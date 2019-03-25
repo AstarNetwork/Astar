@@ -28,6 +28,6 @@ case $TARGET in
 		./init.sh
 		./build.sh
 		cd runtime
-		cargo test --all --release --locked
+		cargo test --all
 		;;
 esac
