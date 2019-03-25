@@ -3,7 +3,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 #![cfg_attr(not(feature = "std"), feature(alloc))]
 // `construct_runtime!` does a lot of recursion and requires us to increase the limit to 256.
-#![recursion_limit="256"]
+#![recursion_limit = "256"]
 
 #[cfg(feature = "std")]
 use serde_derive::{Serialize, Deserialize};
@@ -14,11 +14,11 @@ use primitives::bytes;
 use primitives::{ed25519, OpaqueMetadata};
 use runtime_primitives::{
 	ApplyResult, transaction_validity::TransactionValidity, generic, create_runtime_str,
-	traits::{self, BlakeTwo256, Block as BlockT, StaticLookup, Verify}
+	traits::{self, BlakeTwo256, Block as BlockT, StaticLookup, Verify},
 };
 use client::{
 	block_builder::api::{CheckInherentsResult, InherentData, self as block_builder_api},
-	runtime_api, impl_runtime_apis
+	runtime_api, impl_runtime_apis,
 };
 use version::RuntimeVersion;
 #[cfg(feature = "std")]
@@ -68,12 +68,14 @@ pub mod opaque {
 	/// Opaque, encoded, unchecked extrinsic.
 	#[derive(PartialEq, Eq, Clone, Default, Encode, Decode)]
 	#[cfg_attr(feature = "std", derive(Serialize, Deserialize, Debug))]
-	pub struct UncheckedExtrinsic(#[cfg_attr(feature = "std", serde(with="bytes"))] pub Vec<u8>);
+	pub struct UncheckedExtrinsic(#[cfg_attr(feature = "std", serde(with = "bytes"))] pub Vec<u8>);
+
 	impl traits::Extrinsic for UncheckedExtrinsic {
 		fn is_signed(&self) -> Option<bool> {
 			None
 		}
 	}
+
 	/// Opaque block header type.
 	pub type Header = generic::Header<BlockNumber, BlakeTwo256, generic::DigestItem<Hash, AuthorityId, AuthoritySignature>>;
 	/// Opaque block type.
@@ -182,7 +184,7 @@ impl sudo::Trait for Runtime {
 }
 
 /// Used for the module template in `./template.rs`
-impl template::Trait for Runtime { 
+impl template::Trait for Runtime {
 	type Event = Event;
 }
 
