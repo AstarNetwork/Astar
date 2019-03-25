@@ -16,7 +16,6 @@ Contributors guide: ./.github/CONTRIBUTING.md
 - [ ] all tests passes
 - [ ] tests and/or benchmarks are included
 - [ ] documentation is changed or added
-- [ ] commit message follows [commit guidelines](./doc/guides/contributing/pull-requests.md#commit-message-guidelines)
 - [ ] \(option\)
 
 <!-- _NOTE: these things are not required to open a PR and can be done afterwards / while the PR is open._ -->
