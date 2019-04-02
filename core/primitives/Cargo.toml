@@ -1,0 +1,30 @@
+[package]
+name = "plasm-primitives"
+version = "0.1.0"
+authors = ["Takumi Yamashita <s.a.t.e.3.ths@gmail.com>"]
+edition = "2018"
+
+[dependencies.parity-codec]
+default-features = false
+features = ['derive']
+version = '3.2'
+
+[dependencies.primitives]
+default_features = false
+git = 'https://github.com/paritytech/substrate.git'
+package = 'substrate-primitives'
+rev = '5a463bba8e8b59050f78d5606682e273fcb7c617'
+
+[dependencies.rstd]
+default_features = false
+git = 'https://github.com/paritytech/substrate.git'
+package = 'sr-std'
+rev = '5a463bba8e8b59050f78d5606682e273fcb7c617'
+
+[features]
+default = ["std"]
+std = [
+    'parity-codec/std',
+    'primitives/std',
+    'rstd/std',
+]
