@@ -1,0 +1,93 @@
+[package]
+name = "plasm-utxo"
+version = "0.1.0"
+authors = ["Takumi Yamashita <s.a.t.e.3.ths@gmail.com>"]
+edition = "2018"
+
+[dependencies.parity-codec]
+default-features = false
+features = ['derive']
+version = '3.2'
+
+[dependencies.primitives]
+default_features = false
+git = 'https://github.com/paritytech/substrate.git'
+package = 'substrate-primitives'
+rev = '5a463bba8e8b59050f78d5606682e273fcb7c617'
+
+[dependencies.rstd]
+default_features = false
+git = 'https://github.com/paritytech/substrate.git'
+package = 'sr-std'
+rev = '5a463bba8e8b59050f78d5606682e273fcb7c617'
+
+[dependencies.runtime-io]
+default_features = false
+git = 'https://github.com/paritytech/substrate.git'
+package = 'sr-io'
+rev = '5a463bba8e8b59050f78d5606682e273fcb7c617'
+
+[dependencies.runtime-primitives]
+default_features = false
+git = 'https://github.com/paritytech/substrate.git'
+package = 'sr-primitives'
+rev = '5a463bba8e8b59050f78d5606682e273fcb7c617'
+
+[dependencies.safe-mix]
+default-features = false
+version = '1.0'
+
+[dependencies.serde]
+optional = true
+version = '1.0'
+
+[dependencies.serde_derive]
+optional = true
+version = '1.0'
+
+[dependencies.sudo]
+default_features = false
+git = 'https://github.com/paritytech/substrate.git'
+package = 'srml-sudo'
+rev = '5a463bba8e8b59050f78d5606682e273fcb7c617'
+
+[dependencies.support]
+default_features = false
+git = 'https://github.com/paritytech/substrate.git'
+package = 'srml-support'
+rev = '5a463bba8e8b59050f78d5606682e273fcb7c617'
+
+[dependencies.system]
+default_features = false
+git = 'https://github.com/paritytech/substrate.git'
+package = 'srml-system'
+rev = '5a463bba8e8b59050f78d5606682e273fcb7c617'
+
+[dependencies.timestamp]
+default_features = false
+git = 'https://github.com/paritytech/substrate.git'
+package = 'srml-timestamp'
+rev = '5a463bba8e8b59050f78d5606682e273fcb7c617'
+
+[dependencies.version]
+default_features = false
+git = 'https://github.com/paritytech/substrate.git'
+package = 'sr-version'
+rev = '5a463bba8e8b59050f78d5606682e273fcb7c617'
+
+[features]
+default = ["std"]
+std = [
+    'parity-codec/std',
+    'primitives/std',
+    'rstd/std',
+    'runtime-io/std',
+    'support/std',
+    'system/std',
+    'timestamp/std',
+    'sudo/std',
+    'version/std',
+    'serde_derive',
+    'serde',
+    'safe-mix/std',
+]
