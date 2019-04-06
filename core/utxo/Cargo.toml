@@ -75,6 +75,12 @@ git = 'https://github.com/paritytech/substrate.git'
 package = 'sr-version'
 rev = '5a463bba8e8b59050f78d5606682e273fcb7c617'
 
+[dependencies.sr_primitives]
+default_features = false
+git = 'https://github.com/paritytech/substrate.git'
+package = 'sr-primitives'
+rev = '5a463bba8e8b59050f78d5606682e273fcb7c617'
+
 [features]
 default = ["std"]
 std = [
@@ -90,4 +96,5 @@ std = [
     'serde_derive',
     'serde',
     'safe-mix/std',
+    'sr_primitives/std'
 ]
