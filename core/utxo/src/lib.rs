@@ -1,10 +1,8 @@
-pub mod mvp;
-
-use srml_support::impl_outer_origin;
-use sr_primitives::traits::{Verify, MaybeSerializeDebug, Member, MaybeDisplay};
+use sr_primitives::traits::{Verify, MaybeSerializeDebug, Member, MaybeDisplay, Zero, CheckedAdd, CheckedSub};
+use std::ops::Div;
 use support::{decl_module, decl_storage, decl_event, StorageValue, StorageMap, StorageDoubleMap, dispatch::Result};
-use system::ensure_signed;
-use primitives::{Blake2Hasher, H256, Zero};
+use system::{ensure_signed, ensure_inherent};
+use primitives::{Blake2Hasher, H256};
 
 // use Vec<>
 use rstd::prelude::*;
@@ -12,25 +10,24 @@ use rstd::prelude::*;
 pub use std::fmt;
 pub use std::collections::HashSet;
 // use Encode, Decode
-use parity_codec::{Encode, Decode};
+use parity_codec::{Encode, Decode, Compact};
 use serde::{Serialize, Deserialize};
-use crate::mvp::CheckInfo;
 
 pub trait Trait: consensus::Trait {
 	type Signature: Verify;
-	type Value: Zero;
+	type Value: Zero + CheckedAdd + CheckedSub + Sized + Div<usize, Output=Self::Value>;
 	//加法について交換則、結合則、単位元(0)、逆元(-a)：可換群(加法群)
 	type TimeLock: Zero;
 }
 
-type CheckResult<T> = std::result::Result<T, &'static src>;
+type CheckResult<T> = std::result::Result<T, &'static str>;
 
 #[derive(Clone, Encode, Decode, Debug, Default, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "std", derive(Debug))]
 pub struct TransactionInput<Hash> {
-	#[codec(compact)]
+	///#[codec(compact)]
 	pub tx_hash: Hash,
-	#[codec(compact)]
+	///#[codec(compact)]
 	pub out_index: usize,
 	// optional temp saved transaction output (save_tmp_out, get_tmp_out)
 	//_temp_out: Option<TransactionOutput<Value, SessionKey>> // TODO
@@ -45,7 +42,7 @@ impl<T: Trait> TxIn<T> {
 	pub fn out_index(&self) -> usize {
 		self.out_index
 	}
-	pub fn value(&self) -> value {
+	pub fn value(&self) -> T::Value {
 		match self.output() {
 			Some(tx_out) => tx_out.value(),
 			None => T::Value::zero(),
@@ -53,10 +50,10 @@ impl<T: Trait> TxIn<T> {
 	}
 
 	pub fn output(&self) -> Option<TxOut<T>> {
-		<UnspentOutputs<T>>::get(input.tx_hash(), input.out_index())
+		<crate::UnspentOutputs<T>>::get(self.tx_hash(), self.out_index())
 	}
 	pub fn spent(&self) {
-		<UnspentOutputs<T>>::remove(input.tx_hash(), input.out_index())
+		<UnspentOutputs<T>>::remove(self.tx_hash(), self.out_index())
 	}
 }
 
@@ -64,11 +61,11 @@ impl<T: Trait> TxIn<T> {
 #[derive(Clone, Debug, Default, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "std", derive(Debug))]
 pub struct TransactionOutput<Value, SessionKey> {
-	#[codec(compact)]
+	///#[codec(compact)]
 	pub value: Value,
-	#[codec(compact)]
+	///#[codec(compact)]
 	pub keys: Vec<SessionKey>,
-	#[codec(compact)]
+	///#[codec(compact)]
 	pub quorum: u32,
 }
 
@@ -89,11 +86,11 @@ impl<T: Trait> TxOut<T> {
 #[derive(Clone, Debug, Default, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "std", derive(Debug))]
 pub struct Transaction<TxIn, TxOut, Time> {
-	#[codec(compact)]
+	///#[codec(compact)]
 	pub inputs: Vec<TxIn>,
-	#[codec(compact)]
+	///#[codec(compact)]
 	pub outputs: Vec<TxOut>,
-	#[codec(compact)]
+	///#[codec(compact)]
 	pub lock_time: Time,
 }
 
@@ -112,13 +109,13 @@ impl<T: Trait> Tx<T> {
 			.iter()
 			.try_fold(T::Value::zero(), |sum, inp| sum.checked_add(inp.value()))
 			.ok_or("sum of inputs value is overflow");
-		let sum_out: T::Value = transaction
+		let sum_out: T::Value = self
 			.outputs()
 			.iter()
 			.try_fold(T::Value::zero(), |sum, out| sum.checked_add(out.value()))
 			.ok_or("sum of outputs value is overflow");
 		let leftover = sum_in.checked_sub(sum_out).ok_or("leftover invalid (sum of input) - (sum of output)")?;
-		OK(leftover)
+		Ok(leftover)
 	}
 
 	// spent means changes UTXOs.
@@ -133,17 +130,17 @@ impl<T: Trait> Tx<T> {
 		self.outputs()
 			.iter()
 			.enumerate()
-			.inspect(|(i,out)|
+			.inspect(|(i, out)|
 				<UnspentOutputs<T>>::insert(hash, i, out))
 	}
 }
 
 pub struct SignedTransaction<Tx, Signature, SessionKey> {
-	#[codec(compact)]
+	///#[codec(compact)]
 	pub payload: Option<Tx>,
-	#[codec(compact)]
+	///#[codec(compact)]
 	pub signatures: Vec<Signature>,
-	#[codec(compact)]
+	///#[codec(compact)]
 	pub public_keys: Vec<SessionKey>,
 }
 
@@ -167,7 +164,7 @@ impl<T: Trait> SignedTx<T> {
 			for Some(sign, key) in self.signatures().iter().zip(self.public_keys().iter()) {
 				sign.verify(hash, key)
 			}
-			OK(())
+			Ok(())
 		}
 		Err("payload is None")
 	}
@@ -189,7 +186,7 @@ impl<T: Trait> SignedTx<T> {
 				Err("not enough public_keys to unlock all specified utxo.")
 			}
 		}
-		OK(())
+		Ok(())
 	}
 }
 
@@ -199,38 +196,31 @@ decl_storage! {
 	trait Store for Module<T: Trait> as Utxo {
 		/// All valid unspent transaction outputs are stored in this map.
 		/// Initial set of UTXO is populated from the list stored in genesis.
-		UnspentOutputs build(|config: &GenesisConfig<T>| {
-			config.initial_utxo
-				.iter()
-				.cloned()
-				.enumerate()
-				.map(|(i,u)| (<T::Hashing as Hash>::hash_of(&u), i, u))
-				.collect::<Vec<_>>()
-		}): double_map T::Hash, usize => Option<TxOut<T>>;
+		pub UnspentOutputs get(unspent_outputs): double_map T::Hash, blake2_256(usize) => Option<TxOut<T>>;
 
 		/// Total leftover value to be redistributed among authorities.
 		/// It is accumulated during block execution and then drained
 		/// on block finalization.
-		LeftoverTotal: T::Value;
+		pub LeftoverTotal get(leftover_total): T::Value;
 
 		/// Outputs that are locked
-		LockedOutputs: map T::BlockNumber => Vec<TxOut<T>>;
+		pub LockedOutputs get(locked_outputs): map T::BlockNumber => Option<Vec<TxOut<T>>>;
 	}
 
 	add_extra_genesis {
-		config(initial_utxo): Vec<TransactionOutput>;
+		config(initial_utxo): Vec<TxOut<T>>;
 	}
 }
 
 decl_module! {
-	/// The module declaration.
+	// The module declaration.
 	pub struct Module<T: Trait> for enum Call where origin: T::Origin {
 		// Initializing events
 		// this is needed only if you are using events in your module
-		fn deposit_event<T>() = default;
+		//fn deposit_event<T>() = default;
 
-		/// Dispatch a single transaction and update UTXO set accordingly
-		pub fn execute(origin, #[codec(compact)] signed_tx: SignedTx<T>) -> Result {
+		// Dispatch a single transaction and update UTXO set accordingly
+		pub fn execute(origin, signed_tx: Vec<u8>) -> Result {
 			ensure_inherent(origin)?;
 
 			// all signature checking Signature.Verify(SessionKey, hash(transaction.payload)).
@@ -241,26 +231,34 @@ decl_module! {
 			let leftover = signed_tx
 				.payload()
 				.unwrap()
-				.leftover()?
+				.leftover()?;
 
-			/// Calculate new leftover total
+			// Calculate new leftover total
 			let new_total = <LeftoverTotal<T>>::get()
 				.checked_add(leftover)
-				.ok_or("leftover overflow")?;
+				.unwrap_or("leftover overflow")?;
 
-			Self::update_storage(&transaction.payload(), leftover, new_total)?;
-			Self::deposit_event(Event::TransactionExecuted(transaction));
+			Self::update_storage(&signed_tx.payload(), leftover, new_total)?;
+			//Self::deposit_event(Event::TransactionExecuted(signed_tx));
 			Ok(())
 		}
 
-		/// Handler called by the system on block finalization
-		pub fn on_finalise(n: T::BlockNumber) {
-			let authorities: Vec<_> = consensus::authorities()
+		// Handler called by the system on block finalization
+		fn on_finalize(n: T::BlockNumber) {
+			let authorities: Vec<_> = consensus::Module::<T>::authorities()
 				.iter().map(|&a| a.into()).collect();
 			Self::spend_leftover(&authorities);
 		}
 	}
 }
+//
+//decl_event!(
+//	/// An event in this module.
+//	pub enum Event<T> where T = Trait {
+//		/// Transaction was executed successfully
+//		TransactionExecuted(SignedTx<T>),
+//	}
+//);
 
 /// Not callable external
 impl<T: Trait> Module<T> {
@@ -278,8 +276,8 @@ impl<T: Trait> Module<T> {
 		let leftover = <LeftoverTotal<T>>::take();
 
 		// send leftover to all authorities.
-		let share_value = leftover / authorities.len() as Value;
-		if share_value == 0 { return; }
+		let shared_value = leftover / authorities.len();
+		if shared_value == 0 { return; }
 
 		// create UnspentTransactionOutput
 		let outs: Vec<_> = authorities.iter()
@@ -301,7 +299,74 @@ impl<T: Trait> Module<T> {
 
 		// UnspentOutputs[hash][i] = unspentOutput
 		for (i, out) in outs.iter().enumerate() {
-			<UnspentOutputs<T>>::insert(hash, i, output);
+			<UnspentOutputs<T>>::insert(hash, i, out);
 		}
+	}
+}
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+
+	use runtime_io::with_externalities;
+	use support::{impl_outer_origin, assert_ok};
+	use sr_primitives::{
+		BuildStorage,
+		traits::{BlakeTwo256, IdentityLookup},
+		testing::{Digest, DigestItem, Header},
+		AnySignature,
+	};
+
+	impl_outer_origin! {
+		pub enum Origin for Test {}
+	}
+
+	// For testing the module, we construct most of a mock runtime. This means
+	// first constructing a configuration type (`Test`) which `impl`s each of the
+	// configuration traits of modules we want to use.
+	#[derive(Clone, Eq, PartialEq)]
+	pub struct Test;
+
+	pub type Signature = AnySignature;
+
+	impl system::Trait for Test {
+		type Origin = Origin;
+		type Index = u64;
+		type BlockNumber = u64;
+		type Hash = H256;
+		type Hashing = BlakeTwo256;
+		type Digest = Digest;
+		type AccountId = u64;
+		type Lookup = IdentityLookup<Self::AccountId>;
+		type Header = Header;
+		type Event = ();
+		type Log = DigestItem;
+	}
+
+	impl consensus::Trait for Test {
+		type Log = DigestItem;
+		type SessionKey = <Signature as Verify>::Signer;
+		type InherentOfflineReport = consensus::InstantFinalityReportVec<()>;
+	}
+
+	impl Trait for Test {
+		type Signature = Signature;
+		type Value = u64;
+		type TimeLock = Self::BlockNumber;
+	}
+
+	type TemplateModule = Module<Test>;
+
+	// This function basically just builds a genesis storage key/value store according to
+	// our desired mockup.
+	fn new_test_ext() -> runtime_io::TestExternalities<Blake2Hasher> {
+		system::GenesisConfig::<Test>::default().build_storage().unwrap().0.into()
+	}
+
+	#[test]
+	fn it_works() {
+		with_externalities(&mut new_test_ext(), || {
+			unimplemented!()
+		});
 	}
 }
