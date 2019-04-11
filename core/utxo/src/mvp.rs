@@ -26,6 +26,8 @@
 //	pub inputs: Vec<TransactionInput>,
 //	/// UTXOs to be created as a result of current transaction dispatch
 //	pub outputs: Vec<TransactionOutput>,
+//	/// LockTime
+//	pub lock_time: i32,
 //}
 //
 ///// Single transaction input that refers to one UTXO
