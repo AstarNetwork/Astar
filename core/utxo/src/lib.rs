@@ -1,5 +1,5 @@
-use sr_primitives::traits::{Verify, MaybeSerializeDebug, Member, MaybeDisplay, Zero, CheckedAdd, CheckedSub};
-use support::{decl_module, decl_storage, decl_event, StorageValue, StorageMap, StorageDoubleMap, dispatch::Result};
+use sr_primitives::traits::{Verify, MaybeSerializeDebug, Member, MaybeDisplay, Zero, CheckedAdd, CheckedSub, Hash};
+use support::{decl_module, decl_storage, decl_event, StorageValue, StorageMap, dispatch::Result, Parameter};
 use system::{ensure_signed, ensure_inherent};
 use primitives::{Blake2Hasher, H256};
 
@@ -9,16 +9,16 @@ use rstd::prelude::*;
 pub use std::fmt;
 pub use std::collections::HashSet;
 // use Encode, Decode
-use parity_codec::{Encode, Decode, Compact, Codec};
+use parity_codec::{Encode, Decode, Compact};
 use serde::{Serialize, Deserialize};
 
 pub trait Trait: consensus::Trait {
-	type Signature: Verify + Codec;
-	type Value: Zero + CheckedAdd + CheckedSub + Sized + Div<Self::Value> + Codec;
+	type HashableSessionKey: Parameter + Default + MaybeSerializeDebug + std::hash::Hash;
+	type Signature: Parameter + Verify;
+	type Value: Parameter + Zero + CheckedAdd + CheckedSub + Sized + Div<Self::Value>;
 	//加法について交換則、結合則、単位元(0)、逆元(-a)：可換群(加法群)
-	type TimeLock: Zero + Codec;
+	type TimeLock: Parameter + Zero;
 }
-
 
 pub trait Div<T> {
 	fn div(self, rhs: usize) -> T;
@@ -32,104 +32,100 @@ impl Div<u64> for u64 {
 
 type CheckResult<T> = std::result::Result<T, &'static str>;
 
-#[derive(Clone, Encode, Decode, Default, PartialEq, Eq, Hash)]
+#[derive(Clone, Encode, Decode, Default, PartialEq, Eq)]
 #[cfg_attr(feature = "std", derive(Debug))]
-pub struct TransactionInput<Hash> {
+pub struct TransactionInput<T: Trait> {
 	///#[codec(compact)]
-	pub tx_hash: Hash,
+	pub tx_hash: T::Hash,
 	///#[codec(compact)]
 	pub out_index: usize,
 	// optional temp saved transaction output (save_tmp_out, get_tmp_out)
-	//_temp_out: Option<TransactionOutput<Value, SessionKey>> // TODO
+	//_temp_out: Option<TransactionOutput<Value, HashableSessionKey>> // TODO
 }
 
-type TxIn<T: Trait> = TransactionInput<T::Hash>;
-
-impl<Hash> TransactionInput<Hash> {
-	pub fn tx_hash<T: Trait>(&self) -> &<T as system::Trait>::Hash {
-		&self.tx_hash
+impl<T: Trait> TransactionInput<T> {
+	pub fn tx_hash(&self) -> T::Hash {
+		self.tx_hash
 	}
-	pub fn out_index(&self) -> &usize {
-		&self.out_index
+	pub fn out_index(&self) -> usize {
+		self.out_index
 	}
-	pub fn value<T: Trait>(&self) -> &T::Value {
+	pub fn value(&self) -> T::Value {
 		match self.output() {
 			Some(tx_out) => tx_out.value(),
 			None => T::Value::zero(),
 		}
 	}
 
-	pub fn output<T: Trait>(&self) -> Option<TxOut<T>> {
-		<UnspentOutputs<T>>::get(self.tx_hash(), self.out_index())
+	pub fn output(&self) -> Option<TransactionOutput<T>> {
+		<UnspentOutputs<T>>::get((self.tx_hash(), self.out_index()))
 	}
-	pub fn spent<T: Trait>(&self) {
-		<UnspentOutputs<T>>::remove(self.tx_hash(), self.out_index())
+	pub fn spent(&self) {
+		<UnspentOutputs<T>>::remove((self.tx_hash(), self.out_index()))
 	}
 }
 
 
-#[derive(Clone, Encode, Decode, Default, PartialEq, Eq, Hash)]
+#[derive(Clone, Encode, Decode, Default, PartialEq, Eq)]
 #[cfg_attr(feature = "std", derive(Debug))]
-pub struct TransactionOutput<Value, SessionKey> {
+pub struct TransactionOutput<T: Trait> {
 	///#[codec(compact)]
-	pub value: Value,
+	pub value: T::Value,
 	///#[codec(compact)]
-	pub keys: Vec<SessionKey>,
+	pub keys: Vec<T::HashableSessionKey>,
 	///#[codec(compact)]
 	pub quorum: u32,
 }
 
-type TxOut<T: Trait> = TransactionOutput<T::Value, T::SessionKey>;
-
-impl<Value, SessionKey> TransactionOutput<Value, SessionKey> {
-	pub fn value<T: Trait>(&self) -> &T::Value {
-		&self.value
+impl<T: Trait> TransactionOutput<T> {
+	pub fn value(&self) -> T::Value {
+		self.value.clone()
 	}
-	pub fn keys<T: Trait>(&self) -> &Vec<<T as consensus::Trait>::SessionKey> {
+	pub fn keys(&self) -> &Vec<T::HashableSessionKey> {
 		&self.keys
 	}
-	pub fn quorum(&self) -> &u32 {
+	pub fn quorum(&self) -> u32 {
 		self.quorum
 	}
 }
 
-#[derive(Clone, Encode, Decode, Default, PartialEq, Eq, Hash)]
+#[derive(Clone, Encode, Decode, Default)]
 #[cfg_attr(feature = "std", derive(Debug))]
-pub struct Transaction<TxIn, TxOut, Time> {
+pub struct Transaction<T: Trait> {
 	///#[codec(compact)]
-	pub inputs: Vec<TxIn>,
+	pub inputs: Vec<TransactionInput<T>>,
 	///#[codec(compact)]
-	pub outputs: Vec<TxOut>,
+	pub outputs: Vec<TransactionOutput<T>>,
 	///#[codec(compact)]
-	pub lock_time: Time,
+	pub lock_time: T::TimeLock,
 }
 
-
-type Tx<T: Trait> = Transaction<TxIn<T>, TxOut<T>, T::TimeLock>;
-
-impl<TxIn, TxOut, TimeLock> Transaction<TxIn, TxOut, TimeLock> {
-	pub fn inputs(&self) -> &Vec<TxIn> {
+impl<T: Trait> Transaction<T> {
+	pub fn inputs(&self) -> &Vec<TransactionInput<T>> {
 		&self.inputs
+	}
+	pub fn outputs(&self) -> &Vec<TransactionOutput<T>> {
+		&self.outputs
 	}
 
 	// calculate leftover.
-	pub fn leftover<T: Trait>(&self) -> CheckResult<T::Value> {
+	pub fn leftover(&self) -> CheckResult<T::Value> {
 		let sum_in: T::Value = self
 			.inputs()
 			.iter()
-			.try_fold(T::Value::zero(), |sum, inp| sum.checked_add(inp.value()))
-			.ok_or("sum of inputs value is overflow");
+			.try_fold(T::Value::zero(), |sum, inp| sum.checked_add(&inp.value()))
+			.ok_or("sum of inputs value is overflow")?;
 		let sum_out: T::Value = self
 			.outputs()
 			.iter()
-			.try_fold(T::Value::zero(), |sum, out| sum.checked_add(out.value()))
-			.ok_or("sum of outputs value is overflow");
-		let leftover = sum_in.checked_sub(sum_out).ok_or("leftover invalid (sum of input) - (sum of output)")?;
+			.try_fold(T::Value::zero(), |sum, out| sum.checked_add(&out.value()))
+			.ok_or("sum of outputs value is overflow")?;
+		let leftover = sum_in.checked_sub(&sum_out).ok_or("leftover invalid (sum of input) - (sum of output)")?;
 		Ok(leftover)
 	}
 
 	// spent means changes UTXOs.
-	pub fn spent<T: Trait>(&self) {
+	pub fn spent(&self) {
 		// output that is specified by input remove from UTXO.
 		self.inputs()
 			.iter()
@@ -141,39 +137,40 @@ impl<TxIn, TxOut, TimeLock> Transaction<TxIn, TxOut, TimeLock> {
 			.iter()
 			.enumerate()
 			.inspect(|(i, out)|
-				<UnspentOutputs<T>>::insert(hash, i, out))
+				<UnspentOutputs<T>>::insert((hash.clone(), i.clone()), out.clone()));
 	}
 }
 
-#[derive(Clone, Encode, Decode, Default, PartialEq, Eq, Hash)]
-pub struct SignedTransaction<Tx, Signature, SessionKey> {
+#[derive(Clone, Encode, Decode, Default)]
+pub struct SignedTransaction<T: Trait> {
 	///#[codec(compact)]
-	pub payload: Option<Tx>,
+	pub payload: Option<Transaction<T>>,
 	///#[codec(compact)]
-	pub signatures: Vec<Signature>,
+	pub signatures: Vec<T::Signature>,
 	///#[codec(compact)]
-	pub public_keys: Vec<SessionKey>,
+	pub public_keys: Vec<T::HashableSessionKey>,
 }
 
-type SignedTx<T: Trait> = SignedTransaction<Tx<T>, T::Signature, T::SessionKey>;
-
-impl<Tx, Signature, SessionKey> SignedTransaction<Tx, Signature, SessionKey> {
-	fn payload(&self) -> Option<Tx> {
+impl<T: Trait> SignedTransaction<T> {
+	fn payload(&self) -> Option<Transaction<T>> {
 		self.payload
 	}
-	fn signatures<T: Trait>(&self) -> Vec<T::Signature> {
-		self.signatures
+	fn signatures(&self) -> &Vec<T::Signature> {
+		&self.signatures
 	}
-	fn public_keys<T: Trait>(&self) -> Vec<<T as consensus::Trait>::SessionKey> {
-		self.public_keys
+	fn public_keys(&self) -> &Vec<T::HashableSessionKey> {
+		&self.public_keys
 	}
 
 	// verify signatures
-	pub fn verify<T: Trait>(&self) -> Result {
+	pub fn verify(&self) -> Result {
 		if let Some(tx) = self.payload() {
-			let hash = <T as system::Trait>::Hashing::hash_of(tx);
-			for Some(sign, key) in self.signatures().iter().zip(self.public_keys().iter()) {
-				sign.verify(hash, key)
+			let hash = <T as system::Trait>::Hashing::hash_of(&tx);
+			for (sign, key) in self.signatures().iter().zip(self.public_keys().iter()) {
+				// TODO
+				//	let pubkey = <<C as Crypto>::Pair as Pair>::Public::from_string(uri).ok().or_else(||
+				//				<C as Crypto>::Pair::from_string(uri, password).ok().map(|p| p.public())
+				if !sign.verify(hash.clone().as_mut() as &[u8], key as &<T::Signature as Verify>::Signer) { Err("signature is unverified.") }
 			}
 			Ok(())
 		}
@@ -181,12 +178,12 @@ impl<Tx, Signature, SessionKey> SignedTransaction<Tx, Signature, SessionKey> {
 	}
 
 	// unlock inputs
-	pub fn unlock<T: Trait>(&self) -> Result {
+	pub fn unlock(&self) -> Result {
 		let keys: HashSet<_> = self.public_keys().iter().collect();
 		for input in self.payload()
 			.expect("payload is not None")
 			.inputs() {
-			let output = <UnspentOutputs<T>>::get(input.tx_hash(), input.out_index())
+			let output = <UnspentOutputs<T>>::get((input.tx_hash(), input.out_index()))
 				.unwrap_or("specified utxo by input is not found.")?;
 			if output.quorum() > output
 				.keys()
@@ -207,7 +204,7 @@ decl_storage! {
 	trait Store for Module<T: Trait> as Utxo {
 		/// All valid unspent transaction outputs are stored in this map.
 		/// Initial set of UTXO is populated from the list stored in genesis.
-		pub UnspentOutputs get(unspent_outputs): double_map T::Hash, blake2_256(usize) => Option<TxOut<T>>;
+		pub UnspentOutputs get(unspent_outputs): map (<T as system::Trait>::Hash, usize) => Option<TransactionOutput<T>>;
 
 		/// Total leftover value to be redistributed among authorities.
 		/// It is accumulated during block execution and then drained
@@ -215,11 +212,11 @@ decl_storage! {
 		pub LeftoverTotal get(leftover_total): T::Value;
 
 		/// Outputs that are locked
-		pub LockedOutputs get(locked_outputs): map T::BlockNumber => Option<Vec<TxOut<T>>>;
+		pub LockedOutputs get(locked_outputs): map T::BlockNumber => Option<Vec<TransactionOutput<T>>>;
 	}
 
 	add_extra_genesis {
-		config(initial_utxo): Vec<TxOut<T>>;
+		config(initial_utxo): Vec<TransactionOutput<T>>;
 	}
 }
 
@@ -234,7 +231,7 @@ decl_module! {
 		pub fn execute(origin, signed_tx: Vec<u8>) -> Result {
 			ensure_inherent(origin)?;
 
-			// all signature checking Signature.Verify(SessionKey, hash(transaction.payload)).
+			// all signature checking Signature.Verify(HashableSessionKey, hash(transaction.payload)).
 			signed_tx.verify()?;
 			// UTXO unlocked checking.
 			signed_tx.unlock()?;
@@ -249,7 +246,7 @@ decl_module! {
 				.checked_add(leftover)
 				.unwrap_or("leftover overflow")?;
 
-			Self::update_storage(&signed_tx.payload(), leftover, new_total)?;
+			Self::update_storage(&signed_tx.payload(), leftover, new_total);
 			//Self::deposit_event(Event::TransactionExecuted(signed_tx));
 			Ok(())
 		}
@@ -267,14 +264,14 @@ decl_module! {
 //	/// An event in this module.
 //	pub enum Event<T> where T = Trait {
 //		/// Transaction was executed successfully
-//		TransactionExecuted(SignedTx<T>),
+//		TransactionExecuted(SignedTransaction<T>),
 //	}
 //);
 
 /// Not callable external
 impl<T: Trait> Module<T> {
 	/// Update storage to reflect changes made by transaction
-	fn update_storage(transaction: &Tx<T>, leftover: T::Value, new_total: T::Value) {
+	fn update_storage(transaction: &Transaction<T>, leftover: T::Value, new_total: T::Value) {
 		/// Storing updated leftover value
 		<LeftoverTotal<T>>::put(new_total);
 
@@ -283,7 +280,7 @@ impl<T: Trait> Module<T> {
 	}
 
 	/// Redistribute combined leftover value evenly among authorities
-	fn spend_leftover(authorities: &[T::SessionKey]) {
+	fn spend_leftover(authorities: &[T::HashableSessionKey]) {
 		let leftover = <LeftoverTotal<T>>::take();
 
 		// send leftover to all authorities.
@@ -310,7 +307,7 @@ impl<T: Trait> Module<T> {
 
 		// UnspentOutputs[hash][i] = unspentOutput
 		for (i, out) in outs.iter().enumerate() {
-			<UnspentOutputs<T>>::insert(hash, i, out);
+			<UnspentOutputs<T>>::insert((hash.clone(), i.clone()), out.clone());
 		}
 	}
 }
@@ -325,7 +322,6 @@ mod tests {
 		BuildStorage,
 		traits::{BlakeTwo256, IdentityLookup},
 		testing::{Digest, DigestItem, Header},
-		AnySignature,
 	};
 	use primitives::ed25519;
 
@@ -340,6 +336,7 @@ mod tests {
 	pub struct Test;
 
 	pub type Signature = ed25519::Signature;
+	pub type SessionKey = <Signature as Verify>::Signer;
 
 	impl system::Trait for Test {
 		type Origin = Origin;
@@ -357,11 +354,12 @@ mod tests {
 
 	impl consensus::Trait for Test {
 		type Log = DigestItem;
-		type SessionKey = <Signature as Verify>::Signer;
+		type SessionKey = SessionKey;
 		type InherentOfflineReport = consensus::InstantFinalityReportVec<()>;
 	}
 
 	impl Trait for Test {
+		type HashableSessionKey = SessionKey;
 		type Signature = Signature;
 		type Value = u64;
 		type TimeLock = Self::BlockNumber;
