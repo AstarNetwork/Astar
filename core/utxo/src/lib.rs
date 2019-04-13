@@ -7,14 +7,14 @@ use primitives::{Blake2Hasher, H256};
 use rstd::prelude::*;
 #[cfg(feature = "std")]
 pub use std::fmt;
-pub use std::collections::HashSet;
 // use Encode, Decode
 use parity_codec::{Encode, Decode, Compact};
 use serde::{Serialize, Deserialize};
+use parity_codec::alloc::collections::btree_set::BTreeSet;
 
 pub trait Trait: consensus::Trait {
-	type HashableSessionKey: Parameter + Default + MaybeSerializeDebug + std::hash::Hash;
-	type Signature: Parameter + Verify;
+	type HashableSessionKey: Ord + Parameter + Default + MaybeSerializeDebug;
+	type Signature: Parameter + Verify<Signer=Self::HashableSessionKey>;
 	type Value: Parameter + Zero + CheckedAdd + CheckedSub + Sized + Div<Self::Value>;
 	//加法について交換則、結合則、単位元(0)、逆元(-a)：可換群(加法群)
 	type TimeLock: Parameter + Zero;
@@ -167,31 +167,30 @@ impl<T: Trait> SignedTransaction<T> {
 		if let Some(tx) = self.payload() {
 			let hash = <T as system::Trait>::Hashing::hash_of(&tx);
 			for (sign, key) in self.signatures().iter().zip(self.public_keys().iter()) {
-				// TODO
-				//	let pubkey = <<C as Crypto>::Pair as Pair>::Public::from_string(uri).ok().or_else(||
-				//				<C as Crypto>::Pair::from_string(uri, password).ok().map(|p| p.public())
-				if !sign.verify(hash.clone().as_mut() as &[u8], key as &<T::Signature as Verify>::Signer) { Err("signature is unverified.") }
+				if !sign.verify(hash.clone().as_mut() as &[u8], key) {
+					return Err("signature is unverified.");
+				}
 			}
-			Ok(())
+			return Ok(());
 		}
 		Err("payload is None")
 	}
 
 	// unlock inputs
 	pub fn unlock(&self) -> Result {
-		let keys: HashSet<_> = self.public_keys().iter().collect();
+		let keys: BTreeSet<_> = self.public_keys().iter().collect();
 		for input in self.payload()
 			.expect("payload is not None")
 			.inputs() {
 			let output = <UnspentOutputs<T>>::get((input.tx_hash(), input.out_index()))
-				.unwrap_or("specified utxo by input is not found.")?;
+				.ok_or("specified utxo by input is not found.")?;
 			if output.quorum() > output
 				.keys()
 				.iter()
 				.filter(|key|
 					keys.get(key).is_some())
-				.count() {
-				Err("not enough public_keys to unlock all specified utxo.")
+				.count() as u32 {
+				return Err("not enough public_keys to unlock all specified utxo.")
 			}
 		}
 		Ok(())
@@ -244,7 +243,7 @@ decl_module! {
 			// Calculate new leftover total
 			let new_total = <LeftoverTotal<T>>::get()
 				.checked_add(leftover)
-				.unwrap_or("leftover overflow")?;
+				.ok_or("leftover overflow")?;
 
 			Self::update_storage(&signed_tx.payload(), leftover, new_total);
 			//Self::deposit_event(Event::TransactionExecuted(signed_tx));
