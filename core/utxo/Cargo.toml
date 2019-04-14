@@ -97,5 +97,5 @@ std = [
     'serde_derive',
     'serde',
     'safe-mix/std',
-    'sr_primitives/std'
+    'sr_primitives/std',
 ]

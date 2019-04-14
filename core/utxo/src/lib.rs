@@ -11,19 +11,18 @@ pub use std::fmt;
 use parity_codec::{Encode, Decode, Compact};
 use serde::{Serialize, Deserialize};
 use parity_codec::alloc::collections::btree_set::BTreeSet;
-use std::ops::{Deref, Div};
+use std::ops::{Deref, Div, Add, Sub};
 
 pub trait Trait: consensus::Trait {
-	type HashableSessionKey: Ord + Parameter + Default + MaybeSerializeDebug;
-	type Signature: Parameter + Verify<Signer=Self::HashableSessionKey>;
-	type Value: Parameter + Zero + CheckedAdd + CheckedSub + Div<usize, Output = Self::Value>;
+	type Signature: Parameter + Verify<Signer=Self::SessionKey>;
+	type Value: Parameter + Zero + CheckedAdd + CheckedSub + Div<usize, Output = Self::Value> + Default;
 	//加法について交換則、結合則、単位元(0)、逆元(-a)：可換群(加法群)
-	type TimeLock: Parameter + Zero;
+	type TimeLock: Parameter + Zero + Default;
 }
 
 #[derive(Clone, Encode, Decode, Default, PartialEq, Eq)]
 #[cfg_attr(feature = "std", derive(Debug))]
-struct DefaultValue(u64);
+pub struct DefaultValue(u64);
 
 impl Div<usize> for DefaultValue {
 	type Output = DefaultValue;
@@ -38,28 +37,41 @@ impl Zero for DefaultValue {
 	}
 
 	fn is_zero(&self) -> bool {
-		*self == 0
+		**self == 0
+	}
+}
+
+impl Add for DefaultValue {
+	type Output = Self;
+	fn add(self, rhs: DefaultValue) -> Self::Output {
+		DefaultValue(*self + *rhs)
 	}
 }
 
 impl CheckedAdd for DefaultValue {
 	fn checked_add(&self, v: &Self) -> Option<Self> {
-		if let Some(v) = *self.checked_add(*v) {
+		if let Some(v) = (**self).checked_add(**v) {
 			return Some(DefaultValue(v));
 		}
 		None
+	}
+}
+
+impl Sub for DefaultValue {
+	type Output = Self;
+	fn sub(self, rhs: DefaultValue) -> Self::Output {
+		DefaultValue(*self - *rhs)
 	}
 }
 
 impl CheckedSub for DefaultValue {
 	fn checked_sub(&self, v: &Self) -> Option<Self> {
-		if let Some(v) = *self.checked_sub(*v) {
+		if let Some(v) = (**self).checked_sub(**v) {
 			return Some(DefaultValue(v));
 		}
 		None
 	}
 }
-
 
 impl Deref for DefaultValue {
 	type Target = u64;
@@ -111,7 +123,7 @@ pub struct TransactionOutput<T: Trait> {
 	///#[codec(compact)]
 	pub value: T::Value,
 	///#[codec(compact)]
-	pub keys: Vec<T::HashableSessionKey>,
+	pub keys: Vec<<T as consensus::Trait>::SessionKey>,
 	///#[codec(compact)]
 	pub quorum: u32,
 }
@@ -120,7 +132,7 @@ impl<T: Trait> TransactionOutput<T> {
 	pub fn value(&self) -> T::Value {
 		self.value.clone()
 	}
-	pub fn keys(&self) -> &Vec<T::HashableSessionKey> {
+	pub fn keys(&self) -> &Vec<<T as consensus::Trait>::SessionKey> {
 		&self.keys
 	}
 	pub fn quorum(&self) -> u32 {
@@ -128,7 +140,7 @@ impl<T: Trait> TransactionOutput<T> {
 	}
 }
 
-#[derive(Clone, Encode, Decode, Default)]
+#[derive(Clone, Encode, Decode, Default, PartialEq, Eq)]
 #[cfg_attr(feature = "std", derive(Debug))]
 pub struct Transaction<T: Trait> {
 	///#[codec(compact)]
@@ -180,31 +192,32 @@ impl<T: Trait> Transaction<T> {
 	}
 }
 
-#[derive(Clone, Encode, Decode, Default)]
+#[derive(Clone, Encode, Decode, Default, PartialEq, Eq)]
+#[cfg_attr(feature = "std", derive(Debug))]
 pub struct SignedTransaction<T: Trait> {
 	///#[codec(compact)]
 	pub payload: Option<Transaction<T>>,
 	///#[codec(compact)]
 	pub signatures: Vec<T::Signature>,
 	///#[codec(compact)]
-	pub public_keys: Vec<T::HashableSessionKey>,
+	pub public_keys: Vec<<T as consensus::Trait>::SessionKey>,
 }
 
 impl<T: Trait> SignedTransaction<T> {
-	fn payload(&self) -> Option<Transaction<T>> {
-		self.payload
+	pub fn payload(&self) -> &Option<Transaction<T>> {
+		&self.payload
 	}
-	fn signatures(&self) -> &Vec<T::Signature> {
+	pub fn signatures(&self) -> &Vec<T::Signature> {
 		&self.signatures
 	}
-	fn public_keys(&self) -> &Vec<T::HashableSessionKey> {
+	pub fn public_keys(&self) -> &Vec<<T as consensus::Trait>::SessionKey> {
 		&self.public_keys
 	}
 
 	// verify signatures
 	pub fn verify(&self) -> Result {
 		if let Some(tx) = self.payload() {
-			let hash = <T as system::Trait>::Hashing::hash_of(&tx);
+			let hash = <T as system::Trait>::Hashing::hash_of(tx);
 			for (sign, key) in self.signatures().iter().zip(self.public_keys().iter()) {
 				if !sign.verify(hash.clone().as_mut() as &[u8], key) {
 					return Err("signature is unverified.");
@@ -217,9 +230,10 @@ impl<T: Trait> SignedTransaction<T> {
 
 	// unlock inputs
 	pub fn unlock(&self) -> Result {
-		let keys: BTreeSet<_> = self.public_keys().iter().collect();
+		let keys: Vec<_> = self.public_keys().iter().collect();
 		for input in self.payload()
-			.expect("payload is not None")
+			.as_ref()
+			.expect("payload expects not None")
 			.inputs() {
 			let output = <UnspentOutputs<T>>::get((input.tx_hash(), input.out_index()))
 				.ok_or("specified utxo by input is not found.")?;
@@ -227,7 +241,7 @@ impl<T: Trait> SignedTransaction<T> {
 				.keys()
 				.iter()
 				.filter(|key|
-					keys.get(key).is_some())
+					keys.contains(key))
 				.count() as u32 {
 				return Err("not enough public_keys to unlock all specified utxo.");
 			}
@@ -269,6 +283,7 @@ decl_module! {
 		pub fn execute(origin, signed_tx: Vec<u8>) -> Result {
 			ensure_inherent(origin)?;
 
+			let signed_tx = SignedTransaction::<T>::decode(&mut &signed_tx[..]).ok_or("signed_tx is undecoded bytes.")?;
 			// all signature checking Signature.Verify(HashableSessionKey, hash(transaction.payload)).
 			signed_tx.verify()?;
 			// UTXO unlocked checking.
@@ -276,24 +291,23 @@ decl_module! {
 			// LeftOver(Fee) calclate.
 			let leftover = signed_tx
 				.payload()
+				.as_ref()
 				.unwrap()
 				.leftover()?;
 
 			// Calculate new leftover total
 			let new_total = <LeftoverTotal<T>>::get()
-				.checked_add(leftover)
+				.checked_add(&leftover)
 				.ok_or("leftover overflow")?;
 
-			Self::update_storage(&signed_tx.payload(), leftover, new_total);
+			Self::update_storage(&signed_tx.payload().as_ref().unwrap(), leftover, new_total);
 			//Self::deposit_event(Event::TransactionExecuted(signed_tx));
 			Ok(())
 		}
 
 		// Handler called by the system on block finalization
 		fn on_finalize(n: T::BlockNumber) {
-			let authorities: Vec<_> = consensus::Module::<T>::authorities()
-				.iter().map(|&a| a.into()).collect();
-			Self::spend_leftover(&authorities);
+			Self::spend_leftover(&consensus::Module::<T>::authorities());
 		}
 	}
 }
@@ -318,27 +332,27 @@ impl<T: Trait> Module<T> {
 	}
 
 	/// Redistribute combined leftover value evenly among authorities
-	fn spend_leftover(authorities: &[T::HashableSessionKey]) {
+	fn spend_leftover(authorities: &[<T as consensus::Trait>::SessionKey]) {
 		let leftover = <LeftoverTotal<T>>::take();
 
 		// send leftover to all authorities.
 		let shared_value = leftover / (authorities.len());
-		if shared_value == 0 { return; }
+		if shared_value == <T as Trait>::Value::zero() { return; }
 
 		// create UnspentTransactionOutput
 		let outs: Vec<_> = authorities.iter()
 			.map(|key|
 				TransactionOutput {
-					value: shared_value,
-					keys: vec! {*authorities},
+					value: shared_value.clone(),
+					keys: (*authorities).to_vec(),
 					quorum: 1,
 				})
 			.collect();
 
 		// crate Transaction for calc hash
 		let tx = Transaction {
-			inputs: None,
-			outputs: outs,
+			inputs: vec!{},
+			outputs: outs.clone(),
 			lock_time: T::TimeLock::zero(),
 		};
 		let hash = T::Hashing::hash_of(&tx);
@@ -371,6 +385,7 @@ mod tests {
 	// first constructing a configuration type (`Test`) which `impl`s each of the
 	// configuration traits of modules we want to use.
 	#[derive(Clone, Eq, PartialEq)]
+	#[cfg_attr(feature = "std", derive(Debug))]
 	pub struct Test;
 
 	pub type Signature = ed25519::Signature;
@@ -397,7 +412,6 @@ mod tests {
 	}
 
 	impl Trait for Test {
-		type HashableSessionKey = SessionKey;
 		type Signature = Signature;
 		type Value = DefaultValue;
 		type TimeLock = Self::BlockNumber;
