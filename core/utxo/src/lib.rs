@@ -11,22 +11,61 @@ pub use std::fmt;
 use parity_codec::{Encode, Decode, Compact};
 use serde::{Serialize, Deserialize};
 use parity_codec::alloc::collections::btree_set::BTreeSet;
+use std::ops::{Deref, Div};
 
 pub trait Trait: consensus::Trait {
 	type HashableSessionKey: Ord + Parameter + Default + MaybeSerializeDebug;
 	type Signature: Parameter + Verify<Signer=Self::HashableSessionKey>;
-	type Value: Parameter + Zero + CheckedAdd + CheckedSub + Sized + Div<Self::Value>;
+	type Value: Parameter + Zero + CheckedAdd + CheckedSub + Div<usize, Output = Self::Value>;
 	//加法について交換則、結合則、単位元(0)、逆元(-a)：可換群(加法群)
 	type TimeLock: Parameter + Zero;
 }
 
-pub trait Div<T> {
-	fn div(self, rhs: usize) -> T;
+#[derive(Clone, Encode, Decode, Default, PartialEq, Eq)]
+#[cfg_attr(feature = "std", derive(Debug))]
+struct DefaultValue(u64);
+
+impl Div<usize> for DefaultValue {
+	type Output = DefaultValue;
+	fn div(self, rhs: usize) -> Self::Output {
+		DefaultValue(*self / (rhs as u64))
+	}
 }
 
-impl Div<u64> for u64 {
-	fn div(self, rhs: usize) -> u64 {
-		self / (rhs as u64)
+impl Zero for DefaultValue {
+	fn zero() -> Self {
+		DefaultValue(0)
+	}
+
+	fn is_zero(&self) -> bool {
+		*self == 0
+	}
+}
+
+impl CheckedAdd for DefaultValue {
+	fn checked_add(&self, v: &Self) -> Option<Self> {
+		if let Some(v) = *self.checked_add(*v) {
+			return Some(DefaultValue(v));
+		}
+		None
+	}
+}
+
+impl CheckedSub for DefaultValue {
+	fn checked_sub(&self, v: &Self) -> Option<Self> {
+		if let Some(v) = *self.checked_sub(*v) {
+			return Some(DefaultValue(v));
+		}
+		None
+	}
+}
+
+
+impl Deref for DefaultValue {
+	type Target = u64;
+
+	fn deref(&self) -> &Self::Target {
+		&self.0
 	}
 }
 
@@ -190,7 +229,7 @@ impl<T: Trait> SignedTransaction<T> {
 				.filter(|key|
 					keys.get(key).is_some())
 				.count() as u32 {
-				return Err("not enough public_keys to unlock all specified utxo.")
+				return Err("not enough public_keys to unlock all specified utxo.");
 			}
 		}
 		Ok(())
@@ -283,7 +322,7 @@ impl<T: Trait> Module<T> {
 		let leftover = <LeftoverTotal<T>>::take();
 
 		// send leftover to all authorities.
-		let shared_value = leftover.div(authorities.len());
+		let shared_value = leftover / (authorities.len());
 		if shared_value == 0 { return; }
 
 		// create UnspentTransactionOutput
@@ -360,7 +399,7 @@ mod tests {
 	impl Trait for Test {
 		type HashableSessionKey = SessionKey;
 		type Signature = Signature;
-		type Value = u64;
+		type Value = DefaultValue;
 		type TimeLock = Self::BlockNumber;
 	}
 
