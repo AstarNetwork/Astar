@@ -1,22 +1,18 @@
-use sr_primitives::traits::{Verify, MaybeSerializeDebug, Member, MaybeDisplay, Zero, CheckedAdd, CheckedSub, Hash};
+use sr_primitives::traits::{Verify, Zero, CheckedAdd, CheckedSub, Hash};
 use support::{decl_module, decl_storage, decl_event, StorageValue, StorageMap, dispatch::Result, Parameter};
 use system::{ensure_signed, ensure_inherent};
-use primitives::{Blake2Hasher, H256};
 
 // use Vec<>
 use rstd::prelude::*;
 #[cfg(feature = "std")]
 pub use std::fmt;
 // use Encode, Decode
-use parity_codec::{Encode, Decode, Compact};
-use serde::{Serialize, Deserialize};
-use parity_codec::alloc::collections::btree_set::BTreeSet;
+use parity_codec::{Encode, Decode};
 use std::ops::{Deref, Div, Add, Sub};
 
-pub trait Trait: consensus::Trait {
+pub trait Trait: consensus::Trait + Default {
 	type Signature: Parameter + Verify<Signer=Self::SessionKey>;
-	type Value: Parameter + Zero + CheckedAdd + CheckedSub + Div<usize, Output = Self::Value> + Default;
-	//加法について交換則、結合則、単位元(0)、逆元(-a)：可換群(加法群)
+	type Value: Parameter + Zero + CheckedAdd + CheckedSub + Div<usize, Output=Self::Value> + Default;
 	type TimeLock: Parameter + Zero + Default;
 }
 
@@ -178,13 +174,13 @@ impl<T: Trait> Transaction<T> {
 	// spent means changes UTXOs.
 	pub fn spent(&self) {
 		// output that is specified by input remove from UTXO.
-		self.inputs()
+		let _ = self.inputs()
 			.iter()
 			.inspect(|inp| inp.spent());
 
 		// new output is inserted to UTXO.
 		let hash = <T as system::Trait>::Hashing::hash_of(self);
-		self.outputs()
+		let _ = self.outputs()
 			.iter()
 			.enumerate()
 			.inspect(|(i, out)|
@@ -256,7 +252,15 @@ decl_storage! {
 	trait Store for Module<T: Trait> as Utxo {
 		/// All valid unspent transaction outputs are stored in this map.
 		/// Initial set of UTXO is populated from the list stored in genesis.
-		pub UnspentOutputs get(unspent_outputs): map (<T as system::Trait>::Hash, usize) => Option<TransactionOutput<T>>;
+		pub UnspentOutputs get(unspent_outputs) build(|config: &GenesisConfig<T>| {
+			config.initial_tx
+				.clone()
+				.outputs()
+				.iter()
+				.enumerate()
+				.map(|(i, u)| ((T::Hashing::hash_of(&config.initial_tx), i), u.clone()))
+				.collect::<Vec<_>>()
+		}): map (<T as system::Trait>::Hash, usize) => Option<TransactionOutput<T>>;
 
 		/// Total leftover value to be redistributed among authorities.
 		/// It is accumulated during block execution and then drained
@@ -268,7 +272,7 @@ decl_storage! {
 	}
 
 	add_extra_genesis {
-		config(initial_utxo): Vec<TransactionOutput<T>>;
+		config(initial_tx): Transaction<T>;
 	}
 }
 
@@ -300,21 +304,21 @@ decl_module! {
 				.checked_add(&leftover)
 				.ok_or("leftover overflow")?;
 
-			Self::update_storage(&signed_tx.payload().as_ref().unwrap(), leftover, new_total);
+			Self::update_storage(&signed_tx.payload().as_ref().unwrap(), new_total);
 			//Self::deposit_event(Event::TransactionExecuted(signed_tx));
 			Ok(())
 		}
 
 		// Handler called by the system on block finalization
-		fn on_finalize(n: T::BlockNumber) {
+		fn on_finalize(_n: T::BlockNumber) {
 			Self::spend_leftover(&consensus::Module::<T>::authorities());
 		}
 	}
 }
-//
+
 //decl_event!(
 //	/// An event in this module.
-//	pub enum Event<T> where T = Trait {
+//	pub enum Event<T> where SignedTransaction<T> = SignedTransaction<T as Trait> {
 //		/// Transaction was executed successfully
 //		TransactionExecuted(SignedTransaction<T>),
 //	}
@@ -323,7 +327,7 @@ decl_module! {
 /// Not callable external
 impl<T: Trait> Module<T> {
 	/// Update storage to reflect changes made by transaction
-	fn update_storage(transaction: &Transaction<T>, leftover: T::Value, new_total: T::Value) {
+	fn update_storage(transaction: &Transaction<T>, new_total: T::Value) {
 		/// Storing updated leftover value
 		<LeftoverTotal<T>>::put(new_total);
 
@@ -344,14 +348,14 @@ impl<T: Trait> Module<T> {
 			.map(|key|
 				TransactionOutput {
 					value: shared_value.clone(),
-					keys: (*authorities).to_vec(),
+					keys: vec! {key.clone(), },
 					quorum: 1,
 				})
 			.collect();
 
 		// crate Transaction for calc hash
 		let tx = Transaction {
-			inputs: vec!{},
+			inputs: vec! {},
 			outputs: outs.clone(),
 			lock_time: T::TimeLock::zero(),
 		};
@@ -375,7 +379,7 @@ mod tests {
 		traits::{BlakeTwo256, IdentityLookup},
 		testing::{Digest, DigestItem, Header},
 	};
-	use primitives::ed25519;
+	use primitives::{ed25519, H256, Blake2Hasher};
 
 	impl_outer_origin! {
 		pub enum Origin for Test {}
@@ -384,7 +388,7 @@ mod tests {
 	// For testing the module, we construct most of a mock runtime. This means
 	// first constructing a configuration type (`Test`) which `impl`s each of the
 	// configuration traits of modules we want to use.
-	#[derive(Clone, Eq, PartialEq)]
+	#[derive(Clone, Eq, PartialEq, Default)]
 	#[cfg_attr(feature = "std", derive(Debug))]
 	pub struct Test;
 
@@ -416,8 +420,6 @@ mod tests {
 		type Value = DefaultValue;
 		type TimeLock = Self::BlockNumber;
 	}
-
-	type TemplateModule = Module<Test>;
 
 	// This function basically just builds a genesis storage key/value store according to
 	// our desired mockup.
