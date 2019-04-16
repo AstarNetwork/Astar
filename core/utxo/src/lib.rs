@@ -15,6 +15,11 @@ pub trait Trait: consensus::Trait + Default {
 	type Signature: Parameter + Verify<Signer=Self::SessionKey>;
 	type Value: Parameter + Zero + CheckedAdd + CheckedSub + Div<usize, Output=Self::Value> + Default;
 	type TimeLock: Parameter + Zero + Default;
+
+	type TransactionInput: Parameter + TransactionInputTrait<Self> + Default;
+	type TransactionOutput: Parameter + TransactionOutputTrait<Self> + Default;
+	type Transaction: Parameter + TransactionTrait<Self> + Default;
+	type SignedTransaction: Parameter + SignedTransactionTrait<Self> + Default;
 }
 
 #[derive(Clone, Encode, Decode, Default, PartialEq, Eq)]
@@ -80,35 +85,22 @@ impl Deref for DefaultValue {
 
 type CheckResult<T> = std::result::Result<T, &'static str>;
 
-#[derive(Clone, Encode, Decode, Default, PartialEq, Eq)]
-#[cfg_attr(feature = "std", derive(Debug))]
-pub struct TransactionInput<T: Trait> {
-	///#[codec(compact)]
-	pub tx_hash: T::Hash,
-	///#[codec(compact)]
-	pub out_index: usize,
-	// optional temp saved transaction output (save_tmp_out, get_tmp_out)
-	//_temp_out: Option<TransactionOutput<Value, HashableSessionKey>> // TODO
-}
+pub trait TransactionInputTrait<T: Trait> {
+	fn tx_hash(&self) -> T::Hash;
+	fn out_index(&self) -> usize;
 
-impl<T: Trait> TransactionInput<T> {
-	pub fn tx_hash(&self) -> T::Hash {
-		self.tx_hash
+	fn output(&self) -> Option<T::TransactionOutput> {
+		<UnspentOutputs<T>>::get((self.tx_hash(), self.out_index()))
 	}
-	pub fn out_index(&self) -> usize {
-		self.out_index
-	}
-	pub fn value(&self) -> T::Value {
+
+	fn value(&self) -> T::Value {
 		match self.output() {
 			Some(tx_out) => tx_out.value(),
 			None => T::Value::zero(),
 		}
 	}
 
-	pub fn output(&self) -> Option<TransactionOutput<T>> {
-		<UnspentOutputs<T>>::get((self.tx_hash(), self.out_index()))
-	}
-	pub fn spent(&self) {
+	fn spent(&self) {
 		for key in self.output().unwrap_or(Default::default()).keys().iter() {
 			<UnspentOutputsFinder<T>>::mutate(key, |v| {
 				*v = match
@@ -128,51 +120,63 @@ impl<T: Trait> TransactionInput<T> {
 	}
 }
 
+#[derive(Clone, Encode, Decode, Default, PartialEq, Eq)]
+#[cfg_attr(feature = "std", derive(Debug))]
+pub struct TransactionInput<T: Trait> {
+	///#[codec(compact)]
+	pub hash: T::Hash,
+	///#[codec(compact)]
+	pub index: usize,
+	// optional temp saved transaction output (save_tmp_out, get_tmp_out)
+	//_temp_out: Option<TransactionOutput<Value, HashableSessionKey>> // TODO
+}
+
+
+impl<T: Trait> TransactionInputTrait<T> for T::Transaction {
+	fn tx_hash(&self) -> T::Hash {
+		self.hash
+	}
+	fn out_index(&self) -> usize {
+		self.index
+	}
+}
+
+pub trait TransactionOutputTrait<T: Trait> {
+	fn value(&self) -> T::Value;
+	fn keys(&self) -> &Vec<<T as consensus::Trait>::SessionKey>;
+	fn quorum(&self) -> u32;
+}
 
 #[derive(Clone, Encode, Decode, Default, PartialEq, Eq)]
 #[cfg_attr(feature = "std", derive(Debug))]
 pub struct TransactionOutput<T: Trait> {
 	///#[codec(compact)]
-	pub value: T::Value,
+	pub v: T::Value,
 	///#[codec(compact)]
-	pub keys: Vec<<T as consensus::Trait>::SessionKey>,
+	pub ks: Vec<<T as consensus::Trait>::SessionKey>,
 	///#[codec(compact)]
-	pub quorum: u32,
+	pub q: u32,
 }
 
-impl<T: Trait> TransactionOutput<T> {
-	pub fn value(&self) -> T::Value {
-		self.value.clone()
+impl<T: Trait> TransactionOutputTrait<T> for T::TransactionOutput {
+	fn value(&self) -> T::Value {
+		self.v.clone()
 	}
-	pub fn keys(&self) -> &Vec<<T as consensus::Trait>::SessionKey> {
-		&self.keys
+	fn keys(&self) -> &Vec<<T as consensus::Trait>::SessionKey> {
+		&self.ks
 	}
-	pub fn quorum(&self) -> u32 {
-		self.quorum
+	fn quorum(&self) -> u32 {
+		self.q
 	}
 }
 
-#[derive(Clone, Encode, Decode, Default, PartialEq, Eq)]
-#[cfg_attr(feature = "std", derive(Debug))]
-pub struct Transaction<T: Trait> {
-	///#[codec(compact)]
-	pub inputs: Vec<TransactionInput<T>>,
-	///#[codec(compact)]
-	pub outputs: Vec<TransactionOutput<T>>,
-	///#[codec(compact)]
-	pub lock_time: T::TimeLock,
-}
-
-impl<T: Trait> Transaction<T> {
-	pub fn inputs(&self) -> &Vec<TransactionInput<T>> {
-		&self.inputs
-	}
-	pub fn outputs(&self) -> &Vec<TransactionOutput<T>> {
-		&self.outputs
-	}
+pub trait TransactionTrait<T: Trait> {
+	fn inputs(&self) -> &Vec<T::TransactionInput>;
+	fn outputs(&self) -> &Vec<T::TransactionOutput>;
+	fn lock_time(&self) -> T::TimeLock;
 
 	// calculate leftover.
-	pub fn leftover(&self) -> CheckResult<T::Value> {
+	fn leftover(&self) -> CheckResult<T::Value> {
 		let sum_in: T::Value = self
 			.inputs()
 			.iter()
@@ -188,7 +192,7 @@ impl<T: Trait> Transaction<T> {
 	}
 
 	// spent means changes UTXOs.
-	pub fn spent(&self) {
+	fn spent(&self) {
 		// output that is specified by input remove from UTXO.
 		for inp in self.inputs().iter() {
 			inp.spent();
@@ -213,30 +217,37 @@ impl<T: Trait> Transaction<T> {
 	}
 }
 
+
 #[derive(Clone, Encode, Decode, Default, PartialEq, Eq)]
 #[cfg_attr(feature = "std", derive(Debug))]
-pub struct SignedTransaction<T: Trait> {
+pub struct Transaction<T: Trait> {
 	///#[codec(compact)]
-	pub payload: Option<Transaction<T>>,
+	pub ins: Vec<T::TransactionInput>,
 	///#[codec(compact)]
-	pub signatures: Vec<T::Signature>,
+	pub outs: Vec<T::TransactionOutput>,
 	///#[codec(compact)]
-	pub public_keys: Vec<<T as consensus::Trait>::SessionKey>,
+	pub lt: T::TimeLock,
 }
 
-impl<T: Trait> SignedTransaction<T> {
-	pub fn payload(&self) -> &Option<Transaction<T>> {
-		&self.payload
+impl<T: Trait> TransactionTrait<T> for T::Transaction {
+	fn inputs(&self) -> &Vec<T::TransactionInput> {
+		&self.ins
 	}
-	pub fn signatures(&self) -> &Vec<T::Signature> {
-		&self.signatures
+	fn outputs(&self) -> &Vec<T::TransactionOutput> {
+		&self.outs
 	}
-	pub fn public_keys(&self) -> &Vec<<T as consensus::Trait>::SessionKey> {
-		&self.public_keys
+	fn lock_time(&self) -> T::TimeLock {
+		self.lt.clone()
 	}
+}
+
+pub trait SignedTransactionTrait<T: Trait> {
+	fn payload(&self) -> &Option<T::Transaction>;
+	fn signatures(&self) -> &Vec<T::Signature>;
+	fn public_keys(&self) -> &Vec<<T as consensus::Trait>::SessionKey>;
 
 	// verify signatures
-	pub fn verify(&self) -> Result {
+	fn verify(&self) -> Result {
 		if let Some(tx) = self.payload() {
 			let hash = <T as system::Trait>::Hashing::hash_of(tx);
 			for (sign, key) in self.signatures().iter().zip(self.public_keys().iter()) {
@@ -250,7 +261,7 @@ impl<T: Trait> SignedTransaction<T> {
 	}
 
 	// unlock inputs
-	pub fn unlock(&self) -> Result {
+	fn unlock(&self) -> Result {
 		let keys: Vec<_> = self.public_keys().iter().collect();
 		for input in self.payload()
 			.as_ref()
@@ -271,6 +282,29 @@ impl<T: Trait> SignedTransaction<T> {
 	}
 }
 
+#[derive(Clone, Encode, Decode, Default, PartialEq, Eq)]
+#[cfg_attr(feature = "std", derive(Debug))]
+pub struct SignedTransaction<T: Trait> {
+	///#[codec(compact)]
+	pub p: Option<T::Transaction>,
+	///#[codec(compact)]
+	pub ss: Vec<T::Signature>,
+	///#[codec(compact)]
+	pub ps: Vec<<T as consensus::Trait>::SessionKey>,
+}
+
+impl<T: Trait> SignedTransactionTrait<T> for T::SignedTransaction {
+	fn payload(&self) -> &Option<T::Transaction> {
+		&self.p
+	}
+	fn signatures(&self) -> &Vec<T::Signature> {
+		&self.ss
+	}
+	fn public_keys(&self) -> &Vec<<T as consensus::Trait>::SessionKey> {
+		&self.ps
+	}
+}
+
 
 /// This module's storage items.
 decl_storage! {
@@ -285,7 +319,7 @@ decl_storage! {
 				.enumerate()
 				.map(|(i, u)| ((T::Hashing::hash_of(&config.initial_tx), i), u.clone()))
 				.collect::<Vec<_>>()
-		}): map (<T as system::Trait>::Hash, usize) => Option<TransactionOutput<T>>;
+		}): map (<T as system::Trait>::Hash, usize) => Option<T::TransactionOutput>;
 
 		/// [SessionKey] = reference of UTXO.
 		pub UnspentOutputsFinder get(unspent_outputs_finder) build(|config: &GenesisConfig<T>| { // TODO more clearly
@@ -329,11 +363,11 @@ decl_storage! {
 		pub LeftoverTotal get(leftover_total): T::Value;
 
 		/// Outputs that are locked
-		pub LockedOutputs get(locked_outputs): map T::BlockNumber => Option<Vec<TransactionOutput<T>>>;
+		pub LockedOutputs get(locked_outputs): map T::BlockNumber => Option<Vec<T::TransactionOutput>>;
 	}
 
 	add_extra_genesis {
-		config(initial_tx): Transaction<T>;
+		config(initial_tx): T::Transaction;
 	}
 }
 
@@ -348,7 +382,7 @@ decl_module! {
 		pub fn execute(origin, signed_tx: Vec<u8>) -> Result {
 			ensure_signed(origin)?;
 
-			let signed_tx = SignedTransaction::<T>::decode(&mut &signed_tx[..]).ok_or("signed_tx is undecoded bytes.")?;
+			let signed_tx = T::SignedTransaction::decode(&mut &signed_tx[..]).ok_or("signed_tx is undecoded bytes.")?;
 			// all signature checking Signature.Verify(HashableSessionKey, hash(transaction.payload)).
 			signed_tx.verify()?;
 			// UTXO unlocked checking.
@@ -379,16 +413,16 @@ decl_module! {
 
 //decl_event!(
 //	/// An event in this module.
-//	pub enum Event<T> where SignedTransaction<T> = SignedTransaction<T as Trait> {
+//	pub enum Event<T> where SignedT::Transaction = T::SignedTransaction<T as Trait> {
 //		/// Transaction was executed successfully
-//		TransactionExecuted(SignedTransaction<T>),
+//		TransactionExecuted(SignedT::Transaction),
 //	}
 //);
 
 /// Not callable external
 impl<T: Trait> Module<T> {
 	/// Update storage to reflect changes made by transaction
-	fn update_storage(transaction: &Transaction<T>, new_total: T::Value) {
+	fn update_storage(transaction: &T::Transaction, new_total: T::Value) {
 		/// Storing updated leftover value
 		<LeftoverTotal<T>>::put(new_total);
 
@@ -408,18 +442,18 @@ impl<T: Trait> Module<T> {
 		// create UnspentTransactionOutput
 		let outs: Vec<_> = authorities.iter()
 			.map(|key|
-				TransactionOutput {
-					value: shared_value.clone(),
-					keys: vec! {key.clone(), },
-					quorum: 1,
+				TransactionOutput<T> { // TODO ここどうする？ new() ほしくない？
+					v: shared_value.clone(),
+					ks: vec! {key.clone(), },
+					q: 1,
 				})
 			.collect();
 
 		// crate Transaction for calc hash
 		let tx = Transaction {
-			inputs: vec! {},
-			outputs: outs.clone(),
-			lock_time: T::TimeLock::zero(),
+			ins: vec! {},
+			outs: outs.clone(),
+			lt: T::TimeLock::zero(),
 		};
 		let hash = T::Hashing::hash_of(&tx);
 
@@ -491,6 +525,11 @@ mod tests {
 		type Signature = Signature;
 		type Value = DefaultValue;
 		type TimeLock = Self::BlockNumber;
+
+		type TransactionInput = TransactionInput<Test>;
+		type TransactionOutput = TransactionOutput<Test>;
+		type Transaction = Transaction<Test>;
+		type SignedTransaction = SignedTransaction<Test>;
 	}
 
 	fn authority_key_pair(s: &str) -> ed25519::Pair {
@@ -499,16 +538,16 @@ mod tests {
 	}
 
 	fn gen_normal_tx(in_hash: <Test as system::Trait>::Hash, in_index: usize,
-					 out_value: <Test as Trait>::Value, out_key: <Test as consensus::Trait>::SessionKey) -> Transaction<Test> {
-		Transaction::<Test> {
+					 out_value: <Test as Trait>::Value, out_key: <Test as consensus::Trait>::SessionKey) -> <Test as Trait>::Transaction {
+		Transaction<Test> {
 			inputs: vec! {
-				TransactionInput {
+				TransactionInput<Test> {
 					tx_hash: in_hash,
 					out_index: in_index,
 				},
 			},
 			outputs: vec! {
-				TransactionOutput {
+				TransactionOutput<Test> {
 					value: out_value,
 					keys: vec! {out_key},
 					quorum: 1,
@@ -518,24 +557,24 @@ mod tests {
 		}
 	}
 
-	fn hash(tx: &Transaction<Test>) -> <Test as system::Trait>::Hash {
+	fn hash(tx: &<Test as Trait>::Transaction) -> <Test as system::Trait>::Hash {
 		<Test as system::Trait>::Hashing::hash_of(tx)
 	}
 
-	fn sign(tx: &Transaction<Test>, key_pair: &ed25519::Pair) -> SignedTransaction<Test> {
+	fn sign(tx: &<Test as Trait>::Transaction, key_pair: &ed25519::Pair) -> <Test as Trait>::SignedTransaction {
 		let signature = key_pair.sign(&hash(tx)[..]);
-		SignedTransaction::<Test> {
+		SignedTransaction<Test> {
 			payload: Some(tx.clone()),
 			signatures: vec! {signature},
 			public_keys: vec! {key_pair.public()},
 		}
 	}
 
-	fn genesis_tx(root: &ed25519::Pair) -> Transaction<Test> {
-		Transaction::<Test> {
+	fn genesis_tx(root: &ed25519::Pair) -> <Test as Trait>::Transaction {
+		<Test as Trait>::Transaction {
 			inputs: vec! {},
 			outputs: vec! {
-				TransactionOutput::<Test> {
+				<Test as Trait>::TransactionOutput {
 					value: DefaultValue(1 << 60),
 					keys: vec! {root.public()},
 					quorum: 1,
@@ -561,7 +600,7 @@ mod tests {
 	#[test]
 	fn minimum_works() {// TODO fix divided tests.
 		let root_key_pair = authority_key_pair("test_root");
-		let authorities = vec!{
+		let authorities = vec! {
 			authority_key_pair("test_authority_1").public(),
 			authority_key_pair("test_authority_2").public()};
 		with_externalities(&mut new_test_ext(&root_key_pair), || {
@@ -612,7 +651,7 @@ mod tests {
 
 			// check total leftover is (1<<60) - (1<<59)
 			let leftover_total = <LeftoverTotal<Test>>::get();
-			assert_eq!((1<<59), *leftover_total);
+			assert_eq!((1 << 59), *leftover_total);
 
 			// on_finalize
 			UTXO::on_finalize(1);
@@ -627,7 +666,7 @@ mod tests {
 				let utxo_authority = <UnspentOutputs<Test>>::get(ref_utxo_authority[0]);
 				let utxo_authority = utxo_authority.unwrap();
 				// value is (1<<59)/2 = (1<<58);
-				assert_eq!((1<<58), *utxo_authority.value());
+				assert_eq!((1 << 58), *utxo_authority.value());
 				// keys = {authority}
 				assert_eq!(1, utxo_authority.keys().len());
 				assert_eq!(authority, &utxo_authority.keys()[0]);
