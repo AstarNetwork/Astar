@@ -1,3 +1,5 @@
+mod mvp;
+
 use sr_primitives::traits::{Verify, Zero, CheckedAdd, CheckedSub, Hash};
 use support::{decl_module, decl_storage, decl_event, StorageValue, StorageMap, dispatch::Result, Parameter};
 use system::ensure_signed;
@@ -9,7 +11,10 @@ pub use std::fmt;
 pub use std::collections::HashMap;
 // use Encode, Decode
 use parity_codec::{Encode, Decode, Codec};
-use std::ops::{Deref, Div, Add, Sub};
+use std::ops::Div;
+
+// mvp
+pub use mvp::MVPValue;
 
 pub trait Trait: consensus::Trait + Default {
 	type Signature: Parameter + Verify<Signer=Self::SessionKey>;
@@ -23,67 +28,6 @@ pub trait Trait: consensus::Trait + Default {
 
 	/// The overarching event type.
 	type Event: From<Event<Self>> + Into<<Self as system::Trait>::Event>;
-}
-
-#[derive(Clone, Encode, Decode, Default, PartialEq, Eq)]
-#[cfg_attr(feature = "std", derive(Debug))]
-pub struct DefaultValue(u64);
-
-impl Div<usize> for DefaultValue {
-	type Output = DefaultValue;
-	fn div(self, rhs: usize) -> Self::Output {
-		DefaultValue(*self / (rhs as u64))
-	}
-}
-
-impl Zero for DefaultValue {
-	fn zero() -> Self {
-		DefaultValue(0)
-	}
-
-	fn is_zero(&self) -> bool {
-		**self == 0
-	}
-}
-
-impl Add for DefaultValue {
-	type Output = Self;
-	fn add(self, rhs: DefaultValue) -> Self::Output {
-		DefaultValue(*self + *rhs)
-	}
-}
-
-impl CheckedAdd for DefaultValue {
-	fn checked_add(&self, v: &Self) -> Option<Self> {
-		if let Some(v) = (**self).checked_add(**v) {
-			return Some(DefaultValue(v));
-		}
-		None
-	}
-}
-
-impl Sub for DefaultValue {
-	type Output = Self;
-	fn sub(self, rhs: DefaultValue) -> Self::Output {
-		DefaultValue(*self - *rhs)
-	}
-}
-
-impl CheckedSub for DefaultValue {
-	fn checked_sub(&self, v: &Self) -> Option<Self> {
-		if let Some(v) = (**self).checked_sub(**v) {
-			return Some(DefaultValue(v));
-		}
-		None
-	}
-}
-
-impl Deref for DefaultValue {
-	type Target = u64;
-
-	fn deref(&self) -> &Self::Target {
-		&self.0
-	}
 }
 
 type CheckResult<T> = std::result::Result<T, &'static str>;
@@ -539,7 +483,7 @@ mod tests {
 
 	impl Trait for Test {
 		type Signature = Signature;
-		type Value = DefaultValue;
+		type Value = MVPValue;
 		type TimeLock = Self::BlockNumber;
 
 		type TransactionInput = TransactionInput<Test>;
@@ -577,7 +521,7 @@ mod tests {
 			vec! {},
 			vec! {
 				<Test as Trait>::TransactionOutput::new(
-					DefaultValue(1 << 60),
+					MVPValue::new(1 << 60),
 					vec! {root.public()},
 					1),
 			},
@@ -625,7 +569,7 @@ mod tests {
 			let receiver_key_pair = authority_key_pair("test_receiver");
 			let new_signed_tx = sign(
 				&gen_normal_tx(hash(&exp_gen_tx),
-							   0, DefaultValue(1 << 59), receiver_key_pair.public()),
+							   0, MVPValue::new(1 << 59), receiver_key_pair.public()),
 				&root_key_pair,
 			);
 			assert_ok!(UTXO::execute(Origin::signed(1), new_signed_tx.encode()));
