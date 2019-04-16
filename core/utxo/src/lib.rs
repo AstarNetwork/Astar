@@ -560,7 +560,7 @@ mod tests {
 	type UTXO = Module<Test>;
 
 	#[test]
-	fn it_works() {
+	fn minimum_works() {// TODO fix divided tests.
 		let root_key_pair = authority_key_pair("test_root");
 		let authorities = vec!{
 			authority_key_pair("test_authority_1").public(),
@@ -637,7 +637,6 @@ mod tests {
 			// check total leftover is 0 after finalize
 			let leftover_total = <LeftoverTotal<Test>>::get();
 			assert_eq!(0, *leftover_total);
-
 		});
 	}
 }
