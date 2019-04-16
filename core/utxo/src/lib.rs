@@ -1,6 +1,6 @@
 use sr_primitives::traits::{Verify, Zero, CheckedAdd, CheckedSub, Hash};
 use support::{decl_module, decl_storage, decl_event, StorageValue, StorageMap, dispatch::Result, Parameter};
-use system::{ensure_signed, ensure_inherent};
+use system::ensure_signed;
 
 // use Vec<>
 use rstd::prelude::*;
@@ -174,17 +174,17 @@ impl<T: Trait> Transaction<T> {
 	// spent means changes UTXOs.
 	pub fn spent(&self) {
 		// output that is specified by input remove from UTXO.
-		let _ = self.inputs()
-			.iter()
-			.inspect(|inp| inp.spent());
+		for inp in self.inputs().iter() {
+			inp.spent();
+		}
 
 		// new output is inserted to UTXO.
 		let hash = <T as system::Trait>::Hashing::hash_of(self);
-		let _ = self.outputs()
+		for (i, out) in self.outputs()
 			.iter()
-			.enumerate()
-			.inspect(|(i, out)|
-				<UnspentOutputs<T>>::insert((hash.clone(), i.clone()), out.clone()));
+			.enumerate() {
+			<UnspentOutputs<T>>::insert((hash.clone(), i), out.clone());
+		}
 	}
 }
 
@@ -285,7 +285,7 @@ decl_module! {
 
 		// Dispatch a single transaction and update UTXO set accordingly
 		pub fn execute(origin, signed_tx: Vec<u8>) -> Result {
-			ensure_inherent(origin)?;
+			ensure_signed(origin)?;
 
 			let signed_tx = SignedTransaction::<T>::decode(&mut &signed_tx[..]).ok_or("signed_tx is undecoded bytes.")?;
 			// all signature checking Signature.Verify(HashableSessionKey, hash(transaction.payload)).
@@ -304,7 +304,7 @@ decl_module! {
 				.checked_add(&leftover)
 				.ok_or("leftover overflow")?;
 
-			Self::update_storage(&signed_tx.payload().as_ref().unwrap(), new_total);
+			Self::update_storage(signed_tx.payload().as_ref().unwrap(), new_total);
 			//Self::deposit_event(Event::TransactionExecuted(signed_tx));
 			Ok(())
 		}
@@ -379,7 +379,7 @@ mod tests {
 		traits::{BlakeTwo256, IdentityLookup},
 		testing::{Digest, DigestItem, Header},
 	};
-	use primitives::{ed25519, H256, Blake2Hasher};
+	use primitives::{ed25519, Pair, H256, Blake2Hasher};
 
 	impl_outer_origin! {
 		pub enum Origin for Test {}
@@ -421,16 +421,97 @@ mod tests {
 		type TimeLock = Self::BlockNumber;
 	}
 
-	// This function basically just builds a genesis storage key/value store according to
-	// our desired mockup.
-	fn new_test_ext() -> runtime_io::TestExternalities<Blake2Hasher> {
-		system::GenesisConfig::<Test>::default().build_storage().unwrap().0.into()
+	fn authority_key_pair(s: &str) -> ed25519::Pair {
+		ed25519::Pair::from_string(&format!("//{}", s), None)
+			.expect("static values are valid; qed")
 	}
+
+	fn gen_normal_tx(in_hash: <Test as system::Trait>::Hash, in_index: usize,
+					 out_value: <Test as Trait>::Value, out_key: <Test as consensus::Trait>::SessionKey) -> Transaction<Test> {
+		Transaction::<Test> {
+			inputs: vec! {
+				TransactionInput {
+					tx_hash: in_hash,
+					out_index: in_index,
+				},
+			},
+			outputs: vec! {
+				TransactionOutput {
+					value: out_value,
+					keys: vec! {out_key},
+					quorum: 1,
+				},
+			},
+			lock_time: 0,
+		}
+	}
+
+	fn hash(tx: &Transaction<Test>) -> <Test as system::Trait>::Hash {
+		<Test as system::Trait>::Hashing::hash_of(tx)
+	}
+
+	fn sign(tx: &Transaction<Test>, key_pair: ed25519::Pair) -> SignedTransaction<Test> {
+		let signature = key_pair.sign(&hash(tx)[..]);
+		SignedTransaction::<Test> {
+			payload: Some(tx.clone()),
+			signatures: vec! {signature},
+			public_keys: vec! {key_pair.public()},
+		}
+	}
+
+	fn genesis_tx(root: &ed25519::Pair) -> Transaction<Test> {
+		Transaction::<Test> {
+			inputs: vec! {},
+			outputs: vec! {
+				TransactionOutput::<Test> {
+					value: DefaultValue(1 << 60),
+					keys: vec! {root.public()},
+					quorum: 1,
+				},
+			},
+			lock_time: 0,
+		}
+	}
+
+	// This function basically just builds ax genesis storage key/value store according to
+	// our desired mockup.
+	fn new_test_ext(root: &ed25519::Pair) -> runtime_io::TestExternalities<Blake2Hasher> {
+		let mut t = system::GenesisConfig::<Test>::default().build_storage().unwrap().0;
+		t.extend(GenesisConfig::<Test> {
+			initial_tx: genesis_tx(root),
+		}.build_storage().unwrap().0);
+		t.into()
+	}
+
+	type UTXOModule = Module<Test>;
 
 	#[test]
 	fn it_works() {
-		with_externalities(&mut new_test_ext(), || {
-			unimplemented!()
+		let root_key_pair = authority_key_pair("test_root");
+		with_externalities(&mut new_test_ext(&root_key_pair), || {
+			let exp_gen_tx = genesis_tx(&root_key_pair);
+			let act_gen_out = <UnspentOutputs<Test>>::get((hash(&exp_gen_tx), 0));
+			assert_eq!(exp_gen_tx.outputs()[0], act_gen_out.unwrap());
+
+
+			let new_signed_tx = sign(
+				&gen_normal_tx(hash(&exp_gen_tx),
+							   0, DefaultValue(1 << 59), root_key_pair.public()),
+				root_key_pair,
+			);
+			assert_ok!(UTXOModule::execute(Origin::signed(1), new_signed_tx.encode()));
+
+			// already spent genesis transaction.
+			let spent_utxo = <UnspentOutputs<Test>>::get((hash(&exp_gen_tx), 0));
+			assert!(spent_utxo.is_none());
+
+			// get new transaction.
+			let act_gen_out2 = <UnspentOutputs<Test>>::get((hash(new_signed_tx.payload().as_ref().unwrap()), 0));
+			assert!(act_gen_out2.is_some());
+			assert_eq!(new_signed_tx.payload().as_ref().unwrap().outputs()[0],
+					   act_gen_out2.unwrap());
+
+			
 		});
 	}
 }
