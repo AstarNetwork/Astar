@@ -8,7 +8,7 @@ use rstd::prelude::*;
 pub use std::fmt;
 pub use std::collections::HashMap;
 // use Encode, Decode
-use parity_codec::{Encode, Decode};
+use parity_codec::{Encode, Decode, Codec};
 use std::ops::{Deref, Div, Add, Sub};
 
 pub trait Trait: consensus::Trait + Default {
@@ -20,6 +20,9 @@ pub trait Trait: consensus::Trait + Default {
 	type TransactionOutput: Parameter + TransactionOutputTrait<Self> + Default;
 	type Transaction: Parameter + TransactionTrait<Self> + Default;
 	type SignedTransaction: Parameter + SignedTransactionTrait<Self> + Default;
+
+	/// The overarching event type.
+	type Event: From<Event<Self>> + Into<<Self as system::Trait>::Event>;
 }
 
 #[derive(Clone, Encode, Decode, Default, PartialEq, Eq)]
@@ -86,6 +89,7 @@ impl Deref for DefaultValue {
 type CheckResult<T> = std::result::Result<T, &'static str>;
 
 pub trait TransactionInputTrait<T: Trait> {
+	fn new(tx_hash: T::Hash, out_index: usize) -> Self;
 	fn tx_hash(&self) -> T::Hash;
 	fn out_index(&self) -> usize;
 
@@ -124,24 +128,28 @@ pub trait TransactionInputTrait<T: Trait> {
 #[cfg_attr(feature = "std", derive(Debug))]
 pub struct TransactionInput<T: Trait> {
 	///#[codec(compact)]
-	pub hash: T::Hash,
+	pub tx_hash: T::Hash,
 	///#[codec(compact)]
-	pub index: usize,
+	pub out_index: usize,
 	// optional temp saved transaction output (save_tmp_out, get_tmp_out)
 	//_temp_out: Option<TransactionOutput<Value, HashableSessionKey>> // TODO
 }
 
 
-impl<T: Trait> TransactionInputTrait<T> for T::Transaction {
+impl<T: Trait> TransactionInputTrait<T> for TransactionInput<T> {
+	fn new(tx_hash: T::Hash, out_index: usize) -> Self {
+		Self { tx_hash, out_index }
+	}
 	fn tx_hash(&self) -> T::Hash {
-		self.hash
+		self.tx_hash
 	}
 	fn out_index(&self) -> usize {
-		self.index
+		self.out_index
 	}
 }
 
 pub trait TransactionOutputTrait<T: Trait> {
+	fn new(value: T::Value, keys: Vec<<T as consensus::Trait>::SessionKey>, quorum: u32) -> Self;
 	fn value(&self) -> T::Value;
 	fn keys(&self) -> &Vec<<T as consensus::Trait>::SessionKey>;
 	fn quorum(&self) -> u32;
@@ -151,26 +159,30 @@ pub trait TransactionOutputTrait<T: Trait> {
 #[cfg_attr(feature = "std", derive(Debug))]
 pub struct TransactionOutput<T: Trait> {
 	///#[codec(compact)]
-	pub v: T::Value,
+	pub value: T::Value,
 	///#[codec(compact)]
-	pub ks: Vec<<T as consensus::Trait>::SessionKey>,
+	pub keys: Vec<<T as consensus::Trait>::SessionKey>,
 	///#[codec(compact)]
-	pub q: u32,
+	pub quorum: u32,
 }
 
-impl<T: Trait> TransactionOutputTrait<T> for T::TransactionOutput {
+impl<T: Trait> TransactionOutputTrait<T> for TransactionOutput<T> {
+	fn new(value: T::Value, keys: Vec<<T as consensus::Trait>::SessionKey>, quorum: u32) -> Self {
+		Self { value, keys, quorum }
+	}
 	fn value(&self) -> T::Value {
-		self.v.clone()
+		self.value.clone()
 	}
 	fn keys(&self) -> &Vec<<T as consensus::Trait>::SessionKey> {
-		&self.ks
+		&self.keys
 	}
 	fn quorum(&self) -> u32 {
-		self.q
+		self.quorum
 	}
 }
 
-pub trait TransactionTrait<T: Trait> {
+pub trait TransactionTrait<T: Trait>: Codec {
+	fn new(inputs: Vec<T::TransactionInput>, outputs: Vec<T::TransactionOutput>, lock_time: T::TimeLock) -> Self;
 	fn inputs(&self) -> &Vec<T::TransactionInput>;
 	fn outputs(&self) -> &Vec<T::TransactionOutput>;
 	fn lock_time(&self) -> T::TimeLock;
@@ -222,26 +234,30 @@ pub trait TransactionTrait<T: Trait> {
 #[cfg_attr(feature = "std", derive(Debug))]
 pub struct Transaction<T: Trait> {
 	///#[codec(compact)]
-	pub ins: Vec<T::TransactionInput>,
+	pub inputs: Vec<T::TransactionInput>,
 	///#[codec(compact)]
-	pub outs: Vec<T::TransactionOutput>,
+	pub outputs: Vec<T::TransactionOutput>,
 	///#[codec(compact)]
-	pub lt: T::TimeLock,
+	pub lock_time: T::TimeLock,
 }
 
-impl<T: Trait> TransactionTrait<T> for T::Transaction {
+impl<T: Trait> TransactionTrait<T> for Transaction<T> {
+	fn new(inputs: Vec<T::TransactionInput>, outputs: Vec<T::TransactionOutput>, lock_time: T::TimeLock) -> Self {
+		Self { inputs, outputs, lock_time }
+	}
 	fn inputs(&self) -> &Vec<T::TransactionInput> {
-		&self.ins
+		&self.inputs
 	}
 	fn outputs(&self) -> &Vec<T::TransactionOutput> {
-		&self.outs
+		&self.outputs
 	}
 	fn lock_time(&self) -> T::TimeLock {
-		self.lt.clone()
+		self.lock_time.clone()
 	}
 }
 
 pub trait SignedTransactionTrait<T: Trait> {
+	fn new(payload: Option<T::Transaction>, signatures: Vec<T::Signature>, public_keys: Vec<<T as consensus::Trait>::SessionKey>) -> Self;
 	fn payload(&self) -> &Option<T::Transaction>;
 	fn signatures(&self) -> &Vec<T::Signature>;
 	fn public_keys(&self) -> &Vec<<T as consensus::Trait>::SessionKey>;
@@ -286,25 +302,27 @@ pub trait SignedTransactionTrait<T: Trait> {
 #[cfg_attr(feature = "std", derive(Debug))]
 pub struct SignedTransaction<T: Trait> {
 	///#[codec(compact)]
-	pub p: Option<T::Transaction>,
+	pub payload: Option<T::Transaction>,
 	///#[codec(compact)]
-	pub ss: Vec<T::Signature>,
+	pub signatures: Vec<T::Signature>,
 	///#[codec(compact)]
-	pub ps: Vec<<T as consensus::Trait>::SessionKey>,
+	pub public_keys: Vec<<T as consensus::Trait>::SessionKey>,
 }
 
-impl<T: Trait> SignedTransactionTrait<T> for T::SignedTransaction {
+impl<T: Trait> SignedTransactionTrait<T> for SignedTransaction<T> {
+	fn new(payload: Option<T::Transaction>, signatures: Vec<T::Signature>, public_keys: Vec<<T as consensus::Trait>::SessionKey>) -> Self {
+		Self { payload, signatures, public_keys }
+	}
 	fn payload(&self) -> &Option<T::Transaction> {
-		&self.p
+		&self.payload
 	}
 	fn signatures(&self) -> &Vec<T::Signature> {
-		&self.ss
+		&self.signatures
 	}
 	fn public_keys(&self) -> &Vec<<T as consensus::Trait>::SessionKey> {
-		&self.ps
+		&self.public_keys
 	}
 }
-
 
 /// This module's storage items.
 decl_storage! {
@@ -376,7 +394,7 @@ decl_module! {
 	pub struct Module<T: Trait> for enum Call where origin: T::Origin {
 		// Initializing events
 		// this is needed only if you are using events in your module
-		//fn deposit_event<T>() = default;
+		fn deposit_event<T>() = default;
 
 		// Dispatch a single transaction and update UTXO set accordingly
 		pub fn execute(origin, signed_tx: Vec<u8>) -> Result {
@@ -400,7 +418,7 @@ decl_module! {
 				.ok_or("leftover overflow")?;
 
 			Self::update_storage(signed_tx.payload().as_ref().unwrap(), new_total);
-			//Self::deposit_event(Event::TransactionExecuted(signed_tx));
+			Self::deposit_event(RawEvent::TransactionExecuted(signed_tx));
 			Ok(())
 		}
 
@@ -411,13 +429,13 @@ decl_module! {
 	}
 }
 
-//decl_event!(
-//	/// An event in this module.
-//	pub enum Event<T> where SignedT::Transaction = T::SignedTransaction<T as Trait> {
-//		/// Transaction was executed successfully
-//		TransactionExecuted(SignedT::Transaction),
-//	}
-//);
+decl_event!(
+	/// An event in this module.
+	pub enum Event<T> where SignedTransaction = <T as Trait>::SignedTransaction {
+		/// Transaction was executed successfully
+		TransactionExecuted(SignedTransaction),
+	}
+);
 
 /// Not callable external
 impl<T: Trait> Module<T> {
@@ -442,19 +460,17 @@ impl<T: Trait> Module<T> {
 		// create UnspentTransactionOutput
 		let outs: Vec<_> = authorities.iter()
 			.map(|key|
-				TransactionOutput<T> { // TODO ここどうする？ new() ほしくない？
-					v: shared_value.clone(),
-					ks: vec! {key.clone(), },
-					q: 1,
-				})
+				T::TransactionOutput::new(
+					shared_value.clone(),
+					vec! {key.clone(), },
+					1))
 			.collect();
 
 		// crate Transaction for calc hash
-		let tx = Transaction {
-			ins: vec! {},
-			outs: outs.clone(),
-			lt: T::TimeLock::zero(),
-		};
+		let tx = T::Transaction::new(
+			vec! {},
+			outs.clone(),
+			T::TimeLock::zero());
 		let hash = T::Hashing::hash_of(&tx);
 
 		// UnspentOutputs[hash][i] = unspentOutput
@@ -530,6 +546,8 @@ mod tests {
 		type TransactionOutput = TransactionOutput<Test>;
 		type Transaction = Transaction<Test>;
 		type SignedTransaction = SignedTransaction<Test>;
+
+		type Event = ();
 	}
 
 	fn authority_key_pair(s: &str) -> ed25519::Pair {
@@ -539,22 +557,10 @@ mod tests {
 
 	fn gen_normal_tx(in_hash: <Test as system::Trait>::Hash, in_index: usize,
 					 out_value: <Test as Trait>::Value, out_key: <Test as consensus::Trait>::SessionKey) -> <Test as Trait>::Transaction {
-		Transaction<Test> {
-			inputs: vec! {
-				TransactionInput<Test> {
-					tx_hash: in_hash,
-					out_index: in_index,
-				},
-			},
-			outputs: vec! {
-				TransactionOutput<Test> {
-					value: out_value,
-					keys: vec! {out_key},
-					quorum: 1,
-				},
-			},
-			lock_time: 0,
-		}
+		<Test as Trait>::Transaction::new(
+			vec! {<Test as Trait>::TransactionInput::new(in_hash, in_index)},
+			vec! {<Test as Trait>::TransactionOutput::new(out_value, vec! {out_key}, 1)},
+			0)
 	}
 
 	fn hash(tx: &<Test as Trait>::Transaction) -> <Test as system::Trait>::Hash {
@@ -563,25 +569,19 @@ mod tests {
 
 	fn sign(tx: &<Test as Trait>::Transaction, key_pair: &ed25519::Pair) -> <Test as Trait>::SignedTransaction {
 		let signature = key_pair.sign(&hash(tx)[..]);
-		SignedTransaction<Test> {
-			payload: Some(tx.clone()),
-			signatures: vec! {signature},
-			public_keys: vec! {key_pair.public()},
-		}
+		<Test as Trait>::SignedTransaction::new(Some(tx.clone()), vec! {signature}, vec! {key_pair.public()})
 	}
 
 	fn genesis_tx(root: &ed25519::Pair) -> <Test as Trait>::Transaction {
-		<Test as Trait>::Transaction {
-			inputs: vec! {},
-			outputs: vec! {
-				<Test as Trait>::TransactionOutput {
-					value: DefaultValue(1 << 60),
-					keys: vec! {root.public()},
-					quorum: 1,
-				},
+		<Test as Trait>::Transaction::new(
+			vec! {},
+			vec! {
+				<Test as Trait>::TransactionOutput::new(
+					DefaultValue(1 << 60),
+					vec! {root.public()},
+					1),
 			},
-			lock_time: 0,
-		}
+			0)
 	}
 
 	// This function basically just builds ax genesis storage key/value store according to
