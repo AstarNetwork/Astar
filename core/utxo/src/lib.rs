@@ -562,12 +562,12 @@ mod tests {
 	#[test]
 	fn it_works() {
 		let root_key_pair = authority_key_pair("test_root");
-		let authorities = [
+		let authorities = vec!{
 			authority_key_pair("test_authority_1").public(),
-			authority_key_pair("test_authority_2").public()];
+			authority_key_pair("test_authority_2").public()};
 		with_externalities(&mut new_test_ext(&root_key_pair), || {
 			// consensus set_authorities. (leftover getter.)
-			Consensus::set_authorities(&authorities);
+			Consensus::set_authorities(authorities.as_slice());
 
 			// check genesis tx.
 			let exp_gen_tx = genesis_tx(&root_key_pair);
@@ -579,6 +579,10 @@ mod tests {
 			assert_eq!(1, ref_utxo.as_ref().unwrap().len());
 			assert_eq!(hash(&exp_gen_tx), ref_utxo.as_ref().unwrap()[0].0);
 			assert_eq!(0, ref_utxo.as_ref().unwrap()[0].1);
+
+			// check total leftover is 0
+			let leftover_total = <LeftoverTotal<Test>>::get();
+			assert_eq!(0, *leftover_total);
 
 			let receiver_key_pair = authority_key_pair("test_receiver");
 			let new_signed_tx = sign(
@@ -607,12 +611,33 @@ mod tests {
 			assert_eq!(hash(new_signed_tx.payload().as_ref().unwrap()), ref_utxo.as_ref().unwrap()[0].0);
 			assert_eq!(0, ref_utxo.as_ref().unwrap()[0].1);
 
+			// check total leftover is (1<<60) - (1<<59)
+			let leftover_total = <LeftoverTotal<Test>>::get();
+			assert_eq!((1<<59), *leftover_total);
+
 			// on_finalize
 			UTXO::on_finalize(1);
-			assert!(ref_utxo.is_some());
-			assert_eq!(1, ref_utxo.as_ref().unwrap().len());
-			assert_eq!(hash(new_signed_tx.payload().as_ref().unwrap()), ref_utxo.as_ref().unwrap()[0].0);
-			assert_eq!(0, ref_utxo.as_ref().unwrap()[0].1);
+			// get reference of getting authorities leftover and get utxo.
+			for authority in &authorities {
+				// ref utxo
+				let ref_utxo_authority = <UnspentOutputsFinder<Test>>::get(authority);
+				let ref_utxo_authority = ref_utxo_authority.unwrap();
+				assert_eq!(1, ref_utxo_authority.len());
+
+				// utxo
+				let utxo_authority = <UnspentOutputs<Test>>::get((ref_utxo_authority[0]));
+				let utxo_authority = utxo_authority.unwrap();
+				// value is (1<<59)/2 = (1<<58);
+				assert_eq!((1<<58), *utxo_authority.value());
+				// keys = {authority}
+				assert_eq!(1, utxo_authority.keys().len());
+				assert_eq!(authority, &utxo_authority.keys()[0]);
+			}
+
+			// check total leftover is 0 after finalize
+			let leftover_total = <LeftoverTotal<Test>>::get();
+			assert_eq!(0, *leftover_total);
+
 		});
 	}
 }
