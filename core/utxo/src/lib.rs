@@ -6,6 +6,7 @@ use system::ensure_signed;
 use rstd::prelude::*;
 #[cfg(feature = "std")]
 pub use std::fmt;
+pub use std::collections::HashMap;
 // use Encode, Decode
 use parity_codec::{Encode, Decode};
 use std::ops::{Deref, Div, Add, Sub};
@@ -262,6 +263,42 @@ decl_storage! {
 				.collect::<Vec<_>>()
 		}): map (<T as system::Trait>::Hash, usize) => Option<TransactionOutput<T>>;
 
+		/// [SessionKey] = reference of UTXO.
+		pub UnspentOutputsFinder get(unspent_outputs_finder) build(|config: &GenesisConfig<T>| { // TODO more clearly
+			let mut finder: HashMap<<T as system::Trait>::Hash,Vec<(<T as system::Trait>::Hash, usize)>> = Default::default();
+			let mut vc: Vec<(<T as consensus::Trait>::SessionKey,(Vec<(<T as system::Trait>::Hash, usize)>))> = vec!{};
+			let mut keys: Vec<<T as consensus::Trait>::SessionKey> = vec!{};
+			let _ = config.initial_tx
+				.clone()
+				.outputs()
+				.iter()
+				.enumerate()
+				.inspect(|(i, u)| {
+					let _ = u.keys()
+						.iter()
+						.inspect(|key|{
+							let hash = <T as system::Trait>::Hashing::hash_of(*key);
+							let inh = (<T as system::Trait>::Hashing::hash_of(&config.initial_tx), *i);
+							if let Some(f) = finder.get_mut(&hash) {
+								f.push(inh);
+							} else {
+								finder.insert(hash, vec!{inh});
+							}
+							keys.push((**key).clone());
+						})
+						.count();
+				})
+				.count();
+			for key in keys.iter() {
+				let hash = <T as system::Trait>::Hashing::hash_of(key);
+				if let Some(e) = finder.get(&hash) {
+					vc.push((key.clone(), e.to_vec()));
+					finder.remove(&hash);
+				}
+			}
+			vc
+		}): map <T as consensus::Trait>::SessionKey => Option<Vec<(<T as system::Trait>::Hash, usize)>>; //TODO HashSet<>
+
 		/// Total leftover value to be redistributed among authorities.
 		/// It is accumulated during block execution and then drained
 		/// on block finalization.
@@ -310,7 +347,7 @@ decl_module! {
 		}
 
 		// Handler called by the system on block finalization
-		fn on_finalize(_n: T::BlockNumber) {
+		pub fn on_finalize(_n: T::BlockNumber) {
 			Self::spend_leftover(&consensus::Module::<T>::authorities());
 		}
 	}
@@ -340,6 +377,7 @@ impl<T: Trait> Module<T> {
 		let leftover = <LeftoverTotal<T>>::take();
 
 		// send leftover to all authorities.
+		if authorities.len() == 0 { return; }
 		let shared_value = leftover / (authorities.len());
 		if shared_value == <T as Trait>::Value::zero() { return; }
 
@@ -380,6 +418,7 @@ mod tests {
 		testing::{Digest, DigestItem, Header},
 	};
 	use primitives::{ed25519, Pair, H256, Blake2Hasher};
+	use std::clone::Clone;
 
 	impl_outer_origin! {
 		pub enum Origin for Test {}
@@ -450,7 +489,7 @@ mod tests {
 		<Test as system::Trait>::Hashing::hash_of(tx)
 	}
 
-	fn sign(tx: &Transaction<Test>, key_pair: ed25519::Pair) -> SignedTransaction<Test> {
+	fn sign(tx: &Transaction<Test>, key_pair: &ed25519::Pair) -> SignedTransaction<Test> {
 		let signature = key_pair.sign(&hash(tx)[..]);
 		SignedTransaction::<Test> {
 			payload: Some(tx.clone()),
@@ -483,35 +522,60 @@ mod tests {
 		t.into()
 	}
 
-	type UTXOModule = Module<Test>;
+	type System = system::Module<Test>;
+	type Consensus = consensus::Module<Test>;
+	type UTXO = Module<Test>;
 
 	#[test]
 	fn it_works() {
 		let root_key_pair = authority_key_pair("test_root");
+		let authorities = [
+			authority_key_pair("test_authority_1").public(),
+			authority_key_pair("test_authority_2").public()];
 		with_externalities(&mut new_test_ext(&root_key_pair), || {
+			// consensus set_authorities. (leftover getter.)
+			Consensus::set_authorities(&authorities);
+
+			// check genesis tx.
 			let exp_gen_tx = genesis_tx(&root_key_pair);
 			let act_gen_out = <UnspentOutputs<Test>>::get((hash(&exp_gen_tx), 0));
 			assert_eq!(exp_gen_tx.outputs()[0], act_gen_out.unwrap());
 
+			// check reference of genesis tx.
+			let ref_utxo = <UnspentOutputsFinder<Test>>::get(root_key_pair.public());
+			assert_eq!(1, ref_utxo.as_ref().unwrap().len());
+			assert_eq!(hash(&exp_gen_tx), ref_utxo.as_ref().unwrap()[0].0);
+			assert_eq!(0, ref_utxo.as_ref().unwrap()[0].1);
 
+			let receiver_key_pair = authority_key_pair("test_receiver");
 			let new_signed_tx = sign(
 				&gen_normal_tx(hash(&exp_gen_tx),
-							   0, DefaultValue(1 << 59), root_key_pair.public()),
-				root_key_pair,
+							   0, DefaultValue(1 << 59), receiver_key_pair.public()),
+				&root_key_pair,
 			);
-			assert_ok!(UTXOModule::execute(Origin::signed(1), new_signed_tx.encode()));
+			assert_ok!(UTXO::execute(Origin::signed(1), new_signed_tx.encode()));
 
-			// already spent genesis transaction.
+			// already spent genesis utxo.
 			let spent_utxo = <UnspentOutputs<Test>>::get((hash(&exp_gen_tx), 0));
 			assert!(spent_utxo.is_none());
+			// already spent reference of genesis utxo.
+			let ref_utxo = <UnspentOutputsFinder<Test>>::get(root_key_pair.public());
+			assert!(ref_utxo.is_none());
 
 			// get new transaction.
 			let act_gen_out2 = <UnspentOutputs<Test>>::get((hash(new_signed_tx.payload().as_ref().unwrap()), 0));
 			assert!(act_gen_out2.is_some());
 			assert_eq!(new_signed_tx.payload().as_ref().unwrap().outputs()[0],
 					   act_gen_out2.unwrap());
+			// get reference of new teranction.
+			let ref_utxo = <UnspentOutputsFinder<Test>>::get(receiver_key_pair.public());
+			assert!(ref_utxo.is_some());
+			assert_eq!(1, ref_utxo.as_ref().unwrap().len());
+			assert_eq!(hash(new_signed_tx.payload().as_ref().unwrap()), ref_utxo.as_ref().unwrap()[0].0);
+			assert_eq!(0, ref_utxo.as_ref().unwrap()[0].1);
 
-			
+			// on_finalize
+			UTXO::on_finalize(1);
 		});
 	}
 }
