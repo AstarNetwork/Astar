@@ -555,7 +555,6 @@ mod tests {
 		t.into()
 	}
 
-	type System = system::Module<Test>;
 	type Consensus = consensus::Module<Test>;
 	type UTXO = Module<Test>;
 
@@ -625,7 +624,7 @@ mod tests {
 				assert_eq!(1, ref_utxo_authority.len());
 
 				// utxo
-				let utxo_authority = <UnspentOutputs<Test>>::get((ref_utxo_authority[0]));
+				let utxo_authority = <UnspentOutputs<Test>>::get(ref_utxo_authority[0]);
 				let utxo_authority = utxo_authority.unwrap();
 				// value is (1<<59)/2 = (1<<58);
 				assert_eq!((1<<58), *utxo_authority.value());
