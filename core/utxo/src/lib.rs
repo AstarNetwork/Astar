@@ -109,7 +109,22 @@ impl<T: Trait> TransactionInput<T> {
 		<UnspentOutputs<T>>::get((self.tx_hash(), self.out_index()))
 	}
 	pub fn spent(&self) {
-		<UnspentOutputs<T>>::remove((self.tx_hash(), self.out_index()))
+		for key in self.output().unwrap_or(Default::default()).keys().iter() {
+			<UnspentOutputsFinder<T>>::mutate(key, |v| {
+				*v = match
+					v.as_ref()
+						.unwrap_or(&vec! {})
+						.iter()
+						.filter(|e| **e != (self.tx_hash(), self.out_index()))
+						.map(|e| *e)
+						.collect::<Vec<_>>()
+						.as_slice() {
+					[] => None,
+					s => Some(s.to_vec()),
+				}
+			});
+		}
+		<UnspentOutputs<T>>::remove((self.tx_hash(), self.out_index()));
 	}
 }
 
@@ -184,7 +199,16 @@ impl<T: Trait> Transaction<T> {
 		for (i, out) in self.outputs()
 			.iter()
 			.enumerate() {
-			<UnspentOutputs<T>>::insert((hash.clone(), i), out.clone());
+			let identify = (hash.clone(), i);
+			<UnspentOutputs<T>>::insert(identify.clone(), out.clone());
+			for key in out.keys() {
+				<UnspentOutputsFinder<T>>::mutate(key, |v| {
+					match v.as_mut() {
+						Some(vc) => vc.push(identify.clone()),
+						None => *v = Some(vec! {identify.clone()}),
+					}
+				});
+			}
 		}
 	}
 }
@@ -401,7 +425,16 @@ impl<T: Trait> Module<T> {
 
 		// UnspentOutputs[hash][i] = unspentOutput
 		for (i, out) in outs.iter().enumerate() {
-			<UnspentOutputs<T>>::insert((hash.clone(), i.clone()), out.clone());
+			let identify = (hash.clone(), i);
+			<UnspentOutputs<T>>::insert(identify.clone(), out.clone());
+			for key in out.keys() {
+				<UnspentOutputsFinder<T>>::mutate(key, |v| {
+					match v.as_mut() {
+						Some(vc) => vc.push(identify.clone()),
+						None => *v = Some(vec! {identify.clone()}),
+					}
+				});
+			}
 		}
 	}
 }
@@ -576,6 +609,10 @@ mod tests {
 
 			// on_finalize
 			UTXO::on_finalize(1);
+			assert!(ref_utxo.is_some());
+			assert_eq!(1, ref_utxo.as_ref().unwrap().len());
+			assert_eq!(hash(new_signed_tx.payload().as_ref().unwrap()), ref_utxo.as_ref().unwrap()[0].0);
+			assert_eq!(0, ref_utxo.as_ref().unwrap()[0].1);
 		});
 	}
 }
