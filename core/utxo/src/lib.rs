@@ -4,8 +4,9 @@ use sr_primitives::traits::{Verify, Zero, CheckedAdd, CheckedSub, Hash};
 use support::{decl_module, decl_storage, decl_event, StorageValue, StorageMap, dispatch::Result, Parameter};
 use system::ensure_signed;
 
-// use Vec<>
 use rstd::prelude::*;
+use rstd::marker::PhantomData;
+
 #[cfg(feature = "std")]
 pub use std::fmt;
 pub use std::collections::HashMap;
@@ -26,11 +27,70 @@ pub trait Trait: consensus::Trait + Default {
 	type Transaction: Parameter + TransactionTrait<Self> + Default;
 	type SignedTransaction: Parameter + SignedTransactionTrait<Self> + Default;
 
+	type Inserter: Inserter<Self>;
+	type Remover: Remover<Self>;
+
 	/// The overarching event type.
 	type Event: From<Event<Self>> + Into<<Self as system::Trait>::Event>;
 }
 
 type CheckResult<T> = std::result::Result<T, &'static str>;
+
+pub trait Inserter<T: Trait> {
+	fn insert(tx: &T::Transaction) {
+		// new output is inserted to UTXO.
+		let hash = <T as system::Trait>::Hashing::hash_of(tx);
+		for (i, out) in tx.outputs()
+			.iter()
+			.enumerate() {
+			let identify = (hash.clone(), i);
+			<UnspentOutputs<T>>::insert(identify.clone(), out.clone());
+			for key in out.keys() {
+				<UnspentOutputsFinder<T>>::mutate(key, |v| {
+					match v.as_mut() {
+						Some(vc) => vc.push(identify.clone()),
+						None => *v = Some(vec! {identify.clone()}),
+					}
+				});
+			}
+		}
+	}
+}
+
+#[derive(Clone, Eq, PartialEq, Default)]
+#[cfg_attr(feature = "std", derive(Debug))]
+pub struct DefaultInserter<T: Trait>(PhantomData<T>);
+
+impl<T: Trait> Inserter<T> for DefaultInserter<T> {}
+
+pub trait Remover<T: Trait> {
+	fn remove(tx: &T::Transaction) {
+		for inp in tx.inputs().iter() {
+			for key in inp.output().unwrap_or(Default::default()).keys().iter() {
+				<UnspentOutputsFinder<T>>::mutate(key, |v| {
+					*v = match
+						v.as_ref()
+							.unwrap_or(&vec! {})
+							.iter()
+							.filter(|e| **e != (inp.tx_hash(), inp.out_index()))
+							.map(|e| *e)
+							.collect::<Vec<_>>()
+							.as_slice() {
+						[] => None,
+						s => Some(s.to_vec()),
+					}
+				});
+			}
+			<UnspentOutputs<T>>::remove((inp.tx_hash(), inp.out_index()));
+		}
+	}
+}
+
+#[derive(Clone, Eq, PartialEq, Default)]
+#[cfg_attr(feature = "std", derive(Debug))]
+pub struct DefaultRemover<T: Trait>(PhantomData<T>);
+
+impl<T: Trait> Remover<T> for DefaultRemover<T> {}
 
 pub trait TransactionInputTrait<T: Trait> {
 	fn new(tx_hash: T::Hash, out_index: usize) -> Self;
@@ -46,25 +106,6 @@ pub trait TransactionInputTrait<T: Trait> {
 			Some(tx_out) => tx_out.value(),
 			None => T::Value::zero(),
 		}
-	}
-
-	fn spent(&self) {
-		for key in self.output().unwrap_or(Default::default()).keys().iter() {
-			<UnspentOutputsFinder<T>>::mutate(key, |v| {
-				*v = match
-					v.as_ref()
-						.unwrap_or(&vec! {})
-						.iter()
-						.filter(|e| **e != (self.tx_hash(), self.out_index()))
-						.map(|e| *e)
-						.collect::<Vec<_>>()
-						.as_slice() {
-					[] => None,
-					s => Some(s.to_vec()),
-				}
-			});
-		}
-		<UnspentOutputs<T>>::remove((self.tx_hash(), self.out_index()));
 	}
 }
 
@@ -146,31 +187,6 @@ pub trait TransactionTrait<T: Trait>: Codec {
 		let leftover = sum_in.checked_sub(&sum_out).ok_or("leftover invalid (sum of input) - (sum of output)")?;
 		Ok(leftover)
 	}
-
-	// spent means changes UTXOs.
-	fn spent(&self) {
-		// output that is specified by input remove from UTXO.
-		for inp in self.inputs().iter() {
-			inp.spent();
-		}
-
-		// new output is inserted to UTXO.
-		let hash = <T as system::Trait>::Hashing::hash_of(self);
-		for (i, out) in self.outputs()
-			.iter()
-			.enumerate() {
-			let identify = (hash.clone(), i);
-			<UnspentOutputs<T>>::insert(identify.clone(), out.clone());
-			for key in out.keys() {
-				<UnspentOutputsFinder<T>>::mutate(key, |v| {
-					match v.as_mut() {
-						Some(vc) => vc.push(identify.clone()),
-						None => *v = Some(vec! {identify.clone()}),
-					}
-				});
-			}
-		}
-	}
 }
 
 
@@ -206,7 +222,13 @@ pub trait SignedTransactionTrait<T: Trait> {
 	fn signatures(&self) -> &Vec<T::Signature>;
 	fn public_keys(&self) -> &Vec<<T as consensus::Trait>::SessionKey>;
 
-	// verify signatures
+	/// spent transaction
+	fn spent(&self) {
+		T::Remover::remove(self.payload().as_ref().expect("must be payload when spent."));
+		T::Inserter::insert(self.payload().as_ref().expect("must be payload when spent."));
+	}
+
+	/// verify signatures
 	fn verify(&self) -> Result {
 		if let Some(tx) = self.payload() {
 			let hash = <T as system::Trait>::Hashing::hash_of(tx);
@@ -220,7 +242,7 @@ pub trait SignedTransactionTrait<T: Trait> {
 		Err("payload is None")
 	}
 
-	// unlock inputs
+	/// unlock inputs
 	fn unlock(&self) -> Result {
 		let keys: Vec<_> = self.public_keys().iter().collect();
 		for input in self.payload()
@@ -361,7 +383,7 @@ decl_module! {
 				.checked_add(&leftover)
 				.ok_or("leftover overflow")?;
 
-			Self::update_storage(signed_tx.payload().as_ref().unwrap(), new_total);
+			Self::update_storage(&signed_tx, new_total);
 			Self::deposit_event(RawEvent::TransactionExecuted(signed_tx));
 			Ok(())
 		}
@@ -384,12 +406,12 @@ decl_event!(
 /// Not callable external
 impl<T: Trait> Module<T> {
 	/// Update storage to reflect changes made by transaction
-	fn update_storage(transaction: &T::Transaction, new_total: T::Value) {
+	fn update_storage(signed_tx: &T::SignedTransaction, new_total: T::Value) {
 		/// Storing updated leftover value
 		<LeftoverTotal<T>>::put(new_total);
 
 		/// Remove all used UTXO since they are now spent
-		transaction.spent();
+		signed_tx.spent();
 	}
 
 	/// Redistribute combined leftover value evenly among authorities
@@ -448,7 +470,7 @@ mod tests {
 	use std::clone::Clone;
 
 	impl_outer_origin! {
-		pub enum Origin for Test {}
+	pub enum Origin for Test {}
 	}
 
 	// For testing the module, we construct most of a mock runtime. This means
@@ -490,6 +512,9 @@ mod tests {
 		type TransactionOutput = TransactionOutput<Test>;
 		type Transaction = Transaction<Test>;
 		type SignedTransaction = SignedTransaction<Test>;
+
+		type Inserter = DefaultInserter<Test>;
+		type Remover = DefaultRemover<Test>;
 
 		type Event = ();
 	}
