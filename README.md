@@ -19,13 +19,21 @@ Plasm-Parent は親チェーンの仕様を提供する。子チェーンには�
 ## Plasm-Child
 Plasm-Child は子チェーンの仕様を提供する。親チェーンには子チェーンの各種ソリューションに対応する実装がされており、これらをセットで使うことで親子間の取引を実現することができる。子チェーンでは Plasm-UTXO をベースに deposit/exit についてのロジックが実装されている。
 
-## How to install
+# How to install
+
+## UTXO
 ```toml
 [dependencies.utxo]
 git = 'https://github.com/stakedtechnologies/Plasm.git'
 package = 'plasm-utxo'
 version = '0.1.0' 
 ```
+
+## Parent
+Comming soon...
+
+## Child
+Comming soon...
 
 * * *
 Plasm is licensed under the Apache License, Version2.0 by Staked Technologies Inc.
