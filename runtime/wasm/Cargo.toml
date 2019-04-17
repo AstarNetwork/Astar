@@ -9,14 +9,15 @@ members = []
 crate-type = ['cdylib']
 
 [package]
-authors = ['Parity Technologies <admin@parity.io>']
+authors = ['Takumi Yamashita <takumi@staked.co.jp>']
 edition = '2018'
-name = 'node-template-runtime-wasm'
+name = 'plasm-runtime-wasm'
 version = '1.0.0'
-[dependencies.node-template-runtime]
+
+[dependencies.plasm-runtime]
 default-features = false
 path = '..'
 
 [features]
 default = []
-std = ['node-template-runtime/std']
+std = ['plasm-runtime/std']

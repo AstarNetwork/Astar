@@ -13,19 +13,19 @@ version = '3.2'
 default_features = false
 git = 'https://github.com/paritytech/substrate.git'
 package = 'substrate-primitives'
-rev = 'b5b5c32895c046767827b8264f868e80b22965ad'
+version = '1.0.0'
 
 [dependencies.rstd]
 default_features = false
 git = 'https://github.com/paritytech/substrate.git'
 package = 'sr-std'
-rev = 'b5b5c32895c046767827b8264f868e80b22965ad'
+version = '1.0.0'
 
 [dependencies.runtime-io]
 default_features = false
 git = 'https://github.com/paritytech/substrate.git'
 package = 'sr-io'
-rev = 'b5b5c32895c046767827b8264f868e80b22965ad'
+version = '1.0.0'
 
 [dependencies.safe-mix]
 default-features = false
@@ -43,43 +43,43 @@ version = '1.0'
 default_features = false
 git = 'https://github.com/paritytech/substrate.git'
 package = 'srml-sudo'
-rev = 'b5b5c32895c046767827b8264f868e80b22965ad'
+version = '1.0.0'
 
 [dependencies.support]
 default_features = false
 git = 'https://github.com/paritytech/substrate.git'
 package = 'srml-support'
-rev = 'b5b5c32895c046767827b8264f868e80b22965ad'
+version = '1.0.0'
 
 [dependencies.system]
 default_features = false
 git = 'https://github.com/paritytech/substrate.git'
 package = 'srml-system'
-rev = 'b5b5c32895c046767827b8264f868e80b22965ad'
+version = '1.0.0'
 
 [dependencies.timestamp]
 default_features = false
 git = 'https://github.com/paritytech/substrate.git'
 package = 'srml-timestamp'
-rev = 'b5b5c32895c046767827b8264f868e80b22965ad'
+version = '1.0.0'
 
 [dependencies.consensus]
 default_features = false
 git = 'https://github.com/paritytech/substrate.git'
 package = 'srml-consensus'
-rev = 'b5b5c32895c046767827b8264f868e80b22965ad'
+version = '1.0.0'
 
 [dependencies.version]
 default_features = false
 git = 'https://github.com/paritytech/substrate.git'
 package = 'sr-version'
-rev = 'b5b5c32895c046767827b8264f868e80b22965ad'
+version = '1.0.0'
 
 [dependencies.sr_primitives]
 default_features = false
 git = 'https://github.com/paritytech/substrate.git'
 package = 'sr-primitives'
-rev = 'b5b5c32895c046767827b8264f868e80b22965ad'
+version = '1.0.0'
 
 [features]
 default = ["std"]

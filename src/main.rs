@@ -14,9 +14,9 @@ fn run() -> cli::error::Result<()> {
 		name: "Substrate Node",
 		commit: env!("VERGEN_SHA_SHORT"),
 		version: env!("CARGO_PKG_VERSION"),
-		executable_name: "new-node",
+		executable_name: "plasm-node",
 		author: "takumi",
-		description: "new-node",
+		description: "plasm-node",
 		support_url: "support.anonymous.an",
 	};
 	cli::run(::std::env::args(), cli::Exit, version)

@@ -1,61 +1,62 @@
 [package]
-authors = ['Parity Technologies <admin@parity.io>']
+authors = ['Takumi Yamashita <takumi@staked.co.jp>']
 edition = '2018'
-name = 'node-template-runtime'
+name = 'plasm-runtime'
 version = '1.0.0'
+
 [dependencies.aura]
 default_features = false
 git = 'https://github.com/paritytech/substrate.git'
 package = 'srml-aura'
-rev = '59d5ec144704cec017a01f3e4dbb6b73c5542bf7'
+version = '1.0.0'
 
 [dependencies.balances]
 default_features = false
 git = 'https://github.com/paritytech/substrate.git'
 package = 'srml-balances'
-rev = '59d5ec144704cec017a01f3e4dbb6b73c5542bf7'
+version = '1.0.0'
 
 [dependencies.client]
 default_features = false
 git = 'https://github.com/paritytech/substrate.git'
 package = 'substrate-client'
-rev = '59d5ec144704cec017a01f3e4dbb6b73c5542bf7'
+version = '1.0.0'
 
 [dependencies.consensus]
 default_features = false
 git = 'https://github.com/paritytech/substrate.git'
 package = 'srml-consensus'
-rev = '59d5ec144704cec017a01f3e4dbb6b73c5542bf7'
+version = '1.0.0'
 
 [dependencies.consensus-aura]
 default_features = false
 git = 'https://github.com/paritytech/substrate.git'
 package = 'substrate-consensus-aura-primitives'
-rev = '59d5ec144704cec017a01f3e4dbb6b73c5542bf7'
+version = '1.0.0'
 
 [dependencies.consensus_authorities]
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
 package = 'substrate-consensus-authorities'
-rev = '59d5ec144704cec017a01f3e4dbb6b73c5542bf7'
+version = '1.0.0'
 
 [dependencies.executive]
 default_features = false
 git = 'https://github.com/paritytech/substrate.git'
 package = 'srml-executive'
-rev = '59d5ec144704cec017a01f3e4dbb6b73c5542bf7'
+version = '1.0.0'
 
 [dependencies.indices]
 default_features = false
 git = 'https://github.com/paritytech/substrate.git'
 package = 'srml-indices'
-rev = '59d5ec144704cec017a01f3e4dbb6b73c5542bf7'
+version = '1.0.0'
 
 [dependencies.offchain-primitives]
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
 package = 'substrate-offchain-primitives'
-rev = '59d5ec144704cec017a01f3e4dbb6b73c5542bf7'
+version = '0.1.0'
 
 [dependencies.parity-codec]
 default-features = false
@@ -66,25 +67,25 @@ version = '3.2'
 default_features = false
 git = 'https://github.com/paritytech/substrate.git'
 package = 'substrate-primitives'
-rev = '59d5ec144704cec017a01f3e4dbb6b73c5542bf7'
+version = '1.0.0'
 
 [dependencies.rstd]
 default_features = false
 git = 'https://github.com/paritytech/substrate.git'
 package = 'sr-std'
-rev = '59d5ec144704cec017a01f3e4dbb6b73c5542bf7'
+version = '1.0.0'
 
 [dependencies.runtime-io]
 default_features = false
 git = 'https://github.com/paritytech/substrate.git'
 package = 'sr-io'
-rev = '59d5ec144704cec017a01f3e4dbb6b73c5542bf7'
+version = '1.0.0'
 
 [dependencies.runtime-primitives]
 default_features = false
 git = 'https://github.com/paritytech/substrate.git'
 package = 'sr-primitives'
-rev = '59d5ec144704cec017a01f3e4dbb6b73c5542bf7'
+version = '1.0.0'
 
 [dependencies.safe-mix]
 default-features = false
@@ -102,31 +103,31 @@ version = '1.0'
 default_features = false
 git = 'https://github.com/paritytech/substrate.git'
 package = 'srml-sudo'
-rev = '59d5ec144704cec017a01f3e4dbb6b73c5542bf7'
+version = '1.0.0'
 
 [dependencies.support]
 default_features = false
 git = 'https://github.com/paritytech/substrate.git'
 package = 'srml-support'
-rev = '59d5ec144704cec017a01f3e4dbb6b73c5542bf7'
+version = '1.0.0'
 
 [dependencies.system]
 default_features = false
 git = 'https://github.com/paritytech/substrate.git'
 package = 'srml-system'
-rev = '59d5ec144704cec017a01f3e4dbb6b73c5542bf7'
+version = '1.0.0'
 
 [dependencies.timestamp]
 default_features = false
 git = 'https://github.com/paritytech/substrate.git'
 package = 'srml-timestamp'
-rev = '59d5ec144704cec017a01f3e4dbb6b73c5542bf7'
+version = '1.0.0'
 
 [dependencies.version]
 default_features = false
 git = 'https://github.com/paritytech/substrate.git'
 package = 'sr-version'
-rev = '59d5ec144704cec017a01f3e4dbb6b73c5542bf7'
+version = '1.0.0'
 
 [features]
 default = ['std']
