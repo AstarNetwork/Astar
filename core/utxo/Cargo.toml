@@ -98,5 +98,4 @@ std = [
     'serde',
     'safe-mix/std',
     'sr_primitives/std',
-    'utxo/std',
 ]

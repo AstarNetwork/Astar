@@ -130,9 +130,8 @@ package = 'sr-version'
 version = '1.0.0'
 
 [dependencies.utxo]
-git = 'https://github.com/stakedtechnologies/Plasm.git'
+path = '../core/utxo'
 package = 'plasm-utxo'
-version = '0.1.0'
 
 
 [features]

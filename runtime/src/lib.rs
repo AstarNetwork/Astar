@@ -3,7 +3,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 #![cfg_attr(not(feature = "std"), feature(alloc))]
 // `construct_runtime!` does a lot of recursion and requires us to increase the limit to 256.
-#![recursion_limit="256"]
+#![recursion_limit = "256"]
 
 #[cfg(feature = "std")]
 use serde_derive::{Serialize, Deserialize};
@@ -14,11 +14,11 @@ use primitives::bytes;
 use primitives::{ed25519, sr25519, OpaqueMetadata};
 use runtime_primitives::{
 	ApplyResult, transaction_validity::TransactionValidity, generic, create_runtime_str,
-	traits::{self, NumberFor, BlakeTwo256, Block as BlockT, StaticLookup, Verify}
+	traits::{self, NumberFor, BlakeTwo256, Block as BlockT, StaticLookup, Verify},
 };
 use client::{
 	block_builder::api::{CheckInherentsResult, InherentData, self as block_builder_api},
-	runtime_api, impl_runtime_apis
+	runtime_api, impl_runtime_apis,
 };
 use version::RuntimeVersion;
 #[cfg(feature = "std")]
@@ -68,18 +68,21 @@ pub mod opaque {
 	/// Opaque, encoded, unchecked extrinsic.
 	#[derive(PartialEq, Eq, Clone, Default, Encode, Decode)]
 	#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
-	pub struct UncheckedExtrinsic(#[cfg_attr(feature = "std", serde(with="bytes"))] pub Vec<u8>);
+	pub struct UncheckedExtrinsic(#[cfg_attr(feature = "std", serde(with = "bytes"))] pub Vec<u8>);
+
 	#[cfg(feature = "std")]
 	impl std::fmt::Debug for UncheckedExtrinsic {
 		fn fmt(&self, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
 			write!(fmt, "{}", primitives::hexdisplay::HexDisplay::from(&self.0))
 		}
 	}
+
 	impl traits::Extrinsic for UncheckedExtrinsic {
 		fn is_signed(&self) -> Option<bool> {
 			None
 		}
 	}
+
 	/// Opaque block header type.
 	pub type Header = generic::Header<BlockNumber, BlakeTwo256, generic::DigestItem<Hash, AuthorityId, AuthoritySignature>>;
 	/// Opaque block type.
@@ -190,6 +193,27 @@ impl sudo::Trait for Runtime {
 /// Used for the module template in `./template.rs`
 impl template::Trait for Runtime {
 	type Event = Event;
+}
+
+/// Used for the utxo Module here.
+impl utxo::Trait for Runtime {
+	type Signature = AuthoritySignature;
+	type Value = utxo::MVPValue;
+	type TimeLock = BlockNumber;
+
+	type TransactionInput = utxo::TransactionInput<Runtime>;
+	type TransactionOutput = utxo::TransactionOutput<Runtime>;
+	type Transaction = utxo::Transaction<Runtime>;
+	type SignedTransaction = utxo::SignedTransaction<Runtime>;
+
+	type Inserter = utxo::DefaultInserter<Runtime>;
+	type Remover = utxo::DefaultRemover<Runtime>;
+
+	type Event = Event;
+}
+
+impl std::default::Default for Runtime {
+	fn default() -> Self { Runtime{} }
 }
 
 construct_runtime!(
