@@ -129,6 +129,12 @@ git = 'https://github.com/paritytech/substrate.git'
 package = 'sr-version'
 version = '1.0.0'
 
+[dependencies.utxo]
+git = 'https://github.com/stakedtechnologies/Plasm.git'
+package = 'plasm-utxo'
+version = '0.1.0'
+
+
 [features]
 default = ['std']
 std = [

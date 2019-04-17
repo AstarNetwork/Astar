@@ -81,11 +81,6 @@ git = 'https://github.com/paritytech/substrate.git'
 package = 'sr-primitives'
 version = '1.0.0'
 
-[dependencies.utxo]
-path = '../core/utxo'
-package = 'plasm-utxo'
-version = '0.1.0'
-
 [features]
 default = ["std"]
 std = [
