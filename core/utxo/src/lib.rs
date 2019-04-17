@@ -66,7 +66,7 @@ impl<T: Trait> Inserter<T> for DefaultInserter<T> {}
 pub trait Remover<T: Trait> {
 	fn remove(tx: &T::Transaction) {
 		for inp in tx.inputs().iter() {
-			for key in inp.output().unwrap_or(Default::default()).keys().iter() {
+			for key in inp.output().expect("remove output must be exist.").keys().iter() {
 				<UnspentOutputsFinder<T>>::mutate(key, |v| {
 					*v = match
 						v.as_ref()
