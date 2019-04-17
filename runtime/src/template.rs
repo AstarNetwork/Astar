@@ -22,7 +22,7 @@ pub trait Trait: system::Trait {
 /// This module's storage items.
 decl_storage! {
 	trait Store for Module<T: Trait> as TemplateModule {
-		// Just a dummy storage item.
+		// Just a dummy storage item. 
 		// Here we are declaring a StorageValue, `Something` as a Option<u32>
 		// `get(something)` is the default getter which returns either the stored `u32` or `None` if nothing stored
 		Something get(something): Option<u32>;
@@ -55,7 +55,6 @@ decl_module! {
 }
 
 decl_event!(
-	/// An event in this module.
 	pub enum Event<T> where AccountId = <T as system::Trait>::AccountId {
 		// Just a dummy event.
 		// Event `Something` is declared with a parameter of the type `u32` and `AccountId`
@@ -75,7 +74,7 @@ mod tests {
 	use runtime_primitives::{
 		BuildStorage,
 		traits::{BlakeTwo256, IdentityLookup},
-		testing::{Digest, DigestItem, Header},
+		testing::{Digest, DigestItem, Header}
 	};
 
 	impl_outer_origin! {
@@ -87,7 +86,6 @@ mod tests {
 	// configuration traits of modules we want to use.
 	#[derive(Clone, Eq, PartialEq)]
 	pub struct Test;
-
 	impl system::Trait for Test {
 		type Origin = Origin;
 		type Index = u64;
@@ -101,11 +99,9 @@ mod tests {
 		type Event = ();
 		type Log = DigestItem;
 	}
-
 	impl Trait for Test {
 		type Event = ();
 	}
-
 	type TemplateModule = Module<Test>;
 
 	// This function basically just builds a genesis storage key/value store according to
