@@ -152,4 +152,6 @@ std = [
     'safe-mix/std',
     'consensus-aura/std',
     'offchain-primitives/std',
+    "runtime-primitives/std",
+    "consensus_authorities/std",
 ]
