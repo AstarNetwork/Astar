@@ -2,7 +2,7 @@
 authors = ['Takumi Yamashita <takumi@staked.co.jp>']
 edition = '2018'
 name = 'plasm-runtime'
-version = '1.0.0'
+version = '0.1.0'
 
 [dependencies.aura]
 default_features = false

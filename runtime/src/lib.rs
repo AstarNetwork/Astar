@@ -200,13 +200,15 @@ impl utxo::Trait for Runtime {
 	type Value = utxo::MVPValue;
 	type TimeLock = BlockNumber;
 
-	type TransactionInput = utxo::TransactionInput<Runtime>;
-	type TransactionOutput = utxo::TransactionOutput<Runtime>;
-	type Transaction = utxo::Transaction<Runtime>;
+	type Input = utxo::TransactionInput<Self::Hash>;
+	type Output = utxo::TransactionOutput<Self::Value, Self::SessionKey>;
+
+	type Transaction = utxo::Transaction<Self::Input, Self::Output, Self::TimeLock>;
 	type SignedTransaction = utxo::SignedTransaction<Runtime>;
 
 	type Inserter = utxo::DefaultInserter<Runtime>;
 	type Remover = utxo::DefaultRemover<Runtime>;
+	type Finalizer = utxo::DefaultFinalizer<Runtime>;
 
 	type Event = Event;
 }
@@ -230,6 +232,7 @@ construct_runtime!(
 		Sudo: sudo,
 		// Used for the module template in `./template.rs`
 		TemplateModule: template::{Module, Call, Storage, Event<T>},
+		Utxo: utxo,
 	}
 );
 
