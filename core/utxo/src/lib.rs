@@ -387,7 +387,7 @@ decl_storage! {
 	}
 	
 	add_extra_genesis {
-		config(initial_tx): T::Transaction;
+		config(initial_tx): T::Transaction; // TODO Genesis should only use primitive.
 	}
 }
 
