@@ -13,13 +13,13 @@ version = '3.2'
 default_features = false
 git = 'https://github.com/paritytech/substrate.git'
 package = 'substrate-primitives'
-rev = '5a463bba8e8b59050f78d5606682e273fcb7c617'
+version = '1.0.0'
 
 [dependencies.rstd]
 default_features = false
 git = 'https://github.com/paritytech/substrate.git'
 package = 'sr-std'
-rev = '5a463bba8e8b59050f78d5606682e273fcb7c617'
+version = '1.0.0'
 
 [features]
 default = ["std"]

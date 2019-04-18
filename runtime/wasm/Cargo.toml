@@ -1,22 +1,23 @@
-[dependencies.node-template-runtime]
-default-features = false
-path = '..'
-
-[workspace]
-members = []
-
-[features]
-default = []
-std = ['node-template-runtime/std']
-
-[lib]
-crate-type = ['cdylib']
 [profile.release]
 lto = true
 panic = 'abort'
 
+[workspace]
+members = []
+
+[lib]
+crate-type = ['cdylib']
+
 [package]
-authors = ['Parity Technologies <admin@parity.io>']
+authors = ['Takumi Yamashita <takumi@staked.co.jp>']
 edition = '2018'
-name = 'node-template-runtime-wasm'
-version = '0.9.0'
+name = 'plasm-runtime-wasm'
+version = '1.0.0'
+
+[dependencies.plasm-runtime]
+default-features = false
+path = '..'
+
+[features]
+default = []
+std = ['plasm-runtime/std']

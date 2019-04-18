@@ -5,7 +5,7 @@
 use std::sync::Arc;
 use log::info;
 use transaction_pool::{self, txpool::{Pool as TransactionPool}};
-use node_template_runtime::{self, GenesisConfig, opaque::Block, RuntimeApi};
+use plasm_runtime::{self, GenesisConfig, opaque::Block, RuntimeApi};
 use substrate_service::{
 	FactoryFullConfiguration, LightComponents, FullComponents, FullBackend,
 	FullClient, LightClient, LightBackend, FullExecutor, LightExecutor,
@@ -24,9 +24,9 @@ pub use substrate_executor::NativeExecutor;
 // Our native executor instance.
 native_executor_instance!(
 	pub Executor,
-	node_template_runtime::api::dispatch,
-	node_template_runtime::native_version,
-	include_bytes!("../runtime/wasm/target/wasm32-unknown-unknown/release/node_template_runtime_wasm.compact.wasm")
+	plasm_runtime::api::dispatch,
+	plasm_runtime::native_version,
+	include_bytes!("../runtime/wasm/target/wasm32-unknown-unknown/release/plasm_runtime_wasm.compact.wasm")
 );
 
 #[derive(Default)]
@@ -62,6 +62,7 @@ construct_service_factory! {
 					let proposer = Arc::new(ProposerFactory {
 						client: service.client(),
 						transaction_pool: service.transaction_pool(),
+						inherents_pool: service.inherents_pool(),
 					});
 					let client = service.client();
 					executor.spawn(start_aura(
@@ -73,6 +74,7 @@ construct_service_factory! {
 						service.network(),
 						service.on_exit(),
 						service.config.custom.inherent_data_providers.clone(),
+						service.config.force_authoring,
 					)?);
 				}
 
@@ -84,28 +86,30 @@ construct_service_factory! {
 		FullImportQueue = AuraImportQueue<
 			Self::Block,
 		>
-			{ |config: &mut FactoryFullConfiguration<Self> , client: Arc<FullClient<Self>>|
+			{ |config: &mut FactoryFullConfiguration<Self> , client: Arc<FullClient<Self>>| {
 				import_queue::<_, _, _, Pair>(
-					SlotDuration::get_or_compute(&*client)?,
-					client.clone(),
-					None,
-					client,
-					NothingExtra,
-					config.custom.inherent_data_providers.clone(),
-				).map_err(Into::into)
+						SlotDuration::get_or_compute(&*client)?,
+						client.clone(),
+						None,
+						client,
+						NothingExtra,
+						config.custom.inherent_data_providers.clone(),
+					).map_err(Into::into)
+				}
 			},
 		LightImportQueue = AuraImportQueue<
 			Self::Block,
 		>
-			{ |config: &mut FactoryFullConfiguration<Self>, client: Arc<LightClient<Self>>|
+			{ |config: &mut FactoryFullConfiguration<Self>, client: Arc<LightClient<Self>>| {
 				import_queue::<_, _, _, Pair>(
-					SlotDuration::get_or_compute(&*client)?,
-					client.clone(),
-					None,
-					client,
-					NothingExtra,
-					config.custom.inherent_data_providers.clone(),
-				).map_err(Into::into)
+						SlotDuration::get_or_compute(&*client)?,
+						client.clone(),
+						None,
+						client,
+						NothingExtra,
+						config.custom.inherent_data_providers.clone(),
+					).map_err(Into::into)
+				}
 			},
 	}
 }
