@@ -1,5 +1,3 @@
-mod mvp;
-
 use sr_primitives::traits::{Verify, Zero, CheckedAdd, CheckedSub, Hash};
 use support::{decl_module, decl_storage, decl_event, StorageValue, StorageMap, dispatch::Result, Parameter};
 use serde::{Serialize, de::DeserializeOwned};
@@ -16,8 +14,8 @@ pub use std::collections::HashMap;
 use parity_codec::{Encode, Decode};
 use std::ops::Div;
 
-// mvp
-pub use mvp::MVPValue;
+// plasm pritmitives uses mvp::Value
+pub use plasm_primitives::mvp;
 
 pub trait Trait: consensus::Trait {
 	type Signature: Verify<Signer=Self::SessionKey>;
@@ -331,50 +329,35 @@ decl_storage! {
 	trait Store for Module <T: Trait> as Utxo {
 	/// All valid unspent transaction outputs are stored in this map.
 	/// Initial set of UTXO is populated from the list stored in genesis.
-	pub UnspentOutputs get(unspent_outputs) build( |config: &GenesisConfig<T>| {
-		config.initial_tx
-			.clone()
-			.outputs()
-			.iter()
-			.enumerate()
-			.map(|(i, u)| ((<T as system::Trait>::Hashing::hash_of(&config.initial_tx), i), u.clone()))
-			.collect::<Vec<_>>()
+		pub UnspentOutputs get(unspent_outputs) build( |config: &GenesisConfig<T>| {
+			let tx = T::Transaction::new(vec!{},
+				config.genesis_tx
+					.clone()
+					.iter()
+					.map(|e| T::Output::new(e.0.clone(),vec!{e.1.clone()},1))
+					.collect::<Vec<_>>(), T::TimeLock::zero());
+			tx.clone()
+				.outputs()
+				.iter()
+				.enumerate()
+				.map(|(i, u)| ((<T as system::Trait>::Hashing::hash_of(&tx), i), u.clone()))
+				.collect::<Vec<_>>()
 		}): map (<T as system::Trait>::Hash, usize) => Option<T::Output>;
 		
 		/// [SessionKey] = reference of UTXO.
 		pub UnspentOutputsFinder get(unspent_outputs_finder) build( |config: &GenesisConfig<T> | { // TODO more clearly
-			let mut finder: HashMap <<T as system::Trait>::Hash, Vec<(<T as system::Trait>::Hash, usize)>> = Default::default();
-			let mut vc: Vec<(<T as consensus::Trait>::SessionKey, Vec<(<T as system::Trait>::Hash, usize)>)> = vec!{};
-			let mut keys: Vec<<T as consensus::Trait>::SessionKey> = vec!{};
-			let _ = config.initial_tx
+			let tx = T::Transaction::new(vec!{},
+				config.genesis_tx
+					.clone()
+					.iter()
+					.map(|e| T::Output::new(e.0.clone(),vec!{e.1.clone()},1))
+					.collect::<Vec<_>>(), T::TimeLock::zero());
+			config.genesis_tx
 				.clone()
-				.outputs()
 				.iter()
 				.enumerate()
-				.inspect(|(i, u)| {
-					let _ = u.keys()
-						.iter()
-						.inspect( |key|{
-							let hash = <T as system::Trait>::Hashing::hash_of(*key);
-							let inh = (<T as system::Trait >::Hashing::hash_of(&config.initial_tx), *i);
-							if let Some(f) = finder.get_mut(&hash) {
-								f.push(inh);
-							} else {
-								finder.insert(hash, vec!{inh});
-							}
-								keys.push((**key).clone());
-							})
-						.count();
-				})
-				.count();
-			for key in keys.iter() {
-				let hash = < T as system::Trait >::Hashing::hash_of(key);
-				if let Some(e) = finder.get(&hash) {
-					vc.push((key.clone(), e.to_vec()));
-					finder.remove(&hash);
-				}
-			}
-			vc
+				.map(|(i, e)| (e.1.clone(), vec!{(<T as system::Trait>::Hashing::hash_of(&tx), i)}))
+				.collect::<Vec<_>>()
 		}): map <T as consensus::Trait>::SessionKey => Option<Vec<(<T as system::Trait>::Hash, usize)>>; //TODO HashSet<>
 		
 		/// Total leftover value to be redistributed among authorities.
@@ -387,7 +370,7 @@ decl_storage! {
 	}
 	
 	add_extra_genesis {
-		config(initial_tx): T::Transaction; // TODO Genesis should only use primitive.
+		config(genesis_tx): Vec<(T::Value, <T as consensus::Trait>::SessionKey)>; // TODO Genesis should only use primitive.
 	}
 }
 
@@ -498,7 +481,7 @@ mod tests {
 	impl Trait for Test {
 		type Signature = Signature;
 		type TimeLock = Self::BlockNumber;
-		type Value = MVPValue;
+		type Value = mvp::Value;
 
 		type Input = TransactionInput<H256>;
 		type Output = TransactionOutput<Self::Value, Self::SessionKey>;
@@ -550,14 +533,8 @@ mod tests {
 		}
 	}
 
-	fn genesis_tx(root: &ed25519::Pair) -> <Test as Trait>::Transaction {
-		Transaction::<<Test as Trait>::Input, <Test as Trait>::Output, <Test as Trait>::TimeLock> {
-			inputs: vec! {},
-			outputs: vec! {
-				default_tx_out(MVPValue::new(1 << 60), root.public()),
-			},
-			lock_time: 0,
-		}
+	fn genesis_tx(root: &ed25519::Pair) ->  Vec<(<Test as Trait>::Value, <Test as consensus::Trait>::SessionKey)> {
+		vec! {(mvp::Value::new(1<<60), root.public()),}
 	}
 
 	// This function basically just builds ax genesis storage key/value store according to
@@ -565,7 +542,7 @@ mod tests {
 	fn new_test_ext(root: &ed25519::Pair) -> runtime_io::TestExternalities<Blake2Hasher> {
 		let mut t = system::GenesisConfig::<Test>::default().build_storage().unwrap().0;
 		t.extend(GenesisConfig::<Test> {
-			initial_tx: genesis_tx(root),
+			genesis_tx: genesis_tx(root),
 		}.build_storage().unwrap().0);
 		t.into()
 	}
@@ -583,16 +560,18 @@ mod tests {
 			// consensus set_authorities. (leftover getter.)
 			Consensus::set_authorities(authorities.as_slice());
 
-			// check genesis tx.
-			let exp_gen_tx = genesis_tx(&root_key_pair);
-			let act_gen_out = <UnspentOutputs<Test>>::get((hash(&exp_gen_tx), 0));
-			assert_eq!(exp_gen_tx.outputs()[0], act_gen_out.unwrap());
-
 			// check reference of genesis tx.
 			let ref_utxo = <UnspentOutputsFinder<Test>>::get(root_key_pair.public());
 			assert_eq!(1, ref_utxo.as_ref().unwrap().len());
-			assert_eq!(hash(&exp_gen_tx), ref_utxo.as_ref().unwrap()[0].0);
 			assert_eq!(0, ref_utxo.as_ref().unwrap()[0].1);
+			let exp_gen_outpoint = ref_utxo.as_ref().unwrap()[0];
+
+			// check genesis tx.
+			let exp_gen_tx = &genesis_tx(&root_key_pair)[0];
+			let act_gen_out = <UnspentOutputs<Test>>::get(exp_gen_outpoint);
+			assert_eq!(exp_gen_tx.0, act_gen_out.as_ref().unwrap().value());
+			assert_eq!(1, act_gen_out.as_ref().unwrap().keys().len());
+			assert_eq!(exp_gen_tx.1, act_gen_out.as_ref().unwrap().keys()[0]);
 
 			// check total leftover is 0
 			let leftover_total = <LeftoverTotal<Test>>::get();
@@ -600,14 +579,14 @@ mod tests {
 
 			let receiver_key_pair = authority_key_pair("test_receiver");
 			let new_signed_tx = sign(
-				&gen_normal_tx(hash(&exp_gen_tx),
-							   0, MVPValue::new(1 << 59), receiver_key_pair.public()),
+				&gen_normal_tx(exp_gen_outpoint.0,
+							   exp_gen_outpoint.1, mvp::Value::new(1 << 59), receiver_key_pair.public()),
 				&root_key_pair,
 			);
 			assert_ok!(UTXO::execute(Origin::signed(1), new_signed_tx.encode()));
 
 			// already spent genesis utxo.
-			let spent_utxo = <UnspentOutputs<Test>>::get((hash(&exp_gen_tx), 0));
+			let spent_utxo = <UnspentOutputs<Test>>::get(exp_gen_outpoint);
 			assert!(spent_utxo.is_none());
 			// already spent reference of genesis utxo.
 			let ref_utxo = <UnspentOutputsFinder<Test>>::get(root_key_pair.public());
