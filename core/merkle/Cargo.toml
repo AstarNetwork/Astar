@@ -29,12 +29,26 @@ version = '1.0'
 optional = true
 version = '1.0'
 
+[dependencies.system]
+default_features = false
+git = 'https://github.com/paritytech/substrate.git'
+package = 'srml-system'
+version = '1.0.0'
+
+[dependencies.support]
+default_features = false
+git = 'https://github.com/paritytech/substrate.git'
+package = 'srml-support'
+version = '1.0.0'
+
 [features]
 default = ["std"]
 std = [
     'parity-codec/std',
     'sr_primitives/std',
     'rstd/std',
+    'system/std',
+    'support/std',
    	'serde_derive',
 	'serde',
 ]
