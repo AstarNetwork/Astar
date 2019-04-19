@@ -455,7 +455,7 @@ mod tests {
 	#[cfg_attr(feature = "std", derive(Debug))]
 	pub struct Test;
 
-	pub type Signature = ed25519::Signature;
+	pub type Signature = ed25519::Signature; // TODO must be sr25519 only used by wasm.
 	pub type SessionKey = <Signature as Verify>::Signer;
 
 	impl system::Trait for Test {
