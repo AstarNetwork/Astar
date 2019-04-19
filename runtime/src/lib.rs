@@ -195,26 +195,22 @@ impl template::Trait for Runtime {
 }
 
 /// Used for the utxo Module here.
-impl utxo::Trait for Runtime {
+impl plasm_utxo::Trait for Runtime {
 	type Signature = AuthoritySignature;
-	type Value = utxo::MVPValue;
+	type Value = plasm_primitives::mvp::Value;
 	type TimeLock = BlockNumber;
 
-	type Input = utxo::TransactionInput<Self::Hash>;
-	type Output = utxo::TransactionOutput<Self::Value, Self::SessionKey>;
+	type Input = plasm_utxo::TransactionInput<Self::Hash>;
+	type Output = plasm_utxo::TransactionOutput<Self::Value, Self::SessionKey>;
 
-	type Transaction = utxo::Transaction<Self::Input, Self::Output, Self::TimeLock>;
-	type SignedTransaction = utxo::SignedTransaction<Runtime>;
+	type Transaction = plasm_utxo::Transaction<Self::Input, Self::Output, Self::TimeLock>;
+	type SignedTransaction = plasm_utxo::SignedTransaction<Runtime>;
 
-	type Inserter = utxo::DefaultInserter<Runtime>;
-	type Remover = utxo::DefaultRemover<Runtime>;
-	type Finalizer = utxo::DefaultFinalizer<Runtime>;
+	type Inserter = plasm_utxo::DefaultInserter<Runtime>;
+	type Remover = plasm_utxo::DefaultRemover<Runtime>;
+	type Finalizer = plasm_utxo::DefaultFinalizer<Runtime>;
 
 	type Event = Event;
-}
-
-impl std::default::Default for Runtime {
-	fn default() -> Self { Runtime{} }
 }
 
 construct_runtime!(
@@ -232,7 +228,7 @@ construct_runtime!(
 		Sudo: sudo,
 		// Used for the module template in `./template.rs`
 		TemplateModule: template::{Module, Call, Storage, Event<T>},
-		Utxo: utxo,
+		PlasmUtxo: plasm_utxo,
 	}
 );
 
