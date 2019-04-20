@@ -56,7 +56,7 @@ impl<H: Codec + Default> MockMerkleTree<H> {
 	pub fn get_index(h: &H) -> u64 {
 		match MerkleDb::<&'static str, H, u64>::get(&DirectMerkleDb, &MOCK_MERKLE_TREE_TRIE_ID, h) {
 			Some(index) => index,
-			None => MOCK_MERKLE_TREE_LIMIT << 1,
+			None => 0,
 		}
 	}
 	pub fn push_hash(index: &u64, h: H) {
@@ -81,7 +81,7 @@ impl<H: Codec + Default + Clone + Copy + SimpleBitOps + Eq> MerkleTreeTrait<H> f
 
 		index += MOCK_MERKLE_TREE_LIMIT - 1;
 		while index > 0 {
-			let lr: bool = (index & 1) == 0;
+			let lr: bool = (index & 1) == 1;
 			index = (index - 1) / 2;
 			proofs = match lr {
 				/// left leafs.
@@ -97,6 +97,7 @@ impl<H: Codec + Default + Clone + Copy + SimpleBitOps + Eq> MerkleTreeTrait<H> f
 
 	fn push(leaf: H) {
 		let mut index: u64 = Self::get_index(&Default::default());
+
 		Self::push_index(&Default::default(), index + 1); /// increments...
 		Self::push_index(&leaf, index.clone());
 
@@ -113,6 +114,7 @@ impl<H: Codec + Default + Clone + Copy + SimpleBitOps + Eq> MerkleTreeTrait<H> f
 }
 
 // For Mock Proofs.
+#[derive(Debug)]
 pub enum MockProofs<T> {
 	Leaf(T),
 	Node(Box<MockProofs<T>>, Box<MockProofs<T>>),
@@ -145,7 +147,7 @@ mod tests {
 		traits::{BlakeTwo256, IdentityLookup},
 		testing::{Digest, DigestItem, Header},
 	};
-	use primitives::{ed25519, Pair, Blake2Hasher, H256};
+	use primitives::{Blake2Hasher, H256};
 	use std::clone::Clone;
 
 	impl_outer_origin! {
@@ -229,20 +231,44 @@ mod tests {
 	}
 
 	#[test]
+	fn merkle_mock_onece_test() {
+		with_externalities(&mut new_test_ext(), || {
+			type MerkleTree = MockMerkleTree<H256>;
+			let a = H256::random();
+			let b = H256::random();
+			let c = H256::random();
+
+			MerkleTree::push(a);
+			assert_eq!(a, MerkleTree::root());
+			assert_eq!(a, mock_verify(MerkleTree::proofs(&a)));
+
+			MerkleTree::push(b);
+			assert_eq!(MockConcatHasher::concat(a, b), MerkleTree::root());
+			assert_eq!(MerkleTree::root(), mock_verify(MerkleTree::proofs(&a)));
+			assert_eq!(MerkleTree::root(), mock_verify(MerkleTree::proofs(&b)));
+
+			MerkleTree::push(c);
+			assert_eq!(MockConcatHasher::concat(MockConcatHasher::concat(a, b), c), MerkleTree::root());
+			assert_eq!(MerkleTree::root(), mock_verify(MerkleTree::proofs(&a)));
+			assert_eq!(MerkleTree::root(), mock_verify(MerkleTree::proofs(&b)));
+			assert_eq!(MerkleTree::root(), mock_verify(MerkleTree::proofs(&c)));
+		});
+	}
+
+	#[test]
 	fn merkle_mock_test() {
 		with_externalities(&mut new_test_ext(), || {
 			type MerkleTree = MockMerkleTree<H256>;
 			let hashes = (0..10).map(|_| H256::random()).collect::<Vec<_>>();
 			assert_eq!(10, hashes.len());
 
-			hashes.iter()
-				.inspect(|h| MerkleTree::push(*h.clone()))
-				.count();
+			for h in hashes.iter() {
+				MerkleTree::push(h.clone())
+			}
 
 			// verify
 			let root_hash = MerkleTree::root();
 			for i in 0..10 {
-				println!("{}", i);
 				let proofs = MerkleTree::proofs(&hashes[i]);
 				assert_eq!(root_hash, mock_verify(proofs));
 			}

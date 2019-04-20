@@ -538,7 +538,7 @@ mod tests {
 	}
 
 	// This function basically just builds ax genesis storage key/value store according to
-// our desired mockup.
+	// our desired mockup.
 	fn new_test_ext(root: &ed25519::Pair) -> runtime_io::TestExternalities<Blake2Hasher> {
 		let mut t = system::GenesisConfig::<Test>::default().build_storage().unwrap().0;
 		t.extend(GenesisConfig::<Test> {
