@@ -6,7 +6,7 @@ use parity_codec::alloc::collections::vec_deque::VecDeque;
 
 // mock merkle tree trie id name. no conflict.
 const MOCK_MERKLE_TREE_TRIE_ID: &'static str = "mock_merkle_tree_trie_id";
-const MOCK_MERKLE_TREE_DEPTH: u8 = 5;
+const MOCK_MERKLE_TREE_DEPTH: u8 = 20;
 /// must be 2^n.
 const MOCK_MERKLE_TREE_LIMIT: u64 = (1 << MOCK_MERKLE_TREE_DEPTH as u64);
 
