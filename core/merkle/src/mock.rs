@@ -73,13 +73,11 @@ impl<H, Hashing> MerkleTreeTrait<H, Hashing> for MerkleTree<H, Hashing>
 	}
 
 	fn commit() {
-		println!("commit!");
 		let h: H = Default::default();
 		let x = Hashing::hash_of(&h);
 		let cnt = Self::get_index(&x);
 		Self::push_index(&x, 0);
 		for i in 0..cnt {
-			println!("commit: i-th {}", i);
 			let leaf = Self::get_hash(MOCK_MERKLE_TREE_LIMIT << 1 + i);
 			let mut index: u64 = Self::get_index(&h);
 
@@ -94,7 +92,6 @@ impl<H, Hashing> MerkleTreeTrait<H, Hashing> for MerkleTree<H, Hashing>
 								concat_hash(&Self::get_hash(2 * index + 1),
 											&Self::get_hash(2 * index + 2),
 											Hashing::hash));
-				println!("index:{}, hash:{:?}", index, Self::get_hash(index));
 			}
 		}
 	}
