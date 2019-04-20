@@ -1,10 +1,19 @@
 <div align="center"><img width="300" alt="plasm" src="https://user-images.githubusercontent.com/6259384/55708398-cf9ae900-5a20-11e9-859c-3435b55c68a5.png"></div>
 
+Plasm is a Substrate Runtime Module Library by which a developer can add Plasma functions to his/her own Substrate chain.
+
 __IMPORTANT NOTICE:__
 * __This is an experimental software, does not run in a production yet.__
 
-# Basic Idea of Plasm
-Plasm is a Substrate Runtime Module Library by which a developer can add Plasma functions to his/her own Substrate chain.
+## Table of Contents
+- Introduction
+- Background
+- Plasm
+    - Plasm-UTXO
+    - Plasm-Parent
+    - Plasm-Child
+- How to Install
+
 
 ## Background
 Today, there are many derived Plasmas. For example, 
