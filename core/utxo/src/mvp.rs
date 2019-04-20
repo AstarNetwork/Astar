@@ -1,11 +1,11 @@
 use super::*;
 // use Encode, Decode
 use parity_codec::{Encode, Decode};
-use plasm_merkle::{MerkleTreeTrait};
+use plasm_merkle::MerkleTreeTrait;
 
 #[derive(Clone, Eq, PartialEq, Default)]
 #[cfg_attr(feature = "std", derive(Debug))]
-pub struct MVPInserter<T: Trait, Tree: MerkleTreeTrait<T::Hash>>(PhantomData<(T,Tree)>);
+pub struct MVPInserter<T: Trait, Tree: MerkleTreeTrait<T::Hash>>(PhantomData<(T, Tree)>);
 
 impl<T: Trait, Tree: MerkleTreeTrait<T::Hash>> Inserter<T> for MVPInserter<T, Tree> {
 	fn insert(tx: &T::Transaction) {
@@ -27,12 +27,13 @@ impl<T: Trait, Tree: MerkleTreeTrait<T::Hash>> Inserter<T> for MVPInserter<T, Tr
 //	}
 //}
 //
-//#[derive(Clone, Eq, PartialEq, Default)]
-//#[cfg_attr(feature = "std", derive(Debug))]
-//pub struct MVPFinalizer<T: Trait, Tree: MerkleTreeTrait<T::Hash>> (PhantomData<T>);
-//
-//impl<T: Trait, Tree: MerkleTreeTrait<T::Hash>> Finalizer<T> for MVPFinalizer<T, Tree> {
-//	fn finalize(authorities: &[<T as consensus::Trait>::SessionKey]) {
-//		Self::using_finalize(authorities);
-//	}
-//}
+#[derive(Clone, Eq, PartialEq, Default)]
+#[cfg_attr(feature = "std", derive(Debug))]
+pub struct MVPFinalizer<T: Trait, Tree: MerkleTreeTrait<T::Hash>> (PhantomData<T>);
+
+impl<T: Trait, Tree: MerkleTreeTrait<T::Hash>> Finalizer<T> for MVPFinalizer<T, Tree> {
+	fn finalize(authorities: &[<T as consensus::Trait>::SessionKey]) {
+		Self::using_finalize(authorities);
+		Tree::comit();
+	}
+}

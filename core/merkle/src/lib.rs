@@ -20,6 +20,8 @@ pub trait MerkleTreeTrait<H: Codec> {
 	fn proofs(leaf: &H) -> Self::Proofs;
 	/// push Hash to MerkleTree.
 	fn push(leaf: H);
+	// commit to MerkleTree
+	fn commit();
 }
 
 pub trait MerkleDb<Id: Encode, Key: Encode, O: Codec> {

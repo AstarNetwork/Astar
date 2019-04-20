@@ -95,9 +95,11 @@ impl<H: Codec + Default + Clone + Copy + SimpleBitOps + Eq> MerkleTreeTrait<H> f
 	}
 }
 
-// For  Proofs.
+/// For  Proofs.
+/// 配列でよい[&T]
 #[derive(Debug)]
 pub enum Proofs<T> {
+
 	Leaf(T),
 	Node(Box<Proofs<T>>, Box<Proofs<T>>),
 }
