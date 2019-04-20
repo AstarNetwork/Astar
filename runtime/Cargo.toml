@@ -137,6 +137,10 @@ package = 'plasm-utxo'
 path = '../core/primitives'
 package = 'plasm-primitives'
 
+[dependencies.plasm_merkle]
+path = '../core/merkle'
+package = 'plasm-merkle'
+
 
 [features]
 default = ['std']
