@@ -85,6 +85,10 @@ version = '1.0.0'
 path = '../primitives'
 package = 'plasm-primitives'
 
+[dependencies.plasm_merkle]
+path = '../merkle'
+package = 'plasm-merkle'
+
 [features]
 default = ["std"]
 std = [
