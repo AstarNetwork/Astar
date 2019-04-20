@@ -1,6 +1,6 @@
 <div align="center"><h1>Plasm</h1></div>
 
-<div align="left"><img width="300" alt="plasm" src="https://user-images.githubusercontent.com/6259384/55708398-cf9ae900-5a20-11e9-859c-3435b55c68a5.png"></div>
+<div align="center"><img width="300" alt="plasm" src="https://user-images.githubusercontent.com/6259384/55708398-cf9ae900-5a20-11e9-859c-3435b55c68a5.png"></div>
 
 Plasm is a Substrate Runtime Module Library by which a developer can add Plasma functions to his/her own Substrate chain.
 
@@ -15,11 +15,15 @@ __WARNING__: This is a proof-of-concept prototype. This implementation is NOT re
     - Plasm-Child
 - How to Install
 
+## Introduction
+Plasm is Staked Technologies' product that enables to 
 
 ## Background
 Today, there are many derived Plasmas. For example, 
 
 Plasma には複数の種類、派生系が存在する。例えば初めに Vitanik によって提唱された Plasma-MVP, MVP の不正申告者が子チェーンのフルノードを持たなければならない問題を解決した Plasma-Cash その派生系である Plasma-XT, Prime。そして Plasma-Prime を参考に実装された Plasma-Chamber。ZK-S[T|N]ARKSを用いた Plasma-Snapps 等があげられる。
+
+Plasm includes Plasma-Abstract data structures that 
 
 Plasm では複数の Plasma Solution をプラガブルに組み合わせて使用できるような Plasma-Abstract なデータ構造と各々の Plasma ソリューションに対応する Rust on Substrate 実装を提供する。
 
