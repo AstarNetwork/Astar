@@ -1,4 +1,4 @@
-<div align="center"><img width="300" alt="plasm" src="https://user-images.githubusercontent.com/6259384/55708398-cf9ae900-5a20-11e9-859c-3435b55c68a5.png"></div>
+<div align="left"><img width="300" alt="plasm" src="https://user-images.githubusercontent.com/6259384/55708398-cf9ae900-5a20-11e9-859c-3435b55c68a5.png"></div>
 
 Plasm is a Substrate Runtime Module Library by which a developer can add Plasma functions to his/her own Substrate chain.
 
@@ -22,16 +22,14 @@ Plasma には複数の種類、派生系が存在する。例えば初めに Vit
 
 Plasm では複数の Plasma Solution をプラガブルに組み合わせて使用できるような Plasma-Abstract なデータ構造と各々の Plasma ソリューションに対応する Rust on Substrate 実装を提供する。
 
-Substrate developers can import one of Plasm Libraries and make thier own plasma chain depending on their use casse. Plasm consists of 3 (or 4) libraries, plasm-utxo, plasm-parent and plasm-child.  
+Substrate developers can import one of Plasm Libraries and make thier own plasma chain depending on their use casse. Plasm consists of 3 (or 4) libraries, plasm-utxo, plasm-parent and plasm-child. Plasm-UTXO has a UTXO like data structure to manage the deposited tokens. 
 
-
-plasm-utxo は Deposit したトークン/コイン(以後トークンで統一)を管理するための UTXO-like なデータ構造を提供する。Plasma ではトークンを親チェーンに Exit する際の不正申告のためにトークンの取引履歴を保持する必要がある。何故ならばあるトークンが不正に Exit されたことを証明するにはそのトークンを不正 Exitor が保持していないことを示すために正しい取引履歴を示す必要があるからだ。plasm-utxo では抽象化された UTXOs とそれの具象実装が各 Plasma ソリューションについて実装される。
+Plasma ではトークンを親チェーンに Exit する際の不正申告のためにトークンの取引履歴を保持する必要がある。何故ならばあるトークンが不正に Exit されたことを証明するにはそのトークンを不正 Exitor が保持していないことを示すために正しい取引履歴を示す必要があるからだ。plasm-utxo では抽象化された UTXOs とそれの具象実装が各 Plasma ソリューションについて実装される。
 plasm-parent は Plasma の親チェーンとして動作させるためのモジュールを提供する。
 plasm-child は Plasma の子チェーンとして動作させるためのモジュールを提供する。
 
 ## Plasm-UTXO
-Plasm-UTXO は各 Plasma ソリューションに適したトランザクションの仕様を提供する。
-Along with that, we 
+Plasm-UTXO provides a specification of transactions which is suitable for each Plasma solution. Along with that, it can  
 また、それに伴い UTXO-like なデータ構造全般を網羅的に扱えるような設計をしている。また、Merkle Tree を内包しておりこれについても着脱可能である。
 
 ## Plasm-Parent
@@ -39,6 +37,7 @@ Plasm-Parent provides a specification of the parent chain. 子チェーンには
 
 ## Plasm-Child
 Plasm-Child provides a specification of the child chain. Parent chain has been implemented corresponding to the child chain's solutions. 
+
 
 By using these solutions together, the user can make the transactions happen between the parent chain and the child chain. The logic of "deposit/exit" has been implemented based on Plasm-UTXO.
 
