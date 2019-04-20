@@ -195,6 +195,7 @@ impl template::Trait for Runtime {
 	type Event = Event;
 }
 
+use plasm_merkle;
 type MerkleTree = plasm_merkle::mock::MerkleTree<Hash, BlakeTwo256>;
 
 /// Used for the utxo Module here.

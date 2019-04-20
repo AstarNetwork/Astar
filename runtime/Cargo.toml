@@ -130,14 +130,17 @@ package = 'sr-version'
 version = '1.0.0'
 
 [dependencies.plasm_utxo]
+default_features = false
 path = '../core/utxo'
 package = 'plasm-utxo'
 
 [dependencies.plasm_primitives]
+default_features = false
 path = '../core/primitives'
 package = 'plasm-primitives'
 
 [dependencies.plasm_merkle]
+default_features = false
 path = '../core/merkle'
 package = 'plasm-merkle'
 
@@ -167,4 +170,7 @@ std = [
     'offchain-primitives/std',
     "runtime-primitives/std",
     "consensus_authorities/std",
+    'plasm_primitives/std',
+    'plasm_merkle/std',
+    'plasm_utxo/std',
 ]

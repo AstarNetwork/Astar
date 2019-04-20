@@ -15,6 +15,12 @@ git = 'https://github.com/paritytech/substrate.git'
 package = 'sr-primitives'
 version = '1.0.0'
 
+[dependencies.rstd]
+default_features = false
+git = 'https://github.com/paritytech/substrate.git'
+package = 'sr-std'
+version = '1.0.0'
+
 [dependencies.serde]
 optional = true
 version = '1.0'
@@ -28,6 +34,7 @@ default = ["std"]
 std = [
     'parity-codec/std',
     'sr_primitives/std',
+    'rstd/std',
    	'serde_derive',
-	'serde',
+	'serde/std',
 ]

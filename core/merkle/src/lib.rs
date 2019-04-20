@@ -1,3 +1,5 @@
+#![cfg_attr(not(feature = "std"), no_std)]
+
 use rstd::prelude::*;
 use sr_primitives::traits::{Member, MaybeSerializeDebug, Hash};
 use support::storage::child;

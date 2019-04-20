@@ -1,11 +1,15 @@
+#![cfg_attr(not(feature = "std"), no_std)]
+
+#[cfg(feature = "std")]
+use serde_derive::{Serialize, Deserialize};
+
 use sr_primitives::traits::{Zero, CheckedAdd, CheckedSub};
 // use Encode, Decode
 use parity_codec::{Encode, Decode};
-use std::ops::{Deref, Div, Add, Sub};
-use serde_derive::{Serialize, Deserialize};
+use rstd::ops::{Deref, Div, Add, Sub};
 
-#[derive(Clone, Encode, Decode, Default, PartialEq, Eq, Serialize, Deserialize)]
-#[cfg_attr(feature = "std", derive(Debug))]
+#[derive(Clone, Encode, Decode, Default, PartialEq, Eq)]
+#[cfg_attr(feature = "std", derive(Debug, Serialize, Deserialize))]
 pub struct Value(u64);
 
 impl Value {
@@ -79,30 +83,31 @@ mod tests {
 	#[test]
 	fn mvp_value_add() {
 		assert_eq!(300, *(Value(100) + Value(200)));
-		assert_eq!((1<<60), *(Value(1<<59) + Value(1<<59)));
+		assert_eq!((1 << 60), *(Value(1 << 59) + Value(1 << 59)));
 	}
 
 	#[test]
 	fn mvp_value_checked_add() {
 		assert_eq!(Some(Value(1000)), Value(500).checked_add(&(Value(300) + Value(200))));
-		assert_eq!(None, Value(1<<63).checked_add(&Value(1<<63)));
+		assert_eq!(None, Value(1 << 63).checked_add(&Value(1 << 63)));
 	}
+
 	#[test]
 	fn mvp_value_sub() {
 		assert_eq!(100, *(Value(200) - Value(100)));
-		assert_eq!((1<<58), *(Value(1<<59) - Value(1<<58)));
+		assert_eq!((1 << 58), *(Value(1 << 59) - Value(1 << 58)));
 	}
 
 	#[test]
 	fn mvp_value_checked_sub() {
 		assert_eq!(Some(Value(1000)), Value(2000).checked_sub(&(Value(300) + Value(700))));
-		assert_eq!(None, Value(1<<62).checked_sub(&Value(1<<63)));
+		assert_eq!(None, Value(1 << 62).checked_sub(&Value(1 << 63)));
 	}
 
 	#[test]
 	fn mvp_value_div() {
-		assert_eq!(Value(5), Value(200)/(40 as usize));
-		assert_eq!(Value(100), Value(2019)/(20 as usize));
+		assert_eq!(Value(5), Value(200) / (40 as usize));
+		assert_eq!(Value(100), Value(2019) / (20 as usize));
 	}
 
 	#[test]

@@ -1,7 +1,11 @@
+#![cfg_attr(not(feature = "std"), no_std)]
+
+#[cfg(feature = "std")]
+use serde_derive::{Serialize, Deserialize};
+
 use sr_primitives::traits::{Verify, Zero, CheckedAdd, CheckedSub, Hash};
 use support::{decl_module, decl_storage, decl_event, StorageValue, StorageMap, dispatch::Result, Parameter};
-use serde::{Serialize, de::DeserializeOwned};
-use serde_derive::{Serialize, Deserialize};
+
 use system::ensure_signed;
 
 use rstd::prelude::*;
@@ -9,10 +13,10 @@ use rstd::marker::PhantomData;
 
 #[cfg(feature = "std")]
 pub use std::fmt;
-pub use std::collections::HashMap;
+
 // use Encode, Decode
 use parity_codec::{Encode, Decode};
-use std::ops::Div;
+use rstd::ops::Div;
 
 // plasm pritmitives uses mvp::Value
 pub mod mvp;
@@ -20,12 +24,12 @@ pub mod mvp;
 pub trait Trait: system::Trait {
 	type Signature: Verify<Signer=Self::AccountId>;
 	type TimeLock: Parameter + Zero + Default;
-	type Value: Parameter + From<Self::Value> + Zero + CheckedAdd + CheckedSub + Div<usize, Output=Self::Value> + Default + Serialize + DeserializeOwned;
+	type Value: Parameter + From<Self::Value> + Zero + CheckedAdd + CheckedSub + Div<usize, Output=Self::Value> + Default;
 
 	type Input: TransactionInputTrait<Self::Hash> + From<Self::Input>;
-	type Output: Parameter + TransactionOutputTrait<Self::Value, Self::AccountId> + From<Self::Output> + Default + Serialize + DeserializeOwned;
+	type Output: Parameter + TransactionOutputTrait<Self::Value, Self::AccountId> + From<Self::Output> + Default;
 
-	type Transaction: Parameter + TransactionTrait<Self::Input, Self::Output, Self::TimeLock> + Default + Serialize + DeserializeOwned;
+	type Transaction: Parameter + TransactionTrait<Self::Input, Self::Output, Self::TimeLock> + Default;
 	type SignedTransaction: Parameter + SignedTransactionTrait<Self>;
 
 	type Inserter: InserterTrait<Self>;
@@ -36,7 +40,7 @@ pub trait Trait: system::Trait {
 	type Event: From<Event<Self>> + Into<<Self as system::Trait>::Event>;
 }
 
-type CheckResult<T> = std::result::Result<T, &'static str>;
+type CheckResult<T> = rstd::result::Result<T, &'static str>;
 
 pub trait InserterTrait<T: Trait> {
 	fn insert(tx: &T::Transaction) {
@@ -140,22 +144,22 @@ impl<T: Trait> FinalizerTrait<T> for DefaultFinalizer<T> {}
 pub trait TransactionInputTrait<Hash> {
 	fn new(tx_hash: Hash, out_index: usize) -> Self;
 	fn output_or_default<T: Trait>(&self) -> T::Output
-		where (Hash, usize): std::borrow::Borrow<(<T as system::Trait>::Hash, usize)> {
+		where (Hash, usize): rstd::borrow::Borrow<(<T as system::Trait>::Hash, usize)> {
 		match <UnspentOutputs<T>>::get((self.tx_hash(), self.out_index())) {
 			Some(tx_out) => tx_out,
 			None => Default::default(),
 		}
 	}
 	fn output<T: Trait>(&self) -> Option<T::Output>
-		where (Hash, usize): std::borrow::Borrow<(<T as system::Trait>::Hash, usize)> {
+		where (Hash, usize): rstd::borrow::Borrow<(<T as system::Trait>::Hash, usize)> {
 		<UnspentOutputs<T>>::get((self.tx_hash(), self.out_index()))
 	}
 	fn tx_hash(&self) -> Hash;
 	fn out_index(&self) -> usize;
 }
 
-#[derive(Clone, Encode, Decode, Default, PartialEq, Eq, Serialize, Deserialize)]
-#[cfg_attr(feature = "std", derive(Debug))]
+#[derive(Clone, Encode, Decode, Default, PartialEq, Eq)]
+#[cfg_attr(feature = "std", derive(Debug, Serialize, Deserialize))]
 pub struct TransactionInput<Hash> {
 	///#[codec(compact)]
 	pub tx_hash: Hash,
@@ -183,8 +187,8 @@ pub trait TransactionOutputTrait<Value, Key> {
 	fn quorum(&self) -> u32;
 }
 
-#[derive(Clone, Encode, Decode, Default, PartialEq, Eq, Serialize, Deserialize)]
-#[cfg_attr(feature = "std", derive(Debug))]
+#[derive(Clone, Encode, Decode, Default, PartialEq, Eq)]
+#[cfg_attr(feature = "std", derive(Debug, Serialize, Deserialize))]
 pub struct TransactionOutput<Value, Key> {
 	///#[codec(compact)]
 	pub value: Value,
@@ -217,8 +221,8 @@ pub trait TransactionTrait<Input, Output, TimeLock> {
 	fn lock_time(&self) -> TimeLock;
 }
 
-#[derive(Clone, Encode, Decode, Default, PartialEq, Eq, Serialize, Deserialize)]
-#[cfg_attr(feature = "std", derive(Debug))]
+#[derive(Clone, Encode, Decode, Default, PartialEq, Eq)]
+#[cfg_attr(feature = "std", derive(Debug, Serialize, Deserialize))]
 pub struct Transaction<Input, Output, TimeLock> {
 	///#[codec(compact)]
 	pub inputs: Vec<Input>,
