@@ -47,6 +47,12 @@ git = 'https://github.com/paritytech/substrate.git'
 package = 'srml-support'
 version = '1.0.0'
 
+[dependencies.runtime-io]
+default_features = false
+git = 'https://github.com/paritytech/substrate.git'
+package = 'sr-io'
+version = '1.0.0'
+
 [features]
 default = ["std"]
 std = [
@@ -56,6 +62,7 @@ std = [
     'rstd/std',
     'system/std',
     'support/std',
+    'runtime-io/std',
    	'serde_derive',
 	'serde',
 ]

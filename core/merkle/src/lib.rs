@@ -126,7 +126,7 @@ pub trait MerkleDb<Id: Encode, Key: Encode, O: Codec> {
 		if let Some(ret) = child::get_raw(&trie_id.encode()[..], &key.encode()[..]) {
 			return O::decode(&mut &ret[..]);
 		}
-		None
+		return None;
 	}
 }
 
@@ -137,15 +137,40 @@ impl<Id: Encode, Key: Encode, O: Codec> MerkleDb<Id, Key, O> for DirectMerkleDb 
 #[cfg(test)]
 mod tests {
 	use super::*;
-	use primitives::H256;
+	use runtime_io::with_externalities;
 
-	fn mock_verify(proofs: MockProofs<H256>) -> H256 {
-		match proofs {
-			MockProofs::<H256>::Leaf(leaf) => leaf,
-			MockProofs::<H256>::Node(left, right) => MockConcatHasher::concat::<H256>(
-				mock_verify(*left),
-				mock_verify(*right))
-		}
+	use support::{impl_outer_origin, assert_ok};
+	use sr_primitives::{
+		BuildStorage,
+		traits::{BlakeTwo256, IdentityLookup},
+		testing::{Digest, DigestItem, Header},
+	};
+	use primitives::{ed25519, Pair, Blake2Hasher, H256};
+	use std::clone::Clone;
+
+	impl_outer_origin! {
+		pub enum Origin for Test {}
+	}
+
+	// For testing the module, we construct most of a mock runtime. This means
+	// first constructing a configuration type (`Test`) which `impl`s each of the
+	// configuration traits of modules we want to use.
+	#[derive(Clone, Eq, PartialEq)]
+	#[cfg_attr(feature = "std", derive(Debug))]
+	pub struct Test;
+
+	impl system::Trait for Test {
+		type Origin = Origin;
+		type Index = u64;
+		type BlockNumber = u64;
+		type Hash = H256;
+		type Hashing = BlakeTwo256;
+		type Digest = Digest;
+		type AccountId = u64;
+		type Lookup = IdentityLookup<Self::AccountId>;
+		type Header = Header;
+		type Event = ();
+		type Log = DigestItem;
 	}
 
 	fn merkle_cocnat_hash<H, Hasher, F>(rnd: F) where
@@ -168,45 +193,59 @@ mod tests {
 		merkle_cocnat_hash::<H256, MockConcatHasher, fn() -> H256>(|| { H256::random() });
 	}
 
-//	#[test]
-//	fn merkle_mock_test() {
-//		type MerkleTree = MockMerkleTree<H256>;
-//		let hashes = vec!{1..10}.iter().map(|_| H256::random()).collect::<Vec<_>>();
-//		hashes.iter()
-//			.inspect(|h| MerkleTree::push(*h.clone()))
-//			.count();
-//
-//		// verify
-//		let root_hash = MerkleTree::root();
-//		for i in 0..10 {
-//			let proofs = MerkleTree::proofs(&hashes[i]);
-//			assert_eq!(root_hash, mock_verify(proofs));
-//		}
-//	}
-}
-// 完全二分木による実装。
-// SegmentTree っぽく予め 2*n のデータをとっておく。
-// 利点：実装が楽。
-// other: UTXO の最大プール数(n)が決まっている。nを超えると証明不可能になる。（一巡するので）
-// [index] =
+	fn new_test_ext() -> runtime_io::TestExternalities<Blake2Hasher> {
+		system::GenesisConfig::<Test>::default().build_storage().unwrap().0.into()
+	}
 
-//pub trait MerkleProof<H> {
-//	type Her;
-//	fn left() -> Option<Self>;
-//	fn right() -> Option<Self>;
-//	fn hash() -> H;
-//	fn concat() -> H;
-//}
-//
-//pub struct HeapLikeMerkleProof<Her, H> {
-//	pub left: HeapLikeMerkleProof;
-//	pub right: HeapLikeMerkleProof;
-//	pub hash: Option<H>
-//}
-//
-//pub trait MerkleStorage {
-//	type MerkleProof;
-//	fn push(index: u64);
-//	fn get(index: u64) -> Self::MerkleProof;
-//}
-//
+	fn mock_verify(proofs: MockProofs<H256>) -> H256 {
+		match proofs {
+			MockProofs::<H256>::Leaf(leaf) => leaf,
+			MockProofs::<H256>::Node(left, right) => MockConcatHasher::concat::<H256>(
+				mock_verify(*left),
+				mock_verify(*right))
+		}
+	}
+
+	fn test_db_push(key: u64, value: H256) {
+		MerkleDb::<&'static str, u64, H256>::push(&DirectMerkleDb, &"test_db", &key, value);
+	}
+
+	fn test_db_get(key: u64) -> Option<H256> {
+		MerkleDb::<&'static str, u64, H256>::get(&DirectMerkleDb, &"test_db", &key)
+	}
+
+	#[test]
+	fn merkle_mock_db() {
+		with_externalities(&mut new_test_ext(), || {
+			for i in (0..100) {
+				let k = i as u64;
+				let v = H256::random();
+				test_db_push(k, v.clone());
+				assert_eq!(Some(v), test_db_get(k));
+			}
+			// nothing key 114514
+			assert_eq!(None, test_db_get(114514));
+		});
+	}
+
+	#[test]
+	fn merkle_mock_test() {
+		with_externalities(&mut new_test_ext(), || {
+			type MerkleTree = MockMerkleTree<H256>;
+			let hashes = (0..10).map(|_| H256::random()).collect::<Vec<_>>();
+			assert_eq!(10, hashes.len());
+
+			hashes.iter()
+				.inspect(|h| MerkleTree::push(*h.clone()))
+				.count();
+
+			// verify
+			let root_hash = MerkleTree::root();
+			for i in 0..10 {
+				println!("{}", i);
+				let proofs = MerkleTree::proofs(&hashes[i]);
+				assert_eq!(root_hash, mock_verify(proofs));
+			}
+		});
+	}
+}
