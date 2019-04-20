@@ -1,0 +1,68 @@
+[package]
+name = "plasm-primitives"
+version = "0.1.0"
+authors = ["Takumi Yamashita <s.a.t.e.3.ths@gmail.com>"]
+edition = "2018"
+
+[dependencies.parity-codec]
+default-features = false
+features = ['derive']
+version = '3.2'
+
+[dependencies.primitives]
+default_features = false
+git = 'https://github.com/paritytech/substrate.git'
+package = 'substrate-primitives'
+version = '1.0.0'
+
+[dependencies.sr_primitives]
+default_features = false
+git = 'https://github.com/paritytech/substrate.git'
+package = 'sr-primitives'
+version = '1.0.0'
+
+[dependencies.rstd]
+default_features = false
+git = 'https://github.com/paritytech/substrate.git'
+package = 'sr-std'
+version = '1.0.0'
+
+[dependencies.serde]
+optional = true
+version = '1.0'
+
+[dependencies.serde_derive]
+optional = true
+version = '1.0'
+
+[dependencies.system]
+default_features = false
+git = 'https://github.com/paritytech/substrate.git'
+package = 'srml-system'
+version = '1.0.0'
+
+[dependencies.support]
+default_features = false
+git = 'https://github.com/paritytech/substrate.git'
+package = 'srml-support'
+version = '1.0.0'
+
+[dependencies.runtime-io]
+default_features = false
+git = 'https://github.com/paritytech/substrate.git'
+package = 'sr-io'
+version = '1.0.0'
+
+[features]
+default = ["std"]
+std = [
+    'parity-codec/std',
+    'primitives/std',
+    'sr_primitives/std',
+    'rstd/std',
+    'system/std',
+    'support/std',
+    'runtime-io/std',
+   	'serde_derive',
+	'serde',
+]
