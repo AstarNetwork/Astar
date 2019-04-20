@@ -2,7 +2,7 @@
 authors = ['Takumi Yamashita <takumi@staked.co.jp>']
 edition = '2018'
 name = 'plasm-runtime'
-version = '1.0.0'
+version = '0.1.0'
 
 [dependencies.aura]
 default_features = false
@@ -128,6 +128,15 @@ default_features = false
 git = 'https://github.com/paritytech/substrate.git'
 package = 'sr-version'
 version = '1.0.0'
+
+[dependencies.plasm_utxo]
+path = '../core/utxo'
+package = 'plasm-utxo'
+
+[dependencies.plasm_primitives]
+path = '../core/primitives'
+package = 'plasm-primitives'
+
 
 [features]
 default = ['std']

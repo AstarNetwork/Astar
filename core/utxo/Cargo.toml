@@ -81,6 +81,10 @@ git = 'https://github.com/paritytech/substrate.git'
 package = 'sr-primitives'
 version = '1.0.0'
 
+[dependencies.plasm_primitives]
+path = '../primitives'
+package = 'plasm-primitives'
+
 [features]
 default = ["std"]
 std = [

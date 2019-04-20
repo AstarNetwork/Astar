@@ -9,22 +9,25 @@ default-features = false
 features = ['derive']
 version = '3.2'
 
-[dependencies.primitives]
+[dependencies.sr_primitives]
 default_features = false
 git = 'https://github.com/paritytech/substrate.git'
-package = 'substrate-primitives'
+package = 'sr-primitives'
 version = '1.0.0'
 
-[dependencies.rstd]
-default_features = false
-git = 'https://github.com/paritytech/substrate.git'
-package = 'sr-std'
-version = '1.0.0'
+[dependencies.serde]
+optional = true
+version = '1.0'
+
+[dependencies.serde_derive]
+optional = true
+version = '1.0'
 
 [features]
 default = ["std"]
 std = [
     'parity-codec/std',
-    'primitives/std',
-    'rstd/std',
+    'sr_primitives/std',
+   	'serde_derive',
+	'serde',
 ]

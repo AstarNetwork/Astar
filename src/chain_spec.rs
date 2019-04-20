@@ -1,7 +1,7 @@
 use primitives::{ed25519, sr25519, Pair};
 use plasm_runtime::{
 	AccountId, GenesisConfig, ConsensusConfig, TimestampConfig, BalancesConfig,
-	SudoConfig, IndicesConfig,
+	SudoConfig, IndicesConfig, PlasmUtxoConfig,
 };
 use substrate_service;
 
@@ -114,6 +114,9 @@ fn testnet_genesis(initial_authorities: Vec<AuthorityId>, endowed_accounts: Vec<
 		}),
 		sudo: Some(SudoConfig {
 			key: root_key,
+		}),
+		plasm_utxo: Some( PlasmUtxoConfig {
+			genesis_tx: initial_authorities.iter().cloned().map(|k| (plasm_primitives::mvp::Value::new(1<<60), k)).collect(),
 		}),
 	}
 }

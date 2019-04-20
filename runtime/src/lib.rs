@@ -14,7 +14,7 @@ use primitives::bytes;
 use primitives::{ed25519, sr25519, OpaqueMetadata};
 use runtime_primitives::{
 	ApplyResult, transaction_validity::TransactionValidity, generic, create_runtime_str,
-	traits::{self, NumberFor, BlakeTwo256, Block as BlockT, StaticLookup, Verify}
+	traits::{self, NumberFor, BlakeTwo256, Block as BlockT, StaticLookup, Verify},
 };
 use client::{
 	block_builder::api::{CheckInherentsResult, InherentData, self as block_builder_api},
@@ -68,13 +68,15 @@ pub mod opaque {
 	/// Opaque, encoded, unchecked extrinsic.
 	#[derive(PartialEq, Eq, Clone, Default, Encode, Decode)]
 	#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
-	pub struct UncheckedExtrinsic(#[cfg_attr(feature = "std", serde(with="bytes"))] pub Vec<u8>);
+	pub struct UncheckedExtrinsic(#[cfg_attr(feature = "std", serde(with = "bytes"))] pub Vec<u8>);
+
 	#[cfg(feature = "std")]
 	impl std::fmt::Debug for UncheckedExtrinsic {
 		fn fmt(&self, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
 			write!(fmt, "{}", primitives::hexdisplay::HexDisplay::from(&self.0))
 		}
 	}
+
 	impl traits::Extrinsic for UncheckedExtrinsic {
 		fn is_signed(&self) -> Option<bool> {
 			None
@@ -192,6 +194,25 @@ impl template::Trait for Runtime {
 	type Event = Event;
 }
 
+/// Used for the utxo Module here.
+impl plasm_utxo::Trait for Runtime {
+	type Signature = AuthoritySignature;
+	type Value = plasm_primitives::mvp::Value;
+	type TimeLock = BlockNumber;
+
+	type Input = plasm_utxo::TransactionInput<Self::Hash>;
+	type Output = plasm_utxo::TransactionOutput<Self::Value, Self::SessionKey>;
+
+	type Transaction = plasm_utxo::Transaction<Self::Input, Self::Output, Self::TimeLock>;
+	type SignedTransaction = plasm_utxo::SignedTransaction<Runtime>;
+
+	type Inserter = plasm_utxo::DefaultInserter<Runtime>;
+	type Remover = plasm_utxo::DefaultRemover<Runtime>;
+	type Finalizer = plasm_utxo::DefaultFinalizer<Runtime>;
+
+	type Event = Event;
+}
+
 construct_runtime!(
 	pub enum Runtime with Log(InternalLog: DigestItem<Hash, AuthorityId, AuthoritySignature>) where
 		Block = Block,
@@ -207,6 +228,7 @@ construct_runtime!(
 		Sudo: sudo,
 		// Used for the module template in `./template.rs`
 		TemplateModule: template::{Module, Call, Storage, Event<T>},
+		PlasmUtxo: plasm_utxo,
 	}
 );
 

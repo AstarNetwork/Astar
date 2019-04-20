@@ -2,8 +2,9 @@ use sr_primitives::traits::{Zero, CheckedAdd, CheckedSub};
 // use Encode, Decode
 use parity_codec::{Encode, Decode};
 use std::ops::{Deref, Div, Add, Sub};
+use serde_derive::{Serialize, Deserialize};
 
-#[derive(Clone, Encode, Decode, Default, PartialEq, Eq)]
+#[derive(Clone, Encode, Decode, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[cfg_attr(feature = "std", derive(Debug))]
 pub struct MVPValue(u64);
 
