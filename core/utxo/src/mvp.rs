@@ -34,6 +34,6 @@ pub struct MVPFinalizer<T: Trait, Tree: MerkleTreeTrait<T::Hash>> (PhantomData<T
 impl<T: Trait, Tree: MerkleTreeTrait<T::Hash>> Finalizer<T> for MVPFinalizer<T, Tree> {
 	fn finalize(authorities: &[<T as consensus::Trait>::SessionKey]) {
 		Self::using_finalize(authorities);
-		Tree::comit();
+		Tree::commit();
 	}
 }
