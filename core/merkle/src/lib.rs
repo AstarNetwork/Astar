@@ -54,7 +54,7 @@ pub struct MerkleProof<H> {
 impl<H> MerkleProof<H>
 	where H: Codec + Member + MaybeSerializeDebug + rstd::hash::Hash + AsRef<[u8]> + AsMut<[u8]> + Copy + Default
 {
-	fn verify<Hashing>(&self) -> H
+	pub fn verify<Hashing>(&self) -> H
 		where Hashing: Hash<Output=H>
 	{
 		self.re_verify::<Hashing>(0, 0, self.proofs.len() - 1)

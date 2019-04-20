@@ -80,7 +80,6 @@ impl<H, Hashing> MerkleTreeTrait<H, Hashing> for MerkleTree<H, Hashing>
 		for i in 0..cnt {
 			let leaf = Self::get_hash(MOCK_MERKLE_TREE_LIMIT << 1 + i);
 			let mut index: u64 = Self::get_index(&h);
-
 			Self::push_index(&Default::default(), index + 1); // increments...
 			Self::push_index(&leaf, index);
 
