@@ -4,8 +4,7 @@
 
 Plasm is a Substrate Runtime Module Library by which a developer can add Plasma functions to his/her own Substrate chain.
 
-__IMPORTANT NOTICE:__
-* __This is an experimental software, does not run in a production yet.__
+__WARNING__: This is a proof-of-concept prototype. This implementation is NOT ready for production use.
 
 ## Table of Contents
 - Introduction
