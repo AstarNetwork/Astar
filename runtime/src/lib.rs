@@ -3,7 +3,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 #![cfg_attr(not(feature = "std"), feature(alloc))]
 // `construct_runtime!` does a lot of recursion and requires us to increase the limit to 256.
-#![recursion_limit="256"]
+#![recursion_limit = "256"]
 
 #[cfg(feature = "std")]
 use serde_derive::{Serialize, Deserialize};
@@ -18,7 +18,7 @@ use runtime_primitives::{
 };
 use client::{
 	block_builder::api::{CheckInherentsResult, InherentData, self as block_builder_api},
-	runtime_api, impl_runtime_apis
+	runtime_api, impl_runtime_apis,
 };
 use version::RuntimeVersion;
 #[cfg(feature = "std")]
@@ -82,6 +82,7 @@ pub mod opaque {
 			None
 		}
 	}
+
 	/// Opaque block header type.
 	pub type Header = generic::Header<BlockNumber, BlakeTwo256, generic::DigestItem<Hash, AuthorityId, AuthoritySignature>>;
 	/// Opaque block type.
@@ -194,6 +195,8 @@ impl template::Trait for Runtime {
 	type Event = Event;
 }
 
+type MerkleTree = plasm_merkle::mock::MerkleTree<Hash, BlakeTwo256>;
+
 /// Used for the utxo Module here.
 impl plasm_utxo::Trait for Runtime {
 	type Signature = AuthoritySignature;
@@ -206,9 +209,9 @@ impl plasm_utxo::Trait for Runtime {
 	type Transaction = plasm_utxo::Transaction<Self::Input, Self::Output, Self::TimeLock>;
 	type SignedTransaction = plasm_utxo::SignedTransaction<Runtime>;
 
-	type Inserter = plasm_utxo::DefaultInserter<Runtime>;
+	type Inserter = plasm_utxo::mvp::Inserter<Runtime, MerkleTree>;
 	type Remover = plasm_utxo::DefaultRemover<Runtime>;
-	type Finalizer = plasm_utxo::DefaultFinalizer<Runtime>;
+	type Finalizer = plasm_utxo::mvp::Finalizer<Runtime, MerkleTree>;
 
 	type Event = Event;
 }

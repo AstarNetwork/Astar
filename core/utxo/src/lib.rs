@@ -28,9 +28,9 @@ pub trait Trait: consensus::Trait {
 	type Transaction: Parameter + TransactionTrait<Self::Input, Self::Output, Self::TimeLock> + Default + Serialize + DeserializeOwned;
 	type SignedTransaction: Parameter + SignedTransactionTrait<Self>;
 
-	type Inserter: Inserter<Self>;
-	type Remover: Remover<Self>;
-	type Finalizer: Finalizer<Self>;
+	type Inserter: InserterTrait<Self>;
+	type Remover: RemoverTrait<Self>;
+	type Finalizer: FinalizerTrait<Self>;
 
 	/// The overarching event type.
 	type Event: From<Event<Self>> + Into<<Self as system::Trait>::Event>;
@@ -38,11 +38,11 @@ pub trait Trait: consensus::Trait {
 
 type CheckResult<T> = std::result::Result<T, &'static str>;
 
-pub trait Inserter<T: Trait> {
+pub trait InserterTrait<T: Trait> {
 	fn insert(tx: &T::Transaction) {
-		Self::using_insert(tx);
+		Self::standart_insert(tx);
 	}
-	fn using_insert(tx: &T::Transaction) {
+	fn standart_insert(tx: &T::Transaction) {
 		// new output is inserted to UTXO.
 		let hash = <T as system::Trait>::Hashing::hash_of(tx);
 		for (i, out) in tx.outputs()
@@ -66,14 +66,14 @@ pub trait Inserter<T: Trait> {
 #[cfg_attr(feature = "std", derive(Debug))]
 pub struct DefaultInserter<T: Trait>(PhantomData<T>);
 
-impl<T: Trait> Inserter<T> for DefaultInserter<T> {}
+impl<T: Trait> InserterTrait<T> for DefaultInserter<T> {}
 
-pub trait Remover<T: Trait> {
+pub trait RemoverTrait<T: Trait> {
 	fn remove(tx: &T::Transaction) {
-		Self::using_remove(tx);
+		Self::standart_remove(tx);
 	}
 
-	fn using_remove(tx: &T::Transaction) {
+	fn standart_remove(tx: &T::Transaction) {
 		for inp in tx.inputs().iter() {
 			for key in inp
 				.output_or_default::<T>()
@@ -102,14 +102,15 @@ pub trait Remover<T: Trait> {
 #[cfg_attr(feature = "std", derive(Debug))]
 pub struct DefaultRemover<T: Trait>(PhantomData<T>);
 
-impl<T: Trait> Remover<T> for DefaultRemover<T> {}
+impl<T: Trait> RemoverTrait<T> for DefaultRemover<T> {}
 
-pub trait Finalizer<T: Trait> {
-	fn finalize(authorities: &[<T as consensus::Trait>::SessionKey]) {
-		Self::using_finalize(authorities);
+pub trait FinalizerTrait<T: Trait> {
+	fn finalize(n: T::BlockNumber) {
+		Self::standart_finalize(n);
 	}
 
-	fn using_finalize(authorities: &[<T as consensus::Trait>::SessionKey]) {
+	fn standart_finalize(n: T::BlockNumber) {
+		let authorities = consensus::Module::<T>::authorities();
 		let leftover = <LeftoverTotal<T>>::take();
 
 		// send leftover to all authorities.
@@ -133,7 +134,7 @@ pub trait Finalizer<T: Trait> {
 #[cfg_attr(feature = "std", derive(Debug))]
 pub struct DefaultFinalizer<T: Trait>(PhantomData<T>);
 
-impl<T: Trait> Finalizer<T> for DefaultFinalizer<T> {}
+impl<T: Trait> FinalizerTrait<T> for DefaultFinalizer<T> {}
 
 pub trait TransactionInputTrait<Hash> {
 	fn new(tx_hash: Hash, out_index: usize) -> Self;
@@ -415,8 +416,8 @@ decl_module! {
 		}
 
 		// Handler called by the system on block finalization
-		pub fn on_finalize() {
-			T::Finalizer::finalize(&consensus::Module::<T>::authorities());
+		pub fn on_finalize(n: T::BlockNumber) {
+			T::Finalizer::finalize(n);
 		}
 	}
 }
@@ -426,6 +427,7 @@ decl_event!(
 	pub enum Event <T> where SignedTransaction = <T as Trait>::SignedTransaction {
 		/// Transaction was executed successfully
 		TransactionExecuted(SignedTransaction),
+
 	}
 );
 

@@ -179,7 +179,7 @@ fn minimum_works() { // TODO fix divided tests.
 		assert_eq!((1 << 59), *leftover_total);
 
 		// on_finalize
-		UTXO::on_finalize();
+		UTXO::on_finalize(1);
 		// get reference of getting authorities leftover and get utxo.
 		for authority in &authorities {
 			// ref utxo

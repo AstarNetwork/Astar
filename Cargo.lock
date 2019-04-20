@@ -2149,6 +2149,7 @@ name = "plasm-runtime"
 version = "0.1.0"
 dependencies = [
  "parity-codec 3.5.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "plasm-merkle 0.1.0",
  "plasm-primitives 0.1.0",
  "plasm-utxo 0.1.0",
  "safe-mix 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
