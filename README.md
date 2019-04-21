@@ -30,15 +30,15 @@ Today, there are many derived Plasmas, like
 - Plasma-Chamber: Cryptoeconomics Lab's opensource project inspired by Prime. 
 - Plasma-Snapps: implemented ZK-S[T|N]ARKs
 
-Plasm has Plasma-abstract data structures by which the user can custormize plagable Plasma solutions. In addtion to that, it has the Rust implementations of Plasma solutions. 
+Plasm has Plasma-abstract data structures by which the user can custormize plaggable Plasma solutions. In addtion to that, it has the Rust implementations of Plasma solutions. 
 
-Substrate developers can import one of Plasm Libraries and make thier own plasma chain depending on their use casse. Plasm consists of 3 (or 4) libraries, Plasm-UTXO, Plasm-Parent and Plasm-Child. Plasm-UTXO has a UTXO like data structure to manage the deposited tokens. 
+Substrate developers can import one of Plasm Libraries and make thier own plasma chain depending on their use case. Plasm consists of 3 (or 4) libraries, Plasm-UTXO, Plasm-Parent and Plasm-Child. Plasm-UTXO has a UTXO like data structure to manage the deposited tokens. 
 
-In same sence, Plasma needs to have all transactions in order to validate and declare a maricious transaction when it is exited to the parent chain. 
+In same sence, Plasma needs to have all transactions in order to validate and detect a maricious transaction when it is exited to the parent chain. 
 
-- Plasm-UTXO: Abstracted UTXO model and concreted UTXO model for each Plasma solution are implemented.
-- Plasm-Parent: Plasm-Parent provides modules to make a parent chain.  
-- Prasm-Child: Plasma-Child provides modules to make a child chain.
+- Plasm-UTXO: implements UTXO model which is abstracted and concreted for each Plasma solution.
+- Plasm-Parent: provides modules to make a parent chain.  
+- Prasm-Child: provides modules to make a child chain.
 
 
 ## Plasm-UTXO
