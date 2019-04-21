@@ -12,7 +12,7 @@ pub fn concat_hash<H, F>(a: &H, b: &H, hash: F) -> H
 		  F: FnOnce(&[u8]) -> H {
 	if *a == Default::default() { return *b; }
 	if *b == Default::default() { return *a; }
-	hash(&a.encode().iter().chain(b.encode().iter()).map(|x| *x).collect::<Vec<_>>())
+	hash(&plasm_primitives::concat_bytes(a, b))
 }
 
 // H: Hash, O: Outpoint(Hashable)

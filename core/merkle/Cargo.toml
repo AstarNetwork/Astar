@@ -53,6 +53,11 @@ git = 'https://github.com/paritytech/substrate.git'
 package = 'sr-io'
 version = '1.0.0'
 
+[dependencies.plasm_primitives]
+default_features = false
+path = '../primitives'
+package = 'plasm-primitives'
+
 [features]
 default = ["std"]
 std = [
@@ -63,6 +68,7 @@ std = [
     'system/std',
     'support/std',
     'runtime-io/std',
-   	'serde_derive',
+    'plasm_primitives/std',
+    'serde_derive',
 	'serde',
 ]
