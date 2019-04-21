@@ -1,5 +1,3 @@
-#![cfg_attr(not(feature = "std"), no_std)]
-
 use super::*;
 // use Encode, Decode
 use plasm_merkle::MerkleTreeTrait;

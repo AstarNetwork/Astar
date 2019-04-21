@@ -1,5 +1,3 @@
-#![cfg_attr(not(feature = "std"), no_std)]
-
 use super::*;
 use rstd::marker::PhantomData;
 use sr_primitives::traits::{Member, MaybeSerializeDebug, Hash};

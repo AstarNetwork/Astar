@@ -1,5 +1,3 @@
-#![cfg_attr(not(feature = "std"), no_std)]
-
 #[cfg(feature = "std")]
 use serde_derive::{Serialize, Deserialize};
 
