@@ -1,6 +1,6 @@
 use support::{decl_module, decl_storage, decl_event, StorageValue, StorageMap, dispatch::Result};
 use system::ensure_signed;
-use sr_primitives::traits::{CheckedAdd, CheckedSub};
+use sr_primitives::traits::{CheckedAdd, CheckedSub, Zero, One};
 
 /// The module's configuration trait.
 pub trait Trait: balances::Trait {
@@ -15,8 +15,8 @@ decl_storage! {
 	trait Store for Module<T: Trait> as TemplateModule {
 		TotalDeposit get(total_deposit) config() : <T as balances::Trait>::Balance;
 		ChildChain get(child_chain): map T::BlockNumber => T::Hash;
-		CurrentBlock get(current_block): T::BlockNumber;
-		Operator get(operator) config() : Vec<T::AccountId>;
+		CurrentBlock get(current_block): T::BlockNumber = T::BlockNumber::zero();
+		Operator get(operator) config() : Vec<T::AccountId> = Default::default();
 	}
 }
 
@@ -28,7 +28,17 @@ decl_module! {
 		fn deposit_event<T>() = default;
 
 		/// submit childchain merkle root to parant chain.
-		pub fn submit(origin) -> Result {
+		pub fn submit(origin, root: T::Hash) -> Result {
+			let origin = ensure_signed(origin)?;
+
+			// validate
+			if !Self::operator().contains(&origin) { return Err("permission error submmit can be only operator."); }
+			let current = Self::current_block();
+			let next = current.checked_add(&T::BlockNumber::one()).ok_or("block number is overflow.")?;
+
+			/// update
+			<ChildChain<T>>::insert(&next, root);
+			<CurrentBlock<T>>::put(next);
 			Ok(())
 		}
 
@@ -36,14 +46,14 @@ decl_module! {
 		pub fn deposit(origin, #[compact] value: <T as balances::Trait>::Balance) -> Result {
 			let depositor = ensure_signed(origin)?;
 
-			/// validate
+			// validate
 			let now_balance = <balances::Module<T>>::free_balance(&depositor);
-			let new_balance = now_balance.checked_add(&value).ok_or("not enough balance.")?;
+			let new_balance = now_balance.checked_sub(&value).ok_or("not enough balance.")?;
 
 			let now_total_deposit = Self::total_deposit();
 			let new_total_deposit = now_total_deposit.checked_add(&value).ok_or("overflow total deposit.")?;
 
-			/// stored
+			// update
 			<balances::FreeBalance<T>>::insert(&depositor, new_balance);
 			<TotalDeposit<T>>::put(value.clone());
 			Self::deposit_event(RawEvent::Deposit(depositor, value));
