@@ -1,3 +1,5 @@
+#![cfg_attr(not(feature = "std"), no_std)]
+
 use super::*;
 // use Encode, Decode
 use plasm_merkle::MerkleTreeTrait;
@@ -8,7 +10,7 @@ pub struct Inserter<T, Tree>(PhantomData<(T, Tree)>);
 
 impl<T: Trait, Tree: MerkleTreeTrait<T::Hash, T::Hashing>> InserterTrait<T> for Inserter<T, Tree> {
 	fn insert(tx: &T::Transaction) {
-		Self::standart_insert(tx);
+		Self::default_insert(tx);
 		let hash = <T as system::Trait>::Hashing::hash_of(tx);
 		for (i, _) in tx.outputs().iter().enumerate() {
 			Tree::push(<T as system::Trait>::Hashing::hash_of(&(hash, i)));
@@ -21,7 +23,7 @@ impl<T: Trait, Tree: MerkleTreeTrait<T::Hash, T::Hashing>> InserterTrait<T> for 
 pub struct Finalizer<T, Tree> (PhantomData<(T, Tree)>);
 
 impl<T: Trait, Tree: MerkleTreeTrait<T::Hash, T::Hashing>> FinalizerTrait<T> for Finalizer<T, Tree> {
-	fn standart_finalize(n: T::BlockNumber) {
+	fn default_finalize(n: T::BlockNumber) {
 		Tree::commit();
 	}
 }

@@ -1,8 +1,9 @@
+#![cfg_attr(not(feature = "std"), no_std)]
+
 use super::*;
 use rstd::marker::PhantomData;
 use sr_primitives::traits::{Member, MaybeSerializeDebug, Hash};
 use parity_codec::Codec;
-use parity_codec::alloc::collections::vec_deque::VecDeque;
 
 // mock merkle tree trie id name. no conflict.
 const MOCK_MERKLE_TREE_TRIE_ID: &'static str = "mock_merkle_tree_trie_id";
@@ -45,20 +46,20 @@ impl<H, Hashing> MerkleTreeTrait<H, Hashing> for MerkleTree<H, Hashing>
 	fn proofs(leaf: &H) -> MerkleProof<H> {
 		let mut index: u64 = Self::get_index(leaf);
 		let ret_index = index;
-		let mut proofs = VecDeque::new();
-		proofs.push_back(leaf.clone());
+		let mut proofs = vec! {leaf.clone()};
 
 		index += MOCK_MERKLE_TREE_LIMIT - 1;
 		while index > 0 {
 			let lr: bool = (index & 1) == 1;
 			index = (index - 1) / 2;
 			match lr {
-				true => proofs.push_back(Self::get_hash(2 * index + 2)),    // left leafs.
-				false => proofs.push_front(Self::get_hash(2 * index + 1)), // right leafs.
+				true => proofs.push(Self::get_hash(2 * index + 2)),    // left leafs.
+				false => proofs = vec! {Self::get_hash(2 * index + 1)}
+					.iter().chain(proofs.iter()).map(|x| *x).collect::<Vec<_>>(), // right leafs.
 			}
 		}
 		MerkleProof {
-			proofs: Vec::from(proofs),
+			proofs: proofs,
 			depth: MOCK_MERKLE_TREE_DEPTH,
 			index: ret_index,
 		}
@@ -80,7 +81,6 @@ impl<H, Hashing> MerkleTreeTrait<H, Hashing> for MerkleTree<H, Hashing>
 		for i in 0..cnt {
 			let leaf = Self::get_hash(MOCK_MERKLE_TREE_LIMIT << 1 + i);
 			let mut index: u64 = Self::get_index(&h);
-
 			Self::push_index(&Default::default(), index + 1); // increments...
 			Self::push_index(&leaf, index);
 

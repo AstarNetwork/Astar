@@ -195,16 +195,17 @@ impl template::Trait for Runtime {
 	type Event = Event;
 }
 
+use plasm_merkle;
 type MerkleTree = plasm_merkle::mock::MerkleTree<Hash, BlakeTwo256>;
 
 /// Used for the utxo Module here.
 impl plasm_utxo::Trait for Runtime {
-	type Signature = AuthoritySignature;
+	type Signature = AccountSignature;
 	type Value = plasm_primitives::mvp::Value;
 	type TimeLock = BlockNumber;
 
 	type Input = plasm_utxo::TransactionInput<Self::Hash>;
-	type Output = plasm_utxo::TransactionOutput<Self::Value, Self::SessionKey>;
+	type Output = plasm_utxo::TransactionOutput<Self::Value, Self::AccountId>;
 
 	type Transaction = plasm_utxo::Transaction<Self::Input, Self::Output, Self::TimeLock>;
 	type SignedTransaction = plasm_utxo::SignedTransaction<Runtime>;

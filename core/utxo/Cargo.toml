@@ -82,10 +82,12 @@ package = 'sr-primitives'
 version = '1.0.0'
 
 [dependencies.plasm_primitives]
+default_features = false
 path = '../primitives'
 package = 'plasm-primitives'
 
 [dependencies.plasm_merkle]
+default_features = false
 path = '../merkle'
 package = 'plasm-merkle'
 
@@ -106,4 +108,6 @@ std = [
     'serde',
     'safe-mix/std',
     'sr_primitives/std',
+    'plasm_primitives/std',
+    'plasm_merkle/std',
 ]

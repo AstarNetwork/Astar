@@ -1522,6 +1522,21 @@ version = "0.3.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
+name = "plasm-merkle"
+version = "0.1.0"
+dependencies = [
+ "parity-codec 3.5.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "serde 1.0.90 (registry+https://github.com/rust-lang/crates.io-index)",
+ "serde_derive 1.0.90 (registry+https://github.com/rust-lang/crates.io-index)",
+ "sr-io 1.0.0 (git+https://github.com/paritytech/substrate.git)",
+ "sr-primitives 1.0.0 (git+https://github.com/paritytech/substrate.git)",
+ "sr-std 1.0.0 (git+https://github.com/paritytech/substrate.git)",
+ "srml-support 1.0.0 (git+https://github.com/paritytech/substrate.git)",
+ "srml-system 1.0.0 (git+https://github.com/paritytech/substrate.git)",
+ "substrate-primitives 1.0.0 (git+https://github.com/paritytech/substrate.git)",
+]
+
+[[package]]
 name = "plasm-primitives"
 version = "0.1.0"
 dependencies = [
@@ -1529,6 +1544,7 @@ dependencies = [
  "serde 1.0.90 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde_derive 1.0.90 (registry+https://github.com/rust-lang/crates.io-index)",
  "sr-primitives 1.0.0 (git+https://github.com/paritytech/substrate.git)",
+ "sr-std 1.0.0 (git+https://github.com/paritytech/substrate.git)",
 ]
 
 [[package]]
@@ -1536,6 +1552,7 @@ name = "plasm-runtime"
 version = "0.1.0"
 dependencies = [
  "parity-codec 3.5.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "plasm-merkle 0.1.0",
  "plasm-primitives 0.1.0",
  "plasm-utxo 0.1.0",
  "safe-mix 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -1573,6 +1590,7 @@ name = "plasm-utxo"
 version = "0.1.0"
 dependencies = [
  "parity-codec 3.5.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "plasm-merkle 0.1.0",
  "plasm-primitives 0.1.0",
  "safe-mix 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde 1.0.90 (registry+https://github.com/rust-lang/crates.io-index)",
