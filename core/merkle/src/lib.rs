@@ -46,7 +46,7 @@ pub struct DirectMerkleDb;
 
 impl<Id: Encode, Key: Encode, O: Codec> MerkleDb<Id, Key, O> for DirectMerkleDb {}
 
-pub trait MerkleProofTrait<H>
+pub trait ProofTrait<H>
 	where H: Codec + Member + MaybeSerializeDebug + rstd::hash::Hash + AsRef<[u8]> + AsMut<[u8]> + Copy + Default {
 	fn root<Hashing>(&self) -> H where Hashing: Hash<Output=H>;
 	fn leaf(&self) -> &H;
