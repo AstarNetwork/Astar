@@ -4,7 +4,8 @@ use sr_primitives::traits::{CheckedAdd, CheckedSub, Zero, One};
 
 /// The module's configuration trait.
 pub trait Trait: balances::Trait {
-	// TODO: Add other types and constants required configure this module.
+	type ExitId;
+	type ExitStatus;
 
 	/// The overarching event type.
 	type Event: From<Event<Self>> + Into<<Self as system::Trait>::Event>;
@@ -17,6 +18,7 @@ decl_storage! {
 		ChildChain get(child_chain): map T::BlockNumber => T::Hash;
 		CurrentBlock get(current_block): T::BlockNumber = T::BlockNumber::zero();
 		Operator get(operator) config() : Vec<T::AccountId> = Default::default();
+		ExitStatus get(exit_stats) : map T::ExitId = T::ExitStatus;
 	}
 }
 
