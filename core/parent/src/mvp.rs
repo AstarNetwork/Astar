@@ -1,5 +1,6 @@
-use support::{decl_module, decl_storage, decl_event, StorageValue, dispatch::Result};
+use support::{decl_module, decl_storage, decl_event, StorageValue, StorageMap, dispatch::Result};
 use system::ensure_signed;
+use sr_primitives::traits::{CheckedAdd, CheckedSub};
 
 /// The module's configuration trait.
 pub trait Trait: balances::Trait {
@@ -12,7 +13,7 @@ pub trait Trait: balances::Trait {
 /// This module's storage items.
 decl_storage! {
 	trait Store for Module<T: Trait> as TemplateModule {
-		TotalDepositBalance get(total_deposit_balance) config() : <T as balances::Trait>::Balance;
+		TotalDeposit get(total_deposit) config() : <T as balances::Trait>::Balance;
 		ChildChain get(child_chain): map T::BlockNumber => T::Hash;
 		CurrentBlock get(current_block): T::BlockNumber;
 		Operator get(operator) config() : Vec<T::AccountId>;
@@ -32,7 +33,20 @@ decl_module! {
 		}
 
 		/// deposit balance parent chain to childchain.
-		pub fn deposit(origin) -> Result {
+		pub fn deposit(origin, #[compact] value: <T as balances::Trait>::Balance) -> Result {
+			let depositor = ensure_signed(origin)?;
+
+			/// validate
+			let now_balance = <balances::Module<T>>::free_balance(&depositor);
+			let new_balance = now_balance.checked_add(&value).ok_or("not enough balance.")?;
+
+			let now_total_deposit = Self::total_deposit();
+			let new_total_deposit = now_total_deposit.checked_add(&value).ok_or("overflow total deposit.")?;
+
+			/// stored
+			<balances::FreeBalance<T>>::insert(&depositor, new_balance);
+			<TotalDeposit<T>>::put(value.clone());
+			Self::deposit_event(RawEvent::Deposit(depositor, value));
 			Ok(())
 		}
 
@@ -55,11 +69,13 @@ decl_module! {
 
 decl_event!(
 	/// An event in this module.
-	pub enum Event<T> where AccountId = <T as system::Trait>::AccountId {
+	pub enum Event<T>
+		where 	AccountId = <T as system::Trait>::AccountId,
+				Balance = <T as balances::Trait>::Balance {
 		/// Submit Events
 		Submit,
 		/// Deposit Events to child operator.
-		Deposit(AccountId),
+		Deposit(AccountId, Balance),
 		// Start Exit Events to child operator
 		ExitStart(u32),
 		/// Challenge Events
