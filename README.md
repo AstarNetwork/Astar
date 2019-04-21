@@ -15,38 +15,46 @@ __WARNING__: This is a proof-of-concept prototype. This implementation is NOT re
     - Plasm-Child
 - How to Install
 
-## Introduction
-Plasm is Staked Technologies' product that enables to 
+## [Introduction](https://github.com/stakedtechnologies/Plasm/tree/sota#introduction)
+Plasm is Staked Technologies' product that enables to import Plasma functions to your Substrate chain.
 
-## Background
-Today, there are many derived Plasmas. For example, 
+## [Background](https://github.com/stakedtechnologies/Plasm/tree/sota#background)
+Today, there are many derived Plasmas, like 
 
-Plasma には複数の種類、派生系が存在する。例えば初めに Vitanik によって提唱された Plasma-MVP, MVP の不正申告者が子チェーンのフルノードを持たなければならない問題を解決した Plasma-Cash その派生系である Plasma-XT, Prime。そして Plasma-Prime を参考に実装された Plasma-Chamber。ZK-S[T|N]ARKSを用いた Plasma-Snapps 等があげられる。
+- Plasma-MVP: Proposed by Vitalik Buterin.
+- Plasma-Cash: Users only need to download the histories of and watch the tokens they want to track.
+- Plasma-XT: Plasma-Cash derivative.
+- Plasma-Prime: Plasma-Cash derivative.
+- Plasma-Chamber: Cryptoeconomics Lab's opensource project inspired by Prime. 
+- Plasma-Snapps: implemented ZK-S[T|N]ARKs
 
-Plasm includes Plasma-Abstract data structures that 
-
-Plasm では複数の Plasma Solution をプラガブルに組み合わせて使用できるような Plasma-Abstract なデータ構造と各々の Plasma ソリューションに対応する Rust on Substrate 実装を提供する。
+Plasm has Plasma-Abstract data structures by which the user can custormize plagable Plasma solutions. In addtion to that, it has the Rust implementation for Plasma solutions. 
 
 Substrate developers can import one of Plasm Libraries and make thier own plasma chain depending on their use casse. Plasm consists of 3 (or 4) libraries, plasm-utxo, plasm-parent and plasm-child. Plasm-UTXO has a UTXO like data structure to manage the deposited tokens. 
 
-Plasma ではトークンを親チェーンに Exit する際の不正申告のためにトークンの取引履歴を保持する必要がある。何故ならばあるトークンが不正に Exit されたことを証明するにはそのトークンを不正 Exitor が保持していないことを示すために正しい取引履歴を示す必要があるからだ。plasm-utxo では抽象化された UTXOs とそれの具象実装が各 Plasma ソリューションについて実装される。
-plasm-parent は Plasma の親チェーンとして動作させるためのモジュールを提供する。
-plasm-child は Plasma の子チェーンとして動作させるためのモジュールを提供する。
+In same sence, Plasma needs to have all transactions in order to validate and declare a maricious transaction when it is exited to the parent chain. 
 
-## Plasm-UTXO
+- Plasm-UTXO: Abstracted UTXO model and concreted UTXO model for each Plasma solution are implemented.
+- Plasm-Parent: Plasm-Parent provides modules to make a parent chain.  
+- Prasm-Child: Plasma-Child provides modules to make a child chain.
+
+
+## [Plasm-UTXO](https://github.com/stakedtechnologies/Plasm/tree/sota#plasm-utxo)
 Plasm-UTXO provides a specification of transactions which is suitable for each Plasma solution. Along with that, it can  
 また、それに伴い UTXO-like なデータ構造全般を網羅的に扱えるような設計をしている。また、Merkle Tree を内包しておりこれについても着脱可能である。
 
-## Plasm-Parent
-Plasm-Parent provides a specification of the parent chain. 子チェーンには親チェーンの各種ソリューションに対応する実装がされており、これらをセットで使うことで親子間の取引を実現することができる。主に各種 Exit Game についてのロジックを実装する。
 
-## Plasm-Child
+## [Plasm-Parent](https://github.com/stakedtechnologies/Plasm/tree/sota#plasm-parent)
+Plasm-Parent provides a specification of the parent chain. Child chain has been implemented coresponding to thhe parent chain's solution. Mainly, Plasm-Parent has the logic of each exit game.
+
+
+## [Plasm-Child](https://github.com/stakedtechnologies/Plasm/tree/sota#plasm-child)
 Plasm-Child provides a specification of the child chain. Parent chain has been implemented corresponding to the child chain's solutions. 
 
 
 By using these solutions together, the user can make the transactions happen between the parent chain and the child chain. The logic of "deposit/exit" has been implemented based on Plasm-UTXO.
 
-# How to install
+# [How to install](https://github.com/stakedtechnologies/Plasm/tree/sota#how-to-install)
 
 ## UTXO
 ```toml
