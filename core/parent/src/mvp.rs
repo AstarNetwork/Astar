@@ -12,8 +12,10 @@ pub trait Trait: balances::Trait {
 /// This module's storage items.
 decl_storage! {
 	trait Store for Module<T: Trait> as TemplateModule {
-		TotalDepositBalance get(total_deposit_balance): <T as balances::Trait>::Balance;
+		TotalDepositBalance get(total_deposit_balance) config() : <T as balances::Trait>::Balance;
 		ChildChain get(child_chain): map T::BlockNumber => T::Hash;
+		CurrentBlock get(current_block): T::BlockNumber;
+		Operator get(operator) config() : Vec<T::AccountId>;
 	}
 }
 
