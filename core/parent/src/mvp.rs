@@ -2,7 +2,7 @@ use support::{decl_module, decl_storage, decl_event, StorageValue, dispatch::Res
 use system::ensure_signed;
 
 /// The module's configuration trait.
-pub trait Trait: system::Trait {
+pub trait Trait: balances::Trait {
 	// TODO: Add other types and constants required configure this module.
 
 	/// The overarching event type.
@@ -12,8 +12,8 @@ pub trait Trait: system::Trait {
 /// This module's storage items.
 decl_storage! {
 	trait Store for Module<T: Trait> as TemplateModule {
-		TotalDepositValue: Balance;
-		Something get(something): Option<u32>;
+		TotalDepositBalance get(total_deposit_balance): <T as balances::Trait>::Balance;
+		ChildChain get(child_chain): map T::BlockNumber => T::Hash;
 	}
 }
 
@@ -24,19 +24,28 @@ decl_module! {
 		// this is needed only if you are using events in your module
 		fn deposit_event<T>() = default;
 
-		// Just a dummy entry point.
-		// function that can be called by the external world as an extrinsics call
-		// takes a parameter of the type `AccountId`, stores it and emits an event
-		pub fn do_something(origin, something: u32) -> Result {
-			// TODO: You only need this if you want to check it was signed.
-			let who = ensure_signed(origin)?;
+		/// submit childchain merkle root to parant chain.
+		pub fn submit(origin) -> Result {
+			Ok(())
+		}
 
-			// TODO: Code to execute when something calls this.
-			// For example: the following line stores the passed in u32 in the storage
-			<Something<T>>::put(something);
+		/// deposit balance parent chain to childchain.
+		pub fn deposit(origin) -> Result {
+			Ok(())
+		}
 
-			// here we are raising the Something event
-			Self::deposit_event(RawEvent::SomethingStored(something, who));
+		/// exit balances start parent chain from childchain.
+		pub fn exit_start(origin) -> Result {
+			Ok(())
+		}
+
+		/// exit finalize parent chain from childchain.
+		pub fn exit_finalize(origin) -> Result {
+			Ok(())
+		}
+
+		/// exit challenge(fraud proofs) parent chain from child chain.
+		pub fn exit_challenge(origin) -> Result {
 			Ok(())
 		}
 	}
@@ -45,10 +54,16 @@ decl_module! {
 decl_event!(
 	/// An event in this module.
 	pub enum Event<T> where AccountId = <T as system::Trait>::AccountId {
-		// Just a dummy event.
-		// Event `Something` is declared with a parameter of the type `u32` and `AccountId`
-		// To emit this event, we call the deposit funtion, from our runtime funtions
-		SomethingStored(u32, AccountId),
+		/// Submit Events
+		Submit,
+		/// Deposit Events to child operator.
+		Deposit(AccountId),
+		// Start Exit Events to child operator
+		ExitStart(u32),
+		/// Challenge Events
+		Challenge(u32),
+		/// Exit Finalize Events
+		ExitFinalize(AccountId),
 	}
 );
 
@@ -57,10 +72,10 @@ decl_event!(
 mod tests {
 	use super::*;
 
-	use runtime_io::with_externalities;
+	use sr_io::with_externalities;
 	use primitives::{H256, Blake2Hasher};
 	use support::{impl_outer_origin, assert_ok};
-	use runtime_primitives::{
+	use sr_primitives::{
 		BuildStorage,
 		traits::{BlakeTwo256, IdentityLookup},
 		testing::{Digest, DigestItem, Header},
@@ -90,26 +105,28 @@ mod tests {
 		type Log = DigestItem;
 	}
 
+	impl balances::Trait for Test {
+		type Balance = u64;
+		type OnFreeBalanceZero = ();
+		type OnNewAccount = ();
+		type Event = ();
+		type TransactionPayment = ();
+		type TransferPayment = ();
+		type DustRemoval = ();
+	}
+
 	impl Trait for Test {
 		type Event = ();
 	}
 
-	type TemplateModule = Module<Test>;
-
 	// This function basically just builds a genesis storage key/value store according to
 	// our desired mockup.
-	fn new_test_ext() -> runtime_io::TestExternalities<Blake2Hasher> {
+	fn new_test_ext() -> sr_io::TestExternalities<Blake2Hasher> {
 		system::GenesisConfig::<Test>::default().build_storage().unwrap().0.into()
 	}
 
 	#[test]
 	fn it_works_for_default_value() {
-		with_externalities(&mut new_test_ext(), || {
-			// Just a dummy test for the dummy funtion `do_something`
-			// calling the `do_something` function with a value 42
-			assert_ok!(TemplateModule::do_something(Origin::signed(1), 42));
-			// asserting that the stored value is equal to what we stored
-			assert_eq!(TemplateModule::something(), Some(42));
-		});
+		with_externalities(&mut new_test_ext(), || {});
 	}
 }
