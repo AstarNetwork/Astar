@@ -95,7 +95,7 @@ impl<H> MerkleProof<H>
 	}
 }
 
-impl<H> MerkleProofTrait<H> for MerkleProof<H>
+impl<H> ProofTrait<H> for MerkleProof<H>
 	where H: Codec + Member + MaybeSerializeDebug + rstd::hash::Hash + AsRef<[u8]> + AsMut<[u8]> + Copy + Default {
 	fn root<Hashing>(&self) -> H
 		where Hashing: Hash<Output=H>
