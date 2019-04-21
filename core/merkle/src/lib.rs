@@ -54,9 +54,9 @@ pub trait ProofTrait<H>
 
 #[derive(Debug)]
 pub struct MerkleProof<H> {
-	proofs: Vec<H>,
-	depth: u8,
-	index: u64,
+	pub proofs: Vec<H>,
+	pub depth: u8,
+	pub index: u64,
 }
 
 impl<H> MerkleProof<H>

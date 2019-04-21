@@ -2124,6 +2124,7 @@ name = "plasm-merkle"
 version = "0.1.0"
 dependencies = [
  "parity-codec 3.5.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "plasm-primitives 0.1.0",
  "serde 1.0.90 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde_derive 1.0.90 (registry+https://github.com/rust-lang/crates.io-index)",
  "sr-io 1.0.0 (git+https://github.com/paritytech/substrate.git)",
