@@ -1,24 +1,39 @@
-use support::{decl_module, decl_storage, decl_event, StorageValue, StorageMap, dispatch::Result};
+use support::{decl_module, decl_storage, decl_event, StorageValue, StorageMap, dispatch::Result, Parameter};
 use system::ensure_signed;
 use sr_primitives::traits::{CheckedAdd, CheckedSub, Zero, One};
 
+// use Encode, Decode
+use parity_codec::{Encode, Decode};
+
 /// The module's configuration trait.
 pub trait Trait: balances::Trait {
-	type ExitId;
-	type ExitStatus;
+	type ExitId: Parameter + Default;
+	type ExitStatus: Parameter + Default;
 
 	/// The overarching event type.
 	type Event: From<Event<Self>> + Into<<Self as system::Trait>::Event>;
+}
+
+pub enum Status {
+	Exiting,
+	Challenged,
+	Finalized,
+}
+
+pub struct ExitStatus<BlockNumber> {
+	expired: BlockNumber,
+	status: Status,
 }
 
 /// This module's storage items.
 decl_storage! {
 	trait Store for Module<T: Trait> as TemplateModule {
 		TotalDeposit get(total_deposit) config() : <T as balances::Trait>::Balance;
-		ChildChain get(child_chain): map T::BlockNumber => T::Hash;
-		CurrentBlock get(current_block): T::BlockNumber = T::BlockNumber::zero();
+		ChildChain get(child_chain) : map T::BlockNumber => T::Hash;
+		CurrentBlock get(current_block) : T::BlockNumber = T::BlockNumber::zero();
 		Operator get(operator) config() : Vec<T::AccountId> = Default::default();
-		ExitStatus get(exit_stats) : map T::ExitId = T::ExitStatus;
+		ExitStatusStorage get(exit_stats_storage) : map T::ExitId => T::ExitStatus;
+		ExitNonce get(exit_nonce) : u64;
 	}
 }
 
@@ -63,7 +78,9 @@ decl_module! {
 		}
 
 		/// exit balances start parent chain from childchain.
-		pub fn exit_start(origin) -> Result {
+		pub fn exit_start(origin, blk_num: T::BlockNumber, index: u64,
+			#[compact] value: <T as balances::Trait>::Balance, proofs: Vec<T::Hash>) -> Result {
+			// よーくかんがえりょう
 			Ok(())
 		}
 
@@ -144,10 +161,10 @@ mod tests {
 		type TransferPayment = ();
 		type DustRemoval = ();
 	}
-
-	impl Trait for Test {
-		type Event = ();
-	}
+//
+//	impl Trait for Test {
+//		type Event = ();
+//	}
 
 	// This function basically just builds a genesis storage key/value store according to
 	// our desired mockup.
