@@ -176,8 +176,6 @@ impl<T: Trait> FinalizerTrait<T> for Finalizer<T>
 	}
 }
 
-const EXIT_WATING_MOMENT: u64 = 24 * 60 * 60 * 1000;
-
 /// This module's storage items.
 decl_storage! {
 	trait Store for Module < T: Trait > as Parent {
@@ -254,11 +252,12 @@ decl_module! {
 			// owner check
 			T::ExitorHasChcker::check(&exitor, &utxo)?;
 
+			let now =  <timestamp::Module <T>>::get();
 			let exit_status = ExitStatus {
 				blk_num: blk_num,
 				utxo: utxo,
-				started: <timestamp::Module <T>>::now(),
-				expired: <timestamp::Module <T>>::now() + <T as timestamp::Trait>::Moment::sa(EXIT_WATING_MOMENT),
+				started: now.clone(),
+				expired: now + Self::exit_waiting_period(),
 				state: ExitState::Exiting,
 				_phantom: PhantomData::<(T::Hash, T::ChildValue, T::AccountId)>,
 			};
@@ -269,6 +268,7 @@ decl_module! {
 			<balances::FreeBalance<T>>::insert(&exitor, new_balance); // exitor decrease fee.
 			<TotalDeposit<T>>::put(new_total_deposit); // total increase fee.
 			<ExitStatusStorage<T>>::insert( &exit_id, exit_status); //exit status join!
+			println!("deposit exit_id {:?}", exit_id);
 			Self::deposit_event(RawEvent::ExitStart(exitor, exit_id));
 
 			Ok(())
@@ -395,6 +395,11 @@ mod tests {
 	type AccountId = u64;
 	type BlockNumber = u64;
 
+
+	#[derive(Clone, PartialEq, Eq, Encode, Decode)]
+	#[cfg_attr(feature = "std", derive(Debug))]
+	pub struct Evented(H256);
+
 	impl system::Trait for Test {
 		type Origin = Origin;
 		type Index = u64;
@@ -405,7 +410,7 @@ mod tests {
 		type AccountId = AccountId;
 		type Lookup = IdentityLookup<AccountId>;
 		type Header = Header;
-		type Event = ();
+		type Event = Evented;
 		type Log = DigestItem;
 	}
 
@@ -413,7 +418,7 @@ mod tests {
 		type Balance = u64;
 		type OnFreeBalanceZero = ();
 		type OnNewAccount = ();
-		type Event = ();
+		type Event = Evented;
 		type TransactionPayment = ();
 		type TransferPayment = ();
 		type DustRemoval = ();
@@ -440,8 +445,39 @@ mod tests {
 		type Finalizer = Finalizer<Test>;
 
 		/// The overarching event type.
-		type Event = ();
+		type Event = Evented;
 	}
+
+	//	Submit(Hash),
+//	/// Deposit Events to child operator.
+//	Deposit(AccountId, Balance),
+//	// Start Exit Events to child operator
+//	ExitStart(AccountId, Hash),
+//	/// Challenge Events
+//	Challenged(Hash),
+//	/// Exit Finalize Events
+//	ExitFinalize(Hash),
+	impl From<system::Event> for Evented {
+		fn from(e: system::Event) -> Evented {
+			Evented(H256::zero())
+		}
+	}
+
+	impl From<balances::Event<Test>> for Evented {
+		fn from(e: balances::Event<Test>) -> Evented {
+			Evented(H256::zero())
+		}
+	}
+
+	impl From<Event<Test>> for Evented {
+		fn from(e: Event<Test>) -> Evented {
+			match e {
+				RawEvent::ExitStart(_, hash) => Evented(hash),
+				_ => Evented(H256::zero()),
+			}
+		}
+	}
+
 
 	type Parent = Module<Test>;
 
@@ -565,7 +601,12 @@ mod tests {
 
 			// success exit started after submit.
 			assert_eq!(Ok(()), Parent::exit_start(Origin::signed(1), 2, proof.depth() as u32, proof.index(), proof.proofs().to_vec(), utxo_1.encode()));
-			let exit_id: H256 = H256::random(); // TODO get valid exit_id
+			println!("{:?}", <system::Module<Test>>::events());
+			let exit_id = <system::Module<Test>>::events()
+				.iter()
+				.map(|e| &e.event)
+				.filter(|e| e.0 != H256::zero())
+				.collect::<Vec<_>>()[0].0;
 			let exit_status = Parent::exit_status_storage(&exit_id).unwrap();
 			exit_status_test(&exit_status, 2, &utxo_1, ExitState::Exiting);
 			assert_eq!(98, <balances::Module<Test>>::free_balance(1)); // 100 - 1(deposit) - 1(fee)
@@ -575,10 +616,10 @@ mod tests {
 			assert_ne!(Ok(()), Parent::exit_finalize(Origin::signed(1), exit_id));
 
 			// 1s wait.
-			thread::sleep(Duration::new(1, 0));
+			<timestamp::Module<Test>>::set_timestamp(1001);
 
 			// success finalized.
-			assert_ne!(Ok(()), Parent::exit_finalize(Origin::signed(1), exit_id));
+			assert_eq!(Ok(()), Parent::exit_finalize(Origin::signed(1), exit_id));
 			let exit_status = Parent::exit_status_storage(&exit_id).unwrap();
 			exit_status_test(&exit_status, 2, &utxo_1, ExitState::Finalized);
 			assert_eq!(100, <balances::Module<Test>>::free_balance(1)); // 100 - 1(exit) - 1(fee) + 1(exit) + 1(return fee)
