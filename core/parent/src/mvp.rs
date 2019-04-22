@@ -268,7 +268,6 @@ decl_module! {
 			<balances::FreeBalance<T>>::insert(&exitor, new_balance); // exitor decrease fee.
 			<TotalDeposit<T>>::put(new_total_deposit); // total increase fee.
 			<ExitStatusStorage<T>>::insert( &exit_id, exit_status); //exit status join!
-			println!("deposit exit_id {:?}", exit_id);
 			Self::deposit_event(RawEvent::ExitStart(exitor, exit_id));
 
 			Ok(())
@@ -601,7 +600,7 @@ mod tests {
 
 			// success exit started after submit.
 			assert_eq!(Ok(()), Parent::exit_start(Origin::signed(1), 2, proof.depth() as u32, proof.index(), proof.proofs().to_vec(), utxo_1.encode()));
-			println!("{:?}", <system::Module<Test>>::events());
+
 			let exit_id = <system::Module<Test>>::events()
 				.iter()
 				.map(|e| &e.event)
