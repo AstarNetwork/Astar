@@ -76,5 +76,8 @@ version = '0.1.0'
 ## Child
 (Child will be wrapping UTXO)Comming soon...
 
+## Example Trait
+Please see [here](https://github.com/stakedtechnologies/Plasm/blob/master/runtime/src/lib.rs).
+
 * * *
 Plasm is licensed under the Apache License, Version2.0 by Staked Technologies Inc.
