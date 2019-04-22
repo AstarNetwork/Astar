@@ -15,40 +15,28 @@ git = 'https://github.com/paritytech/substrate.git'
 package = 'substrate-primitives'
 version = '1.0.0'
 
+[dependencies.sr_primitives]
+default_features = false
+git = 'https://github.com/paritytech/substrate.git'
+package = 'sr-primitives'
+version = '1.0.0'
+
+[dependencies.sr-io]
+default_features = false
+git = 'https://github.com/paritytech/substrate.git'
+package = 'sr-io'
+version = '1.0.0'
+
 [dependencies.rstd]
 default_features = false
 git = 'https://github.com/paritytech/substrate.git'
 package = 'sr-std'
 version = '1.0.0'
 
-[dependencies.runtime-io]
+[dependencies.balances]
 default_features = false
 git = 'https://github.com/paritytech/substrate.git'
-package = 'sr-io'
-version = '1.0.0'
-
-[dependencies.runtime-primitives]
-default_features = false
-git = 'https://github.com/paritytech/substrate.git'
-package = 'sr-primitives'
-version = '1.0.0'
-
-[dependencies.safe-mix]
-default-features = false
-version = '1.0'
-
-[dependencies.serde]
-optional = true
-version = '1.0'
-
-[dependencies.serde_derive]
-optional = true
-version = '1.0'
-
-[dependencies.sudo]
-default_features = false
-git = 'https://github.com/paritytech/substrate.git'
-package = 'srml-sudo'
+package = 'srml-balances'
 version = '1.0.0'
 
 [dependencies.support]
@@ -69,25 +57,39 @@ git = 'https://github.com/paritytech/substrate.git'
 package = 'srml-timestamp'
 version = '1.0.0'
 
-[dependencies.version]
+[dependencies.serde]
+optional = true
+version = '1.0'
+
+[dependencies.serde_derive]
+optional = true
+version = '1.0'
+
+[dependencies.plasm_merkle]
 default_features = false
-git = 'https://github.com/paritytech/substrate.git'
-package = 'sr-version'
-version = '1.0.0'
+path = '../merkle'
+package = 'plasm-merkle'
+
+[dependencies.plasm_utxo]
+default_features = false
+path = '../utxo'
+package = 'plasm-utxo'
+
 
 [features]
 default = ["std"]
 std = [
     'parity-codec/std',
     'primitives/std',
+    'sr_primitives/std',
+    'sr-io/std',
     'rstd/std',
-    'runtime-io/std',
+    'balances/std',
     'support/std',
     'system/std',
     'timestamp/std',
-    'sudo/std',
-    'version/std',
-    'serde_derive',
-    'serde',
-    'safe-mix/std',
+    'plasm_merkle/std',
+    'plasm_utxo/std',
+   	'serde_derive',
+	'serde/std',
 ]

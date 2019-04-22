@@ -12,7 +12,7 @@ use std::clone::Clone;
 
 // plasm pritmitives uses plasm_primitives::mvp::Value
 use plasm_primitives;
-use plasm_merkle::MerkleTreeTrait;
+use plasm_merkle::{MerkleTreeTrait, ProofTrait};
 
 impl_outer_origin! {
 	pub enum Origin for Test {}
@@ -183,7 +183,7 @@ fn mvp_minimum_works() {
 
 		// proofs by ref utxo.
 		let proofs = MerkleTree::proofs(&BlakeTwo256::hash_of(&ref_utxo.as_ref().unwrap()[0]));
-		assert_eq!(new_root_hash, proofs.verify::<BlakeTwo256>());
+		assert_eq!(new_root_hash, proofs.root::<BlakeTwo256>());
 	});
 }
 

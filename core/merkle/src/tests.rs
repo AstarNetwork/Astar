@@ -89,7 +89,8 @@ fn merkle_test<Tree, H, Hashing, F>(rnd: F)
 		for j in 0..(i + 1) {
 			let proofs = Tree::proofs(&hashes[j]);
 			println!("{:?}", proofs);
-			assert_eq!(Tree::root(), proofs.verify::<Hashing>())
+			assert_eq!(&hashes[j], Tree::proofs(&hashes[j]).leaf());
+			assert_eq!(Tree::root(), proofs.root::<Hashing>())
 		}
 	}
 
@@ -99,8 +100,9 @@ fn merkle_test<Tree, H, Hashing, F>(rnd: F)
 	}
 	Tree::commit();
 	for i in 0..10 {
-		assert_eq!(Tree::root(), Tree::proofs(&hashes[i]).verify::<Hashing>());
-		assert_eq!(Tree::root(), Tree::proofs(&new_hashes[i]).verify::<Hashing>());
+		assert_eq!(&hashes[i], Tree::proofs(&hashes[i]).leaf());
+		assert_eq!(Tree::root(), Tree::proofs(&hashes[i]).root::<Hashing>());
+		assert_eq!(Tree::root(), Tree::proofs(&new_hashes[i]).root::<Hashing>());
 	}
 }
 

@@ -1,9 +1,7 @@
-#![cfg_attr(not(feature = "std"), no_std)]
-
 #[cfg(feature = "std")]
 use serde_derive::{Serialize, Deserialize};
 
-use sr_primitives::traits::{Zero, CheckedAdd, CheckedSub};
+use sr_primitives::traits::{Zero, CheckedAdd, CheckedSub, As};
 // use Encode, Decode
 use parity_codec::{Encode, Decode};
 use rstd::ops::{Deref, Div, Add, Sub};
@@ -67,6 +65,28 @@ impl CheckedSub for Value {
 	}
 }
 
+impl As<u64> for Value {
+	/// Convert forward (ala `Into::into`).
+	fn as_(self) -> u64 {
+		*self
+	}
+	/// Convert backward (ala `From::from`).
+	fn sa(a: u64) -> Self {
+		Value(a)
+	}
+}
+
+impl As<usize> for Value {
+	/// Convert forward (ala `Into::into`).
+	fn as_(self) -> usize {
+		*self as usize
+	}
+	/// Convert backward (ala `From::from`).
+	fn sa(a: usize) -> Self {
+		Value(a as u64)
+	}
+}
+
 impl Deref for Value {
 	type Target = u64;
 
@@ -113,5 +133,17 @@ mod tests {
 	#[test]
 	fn mvp_value_zero() {
 		assert_eq!(0, *Value::zero());
+	}
+
+	#[test]
+	fn mvp_value_as() {
+		assert_eq!(10 as u64, Value(10).as_());
+		assert_eq!(10 as usize, Value(10).as_());
+	}
+
+	#[test]
+	fn mvp_value_sa() {
+		assert_eq!(Value(10), Value::sa(10 as u64));
+		assert_eq!(Value(10), Value::sa(10 as usize));
 	}
 }
