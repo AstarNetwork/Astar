@@ -217,6 +217,27 @@ impl plasm_utxo::Trait for Runtime {
 	type Event = Event;
 }
 
+pub use plasm_parent::mvp as parent_mvp;
+
+impl plasm_parent::Trait for Runtime {
+	type ChildValue = plasm_primitives::mvp::Value;
+	type Utxo = parent_mvp::Utxo<Self::Hash, Self::ChildValue, Self::AccountId, Self::BlockNumber>;
+	type Proof = plasm_merkle::MerkleProof<Self::Hash>;
+
+	type ExitStatus = parent_mvp::ExitStatus<Self::Hash, Self::ChildValue, Self::AccountId, Self::BlockNumber, Self::Utxo, Self::Moment, plasm_parent::ExitState>;
+	type ChallengeStatus = parent_mvp::ChallengeStatus<Self::Hash, Self::ChildValue, Self::AccountId, Self::BlockNumber, Self::Utxo>;
+
+	type FraudProof = parent_mvp::FraudProof<Runtime>;
+	// How to Fraud proof. to utxo from using utxo.
+	type ExitorHasChcker = parent_mvp::ExitorHasChcker<Runtime>;
+	type ExistProofs = parent_mvp::ExistProofs<Runtime>;
+	type Exchanger = parent_mvp::Exchanger<Self::Balance, Self::ChildValue>;
+	type Finalizer = parent_mvp::Finalizer<Runtime>;
+
+	/// The overarching event type.
+	type Event = Event;
+}
+
 construct_runtime!(
 	pub enum Runtime with Log(InternalLog: DigestItem<Hash, AuthorityId, AuthoritySignature>) where
 		Block = Block,
@@ -233,6 +254,7 @@ construct_runtime!(
 		// Used for the module template in `./template.rs`
 		TemplateModule: template::{Module, Call, Storage, Event<T>},
 		PlasmUtxo: plasm_utxo,
+		PlasmParent: parent_mvp,
 	}
 );
 

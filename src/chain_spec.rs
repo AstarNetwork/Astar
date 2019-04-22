@@ -1,7 +1,7 @@
 use primitives::{ed25519, sr25519, Pair};
 use plasm_runtime::{
 	AccountId, GenesisConfig, ConsensusConfig, TimestampConfig, BalancesConfig,
-	SudoConfig, IndicesConfig, PlasmUtxoConfig,
+	SudoConfig, IndicesConfig, PlasmUtxoConfig, PlasmParentConfig,
 };
 use substrate_service;
 
@@ -113,10 +113,16 @@ fn testnet_genesis(initial_authorities: Vec<AuthorityId>, endowed_accounts: Vec<
 			vesting: vec![],
 		}),
 		sudo: Some(SudoConfig {
-			key: root_key,
+			key: root_key.clone(),
 		}),
 		plasm_utxo: Some(PlasmUtxoConfig {
 			genesis_tx: endowed_accounts.iter().cloned().map(|k| (plasm_primitives::mvp::Value::new(1 << 60), k)).collect(),
+		}),
+		parent_mvp: Some(PlasmParentConfig {
+			total_deposit: 0,
+			operator: vec! {root_key.clone()},
+			fee: 1,
+			exit_waiting_period: 30 * 1000,
 		}),
 	}
 }

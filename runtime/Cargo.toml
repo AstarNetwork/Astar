@@ -129,6 +129,11 @@ git = 'https://github.com/paritytech/substrate.git'
 package = 'sr-version'
 version = '1.0.0'
 
+[dependencies.plasm_parent]
+default_features = false
+path = '../core/parent'
+package = 'plasm-parent'
+
 [dependencies.plasm_utxo]
 default_features = false
 path = '../core/utxo'
@@ -173,4 +178,5 @@ std = [
     'plasm_primitives/std',
     'plasm_merkle/std',
     'plasm_utxo/std',
+    'plasm_parent/std',
 ]
