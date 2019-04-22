@@ -60,7 +60,7 @@ pub trait Trait: balances::Trait + timestamp::Trait {
 	type ExitStatus: Parameter + Default + ExitStatusTrait<Self::BlockNumber, Self::Utxo, Self::Moment, ExitState>;
 	type ChallengeStatus: Parameter + Default + ChallengeStatusTrait<Self::BlockNumber, Self::Utxo>;
 
-	type FraudProof: FraudProofTrait<Self, Self::ExitStatus, Self::ChallengeStatus>;
+	type FraudProof: FraudProofTrait<Self>;
 	// How to Fraud proof. to utxo from using utxo.
 	type ExitorHasChcker: ExitorHasChckerTrait<Self>;
 	type ExistProofs: ExistProofsTrait<Self>;
@@ -106,8 +106,10 @@ pub trait UtxoTrait<H, V, K>
 
 /// Used UTXO by Exit = target, it challenged (fraud proof) from another UTXO.
 /// E is ExitStatus, C is ChllengeStatus or proofed exitsting utxo.
-pub trait FraudProofTrait<T: Trait, E, C> {
-	fn verify(target: &E, challenge: &C) -> Result;
+pub trait FraudProofTrait<T: Trait> {
+	fn verify<E, C>(target: &E, challenge: &C) -> Result
+		where E: ExitStatusTrait<T::BlockNumber, T::Utxo, T::Moment, ExitState>,
+			  C: ChallengeStatusTrait<T::BlockNumber, T::Utxo>;
 }
 
 /// Check exitor has UTXO.
@@ -131,5 +133,4 @@ pub trait ExchangerTrait<P, C> {
 /// T: Trait, E: ExitStatus
 pub trait FinalizerTrait<T: Trait> {
 	fn validate(e: &T::ExitStatus) -> Result;
-	fn update(e: &T::ExitStatus);
 }
