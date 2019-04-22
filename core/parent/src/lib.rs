@@ -51,6 +51,11 @@ impl Decode for ExitState {
 	}
 }
 
+impl Default for ExitState {
+	fn default() -> Self { ExitState::Exiting }
+}
+
+
 /// The module's configuration trait.
 pub trait Trait: balances::Trait + timestamp::Trait {
 	type ChildValue: Parameter + Default + As<u64>;
@@ -58,7 +63,7 @@ pub trait Trait: balances::Trait + timestamp::Trait {
 	type Proof: ProofTrait<Self::Hash>;
 
 	type ExitStatus: Parameter + Default + ExitStatusTrait<Self::BlockNumber, Self::Utxo, Self::Moment, ExitState>;
-	type ChallengeStatus: Parameter + Default + ChallengeStatusTrait<Self::BlockNumber, Self::Utxo>;
+	type ChallengeStatus: Default + ChallengeStatusTrait<Self::BlockNumber, Self::Utxo>;
 
 	type FraudProof: FraudProofTrait<Self>;
 	// How to Fraud proof. to utxo from using utxo.
@@ -114,7 +119,7 @@ pub trait FraudProofTrait<T: Trait> {
 
 /// Check exitor has UTXO.
 pub trait ExitorHasChckerTrait<T: Trait> {
-	fn check(exitor: &T::AccountId, utxo: &T::Utxo) -> Result;
+	fn check(exitor: &T::AccountId, utxo: &T::Utxo) -> Result { Ok(()) }
 }
 
 /// ある UTXO の存在証明が正しいか否かを返す。

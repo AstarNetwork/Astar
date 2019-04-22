@@ -11,7 +11,6 @@ use parity_codec::{Encode, Decode, Codec};
 use rstd::ops::{Div, Mul};
 use rstd::prelude::*;
 use rstd::marker::PhantomData;
-use rstd::mem;
 
 /// plasm
 use plasm_merkle::{ProofTrait, MerkleProof};
@@ -76,18 +75,20 @@ impl<H, V, K, B, U, M> ExitStatusTrait<B, U, M, ExitState> for ExitStatus<H, V, 
 	fn set_state(&mut self, s: ExitState) { self.state = s; }
 }
 
-pub struct ChallengeStatus<H, K, V, B, U> {
+#[derive(Clone, Default, PartialEq, Eq)]
+#[cfg_attr(feature = "std", derive(Debug))]
+pub struct ChallengeStatus<H, V, K, B, U> {
 	pub blk_num: B,
 	pub utxo: U,
-	_phantom: PhantomData<(H, K, V)>,
+	_phantom: PhantomData<(H, V, K)>,
 }
 
 /// Implment ChallengeStatus
-impl<H, K, V, B, U> ChallengeStatusTrait<B, U> for ChallengeStatus<H, K, V, B, U>
+impl<H, V, K, B, U> ChallengeStatusTrait<B, U> for ChallengeStatus<H, V, K, B, U>
 	where H: Codec + Member + MaybeSerializeDebug + rstd::hash::Hash + AsRef<[u8]> + AsMut<[u8]> + Copy + Default,
 		  B: Parameter + Member + SimpleArithmetic + Default + Bounded + Copy
 		  + rstd::hash::Hash,
-		  U: Parameter + Default + UtxoTrait<H, K, V> {
+		  U: Parameter + Default + UtxoTrait<H, V, K> {
 	fn blk_num(&self) -> &B { &self.blk_num }
 	fn utxo(&self) -> &U { &self.utxo }
 }
@@ -385,15 +386,18 @@ mod tests {
 	#[derive(Clone, Eq, PartialEq)]
 	pub struct Test;
 
+	type AccountId = u64;
+	type BlockNumber = u64;
+
 	impl system::Trait for Test {
 		type Origin = Origin;
 		type Index = u64;
-		type BlockNumber = u64;
+		type BlockNumber = BlockNumber;
 		type Hash = H256;
 		type Hashing = BlakeTwo256;
 		type Digest = Digest;
-		type AccountId = u64;
-		type Lookup = IdentityLookup<Self::AccountId>;
+		type AccountId = AccountId;
+		type Lookup = IdentityLookup<AccountId>;
 		type Header = Header;
 		type Event = ();
 		type Log = DigestItem;
@@ -408,15 +412,52 @@ mod tests {
 		type TransferPayment = ();
 		type DustRemoval = ();
 	}
-//
-//	impl Trait for Test {
-//		type Event = ();
-//	}
+
+	impl timestamp::Trait for Test {
+		type Moment = u64;
+		type OnTimestampSet = ();
+	}
+
+	impl Trait for Test {
+		type ChildValue = u64;
+		type Utxo = Utxo<Self::Hash, Self::ChildValue, u64, u64>;
+		type Proof = MerkleProof<Self::Hash>;
+
+		type ExitStatus = ExitStatus<Self::Hash, Self::ChildValue, AccountId, BlockNumber, Self::Utxo, Self::Moment, ExitState>;
+		type ChallengeStatus = ChallengeStatus<Self::Hash, Self::ChildValue, AccountId, BlockNumber, Self::Utxo>;
+
+		type FraudProof = FraudProof<Test>;
+		// How to Fraud proof. to utxo from using utxo.
+		type ExitorHasChcker = ExitorHasChcker<Test>;
+		type ExistProofs = ExistProofs<Test>;
+		type Exchanger = Exchanger<Self::Balance, Self::ChildValue>;
+		type Finalizer = Finalizer<Test>;
+
+		/// The overarching event type.
+		type Event = ();
+	}
 
 	// This function basically just builds a genesis storage key/value store according to
-// our desired mockup.
+	// our desired mockup.
 	fn new_test_ext() -> sr_io::TestExternalities<Blake2Hasher> {
-		system::GenesisConfig::<Test>::default().build_storage().unwrap().0.into()
+		let mut t = system::GenesisConfig::<Test>::default().build_storage().unwrap().0;
+		t.extend(
+			GenesisConfig::<Test> {
+				total_deposit: 1 << 60,
+				operator: vec!{0},
+				fee: (1 << 10),
+			}.build_storage().unwrap().0
+		);
+		t.extend(balances::GenesisConfig::<Test>{
+			balances: vec![(0, (1<<60)), (1, (1<<20)), (2, (1<<20))],
+			transaction_base_fee: 0,
+			transaction_byte_fee: 0,
+			transfer_fee: 0,
+			creation_fee: 0,
+			existential_deposit: 0,
+			vesting: vec![],
+		}.build_storage().unwrap().0);
+		t.into()
 	}
 
 	#[test]
