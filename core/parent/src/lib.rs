@@ -65,7 +65,7 @@ pub trait Trait: balances::Trait + timestamp::Trait {
 	type ExitorHasChcker: ExitorHasChckerTrait<Self>;
 	type ExistProofs: ExistProofsTrait<Self>;
 	type Exchanger: ExchangerTrait<Self::Balance, Self::ChildValue>;
-	type FinalizeChecker: FinalizeCheckerTrait<Self, Self::ExitStatus>;
+	type Finalizer: FinalizerTrait<Self>;
 
 	/// The overarching event type.
 	type Event: From<mvp::Event<Self>> + Into<<Self as system::Trait>::Event>;
@@ -80,6 +80,7 @@ pub trait ExitStatusTrait<B, U, M, S> {
 	fn started(&self) -> &M;
 	fn expired(&self) -> &M;
 	fn state(&self) -> &S;
+	fn set_state(&mut self, s: S);
 }
 
 /// ChallengeStatusTrait
@@ -128,6 +129,7 @@ pub trait ExchangerTrait<P, C> {
 
 /// Finalize Check
 /// T: Trait, E: ExitStatus
-pub trait FinalizeCheckerTrait<T: Trait, E> {
-	fn check(e: &E) -> Result;
+pub trait FinalizerTrait<T: Trait> {
+	fn validate(e: &T::ExitStatus) -> Result;
+	fn update(e: &T::ExitStatus);
 }

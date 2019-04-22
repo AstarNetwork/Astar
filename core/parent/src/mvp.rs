@@ -73,6 +73,7 @@ impl<H, V, K, B, U, M> ExitStatusTrait<B, U, M, ExitState> for ExitStatus<H, V, 
 	fn started(&self) -> &M { &self.started }
 	fn expired(&self) -> &M { &self.expired }
 	fn state(&self) -> &ExitState { &self.state }
+	fn set_state(&mut self, s: ExitState) { self.state = s; }
 }
 
 pub struct ChallengeStatus<H, K, V, B, U> {
@@ -156,13 +157,13 @@ impl<P, C> ExchangerTrait<P, C> for Exchanger<P, C>
 	}
 }
 
-pub struct FinalizeChecker<T, E>(PhantomData<(T, E)>);
+pub struct Finalizer<T>(PhantomData<T>);
 
-impl<T, E> FinalizeCheckerTrait<T, E> for FinalizeChecker<T, E>
+impl<T: Trait> FinalizerTrait<T> for Finalizer<T>
 	where T: Trait,
 		  E: ExitStatusTrait<T::BlockNumber, T::Utxo, T::Moment, ExitState>,
 {
-	fn check(e: &E) -> Result {
+	fn validate(e: &T::ExitStatus) -> Result {
 		match e.state() {
 			ExitState::Exiting => {
 				if <timestamp::Module<T>>::now() > *e.expired() {
@@ -174,6 +175,12 @@ impl<T, E> FinalizeCheckerTrait<T, E> for FinalizeChecker<T, E>
 			ExitState::Finalized => return Err("it is finalized exit yet."),
 			_ => Err("unexpected state error."),
 		}
+	}
+
+	fn update(e: &T::ExitStatus) -> Result {
+		let p = T::Exchanger::exchange(e.utxo().value());
+		let total = <TotalDeposit<T>>::get();
+		let new_total = total.checked_sub(p).is_ok("deposits value error.")?;
 	}
 }
 
@@ -219,15 +226,15 @@ decl_module! {
 			let depositor = ensure_signed(origin) ?;
 
 			// validate
-			let now_balance = < balances::Module < T > >::free_balance( & depositor);
+			let now_balance = <balances::Module<T>>::free_balance(&depositor);
 			let new_balance = now_balance.checked_sub( & value).ok_or("not enough balance.") ?;
 
 			let now_total_deposit = Self::total_deposit();
 			let new_total_deposit = now_total_deposit.checked_add(& value).ok_or("overflow total deposit.") ?;
 
 			// update
-			< balances::FreeBalance < T > >::insert( & depositor, new_balance);
-			< TotalDeposit <T > >::put(value.clone());
+			<balances::FreeBalance<T>>::insert(&depositor, new_balance);
+			<TotalDeposit<T>>::put(new_total_deposit);
 			Self::deposit_event(RawEvent::Deposit(depositor, value));
 			Ok(())
 		}
@@ -238,9 +245,12 @@ decl_module! {
 
 			// validate
 			// fee check
-			let now_balance = <balances::Module<T>>::free_balance(&exitor);
 			let fee = Self::fee();
-			now_balance.checked_sub( &fee).ok_or("not enough fee.") ?;
+			let now_balance = <balances::Module<T>>::free_balance(&exitor);
+			let new_balance = now_balance.checked_sub(&fee).ok_or("not enough fee.") ?;
+
+			let now_total_deposit = Self::total_deposit();
+			let new_total_deposit = now_total_deposit.checked_add(&fee).ok_or("overflow total deposit.") ?;
 
 			// exist check
 			let utxo = T::Utxo::decode( &mut &utxo[..]).ok_or("undecodec utxo binary.")?;
@@ -263,21 +273,78 @@ decl_module! {
 			let exit_status = T::ExitStatus::decode(&mut &exit_status.encode()[..]).unwrap(); // TODO better how to.
 
 			// update
+			<balances::FreeBalance<T>>::insert(&depositor, new_balance);
+			<TotalDeposit<T>>::put(new_total_deposit);
 			<ExitStatusStorage<T>>::insert( &exit_id, exit_status);
+
 			Self::deposit_event(RawEvent::ExitStart(exitor, exit_id));
 
 			Ok(())
 		}
 
 		/// exit finalize parent chain from childchain.
-		pub fn exit_finalize(origin) -> Result {
-			let exitor = ensure_signed(origin);
+		pub fn exit_finalize(origin, exitId: T::Hash) -> Result {
+			ensure_signed(origin)?;
 
+			// validate
+			let exit_status = <ExitStatusStorage<T>>::get(&exit_id).is_ok("invalid exit id.")?;
+			// exit status validate
+			T::FinalizeChecker::check(exit_status)?;
+
+			// total deposit validate
+			let p = T::Exchanger::exchange(e.utxo().value());
+			let now_total = <TotalDeposit<T>>::get();
+			let new_total = total.checked_sub(&p).is_ok("total deposit error.")?;
+
+			let owner = exit_status.utxo().owners()[0];
+			let now_balance = <balances::Module<T>>::free_balance(&owner);
+			let new_balance = now_balance.checked_add( & value).ok_or("overflow error.")?;
+
+			// fee check reverse fee.
+			let fee = Self::fee();
+			let new_balance = new_balance.checked_add(&fee).ok_or("not enough fee.") ?;
+			let new_total_deposit = new_total_deposit.checked_sub(&fee).ok_or("overflow total deposit.") ?;
+
+			// update
+			<TotalDeposit<T>>::put(new_total);
+			<balances::Module<T>>::insert(&owner, new_balance);
+			<ExitStatusStorage<T>>::mutate(&exit_id, |e| e.as_mut().set_state(ExitState::Finalized));
+			Self::deposit_event(RawEvent::ExitFinalize(exit_id));
 			Ok(())
 		}
 
 		/// exit challenge(fraud proofs) parent chain from child chain.
-		pub fn exit_challenge(origin) -> Result {
+		pub fn exit_challenge(origin, target: T::Hash, blk_num: T::BlockNumber, depth: u32, index: u64, proofs: Vec<T::Hash>, utxo: Vec<u8>) -> Result {
+			let challenger = ensure_signed(origin)?;
+
+			// exist check
+			let utxo = T::Utxo::decode( &mut &utxo[..]).ok_or("undecodec utxo binary.")?;
+			let depth = depth as u8;
+			let proof = MerkleProof{ proofs, depth, index};
+			T::ExistProofs::is_exist(&blk_num, &utxo, &proof)?;
+
+			// validate
+			let exit_status = <ExitStatusStorage<T>>::get(&exit_id).is_ok("invalid exit id.")?;
+
+			// challenge check
+			let challenge_status = ChallengeStatus { blk_num, utxo}
+			T::FraudProof::verify(&exit_status, &challenge_status)?;
+
+			// Success...
+
+			// challenger fee gets
+			let fee = Self::fee();
+			let now_balance = <balances::Module<T>>::free_balance(&challenger);
+			let new_balance = now_balance.checked_add(&fee).ok_or("overflow error.")?;
+
+			let now_total = <TotalDeposit<T>>::get();
+			let new_total = total.checked_sub(&fee).is_ok("total deposit error.")?;
+
+			// update
+			<TotalDeposit<T>>::put(new_total);
+			<balances::Module<T>>::insert(&owner, new_balance);
+			<ExitStatusStorage<T>>::mutate(&exit_id, |e| e.as_mut().set_state(ExitState::Challenged));
+			Self::deposit_event(RawEvent::Challenge(exit_id));
 			Ok(())
 		}
 	}
@@ -299,7 +366,7 @@ decl_event!(
 		/// Challenge Events
 		Challenge(u32),
 		/// Exit Finalize Events
-		ExitFinalize(AccountId),
+		ExitFinalize(Hash),
 	}
 );
 
