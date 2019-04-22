@@ -30,11 +30,11 @@ Today, there are many derived Plasmas, like
 - Plasma-Chamber: Cryptoeconomics Lab's opensource project inspired by Prime. 
 - Plasma-Snapps: implemented ZK-S[T|N]ARKs
 
-Plasm has Plasma-abstract data structures by which the user can custormize plaggable Plasma solutions. In addtion to that, it has the Rust implementations of Plasma solutions. 
+Plasm provides a Plasma-abstract data structure which is a combination of Plasma solutions. Also Plasm provides a Rust implementations of Plasma solutions.
 
 Substrate developers can import one of Plasm Libraries and make thier own plasma chain depending on their use case. Plasm consists of 3 (or 4) libraries, Plasm-UTXO, Plasm-Parent and Plasm-Child. Plasm-UTXO has a UTXO like data structure to manage the deposited tokens. 
 
-In same sence, Plasma needs to have all transactions in order to validate and detect a maricious transaction when it is exited to the parent chain. 
+Plasma needs to have all transactions in order to validate and detect a maricious transaction when it is exited to the parent chain. 
 
 - Plasm-UTXO: implements UTXO model which is abstracted and concreted for each Plasma solution.
 - Plasm-Parent: provides modules to make a parent chain.  
@@ -42,18 +42,18 @@ In same sence, Plasma needs to have all transactions in order to validate and de
 
 
 ## Plasm-UTXO
-Plasm-UTXO provides a specification of transactions which is suitable for each Plasma solution. Along with that, Plasm-UTXO can deal with UTXO-like data structures cyclopaedically. Merkle Tree are also removable.
+Plasm-UTXO provides the transactions' specification which is suitable for each Plasma solution. Along with that, Plasm-UTXO can deal with UTXO-like data structures cyclopaedically. Merkle Tree are also removable.
 
 
 ## Plasm-Parent
-Plasm-Parent provides a specification of the parent chain. Child chain has been implemented coresponding to thhe parent chain's solution. Mainly, Plasm-Parent has the logic of each exit game.
+Plasm-Parent provides the parent chain’s specification. Child chain has been implemented corresponding to the parent chain's solution. Mainly, Plasm-Parent has the logic of each exit game.
 
 
 ## Plasm-Child
-Plasm-Child provides a specification of the child chain. Parent chain has been implemented corresponding to the child chain's solutions. 
+Plasm-Child provides the child chain's specification. Parent chain has been implemented corresponding to the child chain's solutions.
 
 
-By using these solutions together, the user can make the transactions happen between the parent chain and the child chain. The logic of "deposit/exit" has been implemented based on Plasm-UTXO.
+By using these solutions together, users can make transactions between the parent chain and the child chain. The logic of "deposit/exit" has been implemented based on Plasm-UTXO.
 
 ## How to install
 
