@@ -50,6 +50,9 @@ pub trait ProofTrait<H>
 	where H: Codec + Member + MaybeSerializeDebug + rstd::hash::Hash + AsRef<[u8]> + AsMut<[u8]> + Copy + Default {
 	fn root<Hashing>(&self) -> H where Hashing: Hash<Output=H>;
 	fn leaf(&self) -> &H;
+	fn proofs(&self) -> &Vec<H>;
+	fn depth(&self) -> u8;
+	fn index(&self) -> u64;
 }
 
 #[derive(Debug)]
@@ -104,6 +107,10 @@ impl<H> ProofTrait<H> for MerkleProof<H>
 	}
 
 	fn leaf(&self) -> &H { self.re_leaf(0, 0, self.proofs.len() - 1) }
+
+	fn proofs(&self) -> &Vec<H> { &self.proofs }
+	fn depth(&self) -> u8 { self.depth }
+	fn index(&self) -> u64 { self.index }
 }
 
 #[cfg(test)]

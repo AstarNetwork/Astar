@@ -184,7 +184,7 @@ decl_storage! {
 		TotalDeposit get(total_deposit) config(): <T as balances::Trait>::Balance;
 		ChildChain get(child_chain): map T::BlockNumber => Option<T::Hash>;
 		CurrentBlock get(current_block): T::BlockNumber = T::BlockNumber::zero();
-		Operator get(operator) config() : Vec <T::AccountId> = Default::default();
+		Operator get(operator) config() : Vec <T::AccountId>;
 		ExitStatusStorage get(exit_status_storage): map T::Hash => Option<T::ExitStatus>;
 		Fee get(fee) config(): <T as balances::Trait>::Balance;
 	}
@@ -207,7 +207,7 @@ decl_module! {
 			let next = current.checked_add( & T::BlockNumber::sa(1)).ok_or("block number is overflow.")?;
 
 			// update
-			<ChildChain<T>>::insert( & next, root);
+			<ChildChain<T>>::insert(&next, root);
 			<CurrentBlock<T>>::put(next);
 			Self::deposit_event(RawEvent::Submit(root));
 			Ok(())
@@ -450,11 +450,11 @@ mod tests {
 			GenesisConfig::<Test> {
 				total_deposit: 0,
 				operator: vec! {0},
-				fee: (1 << 10),
+				fee: 1,
 			}.build_storage().unwrap().0
 		);
 		t.extend(balances::GenesisConfig::<Test> {
-			balances: vec![(0, (1 << 60)), (1, (1 << 20)), (2, (1 << 20))],
+			balances: vec![(0, 1000), (1, 100), (2, 100)],
 			transaction_base_fee: 0,
 			transaction_byte_fee: 0,
 			transfer_fee: 0,
@@ -466,6 +466,7 @@ mod tests {
 	}
 
 	type Tree = plasm_merkle::mock::MerkleTree<H256, BlakeTwo256>;
+	type TestUtxo = Utxo<H256, u64, u64, u64>;
 
 	fn test_tx_in(in_hash: <Test as system::Trait>::Hash, in_index: usize) -> TransactionInput<H256> {
 		TransactionInput::<H256>::new(in_hash, in_index)
@@ -475,26 +476,22 @@ mod tests {
 		TransactionOutput::<u64, u64>::new(out_value, vec! {out_key, }, 1)
 	}
 
-	fn genesis_mvp_tx(value: u64, owner: u64) -> <Test as Trait>::Utxo {
-		<Test as Trait>::Utxo::decode(
-			&mut &Utxo(Transaction::<TransactionInput<H256>, TransactionOutput<u64, u64>, u64>::new(
-				vec! {},
-				vec! {
-					test_tx_out(value, owner),
-				}, 0), 0)
-				.encode()[..]).unwrap()
+	fn genesis_mvp_tx(value: u64, owner: u64) -> TestUtxo {
+		Utxo::<H256, u64, u64, u64>(Transaction::<TransactionInput<H256>, TransactionOutput<u64, u64>, u64>::new(
+			vec! {},
+			vec! {
+				test_tx_out(value, owner),
+			}, 0), 0)
 	}
 
-	fn gen_mvp_tx(in_hash: H256, in_index: usize, value: u64, owner: u64) -> <Test as Trait>::Utxo {
-		<Test as Trait>::Utxo::decode(
-			&mut &Utxo(Transaction::<TransactionInput<H256>, TransactionOutput<u64, u64>, u64>::new(
-				vec! {
-					test_tx_in(in_hash, in_index),
-				},
-				vec! {
-					test_tx_out(value, owner),
-				}, 0), 0)
-				.encode()[..]).unwrap()
+	fn gen_mvp_tx(in_hash: H256, in_index: usize, value: u64, owner: u64) -> TestUtxo {
+		Utxo::<H256, u64, u64, u64>(Transaction::<TransactionInput<H256>, TransactionOutput<u64, u64>, u64>::new(
+			vec! {
+				test_tx_in(in_hash, in_index),
+			},
+			vec! {
+				test_tx_out(value, owner),
+			}, 0), 0)
 	}
 
 //		TotalDeposit get(total_deposit) config(): <T as balances::Trait>::Balance;
@@ -504,23 +501,57 @@ mod tests {
 //		ExitStatusStorage get(exit_status_storage): map T::Hash => Option<T::ExitStatus>;
 //		Fee get(fee) config(): <T as balances::Trait>::Balance;
 
+	fn test_submit(n: u64) {
+		// submit
+		assert_eq!(n, Parent::current_block());
+		assert_eq!(Ok(()), Parent::submit(Origin::signed(0), Tree::root()));
+		assert_ne!(Ok(()), Parent::submit(Origin::signed(1), H256::default()));
+
+		assert_eq!(n + 1, Parent::current_block());
+		assert_eq!(Tree::root(), Parent::child_chain(n + 1).unwrap());
+	}
+
 	#[test]
 	fn it_works_for_minimum() {
 		with_externalities(&mut new_test_ext(), || {
+			assert_eq!(0, Parent::operator()[0]);
 
 			//  mock children...
-			let genesis_utxo = genesis_mvp_tx((1 << 60), 0);
+			let genesis_utxo = genesis_mvp_tx(1000, 0);
 			Tree::push(genesis_utxo.hash::<BlakeTwo256>());
 			Tree::commit();
 
-			// submit
-			assert_eq!(Ok(()), Parent::submit(Origin::signed(0), Tree::root()));
-			assert_ne!(Ok(()), Parent::submit(Origin::signed(1), H256::default()));
+			// submit 0 -> 1
+			test_submit(0);
 
 
 			// check deposit
-			Parent::deposit(Origin::signed(1), (1 << 10));
-			assert_eq!((1 << 10), Parent::total_deposit());
+			assert_eq!(Ok(()), Parent::deposit(Origin::signed(1), 1));
+			assert_eq!(1, Parent::total_deposit());
+			// 100 - 1(deposit)
+			assert_eq!(99, <balances::Module<Test>>::free_balance(1));
+
+			// mock children...
+			let utxo_1 = gen_mvp_tx(BlakeTwo256::hash_of(&genesis_utxo.0), 0, 1, 1);
+			Tree::push(utxo_1.hash::<BlakeTwo256>());
+			Tree::commit();
+
+
+			// exit failed
+			let proof = Tree::proofs(&utxo_1.hash::<BlakeTwo256>());
+			assert_eq!(Tree::root(), proof.root::<BlakeTwo256>());
+			assert_eq!(&utxo_1.hash::<BlakeTwo256>(), proof.leaf());
+			//blk_num: T::BlockNumber, depth: u32, index: u64, proofs: Vec<T::Hash>, utxo: Vec<u8>
+			assert_ne!(Ok(()), Parent::exit_start(Origin::signed(1), 2, proof.depth() as u32, proof.index(), proof.proofs().to_vec(), utxo_1.encode()));
+
+			// submit 1 -> 2
+			test_submit(1);
+
+			// exit started after submit.
+			assert_eq!(Ok(()), Parent::exit_start(Origin::signed(1), 2, proof.depth() as u32, proof.index(), proof.proofs().to_vec(), utxo_1.encode()));
+
+
+			// check exit
 		});
 	}
 }
