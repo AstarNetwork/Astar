@@ -66,10 +66,15 @@ version = '0.1.0'
 ```
 
 ## Parent
-Comming soon...
+```toml
+[dependencies.parent]
+git = 'https://github.com/stakedtechnologies/Plasm.git'
+package = 'plasm-utxo'
+version = '0.1.0' 
+```
 
 ## Child
-Comming soon...
+(Child will be wrapping UTXO)Comming soon...
 
 * * *
 Plasm is licensed under the Apache License, Version2.0 by Staked Technologies Inc.
