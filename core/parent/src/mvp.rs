@@ -187,6 +187,7 @@ decl_storage! {
 		Operator get(operator) config() : Vec <T::AccountId>;
 		ExitStatusStorage get(exit_status_storage): map T::Hash => Option<T::ExitStatus>;
 		Fee get(fee) config(): <T as balances::Trait>::Balance;
+		ExitWaitingPeriod get(exit_waiting_period) config(): <T as timestamp::Trait>::Moment;
 	}
 }
 
@@ -376,6 +377,8 @@ mod tests {
 		testing::{Digest, DigestItem, Header},
 	};
 
+	use std::{thread, time::Duration};
+
 	use plasm_utxo::{TransactionTrait, TransactionInputTrait, TransactionOutputTrait};
 	use plasm_merkle::MerkleTreeTrait;
 
@@ -451,6 +454,7 @@ mod tests {
 				total_deposit: 0,
 				operator: vec! {0},
 				fee: 1,
+				exit_waiting_period: 1000, // 1s
 			}.build_storage().unwrap().0
 		);
 		t.extend(balances::GenesisConfig::<Test> {
@@ -494,13 +498,6 @@ mod tests {
 			}, 0), 0)
 	}
 
-//		TotalDeposit get(total_deposit) config(): <T as balances::Trait>::Balance;
-//		ChildChain get(child_chain): map T::BlockNumber => Option<T::Hash>;
-//		CurrentBlock get(current_block): T::BlockNumber = T::BlockNumber::zero();
-//		Operator get(operator) config() : Vec <T::AccountId> = Default::default();
-//		ExitStatusStorage get(exit_status_storage): map T::Hash => Option<T::ExitStatus>;
-//		Fee get(fee) config(): <T as balances::Trait>::Balance;
-
 	fn test_submit(n: u64) {
 		// submit
 		assert_eq!(n, Parent::current_block());
@@ -510,6 +507,14 @@ mod tests {
 		assert_eq!(n + 1, Parent::current_block());
 		assert_eq!(Tree::root(), Parent::child_chain(n + 1).unwrap());
 	}
+
+	fn exit_status_test(exit_status: &<Test as Trait>::ExitStatus, blk_num: u64, utxo: &TestUtxo, state: ExitState) {
+		assert_eq!(&blk_num, exit_status.blk_num());
+		assert_eq!(utxo.encode(), exit_status.utxo().encode());
+		assert_eq!(&(exit_status.started() + 1000), exit_status.expired());
+		assert_eq!(&state, exit_status.state());
+	}
+
 
 	#[test]
 	fn it_works_for_minimum() {
@@ -547,11 +552,37 @@ mod tests {
 			// submit 1 -> 2
 			test_submit(1);
 
-			// exit started after submit.
+			//		TotalDeposit get(total_deposit) config(): <T as balances::Trait>::Balance;
+			//		ChildChain get(child_chain): map T::BlockNumber => Option<T::Hash>;
+			//		CurrentBlock get(current_block): T::BlockNumber = T::BlockNumber::zero();
+			//		Operator get(operator) config() : Vec <T::AccountId> = Default::default();
+			//		ExitStatusStorage get(exit_status_storage): map T::Hash => Option<T::ExitStatus>;
+			//		Fee get(fee) config(): <T as balances::Trait>::Balance;
+
+
+			// failed another user.
+			assert_ne!(Ok(()), Parent::exit_start(Origin::signed(2), 2, proof.depth() as u32, proof.index(), proof.proofs().to_vec(), utxo_1.encode()));
+
+			// success exit started after submit.
 			assert_eq!(Ok(()), Parent::exit_start(Origin::signed(1), 2, proof.depth() as u32, proof.index(), proof.proofs().to_vec(), utxo_1.encode()));
+			let exit_id: H256 = H256::random(); // TODO get valid exit_id
+			let exit_status = Parent::exit_status_storage(&exit_id).unwrap();
+			exit_status_test(&exit_status, 2, &utxo_1, ExitState::Exiting);
+			assert_eq!(98, <balances::Module<Test>>::free_balance(1)); // 100 - 1(deposit) - 1(fee)
+			assert_eq!(2, Parent::total_deposit()); // 1(deposit) + 1(fee)
 
+			// error finalized before expired.
+			assert_ne!(Ok(()), Parent::exit_finalize(Origin::signed(1), exit_id));
 
-			// check exit
+			// 1s wait.
+			thread::sleep(Duration::new(1, 0));
+
+			// success finalized.
+			assert_ne!(Ok(()), Parent::exit_finalize(Origin::signed(1), exit_id));
+			let exit_status = Parent::exit_status_storage(&exit_id).unwrap();
+			exit_status_test(&exit_status, 2, &utxo_1, ExitState::Finalized);
+			assert_eq!(100, <balances::Module<Test>>::free_balance(1)); // 100 - 1(exit) - 1(fee) + 1(exit) + 1(return fee)
+			assert_eq!(0, Parent::total_deposit()); // +- 0
 		});
 	}
 }
