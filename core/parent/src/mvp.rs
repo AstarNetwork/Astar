@@ -214,7 +214,7 @@ decl_module! {
 		}
 
 		/// deposit balance parent chain to childchain.
-		pub fn deposit(origin, # [compact] value: < T as balances::Trait >::Balance) -> Result {
+		pub fn deposit(origin, #[compact] value: <T as balances::Trait >::Balance) -> Result {
 			let depositor = ensure_signed(origin) ?;
 
 			// validate
@@ -251,7 +251,7 @@ decl_module! {
 			T::ExistProofs::is_exist(&blk_num, &utxo, &proof)?;
 
 			// owner check
-			T::ExitorHasChcker::check(&exitor, &utxo);
+			T::ExitorHasChcker::check(&exitor, &utxo)?;
 
 			let exit_status = ExitStatus {
 				blk_num: blk_num,
@@ -376,6 +376,9 @@ mod tests {
 		testing::{Digest, DigestItem, Header},
 	};
 
+	use plasm_utxo::{TransactionTrait, TransactionInputTrait, TransactionOutputTrait};
+	use plasm_merkle::MerkleTreeTrait;
+
 	impl_outer_origin! {
 		pub enum Origin for Test {}
 	}
@@ -437,19 +440,21 @@ mod tests {
 		type Event = ();
 	}
 
+	type Parent = Module<Test>;
+
 	// This function basically just builds a genesis storage key/value store according to
 	// our desired mockup.
 	fn new_test_ext() -> sr_io::TestExternalities<Blake2Hasher> {
 		let mut t = system::GenesisConfig::<Test>::default().build_storage().unwrap().0;
 		t.extend(
 			GenesisConfig::<Test> {
-				total_deposit: 1 << 60,
-				operator: vec!{0},
+				total_deposit: 0,
+				operator: vec! {0},
 				fee: (1 << 10),
 			}.build_storage().unwrap().0
 		);
-		t.extend(balances::GenesisConfig::<Test>{
-			balances: vec![(0, (1<<60)), (1, (1<<20)), (2, (1<<20))],
+		t.extend(balances::GenesisConfig::<Test> {
+			balances: vec![(0, (1 << 60)), (1, (1 << 20)), (2, (1 << 20))],
 			transaction_base_fee: 0,
 			transaction_byte_fee: 0,
 			transfer_fee: 0,
@@ -460,8 +465,62 @@ mod tests {
 		t.into()
 	}
 
+	type Tree = plasm_merkle::mock::MerkleTree<H256, BlakeTwo256>;
+
+	fn test_tx_in(in_hash: <Test as system::Trait>::Hash, in_index: usize) -> TransactionInput<H256> {
+		TransactionInput::<H256>::new(in_hash, in_index)
+	}
+
+	fn test_tx_out(out_value: u64, out_key: u64) -> TransactionOutput<u64, u64> {
+		TransactionOutput::<u64, u64>::new(out_value, vec! {out_key, }, 1)
+	}
+
+	fn genesis_mvp_tx(value: u64, owner: u64) -> <Test as Trait>::Utxo {
+		<Test as Trait>::Utxo::decode(
+			&mut &Utxo(Transaction::<TransactionInput<H256>, TransactionOutput<u64, u64>, u64>::new(
+				vec! {},
+				vec! {
+					test_tx_out(value, owner),
+				}, 0), 0)
+				.encode()[..]).unwrap()
+	}
+
+	fn gen_mvp_tx(in_hash: H256, in_index: usize, value: u64, owner: u64) -> <Test as Trait>::Utxo {
+		<Test as Trait>::Utxo::decode(
+			&mut &Utxo(Transaction::<TransactionInput<H256>, TransactionOutput<u64, u64>, u64>::new(
+				vec! {
+					test_tx_in(in_hash, in_index),
+				},
+				vec! {
+					test_tx_out(value, owner),
+				}, 0), 0)
+				.encode()[..]).unwrap()
+	}
+
+//		TotalDeposit get(total_deposit) config(): <T as balances::Trait>::Balance;
+//		ChildChain get(child_chain): map T::BlockNumber => Option<T::Hash>;
+//		CurrentBlock get(current_block): T::BlockNumber = T::BlockNumber::zero();
+//		Operator get(operator) config() : Vec <T::AccountId> = Default::default();
+//		ExitStatusStorage get(exit_status_storage): map T::Hash => Option<T::ExitStatus>;
+//		Fee get(fee) config(): <T as balances::Trait>::Balance;
+
 	#[test]
-	fn it_works_for_default_value() {
-		with_externalities(&mut new_test_ext(), || {});
+	fn it_works_for_minimum() {
+		with_externalities(&mut new_test_ext(), || {
+
+			//  mock children...
+			let genesis_utxo = genesis_mvp_tx((1 << 60), 0);
+			Tree::push(genesis_utxo.hash::<BlakeTwo256>());
+			Tree::commit();
+
+			// submit
+			assert_eq!(Ok(()), Parent::submit(Origin::signed(0), Tree::root()));
+			assert_ne!(Ok(()), Parent::submit(Origin::signed(1), H256::default()));
+
+
+			// check deposit
+			Parent::deposit(Origin::signed(1), (1 << 10));
+			assert_eq!((1 << 10), Parent::total_deposit());
+		});
 	}
 }

@@ -119,7 +119,7 @@ pub trait FraudProofTrait<T: Trait> {
 
 /// Check exitor has UTXO.
 pub trait ExitorHasChckerTrait<T: Trait> {
-	fn check(exitor: &T::AccountId, utxo: &T::Utxo) -> Result { Ok(()) }
+	fn check(exitor: &T::AccountId, utxo: &T::Utxo) -> Result;
 }
 
 /// ある UTXO の存在証明が正しいか否かを返す。
