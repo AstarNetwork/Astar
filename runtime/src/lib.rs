@@ -3,7 +3,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 #![cfg_attr(not(feature = "std"), feature(alloc))]
 // `construct_runtime!` does a lot of recursion and requires us to increase the limit to 256.
-#![recursion_limit="256"]
+#![recursion_limit = "256"]
 
 #[cfg(feature = "std")]
 use serde_derive::{Serialize, Deserialize};
@@ -14,11 +14,11 @@ use primitives::bytes;
 use primitives::{ed25519, sr25519, OpaqueMetadata};
 use runtime_primitives::{
 	ApplyResult, transaction_validity::TransactionValidity, generic, create_runtime_str,
-	traits::{self, NumberFor, BlakeTwo256, Block as BlockT, StaticLookup, Verify}
+	traits::{self, NumberFor, BlakeTwo256, Block as BlockT, StaticLookup, Verify},
 };
 use client::{
 	block_builder::api::{CheckInherentsResult, InherentData, self as block_builder_api},
-	runtime_api, impl_runtime_apis
+	runtime_api, impl_runtime_apis,
 };
 use version::RuntimeVersion;
 #[cfg(feature = "std")]
@@ -68,18 +68,21 @@ pub mod opaque {
 	/// Opaque, encoded, unchecked extrinsic.
 	#[derive(PartialEq, Eq, Clone, Default, Encode, Decode)]
 	#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
-	pub struct UncheckedExtrinsic(#[cfg_attr(feature = "std", serde(with="bytes"))] pub Vec<u8>);
+	pub struct UncheckedExtrinsic(#[cfg_attr(feature = "std", serde(with = "bytes"))] pub Vec<u8>);
+
 	#[cfg(feature = "std")]
 	impl std::fmt::Debug for UncheckedExtrinsic {
 		fn fmt(&self, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
 			write!(fmt, "{}", primitives::hexdisplay::HexDisplay::from(&self.0))
 		}
 	}
+
 	impl traits::Extrinsic for UncheckedExtrinsic {
 		fn is_signed(&self) -> Option<bool> {
 			None
 		}
 	}
+
 	/// Opaque block header type.
 	pub type Header = generic::Header<BlockNumber, BlakeTwo256, generic::DigestItem<Hash, AuthorityId, AuthoritySignature>>;
 	/// Opaque block type.
@@ -192,6 +195,49 @@ impl template::Trait for Runtime {
 	type Event = Event;
 }
 
+use plasm_merkle;
+type MerkleTree = plasm_merkle::mock::MerkleTree<Hash, BlakeTwo256>;
+
+/// Used for the utxo Module here.
+impl plasm_utxo::Trait for Runtime {
+	type Signature = AccountSignature;
+	type Value = plasm_primitives::mvp::Value;
+	type TimeLock = BlockNumber;
+
+	type Input = plasm_utxo::TransactionInput<Self::Hash>;
+	type Output = plasm_utxo::TransactionOutput<Self::Value, Self::AccountId>;
+
+	type Transaction = plasm_utxo::Transaction<Self::Input, Self::Output, Self::TimeLock>;
+	type SignedTransaction = plasm_utxo::SignedTransaction<Runtime>;
+
+	type Inserter = plasm_utxo::mvp::Inserter<Runtime, MerkleTree>;
+	type Remover = plasm_utxo::DefaultRemover<Runtime>;
+	type Finalizer = plasm_utxo::mvp::Finalizer<Runtime, MerkleTree>;
+
+	type Event = Event;
+}
+
+pub use plasm_parent::mvp as parent_mvp;
+
+impl plasm_parent::Trait for Runtime {
+	type ChildValue = plasm_primitives::mvp::Value;
+	type Utxo = parent_mvp::Utxo<Self::Hash, Self::ChildValue, Self::AccountId, Self::BlockNumber>;
+	type Proof = plasm_merkle::MerkleProof<Self::Hash>;
+
+	type ExitStatus = parent_mvp::ExitStatus<Self::Hash, Self::ChildValue, Self::AccountId, Self::BlockNumber, Self::Utxo, Self::Moment, plasm_parent::ExitState>;
+	type ChallengeStatus = parent_mvp::ChallengeStatus<Self::Hash, Self::ChildValue, Self::AccountId, Self::BlockNumber, Self::Utxo>;
+
+	type FraudProof = parent_mvp::FraudProof<Runtime>;
+	// How to Fraud proof. to utxo from using utxo.
+	type ExitorHasChcker = parent_mvp::ExitorHasChcker<Runtime>;
+	type ExistProofs = parent_mvp::ExistProofs<Runtime>;
+	type Exchanger = parent_mvp::Exchanger<Self::Balance, Self::ChildValue>;
+	type Finalizer = parent_mvp::Finalizer<Runtime>;
+
+	/// The overarching event type.
+	type Event = Event;
+}
+
 construct_runtime!(
 	pub enum Runtime with Log(InternalLog: DigestItem<Hash, AuthorityId, AuthoritySignature>) where
 		Block = Block,
@@ -207,6 +253,8 @@ construct_runtime!(
 		Sudo: sudo,
 		// Used for the module template in `./template.rs`
 		TemplateModule: template::{Module, Call, Storage, Event<T>},
+		PlasmUtxo: plasm_utxo,
+		PlasmParent: parent_mvp,
 	}
 );
 

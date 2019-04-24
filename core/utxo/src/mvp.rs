@@ -1,71 +1,35 @@
-use sr_primitives::traits::{Zero, CheckedAdd, CheckedSub};
+use super::*;
 // use Encode, Decode
-use parity_codec::{Encode, Decode};
-use std::ops::{Deref, Div, Add, Sub};
+use plasm_merkle::MerkleTreeTrait;
+use sr_primitives::traits::{Member, MaybeSerializeDebug, Hash};
+use parity_codec::Codec;
 
-#[derive(Clone, Encode, Decode, Default, PartialEq, Eq)]
+#[derive(Clone, Eq, PartialEq, Default)]
 #[cfg_attr(feature = "std", derive(Debug))]
-pub struct MVPValue(u64);
+pub struct Inserter<T, Tree>(PhantomData<(T, Tree)>);
 
-impl MVPValue {
-	pub fn new(a: u64) -> Self {
-		MVPValue(a)
-	}
+pub fn utxo_hash<Hashing, H>(tx_hash: &H, i: &usize) -> H
+	where H: Codec + Member + MaybeSerializeDebug + rstd::hash::Hash + AsRef<[u8]> + AsMut<[u8]> + Copy + Default,
+		  Hashing: Hash<Output=H> {
+	Hashing::hash(&plasm_primitives::concat_bytes(tx_hash, i))
 }
 
-impl Div<usize> for MVPValue {
-	type Output = MVPValue;
-	fn div(self, rhs: usize) -> Self::Output {
-		MVPValue(*self / (rhs as u64))
-	}
-}
-
-impl Zero for MVPValue {
-	fn zero() -> Self {
-		MVPValue(0)
-	}
-
-	fn is_zero(&self) -> bool {
-		**self == 0
-	}
-}
-
-impl Add for MVPValue {
-	type Output = Self;
-	fn add(self, rhs: MVPValue) -> Self::Output {
-		MVPValue(*self + *rhs)
-	}
-}
-
-impl CheckedAdd for MVPValue {
-	fn checked_add(&self, v: &Self) -> Option<Self> {
-		if let Some(v) = (**self).checked_add(**v) {
-			return Some(MVPValue(v));
+impl<T: Trait, Tree: MerkleTreeTrait<T::Hash, T::Hashing>> InserterTrait<T> for Inserter<T, Tree> {
+	fn insert(tx: &T::Transaction) {
+		Self::default_insert(tx);
+		let hash = <T as system::Trait>::Hashing::hash_of(tx);
+		for (i, _) in tx.outputs().iter().enumerate() {
+			Tree::push(utxo_hash::<T::Hashing, T::Hash>(&hash, &i))
 		}
-		None
 	}
 }
 
-impl Sub for MVPValue {
-	type Output = Self;
-	fn sub(self, rhs: MVPValue) -> Self::Output {
-		MVPValue(*self - *rhs)
-	}
-}
+#[derive(Clone, Eq, PartialEq, Default)]
+#[cfg_attr(feature = "std", derive(Debug))]
+pub struct Finalizer<T, Tree> (PhantomData<(T, Tree)>);
 
-impl CheckedSub for MVPValue {
-	fn checked_sub(&self, v: &Self) -> Option<Self> {
-		if let Some(v) = (**self).checked_sub(**v) {
-			return Some(MVPValue(v));
-		}
-		None
-	}
-}
-
-impl Deref for MVPValue {
-	type Target = u64;
-
-	fn deref(&self) -> &Self::Target {
-		&self.0
+impl<T: Trait, Tree: MerkleTreeTrait<T::Hash, T::Hashing>> FinalizerTrait<T> for Finalizer<T, Tree> {
+	fn default_finalize(n: T::BlockNumber) {
+		Tree::commit();
 	}
 }
