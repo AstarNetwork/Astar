@@ -9,16 +9,16 @@ Plasm is a Substrate Runtime Module Library by which a developer can add Plasma 
 __WARNING__: This is a proof-of-concept prototype. This implementation is NOT ready for production use. 
 
 ## Table of Contents
-- [Introduction](https://github.com/stakedtechnologies/Plasm/tree/sota#introduction)
-- [Background](https://github.com/stakedtechnologies/Plasm/tree/sota#background)
+- [Introduction](https://github.com/stakedtechnologies/Plasm/tree/master#introduction)
+- [Background](https://github.com/stakedtechnologies/Plasm/tree/master#background)
 - Plasm
-    - [Plasm-UTXO](https://github.com/stakedtechnologies/Plasm/tree/sota#plasm-utxo)
-    - [Plasm-Parent](https://github.com/stakedtechnologies/Plasm/tree/sota#plasm-parent)
-    - [Plasm-Child](https://github.com/stakedtechnologies/Plasm/tree/sota#plasm-child)
-- [How to install](https://github.com/stakedtechnologies/Plasm/tree/sota#how-to-install)
+    - [Plasm-UTXO](https://github.com/stakedtechnologies/Plasm/tree/master#plasm-utxo)
+    - [Plasm-Parent](https://github.com/stakedtechnologies/Plasm/tree/master#plasm-parent)
+    - [Plasm-Child](https://github.com/stakedtechnologies/Plasm/tree/master#plasm-child)
+- [How to install](https://github.com/stakedtechnologies/Plasm/tree/master#how-to-install)
 
 ## Introduction
-Plasm is Staked Technologies' product that enables to import Plasma functions to your Substrate chain.
+Plasm is Staked Technologies' product that enables to import Plasma functions to your Substrate chain. You can see the demo from [here](https://drive.google.com/file/d/1qg6SyEDM0D_hJPsun4ykkNyH-B5W8Yi6/view?usp=sharing)
 
 ## Background
 Today, there are many derived Plasmas, like 
