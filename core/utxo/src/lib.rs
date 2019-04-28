@@ -52,7 +52,7 @@ pub trait InserterTrait<T: Trait> {
 		for (i, out) in tx.outputs()
 			.iter()
 			.enumerate() {
-			let identify = (hash.clone().into(), i);
+			let identify = (hash.clone().into(), i as u32);
 			<UnspentOutputs<T>>::insert(identify.clone(), out.clone());
 			for key in out.keys() {
 				<UnspentOutputsFinder<T>>::mutate(key, |v| {
@@ -142,20 +142,20 @@ pub struct DefaultFinalizer<T: Trait>(PhantomData<T>);
 impl<T: Trait> FinalizerTrait<T> for DefaultFinalizer<T> {}
 
 pub trait TransactionInputTrait<Hash> {
-	fn new(tx_hash: Hash, out_index: usize) -> Self;
+	fn new(tx_hash: Hash, out_index: u32) -> Self;
 	fn output_or_default<T: Trait>(&self) -> T::Output
-		where (Hash, usize): rstd::borrow::Borrow<(<T as system::Trait>::Hash, usize)> {
+		where (Hash, u32): rstd::borrow::Borrow<(<T as system::Trait>::Hash, u32)> {
 		match <UnspentOutputs<T>>::get((self.tx_hash(), self.out_index())) {
 			Some(tx_out) => tx_out,
 			None => Default::default(),
 		}
 	}
 	fn output<T: Trait>(&self) -> Option<T::Output>
-		where (Hash, usize): rstd::borrow::Borrow<(<T as system::Trait>::Hash, usize)> {
+		where (Hash, u32): rstd::borrow::Borrow<(<T as system::Trait>::Hash, u32)> {
 		<UnspentOutputs<T>>::get((self.tx_hash(), self.out_index()))
 	}
 	fn tx_hash(&self) -> Hash;
-	fn out_index(&self) -> usize;
+	fn out_index(&self) -> u32;
 }
 
 #[derive(Clone, Encode, Decode, Default, PartialEq, Eq)]
@@ -164,18 +164,18 @@ pub struct TransactionInput<Hash> {
 	///#[codec(compact)]
 	pub tx_hash: Hash,
 	///#[codec(compact)]
-	pub out_index: usize,
+	pub out_index: u32,
 }
 
 impl<Hash> TransactionInputTrait<Hash> for TransactionInput<Hash>
 	where Hash: Clone {
-	fn new(tx_hash: Hash, out_index: usize) -> Self {
+	fn new(tx_hash: Hash, out_index: u32) -> Self {
 		Self { tx_hash, out_index }
 	}
 	fn tx_hash(&self) -> Hash {
 		self.tx_hash.clone()
 	}
-	fn out_index(&self) -> usize {
+	fn out_index(&self) -> u32 {
 		self.out_index
 	}
 }
@@ -357,9 +357,9 @@ decl_storage! {
 				.outputs()
 				.iter()
 				.enumerate()
-				.map(|(i, u)| ((<T as system::Trait>::Hashing::hash_of(&tx), i), u.clone()))
+				.map(|(i, u)| ((<T as system::Trait>::Hashing::hash_of(&tx), i as u32), u.clone()))
 				.collect::<Vec<_>>()
-		}): map (<T as system::Trait>::Hash, usize) => Option<T::Output>;
+		}): map (<T as system::Trait>::Hash, u32) => Option<T::Output>;
 		
 		/// [AccountId] = reference of UTXO.
 		pub UnspentOutputsFinder get(unspent_outputs_finder) build( |config: &GenesisConfig<T> | { // TODO more clearly
@@ -373,9 +373,9 @@ decl_storage! {
 				.clone()
 				.iter()
 				.enumerate()
-				.map(|(i, e)| (e.1.clone(), vec!{(<T as system::Trait>::Hashing::hash_of(&tx), i)}))
+				.map(|(i, e)| (e.1.clone(), vec!{(<T as system::Trait>::Hashing::hash_of(&tx), i as u32)}))
 				.collect::<Vec<_>>()
-		}): map <T as system::Trait>::AccountId => Option<Vec<(<T as system::Trait>::Hash, usize)>>; //TODO HashSet<>
+		}): map <T as system::Trait>::AccountId => Option<Vec<(<T as system::Trait>::Hash, u32)>>; //TODO HashSet<>
 		
 		/// Total leftover value to be redistributed among authorities.
 		/// It is accumulated during block execution and then drained
