@@ -1,4 +1,5 @@
 <div align="center"><img width="798" alt="plasm" src="https://user-images.githubusercontent.com/6259384/56867192-8b967500-6a1d-11e9-898d-f73f4e2a387c.png"></div>
+
 [![Build Status](https://travis-ci.org/stakedtechnologies/Plasm.svg?branch=master)](https://travis-ci.org/stakedtechnologies/Plasm)
 
 Plasm is a Substrate Runtime Module Library by which a developer can add Plasma functions to his/her own Substrate chain.
