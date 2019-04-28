@@ -1,6 +1,6 @@
 <div align="center"><h1>Plasm</h1></div>
 
-<div align="center"><img width="300" alt="plasm" src="https://user-images.githubusercontent.com/6259384/55708398-cf9ae900-5a20-11e9-859c-3435b55c68a5.png"></div>
+<div align="center"><img width="300" alt="plasm" src="img/plasm.jpg"></div>
 
 [![Build Status](https://travis-ci.org/stakedtechnologies/Plasm.svg?branch=master)](https://travis-ci.org/stakedtechnologies/Plasm)
 
