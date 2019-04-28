@@ -1,4 +1,4 @@
-<div align="center"><img width="900" margin-bottom="40" alt="plasm" src="img/plasm.jpg"></div>
+<div align="center"><img width="900" margin-bottom="10" alt="plasm" src="img/plasm.jpg"></div>
 
 [![Build Status](https://travis-ci.org/stakedtechnologies/Plasm.svg?branch=master)](https://travis-ci.org/stakedtechnologies/Plasm)
 
