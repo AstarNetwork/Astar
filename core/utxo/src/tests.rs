@@ -68,7 +68,7 @@ fn account_key_pair(s: &str) -> sr25519::Pair {
 		.expect("static values are valid; qed")
 }
 
-fn default_tx_in(in_hash: <Test as system::Trait>::Hash, in_index: usize) -> <Test as Trait>::Input {
+fn default_tx_in(in_hash: <Test as system::Trait>::Hash, in_index: u32) -> <Test as Trait>::Input {
 	<Test as Trait>::Input::new(in_hash, in_index)
 }
 
@@ -76,7 +76,7 @@ fn default_tx_out(out_value: <Test as Trait>::Value, out_key: <Test as system::T
 	<Test as Trait>::Output::new(out_value, vec! {out_key, }, 1)
 }
 
-fn gen_normal_tx(in_hash: <Test as system::Trait>::Hash, in_index: usize,
+fn gen_normal_tx(in_hash: <Test as system::Trait>::Hash, in_index: u32,
 				 out_value: <Test as Trait>::Value, out_key: <Test as system::Trait>::AccountId) -> <Test as Trait>::Transaction {
 	<Test as Trait>::Transaction::new(
 		vec! {
