@@ -28,7 +28,7 @@ impl<H, V, K, B> UtxoTrait<H, V, K> for Utxo<H, V, K, B>
 		  K: Parameter,
 		  B: Parameter {
 	fn hash<Hashing: Hash<Output=H>>(&self) -> H {
-		plasm_utxo::mvp::utxo_hash::<Hashing, H>(&Hashing::hash_of(&self.0), &self.1)
+		plasm_utxo::mvp::utxo_hash::<Hashing, H>(&Hashing::hash_of(&self.0), &(self.1 as u32))
 	}
 	fn inputs<Hashing: Hash<Output=H>>(&self) -> Vec<H> {
 		self.0.inputs

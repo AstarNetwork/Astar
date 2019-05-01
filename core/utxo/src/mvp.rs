@@ -8,7 +8,7 @@ use parity_codec::Codec;
 #[cfg_attr(feature = "std", derive(Debug))]
 pub struct Inserter<T, Tree>(PhantomData<(T, Tree)>);
 
-pub fn utxo_hash<Hashing, H>(tx_hash: &H, i: &usize) -> H
+pub fn utxo_hash<Hashing, H>(tx_hash: &H, i: &u32) -> H
 	where H: Codec + Member + MaybeSerializeDebug + rstd::hash::Hash + AsRef<[u8]> + AsMut<[u8]> + Copy + Default,
 		  Hashing: Hash<Output=H> {
 	Hashing::hash(&plasm_primitives::concat_bytes(tx_hash, i))
@@ -19,7 +19,7 @@ impl<T: Trait, Tree: MerkleTreeTrait<T::Hash, T::Hashing>> InserterTrait<T> for 
 		Self::default_insert(tx);
 		let hash = <T as system::Trait>::Hashing::hash_of(tx);
 		for (i, _) in tx.outputs().iter().enumerate() {
-			Tree::push(utxo_hash::<T::Hashing, T::Hash>(&hash, &i))
+			Tree::push(utxo_hash::<T::Hashing, T::Hash>(&hash, &(i as u32)))
 		}
 	}
 }
