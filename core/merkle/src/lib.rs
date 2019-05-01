@@ -16,6 +16,7 @@ pub fn concat_hash<H, F>(a: &H, b: &H, hash: F) -> H
 }
 
 // H: Hash, O: Outpoint(Hashable)
+// TODO : use relational type StorageKey https://doc.rust-jp.rs/the-rust-programming-language-ja/1.6/book/associated-constants.html
 pub trait MerkleTreeTrait<H, Hashing>
 	where H: Codec + Member + MaybeSerializeDebug + rstd::hash::Hash + AsRef<[u8]> + AsMut<[u8]> + Copy + Default,
 		  Hashing: Hash<Output=H>
