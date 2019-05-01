@@ -2,7 +2,7 @@
 
 [![Build Status](https://travis-ci.org/stakedtechnologies/Plasm.svg?branch=master)](https://travis-ci.org/stakedtechnologies/Plasm)
 
-Plasm is a Substrate Runtime Module Library by which a developer can add Plasma functions to his/her own Substrate chain.
+Plasm is a Substrate Runtime Module Library which allows developers to add Plasma functions to their Substrate chain easily and seamlessly. Since Plasm is an SRML, developers can also make both plasma parent chains and plasma child chains with Substrate. 
 
 __WARNING__: This is a proof-of-concept prototype. This implementation is NOT ready for production use. 
 
@@ -16,7 +16,7 @@ __WARNING__: This is a proof-of-concept prototype. This implementation is NOT re
 - [How to install](https://github.com/stakedtechnologies/Plasm/tree/master#how-to-install)
 
 ## Introduction
-Plasm is Staked Technologies' product that enables to import Plasma functions to your Substrate chain. You can see the demo from [here](https://drive.google.com/file/d/1qg6SyEDM0D_hJPsun4ykkNyH-B5W8Yi6/view?usp=sharing)
+Plasm is Staked Technologies' product that enables to import Plasma functions to your Substrate chain. Since Plasm is SRML, we can also make both Plasma parent chains and child chains. You can see the demo from [here].(https://drive.google.com/file/d/1qg6SyEDM0D_hJPsun4ykkNyH-B5W8Yi6/view?usp=sharing)
 
 ## Background
 Today, there are many derived Plasmas, like 
@@ -28,19 +28,19 @@ Today, there are many derived Plasmas, like
 - Plasma-Chamber: Cryptoeconomics Lab's opensource project inspired by Prime. 
 - Plasma-Snapps: implemented ZK-S[T|N]ARKs
 
-Plasm provides a Plasma-abstract data structure which is a combination of Plasma solutions. Also Plasm provides a Rust implementations of Plasma solutions.
+Plasm provides a Plasma-abstract data structure which is a combination of Plasma solutions. Also, Plasm provides Rust implementations of Plasma solutions.
 
-Substrate developers can import one of Plasm Libraries and make thier own plasma chain depending on their use case. Plasm consists of 3 (or 4) libraries, Plasm-UTXO, Plasm-Parent and Plasm-Child. Plasm-UTXO has a UTXO like data structure to manage the deposited tokens. 
+Substrate developers can import one of the Plasm Libraries and make their own plasma chain depending on their use case. Plasm consists of 3 (or 4) libraries, Plasm-UTXO, Plasm-Parent, and Plasm-Child. Plasm-UTXO has a UTXO like data structure to manage the deposited tokens. 
 
-Plasma needs to have all transactions in order to validate and detect a maricious transaction when it is exited to the parent chain. 
+Plasma needs to have all transactions in order to validate and detect a malicious transaction when it is exited to the parent chain. 
 
-- Plasm-UTXO: implements UTXO model which is abstracted and concreted for each Plasma solution.
+- Plasm-UTXO: implements the UTXO model which is abstracted and concreted for each Plasma solution.
 - Plasm-Parent: provides modules to make a parent chain.  
-- Prasm-Child: provides modules to make a child chain.
+- Plasm-Child: provides modules to make a child chain.
 
 
 ## Plasm-UTXO
-Plasm-UTXO provides the transactions' specification which is suitable for each Plasma solution. Along with that, Plasm-UTXO can deal with UTXO-like data structures cyclopaedically. Merkle Tree are also removable.
+Plasm-UTXO provides the transactions' specification which is suitable for each Plasma solution. Along with that, Plasm-UTXO can deal with UTXO-like data structures cyclopaedically. Merkle Tree is also removable.
 
 
 ## Plasm-Parent
@@ -72,7 +72,7 @@ version = '0.1.0'
 ```
 
 ## Child
-(Child will be wrapping UTXO)Comming soon...
+(Child will be wrapping UTXO) Coming soon...
 
 ## Example Trait
 Please see [here](https://github.com/stakedtechnologies/Plasm/blob/master/runtime/src/lib.rs).
