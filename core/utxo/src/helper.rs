@@ -18,7 +18,7 @@ pub type TestInput = TransactionInput<H256>;
 pub type TestOutput = TransactionOutput<Value, AccountId>;
 pub type TestTransaction = Transaction<TestInput, TestOutput, u64>;
 
-fn account_key_pair(s: &str) -> sr25519::Pair {
+pub fn account_key_pair(s: &str) -> sr25519::Pair {
 	sr25519::Pair::from_string(&format!("//{}", s), None)
 		.expect("static values are valid; qed")
 }

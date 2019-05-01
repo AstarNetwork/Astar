@@ -163,11 +163,6 @@ mod tests {
 		type Event = ();
 	}
 
-	fn account_key_pair(s: &str) -> sr25519::Pair {
-		sr25519::Pair::from_string(&format!("//{}", s), None)
-			.expect("static values are valid; qed")
-	}
-
 	type Child = Module<Test>;
 
 	fn new_test_ext(operator: &sr25519::Pair) -> runtime_io::TestExternalities<Blake2Hasher> {
@@ -185,7 +180,7 @@ mod tests {
 
 	#[test]
 	fn test_commit() {
-		let operator_pair = account_key_pair("operator");
+		let operator_pair = utxo::helper::account_key_pair("operator");
 		with_externalities(&mut new_test_ext(&operator_pair), || {
 			let random_hash = H256::random();
 
@@ -200,13 +195,17 @@ mod tests {
 
 	#[test]
 	fn test_deposit() {
-		let operator_pair = account_key_pair("operator");
+		let operator_pair = utxo::helper::account_key_pair("operator");
 		with_externalities(&mut new_test_ext(&operator_pair), || {
 
-			// check reference of genesis tx.
-			let receiver_key_pair = account_key_pair("test_receiver");
+			// check deposit.
+			let receiver_key_pair = utxo::helper::account_key_pair("test_receiver");
 			let signed_tx = utxo::helper::gen_transfer::<Test>(&operator_pair, &receiver_key_pair.public(), 100000);
-			Child::deposit(Origin::signed(receiver_key_pair.public()), signed_tx);
+			assert_eq!(Ok(()), Child::deposit(Origin::signed(receiver_key_pair.public()), signed_tx));
+
+			// invalid deposit transfer from no operator.
+			let invalid_signed_tx = utxo::helper::gen_transfer::<Test>(&receiver_key_pair, &operator_pair.public(), 1000);
+			assert_eq!(Err("Operator contains is not found."), Child::deposit(Origin::signed(operator_pair.public()), invalid_signed_tx));
 		});
 	}
 }
