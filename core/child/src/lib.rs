@@ -1,6 +1,6 @@
 use sr_primitives::traits::{As, Hash, Member, MaybeSerializeDebug};
 
-use support::{decl_module, decl_storage, decl_event, StorageValue, StorageMap, dispatch::Result};
+use support::{decl_module, decl_storage, decl_event, StorageValue, StorageMap, dispatch::Result, ensure};
 use system::ensure_signed;
 
 use merkle::MerkleTreeTrait;
@@ -10,27 +10,32 @@ use merkle::MerkleTreeTrait;
 
 /// The module's configuration trait.
 pub trait Trait: utxo::Trait {
-	type Utxo;
+	// TODO : utxo will be not srml. type Utxo;
 	type Tree: MerkleTreeTrait<Self::Hash, Self::Hashing>;
-
 	/// The overarching event type.
 	type Event: From<Event<Self>> + Into<<Self as system::Trait>::Event>;
 }
 
-decl_storage!{
+decl_storage! {
 	trait Store for Module<T: Trait> as Child {
 		ChildChain get(child_chain): map T::BlockNumber => Option<T::Hash>;
 		CurrentBlock get(current_block): T::BlockNumber = T::BlockNumber::sa(0);
-		Operators get(oerators): Vec<T::AccountId>;
+		Operators get(operators) config(): Vec<T::AccountId>;
+		SubmitInterval get(submit_interval) config(): T::BlockNumber;
 	}
 }
 
-decl_module!{
+decl_module! {
 	pub struct Module<T: Trait> for enum Call where origin: T::Origin {
 		fn deposit_event<T>() = default;
 
 		// commit (change childchain)
 		pub fn commit(origin, blk_num: T::BlockNumber, hash: T::Hash) -> Result {
+			let operator = ensure_signed(origin)?;
+			ensure!(
+				Self::operators().contains(&operator),
+				"Operator Contains is not found.");
+
 			<ChildChain<T>>::insert(&blk_num, hash);
 			<CurrentBlock<T>>::put(blk_num);
 			Ok(())
@@ -80,3 +85,109 @@ decl_event!(
 		Proof(BlockNumber, Hash, u32, Vec<Hash>, u32, u64),
 	}
 );
+
+#[cfg(all(test, feature = "std"))]
+mod tests {
+	use super::*;
+	use runtime_io::with_externalities;
+
+	use support::impl_outer_origin;
+	use sr_primitives::{
+		BuildStorage,
+		traits::{Verify, BlakeTwo256, IdentityLookup, Hash},
+		testing::{Digest, DigestItem, Header},
+	};
+	use primitives::{Blake2Hasher, H256, sr25519, crypto::Pair };
+	use std::clone::Clone;
+
+	use utxo::{TransactionInputTrait, TransactionOutputTrait, TransactionTrait, SignedTransactionTrait,
+			   TransactionInput, TransactionOutput, Transaction, SignedTransaction};
+
+	impl_outer_origin! {
+		pub enum Origin for Test {}
+	}
+
+	// For testing the module, we construct most of a mock runtime. This means
+	// first constructing a configuration type (`Test`) which `impl`s each of the
+	// configuration traits of modules we want to use.
+	#[derive(Clone, Eq, PartialEq)]
+	#[cfg_attr(feature = "std", derive(Debug))]
+	pub struct Test;
+
+	pub type Signature = sr25519::Signature;
+	// TODO must be sr25519 only used by wasm.
+	pub type AccountId = <Signature as Verify>::Signer;
+
+	pub type MerkleTree = merkle::mock::MerkleTree<H256, BlakeTwo256>;
+
+
+	impl system::Trait for Test {
+		type Origin = Origin;
+		type Index = u64;
+		type BlockNumber = u64;
+		type Hash = H256;
+		type Hashing = BlakeTwo256;
+		type Digest = Digest;
+		type AccountId = AccountId;
+		type Lookup = IdentityLookup<Self::AccountId>;
+		type Header = Header;
+		type Event = ();
+		type Log = DigestItem;
+	}
+
+	impl utxo::Trait for Test {
+		type Signature = Signature;
+		type TimeLock = Self::BlockNumber;
+		type Value = utxo::mvp::Value;
+
+		type Input = TransactionInput<H256>;
+		type Output = TransactionOutput<Self::Value, Self::AccountId>;
+
+		type Transaction = Transaction<Self::Input, Self::Output, Self::TimeLock>;
+		type SignedTransaction = SignedTransaction<Test>;
+
+		type Inserter = utxo::mvp::Inserter<Test, MerkleTree>;
+		type Remover = utxo::DefaultRemover<Test>;
+		type Finalizer = utxo::mvp::Finalizer<Test, MerkleTree>;
+
+		type Event = ();
+	}
+
+	impl Trait for Test {
+		type Tree = MerkleTree;
+		type Event = ();
+	}
+
+	fn account_key_pair(s: &str) -> sr25519::Pair {
+		sr25519::Pair::from_string(&format!("//{}", s), None)
+			.expect("static values are valid; qed")
+	}
+
+	type Child = Module<Test>;
+
+	fn new_test_ext(operator: AccountId) -> runtime_io::TestExternalities<Blake2Hasher> {
+		let mut t = system::GenesisConfig::<Test>::default().build_storage().unwrap().0;
+		t.extend(GenesisConfig::<Test> {
+			operators: vec! {operator},
+			submit_interval: 1,
+		}.build_storage().unwrap().0);
+		t.into()
+	}
+
+
+	#[test]
+	fn test_commit() {
+		let operator_pair = account_key_pair("operator");
+		with_externalities(&mut new_test_ext(operator_pair.public().clone()), || {
+			let random_hash = H256::random();
+			//MerkleTree::root();
+
+			Child::commit(Origin::signed(operator_pair.public()), 1, random_hash.clone());
+
+			let current = <CurrentBlock<Test>>::get();
+			let root = <ChildChain<Test>>::get(&1).unwrap();
+			assert_eq!(1, current);
+			assert_eq!(random_hash, root);
+		});
+	}
+}
