@@ -6,7 +6,7 @@ use system::ensure_signed;
 use parity_codec::{Encode, Decode};
 
 use merkle::MerkleTreeTrait;
-use utxo::SignedTransactionTrait;
+use utxo::{SignedTransactionTrait, TransactionOutputTrait};
 
 
 /// The module's configuration trait.
@@ -65,6 +65,22 @@ decl_module! {
 				Self::operators().contains(&operator),
 				"Signer is not operators.");
 
+			let utxo = <utxo::Module<T>>::unspent_outputs(&(tx_hash, out_index)).ok_or("Unexist exit utxo.")?;
+			for key in utxo.keys().iter() {
+				<utxo::UnspentOutputsFinder<T>>::mutate(key, |v| {
+					*v = match
+						v.as_ref()
+							.unwrap_or(&vec! {})
+							.iter()
+							.filter(|e| **e != (tx_hash, out_index))
+							.map(|e| *e)
+							.collect::<Vec<_>>()
+							.as_slice() {
+						[] => None,
+						s => Some(s.to_vec()),
+					}
+				})
+			}
 			<utxo::UnspentOutputs<T>>::remove(&(tx_hash, out_index));
 			Self::deposit_event(RawEvent::ExitStart(tx_hash, out_index));
 			Ok(())
@@ -233,6 +249,8 @@ mod tests {
 
 			let tx_ref = Utxo::unspent_outputs_finder(&receiver_key_pair.public()).unwrap()[0];
 			assert_eq!(Ok(()), Child::exit_start(Origin::signed(operator_pair.public()), tx_ref.0, tx_ref.1));
+			assert_eq!(None, Utxo::unspent_outputs_finder(&receiver_key_pair.public()));
+			assert_eq!(None, Utxo::unspent_outputs(&(tx_ref.0, tx_ref.1)));
 		});
 	}
 }
