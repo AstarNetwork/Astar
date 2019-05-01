@@ -3,9 +3,10 @@ use sr_primitives::traits::{As, Hash, Member, MaybeSerializeDebug};
 use support::{decl_module, decl_storage, decl_event, StorageValue, StorageMap, dispatch::Result, ensure};
 use system::ensure_signed;
 
-use merkle::MerkleTreeTrait;
+use parity_codec::{Encode, Decode};
 
-//use rstd::collections::btree_set::BTreeSet;
+use merkle::MerkleTreeTrait;
+use utxo::SignedTransactionTrait;
 
 
 /// The module's configuration trait.
@@ -45,10 +46,14 @@ decl_module! {
 		pub fn deposit(origin, signed_tx: T::SignedTransaction) -> Result {
 			let operator = ensure_signed(origin)?;
 
-			// TODO operator checks
+			ensure!(signed_tx
+				.public_keys()
+				.iter()
+				.filter(|key| Self::operators().contains(key))
+				.count() == signed_tx.public_keys().len(),
+				"Operator contains is not found.");
 
-			//<utxo::Module<T>>::execute(singed_tx)?;
-			Ok(())
+			<utxo::Module<T>>::do_execute(signed_tx)
 		}
 
 
@@ -97,7 +102,7 @@ mod tests {
 		traits::{Verify, BlakeTwo256, IdentityLookup, Hash},
 		testing::{Digest, DigestItem, Header},
 	};
-	use primitives::{Blake2Hasher, H256, sr25519, crypto::Pair };
+	use primitives::{Blake2Hasher, H256, sr25519, crypto::Pair};
 	use std::clone::Clone;
 
 	use utxo::{TransactionInputTrait, TransactionOutputTrait, TransactionTrait, SignedTransactionTrait,
@@ -140,10 +145,10 @@ mod tests {
 		type TimeLock = Self::BlockNumber;
 		type Value = utxo::mvp::Value;
 
-		type Input = TransactionInput<H256>;
-		type Output = TransactionOutput<Self::Value, Self::AccountId>;
+		type Input = utxo::helper::TestInput;
+		type Output = utxo::helper::TestOutput;
 
-		type Transaction = Transaction<Self::Input, Self::Output, Self::TimeLock>;
+		type Transaction = utxo::helper::TestTransaction;
 		type SignedTransaction = SignedTransaction<Test>;
 
 		type Inserter = utxo::mvp::Inserter<Test, MerkleTree>;
@@ -165,10 +170,13 @@ mod tests {
 
 	type Child = Module<Test>;
 
-	fn new_test_ext(operator: AccountId) -> runtime_io::TestExternalities<Blake2Hasher> {
+	fn new_test_ext(operator: &sr25519::Pair) -> runtime_io::TestExternalities<Blake2Hasher> {
 		let mut t = system::GenesisConfig::<Test>::default().build_storage().unwrap().0;
+		t.extend(utxo::GenesisConfig::<Test> {
+			genesis_tx: utxo::helper::genesis_tx::<Test>(operator),
+		}.build_storage().unwrap().0);
 		t.extend(GenesisConfig::<Test> {
-			operators: vec! {operator},
+			operators: vec! {operator.public().clone()},
 			submit_interval: 1,
 		}.build_storage().unwrap().0);
 		t.into()
@@ -178,9 +186,8 @@ mod tests {
 	#[test]
 	fn test_commit() {
 		let operator_pair = account_key_pair("operator");
-		with_externalities(&mut new_test_ext(operator_pair.public().clone()), || {
+		with_externalities(&mut new_test_ext(&operator_pair), || {
 			let random_hash = H256::random();
-			//MerkleTree::root();
 
 			Child::commit(Origin::signed(operator_pair.public()), 1, random_hash.clone());
 
@@ -188,6 +195,18 @@ mod tests {
 			let root = <ChildChain<Test>>::get(&1).unwrap();
 			assert_eq!(1, current);
 			assert_eq!(random_hash, root);
+		});
+	}
+
+	#[test]
+	fn test_deposit() {
+		let operator_pair = account_key_pair("operator");
+		with_externalities(&mut new_test_ext(&operator_pair), || {
+
+			// check reference of genesis tx.
+			let receiver_key_pair = account_key_pair("test_receiver");
+			let signed_tx = utxo::helper::gen_transfer::<Test>(&operator_pair, &receiver_key_pair.public(), 100000);
+			Child::deposit(Origin::signed(receiver_key_pair.public()), signed_tx);
 		});
 	}
 }
