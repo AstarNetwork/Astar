@@ -18,7 +18,6 @@ pub use std::fmt;
 use parity_codec::{Encode, Decode};
 use rstd::ops::Div;
 
-// plasm pritmitives uses mvp::Value
 pub mod mvp;
 
 pub trait Trait: system::Trait {

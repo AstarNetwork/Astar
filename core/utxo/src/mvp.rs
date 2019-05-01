@@ -4,6 +4,8 @@ use plasm_merkle::MerkleTreeTrait;
 use sr_primitives::traits::{Member, MaybeSerializeDebug, Hash};
 use parity_codec::Codec;
 
+pub use plasm_primitives::mvp::Value;
+
 #[derive(Clone, Eq, PartialEq, Default)]
 #[cfg_attr(feature = "std", derive(Debug))]
 pub struct Inserter<T, Tree>(PhantomData<(T, Tree)>);
