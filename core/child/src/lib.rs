@@ -35,10 +35,11 @@ decl_module! {
 			let operator = ensure_signed(origin)?;
 			ensure!(
 				Self::operators().contains(&operator),
-				"Operator Contains is not found.");
+				"Signer is not operators.");
 
 			<ChildChain<T>>::insert(&blk_num, hash);
-			<CurrentBlock<T>>::put(blk_num);
+			<CurrentBlock<T>>::put(blk_num.clone());
+			Self::deposit_event(RawEvent::Commit(blk_num, hash));
 			Ok(())
 		}
 
@@ -51,15 +52,21 @@ decl_module! {
 				.iter()
 				.filter(|key| Self::operators().contains(key))
 				.count() == signed_tx.public_keys().len(),
-				"Operator contains is not found.");
+				"Signer is not operators.");
 
 			<utxo::Module<T>>::do_execute(signed_tx)
 		}
 
 
-		// exitStart() delete exitor utxo by Utxo.
+		// exitStart () delete exitor utxo by Utxo.
 		pub fn exit_start(origin, tx_hash: T::Hash, out_index: u32) -> Result {
-			//<utxo::Trait<T>>::remove(&(tx_hash, out_index));
+			let operator = ensure_signed(origin)?;
+			ensure!(
+				Self::operators().contains(&operator),
+				"Signer is not operators.");
+
+			<utxo::UnspentOutputs<T>>::remove(&(tx_hash, out_index));
+			Self::deposit_event(RawEvent::ExitStart(tx_hash, out_index));
 			Ok(())
 		}
 
@@ -164,6 +171,7 @@ mod tests {
 	}
 
 	type Child = Module<Test>;
+	type Utxo = utxo::Module<Test>;
 
 	fn new_test_ext(operator: &sr25519::Pair) -> runtime_io::TestExternalities<Blake2Hasher> {
 		let mut t = system::GenesisConfig::<Test>::default().build_storage().unwrap().0;
@@ -205,7 +213,26 @@ mod tests {
 
 			// invalid deposit transfer from no operator.
 			let invalid_signed_tx = utxo::helper::gen_transfer::<Test>(&receiver_key_pair, &operator_pair.public(), 1000);
-			assert_eq!(Err("Operator contains is not found."), Child::deposit(Origin::signed(operator_pair.public()), invalid_signed_tx));
+			assert_eq!(Err("Signer is not operators."), Child::deposit(Origin::signed(operator_pair.public()), invalid_signed_tx));
+		});
+	}
+
+	#[test]
+	fn test_exit_start() {
+		let operator_pair = utxo::helper::account_key_pair("operator");
+		with_externalities(&mut new_test_ext(&operator_pair), || {
+
+			// check deposit.
+			let receiver_key_pair = utxo::helper::account_key_pair("test_receiver");
+			let signed_tx = utxo::helper::gen_transfer::<Test>(&operator_pair, &receiver_key_pair.public(), 100000);
+			assert_eq!(Ok(()), Child::deposit(Origin::signed(receiver_key_pair.public()), signed_tx));
+
+			// invalid deposit transfer from no operator.
+			let invalid_signed_tx = utxo::helper::gen_transfer::<Test>(&receiver_key_pair, &operator_pair.public(), 1000);
+			assert_eq!(Err("Signer is not operators."), Child::deposit(Origin::signed(operator_pair.public()), invalid_signed_tx));
+
+			let tx_ref = Utxo::unspent_outputs_finder(&receiver_key_pair.public()).unwrap()[0];
+			assert_eq!(Ok(()), Child::exit_start(Origin::signed(operator_pair.public()), tx_ref.0, tx_ref.1));
 		});
 	}
 }
