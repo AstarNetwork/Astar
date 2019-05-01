@@ -31,12 +31,12 @@ pub trait MerkleTreeTrait<H, Hashing>
 	fn commit();
 }
 
-pub trait MerkleDb<Id: Encode, Key: Encode, O: Codec> {
-	fn push(&self, trie_id: &Id, key: &Key, o: O) {
-		child::put_raw(&trie_id.encode()[..], &key.encode()[..], &o.encode()[..]);
+pub trait MerkleDb<Key: Encode, O: Codec> {
+	fn push(&self, trie_id: &[u8], key: &Key, o: O) {
+		child::put_raw(trie_id, &key.encode()[..], &o.encode()[..]);
 	}
-	fn get(&self, trie_id: &Id, key: &Key) -> Option<O> {
-		if let Some(ret) = child::get_raw(&trie_id.encode()[..], &key.encode()[..]) {
+	fn get(&self, trie_id: &[u8], key: &Key) -> Option<O> {
+		if let Some(ret) = child::get_raw(trie_id, &key.encode()[..]) {
 			return O::decode(&mut &ret[..]);
 		}
 		return None;
@@ -45,7 +45,7 @@ pub trait MerkleDb<Id: Encode, Key: Encode, O: Codec> {
 
 pub struct DirectMerkleDb;
 
-impl<Id: Encode, Key: Encode, O: Codec> MerkleDb<Id, Key, O> for DirectMerkleDb {}
+impl<Key: Encode, O: Codec> MerkleDb<Key, O> for DirectMerkleDb {}
 
 pub trait ProofTrait<H>
 	where H: Codec + Member + MaybeSerializeDebug + rstd::hash::Hash + AsRef<[u8]> + AsMut<[u8]> + Copy + Default {

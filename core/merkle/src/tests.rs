@@ -53,11 +53,11 @@ fn new_test_ext() -> runtime_io::TestExternalities<Blake2Hasher> {
 }
 
 fn test_db_push(key: u64, value: H256) {
-	MerkleDb::<&'static str, u64, H256>::push(&DirectMerkleDb, &"test_db", &key, value);
+	MerkleDb::<u64, H256>::push(&DirectMerkleDb, b":child_storage:default:test_db", &key, value);
 }
 
 fn test_db_get(key: u64) -> Option<H256> {
-	MerkleDb::<&'static str, u64, H256>::get(&DirectMerkleDb, &"test_db", &key)
+	MerkleDb::<u64, H256>::get(&DirectMerkleDb, b":child_storage:default:test_db", &key)
 }
 
 #[test]
@@ -112,4 +112,9 @@ fn merkle_mock_test() {
 		type MerkleTree = mock::MerkleTree<H256, BlakeTwo256>;
 		merkle_test::<MerkleTree, H256, BlakeTwo256, fn() -> H256>(H256::random);
 	});
+}
+
+#[test]
+fn check_merkle_trie_id() {
+	assert!(mock::MOCK_MERKLE_TREE_TRIE_ID.starts_with(b":child_storage:default:"));
 }

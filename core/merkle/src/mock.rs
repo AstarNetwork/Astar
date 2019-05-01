@@ -4,7 +4,7 @@ use sr_primitives::traits::{Member, MaybeSerializeDebug, Hash};
 use parity_codec::Codec;
 
 // mock merkle tree trie id name. no conflict.
-const MOCK_MERKLE_TREE_TRIE_ID: &'static str = "mock_merkle_tree_trie_id";
+pub const MOCK_MERKLE_TREE_TRIE_ID: &'static [u8] = b":child_storage:default: mock_merkle_tree_trie_id";
 const MOCK_MERKLE_TREE_DEPTH: u8 = 20;
 /// must be 2^n.
 const MOCK_MERKLE_TREE_LIMIT: u64 = (1 << MOCK_MERKLE_TREE_DEPTH as u64);
@@ -19,17 +19,17 @@ pub struct MerkleTree<H, Hashing>(PhantomData<(H, Hashing)>);
 
 impl<H: Codec + Default, Hashing> MerkleTree<H, Hashing> where {
 	pub fn get_hash(index: u64) -> H {
-		MerkleDb::<&'static str, u64, H>::get(&DirectMerkleDb, &MOCK_MERKLE_TREE_TRIE_ID, &index).unwrap_or(Default::default())
+		MerkleDb::<u64, H>::get(&DirectMerkleDb, &MOCK_MERKLE_TREE_TRIE_ID, &index).unwrap_or(Default::default())
 	}
 	pub fn get_index(h: &H) -> u64 {
-		MerkleDb::<&'static str, H, u64>::get(&DirectMerkleDb, &MOCK_MERKLE_TREE_TRIE_ID, h).unwrap_or(0)
+		MerkleDb::<H, u64>::get(&DirectMerkleDb, &MOCK_MERKLE_TREE_TRIE_ID, h).unwrap_or(0)
 	}
 	pub fn push_hash(index: u64, h: H) {
-		MerkleDb::<&'static str, u64, H>::push(&DirectMerkleDb, &MOCK_MERKLE_TREE_TRIE_ID, &index, h);
+		MerkleDb::<u64, H>::push(&DirectMerkleDb, &MOCK_MERKLE_TREE_TRIE_ID, &index, h);
 	}
 
 	pub fn push_index(h: &H, index: u64) {
-		MerkleDb::<&'static str, H, u64>::push(&DirectMerkleDb, &MOCK_MERKLE_TREE_TRIE_ID, h, index);
+		MerkleDb::<H, u64>::push(&DirectMerkleDb, &MOCK_MERKLE_TREE_TRIE_ID, h, index);
 	}
 }
 
