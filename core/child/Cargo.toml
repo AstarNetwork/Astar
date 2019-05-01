@@ -27,7 +27,7 @@ git = 'https://github.com/paritytech/substrate.git'
 package = 'sr-io'
 version = '1.0.0'
 
-[dependencies.runtime-primitives]
+[dependencies.sr-primitives]
 default_features = false
 git = 'https://github.com/paritytech/substrate.git'
 package = 'sr-primitives'
@@ -75,11 +75,22 @@ git = 'https://github.com/paritytech/substrate.git'
 package = 'sr-version'
 version = '1.0.0'
 
+[dependencies.utxo]
+default_features = false
+path = '../utxo'
+package = 'plasm-utxo'
+
+[dependencies.merkle]
+default_features = false
+path = '../merkle'
+package = 'plasm-merkle'
+
 [features]
 default = ["std"]
 std = [
     'parity-codec/std',
     'primitives/std',
+    'sr-primitives/std',
     'rstd/std',
     'runtime-io/std',
     'support/std',
@@ -90,4 +101,6 @@ std = [
     'serde_derive',
     'serde',
     'safe-mix/std',
+    'utxo/std',
+    'merkle/std',
 ]

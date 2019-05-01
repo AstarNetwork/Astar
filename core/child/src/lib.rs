@@ -1,12 +1,17 @@
-pub mod mvp;
+use sr_primitives::traits::{As, Hash, Member, MaybeSerializeDebug};
 
-use support::{decl_module, decl_storage, decl_event, StorageValue, dispatch::Result};
+use support::{decl_module, decl_storage, decl_event, StorageValue, StorageMap, dispatch::Result};
 use system::ensure_signed;
 
+use merkle::MerkleTreeTrait;
+
+//use rstd::collections::btree_set::BTreeSet;
+
+
 /// The module's configuration trait.
-pub trait Trait: system::Trait {
+pub trait Trait: utxo::Trait {
 	type Utxo;
-	type Tree;
+	type Tree: MerkleTreeTrait<Self::Hash, Self::Hashing>;
 
 	/// The overarching event type.
 	type Event: From<Event<Self>> + Into<<Self as system::Trait>::Event>;
@@ -16,6 +21,7 @@ decl_storage!{
 	trait Store for Module<T: Trait> as Child {
 		ChildChain get(child_chain): map T::BlockNumber => Option<T::Hash>;
 		CurrentBlock get(current_block): T::BlockNumber = T::BlockNumber::sa(0);
+		Operators get(oerators): Vec<T::AccountId>;
 	}
 }
 
@@ -24,43 +30,53 @@ decl_module!{
 		fn deposit_event<T>() = default;
 
 		// commit (change childchain)
-		pub fn commit(origin, blk_num: T::BlockNumber, hash: T::Hash) {
+		pub fn commit(origin, blk_num: T::BlockNumber, hash: T::Hash) -> Result {
 			<ChildChain<T>>::insert(&blk_num, hash);
 			<CurrentBlock<T>>::put(blk_num);
 			Ok(())
 		}
 
-		pub fn deposit(origin, sign_tx) {
+		// deposit () verfy and execute(operator -> depositor) by Utxo.
+		pub fn deposit(origin, signed_tx: T::SignedTransaction) -> Result {
+			let operator = ensure_signed(origin)?;
 
-		}
+			// TODO operator checks
 
-		// Just a dummy entry point.
-		// function that can be called by the external world as an extrinsics call
-		// takes a parameter of the type `AccountId`, stores it and emits an event
-		pub fn do_something(origin, something: u32) -> Result {
-			// TODO: You only need this if you want to check it was signed.
-			let who = ensure_signed(origin)?;
-
-			// TODO: Code to execute when something calls this.
-			// For example: the following line stores the passed in u32 in the storage
-			<Something<T>>::put(something);
-
-			// here we are raising the Something event
-			Self::deposit_event(RawEvent::SomethingStored(something, who));
+			//<utxo::Module<T>>::execute(singed_tx)?;
 			Ok(())
 		}
-	}
 
-	// deposit () verfy and execute(operator -> depositor) by Utxo.
-	// exitStart() delete exitor utxo by Utxo.
+
+		// exitStart() delete exitor utxo by Utxo.
+		pub fn exit_start(origin, tx_hash: T::Hash, out_index: u32) -> Result {
+			//<utxo::Trait<T>>::remove(&(tx_hash, out_index));
+			Ok(())
+		}
+
+		pub fn get_proof(origin, blk_num: T::BlockNumber, tx_hash: T::Hash, out_index: u32) -> Result {
+			// deposit_event(RawEvent(Proof(blk_num, tx_hash, out_index, proofs, depth, index));
+			Ok(())
+		}
+
+		fn on_finalize(n_: T::BlockNumber) {
+			Self::deposit_event(RawEvent::Submit(T::Tree::root()));
+		}
+	}
 }
 
 decl_event!(
 	/// An event in this module.
-	pub enum Event<T> where AccountId = <T as system::Trait>::AccountId {
-		// Submit
-		// Commit
-		// Deposit
-		// ExitStart
+	pub enum Event<T>
+		where
+			Hash = <T as system::Trait>::Hash,
+			BlockNumber = <T as system::Trait>::BlockNumber,
+			AccountId = <T as system::Trait>::AccountId,
+			Value = <T as utxo::Trait>::Value {
+		Submit(Hash),
+		Commit(BlockNumber, Hash),
+		Deposit(AccountId, Value),
+		ExitStart(Hash, u32),
+		// blocknumber, hash, index, proofs, depth, index
+		Proof(BlockNumber, Hash, u32, Vec<Hash>, u32, u64),
 	}
 );
