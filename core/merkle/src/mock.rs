@@ -4,6 +4,7 @@ use sr_primitives::traits::{Member, MaybeSerializeDebug, Hash};
 use parity_codec::Codec;
 
 // mock merkle tree trie id name. no conflict.
+// TODO: see https://github.com/paritytech/substrate/issues/2325
 pub const MOCK_MERKLE_TREE_TRIE_ID: &'static [u8] = b":child_storage:default: mock_merkle_tree_trie_id";
 const MOCK_MERKLE_TREE_DEPTH: u8 = 20;
 /// must be 2^n.
