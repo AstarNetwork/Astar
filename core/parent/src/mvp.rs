@@ -375,7 +375,6 @@ mod tests {
 		traits::{BlakeTwo256, IdentityLookup},
 		testing::{Digest, DigestItem, Header},
 	};
-
 	use std::{thread, time::Duration};
 
 	use plasm_utxo::{TransactionTrait, TransactionInputTrait, TransactionOutputTrait};
@@ -447,15 +446,6 @@ mod tests {
 		type Event = Evented;
 	}
 
-	//	Submit(Hash),
-//	/// Deposit Events to child operator.
-//	Deposit(AccountId, Balance),
-//	// Start Exit Events to child operator
-//	ExitStart(AccountId, Hash),
-//	/// Challenge Events
-//	Challenged(Hash),
-//	/// Exit Finalize Events
-//	ExitFinalize(Hash),
 	impl From<system::Event> for Evented {
 		fn from(e: system::Event) -> Evented {
 			Evented(H256::zero())
@@ -476,7 +466,6 @@ mod tests {
 			}
 		}
 	}
-
 
 	type Parent = Module<Test>;
 
@@ -507,7 +496,7 @@ mod tests {
 	type Tree = plasm_merkle::mock::MerkleTree<H256, BlakeTwo256>;
 	type TestUtxo = Utxo<H256, u64, u64, u64>;
 
-	fn test_tx_in(in_hash: <Test as system::Trait>::Hash, in_index: usize) -> TransactionInput<H256> {
+	fn test_tx_in(in_hash: <Test as system::Trait>::Hash, in_index: u32) -> TransactionInput<H256> {
 		TransactionInput::<H256>::new(in_hash, in_index)
 	}
 
@@ -523,7 +512,7 @@ mod tests {
 			}, 0), 0)
 	}
 
-	fn gen_mvp_tx(in_hash: H256, in_index: usize, value: u64, owner: u64) -> TestUtxo {
+	fn gen_mvp_tx(in_hash: H256, in_index: u32, value: u64, owner: u64) -> TestUtxo {
 		Utxo::<H256, u64, u64, u64>(Transaction::<TransactionInput<H256>, TransactionOutput<u64, u64>, u64>::new(
 			vec! {
 				test_tx_in(in_hash, in_index),
