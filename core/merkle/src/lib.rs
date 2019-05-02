@@ -31,6 +31,16 @@ pub trait MerkleTreeTrait<H, Hashing>
 	fn commit();
 }
 
+
+pub trait RecoverableMerkleTreeTrait<H, Hashing> : MerkleTreeTrait<H, Hashing>
+	where H: Codec + Member + MaybeSerializeDebug + rstd::hash::Hash + AsRef<[u8]> + AsMut<[u8]> + Copy + Default,
+		  Hashing: Hash<Output=H>
+{
+	type Out: MerkleTreeTrait<H, Hashing>;
+	fn load(root: &H) -> Self::Out;
+	fn save();
+}
+
 pub trait MerkleDb<Key: Encode, O: Codec> {
 	fn push(&self, trie_id: &[u8], key: &Key, o: O) {
 		child::put_raw(trie_id, &key.encode()[..], &o.encode()[..]);
