@@ -138,13 +138,45 @@ pub struct PastMerkleTree<H, Hashing> {
 }
 
 impl_merkle_accessor!(PastMerkleTree);
+impl<H: Codec + Default, B> PastMerkleTree<H, B> {
+	// get hash by past.
+	fn get_hash_from_node(&self, index: u64) -> H {
+		let mut cpy = index;
+		let mut depths = 0; // depth 0-index.
+		while cpy >= 0 {
+			cpy = (cpy - 1) >> 1;
+			depths += 1;
+		}
+
+		let num_elm = (1 << depth); // number of elements this depth.
+		let weight_nodes = MOCK_MERKLE_TREE_LIMIT / num_elm; // this nodes overwrap [l,r), r-l == weight-nodes.
+		let node_index_with_depth = index - (1 << depth) + 1; // node index with this depths.
+		let left = node_index_with_depth * weight_nodes;
+		let right = left + weight_nodes;
+		// dps is depth of node.
+		self._get_hash_from_node(index, left, right)
+	}
+
+	// node-index, [left, right).
+	fn _get_hash_from_node(&self, index: u64, left: u64, right: u64) -> H {
+		if left >= past { // outer
+			return Default::default();
+		} else if right <= past { // inner
+			return get_hash(&index);
+		}
+		concat_hash(self._get_hash_from_node(2 * index + 1, left, (left + right) / 2),
+					self._get_hash_from_node(2 * index + 2, (left + right) / 2, right),
+					Hashing::hash)
+	}
+}
 
 impl<H, Hashing> MerkleTreeTrait<H, Hashing> for PastMerkleTree<H, Hashing>
 	where H: Codec + Member + MaybeSerializeDebug + rstd::hash::Hash + AsRef<[u8]> + AsMut<[u8]> + Copy + Default,
 		  Hashing: Hash<Output=H>
 {
 	fn root() -> H {
-		Self::get_hash(0)
+		// TODO
+
 	}
 
 	fn proofs(leaf: &H) -> MerkleProof<H> {
