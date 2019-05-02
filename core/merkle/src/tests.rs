@@ -150,6 +150,7 @@ fn recover_merkle_test<Tree, H, Hashing, F>(tree: Tree, rnd: F)
 	tree.save();
 
 	let tree_a = Tree::load(&root_a);
+	assert_eq!(root_a, tree_a.root());
 	let proofs_a_act = (0..10).map(|i| tree_a.proofs(&hashes[i])).collect::<Vec<_>>();
 	assert_eq!(proofs_a, proofs_a_act);
 }
@@ -158,7 +159,7 @@ fn recover_merkle_test<Tree, H, Hashing, F>(tree: Tree, rnd: F)
 fn recover_merkle_mock_test() {
 	with_externalities(&mut new_test_ext(), || {
 		type MerkleTree = mock::MerkleTree<H256, BlakeTwo256>;
-		merkle_test::<MerkleTree, H256, BlakeTwo256, fn() -> H256>(MerkleTree::new(), H256::random);
+		recover_merkle_test::<MerkleTree, H256, BlakeTwo256, fn() -> H256>(MerkleTree::new(), H256::random);
 	});
 }
 
