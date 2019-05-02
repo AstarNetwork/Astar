@@ -129,9 +129,10 @@ mod tests {
 		testing::{Digest, DigestItem, Header},
 	};
 	use primitives::{Blake2Hasher, H256, sr25519, crypto::Pair};
+	use parity_codec::{Encode, Decode};
 	use std::clone::Clone;
 
-	use utxo::{TransactionInputTrait, TransactionOutputTrait, TransactionTrait, SignedTransactionTrait};
+	use utxo::{SignedTransaction};
 
 	impl_outer_origin! {
 		pub enum Origin for Test {}
@@ -150,6 +151,17 @@ mod tests {
 
 	pub type MerkleTree = merkle::mock::MerkleTree<H256, BlakeTwo256>;
 
+	#[derive(Clone, PartialEq, Eq, Encode, Decode)]
+	#[cfg_attr(feature = "std", derive(Debug))]
+	pub enum TestEvent {
+		Submit(H256),
+		Commit(u64, H256),
+		Deposit(AccountId, utxo::mvp::Value),
+		ExitStart(H256, u32),
+		// blocknumber, tx_hash, out_index, proofs, depth, index
+		Proof(u64, H256, u32, Vec<H256>, u32, u64),
+		Other,
+	}
 
 	impl system::Trait for Test {
 		type Origin = Origin;
@@ -161,7 +173,7 @@ mod tests {
 		type AccountId = AccountId;
 		type Lookup = IdentityLookup<Self::AccountId>;
 		type Header = Header;
-		type Event = ();
+		type Event = TestEvent;
 		type Log = DigestItem;
 	}
 
@@ -180,12 +192,36 @@ mod tests {
 		type Remover = utxo::DefaultRemover<Test>;
 		type Finalizer = utxo::mvp::Finalizer<Test, MerkleTree>;
 
-		type Event = ();
+		type Event = TestEvent;
 	}
 
 	impl Trait for Test {
 		type Tree = MerkleTree;
-		type Event = ();
+		type Event = TestEvent;
+	}
+
+	impl From<system::Event> for TestEvent {
+		fn from(_e: system::Event) -> TestEvent {
+			TestEvent::Other
+		}
+	}
+
+	impl From<utxo::Event<Test>> for TestEvent {
+		fn from(_e: utxo::Event<Test>) -> TestEvent {
+			TestEvent::Other
+		}
+	}
+
+	impl From<Event<Test>> for TestEvent {
+		fn from(e: Event<Test>) -> TestEvent {
+			match e {
+				RawEvent::Submit(hash) => TestEvent::Submit(hash),
+				RawEvent::Commit(blk_num, hash) => TestEvent::Commit(blk_num, hash),
+				RawEvent::Deposit(acid, value) => TestEvent::Deposit(acid, value),
+				RawEvent::ExitStart(hash, out) => TestEvent::ExitStart(hash, out),
+				RawEvent::Proof(blk_num, hash, out, prs, depth, index) => TestEvent::Proof(blk_num, hash, out, prs, depth, index),
+			}
+		}
 	}
 
 	type Child = Module<Test>;

@@ -575,14 +575,6 @@ mod tests {
 			// submit 1 -> 2
 			test_submit(1);
 
-			//		TotalDeposit get(total_deposit) config(): <T as balances::Trait>::Balance;
-			//		ChildChain get(child_chain): map T::BlockNumber => Option<T::Hash>;
-			//		CurrentBlock get(current_block): T::BlockNumber = T::BlockNumber::zero();
-			//		Operator get(operator) config() : Vec <T::AccountId> = Default::default();
-			//		ExitStatusStorage get(exit_status_storage): map T::Hash => Option<T::ExitStatus>;
-			//		Fee get(fee) config(): <T as balances::Trait>::Balance;
-
-
 			// failed another user.
 			assert_ne!(Ok(()), Parent::exit_start(Origin::signed(2), 2, proof.depth() as u32, proof.index(), proof.proofs().to_vec(), utxo_1.encode()));
 
