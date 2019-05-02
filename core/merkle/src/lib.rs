@@ -73,7 +73,7 @@ pub trait ProofTrait<H>
 	fn index(&self) -> u64;
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct MerkleProof<H> {
 	pub proofs: Vec<H>,
 	pub depth: u8,
