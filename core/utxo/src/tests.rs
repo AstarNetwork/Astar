@@ -82,7 +82,7 @@ fn mvp_minimum_works() {
 	let root_key_pair = account_key_pair("test_root");
 	with_externalities(&mut new_test_ext(&root_key_pair), || {
 		// check merkle root ============================== different default
-		let root_hash = MerkleTree::root();
+		let root_hash = MerkleTree::new().root();
 
 		// check reference of genesis tx.
 		let ref_utxo = <UnspentOutputsFinder<Test>>::get(root_key_pair.public());
@@ -133,17 +133,17 @@ fn mvp_minimum_works() {
 		assert_eq!((1 << 59), *leftover_total);
 
 		// not yet change root hash ========================= different default TODO genesis tx is not exist (after that issue)
-		assert_eq!(root_hash, MerkleTree::root());
+		assert_eq!(root_hash, MerkleTree::new().root());
 
 		// on_finalize
 		UTXO::on_finalize(1);
 
 		// changed root hash ============================== different default VVV
-		let new_root_hash = MerkleTree::root();
+		let new_root_hash = MerkleTree::new().root();
 		assert_ne!(root_hash, new_root_hash);
 
 		// proofs by ref utxo.
-		let proofs = MerkleTree::proofs(&BlakeTwo256::hash_of(&ref_utxo.as_ref().unwrap()[0]));
+		let proofs = MerkleTree::new().proofs(&BlakeTwo256::hash_of(&ref_utxo.as_ref().unwrap()[0]));
 		assert_eq!(new_root_hash, proofs.root::<BlakeTwo256>());
 	});
 }

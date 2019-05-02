@@ -86,8 +86,12 @@ decl_module! {
 			Ok(())
 		}
 
+		// deposit_event(RawEvent(Proof(blk_num, tx_hash, out_index, proofs, depth, index));
 		pub fn get_proof(origin, blk_num: T::BlockNumber, tx_hash: T::Hash, out_index: u32) -> Result {
-			// deposit_event(RawEvent(Proof(blk_num, tx_hash, out_index, proofs, depth, index));
+			ensure_signed(origin)?;
+			let hash = Self::child_chain(blk_num).ok_or("unexists block number.")
+
+
 			Ok(())
 		}
 
