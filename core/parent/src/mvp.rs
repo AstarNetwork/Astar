@@ -369,13 +369,12 @@ mod tests {
 
 	use sr_io::with_externalities;
 	use primitives::{H256, Blake2Hasher};
-	use support::{impl_outer_origin, assert_ok};
+	use support::{impl_outer_origin};
 	use sr_primitives::{
 		BuildStorage,
 		traits::{BlakeTwo256, IdentityLookup},
 		testing::{Digest, DigestItem, Header},
 	};
-	use std::{thread, time::Duration};
 
 	use plasm_utxo::{TransactionTrait, TransactionInputTrait, TransactionOutputTrait};
 	use plasm_merkle::{MerkleTreeTrait, ReadOnlyMerkleTreeTrait};
@@ -447,13 +446,13 @@ mod tests {
 	}
 
 	impl From<system::Event> for Evented {
-		fn from(e: system::Event) -> Evented {
+		fn from(_e: system::Event) -> Evented {
 			Evented(H256::zero())
 		}
 	}
 
 	impl From<balances::Event<Test>> for Evented {
-		fn from(e: balances::Event<Test>) -> Evented {
+		fn from(_e: balances::Event<Test>) -> Evented {
 			Evented(H256::zero())
 		}
 	}
