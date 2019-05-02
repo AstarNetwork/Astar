@@ -245,7 +245,6 @@ decl_module! {
 
 			// exist check
 			let utxo = T::Utxo::decode( &mut &utxo[..]).ok_or("undecodec utxo binary.")?;
-			let depth = depth as u8;
 			let proof = MerkleProof{ proofs, depth, index};
 			T::ExistProofs::is_exist(&blk_num, &utxo, &proof)?;
 
@@ -310,7 +309,6 @@ decl_module! {
 
 			// exist check
 			let utxo = T::Utxo::decode( &mut &utxo[..]).ok_or("undecodec utxo binary.")?;
-			let depth = depth as u8;
 			let proof = MerkleProof{ proofs, depth, index};
 			T::ExistProofs::is_exist(&blk_num, &utxo, &proof)?;
 
@@ -566,7 +564,7 @@ mod tests {
 
 
 			// exit failed
-			let proof = Tree::new().proofs(&utxo_1.hash::<BlakeTwo256>());
+			let proof = Tree::new().proofs(&utxo_1.hash::<BlakeTwo256>()).unwrap();
 			assert_eq!(Tree::new().root(), proof.root::<BlakeTwo256>());
 			assert_eq!(&utxo_1.hash::<BlakeTwo256>(), proof.leaf());
 			//blk_num: T::BlockNumber, depth: u32, index: u64, proofs: Vec<T::Hash>, utxo: Vec<u8>

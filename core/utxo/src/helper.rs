@@ -4,7 +4,6 @@ use sr_primitives::{
 	traits::{BlakeTwo256},
 };
 use primitives::{sr25519, Pair, H256};
-use std::clone::Clone;
 
 pub type Signature = sr25519::Signature;
 
