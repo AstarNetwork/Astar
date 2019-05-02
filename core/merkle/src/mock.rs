@@ -127,11 +127,7 @@ impl<H, Hashing> ReadOnlyMerkleTreeTrait<H, Hashing> for MerkleTree<H, Hashing>
 
 /// Implemention of MerkleTree.
 ///.
-/// get_index(default::Default()) = number of utxo.
-/// get_index(hash_of(default::Default()) = number of proposed utxo.
 /// get_index(leaf) = index of leaf. value is [0, MOCK_MERKLE_TREE_LIMIT).
-///
-/// get_hash(MOCK_MERKLE_TREE_LIMIT << 1 + i) = i-th porposed utxo hash.
 /// get_hash([0, MOCK_MERKLE_TREE_LIMIT<<1)) = i-th node hash. [MOCK_MERKLE_TREE_LIMIT - 1, MOCK_MERKLE_TREE_LIMIT<<1) is leaf
 impl<H, Hashing> MerkleTreeTrait<H, Hashing> for MerkleTree<H, Hashing>
 	where H: Codec + Member + MaybeSerializeDebug + rstd::hash::Hash + AsRef<[u8]> + AsMut<[u8]> + Copy + Default,
