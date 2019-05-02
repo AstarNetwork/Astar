@@ -69,7 +69,7 @@ pub trait ProofTrait<H>
 	fn root<Hashing>(&self) -> H where Hashing: Hash<Output=H>;
 	fn leaf(&self) -> &H;
 	fn proofs(&self) -> &Vec<H>;
-	fn depth(&self) -> u8;
+	fn depth(&self) -> u32;
 	fn index(&self) -> u64;
 }
 
@@ -77,7 +77,7 @@ pub trait ProofTrait<H>
 #[cfg_attr(feature = "std", derive(Debug))]
 pub struct MerkleProof<H> {
 	pub proofs: Vec<H>,
-	pub depth: u8,
+	pub depth: u32,
 	pub index: u64,
 }
 
@@ -128,7 +128,7 @@ impl<H> ProofTrait<H> for MerkleProof<H>
 	fn leaf(&self) -> &H { self.re_leaf(0, 0, self.proofs.len() - 1) }
 
 	fn proofs(&self) -> &Vec<H> { &self.proofs }
-	fn depth(&self) -> u8 { self.depth }
+	fn depth(&self) -> u32 { self.depth }
 	fn index(&self) -> u64 { self.index }
 }
 

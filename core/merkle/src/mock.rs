@@ -6,7 +6,7 @@ use parity_codec::Codec;
 // mock merkle tree trie id name. no conflict.
 // TODO: see https://github.com/paritytech/substrate/issues/2325
 pub const MOCK_MERKLE_TREE_TRIE_ID: &'static [u8] = b":child_storage:default: mock_merkle_tree_trie_id";
-const MOCK_MERKLE_TREE_DEPTH: u8 = 20;
+const MOCK_MERKLE_TREE_DEPTH: u32 = 20;
 /// must be 2^n.
 const MOCK_MERKLE_TREE_LIMIT: u64 = (1 << MOCK_MERKLE_TREE_DEPTH as u64);
 
@@ -59,6 +59,14 @@ impl<H: Codec + Default, Hashing> MerkleTree<H, Hashing>
 	fn set_num_of_proposal(i: u64) {
 		let h: H = Default::default();
 		Self::push_index(&Hashing::hash_of(&h), i);
+	}
+
+	// get_root_oast(hash(root_hash)) = past_index.
+	fn get_root_past(h: &H) -> Option<u64> {
+		Self::get_index_optionaly(&Hashing::hash_of(h))
+	}
+	fn set_root_past(h: &H, i: u64) {
+		Self::push_index(&Hashing::hash_of(h), i);
 	}
 
 	/// get_hash(MOCK_MERKLE_TREE_LIMIT << 1 + i) = i-th porposed utxo hash.
@@ -184,7 +192,7 @@ impl<H, Hashing> RecoverableMerkleTreeTrait<H, Hashing> for MerkleTree<H, Hashin
 	type Out = Self;
 	/// loading root_hash state.
 	fn load(root: &H) -> Option<Self::Out> {
-		match Self::get_index_optionaly(root) {
+		match Self::get_root_past(root) {
 			Some(past) => return Some(MerkleTree::<H, Hashing> {
 				past: past,
 				_phantom: Default::default(),
@@ -197,7 +205,7 @@ impl<H, Hashing> RecoverableMerkleTreeTrait<H, Hashing> for MerkleTree<H, Hashin
 	fn save(&self) {
 		let root = self.root();
 		let index = Self::get_index(&Default::default());
-		Self::push_index(&root, index);
+		Self::set_root_past(&root, index);
 	}
 }
 

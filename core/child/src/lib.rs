@@ -94,7 +94,7 @@ decl_module! {
 			Ok(())
 		}
 
-		fn on_finalize() {
+		pub fn on_finalize() {
 			let tree = T::Tree::new();
 			tree.save();
 			Self::deposit_event(RawEvent::Submit(tree.root()));
@@ -127,7 +127,7 @@ mod tests {
 	use support::impl_outer_origin;
 	use sr_primitives::{
 		BuildStorage,
-		traits::{Verify, BlakeTwo256, IdentityLookup},
+		traits::{Verify, BlakeTwo256, IdentityLookup, Hash},
 		testing::{Digest, DigestItem, Header},
 	};
 	use primitives::{Blake2Hasher, H256, sr25519, crypto::Pair};
@@ -135,6 +135,7 @@ mod tests {
 	use std::clone::Clone;
 
 	use utxo::SignedTransaction;
+	use merkle::{MerkleProof, ProofTrait};
 
 	impl_outer_origin! {
 		pub enum Origin for Test {}
@@ -156,7 +157,7 @@ mod tests {
 	#[derive(Clone, PartialEq, Eq, Encode, Decode)]
 	#[cfg_attr(feature = "std", derive(Debug))]
 	pub enum TestEvent {
-		Some(Event<Test>),
+		Some(RawEvent<H256, u64, AccountId, utxo::mvp::Value>),
 		None,
 	}
 
@@ -282,22 +283,35 @@ mod tests {
 		});
 	}
 
-	fn get_events() -> Vec<Event<Test>> {
+	fn get_events() -> Vec<TestEvent> {
 		<system::Module<Test>>::events()
 			.iter()
-			.filter(|e| {
-				match e {
-					TestEvent::Some(e) => true,
+			.filter(|e|
+				match &e.event {
+					TestEvent::Some(_) => true,
 					_ => false,
-				}
-			})
-			.map(|e|
-				match e {
-					TestEvent::Some(e) => e,
-					_ => Default::default(),
-				}
-			)
+				})
+			.cloned()
+			.map(|e| e.event)
 			.collect::<Vec<_>>()
+	}
+
+	fn get_submit_hash_from_events() -> H256 {
+		for e in get_events() {
+			if let TestEvent::Some(RawEvent::Submit(hash)) = e {
+				return hash;
+			}
+		}
+		Default::default()
+	}
+
+	fn get_proofs_from_events() -> (u64, H256, u32, Vec<H256>, u32, u64) {
+		for e in get_events() {
+			if let TestEvent::Some(RawEvent::Proof(blk_num, hash, out, proof, depth, index)) = e {
+				return (blk_num, hash, out, proof, depth, index);
+			}
+		}
+		(Default::default(), Default::default(), Default::default(), Default::default(), Default::default(), Default::default())
 	}
 
 	#[test]
@@ -305,24 +319,57 @@ mod tests {
 		let operator_pair = utxo::helper::account_key_pair("operator");
 		with_externalities(&mut new_test_ext(&operator_pair), || {
 			// transfer operator -> test_receiver;
-//			let receiver_key_pair = utxo::helper::account_key_pair("test_receiver");
-//			let signed_tx = utxo::helper::gen_transfer::<Test>(&operator_pair, &receiver_key_pair.public(), 200000);
-//			assert_eq!(Ok(()), Child::deposit(Origin::signed(receiver_key_pair.public()), signed_tx));
-//
-//			// commit merkle tree
-//			Utxo::on_finalize(0);
-//			// save merkle tree
-//			Self::on_finalize();
-//
-//			// transfer test_receiver -> test_receiver_2
-//			let receiver_2_key_pair = utxo::helper::account_key_pair("test_receiver_2");
-//			let signed_tx = utxo::helper::gen_transfer::<Test>(&operator_pair, &receiver_key_pair.public(), 100000);
-//			assert_eq!(Ok(()), Child::deposit(Origin::signed(receiver_key_pair.public()), signed_tx));
-//
-//			let tx_ref = Utxo::unspent_outputs_finder(&receiver_key_pair.public()).unwrap()[0];
-//			assert_eq!(Ok(()), Child::exit_start(Origin::signed(operator_pair.public()), tx_ref.0, tx_ref.1));
-//			assert_eq!(None, Utxo::unspent_outputs_finder(&receiver_key_pair.public()));
-//			assert_eq!(None, Utxo::unspent_outputs(&(tx_ref.0, tx_ref.1)));
+			let receiver_1_key_pair = utxo::helper::account_key_pair("test_receiver");
+			let signed_tx_1 = utxo::helper::gen_transfer::<Test>(&operator_pair, &receiver_1_key_pair.public(), 200000);
+			let tx_1_hash = BlakeTwo256::hash_of(signed_tx_1.payload().as_ref().unwrap());
+			let utxo_1_hash = utxo::mvp::utxo_hash::<BlakeTwo256, H256>(&tx_1_hash, &0);
+			assert_eq!(Ok(()), Child::deposit(Origin::signed(receiver_1_key_pair.public()), signed_tx_1.clone()));
+
+			// commit merkle tree
+			Utxo::on_finalize(0);
+			// save merkle tree
+			assert_eq!(Ok(()), Child::on_finalize());
+
+			let root_hash_1 = MerkleTree::new().root();
+			println!("root_hash_1 {:?}", root_hash_1);
+			println!("proofs: {:?}", MerkleTree::new().proofs(&utxo_1_hash));
+			let submit_hash_1 = get_submit_hash_from_events();
+			assert_eq!(root_hash_1, submit_hash_1);
+			assert_eq!(Ok(()), Child::commit(Origin::signed(operator_pair.public().clone()), 1, root_hash_1));
+
+			// events killed.
+			<system::Module<Test>>::initialize(&1, &[0u8; 32].into(), &[0u8; 32].into());
+
+			// transfer test_receiver -> test_receiver_2
+			let receiver_2_key_pair = utxo::helper::account_key_pair("test_receiver_2");
+			let signed_tx_2 = utxo::helper::gen_transfer::<Test>(&receiver_1_key_pair, &receiver_2_key_pair.public(), 100000);
+			assert_eq!(Ok(()), Utxo::execute(Origin::signed(receiver_1_key_pair.public().clone()), signed_tx_2.encode()));
+
+			// commit merkle tree
+			Utxo::on_finalize(1);
+			// save merkle tree
+			assert_eq!(Ok(()), Child::on_finalize());
+
+			let root_hash_2 = MerkleTree::new().root();
+			let submit_hash_2 = get_submit_hash_from_events();
+			assert_ne!(root_hash_1, root_hash_2);
+			assert_ne!(submit_hash_1, submit_hash_2);
+			assert_eq!(root_hash_2, submit_hash_2);
+			assert_eq!(Ok(()), Child::commit(Origin::signed(operator_pair.public().clone()), 2, root_hash_2));
+
+
+			//GetProofs 1
+			assert_eq!(Ok(()),
+					   Child::get_proof(Origin::signed(operator_pair.public().clone()),
+										1, tx_1_hash, 0));
+			let (blk_num, hash, out, proofs, depth, index) = get_proofs_from_events();
+			assert_eq!(1, blk_num);
+			assert_eq!(tx_1_hash, hash);
+			assert_eq!(0, out);
+
+			let proof = MerkleProof::<H256> { proofs, depth, index };
+			assert_eq!(&utxo::mvp::utxo_hash::<BlakeTwo256, H256>(&tx_1_hash, &0), proof.leaf());
+			assert_eq!(root_hash_1, proof.root::<BlakeTwo256>());
 		});
 	}
 }
