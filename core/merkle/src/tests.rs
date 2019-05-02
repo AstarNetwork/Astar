@@ -74,7 +74,7 @@ fn merkle_mock_db() {
 	});
 }
 
-fn merkle_test<Tree, H, Hashing, F>(rnd: F)
+fn merkle_test<Tree, H, Hashing, F>(tree: Tree, rnd: F)
 	where Tree: MerkleTreeTrait<H, Hashing>,
 		  H: Codec + Member + MaybeSerializeDebug + rstd::hash::Hash + AsRef<[u8]> + AsMut<[u8]> + Copy + Default,
 		  Hashing: Hash<Output=H>,
@@ -84,25 +84,25 @@ fn merkle_test<Tree, H, Hashing, F>(rnd: F)
 	assert_eq!(10, hashes.len());
 
 	for i in 0..10 {
-		Tree::push(hashes[i].clone());
-		Tree::commit();
+		tree.push(hashes[i].clone());
+		tree.commit();
 		for j in 0..(i + 1) {
-			let proofs = Tree::proofs(&hashes[j]);
+			let proofs = tree.proofs(&hashes[j]);
 			println!("{:?}", proofs);
-			assert_eq!(&hashes[j], Tree::proofs(&hashes[j]).leaf());
-			assert_eq!(Tree::root(), proofs.root::<Hashing>())
+			assert_eq!(&hashes[j], tree.proofs(&hashes[j]).leaf());
+			assert_eq!(tree.root(), proofs.root::<Hashing>())
 		}
 	}
 
 	let new_hashes = (0..10).map(|_| rnd()).collect::<Vec<_>>();
 	for i in 0..10 {
-		Tree::push(new_hashes[i]);
+		tree.push(new_hashes[i]);
 	}
-	Tree::commit();
+	tree.commit();
 	for i in 0..10 {
-		assert_eq!(&hashes[i], Tree::proofs(&hashes[i]).leaf());
-		assert_eq!(Tree::root(), Tree::proofs(&hashes[i]).root::<Hashing>());
-		assert_eq!(Tree::root(), Tree::proofs(&new_hashes[i]).root::<Hashing>());
+		assert_eq!(&hashes[i], tree.proofs(&hashes[i]).leaf());
+		assert_eq!(tree.root(), tree.proofs(&hashes[i]).root::<Hashing>());
+		assert_eq!(tree.root(), tree.proofs(&new_hashes[i]).root::<Hashing>());
 	}
 }
 
@@ -110,7 +110,7 @@ fn merkle_test<Tree, H, Hashing, F>(rnd: F)
 fn merkle_mock_test() {
 	with_externalities(&mut new_test_ext(), || {
 		type MerkleTree = mock::MerkleTree<H256, BlakeTwo256>;
-		merkle_test::<MerkleTree, H256, BlakeTwo256, fn() -> H256>(H256::random);
+		merkle_test::<MerkleTree, H256, BlakeTwo256, fn() -> H256>(MerkleTree::new(), H256::random);
 	});
 }
 

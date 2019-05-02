@@ -15,30 +15,37 @@ pub fn concat_hash<H, F>(a: &H, b: &H, hash: F) -> H
 	hash(&plasm_primitives::concat_bytes(a, b))
 }
 
-// H: Hash, O: Outpoint(Hashable)
-// TODO : use relational type StorageKey https://doc.rust-jp.rs/the-rust-programming-language-ja/1.6/book/associated-constants.html
-pub trait MerkleTreeTrait<H, Hashing>
+pub trait ReadOnlyMerkleTreeTrait<H, Hashing>
 	where H: Codec + Member + MaybeSerializeDebug + rstd::hash::Hash + AsRef<[u8]> + AsMut<[u8]> + Copy + Default,
 		  Hashing: Hash<Output=H>
 {
 	/// get root Hash of MerkleTree.
-	fn root() -> H;
+	fn root(&self) -> H;
 	/// get proofs of leaf.
-	fn proofs(leaf: &H) -> MerkleProof<H>;
-	/// push Hash to MerkleTree.
-	fn push(leaf: H);
-	// commit to MerkleTree
-	fn commit();
+	fn proofs(&self, leaf: &H) -> MerkleProof<H>;
 }
 
-
-pub trait RecoverableMerkleTreeTrait<H, Hashing> : MerkleTreeTrait<H, Hashing>
+// H: Hash, O: Outpoint(Hashable)
+// TODO : use relational type StorageKey https://doc.rust-jp.rs/the-rust-programming-language-ja/1.6/book/associated-constants.html
+pub trait MerkleTreeTrait<H, Hashing>: ReadOnlyMerkleTreeTrait<H, Hashing>
 	where H: Codec + Member + MaybeSerializeDebug + rstd::hash::Hash + AsRef<[u8]> + AsMut<[u8]> + Copy + Default,
 		  Hashing: Hash<Output=H>
 {
-	type Out: MerkleTreeTrait<H, Hashing>;
+	fn new() -> Self;
+	/// push Hash to MerkleTree.
+	fn push(&self, leaf: H);
+	// commit to MerkleTree
+	fn commit(&self);
+}
+
+
+pub trait RecoverableMerkleTreeTrait<H, Hashing>: MerkleTreeTrait<H, Hashing>
+	where H: Codec + Member + MaybeSerializeDebug + rstd::hash::Hash + AsRef<[u8]> + AsMut<[u8]> + Copy + Default,
+		  Hashing: Hash<Output=H>
+{
+	type Out: ReadOnlyMerkleTreeTrait<H, Hashing>;
 	fn load(root: &H) -> Self::Out;
-	fn save();
+	fn save(&self);
 }
 
 pub trait MerkleDb<Key: Encode, O: Codec> {
