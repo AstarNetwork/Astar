@@ -94,8 +94,10 @@ decl_module! {
 			Ok(())
 		}
 
-		fn on_finalize(n_: T::BlockNumber) {
-			Self::deposit_event(RawEvent::Submit(T::Tree::new().root()));
+		fn on_finalize() {
+			let tree = T::Tree::new();
+			tree.save();
+			Self::deposit_event(RawEvent::Submit(tree.root()));
 		}
 	}
 }
@@ -132,7 +134,7 @@ mod tests {
 	use parity_codec::{Encode, Decode};
 	use std::clone::Clone;
 
-	use utxo::{SignedTransaction};
+	use utxo::SignedTransaction;
 
 	impl_outer_origin! {
 		pub enum Origin for Test {}
@@ -154,13 +156,8 @@ mod tests {
 	#[derive(Clone, PartialEq, Eq, Encode, Decode)]
 	#[cfg_attr(feature = "std", derive(Debug))]
 	pub enum TestEvent {
-		Submit(H256),
-		Commit(u64, H256),
-		Deposit(AccountId, utxo::mvp::Value),
-		ExitStart(H256, u32),
-		// blocknumber, tx_hash, out_index, proofs, depth, index
-		Proof(u64, H256, u32, Vec<H256>, u32, u64),
-		Other,
+		Some(Event<Test>),
+		None,
 	}
 
 	impl system::Trait for Test {
@@ -202,25 +199,19 @@ mod tests {
 
 	impl From<system::Event> for TestEvent {
 		fn from(_e: system::Event) -> TestEvent {
-			TestEvent::Other
+			TestEvent::None
 		}
 	}
 
 	impl From<utxo::Event<Test>> for TestEvent {
 		fn from(_e: utxo::Event<Test>) -> TestEvent {
-			TestEvent::Other
+			TestEvent::None
 		}
 	}
 
 	impl From<Event<Test>> for TestEvent {
 		fn from(e: Event<Test>) -> TestEvent {
-			match e {
-				RawEvent::Submit(hash) => TestEvent::Submit(hash),
-				RawEvent::Commit(blk_num, hash) => TestEvent::Commit(blk_num, hash),
-				RawEvent::Deposit(acid, value) => TestEvent::Deposit(acid, value),
-				RawEvent::ExitStart(hash, out) => TestEvent::ExitStart(hash, out),
-				RawEvent::Proof(blk_num, hash, out, prs, depth, index) => TestEvent::Proof(blk_num, hash, out, prs, depth, index),
-			}
+			TestEvent::Some(e)
 		}
 	}
 
@@ -246,7 +237,7 @@ mod tests {
 		with_externalities(&mut new_test_ext(&operator_pair), || {
 			let random_hash = H256::random();
 
-			Child::commit(Origin::signed(operator_pair.public()), 1, random_hash.clone());
+			assert_eq!(Ok(()), Child::commit(Origin::signed(operator_pair.public()), 1, random_hash.clone()));
 
 			let current = <CurrentBlock<Test>>::get();
 			let root = <ChildChain<Test>>::get(&1).unwrap();
@@ -275,7 +266,6 @@ mod tests {
 	fn test_exit_start() {
 		let operator_pair = utxo::helper::account_key_pair("operator");
 		with_externalities(&mut new_test_ext(&operator_pair), || {
-
 			// check deposit.
 			let receiver_key_pair = utxo::helper::account_key_pair("test_receiver");
 			let signed_tx = utxo::helper::gen_transfer::<Test>(&operator_pair, &receiver_key_pair.public(), 100000);
@@ -289,6 +279,50 @@ mod tests {
 			assert_eq!(Ok(()), Child::exit_start(Origin::signed(operator_pair.public()), tx_ref.0, tx_ref.1));
 			assert_eq!(None, Utxo::unspent_outputs_finder(&receiver_key_pair.public()));
 			assert_eq!(None, Utxo::unspent_outputs(&(tx_ref.0, tx_ref.1)));
+		});
+	}
+
+	fn get_events() -> Vec<Event<Test>> {
+		<system::Module<Test>>::events()
+			.iter()
+			.filter(|e| {
+				match e {
+					TestEvent::Some(e) => true,
+					_ => false,
+				}
+			})
+			.map(|e|
+				match e {
+					TestEvent::Some(e) => e,
+					_ => Default::default(),
+				}
+			)
+			.collect::<Vec<_>>()
+	}
+
+	#[test]
+	fn test_finalize_and_get_proofs() {
+		let operator_pair = utxo::helper::account_key_pair("operator");
+		with_externalities(&mut new_test_ext(&operator_pair), || {
+			// transfer operator -> test_receiver;
+//			let receiver_key_pair = utxo::helper::account_key_pair("test_receiver");
+//			let signed_tx = utxo::helper::gen_transfer::<Test>(&operator_pair, &receiver_key_pair.public(), 200000);
+//			assert_eq!(Ok(()), Child::deposit(Origin::signed(receiver_key_pair.public()), signed_tx));
+//
+//			// commit merkle tree
+//			Utxo::on_finalize(0);
+//			// save merkle tree
+//			Self::on_finalize();
+//
+//			// transfer test_receiver -> test_receiver_2
+//			let receiver_2_key_pair = utxo::helper::account_key_pair("test_receiver_2");
+//			let signed_tx = utxo::helper::gen_transfer::<Test>(&operator_pair, &receiver_key_pair.public(), 100000);
+//			assert_eq!(Ok(()), Child::deposit(Origin::signed(receiver_key_pair.public()), signed_tx));
+//
+//			let tx_ref = Utxo::unspent_outputs_finder(&receiver_key_pair.public()).unwrap()[0];
+//			assert_eq!(Ok(()), Child::exit_start(Origin::signed(operator_pair.public()), tx_ref.0, tx_ref.1));
+//			assert_eq!(None, Utxo::unspent_outputs_finder(&receiver_key_pair.public()));
+//			assert_eq!(None, Utxo::unspent_outputs(&(tx_ref.0, tx_ref.1)));
 		});
 	}
 }
