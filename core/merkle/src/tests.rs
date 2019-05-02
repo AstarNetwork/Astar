@@ -87,12 +87,13 @@ fn merkle_test<Tree, H, Hashing, F>(tree: Tree, rnd: F)
 		tree.push(hashes[i].clone());
 		tree.commit();
 		for j in 0..(i + 1) {
-			let proofs = tree.proofs(&hashes[j]);
+			let proofs = tree.proofs(&hashes[j]).unwrap();
 			println!("{:?}", proofs);
-			assert_eq!(&hashes[j], tree.proofs(&hashes[j]).leaf());
+			assert_eq!(&hashes[j], tree.proofs(&hashes[j]).unwrap().leaf());
 			assert_eq!(tree.root(), proofs.root::<Hashing>())
 		}
 	}
+	assert_eq!(None, tree.proofs(&rnd()));
 
 	let new_hashes = (0..10).map(|_| rnd()).collect::<Vec<_>>();
 	for i in 0..10 {
@@ -100,9 +101,9 @@ fn merkle_test<Tree, H, Hashing, F>(tree: Tree, rnd: F)
 	}
 	tree.commit();
 	for i in 0..10 {
-		assert_eq!(&hashes[i], tree.proofs(&hashes[i]).leaf());
-		assert_eq!(tree.root(), tree.proofs(&hashes[i]).root::<Hashing>());
-		assert_eq!(tree.root(), tree.proofs(&new_hashes[i]).root::<Hashing>());
+		assert_eq!(&hashes[i], tree.proofs(&hashes[i]).unwrap().leaf());
+		assert_eq!(tree.root(), tree.proofs(&hashes[i]).unwrap().root::<Hashing>());
+		assert_eq!(tree.root(), tree.proofs(&new_hashes[i]).unwrap().root::<Hashing>());
 	}
 }
 
@@ -127,13 +128,13 @@ fn recover_merkle_test<Tree, H, Hashing, F>(tree: Tree, rnd: F)
 		tree.push(hashes[i].clone());
 		tree.commit();
 		for j in 0..(i + 1) {
-			let proofs = tree.proofs(&hashes[j]);
+			let proofs = tree.proofs(&hashes[j]).unwrap();
 			println!("{:?}", proofs);
-			assert_eq!(&hashes[j], tree.proofs(&hashes[j]).leaf());
+			assert_eq!(&hashes[j], tree.proofs(&hashes[j]).unwrap().leaf());
 			assert_eq!(tree.root(), proofs.root::<Hashing>())
 		}
 	}
-	let proofs_a = (0..10).map(|i| tree.proofs(&hashes[i])).collect::<Vec<_>>();
+	let proofs_a = (0..10).map(|i| tree.proofs(&hashes[i]).unwrap()).collect::<Vec<_>>();
 	tree.save();
 	let root_a = tree.root();
 
@@ -143,15 +144,18 @@ fn recover_merkle_test<Tree, H, Hashing, F>(tree: Tree, rnd: F)
 	}
 	tree.commit();
 	for i in 0..10 {
-		assert_eq!(&hashes[i], tree.proofs(&hashes[i]).leaf());
-		assert_eq!(tree.root(), tree.proofs(&hashes[i]).root::<Hashing>());
-		assert_eq!(tree.root(), tree.proofs(&new_hashes[i]).root::<Hashing>());
+		assert_eq!(&hashes[i], tree.proofs(&hashes[i]).unwrap().leaf());
+		assert_eq!(tree.root(), tree.proofs(&hashes[i]).unwrap().root::<Hashing>());
+		assert_eq!(tree.root(), tree.proofs(&new_hashes[i]).unwrap().root::<Hashing>());
 	}
+	let root_b = tree.root();
+	assert!(Tree::load(&root_b).is_none());
+	assert_eq!(None, tree.proofs(&rnd()));
 	tree.save();
 
-	let tree_a = Tree::load(&root_a);
+	let tree_a = Tree::load(&root_a).unwrap();
 	assert_eq!(root_a, tree_a.root());
-	let proofs_a_act = (0..10).map(|i| tree_a.proofs(&hashes[i])).collect::<Vec<_>>();
+	let proofs_a_act = (0..10).map(|i| tree_a.proofs(&hashes[i]).unwrap()).collect::<Vec<_>>();
 	assert_eq!(proofs_a, proofs_a_act);
 }
 

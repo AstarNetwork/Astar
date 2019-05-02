@@ -16,6 +16,8 @@ const MOCK_MERKLE_TREE_LIMIT: u64 = (1 << MOCK_MERKLE_TREE_DEPTH as u64);
 /// 5 6 7 8	  9 10 11 12
 ///
 /// Alike SegmentTree. So fixed number of data.
+#[derive(PartialEq)]
+#[cfg_attr(feature = "std", derive(Debug))]
 pub struct MerkleTree<H, Hashing> {
 	past: u64,
 	_phantom: PhantomData<(H, Hashing)>,
@@ -29,7 +31,10 @@ impl<H: Codec + Default, Hashing> MerkleTree<H, Hashing>
 		MerkleDb::<u64, H>::get(&DirectMerkleDb, &MOCK_MERKLE_TREE_TRIE_ID, &index).unwrap_or(Default::default())
 	}
 	pub fn get_index(h: &H) -> u64 {
-		MerkleDb::<H, u64>::get(&DirectMerkleDb, &MOCK_MERKLE_TREE_TRIE_ID, h).unwrap_or(0)
+		Self::get_index_optionaly(h).unwrap_or(0)
+	}
+	pub fn get_index_optionaly(h: &H) -> Option<u64> {
+		MerkleDb::<H, u64>::get(&DirectMerkleDb, &MOCK_MERKLE_TREE_TRIE_ID, h)
 	}
 	pub fn push_hash(index: u64, h: H) {
 		MerkleDb::<u64, H>::push(&DirectMerkleDb, &MOCK_MERKLE_TREE_TRIE_ID, &index, h);
@@ -102,8 +107,13 @@ impl<H, Hashing> ReadOnlyMerkleTreeTrait<H, Hashing> for MerkleTree<H, Hashing>
 	fn root(&self) -> H {
 		self.get_hash_from_node(0)
 	}
-	fn proofs(&self, leaf: &H) -> MerkleProof<H> {
-		let mut index: u64 = Self::get_index(leaf);
+	fn proofs(&self, leaf: &H) -> Option<MerkleProof<H>> {
+		let mut index: u64;
+		match Self::get_index_optionaly(leaf) {
+			Some(i) => index = i,
+			None => return None,
+		}
+
 		let ret_index = index;
 		let mut proofs = vec! {leaf.clone()};
 
@@ -117,11 +127,11 @@ impl<H, Hashing> ReadOnlyMerkleTreeTrait<H, Hashing> for MerkleTree<H, Hashing>
 					.iter().chain(proofs.iter()).map(|x| *x).collect::<Vec<_>>(), // right leafs.
 			}
 		}
-		MerkleProof {
+		Some(MerkleProof {
 			proofs: proofs,
 			depth: MOCK_MERKLE_TREE_DEPTH,
 			index: ret_index,
-		}
+		})
 	}
 }
 
@@ -173,11 +183,13 @@ impl<H, Hashing> RecoverableMerkleTreeTrait<H, Hashing> for MerkleTree<H, Hashin
 		  Hashing: Hash<Output=H> {
 	type Out = Self;
 	/// loading root_hash state.
-	fn load(root: &H) -> Self::Out {
-		let past = Self::get_index(root);
-		MerkleTree::<H, Hashing> {
-			past: past,
-			_phantom: Default::default(),
+	fn load(root: &H) -> Option<Self::Out> {
+		match Self::get_index_optionaly(root) {
+			Some(past) => return Some(MerkleTree::<H, Hashing> {
+				past: past,
+				_phantom: Default::default(),
+			}),
+			None => return None,
 		}
 	}
 

@@ -22,7 +22,7 @@ pub trait ReadOnlyMerkleTreeTrait<H, Hashing>
 	/// get root Hash of MerkleTree.
 	fn root(&self) -> H;
 	/// get proofs of leaf.
-	fn proofs(&self, leaf: &H) -> MerkleProof<H>;
+	fn proofs(&self, leaf: &H) -> Option<MerkleProof<H>>;
 }
 
 // H: Hash, O: Outpoint(Hashable)
@@ -43,8 +43,8 @@ pub trait RecoverableMerkleTreeTrait<H, Hashing>: MerkleTreeTrait<H, Hashing>
 	where H: Codec + Member + MaybeSerializeDebug + rstd::hash::Hash + AsRef<[u8]> + AsMut<[u8]> + Copy + Default,
 		  Hashing: Hash<Output=H>
 {
-	type Out: ReadOnlyMerkleTreeTrait<H, Hashing>;
-	fn load(root: &H) -> Self::Out;
+	type Out: ReadOnlyMerkleTreeTrait<H, Hashing> + PartialEq;
+	fn load(root: &H) -> Option<Self::Out>;
 	fn save(&self);
 }
 
@@ -73,7 +73,8 @@ pub trait ProofTrait<H>
 	fn index(&self) -> u64;
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(PartialEq)]
+#[cfg_attr(feature = "std", derive(Debug))]
 pub struct MerkleProof<H> {
 	pub proofs: Vec<H>,
 	pub depth: u8,
