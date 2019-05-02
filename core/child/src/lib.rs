@@ -1,18 +1,16 @@
-use sr_primitives::traits::{As, Hash, Member, MaybeSerializeDebug};
+use sr_primitives::traits::As;
 
 use support::{decl_module, decl_storage, decl_event, StorageValue, StorageMap, dispatch::Result, ensure};
 use system::ensure_signed;
 
-use parity_codec::{Encode, Decode};
-
-use merkle::MerkleTreeTrait;
+use merkle::{MerkleTreeTrait, RecoverableMerkleTreeTrait, ReadOnlyMerkleTreeTrait, ProofTrait};
 use utxo::{SignedTransactionTrait, TransactionOutputTrait};
 
 
 /// The module's configuration trait.
 pub trait Trait: utxo::Trait {
 	// TODO : utxo will be not srml. type Utxo;
-	type Tree: MerkleTreeTrait<Self::Hash, Self::Hashing>;
+	type Tree: RecoverableMerkleTreeTrait<Self::Hash, Self::Hashing>;
 	/// The overarching event type.
 	type Event: From<Event<Self>> + Into<<Self as system::Trait>::Event>;
 }
@@ -45,8 +43,7 @@ decl_module! {
 
 		// deposit () verfy and execute(operator -> depositor) by Utxo.
 		pub fn deposit(origin, signed_tx: T::SignedTransaction) -> Result {
-			let operator = ensure_signed(origin)?;
-
+			ensure_signed(origin)?;
 			ensure!(signed_tx
 				.public_keys()
 				.iter()
@@ -89,14 +86,16 @@ decl_module! {
 		// deposit_event(RawEvent(Proof(blk_num, tx_hash, out_index, proofs, depth, index));
 		pub fn get_proof(origin, blk_num: T::BlockNumber, tx_hash: T::Hash, out_index: u32) -> Result {
 			ensure_signed(origin)?;
-			let hash = Self::child_chain(blk_num).ok_or("unexists block number.")
+			let hash = Self::child_chain(blk_num).ok_or("unexists block number.")?;
 
-
+			let tree = T::Tree::load(&hash).ok_or("unexistt root hash.")?;
+			let proof = tree.proofs(&utxo::mvp::utxo_hash::<T::Hashing, T::Hash>(&tx_hash, &out_index)).ok_or("unexist leaf.")?;
+			Self::deposit_event(RawEvent::Proof(blk_num, tx_hash, out_index, proof.proofs().clone(), proof.depth() as u32, proof.index()));
 			Ok(())
 		}
 
 		fn on_finalize(n_: T::BlockNumber) {
-			Self::deposit_event(RawEvent::Submit(T::Tree::root()));
+			Self::deposit_event(RawEvent::Submit(T::Tree::new().root()));
 		}
 	}
 }
@@ -113,7 +112,7 @@ decl_event!(
 		Commit(BlockNumber, Hash),
 		Deposit(AccountId, Value),
 		ExitStart(Hash, u32),
-		// blocknumber, hash, index, proofs, depth, index
+		// blocknumber, tx_hash, out_index, proofs, depth, index
 		Proof(BlockNumber, Hash, u32, Vec<Hash>, u32, u64),
 	}
 );
@@ -126,14 +125,13 @@ mod tests {
 	use support::impl_outer_origin;
 	use sr_primitives::{
 		BuildStorage,
-		traits::{Verify, BlakeTwo256, IdentityLookup, Hash},
+		traits::{Verify, BlakeTwo256, IdentityLookup},
 		testing::{Digest, DigestItem, Header},
 	};
 	use primitives::{Blake2Hasher, H256, sr25519, crypto::Pair};
 	use std::clone::Clone;
 
-	use utxo::{TransactionInputTrait, TransactionOutputTrait, TransactionTrait, SignedTransactionTrait,
-			   TransactionInput, TransactionOutput, Transaction, SignedTransaction};
+	use utxo::{TransactionInputTrait, TransactionOutputTrait, TransactionTrait, SignedTransactionTrait};
 
 	impl_outer_origin! {
 		pub enum Origin for Test {}

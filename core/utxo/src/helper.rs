@@ -1,7 +1,6 @@
 use super::*;
 
 use sr_primitives::{
-	BuildStorage,
 	traits::{BlakeTwo256},
 };
 use primitives::{sr25519, Pair, H256};
