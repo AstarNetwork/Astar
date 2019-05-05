@@ -20,6 +20,23 @@ use rstd::ops::Div;
 
 pub mod mvp;
 
+pub trait WritableUtxoTrait<SignedTx> {
+	fn push(tx: SignedTx);
+	fn commit(tx: SignedTx);
+}
+
+pub trait ReadbleUtxoTrait<SignedTx> {
+	fn verify(tx: SignedTx);
+	fn unlock(tx: SignedTx);
+}
+
+pub trait UtxoTrait<SignedTx>: WritableUtxoTrait<SignedTx> + ReadbleUtxoTrait<SignedTx> {
+	fn execute(tx: SignedTx);
+}
+
+
+
+
 pub trait Trait: system::Trait {
 	type Signature: Parameter + Verify<Signer=Self::AccountId>;
 	type TimeLock: Parameter + Zero + Default;
@@ -359,7 +376,7 @@ decl_storage! {
 				.map(|(i, u)| ((<T as system::Trait>::Hashing::hash_of(&tx), i as u32), u.clone()))
 				.collect::<Vec<_>>()
 		}): map (<T as system::Trait>::Hash, u32) => Option<T::Output>;
-		
+
 		/// [AccountId] = reference of UTXO.
 		pub UnspentOutputsFinder get(unspent_outputs_finder) build( |config: &GenesisConfig<T> | { // TODO more clearly
 			let tx = T::Transaction::new(vec!{},
@@ -375,16 +392,16 @@ decl_storage! {
 				.map(|(i, e)| (e.1.clone(), vec!{(<T as system::Trait>::Hashing::hash_of(&tx), i as u32)}))
 				.collect::<Vec<_>>()
 		}): map <T as system::Trait>::AccountId => Option<Vec<(<T as system::Trait>::Hash, u32)>>; //TODO HashSet<>
-		
+
 		/// Total leftover value to be redistributed among authorities.
 		/// It is accumulated during block execution and then drained
 		/// on block finalization.
 		pub LeftoverTotal get(leftover_total): T::Value;
-		
+
 		/// Outputs that are locked
 		pub LockedOutputs get(locked_outputs): map T::BlockNumber => Option <Vec<T::Output>>;
 	}
-	
+
 	add_extra_genesis {
 		config(genesis_tx): Vec<(T::Value, <T as system::Trait>::AccountId)>; // TODO Genesis should only use primitive.
 	}

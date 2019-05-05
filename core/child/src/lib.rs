@@ -41,7 +41,7 @@ decl_module! {
 			Ok(())
 		}
 
-		// deposit () verfy and execute(operator -> depositor) by Utxo.
+		// deposit () verify and execute(operator -> depositor) by Utxo.
 		pub fn deposit(origin, signed_tx: T::SignedTransaction) -> Result {
 			ensure_signed(origin)?;
 			ensure!(signed_tx
