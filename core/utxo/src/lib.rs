@@ -3,7 +3,7 @@
 #[cfg(feature = "std")]
 use serde_derive::{Serialize, Deserialize};
 
-use sr_primitives::traits::{Verify, Zero, CheckedAdd, CheckedSub, Hash};
+use sr_primitives::traits::{Verify, Zero, CheckedAdd, CheckedSub, Hash, As};
 use support::{decl_module, decl_storage, decl_event, StorageValue, StorageMap, dispatch::Result, Parameter};
 
 use system::ensure_signed;
@@ -18,13 +18,12 @@ pub use std::fmt;
 use parity_codec::{Encode, Decode};
 use rstd::ops::Div;
 
-// plasm pritmitives uses mvp::Value
 pub mod mvp;
 
 pub trait Trait: system::Trait {
-	type Signature: Verify<Signer=Self::AccountId>;
+	type Signature: Parameter + Verify<Signer=Self::AccountId>;
 	type TimeLock: Parameter + Zero + Default;
-	type Value: Parameter + From<Self::Value> + Zero + CheckedAdd + CheckedSub + Div<usize, Output=Self::Value> + Default;
+	type Value: Parameter + From<Self::Value> + Zero + CheckedAdd + CheckedSub + Div<usize, Output=Self::Value> + Default + As<u64>;
 
 	type Input: TransactionInputTrait<Self::Hash> + From<Self::Input>;
 	type Output: Parameter + TransactionOutputTrait<Self::Value, Self::AccountId> + From<Self::Output> + Default;
@@ -403,21 +402,7 @@ decl_module! {
 			ensure_signed(origin)?;
 
 			let signed_tx = T::SignedTransaction::decode( &mut &signed_tx[..]).ok_or("signed_tx is undecoded bytes.")?;
-			// all signature checking Signature.Verify(HashableAccountId, hash(transaction.payload)).
-			signed_tx.verify()?;
-			// UTXO unlocked checking.
-			signed_tx.unlock()?;
-			// LeftOver(Fee) calclate.
-			let leftover = signed_tx.leftover()?;
-
-			// Calculate new leftover total
-			let new_total = <LeftoverTotal<T>>::get()
-			.checked_add(&leftover)
-			.ok_or("leftover overflow")?;
-
-			Self::update_storage(&signed_tx, new_total);
-			Self::deposit_event(RawEvent::TransactionExecuted(signed_tx));
-			Ok(())
+			Self::do_execute(signed_tx)
 		}
 
 		// Handler called by the system on block finalization
@@ -438,15 +423,35 @@ decl_event!(
 
 /// Not callable external
 impl<T: Trait> Module<T> {
+
+	pub fn do_execute(signed_tx: T::SignedTransaction) -> Result {
+		// all signature checking Signature.Verify(HashableAccountId, hash(transaction.payload)).
+		signed_tx.verify()?;
+		// UTXO unlocked checking.
+		signed_tx.unlock()?;
+		// LeftOver(Fee) calclate.
+		let leftover = signed_tx.leftover()?;
+
+		// Calculate new leftover total
+		let new_total = <LeftoverTotal<T>>::get()
+			.checked_add(&leftover)
+			.ok_or("leftover overflow")?;
+
+		Self::update_storage(&signed_tx, new_total);
+		Self::deposit_event(RawEvent::TransactionExecuted(signed_tx));
+		Ok(())
+	}
+
 	/// Update storage to reflect changes made by transaction
 	fn update_storage(signed_tx: &T::SignedTransaction, new_total: T::Value) {
-		/// Storing updated leftover value
+		// Storing updated leftover value
 		<LeftoverTotal<T>>::put(new_total);
 
-		/// Remove all used UTXO since they are now spent
+		// Remove all used UTXO since they are now spent
 		signed_tx.spent();
 	}
 }
 
-#[cfg(test)]
-mod tests;
+#[cfg(tests)]
+pub mod tests;
+pub mod helper;

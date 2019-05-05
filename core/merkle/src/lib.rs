@@ -15,27 +15,45 @@ pub fn concat_hash<H, F>(a: &H, b: &H, hash: F) -> H
 	hash(&plasm_primitives::concat_bytes(a, b))
 }
 
-// H: Hash, O: Outpoint(Hashable)
-pub trait MerkleTreeTrait<H, Hashing>
+pub trait ReadOnlyMerkleTreeTrait<H, Hashing>
 	where H: Codec + Member + MaybeSerializeDebug + rstd::hash::Hash + AsRef<[u8]> + AsMut<[u8]> + Copy + Default,
 		  Hashing: Hash<Output=H>
 {
 	/// get root Hash of MerkleTree.
-	fn root() -> H;
+	fn root(&self) -> H;
 	/// get proofs of leaf.
-	fn proofs(leaf: &H) -> MerkleProof<H>;
-	/// push Hash to MerkleTree.
-	fn push(leaf: H);
-	// commit to MerkleTree
-	fn commit();
+	fn proofs(&self, leaf: &H) -> Option<MerkleProof<H>>;
 }
 
-pub trait MerkleDb<Id: Encode, Key: Encode, O: Codec> {
-	fn push(&self, trie_id: &Id, key: &Key, o: O) {
-		child::put_raw(&trie_id.encode()[..], &key.encode()[..], &o.encode()[..]);
+// H: Hash, O: Outpoint(Hashable)
+// TODO : use relational type StorageKey https://doc.rust-jp.rs/the-rust-programming-language-ja/1.6/book/associated-constants.html
+pub trait MerkleTreeTrait<H, Hashing>: ReadOnlyMerkleTreeTrait<H, Hashing>
+	where H: Codec + Member + MaybeSerializeDebug + rstd::hash::Hash + AsRef<[u8]> + AsMut<[u8]> + Copy + Default,
+		  Hashing: Hash<Output=H>
+{
+	fn new() -> Self;
+	/// push Hash to MerkleTree.
+	fn push(&self, leaf: H);
+	// commit to MerkleTree
+	fn commit(&self);
+}
+
+
+pub trait RecoverableMerkleTreeTrait<H, Hashing>: MerkleTreeTrait<H, Hashing>
+	where H: Codec + Member + MaybeSerializeDebug + rstd::hash::Hash + AsRef<[u8]> + AsMut<[u8]> + Copy + Default,
+		  Hashing: Hash<Output=H>
+{
+	type Out: ReadOnlyMerkleTreeTrait<H, Hashing> + PartialEq;
+	fn load(root: &H) -> Option<Self::Out>;
+	fn save(&self);
+}
+
+pub trait MerkleDb<Key: Encode, O: Codec> {
+	fn push(&self, trie_id: &[u8], key: &Key, o: O) {
+		child::put_raw(trie_id, &key.encode()[..], &o.encode()[..]);
 	}
-	fn get(&self, trie_id: &Id, key: &Key) -> Option<O> {
-		if let Some(ret) = child::get_raw(&trie_id.encode()[..], &key.encode()[..]) {
+	fn get(&self, trie_id: &[u8], key: &Key) -> Option<O> {
+		if let Some(ret) = child::get_raw(trie_id, &key.encode()[..]) {
 			return O::decode(&mut &ret[..]);
 		}
 		return None;
@@ -44,21 +62,22 @@ pub trait MerkleDb<Id: Encode, Key: Encode, O: Codec> {
 
 pub struct DirectMerkleDb;
 
-impl<Id: Encode, Key: Encode, O: Codec> MerkleDb<Id, Key, O> for DirectMerkleDb {}
+impl<Key: Encode, O: Codec> MerkleDb<Key, O> for DirectMerkleDb {}
 
 pub trait ProofTrait<H>
 	where H: Codec + Member + MaybeSerializeDebug + rstd::hash::Hash + AsRef<[u8]> + AsMut<[u8]> + Copy + Default {
 	fn root<Hashing>(&self) -> H where Hashing: Hash<Output=H>;
 	fn leaf(&self) -> &H;
 	fn proofs(&self) -> &Vec<H>;
-	fn depth(&self) -> u8;
+	fn depth(&self) -> u32;
 	fn index(&self) -> u64;
 }
 
-#[derive(Debug)]
+#[derive(PartialEq)]
+#[cfg_attr(feature = "std", derive(Debug))]
 pub struct MerkleProof<H> {
 	pub proofs: Vec<H>,
-	pub depth: u8,
+	pub depth: u32,
 	pub index: u64,
 }
 
@@ -109,7 +128,7 @@ impl<H> ProofTrait<H> for MerkleProof<H>
 	fn leaf(&self) -> &H { self.re_leaf(0, 0, self.proofs.len() - 1) }
 
 	fn proofs(&self) -> &Vec<H> { &self.proofs }
-	fn depth(&self) -> u8 { self.depth }
+	fn depth(&self) -> u32 { self.depth }
 	fn index(&self) -> u64 { self.index }
 }
 

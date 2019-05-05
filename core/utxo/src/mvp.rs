@@ -4,6 +4,8 @@ use plasm_merkle::MerkleTreeTrait;
 use sr_primitives::traits::{Member, MaybeSerializeDebug, Hash};
 use parity_codec::Codec;
 
+pub use plasm_primitives::mvp::Value;
+
 #[derive(Clone, Eq, PartialEq, Default)]
 #[cfg_attr(feature = "std", derive(Debug))]
 pub struct Inserter<T, Tree>(PhantomData<(T, Tree)>);
@@ -19,7 +21,7 @@ impl<T: Trait, Tree: MerkleTreeTrait<T::Hash, T::Hashing>> InserterTrait<T> for 
 		Self::default_insert(tx);
 		let hash = <T as system::Trait>::Hashing::hash_of(tx);
 		for (i, _) in tx.outputs().iter().enumerate() {
-			Tree::push(utxo_hash::<T::Hashing, T::Hash>(&hash, &(i as u32)))
+			Tree::new().push(utxo_hash::<T::Hashing, T::Hash>(&hash, &(i as u32)))
 		}
 	}
 }
@@ -30,6 +32,6 @@ pub struct Finalizer<T, Tree> (PhantomData<(T, Tree)>);
 
 impl<T: Trait, Tree: MerkleTreeTrait<T::Hash, T::Hashing>> FinalizerTrait<T> for Finalizer<T, Tree> {
 	fn default_finalize(n: T::BlockNumber) {
-		Tree::commit();
+		Tree::new().commit();
 	}
 }
