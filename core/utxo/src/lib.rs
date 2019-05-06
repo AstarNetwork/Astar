@@ -22,19 +22,16 @@ pub mod mvp;
 
 pub trait WritableUtxoTrait<SignedTx> {
 	fn push(tx: SignedTx);
-	fn commit(tx: SignedTx);
 }
 
 pub trait ReadbleUtxoTrait<SignedTx> {
-	fn verify(tx: SignedTx);
-	fn unlock(tx: SignedTx);
+	fn verify(tx: &SignedTx) -> Result;
+	fn unlock(tx: &SignedTx) -> Result;
 }
 
 pub trait UtxoTrait<SignedTx>: WritableUtxoTrait<SignedTx> + ReadbleUtxoTrait<SignedTx> {
-	fn execute(tx: SignedTx);
+	fn execute(tx: SignedTx) -> Result;
 }
-
-
 
 
 pub trait Trait: system::Trait {
