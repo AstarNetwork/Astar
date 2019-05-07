@@ -1,11 +1,14 @@
 use super::*;
-// use Encode, Decode
-use plasm_merkle::MerkleTreeTrait;
-use sr_primitives::traits::{Member, MaybeSerializeDebug, Hash, SimpleArithmetic};
-use parity_codec::Codec;
 
-pub use plasm_primitives::mvp::Value;
-use std::marker::PhantomData;
+#[cfg(feature = "std")]
+use serde_derive::{Serialize, Deserialize};
+
+use support::{decl_module, decl_storage, decl_event, StorageValue, StorageMap, Parameter, dispatch::Result};
+use system::ensure_signed;
+use sr_primitives::traits::{Member, MaybeSerializeDebug, Hash, SimpleArithmetic, Verify, As, Zero, CheckedAdd, CheckedSub};
+
+use parity_codec::{Encode, Decode, Codec};
+
 
 /// H: Hash
 #[derive(Clone, Encode, Decode, Default, PartialEq, Eq)]
@@ -19,17 +22,17 @@ pub struct TransactionInput<H> {
 
 type TxIn<T: Trait> = TransactionInput<T::Hash>;
 
-impl<H> TransactionInput<H> {
+impl<H: Copy> TransactionInput<H> {
 	fn output_or_default<T: Trait>(&self) -> TransactionOutput<T::Value, T::AccountId>
 		where (H, u32): rstd::borrow::Borrow<(<T as system::Trait>::Hash, u32)> {
-		match <UnspentOutputs<T>>::get(&(self.tx_hash, self.out_index)) {
+		match <UnspentOutputs<T>>::get((self.tx_hash.clone(), self.out_index)) {
 			Some(tx_out) => tx_out,
 			None => Default::default(),
 		}
 	}
 	fn output<T: Trait>(&self) -> Option<TransactionOutput<T::Value, T::AccountId>>
 		where (H, u32): rstd::borrow::Borrow<(<T as system::Trait>::Hash, u32)> {
-		<UnspentOutputs<T>>::get(&(self.tx_hash, self.out_index))
+		<UnspentOutputs<T>>::get((self.tx_hash.clone(), self.out_index))
 	}
 }
 
@@ -47,32 +50,32 @@ pub struct TransactionOutput<V, K> {
 
 type TxOut<T: Trait> = TransactionOutput<T::Value, T::AccountId>;
 
-/// V: Value, K: Key, H: Hash
+/// V: Value, K: Key, H: Hash, L: TimeLock
 #[derive(Clone, Encode, Decode, Default, PartialEq, Eq)]
 #[cfg_attr(feature = "std", derive(Debug, Serialize, Deserialize))]
-pub struct Transaction<V, K, H> {
+pub struct Transaction<V, K, H, L> {
 	///#[codec(compact)]
 	pub inputs: Vec<TransactionInput<H>>,
 	///#[codec(compact)]
 	pub outputs: Vec<TransactionOutput<V, K>>,
 	///#[codec(compact)]
-	pub lock_time: TimeLock,
+	pub lock_time: L,
 }
 
-type Tx<T: Trait> = Transaction<T::Value, T::AccountId, T::Hash>;
+type Tx<T: Trait> = Transaction<T::Value, T::AccountId, T::Hash, T::TimeLock>;
 
 #[derive(Clone, Encode, Decode, Default, PartialEq, Eq)]
 #[cfg_attr(feature = "std", derive(Debug))]
-pub struct SignedTransaction<V, K, H, S> {
+pub struct SignedTransaction<V, K, H, S, L> {
 	///#[codec(compact)]
-	pub payload: Transaction<V, K, H>,
+	pub payload: Transaction<V, K, H, L>,
 	///#[codec(compact)]
 	pub signatures: Vec<S>,
 	///#[codec(compact)]
 	pub public_keys: Vec<K>,
 }
 
-type SignedTx<T: Trait> = SignedTransaction<T::Value, T::AccountId, T::Hash, T::Signature>;
+type SignedTx<T: Trait> = SignedTransaction<T::Value, T::AccountId, T::Hash, T::Signature, T::TimeLock>;
 
 pub fn hash_of<Hashing, H>(tx_hash: &H, i: &u32) -> H
 	where H: Codec + Member + MaybeSerializeDebug + rstd::hash::Hash + AsRef<[u8]> + AsMut<[u8]> + Copy + Default,
@@ -81,20 +84,20 @@ pub fn hash_of<Hashing, H>(tx_hash: &H, i: &u32) -> H
 }
 
 pub trait Trait: system::Trait {
-	type Signature: Parameter + Verify<Signer=Self::AccountId>;
+	type Signature: Parameter + Default + Verify<Signer=Self::AccountId>;
 	type TimeLock: Parameter + Zero + Default;
 	type Value: Parameter + Member + SimpleArithmetic + Codec + Default + Copy + As<usize> + As<u64> + MaybeSerializeDebug;
 
-	type Utxo: UtxoTriat<SignedTx<Self>>;
+	type Utxo: UtxoTrait<SignedTx<Self>, Self::Value>;
 
 	/// The overarching event type.
 	type Event: From<Event<Self>> + Into<<Self as system::Trait>::Event>;
 }
 
-fn generate_tx_from_conf<T: Trait>(genesis: Vec<(T::Value, <T as system::Trait>::AccountId)>) -> Tx<T> {
+fn generate_tx_from_conf<T: Trait>(genesis: &Vec<(T::Value, <T as system::Trait>::AccountId)>) -> Tx<T> {
 	Transaction {
 		inputs: vec! {},
-		outputs: config.genesis_tx
+		outputs: genesis
 			.clone()
 			.iter()
 			.map(|e| TransactionOutput { value: e.0.clone(), keys: vec! {e.1.clone()}, quorum: 1 })
@@ -108,7 +111,7 @@ decl_storage! {
 		/// All valid unspent transaction outputs are stored in this map.
 		/// Initial set of UTXO is populated from the list stored in genesis.
 		pub UnspentOutputs get(unspent_outputs) build( |config: &GenesisConfig<T>| {
-			let tx = generate_tx_from_conf(config.genesis_tx);
+			let tx = generate_tx_from_conf::<T>(&config.genesis_tx);
 			tx.clone()
 				.outputs
 				.iter()
@@ -119,7 +122,7 @@ decl_storage! {
 
 		/// [AccountId] = reference of UTXO.
 		pub UnspentOutputsFinder get(unspent_outputs_finder) build( |config: &GenesisConfig<T> | {
-			let tx = generate_tx_from_conf(config.genesis_tx);
+			let tx = generate_tx_from_conf::<T>(&config.genesis_tx);
 			config.genesis_tx
 				.clone()
 				.iter()
@@ -129,8 +132,13 @@ decl_storage! {
 		}): map <T as system::Trait>::AccountId => Option<Vec<(<T as system::Trait>::Hash, u32)>>; //TODO HashSet<>
 
 		pub TxList get(tx_list) build( |config: &GenesisConfig<T> | {
-			let tx = generate_tx_from_conf(config.genesis_tx);
-			vec!{(<T as system::Trait>::Hashing::hash_of(&tx), tx)}
+			let tx = generate_tx_from_conf::<T>(&config.genesis_tx);
+			vec!{(<T as system::Trait>::Hashing::hash_of(&tx),
+				SignedTx::<T> {
+					payload: tx,
+					signatures: vec!{},
+					public_keys: vec!{},
+				})}
 		}): map <T as system::Trait>::Hash => SignedTx<T>;
 
 		/// Total leftover value to be redistributed among authorities.
@@ -157,14 +165,14 @@ decl_module! {
 		// Dispatch a single transaction and update UTXO set accordingly
 		pub fn execute(origin, signed_tx: SignedTx<T> ) -> Result {
 			ensure_signed(origin)?;
-			Self::execute(signed_tx);
+			Self::exec(signed_tx)
 		}
 	}
 }
 
 decl_event!(
 	/// An event in this module.
-	pub enum Event {
+	pub enum Event<T> where SignedTransaction = SignedTx<T> {
 		/// Transaction was executed successfully
 		TransactionExecuted(SignedTransaction),
 	}
@@ -180,7 +188,7 @@ impl<T: Trait> WritableUtxoTrait<SignedTx<T>> for Module<T> {
 			.enumerate() {
 			let identify = (hash.clone(), i as u32);
 			<UnspentOutputs<T>>::insert(identify.clone(), out.clone());
-			for key in out.keys() {
+			for key in out.keys.iter() {
 				<UnspentOutputsFinder<T>>::mutate(key, |v| {
 					match v.as_mut() {
 						Some(vc) => vc.push(identify.clone()),
@@ -195,7 +203,7 @@ impl<T: Trait> WritableUtxoTrait<SignedTx<T>> for Module<T> {
 
 impl<T: Trait> ReadbleUtxoTrait<SignedTx<T>, T::Value> for Module<T> {
 	fn verify(signed_tx: &SignedTx<T>) -> Result {
-		let hash = <T as system::Trait>::Hashing::hash_of(&signed_tx.payload);
+		let mut hash = <T as system::Trait>::Hashing::hash_of(&signed_tx.payload);
 		for (sign, key) in signed_tx.signatures.iter().zip(signed_tx.public_keys.iter()) {
 			if !sign.verify(hash.as_mut() as &[u8], key) {
 				return Err("signature is unverified.");
@@ -211,8 +219,8 @@ impl<T: Trait> ReadbleUtxoTrait<SignedTx<T>, T::Value> for Module<T> {
 			.iter() {
 			let output = input.output::<T>()
 				.ok_or("specified utxo by input is not found.")?;
-			if output.quorum() > output
-				.keys()
+			if output.quorum > output
+				.keys
 				.iter()
 				.filter(|key|
 					keys.contains(key))
