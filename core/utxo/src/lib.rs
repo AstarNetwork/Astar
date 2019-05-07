@@ -22,6 +22,3 @@ pub trait ReadbleUtxoTrait<SignedTx, V> {
 pub trait UtxoTrait<SignedTx, V>: WritableUtxoTrait<SignedTx> + ReadbleUtxoTrait<SignedTx, V> {
 	fn exec(tx: SignedTx) -> Result;
 }
-
-#[cfg(tests)]
-pub mod tests;

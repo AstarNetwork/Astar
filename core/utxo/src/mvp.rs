@@ -20,8 +20,6 @@ pub struct TransactionInput<H> {
 	pub out_index: u32,
 }
 
-type TxIn<T: Trait> = TransactionInput<T::Hash>;
-
 impl<H: Copy> TransactionInput<H> {
 	fn output_or_default<T: Trait>(&self) -> TransactionOutput<T::Value, T::AccountId>
 		where (H, u32): rstd::borrow::Borrow<(<T as system::Trait>::Hash, u32)> {
@@ -48,7 +46,7 @@ pub struct TransactionOutput<V, K> {
 	pub quorum: u32,
 }
 
-type TxOut<T: Trait> = TransactionOutput<T::Value, T::AccountId>;
+type TxOut<T: Trait> = TransactionOutput<T::Value, <T as system::Trait>::AccountId>;
 
 /// V: Value, K: Key, H: Hash, L: TimeLock
 #[derive(Clone, Encode, Decode, Default, PartialEq, Eq)]
@@ -62,7 +60,7 @@ pub struct Transaction<V, K, H, L> {
 	pub lock_time: L,
 }
 
-type Tx<T: Trait> = Transaction<T::Value, T::AccountId, T::Hash, T::TimeLock>;
+type Tx<T: Trait> = Transaction<T::Value, <T as system::Trait>::AccountId, <T as system::Trait>::Hash, T::TimeLock>;
 
 #[derive(Clone, Encode, Decode, Default, PartialEq, Eq)]
 #[cfg_attr(feature = "std", derive(Debug))]
@@ -75,7 +73,7 @@ pub struct SignedTransaction<V, K, H, S, L> {
 	pub public_keys: Vec<K>,
 }
 
-type SignedTx<T: Trait> = SignedTransaction<T::Value, T::AccountId, T::Hash, T::Signature, T::TimeLock>;
+type SignedTx<T: Trait> = SignedTransaction<T::Value, <T as system::Trait>::AccountId, <T as system::Trait>::Hash, T::Signature, T::TimeLock>;
 
 pub fn hash_of<Hashing, H>(tx_hash: &H, i: &u32) -> H
 	where H: Codec + Member + MaybeSerializeDebug + rstd::hash::Hash + AsRef<[u8]> + AsMut<[u8]> + Copy + Default,
@@ -87,8 +85,6 @@ pub trait Trait: system::Trait {
 	type Signature: Parameter + Default + Verify<Signer=Self::AccountId>;
 	type TimeLock: Parameter + Zero + Default;
 	type Value: Parameter + Member + SimpleArithmetic + Codec + Default + Copy + As<usize> + As<u64> + MaybeSerializeDebug;
-
-	type Utxo: UtxoTrait<SignedTx<Self>, Self::Value>;
 
 	/// The overarching event type.
 	type Event: From<Event<Self>> + Into<<Self as system::Trait>::Event>;
@@ -274,22 +270,48 @@ impl<T: Trait> UtxoTrait<SignedTx<T>, T::Value> for Module<T> {
 #[cfg(test)]
 mod tests {
 	use super::*;
+	use runtime_io::with_externalities;
+
+	use support::{impl_outer_origin, assert_ok, assert_err};
 	use sr_primitives::{
-		traits::BlakeTwo256,
+		BuildStorage,
+		traits::{Verify, BlakeTwo256, IdentityLookup, Hash},
+		testing::{Digest, DigestItem, Header},
 	};
-	use primitives::{sr25519, Pair, H256};
+	use primitives::{Blake2Hasher, H256, sr25519, crypto::Pair};
+	use std::clone::Clone;
 
 	pub type Signature = sr25519::Signature;
 
 	pub type AccountId = <Signature as Verify>::Signer;
 
-	pub type MerkleTree = plasm_merkle::mock::MerkleTree<H256, BlakeTwo256>;
-
-	pub type Value = u64;
-
 	impl_outer_origin! {
 		pub enum Origin for Test {}
 	}
+
+	impl system::Trait for Test {
+		type Origin = Origin;
+		type Index = u64;
+		type BlockNumber = u64;
+		type Hash = H256;
+		type Hashing = BlakeTwo256;
+		type Digest = Digest;
+		type AccountId = AccountId;
+		type Lookup = IdentityLookup<Self::AccountId>;
+		type Header = Header;
+		type Event = ();
+		type Log = DigestItem;
+	}
+
+	impl Trait for Test {
+		type Signature = Signature;
+		type TimeLock = Self::BlockNumber;
+		type Value = u64;
+
+		type Event = ();
+	}
+
+	type UTXO = Module<Test>;
 
 	// For testing the module, we construct most of a mock runtime. This means
 	// first constructing a configuration type (`Test`) which `impl`s each of the
@@ -303,7 +325,7 @@ mod tests {
 	}
 
 	pub fn genesis_tx(root: &sr25519::Pair) -> Vec<(u64, AccountId)> {
-		vec! {(1000000000000000, &root.public()), }
+		vec! {(1000000000000000, root.public().clone()), }
 	}
 
 	// This function basically just builds ax genesis storage key/value store according to
@@ -316,8 +338,6 @@ mod tests {
 		t.into()
 	}
 
-	type UTXO = Module<Test>;
-
 	pub fn account_key_pair(s: &str) -> sr25519::Pair {
 		sr25519::Pair::from_string(&format!("//{}", s), None)
 			.expect("static values are valid; qed")
@@ -329,10 +349,10 @@ mod tests {
 			.map(|r| <UnspentOutputs<Test>>::get((r.0.clone(), r.1)))
 			.map(|r| r.unwrap())
 			.collect::<Vec<_>>();
-		utxos.fold(0, |sum, v| sum + v)
+		utxos.iter().fold(0, |sum, o| sum + o.value)
 	}
 
-	fn gen_tx_out(value: Value, out_key: AccountId) -> TxOut<Test> {
+	fn gen_tx_out(value: u64, out_key: AccountId) -> TxOut<Test> {
 		TransactionOutput {
 			value: value,
 			keys: vec! {out_key, },
@@ -341,24 +361,26 @@ mod tests {
 	}
 
 	pub fn gen_tx_form_ref(refs: Vec<(H256, u32)>, sender: AccountId, receiver: AccountId, value: u64) -> Tx<Test> {
-		let sum = get_values_from_refs(refs);
+		let sum = get_values_from_refs(refs.clone());
 		Transaction {
-			inputs: refs.iter().map(|r|
-				TransactionInput {
-					tx_hash: r.0.clone(),
-					out_index: r.1,
-				})
+			inputs: refs.iter()
+				.cloned()
+				.map(|r|
+					TransactionInput {
+						tx_hash: r.0.clone(),
+						out_index: r.1,
+					})
 				.collect::<Vec<_>>(),
 			outputs: vec! {
 				gen_tx_out(value, receiver),
-				gen_tx_out(sum - value, sender)
+				gen_tx_out(sum - value - 1000, sender)
 			},
 			lock_time: 0,
 		}
 	}
 
 	fn sign(tx: Tx<Test>, key_pair: &sr25519::Pair) -> SignedTx<Test> {
-		let signature = key_pair.sign(hash(tx).as_ref());
+		let signature = key_pair.sign(hash(&tx).as_ref());
 		SignedTransaction {
 			payload: tx,
 			signatures: vec! {signature},
@@ -367,24 +389,24 @@ mod tests {
 	}
 
 	pub fn gen_transfer(sender: &sr25519::Pair, receiver: &AccountId, value: u64) -> SignedTx<Test> {
-		let ref_utxo = <UnspentOutputsFinder<T>>::get(&sender.public()).unwrap();
+		let ref_utxo = <UnspentOutputsFinder<Test>>::get(&sender.public()).unwrap();
 		let tx = gen_tx_form_ref(ref_utxo, sender.public().clone(), receiver.clone(), value);
 		sign(tx, sender)
 	}
 
 	pub fn verify(account_id: &AccountId, value: u64, num_of_utxo: usize) {
 		let ref_utxo = <UnspentOutputsFinder<Test>>::get(account_id).unwrap();
-		assert_eq!(num_of_utxo, ref_utxo.as_ref().unwrap().len());
+		assert_eq!(num_of_utxo, ref_utxo.len());
 		let utxos = ref_utxo
 			.iter()
 			.map(|r| <UnspentOutputs<Test>>::get((r.0.clone(), r.1)))
 			.map(|r| r.unwrap())
 			.collect::<Vec<_>>();
-		let sum = utxos.fold(0, |sum, v| sum + v);
+		let sum = utxos.iter().fold(0, |sum, o| sum + o.value);
 		assert_eq!(value, sum);
 	}
 
-
+	#[test]
 	fn mvp_minimum_works() {
 		let root_key_pair = account_key_pair("test_root");
 		with_externalities(&mut new_test_ext(&root_key_pair), || {
@@ -393,7 +415,7 @@ mod tests {
 
 			// check total leftover is 0
 			let leftover_total = <LeftoverTotal<Test>>::get();
-			assert_eq!(0, *leftover_total);
+			assert_eq!(0, leftover_total);
 
 			let receiver_key_pair = account_key_pair("test_receiver");
 			let transfer_1 = gen_transfer(&root_key_pair, &receiver_key_pair.public(), 100000);
@@ -401,40 +423,18 @@ mod tests {
 
 			verify(&root_key_pair.public(), 1000000000000000 - 100000, 1);
 			verify(&receiver_key_pair.public(), 100000, 1);
+			assert_eq!(1000, <LeftoverTotal<Test>>::get());
 
 			// double spending error!
-			assert_ne!(Ok(()), UTXO::execute(Origin::signed(root_key_pair.public()), transfer_1));
+			//assert_err!(UTXO::execute(Origin::signed(root_key_pair.public()), transfer_1));
 
-			// TODO
-			// get new transaction.
-			let act_gen_out2 = <UnspentOutputs<Test>>::get((hash(new_signed_tx.payload().as_ref().unwrap()), 0));
-			assert!(act_gen_out2.is_some());
-			assert_eq!(new_signed_tx.payload().as_ref().unwrap().outputs()[0],
-					   act_gen_out2.unwrap());
-			// get reference of new teranction.
-			let ref_utxo = <UnspentOutputsFinder<Test>>::get(receiver_key_pair.public());
-			assert!(ref_utxo.is_some());
-			assert_eq!(1, ref_utxo.as_ref().unwrap().len());
-			assert_eq!(hash(new_signed_tx.payload().as_ref().unwrap()), ref_utxo.as_ref().unwrap()[0].0);
-			assert_eq!(0, ref_utxo.as_ref().unwrap()[0].1);
+			let receiver_key_pair = account_key_pair("test_receiver");
+			let transfer_2 = gen_transfer(&root_key_pair, &receiver_key_pair.public(), 200000);
 
-			// check total leftover is (1<<60) - (1<<59)
-			let leftover_total = <LeftoverTotal<Test>>::get();
-			assert_eq!((1 << 59), *leftover_total);
-
-			// not yet change root hash ========================= different default TODO genesis tx is not exist (after that issue)
-			assert_eq!(root_hash, MerkleTree::new().root());
-
-			// on_finalize
-			UTXO::on_finalize(1);
-
-			// changed root hash ============================== different default VVV
-			let new_root_hash = MerkleTree::new().root();
-			assert_ne!(root_hash, new_root_hash);
-
-			// proofs by ref utxo.
-			let proofs = MerkleTree::new().proofs(&BlakeTwo256::hash_of(&ref_utxo.as_ref().unwrap()[0]));
-			assert_eq!(new_root_hash, proofs.root::<BlakeTwo256>());
+			assert_ok!(UTXO::execute(Origin::signed(root_key_pair.public()), transfer_2));
+			verify(&root_key_pair.public(), 1000000000000000 - 300000, 1);
+			verify(&receiver_key_pair.public(), 300000, 2);
+			assert_eq!(2000, <LeftoverTotal<Test>>::get());
 		});
 	}
 }
