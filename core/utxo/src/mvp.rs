@@ -14,9 +14,7 @@ use parity_codec::{Encode, Decode, Codec};
 #[derive(Clone, Encode, Decode, Default, PartialEq, Eq)]
 #[cfg_attr(feature = "std", derive(Debug, Serialize, Deserialize))]
 pub struct TransactionInput<H> {
-	///#[codec(compact)]
 	pub tx_hash: H,
-	///#[codec(compact)]
 	pub out_index: u32,
 }
 
@@ -38,11 +36,8 @@ impl<H: Copy> TransactionInput<H> {
 #[derive(Clone, Encode, Decode, Default, PartialEq, Eq)]
 #[cfg_attr(feature = "std", derive(Debug, Serialize, Deserialize))]
 pub struct TransactionOutput<V, K> {
-	///#[codec(compact)]
 	pub value: V,
-	///#[codec(compact)]
 	pub keys: Vec<K>,
-	///#[codec(compact)]
 	pub quorum: u32,
 }
 
@@ -52,11 +47,8 @@ type TxOut<T> = TransactionOutput<<T as Trait>::Value, <T as system::Trait>::Acc
 #[derive(Clone, Encode, Decode, Default, PartialEq, Eq)]
 #[cfg_attr(feature = "std", derive(Debug, Serialize, Deserialize))]
 pub struct Transaction<V, K, H, L> {
-	///#[codec(compact)]
 	pub inputs: Vec<TransactionInput<H>>,
-	///#[codec(compact)]
 	pub outputs: Vec<TransactionOutput<V, K>>,
-	///#[codec(compact)]
 	pub lock_time: L,
 }
 
@@ -65,11 +57,8 @@ type Tx<T> = Transaction<<T as Trait>::Value, <T as system::Trait>::AccountId, <
 #[derive(Clone, Encode, Decode, Default, PartialEq, Eq)]
 #[cfg_attr(feature = "std", derive(Debug))]
 pub struct SignedTransaction<V, K, H, S, L> {
-	///#[codec(compact)]
 	pub payload: Transaction<V, K, H, L>,
-	///#[codec(compact)]
 	pub signatures: Vec<S>,
-	///#[codec(compact)]
 	pub public_keys: Vec<K>,
 }
 
