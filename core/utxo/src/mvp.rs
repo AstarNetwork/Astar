@@ -46,7 +46,7 @@ pub struct TransactionOutput<V, K> {
 	pub quorum: u32,
 }
 
-type TxOut<T: Trait> = TransactionOutput<T::Value, <T as system::Trait>::AccountId>;
+type TxOut<T> = TransactionOutput<<T as Trait>::Value, <T as system::Trait>::AccountId>;
 
 /// V: Value, K: Key, H: Hash, L: TimeLock
 #[derive(Clone, Encode, Decode, Default, PartialEq, Eq)]
@@ -60,7 +60,7 @@ pub struct Transaction<V, K, H, L> {
 	pub lock_time: L,
 }
 
-type Tx<T: Trait> = Transaction<T::Value, <T as system::Trait>::AccountId, <T as system::Trait>::Hash, T::TimeLock>;
+type Tx<T> = Transaction<<T as Trait>::Value, <T as system::Trait>::AccountId, <T as system::Trait>::Hash, <T as Trait>::TimeLock>;
 
 #[derive(Clone, Encode, Decode, Default, PartialEq, Eq)]
 #[cfg_attr(feature = "std", derive(Debug))]
@@ -73,7 +73,7 @@ pub struct SignedTransaction<V, K, H, S, L> {
 	pub public_keys: Vec<K>,
 }
 
-type SignedTx<T: Trait> = SignedTransaction<T::Value, <T as system::Trait>::AccountId, <T as system::Trait>::Hash, T::Signature, T::TimeLock>;
+type SignedTx<T> = SignedTransaction<<T as Trait>::Value, <T as system::Trait>::AccountId, <T as system::Trait>::Hash, <T as Trait>::Signature, <T as Trait>::TimeLock>;
 
 pub fn hash_of<Hashing, H>(tx_hash: &H, i: &u32) -> H
 	where H: Codec + Member + MaybeSerializeDebug + rstd::hash::Hash + AsRef<[u8]> + AsMut<[u8]> + Copy + Default,
@@ -174,7 +174,7 @@ decl_event!(
 	}
 );
 
-impl<T: Trait> WritableUtxoTrait<SignedTx<T>> for Module<T> {
+impl<T: Trait> WritableUtxoTrait<SignedTx<T>, Vec<T::AccountId>, (T::Hash, u32)> for Module<T> {
 	/// push: updated UnspentOutputs, UnspentOutputsFinder and TxList.
 	fn push(signed_tx: SignedTx<T>) {
 		let tx = &signed_tx.payload;
@@ -195,6 +195,31 @@ impl<T: Trait> WritableUtxoTrait<SignedTx<T>> for Module<T> {
 		}
 		<TxList<T>>::insert(&hash, signed_tx);
 	}
+
+	fn spent(signed_tx: &SignedTx<T>) {
+		for inp in signed_tx.payload.inputs.iter() {
+			Self::remove(&inp.output_or_default::<T>().keys, &(inp.tx_hash.clone(), inp.out_index));
+		}
+	}
+
+	fn remove(who: &Vec<T::AccountId>, out_point: &(T::Hash, u32)) {
+		for who in who.iter() {
+			<UnspentOutputs<T>>::remove(out_point);
+			<UnspentOutputsFinder<T>>::mutate(who, |v| {
+				*v = match
+					v.as_ref()
+						.unwrap_or(&vec! {})
+						.iter()
+						.filter(|e| **e != *out_point)
+						.map(|e| *e)
+						.collect::<Vec<_>>()
+						.as_slice() {
+					[] => None,
+					s => Some(s.to_vec()),
+				}
+			})
+		}
+	}
 }
 
 impl<T: Trait> ReadbleUtxoTrait<SignedTx<T>, T::Value> for Module<T> {
@@ -204,6 +229,9 @@ impl<T: Trait> ReadbleUtxoTrait<SignedTx<T>, T::Value> for Module<T> {
 			if !sign.verify(hash.as_mut() as &[u8], key) {
 				return Err("signature is unverified.");
 			}
+		}
+		if <TxList<T>>::exists(&T::Hashing::hash_of(&signed_tx.payload)) {
+			return Err("already exist same transaction.");
 		}
 		Ok(())
 	}
@@ -245,7 +273,7 @@ impl<T: Trait> ReadbleUtxoTrait<SignedTx<T>, T::Value> for Module<T> {
 	}
 }
 
-impl<T: Trait> UtxoTrait<SignedTx<T>, T::Value> for Module<T> {
+impl<T: Trait> UtxoTrait<SignedTx<T>, Vec<T::AccountId>, (T::Hash, u32), T::Value> for Module<T> {
 	fn exec(signed_tx: SignedTx<T>) -> Result {
 		// all signature checking Signature.Verify(HashableAccountId, hash(transaction.payload)).
 		Self::verify(&signed_tx)?;
@@ -260,6 +288,7 @@ impl<T: Trait> UtxoTrait<SignedTx<T>, T::Value> for Module<T> {
 			.ok_or("leftover overflow")?;
 
 		<LeftoverTotal<T>>::put(new_total);
+		Self::spent(&signed_tx);
 		Self::push(signed_tx.clone());
 		Self::deposit_event(RawEvent::TransactionExecuted(signed_tx));
 		Ok(())
@@ -419,21 +448,23 @@ mod tests {
 
 			let receiver_key_pair = account_key_pair("test_receiver");
 			let transfer_1 = gen_transfer(&root_key_pair, &receiver_key_pair.public(), 100000);
-			assert_ok!(UTXO::execute(Origin::signed(root_key_pair.public()), transfer_1));
+			assert_ok!(UTXO::execute(Origin::signed(root_key_pair.public()), transfer_1.clone()));
 
-			verify(&root_key_pair.public(), 1000000000000000 - 100000, 1);
+			verify(&root_key_pair.public(), 1000000000000000 - 100000 - 1000, 1);
 			verify(&receiver_key_pair.public(), 100000, 1);
+			assert_eq!(transfer_1, <TxList<Test>>::get(hash(&transfer_1.payload)));
 			assert_eq!(1000, <LeftoverTotal<Test>>::get());
 
 			// double spending error!
-			//assert_err!(UTXO::execute(Origin::signed(root_key_pair.public()), transfer_1));
+			assert_err!(UTXO::execute(Origin::signed(root_key_pair.public()), transfer_1), "already exist same transaction.");
 
 			let receiver_key_pair = account_key_pair("test_receiver");
 			let transfer_2 = gen_transfer(&root_key_pair, &receiver_key_pair.public(), 200000);
 
-			assert_ok!(UTXO::execute(Origin::signed(root_key_pair.public()), transfer_2));
-			verify(&root_key_pair.public(), 1000000000000000 - 300000, 1);
+			assert_ok!(UTXO::execute(Origin::signed(root_key_pair.public()), transfer_2.clone()));
+			verify(&root_key_pair.public(), 1000000000000000 - 300000 - 2000, 1);
 			verify(&receiver_key_pair.public(), 300000, 2);
+			assert_eq!(transfer_2, <TxList<Test>>::get(hash(&transfer_2.payload)));
 			assert_eq!(2000, <LeftoverTotal<Test>>::get());
 		});
 	}

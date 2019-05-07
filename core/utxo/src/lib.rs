@@ -9,8 +9,10 @@ pub mod mvp;
 
 type CheckResult<T> = rstd::result::Result<T, &'static str>;
 
-pub trait WritableUtxoTrait<SignedTx> {
+pub trait WritableUtxoTrait<SignedTx, AccountId, OutPoint> {
 	fn push(tx: SignedTx);
+	fn spent(tx: &SignedTx);
+	fn remove(who: &AccountId, out_point: &OutPoint);
 }
 
 pub trait ReadbleUtxoTrait<SignedTx, V> {
@@ -19,6 +21,6 @@ pub trait ReadbleUtxoTrait<SignedTx, V> {
 	fn leftover(signed_tx: &SignedTx) -> CheckResult<V>;
 }
 
-pub trait UtxoTrait<SignedTx, V>: WritableUtxoTrait<SignedTx> + ReadbleUtxoTrait<SignedTx, V> {
+pub trait UtxoTrait<SignedTx, AccountId, OutPoint, V>: WritableUtxoTrait<SignedTx, AccountId, OutPoint> + ReadbleUtxoTrait<SignedTx, V> {
 	fn exec(tx: SignedTx) -> Result;
 }
