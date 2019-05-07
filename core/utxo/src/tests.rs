@@ -4,7 +4,7 @@ use runtime_io::with_externalities;
 use support::{impl_outer_origin, assert_ok};
 use sr_primitives::{
 	BuildStorage,
-	traits::{BlakeTwo256, IdentityLookup},
+	traits::{BlakeTwo256, IdentityLookup, Verify},
 	testing::{Digest, DigestItem, Header},
 };
 use primitives::{sr25519, Pair, Blake2Hasher, H256};
@@ -14,8 +14,18 @@ use std::clone::Clone;
 use plasm_primitives;
 use plasm_merkle::{MerkleTreeTrait, ProofTrait};
 
-pub use helper::{AccountId, Signature, MerkleTree, Value, TestInput, TestOutput, TestTransaction,
-				 account_key_pair, gen_normal_tx, sign, genesis_tx};
+use sr_primitives::{
+	traits::{BlakeTwo256},
+};
+use primitives::{sr25519, Pair, H256};
+
+pub type Signature = sr25519::Signature;
+
+pub type AccountId = <Signature as Verify>::Signer;
+
+pub type MerkleTree = plasm_merkle::mock::MerkleTree<H256, BlakeTwo256>;
+
+pub type Value = plasm_primitives::mvp::Value;
 
 impl_outer_origin! {
 	pub enum Origin for Test {}
@@ -28,41 +38,12 @@ impl_outer_origin! {
 #[cfg_attr(feature = "std", derive(Debug))]
 pub struct Test;
 
-
-impl system::Trait for Test {
-	type Origin = Origin;
-	type Index = u64;
-	type BlockNumber = u64;
-	type Hash = H256;
-	type Hashing = BlakeTwo256;
-	type Digest = Digest;
-	type AccountId = AccountId;
-	type Lookup = IdentityLookup<Self::AccountId>;
-	type Header = Header;
-	type Event = ();
-	type Log = DigestItem;
+fn hash(tx: &Tx<Test>) -> H256 {
+	BlakeTwo256::hash_of(tx)
 }
 
-impl Trait for Test {
-	type Signature = Signature;
-	type TimeLock = Self::BlockNumber;
-	type Value = Value;
-
-	type Input = TestInput;
-	type Output = TestOutput;
-
-	type Transaction = TestTransaction;
-	type SignedTransaction = SignedTransaction<Test>;
-
-	type Inserter = mvp::Inserter<Test, MerkleTree>;
-	type Remover = DefaultRemover<Test>;
-	type Finalizer = mvp::Finalizer<Test, MerkleTree>;
-
-	type Event = ();
-}
-
-fn hash(tx: &<Test as Trait>::Transaction) -> <Test as system::Trait>::Hash {
-	<Test as system::Trait>::Hashing::hash_of(tx)
+pub fn genesis_tx(root: &sr25519::Pair) -> Vec<(u64, AccountId)> {
+	vec! {(1000000000000000, &root.public()), }
 }
 
 // This function basically just builds ax genesis storage key/value store according to
@@ -70,7 +51,7 @@ fn hash(tx: &<Test as Trait>::Transaction) -> <Test as system::Trait>::Hash {
 fn new_test_ext(root: &sr25519::Pair) -> runtime_io::TestExternalities<Blake2Hasher> {
 	let mut t = system::GenesisConfig::<Test>::default().build_storage().unwrap().0;
 	t.extend(GenesisConfig::<Test> {
-		genesis_tx: genesis_tx::<Test>(root),
+		genesis_tx: genesis_tx(root),
 	}.build_storage().unwrap().0);
 	t.into()
 }
@@ -78,6 +59,69 @@ fn new_test_ext(root: &sr25519::Pair) -> runtime_io::TestExternalities<Blake2Has
 type UTXO = Module<Test>;
 
 #[test]
+fn utxo_executed_tests<SignedTx, V, F1>(utxoModule: UtxoTrait<SignedTx, V>, verify: F1, root_key_pair: AccountId)
+	where F1: Fn(AccountId, V) {
+	// check reference of genesis tx.
+	verify(root_key_pair.public(), 1000000000000000);
+
+	// check genesis tx. TODO
+	let exp_gen_tx = &genesis_tx(&root_key_pair)[0];
+	let act_gen_out = <UnspentOutputs<Test>>::get(exp_gen_outpoint);
+	assert_eq!(exp_gen_tx.0, act_gen_out.as_ref().unwrap().value());
+	assert_eq!(1, act_gen_out.as_ref().unwrap().keys().len());
+	assert_eq!(exp_gen_tx.1, act_gen_out.as_ref().unwrap().keys()[0]);
+
+	// check total leftover is 0
+	let leftover_total = <LeftoverTotal<Test>>::get();
+	assert_eq!(0, *leftover_total);
+
+	let receiver_key_pair = account_key_pair("test_receiver");
+	let new_signed_tx = sign::<Test>(
+		&gen_normal_tx(exp_gen_outpoint.0,
+					   exp_gen_outpoint.1, Value::new(1 << 59), receiver_key_pair.public()),
+		&root_key_pair,
+	);
+	assert_ok!(UTXO::execute(Origin::signed(root_key_pair.public()), new_signed_tx.encode()));
+
+	// already spent genesis utxo.
+	let spent_utxo = <UnspentOutputs<Test>>::get(exp_gen_outpoint);
+	assert!(spent_utxo.is_none());
+	// already spent reference of genesis utxo.
+	let ref_utxo = <UnspentOutputsFinder<Test>>::get(root_key_pair.public());
+	assert!(ref_utxo.is_none());
+
+	// get new transaction.
+	let act_gen_out2 = <UnspentOutputs<Test>>::get((hash(new_signed_tx.payload().as_ref().unwrap()), 0));
+	assert!(act_gen_out2.is_some());
+	assert_eq!(new_signed_tx.payload().as_ref().unwrap().outputs()[0],
+			   act_gen_out2.unwrap());
+	// get reference of new teranction.
+	let ref_utxo = <UnspentOutputsFinder<Test>>::get(receiver_key_pair.public());
+	assert!(ref_utxo.is_some());
+	assert_eq!(1, ref_utxo.as_ref().unwrap().len());
+	assert_eq!(hash(new_signed_tx.payload().as_ref().unwrap()), ref_utxo.as_ref().unwrap()[0].0);
+	assert_eq!(0, ref_utxo.as_ref().unwrap()[0].1);
+
+	// check total leftover is (1<<60) - (1<<59)
+	let leftover_total = <LeftoverTotal<Test>>::get();
+	assert_eq!((1 << 59), *leftover_total);
+
+	// not yet change root hash ========================= different default TODO genesis tx is not exist (after that issue)
+	assert_eq!(root_hash, MerkleTree::new().root());
+
+	// on_finalize
+	UTXO::on_finalize(1);
+
+	// changed root hash ============================== different default VVV
+	let new_root_hash = MerkleTree::new().root();
+	assert_ne!(root_hash, new_root_hash);
+
+	// proofs by ref utxo.
+	let proofs = MerkleTree::new().proofs(&BlakeTwo256::hash_of(&ref_utxo.as_ref().unwrap()[0]));
+	assert_eq!(new_root_hash, proofs.root::<BlakeTwo256>());
+
+	utxoModule::push()
+}
 fn mvp_minimum_works() {
 	let root_key_pair = account_key_pair("test_root");
 	with_externalities(&mut new_test_ext(&root_key_pair), || {

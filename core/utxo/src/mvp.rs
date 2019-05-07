@@ -323,8 +323,57 @@ mod tests {
 			.expect("static values are valid; qed")
 	}
 
+	pub fn get_values_from_refs(refs: Vec<(H256, u32)>) -> u64 {
+		let utxos = refs
+			.iter()
+			.map(|r| <UnspentOutputs<Test>>::get((r.0.clone(), r.1)))
+			.map(|r| r.unwrap())
+			.collect::<Vec<_>>();
+		utxos.fold(0, |sum, v| sum + v)
+	}
+
+	fn gen_tx_out(value: Value, out_key: AccountId) -> TxOut<Test> {
+		TransactionOutput {
+			value: value,
+			keys: vec! {out_key, },
+			quorum: 1,
+		}
+	}
+
+	pub fn gen_tx_form_ref(refs: Vec<(H256, u32)>, sender: AccountId, receiver: AccountId, value: u64) -> Tx<Test> {
+		let sum = get_values_from_refs(refs);
+		Transaction {
+			inputs: refs.iter().map(|r|
+				TransactionInput {
+					tx_hash: r.0.clone(),
+					out_index: r.1,
+				})
+				.collect::<Vec<_>>(),
+			outputs: vec! {
+				gen_tx_out(value, receiver),
+				gen_tx_out(sum - value, sender)
+			},
+			lock_time: 0,
+		}
+	}
+
+	fn sign(tx: Tx<Test>, key_pair: &sr25519::Pair) -> SignedTx<Test> {
+		let signature = key_pair.sign(hash(tx).as_ref());
+		SignedTransaction {
+			payload: tx,
+			signatures: vec! {signature},
+			public_keys: vec! {key_pair.public().clone()},
+		}
+	}
+
+	pub fn gen_transfer(sender: &sr25519::Pair, receiver: &AccountId, value: u64) -> SignedTx<Test> {
+		let ref_utxo = <UnspentOutputsFinder<T>>::get(&sender.public()).unwrap();
+		let tx = gen_tx_form_ref(ref_utxo, sender.public().clone(), receiver.clone(), value);
+		sign(tx, sender)
+	}
+
 	pub fn verify(account_id: &AccountId, value: u64, num_of_utxo: usize) {
-		let ref_utxo = <UnspentOutputsFinder<Test>>::get(account_id);
+		let ref_utxo = <UnspentOutputsFinder<Test>>::get(account_id).unwrap();
 		assert_eq!(num_of_utxo, ref_utxo.as_ref().unwrap().len());
 		let utxos = ref_utxo
 			.iter()
@@ -340,42 +389,23 @@ mod tests {
 		let root_key_pair = account_key_pair("test_root");
 		with_externalities(&mut new_test_ext(&root_key_pair), || {
 			// check merkle root ============================== different default
-			verify(root_key_pair.public(), 1000000000000000, 1);
-
-			// TODO
-			let root_hash = MerkleTree::new().root();
-			// check reference of genesis tx.
-			let ref_utxo = <UnspentOutputsFinder<Test>>::get(root_key_pair.public());
-			assert_eq!(1, ref_utxo.as_ref().unwrap().len());
-			assert_eq!(0, ref_utxo.as_ref().unwrap()[0].1);
-			let exp_gen_outpoint = ref_utxo.as_ref().unwrap()[0];
-
-			// check genesis tx.
-			let exp_gen_tx = &genesis_tx::<Test>(&root_key_pair)[0];
-			let act_gen_out = <UnspentOutputs<Test>>::get(exp_gen_outpoint);
-			assert_eq!(exp_gen_tx.0, act_gen_out.as_ref().unwrap().value());
-			assert_eq!(1, act_gen_out.as_ref().unwrap().keys().len());
-			assert_eq!(exp_gen_tx.1, act_gen_out.as_ref().unwrap().keys()[0]);
+			verify(&root_key_pair.public(), 1000000000000000, 1);
 
 			// check total leftover is 0
 			let leftover_total = <LeftoverTotal<Test>>::get();
 			assert_eq!(0, *leftover_total);
 
 			let receiver_key_pair = account_key_pair("test_receiver");
-			let new_signed_tx = sign::<Test>(
-				&gen_normal_tx(exp_gen_outpoint.0,
-							   exp_gen_outpoint.1, Value::new(1 << 59), receiver_key_pair.public()),
-				&root_key_pair,
-			);
-			assert_ok!(UTXO::execute(Origin::signed(root_key_pair.public()), new_signed_tx.encode()));
+			let transfer_1 = gen_transfer(&root_key_pair, &receiver_key_pair.public(), 100000);
+			assert_ok!(UTXO::execute(Origin::signed(root_key_pair.public()), transfer_1));
 
-			// already spent genesis utxo.
-			let spent_utxo = <UnspentOutputs<Test>>::get(exp_gen_outpoint);
-			assert!(spent_utxo.is_none());
-			// already spent reference of genesis utxo.
-			let ref_utxo = <UnspentOutputsFinder<Test>>::get(root_key_pair.public());
-			assert!(ref_utxo.is_none());
+			verify(&root_key_pair.public(), 1000000000000000 - 100000, 1);
+			verify(&receiver_key_pair.public(), 100000, 1);
 
+			// double spending error!
+			assert_ne!(Ok(()), UTXO::execute(Origin::signed(root_key_pair.public()), transfer_1));
+
+			// TODO
 			// get new transaction.
 			let act_gen_out2 = <UnspentOutputs<Test>>::get((hash(new_signed_tx.payload().as_ref().unwrap()), 0));
 			assert!(act_gen_out2.is_some());
