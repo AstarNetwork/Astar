@@ -20,17 +20,20 @@ use rstd::ops::Div;
 
 pub mod mvp;
 
+type CheckResult<T> = rstd::result::Result<T, &'static str>;
+
 pub trait WritableUtxoTrait<SignedTx> {
 	fn push(tx: SignedTx);
 }
 
-pub trait ReadbleUtxoTrait<SignedTx> {
+pub trait ReadbleUtxoTrait<SignedTx, V> {
 	fn verify(tx: &SignedTx) -> Result;
 	fn unlock(tx: &SignedTx) -> Result;
+	fn leftover(signed_tx: &SignedTx<T>) -> CheckResult<V>;
 }
 
-pub trait UtxoTrait<SignedTx>: WritableUtxoTrait<SignedTx> + ReadbleUtxoTrait<SignedTx> {
-	fn execute(tx: SignedTx) -> Result;
+pub trait UtxoTrait<SignedTx, V>: WritableUtxoTrait<SignedTx> + ReadbleUtxoTrait<SignedTx, V> {
+	fn exec(tx: SignedTx) -> Result;
 }
 
 
@@ -53,7 +56,6 @@ pub trait Trait: system::Trait {
 	type Event: From<Event<Self>> + Into<<Self as system::Trait>::Event>;
 }
 
-type CheckResult<T> = rstd::result::Result<T, &'static str>;
 
 pub trait InserterTrait<T: Trait> {
 	fn insert(tx: &T::Transaction) {
@@ -437,7 +439,6 @@ decl_event!(
 
 /// Not callable external
 impl<T: Trait> Module<T> {
-
 	pub fn do_execute(signed_tx: T::SignedTransaction) -> Result {
 		// all signature checking Signature.Verify(HashableAccountId, hash(transaction.payload)).
 		signed_tx.verify()?;

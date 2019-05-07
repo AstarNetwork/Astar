@@ -74,6 +74,12 @@ pub struct SignedTransaction<V, K, H, S> {
 
 type SignedTx<T: Trait> = SignedTransaction<T::Value, T::AccountId, T::Hash, T::Signature>;
 
+pub fn hash_of<Hashing, H>(tx_hash: &H, i: &u32) -> H
+	where H: Codec + Member + MaybeSerializeDebug + rstd::hash::Hash + AsRef<[u8]> + AsMut<[u8]> + Copy + Default,
+		  Hashing: Hash<Output=H> {
+	Hashing::hash(&plasm_primitives::concat_bytes(tx_hash, i))
+}
+
 pub trait Trait: system::Trait {
 	type Signature: Parameter + Verify<Signer=Self::AccountId>;
 	type TimeLock: Parameter + Zero + Default;
@@ -141,15 +147,30 @@ decl_storage! {
 	}
 }
 
-pub fn hash_of<Hashing, H>(tx_hash: &H, i: &u32) -> H
-	where H: Codec + Member + MaybeSerializeDebug + rstd::hash::Hash + AsRef<[u8]> + AsMut<[u8]> + Copy + Default,
-		  Hashing: Hash<Output=H> {
-	Hashing::hash(&plasm_primitives::concat_bytes(tx_hash, i))
+decl_module! {
+	// The module declaration.
+	pub struct Module<T: Trait> for enum Call where origin: T::Origin {
+		// Initializing events
+		// this is needed only if you are using events in your module
+		fn deposit_event<T> () = default;
+
+		// Dispatch a single transaction and update UTXO set accordingly
+		pub fn execute(origin, signed_tx: SignedTx<T> ) -> Result {
+			ensure_signed(origin)?;
+			Self::execute(signed_tx);
+		}
+	}
 }
 
-pub struct Utxo<T: Trait>(PhantomData<T>);
+decl_event!(
+	/// An event in this module.
+	pub enum Event {
+		/// Transaction was executed successfully
+		TransactionExecuted(SignedTransaction),
+	}
+);
 
-impl<T: Trait> WritableUtxoTrait<SignedTx<T>> for Utxo<T> {
+impl<T: Trait> WritableUtxoTrait<SignedTx<T>> for Module<T> {
 	/// push: updated UnspentOutputs, UnspentOutputsFinder and TxList.
 	fn push(signed_tx: SignedTx<T>) {
 		let tx = &signed_tx.payload;
@@ -172,7 +193,7 @@ impl<T: Trait> WritableUtxoTrait<SignedTx<T>> for Utxo<T> {
 	}
 }
 
-impl<T: Trait> ReadbleUtxoTrait<SignedTx<T>> for Utxo<T> {
+impl<T: Trait> ReadbleUtxoTrait<SignedTx<T>, T::Value> for Module<T> {
 	fn verify(signed_tx: &SignedTx<T>) -> Result {
 		let hash = <T as system::Trait>::Hashing::hash_of(&signed_tx.payload);
 		for (sign, key) in signed_tx.signatures.iter().zip(signed_tx.public_keys.iter()) {
@@ -202,7 +223,7 @@ impl<T: Trait> ReadbleUtxoTrait<SignedTx<T>> for Utxo<T> {
 		Ok(())
 	}
 
-	fn leftover(signed_tx: &SignedTx<T>) -> Result {//TODO CheckResult
+	fn leftover(signed_tx: &SignedTx<T>) -> CheckResult<T::Value> {
 		let sum_in: T::Value = signed_tx
 			.payload
 			.inputs
@@ -220,24 +241,23 @@ impl<T: Trait> ReadbleUtxoTrait<SignedTx<T>> for Utxo<T> {
 	}
 }
 
-impl<T: Trait> UtxoTrait<SignedTx<T>> for Utxo<T> {
-	fn execute(signed_tx: &SignedTx<T>) -> Result {
+impl<T: Trait> UtxoTrait<SignedTx<T>, T::Value> for Module<T> {
+	fn exec(signed_tx: SignedTx<T>) -> Result {
 		// all signature checking Signature.Verify(HashableAccountId, hash(transaction.payload)).
-		Self::verify(signed_tx)?;
+		Self::verify(&signed_tx)?;
 		// UTXO unlocked checking.
-		Self::unlock(signed_tx)?;
+		Self::unlock(&signed_tx)?;
 		// LeftOver(Fee) calclate.
-		let leftover = signed_tx.leftover()?;
+		let leftover = Self::leftover(&signed_tx)?;
 
 		// Calculate new leftover total
 		let new_total = <LeftoverTotal<T>>::get()
 			.checked_add(&leftover)
 			.ok_or("leftover overflow")?;
 
-		Self::update_storage(&signed_tx, new_total);
+		<LeftoverTotal<T>>::put(new_total);
+		Self::push(signed_tx.clone());
 		Self::deposit_event(RawEvent::TransactionExecuted(signed_tx));
 		Ok(())
 	}
 }
-
-
