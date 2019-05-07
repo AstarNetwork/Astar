@@ -269,3 +269,142 @@ impl<T: Trait> UtxoTrait<SignedTx<T>, T::Value> for Module<T> {
 		Ok(())
 	}
 }
+
+/// tests for this module
+#[cfg(test)]
+mod tests {
+	use super::*;
+	use sr_primitives::{
+		traits::BlakeTwo256,
+	};
+	use primitives::{sr25519, Pair, H256};
+
+	pub type Signature = sr25519::Signature;
+
+	pub type AccountId = <Signature as Verify>::Signer;
+
+	pub type MerkleTree = plasm_merkle::mock::MerkleTree<H256, BlakeTwo256>;
+
+	pub type Value = u64;
+
+	impl_outer_origin! {
+		pub enum Origin for Test {}
+	}
+
+	// For testing the module, we construct most of a mock runtime. This means
+	// first constructing a configuration type (`Test`) which `impl`s each of the
+	// configuration traits of modules we want to use.
+	#[derive(Clone, Eq, PartialEq)]
+	#[cfg_attr(feature = "std", derive(Debug))]
+	pub struct Test;
+
+	fn hash(tx: &Tx<Test>) -> H256 {
+		BlakeTwo256::hash_of(tx)
+	}
+
+	pub fn genesis_tx(root: &sr25519::Pair) -> Vec<(u64, AccountId)> {
+		vec! {(1000000000000000, &root.public()), }
+	}
+
+	// This function basically just builds ax genesis storage key/value store according to
+	// our desired mockup.
+	fn new_test_ext(root: &sr25519::Pair) -> runtime_io::TestExternalities<Blake2Hasher> {
+		let mut t = system::GenesisConfig::<Test>::default().build_storage().unwrap().0;
+		t.extend(GenesisConfig::<Test> {
+			genesis_tx: genesis_tx(root),
+		}.build_storage().unwrap().0);
+		t.into()
+	}
+
+	type UTXO = Module<Test>;
+
+	pub fn account_key_pair(s: &str) -> sr25519::Pair {
+		sr25519::Pair::from_string(&format!("//{}", s), None)
+			.expect("static values are valid; qed")
+	}
+
+	pub fn verify(account_id: &AccountId, value: u64, num_of_utxo: usize) {
+		let ref_utxo = <UnspentOutputsFinder<Test>>::get(account_id);
+		assert_eq!(num_of_utxo, ref_utxo.as_ref().unwrap().len());
+		let utxos = ref_utxo
+			.iter()
+			.map(|r| <UnspentOutputs<Test>>::get((r.0.clone(), r.1)))
+			.map(|r| r.unwrap())
+			.collect::<Vec<_>>();
+		let sum = utxos.fold(0, |sum, v| sum + v);
+		assert_eq!(value, sum);
+	}
+
+
+	fn mvp_minimum_works() {
+		let root_key_pair = account_key_pair("test_root");
+		with_externalities(&mut new_test_ext(&root_key_pair), || {
+			// check merkle root ============================== different default
+			verify(root_key_pair.public(), 1000000000000000, 1);
+
+			// TODO
+			let root_hash = MerkleTree::new().root();
+			// check reference of genesis tx.
+			let ref_utxo = <UnspentOutputsFinder<Test>>::get(root_key_pair.public());
+			assert_eq!(1, ref_utxo.as_ref().unwrap().len());
+			assert_eq!(0, ref_utxo.as_ref().unwrap()[0].1);
+			let exp_gen_outpoint = ref_utxo.as_ref().unwrap()[0];
+
+			// check genesis tx.
+			let exp_gen_tx = &genesis_tx::<Test>(&root_key_pair)[0];
+			let act_gen_out = <UnspentOutputs<Test>>::get(exp_gen_outpoint);
+			assert_eq!(exp_gen_tx.0, act_gen_out.as_ref().unwrap().value());
+			assert_eq!(1, act_gen_out.as_ref().unwrap().keys().len());
+			assert_eq!(exp_gen_tx.1, act_gen_out.as_ref().unwrap().keys()[0]);
+
+			// check total leftover is 0
+			let leftover_total = <LeftoverTotal<Test>>::get();
+			assert_eq!(0, *leftover_total);
+
+			let receiver_key_pair = account_key_pair("test_receiver");
+			let new_signed_tx = sign::<Test>(
+				&gen_normal_tx(exp_gen_outpoint.0,
+							   exp_gen_outpoint.1, Value::new(1 << 59), receiver_key_pair.public()),
+				&root_key_pair,
+			);
+			assert_ok!(UTXO::execute(Origin::signed(root_key_pair.public()), new_signed_tx.encode()));
+
+			// already spent genesis utxo.
+			let spent_utxo = <UnspentOutputs<Test>>::get(exp_gen_outpoint);
+			assert!(spent_utxo.is_none());
+			// already spent reference of genesis utxo.
+			let ref_utxo = <UnspentOutputsFinder<Test>>::get(root_key_pair.public());
+			assert!(ref_utxo.is_none());
+
+			// get new transaction.
+			let act_gen_out2 = <UnspentOutputs<Test>>::get((hash(new_signed_tx.payload().as_ref().unwrap()), 0));
+			assert!(act_gen_out2.is_some());
+			assert_eq!(new_signed_tx.payload().as_ref().unwrap().outputs()[0],
+					   act_gen_out2.unwrap());
+			// get reference of new teranction.
+			let ref_utxo = <UnspentOutputsFinder<Test>>::get(receiver_key_pair.public());
+			assert!(ref_utxo.is_some());
+			assert_eq!(1, ref_utxo.as_ref().unwrap().len());
+			assert_eq!(hash(new_signed_tx.payload().as_ref().unwrap()), ref_utxo.as_ref().unwrap()[0].0);
+			assert_eq!(0, ref_utxo.as_ref().unwrap()[0].1);
+
+			// check total leftover is (1<<60) - (1<<59)
+			let leftover_total = <LeftoverTotal<Test>>::get();
+			assert_eq!((1 << 59), *leftover_total);
+
+			// not yet change root hash ========================= different default TODO genesis tx is not exist (after that issue)
+			assert_eq!(root_hash, MerkleTree::new().root());
+
+			// on_finalize
+			UTXO::on_finalize(1);
+
+			// changed root hash ============================== different default VVV
+			let new_root_hash = MerkleTree::new().root();
+			assert_ne!(root_hash, new_root_hash);
+
+			// proofs by ref utxo.
+			let proofs = MerkleTree::new().proofs(&BlakeTwo256::hash_of(&ref_utxo.as_ref().unwrap()[0]));
+			assert_eq!(new_root_hash, proofs.root::<BlakeTwo256>());
+		});
+	}
+}
