@@ -324,6 +324,88 @@ impl<T: Trait> UtxoTrait<SignedTx<T>, T::AccountId, (T::Hash, u32), T::Value> fo
 	}
 }
 
+#[macro_export]
+macro_rules! impl_test_helper {
+	( $a:ty, $b:ty ) => (
+		fn hash(tx: &Tx<$a>) -> H256 {
+			BlakeTwo256::hash_of(tx)
+		}
+	
+		pub fn genesis_tx(root: &sr25519::Pair) -> Vec<(u64, AccountId)> {
+			vec! {(1000000000000000, root.public().clone()), }
+		}
+	
+		pub fn account_key_pair(s: &str) -> sr25519::Pair {
+			sr25519::Pair::from_string(&format!("//{}", s), None)
+				.expect("static values are valid; qed")
+		}
+	
+		pub fn get_values_from_refs(refs: Vec<(H256, u32)>) -> u64 {
+			let utxos = refs
+				.iter()
+				.map(|r| <$b>::get((r.0.clone(), r.1)))
+				.map(|r| r.unwrap())
+				.collect::<Vec<_>>();
+			utxos.iter().fold(0, |sum, o| sum + o.value)
+		}
+	
+		fn gen_tx_out(value: u64, out_key: AccountId) -> TxOut<$a> {
+			TransactionOutput {
+				value: value,
+				keys: vec! {out_key, },
+				quorum: 1,
+			}
+		}
+	
+		pub fn gen_tx_form_ref(refs: Vec<(H256, u32)>, sender: AccountId, receiver: AccountId, value: u64) -> Tx<$a> {
+			let sum = get_values_from_refs(refs.clone());
+			Transaction {
+				inputs: refs.iter()
+					.cloned()
+					.map(|r|
+						TransactionInput {
+							tx_hash: r.0.clone(),
+							out_index: r.1,
+						})
+					.collect::<Vec<_>>(),
+				outputs: vec! {
+					gen_tx_out(value, receiver),
+					gen_tx_out(sum - value - 1000, sender)
+				},
+				lock_time: 0,
+			}
+		}
+	
+		fn sign(tx: Tx<$a>, key_pair: &sr25519::Pair) -> SignedTx<$a> {
+			let signature = key_pair.sign(hash(&tx).as_ref());
+			SignedTransaction {
+				payload: tx,
+				signatures: vec! {signature},
+				public_keys: vec! {key_pair.public().clone()},
+			}
+		}
+	
+		pub fn gen_transfer(sender: &sr25519::Pair, receiver: &AccountId, value: u64) -> SignedTx<$a> {
+			let ref_utxo = <UnspentOutputsFinder<$a>>::get(&sender.public()).unwrap();
+			let tx = gen_tx_form_ref(ref_utxo, sender.public().clone(), receiver.clone(), value);
+			sign(tx, sender)
+		}
+	
+		pub fn verify(account_id: &AccountId, value: u64, num_of_utxo: usize) {
+			let ref_utxo = <UnspentOutputsFinder<$a>>::get(account_id).unwrap();
+			assert_eq!(num_of_utxo, ref_utxo.len());
+			let utxos = ref_utxo
+				.iter()
+				.map(|r| <$b>::get((r.0.clone(), r.1)))
+				.map(|r| r.unwrap())
+				.collect::<Vec<_>>();
+			let sum = utxos.iter().fold(0, |sum, o| sum + o.value);
+			assert_eq!(value, sum);
+		}
+
+	)
+}
+
 /// tests for this module
 #[cfg(test)]
 mod tests {
@@ -378,14 +460,6 @@ mod tests {
 	#[cfg_attr(feature = "std", derive(Debug))]
 	pub struct Test;
 
-	fn hash(tx: &Tx<Test>) -> H256 {
-		BlakeTwo256::hash_of(tx)
-	}
-
-	pub fn genesis_tx(root: &sr25519::Pair) -> Vec<(u64, AccountId)> {
-		vec! {(1000000000000000, root.public().clone()), }
-	}
-
 	// This function basically just builds ax genesis storage key/value store according to
 	// our desired mockup.
 	fn new_test_ext(root: &sr25519::Pair) -> runtime_io::TestExternalities<Blake2Hasher> {
@@ -395,74 +469,8 @@ mod tests {
 		}.build_storage().unwrap().0);
 		t.into()
 	}
-
-	pub fn account_key_pair(s: &str) -> sr25519::Pair {
-		sr25519::Pair::from_string(&format!("//{}", s), None)
-			.expect("static values are valid; qed")
-	}
-
-	pub fn get_values_from_refs(refs: Vec<(H256, u32)>) -> u64 {
-		let utxos = refs
-			.iter()
-			.map(|r| <UnspentOutputs<Test>>::get((r.0.clone(), r.1)))
-			.map(|r| r.unwrap())
-			.collect::<Vec<_>>();
-		utxos.iter().fold(0, |sum, o| sum + o.value)
-	}
-
-	fn gen_tx_out(value: u64, out_key: AccountId) -> TxOut<Test> {
-		TransactionOutput {
-			value: value,
-			keys: vec! {out_key, },
-			quorum: 1,
-		}
-	}
-
-	pub fn gen_tx_form_ref(refs: Vec<(H256, u32)>, sender: AccountId, receiver: AccountId, value: u64) -> Tx<Test> {
-		let sum = get_values_from_refs(refs.clone());
-		Transaction {
-			inputs: refs.iter()
-				.cloned()
-				.map(|r|
-					TransactionInput {
-						tx_hash: r.0.clone(),
-						out_index: r.1,
-					})
-				.collect::<Vec<_>>(),
-			outputs: vec! {
-				gen_tx_out(value, receiver),
-				gen_tx_out(sum - value - 1000, sender)
-			},
-			lock_time: 0,
-		}
-	}
-
-	fn sign(tx: Tx<Test>, key_pair: &sr25519::Pair) -> SignedTx<Test> {
-		let signature = key_pair.sign(hash(&tx).as_ref());
-		SignedTransaction {
-			payload: tx,
-			signatures: vec! {signature},
-			public_keys: vec! {key_pair.public().clone()},
-		}
-	}
-
-	pub fn gen_transfer(sender: &sr25519::Pair, receiver: &AccountId, value: u64) -> SignedTx<Test> {
-		let ref_utxo = <UnspentOutputsFinder<Test>>::get(&sender.public()).unwrap();
-		let tx = gen_tx_form_ref(ref_utxo, sender.public().clone(), receiver.clone(), value);
-		sign(tx, sender)
-	}
-
-	pub fn verify(account_id: &AccountId, value: u64, num_of_utxo: usize) {
-		let ref_utxo = <UnspentOutputsFinder<Test>>::get(account_id).unwrap();
-		assert_eq!(num_of_utxo, ref_utxo.len());
-		let utxos = ref_utxo
-			.iter()
-			.map(|r| <UnspentOutputs<Test>>::get((r.0.clone(), r.1)))
-			.map(|r| r.unwrap())
-			.collect::<Vec<_>>();
-		let sum = utxos.iter().fold(0, |sum, o| sum + o.value);
-		assert_eq!(value, sum);
-	}
+	
+	impl_test_helper!(Test, UnspentOutputs<Test>);
 
 	#[test]
 	fn mvp_minimum_works() {

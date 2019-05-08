@@ -2,9 +2,9 @@
 
 #[cfg(feature = "std")]
 use support::dispatch::Result;
-
 use rstd::prelude::*;
 
+#[macro_use]
 pub mod mvp;
 
 type CheckResult<T> = rstd::result::Result<T, &'static str>;
