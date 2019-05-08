@@ -66,10 +66,6 @@ git = 'https://github.com/paritytech/substrate.git'
 package = 'substrate-transaction-pool'
 version = '1.0.0'
 
-[dependencies.plasm_primitives]
-path = './core/primitives'
-package = 'plasm-primitives'
-
 [build-dependencies]
 vergen = '3'
 [profile.release]
@@ -78,6 +74,16 @@ panic = 'unwind'
 [[bin]]
 name = 'plasm-node'
 path = 'src/main.rs'
+
+[workspace]
+members = [
+	"core/child",
+	"core/merkle",
+	"core/parent",
+	"core/utxo",
+	"core/primitives",
+	"runtime",
+]
 
 [package]
 authors = ['Takumi Yamashita <takumi@staked.co.jp>']

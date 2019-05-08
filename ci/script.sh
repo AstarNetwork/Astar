@@ -27,7 +27,5 @@ case $TARGET in
 		# Install prerequisites and build all wasm projects
 		./init.sh
 		./build.sh
-		cd runtime
-		cargo test --all
 		;;
 esac

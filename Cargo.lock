@@ -2141,7 +2141,6 @@ dependencies = [
  "log 0.4.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "parity-codec 3.5.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "parking_lot 0.7.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "plasm-primitives 0.1.0",
  "plasm-runtime 0.1.0",
  "sr-io 1.0.0 (git+https://github.com/paritytech/substrate.git)",
  "substrate-basic-authorship 1.0.0 (git+https://github.com/paritytech/substrate.git)",
@@ -2157,6 +2156,27 @@ dependencies = [
  "tokio 0.1.19 (registry+https://github.com/rust-lang/crates.io-index)",
  "trie-root 0.12.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "vergen 3.0.4 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "plasm-child"
+version = "0.1.0"
+dependencies = [
+ "parity-codec 3.5.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "plasm-merkle 0.1.0",
+ "plasm-utxo 0.1.0",
+ "safe-mix 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "serde 1.0.90 (registry+https://github.com/rust-lang/crates.io-index)",
+ "serde_derive 1.0.90 (registry+https://github.com/rust-lang/crates.io-index)",
+ "sr-io 1.0.0 (git+https://github.com/paritytech/substrate.git)",
+ "sr-primitives 1.0.0 (git+https://github.com/paritytech/substrate.git)",
+ "sr-std 1.0.0 (git+https://github.com/paritytech/substrate.git)",
+ "sr-version 1.0.0 (git+https://github.com/paritytech/substrate.git)",
+ "srml-sudo 1.0.0 (git+https://github.com/paritytech/substrate.git)",
+ "srml-support 1.0.0 (git+https://github.com/paritytech/substrate.git)",
+ "srml-system 1.0.0 (git+https://github.com/paritytech/substrate.git)",
+ "srml-timestamp 1.0.0 (git+https://github.com/paritytech/substrate.git)",
+ "substrate-primitives 1.0.0 (git+https://github.com/paritytech/substrate.git)",
 ]
 
 [[package]]
