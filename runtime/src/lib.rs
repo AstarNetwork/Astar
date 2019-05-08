@@ -195,24 +195,15 @@ impl template::Trait for Runtime {
 	type Event = Event;
 }
 
+use plasm_utxo::mvp as utxo_mvp;
 use plasm_merkle;
 type MerkleTree = plasm_merkle::mock::MerkleTree<Hash, BlakeTwo256>;
 
 /// Used for the utxo Module here.
-impl plasm_utxo::Trait for Runtime {
+impl utxo_mvp::Trait for Runtime {
 	type Signature = AccountSignature;
-	type Value = plasm_primitives::mvp::Value;
+	type Value = u128;
 	type TimeLock = BlockNumber;
-
-	type Input = plasm_utxo::TransactionInput<Self::Hash>;
-	type Output = plasm_utxo::TransactionOutput<Self::Value, Self::AccountId>;
-
-	type Transaction = plasm_utxo::Transaction<Self::Input, Self::Output, Self::TimeLock>;
-	type SignedTransaction = plasm_utxo::SignedTransaction<Runtime>;
-
-	type Inserter = plasm_utxo::mvp::Inserter<Runtime, MerkleTree>;
-	type Remover = plasm_utxo::DefaultRemover<Runtime>;
-	type Finalizer = plasm_utxo::mvp::Finalizer<Runtime, MerkleTree>;
 
 	type Event = Event;
 }
@@ -220,8 +211,8 @@ impl plasm_utxo::Trait for Runtime {
 pub use plasm_parent::mvp as parent_mvp;
 
 impl plasm_parent::Trait for Runtime {
-	type ChildValue = plasm_primitives::mvp::Value;
-	type Utxo = parent_mvp::Utxo<Self::Hash, Self::ChildValue, Self::AccountId, Self::BlockNumber>;
+	type ChildValue = u128;
+	type Utxo = parent_mvp::Utxo<Self::ChildValue, Self::AccountId, Self::Hash, Self::BlockNumber>;
 	type Proof = plasm_merkle::MerkleProof<Self::Hash>;
 
 	type ExitStatus = parent_mvp::ExitStatus<Self::Hash, Self::ChildValue, Self::AccountId, Self::BlockNumber, Self::Utxo, Self::Moment, plasm_parent::ExitState>;
@@ -253,7 +244,7 @@ construct_runtime!(
 		Sudo: sudo,
 		// Used for the module template in `./template.rs`
 		TemplateModule: template::{Module, Call, Storage, Event<T>},
-		PlasmUtxo: plasm_utxo,
+		PlasmUtxo: utxo_mvp,
 		PlasmParent: parent_mvp,
 	}
 );

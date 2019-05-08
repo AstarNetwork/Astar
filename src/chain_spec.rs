@@ -115,8 +115,8 @@ fn testnet_genesis(initial_authorities: Vec<AuthorityId>, endowed_accounts: Vec<
 		sudo: Some(SudoConfig {
 			key: root_key.clone(),
 		}),
-		plasm_utxo: Some(PlasmUtxoConfig {
-			genesis_tx: endowed_accounts.iter().cloned().map(|k| (plasm_primitives::mvp::Value::new(1 << 60), k)).collect(),
+		utxo_mvp: Some(PlasmUtxoConfig {
+			genesis_tx: endowed_accounts.iter().cloned().map(|k| ((1 << 60), k)).collect(),
 		}),
 		parent_mvp: Some(PlasmParentConfig {
 			total_deposit: 0,

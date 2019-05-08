@@ -13,37 +13,37 @@ use rstd::prelude::*;
 use rstd::marker::PhantomData;
 
 /// plasm
-use plasm_merkle::{ProofTrait, MerkleProof};
-use plasm_utxo::{Transaction, TransactionInput, TransactionOutput};
+use merkle::{ProofTrait, MerkleProof};
+use utxo::mvp::{Transaction};
 
 
 /// Utxo is H: Hash, V: ChildValue, K: AccountId, B: BlockNumber;
 #[derive(Clone, Encode, Decode, Default, PartialEq, Eq)]
 #[cfg_attr(feature = "std", derive(Debug))]
-pub struct Utxo<H, V, K, B>(Transaction<TransactionInput<H>, TransactionOutput<V, K>, B>, usize);
+pub struct Utxo<V, K, H, B>(Transaction<V, K, H, B>, u32);
 
-impl<H, V, K, B> UtxoTrait<H, V, K> for Utxo<H, V, K, B>
-	where H: Codec + Member + MaybeSerializeDebug + rstd::hash::Hash + AsRef<[u8]> + AsMut<[u8]> + Copy + Default,
-		  V: Parameter,
+impl<V, K, H, B> UtxoTrait<H, V, K> for Utxo<V, K, H, B>
+	where V: Parameter,
 		  K: Parameter,
+		  H: Codec + Member + MaybeSerializeDebug + rstd::hash::Hash + AsRef<[u8]> + AsMut<[u8]> + Copy + Default,
 		  B: Parameter {
 	fn hash<Hashing: Hash<Output=H>>(&self) -> H {
-		plasm_utxo::mvp::utxo_hash::<Hashing, H>(&Hashing::hash_of(&self.0), &(self.1 as u32))
+		Hashing::hash_of(&(Hashing::hash_of(&self.0), self.1 as u32))
 	}
 	fn inputs<Hashing: Hash<Output=H>>(&self) -> Vec<H> {
 		self.0.inputs
 			.iter()
-			.map(|inp| plasm_utxo::mvp::utxo_hash::<Hashing, H>(&inp.tx_hash, &inp.out_index))
+			.map(|inp| Hashing::hash_of(&(inp.tx_hash.clone(), inp.out_index)))
 			.collect::<Vec<_>>()
 	}
 	fn value(&self) -> &V {
-		&self.0.outputs[self.1].value
+		&self.0.outputs[self.1 as usize].value
 	}
 	fn owners(&self) -> &Vec<K> {
-		&self.0.outputs[self.1].keys
+		&self.0.outputs[self.1 as usize].keys
 	}
 	fn quorum(&self) -> u32 {
-		self.0.outputs[self.1].quorum
+		self.0.outputs[self.1 as usize].quorum
 	}
 }
 
@@ -201,7 +201,7 @@ decl_module! {
 			let origin = ensure_signed(origin) ?;
 
 			// validate
-			if ! Self::operator().contains( &origin) { return Err("permission error submmit can be only operator."); }
+			if ! Self::operator().contains(&origin) { return Err("permission error submmit can be only operator."); }
 			let current = Self::current_block();
 			let next = current.checked_add( & T::BlockNumber::sa(1)).ok_or("block number is overflow.")?;
 
@@ -231,7 +231,7 @@ decl_module! {
 		}
 
 		/// exit balances start parent chain from childchain.
-		pub fn exit_start(origin, blk_num: T::BlockNumber, depth: u32, index: u64, proofs: Vec<T::Hash>, utxo: Vec<u8>) -> Result {
+		pub fn exit_start(origin, blk_num: T::BlockNumber, depth: u32, index: u64, proofs: Vec<T::Hash>, utxo: T::Utxo) -> Result {
 			let exitor = ensure_signed(origin)?;
 
 			// validate
@@ -244,7 +244,6 @@ decl_module! {
 			let new_total_deposit = now_total_deposit.checked_add(&fee).ok_or("overflow total deposit.") ?;
 
 			// exist check
-			let utxo = T::Utxo::decode( &mut &utxo[..]).ok_or("undecodec utxo binary.")?;
 			let proof = MerkleProof{ proofs, depth, index};
 			T::ExistProofs::is_exist(&blk_num, &utxo, &proof)?;
 
@@ -304,11 +303,10 @@ decl_module! {
 		}
 
 		/// exit challenge(fraud proofs) parent chain from child chain.
-		pub fn exit_challenge(origin, exit_id: T::Hash, blk_num: T::BlockNumber, depth: u32, index: u64, proofs: Vec<T::Hash>, utxo: Vec<u8>) -> Result {
+		pub fn exit_challenge(origin, exit_id: T::Hash, blk_num: T::BlockNumber, depth: u32, index: u64, proofs: Vec<T::Hash>, utxo: T::Utxo) -> Result {
 			let challenger = ensure_signed(origin)?;
 
 			// exist check
-			let utxo = T::Utxo::decode( &mut &utxo[..]).ok_or("undecodec utxo binary.")?;
 			let proof = MerkleProof{ proofs, depth, index};
 			T::ExistProofs::is_exist(&blk_num, &utxo, &proof)?;
 
@@ -367,29 +365,27 @@ mod tests {
 
 	use sr_io::with_externalities;
 	use primitives::{H256, Blake2Hasher};
-	use support::{impl_outer_origin};
+	use support::impl_outer_origin;
 	use sr_primitives::{
 		BuildStorage,
 		traits::{BlakeTwo256, IdentityLookup},
 		testing::{Digest, DigestItem, Header},
 	};
-
-	use plasm_utxo::{TransactionTrait, TransactionInputTrait, TransactionOutputTrait};
-	use plasm_merkle::{MerkleTreeTrait, ReadOnlyMerkleTreeTrait};
+	use utxo::mvp::{TransactionInput, TransactionOutput, Transaction};
+	use merkle::{MerkleTreeTrait, ReadOnlyMerkleTreeTrait};
 
 	impl_outer_origin! {
 		pub enum Origin for Test {}
 	}
 
 	// For testing the module, we construct most of a mock runtime. This means
-// first constructing a configuration type (`Test`) which `impl`s each of the
-// configuration traits of modules we want to use.
+	// first constructing a configuration type (`Test`) which `impl`s each of the
+	// configuration traits of modules we want to use.
 	#[derive(Clone, Eq, PartialEq)]
 	pub struct Test;
 
 	type AccountId = u64;
 	type BlockNumber = u64;
-
 
 	#[derive(Clone, PartialEq, Eq, Encode, Decode)]
 	#[cfg_attr(feature = "std", derive(Debug))]
@@ -426,7 +422,7 @@ mod tests {
 
 	impl Trait for Test {
 		type ChildValue = u64;
-		type Utxo = Utxo<Self::Hash, Self::ChildValue, u64, u64>;
+		type Utxo = Utxo<Self::ChildValue, u64, Self::Hash, u64>;
 		type Proof = MerkleProof<Self::Hash>;
 
 		type ExitStatus = ExitStatus<Self::Hash, Self::ChildValue, AccountId, BlockNumber, Self::Utxo, Self::Moment, ExitState>;
@@ -466,6 +462,37 @@ mod tests {
 
 	type Parent = Module<Test>;
 
+	fn gen_tx_in(hash: H256, index: u32) -> TransactionInput<H256> {
+		TransactionInput {
+			tx_hash: hash,
+			out_index: index,
+		}
+	}
+
+	fn gen_tx_out(value: u64, out_key: AccountId) -> TransactionOutput<u64, AccountId> {
+		TransactionOutput {
+			value: value,
+			keys: vec! {out_key, },
+			quorum: 1,
+		}
+	}
+
+	fn genesis_mvp_tx(value: u64, owner: u64) -> TestUtxo {
+		Utxo::<u64, u64, H256, u64>(Transaction::<u64, u64, H256, u64> {
+			inputs: vec! {},
+			outputs: vec! {gen_tx_out(value, owner), },
+			lock_time: 0,
+		}, 0)
+	}
+
+	fn gen_mvp_tx(in_hash: H256, in_index: u32, value: u64, owner: u64) -> TestUtxo {
+		Utxo::<u64, u64, H256, u64>(Transaction::<u64, u64, H256, u64> {
+			inputs: vec! {gen_tx_in(in_hash, in_index), },
+			outputs: vec! {gen_tx_out(value, owner), },
+			lock_time: 0,
+		}, 0)
+	}
+
 	// This function basically just builds a genesis storage key/value store according to
 	// our desired mockup.
 	fn new_test_ext() -> sr_io::TestExternalities<Blake2Hasher> {
@@ -490,34 +517,8 @@ mod tests {
 		t.into()
 	}
 
-	type Tree = plasm_merkle::mock::MerkleTree<H256, BlakeTwo256>;
-	type TestUtxo = Utxo<H256, u64, u64, u64>;
-
-	fn test_tx_in(in_hash: <Test as system::Trait>::Hash, in_index: u32) -> TransactionInput<H256> {
-		TransactionInput::<H256>::new(in_hash, in_index)
-	}
-
-	fn test_tx_out(out_value: u64, out_key: u64) -> TransactionOutput<u64, u64> {
-		TransactionOutput::<u64, u64>::new(out_value, vec! {out_key, }, 1)
-	}
-
-	fn genesis_mvp_tx(value: u64, owner: u64) -> TestUtxo {
-		Utxo::<H256, u64, u64, u64>(Transaction::<TransactionInput<H256>, TransactionOutput<u64, u64>, u64>::new(
-			vec! {},
-			vec! {
-				test_tx_out(value, owner),
-			}, 0), 0)
-	}
-
-	fn gen_mvp_tx(in_hash: H256, in_index: u32, value: u64, owner: u64) -> TestUtxo {
-		Utxo::<H256, u64, u64, u64>(Transaction::<TransactionInput<H256>, TransactionOutput<u64, u64>, u64>::new(
-			vec! {
-				test_tx_in(in_hash, in_index),
-			},
-			vec! {
-				test_tx_out(value, owner),
-			}, 0), 0)
-	}
+	type Tree = merkle::mock::MerkleTree<H256, BlakeTwo256>;
+	type TestUtxo = Utxo<u64, u64, H256, u64>;
 
 	fn test_submit(n: u64) {
 		// submit
@@ -531,7 +532,7 @@ mod tests {
 
 	fn exit_status_test(exit_status: &<Test as Trait>::ExitStatus, blk_num: u64, utxo: &TestUtxo, state: ExitState) {
 		assert_eq!(&blk_num, exit_status.blk_num());
-		assert_eq!(utxo.encode(), exit_status.utxo().encode());
+		assert_eq!(utxo, exit_status.utxo());
 		assert_eq!(&(exit_status.started() + 1000), exit_status.expired());
 		assert_eq!(&state, exit_status.state());
 	}
@@ -568,16 +569,16 @@ mod tests {
 			assert_eq!(Tree::new().root(), proof.root::<BlakeTwo256>());
 			assert_eq!(&utxo_1.hash::<BlakeTwo256>(), proof.leaf());
 			//blk_num: T::BlockNumber, depth: u32, index: u64, proofs: Vec<T::Hash>, utxo: Vec<u8>
-			assert_ne!(Ok(()), Parent::exit_start(Origin::signed(1), 2, proof.depth() as u32, proof.index(), proof.proofs().to_vec(), utxo_1.encode()));
+			assert_ne!(Ok(()), Parent::exit_start(Origin::signed(1), 2, proof.depth() as u32, proof.index(), proof.proofs().to_vec(), utxo_1.clone()));
 
 			// submit 1 -> 2
 			test_submit(1);
 
 			// failed another user.
-			assert_ne!(Ok(()), Parent::exit_start(Origin::signed(2), 2, proof.depth() as u32, proof.index(), proof.proofs().to_vec(), utxo_1.encode()));
+			assert_ne!(Ok(()), Parent::exit_start(Origin::signed(2), 2, proof.depth() as u32, proof.index(), proof.proofs().to_vec(), utxo_1.clone()));
 
 			// success exit started after submit.
-			assert_eq!(Ok(()), Parent::exit_start(Origin::signed(1), 2, proof.depth() as u32, proof.index(), proof.proofs().to_vec(), utxo_1.encode()));
+			assert_eq!(Ok(()), Parent::exit_start(Origin::signed(1), 2, proof.depth() as u32, proof.index(), proof.proofs().to_vec(), utxo_1.clone()));
 
 			let exit_id = <system::Module<Test>>::events()
 				.iter()

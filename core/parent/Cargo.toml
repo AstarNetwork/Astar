@@ -65,12 +65,12 @@ version = '1.0'
 optional = true
 version = '1.0'
 
-[dependencies.plasm_merkle]
+[dependencies.merkle]
 default_features = false
 path = '../merkle'
 package = 'plasm-merkle'
 
-[dependencies.plasm_utxo]
+[dependencies.utxo]
 default_features = false
 path = '../utxo'
 package = 'plasm-utxo'
@@ -88,8 +88,8 @@ std = [
     'support/std',
     'system/std',
     'timestamp/std',
-    'plasm_merkle/std',
-    'plasm_utxo/std',
+    'merkle/std',
+    'utxo/std',
    	'serde_derive',
 	'serde/std',
 ]

@@ -12,7 +12,7 @@ use parity_codec::{Encode, Decode, Codec, Input, Output};
 use rstd::prelude::*;
 
 /// plasm
-use plasm_merkle::ProofTrait;
+use merkle::ProofTrait;
 
 #[derive(Clone, PartialEq, Eq)]
 #[cfg_attr(feature = "std", derive(Debug))]
