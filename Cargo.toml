@@ -75,6 +75,16 @@ panic = 'unwind'
 name = 'plasm-node'
 path = 'src/main.rs'
 
+[workspace]
+members = [
+	"core/child",
+	"core/merkle",
+	"core/parent",
+	"core/utxo",
+	"core/primitives",
+	"runtime",
+]
+
 [package]
 authors = ['Takumi Yamashita <takumi@staked.co.jp>']
 build = 'build.rs'
