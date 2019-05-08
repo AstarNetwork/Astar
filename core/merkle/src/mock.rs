@@ -123,18 +123,28 @@ impl<H, Hashing> ReadOnlyMerkleTreeTrait<H, Hashing> for MerkleTree<H, Hashing>
 		}
 
 		let ret_index = index;
-		let mut proofs = vec! {leaf.clone()};
+		let mut proofs = vec! {};
 
 		index += MOCK_MERKLE_TREE_LIMIT - 1;
-		while index > 0 {
-			let lr: bool = (index & 1) == 1;
-			index = (index - 1) / 2;
-			match lr {
-				true => proofs.push(self.get_hash_from_node(2 * index + 2)),    // left leafs.
-				false => proofs = vec! {self.get_hash_from_node(2 * index + 1)}
-					.iter().chain(proofs.iter()).map(|x| *x).collect::<Vec<_>>(), // right leafs.
+
+		index += 1;
+		let mut top = 0;
+		while index >=(1<<(top+1)){top+=1};
+		for is_one in (0..top).rev(){
+			let temp = index>>is_one;
+			if temp&1!=0 {
+				proofs.push(self.get_hash_from_node((temp^1)-1));
+
 			}
 		}
+		proofs.push(self.get_hash_from_node(index-1));
+		for is_zero in 0..top{
+			let temp = index>>is_zero;
+			if temp&1==0 {
+				proofs.push(self.get_hash_from_node((temp^1)-1));
+			}
+		}
+
 		Some(MerkleProof {
 			proofs: proofs,
 			depth: MOCK_MERKLE_TREE_DEPTH,
