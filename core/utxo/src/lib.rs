@@ -12,7 +12,9 @@ type CheckResult<T> = rstd::result::Result<T, &'static str>;
 pub trait WritableUtxoTrait<SignedTx, AccountId, OutPoint> {
 	fn push(tx: SignedTx);
 	fn spent(tx: &SignedTx);
-	fn remove(who: &AccountId, out_point: &OutPoint);
+	fn remove(out_point: &OutPoint);
+	fn remove_finder(who: &AccountId, out_point: &OutPoint);
+	fn deal(whoes: &Vec<AccountId>);
 }
 
 pub trait ReadbleUtxoTrait<SignedTx, V> {

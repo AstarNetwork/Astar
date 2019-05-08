@@ -41,7 +41,7 @@ pub struct TransactionOutput<V, K> {
 	pub quorum: u32,
 }
 
-type TxOut<T> = TransactionOutput<<T as Trait>::Value, <T as system::Trait>::AccountId>;
+pub type TxOut<T> = TransactionOutput<<T as Trait>::Value, <T as system::Trait>::AccountId>;
 
 /// V: Value, K: Key, H: Hash, L: TimeLock
 #[derive(Clone, Encode, Decode, Default, PartialEq, Eq)]
@@ -52,7 +52,7 @@ pub struct Transaction<V, K, H, L> {
 	pub lock_time: L,
 }
 
-type Tx<T> = Transaction<<T as Trait>::Value, <T as system::Trait>::AccountId, <T as system::Trait>::Hash, <T as Trait>::TimeLock>;
+pub type Tx<T> = Transaction<<T as Trait>::Value, <T as system::Trait>::AccountId, <T as system::Trait>::Hash, <T as Trait>::TimeLock>;
 
 #[derive(Clone, Encode, Decode, Default, PartialEq, Eq)]
 #[cfg_attr(feature = "std", derive(Debug))]
@@ -62,7 +62,7 @@ pub struct SignedTransaction<V, K, H, S, L> {
 	pub public_keys: Vec<K>,
 }
 
-type SignedTx<T> = SignedTransaction<<T as Trait>::Value, <T as system::Trait>::AccountId, <T as system::Trait>::Hash, <T as Trait>::Signature, <T as Trait>::TimeLock>;
+pub type SignedTx<T> = SignedTransaction<<T as Trait>::Value, <T as system::Trait>::AccountId, <T as system::Trait>::Hash, <T as Trait>::Signature, <T as Trait>::TimeLock>;
 
 pub fn hash_of<Hashing, H>(tx_hash: &H, i: &u32) -> H
 	where H: Codec + Member + MaybeSerializeDebug + rstd::hash::Hash + AsRef<[u8]> + AsMut<[u8]> + Copy + Default,
@@ -163,7 +163,7 @@ decl_event!(
 	}
 );
 
-impl<T: Trait> WritableUtxoTrait<SignedTx<T>, Vec<T::AccountId>, (T::Hash, u32)> for Module<T> {
+impl<T: Trait> WritableUtxoTrait<SignedTx<T>, T::AccountId, (T::Hash, u32)> for Module<T> {
 	/// push: updated UnspentOutputs, UnspentOutputsFinder and TxList.
 	fn push(signed_tx: SignedTx<T>) {
 		let tx = &signed_tx.payload;
@@ -185,29 +185,69 @@ impl<T: Trait> WritableUtxoTrait<SignedTx<T>, Vec<T::AccountId>, (T::Hash, u32)>
 		<TxList<T>>::insert(&hash, signed_tx);
 	}
 
+	/// spent transaction, remove finder and utxo used by inputs.
 	fn spent(signed_tx: &SignedTx<T>) {
 		for inp in signed_tx.payload.inputs.iter() {
-			Self::remove(&inp.output_or_default::<T>().keys, &(inp.tx_hash.clone(), inp.out_index));
+			let identify = (inp.tx_hash.clone(), inp.out_index);
+			for key in inp.output_or_default::<T>().keys.iter() {
+				Self::remove_finder(key, &identify);
+			}
+			Self::remove(&identify);
 		}
 	}
 
-	fn remove(who: &Vec<T::AccountId>, out_point: &(T::Hash, u32)) {
-		for who in who.iter() {
-			<UnspentOutputs<T>>::remove(out_point);
-			<UnspentOutputsFinder<T>>::mutate(who, |v| {
-				*v = match
-					v.as_ref()
-						.unwrap_or(&vec! {})
-						.iter()
-						.filter(|e| **e != *out_point)
-						.map(|e| *e)
-						.collect::<Vec<_>>()
-						.as_slice() {
-					[] => None,
-					s => Some(s.to_vec()),
-				}
-			})
-		}
+	/// remove utxo finder.
+	fn remove_finder(who: &T::AccountId, out_point: &(T::Hash, u32)) {
+		<UnspentOutputsFinder<T>>::mutate(who, |v| {
+			*v = match
+				v.as_ref()
+					.unwrap_or(&vec! {})
+					.iter()
+					.filter(|e| **e != *out_point)
+					.map(|e| *e)
+					.collect::<Vec<_>>()
+					.as_slice() {
+				[] => None,
+				s => Some(s.to_vec()),
+			}
+		});
+	}
+
+	/// remove utxo.
+	fn remove(out_point: &(T::Hash, u32)) {
+		<UnspentOutputs<T>>::remove(out_point);
+	}
+
+	fn deal(whoes: &Vec<T::AccountId>) {
+		let leftover = <LeftoverTotal<T>>::take();
+
+		// send leftover to all authorities.
+		if whoes.len() == 0 { return; }
+		let shared_value = leftover / T::Value::sa(whoes.len() as u64);
+		if shared_value == T::Value::zero() { return; }
+
+		// create UnspentTransactionOutput
+		let outs: Vec<_> = whoes.iter()
+			.map(|key|
+				TransactionOutput {
+					value: shared_value.clone(),
+					keys: vec! {key.clone(), },
+					quorum: 1,
+				})
+			.collect();
+
+		// crate Transaction.
+		let tx = Tx::<T> {
+			inputs: vec! {},
+			outputs: outs,
+			lock_time: T::TimeLock::zero(),
+		};
+		Self::push(SignedTx::<T> {
+			payload: tx,
+			signatures: vec! {},
+			public_keys: vec! {},
+		});
+		<LeftoverTotal<T>>::put(T::Value::zero());
 	}
 }
 
@@ -262,7 +302,7 @@ impl<T: Trait> ReadbleUtxoTrait<SignedTx<T>, T::Value> for Module<T> {
 	}
 }
 
-impl<T: Trait> UtxoTrait<SignedTx<T>, Vec<T::AccountId>, (T::Hash, u32), T::Value> for Module<T> {
+impl<T: Trait> UtxoTrait<SignedTx<T>, T::AccountId, (T::Hash, u32), T::Value> for Module<T> {
 	fn exec(signed_tx: SignedTx<T>) -> Result {
 		// all signature checking Signature.Verify(HashableAccountId, hash(transaction.payload)).
 		Self::verify(&signed_tx)?;
@@ -451,10 +491,16 @@ mod tests {
 			let transfer_2 = gen_transfer(&root_key_pair, &receiver_key_pair.public(), 200000);
 
 			assert_ok!(UTXO::execute(Origin::signed(root_key_pair.public()), transfer_2.clone()));
-			verify(&root_key_pair.public(), 1000000000000000 - 300000 - 2000, 1);
+			verify(&root_key_pair.public().clone(), 1000000000000000 - 300000 - 2000, 1);
 			verify(&receiver_key_pair.public(), 300000, 2);
 			assert_eq!(transfer_2, <TxList<Test>>::get(hash(&transfer_2.payload)));
 			assert_eq!(2000, <LeftoverTotal<Test>>::get());
+
+			// deal test.
+			UTXO::deal(&vec! {root_key_pair.public(), });
+
+			verify(&root_key_pair.public().clone(), 1000000000000000 - 300000, 2);
+			assert_eq!(0, <LeftoverTotal<Test>>::get());
 		});
 	}
 }
