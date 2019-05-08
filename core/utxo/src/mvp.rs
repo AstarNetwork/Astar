@@ -18,6 +18,8 @@ pub struct TransactionInput<H> {
 	pub out_index: u32,
 }
 
+pub type TxIn<T> = TransactionInput<<T as system::Trait>::Hash>;
+
 impl<H: Copy> TransactionInput<H> {
 	fn output_or_default<T: Trait>(&self) -> TransactionOutput<T::Value, T::AccountId>
 		where (H, u32): rstd::borrow::Borrow<(<T as system::Trait>::Hash, u32)> {
@@ -325,21 +327,21 @@ impl<T: Trait> UtxoTrait<SignedTx<T>, T::AccountId, (T::Hash, u32), T::Value> fo
 }
 
 #[macro_export]
-macro_rules! impl_test_helper {
+macro_rules! impl_mvp_test_helper {
 	( $a:ty, $b:ty ) => (
 		fn hash(tx: &Tx<$a>) -> H256 {
 			BlakeTwo256::hash_of(tx)
 		}
-	
+
 		pub fn genesis_tx(root: &sr25519::Pair) -> Vec<(u64, AccountId)> {
 			vec! {(1000000000000000, root.public().clone()), }
 		}
-	
+
 		pub fn account_key_pair(s: &str) -> sr25519::Pair {
 			sr25519::Pair::from_string(&format!("//{}", s), None)
 				.expect("static values are valid; qed")
 		}
-	
+
 		pub fn get_values_from_refs(refs: Vec<(H256, u32)>) -> u64 {
 			let utxos = refs
 				.iter()
@@ -348,7 +350,14 @@ macro_rules! impl_test_helper {
 				.collect::<Vec<_>>();
 			utxos.iter().fold(0, |sum, o| sum + o.value)
 		}
-	
+
+		fn gen_tx_in(hash: H256, index: u32) -> TxIn<$a> {
+			TransactionInput {
+				tx_hash: hash,
+				out_index: index,
+			}
+		}
+
 		fn gen_tx_out(value: u64, out_key: AccountId) -> TxOut<$a> {
 			TransactionOutput {
 				value: value,
@@ -356,17 +365,13 @@ macro_rules! impl_test_helper {
 				quorum: 1,
 			}
 		}
-	
+
 		pub fn gen_tx_form_ref(refs: Vec<(H256, u32)>, sender: AccountId, receiver: AccountId, value: u64) -> Tx<$a> {
 			let sum = get_values_from_refs(refs.clone());
 			Transaction {
 				inputs: refs.iter()
 					.cloned()
-					.map(|r|
-						TransactionInput {
-							tx_hash: r.0.clone(),
-							out_index: r.1,
-						})
+					.map(|r| gen_tx_in(r.0.clone(), r.1))
 					.collect::<Vec<_>>(),
 				outputs: vec! {
 					gen_tx_out(value, receiver),
@@ -375,7 +380,7 @@ macro_rules! impl_test_helper {
 				lock_time: 0,
 			}
 		}
-	
+
 		fn sign(tx: Tx<$a>, key_pair: &sr25519::Pair) -> SignedTx<$a> {
 			let signature = key_pair.sign(hash(&tx).as_ref());
 			SignedTransaction {
@@ -384,13 +389,13 @@ macro_rules! impl_test_helper {
 				public_keys: vec! {key_pair.public().clone()},
 			}
 		}
-	
+
 		pub fn gen_transfer(sender: &sr25519::Pair, receiver: &AccountId, value: u64) -> SignedTx<$a> {
 			let ref_utxo = <UnspentOutputsFinder<$a>>::get(&sender.public()).unwrap();
 			let tx = gen_tx_form_ref(ref_utxo, sender.public().clone(), receiver.clone(), value);
 			sign(tx, sender)
 		}
-	
+
 		pub fn verify(account_id: &AccountId, value: u64, num_of_utxo: usize) {
 			let ref_utxo = <UnspentOutputsFinder<$a>>::get(account_id).unwrap();
 			assert_eq!(num_of_utxo, ref_utxo.len());
@@ -469,8 +474,8 @@ mod tests {
 		}.build_storage().unwrap().0);
 		t.into()
 	}
-	
-	impl_test_helper!(Test, UnspentOutputs<Test>);
+
+	impl_mvp_test_helper!(Test, UnspentOutputs<Test>);
 
 	#[test]
 	fn mvp_minimum_works() {

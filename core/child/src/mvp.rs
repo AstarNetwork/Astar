@@ -142,8 +142,8 @@ mod tests {
 	use parity_codec::{Encode, Decode};
 	use std::clone::Clone;
 
-	use utxo::{impl_test_helper, mvp::{
-		UnspentOutputsFinder, SignedTransaction, Transaction, TransactionOutput, TransactionInput, SignedTx, Tx, TxOut}};
+	use utxo::{impl_mvp_test_helper, mvp::{
+		UnspentOutputsFinder, SignedTransaction, Transaction, TransactionOutput, TransactionInput, SignedTx, Tx, TxOut, TxIn}};
 	use merkle::{MerkleProof, ProofTrait};
 
 	impl_outer_origin! {
@@ -162,6 +162,8 @@ mod tests {
 	pub type AccountId = <Signature as Verify>::Signer;
 
 	pub type MerkleTree = merkle::mock::MerkleTree<H256, BlakeTwo256>;
+
+	impl_mvp_test_helper!(Test, utxo::mvp::UnspentOutputs<Test>);
 
 	#[derive(Clone, PartialEq, Eq, Encode, Decode)]
 	#[cfg_attr(feature = "std", derive(Debug))]
@@ -217,8 +219,6 @@ mod tests {
 
 	type Child = Module<Test>;
 	type Utxo = UtxoModule<Test>;
-
-	impl_test_helper!(Test, utxo::mvp::UnspentOutputs<Test>);
 
 	fn new_test_ext(operator: &sr25519::Pair) -> runtime_io::TestExternalities<Blake2Hasher> {
 		let mut t = system::GenesisConfig::<Test>::default().build_storage().unwrap().0;
