@@ -16,7 +16,7 @@ __WARNING__: This is a proof-of-concept prototype. This implementation is NOT re
 - [How to install](https://github.com/stakedtechnologies/Plasm/tree/master#how-to-install)
 
 ## Introduction
-Plasm is Staked Technologies' product that enables to import Plasma functions to your Substrate chain. Since Plasm is SRML, we can also make both Plasma parent chains and child chains. You can see the demo from [here].(https://drive.google.com/file/d/1qg6SyEDM0D_hJPsun4ykkNyH-B5W8Yi6/view?usp=sharing)
+Plasm is Staked Technologies' product that enables to import Plasma functions to your Substrate chain. Since Plasm is SRML, we can also make both Plasma parent chains and child chains. You can see the demo from [here](https://drive.google.com/file/d/1qg6SyEDM0D_hJPsun4ykkNyH-B5W8Yi6/view?usp=sharing).
 
 ## Background
 Today, there are many derived Plasmas, like 
@@ -72,10 +72,18 @@ version = '0.1.0'
 ```
 
 ## Child
-(Child will be wrapping UTXO) Coming soon...
+```toml
+[dependencies.child]
+git = 'https://github.com/stakedtechnologies/Plasm.git'
+package = 'plasm-child'
+version = '0.1.0' 
+```
 
 ## Example Trait
 Please see [here](https://github.com/stakedtechnologies/Plasm/blob/master/runtime/src/lib.rs).
+
+## Maintainers
+- [@public_sate](https://twitter.com/public_sate)
 
 * * *
 Plasm is licensed under the Apache License, Version2.0 by Staked Technologies Inc.
