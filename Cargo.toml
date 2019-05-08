@@ -66,10 +66,6 @@ git = 'https://github.com/paritytech/substrate.git'
 package = 'substrate-transaction-pool'
 version = '1.0.0'
 
-[dependencies.plasm_primitives]
-path = './core/primitives'
-package = 'plasm-primitives'
-
 [build-dependencies]
 vergen = '3'
 [profile.release]
