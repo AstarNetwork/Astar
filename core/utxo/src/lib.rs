@@ -1,6 +1,5 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
-#[cfg(feature = "std")]
 use support::dispatch::Result;
 use rstd::prelude::*;
 
