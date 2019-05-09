@@ -6,6 +6,7 @@ use system::ensure_signed;
 use merkle::{MerkleTreeTrait, RecoverableMerkleTreeTrait, ReadOnlyMerkleTreeTrait, ProofTrait};
 use utxo::{UtxoTrait, WritableUtxoTrait, mvp::{SignedTx, Module as UtxoModule}};
 
+use rstd::prelude::*;
 
 /// The module's configuration trait.
 pub trait Trait: utxo::mvp::Trait {

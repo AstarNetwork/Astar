@@ -11,13 +11,13 @@ use log::info;
 
 /// Parse command line arguments into service configuration.
 pub fn run<I, T, E>(args: I, exit: E, version: VersionInfo) -> error::Result<()> where
-	I: IntoIterator<Item=T>,
+	I: IntoIterator<Item = T>,
 	T: Into<std::ffi::OsString> + Clone,
 	E: IntoExit,
 {
 	parse_and_execute::<service::Factory, NoCustom, NoCustom, _, _, _, _, _>(
 		load_spec, &version, "substrate-node", args, exit,
-		|exit, _cli_args, _custom_args, config| {
+		|exit, _custom_args, config| {
 			info!("{}", version.name);
 			info!("  version {}", config.full_version());
 			info!("  by {}, 2017, 2018", version.author);
@@ -30,15 +30,15 @@ pub fn run<I, T, E>(args: I, exit: E, version: VersionInfo) -> error::Result<()>
 				ServiceRoles::LIGHT => run_until_exit(
 					runtime,
 					service::Factory::new_light(config, executor).map_err(|e| format!("{:?}", e))?,
-					exit,
+					exit
 				),
 				_ => run_until_exit(
 					runtime,
 					service::Factory::new_full(config, executor).map_err(|e| format!("{:?}", e))?,
-					exit,
+					exit
 				),
 			}.map_err(|e| format!("{:?}", e))
-		},
+		}
 	).map_err(Into::into).map(|_| ())
 }
 
@@ -76,7 +76,6 @@ fn run_until_exit<T, C, E>(
 
 // handles ctrl-c
 pub struct Exit;
-
 impl IntoExit for Exit {
 	type Exit = future::MapErr<oneshot::Receiver<()>, fn(oneshot::Canceled) -> ()>;
 	fn into_exit(self) -> Self::Exit {

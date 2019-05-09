@@ -55,9 +55,6 @@ pub type BlockNumber = u64;
 /// Index of an account's extrinsic in the chain.
 pub type Nonce = u64;
 
-/// Used for the module template in `./template.rs`
-mod template;
-
 /// Opaque types. These are used by the CLI to instantiate machinery that don't need to know
 /// the specifics of the runtime. They can then be made to be agnostic over specific formats
 /// of data like extrinsics, allowing for them to continue syncing the network through upgrades
@@ -190,14 +187,7 @@ impl sudo::Trait for Runtime {
 	type Proposal = Call;
 }
 
-/// Used for the module template in `./template.rs`
-impl template::Trait for Runtime {
-	type Event = Event;
-}
-
 use plasm_utxo::mvp as utxo_mvp;
-use plasm_merkle;
-type MerkleTree = plasm_merkle::mock::MerkleTree<Hash, BlakeTwo256>;
 
 /// Used for the utxo Module here.
 impl utxo_mvp::Trait for Runtime {
@@ -229,6 +219,15 @@ impl plasm_parent::Trait for Runtime {
 	type Event = Event;
 }
 
+pub use plasm_child::mvp as child_mvp;
+
+type MerkleTree = plasm_merkle::mock::MerkleTree<Hash, BlakeTwo256>;
+
+impl child_mvp::Trait for Runtime {
+	type Tree = MerkleTree;
+	type Event = Event;
+}
+
 construct_runtime!(
 	pub enum Runtime with Log(InternalLog: DigestItem<Hash, AuthorityId, AuthoritySignature>) where
 		Block = Block,
@@ -242,10 +241,9 @@ construct_runtime!(
 		Indices: indices,
 		Balances: balances,
 		Sudo: sudo,
-		// Used for the module template in `./template.rs`
-		TemplateModule: template::{Module, Call, Storage, Event<T>},
 		PlasmUtxo: utxo_mvp,
 		PlasmParent: parent_mvp,
+		PlasmChild: child_mvp,
 	}
 );
 

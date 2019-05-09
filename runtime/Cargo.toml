@@ -8,55 +8,55 @@ version = '0.1.0'
 default_features = false
 git = 'https://github.com/paritytech/substrate.git'
 package = 'srml-aura'
-version = '1.0.0'
+tag = 'v1.0.0rc2'
 
 [dependencies.balances]
 default_features = false
 git = 'https://github.com/paritytech/substrate.git'
 package = 'srml-balances'
-version = '1.0.0'
+tag = 'v1.0.0rc2'
 
 [dependencies.client]
 default_features = false
 git = 'https://github.com/paritytech/substrate.git'
 package = 'substrate-client'
-version = '1.0.0'
+tag = 'v1.0.0rc2'
 
 [dependencies.consensus]
 default_features = false
 git = 'https://github.com/paritytech/substrate.git'
 package = 'srml-consensus'
-version = '1.0.0'
+tag = 'v1.0.0rc2'
 
 [dependencies.consensus-aura]
 default_features = false
 git = 'https://github.com/paritytech/substrate.git'
 package = 'substrate-consensus-aura-primitives'
-version = '1.0.0'
+tag = 'v1.0.0rc2'
 
 [dependencies.consensus_authorities]
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
 package = 'substrate-consensus-authorities'
-version = '1.0.0'
+tag = 'v1.0.0rc2'
 
 [dependencies.executive]
 default_features = false
 git = 'https://github.com/paritytech/substrate.git'
 package = 'srml-executive'
-version = '1.0.0'
+tag = 'v1.0.0rc2'
 
 [dependencies.indices]
 default_features = false
 git = 'https://github.com/paritytech/substrate.git'
 package = 'srml-indices'
-version = '1.0.0'
+tag = 'v1.0.0rc2'
 
 [dependencies.offchain-primitives]
 default-features = false
 git = 'https://github.com/paritytech/substrate.git'
 package = 'substrate-offchain-primitives'
-version = '0.1.0'
+tag = 'v1.0.0rc2'
 
 [dependencies.parity-codec]
 default-features = false
@@ -67,25 +67,25 @@ version = '3.2'
 default_features = false
 git = 'https://github.com/paritytech/substrate.git'
 package = 'substrate-primitives'
-version = '1.0.0'
+tag = 'v1.0.0rc2'
 
 [dependencies.rstd]
 default_features = false
 git = 'https://github.com/paritytech/substrate.git'
 package = 'sr-std'
-version = '1.0.0'
+tag = 'v1.0.0rc2'
 
 [dependencies.runtime-io]
 default_features = false
 git = 'https://github.com/paritytech/substrate.git'
 package = 'sr-io'
-version = '1.0.0'
+tag = 'v1.0.0rc2'
 
 [dependencies.runtime-primitives]
 default_features = false
 git = 'https://github.com/paritytech/substrate.git'
 package = 'sr-primitives'
-version = '1.0.0'
+tag = 'v1.0.0rc2'
 
 [dependencies.safe-mix]
 default-features = false
@@ -103,31 +103,31 @@ version = '1.0'
 default_features = false
 git = 'https://github.com/paritytech/substrate.git'
 package = 'srml-sudo'
-version = '1.0.0'
+tag = 'v1.0.0rc2'
 
 [dependencies.support]
 default_features = false
 git = 'https://github.com/paritytech/substrate.git'
 package = 'srml-support'
-version = '1.0.0'
+tag = 'v1.0.0rc2'
 
 [dependencies.system]
 default_features = false
 git = 'https://github.com/paritytech/substrate.git'
 package = 'srml-system'
-version = '1.0.0'
+tag = 'v1.0.0rc2'
 
 [dependencies.timestamp]
 default_features = false
 git = 'https://github.com/paritytech/substrate.git'
 package = 'srml-timestamp'
-version = '1.0.0'
+tag = 'v1.0.0rc2'
 
 [dependencies.version]
 default_features = false
 git = 'https://github.com/paritytech/substrate.git'
 package = 'sr-version'
-version = '1.0.0'
+tag = 'v1.0.0rc2'
 
 [dependencies.plasm_parent]
 default_features = false
@@ -149,6 +149,10 @@ default_features = false
 path = '../core/merkle'
 package = 'plasm-merkle'
 
+[dependencies.plasm_child]
+default_features = false
+path = '../core/child'
+package = 'plasm-child'
 
 [features]
 default = ['std']
@@ -179,4 +183,5 @@ std = [
     'plasm_merkle/std',
     'plasm_utxo/std',
     'plasm_parent/std',
+    'plasm_child/std',
 ]

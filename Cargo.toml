@@ -12,12 +12,12 @@ trie-root = '0.12.0'
 [dependencies.basic-authorship]
 git = 'https://github.com/paritytech/substrate.git'
 package = 'substrate-basic-authorship'
-version = '1.0.0'
+tag = 'v1.0.0rc2'
 
 [dependencies.consensus]
 git = 'https://github.com/paritytech/substrate.git'
 package = 'substrate-consensus-aura'
-version = '1.0.0'
+tag = 'v1.0.0rc2'
 
 [dependencies.ctrlc]
 features = ['termination']
@@ -26,12 +26,12 @@ version = '3.0'
 [dependencies.inherents]
 git = 'https://github.com/paritytech/substrate.git'
 package = 'substrate-inherents'
-version = '1.0.0'
+tag = 'v1.0.0rc2'
 
 [dependencies.network]
 git = 'https://github.com/paritytech/substrate.git'
 package = 'substrate-network'
-version = '0.1.0'
+tag = 'v1.0.0rc2'
 
 [dependencies.plasm-runtime]
 path = 'runtime'
@@ -39,32 +39,32 @@ path = 'runtime'
 [dependencies.primitives]
 git = 'https://github.com/paritytech/substrate.git'
 package = 'substrate-primitives'
-version = '1.0.0'
+tag = 'v1.0.0rc2'
 
 [dependencies.sr-io]
 git = 'https://github.com/paritytech/substrate.git'
-version = '1.0.0'
+tag = 'v1.0.0rc2'
 
 [dependencies.substrate-cli]
 git = 'https://github.com/paritytech/substrate.git'
-version = '1.0.0'
+tag = 'v1.0.0rc2'
 
 [dependencies.substrate-client]
 git = 'https://github.com/paritytech/substrate.git'
-version = '1.0.0'
+tag = 'v1.0.0rc2'
 
 [dependencies.substrate-executor]
 git = 'https://github.com/paritytech/substrate.git'
-version = '1.0.0'
+tag = 'v1.0.0rc2'
 
 [dependencies.substrate-service]
 git = 'https://github.com/paritytech/substrate.git'
-version = '1.0.0'
+tag = 'v1.0.0rc2'
 
 [dependencies.transaction-pool]
 git = 'https://github.com/paritytech/substrate.git'
 package = 'substrate-transaction-pool'
-version = '1.0.0'
+tag = 'v1.0.0rc2'
 
 [build-dependencies]
 vergen = '3'

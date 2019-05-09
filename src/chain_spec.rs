@@ -1,7 +1,7 @@
 use primitives::{ed25519, sr25519, Pair};
 use plasm_runtime::{
 	AccountId, GenesisConfig, ConsensusConfig, TimestampConfig, BalancesConfig,
-	SudoConfig, IndicesConfig, PlasmUtxoConfig, PlasmParentConfig,
+	SudoConfig, IndicesConfig, PlasmUtxoConfig, PlasmParentConfig, PlasmChildConfig,
 };
 use substrate_service;
 
@@ -123,6 +123,10 @@ fn testnet_genesis(initial_authorities: Vec<AuthorityId>, endowed_accounts: Vec<
 			operator: vec! {root_key.clone()},
 			fee: 1,
 			exit_waiting_period: 30 * 1000,
+		}),
+		child_mvp: Some(PlasmChildConfig {
+			operators: endowed_accounts.clone(),
+			submit_interval: 1,
 		}),
 	}
 }
