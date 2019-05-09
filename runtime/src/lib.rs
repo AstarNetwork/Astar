@@ -187,46 +187,46 @@ impl sudo::Trait for Runtime {
 	type Proposal = Call;
 }
 
-//use plasm_utxo::mvp as utxo_mvp;
-//
-///// Used for the utxo Module here.
-//impl utxo_mvp::Trait for Runtime {
-//	type Signature = AccountSignature;
-//	type Value = u128;
-//	type TimeLock = BlockNumber;
-//
-//	type Event = Event;
-//}
-//
-//pub use plasm_parent::mvp as parent_mvp;
-//
-//impl plasm_parent::Trait for Runtime {
-//	type ChildValue = u128;
-//	type Utxo = parent_mvp::Utxo<Self::ChildValue, Self::AccountId, Self::Hash, Self::BlockNumber>;
-//	type Proof = plasm_merkle::MerkleProof<Self::Hash>;
-//
-//	type ExitStatus = parent_mvp::ExitStatus<Self::Hash, Self::ChildValue, Self::AccountId, Self::BlockNumber, Self::Utxo, Self::Moment, plasm_parent::ExitState>;
-//	type ChallengeStatus = parent_mvp::ChallengeStatus<Self::Hash, Self::ChildValue, Self::AccountId, Self::BlockNumber, Self::Utxo>;
-//
-//	type FraudProof = parent_mvp::FraudProof<Runtime>;
-//	// How to Fraud proof. to utxo from using utxo.
-//	type ExitorHasChcker = parent_mvp::ExitorHasChcker<Runtime>;
-//	type ExistProofs = parent_mvp::ExistProofs<Runtime>;
-//	type Exchanger = parent_mvp::Exchanger<Self::Balance, Self::ChildValue>;
-//	type Finalizer = parent_mvp::Finalizer<Runtime>;
-//
-//	/// The overarching event type.
-//	type Event = Event;
-//}
-//
-//pub use plasm_child::mvp as child_mvp;
-//
-//type MerkleTree = plasm_merkle::mock::MerkleTree<Hash, BlakeTwo256>;
-//
-//impl child_mvp::Trait for Runtime {
-//	type Tree = MerkleTree;
-//	type Event = Event;
-//}
+use plasm_utxo::mvp as utxo_mvp;
+
+/// Used for the utxo Module here.
+impl utxo_mvp::Trait for Runtime {
+	type Signature = AccountSignature;
+	type Value = u128;
+	type TimeLock = BlockNumber;
+
+	type Event = Event;
+}
+
+pub use plasm_parent::mvp as parent_mvp;
+
+impl plasm_parent::Trait for Runtime {
+	type ChildValue = u128;
+	type Utxo = parent_mvp::Utxo<Self::ChildValue, Self::AccountId, Self::Hash, Self::BlockNumber>;
+	type Proof = plasm_merkle::MerkleProof<Self::Hash>;
+
+	type ExitStatus = parent_mvp::ExitStatus<Self::Hash, Self::ChildValue, Self::AccountId, Self::BlockNumber, Self::Utxo, Self::Moment, plasm_parent::ExitState>;
+	type ChallengeStatus = parent_mvp::ChallengeStatus<Self::Hash, Self::ChildValue, Self::AccountId, Self::BlockNumber, Self::Utxo>;
+
+	type FraudProof = parent_mvp::FraudProof<Runtime>;
+	// How to Fraud proof. to utxo from using utxo.
+	type ExitorHasChcker = parent_mvp::ExitorHasChcker<Runtime>;
+	type ExistProofs = parent_mvp::ExistProofs<Runtime>;
+	type Exchanger = parent_mvp::Exchanger<Self::Balance, Self::ChildValue>;
+	type Finalizer = parent_mvp::Finalizer<Runtime>;
+
+	/// The overarching event type.
+	type Event = Event;
+}
+
+pub use plasm_child::mvp as child_mvp;
+
+type MerkleTree = plasm_merkle::mock::MerkleTree<Hash, BlakeTwo256>;
+
+impl child_mvp::Trait for Runtime {
+	type Tree = MerkleTree;
+	type Event = Event;
+}
 
 construct_runtime!(
 	pub enum Runtime with Log(InternalLog: DigestItem<Hash, AuthorityId, AuthoritySignature>) where
@@ -241,9 +241,9 @@ construct_runtime!(
 		Indices: indices,
 		Balances: balances,
 		Sudo: sudo,
-//		PlasmUtxo: utxo_mvp,
-//		PlasmParent: parent_mvp,
-//		PlasmChild: child_mvp,
+		PlasmUtxo: utxo_mvp,
+		PlasmParent: parent_mvp,
+		PlasmChild: child_mvp,
 	}
 );
 
