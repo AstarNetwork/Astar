@@ -2200,7 +2200,6 @@ dependencies = [
  "log 0.4.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "parity-codec 3.5.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "parking_lot 0.7.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "plasm-primitives 0.1.0",
  "plasm-runtime 0.1.0",
  "sr-io 1.0.0 (git+https://github.com/paritytech/substrate.git?tag=v1.0.0rc2)",
  "substrate-basic-authorship 1.0.0 (git+https://github.com/paritytech/substrate.git?tag=v1.0.0rc2)",
