@@ -92,12 +92,14 @@ decl_module! {
 			Ok(())
 		}
 
-		pub fn on_finalize() {
+		pub fn on_finalize(n: T::BlockNumber) {
 			<UtxoModule<T>>::deal(&Self::operators());
 			let tree = T::Tree::new();
 			tree.commit();
 			tree.save();
-			Self::deposit_event(RawEvent::Submit(tree.root()));
+			if n % Self::submit_interval == 0 {
+				Self::deposit_event(RawEvent::Submit(tree.root()));
+			}
 		}
 	}
 }
