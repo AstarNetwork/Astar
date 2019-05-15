@@ -97,7 +97,7 @@ decl_module! {
 			let tree = T::Tree::new();
 			tree.commit();
 			tree.save();
-			if n % Self::submit_interval == 0 {
+			if n % Self::submit_interval() == T::BlockNumber::sa(0) {
 				Self::deposit_event(RawEvent::Submit(tree.root()));
 			}
 		}

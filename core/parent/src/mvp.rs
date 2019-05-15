@@ -213,7 +213,7 @@ decl_module! {
 		}
 
 		/// deposit balance parent chain to childchain.
-		pub fn deposit(origin, #[compact] value: <T as balances::Trait >::Balance) -> Result {
+		pub fn deposit(origin, value: <T as balances::Trait >::Balance) -> Result {
 			let depositor = ensure_signed(origin) ?;
 
 			// validate
