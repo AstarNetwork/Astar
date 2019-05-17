@@ -26,7 +26,6 @@ pub trait ReadOnlyMerkleTreeTrait<H, Hashing>
 }
 
 // H: Hash, O: Outpoint(Hashable)
-// TODO : use relational type StorageKey https://doc.rust-jp.rs/the-rust-programming-language-ja/1.6/book/associated-constants.html
 pub trait MerkleTreeTrait<H, Hashing>: ReadOnlyMerkleTreeTrait<H, Hashing>
 	where H: Codec + Member + MaybeSerializeDebug + rstd::hash::Hash + AsRef<[u8]> + AsMut<[u8]> + Copy + Default,
 		  Hashing: Hash<Output=H>
@@ -84,28 +83,28 @@ pub struct MerkleProof<H> {
 impl<H> MerkleProof<H>
 	where H: Codec + Member + MaybeSerializeDebug + rstd::hash::Hash + AsRef<[u8]> + AsMut<[u8]> + Copy + Default
 {
-	fn re_root<Hashing>(&self, mid: u64, now_l: usize, now_r: usize) -> H
+	fn re_root<Hashing>(&self, mid: u64, now_l: u32, now_r: u32) -> H
 		where Hashing: Hash<Output=H>
 	{
 		if now_r - now_l == 1 {
-			return concat_hash(&self.proofs[now_l], &self.proofs[now_r], Hashing::hash);
+			return concat_hash(&self.proofs[now_l as usize], &self.proofs[now_r as usize], Hashing::hash);
 		}
 		let now_depth = self.proofs.len() as u64 - now_r as u64 + now_l as u64;
 		let new_mid = (1u64 << self.depth >> now_depth) + mid;
 		if new_mid <= self.index {
-			return concat_hash(&self.proofs[now_l],
+			return concat_hash(&self.proofs[now_l as usize],
 							   &self.re_root::<Hashing>(new_mid, now_l + 1, now_r),
 							   Hashing::hash);
 		} else {
 			return concat_hash(&self.re_root::<Hashing>(mid, now_l, now_r - 1),
-							   &self.proofs[now_r],
+							   &self.proofs[now_r as usize],
 							   Hashing::hash);
 		}
 	}
 
-	fn re_leaf(&self, mid: u64, now_l: usize, now_r: usize) -> &H {
+	fn re_leaf(&self, mid: u64, now_l: u32, now_r: u32) -> &H {
 		if now_r == now_l {
-			return &self.proofs[now_r];
+			return &self.proofs[now_r as usize];
 		}
 		let now_depth = self.proofs.len() as u64 - now_r as u64 + now_l as u64;
 		let new_mid = (1u64 << self.depth >> now_depth) + mid;
@@ -122,10 +121,10 @@ impl<H> ProofTrait<H> for MerkleProof<H>
 	fn root<Hashing>(&self) -> H
 		where Hashing: Hash<Output=H>
 	{
-		self.re_root::<Hashing>(0, 0, self.proofs.len() - 1)
+		self.re_root::<Hashing>(0, 0, self.proofs.len() as u32 - 1)
 	}
 
-	fn leaf(&self) -> &H { self.re_leaf(0, 0, self.proofs.len() - 1) }
+	fn leaf(&self) -> &H { self.re_leaf(0, 0, self.proofs.len() as u32 - 1) }
 
 	fn proofs(&self) -> &Vec<H> { &self.proofs }
 	fn depth(&self) -> u32 { self.depth }

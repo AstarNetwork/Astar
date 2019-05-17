@@ -122,11 +122,11 @@ fn testnet_genesis(initial_authorities: Vec<AuthorityId>, endowed_accounts: Vec<
 			total_deposit: 0,
 			operator: vec! {root_key.clone()},
 			fee: 1,
-			exit_waiting_period: 30 * 1000,
+			exit_waiting_period: 60, // 60s
 		}),
 		child_mvp: Some(PlasmChildConfig {
 			operators: endowed_accounts.clone(),
-			submit_interval: 1,
+			submit_interval: 5,
 		}),
 	}
 }

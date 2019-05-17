@@ -28,7 +28,7 @@ impl<V, K, H, B> UtxoTrait<H, V, K> for Utxo<V, K, H, B>
 		  H: Codec + Member + MaybeSerializeDebug + rstd::hash::Hash + AsRef<[u8]> + AsMut<[u8]> + Copy + Default,
 		  B: Parameter {
 	fn hash<Hashing: Hash<Output=H>>(&self) -> H {
-		Hashing::hash_of(&(Hashing::hash_of(&self.0), self.1 as u32))
+		Hashing::hash_of(&(Hashing::hash_of(&self.0), self.1))
 	}
 	fn inputs<Hashing: Hash<Output=H>>(&self) -> Vec<H> {
 		self.0.inputs
@@ -184,6 +184,7 @@ decl_storage! {
 		CurrentBlock get(current_block): T::BlockNumber = T::BlockNumber::zero();
 		Operator get(operator) config() : Vec <T::AccountId>;
 		ExitStatusStorage get(exit_status_storage): map T::Hash => Option<T::ExitStatus>;
+		UnfinalizedExits get(unfinalized_exits): Vec<T::Hash> = Vec::<T::Hash>::new();
 		Fee get(fee) config(): <T as balances::Trait>::Balance;
 		ExitWaitingPeriod get(exit_waiting_period) config(): <T as timestamp::Trait>::Moment;
 	}
@@ -203,17 +204,17 @@ decl_module! {
 			// validate
 			if ! Self::operator().contains(&origin) { return Err("permission error submmit can be only operator."); }
 			let current = Self::current_block();
-			let next = current.checked_add( & T::BlockNumber::sa(1)).ok_or("block number is overflow.")?;
+			let next = current.checked_add(&T::BlockNumber::sa(1)).ok_or("block number is overflow.")?;
 
 			// update
 			<ChildChain<T>>::insert(&next, root);
 			<CurrentBlock<T>>::put(next);
-			Self::deposit_event(RawEvent::Submit(root));
+			Self::deposit_event(RawEvent::Submit(root, next));
 			Ok(())
 		}
 
 		/// deposit balance parent chain to childchain.
-		pub fn deposit(origin, #[compact] value: <T as balances::Trait >::Balance) -> Result {
+		pub fn deposit(origin, value: <T as balances::Trait >::Balance) -> Result {
 			let depositor = ensure_signed(origin) ?;
 
 			// validate
@@ -241,6 +242,7 @@ decl_module! {
 			let new_balance = now_balance.checked_sub(&fee).ok_or("not enough fee.") ?;
 
 			let now_total_deposit = Self::total_deposit();
+
 			let new_total_deposit = now_total_deposit.checked_add(&fee).ok_or("overflow total deposit.") ?;
 
 			// exist check
@@ -250,6 +252,7 @@ decl_module! {
 			// owner check
 			T::ExitorHasChcker::check(&exitor, &utxo)?;
 
+			let exit_id = utxo.hash::<T::Hashing>();
 			let now =  <timestamp::Module <T>>::get();
 			let exit_status = ExitStatus {
 				blk_num: blk_num,
@@ -259,13 +262,13 @@ decl_module! {
 				state: ExitState::Exiting,
 				_phantom: PhantomData::<(T::Hash, T::ChildValue, T::AccountId)>,
 			};
-			let exit_id = T::Hashing::hash_of(&exit_status);
 			let exit_status = T::ExitStatus::decode(&mut &exit_status.encode()[..]).unwrap(); // TODO better how to.
 
 			// update
 			<balances::FreeBalance<T>>::insert(&exitor, new_balance); // exitor decrease fee.
 			<TotalDeposit<T>>::put(new_total_deposit); // total increase fee.
 			<ExitStatusStorage<T>>::insert( &exit_id, exit_status); //exit status join!
+			<UnfinalizedExits<T>>::mutate( |e| { e.push(exit_id.clone()) }); // push to unfinalized exits.
 			Self::deposit_event(RawEvent::ExitStart(exitor, exit_id));
 
 			Ok(())
@@ -298,6 +301,12 @@ decl_module! {
 			<balances::FreeBalance<T>>::insert(owner, new_balance); // exit owner add fee and exit amount.
 			<TotalDeposit<T>>::put(new_total); // total deposit decrease fee and exit amount
 			<ExitStatusStorage<T>>::mutate(&exit_id, |e| e.as_mut().unwrap().set_state(ExitState::Finalized)); // exit status changed.
+			<UnfinalizedExits<T>>::mutate( |e| {
+				*e = e.iter()
+					.filter(|v| exit_id != **v)
+					.map(|v| *v)
+					.collect::<Vec<_>>();
+			}); // remove to unfinalized exits.
 			Self::deposit_event(RawEvent::ExitFinalize(exit_id));
 			Ok(())
 		}
@@ -341,12 +350,13 @@ decl_module! {
 decl_event!(
 	/// An event in this module.
 	pub enum Event < T >
-		where    Hash = < T as system::Trait >::Hash,
+		where   Hash = < T as system::Trait >::Hash,
+				BlockNumber = <T as system::Trait>::BlockNumber,
 				AccountId = < T as system::Trait>::AccountId,
 				Balance = < T as balances::Trait >::Balance,
 	{
 		/// Submit Events
-		Submit(Hash),
+		Submit(Hash, BlockNumber),
 		/// Deposit Events to child operator.
 		Deposit(AccountId, Balance),
 		// Start Exit Events to child operator
@@ -389,7 +399,10 @@ mod tests {
 
 	#[derive(Clone, PartialEq, Eq, Encode, Decode)]
 	#[cfg_attr(feature = "std", derive(Debug))]
-	pub struct Evented(H256);
+	pub enum TestEvent {
+		Some(RawEvent<H256, BlockNumber, AccountId, u64>),
+		None,
+	}
 
 	impl system::Trait for Test {
 		type Origin = Origin;
@@ -401,7 +414,7 @@ mod tests {
 		type AccountId = AccountId;
 		type Lookup = IdentityLookup<AccountId>;
 		type Header = Header;
-		type Event = Evented;
+		type Event = TestEvent;
 		type Log = DigestItem;
 	}
 
@@ -409,7 +422,7 @@ mod tests {
 		type Balance = u64;
 		type OnFreeBalanceZero = ();
 		type OnNewAccount = ();
-		type Event = Evented;
+		type Event = TestEvent;
 		type TransactionPayment = ();
 		type TransferPayment = ();
 		type DustRemoval = ();
@@ -436,28 +449,56 @@ mod tests {
 		type Finalizer = Finalizer<Test>;
 
 		/// The overarching event type.
-		type Event = Evented;
+		type Event = TestEvent;
 	}
 
-	impl From<system::Event> for Evented {
-		fn from(_e: system::Event) -> Evented {
-			Evented(H256::zero())
+	impl From<system::Event> for TestEvent {
+		fn from(_e: system::Event) -> TestEvent {
+			TestEvent::None
 		}
 	}
 
-	impl From<balances::Event<Test>> for Evented {
-		fn from(_e: balances::Event<Test>) -> Evented {
-			Evented(H256::zero())
+	impl From<balances::Event<Test>> for TestEvent {
+		fn from(_e: balances::Event<Test>) -> TestEvent {
+			TestEvent::None
 		}
 	}
 
-	impl From<Event<Test>> for Evented {
-		fn from(e: Event<Test>) -> Evented {
-			match e {
-				RawEvent::ExitStart(_, hash) => Evented(hash),
-				_ => Evented(H256::zero()),
+	impl From<Event<Test>> for TestEvent {
+		fn from(e: Event<Test>) -> TestEvent {
+			TestEvent::Some(e)
+		}
+	}
+
+	fn get_events() -> Vec<TestEvent> {
+		<system::Module<Test>>::events()
+			.iter()
+			.filter(|e|
+				match &e.event {
+					TestEvent::Some(_) => true,
+					_ => false,
+				})
+			.cloned()
+			.map(|e| e.event)
+			.collect::<Vec<_>>()
+	}
+
+	fn get_submit_hash_from_events() -> (H256, BlockNumber) {
+		for e in get_events() {
+			if let TestEvent::Some(RawEvent::Submit(hash, blkNum)) = e {
+				return (hash, blkNum);
 			}
 		}
+		Default::default()
+	}
+
+	fn get_exit_start_hash_from_events() -> (AccountId, H256) {
+		for e in get_events() {
+			if let TestEvent::Some(RawEvent::ExitStart(account_id, hash)) = e {
+				return (account_id, hash);
+			}
+		}
+		Default::default()
 	}
 
 	type Parent = Module<Test>;
@@ -502,7 +543,7 @@ mod tests {
 				total_deposit: 0,
 				operator: vec! {0},
 				fee: 1,
-				exit_waiting_period: 1000, // 1s
+				exit_waiting_period: 1000, // 1000s
 			}.build_storage().unwrap().0
 		);
 		t.extend(balances::GenesisConfig::<Test> {
@@ -577,18 +618,20 @@ mod tests {
 			// failed another user.
 			assert_ne!(Ok(()), Parent::exit_start(Origin::signed(2), 2, proof.depth() as u32, proof.index(), proof.proofs().to_vec(), utxo_1.clone()));
 
+			// check unfinalize exits empty.
+			assert_eq!(Vec::<H256>::new(), Parent::unfinalized_exits());
+
 			// success exit started after submit.
 			assert_eq!(Ok(()), Parent::exit_start(Origin::signed(1), 2, proof.depth() as u32, proof.index(), proof.proofs().to_vec(), utxo_1.clone()));
 
-			let exit_id = <system::Module<Test>>::events()
-				.iter()
-				.map(|e| &e.event)
-				.filter(|e| e.0 != H256::zero())
-				.collect::<Vec<_>>()[0].0;
+			let exit_id = get_exit_start_hash_from_events().1;
 			let exit_status = Parent::exit_status_storage(&exit_id).unwrap();
 			exit_status_test(&exit_status, 2, &utxo_1, ExitState::Exiting);
 			assert_eq!(98, <balances::Module<Test>>::free_balance(1)); // 100 - 1(deposit) - 1(fee)
 			assert_eq!(2, Parent::total_deposit()); // 1(deposit) + 1(fee)
+
+			// check unfinalize exits
+			assert_eq!(vec!{exit_id.clone()}, Parent::unfinalized_exits());
 
 			// error finalized before expired.
 			assert_ne!(Ok(()), Parent::exit_finalize(Origin::signed(1), exit_id));
@@ -602,6 +645,9 @@ mod tests {
 			exit_status_test(&exit_status, 2, &utxo_1, ExitState::Finalized);
 			assert_eq!(100, <balances::Module<Test>>::free_balance(1)); // 100 - 1(exit) - 1(fee) + 1(exit) + 1(return fee)
 			assert_eq!(0, Parent::total_deposit()); // +- 0
+
+			// check unfinalize exits empty.
+			assert_eq!(Vec::<H256>::new(), Parent::unfinalized_exits());
 		});
 	}
 }

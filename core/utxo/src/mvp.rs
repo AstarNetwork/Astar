@@ -9,7 +9,6 @@ use sr_primitives::traits::{Member, MaybeSerializeDebug, Hash, SimpleArithmetic,
 
 use parity_codec::{Encode, Decode, Codec};
 
-
 /// H: Hash
 #[derive(Clone, Encode, Decode, Default, PartialEq, Eq)]
 #[cfg_attr(feature = "std", derive(Debug, Serialize, Deserialize))]
@@ -133,7 +132,7 @@ decl_storage! {
 		/// on block finalization.
 		pub LeftoverTotal get(leftover_total): T::Value;
 
-		// TODO Outputs that are locked
+		// TODO Outputs that are locked using mining incentive utxo.
 		//	pub LockedOutputs get(locked_outputs): map T::BlockNumber => Option <Vec<TxOut<T>>>;
 	}
 
@@ -514,6 +513,16 @@ mod tests {
 
 			verify(&root_key_pair.public().clone(), 1000000000000000 - 300000, 2);
 			assert_eq!(0, <LeftoverTotal<Test>>::get());
+
+			// receiver -> receiver2
+			let receiver_key_pair_2 = account_key_pair("test_receiver_2");
+			let transfer_3 = gen_transfer(&receiver_key_pair, &receiver_key_pair_2.public(), 200000);
+
+			assert_ok!(UTXO::execute(Origin::signed(receiver_key_pair.public()), transfer_3.clone()));
+			verify(&receiver_key_pair.public(), 300000 - 200000 - 1000, 1);
+			verify(&receiver_key_pair_2.public(), 200000, 1);
+			assert_eq!(transfer_3, <TxList<Test>>::get(hash(&transfer_3.payload)));
+			assert_eq!(1000, <LeftoverTotal<Test>>::get());
 		});
 	}
 }

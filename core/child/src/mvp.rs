@@ -10,7 +10,6 @@ use rstd::prelude::*;
 
 /// The module's configuration trait.
 pub trait Trait: utxo::mvp::Trait {
-	// TODO : utxo will be not srml. type Utxo;
 	type Tree: RecoverableMerkleTreeTrait<Self::Hash, Self::Hashing>;
 	/// The overarching event type.
 	type Event: From<Event<Self>> + Into<<Self as system::Trait>::Event>;
@@ -92,12 +91,14 @@ decl_module! {
 			Ok(())
 		}
 
-		pub fn on_finalize() {
+		fn on_finalize(n: T::BlockNumber) {
 			<UtxoModule<T>>::deal(&Self::operators());
 			let tree = T::Tree::new();
 			tree.commit();
 			tree.save();
-			Self::deposit_event(RawEvent::Submit(tree.root()));
+			if n % Self::submit_interval() == T::BlockNumber::sa(0) {
+				Self::deposit_event(RawEvent::Submit(tree.root()));
+			}
 		}
 	}
 }
@@ -159,7 +160,7 @@ mod tests {
 	pub struct Test;
 
 	pub type Signature = sr25519::Signature;
-	// TODO must be sr25519 only used by wasm.
+
 	pub type AccountId = <Signature as Verify>::Signer;
 
 	pub type MerkleTree = merkle::mock::MerkleTree<H256, BlakeTwo256>;
@@ -315,6 +316,16 @@ mod tests {
 		(Default::default(), Default::default(), Default::default(), Default::default(), Default::default(), Default::default())
 	}
 
+	fn test_on_finalize(n: u64) {
+		<UtxoModule<Test>>::deal(&Child::operators());
+		let tree = MerkleTree::new();
+		tree.commit();
+		tree.save();
+		if n % Child::submit_interval() == 0 {
+			Child::deposit_event(RawEvent::Submit(tree.root()));
+		}
+	}
+
 	#[test]
 	fn test_finalize_and_get_proofs() {
 		let operator_pair = account_key_pair("operator");
@@ -327,7 +338,7 @@ mod tests {
 			assert_eq!(Ok(()), Child::deposit(Origin::signed(receiver_1_key_pair.public()), signed_tx_1.clone()));
 
 			// save merkle tree
-			assert_eq!(Ok(()), Child::on_finalize());
+			test_on_finalize(1);
 
 			let root_hash_1 = MerkleTree::new().root();
 			println!("root_hash_1 {:?}", root_hash_1);
@@ -345,7 +356,7 @@ mod tests {
 			assert_eq!(Ok(()), Child::execute(Origin::signed(receiver_1_key_pair.public().clone()), signed_tx_2));
 
 			// save merkle tree
-			assert_eq!(Ok(()), Child::on_finalize());
+			test_on_finalize(2);
 
 			let root_hash_2 = MerkleTree::new().root();
 			let submit_hash_2 = get_submit_hash_from_events();
