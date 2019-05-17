@@ -28,7 +28,7 @@ impl<V, K, H, B> UtxoTrait<H, V, K> for Utxo<V, K, H, B>
 		  H: Codec + Member + MaybeSerializeDebug + rstd::hash::Hash + AsRef<[u8]> + AsMut<[u8]> + Copy + Default,
 		  B: Parameter {
 	fn hash<Hashing: Hash<Output=H>>(&self) -> H {
-		Hashing::hash_of(&(Hashing::hash_of(&self.0), self.1 as u32))
+		Hashing::hash_of(&(Hashing::hash_of(&self.0), self.1))
 	}
 	fn inputs<Hashing: Hash<Output=H>>(&self) -> Vec<H> {
 		self.0.inputs
@@ -252,6 +252,7 @@ decl_module! {
 			// owner check
 			T::ExitorHasChcker::check(&exitor, &utxo)?;
 
+			let exit_id = utxo.hash::<T::Hashing>();
 			let now =  <timestamp::Module <T>>::get();
 			let exit_status = ExitStatus {
 				blk_num: blk_num,
@@ -261,7 +262,6 @@ decl_module! {
 				state: ExitState::Exiting,
 				_phantom: PhantomData::<(T::Hash, T::ChildValue, T::AccountId)>,
 			};
-			let exit_id = T::Hashing::hash_of(&exit_status);
 			let exit_status = T::ExitStatus::decode(&mut &exit_status.encode()[..]).unwrap(); // TODO better how to.
 
 			// update
@@ -543,7 +543,7 @@ mod tests {
 				total_deposit: 0,
 				operator: vec! {0},
 				fee: 1,
-				exit_waiting_period: 1000, // 1s
+				exit_waiting_period: 1000, // 1000s
 			}.build_storage().unwrap().0
 		);
 		t.extend(balances::GenesisConfig::<Test> {

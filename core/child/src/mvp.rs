@@ -10,7 +10,6 @@ use rstd::prelude::*;
 
 /// The module's configuration trait.
 pub trait Trait: utxo::mvp::Trait {
-	// TODO : utxo will be not srml. type Utxo;
 	type Tree: RecoverableMerkleTreeTrait<Self::Hash, Self::Hashing>;
 	/// The overarching event type.
 	type Event: From<Event<Self>> + Into<<Self as system::Trait>::Event>;
@@ -161,7 +160,7 @@ mod tests {
 	pub struct Test;
 
 	pub type Signature = sr25519::Signature;
-	// TODO must be sr25519 only used by wasm.
+
 	pub type AccountId = <Signature as Verify>::Signer;
 
 	pub type MerkleTree = merkle::mock::MerkleTree<H256, BlakeTwo256>;
