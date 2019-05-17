@@ -126,7 +126,7 @@ fn testnet_genesis(initial_authorities: Vec<AuthorityId>, endowed_accounts: Vec<
 		}),
 		child_mvp: Some(PlasmChildConfig {
 			operators: endowed_accounts.clone(),
-			submit_interval: 1,
+			submit_interval: 5,
 		}),
 	}
 }
