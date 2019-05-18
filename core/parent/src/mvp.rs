@@ -14,7 +14,7 @@ use rstd::marker::PhantomData;
 
 /// plasm
 use merkle::{ProofTrait, MerkleProof};
-use utxo::mvp::{Transaction};
+use utxo::mvp::Transaction;
 
 
 /// Utxo is H: Hash, V: ChildValue, K: AccountId, B: BlockNumber;
@@ -631,7 +631,7 @@ mod tests {
 			assert_eq!(2, Parent::total_deposit()); // 1(deposit) + 1(fee)
 
 			// check unfinalize exits
-			assert_eq!(vec!{exit_id.clone()}, Parent::unfinalized_exits());
+			assert_eq!(vec! {exit_id.clone()}, Parent::unfinalized_exits());
 
 			// error finalized before expired.
 			assert_ne!(Ok(()), Parent::exit_finalize(Origin::signed(1), exit_id));

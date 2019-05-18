@@ -4,7 +4,7 @@ use super::*;
 use serde_derive::{Serialize, Deserialize};
 
 use support::{decl_module, decl_storage, decl_event, StorageValue, StorageMap, Parameter, dispatch::Result};
-use system::ensure_signed;
+use system::{ensure_signed, OnNewAccount};
 use sr_primitives::traits::{Member, MaybeSerializeDebug, Hash, SimpleArithmetic, Verify, As, Zero, CheckedAdd, CheckedSub};
 
 use parity_codec::{Encode, Decode, Codec};
@@ -75,6 +75,8 @@ pub trait Trait: system::Trait {
 	type Signature: Parameter + Default + Verify<Signer=Self::AccountId>;
 	type TimeLock: Parameter + Zero + Default;
 	type Value: Parameter + Member + SimpleArithmetic + Codec + Default + Copy + As<usize> + As<u64> + MaybeSerializeDebug;
+
+	type OnNewAccount: OnNewAccount<Self::AccountId>;
 
 	/// The overarching event type.
 	type Event: From<Event<Self>> + Into<<Self as system::Trait>::Event>;
@@ -175,6 +177,9 @@ impl<T: Trait> WritableUtxoTrait<SignedTx<T>, T::AccountId, (T::Hash, u32)> for 
 			let identify = (hash.clone(), i as u32);
 			<UnspentOutputs<T>>::insert(identify.clone(), out.clone());
 			for key in out.keys.iter() {
+				if !<UnspentOutputsFinder<T>>::exists(key) { // if unexits outputs finder, create accounts.
+					T::OnNewAccount::on_new_account(key);
+				}
 				<UnspentOutputsFinder<T>>::mutate(key, |v| {
 					match v.as_mut() {
 						Some(vc) => vc.push(identify.clone()),
@@ -451,6 +456,8 @@ mod tests {
 		type Signature = Signature;
 		type TimeLock = Self::BlockNumber;
 		type Value = u64;
+
+		type OnNewAccount = ();
 
 		type Event = ();
 	}
