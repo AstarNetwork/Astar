@@ -195,6 +195,8 @@ impl utxo_mvp::Trait for Runtime {
 	type Value = u128;
 	type TimeLock = BlockNumber;
 
+	type OnNewAccount = Indices;
+
 	type Event = Event;
 }
 

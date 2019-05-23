@@ -193,6 +193,8 @@ mod tests {
 		type TimeLock = Self::BlockNumber;
 		type Value = u64;
 
+		type OnNewAccount = ();
+
 		type Event = TestEvent;
 	}
 
