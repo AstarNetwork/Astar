@@ -7,6 +7,7 @@ Plasm is a Substrate Runtime Module Library which allows developers to add Plasm
 __WARNING__: This is a proof-of-concept prototype. This implementation is NOT ready for production use. 
 
 ## Table of Contents
+- [Demo](https://github.com/stakedtechnologies/Plasm/tree/master#demo)
 - [Introduction](https://github.com/stakedtechnologies/Plasm/tree/master#introduction)
 - [Background](https://github.com/stakedtechnologies/Plasm/tree/master#background)
 - Plasm
@@ -14,6 +15,11 @@ __WARNING__: This is a proof-of-concept prototype. This implementation is NOT re
     - [Plasm-Parent](https://github.com/stakedtechnologies/Plasm/tree/master#plasm-parent)
     - [Plasm-Child](https://github.com/stakedtechnologies/Plasm/tree/master#plasm-child)
 - [How to install](https://github.com/stakedtechnologies/Plasm/tree/master#how-to-install)
+
+## Demo
+![plasm_demo](https://user-images.githubusercontent.com/6259384/58473625-091be500-8184-11e9-9f65-1fd986f5adc0.gif)
+
+Demo application tutorial is [here](https://medium.com/staked-technologies/lets-make-a-plasma-chain-with-plasm-and-substrate-39cbd868022d).
 
 ## Introduction
 Plasm is Staked Technologies' product that enables to import Plasma functions to your Substrate chain. Since Plasm is SRML, we can also make both Plasma parent chains and child chains. You can see the demo from [here](https://drive.google.com/file/d/1qg6SyEDM0D_hJPsun4ykkNyH-B5W8Yi6/view?usp=sharing).
