@@ -26,7 +26,7 @@ native_executor_instance!(
 	pub Executor,
 	plasm_child_runtime::api::dispatch,
 	plasm_child_runtime::native_version,
-	include_bytes!("../runtime/wasm/target/wasm32-unknown-unknown/release/plasm_child_runtime_wasm.compact.wasm")
+	include_bytes!("../runtime/wasm/target/wasm32-unknown-unknown/release/plasm_child_wasm.compact.wasm")
 );
 
 #[derive(Default)]

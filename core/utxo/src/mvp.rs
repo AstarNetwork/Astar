@@ -3,7 +3,7 @@ use super::*;
 #[cfg(feature = "std")]
 use serde_derive::{Serialize, Deserialize};
 
-use support::{decl_module, decl_storage, decl_event, StorageValue, StorageMap, Parameter, dispatch::Result};
+use support::{decl_module, decl_storage, decl_event, StorageValue, StorageMap, Parameter, dispatch::Result, traits::MakePayment};
 use system::{ensure_signed, OnNewAccount};
 use sr_primitives::traits::{Member, MaybeSerializeDebug, Hash, SimpleArithmetic, Verify, As, Zero, CheckedAdd, CheckedSub};
 
@@ -327,6 +327,13 @@ impl<T: Trait> UtxoTrait<SignedTx<T>, T::AccountId, (T::Hash, u32), T::Value> fo
 		Self::push(signed_tx.clone());
 		Self::deposit_event(RawEvent::TransactionExecuted(signed_tx));
 		Ok(())
+	}
+}
+
+impl<T: Trait> MakePayment<T::AccountId> for Module<T> {
+	/// `encoded_len` bytes. Return `Ok` iff the payment was successful.
+	fn make_payment(_: &T::AccountId, _: usize) -> Result {
+		Ok(()) // now not do.
 	}
 }
 
