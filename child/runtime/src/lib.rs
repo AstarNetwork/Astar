@@ -92,8 +92,8 @@ pub mod opaque {
 
 /// This runtime version.
 pub const VERSION: RuntimeVersion = RuntimeVersion {
-	spec_name: create_runtime_str!("plasm-node"),
-	impl_name: create_runtime_str!("plasm-node"),
+	spec_name: create_runtime_str!("plasm-child-node"),
+	impl_name: create_runtime_str!("plasm-child-node"),
 	authoring_version: 3,
 	spec_version: 3,
 	impl_version: 0,
