@@ -1,0 +1,23 @@
+[profile.release]
+lto = true
+panic = 'abort'
+
+[workspace]
+members = []
+
+[lib]
+crate-type = ['cdylib']
+
+[package]
+authors = ['Takumi Yamashita <takumi@staked.co.jp>']
+edition = '2018'
+name = 'plasm-child-wasm'
+version = '0.1.0'
+
+[dependencies.plasm-child-runtime]
+default-features = false
+path = '..'
+
+[features]
+default = []
+std = ['plasm-child-runtime/std']
