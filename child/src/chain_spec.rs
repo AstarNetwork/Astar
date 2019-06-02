@@ -1,7 +1,7 @@
 use primitives::{ed25519, sr25519, Pair};
 use plasm_child_runtime::{
-	AccountId, GenesisConfig, ConsensusConfig, TimestampConfig, BalancesConfig,
-	SudoConfig, IndicesConfig, PlasmUtxoConfig, PlasmParentConfig, PlasmChildConfig,
+	AccountId, GenesisConfig, ConsensusConfig, TimestampConfig,
+	SudoConfig, IndicesConfig, PlasmUtxoConfig, PlasmChildConfig,
 };
 use substrate_service;
 
@@ -103,26 +103,11 @@ fn testnet_genesis(initial_authorities: Vec<AuthorityId>, endowed_accounts: Vec<
 		indices: Some(IndicesConfig {
 			ids: endowed_accounts.clone(),
 		}),
-		balances: Some(BalancesConfig {
-			transaction_base_fee: 1,
-			transaction_byte_fee: 0,
-			existential_deposit: 500,
-			transfer_fee: 0,
-			creation_fee: 0,
-			balances: endowed_accounts.iter().cloned().map(|k| (k, 1 << 60)).collect(),
-			vesting: vec![],
-		}),
 		sudo: Some(SudoConfig {
 			key: root_key.clone(),
 		}),
 		utxo_mvp: Some(PlasmUtxoConfig {
 			genesis_tx: endowed_accounts.iter().cloned().map(|k| ((1 << 60), k)).collect(),
-		}),
-		parent_mvp: Some(PlasmParentConfig {
-			total_deposit: 0,
-			operator: vec! {root_key.clone()},
-			fee: 1,
-			exit_waiting_period: 60, // 60s
 		}),
 		child_mvp: Some(PlasmChildConfig {
 			operators: endowed_accounts.clone(),
