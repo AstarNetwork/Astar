@@ -187,19 +187,6 @@ impl sudo::Trait for Runtime {
 	type Proposal = Call;
 }
 
-use plasm_utxo::mvp as utxo_mvp;
-
-/// Used for the utxo Module here.
-impl utxo_mvp::Trait for Runtime {
-	type Signature = AccountSignature;
-	type Value = u128;
-	type TimeLock = BlockNumber;
-
-	type OnNewAccount = Indices;
-
-	type Event = Event;
-}
-
 pub use plasm_parent::mvp as parent_mvp;
 
 impl plasm_parent::Trait for Runtime {
@@ -221,15 +208,6 @@ impl plasm_parent::Trait for Runtime {
 	type Event = Event;
 }
 
-pub use plasm_child::mvp as child_mvp;
-
-type MerkleTree = plasm_merkle::mock::MerkleTree<Hash, BlakeTwo256>;
-
-impl child_mvp::Trait for Runtime {
-	type Tree = MerkleTree;
-	type Event = Event;
-}
-
 construct_runtime!(
 	pub enum Runtime with Log(InternalLog: DigestItem<Hash, AuthorityId, AuthoritySignature>) where
 		Block = Block,
@@ -243,9 +221,7 @@ construct_runtime!(
 		Indices: indices,
 		Balances: balances,
 		Sudo: sudo,
-		PlasmUtxo: utxo_mvp,
 		PlasmParent: parent_mvp,
-		PlasmChild: child_mvp,
 	}
 );
 
