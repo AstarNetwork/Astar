@@ -29,7 +29,6 @@ use version::NativeVersion;
 pub use runtime_primitives::BuildStorage;
 pub use consensus::Call as ConsensusCall;
 pub use timestamp::Call as TimestampCall;
-pub use balances::Call as BalancesCall;
 pub use runtime_primitives::{Permill, Perbill};
 pub use timestamp::BlockPeriod;
 pub use support::{StorageValue, construct_runtime};
@@ -92,8 +91,8 @@ pub mod opaque {
 
 /// This runtime version.
 pub const VERSION: RuntimeVersion = RuntimeVersion {
-	spec_name: create_runtime_str!("plasm-node"),
-	impl_name: create_runtime_str!("plasm-node"),
+	spec_name: create_runtime_str!("plasm-child-node"),
+	impl_name: create_runtime_str!("plasm-child-node"),
 	authoring_version: 3,
 	spec_version: 3,
 	impl_version: 0,
@@ -155,7 +154,7 @@ impl indices::Trait for Runtime {
 	/// Use the standard means of resolving an index hint from an id.
 	type ResolveHint = indices::SimpleResolveHint<Self::AccountId, Self::AccountIndex>;
 	/// Determine whether an account is dead.
-	type IsDeadAccount = Balances;
+	type IsDeadAccount = PlasmUtxo;
 	/// The uniquitous event type.
 	type Event = Event;
 }
@@ -166,45 +165,31 @@ impl timestamp::Trait for Runtime {
 	type OnTimestampSet = Aura;
 }
 
-impl balances::Trait for Runtime {
-	/// The type for recording an account's balance.
-	type Balance = u128;
-	/// What to do if an account's free balance gets zeroed.
-	type OnFreeBalanceZero = ();
-	/// What to do if a new account is created.
-	type OnNewAccount = Indices;
-	/// The uniquitous event type.
-	type Event = Event;
-
-	type TransactionPayment = ();
-	type DustRemoval = ();
-	type TransferPayment = ();
-}
-
 impl sudo::Trait for Runtime {
 	/// The uniquitous event type.
 	type Event = Event;
 	type Proposal = Call;
 }
 
-pub use plasm_parent::mvp as parent_mvp;
+use plasm_utxo::mvp as utxo_mvp;
 
-impl plasm_parent::Trait for Runtime {
-	type ChildValue = u128;
-	type Utxo = parent_mvp::Utxo<Self::ChildValue, Self::AccountId, Self::Hash, Self::BlockNumber>;
-	type Proof = plasm_merkle::MerkleProof<Self::Hash>;
+/// Used for the utxo Module here.
+impl utxo_mvp::Trait for Runtime {
+	type Signature = AccountSignature;
+	type Value = u128;
+	type TimeLock = BlockNumber;
 
-	type ExitStatus = parent_mvp::ExitStatus<Self::Hash, Self::ChildValue, Self::AccountId, Self::BlockNumber, Self::Utxo, Self::Moment, plasm_parent::ExitState>;
-	type ChallengeStatus = parent_mvp::ChallengeStatus<Self::Hash, Self::ChildValue, Self::AccountId, Self::BlockNumber, Self::Utxo>;
+	type OnNewAccount = Indices;
 
-	type FraudProof = parent_mvp::FraudProof<Runtime>;
-	// How to Fraud proof. to utxo from using utxo.
-	type ExitorHasChcker = parent_mvp::ExitorHasChcker<Runtime>;
-	type ExistProofs = parent_mvp::ExistProofs<Runtime>;
-	type Exchanger = parent_mvp::Exchanger<Self::Balance, Self::ChildValue>;
-	type Finalizer = parent_mvp::Finalizer<Runtime>;
+	type Event = Event;
+}
 
-	/// The overarching event type.
+pub use plasm_child::mvp as child_mvp;
+
+type MerkleTree = plasm_merkle::mock::MerkleTree<Hash, BlakeTwo256>;
+
+impl child_mvp::Trait for Runtime {
+	type Tree = MerkleTree;
 	type Event = Event;
 }
 
@@ -219,9 +204,9 @@ construct_runtime!(
 		Consensus: consensus::{Module, Call, Storage, Config<T>, Log(AuthoritiesChange), Inherent},
 		Aura: aura::{Module},
 		Indices: indices,
-		Balances: balances,
 		Sudo: sudo,
-		PlasmParent: parent_mvp,
+		PlasmUtxo: utxo_mvp,
+		PlasmChild: child_mvp,
 	}
 );
 
@@ -240,7 +225,7 @@ pub type UncheckedExtrinsic = generic::UncheckedMortalCompactExtrinsic<Address, 
 /// Extrinsic type that has already been checked.
 pub type CheckedExtrinsic = generic::CheckedExtrinsic<AccountId, Nonce, Call>;
 /// Executive: handles dispatch to the various modules.
-pub type Executive = executive::Executive<Runtime, Block, Context, Balances, AllModules>;
+pub type Executive = executive::Executive<Runtime, Block, Context, PlasmUtxo, AllModules>;
 
 // Implement our runtime API endpoints. This is just a bunch of proxying.
 impl_runtime_apis! {

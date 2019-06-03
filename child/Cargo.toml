@@ -33,7 +33,7 @@ git = 'https://github.com/paritytech/substrate.git'
 package = 'substrate-network'
 tag = 'v1.0.0rc2'
 
-[dependencies.plasm-runtime]
+[dependencies.plasm-child-runtime]
 path = 'runtime'
 
 [dependencies.primitives]
@@ -72,24 +72,12 @@ vergen = '3'
 panic = 'unwind'
 
 [[bin]]
-name = 'plasm-node'
+name = 'plasm-child-node'
 path = 'src/main.rs'
-
-[workspace]
-members = [
-	"core/child",
-	"core/merkle",
-	"core/parent",
-	"core/utxo",
-	"core/primitives",
-	"runtime",
-	"child",
-	"child/runtime"
-]
 
 [package]
 authors = ['Takumi Yamashita <takumi@staked.co.jp>']
 build = 'build.rs'
 edition = '2018'
-name = 'plasm'
+name = 'plasm-child-node'
 version = '0.1.0'

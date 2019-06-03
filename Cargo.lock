@@ -2239,6 +2239,68 @@ dependencies = [
 ]
 
 [[package]]
+name = "plasm-child-node"
+version = "0.1.0"
+dependencies = [
+ "ctrlc 3.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "error-chain 0.12.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "exit-future 0.1.4 (registry+https://github.com/rust-lang/crates.io-index)",
+ "futures 0.1.26 (registry+https://github.com/rust-lang/crates.io-index)",
+ "hex-literal 0.1.4 (registry+https://github.com/rust-lang/crates.io-index)",
+ "log 0.4.6 (registry+https://github.com/rust-lang/crates.io-index)",
+ "parity-codec 3.5.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "parking_lot 0.7.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "plasm-child-runtime 0.1.0",
+ "sr-io 1.0.0 (git+https://github.com/paritytech/substrate.git?tag=v1.0.0rc2)",
+ "substrate-basic-authorship 1.0.0 (git+https://github.com/paritytech/substrate.git?tag=v1.0.0rc2)",
+ "substrate-cli 1.0.0 (git+https://github.com/paritytech/substrate.git?tag=v1.0.0rc2)",
+ "substrate-client 1.0.0 (git+https://github.com/paritytech/substrate.git?tag=v1.0.0rc2)",
+ "substrate-consensus-aura 1.0.0 (git+https://github.com/paritytech/substrate.git?tag=v1.0.0rc2)",
+ "substrate-executor 1.0.0 (git+https://github.com/paritytech/substrate.git?tag=v1.0.0rc2)",
+ "substrate-inherents 1.0.0 (git+https://github.com/paritytech/substrate.git?tag=v1.0.0rc2)",
+ "substrate-network 0.1.0 (git+https://github.com/paritytech/substrate.git?tag=v1.0.0rc2)",
+ "substrate-primitives 1.0.0 (git+https://github.com/paritytech/substrate.git?tag=v1.0.0rc2)",
+ "substrate-service 1.0.0 (git+https://github.com/paritytech/substrate.git?tag=v1.0.0rc2)",
+ "substrate-transaction-pool 1.0.0 (git+https://github.com/paritytech/substrate.git?tag=v1.0.0rc2)",
+ "tokio 0.1.19 (registry+https://github.com/rust-lang/crates.io-index)",
+ "trie-root 0.12.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "vergen 3.0.4 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "plasm-child-runtime"
+version = "0.1.0"
+dependencies = [
+ "parity-codec 3.5.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "plasm-child 0.1.0",
+ "plasm-merkle 0.1.0",
+ "plasm-parent 0.1.0",
+ "plasm-primitives 0.1.0",
+ "plasm-utxo 0.1.0",
+ "safe-mix 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "serde 1.0.91 (registry+https://github.com/rust-lang/crates.io-index)",
+ "serde_derive 1.0.91 (registry+https://github.com/rust-lang/crates.io-index)",
+ "sr-io 1.0.0 (git+https://github.com/paritytech/substrate.git?tag=v1.0.0rc2)",
+ "sr-primitives 1.0.0 (git+https://github.com/paritytech/substrate.git?tag=v1.0.0rc2)",
+ "sr-std 1.0.0 (git+https://github.com/paritytech/substrate.git?tag=v1.0.0rc2)",
+ "sr-version 1.0.0 (git+https://github.com/paritytech/substrate.git?tag=v1.0.0rc2)",
+ "srml-aura 1.0.0 (git+https://github.com/paritytech/substrate.git?tag=v1.0.0rc2)",
+ "srml-balances 1.0.0 (git+https://github.com/paritytech/substrate.git?tag=v1.0.0rc2)",
+ "srml-consensus 1.0.0 (git+https://github.com/paritytech/substrate.git?tag=v1.0.0rc2)",
+ "srml-executive 1.0.0 (git+https://github.com/paritytech/substrate.git?tag=v1.0.0rc2)",
+ "srml-indices 1.0.0 (git+https://github.com/paritytech/substrate.git?tag=v1.0.0rc2)",
+ "srml-sudo 1.0.0 (git+https://github.com/paritytech/substrate.git?tag=v1.0.0rc2)",
+ "srml-support 1.0.0 (git+https://github.com/paritytech/substrate.git?tag=v1.0.0rc2)",
+ "srml-system 1.0.0 (git+https://github.com/paritytech/substrate.git?tag=v1.0.0rc2)",
+ "srml-timestamp 1.0.0 (git+https://github.com/paritytech/substrate.git?tag=v1.0.0rc2)",
+ "substrate-client 1.0.0 (git+https://github.com/paritytech/substrate.git?tag=v1.0.0rc2)",
+ "substrate-consensus-aura-primitives 1.0.0 (git+https://github.com/paritytech/substrate.git?tag=v1.0.0rc2)",
+ "substrate-consensus-authorities 1.0.0 (git+https://github.com/paritytech/substrate.git?tag=v1.0.0rc2)",
+ "substrate-offchain-primitives 0.1.0 (git+https://github.com/paritytech/substrate.git?tag=v1.0.0rc2)",
+ "substrate-primitives 1.0.0 (git+https://github.com/paritytech/substrate.git?tag=v1.0.0rc2)",
+]
+
+[[package]]
 name = "plasm-merkle"
 version = "0.1.0"
 dependencies = [

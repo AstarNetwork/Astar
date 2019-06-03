@@ -3,8 +3,8 @@ use super::*;
 #[cfg(feature = "std")]
 use serde_derive::{Serialize, Deserialize};
 
-use support::{decl_module, decl_storage, decl_event, StorageValue, StorageMap, Parameter, dispatch::Result};
-use system::{ensure_signed, OnNewAccount};
+use support::{decl_module, decl_storage, decl_event, StorageValue, StorageMap, Parameter, dispatch::Result, traits::MakePayment};
+use system::{ensure_signed, OnNewAccount, IsDeadAccount};
 use sr_primitives::traits::{Member, MaybeSerializeDebug, Hash, SimpleArithmetic, Verify, As, Zero, CheckedAdd, CheckedSub};
 
 use parity_codec::{Encode, Decode, Codec};
@@ -329,6 +329,21 @@ impl<T: Trait> UtxoTrait<SignedTx<T>, T::AccountId, (T::Hash, u32), T::Value> fo
 		Ok(())
 	}
 }
+
+impl<T: Trait> MakePayment<T::AccountId> for Module<T> {
+	/// `encoded_len` bytes. Return `Ok` iff the payment was successful.
+	fn make_payment(_: &T::AccountId, _: usize) -> Result {
+		Ok(()) // now not do.
+	}
+}
+
+impl<T: Trait> IsDeadAccount<T::AccountId> for Module<T>
+{
+	fn is_dead_account(who: &T::AccountId) -> bool {
+		Self::unspent_outputs_finder(who).is_none()
+	}
+}
+
 
 #[macro_export]
 macro_rules! impl_mvp_test_helper {

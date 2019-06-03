@@ -1,7 +1,7 @@
 use primitives::{ed25519, sr25519, Pair};
-use plasm_runtime::{
-	AccountId, GenesisConfig, ConsensusConfig, TimestampConfig, BalancesConfig,
-	SudoConfig, IndicesConfig, PlasmParentConfig,
+use plasm_child_runtime::{
+	AccountId, GenesisConfig, ConsensusConfig, TimestampConfig,
+	SudoConfig, IndicesConfig, PlasmUtxoConfig, PlasmChildConfig,
 };
 use substrate_service;
 
@@ -93,7 +93,7 @@ impl Alternative {
 fn testnet_genesis(initial_authorities: Vec<AuthorityId>, endowed_accounts: Vec<AccountId>, root_key: AccountId) -> GenesisConfig {
 	GenesisConfig {
 		consensus: Some(ConsensusConfig {
-			code: include_bytes!("../runtime/wasm/target/wasm32-unknown-unknown/release/plasm_runtime_wasm.compact.wasm").to_vec(),
+			code: include_bytes!("../runtime/wasm/target/wasm32-unknown-unknown/release/plasm_child_wasm.compact.wasm").to_vec(),
 			authorities: initial_authorities.clone(),
 		}),
 		system: None,
@@ -103,23 +103,15 @@ fn testnet_genesis(initial_authorities: Vec<AuthorityId>, endowed_accounts: Vec<
 		indices: Some(IndicesConfig {
 			ids: endowed_accounts.clone(),
 		}),
-		balances: Some(BalancesConfig {
-			transaction_base_fee: 1,
-			transaction_byte_fee: 0,
-			existential_deposit: 500,
-			transfer_fee: 0,
-			creation_fee: 0,
-			balances: endowed_accounts.iter().cloned().map(|k| (k, 1 << 60)).collect(),
-			vesting: vec![],
-		}),
 		sudo: Some(SudoConfig {
 			key: root_key.clone(),
 		}),
-		parent_mvp: Some(PlasmParentConfig {
-			total_deposit: 0,
-			operator: vec! {root_key.clone()},
-			fee: 1,
-			exit_waiting_period: 60, // 60s
+		utxo_mvp: Some(PlasmUtxoConfig {
+			genesis_tx: endowed_accounts.iter().cloned().map(|k| ((1 << 60), k)).collect(),
+		}),
+		child_mvp: Some(PlasmChildConfig {
+			operators: endowed_accounts.clone(),
+			submit_interval: 5,
 		}),
 	}
 }

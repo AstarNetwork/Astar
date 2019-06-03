@@ -27,5 +27,8 @@ case $TARGET in
 		# Install prerequisites and build all wasm projects
 		./init.sh
 		./build.sh
+
+		cd child
+		./build.sh
 		;;
 esac
