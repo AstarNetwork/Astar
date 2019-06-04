@@ -15,7 +15,7 @@ __WARNING__: This is a proof-of-concept prototype. This implementation is NOT re
     - [Plasm-Parent](https://github.com/stakedtechnologies/Plasm/tree/master#plasm-parent)
     - [Plasm-Child](https://github.com/stakedtechnologies/Plasm/tree/master#plasm-child)
 - [How to install](https://github.com/stakedtechnologies/Plasm/tree/master#how-to-install)
-
+- [Easy setup by Docker]()
 ## Demo
 ![plasm_demo](https://user-images.githubusercontent.com/6259384/58473625-091be500-8184-11e9-9f65-1fd986f5adc0.gif)
 
@@ -61,7 +61,7 @@ By using these solutions together, users can make transactions between the paren
 
 ## How to install
 
-## UTXO
+### UTXO
 ```toml
 [dependencies.utxo]
 git = 'https://github.com/stakedtechnologies/Plasm.git'
@@ -69,7 +69,7 @@ package = 'plasm-utxo'
 version = '0.1.0' 
 ```
 
-## Parent
+### Parent
 ```toml
 [dependencies.parent]
 git = 'https://github.com/stakedtechnologies/Plasm.git'
@@ -77,12 +77,18 @@ package = 'plasm-utxo'
 version = '0.1.0' 
 ```
 
-## Child
+### Child
 ```toml
 [dependencies.child]
 git = 'https://github.com/stakedtechnologies/Plasm.git'
 package = 'plasm-child'
 version = '0.1.0' 
+```
+
+## Easy setup by docker
+```
+docker run -it -v $(pwd):/opt stakedtechnologies/plasm-builder cargo build
+docker 
 ```
 
 ## Example Trait
