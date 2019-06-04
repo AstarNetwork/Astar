@@ -1597,27 +1597,6 @@ version = "0.3.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
-name = "plasm-child"
-version = "0.1.0"
-dependencies = [
- "parity-codec 3.5.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "plasm-merkle 0.1.0",
- "plasm-utxo 0.1.0",
- "safe-mix 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "serde 1.0.91 (registry+https://github.com/rust-lang/crates.io-index)",
- "serde_derive 1.0.91 (registry+https://github.com/rust-lang/crates.io-index)",
- "sr-io 1.0.0 (git+https://github.com/paritytech/substrate.git?tag=v1.0.0rc2)",
- "sr-primitives 1.0.0 (git+https://github.com/paritytech/substrate.git?tag=v1.0.0rc2)",
- "sr-std 1.0.0 (git+https://github.com/paritytech/substrate.git?tag=v1.0.0rc2)",
- "sr-version 1.0.0 (git+https://github.com/paritytech/substrate.git?tag=v1.0.0rc2)",
- "srml-sudo 1.0.0 (git+https://github.com/paritytech/substrate.git?tag=v1.0.0rc2)",
- "srml-support 1.0.0 (git+https://github.com/paritytech/substrate.git?tag=v1.0.0rc2)",
- "srml-system 1.0.0 (git+https://github.com/paritytech/substrate.git?tag=v1.0.0rc2)",
- "srml-timestamp 1.0.0 (git+https://github.com/paritytech/substrate.git?tag=v1.0.0rc2)",
- "substrate-primitives 1.0.0 (git+https://github.com/paritytech/substrate.git?tag=v1.0.0rc2)",
-]
-
-[[package]]
 name = "plasm-merkle"
 version = "0.1.0"
 dependencies = [
@@ -1668,11 +1647,8 @@ name = "plasm-runtime"
 version = "0.1.0"
 dependencies = [
  "parity-codec 3.5.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "plasm-child 0.1.0",
  "plasm-merkle 0.1.0",
  "plasm-parent 0.1.0",
- "plasm-primitives 0.1.0",
- "plasm-utxo 0.1.0",
  "safe-mix 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde 1.0.91 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde_derive 1.0.91 (registry+https://github.com/rust-lang/crates.io-index)",
