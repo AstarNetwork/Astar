@@ -15,7 +15,9 @@ __WARNING__: This is a proof-of-concept prototype. This implementation is NOT re
     - [Plasm-Parent](https://github.com/stakedtechnologies/Plasm/tree/master#plasm-parent)
     - [Plasm-Child](https://github.com/stakedtechnologies/Plasm/tree/master#plasm-child)
 - [How to install](https://github.com/stakedtechnologies/Plasm/tree/master#how-to-install)
-- [Easy setup by Docker]()
+- [Build Nodes on Docker](https://github.com/stakedtechnologies/Plasm/tree/master#build-nodes-on-docker)
+- [Build Nodes for Developer](https://github.com/stakedtechnologies/Plasm/tree/master#build-nodes-for-developer)
+
 ## Demo
 ![plasm_demo](https://user-images.githubusercontent.com/6259384/58473625-091be500-8184-11e9-9f65-1fd986f5adc0.gif)
 
@@ -85,10 +87,32 @@ package = 'plasm-child'
 version = '0.1.0' 
 ```
 
-## Easy setup by docker
+## Build Nodes on Docker
+### Parent(Root) Node
+```bash
+> docker run -p 9944:9944 stakedtechnologies/plasm-node
 ```
-docker run -it -v $(pwd):/opt stakedtechnologies/plasm-builder cargo build
-docker 
+
+### Child Node
+```bash
+> docker run -p 30333:9944 stakedtechnologies/plasm-child-node
+```
+
+## Build Nodes for Developer
+### Parent(Root) Node
+```bash
+> cd plasm
+> ./build
+> cargo build
+> ./target/debug/plasm-node --base-path /tmp/parent --ws-port 9944 --dev
+```
+
+### Child Node
+```bash
+> cd plasm/child
+> ./build
+> cargo build
+> ./target/debug/plasm-child-node --base-path /tmp/child --ws-port 30333 --dev
 ```
 
 ## Example Trait
