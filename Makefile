@@ -1,4 +1,5 @@
 SHELL := /bin/bash
+CHILD_NODE_DIR := $(shell git rev-parse --show-toplevel)/child
 
 .PHONY: rebuild
 rebuild:
@@ -22,10 +23,9 @@ push-parent:
 
 .PHONY: build-child-debian
 build-child-debian:
-	cd child &&\
-	 docker run -it -v $(shell pwd):/opt stakedtechnologies/plasm-builder cargo build --target-dir target-debian --release &&\
-	 docker build child -t stakedtechnologies/plasm-child-node
+	 docker run -it -v $(shell pwd):/opt  -w="/opt/child" stakedtechnologies/plasm-builder cargo build --target-dir $(CHILD_NODE_DIR)/target-debian --release
+	 docker build $(CHILD_NODE_DIR) -t stakedtechnologies/plasm-child-node
 
 .PHONY: push-child
 push-child:
-	cd child && docker push stakedtechnologies/plasm-child-node
+	docker push stakedtechnologies/plasm-child-node

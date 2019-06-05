@@ -2,7 +2,7 @@ FROM debian:9.9
 
 LABEL maintainer="takumi@staked.co.jp"
 
-ENTRYPOINT ["/opt/target/release/plasm-node", "--dev", "--ws-external"]
+ENTRYPOINT ["/opt/target/release/plasm-child-node", "--dev", "--ws-external"]
 
 WORKDIR /opt
 COPY ./target-debian ./target
