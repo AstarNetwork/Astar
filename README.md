@@ -7,14 +7,11 @@ Plasm is a Substrate Runtime Module Library which allows developers to add Plasm
 __WARNING__: This is a proof-of-concept prototype. This implementation is NOT ready for production use. 
 
 ## Table of Contents
-- [Demo](https://github.com/stakedtechnologies/Plasm/tree/master#demo)
 - [Introduction](https://github.com/stakedtechnologies/Plasm/tree/master#introduction)
-- [Background](https://github.com/stakedtechnologies/Plasm/tree/master#background)
-- Plasm
-    - [Plasm-UTXO](https://github.com/stakedtechnologies/Plasm/tree/master#plasm-utxo)
-    - [Plasm-Parent](https://github.com/stakedtechnologies/Plasm/tree/master#plasm-parent)
-    - [Plasm-Child](https://github.com/stakedtechnologies/Plasm/tree/master#plasm-child)
-- [How to install](https://github.com/stakedtechnologies/Plasm/tree/master#how-to-install)
+- [Demo](https://github.com/stakedtechnologies/Plasm/tree/fixed-readme#demo)
+- [Plasm ver0.2.0](https://github.com/stakedtechnologies/Plasm/tree/fixed-readme#plasm-ver020)
+- [Future Works](https://github.com/stakedtechnologies/Plasm/tree/fixed-readme#future-works)
+- [Example Trait](https://github.com/stakedtechnologies/Plasm/tree/fixed-readme#example-trait)
 
 ## Introduction
 Plasm is a Substrate Runtime Module Library which allows developers to add Plasma functions to their Substrate chain. By adding a Plasm Substrate Runtime Module Library, you can get scalable blockchains within a few minutes.
@@ -24,21 +21,19 @@ Some people might not know [Substrate Runtime Module Library](https://docs.subst
 Other people might not know Plasma. Plasma is a layer2 scaling solution which makes it possible for scalable computation by structuring economic incentives to operate the blockchain autonomously without the operator’s management. Ideally, it brings infinite scalability into your blockchain.
 
 Based on the above, Plasm has some features.
-- The first Rust implementation of Plasma SRML.
-- Plasm is a simple but versatile SRML and makes it easier for developers to make a Plasma chain with Substrate.
-- Plasm deals with many types of “Plasmas” in the future. Currently, we are providing UTXO models.
-- Substrate chain can be both a plasma parent chain and a plasma child chain.
+- **The first Rust implementation of Plasma SRML.**
+- **Plasm is a simple but versatile SRML and makes it easier for developers to make a Plasma chain with Substrate.**
+- **Plasm deals with many types of “Plasmas” in the future. Currently, we are providing UTXO models.**
+- **Substrate chain can be both a plasma parent chain and a plasma child chain.**
 
 Since we are making an SRML, we can also make a Plasma chain with Substrate. Once Polkadot is launched, we will connect our root chain to Polkadot, and we aim to be one of the parachains.
-
 <img width="1330" alt="vision" src="https://user-images.githubusercontent.com/29359048/59095564-cdd3a000-8953-11e9-85bb-d273ce05f509.png">
-
 In addition, Plasm makes it easier even for other developers to make a Plasma chain.
 
 ## Demo
 You can see our demo 
-- [Version1](https://www.youtube.com/watch?v=T70iEgyuXbw&feature=youtu.be) 2019/04/25 CLI Demo 
-- [Version2](https://youtu.be/5MoO3Epgvv0) 2019/05/22 UI Demo No explanations yet. I will add asap.
+- [Version1](https://www.youtube.com/watch?v=T70iEgyuXbw&feature=youtu.be): 2019/04/25 CLI Demo 
+- [Version2](https://youtu.be/5MoO3Epgvv0): 2019/05/22 UI Demo No explanations yet. I will add asap.
 
 ## Plasm ver0.2.0
 Plasm ver0.2.0 is a prototype which has the following functions.
@@ -66,7 +61,6 @@ $ git checkout v0.2.0
 
 ### Step2
 Build Plasm Node. After a successful build, you can run Plasma nodes.
-
 ```
 $ cargo build
 $ ./target/debug/plasm-node --dev
@@ -119,11 +113,9 @@ $ yarn dev
 
 <img width="1027" alt="Screen Shot 2019-06-08 at 1 07 31" src="https://user-images.githubusercontent.com/29359048/59117884-d050ec80-8989-11e9-9f27-738df14a1e0c.png">
 
-After that, let’s go to localhost:8000 on your browser.
+After that, let’s go to [localhost:8000](http://localhost:8000/) on your browser. We will create 2 different accounts and send/receive tokens by using the wallet application I mentioned above.
 
-We will create 2 different accounts and send/receive tokens by using the wallet application I mentioned above.
-
-### Step6 Account Registration
+### Step6: Account Registration
 First, you need to register your demo account. Since a default operator is Alice, you should add //Alice ①. Then, create an account ②. You can check Alice’s balance ③.
 
 <img width="1405" alt="Screen Shot 2019-06-08 at 1 09 00" src="https://user-images.githubusercontent.com/29359048/59117971-07270280-898a-11e9-9a20-08fa4fc85186.png">
@@ -132,23 +124,22 @@ To send tokens from Alice to Bob, Alice to Tom and Bob to Tom, generate Bob’s 
 
 <img width="1440" alt="Screen Shot 2019-06-08 at 1 09 44" src="https://user-images.githubusercontent.com/29359048/59118021-21f97700-898a-11e9-9861-392140640467.png">
 
-### Step7 Token Transfer on Parent Chain
+### Step7: Token Transfer on Parent Chain
 As a next step, we will send tokens from Alice to Bob and Alice to Tom on the parent chain.
 
 <img width="1285" alt="Screen Shot 2019-06-08 at 1 11 01" src="https://user-images.githubusercontent.com/29359048/59118123-5a00ba00-898a-11e9-855e-869242cd6d19.png">
 
 <img width="1402" alt="Screen Shot 2019-06-08 at 1 11 22" src="https://user-images.githubusercontent.com/29359048/59118138-5e2cd780-898a-11e9-9aec-8ff285c6879d.png">
-
 Enter the account name and decide the amount of token. Then, click the “Send” button. Keep your eye on the “ParentBalance” next to the account name. After a successful transaction, you will notice that Bob’s amount is increasing. Currently, we collect the exchange fee from the sender on the parent chain. So, Bob and Tom need to have some tokens on the parent chain.
 
-### Step8 Deposit (Deposit tokens from Parent Wallet to Child Wallet.)
+### Step8: Deposit (Deposit tokens from Parent Wallet to Child Wallet.)
 <img width="1266" alt="Screen Shot 2019-06-08 at 1 12 40" src="https://user-images.githubusercontent.com/29359048/59118227-8f0d0c80-898a-11e9-8ce8-2624fd41e2a0.png">
 
 Third, we will send tokens from the parent chain to the child chain. For this time, Bob deposits 5,000,000 tokens to the child chain. Just keep in mind, it takes time to increase ChildBalance because the operator checks the event and executes a transaction.
 
 <img width="1398" alt="Screen Shot 2019-06-08 at 1 13 36" src="https://user-images.githubusercontent.com/29359048/59118280-b237bc00-898a-11e9-801c-74f54a232c55.png">
 
-### Step9 Token Transfer on Child Chain
+### Step9: Token Transfer on Child Chain
 
 <img width="1270" alt="Screen Shot 2019-06-08 at 1 14 10" src="https://user-images.githubusercontent.com/29359048/59118323-c8457c80-898a-11e9-87eb-f8a31f8e962b.png">
 
@@ -158,7 +149,7 @@ Fourth, let’s send some tokens from Bob to Tom on the child chain.
 
 Bob has 5,000,000 tokens. He sent 1,000,000 tokens out of 5,000,000 to Tom.
 
-### Step10 Exit Part1（Exit tokens from ChildWallet to ParentWallet.）
+### Step10: Exit Part1（Exit tokens from ChildWallet to ParentWallet.）
 
 <img width="1253" alt="Screen Shot 2019-06-08 at 1 16 22" src="https://user-images.githubusercontent.com/29359048/59118430-10649f00-898b-11e9-8297-bc008a424c78.png">
 
@@ -173,7 +164,7 @@ Press the ExitStart button so that you can exit your tokens to the parent chain.
 
 BUT, you have to wait about 60 seconds. It is a Plasma challenge period which we decided. Full node holders can challenge the legitimacy of exits in it.
 
-### Step11 Exit Part2（ExitFinalize ChildWallet to ParentWallet.）
+### Step11: Exit Part2（ExitFinalize ChildWallet to ParentWallet.）
 Click ExitFinalize.
 
 <img width="1387" alt="Screen Shot 2019-06-08 at 1 18 32" src="https://user-images.githubusercontent.com/29359048/59118517-5a4d8500-898b-11e9-8fec-dfb2b981e15f.png">
