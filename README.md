@@ -177,24 +177,19 @@ Finally, the exit is successful. Well done!! This is a simple demo, but it’s o
 
 ## Future Works
 **ver0.2.0rc1**
-
-Actually, we just have one node in this tutorial because we used balances SRML, the default setting. We will divide this node into a parent node and a child node using PlasmUtxo SRML.
+: Actually, we just have one node in this tutorial because we used balances SRML, the default setting. We will divide this node into a parent node and a child node using PlasmUtxo SRML.
 
 **ver0.5.0**
-
-Connect our root chain to Polkadot Testnet.
+: Connect our root chain to Polkadot Testnet.
 
 **v0.7.0**
-
-Plasma Cash implementation
+: Plasma Cash implementation
 
 **v1.0.0**
-
-Plasma Chamber implementation
+: Plasma Chamber implementation
 
 **Another Important Task**
-
-Improve ExitGame implementation
+: Improve ExitGame implementation
 
 # Example Trait
 Please check [here](https://github.com/stakedtechnologies/Plasm/blob/master/runtime/src/lib.rs).
