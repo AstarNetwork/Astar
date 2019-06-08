@@ -8,10 +8,10 @@ __WARNING__: This is a proof-of-concept prototype. This implementation is NOT re
 
 ## Table of Contents
 - [Introduction](https://github.com/stakedtechnologies/Plasm/tree/master#introduction)
-- [Demo](https://github.com/stakedtechnologies/Plasm/tree/fixed-readme#demo)
-- [Plasm ver0.2.0](https://github.com/stakedtechnologies/Plasm/tree/fixed-readme#plasm-ver020)
-- [Future Works](https://github.com/stakedtechnologies/Plasm/tree/fixed-readme#future-works)
-- [Example Trait](https://github.com/stakedtechnologies/Plasm/tree/fixed-readme#example-trait)
+- [Demo](https://github.com/stakedtechnologies/Plasm/tree/master#demo)
+- [Plasm ver0.2.0](https://github.com/stakedtechnologies/Plasm/tree/master#plasm-ver020)
+- [Future Works](https://github.com/stakedtechnologies/Plasm/tree/master#future-works)
+- [Example Trait](https://github.com/stakedtechnologies/Plasm/tree/master#example-trait)
 
 ## Introduction
 Plasm is a Substrate Runtime Module Library which allows developers to add Plasma functions to their Substrate chain. By adding a Plasm Substrate Runtime Module Library, you can get scalable blockchains within a few minutes.
