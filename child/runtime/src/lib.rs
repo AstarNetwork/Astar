@@ -205,8 +205,8 @@ construct_runtime!(
 		Aura: aura::{Module},
 		Indices: indices,
 		Sudo: sudo,
-		PlasmUtxo: utxo_mvp,
-		PlasmChild: child_mvp,
+		PlasmUtxo: utxo_mvp::{Module, Call, Storage, Event<T>, Config<T>},
+		PlasmChild: child_mvp::{Module, Call, Storage, Event<T>, Config<T>},
 	}
 );
 

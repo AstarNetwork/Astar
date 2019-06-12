@@ -14,7 +14,7 @@ fn run() -> cli::error::Result<()> {
 		name: "Plasm Child Node",
 		commit: env!("VERGEN_SHA_SHORT"),
 		version: env!("CARGO_PKG_VERSION"),
-		executable_name: "plasm-node",
+		executable_name: "plasm-child-node",
 		author: "takumi",
 		description: "plasm-child-node",
 		support_url: "support.anonymous.an",

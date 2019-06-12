@@ -95,7 +95,7 @@ version = '0.1.0'
 
 ### Child Node
 ```bash
-> docker run -p 30333:9944 stakedtechnologies/plasm-child-node
+> docker run -p 9955:9944 stakedtechnologies/plasm-child-node
 ```
 
 ## Build Nodes for Developer
@@ -104,7 +104,7 @@ version = '0.1.0'
 > cd plasm
 > ./build
 > cargo build
-> ./target/debug/plasm-node --base-path /tmp/parent --ws-port 9944 --dev
+> ./target/debug/plasm-node --base-path /tmp/parent --port 30333 --ws-port 9944 --dev
 ```
 
 ### Child Node
@@ -112,7 +112,7 @@ version = '0.1.0'
 > cd plasm/child
 > ./build
 > cargo build
-> ./target/debug/plasm-child-node --base-path /tmp/child --ws-port 30333 --dev
+> ./target/debug/plasm-child-node --base-path /tmp/child --port 30334 --ws-port 9955 --dev
 ```
 
 ## Example Trait

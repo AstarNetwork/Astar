@@ -80,4 +80,4 @@ authors = ['Takumi Yamashita <takumi@staked.co.jp>']
 build = 'build.rs'
 edition = '2018'
 name = 'plasm-child-node'
-version = '0.1.0'
+version = '0.2.0'
