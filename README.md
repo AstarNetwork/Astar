@@ -11,6 +11,8 @@ __WARNING__: This is a proof-of-concept prototype. This implementation is NOT re
 - [Demo](https://github.com/stakedtechnologies/Plasm/tree/master#demo)
 - [Plasm ver0.2.0](https://github.com/stakedtechnologies/Plasm/tree/master#plasm-ver020)
 - [Future Works](https://github.com/stakedtechnologies/Plasm/tree/master#future-works)
+- [Build Nodes on Docker](https://github.com/stakedtechnologies/Plasm/tree/master#build-nodes-on-docker)
+- [Build Nodes for Developer](https://github.com/stakedtechnologies/Plasm/tree/master#build-nodes-for-developer)
 - [Example Trait](https://github.com/stakedtechnologies/Plasm/tree/master#example-trait)
 
 ## Introduction
@@ -191,7 +193,35 @@ Finally, the exit is successful. Well done!! This is a simple demo, but it’s o
 **Another Important Task**
 : Improve ExitGame implementation
 
-# Example Trait
+## Build Nodes on Docker
+### Parent(Root) Node
+```bash
+> docker run -p 9944:9944 stakedtechnologies/plasm-node
+```
+
+### Child Node
+```bash
+> docker run -p 9955:9944 stakedtechnologies/plasm-child-node
+```
+
+## Build Nodes for Developer
+### Parent(Root) Node
+```bash
+> cd plasm
+> ./build
+> cargo build
+> ./target/debug/plasm-node --base-path /tmp/parent --port 30333 --ws-port 9944 --dev
+```
+
+### Child Node
+```bash
+> cd plasm/child
+> ./build
+> cargo build
+> ./target/debug/plasm-child-node --base-path /tmp/child --port 30334 --ws-port 9955 --dev
+```
+
+## Example Trait
 Please check [here](https://github.com/stakedtechnologies/Plasm/blob/master/runtime/src/lib.rs).
 
 # Maintainers

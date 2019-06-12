@@ -219,9 +219,9 @@ construct_runtime!(
 		Consensus: consensus::{Module, Call, Storage, Config<T>, Log(AuthoritiesChange), Inherent},
 		Aura: aura::{Module},
 		Indices: indices,
-		Balances: balances,
+		Balances: balances::{Module, Call, Storage, Event<T>, Config<T>},
 		Sudo: sudo,
-		PlasmParent: parent_mvp,
+		PlasmParent: parent_mvp::{Module, Call, Storage, Event<T>, Config<T>},
 	}
 );
 
