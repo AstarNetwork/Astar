@@ -84,7 +84,7 @@ members = [
 	"core/primitives",
 	"runtime",
 	"child",
-	"contract",
+	"contracts/commitment",
 ]
 
 [package]

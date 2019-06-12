@@ -1,7 +1,7 @@
-#!/usr/bin/env bash
+#!/bin/bash
 set -e
 
-PROJNAME=plasm_contract
+PROJNAME=commitment
 
 # cargo clean
 # rm Cargo.lock
