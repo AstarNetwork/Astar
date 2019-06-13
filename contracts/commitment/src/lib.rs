@@ -1,7 +1,7 @@
 #![cfg_attr(not(any(test, feature = "std")), no_std)]
 
 use ink_core::{
-	memory::format,
+	memory::{format, vec::Vec},
 	storage,
 };
 use ink_lang::contract;
@@ -59,7 +59,7 @@ contract! {
             	return block.clone();
             }
             env.println(&format!("Commitment::block_hash(number = {:?}) = None)", number));
-            vec!{}
+            Vec::new()
         }
 
     	/// Allows a user to submit a block with the given header.
@@ -100,6 +100,5 @@ mod tests {
 		assert_eq!(contract.block_hash(0), vec! {});
 		assert_eq!(contract.block_hash(1), header_1);
 		assert_eq!(contract.block_hash(2), header_2);
-
 	}
 }
