@@ -7,11 +7,11 @@ export RUSTFLAGS=" -W unused-extern-crates"
 
 # Install rustup and the specified rust toolchain.
 curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain=$RUST_TOOLCHAIN -y
-rustup install nightly-2019-05-21
-rustup target add wasm32-unknown-unknown --toolchain nightly-2019-05-21
-
 # Load cargo environment. Specifically, put cargo into PATH.
 source ~/.cargo/env
+
+rustup install nightly-2019-05-21
+rustup target add wasm32-unknown-unknown --toolchain nightly-2019-05-21
 
 rustc --version
 rustup --version
@@ -30,7 +30,7 @@ case $TARGET in
 		./init.sh
 		./build.sh
 
-		cd child
-		./build.sh
+		cd child && ./build.sh
+		cd ../contracts/commitment && make test
 		;;
 esac
