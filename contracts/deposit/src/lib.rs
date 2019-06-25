@@ -2,42 +2,100 @@
 
 use ink_core::{
     memory::format,
-    storage,
+    memory::string::String,
+    storage::{self,Vec,Flush}
 };
 use ink_lang::contract;
 
+use parity_codec::{Encode,Decode};
+
+type RangeNumber = u32;
+type BlockNumber = u32;
+type ChallengeNumber = u32;
+
+#[derive(Clone,Encode,Decode,Default,PartialEq,Eq)]
+#[cfg_attr(feature="std",derive(Debug))]
+pub struct Range{
+    start : RangeNumber,
+    end : RangeNumber,
+}
+
+#[derive(Encode,Decode)]
+#[cfg_attr(feature="std",derive(Debug))]
+pub struct StateObject{
+    id : String,
+    predicate : AccountId,
+    data: Vec<u8>,
+}
+
+#[derive(Encode,Decode)]
+#[cfg_attr(feature="std",derive(Debug))]
+pub struct StateUpdate {
+    range : Range,
+    state_object : StateObject,
+    plasma_contract : AccountId,
+    plasma_block_number : BlockNumber,
+}
+
+#[derive(Encode,Decode)]
+#[cfg_attr(feature="std",derive(Debug))]
+pub struct Checkpoint {
+    state_update : StateUpdate,
+    sub_range : Range,
+}
+
+#[derive(Encode,Decode)]
+#[cfg_attr(feature="std",derive(Debug))]
+pub struct CheckpointStatus {
+    challengeable_until : BlockNumber,
+    outstanding_challenges : ChallengeNumber,
+}
+
+#[derive(Encode,Decode)]
+#[cfg_attr(feature="std",derive(Debug))]
+pub struct Challenge {
+    challenged_checkpoint : Checkpoint,
+    challenging_checkpoint : Checkpoint,
+}
+
 contract! {
-    
     #![env = ink_core::env::DefaultSrmlTypes]
 
-    /// This simple dummy contract has a `bool` value that can
-    /// alter between `true` and `false` using the `flip` message.
-    /// Users can retrieve its current state using the `get` message.
     struct Deposit {
-        /// The current state of our flag.
+        //constant values
+        TOKEN_ADDRES : storage::Value<AccountId>,
+        CHALLENGE_PERIOD : storage::Value<BlockNumber>,
+        EXIT_PERIOD : storage::Value<BlockNumber>,
+
+        //changable values
+        total_deposited : storage::Value<Range>,
+        checkpoints : storage::HashMap<Hash,Checkpoint>,
+        deposited_ranges : storage::HashMap<RangeNumber, Range>,
+        exit_redeemable_after : storage::HashMap<Hash,BlockNumber>,
+        challenges : storage::HashMap<Hash,bool>,
+
+        //delete later
         value: storage::Value<bool>,
     }
 
     impl Deploy for Deposit {
-        /// Initializes our state to `false` upon deploying our smart contract.
-        fn deploy(&mut self) {
-            self.value.set(false)
+        fn deploy(&mut self , init_ac : AccountId) {
+            self.TOKEN_ADDRES.set(init_ac);
         }
     }
 
     impl Deposit {
-        /// Flips the current state of our smart contract.
         pub(external) fn flip(&mut self) {
             *self.value = !*self.value;
         }
 
-        /// Returns the current state.
         pub(external) fn get(&self) -> bool {
             env.println(&format!("Storage Value: {:?}", *self.value));
             *self.value
         }
     }
 }
+
 
 #[cfg(all(test, feature = "test-env"))]
 mod tests {
@@ -46,8 +104,5 @@ mod tests {
     #[test]
     fn it_works() {
         let mut contract = Deposit::deploy_mock();
-        assert_eq!(contract.get(), false);
-        contract.flip();
-        assert_eq!(contract.get(), true);
     }
 }
