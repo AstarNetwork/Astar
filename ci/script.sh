@@ -30,7 +30,7 @@ case $TARGET in
 		./init.sh
 		./build.sh
 
-		cd child
-		./build.sh
+		cd child && ./build.sh
+		cd contracts/commitment && make test
 		;;
 esac
