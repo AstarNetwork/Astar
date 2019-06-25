@@ -221,6 +221,34 @@ Finally, the exit is successful. Well done!! This is a simple demo, but it’s o
 > ./target/debug/plasm-child-node --base-path /tmp/child --port 30334 --ws-port 9955 --dev
 ```
 
+## Build Nodes on Docker
+### Parent(Root) Node
+```bash
+> docker run -p 9944:9944 stakedtechnologies/plasm-node
+```
+
+### Child Node
+```bash
+> docker run -p 9955:9944 stakedtechnologies/plasm-child-node
+```
+
+## Build Nodes for Developer
+### Parent(Root) Node
+```bash
+> cd plasm
+> ./build
+> cargo build
+> ./target/debug/plasm-node --base-path /tmp/parent --port 30333 --ws-port 9944 --dev
+```
+
+### Child Node
+```bash
+> cd plasm/child
+> ./build
+> cargo build
+> ./target/debug/plasm-child-node --base-path /tmp/child --port 30334 --ws-port 9955 --dev
+```
+
 ## Example Trait
 Please check [here](https://github.com/stakedtechnologies/Plasm/blob/master/runtime/src/lib.rs).
 

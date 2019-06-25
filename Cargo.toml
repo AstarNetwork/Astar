@@ -83,7 +83,8 @@ members = [
 	"core/utxo",
 	"core/primitives",
 	"runtime",
-	"child"
+	"child",
+	"contracts/commitment",
 ]
 
 [package]
