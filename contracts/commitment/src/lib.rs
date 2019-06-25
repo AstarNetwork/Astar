@@ -1,12 +1,16 @@
 #![cfg_attr(not(any(test, feature = "std")), no_std)]
 
 use ink_core::{
+	env::DefaultSrmlTypes,
 	memory::{format, vec::Vec},
 	storage,
 };
+use ink_model::EnvHandler;
 use ink_lang::contract;
 
 contract! {
+    #![env = DefaultSrmlTypes]
+
     /// Event deposited when a submit merkle root to parent chain contract(this contract) from child chain.
     ///
     /// ```
