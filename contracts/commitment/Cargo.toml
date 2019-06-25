@@ -1,5 +1,5 @@
 [package]
-name = "commitment"
+name = "test"
 version = "0.1.0"
 authors = ["[your_name] <[your_email]>"]
 edition = "2018"
@@ -11,7 +11,7 @@ ink_lang = { git = "https://github.com/paritytech/ink", package = "ink_lang" }
 parity-codec = { version = "3.3", default-features = false, features = ["derive"] }
 
 [lib]
-name = "commitment"
+name = "test"
 crate-type = ["cdylib"]
 
 [features]

@@ -84,7 +84,10 @@ members = [
 	"core/primitives",
 	"runtime",
 	"child",
-	"contracts/commitment",
+]
+
+exclude = [
+	"contracts/",
 ]
 
 [package]
