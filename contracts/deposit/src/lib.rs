@@ -108,7 +108,7 @@ contract! {
         }
     }
 
-    // impl Deposit {
+    impl Deposit {
     //
     //     pub(external) fn deposit(&mut self, depositer : AccountId, amount : Balance, initialState : StateObject){
     //
@@ -129,10 +129,10 @@ contract! {
     //                 ,
     //             }
     //         }
-    //     }
+        }
 )
 
-
+        //delete later
         pub(external) fn flip(&mut self) {
             *self.value = !*self.value;
         }
@@ -143,7 +143,6 @@ contract! {
         }
     }
 }
-
 
 #[cfg(all(test, feature = "test-env"))]
 mod tests {
