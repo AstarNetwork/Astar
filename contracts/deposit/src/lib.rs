@@ -95,7 +95,7 @@ contract! {
 
         //changable values
         total_deposited : storage::Value<Range>,
-        checkpoints : storage::HashMap<Hash,Checkpoint>,
+        checkpoints : storage::HashMap<Hash,CheckpointStatus>,
         deposited_ranges : storage::HashMap<RangeNumber, Range>,
         exit_redeemable_after : storage::HashMap<Hash,BlockNumber>,
         challenges : storage::HashMap<Hash,bool>,
