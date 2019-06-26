@@ -87,7 +87,7 @@ members = [
 ]
 
 exclude = [
-	"contracts/",
+	"contracts/"
 ]
 
 [package]
