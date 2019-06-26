@@ -80,12 +80,13 @@ contract! {
     }
 
     event ExitFinalized{
-        exit : CheckPoint,
+        exit : Checkpoint,
     }
 
     struct Deposit {
         //constant values
 
+        COMMITMENT_ADDRESS : storage::Value<AccountId>,
         //MUST be an adress of ERC20 token
         TOKEN_ADDRES : storage::Value<AccountId>,
         CHALLENGE_PERIOD : storage::Value<BlockNumber>,
@@ -109,28 +110,27 @@ contract! {
     }
 
     impl Deposit {
-    //
-    //     pub(external) fn deposit(&mut self, depositer : AccountId, amount : Balance, initialState : StateObject){
-    //
-    //         //MUST keep track of the total deposited assets, totalDeposited.
-    //         //MUST transfer the deposited amount from the depositer to the deposit contract’s address.
-    //         //MUST create a state update with a state object equal to the provided initialState.
-    //         //MUST compute the range of the created state update as totalDeposited to totalDeposited + amount.
-    //         //MUST update the total amount deposited after the deposit is handled.
-    //         *self.total_deposited = *self.total_deposited + amount;
-    //
-    //         //MUST insert the created state update into the checkpoints mapping with challengeableUntil being the current block number - 1.
-    //         let state_update =
-    //
-    //
-    //         //MUST emit a CheckpointFinalized event for the inserted checkpoint.
-    //         env.emit{
-    //             CheckpointFinalized{
-    //                 ,
-    //             }
-    //         }
-        }
-)
+
+        // pub(external) fn deposit(&mut self, depositer : AccountId, amount : Balance, initialState : StateObject){
+        //
+        //     //MUST keep track of the total deposited assets, totalDeposited.
+        //     //MUST transfer the deposited amount from the depositer to the deposit contract’s address.
+        //     //MUST create a state update with a state object equal to the provided initialState.
+        //     //MUST compute the range of the created state update as totalDeposited to totalDeposited + amount.
+        //     //MUST update the total amount deposited after the deposit is handled.
+        //     *self.total_deposited = *self.total_deposited + amount;
+        //
+        //     //MUST insert the created state update into the checkpoints mapping with challengeableUntil being the current block number - 1.
+        //     let state_update =
+        //
+        //
+        //     //MUST emit a CheckpointFinalized event for the inserted checkpoint.
+        //     env.emit{
+        //         CheckpointFinalized{
+        //             ,
+        //         }
+        //     }
+        // }
 
         //delete later
         pub(external) fn flip(&mut self) {
