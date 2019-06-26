@@ -1,0 +1,19 @@
+[package]
+name = "primitives"
+version = "0.1.0"
+authors = ["Takumi Yamashita <takumi@staked.co.jp>"]
+edition = "2018"
+
+[dependencies]
+ink_core = { git = "https://github.com/paritytech/ink", package = "ink_core" }
+ink_lang = { git = "https://github.com/paritytech/ink", package = "ink_lang" }
+parity-codec = { version = "3.3", default-features = false, features = ["derive"] }
+
+[features]
+default = []
+test-env = [
+    "ink_core/test-env",
+]
+generate-api-description = [
+    "ink_lang/generate-api-description"
+]
