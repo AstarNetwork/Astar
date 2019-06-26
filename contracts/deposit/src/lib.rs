@@ -9,9 +9,9 @@ use ink_lang::contract;
 
 use parity_codec::{Encode,Decode};
 
-type RangeNumber = u32;
-type BlockNumber = u32;
-type ChallengeNumber = u32;
+type RangeNumber = u128;
+type BlockNumber = u128;
+type ChallengeNumber = u128;
 
 #[derive(Clone,Encode,Decode,Default,PartialEq,Eq)]
 #[cfg_attr(feature="std",derive(Debug))]
@@ -61,8 +61,32 @@ pub struct Challenge {
 contract! {
     #![env = ink_core::env::DefaultSrmlTypes]
 
+    event CheckpointStarted{
+        checkpoint : Checkpoint,
+        challengeable_until: BlockNumber,
+    }
+
+    event CheckpointChallenged{
+        challenge : Challenge,
+    }
+
+    event CheckpointFinalized{
+        checkpoint: Hash,
+    }
+
+    event ExitStarted{
+        exit : Hash,
+        redeemable_after : BlockNumber,
+    }
+
+    event ExitFinalized{
+        exit : CheckPoint,
+    }
+
     struct Deposit {
         //constant values
+
+        //MUST be an adress of ERC20 token
         TOKEN_ADDRES : storage::Value<AccountId>,
         CHALLENGE_PERIOD : storage::Value<BlockNumber>,
         EXIT_PERIOD : storage::Value<BlockNumber>,
@@ -84,7 +108,31 @@ contract! {
         }
     }
 
-    impl Deposit {
+    // impl Deposit {
+    //
+    //     pub(external) fn deposit(&mut self, depositer : AccountId, amount : Balance, initialState : StateObject){
+    //
+    //         //MUST keep track of the total deposited assets, totalDeposited.
+    //         //MUST transfer the deposited amount from the depositer to the deposit contract’s address.
+    //         //MUST create a state update with a state object equal to the provided initialState.
+    //         //MUST compute the range of the created state update as totalDeposited to totalDeposited + amount.
+    //         //MUST update the total amount deposited after the deposit is handled.
+    //         *self.total_deposited = *self.total_deposited + amount;
+    //
+    //         //MUST insert the created state update into the checkpoints mapping with challengeableUntil being the current block number - 1.
+    //         let state_update =
+    //
+    //
+    //         //MUST emit a CheckpointFinalized event for the inserted checkpoint.
+    //         env.emit{
+    //             CheckpointFinalized{
+    //                 ,
+    //             }
+    //         }
+    //     }
+)
+
+
         pub(external) fn flip(&mut self) {
             *self.value = !*self.value;
         }
