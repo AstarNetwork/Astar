@@ -1,8 +1,8 @@
 #![cfg_attr(not(any(test, feature = "std")), no_std)]
 
 use ink_core::{
-    memory::{string::String, vec::Vec, format},
-    storage,
+	memory::{string::String, vec::Vec, format},
+	storage,
 };
 use ink_lang::contract;
 use primitives::*;
@@ -38,8 +38,16 @@ contract! {
 			unimplemented!();
 		}
 
-		pub (external) fn verifyTransaction(&self,
+		pub (external) fn verify_transaction(&self,
 			pre_state: StateUpdate,
+			transaction: Transaction,
+			witness: Vec<u8>,
+			post_state: StateUpdate) {
+			unimplemented!();
+		}
+
+		pub (external) fn prove_exit_deprecation(&self,
+			deprecated_exit: Checkpoint,
 			transaction: Transaction,
 			witness: Vec<u8>,
 			post_state: StateUpdate) {
@@ -56,13 +64,13 @@ contract! {
 
 #[cfg(all(test, feature = "test-env"))]
 mod tests {
-    use super::*;
+	use super::*;
 
-    #[test]
-    fn it_works() {
-        let mut contract = PredicateStandard::deploy_mock();
-        assert_eq!(contract.get(), false);
-        contract.flip();
-        assert_eq!(contract.get(), true);
-    }
+	#[test]
+	fn it_works() {
+		let mut contract = PredicateStandard::deploy_mock();
+		assert_eq!(contract.get(), false);
+		contract.flip();
+		assert_eq!(contract.get(), true);
+	}
 }
