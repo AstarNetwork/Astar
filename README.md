@@ -56,7 +56,7 @@ As a next step, let’s make a wallet demo application on your laptop and see wh
 Clone Plasm from our GitHub.
 
 ```
-$ git clone https://github.com/stakedtechnologies/Plasm.githttps://github.com/stakedtechnologies/Plasm.git
+$ git clone https://github.com/stakedtechnologies/Plasm.git
 $ cd Plasm
 $ git checkout v0.2.0
 ```
