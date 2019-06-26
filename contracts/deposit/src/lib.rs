@@ -10,6 +10,7 @@ use ink_lang::contract;
 use parity_codec::{Encode,Decode};
 
 type RangeNumber = u128;
+// TODO use ink_core::env::DefaultSrmlTypes::BlockNumber when its implemented
 type BlockNumber = u128;
 type ChallengeNumber = u128;
 
@@ -98,9 +99,6 @@ contract! {
         deposited_ranges : storage::HashMap<RangeNumber, Range>,
         exit_redeemable_after : storage::HashMap<Hash,BlockNumber>,
         challenges : storage::HashMap<Hash,bool>,
-
-        //delete later
-        value: storage::Value<bool>,
     }
 
     impl Deploy for Deposit {
@@ -132,15 +130,6 @@ contract! {
         //     }
         // }
 
-        //delete later
-        pub(external) fn flip(&mut self) {
-            *self.value = !*self.value;
-        }
-
-        pub(external) fn get(&self) -> bool {
-            env.println(&format!("Storage Value: {:?}", *self.value));
-            *self.value
-        }
     }
 }
 
