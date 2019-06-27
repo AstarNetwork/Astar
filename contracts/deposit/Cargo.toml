@@ -9,6 +9,7 @@ ink_core = { git = "https://github.com/paritytech/ink", package = "ink_core" }
 ink_model = { git = "https://github.com/paritytech/ink", package = "ink_model" }
 ink_lang = { git = "https://github.com/paritytech/ink", package = "ink_lang" }
 parity-codec = { version = "3.3", default-features = false, features = ["derive"] }
+primitives = { path = "../primitives", default-features = false }
 
 [lib]
 name = "deposit"
