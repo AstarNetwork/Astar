@@ -52,7 +52,7 @@ impl_outer_dispatch! {
 	pub enum Call for Test where origin: Origin {
 		balances::Balances,
 		contract::Contract,
-		pgspec::Pgspec,
+		pgspec::PGSpec,
 	}
 }
 
@@ -101,6 +101,7 @@ impl Trait for Test {
 type Balances = balances::Module<Test>;
 type Contract = contract::Module<Test>;
 type System = system::Module<Test>;
+type PGSpec = Module<Test>;
 
 pub struct DummyContractAddressFor;
 impl contract::ContractAddressFor<H256, u64> for DummyContractAddressFor {

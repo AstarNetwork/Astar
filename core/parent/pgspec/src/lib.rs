@@ -29,7 +29,7 @@ pub trait Trait: contract::Trait {
 
 // This module's storage items.
 decl_storage! {
-	trait Store for Module<T: Trait> as Pgspec {
+	trait Store for Module<T: Trait> as PGSpec {
 		// Just a dummy storage item.
 		// Here we are declaring a StorageValue, `Something` as a Option<u32>
 		// `get(something)` is the default getter which returns either the stored `u32` or `None` if nothing stored
