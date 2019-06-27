@@ -2356,6 +2356,24 @@ dependencies = [
 ]
 
 [[package]]
+name = "plasm-pgspec"
+version = "0.1.0"
+dependencies = [
+ "parity-codec 3.5.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "serde 1.0.93 (registry+https://github.com/rust-lang/crates.io-index)",
+ "serde_derive 1.0.93 (registry+https://github.com/rust-lang/crates.io-index)",
+ "sr-io 1.0.0 (git+https://github.com/paritytech/substrate.git?tag=v1.0.0rc2)",
+ "sr-primitives 1.0.0 (git+https://github.com/paritytech/substrate.git?tag=v1.0.0rc2)",
+ "sr-std 1.0.0 (git+https://github.com/paritytech/substrate.git?tag=v1.0.0rc2)",
+ "srml-balances 1.0.0 (git+https://github.com/paritytech/substrate.git?tag=v1.0.0rc2)",
+ "srml-contract 1.0.0 (git+https://github.com/paritytech/substrate.git?tag=v1.0.0rc2)",
+ "srml-support 1.0.0 (git+https://github.com/paritytech/substrate.git?tag=v1.0.0rc2)",
+ "srml-system 1.0.0 (git+https://github.com/paritytech/substrate.git?tag=v1.0.0rc2)",
+ "srml-timestamp 1.0.0 (git+https://github.com/paritytech/substrate.git?tag=v1.0.0rc2)",
+ "substrate-primitives 1.0.0 (git+https://github.com/paritytech/substrate.git?tag=v1.0.0rc2)",
+]
+
+[[package]]
 name = "plasm-primitives"
 version = "0.1.0"
 dependencies = [
@@ -2472,6 +2490,16 @@ dependencies = [
 name = "protobuf"
 version = "2.6.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
+
+[[package]]
+name = "pwasm-utils"
+version = "0.6.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+dependencies = [
+ "byteorder 1.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "log 0.4.6 (registry+https://github.com/rust-lang/crates.io-index)",
+ "parity-wasm 0.31.3 (registry+https://github.com/rust-lang/crates.io-index)",
+]
 
 [[package]]
 name = "quick-error"
@@ -3073,6 +3101,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "sr-sandbox"
+version = "1.0.0"
+source = "git+https://github.com/paritytech/substrate.git?tag=v1.0.0rc2#6506c2d1c4148e6d09bcf09783fd6d5da50010b1"
+dependencies = [
+ "parity-codec 3.5.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "rustc_version 0.2.3 (registry+https://github.com/rust-lang/crates.io-index)",
+ "sr-std 1.0.0 (git+https://github.com/paritytech/substrate.git?tag=v1.0.0rc2)",
+ "substrate-primitives 1.0.0 (git+https://github.com/paritytech/substrate.git?tag=v1.0.0rc2)",
+ "wasmi 0.4.5 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
 name = "sr-std"
 version = "1.0.0"
 source = "git+https://github.com/paritytech/substrate.git?tag=v1.0.0rc2#6506c2d1c4148e6d09bcf09783fd6d5da50010b1"
@@ -3142,6 +3182,26 @@ dependencies = [
  "srml-support 1.0.0 (git+https://github.com/paritytech/substrate.git?tag=v1.0.0rc2)",
  "srml-system 1.0.0 (git+https://github.com/paritytech/substrate.git?tag=v1.0.0rc2)",
  "substrate-inherents 1.0.0 (git+https://github.com/paritytech/substrate.git?tag=v1.0.0rc2)",
+ "substrate-primitives 1.0.0 (git+https://github.com/paritytech/substrate.git?tag=v1.0.0rc2)",
+]
+
+[[package]]
+name = "srml-contract"
+version = "1.0.0"
+source = "git+https://github.com/paritytech/substrate.git?tag=v1.0.0rc2#6506c2d1c4148e6d09bcf09783fd6d5da50010b1"
+dependencies = [
+ "parity-codec 3.5.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "parity-wasm 0.31.3 (registry+https://github.com/rust-lang/crates.io-index)",
+ "pwasm-utils 0.6.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "serde 1.0.93 (registry+https://github.com/rust-lang/crates.io-index)",
+ "serde_derive 1.0.93 (registry+https://github.com/rust-lang/crates.io-index)",
+ "sr-io 1.0.0 (git+https://github.com/paritytech/substrate.git?tag=v1.0.0rc2)",
+ "sr-primitives 1.0.0 (git+https://github.com/paritytech/substrate.git?tag=v1.0.0rc2)",
+ "sr-sandbox 1.0.0 (git+https://github.com/paritytech/substrate.git?tag=v1.0.0rc2)",
+ "sr-std 1.0.0 (git+https://github.com/paritytech/substrate.git?tag=v1.0.0rc2)",
+ "srml-support 1.0.0 (git+https://github.com/paritytech/substrate.git?tag=v1.0.0rc2)",
+ "srml-system 1.0.0 (git+https://github.com/paritytech/substrate.git?tag=v1.0.0rc2)",
+ "srml-timestamp 1.0.0 (git+https://github.com/paritytech/substrate.git?tag=v1.0.0rc2)",
  "substrate-primitives 1.0.0 (git+https://github.com/paritytech/substrate.git?tag=v1.0.0rc2)",
 ]
 
@@ -5061,6 +5121,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 "checksum proc-macro-hack-impl 0.4.1 (registry+https://github.com/rust-lang/crates.io-index)" = "2b753ad9ed99dd8efeaa7d2fb8453c8f6bc3e54b97966d35f1bc77ca6865254a"
 "checksum proc-macro2 0.4.30 (registry+https://github.com/rust-lang/crates.io-index)" = "cf3d2011ab5c909338f7887f4fc896d35932e29146c12c8d01da6b22a80ba759"
 "checksum protobuf 2.6.2 (registry+https://github.com/rust-lang/crates.io-index)" = "7e9076cae823584ab4d8fab3a111658d1232faf106611dc8378161b7d062b628"
+"checksum pwasm-utils 0.6.2 (registry+https://github.com/rust-lang/crates.io-index)" = "efb0dcbddbb600f47a7098d33762a00552c671992171637f5bb310b37fe1f0e4"
 "checksum quick-error 0.1.4 (registry+https://github.com/rust-lang/crates.io-index)" = "5fb6ccf8db7bbcb9c2eae558db5ab4f3da1c2a87e4e597ed394726bc8ea6ca1d"
 "checksum quick-error 1.2.2 (registry+https://github.com/rust-lang/crates.io-index)" = "9274b940887ce9addde99c4eee6b5c44cc494b182b97e73dc8ffdcb3397fd3f0"
 "checksum quote 0.6.12 (registry+https://github.com/rust-lang/crates.io-index)" = "faf4799c5d274f3868a4aae320a0a182cbd2baee377b378f080e16a23e9d80db"
@@ -5127,11 +5188,13 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 "checksum sr-api-macros 1.0.0 (git+https://github.com/paritytech/substrate.git?tag=v1.0.0rc2)" = "<none>"
 "checksum sr-io 1.0.0 (git+https://github.com/paritytech/substrate.git?tag=v1.0.0rc2)" = "<none>"
 "checksum sr-primitives 1.0.0 (git+https://github.com/paritytech/substrate.git?tag=v1.0.0rc2)" = "<none>"
+"checksum sr-sandbox 1.0.0 (git+https://github.com/paritytech/substrate.git?tag=v1.0.0rc2)" = "<none>"
 "checksum sr-std 1.0.0 (git+https://github.com/paritytech/substrate.git?tag=v1.0.0rc2)" = "<none>"
 "checksum sr-version 1.0.0 (git+https://github.com/paritytech/substrate.git?tag=v1.0.0rc2)" = "<none>"
 "checksum srml-aura 1.0.0 (git+https://github.com/paritytech/substrate.git?tag=v1.0.0rc2)" = "<none>"
 "checksum srml-balances 1.0.0 (git+https://github.com/paritytech/substrate.git?tag=v1.0.0rc2)" = "<none>"
 "checksum srml-consensus 1.0.0 (git+https://github.com/paritytech/substrate.git?tag=v1.0.0rc2)" = "<none>"
+"checksum srml-contract 1.0.0 (git+https://github.com/paritytech/substrate.git?tag=v1.0.0rc2)" = "<none>"
 "checksum srml-executive 1.0.0 (git+https://github.com/paritytech/substrate.git?tag=v1.0.0rc2)" = "<none>"
 "checksum srml-indices 1.0.0 (git+https://github.com/paritytech/substrate.git?tag=v1.0.0rc2)" = "<none>"
 "checksum srml-metadata 1.0.0 (git+https://github.com/paritytech/substrate.git?tag=v1.0.0rc2)" = "<none>"
