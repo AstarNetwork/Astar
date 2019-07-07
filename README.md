@@ -252,8 +252,13 @@ Finally, the exit is successful. Well done!! This is a simple demo, but it’s o
 ## Example Trait
 Please check [here](https://github.com/stakedtechnologies/Plasm/blob/master/runtime/src/lib.rs).
 
-# Maintainers
+# Please Contacts
+
+## Maintainers
 * [Public_Sate](https://twitter.com/public_sate)
+
+## Comunity
+* [Telegram](https://t.me/PlasmOfficial)
 
 * * *
 Plasm is licensed under the Apache License, Version2.0 by Staked Technologies Inc.
