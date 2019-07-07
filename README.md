@@ -262,4 +262,4 @@ Please check [here](https://github.com/stakedtechnologies/Plasm/blob/master/runt
 * [Task Ohmori](https://twitter.com/taskooh?lang=en)
 
 * * *
-Plasm is licensed under the Apache License, Version2.0 by Staked Technologies Inc.
+Plasm is licensed under the GPL, Version3.0 by Staked Technologies Inc.
