@@ -1,63 +1,11 @@
 #![cfg_attr(not(any(test, feature = "std")), no_std)]
 
-use ink_core::{
-    memory::format,
-    memory::string::String,
-    storage::{self,Vec,Flush}
-};
+use ink_core::storage;
 use ink_lang::contract;
 
-use parity_codec::{Encode,Decode};
+use parity_codec::Encode;
 
-type RangeNumber = u128;
-// TODO use ink_core::env::DefaultSrmlTypes::BlockNumber when its implemented
-type BlockNumber = u128;
-type ChallengeNumber = u128;
-
-#[derive(Clone,Encode,Decode,Default,PartialEq,Eq)]
-#[cfg_attr(feature="std",derive(Debug))]
-pub struct Range{
-    start : RangeNumber,
-    end : RangeNumber,
-}
-
-#[derive(Encode,Decode)]
-#[cfg_attr(feature="std",derive(Debug))]
-pub struct StateObject{
-    id : String,
-    predicate : AccountId,
-    data: Vec<u8>,
-}
-
-#[derive(Encode,Decode)]
-#[cfg_attr(feature="std",derive(Debug))]
-pub struct StateUpdate {
-    range : Range,
-    state_object : StateObject,
-    plasma_contract : AccountId,
-    plasma_block_number : BlockNumber,
-}
-
-#[derive(Encode,Decode)]
-#[cfg_attr(feature="std",derive(Debug))]
-pub struct Checkpoint {
-    state_update : StateUpdate,
-    sub_range : Range,
-}
-
-#[derive(Encode,Decode)]
-#[cfg_attr(feature="std",derive(Debug))]
-pub struct CheckpointStatus {
-    challengeable_until : BlockNumber,
-    outstanding_challenges : ChallengeNumber,
-}
-
-#[derive(Encode,Decode)]
-#[cfg_attr(feature="std",derive(Debug))]
-pub struct Challenge {
-    challenged_checkpoint : Checkpoint,
-    challenging_checkpoint : Checkpoint,
-}
+use primitives::*;
 
 contract! {
     #![env = ink_core::env::DefaultSrmlTypes]
@@ -86,7 +34,6 @@ contract! {
 
     struct Deposit {
         //constant values
-
         COMMITMENT_ADDRESS : storage::Value<AccountId>,
         //MUST be an adress of ERC20 token
         TOKEN_ADDRES : storage::Value<AccountId>,
