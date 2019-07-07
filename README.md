@@ -6,6 +6,9 @@ Plasm is a Substrate Runtime Module Library which allows developers to add Plasm
 
 __WARNING__: This is a proof-of-concept prototype. This implementation is NOT ready for production use. 
 
+## Comunity
+* [Telegram](https://t.me/PlasmOfficial)
+
 ## Table of Contents
 - [Introduction](https://github.com/stakedtechnologies/Plasm/tree/master#introduction)
 - [Demo](https://github.com/stakedtechnologies/Plasm/tree/master#demo)
@@ -256,9 +259,6 @@ Please check [here](https://github.com/stakedtechnologies/Plasm/blob/master/runt
 
 ## Maintainers
 * [Public_Sate](https://twitter.com/public_sate)
-
-## Comunity
-* [Telegram](https://t.me/PlasmOfficial)
 
 * * *
 Plasm is licensed under the Apache License, Version2.0 by Staked Technologies Inc.
