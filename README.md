@@ -259,6 +259,7 @@ Please check [here](https://github.com/stakedtechnologies/Plasm/blob/master/runt
 
 ## Maintainers
 * [Public_Sate](https://twitter.com/public_sate)
+* [Task Ohmori](https://twitter.com/taskooh?lang=en)
 
 * * *
 Plasm is licensed under the Apache License, Version2.0 by Staked Technologies Inc.
