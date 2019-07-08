@@ -1,7 +1,7 @@
 [package]
-name = "commitment"
+name = "balances"
 version = "0.1.0"
-authors = ["Takumi Yamashita <takumi@staked.co.jp>"]
+authors = ["Parity Technologies <admin@parity.io>"]
 edition = "2018"
 
 [dependencies]
@@ -11,14 +11,16 @@ ink_lang = { git = "https://github.com/paritytech/ink", package = "ink_lang" }
 parity-codec = { version = "3.3", default-features = false, features = ["derive"] }
 
 [lib]
-name = "commitment"
+name = "balances"
 crate-type = ["cdylib"]
 
 [features]
-default = []
+default = [
+    "ink_lang/generate-api-description"
+]
 test-env = [
-    "ink_core/test-env",
-    "ink_model/test-env",
+	"ink_core/test-env",
+	"ink_model/test-env",
     "ink_lang/test-env",
 ]
 generate-api-description = [
@@ -28,4 +30,5 @@ generate-api-description = [
 [profile.release]
 panic = "abort"
 lto = true
+# debug = true
 opt-level = "z"
