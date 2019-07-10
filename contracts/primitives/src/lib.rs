@@ -7,6 +7,8 @@ use ink_core::{
 use parity_codec::{Decode, Encode};
 
 type AccountId = <ContractEnv<DefaultSrmlTypes> as EnvTypes>::AccountId;
+type Balance = <ContractEnv<DefaultSrmlTypes> as EnvTypes>::Balance;
+
 pub type RangeNumber = u128;
 
 // TODO use ink_core::env::DefaultSrmlTypes::BlockNumber when its implemented

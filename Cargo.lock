@@ -586,6 +586,16 @@ version = "2.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
+name = "deposit"
+version = "0.1.0"
+dependencies = [
+ "ink_core 0.1.0 (git+https://github.com/paritytech/ink)",
+ "ink_lang 0.1.0 (git+https://github.com/paritytech/ink)",
+ "ink_model 0.1.0 (git+https://github.com/paritytech/ink)",
+ "parity-codec 3.5.1 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
 name = "digest"
 version = "0.6.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
