@@ -60,33 +60,35 @@ contract! {
         pub(external) fn deposit(&mut self, depositer: AccountId, amount: Balance, initial_state: StateObject){
             //MUST keep track of the total deposited assets, totalDeposited.
             //MUST transfer the deposited amount from the depositer to the deposit contract’s address.
-            let params = vec!([Box::new(depositer),Box::new(env.address()),Box::new(amount)]);
-            let sent:bool = env.call(TOKEN_ADDRES,0,0,gen_input_data("transfer_from",params));
+//            let params = vec!([Box::new(depositer),Box::new(env.address()),Box::new(amount)]);
+//            let sent:bool = env.call(TOKEN_ADDRES, 0, 0, gen_input_data("transfer_from",params));
 
             //MUST create a state update with a state object equal to the provided initialState.
-            let state_update = StateUpdate{
-                range: Range,
-                state_object: initial_state,
-                plasma_contract,
-                plasma_block_number,
-            };
+//            let state_update = StateUpdate{
+//                range: Range,
+//                state_object: initial_state,
+//                plasma_contract,
+//                plasma_block_number,
+//            };
             //MUST compute the range of the created state update as totalDeposited to totalDeposited + amount.
 
 
             //MUST update the total amount deposited after the deposit is handled.
-            *self.total_deposited = *self.total_deposited + amount;
+//			*self.total_deposited = *self.total_deposited + amount;
 
             //MUST insert the created state update into the checkpoints mapping with challengeableUntil being the current block number - 1.
 
 
 
             //MUST emit a CheckpointFinalized event for the inserted checkpoint.
-            env.emit(
-                CheckpointFinalized{
-                    checkpoint,
-                }
-            );
+//            env.emit(
+//                CheckpointFinalized{
+//                    checkpoint,
+//                }
+//            );
         }
+
+
 
     }
 }
