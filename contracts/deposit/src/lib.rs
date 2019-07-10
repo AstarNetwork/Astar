@@ -3,7 +3,7 @@
 use ink_core::{
 	memory::{string::String, vec::Vec, format},
 	storage,
-};
+
 use ink_lang::contract;
 use primitives::*;
 use ink_model::gen_input_data::gen_input_data;
@@ -35,7 +35,6 @@ contract! {
 
     struct Deposit {
         //constant values
-
         COMMITMENT_ADDRESS : storage::Value<AccountId>,
         //MUST be an adress of ERC20 token
         TOKEN_ADDRES : storage::Value<AccountId>,
