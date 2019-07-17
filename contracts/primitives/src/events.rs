@@ -1,16 +1,16 @@
-use parity_codec::{Codec, Decode, Encode};
 use ink_core::env::{ContractEnv, DefaultSrmlTypes, EnvTypes};
+use parity_codec::{Codec, Decode, Encode};
 
 use super::default::*;
 use super::traits;
 
-type BlockNumber = <ContractEnv<DefaultSrmlTypes> as EnvTypes>::Balance;
+type BlockNumber = <ContractEnv<DefaultSrmlTypes> as EnvTypes>::BlockNumber;
 type Hash = <ContractEnv<DefaultSrmlTypes> as EnvTypes>::Hash;
 
 macro_rules! event {
 	(
 		$( #[$event_meta:meta] )*
-		$event_name:ident $( <$generic:ident> )* {
+		$event_name:ident $(<$generic:ident>)* {
 			$(
 				$( #[$field_meta:meta] )*
 				$field_name:ident : $field_ty:ty ,
@@ -20,15 +20,15 @@ macro_rules! event {
 		$( #[$event_meta] )*
 		#[derive(Encode, Decode)]
 		#[cfg_attr(feature = "std", derive(Debug))]
-		pub struct $event_name $(<$generic>)* {
+		pub struct $event_name $(<$generic: traits::Member + Codec>)* {
 			$(
-			$( #[$field_meta] )*
-			$field_name : $field_ty
+				$( #[$field_meta] )*
+				$field_name : $field_ty
 			),*
 		}
 
 		impl<T: traits::Member + Codec> From<$event_name $(<$generic>)* > for private::Event<T> {
-			fn from(event: $event_name) -> Self {
+			fn from(event: $event_name $(<$generic>)*) -> Self {
 				private::Event::$event_name(event)
 			}
 		}
@@ -36,43 +36,48 @@ macro_rules! event {
 }
 
 event! {
-	BlockSubmitted {
-		number: BlockNumber,
-		header: Hash,
-	}
+    BlockSubmitted {
+        number: BlockNumber,
+        header: Hash,
+    }
 }
 
-#[derive(Encode, Decode)]
-pub struct CheckpointStarted<T: traits::Member + Codec> {
-    checkpoint: Checkpoint<T>,
-    challengeable_until: BlockNumber,
+event! {
+    CheckpointStarted<T> {
+        checkpoint: Checkpoint<T>,
+        challengeable_until: BlockNumber,
+    }
 }
 
-#[derive(Encode, Decode)]
-pub struct CheckpointChallenged<T: traits::Member + Codec> {
-    challenge: Challenge<T>,
+event! {
+    CheckpointChallenged<T> {
+        challenge: Challenge<T>,
+    }
 }
 
-#[derive(Encode, Decode)]
-pub struct CheckpointFinalized {
-    checkpoint: Hash,
+event! {
+    CheckpointFinalized {
+        checkpoint: Hash,
+    }
 }
 
-#[derive(Encode, Decode)]
-pub struct ExitStarted {
-    exit: Hash,
-    redeemable_after: BlockNumber,
+event! {
+    ExitStarted {
+        exit: Hash,
+        redeemable_after: BlockNumber,
+    }
 }
 
-#[derive(Encode, Decode)]
-pub struct ExitFinalized<T: traits::Member + Codec> {
-    exit: Checkpoint<T>,
+event! {
+    ExitFinalized<T> {
+        exit: Checkpoint<T>,
+    }
 }
 
 mod private {
-	use super::*;
-	#[doc(hidden)]
-	#[derive(Encode, Decode)]
+    use super::*;
+    #[doc(hidden)]
+    #[derive(Encode, Decode)]
     pub enum Event<T: traits::Member + Codec> {
         BlockSubmitted(BlockSubmitted),
         CheckpointStarted(CheckpointStarted<T>),
@@ -90,7 +95,7 @@ pub trait EmitEventExt: private::Sealed {
     /// Emits the given event.
     fn emit<E, T>(&self, event: E)
     where
-		T: traits::Member + Codec,
+        T: traits::Member + Codec,
         E: Into<private::Event<T>>,
     {
         use parity_codec::Encode as _;

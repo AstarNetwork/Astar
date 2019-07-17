@@ -4,7 +4,6 @@ use ink_core::env::{ContractEnv, DefaultSrmlTypes, EnvTypes};
 use parity_codec::{Codec, Decode, Encode};
 
 type AccountId = <ContractEnv<DefaultSrmlTypes> as EnvTypes>::AccountId;
-type Balance = <ContractEnv<DefaultSrmlTypes> as EnvTypes>::Balance;
 
 pub mod default;
 pub mod events;
