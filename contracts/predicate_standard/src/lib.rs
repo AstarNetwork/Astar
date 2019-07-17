@@ -1,7 +1,7 @@
 #![cfg_attr(not(any(test, feature = "std")), no_std)]
 
 use ink_core::{
-	memory::{string::String, vec::Vec, format},
+	memory::{format, string::String, vec::Vec},
 	storage,
 };
 use ink_lang::contract;
@@ -27,32 +27,37 @@ contract! {
     impl PredicateStandard {
         /// deprecation method called by depositContract.deprecateExit.
         pub(external) fn deprecation(&self, check_point: Checkpoint) {
-			unimplemented!();
+            unimplemented!();
         }
 
-		pub (external) fn exit_initiation(&self, exit: Checkpoint) {
-			unimplemented!();
-		}
+        pub (external) fn exit_initiation(&self, exit: Checkpoint) {
+            unimplemented!();
+        }
 
-		pub (external) fn exit_finalization(&self, exit: Checkpoint) {
-			unimplemented!();
-		}
+        pub (external) fn exit_finalization(&self, exit: Checkpoint) {
+            unimplemented!();
+        }
 
-		pub (external) fn verify_transaction(&self,
-			pre_state: StateUpdate,
-			transaction: Transaction,
-			witness: Vec<u8>,
-			post_state: StateUpdate) {
-			unimplemented!();
-		}
+        pub (external) fn verify_transaction(&self,
+            pre_state: StateUpdate,
+            transaction: Transaction,
+            witness: Vec<u8>,
+            post_state: StateUpdate) -> bool {
+            // Predicates MUST define a custom _witness struct for their particular type of state.
 
-		pub (external) fn prove_exit_deprecation(&self,
-			deprecated_exit: Checkpoint,
-			transaction: Transaction,
-			witness: Vec<u8>,
-			post_state: StateUpdate) {
-			unimplemented!();
-		}
+            // Predicates MUST disallow state transitions which pass verification without some interested party’s consent, e.g. the owner’s signature
+        }
+
+        pub (external) fn prove_exit_deprecation(&self,
+            deprecated_exit: Checkpoint,
+            transaction: Transaction,
+            witness: Vec<u8>,
+            post_state: StateUpdate) -> bool {
+            unimplemented!();
+            // MUST check that the transaction is valid with a call to verifyTransaction(_deprecatedExit.stateUpdate, _transaction, _witness, _postState.
+            // MUST check that the _postState.range intersects the _deprecatedExit.subrange
+            // MUST call deprecateExit(_deprecatedExit) on the _deprecatedExit.stateUpdate.state.predicateAddress.
+        }
 
         /// Returns the current state.
         pub(external) fn get(&self) -> bool {

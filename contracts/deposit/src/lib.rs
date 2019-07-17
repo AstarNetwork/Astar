@@ -6,8 +6,19 @@ use ink_core::{
 };
 
 use ink_lang::contract;
-use ink_model::gen_input_data::gen_input_data;
-use primitives::*;
+use primitives::default::{self, RangeNumber, Range};
+use parity_codec::{Encode, Decode};
+
+pub type StateObject = default::StateObject<AccountId>;
+pub type StateUpdate = default::StateUpdate<AccountId>;
+pub type Checkpoint = default::Checkpoint<AccountId>;
+pub type Challenge = defualt::Challenge<AccountId>;
+#[derive(Encode, Decode)]
+#[cfg_attr(feature = "std", derive(Debug))]
+pub struct CheckpointStatus {
+	challengeable_until: BlockNumber,
+	outstanding_challenges: BlockNumber,
+}
 
 contract! {
     #![env = ink_core::env::DefaultSrmlTypes]
