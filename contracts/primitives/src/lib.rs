@@ -16,14 +16,14 @@ pub struct Range<I: traits::SimpleArithmetic + traits::Member + Codec> {
     end: I,
 }
 
-#[derive(Encode, Decode)]
+#[derive(Clone, Encode, Decode, PartialEq, Eq)]
 #[cfg_attr(feature = "std", derive(Debug))]
 pub struct StateObject<T: traits::Member + Codec> {
     predicate: AccountId,
     data: T,
 }
 
-#[derive(Encode, Decode)]
+#[derive(Clone, Encode, Decode, PartialEq, Eq)]
 #[cfg_attr(feature = "std", derive(Debug))]
 pub struct StateUpdate<
     T: traits::Member + Codec,
@@ -34,7 +34,7 @@ pub struct StateUpdate<
     plasma_block_number: I,
 }
 
-#[derive(Encode, Decode)]
+#[derive(Clone, Encode, Decode, PartialEq, Eq)]
 #[cfg_attr(feature = "std", derive(Debug))]
 pub struct Checkpoint<
     T: traits::Member + Codec,
@@ -44,7 +44,7 @@ pub struct Checkpoint<
     sub_range: Range<I>,
 }
 
-#[derive(Encode, Decode)]
+#[derive(Clone, Encode, Decode, PartialEq, Eq)]
 #[cfg_attr(feature = "std", derive(Debug))]
 pub struct Transaction<
     U: traits::Member + Codec,
@@ -55,7 +55,7 @@ pub struct Transaction<
     body: U,
 }
 
-#[derive(Encode, Decode)]
+#[derive(Clone, Encode, Decode, PartialEq, Eq)]
 #[cfg_attr(feature = "std", derive(Debug))]
 pub struct Challenge<
     T: traits::Member + Codec,

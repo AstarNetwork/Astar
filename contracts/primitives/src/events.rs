@@ -36,6 +36,14 @@ macro_rules! event {
 }
 
 event! {
+    /// Event deposited when a submit merkle root to parent chain contract(this contract) from child chain.
+    ///
+    /// ```
+    /// event BlockSubmitted(
+    ///		uint256 _number,
+    ///		bytes _header
+    /// );
+    /// ```
     BlockSubmitted {
         number: BlockNumber,
         header: Hash,
