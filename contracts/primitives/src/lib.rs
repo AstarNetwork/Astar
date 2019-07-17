@@ -7,6 +7,7 @@ type AccountId = <ContractEnv<DefaultSrmlTypes> as EnvTypes>::AccountId;
 type Balance = <ContractEnv<DefaultSrmlTypes> as EnvTypes>::Balance;
 
 pub mod default;
+pub mod events;
 pub mod traits;
 
 #[derive(Clone, Encode, Decode, Default, PartialEq, Eq)]
@@ -25,24 +26,42 @@ pub struct StateObject<T: traits::Member + Codec> {
 
 #[derive(Encode, Decode)]
 #[cfg_attr(feature = "std", derive(Debug))]
-pub struct StateUpdate<T: traits::Member + Codec, I: traits::SimpleArithmetic + traits::Member + Codec> {
+pub struct StateUpdate<
+    T: traits::Member + Codec,
+    I: traits::SimpleArithmetic + traits::Member + Codec,
+> {
     range: Range<I>,
     state_object: StateObject<T>,
-    plasma_contract: AccountId,
     plasma_block_number: I,
 }
 
 #[derive(Encode, Decode)]
 #[cfg_attr(feature = "std", derive(Debug))]
-pub struct Checkpoint<T: traits::Member + Codec, I: traits::SimpleArithmetic + traits::Member + Codec> {
+pub struct Checkpoint<
+    T: traits::Member + Codec,
+    I: traits::SimpleArithmetic + traits::Member + Codec,
+> {
     state_update: StateUpdate<T, I>,
     sub_range: Range<I>,
 }
 
 #[derive(Encode, Decode)]
 #[cfg_attr(feature = "std", derive(Debug))]
-pub struct Transaction<T: traits::Member + Codec, I: traits::SimpleArithmetic + traits::Member + Codec> {
+pub struct Transaction<
+    U: traits::Member + Codec,
+    I: traits::SimpleArithmetic + traits::Member + Codec,
+> {
     deposit_contract: AccountId,
     range: Range<I>,
-    body: T,
+    body: U,
+}
+
+#[derive(Encode, Decode)]
+#[cfg_attr(feature = "std", derive(Debug))]
+pub struct Challenge<
+    T: traits::Member + Codec,
+    I: traits::SimpleArithmetic + traits::Member + Codec,
+> {
+    challenged_checkpoint: Checkpoint<T, I>,
+    challenging_checkpoint: Checkpoint<T, I>,
 }

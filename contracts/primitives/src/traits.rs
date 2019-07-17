@@ -1,10 +1,9 @@
-pub use num_traits::{
-	Zero, One, Bounded, CheckedAdd, CheckedSub, CheckedMul, CheckedDiv,
-	CheckedShl, CheckedShr, Saturating
-};
 use core::ops::{
-	Add, Sub, Mul, Div, Rem, AddAssign, SubAssign, MulAssign, DivAssign,
-	RemAssign, Shl, Shr
+    Add, AddAssign, Div, DivAssign, Mul, MulAssign, Rem, RemAssign, Shl, Shr, Sub, SubAssign,
+};
+pub use num_traits::{
+    Bounded, CheckedAdd, CheckedDiv, CheckedMul, CheckedShl, CheckedShr, CheckedSub, One,
+    Saturating, Zero,
 };
 
 /// Simple trait similar to `Into`, except that it can be used to convert numerics between each
@@ -35,7 +34,7 @@ macro_rules! impl_numerics {
 impl_numerics!(u8, u16, u32, u64, u128, usize, i8, i16, i32, i64, i128, isize);
 
 /// A type that can be used in runtime structures.
-pub trait Member: Send + Sync + Sized  + Eq + PartialEq + Clone + 'static {}
+pub trait Member: Send + Sync + Sized + Eq + PartialEq + Clone + 'static {}
 impl<T: Send + Sync + Sized + Eq + PartialEq + Clone + 'static> Member for T {}
 
 /// A meta trait for arithmetic.
@@ -92,7 +91,7 @@ impl<
             + Saturating
             + PartialOrd<Self>
             + Ord
-            + Bounded
+            + Bounded,
     > SimpleArithmetic for T
 {
 }
