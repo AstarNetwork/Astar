@@ -11,10 +11,6 @@ ink_lang = { git = "https://github.com/paritytech/ink", package = "ink_lang" }
 parity-codec = { version = "3.3", default-features = false, features = ["derive"] }
 primitives = { path = "../primitives", default-features = false }
 
-[lib]
-name = "commitment"
-crate-type = ["cdylib"]
-
 [features]
 default = []
 test-env = [

@@ -1,12 +1,10 @@
 use super::*;
-use core::marker::PhantomData;
 use ink_core::{memory::format, storage};
 use primitives::default::*;
 
 state! {
     struct Deposit {
-        //constant values
-        COMMITMENT_ADDRESS: storage::Value<AccountId>,
+    	COMMITMENT: commitment::default::Commitment,
 
         //MUST be an address of ERC20 token
         TOKEN_ADDRES: storage::Value<AccountId>,
@@ -31,9 +29,14 @@ where
     fn deploy(
         &mut self,
         env: &mut EnvHandler<ink_core::env::ContractEnv<DefaultSrmlTypes>>,
-        init_ac: AccountId,
+        token_address: AccountId,
+        chalenge_period: BlockNumber,
+        exit_period: BlockNumber,
     ) {
-        self.TOKEN_ADDRES.set(init_ac);
+        //MUST be an address of ERC20 token
+        self.TOKEN_ADDRES.set(token_address);
+        self.CHALLENGE_PERIOD.set(chalenge_period);
+        self.EXIT_PERIOD.set(exit_period);
     }
 
     fn deposit(

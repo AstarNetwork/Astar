@@ -10,7 +10,9 @@ where
     fn deploy(
         &mut self,
         env: &mut EnvHandler<ink_core::env::ContractEnv<DefaultSrmlTypes>>,
-        init_ac: AccountId,
+        token_address: AccountId,
+        chalenge_period: BlockNumber,
+        exit_period: BlockNumber,
     );
 
     /// Allows a user to submit a deposit to the contract.
