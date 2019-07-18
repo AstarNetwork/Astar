@@ -1,10 +1,11 @@
 use super::*;
+use ink_model::ContractState;
 use primitives::*;
 
-pub trait Deposit<T, I>
+pub trait Deposit<I, C>: ContractState
 where
-    T: Member + Codec,
     I: Member + SimpleArithmetic + Codec,
+    C: commitment::traits::Commitment,
 {
     /// Initilizes our state to `current_block is 0` upon deploying our smart contract.
     fn deploy(
@@ -44,7 +45,7 @@ where
     ////                    checkpoint,
     ////                }
     ////            );
-    fn deposit(
+    fn deposit<T: Member + Codec>(
         &mut self,
         env: &mut EnvHandler<ink_core::env::ContractEnv<DefaultSrmlTypes>>,
         depositer: AccountId,
@@ -59,11 +60,11 @@ where
     // MUST verify that an indentical checkpoint has not already been started.
     // MUST add the new pending checkpoint to checkpoints with challengeableUntil equalling the current ethereum block.number + CHALLENGE_PERIOD .
     // MUST emit a CheckpointStarted event.
-    fn start_checkpoint(
+    fn start_checkpoint<T: Member + Codec, P: Member + commitment::traits::Verify + Codec>(
         &mut self,
         env: &mut EnvHandler<ink_core::env::ContractEnv<DefaultSrmlTypes>>,
         checkpoint: Checkpoint<T, I>,
-        inclusion_proof: Vec<u8>,
+        inclusion_proof: P,
         deposited_range_id: I,
     );
 
@@ -73,7 +74,7 @@ where
     // MUST ensure that the newerCheckpoint has no challenges.
     // MUST ensure that the newerCheckpoint is no longer challengeable.
     // MUST delete the entries in exitRedeemableAfter.
-    fn delete_exit_outdated(
+    fn delete_exit_outdated<T: Member + Codec>(
         &mut self,
         env: &mut EnvHandler<ink_core::env::ContractEnv<DefaultSrmlTypes>>,
         older_exit: Checkpoint<T, I>,
@@ -90,7 +91,7 @@ where
     // MUST ensure that the current ethereum block is not greater than the challengeableUntil block for the checkpoint being challenged.
     // MUST increment the outstandingChallenges for the challenged checkpoint.
     // MUST set the challenges mapping for the challengeId to true.
-    fn challenge_checkpoint(
+    fn challenge_checkpoint<T: Member + Codec>(
         &mut self,
         env: &mut EnvHandler<ink_core::env::ContractEnv<DefaultSrmlTypes>>,
         challenge: Challenge<T, I>,
@@ -101,7 +102,7 @@ where
     // MUST check that the challenging exit has since been removed.
     // MUST remove the challenge if above conditions are met.
     // MUST decrement the challenged checkpoint’s outstandingChallenges if the above conditions are met.
-    fn remove_challenge(
+    fn remove_challenge<T: Member + Codec>(
         &mut self,
         env: &mut EnvHandler<ink_core::env::ContractEnv<DefaultSrmlTypes>>,
         challenge: Challenge<T, I>,
@@ -113,7 +114,7 @@ where
     // MUST ensure an exit on the checkpoint is not already underway.
     // MUST set the exit’s redeemableAfter status to the current Ethereum block.number + LOCKUP_PERIOD.
     // MUST emit an exitStarted event.
-    fn start_exit(
+    fn start_exit<T: Member + Codec>(
         &mut self,
         env: &mut EnvHandler<ink_core::env::ContractEnv<DefaultSrmlTypes>>,
         checkpoint: Checkpoint<T, I>,
@@ -122,7 +123,7 @@ where
     /// Allows the predicate address to cancel an exit which it determines is deprecated.
     // MUST ensure the msg.sender is the _checkpoint.stateUpdate.predicateAddress to ensure the deprecation is authenticated.
     // MUST delete the exit from exitRedeemableAfter at the checkpointId .
-    fn deprecate_exit(
+    fn deprecate_exit<T: Member + Codec>(
         &mut self,
         env: &mut EnvHandler<ink_core::env::ContractEnv<DefaultSrmlTypes>>,
         checkpoint: Checkpoint<T, I>,
@@ -139,10 +140,12 @@ where
     // MUST remove the exited range by updating the depositedRanges mapping.
     // MUST delete the checkpoint.
     // MUST emit an exitFinalized event.
-    fn finalize_exit(
+    fn finalize_exit<T: Member + Codec>(
         &mut self,
         env: &mut EnvHandler<ink_core::env::ContractEnv<DefaultSrmlTypes>>,
         exit: Checkpoint<T, I>,
         deposited_range_id: I,
     );
+
+    fn commitment(&self) -> &C;
 }

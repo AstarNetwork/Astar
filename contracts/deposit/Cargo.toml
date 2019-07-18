@@ -12,10 +12,6 @@ parity-codec = { version = "3.3", default-features = false, features = ["derive"
 primitives = { path = "../primitives", default-features = false }
 commitment = { path = "../commitment", default-features = false }
 
-[lib]
-name = "deposit"
-crate-type = ["cdylib"]
-
 [features]
 default = []
 test-env = [

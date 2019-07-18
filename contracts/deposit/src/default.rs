@@ -2,9 +2,9 @@ use super::*;
 use ink_core::{memory::format, storage};
 use primitives::default::*;
 
-state! {
+ink_model::state! {
     struct Deposit {
-    	COMMITMENT: commitment::default::Commitment,
+        COMMITMENT: commitment::default::Commitment,
 
         //MUST be an address of ERC20 token
         TOKEN_ADDRES: storage::Value<AccountId>,
@@ -17,15 +17,10 @@ state! {
         deposited_ranges: storage::HashMap<RangeNumber, Range>,
         exit_redeemable_after: storage::HashMap<Hash, BlockNumber>,
         challenges: storage::HashMap<Hash, bool>,
-
-        object: storage::Value<T>,
     }
 }
 
-impl<T> traits::Deposit<T, RangeNumber> for Deposit<T>
-where
-    T: Member + Codec,
-{
+impl traits::Deposit<RangeNumber, commitment::default::Commitment> for Deposit {
     fn deploy(
         &mut self,
         env: &mut EnvHandler<ink_core::env::ContractEnv<DefaultSrmlTypes>>,
@@ -39,7 +34,7 @@ where
         self.EXIT_PERIOD.set(exit_period);
     }
 
-    fn deposit(
+    fn deposit<T: Member + Codec>(
         &mut self,
         env: &mut EnvHandler<ink_core::env::ContractEnv<DefaultSrmlTypes>>,
         depositer: AccountId,
@@ -55,11 +50,11 @@ where
     // MUST verify that an indentical checkpoint has not already been started.
     // MUST add the new pending checkpoint to checkpoints with challengeableUntil equalling the current ethereum block.number + CHALLENGE_PERIOD .
     // MUST emit a CheckpointStarted event.
-    fn start_checkpoint(
+    fn start_checkpoint<T: Member + Codec, P: Member + Codec + commitment::traits::Verify>(
         &mut self,
         env: &mut EnvHandler<ink_core::env::ContractEnv<DefaultSrmlTypes>>,
         checkpoint: Checkpoint<T>,
-        inclusion_proof: Vec<u8>,
+        inclusion_proof: P,
         deposited_range_id: RangeNumber,
     ) {
     }
@@ -70,7 +65,7 @@ where
     // MUST ensure that the newerCheckpoint has no challenges.
     // MUST ensure that the newerCheckpoint is no longer challengeable.
     // MUST delete the entries in exitRedeemableAfter.
-    fn delete_exit_outdated(
+    fn delete_exit_outdated<T: Member + Codec>(
         &mut self,
         env: &mut EnvHandler<ink_core::env::ContractEnv<DefaultSrmlTypes>>,
         older_exit: Checkpoint<T>,
@@ -88,7 +83,7 @@ where
     // MUST ensure that the current ethereum block is not greater than the challengeableUntil block for the checkpoint being challenged.
     // MUST increment the outstandingChallenges for the challenged checkpoint.
     // MUST set the challenges mapping for the challengeId to true.
-    fn challenge_checkpoint(
+    fn challenge_checkpoint<T: Member + Codec>(
         &mut self,
         env: &mut EnvHandler<ink_core::env::ContractEnv<DefaultSrmlTypes>>,
         challenge: Challenge<T>,
@@ -100,7 +95,7 @@ where
     // MUST check that the challenging exit has since been removed.
     // MUST remove the challenge if above conditions are met.
     // MUST decrement the challenged checkpoint’s outstandingChallenges if the above conditions are met.
-    fn remove_challenge(
+    fn remove_challenge<T: Member + Codec>(
         &mut self,
         env: &mut EnvHandler<ink_core::env::ContractEnv<DefaultSrmlTypes>>,
         challenge: Challenge<T>,
@@ -113,7 +108,7 @@ where
     // MUST ensure an exit on the checkpoint is not already underway.
     // MUST set the exit’s redeemableAfter status to the current Ethereum block.number + LOCKUP_PERIOD.
     // MUST emit an exitStarted event.
-    fn start_exit(
+    fn start_exit<T: Member + Codec>(
         &mut self,
         env: &mut EnvHandler<ink_core::env::ContractEnv<DefaultSrmlTypes>>,
         checkpoint: Checkpoint<T>,
@@ -123,7 +118,7 @@ where
     /// Allows the predicate address to cancel an exit which it determines is deprecated.
     // MUST ensure the msg.sender is the _checkpoint.stateUpdate.predicateAddress to ensure the deprecation is authenticated.
     // MUST delete the exit from exitRedeemableAfter at the checkpointId .
-    fn deprecate_exit(
+    fn deprecate_exit<T: Member + Codec>(
         &mut self,
         env: &mut EnvHandler<ink_core::env::ContractEnv<DefaultSrmlTypes>>,
         checkpoint: Checkpoint<T>,
@@ -141,11 +136,15 @@ where
     // MUST remove the exited range by updating the depositedRanges mapping.
     // MUST delete the checkpoint.
     // MUST emit an exitFinalized event.
-    fn finalize_exit(
+    fn finalize_exit<T: Member + Codec>(
         &mut self,
         env: &mut EnvHandler<ink_core::env::ContractEnv<DefaultSrmlTypes>>,
         exit: Checkpoint<T>,
         deposited_range_id: RangeNumber,
     ) {
+    }
+
+    fn commitment(&self) -> &commitment::default::Commitment {
+        &self.COMMITMENT
     }
 }

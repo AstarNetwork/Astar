@@ -39,7 +39,7 @@ impl traits::Verify for Vec<Hash> {
     }
 }
 
-impl traits::Commitment<Vec<Hash>, RangeNumber> for Commitment {
+impl traits::Commitment for Commitment {
     /// Initilizes our state to `current_block is 0` upon deploying our smart contract.
     fn deploy(&mut self, env: &mut EnvHandler<ink_core::env::ContractEnv<DefaultSrmlTypes>>) {
         self.current_block.set(0)
@@ -94,23 +94,33 @@ impl traits::Commitment<Vec<Hash>, RangeNumber> for Commitment {
 
     /// Inclusion Proof.
     /// This function verifies state_update in PlasmaChain with inclusion_proof.
-    fn verify_state_update_inclusion<T: Member + Codec>(
+    fn verify_state_update_inclusion<T, P, I>(
         &self,
         env: &mut EnvHandler<ink_core::env::ContractEnv<DefaultSrmlTypes>>,
-        state_update: StateUpdate<T>,
-        inclusion_proof: Vec<Hash>,
-    ) -> bool {
+        state_update: primitives::StateUpdate<T, I>,
+        inclusion_proof: P,
+    ) -> bool
+    where
+        T: Member + Codec,
+        P: Member + traits::Verify + Codec,
+        I: Member + SimpleArithmetic + Codec,
+    {
         true
     }
 
     /// Inclusion Proof upper layer.
     /// verifyAssetStateRootInclusion
-    fn verify_asset_state_root_inclusion<T: Member + Codec>(
+    fn verify_asset_state_root_inclusion<T, P, I>(
         &self,
         env: &mut EnvHandler<ink_core::env::ContractEnv<DefaultSrmlTypes>>,
-        asset_state: StateUpdate<T>,
-        inclusion_proof: Vec<Hash>,
-    ) -> bool {
+        asset_state: primitives::StateUpdate<T, I>,
+        inclusion_proof: P,
+    ) -> bool
+    where
+        T: Member + Codec,
+        P: Member + traits::Verify + Codec,
+        I: Member + SimpleArithmetic + Codec,
+    {
         true
     }
 }
