@@ -4,7 +4,10 @@ use ink_core::{
     storage,
 };
 use ink_model::{state, EnvHandler};
-use primitives::{default::*, traits::{Member, SimpleArithmetic}};
+use primitives::{
+    default::*,
+    traits::{Member, SimpleArithmetic},
+};
 
 state! {
     /// Each plasma chain MUST have at least one commitment contract.
@@ -30,7 +33,7 @@ impl traits::Verify for Vec<Hash> {
     fn verify<T, I>(&self, state_update: primitives::StateUpdate<T, I>) -> bool
     where
         T: Member + Codec,
-		I: Member + SimpleArithmetic + Codec,
+        I: Member + SimpleArithmetic + Codec,
     {
         true
     }
@@ -83,10 +86,10 @@ impl traits::Commitment<Vec<Hash>, RangeNumber> for Commitment {
     ) {
         *self.current_block += 1;
         self.blocks.insert(*self.current_block, header.clone());
-//        env.emit(BlockSubmitted {
-//            number: *self.current_block,
-//            header: header,
-//        });
+        //        env.emit(BlockSubmitted {
+        //            number: *self.current_block,
+        //            header: header,
+        //        });
     }
 
     /// Inclusion Proof.
