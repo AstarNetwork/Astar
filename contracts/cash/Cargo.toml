@@ -1,5 +1,5 @@
 [package]
-name = "ownership"
+name = "cash"
 version = "0.1.0"
 authors = ["[your_name] <[your_email]>"]
 edition = "2018"
@@ -15,7 +15,7 @@ deposit = { path = "../deposit", default-features = false }
 predicate = { path = "../predicate", deafult-features = false }
 
 [lib]
-name = "ownership"
+name = "cash"
 crate-type = ["cdylib"]
 
 [features]

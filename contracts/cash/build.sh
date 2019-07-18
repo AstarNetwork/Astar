@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-PROJNAME=ownership
+PROJNAME=cash
 
 # cargo clean
 # rm Cargo.lock
