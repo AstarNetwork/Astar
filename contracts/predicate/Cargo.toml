@@ -1,7 +1,7 @@
 [package]
-name = "predicate-standard"
+name = "predicate"
 version = "0.1.0"
-authors = ["Takumi Yamashita <takumi@staked.co.jp>"]
+authors = ["Takumi Yamashita<takumi@staked.co.jp>, Task Ohmori <task@staked.co.jp>"]
 edition = "2018"
 
 [dependencies]
@@ -10,10 +10,8 @@ ink_model = { git = "https://github.com/paritytech/ink", package = "ink_model" }
 ink_lang = { git = "https://github.com/paritytech/ink", package = "ink_lang" }
 parity-codec = { version = "3.3", default-features = false, features = ["derive"] }
 primitives = { path = "../primitives", default-features = false }
-
-[lib]
-name = "predicate_standard"
-crate-type = ["cdylib"]
+commitment = { path = "../commitment", default-features = false }
+deposit = { path = "../deposit", default-features = false }
 
 [features]
 default = []

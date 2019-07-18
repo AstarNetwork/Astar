@@ -3,7 +3,7 @@ use ink_core::{memory::format, storage};
 use primitives::default::*;
 
 ink_model::state! {
-    struct Deposit {
+    pub struct Deposit {
         COMMITMENT: commitment::default::Commitment,
 
         //MUST be an address of ERC20 token
