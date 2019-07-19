@@ -9,16 +9,12 @@ ink_core = { git = "https://github.com/paritytech/ink", package = "ink_core" }
 ink_model = { git = "https://github.com/paritytech/ink", package = "ink_model" }
 ink_lang = { git = "https://github.com/paritytech/ink", package = "ink_lang" }
 parity-codec = { version = "3.3", default-features = false, features = ["derive"] }
-
-[lib]
-name = "commitment"
-crate-type = ["cdylib"]
+primitives = { path = "../primitives", default-features = false }
 
 [features]
 default = []
 test-env = [
     "ink_core/test-env",
-    "ink_model/test-env",
     "ink_lang/test-env",
 ]
 generate-api-description = [

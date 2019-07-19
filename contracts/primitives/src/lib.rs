@@ -1,70 +1,66 @@
 #![cfg_attr(not(any(test, feature = "std")), no_std)]
 
-use ink_core::{
-    env::{ContractEnv, DefaultSrmlTypes, EnvTypes},
-    memory::{string::String, vec::Vec},
-};
-use parity_codec::{Decode, Encode};
+use ink_core::env::{ContractEnv, DefaultSrmlTypes, EnvTypes};
+use parity_codec::{Codec, Decode, Encode};
 
 type AccountId = <ContractEnv<DefaultSrmlTypes> as EnvTypes>::AccountId;
-type Balance = <ContractEnv<DefaultSrmlTypes> as EnvTypes>::Balance;
 
-pub type RangeNumber = u128;
-
-// TODO use ink_core::env::DefaultSrmlTypes::BlockNumber when its implemented
-pub type BlockNumber = u128;
-pub type ChallengeNumber = u128;
+pub mod default;
+pub mod events;
+pub mod traits;
 
 #[derive(Clone, Encode, Decode, Default, PartialEq, Eq)]
 #[cfg_attr(feature = "std", derive(Debug))]
-pub struct Range {
-    start: RangeNumber,
-    end: RangeNumber,
+pub struct Range<I: traits::SimpleArithmetic + traits::Member + Codec> {
+    start: I,
+    end: I,
 }
 
-#[derive(Encode, Decode)]
+#[derive(Clone, Encode, Decode, PartialEq, Eq)]
 #[cfg_attr(feature = "std", derive(Debug))]
-pub struct StateObject {
-    id: String,
+pub struct StateObject<T: traits::Member + Codec> {
     predicate: AccountId,
-    data: Vec<u8>,
+    data: T,
 }
 
-#[derive(Encode, Decode)]
+#[derive(Clone, Encode, Decode, PartialEq, Eq)]
 #[cfg_attr(feature = "std", derive(Debug))]
-pub struct StateUpdate {
-    range: Range,
-    state_object: StateObject,
-    plasma_contract: AccountId,
-    plasma_block_number: BlockNumber,
+pub struct StateUpdate<
+    T: traits::Member + Codec,
+    I: traits::SimpleArithmetic + traits::Member + Codec,
+> {
+    range: Range<I>,
+    state_object: StateObject<T>,
+    plasma_block_number: I,
 }
 
-#[derive(Encode, Decode)]
+#[derive(Clone, Encode, Decode, PartialEq, Eq)]
 #[cfg_attr(feature = "std", derive(Debug))]
-pub struct Checkpoint {
-    state_update: StateUpdate,
-    sub_range: Range,
+pub struct Checkpoint<
+    T: traits::Member + Codec,
+    I: traits::SimpleArithmetic + traits::Member + Codec,
+> {
+    state_update: StateUpdate<T, I>,
+    sub_range: Range<I>,
 }
 
-#[derive(Encode, Decode)]
+#[derive(Clone, Encode, Decode, PartialEq, Eq)]
 #[cfg_attr(feature = "std", derive(Debug))]
-pub struct CheckpointStatus {
-    challengeable_until: BlockNumber,
-    outstanding_challenges: ChallengeNumber,
+pub struct Transaction<
+    U: traits::Member + Codec,
+    I: traits::SimpleArithmetic + traits::Member + Codec,
+> {
+    deposit_contract: AccountId,
+    range: Range<I>,
+    body: U,
 }
 
-#[derive(Encode, Decode)]
+#[derive(Clone, Encode, Decode, PartialEq, Eq)]
 #[cfg_attr(feature = "std", derive(Debug))]
-pub struct Challenge {
-    challenged_checkpoint: Checkpoint,
-    challenging_checkpoint: Checkpoint,
-}
-
-#[derive(Encode, Decode)]
-#[cfg_attr(feature = "std", derive(Debug))]
-pub struct Transaction {
-	plasma_contract: AccountId,
-	range: Range,
-	method_id: Vec<u8>,
-	parameters: Vec<u8>,
+pub struct Challenge<
+    T: traits::Member + Codec,
+    I: traits::SimpleArithmetic + traits::Member + Codec,
+> {
+    challenged_checkpoint: Checkpoint<T, I>,
+    challenging_checkpoint: Checkpoint<T, I>,
 }

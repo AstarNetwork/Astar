@@ -26,11 +26,14 @@ case $TARGET in
 		;;
 
 	"wasm")
+
 		# Install prerequisites and build all wasm projects
 		./init.sh
+		curl https://raw.githubusercontent.com/substrate-developer-hub/substrate-contracts-workshop/master/scripts/install-wasm-tools.sh -sSf |bash -s
+
 		./build.sh
 
 		cd child && ./build.sh
-		cd ../contracts/commitment && make test
+		cd ../contracts/cash && ./build.sh
 		;;
 esac

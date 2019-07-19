@@ -1,5 +1,5 @@
 [package]
-name = "balances"
+name = "cash"
 version = "0.1.0"
 authors = ["Takumi Yamashita <takumi@staked.co.jp>"]
 edition = "2018"
@@ -9,18 +9,20 @@ ink_core = { git = "https://github.com/paritytech/ink", package = "ink_core" }
 ink_model = { git = "https://github.com/paritytech/ink", package = "ink_model" }
 ink_lang = { git = "https://github.com/paritytech/ink", package = "ink_lang" }
 parity-codec = { version = "3.3", default-features = false, features = ["derive"] }
+primitives = { path = "../primitives", default-features = false }
+commitment = { path = "../commitment", default-features = false }
+deposit = { path = "../deposit", default-features = false }
+predicate = { path = "../predicate", deafult-features = false }
 
 [lib]
-name = "balances"
+name = "cash"
 crate-type = ["cdylib"]
 
 [features]
-default = [
-    "ink_lang/generate-api-description"
-]
+default = []
 test-env = [
-	"ink_core/test-env",
-	"ink_model/test-env",
+    "ink_core/test-env",
+    "ink_model/test-env",
     "ink_lang/test-env",
 ]
 generate-api-description = [
@@ -30,5 +32,4 @@ generate-api-description = [
 [profile.release]
 panic = "abort"
 lto = true
-# debug = true
 opt-level = "z"
