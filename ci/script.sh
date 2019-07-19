@@ -31,6 +31,6 @@ case $TARGET in
 		./build.sh
 
 		cd child && ./build.sh
-		cd ../contracts/ownership && ./build.sh
+		cd contracts/ownership && ./build.sh
 		;;
 esac
