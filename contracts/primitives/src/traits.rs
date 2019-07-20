@@ -42,7 +42,8 @@ pub trait SimpleArithmetic:
     Zero
     + One
     + As<u64>
-    + Add<Self, Output = Self>
+	+ As<u128>
+	+ Add<Self, Output = Self>
     + AddAssign<Self>
     + Sub<Self, Output = Self>
     + SubAssign<Self>
@@ -70,6 +71,7 @@ impl<
         T: Zero
             + One
             + As<u64>
+			+ As<u128>
             + Add<Self, Output = Self>
             + AddAssign<Self>
             + Sub<Self, Output = Self>

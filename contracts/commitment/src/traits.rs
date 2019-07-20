@@ -9,7 +9,8 @@ use primitives::{
 /// Means of signature verification.
 pub trait Verify {
     /// Verify a state_update. Return `true` if state_update is valid for the value.
-    fn verify<T, I>(&self, state_update: StateUpdate<T, I>) -> bool
+    /// must be using leeaf node(state_update), idx as a left-index and merkle root(root).
+    fn verify<T, I>(&self, state_update: &StateUpdate<T, I>, idx: I, root: Hash) -> bool
     where
         T: Member + Codec,
         I: Member + SimpleArithmetic + Codec;

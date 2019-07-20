@@ -4,6 +4,7 @@ use ink_core::{
     storage,
 };
 use ink_model::{state, EnvHandler};
+use ink_utils::hash;
 use primitives::{
     default::*,
     traits::{Member, SimpleArithmetic},
@@ -28,14 +29,55 @@ state! {
     }
 }
 
-impl traits::Verify for Vec<Hash> {
+pub fn default_hash(data: &[u8]) -> Hash {
+    Hash::decode(&mut &hash::keccak256(data)[..]).unwrap()
+}
+
+pub fn concat_bytes<T: Encode, U: Encode>(a: &T, b: &U) -> Vec<u8> {
+    a.encode()
+        .iter()
+        .chain(b.encode().iter())
+        .map(|x| *x)
+        .collect::<Vec<_>>()
+}
+
+pub fn concat_hash<T, U, F, H>(a: &T, b: &U, hash: F) -> H
+where
+    T: Encode,
+    U: Encode,
+    H: Encode + Eq + Copy,
+    F: FnOnce(&[u8]) -> H,
+{
+    hash(&concat_bytes(a, b)[..])
+}
+
+impl traits::Verify for Vec<MerkleIndexTreeInternalNode<RangeNumber>> {
     /// Verify a state_update. Return `true` if state_update is valid for the value.
-    fn verify<T, I>(&self, state_update: primitives::StateUpdate<T, I>) -> bool
+    fn verify<T, I>(&self, state_update: &primitives::StateUpdate<T, I>, idx: I, root: Hash) -> bool
     where
         T: Member + Codec,
         I: Member + SimpleArithmetic + Codec,
     {
-        true
+		let idx: RangeNumber = idx.as_();
+        let mut current_node = MerkleIndexTreeInternalNode::<RangeNumber> {
+            index: state_update.range.start.clone().as_(),
+            hash: default_hash(&state_update.encode()[..]),
+        };
+
+        for x in self.iter() {
+            if idx < x.index {
+                current_node = MerkleIndexTreeInternalNode::<RangeNumber> {
+                    index: current_node.index.clone(),
+                    hash: concat_hash(&current_node, x, default_hash),
+                };
+            } else {
+                current_node = MerkleIndexTreeInternalNode::<RangeNumber> {
+                    index: x.index.clone(),
+                    hash: concat_hash(x, &current_node, default_hash),
+                };
+            }
+        }
+        default_hash(&current_node.encode()[..]) == root
     }
 }
 
@@ -97,8 +139,8 @@ impl traits::Commitment for Commitment {
     fn verify_state_update_inclusion<T, P, I>(
         &self,
         env: &mut EnvHandler<ink_core::env::ContractEnv<DefaultSrmlTypes>>,
-        state_update: primitives::StateUpdate<T, I>,
-        inclusion_proof: P,
+        state_update: primitives::StateUpdate<T, I>, // leaf
+        inclusion_proof: P,                          // inclusion_proof
     ) -> bool
     where
         T: Member + Codec,
