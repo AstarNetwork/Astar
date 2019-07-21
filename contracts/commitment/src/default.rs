@@ -210,4 +210,9 @@ mod tests {
         assert_eq!(contract.block_hash(&mut env, 1), Some(header_1));
         assert_eq!(contract.block_hash(&mut env, 2), Some(header_2));
     }
+
+	#[test]
+	fn verify_inclusio_proof() {
+		// TODO
+	}
 }
