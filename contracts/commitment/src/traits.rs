@@ -9,7 +9,8 @@ use primitives::{
 /// Means of signature verification.
 pub trait Verify {
     /// Verify a state_update. Return `true` if state_update is valid for the value.
-    fn verify<T, I>(&self, state_update: StateUpdate<T, I>) -> bool
+    /// must be using leeaf node(state_update), idx as a left-index and merkle root(root).
+    fn verify<T, I>(&self, state_update: &StateUpdate<T, I>, root: Hash) -> bool
     where
         T: Member + Codec,
         I: Member + SimpleArithmetic + Codec;
@@ -33,9 +34,7 @@ pub trait Commitment: ContractState {
     ) -> Option<Hash>;
 
     /// Allows a user to submit a block with the given header.
-    /// ```
-    /// function submitBlock(bytes _header) public
-    /// ```
+    /// `function submitBlock(bytes _header) public`
     fn submit_block(&mut self, env: &mut EnvHandler<ContractEnv<DefaultSrmlTypes>>, header: Hash);
 
     /// Inclusion Proof.
