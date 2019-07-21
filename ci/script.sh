@@ -35,5 +35,6 @@ case $TARGET in
 
 		cd child && ./build.sh
 		cd ../contracts/cash && ./build.sh
+		cd ../commitment && make test
 		;;
 esac
