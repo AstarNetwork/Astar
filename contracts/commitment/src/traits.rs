@@ -34,9 +34,7 @@ pub trait Commitment: ContractState {
     ) -> Option<Hash>;
 
     /// Allows a user to submit a block with the given header.
-    /// ```
-    /// function submitBlock(bytes _header) public
-    /// ```
+    /// `function submitBlock(bytes _header) public`
     fn submit_block(&mut self, env: &mut EnvHandler<ContractEnv<DefaultSrmlTypes>>, header: Hash);
 
     /// Inclusion Proof.

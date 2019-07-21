@@ -13,21 +13,17 @@ state! {
     /// Whenever the operator creates a new plasma block, they MUST publish this block to the commitment contract.
     pub struct Commitment {
         /// Block number of the most recently published plasma block.
-        /// ```
-        /// uint256 public currentBlock;
-        /// ```
+        /// `uint256 public currentBlock;`
         current_block: storage::Value<BlockNumber>,
 
         /// Mapping from block number to block header.
-        /// ```
-        /// mapping (uint256 => bytes) public blocks;
-        /// ```
+        /// `mapping (uint256 => bytes) public blocks;`
         blocks: storage::HashMap<BlockNumber, Hash>,
     }
 }
 
 pub fn default_hash(data: &[u8]) -> Hash {
-    Hash::decode(&mut &hash::keccak256(data)[..]).unwrap()
+    Hash::decode(&mut &hash::keccak256(data)[..]).expect("keccak256 error")
 }
 
 pub fn concat_bytes<T: Encode, U: Encode>(a: &T, b: &U) -> Vec<u8> {
@@ -114,9 +110,7 @@ impl traits::Commitment for Commitment {
     }
 
     /// Allows a user to submit a block with the given header.
-    /// ```
-    /// function submitBlock(bytes _header) public
-    /// ```
+    /// `function submitBlock(bytes _header) public`
     fn submit_block(
         &mut self,
         env: &mut EnvHandler<ink_core::env::ContractEnv<DefaultSrmlTypes>>,
@@ -172,25 +166,48 @@ impl traits::Commitment for Commitment {
 #[cfg(all(test, feature = "test-env"))]
 mod tests {
     use super::*;
-    use parity_codec::Decode;
+    use ink_core::storage::{
+        alloc::{AllocateUsing, BumpAlloc, Initialize as _},
+        Key,
+    };
+	use ink_model::EnvHandler;
+	use crate::traits::Commitment as _;
+    impl Commitment {
+        /// Deploys the testable contract by initializing it with the given values.
+        pub fn deploy_mock() -> (
+            Self,
+            EnvHandler<ink_core::env::ContractEnv<DefaultSrmlTypes>>,
+        ) {
+			let (mut commitment, mut env) = unsafe {
+                let mut alloc = BumpAlloc::from_raw_parts(Key([0x0; 32]));
+                (
+                    Self::allocate_using(&mut alloc),
+                    AllocateUsing::allocate_using(&mut alloc),
+                )
+            };
+			commitment.initialize(());
+			commitment.deploy(&mut env);
+			(commitment, env)
+        }
+    }
 
     #[test]
     fn it_works() {
-        let mut contract = Commitment::deploy_mock();
-        assert_eq!(contract.current_block(), 0);
-        assert_eq!(contract.block_hash(0), None);
+        let (mut contract, mut env) = Commitment::deploy_mock();
+        assert_eq!(contract.current_block(&mut env), 0);
+        assert_eq!(contract.block_hash(&mut env, 0), None);
 
-        let header_1: Hash = Hash::decode(&mut &[1u8; 32].to_vec()[..]).unwrap();
-        contract.submit_block(header_1.clone());
-        assert_eq!(contract.current_block(), 1);
-        assert_eq!(contract.block_hash(0), None);
-        assert_eq!(contract.block_hash(1), Some(header_1));
+        let header_1: Hash = Hash::decode(&mut &[1u8; 32].to_vec()[..]).expect("hash decoded error.");
+        contract.submit_block(&mut env, header_1.clone());
+        assert_eq!(contract.current_block(&mut env), 1);
+        assert_eq!(contract.block_hash(&mut env, 0), None);
+        assert_eq!(contract.block_hash(&mut env, 1), Some(header_1));
 
-        let header_2: Hash = Hash::decode(&mut &[2u8; 32].to_vec()[..]).unwrap();
-        contract.submit_block(header_2.clone());
-        assert_eq!(contract.current_block(), 2);
-        assert_eq!(contract.block_hash(0), None);
-        assert_eq!(contract.block_hash(1), Some(header_1));
-        assert_eq!(contract.block_hash(2), Some(header_2));
+        let header_2: Hash = Hash::decode(&mut &[2u8; 32].to_vec()[..]).expect("hash decoded error.");
+        contract.submit_block(&mut env, header_2.clone());
+        assert_eq!(contract.current_block(&mut env), 2);
+        assert_eq!(contract.block_hash(&mut env, 0), None);
+        assert_eq!(contract.block_hash(&mut env, 1), Some(header_1));
+        assert_eq!(contract.block_hash(&mut env, 2), Some(header_2));
     }
 }
