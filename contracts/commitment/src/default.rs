@@ -1,8 +1,5 @@
 use super::*;
-use ink_core::{
-    memory::{format, vec::Vec},
-    storage,
-};
+use ink_core::{memory::format, storage};
 use ink_model::{state, EnvHandler};
 use ink_utils::hash;
 use primitives::{
@@ -51,21 +48,20 @@ where
     hash(&concat_bytes(a, b)[..])
 }
 
-impl traits::Verify for Vec<MerkleIndexTreeInternalNode<RangeNumber>> {
+impl traits::Verify for InclusionProof<RangeNumber> {
     /// Verify a state_update. Return `true` if state_update is valid for the value.
-    fn verify<T, I>(&self, state_update: &primitives::StateUpdate<T, I>, idx: I, root: Hash) -> bool
+    fn verify<T, I>(&self, state_update: &primitives::StateUpdate<T, I>, root: Hash) -> bool
     where
         T: Member + Codec,
         I: Member + SimpleArithmetic + Codec,
     {
-		let idx: RangeNumber = idx.as_();
         let mut current_node = MerkleIndexTreeInternalNode::<RangeNumber> {
             index: state_update.range.start.clone().as_(),
             hash: default_hash(&state_update.encode()[..]),
         };
 
-        for x in self.iter() {
-            if idx < x.index {
+        for x in self.proofs.iter() {
+            if self.idx < x.index {
                 current_node = MerkleIndexTreeInternalNode::<RangeNumber> {
                     index: current_node.index.clone(),
                     hash: concat_hash(&current_node, x, default_hash),
@@ -147,7 +143,10 @@ impl traits::Commitment for Commitment {
         P: Member + traits::Verify + Codec,
         I: Member + SimpleArithmetic + Codec,
     {
-        true
+        if let Some(root_hash) = self.blocks.get(&state_update.plasma_block_number) {
+            return inclusion_proof.verify(&state_update, *root_hash);
+        }
+        false
     }
 
     /// Inclusion Proof upper layer.
@@ -163,7 +162,10 @@ impl traits::Commitment for Commitment {
         P: Member + traits::Verify + Codec,
         I: Member + SimpleArithmetic + Codec,
     {
-        true
+        if let Some(root_hash) = self.blocks.get(&asset_state.plasma_block_number) {
+            return inclusion_proof.verify(&asset_state, *root_hash);
+        }
+        false
     }
 }
 
