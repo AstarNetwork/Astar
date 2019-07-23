@@ -1,5 +1,4 @@
 use super::*;
-use crate::no_std::ToString;
 use commitment::traits::Commitment;
 use ink_core::{memory::format, storage};
 use primitives::{default::*, Verify};
@@ -14,7 +13,7 @@ ink_model::state! {
         EXIT_PERIOD: storage::Value<BlockNumber>,
 
         //changable values
-        total_deposited: storage::Value<Range>,
+        total_deposited: storage::Value<RangeNumber>,
         checkpoints: storage::HashMap<Hash, CheckpointStatus>,
         deposited_ranges: storage::HashMap<RangeNumber, Range>,
         exit_redeemable_after: storage::HashMap<Hash, BlockNumber>,
@@ -32,6 +31,83 @@ impl Deposit {
     pub fn is_exist_challenges(&self, challenge_id: &Hash) -> bool {
         None != self.challenges.get(challenge_id)
     }
+
+    pub fn is_checkpoint_finalized(&self, checkpoint_id: &Hash, blk_num: &BlockNumber) -> bool {
+        if let Some(chk_status) = self.checkpoints.get(checkpoint_id) {
+            return chk_status.outstanding_challenges == 0
+                && chk_status.challengeable_until < *blk_num;
+        }
+        false
+    }
+
+    pub fn extend_deposited_ranges(&mut self, amount: Balance) {
+        let total_deposited = self.total_deposited.get().clone();
+        let old_range = self.deposited_ranges.get(&total_deposited).unwrap().clone();
+
+        // Set the newStart for the last range
+        let new_start: RangeNumber;
+        if old_range.start == 0 && old_range.end == 0 {
+            // Case 1: We are creating a new range (this is the case when the rightmost range has been removed)
+            new_start = self.total_deposited.get().clone();
+        } else {
+            // Case 2: We are extending the old range (deleting the old range and making a new one with the total length)
+            self.deposited_ranges.remove(&old_range.end);
+            new_start = old_range.start;
+        }
+
+        // Set the newEnd to the totalDeposited plus how much was deposited
+        let new_end: RangeNumber = total_deposited + amount as u128;
+        // Finally create and store the range!
+        self.deposited_ranges.insert(
+            new_end.clone(),
+            Range {
+                start: new_start,
+                end: new_end,
+            },
+        );
+        // Increment total deposited now that we've extended our depositedRanges
+        self.total_deposited
+            .set(total_deposited + amount as u128);
+    }
+
+    /// This function is called when an exit is finalized to "burn" it--so that checkpoints and exits
+    /// on the range cannot be made.  It is equivalent to the range having never been deposited.
+    pub fn remove_deposited_range(&mut self, range: &Range, deposited_range_id: &RangeNumber) {
+        let encompasing_range = self
+            .deposited_ranges
+            .get(&deposited_range_id)
+            .unwrap()
+            .clone();
+
+        // Split the LEFT side
+        // check if we we have a new deposited region to the left
+        if range.start != encompasing_range.start {
+            let left_split_range = Range {
+                start: encompasing_range.start.clone(),
+                end: range.start.clone(),
+            };
+            self.deposited_ranges
+                .insert(left_split_range.end.clone(), left_split_range);
+        }
+
+        // Split the RIGHT side (there 3 possible splits)
+
+        // 1) ##### -> $$$## -- check if we have leftovers to the right which are deposited
+        if range.end != encompasing_range.end {
+            // new deposited range from the newly exited end until the old unexited end
+            let right_split_range = Range {
+                start: range.start.clone(),
+                end: encompasing_range.end.clone(),
+            };
+            // Store the new deposited range
+            self.deposited_ranges
+                .insert(right_split_range.end.clone(), right_split_range);
+            return;
+        }
+
+        // 3) ##### -> $$$$$ -- without right-side leftovers & not the rightmost deposit, we can simply delete the value
+        self.deposited_ranges.remove(&encompasing_range.end);
+    }
 }
 
 impl traits::Deposit<RangeNumber, commitment::default::Commitment> for Deposit {
@@ -47,7 +123,7 @@ impl traits::Deposit<RangeNumber, commitment::default::Commitment> for Deposit {
         self.CHALLENGE_PERIOD.set(chalenge_period);
         self.EXIT_PERIOD.set(exit_period);
 
-        self.total_deposited.set(Range { start: 0, end: 0 });
+        self.total_deposited.set(0);
     }
 
     fn deposit<T: Member + Codec>(
@@ -78,7 +154,7 @@ impl traits::Deposit<RangeNumber, commitment::default::Commitment> for Deposit {
             );
         }
         // verify that subRange is actually a sub-range of stateUpdate.range.
-        if let Err(err) = checkpoint.verify() {
+        if let Err(_) = checkpoint.verify() {
             return Err(
                 "error: verify that subRange is actually a sub-range of stateUpdate.range.",
             );
@@ -270,7 +346,7 @@ impl traits::Deposit<RangeNumber, commitment::default::Commitment> for Deposit {
             return Err("error: Ensure an exit on the checkpoint is not already underway.");
         }
 
-        // Ensure that the msg.sender is the _checkpoint.stateUpdate.predicateAddress to authenticate the exit’s initiation.
+        // Ensure that the Contract address is the _checkpoint.stateUpdate.predicateAddress to authenticate the exit’s initiation.
         if checkpoint.state_update.state_object.predicate != env.address() {
             return Err("error: Ensure that the contract address is the checkpoint.state_update.predicate_address to authenticate the exit’s initiation.");
         }
@@ -303,22 +379,55 @@ impl traits::Deposit<RangeNumber, commitment::default::Commitment> for Deposit {
     }
 
     /// Finalizes an exit that has passed its exit period and has not been successfully challenged.
-    // MUST ensure that the exit finalization is authenticated from the predicate by msg.sender == _exit.stateUpdate.state.predicateAddress.
-    // MUST ensure that the checkpoint is finalized (current Ethereum block exceeds checkpoint.challengeableUntil).
-    // MUST ensure that the checkpoint’s outstandingChallenges is 0.
-    // MUST ensure that the exit is finalized (current Ethereum block exceeds redeemablAfter ).
-    // MUST ensure that the checkpoint is on a subrange of the currently exitable ranges via depositedRangeId.
-    // MUST make an ERC20 transfer of the end - start amount to the predicate address.
-    // MUST delete the exit.
-    // MUST remove the exited range by updating the depositedRanges mapping.
-    // MUST delete the checkpoint.
-    // MUST emit an exitFinalized event.
     fn finalize_exit<T: Member + Codec>(
         &mut self,
         env: &mut EnvHandler<ink_core::env::ContractEnv<DefaultSrmlTypes>>,
         exit: Checkpoint<T>,
         deposited_range_id: RangeNumber,
-    ) {
+    ) -> primitives::Result<ExitFinalized<T>> {
+        let checkpoint_id = exit.id();
+        let blk_number = env.block_number();
+        // Ensure that the exit finalization is authenticated from the predicate by Contract address == _exit.stateUpdate.state.predicateAddress.
+        if exit.state_update.state_object.predicate != env.address() {
+            return Err("error: ensure that the exit finalization is authenticated from the predicate by Contract address == _exit.stateUpdate.state.predicateAddress.");
+        }
+
+        // Ensure that the checkpoint is finalized (current Ethereum block exceeds checkpoint.challengeableUntil).
+        // Ensure that the checkpoint’s outstandingChallenges is 0.
+        if !self.is_checkpoint_finalized(&checkpoint_id, &blk_number) {
+            return Err("error: ensure that the checkpoint is finalized (current Ethereum block exceeds checkpoint.challengeableUntil and checkpoint’s outstandingChallenges is 0).");
+        }
+
+        // Ensure that the exit is finalized (current Ethereum block exceeds redeemablAfter ).
+        if blk_number <= *self.exit_redeemable_after.get(&checkpoint_id).unwrap() {
+            return Err("error: ensure that the exit is finalized (current Ethereum block exceeds redeemablAfter.");
+        }
+
+        // Ensure that the checkpoint is on a subrange of the currently exitable ranges via depositedRangeId.
+        if let Some(deposited_range) = self.deposited_ranges.get(&deposited_range_id) {
+            if !deposited_range.subrange(&exit.sub_range) {
+                return Err("error: ensure that the checkpoint is on a subrange of the currently exitable ranges via depositedRangeId. Invalid SubRange.");
+            }
+        } else {
+            return Err("error: ensure that the checkpoint is on a subrange of the currently exitable ranges via depositedRangeId. Not found depositedRangeId.");
+        }
+
+        // Remove the exited range by updating the depositedRanges mapping.
+        self.remove_deposited_range(&exit.sub_range, &deposited_range_id);
+
+        // MUST make an ERC20 transfer of the end - start amount to the predicate address.
+        // Transfer tokens to the deposit contract
+        //		uint256 amount = _exit.subrange.end - _exit.subrange.start;
+        //		erc20.transfer(_exit.stateUpdate.stateObject.predicateAddress, amount);
+        // TODO
+
+        // Delete the exit.
+        self.exit_redeemable_after.remove(&checkpoint_id);
+        // Delete the checkpoint.
+        self.checkpoints.remove(&checkpoint_id);
+
+        // Emit an exitFinalized event.
+        Ok(ExitFinalized { exit })
     }
 
     fn commitment(&self) -> &commitment::default::Commitment {

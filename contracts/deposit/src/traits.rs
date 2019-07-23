@@ -145,7 +145,7 @@ where
         env: &mut EnvHandler<ink_core::env::ContractEnv<DefaultSrmlTypes>>,
         exit: Checkpoint<T, I>,
         deposited_range_id: I,
-    );
+    ) -> Result<ExitFinalized<T>>;
 
     fn commitment(&self) -> &C;
 }

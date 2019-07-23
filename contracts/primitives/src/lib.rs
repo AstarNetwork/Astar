@@ -24,6 +24,12 @@ pub struct Range<I: traits::SimpleArithmetic + traits::Member + Codec> {
     pub end: I,
 }
 
+impl<I: traits::SimpleArithmetic + traits::Member + Codec> Range<I> {
+    pub fn subrange(&self, sub_range: &Range<I>) -> bool {
+        self.start <= sub_range.start && sub_range.end <= self.end
+    }
+}
+
 impl<I> Verify for Range<I>
 where
     I: traits::SimpleArithmetic + traits::Member + Codec,

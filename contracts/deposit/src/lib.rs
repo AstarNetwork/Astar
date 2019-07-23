@@ -3,7 +3,6 @@
 use core::option::Option;
 use ink_core::{
     env::{ContractEnv, DefaultSrmlTypes, EnvTypes},
-    memory::vec::Vec,
 };
 use ink_model::EnvHandler;
 use parity_codec::{Codec, Decode, Encode};
