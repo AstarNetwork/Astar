@@ -16,7 +16,7 @@ ink_model::state! {
 }
 
 #[derive(Clone, Encode, Decode, PartialEq, Eq)]
-#[cfg_attr(feature = "std", derive(Debug))]
+#[cfg_attr(not(no_std), derive(Debug))]
 pub struct TransactionBody {
     new_state_object: StateObject<AccountId>,
     origin_block: BlockNumber,
@@ -24,7 +24,7 @@ pub struct TransactionBody {
 }
 
 #[derive(Clone, Encode, Decode)]
-#[cfg_attr(feature = "std", derive(Debug))]
+#[cfg_attr(not(no_std), derive(Debug))]
 pub struct Signature(pub [u8; 64]);
 
 impl

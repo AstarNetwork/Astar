@@ -10,22 +10,24 @@ pub mod default;
 pub mod events;
 pub mod traits;
 
+pub type Result<T> = core::result::Result<T, &'static str>;
+
 #[derive(Clone, Encode, Decode, Default, PartialEq, Eq)]
-#[cfg_attr(feature = "std", derive(Debug))]
+#[cfg_attr(not(no_std), derive(Debug))]
 pub struct Range<I: traits::SimpleArithmetic + traits::Member + Codec> {
     pub start: I,
     pub end: I,
 }
 
 #[derive(Clone, Encode, Decode, PartialEq, Eq)]
-#[cfg_attr(feature = "std", derive(Debug))]
+#[cfg_attr(not(no_std), derive(Debug))]
 pub struct StateObject<T: traits::Member + Codec> {
     pub predicate: AccountId,
     pub data: T,
 }
 
 #[derive(Clone, Encode, Decode, PartialEq, Eq)]
-#[cfg_attr(feature = "std", derive(Debug))]
+#[cfg_attr(not(no_std), derive(Debug))]
 pub struct StateUpdate<
     T: traits::Member + Codec,
     I: traits::SimpleArithmetic + traits::Member + Codec,
@@ -36,7 +38,7 @@ pub struct StateUpdate<
 }
 
 #[derive(Clone, Encode, Decode, PartialEq, Eq)]
-#[cfg_attr(feature = "std", derive(Debug))]
+#[cfg_attr(not(no_std), derive(Debug))]
 pub struct Checkpoint<
     T: traits::Member + Codec,
     I: traits::SimpleArithmetic + traits::Member + Codec,
@@ -46,7 +48,7 @@ pub struct Checkpoint<
 }
 
 #[derive(Clone, Encode, Decode, PartialEq, Eq)]
-#[cfg_attr(feature = "std", derive(Debug))]
+#[cfg_attr(not(no_std), derive(Debug))]
 pub struct Transaction<
     U: traits::Member + Codec,
     I: traits::SimpleArithmetic + traits::Member + Codec,
@@ -57,7 +59,7 @@ pub struct Transaction<
 }
 
 #[derive(Clone, Encode, Decode, PartialEq, Eq)]
-#[cfg_attr(feature = "std", derive(Debug))]
+#[cfg_attr(not(no_std), derive(Debug))]
 pub struct Challenge<
     T: traits::Member + Codec,
     I: traits::SimpleArithmetic + traits::Member + Codec,

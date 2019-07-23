@@ -13,17 +13,17 @@ macro_rules! event {
 		$event_name:ident $(<$generic:ident>)* {
 			$(
 				$( #[$field_meta:meta] )*
-				$field_name:ident : $field_ty:ty ,
+				$vis:vis $field_name:ident : $field_ty:ty ,
 			)*
 		}
 	) => {
 		$( #[$event_meta] )*
-		#[derive(Encode, Decode)]
-		#[cfg_attr(feature = "std", derive(Debug))]
+		#[derive(Clone, Encode, Decode, PartialEq, Eq)]
+		#[cfg_attr(not(no_std), derive(Debug))]
 		pub struct $event_name $(<$generic: traits::Member + Codec>)* {
 			$(
 				$( #[$field_meta] )*
-				$field_name : $field_ty
+				$vis $field_name : $field_ty
 			),*
 		}
 
@@ -45,40 +45,40 @@ event! {
     /// );
     /// ```
     BlockSubmitted {
-        number: BlockNumber,
-        header: Hash,
+        pub number: BlockNumber,
+        pub header: Hash,
     }
 }
 
 event! {
     CheckpointStarted<T> {
-        checkpoint: Checkpoint<T>,
-        challengeable_until: BlockNumber,
+        pub checkpoint: Checkpoint<T>,
+        pub challengeable_until: BlockNumber,
     }
 }
 
 event! {
     CheckpointChallenged<T> {
-        challenge: Challenge<T>,
+        pub challenge: Challenge<T>,
     }
 }
 
 event! {
     CheckpointFinalized {
-        checkpoint: Hash,
+        pub checkpoint: Hash,
     }
 }
 
 event! {
     ExitStarted {
-        exit: Hash,
-        redeemable_after: BlockNumber,
+        pub exit: Hash,
+        pub redeemable_after: BlockNumber,
     }
 }
 
 event! {
     ExitFinalized<T> {
-        exit: Checkpoint<T>,
+        pub exit: Checkpoint<T>,
     }
 }
 

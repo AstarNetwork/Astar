@@ -20,7 +20,7 @@ type BlockNumber = <ContractEnv<DefaultSrmlTypes> as EnvTypes>::BlockNumber;
 type Hash = <ContractEnv<DefaultSrmlTypes> as EnvTypes>::Hash;
 
 #[derive(Clone, Encode, Decode, PartialEq, Eq)]
-#[cfg_attr(feature = "std", derive(Debug))]
+#[cfg_attr(not(no_std), derive(Debug))]
 pub struct CheckpointStatus {
     challengeable_until: BlockNumber,
     outstanding_challenges: u128,

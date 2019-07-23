@@ -32,6 +32,8 @@ impl traits::Deposit<RangeNumber, commitment::default::Commitment> for Deposit {
         self.TOKEN_ADDRES.set(token_address);
         self.CHALLENGE_PERIOD.set(chalenge_period);
         self.EXIT_PERIOD.set(exit_period);
+
+        self.total_deposited.set(Range { start: 0, end: 0 });
     }
 
     fn deposit<T: Member + Codec>(
@@ -44,11 +46,6 @@ impl traits::Deposit<RangeNumber, commitment::default::Commitment> for Deposit {
     }
 
     /// Starts a checkpoint for a given state update.
-    // MUST verify the that checkpoint.stateUpdate was included with inclusionProof.
-    // MUST verify that subRange is actually a sub-range of stateUpdate.range.
-    // MUST verify that the subRange is still exitable with the depositedRangeId .
-    // MUST verify that an indentical checkpoint has not already been started.
-    // MUST add the new pending checkpoint to checkpoints with challengeableUntil equalling the current ethereum block.number + CHALLENGE_PERIOD .
     // MUST emit a CheckpointStarted event.
     fn start_checkpoint<T: Member + Codec, P: Member + Codec + commitment::traits::Verify>(
         &mut self,
@@ -56,7 +53,42 @@ impl traits::Deposit<RangeNumber, commitment::default::Commitment> for Deposit {
         checkpoint: Checkpoint<T>,
         inclusion_proof: P,
         deposited_range_id: RangeNumber,
-    ) {
+    ) -> bool {
+        // verify the that checkpoint.stateUpdate was included with inclusionProof.
+        if !self.commitment().verify_state_update_inclusion(
+            env,
+            checkpoint.state_update,
+            inclusion_proof,
+        ) {
+            return false;
+        }
+        // verify that subRange is actually a sub-range of stateUpdate.range.
+        if !(checkpoint.state_update.range.start <= checkpoint.subrange.start
+            && checkpoint.subrange.end <= checkpoint.state_update.range.end)
+        {
+            return false;
+        }
+        // verify that the subRange is still exitable with the depositedRangeId .
+        if let exitable_range = self.deposited_ranges.get(deposited_range_id) {
+            if !(exitable_range.start <= checkpoint.subrange.start
+                && checkpoint.subrange.end <= exitable_range.end)
+            {
+                return false;
+            }
+        }
+
+        // verify that an indentical checkpoint has not already been started.
+		let checkpoint_hash = checkpoint.hash();
+		if let Some(_) = self.checkpoints.get(checkpoint_hash) {
+			return false;
+		}
+
+		// add the new pending checkpoint to checkpoints with challengeableUntil equalling the current ethereum block.number + CHALLENGE_PERIOD.
+		self.checkpoints.insert(checkpoint_hash, CheckpointStatus {
+			challengeable_until: ext_block_numebr() + self.CHALLENGE_PERIOD.get(),
+			outstanding_challenges: 0,
+		});
+        true
     }
 
     /// Deletes an exit by showing that there exists a newer finalized checkpoint. Immediately cancels the exit.
