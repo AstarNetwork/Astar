@@ -47,8 +47,8 @@ pub trait Commitment: ContractState {
     fn verify_state_update_inclusion<T, P, I>(
         &self,
         env: &mut EnvHandler<ContractEnv<DefaultSrmlTypes>>,
-        state_update: StateUpdate<T, I>,
-        inclusion_proof: P,
+        state_update: &StateUpdate<T, I>,
+        inclusion_proof: &P,
     ) -> bool
     where
         T: Member + Codec,
@@ -60,8 +60,8 @@ pub trait Commitment: ContractState {
     fn verify_asset_state_root_inclusion<T, P, I>(
         &self,
         env: &mut EnvHandler<ContractEnv<DefaultSrmlTypes>>,
-        asset_state: StateUpdate<T, I>,
-        inclusion_proof: P,
+        asset_state: &StateUpdate<T, I>,
+        inclusion_proof: &P,
     ) -> bool
     where
         T: Member + Codec,

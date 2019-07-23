@@ -130,8 +130,8 @@ impl traits::Commitment for Commitment {
     fn verify_state_update_inclusion<T, P, I>(
         &self,
         env: &mut EnvHandler<ink_core::env::ContractEnv<DefaultSrmlTypes>>,
-        state_update: primitives::StateUpdate<T, I>, // leaf
-        inclusion_proof: P,                          // inclusion_proof
+        state_update: &primitives::StateUpdate<T, I>, // leaf
+        inclusion_proof: &P,                          // inclusion_proof
     ) -> bool
     where
         T: Member + Codec,
@@ -139,7 +139,7 @@ impl traits::Commitment for Commitment {
         I: Member + SimpleArithmetic + Codec,
     {
         if let Some(root_hash) = self.blocks.get(&state_update.plasma_block_number) {
-            return inclusion_proof.verify(&state_update, *root_hash);
+            return inclusion_proof.verify(state_update, *root_hash);
         }
         false
     }
@@ -149,8 +149,8 @@ impl traits::Commitment for Commitment {
     fn verify_asset_state_root_inclusion<T, P, I>(
         &self,
         env: &mut EnvHandler<ink_core::env::ContractEnv<DefaultSrmlTypes>>,
-        asset_state: primitives::StateUpdate<T, I>,
-        inclusion_proof: P,
+        asset_state: &primitives::StateUpdate<T, I>,
+        inclusion_proof: &P,
     ) -> bool
     where
         T: Member + Codec,
@@ -158,7 +158,7 @@ impl traits::Commitment for Commitment {
         I: Member + SimpleArithmetic + Codec,
     {
         if let Some(root_hash) = self.blocks.get(&asset_state.plasma_block_number) {
-            return inclusion_proof.verify(&asset_state, *root_hash);
+            return inclusion_proof.verify(asset_state, *root_hash);
         }
         false
     }

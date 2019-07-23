@@ -5,6 +5,7 @@ use parity_codec::{Codec, Decode, Encode};
 
 type AccountId = <ContractEnv<DefaultSrmlTypes> as EnvTypes>::AccountId;
 type BlockNumber = <ContractEnv<DefaultSrmlTypes> as EnvTypes>::BlockNumber;
+type Hash = <ContractEnv<DefaultSrmlTypes> as EnvTypes>::Hash;
 
 pub mod default;
 pub mod events;
@@ -66,4 +67,8 @@ pub struct Challenge<
 > {
     pub challenged_checkpoint: Checkpoint<T, I>,
     pub challenging_checkpoint: Checkpoint<T, I>,
+}
+
+pub fn keccak256<E: Encode>(data: &E) -> Hash {
+	Hash::decode(&mut &ink_utils::hash::keccak256(&data.encode()[..])[..]).expect("Hash decoded error in keccak256.")
 }

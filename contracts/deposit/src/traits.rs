@@ -66,7 +66,7 @@ where
         checkpoint: Checkpoint<T, I>,
         inclusion_proof: P,
         deposited_range_id: I,
-    );
+    ) -> Result<CheckpointStarted<T>>;
 
     /// Deletes an exit by showing that there exists a newer finalized checkpoint. Immediately cancels the exit.
     // MUST ensure the checkpoint ranges intersect.

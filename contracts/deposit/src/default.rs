@@ -1,6 +1,7 @@
 use super::*;
 use ink_core::{memory::format, storage};
 use primitives::default::*;
+use commitment::traits::Commitment;
 
 ink_model::state! {
     pub struct Deposit {
@@ -53,42 +54,59 @@ impl traits::Deposit<RangeNumber, commitment::default::Commitment> for Deposit {
         checkpoint: Checkpoint<T>,
         inclusion_proof: P,
         deposited_range_id: RangeNumber,
-    ) -> bool {
+    ) -> primitives::Result<CheckpointStarted<T>> {
         // verify the that checkpoint.stateUpdate was included with inclusionProof.
         if !self.commitment().verify_state_update_inclusion(
             env,
-            checkpoint.state_update,
-            inclusion_proof,
+            &checkpoint.state_update,
+            &inclusion_proof,
         ) {
-            return false;
+            return Err(
+                "error: verify the that checkpoint.stateUpdate was included with inclusionProof.",
+            );
         }
         // verify that subRange is actually a sub-range of stateUpdate.range.
-        if !(checkpoint.state_update.range.start <= checkpoint.subrange.start
-            && checkpoint.subrange.end <= checkpoint.state_update.range.end)
+        if !(checkpoint.state_update.range.start <= checkpoint.sub_range.start
+            && checkpoint.sub_range.end <= checkpoint.state_update.range.end)
         {
-            return false;
+            return Err(
+                "error: verify that subRange is actually a sub-range of stateUpdate.range.",
+            );
         }
         // verify that the subRange is still exitable with the depositedRangeId .
-        if let exitable_range = self.deposited_ranges.get(deposited_range_id) {
-            if !(exitable_range.start <= checkpoint.subrange.start
-                && checkpoint.subrange.end <= exitable_range.end)
+        if let Some(exitable_range) = self.deposited_ranges.get(&deposited_range_id) {
+            if !(exitable_range.start <= checkpoint.sub_range.start
+                && checkpoint.sub_range.end <= exitable_range.end)
             {
-                return false;
+                return Err(
+					"error: verify that the subRange is still exitable with the depositedRangeId.",
+                );
             }
-        }
-
-        // verify that an indentical checkpoint has not already been started.
-		let checkpoint_hash = checkpoint.hash();
-		if let Some(_) = self.checkpoints.get(checkpoint_hash) {
-			return false;
+        } else {
+			return Err(
+				"error: verify that the subRange is still exitable with the depositedRangeId. Not found deposited_range_id.",
+			)
 		}
 
-		// add the new pending checkpoint to checkpoints with challengeableUntil equalling the current ethereum block.number + CHALLENGE_PERIOD.
-		self.checkpoints.insert(checkpoint_hash, CheckpointStatus {
-			challengeable_until: ext_block_numebr() + self.CHALLENGE_PERIOD.get(),
-			outstanding_challenges: 0,
-		});
-        true
+        // verify that an indentical checkpoint has not already been started.
+        let checkpoint_hash = primitives::keccak256(&checkpoint);
+        if let Some(_) = self.checkpoints.get(&checkpoint_hash) {
+            return Err("error: verify that an indentical checkpoint has not already been started");
+        }
+
+        // add the new pending checkpoint to checkpoints with challengeableUntil equalling the current ethereum block.number + CHALLENGE_PERIOD.
+        let challengeable_until = env.block_number() + self.CHALLENGE_PERIOD.get();
+        self.checkpoints.insert(
+            checkpoint_hash,
+            CheckpointStatus {
+                challengeable_until: challengeable_until,
+                outstanding_challenges: 0,
+            },
+        );
+        Ok(CheckpointStarted {
+            checkpoint: checkpoint,
+            challengeable_until: challengeable_until,
+        })
     }
 
     /// Deletes an exit by showing that there exists a newer finalized checkpoint. Immediately cancels the exit.

@@ -7,11 +7,12 @@ use ink_core::{
 };
 use ink_model::EnvHandler;
 use parity_codec::{Codec, Decode, Encode};
-use primitives::traits::{Member, SimpleArithmetic};
+use primitives::{
+    events::*,
+    traits::{Member, SimpleArithmetic},
+};
 
 pub mod default;
-#[macro_use]
-pub mod state;
 pub mod traits;
 
 type AccountId = <ContractEnv<DefaultSrmlTypes> as EnvTypes>::AccountId;

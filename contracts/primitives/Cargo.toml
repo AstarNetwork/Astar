@@ -8,6 +8,7 @@ edition = "2018"
 ink_core = { git = "https://github.com/paritytech/ink", package = "ink_core" }
 ink_model = { git = "https://github.com/paritytech/ink", package = "ink_model" }
 ink_lang = { git = "https://github.com/paritytech/ink", package = "ink_lang" }
+ink_utils = { git = "https://github.com/paritytech/ink", package = "ink_utils" }
 parity-codec = { version = "3.3", default-features = false, features = ["derive"] }
 num-traits = { version = "0.2", default-features = false }
 
