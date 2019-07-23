@@ -22,6 +22,18 @@ ink_model::state! {
     }
 }
 
+impl Deposit {
+    pub fn is_exist_exit(&self, exit_id: &Hash) -> bool {
+        None != self.exit_redeemable_after.get(exit_id)
+    }
+    pub fn is_exist_checkpoints(&self, checkpoint_id: &Hash) -> bool {
+        None != self.checkpoints.get(checkpoint_id)
+    }
+    pub fn is_exist_challenges(&self, challenge_id: &Hash) -> bool {
+        None != self.challenges.get(challenge_id)
+    }
+}
+
 impl traits::Deposit<RangeNumber, commitment::default::Commitment> for Deposit {
     fn deploy(
         &mut self,
@@ -154,21 +166,18 @@ impl traits::Deposit<RangeNumber, commitment::default::Commitment> for Deposit {
 
     /// Starts a challenge for a checkpoint by pointing to an exit that occurred in an earlier plasma block.
     /// Does not immediately cancel the checkpoint. Challenge can be blocked if the exit is cancelled.
-    ///
     fn challenge_checkpoint<T: Member + Codec>(
         &mut self,
         env: &mut EnvHandler<ink_core::env::ContractEnv<DefaultSrmlTypes>>,
         challenge: Challenge<T>,
     ) -> primitives::Result<()> {
-        // Ensure that the checkpoint being used to challenge exists.
         let challenged_id = challenge.challenged_checkpoint.id();
         let challenging_id = challenge.challenging_checkpoint.id();
-        let mut challenged_status: CheckpointStatus;
-        match self.checkpoints.get(&challenged_id) {
-			Some(ch) => challenged_status = ch.clone(),
-			None => return Err("error: ensure that the checkpoint being used to challenge exists. Not found challenged checkpoints."),
-		}
-        if None == self.exit_redeemable_after.get(&challenging_id) {
+        // Ensure that the checkpoint being used to challenge exists.
+        if !self.is_exist_checkpoints(&challenged_id) {
+            return Err("error: ensure that the checkpoint being used to challenge exists. Not found challenged checkpoints.");
+        }
+        if !self.is_exist_exit(&challenging_id) {
             return Err("error: ensure that the checkpoint being used to challenge exists. Not found challenging exit.");
         }
 
@@ -199,6 +208,7 @@ impl traits::Deposit<RangeNumber, commitment::default::Commitment> for Deposit {
             return Err("error: ensure that an identical challenge is not already underway.");
         }
 
+        let mut challenged_status = self.checkpoints.get(&challenged_id).unwrap().clone();
         // Ensure that the current ethereum block is not greater than the challengeableUntil block for the checkpoint being challenged.
         if challenged_status.challengeable_until <= env.block_number() {
             return Err("error: ensure that the current ethereum block is not greater than the challengeableUntil block for the checkpoint being challenged.");
@@ -215,15 +225,32 @@ impl traits::Deposit<RangeNumber, commitment::default::Commitment> for Deposit {
     }
 
     /// Decrements the number of outstanding challenges on a checkpoint by showing that one of its challenges has been blocked.
-    // MUST check that the challenge was not already removed.
-    // MUST check that the challenging exit has since been removed.
-    // MUST remove the challenge if above conditions are met.
-    // MUST decrement the challenged checkpoint’s outstandingChallenges if the above conditions are met.
     fn remove_challenge<T: Member + Codec>(
         &mut self,
         env: &mut EnvHandler<ink_core::env::ContractEnv<DefaultSrmlTypes>>,
         challenge: Challenge<T>,
-    ) {
+    ) -> primitives::Result<()> {
+        // Check that the challenge was not already removed.
+        let challenge_id = challenge.id();
+        let challenging_id = challenge.challenging_checkpoint.id();
+        let challenged_id = challenge.challenged_checkpoint.id();
+        if self.is_exist_challenges(&challenge_id) {
+            return Err("error: check that the challenge was not already removed.");
+        }
+
+        // Check that the challenging exit has since been removed.
+        if self.is_exist_exit(&challenging_id) {
+            return Err("error: check that the challenging exit has since been removed.");
+        }
+
+        // Remove the challenge if above conditions are met.
+        self.challenges.insert(challenge_id, true);
+
+        // Decrement the challenged checkpoint’s outstandingChallenges if the above conditions are met.
+        let mut challenged_status = self.checkpoints.get(&challenged_id).unwrap().clone();
+        challenged_status.outstanding_challenges -= 1;
+        self.checkpoints.insert(challenged_id, challenged_status);
+        Ok(())
     }
 
     /// Allows the predicate contract to start an exit from a checkpoint. Checkpoint may be pending or finalized.

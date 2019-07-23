@@ -106,7 +106,7 @@ where
         &mut self,
         env: &mut EnvHandler<ink_core::env::ContractEnv<DefaultSrmlTypes>>,
         challenge: Challenge<T, I>,
-    );
+    ) -> Result<()>;
 
     /// Allows the predicate contract to start an exit from a checkpoint. Checkpoint may be pending or finalized.
     // MUST ensure the checkpoint exists.
