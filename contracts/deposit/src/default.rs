@@ -1,7 +1,8 @@
 use super::*;
+use crate::no_std::ToString;
 use commitment::traits::Commitment;
 use ink_core::{memory::format, storage};
-use primitives::default::*;
+use primitives::{default::*, Verify};
 
 ink_model::state! {
     pub struct Deposit {
@@ -65,7 +66,7 @@ impl traits::Deposit<RangeNumber, commitment::default::Commitment> for Deposit {
             );
         }
         // verify that subRange is actually a sub-range of stateUpdate.range.
-        if !checkpoint.is_intersect() {
+        if let Err(err) = checkpoint.verify() {
             return Err(
                 "error: verify that subRange is actually a sub-range of stateUpdate.range.",
             );
@@ -86,15 +87,15 @@ impl traits::Deposit<RangeNumber, commitment::default::Commitment> for Deposit {
         }
 
         // verify that an indentical checkpoint has not already been started.
-        let checkpoint_hash = primitives::keccak256(&checkpoint);
-        if let Some(_) = self.checkpoints.get(&checkpoint_hash) {
+        let checkpoint_id = checkpoint.id();
+        if let Some(_) = self.checkpoints.get(&checkpoint_id) {
             return Err("error: verify that an indentical checkpoint has not already been started");
         }
 
         // add the new pending checkpoint to checkpoints with challengeableUntil equalling the current ethereum block.number + CHALLENGE_PERIOD.
         let challengeable_until = env.block_number() + self.CHALLENGE_PERIOD.get();
         self.checkpoints.insert(
-            checkpoint_hash,
+            checkpoint_id,
             CheckpointStatus {
                 challengeable_until: challengeable_until,
                 outstanding_challenges: 0,
@@ -109,7 +110,6 @@ impl traits::Deposit<RangeNumber, commitment::default::Commitment> for Deposit {
     }
 
     /// Deletes an exit by showing that there exists a newer finalized checkpoint. Immediately cancels the exit.
-
     fn delete_exit_outdated<T: Member + Codec>(
         &mut self,
         env: &mut EnvHandler<ink_core::env::ContractEnv<DefaultSrmlTypes>>,
@@ -117,7 +117,7 @@ impl traits::Deposit<RangeNumber, commitment::default::Commitment> for Deposit {
         newer_checkpoint: Checkpoint<T>,
     ) -> primitives::Result<()> {
         // Ensure the checkpoint ranges intersect.
-        if !older_exit.is_intersect() && !newer_checkpoint.is_intersect() {
+        if !older_exit.is_intersect(&newer_checkpoint) {
             return Err("error: ensure the checkpoint ranges intersect.");
         }
 
@@ -131,13 +131,13 @@ impl traits::Deposit<RangeNumber, commitment::default::Commitment> for Deposit {
         }
 
         // Ensure that the newerCheckpoint has no challenges.
-        let newer_checkpoint_hash = primitives::keccak256(&newer_checkpoint);
-        if let Some(true) = self.challenges.get(&newer_checkpoint_hash) {
+        let newer_checkpoint_id = newer_checkpoint.id();
+        if let Some(true) = self.challenges.get(&newer_checkpoint_id) {
             return Err("error: ensure that the newerCheckpoint has no challenges.");
         }
 
         // Ensure that the newerCheckpoint is no longer challengeable.
-        if let Some(checkpoint_status) = self.checkpoints.get(&newer_checkpoint_hash) {
+        if let Some(checkpoint_status) = self.checkpoints.get(&newer_checkpoint_id) {
             if checkpoint_status.challengeable_until > env.block_number() {
                 return Err("error: ensure that the newerCheckpoint is no longer challengeable.");
             }
@@ -146,27 +146,72 @@ impl traits::Deposit<RangeNumber, commitment::default::Commitment> for Deposit {
         }
 
         // Delete the entries in exitRedeemableAfter.
-        let older_checkpoint_hash = primitives::keccak256(&older_exit);
-        self.exit_redeemable_after.remove(&older_checkpoint_hash);
+        let older_checkpoint_id = older_exit.id();
+        self.exit_redeemable_after.remove(&older_checkpoint_id);
 
         Ok(())
     }
 
     /// Starts a challenge for a checkpoint by pointing to an exit that occurred in an earlier plasma block.
     /// Does not immediately cancel the checkpoint. Challenge can be blocked if the exit is cancelled.
-    /// MUST ensure that the checkpoint being used to challenge exists.
     ///
-    // MUST ensure that the challenge ranges intersect.
-    // MUST ensure that the checkpoint being used to challenge has an older plasmaBlockNumber.
-    // MUST ensure that an identical challenge is not already underway.
-    // MUST ensure that the current ethereum block is not greater than the challengeableUntil block for the checkpoint being challenged.
-    // MUST increment the outstandingChallenges for the challenged checkpoint.
-    // MUST set the challenges mapping for the challengeId to true.
     fn challenge_checkpoint<T: Member + Codec>(
         &mut self,
         env: &mut EnvHandler<ink_core::env::ContractEnv<DefaultSrmlTypes>>,
         challenge: Challenge<T>,
-    ) {
+    ) -> primitives::Result<()> {
+        // Ensure that the checkpoint being used to challenge exists.
+        let challenged_id = challenge.challenged_checkpoint.id();
+        let challenging_id = challenge.challenging_checkpoint.id();
+        let mut challenged_status: CheckpointStatus;
+        match self.checkpoints.get(&challenged_id) {
+			Some(ch) => challenged_status = ch.clone(),
+			None => return Err("error: ensure that the checkpoint being used to challenge exists. Not found challenged checkpoints."),
+		}
+        if None == self.exit_redeemable_after.get(&challenging_id) {
+            return Err("error: ensure that the checkpoint being used to challenge exists. Not found challenging exit.");
+        }
+
+        // Ensure that the challenge ranges intersect.
+        if !challenge
+            .challenged_checkpoint
+            .is_intersect(&challenge.challenging_checkpoint)
+        {
+            return Err("error: ensure that the challenge ranges intersect.");
+        }
+
+        // Ensure that the checkpoint being used to challenge has an older plasmaBlockNumber.
+        if challenge
+            .challenging_checkpoint
+            .state_update
+            .plasma_block_number
+            >= challenge
+                .challenged_checkpoint
+                .state_update
+                .plasma_block_number
+        {
+            return Err("error: ensure that the checkpoint being used to challenge has an older plasmaBlockNumber.");
+        }
+
+        // Ensure that an identical challenge is not already underway.
+        let challenge_id = challenge.challenged_checkpoint.id();
+        if None == self.challenges.get(&challenge_id) {
+            return Err("error: ensure that an identical challenge is not already underway.");
+        }
+
+        // Ensure that the current ethereum block is not greater than the challengeableUntil block for the checkpoint being challenged.
+        if challenged_status.challengeable_until <= env.block_number() {
+            return Err("error: ensure that the current ethereum block is not greater than the challengeableUntil block for the checkpoint being challenged.");
+        }
+
+        // increment the outstandingChallenges for the challenged checkpoint.
+        challenged_status.outstanding_challenges += 1;
+        self.checkpoints.insert(challenged_id, challenged_status);
+
+        // MUST set the challenges mapping for the challengeId to true.
+        self.challenges.insert(challenge_id, true);
+
+        Ok(())
     }
 
     /// Decrements the number of outstanding challenges on a checkpoint by showing that one of its challenges has been blocked.

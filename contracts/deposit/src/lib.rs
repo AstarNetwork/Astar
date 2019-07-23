@@ -36,3 +36,10 @@ mod tests {
         let mut contract = Deposit::deploy_mock();
     }
 }
+
+#[cfg(not(any(test, feature = "std")))]
+mod no_std {
+	extern crate alloc;
+	pub use alloc::string::{String, ToString};
+	pub use alloc::vec::Vec;
+}

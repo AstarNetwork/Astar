@@ -95,7 +95,7 @@ where
         &mut self,
         env: &mut EnvHandler<ink_core::env::ContractEnv<DefaultSrmlTypes>>,
         challenge: Challenge<T, I>,
-    );
+    ) -> Result<()>;
 
     /// Decrements the number of outstanding challenges on a checkpoint by showing that one of its challenges has been blocked.
     // MUST check that the challenge was not already removed.
