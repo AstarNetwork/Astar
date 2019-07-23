@@ -288,13 +288,18 @@ impl traits::Deposit<RangeNumber, commitment::default::Commitment> for Deposit {
     }
 
     /// Allows the predicate address to cancel an exit which it determines is deprecated.
-    // MUST ensure the msg.sender is the _checkpoint.stateUpdate.predicateAddress to ensure the deprecation is authenticated.
-    // MUST delete the exit from exitRedeemableAfter at the checkpointId .
     fn deprecate_exit<T: Member + Codec>(
         &mut self,
         env: &mut EnvHandler<ink_core::env::ContractEnv<DefaultSrmlTypes>>,
         checkpoint: Checkpoint<T>,
-    ) {
+    ) -> primitives::Result<()> {
+        let checkpoint_id = checkpoint.id();
+        // Ensure the contract address is the checkpoint.stateUpdate.predicateAddress to ensure the deprecation is authenticated.
+        if checkpoint.state_update.state_object.predicate != env.address() {
+            return Err("Ensure the contract address is the checkpoint.stateUpdate.predicateAddress to ensure the deprecation is authenticated.");
+        }
+        self.exit_redeemable_after.remove(&checkpoint_id);
+        Ok(())
     }
 
     /// Finalizes an exit that has passed its exit period and has not been successfully challenged.

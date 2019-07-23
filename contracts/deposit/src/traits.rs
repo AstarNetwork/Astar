@@ -127,7 +127,7 @@ where
         &mut self,
         env: &mut EnvHandler<ink_core::env::ContractEnv<DefaultSrmlTypes>>,
         checkpoint: Checkpoint<T, I>,
-    );
+    ) -> Result<()>;
 
     /// Finalizes an exit that has passed its exit period and has not been successfully challenged.
     // MUST ensure that the exit finalization is authenticated from the predicate by msg.sender == _exit.stateUpdate.state.predicateAddress.
