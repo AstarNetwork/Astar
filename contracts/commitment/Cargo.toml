@@ -14,6 +14,11 @@ primitives = { path = "../primitives", default-features = false }
 
 [features]
 default = []
+std = [
+    "ink_utils/std",
+    "ink_core/std",
+    "parity-codec/std",
+]
 test-env = [
     "ink_core/test-env",
     "ink_lang/test-env",
