@@ -194,8 +194,6 @@ mod tests {
 
     #[test]
     fn it_works() {
-		assert_eq!(Range{start:1,end:2}, Range{start:1,end:2});
-
         let (mut contract, mut env) = Commitment::deploy_mock();
         assert_eq!(contract.current_block(&mut env), 0);
         assert_eq!(contract.block_hash(&mut env, 0), None);
@@ -229,7 +227,7 @@ mod tests {
     }
 
     #[test]
-    fn verify_inclusio_proof() {
+    fn verify_inclusion_proof() {
         // TODO
     }
 }
