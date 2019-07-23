@@ -1,7 +1,7 @@
 use super::*;
+use commitment::traits::Commitment;
 use ink_core::{memory::format, storage};
 use primitives::default::*;
-use commitment::traits::Commitment;
 
 ink_model::state! {
     pub struct Deposit {
@@ -47,7 +47,6 @@ impl traits::Deposit<RangeNumber, commitment::default::Commitment> for Deposit {
     }
 
     /// Starts a checkpoint for a given state update.
-    // MUST emit a CheckpointStarted event.
     fn start_checkpoint<T: Member + Codec, P: Member + Codec + commitment::traits::Verify>(
         &mut self,
         env: &mut EnvHandler<ink_core::env::ContractEnv<DefaultSrmlTypes>>,
@@ -66,9 +65,7 @@ impl traits::Deposit<RangeNumber, commitment::default::Commitment> for Deposit {
             );
         }
         // verify that subRange is actually a sub-range of stateUpdate.range.
-        if !(checkpoint.state_update.range.start <= checkpoint.sub_range.start
-            && checkpoint.sub_range.end <= checkpoint.state_update.range.end)
-        {
+        if !checkpoint.is_intersect() {
             return Err(
                 "error: verify that subRange is actually a sub-range of stateUpdate.range.",
             );
@@ -79,14 +76,14 @@ impl traits::Deposit<RangeNumber, commitment::default::Commitment> for Deposit {
                 && checkpoint.sub_range.end <= exitable_range.end)
             {
                 return Err(
-					"error: verify that the subRange is still exitable with the depositedRangeId.",
+                    "error: verify that the subRange is still exitable with the depositedRangeId.",
                 );
             }
         } else {
-			return Err(
+            return Err(
 				"error: verify that the subRange is still exitable with the depositedRangeId. Not found deposited_range_id.",
-			)
-		}
+			);
+        }
 
         // verify that an indentical checkpoint has not already been started.
         let checkpoint_hash = primitives::keccak256(&checkpoint);
@@ -103,6 +100,8 @@ impl traits::Deposit<RangeNumber, commitment::default::Commitment> for Deposit {
                 outstanding_challenges: 0,
             },
         );
+
+        // return that emitted a CheckpointStarted event.
         Ok(CheckpointStarted {
             checkpoint: checkpoint,
             challengeable_until: challengeable_until,
@@ -110,17 +109,47 @@ impl traits::Deposit<RangeNumber, commitment::default::Commitment> for Deposit {
     }
 
     /// Deletes an exit by showing that there exists a newer finalized checkpoint. Immediately cancels the exit.
-    // MUST ensure the checkpoint ranges intersect.
-    // MUST ensure that the plasma blocknumber of the _olderExitt is less than that of _newerCheckpoint.
-    // MUST ensure that the newerCheckpoint has no challenges.
-    // MUST ensure that the newerCheckpoint is no longer challengeable.
-    // MUST delete the entries in exitRedeemableAfter.
+
     fn delete_exit_outdated<T: Member + Codec>(
         &mut self,
         env: &mut EnvHandler<ink_core::env::ContractEnv<DefaultSrmlTypes>>,
         older_exit: Checkpoint<T>,
         newer_checkpoint: Checkpoint<T>,
-    ) {
+    ) -> primitives::Result<()> {
+        // Ensure the checkpoint ranges intersect.
+        if !older_exit.is_intersect() && !newer_checkpoint.is_intersect() {
+            return Err("error: ensure the checkpoint ranges intersect.");
+        }
+
+        // Ensure that the plasma blocknumber of the _olderExitt is less than that of _newerCheckpoint.
+        if older_exit.state_update.plasma_block_number
+            >= newer_checkpoint.state_update.plasma_block_number
+        {
+            return Err(
+				"error: ensure that the plasma blocknumber of the older_exitt is less than that of newer_checkpoint.",
+			);
+        }
+
+        // Ensure that the newerCheckpoint has no challenges.
+        let newer_checkpoint_hash = primitives::keccak256(&newer_checkpoint);
+        if let Some(true) = self.challenges.get(&newer_checkpoint_hash) {
+            return Err("error: ensure that the newerCheckpoint has no challenges.");
+        }
+
+        // Ensure that the newerCheckpoint is no longer challengeable.
+        if let Some(checkpoint_status) = self.checkpoints.get(&newer_checkpoint_hash) {
+            if checkpoint_status.challengeable_until > env.block_number() {
+                return Err("error: ensure that the newerCheckpoint is no longer challengeable.");
+            }
+        } else {
+            return Err("error: ensure that the newerCheckpoint is no longer challengeable. Not found checkpoint_status.");
+        }
+
+        // Delete the entries in exitRedeemableAfter.
+        let older_checkpoint_hash = primitives::keccak256(&older_exit);
+        self.exit_redeemable_after.remove(&older_checkpoint_hash);
+
+        Ok(())
     }
 
     /// Starts a challenge for a checkpoint by pointing to an exit that occurred in an earlier plasma block.

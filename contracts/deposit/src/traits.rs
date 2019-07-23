@@ -79,7 +79,7 @@ where
         env: &mut EnvHandler<ink_core::env::ContractEnv<DefaultSrmlTypes>>,
         older_exit: Checkpoint<T, I>,
         newer_checkpoint: Checkpoint<T, I>,
-    );
+    ) -> Result<()>;
 
     /// Starts a challenge for a checkpoint by pointing to an exit that occurred in an earlier plasma block.
     /// Does not immediately cancel the checkpoint. Challenge can be blocked if the exit is cancelled.

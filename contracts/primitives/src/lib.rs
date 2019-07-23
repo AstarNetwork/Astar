@@ -48,6 +48,17 @@ pub struct Checkpoint<
     pub sub_range: Range<I>,
 }
 
+impl<T, I> Checkpoint<T, I>
+where
+    T: traits::Member + Codec,
+    I: traits::SimpleArithmetic + traits::Member + Codec,
+{
+    pub fn is_intersect(&self) -> bool {
+        self.state_update.range.start <= self.sub_range.start
+            && self.sub_range.end <= self.state_update.range.end
+    }
+}
+
 #[derive(Clone, Encode, Decode, PartialEq, Eq)]
 #[cfg_attr(not(no_std), derive(Debug))]
 pub struct Transaction<
@@ -70,5 +81,6 @@ pub struct Challenge<
 }
 
 pub fn keccak256<E: Encode>(data: &E) -> Hash {
-	Hash::decode(&mut &ink_utils::hash::keccak256(&data.encode()[..])[..]).expect("Hash decoded error in keccak256.")
+    Hash::decode(&mut &ink_utils::hash::keccak256(&data.encode()[..])[..])
+        .expect("Hash decoded error in keccak256.")
 }
