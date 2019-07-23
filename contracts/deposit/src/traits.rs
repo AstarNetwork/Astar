@@ -118,7 +118,7 @@ where
         &mut self,
         env: &mut EnvHandler<ink_core::env::ContractEnv<DefaultSrmlTypes>>,
         checkpoint: Checkpoint<T, I>,
-    );
+    ) -> Result<ExitStarted>;
 
     /// Allows the predicate address to cancel an exit which it determines is deprecated.
     // MUST ensure the msg.sender is the _checkpoint.stateUpdate.predicateAddress to ensure the deprecation is authenticated.

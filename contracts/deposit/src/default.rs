@@ -254,16 +254,37 @@ impl traits::Deposit<RangeNumber, commitment::default::Commitment> for Deposit {
     }
 
     /// Allows the predicate contract to start an exit from a checkpoint. Checkpoint may be pending or finalized.
-    // MUST ensure the checkpoint exists.
-    // MUST ensure that the msg.sender is the _checkpoint.stateUpdate.predicateAddress to authenticate the exit’s initiation.
-    // MUST ensure an exit on the checkpoint is not already underway.
-    // MUST set the exit’s redeemableAfter status to the current Ethereum block.number + LOCKUP_PERIOD.
-    // MUST emit an exitStarted event.
     fn start_exit<T: Member + Codec>(
         &mut self,
         env: &mut EnvHandler<ink_core::env::ContractEnv<DefaultSrmlTypes>>,
         checkpoint: Checkpoint<T>,
-    ) {
+    ) -> primitives::Result<ExitStarted> {
+        let checkpoint_id = checkpoint.id();
+        // Ensure the checkpoint exists.
+        if !self.is_exist_checkpoints(&checkpoint_id) {
+            return Err("error: Ensure the checkpoint exists.");
+        }
+
+        // Ensure an exit on the checkpoint is not already underway.
+        if self.is_exist_exit(&checkpoint_id) {
+            return Err("error: Ensure an exit on the checkpoint is not already underway.");
+        }
+
+        // Ensure that the msg.sender is the _checkpoint.stateUpdate.predicateAddress to authenticate the exit’s initiation.
+        if checkpoint.state_update.state_object.predicate != env.address() {
+            return Err("error: Ensure that the contract address is the checkpoint.state_update.predicate_address to authenticate the exit’s initiation.");
+        }
+
+        // Set the exit’s redeemableAfter status to the current Ethereum block.number + LOCKUP_PERIOD.
+        let redeemable_after = env.block_number() + *self.EXIT_PERIOD;
+        self.exit_redeemable_after
+            .insert(checkpoint_id.clone(), redeemable_after);
+
+        // Emit an exitStarted event.
+        Ok(ExitStarted {
+            exit: checkpoint_id,
+            redeemable_after: redeemable_after,
+        })
     }
 
     /// Allows the predicate address to cancel an exit which it determines is deprecated.
