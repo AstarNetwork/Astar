@@ -1,7 +1,6 @@
 #![cfg_attr(not(any(test, feature = "std")), no_std)]
 
-use commitment::traits::Commitment;
-use commitment::MerkleIndexTreeInternalNode;
+use commitment::{traits::Commitment, MerkleIndexTreeInternalNode};
 use core::option::Option;
 use deposit::traits::Deposit;
 use ink_core::{
@@ -170,12 +169,21 @@ impl EmitEventExt for ink_model::EnvHandler<ink_core::env::ContractEnv<DefaultSr
 #[cfg(all(test, feature = "test-env"))]
 mod tests {
     use super::*;
+    use parity_codec::Decode;
+
+    fn get_token_address() -> AccountId {
+        AccountId::decode(&mut &[2u8; 32].to_vec()[..]).expect("account id decoded.")
+    }
+    fn get_sender_address() -> AccountId {
+        AccountId::decode(&mut &[3u8; 32].to_vec()[..]).expect("account id decoded.")
+    }
+    fn get_receiver_address() -> AccountId {
+        AccountId::decode(&mut &[4u8; 32].to_vec()[..]).expect("account id decoded.")
+    }
 
     #[test]
     fn it_works() {
-        let mut contract = Cash::deploy_mock();
-        assert_eq!(contract.get(), false);
-        contract.flip();
-        assert_eq!(contract.get(), true);
+        let mut contract = Cash::deploy_mock(get_token_address(), 5, 5);
+        assert_eq!(contract.current_block(), 0);
     }
 }
