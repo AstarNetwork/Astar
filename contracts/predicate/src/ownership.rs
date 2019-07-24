@@ -49,7 +49,7 @@ impl
         chalenge_period: BlockNumber,
         exit_period: BlockNumber,
     ) {
-        self.DEPOSIT
+        self.deposit()
             .deploy(env, token_address, chalenge_period, exit_period);
     }
 
@@ -108,7 +108,7 @@ impl
         }
 
         // Forward the authenticated startExit to the deposit contract
-        self.DEPOSIT.start_exit(env, checkpoint)
+        self.deposit().start_exit(env, checkpoint)
     }
 
     /// Finalizes an exit that has passed its exit period and has not been successfully challenged.
@@ -118,11 +118,11 @@ impl
         exit: Checkpoint<AccountId>,
         deposited_range_id: RangeNumber,
     ) -> primitives::Result<ExitFinalized<AccountId>> {
-        self.DEPOSIT.finalize_exit(env, exit, deposited_range_id)
+        self.deposit().finalize_exit(env, exit, deposited_range_id)
     }
 
     fn commitment(&mut self) -> &mut commitment::default::Commitment {
-        self.DEPOSIT.commitment()
+        self.deposit().commitment()
     }
     fn deposit(&mut self) -> &mut deposit::default::Deposit {
         &mut self.DEPOSIT
