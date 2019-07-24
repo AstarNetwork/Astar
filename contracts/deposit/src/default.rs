@@ -551,6 +551,7 @@ mod tests {
                 end: amount.clone() as RangeNumber,
             },
         };
+
         assert_eq!(
             Ok(CheckpointFinalized {
                 checkpoint: exp_checkpoint.id(),
