@@ -44,6 +44,7 @@ impl
         chalenge_period: BlockNumber,
         exit_period: BlockNumber,
     ) {
+		self.DEPOSIT.deploy(env, token_address, chalenge_period, exit_period);
     }
 
     /// Predicates MUST define a custom _witness struct for their particular type of state.
