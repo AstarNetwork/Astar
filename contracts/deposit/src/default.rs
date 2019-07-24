@@ -477,8 +477,8 @@ impl traits::Deposit<RangeNumber, commitment::default::Commitment> for Deposit {
         Ok(ExitFinalized { exit })
     }
 
-    fn commitment(&self) -> &commitment::default::Commitment {
-        &self.COMMITMENT
+    fn commitment(&mut self) -> &mut commitment::default::Commitment {
+        &mut self.COMMITMENT
     }
 }
 

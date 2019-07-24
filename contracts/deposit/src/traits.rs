@@ -147,5 +147,5 @@ where
         deposited_range_id: I,
     ) -> Result<ExitFinalized<T>>;
 
-    fn commitment(&self) -> &C;
+    fn commitment(&mut self) -> &mut C;
 }

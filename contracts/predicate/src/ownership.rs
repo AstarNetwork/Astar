@@ -111,19 +111,6 @@ impl
         self.DEPOSIT.start_exit(env, checkpoint)
     }
 
-    /// Allows the predicate address to cancel an exit which it determines is deprecated.
-    fn deprecate_exit(
-        &mut self,
-        env: &mut EnvHandler<ink_core::env::ContractEnv<DefaultSrmlTypes>>,
-        deprecated_exit: Checkpoint<AccountId>,
-        transaction: Transaction<TransactionBody>,
-        witness: Signature,
-        post_state: StateUpdate<AccountId>,
-    ) -> primitives::Result<()> {
-        self._deprecate_exit(env, &deprecated_exit, &transaction, &witness, &post_state)?;
-        self.DEPOSIT.deprecate_exit(env, deprecated_exit)
-    }
-
     /// Finalizes an exit that has passed its exit period and has not been successfully challenged.
     fn finalize_exit(
         &mut self,
@@ -134,10 +121,10 @@ impl
         self.DEPOSIT.finalize_exit(env, exit, deposited_range_id)
     }
 
-    fn commitment(&self) -> &commitment::default::Commitment {
+    fn commitment(&mut self) -> &mut commitment::default::Commitment {
         self.DEPOSIT.commitment()
     }
-    fn deposit(&self) -> &deposit::default::Deposit {
-        &self.DEPOSIT
+    fn deposit(&mut self) -> &mut deposit::default::Deposit {
+        &mut self.DEPOSIT
     }
 }

@@ -39,15 +39,14 @@ where
     ) -> Result<ExitStarted>;
 
     /// Allows the predicate address to cancel an exit which it determines is deprecated.
-    /// *(Common Part of DepreacteExit.)
-    fn _deprecate_exit(
+    fn deprecate_exit(
         &mut self,
         env: &mut EnvHandler<ink_core::env::ContractEnv<DefaultSrmlTypes>>,
-        deprecated_exit: &Checkpoint<T, I>,
-        transaction: &Transaction<B, I>,
-        witness: &W,
-        post_state: &StateUpdate<T, I>,
-    ) -> primitives::Result<()> {
+        deprecated_exit: Checkpoint<T, I>,
+        transaction: Transaction<B, I>,
+        witness: W,
+        post_state: StateUpdate<T, I>,
+    ) -> Result<()> {
         if deprecated_exit.state_update.state_object.predicate != transaction.predicate {
             return Err("Transactions can only act on SUs with the same predicate contract.");
         }
@@ -62,24 +61,14 @@ where
         if !self.verify_transaction(
             env,
             &deprecated_exit.state_update,
-            transaction,
-            witness,
-            post_state,
+            &transaction,
+            &witness,
+            &post_state,
         ) {
             return Err("Predicate must be able to verify the transaction to deprecate.");
         }
-		Ok(())
+        self.deposit().deprecate_exit(env, deprecated_exit)
     }
-
-    /// Allows the predicate address to cancel an exit which it determines is deprecated.
-    fn deprecate_exit(
-        &mut self,
-        env: &mut EnvHandler<ink_core::env::ContractEnv<DefaultSrmlTypes>>,
-        deprecated_exit: Checkpoint<T, I>,
-        transaction: Transaction<B, I>,
-        witness: W,
-        post_state: StateUpdate<T, I>,
-    ) -> Result<()>;
 
     /// Finalizes an exit that has passed its exit period and has not been successfully challenged.
     fn finalize_exit(
@@ -89,6 +78,6 @@ where
         deposited_range_id: I,
     ) -> Result<ExitFinalized<T>>;
 
-    fn commitment(&self) -> &C;
-    fn deposit(&self) -> &D;
+    fn commitment(&mut self) -> &mut C;
+    fn deposit(&mut self) -> &mut D;
 }
