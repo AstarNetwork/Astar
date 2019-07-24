@@ -66,8 +66,7 @@ impl Deposit {
             },
         );
         // Increment total deposited now that we've extended our depositedRanges
-        self.total_deposited
-            .set(total_deposited + amount as u128);
+        self.total_deposited.set(total_deposited + amount as u128);
     }
 
     /// This function is called when an exit is finalized to "burn" it--so that checkpoints and exits
@@ -126,14 +125,58 @@ impl traits::Deposit<RangeNumber, commitment::default::Commitment> for Deposit {
         self.total_deposited.set(0);
     }
 
+    /// Allows a user to submit a deposit to the contract.
+    /// Only allows users to submit deposits for the asset represented by this contract.
+    ///
+    /// Depositing is the mechanism which locks an asset into the plasma escrow agreement,
+    /// allowing it to be transacted off-chain. The initialState defines its spending conditions,
+    /// in the same way that a StateUpdate does once further transactions are made. Because deposits are verified on-chain transactions,
+    /// they can be treated as checkpoints which are unchallengeable.
     fn deposit<T: Member + Codec>(
         &mut self,
         env: &mut EnvHandler<ink_core::env::ContractEnv<DefaultSrmlTypes>>,
         depositer: AccountId,
         amount: Balance,
         initial_state: StateObject<T>,
-    ) {
-		// TODO
+    ) -> primitives::Result<CheckpointFinalized> {
+        // Transfer the deposited amount from the depositer to the deposit contract’s address.
+        // Transfer tokens to the deposit contract
+        // erc20.transferFrom(msg.sender, address(this), _amount);
+        // TODO
+
+        let total_deposited = self.total_deposited.get().clone();
+        let deposit_range = Range {
+            start: total_deposited,
+            end: total_deposited + amount as RangeNumber,
+        };
+        let state_update = StateUpdate {
+            range: deposit_range.clone(),
+            state_object: initial_state,
+            plasma_block_number: self.commitment().current_block(env),
+        };
+        let checkpoint = Checkpoint {
+            state_update: state_update,
+            sub_range: deposit_range,
+        };
+
+        // Keep track of the total deposited assets, totalDeposited.
+        // Create a state update with a state object equal to the provided initialState.
+        // Compute the range of the created state update as totalDeposited to totalDeposited + amount.
+        // Update the total amount deposited after the deposit is handled.
+        self.extend_deposited_ranges(amount);
+
+        // Insert the created state update into the checkpoints mapping with challengeableUntil being the current block number - 1.
+        let checkpoint_id = checkpoint.id();
+        let status = CheckpointStatus {
+            challengeable_until: env.block_number() - 1,
+            outstanding_challenges: 0,
+        };
+        self.checkpoints.insert(checkpoint_id.clone(), status);
+
+        // Emit a CheckpointFinalized event for the inserted checkpoint.
+        Ok(CheckpointFinalized {
+            checkpoint: checkpoint_id,
+        })
     }
 
     /// Starts a checkpoint for a given state update.

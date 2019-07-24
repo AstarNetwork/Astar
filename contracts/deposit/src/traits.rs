@@ -51,7 +51,7 @@ where
         depositer: AccountId,
         amount: Balance,
         initial_state: StateObject<T>,
-    );
+    ) -> Result<CheckpointFinalized>;
 
     /// Starts a checkpoint for a given state update.
     // MUST verify the that checkpoint.stateUpdate was included with inclusionProof.
