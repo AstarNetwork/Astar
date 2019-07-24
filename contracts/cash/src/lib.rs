@@ -1,24 +1,27 @@
 #![cfg_attr(not(any(test, feature = "std")), no_std)]
 
-use ink_core::{memory::{format, vec::Vec}, storage};
 use core::option::Option;
+use ink_core::{
+    memory::{format, vec::Vec},
+    storage,
+};
 use ink_lang::contract;
 use predicate::ownership::{Signature, TransactionBody};
-use primitives::default::*;
 use predicate::traits::Predicate;
+use primitives::default::*;
 
 // TODO: Comment Japanese, because WIP specific implmentation.
 
 contract! {
     #![env = ink_core::env::DefaultSrmlTypes]
 
-	/// Ownership Plasma Standard Contract.
-    struct Ownership {
+    /// Cash Plasma Standard Contract.
+    struct Cash {
         /// The current state of our flag.
         predicate: predicate::ownership::Predicate,
     }
 
-    impl Deploy for Ownership {
+    impl Deploy for Cash {
         /// Initializes our state to `false` upon deploying our smart contract.
         fn deploy(&mut self,
             token_address: AccountId,
@@ -29,24 +32,27 @@ contract! {
         }
     }
 
-    impl Ownership {
+    impl Cash {
         ///			マークルルートを提出する。
         //			一般にオペレータのみが提出を許可される。
         pub(external) fn submit_block(&mut self, header: Hash) {
+        	match self.predicate.commitment().submit_block(header) {
+        		Ok(result) => env.emit(result),
 
+        	}
         }
         ///  checkpoint の作成を開始する。ある一定期間 challenge_checkpoint されなければチェックポイントが作成される
         ///  deposited_range_id は depositedRanges の始点
         pub(external) fn start_checkpoint(&mut self,
-        	checkpoint: Checkpoint<AccountId>,
-        	inclusion_proof: Vec<Hash>,
-        	deposited_range_id: RangeNumber) {
+            checkpoint: Checkpoint<AccountId>,
+            inclusion_proof: Vec<Hash>,
+            deposited_range_id: RangeNumber) {
         }
 
         //// 新しいチェックポイントを示すことで古いチェックポイントを消す
         pub(external) fn delete_exit_outdated(&mut self,
-        	older_exit: Checkpoint<AccountId>,
-        	newer_checkpoint: Checkpoint<AccountId>) {
+            older_exit: Checkpoint<AccountId>,
+            newer_checkpoint: Checkpoint<AccountId>) {
         }
 
         /// チェックポイントに対するチャレンジ
@@ -84,7 +90,7 @@ mod tests {
 
     #[test]
     fn it_works() {
-        let mut contract = Ownership::deploy_mock();
+        let mut contract = Cash::deploy_mock();
         assert_eq!(contract.get(), false);
         contract.flip();
         assert_eq!(contract.get(), true);
