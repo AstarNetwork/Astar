@@ -523,13 +523,15 @@ mod tests {
         }
     }
 
+    fn get_token_address() -> AccountId {
+        AccountId::decode(&mut &[2u8; 32].to_vec()[..]).expect("account id decoded.")
+    }
+
     #[test]
     fn deposit_normal() {
-        let erc20_address =
-            AccountId::decode(&mut &[1u8; 32].to_vec()[..]).expect("account id decoded.");
+        let erc20_address = get_token_address();
         let (mut contract, mut env) = Deposit::deploy_mock(erc20_address, 5, 5);
         let this = env.address();
-        println!("this address: {:?}", this);
 
         let amount = 10000 as Balance;
         let initial_state = StateObject {
@@ -556,7 +558,16 @@ mod tests {
             Ok(CheckpointFinalized {
                 checkpoint: exp_checkpoint.id(),
             }),
-            contract.deposit(&mut env, erc20_address, amount, initial_state,)
+            contract.deposit(&mut env, this, amount, initial_state,)
         )
+    }
+
+    #[test]
+    fn start_checkpoint_normal() {
+        let erc20_address = get_token_address();
+        let (mut contract, mut env) = Deposit::deploy_mock(erc20_address, 5, 5);
+        let this = env.address();
+
+    	// TODO Creating inclusionProof.(Merkle Logic.)
     }
 }
