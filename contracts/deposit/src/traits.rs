@@ -51,7 +51,7 @@ where
         depositer: AccountId,
         amount: Balance,
         initial_state: StateObject<T>,
-    );
+    ) -> Result<CheckpointFinalized>;
 
     /// Starts a checkpoint for a given state update.
     // MUST verify the that checkpoint.stateUpdate was included with inclusionProof.
@@ -66,7 +66,7 @@ where
         checkpoint: Checkpoint<T, I>,
         inclusion_proof: P,
         deposited_range_id: I,
-    );
+    ) -> Result<CheckpointStarted<T>>;
 
     /// Deletes an exit by showing that there exists a newer finalized checkpoint. Immediately cancels the exit.
     // MUST ensure the checkpoint ranges intersect.
@@ -79,7 +79,7 @@ where
         env: &mut EnvHandler<ink_core::env::ContractEnv<DefaultSrmlTypes>>,
         older_exit: Checkpoint<T, I>,
         newer_checkpoint: Checkpoint<T, I>,
-    );
+    ) -> Result<()>;
 
     /// Starts a challenge for a checkpoint by pointing to an exit that occurred in an earlier plasma block.
     /// Does not immediately cancel the checkpoint. Challenge can be blocked if the exit is cancelled.
@@ -95,7 +95,7 @@ where
         &mut self,
         env: &mut EnvHandler<ink_core::env::ContractEnv<DefaultSrmlTypes>>,
         challenge: Challenge<T, I>,
-    );
+    ) -> Result<()>;
 
     /// Decrements the number of outstanding challenges on a checkpoint by showing that one of its challenges has been blocked.
     // MUST check that the challenge was not already removed.
@@ -106,7 +106,7 @@ where
         &mut self,
         env: &mut EnvHandler<ink_core::env::ContractEnv<DefaultSrmlTypes>>,
         challenge: Challenge<T, I>,
-    );
+    ) -> Result<()>;
 
     /// Allows the predicate contract to start an exit from a checkpoint. Checkpoint may be pending or finalized.
     // MUST ensure the checkpoint exists.
@@ -118,7 +118,7 @@ where
         &mut self,
         env: &mut EnvHandler<ink_core::env::ContractEnv<DefaultSrmlTypes>>,
         checkpoint: Checkpoint<T, I>,
-    );
+    ) -> Result<ExitStarted>;
 
     /// Allows the predicate address to cancel an exit which it determines is deprecated.
     // MUST ensure the msg.sender is the _checkpoint.stateUpdate.predicateAddress to ensure the deprecation is authenticated.
@@ -127,7 +127,7 @@ where
         &mut self,
         env: &mut EnvHandler<ink_core::env::ContractEnv<DefaultSrmlTypes>>,
         checkpoint: Checkpoint<T, I>,
-    );
+    ) -> Result<()>;
 
     /// Finalizes an exit that has passed its exit period and has not been successfully challenged.
     // MUST ensure that the exit finalization is authenticated from the predicate by msg.sender == _exit.stateUpdate.state.predicateAddress.
@@ -145,7 +145,7 @@ where
         env: &mut EnvHandler<ink_core::env::ContractEnv<DefaultSrmlTypes>>,
         exit: Checkpoint<T, I>,
         deposited_range_id: I,
-    );
+    ) -> Result<ExitFinalized<T>>;
 
     fn commitment(&self) -> &C;
 }

@@ -4,6 +4,7 @@ use ink_model::{state, EnvHandler};
 use ink_utils::hash;
 use primitives::{
     default::*,
+    events::*,
     traits::{Member, SimpleArithmetic},
 };
 
@@ -115,13 +116,13 @@ impl traits::Commitment for Commitment {
         &mut self,
         env: &mut EnvHandler<ink_core::env::ContractEnv<DefaultSrmlTypes>>,
         header: Hash,
-    ) {
+    ) -> primitives::Result<BlockSubmitted> {
         *self.current_block += 1;
         self.blocks.insert(*self.current_block, header.clone());
-        //        env.emit(BlockSubmitted {
-        //            number: *self.current_block,
-        //            header: header,
-        //        });
+        Ok(BlockSubmitted {
+            number: *self.current_block,
+            header: header,
+        })
     }
 
     /// Inclusion Proof.
@@ -129,8 +130,8 @@ impl traits::Commitment for Commitment {
     fn verify_state_update_inclusion<T, P, I>(
         &self,
         env: &mut EnvHandler<ink_core::env::ContractEnv<DefaultSrmlTypes>>,
-        state_update: primitives::StateUpdate<T, I>, // leaf
-        inclusion_proof: P,                          // inclusion_proof
+        state_update: &primitives::StateUpdate<T, I>, // leaf
+        inclusion_proof: &P,                          // inclusion_proof
     ) -> bool
     where
         T: Member + Codec,
@@ -138,7 +139,7 @@ impl traits::Commitment for Commitment {
         I: Member + SimpleArithmetic + Codec,
     {
         if let Some(root_hash) = self.blocks.get(&state_update.plasma_block_number) {
-            return inclusion_proof.verify(&state_update, *root_hash);
+            return inclusion_proof.verify(state_update, *root_hash);
         }
         false
     }
@@ -148,8 +149,8 @@ impl traits::Commitment for Commitment {
     fn verify_asset_state_root_inclusion<T, P, I>(
         &self,
         env: &mut EnvHandler<ink_core::env::ContractEnv<DefaultSrmlTypes>>,
-        asset_state: primitives::StateUpdate<T, I>,
-        inclusion_proof: P,
+        asset_state: &primitives::StateUpdate<T, I>,
+        inclusion_proof: &P,
     ) -> bool
     where
         T: Member + Codec,
@@ -157,7 +158,7 @@ impl traits::Commitment for Commitment {
         I: Member + SimpleArithmetic + Codec,
     {
         if let Some(root_hash) = self.blocks.get(&asset_state.plasma_block_number) {
-            return inclusion_proof.verify(&asset_state, *root_hash);
+            return inclusion_proof.verify(asset_state, *root_hash);
         }
         false
     }
@@ -166,28 +167,28 @@ impl traits::Commitment for Commitment {
 #[cfg(all(test, feature = "test-env"))]
 mod tests {
     use super::*;
+    use crate::traits::Commitment as _;
     use ink_core::storage::{
         alloc::{AllocateUsing, BumpAlloc, Initialize as _},
         Key,
     };
-	use ink_model::EnvHandler;
-	use crate::traits::Commitment as _;
+    use ink_model::EnvHandler;
     impl Commitment {
         /// Deploys the testable contract by initializing it with the given values.
         pub fn deploy_mock() -> (
             Self,
             EnvHandler<ink_core::env::ContractEnv<DefaultSrmlTypes>>,
         ) {
-			let (mut commitment, mut env) = unsafe {
+            let (mut commitment, mut env) = unsafe {
                 let mut alloc = BumpAlloc::from_raw_parts(Key([0x0; 32]));
                 (
                     Self::allocate_using(&mut alloc),
                     AllocateUsing::allocate_using(&mut alloc),
                 )
             };
-			commitment.initialize(());
-			commitment.deploy(&mut env);
-			(commitment, env)
+            commitment.initialize(());
+            commitment.deploy(&mut env);
+            (commitment, env)
         }
     }
 
@@ -197,22 +198,36 @@ mod tests {
         assert_eq!(contract.current_block(&mut env), 0);
         assert_eq!(contract.block_hash(&mut env, 0), None);
 
-        let header_1: Hash = Hash::decode(&mut &[1u8; 32].to_vec()[..]).expect("hash decoded error.");
-        contract.submit_block(&mut env, header_1.clone());
+        let header_1: Hash =
+            Hash::decode(&mut &[1u8; 32].to_vec()[..]).expect("hash decoded error.");
+        assert_eq!(
+            Ok(BlockSubmitted {
+                number: 1,
+                header: header_1.clone(),
+            }),
+            contract.submit_block(&mut env, header_1.clone())
+        );
         assert_eq!(contract.current_block(&mut env), 1);
         assert_eq!(contract.block_hash(&mut env, 0), None);
         assert_eq!(contract.block_hash(&mut env, 1), Some(header_1));
 
-        let header_2: Hash = Hash::decode(&mut &[2u8; 32].to_vec()[..]).expect("hash decoded error.");
-        contract.submit_block(&mut env, header_2.clone());
+        let header_2: Hash =
+            Hash::decode(&mut &[2u8; 32].to_vec()[..]).expect("hash decoded error.");
+        assert_eq!(
+            Ok(BlockSubmitted {
+                number: 2,
+                header: header_2.clone(),
+            }),
+            contract.submit_block(&mut env, header_2.clone())
+        );
         assert_eq!(contract.current_block(&mut env), 2);
         assert_eq!(contract.block_hash(&mut env, 0), None);
         assert_eq!(contract.block_hash(&mut env, 1), Some(header_1));
         assert_eq!(contract.block_hash(&mut env, 2), Some(header_2));
     }
 
-	#[test]
-	fn verify_inclusio_proof() {
-		// TODO
-	}
+    #[test]
+    fn verify_inclusion_proof() {
+        // TODO
+    }
 }

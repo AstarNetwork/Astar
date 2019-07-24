@@ -2,6 +2,7 @@ use super::*;
 use ink_core::env::{ContractEnv, DefaultSrmlTypes};
 use ink_model::{ContractState, EnvHandler};
 use primitives::{
+    events::*,
     traits::{Member, SimpleArithmetic},
     *,
 };
@@ -35,15 +36,19 @@ pub trait Commitment: ContractState {
 
     /// Allows a user to submit a block with the given header.
     /// `function submitBlock(bytes _header) public`
-    fn submit_block(&mut self, env: &mut EnvHandler<ContractEnv<DefaultSrmlTypes>>, header: Hash);
+    fn submit_block(
+        &mut self,
+        env: &mut EnvHandler<ContractEnv<DefaultSrmlTypes>>,
+        header: Hash,
+    ) -> Result<BlockSubmitted>;
 
     /// Inclusion Proof.
     /// This function verifies state_update in PlasmaChain with inclusion_proof.
     fn verify_state_update_inclusion<T, P, I>(
         &self,
         env: &mut EnvHandler<ContractEnv<DefaultSrmlTypes>>,
-        state_update: StateUpdate<T, I>,
-        inclusion_proof: P,
+        state_update: &StateUpdate<T, I>,
+        inclusion_proof: &P,
     ) -> bool
     where
         T: Member + Codec,
@@ -55,8 +60,8 @@ pub trait Commitment: ContractState {
     fn verify_asset_state_root_inclusion<T, P, I>(
         &self,
         env: &mut EnvHandler<ContractEnv<DefaultSrmlTypes>>,
-        asset_state: StateUpdate<T, I>,
-        inclusion_proof: P,
+        asset_state: &StateUpdate<T, I>,
+        inclusion_proof: &P,
     ) -> bool
     where
         T: Member + Codec,
