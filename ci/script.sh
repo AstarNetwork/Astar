@@ -34,7 +34,7 @@ case $TARGET in
 		./build.sh
 
 		cd child && ./build.sh
-		cd ../contracts/cash && ./build.sh
+		cd ../contracts/cash && ./build.sh && make test
 		cd ../commitment && make test
 		cd ../deposit && make test
 		cd ../predicate && make test
