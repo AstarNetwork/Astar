@@ -398,7 +398,7 @@ impl traits::Deposit<RangeNumber, commitment::default::Commitment> for Deposit {
             return Err("error: Ensure that the contract address is the checkpoint.state_update.predicate_address to authenticate the exit’s initiation.");
         }
 
-        // Set the exit’s redeemableAfter status to the current Ethereum block.number + LOCKUP_PERIOD.
+        // Set the exit’s redeemableAfter status to the current Ethereum block.number + EXIT_PERIOD.
         let redeemable_after = env.block_number() + *self.EXIT_PERIOD;
         self.exit_redeemable_after
             .insert(checkpoint_id.clone(), redeemable_after);
@@ -479,6 +479,9 @@ impl traits::Deposit<RangeNumber, commitment::default::Commitment> for Deposit {
 
     fn commitment(&mut self) -> &mut commitment::default::Commitment {
         &mut self.COMMITMENT
+    }
+    fn commitment_ref(&self) -> &commitment::default::Commitment {
+        &self.COMMITMENT
     }
 }
 
@@ -568,6 +571,6 @@ mod tests {
         let (mut contract, mut env) = Deposit::deploy_mock(erc20_address, 5, 5);
         let this = env.address();
 
-    	// TODO Creating inclusionProof.(Merkle Logic.)
+        // TODO Creating inclusionProof.(Merkle Logic.)
     }
 }

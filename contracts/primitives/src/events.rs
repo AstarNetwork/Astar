@@ -27,9 +27,9 @@ macro_rules! event {
 			),*
 		}
 
-		impl<T: traits::Member + Codec> From<$event_name $(<$generic>)* > for private::Event<T> {
+		impl<T: traits::Member + Codec> From<$event_name $(<$generic>)* > for public::Event<T> {
 			fn from(event: $event_name $(<$generic>)*) -> Self {
-				private::Event::$event_name(event)
+				public::Event::$event_name(event)
 			}
 		}
 	}
@@ -82,9 +82,8 @@ event! {
     }
 }
 
-mod private {
+pub mod public {
     use super::*;
-    #[doc(hidden)]
     #[derive(Encode, Decode)]
     pub enum Event<T: traits::Member + Codec> {
         BlockSubmitted(BlockSubmitted),
@@ -94,25 +93,4 @@ mod private {
         ExitStarted(ExitStarted),
         ExitFinalized(ExitFinalized<T>),
     }
-
-    /// Used to seal the emit trait.
-    pub trait Sealed {}
 }
-
-pub trait EmitEventExt: private::Sealed {
-    /// Emits the given event.
-    fn emit<E, T>(&self, event: E)
-    where
-        T: traits::Member + Codec,
-        E: Into<private::Event<T>>,
-    {
-        use parity_codec::Encode as _;
-        <ink_core::env::ContractEnv<DefaultSrmlTypes> as ink_core::env::Env>::deposit_raw_event(
-            &[],
-            event.into().encode().as_slice(),
-        )
-    }
-}
-
-impl EmitEventExt for ink_model::EnvHandler<ink_core::env::ContractEnv<DefaultSrmlTypes>> {}
-impl private::Sealed for ink_model::EnvHandler<ink_core::env::ContractEnv<DefaultSrmlTypes>> {}

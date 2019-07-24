@@ -134,6 +134,13 @@ impl
     fn deposit(&mut self) -> &mut deposit::default::Deposit {
         &mut self.DEPOSIT
     }
+
+    fn commitment_ref(&self) -> &commitment::default::Commitment {
+        self.deposit_ref().commitment_ref()
+    }
+    fn deposit_ref(&self) -> &deposit::default::Deposit {
+        &self.DEPOSIT
+    }
 }
 
 #[cfg(all(test, feature = "test-env"))]

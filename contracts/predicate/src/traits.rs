@@ -80,4 +80,7 @@ where
 
     fn commitment(&mut self) -> &mut C;
     fn deposit(&mut self) -> &mut D;
+
+    fn commitment_ref(&self) -> &C;
+    fn deposit_ref(&self) -> &D;
 }

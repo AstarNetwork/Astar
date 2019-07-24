@@ -1,24 +1,30 @@
 #![cfg_attr(not(any(test, feature = "std")), no_std)]
 
-use ink_core::{memory::{format, vec::Vec}, storage};
+use commitment::{traits::Commitment, MerkleIndexTreeInternalNode};
 use core::option::Option;
+use deposit::traits::Deposit;
+use ink_core::{
+    env::DefaultSrmlTypes,
+    memory::{format, vec::Vec},
+    storage,
+};
 use ink_lang::contract;
-use predicate::ownership::{Signature, TransactionBody};
-use primitives::default::*;
-use predicate::traits::Predicate;
-
-// TODO: Comment Japanese, because WIP specific implmentation.
+use predicate::{
+    ownership::{Signature, TransactionBody},
+    traits::Predicate,
+};
+use primitives::{default::*, events::*, traits};
 
 contract! {
     #![env = ink_core::env::DefaultSrmlTypes]
 
-	/// Ownership Plasma Standard Contract.
-    struct Ownership {
+    /// Cash Plasma Standard Contract.
+    struct Cash {
         /// The current state of our flag.
         predicate: predicate::ownership::Predicate,
     }
 
-    impl Deploy for Ownership {
+    impl Deploy for Cash {
         /// Initializes our state to `false` upon deploying our smart contract.
         fn deploy(&mut self,
             token_address: AccountId,
@@ -29,64 +35,155 @@ contract! {
         }
     }
 
-    impl Ownership {
-        ///			マークルルートを提出する。
-        //			一般にオペレータのみが提出を許可される。
+    impl Cash {
+        /// Allows a user to submit a block with the given header(merkle root).
+        /// Generally, allows a operator only execute this fucntion.
         pub(external) fn submit_block(&mut self, header: Hash) {
-
+            match self.predicate.commitment().submit_block(env, header) {
+                Ok(result) => env.emit(result),
+                Err(err) => env.println(err),
+            }
         }
-        ///  checkpoint の作成を開始する。ある一定期間 challenge_checkpoint されなければチェックポイントが作成される
-        ///  deposited_range_id は depositedRanges の始点
+
+        /// Starts a checkpoint for a given state update.
+        ///
+        /// Checkpoints are assertions that a certain state update occured/was included,
+        /// and that it has no intersecting unspent state updates in its history.
+        /// Because the operator may publish an invalid block,
+        /// it must undergo a challenge period in which the parties who care about the unspent state update in the history exit it,
+        /// and use it to challenge the checkpoint.
+        ///
+        /// deposited_range_id is end of deposited_ranges.
         pub(external) fn start_checkpoint(&mut self,
-        	checkpoint: Checkpoint<AccountId>,
-        	inclusion_proof: Vec<Hash>,
-        	deposited_range_id: RangeNumber) {
+            checkpoint: Checkpoint<AccountId>,
+            inclusion_proof: commitment::InclusionProof<RangeNumber>,
+            deposited_range_id: RangeNumber) {
+            match self.predicate.deposit().start_checkpoint(env, checkpoint, inclusion_proof, deposited_range_id) {
+                Ok(result) => env.emit(result),
+                Err(err) => env.println(err),
+            }
         }
 
-        //// 新しいチェックポイントを示すことで古いチェックポイントを消す
+        /// Deletes an exit by showing that there exists a newer finalized checkpoint. Immediately cancels the exit.
+        ///
+        /// If a checkpoint game has finalized, the safety property should be that nothing is valid in that
+        /// range’s previous blocks–”the history has been erased.” However,
+        /// since there still might be some `StateUpdates` included in the blocks prior,
+        /// invalid checkpoints can be initiated. This method allows the rightful owner to
+        /// demonstrate that the initiated `older_checkpoint` is invalid and must be deleted.
         pub(external) fn delete_exit_outdated(&mut self,
-        	older_exit: Checkpoint<AccountId>,
-        	newer_checkpoint: Checkpoint<AccountId>) {
+            older_exit: Checkpoint<AccountId>,
+            newer_checkpoint: Checkpoint<AccountId>) {
+            if let Err(err) = self.predicate.deposit().delete_exit_outdated(env, older_exit, newer_checkpoint) {
+                env.println(err);
+            }
         }
 
-        /// チェックポイントに対するチャレンジ
-        pub(external) fn challenge_checkpoint(&mut self, challenge: Challenge<AccountId>) {}
+        /// Starts a challenge for a checkpoint by pointing to an exit that occurred in
+        /// an earlier plasma block. Does not immediately cancel the checkpoint. Challenge can be blocked if the exit is cancelled.
+        ///
+        /// If the operator includes an invalid `StateUpdate`
+        /// (i.e. there is not a deprecation for the last valid `StateUpdate` on an intersecting range),
+        /// they may checkpoint it and attempt a malicious exit.
+        /// To prevent this, the valid owner must checkpoint their unspent state,
+        /// exit it, and create a challenge on the invalid checkpoint.
+        pub(external) fn challenge_checkpoint(&mut self, challenge: Challenge<AccountId>) {
+            if let Err(err) = self.predicate.deposit().challenge_checkpoint(env, challenge) {
+                env.println(err);
+            }
+        }
 
-        /// チャレンジされているチェックポイントの削除
-        pub(external) fn removeChallenge(&mut self, challenge: Challenge<AccountId>) {}
+        /// Decrements the number of outstanding challenges on a checkpoint by showing that one of its challenges has been blocked.
+        ///
+        /// Anyone can exit a prior state which was since spent and use it to challenge despite it being deprecated.
+        /// To remove this invalid challenge, the challenged checkpointer may demonstrate the exit is deprecated,
+        /// deleting it, and then call this method to remove the challenge.
+        pub(external) fn remove_challenge(&mut self, challenge: Challenge<AccountId>) {
+            if let Err(err) = self.predicate.deposit().remove_challenge(env, challenge) {
+                env.println(err);
+            }
+        }
 
-        /// Exit の開始
-        pub(external) fn start_exit(&mut self,	checkpoint: Checkpoint<AccountId>){}
+        /// Allows the predicate contract to start an exit from a checkpoint. Checkpoint may be pending or finalized.
+        ///
+        /// For a user to redeem state from the plasma chain onto the main chain,
+        /// they must checkpoint it and respond to all challenges on the checkpoint,
+        /// and await a `EXIT_PERIOD` to demonstrate that the checkpointed subrange has not been deprecated. This is the method which starts the latter process on a given checkpoint.
+        pub(external) fn start_exit(&mut self,	checkpoint: Checkpoint<AccountId>){
+            match self.predicate.start_exit(env, checkpoint) {
+                Ok(result) => env.emit(result),
+                Err(err) => env.println(err),
+            }
+        }
 
-        /// Exit の無効化（要はチャレンジ）
+        /// Allows the predicate address to cancel an exit which it determines is deprecated.
         pub(external) fn deprecate_exit(&mut self,
             deprecated_exit: Checkpoint<AccountId>,
             transaction: Transaction<TransactionBody>,
             witness: Signature,
-            post_state: StateUpdate<AccountId>) {}
+            post_state: StateUpdate<AccountId>) {
+            if let Err(err) = self.predicate.deprecate_exit(env, deprecated_exit, transaction, witness, post_state) {
+                env.println(err);
+            }
+        }
 
-        /// Exit finalize
-        pub(external) fn finalizeExit(&mut self,
+        /// Finalizes an exit that has passed its exit period and has not been successfully challenged.
+        pub(external) fn finalize_exit(&mut self,
             checkpoint: Checkpoint<AccountId>,
-            deposited_range_id: RangeNumber) {}
+            deposited_range_id: RangeNumber) {
+            match self.predicate.finalize_exit(env, checkpoint, deposited_range_id) {
+                Ok(result) => env.emit(result),
+                Err(err) => env.println(err),
+            }
+        }
 
+        // ================================== Getter ===================================================
         ///	最新のブロックハッシュを取得する。
-        pub(external) fn current_block(&self) -> BlockNumber { 1u64 }
+        pub(external) fn current_block(&self) -> BlockNumber {
+            self.predicate.commitment_ref().current_block(env)
+         }
 
 
-        pub(external) fn block_hash(&self, number: BlockNumber) -> Option<Hash> { None }
+        pub(external) fn block_hash(&self, number: BlockNumber) -> Option<Hash> {
+            self.predicate.commitment_ref().block_hash(env, number)
+        }
     }
 }
+
+pub trait EmitEventExt {
+    /// Emits the given event.
+    fn emit<E>(&self, event: E)
+    where
+        E: Into<public::Event<AccountId>>,
+    {
+        use parity_codec::Encode as _;
+        <ink_core::env::ContractEnv<DefaultSrmlTypes> as ink_core::env::Env>::deposit_raw_event(
+            &[],
+            event.into().encode().as_slice(),
+        )
+    }
+}
+
+impl EmitEventExt for ink_model::EnvHandler<ink_core::env::ContractEnv<DefaultSrmlTypes>> {}
 
 #[cfg(all(test, feature = "test-env"))]
 mod tests {
     use super::*;
+    use parity_codec::Decode;
+
+    fn get_token_address() -> AccountId {
+        AccountId::decode(&mut &[2u8; 32].to_vec()[..]).expect("account id decoded.")
+    }
+    fn get_sender_address() -> AccountId {
+        AccountId::decode(&mut &[3u8; 32].to_vec()[..]).expect("account id decoded.")
+    }
+    fn get_receiver_address() -> AccountId {
+        AccountId::decode(&mut &[4u8; 32].to_vec()[..]).expect("account id decoded.")
+    }
 
     #[test]
     fn it_works() {
-        let mut contract = Ownership::deploy_mock();
-        assert_eq!(contract.get(), false);
-        contract.flip();
-        assert_eq!(contract.get(), true);
+        let mut contract = Cash::deploy_mock(get_token_address(), 5, 5);
+        assert_eq!(contract.current_block(), 0);
     }
 }
