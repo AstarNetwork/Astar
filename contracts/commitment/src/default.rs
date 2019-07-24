@@ -83,7 +83,7 @@ impl traits::Commitment for Commitment {
     /// Returns the current block number.
     fn current_block(
         &self,
-        env: &mut EnvHandler<ink_core::env::ContractEnv<DefaultSrmlTypes>>,
+        env: &EnvHandler<ink_core::env::ContractEnv<DefaultSrmlTypes>>,
     ) -> BlockNumber {
         let current_block = *self.current_block;
         env.println(&format!("Commitment::current_block = {:?}", current_block));
@@ -93,7 +93,7 @@ impl traits::Commitment for Commitment {
     /// Returns the balance of the given AccountId.
     fn block_hash(
         &self,
-        env: &mut EnvHandler<ink_core::env::ContractEnv<DefaultSrmlTypes>>,
+        env: &EnvHandler<ink_core::env::ContractEnv<DefaultSrmlTypes>>,
         number: BlockNumber,
     ) -> Option<Hash> {
         if let Some(block) = self.blocks.get(&number) {

@@ -112,7 +112,7 @@ where
     // MUST ensure the checkpoint exists.
     // MUST ensure that the msg.sender is the _checkpoint.stateUpdate.predicateAddress to authenticate the exit’s initiation.
     // MUST ensure an exit on the checkpoint is not already underway.
-    // MUST set the exit’s redeemableAfter status to the current Ethereum block.number + LOCKUP_PERIOD.
+    // MUST set the exit’s redeemableAfter status to the current Ethereum block.number + EXIT_PERIOD.
     // MUST emit an exitStarted event.
     fn start_exit<T: Member + Codec>(
         &mut self,
@@ -148,4 +148,5 @@ where
     ) -> Result<ExitFinalized<T>>;
 
     fn commitment(&mut self) -> &mut C;
+    fn commitment_ref(&self) -> &C;
 }

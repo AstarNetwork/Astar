@@ -25,12 +25,12 @@ pub trait Commitment: ContractState {
     fn deploy(&mut self, env: &mut EnvHandler<ContractEnv<DefaultSrmlTypes>>);
 
     /// Returns the current block number.
-    fn current_block(&self, env: &mut EnvHandler<ContractEnv<DefaultSrmlTypes>>) -> BlockNumber;
+    fn current_block(&self, env: &EnvHandler<ContractEnv<DefaultSrmlTypes>>) -> BlockNumber;
 
     /// Returns the balance of the given AccountId.
     fn block_hash(
         &self,
-        env: &mut EnvHandler<ContractEnv<DefaultSrmlTypes>>,
+        env: &EnvHandler<ContractEnv<DefaultSrmlTypes>>,
         number: BlockNumber,
     ) -> Option<Hash>;
 
