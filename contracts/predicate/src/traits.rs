@@ -36,7 +36,7 @@ where
         &mut self,
         env: &mut EnvHandler<ink_core::env::ContractEnv<DefaultSrmlTypes>>,
         checkpoint: Checkpoint<T, I>,
-    );
+    ) -> Result<ExitStarted>;
 
     /// Allows the predicate address to cancel an exit which it determines is deprecated.
     fn deprecate_exit(
@@ -46,7 +46,7 @@ where
         transaction: Transaction<B, I>,
         witness: W,
         post_state: StateUpdate<T, I>,
-    );
+    ) -> Result<()>;
 
     /// Finalizes an exit that has passed its exit period and has not been successfully challenged.
     fn finalize_exit(
@@ -54,7 +54,7 @@ where
         env: &mut EnvHandler<ink_core::env::ContractEnv<DefaultSrmlTypes>>,
         exit: Checkpoint<T, I>,
         deposited_range_id: I,
-    );
+    ) -> Result<ExitFinalized<T>>;
 
     fn commitment(&self) -> &C;
     fn deposit(&self) -> &D;

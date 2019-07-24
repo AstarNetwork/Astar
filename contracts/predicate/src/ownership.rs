@@ -98,7 +98,8 @@ impl
         &mut self,
         env: &mut EnvHandler<ink_core::env::ContractEnv<DefaultSrmlTypes>>,
         checkpoint: Checkpoint<AccountId>,
-    ) {
+    ) -> primitives::Result<ExitStarted> {
+        self.DEPOSIT.start_exit(env, checkpoint)
     }
 
     /// Allows the predicate address to cancel an exit which it determines is deprecated.
@@ -109,7 +110,8 @@ impl
         transaction: Transaction<TransactionBody>,
         witness: Signature,
         post_state: StateUpdate<AccountId>,
-    ) {
+    ) -> primitives::Result<()> {
+        Ok(())
     }
 
     /// Finalizes an exit that has passed its exit period and has not been successfully challenged.
@@ -118,7 +120,8 @@ impl
         env: &mut EnvHandler<ink_core::env::ContractEnv<DefaultSrmlTypes>>,
         exit: Checkpoint<AccountId>,
         deposited_range_id: RangeNumber,
-    ) {
+    ) -> primitives::Result<ExitFinalized<AccountId>> {
+        self.DEPOSIT.finalize_exit(env, exit, deposited_range_id)
     }
 
     fn commitment(&self) -> &commitment::default::Commitment {
