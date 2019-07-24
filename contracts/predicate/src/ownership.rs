@@ -99,6 +99,15 @@ impl
         env: &mut EnvHandler<ink_core::env::ContractEnv<DefaultSrmlTypes>>,
         checkpoint: Checkpoint<AccountId>,
     ) -> primitives::Result<ExitStarted> {
+		// Extract the owner from the state object data field
+		let owner = checkpoint.state_update.state_object.data;
+
+		// Require that this is called by the owner
+		if env.caller() != owner {
+			return Err("Only owner may initiate the exit.")
+		}
+
+		// Forward the authenticated startExit to the deposit contract
         self.DEPOSIT.start_exit(env, checkpoint)
     }
 
