@@ -37,5 +37,6 @@ case $TARGET in
 		cd ../contracts/cash && ./build.sh
 		cd ../commitment && make test
 		cd ../deposit && make test
+		cd ../predicate && make test
 		;;
 esac

@@ -117,7 +117,7 @@ impl traits::Deposit<RangeNumber, commitment::default::Commitment> for Deposit {
         chalenge_period: BlockNumber,
         exit_period: BlockNumber,
     ) {
-        self.COMMITMENT.deploy(env);
+        self.commitment().deploy(env);
 
         //MUST be an address of ERC20 token
         self.TOKEN_ADDRES.set(token_address);
@@ -477,8 +477,8 @@ impl traits::Deposit<RangeNumber, commitment::default::Commitment> for Deposit {
         Ok(ExitFinalized { exit })
     }
 
-    fn commitment(&self) -> &commitment::default::Commitment {
-        &self.COMMITMENT
+    fn commitment(&mut self) -> &mut commitment::default::Commitment {
+        &mut self.COMMITMENT
     }
 }
 

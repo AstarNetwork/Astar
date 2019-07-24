@@ -7,7 +7,10 @@ use ink_core::{
 };
 use ink_model::EnvHandler;
 use parity_codec::{Codec, Decode, Encode};
-use primitives::traits::{Member, SimpleArithmetic};
+use primitives::{
+    events::*,
+    traits::{Member, SimpleArithmetic},
+};
 
 pub mod ownership;
 pub mod traits;
@@ -16,13 +19,3 @@ type AccountId = <ContractEnv<DefaultSrmlTypes> as EnvTypes>::AccountId;
 type Balance = <ContractEnv<DefaultSrmlTypes> as EnvTypes>::Balance;
 type BlockNumber = <ContractEnv<DefaultSrmlTypes> as EnvTypes>::BlockNumber;
 type Hash = <ContractEnv<DefaultSrmlTypes> as EnvTypes>::Hash;
-
-#[cfg(all(test, feature = "test-env"))]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn it_works() {
-        let mut contract = Deposit::deploy_mock();
-    }
-}

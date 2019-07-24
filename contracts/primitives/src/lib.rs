@@ -30,6 +30,13 @@ impl<I: traits::SimpleArithmetic + traits::Member + Codec> Range<I> {
     }
 }
 
+pub fn is_intersects<I: traits::SimpleArithmetic + traits::Member + Codec>(
+    a: &Range<I>,
+    b: &Range<I>,
+) -> bool {
+    (a.start <= b.start && b.start <= a.end) || (a.start <= b.end && b.end <= a.end)
+}
+
 impl<I> Verify for Range<I>
 where
     I: traits::SimpleArithmetic + traits::Member + Codec,
@@ -130,7 +137,7 @@ pub struct Transaction<
     U: traits::Member + Codec,
     I: traits::SimpleArithmetic + traits::Member + Codec,
 > {
-    pub deposit_contract: AccountId,
+    pub predicate: AccountId,
     pub range: Range<I>,
     pub body: U,
 }
