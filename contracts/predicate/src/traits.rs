@@ -24,6 +24,7 @@ where
     /// Predicates MUST disallow state transitions which pass verification without some interested party’s consent, e.g. the owner’s signature
     fn verify_transaction(
         &self,
+        env: &mut EnvHandler<ink_core::env::ContractEnv<DefaultSrmlTypes>>,
         pre_state: StateUpdate<T, I>,
         transaction: Transaction<B, I>,
         witness: W,

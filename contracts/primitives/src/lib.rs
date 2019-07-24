@@ -130,7 +130,7 @@ pub struct Transaction<
     U: traits::Member + Codec,
     I: traits::SimpleArithmetic + traits::Member + Codec,
 > {
-    pub deposit_contract: AccountId,
+    pub predicate: AccountId,
     pub range: Range<I>,
     pub body: U,
 }

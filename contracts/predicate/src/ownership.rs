@@ -18,13 +18,16 @@ ink_model::state! {
 #[derive(Clone, Encode, Decode, PartialEq, Eq)]
 #[cfg_attr(not(no_std), derive(Debug))]
 pub struct TransactionBody {
-    new_state_object: StateObject<AccountId>,
+    new_state: StateObject<AccountId>,
     origin_block: BlockNumber,
     max_block: BlockNumber,
 }
 
 #[derive(Clone, Encode, Decode)]
 pub struct Signature(pub [u8; 64]);
+pub fn check_signature<T: Codec>(data: &T, pubkey: &AccountId, signature: &Signature) -> bool {
+    true
+}
 
 impl
     traits::Predicate<
@@ -36,7 +39,7 @@ impl
         deposit::default::Deposit,
     > for Predicate
 {
-    /// deplpy predicate contract.
+    /// Deplpy predicate contract.
     fn deploy(
         &mut self,
         env: &mut EnvHandler<ink_core::env::ContractEnv<DefaultSrmlTypes>>,
@@ -44,18 +47,48 @@ impl
         chalenge_period: BlockNumber,
         exit_period: BlockNumber,
     ) {
-		self.DEPOSIT.deploy(env, token_address, chalenge_period, exit_period);
+        self.DEPOSIT
+            .deploy(env, token_address, chalenge_period, exit_period);
     }
 
-    /// Predicates MUST define a custom _witness struct for their particular type of state.
-    /// Predicates MUST disallow state transitions which pass verification without some interested party’s consent, e.g. the owner’s signature
+    /// The main thing that must be defined for a state transition model is this verifyTransaction function
+    /// which accepts a preState state update, and verifies against a transaction and witness that a given postState is correct.
     fn verify_transaction(
         &self,
+        env: &mut EnvHandler<ink_core::env::ContractEnv<DefaultSrmlTypes>>,
         pre_state: StateUpdate<AccountId>,
         transaction: Transaction<TransactionBody>,
         witness: Signature,
         post_state: StateUpdate<AccountId>,
     ) -> bool {
+        /// Define a custom witness struct for their particular type of state.
+        let owner = pre_state.state_object.data;
+        if !check_signature(&transaction, &owner, &witness) {
+            env.println("Owner must have signed the transaction.");
+            return false;
+        }
+
+        // Disallow state transitions which pass verification without some interested party’s consent, e.g. the owner’s signature
+        // check the prestate came after or at the originating block
+        if pre_state.plasma_block_number > transaction.body.origin_block {
+            env.println(
+                "Transaction preState must come before or on the transaction body origin block.",
+            );
+            return false;
+        }
+        // check the poststate came before or at the max block
+        if post_state.plasma_block_number > transaction.body.max_block {
+            env.println(
+                "Transaction postState must come before or on the transaction body max block.",
+            );
+            return false;
+        }
+        // check the state objects are the same
+        if post_state.state_object != transaction.body.new_state {
+            env.println("postState must be the transaction.body.newState.");
+            return false;
+        }
+
         true
     }
 
