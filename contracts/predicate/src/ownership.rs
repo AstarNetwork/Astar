@@ -100,10 +100,10 @@ impl
         checkpoint: Checkpoint<AccountId>,
     ) -> primitives::Result<ExitStarted> {
         // Extract the owner from the state object data field
-        let owner = checkpoint.state_update.state_object.data;
+        let owner = &checkpoint.state_update.state_object.data;
 
         // Require that this is called by the owner
-        if env.caller() != owner {
+        if &env.caller() != owner {
             return Err("Only owner may initiate the exit.");
         }
 
@@ -118,6 +118,13 @@ impl
         exit: Checkpoint<AccountId>,
         deposited_range_id: RangeNumber,
     ) -> primitives::Result<ExitFinalized<AccountId>> {
+        // Extract the owner from the state object data field
+        let owner = &exit.state_update.state_object.data;
+        // Require that this is called by the owner
+        if &env.caller() != owner {
+            return Err("Only owner may finalize the exit.");
+        }
+        // handle the finalization from the parent class now thaat we've verified it's authenticated
         self.deposit().finalize_exit(env, exit, deposited_range_id)
     }
 
