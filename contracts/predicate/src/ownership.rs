@@ -1,12 +1,12 @@
 use super::*;
 use commitment::traits::Verify;
 use core::marker::PhantomData;
+use deposit::traits::Deposit;
 use ink_core::{
     memory::{format, vec::Vec},
     storage,
 };
 use primitives::default::*;
-use deposit::traits::Deposit;
 
 ink_model::state! {
     pub struct Predicate {
@@ -24,7 +24,6 @@ pub struct TransactionBody {
 }
 
 #[derive(Clone, Encode, Decode)]
-#[cfg_attr(not(no_std), derive(Debug))]
 pub struct Signature(pub [u8; 64]);
 
 impl

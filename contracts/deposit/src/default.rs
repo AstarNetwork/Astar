@@ -133,6 +133,7 @@ impl traits::Deposit<RangeNumber, commitment::default::Commitment> for Deposit {
         amount: Balance,
         initial_state: StateObject<T>,
     ) {
+		// TODO
     }
 
     /// Starts a checkpoint for a given state update.
