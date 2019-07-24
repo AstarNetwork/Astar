@@ -25,10 +25,10 @@ where
     fn verify_transaction(
         &self,
         env: &mut EnvHandler<ink_core::env::ContractEnv<DefaultSrmlTypes>>,
-        pre_state: StateUpdate<T, I>,
-        transaction: Transaction<B, I>,
-        witness: W,
-        post_state: StateUpdate<T, I>,
+        pre_state: &StateUpdate<T, I>,
+        transaction: &Transaction<B, I>,
+        witness: &W,
+        post_state: &StateUpdate<T, I>,
     ) -> bool;
 
     /// Allows the predicate contract to start an exit from a checkpoint. Checkpoint may be pending or finalized.
@@ -37,6 +37,39 @@ where
         env: &mut EnvHandler<ink_core::env::ContractEnv<DefaultSrmlTypes>>,
         checkpoint: Checkpoint<T, I>,
     ) -> Result<ExitStarted>;
+
+    /// Allows the predicate address to cancel an exit which it determines is deprecated.
+    /// *(Common Part of DepreacteExit.)
+    fn _deprecate_exit(
+        &mut self,
+        env: &mut EnvHandler<ink_core::env::ContractEnv<DefaultSrmlTypes>>,
+        deprecated_exit: &Checkpoint<T, I>,
+        transaction: &Transaction<B, I>,
+        witness: &W,
+        post_state: &StateUpdate<T, I>,
+    ) -> primitives::Result<()> {
+        if deprecated_exit.state_update.state_object.predicate != transaction.predicate {
+            return Err("Transactions can only act on SUs with the same predicate contract.");
+        }
+        if post_state.state_object.predicate != transaction.predicate {
+            return Err("Transactions can only produce SUs with the same deposit contract.");
+        }
+        if !primitives::is_intersects(&deprecated_exit.sub_range, &post_state.range) {
+            return Err(
+                "Transactions can only deprecate an exit intersecting the postState subrange.",
+            );
+        }
+        if !self.verify_transaction(
+            env,
+            &deprecated_exit.state_update,
+            transaction,
+            witness,
+            post_state,
+        ) {
+            return Err("Predicate must be able to verify the transaction to deprecate.");
+        }
+		Ok(())
+    }
 
     /// Allows the predicate address to cancel an exit which it determines is deprecated.
     fn deprecate_exit(

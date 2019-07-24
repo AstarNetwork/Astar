@@ -58,14 +58,14 @@ impl
     fn verify_transaction(
         &self,
         env: &mut EnvHandler<ink_core::env::ContractEnv<DefaultSrmlTypes>>,
-        pre_state: StateUpdate<AccountId>,
-        transaction: Transaction<TransactionBody>,
-        witness: Signature,
-        post_state: StateUpdate<AccountId>,
+        pre_state: &StateUpdate<AccountId>,
+        transaction: &Transaction<TransactionBody>,
+        witness: &Signature,
+        post_state: &StateUpdate<AccountId>,
     ) -> bool {
         /// Define a custom witness struct for their particular type of state.
-        let owner = pre_state.state_object.data;
-        if !check_signature(&transaction, &owner, &witness) {
+        let owner = &pre_state.state_object.data;
+        if !check_signature(transaction, owner, witness) {
             env.println("Owner must have signed the transaction.");
             return false;
         }
@@ -99,15 +99,15 @@ impl
         env: &mut EnvHandler<ink_core::env::ContractEnv<DefaultSrmlTypes>>,
         checkpoint: Checkpoint<AccountId>,
     ) -> primitives::Result<ExitStarted> {
-		// Extract the owner from the state object data field
-		let owner = checkpoint.state_update.state_object.data;
+        // Extract the owner from the state object data field
+        let owner = checkpoint.state_update.state_object.data;
 
-		// Require that this is called by the owner
-		if env.caller() != owner {
-			return Err("Only owner may initiate the exit.")
-		}
+        // Require that this is called by the owner
+        if env.caller() != owner {
+            return Err("Only owner may initiate the exit.");
+        }
 
-		// Forward the authenticated startExit to the deposit contract
+        // Forward the authenticated startExit to the deposit contract
         self.DEPOSIT.start_exit(env, checkpoint)
     }
 
@@ -120,7 +120,8 @@ impl
         witness: Signature,
         post_state: StateUpdate<AccountId>,
     ) -> primitives::Result<()> {
-        Ok(())
+        self._deprecate_exit(env, &deprecated_exit, &transaction, &witness, &post_state)?;
+        self.DEPOSIT.deprecate_exit(env, deprecated_exit)
     }
 
     /// Finalizes an exit that has passed its exit period and has not been successfully challenged.
