@@ -135,3 +135,105 @@ impl
         &mut self.DEPOSIT
     }
 }
+
+#[cfg(all(test, feature = "test-env"))]
+mod tests {
+    use super::*;
+    use crate::traits::Predicate as _;
+    use ink_core::storage::{
+        alloc::{AllocateUsing, BumpAlloc, Initialize as _},
+        Key,
+    };
+    use ink_model::EnvHandler;
+
+    const DEPOSIT_ADDRESS: [u8; 32] = [1u8; 32];
+
+    impl Predicate {
+        /// Deploys the testable contract by initializing it with the given values.
+        pub fn deploy_mock(
+            token_address: AccountId,
+            challenge_period: BlockNumber,
+            exit_period: BlockNumber,
+        ) -> (
+            Self,
+            EnvHandler<ink_core::env::ContractEnv<DefaultSrmlTypes>>,
+        ) {
+            // initialize Environment.
+            ink_core::env::ContractEnv::<DefaultSrmlTypes>::set_address(
+                AccountId::decode(&mut &DEPOSIT_ADDRESS[..]).unwrap(),
+            );
+            ink_core::env::ContractEnv::<DefaultSrmlTypes>::set_block_number(1);
+            ink_core::env::ContractEnv::<DefaultSrmlTypes>::set_caller(get_sender_address());
+
+            let (mut predicate, mut env) = unsafe {
+                let mut alloc = BumpAlloc::from_raw_parts(Key([0x0; 32]));
+                (
+                    Self::allocate_using(&mut alloc),
+                    AllocateUsing::allocate_using(&mut alloc),
+                )
+            };
+            predicate.initialize(());
+            predicate.deploy(&mut env, token_address, challenge_period, exit_period);
+            (predicate, env)
+        }
+    }
+
+    fn get_token_address() -> AccountId {
+        AccountId::decode(&mut &[2u8; 32].to_vec()[..]).expect("account id decoded.")
+    }
+
+    fn get_sender_address() -> AccountId {
+        AccountId::decode(&mut &[3u8; 32].to_vec()[..]).expect("account id decoded.")
+    }
+    fn get_receiver_address() -> AccountId {
+        AccountId::decode(&mut &[4u8; 32].to_vec()[..]).expect("account id decoded.")
+    }
+
+    #[test]
+    fn verify_transaction_normal() {
+        let erc20_address = get_token_address();
+        let (mut contract, mut env) = Predicate::deploy_mock(erc20_address, 5, 5);
+        let this = env.address();
+        let sender = get_sender_address();
+        let receiver = get_receiver_address();
+
+        let range = Range {
+            start: 0,
+            end: 1000,
+        };
+        let state_object = StateObject {
+            predicate: this.clone(),
+            data: sender.clone(),
+        };
+        let new_state = StateObject {
+            predicate: this.clone(),
+            data: receiver.clone(),
+        };
+
+        let pre_state = StateUpdate {
+            range: range.clone(),
+            state_object: state_object.clone(),
+            plasma_block_number: 0,
+        };
+        let post_state = StateUpdate {
+            range: range.clone(),
+            state_object: new_state.clone(),
+            plasma_block_number: 3,
+        };
+        let transaction = Transaction {
+            predicate: this.clone(),
+            range: range.clone(),
+            body: TransactionBody {
+                new_state: post_state.state_object.clone(),
+                origin_block: 1,
+                max_block: 5,
+            },
+        };
+        let witness = Signature([1u8; 64]);
+
+        assert_eq!(
+            true,
+            contract.verify_transaction(&mut env, &pre_state, &transaction, &witness, &post_state)
+        )
+    }
+}
