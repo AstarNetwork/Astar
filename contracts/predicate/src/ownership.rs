@@ -26,6 +26,8 @@ pub struct TransactionBody {
 #[derive(Clone, Encode, Decode)]
 pub struct Signature(pub [u8; 64]);
 pub fn check_signature<T: Codec>(data: &T, pubkey: &AccountId, signature: &Signature) -> bool {
+    // TODO check signature, but now can not ink! signature logic.
+    // TODO Waiting efficient built-in cryptographic functions. (https://github.com/paritytech/ink/issues/6)
     true
 }
 
@@ -88,7 +90,6 @@ impl
             env.println("postState must be the transaction.body.newState.");
             return false;
         }
-
         true
     }
 
