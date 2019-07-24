@@ -26,16 +26,6 @@ pub struct CheckpointStatus {
     outstanding_challenges: u128,
 }
 
-#[cfg(all(test, feature = "test-env"))]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn it_works() {
-        let mut contract = Deposit::deploy_mock();
-    }
-}
-
 #[cfg(not(any(test, feature = "std")))]
 mod no_std {
 	extern crate alloc;

@@ -117,12 +117,15 @@ impl traits::Deposit<RangeNumber, commitment::default::Commitment> for Deposit {
         chalenge_period: BlockNumber,
         exit_period: BlockNumber,
     ) {
+        self.COMMITMENT.deploy(env);
+
         //MUST be an address of ERC20 token
         self.TOKEN_ADDRES.set(token_address);
         self.CHALLENGE_PERIOD.set(chalenge_period);
         self.EXIT_PERIOD.set(exit_period);
 
         self.total_deposited.set(0);
+        self.deposited_ranges.insert(0, Range { start: 0, end: 0 });
     }
 
     /// Allows a user to submit a deposit to the contract.
@@ -476,5 +479,83 @@ impl traits::Deposit<RangeNumber, commitment::default::Commitment> for Deposit {
 
     fn commitment(&self) -> &commitment::default::Commitment {
         &self.COMMITMENT
+    }
+}
+
+#[cfg(all(test, feature = "test-env"))]
+mod tests {
+    use super::*;
+    use crate::traits::Deposit as _;
+    use ink_core::storage::{
+        alloc::{AllocateUsing, BumpAlloc, Initialize as _},
+        Key,
+    };
+    use ink_model::EnvHandler;
+
+    const DEPOSIT_ADDRESS: [u8; 32] = [1u8; 32];
+
+    impl Deposit {
+        /// Deploys the testable contract by initializing it with the given values.
+        pub fn deploy_mock(
+            token_address: AccountId,
+            challenge_period: BlockNumber,
+            exit_period: BlockNumber,
+        ) -> (
+            Self,
+            EnvHandler<ink_core::env::ContractEnv<DefaultSrmlTypes>>,
+        ) {
+            // initialize Environment.
+            ink_core::env::ContractEnv::<DefaultSrmlTypes>::set_address(
+                AccountId::decode(&mut &DEPOSIT_ADDRESS[..]).unwrap(),
+            );
+            ink_core::env::ContractEnv::<DefaultSrmlTypes>::set_block_number(1);
+
+            let (mut deposit, mut env) = unsafe {
+                let mut alloc = BumpAlloc::from_raw_parts(Key([0x0; 32]));
+                (
+                    Self::allocate_using(&mut alloc),
+                    AllocateUsing::allocate_using(&mut alloc),
+                )
+            };
+            deposit.initialize(());
+            deposit.deploy(&mut env, token_address, challenge_period, exit_period);
+            (deposit, env)
+        }
+    }
+
+    #[test]
+    fn deposit_normal() {
+        let erc20_address =
+            AccountId::decode(&mut &[1u8; 32].to_vec()[..]).expect("account id decoded.");
+        let (mut contract, mut env) = Deposit::deploy_mock(erc20_address, 5, 5);
+        let this = env.address();
+        println!("this address: {:?}", this);
+
+        let amount = 10000 as Balance;
+        let initial_state = StateObject {
+            predicate: erc20_address,
+            data: erc20_address,
+        };
+
+        let exp_checkpoint = Checkpoint {
+            state_update: StateUpdate {
+                range: Range {
+                    start: 0,
+                    end: amount.clone() as RangeNumber,
+                },
+                state_object: initial_state.clone(),
+                plasma_block_number: 0,
+            },
+            sub_range: Range {
+                start: 0,
+                end: amount.clone() as RangeNumber,
+            },
+        };
+        assert_eq!(
+            Ok(CheckpointFinalized {
+                checkpoint: exp_checkpoint.id(),
+            }),
+            contract.deposit(&mut env, erc20_address, amount, initial_state,)
+        )
     }
 }
