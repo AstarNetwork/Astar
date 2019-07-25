@@ -16,13 +16,9 @@
 
 #![cfg_attr(not(any(test, feature = "test-env")), no_std)]
 
-use ink_core::{
-	env::DefaultSrmlTypes,
-	memory::format,
-	storage,
-};
-use ink_model::EnvHandler;
+use ink_core::{env::DefaultSrmlTypes, memory::format, storage};
 use ink_lang::contract;
+use ink_model::EnvHandler;
 
 contract! {
     #![env = DefaultSrmlTypes]
@@ -41,19 +37,19 @@ contract! {
         value: Balance,
     }
 
-	// Event deposited when an deposit.
+    // Event deposited when an deposit.
     event Deposit {
-    	indexed: AccountId,
-    	amount: Balance,
+        indexed: AccountId,
+        amount: Balance,
     }
 
     // Event deposited when an withdrawal
     event Withdrawal {
-    	indexed: AccountId,
-    	amount: Balance,
-	}
+        indexed: AccountId,
+        amount: Balance,
+    }
 
-	/// The storage items for a typical ERC20 token implementation.
+    /// The storage items for a typical ERC20 token implementation.
     struct Balances {
         /// The total supply.
         total_supply: storage::Value<Balance>,
@@ -76,20 +72,25 @@ contract! {
     }
 
     impl Balances {
-    	/// reference: https://github.com/dapphub/ds-weth/blob/master/src/weth9.sol
-    	/// deposit
-    	pub(external) fn deposit(&mut self) -> bool {
+        /// reference: https://github.com/dapphub/ds-weth/blob/master/src/weth9.sol
+        /// deposit
+        /// TODO : now free deposit.
+        pub(external) fn deposit(&mut self, amount: Balance) -> bool {
 //            let balance_from = self.balance_of_or_zero(&env.caller());
 //            self.balances.insert(env.caller(), balance_from + env.value_transferred());
-//            env.emit(Deposit {
-//            	indexed: env.caller().clone(),
-//            	amount: env.value_transferred().clone(),
-//            });
+            let caller = env.caller();
+            let balance_from = self.balance_of_or_zero(&caller);
+            self.balances.insert(caller.clone(), balance_from + amount);
+            env.emit(Deposit {
+                indexed: caller,
+                amount: balance_from + amount,
+            });
             true
-	    }
+        }
 
-    	/// withdraw
-		pub(external) fn withdraw(&mut self, amount: Balance) -> bool {
+        /// withdraw
+        /// TODO : now free withdraw.
+        pub(external) fn withdraw(&mut self, amount: Balance) -> bool {
 //			let balance_from = self.balance_of_or_zero(&env.caller()).clone();
 //			if balance_from >= amount {
 //				return false
@@ -101,8 +102,19 @@ contract! {
 //				indexed: env.caller().clone(),
 //				amount: env.value_transferred().clone(),
 //			});
-			true
-		}
+
+            let caller = env.caller();
+            let balance_from = self.balance_of_or_zero(&caller);
+            if balance_from >= amount {
+                return false;
+            }
+            self.balances.insert(caller.clone(), balance_from - amount);
+            env.emit(Withdrawal{
+                indexed: caller,
+                amount: balance_from - amount,
+            });
+            true
+        }
 
         /// Returns the total number of tokens in existence.
         pub(external) fn total_supply(&self) -> Balance {
@@ -189,90 +201,90 @@ contract! {
 
 #[cfg(all(test, feature = "test-env"))]
 mod tests {
-	use super::*;
-	use ink_core::env;
+    use super::*;
+    use ink_core::env;
 
-	type Types = ink_core::env::DefaultSrmlTypes;
+    type Types = ink_core::env::DefaultSrmlTypes;
 
-	#[test]
-	fn deployment_works() {
-		let alice = AccountId::from([0x0; 32]);
-		env::test::set_caller::<Types>(alice);
+    #[test]
+    fn deployment_works() {
+        let alice = AccountId::from([0x0; 32]);
+        env::test::set_caller::<Types>(alice);
 
-		// Deploy the contract with some `init_value`
-		let balances = Balances::deploy_mock(1234);
-		// Check that the `total_supply` is `init_value`
-		assert_eq!(balances.total_supply(), 1234);
-		// Check that `balance_of` Alice is `init_value`
-		assert_eq!(balances.balance_of(alice), 1234);
-	}
+        // Deploy the contract with some `init_value`
+        let balances = Balances::deploy_mock(1234);
+        // Check that the `total_supply` is `init_value`
+        assert_eq!(balances.total_supply(), 1234);
+        // Check that `balance_of` Alice is `init_value`
+        assert_eq!(balances.balance_of(alice), 1234);
+    }
 
-	#[test]
-	fn transfer_works() {
-		let alice = AccountId::from([0x0; 32]);
-		let bob = AccountId::from([0x1; 32]);
+    #[test]
+    fn transfer_works() {
+        let alice = AccountId::from([0x0; 32]);
+        let bob = AccountId::from([0x1; 32]);
 
-		env::test::set_caller::<Types>(alice);
-		// Deploy the contract with some `init_value`
-		let mut balances = Balances::deploy_mock(1234);
-		// Alice does not have enough funds for this
-		assert_eq!(balances.transfer(bob, 4321), false);
-		// Alice can do this though
-		assert_eq!(balances.transfer(bob, 234), true);
-		// Check Alice and Bob have the expected balance
-		assert_eq!(balances.balance_of(alice), 1000);
-		assert_eq!(balances.balance_of(bob), 234);
-	}
+        env::test::set_caller::<Types>(alice);
+        // Deploy the contract with some `init_value`
+        let mut balances = Balances::deploy_mock(1234);
+        // Alice does not have enough funds for this
+        assert_eq!(balances.transfer(bob, 4321), false);
+        // Alice can do this though
+        assert_eq!(balances.transfer(bob, 234), true);
+        // Check Alice and Bob have the expected balance
+        assert_eq!(balances.balance_of(alice), 1000);
+        assert_eq!(balances.balance_of(bob), 234);
+    }
 
-	#[test]
-	fn allowance_works() {
-		let alice = AccountId::from([0x0; 32]);
-		let bob = AccountId::from([0x1; 32]);
-		let charlie = AccountId::from([0x2; 32]);
+    #[test]
+    fn allowance_works() {
+        let alice = AccountId::from([0x0; 32]);
+        let bob = AccountId::from([0x1; 32]);
+        let charlie = AccountId::from([0x2; 32]);
 
-		env::test::set_caller::<Types>(alice);
-		// Deploy the contract with some `init_value`
-		let mut balances = Balances::deploy_mock(1234);
-		// Bob does not have an allowance from Alice's balance
-		assert_eq!(balances.allowance(alice, bob), 0);
-		// Thus, Bob cannot transfer out of Alice's account
-		env::test::set_caller::<Types>(bob);
-		assert_eq!(balances.transfer_from(alice, bob, 1), false);
-		// Alice can approve bob for some of her funds
-		env::test::set_caller::<Types>(alice);
-		assert_eq!(balances.approve(bob, 20), true);
-		// And the allowance reflects that correctly
-		assert_eq!(balances.allowance(alice, bob), 20);
-		// Charlie cannot send on behalf of Bob
-		env::test::set_caller::<Types>(charlie);
-		assert_eq!(balances.transfer_from(alice, bob, 10), false);
-		// Bob cannot transfer more than he is allowed
-		env::test::set_caller::<Types>(bob);
-		assert_eq!(balances.transfer_from(alice, charlie, 25), false);
-		// A smaller amount should work though
-		assert_eq!(balances.transfer_from(alice, charlie, 10), true);
-		// Check that the allowance is updated
-		assert_eq!(balances.allowance(alice, bob), 10);
-		// and the balance transferred to the right person
-		assert_eq!(balances.balance_of(charlie), 10);
-	}
+        env::test::set_caller::<Types>(alice);
+        // Deploy the contract with some `init_value`
+        let mut balances = Balances::deploy_mock(1234);
+        // Bob does not have an allowance from Alice's balance
+        assert_eq!(balances.allowance(alice, bob), 0);
+        // Thus, Bob cannot transfer out of Alice's account
+        env::test::set_caller::<Types>(bob);
+        assert_eq!(balances.transfer_from(alice, bob, 1), false);
+        // Alice can approve bob for some of her funds
+        env::test::set_caller::<Types>(alice);
+        assert_eq!(balances.approve(bob, 20), true);
+        // And the allowance reflects that correctly
+        assert_eq!(balances.allowance(alice, bob), 20);
+        // Charlie cannot send on behalf of Bob
+        env::test::set_caller::<Types>(charlie);
+        assert_eq!(balances.transfer_from(alice, bob, 10), false);
+        // Bob cannot transfer more than he is allowed
+        env::test::set_caller::<Types>(bob);
+        assert_eq!(balances.transfer_from(alice, charlie, 25), false);
+        // A smaller amount should work though
+        assert_eq!(balances.transfer_from(alice, charlie, 10), true);
+        // Check that the allowance is updated
+        assert_eq!(balances.allowance(alice, bob), 10);
+        // and the balance transferred to the right person
+        assert_eq!(balances.balance_of(charlie), 10);
+    }
 
-	#[test]
-	fn events_work() {
-		let alice = AccountId::from([0x0; 32]);
-		let bob = AccountId::from([0x1; 32]);
+    #[test]
+    fn events_work() {
+        let alice = AccountId::from([0x0; 32]);
+        let bob = AccountId::from([0x1; 32]);
 
-		// No events to start
-		env::test::set_caller::<Types>(alice);
-		assert_eq!(env::test::emitted_events::<Types>().count(), 0);
-		// Event should be emitted for initial minting
-		let mut balances = Balances::deploy_mock(1234);
-		assert_eq!(env::test::emitted_events::<Types>().count(), 1);
-		// Event should be emitted for approvals
-		assert_eq!(balances.approve(bob, 20), true);
-		assert_eq!(env::test::emitted_events::<Types>().count(), 2);
-		// Event should be emitted for transfers
-		assert_eq!(balances.transfer(bob, 10), true);
-		assert_eq!(env::test::emitted_events::<Types>().count(), 3);
-	}
+        // No events to start
+        env::test::set_caller::<Types>(alice);
+        assert_eq!(env::test::emitted_events::<Types>().count(), 0);
+        // Event should be emitted for initial minting
+        let mut balances = Balances::deploy_mock(1234);
+        assert_eq!(env::test::emitted_events::<Types>().count(), 1);
+        // Event should be emitted for approvals
+        assert_eq!(balances.approve(bob, 20), true);
+        assert_eq!(env::test::emitted_events::<Types>().count(), 2);
+        // Event should be emitted for transfers
+        assert_eq!(balances.transfer(bob, 10), true);
+        assert_eq!(env::test::emitted_events::<Types>().count(), 3);
+    }
 }

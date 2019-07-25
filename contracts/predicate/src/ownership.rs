@@ -63,7 +63,7 @@ impl
         witness: &Signature,
         post_state: &StateUpdate<AccountId>,
     ) -> bool {
-        /// Define a custom witness struct for their particular type of state.
+        // Define a custom witness struct for their particular type of state.
         let owner = &pre_state.state_object.data;
         if !check_signature(transaction, owner, witness) {
             env.println("Owner must have signed the transaction.");
