@@ -32,6 +32,7 @@ use version::NativeVersion;
 pub use runtime_primitives::BuildStorage;
 pub use timestamp::Call as TimestampCall;
 pub use balances::Call as BalancesCall;
+pub use contracts::Gas;
 pub use runtime_primitives::{Permill, Perbill};
 pub use support::{StorageValue, construct_runtime, parameter_types};
 
@@ -55,6 +56,13 @@ pub type BlockNumber = u64;
 
 /// Index of an account's extrinsic in the chain.
 pub type Nonce = u64;
+
+/// Balance of an account.
+pub type Balance = u128;
+
+pub const MILLICENTS: Balance = 1_000_000_000;
+pub const CENTS: Balance = 1_000 * MILLICENTS;    // assume this is worth about a cent.
+pub const DOLLARS: Balance = 100 * CENTS;
 
 /// Opaque types. These are used by the CLI to instantiate machinery that don't need to know
 /// the specifics of the runtime. They can then be made to be agnostic over specific formats
@@ -173,7 +181,7 @@ impl balances::Trait for Runtime {
 	/// The type for recording an account's balance.
 	type Balance = u128;
 	/// What to do if an account's free balance gets zeroed.
-	type OnFreeBalanceZero = ();
+	type OnFreeBalanceZero = ((Contracts,),);
 	/// What to do if a new account is created.
 	type OnNewAccount = Indices;
 	/// The ubiquitous event type.
@@ -187,6 +195,39 @@ impl balances::Trait for Runtime {
 	type CreationFee = CreationFee;
 	type TransactionBaseFee = TransactionBaseFee;
 	type TransactionByteFee = TransactionByteFee;
+}
+
+parameter_types! {
+	pub const ContractTransferFee: Balance = 1 * CENTS;
+	pub const ContractCreationFee: Balance = 1 * CENTS;
+	pub const ContractTransactionBaseFee: Balance = 1 * CENTS;
+	pub const ContractTransactionByteFee: Balance = 10 * MILLICENTS;
+	pub const ContractFee: Balance = 1 * CENTS;
+}
+
+impl contracts::Trait for Runtime {
+	type Currency = Balances;
+	type Call = Call;
+	type Event = Event;
+	type DetermineContractAddress = contracts::SimpleAddressDeterminator<Runtime>;
+	type ComputeDispatchFee = contracts::DefaultDispatchFeeComputor<Runtime>;
+	type TrieIdGenerator = contracts::TrieIdFromParentCounter<Runtime>;
+	type GasPayment = ();
+	type SignedClaimHandicap = contracts::DefaultSignedClaimHandicap;
+	type TombstoneDeposit = contracts::DefaultTombstoneDeposit;
+	type StorageSizeOffset = contracts::DefaultStorageSizeOffset;
+	type RentByteFee = contracts::DefaultRentByteFee;
+	type RentDepositOffset = contracts::DefaultRentDepositOffset;
+	type SurchargeReward = contracts::DefaultSurchargeReward;
+	type TransferFee = ContractTransferFee;
+	type CreationFee = ContractCreationFee;
+	type TransactionBaseFee = ContractTransactionBaseFee;
+	type TransactionByteFee = ContractTransactionByteFee;
+	type ContractFee = ContractFee;
+	type CallBaseFee = contracts::DefaultCallBaseFee;
+	type CreateBaseFee = contracts::DefaultCreateBaseFee;
+	type MaxDepth = contracts::DefaultMaxDepth;
+	type BlockGasLimit = contracts::DefaultBlockGasLimit;
 }
 
 impl sudo::Trait for Runtime {
@@ -206,6 +247,7 @@ construct_runtime!(
 		Aura: aura::{Module, Config<T>, Inherent(Timestamp)},
 		Indices: indices::{default, Config<T>},
 		Balances: balances,
+		Contracts: contracts,
 		Sudo: sudo,
 	}
 );

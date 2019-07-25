@@ -1,7 +1,7 @@
 use primitives::{ed25519, sr25519, Pair};
 use node_plasm_runtime::{
-	AccountId, GenesisConfig, AuraConfig, BalancesConfig,
-	SudoConfig, IndicesConfig, SystemConfig, WASM_BINARY, AuraId
+	AccountId, GenesisConfig, AuraConfig, BalancesConfig, ContractsConfig,
+	SudoConfig, IndicesConfig, SystemConfig, WASM_BINARY, AuraId, MILLICENTS,
 };
 use substrate_service;
 
@@ -103,6 +103,10 @@ fn testnet_genesis(initial_authorities: Vec<AuraId>, endowed_accounts: Vec<Accou
 		balances: Some(BalancesConfig {
 			balances: endowed_accounts.iter().cloned().map(|k|(k, 1 << 60)).collect(),
 			vesting: vec![],
+		}),
+		contracts: Some(ContractsConfig {
+			current_schedule: Default::default(),
+			gas_price: 1 * MILLICENTS,
 		}),
 		sudo: Some(SudoConfig {
 			key: root_key,
