@@ -138,12 +138,13 @@ contract! {
         }
 
         // ================================== Getter ===================================================
-        ///	最新のブロックハッシュを取得する。
+        ///	Gets Leatest Plasma block number.
         pub(external) fn current_block(&self) -> BlockNumber {
             self.predicate.commitment_ref().current_block(env)
          }
 
 
+		/// Gets Plasma block hash by identified block number.
         pub(external) fn block_hash(&self, number: BlockNumber) -> Option<Hash> {
             self.predicate.commitment_ref().block_hash(env, number)
         }
