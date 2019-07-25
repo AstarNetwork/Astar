@@ -80,7 +80,7 @@ members = [
 	"core/child",
 	"core/merkle",
 	"core/parent",
-	"core/parent/pgspec",
+	"core/pgspec",
 	"core/utxo",
 	"core/primitives",
 	"runtime",
