@@ -23,7 +23,7 @@ case $TARGET in
 		sudo apt-get install -y cmake pkg-config libssl-dev
 
 		# Install prerequisites and build all wasm projects
-		./script.sh/init.sh
+		./script/init.sh
 
 		cargo test --all --release --locked
 		;;
@@ -31,10 +31,10 @@ case $TARGET in
 	"wasm")
 
 		# Install prerequisites and build all wasm projects
-		./script.sh/init.sh
+		./script/init.sh
 		curl https://raw.githubusercontent.com/substrate-developer-hub/substrate-contracts-workshop/master/scripts/install-wasm-tools.sh -sSf |bash -s
 
-		cd ../contracts/cash && ./build.sh && make test
+		cd ./contracts/cash && ./build.sh && make test
 		cd ../commitment && make test
 		cd ../deposit && make test
 		cd ../predicate && make test
