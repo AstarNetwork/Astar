@@ -22,18 +22,18 @@ case $TARGET in
 		sudo apt-get -y update
 		sudo apt-get install -y cmake pkg-config libssl-dev
 
+		# Install prerequisites and build all wasm projects
+		./script.sh/init.sh
+
 		cargo test --all --release --locked
 		;;
 
 	"wasm")
 
 		# Install prerequisites and build all wasm projects
-		./init.sh
+		./script.sh/init.sh
 		curl https://raw.githubusercontent.com/substrate-developer-hub/substrate-contracts-workshop/master/scripts/install-wasm-tools.sh -sSf |bash -s
 
-		./build.sh
-
-		cd child && ./build.sh
 		cd ../contracts/cash && ./build.sh && make test
 		cd ../commitment && make test
 		cd ../deposit && make test
