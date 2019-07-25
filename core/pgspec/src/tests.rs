@@ -17,22 +17,25 @@
 // TODO: #1417 Add more integration tests
 // also remove the #![allow(unused)] below.
 
+use super::*;
 use parity_codec::{Decode, Encode, KeyedVec};
-use primitives::storage::well_known_keys;
-use primitives::Blake2Hasher;
+use primitives::{sr25519, storage::well_known_keys, Blake2Hasher, crypto::{Pair, UncheckedFrom}};
 use sr_io;
 use sr_io::with_externalities;
 use sr_primitives::testing::{Digest, DigestItem, Header, UintAuthorityId, H256};
-use sr_primitives::traits::{BlakeTwo256, IdentityLookup};
+use sr_primitives::traits::{Hash, BlakeTwo256, IdentityLookup};
 use sr_primitives::BuildStorage;
+use std::cell::RefCell;
 use std::sync::atomic::{AtomicUsize, Ordering};
+use std::marker::PhantomData;
 use support::{
-    assert_ok, impl_outer_dispatch, impl_outer_event, impl_outer_origin, storage::child,
-    traits::Currency, StorageMap,
+    assert_err, assert_ok, impl_outer_dispatch, impl_outer_event, impl_outer_origin,
+    parameter_types,
+    storage::child,
+    traits::{Currency, Get},
+    StorageMap, StorageValue,
 };
 use system::{self, EventRecord, Phase};
-
-use super::*;
 
 mod pgspec {
     // Re-export contents of the root. This basically
@@ -58,67 +61,138 @@ impl_outer_dispatch! {
     }
 }
 
-#[derive(Clone, Eq, PartialEq)]
+/// Alias to pubkey that identifies an account on the chain.
+pub type AccountId = <AccountSignature as Verify>::Signer;
+/// The type used by authorities to prove their ID.
+pub type AccountSignature = sr25519::Signature;
+
+thread_local! {
+    static EXISTENTIAL_DEPOSIT: RefCell<u64> = RefCell::new(0);
+    static TRANSFER_FEE: RefCell<u64> = RefCell::new(0);
+    static CREATION_FEE: RefCell<u64> = RefCell::new(0);
+    static BLOCK_GAS_LIMIT: RefCell<u64> = RefCell::new(0);
+}
+
+pub struct ExistentialDeposit;
+
+impl Get<u64> for ExistentialDeposit {
+    fn get() -> u64 {
+        EXISTENTIAL_DEPOSIT.with(|v| *v.borrow())
+    }
+}
+
+pub struct TransferFee;
+
+impl Get<u64> for TransferFee {
+    fn get() -> u64 {
+        TRANSFER_FEE.with(|v| *v.borrow())
+    }
+}
+
+pub struct CreationFee;
+
+impl Get<u64> for CreationFee {
+    fn get() -> u64 {
+        CREATION_FEE.with(|v| *v.borrow())
+    }
+}
+
+pub struct BlockGasLimit;
+
+impl Get<u64> for BlockGasLimit {
+    fn get() -> u64 {
+        BLOCK_GAS_LIMIT.with(|v| *v.borrow())
+    }
+}
+
+#[derive(Clone, Eq, PartialEq, Debug)]
 pub struct Test;
+parameter_types! {
+    pub const BlockHashCount: u64 = 250;
+}
 impl system::Trait for Test {
-	type Origin = Origin;
-	type Index = u64;
-	type BlockNumber = u64;
-	type Hash = H256;
-	type Hashing = BlakeTwo256;
-	type AccountId = u64;
-	type Lookup = IdentityLookup<Self::AccountId>;
-	type Header = Header;
-	type WeightMultiplierUpdate = ();
-	type Event = MetaEvent;
-	type BlockHashCount = BlockHashCount;
-	type MaximumBlockWeight = MaximumBlockWeight;
-	type MaximumBlockLength = MaximumBlockLength;
+    type Origin = Origin;
+    type Index = u64;
+    type BlockNumber = u64;
+    type Hash = H256;
+    type Hashing = BlakeTwo256;
+    type AccountId = AccountId;
+    type Lookup = IdentityLookup<Self::AccountId>;
+    type Header = Header;
+    type Event = MetaEvent;
+    type BlockHashCount = BlockHashCount;
+}
+parameter_types! {
+    pub const BalancesTransactionBaseFee: u64 = 0;
+    pub const BalancesTransactionByteFee: u64 = 0;
 }
 impl balances::Trait for Test {
-	type Balance = u64;
-	type OnFreeBalanceZero = Contract;
-	type OnNewAccount = ();
-	type Event = MetaEvent;
-	type TransactionPayment = ();
-	type DustRemoval = ();
-	type TransferPayment = ();
-	type ExistentialDeposit = ExistentialDeposit;
-	type TransferFee = TransferFee;
-	type CreationFee = CreationFee;
-	type TransactionBaseFee = BalancesTransactionBaseFee;
-	type TransactionByteFee = BalancesTransactionByteFee;
+    type Balance = u64;
+    type OnFreeBalanceZero = Contract;
+    type OnNewAccount = ();
+    type Event = MetaEvent;
+    type TransactionPayment = ();
+    type DustRemoval = ();
+    type TransferPayment = ();
+    type ExistentialDeposit = ExistentialDeposit;
+    type TransferFee = TransferFee;
+    type CreationFee = CreationFee;
+    type TransactionBaseFee = BalancesTransactionBaseFee;
+    type TransactionByteFee = BalancesTransactionByteFee;
+}
+parameter_types! {
+    pub const MinimumPeriod: u64 = 1;
 }
 impl timestamp::Trait for Test {
     type Moment = u64;
     type OnTimestampSet = ();
+    type MinimumPeriod = MinimumPeriod;
+}
+parameter_types! {
+    pub const SignedClaimHandicap: u64 = 2;
+    pub const TombstoneDeposit: u64 = 16;
+    pub const StorageSizeOffset: u32 = 8;
+    pub const RentByteFee: u64 = 4;
+    pub const RentDepositOffset: u64 = 10_000;
+    pub const SurchargeReward: u64 = 150;
+    pub const TransactionBaseFee: u64 = 2;
+    pub const TransactionByteFee: u64 = 6;
+    pub const ContractFee: u64 = 21;
+    pub const CallBaseFee: u64 = 135;
+    pub const CreateBaseFee: u64 = 175;
+    pub const MaxDepth: u32 = 100;
 }
 impl contract::Trait for Test {
-	type Currency = Balances;
-	type Call = Call;
-	type DetermineContractAddress = DummyContractAddressFor;
-	type Event = MetaEvent;
-	type ComputeDispatchFee = DummyComputeDispatchFee;
-	type TrieIdGenerator = DummyTrieIdGenerator;
-	type GasPayment = ();
-	type SignedClaimHandicap = SignedClaimHandicap;
-	type TombstoneDeposit = TombstoneDeposit;
-	type StorageSizeOffset = StorageSizeOffset;
-	type RentByteFee = RentByteFee;
-	type RentDepositOffset = RentDepositOffset;
-	type SurchargeReward = SurchargeReward;
-	type TransferFee = TransferFee;
-	type CreationFee = CreationFee;
-	type TransactionBaseFee = TransactionBaseFee;
-	type TransactionByteFee = TransactionByteFee;
-	type ContractFee = ContractFee;
-	type CallBaseFee = CallBaseFee;
-	type CreateBaseFee = CreateBaseFee;
-	type MaxDepth = MaxDepth;
-	type MaxValueSize = MaxValueSize;
-	type BlockGasLimit = BlockGasLimit;
+    type Currency = Balances;
+    type Call = Call;
+    type DetermineContractAddress = DummyContractAddressFor<Test>;
+    type Event = MetaEvent;
+    type ComputeDispatchFee = DummyComputeDispatchFee;
+    type TrieIdGenerator = DummyTrieIdGenerator<Test>;
+    type GasPayment = ();
+    type SignedClaimHandicap = SignedClaimHandicap;
+    type TombstoneDeposit = TombstoneDeposit;
+    type StorageSizeOffset = StorageSizeOffset;
+    type RentByteFee = RentByteFee;
+    type RentDepositOffset = RentDepositOffset;
+    type SurchargeReward = SurchargeReward;
+    type TransferFee = TransferFee;
+    type CreationFee = CreationFee;
+    type TransactionBaseFee = TransactionBaseFee;
+    type TransactionByteFee = TransactionByteFee;
+    type ContractFee = ContractFee;
+    type CallBaseFee = CallBaseFee;
+    type CreateBaseFee = CreateBaseFee;
+    type MaxDepth = MaxDepth;
+    type BlockGasLimit = BlockGasLimit;
 }
+
 impl Trait for Test {
+    type RangeNumber = u128;
+    type Data = Self::AccountId;
+    type TxBody = ();
+    type Signature = AccountSignature;
+
     type Event = MetaEvent;
 }
 
@@ -127,40 +201,68 @@ type Contract = contract::Module<Test>;
 type System = system::Module<Test>;
 type PGSpec = Module<Test>;
 
-pub struct DummyContractAddressFor;
-impl contract::ContractAddressFor<H256, u64> for DummyContractAddressFor {
-    fn contract_address_for(_code_hash: &H256, _data: &[u8], origin: &u64) -> u64 {
-        *origin + 1
+pub struct DummyContractAddressFor<T: Trait>(PhantomData<T>);
+impl<T: Trait> contract::ContractAddressFor<contract::CodeHash<T>, T::AccountId> for DummyContractAddressFor<T>
+where
+    T::AccountId: UncheckedFrom<T::Hash> + AsRef<[u8]>,
+{
+    fn contract_address_for(
+        code_hash: &contract::CodeHash<T>,
+        data: &[u8],
+        origin: &T::AccountId,
+    ) -> T::AccountId {
+        let data_hash = T::Hashing::hash(data);
+
+        let mut buf = Vec::new();
+        buf.extend_from_slice(code_hash.as_ref());
+        buf.extend_from_slice(data_hash.as_ref());
+        buf.extend_from_slice(origin.as_ref());
+
+        UncheckedFrom::unchecked_from(T::Hashing::hash(&buf[..]))
     }
 }
 
-static KEY_COUNTER: AtomicUsize = AtomicUsize::new(0);
+pub struct DummyTrieIdGenerator<T: Trait>(PhantomData<T>);
+/// This generator uses inner counter for account id and applies the hash over `AccountId +
+/// accountid_counter`.
+impl<T: Trait> contract::TrieIdGenerator<T::AccountId> for DummyTrieIdGenerator<T>
+	where
+		T::AccountId: AsRef<[u8]>
+{
+	fn trie_id(account_id: &T::AccountId) -> contract::TrieId {
+		// Note that skipping a value due to error is not an issue here.
+		// We only need uniqueness, not sequence.
+		let new_seed = contract::AccountCounter::mutate(|v| {
+			*v = v.wrapping_add(1);
+			*v
+		});
 
-pub struct DummyTrieIdGenerator;
-impl contract::TrieIdGenerator<u64> for DummyTrieIdGenerator {
-    fn trie_id(account_id: &u64) -> contract::TrieId {
-        use primitives::storage::well_known_keys;
+		let mut buf = Vec::new();
+		buf.extend_from_slice(account_id.as_ref());
+		buf.extend_from_slice(&new_seed.to_le_bytes()[..]);
 
-        // TODO: see https://github.com/paritytech/substrate/issues/2325
-        let mut res = vec![];
-        res.extend_from_slice(well_known_keys::CHILD_STORAGE_KEY_PREFIX);
-        res.extend_from_slice(b"default:");
-        res.extend_from_slice(&KEY_COUNTER.fetch_add(1, Ordering::Relaxed).to_le_bytes());
-        res.extend_from_slice(&account_id.to_le_bytes());
-        res
-    }
+		// TODO: see https://github.com/paritytech/substrate/issues/2325
+		well_known_keys::CHILD_STORAGE_KEY_PREFIX.iter()
+			.chain(b"default:")
+			.chain(T::Hashing::hash(&buf[..]).as_ref().iter())
+			.cloned()
+			.collect()
+	}
 }
 
 pub struct DummyComputeDispatchFee;
+
 impl contract::ComputeDispatchFee<Call, u64> for DummyComputeDispatchFee {
     fn compute_dispatch_fee(call: &Call) -> u64 {
         69
     }
 }
 
-const ALICE: u64 = 1;
-const BOB: u64 = 2;
-const CHARLIE: u64 = 3;
+fn account_key(s: &str) -> AccountId {
+    sr25519::Pair::from_string(&format!("//{}", s), None)
+        .expect("static values are valid; qed")
+        .public()
+}
 
 pub struct ExtBuilder {
     existential_deposit: u64,
@@ -169,6 +271,7 @@ pub struct ExtBuilder {
     transfer_fee: u64,
     creation_fee: u64,
 }
+
 impl Default for ExtBuilder {
     fn default() -> Self {
         Self {
@@ -180,6 +283,7 @@ impl Default for ExtBuilder {
         }
     }
 }
+
 impl ExtBuilder {
     pub fn existential_deposit(mut self, existential_deposit: u64) -> Self {
         self.existential_deposit = existential_deposit;
@@ -201,46 +305,36 @@ impl ExtBuilder {
         self.creation_fee = creation_fee;
         self
     }
+    pub fn set_associated_consts(&self) {
+        EXISTENTIAL_DEPOSIT.with(|v| *v.borrow_mut() = self.existential_deposit);
+        TRANSFER_FEE.with(|v| *v.borrow_mut() = self.transfer_fee);
+        CREATION_FEE.with(|v| *v.borrow_mut() = self.creation_fee);
+        BLOCK_GAS_LIMIT.with(|v| *v.borrow_mut() = self.block_gas_limit);
+    }
     pub fn build(self) -> sr_io::TestExternalities<Blake2Hasher> {
-        let mut t = system::GenesisConfig::<Test>::default()
-            .build_storage()
-            .unwrap()
-            .0;
-        t.extend(
-            balances::GenesisConfig::<Test> {
-                transaction_base_fee: 0,
-                transaction_byte_fee: 0,
-                balances: vec![],
-                existential_deposit: self.existential_deposit,
-                transfer_fee: self.transfer_fee,
-                creation_fee: self.creation_fee,
-                vesting: vec![],
-            }
-            .build_storage()
-            .unwrap()
-            .0,
-        );
-        t.extend(
-            contract::GenesisConfig::<Test> {
-                transaction_base_fee: 0,
-                transaction_byte_fee: 0,
-                transfer_fee: self.transfer_fee,
-                creation_fee: self.creation_fee,
-                contract_fee: 21,
-                call_base_fee: 135,
-                create_base_fee: 175,
-                gas_price: self.gas_price,
-                max_depth: 100,
-                block_gas_limit: self.block_gas_limit,
-                current_schedule: Default::default(),
-            }
-            .build_storage()
-            .unwrap()
-            .0,
-        );
-        sr_io::TestExternalities::new(t)
+        self.set_associated_consts();
+        let mut t = system::GenesisConfig::default()
+            .build_storage::<Test>()
+            .unwrap();
+        balances::GenesisConfig::<Test> {
+            balances: vec![],
+            vesting: vec![],
+        }
+        .assimilate_storage(&mut t.0, &mut t.1)
+        .unwrap();
+        contract::GenesisConfig::<Test> {
+            current_schedule: Default::default(),
+            gas_price: self.gas_price,
+        }
+        .assimilate_storage(&mut t.0, &mut t.1)
+        .unwrap();
+        sr_io::TestExternalities::new_with_children(t)
     }
 }
+
+//const ALICE: AccountId = account_key("Alice");
+//const BOB: AccountId = account_key("Bob");
+//const CHARLIE: AccountId = account_key("Charlie");
 
 #[test]
 fn it_works() {

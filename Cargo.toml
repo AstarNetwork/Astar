@@ -77,18 +77,16 @@ path = 'src/main.rs'
 
 [workspace]
 members = [
-	"core/child",
-	"core/merkle",
-	"core/parent",
 	"core/pgspec",
-	"core/utxo",
-	"core/primitives",
 	"runtime",
-	"child",
 ]
 
 exclude = [
-	"contracts/"
+	"contracts/",
+	"core/child",
+	"core/parent",
+	"core/utxo",
+	"core/merkle",
 ]
 
 [package]

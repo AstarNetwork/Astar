@@ -1,9 +1,9 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
+use parity_codec::{Codec, Decode, Encode};
 use sr_primitives::traits::{MaybeDisplay, MaybeSerializeDebug, Member, SimpleArithmetic, Verify};
 use support::{decl_event, decl_module, decl_storage, dispatch::Result, Parameter, StorageValue};
 use system::ensure_signed;
-use parity_codec::{Encode, Decode, Codec};
 
 pub mod traits;
 pub mod types;
@@ -15,8 +15,8 @@ mod tests;
 /// The module's configuration trait.
 pub trait Trait: contract::Trait {
     type RangeNumber: Member + Parameter + SimpleArithmetic + Default + Copy;
-    type Data: Member + Parameter + Default + Copy;
-    type TxBody: Member + Parameter + Default + Copy;
+    type Data: Member + Parameter + Default;
+    type TxBody: Member + Parameter + Default;
     type Signature: Parameter + Default + Verify<Signer = Self::AccountId>;
 
     // The overarching event type.
