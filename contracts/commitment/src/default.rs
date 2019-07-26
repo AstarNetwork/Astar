@@ -52,19 +52,19 @@ impl traits::Verify for InclusionProof<RangeNumber> {
         T: Member + Codec,
         I: Member + SimpleArithmetic + Codec,
     {
-        let mut current_node = MerkleIndexTreeInternalNode::<RangeNumber> {
+        let mut current_node = MerkleIntervalTreeInternalNode::<RangeNumber> {
             index: state_update.range.start.clone().as_(),
             hash: default_hash(&state_update.encode()[..]),
         };
 
         for x in self.proofs.iter() {
             if self.idx < x.index {
-                current_node = MerkleIndexTreeInternalNode::<RangeNumber> {
+                current_node = MerkleIntervalTreeInternalNode::<RangeNumber> {
                     index: current_node.index.clone(),
                     hash: concat_hash(&current_node, x, default_hash),
                 };
             } else {
-                current_node = MerkleIndexTreeInternalNode::<RangeNumber> {
+                current_node = MerkleIntervalTreeInternalNode::<RangeNumber> {
                     index: x.index.clone(),
                     hash: concat_hash(x, &current_node, default_hash),
                 };

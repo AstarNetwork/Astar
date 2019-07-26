@@ -1,6 +1,6 @@
 #![cfg_attr(not(any(test, feature = "std")), no_std)]
 
-use commitment::{traits::Commitment, MerkleIndexTreeInternalNode};
+use commitment::{traits::Commitment, MerkleIntervalTreeInternalNode};
 use core::option::Option;
 use deposit::traits::Deposit;
 use ink_core::{
