@@ -1,11 +1,9 @@
 use primitives::{ed25519, sr25519, Pair};
-use plasm_runtime::{
-	AccountId, GenesisConfig, ConsensusConfig, TimestampConfig, BalancesConfig,
-	SudoConfig, IndicesConfig, PlasmParentConfig,
+use node_plasm_runtime::{
+	AccountId, GenesisConfig, AuraConfig, BalancesConfig, ContractsConfig,
+	SudoConfig, IndicesConfig, SystemConfig, WASM_BINARY, AuraId, MILLICENTS,
 };
 use substrate_service;
-
-use ed25519::Public as AuthorityId;
 
 // Note this is the URL for the telemetry server
 //const STAGING_TELEMETRY_URL: &str = "wss://telemetry.polkadot.io/submit/";
@@ -24,7 +22,7 @@ pub enum Alternative {
 	LocalTestnet,
 }
 
-fn authority_key(s: &str) -> AuthorityId {
+fn authority_key(s: &str) -> AuraId {
 	ed25519::Pair::from_string(&format!("//{}", s), None)
 		.expect("static values are valid; qed")
 		.public()
@@ -48,13 +46,13 @@ impl Alternative {
 				], vec![
 					account_key("Alice")
 				],
-								   account_key("Alice"),
+					account_key("Alice")
 				),
 				vec![],
 				None,
 				None,
 				None,
-				None,
+				None
 			),
 			Alternative::LocalTestnet => ChainSpec::from_genesis(
 				"Local Testnet",
@@ -70,13 +68,13 @@ impl Alternative {
 					account_key("Eve"),
 					account_key("Ferdie"),
 				],
-								   account_key("Alice"),
+					account_key("Alice"),
 				),
 				vec![],
 				None,
 				None,
 				None,
-				None,
+				None
 			),
 		})
 	}
@@ -90,36 +88,28 @@ impl Alternative {
 	}
 }
 
-fn testnet_genesis(initial_authorities: Vec<AuthorityId>, endowed_accounts: Vec<AccountId>, root_key: AccountId) -> GenesisConfig {
+fn testnet_genesis(initial_authorities: Vec<AuraId>, endowed_accounts: Vec<AccountId>, root_key: AccountId) -> GenesisConfig {
 	GenesisConfig {
-		consensus: Some(ConsensusConfig {
-			code: include_bytes!("../runtime/wasm/target/wasm32-unknown-unknown/release/plasm_runtime_wasm.compact.wasm").to_vec(),
-			authorities: initial_authorities.clone(),
+		system: Some(SystemConfig {
+			code: WASM_BINARY.to_vec(),
+			changes_trie_config: Default::default(),
 		}),
-		system: None,
-		timestamp: Some(TimestampConfig {
-			minimum_period: 5, // 10 second block time.
+		aura: Some(AuraConfig {
+			authorities: initial_authorities.clone(),
 		}),
 		indices: Some(IndicesConfig {
 			ids: endowed_accounts.clone(),
 		}),
 		balances: Some(BalancesConfig {
-			transaction_base_fee: 1,
-			transaction_byte_fee: 0,
-			existential_deposit: 500,
-			transfer_fee: 0,
-			creation_fee: 0,
-			balances: endowed_accounts.iter().cloned().map(|k| (k, 1 << 60)).collect(),
+			balances: endowed_accounts.iter().cloned().map(|k|(k, 1 << 60)).collect(),
 			vesting: vec![],
 		}),
-		sudo: Some(SudoConfig {
-			key: root_key.clone(),
+		contracts: Some(ContractsConfig {
+			current_schedule: Default::default(),
+			gas_price: 1 * MILLICENTS,
 		}),
-		parent_mvp: Some(PlasmParentConfig {
-			total_deposit: 0,
-			operator: vec! {root_key.clone()},
-			fee: 1,
-			exit_waiting_period: 60, // 60s
+		sudo: Some(SudoConfig {
+			key: root_key,
 		}),
 	}
 }

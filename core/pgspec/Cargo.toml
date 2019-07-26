@@ -1,5 +1,5 @@
 [package]
-name = "plasm-pgspec"
+name = "plasm-parent-pgspec"
 version = "0.1.0"
 authors = ["Takumi Yamashita <takumi@staked.co.jp>"]
 edition = "2018"
@@ -7,61 +7,61 @@ edition = "2018"
 [dependencies.parity-codec]
 default-features = false
 features = ['derive']
-version = '3.2'
+version = "4.1.1"
 
 [dependencies.primitives]
 default_features = false
 git = 'https://github.com/paritytech/substrate.git'
 package = 'substrate-primitives'
-tag = 'v1.0.0rc2'
+rev = 'f7489f0ed45c36ee19060d4a70c773673c48d924'
 
 [dependencies.sr_primitives]
 default_features = false
 git = 'https://github.com/paritytech/substrate.git'
 package = 'sr-primitives'
-tag = 'v1.0.0rc2'
+rev = 'f7489f0ed45c36ee19060d4a70c773673c48d924'
 
 [dependencies.sr-io]
 default_features = false
 git = 'https://github.com/paritytech/substrate.git'
 package = 'sr-io'
-tag = 'v1.0.0rc2'
+rev = 'f7489f0ed45c36ee19060d4a70c773673c48d924'
 
 [dependencies.rstd]
 default_features = false
 git = 'https://github.com/paritytech/substrate.git'
 package = 'sr-std'
-tag = 'v1.0.0rc2'
+rev = 'f7489f0ed45c36ee19060d4a70c773673c48d924'
 
 [dependencies.balances]
 default_features = false
 git = 'https://github.com/paritytech/substrate.git'
 package = 'srml-balances'
-tag = 'v1.0.0rc2'
+rev = 'f7489f0ed45c36ee19060d4a70c773673c48d924'
 
 [dependencies.support]
 default_features = false
 git = 'https://github.com/paritytech/substrate.git'
 package = 'srml-support'
-tag = 'v1.0.0rc2'
+rev = 'f7489f0ed45c36ee19060d4a70c773673c48d924'
 
 [dependencies.system]
 default_features = false
 git = 'https://github.com/paritytech/substrate.git'
 package = 'srml-system'
-tag = 'v1.0.0rc2'
+rev = 'f7489f0ed45c36ee19060d4a70c773673c48d924'
 
 [dependencies.timestamp]
 default_features = false
 git = 'https://github.com/paritytech/substrate.git'
 package = 'srml-timestamp'
-tag = 'v1.0.0rc2'
+rev = 'f7489f0ed45c36ee19060d4a70c773673c48d924'
 
 [dependencies.contract]
 default_features = false
 git = 'https://github.com/paritytech/substrate.git'
-package = 'srml-contract'
-tag = 'v1.0.0rc2'
+package = 'srml-contracts'
+rev = 'f7489f0ed45c36ee19060d4a70c773673c48d924'
 
 [dependencies.serde]
 optional = true

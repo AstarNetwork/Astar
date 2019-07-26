@@ -12,12 +12,12 @@ trie-root = '0.12.0'
 [dependencies.basic-authorship]
 git = 'https://github.com/paritytech/substrate.git'
 package = 'substrate-basic-authorship'
-tag = 'v1.0.0rc2'
+rev = 'f7489f0ed45c36ee19060d4a70c773673c48d924'
 
 [dependencies.consensus]
 git = 'https://github.com/paritytech/substrate.git'
 package = 'substrate-consensus-aura'
-tag = 'v1.0.0rc2'
+rev = 'f7489f0ed45c36ee19060d4a70c773673c48d924'
 
 [dependencies.ctrlc]
 features = ['termination']
@@ -26,45 +26,45 @@ version = '3.0'
 [dependencies.inherents]
 git = 'https://github.com/paritytech/substrate.git'
 package = 'substrate-inherents'
-tag = 'v1.0.0rc2'
+rev = 'f7489f0ed45c36ee19060d4a70c773673c48d924'
 
 [dependencies.network]
 git = 'https://github.com/paritytech/substrate.git'
 package = 'substrate-network'
-tag = 'v1.0.0rc2'
+rev = 'f7489f0ed45c36ee19060d4a70c773673c48d924'
 
-[dependencies.plasm-runtime]
+[dependencies.node-plasm-runtime]
 path = 'runtime'
 
 [dependencies.primitives]
 git = 'https://github.com/paritytech/substrate.git'
 package = 'substrate-primitives'
-tag = 'v1.0.0rc2'
+rev = 'f7489f0ed45c36ee19060d4a70c773673c48d924'
 
 [dependencies.sr-io]
 git = 'https://github.com/paritytech/substrate.git'
-tag = 'v1.0.0rc2'
+rev = 'f7489f0ed45c36ee19060d4a70c773673c48d924'
 
 [dependencies.substrate-cli]
 git = 'https://github.com/paritytech/substrate.git'
-tag = 'v1.0.0rc2'
+rev = 'f7489f0ed45c36ee19060d4a70c773673c48d924'
 
 [dependencies.substrate-client]
 git = 'https://github.com/paritytech/substrate.git'
-tag = 'v1.0.0rc2'
+rev = 'f7489f0ed45c36ee19060d4a70c773673c48d924'
 
 [dependencies.substrate-executor]
 git = 'https://github.com/paritytech/substrate.git'
-tag = 'v1.0.0rc2'
+rev = 'f7489f0ed45c36ee19060d4a70c773673c48d924'
 
 [dependencies.substrate-service]
 git = 'https://github.com/paritytech/substrate.git'
-tag = 'v1.0.0rc2'
+rev = 'f7489f0ed45c36ee19060d4a70c773673c48d924'
 
 [dependencies.transaction-pool]
 git = 'https://github.com/paritytech/substrate.git'
 package = 'substrate-transaction-pool'
-tag = 'v1.0.0rc2'
+rev = 'f7489f0ed45c36ee19060d4a70c773673c48d924'
 
 [build-dependencies]
 vergen = '3'
@@ -77,18 +77,16 @@ path = 'src/main.rs'
 
 [workspace]
 members = [
-	"core/child",
-	"core/merkle",
-	"core/parent",
-	"core/parent/pgspec",
-	"core/utxo",
-	"core/primitives",
+	"core/pgspec",
 	"runtime",
-	"child",
 ]
 
 exclude = [
-	"contracts/"
+	"contracts/",
+	"core/child",
+	"core/parent",
+	"core/utxo",
+	"core/merkle",
 ]
 
 [package]
@@ -96,4 +94,4 @@ authors = ['Takumi Yamashita <takumi@staked.co.jp>']
 build = 'build.rs'
 edition = '2018'
 name = 'plasm'
-version = '0.2.0'
+version = '0.5.0'
