@@ -5,7 +5,7 @@ use std::marker::PhantomData;
 pub type Nodes = Vec<MerkleIntervalTreeInternalNode<RangeNumber>>;
 pub type Tree = Vec<Nodes>;
 
-struct MerkleIntervalTree<T, F>
+pub struct MerkleIntervalTreeGenerator<T, F>
 where
     T: traits::Member + Codec,
     F: FnOnce(&[u8]) -> Hash,
@@ -13,13 +13,13 @@ where
     _phantom: PhantomData<(T, F)>,
 }
 
-impl<T, F> MerkleIntervalTree<T, F>
+impl<T, F> MerkleIntervalTreeGenerator<T, F>
 where
     T: traits::Member + Codec,
-    F: Fn(&[u8]) -> Hash,
+    F: Fn(&[u8]) -> Hash + Copy,
 {
     pub fn generate_leafs(
-        leaf_nodes: &mut Vec<MerkleIntervalTreeLeafNode<RangeNumber, T>>,
+        leaf_nodes: &mut Vec<primitives::default::StateUpdate<T>>,
         hash_func: F,
     ) -> Nodes {
         let mut children: Nodes = Vec::new();
@@ -30,9 +30,9 @@ where
         }
 
         // Leaves intersect
-        leaf_nodes.sort_by_key(|a| a.start);
+        leaf_nodes.sort_by_key(|a| a.range.start);
         for i in (0..leaf_nodes.len() - 1) {
-            if leaf_nodes[i].end >= leaf_nodes[i + 1].start {
+            if leaf_nodes[i].range.end > leaf_nodes[i + 1].range.start {
                 return children;
             }
         }
@@ -40,16 +40,16 @@ where
         // leaf add to children
         for leaf in leaf_nodes.iter() {
             children.push(MerkleIntervalTreeInternalNode {
-                index: leaf.start.clone(),
+                index: leaf.range.start.clone(),
                 hash: hash_func(&leaf.encode()[..]),
             });
         }
         children
     }
 
-    pub fn generate_internal_nodes(children: &Nodes, hash_func: &F) -> Tree {
+    pub fn generate_internal_nodes(children: &Nodes, hash_func: F) -> Tree {
         if children.len() == 1 {
-            return Vec::new();
+            return vec![children.clone()];
         }
         let mut parents: Nodes = Vec::new();
         for i in (0..children.len()) {
@@ -72,18 +72,19 @@ where
             }
         }
         let mut tree = Self::generate_internal_nodes(&parents, hash_func);
-        tree.push(parents);
+        tree.push(children.clone());
         tree
     }
 
     pub fn generate_proof(
         tree: &Tree,
-        leaf_node: &MerkleIntervalTreeInternalNode<RangeNumber>,
+        leaf_node: &primitives::default::StateUpdate<T>,
+        hash_func: F,
     ) -> primitives::Result<InclusionProof<RangeNumber>> {
         let leaves = &tree[tree.len() - 1];
         let mut leaf_index: usize = 0;
         while leaf_index < leaves.len() {
-            if leaf_node == &leaves[leaf_index] {
+            if &hash_func(&leaf_node.encode()[..]) == &leaves[leaf_index].hash {
                 break;
             }
             leaf_index += 1;
@@ -107,8 +108,12 @@ where
             return proof;
         }
 
-        proof.push(tree[height][child_index].clone());
-        let parent_index = (child_index - 1) / 2;
+        proof.push(tree[height][Self::get_sibling(child_index)].clone());
+        let parent_index = child_index / 2;
         Self::find_siblings(tree, height - 1, parent_index, proof)
+    }
+
+    fn get_sibling(index: usize) -> usize {
+        index + 1 - (index & 1) * 2
     }
 }

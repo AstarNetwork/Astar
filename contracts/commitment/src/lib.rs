@@ -17,17 +17,6 @@ type Hash = <ContractEnv<DefaultSrmlTypes> as EnvTypes>::Hash;
 
 #[derive(Clone, Encode, Decode, PartialEq, Eq)]
 #[cfg_attr(not(no_std), derive(Debug))]
-pub struct MerkleIntervalTreeLeafNode<
-    I: primitives::traits::Member + primitives::traits::SimpleArithmetic + Codec,
-    T: primitives::traits::Member + Codec,
-> {
-    pub start: I,
-    pub end: I,
-    pub data: T,
-}
-
-#[derive(Clone, Encode, Decode, PartialEq, Eq)]
-#[cfg_attr(not(no_std), derive(Debug))]
 pub struct MerkleIntervalTreeInternalNode<
     I: primitives::traits::Member + primitives::traits::SimpleArithmetic + Codec,
 > {
