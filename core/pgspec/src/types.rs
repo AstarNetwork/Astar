@@ -72,7 +72,7 @@ pub struct Challenge<
 
 #[derive(Clone, Encode, Decode, PartialEq, Eq)]
 #[cfg_attr(feature = "std", derive(Debug))]
-pub struct MerkleIndexTreeInternalNode<
+pub struct MerkleIntervalTreeInternalNode<
     I: Member + SimpleArithmetic + Codec,
     Hash: Member
         + MaybeSerializeDebug
@@ -104,6 +104,6 @@ pub struct InclusionProof<
         + AsRef<[u8]>
         + AsMut<[u8]>,
 > {
-    pub proofs: Vec<MerkleIndexTreeInternalNode<I, Hash>>,
+    pub proofs: Vec<MerkleIntervalTreeInternalNode<I, Hash>>,
     pub idx: I,
 }

@@ -52,23 +52,25 @@ impl traits::Verify for InclusionProof<RangeNumber> {
         T: Member + Codec,
         I: Member + SimpleArithmetic + Codec,
     {
-        let mut current_node = MerkleIndexTreeInternalNode::<RangeNumber> {
+        let mut current_node = MerkleIntervalTreeInternalNode::<RangeNumber> {
             index: state_update.range.start.clone().as_(),
             hash: default_hash(&state_update.encode()[..]),
         };
 
+        let mut leaf_index = self.idx;
         for x in self.proofs.iter() {
-            if self.idx < x.index {
-                current_node = MerkleIndexTreeInternalNode::<RangeNumber> {
+            if leaf_index & 1 == 0 {
+                current_node = MerkleIntervalTreeInternalNode::<RangeNumber> {
                     index: current_node.index.clone(),
                     hash: concat_hash(&current_node, x, default_hash),
                 };
             } else {
-                current_node = MerkleIndexTreeInternalNode::<RangeNumber> {
+                current_node = MerkleIntervalTreeInternalNode::<RangeNumber> {
                     index: x.index.clone(),
                     hash: concat_hash(x, &current_node, default_hash),
                 };
             }
+            leaf_index /= 2;
         }
         default_hash(&current_node.encode()[..]) == root
     }
@@ -172,7 +174,11 @@ mod tests {
         alloc::{AllocateUsing, BumpAlloc, Initialize as _},
         Key,
     };
+
+    type AccountId = <ContractEnv<DefaultSrmlTypes> as EnvTypes>::AccountId;
+
     use ink_model::EnvHandler;
+
     impl Commitment {
         /// Deploys the testable contract by initializing it with the given values.
         pub fn deploy_mock() -> (
@@ -226,8 +232,121 @@ mod tests {
         assert_eq!(contract.block_hash(&mut env, 2), Some(header_2));
     }
 
+    pub type TreeGenerator = merkle::MerkleIntervalTreeGenerator<u32, fn(&[u8]) -> Hash>;
+
     #[test]
     fn verify_inclusion_proof() {
-        // TODO
+        let (mut contract, mut env) = Commitment::deploy_mock();
+
+        let mut leafs = vec![
+            StateUpdate::<u32> {
+                range: Range { start: 1, end: 2 },
+                state_object: StateObject {
+                    predicate: AccountId::decode(&mut &[1u8; 32][..]).unwrap(),
+                    data: 100,
+                },
+                plasma_block_number: 1,
+            },
+            StateUpdate::<u32> {
+                range: Range { start: 2, end: 100 },
+                state_object: StateObject {
+                    predicate: AccountId::decode(&mut &[1u8; 32][..]).unwrap(),
+                    data: 1,
+                },
+                plasma_block_number: 1,
+            },
+            StateUpdate::<u32> {
+                range: Range {
+                    start: 100,
+                    end: 200,
+                },
+                state_object: StateObject {
+                    predicate: AccountId::decode(&mut &[1u8; 32][..]).unwrap(),
+                    data: 1010,
+                },
+                plasma_block_number: 1,
+            },
+            StateUpdate::<u32> {
+                range: Range {
+                    start: 200,
+                    end: 300,
+                },
+                state_object: StateObject {
+                    predicate: AccountId::decode(&mut &[1u8; 32][..]).unwrap(),
+                    data: 102320,
+                },
+                plasma_block_number: 1,
+            },
+            StateUpdate::<u32> {
+                range: Range {
+                    start: 300,
+                    end: 500,
+                },
+                state_object: StateObject {
+                    predicate: AccountId::decode(&mut &[1u8; 32][..]).unwrap(),
+                    data: 1000,
+                },
+                plasma_block_number: 1,
+            },
+            StateUpdate::<u32> {
+                range: Range {
+                    start: 500,
+                    end: 1000,
+                },
+                state_object: StateObject {
+                    predicate: AccountId::decode(&mut &[1u8; 32][..]).unwrap(),
+                    data: 2000,
+                },
+                plasma_block_number: 1,
+            },
+            StateUpdate::<u32> {
+                range: Range {
+                    start: 1000,
+                    end: 3000,
+                },
+                state_object: StateObject {
+                    predicate: AccountId::decode(&mut &[1u8; 32][..]).unwrap(),
+                    data: 111111,
+                },
+                plasma_block_number: 1,
+            },
+            StateUpdate::<u32> {
+                range: Range {
+                    start: 3000,
+                    end: 10000,
+                },
+                state_object: StateObject {
+                    predicate: AccountId::decode(&mut &[1u8; 32][..]).unwrap(),
+                    data: 1321323,
+                },
+                plasma_block_number: 1,
+            },
+        ];
+        let nodes = TreeGenerator::generate_leafs(&mut leafs, default_hash);
+        let tree = TreeGenerator::generate_internal_nodes(&nodes, default_hash);
+
+        let header_1: Hash = default_hash(&tree[0][0].encode()[..]);
+        assert_eq!(
+            Ok(BlockSubmitted {
+                number: 1,
+                header: header_1.clone(),
+            }),
+            contract.submit_block(&mut env, header_1.clone())
+        );
+        for (i, leaf) in leafs.iter().enumerate() {
+            let proof = TreeGenerator::generate_proof(&tree, leaf, default_hash).unwrap();
+            assert_eq!(
+                true,
+                contract.verify_state_update_inclusion(&mut env, leaf, &proof),
+            );
+            assert_eq!(
+                false,
+                contract.verify_state_update_inclusion(
+                    &mut env,
+                    &leafs[i + 1 - (i & 1) * 2],
+                    &proof
+                ),
+            );
+        }
     }
 }

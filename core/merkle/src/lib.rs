@@ -8,8 +8,8 @@ use parity_codec::{Encode, Codec};
 pub mod mock;
 
 pub fn concat_hash<H, F>(a: &H, b: &H, hash: F) -> H
-	where H: Encode + Default + Eq + Copy,
-		  F: FnOnce(&[u8]) -> H {
+	where H: Encode + Default + Eq,
+		  F: Fn(&[u8]) -> H {
 	if *a == Default::default() { return *b; }
 	if *b == Default::default() { return *a; }
 	hash(&plasm_primitives::concat_bytes(a, b))

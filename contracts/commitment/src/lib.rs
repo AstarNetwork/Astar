@@ -9,12 +9,15 @@ use parity_codec::{Codec, Decode, Encode};
 pub mod default;
 pub mod traits;
 
+#[cfg(all(test, feature = "test-env"))]
+pub mod merkle;
+
 type BlockNumber = <ContractEnv<DefaultSrmlTypes> as EnvTypes>::BlockNumber;
 type Hash = <ContractEnv<DefaultSrmlTypes> as EnvTypes>::Hash;
 
 #[derive(Clone, Encode, Decode, PartialEq, Eq)]
 #[cfg_attr(not(no_std), derive(Debug))]
-pub struct MerkleIndexTreeInternalNode<
+pub struct MerkleIntervalTreeInternalNode<
     I: primitives::traits::Member + primitives::traits::SimpleArithmetic + Codec,
 > {
     pub index: I,
@@ -26,6 +29,6 @@ pub struct MerkleIndexTreeInternalNode<
 pub struct InclusionProof<
     I: primitives::traits::Member + primitives::traits::SimpleArithmetic + Codec,
 > {
-    pub proofs: Vec<MerkleIndexTreeInternalNode<I>>,
+    pub proofs: Vec<MerkleIntervalTreeInternalNode<I>>,
     pub idx: I,
 }
