@@ -31,7 +31,7 @@ case $TARGET in
 	"wasm")
 
 		# Install prerequisites and build all wasm projects
-		sudo apt install -y curl jq tar
+		sudo apt-get install -y curl jq tar
 		curl https://raw.githubusercontent.com/substrate-developer-hub/substrate-contracts-workshop/master/scripts/install-wasm-tools.sh -sSf |bash -s
 		cargo install pwasm-utils-cli --bin wasm-prune --force
 
