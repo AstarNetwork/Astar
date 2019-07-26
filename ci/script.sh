@@ -25,7 +25,7 @@ case $TARGET in
 		# Install prerequisites and build all wasm projects
 		./scripts/init.sh
 
-		cargo test --all --release --locked
+		cargo test --all
 		;;
 
 	"wasm")
