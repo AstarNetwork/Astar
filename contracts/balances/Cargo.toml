@@ -5,9 +5,9 @@ authors = ["Takumi Yamashita <takumi@staked.co.jp>"]
 edition = "2018"
 
 [dependencies]
-ink_core = { git = "https://github.com/paritytech/ink", package = "ink_core" }
-ink_model = { git = "https://github.com/paritytech/ink", package = "ink_model" }
-ink_lang = { git = "https://github.com/paritytech/ink", package = "ink_lang" }
+ink_core = { git = "https://github.com/paritytech/ink", package = "ink_core", rev = "7d19156eede9dd2f5e2e58c13302707c1f89fe2f" }
+ink_model = { git = "https://github.com/paritytech/ink", package = "ink_model", rev = "7d19156eede9dd2f5e2e58c13302707c1f89fe2f" }
+ink_lang = { git = "https://github.com/paritytech/ink", package = "ink_lang", rev = "7d19156eede9dd2f5e2e58c13302707c1f89fe2f" }
 parity-codec = { version = "3.3", default-features = false, features = ["derive"] }
 
 [lib]
