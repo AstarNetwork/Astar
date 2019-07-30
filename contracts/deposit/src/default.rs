@@ -42,7 +42,14 @@ impl Deposit {
 
     pub fn extend_deposited_ranges(&mut self, amount: Balance) {
         let total_deposited = self.total_deposited.get().clone();
-        let old_range = self.deposited_ranges.get(&total_deposited).unwrap().clone();
+        let old_range = self
+            .deposited_ranges
+            .get(&total_deposited)
+            .unwrap_or(&Range {
+                start: total_deposited.clone(),
+                end: total_deposited.clone(),
+            })
+            .clone();
 
         // Set the newStart for the last range
         let new_start: RangeNumber;
@@ -95,7 +102,7 @@ impl Deposit {
         if range.end != encompasing_range.end {
             // new deposited range from the newly exited end until the old unexited end
             let right_split_range = Range {
-                start: range.start.clone(),
+                start: range.end.clone(),
                 end: encompasing_range.end.clone(),
             };
             // Store the new deposited range
@@ -523,6 +530,23 @@ mod tests {
             deposit.initialize(());
             deposit.deploy(&mut env, token_address, challenge_period, exit_period);
             (deposit, env)
+        }
+
+        // Test Getters
+        pub fn total_deposited(&self) -> RangeNumber {
+            self.total_deposited.get().clone()
+        }
+        pub fn checkpoints(&self, key: &Hash) -> Option<&CheckpointStatus> {
+            self.checkpoints.get(key)
+        }
+        pub fn deposited_ranges(&self, key: &RangeNumber) -> Option<&Range> {
+            self.deposited_ranges.get(key)
+        }
+        pub fn exit_redeemable_after(&self, key: &Hash) -> Option<&BlockNumber> {
+            self.exit_redeemable_after.get(key)
+        }
+        pub fn challenges(&self, key: &Hash) -> Option<&bool> {
+            self.challenges.get(key)
         }
     }
 
