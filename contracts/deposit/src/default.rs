@@ -271,7 +271,7 @@ impl traits::Deposit<RangeNumber, commitment::default::Commitment> for Deposit {
             >= newer_checkpoint.state_update.plasma_block_number
         {
             return Err(
-				"error: ensure that the plasma blocknumber of the older_exitt is less than that of newer_checkpoint.",
+				"error: ensure that the plasma blocknumber of the older_exit is less than that of newer_checkpoint.",
 			);
         }
 
@@ -763,5 +763,104 @@ mod tests {
             Some(&(env.block_number() + 5)),
             contract.exit_redeemable_after(&checkpoint_id),
         );
+    }
+
+    fn start_exit_unwrap(
+        contract: &mut Deposit,
+        env: &mut EnvHandler<ink_core::env::ContractEnv<DefaultSrmlTypes>>,
+        leaf: &StateUpdate<AccountId>,
+    ) -> Checkpoint<AccountId> {
+        let checkpoint = Checkpoint {
+            state_update: leaf.clone(),
+            sub_range: Range {
+                start: leaf.range.start,
+                end: leaf.range.end,
+            },
+        };
+        let checkpoint_id = checkpoint.id();
+
+        // Check the emit value.
+        assert_eq!(
+            Ok(ExitStarted {
+                exit: checkpoint_id,
+                redeemable_after: env.block_number() + 5,
+            }),
+            contract.start_exit(env, checkpoint.clone())
+        );
+        checkpoint
+    }
+
+    fn start_checkpoint_unwrap(
+        contract: &mut Deposit,
+        env: &mut EnvHandler<ink_core::env::ContractEnv<DefaultSrmlTypes>>,
+        leaf: &StateUpdate<AccountId>,
+        inclusion_proof: commitment::InclusionProof<RangeNumber>,
+        deposited_range_id: RangeNumber,
+    ) -> Checkpoint<AccountId> {
+        let checkpoint = Checkpoint {
+            state_update: leaf.clone(),
+            sub_range: Range {
+                start: leaf.range.start,
+                end: leaf.range.end,
+            },
+        };
+        let checkpoint_id = checkpoint.id();
+        // Check the emit value.
+        assert_eq!(
+            Ok(CheckpointStarted {
+                checkpoint: checkpoint.clone(),
+                challengeable_until: env.block_number() + 5,
+            }),
+            contract.start_checkpoint(env, checkpoint.clone(), inclusion_proof, deposited_range_id)
+        );
+        checkpoint
+    }
+
+    #[test]
+    fn delete_exit_outdated_normal() {
+        let erc20_address = get_token_address();
+        let (mut contract, mut env) = Deposit::deploy_mock(erc20_address, 5, 5);
+        let this = env.address();
+
+        // initail state...
+        let mut leafs = make_test_leafs(&mut env, 1);
+        let tree = make_test_merkle_tree_and_state(&mut contract, &mut env, &mut leafs, 1);
+        all_deposit_leafs(&mut contract, &mut env, &mut leafs);
+
+        // [5] exit.
+        let older_exit = start_exit_unwrap(&mut contract, &mut env, &leafs[5]);
+
+        ink_core::env::ContractEnv::<DefaultSrmlTypes>::set_block_number(2);
+
+        // second state...
+        let mut new_state = leafs[5].clone();
+        new_state.plasma_block_number = 2;
+        new_state.state_object.data = AccountId::decode(&mut &[0 as u8; 32][..]).unwrap();
+        let mut new_leafs = leafs.clone();
+        new_leafs[5] = new_state;
+        let new_tree = make_test_merkle_tree_and_state(&mut contract, &mut env, &mut new_leafs, 2);
+        let inclusion_proof =
+            TreeGenerator::generate_proof(&new_tree, &new_leafs[5], default_hash).unwrap();
+        let deposited_range_id = new_leafs.last().unwrap().range.end;
+
+        let newer_checkpoint = start_checkpoint_unwrap(
+            &mut contract,
+            &mut env,
+            &new_leafs[5],
+            inclusion_proof,
+            deposited_range_id,
+        );
+
+        ink_core::env::ContractEnv::<DefaultSrmlTypes>::set_block_number(8);
+        // check ther previous storage.
+        let older_exit_id = older_exit.id();
+        assert_eq!(Some(&6), contract.exit_redeemable_after(&older_exit_id));
+        // check the return value.a
+        assert_eq!(
+            Ok(()),
+            contract.delete_exit_outdated(&mut env, older_exit, newer_checkpoint)
+        );
+        // check change the storage.
+        assert_eq!(None, contract.exit_redeemable_after(&older_exit_id))
     }
 }
