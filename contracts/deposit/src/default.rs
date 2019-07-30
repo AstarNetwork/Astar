@@ -586,7 +586,9 @@ mod tests {
                 checkpoint: exp_checkpoint.id(),
             }),
             contract.deposit(&mut env, this, amount, initial_state,)
-        )
+        );
+		assert_eq!(10000, contract.total_deposited());
+		assert_eq!(Some(&Range{start:0, end:10000}), contract.deposited_ranges(&10000));
     }
 
     #[test]
