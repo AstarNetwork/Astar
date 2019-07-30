@@ -851,6 +851,13 @@ mod tests {
             deposited_range_id,
         );
 
+        // check the ng case :(error: ensure that the newerCheckpoint is no longer challengeable)
+        assert_eq!(
+            Err("error: ensure that the newerCheckpoint is no longer challengeable."),
+            contract.delete_exit_outdated(&mut env, older_exit.clone(), newer_checkpoint.clone())
+        );
+
+		// passed
         ink_core::env::ContractEnv::<DefaultSrmlTypes>::set_block_number(8);
         // check ther previous storage.
         let older_exit_id = older_exit.id();
