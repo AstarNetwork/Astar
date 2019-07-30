@@ -712,6 +712,7 @@ mod tests {
         };
 
         let checkpoint_id = checkpoint.id();
+        // Check the emit value.
         assert_eq!(
             Ok(CheckpointStarted {
                 checkpoint: checkpoint.clone(),
@@ -719,12 +720,48 @@ mod tests {
             }),
             contract.start_checkpoint(&mut env, checkpoint, inclusion_proof, deposited_range_id)
         );
+        // Check change the value.
         assert_eq!(
             Some(&CheckpointStatus {
                 challengeable_until: env.block_number() + 5,
                 outstanding_challenges: 0,
             }),
             contract.checkpoints(&checkpoint_id),
+        );
+    }
+
+    #[test]
+    fn start_exit_normal() {
+        let erc20_address = get_token_address();
+        let (mut contract, mut env) = Deposit::deploy_mock(erc20_address, 5, 5);
+        let this = env.address();
+
+        let mut leafs = make_test_leafs(&mut env, 1);
+        let tree = make_test_merkle_tree_and_state(&mut contract, &mut env, &mut leafs, 1);
+        all_deposit_leafs(&mut contract, &mut env, &mut leafs);
+
+        let checkpoint = Checkpoint {
+            state_update: leafs[3].clone(),
+            sub_range: Range {
+                start: leafs[3].range.start,
+                end: leafs[3].range.end,
+            },
+        };
+
+        let checkpoint_id = checkpoint.id();
+
+        // Check the emit value.
+        assert_eq!(
+            Ok(ExitStarted {
+                exit: checkpoint_id,
+                redeemable_after: env.block_number() + 5,
+            }),
+            contract.start_exit(&mut env, checkpoint)
+        );
+        // Check change the value.
+        assert_eq!(
+            Some(&(env.block_number() + 5)),
+            contract.exit_redeemable_after(&checkpoint_id),
         );
     }
 }
