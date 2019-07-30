@@ -693,7 +693,7 @@ mod tests {
         all_deposit_leafs(&mut contract, &mut env, &mut leafs);
 
         let mut new_state = leafs[3].clone();
-		new_state.plasma_block_number = 2;
+        new_state.plasma_block_number = 2;
         new_state.state_object.data = AccountId::decode(&mut &[0 as u8; 32][..]).unwrap();
         let mut new_leafs = leafs.clone();
         new_leafs[3] = new_state;
@@ -711,12 +711,20 @@ mod tests {
             },
         };
 
+        let checkpoint_id = checkpoint.id();
         assert_eq!(
             Ok(CheckpointStarted {
                 checkpoint: checkpoint.clone(),
                 challengeable_until: env.block_number() + 5,
             }),
             contract.start_checkpoint(&mut env, checkpoint, inclusion_proof, deposited_range_id)
+        );
+        assert_eq!(
+            Some(&CheckpointStatus {
+                challengeable_until: env.block_number() + 5,
+                outstanding_challenges: 0,
+            }),
+            contract.checkpoints(&checkpoint_id),
         );
     }
 }
