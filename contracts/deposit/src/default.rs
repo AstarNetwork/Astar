@@ -275,14 +275,14 @@ impl traits::Deposit<RangeNumber, commitment::default::Commitment> for Deposit {
 			);
         }
 
-        // Ensure that the newerCheckpoint has no challenges.
+        // Check checkpoint finalized.
         let newer_checkpoint_id = newer_checkpoint.id();
-        if let Some(true) = self.challenges.get(&newer_checkpoint_id) {
-            return Err("error: ensure that the newerCheckpoint has no challenges.");
-        }
-
-        // Ensure that the newerCheckpoint is no longer challengeable.
         if let Some(checkpoint_status) = self.checkpoints.get(&newer_checkpoint_id) {
+            // Ensure that the newerCheckpoint has no challenges.
+            if checkpoint_status.outstanding_challenges != 0 {
+                return Err("error: ensure that the newerCheckpoint has no challenges.");
+            }
+            // Ensure that the newerCheckpoint is no longer challengeable.
             if checkpoint_status.challengeable_until > env.block_number() {
                 return Err("error: ensure that the newerCheckpoint is no longer challengeable.");
             }
@@ -336,8 +336,8 @@ impl traits::Deposit<RangeNumber, commitment::default::Commitment> for Deposit {
         }
 
         // Ensure that an identical challenge is not already underway.
-        let challenge_id = challenge.challenged_checkpoint.id();
-        if None == self.challenges.get(&challenge_id) {
+        let challenge_id = challenge.id();
+        if let Some(_) = self.challenges.get(&challenge_id) {
             return Err("error: ensure that an identical challenge is not already underway.");
         }
 
@@ -377,7 +377,7 @@ impl traits::Deposit<RangeNumber, commitment::default::Commitment> for Deposit {
         }
 
         // Remove the challenge if above conditions are met.
-        self.challenges.insert(challenge_id, true);
+        self.challenges.insert(challenge_id, false);
 
         // Decrement the challenged checkpoint’s outstandingChallenges if the above conditions are met.
         let mut challenged_status = self.checkpoints.get(&challenged_id).unwrap().clone();
@@ -857,7 +857,7 @@ mod tests {
             contract.delete_exit_outdated(&mut env, older_exit.clone(), newer_checkpoint.clone())
         );
 
-		// passed
+        // passed
         ink_core::env::ContractEnv::<DefaultSrmlTypes>::set_block_number(8);
         // check ther previous storage.
         let older_exit_id = older_exit.id();
@@ -870,4 +870,72 @@ mod tests {
         // check change the storage.
         assert_eq!(None, contract.exit_redeemable_after(&older_exit_id))
     }
+
+    #[test]
+    fn challenge_checkpoint_normal() {
+        let erc20_address = get_token_address();
+        let (mut contract, mut env) = Deposit::deploy_mock(erc20_address, 5, 5);
+        let this = env.address();
+
+        // initail state...
+        let mut leafs = make_test_leafs(&mut env, 1);
+        let tree = make_test_merkle_tree_and_state(&mut contract, &mut env, &mut leafs, 1);
+        all_deposit_leafs(&mut contract, &mut env, &mut leafs);
+
+        // [5] exit.
+        let challenging_exit = start_exit_unwrap(&mut contract, &mut env, &leafs[5]);
+
+        ink_core::env::ContractEnv::<DefaultSrmlTypes>::set_block_number(2);
+
+        // second state...
+        let mut new_state = leafs[5].clone();
+        new_state.plasma_block_number = 2;
+        new_state.state_object.data = AccountId::decode(&mut &[0 as u8; 32][..]).unwrap();
+        let mut new_leafs = leafs.clone();
+        new_leafs[5] = new_state;
+        let new_tree = make_test_merkle_tree_and_state(&mut contract, &mut env, &mut new_leafs, 2);
+        let inclusion_proof =
+            TreeGenerator::generate_proof(&new_tree, &new_leafs[5], default_hash).unwrap();
+        let deposited_range_id = new_leafs.last().unwrap().range.end;
+
+        let challenged_checkpoint = start_checkpoint_unwrap(
+            &mut contract,
+            &mut env,
+            &new_leafs[5],
+            inclusion_proof,
+            deposited_range_id,
+        );
+
+        // passed
+        let challenge = Challenge {
+            challenged_checkpoint: challenged_checkpoint.clone(),
+            challenging_checkpoint: challenging_exit.clone(),
+        };
+        let challenged_id = challenged_checkpoint.id();
+        let challenge_id = challenge.id();
+
+        // check ther previous storage.
+        assert_eq!(
+            Some(&CheckpointStatus {
+                challengeable_until: 7,
+                outstanding_challenges: 0,
+            }),
+            contract.checkpoints(&challenged_id)
+        );
+
+        // check the return value.
+        assert_eq!(Ok(()), contract.challenge_checkpoint(&mut env, challenge));
+
+        assert_eq!(
+            Some(&CheckpointStatus {
+                challengeable_until: 7,
+                outstanding_challenges: 1,
+            }),
+            contract.checkpoints(&challenged_id)
+        );
+        assert_eq!(Some(&true), contract.challenges(&challenge_id));
+    }
+
+    #[test]
+    fn remove_challenge_normal() {}
 }
