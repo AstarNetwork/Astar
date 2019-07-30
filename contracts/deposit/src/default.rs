@@ -1047,4 +1047,65 @@ mod tests {
             contract.checkpoints.get(&challenged_checkpoint.id())
         );
     }
+
+    #[test]
+    fn finalize_exit_normal() {
+        let erc20_address = get_token_address();
+        let (mut contract, mut env) = Deposit::deploy_mock(erc20_address, 5, 5);
+        let this = env.address();
+
+        // initail state...
+        let mut leafs = make_test_leafs(&mut env, 1);
+        let tree = make_test_merkle_tree_and_state(&mut contract, &mut env, &mut leafs, 1);
+        all_deposit_leafs(&mut contract, &mut env, &mut leafs);
+
+        // [5] exit.
+        let exit = start_exit_unwrap(&mut contract, &mut env, &leafs[5]);
+        let deposited_range_id = leafs.last().unwrap().range.end;
+
+        // previous exit finalize.
+        ink_core::env::ContractEnv::<DefaultSrmlTypes>::set_block_number(2);
+
+        assert_eq!(Err("error: ensure that the exit is finalized (current Ethereum block exceeds redeemablAfter."),
+				   contract.finalize_exit(&mut env, exit.clone(), deposited_range_id));
+
+		// passed block number
+        ink_core::env::ContractEnv::<DefaultSrmlTypes>::set_block_number(10);
+
+		// previous state.
+		assert_eq!(800, contract.total_deposited());
+		assert_eq!(
+			Some(&Range {
+				start: 0,
+				end: 800
+			}),
+			contract.deposited_ranges(&800)
+		);
+		assert_eq!(
+			None,
+			contract.deposited_ranges(&500)
+		);
+
+		// check return value.
+        assert_eq!(
+            Ok(ExitFinalized { exit: exit.clone() }),
+            contract.finalize_exit(&mut env, exit.clone(), deposited_range_id)
+        );
+
+		// check after value.
+        assert_eq!(800, contract.total_deposited());
+        assert_eq!(
+            Some(&Range {
+                start: 600,
+                end: 800
+            }),
+            contract.deposited_ranges(&800)
+        );
+        assert_eq!(
+            Some(&Range { start: 0, end: 500 }),
+            contract.deposited_ranges(&500)
+        );
+        assert_eq!(None, contract.checkpoints(&exit.id()));
+        assert_eq!(None, contract.exit_redeemable_after(&exit.id()));
+    }
 }
