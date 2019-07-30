@@ -207,8 +207,9 @@ impl traits::Deposit<RangeNumber, commitment::default::Commitment> for Deposit {
                 "error: verify the that checkpoint.stateUpdate was included with inclusionProof.",
             );
         }
+
         // verify that subRange is actually a sub-range of stateUpdate.range.
-        if let Err(_) = checkpoint.verify() {
+        if let Err(err) = checkpoint.verify() {
             return Err(
                 "error: verify that subRange is actually a sub-range of stateUpdate.range.",
             );
@@ -231,7 +232,9 @@ impl traits::Deposit<RangeNumber, commitment::default::Commitment> for Deposit {
         // verify that an indentical checkpoint has not already been started.
         let checkpoint_id = checkpoint.id();
         if let Some(_) = self.checkpoints.get(&checkpoint_id) {
-            return Err("error: verify that an indentical checkpoint has not already been started");
+            return Err(
+                "error: verify that an indentical checkpoint has not already been started.",
+            );
         }
 
         // add the new pending checkpoint to checkpoints with challengeableUntil equalling the current ethereum block.number + CHALLENGE_PERIOD.
@@ -502,6 +505,9 @@ mod tests {
     };
     use ink_model::EnvHandler;
 
+    #[cfg(all(test, feature = "test-env"))]
+    extern crate commitment;
+
     const DEPOSIT_ADDRESS: [u8; 32] = [1u8; 32];
 
     impl Deposit {
@@ -587,8 +593,93 @@ mod tests {
             }),
             contract.deposit(&mut env, this, amount, initial_state,)
         );
-		assert_eq!(10000, contract.total_deposited());
-		assert_eq!(Some(&Range{start:0, end:10000}), contract.deposited_ranges(&10000));
+        assert_eq!(10000, contract.total_deposited());
+        assert_eq!(
+            Some(&Range {
+                start: 0,
+                end: 10000
+            }),
+            contract.deposited_ranges(&10000)
+        );
+        assert_eq!(
+            Some(&CheckpointStatus {
+                challengeable_until: env.block_number() - 1,
+                outstanding_challenges: 0,
+            }),
+            contract.checkpoints(&exp_checkpoint.id())
+        );
+    }
+
+    use commitment::{default::default_hash, merkle};
+    pub type TreeGenerator = merkle::MerkleIntervalTreeGenerator<AccountId, fn(&[u8]) -> Hash>;
+
+    fn make_test_leafs(
+        env: &mut EnvHandler<ink_core::env::ContractEnv<DefaultSrmlTypes>>,
+        plasm_block_number: BlockNumber,
+    ) -> Vec<StateUpdate<AccountId>> {
+        (0..8)
+            .map(|i| StateUpdate::<AccountId> {
+                range: Range {
+                    start: i * 100,
+                    end: i * 100 + 100,
+                },
+                state_object: StateObject {
+                    predicate: env.address(),
+                    data: AccountId::decode(&mut &[i as u8; 32][..]).unwrap(),
+                },
+                plasma_block_number: plasm_block_number,
+            })
+            .collect()
+    }
+
+    use std::convert::TryInto;
+    fn make_test_merkle_tree_and_state(
+        contract: &mut Deposit,
+        env: &mut EnvHandler<ink_core::env::ContractEnv<DefaultSrmlTypes>>,
+        leafs: &mut Vec<StateUpdate<AccountId>>,
+        plasm_block_number: BlockNumber,
+    ) -> merkle::Tree {
+        let nodes = TreeGenerator::generate_leafs(leafs, default_hash);
+        let tree = TreeGenerator::generate_internal_nodes(&nodes, default_hash);
+
+        let header: Hash = default_hash(&tree[0][0].encode()[..]);
+        assert_eq!(
+            Ok(BlockSubmitted {
+                number: plasm_block_number,
+                header: header.clone(),
+            }),
+            contract.commitment().submit_block(env, header.clone())
+        );
+        tree
+    }
+
+    fn all_deposit_leafs(
+        contract: &mut Deposit,
+        env: &mut EnvHandler<ink_core::env::ContractEnv<DefaultSrmlTypes>>,
+        leafs: &mut Vec<StateUpdate<AccountId>>,
+    ) {
+        for leaf in leafs.iter() {
+            let exp_checkpoint = Checkpoint {
+                state_update: leaf.clone(),
+                sub_range: Range {
+                    start: leaf.range.start,
+                    end: leaf.range.end,
+                },
+            };
+            assert_eq!(
+                Ok(CheckpointFinalized {
+                    checkpoint: exp_checkpoint.id()
+                }),
+                contract.deposit(
+                    env,
+                    leaf.state_object.data.clone(),
+                    ((leaf.range.end - leaf.range.start) as u64)
+                        .try_into()
+                        .unwrap(),
+                    leaf.state_object.clone(),
+                )
+            );
+        }
     }
 
     #[test]
@@ -597,6 +688,35 @@ mod tests {
         let (mut contract, mut env) = Deposit::deploy_mock(erc20_address, 5, 5);
         let this = env.address();
 
-        // TODO Creating inclusionProof.(Merkle Logic.)
+        let mut leafs = make_test_leafs(&mut env, 1);
+        let tree = make_test_merkle_tree_and_state(&mut contract, &mut env, &mut leafs, 1);
+        all_deposit_leafs(&mut contract, &mut env, &mut leafs);
+
+        let mut new_state = leafs[3].clone();
+		new_state.plasma_block_number = 2;
+        new_state.state_object.data = AccountId::decode(&mut &[0 as u8; 32][..]).unwrap();
+        let mut new_leafs = leafs.clone();
+        new_leafs[3] = new_state;
+        let new_tree = make_test_merkle_tree_and_state(&mut contract, &mut env, &mut new_leafs, 2);
+
+        let inclusion_proof =
+            TreeGenerator::generate_proof(&new_tree, &new_leafs[3], default_hash).unwrap();
+        let deposited_range_id = new_leafs.last().unwrap().range.end;
+
+        let checkpoint = Checkpoint {
+            state_update: new_leafs[3].clone(),
+            sub_range: Range {
+                start: new_leafs[3].range.start,
+                end: new_leafs[3].range.end,
+            },
+        };
+
+        assert_eq!(
+            Ok(CheckpointStarted {
+                checkpoint: checkpoint.clone(),
+                challengeable_until: env.block_number() + 5,
+            }),
+            contract.start_checkpoint(&mut env, checkpoint, inclusion_proof, deposited_range_id)
+        );
     }
 }

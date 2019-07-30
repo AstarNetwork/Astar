@@ -108,9 +108,9 @@ where
         if self.state_update.range.start <= self.sub_range.start
             && self.sub_range.end <= self.state_update.range.end
         {
-            return Err("error: sub_range is not sub range of state_update.range.");
+            return Ok(());
         }
-        Ok(())
+        Err("error: sub_range is not sub range of state_update.range.")
     }
 }
 
