@@ -367,7 +367,7 @@ impl traits::Deposit<RangeNumber, commitment::default::Commitment> for Deposit {
         let challenge_id = challenge.id();
         let challenging_id = challenge.challenging_checkpoint.id();
         let challenged_id = challenge.challenged_checkpoint.id();
-        if self.is_exist_challenges(&challenge_id) {
+        if !self.is_exist_challenges(&challenge_id) {
             return Err("error: check that the challenge was not already removed.");
         }
 
@@ -790,6 +790,27 @@ mod tests {
         checkpoint
     }
 
+    #[test]
+    fn deprecate_exit_normal() {
+        let erc20_address = get_token_address();
+        let (mut contract, mut env) = Deposit::deploy_mock(erc20_address, 5, 5);
+        let this = env.address();
+
+        let mut leafs = make_test_leafs(&mut env, 1);
+        let tree = make_test_merkle_tree_and_state(&mut contract, &mut env, &mut leafs, 1);
+        all_deposit_leafs(&mut contract, &mut env, &mut leafs);
+
+        let checkpoint = start_exit_unwrap(&mut contract, &mut env, &leafs[6]);
+        let checkpoint_id = checkpoint.id();
+
+        // check previous state.
+        assert_eq!(true, contract.is_exist_exit(&checkpoint_id));
+        // check return value.
+        assert_eq!(Ok(()), contract.deprecate_exit(&mut env, checkpoint));
+        // check after state.
+        assert_eq!(false, contract.is_exist_exit(&checkpoint_id));
+    }
+
     fn start_checkpoint_unwrap(
         contract: &mut Deposit,
         env: &mut EnvHandler<ink_core::env::ContractEnv<DefaultSrmlTypes>>,
@@ -936,6 +957,94 @@ mod tests {
         assert_eq!(Some(&true), contract.challenges(&challenge_id));
     }
 
+    fn challenge_checkpoint_unwrap(
+        contract: &mut Deposit,
+        env: &mut EnvHandler<ink_core::env::ContractEnv<DefaultSrmlTypes>>,
+        challenged: &Checkpoint<AccountId>,
+        challenging: &Checkpoint<AccountId>,
+    ) -> Challenge<AccountId> {
+        let challenge = Challenge {
+            challenged_checkpoint: challenged.clone(),
+            challenging_checkpoint: challenging.clone(),
+        };
+        // check the return value.
+        assert_eq!(
+            Ok(()),
+            contract.challenge_checkpoint(env, challenge.clone())
+        );
+        challenge
+    }
+
     #[test]
-    fn remove_challenge_normal() {}
+    fn remove_challenge_normal() {
+        let erc20_address = get_token_address();
+        let (mut contract, mut env) = Deposit::deploy_mock(erc20_address, 5, 5);
+        let this = env.address();
+
+        // initail state...
+        let mut leafs = make_test_leafs(&mut env, 1);
+        let tree = make_test_merkle_tree_and_state(&mut contract, &mut env, &mut leafs, 1);
+        all_deposit_leafs(&mut contract, &mut env, &mut leafs);
+
+        // [5] exit.
+        let challenging_exit = start_exit_unwrap(&mut contract, &mut env, &leafs[5]);
+
+        ink_core::env::ContractEnv::<DefaultSrmlTypes>::set_block_number(2);
+
+        // second state...
+        let mut new_state = leafs[5].clone();
+        new_state.plasma_block_number = 2;
+        new_state.state_object.data = AccountId::decode(&mut &[0 as u8; 32][..]).unwrap();
+        let mut new_leafs = leafs.clone();
+        new_leafs[5] = new_state;
+        let new_tree = make_test_merkle_tree_and_state(&mut contract, &mut env, &mut new_leafs, 2);
+        let inclusion_proof =
+            TreeGenerator::generate_proof(&new_tree, &new_leafs[5], default_hash).unwrap();
+        let deposited_range_id = new_leafs.last().unwrap().range.end;
+
+        let challenged_checkpoint = start_checkpoint_unwrap(
+            &mut contract,
+            &mut env,
+            &new_leafs[5],
+            inclusion_proof,
+            deposited_range_id,
+        );
+
+        let challenge = challenge_checkpoint_unwrap(
+            &mut contract,
+            &mut env,
+            &challenged_checkpoint,
+            &challenging_exit,
+        );
+        let challenge_id = challenge.id();
+
+        // deprecate exit.
+        assert_eq!(
+            Ok(()),
+            contract.deprecate_exit(&mut env, challenging_exit.clone())
+        );
+
+        // check privious state.
+        assert_eq!(Some(&true), contract.challenges(&challenge_id));
+        assert_eq!(
+            Some(&CheckpointStatus {
+                challengeable_until: 7,
+                outstanding_challenges: 1,
+            }),
+            contract.checkpoints.get(&challenged_checkpoint.id())
+        );
+
+        // check return value.
+        assert_eq!(Ok(()), contract.remove_challenge(&mut env, challenge));
+
+        // check after state.
+        assert_eq!(Some(&false), contract.challenges(&challenge_id));
+        assert_eq!(
+            Some(&CheckpointStatus {
+                challengeable_until: 7,
+                outstanding_challenges: 0,
+            }),
+            contract.checkpoints.get(&challenged_checkpoint.id())
+        );
+    }
 }
