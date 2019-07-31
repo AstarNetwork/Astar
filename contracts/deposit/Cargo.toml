@@ -1,7 +1,7 @@
 [package]
 name = "deposit"
 version = "0.1.0"
-authors = ["Task Ohmori <task@staked.co.jp>"]
+authors = ["Takumi Yamashita <takumi@staked.co.jp>, Task Ohmori <task@staked.co.jp>"]
 edition = "2018"
 
 [dependencies]
@@ -18,6 +18,8 @@ test-env = [
     "ink_core/test-env",
     "ink_model/test-env",
     "ink_lang/test-env",
+    "commitment/test-env",
+    "primitives/test-env",
 ]
 generate-api-description = [
     "ink_lang/generate-api-description"

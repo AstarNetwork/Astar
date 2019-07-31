@@ -9,8 +9,12 @@ use parity_codec::{Codec, Decode, Encode};
 pub mod default;
 pub mod traits;
 
-#[cfg(all(test, feature = "test-env"))]
+#[cfg(feature = "test-env")]
 pub mod merkle;
+
+#[cfg(feature = "test-env")]
+#[macro_use]
+extern crate alloc;
 
 type BlockNumber = <ContractEnv<DefaultSrmlTypes> as EnvTypes>::BlockNumber;
 type Hash = <ContractEnv<DefaultSrmlTypes> as EnvTypes>::Hash;

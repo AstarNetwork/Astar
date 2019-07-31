@@ -1,6 +1,7 @@
 use super::*;
 use primitives::{default::RangeNumber, traits};
-use std::marker::PhantomData;
+
+use core::marker::PhantomData;
 
 pub type Nodes = Vec<MerkleIntervalTreeInternalNode<RangeNumber>>;
 pub type Tree = Vec<Nodes>;

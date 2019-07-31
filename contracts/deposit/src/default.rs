@@ -42,7 +42,14 @@ impl Deposit {
 
     pub fn extend_deposited_ranges(&mut self, amount: Balance) {
         let total_deposited = self.total_deposited.get().clone();
-        let old_range = self.deposited_ranges.get(&total_deposited).unwrap().clone();
+        let old_range = self
+            .deposited_ranges
+            .get(&total_deposited)
+            .unwrap_or(&Range {
+                start: total_deposited.clone(),
+                end: total_deposited.clone(),
+            })
+            .clone();
 
         // Set the newStart for the last range
         let new_start: RangeNumber;
@@ -95,7 +102,7 @@ impl Deposit {
         if range.end != encompasing_range.end {
             // new deposited range from the newly exited end until the old unexited end
             let right_split_range = Range {
-                start: range.start.clone(),
+                start: range.end.clone(),
                 end: encompasing_range.end.clone(),
             };
             // Store the new deposited range
@@ -200,8 +207,9 @@ impl traits::Deposit<RangeNumber, commitment::default::Commitment> for Deposit {
                 "error: verify the that checkpoint.stateUpdate was included with inclusionProof.",
             );
         }
+
         // verify that subRange is actually a sub-range of stateUpdate.range.
-        if let Err(_) = checkpoint.verify() {
+        if let Err(err) = checkpoint.verify() {
             return Err(
                 "error: verify that subRange is actually a sub-range of stateUpdate.range.",
             );
@@ -224,7 +232,9 @@ impl traits::Deposit<RangeNumber, commitment::default::Commitment> for Deposit {
         // verify that an indentical checkpoint has not already been started.
         let checkpoint_id = checkpoint.id();
         if let Some(_) = self.checkpoints.get(&checkpoint_id) {
-            return Err("error: verify that an indentical checkpoint has not already been started");
+            return Err(
+                "error: verify that an indentical checkpoint has not already been started.",
+            );
         }
 
         // add the new pending checkpoint to checkpoints with challengeableUntil equalling the current ethereum block.number + CHALLENGE_PERIOD.
@@ -261,18 +271,18 @@ impl traits::Deposit<RangeNumber, commitment::default::Commitment> for Deposit {
             >= newer_checkpoint.state_update.plasma_block_number
         {
             return Err(
-				"error: ensure that the plasma blocknumber of the older_exitt is less than that of newer_checkpoint.",
+				"error: ensure that the plasma blocknumber of the older_exit is less than that of newer_checkpoint.",
 			);
         }
 
-        // Ensure that the newerCheckpoint has no challenges.
+        // Check checkpoint finalized.
         let newer_checkpoint_id = newer_checkpoint.id();
-        if let Some(true) = self.challenges.get(&newer_checkpoint_id) {
-            return Err("error: ensure that the newerCheckpoint has no challenges.");
-        }
-
-        // Ensure that the newerCheckpoint is no longer challengeable.
         if let Some(checkpoint_status) = self.checkpoints.get(&newer_checkpoint_id) {
+            // Ensure that the newerCheckpoint has no challenges.
+            if checkpoint_status.outstanding_challenges != 0 {
+                return Err("error: ensure that the newerCheckpoint has no challenges.");
+            }
+            // Ensure that the newerCheckpoint is no longer challengeable.
             if checkpoint_status.challengeable_until > env.block_number() {
                 return Err("error: ensure that the newerCheckpoint is no longer challengeable.");
             }
@@ -326,8 +336,8 @@ impl traits::Deposit<RangeNumber, commitment::default::Commitment> for Deposit {
         }
 
         // Ensure that an identical challenge is not already underway.
-        let challenge_id = challenge.challenged_checkpoint.id();
-        if None == self.challenges.get(&challenge_id) {
+        let challenge_id = challenge.id();
+        if let Some(_) = self.challenges.get(&challenge_id) {
             return Err("error: ensure that an identical challenge is not already underway.");
         }
 
@@ -357,7 +367,7 @@ impl traits::Deposit<RangeNumber, commitment::default::Commitment> for Deposit {
         let challenge_id = challenge.id();
         let challenging_id = challenge.challenging_checkpoint.id();
         let challenged_id = challenge.challenged_checkpoint.id();
-        if self.is_exist_challenges(&challenge_id) {
+        if !self.is_exist_challenges(&challenge_id) {
             return Err("error: check that the challenge was not already removed.");
         }
 
@@ -367,7 +377,7 @@ impl traits::Deposit<RangeNumber, commitment::default::Commitment> for Deposit {
         }
 
         // Remove the challenge if above conditions are met.
-        self.challenges.insert(challenge_id, true);
+        self.challenges.insert(challenge_id, false);
 
         // Decrement the challenged checkpoint’s outstandingChallenges if the above conditions are met.
         let mut challenged_status = self.checkpoints.get(&challenged_id).unwrap().clone();
@@ -495,6 +505,9 @@ mod tests {
     };
     use ink_model::EnvHandler;
 
+    #[cfg(all(test, feature = "test-env"))]
+    extern crate commitment;
+
     const DEPOSIT_ADDRESS: [u8; 32] = [1u8; 32];
 
     impl Deposit {
@@ -523,6 +536,23 @@ mod tests {
             deposit.initialize(());
             deposit.deploy(&mut env, token_address, challenge_period, exit_period);
             (deposit, env)
+        }
+
+        // Test Getters
+        pub fn total_deposited(&self) -> RangeNumber {
+            self.total_deposited.get().clone()
+        }
+        pub fn checkpoints(&self, key: &Hash) -> Option<&CheckpointStatus> {
+            self.checkpoints.get(key)
+        }
+        pub fn deposited_ranges(&self, key: &RangeNumber) -> Option<&Range> {
+            self.deposited_ranges.get(key)
+        }
+        pub fn exit_redeemable_after(&self, key: &Hash) -> Option<&BlockNumber> {
+            self.exit_redeemable_after.get(key)
+        }
+        pub fn challenges(&self, key: &Hash) -> Option<&bool> {
+            self.challenges.get(key)
         }
     }
 
@@ -562,7 +592,94 @@ mod tests {
                 checkpoint: exp_checkpoint.id(),
             }),
             contract.deposit(&mut env, this, amount, initial_state,)
-        )
+        );
+        assert_eq!(10000, contract.total_deposited());
+        assert_eq!(
+            Some(&Range {
+                start: 0,
+                end: 10000
+            }),
+            contract.deposited_ranges(&10000)
+        );
+        assert_eq!(
+            Some(&CheckpointStatus {
+                challengeable_until: env.block_number() - 1,
+                outstanding_challenges: 0,
+            }),
+            contract.checkpoints(&exp_checkpoint.id())
+        );
+    }
+
+    use commitment::{default::default_hash, merkle};
+    pub type TreeGenerator = merkle::MerkleIntervalTreeGenerator<AccountId, fn(&[u8]) -> Hash>;
+
+    fn make_test_leafs(
+        env: &mut EnvHandler<ink_core::env::ContractEnv<DefaultSrmlTypes>>,
+        plasm_block_number: BlockNumber,
+    ) -> Vec<StateUpdate<AccountId>> {
+        (0..8)
+            .map(|i| StateUpdate::<AccountId> {
+                range: Range {
+                    start: i * 100,
+                    end: i * 100 + 100,
+                },
+                state_object: StateObject {
+                    predicate: env.address(),
+                    data: AccountId::decode(&mut &[i as u8; 32][..]).unwrap(),
+                },
+                plasma_block_number: plasm_block_number,
+            })
+            .collect()
+    }
+
+    use std::convert::TryInto;
+    fn make_test_merkle_tree_and_state(
+        contract: &mut Deposit,
+        env: &mut EnvHandler<ink_core::env::ContractEnv<DefaultSrmlTypes>>,
+        leafs: &mut Vec<StateUpdate<AccountId>>,
+        plasm_block_number: BlockNumber,
+    ) -> merkle::Tree {
+        let nodes = TreeGenerator::generate_leafs(leafs, default_hash);
+        let tree = TreeGenerator::generate_internal_nodes(&nodes, default_hash);
+
+        let header: Hash = default_hash(&tree[0][0].encode()[..]);
+        assert_eq!(
+            Ok(BlockSubmitted {
+                number: plasm_block_number,
+                header: header.clone(),
+            }),
+            contract.commitment().submit_block(env, header.clone())
+        );
+        tree
+    }
+
+    fn all_deposit_leafs(
+        contract: &mut Deposit,
+        env: &mut EnvHandler<ink_core::env::ContractEnv<DefaultSrmlTypes>>,
+        leafs: &mut Vec<StateUpdate<AccountId>>,
+    ) {
+        for leaf in leafs.iter() {
+            let exp_checkpoint = Checkpoint {
+                state_update: leaf.clone(),
+                sub_range: Range {
+                    start: leaf.range.start,
+                    end: leaf.range.end,
+                },
+            };
+            assert_eq!(
+                Ok(CheckpointFinalized {
+                    checkpoint: exp_checkpoint.id()
+                }),
+                contract.deposit(
+                    env,
+                    leaf.state_object.data.clone(),
+                    ((leaf.range.end - leaf.range.start) as u64)
+                        .try_into()
+                        .unwrap(),
+                    leaf.state_object.clone(),
+                )
+            );
+        }
     }
 
     #[test]
@@ -571,6 +688,424 @@ mod tests {
         let (mut contract, mut env) = Deposit::deploy_mock(erc20_address, 5, 5);
         let this = env.address();
 
-        // TODO Creating inclusionProof.(Merkle Logic.)
+        let mut leafs = make_test_leafs(&mut env, 1);
+        let tree = make_test_merkle_tree_and_state(&mut contract, &mut env, &mut leafs, 1);
+        all_deposit_leafs(&mut contract, &mut env, &mut leafs);
+
+        let mut new_state = leafs[3].clone();
+        new_state.plasma_block_number = 2;
+        new_state.state_object.data = AccountId::decode(&mut &[0 as u8; 32][..]).unwrap();
+        let mut new_leafs = leafs.clone();
+        new_leafs[3] = new_state;
+        let new_tree = make_test_merkle_tree_and_state(&mut contract, &mut env, &mut new_leafs, 2);
+
+        let inclusion_proof =
+            TreeGenerator::generate_proof(&new_tree, &new_leafs[3], default_hash).unwrap();
+        let deposited_range_id = new_leafs.last().unwrap().range.end;
+
+        let checkpoint = Checkpoint {
+            state_update: new_leafs[3].clone(),
+            sub_range: Range {
+                start: new_leafs[3].range.start,
+                end: new_leafs[3].range.end,
+            },
+        };
+
+        let checkpoint_id = checkpoint.id();
+        // Check the emit value.
+        assert_eq!(
+            Ok(CheckpointStarted {
+                checkpoint: checkpoint.clone(),
+                challengeable_until: env.block_number() + 5,
+            }),
+            contract.start_checkpoint(&mut env, checkpoint, inclusion_proof, deposited_range_id)
+        );
+        // Check change the value.
+        assert_eq!(
+            Some(&CheckpointStatus {
+                challengeable_until: env.block_number() + 5,
+                outstanding_challenges: 0,
+            }),
+            contract.checkpoints(&checkpoint_id),
+        );
+    }
+
+    #[test]
+    fn start_exit_normal() {
+        let erc20_address = get_token_address();
+        let (mut contract, mut env) = Deposit::deploy_mock(erc20_address, 5, 5);
+        let this = env.address();
+
+        let mut leafs = make_test_leafs(&mut env, 1);
+        let tree = make_test_merkle_tree_and_state(&mut contract, &mut env, &mut leafs, 1);
+        all_deposit_leafs(&mut contract, &mut env, &mut leafs);
+
+        let checkpoint = Checkpoint {
+            state_update: leafs[3].clone(),
+            sub_range: Range {
+                start: leafs[3].range.start,
+                end: leafs[3].range.end,
+            },
+        };
+
+        let checkpoint_id = checkpoint.id();
+
+        // Check the emit value.
+        assert_eq!(
+            Ok(ExitStarted {
+                exit: checkpoint_id,
+                redeemable_after: env.block_number() + 5,
+            }),
+            contract.start_exit(&mut env, checkpoint)
+        );
+        // Check change the value.
+        assert_eq!(
+            Some(&(env.block_number() + 5)),
+            contract.exit_redeemable_after(&checkpoint_id),
+        );
+    }
+
+    fn start_exit_unwrap(
+        contract: &mut Deposit,
+        env: &mut EnvHandler<ink_core::env::ContractEnv<DefaultSrmlTypes>>,
+        leaf: &StateUpdate<AccountId>,
+    ) -> Checkpoint<AccountId> {
+        let checkpoint = Checkpoint {
+            state_update: leaf.clone(),
+            sub_range: Range {
+                start: leaf.range.start,
+                end: leaf.range.end,
+            },
+        };
+        let checkpoint_id = checkpoint.id();
+
+        // Check the emit value.
+        assert_eq!(
+            Ok(ExitStarted {
+                exit: checkpoint_id,
+                redeemable_after: env.block_number() + 5,
+            }),
+            contract.start_exit(env, checkpoint.clone())
+        );
+        checkpoint
+    }
+
+    #[test]
+    fn deprecate_exit_normal() {
+        let erc20_address = get_token_address();
+        let (mut contract, mut env) = Deposit::deploy_mock(erc20_address, 5, 5);
+        let this = env.address();
+
+        let mut leafs = make_test_leafs(&mut env, 1);
+        let tree = make_test_merkle_tree_and_state(&mut contract, &mut env, &mut leafs, 1);
+        all_deposit_leafs(&mut contract, &mut env, &mut leafs);
+
+        let checkpoint = start_exit_unwrap(&mut contract, &mut env, &leafs[6]);
+        let checkpoint_id = checkpoint.id();
+
+        // check previous state.
+        assert_eq!(true, contract.is_exist_exit(&checkpoint_id));
+        // check return value.
+        assert_eq!(Ok(()), contract.deprecate_exit(&mut env, checkpoint));
+        // check after state.
+        assert_eq!(false, contract.is_exist_exit(&checkpoint_id));
+    }
+
+    fn start_checkpoint_unwrap(
+        contract: &mut Deposit,
+        env: &mut EnvHandler<ink_core::env::ContractEnv<DefaultSrmlTypes>>,
+        leaf: &StateUpdate<AccountId>,
+        inclusion_proof: commitment::InclusionProof<RangeNumber>,
+        deposited_range_id: RangeNumber,
+    ) -> Checkpoint<AccountId> {
+        let checkpoint = Checkpoint {
+            state_update: leaf.clone(),
+            sub_range: Range {
+                start: leaf.range.start,
+                end: leaf.range.end,
+            },
+        };
+        let checkpoint_id = checkpoint.id();
+        // Check the emit value.
+        assert_eq!(
+            Ok(CheckpointStarted {
+                checkpoint: checkpoint.clone(),
+                challengeable_until: env.block_number() + 5,
+            }),
+            contract.start_checkpoint(env, checkpoint.clone(), inclusion_proof, deposited_range_id)
+        );
+        checkpoint
+    }
+
+    #[test]
+    fn delete_exit_outdated_normal() {
+        let erc20_address = get_token_address();
+        let (mut contract, mut env) = Deposit::deploy_mock(erc20_address, 5, 5);
+        let this = env.address();
+
+        // initail state...
+        let mut leafs = make_test_leafs(&mut env, 1);
+        let tree = make_test_merkle_tree_and_state(&mut contract, &mut env, &mut leafs, 1);
+        all_deposit_leafs(&mut contract, &mut env, &mut leafs);
+
+        // [5] exit.
+        let older_exit = start_exit_unwrap(&mut contract, &mut env, &leafs[5]);
+
+        ink_core::env::ContractEnv::<DefaultSrmlTypes>::set_block_number(2);
+
+        // second state...
+        let mut new_state = leafs[5].clone();
+        new_state.plasma_block_number = 2;
+        new_state.state_object.data = AccountId::decode(&mut &[0 as u8; 32][..]).unwrap();
+        let mut new_leafs = leafs.clone();
+        new_leafs[5] = new_state;
+        let new_tree = make_test_merkle_tree_and_state(&mut contract, &mut env, &mut new_leafs, 2);
+        let inclusion_proof =
+            TreeGenerator::generate_proof(&new_tree, &new_leafs[5], default_hash).unwrap();
+        let deposited_range_id = new_leafs.last().unwrap().range.end;
+
+        let newer_checkpoint = start_checkpoint_unwrap(
+            &mut contract,
+            &mut env,
+            &new_leafs[5],
+            inclusion_proof,
+            deposited_range_id,
+        );
+
+        // check the ng case :(error: ensure that the newerCheckpoint is no longer challengeable)
+        assert_eq!(
+            Err("error: ensure that the newerCheckpoint is no longer challengeable."),
+            contract.delete_exit_outdated(&mut env, older_exit.clone(), newer_checkpoint.clone())
+        );
+
+        // passed
+        ink_core::env::ContractEnv::<DefaultSrmlTypes>::set_block_number(8);
+        // check ther previous storage.
+        let older_exit_id = older_exit.id();
+        assert_eq!(Some(&6), contract.exit_redeemable_after(&older_exit_id));
+        // check the return value.a
+        assert_eq!(
+            Ok(()),
+            contract.delete_exit_outdated(&mut env, older_exit, newer_checkpoint)
+        );
+        // check change the storage.
+        assert_eq!(None, contract.exit_redeemable_after(&older_exit_id))
+    }
+
+    #[test]
+    fn challenge_checkpoint_normal() {
+        let erc20_address = get_token_address();
+        let (mut contract, mut env) = Deposit::deploy_mock(erc20_address, 5, 5);
+        let this = env.address();
+
+        // initail state...
+        let mut leafs = make_test_leafs(&mut env, 1);
+        let tree = make_test_merkle_tree_and_state(&mut contract, &mut env, &mut leafs, 1);
+        all_deposit_leafs(&mut contract, &mut env, &mut leafs);
+
+        // [5] exit.
+        let challenging_exit = start_exit_unwrap(&mut contract, &mut env, &leafs[5]);
+
+        ink_core::env::ContractEnv::<DefaultSrmlTypes>::set_block_number(2);
+
+        // second state...
+        let mut new_state = leafs[5].clone();
+        new_state.plasma_block_number = 2;
+        new_state.state_object.data = AccountId::decode(&mut &[0 as u8; 32][..]).unwrap();
+        let mut new_leafs = leafs.clone();
+        new_leafs[5] = new_state;
+        let new_tree = make_test_merkle_tree_and_state(&mut contract, &mut env, &mut new_leafs, 2);
+        let inclusion_proof =
+            TreeGenerator::generate_proof(&new_tree, &new_leafs[5], default_hash).unwrap();
+        let deposited_range_id = new_leafs.last().unwrap().range.end;
+
+        let challenged_checkpoint = start_checkpoint_unwrap(
+            &mut contract,
+            &mut env,
+            &new_leafs[5],
+            inclusion_proof,
+            deposited_range_id,
+        );
+
+        // passed
+        let challenge = Challenge {
+            challenged_checkpoint: challenged_checkpoint.clone(),
+            challenging_checkpoint: challenging_exit.clone(),
+        };
+        let challenged_id = challenged_checkpoint.id();
+        let challenge_id = challenge.id();
+
+        // check ther previous storage.
+        assert_eq!(
+            Some(&CheckpointStatus {
+                challengeable_until: 7,
+                outstanding_challenges: 0,
+            }),
+            contract.checkpoints(&challenged_id)
+        );
+
+        // check the return value.
+        assert_eq!(Ok(()), contract.challenge_checkpoint(&mut env, challenge));
+
+        assert_eq!(
+            Some(&CheckpointStatus {
+                challengeable_until: 7,
+                outstanding_challenges: 1,
+            }),
+            contract.checkpoints(&challenged_id)
+        );
+        assert_eq!(Some(&true), contract.challenges(&challenge_id));
+    }
+
+    fn challenge_checkpoint_unwrap(
+        contract: &mut Deposit,
+        env: &mut EnvHandler<ink_core::env::ContractEnv<DefaultSrmlTypes>>,
+        challenged: &Checkpoint<AccountId>,
+        challenging: &Checkpoint<AccountId>,
+    ) -> Challenge<AccountId> {
+        let challenge = Challenge {
+            challenged_checkpoint: challenged.clone(),
+            challenging_checkpoint: challenging.clone(),
+        };
+        // check the return value.
+        assert_eq!(
+            Ok(()),
+            contract.challenge_checkpoint(env, challenge.clone())
+        );
+        challenge
+    }
+
+    #[test]
+    fn remove_challenge_normal() {
+        let erc20_address = get_token_address();
+        let (mut contract, mut env) = Deposit::deploy_mock(erc20_address, 5, 5);
+        let this = env.address();
+
+        // initail state...
+        let mut leafs = make_test_leafs(&mut env, 1);
+        let tree = make_test_merkle_tree_and_state(&mut contract, &mut env, &mut leafs, 1);
+        all_deposit_leafs(&mut contract, &mut env, &mut leafs);
+
+        // [5] exit.
+        let challenging_exit = start_exit_unwrap(&mut contract, &mut env, &leafs[5]);
+
+        ink_core::env::ContractEnv::<DefaultSrmlTypes>::set_block_number(2);
+
+        // second state...
+        let mut new_state = leafs[5].clone();
+        new_state.plasma_block_number = 2;
+        new_state.state_object.data = AccountId::decode(&mut &[0 as u8; 32][..]).unwrap();
+        let mut new_leafs = leafs.clone();
+        new_leafs[5] = new_state;
+        let new_tree = make_test_merkle_tree_and_state(&mut contract, &mut env, &mut new_leafs, 2);
+        let inclusion_proof =
+            TreeGenerator::generate_proof(&new_tree, &new_leafs[5], default_hash).unwrap();
+        let deposited_range_id = new_leafs.last().unwrap().range.end;
+
+        let challenged_checkpoint = start_checkpoint_unwrap(
+            &mut contract,
+            &mut env,
+            &new_leafs[5],
+            inclusion_proof,
+            deposited_range_id,
+        );
+
+        let challenge = challenge_checkpoint_unwrap(
+            &mut contract,
+            &mut env,
+            &challenged_checkpoint,
+            &challenging_exit,
+        );
+        let challenge_id = challenge.id();
+
+        // deprecate exit.
+        assert_eq!(
+            Ok(()),
+            contract.deprecate_exit(&mut env, challenging_exit.clone())
+        );
+
+        // check privious state.
+        assert_eq!(Some(&true), contract.challenges(&challenge_id));
+        assert_eq!(
+            Some(&CheckpointStatus {
+                challengeable_until: 7,
+                outstanding_challenges: 1,
+            }),
+            contract.checkpoints.get(&challenged_checkpoint.id())
+        );
+
+        // check return value.
+        assert_eq!(Ok(()), contract.remove_challenge(&mut env, challenge));
+
+        // check after state.
+        assert_eq!(Some(&false), contract.challenges(&challenge_id));
+        assert_eq!(
+            Some(&CheckpointStatus {
+                challengeable_until: 7,
+                outstanding_challenges: 0,
+            }),
+            contract.checkpoints.get(&challenged_checkpoint.id())
+        );
+    }
+
+    #[test]
+    fn finalize_exit_normal() {
+        let erc20_address = get_token_address();
+        let (mut contract, mut env) = Deposit::deploy_mock(erc20_address, 5, 5);
+        let this = env.address();
+
+        // initail state...
+        let mut leafs = make_test_leafs(&mut env, 1);
+        let tree = make_test_merkle_tree_and_state(&mut contract, &mut env, &mut leafs, 1);
+        all_deposit_leafs(&mut contract, &mut env, &mut leafs);
+
+        // [5] exit.
+        let exit = start_exit_unwrap(&mut contract, &mut env, &leafs[5]);
+        let deposited_range_id = leafs.last().unwrap().range.end;
+
+        // previous exit finalize.
+        ink_core::env::ContractEnv::<DefaultSrmlTypes>::set_block_number(2);
+
+        assert_eq!(Err("error: ensure that the exit is finalized (current Ethereum block exceeds redeemablAfter."),
+				   contract.finalize_exit(&mut env, exit.clone(), deposited_range_id));
+
+		// passed block number
+        ink_core::env::ContractEnv::<DefaultSrmlTypes>::set_block_number(10);
+
+		// previous state.
+		assert_eq!(800, contract.total_deposited());
+		assert_eq!(
+			Some(&Range {
+				start: 0,
+				end: 800
+			}),
+			contract.deposited_ranges(&800)
+		);
+		assert_eq!(
+			None,
+			contract.deposited_ranges(&500)
+		);
+
+		// check return value.
+        assert_eq!(
+            Ok(ExitFinalized { exit: exit.clone() }),
+            contract.finalize_exit(&mut env, exit.clone(), deposited_range_id)
+        );
+
+		// check after value.
+        assert_eq!(800, contract.total_deposited());
+        assert_eq!(
+            Some(&Range {
+                start: 600,
+                end: 800
+            }),
+            contract.deposited_ranges(&800)
+        );
+        assert_eq!(
+            Some(&Range { start: 0, end: 500 }),
+            contract.deposited_ranges(&500)
+        );
+        assert_eq!(None, contract.checkpoints(&exit.id()));
+        assert_eq!(None, contract.exit_redeemable_after(&exit.id()));
     }
 }
