@@ -243,8 +243,30 @@ mod tests {
         )
     }
 
+    fn deposit_unwrap(
+        contract: &mut Predicate,
+        env: &mut EnvHandler<ink_core::env::ContractEnv<DefaultSrmlTypes>>,
+        checkpoint: &Checkpoint<AccountId>,
+    ) -> Hash {
+        let checkpoint_id = checkpoint.id();
+        let range = checkpoint.state_update.range.clone();
+        // previous deposit.
+        assert_eq!(
+            Ok(CheckpointFinalized {
+                checkpoint: checkpoint_id.clone()
+            }),
+            contract.deposit().deposit(
+                env,
+                checkpoint.state_update.state_object.data.clone(),
+                ((range.end - range.start) as u64).try_into().unwrap(),
+                checkpoint.state_update.state_object.clone(),
+            )
+        );
+        checkpoint_id
+    }
+
     #[test]
-    fn start_exit() {
+    fn start_exit_normal() {
         let erc20_address = get_token_address();
         let (mut contract, mut env) = Predicate::deploy_mock(erc20_address, 5, 5);
         let this = env.address();
@@ -271,20 +293,7 @@ mod tests {
                 end: range.end,
             },
         };
-        let checkpoint_id = checkpoint.id();
-
-        // previous deposit.
-        assert_eq!(
-            Ok(CheckpointFinalized {
-                checkpoint: checkpoint_id.clone()
-            }),
-            contract.deposit().deposit(
-                &mut env,
-                state_object.data.clone(),
-                ((range.end - range.start) as u64).try_into().unwrap(),
-                state_object.clone(),
-            )
-        );
+        let checkpoint_id = deposit_unwrap(&mut contract, &mut env, &checkpoint);
 
         ink_core::env::ContractEnv::<DefaultSrmlTypes>::set_caller(get_receiver_address());
 
@@ -303,6 +312,65 @@ mod tests {
                 redeemable_after: env.block_number() + 5,
             }),
             contract.start_exit(&mut env, checkpoint.clone())
+        );
+    }
+
+    #[test]
+    fn finalize_exit_normal() {
+        let erc20_address = get_token_address();
+        let (mut contract, mut env) = Predicate::deploy_mock(erc20_address, 5, 5);
+        let this = env.address();
+        let sender = get_sender_address();
+        let receiver = get_receiver_address();
+
+        let range = Range {
+            start: 0,
+            end: 1000,
+        };
+        let state_object = StateObject {
+            predicate: this.clone(),
+            data: sender.clone(),
+        };
+
+        let checkpoint = Checkpoint {
+            state_update: StateUpdate {
+                range: range.clone(),
+                state_object: state_object.clone(),
+                plasma_block_number: 0,
+            },
+            sub_range: Range {
+                start: range.start,
+                end: range.end,
+            },
+        };
+        let checkpoint_id = deposit_unwrap(&mut contract, &mut env, &checkpoint);
+
+        // exit_start.
+        assert_eq!(
+            Ok(ExitStarted {
+                exit: checkpoint_id,
+                redeemable_after: env.block_number() + 5,
+            }),
+            contract.start_exit(&mut env, checkpoint.clone())
+        );
+        let deposited_range_id = 1000;
+
+        ink_core::env::ContractEnv::<DefaultSrmlTypes>::set_block_number(10);
+        ink_core::env::ContractEnv::<DefaultSrmlTypes>::set_caller(get_receiver_address());
+
+        // Invalid case.
+        assert_eq!(
+            Err("Only owner may finalize the exit."),
+            contract.finalize_exit(&mut env, checkpoint.clone(), deposited_range_id)
+        );
+
+        ink_core::env::ContractEnv::<DefaultSrmlTypes>::set_caller(get_sender_address());
+        // check return value.
+        assert_eq!(
+            Ok(ExitFinalized {
+                exit: checkpoint.clone()
+            }),
+            contract.finalize_exit(&mut env, checkpoint.clone(), deposited_range_id)
         );
     }
 }
