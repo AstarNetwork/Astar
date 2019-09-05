@@ -1,7 +1,7 @@
 #![cfg_attr(not(any(test, feature = "std")), no_std)]
 
 use ink_core::env::{ContractEnv, DefaultSrmlTypes, EnvTypes};
-use parity_codec::{Codec, Decode, Encode};
+use scale::{Codec, Decode, Encode};
 
 type AccountId = <ContractEnv<DefaultSrmlTypes> as EnvTypes>::AccountId;
 type BlockNumber = <ContractEnv<DefaultSrmlTypes> as EnvTypes>::BlockNumber;
@@ -17,7 +17,7 @@ pub trait Verify {
     fn verify(&self) -> Result<()>;
 }
 
-#[derive(Clone, Encode, Decode, Default, PartialEq, Eq)]
+#[derive(Clone, scale::Encode, scale::Decode, Default, PartialEq, Eq)]
 #[cfg_attr(not(no_std), derive(Debug))]
 pub struct Range<I: traits::SimpleArithmetic + traits::Member + Codec> {
     pub start: I,
@@ -49,7 +49,7 @@ where
     }
 }
 
-#[derive(Clone, Encode, Decode, PartialEq, Eq)]
+#[derive(Clone, scale::Encode, scale::Decode, PartialEq, Eq)]
 #[cfg_attr(not(no_std), derive(Debug))]
 pub struct StateObject<T: traits::Member + Codec> {
     pub predicate: AccountId,
@@ -65,7 +65,7 @@ where
     }
 }
 
-#[derive(Clone, Encode, Decode, PartialEq, Eq)]
+#[derive(Clone, scale::Encode, scale::Decode, PartialEq, Eq)]
 #[cfg_attr(not(no_std), derive(Debug))]
 pub struct StateUpdate<
     T: traits::Member + Codec,
@@ -88,7 +88,7 @@ where
     }
 }
 
-#[derive(Clone, Encode, Decode, PartialEq, Eq)]
+#[derive(Clone, scale::Encode, scale::Decode, PartialEq, Eq)]
 #[cfg_attr(not(no_std), derive(Debug))]
 pub struct Checkpoint<
     T: traits::Member + Codec,
@@ -131,7 +131,7 @@ where
     }
 }
 
-#[derive(Clone, Encode, Decode, PartialEq, Eq)]
+#[derive(Clone, scale::Encode, scale::Decode, PartialEq, Eq)]
 #[cfg_attr(not(no_std), derive(Debug))]
 pub struct Transaction<
     U: traits::Member + Codec,
@@ -142,7 +142,7 @@ pub struct Transaction<
     pub body: U,
 }
 
-#[derive(Clone, Encode, Decode, PartialEq, Eq)]
+#[derive(Clone, scale::Encode, scale::Decode, PartialEq, Eq)]
 #[cfg_attr(not(no_std), derive(Debug))]
 pub struct Challenge<
     T: traits::Member + Codec,
