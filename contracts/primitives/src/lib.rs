@@ -17,8 +17,8 @@ pub trait Verify {
     fn verify(&self) -> Result<()>;
 }
 
-#[derive(Clone, scale::Encode, scale::Decode, Default, PartialEq, Eq)]
-#[cfg_attr(not(no_std), derive(Debug))]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, scale::Encode, scale::Decode)]
+#[cfg_attr(feature = "ink-generate-abi", derive(type_metadata::Metadata))]
 pub struct Range<I: traits::SimpleArithmetic + traits::Member + Codec> {
     pub start: I,
     pub end: I,
@@ -47,6 +47,10 @@ where
         }
         Ok(())
     }
+}
+
+impl<I: traits::SimpleArithmetic + traits::Member + Codec> ink_core::storage::Flush for Range<I> {
+	fn flush(&mut self) {}
 }
 
 #[derive(Clone, scale::Encode, scale::Decode, PartialEq, Eq)]
