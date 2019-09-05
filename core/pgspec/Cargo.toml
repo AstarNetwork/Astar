@@ -13,55 +13,55 @@ version = "4.1.1"
 default_features = false
 git = 'https://github.com/paritytech/substrate.git'
 package = 'substrate-primitives'
-rev = 'f7489f0ed45c36ee19060d4a70c773673c48d924'
+rev = 'd2e7d660f8dbbb8f9753dfd231cef1c9b502c41c'
 
 [dependencies.sr_primitives]
 default_features = false
 git = 'https://github.com/paritytech/substrate.git'
 package = 'sr-primitives'
-rev = 'f7489f0ed45c36ee19060d4a70c773673c48d924'
+rev = 'd2e7d660f8dbbb8f9753dfd231cef1c9b502c41c'
 
 [dependencies.sr-io]
 default_features = false
 git = 'https://github.com/paritytech/substrate.git'
 package = 'sr-io'
-rev = 'f7489f0ed45c36ee19060d4a70c773673c48d924'
+rev = 'd2e7d660f8dbbb8f9753dfd231cef1c9b502c41c'
 
 [dependencies.rstd]
 default_features = false
 git = 'https://github.com/paritytech/substrate.git'
 package = 'sr-std'
-rev = 'f7489f0ed45c36ee19060d4a70c773673c48d924'
+rev = 'd2e7d660f8dbbb8f9753dfd231cef1c9b502c41c'
 
 [dependencies.balances]
 default_features = false
 git = 'https://github.com/paritytech/substrate.git'
 package = 'srml-balances'
-rev = 'f7489f0ed45c36ee19060d4a70c773673c48d924'
+rev = 'd2e7d660f8dbbb8f9753dfd231cef1c9b502c41c'
 
 [dependencies.support]
 default_features = false
 git = 'https://github.com/paritytech/substrate.git'
 package = 'srml-support'
-rev = 'f7489f0ed45c36ee19060d4a70c773673c48d924'
+rev = 'd2e7d660f8dbbb8f9753dfd231cef1c9b502c41c'
 
 [dependencies.system]
 default_features = false
 git = 'https://github.com/paritytech/substrate.git'
 package = 'srml-system'
-rev = 'f7489f0ed45c36ee19060d4a70c773673c48d924'
+rev = 'd2e7d660f8dbbb8f9753dfd231cef1c9b502c41c'
 
 [dependencies.timestamp]
 default_features = false
 git = 'https://github.com/paritytech/substrate.git'
 package = 'srml-timestamp'
-rev = 'f7489f0ed45c36ee19060d4a70c773673c48d924'
+rev = 'd2e7d660f8dbbb8f9753dfd231cef1c9b502c41c'
 
 [dependencies.contract]
 default_features = false
 git = 'https://github.com/paritytech/substrate.git'
 package = 'srml-contracts'
-rev = 'f7489f0ed45c36ee19060d4a70c773673c48d924'
+rev = 'd2e7d660f8dbbb8f9753dfd231cef1c9b502c41c'
 
 [dependencies.serde]
 optional = true
