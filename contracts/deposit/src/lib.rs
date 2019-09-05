@@ -5,7 +5,7 @@ use ink_core::{
     env::{ContractEnv, DefaultSrmlTypes, EnvTypes},
 };
 use ink_model::EnvHandler;
-use parity_codec::{Codec, Decode, Encode};
+use scale::Codec;
 use primitives::{
     events::*,
     traits::{Member, SimpleArithmetic},
@@ -19,11 +19,15 @@ type Balance = <ContractEnv<DefaultSrmlTypes> as EnvTypes>::Balance;
 type BlockNumber = <ContractEnv<DefaultSrmlTypes> as EnvTypes>::BlockNumber;
 type Hash = <ContractEnv<DefaultSrmlTypes> as EnvTypes>::Hash;
 
-#[derive(Clone, Encode, Decode, PartialEq, Eq)]
+#[derive(Clone, scale::Encode, scale::Decode, PartialEq, Eq)]
 #[cfg_attr(not(no_std), derive(Debug))]
 pub struct CheckpointStatus {
     challengeable_until: BlockNumber,
     outstanding_challenges: u128,
+}
+
+impl ink_core::storage::Flush for CheckpointStatus {
+	fn flush(&mut self) {}
 }
 
 #[cfg(not(any(test, feature = "std")))]

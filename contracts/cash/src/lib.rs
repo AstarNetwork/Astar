@@ -157,7 +157,7 @@ pub trait EmitEventExt {
     where
         E: Into<public::Event<AccountId>>,
     {
-        use parity_codec::Encode as _;
+        use scale::Encode as _;
         <ink_core::env::ContractEnv<DefaultSrmlTypes> as ink_core::env::Env>::deposit_raw_event(
             &[],
             event.into().encode().as_slice(),
@@ -170,7 +170,7 @@ impl EmitEventExt for ink_model::EnvHandler<ink_core::env::ContractEnv<DefaultSr
 #[cfg(all(test, feature = "test-env"))]
 mod tests {
     use super::*;
-    use parity_codec::Decode;
+    use scale::Decode;
 
     fn get_token_address() -> AccountId {
         AccountId::decode(&mut &[2u8; 32].to_vec()[..]).expect("account id decoded.")

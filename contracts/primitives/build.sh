@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-PROJNAME=commitment
+PROJNAME=primitives
 
 # cargo clean
 # rm Cargo.lock

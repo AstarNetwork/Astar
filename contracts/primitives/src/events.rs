@@ -1,5 +1,5 @@
 use ink_core::env::{ContractEnv, DefaultSrmlTypes, EnvTypes};
-use parity_codec::{Codec, Decode, Encode};
+use scale::Codec;
 
 use super::default::*;
 use super::traits;
@@ -18,7 +18,7 @@ macro_rules! event {
 		}
 	) => {
 		$( #[$event_meta] )*
-		#[derive(Clone, Encode, Decode, PartialEq, Eq)]
+		#[derive(Clone, scale::Encode, scale::Decode, PartialEq, Eq)]
 		#[cfg_attr(not(no_std), derive(Debug))]
 		pub struct $event_name $(<$generic: traits::Member + Codec>)* {
 			$(
@@ -84,7 +84,7 @@ event! {
 
 pub mod public {
     use super::*;
-    #[derive(Encode, Decode)]
+    #[derive(scale::Encode, scale::Decode)]
     pub enum Event<T: traits::Member + Codec> {
         BlockSubmitted(BlockSubmitted),
         CheckpointStarted(CheckpointStarted<T>),

@@ -1,6 +1,9 @@
 use super::*;
 use commitment::traits::Commitment;
-use ink_core::{memory::format, storage};
+use ink_core::{
+    memory::format,
+    storage,
+};
 use primitives::{default::*, Verify};
 
 ink_model::state! {
@@ -504,6 +507,7 @@ mod tests {
         Key,
     };
     use ink_model::EnvHandler;
+	use scale::{Encode, Decode};
 
     #[cfg(all(test, feature = "test-env"))]
     extern crate commitment;
@@ -1069,30 +1073,24 @@ mod tests {
         assert_eq!(Err("error: ensure that the exit is finalized (current Ethereum block exceeds redeemablAfter."),
 				   contract.finalize_exit(&mut env, exit.clone(), deposited_range_id));
 
-		// passed block number
+        // passed block number
         ink_core::env::ContractEnv::<DefaultSrmlTypes>::set_block_number(10);
 
-		// previous state.
-		assert_eq!(800, contract.total_deposited());
-		assert_eq!(
-			Some(&Range {
-				start: 0,
-				end: 800
-			}),
-			contract.deposited_ranges(&800)
-		);
-		assert_eq!(
-			None,
-			contract.deposited_ranges(&500)
-		);
+        // previous state.
+        assert_eq!(800, contract.total_deposited());
+        assert_eq!(
+            Some(&Range { start: 0, end: 800 }),
+            contract.deposited_ranges(&800)
+        );
+        assert_eq!(None, contract.deposited_ranges(&500));
 
-		// check return value.
+        // check return value.
         assert_eq!(
             Ok(ExitFinalized { exit: exit.clone() }),
             contract.finalize_exit(&mut env, exit.clone(), deposited_range_id)
         );
 
-		// check after value.
+        // check after value.
         assert_eq!(800, contract.total_deposited());
         assert_eq!(
             Some(&Range {

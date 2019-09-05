@@ -15,15 +15,19 @@ ink_model::state! {
     }
 }
 
-#[derive(Clone, Encode, Decode, PartialEq, Eq)]
-#[cfg_attr(not(no_std), derive(Debug))]
+#[derive(Debug, Clone, PartialEq, Eq, scale::Encode, scale::Decode)]
+#[cfg_attr(feature = "ink-generate-abi", derive(type_metadata::Metadata))]
 pub struct TransactionBody {
     new_state: StateObject<AccountId>,
     origin_block: BlockNumber,
     max_block: BlockNumber,
 }
+impl ink_core::storage::Flush for TransactionBody {
+    fn flush(&mut self) {}
+}
 
-#[derive(Clone, Encode, Decode)]
+#[derive(Copy, Clone, scale::Encode, scale::Decode)]
+#[cfg_attr(feature = "ink-generate-abi", derive(type_metadata::Metadata))]
 pub struct Signature(pub [u8; 64]);
 pub fn check_signature<T: Codec>(data: &T, pubkey: &AccountId, signature: &Signature) -> bool {
     // TODO check signature, but now can not ink! signature logic.

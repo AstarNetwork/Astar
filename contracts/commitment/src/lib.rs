@@ -5,7 +5,7 @@ use ink_core::{
     env::{ContractEnv, DefaultSrmlTypes, EnvTypes},
     memory::vec::Vec,
 };
-use parity_codec::{Codec, Decode, Encode};
+use scale::{Codec, Decode, Encode};
 pub mod default;
 pub mod traits;
 
