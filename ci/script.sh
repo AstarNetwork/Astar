@@ -22,9 +22,6 @@ case $TARGET in
 		sudo apt-get -y update
 		sudo apt-get install -y cmake pkg-config libssl-dev
 
-		# Install prerequisites and build all wasm projects
-		./scripts/init.sh
-
 		cargo test --all
 		;;
 
@@ -33,9 +30,10 @@ case $TARGET in
 		# Install prerequisites and build all wasm projects
 		cargo install pwasm-utils-cli --bin wasm-prune --force
 
-		cd ./contracts/cash && ./build.sh && make test
-		cd ../commitment && make test
-		cd ../deposit && make test
-		cd ../predicate && make test
+		cd ./contracts/balances && ./build.sh && cargo test
+		cd ./contracts/cash && ./build.sh && cargo test
+		cd ../commitment && cargo test
+		cd ../deposit && cargo test
+		cd ../predicate && cargo test
 		;;
 esac
