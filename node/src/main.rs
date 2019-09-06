@@ -50,8 +50,8 @@ fn main() {
 		version: env!("CARGO_PKG_VERSION"),
 		executable_name: "plasm-node",
 		author: "Takumi Yamashita <takumi@staked.co.jp>",
-		description: "Generic substrate node",
-		support_url: "https://github.com/paritytech/substrate/issues/new",
+		description: "PlasmChain Node",
+		support_url: "https://github.com/stakedtechnologies/Plasm/issues/new",
 	};
 
 	if let Err(e) = cli::run(::std::env::args(), Exit, version) {
