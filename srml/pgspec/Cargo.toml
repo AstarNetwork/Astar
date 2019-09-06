@@ -11,57 +11,48 @@ version = "4.1.1"
 
 [dependencies.primitives]
 default_features = false
-git = 'https://github.com/paritytech/substrate.git'
+git = 'https://github.com/satellitex/substrate.git'
 package = 'substrate-primitives'
-rev = 'd2e7d660f8dbbb8f9753dfd231cef1c9b502c41c'
 
 [dependencies.sr_primitives]
 default_features = false
-git = 'https://github.com/paritytech/substrate.git'
+git = 'https://github.com/satellitex/substrate.git'
 package = 'sr-primitives'
-rev = 'd2e7d660f8dbbb8f9753dfd231cef1c9b502c41c'
 
 [dependencies.sr-io]
 default_features = false
-git = 'https://github.com/paritytech/substrate.git'
+git = 'https://github.com/satellitex/substrate.git'
 package = 'sr-io'
-rev = 'd2e7d660f8dbbb8f9753dfd231cef1c9b502c41c'
 
 [dependencies.rstd]
 default_features = false
-git = 'https://github.com/paritytech/substrate.git'
+git = 'https://github.com/satellitex/substrate.git'
 package = 'sr-std'
-rev = 'd2e7d660f8dbbb8f9753dfd231cef1c9b502c41c'
 
 [dependencies.balances]
 default_features = false
-git = 'https://github.com/paritytech/substrate.git'
+git = 'https://github.com/satellitex/substrate.git'
 package = 'srml-balances'
-rev = 'd2e7d660f8dbbb8f9753dfd231cef1c9b502c41c'
 
 [dependencies.support]
 default_features = false
-git = 'https://github.com/paritytech/substrate.git'
+git = 'https://github.com/satellitex/substrate.git'
 package = 'srml-support'
-rev = 'd2e7d660f8dbbb8f9753dfd231cef1c9b502c41c'
 
 [dependencies.system]
 default_features = false
-git = 'https://github.com/paritytech/substrate.git'
+git = 'https://github.com/satellitex/substrate.git'
 package = 'srml-system'
-rev = 'd2e7d660f8dbbb8f9753dfd231cef1c9b502c41c'
 
 [dependencies.timestamp]
 default_features = false
-git = 'https://github.com/paritytech/substrate.git'
+git = 'https://github.com/satellitex/substrate.git'
 package = 'srml-timestamp'
-rev = 'd2e7d660f8dbbb8f9753dfd231cef1c9b502c41c'
 
 [dependencies.contract]
 default_features = false
-git = 'https://github.com/paritytech/substrate.git'
+git = 'https://github.com/satellitex/substrate.git'
 package = 'srml-contracts'
-rev = 'd2e7d660f8dbbb8f9753dfd231cef1c9b502c41c'
 
 [dependencies.serde]
 optional = true
