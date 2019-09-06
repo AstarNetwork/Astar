@@ -12,6 +12,7 @@ source ~/.cargo/env
 
 rustup install nightly-2019-05-21
 rustup target add wasm32-unknown-unknown --toolchain nightly-2019-05-21
+rustup override set nightly
 
 rustc --version
 rustup --version
