@@ -1,3 +1,6 @@
+//! The default implementation of the Deposit Contract which conforms to PGSpec.
+//! The details of implementation, Please reference the description of trait.rs.
+
 use super::*;
 use commitment::traits::Commitment;
 use ink_core::{
@@ -8,18 +11,32 @@ use primitives::{default::*, Verify};
 
 ink_model::state! {
     pub struct Deposit {
+    	/// Address of the commitment contract where block headers for the plasma chain are being published.
         COMMITMENT: commitment::default::Commitment,
 
-        //MUST be an address of ERC20 token
+        /// Address of the ERC-20 token which this deposit contract custodies.
         TOKEN_ADDRES: storage::Value<AccountId>,
+
+        /// Number of Ethereum blocks for which a checkpoint may be challenged.
         CHALLENGE_PERIOD: storage::Value<BlockNumber>,
+
+        /// Number of Ethereum blocks before an exit can be finalized.
         EXIT_PERIOD: storage::Value<BlockNumber>,
 
-        //changable values
+        /// Total amount deposited into this contract.
         total_deposited: storage::Value<RangeNumber>,
+
+        /// Mapping from the ID of a checkpoint to the checkpoint’s status.
         checkpoints: storage::HashMap<Hash, CheckpointStatus>,
+
+        /// Stores the list of ranges that have not been exited as a mapping from the start of a range to the full range.
+        /// Prevents multiple exits from the same range of objects.
         deposited_ranges: storage::HashMap<RangeNumber, Range>,
+
+        /// Mapping from the ID of an exit to the Ethereum block after which the exit can be finalized.
         exit_redeemable_after: storage::HashMap<Hash, BlockNumber>,
+
+        /// Mapping from the ID of a challenge to whether or not the challenge is currently active.
         challenges: storage::HashMap<Hash, bool>,
     }
 }

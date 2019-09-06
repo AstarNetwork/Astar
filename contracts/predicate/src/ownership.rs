@@ -1,3 +1,8 @@
+//! Predicate implementation of Predicate contract which conforms to PGSpec.
+//! The details of implementation refer to the description of trait.rs.
+//!
+//! Ownership means that NFT(StateObject) has an only owner(AccountId) object. In other words, Same as PlasmaCash.
+
 use super::*;
 use commitment::traits::Verify;
 use core::marker::PhantomData;
@@ -9,23 +14,29 @@ use ink_core::{
 use primitives::default::*;
 
 ink_model::state! {
+	/// Ownership predicate Contract.
     pub struct Predicate {
         // deposit contract
         DEPOSIT: deposit::default::Deposit,
     }
 }
 
+/// Ownership TransactionBody.
 #[derive(Debug, Clone, PartialEq, Eq, scale::Encode, scale::Decode)]
 #[cfg_attr(feature = "ink-generate-abi", derive(type_metadata::Metadata))]
 pub struct TransactionBody {
+	// the state object that the owner desires to mutate to.
     new_state: StateObject<AccountId>,
+	/// the minimum plasma blocknumber of the ownership StateUpdate s from which you are spending.
     origin_block: BlockNumber,
+	/// the maximum plasma blocknumber of the ownership StateUpdate s from which you are spending.
     max_block: BlockNumber,
 }
 impl ink_core::storage::Flush for TransactionBody {
     fn flush(&mut self) {}
 }
 
+/// Signature is used the witness for transaction proof.
 #[derive(Copy, Clone, scale::Encode, scale::Decode)]
 #[cfg_attr(feature = "ink-generate-abi", derive(type_metadata::Metadata))]
 pub struct Signature(pub [u8; 64]);

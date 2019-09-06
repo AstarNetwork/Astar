@@ -1,3 +1,6 @@
+//! Has default implementation of Commitment Contract which conforms to PGSpec.
+//! Please reference the trait.rs description.
+
 use super::*;
 use ink_core::{memory::format, storage};
 use ink_model::{state, EnvHandler};

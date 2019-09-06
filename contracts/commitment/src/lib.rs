@@ -1,3 +1,13 @@
+//! Commitment trait and default implementation which conforms to the PGSpec.
+//!
+//! Commitment Contract Trait provides a commitment contract specification and default implementations.
+//!
+//! Each plasma chain must have at least one commitment trait object.
+//! Commitment holds the block headers of the plasma chain.
+//! Whenever the operator creates a new plasma block, they must use the commitment contract trait.
+//!
+//! Refer to https://docs.plasma.group/projects/spec/en/latest/src/02-contracts/commitment-contract.html.
+
 #![cfg_attr(not(any(test, feature = "std")), no_std)]
 
 use core::option::Option;

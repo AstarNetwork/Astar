@@ -1,3 +1,12 @@
+//! Plasma-cash logic conforms to the PGSPec design.
+//!
+//! It is implemented in a Plasma cash contract.
+//! PGSpec design are more abstract designs of PlasmaCash.
+//! It is possible to describe PlasmaCash simply as PGSpec default implementation.
+//! Also, this contract can be used as an example of implementation of Plasma contract that conforms to PGSpec.
+//!
+//! Standard PlasmaCash Contract implementation.
+
 #![cfg_attr(not(any(test, feature = "std")), no_std)]
 
 use commitment::{traits::Commitment, MerkleIntervalTreeInternalNode};

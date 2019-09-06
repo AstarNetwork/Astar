@@ -1,3 +1,6 @@
+//! Has a specification of Predicate Contract.
+//! Must be an implementation of Predicate.
+
 use super::*;
 use ink_model::ContractState;
 use primitives::*;

@@ -1,3 +1,5 @@
+//! Define utility traits.
+
 use core::ops::{
     Add, AddAssign, Div, DivAssign, Mul, MulAssign, Rem, RemAssign, Shl, Shr, Sub, SubAssign,
 };
