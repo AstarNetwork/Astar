@@ -1,0 +1,25 @@
+[package]
+name = "node-rpc"
+version = "2.0.0"
+authors = ["Takumi Yamashita <takumi@staked.co.jp>"]
+edition = "2018"
+
+[dependencies]
+client = { package = "substrate-client", git = "https://github.com/satellitex/substrate.git" }
+jsonrpc-core = "13.1.0"
+jsonrpc-core-client = "13.1.0"
+jsonrpc-derive = "13.1.0"
+jsonrpc-pubsub = "13.1.0"
+keyring = { package = "substrate-keyring", git = "https://github.com/satellitex/substrate.git" }
+log = "0.4"
+node-primitives = { git = "https://github.com/satellitex/substrate.git" }
+codec = { package = "parity-scale-codec", version = "1.0.0" }
+serde = { version = "1.0", features = ["derive"] }
+sr-primitives = { git = "https://github.com/satellitex/substrate.git" }
+substrate-primitives = { git = "https://github.com/satellitex/substrate.git" }
+transaction_pool = { package = "substrate-transaction-pool", git = "https://github.com/satellitex/substrate.git" }
+
+[dev-dependencies]
+node-testing = { git = "https://github.com/satellitex/substrate.git" }
+node-runtime = { git = "https://github.com/satellitex/substrate.git" }
+env_logger = "0.6"

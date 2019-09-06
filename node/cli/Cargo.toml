@@ -1,0 +1,61 @@
+[package]
+name = "node-cli"
+version = "2.0.0"
+authors = ["Takumi Yamashita <takumi@staked.co.jp>"]
+description = "Substrate node implementation in Rust."
+build = "build.rs"
+edition = "2018"
+
+[dependencies]
+log = "0.4"
+tokio = "0.1.7"
+futures = "0.1"
+exit-future = "0.1"
+jsonrpc-core = "13.1.0"
+cli = { package = "substrate-cli", git = "https://github.com/satellitex/substrate.git" }
+codec = { package = "parity-scale-codec", version = "1.0.0" }
+sr-io = { git = "https://github.com/satellitex/substrate.git" }
+client = { package = "substrate-client", git = "https://github.com/satellitex/substrate.git" }
+primitives = { package = "substrate-primitives", git = "https://github.com/satellitex/substrate.git" }
+inherents = { package = "substrate-inherents", git = "https://github.com/satellitex/substrate.git" }
+node-runtime = { git = "https://github.com/satellitex/substrate.git" }
+node-rpc = { git = "https://github.com/satellitex/substrate.git" }
+node-primitives = { git = "https://github.com/satellitex/substrate.git" }
+hex-literal = "0.2"
+substrate-rpc = { package = "substrate-rpc", git = "https://github.com/satellitex/substrate.git" }
+substrate-basic-authorship = { git = "https://github.com/satellitex/substrate.git" }
+substrate-service = { git = "https://github.com/satellitex/substrate.git" }
+transaction_pool = { package = "substrate-transaction-pool", git = "https://github.com/satellitex/substrate.git" }
+network = { package = "substrate-network", git = "https://github.com/satellitex/substrate.git" }
+babe = { package = "substrate-consensus-babe", git = "https://github.com/satellitex/substrate.git" }
+babe-primitives = { package = "substrate-consensus-babe-primitives", git = "https://github.com/satellitex/substrate.git" }
+grandpa = { package = "substrate-finality-grandpa", git = "https://github.com/satellitex/substrate.git" }
+grandpa_primitives = { package = "substrate-finality-grandpa-primitives", git = "https://github.com/satellitex/substrate.git" }
+sr-primitives = { git = "https://github.com/satellitex/substrate.git" }
+node-executor = { git = "https://github.com/satellitex/substrate.git" }
+substrate-telemetry = { package = "substrate-telemetry", git = "https://github.com/satellitex/substrate.git" }
+structopt = "0.2"
+transaction-factory = { git = "https://github.com/satellitex/substrate.git" }
+keyring = { package = "substrate-keyring", git = "https://github.com/satellitex/substrate.git" }
+indices = { package = "srml-indices", git = "https://github.com/satellitex/substrate.git" }
+timestamp = { package = "srml-timestamp", git = "https://github.com/satellitex/substrate.git", default-features = false }
+rand = "0.6"
+finality_tracker = { package = "srml-finality-tracker", git = "https://github.com/satellitex/substrate.git", default-features = false }
+contracts = { package = "srml-contracts", git = "https://github.com/satellitex/substrate.git" }
+system = { package = "srml-system", git = "https://github.com/satellitex/substrate.git" }
+balances = { package = "srml-balances", git = "https://github.com/satellitex/substrate.git" }
+support = { package = "srml-support", git = "https://github.com/satellitex/substrate.git", default-features = false }
+im_online = { package = "srml-im-online", git = "https://github.com/satellitex/substrate.git", default-features = false }
+authority-discovery = { package = "srml-authority-discovery", git = "https://github.com/satellitex/substrate.git", default-features = false }
+
+[dev-dependencies]
+keystore = { package = "substrate-keystore", git = "https://github.com/satellitex/substrate.git" }
+babe = { package = "substrate-consensus-babe", git = "https://github.com/satellitex/substrate.git", features = ["test-helpers"] }
+consensus-common = { package = "substrate-consensus-common", git = "https://github.com/satellitex/substrate.git" }
+service-test = { package = "substrate-service-test", git = "https://github.com/satellitex/substrate.git" }
+futures03 = { package = "futures-preview", version = "=0.3.0-alpha.17" }
+tempfile = "3.1"
+
+[build-dependencies]
+cli = { package = "substrate-cli", git = "https://github.com/satellitex/substrate.git" }
+structopt = "0.2"
