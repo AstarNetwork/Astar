@@ -1,3 +1,5 @@
+//! Has a specification of Commitment Contract.
+
 use super::*;
 use ink_core::env::{ContractEnv, DefaultSrmlTypes};
 use ink_model::{ContractState, EnvHandler};

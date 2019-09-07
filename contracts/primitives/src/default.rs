@@ -1,3 +1,5 @@
+//! Default type parameters.
+
 pub type RangeNumber = u128;
 
 pub type Range = super::Range<RangeNumber>;

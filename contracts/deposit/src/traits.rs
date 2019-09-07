@@ -1,3 +1,6 @@
+//! Specification of Deposit Contract.
+//! Must be the following implementation.
+
 use super::*;
 use ink_model::ContractState;
 use primitives::*;

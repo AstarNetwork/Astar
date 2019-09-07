@@ -1,0 +1,80 @@
+[package]
+name = "plasm-parent-pgspec"
+version = "0.1.0"
+authors = ["Takumi Yamashita <takumi@staked.co.jp>"]
+edition = "2018"
+
+[dependencies.parity-codec]
+default-features = false
+features = ['derive']
+version = "4.1.1"
+
+[dependencies.primitives]
+default_features = false
+git = 'https://github.com/satellitex/substrate.git'
+package = 'substrate-primitives'
+
+[dependencies.sr_primitives]
+default_features = false
+git = 'https://github.com/satellitex/substrate.git'
+package = 'sr-primitives'
+
+[dependencies.sr-io]
+default_features = false
+git = 'https://github.com/satellitex/substrate.git'
+package = 'sr-io'
+
+[dependencies.rstd]
+default_features = false
+git = 'https://github.com/satellitex/substrate.git'
+package = 'sr-std'
+
+[dependencies.balances]
+default_features = false
+git = 'https://github.com/satellitex/substrate.git'
+package = 'srml-balances'
+
+[dependencies.support]
+default_features = false
+git = 'https://github.com/satellitex/substrate.git'
+package = 'srml-support'
+
+[dependencies.system]
+default_features = false
+git = 'https://github.com/satellitex/substrate.git'
+package = 'srml-system'
+
+[dependencies.timestamp]
+default_features = false
+git = 'https://github.com/satellitex/substrate.git'
+package = 'srml-timestamp'
+
+[dependencies.contract]
+default_features = false
+git = 'https://github.com/satellitex/substrate.git'
+package = 'srml-contracts'
+
+[dependencies.serde]
+optional = true
+version = '1.0'
+
+[dependencies.serde_derive]
+optional = true
+version = '1.0'
+
+[features]
+default = ["std"]
+std = [
+    'parity-codec/std',
+    'primitives/std',
+    'sr_primitives/std',
+    'sr-io/std',
+    'rstd/std',
+    'balances/std',
+    'support/std',
+    'system/std',
+    'timestamp/std',
+    'contract/std',
+   	'serde_derive',
+	'serde/std',
+]

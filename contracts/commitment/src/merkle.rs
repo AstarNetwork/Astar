@@ -1,3 +1,6 @@
+//! Has a implementation of merkle interval tree for plasma contracts tests.
+//! Refer to https://docs.plasma.group/projects/spec/en/latest/src/01-core/merkle-interval-tree.html.
+
 use super::*;
 use primitives::{default::RangeNumber, traits};
 

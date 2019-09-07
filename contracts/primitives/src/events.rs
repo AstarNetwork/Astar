@@ -1,3 +1,5 @@
+//! Define events using PGSpec.
+
 use ink_core::env::{ContractEnv, DefaultSrmlTypes, EnvTypes};
 use scale::Codec;
 
@@ -37,47 +39,54 @@ macro_rules! event {
 
 event! {
     /// Event deposited when a submit merkle root to parent chain contract(this contract) from child chain.
-    ///
-    /// ```
-    /// event BlockSubmitted(
-    ///		uint256 _number,
-    ///		bytes _header
-    /// );
-    /// ```
     BlockSubmitted {
+    	/// Block number that was published.
         pub number: BlockNumber,
+        /// Header for that block.
         pub header: Hash,
     }
 }
 
 event! {
+	/// Emitted whenever a user attempts to checkpoint a state update.
     CheckpointStarted<T> {
+    	/// ID of the checkpoint that was started.
         pub checkpoint: Checkpoint<T>,
+        /// Ethereum block in which the checkpoint was started.
         pub challengeable_until: BlockNumber,
     }
 }
 
 event! {
+	/// Emitted whenever an invalid history challenge has been started on a checkpoint.
     CheckpointChallenged<T> {
+    	/// The details of the challenge.
         pub challenge: Challenge<T>,
     }
 }
 
 event! {
+	/// Emitted whenever a checkpoint is finalized.
     CheckpointFinalized {
+    	/// ID of the checkpoint that was finalized.
         pub checkpoint: Hash,
     }
 }
 
 event! {
+	/// Emitted whenever an exit is started.
     ExitStarted {
+    	/// ID of the exit that was started.
         pub exit: Hash,
+        /// Ethereum block in which the exit will be redeemable.
         pub redeemable_after: BlockNumber,
     }
 }
 
 event! {
+	/// Emitted whenever an exit is finalized.
     ExitFinalized<T> {
+    	/// The checkpoint that had its exit finalized.
         pub exit: Checkpoint<T>,
     }
 }

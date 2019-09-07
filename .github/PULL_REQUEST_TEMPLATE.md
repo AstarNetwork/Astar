@@ -21,7 +21,7 @@ Contributors guide: ./.github/CONTRIBUTING.md
 <!-- _NOTE: these things are not required to open a PR and can be done afterwards / while the PR is open._ -->
 
 ## Affected core subsystem(s)
-<!-- Please provide affected core subsystem(s). -->
+<!-- Please provide affected other system(s). -->
 
 ## Description of change
 <!-- Please provide a description of the change here. -->
