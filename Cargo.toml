@@ -21,7 +21,6 @@ path = "node/src/main.rs"
 
 [workspace]
 members = [
-	"srml/pgspec",
 	"node/cli",
 	"node/executor",
 	"node/primitives",
