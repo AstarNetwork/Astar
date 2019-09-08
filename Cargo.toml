@@ -28,8 +28,25 @@ members = [
 	"node/rpc-client",
 	"node/runtime",
 	"node/testing",
+	"contracts/balances",
+	"contracts/balances/.ink/abi_gen",
+	"contracts/cash",
+	"contracts/cash/.ink/abi_gen",
+	"contracts/commitment",
+	"contracts/commitment/.ink/abi_gen",
+	"contracts/deposit",
+    "contracts/deposit/.ink/abi_gen",
+	"contracts/predicate",
+    "contracts/predicate/.ink/abi_gen",
+	"contracts/primitives",
+	"contracts/primitives/.ink/abi_gen",
 ]
 
 exclude = [
-	"contracts/",
+	"contracts/balances/.ink",
+	"contracts/cash/.ink",
+	"contracts/commitment/.ink",
+	"contracts/deposit/.ink",
+	"contracts/predicate/.ink",
+	"contracts/primitives/.ink",
 ]

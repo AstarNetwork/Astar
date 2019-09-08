@@ -13,7 +13,7 @@ use commitment::{traits::Commitment, MerkleIntervalTreeInternalNode};
 use core::option::Option;
 use deposit::traits::Deposit;
 use ink_core::{
-    env::DefaultSrmlTypes,
+    env::{ContractEnv, DefaultSrmlTypes, EnvTypes},
     memory::{format, vec::Vec},
     storage,
 };
@@ -150,7 +150,7 @@ contract! {
         ///	Gets Leatest Plasma block number.
         pub(external) fn current_block(&self) -> BlockNumber {
             self.predicate.commitment_ref().current_block(env)
-         }
+        }
 
 
 		/// Gets Plasma block hash by identified block number.
@@ -160,6 +160,7 @@ contract! {
     }
 }
 
+type AccountId = <ContractEnv<DefaultSrmlTypes> as EnvTypes>::AccountId;
 pub trait EmitEventExt {
     /// Emits the given event.
     fn emit<E>(&self, event: E)

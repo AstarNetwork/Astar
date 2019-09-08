@@ -62,8 +62,8 @@ impl<I: traits::SimpleArithmetic + traits::Member + Codec> ink_core::storage::Fl
 /// Represents a state object.
 /// Contains the address of the predicate contract and input data to that
 /// contract which control the conditions under which the object may be mutated.
-#[derive(Clone, scale::Encode, scale::Decode, PartialEq, Eq)]
-#[cfg_attr(not(no_std), derive(Debug))]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, scale::Encode, scale::Decode)]
+#[cfg_attr(feature = "ink-generate-abi", derive(type_metadata::Metadata))]
 pub struct StateObject<T: traits::Member + Codec> {
 	/// Address of the predicate contract that dictates how the object can be mutated.
     pub predicate: AccountId,
@@ -81,8 +81,8 @@ where
 }
 
 /// Represents a state update, which contains the contextual information for how a particular range of state objects was mutated.
-#[derive(Clone, scale::Encode, scale::Decode, PartialEq, Eq)]
-#[cfg_attr(not(no_std), derive(Debug))]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, scale::Encode, scale::Decode)]
+#[cfg_attr(feature = "ink-generate-abi", derive(type_metadata::Metadata))]
 pub struct StateUpdate<
     T: traits::Member + Codec,
     I: traits::SimpleArithmetic + traits::Member + Codec,
@@ -110,8 +110,8 @@ where
 /// Represents a checkpoint of a particular state update on which a “checkpoint game” is being or has been played out.
 /// Checkpoints which have successfully passed the checkpoint game are considered “finalized”,
 /// meaning the plasma contract should ignore all state updates on that range with an older plasma block number.
-#[derive(Clone, scale::Encode, scale::Decode, PartialEq, Eq)]
-#[cfg_attr(not(no_std), derive(Debug))]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, scale::Encode, scale::Decode)]
+#[cfg_attr(feature = "ink-generate-abi", derive(type_metadata::Metadata))]
 pub struct Checkpoint<
     T: traits::Member + Codec,
     I: traits::SimpleArithmetic + traits::Member + Codec,
@@ -159,8 +159,8 @@ where
 /// Each predicate could parse these bytes in a unique way and therefore define its own transaction format.
 /// However, clients should be able to correctly generate a transaction for any given predicate.
 /// As a result, we’ve developed a standard transaction format that simplifies the transaction generation process.
-#[derive(Clone, scale::Encode, scale::Decode, PartialEq, Eq)]
-#[cfg_attr(not(no_std), derive(Debug))]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, scale::Encode, scale::Decode)]
+#[cfg_attr(feature = "ink-generate-abi", derive(type_metadata::Metadata))]
 pub struct Transaction<
     U: traits::Member + Codec,
     I: traits::SimpleArithmetic + traits::Member + Codec,
@@ -178,8 +178,8 @@ pub struct Transaction<
 /// Describes a challenge against a checkpoint.
 /// A challenge is a claim that the challengingCheckpoint has no valid transactions,
 /// meaning that the state update in the challengedCheckpoint could never have been reached and thus is invalid.
-#[derive(Clone, scale::Encode, scale::Decode, PartialEq, Eq)]
-#[cfg_attr(not(no_std), derive(Debug))]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, scale::Encode, scale::Decode)]
+#[cfg_attr(feature = "ink-generate-abi", derive(type_metadata::Metadata))]
 pub struct Challenge<
     T: traits::Member + Codec,
     I: traits::SimpleArithmetic + traits::Member + Codec,

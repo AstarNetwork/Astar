@@ -1,12 +1,12 @@
 [package]
-name = "abi-gen"
+name = "predicate-abi-gen"
 version = "0.1.0"
 authors = ["Takumi Yamashita <takumi@staked.co.jp>"]
 edition = "2018"
 publish = false
 
 [[bin]]
-name = "abi-gen"
+name = "predicate-abi-gen"
 path = "main.rs"
 
 [dependencies]
