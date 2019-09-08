@@ -1,5 +1,5 @@
 [package]
-name = "node-cli"
+name = "plasm-cli"
 version = "0.4.9"
 authors = ["Takumi Yamashita <takumi@staked.co.jp>"]
 description = "Plasm node implementation in Rust."
@@ -18,9 +18,9 @@ sr-io = { git = "https://github.com/satellitex/substrate.git" }
 client = { package = "substrate-client", git = "https://github.com/satellitex/substrate.git" }
 primitives = { package = "substrate-primitives", git = "https://github.com/satellitex/substrate.git" }
 inherents = { package = "substrate-inherents", git = "https://github.com/satellitex/substrate.git" }
-node-runtime = { git = "https://github.com/satellitex/substrate.git" }
-node-rpc = { git = "https://github.com/satellitex/substrate.git" }
-node-primitives = { git = "https://github.com/satellitex/substrate.git" }
+plasm-runtime = { path = "../runtime" }
+plasm-rpc = { path = "../rpc" }
+plasm-primitives = { path = "../primitives" }
 hex-literal = "0.2"
 substrate-rpc = { package = "substrate-rpc", git = "https://github.com/satellitex/substrate.git" }
 substrate-basic-authorship = { git = "https://github.com/satellitex/substrate.git" }
@@ -32,7 +32,7 @@ babe-primitives = { package = "substrate-consensus-babe-primitives", git = "http
 grandpa = { package = "substrate-finality-grandpa", git = "https://github.com/satellitex/substrate.git" }
 grandpa_primitives = { package = "substrate-finality-grandpa-primitives", git = "https://github.com/satellitex/substrate.git" }
 sr-primitives = { git = "https://github.com/satellitex/substrate.git" }
-node-executor = { git = "https://github.com/satellitex/substrate.git" }
+plasm-executor = { path = "../executor" }
 substrate-telemetry = { package = "substrate-telemetry", git = "https://github.com/satellitex/substrate.git" }
 structopt = "0.2"
 transaction-factory = { git = "https://github.com/satellitex/substrate.git" }

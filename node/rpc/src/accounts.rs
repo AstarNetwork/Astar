@@ -21,7 +21,7 @@ use std::sync::Arc;
 use client::blockchain::HeaderBackend;
 use jsonrpc_core::{Result, Error, ErrorCode};
 use jsonrpc_derive::rpc;
-use node_primitives::{
+use plasm_primitives::{
 	AccountId, Index, AccountNonceApi, Block, BlockId,
 };
 use codec::Encode;
@@ -113,14 +113,14 @@ where
 mod tests {
 	use super::*;
 
-	use node_runtime::{CheckedExtrinsic, Call, TimestampCall};
+	use plasm_runtime::{CheckedExtrinsic, Call, TimestampCall};
 	use codec::Decode;
-	use node_testing::{
+	use plasm_testing::{
 		client::{ClientExt, TestClientBuilder, TestClientBuilderExt},
 		keyring::{self, alice, signed_extra},
 	};
 
-	const VERSION: u32 = node_runtime::VERSION.spec_version;
+	const VERSION: u32 = plasm_runtime::VERSION.spec_version;
 
 	#[test]
 	fn should_return_next_nonce_for_some_account() {
@@ -137,7 +137,7 @@ mod tests {
 			let xt = keyring::sign(ex, VERSION, client.genesis_hash().into());
 			// Convert to OpaqueExtrinsic
 			let encoded = xt.encode();
-			node_primitives::UncheckedExtrinsic::decode(&mut &*encoded).unwrap()
+			plasm_primitives::UncheckedExtrinsic::decode(&mut &*encoded).unwrap()
 		};
 		// Populate the pool
 		let ext0 = new_transaction(signed_extra(0, 0));

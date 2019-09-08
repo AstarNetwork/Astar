@@ -2306,333 +2306,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "node-cli"
-version = "0.4.9"
-dependencies = [
- "exit-future 0.1.4 (registry+https://github.com/rust-lang/crates.io-index)",
- "futures 0.1.29 (registry+https://github.com/rust-lang/crates.io-index)",
- "futures-preview 0.3.0-alpha.17 (registry+https://github.com/rust-lang/crates.io-index)",
- "hex-literal 0.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "jsonrpc-core 13.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
- "node-executor 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "node-primitives 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "node-rpc 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "node-runtime 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "parity-scale-codec 1.0.5 (registry+https://github.com/rust-lang/crates.io-index)",
- "rand 0.6.5 (registry+https://github.com/rust-lang/crates.io-index)",
- "sr-io 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "sr-primitives 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "srml-authority-discovery 0.1.0 (git+https://github.com/satellitex/substrate.git)",
- "srml-balances 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "srml-contracts 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "srml-finality-tracker 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "srml-im-online 0.1.0 (git+https://github.com/satellitex/substrate.git)",
- "srml-indices 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "srml-support 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "srml-system 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "srml-timestamp 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "structopt 0.2.18 (registry+https://github.com/rust-lang/crates.io-index)",
- "substrate-basic-authorship 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "substrate-cli 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "substrate-client 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "substrate-consensus-babe 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "substrate-consensus-babe-primitives 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "substrate-consensus-common 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "substrate-finality-grandpa 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "substrate-finality-grandpa-primitives 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "substrate-inherents 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "substrate-keyring 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "substrate-keystore 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "substrate-network 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "substrate-primitives 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "substrate-rpc 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "substrate-service 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "substrate-service-test 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "substrate-telemetry 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "substrate-transaction-pool 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "tempfile 3.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "tokio 0.1.22 (registry+https://github.com/rust-lang/crates.io-index)",
- "transaction-factory 0.0.1 (git+https://github.com/satellitex/substrate.git)",
-]
-
-[[package]]
-name = "node-executor"
-version = "2.0.0"
-source = "git+https://github.com/satellitex/substrate.git#d2e7d660f8dbbb8f9753dfd231cef1c9b502c41c"
-dependencies = [
- "node-primitives 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "node-runtime 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "parity-scale-codec 1.0.5 (registry+https://github.com/rust-lang/crates.io-index)",
- "sr-io 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "substrate-executor 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "substrate-primitives 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "substrate-state-machine 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "substrate-trie 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "trie-root 0.15.2 (registry+https://github.com/rust-lang/crates.io-index)",
-]
-
-[[package]]
-name = "node-executor"
-version = "2.0.0"
-dependencies = [
- "node-primitives 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "node-runtime 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "node-testing 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "parity-scale-codec 1.0.5 (registry+https://github.com/rust-lang/crates.io-index)",
- "sr-io 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "sr-primitives 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "srml-balances 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "srml-contracts 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "srml-grandpa 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "srml-indices 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "srml-session 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "srml-support 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "srml-system 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "srml-timestamp 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "srml-treasury 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "substrate-executor 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "substrate-primitives 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "substrate-state-machine 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "substrate-test-client 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "substrate-trie 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "trie-root 0.15.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "wabt 0.7.4 (registry+https://github.com/rust-lang/crates.io-index)",
-]
-
-[[package]]
-name = "node-primitives"
-version = "2.0.0"
-source = "git+https://github.com/satellitex/substrate.git#d2e7d660f8dbbb8f9753dfd231cef1c9b502c41c"
-dependencies = [
- "parity-scale-codec 1.0.5 (registry+https://github.com/rust-lang/crates.io-index)",
- "serde 1.0.100 (registry+https://github.com/rust-lang/crates.io-index)",
- "sr-primitives 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "sr-std 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "substrate-client 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "substrate-primitives 2.0.0 (git+https://github.com/satellitex/substrate.git)",
-]
-
-[[package]]
-name = "node-primitives"
-version = "2.0.0"
-dependencies = [
- "parity-scale-codec 1.0.5 (registry+https://github.com/rust-lang/crates.io-index)",
- "pretty_assertions 0.6.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "serde 1.0.100 (registry+https://github.com/rust-lang/crates.io-index)",
- "sr-primitives 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "sr-std 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "substrate-client 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "substrate-primitives 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "substrate-serializer 2.0.0 (git+https://github.com/satellitex/substrate.git)",
-]
-
-[[package]]
-name = "node-rpc"
-version = "2.0.0"
-source = "git+https://github.com/satellitex/substrate.git#d2e7d660f8dbbb8f9753dfd231cef1c9b502c41c"
-dependencies = [
- "jsonrpc-core 13.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "jsonrpc-core-client 13.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "jsonrpc-derive 13.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "jsonrpc-pubsub 13.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
- "node-primitives 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "parity-scale-codec 1.0.5 (registry+https://github.com/rust-lang/crates.io-index)",
- "serde 1.0.100 (registry+https://github.com/rust-lang/crates.io-index)",
- "sr-primitives 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "substrate-client 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "substrate-keyring 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "substrate-primitives 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "substrate-transaction-pool 2.0.0 (git+https://github.com/satellitex/substrate.git)",
-]
-
-[[package]]
-name = "node-rpc"
-version = "2.0.0"
-dependencies = [
- "env_logger 0.6.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "jsonrpc-core 13.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "jsonrpc-core-client 13.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "jsonrpc-derive 13.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "jsonrpc-pubsub 13.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
- "node-primitives 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "node-runtime 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "node-testing 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "parity-scale-codec 1.0.5 (registry+https://github.com/rust-lang/crates.io-index)",
- "serde 1.0.100 (registry+https://github.com/rust-lang/crates.io-index)",
- "sr-primitives 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "substrate-client 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "substrate-keyring 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "substrate-primitives 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "substrate-transaction-pool 2.0.0 (git+https://github.com/satellitex/substrate.git)",
-]
-
-[[package]]
-name = "node-rpc-client"
-version = "2.0.0"
-dependencies = [
- "env_logger 0.6.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "futures 0.1.29 (registry+https://github.com/rust-lang/crates.io-index)",
- "hyper 0.12.34 (registry+https://github.com/rust-lang/crates.io-index)",
- "jsonrpc-core-client 13.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
- "node-primitives 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "substrate-rpc 2.0.0 (git+https://github.com/satellitex/substrate.git)",
-]
-
-[[package]]
-name = "node-runtime"
-version = "2.0.0"
-source = "git+https://github.com/satellitex/substrate.git#d2e7d660f8dbbb8f9753dfd231cef1c9b502c41c"
-dependencies = [
- "integer-sqrt 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "node-primitives 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "parity-scale-codec 1.0.5 (registry+https://github.com/rust-lang/crates.io-index)",
- "rustc-hex 2.0.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "safe-mix 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "serde 1.0.100 (registry+https://github.com/rust-lang/crates.io-index)",
- "sr-primitives 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "sr-staking-primitives 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "sr-std 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "sr-version 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "srml-authority-discovery 0.1.0 (git+https://github.com/satellitex/substrate.git)",
- "srml-authorship 0.1.0 (git+https://github.com/satellitex/substrate.git)",
- "srml-babe 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "srml-balances 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "srml-collective 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "srml-contracts 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "srml-democracy 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "srml-elections 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "srml-executive 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "srml-finality-tracker 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "srml-grandpa 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "srml-im-online 0.1.0 (git+https://github.com/satellitex/substrate.git)",
- "srml-indices 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "srml-membership 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "srml-offences 1.0.0 (git+https://github.com/satellitex/substrate.git)",
- "srml-session 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "srml-staking 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "srml-sudo 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "srml-support 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "srml-system 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "srml-timestamp 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "srml-treasury 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "substrate-authority-discovery-primitives 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "substrate-client 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "substrate-consensus-babe-primitives 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "substrate-keyring 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "substrate-offchain-primitives 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "substrate-primitives 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "substrate-session 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "substrate-wasm-builder-runner 1.0.3 (git+https://github.com/satellitex/substrate.git)",
-]
-
-[[package]]
-name = "node-runtime"
-version = "2.0.0"
-dependencies = [
- "integer-sqrt 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "node-primitives 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "parity-scale-codec 1.0.5 (registry+https://github.com/rust-lang/crates.io-index)",
- "rustc-hex 2.0.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "safe-mix 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "serde 1.0.100 (registry+https://github.com/rust-lang/crates.io-index)",
- "sr-primitives 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "sr-staking-primitives 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "sr-std 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "sr-version 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "srml-authority-discovery 0.1.0 (git+https://github.com/satellitex/substrate.git)",
- "srml-authorship 0.1.0 (git+https://github.com/satellitex/substrate.git)",
- "srml-babe 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "srml-balances 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "srml-collective 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "srml-contracts 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "srml-democracy 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "srml-elections 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "srml-executive 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "srml-finality-tracker 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "srml-grandpa 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "srml-im-online 0.1.0 (git+https://github.com/satellitex/substrate.git)",
- "srml-indices 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "srml-membership 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "srml-offences 1.0.0 (git+https://github.com/satellitex/substrate.git)",
- "srml-session 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "srml-staking 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "srml-sudo 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "srml-support 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "srml-system 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "srml-timestamp 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "srml-treasury 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "substrate-authority-discovery-primitives 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "substrate-client 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "substrate-consensus-babe-primitives 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "substrate-keyring 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "substrate-offchain-primitives 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "substrate-primitives 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "substrate-session 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "substrate-wasm-builder-runner 1.0.3 (git+https://github.com/satellitex/substrate.git)",
-]
-
-[[package]]
-name = "node-testing"
-version = "2.0.0"
-source = "git+https://github.com/satellitex/substrate.git#d2e7d660f8dbbb8f9753dfd231cef1c9b502c41c"
-dependencies = [
- "node-executor 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "node-primitives 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "node-runtime 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "parity-scale-codec 1.0.5 (registry+https://github.com/rust-lang/crates.io-index)",
- "sr-io 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "sr-primitives 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "srml-balances 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "srml-contracts 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "srml-grandpa 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "srml-indices 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "srml-session 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "srml-staking 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "srml-support 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "srml-system 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "srml-timestamp 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "srml-treasury 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "substrate-client 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "substrate-executor 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "substrate-keyring 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "substrate-primitives 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "substrate-test-client 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "wabt 0.7.4 (registry+https://github.com/rust-lang/crates.io-index)",
-]
-
-[[package]]
-name = "node-testing"
-version = "2.0.0"
-dependencies = [
- "node-executor 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "node-primitives 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "node-runtime 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "parity-scale-codec 1.0.5 (registry+https://github.com/rust-lang/crates.io-index)",
- "sr-io 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "sr-primitives 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "srml-balances 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "srml-contracts 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "srml-grandpa 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "srml-indices 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "srml-session 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "srml-staking 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "srml-support 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "srml-system 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "srml-timestamp 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "srml-treasury 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "substrate-client 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "substrate-executor 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "substrate-keyring 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "substrate-primitives 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "substrate-test-client 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "wabt 0.7.4 (registry+https://github.com/rust-lang/crates.io-index)",
-]
-
-[[package]]
 name = "nodrop"
 version = "0.1.13"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3031,8 +2704,210 @@ version = "0.4.9"
 dependencies = [
  "ctrlc 3.1.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "futures 0.1.29 (registry+https://github.com/rust-lang/crates.io-index)",
- "node-cli 0.4.9",
+ "plasm-cli 0.4.9",
  "vergen 3.0.4 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "plasm-cli"
+version = "0.4.9"
+dependencies = [
+ "exit-future 0.1.4 (registry+https://github.com/rust-lang/crates.io-index)",
+ "futures 0.1.29 (registry+https://github.com/rust-lang/crates.io-index)",
+ "futures-preview 0.3.0-alpha.17 (registry+https://github.com/rust-lang/crates.io-index)",
+ "hex-literal 0.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "jsonrpc-core 13.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
+ "parity-scale-codec 1.0.5 (registry+https://github.com/rust-lang/crates.io-index)",
+ "plasm-executor 0.4.9",
+ "plasm-primitives 0.4.9",
+ "plasm-rpc 0.4.9",
+ "plasm-runtime 0.4.9",
+ "rand 0.6.5 (registry+https://github.com/rust-lang/crates.io-index)",
+ "sr-io 2.0.0 (git+https://github.com/satellitex/substrate.git)",
+ "sr-primitives 2.0.0 (git+https://github.com/satellitex/substrate.git)",
+ "srml-authority-discovery 0.1.0 (git+https://github.com/satellitex/substrate.git)",
+ "srml-balances 2.0.0 (git+https://github.com/satellitex/substrate.git)",
+ "srml-contracts 2.0.0 (git+https://github.com/satellitex/substrate.git)",
+ "srml-finality-tracker 2.0.0 (git+https://github.com/satellitex/substrate.git)",
+ "srml-im-online 0.1.0 (git+https://github.com/satellitex/substrate.git)",
+ "srml-indices 2.0.0 (git+https://github.com/satellitex/substrate.git)",
+ "srml-support 2.0.0 (git+https://github.com/satellitex/substrate.git)",
+ "srml-system 2.0.0 (git+https://github.com/satellitex/substrate.git)",
+ "srml-timestamp 2.0.0 (git+https://github.com/satellitex/substrate.git)",
+ "structopt 0.2.18 (registry+https://github.com/rust-lang/crates.io-index)",
+ "substrate-basic-authorship 2.0.0 (git+https://github.com/satellitex/substrate.git)",
+ "substrate-cli 2.0.0 (git+https://github.com/satellitex/substrate.git)",
+ "substrate-client 2.0.0 (git+https://github.com/satellitex/substrate.git)",
+ "substrate-consensus-babe 2.0.0 (git+https://github.com/satellitex/substrate.git)",
+ "substrate-consensus-babe-primitives 2.0.0 (git+https://github.com/satellitex/substrate.git)",
+ "substrate-consensus-common 2.0.0 (git+https://github.com/satellitex/substrate.git)",
+ "substrate-finality-grandpa 2.0.0 (git+https://github.com/satellitex/substrate.git)",
+ "substrate-finality-grandpa-primitives 2.0.0 (git+https://github.com/satellitex/substrate.git)",
+ "substrate-inherents 2.0.0 (git+https://github.com/satellitex/substrate.git)",
+ "substrate-keyring 2.0.0 (git+https://github.com/satellitex/substrate.git)",
+ "substrate-keystore 2.0.0 (git+https://github.com/satellitex/substrate.git)",
+ "substrate-network 2.0.0 (git+https://github.com/satellitex/substrate.git)",
+ "substrate-primitives 2.0.0 (git+https://github.com/satellitex/substrate.git)",
+ "substrate-rpc 2.0.0 (git+https://github.com/satellitex/substrate.git)",
+ "substrate-service 2.0.0 (git+https://github.com/satellitex/substrate.git)",
+ "substrate-service-test 2.0.0 (git+https://github.com/satellitex/substrate.git)",
+ "substrate-telemetry 2.0.0 (git+https://github.com/satellitex/substrate.git)",
+ "substrate-transaction-pool 2.0.0 (git+https://github.com/satellitex/substrate.git)",
+ "tempfile 3.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "tokio 0.1.22 (registry+https://github.com/rust-lang/crates.io-index)",
+ "transaction-factory 0.0.1 (git+https://github.com/satellitex/substrate.git)",
+]
+
+[[package]]
+name = "plasm-executor"
+version = "0.4.9"
+dependencies = [
+ "parity-scale-codec 1.0.5 (registry+https://github.com/rust-lang/crates.io-index)",
+ "plasm-primitives 0.4.9",
+ "plasm-runtime 0.4.9",
+ "plasm-testing 0.4.9",
+ "sr-io 2.0.0 (git+https://github.com/satellitex/substrate.git)",
+ "sr-primitives 2.0.0 (git+https://github.com/satellitex/substrate.git)",
+ "srml-balances 2.0.0 (git+https://github.com/satellitex/substrate.git)",
+ "srml-contracts 2.0.0 (git+https://github.com/satellitex/substrate.git)",
+ "srml-grandpa 2.0.0 (git+https://github.com/satellitex/substrate.git)",
+ "srml-indices 2.0.0 (git+https://github.com/satellitex/substrate.git)",
+ "srml-session 2.0.0 (git+https://github.com/satellitex/substrate.git)",
+ "srml-support 2.0.0 (git+https://github.com/satellitex/substrate.git)",
+ "srml-system 2.0.0 (git+https://github.com/satellitex/substrate.git)",
+ "srml-timestamp 2.0.0 (git+https://github.com/satellitex/substrate.git)",
+ "srml-treasury 2.0.0 (git+https://github.com/satellitex/substrate.git)",
+ "substrate-executor 2.0.0 (git+https://github.com/satellitex/substrate.git)",
+ "substrate-primitives 2.0.0 (git+https://github.com/satellitex/substrate.git)",
+ "substrate-state-machine 2.0.0 (git+https://github.com/satellitex/substrate.git)",
+ "substrate-test-client 2.0.0 (git+https://github.com/satellitex/substrate.git)",
+ "substrate-trie 2.0.0 (git+https://github.com/satellitex/substrate.git)",
+ "trie-root 0.15.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "wabt 0.7.4 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "plasm-primitives"
+version = "0.4.9"
+dependencies = [
+ "parity-scale-codec 1.0.5 (registry+https://github.com/rust-lang/crates.io-index)",
+ "pretty_assertions 0.6.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "serde 1.0.100 (registry+https://github.com/rust-lang/crates.io-index)",
+ "sr-primitives 2.0.0 (git+https://github.com/satellitex/substrate.git)",
+ "sr-std 2.0.0 (git+https://github.com/satellitex/substrate.git)",
+ "substrate-client 2.0.0 (git+https://github.com/satellitex/substrate.git)",
+ "substrate-primitives 2.0.0 (git+https://github.com/satellitex/substrate.git)",
+ "substrate-serializer 2.0.0 (git+https://github.com/satellitex/substrate.git)",
+]
+
+[[package]]
+name = "plasm-rpc"
+version = "0.4.9"
+dependencies = [
+ "env_logger 0.6.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "jsonrpc-core 13.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "jsonrpc-core-client 13.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "jsonrpc-derive 13.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "jsonrpc-pubsub 13.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
+ "parity-scale-codec 1.0.5 (registry+https://github.com/rust-lang/crates.io-index)",
+ "plasm-primitives 0.4.9",
+ "plasm-runtime 0.4.9",
+ "plasm-testing 0.4.9",
+ "serde 1.0.100 (registry+https://github.com/rust-lang/crates.io-index)",
+ "sr-primitives 2.0.0 (git+https://github.com/satellitex/substrate.git)",
+ "substrate-client 2.0.0 (git+https://github.com/satellitex/substrate.git)",
+ "substrate-keyring 2.0.0 (git+https://github.com/satellitex/substrate.git)",
+ "substrate-primitives 2.0.0 (git+https://github.com/satellitex/substrate.git)",
+ "substrate-transaction-pool 2.0.0 (git+https://github.com/satellitex/substrate.git)",
+]
+
+[[package]]
+name = "plasm-rpc-client"
+version = "0.4.9"
+dependencies = [
+ "env_logger 0.6.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "futures 0.1.29 (registry+https://github.com/rust-lang/crates.io-index)",
+ "hyper 0.12.34 (registry+https://github.com/rust-lang/crates.io-index)",
+ "jsonrpc-core-client 13.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
+ "plasm-primitives 0.4.9",
+ "substrate-rpc 2.0.0 (git+https://github.com/satellitex/substrate.git)",
+]
+
+[[package]]
+name = "plasm-runtime"
+version = "0.4.9"
+dependencies = [
+ "integer-sqrt 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "parity-scale-codec 1.0.5 (registry+https://github.com/rust-lang/crates.io-index)",
+ "plasm-primitives 0.4.9",
+ "rustc-hex 2.0.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "safe-mix 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "serde 1.0.100 (registry+https://github.com/rust-lang/crates.io-index)",
+ "sr-primitives 2.0.0 (git+https://github.com/satellitex/substrate.git)",
+ "sr-staking-primitives 2.0.0 (git+https://github.com/satellitex/substrate.git)",
+ "sr-std 2.0.0 (git+https://github.com/satellitex/substrate.git)",
+ "sr-version 2.0.0 (git+https://github.com/satellitex/substrate.git)",
+ "srml-authority-discovery 0.1.0 (git+https://github.com/satellitex/substrate.git)",
+ "srml-authorship 0.1.0 (git+https://github.com/satellitex/substrate.git)",
+ "srml-babe 2.0.0 (git+https://github.com/satellitex/substrate.git)",
+ "srml-balances 2.0.0 (git+https://github.com/satellitex/substrate.git)",
+ "srml-collective 2.0.0 (git+https://github.com/satellitex/substrate.git)",
+ "srml-contracts 2.0.0 (git+https://github.com/satellitex/substrate.git)",
+ "srml-democracy 2.0.0 (git+https://github.com/satellitex/substrate.git)",
+ "srml-elections 2.0.0 (git+https://github.com/satellitex/substrate.git)",
+ "srml-executive 2.0.0 (git+https://github.com/satellitex/substrate.git)",
+ "srml-finality-tracker 2.0.0 (git+https://github.com/satellitex/substrate.git)",
+ "srml-grandpa 2.0.0 (git+https://github.com/satellitex/substrate.git)",
+ "srml-im-online 0.1.0 (git+https://github.com/satellitex/substrate.git)",
+ "srml-indices 2.0.0 (git+https://github.com/satellitex/substrate.git)",
+ "srml-membership 2.0.0 (git+https://github.com/satellitex/substrate.git)",
+ "srml-offences 1.0.0 (git+https://github.com/satellitex/substrate.git)",
+ "srml-session 2.0.0 (git+https://github.com/satellitex/substrate.git)",
+ "srml-staking 2.0.0 (git+https://github.com/satellitex/substrate.git)",
+ "srml-sudo 2.0.0 (git+https://github.com/satellitex/substrate.git)",
+ "srml-support 2.0.0 (git+https://github.com/satellitex/substrate.git)",
+ "srml-system 2.0.0 (git+https://github.com/satellitex/substrate.git)",
+ "srml-timestamp 2.0.0 (git+https://github.com/satellitex/substrate.git)",
+ "srml-treasury 2.0.0 (git+https://github.com/satellitex/substrate.git)",
+ "substrate-authority-discovery-primitives 2.0.0 (git+https://github.com/satellitex/substrate.git)",
+ "substrate-client 2.0.0 (git+https://github.com/satellitex/substrate.git)",
+ "substrate-consensus-babe-primitives 2.0.0 (git+https://github.com/satellitex/substrate.git)",
+ "substrate-keyring 2.0.0 (git+https://github.com/satellitex/substrate.git)",
+ "substrate-offchain-primitives 2.0.0 (git+https://github.com/satellitex/substrate.git)",
+ "substrate-primitives 2.0.0 (git+https://github.com/satellitex/substrate.git)",
+ "substrate-session 2.0.0 (git+https://github.com/satellitex/substrate.git)",
+ "substrate-wasm-builder-runner 1.0.3 (git+https://github.com/satellitex/substrate.git)",
+]
+
+[[package]]
+name = "plasm-testing"
+version = "0.4.9"
+dependencies = [
+ "parity-scale-codec 1.0.5 (registry+https://github.com/rust-lang/crates.io-index)",
+ "plasm-executor 0.4.9",
+ "plasm-primitives 0.4.9",
+ "plasm-runtime 0.4.9",
+ "sr-io 2.0.0 (git+https://github.com/satellitex/substrate.git)",
+ "sr-primitives 2.0.0 (git+https://github.com/satellitex/substrate.git)",
+ "srml-balances 2.0.0 (git+https://github.com/satellitex/substrate.git)",
+ "srml-contracts 2.0.0 (git+https://github.com/satellitex/substrate.git)",
+ "srml-grandpa 2.0.0 (git+https://github.com/satellitex/substrate.git)",
+ "srml-indices 2.0.0 (git+https://github.com/satellitex/substrate.git)",
+ "srml-session 2.0.0 (git+https://github.com/satellitex/substrate.git)",
+ "srml-staking 2.0.0 (git+https://github.com/satellitex/substrate.git)",
+ "srml-support 2.0.0 (git+https://github.com/satellitex/substrate.git)",
+ "srml-system 2.0.0 (git+https://github.com/satellitex/substrate.git)",
+ "srml-timestamp 2.0.0 (git+https://github.com/satellitex/substrate.git)",
+ "srml-treasury 2.0.0 (git+https://github.com/satellitex/substrate.git)",
+ "substrate-client 2.0.0 (git+https://github.com/satellitex/substrate.git)",
+ "substrate-executor 2.0.0 (git+https://github.com/satellitex/substrate.git)",
+ "substrate-keyring 2.0.0 (git+https://github.com/satellitex/substrate.git)",
+ "substrate-primitives 2.0.0 (git+https://github.com/satellitex/substrate.git)",
+ "substrate-test-client 2.0.0 (git+https://github.com/satellitex/substrate.git)",
+ "wabt 0.7.4 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -6229,11 +6104,6 @@ dependencies = [
 "checksum native-tls 0.2.3 (registry+https://github.com/rust-lang/crates.io-index)" = "4b2df1a4c22fd44a62147fd8f13dd0f95c9d8ca7b2610299b2a2f9cf8964274e"
 "checksum net2 0.2.33 (registry+https://github.com/rust-lang/crates.io-index)" = "42550d9fb7b6684a6d404d9fa7250c2eb2646df731d1c06afc06dcee9e1bcf88"
 "checksum nix 0.14.1 (registry+https://github.com/rust-lang/crates.io-index)" = "6c722bee1037d430d0f8e687bbdbf222f27cc6e4e68d5caf630857bb2b6dbdce"
-"checksum node-executor 2.0.0 (git+https://github.com/satellitex/substrate.git)" = "<none>"
-"checksum node-primitives 2.0.0 (git+https://github.com/satellitex/substrate.git)" = "<none>"
-"checksum node-rpc 2.0.0 (git+https://github.com/satellitex/substrate.git)" = "<none>"
-"checksum node-runtime 2.0.0 (git+https://github.com/satellitex/substrate.git)" = "<none>"
-"checksum node-testing 2.0.0 (git+https://github.com/satellitex/substrate.git)" = "<none>"
 "checksum nodrop 0.1.13 (registry+https://github.com/rust-lang/crates.io-index)" = "2f9667ddcc6cc8a43afc9b7917599d7216aa09c463919ea32c59ed6cac8bc945"
 "checksum nohash-hasher 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)" = "0d138afcce92d219ccb6eb53d9b1e8a96ac0d633cfd3c53cd9856d96d1741bb8"
 "checksum nom 4.2.3 (registry+https://github.com/rust-lang/crates.io-index)" = "2ad2a91a8e869eeb30b9cb3119ae87773a8f4ae617f41b1eb9c154b2905f7bd6"

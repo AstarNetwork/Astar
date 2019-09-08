@@ -17,8 +17,8 @@
 //! Test accounts.
 
 use keyring::{AccountKeyring, Sr25519Keyring, Ed25519Keyring};
-use node_primitives::{AccountId, Balance, Index};
-use node_runtime::{CheckedExtrinsic, UncheckedExtrinsic, SessionKeys, SignedExtra};
+use plasm_primitives::{AccountId, Balance, Index};
+use plasm_runtime::{CheckedExtrinsic, UncheckedExtrinsic, SessionKeys, SignedExtra};
 use sr_primitives::generic::Era;
 use codec::Encode;
 

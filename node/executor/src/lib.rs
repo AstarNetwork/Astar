@@ -29,8 +29,8 @@ use substrate_executor::native_executor_instance;
 // equivalent wasm code.
 native_executor_instance!(
 	pub Executor,
-	node_runtime::api::dispatch,
-	node_runtime::native_version
+	plasm_runtime::api::dispatch,
+	plasm_runtime::native_version
 );
 
 #[cfg(test)]
@@ -48,15 +48,15 @@ mod tests {
 	use sr_primitives::weights::{WeightMultiplier, GetDispatchInfo};
 	use contracts::ContractAddressFor;
 	use system::{EventRecord, Phase};
-	use node_primitives::{Hash, BlockNumber, Balance};
-	use node_runtime::{
+	use plasm_primitives::{Hash, BlockNumber, Balance};
+	use plasm_runtime::{
 		Header, Block, UncheckedExtrinsic, CheckedExtrinsic, Call, Runtime, Balances, BuildStorage,
 		System, Event,
 		TransferFee, TransactionBaseFee, TransactionByteFee,
 	};
-	use node_runtime::constants::currency::*;
-	use node_runtime::impls::WeightToFee;
-	use node_testing::keyring::*;
+	use plasm_runtime::constants::currency::*;
+	use plasm_runtime::impls::WeightToFee;
+	use plasm_testing::keyring::*;
 	use wabt;
 
 	/// The wasm runtime code.
@@ -65,23 +65,23 @@ mod tests {
 	/// making the binary slimmer. There is a convention to use compact version of the runtime
 	/// as canonical. This is why `native_executor_instance` also uses the compact version of the
 	/// runtime.
-	const COMPACT_CODE: &[u8] = node_runtime::WASM_BINARY;
+	const COMPACT_CODE: &[u8] = plasm_runtime::WASM_BINARY;
 
 	/// The wasm runtime binary which hasn't undergone the compacting process.
 	///
 	/// The idea here is to pass it as the current runtime code to the executor so the executor will
 	/// have to execute provided wasm code instead of the native equivalent. This trick is used to
 	/// test code paths that differ between native and wasm versions.
-	const BLOATY_CODE: &[u8] = node_runtime::WASM_BINARY_BLOATY;
+	const BLOATY_CODE: &[u8] = plasm_runtime::WASM_BINARY_BLOATY;
 
 	const GENESIS_HASH: [u8; 32] = [69u8; 32];
 
-	const VERSION: u32 = node_runtime::VERSION.spec_version;
+	const VERSION: u32 = plasm_runtime::VERSION.spec_version;
 
 	type TestExternalities<H> = CoreTestExternalities<H, u64>;
 
 	fn sign(xt: CheckedExtrinsic) -> UncheckedExtrinsic {
-		node_testing::keyring::sign(xt, VERSION, GENESIS_HASH)
+		plasm_testing::keyring::sign(xt, VERSION, GENESIS_HASH)
 	}
 
 	/// Default transfer fee
@@ -264,7 +264,7 @@ mod tests {
 	fn new_test_ext(code: &[u8], support_changes_trie: bool) -> TestExternalities<Blake2Hasher> {
 		let mut ext = TestExternalities::new_with_code(
 			code,
-			node_testing::genesis::config(support_changes_trie, Some(code)).build_storage().unwrap(),
+			plasm_testing::genesis::config(support_changes_trie, Some(code)).build_storage().unwrap(),
 		);
 		ext.changes_trie_storage().insert(0, GENESIS_HASH.into(), Default::default());
 		ext
@@ -823,12 +823,12 @@ mod tests {
 
 	#[test]
 	fn should_import_block_with_test_client() {
-		use node_testing::client::{ClientExt, TestClientBuilderExt, TestClientBuilder, consensus::BlockOrigin};
+		use plasm_testing::client::{ClientExt, TestClientBuilderExt, TestClientBuilder, consensus::BlockOrigin};
 
 		let client = TestClientBuilder::new().build();
 		let block1 = changes_trie_block();
 		let block_data = block1.0;
-		let block = node_primitives::Block::decode(&mut &block_data[..]).unwrap();
+		let block = plasm_primitives::Block::decode(&mut &block_data[..]).unwrap();
 
 		client.import(BlockOrigin::Own, block).unwrap();
 	}

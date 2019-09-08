@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Substrate.  If not, see <http://www.gnu.org/licenses/>.
 
-//! A collection of node-specific RPC methods.
+//! A collection of plasm-specific RPC methods.
 //!
 //! Since `substrate` srml functionality makes no assumptions
 //! about the modules used inside the runtime, so do
@@ -24,7 +24,7 @@
 //!
 //! The RPCs available in this crate however can make some assumptions
 //! about how the runtime is constructed and what `SRML` modules
-//! are part of it. Therefore all node-runtime-specific RPCs can
+//! are part of it. Therefore all plasm-runtime-specific RPCs can
 //! be placed here.
 
 #![warn(missing_docs)]

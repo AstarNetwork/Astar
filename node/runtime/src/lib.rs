@@ -25,7 +25,7 @@ use support::{
 	construct_runtime, parameter_types, traits::{SplitTwoWays, Currency}
 };
 use primitives::u32_trait::{_1, _2, _3, _4};
-use node_primitives::{
+use plasm_primitives::{
 	AccountId, AccountIndex, Balance, BlockNumber, Hash, Index,
 	Moment, Signature,
 };
@@ -457,7 +457,7 @@ impl system::offchain::CreateTransaction<Runtime, UncheckedExtrinsic> for Runtim
 construct_runtime!(
 	pub enum Runtime where
 		Block = Block,
-		NodeBlock = node_primitives::Block,
+		NodeBlock = plasm_primitives::Block,
 		UncheckedExtrinsic = UncheckedExtrinsic
 	{
 		System: system::{Module, Call, Storage, Config, Event},
@@ -628,7 +628,7 @@ impl_runtime_apis! {
 		}
 	}
 
-	impl node_primitives::AccountNonceApi<Block> for Runtime {
+	impl plasm_primitives::AccountNonceApi<Block> for Runtime {
 		fn account_nonce(account: AccountId) -> Index {
 			System::account_nonce(account)
 		}

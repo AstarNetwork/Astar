@@ -23,9 +23,9 @@ use std::sync::Arc;
 use babe::{import_queue, Config};
 use client::{self, LongestChain};
 use grandpa::{self, FinalityProofProvider as GrandpaFinalityProofProvider};
-use node_executor;
-use node_primitives::Block;
-use node_runtime::{GenesisConfig, RuntimeApi};
+use plasm_executor;
+use plasm_primitives::Block;
+use plasm_runtime::{GenesisConfig, RuntimeApi};
 use substrate_service::{
 	AbstractService, ServiceBuilder, config::Configuration, error::{Error as ServiceError},
 };
@@ -49,7 +49,7 @@ macro_rules! new_full_start {
 		let mut tasks_to_spawn = Vec::new();
 
 		let builder = substrate_service::ServiceBuilder::new_full::<
-			node_primitives::Block, node_runtime::RuntimeApi, node_executor::Executor
+			plasm_primitives::Block, plasm_runtime::RuntimeApi, plasm_executor::Executor
 		>($config)?
 			.with_select_chain(|_config, backend| {
 				Ok(client::LongestChain::new(backend.clone()))
@@ -61,7 +61,7 @@ macro_rules! new_full_start {
 				let select_chain = select_chain.take()
 					.ok_or_else(|| substrate_service::Error::SelectChainRequired)?;
 				let (block_import, link_half) =
-					grandpa::block_import::<_, _, _, node_runtime::RuntimeApi, _, _>(
+					grandpa::block_import::<_, _, _, plasm_runtime::RuntimeApi, _, _>(
 						client.clone(), client.clone(), select_chain
 					)?;
 				let justification_import = block_import.clone();
@@ -83,7 +83,7 @@ macro_rules! new_full_start {
 				Ok(import_queue)
 			})?
 			.with_rpc_extensions(|client, pool| {
-				use node_rpc::accounts::{Accounts, AccountsApi};
+				use plasm_rpc::accounts::{Accounts, AccountsApi};
 
 				let mut io = jsonrpc_core::IoHandler::<substrate_service::RpcMetadata>::default();
 				io.extend_with(
@@ -221,7 +221,7 @@ pub fn new_light<C: Send + Default + 'static>(config: Configuration<C, GenesisCo
 	let inherent_data_providers = InherentDataProviders::new();
 	let mut tasks_to_spawn = Vec::new();
 
-	let service = ServiceBuilder::new_light::<Block, RuntimeApi, node_executor::Executor>(config)?
+	let service = ServiceBuilder::new_light::<Block, RuntimeApi, plasm_executor::Executor>(config)?
 		.with_select_chain(|_config, backend| {
 			Ok(LongestChain::new(backend.clone()))
 		})?
@@ -261,7 +261,7 @@ pub fn new_light<C: Send + Default + 'static>(config: Configuration<C, GenesisCo
 			Ok(Arc::new(GrandpaFinalityProofProvider::new(backend, client)) as _)
 		)?
 		.with_rpc_extensions(|client, pool| {
-			use node_rpc::accounts::{Accounts, AccountsApi};
+			use plasm_rpc::accounts::{Accounts, AccountsApi};
 
 			let mut io = jsonrpc_core::IoHandler::default();
 			io.extend_with(
@@ -290,9 +290,9 @@ mod tests {
 	use consensus_common::{
 		Environment, Proposer, BlockImportParams, BlockOrigin, ForkChoiceStrategy
 	};
-	use node_primitives::DigestItem;
-	use node_runtime::{BalancesCall, Call, UncheckedExtrinsic};
-	use node_runtime::constants::{currency::CENTS, time::{PRIMARY_PROBABILITY, SLOT_DURATION}};
+	use plasm_primitives::DigestItem;
+	use plasm_runtime::{BalancesCall, Call, UncheckedExtrinsic};
+	use plasm_runtime::constants::{currency::CENTS, time::{PRIMARY_PROBABILITY, SLOT_DURATION}};
 	use codec::{Encode, Decode};
 	use primitives::{
 		crypto::Pair as CryptoPair, blake2_256,

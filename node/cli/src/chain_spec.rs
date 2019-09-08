@@ -17,14 +17,14 @@
 //! Substrate chain configurations.
 
 use primitives::{Pair, Public, crypto::UncheckedInto};
-pub use node_primitives::{AccountId, Balance};
-use node_runtime::{
+pub use plasm_primitives::{AccountId, Balance};
+use plasm_runtime::{
 	AuthorityDiscoveryConfig, BabeConfig, BalancesConfig, ContractsConfig, CouncilConfig, DemocracyConfig,
 	ElectionsConfig, GrandpaConfig, ImOnlineConfig, IndicesConfig, SessionConfig, SessionKeys, StakerStatus,
 	StakingConfig, SudoConfig, SystemConfig, TechnicalCommitteeConfig, WASM_BINARY,
 };
-use node_runtime::constants::{time::*, currency::*};
-pub use node_runtime::GenesisConfig;
+use plasm_runtime::constants::{time::*, currency::*};
+pub use plasm_runtime::GenesisConfig;
 use substrate_service;
 use hex_literal::hex;
 use substrate_telemetry::TelemetryEndpoints;

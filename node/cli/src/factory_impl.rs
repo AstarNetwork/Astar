@@ -23,7 +23,7 @@ use rand::rngs::StdRng;
 
 use codec::{Encode, Decode};
 use keyring::sr25519::Keyring;
-use node_runtime::{Call, CheckedExtrinsic, UncheckedExtrinsic, SignedExtra, BalancesCall, ExistentialDeposit};
+use plasm_runtime::{Call, CheckedExtrinsic, UncheckedExtrinsic, SignedExtra, BalancesCall, ExistentialDeposit};
 use primitives::{sr25519, crypto::Pair};
 use sr_primitives::{generic::Era, traits::{Block as BlockT, Header as HeaderT, SignedExtension}};
 use transaction_factory::RuntimeAdapter;
@@ -46,10 +46,10 @@ pub struct FactoryState<N> {
 	num: u32,
 }
 
-type Number = <<node_primitives::Block as BlockT>::Header as HeaderT>::Number;
+type Number = <<plasm_primitives::Block as BlockT>::Header as HeaderT>::Number;
 
 impl<Number> FactoryState<Number> {
-	fn build_extra(index: node_primitives::Index, phase: u64) -> node_runtime::SignedExtra {
+	fn build_extra(index: plasm_primitives::Index, phase: u64) -> plasm_runtime::SignedExtra {
 		(
 			system::CheckVersion::new(),
 			system::CheckGenesis::new(),
@@ -62,12 +62,12 @@ impl<Number> FactoryState<Number> {
 }
 
 impl RuntimeAdapter for FactoryState<Number> {
-	type AccountId = node_primitives::AccountId;
-	type Balance = node_primitives::Balance;
-	type Block = node_primitives::Block;
+	type AccountId = plasm_primitives::AccountId;
+	type Balance = plasm_primitives::Balance;
+	type Block = plasm_primitives::Block;
 	type Phase = sr_primitives::generic::Phase;
 	type Secret = sr25519::Pair;
-	type Index = node_primitives::Index;
+	type Index = plasm_primitives::Index;
 
 	type Number = Number;
 

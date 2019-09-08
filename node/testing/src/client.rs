@@ -14,25 +14,25 @@
 // You should have received a copy of the GNU General Public License
 // along with Substrate.  If not, see <http://www.gnu.org/licenses/>.
 
-//! Utilites to build a `TestClient` for `node-runtime`.
+//! Utilites to build a `TestClient` for `plasm-runtime`.
 
 use sr_primitives::BuildStorage;
 
 /// Re-export test-client utilities.
 pub use test_client::*;
 
-/// Call executor for `node-runtime` `TestClient`.
-pub type Executor = substrate_executor::NativeExecutor<node_executor::Executor>;
+/// Call executor for `plasm-runtime` `TestClient`.
+pub type Executor = substrate_executor::NativeExecutor<plasm_executor::Executor>;
 
 /// Default backend type.
-pub type Backend = client_db::Backend<node_primitives::Block>;
+pub type Backend = client_db::Backend<plasm_primitives::Block>;
 
 /// Test client type.
 pub type Client = client::Client<
 	Backend,
 	client::LocalCallExecutor<Backend, Executor>,
-	node_primitives::Block,
-	node_runtime::RuntimeApi,
+	plasm_primitives::Block,
+	plasm_runtime::RuntimeApi,
 >;
 
 /// Genesis configuration parameters for `TestClient`.

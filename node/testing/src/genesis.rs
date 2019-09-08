@@ -18,11 +18,11 @@
 
 use crate::keyring::*;
 use keyring::{Ed25519Keyring, Sr25519Keyring};
-use node_runtime::{
+use plasm_runtime::{
 	GenesisConfig, BalancesConfig, SessionConfig, StakingConfig, SystemConfig,
 	GrandpaConfig, IndicesConfig, ContractsConfig, WASM_BINARY,
 };
-use node_runtime::constants::currency::*;
+use plasm_runtime::constants::currency::*;
 use primitives::ChangesTrieConfiguration;
 use sr_primitives::Perbill;
 

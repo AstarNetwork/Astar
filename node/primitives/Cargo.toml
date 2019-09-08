@@ -1,6 +1,6 @@
 [package]
-name = "node-primitives"
-version = "2.0.0"
+name = "plasm-primitives"
+version = "0.4.9"
 authors = ["Takumi Yamashita <takumi@staked.co.jp>"]
 edition = "2018"
 
