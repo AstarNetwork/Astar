@@ -23,6 +23,7 @@ use predicate::{
     traits::Predicate,
 };
 use primitives::{default::*, events::*, traits};
+use scale::Decode;
 
 contract! {
     #![env = ink_core::env::DefaultSrmlTypes]
@@ -64,9 +65,11 @@ contract! {
         ///
         /// deposited_range_id is end of deposited_ranges.
         pub(external) fn start_checkpoint(&mut self,
-            checkpoint: Checkpoint<AccountId>,
-            inclusion_proof: commitment::InclusionProof<RangeNumber>,
-            deposited_range_id: RangeNumber) {
+            checkpoint: Vec<u8>,
+            inclusion_proof: Vec<u8>,
+            deposited_range_id: u128) {
+            let checkpoint = Checkpoint::<AccountId>::decode(&mut &checkpoint[..]).expect("expect Checkpoint checkpoint");
+            let inclusion_proof = commitment::InclusionProof::<RangeNumber>::decode(&mut &inclusion_proof[..]).expect("expect inclusionProof inclusion_proof");
             match self.predicate.deposit().start_checkpoint(env, checkpoint, inclusion_proof, deposited_range_id) {
                 Ok(result) => env.emit(result),
                 Err(err) => env.println(err),
@@ -81,8 +84,10 @@ contract! {
         /// invalid checkpoints can be initiated. This method allows the rightful owner to
         /// demonstrate that the initiated `older_checkpoint` is invalid and must be deleted.
         pub(external) fn delete_exit_outdated(&mut self,
-            older_exit: Checkpoint<AccountId>,
-            newer_checkpoint: Checkpoint<AccountId>) {
+            older_exit: Vec<u8>,
+            newer_checkpoint: Vec<u8>) {
+            let older_exit = Checkpoint::<AccountId>::decode(&mut &older_exit[..]).expect("expect Checkpoint<AccountId> older_exit.");
+            let newer_checkpoint = Checkpoint::<AccountId>::decode(&mut &newer_checkpoint[..]).expect("expect <AccountId> newer_exit.");
             if let Err(err) = self.predicate.deposit().delete_exit_outdated(env, older_exit, newer_checkpoint) {
                 env.println(err);
             }
@@ -96,7 +101,8 @@ contract! {
         /// they may checkpoint it and attempt a malicious exit.
         /// To prevent this, the valid owner must checkpoint their unspent state,
         /// exit it, and create a challenge on the invalid checkpoint.
-        pub(external) fn challenge_checkpoint(&mut self, challenge: Challenge<AccountId>) {
+        pub(external) fn challenge_checkpoint(&mut self, challenge: Vec<u8>) {
+        	let challenge = Challenge::<AccountId>::decode(&mut &challenge[..]).expect("expect Challenge<AccontId> challenge");
             if let Err(err) = self.predicate.deposit().challenge_checkpoint(env, challenge) {
                 env.println(err);
             }
@@ -107,7 +113,8 @@ contract! {
         /// Anyone can exit a prior state which was since spent and use it to challenge despite it being deprecated.
         /// To remove this invalid challenge, the challenged checkpointer may demonstrate the exit is deprecated,
         /// deleting it, and then call this method to remove the challenge.
-        pub(external) fn remove_challenge(&mut self, challenge: Challenge<AccountId>) {
+        pub(external) fn remove_challenge(&mut self, challenge: Vec<u8>) {
+        	let challenge = Challenge::<AccountId>::decode(&mut &challenge[..]).expect("challenge Challenge<AccountId> challenge");
             if let Err(err) = self.predicate.deposit().remove_challenge(env, challenge) {
                 env.println(err);
             }
@@ -118,7 +125,8 @@ contract! {
         /// For a user to redeem state from the plasma chain onto the main chain,
         /// they must checkpoint it and respond to all challenges on the checkpoint,
         /// and await a `EXIT_PERIOD` to demonstrate that the checkpointed subrange has not been deprecated. This is the method which starts the latter process on a given checkpoint.
-        pub(external) fn start_exit(&mut self,	checkpoint: Checkpoint<AccountId>){
+        pub(external) fn start_exit(&mut self,	checkpoint: Vec<u8>){
+        	let checkpoint = Checkpoint::<AccountId>::decode(&mut &checkpoint[..]).expect("expect Checkpoint<AccountId> checkpoint");
             match self.predicate.start_exit(env, checkpoint) {
                 Ok(result) => env.emit(result),
                 Err(err) => env.println(err),
@@ -127,10 +135,14 @@ contract! {
 
         /// Allows the predicate address to cancel an exit which it determines is deprecated.
         pub(external) fn deprecate_exit(&mut self,
-            deprecated_exit: Checkpoint<AccountId>,
-            transaction: Transaction<TransactionBody>,
-            witness: Signature,
-            post_state: StateUpdate<AccountId>) {
+            deprecated_exit: Vec<u8>,
+            transaction: Vec<u8>,
+            witness: Vec<u8>,
+            post_state: Vec<u8>) {
+            let deprecated_exit = Checkpoint::<AccountId>::decode(&mut &deprecated_exit[..]).expect("expect Checkpoint<AccountId> deprecated_exit");
+            let transaction = Transaction::<TransactionBody>::decode(&mut &transaction[..]).expect("expect Transaction<TransactionBody> transaction");
+            let witness = Signature::decode(&mut &witness[..]).expect("expect Signature witness");
+            let post_state = StateUpdate::<AccountId>::decode(&mut &post_state[..]).expect("expect StateUpdate<AccountId> post_state");
             if let Err(err) = self.predicate.deprecate_exit(env, deprecated_exit, transaction, witness, post_state) {
                 env.println(err);
             }
@@ -138,8 +150,9 @@ contract! {
 
         /// Finalizes an exit that has passed its exit period and has not been successfully challenged.
         pub(external) fn finalize_exit(&mut self,
-            checkpoint: Checkpoint<AccountId>,
-            deposited_range_id: RangeNumber) {
+            checkpoint: Vec<u8>,
+            deposited_range_id: u128) {
+            let checkpoint = Checkpoint::<AccountId>::decode(&mut &checkpoint[..]).expect("expect Checkpoint<AccountId> checkpoint");
             match self.predicate.finalize_exit(env, checkpoint, deposited_range_id) {
                 Ok(result) => env.emit(result),
                 Err(err) => env.println(err),
@@ -160,12 +173,11 @@ contract! {
     }
 }
 
-type AccountId = <ContractEnv<DefaultSrmlTypes> as EnvTypes>::AccountId;
 pub trait EmitEventExt {
     /// Emits the given event.
     fn emit<E>(&self, event: E)
     where
-        E: Into<public::Event<AccountId>>,
+        E: Into<public::Event<<ContractEnv<DefaultSrmlTypes> as EnvTypes>::AccountId>>,
     {
         use scale::Encode as _;
         <ink_core::env::ContractEnv<DefaultSrmlTypes> as ink_core::env::Env>::deposit_raw_event(
@@ -180,7 +192,6 @@ impl EmitEventExt for ink_model::EnvHandler<ink_core::env::ContractEnv<DefaultSr
 #[cfg(all(test, feature = "test-env"))]
 mod tests {
     use super::*;
-    use scale::Decode;
 
     fn get_token_address() -> AccountId {
         AccountId::decode(&mut &[2u8; 32].to_vec()[..]).expect("account id decoded.")

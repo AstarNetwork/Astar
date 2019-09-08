@@ -10,6 +10,7 @@ use ink_core::{
 use primitives::{default::*, Verify};
 
 ink_model::state! {
+	#[cfg_attr(feature = "ink-generate-abi", derive(type_metadata::Metadata))]
     pub struct Deposit {
     	/// Address of the commitment contract where block headers for the plasma chain are being published.
         COMMITMENT: commitment::default::Commitment,

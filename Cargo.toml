@@ -3,7 +3,7 @@ authors = ['Takumi Yamashita <takumi@staked.co.jp>']
 build = 'build.rs'
 edition = '2018'
 name = 'plasm'
-version = '0.5.0'
+version = '0.4.9'
 
 [dependencies]
 cli = { package = "node-cli", path = "node/cli" }
@@ -33,13 +33,9 @@ members = [
 	"contracts/cash",
 	"contracts/cash/.ink/abi_gen",
 	"contracts/commitment",
-	"contracts/commitment/.ink/abi_gen",
 	"contracts/deposit",
-    "contracts/deposit/.ink/abi_gen",
 	"contracts/predicate",
-    "contracts/predicate/.ink/abi_gen",
 	"contracts/primitives",
-	"contracts/primitives/.ink/abi_gen",
 ]
 
 exclude = [

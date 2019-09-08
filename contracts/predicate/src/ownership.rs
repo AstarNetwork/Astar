@@ -15,6 +15,7 @@ use primitives::default::*;
 
 ink_model::state! {
 	/// Ownership predicate Contract.
+	#[cfg_attr(feature = "ink-generate-abi", derive(type_metadata::Metadata))]
     pub struct Predicate {
         // deposit contract
         DEPOSIT: deposit::default::Deposit,

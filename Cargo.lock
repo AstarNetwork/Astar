@@ -476,15 +476,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "commitment-abi-gen"
-version = "0.1.0"
-dependencies = [
- "commitment 0.1.0",
- "serde 1.0.100 (registry+https://github.com/rust-lang/crates.io-index)",
- "serde_json 1.0.40 (registry+https://github.com/rust-lang/crates.io-index)",
-]
-
-[[package]]
 name = "const-random"
 version = "0.1.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -664,15 +655,6 @@ dependencies = [
  "parity-scale-codec 1.0.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "primitives 0.1.0",
  "type-metadata 0.1.0 (git+https://github.com/type-metadata/type-metadata.git)",
-]
-
-[[package]]
-name = "deposit-abi-gen"
-version = "0.1.0"
-dependencies = [
- "deposit 0.1.0",
- "serde 1.0.100 (registry+https://github.com/rust-lang/crates.io-index)",
- "serde_json 1.0.40 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -2325,7 +2307,7 @@ dependencies = [
 
 [[package]]
 name = "node-cli"
-version = "2.0.0"
+version = "0.4.9"
 dependencies = [
  "exit-future 0.1.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "futures 0.1.29 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -3045,11 +3027,11 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "plasm"
-version = "0.5.0"
+version = "0.4.9"
 dependencies = [
  "ctrlc 3.1.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "futures 0.1.29 (registry+https://github.com/rust-lang/crates.io-index)",
- "node-cli 2.0.0",
+ "node-cli 0.4.9",
  "vergen 3.0.4 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
@@ -3071,15 +3053,6 @@ dependencies = [
  "parity-scale-codec 1.0.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "primitives 0.1.0",
  "type-metadata 0.1.0 (git+https://github.com/type-metadata/type-metadata.git)",
-]
-
-[[package]]
-name = "predicate-abi-gen"
-version = "0.1.0"
-dependencies = [
- "predicate 0.1.0",
- "serde 1.0.100 (registry+https://github.com/rust-lang/crates.io-index)",
- "serde_json 1.0.40 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -3116,15 +3089,6 @@ dependencies = [
  "num-traits 0.2.8 (registry+https://github.com/rust-lang/crates.io-index)",
  "parity-scale-codec 1.0.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "type-metadata 0.1.0 (git+https://github.com/type-metadata/type-metadata.git)",
-]
-
-[[package]]
-name = "primitives-abi-gen"
-version = "0.1.0"
-dependencies = [
- "primitives 0.1.0",
- "serde 1.0.100 (registry+https://github.com/rust-lang/crates.io-index)",
- "serde_json 1.0.40 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]

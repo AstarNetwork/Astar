@@ -15,6 +15,7 @@ state! {
     /// Each plasma chain MUST have at least one commitment contract.
     /// Commitment contracts hold the block headers for the plasma chain.
     /// Whenever the operator creates a new plasma block, they MUST publish this block to the commitment contract.
+    #[cfg_attr(feature = "ink-generate-abi", derive(type_metadata::Metadata))]
     pub struct Commitment {
         /// Block number of the most recently published plasma block.
         /// `uint256 public currentBlock;`
