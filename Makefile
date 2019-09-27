@@ -29,3 +29,7 @@ build-child-debian:
 .PHONY: push-child
 push-child:
 	docker push stakedtechnologies/plasm-child-node
+
+.PHONY: build-doc
+build-doc:
+	cargo doc --all --all-features --no-deps --open
