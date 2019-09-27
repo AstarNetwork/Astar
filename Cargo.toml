@@ -41,8 +41,4 @@ members = [
 exclude = [
 	"contracts/balances/.ink",
 	"contracts/cash/.ink",
-	"contracts/commitment/.ink",
-	"contracts/deposit/.ink",
-	"contracts/predicate/.ink",
-	"contracts/primitives/.ink",
 ]

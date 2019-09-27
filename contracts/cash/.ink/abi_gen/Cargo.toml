@@ -10,6 +10,6 @@ name = "cash-abi-gen"
 path = "main.rs"
 
 [dependencies]
-contract = { path = "../..", package = "cash", features = ["ink-generate-abi", "test-env"] }
+contract = { path = "../..", package = "cash", features = ["ink-generate-abi"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
