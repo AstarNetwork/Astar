@@ -52,5 +52,9 @@ ink-generate-abi = [
     "type-metadata",
     "ink_core/ink-generate-abi",
     "ink_lang/ink-generate-abi",
+    "predicate/ink-generate-abi",
+    "deposit/ink-generate-abi",
+    "commitment/ink-generate-abi",
+	"primitives/ink-generate-abi",
 ]
 ink-as-dependency = []

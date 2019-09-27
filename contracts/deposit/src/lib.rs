@@ -30,8 +30,8 @@ type BlockNumber = <ContractEnv<DefaultSrmlTypes> as EnvTypes>::BlockNumber;
 type Hash = <ContractEnv<DefaultSrmlTypes> as EnvTypes>::Hash;
 
 /// Status of a particular checkpoint attempt.
-#[derive(Clone, scale::Encode, scale::Decode, PartialEq, Eq)]
-#[cfg_attr(not(no_std), derive(Debug))]
+#[derive(Debug, Clone, scale::Encode, scale::Decode, PartialEq, Eq)]
+#[cfg_attr(feature = "ink-generate-abi", derive(type_metadata::Metadata))]
 pub struct CheckpointStatus {
 	/// Ethereum block number until which the checkpoint can still be challenged.
     challengeable_until: BlockNumber,

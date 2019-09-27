@@ -29,7 +29,7 @@ contract! {
     #![env = ink_core::env::DefaultSrmlTypes]
 
     /// Cash Plasma Standard Contract.
-    struct Cash {
+	struct Cash {
         /// The current state of our flag.
         predicate: predicate::ownership::Predicate,
     }
