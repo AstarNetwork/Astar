@@ -27,6 +27,25 @@ state! {
     }
 }
 
+#[cfg(feature = "ink-generate-abi")]
+use ink_abi::{HasLayout, LayoutField, LayoutStruct, StorageLayout};
+#[cfg(feature = "ink-generate-abi")]
+use type_metadata::Metadata;
+
+#[cfg(feature = "ink-generate-abi")]
+impl HasLayout for Commitment {
+    fn layout(&self) -> StorageLayout {
+        LayoutStruct::new(
+            Self::meta_type(),
+            vec![
+                LayoutField::of("current_block", &self.current_block),
+                LayoutField::of("blocks", &self.blocks),
+            ],
+        )
+        .into()
+    }
+}
+
 pub fn default_hash(data: &[u8]) -> Hash {
     Hash::decode(&mut &hash::keccak256(data)[..]).expect("keccak256 error")
 }

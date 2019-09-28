@@ -14,11 +14,27 @@ use ink_core::{
 use primitives::default::*;
 
 ink_model::state! {
-	/// Ownership predicate Contract.
-	#[cfg_attr(feature = "ink-generate-abi", derive(type_metadata::Metadata))]
+    /// Ownership predicate Contract.
+    #[cfg_attr(feature = "ink-generate-abi", derive(type_metadata::Metadata))]
     pub struct Predicate {
         // deposit contract
         DEPOSIT: deposit::default::Deposit,
+    }
+}
+
+#[cfg(feature = "ink-generate-abi")]
+use ink_abi::{HasLayout, LayoutField, LayoutStruct, StorageLayout};
+#[cfg(feature = "ink-generate-abi")]
+use type_metadata::Metadata;
+
+#[cfg(feature = "ink-generate-abi")]
+impl HasLayout for Predicate {
+    fn layout(&self) -> StorageLayout {
+        LayoutStruct::new(
+            Self::meta_type(),
+            vec![LayoutField::of("DEPOSIT", &self.DEPOSIT)],
+        )
+        .into()
     }
 }
 
@@ -26,11 +42,11 @@ ink_model::state! {
 #[derive(Debug, Clone, PartialEq, Eq, scale::Encode, scale::Decode)]
 #[cfg_attr(feature = "ink-generate-abi", derive(type_metadata::Metadata))]
 pub struct TransactionBody {
-	// the state object that the owner desires to mutate to.
+    // the state object that the owner desires to mutate to.
     new_state: StateObject<AccountId>,
-	/// the minimum plasma blocknumber of the ownership StateUpdate s from which you are spending.
+    /// the minimum plasma blocknumber of the ownership StateUpdate s from which you are spending.
     origin_block: BlockNumber,
-	/// the maximum plasma blocknumber of the ownership StateUpdate s from which you are spending.
+    /// the maximum plasma blocknumber of the ownership StateUpdate s from which you are spending.
     max_block: BlockNumber,
 }
 impl ink_core::storage::Flush for TransactionBody {

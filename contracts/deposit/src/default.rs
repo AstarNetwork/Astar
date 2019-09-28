@@ -3,16 +3,13 @@
 
 use super::*;
 use commitment::traits::Commitment;
-use ink_core::{
-    memory::format,
-    storage,
-};
+use ink_core::{memory::format, storage};
 use primitives::{default::*, Verify};
 
 ink_model::state! {
-	#[cfg_attr(feature = "ink-generate-abi", derive(type_metadata::Metadata))]
+    #[cfg_attr(feature = "ink-generate-abi", derive(type_metadata::Metadata))]
     pub struct Deposit {
-    	/// Address of the commitment contract where block headers for the plasma chain are being published.
+        /// Address of the commitment contract where block headers for the plasma chain are being published.
         COMMITMENT: commitment::default::Commitment,
 
         /// Address of the ERC-20 token which this deposit contract custodies.
@@ -39,6 +36,32 @@ ink_model::state! {
 
         /// Mapping from the ID of a challenge to whether or not the challenge is currently active.
         challenges: storage::HashMap<Hash, bool>,
+    }
+}
+
+#[cfg(feature = "ink-generate-abi")]
+use ink_abi::{HasLayout, LayoutField, LayoutStruct, StorageLayout};
+#[cfg(feature = "ink-generate-abi")]
+use type_metadata::Metadata;
+
+#[cfg(feature = "ink-generate-abi")]
+impl HasLayout for Deposit {
+    fn layout(&self) -> StorageLayout {
+        LayoutStruct::new(
+            Self::meta_type(),
+            vec![
+                LayoutField::of("COMMITMENT", &self.COMMITMENT),
+                LayoutField::of("TOKEN_ADDRES", &self.TOKEN_ADDRES),
+                LayoutField::of("CHALLENGE_PERIOD", &self.CHALLENGE_PERIOD),
+                LayoutField::of("EXIT_PERIOD", &self.EXIT_PERIOD),
+                LayoutField::of("total_deposited", &self.total_deposited),
+                LayoutField::of("checkpoints", &self.checkpoints),
+                LayoutField::of("deposited_ranges", &self.deposited_ranges),
+                LayoutField::of("exit_redeemable_after", &self.exit_redeemable_after),
+                LayoutField::of("challenges", &self.challenges),
+            ],
+        )
+        .into()
     }
 }
 
@@ -525,7 +548,7 @@ mod tests {
         Key,
     };
     use ink_model::EnvHandler;
-	use scale::{Encode, Decode};
+    use scale::{Decode, Encode};
 
     #[cfg(all(test, feature = "test-env"))]
     extern crate commitment;

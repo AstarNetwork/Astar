@@ -5,7 +5,7 @@ authors = ['Takumi Yamashita <takumi@staked.co.jp>']
 edition = "2018"
 
 [dependencies]
-ink_abi = { git = "https://github.com/paritytech/ink", package = "ink_abi", default-features = false, optional = true }
+ink_abi = { git = "https://github.com/paritytech/ink", package = "ink_abi", default-features = false, features = ["derive"], optional = true }
 ink_core = { git = "https://github.com/paritytech/ink", package = "ink_core", default-features = false }
 ink_model = { git = "https://github.com/paritytech/ink", package = "ink_model", default-features = false }
 ink_lang = { git = "https://github.com/paritytech/ink", package = "ink_lang", default-features = false }
@@ -52,5 +52,10 @@ ink-generate-abi = [
     "type-metadata",
     "ink_core/ink-generate-abi",
     "ink_lang/ink-generate-abi",
+
+    "predicate/ink-generate-abi",
+    "deposit/ink-generate-abi",
+    "commitment/ink-generate-abi",
+	"primitives/ink-generate-abi",
 ]
 ink-as-dependency = []
