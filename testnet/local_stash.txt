@@ -1,0 +1,4 @@
+Secret phrase `hole math party slam knee mobile flat dance exercise economy chuckle fossil` is account:
+  Secret seed: 0x8e23c81a8afb8939f038e4fc5a2a204157f36f088ada52cca122db0dce051aa1
+  Public key (hex): 0x086a9347dfb0536c2382936c65e82a412189131669455f347c41aac2a7b3041e
+  Address (SS58): 5CFju8um8d5nPdq6Uqw6sowHNhPQzgSyTe2zz7CwX3VTrTGN
