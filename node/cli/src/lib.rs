@@ -158,7 +158,7 @@ pub fn run<I, T, E>(args: I, exit: E, version: cli::VersionInfo) -> error::Resul
 	T: Into<std::ffi::OsString> + Clone,
 	E: IntoExit,
 {
-	match parse_and_prepare::<CustomSubcommands, NoCustom, _>(&version, "substrate-node", args) {
+	match parse_and_prepare::<CustomSubcommands, NoCustom, _>(&version, "plasm-node", args) {
 		ParseAndPrepare::Run(cmd) => cmd.run::<(), _, _, _, _>(load_spec, exit,
 		|exit, _cli_args, _custom_args, config| {
 			info!("{}", version.name);

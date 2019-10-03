@@ -62,7 +62,7 @@ impl Convert<u128, Balance> for CurrencyToVoteHandler {
 pub struct WeightToFee;
 impl Convert<Weight, Balance> for WeightToFee {
 	fn convert(x: Weight) -> Balance {
-		// substrate-node a weight of 10_000 (smallest non-zero weight) to be mapped to 10^7 units of
+		// plasm-node a weight of 10_000 (smallest non-zero weight) to be mapped to 10^7 units of
 		// fees, hence:
 		Balance::from(x).saturating_mul(1_000)
 	}

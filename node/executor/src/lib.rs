@@ -918,7 +918,7 @@ mod tests {
 
 	#[test]
 	fn transaction_fee_is_correct_ultimate() {
-		// This uses the exact values of substrate-node.
+		// This uses the exact values of plasm-node.
 		//
 		// weight of transfer call as of now: 1_000_000
 		// if weight of the cheapest weight would be 10^7, this would be 10^9, which is:
