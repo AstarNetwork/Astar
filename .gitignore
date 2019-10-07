@@ -141,3 +141,6 @@ Cargo.lock
 
 ### build-for-debian ###
 **/target-debian/**
+
+# Testnet keys
+.keys
