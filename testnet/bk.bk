@@ -19,6 +19,8 @@
       },
       "indices": {
         "ids": [
+          "5ELomezsSJhtedP3cFD4zqNDVvvwmdp6PpywACWEq1UP3fgq",
+          "5DwNtWotLKncBq1EYJSd74s4tf5fH8McK5XMoG8AyvwdFor6",
           "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY",
           "5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty",
           "5FLSigC9HGRKVhB9FiEo4Y3koPsNmBmLJbpXg2mp1hXcS59Y",
@@ -35,6 +37,14 @@
       },
       "balances": {
         "balances": [
+          [
+            "5ELomezsSJhtedP3cFD4zqNDVvvwmdp6PpywACWEq1UP3fgq",
+            1000000000000000000000
+          ],
+          [
+            "5DwNtWotLKncBq1EYJSd74s4tf5fH8McK5XMoG8AyvwdFor6",
+            1000000000000000000000
+          ],
           [
             "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY",
             1000000000000000000000
@@ -90,16 +100,15 @@
         "validatorCount": 1,
         "minimumValidatorCount": 1,
         "invulnerables": [
-          "5GNJqTPyNqANBkUVMN1LPPrxXnFouWXoe2wNSmmEoLctxiZY",
-          "5HpG9w8EBLe5XCrbczpwq5TSXvedjrBGCwqxK1iQ7qUsSWFc"
+          "5ELomezsSJhtedP3cFD4zqNDVvvwmdp6PpywACWEq1UP3fgq"
         ],
         "currentEra": 0,
         "forceEra": "NotForcing",
         "slashRewardFraction": 100000000,
         "stakers": [
           [
-            "5GNJqTPyNqANBkUVMN1LPPrxXnFouWXoe2wNSmmEoLctxiZY",
-            "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY",
+            "5ELomezsSJhtedP3cFD4zqNDVvvwmdp6PpywACWEq1UP3fgq",
+            "5ELomezsSJhtedP3cFD4zqNDVvvwmdp6PpywACWEq1UP3fgq",
             10000000000000000,
             "Validator"
           ]
@@ -108,11 +117,11 @@
       "session": {
         "keys": [
           [
-            "5GNJqTPyNqANBkUVMN1LPPrxXnFouWXoe2wNSmmEoLctxiZY",
+            "5ELomezsSJhtedP3cFD4zqNDVvvwmdp6PpywACWEq1UP3fgq",
             {
-              "grandpa": "5FA9nQDVg267DEd8m1ZypXLBnvN7SFxYwV7ndqSYGiN9TTpu",
-              "babe": "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY",
-              "im_online": "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY"
+              "grandpa": "5GdhABzAQBQYdEFw31veGtjoHbtSUUxTkte53ZUGuUDu73Ra",
+              "babe": "5ELomezsSJhtedP3cFD4zqNDVvvwmdp6PpywACWEq1UP3fgq",
+              "im_online": "5ELomezsSJhtedP3cFD4zqNDVvvwmdp6PpywACWEq1UP3fgq"
             }
           ]
         ]
@@ -204,7 +213,7 @@
         "gasPrice": 1000000000
       },
       "sudo": {
-        "key": "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY"
+        "key": "5ELomezsSJhtedP3cFD4zqNDVvvwmdp6PpywACWEq1UP3fgq"
       },
       "imOnline": {
         "keys": []
