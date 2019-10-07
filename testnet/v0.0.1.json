@@ -2,14 +2,9 @@
   "name": "Plasm Testnet",
   "id": "plasm_testnet",
   "bootNodes": [
-    "/ip4/3.114.90.94/tcp/30333/p2p/QmWYQrMn2ng3LBY4ErpdayzX8FatjNFPs6BBA92y69PgSr"
+    "/ip4/3.114.90.94/tcp/30333/p2p/QmTVUeF2fTe9m8MXw6EGihbvPzDpRm5sJbFGsj6WuagvJu"
   ],
-  "telemetryEndpoints": [
-    [
-      "wss://telemetry.polkadot.io/submit/",
-      0
-    ]
-  ],
+  "telemetryEndpoints": null,
   "protocolId": "prm",
   "consensusEngine": null,
   "properties": {
@@ -27,10 +22,10 @@
       },
       "indices": {
         "ids": [
-          "5FHjzWNXr8PmNBNcB5ZmWxoYa9rV1YKVeK42nSUdShfNAeWv",
-          "5HU2UehzR4hmqVS2HMcsXqnZgnav5yzviuUu1rAvx8Jom7qz",
-          "5DqiGMSyDdJ1zTBAfQNfFAS8U24iFkBPVdasCNdDjYai84Tf",
-          "5Di4t9XNkcRQnvsk5iegxwsrgR7dYKKWdJkfkadsFdimoC8o",
+          "5ELomezsSJhtedP3cFD4zqNDVvvwmdp6PpywACWEq1UP3fgq",
+          "5DwNtWotLKncBq1EYJSd74s4tf5fH8McK5XMoG8AyvwdFor6",
+          "5GLQu9iyhRHDAHgCd8yFDD3dqFkxn4z8uwEwK8YyYa2GBTUu",
+          "5EvzqUdvcifpT9oevGXy3DRqLB9CL6ptWdpAQtNt1hAGJMP1",
           "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY",
           "5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty",
           "5FLSigC9HGRKVhB9FiEo4Y3koPsNmBmLJbpXg2mp1hXcS59Y",
@@ -40,27 +35,23 @@
       "balances": {
         "balances": [
           [
-            "5FHjzWNXr8PmNBNcB5ZmWxoYa9rV1YKVeK42nSUdShfNAeWv",
+            "5ELomezsSJhtedP3cFD4zqNDVvvwmdp6PpywACWEq1UP3fgq",
             1000000000000000000000
           ],
           [
-            "5HU2UehzR4hmqVS2HMcsXqnZgnav5yzviuUu1rAvx8Jom7qz",
+            "5DwNtWotLKncBq1EYJSd74s4tf5fH8McK5XMoG8AyvwdFor6",
             1000000000000000000000
           ],
           [
-            "5DqiGMSyDdJ1zTBAfQNfFAS8U24iFkBPVdasCNdDjYai84Tf",
+            "5GLQu9iyhRHDAHgCd8yFDD3dqFkxn4z8uwEwK8YyYa2GBTUu",
             1000000000000000000000
           ],
           [
-            "5Di4t9XNkcRQnvsk5iegxwsrgR7dYKKWdJkfkadsFdimoC8o",
+            "5EvzqUdvcifpT9oevGXy3DRqLB9CL6ptWdpAQtNt1hAGJMP1",
             1000000000000000000000
           ],
           [
             "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY",
-            1000000000000000000000
-          ],
-          [
-            "5HU2UehzR4hmqVS2HMcsXqnZgnav5yzviuUu1rAvx8Jom7qz",
             1000000000000000000000
           ],
           [
@@ -79,25 +70,18 @@
         "vesting": []
       },
       "staking": {
-        "validatorCount": 2,
+        "validatorCount": 1,
         "minimumValidatorCount": 1,
         "invulnerables": [
-          "5HU2UehzR4hmqVS2HMcsXqnZgnav5yzviuUu1rAvx8Jom7qz",
-          "5Di4t9XNkcRQnvsk5iegxwsrgR7dYKKWdJkfkadsFdimoC8o"
+          "5DwNtWotLKncBq1EYJSd74s4tf5fH8McK5XMoG8AyvwdFor6"
         ],
         "currentEra": 0,
         "forceEra": "NotForcing",
         "slashRewardFraction": 100000000,
         "stakers": [
           [
-            "5HU2UehzR4hmqVS2HMcsXqnZgnav5yzviuUu1rAvx8Jom7qz",
-            "5FHjzWNXr8PmNBNcB5ZmWxoYa9rV1YKVeK42nSUdShfNAeWv",
-            10000000000000000,
-            "Validator"
-          ],
-          [
-            "5Di4t9XNkcRQnvsk5iegxwsrgR7dYKKWdJkfkadsFdimoC8o",
-            "5DqiGMSyDdJ1zTBAfQNfFAS8U24iFkBPVdasCNdDjYai84Tf",
+            "5DwNtWotLKncBq1EYJSd74s4tf5fH8McK5XMoG8AyvwdFor6",
+            "5ELomezsSJhtedP3cFD4zqNDVvvwmdp6PpywACWEq1UP3fgq",
             10000000000000000,
             "Validator"
           ]
@@ -106,19 +90,11 @@
       "session": {
         "keys": [
           [
-            "5HU2UehzR4hmqVS2HMcsXqnZgnav5yzviuUu1rAvx8Jom7qz",
+            "5DwNtWotLKncBq1EYJSd74s4tf5fH8McK5XMoG8AyvwdFor6",
             {
-              "grandpa": "5GvnaPJzBHMvCpHEn5XvS1vbQT5XPKrf5JSyfmhBCSTmT1wD",
-              "babe": "5FHjzWNXr8PmNBNcB5ZmWxoYa9rV1YKVeK42nSUdShfNAeWv",
-              "im_online": "5FHjzWNXr8PmNBNcB5ZmWxoYa9rV1YKVeK42nSUdShfNAeWv"
-            }
-          ],
-          [
-            "5DqiGMSyDdJ1zTBAfQNfFAS8U24iFkBPVdasCNdDjYai84Tf",
-            {
-              "grandpa": "5F8q5FN4btMa85pfQhDSZip7uhhsDZ7MFLMUzY2CfBHwgSVt",
-              "babe": "5Di4t9XNkcRQnvsk5iegxwsrgR7dYKKWdJkfkadsFdimoC8o",
-              "im_online": "5Di4t9XNkcRQnvsk5iegxwsrgR7dYKKWdJkfkadsFdimoC8o"
+              "grandpa": "5GdhABzAQBQYdEFw31veGtjoHbtSUUxTkte53ZUGuUDu73Ra",
+              "babe": "5ELomezsSJhtedP3cFD4zqNDVvvwmdp6PpywACWEq1UP3fgq",
+              "im_online": "5ELomezsSJhtedP3cFD4zqNDVvvwmdp6PpywACWEq1UP3fgq"
             }
           ]
         ]
@@ -137,14 +113,6 @@
         "termDuration": 1000000,
         "desiredSeats": 4,
         "members": [
-          [
-            "5FHjzWNXr8PmNBNcB5ZmWxoYa9rV1YKVeK42nSUdShfNAeWv",
-            1000000
-          ],
-          [
-            "5DqiGMSyDdJ1zTBAfQNfFAS8U24iFkBPVdasCNdDjYai84Tf",
-            1000000
-          ],
           [
             "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY",
             1000000
@@ -194,7 +162,7 @@
         "gasPrice": 1000000000
       },
       "sudo": {
-        "key": "5FHjzWNXr8PmNBNcB5ZmWxoYa9rV1YKVeK42nSUdShfNAeWv"
+        "key": "5ELomezsSJhtedP3cFD4zqNDVvvwmdp6PpywACWEq1UP3fgq"
       },
       "imOnline": {
         "keys": []

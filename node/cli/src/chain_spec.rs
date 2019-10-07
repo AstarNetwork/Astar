@@ -1,21 +1,3 @@
-// Copyright 2018-2019 Parity Technologies (UK) Ltd.
-// This file is part of Substrate.
-
-// Substrate is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-
-// Substrate is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-
-// You should have received a copy of the GNU General Public License
-// along with Substrate.  If not, see <http://www.gnu.org/licenses/>.
-
-//! Substrate chain configurations.
-
 use babe_primitives::AuthorityId as BabeId;
 use grandpa_primitives::AuthorityId as GrandpaId;
 use hex_literal::hex;
@@ -286,14 +268,14 @@ pub fn testnet_genesis(
 ) -> GenesisConfig {
     let endowed_accounts: Vec<AccountId> = endowed_accounts.unwrap_or_else(|| {
 		vec![
-			get_from_phrase::<AccountId>("embrace depart solution acoustic shift speed trap include member attitude photo tobacco"),
+//			get_from_phrase::<AccountId>("embrace depart solution acoustic shift speed trap include member attitude photo tobacco"),
 			get_from_seed::<AccountId>("Alice"),
 			get_from_seed::<AccountId>("Bob"),
 			get_from_seed::<AccountId>("Charlie"),
 			get_from_seed::<AccountId>("Dave"),
 			get_from_seed::<AccountId>("Eve"),
 			get_from_seed::<AccountId>("Ferdie"),
-			get_from_phrase::<AccountId>("hole math party slam knee mobile flat dance exercise economy chuckle fossil"),
+//			get_from_phrase::<AccountId>("hole math party slam knee mobile flat dance exercise economy chuckle fossil"),
 			get_from_seed::<AccountId>("Alice//stash"),
 			get_from_seed::<AccountId>("Bob//stash"),
 			get_from_seed::<AccountId>("Charlie//stash"),
@@ -337,7 +319,7 @@ pub fn testnet_genesis(
         staking: Some(StakingConfig {
             current_era: 0,
             minimum_validator_count: 1,
-            validator_count: 3,
+            validator_count: 2,
             stakers: initial_authorities
                 .iter()
                 .map(|x| (x.0.clone(), x.1.clone(), STASH, StakerStatus::Validator))
@@ -416,12 +398,12 @@ pub fn development_config() -> ChainSpec {
 fn local_testnet_genesis() -> GenesisConfig {
     testnet_genesis(
 		vec![
-			get_authority_keys_from_phrase("embrace depart solution acoustic shift speed trap include member attitude photo tobacco",
-										   "hole math party slam knee mobile flat dance exercise economy chuckle fossil"),
+			//get_authority_keys_from_phrase("embrace depart solution acoustic shift speed trap include member attitude photo tobacco","hole math party slam knee mobile flat dance exercise economy chuckle fossil"),
 			get_authority_keys_from_seed("Alice"),
 			get_authority_keys_from_seed("Bob"),
 		],
-		get_from_phrase::<AccountId>("embrace depart solution acoustic shift speed trap include member attitude photo tobacco"),
+		get_from_seed::<AccountId>("Alice"),
+//		get_from_phrase::<AccountId>("embrace depart solution acoustic shift speed trap include member attitude photo tobacco"),
 		None,
 		false,
 	)
