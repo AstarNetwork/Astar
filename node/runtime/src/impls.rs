@@ -5,15 +5,8 @@ use sr_primitives::weights::{Weight, WeightMultiplier};
 use sr_primitives::traits::{Convert, Saturating};
 use sr_primitives::Fixed64;
 use support::traits::{OnUnbalanced, Currency};
-use crate::{Balances, Authorship, MaximumBlockWeight, NegativeImbalance};
+use crate::{Balances, MaximumBlockWeight, NegativeImbalance};
 use crate::constants::fee::TARGET_BLOCK_FULLNESS;
-
-pub struct Author;
-impl OnUnbalanced<NegativeImbalance> for Author {
-	fn on_unbalanced(amount: NegativeImbalance) {
-		Balances::resolve_creating(&Authorship::author(), amount);
-	}
-}
 
 /// Struct that handles the conversion of Balance -> `u64`. This is used for staking's election
 /// calculation.

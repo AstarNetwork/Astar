@@ -6,10 +6,8 @@ pub use plasm_primitives::{AccountId, Balance};
 use plasm_runtime::constants::{currency::*, time::*};
 pub use plasm_runtime::GenesisConfig;
 use plasm_runtime::{
-    AuthorityDiscoveryConfig, BabeConfig, BalancesConfig, ContractsConfig, CouncilConfig,
-    DemocracyConfig, ElectionsConfig, GrandpaConfig, ImOnlineConfig, IndicesConfig, SessionConfig,
-    SessionKeys, StakerStatus, StakingConfig, SudoConfig, SystemConfig, TechnicalCommitteeConfig,
-    WASM_BINARY,
+    BabeConfig, BalancesConfig, ContractsConfig, GrandpaConfig, IndicesConfig, SudoConfig,
+    SystemConfig, WASM_BINARY,
 };
 use primitives::{crypto::UncheckedInto, Pair, Public};
 use sr_primitives::Perbill;
@@ -24,14 +22,6 @@ pub type ChainSpec = substrate_service::ChainSpec<GenesisConfig>;
 /// Flaming Fir testnet generator
 pub fn flaming_fir_config() -> Result<ChainSpec, String> {
     ChainSpec::from_json_bytes(&include_bytes!("../res/flaming-fir.json")[..])
-}
-
-fn session_keys(grandpa: GrandpaId, babe: BabeId, im_online: ImOnlineId) -> SessionKeys {
-    SessionKeys {
-        grandpa,
-        babe,
-        im_online,
-    }
 }
 
 fn staging_testnet_config_genesis() -> GenesisConfig {
@@ -142,44 +132,6 @@ fn staging_testnet_config_genesis() -> GenesisConfig {
                 .chain(initial_authorities.iter().map(|x| x.0.clone()))
                 .collect::<Vec<_>>(),
         }),
-        session: Some(SessionConfig {
-            keys: initial_authorities
-                .iter()
-                .map(|x| {
-                    (
-                        x.0.clone(),
-                        session_keys(x.2.clone(), x.3.clone(), x.4.clone()),
-                    )
-                })
-                .collect::<Vec<_>>(),
-        }),
-        staking: Some(StakingConfig {
-            current_era: 0,
-            validator_count: 7,
-            minimum_validator_count: 4,
-            stakers: initial_authorities
-                .iter()
-                .map(|x| (x.0.clone(), x.1.clone(), STASH, StakerStatus::Validator))
-                .collect(),
-            invulnerables: initial_authorities.iter().map(|x| x.0.clone()).collect(),
-            slash_reward_fraction: Perbill::from_percent(10),
-            ..Default::default()
-        }),
-        democracy: Some(DemocracyConfig::default()),
-        collective_Instance1: Some(CouncilConfig {
-            members: vec![],
-            phantom: Default::default(),
-        }),
-        collective_Instance2: Some(TechnicalCommitteeConfig {
-            members: vec![],
-            phantom: Default::default(),
-        }),
-        elections: Some(ElectionsConfig {
-            members: vec![],
-            presentation_duration: 1 * DAYS,
-            term_duration: 28 * DAYS,
-            desired_seats: 0,
-        }),
         contracts: Some(ContractsConfig {
             current_schedule: Default::default(),
             gas_price: 1 * MILLICENTS,
@@ -188,14 +140,17 @@ fn staging_testnet_config_genesis() -> GenesisConfig {
             key: endowed_accounts[0].clone(),
         }),
         babe: Some(BabeConfig {
-            authorities: vec![],
+            authorities: initial_authorities
+                .iter()
+                .map(|x| (x.3.clone(), 1))
+                .collect(),
         }),
-        im_online: Some(ImOnlineConfig { keys: vec![] }),
-        authority_discovery: Some(AuthorityDiscoveryConfig { keys: vec![] }),
         grandpa: Some(GrandpaConfig {
-            authorities: vec![],
+            authorities: initial_authorities
+                .iter()
+                .map(|x| (x.2.clone(), 1))
+                .collect(),
         }),
-        membership_Instance1: Some(Default::default()),
     }
 }
 
@@ -267,23 +222,23 @@ pub fn testnet_genesis(
     enable_println: bool,
 ) -> GenesisConfig {
     let endowed_accounts: Vec<AccountId> = endowed_accounts.unwrap_or_else(|| {
-		vec![
-//			get_from_phrase::<AccountId>("embrace depart solution acoustic shift speed trap include member attitude photo tobacco"),
-			get_from_seed::<AccountId>("Alice"),
-			get_from_seed::<AccountId>("Bob"),
-			get_from_seed::<AccountId>("Charlie"),
-			get_from_seed::<AccountId>("Dave"),
-			get_from_seed::<AccountId>("Eve"),
-			get_from_seed::<AccountId>("Ferdie"),
-//			get_from_phrase::<AccountId>("hole math party slam knee mobile flat dance exercise economy chuckle fossil"),
-			get_from_seed::<AccountId>("Alice//stash"),
-			get_from_seed::<AccountId>("Bob//stash"),
-			get_from_seed::<AccountId>("Charlie//stash"),
-			get_from_seed::<AccountId>("Dave//stash"),
-			get_from_seed::<AccountId>("Eve//stash"),
-			get_from_seed::<AccountId>("Ferdie//stash"),
-		]
-	});
+        vec![
+            //			get_from_phrase::<AccountId>("embrace depart solution acoustic shift speed trap include member attitude photo tobacco"),
+            get_from_seed::<AccountId>("Alice"),
+            get_from_seed::<AccountId>("Bob"),
+            get_from_seed::<AccountId>("Charlie"),
+            get_from_seed::<AccountId>("Dave"),
+            get_from_seed::<AccountId>("Eve"),
+            get_from_seed::<AccountId>("Ferdie"),
+            //			get_from_phrase::<AccountId>("hole math party slam knee mobile flat dance exercise economy chuckle fossil"),
+            get_from_seed::<AccountId>("Alice//stash"),
+            get_from_seed::<AccountId>("Bob//stash"),
+            get_from_seed::<AccountId>("Charlie//stash"),
+            get_from_seed::<AccountId>("Dave//stash"),
+            get_from_seed::<AccountId>("Eve//stash"),
+            get_from_seed::<AccountId>("Ferdie//stash"),
+        ]
+    });
 
     const ENDOWMENT: Balance = 10_000_000 * DOLLARS;
     const STASH: Balance = 100 * DOLLARS;
@@ -305,53 +260,6 @@ pub fn testnet_genesis(
                 .collect(),
             vesting: vec![],
         }),
-        session: Some(SessionConfig {
-            keys: initial_authorities
-                .iter()
-                .map(|x| {
-                    (
-                        x.0.clone(),
-                        session_keys(x.2.clone(), x.3.clone(), x.4.clone()),
-                    )
-                })
-                .collect::<Vec<_>>(),
-        }),
-        staking: Some(StakingConfig {
-            current_era: 0,
-            minimum_validator_count: 1,
-            validator_count: 2,
-            stakers: initial_authorities
-                .iter()
-                .map(|x| (x.0.clone(), x.1.clone(), STASH, StakerStatus::Validator))
-                .collect(),
-            invulnerables: initial_authorities.iter().map(|x| x.0.clone()).collect(),
-            slash_reward_fraction: Perbill::from_percent(10),
-            ..Default::default()
-        }),
-        democracy: Some(DemocracyConfig::default()),
-        collective_Instance1: Some(CouncilConfig {
-            members: vec![],
-            phantom: Default::default(),
-        }),
-        collective_Instance2: Some(TechnicalCommitteeConfig {
-            members: vec![],
-            phantom: Default::default(),
-        }),
-        elections: Some(ElectionsConfig {
-            members: endowed_accounts
-                .iter()
-                .filter(|&endowed| {
-                    initial_authorities
-                        .iter()
-                        .find(|&(_, controller, ..)| controller == endowed)
-                        .is_none()
-                })
-                .map(|a| (a.clone(), 1000000))
-                .collect(),
-            presentation_duration: 10,
-            term_duration: 1000000,
-            desired_seats: desired_seats,
-        }),
         contracts: Some(ContractsConfig {
             current_schedule: contracts::Schedule {
                 enable_println, // this should only be enabled on development chains
@@ -361,14 +269,17 @@ pub fn testnet_genesis(
         }),
         sudo: Some(SudoConfig { key: root_key }),
         babe: Some(BabeConfig {
-            authorities: vec![],
+            authorities: initial_authorities
+                .iter()
+                .map(|x| (x.3.clone(), 1))
+                .collect(),
         }),
-        im_online: Some(ImOnlineConfig { keys: vec![] }),
-        authority_discovery: Some(AuthorityDiscoveryConfig { keys: vec![] }),
         grandpa: Some(GrandpaConfig {
-            authorities: vec![],
+            authorities: initial_authorities
+                .iter()
+                .map(|x| (x.2.clone(), 1))
+                .collect(),
         }),
-        membership_Instance1: Some(Default::default()),
     }
 }
 
@@ -397,16 +308,16 @@ pub fn development_config() -> ChainSpec {
 
 fn local_testnet_genesis() -> GenesisConfig {
     testnet_genesis(
-		vec![
-			//get_authority_keys_from_phrase("embrace depart solution acoustic shift speed trap include member attitude photo tobacco","hole math party slam knee mobile flat dance exercise economy chuckle fossil"),
-			get_authority_keys_from_seed("Alice"),
-			get_authority_keys_from_seed("Bob"),
-		],
-		get_from_seed::<AccountId>("Alice"),
-//		get_from_phrase::<AccountId>("embrace depart solution acoustic shift speed trap include member attitude photo tobacco"),
-		None,
-		false,
-	)
+        vec![
+            //get_authority_keys_from_phrase("embrace depart solution acoustic shift speed trap include member attitude photo tobacco","hole math party slam knee mobile flat dance exercise economy chuckle fossil"),
+            get_authority_keys_from_seed("Alice"),
+            get_authority_keys_from_seed("Bob"),
+        ],
+        get_from_seed::<AccountId>("Alice"),
+        //		get_from_phrase::<AccountId>("embrace depart solution acoustic shift speed trap include member attitude photo tobacco"),
+        None,
+        false,
+    )
 }
 
 /// Local testnet config (multivalidator Alice + Bob)
