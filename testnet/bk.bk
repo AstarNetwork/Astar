@@ -100,14 +100,14 @@
         "validatorCount": 1,
         "minimumValidatorCount": 1,
         "invulnerables": [
-          "5ELomezsSJhtedP3cFD4zqNDVvvwmdp6PpywACWEq1UP3fgq"
+          "5DwNtWotLKncBq1EYJSd74s4tf5fH8McK5XMoG8AyvwdFor6"
         ],
         "currentEra": 0,
         "forceEra": "NotForcing",
         "slashRewardFraction": 100000000,
         "stakers": [
           [
-            "5ELomezsSJhtedP3cFD4zqNDVvvwmdp6PpywACWEq1UP3fgq",
+            "5DwNtWotLKncBq1EYJSd74s4tf5fH8McK5XMoG8AyvwdFor6",
             "5ELomezsSJhtedP3cFD4zqNDVvvwmdp6PpywACWEq1UP3fgq",
             10000000000000000,
             "Validator"
@@ -117,7 +117,7 @@
       "session": {
         "keys": [
           [
-            "5ELomezsSJhtedP3cFD4zqNDVvvwmdp6PpywACWEq1UP3fgq",
+            "5DwNtWotLKncBq1EYJSd74s4tf5fH8McK5XMoG8AyvwdFor6",
             {
               "grandpa": "5GdhABzAQBQYdEFw31veGtjoHbtSUUxTkte53ZUGuUDu73Ra",
               "babe": "5ELomezsSJhtedP3cFD4zqNDVvvwmdp6PpywACWEq1UP3fgq",
