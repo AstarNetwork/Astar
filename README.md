@@ -6,6 +6,11 @@ Plasm is a Substrate Runtime Module Library which allows developers to add Plasm
 
 __WARNING__: This is a proof-of-concept prototype. This implementation is NOT ready for production use. 
 
+## Whitepaper
+
+* [Whitepaper](https://github.com/stakedtechnologies/plasmdocs/blob/master/wp/en.pdf)
+* [Whitepaper(JP)](https://github.com/stakedtechnologies/plasmdocs/blob/master/wp/jp.pdf)
+
 ## Comunity
 * [Telegram](https://t.me/PlasmOfficial)
 
