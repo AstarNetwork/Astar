@@ -1,19 +1,3 @@
-// Copyright 2018-2019 Parity Technologies (UK) Ltd.
-// This file is part of Substrate.
-
-// Substrate is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-
-// Substrate is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-
-// You should have received a copy of the GNU General Public License
-// along with Substrate.  If not, see <http://www.gnu.org/licenses/>.
-
 //! Substrate CLI library.
 
 #![warn(missing_docs)]
@@ -158,12 +142,12 @@ pub fn run<I, T, E>(args: I, exit: E, version: cli::VersionInfo) -> error::Resul
 	T: Into<std::ffi::OsString> + Clone,
 	E: IntoExit,
 {
-	match parse_and_prepare::<CustomSubcommands, NoCustom, _>(&version, "substrate-node", args) {
+	match parse_and_prepare::<CustomSubcommands, NoCustom, _>(&version, "plasm-node", args) {
 		ParseAndPrepare::Run(cmd) => cmd.run::<(), _, _, _, _>(load_spec, exit,
 		|exit, _cli_args, _custom_args, config| {
 			info!("{}", version.name);
 			info!("  version {}", config.full_version());
-			info!("  by Parity Technologies, 2017-2019");
+			info!("  by Stake Technologies, 2018-2019");
 			info!("Chain specification: {}", config.chain_spec.name());
 			info!("Node name: {}", config.name);
 			info!("Roles: {:?}", config.roles);

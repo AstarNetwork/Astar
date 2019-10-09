@@ -1,19 +1,3 @@
-// Copyright 2019 Parity Technologies (UK) Ltd.
-// This file is part of Substrate.
-
-// Substrate is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-
-// Substrate is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-
-// You should have received a copy of the GNU General Public License
-// along with Substrate.  If not, see <http://www.gnu.org/licenses/>.
-
 //! Some configurable implementations as associated type for the substrate runtime.
 
 use plasm_primitives::Balance;
@@ -21,15 +5,8 @@ use sr_primitives::weights::{Weight, WeightMultiplier};
 use sr_primitives::traits::{Convert, Saturating};
 use sr_primitives::Fixed64;
 use support::traits::{OnUnbalanced, Currency};
-use crate::{Balances, Authorship, MaximumBlockWeight, NegativeImbalance};
+use crate::{Balances, MaximumBlockWeight, NegativeImbalance};
 use crate::constants::fee::TARGET_BLOCK_FULLNESS;
-
-pub struct Author;
-impl OnUnbalanced<NegativeImbalance> for Author {
-	fn on_unbalanced(amount: NegativeImbalance) {
-		Balances::resolve_creating(&Authorship::author(), amount);
-	}
-}
 
 /// Struct that handles the conversion of Balance -> `u64`. This is used for staking's election
 /// calculation.
@@ -62,7 +39,7 @@ impl Convert<u128, Balance> for CurrencyToVoteHandler {
 pub struct WeightToFee;
 impl Convert<Weight, Balance> for WeightToFee {
 	fn convert(x: Weight) -> Balance {
-		// substrate-node a weight of 10_000 (smallest non-zero weight) to be mapped to 10^7 units of
+		// plasm-node a weight of 10_000 (smallest non-zero weight) to be mapped to 10^7 units of
 		// fees, hence:
 		Balance::from(x).saturating_mul(1_000)
 	}

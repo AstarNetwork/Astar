@@ -1,14 +1,14 @@
-FROM debian:9.9
+FROM phusion/baseimage:0.10.2
 
 LABEL maintainer="takumi@staked.co.jp"
 
-ENTRYPOINT ["/opt/target/release/plasm-node", "--dev", "--ws-external"]
+ENTRYPOINT ["/opt/target/release/plasm-node", "--ws-external"]
 
 WORKDIR /opt
 COPY ./target-debian ./target
 
-RUN apt-get update && \
-    apt-get install -y \
-    libssl-dev
+# Shrinking
+RUN rm -rf /usr/lib/python* && \
+	rm -rf /usr/bin /usr/sbin /usr/share/man
 
 EXPOSE 9944

@@ -1,19 +1,3 @@
-// Copyright 2018-2019 Parity Technologies (UK) Ltd.
-// This file is part of Substrate.
-
-// Substrate is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-
-// Substrate is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-
-// You should have received a copy of the GNU General Public License
-// along with Substrate.  If not, see <http://www.gnu.org/licenses/>.
-
 //! A `CodeExecutor` specialization which uses natively compiled runtime when the wasm to be
 //! executed is equivalent to the natively compiled code.
 
@@ -918,7 +902,7 @@ mod tests {
 
 	#[test]
 	fn transaction_fee_is_correct_ultimate() {
-		// This uses the exact values of substrate-node.
+		// This uses the exact values of plasm-node.
 		//
 		// weight of transfer call as of now: 1_000_000
 		// if weight of the cheapest weight would be 10^7, this would be 10^9, which is:

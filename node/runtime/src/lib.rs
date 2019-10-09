@@ -1,19 +1,3 @@
-// Copyright 2018-2019 Parity Technologies (UK) Ltd.
-// This file is part of Substrate.
-
-// Substrate is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-
-// Substrate is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-
-// You should have received a copy of the GNU General Public License
-// along with Substrate.  If not, see <http://www.gnu.org/licenses/>.
-
 //! The Substrate runtime. This can be compiled with ``#[no_std]`, ready for Wasm.
 
 #![cfg_attr(not(feature = "std"), no_std)]
@@ -47,7 +31,6 @@ use elections::VoteIndex;
 use version::NativeVersion;
 use primitives::OpaqueMetadata;
 use grandpa::{AuthorityId as GrandpaId, AuthorityWeight as GrandpaWeight};
-use im_online::sr25519::{AuthorityId as ImOnlineId};
 use system::offchain::TransactionSubmitter;
 
 #[cfg(any(feature = "std", test))]
@@ -61,7 +44,7 @@ pub use staking::StakerStatus;
 
 /// Implementations of some helper traits passed into runtime modules as associated types.
 pub mod impls;
-use impls::{CurrencyToVoteHandler, WeightMultiplierUpdateHandler, Author, WeightToFee};
+use impls::{CurrencyToVoteHandler, WeightMultiplierUpdateHandler, WeightToFee};
 
 /// Constant values used within the runtime.
 pub mod constants;
@@ -74,7 +57,7 @@ include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 /// Runtime version.
 pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("node"),
-	impl_name: create_runtime_str!("substrate-node"),
+	impl_name: create_runtime_str!("plasm-node"),
 	authoring_version: 10,
 	// Per convention: if the runtime behavior changes, increment spec_version
 	// and set impl_version to equal spec_version. If only runtime
@@ -95,13 +78,6 @@ pub fn native_version() -> NativeVersion {
 }
 
 type NegativeImbalance = <Balances as Currency<AccountId>>::NegativeImbalance;
-
-pub type DealWithFees = SplitTwoWays<
-	Balance,
-	NegativeImbalance,
-	_4, Treasury,   // 4 parts (80%) goes to the treasury.
-	_1, Author,     // 1 part (20%) goes to the block author.
->;
 
 parameter_types! {
 	pub const BlockHashCount: BlockNumber = 250;
@@ -128,6 +104,17 @@ impl system::Trait for Runtime {
 	type MaximumBlockLength = MaximumBlockLength;
 	type AvailableBlockRatio = AvailableBlockRatio;
 	type Version = Version;
+}
+
+type SessionHandlers = (Grandpa, Babe);
+
+impl_opaque_keys! {
+	pub struct SessionKeys {
+		#[id(key_types::GRANDPA)]
+		pub grandpa: GrandpaId,
+		#[id(key_types::BABE)]
+		pub babe: BabeId,
+	}
 }
 
 parameter_types! {
@@ -157,10 +144,10 @@ parameter_types! {
 
 impl balances::Trait for Runtime {
 	type Balance = Balance;
-	type OnFreeBalanceZero = ((Staking, Contracts), Session);
+	type OnFreeBalanceZero = (Contracts);
 	type OnNewAccount = Indices;
 	type Event = Event;
-	type TransactionPayment = DealWithFees;
+	type TransactionPayment = ();
 	type DustRemoval = ();
 	type TransferPayment = ();
 	type ExistentialDeposit = ExistentialDeposit;
@@ -178,180 +165,6 @@ impl timestamp::Trait for Runtime {
 	type Moment = Moment;
 	type OnTimestampSet = Babe;
 	type MinimumPeriod = MinimumPeriod;
-}
-
-parameter_types! {
-	pub const UncleGenerations: BlockNumber = 5;
-}
-
-impl authorship::Trait for Runtime {
-	type FindAuthor = session::FindAccountFromAuthorIndex<Self, Babe>;
-	type UncleGenerations = UncleGenerations;
-	type FilterUncle = ();
-	type EventHandler = Staking;
-}
-
-type SessionHandlers = (Grandpa, Babe, ImOnline);
-
-impl_opaque_keys! {
-	pub struct SessionKeys {
-		#[id(key_types::GRANDPA)]
-		pub grandpa: GrandpaId,
-		#[id(key_types::BABE)]
-		pub babe: BabeId,
-		#[id(key_types::IM_ONLINE)]
-		pub im_online: ImOnlineId,
-	}
-}
-
-// NOTE: `SessionHandler` and `SessionKeys` are co-dependent: One key will be used for each handler.
-// The number and order of items in `SessionHandler` *MUST* be the same number and order of keys in
-// `SessionKeys`.
-// TODO: Introduce some structure to tie these together to make it a bit less of a footgun. This
-// should be easy, since OneSessionHandler trait provides the `Key` as an associated type. #2858
-
-impl session::Trait for Runtime {
-	type OnSessionEnding = Staking;
-	type SessionHandler = SessionHandlers;
-	type ShouldEndSession = Babe;
-	type Event = Event;
-	type Keys = SessionKeys;
-	type ValidatorId = AccountId;
-	type ValidatorIdOf = staking::StashOf<Self>;
-	type SelectInitialValidators = Staking;
-}
-
-impl session::historical::Trait for Runtime {
-	type FullIdentification = staking::Exposure<AccountId, Balance>;
-	type FullIdentificationOf = staking::ExposureOf<Runtime>;
-}
-
-parameter_types! {
-	pub const SessionsPerEra: sr_staking_primitives::SessionIndex = 6;
-	pub const BondingDuration: staking::EraIndex = 24 * 28;
-}
-
-impl staking::Trait for Runtime {
-	type Currency = Balances;
-	type Time = Timestamp;
-	type CurrencyToVote = CurrencyToVoteHandler;
-	type OnRewardMinted = Treasury;
-	type Event = Event;
-	type Slash = Treasury; // send the slashed funds to the treasury.
-	type Reward = (); // rewards are minted from the void
-	type SessionsPerEra = SessionsPerEra;
-	type BondingDuration = BondingDuration;
-	type SessionInterface = Self;
-}
-
-parameter_types! {
-	pub const LaunchPeriod: BlockNumber = 28 * 24 * 60 * MINUTES;
-	pub const VotingPeriod: BlockNumber = 28 * 24 * 60 * MINUTES;
-	pub const EmergencyVotingPeriod: BlockNumber = 3 * 24 * 60 * MINUTES;
-	pub const MinimumDeposit: Balance = 100 * DOLLARS;
-	pub const EnactmentPeriod: BlockNumber = 30 * 24 * 60 * MINUTES;
-	pub const CooloffPeriod: BlockNumber = 28 * 24 * 60 * MINUTES;
-}
-
-impl democracy::Trait for Runtime {
-	type Proposal = Call;
-	type Event = Event;
-	type Currency = Balances;
-	type EnactmentPeriod = EnactmentPeriod;
-	type LaunchPeriod = LaunchPeriod;
-	type VotingPeriod = VotingPeriod;
-	type EmergencyVotingPeriod = EmergencyVotingPeriod;
-	type MinimumDeposit = MinimumDeposit;
-	/// A straight majority of the council can decide what their next motion is.
-	type ExternalOrigin = collective::EnsureProportionAtLeast<_1, _2, AccountId, CouncilCollective>;
-	/// A super-majority can have the next scheduled referendum be a straight majority-carries vote.
-	type ExternalMajorityOrigin = collective::EnsureProportionAtLeast<_3, _4, AccountId, CouncilCollective>;
-	/// A unanimous council can have the next scheduled referendum be a straight default-carries
-	/// (NTB) vote.
-	type ExternalDefaultOrigin = collective::EnsureProportionAtLeast<_1, _1, AccountId, CouncilCollective>;
-	/// Two thirds of the technical committee can have an ExternalMajority/ExternalDefault vote
-	/// be tabled immediately and with a shorter voting/enactment period.
-	type FastTrackOrigin = collective::EnsureProportionAtLeast<_2, _3, AccountId, TechnicalCollective>;
-	// To cancel a proposal which has been passed, 2/3 of the council must agree to it.
-	type CancellationOrigin = collective::EnsureProportionAtLeast<_2, _3, AccountId, CouncilCollective>;
-	// Any single technical committee member may veto a coming council proposal, however they can
-	// only do it once and it lasts only for the cooloff period.
-	type VetoOrigin = collective::EnsureMember<AccountId, TechnicalCollective>;
-	type CooloffPeriod = CooloffPeriod;
-}
-
-type CouncilCollective = collective::Instance1;
-impl collective::Trait<CouncilCollective> for Runtime {
-	type Origin = Origin;
-	type Proposal = Call;
-	type Event = Event;
-}
-
-parameter_types! {
-	pub const CandidacyBond: Balance = 10 * DOLLARS;
-	pub const VotingBond: Balance = 1 * DOLLARS;
-	pub const VotingFee: Balance = 2 * DOLLARS;
-	pub const PresentSlashPerVoter: Balance = 1 * CENTS;
-	pub const CarryCount: u32 = 6;
-	// one additional vote should go by before an inactive voter can be reaped.
-	pub const InactiveGracePeriod: VoteIndex = 1;
-	pub const ElectionsVotingPeriod: BlockNumber = 2 * DAYS;
-	pub const DecayRatio: u32 = 0;
-}
-
-impl elections::Trait for Runtime {
-	type Event = Event;
-	type Currency = Balances;
-	type BadPresentation = ();
-	type BadReaper = ();
-	type BadVoterIndex = ();
-	type LoserCandidate = ();
-	type ChangeMembers = Council;
-	type CandidacyBond = CandidacyBond;
-	type VotingBond = VotingBond;
-	type VotingFee = VotingFee;
-	type PresentSlashPerVoter = PresentSlashPerVoter;
-	type CarryCount = CarryCount;
-	type InactiveGracePeriod = InactiveGracePeriod;
-	type VotingPeriod = ElectionsVotingPeriod;
-	type DecayRatio = DecayRatio;
-}
-
-type TechnicalCollective = collective::Instance2;
-impl collective::Trait<TechnicalCollective> for Runtime {
-	type Origin = Origin;
-	type Proposal = Call;
-	type Event = Event;
-}
-
-impl membership::Trait<membership::Instance1> for Runtime {
-	type Event = Event;
-	type AddOrigin = collective::EnsureProportionMoreThan<_1, _2, AccountId, CouncilCollective>;
-	type RemoveOrigin = collective::EnsureProportionMoreThan<_1, _2, AccountId, CouncilCollective>;
-	type SwapOrigin = collective::EnsureProportionMoreThan<_1, _2, AccountId, CouncilCollective>;
-	type ResetOrigin = collective::EnsureProportionMoreThan<_1, _2, AccountId, CouncilCollective>;
-	type MembershipInitialized = TechnicalCommittee;
-	type MembershipChanged = TechnicalCommittee;
-}
-
-parameter_types! {
-	pub const ProposalBond: Permill = Permill::from_percent(5);
-	pub const ProposalBondMinimum: Balance = 1 * DOLLARS;
-	pub const SpendPeriod: BlockNumber = 1 * DAYS;
-	pub const Burn: Permill = Permill::from_percent(50);
-}
-
-impl treasury::Trait for Runtime {
-	type Currency = Balances;
-	type ApproveOrigin = collective::EnsureMembers<_4, AccountId, CouncilCollective>;
-	type RejectOrigin = collective::EnsureMembers<_2, AccountId, CouncilCollective>;
-	type Event = Event;
-	type MintedForSpending = ();
-	type ProposalRejection = ();
-	type ProposalBond = ProposalBond;
-	type ProposalBondMinimum = ProposalBondMinimum;
-	type SpendPeriod = SpendPeriod;
-	type Burn = Burn;
 }
 
 parameter_types! {
@@ -392,25 +205,6 @@ impl sudo::Trait for Runtime {
 	type Event = Event;
 	type Proposal = Call;
 }
-
-type SubmitTransaction = TransactionSubmitter<ImOnlineId, Runtime, UncheckedExtrinsic>;
-
-impl im_online::Trait for Runtime {
-	type AuthorityId = ImOnlineId;
-	type Call = Call;
-	type Event = Event;
-	type SubmitTransaction = SubmitTransaction;
-	type ReportUnresponsiveness = Offences;
-	type CurrentElectedSet = staking::CurrentElectedStashAccounts<Runtime>;
-}
-
-impl offences::Trait for Runtime {
-	type Event = Event;
-	type IdentificationTuple = session::historical::IdentificationTuple<Self>;
-	type OnOffenceHandler = Staking;
-}
-
-impl authority_discovery::Trait for Runtime {}
 
 impl grandpa::Trait for Runtime {
 	type Event = Event;
@@ -463,24 +257,11 @@ construct_runtime!(
 		System: system::{Module, Call, Storage, Config, Event},
 		Babe: babe::{Module, Call, Storage, Config, Inherent(Timestamp)},
 		Timestamp: timestamp::{Module, Call, Storage, Inherent},
-		Authorship: authorship::{Module, Call, Storage, Inherent},
 		Indices: indices,
 		Balances: balances,
-		Staking: staking::{default, OfflineWorker},
-		Session: session::{Module, Call, Storage, Event, Config<T>},
-		Democracy: democracy::{Module, Call, Storage, Config, Event<T>},
-		Council: collective::<Instance1>::{Module, Call, Storage, Origin<T>, Event<T>, Config<T>},
-		TechnicalCommittee: collective::<Instance2>::{Module, Call, Storage, Origin<T>, Event<T>, Config<T>},
-		Elections: elections::{Module, Call, Storage, Event<T>, Config<T>},
-		TechnicalMembership: membership::<Instance1>::{Module, Call, Storage, Event<T>, Config<T>},
-		FinalityTracker: finality_tracker::{Module, Call, Inherent},
 		Grandpa: grandpa::{Module, Call, Storage, Config, Event},
-		Treasury: treasury::{Module, Call, Storage, Event<T>},
 		Contracts: contracts,
 		Sudo: sudo,
-		ImOnline: im_online::{Module, Call, Storage, Event<T>, ValidateUnsigned, Config<T>},
-		AuthorityDiscovery: authority_discovery::{Module, Call, Config<T>},
-		Offences: offences::{Module, Call, Storage, Event},
 	}
 );
 
@@ -611,23 +392,6 @@ impl_runtime_apis! {
 		}
 	}
 
-	impl authority_discovery_primitives::AuthorityDiscoveryApi<Block, ImOnlineId> for Runtime {
-		fn authority_id() -> Option<ImOnlineId> {
-			AuthorityDiscovery::authority_id()
-		}
-		fn authorities() -> Vec<ImOnlineId> {
-			AuthorityDiscovery::authorities()
-		}
-
-		fn sign(payload: Vec<u8>, authority_id: ImOnlineId) -> Option<Vec<u8>> {
-			AuthorityDiscovery::sign(payload, authority_id)
-		}
-
-		fn verify(payload: Vec<u8>, signature: Vec<u8>, public_key: ImOnlineId) -> bool {
-			AuthorityDiscovery::verify(payload, signature, public_key)
-		}
-	}
-
 	impl plasm_primitives::AccountNonceApi<Block> for Runtime {
 		fn account_nonce(account: AccountId) -> Index {
 			System::account_nonce(account)
@@ -660,9 +424,4 @@ mod tests {
 		Signer::Signature: Into<Signature>,
 	{}
 
-	#[test]
-	fn validate_bounds() {
-		let x = SubmitTransaction::default();
-		is_submit_signed_transaction(x);
-	}
 }
