@@ -1,13 +1,17 @@
 {
-  "name": "Local Testnet",
-  "id": "local_testnet",
+  "name": "Miniplasm",
+  "id": "miniplasm",
   "bootNodes": [
-    "/ip4/127.0.0.1/tcp/30333/p2p/Qma4haysBLkhbeKbVyEW5rgQ1hiXymsYxaxGThLP6XAiD5"
+    "/ip4/3.114.90.94/tcp/30333/p2p/QmPJKybY5ZxkhuNzkpTjdXcdWMjDKPjRHxDhEJjqHKjXpG",
+	  "/ip4/3.114.81.104/tcp/30333/p2p/QmbQxktvATQUX8BX3grYRdyr6B52eyXL7aZCKt3jMNepe4"
   ],
   "telemetryEndpoints": null,
-  "protocolId": null,
+  "protocolId": "prm",
   "consensusEngine": null,
-  "properties": null,
+  "properties": {
+	  "tokenDecimals": 15,
+	  "tokenSymbol": "PRM"
+  },
   "genesis": {
     "runtime": {
       "system": {
@@ -19,13 +23,19 @@
           [
             "5ELomezsSJhtedP3cFD4zqNDVvvwmdp6PpywACWEq1UP3fgq",
             1
-          ]
+          ],
+			[
+				"5GLQu9iyhRHDAHgCd8yFDD3dqFkxn4z8uwEwK8YyYa2GBTUu",
+				1
+			]
         ]
       },
       "indices": {
         "ids": [
 			"5ELomezsSJhtedP3cFD4zqNDVvvwmdp6PpywACWEq1UP3fgq",
 			"5DwNtWotLKncBq1EYJSd74s4tf5fH8McK5XMoG8AyvwdFor6",
+			"5GLQu9iyhRHDAHgCd8yFDD3dqFkxn4z8uwEwK8YyYa2GBTUu",
+			"5EvzqUdvcifpT9oevGXy3DRqLB9CL6ptWdpAQtNt1hAGJMP1",
           "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY",
           "5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty",
           "5FLSigC9HGRKVhB9FiEo4Y3koPsNmBmLJbpXg2mp1hXcS59Y",
@@ -48,6 +58,14 @@
 			],
 			[
 				"5DwNtWotLKncBq1EYJSd74s4tf5fH8McK5XMoG8AyvwdFor6",
+				1000000000000000000000
+			],
+			[
+				"5GLQu9iyhRHDAHgCd8yFDD3dqFkxn4z8uwEwK8YyYa2GBTUu",
+				1000000000000000000000
+			],
+			[
+				"5EvzqUdvcifpT9oevGXy3DRqLB9CL6ptWdpAQtNt1hAGJMP1",
 				1000000000000000000000
 			],
           [
@@ -106,8 +124,12 @@
           [
             "5FA9nQDVg267DEd8m1ZypXLBnvN7SFxYwV7ndqSYGiN9TTpu",
             1
-          ]
-        ]
+          ],
+			[
+				"5HJWD9xdcPvXW2ajEUJEgAXbP4DBGfjDxRh3Nq8PAvnZM8AP",
+				1
+			]
+		]
       },
       "contracts": {
         "currentSchedule": {
