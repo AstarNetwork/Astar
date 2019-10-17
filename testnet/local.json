@@ -5,7 +5,12 @@
     "/ip4/3.114.90.94/tcp/30333/p2p/QmPJKybY5ZxkhuNzkpTjdXcdWMjDKPjRHxDhEJjqHKjXpG",
 	  "/ip4/3.114.81.104/tcp/30333/p2p/QmbQxktvATQUX8BX3grYRdyr6B52eyXL7aZCKt3jMNepe4"
   ],
-  "telemetryEndpoints": null,
+  "telemetryEndpoints": [
+	  [
+		  "wss://telemetry.polkadot.io/submit/",
+		  0
+	  ]
+  ],
   "protocolId": "prm",
   "consensusEngine": null,
   "properties": {
