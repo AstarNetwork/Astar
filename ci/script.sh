@@ -10,18 +10,15 @@ curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain=$RUST_TOOLCHAIN -y
 # Load cargo environment. Specifically, put cargo into PATH.
 source ~/.cargo/env
 
-rustup install nightly-2019-05-21
-rustup target add wasm32-unknown-unknown --toolchain nightly-2019-05-21
-rustup override set nightly
-
 rustc --version
 rustup --version
 cargo --version
 
 case $TARGET in
 	"native")
+
 		sudo apt-get -y update
-		sudo apt-get install -y cmake pkg-config libssl-dev
+		sudo apt-get install -y cmake pkg-config libssl-dev clang libclang-dev
 
 		./scripts/init.sh
 		cargo build
@@ -38,4 +35,5 @@ case $TARGET in
 		cd ../deposit && cargo test
 		cd ../predicate && cargo test
 		;;
+
 esac
