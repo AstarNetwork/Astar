@@ -126,8 +126,8 @@ fn generate_config_genesis(
 /// Staging testnet config.
 pub fn staging_testnet_config() -> ChainSpec {
     let boot_nodes = vec![
-		"/ip4/3.114.90.94/tcp/30333/p2p/QmPJKybY5ZxkhuNzkpTjdXcdWMjDKPjRHxDhEJjqHKjXpG".to_string(),
-		"/ip4/3.114.81.104/tcp/30333/p2p/QmbQxktvATQUX8BX3grYRdyr6B52eyXL7aZCKt3jMNepe4".to_string(),
+		"/ip4/3.114.90.94/tcp/30333/p2p/QmTVUeF2fTe9m8MXw6EGihbvPzDpRm5sJbFGsj6WuagvJu".to_string(),
+		"/ip4/3.114.81.104/tcp/30333/p2p/QmQU5Ac75U9d9hG9cWzjANxLK9k35mGnZRhFdGW9X7YLbN".to_string(),
 	];
 	let properties = serde_json::from_str(PLASM_PROPERTIES).unwrap();
     ChainSpec::from_genesis(
@@ -181,8 +181,8 @@ fn staging_testnet_genesis() -> GenesisConfig {
                 // 5GdhABzAQBQYdEFw31veGtjoHbtSUUxTkte53ZUGuUDu73Ra
                 hex!["ca19aecbb6f621eb9aea26914916a73135df6766e146b993803065474abed3fa"]
                     .unchecked_into(),
-                // 5GdhABzAQBQYdEFw31veGtjoHbtSUUxTkte53ZUGuUDu73Ra
-                hex!["ca19aecbb6f621eb9aea26914916a73135df6766e146b993803065474abed3fa"]
+                // 5ELomezsSJhtedP3cFD4zqNDVvvwmdp6PpywACWEq1UP3fgq
+                hex!["64c04cdc3237ff84dc94b294d66aff7c370c0cd2648fab05330368ef905cfa5a"]
                     .unchecked_into(),
                 // 5ELomezsSJhtedP3cFD4zqNDVvvwmdp6PpywACWEq1UP3fgq
                 hex!["64c04cdc3237ff84dc94b294d66aff7c370c0cd2648fab05330368ef905cfa5a"]
@@ -198,8 +198,8 @@ fn staging_testnet_genesis() -> GenesisConfig {
                 // 5HJWD9xdcPvXW2ajEUJEgAXbP4DBGfjDxRh3Nq8PAvnZM8AP
                 hex!["e7b365779d16bf9e51164f63d5b1ff986ba58420636d007576549f0da03547ae"]
                     .unchecked_into(),
-                // 5HJWD9xdcPvXW2ajEUJEgAXbP4DBGfjDxRh3Nq8PAvnZM8AP
-                hex!["e7b365779d16bf9e51164f63d5b1ff986ba58420636d007576549f0da03547ae"]
+                // 5GLQu9iyhRHDAHgCd8yFDD3dqFkxn4z8uwEwK8YyYa2GBTUu
+                hex!["bcebc6faab0765ca020f33182410156517bc88994d1210a8a026bdc5d201ee7b"]
                     .unchecked_into(),
                 // 5GLQu9iyhRHDAHgCd8yFDD3dqFkxn4z8uwEwK8YyYa2GBTUu
                 hex!["bcebc6faab0765ca020f33182410156517bc88994d1210a8a026bdc5d201ee7b"]
