@@ -1,13 +1,13 @@
 SHELL := /bin/bash
 CHILD_NODE_DIR := $(shell git rev-parse --show-toplevel)/child
 
-.PHONY: build-debian
-build-debian:
+.PHONY: docker-build
+docker-build:
 	docker run -it -v $(shell pwd):/opt stakedtechnologies/plasm-builder cargo build --target-dir target-debian --release
 	docker build . -t stakedtechnologies/plasm-node
 
-.PHONY: push-parent
-push-parent:
+.PHONY: docker-push
+docker-push:
 	docker push stakedtechnologies/plasm-node
 
 .PHONY: build-doc

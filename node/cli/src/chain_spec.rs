@@ -11,10 +11,17 @@ use plasm_runtime::{
 };
 use primitives::{crypto::UncheckedInto, Pair, Public};
 use sr_primitives::Perbill;
+use std::collections::HashSet;
 use substrate_service;
 use substrate_telemetry::TelemetryEndpoints;
 
 const STAGING_TELEMETRY_URL: &str = "wss://telemetry.polkadot.io/submit/";
+const PLASM_PROPERTIES: &str = r#"
+		{
+			"tokenDecimals": 15,
+			"tokenSymbol": "PLM"
+		}"#;
+const PLASM_PROTOCOL_ID: &str = "plm";
 
 /// Specialized `ChainSpec`.
 pub type ChainSpec = substrate_service::ChainSpec<GenesisConfig>;
@@ -24,166 +31,10 @@ pub fn flaming_fir_config() -> Result<ChainSpec, String> {
     ChainSpec::from_json_bytes(&include_bytes!("../res/flaming-fir.json")[..])
 }
 
-fn staging_testnet_config_genesis() -> GenesisConfig {
-    // stash, controller, session-key
-    // generated with secret:
-    // for i in 1 2 3 4 ; do for j in stash controller; do subkey inspect "$secret"/fir/$j/$i; done; done
-    // and
-    // for i in 1 2 3 4 ; do for j in session; do subkey --ed25519 inspect "$secret"//fir//$j//$i; done; done
-
-    let initial_authorities: Vec<(AccountId, AccountId, GrandpaId, BabeId, ImOnlineId)> = vec![
-        (
-            // 5Fbsd6WXDGiLTxunqeK5BATNiocfCqu9bS1yArVjCgeBLkVy
-            hex!["9c7a2ee14e565db0c69f78c7b4cd839fbf52b607d867e9e9c5a79042898a0d12"]
-                .unchecked_into(),
-            // 5EnCiV7wSHeNhjW3FSUwiJNkcc2SBkPLn5Nj93FmbLtBjQUq
-            hex!["781ead1e2fa9ccb74b44c19d29cb2a7a4b5be3972927ae98cd3877523976a276"]
-                .unchecked_into(),
-            // 5Fb9ayurnxnaXj56CjmyQLBiadfRCqUbL2VWNbbe1nZU6wiC
-            hex!["9becad03e6dcac03cee07edebca5475314861492cdfc96a2144a67bbe9699332"]
-                .unchecked_into(),
-            // 5EZaeQ8djPcq9pheJUhgerXQZt9YaHnMJpiHMRhwQeinqUW8
-            hex!["6e7e4eb42cbd2e0ab4cae8708ce5509580b8c04d11f6758dbf686d50fe9f9106"]
-                .unchecked_into(),
-            // 5EZaeQ8djPcq9pheJUhgerXQZt9YaHnMJpiHMRhwQeinqUW8
-            hex!["6e7e4eb42cbd2e0ab4cae8708ce5509580b8c04d11f6758dbf686d50fe9f9106"]
-                .unchecked_into(),
-        ),
-        (
-            // 5ERawXCzCWkjVq3xz1W5KGNtVx2VdefvZ62Bw1FEuZW4Vny2
-            hex!["68655684472b743e456907b398d3a44c113f189e56d1bbfd55e889e295dfde78"]
-                .unchecked_into(),
-            // 5Gc4vr42hH1uDZc93Nayk5G7i687bAQdHHc9unLuyeawHipF
-            hex!["c8dc79e36b29395413399edaec3e20fcca7205fb19776ed8ddb25d6f427ec40e"]
-                .unchecked_into(),
-            // 5EockCXN6YkiNCDjpqqnbcqd4ad35nU4RmA1ikM4YeRN4WcE
-            hex!["7932cff431e748892fa48e10c63c17d30f80ca42e4de3921e641249cd7fa3c2f"]
-                .unchecked_into(),
-            // 5DhLtiaQd1L1LU9jaNeeu9HJkP6eyg3BwXA7iNMzKm7qqruQ
-            hex!["482dbd7297a39fa145c570552249c2ca9dd47e281f0c500c971b59c9dcdcd82e"]
-                .unchecked_into(),
-            // 5DhLtiaQd1L1LU9jaNeeu9HJkP6eyg3BwXA7iNMzKm7qqruQ
-            hex!["482dbd7297a39fa145c570552249c2ca9dd47e281f0c500c971b59c9dcdcd82e"]
-                .unchecked_into(),
-        ),
-        (
-            // 5DyVtKWPidondEu8iHZgi6Ffv9yrJJ1NDNLom3X9cTDi98qp
-            hex!["547ff0ab649283a7ae01dbc2eb73932eba2fb09075e9485ff369082a2ff38d65"]
-                .unchecked_into(),
-            // 5FeD54vGVNpFX3PndHPXJ2MDakc462vBCD5mgtWRnWYCpZU9
-            hex!["9e42241d7cd91d001773b0b616d523dd80e13c6c2cab860b1234ef1b9ffc1526"]
-                .unchecked_into(),
-            // 5E1jLYfLdUQKrFrtqoKgFrRvxM3oQPMbf6DfcsrugZZ5Bn8d
-            hex!["5633b70b80a6c8bb16270f82cca6d56b27ed7b76c8fd5af2986a25a4788ce440"]
-                .unchecked_into(),
-            // 5DhKqkHRkndJu8vq7pi2Q5S3DfftWJHGxbEUNH43b46qNspH
-            hex!["482a3389a6cf42d8ed83888cfd920fec738ea30f97e44699ada7323f08c3380a"]
-                .unchecked_into(),
-            // 5DhKqkHRkndJu8vq7pi2Q5S3DfftWJHGxbEUNH43b46qNspH
-            hex!["482a3389a6cf42d8ed83888cfd920fec738ea30f97e44699ada7323f08c3380a"]
-                .unchecked_into(),
-        ),
-        (
-            // 5HYZnKWe5FVZQ33ZRJK1rG3WaLMztxWrrNDb1JRwaHHVWyP9
-            hex!["f26cdb14b5aec7b2789fd5ca80f979cef3761897ae1f37ffb3e154cbcc1c2663"]
-                .unchecked_into(),
-            // 5EPQdAQ39WQNLCRjWsCk5jErsCitHiY5ZmjfWzzbXDoAoYbn
-            hex!["66bc1e5d275da50b72b15de072a2468a5ad414919ca9054d2695767cf650012f"]
-                .unchecked_into(),
-            // 5DMa31Hd5u1dwoRKgC4uvqyrdK45RHv3CpwvpUC1EzuwDit4
-            hex!["3919132b851ef0fd2dae42a7e734fe547af5a6b809006100f48944d7fae8e8ef"]
-                .unchecked_into(),
-            // 5C4vDQxA8LTck2xJEy4Yg1hM9qjDt4LvTQaMo4Y8ne43aU6x
-            hex!["00299981a2b92f878baaf5dbeba5c18d4e70f2a1fcd9c61b32ea18daf38f4378"]
-                .unchecked_into(),
-            // 5C4vDQxA8LTck2xJEy4Yg1hM9qjDt4LvTQaMo4Y8ne43aU6x
-            hex!["00299981a2b92f878baaf5dbeba5c18d4e70f2a1fcd9c61b32ea18daf38f4378"]
-                .unchecked_into(),
-        ),
-    ];
-
-    // generated with secret: subkey inspect "$secret"/fir
-    let endowed_accounts: Vec<AccountId> = vec![
-        // 5Ff3iXP75ruzroPWRP2FYBHWnmGGBSb63857BgnzCoXNxfPo
-        hex!["9ee5e5bdc0ec239eb164f865ecc345ce4c88e76ee002e0f7e318097347471809"].unchecked_into(),
-    ];
-
-    const ENDOWMENT: Balance = 10_000_000 * DOLLARS;
-    const STASH: Balance = 100 * DOLLARS;
-
-    GenesisConfig {
-        system: Some(SystemConfig {
-            code: WASM_BINARY.to_vec(),
-            changes_trie_config: Default::default(),
-        }),
-        balances: Some(BalancesConfig {
-            balances: endowed_accounts
-                .iter()
-                .cloned()
-                .map(|k| (k, ENDOWMENT))
-                .chain(initial_authorities.iter().map(|x| (x.0.clone(), STASH)))
-                .collect(),
-            vesting: vec![],
-        }),
-        indices: Some(IndicesConfig {
-            ids: endowed_accounts
-                .iter()
-                .cloned()
-                .chain(initial_authorities.iter().map(|x| x.0.clone()))
-                .collect::<Vec<_>>(),
-        }),
-        contracts: Some(ContractsConfig {
-            current_schedule: Default::default(),
-            gas_price: 1 * MILLICENTS,
-        }),
-        sudo: Some(SudoConfig {
-            key: endowed_accounts[0].clone(),
-        }),
-        babe: Some(BabeConfig {
-            authorities: initial_authorities
-                .iter()
-                .map(|x| (x.3.clone(), 1))
-                .collect(),
-        }),
-        grandpa: Some(GrandpaConfig {
-            authorities: initial_authorities
-                .iter()
-                .map(|x| (x.2.clone(), 1))
-                .collect(),
-        }),
-    }
-}
-
-/// Staging testnet config.
-pub fn staging_testnet_config() -> ChainSpec {
-    let boot_nodes = vec![];
-    ChainSpec::from_genesis(
-        "Staging Testnet",
-        "staging_testnet",
-        staging_testnet_config_genesis,
-        boot_nodes,
-        Some(TelemetryEndpoints::new(vec![(
-            STAGING_TELEMETRY_URL.to_string(),
-            0,
-        )])),
-        None,
-        None,
-        None,
-    )
-}
-
 /// Helper function to generate a crypto pair from seed
 pub fn get_from_seed<TPublic: Public>(seed: &str) -> <TPublic::Pair as Pair>::Public {
     TPublic::Pair::from_string(&format!("//{}", seed), None)
         .expect("static values are valid; qed")
-        .public()
-}
-
-/// Helper function to generate a crypto pair from phrase
-pub fn get_from_phrase<TPublic: Public>(phrase: &str) -> <TPublic::Pair as Pair>::Public {
-    TPublic::Pair::from_phrase(phrase, None)
-        .expect("static values are valid; qed")
-        .0
         .public()
 }
 
@@ -200,65 +51,54 @@ pub fn get_authority_keys_from_seed(
     )
 }
 
-/// Helper function to generate stash, controller and session key from seed
-pub fn get_authority_keys_from_phrase(
-    phrase: &str,
-    stash: &str,
-) -> (AccountId, AccountId, GrandpaId, BabeId, ImOnlineId) {
-    (
-        get_from_phrase::<AccountId>(stash),
-        get_from_phrase::<AccountId>(phrase),
-        get_from_phrase::<GrandpaId>(phrase),
-        get_from_phrase::<BabeId>(phrase),
-        get_from_phrase::<ImOnlineId>(phrase),
-    )
-}
-
-/// Helper function to create GenesisConfig for testing
-pub fn testnet_genesis(
+/// Helper function to create GenesisConfig
+fn generate_config_genesis(
     initial_authorities: Vec<(AccountId, AccountId, GrandpaId, BabeId, ImOnlineId)>,
     root_key: AccountId,
     endowed_accounts: Option<Vec<AccountId>>,
     enable_println: bool,
 ) -> GenesisConfig {
-    let endowed_accounts: Vec<AccountId> = endowed_accounts.unwrap_or_else(|| {
-        vec![
-            //			get_from_phrase::<AccountId>("embrace depart solution acoustic shift speed trap include member attitude photo tobacco"),
-            get_from_seed::<AccountId>("Alice"),
-            get_from_seed::<AccountId>("Bob"),
-            get_from_seed::<AccountId>("Charlie"),
-            get_from_seed::<AccountId>("Dave"),
-            get_from_seed::<AccountId>("Eve"),
-            get_from_seed::<AccountId>("Ferdie"),
-            //			get_from_phrase::<AccountId>("hole math party slam knee mobile flat dance exercise economy chuckle fossil"),
-            get_from_seed::<AccountId>("Alice//stash"),
-            get_from_seed::<AccountId>("Bob//stash"),
-            get_from_seed::<AccountId>("Charlie//stash"),
-            get_from_seed::<AccountId>("Dave//stash"),
-            get_from_seed::<AccountId>("Eve//stash"),
-            get_from_seed::<AccountId>("Ferdie//stash"),
-        ]
-    });
+    let default_endowed_accounts: HashSet<AccountId> = vec![
+        get_from_seed::<AccountId>("Alice"),
+        get_from_seed::<AccountId>("Bob"),
+        get_from_seed::<AccountId>("Charlie"),
+        get_from_seed::<AccountId>("Dave"),
+        get_from_seed::<AccountId>("Eve"),
+        get_from_seed::<AccountId>("Ferdie"),
+        get_from_seed::<AccountId>("Alice//stash"),
+        get_from_seed::<AccountId>("Bob//stash"),
+        get_from_seed::<AccountId>("Charlie//stash"),
+        get_from_seed::<AccountId>("Dave//stash"),
+        get_from_seed::<AccountId>("Eve//stash"),
+        get_from_seed::<AccountId>("Ferdie//stash"),
+    ]
+    .iter()
+    .cloned()
+    .chain(initial_authorities.iter().map(|x| x.1.clone()))
+    .chain(initial_authorities.iter().map(|x| x.0.clone()))
+    .into_iter()
+    .collect();
+    let endowed_accounts: Vec<AccountId> =
+        endowed_accounts.unwrap_or_else(|| default_endowed_accounts.into_iter().collect());
 
     const ENDOWMENT: Balance = 10_000_000 * DOLLARS;
     const STASH: Balance = 100 * DOLLARS;
-
-    let desired_seats = (endowed_accounts.len() / 2 - initial_authorities.len()) as u32;
 
     GenesisConfig {
         system: Some(SystemConfig {
             code: WASM_BINARY.to_vec(),
             changes_trie_config: Default::default(),
         }),
-        indices: Some(IndicesConfig {
-            ids: endowed_accounts.clone(),
-        }),
         balances: Some(BalancesConfig {
             balances: endowed_accounts
                 .iter()
-                .map(|k| (k.clone(), ENDOWMENT))
+                .cloned()
+                .map(|k| (k, ENDOWMENT))
                 .collect(),
             vesting: vec![],
+        }),
+        indices: Some(IndicesConfig {
+            ids: endowed_accounts.iter().cloned().collect::<Vec<_>>(),
         }),
         contracts: Some(ContractsConfig {
             current_schedule: contracts::Schedule {
@@ -283,8 +123,30 @@ pub fn testnet_genesis(
     }
 }
 
+/// Staging testnet config.
+pub fn staging_testnet_config() -> ChainSpec {
+    let boot_nodes = vec![
+		"/ip4/3.114.90.94/tcp/30333/p2p/QmTVUeF2fTe9m8MXw6EGihbvPzDpRm5sJbFGsj6WuagvJu".to_string(),
+		"/ip4/3.114.81.104/tcp/30333/p2p/QmQU5Ac75U9d9hG9cWzjANxLK9k35mGnZRhFdGW9X7YLbN".to_string(),
+	];
+	let properties = serde_json::from_str(PLASM_PROPERTIES).unwrap();
+    ChainSpec::from_genesis(
+        "Miniplasm",
+        "miniplasm",
+        staging_testnet_genesis,
+        boot_nodes,
+        Some(TelemetryEndpoints::new(vec![(
+            STAGING_TELEMETRY_URL.to_string(),
+            0,
+        )])),
+		Some(PLASM_PROTOCOL_ID),
+		None,
+		properties,
+    )
+}
+
 fn development_config_genesis() -> GenesisConfig {
-    testnet_genesis(
+    generate_config_genesis(
         vec![get_authority_keys_from_seed("Alice")],
         get_from_seed::<AccountId>("Alice"),
         None,
@@ -306,15 +168,58 @@ pub fn development_config() -> ChainSpec {
     )
 }
 
-fn local_testnet_genesis() -> GenesisConfig {
-    testnet_genesis(
+fn staging_testnet_genesis() -> GenesisConfig {
+    generate_config_genesis(
         vec![
-            //get_authority_keys_from_phrase("embrace depart solution acoustic shift speed trap include member attitude photo tobacco","hole math party slam knee mobile flat dance exercise economy chuckle fossil"),
+            (
+                // 5DwNtWotLKncBq1EYJSd74s4tf5fH8McK5XMoG8AyvwdFor6
+                hex!["52e1e582076b036e8feb9104b18619795cceccc00fb80c18dd8df5a5c4ea1d52"]
+                    .unchecked_into(),
+                // 5ELomezsSJhtedP3cFD4zqNDVvvwmdp6PpywACWEq1UP3fgq
+                hex!["64c04cdc3237ff84dc94b294d66aff7c370c0cd2648fab05330368ef905cfa5a"]
+                    .unchecked_into(),
+                // 5GdhABzAQBQYdEFw31veGtjoHbtSUUxTkte53ZUGuUDu73Ra
+                hex!["ca19aecbb6f621eb9aea26914916a73135df6766e146b993803065474abed3fa"]
+                    .unchecked_into(),
+                // 5ELomezsSJhtedP3cFD4zqNDVvvwmdp6PpywACWEq1UP3fgq
+                hex!["64c04cdc3237ff84dc94b294d66aff7c370c0cd2648fab05330368ef905cfa5a"]
+                    .unchecked_into(),
+                // 5ELomezsSJhtedP3cFD4zqNDVvvwmdp6PpywACWEq1UP3fgq
+                hex!["64c04cdc3237ff84dc94b294d66aff7c370c0cd2648fab05330368ef905cfa5a"]
+                    .unchecked_into(),
+            ),
+            (
+                // 5EvzqUdvcifpT9oevGXy3DRqLB9CL6ptWdpAQtNt1hAGJMP1
+                hex!["7ed3e52399b93e05072d83bcbc18d80ff59da1439352057fb61eaf541e8f1c39"]
+                    .unchecked_into(),
+                // 5GLQu9iyhRHDAHgCd8yFDD3dqFkxn4z8uwEwK8YyYa2GBTUu
+                hex!["bcebc6faab0765ca020f33182410156517bc88994d1210a8a026bdc5d201ee7b"]
+                    .unchecked_into(),
+                // 5HJWD9xdcPvXW2ajEUJEgAXbP4DBGfjDxRh3Nq8PAvnZM8AP
+                hex!["e7b365779d16bf9e51164f63d5b1ff986ba58420636d007576549f0da03547ae"]
+                    .unchecked_into(),
+                // 5GLQu9iyhRHDAHgCd8yFDD3dqFkxn4z8uwEwK8YyYa2GBTUu
+                hex!["bcebc6faab0765ca020f33182410156517bc88994d1210a8a026bdc5d201ee7b"]
+                    .unchecked_into(),
+                // 5GLQu9iyhRHDAHgCd8yFDD3dqFkxn4z8uwEwK8YyYa2GBTUu
+                hex!["bcebc6faab0765ca020f33182410156517bc88994d1210a8a026bdc5d201ee7b"]
+                    .unchecked_into(),
+            ),
+        ],
+        // 5ELomezsSJhtedP3cFD4zqNDVvvwmdp6PpywACWEq1UP3fgq
+        hex!["64c04cdc3237ff84dc94b294d66aff7c370c0cd2648fab05330368ef905cfa5a"].unchecked_into(),
+        None,
+        false,
+    )
+}
+
+fn local_testnet_genesis() -> GenesisConfig {
+    generate_config_genesis(
+        vec![
             get_authority_keys_from_seed("Alice"),
             get_authority_keys_from_seed("Bob"),
         ],
         get_from_seed::<AccountId>("Alice"),
-        //		get_from_phrase::<AccountId>("embrace depart solution acoustic shift speed trap include member attitude photo tobacco"),
         None,
         false,
     )
