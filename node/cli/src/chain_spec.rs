@@ -19,9 +19,9 @@ const STAGING_TELEMETRY_URL: &str = "wss://telemetry.polkadot.io/submit/";
 const PLASM_PROPERTIES: &str = r#"
 		{
 			"tokenDecimals": 15,
-			"tokenSymbol": "PRM"
+			"tokenSymbol": "PLM"
 		}"#;
-const PLASM_PROTOCOL_ID: &str = "prm";
+const PLASM_PROTOCOL_ID: &str = "plm";
 
 /// Specialized `ChainSpec`.
 pub type ChainSpec = substrate_service::ChainSpec<GenesisConfig>;
