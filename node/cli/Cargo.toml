@@ -12,6 +12,7 @@ tokio = "0.1.7"
 futures = "0.1"
 exit-future = "0.1"
 jsonrpc-core = "13.1.0"
+serde_json = "1.0"
 cli = { package = "substrate-cli", git = "https://github.com/satellitex/substrate.git" }
 codec = { package = "parity-scale-codec", version = "1.0.0" }
 sr-io = { git = "https://github.com/satellitex/substrate.git" }
