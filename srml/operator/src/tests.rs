@@ -4,8 +4,7 @@
 #![allow(unused)]
 
 use super::*;
-use contract::{BalanceOf, ComputeDispatchFee, ContractAddressFor, ContractInfo, ContractInfoOf, GenesisConfig,
-	Module, RawAliveContractInfo, RawEvent, TrieId, TrieIdFromParentCounter, Schedule, TrieIdGenerator};
+use contract::{BalanceOf, ComputeDispatchFee, ContractAddressFor, ContractInfo, ContractInfoOf, RawAliveContractInfo, TrieId, TrieIdFromParentCounter, Schedule, TrieIdGenerator};
 use hex_literal::*;
 use codec::{Decode, Encode, KeyedVec};
 use sr_primitives::{
@@ -269,7 +268,7 @@ impl ExtBuilder {
 			balances: vec![],
 			vesting: vec![],
 		}.assimilate_storage(&mut t).unwrap();
-		GenesisConfig::<Test> {
+		contract::GenesisConfig::<Test> {
 			current_schedule: Schedule {
 				enable_println: true,
 				..Default::default()
@@ -346,7 +345,7 @@ fn instantiate_and_call_and_deposit_event() {
 			},
 			EventRecord {
 				phase: Phase::ApplyExtrinsic(0),
-				event: MetaEvent::contract(RawEvent::CodeStored(code_hash.into())),
+				event: MetaEvent::contract(contract::RawEvent::CodeStored(code_hash.into())),
 				topics: vec![],
 			},
 			EventRecord {
@@ -358,22 +357,105 @@ fn instantiate_and_call_and_deposit_event() {
 			},
 			EventRecord {
 				phase: Phase::ApplyExtrinsic(0),
-				event: MetaEvent::contract(RawEvent::Transfer(ALICE, BOB, 100)),
+				event: MetaEvent::contract(contract::RawEvent::Transfer(ALICE, BOB, 100)),
 				topics: vec![],
 			},
 			EventRecord {
 				phase: Phase::ApplyExtrinsic(0),
-				event: MetaEvent::contract(RawEvent::Contract(BOB, vec![1, 2, 3, 4])),
+				event: MetaEvent::contract(contract::RawEvent::Contract(BOB, vec![1, 2, 3, 4])),
 				topics: vec![],
 			},
 			EventRecord {
 				phase: Phase::ApplyExtrinsic(0),
-				event: MetaEvent::contract(RawEvent::Instantiated(ALICE, BOB)),
+				event: MetaEvent::contract(contract::RawEvent::Instantiated(ALICE, BOB)),
 				topics: vec![],
 			}
 		]);
 
 		assert_ok!(creation);
 		assert!(ContractInfoOf::<Test>::exists(BOB));
+	});
+}
+
+
+#[test]
+fn instantiate_and_relate_operator() {
+	let (wasm, code_hash) = compile_module::<Test>(CODE_RETURN_FROM_START_FN).unwrap();
+
+	ExtBuilder::default().existential_deposit(100).build().execute_with(|| {
+		// prepare
+		Balances::deposit_creating(&ALICE, 1_000_000);
+		assert_ok!(Contract::put_code(Origin::signed(ALICE), 100_000, wasm));
+
+		let test_params = TestParameters{a: 5_000_000};
+
+		// instantiate
+		// Check at the end to get hash on error easily
+		let creation = Operator::instantiate(
+			Origin::signed(ALICE),
+			100,
+			100_000,
+			code_hash.into(),
+			vec![],
+			test_params.clone(),
+		);
+		// checks eventRecord
+		assert_eq!(System::events(), vec![
+			EventRecord {
+				phase: Phase::ApplyExtrinsic(0),
+				event: MetaEvent::balances(balances::RawEvent::NewAccount(1, 1_000_000)),
+				topics: vec![],
+			},
+			EventRecord {
+				phase: Phase::ApplyExtrinsic(0),
+				event: MetaEvent::contract(contract::RawEvent::CodeStored(code_hash.into())),
+				topics: vec![],
+			},
+			EventRecord {
+				phase: Phase::ApplyExtrinsic(0),
+				event: MetaEvent::balances(
+					balances::RawEvent::NewAccount(BOB, 100)
+				),
+				topics: vec![],
+			},
+			EventRecord {
+				phase: Phase::ApplyExtrinsic(0),
+				event: MetaEvent::contract(contract::RawEvent::Transfer(ALICE, BOB, 100)),
+				topics: vec![],
+			},
+			EventRecord {
+				phase: Phase::ApplyExtrinsic(0),
+				event: MetaEvent::contract(contract::RawEvent::Contract(BOB, vec![1, 2, 3, 4])),
+				topics: vec![],
+			},
+			EventRecord {
+				phase: Phase::ApplyExtrinsic(0),
+				event: MetaEvent::contract(contract::RawEvent::Instantiated(ALICE, BOB)),
+				topics: vec![],
+			},
+			EventRecord {
+				phase: Phase::ApplyExtrinsic(0),
+				event: MetaEvent::operator(RawEvent::SetOperator(BOB, ALICE)),
+				topics: vec![],
+			}
+		]);
+
+		// checks deployed contract
+		assert!(ContractInfoOf::<Test>::exists(BOB));
+
+		// checks mapping operator and contract
+		// ALICE operate a only BOB contract.
+		assert!(OperatorHasContracts::<Test>::exists(ALICE));
+		let tree = OperatorHasContracts::<Test>::get(&ALICE);
+		assert_eq!(tree.len(), 1);
+		assert!(tree.contains(&BOB));
+
+		// BOB contract is operated a ALICE.
+		assert!(ContractHasOperator::<Test>::exists(BOB));
+		assert_eq!(ContractHasOperator::<Test>::get(&BOB), Some(ALICE));
+
+		// BOB's contract Parameters is same test_params.
+		assert!(ContractParameters::<Test>::exists(BOB));
+		assert_eq!(ContractParameters::<Test>::get(&BOB), Some(test_params));
 	});
 }
