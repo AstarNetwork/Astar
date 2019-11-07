@@ -1,10 +1,10 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use support::{decl_module, decl_storage, decl_event, dispatch::Result, Parameter};
-use system::ensure_signed;
+use system::{ensure_signed, RawOrigin};
 use sr_primitives::traits::{Member, MaybeDisplay, MaybeSerialize};
 use rstd::collections::btree_set::BTreeSet;
-use contract::{BalanceOf, Gas, CodeHash};
+use contract::{BalanceOf, Gas, CodeHash, ContractAddressFor};
 
 #[cfg(test)]
 mod tests;
@@ -43,6 +43,19 @@ decl_module! {
 			code_hash: CodeHash<T>,
 			data: Vec<u8>,
 			parameters: T::Parameters) -> Result {
+			let operator = ensure_signed(origin)?;
+			let contract = T::DetermineContractAddress::contract_address_for(&code_hash, &data, &operator);
+			contract::Module::<T>::instantiate(RawOrigin::Signed(operator.clone()).into(), endowment, gas_limit, code_hash, data)?;
+
+			// add operator to contracts
+			<OperatorHasContracts<T>>::mutate(&operator, {|tree| (*tree).insert(contract.clone()) });
+			// add contract to operator
+			<ContractHasOperator<T>>::insert(&contract, operator.clone());
+			// add contract to paramters
+			<ContractParameters<T>>::insert(&contract, parameters);
+
+			// issue an event operator -> contract
+			Self::deposit_event(RawEvent::SetOperator(operator, contract));
 			Ok(())
 		}
 

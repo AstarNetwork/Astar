@@ -435,7 +435,7 @@ fn instantiate_and_relate_operator() {
 			},
 			EventRecord {
 				phase: Phase::ApplyExtrinsic(0),
-				event: MetaEvent::operator(RawEvent::SetOperator(BOB, ALICE)),
+				event: MetaEvent::operator(RawEvent::SetOperator(ALICE, BOB)),
 				topics: vec![],
 			}
 		]);
