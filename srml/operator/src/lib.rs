@@ -26,13 +26,12 @@ pub trait Trait: system::Trait {
 /// This module's storage items.
 decl_storage! {
 	trait Store for Module<T: Trait> as operator {
-		// Just a dummy storage item.
-		// Here we are declaring a StorageValue, `Something` as a Option<u32>
-		// `get(something)` is the default getter which returns either the stored `u32` or `None` if nothing stored
-		Something get(something): Option<u32>;
+		/// A mapping from operators to operated contracts by them.
 		pub OperatorHasContracts: map T::AccountId => BTreeSet<T::AccountId>;
+		/// A mapping from operated contract by operator to it.
 		pub ContractHasOperator: map T::AccountId => Option<T::AccountId>;
-		pub ContractsParameter: map T::AccountId => Option<T::Parameters>;
+		/// A mapping from contract to it's parameters.
+		pub ContractParameters: map T::AccountId => Option<T::Parameters>;
 	}
 }
 
@@ -43,19 +42,23 @@ decl_module! {
 		// this is needed only if you are using events in your module
 		fn deposit_event() = default;
 
-		// Just a dummy entry point.
-		// function that can be called by the external world as an extrinsics call
-		// takes a parameter of the type `AccountId`, stores it and emits an event
-		pub fn do_something(origin, something: u32) -> Result {
-			// TODO: You only need this if you want to check it was signed.
-			let who = ensure_signed(origin)?;
+		/// Deploys a contact and insert relation of a contract and an operator to mapping.
+		pub fn instantiate(origin,
+			#[compact] endowment: BalanceOf<T>,
+			#[compact] gas_limit: Gas,
+			code_hash: CodeHash<T>,
+			data: Vec<u8>,
+			parameters: OperateParameters) -> Result {
+			Ok(())
+		}
 
-			// TODO: Code to execute when something calls this.
-			// For example: the following line stores the passed in u32 in the storage
-			Something::put(something);
+		/// Updates parameters for an identified contact.
+		pub fn update_parameters(origin, paramters: OperateParameters) -> Result {
+			Ok(())
+		}
 
-			// here we are raising the Something event
-			Self::deposit_event(RawEvent::SomethingStored(something, who));
+		/// Changes an operator for identified contracts.
+		pub fn change_operator(origin, contracts: Vec<AccountId>, new_operator: AccountId) -> Result {
 			Ok(())
 		}
 	}
@@ -63,10 +66,13 @@ decl_module! {
 
 decl_event!(
 	pub enum Event<T> where AccountId = <T as system::Trait>::AccountId {
-		// Just a dummy event.
-		// Event `Something` is declared with a parameter of the type `u32` and `AccountId`
-		// To emit this event, we call the deposit funtion, from our runtime funtions
-		SomethingStored(u32, AccountId),
+		/// When operator changed,
+		/// it is issued that 1-st Operator AccountId and 2-nd Contract AccountId.
+		SetOperator(AccountId, AccountId),
+
+		/// When contract's parameters changed,
+		/// it is issued that 1-st Contract AccountId and 2-nd the contract's new parameters.
+		SetParameter(AccountId, Parameters),
 	}
 );
 
@@ -144,4 +150,6 @@ mod tests {
 			assert_eq!(TemplateModule::something(), Some(42));
 		});
 	}
+
+
 }
