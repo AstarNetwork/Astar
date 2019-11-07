@@ -3,7 +3,7 @@ authors = ['Takumi Yamashita <takumi@staked.co.jp>']
 build = 'build.rs'
 edition = '2018'
 name = 'plasm'
-version = '0.4.9'
+version = '0.5.0'
 
 [dependencies]
 cli = { package = "plasm-cli", path = "node/cli" }

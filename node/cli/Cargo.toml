@@ -1,6 +1,6 @@
 [package]
 name = "plasm-cli"
-version = "0.4.9"
+version = "0.5.0"
 authors = ["Takumi Yamashita <takumi@staked.co.jp>"]
 description = "Plasm node implementation in Rust."
 build = "build.rs"
@@ -54,7 +54,7 @@ keystore = { package = "substrate-keystore", git = "https://github.com/satellite
 babe = { package = "substrate-consensus-babe", git = "https://github.com/satellitex/substrate.git", features = ["test-helpers"] }
 consensus-common = { package = "substrate-consensus-common", git = "https://github.com/satellitex/substrate.git" }
 service-test = { package = "substrate-service-test", git = "https://github.com/satellitex/substrate.git" }
-futures03 = { package = "futures-preview", version = "=0.3.0-alpha.17" }
+futures03 = { package = "futures-preview", version = "0.3.0-alpha.19" }
 tempfile = "3.1"
 
 [build-dependencies]

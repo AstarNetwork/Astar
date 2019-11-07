@@ -1,6 +1,6 @@
 [package]
 name = "plasm-runtime"
-version = "0.4.9"
+version = "0.5.0"
 authors = ["Takumi Yamashita <takumi@staked.co.jp>"]
 edition = "2018"
 build = "build.rs"
@@ -23,6 +23,7 @@ babe = { package = "srml-babe", git = "https://github.com/satellitex/substrate.g
 babe-primitives = { package = "substrate-consensus-babe-primitives", git = "https://github.com/satellitex/substrate.git", default-features = false }
 balances = { package = "srml-balances", git = "https://github.com/satellitex/substrate.git", default-features = false }
 contracts = { package = "srml-contracts", git = "https://github.com/satellitex/substrate.git", default-features = false }
+contracts-rpc-runtime-api = { package = "srml-contracts-rpc-runtime-api", git = "https://github.com/satellitex/substrate.git", default-features = false }
 collective = { package = "srml-collective", git = "https://github.com/satellitex/substrate.git", default-features = false }
 democracy = { package = "srml-democracy", git = "https://github.com/satellitex/substrate.git", default-features = false }
 elections = { package = "srml-elections", git = "https://github.com/satellitex/substrate.git", default-features = false }
@@ -51,9 +52,6 @@ wasm-builder-runner = { package = "substrate-wasm-builder-runner", version = "1.
 
 [features]
 default = ["std"]
-no_std = [
-	"contracts/core",
-]
 std = [
 	"authority-discovery-primitives/std",
 	"authority-discovery/std",
@@ -65,6 +63,7 @@ std = [
 	"codec/std",
 	"collective/std",
 	"contracts/std",
+	"contracts-rpc-runtime-api/std",
 	"democracy/std",
 	"elections/std",
 	"executive/std",
