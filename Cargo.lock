@@ -2789,6 +2789,24 @@ dependencies = [
 ]
 
 [[package]]
+name = "plasm-parent-pgspec"
+version = "0.1.0"
+dependencies = [
+ "derive_more 0.14.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "parity-scale-codec 1.0.5 (registry+https://github.com/rust-lang/crates.io-index)",
+ "serde 1.0.100 (registry+https://github.com/rust-lang/crates.io-index)",
+ "serde_derive 1.0.100 (registry+https://github.com/rust-lang/crates.io-index)",
+ "sr-io 2.0.0 (git+https://github.com/satellitex/substrate.git)",
+ "sr-primitives 2.0.0 (git+https://github.com/satellitex/substrate.git)",
+ "sr-std 2.0.0 (git+https://github.com/satellitex/substrate.git)",
+ "srml-balances 2.0.0 (git+https://github.com/satellitex/substrate.git)",
+ "srml-contracts 2.0.0 (git+https://github.com/satellitex/substrate.git)",
+ "srml-support 2.0.0 (git+https://github.com/satellitex/substrate.git)",
+ "srml-system 2.0.0 (git+https://github.com/satellitex/substrate.git)",
+ "substrate-primitives 2.0.0 (git+https://github.com/satellitex/substrate.git)",
+]
+
+[[package]]
 name = "plasm-primitives"
 version = "0.4.9"
 dependencies = [

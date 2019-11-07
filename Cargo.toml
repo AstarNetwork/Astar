@@ -36,6 +36,7 @@ members = [
 	"contracts/deposit",
 	"contracts/predicate",
 	"contracts/primitives",
+	"srml/operator",
 ]
 
 exclude = [
