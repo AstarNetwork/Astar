@@ -89,6 +89,27 @@ decl_module! {
 
 		/// Changes an operator for identified contracts.
 		pub fn change_operator(origin, contracts: Vec<T::AccountId>, new_operator: T::AccountId) -> Result {
+			let operator = ensure_signed(origin)?;
+			let operate_contracts = <OperatorHasContracts<T>>::get(&operator);
+
+			// check the actually operate the contract.
+			for c in contracts.iter() {
+				if !operate_contracts.contains(&c) {
+					return Err("The sender don't operate the contracts address.")
+				}
+			}
+
+
+			for c in contracts.iter() {
+				// remove origin operator to contracts
+				<OperatorHasContracts<T>>::mutate(&operator, {|tree| (*tree).remove(c) });
+				// add new_operator to contracts
+				<OperatorHasContracts<T>>::mutate(&new_operator, {|tree| (*tree).insert(c.clone()) });
+				// add contract to new_operator
+				<ContractHasOperator<T>>::insert(&c, new_operator.clone());
+				// issue an event operator -> contract
+				Self::deposit_event(RawEvent::SetOperator(new_operator.clone(), c.clone()));
+			}
 			Ok(())
 		}
 	}

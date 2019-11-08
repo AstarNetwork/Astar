@@ -665,3 +665,102 @@ fn update_parameters_failed() {
 		assert_eq!(ContractParameters::<Test>::get(&BOB), Some(DEFAULT_PARAMETERS));
 	});
 }
+
+#[test]
+fn change_operator_passed() {
+	let (wasm, code_hash) = compile_module::<Test>(CODE_RETURN_FROM_START_FN).unwrap();
+
+	ExtBuilder::default().existential_deposit(100).build().execute_with(|| {
+		valid_instatiate(wasm, code_hash);
+
+		// do change operator form alice to charlie.
+		let new_operator = CHARLIE;
+		assert_ok!(Operator::change_operator(Origin::signed(ALICE), vec!{BOB,}, new_operator.clone()));
+
+		// checks mapping operator and contract
+		// ALICE doesn't operate a BOB contract.
+		let tree = OperatorHasContracts::<Test>::get(&ALICE);
+		assert_eq!(tree.len(), 0);
+
+		// CHARLIE operate a only BOB contract.
+		assert!(OperatorHasContracts::<Test>::exists(CHARLIE));
+		let tree = OperatorHasContracts::<Test>::get(&CHARLIE);
+		assert_eq!(tree.len(), 1);
+		assert!(tree.contains(&BOB));
+
+		// BOB contract is operated a CHARLIE.
+		assert!(ContractHasOperator::<Test>::exists(BOB));
+		assert_eq!(ContractHasOperator::<Test>::get(&BOB), Some(CHARLIE));
+
+		// To issue SetParameter
+		assert_eq!(System::events(), vec![
+			EventRecord {
+				phase: Phase::ApplyExtrinsic(0),
+				event: MetaEvent::balances(balances::RawEvent::NewAccount(1, 1_000_000)),
+				topics: vec![],
+			},
+			EventRecord {
+				phase: Phase::ApplyExtrinsic(0),
+				event: MetaEvent::contract(contract::RawEvent::CodeStored(code_hash.into())),
+				topics: vec![],
+			},
+			EventRecord {
+				phase: Phase::ApplyExtrinsic(0),
+				event: MetaEvent::balances(
+					balances::RawEvent::NewAccount(BOB, 100)
+				),
+				topics: vec![],
+			},
+			EventRecord {
+				phase: Phase::ApplyExtrinsic(0),
+				event: MetaEvent::contract(contract::RawEvent::Transfer(ALICE, BOB, 100)),
+				topics: vec![],
+			},
+			EventRecord {
+				phase: Phase::ApplyExtrinsic(0),
+				event: MetaEvent::contract(contract::RawEvent::Contract(BOB, vec![1, 2, 3, 4])),
+				topics: vec![],
+			},
+			EventRecord {
+				phase: Phase::ApplyExtrinsic(0),
+				event: MetaEvent::contract(contract::RawEvent::Instantiated(ALICE, BOB)),
+				topics: vec![],
+			},
+			EventRecord {
+				phase: Phase::ApplyExtrinsic(0),
+				event: MetaEvent::operator(RawEvent::SetOperator(ALICE, BOB)),
+				topics: vec![],
+			},
+			EventRecord {
+				phase: Phase::ApplyExtrinsic(0),
+				event: MetaEvent::operator(RawEvent::SetOperator(CHARLIE, BOB)),
+				topics: vec![],
+			},
+		]);
+	});
+}
+
+#[test]
+fn change_operator_failed() {
+	let (wasm, code_hash) = compile_module::<Test>(CODE_RETURN_FROM_START_FN).unwrap();
+
+	ExtBuilder::default().existential_deposit(100).build().execute_with(|| {
+		valid_instatiate(wasm, code_hash);
+
+		// failed update parameter, invalid operator.
+		let new_operator = CHARLIE;
+		assert_err!(Operator::change_operator(Origin::signed(ALICE), vec!{DJANGO,}, new_operator.clone()),
+			"The sender don't operate the contracts address.");
+
+		// checks mapping operator and contract is not changed.
+		// ALICE operate a only BOB contract.
+		assert!(OperatorHasContracts::<Test>::exists(ALICE));
+		let tree = OperatorHasContracts::<Test>::get(&ALICE);
+		assert_eq!(tree.len(), 1);
+		assert!(tree.contains(&BOB));
+
+		// BOB contract is operated a ALICE.
+		assert!(ContractHasOperator::<Test>::exists(BOB));
+		assert_eq!(ContractHasOperator::<Test>::get(&BOB), Some(ALICE));
+	});
+}
