@@ -21,7 +21,7 @@ case $TARGET in
 		sudo apt-get install -y cmake pkg-config libssl-dev clang libclang-dev
 
 		./scripts/init.sh
-		cd node/cli
+		cd ./node/cli
 		cargo build
 		;;
 
