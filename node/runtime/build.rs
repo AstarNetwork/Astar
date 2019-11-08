@@ -5,7 +5,7 @@ fn main() {
 		"wasm_binary.rs",
 		WasmBuilderSource::Git {
 			repo: "https://github.com/satellitex/substrate.git",
-			rev: "d2e7d660f8dbbb8f9753dfd231cef1c9b502c41c",
+			rev: "97643d4639868119550bd7ef6d824729cd6e587a",
 		},
 		// This instructs LLD to export __heap_base as a global variable, which is used by the
 		// external memory allocator.
