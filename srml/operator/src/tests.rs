@@ -164,6 +164,15 @@ impl contract::Trait for Test {
 pub struct TestParameters {
 	pub a: u128,
 }
+const TEST_MAX_PARAMS_A: u128 = 1000_000_000_000;
+impl parameters::Verifiable for TestParameters {
+	fn verify(&self) -> Result {
+		if self.a > TEST_MAX_PARAMS_A {
+			return Err("over max params.")
+		}
+		Ok(())
+	}
+}
 
 impl Trait for Test {
 	type Parameters = TestParameters;
@@ -215,6 +224,8 @@ const ALICE: u64 = 1;
 const BOB: u64 = 2;
 const CHARLIE: u64 = 3;
 const DJANGO: u64 = 4;
+const DEFAULT_PARAMETERS: TestParameters = TestParameters{a: 5_000_000};
+const INVALID_PARAMETERS: TestParameters = TestParameters{a: TEST_MAX_PARAMS_A + 1};
 
 pub struct ExtBuilder {
 	existential_deposit: u64,
@@ -387,18 +398,18 @@ fn instantiate_and_relate_operator() {
 		Balances::deposit_creating(&ALICE, 1_000_000);
 		assert_ok!(Contract::put_code(Origin::signed(ALICE), 100_000, wasm));
 
-		let test_params = TestParameters{a: 5_000_000};
+		let test_params = DEFAULT_PARAMETERS.clone();
 
 		// instantiate
 		// Check at the end to get hash on error easily
-		let creation = Operator::instantiate(
+		assert_ok!(Operator::instantiate(
 			Origin::signed(ALICE),
 			100,
 			100_000,
 			code_hash.into(),
 			vec![],
 			test_params.clone(),
-		);
+		));
 		// checks eventRecord
 		assert_eq!(System::events(), vec![
 			EventRecord {
@@ -457,5 +468,154 @@ fn instantiate_and_relate_operator() {
 		// BOB's contract Parameters is same test_params.
 		assert!(ContractParameters::<Test>::exists(BOB));
 		assert_eq!(ContractParameters::<Test>::get(&BOB), Some(test_params));
+	});
+}
+
+#[test]
+fn instantiate_failed() {
+	let (wasm, code_hash) = compile_module::<Test>(CODE_RETURN_FROM_START_FN).unwrap();
+
+	ExtBuilder::default().existential_deposit(100).build().execute_with(|| {
+		// prepare
+		Balances::deposit_creating(&ALICE, 1_000_000);
+		assert_ok!(Contract::put_code(Origin::signed(ALICE), 100_000, wasm));
+
+		let test_params = INVALID_PARAMETERS;
+
+		// instantiate
+		// Check at the end to get hash on error easily
+		assert_err!(Operator::instantiate(
+			Origin::signed(ALICE),
+			100,
+			100_000,
+			code_hash.into(),
+			vec![],
+			test_params,
+		), "over max params.");
+	});
+}
+
+
+fn valid_instatiate(wasm: Vec<u8>, code_hash: CodeHash<Test>) {
+	// prepare
+	Balances::deposit_creating(&ALICE, 1_000_000);
+	assert_ok!(Contract::put_code(Origin::signed(ALICE), 100_000, wasm));
+
+	let test_params = TestParameters{a: 5_000_000};
+
+	// instantiate
+	// Check at the end to get hash on error easily
+	let creation = Operator::instantiate(
+		Origin::signed(ALICE),
+		100,
+		100_000,
+		code_hash.into(),
+		vec![],
+		test_params.clone(),
+	);
+	// checks eventRecord
+	assert_eq!(System::events(), vec![
+		EventRecord {
+			phase: Phase::ApplyExtrinsic(0),
+			event: MetaEvent::balances(balances::RawEvent::NewAccount(1, 1_000_000)),
+			topics: vec![],
+		},
+		EventRecord {
+			phase: Phase::ApplyExtrinsic(0),
+			event: MetaEvent::contract(contract::RawEvent::CodeStored(code_hash.into())),
+			topics: vec![],
+		},
+		EventRecord {
+			phase: Phase::ApplyExtrinsic(0),
+			event: MetaEvent::balances(
+				balances::RawEvent::NewAccount(BOB, 100)
+			),
+			topics: vec![],
+		},
+		EventRecord {
+			phase: Phase::ApplyExtrinsic(0),
+			event: MetaEvent::contract(contract::RawEvent::Transfer(ALICE, BOB, 100)),
+			topics: vec![],
+		},
+		EventRecord {
+			phase: Phase::ApplyExtrinsic(0),
+			event: MetaEvent::contract(contract::RawEvent::Contract(BOB, vec![1, 2, 3, 4])),
+			topics: vec![],
+		},
+		EventRecord {
+			phase: Phase::ApplyExtrinsic(0),
+			event: MetaEvent::contract(contract::RawEvent::Instantiated(ALICE, BOB)),
+			topics: vec![],
+		},
+		EventRecord {
+			phase: Phase::ApplyExtrinsic(0),
+			event: MetaEvent::operator(RawEvent::SetOperator(ALICE, BOB)),
+			topics: vec![],
+		}
+	]);
+
+	// checks deployed contract
+	assert!(ContractInfoOf::<Test>::exists(BOB));
+
+	// checks mapping operator and contract
+	// ALICE operate a only BOB contract.
+	assert!(OperatorHasContracts::<Test>::exists(ALICE));
+	let tree = OperatorHasContracts::<Test>::get(&ALICE);
+	assert_eq!(tree.len(), 1);
+	assert!(tree.contains(&BOB));
+
+	// BOB contract is operated a ALICE.
+	assert!(ContractHasOperator::<Test>::exists(BOB));
+	assert_eq!(ContractHasOperator::<Test>::get(&BOB), Some(ALICE));
+
+	// BOB's contract Parameters is same test_params.
+	assert!(ContractParameters::<Test>::exists(BOB));
+	assert_eq!(ContractParameters::<Test>::get(&BOB), Some(test_params));
+}
+
+#[test]
+fn update_parameters_passed() {
+	let (wasm, code_hash) = compile_module::<Test>(CODE_RETURN_FROM_START_FN).unwrap();
+
+	ExtBuilder::default().existential_deposit(100).build().execute_with(|| {
+		valid_instatiate(wasm, code_hash);
+
+		// do update parameters
+		let new_parameters = TestParameters{a: 100_000_000};
+		assert_ok!(Operator::update_parameters(Origin::signed(ALICE), BOB, new_parameters.clone()));
+
+		// check updated paramters
+		// BOB's contract Parameters is same test_params.
+		assert!(ContractParameters::<Test>::exists(BOB));
+		assert_eq!(ContractParameters::<Test>::get(&BOB), Some(new_parameters));
+	});
+}
+
+#[test]
+fn update_parameters_failed() {
+	let (wasm, code_hash) = compile_module::<Test>(CODE_RETURN_FROM_START_FN).unwrap();
+
+	ExtBuilder::default().existential_deposit(100).build().execute_with(|| {
+		valid_instatiate(wasm, code_hash);
+
+		// failed update parameters-not signed
+		let new_parameters = TestParameters{a: 100_000_000};
+		assert_err!(Operator::update_parameters(Origin::signed(BOB), BOB, new_parameters),
+		 "ensure sigend error.");
+
+		// failed update parameters not operate contract address.
+		let new_parameters = TestParameters{a: 100_000_000};
+		assert_err!(Operator::update_parameters(Origin::signed(ALICE), ALICE, new_parameters),
+		 "The sender don't operate the contract address.");
+
+		// failed invalid parameters.
+		let new_parameters = INVALID_PARAMETERS;
+		assert_err!(Operator::update_parameters(Origin::signed(ALICE), BOB, new_parameters),
+		 "over max params.");
+
+		// check updated paramters
+		// BOB's contract Parameters is not changed.
+		assert!(ContractParameters::<Test>::exists(BOB));
+		assert_eq!(ContractParameters::<Test>::get(&BOB), Some(DEFAULT_PARAMETERS));
 	});
 }

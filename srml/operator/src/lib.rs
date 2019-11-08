@@ -8,10 +8,13 @@ use contract::{BalanceOf, Gas, CodeHash, ContractAddressFor};
 
 #[cfg(test)]
 mod tests;
+pub mod parameters;
+
+use crate::parameters::Verifiable;
 
 /// The module's configuration trait.
 pub trait Trait: contract::Trait {
-	type Parameters: Parameter + Member + MaybeSerialize + MaybeDisplay + Default + rstd::hash::Hash;
+	type Parameters: Parameter + Member + MaybeSerialize + MaybeDisplay + Default + rstd::hash::Hash + parameters::Verifiable;
 
 	/// The overarching event type.
 	type Event: From<Event<Self>> + Into<<Self as system::Trait>::Event>;
@@ -44,6 +47,7 @@ decl_module! {
 			data: Vec<u8>,
 			parameters: T::Parameters) -> Result {
 			let operator = ensure_signed(origin)?;
+			parameters.verify()?;
 			let contract = T::DetermineContractAddress::contract_address_for(&code_hash, &data, &operator);
 			contract::Module::<T>::instantiate(RawOrigin::Signed(operator.clone()).into(), endowment, gas_limit, code_hash, data)?;
 
@@ -60,7 +64,7 @@ decl_module! {
 		}
 
 		/// Updates parameters for an identified contact.
-		pub fn update_parameters(origin, paramters: T::Parameters) -> Result {
+		pub fn update_parameters(origin, contract: T::AccountId, paramters: T::Parameters) -> Result {
 			Ok(())
 		}
 
