@@ -587,7 +587,53 @@ fn update_parameters_passed() {
 		// check updated paramters
 		// BOB's contract Parameters is same test_params.
 		assert!(ContractParameters::<Test>::exists(BOB));
-		assert_eq!(ContractParameters::<Test>::get(&BOB), Some(new_parameters));
+		assert_eq!(ContractParameters::<Test>::get(&BOB), Some(new_parameters.clone()));
+
+		// To issue SetParameter
+		assert_eq!(System::events(), vec![
+			EventRecord {
+				phase: Phase::ApplyExtrinsic(0),
+				event: MetaEvent::balances(balances::RawEvent::NewAccount(1, 1_000_000)),
+				topics: vec![],
+			},
+			EventRecord {
+				phase: Phase::ApplyExtrinsic(0),
+				event: MetaEvent::contract(contract::RawEvent::CodeStored(code_hash.into())),
+				topics: vec![],
+			},
+			EventRecord {
+				phase: Phase::ApplyExtrinsic(0),
+				event: MetaEvent::balances(
+					balances::RawEvent::NewAccount(BOB, 100)
+				),
+				topics: vec![],
+			},
+			EventRecord {
+				phase: Phase::ApplyExtrinsic(0),
+				event: MetaEvent::contract(contract::RawEvent::Transfer(ALICE, BOB, 100)),
+				topics: vec![],
+			},
+			EventRecord {
+				phase: Phase::ApplyExtrinsic(0),
+				event: MetaEvent::contract(contract::RawEvent::Contract(BOB, vec![1, 2, 3, 4])),
+				topics: vec![],
+			},
+			EventRecord {
+				phase: Phase::ApplyExtrinsic(0),
+				event: MetaEvent::contract(contract::RawEvent::Instantiated(ALICE, BOB)),
+				topics: vec![],
+			},
+			EventRecord {
+				phase: Phase::ApplyExtrinsic(0),
+				event: MetaEvent::operator(RawEvent::SetOperator(ALICE, BOB)),
+				topics: vec![],
+			},
+			EventRecord {
+				phase: Phase::ApplyExtrinsic(0),
+				event: MetaEvent::operator(RawEvent::SetParameters(BOB, new_parameters)),
+				topics: vec![],
+			},
+		]);
 	});
 }
 
@@ -598,10 +644,10 @@ fn update_parameters_failed() {
 	ExtBuilder::default().existential_deposit(100).build().execute_with(|| {
 		valid_instatiate(wasm, code_hash);
 
-		// failed update parameters-not signed
+		// failed update parameters empty operate
 		let new_parameters = TestParameters{a: 100_000_000};
 		assert_err!(Operator::update_parameters(Origin::signed(BOB), BOB, new_parameters),
-		 "ensure sigend error.");
+		 "The sender don't operate the contract address.");
 
 		// failed update parameters not operate contract address.
 		let new_parameters = TestParameters{a: 100_000_000};

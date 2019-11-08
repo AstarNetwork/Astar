@@ -47,7 +47,10 @@ decl_module! {
 			data: Vec<u8>,
 			parameters: T::Parameters) -> Result {
 			let operator = ensure_signed(origin)?;
+
+			// verify parameters.
 			parameters.verify()?;
+
 			let contract = T::DetermineContractAddress::contract_address_for(&code_hash, &data, &operator);
 			contract::Module::<T>::instantiate(RawOrigin::Signed(operator.clone()).into(), endowment, gas_limit, code_hash, data)?;
 
@@ -55,7 +58,7 @@ decl_module! {
 			<OperatorHasContracts<T>>::mutate(&operator, {|tree| (*tree).insert(contract.clone()) });
 			// add contract to operator
 			<ContractHasOperator<T>>::insert(&contract, operator.clone());
-			// add contract to paramters
+			// add contract to parameters
 			<ContractParameters<T>>::insert(&contract, parameters);
 
 			// issue an event operator -> contract
@@ -64,7 +67,23 @@ decl_module! {
 		}
 
 		/// Updates parameters for an identified contact.
-		pub fn update_parameters(origin, contract: T::AccountId, paramters: T::Parameters) -> Result {
+		pub fn update_parameters(origin, contract: T::AccountId, parameters: T::Parameters) -> Result {
+			let operator = ensure_signed(origin)?;
+
+			// verify parameters
+			parameters.verify()?;
+
+			let contracts = <OperatorHasContracts<T>>::get(&operator);
+
+			// check the actually operate the contract.
+			if !contracts.contains(&contract) {
+				return Err("The sender don't operate the contract address.")
+			}
+
+			// update parameters
+			<ContractParameters<T>>::insert(&contract, parameters.clone());
+			// issue set parameter events
+			Self::deposit_event(RawEvent::SetParameters(contract, parameters));
 			Ok(())
 		}
 
@@ -87,6 +106,6 @@ decl_event!(
 
 		/// When contract's parameters changed,
 		/// it is issued that 1-st Contract AccountId and 2-nd the contract's new parameters.
-		SetParameter(AccountId, Parameters),
+		SetParameters(AccountId, Parameters),
 	}
 );
