@@ -1,13 +1,14 @@
 [package]
-name = "plasm-parent-pgspec"
+name = "srml-contract-operator"
 version = "0.1.0"
 authors = ["Takumi Yamashita <takumi@staked.co.jp>"]
 edition = "2018"
 
-[dependencies.parity-codec]
+[dependencies.codec]
 default-features = false
 features = ['derive']
-version = "4.1.1"
+version = "1.0.0"
+package = "parity-scale-codec"
 
 [dependencies.primitives]
 default_features = false
@@ -39,15 +40,16 @@ default_features = false
 git = 'https://github.com/satellitex/substrate.git'
 package = 'srml-support'
 
+[dependencies.timestamp]
+default_features = false
+git = 'https://github.com/satellitex/substrate.git'
+package = 'srml-timestamp'
+
 [dependencies.system]
 default_features = false
 git = 'https://github.com/satellitex/substrate.git'
 package = 'srml-system'
 
-[dependencies.timestamp]
-default_features = false
-git = 'https://github.com/satellitex/substrate.git'
-package = 'srml-timestamp'
 
 [dependencies.contract]
 default_features = false
@@ -62,18 +64,24 @@ version = '1.0'
 optional = true
 version = '1.0'
 
+[dev-dependencies]
+wabt = "0.9.2"
+derive_more = "0.14.0"
+hex-literal = "0.2.1"
+randomness-collective-flip = { package = "srml-randomness-collective-flip", git = 'https://github.com/satellitex/substrate.git' }
+
 [features]
 default = ["std"]
 std = [
-    'parity-codec/std',
+    'codec/std',
     'primitives/std',
     'sr_primitives/std',
     'sr-io/std',
     'rstd/std',
     'balances/std',
     'support/std',
-    'system/std',
     'timestamp/std',
+    'system/std',
     'contract/std',
    	'serde_derive',
 	'serde/std',

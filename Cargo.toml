@@ -1,24 +1,3 @@
-[package]
-authors = ['Takumi Yamashita <takumi@staked.co.jp>']
-build = 'build.rs'
-edition = '2018'
-name = 'plasm'
-version = '0.4.9'
-
-[dependencies]
-cli = { package = "plasm-cli", path = "node/cli" }
-futures = "0.1"
-ctrlc = { version = "3.0", features = ["termination"] }
-
-[build-dependencies]
-vergen = '3'
-[profile.release]
-panic = 'unwind'
-
-[[bin]]
-name = 'plasm-node'
-path = "node/src/main.rs"
-
 [workspace]
 members = [
 	"node/cli",
@@ -36,9 +15,15 @@ members = [
 	"contracts/deposit",
 	"contracts/predicate",
 	"contracts/primitives",
+	"srml/operator",
 ]
 
 exclude = [
 	"contracts/balances/.ink",
 	"contracts/cash/.ink",
 ]
+
+[profile.release]
+# Substrate runtime requires unwinding.
+panic = "unwind"
+

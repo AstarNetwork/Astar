@@ -1,19 +1,23 @@
-use babe_primitives::AuthorityId as BabeId;
+use aura_primitives::sr25519::AuthorityId as AuraId;
 use grandpa_primitives::AuthorityId as GrandpaId;
 use hex_literal::hex;
 use im_online::sr25519::AuthorityId as ImOnlineId;
-pub use plasm_primitives::{AccountId, Balance};
-use plasm_runtime::constants::{currency::*, time::*};
-pub use plasm_runtime::GenesisConfig;
+pub use plasm_primitives::{AccountId, Balance, Signature};
 use plasm_runtime::{
-    BabeConfig, BalancesConfig, ContractsConfig, GrandpaConfig, IndicesConfig, SudoConfig,
-    SystemConfig, WASM_BINARY,
+    constants::{currency::*, time::*},
+    AuraConfig, BalancesConfig, ContractsConfig, GenesisConfig, GrandpaConfig, IndicesConfig,
+    SudoConfig, SystemConfig, WASM_BINARY,
 };
-use primitives::{crypto::UncheckedInto, Pair, Public};
-use sr_primitives::Perbill;
-use std::collections::HashSet;
+use primitives::{crypto::UncheckedInto, sr25519, Pair, Public};
+use sr_primitives::{
+    traits::{IdentifyAccount, Verify},
+    Perbill,
+};
+use std::collections::BTreeSet;
 use substrate_service;
 use substrate_telemetry::TelemetryEndpoints;
+
+type AccountPublic = <Signature as Verify>::Signer;
 
 const STAGING_TELEMETRY_URL: &str = "wss://telemetry.polkadot.io/submit/";
 const PLASM_PROPERTIES: &str = r#"
@@ -38,39 +42,47 @@ pub fn get_from_seed<TPublic: Public>(seed: &str) -> <TPublic::Pair as Pair>::Pu
         .public()
 }
 
+/// Helper function to generate an account ID from seed
+pub fn get_account_id_from_seed<TPublic: Public>(seed: &str) -> AccountId
+where
+    AccountPublic: From<<TPublic::Pair as Pair>::Public>,
+{
+    AccountPublic::from(get_from_seed::<TPublic>(seed)).into_account()
+}
+
 /// Helper function to generate stash, controller and session key from seed
 pub fn get_authority_keys_from_seed(
     seed: &str,
-) -> (AccountId, AccountId, GrandpaId, BabeId, ImOnlineId) {
+) -> (AccountId, AccountId, GrandpaId, AuraId, ImOnlineId) {
     (
-        get_from_seed::<AccountId>(&format!("{}//stash", seed)),
-        get_from_seed::<AccountId>(seed),
+        get_account_id_from_seed::<sr25519::Public>(&format!("{}//stash", seed)),
+        get_account_id_from_seed::<sr25519::Public>(seed),
         get_from_seed::<GrandpaId>(seed),
-        get_from_seed::<BabeId>(seed),
+        get_from_seed::<AuraId>(seed),
         get_from_seed::<ImOnlineId>(seed),
     )
 }
 
 /// Helper function to create GenesisConfig
 fn generate_config_genesis(
-    initial_authorities: Vec<(AccountId, AccountId, GrandpaId, BabeId, ImOnlineId)>,
+    initial_authorities: Vec<(AccountId, AccountId, GrandpaId, AuraId, ImOnlineId)>,
     root_key: AccountId,
     endowed_accounts: Option<Vec<AccountId>>,
     enable_println: bool,
 ) -> GenesisConfig {
-    let default_endowed_accounts: HashSet<AccountId> = vec![
-        get_from_seed::<AccountId>("Alice"),
-        get_from_seed::<AccountId>("Bob"),
-        get_from_seed::<AccountId>("Charlie"),
-        get_from_seed::<AccountId>("Dave"),
-        get_from_seed::<AccountId>("Eve"),
-        get_from_seed::<AccountId>("Ferdie"),
-        get_from_seed::<AccountId>("Alice//stash"),
-        get_from_seed::<AccountId>("Bob//stash"),
-        get_from_seed::<AccountId>("Charlie//stash"),
-        get_from_seed::<AccountId>("Dave//stash"),
-        get_from_seed::<AccountId>("Eve//stash"),
-        get_from_seed::<AccountId>("Ferdie//stash"),
+    let default_endowed_accounts: BTreeSet<AccountId> = vec![
+        get_account_id_from_seed::<sr25519::Public>("Alice"),
+        get_account_id_from_seed::<sr25519::Public>("Bob"),
+        get_account_id_from_seed::<sr25519::Public>("Charlie"),
+        get_account_id_from_seed::<sr25519::Public>("Dave"),
+        get_account_id_from_seed::<sr25519::Public>("Eve"),
+        get_account_id_from_seed::<sr25519::Public>("Ferdie"),
+        get_account_id_from_seed::<sr25519::Public>("Alice//stash"),
+        get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
+        get_account_id_from_seed::<sr25519::Public>("Charlie//stash"),
+        get_account_id_from_seed::<sr25519::Public>("Dave//stash"),
+        get_account_id_from_seed::<sr25519::Public>("Eve//stash"),
+        get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
     ]
     .iter()
     .cloned()
@@ -108,11 +120,8 @@ fn generate_config_genesis(
             gas_price: 1 * MILLICENTS,
         }),
         sudo: Some(SudoConfig { key: root_key }),
-        babe: Some(BabeConfig {
-            authorities: initial_authorities
-                .iter()
-                .map(|x| (x.3.clone(), 1))
-                .collect(),
+        aura: Some(AuraConfig {
+            authorities: initial_authorities.iter().map(|x| (x.3.clone())).collect(),
         }),
         grandpa: Some(GrandpaConfig {
             authorities: initial_authorities
@@ -126,10 +135,11 @@ fn generate_config_genesis(
 /// Staging testnet config.
 pub fn staging_testnet_config() -> ChainSpec {
     let boot_nodes = vec![
-		"/ip4/3.114.90.94/tcp/30333/p2p/QmTVUeF2fTe9m8MXw6EGihbvPzDpRm5sJbFGsj6WuagvJu".to_string(),
-		"/ip4/3.114.81.104/tcp/30333/p2p/QmQU5Ac75U9d9hG9cWzjANxLK9k35mGnZRhFdGW9X7YLbN".to_string(),
-	];
-	let properties = serde_json::from_str(PLASM_PROPERTIES).unwrap();
+        "/ip4/3.114.90.94/tcp/30333/p2p/QmTVUeF2fTe9m8MXw6EGihbvPzDpRm5sJbFGsj6WuagvJu".to_string(),
+        "/ip4/3.114.81.104/tcp/30333/p2p/QmQU5Ac75U9d9hG9cWzjANxLK9k35mGnZRhFdGW9X7YLbN"
+            .to_string(),
+    ];
+    let properties = serde_json::from_str(PLASM_PROPERTIES).unwrap();
     ChainSpec::from_genesis(
         "Miniplasm",
         "miniplasm",
@@ -139,16 +149,16 @@ pub fn staging_testnet_config() -> ChainSpec {
             STAGING_TELEMETRY_URL.to_string(),
             0,
         )])),
-		Some(PLASM_PROTOCOL_ID),
-		None,
-		properties,
+        Some(PLASM_PROTOCOL_ID),
+        None,
+        properties,
     )
 }
 
 fn development_config_genesis() -> GenesisConfig {
     generate_config_genesis(
         vec![get_authority_keys_from_seed("Alice")],
-        get_from_seed::<AccountId>("Alice"),
+        get_account_id_from_seed::<sr25519::Public>("Alice"),
         None,
         true,
     )
@@ -173,11 +183,9 @@ fn staging_testnet_genesis() -> GenesisConfig {
         vec![
             (
                 // 5DwNtWotLKncBq1EYJSd74s4tf5fH8McK5XMoG8AyvwdFor6
-                hex!["52e1e582076b036e8feb9104b18619795cceccc00fb80c18dd8df5a5c4ea1d52"]
-                    .unchecked_into(),
+                hex!["52e1e582076b036e8feb9104b18619795cceccc00fb80c18dd8df5a5c4ea1d52"].into(),
                 // 5ELomezsSJhtedP3cFD4zqNDVvvwmdp6PpywACWEq1UP3fgq
-                hex!["64c04cdc3237ff84dc94b294d66aff7c370c0cd2648fab05330368ef905cfa5a"]
-                    .unchecked_into(),
+                hex!["64c04cdc3237ff84dc94b294d66aff7c370c0cd2648fab05330368ef905cfa5a"].into(),
                 // 5GdhABzAQBQYdEFw31veGtjoHbtSUUxTkte53ZUGuUDu73Ra
                 hex!["ca19aecbb6f621eb9aea26914916a73135df6766e146b993803065474abed3fa"]
                     .unchecked_into(),
@@ -190,11 +198,9 @@ fn staging_testnet_genesis() -> GenesisConfig {
             ),
             (
                 // 5EvzqUdvcifpT9oevGXy3DRqLB9CL6ptWdpAQtNt1hAGJMP1
-                hex!["7ed3e52399b93e05072d83bcbc18d80ff59da1439352057fb61eaf541e8f1c39"]
-                    .unchecked_into(),
+                hex!["7ed3e52399b93e05072d83bcbc18d80ff59da1439352057fb61eaf541e8f1c39"].into(),
                 // 5GLQu9iyhRHDAHgCd8yFDD3dqFkxn4z8uwEwK8YyYa2GBTUu
-                hex!["bcebc6faab0765ca020f33182410156517bc88994d1210a8a026bdc5d201ee7b"]
-                    .unchecked_into(),
+                hex!["bcebc6faab0765ca020f33182410156517bc88994d1210a8a026bdc5d201ee7b"].into(),
                 // 5HJWD9xdcPvXW2ajEUJEgAXbP4DBGfjDxRh3Nq8PAvnZM8AP
                 hex!["e7b365779d16bf9e51164f63d5b1ff986ba58420636d007576549f0da03547ae"]
                     .unchecked_into(),
@@ -207,7 +213,7 @@ fn staging_testnet_genesis() -> GenesisConfig {
             ),
         ],
         // 5ELomezsSJhtedP3cFD4zqNDVvvwmdp6PpywACWEq1UP3fgq
-        hex!["64c04cdc3237ff84dc94b294d66aff7c370c0cd2648fab05330368ef905cfa5a"].unchecked_into(),
+        hex!["64c04cdc3237ff84dc94b294d66aff7c370c0cd2648fab05330368ef905cfa5a"].into(),
         None,
         false,
     )
@@ -219,7 +225,7 @@ fn local_testnet_genesis() -> GenesisConfig {
             get_authority_keys_from_seed("Alice"),
             get_authority_keys_from_seed("Bob"),
         ],
-        get_from_seed::<AccountId>("Alice"),
+        get_account_id_from_seed::<sr25519::Public>("Alice"),
         None,
         false,
     )
@@ -248,7 +254,7 @@ pub(crate) mod tests {
     fn local_testnet_genesis_instant_single() -> GenesisConfig {
         testnet_genesis(
             vec![get_authority_keys_from_seed("Alice")],
-            get_from_seed::<AccountId>("Alice"),
+            get_account_id_from_seed::<sr25519::Public>("Alice"),
             None,
             false,
         )

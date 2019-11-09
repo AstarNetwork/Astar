@@ -1,6 +1,6 @@
 [package]
 name = "plasm-primitives"
-version = "0.4.9"
+version = "0.5.0"
 authors = ["Takumi Yamashita <takumi@staked.co.jp>"]
 edition = "2018"
 

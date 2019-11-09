@@ -1,6 +1,6 @@
 [package]
 name = "plasm-executor"
-version = "0.4.9"
+version = "0.5.0"
 authors = ["Takumi Yamashita <takumi@staked.co.jp>"]
 description = "Substrate node implementation in Rust."
 edition = "2018"
@@ -32,5 +32,11 @@ indices = { package = "srml-indices", git = "https://github.com/satellitex/subst
 wabt = "~0.7.4"
 
 [features]
-benchmarks = []
+wasmtime = [
+    "substrate-executor/wasmtime",
+]
 stress-test = []
+
+[[bench]]
+name = "bench"
+harness = false

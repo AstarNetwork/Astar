@@ -21,6 +21,7 @@ case $TARGET in
 		sudo apt-get install -y cmake pkg-config libssl-dev clang libclang-dev
 
 		./scripts/init.sh
+		cd ./node/cli
 		cargo build
 		;;
 
@@ -29,11 +30,11 @@ case $TARGET in
 		# Install prerequisites and build all wasm projects
 		cargo install pwasm-utils-cli --bin wasm-prune --force
 
-		cd ./contracts/balances && ./build.sh && cargo test
-		cd ./contracts/cash && ./build.sh && cargo test
-		cd ../commitment && cargo test
-		cd ../deposit && cargo test
-		cd ../predicate && cargo test
+#		cd ./contracts/balances && ./build.sh && cargo test
+#		cd ./contracts/cash && ./build.sh && cargo test
+#		cd ../commitment && cargo test
+#		cd ../deposit && cargo test
+#		cd ../predicate && cargo test
 		;;
 
 esac

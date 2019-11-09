@@ -6,15 +6,15 @@
 
 use rstd::prelude::*;
 use support::{
-	construct_runtime, parameter_types, traits::{SplitTwoWays, Currency}
+	construct_runtime, parameter_types, traits::{SplitTwoWays, Currency, Randomness}
 };
 use primitives::u32_trait::{_1, _2, _3, _4};
 use plasm_primitives::{
 	AccountId, AccountIndex, Balance, BlockNumber, Hash, Index,
 	Moment, Signature,
 };
-use babe::{AuthorityId as BabeId};
-use grandpa::fg_primitives::{self, ScheduledChange};
+use aura_primitives::sr25519::AuthorityId as AuraId;
+use grandpa::{fg_primitives, AuthorityList as GrandpaAuthorityList};
 use client::{
 	block_builder::api::{self as block_builder_api, InherentData, CheckInherentsResult},
 	runtime_api as client_api, impl_runtime_apis
@@ -31,6 +31,8 @@ use elections::VoteIndex;
 use version::NativeVersion;
 use primitives::OpaqueMetadata;
 use grandpa::{AuthorityId as GrandpaId, AuthorityWeight as GrandpaWeight};
+use transaction_payment_rpc_runtime_api::RuntimeDispatchInfo;
+use contracts_rpc_runtime_api::ContractExecResult;
 use system::offchain::TransactionSubmitter;
 
 #[cfg(any(feature = "std", test))]
@@ -39,12 +41,12 @@ pub use timestamp::Call as TimestampCall;
 pub use balances::Call as BalancesCall;
 pub use contracts::Gas;
 pub use sr_primitives::{Permill, Perbill};
-pub use support::StorageValue;
+pub use support::{StorageValue, traits::OnUnbalanced};
 pub use staking::StakerStatus;
 
 /// Implementations of some helper traits passed into runtime modules as associated types.
 pub mod impls;
-use impls::{CurrencyToVoteHandler, WeightMultiplierUpdateHandler, WeightToFee};
+use impls::{CurrencyToVoteHandler, Author, LinearWeightToFee, TargetedFeeAdjustment};
 
 /// Constant values used within the runtime.
 pub mod constants;
@@ -79,6 +81,18 @@ pub fn native_version() -> NativeVersion {
 
 type NegativeImbalance = <Balances as Currency<AccountId>>::NegativeImbalance;
 
+pub struct SlashBox;
+impl OnUnbalanced<NegativeImbalance> for SlashBox {
+	fn on_unbalanced(amount: NegativeImbalance) {}
+}
+
+pub type DealWithFees = SplitTwoWays<
+	Balance,
+	NegativeImbalance,
+	_4, SlashBox,   // 4 parts (80%) goes to the slash box.
+	_1, Author,     // 1 part (20%) goes to the block author.
+>;
+
 parameter_types! {
 	pub const BlockHashCount: BlockNumber = 250;
 	pub const MaximumBlockWeight: Weight = 1_000_000_000;
@@ -97,7 +111,6 @@ impl system::Trait for Runtime {
 	type AccountId = AccountId;
 	type Lookup = Indices;
 	type Header = generic::Header<BlockNumber, BlakeTwo256>;
-	type WeightMultiplierUpdate = WeightMultiplierUpdateHandler;
 	type Event = Event;
 	type BlockHashCount = BlockHashCount;
 	type MaximumBlockWeight = MaximumBlockWeight;
@@ -106,14 +119,27 @@ impl system::Trait for Runtime {
 	type Version = Version;
 }
 
-type SessionHandlers = (Grandpa, Babe);
+/// Opaque types. These are used by the CLI to instantiate machinery that don't need to know
+/// the specifics of the runtime. They can then be made to be agnostic over specific formats
+/// of data like extrinsics, allowing for them to continue syncing the network through upgrades
+/// to even the core datastructures.
+pub mod opaque {
+	use super::*;
 
-impl_opaque_keys! {
-	pub struct SessionKeys {
-		#[id(key_types::GRANDPA)]
-		pub grandpa: GrandpaId,
-		#[id(key_types::BABE)]
-		pub babe: BabeId,
+	pub use sr_primitives::OpaqueExtrinsic as UncheckedExtrinsic;
+
+	/// Opaque block header type.
+	pub type Header = generic::Header<BlockNumber, BlakeTwo256>;
+	/// Opaque block type.
+	pub type Block = generic::Block<Header, UncheckedExtrinsic>;
+	/// Opaque block identifier type.
+	pub type BlockId = generic::BlockId<Block>;
+
+	impl_opaque_keys! {
+		pub struct SessionKeys {
+			pub aura: Aura,
+			pub grandpa: Grandpa,
+		}
 	}
 }
 
@@ -122,9 +148,8 @@ parameter_types! {
 	pub const ExpectedBlockTime: Moment = MILLISECS_PER_BLOCK;
 }
 
-impl babe::Trait for Runtime {
-	type EpochDuration = EpochDuration;
-	type ExpectedBlockTime = ExpectedBlockTime;
+impl aura::Trait for Runtime {
+	type AuthorityId = AuraId;
 }
 
 impl indices::Trait for Runtime {
@@ -138,8 +163,6 @@ parameter_types! {
 	pub const ExistentialDeposit: Balance = 1 * DOLLARS;
 	pub const TransferFee: Balance = 1 * CENTS;
 	pub const CreationFee: Balance = 1 * CENTS;
-	pub const TransactionBaseFee: Balance = 1 * CENTS;
-	pub const TransactionByteFee: Balance = 10 * MILLICENTS;
 }
 
 impl balances::Trait for Runtime {
@@ -147,15 +170,29 @@ impl balances::Trait for Runtime {
 	type OnFreeBalanceZero = (Contracts);
 	type OnNewAccount = Indices;
 	type Event = Event;
-	type TransactionPayment = ();
 	type DustRemoval = ();
 	type TransferPayment = ();
 	type ExistentialDeposit = ExistentialDeposit;
 	type TransferFee = TransferFee;
 	type CreationFee = CreationFee;
+}
+
+parameter_types! {
+	pub const TransactionBaseFee: Balance = 1 * CENTS;
+	pub const TransactionByteFee: Balance = 10 * MILLICENTS;
+	// setting this to zero will disable the weight fee.
+	pub const WeightFeeCoefficient: Balance = 1_000;
+	// for a sane configuration, this should always be less than `AvailableBlockRatio`.
+	pub const TargetBlockFullness: Perbill = Perbill::from_percent(25);
+}
+
+impl transaction_payment::Trait for Runtime {
+	type Currency = Balances;
+	type OnTransactionPayment = DealWithFees;
 	type TransactionBaseFee = TransactionBaseFee;
 	type TransactionByteFee = TransactionByteFee;
-	type WeightToFee = WeightToFee;
+	type WeightToFee = LinearWeightToFee<WeightFeeCoefficient>;
+	type FeeMultiplierUpdate = TargetedFeeAdjustment<TargetBlockFullness>;
 }
 
 parameter_types! {
@@ -163,7 +200,7 @@ parameter_types! {
 }
 impl timestamp::Trait for Runtime {
 	type Moment = Moment;
-	type OnTimestampSet = Babe;
+	type OnTimestampSet = Aura;
 	type MinimumPeriod = MinimumPeriod;
 }
 
@@ -173,29 +210,36 @@ parameter_types! {
 	pub const ContractTransactionBaseFee: Balance = 1 * CENTS;
 	pub const ContractTransactionByteFee: Balance = 10 * MILLICENTS;
 	pub const ContractFee: Balance = 1 * CENTS;
+	pub const TombstoneDeposit: Balance = 1 * DOLLARS;
+	pub const RentByteFee: Balance = 1 * DOLLARS;
+	pub const RentDepositOffset: Balance = 1000 * DOLLARS;
+	pub const SurchargeReward: Balance = 150 * DOLLARS;
 }
 
 impl contracts::Trait for Runtime {
 	type Currency = Balances;
+	type Time = Timestamp;
+	type Randomness = RandomnessCollectiveFlip;
 	type Call = Call;
 	type Event = Event;
 	type DetermineContractAddress = contracts::SimpleAddressDeterminator<Runtime>;
 	type ComputeDispatchFee = contracts::DefaultDispatchFeeComputor<Runtime>;
 	type TrieIdGenerator = contracts::TrieIdFromParentCounter<Runtime>;
 	type GasPayment = ();
+	type RentPayment = ();
 	type SignedClaimHandicap = contracts::DefaultSignedClaimHandicap;
-	type TombstoneDeposit = contracts::DefaultTombstoneDeposit;
+	type TombstoneDeposit = TombstoneDeposit;
 	type StorageSizeOffset = contracts::DefaultStorageSizeOffset;
-	type RentByteFee = contracts::DefaultRentByteFee;
-	type RentDepositOffset = contracts::DefaultRentDepositOffset;
-	type SurchargeReward = contracts::DefaultSurchargeReward;
+	type RentByteFee = RentByteFee;
+	type RentDepositOffset = RentDepositOffset;
+	type SurchargeReward = SurchargeReward;
 	type TransferFee = ContractTransferFee;
 	type CreationFee = ContractCreationFee;
 	type TransactionBaseFee = ContractTransactionBaseFee;
 	type TransactionByteFee = ContractTransactionByteFee;
 	type ContractFee = ContractFee;
 	type CallBaseFee = contracts::DefaultCallBaseFee;
-	type CreateBaseFee = contracts::DefaultCreateBaseFee;
+	type InstantiateBaseFee = contracts::DefaultInstantiateBaseFee;
 	type MaxDepth = contracts::DefaultMaxDepth;
 	type MaxValueSize = contracts::DefaultMaxValueSize;
 	type BlockGasLimit = contracts::DefaultBlockGasLimit;
@@ -222,10 +266,12 @@ impl finality_tracker::Trait for Runtime {
 }
 
 impl system::offchain::CreateTransaction<Runtime, UncheckedExtrinsic> for Runtime {
+	type Public = <Signature as traits::Verify>::Signer;
 	type Signature = Signature;
 
-	fn create_transaction<F: system::offchain::Signer<AccountId, Self::Signature>>(
+	fn create_transaction<F: system::offchain::Signer<Self::Public, Self::Signature>>(
 		call: Call,
+		public: Self::Public,
 		account: AccountId,
 		index: Index,
 	) -> Option<(Call, <UncheckedExtrinsic as traits::Extrinsic>::SignaturePayload)> {
@@ -238,10 +284,11 @@ impl system::offchain::CreateTransaction<Runtime, UncheckedExtrinsic> for Runtim
 			system::CheckEra::<Runtime>::from(generic::Era::mortal(period, current_block)),
 			system::CheckNonce::<Runtime>::from(index),
 			system::CheckWeight::<Runtime>::new(),
-			balances::TakeFees::<Runtime>::from(tip),
+			transaction_payment::ChargeTransactionPayment::<Runtime>::from(tip),
+			Default::default(),
 		);
 		let raw_payload = SignedPayload::new(call, extra).ok()?;
-		let signature = F::sign(account.clone(), &raw_payload)?;
+		let signature = F::sign(public, &raw_payload)?;
 		let address = Indices::unlookup(account);
 		let (call, extra, _) = raw_payload.deconstruct();
 		Some((call, (address, signature, extra)))
@@ -255,12 +302,14 @@ construct_runtime!(
 		UncheckedExtrinsic = UncheckedExtrinsic
 	{
 		System: system::{Module, Call, Storage, Config, Event},
-		Babe: babe::{Module, Call, Storage, Config, Inherent(Timestamp)},
+		Aura: aura::{Module, Config<T>, Inherent(Timestamp)},
 		Timestamp: timestamp::{Module, Call, Storage, Inherent},
+		TransactionPayment: transaction_payment::{Module, Storage},
 		Indices: indices,
 		Balances: balances,
 		Grandpa: grandpa::{Module, Call, Storage, Config, Event},
 		Contracts: contracts,
+		RandomnessCollectiveFlip: randomness_collective_flip::{Module, Call, Storage},
 		Sudo: sudo,
 	}
 );
@@ -282,7 +331,8 @@ pub type SignedExtra = (
 	system::CheckEra<Runtime>,
 	system::CheckNonce<Runtime>,
 	system::CheckWeight<Runtime>,
-	balances::TakeFees<Runtime>
+	transaction_payment::ChargeTransactionPayment<Runtime>,
+	contracts::CheckBlockGasLimit<Runtime>,
 );
 /// Unchecked extrinsic type as expected by this runtime.
 pub type UncheckedExtrinsic = generic::UncheckedExtrinsic<Address, Call, Signature, SignedExtra>;
@@ -332,7 +382,7 @@ impl_runtime_apis! {
 		}
 
 		fn random_seed() -> <Block as BlockT>::Hash {
-			System::random_seed()
+			RandomnessCollectiveFlip::random_seed()
 		}
 	}
 
@@ -349,59 +399,81 @@ impl_runtime_apis! {
 	}
 
 	impl fg_primitives::GrandpaApi<Block> for Runtime {
-		fn grandpa_pending_change(digest: &DigestFor<Block>)
-			-> Option<ScheduledChange<NumberFor<Block>>>
-		{
-			Grandpa::pending_change(digest)
-		}
-
-		fn grandpa_forced_change(digest: &DigestFor<Block>)
-			-> Option<(NumberFor<Block>, ScheduledChange<NumberFor<Block>>)>
-		{
-			Grandpa::forced_change(digest)
-		}
-
-		fn grandpa_authorities() -> Vec<(GrandpaId, GrandpaWeight)> {
+		fn grandpa_authorities() -> GrandpaAuthorityList {
 			Grandpa::grandpa_authorities()
 		}
 	}
 
-	impl babe_primitives::BabeApi<Block> for Runtime {
-		fn startup_data() -> babe_primitives::BabeConfiguration {
-			// The choice of `c` parameter (where `1 - c` represents the
-			// probability of a slot being empty), is done in accordance to the
-			// slot duration and expected target block time, for safely
-			// resisting network delays of maximum two seconds.
-			// <https://research.web3.foundation/en/latest/polkadot/BABE/Babe/#6-practical-results>
-			babe_primitives::BabeConfiguration {
-				median_required_blocks: 1000,
-				slot_duration: Babe::slot_duration(),
-				c: PRIMARY_PROBABILITY,
-			}
+	impl aura_primitives::AuraApi<Block, AuraId> for Runtime {
+		fn slot_duration() -> u64 {
+			Aura::slot_duration()
 		}
 
-		fn epoch() -> babe_primitives::Epoch {
-			babe_primitives::Epoch {
-				start_slot: Babe::epoch_start_slot(),
-				authorities: Babe::authorities(),
-				epoch_index: Babe::epoch_index(),
-				randomness: Babe::randomness(),
-				duration: EpochDuration::get(),
-				secondary_slots: Babe::secondary_slots().0,
-			}
+		fn authorities() -> Vec<AuraId> {
+			Aura::authorities()
 		}
 	}
 
-	impl plasm_primitives::AccountNonceApi<Block> for Runtime {
+	impl system_rpc_runtime_api::AccountNonceApi<Block, AccountId, Index> for Runtime {
 		fn account_nonce(account: AccountId) -> Index {
 			System::account_nonce(account)
+		}
+	}
+
+	impl contracts_rpc_runtime_api::ContractsApi<Block, AccountId, Balance> for Runtime {
+		fn call(
+			origin: AccountId,
+			dest: AccountId,
+			value: Balance,
+			gas_limit: u64,
+			input_data: Vec<u8>,
+		) -> ContractExecResult {
+			let exec_result = Contracts::bare_call(
+				origin,
+				dest.into(),
+				value,
+				gas_limit,
+				input_data,
+			);
+			match exec_result {
+				Ok(v) => ContractExecResult::Success {
+					status: v.status,
+					data: v.data,
+				},
+				Err(_) => ContractExecResult::Error,
+			}
+		}
+
+		fn get_storage(
+			address: AccountId,
+			key: [u8; 32],
+		) -> contracts_rpc_runtime_api::GetStorageResult {
+			Contracts::get_storage(address, key).map_err(|rpc_err| {
+				use contracts::GetStorageError;
+				use contracts_rpc_runtime_api::{GetStorageError as RpcGetStorageError};
+				/// Map the contract error into the RPC layer error.
+				match rpc_err {
+					GetStorageError::ContractDoesntExist => RpcGetStorageError::ContractDoesntExist,
+					GetStorageError::IsTombstone => RpcGetStorageError::IsTombstone,
+				}
+			})
+		}
+	}
+
+	impl transaction_payment_rpc_runtime_api::TransactionPaymentApi<
+		Block,
+		Balance,
+		UncheckedExtrinsic,
+	> for Runtime {
+		fn query_info(uxt: UncheckedExtrinsic, len: u32) -> RuntimeDispatchInfo<Balance> {
+			TransactionPayment::query_info(uxt, len)
 		}
 	}
 
 	impl substrate_session::SessionKeys<Block> for Runtime {
 		fn generate_session_keys(seed: Option<Vec<u8>>) -> Vec<u8> {
 			let seed = seed.as_ref().map(|s| rstd::str::from_utf8(&s).expect("Seed is an utf8 string"));
-			SessionKeys::generate(seed)
+			opaque::SessionKeys::generate(seed)
 		}
 	}
 }
