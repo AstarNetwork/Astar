@@ -99,10 +99,8 @@ decl_module! {
             let operate_contracts = <OperatorHasContracts<T>>::get(&operator);
 
             // check the actually operate the contract.
-            for c in contracts.iter() {
-                if !operate_contracts.contains(&c) {
-                    return Err("The sender don't operate the contracts address.")
-                }
+            if !contracts.iter().all(|c| operate_contracts.contains(&c)) {
+                return Err("The sender don't operate the contracts address.")
             }
 
             // remove origin operator to contracts
@@ -114,9 +112,9 @@ decl_module! {
                 |tree| for c in contracts.iter() { (*tree).insert(c.clone()); }
             );
             for c in contracts.iter() {
-				// add contract to new_operator
-				<ContractHasOperator<T>>::insert(&c, new_operator.clone());
-				// issue an event operator -> contract
+                // add contract to new_operator
+                <ContractHasOperator<T>>::insert(&c, new_operator.clone());
+                // issue an event operator -> contract
                 Self::deposit_event(RawEvent::SetOperator(new_operator.clone(), c.clone()));
             }
             Ok(())
