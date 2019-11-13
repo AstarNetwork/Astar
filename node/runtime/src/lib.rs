@@ -58,7 +58,7 @@ include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
 /// Runtime version.
 pub const VERSION: RuntimeVersion = RuntimeVersion {
-	spec_name: create_runtime_str!("node"),
+	spec_name: create_runtime_str!("plasm"),
 	impl_name: create_runtime_str!("plasm-node"),
 	authoring_version: 10,
 	// Per convention: if the runtime behavior changes, increment spec_version
@@ -245,6 +245,11 @@ impl contracts::Trait for Runtime {
 	type BlockGasLimit = contracts::DefaultBlockGasLimit;
 }
 
+impl operator::Trait for Runtime {
+	type Parameters = operator::parameters::DefaultParameters;
+	type Event = Event;
+}
+
 impl sudo::Trait for Runtime {
 	type Event = Event;
 	type Proposal = Call;
@@ -309,6 +314,7 @@ construct_runtime!(
 		Balances: balances,
 		Grandpa: grandpa::{Module, Call, Storage, Config, Event},
 		Contracts: contracts,
+		Operator: operator::{Module, Call, Storage, Event<T>},
 		RandomnessCollectiveFlip: randomness_collective_flip::{Module, Call, Storage},
 		Sudo: sudo,
 	}

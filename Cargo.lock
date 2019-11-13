@@ -3058,6 +3058,7 @@ dependencies = [
  "srml-authorship 0.1.0 (git+https://github.com/satellitex/substrate.git)",
  "srml-balances 2.0.0 (git+https://github.com/satellitex/substrate.git)",
  "srml-collective 2.0.0 (git+https://github.com/satellitex/substrate.git)",
+ "srml-contract-operator 0.1.0",
  "srml-contracts 2.0.0 (git+https://github.com/satellitex/substrate.git)",
  "srml-contracts-rpc-runtime-api 2.0.0 (git+https://github.com/satellitex/substrate.git)",
  "srml-democracy 2.0.0 (git+https://github.com/satellitex/substrate.git)",

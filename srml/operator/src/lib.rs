@@ -5,6 +5,7 @@ use rstd::collections::btree_set::BTreeSet;
 use sr_primitives::traits::{MaybeDisplay, MaybeSerialize, Member};
 use support::{decl_event, decl_module, decl_storage, dispatch::Result, Parameter};
 use system::{ensure_signed, RawOrigin};
+use rstd::prelude::*;
 
 pub mod parameters;
 #[cfg(test)]
