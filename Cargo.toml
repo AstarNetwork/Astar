@@ -4,9 +4,7 @@ members = [
 	"node/executor",
 	"node/primitives",
 	"node/rpc",
-	"node/rpc-client",
 	"node/runtime",
-	"node/testing",
 	"contracts/balances",
 	"contracts/balances/.ink/abi_gen",
 	"contracts/cash",
@@ -26,4 +24,3 @@ exclude = [
 [profile.release]
 # Substrate runtime requires unwinding.
 panic = "unwind"
-

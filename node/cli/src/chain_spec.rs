@@ -30,11 +30,6 @@ const PLASM_PROTOCOL_ID: &str = "plm";
 /// Specialized `ChainSpec`.
 pub type ChainSpec = substrate_service::ChainSpec<GenesisConfig>;
 
-/// Flaming Fir testnet generator
-pub fn flaming_fir_config() -> Result<ChainSpec, String> {
-	ChainSpec::from_json_bytes(&include_bytes!("../res/flaming-fir.json")[..])
-}
-
 /// Helper function to generate a crypto pair from seed
 pub fn get_from_seed<TPublic: Public>(seed: &str) -> <TPublic::Pair as Pair>::Public {
 	TPublic::Pair::from_string(&format!("//{}", seed), None)
@@ -132,6 +127,11 @@ fn generate_config_genesis(
 	}
 }
 
+pub fn staging_testnet_config() -> ChainSpec {
+    ChainSpec::from_json_bytes(&include_bytes!("../../../testnet/v0.1.0.json")[..]).unwrap()
+}
+
+/*
 /// Staging testnet config.
 pub fn staging_testnet_config() -> ChainSpec {
 	let boot_nodes = vec![
@@ -157,6 +157,7 @@ pub fn staging_testnet_config() -> ChainSpec {
 		Default::default(),
 	)
 }
+*/
 
 fn development_config_genesis() -> GenesisConfig {
 	generate_config_genesis(
