@@ -16,6 +16,8 @@ Community
 --------- 
 
 * [Telegram](https://t.me/PlasmOfficial)
+* [Discord](https://discord.gg/Z3nC9U4)
+* [Twitter](https://twitter.com/Plasm_Network)
 
 Table of Contents
 -----------------
@@ -40,9 +42,10 @@ Based on the above, Plasm has some features.
 - **Plasm deals with many types of “Plasmas” in the future. Currently, we are providing UTXO models.**
 - **Substrate chain can be both a plasma parent chain and a plasma child chain.**
 
-Since we are making an SRML, we can also make a Plasma chain with Substrate. Once Polkadot is launched, we will connect our root chain to Polkadot, and we aim to be one of the parachains.
+Since we are making an SRML, we can also make a scalable chain with Substrate. Once Polkadot is launched, we will connect our root chain to Polkadot, and we aim to be one of the parachains.
 <img width="1330" alt="vision" src="https://user-images.githubusercontent.com/29359048/59095564-cdd3a000-8953-11e9-85bb-d273ce05f509.png">
-In addition, Plasm makes it easier even for other developers to make a Plasma chain.
+
+We call this chain Plasm Network. Plasm Network is a scaling DApps Platform based on Substrate. The point is Polkadot Relaychain doesn’t support smart contracts by design. So, people in the Polkadot ecosystem need Parachains that support smart contracts well. From the developer’s perspective, he needs to choose on which Parachain his decentralized application should be built. Scalability must be one of the most important criteria for him to choose which Parachain to use. This is where Plasm Network comes in.
 
 Install Plasm 
 =============
@@ -94,12 +97,16 @@ Run in Nix shell:
 
 Plasm Validator Program
 =======================
+Since we launched our Plasm Network testnet, we are looking for around 50 validators all over the world. This is a testnet like Ethereum Rinkeby, Kovan, and Ropsten. So, PLM (Plasm Network native token called PLUM) doesn’t have any values. Therefore, there is no incentive to be a validator on the testnet. To solve this problem,
+We will provide you with a right to be the first validator during the PoA term (between Lockdrop1 and Lockdrop2 described below) on the mainnet if you are a validator on the Plasm testnet.
 
-1. Run node on validator mode for [Plasm testnet](https://telemetry.polkadot.io/#/PlasmTestnet%20v1):
+<img width="1287" alt="Screen Shot 2019-11-16 at 22 24 37" src="https://user-images.githubusercontent.com/29359048/68994354-799af780-08c5-11ea-9a6f-7e9080ddc893.png">
+
+1. Run a node on [Plasm testnet](https://telemetry.polkadot.io/#/PlasmTestnet%20v1):
 
     plasm-node --validator
 
-2. Apply Google Form for participate in validator program:
+2. Apply the program for participating in validator program:
 
 * https://docs.google.com/forms/d/1g0XGDQ0qg-YipwmHlmrnszF8BI0E85xY42pMZpF0knI/viewform
 
@@ -113,13 +120,7 @@ You can see our demo:
 Future Works
 ------------
 
-* **ver0.2.0rc1** : Actually, we just have one node in this tutorial because we used balances SRML, the default setting. We will divide this node into a parent node and a child node using PlasmUtxo SRML.
-* **ver0.5.0** : Connect our root chain to Polkadot Testnet.
-* **v0.7.0** : Plasma Cash implementation.
-* **v1.0.0** : Plasma Chamber implementation.
-
-**Another Important Task**
-: Improve ExitGame implementation
+![1_MsvI5mbUlwMYAnzHxOTwuw](https://user-images.githubusercontent.com/29359048/68994260-57ed4080-08c4-11ea-8659-3a0b066661bc.png)
 
 Contacts
 --------
@@ -128,7 +129,9 @@ Contacts
 
 * [Public_Sate](https://twitter.com/public_sate)
 * [Task Ohmori](https://twitter.com/taskooh?lang=en)
+* [Aleksandr Krupenkin](https://github.com/akru)
+* [Sota Watanabe](https://twitter.com/WatanabeSota)
 
 * * *
 
-Plasm is licensed under the GPLv3.0 by Staked Technologies Inc.
+Plasm is licensed under the GPLv3.0 by Stake Technologies Inc.
