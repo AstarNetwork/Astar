@@ -106,7 +106,7 @@ We will provide you with a right to be the first validator during the PoA term (
 
     plasm-node --validator
 
-2. Apply the program for participating in validator program:
+2. Apply the validator program:
 
 * https://docs.google.com/forms/d/1g0XGDQ0qg-YipwmHlmrnszF8BI0E85xY42pMZpF0knI/viewform
 
