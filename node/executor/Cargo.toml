@@ -17,7 +17,6 @@ plasm-primitives = { path = "../primitives" }
 plasm-runtime = { path = "../runtime" }
 
 [dev-dependencies]
-plasm-testing = { path = "../testing" }
 test-client = { package = "substrate-test-client", git = "https://github.com/satellitex/substrate.git" }
 sr-primitives = { git = "https://github.com/satellitex/substrate.git" }
 runtime_support = { package = "srml-support", git = "https://github.com/satellitex/substrate.git" }

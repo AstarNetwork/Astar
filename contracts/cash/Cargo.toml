@@ -16,7 +16,7 @@ type-metadata = { git = "https://github.com/type-metadata/type-metadata.git", de
 primitives = { path = "../primitives", default-features = false }
 commitment = { path = "../commitment", default-features = false }
 deposit = { path = "../deposit", default-features = false }
-predicate = { path = "../predicate", deafult-features = false }
+predicate = { path = "../predicate" }
 
 [lib]
 name = "cash"
