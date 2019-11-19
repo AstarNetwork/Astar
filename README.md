@@ -73,7 +73,7 @@ You will also need to install the following packages:
 
 Install Plasm node from git source:
 
-    cargo +nightly install --force --git https://github.com/stakedtechnologies/Plasm --tag plasm-testnet-v1 plasm-cli
+    cargo install --force --git https://github.com/stakedtechnologies/Plasm --tag v0.5.0
 
 Run node in [Plasm testnet](https://telemetry.polkadot.io/#/PlasmTestnet%20v1):
 
