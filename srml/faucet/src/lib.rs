@@ -1,17 +1,17 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use codec::{Decode, Encode};
-use contract::{BalanceOf, CodeHash, ContractAddressFor, Gas};
-use rstd::collections::btree_set::BTreeSet;
 use rstd::prelude::*;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
-use sr_primitives::traits::{MaybeDisplay, MaybeSerialize, Member};
-use support::{decl_event, decl_module, decl_storage, dispatch::Result, traits::Get, Parameter};
-use system::{ensure_signed, RawOrigin};
+use support::{decl_event, decl_module, decl_storage, dispatch::Result, traits::{Currency, Get}};
+use system::ensure_signed;
 
 /// The module's configuration trait.
 pub trait Trait: balances::Trait + timestamp::Trait {
+	// Currency
+	type Currency: Currency<Self::AccountId>;
+
 	/// Please waiting minimum period after previous calims.
 	type WaitingClaims: Get<Self::Moment>;
 
@@ -23,17 +23,19 @@ pub trait Trait: balances::Trait + timestamp::Trait {
 }
 
 #[derive(Clone, Eq, PartialEq, Default, Encode, Decode)]
-#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize, Debug))]
 pub struct FaucetLog<Balance, Moment> {
 	pub amount: Balance,
 	pub time: Moment,
 }
 
+pub type BalanceOf<T> = <<T as Trait>::Currency as Currency<<T as system::Trait>::AccountId>>::Balance;
+
 /// This module's storage items.
 decl_storage! {
     trait Store for Module<T: Trait> as Operator {
         /// A mapping from operators to operated contracts by them.
-        pub FaucetHistory: map T::AccountId => Vec<T::Balance>;
+        pub FaucetHistory: map T::AccountId => Vec<FaucetLog<T::Balance, T::Moment>>;
     }
 }
 
@@ -45,7 +47,7 @@ decl_module! {
         fn deposit_event() = default;
 
         /// claim
-        pub fn claims(origin) -> Result {
+        pub fn claims(origin, ) -> Result {
 //        	let sender = ensure_signed(origin)?;
 //        	let mut history = <FaucetHistory<T>>::get(&sender);
 //        	let now = <timestamp::Module<T>>::now();
@@ -84,8 +86,9 @@ mod tests {
 	use super::*;
 
 	use primitives::H256;
-	use support::{assert_noop, assert_ok, impl_outer_origin, parameter_types};
+	use support::{assert_ok, impl_outer_origin, impl_outer_event, parameter_types};
 	use std::cell::RefCell;
+	use system::{EventRecord, Phase};
 	// The testing primitives are very useful for avoiding having to work with signatures
 	// or public keys. `u64` is used as the `AccountId` and no `Signature`s are required.
 	use sr_primitives::{
@@ -97,6 +100,19 @@ mod tests {
 	impl_outer_origin! {
         pub enum Origin for Test {}
     }
+
+	mod faucet {
+		// Re-export contents of the root. This basically
+		// needs to give a name for the current crate.
+		// This hack is required for `impl_outer_event!`.
+		pub use super::super::*;
+		use support::impl_outer_event;
+	}
+	impl_outer_event! {
+		pub enum MetaEvent for Test {
+			balances<T>, faucet<T>,
+		}
+	}
 
 	// For testing the module, we construct most of a mock runtime. This means
 	// first constructing a configuration type (`Test`) which `impl`s each of the
@@ -119,7 +135,7 @@ mod tests {
 		type AccountId = u64;
 		type Lookup = IdentityLookup<Self::AccountId>;
 		type Header = Header;
-		type Event = ();
+		type Event = MetaEvent;
 		type BlockHashCount = BlockHashCount;
 		type MaximumBlockWeight = MaximumBlockWeight;
 		type AvailableBlockRatio = AvailableBlockRatio;
@@ -152,7 +168,7 @@ mod tests {
 		type Balance = u64;
 		type OnFreeBalanceZero = ();
 		type OnNewAccount = ();
-		type Event = ();
+		type Event = MetaEvent;
 		type DustRemoval = ();
 		type TransferPayment = ();
 		type ExistentialDeposit = ExistentialDeposit;
@@ -174,9 +190,10 @@ mod tests {
     }
 
 	impl Trait for Test {
+		type Currency = Balances;
 		type WaitingClaims = WaitingClaims;
 		type FaucetValue = FaucetValue;
-		type Event = ();
+		type Event = MetaEvent;
 	}
 
 	pub struct ExtBuilder {
@@ -256,6 +273,7 @@ mod tests {
 		}
 	}
 
+	type System = system::Module<Test>;
 	type Balances = balances::Module<Test>;
 	type Timestamp = timestamp::Module<Test>;
 	type Faucet = Module<Test>;
@@ -269,7 +287,26 @@ mod tests {
 	#[test]
 	fn once_claims() {
 		new_test_ext().execute_with(|| {
-			assert!(true)
+			assert_eq!(<balances::FreeBalance<Test>>::get(&1), 10);
+
+			assert_ok!(Faucet::claims(Origin::signed(1)));
+			assert_eq!(
+				System::events(),
+				vec![
+				EventRecord {
+					phase: Phase::ApplyExtrinsic(0),
+					event: MetaEvent::faucet(faucet::RawEvent::SuccessClaims(1, <Test as Trait>::FaucetValue::get(), Timestamp::now())),
+					topics: vec![],
+				}],
+			);
+
+			assert_eq!(<balances::FreeBalance<Test>>::get(&1), 10 + <Test as Trait>::FaucetValue::get());
+			assert_eq!(<FaucetHistory<Test>>::get(&1), vec![
+				FaucetLog {
+					amount: <Test as Trait>::FaucetValue::get(),
+					time: Timestamp::now(),
+				}
+			]);
 		});
 	}
 }
