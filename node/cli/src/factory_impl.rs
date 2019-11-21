@@ -43,7 +43,7 @@ impl<Number> FactoryState<Number> {
 			system::CheckEra::from(Era::mortal(256, phase)),
 			system::CheckNonce::from(index),
 			system::CheckWeight::new(),
-			transaction_payment::ChargeTransactionPayment::from(0),
+			plasm_runtime::ChargeTransactionPaymentWithFaucet::from(0),
 			Default::default(),
 		)
 	}

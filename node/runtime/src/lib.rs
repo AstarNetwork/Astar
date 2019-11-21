@@ -10,9 +10,7 @@ use client::{
 	impl_runtime_apis, runtime_api as client_api,
 };
 use contracts_rpc_runtime_api::ContractExecResult;
-use elections::VoteIndex;
 use grandpa::{fg_primitives, AuthorityList as GrandpaAuthorityList};
-use grandpa::{AuthorityId as GrandpaId, AuthorityWeight as GrandpaWeight};
 use plasm_primitives::{
 	AccountId, AccountIndex, Balance, BlockNumber, Hash, Index, Moment, Signature,
 };
@@ -22,13 +20,20 @@ use rstd::prelude::*;
 use sr_primitives::traits::{
 	self, BlakeTwo256, Block as BlockT, DigestFor, NumberFor, SaturatedConversion, StaticLookup,
 };
-use sr_primitives::transaction_validity::TransactionValidity;
-use sr_primitives::weights::Weight;
-use sr_primitives::{create_runtime_str, generic, impl_opaque_keys, key_types, ApplyResult};
+use sr_primitives::{
+	create_runtime_str, generic, impl_opaque_keys, key_types, ApplyResult,
+	traits::{Zero, Saturating, SignedExtension, Convert},
+	transaction_validity::{
+		TransactionPriority, ValidTransaction, InvalidTransaction, TransactionValidityError,
+		TransactionValidity,
+	},
+	weights::{Weight, DispatchInfo, GetDispatchInfo},
+};
 use support::{
 	construct_runtime, parameter_types,
-	traits::{Currency, Randomness, SplitTwoWays},
+	traits::{Currency, Randomness, SplitTwoWays, ExistenceRequirement, WithdrawReason},
 };
+use codec::{Encode, Decode};
 use system::offchain::TransactionSubmitter;
 use transaction_payment_rpc_runtime_api::RuntimeDispatchInfo;
 #[cfg(any(feature = "std", test))]
@@ -166,8 +171,8 @@ impl indices::Trait for Runtime {
 
 parameter_types! {
     pub const ExistentialDeposit: Balance = 1 * PLMS;
-    pub const TransferFee: Balance = 1 * MILLIPLMS;
-    pub const CreationFee: Balance = 1 * MILLIPLMS;
+    pub const TransferFee: Balance = 0;
+    pub const CreationFee: Balance = 0;
 }
 
 impl balances::Trait for Runtime {
@@ -309,7 +314,7 @@ impl system::offchain::CreateTransaction<Runtime, UncheckedExtrinsic> for Runtim
 			system::CheckEra::<Runtime>::from(generic::Era::mortal(period, current_block)),
 			system::CheckNonce::<Runtime>::from(index),
 			system::CheckWeight::<Runtime>::new(),
-			transaction_payment::ChargeTransactionPayment::<Runtime>::from(tip),
+			ChargeTransactionPaymentWithFaucet::from(tip),
 			Default::default(),
 		);
 		let raw_payload = SignedPayload::new(call, extra).ok()?;
@@ -341,6 +346,93 @@ construct_runtime!(
 	}
 );
 
+/// custom transaction paymetn with faucet.
+#[derive(Encode, Decode, Clone, Eq, PartialEq)]
+pub struct ChargeTransactionPaymentWithFaucet(#[codec(compact)] Balance);
+impl rstd::fmt::Debug for ChargeTransactionPaymentWithFaucet {
+	#[cfg(feature = "std")]
+	fn fmt(&self, f: &mut rstd::fmt::Formatter) -> rstd::fmt::Result {
+		write!(f, "ChargeTransactionPaymentWithFauce<{:?}>", self.0)
+	}
+	#[cfg(not(feature = "std"))]
+	fn fmt(&self, _: &mut rstd::fmt::Formatter) -> rstd::fmt::Result {
+		Ok(())
+	}
+}
+
+impl ChargeTransactionPaymentWithFaucet {
+	/// utility constructor. Used only in client/factory code.
+	pub fn from(fee: Balance) -> Self {
+		Self(fee)
+	}
+
+	fn compute_fee(len: u32, info: DispatchInfo, tip: Balance) -> Balance {
+		let len_fee = if info.pay_length_fee() {
+			let len = Balance::from(len);
+			let base = <Runtime as transaction_payment::Trait>::TransactionBaseFee::get();
+			let per_byte = <Runtime as transaction_payment::Trait>::TransactionByteFee::get();
+			base.saturating_add(per_byte.saturating_mul(len))
+		} else {
+			Zero::zero()
+		};
+
+		let weight_fee = {
+			// cap the weight to the maximum defined in runtime, otherwise it will be the `Bounded`
+			// maximum of its data type, which is not desired.
+			let capped_weight = info.weight.min(<Runtime as system::Trait>::MaximumBlockWeight::get());
+			<Runtime as transaction_payment::Trait>::WeightToFee::convert(capped_weight)
+		};
+
+		// everything except for tip
+		let basic_fee = len_fee.saturating_add(weight_fee);
+		basic_fee.saturating_add(tip)
+	}
+}
+
+impl SignedExtension for ChargeTransactionPaymentWithFaucet
+{
+	type AccountId = AccountId;
+	type Call = Call;
+	type AdditionalSigned = ();
+	type Pre = ();
+	fn additional_signed(&self) -> rstd::result::Result<(), TransactionValidityError> { Ok(()) }
+
+	fn validate(
+		&self,
+		who: &Self::AccountId,
+		_call: &Self::Call,
+		info: DispatchInfo,
+		len: usize,
+	) -> TransactionValidity {
+		// pay any fees.
+		if let &Call::Faucet(faucet::Call::claims()) = _call {
+			return Ok(ValidTransaction::default());
+		}
+		let tip = self.0;
+		let fee = Self::compute_fee(len as u32, info, tip);
+		let imbalance = match <Runtime as transaction_payment::Trait>::Currency::withdraw(
+			who,
+			fee,
+			if tip.is_zero() {
+				WithdrawReason::TransactionPayment.into()
+			} else {
+				WithdrawReason::TransactionPayment | WithdrawReason::Tip
+			},
+			ExistenceRequirement::KeepAlive,
+		) {
+			Ok(imbalance) => imbalance,
+			Err(_) => return InvalidTransaction::Payment.into(),
+		};
+		<Runtime as transaction_payment::Trait>::OnTransactionPayment::on_unbalanced(imbalance);
+
+		let mut r = ValidTransaction::default();
+		// NOTE: we probably want to maximize the _fee (of any type) per weight unit_ here, which
+		// will be a bit more than setting the priority to tip. For now, this is enough.
+		r.priority = fee.saturated_into::<TransactionPriority>();
+		Ok(r)
+	}
+}
+
 /// The address format for describing accounts.
 pub type Address = <Indices as StaticLookup>::Source;
 /// Block header type as expected by this runtime.
@@ -358,7 +450,7 @@ pub type SignedExtra = (
 	system::CheckEra<Runtime>,
 	system::CheckNonce<Runtime>,
 	system::CheckWeight<Runtime>,
-	transaction_payment::ChargeTransactionPayment<Runtime>,
+	ChargeTransactionPaymentWithFaucet,
 	contracts::CheckBlockGasLimit<Runtime>,
 );
 /// Unchecked extrinsic type as expected by this runtime.
