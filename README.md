@@ -67,7 +67,7 @@ Ensure you have Rust and the support software installed:
 
 You will also need to install the following packages:
 
-* Linux: `sudo apt install cmake git clang libclang-dev`
+* Linux: `sudo apt install cmake git clang libclang-dev pkg-config libssl-dev build-essential`
 * Mac: `brew install cmake pkg-config git llvm`
 * Windows: Download and install the Pre Build Windows binaries of LLVM from http://releases.llvm.org/download.html
 
