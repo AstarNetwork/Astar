@@ -38,7 +38,7 @@ pub type BalanceOf<T> =
 
 decl_storage! {
     trait Store for Module<T: Trait> as Operator {
-        /// A mapping from operators to operated contracts by them.
+        /// A mapping from account to faucet logs.
         pub FaucetHistory: map T::AccountId => Vec<FaucetLog<BalanceOf<T>, T::Moment>>;
     }
 }
@@ -50,7 +50,9 @@ decl_module! {
         // this is needed only if you are using events in your module
         fn deposit_event() = default;
 
-        /// claim
+        /// claim methods
+        /// A account can claim once per DAYS.
+        /// And get 1 PLMS.
         pub fn claims(origin, ) -> Result {
             let sender = ensure_signed(origin)?;
             let mut history = <FaucetHistory<T>>::get(&sender);
