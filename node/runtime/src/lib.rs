@@ -165,9 +165,9 @@ impl indices::Trait for Runtime {
 }
 
 parameter_types! {
-    pub const ExistentialDeposit: Balance = 1 * DOLLARS;
-    pub const TransferFee: Balance = 1 * CENTS;
-    pub const CreationFee: Balance = 1 * CENTS;
+    pub const ExistentialDeposit: Balance = 1 * PLMS;
+    pub const TransferFee: Balance = 1 * MILLIPLMS;
+    pub const CreationFee: Balance = 1 * MILLIPLMS;
 }
 
 impl balances::Trait for Runtime {
@@ -183,8 +183,8 @@ impl balances::Trait for Runtime {
 }
 
 parameter_types! {
-    pub const TransactionBaseFee: Balance = 1 * CENTS;
-    pub const TransactionByteFee: Balance = 10 * MILLICENTS;
+    pub const TransactionBaseFee: Balance = 1 * MILLIPLMS;
+    pub const TransactionByteFee: Balance = 10 * MICROPLMS;
     // setting this to zero will disable the weight fee.
     pub const WeightFeeCoefficient: Balance = 1_000;
     // for a sane configuration, this should always be less than `AvailableBlockRatio`.
@@ -211,7 +211,7 @@ impl timestamp::Trait for Runtime {
 
 parameter_types! {
     pub const WaitingClaims: Moment = 1 * MOMENT_DAYS;
-    pub const FaucetValue: Balance = 1 * DOLLARS;
+    pub const FaucetValue: Balance = 1 * PLMS;
 }
 
 impl faucet::Trait for Runtime {
@@ -222,15 +222,15 @@ impl faucet::Trait for Runtime {
 }
 
 parameter_types! {
-    pub const ContractTransferFee: Balance = 1 * CENTS;
-    pub const ContractCreationFee: Balance = 1 * CENTS;
-    pub const ContractTransactionBaseFee: Balance = 1 * CENTS;
-    pub const ContractTransactionByteFee: Balance = 10 * MILLICENTS;
-    pub const ContractFee: Balance = 1 * CENTS;
-    pub const TombstoneDeposit: Balance = 1 * DOLLARS;
-    pub const RentByteFee: Balance = 1 * DOLLARS;
-    pub const RentDepositOffset: Balance = 1000 * DOLLARS;
-    pub const SurchargeReward: Balance = 150 * DOLLARS;
+    pub const ContractTransferFee: Balance = 1 * MILLIPLMS;
+    pub const ContractCreationFee: Balance = 1 * MILLIPLMS;
+    pub const ContractTransactionBaseFee: Balance = 1 * MILLIPLMS;
+    pub const ContractTransactionByteFee: Balance = 10 * MICROPLMS;
+    pub const ContractFee: Balance = 1 * MILLIPLMS;
+    pub const TombstoneDeposit: Balance = 1 * PLMS;
+    pub const RentByteFee: Balance = 1 * PLMS;
+    pub const RentDepositOffset: Balance = 1000 * PLMS;
+    pub const SurchargeReward: Balance = 150 * PLMS;
 }
 
 impl contracts::Trait for Runtime {
@@ -508,20 +508,21 @@ impl_runtime_apis! {
 
 #[cfg(test)]
 mod tests {
-	use super::*;
-	use sr_primitives::app_crypto::RuntimeAppPublic;
-	use system::offchain::SubmitSignedTransaction;
+    use super::*;
+    use sr_primitives::app_crypto::RuntimeAppPublic;
+    use system::offchain::SubmitSignedTransaction;
 
-	fn is_submit_signed_transaction<T, Signer>(_arg: T)
-		where
-			T: SubmitSignedTransaction<
-				Runtime,
-				Call,
-				Extrinsic=UncheckedExtrinsic,
-				CreateTransaction=Runtime,
-				Signer=Signer,
-			>,
-			Signer: RuntimeAppPublic + From<AccountId>,
-			Signer::Signature: Into<Signature>,
-	{}
+    fn is_submit_signed_transaction<T, Signer>(_arg: T)
+    where
+        T: SubmitSignedTransaction<
+            Runtime,
+            Call,
+            Extrinsic = UncheckedExtrinsic,
+            CreateTransaction = Runtime,
+            Signer = Signer,
+        >,
+        Signer: RuntimeAppPublic + From<AccountId>,
+        Signer::Signature: Into<Signature>,
+    {
+    }
 }

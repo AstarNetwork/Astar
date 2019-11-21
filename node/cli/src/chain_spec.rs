@@ -88,8 +88,8 @@ fn generate_config_genesis(
 	let endowed_accounts: Vec<AccountId> =
 		endowed_accounts.unwrap_or_else(|| default_endowed_accounts.into_iter().collect());
 
-	const ENDOWMENT: Balance = 10_000_000 * DOLLARS;
-	const STASH: Balance = 100 * DOLLARS;
+	const ENDOWMENT: Balance = 10_000_000 * PLMS;
+	const STASH: Balance = 100 * PLMS;
 
 	GenesisConfig {
 		system: Some(SystemConfig {
@@ -112,7 +112,7 @@ fn generate_config_genesis(
 				enable_println, // this should only be enabled on development chains
 				..Default::default()
 			},
-			gas_price: 1 * MILLICENTS,
+			gas_price: 1 * MICROPLMS,
 		}),
 		sudo: Some(SudoConfig { key: root_key }),
 		aura: Some(AuraConfig {

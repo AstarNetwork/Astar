@@ -79,7 +79,7 @@ mod tests {
 	}
 
 	fn default_transfer_call() -> balances::Call<Runtime> {
-		balances::Call::transfer::<Runtime>(bob().into(), 69 * DOLLARS)
+		balances::Call::transfer::<Runtime>(bob().into(), 69 * PLMS)
 	}
 
 	fn xt() -> UncheckedExtrinsic {
@@ -173,10 +173,10 @@ mod tests {
 	fn successful_execution_with_native_equivalent_code_gives_ok() {
 		let mut t = TestExternalities::<Blake2Hasher>::new_with_code(COMPACT_CODE, (map![
 			<balances::FreeBalance<Runtime>>::hashed_key_for(alice()) => {
-				(111 * DOLLARS).encode()
+				(111 * PLMS).encode()
 			},
 			<balances::TotalIssuance<Runtime>>::hashed_key().to_vec() => {
-				(111 * DOLLARS).encode()
+				(111 * PLMS).encode()
 			},
 			<indices::NextEnumSet<Runtime>>::hashed_key().to_vec() => vec![0u8; 16],
 			<system::BlockHash<Runtime>>::hashed_key_for(0) => vec![0u8; 32]
@@ -200,8 +200,8 @@ mod tests {
 		assert!(r.is_ok());
 
 		runtime_io::with_externalities(&mut t, || {
-			assert_eq!(Balances::total_balance(&alice()), 42 * DOLLARS - transfer_fee(&xt()));
-			assert_eq!(Balances::total_balance(&bob()), 69 * DOLLARS);
+			assert_eq!(Balances::total_balance(&alice()), 42 * PLMS - transfer_fee(&xt()));
+			assert_eq!(Balances::total_balance(&bob()), 69 * PLMS);
 		});
 	}
 
@@ -209,10 +209,10 @@ mod tests {
 	fn successful_execution_with_foreign_code_gives_ok() {
 		let mut t = TestExternalities::<Blake2Hasher>::new_with_code(BLOATY_CODE, (map![
 			<balances::FreeBalance<Runtime>>::hashed_key_for(alice()) => {
-				(111 * DOLLARS).encode()
+				(111 * PLMS).encode()
 			},
 			<balances::TotalIssuance<Runtime>>::hashed_key().to_vec() => {
-				(111 * DOLLARS).encode()
+				(111 * PLMS).encode()
 			},
 			<indices::NextEnumSet<Runtime>>::hashed_key().to_vec() => vec![0u8; 16],
 			<system::BlockHash<Runtime>>::hashed_key_for(0) => vec![0u8; 32]
@@ -236,8 +236,8 @@ mod tests {
 		assert!(r.is_ok());
 
 		runtime_io::with_externalities(&mut t, || {
-			assert_eq!(Balances::total_balance(&alice()), 42 * DOLLARS - transfer_fee(&xt()));
-			assert_eq!(Balances::total_balance(&bob()), 69 * DOLLARS);
+			assert_eq!(Balances::total_balance(&alice()), 42 * PLMS - transfer_fee(&xt()));
+			assert_eq!(Balances::total_balance(&bob()), 69 * PLMS);
 		});
 	}
 
@@ -321,7 +321,7 @@ mod tests {
 				},
 				CheckedExtrinsic {
 					signed: Some((alice(), signed_extra(0, 0))),
-					function: Call::Balances(balances::Call::transfer(bob().into(), 69 * DOLLARS)),
+					function: Call::Balances(balances::Call::transfer(bob().into(), 69 * PLMS)),
 				},
 			]
 		)
@@ -343,7 +343,7 @@ mod tests {
 				},
 				CheckedExtrinsic {
 					signed: Some((alice(), signed_extra(0, 0))),
-					function: Call::Balances(balances::Call::transfer(bob().into(), 69 * DOLLARS)),
+					function: Call::Balances(balances::Call::transfer(bob().into(), 69 * PLMS)),
 				},
 			]
 		);
@@ -358,11 +358,11 @@ mod tests {
 				},
 				CheckedExtrinsic {
 					signed: Some((bob(), signed_extra(0, 0))),
-					function: Call::Balances(balances::Call::transfer(alice().into(), 5 * DOLLARS)),
+					function: Call::Balances(balances::Call::transfer(alice().into(), 5 * PLMS)),
 				},
 				CheckedExtrinsic {
 					signed: Some((alice(), signed_extra(1, 0))),
-					function: Call::Balances(balances::Call::transfer(bob().into(), 15 * DOLLARS)),
+					function: Call::Balances(balances::Call::transfer(bob().into(), 15 * PLMS)),
 				}
 			]
 		);
@@ -407,8 +407,8 @@ mod tests {
 		).0.unwrap();
 
 		runtime_io::with_externalities(&mut t, || {
-			assert_eq!(Balances::total_balance(&alice()), 42 * DOLLARS - transfer_fee(&xt()));
-			assert_eq!(Balances::total_balance(&bob()), 169 * DOLLARS);
+			assert_eq!(Balances::total_balance(&alice()), 42 * PLMS - transfer_fee(&xt()));
+			assert_eq!(Balances::total_balance(&bob()), 169 * PLMS);
 			let events = vec![
 				EventRecord {
 					phase: Phase::ApplyExtrinsic(0),
@@ -420,8 +420,8 @@ mod tests {
 					event: Event::balances(balances::RawEvent::Transfer(
 						alice().into(),
 						bob().into(),
-						69 * DOLLARS,
-						1 * CENTS
+						69 * PLMS,
+						1 * MILLIPLMS
 					)),
 					topics: vec![],
 				},
@@ -446,12 +446,12 @@ mod tests {
 			// weight update. Hence, using `assert_eq_error_rate`.
 			assert_eq_error_rate!(
 				Balances::total_balance(&alice()),
-				32 * DOLLARS - 2 * transfer_fee(&xt()),
+				32 * PLMS - 2 * transfer_fee(&xt()),
 				10_000
 			);
 			assert_eq_error_rate!(
 				Balances::total_balance(&bob()),
-				179 * DOLLARS - transfer_fee(&xt()),
+				179 * PLMS - transfer_fee(&xt()),
 				10_000
 			);
 			let events = vec![
@@ -466,8 +466,8 @@ mod tests {
 						balances::RawEvent::Transfer(
 							bob().into(),
 							alice().into(),
-							5 * DOLLARS,
-							1 * CENTS,
+							5 * PLMS,
+							1 * MILLIPLMS,
 						)
 					),
 					topics: vec![],
@@ -483,8 +483,8 @@ mod tests {
 						balances::RawEvent::Transfer(
 							alice().into(),
 							bob().into(),
-							15 * DOLLARS,
-							1 * CENTS,
+							15 * PLMS,
+							1 * MILLIPLMS,
 						)
 					),
 					topics: vec![],
@@ -508,8 +508,8 @@ mod tests {
 		WasmExecutor::new().call(&mut t, 8, COMPACT_CODE, "Core_execute_block", &block1.0).unwrap();
 
 		runtime_io::with_externalities(&mut t, || {
-			assert_eq!(Balances::total_balance(&alice()), 42 * DOLLARS - transfer_fee(&xt()));
-			assert_eq!(Balances::total_balance(&bob()), 169 * DOLLARS);
+			assert_eq!(Balances::total_balance(&alice()), 42 * PLMS - transfer_fee(&xt()));
+			assert_eq!(Balances::total_balance(&bob()), 169 * PLMS);
 		});
 
 		WasmExecutor::new().call(&mut t, 8, COMPACT_CODE, "Core_execute_block", &block2.0).unwrap();
@@ -517,12 +517,12 @@ mod tests {
 		runtime_io::with_externalities(&mut t, || {
 			assert_eq_error_rate!(
 				Balances::total_balance(&alice()),
-				32 * DOLLARS - 2 * transfer_fee(&xt()),
+				32 * PLMS - 2 * transfer_fee(&xt()),
 				10_000
 			);
 			assert_eq_error_rate!(
 				Balances::total_balance(&bob()),
-				179 * DOLLARS - 1 * transfer_fee(&xt()),
+				179 * PLMS - 1 * transfer_fee(&xt()),
 				10_000
 			);
 		});
@@ -649,7 +649,7 @@ mod tests {
 				CheckedExtrinsic {
 					signed: Some((charlie(), signed_extra(1, 0))),
 					function: Call::Contracts(
-						contracts::Call::create::<Runtime>(1 * DOLLARS, 10_000, transfer_ch, Vec::new())
+						contracts::Call::create::<Runtime>(1 * PLMS, 10_000, transfer_ch, Vec::new())
 					),
 				},
 				CheckedExtrinsic {
@@ -750,10 +750,10 @@ mod tests {
 	fn successful_execution_gives_ok() {
 		let mut t = TestExternalities::<Blake2Hasher>::new_with_code(COMPACT_CODE, (map![
 			<balances::FreeBalance<Runtime>>::hashed_key_for(alice()) => {
-				(111 * DOLLARS).encode()
+				(111 * PLMS).encode()
 			},
 			<balances::TotalIssuance<Runtime>>::hashed_key().to_vec() => {
-				(111 * DOLLARS).encode()
+				(111 * PLMS).encode()
 			},
 			<indices::NextEnumSet<Runtime>>::hashed_key().to_vec() => vec![0u8; 16],
 			<system::BlockHash<Runtime>>::hashed_key_for(0) => vec![0u8; 32]
@@ -768,8 +768,8 @@ mod tests {
 		assert_eq!(r, Ok(ApplyOutcome::Success));
 
 		runtime_io::with_externalities(&mut t, || {
-			assert_eq!(Balances::total_balance(&alice()), 42 * DOLLARS - 1 * transfer_fee(&xt()));
-			assert_eq!(Balances::total_balance(&bob()), 69 * DOLLARS);
+			assert_eq!(Balances::total_balance(&alice()), 42 * PLMS - 1 * transfer_fee(&xt()));
+			assert_eq!(Balances::total_balance(&bob()), 69 * PLMS);
 		});
 	}
 
@@ -902,18 +902,18 @@ mod tests {
 		//
 		// weight of transfer call as of now: 1_000_000
 		// if weight of the cheapest weight would be 10^7, this would be 10^9, which is:
-		//   - 1 MILLICENTS in substrate node.
+		//   - 1 MICROPLMS in substrate node.
 		//   - 1 milldot based on current polkadot runtime.
 		// (this baed on assigning 0.1 CENT to the cheapest tx with `weight = 100`)
 		let mut t = TestExternalities::<Blake2Hasher>::new_with_code(COMPACT_CODE, (map![
 			<balances::FreeBalance<Runtime>>::hashed_key_for(alice()) => {
-				(100 * DOLLARS).encode()
+				(100 * PLMS).encode()
 			},
 			<balances::FreeBalance<Runtime>>::hashed_key_for(bob()) => {
-				(10 * DOLLARS).encode()
+				(10 * PLMS).encode()
 			},
 			<balances::TotalIssuance<Runtime>>::hashed_key().to_vec() => {
-				(110 * DOLLARS).encode()
+				(110 * PLMS).encode()
 			},
 			<indices::NextEnumSet<Runtime>>::hashed_key().to_vec() => vec![0u8; 16],
 			<system::BlockHash<Runtime>>::hashed_key_for(0) => vec![0u8; 32]
@@ -944,13 +944,13 @@ mod tests {
 		assert!(r.is_ok());
 
 		runtime_io::with_externalities(&mut t, || {
-			assert_eq!(Balances::total_balance(&bob()), (10 + 69) * DOLLARS);
+			assert_eq!(Balances::total_balance(&bob()), (10 + 69) * PLMS);
 			// Components deducted from alice's balances:
 			// - Weight fee
 			// - Length fee
 			// - Tip
 			// - Creation-fee of bob's account.
-			let mut balance_alice = (100 - 69) * DOLLARS;
+			let mut balance_alice = (100 - 69) * PLMS;
 
 			let length_fee = TransactionBaseFee::get() +
 				TransactionByteFee::get() *
@@ -961,7 +961,7 @@ mod tests {
 			let weight_fee = WeightToFee::convert(weight);
 
 			// we know that weight to fee multiplier is effect-less in block 1.
-			assert_eq!(weight_fee as Balance, MILLICENTS);
+			assert_eq!(weight_fee as Balance, MICROPLMS);
 			balance_alice -= weight_fee;
 
 			balance_alice -= tip;

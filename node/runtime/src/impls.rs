@@ -9,6 +9,7 @@ use sr_primitives::{Fixed64, Perbill};
 use support::traits::{Currency, Get, OnUnbalanced};
 
 pub struct Author;
+
 impl OnUnbalanced<NegativeImbalance> for Author {
     fn on_unbalanced(amount: NegativeImbalance) {}
 }
@@ -183,9 +184,9 @@ mod tests {
 				"iteration {}, new wm = {:?}. Fee at this point is: {} millicents, {} cents, {} dollars",
 				iterations,
 				wm,
-				fee / MILLICENTS,
-				fee / CENTS,
-				fee / DOLLARS
+				fee / MICROPLMS,
+				fee / MILLIPLMS,
+				fee / PLMS
 			);
         }
     }

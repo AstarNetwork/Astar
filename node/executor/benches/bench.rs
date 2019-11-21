@@ -121,7 +121,7 @@ fn test_blocks(genesis_config: &GenesisConfig, executor: &NativeExecutor<Executo
 	block1_extrinsics.extend((0..20).map(|i| {
 		CheckedExtrinsic {
 			signed: Some((alice(), signed_extra(i, 0))),
-			function: Call::Balances(balances::Call::transfer(bob().into(), 1 * DOLLARS)),
+			function: Call::Balances(balances::Call::transfer(bob().into(), 1 * PLMS)),
 		}
 	}));
 	let block1 = construct_block(
