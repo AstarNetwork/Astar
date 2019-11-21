@@ -26,6 +26,7 @@ balances = { package = "srml-balances", git = "https://github.com/satellitex/sub
 contracts = { package = "srml-contracts", git = "https://github.com/satellitex/substrate.git", default-features = false }
 contracts-rpc-runtime-api = { package = "srml-contracts-rpc-runtime-api", git = "https://github.com/satellitex/substrate.git", default-features = false }
 operator = { package = "srml-contract-operator", path = "../../srml/operator", default-features = false }
+faucet = { package = "srml-faucet", path = "../../srml/faucet", default-features = false }
 collective = { package = "srml-collective", git = "https://github.com/satellitex/substrate.git", default-features = false }
 democracy = { package = "srml-democracy", git = "https://github.com/satellitex/substrate.git", default-features = false }
 elections = { package = "srml-elections", git = "https://github.com/satellitex/substrate.git", default-features = false }
@@ -71,6 +72,7 @@ std = [
 	"contracts/std",
 	"contracts-rpc-runtime-api/std",
 	"operator/std",
+	"faucet/std",
 	"democracy/std",
 	"elections/std",
 	"executive/std",

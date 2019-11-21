@@ -2953,6 +2953,7 @@ dependencies = [
  "srml-democracy 2.0.0 (git+https://github.com/satellitex/substrate.git)",
  "srml-elections 2.0.0 (git+https://github.com/satellitex/substrate.git)",
  "srml-executive 2.0.0 (git+https://github.com/satellitex/substrate.git)",
+ "srml-faucet 1.0.0",
  "srml-finality-tracker 2.0.0 (git+https://github.com/satellitex/substrate.git)",
  "srml-grandpa 2.0.0 (git+https://github.com/satellitex/substrate.git)",
  "srml-im-online 0.1.0 (git+https://github.com/satellitex/substrate.git)",
