@@ -336,4 +336,59 @@ mod tests {
 			);
 		});
 	}
+
+	#[test]
+	fn failed_claims() {
+		new_test_ext().execute_with(|| {
+			assert_eq!(<balances::FreeBalance<Test>>::get(&1), 10);
+
+			// Success
+			assert_ok!(Faucet::claims(Origin::signed(1)));
+			assert_eq!(
+				System::events(),
+				vec![EventRecord {
+					phase: Phase::ApplyExtrinsic(0),
+					event: MetaEvent::faucet(faucet::RawEvent::SuccessClaims(
+						1,
+						<Test as Trait>::FaucetValue::get(),
+						Timestamp::now(),
+					)),
+					topics: vec![],
+				}],
+			);
+			let now = Timestamp::now();
+			// Failed
+			assert_ok!(Faucet::claims(Origin::signed(1)));
+			assert_eq!(
+				System::events(),
+				vec![
+					EventRecord {
+						phase: Phase::ApplyExtrinsic(0),
+						event: MetaEvent::faucet(faucet::RawEvent::SuccessClaims(
+							1,
+							<Test as Trait>::FaucetValue::get(),
+							now,
+						)),
+						topics: vec![],
+					},
+					EventRecord {
+						phase: Phase::ApplyExtrinsic(0),
+						event: MetaEvent::faucet(faucet::RawEvent::FailedClaims(1, now)),
+						topics: vec![],
+					}
+				],
+			);
+			assert_eq!(
+				<balances::FreeBalance<Test>>::get(&1),
+				10 + <Test as Trait>::FaucetValue::get()
+			);
+			assert_eq!(
+				<FaucetHistory<Test>>::get(&1),
+				vec![FaucetLog {
+					amount: <Test as Trait>::FaucetValue::get(),
+					time: now,
+				}]
+			);
+		});
+	}
 }
