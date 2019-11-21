@@ -1,0 +1,28 @@
+[package]
+name = "srml-validator-manager"
+version = "0.1.0"
+authors = ["Aleksandr Krupenkin <aleksandr@stake.co.jp>"]
+edition = "2018"
+
+[dependencies]
+codec = { package = "parity-scale-codec", version = "1.0" }
+rstd = { package = "sr-std", git = "https://github.com/satellitex/substrate.git", default-features = false }
+support = { package = "srml-support", git = "https://github.com/satellitex/substrate.git", default-features = false }
+system = { package = "srml-system", git = "https://github.com/satellitex/substrate.git", default-features = false }
+session = { package = "srml-session", git = "https://github.com/satellitex/substrate.git", default-features = false }
+
+[dev-dependencies]
+babe = { package = "srml-babe", git = "https://github.com/satellitex/substrate.git", default-features = false }
+sr-io = { git = "https://github.com/satellitex/substrate.git", default-features = false }
+primitives = { package = "sr-primitives", git = "https://github.com/satellitex/substrate.git", default-features = false }
+timestamp = { package = "srml-timestamp", git = "https://github.com/satellitex/substrate.git", default-features = false }
+
+[features]
+default = ["std"]
+std = [
+  "codec/std",
+  "rstd/std",
+  "support/std",
+  "system/std",
+  "session/std",
+]

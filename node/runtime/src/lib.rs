@@ -52,6 +52,9 @@ use impls::{CurrencyToVoteHandler, Author, LinearWeightToFee, TargetedFeeAdjustm
 pub mod constants;
 use constants::{time::*, currency::*};
 
+/// Simple PoA management module
+pub mod poa_simple;
+
 // Make the WASM binary available.
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
@@ -150,6 +153,10 @@ parameter_types! {
 
 impl aura::Trait for Runtime {
 	type AuthorityId = AuraId;
+}
+
+impl poa_simple::Trait for Runtime {
+    type Engine = Aura;
 }
 
 impl indices::Trait for Runtime {
@@ -308,6 +315,7 @@ construct_runtime!(
 	{
 		System: system::{Module, Call, Storage, Config, Event},
 		Aura: aura::{Module, Config<T>, Inherent(Timestamp)},
+        PoASimple: poa_simple::{Module},
 		Timestamp: timestamp::{Module, Call, Storage, Inherent},
 		TransactionPayment: transaction_payment::{Module, Storage},
 		Indices: indices,
