@@ -35,7 +35,8 @@ pub mod time {
     pub const SECS_PER_BLOCK: Moment = MILLISECS_PER_BLOCK / 1000;
 
     pub const SLOT_DURATION: Moment = MILLISECS_PER_BLOCK;
-    pub const MOMENT_MINUTES: Moment = 60 / SECS_PER_BLOCK;
+    pub const MOMENT_SECS: Moment = 1000;
+    pub const MOMENT_MINUTES: Moment = 60 * MOMENT_SECS;
     pub const MOMENT_HOURS: Moment = MOMENT_MINUTES * 60;
     pub const MOMENT_DAYS: Moment = MOMENT_HOURS * 24;
 

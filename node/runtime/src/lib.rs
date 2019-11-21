@@ -6,34 +6,35 @@
 
 use aura_primitives::sr25519::AuthorityId as AuraId;
 use client::{
-	block_builder::api::{self as block_builder_api, CheckInherentsResult, InherentData},
-	impl_runtime_apis, runtime_api as client_api,
+    block_builder::api::{self as block_builder_api, CheckInherentsResult, InherentData},
+    impl_runtime_apis, runtime_api as client_api,
 };
+use codec::{Decode, Encode};
 use contracts_rpc_runtime_api::ContractExecResult;
 use grandpa::{fg_primitives, AuthorityList as GrandpaAuthorityList};
 use plasm_primitives::{
-	AccountId, AccountIndex, Balance, BlockNumber, Hash, Index, Moment, Signature,
+    AccountId, AccountIndex, Balance, BlockNumber, Hash, Index, Moment, Signature,
 };
 use primitives::u32_trait::{_1, _2, _3, _4};
 use primitives::OpaqueMetadata;
 use rstd::prelude::*;
 use sr_primitives::traits::{
-	self, BlakeTwo256, Block as BlockT, DigestFor, NumberFor, SaturatedConversion, StaticLookup,
+    self, BlakeTwo256, Block as BlockT, DigestFor, NumberFor, SaturatedConversion, StaticLookup,
 };
 use sr_primitives::{
-	create_runtime_str, generic, impl_opaque_keys, key_types, ApplyResult,
-	traits::{Zero, Saturating, SignedExtension, Convert},
-	transaction_validity::{
-		TransactionPriority, ValidTransaction, InvalidTransaction, TransactionValidityError,
-		TransactionValidity,
-	},
-	weights::{Weight, DispatchInfo, GetDispatchInfo},
+    create_runtime_str, generic, impl_opaque_keys, key_types,
+    traits::{Convert, Saturating, SignedExtension, Zero},
+    transaction_validity::{
+        InvalidTransaction, TransactionPriority, TransactionValidity, TransactionValidityError,
+        ValidTransaction,
+    },
+    weights::{DispatchInfo, GetDispatchInfo, Weight},
+    ApplyResult,
 };
 use support::{
-	construct_runtime, parameter_types,
-	traits::{Currency, Randomness, SplitTwoWays, ExistenceRequirement, WithdrawReason},
+    construct_runtime, parameter_types,
+    traits::{Currency, ExistenceRequirement, Randomness, SplitTwoWays, WithdrawReason},
 };
-use codec::{Encode, Decode};
 use system::offchain::TransactionSubmitter;
 use transaction_payment_rpc_runtime_api::RuntimeDispatchInfo;
 #[cfg(any(feature = "std", test))]
@@ -65,25 +66,25 @@ include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
 /// Runtime version.
 pub const VERSION: RuntimeVersion = RuntimeVersion {
-	spec_name: create_runtime_str!("plasm"),
-	impl_name: create_runtime_str!("plasm-node"),
-	authoring_version: 10,
-	// Per convention: if the runtime behavior changes, increment spec_version
-	// and set impl_version to equal spec_version. If only runtime
-	// implementation changes and behavior does not, then leave spec_version as
-	// is and increment impl_version.
-	spec_version: 154,
-	impl_version: 159,
-	apis: RUNTIME_API_VERSIONS,
+    spec_name: create_runtime_str!("plasm"),
+    impl_name: create_runtime_str!("plasm-node"),
+    authoring_version: 10,
+    // Per convention: if the runtime behavior changes, increment spec_version
+    // and set impl_version to equal spec_version. If only runtime
+    // implementation changes and behavior does not, then leave spec_version as
+    // is and increment impl_version.
+    spec_version: 154,
+    impl_version: 159,
+    apis: RUNTIME_API_VERSIONS,
 };
 
 /// Native version.
 #[cfg(any(feature = "std", test))]
 pub fn native_version() -> NativeVersion {
-	NativeVersion {
-		runtime_version: VERSION,
-		can_author_with: Default::default(),
-	}
+    NativeVersion {
+        runtime_version: VERSION,
+        can_author_with: Default::default(),
+    }
 }
 
 type NegativeImbalance = <Balances as Currency<AccountId>>::NegativeImbalance;
@@ -91,16 +92,16 @@ type NegativeImbalance = <Balances as Currency<AccountId>>::NegativeImbalance;
 pub struct SlashBox;
 
 impl OnUnbalanced<NegativeImbalance> for SlashBox {
-	fn on_unbalanced(amount: NegativeImbalance) {}
+    fn on_unbalanced(amount: NegativeImbalance) {}
 }
 
 pub type DealWithFees = SplitTwoWays<
-	Balance,
-	NegativeImbalance,
-	_4,
-	SlashBox, // 4 parts (80%) goes to the slash box.
-	_1,
-	Author, // 1 part (20%) goes to the block author.
+    Balance,
+    NegativeImbalance,
+    _4,
+    SlashBox, // 4 parts (80%) goes to the slash box.
+    _1,
+    Author, // 1 part (20%) goes to the block author.
 >;
 
 parameter_types! {
@@ -112,21 +113,21 @@ parameter_types! {
 }
 
 impl system::Trait for Runtime {
-	type Origin = Origin;
-	type Call = Call;
-	type Index = Index;
-	type BlockNumber = BlockNumber;
-	type Hash = Hash;
-	type Hashing = BlakeTwo256;
-	type AccountId = AccountId;
-	type Lookup = Indices;
-	type Header = generic::Header<BlockNumber, BlakeTwo256>;
-	type Event = Event;
-	type BlockHashCount = BlockHashCount;
-	type MaximumBlockWeight = MaximumBlockWeight;
-	type MaximumBlockLength = MaximumBlockLength;
-	type AvailableBlockRatio = AvailableBlockRatio;
-	type Version = Version;
+    type Origin = Origin;
+    type Call = Call;
+    type Index = Index;
+    type BlockNumber = BlockNumber;
+    type Hash = Hash;
+    type Hashing = BlakeTwo256;
+    type AccountId = AccountId;
+    type Lookup = Indices;
+    type Header = generic::Header<BlockNumber, BlakeTwo256>;
+    type Event = Event;
+    type BlockHashCount = BlockHashCount;
+    type MaximumBlockWeight = MaximumBlockWeight;
+    type MaximumBlockLength = MaximumBlockLength;
+    type AvailableBlockRatio = AvailableBlockRatio;
+    type Version = Version;
 }
 
 /// Opaque types. These are used by the CLI to instantiate machinery that don't need to know
@@ -134,18 +135,18 @@ impl system::Trait for Runtime {
 /// of data like extrinsics, allowing for them to continue syncing the network through upgrades
 /// to even the core datastructures.
 pub mod opaque {
-	use super::*;
+    use super::*;
 
-	pub use sr_primitives::OpaqueExtrinsic as UncheckedExtrinsic;
+    pub use sr_primitives::OpaqueExtrinsic as UncheckedExtrinsic;
 
-	/// Opaque block header type.
-	pub type Header = generic::Header<BlockNumber, BlakeTwo256>;
-	/// Opaque block type.
-	pub type Block = generic::Block<Header, UncheckedExtrinsic>;
-	/// Opaque block identifier type.
-	pub type BlockId = generic::BlockId<Block>;
+    /// Opaque block header type.
+    pub type Header = generic::Header<BlockNumber, BlakeTwo256>;
+    /// Opaque block type.
+    pub type Block = generic::Block<Header, UncheckedExtrinsic>;
+    /// Opaque block identifier type.
+    pub type BlockId = generic::BlockId<Block>;
 
-	impl_opaque_keys! {
+    impl_opaque_keys! {
         pub struct SessionKeys {
             pub aura: Aura,
             pub grandpa: Grandpa,
@@ -159,14 +160,14 @@ parameter_types! {
 }
 
 impl aura::Trait for Runtime {
-	type AuthorityId = AuraId;
+    type AuthorityId = AuraId;
 }
 
 impl indices::Trait for Runtime {
-	type AccountIndex = AccountIndex;
-	type IsDeadAccount = Balances;
-	type ResolveHint = indices::SimpleResolveHint<Self::AccountId, Self::AccountIndex>;
-	type Event = Event;
+    type AccountIndex = AccountIndex;
+    type IsDeadAccount = Balances;
+    type ResolveHint = indices::SimpleResolveHint<Self::AccountId, Self::AccountIndex>;
+    type Event = Event;
 }
 
 parameter_types! {
@@ -176,15 +177,15 @@ parameter_types! {
 }
 
 impl balances::Trait for Runtime {
-	type Balance = Balance;
-	type OnFreeBalanceZero = (Contracts);
-	type OnNewAccount = Indices;
-	type Event = Event;
-	type DustRemoval = ();
-	type TransferPayment = ();
-	type ExistentialDeposit = ExistentialDeposit;
-	type TransferFee = TransferFee;
-	type CreationFee = CreationFee;
+    type Balance = Balance;
+    type OnFreeBalanceZero = (Contracts);
+    type OnNewAccount = Indices;
+    type Event = Event;
+    type DustRemoval = ();
+    type TransferPayment = ();
+    type ExistentialDeposit = ExistentialDeposit;
+    type TransferFee = TransferFee;
+    type CreationFee = CreationFee;
 }
 
 parameter_types! {
@@ -197,21 +198,21 @@ parameter_types! {
 }
 
 impl transaction_payment::Trait for Runtime {
-	type Currency = Balances;
-	type OnTransactionPayment = DealWithFees;
-	type TransactionBaseFee = TransactionBaseFee;
-	type TransactionByteFee = TransactionByteFee;
-	type WeightToFee = LinearWeightToFee<WeightFeeCoefficient>;
-	type FeeMultiplierUpdate = TargetedFeeAdjustment<TargetBlockFullness>;
+    type Currency = Balances;
+    type OnTransactionPayment = DealWithFees;
+    type TransactionBaseFee = TransactionBaseFee;
+    type TransactionByteFee = TransactionByteFee;
+    type WeightToFee = LinearWeightToFee<WeightFeeCoefficient>;
+    type FeeMultiplierUpdate = TargetedFeeAdjustment<TargetBlockFullness>;
 }
 
 parameter_types! {
     pub const MinimumPeriod: Moment = SLOT_DURATION / 2;
 }
 impl timestamp::Trait for Runtime {
-	type Moment = Moment;
-	type OnTimestampSet = Aura;
-	type MinimumPeriod = MinimumPeriod;
+    type Moment = Moment;
+    type OnTimestampSet = Aura;
+    type MinimumPeriod = MinimumPeriod;
 }
 
 parameter_types! {
@@ -220,10 +221,10 @@ parameter_types! {
 }
 
 impl faucet::Trait for Runtime {
-	type Currency = Balances;
-	type WaitingClaims = WaitingClaims;
-	type FaucetValue = FaucetValue;
-	type Event = Event;
+    type Currency = Balances;
+    type WaitingClaims = WaitingClaims;
+    type FaucetValue = FaucetValue;
+    type Event = Event;
 }
 
 parameter_types! {
@@ -239,46 +240,46 @@ parameter_types! {
 }
 
 impl contracts::Trait for Runtime {
-	type Currency = Balances;
-	type Time = Timestamp;
-	type Randomness = RandomnessCollectiveFlip;
-	type Call = Call;
-	type Event = Event;
-	type DetermineContractAddress = contracts::SimpleAddressDeterminator<Runtime>;
-	type ComputeDispatchFee = contracts::DefaultDispatchFeeComputor<Runtime>;
-	type TrieIdGenerator = contracts::TrieIdFromParentCounter<Runtime>;
-	type GasPayment = ();
-	type RentPayment = ();
-	type SignedClaimHandicap = contracts::DefaultSignedClaimHandicap;
-	type TombstoneDeposit = TombstoneDeposit;
-	type StorageSizeOffset = contracts::DefaultStorageSizeOffset;
-	type RentByteFee = RentByteFee;
-	type RentDepositOffset = RentDepositOffset;
-	type SurchargeReward = SurchargeReward;
-	type TransferFee = ContractTransferFee;
-	type CreationFee = ContractCreationFee;
-	type TransactionBaseFee = ContractTransactionBaseFee;
-	type TransactionByteFee = ContractTransactionByteFee;
-	type ContractFee = ContractFee;
-	type CallBaseFee = contracts::DefaultCallBaseFee;
-	type InstantiateBaseFee = contracts::DefaultInstantiateBaseFee;
-	type MaxDepth = contracts::DefaultMaxDepth;
-	type MaxValueSize = contracts::DefaultMaxValueSize;
-	type BlockGasLimit = contracts::DefaultBlockGasLimit;
+    type Currency = Balances;
+    type Time = Timestamp;
+    type Randomness = RandomnessCollectiveFlip;
+    type Call = Call;
+    type Event = Event;
+    type DetermineContractAddress = contracts::SimpleAddressDeterminator<Runtime>;
+    type ComputeDispatchFee = contracts::DefaultDispatchFeeComputor<Runtime>;
+    type TrieIdGenerator = contracts::TrieIdFromParentCounter<Runtime>;
+    type GasPayment = ();
+    type RentPayment = ();
+    type SignedClaimHandicap = contracts::DefaultSignedClaimHandicap;
+    type TombstoneDeposit = TombstoneDeposit;
+    type StorageSizeOffset = contracts::DefaultStorageSizeOffset;
+    type RentByteFee = RentByteFee;
+    type RentDepositOffset = RentDepositOffset;
+    type SurchargeReward = SurchargeReward;
+    type TransferFee = ContractTransferFee;
+    type CreationFee = ContractCreationFee;
+    type TransactionBaseFee = ContractTransactionBaseFee;
+    type TransactionByteFee = ContractTransactionByteFee;
+    type ContractFee = ContractFee;
+    type CallBaseFee = contracts::DefaultCallBaseFee;
+    type InstantiateBaseFee = contracts::DefaultInstantiateBaseFee;
+    type MaxDepth = contracts::DefaultMaxDepth;
+    type MaxValueSize = contracts::DefaultMaxValueSize;
+    type BlockGasLimit = contracts::DefaultBlockGasLimit;
 }
 
 impl operator::Trait for Runtime {
-	type Parameters = operator::parameters::DefaultParameters;
-	type Event = Event;
+    type Parameters = operator::parameters::DefaultParameters;
+    type Event = Event;
 }
 
 impl sudo::Trait for Runtime {
-	type Event = Event;
-	type Proposal = Call;
+    type Event = Event;
+    type Proposal = Call;
 }
 
 impl grandpa::Trait for Runtime {
-	type Event = Event;
+    type Event = Event;
 }
 
 parameter_types! {
@@ -287,42 +288,42 @@ parameter_types! {
 }
 
 impl finality_tracker::Trait for Runtime {
-	type OnFinalizationStalled = Grandpa;
-	type WindowSize = WindowSize;
-	type ReportLatency = ReportLatency;
+    type OnFinalizationStalled = Grandpa;
+    type WindowSize = WindowSize;
+    type ReportLatency = ReportLatency;
 }
 
 impl system::offchain::CreateTransaction<Runtime, UncheckedExtrinsic> for Runtime {
-	type Public = <Signature as traits::Verify>::Signer;
-	type Signature = Signature;
+    type Public = <Signature as traits::Verify>::Signer;
+    type Signature = Signature;
 
-	fn create_transaction<F: system::offchain::Signer<Self::Public, Self::Signature>>(
-		call: Call,
-		public: Self::Public,
-		account: AccountId,
-		index: Index,
-	) -> Option<(
-		Call,
-		<UncheckedExtrinsic as traits::Extrinsic>::SignaturePayload,
-	)> {
-		let period = 1 << 8;
-		let current_block = System::block_number().saturated_into::<u64>();
-		let tip = 0;
-		let extra: SignedExtra = (
-			system::CheckVersion::<Runtime>::new(),
-			system::CheckGenesis::<Runtime>::new(),
-			system::CheckEra::<Runtime>::from(generic::Era::mortal(period, current_block)),
-			system::CheckNonce::<Runtime>::from(index),
-			system::CheckWeight::<Runtime>::new(),
-			ChargeTransactionPaymentWithFaucet::from(tip),
-			Default::default(),
-		);
-		let raw_payload = SignedPayload::new(call, extra).ok()?;
-		let signature = F::sign(public, &raw_payload)?;
-		let address = Indices::unlookup(account);
-		let (call, extra, _) = raw_payload.deconstruct();
-		Some((call, (address, signature, extra)))
-	}
+    fn create_transaction<F: system::offchain::Signer<Self::Public, Self::Signature>>(
+        call: Call,
+        public: Self::Public,
+        account: AccountId,
+        index: Index,
+    ) -> Option<(
+        Call,
+        <UncheckedExtrinsic as traits::Extrinsic>::SignaturePayload,
+    )> {
+        let period = 1 << 8;
+        let current_block = System::block_number().saturated_into::<u64>();
+        let tip = 0;
+        let extra: SignedExtra = (
+            system::CheckVersion::<Runtime>::new(),
+            system::CheckGenesis::<Runtime>::new(),
+            system::CheckEra::<Runtime>::from(generic::Era::mortal(period, current_block)),
+            system::CheckNonce::<Runtime>::from(index),
+            system::CheckWeight::<Runtime>::new(),
+            ChargeTransactionPaymentWithFaucet::from(tip),
+            Default::default(),
+        );
+        let raw_payload = SignedPayload::new(call, extra).ok()?;
+        let signature = F::sign(public, &raw_payload)?;
+        let address = Indices::unlookup(account);
+        let (call, extra, _) = raw_payload.deconstruct();
+        Some((call, (address, signature, extra)))
+    }
 }
 
 construct_runtime!(
@@ -350,87 +351,90 @@ construct_runtime!(
 #[derive(Encode, Decode, Clone, Eq, PartialEq)]
 pub struct ChargeTransactionPaymentWithFaucet(#[codec(compact)] Balance);
 impl rstd::fmt::Debug for ChargeTransactionPaymentWithFaucet {
-	#[cfg(feature = "std")]
-	fn fmt(&self, f: &mut rstd::fmt::Formatter) -> rstd::fmt::Result {
-		write!(f, "ChargeTransactionPaymentWithFauce<{:?}>", self.0)
-	}
-	#[cfg(not(feature = "std"))]
-	fn fmt(&self, _: &mut rstd::fmt::Formatter) -> rstd::fmt::Result {
-		Ok(())
-	}
+    #[cfg(feature = "std")]
+    fn fmt(&self, f: &mut rstd::fmt::Formatter) -> rstd::fmt::Result {
+        write!(f, "ChargeTransactionPaymentWithFauce<{:?}>", self.0)
+    }
+    #[cfg(not(feature = "std"))]
+    fn fmt(&self, _: &mut rstd::fmt::Formatter) -> rstd::fmt::Result {
+        Ok(())
+    }
 }
 
 impl ChargeTransactionPaymentWithFaucet {
-	/// utility constructor. Used only in client/factory code.
-	pub fn from(fee: Balance) -> Self {
-		Self(fee)
-	}
+    /// utility constructor. Used only in client/factory code.
+    pub fn from(fee: Balance) -> Self {
+        Self(fee)
+    }
 
-	fn compute_fee(len: u32, info: DispatchInfo, tip: Balance) -> Balance {
-		let len_fee = if info.pay_length_fee() {
-			let len = Balance::from(len);
-			let base = <Runtime as transaction_payment::Trait>::TransactionBaseFee::get();
-			let per_byte = <Runtime as transaction_payment::Trait>::TransactionByteFee::get();
-			base.saturating_add(per_byte.saturating_mul(len))
-		} else {
-			Zero::zero()
-		};
+    fn compute_fee(len: u32, info: DispatchInfo, tip: Balance) -> Balance {
+        let len_fee = if info.pay_length_fee() {
+            let len = Balance::from(len);
+            let base = <Runtime as transaction_payment::Trait>::TransactionBaseFee::get();
+            let per_byte = <Runtime as transaction_payment::Trait>::TransactionByteFee::get();
+            base.saturating_add(per_byte.saturating_mul(len))
+        } else {
+            Zero::zero()
+        };
 
-		let weight_fee = {
-			// cap the weight to the maximum defined in runtime, otherwise it will be the `Bounded`
-			// maximum of its data type, which is not desired.
-			let capped_weight = info.weight.min(<Runtime as system::Trait>::MaximumBlockWeight::get());
-			<Runtime as transaction_payment::Trait>::WeightToFee::convert(capped_weight)
-		};
+        let weight_fee = {
+            // cap the weight to the maximum defined in runtime, otherwise it will be the `Bounded`
+            // maximum of its data type, which is not desired.
+            let capped_weight = info
+                .weight
+                .min(<Runtime as system::Trait>::MaximumBlockWeight::get());
+            <Runtime as transaction_payment::Trait>::WeightToFee::convert(capped_weight)
+        };
 
-		// everything except for tip
-		let basic_fee = len_fee.saturating_add(weight_fee);
-		basic_fee.saturating_add(tip)
-	}
+        // everything except for tip
+        let basic_fee = len_fee.saturating_add(weight_fee);
+        basic_fee.saturating_add(tip)
+    }
 }
 
-impl SignedExtension for ChargeTransactionPaymentWithFaucet
-{
-	type AccountId = AccountId;
-	type Call = Call;
-	type AdditionalSigned = ();
-	type Pre = ();
-	fn additional_signed(&self) -> rstd::result::Result<(), TransactionValidityError> { Ok(()) }
+impl SignedExtension for ChargeTransactionPaymentWithFaucet {
+    type AccountId = AccountId;
+    type Call = Call;
+    type AdditionalSigned = ();
+    type Pre = ();
+    fn additional_signed(&self) -> rstd::result::Result<(), TransactionValidityError> {
+        Ok(())
+    }
 
-	fn validate(
-		&self,
-		who: &Self::AccountId,
-		_call: &Self::Call,
-		info: DispatchInfo,
-		len: usize,
-	) -> TransactionValidity {
-		// pay any fees.
-		if let &Call::Faucet(faucet::Call::claims()) = _call {
-			return Ok(ValidTransaction::default());
-		}
-		let tip = self.0;
-		let fee = Self::compute_fee(len as u32, info, tip);
-		let imbalance = match <Runtime as transaction_payment::Trait>::Currency::withdraw(
-			who,
-			fee,
-			if tip.is_zero() {
-				WithdrawReason::TransactionPayment.into()
-			} else {
-				WithdrawReason::TransactionPayment | WithdrawReason::Tip
-			},
-			ExistenceRequirement::KeepAlive,
-		) {
-			Ok(imbalance) => imbalance,
-			Err(_) => return InvalidTransaction::Payment.into(),
-		};
-		<Runtime as transaction_payment::Trait>::OnTransactionPayment::on_unbalanced(imbalance);
+    fn validate(
+        &self,
+        who: &Self::AccountId,
+        _call: &Self::Call,
+        info: DispatchInfo,
+        len: usize,
+    ) -> TransactionValidity {
+        // pay any fees.
+        if let &Call::Faucet(faucet::Call::claims()) = _call {
+            return Ok(ValidTransaction::default());
+        }
+        let tip = self.0;
+        let fee = Self::compute_fee(len as u32, info, tip);
+        let imbalance = match <Runtime as transaction_payment::Trait>::Currency::withdraw(
+            who,
+            fee,
+            if tip.is_zero() {
+                WithdrawReason::TransactionPayment.into()
+            } else {
+                WithdrawReason::TransactionPayment | WithdrawReason::Tip
+            },
+            ExistenceRequirement::KeepAlive,
+        ) {
+            Ok(imbalance) => imbalance,
+            Err(_) => return InvalidTransaction::Payment.into(),
+        };
+        <Runtime as transaction_payment::Trait>::OnTransactionPayment::on_unbalanced(imbalance);
 
-		let mut r = ValidTransaction::default();
-		// NOTE: we probably want to maximize the _fee (of any type) per weight unit_ here, which
-		// will be a bit more than setting the priority to tip. For now, this is enough.
-		r.priority = fee.saturated_into::<TransactionPriority>();
-		Ok(r)
-	}
+        let mut r = ValidTransaction::default();
+        // NOTE: we probably want to maximize the _fee (of any type) per weight unit_ here, which
+        // will be a bit more than setting the priority to tip. For now, this is enough.
+        r.priority = fee.saturated_into::<TransactionPriority>();
+        Ok(r)
+    }
 }
 
 /// The address format for describing accounts.
@@ -445,13 +449,13 @@ pub type SignedBlock = generic::SignedBlock<Block>;
 pub type BlockId = generic::BlockId<Block>;
 /// The SignedExtension to the basic transaction logic.
 pub type SignedExtra = (
-	system::CheckVersion<Runtime>,
-	system::CheckGenesis<Runtime>,
-	system::CheckEra<Runtime>,
-	system::CheckNonce<Runtime>,
-	system::CheckWeight<Runtime>,
-	ChargeTransactionPaymentWithFaucet,
-	contracts::CheckBlockGasLimit<Runtime>,
+    system::CheckVersion<Runtime>,
+    system::CheckGenesis<Runtime>,
+    system::CheckEra<Runtime>,
+    system::CheckNonce<Runtime>,
+    system::CheckWeight<Runtime>,
+    ChargeTransactionPaymentWithFaucet,
+    contracts::CheckBlockGasLimit<Runtime>,
 );
 /// Unchecked extrinsic type as expected by this runtime.
 pub type UncheckedExtrinsic = generic::UncheckedExtrinsic<Address, Call, Signature, SignedExtra>;
@@ -461,7 +465,7 @@ pub type SignedPayload = generic::SignedPayload<Call, SignedExtra>;
 pub type CheckedExtrinsic = generic::CheckedExtrinsic<AccountId, Call, SignedExtra>;
 /// Executive: handles dispatch to the various modules.
 pub type Executive =
-executive::Executive<Runtime, Block, system::ChainContext<Runtime>, Runtime, AllModules>;
+    executive::Executive<Runtime, Block, system::ChainContext<Runtime>, Runtime, AllModules>;
 
 impl_runtime_apis! {
     impl client_api::Core<Block> for Runtime {
