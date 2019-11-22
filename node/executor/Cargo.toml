@@ -1,6 +1,6 @@
 [package]
 name = "plasm-executor"
-version = "0.5.0"
+version = "0.5.1"
 authors = ["Takumi Yamashita <takumi@staked.co.jp>"]
 description = "Substrate node implementation in Rust."
 edition = "2018"

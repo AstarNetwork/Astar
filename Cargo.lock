@@ -2814,7 +2814,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "plasm-cli"
-version = "0.5.0"
+version = "0.5.1"
 dependencies = [
  "ctrlc 3.1.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "exit-future 0.1.4 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -2824,10 +2824,10 @@ dependencies = [
  "jsonrpc-core 14.0.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
  "parity-scale-codec 1.0.6 (registry+https://github.com/rust-lang/crates.io-index)",
- "plasm-executor 0.5.0",
- "plasm-primitives 0.5.0",
- "plasm-rpc 0.5.0",
- "plasm-runtime 0.5.0",
+ "plasm-executor 0.5.1",
+ "plasm-primitives 0.5.1",
+ "plasm-rpc 0.5.1",
+ "plasm-runtime 0.5.1",
  "rand 0.7.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde 1.0.102 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde_json 1.0.41 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -2874,11 +2874,11 @@ dependencies = [
 
 [[package]]
 name = "plasm-executor"
-version = "0.5.0"
+version = "0.5.1"
 dependencies = [
  "parity-scale-codec 1.0.6 (registry+https://github.com/rust-lang/crates.io-index)",
- "plasm-primitives 0.5.0",
- "plasm-runtime 0.5.0",
+ "plasm-primitives 0.5.1",
+ "plasm-runtime 0.5.1",
  "sr-io 2.0.0 (git+https://github.com/satellitex/substrate.git)",
  "sr-primitives 2.0.0 (git+https://github.com/satellitex/substrate.git)",
  "srml-balances 2.0.0 (git+https://github.com/satellitex/substrate.git)",
@@ -2901,7 +2901,7 @@ dependencies = [
 
 [[package]]
 name = "plasm-primitives"
-version = "0.5.0"
+version = "0.5.1"
 dependencies = [
  "parity-scale-codec 1.0.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "pretty_assertions 0.6.1 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -2915,11 +2915,11 @@ dependencies = [
 
 [[package]]
 name = "plasm-rpc"
-version = "0.5.0"
+version = "0.5.1"
 dependencies = [
  "jsonrpc-core 14.0.3 (registry+https://github.com/rust-lang/crates.io-index)",
- "plasm-primitives 0.5.0",
- "plasm-runtime 0.5.0",
+ "plasm-primitives 0.5.1",
+ "plasm-runtime 0.5.1",
  "sr-primitives 2.0.0 (git+https://github.com/satellitex/substrate.git)",
  "srml-contracts-rpc 2.0.0 (git+https://github.com/satellitex/substrate.git)",
  "srml-system-rpc 2.0.0 (git+https://github.com/satellitex/substrate.git)",
@@ -2930,11 +2930,11 @@ dependencies = [
 
 [[package]]
 name = "plasm-runtime"
-version = "0.5.0"
+version = "0.5.1"
 dependencies = [
  "integer-sqrt 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "parity-scale-codec 1.0.6 (registry+https://github.com/rust-lang/crates.io-index)",
- "plasm-primitives 0.5.0",
+ "plasm-primitives 0.5.1",
  "rustc-hex 2.0.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "safe-mix 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde 1.0.102 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -2947,7 +2947,7 @@ dependencies = [
  "srml-authorship 0.1.0 (git+https://github.com/satellitex/substrate.git)",
  "srml-balances 2.0.0 (git+https://github.com/satellitex/substrate.git)",
  "srml-collective 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "srml-contract-operator 0.1.0",
+ "srml-contract-operator 0.5.0",
  "srml-contracts 2.0.0 (git+https://github.com/satellitex/substrate.git)",
  "srml-contracts-rpc-runtime-api 2.0.0 (git+https://github.com/satellitex/substrate.git)",
  "srml-democracy 2.0.0 (git+https://github.com/satellitex/substrate.git)",
@@ -3939,7 +3939,7 @@ dependencies = [
 
 [[package]]
 name = "srml-contract-operator"
-version = "0.1.0"
+version = "0.5.0"
 dependencies = [
  "derive_more 0.14.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "hex-literal 0.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
