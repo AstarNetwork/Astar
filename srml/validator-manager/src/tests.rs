@@ -76,37 +76,25 @@ parameter_types! {
 
 impl timestamp::Trait for Test {
 	type Moment = u64;
-	type OnTimestampSet = Babe;
+	type OnTimestampSet = ();
 	type MinimumPeriod = MinimumPeriod;
 }
 
 impl_opaque_keys! {
     pub struct SessionKeys {
-        pub babe: Babe,
     }
 }
 
 impl session::Trait for Test {
 	type OnSessionEnding = ValidatorManager;
 	type SessionHandler = <SessionKeys as OpaqueKeys>::KeyTypeIdProviders;
-	type ShouldEndSession = Babe;
+	type ShouldEndSession = ValidatorManager;
 	type Event = MetaEvent;
 	type Keys = ();
 	type ValidatorId = <Self as system::Trait>::AccountId;
 	type ValidatorIdOf = ();
 	type SelectInitialValidators = ValidatorManager;
 	type DisabledValidatorsThreshold = ();
-}
-
-parameter_types! {
-	pub const EpochDuration: u64 = 1;
-	pub const ExpectedBlockTime: u64 = 1;
-}
-
-impl babe::Trait for Runtime {
-	type EpochDuration = EpochDuration;
-	type ExpectedBlockTime = ExpectedBlockTime;
-	type EpochChangeTrigger = babe::ExternalTrigger;
 }
 
 impl Trait for Test {

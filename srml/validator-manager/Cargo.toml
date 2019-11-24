@@ -5,17 +5,16 @@ authors = ["Aleksandr Krupenkin <aleksandr@stake.co.jp>"]
 edition = "2018"
 
 [dependencies]
-codec = { package = "parity-scale-codec", version = "1.0" }
+codec = { package = "parity-scale-codec", version = "1.0.0", features = ["derive"], default-features = false }
 rstd = { package = "sr-std", git = "https://github.com/satellitex/substrate.git", default-features = false }
 support = { package = "srml-support", git = "https://github.com/satellitex/substrate.git", default-features = false }
 system = { package = "srml-system", git = "https://github.com/satellitex/substrate.git", default-features = false }
 session = { package = "srml-session", git = "https://github.com/satellitex/substrate.git", default-features = false }
 
 [dev-dependencies]
-babe = { package = "srml-babe", git = "https://github.com/satellitex/substrate.git", default-features = false }
-sr-io = { git = "https://github.com/satellitex/substrate.git", default-features = false }
-primitives = { package = "sr-primitives", git = "https://github.com/satellitex/substrate.git", default-features = false }
-timestamp = { package = "srml-timestamp", git = "https://github.com/satellitex/substrate.git", default-features = false }
+sr-io = { git = "https://github.com/satellitex/substrate.git" }
+primitives = { package = "sr-primitives", git = "https://github.com/satellitex/substrate.git" }
+timestamp = { package = "srml-timestamp", git = "https://github.com/satellitex/substrate.git" }
 
 [features]
 default = ["std"]

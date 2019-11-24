@@ -52,9 +52,6 @@ use impls::{CurrencyToVoteHandler, Author, LinearWeightToFee, TargetedFeeAdjustm
 pub mod constants;
 use constants::{time::*, currency::*};
 
-/// Simple PoA management module
-pub mod poa_simple;
-
 // Make the WASM binary available.
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
@@ -155,10 +152,6 @@ impl aura::Trait for Runtime {
 	type AuthorityId = AuraId;
 }
 
-impl poa_simple::Trait for Runtime {
-    type Engine = Aura;
-}
-
 impl indices::Trait for Runtime {
 	type AccountIndex = AccountIndex;
 	type IsDeadAccount = Balances;
@@ -257,6 +250,10 @@ impl operator::Trait for Runtime {
 	type Event = Event;
 }
 
+impl validator_manager::Trait for Runtime {
+	type Event = Event;
+}
+
 impl sudo::Trait for Runtime {
 	type Event = Event;
 	type Proposal = Call;
@@ -323,6 +320,7 @@ construct_runtime!(
 		Grandpa: grandpa::{Module, Call, Storage, Config, Event},
 		Contracts: contracts,
 		Operator: operator::{Module, Call, Storage, Event<T>},
+		ValidatorManager: validator_manager::{Module, Call, Storage, Event<T>},
 		RandomnessCollectiveFlip: randomness_collective_flip::{Module, Call, Storage},
 		Sudo: sudo,
 	}
