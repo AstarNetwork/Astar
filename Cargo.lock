@@ -3812,18 +3812,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 [[package]]
 name = "sr-api-macros"
 version = "2.0.0"
-source = "git+https://github.com/satellitex/substrate.git#97643d4639868119550bd7ef6d824729cd6e587a"
-dependencies = [
- "blake2-rfc 0.2.18 (registry+https://github.com/rust-lang/crates.io-index)",
- "proc-macro-crate 0.1.4 (registry+https://github.com/rust-lang/crates.io-index)",
- "proc-macro2 1.0.6 (registry+https://github.com/rust-lang/crates.io-index)",
- "quote 1.0.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "syn 1.0.8 (registry+https://github.com/rust-lang/crates.io-index)",
-]
-
-[[package]]
-name = "sr-api-macros"
-version = "2.0.0"
 source = "git+https://github.com/stakedtechnologies/substrate.git?branch=plasm-master#97643d4639868119550bd7ef6d824729cd6e587a"
 dependencies = [
  "blake2-rfc 0.2.18 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -3831,19 +3819,6 @@ dependencies = [
  "proc-macro2 1.0.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "quote 1.0.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "syn 1.0.8 (registry+https://github.com/rust-lang/crates.io-index)",
-]
-
-[[package]]
-name = "sr-arithmetic"
-version = "2.0.0"
-source = "git+https://github.com/satellitex/substrate.git#97643d4639868119550bd7ef6d824729cd6e587a"
-dependencies = [
- "integer-sqrt 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "num-traits 0.2.10 (registry+https://github.com/rust-lang/crates.io-index)",
- "parity-scale-codec 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "serde 1.0.102 (registry+https://github.com/rust-lang/crates.io-index)",
- "sr-std 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "substrate-debug-derive 2.0.0 (git+https://github.com/satellitex/substrate.git)",
 ]
 
 [[package]]
@@ -3862,24 +3837,6 @@ dependencies = [
 [[package]]
 name = "sr-io"
 version = "2.0.0"
-source = "git+https://github.com/satellitex/substrate.git#97643d4639868119550bd7ef6d824729cd6e587a"
-dependencies = [
- "hash-db 0.15.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "libsecp256k1 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
- "parity-scale-codec 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "rustc_version 0.2.3 (registry+https://github.com/rust-lang/crates.io-index)",
- "sr-std 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "substrate-externalities 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "substrate-primitives 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "substrate-state-machine 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "substrate-trie 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "tiny-keccak 1.5.0 (registry+https://github.com/rust-lang/crates.io-index)",
-]
-
-[[package]]
-name = "sr-io"
-version = "2.0.0"
 source = "git+https://github.com/stakedtechnologies/substrate.git?branch=plasm-master#97643d4639868119550bd7ef6d824729cd6e587a"
 dependencies = [
  "hash-db 0.15.2 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -3893,24 +3850,6 @@ dependencies = [
  "substrate-state-machine 2.0.0 (git+https://github.com/stakedtechnologies/substrate.git?branch=plasm-master)",
  "substrate-trie 2.0.0 (git+https://github.com/stakedtechnologies/substrate.git?branch=plasm-master)",
  "tiny-keccak 1.5.0 (registry+https://github.com/rust-lang/crates.io-index)",
-]
-
-[[package]]
-name = "sr-primitives"
-version = "2.0.0"
-source = "git+https://github.com/satellitex/substrate.git#97643d4639868119550bd7ef6d824729cd6e587a"
-dependencies = [
- "impl-trait-for-tuples 0.1.3 (registry+https://github.com/rust-lang/crates.io-index)",
- "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
- "parity-scale-codec 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "paste 0.1.6 (registry+https://github.com/rust-lang/crates.io-index)",
- "rand 0.7.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "serde 1.0.102 (registry+https://github.com/rust-lang/crates.io-index)",
- "sr-arithmetic 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "sr-io 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "sr-std 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "substrate-application-crypto 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "substrate-primitives 2.0.0 (git+https://github.com/satellitex/substrate.git)",
 ]
 
 [[package]]
@@ -3946,16 +3885,6 @@ dependencies = [
 [[package]]
 name = "sr-staking-primitives"
 version = "2.0.0"
-source = "git+https://github.com/satellitex/substrate.git#97643d4639868119550bd7ef6d824729cd6e587a"
-dependencies = [
- "parity-scale-codec 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "sr-primitives 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "sr-std 2.0.0 (git+https://github.com/satellitex/substrate.git)",
-]
-
-[[package]]
-name = "sr-staking-primitives"
-version = "2.0.0"
 source = "git+https://github.com/stakedtechnologies/substrate.git?branch=plasm-master#97643d4639868119550bd7ef6d824729cd6e587a"
 dependencies = [
  "parity-scale-codec 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -3966,29 +3895,9 @@ dependencies = [
 [[package]]
 name = "sr-std"
 version = "2.0.0"
-source = "git+https://github.com/satellitex/substrate.git#97643d4639868119550bd7ef6d824729cd6e587a"
-dependencies = [
- "rustc_version 0.2.3 (registry+https://github.com/rust-lang/crates.io-index)",
-]
-
-[[package]]
-name = "sr-std"
-version = "2.0.0"
 source = "git+https://github.com/stakedtechnologies/substrate.git?branch=plasm-master#97643d4639868119550bd7ef6d824729cd6e587a"
 dependencies = [
  "rustc_version 0.2.3 (registry+https://github.com/rust-lang/crates.io-index)",
-]
-
-[[package]]
-name = "sr-version"
-version = "2.0.0"
-source = "git+https://github.com/satellitex/substrate.git#97643d4639868119550bd7ef6d824729cd6e587a"
-dependencies = [
- "impl-serde 0.2.3 (registry+https://github.com/rust-lang/crates.io-index)",
- "parity-scale-codec 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "serde 1.0.102 (registry+https://github.com/rust-lang/crates.io-index)",
- "sr-primitives 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "sr-std 2.0.0 (git+https://github.com/satellitex/substrate.git)",
 ]
 
 [[package]]
@@ -4288,17 +4197,6 @@ dependencies = [
 [[package]]
 name = "srml-metadata"
 version = "2.0.0"
-source = "git+https://github.com/satellitex/substrate.git#97643d4639868119550bd7ef6d824729cd6e587a"
-dependencies = [
- "parity-scale-codec 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "serde 1.0.102 (registry+https://github.com/rust-lang/crates.io-index)",
- "sr-std 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "substrate-primitives 2.0.0 (git+https://github.com/satellitex/substrate.git)",
-]
-
-[[package]]
-name = "srml-metadata"
-version = "2.0.0"
 source = "git+https://github.com/stakedtechnologies/substrate.git?branch=plasm-master#97643d4639868119550bd7ef6d824729cd6e587a"
 dependencies = [
  "parity-scale-codec 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -4333,25 +4231,6 @@ dependencies = [
  "sr-std 2.0.0 (git+https://github.com/stakedtechnologies/substrate.git?branch=plasm-master)",
  "srml-support 2.0.0 (git+https://github.com/stakedtechnologies/substrate.git?branch=plasm-master)",
  "srml-system 2.0.0 (git+https://github.com/stakedtechnologies/substrate.git?branch=plasm-master)",
-]
-
-[[package]]
-name = "srml-session"
-version = "2.0.0"
-source = "git+https://github.com/satellitex/substrate.git#97643d4639868119550bd7ef6d824729cd6e587a"
-dependencies = [
- "impl-trait-for-tuples 0.1.3 (registry+https://github.com/rust-lang/crates.io-index)",
- "parity-scale-codec 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "safe-mix 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "serde 1.0.102 (registry+https://github.com/rust-lang/crates.io-index)",
- "sr-io 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "sr-primitives 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "sr-staking-primitives 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "sr-std 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "srml-support 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "srml-system 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "srml-timestamp 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "substrate-trie 2.0.0 (git+https://github.com/satellitex/substrate.git)",
 ]
 
 [[package]]
@@ -4410,27 +4289,6 @@ dependencies = [
 [[package]]
 name = "srml-support"
 version = "2.0.0"
-source = "git+https://github.com/satellitex/substrate.git#97643d4639868119550bd7ef6d824729cd6e587a"
-dependencies = [
- "bitmask 0.5.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "impl-trait-for-tuples 0.1.3 (registry+https://github.com/rust-lang/crates.io-index)",
- "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
- "once_cell 0.2.4 (registry+https://github.com/rust-lang/crates.io-index)",
- "parity-scale-codec 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "paste 0.1.6 (registry+https://github.com/rust-lang/crates.io-index)",
- "serde 1.0.102 (registry+https://github.com/rust-lang/crates.io-index)",
- "sr-io 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "sr-primitives 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "sr-std 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "srml-metadata 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "srml-support-procedural 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "substrate-inherents 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "substrate-primitives 2.0.0 (git+https://github.com/satellitex/substrate.git)",
-]
-
-[[package]]
-name = "srml-support"
-version = "2.0.0"
 source = "git+https://github.com/stakedtechnologies/substrate.git?branch=plasm-master#97643d4639868119550bd7ef6d824729cd6e587a"
 dependencies = [
  "bitmask 0.5.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -4452,36 +4310,12 @@ dependencies = [
 [[package]]
 name = "srml-support-procedural"
 version = "2.0.0"
-source = "git+https://github.com/satellitex/substrate.git#97643d4639868119550bd7ef6d824729cd6e587a"
-dependencies = [
- "proc-macro2 1.0.6 (registry+https://github.com/rust-lang/crates.io-index)",
- "quote 1.0.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "sr-api-macros 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "srml-support-procedural-tools 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "syn 1.0.8 (registry+https://github.com/rust-lang/crates.io-index)",
-]
-
-[[package]]
-name = "srml-support-procedural"
-version = "2.0.0"
 source = "git+https://github.com/stakedtechnologies/substrate.git?branch=plasm-master#97643d4639868119550bd7ef6d824729cd6e587a"
 dependencies = [
  "proc-macro2 1.0.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "quote 1.0.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "sr-api-macros 2.0.0 (git+https://github.com/stakedtechnologies/substrate.git?branch=plasm-master)",
  "srml-support-procedural-tools 2.0.0 (git+https://github.com/stakedtechnologies/substrate.git?branch=plasm-master)",
- "syn 1.0.8 (registry+https://github.com/rust-lang/crates.io-index)",
-]
-
-[[package]]
-name = "srml-support-procedural-tools"
-version = "2.0.0"
-source = "git+https://github.com/satellitex/substrate.git#97643d4639868119550bd7ef6d824729cd6e587a"
-dependencies = [
- "proc-macro-crate 0.1.4 (registry+https://github.com/rust-lang/crates.io-index)",
- "proc-macro2 1.0.6 (registry+https://github.com/rust-lang/crates.io-index)",
- "quote 1.0.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "srml-support-procedural-tools-derive 2.0.0 (git+https://github.com/satellitex/substrate.git)",
  "syn 1.0.8 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
@@ -4500,38 +4334,11 @@ dependencies = [
 [[package]]
 name = "srml-support-procedural-tools-derive"
 version = "2.0.0"
-source = "git+https://github.com/satellitex/substrate.git#97643d4639868119550bd7ef6d824729cd6e587a"
-dependencies = [
- "proc-macro2 1.0.6 (registry+https://github.com/rust-lang/crates.io-index)",
- "quote 1.0.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "syn 1.0.8 (registry+https://github.com/rust-lang/crates.io-index)",
-]
-
-[[package]]
-name = "srml-support-procedural-tools-derive"
-version = "2.0.0"
 source = "git+https://github.com/stakedtechnologies/substrate.git?branch=plasm-master#97643d4639868119550bd7ef6d824729cd6e587a"
 dependencies = [
  "proc-macro2 1.0.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "quote 1.0.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "syn 1.0.8 (registry+https://github.com/rust-lang/crates.io-index)",
-]
-
-[[package]]
-name = "srml-system"
-version = "2.0.0"
-source = "git+https://github.com/satellitex/substrate.git#97643d4639868119550bd7ef6d824729cd6e587a"
-dependencies = [
- "impl-trait-for-tuples 0.1.3 (registry+https://github.com/rust-lang/crates.io-index)",
- "parity-scale-codec 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "safe-mix 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "serde 1.0.102 (registry+https://github.com/rust-lang/crates.io-index)",
- "sr-io 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "sr-primitives 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "sr-std 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "sr-version 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "srml-support 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "substrate-primitives 2.0.0 (git+https://github.com/satellitex/substrate.git)",
 ]
 
 [[package]]
@@ -4576,21 +4383,6 @@ source = "git+https://github.com/stakedtechnologies/substrate.git?branch=plasm-m
 dependencies = [
  "parity-scale-codec 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "substrate-client 2.0.0 (git+https://github.com/stakedtechnologies/substrate.git?branch=plasm-master)",
-]
-
-[[package]]
-name = "srml-timestamp"
-version = "2.0.0"
-source = "git+https://github.com/satellitex/substrate.git#97643d4639868119550bd7ef6d824729cd6e587a"
-dependencies = [
- "impl-trait-for-tuples 0.1.3 (registry+https://github.com/rust-lang/crates.io-index)",
- "parity-scale-codec 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "serde 1.0.102 (registry+https://github.com/rust-lang/crates.io-index)",
- "sr-primitives 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "sr-std 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "srml-support 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "srml-system 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "substrate-inherents 2.0.0 (git+https://github.com/satellitex/substrate.git)",
 ]
 
 [[package]]
@@ -4669,13 +4461,15 @@ name = "srml-validator-manager"
 version = "0.1.0"
 dependencies = [
  "parity-scale-codec 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "sr-io 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "sr-primitives 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "sr-std 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "srml-session 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "srml-support 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "srml-system 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "srml-timestamp 2.0.0 (git+https://github.com/satellitex/substrate.git)",
+ "serde 1.0.102 (registry+https://github.com/rust-lang/crates.io-index)",
+ "sr-io 2.0.0 (git+https://github.com/stakedtechnologies/substrate.git?branch=plasm-master)",
+ "sr-primitives 2.0.0 (git+https://github.com/stakedtechnologies/substrate.git?branch=plasm-master)",
+ "sr-std 2.0.0 (git+https://github.com/stakedtechnologies/substrate.git?branch=plasm-master)",
+ "srml-session 2.0.0 (git+https://github.com/stakedtechnologies/substrate.git?branch=plasm-master)",
+ "srml-support 2.0.0 (git+https://github.com/stakedtechnologies/substrate.git?branch=plasm-master)",
+ "srml-system 2.0.0 (git+https://github.com/stakedtechnologies/substrate.git?branch=plasm-master)",
+ "srml-timestamp 2.0.0 (git+https://github.com/stakedtechnologies/substrate.git?branch=plasm-master)",
+ "substrate-primitives 2.0.0 (git+https://github.com/stakedtechnologies/substrate.git?branch=plasm-master)",
 ]
 
 [[package]]
@@ -4752,18 +4546,6 @@ dependencies = [
  "proc-macro2 0.4.30 (registry+https://github.com/rust-lang/crates.io-index)",
  "quote 0.6.13 (registry+https://github.com/rust-lang/crates.io-index)",
  "syn 0.15.44 (registry+https://github.com/rust-lang/crates.io-index)",
-]
-
-[[package]]
-name = "substrate-application-crypto"
-version = "2.0.0"
-source = "git+https://github.com/satellitex/substrate.git#97643d4639868119550bd7ef6d824729cd6e587a"
-dependencies = [
- "parity-scale-codec 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "serde 1.0.102 (registry+https://github.com/rust-lang/crates.io-index)",
- "sr-io 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "sr-std 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "substrate-primitives 2.0.0 (git+https://github.com/satellitex/substrate.git)",
 ]
 
 [[package]]
@@ -5032,16 +4814,6 @@ dependencies = [
 [[package]]
 name = "substrate-debug-derive"
 version = "2.0.0"
-source = "git+https://github.com/satellitex/substrate.git#97643d4639868119550bd7ef6d824729cd6e587a"
-dependencies = [
- "proc-macro2 1.0.6 (registry+https://github.com/rust-lang/crates.io-index)",
- "quote 1.0.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "syn 1.0.8 (registry+https://github.com/rust-lang/crates.io-index)",
-]
-
-[[package]]
-name = "substrate-debug-derive"
-version = "2.0.0"
 source = "git+https://github.com/stakedtechnologies/substrate.git?branch=plasm-master#97643d4639868119550bd7ef6d824729cd6e587a"
 dependencies = [
  "proc-macro2 1.0.6 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -5079,17 +4851,6 @@ dependencies = [
  "wasmtime-environ 0.2.0 (git+https://github.com/CraneStation/wasmtime.git?rev=71dd73d6)",
  "wasmtime-jit 0.2.0 (git+https://github.com/CraneStation/wasmtime.git?rev=71dd73d6)",
  "wasmtime-runtime 0.2.0 (git+https://github.com/CraneStation/wasmtime.git?rev=71dd73d6)",
-]
-
-[[package]]
-name = "substrate-externalities"
-version = "2.0.0"
-source = "git+https://github.com/satellitex/substrate.git#97643d4639868119550bd7ef6d824729cd6e587a"
-dependencies = [
- "environmental 1.0.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "primitive-types 0.6.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "sr-std 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "substrate-primitives-storage 2.0.0 (git+https://github.com/satellitex/substrate.git)",
 ]
 
 [[package]]
@@ -5153,17 +4914,6 @@ dependencies = [
  "lru-cache 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "parking_lot 0.9.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "sr-primitives 2.0.0 (git+https://github.com/stakedtechnologies/substrate.git?branch=plasm-master)",
-]
-
-[[package]]
-name = "substrate-inherents"
-version = "2.0.0"
-source = "git+https://github.com/satellitex/substrate.git#97643d4639868119550bd7ef6d824729cd6e587a"
-dependencies = [
- "parity-scale-codec 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "parking_lot 0.9.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "sr-primitives 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "sr-std 2.0.0 (git+https://github.com/satellitex/substrate.git)",
 ]
 
 [[package]]
@@ -5285,15 +5035,6 @@ dependencies = [
 [[package]]
 name = "substrate-panic-handler"
 version = "2.0.0"
-source = "git+https://github.com/satellitex/substrate.git#97643d4639868119550bd7ef6d824729cd6e587a"
-dependencies = [
- "backtrace 0.3.40 (registry+https://github.com/rust-lang/crates.io-index)",
- "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
-]
-
-[[package]]
-name = "substrate-panic-handler"
-version = "2.0.0"
 source = "git+https://github.com/stakedtechnologies/substrate.git?branch=plasm-master#97643d4639868119550bd7ef6d824729cd6e587a"
 dependencies = [
  "backtrace 0.3.40 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -5321,44 +5062,6 @@ dependencies = [
  "serde 1.0.102 (registry+https://github.com/rust-lang/crates.io-index)",
  "sr-primitives 2.0.0 (git+https://github.com/stakedtechnologies/substrate.git?branch=plasm-master)",
  "sr-std 2.0.0 (git+https://github.com/stakedtechnologies/substrate.git?branch=plasm-master)",
-]
-
-[[package]]
-name = "substrate-primitives"
-version = "2.0.0"
-source = "git+https://github.com/satellitex/substrate.git#97643d4639868119550bd7ef6d824729cd6e587a"
-dependencies = [
- "base58 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "blake2-rfc 0.2.18 (registry+https://github.com/rust-lang/crates.io-index)",
- "byteorder 1.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "ed25519-dalek 0.9.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "hash-db 0.15.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "hash256-std-hasher 0.15.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "hex 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "impl-serde 0.2.3 (registry+https://github.com/rust-lang/crates.io-index)",
- "lazy_static 1.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "libsecp256k1 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
- "num-traits 0.2.10 (registry+https://github.com/rust-lang/crates.io-index)",
- "parity-scale-codec 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "parking_lot 0.9.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "primitive-types 0.6.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "rand 0.7.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "regex 1.3.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "rustc-hex 2.0.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "schnorrkel 0.8.5 (registry+https://github.com/rust-lang/crates.io-index)",
- "serde 1.0.102 (registry+https://github.com/rust-lang/crates.io-index)",
- "sha2 0.8.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "sr-std 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "substrate-bip39 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "substrate-debug-derive 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "substrate-externalities 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "substrate-primitives-storage 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "tiny-bip39 0.6.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "tiny-keccak 1.5.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "twox-hash 1.5.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "wasmi 0.5.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "zeroize 0.10.1 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -5397,17 +5100,6 @@ dependencies = [
  "twox-hash 1.5.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "wasmi 0.5.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "zeroize 0.10.1 (registry+https://github.com/rust-lang/crates.io-index)",
-]
-
-[[package]]
-name = "substrate-primitives-storage"
-version = "2.0.0"
-source = "git+https://github.com/satellitex/substrate.git#97643d4639868119550bd7ef6d824729cd6e587a"
-dependencies = [
- "impl-serde 0.2.3 (registry+https://github.com/rust-lang/crates.io-index)",
- "serde 1.0.102 (registry+https://github.com/rust-lang/crates.io-index)",
- "sr-std 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "substrate-debug-derive 2.0.0 (git+https://github.com/satellitex/substrate.git)",
 ]
 
 [[package]]
@@ -5587,25 +5279,6 @@ dependencies = [
 [[package]]
 name = "substrate-state-machine"
 version = "2.0.0"
-source = "git+https://github.com/satellitex/substrate.git#97643d4639868119550bd7ef6d824729cd6e587a"
-dependencies = [
- "hash-db 0.15.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
- "num-traits 0.2.10 (registry+https://github.com/rust-lang/crates.io-index)",
- "parity-scale-codec 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "parking_lot 0.9.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "rand 0.7.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "substrate-externalities 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "substrate-panic-handler 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "substrate-primitives 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "substrate-trie 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "trie-db 0.15.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "trie-root 0.15.2 (registry+https://github.com/rust-lang/crates.io-index)",
-]
-
-[[package]]
-name = "substrate-state-machine"
-version = "2.0.0"
 source = "git+https://github.com/stakedtechnologies/substrate.git?branch=plasm-master#97643d4639868119550bd7ef6d824729cd6e587a"
 dependencies = [
  "hash-db 0.15.2 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -5690,20 +5363,6 @@ dependencies = [
  "substrate-client 2.0.0 (git+https://github.com/stakedtechnologies/substrate.git?branch=plasm-master)",
  "substrate-primitives 2.0.0 (git+https://github.com/stakedtechnologies/substrate.git?branch=plasm-master)",
  "substrate-transaction-graph 2.0.0 (git+https://github.com/stakedtechnologies/substrate.git?branch=plasm-master)",
-]
-
-[[package]]
-name = "substrate-trie"
-version = "2.0.0"
-source = "git+https://github.com/satellitex/substrate.git#97643d4639868119550bd7ef6d824729cd6e587a"
-dependencies = [
- "hash-db 0.15.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "memory-db 0.15.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "parity-scale-codec 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "sr-std 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "substrate-primitives 2.0.0 (git+https://github.com/satellitex/substrate.git)",
- "trie-db 0.15.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "trie-root 0.15.2 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -7152,20 +6811,13 @@ dependencies = [
 "checksum soketto 0.2.3 (registry+https://github.com/rust-lang/crates.io-index)" = "bceb1a3a15232d013d9a3b7cac9e5ce8e2313f348f01d4bc1097e5e53aa07095"
 "checksum sourcefile 0.1.4 (registry+https://github.com/rust-lang/crates.io-index)" = "4bf77cb82ba8453b42b6ae1d692e4cdc92f9a47beaf89a847c8be83f4e328ad3"
 "checksum spin 0.5.2 (registry+https://github.com/rust-lang/crates.io-index)" = "6e63cff320ae2c57904679ba7cb63280a3dc4613885beafb148ee7bf9aa9042d"
-"checksum sr-api-macros 2.0.0 (git+https://github.com/satellitex/substrate.git)" = "<none>"
 "checksum sr-api-macros 2.0.0 (git+https://github.com/stakedtechnologies/substrate.git?branch=plasm-master)" = "<none>"
-"checksum sr-arithmetic 2.0.0 (git+https://github.com/satellitex/substrate.git)" = "<none>"
 "checksum sr-arithmetic 2.0.0 (git+https://github.com/stakedtechnologies/substrate.git?branch=plasm-master)" = "<none>"
-"checksum sr-io 2.0.0 (git+https://github.com/satellitex/substrate.git)" = "<none>"
 "checksum sr-io 2.0.0 (git+https://github.com/stakedtechnologies/substrate.git?branch=plasm-master)" = "<none>"
-"checksum sr-primitives 2.0.0 (git+https://github.com/satellitex/substrate.git)" = "<none>"
 "checksum sr-primitives 2.0.0 (git+https://github.com/stakedtechnologies/substrate.git?branch=plasm-master)" = "<none>"
 "checksum sr-sandbox 2.0.0 (git+https://github.com/stakedtechnologies/substrate.git?branch=plasm-master)" = "<none>"
-"checksum sr-staking-primitives 2.0.0 (git+https://github.com/satellitex/substrate.git)" = "<none>"
 "checksum sr-staking-primitives 2.0.0 (git+https://github.com/stakedtechnologies/substrate.git?branch=plasm-master)" = "<none>"
-"checksum sr-std 2.0.0 (git+https://github.com/satellitex/substrate.git)" = "<none>"
 "checksum sr-std 2.0.0 (git+https://github.com/stakedtechnologies/substrate.git?branch=plasm-master)" = "<none>"
-"checksum sr-version 2.0.0 (git+https://github.com/satellitex/substrate.git)" = "<none>"
 "checksum sr-version 2.0.0 (git+https://github.com/stakedtechnologies/substrate.git?branch=plasm-master)" = "<none>"
 "checksum srml-aura 2.0.0 (git+https://github.com/stakedtechnologies/substrate.git?branch=plasm-master)" = "<none>"
 "checksum srml-authority-discovery 0.1.0 (git+https://github.com/stakedtechnologies/substrate.git?branch=plasm-master)" = "<none>"
@@ -7183,27 +6835,19 @@ dependencies = [
 "checksum srml-im-online 0.1.0 (git+https://github.com/stakedtechnologies/substrate.git?branch=plasm-master)" = "<none>"
 "checksum srml-indices 2.0.0 (git+https://github.com/stakedtechnologies/substrate.git?branch=plasm-master)" = "<none>"
 "checksum srml-membership 2.0.0 (git+https://github.com/stakedtechnologies/substrate.git?branch=plasm-master)" = "<none>"
-"checksum srml-metadata 2.0.0 (git+https://github.com/satellitex/substrate.git)" = "<none>"
 "checksum srml-metadata 2.0.0 (git+https://github.com/stakedtechnologies/substrate.git?branch=plasm-master)" = "<none>"
 "checksum srml-offences 1.0.0 (git+https://github.com/stakedtechnologies/substrate.git?branch=plasm-master)" = "<none>"
 "checksum srml-randomness-collective-flip 2.0.0 (git+https://github.com/stakedtechnologies/substrate.git?branch=plasm-master)" = "<none>"
-"checksum srml-session 2.0.0 (git+https://github.com/satellitex/substrate.git)" = "<none>"
 "checksum srml-session 2.0.0 (git+https://github.com/stakedtechnologies/substrate.git?branch=plasm-master)" = "<none>"
 "checksum srml-staking 2.0.0 (git+https://github.com/stakedtechnologies/substrate.git?branch=plasm-master)" = "<none>"
 "checksum srml-sudo 2.0.0 (git+https://github.com/stakedtechnologies/substrate.git?branch=plasm-master)" = "<none>"
-"checksum srml-support 2.0.0 (git+https://github.com/satellitex/substrate.git)" = "<none>"
 "checksum srml-support 2.0.0 (git+https://github.com/stakedtechnologies/substrate.git?branch=plasm-master)" = "<none>"
-"checksum srml-support-procedural 2.0.0 (git+https://github.com/satellitex/substrate.git)" = "<none>"
 "checksum srml-support-procedural 2.0.0 (git+https://github.com/stakedtechnologies/substrate.git?branch=plasm-master)" = "<none>"
-"checksum srml-support-procedural-tools 2.0.0 (git+https://github.com/satellitex/substrate.git)" = "<none>"
 "checksum srml-support-procedural-tools 2.0.0 (git+https://github.com/stakedtechnologies/substrate.git?branch=plasm-master)" = "<none>"
-"checksum srml-support-procedural-tools-derive 2.0.0 (git+https://github.com/satellitex/substrate.git)" = "<none>"
 "checksum srml-support-procedural-tools-derive 2.0.0 (git+https://github.com/stakedtechnologies/substrate.git?branch=plasm-master)" = "<none>"
-"checksum srml-system 2.0.0 (git+https://github.com/satellitex/substrate.git)" = "<none>"
 "checksum srml-system 2.0.0 (git+https://github.com/stakedtechnologies/substrate.git?branch=plasm-master)" = "<none>"
 "checksum srml-system-rpc 2.0.0 (git+https://github.com/stakedtechnologies/substrate.git?branch=plasm-master)" = "<none>"
 "checksum srml-system-rpc-runtime-api 2.0.0 (git+https://github.com/stakedtechnologies/substrate.git?branch=plasm-master)" = "<none>"
-"checksum srml-timestamp 2.0.0 (git+https://github.com/satellitex/substrate.git)" = "<none>"
 "checksum srml-timestamp 2.0.0 (git+https://github.com/stakedtechnologies/substrate.git?branch=plasm-master)" = "<none>"
 "checksum srml-transaction-payment 2.0.0 (git+https://github.com/stakedtechnologies/substrate.git?branch=plasm-master)" = "<none>"
 "checksum srml-transaction-payment-rpc 2.0.0 (git+https://github.com/stakedtechnologies/substrate.git?branch=plasm-master)" = "<none>"
@@ -7219,7 +6863,6 @@ dependencies = [
 "checksum structopt-derive 0.3.5 (registry+https://github.com/rust-lang/crates.io-index)" = "ea692d40005b3ceba90a9fe7a78fa8d4b82b0ce627eebbffc329aab850f3410e"
 "checksum strum 0.15.0 (registry+https://github.com/rust-lang/crates.io-index)" = "e5d1c33039533f051704951680f1adfd468fd37ac46816ded0d9ee068e60f05f"
 "checksum strum_macros 0.15.0 (registry+https://github.com/rust-lang/crates.io-index)" = "47cd23f5c7dee395a00fa20135e2ec0fffcdfa151c56182966d7a3261343432e"
-"checksum substrate-application-crypto 2.0.0 (git+https://github.com/satellitex/substrate.git)" = "<none>"
 "checksum substrate-application-crypto 2.0.0 (git+https://github.com/stakedtechnologies/substrate.git?branch=plasm-master)" = "<none>"
 "checksum substrate-authority-discovery-primitives 2.0.0 (git+https://github.com/stakedtechnologies/substrate.git?branch=plasm-master)" = "<none>"
 "checksum substrate-basic-authorship 2.0.0 (git+https://github.com/stakedtechnologies/substrate.git?branch=plasm-master)" = "<none>"
@@ -7235,28 +6878,22 @@ dependencies = [
 "checksum substrate-consensus-babe-primitives 2.0.0 (git+https://github.com/stakedtechnologies/substrate.git?branch=plasm-master)" = "<none>"
 "checksum substrate-consensus-common 2.0.0 (git+https://github.com/stakedtechnologies/substrate.git?branch=plasm-master)" = "<none>"
 "checksum substrate-consensus-slots 2.0.0 (git+https://github.com/stakedtechnologies/substrate.git?branch=plasm-master)" = "<none>"
-"checksum substrate-debug-derive 2.0.0 (git+https://github.com/satellitex/substrate.git)" = "<none>"
 "checksum substrate-debug-derive 2.0.0 (git+https://github.com/stakedtechnologies/substrate.git?branch=plasm-master)" = "<none>"
 "checksum substrate-executor 2.0.0 (git+https://github.com/stakedtechnologies/substrate.git?branch=plasm-master)" = "<none>"
-"checksum substrate-externalities 2.0.0 (git+https://github.com/satellitex/substrate.git)" = "<none>"
 "checksum substrate-externalities 2.0.0 (git+https://github.com/stakedtechnologies/substrate.git?branch=plasm-master)" = "<none>"
 "checksum substrate-finality-grandpa 2.0.0 (git+https://github.com/stakedtechnologies/substrate.git?branch=plasm-master)" = "<none>"
 "checksum substrate-finality-grandpa-primitives 2.0.0 (git+https://github.com/stakedtechnologies/substrate.git?branch=plasm-master)" = "<none>"
 "checksum substrate-header-metadata 2.0.0 (git+https://github.com/stakedtechnologies/substrate.git?branch=plasm-master)" = "<none>"
-"checksum substrate-inherents 2.0.0 (git+https://github.com/satellitex/substrate.git)" = "<none>"
 "checksum substrate-inherents 2.0.0 (git+https://github.com/stakedtechnologies/substrate.git?branch=plasm-master)" = "<none>"
 "checksum substrate-keyring 2.0.0 (git+https://github.com/stakedtechnologies/substrate.git?branch=plasm-master)" = "<none>"
 "checksum substrate-keystore 2.0.0 (git+https://github.com/stakedtechnologies/substrate.git?branch=plasm-master)" = "<none>"
 "checksum substrate-network 2.0.0 (git+https://github.com/stakedtechnologies/substrate.git?branch=plasm-master)" = "<none>"
 "checksum substrate-offchain 2.0.0 (git+https://github.com/stakedtechnologies/substrate.git?branch=plasm-master)" = "<none>"
 "checksum substrate-offchain-primitives 2.0.0 (git+https://github.com/stakedtechnologies/substrate.git?branch=plasm-master)" = "<none>"
-"checksum substrate-panic-handler 2.0.0 (git+https://github.com/satellitex/substrate.git)" = "<none>"
 "checksum substrate-panic-handler 2.0.0 (git+https://github.com/stakedtechnologies/substrate.git?branch=plasm-master)" = "<none>"
 "checksum substrate-peerset 2.0.0 (git+https://github.com/stakedtechnologies/substrate.git?branch=plasm-master)" = "<none>"
 "checksum substrate-phragmen 2.0.0 (git+https://github.com/stakedtechnologies/substrate.git?branch=plasm-master)" = "<none>"
-"checksum substrate-primitives 2.0.0 (git+https://github.com/satellitex/substrate.git)" = "<none>"
 "checksum substrate-primitives 2.0.0 (git+https://github.com/stakedtechnologies/substrate.git?branch=plasm-master)" = "<none>"
-"checksum substrate-primitives-storage 2.0.0 (git+https://github.com/satellitex/substrate.git)" = "<none>"
 "checksum substrate-primitives-storage 2.0.0 (git+https://github.com/stakedtechnologies/substrate.git?branch=plasm-master)" = "<none>"
 "checksum substrate-rpc 2.0.0 (git+https://github.com/stakedtechnologies/substrate.git?branch=plasm-master)" = "<none>"
 "checksum substrate-rpc-api 2.0.0 (git+https://github.com/stakedtechnologies/substrate.git?branch=plasm-master)" = "<none>"
@@ -7267,13 +6904,11 @@ dependencies = [
 "checksum substrate-service-test 2.0.0 (git+https://github.com/stakedtechnologies/substrate.git?branch=plasm-master)" = "<none>"
 "checksum substrate-session 2.0.0 (git+https://github.com/stakedtechnologies/substrate.git?branch=plasm-master)" = "<none>"
 "checksum substrate-state-db 2.0.0 (git+https://github.com/stakedtechnologies/substrate.git?branch=plasm-master)" = "<none>"
-"checksum substrate-state-machine 2.0.0 (git+https://github.com/satellitex/substrate.git)" = "<none>"
 "checksum substrate-state-machine 2.0.0 (git+https://github.com/stakedtechnologies/substrate.git?branch=plasm-master)" = "<none>"
 "checksum substrate-telemetry 2.0.0 (git+https://github.com/stakedtechnologies/substrate.git?branch=plasm-master)" = "<none>"
 "checksum substrate-test-client 2.0.0 (git+https://github.com/stakedtechnologies/substrate.git?branch=plasm-master)" = "<none>"
 "checksum substrate-transaction-graph 2.0.0 (git+https://github.com/stakedtechnologies/substrate.git?branch=plasm-master)" = "<none>"
 "checksum substrate-transaction-pool 2.0.0 (git+https://github.com/stakedtechnologies/substrate.git?branch=plasm-master)" = "<none>"
-"checksum substrate-trie 2.0.0 (git+https://github.com/satellitex/substrate.git)" = "<none>"
 "checksum substrate-trie 2.0.0 (git+https://github.com/stakedtechnologies/substrate.git?branch=plasm-master)" = "<none>"
 "checksum substrate-wasm-builder-runner 1.0.4 (git+https://github.com/stakedtechnologies/substrate.git?branch=plasm-master)" = "<none>"
 "checksum substrate-wasm-interface 2.0.0 (git+https://github.com/stakedtechnologies/substrate.git?branch=plasm-master)" = "<none>"

@@ -312,7 +312,6 @@ construct_runtime!(
 	{
 		System: system::{Module, Call, Storage, Config, Event},
 		Aura: aura::{Module, Config<T>, Inherent(Timestamp)},
-        PoASimple: poa_simple::{Module},
 		Timestamp: timestamp::{Module, Call, Storage, Inherent},
 		TransactionPayment: transaction_payment::{Module, Storage},
 		Indices: indices,
