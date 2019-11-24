@@ -9,52 +9,51 @@ build = "build.rs"
 integer-sqrt = { version = "0.1.2" }
 safe-mix = { version = "1.0", default-features = false }
 codec = { package = "parity-scale-codec", version = "1.0.0", default-features = false, features = ["derive"] }
-primitives = { package = "substrate-primitives",  git = "https://github.com/satellitex/substrate.git", default-features = false }
-client = { package = "substrate-client", git = "https://github.com/satellitex/substrate.git", default-features = false }
-rstd = { package = "sr-std", git = "https://github.com/satellitex/substrate.git", default-features = false }
-sr-primitives = { git = "https://github.com/satellitex/substrate.git", default-features = false }
-sr-staking-primitives = { git = "https://github.com/satellitex/substrate.git", default-features = false }
-offchain-primitives = { package = "substrate-offchain-primitives", git = "https://github.com/satellitex/substrate.git", default-features = false }
-authority-discovery-primitives = { package = "substrate-authority-discovery-primitives", git = "https://github.com/satellitex/substrate.git", default-features = false }
-version = { package = "sr-version", git = "https://github.com/satellitex/substrate.git", default-features = false }
-
-support = { package = "srml-support", git = "https://github.com/satellitex/substrate.git", default-features = false }
-authorship = { package = "srml-authorship", git = "https://github.com/satellitex/substrate.git", default-features = false }
-aura = { package = "srml-aura", git = "https://github.com/satellitex/substrate.git", default-features = false }
-aura-primitives = { package = "substrate-consensus-aura-primitives", git = "https://github.com/satellitex/substrate.git", default-features = false }
-balances = { package = "srml-balances", git = "https://github.com/satellitex/substrate.git", default-features = false }
-contracts = { package = "srml-contracts", git = "https://github.com/satellitex/substrate.git", default-features = false }
-contracts-rpc-runtime-api = { package = "srml-contracts-rpc-runtime-api", git = "https://github.com/satellitex/substrate.git", default-features = false }
+primitives = { package = "substrate-primitives",  git = "https://github.com/stakedtechnologies/substrate.git", branch = "plasm-master", default-features = false }
+client = { package = "substrate-client", git = "https://github.com/stakedtechnologies/substrate.git", branch = "plasm-master", default-features = false }
+rstd = { package = "sr-std", git = "https://github.com/stakedtechnologies/substrate.git", branch = "plasm-master", default-features = false }
+sr-primitives = { git = "https://github.com/stakedtechnologies/substrate.git", branch = "plasm-master", default-features = false }
+sr-staking-primitives = { git = "https://github.com/stakedtechnologies/substrate.git", branch = "plasm-master", default-features = false }
+offchain-primitives = { package = "substrate-offchain-primitives", git = "https://github.com/stakedtechnologies/substrate.git", branch = "plasm-master", default-features = false }
+authority-discovery-primitives = { package = "substrate-authority-discovery-primitives", git = "https://github.com/stakedtechnologies/substrate.git", branch = "plasm-master", default-features = false }
+version = { package = "sr-version", git = "https://github.com/stakedtechnologies/substrate.git", branch = "plasm-master", default-features = false }
+support = { package = "srml-support", git = "https://github.com/stakedtechnologies/substrate.git", branch = "plasm-master", default-features = false }
+authorship = { package = "srml-authorship", git = "https://github.com/stakedtechnologies/substrate.git", branch = "plasm-master", default-features = false }
+aura = { package = "srml-aura", git = "https://github.com/stakedtechnologies/substrate.git", branch = "plasm-master", default-features = false }
+aura-primitives = { package = "substrate-consensus-aura-primitives", git = "https://github.com/stakedtechnologies/substrate.git", branch = "plasm-master", default-features = false }
+balances = { package = "srml-balances", git = "https://github.com/stakedtechnologies/substrate.git", branch = "plasm-master", default-features = false }
+contracts = { package = "srml-contracts", git = "https://github.com/stakedtechnologies/substrate.git", branch = "plasm-master", default-features = false }
+contracts-rpc-runtime-api = { package = "srml-contracts-rpc-runtime-api", git = "https://github.com/stakedtechnologies/substrate.git", branch = "plasm-master", default-features = false }
 operator = { package = "srml-contract-operator", path = "../../srml/operator", default-features = false }
-collective = { package = "srml-collective", git = "https://github.com/satellitex/substrate.git", default-features = false }
-democracy = { package = "srml-democracy", git = "https://github.com/satellitex/substrate.git", default-features = false }
-elections = { package = "srml-elections", git = "https://github.com/satellitex/substrate.git", default-features = false }
-executive = { package = "srml-executive", git = "https://github.com/satellitex/substrate.git", default-features = false }
-finality-tracker = { package = "srml-finality-tracker", git = "https://github.com/satellitex/substrate.git", default-features = false }
-grandpa = { package = "srml-grandpa", git = "https://github.com/satellitex/substrate.git", default-features = false }
-indices = { package = "srml-indices", git = "https://github.com/satellitex/substrate.git", default-features = false }
-membership = { package = "srml-membership", git = "https://github.com/satellitex/substrate.git", default-features = false }
-randomness-collective-flip = { package = "srml-randomness-collective-flip", git = "https://github.com/satellitex/substrate.git", default-features = false }
-session = { package = "srml-session", git = "https://github.com/satellitex/substrate.git", default-features = false, features = ["historical"] }
-staking = { package = "srml-staking", git = "https://github.com/satellitex/substrate.git", default-features = false }
-system = { package = "srml-system", git = "https://github.com/satellitex/substrate.git", default-features = false }
-system-rpc-runtime-api = { package = "srml-system-rpc-runtime-api", git = "https://github.com/satellitex/substrate.git", default-features = false }
-timestamp = { package = "srml-timestamp", git = "https://github.com/satellitex/substrate.git", default-features = false }
-treasury = { package = "srml-treasury", git = "https://github.com/satellitex/substrate.git", default-features = false }
-sudo = { package = "srml-sudo", git = "https://github.com/satellitex/substrate.git", default-features = false }
-im-online = { package = "srml-im-online", git = "https://github.com/satellitex/substrate.git", default-features = false }
-authority-discovery = { package = "srml-authority-discovery", git = "https://github.com/satellitex/substrate.git", default-features = false }
-offences = { package = "srml-offences", git = "https://github.com/satellitex/substrate.git", default-features = false }
+collective = { package = "srml-collective", git = "https://github.com/stakedtechnologies/substrate.git", branch = "plasm-master", default-features = false }
+democracy = { package = "srml-democracy", git = "https://github.com/stakedtechnologies/substrate.git", branch = "plasm-master", default-features = false }
+elections = { package = "srml-elections", git = "https://github.com/stakedtechnologies/substrate.git", branch = "plasm-master", default-features = false }
+executive = { package = "srml-executive", git = "https://github.com/stakedtechnologies/substrate.git", branch = "plasm-master", default-features = false }
+finality-tracker = { package = "srml-finality-tracker", git = "https://github.com/stakedtechnologies/substrate.git", branch = "plasm-master", default-features = false }
+grandpa = { package = "srml-grandpa", git = "https://github.com/stakedtechnologies/substrate.git", branch = "plasm-master", default-features = false }
+indices = { package = "srml-indices", git = "https://github.com/stakedtechnologies/substrate.git", branch = "plasm-master", default-features = false }
+membership = { package = "srml-membership", git = "https://github.com/stakedtechnologies/substrate.git", branch = "plasm-master", default-features = false }
+randomness-collective-flip = { package = "srml-randomness-collective-flip", git = "https://github.com/stakedtechnologies/substrate.git", branch = "plasm-master", default-features = false }
+session = { package = "srml-session", git = "https://github.com/stakedtechnologies/substrate.git", branch = "plasm-master", default-features = false, features = ["historical"] }
+staking = { package = "srml-staking", git = "https://github.com/stakedtechnologies/substrate.git", branch = "plasm-master", default-features = false }
+system = { package = "srml-system", git = "https://github.com/stakedtechnologies/substrate.git", branch = "plasm-master", default-features = false }
+system-rpc-runtime-api = { package = "srml-system-rpc-runtime-api", git = "https://github.com/stakedtechnologies/substrate.git", branch = "plasm-master", default-features = false }
+timestamp = { package = "srml-timestamp", git = "https://github.com/stakedtechnologies/substrate.git", branch = "plasm-master", default-features = false }
+treasury = { package = "srml-treasury", git = "https://github.com/stakedtechnologies/substrate.git", branch = "plasm-master", default-features = false }
+sudo = { package = "srml-sudo", git = "https://github.com/stakedtechnologies/substrate.git", branch = "plasm-master", default-features = false }
+im-online = { package = "srml-im-online", git = "https://github.com/stakedtechnologies/substrate.git", branch = "plasm-master", default-features = false }
+authority-discovery = { package = "srml-authority-discovery", git = "https://github.com/stakedtechnologies/substrate.git", branch = "plasm-master", default-features = false }
+offences = { package = "srml-offences", git = "https://github.com/stakedtechnologies/substrate.git", branch = "plasm-master", default-features = false }
 plasm-primitives = { path = "../primitives", default-features = false }
 rustc-hex = { version = "2.0", optional = true }
 serde = { version = "1.0", optional = true }
-substrate-keyring = { git = "https://github.com/satellitex/substrate.git", optional = true }
-substrate-session = { git = "https://github.com/satellitex/substrate.git", default-features = false }
-transaction-payment = { package = "srml-transaction-payment", git = "https://github.com/satellitex/substrate.git", default-features = false }
-transaction-payment-rpc-runtime-api = { package = "srml-transaction-payment-rpc-runtime-api", git = "https://github.com/satellitex/substrate.git", default-features = false }
+substrate-keyring = { git = "https://github.com/stakedtechnologies/substrate.git", branch = "plasm-master", optional = true }
+substrate-session = { git = "https://github.com/stakedtechnologies/substrate.git", branch = "plasm-master", default-features = false }
+transaction-payment = { package = "srml-transaction-payment", git = "https://github.com/stakedtechnologies/substrate.git", branch = "plasm-master", default-features = false }
+transaction-payment-rpc-runtime-api = { package = "srml-transaction-payment-rpc-runtime-api", git = "https://github.com/stakedtechnologies/substrate.git", branch = "plasm-master", default-features = false }
 
 [build-dependencies]
-wasm-builder-runner = { package = "substrate-wasm-builder-runner", version = "1.0.2", git = "https://github.com/satellitex/substrate.git" }
+wasm-builder-runner = { package = "substrate-wasm-builder-runner", version = "1.0.2", git = "https://github.com/stakedtechnologies/substrate.git", branch = "plasm-master" }
 
 [features]
 default = ["std"]
@@ -65,7 +64,6 @@ std = [
 	"aura-primitives/std",
 	"aura/std",
 	"balances/std",
-	"client/std",
 	"codec/std",
 	"collective/std",
 	"contracts/std",
