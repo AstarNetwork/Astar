@@ -5,21 +5,20 @@ authors = ["Takumi Yamashita <takumi@staked.co.jp>"]
 edition = "2018"
 
 [dependencies]
-client = { package = "substrate-client", git = "https://github.com/satellitex/substrate.git", default-features = false }
-codec = { package = "parity-scale-codec", version = "1.0.0", default-features = false, features = ["derive"] }
-primitives = { package = "substrate-primitives", git = "https://github.com/satellitex/substrate.git", default-features = false }
-rstd = { package = "sr-std", git = "https://github.com/satellitex/substrate.git", default-features = false }
 serde = { version = "1.0", optional = true, features = ["derive"] }
-sr-primitives = { git = "https://github.com/satellitex/substrate.git", default-features = false }
+codec = { package = "parity-scale-codec", version = "1.0.0", default-features = false, features = ["derive"] }
+client = { package = "substrate-client", git = "https://github.com/stakedtechnologies/substrate.git", branch = "plasm-master", default-features = false }
+primitives = { package = "substrate-primitives", git = "https://github.com/stakedtechnologies/substrate.git", branch = "plasm-master", default-features = false }
+rstd = { package = "sr-std", git = "https://github.com/stakedtechnologies/substrate.git", branch = "plasm-master", default-features = false }
+sr-primitives = { git = "https://github.com/stakedtechnologies/substrate.git", branch = "plasm-master", default-features = false }
 
 [dev-dependencies]
-substrate-serializer = { git = "https://github.com/satellitex/substrate.git" }
+substrate-serializer = { git = "https://github.com/stakedtechnologies/substrate.git", branch = "plasm-master" }
 pretty_assertions = "0.6.1"
 
 [features]
 default = ["std"]
 std = [
-	"client/std",
 	"codec/std",
 	"primitives/std",
 	"rstd/std",
