@@ -3024,6 +3024,7 @@ dependencies = [
  "srml-transaction-payment 2.0.0 (git+https://github.com/stakedtechnologies/substrate.git?branch=plasm-master)",
  "srml-transaction-payment-rpc-runtime-api 2.0.0 (git+https://github.com/stakedtechnologies/substrate.git?branch=plasm-master)",
  "srml-treasury 2.0.0 (git+https://github.com/stakedtechnologies/substrate.git?branch=plasm-master)",
+ "srml-validator-manager 0.1.0",
  "substrate-authority-discovery-primitives 2.0.0 (git+https://github.com/stakedtechnologies/substrate.git?branch=plasm-master)",
  "substrate-client 2.0.0 (git+https://github.com/stakedtechnologies/substrate.git?branch=plasm-master)",
  "substrate-consensus-aura-primitives 2.0.0 (git+https://github.com/stakedtechnologies/substrate.git?branch=plasm-master)",
@@ -4453,6 +4454,22 @@ dependencies = [
  "srml-balances 2.0.0 (git+https://github.com/stakedtechnologies/substrate.git?branch=plasm-master)",
  "srml-support 2.0.0 (git+https://github.com/stakedtechnologies/substrate.git?branch=plasm-master)",
  "srml-system 2.0.0 (git+https://github.com/stakedtechnologies/substrate.git?branch=plasm-master)",
+]
+
+[[package]]
+name = "srml-validator-manager"
+version = "0.1.0"
+dependencies = [
+ "parity-scale-codec 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "serde 1.0.102 (registry+https://github.com/rust-lang/crates.io-index)",
+ "sr-io 2.0.0 (git+https://github.com/stakedtechnologies/substrate.git?branch=plasm-master)",
+ "sr-primitives 2.0.0 (git+https://github.com/stakedtechnologies/substrate.git?branch=plasm-master)",
+ "sr-std 2.0.0 (git+https://github.com/stakedtechnologies/substrate.git?branch=plasm-master)",
+ "srml-session 2.0.0 (git+https://github.com/stakedtechnologies/substrate.git?branch=plasm-master)",
+ "srml-support 2.0.0 (git+https://github.com/stakedtechnologies/substrate.git?branch=plasm-master)",
+ "srml-system 2.0.0 (git+https://github.com/stakedtechnologies/substrate.git?branch=plasm-master)",
+ "srml-timestamp 2.0.0 (git+https://github.com/stakedtechnologies/substrate.git?branch=plasm-master)",
+ "substrate-primitives 2.0.0 (git+https://github.com/stakedtechnologies/substrate.git?branch=plasm-master)",
 ]
 
 [[package]]

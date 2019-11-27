@@ -250,6 +250,10 @@ impl operator::Trait for Runtime {
 	type Event = Event;
 }
 
+impl validator_manager::Trait for Runtime {
+	type Event = Event;
+}
+
 impl sudo::Trait for Runtime {
 	type Event = Event;
 	type Proposal = Call;
@@ -315,6 +319,7 @@ construct_runtime!(
 		Grandpa: grandpa::{Module, Call, Storage, Config, Event},
 		Contracts: contracts,
 		Operator: operator::{Module, Call, Storage, Event<T>},
+		ValidatorManager: validator_manager::{Module, Call, Storage, Event<T>},
 		RandomnessCollectiveFlip: randomness_collective_flip::{Module, Call, Storage},
 		Sudo: sudo,
 	}

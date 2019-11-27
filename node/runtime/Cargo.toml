@@ -9,6 +9,8 @@ build = "build.rs"
 integer-sqrt = { version = "0.1.2" }
 safe-mix = { version = "1.0", default-features = false }
 codec = { package = "parity-scale-codec", version = "1.0.0", default-features = false, features = ["derive"] }
+operator = { package = "srml-contract-operator", path = "../../srml/operator", default-features = false }
+validator-manager = { package = "srml-validator-manager", path = "../../srml/validator-manager", default-features = false }
 primitives = { package = "substrate-primitives",  git = "https://github.com/stakedtechnologies/substrate.git", branch = "plasm-master", default-features = false }
 client = { package = "substrate-client", git = "https://github.com/stakedtechnologies/substrate.git", branch = "plasm-master", default-features = false }
 rstd = { package = "sr-std", git = "https://github.com/stakedtechnologies/substrate.git", branch = "plasm-master", default-features = false }
@@ -24,7 +26,6 @@ aura-primitives = { package = "substrate-consensus-aura-primitives", git = "http
 balances = { package = "srml-balances", git = "https://github.com/stakedtechnologies/substrate.git", branch = "plasm-master", default-features = false }
 contracts = { package = "srml-contracts", git = "https://github.com/stakedtechnologies/substrate.git", branch = "plasm-master", default-features = false }
 contracts-rpc-runtime-api = { package = "srml-contracts-rpc-runtime-api", git = "https://github.com/stakedtechnologies/substrate.git", branch = "plasm-master", default-features = false }
-operator = { package = "srml-contract-operator", path = "../../srml/operator", default-features = false }
 collective = { package = "srml-collective", git = "https://github.com/stakedtechnologies/substrate.git", branch = "plasm-master", default-features = false }
 democracy = { package = "srml-democracy", git = "https://github.com/stakedtechnologies/substrate.git", branch = "plasm-master", default-features = false }
 elections = { package = "srml-elections", git = "https://github.com/stakedtechnologies/substrate.git", branch = "plasm-master", default-features = false }
@@ -58,44 +59,45 @@ wasm-builder-runner = { package = "substrate-wasm-builder-runner", version = "1.
 [features]
 default = ["std"]
 std = [
-	"authority-discovery-primitives/std",
-	"authority-discovery/std",
-	"authorship/std",
-	"aura-primitives/std",
-	"aura/std",
-	"balances/std",
-	"codec/std",
-	"collective/std",
-	"contracts/std",
-	"contracts-rpc-runtime-api/std",
-	"operator/std",
-	"democracy/std",
-	"elections/std",
-	"executive/std",
-	"finality-tracker/std",
-	"grandpa/std",
-	"im-online/std",
-	"indices/std",
-	"membership/std",
-	"plasm-primitives/std",
-	"offchain-primitives/std",
-	"offences/std",
-	"primitives/std",
-	"randomness-collective-flip/std",
-	"rstd/std",
-	"rustc-hex",
-	"safe-mix/std",
-	"serde",
-	"session/std",
-	"sr-primitives/std",
-	"sr-staking-primitives/std",
-	"staking/std",
-	"substrate-keyring",
-	"substrate-session/std",
-	"sudo/std",
-	"support/std",
-	"system/std",
-	"timestamp/std",
-	"treasury/std",
-	"version/std",
+    "authority-discovery-primitives/std",
+    "authority-discovery/std",
+    "authorship/std",
+    "aura-primitives/std",
+    "aura/std",
+    "balances/std",
+    "codec/std",
+    "collective/std",
+    "contracts/std",
+    "contracts-rpc-runtime-api/std",
+    "operator/std",
+    "democracy/std",
+    "elections/std",
+    "executive/std",
+    "finality-tracker/std",
+    "grandpa/std",
+    "im-online/std",
+    "indices/std",
+    "membership/std",
+    "plasm-primitives/std",
+    "offchain-primitives/std",
+    "offences/std",
+    "primitives/std",
+    "randomness-collective-flip/std",
+    "rstd/std",
+    "rustc-hex",
+    "safe-mix/std",
+    "serde",
+    "session/std",
+    "sr-primitives/std",
+    "sr-staking-primitives/std",
+    "staking/std",
+    "substrate-keyring",
+    "substrate-session/std",
+    "sudo/std",
+    "support/std",
+    "system/std",
+    "timestamp/std",
+    "treasury/std",
+    "validator-manager/std",
+    "version/std",
 ]
