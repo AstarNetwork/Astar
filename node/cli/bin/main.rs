@@ -39,7 +39,7 @@ fn main() -> Result<(), substrate_cli::error::Error> {
         executable_name: "plasm-node",
         author: "Takumi Yamashita <takumi@staked.co.jp>",
         description: "PlasmChain Node",
-        support_url: "https://github.com/stakedtechnologies/Plasm/issues/new",
+        support_url: "https://github.com/staketechnologies/Plasm/issues/new",
     };
 
     plasm_cli::run(std::env::args(), Exit, version)
