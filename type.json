@@ -1,0 +1,10 @@
+{
+	"types": {
+		"Parameters": {
+			"canBeNominated": "bool",
+			"optionExpired": "u128",
+			"optionP": "u128"
+		},
+		"BTreeSet": {}
+	}
+}
