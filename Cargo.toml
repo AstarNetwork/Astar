@@ -1,27 +1,19 @@
 [workspace]
 members = [
-	"node/cli",
-	"node/executor",
-	"node/primitives",
-	"node/rpc",
-	"node/runtime",
-	"contracts/balances",
-	"contracts/balances/.ink/abi_gen",
-	"contracts/cash",
-	"contracts/cash/.ink/abi_gen",
-	"contracts/commitment",
-	"contracts/deposit",
-	"contracts/predicate",
-	"contracts/primitives",
-	"srml/operator",
-    "srml/validator-manager",
+    "bin/node/cli",
+    "bin/node/executor",
+    "bin/node/primitives",
+    "bin/node/rpc",
+    "bin/node/runtime",
+    "frame/operator",
+    "frame/session-manager",
 ]
 
 exclude = [
-	"contracts/balances/.ink",
-	"contracts/cash/.ink",
+    "contracts/balances/.ink",
+    "contracts/cash/.ink",
 ]
 
 [profile.release]
-# Substrate runtime requires unwinding.
+# Plasm runtime requires unwinding.
 panic = "unwind"

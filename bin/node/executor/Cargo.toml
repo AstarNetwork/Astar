@@ -1,0 +1,13 @@
+[package]
+name = "plasm-executor"
+version = "0.6.0"
+authors = [
+    "Takumi Yamashita <takumi@stake.co.jp>",
+    "Aleksandr Krupenkin <aleksandr@stake.co.jp>",
+]
+description = "Plasm runtime executor library."
+edition = "2018"
+
+[dependencies]
+substrate-executor = { git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master" }
+plasm-runtime = { path = "../runtime" }

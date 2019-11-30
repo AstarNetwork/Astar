@@ -67,13 +67,13 @@ Ensure you have Rust and the support software installed:
 
 You will also need to install the following packages:
 
-* Linux: `sudo apt install cmake git clang libclang-dev pkg-config libssl-dev build-essential`
-* Mac: `brew install cmake pkg-config git llvm`
+* Linux: `sudo apt install cmake git clang libclang-dev build-essential`
+* Mac: `brew install cmake git llvm`
 * Windows: Download and install the Pre Build Windows binaries of LLVM from http://releases.llvm.org/download.html
 
 Install Plasm node from git source:
 
-    cargo install --force --git https://github.com/stakedtechnologies/Plasm --tag v0.5.0
+    cargo install --force --git https://github.com/stakedtechnologies/Plasm --tag v0.6.0
 
 Run node in [Plasm testnet](https://telemetry.polkadot.io/#/PlasmTestnet%20v1):
 

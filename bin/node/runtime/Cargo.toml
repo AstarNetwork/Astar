@@ -1,0 +1,95 @@
+[package]
+name = "plasm-runtime"
+version = "0.6.0"
+authors = [
+    "Takumi Yamashita <takumi@stake.co.jp>",
+    "Aleksandr Krupenkin <aleksandr@stake.co.jp>"
+]
+edition = "2018"
+build = "build.rs"
+
+[dependencies]
+# third-party dependencies
+serde = { version = "1.0", optional = true }
+codec = { package = "parity-scale-codec", version = "1.0", default-features = false, features = ["derive"] }
+
+# primitives
+plasm-primitives = { path = "../primitives", default-features = false }
+primitives = { package = "substrate-primitives",  git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master", default-features = false }
+sr-primitives = { git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master", default-features = false }
+babe-primitives = { package = "substrate-consensus-babe-primitives", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master", default-features = false }
+offchain-primitives = { package = "substrate-offchain-primitives", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master", default-features = false }
+
+# core dependencies
+sr-api = { package = "sr-api", git = "https://github.com/staketechnologies/substrate", branch = "plasm-master", default-features = false }
+inherents = { package = "substrate-inherents", git = "https://github.com/staketechnologies/substrate", branch = "plasm-master", default-features = false }
+block-builder-api = { package = "substrate-block-builder-runtime-api", git = "https://github.com/staketechnologies/substrate", branch = "plasm-master", default-features = false }
+txpool-api = { package = "sp-transaction-pool-runtime-api", git = "https://github.com/staketechnologies/substrate", branch = "plasm-master", default-features = false }
+rstd = { package = "sr-std", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master", default-features = false }
+version = { package = "sr-version", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master", default-features = false }
+substrate-session = { git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master", default-features = false }
+
+# frame dependencies
+operator = { package = "pallet-contract-operator", path = "../../../frame/operator", default-features = false }
+session-manager = { package = "pallet-session-manager", path = "../../../frame/session-manager", default-features = false }
+executive = { package = "frame-executive", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master", default-features = false }
+babe = { package = "pallet-babe", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master", default-features = false }
+balances = { package = "pallet-balances", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master", default-features = false }
+contracts = { package = "pallet-contracts", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master", default-features = false }
+contracts-rpc-runtime-api = { package = "pallet-contracts-rpc-runtime-api", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master", default-features = false }
+finality-tracker = { package = "pallet-finality-tracker", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master", default-features = false }
+grandpa = { package = "pallet-grandpa", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master", default-features = false }
+indices = { package = "pallet-indices", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master", default-features = false }
+randomness-collective-flip = { package = "pallet-randomness-collective-flip", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master", default-features = false }
+session = { package = "pallet-session", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master", default-features = false, features = ["historical"] }
+sudo = { package = "pallet-sudo", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master", default-features = false }
+support = { package = "frame-support", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master", default-features = false }
+system = { package = "frame-system", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master", default-features = false }
+system-rpc-runtime-api = { package = "frame-system-rpc-runtime-api", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master", default-features = false }
+timestamp = { package = "pallet-timestamp", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master", default-features = false }
+transaction-payment = { package = "pallet-transaction-payment", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master", default-features = false }
+transaction-payment-rpc-runtime-api = { package = "pallet-transaction-payment-rpc-runtime-api", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master", default-features = false }
+
+[dev-dependencies]
+sr-io = { git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master" }
+
+[build-dependencies]
+wasm-builder-runner = { package = "substrate-wasm-builder-runner", version = "1.0.4", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master" }
+
+[features]
+default = ["std"]
+std = [
+    "babe-primitives/std",
+    "babe/std",
+    "balances/std",
+    "sr-api/std",
+    "codec/std",
+    "contracts/std",
+    "contracts-rpc-runtime-api/std",
+    "executive/std",
+    "finality-tracker/std",
+    "grandpa/std",
+    "indices/std",
+    "operator/std",
+    "offchain-primitives/std",
+    "plasm-primitives/std",
+    "primitives/std",
+    "randomness-collective-flip/std",
+    "rstd/std",
+    "serde",
+    "session/std",
+    "session-manager/std",
+    "sr-primitives/std",
+    "substrate-session/std",
+    "sudo/std",
+    "support/std",
+    "system/std",
+    "system-rpc-runtime-api/std",
+    "timestamp/std",
+    "transaction-payment/std",
+    "transaction-payment-rpc-runtime-api/std",
+    "version/std",
+    "block-builder-api/std",
+    "txpool-api/std",
+    "inherents/std",
+]

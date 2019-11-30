@@ -1,0 +1,19 @@
+[package]
+name = "plasm-rpc"
+version = "0.6.0"
+authors = [
+    "Takumi Yamashita <takumi@stake.co.jp>",
+    "Aleksandr Krupenkin <aleksandr@stake.co.jp>"
+]
+edition = "2018"
+
+[dependencies]
+jsonrpc-core = "14.0"
+plasm-runtime = { path = "../runtime" }
+plasm-primitives = { path = "../primitives" }
+client = { package = "substrate-client", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master" }
+sr-primitives = { git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master" }
+pallet-contracts-rpc = { git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master" }
+pallet-transaction-payment-rpc = { git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master" }
+substrate-frame-rpc-system = { git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master" }
+txpool-api = { package = "sp-transaction-pool-api", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master" }
