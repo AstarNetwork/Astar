@@ -50,7 +50,10 @@ We call this chain Plasm Network. Plasm Network is a scaling DApps Platform base
 Install Plasm 
 =============
 
-Plasm node binaries available in [releases](https://github.com/stakedtechnologies/Plasm/releases). Latest version you can try to build from source.
+* Plasm node binaries [releases](https://github.com/stakedtechnologies/Plasm/releases).
+* Node [custom types](https://github.com/staketechnologies/Plasm/tree/master/bin/node/cli/res/custom_types.json). 
+
+> Latest version you can try to build from source.
 
 Building from source
 --------------------
