@@ -20,7 +20,7 @@ use sr_primitives::{ApplyExtrinsicResult, impl_opaque_keys, generic, create_runt
 use sr_primitives::transaction_validity::TransactionValidity;
 use sr_primitives::traits::{
     BlakeTwo256, Block as BlockT, OpaqueKeys, Verify, Extrinsic,
-    NumberFor, SaturatedConversion, StaticLookup,
+    NumberFor, SaturatedConversion, StaticLookup, ConvertInto,
 };
 use version::RuntimeVersion;
 #[cfg(any(feature = "std", test))]
@@ -130,7 +130,7 @@ impl session::Trait for Runtime {
 	type Event = Event;
 	type Keys = opaque::SessionKeys;
 	type ValidatorId = <Self as system::Trait>::AccountId;
-	type ValidatorIdOf = ();
+	type ValidatorIdOf = ConvertInto;
 	type SelectInitialValidators = SessionManager;
 	type DisabledValidatorsThreshold = ();
 }

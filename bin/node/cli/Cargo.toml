@@ -51,6 +51,7 @@ substrate-rpc = { git = "https://github.com/staketechnologies/substrate.git", br
 basic-authorship = { package = "substrate-basic-authorship", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master" }
 substrate-service = { git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master" }
 telemetry = { package = "substrate-telemetry", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master" }
+consensus-common = { package = "substrate-consensus-common", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master" }
 
 # plasm-specific dependencies
 plasm-primitives = { path = "../primitives" }

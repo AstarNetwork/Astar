@@ -4,14 +4,14 @@ use babe_primitives::AuthorityId as BabeId;
 use chain_spec::ChainSpecExtension;
 use serde::{Serialize, Deserialize};
 use plasm_runtime::{
-    constants::{currency::*, time::*},
+    constants::currency::*,
     opaque::SessionKeys,
     GenesisConfig, SystemConfig, SessionConfig, SessionManagerConfig,
     BabeConfig, GrandpaConfig, IndicesConfig, BalancesConfig, ContractsConfig, SudoConfig,
     WASM_BINARY,
 };
 use primitives::{crypto::UncheckedInto, sr25519, Pair, Public};
-use sr_primitives::{traits::{IdentifyAccount, Verify}, Perbill};
+use sr_primitives::traits::{IdentifyAccount, Verify};
 use telemetry::TelemetryEndpoints;
 use hex_literal::hex;
 
@@ -56,12 +56,11 @@ pub fn get_account_id_from_seed<TPublic: Public>(seed: &str) -> AccountId
     AccountPublic::from(get_from_seed::<TPublic>(seed)).into_account()
 }
 
-/// Helper function to generate stash, controller and session key from seed
+/// Helper function to generate controller and session key from seed
 pub fn get_authority_keys_from_seed(
     seed: &str,
-) -> (AccountId, AccountId, GrandpaId, BabeId) {
+) -> (AccountId, GrandpaId, BabeId) {
     (
-        get_account_id_from_seed::<sr25519::Public>(&format!("{}//stash", seed)),
         get_account_id_from_seed::<sr25519::Public>(seed),
         get_from_seed::<GrandpaId>(seed),
         get_from_seed::<BabeId>(seed),
@@ -77,7 +76,7 @@ fn session_keys(
 
 /// Helper function to create GenesisConfig
 fn generate_config_genesis(
-    initial_authorities: Vec<(AccountId, AccountId, GrandpaId, BabeId)>,
+    initial_authorities: Vec<(AccountId, GrandpaId, BabeId)>,
     root_key: AccountId,
     endowed_accounts: Option<Vec<AccountId>>,
     enable_println: bool,
@@ -115,12 +114,12 @@ fn generate_config_genesis(
         session_manager: Some(SessionManagerConfig {
             validators: initial_authorities
                 .iter()
-                .map(|x| x.1.clone())
+                .map(|x| x.0.clone())
                 .collect()
         }),
         session: Some(SessionConfig {
             keys: initial_authorities.iter().map(|x| {
-                (x.0.clone(), session_keys(x.2.clone(), x.3.clone()))
+                (x.0.clone(), session_keys(x.1.clone(), x.2.clone()))
             }).collect::<Vec<_>>(),
         }),
         babe: Some(BabeConfig {
@@ -141,30 +140,27 @@ fn generate_config_genesis(
 }
 
 pub fn plasm_testnet_config() -> ChainSpec {
-    ChainSpec::from_json_bytes(&include_bytes!("../res/v0.1.0.json")[..]).unwrap()
+    ChainSpec::from_json_bytes(&include_bytes!("../res/testnet_v2.json")[..]).unwrap()
 }
 
 /*
 /// Plasm testnet config.
 pub fn plasm_testnet_config() -> ChainSpec {
     let boot_nodes = vec![
+        // akru
+        // Stake Technologies
         "/ip4/3.114.90.94/tcp/30333/p2p/QmW8EjUZ1f6RZe4YJ6tZAXzqYmjANbfdEYWMMaFgjkw9HN".to_string(),
-        "/ip4/3.114.81.104/tcp/30333/p2p/QmTuouKCV9zXLrNRY71PkfggEUVrrzqofZecCfu7pz5Ntt"
-            .to_string(),
-        "/ip4/3.115.175.152/tcp/30333/p2p/QmbKSyPY95NvJzoxP8q2DNaA9BRHZa5hy1q1pzfUoLhaUn"
-            .to_string(),
+        "/ip4/3.114.81.104/tcp/30333/p2p/QmTuouKCV9zXLrNRY71PkfggEUVrrzqofZecCfu7pz5Ntt".to_string(),
+        "/ip4/3.115.175.152/tcp/30333/p2p/QmbKSyPY95NvJzoxP8q2DNaA9BRHZa5hy1q1pzfUoLhaUn".to_string(),
         "/ip4/54.64.145.3/tcp/30333/p2p/QmS9psuQJceiYQMe6swoheKXrpnyYDjaigrTqv45RWyvCh".to_string(),
     ];
     let properties = serde_json::from_str(PLASM_PROPERTIES).unwrap();
     ChainSpec::from_genesis(
-        "PlasmTestnet v1",
-        "plasm_testnet_v1",
-        staging_testnet_genesis,
+        "Plasm Testnet v2",
+        "plasm_testnet_v2",
+        plasm_testnet_genesis,
         boot_nodes,
-        Some(TelemetryEndpoints::new(vec![(
-            STAGING_TELEMETRY_URL.to_string(),
-            0,
-        )])),
+        Some(TelemetryEndpoints::new(vec![(STAGING_TELEMETRY_URL.to_string(),0)])),
         Some(PLASM_PROTOCOL_ID),
         properties,
         Default::default(),
@@ -172,72 +168,17 @@ pub fn plasm_testnet_config() -> ChainSpec {
 }
 
 fn plasm_testnet_genesis() -> GenesisConfig {
+    let authorities = vec![(
+        hex!["58cdc7ef880c80e8475170f206381d2cb13a87c209452fc6d8a1e14186d61b28"].into(),
+        hex!["daf0535a46d8187446471bf619ea9104bda443366c526bf6f2cd4e9a1fcf5dd7"].unchecked_into(),
+        hex!["36cced69f5f1f07856ff0daac944c52e286e10184e52be76ca9377bd0406d90b"].unchecked_into(),
+    )];
+    // 5Cakru1BpXPiezeD2LRZh3pJamHcbX9yZ13KLBxuqdTpgnYF
+    let root_key = hex!["16eb796bee0c857db3d646ee7070252707aec0c7d82b2eda856632f6a2306a58"];
     generate_config_genesis(
-        vec![
-            (
-                // 5DwNtWotLKncBq1EYJSd74s4tf5fH8McK5XMoG8AyvwdFor6
-                hex!["52e1e582076b036e8feb9104b18619795cceccc00fb80c18dd8df5a5c4ea1d52"].into(),
-                // 5ELomezsSJhtedP3cFD4zqNDVvvwmdp6PpywACWEq1UP3fgq
-                hex!["64c04cdc3237ff84dc94b294d66aff7c370c0cd2648fab05330368ef905cfa5a"].into(),
-                // 5GdhABzAQBQYdEFw31veGtjoHbtSUUxTkte53ZUGuUDu73Ra
-                hex!["ca19aecbb6f621eb9aea26914916a73135df6766e146b993803065474abed3fa"]
-                    .unchecked_into(),
-                // 5ELomezsSJhtedP3cFD4zqNDVvvwmdp6PpywACWEq1UP3fgq
-                hex!["64c04cdc3237ff84dc94b294d66aff7c370c0cd2648fab05330368ef905cfa5a"]
-                    .unchecked_into(),
-                // 5ELomezsSJhtedP3cFD4zqNDVvvwmdp6PpywACWEq1UP3fgq
-                hex!["64c04cdc3237ff84dc94b294d66aff7c370c0cd2648fab05330368ef905cfa5a"]
-                    .unchecked_into(),
-            ),
-            (
-                // 5EvzqUdvcifpT9oevGXy3DRqLB9CL6ptWdpAQtNt1hAGJMP1
-                hex!["7ed3e52399b93e05072d83bcbc18d80ff59da1439352057fb61eaf541e8f1c39"].into(),
-                // 5GLQu9iyhRHDAHgCd8yFDD3dqFkxn4z8uwEwK8YyYa2GBTUu
-                hex!["bcebc6faab0765ca020f33182410156517bc88994d1210a8a026bdc5d201ee7b"].into(),
-                // 5HJWD9xdcPvXW2ajEUJEgAXbP4DBGfjDxRh3Nq8PAvnZM8AP
-                hex!["e7b365779d16bf9e51164f63d5b1ff986ba58420636d007576549f0da03547ae"]
-                    .unchecked_into(),
-                // 5GLQu9iyhRHDAHgCd8yFDD3dqFkxn4z8uwEwK8YyYa2GBTUu
-                hex!["bcebc6faab0765ca020f33182410156517bc88994d1210a8a026bdc5d201ee7b"]
-                    .unchecked_into(),
-                // 5GLQu9iyhRHDAHgCd8yFDD3dqFkxn4z8uwEwK8YyYa2GBTUu
-                hex!["bcebc6faab0765ca020f33182410156517bc88994d1210a8a026bdc5d201ee7b"]
-                    .unchecked_into(),
-            ),
-            (
-                // 5GQmtbg2xxckjAeAZzDkNK2oJmKcm91p9iSSZAoxbz4GarXN
-                hex!["c03f6b4ab6098cf656c0c8f2454165fc00226f5b82e2c353de603c915ed3031e"].into(),
-                // 5C5RmBoMGtgShP9p5vGdSfjkv7Mc25tqz9ZzRGN4z6mTgjEx
-                hex!["008d11028493788b3d4d6c36fe3790fa9516e9ba5d034796b74a6cea7ae51d2f"].into(),
-                // 5FxCnoKpWBgGKqooWvVb3KCdRbfCoMgKRQXLPrKry6vRGTwb
-                hex!["abfb9d369944792a2d1db8d3ba2acd5992e092720a68e2bce719920ab6d72b7c"]
-                    .unchecked_into(),
-                // 5C5RmBoMGtgShP9p5vGdSfjkv7Mc25tqz9ZzRGN4z6mTgjEx
-                hex!["008d11028493788b3d4d6c36fe3790fa9516e9ba5d034796b74a6cea7ae51d2f"]
-                    .unchecked_into(),
-                // 5C5RmBoMGtgShP9p5vGdSfjkv7Mc25tqz9ZzRGN4z6mTgjEx
-                hex!["008d11028493788b3d4d6c36fe3790fa9516e9ba5d034796b74a6cea7ae51d2f"]
-                    .unchecked_into(),
-            ),
-            (
-                // 5CFJtZZZ2s8LEPTMiGyupwdBK9iCvZmbcaFP7xSDm7SLmwWg
-                hex!["0816626ad05d91ac47de56ef3369f3f8db6942a66a1ea1130b7851415088a775"].into(),
-                // 5DkRuuy4bTpodMNfnmV2bs6PNbSvCSKiQC6s8YUcBMBcMf7c
-                hex!["4a88608ef40d00f043fa10250bd99dcb93f2ea9367264f8723bd4c777011c13f"].into(),
-                // 5GhGYkurWP29fDtjGtTBFhR5DBSC8fqATeBmtgKVmPqMVuJp
-                hex!["ccd3d1155c23c1febe0102f5d80a342696065f3072cadfa4e3f817618f80aa83"]
-                    .unchecked_into(),
-                // 5DkRuuy4bTpodMNfnmV2bs6PNbSvCSKiQC6s8YUcBMBcMf7c
-                hex!["4a88608ef40d00f043fa10250bd99dcb93f2ea9367264f8723bd4c777011c13f"]
-                    .unchecked_into(),
-                // 5DkRuuy4bTpodMNfnmV2bs6PNbSvCSKiQC6s8YUcBMBcMf7c
-                hex!["4a88608ef40d00f043fa10250bd99dcb93f2ea9367264f8723bd4c777011c13f"]
-                    .unchecked_into(),
-            ),
-        ],
-        // 5ELomezsSJhtedP3cFD4zqNDVvvwmdp6PpywACWEq1UP3fgq
-        hex!["64c04cdc3237ff84dc94b294d66aff7c370c0cd2648fab05330368ef905cfa5a"].into(),
-        None,
+        authorities,
+        root_key.clone().into(),
+        Some(vec![root_key.into()]),
         false,
     )
 }

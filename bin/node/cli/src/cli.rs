@@ -1,12 +1,12 @@
 pub use substrate_cli::error;
+pub use substrate_cli::{VersionInfo, IntoExit};
 use tokio::prelude::Future;
 use tokio::runtime::{Builder as RuntimeBuilder, Runtime};
-pub use substrate_cli::{VersionInfo, IntoExit, NoCustom, SharedParams, ExecutionStrategyParam};
+use substrate_cli::NoCustom;
 use substrate_service::{AbstractService, Roles as ServiceRoles, Configuration};
 use log::info;
-use structopt::{StructOpt, clap::App};
-use substrate_cli::{display_role, parse_and_prepare, AugmentClap, GetLogFilter, ParseAndPrepare};
-use crate::{service, ChainSpec, load_spec};
+use substrate_cli::{display_role, parse_and_prepare, ParseAndPrepare};
+use crate::{service, load_spec};
 
 /// Parse command line arguments into service configuration.
 pub fn run<I, T, E>(args: I, exit: E, version: substrate_cli::VersionInfo) -> error::Result<()> where
