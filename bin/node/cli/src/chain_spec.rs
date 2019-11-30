@@ -295,10 +295,12 @@ pub fn local_testnet_config() -> ChainSpec {
 #[cfg(test)]
 pub(crate) mod tests {
     use super::*;
-    use crate::service::{new_full, new_light};
+    use crate::service::new_full;
+    use substrate_service::Roles;
+    use service_test;
 
     fn local_testnet_genesis_instant_single() -> GenesisConfig {
-        testnet_genesis(
+        generate_config_genesis(
             vec![get_authority_keys_from_seed("Alice")],
             get_account_id_from_seed::<sr25519::Public>("Alice"),
             None,
@@ -316,7 +318,7 @@ pub(crate) mod tests {
             None,
             None,
             None,
-            None,
+            Default::default(),
         )
     }
 
@@ -330,7 +332,7 @@ pub(crate) mod tests {
             None,
             None,
             None,
-            None,
+            Default::default(),
         )
     }
 

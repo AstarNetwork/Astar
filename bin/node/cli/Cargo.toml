@@ -57,7 +57,13 @@ plasm-primitives = { path = "../primitives" }
 plasm-executor = { path = "../executor" }
 plasm-runtime = { path = "../runtime" }
 plasm-rpc = { path = "../rpc" }
+
+# frame dependencies
+system = { package = "frame-system", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master" }
+timestamp = { package = "pallet-timestamp", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master" }
 contracts = { package = "pallet-contracts", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master", default-features = false }
+transaction-payment = { package = "pallet-transaction-payment", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master" }
+finality-tracker = { package = "pallet-finality-tracker", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master" }
 
 # CLI-specific dependencies
 tokio = { version = "0.1.22", optional = true }
@@ -66,7 +72,6 @@ substrate-cli = { package = "substrate-cli", git = "https://github.com/staketech
 ctrlc = { version = "3.1.3", features = ["termination"], optional = true }
 
 [dev-dependencies]
-codec = { package = "parity-scale-codec", version = "1.0" }
 service-test = { package = "substrate-service-test", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master" }
 
 [build-dependencies]
