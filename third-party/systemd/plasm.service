@@ -1,0 +1,14 @@
+[Unit]
+Description=Plasm validator service
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+RemainAfterExit=no
+Restart=on-failure
+RestartSec=5s
+ExecStart=/usr/local/bin/plasm-node --name plasm-validator --validator
+
+[Install]
+WantedBy=multi-user.target

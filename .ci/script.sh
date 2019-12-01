@@ -18,9 +18,9 @@ case $TARGET in
 	"native")
 
 		sudo apt-get -y update
-		sudo apt-get install -y cmake pkg-config libssl-dev clang libclang-dev
+		sudo apt-get install -y cmake libclang-dev
 
-		./scripts/init.sh
+		./third-party/scripts/init.sh
 		cargo test
 		;;
 
