@@ -7,7 +7,7 @@ with llvmPackages_latest;
 
 rustPlatform.buildRustPackage rec {
   name = "plasm-node";
-  src = ./..;
+  src = ./../..;
   cargoSha256 = null; 
   buildInputs = [ rustWasm wasm-gc pkgconfig openssl clang ];
   LIBCLANG_PATH = "${libclang}/lib";
