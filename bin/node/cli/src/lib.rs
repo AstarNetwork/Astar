@@ -3,6 +3,7 @@
 #![warn(missing_docs)]
 #![warn(unused_extern_crates)]
 
+/// Plasm chain specification.
 pub mod chain_spec;
 
 #[macro_use]

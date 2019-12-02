@@ -3,9 +3,9 @@
 #![cfg(test)]
 
 use crate::{Module, Trait};
-use sr_primitives::{Perbill, KeyTypeId};
-use sr_primitives::testing::{Header, UintAuthorityId};
-use sr_primitives::traits::{IdentityLookup, BlakeTwo256, ConvertInto, OpaqueKeys};
+use sp_runtime::{Perbill, KeyTypeId};
+use sp_runtime::testing::{Header, UintAuthorityId};
+use sp_runtime::traits::{IdentityLookup, BlakeTwo256, ConvertInto, OpaqueKeys};
 use primitives::{H256, crypto::key_types};
 use support::{impl_outer_origin, impl_outer_dispatch, parameter_types};
 
@@ -15,13 +15,11 @@ impl_outer_origin!{
 
 impl_outer_dispatch! {
     pub enum Call for Runtime where origin: Origin {
-        system::System,
-        session::Session,
-        sessionmanager::SessionManager,
+        session_manager::SessionManager,
     }
 }
 
-pub fn new_test_ext() -> sr_io::TestExternalities {
+pub fn new_test_ext() -> sp_io::TestExternalities {
     let mut storage = system::GenesisConfig::default()
         .build_storage::<Runtime>()
         .unwrap();

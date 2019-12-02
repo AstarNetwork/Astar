@@ -1,17 +1,19 @@
-use plasm_primitives::{AccountId, Balance, Signature};
-use grandpa_primitives::AuthorityId as GrandpaId;
-use babe_primitives::AuthorityId as BabeId;
+///! Plasm chain configuration.
+
 use chain_spec::ChainSpecExtension;
+use primitives::{crypto::UncheckedInto, sr25519, Pair, Public};
 use serde::{Serialize, Deserialize};
+use plasm_primitives::{AccountId, Balance, Signature};
 use plasm_runtime::{
-    constants::currency::*,
-    opaque::SessionKeys,
     GenesisConfig, SystemConfig, SessionConfig, SessionManagerConfig,
     BabeConfig, GrandpaConfig, IndicesConfig, BalancesConfig, ContractsConfig, SudoConfig,
-    WASM_BINARY,
+    SessionKeys, WASM_BINARY,
 };
-use primitives::{crypto::UncheckedInto, sr25519, Pair, Public};
-use sr_primitives::traits::{IdentifyAccount, Verify};
+use plasm_runtime::constants::currency::*;
+use plasm_runtime::Block;
+use grandpa_primitives::AuthorityId as GrandpaId;
+use babe_primitives::AuthorityId as BabeId;
+use sp_runtime::traits::{IdentifyAccount, Verify};
 use telemetry::TelemetryEndpoints;
 use hex_literal::hex;
 
@@ -32,11 +34,11 @@ const PLASM_PROTOCOL_ID: &str = "plm";
 #[derive(Default, Clone, Serialize, Deserialize, ChainSpecExtension)]
 pub struct Extensions {
     /// Block numbers with known hashes.
-    pub fork_blocks: client::ForkBlocks<plasm_runtime::opaque::Block>,
+    pub fork_blocks: client::ForkBlocks<Block>,
 }
 
 /// Specialized `ChainSpec`.
-pub type ChainSpec = substrate_service::ChainSpec<
+pub type ChainSpec = sc_service::ChainSpec<
     GenesisConfig,
     Extensions,
 >;
@@ -139,20 +141,22 @@ fn generate_config_genesis(
     }
 }
 
+/// Plasm testnet file config.
 pub fn plasm_testnet_config() -> ChainSpec {
     ChainSpec::from_json_bytes(&include_bytes!("../res/testnet_v2.json")[..]).unwrap()
 }
 
 /*
-/// Plasm testnet config.
+/// Plasm testnet native config.
 pub fn plasm_testnet_config() -> ChainSpec {
     let boot_nodes = vec![
         // akru
+        "/ip4/95.216.202.55/tcp/30333/p2p/QmYyTG2eKpREh4J9BvySAkuNJDTnDXJBcJeiY1E5SdSsBv".into(),
         // Stake Technologies
-        "/ip4/3.114.90.94/tcp/30333/p2p/QmW8EjUZ1f6RZe4YJ6tZAXzqYmjANbfdEYWMMaFgjkw9HN".to_string(),
-        "/ip4/3.114.81.104/tcp/30333/p2p/QmTuouKCV9zXLrNRY71PkfggEUVrrzqofZecCfu7pz5Ntt".to_string(),
-        "/ip4/3.115.175.152/tcp/30333/p2p/QmbKSyPY95NvJzoxP8q2DNaA9BRHZa5hy1q1pzfUoLhaUn".to_string(),
-        "/ip4/54.64.145.3/tcp/30333/p2p/QmS9psuQJceiYQMe6swoheKXrpnyYDjaigrTqv45RWyvCh".to_string(),
+        "/ip4/3.114.90.94/tcp/30333/p2p/QmW8EjUZ1f6RZe4YJ6tZAXzqYmjANbfdEYWMMaFgjkw9HN".into(),
+        "/ip4/3.114.81.104/tcp/30333/p2p/QmTuouKCV9zXLrNRY71PkfggEUVrrzqofZecCfu7pz5Ntt".into(),
+        "/ip4/3.115.175.152/tcp/30333/p2p/QmbKSyPY95NvJzoxP8q2DNaA9BRHZa5hy1q1pzfUoLhaUn".into(),
+        "/ip4/54.64.145.3/tcp/30333/p2p/QmS9psuQJceiYQMe6swoheKXrpnyYDjaigrTqv45RWyvCh".into(),
     ];
     let properties = serde_json::from_str(PLASM_PROPERTIES).unwrap();
     ChainSpec::from_genesis(
@@ -237,7 +241,7 @@ pub fn local_testnet_config() -> ChainSpec {
 pub(crate) mod tests {
     use super::*;
     use crate::service::new_full;
-    use substrate_service::Roles;
+    use sc_service::Roles;
     use service_test;
 
     fn local_testnet_genesis_instant_single() -> GenesisConfig {

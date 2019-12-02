@@ -1,15 +1,13 @@
-pub use substrate_cli::error;
-pub use substrate_cli::{VersionInfo, IntoExit};
+pub use sc_cli::VersionInfo;
 use tokio::prelude::Future;
-use tokio::runtime::{Builder as RuntimeBuilder, Runtime};
-use substrate_cli::NoCustom;
-use substrate_service::{AbstractService, Roles as ServiceRoles, Configuration};
+use tokio::runtime::{Builder as RuntimeBuilder, Runtime,};
+use sc_cli::{error, display_role, parse_and_prepare, ParseAndPrepare, NoCustom, IntoExit,};
+use sc_service::{AbstractService, Roles as ServiceRoles, Configuration,};
 use log::info;
-use substrate_cli::{display_role, parse_and_prepare, ParseAndPrepare};
-use crate::{service, load_spec};
+use crate::{service, load_spec,};
 
 /// Parse command line arguments into service configuration.
-pub fn run<I, T, E>(args: I, exit: E, version: substrate_cli::VersionInfo) -> error::Result<()> where
+pub fn run<I, T, E>(args: I, exit: E, version: VersionInfo) -> error::Result<()> where
     I: IntoIterator<Item = T>,
     T: Into<std::ffi::OsString> + Clone,
     E: IntoExit,
@@ -67,7 +65,7 @@ fn run_until_exit<T, E>(
 
     let (exit_send, exit) = oneshot::channel();
 
-    let informant = substrate_cli::informant::build(&service);
+    let informant = sc_cli::informant::build(&service);
 
     let future = select(informant, exit).map(|_| Ok(())).compat();
     runtime.executor().spawn(future);

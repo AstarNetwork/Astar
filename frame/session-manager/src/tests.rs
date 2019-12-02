@@ -3,6 +3,7 @@
 #![cfg(test)]
 
 use crate::mock::*;
+use support::assert_ok;
 
 #[test]
 fn set_validators_fails_for_user() {
@@ -19,7 +20,7 @@ fn set_validators_works_for_root() {
         assert_eq!(Session::current_index(), 1);
         assert_eq!(Session::validators(), vec![1, 2]);
 
-        assert_eq!(SessionManager::set_validators(Origin::ROOT, vec![1, 2, 3]), Ok(()));
+        assert_ok!(SessionManager::set_validators(Origin::ROOT, vec![1, 2, 3]));
         assert_eq!(SessionManager::validators(), vec![1, 2, 3]);
 
         advance_session();
@@ -30,7 +31,7 @@ fn set_validators_works_for_root() {
         assert_eq!(Session::current_index(), 3);
         assert_eq!(Session::validators(), vec![1, 2, 3]);
 
-        assert_eq!(SessionManager::set_validators(Origin::ROOT, vec![1, 2]), Ok(()));
+        assert_ok!(SessionManager::set_validators(Origin::ROOT, vec![1, 2]));
         assert_eq!(SessionManager::validators(), vec![1, 2]);
 
         advance_session();
@@ -41,7 +42,7 @@ fn set_validators_works_for_root() {
         assert_eq!(Session::current_index(), 5);
         assert_eq!(Session::validators(), vec![1, 2]);
 
-        assert_eq!(SessionManager::set_validators(Origin::ROOT, vec![1, 2, 4]), Ok(()));
+        assert_ok!(SessionManager::set_validators(Origin::ROOT, vec![1, 2, 4]));
         assert_eq!(SessionManager::validators(), vec![1, 2, 4]);
 
         advance_session();

@@ -5,20 +5,12 @@
 #![recursion_limit="256"]
 
 use rstd::prelude::*;
-use support::{
-    construct_runtime, parameter_types,
-    weights::Weight,
-    traits::Randomness
-};
-use plasm_primitives::{
-    AccountId, AccountIndex, Balance, BlockNumber, Hash, Index,
-    Moment, Signature,
-};
-use grandpa::{fg_primitives, AuthorityList as GrandpaAuthorityList};
-use sr_api::impl_runtime_apis;
-use sr_primitives::{ApplyExtrinsicResult, impl_opaque_keys, generic, create_runtime_str};
-use sr_primitives::transaction_validity::TransactionValidity;
-use sr_primitives::traits::{
+use support::{construct_runtime, parameter_types, weights::Weight, traits::Randomness,};
+use plasm_primitives::{AccountId, AccountIndex, Balance, BlockNumber, Hash, Index, Moment, Signature,};
+use sp_api::impl_runtime_apis;
+use sp_runtime::{Perbill, ApplyExtrinsicResult, impl_opaque_keys, generic, create_runtime_str};
+use sp_runtime::transaction_validity::TransactionValidity;
+use sp_runtime::traits::{
     BlakeTwo256, Block as BlockT, OpaqueKeys, Verify, Extrinsic,
     NumberFor, SaturatedConversion, StaticLookup, ConvertInto,
 };
@@ -26,17 +18,17 @@ use version::RuntimeVersion;
 #[cfg(any(feature = "std", test))]
 use version::NativeVersion;
 use primitives::OpaqueMetadata;
+use grandpa::fg_primitives;
+use grandpa::AuthorityList as GrandpaAuthorityList;
 use transaction_payment_rpc_runtime_api::RuntimeDispatchInfo;
 use contracts_rpc_runtime_api::ContractExecResult;
 use inherents::{InherentData, CheckInherentsResult};
 
 #[cfg(any(feature = "std", test))]
-pub use sr_primitives::BuildStorage;
+pub use sp_runtime::BuildStorage;
 pub use timestamp::Call as TimestampCall;
 pub use balances::Call as BalancesCall;
 pub use contracts::Gas;
-pub use sr_primitives::{Permill, Perbill};
-pub use support::StorageValue;
 
 /// Implementations of some helper traits passed into runtime modules as associated types.
 pub mod impls;
@@ -60,7 +52,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     // implementation changes and behavior does not, then leave spec_version as
     // is and increment impl_version.
     spec_version: 20,
-    impl_version: 20,
+    impl_version: 21,
     apis: RUNTIME_API_VERSIONS,
 };
 
@@ -73,36 +65,12 @@ pub fn native_version() -> NativeVersion {
     }
 }
 
-/// Opaque types. These are used by the CLI to instantiate machinery that don't need to know
-/// the specifics of the runtime. They can then be made to be agnostic over specific formats
-/// of data like extrinsics, allowing for them to continue syncing the network through upgrades
-/// to even the core datastructures.
-pub mod opaque {
-    use super::*;
-
-    pub use sr_primitives::OpaqueExtrinsic as UncheckedExtrinsic;
-
-    /// Opaque block header type.
-    pub type Header = generic::Header<BlockNumber, BlakeTwo256>;
-    /// Opaque block type.
-    pub type Block = generic::Block<Header, UncheckedExtrinsic>;
-    /// Opaque block identifier type.
-    pub type BlockId = generic::BlockId<Block>;
-
-    impl_opaque_keys! {
-        pub struct SessionKeys {
-            pub babe: Babe,
-            pub grandpa: Grandpa,
-        }
-    }
-}
-
 parameter_types! {
     pub const BlockHashCount: BlockNumber = 250;
     pub const MaximumBlockWeight: Weight = 1_000_000_000;
-    pub const AvailableBlockRatio: Perbill = Perbill::from_percent(75);
     pub const MaximumBlockLength: u32 = 5 * 1024 * 1024;
     pub const Version: RuntimeVersion = VERSION;
+    pub const AvailableBlockRatio: Perbill = Perbill::from_percent(75);
 }
 
 impl system::Trait for Runtime {
@@ -121,18 +89,6 @@ impl system::Trait for Runtime {
     type MaximumBlockLength = MaximumBlockLength;
     type AvailableBlockRatio = AvailableBlockRatio;
     type Version = Version;
-}
-
-impl session::Trait for Runtime {
-	type OnSessionEnding = SessionManager;
-	type SessionHandler = <opaque::SessionKeys as OpaqueKeys>::KeyTypeIdProviders;
-	type ShouldEndSession = Babe;
-	type Event = Event;
-	type Keys = opaque::SessionKeys;
-	type ValidatorId = <Self as system::Trait>::AccountId;
-	type ValidatorIdOf = ConvertInto;
-	type SelectInitialValidators = SessionManager;
-	type DisabledValidatorsThreshold = ();
 }
 
 parameter_types! {
@@ -199,6 +155,29 @@ impl timestamp::Trait for Runtime {
     type MinimumPeriod = MinimumPeriod;
 }
 
+impl_opaque_keys! {
+    pub struct SessionKeys {
+        pub babe: Babe,
+        pub grandpa: Grandpa,
+    }
+}
+
+impl session::Trait for Runtime {
+	type OnSessionEnding = SessionManager;
+	type SessionHandler = <SessionKeys as OpaqueKeys>::KeyTypeIdProviders;
+	type ShouldEndSession = Babe;
+	type Event = Event;
+	type Keys = SessionKeys;
+	type ValidatorId = <Self as system::Trait>::AccountId;
+	type ValidatorIdOf = ConvertInto;
+	type SelectInitialValidators = SessionManager;
+	type DisabledValidatorsThreshold = ();
+}
+
+impl session_manager::Trait for Runtime {
+    type Event = Event;
+}
+
 parameter_types! {
     pub const ContractTransferFee: Balance = 1 * MILLIPLM;
     pub const ContractCreationFee: Balance = 1 * MILLIPLM;
@@ -242,10 +221,6 @@ impl contracts::Trait for Runtime {
 
 impl operator::Trait for Runtime {
     type Parameters = operator::parameters::DefaultParameters;
-    type Event = Event;
-}
-
-impl session_manager::Trait for Runtime {
     type Event = Event;
 }
 
@@ -302,23 +277,23 @@ impl system::offchain::CreateTransaction<Runtime, UncheckedExtrinsic> for Runtim
 construct_runtime!(
     pub enum Runtime where
         Block = Block,
-        NodeBlock = opaque::Block,
+        NodeBlock = plasm_primitives::Block,
         UncheckedExtrinsic = UncheckedExtrinsic
     {
         System: system::{Module, Call, Storage, Config, Event},
-        SessionManager: session_manager::{Module, Call, Storage, Event<T>, Config<T>},
-        Session: session::{Module, Call, Storage, Event, Config<T>},
         Timestamp: timestamp::{Module, Call, Storage, Inherent},
-        Babe: babe::{Module, Call, Storage, Config, Inherent(Timestamp)},
-        FinalityTracker: finality_tracker::{Module, Call, Inherent},
-        Grandpa: grandpa::{Module, Call, Storage, Config, Event},
         TransactionPayment: transaction_payment::{Module, Storage},
         Indices: indices,
         Balances: balances,
         Contracts: contracts,
-        RandomnessCollectiveFlip: randomness_collective_flip::{Module, Call, Storage},
+        SessionManager: session_manager::{Module, Call, Storage, Event<T>, Config<T>},
+        Session: session::{Module, Call, Storage, Event, Config<T>},
+        Babe: babe::{Module, Call, Storage, Config, Inherent(Timestamp)},
+        Grandpa: grandpa::{Module, Call, Storage, Config, Event},
+        FinalityTracker: finality_tracker::{Module, Call, Inherent},
         Sudo: sudo,
         Operator: operator::{Module, Call, Storage, Event<T>},
+        RandomnessCollectiveFlip: randomness_collective_flip::{Module, Call, Storage},
     }
 );
 
@@ -352,7 +327,7 @@ pub type CheckedExtrinsic = generic::CheckedExtrinsic<AccountId, Call, SignedExt
 pub type Executive = executive::Executive<Runtime, Block, system::ChainContext<Runtime>, Runtime, AllModules>;
 
 impl_runtime_apis! {
-    impl sr_api::Core<Block> for Runtime {
+    impl sp_api::Core<Block> for Runtime {
         fn version() -> RuntimeVersion {
             VERSION
         }
@@ -366,7 +341,7 @@ impl_runtime_apis! {
         }
     }
 
-    impl sr_api::Metadata<Block> for Runtime {
+    impl sp_api::Metadata<Block> for Runtime {
         fn metadata() -> OpaqueMetadata {
             Runtime::metadata().into()
         }
@@ -486,9 +461,9 @@ impl_runtime_apis! {
         }
     }
 
-    impl substrate_session::SessionKeys<Block> for Runtime {
+    impl sp_session::SessionKeys<Block> for Runtime {
         fn generate_session_keys(seed: Option<Vec<u8>>) -> Vec<u8> {
-            opaque::SessionKeys::generate(seed)
+            SessionKeys::generate(seed)
         }
     }
 }

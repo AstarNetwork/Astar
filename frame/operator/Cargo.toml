@@ -7,32 +7,32 @@ edition = "2018"
 [dependencies.codec]
 default-features = false
 features = ['derive']
-version = "1.0"
+version = "1.0.6"
 package = "parity-scale-codec"
 
 [dependencies.primitives]
 default_features = false
 git = 'https://github.com/staketechnologies/substrate.git'
 branch = 'plasm-master'
-package = 'substrate-primitives'
+package = 'sp-core'
 
-[dependencies.sr_primitives]
+[dependencies.sp-runtime]
 default_features = false
 git = 'https://github.com/staketechnologies/substrate.git'
 branch = 'plasm-master'
-package = 'sr-primitives'
+package = 'sp-runtime'
 
-[dependencies.sr-io]
+[dependencies.sp-io]
 default_features = false
 git = 'https://github.com/staketechnologies/substrate.git'
 branch = 'plasm-master'
-package = 'sr-io'
+package = 'sp-io'
 
 [dependencies.rstd]
 default_features = false
 git = 'https://github.com/staketechnologies/substrate.git'
 branch = 'plasm-master'
-package = 'sr-std'
+package = 'sp-std'
 
 [dependencies.balances]
 default_features = false
@@ -83,8 +83,8 @@ default = ["std"]
 std = [
     'codec/std',
     'primitives/std',
-    'sr_primitives/std',
-    'sr-io/std',
+    'sp-runtime/std',
+    'sp-io/std',
     'rstd/std',
     'balances/std',
     'support/std',

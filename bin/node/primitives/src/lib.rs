@@ -4,8 +4,8 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use sr_primitives::{
-	generic, traits::{Verify, IdentifyAccount}, MultiSignature
+use sp_runtime::{
+	generic, traits::{Verify, IdentifyAccount, BlakeTwo256}, MultiSignature, OpaqueExtrinsic
 };
 
 /// An index to a block.
@@ -40,3 +40,9 @@ pub type Timestamp = u64;
 
 /// Digest item type.
 pub type DigestItem = generic::DigestItem<Hash>;
+/// Header type.
+pub type Header = generic::Header<BlockNumber, BlakeTwo256>;
+/// Block type.
+pub type Block = generic::Block<Header, OpaqueExtrinsic>;
+/// Block ID.
+pub type BlockId = generic::BlockId<Block>;

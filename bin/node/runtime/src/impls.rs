@@ -1,8 +1,8 @@
 //! Some configurable implementations as associated type for the plasm runtime.
 
 use plasm_primitives::Balance;
-use sr_primitives::traits::{Convert, Saturating};
-use sr_primitives::{Fixed64, Perbill};
+use sp_runtime::traits::{Convert, Saturating};
+use sp_runtime::{Fixed64, Perbill};
 use support::{traits::Get, weights::Weight};
 use crate::{System, MaximumBlockWeight};
 
@@ -76,7 +76,7 @@ impl<T: Get<Perbill>> Convert<Fixed64, Fixed64> for TargetedFeeAdjustment<T> {
 #[cfg(test)]
 mod tests {
 	use super::*;
-	use sr_primitives::assert_eq_error_rate;
+	use sp_runtime::assert_eq_error_rate;
 	use crate::{MaximumBlockWeight, AvailableBlockRatio, Runtime};
 	use crate::{constants::currency::*, TransactionPayment, TargetBlockFullness};
 	use support::weights::Weight;
@@ -111,7 +111,7 @@ mod tests {
 	}
 
 	fn run_with_system_weight<F>(w: Weight, assertions: F) where F: Fn() -> () {
-		let mut t: sr_io::TestExternalities =
+		let mut t: sp_io::TestExternalities =
 			system::GenesisConfig::default().build_storage::<Runtime>().unwrap().into();
 		t.execute_with(|| {
 			System::set_block_limits(w, 0);

@@ -2,24 +2,26 @@
 
 use std::sync::Arc;
 
+use babe;
 use client::{self, LongestChain};
 use grandpa::{self, FinalityProofProvider as GrandpaFinalityProofProvider};
-use plasm_runtime::{GenesisConfig, RuntimeApi, opaque::Block};
-use plasm_executor::Executor;
-use substrate_service::{
+use plasm_executor;
+use plasm_primitives::Block;
+use plasm_runtime::{GenesisConfig, RuntimeApi};
+use sc_service::{
 	AbstractService, ServiceBuilder, config::Configuration, error::{Error as ServiceError},
 };
 use inherents::InherentDataProviders;
 use network::construct_simple_protocol;
 
-use substrate_service::{Service, NetworkStatus};
+use sc_service::{Service, NetworkStatus};
 use client::{Client, LocalCallExecutor};
-use sr_primitives::traits::Block as BlockT;
+use client_db::Backend;
+use sp_runtime::traits::Block as BlockT;
 use plasm_executor::NativeExecutor;
 use network::NetworkService;
 use offchain::OffchainWorkers;
 use primitives::Blake2Hasher;
-use client_db::Backend;
 
 construct_simple_protocol! {
 	pub struct NodeProtocol where Block = Block { }
@@ -31,12 +33,12 @@ construct_simple_protocol! {
 /// be able to perform chain operations.
 macro_rules! new_full_start {
 	($config:expr) => {{
-		type RpcExtension = jsonrpc_core::IoHandler<substrate_rpc::Metadata>;
+		type RpcExtension = jsonrpc_core::IoHandler<sc_rpc::Metadata>;
 		let mut import_setup = None;
 		let inherent_data_providers = inherents::InherentDataProviders::new();
 
-		let builder = substrate_service::ServiceBuilder::new_full::<
-			plasm_runtime::opaque::Block, plasm_runtime::RuntimeApi, plasm_executor::Executor
+		let builder = sc_service::ServiceBuilder::new_full::<
+			plasm_primitives::Block, plasm_runtime::RuntimeApi, plasm_executor::Executor
 		>($config)?
 			.with_select_chain(|_config, backend| {
 				Ok(client::LongestChain::new(backend.clone()))
@@ -50,7 +52,7 @@ macro_rules! new_full_start {
             })?
 			.with_import_queue(|_config, client, mut select_chain, _transaction_pool| {
 				let select_chain = select_chain.take()
-					.ok_or_else(|| substrate_service::Error::SelectChainRequired)?;
+					.ok_or_else(|| sc_service::Error::SelectChainRequired)?;
 				let (grandpa_block_import, grandpa_link) = grandpa::block_import(
 					client.clone(),
 					&*client,
@@ -130,7 +132,8 @@ macro_rules! new_full {
 
 			let client = service.client();
 			let select_chain = service.select_chain()
-				.ok_or(substrate_service::Error::SelectChainRequired)?;
+				.ok_or(sc_service::Error::SelectChainRequired)?;
+
             let can_author_with =
                 consensus_common::CanAuthorWithNativeVersion::new(client.executor().clone());
 
@@ -211,7 +214,7 @@ macro_rules! new_full {
 }
 
 #[allow(dead_code)]
-type ConcreteBlock = plasm_runtime::opaque::Block;
+type ConcreteBlock = plasm_primitives::Block;
 #[allow(dead_code)]
 type ConcreteClient =
 	Client<
@@ -219,14 +222,14 @@ type ConcreteClient =
 		LocalCallExecutor<Backend<ConcreteBlock>,
 		NativeExecutor<plasm_executor::Executor>>,
 		ConcreteBlock,
-		RuntimeApi
+		plasm_runtime::RuntimeApi
 	>;
 #[allow(dead_code)]
 type ConcreteBackend = Backend<ConcreteBlock>;
 #[allow(dead_code)]
 type ConcreteTransactionPool = txpool_api::MaintainableTransactionPool<
     txpool::BasicPool<
-    txpool::FullChainApi<ConcreteClient, ConcreteBlock>,
+        txpool::FullChainApi<ConcreteClient, ConcreteBlock>,
         ConcreteBlock
     >,
     txpool::FullBasicPoolMaintainer<
@@ -263,10 +266,10 @@ pub fn new_full<C: Send + Default + 'static>(config: NodeConfiguration<C>)
 /// Builds a new service for a light client.
 pub fn new_light<C: Send + Default + 'static>(config: NodeConfiguration<C>)
 -> Result<impl AbstractService, ServiceError> {
-	type RpcExtension = jsonrpc_core::IoHandler<substrate_rpc::Metadata>;
+	type RpcExtension = jsonrpc_core::IoHandler<sc_rpc::Metadata>;
 	let inherent_data_providers = InherentDataProviders::new();
 
-	let service = ServiceBuilder::new_light::<Block, RuntimeApi, Executor>(config)?
+	let service = ServiceBuilder::new_light::<Block, RuntimeApi, plasm_executor::Executor>(config)?
 		.with_select_chain(|_config, backend| {
 			Ok(LongestChain::new(backend.clone()))
 		})?
