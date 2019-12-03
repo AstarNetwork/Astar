@@ -172,11 +172,33 @@ pub fn plasm_testnet_config() -> ChainSpec {
 }
 
 fn plasm_testnet_genesis() -> GenesisConfig {
-    let authorities = vec![(
-        hex!["58cdc7ef880c80e8475170f206381d2cb13a87c209452fc6d8a1e14186d61b28"].into(),
-        hex!["daf0535a46d8187446471bf619ea9104bda443366c526bf6f2cd4e9a1fcf5dd7"].unchecked_into(),
-        hex!["36cced69f5f1f07856ff0daac944c52e286e10184e52be76ca9377bd0406d90b"].unchecked_into(),
-    )];
+    let authorities = vec![
+        (   // akru
+            hex!["58cdc7ef880c80e8475170f206381d2cb13a87c209452fc6d8a1e14186d61b28"].into(),
+            hex!["daf0535a46d8187446471bf619ea9104bda443366c526bf6f2cd4e9a1fcf5dd7"].unchecked_into(),
+            hex!["36cced69f5f1f07856ff0daac944c52e286e10184e52be76ca9377bd0406d90b"].unchecked_into(),
+        ),
+        (   // staketech-01
+            hex!["48cdc7ef880c80e8475170f206381d2cb13a87c209452fc6d8a1e14186d61b28"].into(),
+            hex!["d0e7c18cc9fba7cedada50d7aff29d8cb39be446e9099abf476dafc697988c5c"].unchecked_into(),
+            hex!["928be798d4c32aedaa7267c66a48a906ee2374a03f7bbe07b741f5accd01c7d5"].unchecked_into(),
+        ),
+        (   // staketech-02
+            hex!["38cdc7ef880c80e8475170f206381d2cb13a87c209452fc6d8a1e14186d61b28"].into(),
+            hex!["c8a37db8f2c236f71f72c1d333049cdba0eff3064a826dddbf0efb1f9a8a273c"].unchecked_into(),
+            hex!["a74b2d6f1c9d0b40a93456bb5dc65267a390a59d36839780eacac178dee5cf89"].unchecked_into(),
+        ),
+        (   // staketech-03
+            hex!["28cdc7ef880c80e8475170f206381d2cb13a87c209452fc6d8a1e14186d61b28"].into(),
+            hex!["3c4d43514f97d83862c9a5bd2513e8db363734fdbebfaaae9832b327c5f6e277"].unchecked_into(),
+            hex!["ad18fbe2ae608896b24c3d9582568891a9be31ba16421f3b5794753ed1c4d0f3"].unchecked_into(),
+        ),
+        (   // staketech-04
+            hex!["18cdc7ef880c80e8475170f206381d2cb13a87c209452fc6d8a1e14186d61b28"].into(),
+            hex!["dea593136699e04edc1043ceaf753efa58b0139e627e0f62623ea13315a1cb0a"].unchecked_into(),
+            hex!["673ba3a3efb5b676b7f804d1e9297823121cf81859542a665388b76c980e64c0"].unchecked_into(),
+        ),
+    ];
     // 5Cakru1BpXPiezeD2LRZh3pJamHcbX9yZ13KLBxuqdTpgnYF
     let root_key = hex!["16eb796bee0c857db3d646ee7070252707aec0c7d82b2eda856632f6a2306a58"];
     generate_config_genesis(
