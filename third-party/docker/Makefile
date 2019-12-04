@@ -3,7 +3,7 @@ CHILD_NODE_DIR := $(shell git rev-parse --show-toplevel)/child
 
 .PHONY: docker-build
 docker-build:
-	docker run -it -v $(shell pwd)/../..:/opt stakedtechnologies/plasm-builder cargo build -p plasm-cli --target-dir third-party/docker/target-debian --release
+	docker run -it -v $(shell pwd)/../..:/opt stakedtechnologies/plasm-builder cargo build --target-dir third-party/docker/target-debian --release
 	docker build . -t stakedtechnologies/plasm-node
 
 .PHONY: docker-push
