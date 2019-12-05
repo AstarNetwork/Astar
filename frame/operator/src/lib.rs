@@ -1,5 +1,4 @@
 #![cfg_attr(not(feature = "std"), no_std)]
-#![feature(vec_remove_item)]
 
 use contract::{BalanceOf, CodeHash, ContractAddressFor, Gas};
 use sp_runtime::traits::{MaybeDisplay, MaybeSerialize, Member};
@@ -106,8 +105,8 @@ decl_module! {
 
             // remove origin operator to contracts
             <OperatorHasContracts<T>>::mutate(&operator,
-                |tree| for c in contracts.iter() { (*tree).remove_item(c); }
-            );
+            	|tree| *tree = tree.iter().filter(|&x| !contracts.contains(x)).cloned().collect());
+
             // add new_operator to contracts
             <OperatorHasContracts<T>>::mutate(&new_operator,
                 |tree| for c in contracts.iter() { (*tree).push(c.clone()); }
