@@ -1,7 +1,6 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use contract::{BalanceOf, CodeHash, ContractAddressFor, Gas};
-use rstd::collections::btree_set::BTreeSet;
 use sp_runtime::traits::{MaybeDisplay, MaybeSerialize, Member};
 use support::{decl_event, decl_module, decl_storage, dispatch::Result, Parameter};
 use system::{ensure_signed, RawOrigin};
@@ -31,7 +30,7 @@ pub trait Trait: contract::Trait {
 decl_storage! {
     trait Store for Module<T: Trait> as Operator {
         /// A mapping from operators to operated contracts by them.
-        pub OperatorHasContracts: map T::AccountId => BTreeSet<T::AccountId>;
+        pub OperatorHasContracts: map T::AccountId => Vec<T::AccountId>;
         /// A mapping from operated contract by operator to it.
         pub ContractHasOperator: map T::AccountId => Option<T::AccountId>;
         /// A mapping from contract to it's parameters.
@@ -62,7 +61,7 @@ decl_module! {
             contract::Module::<T>::instantiate(RawOrigin::Signed(operator.clone()).into(), endowment, gas_limit, code_hash, data)?;
 
             // add operator to contracts
-            <OperatorHasContracts<T>>::mutate(&operator, {|tree| (*tree).insert(contract.clone()) });
+            <OperatorHasContracts<T>>::mutate(&operator, {|tree| (*tree).push(contract.clone()) });
             // add contract to operator
             <ContractHasOperator<T>>::insert(&contract, operator.clone());
             // add contract to parameters
@@ -106,11 +105,11 @@ decl_module! {
 
             // remove origin operator to contracts
             <OperatorHasContracts<T>>::mutate(&operator,
-                |tree| for c in contracts.iter() { (*tree).remove(c); }
-            );
+            	|tree| *tree = tree.iter().filter(|&x| !contracts.contains(x)).cloned().collect());
+
             // add new_operator to contracts
             <OperatorHasContracts<T>>::mutate(&new_operator,
-                |tree| for c in contracts.iter() { (*tree).insert(c.clone()); }
+                |tree| for c in contracts.iter() { (*tree).push(c.clone()); }
             );
             for c in contracts.iter() {
                 // add contract to new_operator
