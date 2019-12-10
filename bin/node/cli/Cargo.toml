@@ -34,7 +34,7 @@ jsonrpc-core = "14.0.3"
 primitives = { package = "sp-core", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master" }
 sp-runtime = { git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master" }
 babe-primitives = { package = "sp-consensus-babe", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master" }
-grandpa-primitives = { package = "sp-finality-granpda", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master" }
+grandpa-primitives = { package = "sp-finality-grandpa", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master" }
 inherents = { package = "sp-inherents", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master" }
 
 # client dependencies

@@ -7,6 +7,7 @@
 use rstd::prelude::*;
 use support::{construct_runtime, parameter_types, weights::Weight, traits::Randomness,};
 use plasm_primitives::{AccountId, AccountIndex, Balance, BlockNumber, Hash, Index, Moment, Signature,};
+use txpool_api::runtime_api as txpool_runtime_api;
 use sp_api::impl_runtime_apis;
 use sp_runtime::{Perbill, ApplyExtrinsicResult, impl_opaque_keys, generic, create_runtime_str};
 use sp_runtime::transaction_validity::TransactionValidity;
@@ -369,7 +370,7 @@ impl_runtime_apis! {
         }
     }
 
-    impl txpool_api::TaggedTransactionQueue<Block> for Runtime {
+    impl txpool_runtime_api::TaggedTransactionQueue<Block> for Runtime {
         fn validate_transaction(tx: <Block as BlockT>::Extrinsic) -> TransactionValidity {
             Executive::validate_transaction(tx)
         }

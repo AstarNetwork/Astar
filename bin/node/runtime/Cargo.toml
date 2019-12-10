@@ -24,7 +24,7 @@ offchain-primitives = { package = "sp-offchain", git = "https://github.com/stake
 sp-api = { package = "sp-api", git = "https://github.com/staketechnologies/substrate", branch = "plasm-master", default-features = false }
 inherents = { package = "sp-inherents", git = "https://github.com/staketechnologies/substrate", branch = "plasm-master", default-features = false }
 block-builder-api = { package = "sp-block-builder", git = "https://github.com/staketechnologies/substrate", branch = "plasm-master", default-features = false }
-txpool-api = { package = "sp-transaction-pool-runtime-api", git = "https://github.com/staketechnologies/substrate", branch = "plasm-master", default-features = false }
+txpool-api = { package = "sp-transaction-pool-api", git = "https://github.com/staketechnologies/substrate", branch = "plasm-master", default-features = false }
 rstd = { package = "sp-std", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master", default-features = false }
 version = { package = "sp-version", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master", default-features = false }
 sp-session = { git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master", default-features = false }
