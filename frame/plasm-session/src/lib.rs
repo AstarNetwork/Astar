@@ -1,5 +1,51 @@
-use support::{decl_module, decl_storage, decl_event, StorageValue, dispatch::Result};
-use system::ensure_signed;
+//! # Plasm Session Module
+//!
+//! The Plasm session module manages era and total amounts of rewards and how to distribute.
+
+use support::{decl_module, decl_storage, decl_event, StorageValue, dispatch::Result, weights::SimpleDispatchInfo,
+			  traits::{LockableCurrency, Time, Get, Currency}};
+use system::{ensure_signed, ensure_root};
+use session::OnSessionEnding;
+use sp_staking::SessionIndex;
+use sp_runtime::{
+	RuntimeDebug,
+	traits::EnsureOrigin,
+};
+#[cfg(feature = "std")]
+use sp_runtime::{Serialize, Deserialize};
+
+use codec::{Encode, Decode};
+
+#[cfg(test)]
+mod mock;
+#[cfg(test)]
+mod tests;
+mod migration;
+
+/// Counter for the number of eras that have passed.
+pub type EraIndex = u32;
+
+pub type BalanceOf<T> =
+<<T as Trait>::Currency as Currency<<T as system::Trait>::AccountId>>::Balance;
+pub type MomentOf<T> = <<T as Trait>::Time as Time>::Moment;
+
+/// Mode of era-forcing.
+#[derive(Copy, Clone, PartialEq, Eq, Encode, Decode, RuntimeDebug)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+pub enum Forcing {
+	/// Not forcing anything - just let whatever happen.
+	NotForcing,
+	/// Force a new era, then reset to `NotForcing` as soon as it is done.
+	ForceNew,
+	/// Avoid a new era indefinitely.
+	ForceNone,
+	/// Force a new era at the end of all sessions indefinitely.
+	ForceAlways,
+}
+
+impl Default for Forcing {
+	fn default() -> Self { Forcing::NotForcing }
+}
 
 pub trait Trait: system::Trait {
 	/// The balance using rewards.
@@ -8,67 +54,34 @@ pub trait Trait: system::Trait {
 	/// Time used for computing era duration.
 	type Time: Time;
 
-	/// The overarching event type.
-	type Event: From<Event<Self>> + Into<<Self as system::Trait>::Event>;
-
-	/// Handler for the unbalanced reduction when slashing a staker.
-	type Slash: OnUnbalanced<NegativeImbalanceOf<Self>>;
-
-	/// Handler for the unbalanced increment when rewarding a staker.
-	type Reward: OnUnbalanced<PositiveImbalanceOf<Self>>;
-
 	/// Number of sessions per era.
 	type SessionsPerEra: Get<SessionIndex>;
 
-	/// Number of eras that slashes are deferred by, after computation. This
-	/// should be less than the bonding duration. Set to 0 if slashes should be
-	/// applied immediately, without opportunity for intervention.
-	type SlashDeferDuration: Get<EraIndex>;
-
-	/// The origin which can cancel a deferred slash. Root can always do this.
-	type SlashCancelOrigin: EnsureOrigin<Self::Origin>;
-
-	/// Interface for interacting with a session module.
-	type SessionInterface: self::SessionInterface<Self::AccountId>;
-
 	/// Handler for when a session is about to end.
-	type OnSessionEnding: OnSessionEnding<Self::ValidatorId>;
+	type OnSessionEnding: OnSessionEnding<Self::AccountId>;
+
+	/// The overarching event type.
+	type Event: From<Event<Self>> + Into<<Self as system::Trait>::Event>;
 }
 
 decl_storage! {
-	trait Store for Module<T: Trait> as poa-rewards {
+	trait Store for Module<T: Trait> as PlasmSession {
 		/// Any validators that may never be slashed or forcibly kicked. It's a Vec since they're
 		/// easy to initialize and the performance hit is minimal (we expect no more than four
 		/// invulnerables) and restricted to testnets.
 		pub Invulnerables get(fn invulnerables) config(): Vec<T::AccountId>;
 
-		/// The percentage of the slash that is distributed to reporters.
-		///
-		/// The rest of the slashed value is handled by the `Slash`.
-		pub SlashRewardFraction get(fn slash_reward_fraction) config(): Perbill;
+		/// The current era index.
+		pub CurrentEra get(fn current_era) config(): EraIndex;
 
-		/// The amount of currency given to reporters of a slash event which was
-		/// canceled by extraordinary circumstances (e.g. governance).
-		pub CanceledSlashPayout get(fn canceled_payout) config(): BalanceOf<T>;
+		/// The start of the current era.
+		pub CurrentEraStart get(fn current_era_start): MomentOf<T>;
 
-		/// All unapplied slashes that are queued for later.
-		pub UnappliedSlashes: map EraIndex => Vec<UnappliedSlash<T::AccountId, BalanceOf<T>>>;
+		/// The session index at which the current era started.
+		pub CurrentEraStartSessionIndex get(fn current_era_start_session_index): SessionIndex;
 
-		/// All slashing events on validators, mapped by era to the highest slash proportion
-		/// and slash value of the era.
-		ValidatorSlashInEra:
-			double_map EraIndex, twox_128(T::AccountId) => Option<(Perbill, BalanceOf<T>)>;
-
-		/// Slashing spans for stash accounts.
-		SlashingSpans: map T::AccountId => Option<slashing::SlashingSpans>;
-
-		/// Records information about the maximum slash of a stash within a slashing span,
-		/// as well as how much reward has been paid out.
-		SpanSlash:
-			map (T::AccountId, slashing::SpanIndex) => slashing::SpanRecord<BalanceOf<T>>;
-
-		/// The earliest era for which we have a pending, unapplied slash.
-		EarliestUnappliedSlash: Option<EraIndex>;
+		/// True if the next session change will be a new era regardless of index.
+		pub ForceEra get(fn force_era) config(): Forcing;
 
 		/// The version of storage for upgrade.
 		StorageVersion: u32;
@@ -78,7 +91,7 @@ decl_storage! {
 decl_module! {
 	pub struct Module<T: Trait> for enum Call where origin: T::Origin {
 		/// Number of sessions per era.
-		const SessionsPerEra: SessionIndex = T::SessionsPerEra::get();
+//		const SessionsPerEra: SessionIndex = T::SessionsPerEra::get();
 
 		fn deposit_event() = default;
 
@@ -92,76 +105,77 @@ decl_module! {
 				<CurrentEraStart<T>>::put(T::Time::now());
 			}
 		}
+
+		// ----- Root calls.
+		/// Force there to be no new eras indefinitely.
+		///
+		/// # <weight>
+		/// - No arguments.
+		/// # </weight>
+		#[weight = SimpleDispatchInfo::FreeOperational]
+		fn force_no_eras(origin) {
+			ensure_root(origin)?;
+			ForceEra::put(Forcing::ForceNone);
+		}
+
+		/// Force there to be a new era at the end of the next session. After this, it will be
+		/// reset to normal (non-forced) behaviour.
+		///
+		/// # <weight>
+		/// - No arguments.
+		/// # </weight>
+		#[weight = SimpleDispatchInfo::FreeOperational]
+		fn force_new_era(origin) {
+			ensure_root(origin)?;
+			ForceEra::put(Forcing::ForceNew);
+		}
+
+		/// Set the validators who cannot be slashed (if any).
+		#[weight = SimpleDispatchInfo::FreeOperational]
+		fn set_invulnerables(origin, validators: Vec<T::AccountId>) {
+			ensure_root(origin)?;
+			<Invulnerables<T>>::put(validators);
+		}
+
+		/// Force there to be a new era at the end of sessions indefinitely.
+		///
+		/// # <weight>
+		/// - One storage write
+		/// # </weight>
+		#[weight = SimpleDispatchInfo::FreeOperational]
+		fn force_new_era_always(origin) {
+			ensure_root(origin)?;
+			ForceEra::put(Forcing::ForceAlways);
+		}
 	}
 }
 
 decl_event!(
-	pub enum Event<T> where Balance = BalanceOf<T>, <T as system::Trait>::AccountId {
+	pub enum Event<T> where Balance = BalanceOf<T> {
 		/// All validators have been rewarded;
 		Reward(Balance),
-		/// One validator has been slashed by the given amount.
-		Slash(AccountId, Balance),
-		/// An old slashing report from a prior era was discarded because it could
-		/// not be processed.
-		OldSlashingReportDiscarded(SessionIndex),
 	}
 );
 
-/// tests for this module
-#[cfg(test)]
-mod tests {
-	use super::*;
 
-	use runtime_io::with_externalities;
-	use primitives::{H256, Blake2Hasher};
-	use support::{impl_outer_origin, assert_ok};
-	use runtime_primitives::{
-		BuildStorage,
-		traits::{BlakeTwo256, IdentityLookup},
-		testing::{Digest, DigestItem, Header}
-	};
-
-	impl_outer_origin! {
-		pub enum Origin for Test {}
+impl<T: Trait> Module<T> {
+	pub fn new_session(session_index: SessionIndex) -> Option<Vec<T::AccountId>> {
+		None
 	}
 
-	// For testing the module, we construct most of a mock runtime. This means
-	// first constructing a configuration type (`Test`) which `impl`s each of the
-	// configuration traits of modules we want to use.
-	#[derive(Clone, Eq, PartialEq)]
-	pub struct Test;
-	impl system::Trait for Test {
-		type Origin = Origin;
-		type Index = u64;
-		type BlockNumber = u64;
-		type Hash = H256;
-		type Hashing = BlakeTwo256;
-		type Digest = Digest;
-		type AccountId = u64;
-		type Lookup = IdentityLookup<Self::AccountId>;
-		type Header = Header;
-		type Event = ();
-		type Log = DigestItem;
-	}
-	impl Trait for Test {
-		type Event = ();
-	}
-	type poa-rewards = Module<Test>;
-
-	// This function basically just builds a genesis storage key/value store according to
-	// our desired mockup.
-	fn new_test_ext() -> runtime_io::TestExternalities<Blake2Hasher> {
-		system::GenesisConfig::<Test>::default().build_storage().unwrap().0.into()
+	pub fn new_era(start_session_index: SessionIndex) -> Option<Vec<T::AccountId>> {
+		None
 	}
 
-	#[test]
-	fn it_works_for_default_value() {
-		with_externalities(&mut new_test_ext(), || {
-			// Just a dummy test for the dummy funtion `do_something`
-			// calling the `do_something` function with a value 42
-			assert_ok!(poa-rewards::do_something(Origin::signed(1), 42));
-			// asserting that the stored value is equal to what we stored
-			assert_eq!(poa-rewards::something(), Some(42));
-		});
+	/// Ensures storage is upgraded to most recent necessary state.
+	fn ensure_storage_upgraded() {
+		migration::perform_migrations::<T>();
+	}
+}
+
+impl<T: Trait> OnSessionEnding<T::AccountId> for Module<T> {
+	fn on_session_ending(_ending: SessionIndex, start_session: SessionIndex) -> Option<Vec<T::AccountId>> {
+		Self::ensure_storage_upgraded();
+		Self::new_session(start_session - 1)
 	}
 }

@@ -2640,6 +2640,31 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-poa-rewards"
+version = "0.1.0"
+dependencies = [
+ "derive_more 0.14.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "frame-support 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
+ "frame-system 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
+ "hex-literal 0.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "pallet-balances 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
+ "pallet-contracts 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
+ "pallet-randomness-collective-flip 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
+ "pallet-session 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
+ "pallet-session-manager 0.1.0",
+ "pallet-timestamp 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
+ "parity-scale-codec 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "serde 1.0.103 (registry+https://github.com/rust-lang/crates.io-index)",
+ "serde_derive 1.0.103 (registry+https://github.com/rust-lang/crates.io-index)",
+ "sp-core 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
+ "sp-io 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
+ "sp-runtime 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
+ "sp-staking 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
+ "sp-std 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
+ "wabt 0.9.2 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
 name = "pallet-randomness-collective-flip"
 version = "2.0.0"
 source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#8cb06da9853d50aea0f81d1a94c48f64618a58fc"
