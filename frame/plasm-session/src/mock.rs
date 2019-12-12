@@ -10,37 +10,71 @@ use sp_runtime::traits::{IdentityLookup, BlakeTwo256, ConvertInto, OpaqueKeys};
 use primitives::{H256, crypto::key_types};
 use support::{impl_outer_origin, impl_outer_dispatch, impl_outer_event, parameter_types};
 
+/// The AccountId alias in this test module.
+pub type AccountId = u64;
+pub type BlockNumber = u64;
+pub type Balance = u64;
+
 impl_outer_origin! {
-    pub enum Origin for Runtime {}
+    pub enum Origin for Test {}
 }
 
 impl_outer_dispatch! {
-    pub enum Call for Runtime where origin: Origin {
+    pub enum Call for Test where origin: Origin {
+    	session::Session,
     	balances::Balances,
+    	session_manager::SessionManager,
     	plasm_session::PlasmSession,
-        session_manager::SessionManager,
     }
+}
+
+mod plasm_session {
+	// Re-export contents of the root. This basically
+	// needs to give a name for the current crate.
+	// This hack is required for `impl_outer_event!`.
+	pub use super::super::*;
+	use support::impl_outer_event;
 }
 
 impl_outer_event! {
     pub enum MetaEvent for Test {
-        session<T>, sessionManager<T>, plasmSession<T>,
+    	session,
+    	balances<T>,
+    	session_manager<T>,
+        plasm_session<T>,
     }
 }
 
 pub fn new_test_ext() -> sp_io::TestExternalities {
 	let mut storage = system::GenesisConfig::default()
-		.build_storage::<Runtime>()
+		.build_storage::<Test>()
 		.unwrap();
 
 	let validators = vec![1, 2];
 
-	let _ = crate::GenesisConfig::<Runtime> {
+	let _ = session_manager::GenesisConfig::<Test> {
 		validators: validators.clone(),
 	}.assimilate_storage(&mut storage);
 
-	let _ = session::GenesisConfig::<Runtime> {
+	let _ = session::GenesisConfig::<Test> {
 		keys: validators.iter().map(|x| (*x, UintAuthorityId(*x))).collect(),
+	}.assimilate_storage(&mut storage);
+
+	let _ = balances::GenesisConfig::<Test>{
+		balances: vec![
+			(1, 10),
+			(2, 20),
+			(3, 300),
+			(4, 400),
+		],
+		vesting: vec![],
+	}.assimilate_storage(&mut storage);
+
+	let _ = GenesisConfig::<Test>{
+		current_era: 0,
+		invulnerables: validators.clone(),
+		force_era: Forcing::NotForcing,
+		storage_version: 1,
 	}.assimilate_storage(&mut storage);
 
 	storage.into()
@@ -48,7 +82,7 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 
 
 #[derive(Clone, PartialEq, Eq, Debug)]
-pub struct Runtime;
+pub struct Test;
 
 parameter_types! {
     pub const BlockHashCount: u64 = 250;
@@ -57,14 +91,14 @@ parameter_types! {
     pub const AvailableBlockRatio: Perbill = Perbill::one();
 }
 
-impl system::Trait for Runtime {
+impl system::Trait for Test {
 	type Origin = Origin;
 	type Index = u64;
-	type BlockNumber = u64;
+	type BlockNumber = BlockNumber;
 	type Call = Call;
 	type Hash = H256;
 	type Hashing = BlakeTwo256;
-	type AccountId = u64;
+	type AccountId = AccountId;
 	type Lookup = IdentityLookup<Self::AccountId>;
 	type Header = Header;
 	type Event = MetaEvent;
@@ -103,32 +137,32 @@ impl session::SessionHandler<u64> for TestSessionHandler {
 	fn on_before_session_ending() {}
 }
 
-impl session::Trait for Runtime {
+impl session::Trait for Test {
 	type ShouldEndSession = session::PeriodicSessions<Period, Offset>;
-	type OnSessionEnding = SessionManager;
+	type OnSessionEnding = PlasmSession;
 	type SelectInitialValidators = SessionManager;
 	type SessionHandler = TestSessionHandler;
 	type ValidatorId = u64;
 	type ValidatorIdOf = ConvertInto;
 	type Keys = UintAuthorityId;
-	type Event = ();
+	type Event = MetaEvent;
 	type DisabledValidatorsThreshold = ();
 }
 
-impl session_manager::Trait for Runtime {
+impl session_manager::Trait for Test {
 	type Event = MetaEvent;
 }
 
 parameter_types! {
-	pub const ExistentialDeposit: Balance = 500;
+	pub const ExistentialDeposit: Balance = 10;
 	pub const TransferFee: Balance = 0;
 	pub const CreationFee: Balance = 0;
 }
 
-impl balances::Trait for Runtime {
+impl balances::Trait for Test {
 	type Balance = Balance;
 	type OnFreeBalanceZero = ();
-	type OnNewAccount = Indices;
+	type OnNewAccount = ();
 	type Event = MetaEvent;
 	type DustRemoval = ();
 	type TransferPayment = ();
@@ -139,12 +173,9 @@ impl balances::Trait for Runtime {
 
 parameter_types! {
 	pub const SessionsPerEra: sp_staking::SessionIndex = 6;
-	pub const BondingDuration: staking::EraIndex = 24 * 28;
-	pub const SlashDeferDuration: staking::EraIndex = 24 * 7; // 1/4 the bonding duration.
-	pub const RewardCurve: &'static PiecewiseLinear<'static> = &REWARD_CURVE;
 }
 
-impl Trait for Runtime {
+impl Trait for Test {
 	type Currency = Balances;
 	type Time = Timestamp;
 	type SessionsPerEra = SessionsPerEra;
@@ -152,12 +183,13 @@ impl Trait for Runtime {
 	type Event = MetaEvent;
 }
 
-
 /// SessionManager module.
-pub type System = system::Module<Runtime>;
-pub type Session = session::Module<Runtime>;
-pub type SessionManager = Module<Runtime>;
-pub type PlasmSession = Module<Runtime>;
+pub type System = system::Module<Test>;
+pub type Balances = balances::Module<Test>;
+pub type Session = session::Module<Test>;
+pub type SessionManager = session_manager::Module<Test>;
+pub type Timestamp = timestamp::Module<Test>;
+pub type PlasmSession = Module<Test>;
 
 pub fn advance_session() {
 	let now = System::block_number();

@@ -1,6 +1,6 @@
 //! Storage migrations for plams-session.
 
-#[cfg(not(any(test, feature = "migrate")))]
+#[cfg(not(feature = "migrate"))]
 mod inner {
 	pub(super) fn perform_migrations<T>() { }
 }

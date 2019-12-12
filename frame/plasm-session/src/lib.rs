@@ -84,14 +84,14 @@ decl_storage! {
 		pub ForceEra get(fn force_era) config(): Forcing;
 
 		/// The version of storage for upgrade.
-		StorageVersion: u32;
+		pub StorageVersion get(fn storage_version) config(): u32;
 	}
 }
 
 decl_module! {
 	pub struct Module<T: Trait> for enum Call where origin: T::Origin {
 		/// Number of sessions per era.
-//		const SessionsPerEra: SessionIndex = T::SessionsPerEra::get();
+		const SessionsPerEra: SessionIndex = T::SessionsPerEra::get();
 
 		fn deposit_event() = default;
 
