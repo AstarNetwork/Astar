@@ -15,7 +15,7 @@ decl_module! {
     pub struct Module<T: Trait> for enum Call where origin: T::Origin {
         fn deposit_event() = default;
 
-        fn set_validators(origin, new_validators: Vec<T::AccountId>) -> Result {
+        pub fn set_validators(origin, new_validators: Vec<T::AccountId>) -> Result {
             ensure_root(origin)?;
             <Validators<T>>::put(&new_validators);
             Self::deposit_event(RawEvent::NewValidators(new_validators));

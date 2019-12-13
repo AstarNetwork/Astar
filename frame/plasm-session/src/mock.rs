@@ -172,7 +172,7 @@ impl balances::Trait for Test {
 }
 
 parameter_types! {
-	pub const SessionsPerEra: sp_staking::SessionIndex = 6;
+	pub const SessionsPerEra: sp_staking::SessionIndex = 10;
 }
 
 impl Trait for Test {
@@ -192,8 +192,12 @@ pub type Timestamp = timestamp::Module<Test>;
 pub type PlasmSession = Module<Test>;
 
 pub fn advance_session() {
+	// increase block numebr
 	let now = System::block_number();
 	System::set_block_number(now + 1);
+	// increase timestamp + 10
+	let now_time = Timestamp::get();
+	Timestamp::set_timestamp(now_time+10);
 	Session::rotate_session();
 	assert_eq!(Session::current_index(), (now / Period::get()) as u32);
 }

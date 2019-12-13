@@ -47,7 +47,7 @@ impl Default for Forcing {
 	fn default() -> Self { Forcing::NotForcing }
 }
 
-pub trait Trait: system::Trait {
+pub trait Trait: session::Trait {
 	/// The balance using rewards.
 	type Currency: LockableCurrency<Self::AccountId, Moment=Self::BlockNumber>;
 
@@ -159,12 +159,22 @@ decl_event!(
 
 
 impl<T: Trait> Module<T> {
-	pub fn new_session(session_index: SessionIndex) -> Option<Vec<T::AccountId>> {
-		None
+	pub fn new_session(ending: SessionIndex, will_apply_at: SessionIndex) -> Option<Vec<T::AccountId>> {
+		let era_length = will_apply_at.checked_sub(Self::current_era_start_session_index()).unwrap_or(0);
+		match ForceEra::get() {
+			Forcing::ForceNew => ForceEra::kill(),
+			Forcing::ForceAlways => (),
+			Forcing::NotForcing if era_length > T::SessionsPerEra::get() => (),
+			_ => return None,
+		}
+		Self::new_era(ending, will_apply_at)
 	}
 
-	pub fn new_era(start_session_index: SessionIndex) -> Option<Vec<T::AccountId>> {
-		None
+	pub fn new_era(ending: SessionIndex, will_apply_at: SessionIndex) -> Option<Vec<T::AccountId>> {
+		CurrentEra::put(Self::current_era() + 1);
+		<CurrentEraStart<T>>::put(T::Time::now());
+		CurrentEraStartSessionIndex::put(will_apply_at - 1);
+		<T as Trait>::OnSessionEnding::on_session_ending(ending, will_apply_at)
 	}
 
 	/// Ensures storage is upgraded to most recent necessary state.
@@ -174,8 +184,8 @@ impl<T: Trait> Module<T> {
 }
 
 impl<T: Trait> OnSessionEnding<T::AccountId> for Module<T> {
-	fn on_session_ending(_ending: SessionIndex, start_session: SessionIndex) -> Option<Vec<T::AccountId>> {
+	fn on_session_ending(ending: SessionIndex, will_apply_at: SessionIndex) -> Option<Vec<T::AccountId>> {
 		Self::ensure_storage_upgraded();
-		Self::new_session(start_session - 1)
+		Self::new_session(ending, will_apply_at)
 	}
 }

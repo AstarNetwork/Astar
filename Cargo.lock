@@ -2640,7 +2640,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "pallet-poa-rewards"
+name = "pallet-plasm-session"
 version = "0.1.0"
 dependencies = [
  "derive_more 0.14.1 (registry+https://github.com/rust-lang/crates.io-index)",

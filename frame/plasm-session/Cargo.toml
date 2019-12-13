@@ -1,5 +1,5 @@
 [package]
-name = "pallet-poa-rewards"
+name = "pallet-plasm-session"
 version = "0.1.0"
 authors = ["Takumi Yamashita <takumi@stake.co.jp>"]
 edition = "2018"
