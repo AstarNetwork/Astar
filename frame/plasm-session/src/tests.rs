@@ -15,16 +15,13 @@ fn set_validators_fails_for_user() {
 		let res = PlasmSession::force_new_era(Origin::signed(0));
 		assert_eq!(res, Err("RequireRootOrigin"));
 
-		let res = PlasmSession::set_invulnerables(Origin::signed(0), vec![0, 0]);
-		assert_eq!(res, Err("RequireRootOrigin"));
-
 		let res = PlasmSession::force_new_era_always(Origin::signed(0));
 		assert_eq!(res, Err("RequireRootOrigin"));
 	})
 }
 
 #[test]
-fn incremental_era() {
+fn noraml_incremental_era() {
 	new_test_ext().execute_with(|| {
 		assert_eq!(PlasmSession::current_era(), 0);
 		assert_eq!(PlasmSession::current_era_start(), 0);
@@ -50,7 +47,7 @@ fn incremental_era() {
 		assert_eq!(Session::current_index(), 1);
 
 		// 2~9-th session
-		for i in (2..10) {
+		for i in 2..10 {
 			advance_session();
 			assert_eq!(PlasmSession::current_era(), 0);
 			assert_eq!(PlasmSession::current_era_start(), 0);
@@ -62,7 +59,7 @@ fn incremental_era() {
 		}
 
 		// 10~19-th session
-		for i in (10..20) {
+		for i in 10..20 {
 			advance_session();
 			println!("{}", i);
 			assert_eq!(PlasmSession::current_era(), 1);
@@ -80,7 +77,7 @@ fn incremental_era() {
 		assert_ok!(SessionManager::set_validators(Origin::ROOT, vec![1,3,5]));
 
 		// 20~29-th session
-		for i in (20..30) {
+		for i in 20..30 {
 			advance_session();
 			assert_eq!(PlasmSession::current_era(), 2);
 			assert_eq!(PlasmSession::current_era_start(), 200);
@@ -93,5 +90,75 @@ fn incremental_era() {
 				_ => assert_eq!(Session::validators(), vec![1, 3, 5]),
 			}
 		}
+	})
+}
+
+#[test]
+fn force_new_era_incremental_era() {
+	new_test_ext().execute_with(|| {
+		assert_eq!(PlasmSession::force_era(), Forcing::NotForcing);
+		assert_ok!(PlasmSession::force_new_era(Origin::ROOT));
+		assert_eq!(PlasmSession::force_era(), Forcing::ForceNew);
+
+		assert_ok!(SessionManager::set_validators(Origin::ROOT, vec![1,2, 3,4,5]));
+
+		advance_session();
+		assert_eq!(PlasmSession::current_era(), 1);
+		assert_eq!(PlasmSession::current_era_start(), 10);
+		assert_eq!(PlasmSession::current_era_start_session_index(), 1);
+		assert_eq!(PlasmSession::force_era(), Forcing::NotForcing);
+		assert_eq!(PlasmSession::storage_version(), 1);
+		assert_eq!(Session::validators(), vec![1, 2]);
+		assert_eq!(Session::current_index(), 1);
+
+		// 2-11-th sesson
+		for i in 2..11 {
+			advance_session();
+			assert_eq!(PlasmSession::current_era(), 1);
+			assert_eq!(PlasmSession::current_era_start(), 10);
+			assert_eq!(PlasmSession::current_era_start_session_index(), 1);
+			assert_eq!(PlasmSession::force_era(), Forcing::NotForcing);
+			assert_eq!(PlasmSession::storage_version(), 1);
+			assert_eq!(Session::validators(), vec![1, 2, 3, 4, 5]);
+			assert_eq!(Session::current_index(), i);
+		}
+
+		advance_session();
+		assert_eq!(PlasmSession::current_era(), 2);
+		assert_eq!(PlasmSession::current_era_start(), 110);
+		assert_eq!(PlasmSession::current_era_start_session_index(), 11);
+		assert_eq!(PlasmSession::force_era(), Forcing::NotForcing);
+		assert_eq!(PlasmSession::storage_version(), 1);
+		assert_eq!(Session::validators(), vec![1, 2, 3, 4, 5]);
+		assert_eq!(Session::current_index(), 11);
+	})
+}
+
+#[test]
+fn force_new_era_always_incremental_era() {
+	new_test_ext().execute_with(|| {
+		assert_eq!(PlasmSession::force_era(), Forcing::NotForcing);
+		assert_ok!(PlasmSession::force_new_era_always(Origin::ROOT));
+		assert_eq!(PlasmSession::force_era(), Forcing::ForceAlways);
+
+		assert_ok!(SessionManager::set_validators(Origin::ROOT, vec![1,2, 3,4,5]));
+
+		advance_session();
+		assert_eq!(PlasmSession::current_era(), 1);
+		assert_eq!(PlasmSession::current_era_start(), 10);
+		assert_eq!(PlasmSession::current_era_start_session_index(), 1);
+		assert_eq!(PlasmSession::force_era(), Forcing::ForceAlways);
+		assert_eq!(PlasmSession::storage_version(), 1);
+		assert_eq!(Session::validators(), vec![1, 2]);
+		assert_eq!(Session::current_index(), 1);
+
+		advance_session();
+		assert_eq!(PlasmSession::current_era(), 2);
+		assert_eq!(PlasmSession::current_era_start(), 20);
+		assert_eq!(PlasmSession::current_era_start_session_index(), 2);
+		assert_eq!(PlasmSession::force_era(), Forcing::ForceAlways);
+		assert_eq!(PlasmSession::storage_version(), 1);
+		assert_eq!(Session::validators(), vec![1, 2, 3, 4, 5]);
+		assert_eq!(Session::current_index(), 2);
 	})
 }

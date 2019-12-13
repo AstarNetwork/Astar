@@ -8,7 +8,7 @@ use sp_runtime::{Perbill, KeyTypeId};
 use sp_runtime::testing::{Header, UintAuthorityId};
 use sp_runtime::traits::{IdentityLookup, BlakeTwo256, ConvertInto, OpaqueKeys};
 use primitives::{H256, crypto::key_types};
-use support::{impl_outer_origin, impl_outer_dispatch, impl_outer_event, parameter_types};
+use support::{impl_outer_origin, impl_outer_dispatch, parameter_types};
 
 /// The AccountId alias in this test module.
 pub type AccountId = u64;
@@ -28,22 +28,22 @@ impl_outer_dispatch! {
     }
 }
 
-mod plasm_session {
-	// Re-export contents of the root. This basically
-	// needs to give a name for the current crate.
-	// This hack is required for `impl_outer_event!`.
-	pub use super::super::*;
-	use support::impl_outer_event;
-}
-
-impl_outer_event! {
-    pub enum MetaEvent for Test {
-    	session,
-    	balances<T>,
-    	session_manager<T>,
-        plasm_session<T>,
-    }
-}
+//mod plasm_session {
+//	// Re-export contents of the root. This basically
+//	// needs to give a name for the current crate.
+//	// This hack is required for `impl_outer_event!`.
+//	pub use super::super::*;
+//	use support::impl_outer_event;
+//}
+//
+//impl_outer_event! {
+//    pub enum () for Test {
+//    	session,
+//    	balances<T>,
+//    	session_manager<T>,
+//        plasm_session<T>,
+//    }
+//}
 
 pub fn new_test_ext() -> sp_io::TestExternalities {
 	let mut storage = system::GenesisConfig::default()
@@ -60,7 +60,7 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 		keys: validators.iter().map(|x| (*x, UintAuthorityId(*x))).collect(),
 	}.assimilate_storage(&mut storage);
 
-	let _ = balances::GenesisConfig::<Test>{
+	let _ = balances::GenesisConfig::<Test> {
 		balances: vec![
 			(1, 10),
 			(2, 20),
@@ -70,9 +70,8 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 		vesting: vec![],
 	}.assimilate_storage(&mut storage);
 
-	let _ = GenesisConfig::<Test>{
+	let _ = GenesisConfig {
 		current_era: 0,
-		invulnerables: validators.clone(),
 		force_era: Forcing::NotForcing,
 		storage_version: 1,
 	}.assimilate_storage(&mut storage);
@@ -101,7 +100,7 @@ impl system::Trait for Test {
 	type AccountId = AccountId;
 	type Lookup = IdentityLookup<Self::AccountId>;
 	type Header = Header;
-	type Event = MetaEvent;
+	type Event = ();
 	type BlockHashCount = BlockHashCount;
 	type MaximumBlockWeight = MaximumBlockWeight;
 	type MaximumBlockLength = MaximumBlockLength;
@@ -145,12 +144,12 @@ impl session::Trait for Test {
 	type ValidatorId = u64;
 	type ValidatorIdOf = ConvertInto;
 	type Keys = UintAuthorityId;
-	type Event = MetaEvent;
+	type Event = ();
 	type DisabledValidatorsThreshold = ();
 }
 
 impl session_manager::Trait for Test {
-	type Event = MetaEvent;
+	type Event = ();
 }
 
 parameter_types! {
@@ -163,7 +162,7 @@ impl balances::Trait for Test {
 	type Balance = Balance;
 	type OnFreeBalanceZero = ();
 	type OnNewAccount = ();
-	type Event = MetaEvent;
+	type Event = ();
 	type DustRemoval = ();
 	type TransferPayment = ();
 	type ExistentialDeposit = ExistentialDeposit;
@@ -180,7 +179,7 @@ impl Trait for Test {
 	type Time = Timestamp;
 	type SessionsPerEra = SessionsPerEra;
 	type OnSessionEnding = SessionManager;
-	type Event = MetaEvent;
+	type Event = ();
 }
 
 /// SessionManager module.
@@ -197,7 +196,7 @@ pub fn advance_session() {
 	System::set_block_number(now + 1);
 	// increase timestamp + 10
 	let now_time = Timestamp::get();
-	Timestamp::set_timestamp(now_time+10);
+	Timestamp::set_timestamp(now_time + 10);
 	Session::rotate_session();
 	assert_eq!(Session::current_index(), (now / Period::get()) as u32);
 }

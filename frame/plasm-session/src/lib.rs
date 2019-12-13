@@ -2,14 +2,13 @@
 //!
 //! The Plasm session module manages era and total amounts of rewards and how to distribute.
 
-use support::{decl_module, decl_storage, decl_event, StorageValue, dispatch::Result, weights::SimpleDispatchInfo,
+use support::{decl_module, decl_storage, decl_event, StorageValue, weights::SimpleDispatchInfo,
 			  traits::{LockableCurrency, Time, Get, Currency}};
-use system::{ensure_signed, ensure_root};
+use system::ensure_root;
 use session::OnSessionEnding;
 use sp_staking::SessionIndex;
 use sp_runtime::{
 	RuntimeDebug,
-	traits::EnsureOrigin,
 };
 #[cfg(feature = "std")]
 use sp_runtime::{Serialize, Deserialize};
@@ -66,11 +65,6 @@ pub trait Trait: session::Trait {
 
 decl_storage! {
 	trait Store for Module<T: Trait> as PlasmSession {
-		/// Any validators that may never be slashed or forcibly kicked. It's a Vec since they're
-		/// easy to initialize and the performance hit is minimal (we expect no more than four
-		/// invulnerables) and restricted to testnets.
-		pub Invulnerables get(fn invulnerables) config(): Vec<T::AccountId>;
-
 		/// The current era index.
 		pub CurrentEra get(fn current_era) config(): EraIndex;
 
@@ -128,13 +122,6 @@ decl_module! {
 		fn force_new_era(origin) {
 			ensure_root(origin)?;
 			ForceEra::put(Forcing::ForceNew);
-		}
-
-		/// Set the validators who cannot be slashed (if any).
-		#[weight = SimpleDispatchInfo::FreeOperational]
-		fn set_invulnerables(origin, validators: Vec<T::AccountId>) {
-			ensure_root(origin)?;
-			<Invulnerables<T>>::put(validators);
 		}
 
 		/// Force there to be a new era at the end of sessions indefinitely.
