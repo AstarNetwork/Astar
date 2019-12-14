@@ -15,7 +15,7 @@ impl_outer_origin!{
 
 impl_outer_dispatch! {
     pub enum Call for Runtime where origin: Origin {
-        validator_managerValidatorManager,
+        validator_manager::ValidatorManager,
     }
 }
 

@@ -7,7 +7,7 @@ members = [
     "bin/node/runtime",
     "frame/operator",
     "frame/validator-manager",
-    "frame/plasm-session",
+    "frame/plasm-staking",
 ]
 
 exclude = [

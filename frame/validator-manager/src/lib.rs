@@ -6,12 +6,17 @@ use rstd::prelude::*;
 
 mod mock;
 mod tests;
-mod traits;
-
-pub use traits::OnEraEnding;
 
 /// Counter for the number of eras that have passed.
 pub type EraIndex = u32;
+
+pub trait OnEraEnding<ValidatorId, EraIndex> {
+	fn on_era_ending(
+		_ending: EraIndex,
+		_start_era: EraIndex,
+	) -> Option<Vec<ValidatorId>>;
+}
+
 
 pub trait Trait: system::Trait {
     type Event: From<Event<Self>> + Into<<Self as system::Trait>::Event>;

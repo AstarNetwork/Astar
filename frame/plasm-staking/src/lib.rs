@@ -21,6 +21,8 @@ mod mock;
 #[cfg(test)]
 mod tests;
 mod migration;
+pub mod traits;
+
 
 pub type BalanceOf<T> =
 <<T as Trait>::Currency as Currency<<T as system::Trait>::AccountId>>::Balance;
@@ -62,7 +64,7 @@ pub trait Trait: session::Trait {
 }
 
 decl_storage! {
-	trait Store for Module<T: Trait> as PlasmSession {
+	trait Store for Module<T: Trait> as PlasmStaking {
 		/// The current era index.
 		pub CurrentEra get(fn current_era) config(): EraIndex;
 

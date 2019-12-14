@@ -24,11 +24,11 @@ impl_outer_dispatch! {
     	session::Session,
     	balances::Balances,
     	validator_manager::ValidatorManager,
-    	plasm_session::PlasmSession,
+    	plasm_staking::PlasmStaking,
     }
 }
 
-//mod plasm_session {
+//mod plasm_staking {
 //	// Re-export contents of the root. This basically
 //	// needs to give a name for the current crate.
 //	// This hack is required for `impl_outer_event!`.
@@ -41,7 +41,7 @@ impl_outer_dispatch! {
 //    	session,
 //    	balances<T>,
 //    	session_manager<T>,
-//        plasm_session<T>,
+//        plasm_staking<T>,
 //    }
 //}
 
@@ -138,7 +138,7 @@ impl session::SessionHandler<u64> for TestSessionHandler {
 
 impl session::Trait for Test {
 	type ShouldEndSession = session::PeriodicSessions<Period, Offset>;
-	type OnSessionEnding = PlasmSession;
+	type OnSessionEnding = PlasmStaking;
 	type SelectInitialValidators = ValidatorManager;
 	type SessionHandler = TestSessionHandler;
 	type ValidatorId = u64;
@@ -188,7 +188,7 @@ pub type Balances = balances::Module<Test>;
 pub type Session = session::Module<Test>;
 pub type ValidatorManager = validator_manager::Module<Test>;
 pub type Timestamp = timestamp::Module<Test>;
-pub type PlasmSession = Module<Test>;
+pub type PlasmStaking = Module<Test>;
 
 pub fn advance_session() {
 	// increase block numebr

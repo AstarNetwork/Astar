@@ -11,6 +11,7 @@ rstd = { package = "sp-std", git = "https://github.com/staketechnologies/substra
 support = { package = "frame-support", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master", default-features = false }
 system = { package = "frame-system", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master", default-features = false }
 session = { package = "pallet-session", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master", default-features = false }
+#plasm-staking = { package = "pallet-plasm-staking", path = "../plasm-staking", default-features = false }
 
 [dev-dependencies]
 sp-io = { git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master" }
