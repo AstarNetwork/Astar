@@ -23,7 +23,7 @@ impl_outer_dispatch! {
     pub enum Call for Test where origin: Origin {
     	session::Session,
     	balances::Balances,
-    	session_manager::SessionManager,
+    	validator_manager::ValidatorManager,
     	plasm_session::PlasmSession,
     }
 }
@@ -52,7 +52,7 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 
 	let validators = vec![1, 2];
 
-	let _ = session_manager::GenesisConfig::<Test> {
+	let _ = validator_manager::GenesisConfig::<Test> {
 		validators: validators.clone(),
 	}.assimilate_storage(&mut storage);
 
@@ -139,7 +139,7 @@ impl session::SessionHandler<u64> for TestSessionHandler {
 impl session::Trait for Test {
 	type ShouldEndSession = session::PeriodicSessions<Period, Offset>;
 	type OnSessionEnding = PlasmSession;
-	type SelectInitialValidators = SessionManager;
+	type SelectInitialValidators = ValidatorManager;
 	type SessionHandler = TestSessionHandler;
 	type ValidatorId = u64;
 	type ValidatorIdOf = ConvertInto;
@@ -148,7 +148,7 @@ impl session::Trait for Test {
 	type DisabledValidatorsThreshold = ();
 }
 
-impl session_manager::Trait for Test {
+impl validator_manager::Trait for Test {
 	type Event = ();
 }
 
@@ -178,15 +178,15 @@ impl Trait for Test {
 	type Currency = Balances;
 	type Time = Timestamp;
 	type SessionsPerEra = SessionsPerEra;
-	type OnSessionEnding = SessionManager;
+	type OnEraEnding = ValidatorManager;
 	type Event = ();
 }
 
-/// SessionManager module.
+/// ValidatorManager module.
 pub type System = system::Module<Test>;
 pub type Balances = balances::Module<Test>;
 pub type Session = session::Module<Test>;
-pub type SessionManager = session_manager::Module<Test>;
+pub type ValidatorManager = validator_manager::Module<Test>;
 pub type Timestamp = timestamp::Module<Test>;
 pub type PlasmSession = Module<Test>;
 

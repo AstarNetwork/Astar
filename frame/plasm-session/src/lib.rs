@@ -13,6 +13,7 @@ use sp_runtime::{
 #[cfg(feature = "std")]
 use sp_runtime::{Serialize, Deserialize};
 
+use validator_manager::{EraIndex, OnEraEnding};
 use codec::{Encode, Decode};
 
 #[cfg(test)]
@@ -20,9 +21,6 @@ mod mock;
 #[cfg(test)]
 mod tests;
 mod migration;
-
-/// Counter for the number of eras that have passed.
-pub type EraIndex = u32;
 
 pub type BalanceOf<T> =
 <<T as Trait>::Currency as Currency<<T as system::Trait>::AccountId>>::Balance;
@@ -57,7 +55,7 @@ pub trait Trait: session::Trait {
 	type SessionsPerEra: Get<SessionIndex>;
 
 	/// Handler for when a session is about to end.
-	type OnSessionEnding: OnSessionEnding<Self::AccountId>;
+	type OnEraEnding: OnEraEnding<Self::AccountId, EraIndex>;
 
 	/// The overarching event type.
 	type Event: From<Event<Self>> + Into<<Self as system::Trait>::Event>;
@@ -157,11 +155,12 @@ impl<T: Trait> Module<T> {
 		Self::new_era(ending, will_apply_at)
 	}
 
-	pub fn new_era(ending: SessionIndex, will_apply_at: SessionIndex) -> Option<Vec<T::AccountId>> {
-		CurrentEra::put(Self::current_era() + 1);
+	pub fn new_era(_ending: SessionIndex, will_apply_at: SessionIndex) -> Option<Vec<T::AccountId>> {
+		let current_era = Self::current_era();
+		CurrentEra::put(current_era + 1);
 		<CurrentEraStart<T>>::put(T::Time::now());
 		CurrentEraStartSessionIndex::put(will_apply_at - 1);
-		<T as Trait>::OnSessionEnding::on_session_ending(ending, will_apply_at)
+		<T as Trait>::OnEraEnding::on_era_ending(current_era, current_era + 1)
 	}
 
 	/// Ensures storage is upgraded to most recent necessary state.

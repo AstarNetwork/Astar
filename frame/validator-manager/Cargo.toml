@@ -1,5 +1,5 @@
 [package]
-name = "pallet-session-manager"
+name = "pallet-validator-manager"
 version = "0.1.0"
 authors = ["Aleksandr Krupenkin <aleksandr@stake.co.jp>"]
 edition = "2018"

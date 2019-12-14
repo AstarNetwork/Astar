@@ -164,18 +164,18 @@ impl_opaque_keys! {
 }
 
 impl session::Trait for Runtime {
-	type OnSessionEnding = SessionManager;
+	type OnSessionEnding = ValidatorManager;
 	type SessionHandler = <SessionKeys as OpaqueKeys>::KeyTypeIdProviders;
 	type ShouldEndSession = Babe;
 	type Event = Event;
 	type Keys = SessionKeys;
 	type ValidatorId = <Self as system::Trait>::AccountId;
 	type ValidatorIdOf = ConvertInto;
-	type SelectInitialValidators = SessionManager;
+	type SelectInitialValidators = ValidatorManager;
 	type DisabledValidatorsThreshold = ();
 }
 
-impl session_manager::Trait for Runtime {
+impl validator_managerTrait for Runtime {
     type Event = Event;
 }
 
@@ -287,7 +287,7 @@ construct_runtime!(
         Indices: indices,
         Balances: balances,
         Contracts: contracts,
-        SessionManager: session_manager::{Module, Call, Storage, Event<T>, Config<T>},
+        ValidatorManager: validator_manager{Module, Call, Storage, Event<T>, Config<T>},
         Session: session::{Module, Call, Storage, Event, Config<T>},
         Babe: babe::{Module, Call, Storage, Config, Inherent(Timestamp)},
         Grandpa: grandpa::{Module, Call, Storage, Config, Event},

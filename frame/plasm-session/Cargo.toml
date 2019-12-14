@@ -70,10 +70,10 @@ git = 'https://github.com/staketechnologies/substrate.git'
 branch = 'plasm-master'
 package = 'pallet-contracts'
 
-[dependencies.session-manager]
+[dependencies.validator-manager]
 default_features = false
-path = "../session-manager"
-package = "pallet-session-manager"
+path = "../validator-manager"
+package = "pallet-validator-manager"
 
 [dependencies.sp-staking]
 default_features = false
@@ -108,7 +108,7 @@ std = [
     'session/std',
     'timestamp/std',
     'system/std',
-    'session-manager/std',
+    'validator-manager/std',
     'contract/std',
     "sp-staking/std",
    	'serde_derive',

@@ -2651,8 +2651,8 @@ dependencies = [
  "pallet-contracts 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "pallet-randomness-collective-flip 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "pallet-session 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
- "pallet-session-manager 0.1.0",
  "pallet-timestamp 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
+ "pallet-validator-manager 0.1.0",
  "parity-scale-codec 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde 1.0.103 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde_derive 1.0.103 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -2694,22 +2694,6 @@ dependencies = [
  "sp-staking 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "sp-std 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "sp-trie 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
-]
-
-[[package]]
-name = "pallet-session-manager"
-version = "0.1.0"
-dependencies = [
- "frame-support 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
- "frame-system 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
- "pallet-session 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
- "pallet-timestamp 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
- "parity-scale-codec 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "serde 1.0.103 (registry+https://github.com/rust-lang/crates.io-index)",
- "sp-core 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
- "sp-io 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
- "sp-runtime 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
- "sp-std 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
 ]
 
 [[package]]
@@ -2781,6 +2765,22 @@ dependencies = [
  "parity-scale-codec 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde 1.0.103 (registry+https://github.com/rust-lang/crates.io-index)",
  "sp-api 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
+ "sp-runtime 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
+ "sp-std 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
+]
+
+[[package]]
+name = "pallet-validator-manager"
+version = "0.1.0"
+dependencies = [
+ "frame-support 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
+ "frame-system 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
+ "pallet-session 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
+ "pallet-timestamp 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
+ "parity-scale-codec 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "serde 1.0.103 (registry+https://github.com/rust-lang/crates.io-index)",
+ "sp-core 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
+ "sp-io 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "sp-runtime 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "sp-std 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
 ]
@@ -3147,11 +3147,11 @@ dependencies = [
  "pallet-indices 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "pallet-randomness-collective-flip 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "pallet-session 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
- "pallet-session-manager 0.1.0",
  "pallet-sudo 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "pallet-timestamp 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "pallet-transaction-payment 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "pallet-transaction-payment-rpc-runtime-api 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
+ "pallet-validator-manager 0.1.0",
  "parity-scale-codec 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "plasm-primitives 0.6.2",
  "serde 1.0.103 (registry+https://github.com/rust-lang/crates.io-index)",
