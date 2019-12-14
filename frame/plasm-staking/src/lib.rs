@@ -47,9 +47,6 @@ impl Default for Forcing {
 }
 
 pub trait Trait: session::Trait {
-	/// The balance using rewards.
-	type Currency: LockableCurrency<Self::AccountId, Moment=Self::BlockNumber>;
-
 	/// Time used for computing era duration.
 	type Time: Time;
 
