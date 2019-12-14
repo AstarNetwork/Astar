@@ -21,7 +21,6 @@ mod mock;
 #[cfg(test)]
 mod tests;
 mod migration;
-pub mod traits;
 
 
 pub type BalanceOf<T> =
