@@ -16,4 +16,4 @@ sp-runtime = { git = "https://github.com/staketechnologies/substrate.git", branc
 pallet-contracts-rpc = { git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master" }
 pallet-transaction-payment-rpc = { git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master" }
 substrate-frame-rpc-system = { git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master" }
-txpool-api = { package = "sp-transaction-pool-api", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master" }
+sp-transaction-pool = { git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master" }
