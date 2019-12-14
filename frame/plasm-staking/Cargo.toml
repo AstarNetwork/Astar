@@ -107,6 +107,7 @@ std = [
     'support/std',
     'session/std',
     'timestamp/std',
+    'validator-manager/std',
     'system/std',
     'contract/std',
     'sp-staking/std',
