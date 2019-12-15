@@ -22,7 +22,6 @@ mod mock;
 mod tests;
 mod migration;
 
-
 pub type BalanceOf<T> =
 <<T as Trait>::Currency as Currency<<T as system::Trait>::AccountId>>::Balance;
 pub type MomentOf<T> = <<T as Trait>::Time as Time>::Moment;
@@ -46,6 +45,9 @@ impl Default for Forcing {
 }
 
 pub trait Trait: session::Trait {
+	/// The staking balance.
+	type Currency: LockableCurrency<Self::AccountId, Moment=Self::BlockNumber>;
+
 	/// Time used for computing era duration.
 	type Time: Time;
 

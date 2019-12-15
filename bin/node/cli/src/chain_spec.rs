@@ -113,7 +113,7 @@ fn generate_config_genesis(
                     .cloned()
                     .collect::<Vec<_>>(),
         }),
-        session_manager: Some(ValidatorManagerConfig {
+        validator_manager: Some(ValidatorManagerConfig {
             validators: initial_authorities
                 .iter()
                 .map(|x| x.0.clone())

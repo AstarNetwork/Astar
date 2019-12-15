@@ -174,7 +174,7 @@ impl session::Trait for Runtime {
 	type DisabledValidatorsThreshold = ();
 }
 
-impl validator_managerTrait for Runtime {
+impl validator_manager::Trait for Runtime {
     type Event = Event;
 }
 
@@ -286,7 +286,7 @@ construct_runtime!(
         Indices: indices,
         Balances: balances,
         Contracts: contracts,
-        ValidatorManager: validator_manager{Module, Call, Storage, Event<T>, Config<T>},
+        ValidatorManager: validator_manager::{Module, Call, Storage, Event<T>, Config<T>},
         Session: session::{Module, Call, Storage, Event, Config<T>},
         Babe: babe::{Module, Call, Storage, Config, Inherent(Timestamp)},
         Grandpa: grandpa::{Module, Call, Storage, Config, Event},
