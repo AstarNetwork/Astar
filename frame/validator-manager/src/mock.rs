@@ -15,7 +15,7 @@ impl_outer_origin!{
 
 impl_outer_dispatch! {
     pub enum Call for Runtime where origin: Origin {
-        session_manager::SessionManager,
+        validator_manager::ValidatorManager,
     }
 }
 
@@ -86,8 +86,8 @@ impl session::SessionHandler<u64> for TestSessionHandler {
 
 impl session::Trait for Runtime {
     type ShouldEndSession = session::PeriodicSessions<Period, Offset>;
-    type OnSessionEnding = SessionManager;
-    type SelectInitialValidators = SessionManager;
+    type OnSessionEnding = ValidatorManager;
+    type SelectInitialValidators = ValidatorManager;
     type SessionHandler = TestSessionHandler;
     type ValidatorId = u64;
     type ValidatorIdOf = ConvertInto;
@@ -100,10 +100,10 @@ impl Trait for Runtime {
     type Event = ();
 }
 
-/// SessionManager module.
+/// ValidatorManager module.
 pub type System = system::Module<Runtime>;
 pub type Session = session::Module<Runtime>;
-pub type SessionManager = Module<Runtime>;
+pub type ValidatorManager = Module<Runtime>;
 
 pub fn advance_session() {
     let now = System::block_number();

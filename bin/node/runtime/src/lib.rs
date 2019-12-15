@@ -4,7 +4,7 @@
 // `construct_runtime!` does a lot of recursion and requires us to increase the limit to 256.
 #![recursion_limit="256"]
 
-use rstd::prelude::*;
+use sp_std::prelude::*;
 use support::{construct_runtime, parameter_types, weights::Weight, traits::Randomness,};
 use plasm_primitives::{AccountId, AccountIndex, Balance, BlockNumber, Hash, Index, Moment, Signature,};
 use sp_api::impl_runtime_apis;
@@ -163,18 +163,18 @@ impl_opaque_keys! {
 }
 
 impl session::Trait for Runtime {
-	type OnSessionEnding = SessionManager;
+	type OnSessionEnding = ValidatorManager;
 	type SessionHandler = <SessionKeys as OpaqueKeys>::KeyTypeIdProviders;
 	type ShouldEndSession = Babe;
 	type Event = Event;
 	type Keys = SessionKeys;
 	type ValidatorId = <Self as system::Trait>::AccountId;
 	type ValidatorIdOf = ConvertInto;
-	type SelectInitialValidators = SessionManager;
+	type SelectInitialValidators = ValidatorManager;
 	type DisabledValidatorsThreshold = ();
 }
 
-impl session_manager::Trait for Runtime {
+impl validator_manager::Trait for Runtime {
     type Event = Event;
 }
 
@@ -286,7 +286,7 @@ construct_runtime!(
         Indices: indices,
         Balances: balances,
         Contracts: contracts,
-        SessionManager: session_manager::{Module, Call, Storage, Event<T>, Config<T>},
+        ValidatorManager: validator_manager::{Module, Call, Storage, Event<T>, Config<T>},
         Session: session::{Module, Call, Storage, Event, Config<T>},
         Babe: babe::{Module, Call, Storage, Config, Inherent(Timestamp)},
         Grandpa: grandpa::{Module, Call, Storage, Config, Event},

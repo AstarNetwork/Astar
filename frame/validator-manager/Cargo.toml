@@ -1,5 +1,5 @@
 [package]
-name = "pallet-session-manager"
+name = "pallet-validator-manager"
 version = "0.1.0"
 authors = ["Aleksandr Krupenkin <aleksandr@stake.co.jp>"]
 edition = "2018"
@@ -7,7 +7,7 @@ edition = "2018"
 [dependencies]
 serde = { version = "1.0.102", optional = true }
 codec = { package = "parity-scale-codec", version = "1.0.6", features = ["derive"], default-features = false }
-rstd = { package = "sp-std", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master", default-features = false }
+sp-std = { package = "sp-std", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master", default-features = false }
 support = { package = "frame-support", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master", default-features = false }
 system = { package = "frame-system", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master", default-features = false }
 session = { package = "pallet-session", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master", default-features = false }
@@ -23,7 +23,7 @@ default = ["std"]
 std = [
     "serde",
     "codec/std",
-    "rstd/std",
+    "sp-std/std",
     "support/std",
     "system/std",
     "session/std",

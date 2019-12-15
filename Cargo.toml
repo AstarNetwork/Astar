@@ -6,7 +6,8 @@ members = [
     "bin/node/rpc",
     "bin/node/runtime",
     "frame/operator",
-    "frame/session-manager",
+    "frame/validator-manager",
+    "frame/plasm-staking",
 ]
 
 exclude = [

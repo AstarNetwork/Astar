@@ -4,7 +4,7 @@ use contract::{BalanceOf, CodeHash, ContractAddressFor, Gas};
 use sp_runtime::traits::{MaybeDisplay, MaybeSerialize, Member};
 use support::{decl_event, decl_module, decl_storage, dispatch::Result, Parameter};
 use system::{ensure_signed, RawOrigin};
-use rstd::prelude::*;
+use sp_std::prelude::*;
 
 pub mod parameters;
 #[cfg(test)]
@@ -19,7 +19,7 @@ pub trait Trait: contract::Trait {
 	+ MaybeSerialize
 	+ MaybeDisplay
 	+ Default
-	+ rstd::hash::Hash
+	+ sp_std::hash::Hash
 	+ parameters::Verifiable;
 
 	/// The overarching event type.

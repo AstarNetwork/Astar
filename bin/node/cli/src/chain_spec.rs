@@ -5,7 +5,7 @@ use primitives::{crypto::UncheckedInto, sr25519, Pair, Public};
 use serde::{Serialize, Deserialize};
 use plasm_primitives::{AccountId, Balance, Signature};
 use plasm_runtime::{
-    GenesisConfig, SystemConfig, SessionConfig, SessionManagerConfig,
+    GenesisConfig, SystemConfig, SessionConfig, ValidatorManagerConfig,
     BabeConfig, GrandpaConfig, IndicesConfig, BalancesConfig, ContractsConfig, SudoConfig,
     SessionKeys, WASM_BINARY,
 };
@@ -83,7 +83,7 @@ fn generate_config_genesis(
     endowed_accounts: Option<Vec<AccountId>>,
     enable_println: bool,
 ) -> GenesisConfig {
-    let endowed_accounts: Vec<AccountId> = endowed_accounts.unwrap_or_else(|| vec![ 
+    let endowed_accounts: Vec<AccountId> = endowed_accounts.unwrap_or_else(|| vec![
         get_account_id_from_seed::<sr25519::Public>("Alice"),
         get_account_id_from_seed::<sr25519::Public>("Bob"),
         get_account_id_from_seed::<sr25519::Public>("Charlie"),
@@ -113,7 +113,7 @@ fn generate_config_genesis(
                     .cloned()
                     .collect::<Vec<_>>(),
         }),
-        session_manager: Some(SessionManagerConfig {
+        validator_manager: Some(ValidatorManagerConfig {
             validators: initial_authorities
                 .iter()
                 .map(|x| x.0.clone())
@@ -125,10 +125,10 @@ fn generate_config_genesis(
             }).collect::<Vec<_>>(),
         }),
         babe: Some(BabeConfig {
-            authorities: vec![] 
+            authorities: vec![]
         }),
         grandpa: Some(GrandpaConfig {
-            authorities: vec![] 
+            authorities: vec![]
         }),
         contracts: Some(ContractsConfig {
             current_schedule: contracts::Schedule {
