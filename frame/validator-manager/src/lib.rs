@@ -2,7 +2,7 @@
 
 use support::{decl_module, decl_event, decl_storage, dispatch::Result};
 use system::ensure_root;
-use rstd::prelude::*;
+use sp_std::prelude::*;
 
 mod mock;
 mod tests;

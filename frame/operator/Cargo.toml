@@ -28,7 +28,7 @@ git = 'https://github.com/staketechnologies/substrate.git'
 branch = 'plasm-master'
 package = 'sp-io'
 
-[dependencies.rstd]
+[dependencies.sp-std]
 default_features = false
 git = 'https://github.com/staketechnologies/substrate.git'
 branch = 'plasm-master'
@@ -85,7 +85,7 @@ std = [
     'primitives/std',
     'sp-runtime/std',
     'sp-io/std',
-    'rstd/std',
+    'sp-std/std',
     'balances/std',
     'support/std',
     'timestamp/std',

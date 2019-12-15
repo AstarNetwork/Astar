@@ -18,7 +18,7 @@ use std::sync::Arc;
 use plasm_primitives::{Block, AccountId, Index, Balance};
 use plasm_runtime::UncheckedExtrinsic;
 use sp_runtime::traits::ProvideRuntimeApi;
-use txpool_api::TransactionPool;
+use sp_transaction_pool::TransactionPool;
 
 /// Light client extra dependencies.
 pub struct LightDeps<F> {
