@@ -836,7 +836,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 [[package]]
 name = "fork-tree"
 version = "2.0.0"
-source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#0d02284040adf9dcf2ca37886715d591b8a7bc29"
+source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#a8ea665d61dbe79dc245539e5e13116d45189afe"
 dependencies = [
  "parity-scale-codec 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
@@ -844,7 +844,7 @@ dependencies = [
 [[package]]
 name = "frame-executive"
 version = "2.0.0"
-source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#0d02284040adf9dcf2ca37886715d591b8a7bc29"
+source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#a8ea665d61dbe79dc245539e5e13116d45189afe"
 dependencies = [
  "frame-support 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "frame-system 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
@@ -858,7 +858,7 @@ dependencies = [
 [[package]]
 name = "frame-metadata"
 version = "2.0.0"
-source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#0d02284040adf9dcf2ca37886715d591b8a7bc29"
+source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#a8ea665d61dbe79dc245539e5e13116d45189afe"
 dependencies = [
  "parity-scale-codec 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde 1.0.104 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -869,7 +869,7 @@ dependencies = [
 [[package]]
 name = "frame-support"
 version = "2.0.0"
-source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#0d02284040adf9dcf2ca37886715d591b8a7bc29"
+source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#a8ea665d61dbe79dc245539e5e13116d45189afe"
 dependencies = [
  "bitmask 0.5.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "frame-metadata 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
@@ -893,7 +893,7 @@ dependencies = [
 [[package]]
 name = "frame-support-procedural"
 version = "2.0.0"
-source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#0d02284040adf9dcf2ca37886715d591b8a7bc29"
+source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#a8ea665d61dbe79dc245539e5e13116d45189afe"
 dependencies = [
  "frame-support-procedural-tools 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "proc-macro2 1.0.6 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -904,7 +904,7 @@ dependencies = [
 [[package]]
 name = "frame-support-procedural-tools"
 version = "2.0.0"
-source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#0d02284040adf9dcf2ca37886715d591b8a7bc29"
+source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#a8ea665d61dbe79dc245539e5e13116d45189afe"
 dependencies = [
  "frame-support-procedural-tools-derive 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "proc-macro-crate 0.1.4 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -916,7 +916,7 @@ dependencies = [
 [[package]]
 name = "frame-support-procedural-tools-derive"
 version = "2.0.0"
-source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#0d02284040adf9dcf2ca37886715d591b8a7bc29"
+source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#a8ea665d61dbe79dc245539e5e13116d45189afe"
 dependencies = [
  "proc-macro2 1.0.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "quote 1.0.2 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -926,7 +926,7 @@ dependencies = [
 [[package]]
 name = "frame-system"
 version = "2.0.0"
-source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#0d02284040adf9dcf2ca37886715d591b8a7bc29"
+source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#a8ea665d61dbe79dc245539e5e13116d45189afe"
 dependencies = [
  "frame-support 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "impl-trait-for-tuples 0.1.3 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -943,7 +943,7 @@ dependencies = [
 [[package]]
 name = "frame-system-rpc-runtime-api"
 version = "2.0.0"
-source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#0d02284040adf9dcf2ca37886715d591b8a7bc29"
+source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#a8ea665d61dbe79dc245539e5e13116d45189afe"
 dependencies = [
  "parity-scale-codec 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "sp-api 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
@@ -1199,7 +1199,7 @@ dependencies = [
 [[package]]
 name = "grafana-data-source"
 version = "2.0.0"
-source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#0d02284040adf9dcf2ca37886715d591b8a7bc29"
+source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#a8ea665d61dbe79dc245539e5e13116d45189afe"
 dependencies = [
  "async-std 1.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "chrono 0.4.10 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -2491,7 +2491,7 @@ dependencies = [
 [[package]]
 name = "pallet-babe"
 version = "2.0.0"
-source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#0d02284040adf9dcf2ca37886715d591b8a7bc29"
+source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#a8ea665d61dbe79dc245539e5e13116d45189afe"
 dependencies = [
  "frame-support 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "frame-system 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
@@ -2500,7 +2500,7 @@ dependencies = [
  "pallet-timestamp 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "parity-scale-codec 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde 1.0.104 (registry+https://github.com/rust-lang/crates.io-index)",
- "sp-consensus-babe 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
+ "sp-consensus-babe 0.8.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "sp-inherents 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "sp-io 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "sp-runtime 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
@@ -2512,7 +2512,7 @@ dependencies = [
 [[package]]
 name = "pallet-balances"
 version = "2.0.0"
-source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#0d02284040adf9dcf2ca37886715d591b8a7bc29"
+source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#a8ea665d61dbe79dc245539e5e13116d45189afe"
 dependencies = [
  "frame-support 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "frame-system 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
@@ -2548,7 +2548,7 @@ dependencies = [
 [[package]]
 name = "pallet-contracts"
 version = "2.0.0"
-source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#0d02284040adf9dcf2ca37886715d591b8a7bc29"
+source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#a8ea665d61dbe79dc245539e5e13116d45189afe"
 dependencies = [
  "frame-support 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "frame-system 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
@@ -2567,7 +2567,7 @@ dependencies = [
 [[package]]
 name = "pallet-contracts-rpc"
 version = "2.0.0"
-source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#0d02284040adf9dcf2ca37886715d591b8a7bc29"
+source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#a8ea665d61dbe79dc245539e5e13116d45189afe"
 dependencies = [
  "jsonrpc-core 14.0.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "jsonrpc-core-client 14.0.5 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -2584,7 +2584,7 @@ dependencies = [
 [[package]]
 name = "pallet-contracts-rpc-runtime-api"
 version = "2.0.0"
-source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#0d02284040adf9dcf2ca37886715d591b8a7bc29"
+source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#a8ea665d61dbe79dc245539e5e13116d45189afe"
 dependencies = [
  "parity-scale-codec 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "sp-api 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
@@ -2595,7 +2595,7 @@ dependencies = [
 [[package]]
 name = "pallet-finality-tracker"
 version = "2.0.0"
-source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#0d02284040adf9dcf2ca37886715d591b8a7bc29"
+source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#a8ea665d61dbe79dc245539e5e13116d45189afe"
 dependencies = [
  "frame-support 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "frame-system 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
@@ -2611,7 +2611,7 @@ dependencies = [
 [[package]]
 name = "pallet-grandpa"
 version = "2.0.0"
-source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#0d02284040adf9dcf2ca37886715d591b8a7bc29"
+source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#a8ea665d61dbe79dc245539e5e13116d45189afe"
 dependencies = [
  "frame-support 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "frame-system 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
@@ -2629,7 +2629,7 @@ dependencies = [
 [[package]]
 name = "pallet-indices"
 version = "2.0.0"
-source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#0d02284040adf9dcf2ca37886715d591b8a7bc29"
+source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#a8ea665d61dbe79dc245539e5e13116d45189afe"
 dependencies = [
  "frame-support 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "frame-system 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
@@ -2670,7 +2670,7 @@ dependencies = [
 [[package]]
 name = "pallet-randomness-collective-flip"
 version = "2.0.0"
-source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#0d02284040adf9dcf2ca37886715d591b8a7bc29"
+source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#a8ea665d61dbe79dc245539e5e13116d45189afe"
 dependencies = [
  "frame-support 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "frame-system 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
@@ -2683,7 +2683,7 @@ dependencies = [
 [[package]]
 name = "pallet-session"
 version = "2.0.0"
-source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#0d02284040adf9dcf2ca37886715d591b8a7bc29"
+source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#a8ea665d61dbe79dc245539e5e13116d45189afe"
 dependencies = [
  "frame-support 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "frame-system 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
@@ -2702,7 +2702,7 @@ dependencies = [
 [[package]]
 name = "pallet-sudo"
 version = "2.0.0"
-source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#0d02284040adf9dcf2ca37886715d591b8a7bc29"
+source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#a8ea665d61dbe79dc245539e5e13116d45189afe"
 dependencies = [
  "frame-support 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "frame-system 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
@@ -2716,7 +2716,7 @@ dependencies = [
 [[package]]
 name = "pallet-timestamp"
 version = "2.0.0"
-source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#0d02284040adf9dcf2ca37886715d591b8a7bc29"
+source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#a8ea665d61dbe79dc245539e5e13116d45189afe"
 dependencies = [
  "frame-support 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "frame-system 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
@@ -2732,7 +2732,7 @@ dependencies = [
 [[package]]
 name = "pallet-transaction-payment"
 version = "2.0.0"
-source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#0d02284040adf9dcf2ca37886715d591b8a7bc29"
+source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#a8ea665d61dbe79dc245539e5e13116d45189afe"
 dependencies = [
  "frame-support 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "frame-system 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
@@ -2745,7 +2745,7 @@ dependencies = [
 [[package]]
 name = "pallet-transaction-payment-rpc"
 version = "2.0.0"
-source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#0d02284040adf9dcf2ca37886715d591b8a7bc29"
+source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#a8ea665d61dbe79dc245539e5e13116d45189afe"
 dependencies = [
  "jsonrpc-core 14.0.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "jsonrpc-core-client 14.0.5 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -2762,7 +2762,7 @@ dependencies = [
 [[package]]
 name = "pallet-transaction-payment-rpc-runtime-api"
 version = "2.0.0"
-source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#0d02284040adf9dcf2ca37886715d591b8a7bc29"
+source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#a8ea665d61dbe79dc245539e5e13116d45189afe"
 dependencies = [
  "frame-support 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "parity-scale-codec 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -3061,9 +3061,9 @@ dependencies = [
  "sc-client 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "sc-client-api 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "sc-client-db 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
- "sc-consensus-babe 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
+ "sc-consensus-babe 0.8.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "sc-finality-grandpa 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
- "sc-network 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
+ "sc-network 0.8.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "sc-offchain 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "sc-rpc 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "sc-service 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
@@ -3072,8 +3072,8 @@ dependencies = [
  "sc-transaction-pool 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "serde 1.0.104 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde_json 1.0.44 (registry+https://github.com/rust-lang/crates.io-index)",
- "sp-consensus 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
- "sp-consensus-babe 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
+ "sp-consensus 0.8.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
+ "sp-consensus-babe 0.8.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "sp-core 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "sp-finality-grandpa 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "sp-inherents 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
@@ -3144,7 +3144,7 @@ dependencies = [
  "serde 1.0.104 (registry+https://github.com/rust-lang/crates.io-index)",
  "sp-api 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "sp-block-builder 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
- "sp-consensus-babe 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
+ "sp-consensus-babe 0.8.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "sp-core 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "sp-inherents 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "sp-io 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
@@ -3559,7 +3559,7 @@ dependencies = [
 [[package]]
 name = "sc-basic-authority"
 version = "2.0.0"
-source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#0d02284040adf9dcf2ca37886715d591b8a7bc29"
+source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#a8ea665d61dbe79dc245539e5e13116d45189afe"
 dependencies = [
  "futures 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -3569,7 +3569,7 @@ dependencies = [
  "sc-client-api 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "sc-telemetry 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "sp-blockchain 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
- "sp-consensus 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
+ "sp-consensus 0.8.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "sp-core 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "sp-inherents 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "sp-runtime 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
@@ -3580,7 +3580,7 @@ dependencies = [
 [[package]]
 name = "sc-block-builder"
 version = "2.0.0"
-source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#0d02284040adf9dcf2ca37886715d591b8a7bc29"
+source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#a8ea665d61dbe79dc245539e5e13116d45189afe"
 dependencies = [
  "parity-scale-codec 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "sp-api 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
@@ -3594,11 +3594,11 @@ dependencies = [
 [[package]]
 name = "sc-chain-spec"
 version = "2.0.0"
-source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#0d02284040adf9dcf2ca37886715d591b8a7bc29"
+source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#a8ea665d61dbe79dc245539e5e13116d45189afe"
 dependencies = [
  "impl-trait-for-tuples 0.1.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "sc-chain-spec-derive 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
- "sc-network 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
+ "sc-network 0.8.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "sc-telemetry 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "serde 1.0.104 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde_json 1.0.44 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -3609,7 +3609,7 @@ dependencies = [
 [[package]]
 name = "sc-chain-spec-derive"
 version = "2.0.0"
-source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#0d02284040adf9dcf2ca37886715d591b8a7bc29"
+source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#a8ea665d61dbe79dc245539e5e13116d45189afe"
 dependencies = [
  "proc-macro-crate 0.1.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "proc-macro2 1.0.6 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -3620,7 +3620,7 @@ dependencies = [
 [[package]]
 name = "sc-cli"
 version = "2.0.0"
-source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#0d02284040adf9dcf2ca37886715d591b8a7bc29"
+source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#a8ea665d61dbe79dc245539e5e13116d45189afe"
 dependencies = [
  "ansi_term 0.12.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "app_dirs 1.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -3636,7 +3636,7 @@ dependencies = [
  "regex 1.3.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "rpassword 4.0.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "sc-client-api 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
- "sc-network 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
+ "sc-network 0.8.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "sc-service 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "sc-telemetry 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "sc-tracing 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
@@ -3655,7 +3655,7 @@ dependencies = [
 [[package]]
 name = "sc-client"
 version = "2.0.0"
-source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#0d02284040adf9dcf2ca37886715d591b8a7bc29"
+source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#a8ea665d61dbe79dc245539e5e13116d45189afe"
 dependencies = [
  "derive_more 0.99.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "fnv 1.0.6 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -3672,7 +3672,7 @@ dependencies = [
  "sc-telemetry 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "sp-api 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "sp-blockchain 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
- "sp-consensus 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
+ "sp-consensus 0.8.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "sp-core 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "sp-externalities 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "sp-inherents 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
@@ -3688,7 +3688,7 @@ dependencies = [
 [[package]]
 name = "sc-client-api"
 version = "2.0.0"
-source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#0d02284040adf9dcf2ca37886715d591b8a7bc29"
+source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#a8ea665d61dbe79dc245539e5e13116d45189afe"
 dependencies = [
  "derive_more 0.99.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "fnv 1.0.6 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -3703,7 +3703,7 @@ dependencies = [
  "sc-telemetry 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "sp-api 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "sp-blockchain 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
- "sp-consensus 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
+ "sp-consensus 0.8.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "sp-core 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "sp-externalities 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "sp-inherents 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
@@ -3719,7 +3719,7 @@ dependencies = [
 [[package]]
 name = "sc-client-db"
 version = "2.0.0"
-source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#0d02284040adf9dcf2ca37886715d591b8a7bc29"
+source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#a8ea665d61dbe79dc245539e5e13116d45189afe"
 dependencies = [
  "hash-db 0.15.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "kvdb 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -3734,7 +3734,7 @@ dependencies = [
  "sc-executor 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "sc-state-db 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "sp-blockchain 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
- "sp-consensus 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
+ "sp-consensus 0.8.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "sp-core 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "sp-runtime 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "sp-state-machine 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
@@ -3743,8 +3743,8 @@ dependencies = [
 
 [[package]]
 name = "sc-consensus-babe"
-version = "2.0.0"
-source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#0d02284040adf9dcf2ca37886715d591b8a7bc29"
+version = "0.8.0"
+source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#a8ea665d61dbe79dc245539e5e13116d45189afe"
 dependencies = [
  "derive_more 0.99.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "fork-tree 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
@@ -3762,8 +3762,8 @@ dependencies = [
  "rand 0.7.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "sc-client 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "sc-client-api 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
- "sc-consensus-slots 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
- "sc-consensus-uncles 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
+ "sc-consensus-slots 0.8.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
+ "sc-consensus-uncles 0.8.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "sc-keystore 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "sc-telemetry 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "schnorrkel 0.8.5 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -3771,8 +3771,8 @@ dependencies = [
  "sp-application-crypto 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "sp-block-builder 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "sp-blockchain 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
- "sp-consensus 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
- "sp-consensus-babe 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
+ "sp-consensus 0.8.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
+ "sp-consensus-babe 0.8.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "sp-core 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "sp-inherents 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "sp-io 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
@@ -3783,8 +3783,8 @@ dependencies = [
 
 [[package]]
 name = "sc-consensus-slots"
-version = "2.0.0"
-source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#0d02284040adf9dcf2ca37886715d591b8a7bc29"
+version = "0.8.0"
+source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#a8ea665d61dbe79dc245539e5e13116d45189afe"
 dependencies = [
  "futures 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "futures-timer 2.0.2 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -3794,7 +3794,7 @@ dependencies = [
  "sc-client-api 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "sc-telemetry 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "sp-blockchain 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
- "sp-consensus 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
+ "sp-consensus 0.8.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "sp-core 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "sp-inherents 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "sp-runtime 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
@@ -3802,13 +3802,13 @@ dependencies = [
 
 [[package]]
 name = "sc-consensus-uncles"
-version = "2.0.0"
-source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#0d02284040adf9dcf2ca37886715d591b8a7bc29"
+version = "0.8.0"
+source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#a8ea665d61dbe79dc245539e5e13116d45189afe"
 dependencies = [
  "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
  "sc-client-api 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "sp-authorship 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
- "sp-consensus 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
+ "sp-consensus 0.8.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "sp-core 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "sp-inherents 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "sp-runtime 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
@@ -3817,7 +3817,7 @@ dependencies = [
 [[package]]
 name = "sc-executor"
 version = "2.0.0"
-source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#0d02284040adf9dcf2ca37886715d591b8a7bc29"
+source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#a8ea665d61dbe79dc245539e5e13116d45189afe"
 dependencies = [
  "derive_more 0.99.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "lazy_static 1.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -3841,7 +3841,7 @@ dependencies = [
 [[package]]
 name = "sc-finality-grandpa"
 version = "2.0.0"
-source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#0d02284040adf9dcf2ca37886715d591b8a7bc29"
+source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#a8ea665d61dbe79dc245539e5e13116d45189afe"
 dependencies = [
  "finality-grandpa 0.10.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "fork-tree 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
@@ -3855,12 +3855,12 @@ dependencies = [
  "sc-client 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "sc-client-api 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "sc-keystore 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
- "sc-network 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
+ "sc-network 0.8.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "sc-network-gossip 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "sc-telemetry 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "serde_json 1.0.44 (registry+https://github.com/rust-lang/crates.io-index)",
  "sp-blockchain 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
- "sp-consensus 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
+ "sp-consensus 0.8.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "sp-core 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "sp-finality-grandpa 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "sp-finality-tracker 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
@@ -3871,7 +3871,7 @@ dependencies = [
 [[package]]
 name = "sc-keystore"
 version = "2.0.0"
-source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#0d02284040adf9dcf2ca37886715d591b8a7bc29"
+source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#a8ea665d61dbe79dc245539e5e13116d45189afe"
 dependencies = [
  "derive_more 0.99.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "hex 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -3885,8 +3885,8 @@ dependencies = [
 
 [[package]]
 name = "sc-network"
-version = "2.0.0"
-source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#0d02284040adf9dcf2ca37886715d591b8a7bc29"
+version = "0.8.0"
+source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#a8ea665d61dbe79dc245539e5e13116d45189afe"
 dependencies = [
  "bitflags 1.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "bytes 0.4.12 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -3918,8 +3918,8 @@ dependencies = [
  "smallvec 0.6.13 (registry+https://github.com/rust-lang/crates.io-index)",
  "sp-arithmetic 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "sp-blockchain 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
- "sp-consensus 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
- "sp-consensus-babe 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
+ "sp-consensus 0.8.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
+ "sp-consensus-babe 0.8.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "sp-core 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "sp-runtime 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "tokio-io 0.1.12 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -3931,7 +3931,7 @@ dependencies = [
 [[package]]
 name = "sc-network-gossip"
 version = "2.0.0"
-source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#0d02284040adf9dcf2ca37886715d591b8a7bc29"
+source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#a8ea665d61dbe79dc245539e5e13116d45189afe"
 dependencies = [
  "futures 0.1.29 (registry+https://github.com/rust-lang/crates.io-index)",
  "futures 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -3940,14 +3940,14 @@ dependencies = [
  "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
  "lru 0.1.17 (registry+https://github.com/rust-lang/crates.io-index)",
  "parking_lot 0.9.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "sc-network 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
+ "sc-network 0.8.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "sp-runtime 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
 ]
 
 [[package]]
 name = "sc-offchain"
 version = "2.0.0"
-source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#0d02284040adf9dcf2ca37886715d591b8a7bc29"
+source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#a8ea665d61dbe79dc245539e5e13116d45189afe"
 dependencies = [
  "bytes 0.4.12 (registry+https://github.com/rust-lang/crates.io-index)",
  "fnv 1.0.6 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -3963,7 +3963,7 @@ dependencies = [
  "rand 0.7.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "sc-client-api 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "sc-keystore 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
- "sc-network 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
+ "sc-network 0.8.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "sp-api 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "sp-core 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "sp-offchain 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
@@ -3974,7 +3974,7 @@ dependencies = [
 [[package]]
 name = "sc-peerset"
 version = "2.0.0"
-source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#0d02284040adf9dcf2ca37886715d591b8a7bc29"
+source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#a8ea665d61dbe79dc245539e5e13116d45189afe"
 dependencies = [
  "futures 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "libp2p 0.13.1 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -3985,7 +3985,7 @@ dependencies = [
 [[package]]
 name = "sc-rpc"
 version = "2.0.0"
-source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#0d02284040adf9dcf2ca37886715d591b8a7bc29"
+source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#a8ea665d61dbe79dc245539e5e13116d45189afe"
 dependencies = [
  "futures 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "hash-db 0.15.2 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -4014,7 +4014,7 @@ dependencies = [
 [[package]]
 name = "sc-rpc-api"
 version = "2.0.0"
-source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#0d02284040adf9dcf2ca37886715d591b8a7bc29"
+source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#a8ea665d61dbe79dc245539e5e13116d45189afe"
 dependencies = [
  "derive_more 0.99.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "futures 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -4036,7 +4036,7 @@ dependencies = [
 [[package]]
 name = "sc-rpc-server"
 version = "2.0.0"
-source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#0d02284040adf9dcf2ca37886715d591b8a7bc29"
+source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#a8ea665d61dbe79dc245539e5e13116d45189afe"
 dependencies = [
  "jsonrpc-core 14.0.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "jsonrpc-http-server 14.0.5 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -4051,7 +4051,7 @@ dependencies = [
 [[package]]
 name = "sc-service"
 version = "2.0.0"
-source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#0d02284040adf9dcf2ca37886715d591b8a7bc29"
+source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#a8ea665d61dbe79dc245539e5e13116d45189afe"
 dependencies = [
  "derive_more 0.99.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "exit-future 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -4069,7 +4069,7 @@ dependencies = [
  "sc-client-db 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "sc-executor 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "sc-keystore 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
- "sc-network 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
+ "sc-network 0.8.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "sc-offchain 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "sc-rpc 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "sc-rpc-server 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
@@ -4082,7 +4082,7 @@ dependencies = [
  "sp-api 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "sp-application-crypto 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "sp-blockchain 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
- "sp-consensus 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
+ "sp-consensus 0.8.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "sp-core 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "sp-io 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "sp-runtime 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
@@ -4098,7 +4098,7 @@ dependencies = [
 [[package]]
 name = "sc-service-test"
 version = "2.0.0"
-source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#0d02284040adf9dcf2ca37886715d591b8a7bc29"
+source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#a8ea665d61dbe79dc245539e5e13116d45189afe"
 dependencies = [
  "env_logger 0.7.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "fdlimit 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -4106,9 +4106,9 @@ dependencies = [
  "futures 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
  "sc-client 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
- "sc-network 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
+ "sc-network 0.8.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "sc-service 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
- "sp-consensus 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
+ "sp-consensus 0.8.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "sp-core 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "sp-runtime 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "sp-transaction-pool 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
@@ -4119,7 +4119,7 @@ dependencies = [
 [[package]]
 name = "sc-state-db"
 version = "2.0.0"
-source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#0d02284040adf9dcf2ca37886715d591b8a7bc29"
+source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#a8ea665d61dbe79dc245539e5e13116d45189afe"
 dependencies = [
  "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
  "parity-scale-codec 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -4130,7 +4130,7 @@ dependencies = [
 [[package]]
 name = "sc-telemetry"
 version = "2.0.0"
-source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#0d02284040adf9dcf2ca37886715d591b8a7bc29"
+source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#a8ea665d61dbe79dc245539e5e13116d45189afe"
 dependencies = [
  "bytes 0.4.12 (registry+https://github.com/rust-lang/crates.io-index)",
  "futures 0.1.29 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -4152,7 +4152,7 @@ dependencies = [
 [[package]]
 name = "sc-tracing"
 version = "2.0.0"
-source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#0d02284040adf9dcf2ca37886715d591b8a7bc29"
+source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#a8ea665d61dbe79dc245539e5e13116d45189afe"
 dependencies = [
  "erased-serde 0.3.9 (registry+https://github.com/rust-lang/crates.io-index)",
  "grafana-data-source 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
@@ -4168,7 +4168,7 @@ dependencies = [
 [[package]]
 name = "sc-transaction-graph"
 version = "2.0.0"
-source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#0d02284040adf9dcf2ca37886715d591b8a7bc29"
+source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#a8ea665d61dbe79dc245539e5e13116d45189afe"
 dependencies = [
  "derive_more 0.99.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "futures 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -4183,7 +4183,7 @@ dependencies = [
 [[package]]
 name = "sc-transaction-pool"
 version = "2.0.0"
-source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#0d02284040adf9dcf2ca37886715d591b8a7bc29"
+source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#a8ea665d61dbe79dc245539e5e13116d45189afe"
 dependencies = [
  "derive_more 0.99.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "futures 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -4430,7 +4430,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 [[package]]
 name = "sp-api"
 version = "2.0.0"
-source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#0d02284040adf9dcf2ca37886715d591b8a7bc29"
+source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#a8ea665d61dbe79dc245539e5e13116d45189afe"
 dependencies = [
  "parity-scale-codec 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "sp-api-proc-macro 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
@@ -4444,7 +4444,7 @@ dependencies = [
 [[package]]
 name = "sp-api-proc-macro"
 version = "2.0.0"
-source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#0d02284040adf9dcf2ca37886715d591b8a7bc29"
+source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#a8ea665d61dbe79dc245539e5e13116d45189afe"
 dependencies = [
  "blake2-rfc 0.2.18 (registry+https://github.com/rust-lang/crates.io-index)",
  "proc-macro-crate 0.1.4 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -4456,7 +4456,7 @@ dependencies = [
 [[package]]
 name = "sp-application-crypto"
 version = "2.0.0"
-source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#0d02284040adf9dcf2ca37886715d591b8a7bc29"
+source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#a8ea665d61dbe79dc245539e5e13116d45189afe"
 dependencies = [
  "parity-scale-codec 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde 1.0.104 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -4468,7 +4468,7 @@ dependencies = [
 [[package]]
 name = "sp-arithmetic"
 version = "2.0.0"
-source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#0d02284040adf9dcf2ca37886715d591b8a7bc29"
+source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#a8ea665d61dbe79dc245539e5e13116d45189afe"
 dependencies = [
  "integer-sqrt 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "num-traits 0.2.10 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -4481,7 +4481,7 @@ dependencies = [
 [[package]]
 name = "sp-authorship"
 version = "2.0.0"
-source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#0d02284040adf9dcf2ca37886715d591b8a7bc29"
+source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#a8ea665d61dbe79dc245539e5e13116d45189afe"
 dependencies = [
  "parity-scale-codec 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "sp-inherents 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
@@ -4492,7 +4492,7 @@ dependencies = [
 [[package]]
 name = "sp-block-builder"
 version = "2.0.0"
-source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#0d02284040adf9dcf2ca37886715d591b8a7bc29"
+source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#a8ea665d61dbe79dc245539e5e13116d45189afe"
 dependencies = [
  "parity-scale-codec 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "sp-api 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
@@ -4504,7 +4504,7 @@ dependencies = [
 [[package]]
 name = "sp-blockchain"
 version = "2.0.0"
-source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#0d02284040adf9dcf2ca37886715d591b8a7bc29"
+source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#a8ea665d61dbe79dc245539e5e13116d45189afe"
 dependencies = [
  "derive_more 0.99.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -4512,15 +4512,15 @@ dependencies = [
  "parity-scale-codec 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "parking_lot 0.9.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "sp-block-builder 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
- "sp-consensus 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
+ "sp-consensus 0.8.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "sp-runtime 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "sp-state-machine 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
 ]
 
 [[package]]
 name = "sp-consensus"
-version = "2.0.0"
-source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#0d02284040adf9dcf2ca37886715d591b8a7bc29"
+version = "0.8.0"
+source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#a8ea665d61dbe79dc245539e5e13116d45189afe"
 dependencies = [
  "derive_more 0.99.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "futures 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -4538,14 +4538,14 @@ dependencies = [
 
 [[package]]
 name = "sp-consensus-babe"
-version = "2.0.0"
-source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#0d02284040adf9dcf2ca37886715d591b8a7bc29"
+version = "0.8.0"
+source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#a8ea665d61dbe79dc245539e5e13116d45189afe"
 dependencies = [
  "parity-scale-codec 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "schnorrkel 0.8.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "sp-api 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "sp-application-crypto 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
- "sp-consensus 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
+ "sp-consensus 0.8.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "sp-inherents 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "sp-runtime 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "sp-std 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
@@ -4555,7 +4555,7 @@ dependencies = [
 [[package]]
 name = "sp-core"
 version = "2.0.0"
-source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#0d02284040adf9dcf2ca37886715d591b8a7bc29"
+source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#a8ea665d61dbe79dc245539e5e13116d45189afe"
 dependencies = [
  "base58 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "blake2-rfc 0.2.18 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -4594,7 +4594,7 @@ dependencies = [
 [[package]]
 name = "sp-debug-derive"
 version = "2.0.0"
-source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#0d02284040adf9dcf2ca37886715d591b8a7bc29"
+source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#a8ea665d61dbe79dc245539e5e13116d45189afe"
 dependencies = [
  "proc-macro2 1.0.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "quote 1.0.2 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -4604,7 +4604,7 @@ dependencies = [
 [[package]]
 name = "sp-externalities"
 version = "2.0.0"
-source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#0d02284040adf9dcf2ca37886715d591b8a7bc29"
+source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#a8ea665d61dbe79dc245539e5e13116d45189afe"
 dependencies = [
  "environmental 1.0.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "sp-std 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
@@ -4614,7 +4614,7 @@ dependencies = [
 [[package]]
 name = "sp-finality-grandpa"
 version = "2.0.0"
-source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#0d02284040adf9dcf2ca37886715d591b8a7bc29"
+source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#a8ea665d61dbe79dc245539e5e13116d45189afe"
 dependencies = [
  "parity-scale-codec 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde 1.0.104 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -4627,7 +4627,7 @@ dependencies = [
 [[package]]
 name = "sp-finality-tracker"
 version = "2.0.0"
-source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#0d02284040adf9dcf2ca37886715d591b8a7bc29"
+source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#a8ea665d61dbe79dc245539e5e13116d45189afe"
 dependencies = [
  "parity-scale-codec 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "sp-inherents 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
@@ -4637,7 +4637,7 @@ dependencies = [
 [[package]]
 name = "sp-inherents"
 version = "2.0.0"
-source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#0d02284040adf9dcf2ca37886715d591b8a7bc29"
+source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#a8ea665d61dbe79dc245539e5e13116d45189afe"
 dependencies = [
  "derive_more 0.99.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "parity-scale-codec 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -4649,7 +4649,7 @@ dependencies = [
 [[package]]
 name = "sp-io"
 version = "2.0.0"
-source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#0d02284040adf9dcf2ca37886715d591b8a7bc29"
+source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#a8ea665d61dbe79dc245539e5e13116d45189afe"
 dependencies = [
  "hash-db 0.15.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "libsecp256k1 0.3.3 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -4666,7 +4666,7 @@ dependencies = [
 [[package]]
 name = "sp-keyring"
 version = "2.0.0"
-source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#0d02284040adf9dcf2ca37886715d591b8a7bc29"
+source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#a8ea665d61dbe79dc245539e5e13116d45189afe"
 dependencies = [
  "lazy_static 1.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "sp-core 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
@@ -4677,7 +4677,7 @@ dependencies = [
 [[package]]
 name = "sp-offchain"
 version = "2.0.0"
-source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#0d02284040adf9dcf2ca37886715d591b8a7bc29"
+source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#a8ea665d61dbe79dc245539e5e13116d45189afe"
 dependencies = [
  "sp-api 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "sp-runtime 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
@@ -4686,7 +4686,7 @@ dependencies = [
 [[package]]
 name = "sp-panic-handler"
 version = "2.0.0"
-source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#0d02284040adf9dcf2ca37886715d591b8a7bc29"
+source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#a8ea665d61dbe79dc245539e5e13116d45189afe"
 dependencies = [
  "backtrace 0.3.40 (registry+https://github.com/rust-lang/crates.io-index)",
  "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -4695,7 +4695,7 @@ dependencies = [
 [[package]]
 name = "sp-rpc"
 version = "2.0.0"
-source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#0d02284040adf9dcf2ca37886715d591b8a7bc29"
+source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#a8ea665d61dbe79dc245539e5e13116d45189afe"
 dependencies = [
  "serde 1.0.104 (registry+https://github.com/rust-lang/crates.io-index)",
  "sp-core 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
@@ -4704,7 +4704,7 @@ dependencies = [
 [[package]]
 name = "sp-runtime"
 version = "2.0.0"
-source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#0d02284040adf9dcf2ca37886715d591b8a7bc29"
+source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#a8ea665d61dbe79dc245539e5e13116d45189afe"
 dependencies = [
  "impl-trait-for-tuples 0.1.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -4723,7 +4723,7 @@ dependencies = [
 [[package]]
 name = "sp-runtime-interface"
 version = "2.0.0"
-source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#0d02284040adf9dcf2ca37886715d591b8a7bc29"
+source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#a8ea665d61dbe79dc245539e5e13116d45189afe"
 dependencies = [
  "environmental 1.0.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "parity-scale-codec 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -4738,7 +4738,7 @@ dependencies = [
 [[package]]
 name = "sp-runtime-interface-proc-macro"
 version = "2.0.0"
-source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#0d02284040adf9dcf2ca37886715d591b8a7bc29"
+source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#a8ea665d61dbe79dc245539e5e13116d45189afe"
 dependencies = [
  "Inflector 0.11.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "proc-macro-crate 0.1.4 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -4750,7 +4750,7 @@ dependencies = [
 [[package]]
 name = "sp-sandbox"
 version = "2.0.0"
-source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#0d02284040adf9dcf2ca37886715d591b8a7bc29"
+source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#a8ea665d61dbe79dc245539e5e13116d45189afe"
 dependencies = [
  "parity-scale-codec 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "sp-core 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
@@ -4762,7 +4762,7 @@ dependencies = [
 [[package]]
 name = "sp-serializer"
 version = "2.0.0"
-source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#0d02284040adf9dcf2ca37886715d591b8a7bc29"
+source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#a8ea665d61dbe79dc245539e5e13116d45189afe"
 dependencies = [
  "serde 1.0.104 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde_json 1.0.44 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -4771,7 +4771,7 @@ dependencies = [
 [[package]]
 name = "sp-session"
 version = "2.0.0"
-source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#0d02284040adf9dcf2ca37886715d591b8a7bc29"
+source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#a8ea665d61dbe79dc245539e5e13116d45189afe"
 dependencies = [
  "sp-api 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "sp-runtime 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
@@ -4781,7 +4781,7 @@ dependencies = [
 [[package]]
 name = "sp-staking"
 version = "2.0.0"
-source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#0d02284040adf9dcf2ca37886715d591b8a7bc29"
+source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#a8ea665d61dbe79dc245539e5e13116d45189afe"
 dependencies = [
  "parity-scale-codec 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "sp-runtime 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
@@ -4791,7 +4791,7 @@ dependencies = [
 [[package]]
 name = "sp-state-machine"
 version = "2.0.0"
-source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#0d02284040adf9dcf2ca37886715d591b8a7bc29"
+source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#a8ea665d61dbe79dc245539e5e13116d45189afe"
 dependencies = [
  "hash-db 0.15.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -4810,12 +4810,12 @@ dependencies = [
 [[package]]
 name = "sp-std"
 version = "2.0.0"
-source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#0d02284040adf9dcf2ca37886715d591b8a7bc29"
+source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#a8ea665d61dbe79dc245539e5e13116d45189afe"
 
 [[package]]
 name = "sp-storage"
 version = "2.0.0"
-source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#0d02284040adf9dcf2ca37886715d591b8a7bc29"
+source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#a8ea665d61dbe79dc245539e5e13116d45189afe"
 dependencies = [
  "impl-serde 0.2.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde 1.0.104 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -4826,7 +4826,7 @@ dependencies = [
 [[package]]
 name = "sp-timestamp"
 version = "2.0.0"
-source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#0d02284040adf9dcf2ca37886715d591b8a7bc29"
+source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#a8ea665d61dbe79dc245539e5e13116d45189afe"
 dependencies = [
  "impl-trait-for-tuples 0.1.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "parity-scale-codec 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -4839,7 +4839,7 @@ dependencies = [
 [[package]]
 name = "sp-transaction-pool"
 version = "2.0.0"
-source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#0d02284040adf9dcf2ca37886715d591b8a7bc29"
+source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#a8ea665d61dbe79dc245539e5e13116d45189afe"
 dependencies = [
  "derive_more 0.99.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "futures 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -4853,7 +4853,7 @@ dependencies = [
 [[package]]
 name = "sp-trie"
 version = "2.0.0"
-source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#0d02284040adf9dcf2ca37886715d591b8a7bc29"
+source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#a8ea665d61dbe79dc245539e5e13116d45189afe"
 dependencies = [
  "hash-db 0.15.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "memory-db 0.15.3 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -4867,7 +4867,7 @@ dependencies = [
 [[package]]
 name = "sp-version"
 version = "2.0.0"
-source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#0d02284040adf9dcf2ca37886715d591b8a7bc29"
+source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#a8ea665d61dbe79dc245539e5e13116d45189afe"
 dependencies = [
  "impl-serde 0.2.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "parity-scale-codec 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -4879,7 +4879,7 @@ dependencies = [
 [[package]]
 name = "sp-wasm-interface"
 version = "2.0.0"
-source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#0d02284040adf9dcf2ca37886715d591b8a7bc29"
+source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#a8ea665d61dbe79dc245539e5e13116d45189afe"
 dependencies = [
  "impl-trait-for-tuples 0.1.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "wasmi 0.6.2 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -4975,12 +4975,12 @@ dependencies = [
 [[package]]
 name = "substrate-build-script-utils"
 version = "2.0.0"
-source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#0d02284040adf9dcf2ca37886715d591b8a7bc29"
+source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#a8ea665d61dbe79dc245539e5e13116d45189afe"
 
 [[package]]
 name = "substrate-frame-rpc-system"
 version = "2.0.0"
-source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#0d02284040adf9dcf2ca37886715d591b8a7bc29"
+source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#a8ea665d61dbe79dc245539e5e13116d45189afe"
 dependencies = [
  "frame-system-rpc-runtime-api 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "futures 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -5000,7 +5000,7 @@ dependencies = [
 [[package]]
 name = "substrate-wasm-builder-runner"
 version = "1.0.4"
-source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#0d02284040adf9dcf2ca37886715d591b8a7bc29"
+source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#a8ea665d61dbe79dc245539e5e13116d45189afe"
 
 [[package]]
 name = "subtle"
@@ -6309,13 +6309,13 @@ dependencies = [
 "checksum sc-client 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)" = "<none>"
 "checksum sc-client-api 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)" = "<none>"
 "checksum sc-client-db 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)" = "<none>"
-"checksum sc-consensus-babe 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)" = "<none>"
-"checksum sc-consensus-slots 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)" = "<none>"
-"checksum sc-consensus-uncles 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)" = "<none>"
+"checksum sc-consensus-babe 0.8.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)" = "<none>"
+"checksum sc-consensus-slots 0.8.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)" = "<none>"
+"checksum sc-consensus-uncles 0.8.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)" = "<none>"
 "checksum sc-executor 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)" = "<none>"
 "checksum sc-finality-grandpa 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)" = "<none>"
 "checksum sc-keystore 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)" = "<none>"
-"checksum sc-network 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)" = "<none>"
+"checksum sc-network 0.8.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)" = "<none>"
 "checksum sc-network-gossip 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)" = "<none>"
 "checksum sc-offchain 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)" = "<none>"
 "checksum sc-peerset 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)" = "<none>"
@@ -6362,8 +6362,8 @@ dependencies = [
 "checksum sp-authorship 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)" = "<none>"
 "checksum sp-block-builder 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)" = "<none>"
 "checksum sp-blockchain 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)" = "<none>"
-"checksum sp-consensus 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)" = "<none>"
-"checksum sp-consensus-babe 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)" = "<none>"
+"checksum sp-consensus 0.8.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)" = "<none>"
+"checksum sp-consensus-babe 0.8.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)" = "<none>"
 "checksum sp-core 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)" = "<none>"
 "checksum sp-debug-derive 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)" = "<none>"
 "checksum sp-externalities 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)" = "<none>"

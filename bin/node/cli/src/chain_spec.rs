@@ -61,24 +61,24 @@ pub fn get_account_id_from_seed<TPublic: Public>(seed: &str) -> AccountId
 /// Helper function to generate controller and session key from seed
 pub fn get_authority_keys_from_seed(
     seed: &str,
-) -> (AccountId, GrandpaId, BabeId) {
+) -> (AccountId, BabeId, GrandpaId) {
     (
         get_account_id_from_seed::<sr25519::Public>(seed),
-        get_from_seed::<GrandpaId>(seed),
         get_from_seed::<BabeId>(seed),
+        get_from_seed::<GrandpaId>(seed),
     )
 }
 
 fn session_keys(
-    grandpa: GrandpaId,
     babe: BabeId,
+    grandpa: GrandpaId,
 ) -> SessionKeys {
-    SessionKeys { grandpa, babe, }
+    SessionKeys { babe, grandpa, }
 }
 
 /// Helper function to create GenesisConfig
 fn generate_config_genesis(
-    initial_authorities: Vec<(AccountId, GrandpaId, BabeId)>,
+    initial_authorities: Vec<(AccountId, BabeId, GrandpaId)>,
     root_key: AccountId,
     endowed_accounts: Option<Vec<AccountId>>,
     enable_println: bool,
@@ -179,28 +179,28 @@ fn plasm_testnet_genesis() -> GenesisConfig {
     let authorities = vec![
         (   // akru
             hex!["16eb796bee0c857db3d646ee7070252707aec0c7d82b2eda856632f6a2306a58"].into(),
-            hex!["a052b95b98187616ded432d38a7329fe4525b567842a422ab61b921da389817c"].unchecked_into(),
-            hex!["177a70a4209226ffcc8f19bc4cb0866dbcf54fd7cf411e0ba87002967451dd0c"].unchecked_into(),
+            hex!["ac2bbc1877441591e997a7bd8043f4df4f7ca69bd05a762b0661ec376f64f551"].unchecked_into(),
+            hex!["0e95fb00ea007cd02b7b0065840d4572aeab5dbf77f148a62330168e7092703d"].unchecked_into(),
         ),
         (   // staketech-01
             hex!["48cdc7ef880c80e8475170f206381d2cb13a87c209452fc6d8a1e14186d61b28"].into(),
-            hex!["d0e7c18cc9fba7cedada50d7aff29d8cb39be446e9099abf476dafc697988c5c"].unchecked_into(),
-            hex!["928be798d4c32aedaa7267c66a48a906ee2374a03f7bbe07b741f5accd01c7d5"].unchecked_into(),
+            hex!["70887b6d5241f2483fd7f199697a2f4ccfe3aedbfa60fe0c82fe476a4b08a320"].unchecked_into(),
+            hex!["c62110354d58905bbfa894a1d82f0c175dfc7720758b28d18bc2118ef5f54f91"].unchecked_into(),
         ),
         (   // staketech-02
             hex!["38cdc7ef880c80e8475170f206381d2cb13a87c209452fc6d8a1e14186d61b28"].into(),
-            hex!["c8a37db8f2c236f71f72c1d333049cdba0eff3064a826dddbf0efb1f9a8a273c"].unchecked_into(),
-            hex!["a74b2d6f1c9d0b40a93456bb5dc65267a390a59d36839780eacac178dee5cf89"].unchecked_into(),
+            hex!["d409311bae981d87dee63d4c799723a33d509d7388db4c530a10e607937e547d"].unchecked_into(),
+            hex!["36aaade466263a00ec16a1a1c301636ff8488fc28a08e6a7eca7ac8496e35dca"].unchecked_into(),
         ),
         (   // staketech-03
             hex!["28cdc7ef880c80e8475170f206381d2cb13a87c209452fc6d8a1e14186d61b28"].into(),
-            hex!["3c4d43514f97d83862c9a5bd2513e8db363734fdbebfaaae9832b327c5f6e277"].unchecked_into(),
-            hex!["ad18fbe2ae608896b24c3d9582568891a9be31ba16421f3b5794753ed1c4d0f3"].unchecked_into(),
+            hex!["266f53d34490e10e6c818a1f6208dd285a74c01e022cb3b725cf5888bc89136f"].unchecked_into(),
+            hex!["c379204b0b450bb62006a0df2b4abac72c79909248fc0f30ce0b05fcb9c102fa"].unchecked_into(),
         ),
         (   // staketech-04
             hex!["18cdc7ef880c80e8475170f206381d2cb13a87c209452fc6d8a1e14186d61b28"].into(),
-            hex!["dea593136699e04edc1043ceaf753efa58b0139e627e0f62623ea13315a1cb0a"].unchecked_into(),
-            hex!["673ba3a3efb5b676b7f804d1e9297823121cf81859542a665388b76c980e64c0"].unchecked_into(),
+            hex!["96e2554353e7a8de10a388a5dda42096d3c7768403f3735d0a939bc3fd39bc54"].unchecked_into(),
+            hex!["674bd4f2670c0e99edcccd5d3821c54b9d559580a31d8e2ca1e88c1e3db28021"].unchecked_into(),
         ),
         (   // Stir
             hex!["ce3e6bb7672586afaf31d1c5d7e73a69d468b461d1334917ff1f23d984f8c525"].into(),
@@ -365,12 +365,7 @@ pub(crate) mod tests {
         service_test::connectivity(
             integration_test_config_with_two_authorities(),
             |config| new_full(config),
-            |mut config| {
-                // light nodes are unsupported
-                config.roles = Roles::FULL;
-                new_full(config)
-            },
-            true,
+            |config| new_light(config),
         );
     }
 }
