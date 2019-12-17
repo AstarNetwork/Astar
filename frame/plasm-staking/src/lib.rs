@@ -2,19 +2,18 @@
 //!
 //! The Plasm session module manages era and total amounts of rewards and how to distribute.
 
-use support::{decl_module, decl_storage, decl_event, StorageValue, weights::SimpleDispatchInfo,
-			  traits::{LockableCurrency, Time, Get, Currency}};
+use support::{
+    decl_module, decl_storage, decl_event, StorageValue,
+    weights::SimpleDispatchInfo,
+	traits::{Time, Get},
+};
 use system::ensure_root;
 use session::OnSessionEnding;
 use sp_staking::SessionIndex;
-use sp_runtime::{
-	RuntimeDebug,
-};
+use sp_runtime::RuntimeDebug;
 #[cfg(feature = "std")]
-use sp_runtime::{Serialize, Deserialize};
-
-use validator_manager::{EraIndex, OnEraEnding};
-use codec::{Encode, Decode};
+use sp_runtime::{Serialize, Deserialize,};
+use codec::{Encode, Decode,};
 
 #[cfg(test)]
 mod mock;
@@ -22,8 +21,7 @@ mod mock;
 mod tests;
 mod migration;
 
-pub type BalanceOf<T> =
-<<T as Trait>::Currency as Currency<<T as system::Trait>::AccountId>>::Balance;
+pub type EraIndex = u32;
 pub type MomentOf<T> = <<T as Trait>::Time as Time>::Moment;
 
 /// Mode of era-forcing.
@@ -45,17 +43,11 @@ impl Default for Forcing {
 }
 
 pub trait Trait: session::Trait {
-	/// The staking balance.
-	type Currency: LockableCurrency<Self::AccountId, Moment=Self::BlockNumber>;
-
 	/// Time used for computing era duration.
 	type Time: Time;
 
 	/// Number of sessions per era.
 	type SessionsPerEra: Get<SessionIndex>;
-
-	/// Handler for when a session is about to end.
-	type OnEraEnding: OnEraEnding<Self::AccountId, EraIndex>;
 
 	/// The overarching event type.
 	type Event: From<Event<Self>> + Into<<Self as system::Trait>::Event>;
@@ -64,7 +56,7 @@ pub trait Trait: session::Trait {
 decl_storage! {
 	trait Store for Module<T: Trait> as PlasmStaking {
 		/// The current era index.
-		pub CurrentEra get(fn current_era) config(): EraIndex;
+		pub CurrentEra get(fn current_era): EraIndex;
 
 		/// The start of the current era.
 		pub CurrentEraStart get(fn current_era_start): MomentOf<T>;
@@ -77,6 +69,9 @@ decl_storage! {
 
 		/// The version of storage for upgrade.
 		pub StorageVersion get(fn storage_version) config(): u32;
+
+        /// Set of accounts that can validate blocks.
+        pub Validators get(fn validators) config(): Vec<T::AccountId>;
 	}
 }
 
@@ -132,13 +127,25 @@ decl_module! {
 			ensure_root(origin)?;
 			ForceEra::put(Forcing::ForceAlways);
 		}
+
+		/// Manually set new validators. 
+		///
+		/// # <weight>
+		/// - One storage write
+		/// # </weight>
+		#[weight = SimpleDispatchInfo::FreeOperational]
+        fn set_validators(origin, new_validators: Vec<T::AccountId>) {
+            ensure_root(origin)?;
+            <Validators<T>>::put(&new_validators);
+            Self::deposit_event(RawEvent::NewValidators(new_validators));
+        }
 	}
 }
 
 decl_event!(
-	pub enum Event<T> where Balance = BalanceOf<T> {
-		/// All validators have been rewarded;
-		Reward(Balance),
+	pub enum Event<T> where AccountId = <T as system::Trait>::AccountId {
+        /// Validator set changed.
+        NewValidators(Vec<AccountId>),
 	}
 );
 
@@ -156,11 +163,11 @@ impl<T: Trait> Module<T> {
 	}
 
 	pub fn new_era(_ending: SessionIndex, will_apply_at: SessionIndex) -> Option<Vec<T::AccountId>> {
-		let current_era = Self::current_era();
-		CurrentEra::put(current_era + 1);
+		CurrentEra::mutate(|era| *era += 1);
 		<CurrentEraStart<T>>::put(T::Time::now());
 		CurrentEraStartSessionIndex::put(will_apply_at - 1);
-		<T as Trait>::OnEraEnding::on_era_ending(current_era, current_era + 1)
+        // Apply new validator set
+        Some(<Validators<T>>::get())
 	}
 
 	/// Ensures storage is upgraded to most recent necessary state.
@@ -174,4 +181,10 @@ impl<T: Trait> OnSessionEnding<T::AccountId> for Module<T> {
 		Self::ensure_storage_upgraded();
 		Self::new_session(ending, will_apply_at)
 	}
+}
+
+impl<T: Trait> session::SelectInitialValidators<T::AccountId> for Module<T> {
+    fn select_initial_validators() -> Option<Vec<T::AccountId>> {
+        Some(<Validators<T>>::get())
+    }
 }

@@ -3,16 +3,14 @@
 #![cfg(test)]
 
 use super::*;
-use crate::{Module, Trait};
 use sp_runtime::{Perbill, KeyTypeId};
 use sp_runtime::testing::{Header, UintAuthorityId};
 use sp_runtime::traits::{IdentityLookup, BlakeTwo256, ConvertInto, OpaqueKeys};
 use primitives::{H256, crypto::key_types};
 use support::{impl_outer_origin, impl_outer_dispatch, parameter_types};
 
-/// The AccountId alias in this test module.
-pub type AccountId = u64;
 pub type BlockNumber = u64;
+pub type AccountId = u64;
 pub type Balance = u64;
 
 impl_outer_origin! {
@@ -23,42 +21,14 @@ impl_outer_dispatch! {
     pub enum Call for Test where origin: Origin {
     	session::Session,
     	balances::Balances,
-    	validator_manager::ValidatorManager,
     	plasm_staking::PlasmStaking,
     }
 }
-
-//mod plasm_staking {
-//	// Re-export contents of the root. This basically
-//	// needs to give a name for the current crate.
-//	// This hack is required for `impl_outer_event!`.
-//	pub use super::super::*;
-//	use support::impl_outer_event;
-//}
-//
-//impl_outer_event! {
-//    pub enum () for Test {
-//    	session,
-//    	balances<T>,
-//    	session_manager<T>,
-//        plasm_staking<T>,
-//    }
-//}
 
 pub fn new_test_ext() -> sp_io::TestExternalities {
 	let mut storage = system::GenesisConfig::default()
 		.build_storage::<Test>()
 		.unwrap();
-
-	let validators = vec![1, 2];
-
-	let _ = validator_manager::GenesisConfig::<Test> {
-		validators: validators.clone(),
-	}.assimilate_storage(&mut storage);
-
-	let _ = session::GenesisConfig::<Test> {
-		keys: validators.iter().map(|x| (*x, UintAuthorityId(*x))).collect(),
-	}.assimilate_storage(&mut storage);
 
 	let _ = balances::GenesisConfig::<Test> {
 		balances: vec![
@@ -70,10 +40,16 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 		vesting: vec![],
 	}.assimilate_storage(&mut storage);
 
-	let _ = GenesisConfig {
-		current_era: 0,
-		force_era: Forcing::NotForcing,
+	let validators = vec![1, 2];
+
+	let _ = GenesisConfig::<Test> {
 		storage_version: 1,
+		force_era: Forcing::NotForcing,
+		validators: validators,
+	}.assimilate_storage(&mut storage);
+
+	let _ = session::GenesisConfig::<Test> {
+        keys: vec![] 
 	}.assimilate_storage(&mut storage);
 
 	storage.into()
@@ -139,17 +115,13 @@ impl session::SessionHandler<u64> for TestSessionHandler {
 impl session::Trait for Test {
 	type ShouldEndSession = session::PeriodicSessions<Period, Offset>;
 	type OnSessionEnding = PlasmStaking;
-	type SelectInitialValidators = ValidatorManager;
+	type SelectInitialValidators = PlasmStaking;
 	type SessionHandler = TestSessionHandler;
 	type ValidatorId = u64;
 	type ValidatorIdOf = ConvertInto;
 	type Keys = UintAuthorityId;
 	type Event = ();
 	type DisabledValidatorsThreshold = ();
-}
-
-impl validator_manager::Trait for Test {
-	type Event = ();
 }
 
 parameter_types! {
@@ -175,18 +147,15 @@ parameter_types! {
 }
 
 impl Trait for Test {
-	type Currency = Balances;
 	type Time = Timestamp;
-	type SessionsPerEra = SessionsPerEra;
-	type OnEraEnding = ValidatorManager;
 	type Event = ();
+	type SessionsPerEra = SessionsPerEra;
 }
 
 /// ValidatorManager module.
 pub type System = system::Module<Test>;
-pub type Balances = balances::Module<Test>;
 pub type Session = session::Module<Test>;
-pub type ValidatorManager = validator_manager::Module<Test>;
+pub type Balances = balances::Module<Test>;
 pub type Timestamp = timestamp::Module<Test>;
 pub type PlasmStaking = Module<Test>;
 

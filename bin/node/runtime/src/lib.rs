@@ -163,19 +163,25 @@ impl_opaque_keys! {
 }
 
 impl session::Trait for Runtime {
-	type OnSessionEnding = ValidatorManager;
+	type OnSessionEnding = PlasmStaking;
 	type SessionHandler = <SessionKeys as OpaqueKeys>::KeyTypeIdProviders;
 	type ShouldEndSession = Babe;
 	type Event = Event;
 	type Keys = SessionKeys;
 	type ValidatorId = <Self as system::Trait>::AccountId;
 	type ValidatorIdOf = ConvertInto;
-	type SelectInitialValidators = ValidatorManager;
+	type SelectInitialValidators = PlasmStaking;
 	type DisabledValidatorsThreshold = ();
 }
 
-impl validator_manager::Trait for Runtime {
+parameter_types! {
+	pub const SessionsPerEra: sp_staking::SessionIndex = 10;
+}
+
+impl plasm_staking::Trait for Runtime {
+	type Time = Timestamp;
     type Event = Event;
+	type SessionsPerEra = SessionsPerEra;
 }
 
 parameter_types! {
