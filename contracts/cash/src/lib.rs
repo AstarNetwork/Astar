@@ -29,7 +29,7 @@ contract! {
     #![env = ink_core::env::DefaultSrmlTypes]
 
     /// Cash Plasma Standard Contract.
-	struct Cash {
+    struct Cash {
         /// The current state of our flag.
         predicate: predicate::ownership::Predicate,
     }
@@ -102,7 +102,7 @@ contract! {
         /// To prevent this, the valid owner must checkpoint their unspent state,
         /// exit it, and create a challenge on the invalid checkpoint.
         pub(external) fn challenge_checkpoint(&mut self, challenge: Vec<u8>) {
-        	let challenge = Challenge::<AccountId>::decode(&mut &challenge[..]).expect("expect Challenge<AccontId> challenge");
+            let challenge = Challenge::<AccountId>::decode(&mut &challenge[..]).expect("expect Challenge<AccontId> challenge");
             if let Err(err) = self.predicate.deposit().challenge_checkpoint(env, challenge) {
                 env.println(err);
             }
@@ -114,7 +114,7 @@ contract! {
         /// To remove this invalid challenge, the challenged checkpointer may demonstrate the exit is deprecated,
         /// deleting it, and then call this method to remove the challenge.
         pub(external) fn remove_challenge(&mut self, challenge: Vec<u8>) {
-        	let challenge = Challenge::<AccountId>::decode(&mut &challenge[..]).expect("challenge Challenge<AccountId> challenge");
+            let challenge = Challenge::<AccountId>::decode(&mut &challenge[..]).expect("challenge Challenge<AccountId> challenge");
             if let Err(err) = self.predicate.deposit().remove_challenge(env, challenge) {
                 env.println(err);
             }
@@ -125,8 +125,8 @@ contract! {
         /// For a user to redeem state from the plasma chain onto the main chain,
         /// they must checkpoint it and respond to all challenges on the checkpoint,
         /// and await a `EXIT_PERIOD` to demonstrate that the checkpointed subrange has not been deprecated. This is the method which starts the latter process on a given checkpoint.
-        pub(external) fn start_exit(&mut self,	checkpoint: Vec<u8>){
-        	let checkpoint = Checkpoint::<AccountId>::decode(&mut &checkpoint[..]).expect("expect Checkpoint<AccountId> checkpoint");
+        pub(external) fn start_exit(&mut self,    checkpoint: Vec<u8>){
+            let checkpoint = Checkpoint::<AccountId>::decode(&mut &checkpoint[..]).expect("expect Checkpoint<AccountId> checkpoint");
             match self.predicate.start_exit(env, checkpoint) {
                 Ok(result) => env.emit(result),
                 Err(err) => env.println(err),
@@ -160,13 +160,13 @@ contract! {
         }
 
         // ================================== Getter ===================================================
-        ///	Gets Leatest Plasma block number.
+        ///    Gets Leatest Plasma block number.
         pub(external) fn current_block(&self) -> BlockNumber {
             self.predicate.commitment_ref().current_block(env)
         }
 
 
-		/// Gets Plasma block hash by identified block number.
+        /// Gets Plasma block hash by identified block number.
         pub(external) fn block_hash(&self, number: BlockNumber) -> Option<Hash> {
             self.predicate.commitment_ref().block_hash(env, number)
         }

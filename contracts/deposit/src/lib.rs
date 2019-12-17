@@ -33,19 +33,19 @@ type Hash = <ContractEnv<DefaultSrmlTypes> as EnvTypes>::Hash;
 #[derive(Debug, Clone, scale::Encode, scale::Decode, PartialEq, Eq)]
 #[cfg_attr(feature = "ink-generate-abi", derive(type_metadata::Metadata))]
 pub struct CheckpointStatus {
-	/// Ethereum block number until which the checkpoint can still be challenged.
+    /// Ethereum block number until which the checkpoint can still be challenged.
     challengeable_until: BlockNumber,
-	/// Number of outstanding challenges.
+    /// Number of outstanding challenges.
     outstanding_challenges: u128,
 }
 
 impl ink_core::storage::Flush for CheckpointStatus {
-	fn flush(&mut self) {}
+    fn flush(&mut self) {}
 }
 
 #[cfg(not(any(test, feature = "std")))]
 mod no_std {
-	extern crate alloc;
-	pub use alloc::string::{String, ToString};
-	pub use alloc::vec::Vec;
+    extern crate alloc;
+    pub use alloc::string::{String, ToString};
+    pub use alloc::vec::Vec;
 }

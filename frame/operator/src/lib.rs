@@ -14,16 +14,16 @@ use crate::parameters::Verifiable;
 
 /// The module's configuration trait.
 pub trait Trait: contract::Trait {
-	type Parameters: Parameter
-	+ Member
-	+ MaybeSerialize
-	+ MaybeDisplay
-	+ Default
-	+ sp_std::hash::Hash
-	+ parameters::Verifiable;
+    type Parameters: Parameter
+    + Member
+    + MaybeSerialize
+    + MaybeDisplay
+    + Default
+    + sp_std::hash::Hash
+    + parameters::Verifiable;
 
-	/// The overarching event type.
-	type Event: From<Event<Self>> + Into<<Self as system::Trait>::Event>;
+    /// The overarching event type.
+    type Event: From<Event<Self>> + Into<<Self as system::Trait>::Event>;
 }
 
 // This module's storage items.
@@ -105,7 +105,7 @@ decl_module! {
 
             // remove origin operator to contracts
             <OperatorHasContracts<T>>::mutate(&operator,
-            	|tree| *tree = tree.iter().filter(|&x| !contracts.contains(x)).cloned().collect());
+                |tree| *tree = tree.iter().filter(|&x| !contracts.contains(x)).cloned().collect());
 
             // add new_operator to contracts
             <OperatorHasContracts<T>>::mutate(&new_operator,
