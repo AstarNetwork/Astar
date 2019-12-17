@@ -6,7 +6,6 @@ members = [
     "bin/node/rpc",
     "bin/node/runtime",
     "frame/operator",
-    "frame/validator-manager",
     "frame/plasm-staking",
 ]
 

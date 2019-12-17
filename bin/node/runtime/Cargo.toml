@@ -31,7 +31,7 @@ sp-session = { git = "https://github.com/staketechnologies/substrate.git", branc
 
 # frame dependencies
 operator = { package = "pallet-contract-operator", path = "../../../frame/operator", default-features = false }
-validator-manager = { package = "pallet-validator-manager", path = "../../../frame/validator-manager", default-features = false }
+plasm-staking = { package = "pallet-plasm-staking", path = "../../../frame/plasm-staking", default-features = false }
 executive = { package = "frame-executive", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master", default-features = false }
 babe = { package = "pallet-babe", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master", default-features = false }
 balances = { package = "pallet-balances", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master", default-features = false }
@@ -78,7 +78,7 @@ std = [
     "sp-std/std",
     "serde",
     "session/std",
-    "validator-manager/std",
+    "plasm-staking/std",
     "sp-runtime/std",
     "sp-session/std",
     "sudo/std",

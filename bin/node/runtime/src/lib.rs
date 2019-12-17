@@ -28,6 +28,7 @@ use inherents::{InherentData, CheckInherentsResult};
 pub use sp_runtime::BuildStorage;
 pub use timestamp::Call as TimestampCall;
 pub use balances::Call as BalancesCall;
+pub use plasm_staking::Forcing;
 pub use contracts::Gas;
 
 /// Implementations of some helper traits passed into runtime modules as associated types.
@@ -163,19 +164,25 @@ impl_opaque_keys! {
 }
 
 impl session::Trait for Runtime {
-	type OnSessionEnding = ValidatorManager;
-	type SessionHandler = <SessionKeys as OpaqueKeys>::KeyTypeIdProviders;
-	type ShouldEndSession = Babe;
-	type Event = Event;
-	type Keys = SessionKeys;
-	type ValidatorId = <Self as system::Trait>::AccountId;
-	type ValidatorIdOf = ConvertInto;
-	type SelectInitialValidators = ValidatorManager;
-	type DisabledValidatorsThreshold = ();
+    type OnSessionEnding = PlasmStaking;
+    type SessionHandler = <SessionKeys as OpaqueKeys>::KeyTypeIdProviders;
+    type ShouldEndSession = Babe;
+    type Event = Event;
+    type Keys = SessionKeys;
+    type ValidatorId = <Self as system::Trait>::AccountId;
+    type ValidatorIdOf = ConvertInto;
+    type SelectInitialValidators = PlasmStaking;
+    type DisabledValidatorsThreshold = ();
 }
 
-impl validator_manager::Trait for Runtime {
+parameter_types! {
+    pub const SessionsPerEra: plasm_staking::SessionIndex = 10;
+}
+
+impl plasm_staking::Trait for Runtime {
+    type Time = Timestamp;
     type Event = Event;
+    type SessionsPerEra = SessionsPerEra;
 }
 
 parameter_types! {
@@ -245,33 +252,33 @@ impl finality_tracker::Trait for Runtime {
 }
 
 impl system::offchain::CreateTransaction<Runtime, UncheckedExtrinsic> for Runtime {
-	type Public = <Signature as Verify>::Signer;
-	type Signature = Signature;
+    type Public = <Signature as Verify>::Signer;
+    type Signature = Signature;
 
-	fn create_transaction<TSigner: system::offchain::Signer<Self::Public, Self::Signature>>(
-		call: Call,
-		public: Self::Public,
-		account: AccountId,
-		index: Index,
-	) -> Option<(Call, <UncheckedExtrinsic as Extrinsic>::SignaturePayload)> {
-		let period = 1 << 8;
-		let current_block = System::block_number().saturated_into::<u64>();
-		let tip = 0;
-		let extra: SignedExtra = (
-			system::CheckVersion::<Runtime>::new(),
-			system::CheckGenesis::<Runtime>::new(),
-			system::CheckEra::<Runtime>::from(generic::Era::mortal(period, current_block)),
-			system::CheckNonce::<Runtime>::from(index),
-			system::CheckWeight::<Runtime>::new(),
-			transaction_payment::ChargeTransactionPayment::<Runtime>::from(tip),
-			Default::default(),
-		);
-		let raw_payload = SignedPayload::new(call, extra).ok()?;
-		let signature = TSigner::sign(public, &raw_payload)?;
-		let address = Indices::unlookup(account);
-		let (call, extra, _) = raw_payload.deconstruct();
-		Some((call, (address, signature, extra)))
-	}
+    fn create_transaction<TSigner: system::offchain::Signer<Self::Public, Self::Signature>>(
+        call: Call,
+        public: Self::Public,
+        account: AccountId,
+        index: Index,
+    ) -> Option<(Call, <UncheckedExtrinsic as Extrinsic>::SignaturePayload)> {
+        let period = 1 << 8;
+        let current_block = System::block_number().saturated_into::<u64>();
+        let tip = 0;
+        let extra: SignedExtra = (
+            system::CheckVersion::<Runtime>::new(),
+            system::CheckGenesis::<Runtime>::new(),
+            system::CheckEra::<Runtime>::from(generic::Era::mortal(period, current_block)),
+            system::CheckNonce::<Runtime>::from(index),
+            system::CheckWeight::<Runtime>::new(),
+            transaction_payment::ChargeTransactionPayment::<Runtime>::from(tip),
+            Default::default(),
+        );
+        let raw_payload = SignedPayload::new(call, extra).ok()?;
+        let signature = TSigner::sign(public, &raw_payload)?;
+        let address = Indices::unlookup(account);
+        let (call, extra, _) = raw_payload.deconstruct();
+        Some((call, (address, signature, extra)))
+    }
 }
 
 construct_runtime!(
@@ -286,7 +293,7 @@ construct_runtime!(
         Indices: indices,
         Balances: balances,
         Contracts: contracts,
-        ValidatorManager: validator_manager::{Module, Call, Storage, Event<T>, Config<T>},
+        PlasmStaking: plasm_staking::{Module, Call, Storage, Event<T>, Config<T>},
         Session: session::{Module, Call, Storage, Event, Config<T>},
         Babe: babe::{Module, Call, Storage, Config, Inherent(Timestamp)},
         Grandpa: grandpa::{Module, Call, Storage, Config, Event},
@@ -470,37 +477,37 @@ impl_runtime_apis! {
 
 #[cfg(test)]
 mod tests {
-	use super::*;
+    use super::*;
 
-	#[test]
-	fn block_hooks_weight_should_not_exceed_limits() {
-		use support::weights::WeighBlock;
-		let check_for_block = |b| {
-			let block_hooks_weight =
-				<AllModules as WeighBlock<BlockNumber>>::on_initialize(b) +
-				<AllModules as WeighBlock<BlockNumber>>::on_finalize(b);
+    #[test]
+    fn block_hooks_weight_should_not_exceed_limits() {
+        use support::weights::WeighBlock;
+        let check_for_block = |b| {
+            let block_hooks_weight =
+                <AllModules as WeighBlock<BlockNumber>>::on_initialize(b) +
+                <AllModules as WeighBlock<BlockNumber>>::on_finalize(b);
 
-			assert_eq!(
-				block_hooks_weight,
-				0,
-				"This test might fail simply because the value being compared to has increased to a \
-				module declaring a new weight for a hook or call. In this case update the test and \
-				happily move on.",
-			);
+            assert_eq!(
+                block_hooks_weight,
+                0,
+                "This test might fail simply because the value being compared to has increased to a \
+                module declaring a new weight for a hook or call. In this case update the test and \
+                happily move on.",
+            );
 
-			// Invariant. Always must be like this to have a sane chain.
-			assert!(block_hooks_weight < MaximumBlockWeight::get());
+            // Invariant. Always must be like this to have a sane chain.
+            assert!(block_hooks_weight < MaximumBlockWeight::get());
 
-			// Warning.
-			if block_hooks_weight > MaximumBlockWeight::get() / 2 {
-				println!(
-					"block hooks weight is consuming more than a block's capacity. You probably want \
-					to re-think this. This test will fail now."
-				);
-				assert!(false);
-			}
-		};
+            // Warning.
+            if block_hooks_weight > MaximumBlockWeight::get() / 2 {
+                println!(
+                    "block hooks weight is consuming more than a block's capacity. You probably want \
+                    to re-think this. This test will fail now."
+                );
+                assert!(false);
+            }
+        };
 
-		let _ = (0..100_000).for_each(check_for_block);
-	}
+        let _ = (0..100_000).for_each(check_for_block);
+    }
 }

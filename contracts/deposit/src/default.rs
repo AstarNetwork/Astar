@@ -269,8 +269,8 @@ impl traits::Deposit<RangeNumber, commitment::default::Commitment> for Deposit {
             }
         } else {
             return Err(
-				"error: verify that the subRange is still exitable with the depositedRangeId. Not found deposited_range_id.",
-			);
+                "error: verify that the subRange is still exitable with the depositedRangeId. Not found deposited_range_id.",
+            );
         }
 
         // verify that an indentical checkpoint has not already been started.
@@ -315,8 +315,8 @@ impl traits::Deposit<RangeNumber, commitment::default::Commitment> for Deposit {
             >= newer_checkpoint.state_update.plasma_block_number
         {
             return Err(
-				"error: ensure that the plasma blocknumber of the older_exit is less than that of newer_checkpoint.",
-			);
+                "error: ensure that the plasma blocknumber of the older_exit is less than that of newer_checkpoint.",
+            );
         }
 
         // Check checkpoint finalized.
@@ -518,8 +518,8 @@ impl traits::Deposit<RangeNumber, commitment::default::Commitment> for Deposit {
 
         // MUST make an ERC20 transfer of the end - start amount to the predicate address.
         // Transfer tokens to the deposit contract
-        //		uint256 amount = _exit.subrange.end - _exit.subrange.start;
-        //		erc20.transfer(_exit.stateUpdate.stateObject.predicateAddress, amount);
+        //        uint256 amount = _exit.subrange.end - _exit.subrange.start;
+        //        erc20.transfer(_exit.stateUpdate.stateObject.predicateAddress, amount);
         // TODO
 
         // Delete the exit.
@@ -1112,7 +1112,7 @@ mod tests {
         ink_core::env::ContractEnv::<DefaultSrmlTypes>::set_block_number(2);
 
         assert_eq!(Err("error: ensure that the exit is finalized (current Ethereum block exceeds redeemablAfter."),
-				   contract.finalize_exit(&mut env, exit.clone(), deposited_range_id));
+                   contract.finalize_exit(&mut env, exit.clone(), deposited_range_id));
 
         // passed block number
         ink_core::env::ContractEnv::<DefaultSrmlTypes>::set_block_number(10);
