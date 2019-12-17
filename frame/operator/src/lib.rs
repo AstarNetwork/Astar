@@ -12,6 +12,10 @@ mod tests;
 
 use crate::parameters::Verifiable;
 
+pub trait IsExistsContract<AccountId> {
+    fn is_exists_contract(contract_id: &AccountId) -> bool;
+}
+
 /// The module's configuration trait.
 pub trait Trait: contract::Trait {
     type Parameters: Parameter
@@ -137,3 +141,10 @@ decl_event!(
         SetParameters(AccountId, Parameters),
     }
 );
+
+impl<T: Trait> IsExistsContract<T::AccountId> for Module<T> {
+    fn is_exists_contract(contract_id: &T::AccountId) -> bool {
+        <ContractHasOperator<T>>::exists(contract_id)
+    }
+}
+

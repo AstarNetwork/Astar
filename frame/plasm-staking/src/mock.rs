@@ -49,7 +49,7 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
     }.assimilate_storage(&mut storage);
 
     let _ = session::GenesisConfig::<Test> {
-        keys: vec![] 
+        keys: vec![]
     }.assimilate_storage(&mut storage);
 
     storage.into()
@@ -144,9 +144,12 @@ impl balances::Trait for Test {
 
 parameter_types! {
     pub const SessionsPerEra: sp_staking::SessionIndex = 10;
+    pub const BondingDuration: EraIndex = 3;
 }
 
 impl Trait for Test {
+    type Currency = Balances;
+    type BondingDuration = BondingDuration;
     type Time = Timestamp;
     type Event = ();
     type SessionsPerEra = SessionsPerEra;
