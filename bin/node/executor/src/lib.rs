@@ -7,7 +7,7 @@ use sc_executor::native_executor_instance;
 // Declare an instance of the native executor named `Executor`. Include the wasm binary as the
 // equivalent wasm code.
 native_executor_instance!(
-	pub Executor,
-	plasm_runtime::api::dispatch,
-	plasm_runtime::native_version
+    pub Executor,
+    plasm_runtime::api::dispatch,
+    plasm_runtime::native_version
 );

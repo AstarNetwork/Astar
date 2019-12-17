@@ -82,17 +82,17 @@ contract! {
         /// withdraw
         /// TODO : now free withdraw.
         pub(external) fn withdraw(&mut self, amount: Balance) -> bool {
-//			let balance_from = self.balance_of_or_zero(&env.caller()).clone();
-//			if balance_from >= amount {
-//				return false
-//			}
-//			self.balances.insert(env.caller(), balance_from - amount);
+//            let balance_from = self.balance_of_or_zero(&env.caller()).clone();
+//            if balance_from >= amount {
+//                return false
+//            }
+//            self.balances.insert(env.caller(), balance_from - amount);
 //
-//			// TODO msg.sender.transfer(wad);
-//			env.emit(Withdrawal{
-//				indexed: env.caller().clone(),
-//				amount: env.value_transferred().clone(),
-//			});
+//            // TODO msg.sender.transfer(wad);
+//            env.emit(Withdrawal{
+//                indexed: env.caller().clone(),
+//                amount: env.value_transferred().clone(),
+//            });
 
             let caller = env.caller();
             let balance_from = self.balance_of_or_zero(&caller);

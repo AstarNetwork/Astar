@@ -56,6 +56,6 @@ ink-generate-abi = [
     "predicate/ink-generate-abi",
     "deposit/ink-generate-abi",
     "commitment/ink-generate-abi",
-	"primitives/ink-generate-abi",
+    "primitives/ink-generate-abi",
 ]
 ink-as-dependency = []

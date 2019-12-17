@@ -14,6 +14,6 @@ sp-runtime = { git = "https://github.com/staketechnologies/substrate.git", branc
 [features]
 default = ["std"]
 std = [
-	"primitives/std",
-	"sp-runtime/std",
+    "primitives/std",
+    "sp-runtime/std",
 ]

@@ -24,9 +24,9 @@ pub trait Verify {
 #[derive(Debug, Copy, Clone, PartialEq, Eq, scale::Encode, scale::Decode)]
 #[cfg_attr(feature = "ink-generate-abi", derive(type_metadata::Metadata))]
 pub struct Range<I: traits::SimpleArithmetic + traits::Member + Codec> {
-	/// Start of the range of objects.
-	pub start: I,
-	/// End of the range of objects.
+    /// Start of the range of objects.
+    pub start: I,
+    /// End of the range of objects.
     pub end: I,
 }
 
@@ -56,7 +56,7 @@ where
 }
 
 impl<I: traits::SimpleArithmetic + traits::Member + Codec> ink_core::storage::Flush for Range<I> {
-	fn flush(&mut self) {}
+    fn flush(&mut self) {}
 }
 
 /// Represents a state object.
@@ -65,9 +65,9 @@ impl<I: traits::SimpleArithmetic + traits::Member + Codec> ink_core::storage::Fl
 #[derive(Debug, Copy, Clone, PartialEq, Eq, scale::Encode, scale::Decode)]
 #[cfg_attr(feature = "ink-generate-abi", derive(type_metadata::Metadata))]
 pub struct StateObject<T: traits::Member + Codec> {
-	/// Address of the predicate contract that dictates how the object can be mutated.
+    /// Address of the predicate contract that dictates how the object can be mutated.
     pub predicate: AccountId,
-	/// Arbitrary state data for the object.
+    /// Arbitrary state data for the object.
     pub data: T,
 }
 
@@ -87,11 +87,11 @@ pub struct StateUpdate<
     T: traits::Member + Codec,
     I: traits::SimpleArithmetic + traits::Member + Codec,
 > {
-	/// Range of state objects that were mutated.
+    /// Range of state objects that were mutated.
     pub range: Range<I>,
-	/// Resulting state object created by the mutation of the input objects.
+    /// Resulting state object created by the mutation of the input objects.
     pub state_object: StateObject<T>,
-	/// Plasma block number in which the update occurred.
+    /// Plasma block number in which the update occurred.
     pub plasma_block_number: BlockNumber,
 }
 
@@ -116,9 +116,9 @@ pub struct Checkpoint<
     T: traits::Member + Codec,
     I: traits::SimpleArithmetic + traits::Member + Codec,
 > {
-	/// State update being checkpointed.
+    /// State update being checkpointed.
     pub state_update: StateUpdate<T, I>,
-	/// Sub-range of the state update being checkpointed. We include this field because the update may be partially spent.
+    /// Sub-range of the state update being checkpointed. We include this field because the update may be partially spent.
     pub sub_range: Range<I>,
 }
 
@@ -165,14 +165,14 @@ pub struct Transaction<
     U: traits::Member + Codec,
     I: traits::SimpleArithmetic + traits::Member + Codec,
 > {
-	/// The address of the specific plasma deposit contract which identifies the asset being transferred.
-	/// This is somewhat equivalent to Ethereum’s chain ID transaction parameter.
+    /// The address of the specific plasma deposit contract which identifies the asset being transferred.
+    /// This is somewhat equivalent to Ethereum’s chain ID transaction parameter.
     pub predicate: AccountId,
-	/// the range being transacted.
+    /// the range being transacted.
     pub range: Range<I>,
-	/// Input parameters to be sent to the predicate along with method to compute the state transiton.
-	/// Must be ABI encoded according to the Predicate API. This is similar to the transaction input value encoding in Ethereum.
-	pub body: U,
+    /// Input parameters to be sent to the predicate along with method to compute the state transiton.
+    /// Must be ABI encoded according to the Predicate API. This is similar to the transaction input value encoding in Ethereum.
+    pub body: U,
 }
 
 /// Describes a challenge against a checkpoint.
@@ -184,9 +184,9 @@ pub struct Challenge<
     T: traits::Member + Codec,
     I: traits::SimpleArithmetic + traits::Member + Codec,
 > {
-	/// Checkpoint being challenged.
+    /// Checkpoint being challenged.
     pub challenged_checkpoint: Checkpoint<T, I>,
-	/// Checkpoint being used to challenge.
+    /// Checkpoint being used to challenge.
     pub challenging_checkpoint: Checkpoint<T, I>,
 }
 

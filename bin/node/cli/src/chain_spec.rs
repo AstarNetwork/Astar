@@ -5,9 +5,9 @@ use primitives::{crypto::UncheckedInto, sr25519, Pair, Public};
 use serde::{Serialize, Deserialize};
 use plasm_primitives::{AccountId, Balance, Signature};
 use plasm_runtime::{
-    GenesisConfig, SystemConfig, SessionConfig, ValidatorManagerConfig,
+    GenesisConfig, SystemConfig, SessionConfig, PlasmStakingConfig,
     BabeConfig, GrandpaConfig, IndicesConfig, BalancesConfig, ContractsConfig, SudoConfig,
-    SessionKeys, WASM_BINARY,
+    SessionKeys, Forcing, WASM_BINARY,
 };
 use plasm_runtime::constants::currency::*;
 use plasm_runtime::Block;
@@ -113,7 +113,9 @@ fn generate_config_genesis(
                     .cloned()
                     .collect::<Vec<_>>(),
         }),
-        validator_manager: Some(ValidatorManagerConfig {
+        plasm_staking: Some(PlasmStakingConfig {
+            storage_version: 1,
+            force_era: Forcing::NotForcing,
             validators: initial_authorities
                 .iter()
                 .map(|x| x.0.clone())
@@ -141,12 +143,13 @@ fn generate_config_genesis(
     }
 }
 
+/*
 /// Plasm testnet file config.
 pub fn plasm_testnet_config() -> ChainSpec {
     ChainSpec::from_json_bytes(&include_bytes!("../res/testnet_v2.json")[..]).unwrap()
 }
+*/
 
-/*
 /// Plasm testnet native config.
 pub fn plasm_testnet_config() -> ChainSpec {
     let boot_nodes = vec![
@@ -208,7 +211,6 @@ fn plasm_testnet_genesis() -> GenesisConfig {
         false,
     )
 }
-*/
 
 fn development_config_genesis() -> GenesisConfig {
     generate_config_genesis(

@@ -97,6 +97,7 @@ randomness-collective-flip = { package = "pallet-randomness-collective-flip", gi
 default = ["std"]
 std = [
     'codec/std',
+    'serde_derive',
     'primitives/std',
     'sp-runtime/std',
     'sp-io/std',
@@ -108,6 +109,5 @@ std = [
     'system/std',
     'contract/std',
     'sp-staking/std',
-   	'serde_derive',
-	'serde/std',
+    'serde/std',
 ]
