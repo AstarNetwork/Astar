@@ -31,28 +31,28 @@ structopt = "0.3.3"
 jsonrpc-core = "14.0.3"
 
 # primitives
-primitives = { package = "sp-core", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master" }
-sp-runtime = { git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master" }
-babe-primitives = { package = "sp-consensus-babe", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master" }
-grandpa-primitives = { package = "sp-finality-grandpa", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master" }
-inherents = { package = "sp-inherents", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master" }
+primitives = { package = "sp-core", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-v0.6.3" }
+sp-runtime = { git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-v0.6.3" }
+babe-primitives = { package = "sp-consensus-babe", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-v0.6.3" }
+grandpa-primitives = { package = "sp-finality-grandpa", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-v0.6.3" }
+inherents = { package = "sp-inherents", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-v0.6.3" }
 
 # client dependencies
-client = { package = "sc-client", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master" }
-client-api = { package = "sc-client-api", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master" }
-chain-spec = { package = "sc-chain-spec", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master" }
-txpool = { package = "sc-transaction-pool", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master" }
-txpool-api = { package = "sp-transaction-pool", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master" }
-network = { package = "sc-network", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master" }
-babe = { package = "sc-consensus-babe", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master" }
-grandpa = { package = "sc-finality-grandpa", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master" }
-offchain = { package = "sc-offchain", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master" }
-client-db = { package = "sc-client-db", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master", default-features = false }
-sc-rpc = { git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master" }
-basic-authorship = { package = "sc-basic-authority", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master" }
-sc-service = { git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master" }
-telemetry = { package = "sc-telemetry", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master" }
-consensus-common = { package = "sp-consensus", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master" }
+client = { package = "sc-client", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-v0.6.3" }
+client-api = { package = "sc-client-api", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-v0.6.3" }
+chain-spec = { package = "sc-chain-spec", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-v0.6.3" }
+txpool = { package = "sc-transaction-pool", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-v0.6.3" }
+txpool-api = { package = "sp-transaction-pool", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-v0.6.3" }
+network = { package = "sc-network", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-v0.6.3" }
+babe = { package = "sc-consensus-babe", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-v0.6.3" }
+grandpa = { package = "sc-finality-grandpa", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-v0.6.3" }
+offchain = { package = "sc-offchain", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-v0.6.3" }
+client-db = { package = "sc-client-db", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-v0.6.3", default-features = false }
+sc-rpc = { git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-v0.6.3" }
+basic-authorship = { package = "sc-basic-authority", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-v0.6.3" }
+sc-service = { git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-v0.6.3" }
+telemetry = { package = "sc-telemetry", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-v0.6.3" }
+consensus-common = { package = "sp-consensus", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-v0.6.3" }
 
 # plasm-specific dependencies
 plasm-primitives = { path = "../primitives" }
@@ -61,24 +61,24 @@ plasm-runtime = { path = "../runtime" }
 plasm-rpc = { path = "../rpc" }
 
 # frame dependencies
-system = { package = "frame-system", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master" }
-timestamp = { package = "pallet-timestamp", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master" }
-contracts = { package = "pallet-contracts", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master", default-features = false }
-transaction-payment = { package = "pallet-transaction-payment", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master" }
-finality-tracker = { package = "pallet-finality-tracker", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master" }
+system = { package = "frame-system", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-v0.6.3" }
+timestamp = { package = "pallet-timestamp", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-v0.6.3" }
+contracts = { package = "pallet-contracts", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-v0.6.3", default-features = false }
+transaction-payment = { package = "pallet-transaction-payment", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-v0.6.3" }
+finality-tracker = { package = "pallet-finality-tracker", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-v0.6.3" }
 
 # CLI-specific dependencies
 tokio = { version = "0.1.22", optional = true }
 exit-future = { version = "0.1.4", optional = true }
-sc-cli = { package = "sc-cli", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master", optional = true }
+sc-cli = { package = "sc-cli", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-v0.6.3", optional = true }
 ctrlc = { version = "3.1.3", features = ["termination"], optional = true }
 
 [dev-dependencies]
-service-test = { package = "sc-service-test", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master" }
+service-test = { package = "sc-service-test", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-v0.6.3" }
 
 [build-dependencies]
-sc-cli = { package = "sc-cli", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master" }
-build-script-utils = { package = "substrate-build-script-utils", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master" }
+sc-cli = { package = "sc-cli", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-v0.6.3" }
+build-script-utils = { package = "substrate-build-script-utils", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-v0.6.3" }
 structopt = "0.3.3"
 vergen = "3.0.4"
 

@@ -11,9 +11,9 @@ edition = "2018"
 jsonrpc-core = "14.0.3"
 plasm-runtime = { path = "../runtime" }
 plasm-primitives = { path = "../primitives" }
-client = { package = "sc-client", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master" }
-sp-runtime = { git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master" }
-pallet-contracts-rpc = { git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master" }
-pallet-transaction-payment-rpc = { git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master" }
-substrate-frame-rpc-system = { git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master" }
-sp-transaction-pool = { git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master" }
+client = { package = "sc-client", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-v0.6.3" }
+sp-runtime = { git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-v0.6.3" }
+pallet-contracts-rpc = { git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-v0.6.3" }
+pallet-transaction-payment-rpc = { git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-v0.6.3" }
+substrate-frame-rpc-system = { git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-v0.6.3" }
+sp-transaction-pool = { git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-v0.6.3" }
