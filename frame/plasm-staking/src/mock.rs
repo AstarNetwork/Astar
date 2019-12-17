@@ -3,11 +3,11 @@
 #![cfg(test)]
 
 use super::*;
-use sp_runtime::{Perbill, KeyTypeId};
+use primitives::{crypto::key_types, H256};
 use sp_runtime::testing::{Header, UintAuthorityId};
-use sp_runtime::traits::{IdentityLookup, BlakeTwo256, ConvertInto, OpaqueKeys};
-use primitives::{H256, crypto::key_types};
-use support::{impl_outer_origin, impl_outer_dispatch, parameter_types};
+use sp_runtime::traits::{BlakeTwo256, ConvertInto, IdentityLookup, OpaqueKeys};
+use sp_runtime::{KeyTypeId, Perbill};
+use support::{impl_outer_dispatch, impl_outer_origin, parameter_types};
 
 pub type BlockNumber = u64;
 pub type AccountId = u64;
@@ -31,14 +31,10 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
         .unwrap();
 
     let _ = balances::GenesisConfig::<Test> {
-        balances: vec![
-            (1, 10),
-            (2, 20),
-            (3, 300),
-            (4, 400),
-        ],
+        balances: vec![(1, 10), (2, 20), (3, 300), (4, 400)],
         vesting: vec![],
-    }.assimilate_storage(&mut storage);
+    }
+    .assimilate_storage(&mut storage);
 
     let validators = vec![1, 2];
 
@@ -46,15 +42,13 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
         storage_version: 1,
         force_era: Forcing::NotForcing,
         validators: validators,
-    }.assimilate_storage(&mut storage);
+    }
+    .assimilate_storage(&mut storage);
 
-    let _ = session::GenesisConfig::<Test> {
-        keys: vec![]
-    }.assimilate_storage(&mut storage);
+    let _ = session::GenesisConfig::<Test> { keys: vec![] }.assimilate_storage(&mut storage);
 
     storage.into()
 }
-
 
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub struct Test;
@@ -107,7 +101,8 @@ impl session::SessionHandler<u64> for TestSessionHandler {
         _changed: bool,
         _validators: &[(u64, T)],
         _queued_validators: &[(u64, T)],
-    ) {}
+    ) {
+    }
     fn on_disabled(_validator_index: usize) {}
     fn on_before_session_ending() {}
 }

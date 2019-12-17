@@ -3,38 +3,40 @@
 //! The Plasm staking module manages era, total amounts of rewards and how to distribute.
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use support::{
-    decl_module, decl_storage, decl_event, StorageValue, ensure, StorageMap,
-    weights::SimpleDispatchInfo,
-    traits::{Currency, OnFreeBalanceZero, LockIdentifier, LockableCurrency,
-             WithdrawReasons, OnUnbalanced, Imbalance, Get, Time,
-    },
-};
-use system::{ensure_signed, ensure_root};
+use codec::{Decode, Encode, HasCompact};
+use operator::IsExistsContract;
 use session::OnSessionEnding;
+use sp_runtime::traits::{
+    Bounded, CheckedSub, Convert, EnsureOrigin, One, SaturatedConversion, Saturating,
+    SimpleArithmetic, StaticLookup, Zero,
+};
 use sp_runtime::RuntimeDebug;
 #[cfg(feature = "std")]
-use sp_runtime::{Serialize, Deserialize};
-use sp_runtime::{
-    traits::{Convert, Zero, One, StaticLookup, CheckedSub, Saturating, Bounded, SaturatedConversion,
-             SimpleArithmetic, EnsureOrigin},
+use sp_runtime::{Deserialize, Serialize};
+use sp_std::{prelude::*, result, vec::Vec};
+use staking::{Exposure, Forcing, Nominations, RewardDestination};
+use support::{
+    decl_event, decl_module, decl_storage, ensure,
+    traits::{
+        Currency, Get, Imbalance, LockIdentifier, LockableCurrency, OnFreeBalanceZero,
+        OnUnbalanced, Time, WithdrawReasons,
+    },
+    weights::SimpleDispatchInfo,
+    StorageMap, StorageValue,
 };
-use codec::{HasCompactEncode, Decode};
-use sp_std::{prelude::*, vec::Vec, result};
-use staking::{Nominations, Exposure, RewardDestination, Forcing};
-use operator::IsExistsContract;
+use system::{ensure_root, ensure_signed};
 
+mod migration;
 #[cfg(test)]
 mod mock;
 #[cfg(test)]
 mod tests;
-mod migration;
 
 pub use sp_staking::SessionIndex;
 
 pub type EraIndex = u32;
 pub type BalanceOf<T> =
-<<T as Trait>::Currency as Currency<<T as system::Trait>::AccountId>>::Balance;
+    <<T as Trait>::Currency as Currency<<T as system::Trait>::AccountId>>::Balance;
 pub type MomentOf<T> = <<T as Trait>::Time as Time>::Moment;
 
 const DEFAULT_MINIMUM_VALIDATOR_COUNT: u32 = 4;
@@ -71,27 +73,34 @@ pub struct StakingLedger<AccountId, Balance: HasCompact> {
     pub unlocking: Vec<UnlockChunk<Balance>>,
 }
 
-impl<
-    AccountId,
-    Balance: HasCompact + Copy + Saturating,
-> StakingLedger<AccountId, Balance> {
+impl<AccountId, Balance: HasCompact + Copy + Saturating> StakingLedger<AccountId, Balance> {
     /// Remove entries from `unlocking` that are sufficiently old and reduce the
     /// total by the sum of their balances.
     fn consolidate_unlocked(self, current_era: EraIndex) -> Self {
         let mut total = self.total;
-        let unlocking = self.unlocking.into_iter()
-            .filter(|chunk| if chunk.era > current_era {
-                true
-            } else {
-                total = total.saturating_sub(chunk.value);
-                false
+        let unlocking = self
+            .unlocking
+            .into_iter()
+            .filter(|chunk| {
+                if chunk.era > current_era {
+                    true
+                } else {
+                    total = total.saturating_sub(chunk.value);
+                    false
+                }
             })
             .collect();
-        Self { total, active: self.active, stash: self.stash, unlocking }
+        Self {
+            total,
+            active: self.active,
+            stash: self.stash,
+            unlocking,
+        }
     }
 }
 
-impl<AccountId, Balance> StakingLedger<AccountId, Balance> where
+impl<AccountId, Balance> StakingLedger<AccountId, Balance>
+where
     Balance: SimpleArithmetic + Saturating + Copy,
 {
     /// Slash the validator for a given amount of balance. This can grow the value
@@ -100,38 +109,34 @@ impl<AccountId, Balance> StakingLedger<AccountId, Balance> where
     ///
     /// Slashes from `active` funds first, and then `unlocking`, starting with the
     /// chunks that are closest to unlocking.
-    fn slash(
-        &mut self,
-        mut value: Balance,
-        minimum_balance: Balance,
-    ) -> Balance {
+    fn slash(&mut self, mut value: Balance, minimum_balance: Balance) -> Balance {
         let pre_total = self.total;
         let total = &mut self.total;
         let active = &mut self.active;
 
-        let slash_out_of = |total_remaining: &mut Balance,
-                            target: &mut Balance,
-                            value: &mut Balance,
-        | {
-            let mut slash_from_target = (*value).min(*target);
+        let slash_out_of =
+            |total_remaining: &mut Balance, target: &mut Balance, value: &mut Balance| {
+                let mut slash_from_target = (*value).min(*target);
 
-            if !slash_from_target.is_zero() {
-                *target -= slash_from_target;
+                if !slash_from_target.is_zero() {
+                    *target -= slash_from_target;
 
-                // don't leave a dust balance in the staking system.
-                if *target <= minimum_balance {
-                    slash_from_target += *target;
-                    *value += sp_std::mem::replace(target, Zero::zero());
+                    // don't leave a dust balance in the staking system.
+                    if *target <= minimum_balance {
+                        slash_from_target += *target;
+                        *value += sp_std::mem::replace(target, Zero::zero());
+                    }
+
+                    *total_remaining = total_remaining.saturating_sub(slash_from_target);
+                    *value -= slash_from_target;
                 }
-
-                *total_remaining = total_remaining.saturating_sub(slash_from_target);
-                *value -= slash_from_target;
-            }
-        };
+            };
 
         slash_out_of(total, active, &mut value);
 
-        let i = self.unlocking.iter_mut()
+        let i = self
+            .unlocking
+            .iter_mut()
             .map(|chunk| {
                 slash_out_of(total, &mut chunk.value, &mut value);
                 chunk.value
@@ -148,7 +153,7 @@ impl<AccountId, Balance> StakingLedger<AccountId, Balance> where
 
 pub trait Trait: session::Trait {
     /// The staking balance.
-    type Currency: LockableCurrency<Self::AccountId, Moment=Self::BlockNumber>;
+    type Currency: LockableCurrency<Self::AccountId, Moment = Self::BlockNumber>;
 
     // The check valid operated contracts.
     type IsExistsContract: operator::IsExistsContract<Self::AccountId>;
@@ -169,26 +174,26 @@ pub trait Trait: session::Trait {
 decl_storage! {
     trait Store for Module<T: Trait> as PlasmStaking {
         // ----- Staking uses.
-		/// Map from all locked "stash" accounts to the controller account.
-		pub Bonded get(fn bonded): map T::AccountId => Option<T::AccountId>;
-		/// Map from all (unlocked) "controller" accounts to the info regarding the staking.
-		pub Ledger get(fn ledger):
-			map T::AccountId => Option<StakingLedger<T::AccountId, BalanceOf<T>>>;
+        /// Map from all locked "stash" accounts to the controller account.
+        pub Bonded get(fn bonded): map T::AccountId => Option<T::AccountId>;
+        /// Map from all (unlocked) "controller" accounts to the info regarding the staking.
+        pub Ledger get(fn ledger):
+            map T::AccountId => Option<StakingLedger<T::AccountId, BalanceOf<T>>>;
 
-		/// Where the reward payment should be made. Keyed by stash.
-		pub Payee get(fn payee): map T::AccountId => RewardDestination;
+        /// Where the reward payment should be made. Keyed by stash.
+        pub Payee get(fn payee): map T::AccountId => RewardDestination;
 
-		/// The map from nominator stash key to the set of stash keys of all validators/contracts to nominate.
-		///
-		/// NOTE: is private so that we can ensure upgraded before all typical accesses.
-		/// Direct storage APIs can still bypass this protection.
-		Nominators get(fn nominators): linked_map T::AccountId => Option<Nominations<T::AccountId>>;
+        /// The map from nominator stash key to the set of stash keys of all validators/contracts to nominate.
+        ///
+        /// NOTE: is private so that we can ensure upgraded before all typical accesses.
+        /// Direct storage APIs can still bypass this protection.
+        Nominators get(fn nominators): linked_map T::AccountId => Option<Nominations<T::AccountId>>;
 
-		/// Nominators for a particular account that is in action right now. You can't iterate
-		/// through validators/contracts here, but you can find them in the Session module.
-		///
-		/// This is keyed by the stash account.
-		pub Stakers get(fn stakers): map T::AccountId => Exposure<T::AccountId, BalanceOf<T>>;
+        /// Nominators for a particular account that is in action right now. You can't iterate
+        /// through validators/contracts here, but you can find them in the Session module.
+        ///
+        /// This is keyed by the stash account.
+        pub Stakers get(fn stakers): map T::AccountId => Exposure<T::AccountId, BalanceOf<T>>;
 
         // ---- Era manages.
         /// The current era index.
@@ -546,12 +551,14 @@ decl_module! {
 }
 
 decl_event!(
-    pub enum Event<T> where AccountId = <T as system::Trait>::AccountId {
+    pub enum Event<T>
+    where
+        AccountId = <T as system::Trait>::AccountId,
+    {
         /// Validator set changed.
         NewValidators(Vec<AccountId>),
     }
 );
-
 
 impl<T: Trait> Module<T> {
     // MUTABLES (DANGEROUS)
@@ -594,8 +601,13 @@ impl<T: Trait> Module<T> {
 
     /// Session has just ended. Provide the validator set for the next session if it's an era-end, along
     /// with the exposure of the prior validator set.
-    pub fn new_session(ending: SessionIndex, will_apply_at: SessionIndex) -> Option<Vec<T::AccountId>> {
-        let era_length = will_apply_at.checked_sub(Self::current_era_start_session_index()).unwrap_or(0);
+    pub fn new_session(
+        ending: SessionIndex,
+        will_apply_at: SessionIndex,
+    ) -> Option<Vec<T::AccountId>> {
+        let era_length = will_apply_at
+            .checked_sub(Self::current_era_start_session_index())
+            .unwrap_or(0);
         match ForceEra::get() {
             Forcing::ForceNew => ForceEra::kill(),
             Forcing::ForceAlways => (),
@@ -609,7 +621,10 @@ impl<T: Trait> Module<T> {
     ///
     /// NOTE: This always happens immediately before a session change to ensure that new validators
     /// get a chance to set their session keys.
-    pub fn new_era(_ending: SessionIndex, will_apply_at: SessionIndex) -> Option<Vec<T::AccountId>> {
+    pub fn new_era(
+        _ending: SessionIndex,
+        will_apply_at: SessionIndex,
+    ) -> Option<Vec<T::AccountId>> {
         CurrentEra::mutate(|era| *era += 1);
         <CurrentEraStart<T>>::put(T::Time::now());
         CurrentEraStartSessionIndex::put(will_apply_at - 1);
@@ -624,7 +639,10 @@ impl<T: Trait> Module<T> {
 }
 
 impl<T: Trait> OnSessionEnding<T::AccountId> for Module<T> {
-    fn on_session_ending(ending: SessionIndex, will_apply_at: SessionIndex) -> Option<Vec<T::AccountId>> {
+    fn on_session_ending(
+        ending: SessionIndex,
+        will_apply_at: SessionIndex,
+    ) -> Option<Vec<T::AccountId>> {
         Self::ensure_storage_upgraded();
         Self::new_session(ending, will_apply_at)
     }

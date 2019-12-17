@@ -82,7 +82,10 @@ fn noraml_incremental_era() {
         assert_eq!(Session::validators(), vec![1, 2]);
         assert_eq!(Session::current_index(), 1);
 
-        assert_ok!(PlasmStaking::set_validators(Origin::ROOT, vec![1,2,3,4,5]));
+        assert_ok!(PlasmStaking::set_validators(
+            Origin::ROOT,
+            vec![1, 2, 3, 4, 5]
+        ));
 
         assert_eq!(Session::validators(), vec![1, 2]);
         assert_eq!(Session::current_index(), 1);
@@ -115,7 +118,7 @@ fn noraml_incremental_era() {
             }
         }
 
-        assert_ok!(PlasmStaking::set_validators(Origin::ROOT, vec![1,3,5]));
+        assert_ok!(PlasmStaking::set_validators(Origin::ROOT, vec![1, 3, 5]));
 
         // 20~29-th session
         for i in 20..30 {
@@ -141,7 +144,10 @@ fn force_new_era_incremental_era() {
         assert_ok!(PlasmStaking::force_new_era(Origin::ROOT));
         assert_eq!(PlasmStaking::force_era(), Forcing::ForceNew);
 
-        assert_ok!(PlasmStaking::set_validators(Origin::ROOT, vec![1,2, 3,4,5]));
+        assert_ok!(PlasmStaking::set_validators(
+            Origin::ROOT,
+            vec![1, 2, 3, 4, 5]
+        ));
 
         advance_session();
         assert_eq!(PlasmStaking::current_era(), 1);
@@ -182,7 +188,10 @@ fn force_new_era_always_incremental_era() {
         assert_ok!(PlasmStaking::force_new_era_always(Origin::ROOT));
         assert_eq!(PlasmStaking::force_era(), Forcing::ForceAlways);
 
-        assert_ok!(PlasmStaking::set_validators(Origin::ROOT, vec![1,2, 3,4,5]));
+        assert_ok!(PlasmStaking::set_validators(
+            Origin::ROOT,
+            vec![1, 2, 3, 4, 5]
+        ));
 
         advance_session();
         assert_eq!(PlasmStaking::current_era(), 1);
@@ -203,4 +212,3 @@ fn force_new_era_always_incremental_era() {
         assert_eq!(Session::current_index(), 2);
     })
 }
-
