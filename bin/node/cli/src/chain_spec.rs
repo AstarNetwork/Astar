@@ -318,7 +318,7 @@ pub fn local_testnet_config() -> ChainSpec {
 #[cfg(test)]
 pub(crate) mod tests {
     use super::*;
-    use crate::service::new_full;
+    use crate::service::{new_full, new_light};
     use sc_service::Roles;
     use service_test;
 
