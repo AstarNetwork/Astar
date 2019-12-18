@@ -1,34 +1,42 @@
+//! *Plasm Staking Parameters*
+//!
+//! Rewards_{option_{i,j}^{old}}=Rewards_{opeartor_{i}}\times \frac{stake_{i,j}^{old}}{\sum^{n^{old}}_{i,j}\sum^{m_i^{old}}_jstake_{i,j}^{old}}\times p^{old}_{operator_i}
+//!
+//! Used Perbil other parameters.
 use super::*;
 use codec::{Decode, Encode};
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
-
-pub trait Verifiable {
-    fn verify(&self) -> Result;
-}
+use operator::parameters::Verifiable;
 
 #[derive(Clone, Eq, PartialEq, Default, Encode, Decode, Hash)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
-pub struct DefaultParameters {
+pub struct StakingParameters {
+    /// If true, the operated contracts can be nominated else is can't.
     pub can_be_nominated: bool,
+    /// Expired of that **option** can be exercised.
     pub option_expired: u128,
-    pub option_p: u128,
+    /// For calculating option, **p**.
+    pub option_p: u32,
 }
 
-impl Verifiable for DefaultParameters {
+impl Verifiable for StakingParameters {
     fn verify(&self) -> Result {
+        if self.option_p < Perbill::from_percent(20).deconstruct() {
+            return Err("**p** of option's parameters must be lower than 20%(0_200_000_000)");
+        }
         Ok(())
     }
 }
 
 #[cfg(feature = "std")]
-impl std::fmt::Display for DefaultParameters {
+impl std::fmt::Display for StakingParameters {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         write!(f, "{:?}", self)
     }
 }
 
-impl sp_std::fmt::Debug for DefaultParameters {
+impl sp_std::fmt::Debug for StakingParameters {
     #[cfg(feature = "std")]
     fn fmt(&self, f: &mut sp_std::fmt::Formatter) -> sp_std::fmt::Result {
         write!(f, "{:?}", self)

@@ -136,6 +136,51 @@ impl balances::Trait for Test {
     type TransferFee = TransferFee;
     type CreationFee = CreationFee;
 }
+parameter_types! {
+    pub const ContractTransferFee: Balance = 0;
+    pub const ContractCreationFee: Balance = 0;
+    pub const ContractTransactionBaseFee: Balance = 0;
+    pub const ContractTransactionByteFee: Balance = 0;
+    pub const ContractFee: Balance = 0;
+    pub const TombstoneDeposit: Balance = 0;
+    pub const RentByteFee: Balance = 0;
+    pub const RentDepositOffset: Balance = 0;
+    pub const SurchargeReward: Balance = 0;
+}
+
+impl contracts::Trait for Test {
+    type Currency = Balances;
+    type Time = Timestamp;
+    type Randomness = RandomnessCollectiveFlip;
+    type Call = Call;
+    type Event = Event;
+    type DetermineContractAddress = contracts::SimpleAddressDeterminator<Test>;
+    type ComputeDispatchFee = contracts::DefaultDispatchFeeComputor<Test>;
+    type TrieIdGenerator = contracts::TrieIdFromParentCounter<Test>;
+    type GasPayment = ();
+    type RentPayment = ();
+    type SignedClaimHandicap = contracts::DefaultSignedClaimHandicap;
+    type TombstoneDeposit = TombstoneDeposit;
+    type StorageSizeOffset = contracts::DefaultStorageSizeOffset;
+    type RentByteFee = RentByteFee;
+    type RentDepositOffset = RentDepositOffset;
+    type SurchargeReward = SurchargeReward;
+    type TransferFee = ContractTransferFee;
+    type CreationFee = ContractCreationFee;
+    type TransactionBaseFee = ContractTransactionBaseFee;
+    type TransactionByteFee = ContractTransactionByteFee;
+    type ContractFee = ContractFee;
+    type CallBaseFee = contracts::DefaultCallBaseFee;
+    type InstantiateBaseFee = contracts::DefaultInstantiateBaseFee;
+    type MaxDepth = contracts::DefaultMaxDepth;
+    type MaxValueSize = contracts::DefaultMaxValueSize;
+    type BlockGasLimit = contracts::DefaultBlockGasLimit;
+}
+
+impl operator::Trait for Test {
+    type Parameters = operator::parameters::DefaultParameters;
+    type Event = Event;
+}
 
 parameter_types! {
     pub const SessionsPerEra: sp_staking::SessionIndex = 10;
@@ -145,6 +190,7 @@ parameter_types! {
 impl Trait for Test {
     type Currency = Balances;
     type BondingDuration = BondingDuration;
+    type IsExistsContract = Operator;
     type Time = Timestamp;
     type Event = ();
     type SessionsPerEra = SessionsPerEra;
@@ -155,6 +201,7 @@ pub type System = system::Module<Test>;
 pub type Session = session::Module<Test>;
 pub type Balances = balances::Module<Test>;
 pub type Timestamp = timestamp::Module<Test>;
+pub type Opeartor = operator::Module<Test>;
 pub type PlasmStaking = Module<Test>;
 
 pub fn advance_session() {

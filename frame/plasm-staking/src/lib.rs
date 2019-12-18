@@ -6,26 +6,29 @@
 use codec::{Decode, Encode, HasCompact};
 use operator::IsExistsContract;
 use session::OnSessionEnding;
-use sp_runtime::traits::{
-    Bounded, CheckedSub, Convert, EnsureOrigin, One, SaturatedConversion, Saturating,
-    SimpleArithmetic, StaticLookup, Zero,
+use sp_runtime::{
+    Perbill,
+    traits::{
+        Bounded, CheckedSub, Saturating,
+        StaticLookup, Zero,
+    }
 };
 use sp_runtime::RuntimeDebug;
-#[cfg(feature = "std")]
-use sp_runtime::{Deserialize, Serialize};
 use sp_std::{prelude::*, result, vec::Vec};
 use staking::{Exposure, Forcing, Nominations, RewardDestination};
 use support::{
     decl_event, decl_module, decl_storage, ensure,
+    dispatch::Result,
     traits::{
-        Currency, Get, Imbalance, LockIdentifier, LockableCurrency, OnFreeBalanceZero,
-        OnUnbalanced, Time, WithdrawReasons,
+        Currency, Get, LockIdentifier, LockableCurrency,
+        Time, WithdrawReasons,
     },
     weights::SimpleDispatchInfo,
     StorageMap, StorageValue,
 };
 use system::{ensure_root, ensure_signed};
 
+pub mod parameters;
 mod migration;
 #[cfg(test)]
 mod mock;
@@ -39,7 +42,6 @@ pub type BalanceOf<T> =
     <<T as Trait>::Currency as Currency<<T as system::Trait>::AccountId>>::Balance;
 pub type MomentOf<T> = <<T as Trait>::Time as Time>::Moment;
 
-const DEFAULT_MINIMUM_VALIDATOR_COUNT: u32 = 4;
 const MAX_NOMINATIONS: usize = 16;
 const MAX_UNLOCKING_CHUNKS: usize = 32;
 const STAKING_ID: LockIdentifier = *b"plmstake";
@@ -96,58 +98,6 @@ impl<AccountId, Balance: HasCompact + Copy + Saturating> StakingLedger<AccountId
             stash: self.stash,
             unlocking,
         }
-    }
-}
-
-impl<AccountId, Balance> StakingLedger<AccountId, Balance>
-where
-    Balance: SimpleArithmetic + Saturating + Copy,
-{
-    /// Slash the validator for a given amount of balance. This can grow the value
-    /// of the slash in the case that the validator has less than `minimum_balance`
-    /// active funds. Returns the amount of funds actually slashed.
-    ///
-    /// Slashes from `active` funds first, and then `unlocking`, starting with the
-    /// chunks that are closest to unlocking.
-    fn slash(&mut self, mut value: Balance, minimum_balance: Balance) -> Balance {
-        let pre_total = self.total;
-        let total = &mut self.total;
-        let active = &mut self.active;
-
-        let slash_out_of =
-            |total_remaining: &mut Balance, target: &mut Balance, value: &mut Balance| {
-                let mut slash_from_target = (*value).min(*target);
-
-                if !slash_from_target.is_zero() {
-                    *target -= slash_from_target;
-
-                    // don't leave a dust balance in the staking system.
-                    if *target <= minimum_balance {
-                        slash_from_target += *target;
-                        *value += sp_std::mem::replace(target, Zero::zero());
-                    }
-
-                    *total_remaining = total_remaining.saturating_sub(slash_from_target);
-                    *value -= slash_from_target;
-                }
-            };
-
-        slash_out_of(total, active, &mut value);
-
-        let i = self
-            .unlocking
-            .iter_mut()
-            .map(|chunk| {
-                slash_out_of(total, &mut chunk.value, &mut value);
-                chunk.value
-            })
-            .take_while(|value| value.is_zero()) // take all fully-consumed chunks out.
-            .count();
-
-        // kill all drained chunks.
-        let _ = self.unlocking.drain(..i);
-
-        pre_total.saturating_sub(*total)
     }
 }
 

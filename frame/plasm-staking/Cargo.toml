@@ -67,7 +67,7 @@ git = 'https://github.com/staketechnologies/substrate.git'
 branch = 'plasm-master'
 package = 'frame-system'
 
-[dependencies.contract]
+[dependencies.contracts]
 default_features = false
 git = 'https://github.com/staketechnologies/substrate.git'
 branch = 'plasm-master'
@@ -118,7 +118,7 @@ std = [
     'session/std',
     'timestamp/std',
     'system/std',
-    'contract/std',
+    'contracts/std',
     'staking/std',
     'operator/std',
     'sp-staking/std',
