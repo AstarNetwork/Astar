@@ -2,9 +2,9 @@
 
 use contracts::{BalanceOf, CodeHash, ContractAddressFor, Gas};
 use sp_runtime::traits::{MaybeDisplay, MaybeSerialize, Member};
+use sp_std::prelude::*;
 use support::{decl_event, decl_module, decl_storage, dispatch::Result, Parameter};
 use system::{ensure_signed, RawOrigin};
-use sp_std::prelude::*;
 
 pub mod parameters;
 #[cfg(test)]
@@ -19,12 +19,12 @@ pub trait IsExistsContract<AccountId> {
 /// The module's configuration trait.
 pub trait Trait: contracts::Trait {
     type Parameters: Parameter
-    + Member
-    + MaybeSerialize
-    + MaybeDisplay
-    + Default
-    + sp_std::hash::Hash
-    + parameters::Verifiable;
+        + Member
+        + MaybeSerialize
+        + MaybeDisplay
+        + Default
+        + sp_std::hash::Hash
+        + parameters::Verifiable;
 
     /// The overarching event type.
     type Event: From<Event<Self>> + Into<<Self as system::Trait>::Event>;
@@ -147,4 +147,3 @@ impl<T: Trait> IsExistsContract<T::AccountId> for Module<T> {
         <ContractHasOperator<T>>::exists(contract_id)
     }
 }
-

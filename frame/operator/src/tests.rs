@@ -183,8 +183,8 @@ impl contracts::Trait for Test {
 
 #[derive(Clone, Eq, PartialEq, Default, Encode, Decode, Hash)]
 #[cfg_attr(
-feature = "std",
-derive(Debug, Serialize, Deserialize, derive_more::Display)
+    feature = "std",
+    derive(Debug, Serialize, Deserialize, derive_more::Display)
 )]
 pub struct TestParameters {
     pub a: u128,
@@ -315,8 +315,8 @@ impl ExtBuilder {
             balances: vec![],
             vesting: vec![],
         }
-            .assimilate_storage(&mut t)
-            .unwrap();
+        .assimilate_storage(&mut t)
+        .unwrap();
         contracts::GenesisConfig::<Test> {
             current_schedule: Schedule {
                 enable_println: true,
@@ -324,8 +324,8 @@ impl ExtBuilder {
             },
             gas_price: self.gas_price,
         }
-            .assimilate_storage(&mut t)
-            .unwrap();
+        .assimilate_storage(&mut t)
+        .unwrap();
         sp_io::TestExternalities::new(t)
     }
 }
@@ -334,8 +334,8 @@ impl ExtBuilder {
 fn compile_module<T>(
     wabt_module: &str,
 ) -> std::result::Result<(Vec<u8>, <T::Hashing as Hash>::Output), wabt::Error>
-    where
-        T: system::Trait,
+where
+    T: system::Trait,
 {
     let wasm = wabt::wat2wasm(wabt_module)?;
     let code_hash = T::Hashing::hash(&wasm);

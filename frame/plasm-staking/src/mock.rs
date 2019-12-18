@@ -6,7 +6,7 @@ use super::*;
 use primitives::{crypto::key_types, H256};
 use sp_runtime::testing::{Header, UintAuthorityId};
 use sp_runtime::traits::{BlakeTwo256, ConvertInto, IdentityLookup, OpaqueKeys};
-use sp_runtime::{KeyTypeId, Perbill, traits::Hash};
+use sp_runtime::{traits::Hash, KeyTypeId, Perbill};
 use support::{assert_ok, impl_outer_dispatch, impl_outer_origin, parameter_types};
 
 pub type BlockNumber = u64;
@@ -267,8 +267,8 @@ pub type PlasmStaking = Module<Test>;
 pub fn compile_module<T>(
     wabt_module: &str,
 ) -> result::Result<(Vec<u8>, <T::Hashing as Hash>::Output), wabt::Error>
-    where
-        T: system::Trait,
+where
+    T: system::Trait,
 {
     let wasm = wabt::wat2wasm(wabt_module)?;
     let code_hash = T::Hashing::hash(&wasm);
@@ -310,7 +310,11 @@ pub fn valid_instatiate() {
 
     // prepare
     Balances::deposit_creating(&ALICE_STASH, 1_000_000);
-    assert_ok!(Contract::put_code(Origin::signed(ALICE_STASH), 100_000, wasm));
+    assert_ok!(Contract::put_code(
+        Origin::signed(ALICE_STASH),
+        100_000,
+        wasm
+    ));
 
     let test_params = parameters::StakingParameters {
         can_be_nominated: true,
@@ -339,12 +343,20 @@ pub fn valid_instatiate() {
     assert!(tree.contains(&ALICE_CONTRACT));
 
     // ALICE_CONTRACT contract is operated by ALICE_STASH.
-    assert!(operator::ContractHasOperator::<Test>::exists(ALICE_CONTRACT));
-    assert_eq!(operator::ContractHasOperator::<Test>::get(&ALICE_CONTRACT), Some(ALICE_STASH));
+    assert!(operator::ContractHasOperator::<Test>::exists(
+        ALICE_CONTRACT
+    ));
+    assert_eq!(
+        operator::ContractHasOperator::<Test>::get(&ALICE_CONTRACT),
+        Some(ALICE_STASH)
+    );
 
     // ALICE_CONTRACT's contract Parameters is same test_params.
     assert!(operator::ContractParameters::<Test>::exists(ALICE_CONTRACT));
-    assert_eq!(operator::ContractParameters::<Test>::get(&ALICE_CONTRACT), Some(test_params));
+    assert_eq!(
+        operator::ContractParameters::<Test>::get(&ALICE_CONTRACT),
+        Some(test_params)
+    );
 }
 
 pub fn advance_session() {
