@@ -22,7 +22,7 @@ pub struct StakingParameters {
 
 impl Verifiable for StakingParameters {
     fn verify(&self) -> Result {
-        if self.option_p < Perbill::from_percent(20).deconstruct() {
+        if self.option_p > Perbill::from_percent(20).deconstruct() {
             return Err("**p** of option's parameters must be lower than 20%(0_200_000_000)");
         }
         Ok(())

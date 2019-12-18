@@ -5,7 +5,7 @@
 use super::*;
 use crate::mock::*;
 use balances::BalanceLock;
-use support::{assert_ok, traits::LockableCurrency};
+use support::assert_ok;
 
 #[test]
 fn root_calls_fails_for_user() {
@@ -431,7 +431,7 @@ fn success_unbond(ctrl: AccountId, balance: Balance) {
     let now_ledger = PlasmStaking::ledger(ctrl).unwrap();
     let now_unlock_chunk = now_ledger.unlocking;
     let now_len = now_unlock_chunk.len();
-    let mut current_era = PlasmStaking::current_era();
+    let current_era = PlasmStaking::current_era();
 
     assert_ok!(PlasmStaking::unbond(Origin::signed(ctrl), balance));
 
@@ -446,10 +446,7 @@ fn success_unbond(ctrl: AccountId, balance: Balance) {
         }
     );
     assert_eq!(now_ledger.total, after_ledger.total);
-    assert_eq!(
-        now_ledger.active,
-        after_ledger.active + balance
-    );
+    assert_eq!(now_ledger.active, after_ledger.active + balance);
 }
 
 #[test]
@@ -540,29 +537,140 @@ fn withdraw_unbonded_scenario_test() {
 }
 
 #[test]
-fn nominate_contracts_scenario_test() {
+fn withdraw_unbonded_failed_test() {
     new_test_ext().execute_with(|| {
-        assert!(false);
+        success_first_bond(BOB_STASH, BOB_CTRL, 1000, RewardDestination::Stash);
+        success_unbond(BOB_CTRL, 300);
+        assert_eq!(
+            PlasmStaking::withdraw_unbonded(Origin::signed(BOB_STASH)),
+            Err("not a controller")
+        );
     })
 }
 
 #[test]
+fn nominate_contracts_scenario_test() {
+    new_test_ext().execute_with(|| {
+        valid_instatiate();
+        success_first_bond(BOB_STASH, BOB_CTRL, 1000, RewardDestination::Stash);
+        assert_ok!(PlasmStaking::nominate_contracts(Origin::signed(BOB_CTRL), vec![ALICE_CONTRACT]));
+        assert_eq!(
+            PlasmStaking::nominators(BOB_STASH),
+            Some(staking::Nominations {
+                targets: vec![ALICE_CONTRACT],
+                submitted_in: 0,
+                suppressed: false,
+            })
+        );
+    })
+}
+
+fn success_nominate_contracts(ctrl: AccountId, targets: Vec<AccountId>) {
+    assert_ok!(PlasmStaking::nominate_contracts(Origin::signed(ctrl), targets.clone()));
+    let stash = PlasmStaking::ledger(&ctrl).unwrap().stash;
+    assert_eq!(
+        PlasmStaking::nominators(stash),
+        Some(staking::Nominations {
+            targets: targets,
+            submitted_in: 0,
+            suppressed: false,
+        })
+    );
+}
+
+#[test]
+fn nominate_contracts_failed_test() {
+    new_test_ext().execute_with(|| {
+        valid_instatiate();
+        success_first_bond(BOB_STASH, BOB_CTRL, 1000, RewardDestination::Stash);
+        assert_eq!(PlasmStaking::nominate_contracts(Origin::signed(BOB_STASH), vec![ALICE_CONTRACT]), Err("not a controller"));
+        assert_eq!(PlasmStaking::nominate_contracts(Origin::signed(BOB_CTRL), vec![]), Err("targets cannot be empty"));
+        assert_eq!(PlasmStaking::nominate_contracts(Origin::signed(BOB_CTRL), vec![BOB_CONTRACT]), Err("tragets must be operated contracts"));
+    })
+}
+
+
+#[test]
 fn chill_scenario_test() {
     new_test_ext().execute_with(|| {
-        assert!(false);
+        valid_instatiate();
+        success_first_bond(BOB_STASH, BOB_CTRL, 1000, RewardDestination::Stash);
+        success_nominate_contracts(BOB_CTRL, vec![ALICE_CONTRACT]);
+        assert_ok!(PlasmStaking::chill(Origin::signed(BOB_CTRL)));
+        assert_eq!(PlasmStaking::nominators(BOB_STASH),None);
+    })
+}
+
+#[test]
+fn chill_failed_test() {
+    new_test_ext().execute_with(|| {
+        valid_instatiate();
+        success_first_bond(BOB_STASH, BOB_CTRL, 1000, RewardDestination::Stash);
+        success_nominate_contracts(BOB_CTRL, vec![ALICE_CONTRACT]);
+        assert_eq!(PlasmStaking::chill(Origin::signed(BOB_STASH)), Err("not a controller"));
     })
 }
 
 #[test]
 fn set_payee_scenario_test() {
     new_test_ext().execute_with(|| {
-        assert!(false);
+        success_first_bond(ALICE_STASH, ALICE_CTRL, 1000, RewardDestination::Stash);
+        assert_ok!(PlasmStaking::set_payee(
+            Origin::signed(ALICE_CTRL),
+            RewardDestination::Controller
+        ));
+        assert_eq!(
+            PlasmStaking::payee(ALICE_STASH),
+            RewardDestination::Controller
+        );
+    })
+}
+
+#[test]
+fn set_payee_failed_test() {
+    new_test_ext().execute_with(|| {
+        success_first_bond(ALICE_STASH, ALICE_CTRL, 1000, RewardDestination::Stash);
+        assert_eq!(
+            PlasmStaking::set_payee(Origin::signed(ALICE_STASH), RewardDestination::Controller),
+            Err("not a controller")
+        );
     })
 }
 
 #[test]
 fn set_controller_scenario_test() {
     new_test_ext().execute_with(|| {
-        assert!(false);
+        success_first_bond(ALICE_STASH, ALICE_CTRL, 1000, RewardDestination::Stash);
+        assert_ok!(PlasmStaking::set_controller(
+            Origin::signed(ALICE_STASH),
+            BOB_CTRL
+        ));
+        assert_eq!(PlasmStaking::bonded(ALICE_STASH), Some(BOB_CTRL));
+        assert_eq!(
+            PlasmStaking::ledger(BOB_CTRL),
+            Some(StakingLedger {
+                stash: ALICE_STASH,
+                total: 1000,
+                active: 1000,
+                unlocking: vec![],
+            })
+        );
+        assert_eq!(PlasmStaking::ledger(ALICE_CTRL), None);
+    })
+}
+
+#[test]
+fn set_controller_failed_test() {
+    new_test_ext().execute_with(|| {
+        success_first_bond(ALICE_STASH, ALICE_CTRL, 1000, RewardDestination::Stash);
+        assert_eq!(PlasmStaking::set_controller(
+            Origin::signed(ALICE_CTRL),
+            BOB_CTRL
+        ), Err("not a stash"));
+        success_first_bond(BOB_STASH, BOB_CTRL, 1000, RewardDestination::Stash);
+        assert_eq!(PlasmStaking::set_controller(
+            Origin::signed(ALICE_STASH),
+            BOB_CTRL
+        ), Err("controller already paired"));
     })
 }

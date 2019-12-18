@@ -370,7 +370,7 @@ decl_module! {
                 .collect::<result::Result<Vec<T::AccountId>, _>>()?;
 
             if !targets.iter().all(|t| T::IsExistsContract::is_exists_contract(&t)) {
-                return Err("tragets must be operated contracts.");
+                return Err("tragets must be operated contracts");
             }
 
             let nominations = Nominations {

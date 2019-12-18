@@ -6,8 +6,8 @@ use super::*;
 use primitives::{crypto::key_types, H256};
 use sp_runtime::testing::{Header, UintAuthorityId};
 use sp_runtime::traits::{BlakeTwo256, ConvertInto, IdentityLookup, OpaqueKeys};
-use sp_runtime::{KeyTypeId, Perbill};
-use support::{impl_outer_dispatch, impl_outer_origin, parameter_types, assert_ok};
+use sp_runtime::{KeyTypeId, Perbill, traits::Hash};
+use support::{assert_ok, impl_outer_dispatch, impl_outer_origin, parameter_types};
 
 pub type BlockNumber = u64;
 pub type AccountId = u64;
@@ -17,6 +17,8 @@ pub const ALICE_STASH: u64 = 1;
 pub const BOB_STASH: u64 = 2;
 pub const ALICE_CTRL: u64 = 3;
 pub const BOB_CTRL: u64 = 4;
+pub const ALICE_CONTRACT: u64 = 11;
+pub const BOB_CONTRACT: u64 = 12;
 
 impl_outer_origin! {
     pub enum Origin for Test {}
@@ -37,8 +39,22 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
         .unwrap();
 
     let _ = balances::GenesisConfig::<Test> {
-        balances: vec![(ALICE_STASH, 1000), (BOB_STASH, 2000), (ALICE_CTRL, 10), (BOB_CTRL, 20)],
+        balances: vec![
+            (ALICE_STASH, 1000),
+            (BOB_STASH, 2000),
+            (ALICE_CTRL, 10),
+            (BOB_CTRL, 20),
+        ],
         vesting: vec![],
+    }
+    .assimilate_storage(&mut storage);
+
+    let _ = contracts::GenesisConfig::<Test> {
+        current_schedule: contracts::Schedule {
+            enable_println: true,
+            ..Default::default()
+        },
+        gas_price: 2,
     }
     .assimilate_storage(&mut storage);
 
@@ -146,7 +162,7 @@ impl balances::Trait for Test {
 pub struct DummyContractAddressFor;
 impl contracts::ContractAddressFor<H256, u64> for DummyContractAddressFor {
     fn contract_address_for(_code_hash: &H256, _data: &[u8], origin: &u64) -> u64 {
-        *origin + 1
+        *origin + 10
     }
 }
 
@@ -220,7 +236,7 @@ impl contracts::Trait for Test {
 }
 
 impl operator::Trait for Test {
-    type Parameters = operator::parameters::DefaultParameters;
+    type Parameters = parameters::StakingParameters;
     type Event = ();
 }
 
@@ -246,6 +262,90 @@ pub type Timestamp = timestamp::Module<Test>;
 pub type Contract = contracts::Module<Test>;
 pub type Operator = operator::Module<Test>;
 pub type PlasmStaking = Module<Test>;
+
+/// Generate Wasm binary and code hash from wabt source.
+pub fn compile_module<T>(
+    wabt_module: &str,
+) -> result::Result<(Vec<u8>, <T::Hashing as Hash>::Output), wabt::Error>
+    where
+        T: system::Trait,
+{
+    let wasm = wabt::wat2wasm(wabt_module)?;
+    let code_hash = T::Hashing::hash(&wasm);
+    Ok((wasm, code_hash))
+}
+
+pub const CODE_RETURN_FROM_START_FN: &str = r#"
+(module
+    (import "env" "ext_return" (func $ext_return (param i32 i32)))
+    (import "env" "ext_deposit_event" (func $ext_deposit_event (param i32 i32 i32 i32)))
+    (import "env" "memory" (memory 1 1))
+
+    (start $start)
+    (func $start
+        (call $ext_deposit_event
+            (i32.const 0) ;; The topics buffer
+            (i32.const 0) ;; The topics buffer's length
+            (i32.const 8) ;; The data buffer
+            (i32.const 4) ;; The data buffer's length
+        )
+        (call $ext_return
+            (i32.const 8)
+            (i32.const 4)
+        )
+        (unreachable)
+    )
+
+    (func (export "call")
+        (unreachable)
+    )
+    (func (export "deploy"))
+
+    (data (i32.const 8) "\01\02\03\04")
+)
+"#;
+
+pub fn valid_instatiate() {
+    let (wasm, code_hash) = compile_module::<Test>(CODE_RETURN_FROM_START_FN).unwrap();
+
+    // prepare
+    Balances::deposit_creating(&ALICE_STASH, 1_000_000);
+    assert_ok!(Contract::put_code(Origin::signed(ALICE_STASH), 100_000, wasm));
+
+    let test_params = parameters::StakingParameters {
+        can_be_nominated: true,
+        option_expired: 100,
+        option_p: Perbill::from_percent(20).deconstruct(),
+    };
+
+    // instantiate
+    // Check at the end to get hash on error easily
+    let _ = Operator::instantiate(
+        Origin::signed(ALICE_STASH),
+        100,
+        100_000,
+        code_hash.into(),
+        vec![],
+        test_params.clone(),
+    );
+    // checks deployed contract
+    assert!(contracts::ContractInfoOf::<Test>::exists(ALICE_CONTRACT));
+
+    // checks mapping operator and contract
+    // ALICE_STASH operates a only ALICE_CONTRACT contract.
+    assert!(operator::OperatorHasContracts::<Test>::exists(ALICE_STASH));
+    let tree = operator::OperatorHasContracts::<Test>::get(&ALICE_STASH);
+    assert_eq!(tree.len(), 1);
+    assert!(tree.contains(&ALICE_CONTRACT));
+
+    // ALICE_CONTRACT contract is operated by ALICE_STASH.
+    assert!(operator::ContractHasOperator::<Test>::exists(ALICE_CONTRACT));
+    assert_eq!(operator::ContractHasOperator::<Test>::get(&ALICE_CONTRACT), Some(ALICE_STASH));
+
+    // ALICE_CONTRACT's contract Parameters is same test_params.
+    assert!(operator::ContractParameters::<Test>::exists(ALICE_CONTRACT));
+    assert_eq!(operator::ContractParameters::<Test>::get(&ALICE_CONTRACT), Some(test_params));
+}
 
 pub fn advance_session() {
     // increase block numebr
