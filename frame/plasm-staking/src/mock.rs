@@ -7,11 +7,16 @@ use primitives::{crypto::key_types, H256};
 use sp_runtime::testing::{Header, UintAuthorityId};
 use sp_runtime::traits::{BlakeTwo256, ConvertInto, IdentityLookup, OpaqueKeys};
 use sp_runtime::{KeyTypeId, Perbill};
-use support::{impl_outer_dispatch, impl_outer_origin, parameter_types};
+use support::{impl_outer_dispatch, impl_outer_origin, parameter_types, assert_ok};
 
 pub type BlockNumber = u64;
 pub type AccountId = u64;
 pub type Balance = u64;
+
+pub const ALICE_STASH: u64 = 1;
+pub const BOB_STASH: u64 = 2;
+pub const ALICE_CTRL: u64 = 3;
+pub const BOB_CTRL: u64 = 4;
 
 impl_outer_origin! {
     pub enum Origin for Test {}
@@ -32,7 +37,7 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
         .unwrap();
 
     let _ = balances::GenesisConfig::<Test> {
-        balances: vec![(1, 10), (2, 20), (3, 300), (4, 400)],
+        balances: vec![(ALICE_STASH, 1000), (BOB_STASH, 2000), (ALICE_CTRL, 10), (BOB_CTRL, 20)],
         vesting: vec![],
     }
     .assimilate_storage(&mut storage);
@@ -251,4 +256,12 @@ pub fn advance_session() {
     Timestamp::set_timestamp(now_time + 10);
     Session::rotate_session();
     assert_eq!(Session::current_index(), (now / Period::get()) as u32);
+}
+
+pub fn advance_era() {
+    let current_era = PlasmStaking::current_era();
+    assert_ok!(PlasmStaking::force_new_era(Origin::ROOT));
+    assert_eq!(PlasmStaking::force_era(), Forcing::ForceNew);
+    advance_session();
+    assert_eq!(PlasmStaking::current_era(), current_era + 1);
 }
