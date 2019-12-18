@@ -4,8 +4,8 @@
 
 use super::*;
 use crate::mock::*;
-use support::{assert_ok, traits::LockableCurrency};
 use balances::BalanceLock;
+use support::{assert_ok, traits::LockableCurrency};
 
 #[test]
 fn root_calls_fails_for_user() {
@@ -237,46 +237,61 @@ fn bond_scenario_test() {
             })
         );
         assert_eq!(PlasmStaking::ledger(ALICE_STASH), None);
-        assert_eq!(Balances::locks(ALICE_STASH), vec![
-            BalanceLock {
+        assert_eq!(
+            Balances::locks(ALICE_STASH),
+            vec![BalanceLock {
                 id: STAKING_ID,
                 amount: 1000,
                 until: <Test as system::Trait>::BlockNumber::max_value(),
                 reasons: WithdrawReasons::all(),
-            },
-        ])
+            },]
+        )
     })
 }
 
 #[test]
 fn bond_failed_test() {
     new_test_ext().execute_with(|| {
-        assert_eq!(PlasmStaking::bond(
-            Origin::signed(ALICE_STASH),
-            ALICE_CTRL,
-            9,
-            RewardDestination::Stash,
-        ), Err("can not bond with value less than minimum balance"));
+        assert_eq!(
+            PlasmStaking::bond(
+                Origin::signed(ALICE_STASH),
+                ALICE_CTRL,
+                9,
+                RewardDestination::Stash,
+            ),
+            Err("can not bond with value less than minimum balance")
+        );
 
         success_first_bond(ALICE_STASH, ALICE_CTRL, 10, RewardDestination::Stash);
 
-        assert_eq!(PlasmStaking::bond(
-            Origin::signed(ALICE_STASH),
-            ALICE_CTRL,
-            100,
-            RewardDestination::Stash,
-        ), Err("stash already bonded"));
+        assert_eq!(
+            PlasmStaking::bond(
+                Origin::signed(ALICE_STASH),
+                ALICE_CTRL,
+                100,
+                RewardDestination::Stash,
+            ),
+            Err("stash already bonded")
+        );
 
-        assert_eq!(PlasmStaking::bond(
-            Origin::signed(BOB_STASH),
-            ALICE_CTRL,
-            100,
-            RewardDestination::Stash,
-        ), Err("controller already paired"));
+        assert_eq!(
+            PlasmStaking::bond(
+                Origin::signed(BOB_STASH),
+                ALICE_CTRL,
+                100,
+                RewardDestination::Stash,
+            ),
+            Err("controller already paired")
+        );
     });
 }
 
-fn success_first_bond(stash: AccountId, ctrl: AccountId, balance: Balance, dest: RewardDestination) {
+fn success_first_bond(
+    stash: AccountId,
+    ctrl: AccountId,
+    balance: Balance,
+    dest: RewardDestination,
+) {
     // bond ALICE -> BOB
     assert_ok!(PlasmStaking::bond(
         Origin::signed(stash),
@@ -295,14 +310,15 @@ fn success_first_bond(stash: AccountId, ctrl: AccountId, balance: Balance, dest:
             unlocking: vec![],
         })
     );
-    assert_eq!(Balances::locks(stash), vec![
-        BalanceLock {
+    assert_eq!(
+        Balances::locks(stash),
+        vec![BalanceLock {
             id: STAKING_ID,
             amount: balance,
             until: <Test as system::Trait>::BlockNumber::max_value(),
             reasons: WithdrawReasons::all(),
-        },
-    ])
+        },]
+    )
 }
 
 #[test]
@@ -323,23 +339,30 @@ fn bond_extra_scenario_test() {
                 unlocking: vec![],
             })
         );
-        assert_eq!(Balances::locks(BOB_STASH), vec![
-            BalanceLock {
+        assert_eq!(
+            Balances::locks(BOB_STASH),
+            vec![BalanceLock {
                 id: STAKING_ID,
                 amount: 2000,
                 until: <Test as system::Trait>::BlockNumber::max_value(),
                 reasons: WithdrawReasons::all(),
-            },
-        ]);
+            },]
+        );
     })
 }
 
 #[test]
 fn bond_extra_failed_test() {
     new_test_ext().execute_with(|| {
-        assert_eq!(PlasmStaking::bond_extra(Origin::signed(BOB_STASH), 1000), Err("not a stash"));
+        assert_eq!(
+            PlasmStaking::bond_extra(Origin::signed(BOB_STASH), 1000),
+            Err("not a stash")
+        );
         <Bonded<Test>>::insert(BOB_STASH, BOB_CTRL);
-        assert_eq!(PlasmStaking::bond_extra(Origin::signed(BOB_STASH), 1000), Err("not a controller"));
+        assert_eq!(
+            PlasmStaking::bond_extra(Origin::signed(BOB_STASH), 1000),
+            Err("not a controller")
+        );
     })
 }
 
@@ -355,27 +378,164 @@ fn unbond_scenario_test() {
                 stash: BOB_STASH,
                 total: 1000,
                 active: 700,
-                unlocking: vec![UnlockChunk{
+                unlocking: vec![UnlockChunk {
                     value: 300,
                     era: 3, // current_era(0) + bonding_duration(3)
                 }],
             })
         );
-        assert_eq!(Balances::locks(BOB_STASH), vec![
-            BalanceLock {
+        assert_eq!(
+            Balances::locks(BOB_STASH),
+            vec![BalanceLock {
                 id: STAKING_ID,
                 amount: 1000,
                 until: <Test as system::Trait>::BlockNumber::max_value(),
                 reasons: WithdrawReasons::all(),
-            },
-        ]);
+            },]
+        );
+
+        advance_era();
+
+        assert_ok!(PlasmStaking::unbond(Origin::signed(BOB_CTRL), 200));
+        assert_eq!(
+            PlasmStaking::ledger(BOB_CTRL),
+            Some(StakingLedger {
+                stash: BOB_STASH,
+                total: 1000,
+                active: 500,
+                unlocking: vec![
+                    UnlockChunk {
+                        value: 300,
+                        era: 3, // current_era(0) + bonding_duration(3)
+                    },
+                    UnlockChunk {
+                        value: 200,
+                        era: 4, // current_era(1) + bonding_duration(3)
+                    }
+                ],
+            })
+        );
+        assert_eq!(
+            Balances::locks(BOB_STASH),
+            vec![BalanceLock {
+                id: STAKING_ID,
+                amount: 1000,
+                until: <Test as system::Trait>::BlockNumber::max_value(),
+                reasons: WithdrawReasons::all(),
+            },]
+        );
+    })
+}
+
+fn success_unbond(ctrl: AccountId, balance: Balance) {
+    let now_ledger = PlasmStaking::ledger(ctrl).unwrap();
+    let now_unlock_chunk = now_ledger.unlocking;
+    let now_len = now_unlock_chunk.len();
+    let mut current_era = PlasmStaking::current_era();
+
+    assert_ok!(PlasmStaking::unbond(Origin::signed(ctrl), balance));
+
+    let after_ledger = PlasmStaking::ledger(ctrl).unwrap();
+    let after_unlock_chunks = after_ledger.unlocking;
+    assert_eq!(now_unlock_chunk, after_unlock_chunks.split_at(now_len).0);
+    assert_eq!(
+        after_unlock_chunks[now_len],
+        UnlockChunk {
+            value: balance,
+            era: current_era + 3, // current_era(0) + bonding_duration(3)
+        }
+    );
+    assert_eq!(now_ledger.total, after_ledger.total);
+    assert_eq!(
+        now_ledger.active,
+        after_ledger.active + balance
+    );
+}
+
+#[test]
+fn unbond_failed_test() {
+    new_test_ext().execute_with(|| {
+        success_first_bond(BOB_STASH, BOB_CTRL, 1000, RewardDestination::Stash);
+        assert_eq!(
+            PlasmStaking::unbond(Origin::signed(BOB_STASH), 300),
+            Err("not a controller")
+        );
+        for _ in 0..32 {
+            success_unbond(BOB_CTRL, 10);
+        }
+        assert_eq!(
+            PlasmStaking::unbond(Origin::signed(BOB_CTRL), 300),
+            Err("can not schedule more unlock chunks")
+        );
     })
 }
 
 #[test]
 fn withdraw_unbonded_scenario_test() {
     new_test_ext().execute_with(|| {
-        assert!(false);
+        success_first_bond(BOB_STASH, BOB_CTRL, 1000, RewardDestination::Stash);
+        success_unbond(BOB_CTRL, 300);
+
+        // era 0 -> 1
+        advance_era();
+
+        success_unbond(BOB_CTRL, 700);
+
+        // era 1 -> 2
+        advance_era();
+
+        assert_ok!(PlasmStaking::withdraw_unbonded(Origin::signed(BOB_CTRL)));
+        assert_eq!(
+            PlasmStaking::ledger(BOB_CTRL),
+            Some(StakingLedger {
+                stash: BOB_STASH,
+                total: 1000,
+                active: 0,
+                unlocking: vec![
+                    UnlockChunk { value: 300, era: 3 },
+                    UnlockChunk { value: 700, era: 4 },
+                ],
+            })
+        );
+        assert_eq!(
+            Balances::locks(BOB_STASH),
+            vec![BalanceLock {
+                id: STAKING_ID,
+                amount: 1000,
+                until: <Test as system::Trait>::BlockNumber::max_value(),
+                reasons: WithdrawReasons::all(),
+            },]
+        );
+
+        // era 2 -> 3
+        advance_era();
+
+        assert_ok!(PlasmStaking::withdraw_unbonded(Origin::signed(BOB_CTRL)));
+        assert_eq!(
+            PlasmStaking::ledger(BOB_CTRL),
+            Some(StakingLedger {
+                stash: BOB_STASH,
+                total: 700,
+                active: 0,
+                unlocking: vec![UnlockChunk { value: 700, era: 4 },],
+            })
+        );
+        assert_eq!(
+            Balances::locks(BOB_STASH),
+            vec![BalanceLock {
+                id: STAKING_ID,
+                amount: 700,
+                until: <Test as system::Trait>::BlockNumber::max_value(),
+                reasons: WithdrawReasons::all(),
+            },]
+        );
+
+        // era 3 -> 4
+        advance_era();
+
+        assert_ok!(PlasmStaking::withdraw_unbonded(Origin::signed(BOB_CTRL)));
+        assert_eq!(PlasmStaking::ledger(BOB_CTRL), None);
+        assert_eq!(Balances::locks(BOB_STASH), vec![]);
     })
 }
 
