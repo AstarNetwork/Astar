@@ -1,6 +1,6 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use contract::{BalanceOf, CodeHash, ContractAddressFor, Gas};
+use contracts::{BalanceOf, CodeHash, ContractAddressFor, Gas};
 use sp_runtime::traits::{MaybeDisplay, MaybeSerialize, Member};
 use support::{decl_event, decl_module, decl_storage, dispatch::Result, Parameter};
 use system::{ensure_signed, RawOrigin};
@@ -17,7 +17,7 @@ pub trait IsExistsContract<AccountId> {
 }
 
 /// The module's configuration trait.
-pub trait Trait: contract::Trait {
+pub trait Trait: contracts::Trait {
     type Parameters: Parameter
     + Member
     + MaybeSerialize
@@ -62,7 +62,7 @@ decl_module! {
             parameters.verify()?;
 
             let contract = T::DetermineContractAddress::contract_address_for(&code_hash, &data, &operator);
-            contract::Module::<T>::instantiate(RawOrigin::Signed(operator.clone()).into(), endowment, gas_limit, code_hash, data)?;
+            contracts::Module::<T>::instantiate(RawOrigin::Signed(operator.clone()).into(), endowment, gas_limit, code_hash, data)?;
 
             // add operator to contracts
             <OperatorHasContracts<T>>::mutate(&operator, {|tree| (*tree).push(contract.clone()) });
