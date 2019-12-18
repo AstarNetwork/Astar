@@ -346,8 +346,29 @@ fn bond_extra_failed_test() {
 #[test]
 fn unbond_scenario_test() {
     new_test_ext().execute_with(|| {
-        // TODO
-        assert!(false);
+        success_first_bond(BOB_STASH, BOB_CTRL, 1000, RewardDestination::Stash);
+
+        assert_ok!(PlasmStaking::unbond(Origin::signed(BOB_CTRL), 300));
+        assert_eq!(
+            PlasmStaking::ledger(BOB_CTRL),
+            Some(StakingLedger {
+                stash: BOB_STASH,
+                total: 1000,
+                active: 700,
+                unlocking: vec![UnlockChunk{
+                    value: 300,
+                    era: 3, // current_era(0) + bonding_duration(3)
+                }],
+            })
+        );
+        assert_eq!(Balances::locks(BOB_STASH), vec![
+            BalanceLock {
+                id: STAKING_ID,
+                amount: 1000,
+                until: <Test as system::Trait>::BlockNumber::max_value(),
+                reasons: WithdrawReasons::all(),
+            },
+        ]);
     })
 }
 
