@@ -6,32 +6,27 @@
 use codec::{Decode, Encode, HasCompact};
 use operator::IsExistsContract;
 use session::OnSessionEnding;
-use sp_runtime::{
-    Perbill,
-    traits::{
-        Bounded, CheckedSub, Saturating,
-        StaticLookup, Zero,
-    }
-};
 use sp_runtime::RuntimeDebug;
+use sp_runtime::{
+    traits::{Bounded, CheckedSub, Saturating, StaticLookup, Zero},
+    Perbill,
+};
 use sp_std::{prelude::*, result, vec::Vec};
 use staking::{Exposure, Forcing, Nominations, RewardDestination};
 use support::{
-    decl_event, decl_module, decl_storage, ensure,
+    decl_event, decl_module, decl_storage,
     dispatch::Result,
-    traits::{
-        Currency, Get, LockIdentifier, LockableCurrency,
-        Time, WithdrawReasons,
-    },
+    ensure,
+    traits::{Currency, Get, LockIdentifier, LockableCurrency, Time, WithdrawReasons},
     weights::SimpleDispatchInfo,
     StorageMap, StorageValue,
 };
 use system::{ensure_root, ensure_signed};
 
-pub mod parameters;
 mod migration;
 #[cfg(test)]
 mod mock;
+pub mod parameters;
 #[cfg(test)]
 mod tests;
 

@@ -21,6 +21,7 @@ impl_outer_dispatch! {
     pub enum Call for Test where origin: Origin {
         session::Session,
         balances::Balances,
+        contracts::Contract,
         plasm_staking::PlasmStaking,
     }
 }
@@ -136,6 +137,42 @@ impl balances::Trait for Test {
     type TransferFee = TransferFee;
     type CreationFee = CreationFee;
 }
+
+pub struct DummyContractAddressFor;
+impl contracts::ContractAddressFor<H256, u64> for DummyContractAddressFor {
+    fn contract_address_for(_code_hash: &H256, _data: &[u8], origin: &u64) -> u64 {
+        *origin + 1
+    }
+}
+
+pub struct DummyTrieIdGenerator;
+
+impl contracts::TrieIdGenerator<u64> for DummyTrieIdGenerator {
+    fn trie_id(account_id: &u64) -> contracts::TrieId {
+        use primitives::storage::well_known_keys;
+
+        let new_seed = contracts::AccountCounter::mutate(|v| {
+            *v = v.wrapping_add(1);
+            *v
+        });
+
+        // TODO: see https://github.com/paritytech/substrate/issues/2325
+        let mut res = vec![];
+        res.extend_from_slice(well_known_keys::CHILD_STORAGE_KEY_PREFIX);
+        res.extend_from_slice(b"default:");
+        res.extend_from_slice(&new_seed.to_le_bytes());
+        res.extend_from_slice(&account_id.to_le_bytes());
+        res
+    }
+}
+
+pub struct DummyComputeDispatchFee;
+impl contracts::ComputeDispatchFee<Call, u64> for DummyComputeDispatchFee {
+    fn compute_dispatch_fee(_call: &Call) -> u64 {
+        69
+    }
+}
+
 parameter_types! {
     pub const ContractTransferFee: Balance = 0;
     pub const ContractCreationFee: Balance = 0;
@@ -151,12 +188,12 @@ parameter_types! {
 impl contracts::Trait for Test {
     type Currency = Balances;
     type Time = Timestamp;
-    type Randomness = RandomnessCollectiveFlip;
+    type Randomness = randomness_collective_flip::Module<Test>;
     type Call = Call;
-    type Event = Event;
-    type DetermineContractAddress = contracts::SimpleAddressDeterminator<Test>;
-    type ComputeDispatchFee = contracts::DefaultDispatchFeeComputor<Test>;
-    type TrieIdGenerator = contracts::TrieIdFromParentCounter<Test>;
+    type Event = ();
+    type DetermineContractAddress = DummyContractAddressFor;
+    type ComputeDispatchFee = DummyComputeDispatchFee;
+    type TrieIdGenerator = DummyTrieIdGenerator;
     type GasPayment = ();
     type RentPayment = ();
     type SignedClaimHandicap = contracts::DefaultSignedClaimHandicap;
@@ -179,7 +216,7 @@ impl contracts::Trait for Test {
 
 impl operator::Trait for Test {
     type Parameters = operator::parameters::DefaultParameters;
-    type Event = Event;
+    type Event = ();
 }
 
 parameter_types! {
@@ -201,7 +238,8 @@ pub type System = system::Module<Test>;
 pub type Session = session::Module<Test>;
 pub type Balances = balances::Module<Test>;
 pub type Timestamp = timestamp::Module<Test>;
-pub type Opeartor = operator::Module<Test>;
+pub type Contract = contracts::Module<Test>;
+pub type Operator = operator::Module<Test>;
 pub type PlasmStaking = Module<Test>;
 
 pub fn advance_session() {

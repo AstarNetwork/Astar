@@ -5,9 +5,9 @@
 //! Used Perbil other parameters.
 use super::*;
 use codec::{Decode, Encode};
+use operator::parameters::Verifiable;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
-use operator::parameters::Verifiable;
 
 #[derive(Clone, Eq, PartialEq, Default, Encode, Decode, Hash)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
