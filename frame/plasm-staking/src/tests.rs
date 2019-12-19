@@ -108,7 +108,7 @@ fn noraml_incremental_era() {
             advance_session();
             println!("{}", i);
             assert_eq!(PlasmStaking::current_era(), 1);
-            assert_eq!(PlasmStaking::current_era_start(), 100);
+            assert_eq!(PlasmStaking::current_era_start(), 10 * PER_SESSION);
             assert_eq!(PlasmStaking::current_era_start_session_index(), 10);
             assert_eq!(PlasmStaking::force_era(), Forcing::NotForcing);
             assert_eq!(PlasmStaking::storage_version(), 1);
@@ -125,7 +125,7 @@ fn noraml_incremental_era() {
         for i in 20..30 {
             advance_session();
             assert_eq!(PlasmStaking::current_era(), 2);
-            assert_eq!(PlasmStaking::current_era_start(), 200);
+            assert_eq!(PlasmStaking::current_era_start(), 20 * PER_SESSION);
             assert_eq!(PlasmStaking::current_era_start_session_index(), 20);
             assert_eq!(PlasmStaking::force_era(), Forcing::NotForcing);
             assert_eq!(PlasmStaking::storage_version(), 1);
@@ -152,7 +152,7 @@ fn force_new_era_incremental_era() {
 
         advance_session();
         assert_eq!(PlasmStaking::current_era(), 1);
-        assert_eq!(PlasmStaking::current_era_start(), 10);
+        assert_eq!(PlasmStaking::current_era_start(), PER_SESSION);
         assert_eq!(PlasmStaking::current_era_start_session_index(), 1);
         assert_eq!(PlasmStaking::force_era(), Forcing::NotForcing);
         assert_eq!(PlasmStaking::storage_version(), 1);
@@ -163,7 +163,7 @@ fn force_new_era_incremental_era() {
         for i in 2..11 {
             advance_session();
             assert_eq!(PlasmStaking::current_era(), 1);
-            assert_eq!(PlasmStaking::current_era_start(), 10);
+            assert_eq!(PlasmStaking::current_era_start(), PER_SESSION);
             assert_eq!(PlasmStaking::current_era_start_session_index(), 1);
             assert_eq!(PlasmStaking::force_era(), Forcing::NotForcing);
             assert_eq!(PlasmStaking::storage_version(), 1);
@@ -173,7 +173,7 @@ fn force_new_era_incremental_era() {
 
         advance_session();
         assert_eq!(PlasmStaking::current_era(), 2);
-        assert_eq!(PlasmStaking::current_era_start(), 110);
+        assert_eq!(PlasmStaking::current_era_start(), 11 * PER_SESSION);
         assert_eq!(PlasmStaking::current_era_start_session_index(), 11);
         assert_eq!(PlasmStaking::force_era(), Forcing::NotForcing);
         assert_eq!(PlasmStaking::storage_version(), 1);
@@ -196,7 +196,7 @@ fn force_new_era_always_incremental_era() {
 
         advance_session();
         assert_eq!(PlasmStaking::current_era(), 1);
-        assert_eq!(PlasmStaking::current_era_start(), 10);
+        assert_eq!(PlasmStaking::current_era_start(), PER_SESSION);
         assert_eq!(PlasmStaking::current_era_start_session_index(), 1);
         assert_eq!(PlasmStaking::force_era(), Forcing::ForceAlways);
         assert_eq!(PlasmStaking::storage_version(), 1);
@@ -205,7 +205,7 @@ fn force_new_era_always_incremental_era() {
 
         advance_session();
         assert_eq!(PlasmStaking::current_era(), 2);
-        assert_eq!(PlasmStaking::current_era_start(), 20);
+        assert_eq!(PlasmStaking::current_era_start(), 2 * PER_SESSION);
         assert_eq!(PlasmStaking::current_era_start_session_index(), 2);
         assert_eq!(PlasmStaking::force_era(), Forcing::ForceAlways);
         assert_eq!(PlasmStaking::storage_version(), 1);
@@ -555,12 +555,12 @@ fn nominate_contracts_scenario_test() {
         success_first_bond(BOB_STASH, BOB_CTRL, 1000, RewardDestination::Stash);
         assert_ok!(PlasmStaking::nominate_contracts(
             Origin::signed(BOB_CTRL),
-            vec![ALICE_CONTRACT]
+            vec![OPERATED_CONTRACT]
         ));
         assert_eq!(
             PlasmStaking::dapps_nominations(BOB_STASH),
             Some(staking::Nominations {
-                targets: vec![ALICE_CONTRACT],
+                targets: vec![OPERATED_CONTRACT],
                 submitted_in: 0,
                 suppressed: false,
             })
@@ -574,11 +574,12 @@ fn success_nominate_contracts(ctrl: AccountId, targets: Vec<AccountId>) {
         targets.clone()
     ));
     let stash = PlasmStaking::ledger(&ctrl).unwrap().stash;
+    let current_era = PlasmStaking::current_era();
     assert_eq!(
         PlasmStaking::dapps_nominations(stash),
         Some(staking::Nominations {
             targets: targets,
-            submitted_in: 0,
+            submitted_in: current_era,
             suppressed: false,
         })
     );
@@ -590,7 +591,7 @@ fn nominate_contracts_failed_test() {
         valid_instatiate();
         success_first_bond(BOB_STASH, BOB_CTRL, 1000, RewardDestination::Stash);
         assert_eq!(
-            PlasmStaking::nominate_contracts(Origin::signed(BOB_STASH), vec![ALICE_CONTRACT]),
+            PlasmStaking::nominate_contracts(Origin::signed(BOB_STASH), vec![OPERATED_CONTRACT]),
             Err("not a controller")
         );
         assert_eq!(
@@ -609,7 +610,7 @@ fn chill_scenario_test() {
     new_test_ext().execute_with(|| {
         valid_instatiate();
         success_first_bond(BOB_STASH, BOB_CTRL, 1000, RewardDestination::Stash);
-        success_nominate_contracts(BOB_CTRL, vec![ALICE_CONTRACT]);
+        success_nominate_contracts(BOB_CTRL, vec![OPERATED_CONTRACT]);
         assert_ok!(PlasmStaking::chill(Origin::signed(BOB_CTRL)));
         assert_eq!(PlasmStaking::dapps_nominations(BOB_STASH), None);
     })
@@ -620,7 +621,7 @@ fn chill_failed_test() {
     new_test_ext().execute_with(|| {
         valid_instatiate();
         success_first_bond(BOB_STASH, BOB_CTRL, 1000, RewardDestination::Stash);
-        success_nominate_contracts(BOB_CTRL, vec![ALICE_CONTRACT]);
+        success_nominate_contracts(BOB_CTRL, vec![OPERATED_CONTRACT]);
         assert_eq!(
             PlasmStaking::chill(Origin::signed(BOB_STASH)),
             Err("not a controller")
@@ -713,12 +714,15 @@ fn reward_to_validator_test() {
             vec![VALIDATOR_A, VALIDATOR_B, VALIDATOR_C, VALIDATOR_D]
         );
 
-        PlasmStaking::reward_to_validators(SIX_HOURS);
+        let pre_total_issuarance = Balances::total_issuance();
+
+        let (a, b) = inflation::compute_total_payout_test(pre_total_issuarance, SIX_HOURS);
+        PlasmStaking::reward_to_validators(a / 2, b / 2);
         assert_eq!(Balances::free_balance(&VALIDATOR_A), 1_000_068);
         assert_eq!(Balances::free_balance(&VALIDATOR_B), 1_000_068);
         assert_eq!(Balances::free_balance(&VALIDATOR_C), 1_000_068);
         assert_eq!(Balances::free_balance(&VALIDATOR_D), 1_000_068);
-        assert_eq!(Balances::total_issuance(), 4_003_302);
+        assert_eq!(Balances::total_issuance(), pre_total_issuarance + 272);
     })
 }
 
@@ -726,6 +730,11 @@ fn reward_to_validator_test() {
 fn reward_to_operators_test() {
     new_test_ext().execute_with(|| {
         valid_instatiate();
+        assert_ok!(Operator::change_operator(
+            Origin::signed(OPERATOR),
+            vec![OPERATED_CONTRACT],
+            ALICE_STASH
+        ));
         success_first_bond(BOB_STASH, BOB_CTRL, 1_000, RewardDestination::Stash);
         success_first_bond(
             ALICE_STASH,
@@ -733,23 +742,76 @@ fn reward_to_operators_test() {
             1_000,
             RewardDestination::Controller,
         );
-        success_nominate_contracts(BOB_CTRL, vec![ALICE_CONTRACT]);
-        success_nominate_contracts(ALICE_CTRL, vec![ALICE_CONTRACT]);
+        success_nominate_contracts(BOB_CTRL, vec![OPERATED_CONTRACT]);
+        success_nominate_contracts(ALICE_CTRL, vec![OPERATED_CONTRACT]);
 
         advance_era();
 
-        PlasmStaking::reward_to_operators(SIX_HOURS);
-        assert_eq!(Balances::free_balance(&BOB_STASH), 2_000 + 0); // +nomiante reward
+        let pre_total_issuarance = Balances::total_issuance();
+
+        let (a, b) = inflation::compute_total_payout_test(pre_total_issuarance, SIX_HOURS);
+        PlasmStaking::reward_to_operators(a - a / 2, b - b / 2);
+        assert_eq!(Balances::free_balance(&BOB_STASH), 2_000 + 34); // +nomiante reward
         assert_eq!(Balances::free_balance(&BOB_CTRL), 20 + 0); // +0
-        assert_eq!(Balances::free_balance(&ALICE_STASH), 1_000 + 068); // +operator reward
-        assert_eq!(Balances::free_balance(&ALICE_CTRL), 10 + 1_000_068); // +nominate reward
-        assert_eq!(Balances::total_issuance(), 4_003_302);
+        assert_eq!(Balances::free_balance(&ALICE_STASH), 1_000 + 274); // +operator reward
+        assert_eq!(Balances::free_balance(&ALICE_CTRL), 10 + 34); // +nominate reward
+        assert_eq!(Balances::total_issuance(), pre_total_issuarance + 342);
     })
 }
 
 #[test]
 fn new_session_scenario_test() {
     new_test_ext().execute_with(|| {
-        assert!(false);
+        advance_session();
+        assert_ok!(PlasmStaking::set_validators(
+            Origin::ROOT,
+            vec![VALIDATOR_A, VALIDATOR_B, VALIDATOR_C, VALIDATOR_D]
+        ));
+
+        valid_instatiate();
+        assert_ok!(Operator::change_operator(
+            Origin::signed(OPERATOR),
+            vec![OPERATED_CONTRACT],
+            ALICE_STASH
+        ));
+        success_first_bond(BOB_STASH, BOB_CTRL, 1_000, RewardDestination::Stash);
+        success_first_bond(
+            ALICE_STASH,
+            ALICE_CTRL,
+            1_000,
+            RewardDestination::Controller,
+        );
+        success_nominate_contracts(BOB_CTRL, vec![OPERATED_CONTRACT]);
+        success_nominate_contracts(ALICE_CTRL, vec![OPERATED_CONTRACT]);
+
+        advance_era();
+        advance_session();
+        assert_eq!(
+            PlasmStaking::current_elected(),
+            vec![VALIDATOR_A, VALIDATOR_B, VALIDATOR_C, VALIDATOR_D]
+        );
+
+        let pre_total_issuarance = Balances::total_issuance();
+        assert_eq!(Balances::free_balance(&VALIDATOR_A), 1_000_000);
+        assert_eq!(Balances::free_balance(&VALIDATOR_B), 1_000_000);
+        assert_eq!(Balances::free_balance(&VALIDATOR_C), 1_000_000);
+        assert_eq!(Balances::free_balance(&VALIDATOR_D), 1_000_000);
+        assert_eq!(Balances::free_balance(&BOB_STASH), 2_000);
+        assert_eq!(Balances::free_balance(&BOB_CTRL), 20);
+        assert_eq!(Balances::free_balance(&ALICE_STASH), 1_000);
+        assert_eq!(Balances::free_balance(&ALICE_CTRL), 10);
+        assert_eq!(pre_total_issuarance, 5_002_318);
+        for _ in 0..10 {
+            advance_session();
+        }
+        assert_eq!(Balances::free_balance(&VALIDATOR_A), 1_000_000 + 2); // +validator reward
+        assert_eq!(Balances::free_balance(&VALIDATOR_B), 1_000_000 + 2); // +validator reward
+        assert_eq!(Balances::free_balance(&VALIDATOR_C), 1_000_000 + 2); // +validator reward
+        assert_eq!(Balances::free_balance(&VALIDATOR_D), 1_000_000 + 2); // +validator reward
+        assert_eq!(Balances::free_balance(&BOB_STASH), 2_000 + 1); // +nomiante reward
+        assert_eq!(Balances::free_balance(&BOB_CTRL), 20 + 0); // +0
+        assert_eq!(Balances::free_balance(&ALICE_STASH), 1_000 + 8); // +operator reward
+        assert_eq!(Balances::free_balance(&ALICE_CTRL), 10 + 1); // +nominate reward
+        assert_eq!(Balances::total_issuance(), 5_002_318 + 18);
     })
 }

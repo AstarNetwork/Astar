@@ -9,7 +9,8 @@ use session::OnSessionEnding;
 use sp_runtime::RuntimeDebug;
 use sp_runtime::{
     traits::{
-        Bounded, CheckedAdd, CheckedSub, One, SaturatedConversion, Saturating, StaticLookup, Zero,
+        Bounded, CheckedAdd, CheckedDiv, CheckedSub, One, SaturatedConversion, Saturating,
+        StaticLookup, Zero,
     },
     Perbill,
 };
@@ -627,8 +628,19 @@ impl<T: Trait> Module<T> {
         let previous_era_start = <CurrentEraStart<T>>::mutate(|v| sp_std::mem::replace(v, now));
         let era_duration = now - previous_era_start;
         if !era_duration.is_zero() {
-            Self::reward_to_validators(era_duration);
-            Self::reward_to_operators(era_duration);
+            // When PoA, used by compute_total_payout_test.
+            let (total_payout, _) = inflation::compute_total_payout_test(
+                T::Currency::total_issuance(),
+                era_duration.saturated_into::<u64>(),
+            );
+            let total_payout_v = total_payout
+                .checked_div(&BalanceOf::<T>::from(2))
+                .unwrap_or(BalanceOf::<T>::zero());
+            let total_payout_o = total_payout
+                .checked_sub(&total_payout_v)
+                .unwrap_or(BalanceOf::<T>::zero());
+            Self::reward_to_validators(total_payout_v.clone(), total_payout_v);
+            Self::reward_to_operators(total_payout_o.clone(), total_payout_o);
         }
 
         CurrentEra::mutate(|era| *era += 1);
@@ -641,14 +653,9 @@ impl<T: Trait> Module<T> {
         Some(<Validators<T>>::get())
     }
 
-    pub fn reward_to_validators(era_duration: MomentOf<T>) {
+    pub fn reward_to_validators(total_payout: BalanceOf<T>, max_payout: BalanceOf<T>) {
         let validators = Self::current_elected();
         let validator_len: u64 = validators.len() as u64;
-        // When PoA, used by compute_total_payout_test.
-        let (total_payout, max_payout) = inflation::compute_total_payout_test(
-            T::Currency::total_issuance(),
-            era_duration.saturated_into::<u64>(),
-        );
         let mut total_imbalance = <PositiveImbalanceOf<T>>::zero();
         for v in validators.iter() {
             let reward = Perbill::from_rational_approximation(1, validator_len) * total_payout;
@@ -662,12 +669,7 @@ impl<T: Trait> Module<T> {
         T::RewardRemainder::on_unbalanced(T::Currency::issue(rest));
     }
 
-    pub fn reward_to_operators(era_duration: MomentOf<T>) {
-        // When PoA, used by compute_total_payout_test.
-        let (total_payout, max_payout) = inflation::compute_total_payout_test(
-            T::Currency::total_issuance(),
-            era_duration.saturated_into::<u64>(),
-        );
+    pub fn reward_to_operators(total_payout: BalanceOf<T>, max_payout: BalanceOf<T>) {
         let mut total_imbalance = <PositiveImbalanceOf<T>>::zero();
         let operators_reward =
             Perbill::from_rational_approximation(BalanceOf::<T>::from(4), BalanceOf::<T>::from(5))
@@ -683,11 +685,12 @@ impl<T: Trait> Module<T> {
                 sm.checked_add(&e.total).unwrap_or(sm)
             });
 
-        for (c, e) in <StakedContracts<T>>::enumerate() {
+        for (c, e) in staked_contracts.iter() {
             let reward =
                 Perbill::from_rational_approximation(e.total, total_staked) * operators_reward;
             total_imbalance.subsume(Self::reward_contract(&c, reward));
         }
+
         let nominate_totals = staked_contracts.iter().fold(
             BTreeMap::<T::AccountId, BalanceOf<T>>::new(),
             |mp, (_, e)| {
@@ -703,6 +706,7 @@ impl<T: Trait> Module<T> {
                 })
             },
         );
+
         for (n, t) in nominate_totals.iter() {
             let reward = Perbill::from_rational_approximation(*t, total_staked) * nominators_reward;
             total_imbalance
@@ -718,7 +722,7 @@ impl<T: Trait> Module<T> {
 
     fn elected_operators() {
         let nominations = <DappsNominations<T>>::enumerate()
-            .filter(|(_, n)| n.suppressed)
+            .filter(|(_, n)| !n.suppressed)
             .collect::<Vec<(T::AccountId, Nominations<T::AccountId>)>>();
         let nominators = nominations
             .iter()
@@ -736,6 +740,7 @@ impl<T: Trait> Module<T> {
                 (n, BalanceOf::<T>::zero())
             })
             .collect::<BTreeMap<T::AccountId, BalanceOf<T>>>();
+
         let staked_contracts = nominations.iter().fold(
             BTreeMap::<T::AccountId, Exposure<T::AccountId, BalanceOf<T>>>::new(),
             |mut b, (s, n)| {
