@@ -29,6 +29,7 @@ use version::RuntimeVersion;
 
 pub use balances::Call as BalancesCall;
 pub use contracts::Gas;
+pub use plasm_staking::Forcing;
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
 pub use timestamp::Call as TimestampCall;

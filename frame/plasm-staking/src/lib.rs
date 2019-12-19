@@ -12,7 +12,7 @@ use sp_runtime::{
     Perbill,
 };
 use sp_std::{prelude::*, result, vec::Vec};
-use staking::{Exposure, Forcing, Nominations, RewardDestination};
+pub use staking::{Exposure, Forcing, Nominations, RewardDestination};
 use support::{
     decl_event, decl_module, decl_storage,
     dispatch::Result,

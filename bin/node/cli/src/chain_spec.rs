@@ -1,21 +1,20 @@
+use babe_primitives::AuthorityId as BabeId;
 ///! Plasm chain configuration.
-
 use chain_spec::ChainSpecExtension;
-use primitives::{crypto::UncheckedInto, sr25519, Pair, Public};
-use serde::{Serialize, Deserialize};
+use grandpa_primitives::AuthorityId as GrandpaId;
+use hex_literal::hex;
 use plasm_primitives::{AccountId, Balance, Signature};
-use plasm_runtime::{
-    GenesisConfig, SystemConfig, SessionConfig, PlasmStakingConfig,
-    BabeConfig, GrandpaConfig, IndicesConfig, BalancesConfig, ContractsConfig, SudoConfig,
-    SessionKeys, Forcing, WASM_BINARY,
-};
 use plasm_runtime::constants::currency::*;
 use plasm_runtime::Block;
-use grandpa_primitives::AuthorityId as GrandpaId;
-use babe_primitives::AuthorityId as BabeId;
+use plasm_runtime::{
+    BabeConfig, BalancesConfig, ContractsConfig, Forcing, GenesisConfig, GrandpaConfig,
+    IndicesConfig, PlasmStakingConfig, SessionConfig, SessionKeys, SudoConfig, SystemConfig,
+    WASM_BINARY,
+};
+use primitives::{crypto::UncheckedInto, sr25519, Pair, Public};
+use serde::{Deserialize, Serialize};
 use sp_runtime::traits::{IdentifyAccount, Verify};
 use telemetry::TelemetryEndpoints;
-use hex_literal::hex;
 
 type AccountPublic = <Signature as Verify>::Signer;
 
@@ -38,10 +37,7 @@ pub struct Extensions {
 }
 
 /// Specialized `ChainSpec`.
-pub type ChainSpec = sc_service::ChainSpec<
-    GenesisConfig,
-    Extensions,
->;
+pub type ChainSpec = sc_service::ChainSpec<GenesisConfig, Extensions>;
 
 /// Helper function to generate a crypto pair from seed
 pub fn get_from_seed<TPublic: Public>(seed: &str) -> <TPublic::Pair as Pair>::Public {
@@ -52,16 +48,14 @@ pub fn get_from_seed<TPublic: Public>(seed: &str) -> <TPublic::Pair as Pair>::Pu
 
 /// Helper function to generate an account ID from seed
 pub fn get_account_id_from_seed<TPublic: Public>(seed: &str) -> AccountId
-    where
-        AccountPublic: From<<TPublic::Pair as Pair>::Public>,
+where
+    AccountPublic: From<<TPublic::Pair as Pair>::Public>,
 {
     AccountPublic::from(get_from_seed::<TPublic>(seed)).into_account()
 }
 
 /// Helper function to generate controller and session key from seed
-pub fn get_authority_keys_from_seed(
-    seed: &str,
-) -> (AccountId, BabeId, GrandpaId) {
+pub fn get_authority_keys_from_seed(seed: &str) -> (AccountId, BabeId, GrandpaId) {
     (
         get_account_id_from_seed::<sr25519::Public>(seed),
         get_from_seed::<BabeId>(seed),
@@ -69,11 +63,8 @@ pub fn get_authority_keys_from_seed(
     )
 }
 
-fn session_keys(
-    babe: BabeId,
-    grandpa: GrandpaId,
-) -> SessionKeys {
-    SessionKeys { babe, grandpa, }
+fn session_keys(babe: BabeId, grandpa: GrandpaId) -> SessionKeys {
+    SessionKeys { babe, grandpa }
 }
 
 /// Helper function to create GenesisConfig
@@ -83,14 +74,16 @@ fn generate_config_genesis(
     endowed_accounts: Option<Vec<AccountId>>,
     enable_println: bool,
 ) -> GenesisConfig {
-    let endowed_accounts: Vec<AccountId> = endowed_accounts.unwrap_or_else(|| vec![
-        get_account_id_from_seed::<sr25519::Public>("Alice"),
-        get_account_id_from_seed::<sr25519::Public>("Bob"),
-        get_account_id_from_seed::<sr25519::Public>("Charlie"),
-        get_account_id_from_seed::<sr25519::Public>("Dave"),
-        get_account_id_from_seed::<sr25519::Public>("Eve"),
-        get_account_id_from_seed::<sr25519::Public>("Ferdie"),
-    ]);
+    let endowed_accounts: Vec<AccountId> = endowed_accounts.unwrap_or_else(|| {
+        vec![
+            get_account_id_from_seed::<sr25519::Public>("Alice"),
+            get_account_id_from_seed::<sr25519::Public>("Bob"),
+            get_account_id_from_seed::<sr25519::Public>("Charlie"),
+            get_account_id_from_seed::<sr25519::Public>("Dave"),
+            get_account_id_from_seed::<sr25519::Public>("Eve"),
+            get_account_id_from_seed::<sr25519::Public>("Ferdie"),
+        ]
+    });
 
     const ENDOWMENT: Balance = 1_000 * PLM;
 
@@ -108,29 +101,24 @@ fn generate_config_genesis(
             vesting: vec![],
         }),
         indices: Some(IndicesConfig {
-            ids: endowed_accounts
-                    .iter()
-                    .cloned()
-                    .collect::<Vec<_>>(),
+            ids: endowed_accounts.iter().cloned().collect::<Vec<_>>(),
         }),
         plasm_staking: Some(PlasmStakingConfig {
             storage_version: 1,
             force_era: Forcing::NotForcing,
-            validators: initial_authorities
-                .iter()
-                .map(|x| x.0.clone())
-                .collect()
+            validators: initial_authorities.iter().map(|x| x.0.clone()).collect(),
         }),
         session: Some(SessionConfig {
-            keys: initial_authorities.iter().map(|x| {
-                (x.0.clone(), session_keys(x.1.clone(), x.2.clone()))
-            }).collect::<Vec<_>>(),
+            keys: initial_authorities
+                .iter()
+                .map(|x| (x.0.clone(), session_keys(x.1.clone(), x.2.clone())))
+                .collect::<Vec<_>>(),
         }),
         babe: Some(BabeConfig {
-            authorities: vec![]
+            authorities: vec![],
         }),
         grandpa: Some(GrandpaConfig {
-            authorities: vec![]
+            authorities: vec![],
         }),
         contracts: Some(ContractsConfig {
             current_schedule: contracts::Schedule {
@@ -206,37 +194,37 @@ fn plasm_testnet_genesis() -> GenesisConfig {
             hex!["da001e43576e62a7d4984eb86fe3a330e83854129caac5a06c5587025d9be302"].unchecked_into(),
             hex!["a4b411edba991630917119135b82c1ee9ff15d30e1ff6f62e637c7527c7478c2"].unchecked_into(),
         ),
-        (   // Knigh-star 
+        (   // Knigh-star
             hex!["ba103eb6c8b63de70b8410ec9d498d126234e56d51adfef3efa95fc466308d2c"].into(),
             hex!["ea711db476883a01dd2dc79a60656f66ee16a58ad33f6638c72fd647092d6b15"].unchecked_into(),
             hex!["597f96c1b19c1c2063fb35c8da64fee721ca900481f20d4b45693f517ef29acf"].unchecked_into(),
         ),
-        (   // Roy 
+        (   // Roy
             hex!["4219c9547619f8eaed24f507872df5168674c384fcbf4dd96e860bdc1a90b64d"].into(),
             hex!["56ffd328660aa360e9d73680bb93f255866356c8c480466177e8fecf39e0c204"].unchecked_into(),
             hex!["c54fb4015876028619d7572bffece205a0108821257112c60e0e3b779e5ff519"].unchecked_into(),
         ),
-        (   // InChainWorks 
+        (   // InChainWorks
             hex!["10270887a7c74e7b858b70edba7d44c2905295d026e445933c094a0e29414236"].into(),
             hex!["f0bc957cf56363494f4bac16434e547a2e651166215ae409fe49cb376dd4c031"].unchecked_into(),
             hex!["9c1ee88efa1f48b1d5cea56df757897ecca77940336b24f0bd75cefaf7a6652f"].unchecked_into(),
         ),
-        (   // Moonline 
+        (   // Moonline
             hex!["4041e4a5f581bb14f13036a34f6eb26346e67f03f1c1d41e4bfa0b822f60780e"].into(),
             hex!["c0f0af7ed4801cf9d07748cee789234ed1d94a3a49a64a00052287b49152f123"].unchecked_into(),
             hex!["1884916e0ec789a374739fc426b798ec6d76f41269ebe3d742a317ec7feff011"].unchecked_into(),
         ),
-        (   // Witval 
+        (   // Witval
             hex!["2ac41c4e82b7b3680a4e86486550557e7274363f413ec363ae03d2b7c11ceeef"].into(),
             hex!["6e1ce430daf4205ecabe491f5c1b2d84cf4b999f73d4f36f303e3e319162a267"].unchecked_into(),
             hex!["2fd38b8a4247fe685f3fb198b617f04b185044a0df07db0bf86f38fb23c1eb70"].unchecked_into(),
         ),
-        (   // Spiritual 
+        (   // Spiritual
             hex!["420a8d0c7c7971bbf1d32f5feefbfe2cb09d15b5c70b8258a880117c281f365f"].into(),
             hex!["6edf07f0743c09fd96e64d613777aec0225eb8cce3211f58b3ec0ced7f9e424a"].unchecked_into(),
             hex!["9ec82b6b22e47ec7dde324cfcca84a4e8785bb8ac03eda89e414c105fe13fdfa"].unchecked_into(),
         ),
-        (   // cp287 
+        (   // cp287
             hex!["380477b148049ca59005c2900f51467aaf438f113d5ab061c46e7fb35a145366"].into(),
             hex!["d87d24f1cc66e34b16529838654541e682971e78d4cd13595d25a5ff5f20be54"].unchecked_into(),
             hex!["4694c661d2c7d042c3b6d37305cd7c595b1d4c43f8b44173c304156f10f7a97a"].unchecked_into(),
