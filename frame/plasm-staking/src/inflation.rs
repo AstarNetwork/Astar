@@ -23,7 +23,6 @@ where
     const MILLISECONDS_PER_YEAR: u64 = 1000 * 3600 * 24 * 36525 / 100;
     let portion =
         Perbill::from_rational_approximation(era_duration as u64, MILLISECONDS_PER_YEAR * 5);
-    println!("{:?}", portion);
     let payout = portion * total_tokens;
     (payout.clone(), payout)
 }

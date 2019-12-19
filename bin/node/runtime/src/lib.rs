@@ -187,6 +187,8 @@ impl plasm_staking::Trait for Runtime {
     type Currency = Balances;
     type BondingDuration = BondingDuration;
     type ContractFinder = Operator;
+    type RewardRemainder = (); // Reward remainder is burned.
+    type Reward = (); // Reward is minted.
     type Time = Timestamp;
     type Event = Event;
     type SessionsPerEra = SessionsPerEra;
@@ -234,7 +236,7 @@ impl contracts::Trait for Runtime {
 }
 
 impl operator::Trait for Runtime {
-    type Parameters = operator::parameters::DefaultParameters;
+    type Parameters = plasm_staking::parameters::StakingParameters;
     type Event = Event;
 }
 

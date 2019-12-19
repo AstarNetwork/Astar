@@ -106,7 +106,6 @@ fn noraml_incremental_era() {
         // 10~19-th session
         for i in 10..20 {
             advance_session();
-            println!("{}", i);
             assert_eq!(PlasmStaking::current_era(), 1);
             assert_eq!(PlasmStaking::current_era_start(), 10 * PER_SESSION);
             assert_eq!(PlasmStaking::current_era_start_session_index(), 10);
