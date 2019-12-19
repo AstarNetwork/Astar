@@ -11,6 +11,7 @@ use inherents::{CheckInherentsResult, InherentData};
 use plasm_primitives::{
     AccountId, AccountIndex, Balance, BlockNumber, Hash, Index, Moment, Signature,
 };
+use plasm_staking::EraIndex;
 use primitives::OpaqueMetadata;
 use sp_api::impl_runtime_apis;
 use sp_runtime::traits::{
@@ -19,7 +20,6 @@ use sp_runtime::traits::{
 };
 use sp_runtime::transaction_validity::TransactionValidity;
 use sp_runtime::{create_runtime_str, generic, impl_opaque_keys, ApplyExtrinsicResult, Perbill};
-use plasm_staking::EraIndex;
 use sp_std::prelude::*;
 use support::{construct_runtime, parameter_types, traits::Randomness, weights::Weight};
 use transaction_payment_rpc_runtime_api::RuntimeDispatchInfo;
