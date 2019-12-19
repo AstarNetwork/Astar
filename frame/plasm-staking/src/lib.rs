@@ -17,12 +17,13 @@ use support::{
     decl_event, decl_module, decl_storage,
     dispatch::Result,
     ensure,
-    traits::{Currency, Get, LockIdentifier, LockableCurrency, Time, WithdrawReasons},
+    traits::{Currency, Get, LockIdentifier, LockableCurrency, Time, WithdrawReasons, OnUnbalanced, Imbalance},
     weights::SimpleDispatchInfo,
     StorageMap, StorageValue,
 };
 use system::{ensure_root, ensure_signed};
 
+mod inflation;
 mod migration;
 #[cfg(test)]
 mod mock;
@@ -36,6 +37,11 @@ pub type EraIndex = u32;
 pub type BalanceOf<T> =
     <<T as Trait>::Currency as Currency<<T as system::Trait>::AccountId>>::Balance;
 pub type MomentOf<T> = <<T as Trait>::Time as Time>::Moment;
+
+type PositiveImbalanceOf<T> =
+<<T as Trait>::Currency as Currency<<T as system::Trait>::AccountId>>::PositiveImbalance;
+type NegativeImbalanceOf<T> =
+<<T as Trait>::Currency as Currency<<T as system::Trait>::AccountId>>::NegativeImbalance;
 
 const MAX_NOMINATIONS: usize = 16;
 const MAX_UNLOCKING_CHUNKS: usize = 32;
@@ -105,6 +111,12 @@ pub trait Trait: session::Trait {
 
     /// Number of eras that staked funds must remain bonded for.
     type BondingDuration: Get<EraIndex>;
+
+    /// Tokens have been minted and are unused for validator-reward. Maybe, plasm-staking uses ().
+    type RewardRemainder: OnUnbalanced<NegativeImbalanceOf<Self>>;
+
+    /// Handler for the unbalanced increment when rewarding a staker. Maybe, plasm-staking uses ().
+    type Reward: OnUnbalanced<PositiveImbalanceOf<Self>>;
 
     /// Time used for computing era duration.
     type Time: Time;
@@ -570,11 +582,83 @@ impl<T: Trait> Module<T> {
         _ending: SessionIndex,
         will_apply_at: SessionIndex,
     ) -> Option<Vec<T::AccountId>> {
+
+        let now = T::Time::now();
+        let previous_era_start = <CurrentEraStart<T>>::mutate(|v| {
+            sp_std::mem::replace(v, now)
+        });
+        let era_duration = now - previous_era_start;
+        if !era_duration.is_zero() {
+            Self::reward_to_validators(era_duration);
+            Self::reward_to_operators(era_duration);
+        }
+
         CurrentEra::mutate(|era| *era += 1);
-        <CurrentEraStart<T>>::put(T::Time::now());
         CurrentEraStartSessionIndex::put(will_apply_at - 1);
+
+        // Compute Bonded
+        Self::compute_bonded();
+
         // Apply new validator set
         Some(<Validators<T>>::get())
+    }
+
+    fn reward_to_validators(era_duration: MomentOf<T>) {
+//        let validators = session::Module<T>::validators();
+//        let validator_len: BalanceOf<T> = (validators.len as u32).into();
+//        // When PoA, used by compute_total_payout_test.
+//        let (total_payout, max_payout) = inflation::compute_total_payout_test(
+//            T::Currency::total_issuarance(),
+//            era_duration.saturated_into::<u64>(),
+//        );
+//        let mut total_imbalance = <PositiveImbalanceOf<T>>::zero();
+//        for v in validators.iter() {
+//            let reward = Perbill::from_rational_approximation(1, validator_len) * total_payout;
+//            total_imbalance.subsume(Self::reward_validator(v, reward));
+//        }
+//        let total_payout = total_imbalance.peek();
+//
+//        let rest = max_payout.saturating_sub(total_payout);
+//        Self::deposit_event(RawEvent::Reward(total_payout, rest));
+//
+//        T::Reward::on_unbalanced(total_imblanace);
+//        T::RewardRemainder::on_unbalanced(T::Currency::issue(rest));
+    }
+
+    fn reward_to_operators(era_duration: MomentOf<T>) {
+        // When PoA, used by compute_total_payout_test.
+//        let (total_payout, max_payout) = inflation::compute_total_payout_test(
+//            T::Currency::total_issuarance(),
+//            era_duration.saturated_into::<u64>(),
+//        );
+    }
+
+    fn compute_bonded() {
+    }
+
+    fn reward_validator(stash: &T::AccountId, reward: BalanceOf<T>) -> PositiveImbalanceOf<T> {
+        Self::make_payout(stash, reward).unwrap_or(PositiveImbalanceOf::<T>::zero())
+    }
+
+    fn make_payout(stash: &T::AccountId, amount: BalanceOf<T>) -> Option<PositiveImbalanceOf<T>> {
+        let dest = Self::payee(stash);
+        match dest {
+            RewardDestination::Controller => Self::bonded(stash)
+                .and_then(|controller|
+                    T::Currency::deposit_into_existing(&controller, amount).ok()
+                ),
+            RewardDestination::Stash =>
+                T::Currency::deposit_into_existing(stash, amount).ok(),
+            RewardDestination::Staked => Self::bonded(stash)
+                .and_then(|c| Self::ledger(&c).map(|l| (c, l)))
+                .and_then(|(controller, mut l)| {
+                    l.active += amount;
+                    l.total += amount;
+                    let r = T::Currency::deposit_into_existing(stash, amount).ok();
+                    Self::update_ledger(&controller, &l);
+                    r
+                }),
+        }
     }
 
     /// Ensures storage is upgraded to most recent necessary state.

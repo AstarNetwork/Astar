@@ -249,6 +249,8 @@ impl Trait for Test {
     type Currency = Balances;
     type BondingDuration = BondingDuration;
     type IsExistsContract = Operator;
+    type RewardRemainder = (); // Reward remainder is burned.
+    type Reward = (); // Reward is minted.
     type Time = Timestamp;
     type Event = ();
     type SessionsPerEra = SessionsPerEra;
