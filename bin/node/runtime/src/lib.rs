@@ -186,7 +186,7 @@ parameter_types! {
 impl plasm_staking::Trait for Runtime {
     type Currency = Balances;
     type BondingDuration = BondingDuration;
-    type IsExistsContract = Operator;
+    type ContractFinder = Operator;
     type Time = Timestamp;
     type Event = Event;
     type SessionsPerEra = SessionsPerEra;

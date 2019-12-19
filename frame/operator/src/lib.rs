@@ -12,8 +12,10 @@ mod tests;
 
 use crate::parameters::Verifiable;
 
-pub trait IsExistsContract<AccountId> {
+pub trait ContractFinder<AccountId, Parameter> {
     fn is_exists_contract(contract_id: &AccountId) -> bool;
+    fn operator(contract_id: &AccountId) -> Option<AccountId>;
+    fn parameters(contract_id: &AccountId) -> Option<Parameter>;
 }
 
 /// The module's configuration trait.
@@ -142,8 +144,14 @@ decl_event!(
     }
 );
 
-impl<T: Trait> IsExistsContract<T::AccountId> for Module<T> {
+impl<T: Trait> ContractFinder<T::AccountId, T::Parameters> for Module<T> {
     fn is_exists_contract(contract_id: &T::AccountId) -> bool {
         <ContractHasOperator<T>>::exists(contract_id)
+    }
+    fn operator(contract_id: &T::AccountId) -> Option<T::AccountId> {
+        <ContractHasOperator<T>>::get(contract_id)
+    }
+    fn parameters(contract_id: &T::AccountId) -> Option<T::Parameters> {
+        <ContractParameters<T>>::get(contract_id)
     }
 }

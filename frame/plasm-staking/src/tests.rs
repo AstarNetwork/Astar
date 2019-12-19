@@ -558,7 +558,7 @@ fn nominate_contracts_scenario_test() {
             vec![ALICE_CONTRACT]
         ));
         assert_eq!(
-            PlasmStaking::nominators(BOB_STASH),
+            PlasmStaking::dapps_nominations(BOB_STASH),
             Some(staking::Nominations {
                 targets: vec![ALICE_CONTRACT],
                 submitted_in: 0,
@@ -575,7 +575,7 @@ fn success_nominate_contracts(ctrl: AccountId, targets: Vec<AccountId>) {
     ));
     let stash = PlasmStaking::ledger(&ctrl).unwrap().stash;
     assert_eq!(
-        PlasmStaking::nominators(stash),
+        PlasmStaking::dapps_nominations(stash),
         Some(staking::Nominations {
             targets: targets,
             submitted_in: 0,
@@ -611,7 +611,7 @@ fn chill_scenario_test() {
         success_first_bond(BOB_STASH, BOB_CTRL, 1000, RewardDestination::Stash);
         success_nominate_contracts(BOB_CTRL, vec![ALICE_CONTRACT]);
         assert_ok!(PlasmStaking::chill(Origin::signed(BOB_CTRL)));
-        assert_eq!(PlasmStaking::nominators(BOB_STASH), None);
+        assert_eq!(PlasmStaking::dapps_nominations(BOB_STASH), None);
     })
 }
 
@@ -689,5 +689,67 @@ fn set_controller_failed_test() {
             PlasmStaking::set_controller(Origin::signed(ALICE_STASH), BOB_CTRL),
             Err("controller already paired")
         );
+    })
+}
+
+const SIX_HOURS: u64 = 6 * 60 * 60 * 1000;
+
+#[test]
+fn reward_to_validator_test() {
+    new_test_ext().execute_with(|| {
+        advance_session();
+        assert_ok!(PlasmStaking::set_validators(
+            Origin::ROOT,
+            vec![VALIDATOR_A, VALIDATOR_B, VALIDATOR_C, VALIDATOR_D]
+        ));
+        advance_era();
+        assert_eq!(
+            PlasmStaking::current_elected(),
+            vec![VALIDATOR_A, VALIDATOR_B, VALIDATOR_C, VALIDATOR_D]
+        );
+        advance_session();
+        assert_eq!(
+            Session::validators(),
+            vec![VALIDATOR_A, VALIDATOR_B, VALIDATOR_C, VALIDATOR_D]
+        );
+
+        PlasmStaking::reward_to_validators(SIX_HOURS);
+        assert_eq!(Balances::free_balance(&VALIDATOR_A), 1_000_068);
+        assert_eq!(Balances::free_balance(&VALIDATOR_B), 1_000_068);
+        assert_eq!(Balances::free_balance(&VALIDATOR_C), 1_000_068);
+        assert_eq!(Balances::free_balance(&VALIDATOR_D), 1_000_068);
+        assert_eq!(Balances::total_issuance(), 4_003_302);
+    })
+}
+
+#[test]
+fn reward_to_operators_test() {
+    new_test_ext().execute_with(|| {
+        valid_instatiate();
+        success_first_bond(BOB_STASH, BOB_CTRL, 1_000, RewardDestination::Stash);
+        success_first_bond(
+            ALICE_STASH,
+            ALICE_CTRL,
+            1_000,
+            RewardDestination::Controller,
+        );
+        success_nominate_contracts(BOB_CTRL, vec![ALICE_CONTRACT]);
+        success_nominate_contracts(ALICE_CTRL, vec![ALICE_CONTRACT]);
+
+        advance_era();
+
+        PlasmStaking::reward_to_operators(SIX_HOURS);
+        assert_eq!(Balances::free_balance(&BOB_STASH), 2_000 + 0); // +nomiante reward
+        assert_eq!(Balances::free_balance(&BOB_CTRL), 20 + 0); // +0
+        assert_eq!(Balances::free_balance(&ALICE_STASH), 1_000 + 068); // +operator reward
+        assert_eq!(Balances::free_balance(&ALICE_CTRL), 10 + 1_000_068); // +nominate reward
+        assert_eq!(Balances::total_issuance(), 4_003_302);
+    })
+}
+
+#[test]
+fn new_session_scenario_test() {
+    new_test_ext().execute_with(|| {
+        assert!(false);
     })
 }

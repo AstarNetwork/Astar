@@ -17,6 +17,10 @@ pub const ALICE_STASH: u64 = 1;
 pub const BOB_STASH: u64 = 2;
 pub const ALICE_CTRL: u64 = 3;
 pub const BOB_CTRL: u64 = 4;
+pub const VALIDATOR_A: u64 = 5;
+pub const VALIDATOR_B: u64 = 6;
+pub const VALIDATOR_C: u64 = 7;
+pub const VALIDATOR_D: u64 = 8;
 pub const ALICE_CONTRACT: u64 = 11;
 pub const BOB_CONTRACT: u64 = 12;
 
@@ -44,6 +48,10 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
             (BOB_STASH, 2000),
             (ALICE_CTRL, 10),
             (BOB_CTRL, 20),
+            (VALIDATOR_A, 1_000_000),
+            (VALIDATOR_B, 1_000_000),
+            (VALIDATOR_C, 1_000_000),
+            (VALIDATOR_D, 1_000_000),
         ],
         vesting: vec![],
     }
@@ -248,7 +256,7 @@ parameter_types! {
 impl Trait for Test {
     type Currency = Balances;
     type BondingDuration = BondingDuration;
-    type IsExistsContract = Operator;
+    type ContractFinder = Operator;
     type RewardRemainder = (); // Reward remainder is burned.
     type Reward = (); // Reward is minted.
     type Time = Timestamp;
