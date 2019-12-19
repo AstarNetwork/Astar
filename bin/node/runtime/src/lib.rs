@@ -2,34 +2,37 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 // `construct_runtime!` does a lot of recursion and requires us to increase the limit to 256.
-#![recursion_limit="256"]
+#![recursion_limit = "256"]
 
-use sp_std::prelude::*;
-use support::{construct_runtime, parameter_types, weights::Weight, traits::Randomness,};
-use plasm_primitives::{AccountId, AccountIndex, Balance, BlockNumber, Hash, Index, Moment, Signature,};
-use sp_api::impl_runtime_apis;
-use sp_runtime::{Perbill, ApplyExtrinsicResult, impl_opaque_keys, generic, create_runtime_str};
-use sp_runtime::transaction_validity::TransactionValidity;
-use sp_runtime::traits::{
-    BlakeTwo256, Block as BlockT, OpaqueKeys, Verify, Extrinsic,
-    NumberFor, SaturatedConversion, StaticLookup, ConvertInto,
-};
-use version::RuntimeVersion;
-#[cfg(any(feature = "std", test))]
-use version::NativeVersion;
-use primitives::OpaqueMetadata;
+use contracts_rpc_runtime_api::ContractExecResult;
 use grandpa::fg_primitives;
 use grandpa::AuthorityList as GrandpaAuthorityList;
+use inherents::{CheckInherentsResult, InherentData};
+use plasm_primitives::{
+    AccountId, AccountIndex, Balance, BlockNumber, Hash, Index, Moment, Signature,
+};
+use plasm_staking::EraIndex;
+use primitives::OpaqueMetadata;
+use sp_api::impl_runtime_apis;
+use sp_runtime::traits::{
+    BlakeTwo256, Block as BlockT, ConvertInto, Extrinsic, NumberFor, OpaqueKeys,
+    SaturatedConversion, StaticLookup, Verify,
+};
+use sp_runtime::transaction_validity::TransactionValidity;
+use sp_runtime::{create_runtime_str, generic, impl_opaque_keys, ApplyExtrinsicResult, Perbill};
+use sp_std::prelude::*;
+use support::{construct_runtime, parameter_types, traits::Randomness, weights::Weight};
 use transaction_payment_rpc_runtime_api::RuntimeDispatchInfo;
-use contracts_rpc_runtime_api::ContractExecResult;
-use inherents::{InherentData, CheckInherentsResult};
+#[cfg(any(feature = "std", test))]
+use version::NativeVersion;
+use version::RuntimeVersion;
 
+pub use balances::Call as BalancesCall;
+pub use contracts::Gas;
+pub use plasm_staking::Forcing;
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
 pub use timestamp::Call as TimestampCall;
-pub use balances::Call as BalancesCall;
-pub use plasm_staking::Forcing;
-pub use contracts::Gas;
 
 /// Implementations of some helper traits passed into runtime modules as associated types.
 pub mod impls;
@@ -37,7 +40,7 @@ use impls::{LinearWeightToFee, TargetedFeeAdjustment};
 
 /// Constant values used within the runtime.
 pub mod constants;
-use constants::{time::*, currency::*};
+use constants::{currency::*, time::*};
 
 // Make the WASM binary available.
 #[cfg(feature = "std")]
@@ -177,9 +180,13 @@ impl session::Trait for Runtime {
 
 parameter_types! {
     pub const SessionsPerEra: plasm_staking::SessionIndex = 10;
+    pub const BondingDuration: EraIndex = 3;
 }
 
 impl plasm_staking::Trait for Runtime {
+    type Currency = Balances;
+    type BondingDuration = BondingDuration;
+    type IsExistsContract = Operator;
     type Time = Timestamp;
     type Event = Event;
     type SessionsPerEra = SessionsPerEra;
@@ -331,7 +338,8 @@ pub type SignedPayload = generic::SignedPayload<Call, SignedExtra>;
 /// Extrinsic type that has already been checked.
 pub type CheckedExtrinsic = generic::CheckedExtrinsic<AccountId, Call, SignedExtra>;
 /// Executive: handles dispatch to the various modules.
-pub type Executive = executive::Executive<Runtime, Block, system::ChainContext<Runtime>, Runtime, AllModules>;
+pub type Executive =
+    executive::Executive<Runtime, Block, system::ChainContext<Runtime>, Runtime, AllModules>;
 
 impl_runtime_apis! {
     impl sp_api::Core<Block> for Runtime {
@@ -483,9 +491,8 @@ mod tests {
     fn block_hooks_weight_should_not_exceed_limits() {
         use support::weights::WeighBlock;
         let check_for_block = |b| {
-            let block_hooks_weight =
-                <AllModules as WeighBlock<BlockNumber>>::on_initialize(b) +
-                <AllModules as WeighBlock<BlockNumber>>::on_finalize(b);
+            let block_hooks_weight = <AllModules as WeighBlock<BlockNumber>>::on_initialize(b)
+                + <AllModules as WeighBlock<BlockNumber>>::on_finalize(b);
 
             assert_eq!(
                 block_hooks_weight,

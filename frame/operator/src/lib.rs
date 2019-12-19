@@ -1,10 +1,10 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use contract::{BalanceOf, CodeHash, ContractAddressFor, Gas};
+use contracts::{BalanceOf, CodeHash, ContractAddressFor, Gas};
 use sp_runtime::traits::{MaybeDisplay, MaybeSerialize, Member};
+use sp_std::prelude::*;
 use support::{decl_event, decl_module, decl_storage, dispatch::Result, Parameter};
 use system::{ensure_signed, RawOrigin};
-use sp_std::prelude::*;
 
 pub mod parameters;
 #[cfg(test)]
@@ -12,15 +12,19 @@ mod tests;
 
 use crate::parameters::Verifiable;
 
+pub trait IsExistsContract<AccountId> {
+    fn is_exists_contract(contract_id: &AccountId) -> bool;
+}
+
 /// The module's configuration trait.
-pub trait Trait: contract::Trait {
+pub trait Trait: contracts::Trait {
     type Parameters: Parameter
-    + Member
-    + MaybeSerialize
-    + MaybeDisplay
-    + Default
-    + sp_std::hash::Hash
-    + parameters::Verifiable;
+        + Member
+        + MaybeSerialize
+        + MaybeDisplay
+        + Default
+        + sp_std::hash::Hash
+        + parameters::Verifiable;
 
     /// The overarching event type.
     type Event: From<Event<Self>> + Into<<Self as system::Trait>::Event>;
@@ -58,7 +62,7 @@ decl_module! {
             parameters.verify()?;
 
             let contract = T::DetermineContractAddress::contract_address_for(&code_hash, &data, &operator);
-            contract::Module::<T>::instantiate(RawOrigin::Signed(operator.clone()).into(), endowment, gas_limit, code_hash, data)?;
+            contracts::Module::<T>::instantiate(RawOrigin::Signed(operator.clone()).into(), endowment, gas_limit, code_hash, data)?;
 
             // add operator to contracts
             <OperatorHasContracts<T>>::mutate(&operator, {|tree| (*tree).push(contract.clone()) });
@@ -137,3 +141,9 @@ decl_event!(
         SetParameters(AccountId, Parameters),
     }
 );
+
+impl<T: Trait> IsExistsContract<T::AccountId> for Module<T> {
+    fn is_exists_contract(contract_id: &T::AccountId) -> bool {
+        <ContractHasOperator<T>>::exists(contract_id)
+    }
+}

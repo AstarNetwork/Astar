@@ -10,7 +10,7 @@ pub mod currency {
 
 /// Time.
 pub mod time {
-    use plasm_primitives::{Moment, BlockNumber};
+    use plasm_primitives::{BlockNumber, Moment};
 
     /// Since BABE is probabilistic this is the average expected block time that
     /// we are targetting. Blocks will be produced at a minimum duration defined

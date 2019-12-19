@@ -5,7 +5,7 @@
 
 use super::*;
 use codec::{Decode, Encode, KeyedVec};
-use contract::{
+use contracts::{
     BalanceOf, ComputeDispatchFee, ContractAddressFor, ContractInfo, ContractInfoOf,
     RawAliveContractInfo, Schedule, TrieId, TrieIdFromParentCounter, TrieIdGenerator,
 };
@@ -40,7 +40,7 @@ mod operator {
 }
 impl_outer_event! {
     pub enum MetaEvent for Test {
-        balances<T>, contract<T>, operator<T>,
+        balances<T>, contracts<T>, operator<T>,
     }
 }
 impl_outer_origin! {
@@ -49,7 +49,7 @@ impl_outer_origin! {
 impl_outer_dispatch! {
     pub enum Call for Test where origin: Origin {
         balances::Balances,
-        contract::Contract,
+        contracts::Contract,
     }
 }
 
@@ -152,7 +152,7 @@ parameter_types! {
     pub const MaxDepth: u32 = 100;
     pub const MaxValueSize: u32 = 16_384;
 }
-impl contract::Trait for Test {
+impl contracts::Trait for Test {
     type Currency = Balances;
     type Time = Timestamp;
     type Randomness = Randomness;
@@ -183,8 +183,8 @@ impl contract::Trait for Test {
 
 #[derive(Clone, Eq, PartialEq, Default, Encode, Decode, Hash)]
 #[cfg_attr(
-feature = "std",
-derive(Debug, Serialize, Deserialize, derive_more::Display)
+    feature = "std",
+    derive(Debug, Serialize, Deserialize, derive_more::Display)
 )]
 pub struct TestParameters {
     pub a: u128,
@@ -208,7 +208,7 @@ impl Trait for Test {
 
 type Balances = balances::Module<Test>;
 type Timestamp = timestamp::Module<Test>;
-type Contract = contract::Module<Test>;
+type Contract = contracts::Module<Test>;
 type System = system::Module<Test>;
 type Randomness = randomness_collective_flip::Module<Test>;
 type Operator = Module<Test>;
@@ -227,7 +227,7 @@ impl TrieIdGenerator<u64> for DummyTrieIdGenerator {
     fn trie_id(account_id: &u64) -> TrieId {
         use primitives::storage::well_known_keys;
 
-        let new_seed = contract::AccountCounter::mutate(|v| {
+        let new_seed = contracts::AccountCounter::mutate(|v| {
             *v = v.wrapping_add(1);
             *v
         });
@@ -315,17 +315,17 @@ impl ExtBuilder {
             balances: vec![],
             vesting: vec![],
         }
-            .assimilate_storage(&mut t)
-            .unwrap();
-        contract::GenesisConfig::<Test> {
+        .assimilate_storage(&mut t)
+        .unwrap();
+        contracts::GenesisConfig::<Test> {
             current_schedule: Schedule {
                 enable_println: true,
                 ..Default::default()
             },
             gas_price: self.gas_price,
         }
-            .assimilate_storage(&mut t)
-            .unwrap();
+        .assimilate_storage(&mut t)
+        .unwrap();
         sp_io::TestExternalities::new(t)
     }
 }
@@ -334,8 +334,8 @@ impl ExtBuilder {
 fn compile_module<T>(
     wabt_module: &str,
 ) -> std::result::Result<(Vec<u8>, <T::Hashing as Hash>::Output), wabt::Error>
-    where
-        T: system::Trait,
+where
+    T: system::Trait,
 {
     let wasm = wabt::wat2wasm(wabt_module)?;
     let code_hash = T::Hashing::hash(&wasm);
@@ -403,7 +403,7 @@ fn instantiate_and_call_and_deposit_event() {
                     },
                     EventRecord {
                         phase: Phase::ApplyExtrinsic(0),
-                        event: MetaEvent::contract(contract::RawEvent::CodeStored(
+                        event: MetaEvent::contracts(contracts::RawEvent::CodeStored(
                             code_hash.into()
                         )),
                         topics: vec![],
@@ -415,12 +415,12 @@ fn instantiate_and_call_and_deposit_event() {
                     },
                     EventRecord {
                         phase: Phase::ApplyExtrinsic(0),
-                        event: MetaEvent::contract(contract::RawEvent::Transfer(ALICE, BOB, 100)),
+                        event: MetaEvent::contracts(contracts::RawEvent::Transfer(ALICE, BOB, 100)),
                         topics: vec![],
                     },
                     EventRecord {
                         phase: Phase::ApplyExtrinsic(0),
-                        event: MetaEvent::contract(contract::RawEvent::Contract(
+                        event: MetaEvent::contracts(contracts::RawEvent::Contract(
                             BOB,
                             vec![1, 2, 3, 4],
                         )),
@@ -428,7 +428,7 @@ fn instantiate_and_call_and_deposit_event() {
                     },
                     EventRecord {
                         phase: Phase::ApplyExtrinsic(0),
-                        event: MetaEvent::contract(contract::RawEvent::Instantiated(ALICE, BOB)),
+                        event: MetaEvent::contracts(contracts::RawEvent::Instantiated(ALICE, BOB)),
                         topics: vec![],
                     }
                 ]
@@ -474,7 +474,7 @@ fn instantiate_and_relate_operator() {
                     },
                     EventRecord {
                         phase: Phase::ApplyExtrinsic(0),
-                        event: MetaEvent::contract(contract::RawEvent::CodeStored(
+                        event: MetaEvent::contracts(contracts::RawEvent::CodeStored(
                             code_hash.into()
                         )),
                         topics: vec![],
@@ -486,12 +486,12 @@ fn instantiate_and_relate_operator() {
                     },
                     EventRecord {
                         phase: Phase::ApplyExtrinsic(0),
-                        event: MetaEvent::contract(contract::RawEvent::Transfer(ALICE, BOB, 100)),
+                        event: MetaEvent::contracts(contracts::RawEvent::Transfer(ALICE, BOB, 100)),
                         topics: vec![],
                     },
                     EventRecord {
                         phase: Phase::ApplyExtrinsic(0),
-                        event: MetaEvent::contract(contract::RawEvent::Contract(
+                        event: MetaEvent::contracts(contracts::RawEvent::Contract(
                             BOB,
                             vec![1, 2, 3, 4],
                         )),
@@ -499,7 +499,7 @@ fn instantiate_and_relate_operator() {
                     },
                     EventRecord {
                         phase: Phase::ApplyExtrinsic(0),
-                        event: MetaEvent::contract(contract::RawEvent::Instantiated(ALICE, BOB)),
+                        event: MetaEvent::contracts(contracts::RawEvent::Instantiated(ALICE, BOB)),
                         topics: vec![],
                     },
                     EventRecord {
@@ -588,7 +588,7 @@ fn valid_instatiate(wasm: Vec<u8>, code_hash: CodeHash<Test>) {
             },
             EventRecord {
                 phase: Phase::ApplyExtrinsic(0),
-                event: MetaEvent::contract(contract::RawEvent::CodeStored(code_hash.into())),
+                event: MetaEvent::contracts(contracts::RawEvent::CodeStored(code_hash.into())),
                 topics: vec![],
             },
             EventRecord {
@@ -598,17 +598,17 @@ fn valid_instatiate(wasm: Vec<u8>, code_hash: CodeHash<Test>) {
             },
             EventRecord {
                 phase: Phase::ApplyExtrinsic(0),
-                event: MetaEvent::contract(contract::RawEvent::Transfer(ALICE, BOB, 100)),
+                event: MetaEvent::contracts(contracts::RawEvent::Transfer(ALICE, BOB, 100)),
                 topics: vec![],
             },
             EventRecord {
                 phase: Phase::ApplyExtrinsic(0),
-                event: MetaEvent::contract(contract::RawEvent::Contract(BOB, vec![1, 2, 3, 4])),
+                event: MetaEvent::contracts(contracts::RawEvent::Contract(BOB, vec![1, 2, 3, 4])),
                 topics: vec![],
             },
             EventRecord {
                 phase: Phase::ApplyExtrinsic(0),
-                event: MetaEvent::contract(contract::RawEvent::Instantiated(ALICE, BOB)),
+                event: MetaEvent::contracts(contracts::RawEvent::Instantiated(ALICE, BOB)),
                 topics: vec![],
             },
             EventRecord {
@@ -675,7 +675,7 @@ fn update_parameters_passed() {
                     },
                     EventRecord {
                         phase: Phase::ApplyExtrinsic(0),
-                        event: MetaEvent::contract(contract::RawEvent::CodeStored(
+                        event: MetaEvent::contracts(contracts::RawEvent::CodeStored(
                             code_hash.into()
                         )),
                         topics: vec![],
@@ -687,12 +687,12 @@ fn update_parameters_passed() {
                     },
                     EventRecord {
                         phase: Phase::ApplyExtrinsic(0),
-                        event: MetaEvent::contract(contract::RawEvent::Transfer(ALICE, BOB, 100)),
+                        event: MetaEvent::contracts(contracts::RawEvent::Transfer(ALICE, BOB, 100)),
                         topics: vec![],
                     },
                     EventRecord {
                         phase: Phase::ApplyExtrinsic(0),
-                        event: MetaEvent::contract(contract::RawEvent::Contract(
+                        event: MetaEvent::contracts(contracts::RawEvent::Contract(
                             BOB,
                             vec![1, 2, 3, 4],
                         )),
@@ -700,7 +700,7 @@ fn update_parameters_passed() {
                     },
                     EventRecord {
                         phase: Phase::ApplyExtrinsic(0),
-                        event: MetaEvent::contract(contract::RawEvent::Instantiated(ALICE, BOB)),
+                        event: MetaEvent::contracts(contracts::RawEvent::Instantiated(ALICE, BOB)),
                         topics: vec![],
                     },
                     EventRecord {
@@ -803,7 +803,7 @@ fn change_operator_passed() {
                     },
                     EventRecord {
                         phase: Phase::ApplyExtrinsic(0),
-                        event: MetaEvent::contract(contract::RawEvent::CodeStored(
+                        event: MetaEvent::contracts(contracts::RawEvent::CodeStored(
                             code_hash.into()
                         )),
                         topics: vec![],
@@ -815,12 +815,12 @@ fn change_operator_passed() {
                     },
                     EventRecord {
                         phase: Phase::ApplyExtrinsic(0),
-                        event: MetaEvent::contract(contract::RawEvent::Transfer(ALICE, BOB, 100)),
+                        event: MetaEvent::contracts(contracts::RawEvent::Transfer(ALICE, BOB, 100)),
                         topics: vec![],
                     },
                     EventRecord {
                         phase: Phase::ApplyExtrinsic(0),
-                        event: MetaEvent::contract(contract::RawEvent::Contract(
+                        event: MetaEvent::contracts(contracts::RawEvent::Contract(
                             BOB,
                             vec![1, 2, 3, 4],
                         )),
@@ -828,7 +828,7 @@ fn change_operator_passed() {
                     },
                     EventRecord {
                         phase: Phase::ApplyExtrinsic(0),
-                        event: MetaEvent::contract(contract::RawEvent::Instantiated(ALICE, BOB)),
+                        event: MetaEvent::contracts(contracts::RawEvent::Instantiated(ALICE, BOB)),
                         topics: vec![],
                     },
                     EventRecord {
