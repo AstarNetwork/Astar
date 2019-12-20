@@ -17,7 +17,12 @@ pub const ALICE_STASH: u64 = 1;
 pub const BOB_STASH: u64 = 2;
 pub const ALICE_CTRL: u64 = 3;
 pub const BOB_CTRL: u64 = 4;
-pub const ALICE_CONTRACT: u64 = 11;
+pub const VALIDATOR_A: u64 = 5;
+pub const VALIDATOR_B: u64 = 6;
+pub const VALIDATOR_C: u64 = 7;
+pub const VALIDATOR_D: u64 = 8;
+pub const OPERATOR: u64 = 9;
+pub const OPERATED_CONTRACT: u64 = 19;
 pub const BOB_CONTRACT: u64 = 12;
 
 impl_outer_origin! {
@@ -44,6 +49,10 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
             (BOB_STASH, 2000),
             (ALICE_CTRL, 10),
             (BOB_CTRL, 20),
+            (VALIDATOR_A, 1_000_000),
+            (VALIDATOR_B, 1_000_000),
+            (VALIDATOR_C, 1_000_000),
+            (VALIDATOR_D, 1_000_000),
         ],
         vesting: vec![],
     }
@@ -248,7 +257,9 @@ parameter_types! {
 impl Trait for Test {
     type Currency = Balances;
     type BondingDuration = BondingDuration;
-    type IsExistsContract = Operator;
+    type ContractFinder = Operator;
+    type RewardRemainder = (); // Reward remainder is burned.
+    type Reward = (); // Reward is minted.
     type Time = Timestamp;
     type Event = ();
     type SessionsPerEra = SessionsPerEra;
@@ -309,12 +320,8 @@ pub fn valid_instatiate() {
     let (wasm, code_hash) = compile_module::<Test>(CODE_RETURN_FROM_START_FN).unwrap();
 
     // prepare
-    Balances::deposit_creating(&ALICE_STASH, 1_000_000);
-    assert_ok!(Contract::put_code(
-        Origin::signed(ALICE_STASH),
-        100_000,
-        wasm
-    ));
+    let _ = Balances::deposit_creating(&OPERATOR, 1_000_000);
+    assert_ok!(Contract::put_code(Origin::signed(OPERATOR), 100_000, wasm));
 
     let test_params = parameters::StakingParameters {
         can_be_nominated: true,
@@ -325,7 +332,7 @@ pub fn valid_instatiate() {
     // instantiate
     // Check at the end to get hash on error easily
     let _ = Operator::instantiate(
-        Origin::signed(ALICE_STASH),
+        Origin::signed(OPERATOR),
         100,
         100_000,
         code_hash.into(),
@@ -333,31 +340,35 @@ pub fn valid_instatiate() {
         test_params.clone(),
     );
     // checks deployed contract
-    assert!(contracts::ContractInfoOf::<Test>::exists(ALICE_CONTRACT));
+    assert!(contracts::ContractInfoOf::<Test>::exists(OPERATED_CONTRACT));
 
     // checks mapping operator and contract
-    // ALICE_STASH operates a only ALICE_CONTRACT contract.
-    assert!(operator::OperatorHasContracts::<Test>::exists(ALICE_STASH));
-    let tree = operator::OperatorHasContracts::<Test>::get(&ALICE_STASH);
+    // OPERATOR operates a only OPERATED_CONTRACT contract.
+    assert!(operator::OperatorHasContracts::<Test>::exists(OPERATOR));
+    let tree = operator::OperatorHasContracts::<Test>::get(&OPERATOR);
     assert_eq!(tree.len(), 1);
-    assert!(tree.contains(&ALICE_CONTRACT));
+    assert!(tree.contains(&OPERATED_CONTRACT));
 
-    // ALICE_CONTRACT contract is operated by ALICE_STASH.
+    // OPERATED_CONTRACT contract is operated by OPERATOR.
     assert!(operator::ContractHasOperator::<Test>::exists(
-        ALICE_CONTRACT
+        OPERATED_CONTRACT
     ));
     assert_eq!(
-        operator::ContractHasOperator::<Test>::get(&ALICE_CONTRACT),
-        Some(ALICE_STASH)
+        operator::ContractHasOperator::<Test>::get(&OPERATED_CONTRACT),
+        Some(OPERATOR)
     );
 
-    // ALICE_CONTRACT's contract Parameters is same test_params.
-    assert!(operator::ContractParameters::<Test>::exists(ALICE_CONTRACT));
+    // OPERATED_CONTRACT's contract Parameters is same test_params.
+    assert!(operator::ContractParameters::<Test>::exists(
+        OPERATED_CONTRACT
+    ));
     assert_eq!(
-        operator::ContractParameters::<Test>::get(&ALICE_CONTRACT),
+        operator::ContractParameters::<Test>::get(&OPERATED_CONTRACT),
         Some(test_params)
     );
 }
+
+pub const PER_SESSION: u64 = 60 * 1000;
 
 pub fn advance_session() {
     // increase block numebr
@@ -365,7 +376,7 @@ pub fn advance_session() {
     System::set_block_number(now + 1);
     // increase timestamp + 10
     let now_time = Timestamp::get();
-    Timestamp::set_timestamp(now_time + 10);
+    Timestamp::set_timestamp(now_time + PER_SESSION);
     Session::rotate_session();
     assert_eq!(Session::current_index(), (now / Period::get()) as u32);
 }
