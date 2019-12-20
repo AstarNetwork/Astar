@@ -179,8 +179,8 @@ impl session::Trait for Runtime {
 }
 
 parameter_types! {
-    pub const SessionsPerEra: plasm_staking::SessionIndex = 10;
-    pub const BondingDuration: EraIndex = 3;
+    pub const SessionsPerEra: plasm_staking::SessionIndex = 6;
+    pub const BondingDuration: EraIndex = 24 * 28;
 }
 
 impl plasm_staking::Trait for Runtime {
