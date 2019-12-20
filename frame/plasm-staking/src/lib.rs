@@ -546,7 +546,7 @@ decl_event!(
     {
         /// Validator set changed.
         NewValidators(Vec<AccountId>),
-        /// Rewards to validators. (The amount of mint tokens, The amount of burn tokens)
+        /// The amount of minted rewards. (for validators with nominators, for dapps with nominators)
         Reward(Balance, Balance),
     }
 );
@@ -639,8 +639,9 @@ impl<T: Trait> Module<T> {
             let total_payout_o = total_payout
                 .checked_sub(&total_payout_v)
                 .unwrap_or(BalanceOf::<T>::zero());
-            Self::reward_to_validators(total_payout_v.clone(), total_payout_v);
-            Self::reward_to_operators(total_payout_o.clone(), total_payout_o);
+            let reward_v = Self::reward_to_validators(total_payout_v.clone(), total_payout_v);
+            let reward_o = Self::reward_to_operators(total_payout_o.clone(), total_payout_o);
+            Self::deposit_event(RawEvent::Reward(reward_v, reward_o));
         }
 
         CurrentEra::mutate(|era| *era += 1);
@@ -653,7 +654,10 @@ impl<T: Trait> Module<T> {
         Some(<Validators<T>>::get())
     }
 
-    pub fn reward_to_validators(total_payout: BalanceOf<T>, max_payout: BalanceOf<T>) {
+    pub fn reward_to_validators(
+        total_payout: BalanceOf<T>,
+        max_payout: BalanceOf<T>,
+    ) -> BalanceOf<T> {
         let validators = Self::current_elected();
         let validator_len: u64 = validators.len() as u64;
         let mut total_imbalance = <PositiveImbalanceOf<T>>::zero();
@@ -663,13 +667,17 @@ impl<T: Trait> Module<T> {
         }
         let total_payout = total_imbalance.peek();
 
-        let rest = max_payout.saturating_sub(total_payout);
+        let rest = max_payout.saturating_sub(total_payout.clone());
 
         T::Reward::on_unbalanced(total_imbalance);
         T::RewardRemainder::on_unbalanced(T::Currency::issue(rest));
+        total_payout
     }
 
-    pub fn reward_to_operators(total_payout: BalanceOf<T>, max_payout: BalanceOf<T>) {
+    pub fn reward_to_operators(
+        total_payout: BalanceOf<T>,
+        max_payout: BalanceOf<T>,
+    ) -> BalanceOf<T> {
         let mut total_imbalance = <PositiveImbalanceOf<T>>::zero();
         let operators_reward =
             Perbill::from_rational_approximation(BalanceOf::<T>::from(4), BalanceOf::<T>::from(5))
@@ -714,55 +722,56 @@ impl<T: Trait> Module<T> {
         }
         let total_payout = total_imbalance.peek();
 
-        let rest = max_payout.saturating_sub(total_payout);
+        let rest = max_payout.saturating_sub(total_payout.clone());
 
         T::Reward::on_unbalanced(total_imbalance);
         T::RewardRemainder::on_unbalanced(T::Currency::issue(rest));
+        total_payout
     }
 
     fn elected_operators() {
         let nominations = <DappsNominations<T>>::enumerate()
-            .filter(|(_, n)| !n.suppressed)
+            .filter(|(_, nomination)| !nomination.suppressed)
             .collect::<Vec<(T::AccountId, Nominations<T::AccountId>)>>();
         let nominators = nominations
             .iter()
             .cloned()
-            .map(|(s, _)| s)
+            .map(|(stash, _)| stash)
             .collect::<Vec<T::AccountId>>();
         let nominators_to_staking = nominators
             .into_iter()
-            .map(|n| {
-                if let Some(ctrl) = Self::bonded(&n) {
+            .map(|nominator| {
+                if let Some(ctrl) = Self::bonded(&nominator) {
                     if let Some(ledger) = Self::ledger(&ctrl) {
-                        return (n, ledger.active);
+                        return (nominator, ledger.active);
                     }
                 }
-                (n, BalanceOf::<T>::zero())
+                (nominator, BalanceOf::<T>::zero())
             })
             .collect::<BTreeMap<T::AccountId, BalanceOf<T>>>();
 
         let staked_contracts = nominations.iter().fold(
             BTreeMap::<T::AccountId, Exposure<T::AccountId, BalanceOf<T>>>::new(),
-            |mut b, (s, n)| {
+            |mut bmap, (stash, nomination)| {
                 let value = Perbill::from_rational_approximation(
                     BalanceOf::<T>::from(1),
-                    BalanceOf::<T>::try_from(n.targets.len()).unwrap_or(BalanceOf::<T>::one()),
+                    BalanceOf::<T>::try_from(nomination.targets.len()).unwrap_or(BalanceOf::<T>::one()),
                 ) * *(nominators_to_staking
-                    .get(s)
+                    .get(stash)
                     .unwrap_or(&BalanceOf::<T>::zero()));
                 let indv = IndividualExposure {
-                    who: s.clone(),
+                    who: stash.clone(),
                     value: value,
                 };
-                for t in n.targets.iter() {
-                    if b.contains_key(&t) {
-                        if let Some(x) = b.get_mut(&t) {
-                            (*x).total += value;
-                            (*x).others.push(indv.clone())
+                for contract in nomination.targets.iter() {
+                    if bmap.contains_key(&contract) {
+                        if let Some(exposure) = bmap.get_mut(&contract) {
+                            (*exposure).total += value;
+                            (*exposure).others.push(indv.clone())
                         }
                     } else {
-                        b.insert(
-                            t.clone(),
+                        bmap.insert(
+                            contract.clone(),
                             Exposure {
                                 own: BalanceOf::<T>::zero(),
                                 total: value.clone(),
@@ -771,13 +780,13 @@ impl<T: Trait> Module<T> {
                         );
                     }
                 }
-                return b;
+                return bmap;
             },
         );
 
         // Updating staked contracts info
-        for (c, e) in staked_contracts.iter() {
-            <StakedContracts<T>>::mutate(&c, |x| *x = e.clone());
+        for (contract, exposure) in staked_contracts.iter() {
+            <StakedContracts<T>>::mutate(&contract, |x| *x = exposure.clone());
         }
     }
 

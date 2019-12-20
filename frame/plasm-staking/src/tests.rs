@@ -716,11 +716,12 @@ fn reward_to_validator_test() {
         let pre_total_issuarance = Balances::total_issuance();
 
         let (a, b) = inflation::compute_total_payout_test(pre_total_issuarance, SIX_HOURS);
-        PlasmStaking::reward_to_validators(a / 2, b / 2);
+        let positive_imbalance = PlasmStaking::reward_to_validators(a / 2, b / 2);
         assert_eq!(Balances::free_balance(&VALIDATOR_A), 1_000_068);
         assert_eq!(Balances::free_balance(&VALIDATOR_B), 1_000_068);
         assert_eq!(Balances::free_balance(&VALIDATOR_C), 1_000_068);
         assert_eq!(Balances::free_balance(&VALIDATOR_D), 1_000_068);
+        assert_eq!(positive_imbalance, 272);
         assert_eq!(Balances::total_issuance(), pre_total_issuarance + 272);
     })
 }
@@ -749,11 +750,12 @@ fn reward_to_operators_test() {
         let pre_total_issuarance = Balances::total_issuance();
 
         let (a, b) = inflation::compute_total_payout_test(pre_total_issuarance, SIX_HOURS);
-        PlasmStaking::reward_to_operators(a - a / 2, b - b / 2);
+        let positive_imbalance = PlasmStaking::reward_to_operators(a - a / 2, b - b / 2);
         assert_eq!(Balances::free_balance(&BOB_STASH), 2_000 + 34); // +nomiante reward
         assert_eq!(Balances::free_balance(&BOB_CTRL), 20 + 0); // +0
         assert_eq!(Balances::free_balance(&ALICE_STASH), 1_000 + 274); // +operator reward
         assert_eq!(Balances::free_balance(&ALICE_CTRL), 10 + 34); // +nominate reward
+        assert_eq!(positive_imbalance, 342);
         assert_eq!(Balances::total_issuance(), pre_total_issuarance + 342);
     })
 }
