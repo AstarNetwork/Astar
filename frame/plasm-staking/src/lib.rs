@@ -689,36 +689,38 @@ impl<T: Trait> Module<T> {
             .collect::<Vec<(T::AccountId, Exposure<T::AccountId, BalanceOf<T>>)>>();
         let total_staked = staked_contracts
             .iter()
-            .fold(BalanceOf::<T>::zero(), |sm, (_, e)| {
-                sm.checked_add(&e.total).unwrap_or(sm)
+            .fold(BalanceOf::<T>::zero(), |sum, (_, exposure)| {
+                sum.checked_add(&exposure.total).unwrap_or(sum)
             });
 
-        for (c, e) in staked_contracts.iter() {
-            let reward =
-                Perbill::from_rational_approximation(e.total, total_staked) * operators_reward;
-            total_imbalance.subsume(Self::reward_contract(&c, reward));
+        for (contract, exposure) in staked_contracts.iter() {
+            let reward = Perbill::from_rational_approximation(exposure.total, total_staked)
+                * operators_reward;
+            total_imbalance.subsume(Self::reward_contract(&contract, reward));
         }
 
         let nominate_totals = staked_contracts.iter().fold(
             BTreeMap::<T::AccountId, BalanceOf<T>>::new(),
-            |mp, (_, e)| {
-                e.others.iter().fold(mp, |mut m, ind| {
-                    if m.contains_key(&ind.who) {
-                        if let Some(m) = m.get_mut(&ind.who) {
-                            *m += ind.value;
+            |bmap, (_, exposure)| {
+                exposure.others.iter().fold(bmap, |mut bmap, ind| {
+                    if bmap.contains_key(&ind.who) {
+                        if let Some(indv) = bmap.get_mut(&ind.who) {
+                            *indv += ind.value;
                         }
                     } else {
-                        m.insert(ind.who.clone(), ind.value);
+                        bmap.insert(ind.who.clone(), ind.value);
                     }
-                    return m;
+                    return bmap;
                 })
             },
         );
 
-        for (n, t) in nominate_totals.iter() {
-            let reward = Perbill::from_rational_approximation(*t, total_staked) * nominators_reward;
-            total_imbalance
-                .subsume(Self::make_payout(n, reward).unwrap_or(PositiveImbalanceOf::<T>::zero()));
+        for (nominator, staked) in nominate_totals.iter() {
+            let reward =
+                Perbill::from_rational_approximation(*staked, total_staked) * nominators_reward;
+            total_imbalance.subsume(
+                Self::make_payout(nominator, reward).unwrap_or(PositiveImbalanceOf::<T>::zero()),
+            );
         }
         let total_payout = total_imbalance.peek();
 
@@ -755,7 +757,8 @@ impl<T: Trait> Module<T> {
             |mut bmap, (stash, nomination)| {
                 let value = Perbill::from_rational_approximation(
                     BalanceOf::<T>::from(1),
-                    BalanceOf::<T>::try_from(nomination.targets.len()).unwrap_or(BalanceOf::<T>::one()),
+                    BalanceOf::<T>::try_from(nomination.targets.len())
+                        .unwrap_or(BalanceOf::<T>::one()),
                 ) * *(nominators_to_staking
                     .get(stash)
                     .unwrap_or(&BalanceOf::<T>::zero()));
@@ -786,7 +789,7 @@ impl<T: Trait> Module<T> {
 
         // Updating staked contracts info
         for (contract, exposure) in staked_contracts.iter() {
-            <StakedContracts<T>>::mutate(&contract, |x| *x = exposure.clone());
+            <StakedContracts<T>>::mutate(&contract, |ex| *ex = exposure.clone());
         }
     }
 
