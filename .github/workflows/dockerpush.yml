@@ -6,8 +6,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v1
-      - name: PlasmBuilder
-        uses: docker://stakedtechnologies/plasm-builder
       - uses: azure/docker-login@v1
         with:
           login-server: https://index.docker.io/v1
