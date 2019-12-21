@@ -14,6 +14,6 @@ jobs:
       - run: |
           cd third-party/docker
           docker pull stakedtechnologies/plasm-builder
-          docker run -it -v $(pwd)/../..:/opt stakedtechnologies/plasm-builder cargo build --target-dir third-party/docker/target-debian --release
+          docker run -v $(pwd)/../..:/opt stakedtechnologies/plasm-builder cargo build --target-dir third-party/docker/target-debian --release
           docker build . -t staketechnologies/plasm-node:${{ github.sha }}
           docker push staketechnologies/plasm-node:${{ github.sha }}
