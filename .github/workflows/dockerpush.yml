@@ -1,0 +1,15 @@
+name: Docker Image CI
+on: [push]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/docker/login@master
+        env:
+          login-server: https://index.docker.io/v1
+          username: ${{ secrets.REGISTRY_USERNAME }}
+          password: ${{ secrets.REGISTRY_PASSWORD }}
+      - run: |
+          cd third-party/docker && docker run -it -v $(pwd)/../..:/opt stakedtechnologies/plasm-builder cargo build --target-dir third-party/docker/target-debian --release
+          docker build . -t staketechnologies/plasm-node:${{ github.sha }}
+          docker push staketechnologies/plasm-node:${{ github.sha }}
