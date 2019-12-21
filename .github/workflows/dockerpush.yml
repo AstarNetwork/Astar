@@ -10,6 +10,8 @@ jobs:
           username: ${{ secrets.REGISTRY_USERNAME }}
           password: ${{ secrets.REGISTRY_PASSWORD }}
       - run: |
-          cd third-party/docker && docker run -it -v $(pwd)/../..:/opt stakedtechnologies/plasm-builder cargo build --target-dir third-party/docker/target-debian --release
+          ls
+          cd third-party/docker
+          docker run -it -v $(pwd)/../..:/opt stakedtechnologies/plasm-builder cargo build --target-dir third-party/docker/target-debian --release
           docker build . -t staketechnologies/plasm-node:${{ github.sha }}
           docker push staketechnologies/plasm-node:${{ github.sha }}
