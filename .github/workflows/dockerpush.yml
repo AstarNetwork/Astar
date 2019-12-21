@@ -4,7 +4,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/docker/login@master
+      - uses: azure/docker-login@v1
         env:
           login-server: https://index.docker.io/v1
           username: ${{ secrets.REGISTRY_USERNAME }}
