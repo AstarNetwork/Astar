@@ -6,14 +6,15 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v1
+      - name: PlasmBuilder
+        uses: stakedtechnologies/plasm-builder
       - uses: azure/docker-login@v1
         with:
           login-server: https://index.docker.io/v1
           username: ${{ secrets.REGISTRY_USERNAME }}
           password: ${{ secrets.REGISTRY_PASSWORD }}
       - run: |
+          cargo build --target-dir third-party/docker/target-debian --release
           cd third-party/docker
-          docker pull stakedtechnologies/plasm-builder
-          docker run -v $(pwd)/../..:/opt stakedtechnologies/plasm-builder cargo build --target-dir third-party/docker/target-debian --release
           docker build . -t staketechnologies/plasm-node:${{ github.sha }}
           docker push staketechnologies/plasm-node:${{ github.sha }}
