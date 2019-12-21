@@ -7,7 +7,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v1
       - name: PlasmBuilder
-        uses: stakedtechnologies/plasm-builder
+        uses: docker://stakedtechnologies/plasm-builder
       - uses: azure/docker-login@v1
         with:
           login-server: https://index.docker.io/v1
