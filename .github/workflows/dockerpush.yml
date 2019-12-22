@@ -1,18 +1,28 @@
 name: Docker Image CI
-on: [push]
+on:
+  push:
+    branches:
+      - **
+    tags:
+      - v.*
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v1
+      - name: Get the version
+        id: get_version
+        run: echo ::set-output name=tag::${GITHUB_REF#refs/tags/v}
       - uses: azure/docker-login@v1
         with:
           username: ${{ secrets.REGISTRY_USERNAME }}
           password: ${{ secrets.REGISTRY_PASSWORD }}
       - run: |
+          echo $RELEASE_VERSION
+          echo ${{ steps.get_version.outputs.tag }}
           cd third-party/docker
           docker pull stakedtechnologies/plasm-builder
           docker run -v $(pwd)/../..:/opt stakedtechnologies/plasm-builder cargo build --target-dir third-party/docker/target-debian --release
-          docker build . -t staketechnologies/plasm-node:${{ github.sha }}
-          docker push staketechnologies/plasm-node:${{ github.sha }}
+          docker build . -t staketechnologies/plasm-node:${{ steps.get_version.outputs.tag }}
+          docker push staketechnologies/plasm-node:${{ steps.get_version.outputs.tag }}
