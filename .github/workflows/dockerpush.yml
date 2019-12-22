@@ -1,7 +1,8 @@
 name: Docker Image CI
 on:
   push:
-    branches: '**'
+    branches:
+      - master
     tags:
       - v.*
 jobs:
@@ -13,6 +14,10 @@ jobs:
       - name: Get the version
         id: get_version
         run: echo ::set-output name=tag::${GITHUB_REF#refs/tags/v}
+      - name: Get the version latest
+        id: get_version
+        if: steps.get_version.outputs.tag == ''
+        run: echo ::set-output name=tag::latest
       - uses: azure/docker-login@v1
         with:
           username: ${{ secrets.REGISTRY_USERNAME }}
