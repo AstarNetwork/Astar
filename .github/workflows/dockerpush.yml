@@ -14,17 +14,16 @@ jobs:
       - name: Get the version
         id: get_version
         run: echo ::set-output name=tag::${GITHUB_REF#refs/tags/v}
-      - name: Get the version latest
-        id: get_version
-        if: steps.get_version.outputs.tag == ''
-        run: echo ::set-output name=tag::latest
       - uses: azure/docker-login@v1
         with:
           username: ${{ secrets.REGISTRY_USERNAME }}
           password: ${{ secrets.REGISTRY_PASSWORD }}
       - run: |
           echo $RELEASE_VERSION
+          TAG=${{ steps.get_version.outputs.tag }}
+          if [ -n $TAG ]; then TAG='latest'; fi
           echo ${{ steps.get_version.outputs.tag }}
+          echo $TAG
           cd third-party/docker
           docker pull stakedtechnologies/plasm-builder
           docker run -v $(pwd)/../..:/opt stakedtechnologies/plasm-builder cargo build --target-dir third-party/docker/target-debian --release
