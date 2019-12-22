@@ -1,0 +1,31 @@
+name: Docker Image CI
+on:
+  push:
+    branches:
+      - master
+    tags:
+      - v.*
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v1
+      - name: Get the version
+        id: get_version
+        run: echo ::set-output name=tag::${GITHUB_REF#refs/tags/v}
+      - uses: azure/docker-login@v1
+        with:
+          username: ${{ secrets.REGISTRY_USERNAME }}
+          password: ${{ secrets.REGISTRY_PASSWORD }}
+      - run: |
+          echo $RELEASE_VERSION
+          TAG=${{ steps.get_version.outputs.tag }}
+          if [ -n $TAG ]; then TAG='latest'; fi
+          echo ${{ steps.get_version.outputs.tag }}
+          echo $TAG
+          cd third-party/docker
+          docker pull stakedtechnologies/plasm-builder
+          docker run -v $(pwd)/../..:/opt stakedtechnologies/plasm-builder cargo build --target-dir third-party/docker/target-debian --release
+          docker build . -t staketechnologies/plasm-node:${{ steps.get_version.outputs.tag }}
+          docker push staketechnologies/plasm-node:${{ steps.get_version.outputs.tag }}
