@@ -11,7 +11,7 @@ use plasm_runtime::{
     IndicesConfig, PlasmStakingConfig, SessionConfig, SessionKeys, SudoConfig, SystemConfig,
     WASM_BINARY,
 };
-use primitives::{crypto::UncheckedInto, sr25519, Pair, Public};
+use primitives::{crypto::UncheckedInto, sr25519, ecdsa, Pair, Public};
 use serde::{Deserialize, Serialize};
 use sp_runtime::traits::{IdentifyAccount, Verify};
 use telemetry::TelemetryEndpoints;
@@ -25,6 +25,7 @@ const PLASM_PROPERTIES: &str = r#"
             "tokenSymbol": "PLM"
         }"#;
 const PLASM_PROTOCOL_ID: &str = "plm";
+const ENDOWMENT: Balance = 1_000 * PLM;
 
 /// Node `ChainSpec` extensions.
 ///
@@ -71,21 +72,20 @@ fn session_keys(babe: BabeId, grandpa: GrandpaId) -> SessionKeys {
 fn generate_config_genesis(
     initial_authorities: Vec<(AccountId, BabeId, GrandpaId)>,
     root_key: AccountId,
-    endowed_accounts: Option<Vec<AccountId>>,
+    balances: Option<Vec<(AccountId, Balance)>>,
     enable_println: bool,
 ) -> GenesisConfig {
-    let endowed_accounts: Vec<AccountId> = endowed_accounts.unwrap_or_else(|| {
+    let balances: Vec<(AccountId, Balance)> = balances.unwrap_or_else(|| {
         vec![
-            get_account_id_from_seed::<sr25519::Public>("Alice"),
-            get_account_id_from_seed::<sr25519::Public>("Bob"),
-            get_account_id_from_seed::<sr25519::Public>("Charlie"),
-            get_account_id_from_seed::<sr25519::Public>("Dave"),
-            get_account_id_from_seed::<sr25519::Public>("Eve"),
-            get_account_id_from_seed::<sr25519::Public>("Ferdie"),
+            (get_account_id_from_seed::<sr25519::Public>("Alice"), ENDOWMENT),
+            (get_account_id_from_seed::<sr25519::Public>("Bob"), ENDOWMENT),
+            (get_account_id_from_seed::<sr25519::Public>("Charlie"), ENDOWMENT),
+            (get_account_id_from_seed::<sr25519::Public>("Dave"), ENDOWMENT),
+            (get_account_id_from_seed::<sr25519::Public>("Eve"), ENDOWMENT),
+            (get_account_id_from_seed::<sr25519::Public>("Ferdie"), ENDOWMENT),
         ]
     });
-
-    const ENDOWMENT: Balance = 1_000 * PLM;
+    let ids = balances.iter().cloned().map(|(a, _)| a).collect::<Vec<_>>();
 
     GenesisConfig {
         system: Some(SystemConfig {
@@ -93,15 +93,11 @@ fn generate_config_genesis(
             changes_trie_config: Default::default(),
         }),
         balances: Some(BalancesConfig {
-            balances: endowed_accounts
-                .iter()
-                .cloned()
-                .map(|k| (k, ENDOWMENT))
-                .collect(),
+            balances,
             vesting: vec![],
         }),
         indices: Some(IndicesConfig {
-            ids: endowed_accounts.iter().cloned().collect::<Vec<_>>(),
+            ids,
         }),
         plasm_staking: Some(PlasmStakingConfig {
             storage_version: 1,
@@ -131,12 +127,13 @@ fn generate_config_genesis(
     }
 }
 
+/*
 /// Plasm testnet file config.
 pub fn plasm_testnet_config() -> ChainSpec {
     ChainSpec::from_json_bytes(&include_bytes!("../res/testnet_v2.json")[..]).unwrap()
 }
+*/
 
-/*
 /// Plasm testnet native config.
 pub fn plasm_testnet_config() -> ChainSpec {
     let boot_nodes = vec![
@@ -150,8 +147,8 @@ pub fn plasm_testnet_config() -> ChainSpec {
     ];
     let properties = serde_json::from_str(PLASM_PROPERTIES).unwrap();
     ChainSpec::from_genesis(
-        "Plasm Testnet v2",
-        "plasm_testnet_v2",
+        "Plasm Testnet v3",
+        "plasm_testnet_v3",
         plasm_testnet_genesis,
         boot_nodes,
         Some(TelemetryEndpoints::new(vec![(STAGING_TELEMETRY_URL.to_string(),0)])),
@@ -232,15 +229,54 @@ fn plasm_testnet_genesis() -> GenesisConfig {
     ];
 
     // Testnet endowements
-    let mut endowed_accounts: Vec<AccountId> = authorities.iter().cloned().map(|x| x.0).collect();
-    endowed_accounts.extend(vec![
-        hex!["10270887a7c74e7b858b70edba7d44c2905295d026e445933c094a0e29414236"].into(),
-        hex!["ce3e6bb7672586afaf31d1c5d7e73a69d468b461d1334917ff1f23d984f8c525"].into(),
-        hex!["4cd4fbd4a2694d2a51a7012cb5f517096c150980465f2762f7a53dcb8bca0c56"].into(),
-        hex!["240826b5b3a2d144086c7de1032c69209d6c381a96d0fa7eafc3d95798080e24"].into(),
-        hex!["9450bb2d9c81781d159f6fe6f5be5b95a57be1a245da4315fe9baf3dd239bc06"].into(),
-        hex!["2a40ea8a4d6c61e2aa0c5acf7e27f1b9d52014fe1d12e27e89b11fc0173e9277"].into(),
-    ]);
+    let mut balances: Vec<(AccountId, Balance)> = vec![];
+
+    let endowed_authorities: Vec<(AccountId, Balance)> =
+        authorities.iter().cloned().map(|x| (x.0, ENDOWMENT)).collect();
+    balances.extend(endowed_authorities);
+
+    let endowed_accounts: Vec<(AccountId, Balance)> = vec![
+        (hex!["10270887a7c74e7b858b70edba7d44c2905295d026e445933c094a0e29414236"].into(), ENDOWMENT),
+        (hex!["ce3e6bb7672586afaf31d1c5d7e73a69d468b461d1334917ff1f23d984f8c525"].into(), ENDOWMENT),
+        (hex!["4cd4fbd4a2694d2a51a7012cb5f517096c150980465f2762f7a53dcb8bca0c56"].into(), ENDOWMENT),
+        (hex!["240826b5b3a2d144086c7de1032c69209d6c381a96d0fa7eafc3d95798080e24"].into(), ENDOWMENT),
+        (hex!["9450bb2d9c81781d159f6fe6f5be5b95a57be1a245da4315fe9baf3dd239bc06"].into(), ENDOWMENT),
+        (hex!["2a40ea8a4d6c61e2aa0c5acf7e27f1b9d52014fe1d12e27e89b11fc0173e9277"].into(), ENDOWMENT),
+    ];
+    balances.extend(endowed_accounts);
+
+    let lockdrop_results: Vec<(ecdsa::Public, Balance)> = vec![
+        (hex!["72ea6ffa38d4f0b256ee1e12165f84e256266a163808bafb5a1cdec9127764707c0bc1dbff4d8d808345adbedd433c9c2ebfb6bca0c5e5f0fb7d1d9a841a9d22"].unchecked_into(), 7086849197963211748),
+        (hex!["a0bd82a21ae8c035427069251db0de76b6501859500c2a1f249c7fa295a020416c42f73c33bb4c1d3dabca0ca644ef854dd85a53b44e9291331c5379b6745767"].unchecked_into(), 1476426916242335781029),
+        (hex!["3e4960f13b3dd5d25e66f7bcc174f83d6afaec3a8f19ca25d51df8784f05ec794d3a778642272ade072aa31b2b754dc57f47bb2f52b385264d74e9a5b24dd1cc"].unchecked_into(), 34725561070019737569),
+        (hex!["49bba4cd2109e677edd8374c6fc839b428ff549c1c2a8259732144beb59d246f62405399baf220bc868b3fda53bf8a331c53a9fcdd4827eea85d81e8dbcc3d31"].unchecked_into(), 70868491979632117489),
+        (hex!["e8b340ecd69904ac5c0ee55180b0d6f40ff998098b0d82f36034c0741d5ea22cb8ad35dca8916f8b0441a98c9e2f23e402e1cb51ffc0c561bf5fefb58bb468b2"].unchecked_into(), 4724566131975474499293),
+        (hex!["dacb4acb8315a094c5b62a1d383a037a4c9b92aff5d6d1fe3cf54564b2ade54d590d4b863bf5e2d45c2915f875f2ea230e8399091f0222f73007dcd2032c660f"].unchecked_into(), 25453600036017868864942),
+        (hex!["88dacdff339718ad31eb7b641ab41759a3cb7dc1a2b5b245ff343fdeb8c628640425f2cf09bfdccd36e3413cb3c9541dcf8f1fee170df7b800f1449303098769"].unchecked_into(), 14882383315722744672773),
+        (hex!["0eaa389de0bc6dbad1eb42ec211d629368ee97b380103b5edbe2a164f54811395c3ff49ad2bcaa8749cfdac0d3c40fab07e10b9c112a25de173d74bd24c46161"].unchecked_into(), 53151368984724088117049),
+        (hex!["cbc386fdc95d42fb542ad7fc761b9d75e1525fefc872bf4ccc48d61d4a63f242f407f646d406e67d0e1c4ee97d34be65c1fe3dfa2d92deb07de94a69bc29db0f"].unchecked_into(), 637816427816689057404),
+        (hex!["9308948ba005372aa9fb9ee70d088298e99da8dd87e79e24870b7e3af4f53d32439de3c3f4cf56fd8195fb16ec524ad60f3a1d1907a78f5bae601afea6a590dc"].unchecked_into(), 21260547593889635246819),
+        (hex!["65d068328553959df19c46640e0326052e445f46496a1969da2c4e8c527bdb14f82f2bdbe07c5d1eb2fe4eb51b37bb0523c3d40afca97028270fbd7e7ba154c8"].unchecked_into(), 21260547593889635246819),
+        (hex!["dc9381468a9712dfae81b5c88827cd824c189db9f7f49d4571cfe67b498b691204ae6d4c354a3677788828830649b682c91eeef379daec40f56a9ac7c4a669bd"].unchecked_into(), 20197520214195153484478),
+        (hex!["7a4e1723b1d86a9f9fa9463a3bf9bf74bb77fed77da8133d57d786403a29b090595d0711616ed482fc2372e4222a18d28748a60104720ce60befe03726a63b80"].unchecked_into(), 5315136898472408811704),
+        (hex!["18d4985842078b4e71fb3c6cf89404048d945f40b8091d8cb9d4c68325ecaa35f123068f6af41c46aa2eb68b0efefdf01b5ef3a3adebbc4cdf63a70888124a57"].unchecked_into(), 297647666314454893455),
+        (hex!["0f1e92b59c57d71c1d547445542b59417b824bf69a16a7923ff6dca02ef492236f3869f57ba1147bd6acbbc147e64a15b1ed13f2864ea5b0c78516045a59d040"].unchecked_into(), 4762362661031278295287),
+        (hex!["b67adc96f145bd8521576321f01b2a37de74c36af81b87fead022858de31d68a4443377ef3e517adf82f74bbea37e3b82c3d65f81451eb178f7127104fe6f753"].unchecked_into(), 10630273796944817623409),
+        (hex!["5ed9d63912b7a0e1ebf719d3b191c05eaf74299ac81062f5911cd56e3d4c662c6fe078a33982b8df6dea6147ae53f2d74a69cce4070df5406b007472f788605b"].unchecked_into(), 10630273796944817623409),
+        (hex!["0d719cf8c1f4b8343484a6e13c7102055903552787b9568041c3fe548a13791362f8a4ba73d42294ab5c0d32c1207781c45108b3e85c76ceaeb99bd64ab305d9"].unchecked_into(), 14882383315722744672773),
+        (hex!["f70be2dc51b338ab5fb7b7607821d7a02dcbae1d6fcaad8377947c1f8b377ad8568524c0bc3ea7e46cfef6f5200b08cdc14534de34da34b9468e61d6040bc4f4"].unchecked_into(), 297647666314454893455),
+        (hex!["ca5a3e9a9b1fa5151c42cfbae7e2c80b1a67a75aa42c5b248893861829405c58cab8c28050b2939a927191d7606580d77fce7e01223fada1d5673437e078f59c"].unchecked_into(), 106302737969448176234098),
+        (hex!["9330721827066c3b165dd60c3b95368d08cdcc69229e7a892dcf848d3334a4ac206ad1e6f9ee498cb5a1e59262880d71dee3fa6889899e9f6665187da15fb6c2"].unchecked_into(), 31359307700987211989059),
+        (hex!["5dee8ed95e0d9bed5d85b73db0271a0e67a034473e533a882cff19f0b0751f85ccbbe195da23e36f2eaaa64d05be4ea9f0010a4f1b7185d51dc76c2f2212dc48"].unchecked_into(), 2952853832484671562058),
+        (hex!["f2b46504de471e2cf024c489e635f5b91c0a2073f7865c794bd8b946f8f3c79573baaf438101db6d9a0313f5225f49260597cfea2f86ee6554078dfc50d39d50"].unchecked_into(), 31890821390834452870229),
+        (hex!["c5a5a32ff39eb08e7734f81658252ea2f13d2829366ee71f077880fdc41e291d1b78812a6ac224380b8d7756cb52c9f8aee3b1dc2ad4107a1a20b7b5c80618e8"].unchecked_into(), 42521095187779270493639)
+    ];
+    let lockdrop_balances: Vec<(AccountId, Balance)> = lockdrop_results
+            .iter()
+            .cloned()
+            .map(|(a, b)| (AccountPublic::from(a).into_account(), b))
+            .collect();
+    balances.extend(lockdrop_balances);
 
     // 5Cakru1BpXPiezeD2LRZh3pJamHcbX9yZ13KLBxuqdTpgnYF
     let root_key = hex!["16eb796bee0c857db3d646ee7070252707aec0c7d82b2eda856632f6a2306a58"];
@@ -248,11 +284,10 @@ fn plasm_testnet_genesis() -> GenesisConfig {
     generate_config_genesis(
         authorities,
         root_key.into(),
-        Some(endowed_accounts),
+        Some(balances),
         false,
     )
 }
-*/
 
 fn development_config_genesis() -> GenesisConfig {
     generate_config_genesis(
