@@ -5,6 +5,7 @@ members = [
     "bin/node/primitives",
     "bin/node/rpc",
     "bin/node/runtime",
+    "bin/node/subkey",
     "frame/operator",
     "frame/plasm-staking",
 ]

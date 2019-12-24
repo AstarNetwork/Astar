@@ -1,0 +1,26 @@
+[package]
+name = "subkey"
+version = "2.0.0"
+authors = ["Parity Technologies <admin@parity.io>"]
+edition = "2018"
+
+[dependencies]
+sp-core = { git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master" }
+node-runtime = { path = "../node/runtime" }
+node-primitives = { path = "../node/primitives" }
+sp-runtime = { git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master" }
+rand = "0.7.2"
+clap = "2.33.0"
+tiny-bip39 = "0.6.2"
+rustc-hex = "2.0.1"
+substrate-bip39 = "0.3.1"
+hex = "0.4.0"
+hex-literal = "0.2.1"
+codec = { package = "parity-scale-codec", version = "1.0.0" }
+frame-system = { git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master" }
+pallet-balances = { git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master" }
+pallet-transaction-payment = { git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master" }
+rpassword = "4.0.1"
+
+[features]
+bench = []
