@@ -196,7 +196,7 @@ const TEST_MAX_PARAMS_A: u128 = 1000_000_000_000;
 impl parameters::Verifiable for TestParameters {
     fn verify(&self) -> Result<(), DispatchError>  {
         if self.a > TEST_MAX_PARAMS_A {
-            return Err("over max params.");
+            return Err(DispatchError::Other("over max params."));
         }
         Ok(())
     }
