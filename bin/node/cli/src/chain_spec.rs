@@ -127,13 +127,12 @@ fn generate_config_genesis(
     }
 }
 
-/*
 /// Plasm testnet file config.
 pub fn plasm_testnet_config() -> ChainSpec {
-    ChainSpec::from_json_bytes(&include_bytes!("../res/testnet_v2.json")[..]).unwrap()
+    ChainSpec::from_json_bytes(&include_bytes!("../res/testnet_v3.json")[..]).unwrap()
 }
-*/
 
+/*
 /// Plasm testnet native config.
 pub fn plasm_testnet_config() -> ChainSpec {
     let boot_nodes = vec![
@@ -288,6 +287,7 @@ fn plasm_testnet_genesis() -> GenesisConfig {
         false,
     )
 }
+*/
 
 fn development_config_genesis() -> GenesisConfig {
     generate_config_genesis(
