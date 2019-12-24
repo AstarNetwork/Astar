@@ -15,7 +15,7 @@ use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use sp_runtime::{
     testing::{Digest, DigestItem, Header, UintAuthorityId, H256},
     traits::{BlakeTwo256, Hash, IdentityLookup, SignedExtension},
-    BuildStorage, Perbill,
+    BuildStorage, Perbill, DispatchError,
 };
 use std::{
     cell::RefCell,
