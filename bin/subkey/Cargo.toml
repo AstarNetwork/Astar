@@ -6,8 +6,8 @@ edition = "2018"
 
 [dependencies]
 sp-core = { git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master" }
-node-runtime = { path = "../node/runtime" }
-node-primitives = { path = "../node/primitives" }
+node-runtime = { package = "plasm-runtime", path = "../node/runtime" }
+node-primitives = { package = "plasm-primitives", path = "../node/primitives" }
 sp-runtime = { git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master" }
 rand = "0.7.2"
 clap = "2.33.0"

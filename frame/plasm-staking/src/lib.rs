@@ -18,7 +18,6 @@ use sp_std::{collections::btree_map::BTreeMap, convert::TryFrom, prelude::*, res
 pub use staking::{Forcing, Nominations, RewardDestination};
 use support::{
     decl_event, decl_module, decl_storage,
-    dispatch::Result,
     ensure,
     traits::{
         Currency, Get, Imbalance, LockIdentifier, LockableCurrency, OnUnbalanced, Time,
@@ -246,18 +245,18 @@ decl_module! {
             let stash = ensure_signed(origin)?;
 
             if <Bonded<T>>::exists(&stash) {
-                return Err("stash already bonded")
+                Err("stash already bonded")?
             }
 
             let controller = T::Lookup::lookup(controller)?;
 
             if <Ledger<T>>::exists(&controller) {
-                return Err("controller already paired")
+                Err("controller already paired")?
             }
 
             // reject a bond which is considered to be _dust_.
             if value < T::Currency::minimum_balance() {
-                return Err("can not bond with value less than minimum balance")
+                Err("can not bond with value less than minimum balance")?
             }
 
             // You're auto-bonded forever, here. We might improve this by only bonding when
@@ -413,7 +412,7 @@ decl_module! {
                 .collect::<result::Result<Vec<T::AccountId>, _>>()?;
 
             if !targets.iter().all(|t| T::ContractFinder::is_exists_contract(&t)) {
-                return Err("tragets must be operated contracts");
+                Err("tragets must be operated contracts")?
             }
 
             let nominations = Nominations {
@@ -479,7 +478,7 @@ decl_module! {
             let old_controller = Self::bonded(&stash).ok_or("not a stash")?;
             let controller = T::Lookup::lookup(controller)?;
             if <Ledger<T>>::exists(&controller) {
-                return Err("controller already paired")
+                Err("controller already paired")?
             }
             if controller != old_controller {
                 <Bonded<T>>::insert(&stash, &controller);

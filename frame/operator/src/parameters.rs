@@ -1,10 +1,10 @@
-use super::*;
 use codec::{Decode, Encode};
+use sp_runtime::DispatchError;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
 
 pub trait Verifiable {
-    fn verify(&self) -> Result;
+    fn verify(&self) -> Result<(), DispatchError>;
 }
 
 #[derive(Clone, Eq, PartialEq, Default, Encode, Decode, Hash)]
@@ -16,7 +16,7 @@ pub struct DefaultParameters {
 }
 
 impl Verifiable for DefaultParameters {
-    fn verify(&self) -> Result {
+    fn verify(&self) -> Result<(), DispatchError> {
         Ok(())
     }
 }

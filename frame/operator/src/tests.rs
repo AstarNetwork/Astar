@@ -116,6 +116,7 @@ impl system::Trait for Test {
     type AvailableBlockRatio = AvailableBlockRatio;
     type MaximumBlockLength = MaximumBlockLength;
     type Version = ();
+    type ModuleToIndex = ();
 }
 
 impl balances::Trait for Test {

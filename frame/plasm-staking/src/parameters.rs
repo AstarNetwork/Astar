@@ -3,8 +3,8 @@
 //! Rewards_{option_{i,j}^{old}}=Rewards_{opeartor_{i}}\times \frac{stake_{i,j}^{old}}{\sum^{n^{old}}_{i,j}\sum^{m_i^{old}}_jstake_{i,j}^{old}}\times p^{old}_{operator_i}
 //!
 //! Used Perbil other parameters.
-use super::*;
 use codec::{Decode, Encode};
+use sp_runtime::{Perbill, DispatchError};
 use operator::parameters::Verifiable;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
@@ -21,9 +21,9 @@ pub struct StakingParameters {
 }
 
 impl Verifiable for StakingParameters {
-    fn verify(&self) -> Result {
+    fn verify(&self) -> Result<(), DispatchError> {
         if self.option_p > Perbill::from_percent(20).deconstruct() {
-            return Err("**p** of option's parameters must be lower than 20%(0_200_000_000)");
+            Err("**p** of option's parameters must be lower than 20%(0_200_000_000)")?
         }
         Ok(())
     }

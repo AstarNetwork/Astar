@@ -3,7 +3,7 @@
 use contracts::{BalanceOf, CodeHash, ContractAddressFor, Gas};
 use sp_runtime::traits::{MaybeDisplay, MaybeSerialize, Member};
 use sp_std::prelude::*;
-use support::{decl_event, decl_module, decl_storage, dispatch::Result, Parameter};
+use support::{decl_event, decl_module, decl_storage, Parameter};
 use system::{ensure_signed, RawOrigin};
 
 pub mod parameters;
@@ -57,7 +57,7 @@ decl_module! {
             #[compact] gas_limit: Gas,
             code_hash: CodeHash<T>,
             data: Vec<u8>,
-            parameters: T::Parameters) -> Result {
+            parameters: T::Parameters) {
             let operator = ensure_signed(origin)?;
 
             // verify parameters.
@@ -75,11 +75,10 @@ decl_module! {
 
             // issue an event operator -> contract
             Self::deposit_event(RawEvent::SetOperator(operator, contract));
-            Ok(())
         }
 
         /// Updates parameters for an identified contact.
-        pub fn update_parameters(origin, contract: T::AccountId, parameters: T::Parameters) -> Result {
+        pub fn update_parameters(origin, contract: T::AccountId, parameters: T::Parameters) {
             let operator = ensure_signed(origin)?;
 
             // verify parameters
@@ -89,24 +88,23 @@ decl_module! {
 
             // check the actually operate the contract.
             if !contracts.contains(&contract) {
-                return Err("The sender don't operate the contract address.")
+                Err("The sender don't operate the contract address.")?
             }
 
             // update parameters
             <ContractParameters<T>>::insert(&contract, parameters.clone());
             // issue set parameter events
             Self::deposit_event(RawEvent::SetParameters(contract, parameters));
-            Ok(())
         }
 
         /// Changes an operator for identified contracts.
-        pub fn change_operator(origin, contracts: Vec<T::AccountId>, new_operator: T::AccountId) -> Result {
+        pub fn change_operator(origin, contracts: Vec<T::AccountId>, new_operator: T::AccountId) {
             let operator = ensure_signed(origin)?;
             let operate_contracts = <OperatorHasContracts<T>>::get(&operator);
 
             // check the actually operate the contract.
             if !contracts.iter().all(|c| operate_contracts.contains(&c)) {
-                return Err("The sender don't operate the contracts address.")
+                Err("The sender don't operate the contracts address.")?
             }
 
             // remove origin operator to contracts
@@ -123,7 +121,6 @@ decl_module! {
                 // issue an event operator -> contract
                 Self::deposit_event(RawEvent::SetOperator(new_operator.clone(), c.clone()));
             }
-            Ok(())
         }
     }
 }
