@@ -38,7 +38,7 @@ decl_storage! {
         /// A mapping from operators to operated contracts by them.
         pub OperatorHasContracts: map T::AccountId => Vec<T::AccountId>;
         /// A mapping from operated contract by operator to it.
-        pub ContractHasOperator: map T::AccountId => Option<T::AccountId>;
+        pub ContractHasOperator: linked_map T::AccountId => Option<T::AccountId>;
         /// A mapping from contract to it's parameters.
         pub ContractParameters: map T::AccountId => Option<T::Parameters>;
     }
