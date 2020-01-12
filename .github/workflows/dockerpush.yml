@@ -25,7 +25,7 @@ jobs:
           echo ${{ steps.get_version.outputs.tag }}
           echo $TAG
           cd third-party/docker
-          docker pull stakedtechnologies/plasm-builder
-          docker run -v $(pwd)/../..:/opt stakedtechnologies/plasm-builder cargo build --target-dir third-party/docker/target-debian --release
+          docker pull staketechnologies/plasm-builder
+          docker run -v $(pwd)/../..:/opt staketechnologies/plasm-builder cargo build --target-dir third-party/docker/target-debian --release
           docker build . -t staketechnologies/plasm-node:$TAG
           docker push staketechnologies/plasm-node:$TAG

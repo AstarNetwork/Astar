@@ -8,7 +8,7 @@ docker-build:
 
 .PHONY: docker-push
 docker-push:
-	docker push stakedtechnologies/plasm-node
+	docker push staketechnologies/plasm-node
 
 .PHONY: build-doc
 build-doc:
