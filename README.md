@@ -9,8 +9,8 @@ __WARNING__: This is a proof-of-concept prototype. This implementation is NOT re
 Whitepaper
 ----------
 
-* [Whitepaper](https://github.com/stakedtechnologies/plasmdocs/blob/master/wp/en.pdf)
-* [Whitepaper(JP)](https://github.com/stakedtechnologies/plasmdocs/blob/master/wp/jp.pdf)
+* [Whitepaper](https://github.com/staketechnologies/plasmdocs/blob/master/wp/en.pdf)
+* [Whitepaper(JP)](https://github.com/staketechnologies/plasmdocs/blob/master/wp/jp.pdf)
 
 Community
 --------- 
@@ -22,10 +22,10 @@ Community
 Table of Contents
 -----------------
 
-* [Introduction](https://github.com/stakedtechnologies/Plasm/tree/master#introduction)
-* [Install Plasm](https://github.com/stakedtechnologies/Plasm/tree/master#install-plasm)
-* [Plasm Validator Program](https://github.com/stakedtechnologies/Plasm/tree/master#plasm-validator-program)
-* [Examples](https://github.com/stakedtechnologies/Plasm/tree/master#examples)
+* [Introduction](https://github.com/staketechnologies/Plasm/tree/master#introduction)
+* [Install Plasm](https://github.com/staketechnologies/Plasm/tree/master#install-plasm)
+* [Plasm Validator Program](https://github.com/staketechnologies/Plasm/tree/master#plasm-validator-program)
+* [Examples](https://github.com/staketechnologies/Plasm/tree/master#examples)
 
 Introduction
 ============
@@ -50,7 +50,7 @@ We call this chain Plasm Network. Plasm Network is a scaling DApps Platform base
 Install Plasm 
 =============
 
-* Plasm node binaries [releases](https://github.com/stakedtechnologies/Plasm/releases).
+* Plasm node binaries [releases](https://github.com/staketechnologies/Plasm/releases).
 * Node [custom types](https://github.com/staketechnologies/Plasm/tree/master/bin/node/cli/res/custom_types.json). 
 
 > Latest version you can try to build from source.
@@ -76,7 +76,7 @@ You will also need to install the following packages:
 
 Install Plasm node from git source:
 
-    cargo install --force --git https://github.com/stakedtechnologies/Plasm --tag v0.7.1 plasm-cli
+    cargo install --force --git https://github.com/staketechnologies/Plasm --tag v0.7.0 plasm-cli
 
 Run node in [Plasm testnet](https://telemetry.polkadot.io/#/PlasmTestnet%20v1):
 
@@ -95,7 +95,7 @@ Install Nix package manager:
 
 Run in Nix shell:
 
-    git clone https://github.com/stakedtechnologies/Plasm && cd Plasm
+    git clone https://github.com/staketechnologies/Plasm && cd Plasm
     nix-shell nix/shell.nix --run "cargo run --release"
 
 Plasm Validator Program
