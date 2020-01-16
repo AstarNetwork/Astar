@@ -23,6 +23,8 @@ jobs:
           cd target
           mkdir tmp
           cd tmp
+          git config --global user.email "s.a.t.e.3.ths@gmail.com"
+          git config --global user.name "satellitex"
           git init
           git remote add origin https://satellitex:${GITHUB_TOKEN}@github.com/staketechnologies/Plasm.git
           git checkout -b gh-pages
