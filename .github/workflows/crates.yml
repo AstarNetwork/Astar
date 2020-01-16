@@ -13,14 +13,11 @@ jobs:
         with:
           toolchain: nightly
           override: true
-      - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: wasm32-unknown-unknown
-          override: true
       - name: push-crates
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          rustup target add wasm32-unknown-unknown --toolchain nightly
           cargo +nightly install --git https://github.com/alexcrichton/wasm-gc --force
           cargo doc --all --all-features --no-deps
           cd target/release
