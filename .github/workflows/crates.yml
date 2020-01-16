@@ -20,7 +20,7 @@ jobs:
           rustup target add wasm32-unknown-unknown --toolchain nightly
           cargo +nightly install --git https://github.com/alexcrichton/wasm-gc --force
           cargo doc --all --all-features --no-deps
-          cd target/release
+          cd target
           mkdir tmp
           git init
           git remote add origin https://satellitex:${GITHUB_TOKEN}@github.com/staketechnologies/Plasm.git
