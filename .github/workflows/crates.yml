@@ -4,11 +4,20 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@master
+      - id: component
+        uses: actions-rs/components-nightly@v1
+        with:
+          component: clippy
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly, wasm32-unknown-unknown
+          override: true
       - name: push-crates
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          cargo +nightly install --git https://github.com/alexcrichton/wasm-gc --force
           cargo doc --all --all-features --no-deps
           cd target/release
           mkdir tmp
