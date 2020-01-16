@@ -22,9 +22,11 @@ jobs:
           cargo doc --all --all-features --no-deps
           cd target
           mkdir tmp
+          cd tmp
           git init
           git remote add origin https://satellitex:${GITHUB_TOKEN}@github.com/staketechnologies/Plasm.git
-          git checkout gh-pages
+          git checkout -b gh-pages
+          git pull origin gh-pages
           cp -R ../doc/* .
           git add .
           git commit -m 'auto update crates on gh-pages'
