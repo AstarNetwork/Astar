@@ -1,0 +1,1 @@
+initSidebarItems({"struct":[["LinearWeightToFee","Convert from weight to balance via a simple coefficient multiplication The associated type C encapsulates a constant in units of balance per weight"],["TargetedFeeAdjustment","Update the given multiplier based on the following formula"]]});

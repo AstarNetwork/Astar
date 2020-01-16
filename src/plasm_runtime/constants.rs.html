@@ -1,0 +1,137 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source to the Rust file `bin/node/runtime/src/constants.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>constants.rs.html -- source</title><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../dark.css"><link rel="stylesheet" type="text/css" href="../../light.css" id="themeStyle"><script src="../../storage.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="shortcut icon" href="../../favicon.ico"><style type="text/css">#crate-search{background-image:url("../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../plasm_runtime/index.html'><div class='logo-container'><img src='../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!"><img src="../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices"></div></div><script src="../../theme.js"></script><nav class="sub"><form class="search-form js-only"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><a id="settings-menu" href="../../settings.html"><img src="../../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1"> 1</span>
+<span id="2"> 2</span>
+<span id="3"> 3</span>
+<span id="4"> 4</span>
+<span id="5"> 5</span>
+<span id="6"> 6</span>
+<span id="7"> 7</span>
+<span id="8"> 8</span>
+<span id="9"> 9</span>
+<span id="10">10</span>
+<span id="11">11</span>
+<span id="12">12</span>
+<span id="13">13</span>
+<span id="14">14</span>
+<span id="15">15</span>
+<span id="16">16</span>
+<span id="17">17</span>
+<span id="18">18</span>
+<span id="19">19</span>
+<span id="20">20</span>
+<span id="21">21</span>
+<span id="22">22</span>
+<span id="23">23</span>
+<span id="24">24</span>
+<span id="25">25</span>
+<span id="26">26</span>
+<span id="27">27</span>
+<span id="28">28</span>
+<span id="29">29</span>
+<span id="30">30</span>
+<span id="31">31</span>
+<span id="32">32</span>
+<span id="33">33</span>
+<span id="34">34</span>
+<span id="35">35</span>
+<span id="36">36</span>
+<span id="37">37</span>
+<span id="38">38</span>
+<span id="39">39</span>
+<span id="40">40</span>
+<span id="41">41</span>
+<span id="42">42</span>
+<span id="43">43</span>
+<span id="44">44</span>
+<span id="45">45</span>
+<span id="46">46</span>
+<span id="47">47</span>
+<span id="48">48</span>
+<span id="49">49</span>
+<span id="50">50</span>
+<span id="51">51</span>
+<span id="52">52</span>
+<span id="53">53</span>
+<span id="54">54</span>
+<span id="55">55</span>
+<span id="56">56</span>
+<span id="57">57</span>
+<span id="58">58</span>
+<span id="59">59</span>
+<span id="60">60</span>
+<span id="61">61</span>
+<span id="62">62</span>
+<span id="63">63</span>
+<span id="64">64</span>
+<span id="65">65</span>
+<span id="66">66</span>
+<span id="67">67</span>
+</pre><div class="example-wrap"><pre class="rust ">
+<span class="doccomment">//! A set of constant values used in substrate runtime.</span>
+
+<span class="doccomment">/// Money matters.</span>
+<span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">currency</span> {
+    <span class="kw">use</span> <span class="ident">plasm_primitives</span>::<span class="ident">Balance</span>;
+
+    <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">MILLIPLM</span>: <span class="ident">Balance</span> <span class="op">=</span> <span class="number">1_000_000_000_000</span>;
+    <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">PLM</span>: <span class="ident">Balance</span> <span class="op">=</span> <span class="number">1_000</span> <span class="op">*</span> <span class="ident">MILLIPLM</span>;
+}
+
+<span class="doccomment">/// Time.</span>
+<span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">time</span> {
+    <span class="kw">use</span> <span class="ident">plasm_primitives</span>::{<span class="ident">BlockNumber</span>, <span class="ident">Moment</span>};
+
+    <span class="doccomment">/// Since BABE is probabilistic this is the average expected block time that</span>
+    <span class="doccomment">/// we are targetting. Blocks will be produced at a minimum duration defined</span>
+    <span class="doccomment">/// by `SLOT_DURATION`, but some slots will not be allocated to any</span>
+    <span class="doccomment">/// authority and hence no block will be produced. We expect to have this</span>
+    <span class="doccomment">/// block time on average following the defined slot duration and the value</span>
+    <span class="doccomment">/// of `c` configured for BABE (where `1 - c` represents the probability of</span>
+    <span class="doccomment">/// a slot being empty).</span>
+    <span class="doccomment">/// This value is only used indirectly to define the unit constants below</span>
+    <span class="doccomment">/// that are expressed in blocks. The rest of the code should use</span>
+    <span class="doccomment">/// `SLOT_DURATION` instead (like the timestamp module for calculating the</span>
+    <span class="doccomment">/// minimum period).</span>
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// If using BABE with secondary slots (default) then all of the slots will</span>
+    <span class="doccomment">/// always be assigned, in which case `MILLISECS_PER_BLOCK` and</span>
+    <span class="doccomment">/// `SLOT_DURATION` should have the same value.</span>
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// &lt;https://research.web3.foundation/en/latest/polkadot/BABE/Babe/#6-practical-results&gt;</span>
+    <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">MILLISECS_PER_BLOCK</span>: <span class="ident">Moment</span> <span class="op">=</span> <span class="number">10000</span>;
+    <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">SECS_PER_BLOCK</span>: <span class="ident">Moment</span> <span class="op">=</span> <span class="ident">MILLISECS_PER_BLOCK</span> <span class="op">/</span> <span class="number">1000</span>;
+
+    <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">SLOT_DURATION</span>: <span class="ident">Moment</span> <span class="op">=</span> <span class="ident">MILLISECS_PER_BLOCK</span>;
+
+    <span class="comment">// 1 in 4 blocks (on average, not counting collisions) will be primary BABE blocks.</span>
+    <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">PRIMARY_PROBABILITY</span>: (<span class="ident">u64</span>, <span class="ident">u64</span>) <span class="op">=</span> (<span class="number">1</span>, <span class="number">4</span>);
+
+    <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">EPOCH_DURATION_IN_BLOCKS</span>: <span class="ident">BlockNumber</span> <span class="op">=</span> <span class="number">10</span> <span class="op">*</span> <span class="ident">MINUTES</span>;
+    <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">EPOCH_DURATION_IN_SLOTS</span>: <span class="ident">u64</span> <span class="op">=</span> {
+        <span class="kw">const</span> <span class="ident">SLOT_FILL_RATE</span>: <span class="ident">f64</span> <span class="op">=</span> <span class="ident">MILLISECS_PER_BLOCK</span> <span class="kw">as</span> <span class="ident">f64</span> <span class="op">/</span> <span class="ident">SLOT_DURATION</span> <span class="kw">as</span> <span class="ident">f64</span>;
+
+        (<span class="ident">EPOCH_DURATION_IN_BLOCKS</span> <span class="kw">as</span> <span class="ident">f64</span> <span class="op">*</span> <span class="ident">SLOT_FILL_RATE</span>) <span class="kw">as</span> <span class="ident">u64</span>
+    };
+
+    <span class="comment">// These time units are defined in number of blocks.</span>
+    <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">MINUTES</span>: <span class="ident">BlockNumber</span> <span class="op">=</span> <span class="number">60</span> <span class="op">/</span> (<span class="ident">SECS_PER_BLOCK</span> <span class="kw">as</span> <span class="ident">BlockNumber</span>);
+    <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">HOURS</span>: <span class="ident">BlockNumber</span> <span class="op">=</span> <span class="ident">MINUTES</span> <span class="op">*</span> <span class="number">60</span>;
+    <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">DAYS</span>: <span class="ident">BlockNumber</span> <span class="op">=</span> <span class="ident">HOURS</span> <span class="op">*</span> <span class="number">24</span>;
+}
+
+<span class="comment">// CRITICAL NOTE: The system module maintains two constants: a _maximum_ block weight and a</span>
+<span class="comment">// _ratio_ of it yielding the portion which is accessible to normal transactions (reserving the rest</span>
+<span class="comment">// for operational ones). `TARGET_BLOCK_FULLNESS` is entirely independent and the system module is</span>
+<span class="comment">// not aware of if, nor should it care about it. This constant simply denotes on which ratio of the</span>
+<span class="comment">// _maximum_ block weight we tweak the fees. It does NOT care about the type of the dispatch.</span>
+<span class="comment">//</span>
+<span class="comment">// For the system to be configured in a sane way, `TARGET_BLOCK_FULLNESS` should always be less than</span>
+<span class="comment">// the ratio that `system` module uses to find normal transaction quota.</span>
+<span class="doccomment">/// Fee-related.</span>
+<span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">fee</span> {
+    <span class="kw">pub</span> <span class="kw">use</span> <span class="ident">sp_runtime</span>::<span class="ident">Perbill</span>;
+
+    <span class="doccomment">/// The block saturation level. Fees will be updates based on this value.</span>
+    <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">TARGET_BLOCK_FULLNESS</span>: <span class="ident">Perbill</span> <span class="op">=</span> <span class="ident">Perbill</span>::<span class="ident">from_percent</span>(<span class="number">25</span>);
+}
+</pre></div>
+</section><section id="search" class="content hidden"></section><section class="footer"></section><script>window.rootPath = "../../";window.currentCrate = "plasm_runtime";</script><script src="../../aliases.js"></script><script src="../../main.js"></script><script src="../../source-script.js"></script><script src="../../source-files.js"></script><script defer src="../../search-index.js"></script></body></html>

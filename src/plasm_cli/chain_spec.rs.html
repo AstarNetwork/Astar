@@ -1,0 +1,791 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source to the Rust file `bin/node/cli/src/chain_spec.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>chain_spec.rs.html -- source</title><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../dark.css"><link rel="stylesheet" type="text/css" href="../../light.css" id="themeStyle"><script src="../../storage.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="shortcut icon" href="../../favicon.ico"><style type="text/css">#crate-search{background-image:url("../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../plasm_cli/index.html'><div class='logo-container'><img src='../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!"><img src="../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices"></div></div><script src="../../theme.js"></script><nav class="sub"><form class="search-form js-only"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><a id="settings-menu" href="../../settings.html"><img src="../../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1">  1</span>
+<span id="2">  2</span>
+<span id="3">  3</span>
+<span id="4">  4</span>
+<span id="5">  5</span>
+<span id="6">  6</span>
+<span id="7">  7</span>
+<span id="8">  8</span>
+<span id="9">  9</span>
+<span id="10"> 10</span>
+<span id="11"> 11</span>
+<span id="12"> 12</span>
+<span id="13"> 13</span>
+<span id="14"> 14</span>
+<span id="15"> 15</span>
+<span id="16"> 16</span>
+<span id="17"> 17</span>
+<span id="18"> 18</span>
+<span id="19"> 19</span>
+<span id="20"> 20</span>
+<span id="21"> 21</span>
+<span id="22"> 22</span>
+<span id="23"> 23</span>
+<span id="24"> 24</span>
+<span id="25"> 25</span>
+<span id="26"> 26</span>
+<span id="27"> 27</span>
+<span id="28"> 28</span>
+<span id="29"> 29</span>
+<span id="30"> 30</span>
+<span id="31"> 31</span>
+<span id="32"> 32</span>
+<span id="33"> 33</span>
+<span id="34"> 34</span>
+<span id="35"> 35</span>
+<span id="36"> 36</span>
+<span id="37"> 37</span>
+<span id="38"> 38</span>
+<span id="39"> 39</span>
+<span id="40"> 40</span>
+<span id="41"> 41</span>
+<span id="42"> 42</span>
+<span id="43"> 43</span>
+<span id="44"> 44</span>
+<span id="45"> 45</span>
+<span id="46"> 46</span>
+<span id="47"> 47</span>
+<span id="48"> 48</span>
+<span id="49"> 49</span>
+<span id="50"> 50</span>
+<span id="51"> 51</span>
+<span id="52"> 52</span>
+<span id="53"> 53</span>
+<span id="54"> 54</span>
+<span id="55"> 55</span>
+<span id="56"> 56</span>
+<span id="57"> 57</span>
+<span id="58"> 58</span>
+<span id="59"> 59</span>
+<span id="60"> 60</span>
+<span id="61"> 61</span>
+<span id="62"> 62</span>
+<span id="63"> 63</span>
+<span id="64"> 64</span>
+<span id="65"> 65</span>
+<span id="66"> 66</span>
+<span id="67"> 67</span>
+<span id="68"> 68</span>
+<span id="69"> 69</span>
+<span id="70"> 70</span>
+<span id="71"> 71</span>
+<span id="72"> 72</span>
+<span id="73"> 73</span>
+<span id="74"> 74</span>
+<span id="75"> 75</span>
+<span id="76"> 76</span>
+<span id="77"> 77</span>
+<span id="78"> 78</span>
+<span id="79"> 79</span>
+<span id="80"> 80</span>
+<span id="81"> 81</span>
+<span id="82"> 82</span>
+<span id="83"> 83</span>
+<span id="84"> 84</span>
+<span id="85"> 85</span>
+<span id="86"> 86</span>
+<span id="87"> 87</span>
+<span id="88"> 88</span>
+<span id="89"> 89</span>
+<span id="90"> 90</span>
+<span id="91"> 91</span>
+<span id="92"> 92</span>
+<span id="93"> 93</span>
+<span id="94"> 94</span>
+<span id="95"> 95</span>
+<span id="96"> 96</span>
+<span id="97"> 97</span>
+<span id="98"> 98</span>
+<span id="99"> 99</span>
+<span id="100">100</span>
+<span id="101">101</span>
+<span id="102">102</span>
+<span id="103">103</span>
+<span id="104">104</span>
+<span id="105">105</span>
+<span id="106">106</span>
+<span id="107">107</span>
+<span id="108">108</span>
+<span id="109">109</span>
+<span id="110">110</span>
+<span id="111">111</span>
+<span id="112">112</span>
+<span id="113">113</span>
+<span id="114">114</span>
+<span id="115">115</span>
+<span id="116">116</span>
+<span id="117">117</span>
+<span id="118">118</span>
+<span id="119">119</span>
+<span id="120">120</span>
+<span id="121">121</span>
+<span id="122">122</span>
+<span id="123">123</span>
+<span id="124">124</span>
+<span id="125">125</span>
+<span id="126">126</span>
+<span id="127">127</span>
+<span id="128">128</span>
+<span id="129">129</span>
+<span id="130">130</span>
+<span id="131">131</span>
+<span id="132">132</span>
+<span id="133">133</span>
+<span id="134">134</span>
+<span id="135">135</span>
+<span id="136">136</span>
+<span id="137">137</span>
+<span id="138">138</span>
+<span id="139">139</span>
+<span id="140">140</span>
+<span id="141">141</span>
+<span id="142">142</span>
+<span id="143">143</span>
+<span id="144">144</span>
+<span id="145">145</span>
+<span id="146">146</span>
+<span id="147">147</span>
+<span id="148">148</span>
+<span id="149">149</span>
+<span id="150">150</span>
+<span id="151">151</span>
+<span id="152">152</span>
+<span id="153">153</span>
+<span id="154">154</span>
+<span id="155">155</span>
+<span id="156">156</span>
+<span id="157">157</span>
+<span id="158">158</span>
+<span id="159">159</span>
+<span id="160">160</span>
+<span id="161">161</span>
+<span id="162">162</span>
+<span id="163">163</span>
+<span id="164">164</span>
+<span id="165">165</span>
+<span id="166">166</span>
+<span id="167">167</span>
+<span id="168">168</span>
+<span id="169">169</span>
+<span id="170">170</span>
+<span id="171">171</span>
+<span id="172">172</span>
+<span id="173">173</span>
+<span id="174">174</span>
+<span id="175">175</span>
+<span id="176">176</span>
+<span id="177">177</span>
+<span id="178">178</span>
+<span id="179">179</span>
+<span id="180">180</span>
+<span id="181">181</span>
+<span id="182">182</span>
+<span id="183">183</span>
+<span id="184">184</span>
+<span id="185">185</span>
+<span id="186">186</span>
+<span id="187">187</span>
+<span id="188">188</span>
+<span id="189">189</span>
+<span id="190">190</span>
+<span id="191">191</span>
+<span id="192">192</span>
+<span id="193">193</span>
+<span id="194">194</span>
+<span id="195">195</span>
+<span id="196">196</span>
+<span id="197">197</span>
+<span id="198">198</span>
+<span id="199">199</span>
+<span id="200">200</span>
+<span id="201">201</span>
+<span id="202">202</span>
+<span id="203">203</span>
+<span id="204">204</span>
+<span id="205">205</span>
+<span id="206">206</span>
+<span id="207">207</span>
+<span id="208">208</span>
+<span id="209">209</span>
+<span id="210">210</span>
+<span id="211">211</span>
+<span id="212">212</span>
+<span id="213">213</span>
+<span id="214">214</span>
+<span id="215">215</span>
+<span id="216">216</span>
+<span id="217">217</span>
+<span id="218">218</span>
+<span id="219">219</span>
+<span id="220">220</span>
+<span id="221">221</span>
+<span id="222">222</span>
+<span id="223">223</span>
+<span id="224">224</span>
+<span id="225">225</span>
+<span id="226">226</span>
+<span id="227">227</span>
+<span id="228">228</span>
+<span id="229">229</span>
+<span id="230">230</span>
+<span id="231">231</span>
+<span id="232">232</span>
+<span id="233">233</span>
+<span id="234">234</span>
+<span id="235">235</span>
+<span id="236">236</span>
+<span id="237">237</span>
+<span id="238">238</span>
+<span id="239">239</span>
+<span id="240">240</span>
+<span id="241">241</span>
+<span id="242">242</span>
+<span id="243">243</span>
+<span id="244">244</span>
+<span id="245">245</span>
+<span id="246">246</span>
+<span id="247">247</span>
+<span id="248">248</span>
+<span id="249">249</span>
+<span id="250">250</span>
+<span id="251">251</span>
+<span id="252">252</span>
+<span id="253">253</span>
+<span id="254">254</span>
+<span id="255">255</span>
+<span id="256">256</span>
+<span id="257">257</span>
+<span id="258">258</span>
+<span id="259">259</span>
+<span id="260">260</span>
+<span id="261">261</span>
+<span id="262">262</span>
+<span id="263">263</span>
+<span id="264">264</span>
+<span id="265">265</span>
+<span id="266">266</span>
+<span id="267">267</span>
+<span id="268">268</span>
+<span id="269">269</span>
+<span id="270">270</span>
+<span id="271">271</span>
+<span id="272">272</span>
+<span id="273">273</span>
+<span id="274">274</span>
+<span id="275">275</span>
+<span id="276">276</span>
+<span id="277">277</span>
+<span id="278">278</span>
+<span id="279">279</span>
+<span id="280">280</span>
+<span id="281">281</span>
+<span id="282">282</span>
+<span id="283">283</span>
+<span id="284">284</span>
+<span id="285">285</span>
+<span id="286">286</span>
+<span id="287">287</span>
+<span id="288">288</span>
+<span id="289">289</span>
+<span id="290">290</span>
+<span id="291">291</span>
+<span id="292">292</span>
+<span id="293">293</span>
+<span id="294">294</span>
+<span id="295">295</span>
+<span id="296">296</span>
+<span id="297">297</span>
+<span id="298">298</span>
+<span id="299">299</span>
+<span id="300">300</span>
+<span id="301">301</span>
+<span id="302">302</span>
+<span id="303">303</span>
+<span id="304">304</span>
+<span id="305">305</span>
+<span id="306">306</span>
+<span id="307">307</span>
+<span id="308">308</span>
+<span id="309">309</span>
+<span id="310">310</span>
+<span id="311">311</span>
+<span id="312">312</span>
+<span id="313">313</span>
+<span id="314">314</span>
+<span id="315">315</span>
+<span id="316">316</span>
+<span id="317">317</span>
+<span id="318">318</span>
+<span id="319">319</span>
+<span id="320">320</span>
+<span id="321">321</span>
+<span id="322">322</span>
+<span id="323">323</span>
+<span id="324">324</span>
+<span id="325">325</span>
+<span id="326">326</span>
+<span id="327">327</span>
+<span id="328">328</span>
+<span id="329">329</span>
+<span id="330">330</span>
+<span id="331">331</span>
+<span id="332">332</span>
+<span id="333">333</span>
+<span id="334">334</span>
+<span id="335">335</span>
+<span id="336">336</span>
+<span id="337">337</span>
+<span id="338">338</span>
+<span id="339">339</span>
+<span id="340">340</span>
+<span id="341">341</span>
+<span id="342">342</span>
+<span id="343">343</span>
+<span id="344">344</span>
+<span id="345">345</span>
+<span id="346">346</span>
+<span id="347">347</span>
+<span id="348">348</span>
+<span id="349">349</span>
+<span id="350">350</span>
+<span id="351">351</span>
+<span id="352">352</span>
+<span id="353">353</span>
+<span id="354">354</span>
+<span id="355">355</span>
+<span id="356">356</span>
+<span id="357">357</span>
+<span id="358">358</span>
+<span id="359">359</span>
+<span id="360">360</span>
+<span id="361">361</span>
+<span id="362">362</span>
+<span id="363">363</span>
+<span id="364">364</span>
+<span id="365">365</span>
+<span id="366">366</span>
+<span id="367">367</span>
+<span id="368">368</span>
+<span id="369">369</span>
+<span id="370">370</span>
+<span id="371">371</span>
+<span id="372">372</span>
+<span id="373">373</span>
+<span id="374">374</span>
+<span id="375">375</span>
+<span id="376">376</span>
+<span id="377">377</span>
+<span id="378">378</span>
+<span id="379">379</span>
+<span id="380">380</span>
+<span id="381">381</span>
+<span id="382">382</span>
+<span id="383">383</span>
+<span id="384">384</span>
+<span id="385">385</span>
+<span id="386">386</span>
+<span id="387">387</span>
+<span id="388">388</span>
+<span id="389">389</span>
+<span id="390">390</span>
+<span id="391">391</span>
+<span id="392">392</span>
+<span id="393">393</span>
+<span id="394">394</span>
+</pre><div class="example-wrap"><pre class="rust ">
+<span class="kw">use</span> <span class="ident">babe_primitives</span>::<span class="ident">AuthorityId</span> <span class="kw">as</span> <span class="ident">BabeId</span>;
+<span class="doccomment">///! Plasm chain configuration.</span>
+<span class="kw">use</span> <span class="ident">chain_spec</span>::<span class="ident">ChainSpecExtension</span>;
+<span class="kw">use</span> <span class="ident">grandpa_primitives</span>::<span class="ident">AuthorityId</span> <span class="kw">as</span> <span class="ident">GrandpaId</span>;
+<span class="kw">use</span> <span class="ident">hex_literal</span>::<span class="ident">hex</span>;
+<span class="kw">use</span> <span class="ident">plasm_primitives</span>::{<span class="ident">AccountId</span>, <span class="ident">Balance</span>, <span class="ident">Signature</span>};
+<span class="kw">use</span> <span class="ident">plasm_runtime</span>::<span class="ident">constants</span>::<span class="ident">currency</span>::<span class="kw-2">*</span>;
+<span class="kw">use</span> <span class="ident">plasm_runtime</span>::<span class="ident">Block</span>;
+<span class="kw">use</span> <span class="ident">plasm_runtime</span>::{
+    <span class="ident">BabeConfig</span>, <span class="ident">BalancesConfig</span>, <span class="ident">ContractsConfig</span>, <span class="ident">Forcing</span>, <span class="ident">GenesisConfig</span>, <span class="ident">GrandpaConfig</span>,
+    <span class="ident">IndicesConfig</span>, <span class="ident">PlasmStakingConfig</span>, <span class="ident">SessionConfig</span>, <span class="ident">SessionKeys</span>, <span class="ident">SudoConfig</span>, <span class="ident">SystemConfig</span>,
+    <span class="ident">WASM_BINARY</span>,
+};
+<span class="kw">use</span> <span class="ident">primitives</span>::{<span class="ident">crypto</span>::<span class="ident">UncheckedInto</span>, <span class="ident">sr25519</span>, <span class="ident">ecdsa</span>, <span class="ident">Pair</span>, <span class="ident">Public</span>};
+<span class="kw">use</span> <span class="ident">serde</span>::{<span class="ident">Deserialize</span>, <span class="ident">Serialize</span>};
+<span class="kw">use</span> <span class="ident">sp_runtime</span>::<span class="ident">traits</span>::{<span class="ident">IdentifyAccount</span>, <span class="ident">Verify</span>};
+<span class="kw">use</span> <span class="ident">telemetry</span>::<span class="ident">TelemetryEndpoints</span>;
+
+<span class="kw">type</span> <span class="ident">AccountPublic</span> <span class="op">=</span> <span class="op">&lt;</span><span class="ident">Signature</span> <span class="kw">as</span> <span class="ident">Verify</span><span class="op">&gt;</span>::<span class="ident">Signer</span>;
+
+<span class="kw">const</span> <span class="ident">STAGING_TELEMETRY_URL</span>: <span class="kw-2">&amp;</span><span class="ident">str</span> <span class="op">=</span> <span class="string">&quot;wss://telemetry.polkadot.io/submit/&quot;</span>;
+<span class="kw">const</span> <span class="ident">PLASM_PROPERTIES</span>: <span class="kw-2">&amp;</span><span class="ident">str</span> <span class="op">=</span> <span class="string">r#&quot;
+        {
+            &quot;tokenDecimals&quot;: 15,
+            &quot;tokenSymbol&quot;: &quot;PLM&quot;
+        }&quot;#</span>;
+<span class="kw">const</span> <span class="ident">PLASM_PROTOCOL_ID</span>: <span class="kw-2">&amp;</span><span class="ident">str</span> <span class="op">=</span> <span class="string">&quot;plm&quot;</span>;
+<span class="kw">const</span> <span class="ident">ENDOWMENT</span>: <span class="ident">Balance</span> <span class="op">=</span> <span class="number">1_000</span> <span class="op">*</span> <span class="ident">PLM</span>;
+
+<span class="doccomment">/// Node `ChainSpec` extensions.</span>
+<span class="doccomment">///</span>
+<span class="doccomment">/// Additional parameters for some Substrate core modules,</span>
+<span class="doccomment">/// customizable from the chain spec.</span>
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Default</span>, <span class="ident">Clone</span>, <span class="ident">Serialize</span>, <span class="ident">Deserialize</span>, <span class="ident">ChainSpecExtension</span>)]</span>
+<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Extensions</span> {
+    <span class="doccomment">/// Block numbers with known hashes.</span>
+    <span class="kw">pub</span> <span class="ident">fork_blocks</span>: <span class="ident">client</span>::<span class="ident">ForkBlocks</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span>,
+}
+
+<span class="doccomment">/// Specialized `ChainSpec`.</span>
+<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">ChainSpec</span> <span class="op">=</span> <span class="ident">sc_service</span>::<span class="ident">ChainSpec</span><span class="op">&lt;</span><span class="ident">GenesisConfig</span>, <span class="ident">Extensions</span><span class="op">&gt;</span>;
+
+<span class="doccomment">/// Helper function to generate a crypto pair from seed</span>
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_from_seed</span><span class="op">&lt;</span><span class="ident">TPublic</span>: <span class="ident">Public</span><span class="op">&gt;</span>(<span class="ident">seed</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="op">&lt;</span><span class="ident">TPublic</span>::<span class="ident">Pair</span> <span class="kw">as</span> <span class="ident">Pair</span><span class="op">&gt;</span>::<span class="ident">Public</span> {
+    <span class="ident">TPublic</span>::<span class="ident">Pair</span>::<span class="ident">from_string</span>(<span class="kw-2">&amp;</span><span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;//{}&quot;</span>, <span class="ident">seed</span>), <span class="prelude-val">None</span>)
+        .<span class="ident">expect</span>(<span class="string">&quot;static values are valid; qed&quot;</span>)
+        .<span class="ident">public</span>()
+}
+
+<span class="doccomment">/// Helper function to generate an account ID from seed</span>
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_account_id_from_seed</span><span class="op">&lt;</span><span class="ident">TPublic</span>: <span class="ident">Public</span><span class="op">&gt;</span>(<span class="ident">seed</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">AccountId</span>
+<span class="kw">where</span>
+    <span class="ident">AccountPublic</span>: <span class="ident">From</span><span class="op">&lt;</span><span class="op">&lt;</span><span class="ident">TPublic</span>::<span class="ident">Pair</span> <span class="kw">as</span> <span class="ident">Pair</span><span class="op">&gt;</span>::<span class="ident">Public</span><span class="op">&gt;</span>,
+{
+    <span class="ident">AccountPublic</span>::<span class="ident">from</span>(<span class="ident">get_from_seed</span>::<span class="op">&lt;</span><span class="ident">TPublic</span><span class="op">&gt;</span>(<span class="ident">seed</span>)).<span class="ident">into_account</span>()
+}
+
+<span class="doccomment">/// Helper function to generate controller and session key from seed</span>
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_authority_keys_from_seed</span>(<span class="ident">seed</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) <span class="op">-</span><span class="op">&gt;</span> (<span class="ident">AccountId</span>, <span class="ident">BabeId</span>, <span class="ident">GrandpaId</span>) {
+    (
+        <span class="ident">get_account_id_from_seed</span>::<span class="op">&lt;</span><span class="ident">sr25519</span>::<span class="ident">Public</span><span class="op">&gt;</span>(<span class="ident">seed</span>),
+        <span class="ident">get_from_seed</span>::<span class="op">&lt;</span><span class="ident">BabeId</span><span class="op">&gt;</span>(<span class="ident">seed</span>),
+        <span class="ident">get_from_seed</span>::<span class="op">&lt;</span><span class="ident">GrandpaId</span><span class="op">&gt;</span>(<span class="ident">seed</span>),
+    )
+}
+
+<span class="kw">fn</span> <span class="ident">session_keys</span>(<span class="ident">babe</span>: <span class="ident">BabeId</span>, <span class="ident">grandpa</span>: <span class="ident">GrandpaId</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">SessionKeys</span> {
+    <span class="ident">SessionKeys</span> { <span class="ident">babe</span>, <span class="ident">grandpa</span> }
+}
+
+<span class="doccomment">/// Helper function to create GenesisConfig</span>
+<span class="kw">fn</span> <span class="ident">generate_config_genesis</span>(
+    <span class="ident">initial_authorities</span>: <span class="ident">Vec</span><span class="op">&lt;</span>(<span class="ident">AccountId</span>, <span class="ident">BabeId</span>, <span class="ident">GrandpaId</span>)<span class="op">&gt;</span>,
+    <span class="ident">root_key</span>: <span class="ident">AccountId</span>,
+    <span class="ident">balances</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span>(<span class="ident">AccountId</span>, <span class="ident">Balance</span>)<span class="op">&gt;</span><span class="op">&gt;</span>,
+    <span class="ident">enable_println</span>: <span class="ident">bool</span>,
+) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">GenesisConfig</span> {
+    <span class="kw">let</span> <span class="ident">balances</span>: <span class="ident">Vec</span><span class="op">&lt;</span>(<span class="ident">AccountId</span>, <span class="ident">Balance</span>)<span class="op">&gt;</span> <span class="op">=</span> <span class="ident">balances</span>.<span class="ident">unwrap_or_else</span>(<span class="op">|</span><span class="op">|</span> {
+        <span class="macro">vec</span><span class="macro">!</span>[
+            (<span class="ident">get_account_id_from_seed</span>::<span class="op">&lt;</span><span class="ident">sr25519</span>::<span class="ident">Public</span><span class="op">&gt;</span>(<span class="string">&quot;Alice&quot;</span>), <span class="ident">ENDOWMENT</span>),
+            (<span class="ident">get_account_id_from_seed</span>::<span class="op">&lt;</span><span class="ident">sr25519</span>::<span class="ident">Public</span><span class="op">&gt;</span>(<span class="string">&quot;Bob&quot;</span>), <span class="ident">ENDOWMENT</span>),
+            (<span class="ident">get_account_id_from_seed</span>::<span class="op">&lt;</span><span class="ident">sr25519</span>::<span class="ident">Public</span><span class="op">&gt;</span>(<span class="string">&quot;Charlie&quot;</span>), <span class="ident">ENDOWMENT</span>),
+            (<span class="ident">get_account_id_from_seed</span>::<span class="op">&lt;</span><span class="ident">sr25519</span>::<span class="ident">Public</span><span class="op">&gt;</span>(<span class="string">&quot;Dave&quot;</span>), <span class="ident">ENDOWMENT</span>),
+            (<span class="ident">get_account_id_from_seed</span>::<span class="op">&lt;</span><span class="ident">sr25519</span>::<span class="ident">Public</span><span class="op">&gt;</span>(<span class="string">&quot;Eve&quot;</span>), <span class="ident">ENDOWMENT</span>),
+            (<span class="ident">get_account_id_from_seed</span>::<span class="op">&lt;</span><span class="ident">sr25519</span>::<span class="ident">Public</span><span class="op">&gt;</span>(<span class="string">&quot;Ferdie&quot;</span>), <span class="ident">ENDOWMENT</span>),
+        ]
+    });
+    <span class="kw">let</span> <span class="ident">ids</span> <span class="op">=</span> <span class="ident">balances</span>.<span class="ident">iter</span>().<span class="ident">cloned</span>().<span class="ident">map</span>(<span class="op">|</span>(<span class="ident">a</span>, <span class="kw">_</span>)<span class="op">|</span> <span class="ident">a</span>).<span class="ident">collect</span>::<span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span><span class="op">&gt;</span>();
+
+    <span class="ident">GenesisConfig</span> {
+        <span class="ident">system</span>: <span class="prelude-val">Some</span>(<span class="ident">SystemConfig</span> {
+            <span class="ident">code</span>: <span class="ident">WASM_BINARY</span>.<span class="ident">to_vec</span>(),
+            <span class="ident">changes_trie_config</span>: <span class="ident">Default</span>::<span class="ident">default</span>(),
+        }),
+        <span class="ident">balances</span>: <span class="prelude-val">Some</span>(<span class="ident">BalancesConfig</span> {
+            <span class="ident">balances</span>,
+            <span class="ident">vesting</span>: <span class="macro">vec</span><span class="macro">!</span>[],
+        }),
+        <span class="ident">indices</span>: <span class="prelude-val">Some</span>(<span class="ident">IndicesConfig</span> {
+            <span class="ident">ids</span>,
+        }),
+        <span class="ident">plasm_staking</span>: <span class="prelude-val">Some</span>(<span class="ident">PlasmStakingConfig</span> {
+            <span class="ident">storage_version</span>: <span class="number">1</span>,
+            <span class="ident">force_era</span>: <span class="ident">Forcing</span>::<span class="ident">NotForcing</span>,
+            <span class="ident">validators</span>: <span class="ident">initial_authorities</span>.<span class="ident">iter</span>().<span class="ident">map</span>(<span class="op">|</span><span class="ident">x</span><span class="op">|</span> <span class="ident">x</span>.<span class="number">0</span>.<span class="ident">clone</span>()).<span class="ident">collect</span>(),
+        }),
+        <span class="ident">session</span>: <span class="prelude-val">Some</span>(<span class="ident">SessionConfig</span> {
+            <span class="ident">keys</span>: <span class="ident">initial_authorities</span>
+                .<span class="ident">iter</span>()
+                .<span class="ident">map</span>(<span class="op">|</span><span class="ident">x</span><span class="op">|</span> (<span class="ident">x</span>.<span class="number">0</span>.<span class="ident">clone</span>(), <span class="ident">session_keys</span>(<span class="ident">x</span>.<span class="number">1</span>.<span class="ident">clone</span>(), <span class="ident">x</span>.<span class="number">2</span>.<span class="ident">clone</span>())))
+                .<span class="ident">collect</span>::<span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span><span class="op">&gt;</span>(),
+        }),
+        <span class="ident">babe</span>: <span class="prelude-val">Some</span>(<span class="ident">BabeConfig</span> {
+            <span class="ident">authorities</span>: <span class="macro">vec</span><span class="macro">!</span>[],
+        }),
+        <span class="ident">grandpa</span>: <span class="prelude-val">Some</span>(<span class="ident">GrandpaConfig</span> {
+            <span class="ident">authorities</span>: <span class="macro">vec</span><span class="macro">!</span>[],
+        }),
+        <span class="ident">contracts</span>: <span class="prelude-val">Some</span>(<span class="ident">ContractsConfig</span> {
+            <span class="ident">current_schedule</span>: <span class="ident">contracts</span>::<span class="ident">Schedule</span> {
+                <span class="ident">enable_println</span>, <span class="comment">// this should only be enabled on development chains</span>
+                ..<span class="ident">Default</span>::<span class="ident">default</span>()
+            },
+            <span class="ident">gas_price</span>: <span class="number">1</span> <span class="op">*</span> <span class="ident">MILLIPLM</span>,
+        }),
+        <span class="ident">sudo</span>: <span class="prelude-val">Some</span>(<span class="ident">SudoConfig</span> { <span class="ident">key</span>: <span class="ident">root_key</span> }),
+    }
+}
+
+<span class="doccomment">/// Plasm testnet file config.</span>
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">plasm_testnet_config</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">ChainSpec</span> {
+    <span class="ident">ChainSpec</span>::<span class="ident">from_json_bytes</span>(<span class="kw-2">&amp;</span><span class="macro">include_bytes</span><span class="macro">!</span>(<span class="string">&quot;../res/testnet_v3.json&quot;</span>)[..]).<span class="ident">unwrap</span>()
+}
+
+<span class="comment">/*
+/// Plasm testnet native config.
+pub fn plasm_testnet_config() -&gt; ChainSpec {
+    let boot_nodes = vec![
+        // akru
+        &quot;/ip4/95.216.202.55/tcp/30333/p2p/QmYyTG2eKpREh4J9BvySAkuNJDTnDXJBcJeiY1E5SdSsBv&quot;.into(),
+        // Stake Technologies
+        &quot;/ip4/3.114.90.94/tcp/30333/p2p/QmW8EjUZ1f6RZe4YJ6tZAXzqYmjANbfdEYWMMaFgjkw9HN&quot;.into(),
+        &quot;/ip4/3.114.81.104/tcp/30333/p2p/QmTuouKCV9zXLrNRY71PkfggEUVrrzqofZecCfu7pz5Ntt&quot;.into(),
+        &quot;/ip4/3.115.175.152/tcp/30333/p2p/QmbKSyPY95NvJzoxP8q2DNaA9BRHZa5hy1q1pzfUoLhaUn&quot;.into(),
+        &quot;/ip4/54.64.145.3/tcp/30333/p2p/QmS9psuQJceiYQMe6swoheKXrpnyYDjaigrTqv45RWyvCh&quot;.into(),
+    ];
+    let properties = serde_json::from_str(PLASM_PROPERTIES).unwrap();
+    ChainSpec::from_genesis(
+        &quot;Plasm Testnet v3&quot;,
+        &quot;plasm_testnet_v3&quot;,
+        plasm_testnet_genesis,
+        boot_nodes,
+        Some(TelemetryEndpoints::new(vec![(STAGING_TELEMETRY_URL.to_string(),0)])),
+        Some(PLASM_PROTOCOL_ID),
+        properties,
+        Default::default(),
+    )
+}
+
+fn plasm_testnet_genesis() -&gt; GenesisConfig {
+    // Testnet authorities list
+    let authorities = vec![
+        (   // akru
+            hex![&quot;16eb796bee0c857db3d646ee7070252707aec0c7d82b2eda856632f6a2306a58&quot;].into(),
+            hex![&quot;ac2bbc1877441591e997a7bd8043f4df4f7ca69bd05a762b0661ec376f64f551&quot;].unchecked_into(),
+            hex![&quot;0e95fb00ea007cd02b7b0065840d4572aeab5dbf77f148a62330168e7092703d&quot;].unchecked_into(),
+        ),
+        (   // staketech-01
+            hex![&quot;48cdc7ef880c80e8475170f206381d2cb13a87c209452fc6d8a1e14186d61b28&quot;].into(),
+            hex![&quot;70887b6d5241f2483fd7f199697a2f4ccfe3aedbfa60fe0c82fe476a4b08a320&quot;].unchecked_into(),
+            hex![&quot;c62110354d58905bbfa894a1d82f0c175dfc7720758b28d18bc2118ef5f54f91&quot;].unchecked_into(),
+        ),
+        (   // staketech-02
+            hex![&quot;38cdc7ef880c80e8475170f206381d2cb13a87c209452fc6d8a1e14186d61b28&quot;].into(),
+            hex![&quot;d409311bae981d87dee63d4c799723a33d509d7388db4c530a10e607937e547d&quot;].unchecked_into(),
+            hex![&quot;36aaade466263a00ec16a1a1c301636ff8488fc28a08e6a7eca7ac8496e35dca&quot;].unchecked_into(),
+        ),
+        (   // staketech-03
+            hex![&quot;28cdc7ef880c80e8475170f206381d2cb13a87c209452fc6d8a1e14186d61b28&quot;].into(),
+            hex![&quot;266f53d34490e10e6c818a1f6208dd285a74c01e022cb3b725cf5888bc89136f&quot;].unchecked_into(),
+            hex![&quot;c379204b0b450bb62006a0df2b4abac72c79909248fc0f30ce0b05fcb9c102fa&quot;].unchecked_into(),
+        ),
+        (   // staketech-04
+            hex![&quot;18cdc7ef880c80e8475170f206381d2cb13a87c209452fc6d8a1e14186d61b28&quot;].into(),
+            hex![&quot;96e2554353e7a8de10a388a5dda42096d3c7768403f3735d0a939bc3fd39bc54&quot;].unchecked_into(),
+            hex![&quot;674bd4f2670c0e99edcccd5d3821c54b9d559580a31d8e2ca1e88c1e3db28021&quot;].unchecked_into(),
+        ),
+        (   // Stir
+            hex![&quot;ce3e6bb7672586afaf31d1c5d7e73a69d468b461d1334917ff1f23d984f8c525&quot;].into(),
+            hex![&quot;da001e43576e62a7d4984eb86fe3a330e83854129caac5a06c5587025d9be302&quot;].unchecked_into(),
+            hex![&quot;a4b411edba991630917119135b82c1ee9ff15d30e1ff6f62e637c7527c7478c2&quot;].unchecked_into(),
+        ),
+        (   // Knigh-star
+            hex![&quot;ba103eb6c8b63de70b8410ec9d498d126234e56d51adfef3efa95fc466308d2c&quot;].into(),
+            hex![&quot;ea711db476883a01dd2dc79a60656f66ee16a58ad33f6638c72fd647092d6b15&quot;].unchecked_into(),
+            hex![&quot;597f96c1b19c1c2063fb35c8da64fee721ca900481f20d4b45693f517ef29acf&quot;].unchecked_into(),
+        ),
+        (   // Roy
+            hex![&quot;4219c9547619f8eaed24f507872df5168674c384fcbf4dd96e860bdc1a90b64d&quot;].into(),
+            hex![&quot;56ffd328660aa360e9d73680bb93f255866356c8c480466177e8fecf39e0c204&quot;].unchecked_into(),
+            hex![&quot;c54fb4015876028619d7572bffece205a0108821257112c60e0e3b779e5ff519&quot;].unchecked_into(),
+        ),
+        (   // InChainWorks
+            hex![&quot;10270887a7c74e7b858b70edba7d44c2905295d026e445933c094a0e29414236&quot;].into(),
+            hex![&quot;f0bc957cf56363494f4bac16434e547a2e651166215ae409fe49cb376dd4c031&quot;].unchecked_into(),
+            hex![&quot;9c1ee88efa1f48b1d5cea56df757897ecca77940336b24f0bd75cefaf7a6652f&quot;].unchecked_into(),
+        ),
+        (   // Moonline
+            hex![&quot;4041e4a5f581bb14f13036a34f6eb26346e67f03f1c1d41e4bfa0b822f60780e&quot;].into(),
+            hex![&quot;c0f0af7ed4801cf9d07748cee789234ed1d94a3a49a64a00052287b49152f123&quot;].unchecked_into(),
+            hex![&quot;1884916e0ec789a374739fc426b798ec6d76f41269ebe3d742a317ec7feff011&quot;].unchecked_into(),
+        ),
+        (   // Witval
+            hex![&quot;2ac41c4e82b7b3680a4e86486550557e7274363f413ec363ae03d2b7c11ceeef&quot;].into(),
+            hex![&quot;6e1ce430daf4205ecabe491f5c1b2d84cf4b999f73d4f36f303e3e319162a267&quot;].unchecked_into(),
+            hex![&quot;2fd38b8a4247fe685f3fb198b617f04b185044a0df07db0bf86f38fb23c1eb70&quot;].unchecked_into(),
+        ),
+        (   // Spiritual
+            hex![&quot;420a8d0c7c7971bbf1d32f5feefbfe2cb09d15b5c70b8258a880117c281f365f&quot;].into(),
+            hex![&quot;6edf07f0743c09fd96e64d613777aec0225eb8cce3211f58b3ec0ced7f9e424a&quot;].unchecked_into(),
+            hex![&quot;9ec82b6b22e47ec7dde324cfcca84a4e8785bb8ac03eda89e414c105fe13fdfa&quot;].unchecked_into(),
+        ),
+        (   // cp287
+            hex![&quot;380477b148049ca59005c2900f51467aaf438f113d5ab061c46e7fb35a145366&quot;].into(),
+            hex![&quot;d87d24f1cc66e34b16529838654541e682971e78d4cd13595d25a5ff5f20be54&quot;].unchecked_into(),
+            hex![&quot;4694c661d2c7d042c3b6d37305cd7c595b1d4c43f8b44173c304156f10f7a97a&quot;].unchecked_into(),
+        ),
+    ];
+
+    // Testnet endowements
+    let mut balances: Vec&lt;(AccountId, Balance)&gt; = vec![];
+
+    let endowed_authorities: Vec&lt;(AccountId, Balance)&gt; =
+        authorities.iter().cloned().map(|x| (x.0, ENDOWMENT)).collect();
+    balances.extend(endowed_authorities);
+
+    let endowed_accounts: Vec&lt;(AccountId, Balance)&gt; = vec![
+        (hex![&quot;10270887a7c74e7b858b70edba7d44c2905295d026e445933c094a0e29414236&quot;].into(), ENDOWMENT),
+        (hex![&quot;ce3e6bb7672586afaf31d1c5d7e73a69d468b461d1334917ff1f23d984f8c525&quot;].into(), ENDOWMENT),
+        (hex![&quot;4cd4fbd4a2694d2a51a7012cb5f517096c150980465f2762f7a53dcb8bca0c56&quot;].into(), ENDOWMENT),
+        (hex![&quot;240826b5b3a2d144086c7de1032c69209d6c381a96d0fa7eafc3d95798080e24&quot;].into(), ENDOWMENT),
+        (hex![&quot;9450bb2d9c81781d159f6fe6f5be5b95a57be1a245da4315fe9baf3dd239bc06&quot;].into(), ENDOWMENT),
+        (hex![&quot;2a40ea8a4d6c61e2aa0c5acf7e27f1b9d52014fe1d12e27e89b11fc0173e9277&quot;].into(), ENDOWMENT),
+    ];
+    balances.extend(endowed_accounts);
+
+    let lockdrop_results: Vec&lt;(ecdsa::Public, Balance)&gt; = vec![
+        (hex![&quot;72ea6ffa38d4f0b256ee1e12165f84e256266a163808bafb5a1cdec9127764707c0bc1dbff4d8d808345adbedd433c9c2ebfb6bca0c5e5f0fb7d1d9a841a9d22&quot;].unchecked_into(), 7086849197963211748),
+        (hex![&quot;a0bd82a21ae8c035427069251db0de76b6501859500c2a1f249c7fa295a020416c42f73c33bb4c1d3dabca0ca644ef854dd85a53b44e9291331c5379b6745767&quot;].unchecked_into(), 1476426916242335781029),
+        (hex![&quot;3e4960f13b3dd5d25e66f7bcc174f83d6afaec3a8f19ca25d51df8784f05ec794d3a778642272ade072aa31b2b754dc57f47bb2f52b385264d74e9a5b24dd1cc&quot;].unchecked_into(), 34725561070019737569),
+        (hex![&quot;49bba4cd2109e677edd8374c6fc839b428ff549c1c2a8259732144beb59d246f62405399baf220bc868b3fda53bf8a331c53a9fcdd4827eea85d81e8dbcc3d31&quot;].unchecked_into(), 70868491979632117489),
+        (hex![&quot;e8b340ecd69904ac5c0ee55180b0d6f40ff998098b0d82f36034c0741d5ea22cb8ad35dca8916f8b0441a98c9e2f23e402e1cb51ffc0c561bf5fefb58bb468b2&quot;].unchecked_into(), 4724566131975474499293),
+        (hex![&quot;dacb4acb8315a094c5b62a1d383a037a4c9b92aff5d6d1fe3cf54564b2ade54d590d4b863bf5e2d45c2915f875f2ea230e8399091f0222f73007dcd2032c660f&quot;].unchecked_into(), 25453600036017868864942),
+        (hex![&quot;88dacdff339718ad31eb7b641ab41759a3cb7dc1a2b5b245ff343fdeb8c628640425f2cf09bfdccd36e3413cb3c9541dcf8f1fee170df7b800f1449303098769&quot;].unchecked_into(), 14882383315722744672773),
+        (hex![&quot;0eaa389de0bc6dbad1eb42ec211d629368ee97b380103b5edbe2a164f54811395c3ff49ad2bcaa8749cfdac0d3c40fab07e10b9c112a25de173d74bd24c46161&quot;].unchecked_into(), 53151368984724088117049),
+        (hex![&quot;cbc386fdc95d42fb542ad7fc761b9d75e1525fefc872bf4ccc48d61d4a63f242f407f646d406e67d0e1c4ee97d34be65c1fe3dfa2d92deb07de94a69bc29db0f&quot;].unchecked_into(), 637816427816689057404),
+        (hex![&quot;9308948ba005372aa9fb9ee70d088298e99da8dd87e79e24870b7e3af4f53d32439de3c3f4cf56fd8195fb16ec524ad60f3a1d1907a78f5bae601afea6a590dc&quot;].unchecked_into(), 21260547593889635246819),
+        (hex![&quot;65d068328553959df19c46640e0326052e445f46496a1969da2c4e8c527bdb14f82f2bdbe07c5d1eb2fe4eb51b37bb0523c3d40afca97028270fbd7e7ba154c8&quot;].unchecked_into(), 21260547593889635246819),
+        (hex![&quot;dc9381468a9712dfae81b5c88827cd824c189db9f7f49d4571cfe67b498b691204ae6d4c354a3677788828830649b682c91eeef379daec40f56a9ac7c4a669bd&quot;].unchecked_into(), 20197520214195153484478),
+        (hex![&quot;7a4e1723b1d86a9f9fa9463a3bf9bf74bb77fed77da8133d57d786403a29b090595d0711616ed482fc2372e4222a18d28748a60104720ce60befe03726a63b80&quot;].unchecked_into(), 5315136898472408811704),
+        (hex![&quot;18d4985842078b4e71fb3c6cf89404048d945f40b8091d8cb9d4c68325ecaa35f123068f6af41c46aa2eb68b0efefdf01b5ef3a3adebbc4cdf63a70888124a57&quot;].unchecked_into(), 297647666314454893455),
+        (hex![&quot;0f1e92b59c57d71c1d547445542b59417b824bf69a16a7923ff6dca02ef492236f3869f57ba1147bd6acbbc147e64a15b1ed13f2864ea5b0c78516045a59d040&quot;].unchecked_into(), 4762362661031278295287),
+        (hex![&quot;b67adc96f145bd8521576321f01b2a37de74c36af81b87fead022858de31d68a4443377ef3e517adf82f74bbea37e3b82c3d65f81451eb178f7127104fe6f753&quot;].unchecked_into(), 10630273796944817623409),
+        (hex![&quot;5ed9d63912b7a0e1ebf719d3b191c05eaf74299ac81062f5911cd56e3d4c662c6fe078a33982b8df6dea6147ae53f2d74a69cce4070df5406b007472f788605b&quot;].unchecked_into(), 10630273796944817623409),
+        (hex![&quot;0d719cf8c1f4b8343484a6e13c7102055903552787b9568041c3fe548a13791362f8a4ba73d42294ab5c0d32c1207781c45108b3e85c76ceaeb99bd64ab305d9&quot;].unchecked_into(), 14882383315722744672773),
+        (hex![&quot;f70be2dc51b338ab5fb7b7607821d7a02dcbae1d6fcaad8377947c1f8b377ad8568524c0bc3ea7e46cfef6f5200b08cdc14534de34da34b9468e61d6040bc4f4&quot;].unchecked_into(), 297647666314454893455),
+        (hex![&quot;ca5a3e9a9b1fa5151c42cfbae7e2c80b1a67a75aa42c5b248893861829405c58cab8c28050b2939a927191d7606580d77fce7e01223fada1d5673437e078f59c&quot;].unchecked_into(), 106302737969448176234098),
+        (hex![&quot;9330721827066c3b165dd60c3b95368d08cdcc69229e7a892dcf848d3334a4ac206ad1e6f9ee498cb5a1e59262880d71dee3fa6889899e9f6665187da15fb6c2&quot;].unchecked_into(), 31359307700987211989059),
+        (hex![&quot;5dee8ed95e0d9bed5d85b73db0271a0e67a034473e533a882cff19f0b0751f85ccbbe195da23e36f2eaaa64d05be4ea9f0010a4f1b7185d51dc76c2f2212dc48&quot;].unchecked_into(), 2952853832484671562058),
+        (hex![&quot;f2b46504de471e2cf024c489e635f5b91c0a2073f7865c794bd8b946f8f3c79573baaf438101db6d9a0313f5225f49260597cfea2f86ee6554078dfc50d39d50&quot;].unchecked_into(), 31890821390834452870229),
+        (hex![&quot;c5a5a32ff39eb08e7734f81658252ea2f13d2829366ee71f077880fdc41e291d1b78812a6ac224380b8d7756cb52c9f8aee3b1dc2ad4107a1a20b7b5c80618e8&quot;].unchecked_into(), 42521095187779270493639)
+    ];
+    let lockdrop_balances: Vec&lt;(AccountId, Balance)&gt; = lockdrop_results
+            .iter()
+            .cloned()
+            .map(|(a, b)| (AccountPublic::from(a).into_account(), b))
+            .collect();
+    balances.extend(lockdrop_balances);
+
+    // 5Cakru1BpXPiezeD2LRZh3pJamHcbX9yZ13KLBxuqdTpgnYF
+    let root_key = hex![&quot;16eb796bee0c857db3d646ee7070252707aec0c7d82b2eda856632f6a2306a58&quot;];
+
+    generate_config_genesis(
+        authorities,
+        root_key.into(),
+        Some(balances),
+        false,
+    )
+}
+*/</span>
+
+<span class="kw">fn</span> <span class="ident">development_config_genesis</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">GenesisConfig</span> {
+    <span class="ident">generate_config_genesis</span>(
+        <span class="macro">vec</span><span class="macro">!</span>[<span class="ident">get_authority_keys_from_seed</span>(<span class="string">&quot;Alice&quot;</span>)],
+        <span class="ident">get_account_id_from_seed</span>::<span class="op">&lt;</span><span class="ident">sr25519</span>::<span class="ident">Public</span><span class="op">&gt;</span>(<span class="string">&quot;Alice&quot;</span>),
+        <span class="prelude-val">None</span>,
+        <span class="bool-val">true</span>,
+    )
+}
+
+<span class="doccomment">/// Development config (single validator Alice)</span>
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">development_config</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">ChainSpec</span> {
+    <span class="ident">ChainSpec</span>::<span class="ident">from_genesis</span>(
+        <span class="string">&quot;Development&quot;</span>,
+        <span class="string">&quot;dev&quot;</span>,
+        <span class="ident">development_config_genesis</span>,
+        <span class="macro">vec</span><span class="macro">!</span>[],
+        <span class="prelude-val">None</span>,
+        <span class="prelude-val">None</span>,
+        <span class="prelude-val">None</span>,
+        <span class="ident">Default</span>::<span class="ident">default</span>(),
+    )
+}
+
+<span class="kw">fn</span> <span class="ident">local_testnet_genesis</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">GenesisConfig</span> {
+    <span class="ident">generate_config_genesis</span>(
+        <span class="macro">vec</span><span class="macro">!</span>[
+            <span class="ident">get_authority_keys_from_seed</span>(<span class="string">&quot;Alice&quot;</span>),
+            <span class="ident">get_authority_keys_from_seed</span>(<span class="string">&quot;Bob&quot;</span>),
+        ],
+        <span class="ident">get_account_id_from_seed</span>::<span class="op">&lt;</span><span class="ident">sr25519</span>::<span class="ident">Public</span><span class="op">&gt;</span>(<span class="string">&quot;Alice&quot;</span>),
+        <span class="prelude-val">None</span>,
+        <span class="bool-val">false</span>,
+    )
+}
+
+<span class="doccomment">/// Local testnet config (multivalidator Alice + Bob)</span>
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">local_testnet_config</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">ChainSpec</span> {
+    <span class="ident">ChainSpec</span>::<span class="ident">from_genesis</span>(
+        <span class="string">&quot;Local Testnet&quot;</span>,
+        <span class="string">&quot;local_testnet&quot;</span>,
+        <span class="ident">local_testnet_genesis</span>,
+        <span class="macro">vec</span><span class="macro">!</span>[],
+        <span class="prelude-val">None</span>,
+        <span class="prelude-val">None</span>,
+        <span class="prelude-val">None</span>,
+        <span class="ident">Default</span>::<span class="ident">default</span>(),
+    )
+}
+
+<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">test</span>)]</span>
+<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">mod</span> <span class="ident">tests</span> {
+    <span class="kw">use</span> <span class="kw">super</span>::<span class="kw-2">*</span>;
+    <span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">service</span>::{<span class="ident">new_full</span>, <span class="ident">new_light</span>};
+    <span class="kw">use</span> <span class="ident">sc_service</span>::<span class="ident">Roles</span>;
+    <span class="kw">use</span> <span class="ident">service_test</span>;
+
+    <span class="kw">fn</span> <span class="ident">local_testnet_genesis_instant_single</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">GenesisConfig</span> {
+        <span class="ident">generate_config_genesis</span>(
+            <span class="macro">vec</span><span class="macro">!</span>[<span class="ident">get_authority_keys_from_seed</span>(<span class="string">&quot;Alice&quot;</span>)],
+            <span class="ident">get_account_id_from_seed</span>::<span class="op">&lt;</span><span class="ident">sr25519</span>::<span class="ident">Public</span><span class="op">&gt;</span>(<span class="string">&quot;Alice&quot;</span>),
+            <span class="prelude-val">None</span>,
+            <span class="bool-val">false</span>,
+        )
+    }
+
+    <span class="doccomment">/// Local testnet config (single validator - Alice)</span>
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">integration_test_config_with_single_authority</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">ChainSpec</span> {
+        <span class="ident">ChainSpec</span>::<span class="ident">from_genesis</span>(
+            <span class="string">&quot;Integration Test&quot;</span>,
+            <span class="string">&quot;test&quot;</span>,
+            <span class="ident">local_testnet_genesis_instant_single</span>,
+            <span class="macro">vec</span><span class="macro">!</span>[],
+            <span class="prelude-val">None</span>,
+            <span class="prelude-val">None</span>,
+            <span class="prelude-val">None</span>,
+            <span class="ident">Default</span>::<span class="ident">default</span>(),
+        )
+    }
+
+    <span class="doccomment">/// Local testnet config (multivalidator Alice + Bob)</span>
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">integration_test_config_with_two_authorities</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">ChainSpec</span> {
+        <span class="ident">ChainSpec</span>::<span class="ident">from_genesis</span>(
+            <span class="string">&quot;Integration Test&quot;</span>,
+            <span class="string">&quot;test&quot;</span>,
+            <span class="ident">local_testnet_genesis</span>,
+            <span class="macro">vec</span><span class="macro">!</span>[],
+            <span class="prelude-val">None</span>,
+            <span class="prelude-val">None</span>,
+            <span class="prelude-val">None</span>,
+            <span class="ident">Default</span>::<span class="ident">default</span>(),
+        )
+    }
+
+    <span class="attribute">#[<span class="ident">test</span>]</span>
+    <span class="attribute">#[<span class="ident">ignore</span>]</span>
+    <span class="kw">fn</span> <span class="ident">test_connectivity</span>() {
+        <span class="ident">service_test</span>::<span class="ident">connectivity</span>(
+            <span class="ident">integration_test_config_with_two_authorities</span>(),
+            <span class="op">|</span><span class="ident">config</span><span class="op">|</span> <span class="ident">new_full</span>(<span class="ident">config</span>),
+            <span class="op">|</span><span class="ident">config</span><span class="op">|</span> <span class="ident">new_light</span>(<span class="ident">config</span>),
+        );
+    }
+}
+</pre></div>
+</section><section id="search" class="content hidden"></section><section class="footer"></section><script>window.rootPath = "../../";window.currentCrate = "plasm_cli";</script><script src="../../aliases.js"></script><script src="../../main.js"></script><script src="../../source-script.js"></script><script src="../../source-files.js"></script><script defer src="../../search-index.js"></script></body></html>

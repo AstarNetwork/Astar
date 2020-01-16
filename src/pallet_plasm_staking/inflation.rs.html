@@ -1,0 +1,123 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source to the Rust file `frame/plasm-staking/src/inflation.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>inflation.rs.html -- source</title><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../dark.css"><link rel="stylesheet" type="text/css" href="../../light.css" id="themeStyle"><script src="../../storage.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="shortcut icon" href="../../favicon.ico"><style type="text/css">#crate-search{background-image:url("../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../pallet_plasm_staking/index.html'><div class='logo-container'><img src='../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!"><img src="../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices"></div></div><script src="../../theme.js"></script><nav class="sub"><form class="search-form js-only"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><a id="settings-menu" href="../../settings.html"><img src="../../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1"> 1</span>
+<span id="2"> 2</span>
+<span id="3"> 3</span>
+<span id="4"> 4</span>
+<span id="5"> 5</span>
+<span id="6"> 6</span>
+<span id="7"> 7</span>
+<span id="8"> 8</span>
+<span id="9"> 9</span>
+<span id="10">10</span>
+<span id="11">11</span>
+<span id="12">12</span>
+<span id="13">13</span>
+<span id="14">14</span>
+<span id="15">15</span>
+<span id="16">16</span>
+<span id="17">17</span>
+<span id="18">18</span>
+<span id="19">19</span>
+<span id="20">20</span>
+<span id="21">21</span>
+<span id="22">22</span>
+<span id="23">23</span>
+<span id="24">24</span>
+<span id="25">25</span>
+<span id="26">26</span>
+<span id="27">27</span>
+<span id="28">28</span>
+<span id="29">29</span>
+<span id="30">30</span>
+<span id="31">31</span>
+<span id="32">32</span>
+<span id="33">33</span>
+<span id="34">34</span>
+<span id="35">35</span>
+<span id="36">36</span>
+<span id="37">37</span>
+<span id="38">38</span>
+<span id="39">39</span>
+<span id="40">40</span>
+<span id="41">41</span>
+<span id="42">42</span>
+<span id="43">43</span>
+<span id="44">44</span>
+<span id="45">45</span>
+<span id="46">46</span>
+<span id="47">47</span>
+<span id="48">48</span>
+<span id="49">49</span>
+<span id="50">50</span>
+<span id="51">51</span>
+<span id="52">52</span>
+<span id="53">53</span>
+<span id="54">54</span>
+<span id="55">55</span>
+<span id="56">56</span>
+<span id="57">57</span>
+<span id="58">58</span>
+<span id="59">59</span>
+<span id="60">60</span>
+</pre><div class="example-wrap"><pre class="rust ">
+<span class="doccomment">//! This is explains plasm inflation models.</span>
+<span class="doccomment">//! The staking has 2 kinds.</span>
+<span class="doccomment">//!</span>
+<span class="doccomment">//! 1. Validator Staking</span>
+<span class="doccomment">//! 2. Dapps(Operator) Staking</span>
+<span class="doccomment">//!</span>
+<span class="doccomment">//! About each staking, this module computes issuing new tokens.</span>
+
+<span class="kw">use</span> <span class="kw">super</span>::<span class="kw-2">*</span>;
+<span class="kw">use</span> <span class="ident">sp_runtime</span>::<span class="ident">traits</span>::<span class="ident">SimpleArithmetic</span>;
+
+<span class="doccomment">/// The total payout to all operators and validators and their nominators per era.</span>
+<span class="doccomment">///</span>
+<span class="doccomment">/// Testnet(Until migrate NPoS) defined as such:</span>
+<span class="doccomment">///     20% of total issue tokens per a year.</span>
+<span class="doccomment">///</span>
+<span class="doccomment">/// `era_duration` is expressed in millisecond.</span>
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">compute_total_payout_test</span><span class="op">&lt;</span><span class="ident">N</span><span class="op">&gt;</span>(<span class="ident">total_tokens</span>: <span class="ident">N</span>, <span class="ident">era_duration</span>: <span class="ident">u64</span>) <span class="op">-</span><span class="op">&gt;</span> (<span class="ident">N</span>, <span class="ident">N</span>)
+<span class="kw">where</span>
+    <span class="ident">N</span>: <span class="ident">SimpleArithmetic</span> <span class="op">+</span> <span class="ident">Clone</span>,
+{
+    <span class="comment">// Milliseconds per year for the Julian year (365.25 days).</span>
+    <span class="kw">const</span> <span class="ident">MILLISECONDS_PER_YEAR</span>: <span class="ident">u64</span> <span class="op">=</span> <span class="number">1000</span> <span class="op">*</span> <span class="number">3600</span> <span class="op">*</span> <span class="number">24</span> <span class="op">*</span> <span class="number">36525</span> <span class="op">/</span> <span class="number">100</span>;
+    <span class="kw">let</span> <span class="ident">portion</span> <span class="op">=</span>
+        <span class="ident">Perbill</span>::<span class="ident">from_rational_approximation</span>(<span class="ident">era_duration</span> <span class="kw">as</span> <span class="ident">u64</span>, <span class="ident">MILLISECONDS_PER_YEAR</span> <span class="op">*</span> <span class="number">5</span>);
+    <span class="kw">let</span> <span class="ident">payout</span> <span class="op">=</span> <span class="ident">portion</span> <span class="op">*</span> <span class="ident">total_tokens</span>;
+    (<span class="ident">payout</span>.<span class="ident">clone</span>(), <span class="ident">payout</span>)
+}
+
+<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">test</span>)]</span>
+<span class="kw">mod</span> <span class="ident">test</span> {
+    <span class="attribute">#[<span class="ident">test</span>]</span>
+    <span class="kw">fn</span> <span class="ident">test_compute_total_payout_test</span>() {
+        <span class="kw">const</span> <span class="ident">YEAR</span>: <span class="ident">u64</span> <span class="op">=</span> <span class="number">365</span> <span class="op">*</span> <span class="number">24</span> <span class="op">*</span> <span class="number">60</span> <span class="op">*</span> <span class="number">60</span> <span class="op">*</span> <span class="number">1000</span>;
+        <span class="comment">// check maximum inflation.</span>
+        <span class="comment">// not 10_000 due to rounding error.</span>
+        <span class="macro">assert_eq</span><span class="macro">!</span>(
+            <span class="kw">super</span>::<span class="ident">compute_total_payout_test</span>(<span class="number">100_000_000u64</span>, <span class="ident">YEAR</span>).<span class="number">0</span>,
+            <span class="number">19_986_311</span>
+        );
+
+        <span class="kw">const</span> <span class="ident">DAY</span>: <span class="ident">u64</span> <span class="op">=</span> <span class="number">24</span> <span class="op">*</span> <span class="number">60</span> <span class="op">*</span> <span class="number">60</span> <span class="op">*</span> <span class="number">1000</span>;
+        <span class="macro">assert_eq</span><span class="macro">!</span>(
+            <span class="kw">super</span>::<span class="ident">compute_total_payout_test</span>(<span class="number">100_000_000u64</span>, <span class="ident">DAY</span>).<span class="number">0</span>,
+            <span class="number">54_757</span>
+        );
+
+        <span class="kw">const</span> <span class="ident">SIX_HOURS</span>: <span class="ident">u64</span> <span class="op">=</span> <span class="number">6</span> <span class="op">*</span> <span class="number">60</span> <span class="op">*</span> <span class="number">60</span> <span class="op">*</span> <span class="number">1000</span>;
+        <span class="macro">assert_eq</span><span class="macro">!</span>(
+            <span class="kw">super</span>::<span class="ident">compute_total_payout_test</span>(<span class="number">100_000_000u64</span>, <span class="ident">SIX_HOURS</span>).<span class="number">0</span>,
+            <span class="number">13_689</span>
+        );
+
+        <span class="kw">const</span> <span class="ident">HOUR</span>: <span class="ident">u64</span> <span class="op">=</span> <span class="number">60</span> <span class="op">*</span> <span class="number">60</span> <span class="op">*</span> <span class="number">1000</span>;
+        <span class="macro">assert_eq</span><span class="macro">!</span>(
+            <span class="kw">super</span>::<span class="ident">compute_total_payout_test</span>(<span class="number">100_000_000u64</span>, <span class="ident">HOUR</span>).<span class="number">0</span>,
+            <span class="number">2_281</span>
+        );
+    }
+}
+</pre></div>
+</section><section id="search" class="content hidden"></section><section class="footer"></section><script>window.rootPath = "../../";window.currentCrate = "pallet_plasm_staking";</script><script src="../../aliases.js"></script><script src="../../main.js"></script><script src="../../source-script.js"></script><script src="../../source-files.js"></script><script defer src="../../search-index.js"></script></body></html>
