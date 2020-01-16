@@ -11,7 +11,11 @@ jobs:
           component: clippy
       - uses: actions-rs/toolchain@v1
         with:
-          toolchain: nightly, wasm32-unknown-unknown
+          toolchain: nightly
+          override: true
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: wasm32-unknown-unknown
           override: true
       - name: push-crates
         env:
