@@ -1,0 +1,38 @@
+name: crates
+on:
+  push:
+    branches:
+      - master
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@master
+      - id: component
+        uses: actions-rs/components-nightly@v1
+        with:
+          component: clippy
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly
+          override: true
+      - name: push-crates
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          rustup target add wasm32-unknown-unknown --toolchain nightly
+          cargo +nightly install --git https://github.com/alexcrichton/wasm-gc --force
+          cargo doc --all --all-features --no-deps
+          cd target
+          mkdir tmp
+          cd tmp
+          git config --global user.email "s.a.t.e.3.ths@gmail.com"
+          git config --global user.name "satellitex"
+          git init
+          git remote add origin https://satellitex:${GITHUB_TOKEN}@github.com/staketechnologies/Plasm.git
+          git checkout -b gh-pages
+          git pull origin gh-pages
+          cp -R ../doc/* .
+          git add .
+          git commit -m 'auto update crates on gh-pages'
+          git push origin gh-pages
