@@ -1,4 +1,4 @@
-<div align="center"><img width="798" alt="plasm" src="https://user-images.githubusercontent.com/6259384/56867192-8b967500-6a1d-11e9-898d-f73f4e2a387c.png"></div>
+<div align="center"><img width="1007" alt="plasm_web3" src="https://user-images.githubusercontent.com/6259384/72399615-0e1cbb80-378a-11ea-91af-c1dbdde345f5.png"></div>
 
 [![Build Status](https://travis-ci.org/staketechnologies/Plasm.svg?branch=master)](https://travis-ci.org/staketechnologies/Plasm)
 
