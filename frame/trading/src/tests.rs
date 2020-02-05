@@ -1,24 +1,13 @@
 use super::*;
-use primitives::storage::well_known_keys;
-use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use sp_runtime::{
-    testing::{Digest, DigestItem, Header, UintAuthorityId, H256},
-    traits::{BlakeTwo256, Hash, IdentityLookup, SignedExtension},
-    BuildStorage, DispatchError, Perbill,
+    testing::{Header, H256},
+    traits::{BlakeTwo256, Hash, IdentityLookup},
+    Perbill,
 };
 use sp_std::marker::PhantomData;
-use std::{
-    cell::RefCell,
-    collections::BTreeMap,
-    sync::atomic::{AtomicUsize, Ordering},
-};
 use support::{
-    assert_err, assert_ok, impl_outer_dispatch, impl_outer_event, impl_outer_origin,
-    parameter_types,
-    storage::child,
-    traits::{Currency, Get},
-    weights::{DispatchClass, DispatchInfo},
-    StorageMap, StorageValue,
+    assert_err, assert_ok, impl_outer_event, impl_outer_origin, parameter_types, traits::Currency,
+    StorageMap,
 };
 use system::{self, EventRecord, Phase};
 
@@ -27,7 +16,6 @@ mod trading {
     // needs to give a name for the current crate.
     // This hack is required for `impl_outer_event!`.
     pub use super::super::*;
-    use support::impl_outer_event;
 }
 impl_outer_event! {
     pub enum MetaEvent for Test {
@@ -133,6 +121,8 @@ impl<T: MockOperatorTrait> TransferOperator<T::AccountId> for MockOperatorModule
 impl MockOperatorTrait for Test {}
 
 impl Trait for Test {
+    type Currency = Balances;
+    type Time = Timestamp;
     type OperatorFinder = MockOperatorModule<Test>;
     /// The helper of transfering operator's authorities.
     type TransferOperator = MockOperatorModule<Test>;
@@ -146,7 +136,7 @@ impl ExtBuilder {
             .build_storage::<Test>()
             .unwrap();
         balances::GenesisConfig::<Test> {
-            balances: vec![],
+            balances: vec![(ALICE, 1000), (BOB, 1000), (CHARLIE, 1000), (DAVE, 1000)],
             vesting: vec![],
         }
         .assimilate_storage(&mut t)
@@ -156,12 +146,338 @@ impl ExtBuilder {
 }
 
 type System = system::Module<Test>;
-type Balancecs = balances::Module<Test>;
+type Balances = balances::Module<Test>;
 type Timestamp = timestamp::Module<Test>;
+type Trading = Module<Test>;
+
+// operators
+pub const ALICE: u64 = 1;
+pub const BOB: u64 = 2;
+pub const CHARLIE: u64 = 3;
+pub const DAVE: u64 = 4;
+
+// contracts
+pub const ANT: u64 = 11;
+pub const BLUE: u64 = 12;
+pub const CUT: u64 = 13;
+pub const DEEN: u64 = 14;
+
+pub const PER_SESSION: u64 = 10;
+
+fn initialize_operator_storage_settings() {
+    for (x, y) in vec![
+        (ALICE, vec![ANT, BLUE, CUT]),
+        (BOB, vec![DEEN]),
+        (CHARLIE, vec![]),
+        (DAVE, vec![]),
+    ] {
+        <OperatorHasContracts<Test>>::insert(&x, y);
+    }
+}
+
+fn advance_sessin() {
+    let now = System::block_number();
+    System::initialize(
+        &(now + 1),
+        &[0u8; 32].into(),
+        &[0u8; 32].into(),
+        &Default::default(),
+    );
+    // increase timestamp + 10
+    let now_time = Timestamp::get();
+    Timestamp::set_timestamp(now_time + PER_SESSION);
+}
 
 #[test]
-fn instantiate_and_call_and_deposit_event() {
+fn correct_offer_test() {
     ExtBuilder::build().execute_with(|| {
-        assert!(true);
+        initialize_operator_storage_settings();
+        correct_offer(CHARLIE, ALICE, vec![ANT, BLUE], 800, 20);
     })
+}
+
+#[test]
+fn offer_error_test() {
+    ExtBuilder::build().execute_with(|| {
+        initialize_operator_storage_settings();
+        assert_err!(
+            Trading::offer(Origin::signed(CHARLIE), ALICE, vec![CUT, DEEN], 800, 20),
+            "sender does not have these contracts.",
+        );
+        assert_err!(
+            Trading::offer(Origin::signed(BOB), ALICE, vec![CUT, DEEN], 1000, 20),
+            "buyer does not have enough balances.",
+        );
+
+        correct_offer(CHARLIE, ALICE, vec![ANT, BLUE], 800, 20);
+
+        advance_sessin();
+
+        assert_err!(
+            Trading::offer(Origin::signed(CHARLIE), ALICE, vec![ANT, BLUE], 800, 20),
+            "this offer was already issued.",
+        );
+    })
+}
+
+fn correct_offer(
+    buyer: AccountId,
+    sender: AccountId,
+    contracts: Vec<AccountId>,
+    amount: u64,
+    expired: u64,
+) {
+    let buyer_balances = Balances::free_balance(&buyer);
+    let offer_expired = Timestamp::now() + expired;
+    assert_ok!(Trading::offer(
+        Origin::signed(buyer),
+        sender,
+        contracts.clone(),
+        amount,
+        expired,
+    ));
+    let offer = OfferOf::<Test> {
+        buyer,
+        sender,
+        contracts,
+        amount,
+        expired: offer_expired,
+        state: OfferState::WAITING,
+    };
+    assert_eq!(
+        System::events(),
+        vec![EventRecord {
+            phase: Phase::ApplyExtrinsic(0),
+            event: MetaEvent::trading(RawEvent::Offer(buyer)),
+            topics: vec![],
+        },]
+    );
+    assert_eq!(Some(offer.clone()), <Offers<Test>>::get(&buyer));
+    // TODO: Locking buyer test
+    //  assert_eq!(vec![Lock{~~}], Balances::locks(&buyer))
+}
+
+#[test]
+fn offer_and_reject_test() {
+    ExtBuilder::build().execute_with(|| {
+        initialize_operator_storage_settings();
+
+        correct_offer(CHARLIE, ALICE, vec![ANT, BLUE], 800, 20);
+
+        advance_sessin();
+
+        correct_reject(CHARLIE, CHARLIE);
+
+        advance_sessin();
+
+        correct_offer(CHARLIE, ALICE, vec![ANT, BLUE], 500, 20);
+
+        advance_sessin();
+
+        correct_reject(ALICE, CHARLIE);
+    })
+}
+
+fn correct_reject(rejector: AccountId, offer_id: AccountId) {
+    let offer = <Offers<Test>>::get(&offer_id).unwrap();
+    let contracts = MockOperatorModule::<Test>::contracts(&offer.sender);
+    assert_ok!(Trading::reject(Origin::signed(rejector), offer_id));
+    assert_eq!(
+        System::events(),
+        vec![EventRecord {
+            phase: Phase::ApplyExtrinsic(0),
+            event: MetaEvent::trading(RawEvent::Reject(rejector, offer_id.clone())),
+            topics: vec![],
+        },]
+    );
+    let mut reject_offer = offer.clone();
+    reject_offer.state = OfferState::REJECT;
+    // equal reject.
+    assert_eq!(Some(reject_offer), <Offers<Test>>::get(&offer_id));
+    // not changed.
+    assert_eq!(MockOperatorModule::<Test>::contracts(&ALICE), contracts);
+    // TODO: Unlocking buyer test
+    //  assert_eq!(vec![], Balances::locks(&buyer))
+}
+
+#[test]
+fn reject_error_test() {
+    ExtBuilder::build().execute_with(|| {
+        initialize_operator_storage_settings();
+
+        correct_offer(CHARLIE, ALICE, vec![ANT, BLUE], 800, 20);
+
+        advance_sessin();
+
+        assert_err!(
+            Trading::reject(Origin::signed(CHARLIE), BOB),
+            "can not find the offer id."
+        );
+        assert_err!(
+            Trading::reject(Origin::signed(BOB), CHARLIE),
+            "the rejector can not reject. only sender or buyer can reject."
+        );
+
+        correct_accept(ALICE, CHARLIE);
+
+        assert_err!(
+            Trading::reject(Origin::signed(ALICE), CHARLIE),
+            "the offer was already accepted."
+        );
+    })
+}
+
+#[test]
+fn offer_and_accept_test() {
+    ExtBuilder::build().execute_with(|| {
+        initialize_operator_storage_settings();
+
+        correct_offer(CHARLIE, ALICE, vec![ANT, BLUE], 800, 20);
+
+        advance_sessin();
+
+        correct_accept(ALICE, CHARLIE);
+
+        advance_sessin();
+
+        correct_offer(BOB, CHARLIE, vec![ANT], 200, 20);
+
+        advance_sessin();
+
+        correct_accept(CHARLIE, BOB);
+    })
+}
+
+fn correct_accept(acceptor: AccountId, offer_id: AccountId) {
+    let offer = <Offers<Test>>::get(&offer_id).unwrap();
+    let buyer_contracts = MockOperatorModule::<Test>::contracts(&offer.buyer);
+    let sender_contracts = MockOperatorModule::<Test>::contracts(&offer.sender);
+    let buyer_balances = Balances::free_balance(&offer.buyer);
+    let sender_balances = Balances::free_balance(&offer.sender);
+
+    assert_ok!(Trading::accept(Origin::signed(acceptor), offer_id));
+    assert_eq!(
+        System::events(),
+        vec![
+            EventRecord {
+                phase: Phase::ApplyExtrinsic(0),
+                event: MetaEvent::balances(balances::RawEvent::Transfer(
+                    offer.buyer,
+                    offer.sender,
+                    offer.amount,
+                    0,
+                )),
+                topics: vec![],
+            },
+            EventRecord {
+                phase: Phase::ApplyExtrinsic(0),
+                event: MetaEvent::trading(RawEvent::Accept(acceptor, offer_id.clone())),
+                topics: vec![],
+            },
+        ],
+    );
+
+    let mut accept_offer = offer.clone();
+    accept_offer.state = OfferState::ACCEPT;
+    // equal reject.
+    assert_eq!(Some(accept_offer), <Offers<Test>>::get(&offer_id));
+    // Changed!. sender contracts
+    let sender_new_contracts: Vec<AccountId> = sender_contracts
+        .iter()
+        .filter(|c| !offer.contracts.contains(*c))
+        .cloned()
+        .collect();
+    assert_eq!(
+        MockOperatorModule::<Test>::contracts(&offer.sender),
+        sender_new_contracts
+    );
+    // Changed!. buyer contracts.
+    let buyer_new_contracts: Vec<AccountId> = buyer_contracts
+        .iter()
+        .chain(offer.contracts.iter())
+        .cloned()
+        .collect();
+    assert_eq!(
+        MockOperatorModule::<Test>::contracts(&offer.buyer),
+        buyer_new_contracts
+    );
+    // Check transfered bueyr -> sende: amount
+    assert_eq!(
+        buyer_balances - offer.amount,
+        Balances::free_balance(&offer.buyer)
+    );
+    assert_eq!(
+        sender_balances + offer.amount,
+        Balances::free_balance(&offer.sender)
+    );
+    // TODO: Unlocking buyer test
+    //  assert_eq!(vec![], Balances::locks(&buyer))
+}
+
+#[test]
+fn accept_error_test() {
+    ExtBuilder::build().execute_with(|| {
+        initialize_operator_storage_settings();
+
+        correct_offer(CHARLIE, ALICE, vec![ANT, BLUE], 800, 20);
+
+        advance_sessin();
+
+        assert_err!(
+            Trading::accept(Origin::signed(CHARLIE), BOB),
+            "can not find the offer id."
+        );
+        assert_err!(
+            Trading::accept(Origin::signed(BOB), CHARLIE),
+            "the accept can not accept. only sender can accept."
+        );
+
+        advance_sessin();
+
+        advance_sessin();
+
+        assert_err!(
+            Trading::accept(Origin::signed(ALICE), CHARLIE),
+            "the offer was already expired."
+        )
+    })
+}
+
+#[test]
+fn remove_test() {
+    ExtBuilder::build().execute_with(|| {
+        initialize_operator_storage_settings();
+
+        correct_offer(CHARLIE, ALICE, vec![ANT, BLUE], 800, 20);
+
+        advance_sessin();
+
+        assert_err!(
+            Trading::remove(Origin::signed(CHARLIE)),
+            "the offer is living."
+        );
+        assert_err!(
+            Trading::remove(Origin::signed(ALICE)),
+            "the remover does not have a offer."
+        );
+
+        advance_sessin();
+        advance_sessin();
+
+        correct_remove(CHARLIE);
+    })
+}
+
+fn correct_remove(remover: AccountId) {
+    assert_ok!(Trading::remove(Origin::signed(remover)));
+    assert_eq!(
+        System::events(),
+        vec![EventRecord {
+            phase: Phase::ApplyExtrinsic(0),
+            event: MetaEvent::trading(RawEvent::Remove(remover)),
+            topics: vec![],
+        },]
+    );
+    // TODO: Unlocking buyer test
+    //  assert_eq!(vec![], Balances::locks(&buyer))
 }
