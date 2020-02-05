@@ -15,7 +15,7 @@ use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use sp_runtime::{
     testing::{Digest, DigestItem, Header, UintAuthorityId, H256},
     traits::{BlakeTwo256, Hash, IdentityLookup, SignedExtension},
-    BuildStorage, Perbill, DispatchError,
+    BuildStorage, DispatchError, Perbill,
 };
 use std::{
     cell::RefCell,
@@ -194,7 +194,7 @@ pub struct TestParameters {
 const TEST_MAX_PARAMS_A: u128 = 1000_000_000_000;
 
 impl parameters::Verifiable for TestParameters {
-    fn verify(&self) -> Result<(), DispatchError>  {
+    fn verify(&self) -> Result<(), DispatchError> {
         if self.a > TEST_MAX_PARAMS_A {
             return Err(DispatchError::Other("over max params."));
         }
