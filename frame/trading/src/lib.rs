@@ -68,7 +68,7 @@ pub trait Trait: system::Trait {
 
 decl_storage! {
     trait Store for Module<T: Trait> as Operator {
-        /// A mapping from offerId to Offer
+        /// A mapping from the offering account id to Offer
         pub Offers: linked_map T::AccountId => Option<OfferOf<T>>;
     }
 }
@@ -80,7 +80,11 @@ decl_module! {
         // this is needed only if you are using events in your module
         fn deposit_event() = default;
 
-        /// Deploys a contact and insert relation of a contract and an operator to mapping.
+        /// Offer is an easy cotnract to trade.
+        /// If the sender `accept` during the period, the operator trading will be completed.
+        /// After the offer, the part of the amount of the buyer's balances will lock.
+        ///
+        /// Note: Only one offer can be issued at the same time each an account.
         pub fn offer(origin, sender: T::AccountId, contracts: Vec<T::AccountId>, amount: BalanceOf<T>, expired: MomentOf<T>) {
             let buyer = ensure_signed(origin)?;
             let offer_account = buyer.clone();
@@ -122,6 +126,9 @@ decl_module! {
             Self::deposit_event(RawEvent::Offer(offer_account));
         }
 
+        /// Reject the target offer.
+        /// the offer's buyer or sender can reject the offer.
+        /// After the reject, the buyer's balances will be unlock.
         pub fn reject(origin, offer_id: T::AccountId) {
             let rejector = ensure_signed(origin)?;
             let mut offer = match <Offers<T>>::get(&offer_id) {
@@ -144,6 +151,12 @@ decl_module! {
             Self::deposit_event(RawEvent::Reject(rejector, offer_id));
         }
 
+        /// Accept the target offer.
+        /// Only the offer's sender can accept the offer.
+        /// After the accept:
+        ///  1. the buyer's balances will be unlock.
+        ///  2. the buyer's balances tranfer to the sender.
+        ///  3. the sender's target contracts transfer to the buyer.
         pub fn accept(origin, offer_id: T::AccountId) {
             let acceptor = ensure_signed(origin)?;
             let mut offer = match <Offers<T>>::get(&offer_id) {
@@ -175,6 +188,9 @@ decl_module! {
             Self::deposit_event(RawEvent::Accept(acceptor, offer_id));
         }
 
+        /// Remove the offer.
+        /// The offer's owner can remove the offer.
+        /// But, if the offer is living(until expired), he can not remove the offer.
         pub fn remove(origin) {
             let remover = ensure_signed(origin)?;
             let offer = match <Offers<T>>::get(&remover) {
