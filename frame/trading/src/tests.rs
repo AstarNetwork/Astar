@@ -175,7 +175,7 @@ fn initialize_operator_storage_settings() {
     }
 }
 
-fn advance_sessin() {
+fn advance_session() {
     let now = System::block_number();
     System::initialize(
         &(now + 1),
@@ -211,7 +211,7 @@ fn offer_error_test() {
 
         correct_offer(CHARLIE, ALICE, vec![ANT, BLUE], 800, 20);
 
-        advance_sessin();
+        advance_session();
 
         assert_err!(
             Trading::offer(Origin::signed(CHARLIE), ALICE, vec![ANT, BLUE], 800, 20),
@@ -264,15 +264,15 @@ fn offer_and_reject_test() {
 
         correct_offer(CHARLIE, ALICE, vec![ANT, BLUE], 800, 20);
 
-        advance_sessin();
+        advance_session();
 
         correct_reject(CHARLIE, CHARLIE);
 
-        advance_sessin();
+        advance_session();
 
         correct_offer(CHARLIE, ALICE, vec![ANT, BLUE], 500, 20);
 
-        advance_sessin();
+        advance_session();
 
         correct_reject(ALICE, CHARLIE);
     })
@@ -307,7 +307,7 @@ fn reject_error_test() {
 
         correct_offer(CHARLIE, ALICE, vec![ANT, BLUE], 800, 20);
 
-        advance_sessin();
+        advance_session();
 
         assert_err!(
             Trading::reject(Origin::signed(CHARLIE), BOB),
@@ -334,15 +334,15 @@ fn offer_and_accept_test() {
 
         correct_offer(CHARLIE, ALICE, vec![ANT, BLUE], 800, 20);
 
-        advance_sessin();
+        advance_session();
 
         correct_accept(ALICE, CHARLIE);
 
-        advance_sessin();
+        advance_session();
 
         correct_offer(BOB, CHARLIE, vec![ANT], 200, 20);
 
-        advance_sessin();
+        advance_session();
 
         correct_accept(CHARLIE, BOB);
     })
@@ -421,7 +421,7 @@ fn accept_error_test() {
 
         correct_offer(CHARLIE, ALICE, vec![ANT, BLUE], 800, 20);
 
-        advance_sessin();
+        advance_session();
 
         assert_err!(
             Trading::accept(Origin::signed(CHARLIE), BOB),
@@ -432,9 +432,9 @@ fn accept_error_test() {
             "the accept can not accept. only sender can accept."
         );
 
-        advance_sessin();
+        advance_session();
 
-        advance_sessin();
+        advance_session();
 
         assert_err!(
             Trading::accept(Origin::signed(ALICE), CHARLIE),
@@ -450,7 +450,7 @@ fn remove_test() {
 
         correct_offer(CHARLIE, ALICE, vec![ANT, BLUE], 800, 20);
 
-        advance_sessin();
+        advance_session();
 
         assert_err!(
             Trading::remove(Origin::signed(CHARLIE)),
@@ -461,8 +461,8 @@ fn remove_test() {
             "the remover does not have a offer."
         );
 
-        advance_sessin();
-        advance_sessin();
+        advance_session();
+        advance_session();
 
         correct_remove(CHARLIE);
     })

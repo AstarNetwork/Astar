@@ -80,7 +80,7 @@ decl_module! {
         // this is needed only if you are using events in your module
         fn deposit_event() = default;
 
-        /// Offer is an easy cotnract to trade.
+        /// Offer is an easy contract to trade.
         /// If the sender `accept` during the period, the operator trading will be completed.
         /// After the offer, the part of the amount of the buyer's balances will lock.
         ///
