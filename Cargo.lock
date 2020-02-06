@@ -3156,10 +3156,10 @@ dependencies = [
  "pallet-timestamp 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "pallet-transaction-payment 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "parity-scale-codec 1.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "plasm-executor 0.7.1",
- "plasm-primitives 0.7.1",
- "plasm-rpc 0.7.1",
- "plasm-runtime 0.7.1",
+ "plasm-executor 0.7.2",
+ "plasm-primitives 0.7.2",
+ "plasm-rpc 0.7.2",
+ "plasm-runtime 0.7.2",
  "sc-basic-authorship 0.8.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "sc-chain-spec 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "sc-cli 0.8.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
@@ -3191,15 +3191,15 @@ dependencies = [
 
 [[package]]
 name = "plasm-executor"
-version = "0.7.1"
+version = "0.7.2"
 dependencies = [
- "plasm-runtime 0.7.1",
+ "plasm-runtime 0.7.2",
  "sc-executor 0.8.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
 ]
 
 [[package]]
 name = "plasm-primitives"
-version = "0.7.1"
+version = "0.7.2"
 dependencies = [
  "sp-core 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "sp-runtime 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
@@ -3207,13 +3207,13 @@ dependencies = [
 
 [[package]]
 name = "plasm-rpc"
-version = "0.7.1"
+version = "0.7.2"
 dependencies = [
  "jsonrpc-core 14.0.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "pallet-contracts-rpc 0.8.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "pallet-transaction-payment-rpc 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
- "plasm-primitives 0.7.1",
- "plasm-runtime 0.7.1",
+ "plasm-primitives 0.7.2",
+ "plasm-runtime 0.7.2",
  "sc-client 0.8.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "sp-api 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "sp-runtime 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
@@ -3223,7 +3223,7 @@ dependencies = [
 
 [[package]]
 name = "plasm-runtime"
-version = "0.7.1"
+version = "0.7.2"
 dependencies = [
  "frame-executive 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "frame-support 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
@@ -3247,7 +3247,7 @@ dependencies = [
  "pallet-transaction-payment 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "pallet-transaction-payment-rpc-runtime-api 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "parity-scale-codec 1.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "plasm-primitives 0.7.1",
+ "plasm-primitives 0.7.2",
  "serde 1.0.104 (registry+https://github.com/rust-lang/crates.io-index)",
  "sp-api 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "sp-block-builder 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
@@ -5238,8 +5238,8 @@ dependencies = [
  "pallet-balances 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "pallet-transaction-payment 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "parity-scale-codec 1.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "plasm-primitives 0.7.1",
- "plasm-runtime 0.7.1",
+ "plasm-primitives 0.7.2",
+ "plasm-runtime 0.7.2",
  "rand 0.7.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "rpassword 4.0.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "rustc-hex 2.1.0 (registry+https://github.com/rust-lang/crates.io-index)",

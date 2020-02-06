@@ -12,11 +12,11 @@ use plasm_primitives::{
     AccountId, AccountIndex, Balance, BlockNumber, Hash, Index, Moment, Signature,
 };
 use plasm_staking::EraIndex;
-use sp_core::OpaqueMetadata;
 use sp_api::impl_runtime_apis;
+use sp_core::OpaqueMetadata;
 use sp_runtime::traits::{
-    BlakeTwo256, Block as BlockT, ConvertInto, Extrinsic, OpaqueKeys,
-    SaturatedConversion, StaticLookup, Verify,
+    BlakeTwo256, Block as BlockT, ConvertInto, Extrinsic, OpaqueKeys, SaturatedConversion,
+    StaticLookup, Verify,
 };
 use sp_runtime::transaction_validity::TransactionValidity;
 use sp_runtime::{create_runtime_str, generic, impl_opaque_keys, ApplyExtrinsicResult, Perbill};
@@ -55,8 +55,8 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     // and set impl_version to equal spec_version. If only runtime
     // implementation changes and behavior does not, then leave spec_version as
     // is and increment impl_version.
-    spec_version: 31,
-    impl_version: 31,
+    spec_version: 32,
+    impl_version: 32,
     apis: RUNTIME_API_VERSIONS,
 };
 
@@ -402,9 +402,9 @@ impl_runtime_apis! {
     }
 
     impl offchain_primitives::OffchainWorkerApi<Block> for Runtime {
-		fn offchain_worker(header: &<Block as BlockT>::Header) {
-			Executive::offchain_worker(header)
-		}
+        fn offchain_worker(header: &<Block as BlockT>::Header) {
+            Executive::offchain_worker(header)
+        }
     }
 
     impl fg_primitives::GrandpaApi<Block> for Runtime {
@@ -485,11 +485,11 @@ impl_runtime_apis! {
             SessionKeys::generate(seed)
         }
 
-		fn decode_session_keys(
-			encoded: Vec<u8>,
-		) -> Option<Vec<(Vec<u8>, sp_core::crypto::KeyTypeId)>> {
-			SessionKeys::decode_into_raw_public_keys(&encoded)
-		}
+        fn decode_session_keys(
+            encoded: Vec<u8>,
+        ) -> Option<Vec<(Vec<u8>, sp_core::crypto::KeyTypeId)>> {
+            SessionKeys::decode_into_raw_public_keys(&encoded)
+        }
     }
 }
 
