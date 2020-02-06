@@ -49,7 +49,7 @@ grandpa = { package = "sc-finality-grandpa", git = "https://github.com/staketech
 offchain = { package = "sc-offchain", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master" }
 client-db = { package = "sc-client-db", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master", default-features = false }
 sc-rpc = { git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master" }
-basic-authorship = { package = "sc-basic-authority", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master" }
+basic-authorship = { package = "sc-basic-authorship", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master" }
 sc-service = { git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master" }
 telemetry = { package = "sc-telemetry", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master" }
 consensus-common = { package = "sp-consensus", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master" }
