@@ -1,6 +1,7 @@
 var N = null;var sourcesIndex = {};
 sourcesIndex["pallet_contract_operator"] = {"name":"","files":["lib.rs","parameters.rs"]};
 sourcesIndex["pallet_plasm_staking"] = {"name":"","files":["inflation.rs","lib.rs","migration.rs","parameters.rs"]};
+sourcesIndex["pallet_trading_operator"] = {"name":"","files":["lib.rs"]};
 sourcesIndex["plasm_cli"] = {"name":"","files":["chain_spec.rs","cli.rs","lib.rs","service.rs"]};
 sourcesIndex["plasm_executor"] = {"name":"","files":["lib.rs"]};
 sourcesIndex["plasm_node"] = {"name":"","files":["main.rs"]};

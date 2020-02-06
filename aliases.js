@@ -1,6 +1,7 @@
 var ALIASES = {};
 ALIASES["pallet_contract_operator"] = {};
 ALIASES["pallet_plasm_staking"] = {};
+ALIASES["pallet_trading_operator"] = {};
 ALIASES["plasm_cli"] = {};
 ALIASES["plasm_executor"] = {};
 ALIASES["plasm_node"] = {};
