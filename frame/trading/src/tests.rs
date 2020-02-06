@@ -122,7 +122,6 @@ impl MockOperatorTrait for Test {}
 
 impl Trait for Test {
     type Currency = Balances;
-    type Time = Timestamp;
     type OperatorFinder = MockOperatorModule<Test>;
     /// The helper of transfering operator's authorities.
     type TransferOperator = MockOperatorModule<Test>;
@@ -192,7 +191,7 @@ fn advance_session() {
 fn correct_offer_test() {
     ExtBuilder::build().execute_with(|| {
         initialize_operator_storage_settings();
-        correct_offer(CHARLIE, ALICE, vec![ANT, BLUE], 800, 20);
+        correct_offer(CHARLIE, ALICE, vec![ANT, BLUE], 800, 2);
     })
 }
 
@@ -209,7 +208,7 @@ fn offer_error_test() {
             "buyer does not have enough balances.",
         );
 
-        correct_offer(CHARLIE, ALICE, vec![ANT, BLUE], 800, 20);
+        correct_offer(CHARLIE, ALICE, vec![ANT, BLUE], 800, 2);
 
         advance_session();
 
@@ -228,7 +227,6 @@ fn correct_offer(
     expired: u64,
 ) {
     let buyer_balances = Balances::free_balance(&buyer);
-    let offer_expired = Timestamp::now() + expired;
     assert_ok!(Trading::offer(
         Origin::signed(buyer),
         sender,
@@ -241,7 +239,7 @@ fn correct_offer(
         sender,
         contracts,
         amount,
-        expired: offer_expired,
+        expired,
         state: OfferState::Waiting,
     };
     assert_eq!(
@@ -262,7 +260,7 @@ fn offer_and_reject_test() {
     ExtBuilder::build().execute_with(|| {
         initialize_operator_storage_settings();
 
-        correct_offer(CHARLIE, ALICE, vec![ANT, BLUE], 800, 20);
+        correct_offer(CHARLIE, ALICE, vec![ANT, BLUE], 800, 2);
 
         advance_session();
 
@@ -270,7 +268,7 @@ fn offer_and_reject_test() {
 
         advance_session();
 
-        correct_offer(CHARLIE, ALICE, vec![ANT, BLUE], 500, 20);
+        correct_offer(CHARLIE, ALICE, vec![ANT, BLUE], 500, 4);
 
         advance_session();
 
@@ -305,7 +303,7 @@ fn reject_error_test() {
     ExtBuilder::build().execute_with(|| {
         initialize_operator_storage_settings();
 
-        correct_offer(CHARLIE, ALICE, vec![ANT, BLUE], 800, 20);
+        correct_offer(CHARLIE, ALICE, vec![ANT, BLUE], 800, 3);
 
         advance_session();
 
@@ -332,7 +330,7 @@ fn offer_and_accept_test() {
     ExtBuilder::build().execute_with(|| {
         initialize_operator_storage_settings();
 
-        correct_offer(CHARLIE, ALICE, vec![ANT, BLUE], 800, 20);
+        correct_offer(CHARLIE, ALICE, vec![ANT, BLUE], 800, 3);
 
         advance_session();
 
@@ -340,7 +338,7 @@ fn offer_and_accept_test() {
 
         advance_session();
 
-        correct_offer(BOB, CHARLIE, vec![ANT], 200, 20);
+        correct_offer(BOB, CHARLIE, vec![ANT], 200, 5);
 
         advance_session();
 
@@ -419,7 +417,7 @@ fn accept_error_test() {
     ExtBuilder::build().execute_with(|| {
         initialize_operator_storage_settings();
 
-        correct_offer(CHARLIE, ALICE, vec![ANT, BLUE], 800, 20);
+        correct_offer(CHARLIE, ALICE, vec![ANT, BLUE], 800, 3);
 
         advance_session();
 
@@ -448,7 +446,7 @@ fn remove_test() {
     ExtBuilder::build().execute_with(|| {
         initialize_operator_storage_settings();
 
-        correct_offer(CHARLIE, ALICE, vec![ANT, BLUE], 800, 20);
+        correct_offer(CHARLIE, ALICE, vec![ANT, BLUE], 800, 3);
 
         advance_session();
 

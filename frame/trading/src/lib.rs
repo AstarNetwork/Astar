@@ -8,7 +8,7 @@ use sp_std::prelude::*;
 use support::{
     decl_event, decl_module, decl_storage,
     traits::{
-        Currency, ExistenceRequirement, LockIdentifier, LockableCurrency, Time, WithdrawReasons,
+        Currency, ExistenceRequirement, LockIdentifier, LockableCurrency, WithdrawReasons,
     },
     StorageLinkedMap,
 };
@@ -47,8 +47,8 @@ pub struct Offer<AccountId, Balance, Moment> {
 
 pub type BalanceOf<T> =
     <<T as Trait>::Currency as Currency<<T as system::Trait>::AccountId>>::Balance;
-pub type MomentOf<T> = <<T as Trait>::Time as Time>::Moment;
-pub type OfferOf<T> = Offer<<T as system::Trait>::AccountId, BalanceOf<T>, MomentOf<T>>;
+pub type OfferOf<T> =
+    Offer<<T as system::Trait>::AccountId, BalanceOf<T>, <T as system::Trait>::BlockNumber>;
 
 const TRADING_ID: LockIdentifier = *b"trading_";
 
@@ -56,8 +56,6 @@ const TRADING_ID: LockIdentifier = *b"trading_";
 pub trait Trait: system::Trait {
     // use amount of values.
     type Currency: LockableCurrency<Self::AccountId, Moment = Self::BlockNumber>;
-    /// Time used calculating expired.
-    type Time: Time;
     /// The helper of checking the state of operators.
     type OperatorFinder: OperatorFinder<Self::AccountId>;
     /// The helper of transfering operator's authorities.
@@ -85,7 +83,7 @@ decl_module! {
         /// After the offer, the part of the amount of the buyer's balances will lock.
         ///
         /// Note: Only one offer can be issued at the same time each an account.
-        pub fn offer(origin, sender: T::AccountId, contracts: Vec<T::AccountId>, amount: BalanceOf<T>, expired: MomentOf<T>) {
+        pub fn offer(origin, sender: T::AccountId, contracts: Vec<T::AccountId>, amount: BalanceOf<T>, expired: T::BlockNumber) {
             let buyer = ensure_signed(origin)?;
             let offer_account = buyer.clone();
             let sender_account = sender.clone();
@@ -106,7 +104,7 @@ decl_module! {
                 sender,
                 contracts,
                 amount,
-                expired: T::Time::now() + expired,
+                expired,
                 state: OfferState::Waiting,
             };
 
@@ -119,7 +117,7 @@ decl_module! {
             // lock amount
             T::Currency::set_lock(
                 TRADING_ID, &offer.buyer, offer.amount,
-                <T as system::Trait>::BlockNumber::max_value(),
+                expired,
                 WithdrawReasons::all(),
             );
             // insert new a offer.
@@ -167,7 +165,7 @@ decl_module! {
             if acceptor != offer.sender {
                 Err("the accept can not accept. only sender can accept.")?;
             }
-            if T::Time::now() > offer.expired {
+            if <system::Module<T>>::block_number() >= offer.expired {
                 Err("the offer was already expired.")?;
             }
 
@@ -198,7 +196,7 @@ decl_module! {
                 Some(o) => o,
                 None => Err("the remover does not have a offer.")?
             };
-            if offer.state == OfferState::Waiting  && offer.expired >= T::Time::now() {
+            if offer.state == OfferState::Waiting  && offer.expired > <system::Module<T>>::block_number() {
                 Err("the offer is living.")?
             }
             // unlock amount
