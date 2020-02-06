@@ -242,7 +242,7 @@ fn correct_offer(
         contracts,
         amount,
         expired: offer_expired,
-        state: OfferState::WAITING,
+        state: OfferState::Waiting,
     };
     assert_eq!(
         System::events(),
@@ -291,7 +291,7 @@ fn correct_reject(rejector: AccountId, offer_id: AccountId) {
         },]
     );
     let mut reject_offer = offer.clone();
-    reject_offer.state = OfferState::REJECT;
+    reject_offer.state = OfferState::Reject;
     // equal reject.
     assert_eq!(Some(reject_offer), <Offers<Test>>::get(&offer_id));
     // not changed.
@@ -378,7 +378,7 @@ fn correct_accept(acceptor: AccountId, offer_id: AccountId) {
     );
 
     let mut accept_offer = offer.clone();
-    accept_offer.state = OfferState::ACCEPT;
+    accept_offer.state = OfferState::Accept;
     // equal reject.
     assert_eq!(Some(accept_offer), <Offers<Test>>::get(&offer_id));
     // Changed!. sender contracts

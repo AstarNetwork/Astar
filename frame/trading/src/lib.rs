@@ -23,14 +23,14 @@ mod tests;
 #[derive(Clone, Eq, PartialEq, Encode, Decode, Hash)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize, Debug))]
 pub enum OfferState {
-    WAITING,
-    REJECT,
-    ACCEPT,
+    Waiting,
+    Reject,
+    Accept,
 }
 
 impl Default for OfferState {
     fn default() -> OfferState {
-        OfferState::WAITING
+        OfferState::Waiting
     }
 }
 
@@ -106,11 +106,11 @@ decl_module! {
                 contracts,
                 amount,
                 expired: T::Time::now() + expired,
-                state: OfferState::WAITING,
+                state: OfferState::Waiting,
             };
 
             if let Some(current_offer) = <Offers<T>>::get(&offer_account) {
-                if current_offer.state == OfferState::WAITING {
+                if current_offer.state == OfferState::Waiting {
                     Err("this offer was already issued.")?
                 }
             }
@@ -138,11 +138,11 @@ decl_module! {
             if rejector != offer.sender && rejector != offer.buyer {
                 Err("the rejector can not reject. only sender or buyer can reject.")?;
             }
-            if offer.state == OfferState::ACCEPT {
+            if offer.state == OfferState::Accept {
                 Err("the offer was already accepted.")?;
             }
 
-            offer.state = OfferState::REJECT;
+            offer.state = OfferState::Reject;
 
             // unlock amount
             T::Currency::remove_lock(TRADING_ID, &offer.buyer);
@@ -183,7 +183,7 @@ decl_module! {
             T::TransferOperator::force_transfer_operator(offer.sender.clone(), offer.contracts.clone(), offer.buyer.clone());
 
             // insert changing offer
-            offer.state = OfferState::ACCEPT;
+            offer.state = OfferState::Accept;
             <Offers<T>>::insert(&offer_id, offer);
             Self::deposit_event(RawEvent::Accept(acceptor, offer_id));
         }
@@ -197,7 +197,7 @@ decl_module! {
                 Some(o) => o,
                 None => Err("the remover does not have a offer.")?
             };
-            if offer.state == OfferState::WAITING  && offer.expired >= T::Time::now() {
+            if offer.state == OfferState::Waiting  && offer.expired >= T::Time::now() {
                 Err("the offer is living.")?
             }
             // unlock amount
