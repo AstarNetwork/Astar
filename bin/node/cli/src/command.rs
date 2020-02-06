@@ -1,6 +1,5 @@
 use crate::{load_spec, service, Cli, Subcommand};
 use sc_cli::{error, VersionInfo};
-use sc_service::Roles as ServiceRoles;
 
 /// Parse command line arguments into service configuration.
 pub fn run<I, T>(args: I, version: VersionInfo) -> error::Result<()>
