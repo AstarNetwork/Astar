@@ -122,8 +122,8 @@ You can see our demo:
 
 Future Works
 ------------
+![Milestones](https://user-images.githubusercontent.com/6259384/73917595-14bece80-4903-11ea-9d61-6a162b9d0118.png)
 
-![1_MsvI5mbUlwMYAnzHxOTwuw](https://user-images.githubusercontent.com/29359048/68994260-57ed4080-08c4-11ea-8659-3a0b066661bc.png)
 
 Contacts
 --------
