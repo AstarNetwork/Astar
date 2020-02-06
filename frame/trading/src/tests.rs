@@ -1,7 +1,7 @@
 use super::*;
 use sp_runtime::{
     testing::{Header, H256},
-    traits::{BlakeTwo256, Hash, IdentityLookup},
+    traits::{BlakeTwo256, IdentityLookup},
     Perbill,
 };
 use sp_std::marker::PhantomData;
@@ -248,7 +248,7 @@ fn correct_offer(
         System::events(),
         vec![EventRecord {
             phase: Phase::ApplyExtrinsic(0),
-            event: MetaEvent::trading(RawEvent::Offer(buyer)),
+            event: MetaEvent::trading(RawEvent::Offer(buyer, sender)),
             topics: vec![],
         },]
     );

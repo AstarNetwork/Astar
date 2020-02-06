@@ -88,6 +88,7 @@ decl_module! {
         pub fn offer(origin, sender: T::AccountId, contracts: Vec<T::AccountId>, amount: BalanceOf<T>, expired: MomentOf<T>) {
             let buyer = ensure_signed(origin)?;
             let offer_account = buyer.clone();
+            let sender_account = sender.clone();
 
             if T::Currency::free_balance(&buyer) <= amount {
                 Err("buyer does not have enough balances.")?
@@ -123,7 +124,7 @@ decl_module! {
             );
             // insert new a offer.
             <Offers<T>>::insert(&offer_account, offer);
-            Self::deposit_event(RawEvent::Offer(offer_account));
+            Self::deposit_event(RawEvent::Offer(offer_account, sender_account));
         }
 
         /// Reject the target offer.
@@ -217,7 +218,8 @@ decl_event!(
         /// When call offer,
         /// it is issued arguments:
         /// 1: New Operator(buyer)
-        Offer(AccountId),
+        /// 2: Current Operator(sender)
+        Offer(AccountId, AccountId),
 
         /// When call reject,
         /// it is issued arguments:
