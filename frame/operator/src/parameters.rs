@@ -1,7 +1,7 @@
 use codec::{Decode, Encode};
-use sp_runtime::DispatchError;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
+use sp_runtime::DispatchError;
 
 pub trait Verifiable {
     fn verify(&self) -> Result<(), DispatchError>;
