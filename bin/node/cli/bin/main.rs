@@ -4,9 +4,6 @@
 
 use sc_cli::VersionInfo;
 
-// handles ctrl-c
-struct Exit;
-
 fn main() -> Result<(), sc_cli::error::Error> {
     let version = VersionInfo {
         name: "Plasm Node",
