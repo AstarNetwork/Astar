@@ -207,7 +207,7 @@ mod tests {
                 let adjusted_fee = fm.saturated_multiply_accumulate(fee);
                 println!(
                     "iteration {}, new fm = {:?}. Fee at this point is: {} units / {} mPLM, \
-                    {} PLM",
+                     {} PLM",
                     iterations,
                     fm,
                     adjusted_fee,
