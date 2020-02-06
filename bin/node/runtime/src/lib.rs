@@ -15,7 +15,7 @@ use plasm_staking::EraIndex;
 use sp_core::OpaqueMetadata;
 use sp_api::impl_runtime_apis;
 use sp_runtime::traits::{
-    BlakeTwo256, Block as BlockT, ConvertInto, Extrinsic, NumberFor, OpaqueKeys,
+    BlakeTwo256, Block as BlockT, ConvertInto, Extrinsic, OpaqueKeys,
     SaturatedConversion, StaticLookup, Verify,
 };
 use sp_runtime::transaction_validity::TransactionValidity;

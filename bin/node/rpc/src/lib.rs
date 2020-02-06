@@ -15,9 +15,9 @@
 
 use std::sync::Arc;
 
-use plasm_primitives::{Block, AccountId, Index, Balance};
+use plasm_primitives::{Block, BlockNumber, AccountId, Index, Balance};
 use plasm_runtime::UncheckedExtrinsic;
-use sp_runtime::traits::ProvideRuntimeApi;
+use sp_api::ProvideRuntimeApi;
 use sp_transaction_pool::TransactionPool;
 
 /// Light client extra dependencies.
@@ -46,11 +46,11 @@ pub fn create<C, P, M, F>(
     pool: Arc<P>,
     light_deps: Option<LightDeps<F>>,
 ) -> jsonrpc_core::IoHandler<M> where
-    C: ProvideRuntimeApi,
+    C: ProvideRuntimeApi<Block>,
     C: client::blockchain::HeaderBackend<Block>,
     C: Send + Sync + 'static,
     C::Api: substrate_frame_rpc_system::AccountNonceApi<Block, AccountId, Index>,
-    C::Api: pallet_contracts_rpc::ContractsRuntimeApi<Block, AccountId, Balance>,
+    C::Api: pallet_contracts_rpc::ContractsRuntimeApi<Block, AccountId, Balance, BlockNumber>,
     C::Api: pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance, UncheckedExtrinsic>,
     F: client::light::fetcher::Fetcher<Block> + 'static,
     P: TransactionPool + 'static,

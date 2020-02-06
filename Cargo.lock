@@ -601,15 +601,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "ctrlc"
-version = "3.1.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-dependencies = [
- "nix 0.14.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "winapi 0.3.8 (registry+https://github.com/rust-lang/crates.io-index)",
-]
-
-[[package]]
 name = "cuckoofilter"
 version = "0.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -741,15 +732,6 @@ version = "0.3.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "serde 1.0.104 (registry+https://github.com/rust-lang/crates.io-index)",
-]
-
-[[package]]
-name = "exit-future"
-version = "0.1.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-dependencies = [
- "futures 0.1.29 (registry+https://github.com/rust-lang/crates.io-index)",
- "parking_lot 0.7.1 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -2221,7 +2203,6 @@ name = "lock_api"
 version = "0.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
- "owning_ref 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "scopeguard 0.3.3 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
@@ -2409,18 +2390,6 @@ dependencies = [
  "cfg-if 0.1.10 (registry+https://github.com/rust-lang/crates.io-index)",
  "libc 0.2.66 (registry+https://github.com/rust-lang/crates.io-index)",
  "winapi 0.3.8 (registry+https://github.com/rust-lang/crates.io-index)",
-]
-
-[[package]]
-name = "nix"
-version = "0.14.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-dependencies = [
- "bitflags 1.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "cc 1.0.50 (registry+https://github.com/rust-lang/crates.io-index)",
- "cfg-if 0.1.10 (registry+https://github.com/rust-lang/crates.io-index)",
- "libc 0.2.66 (registry+https://github.com/rust-lang/crates.io-index)",
- "void 1.0.2 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -2714,6 +2683,24 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-operator-trading"
+version = "0.1.0"
+dependencies = [
+ "frame-support 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
+ "frame-system 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
+ "pallet-balances 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
+ "pallet-contract-operator 0.1.0",
+ "pallet-timestamp 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
+ "parity-scale-codec 1.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "serde 1.0.104 (registry+https://github.com/rust-lang/crates.io-index)",
+ "serde_derive 1.0.104 (registry+https://github.com/rust-lang/crates.io-index)",
+ "sp-core 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
+ "sp-io 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
+ "sp-runtime 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
+ "sp-std 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
+]
+
+[[package]]
 name = "pallet-plasm-staking"
 version = "0.1.0"
 dependencies = [
@@ -2817,24 +2804,6 @@ dependencies = [
  "sp-runtime 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "sp-std 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "sp-timestamp 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
-]
-
-[[package]]
-name = "pallet-trading-operator"
-version = "0.1.0"
-dependencies = [
- "frame-support 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
- "frame-system 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
- "pallet-balances 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
- "pallet-contract-operator 0.1.0",
- "pallet-timestamp 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
- "parity-scale-codec 1.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "serde 1.0.104 (registry+https://github.com/rust-lang/crates.io-index)",
- "serde_derive 1.0.104 (registry+https://github.com/rust-lang/crates.io-index)",
- "sp-core 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
- "sp-io 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
- "sp-runtime 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
- "sp-std 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
 ]
 
 [[package]]
@@ -3174,10 +3143,8 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "plasm-cli"
-version = "0.7.1"
+version = "0.7.2"
 dependencies = [
- "ctrlc 3.1.3 (registry+https://github.com/rust-lang/crates.io-index)",
- "exit-future 0.1.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "frame-system 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "futures 0.1.29 (registry+https://github.com/rust-lang/crates.io-index)",
  "futures 0.3.3 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -3219,7 +3186,6 @@ dependencies = [
  "sp-transaction-pool 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "structopt 0.3.9 (registry+https://github.com/rust-lang/crates.io-index)",
  "substrate-build-script-utils 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
- "tokio 0.1.22 (registry+https://github.com/rust-lang/crates.io-index)",
  "vergen 3.0.4 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
@@ -3249,6 +3215,7 @@ dependencies = [
  "plasm-primitives 0.7.1",
  "plasm-runtime 0.7.1",
  "sc-client 0.8.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
+ "sp-api 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "sp-runtime 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "sp-transaction-pool 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "substrate-frame-rpc-system 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
@@ -3266,10 +3233,12 @@ dependencies = [
  "pallet-balances 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "pallet-contract-operator 0.1.0",
  "pallet-contracts 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
+ "pallet-contracts-primitives 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "pallet-contracts-rpc-runtime-api 0.8.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "pallet-finality-tracker 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "pallet-grandpa 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "pallet-indices 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
+ "pallet-operator-trading 0.1.0",
  "pallet-plasm-staking 0.1.0",
  "pallet-randomness-collective-flip 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "pallet-session 2.0.0 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
@@ -6360,7 +6329,6 @@ dependencies = [
 "checksum crypto-mac 0.7.0 (registry+https://github.com/rust-lang/crates.io-index)" = "4434400df11d95d556bac068ddfedd482915eb18fe8bea89bc80b6e4b1c179e5"
 "checksum ct-logs 0.6.0 (registry+https://github.com/rust-lang/crates.io-index)" = "4d3686f5fa27dbc1d76c751300376e167c5a43387f44bb451fd1c24776e49113"
 "checksum ctr 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)" = "022cd691704491df67d25d006fe8eca083098253c4d43516c2206479c58c6736"
-"checksum ctrlc 3.1.3 (registry+https://github.com/rust-lang/crates.io-index)" = "c7dfd2d8b4c82121dfdff120f818e09fc4380b0b7e17a742081a89b94853e87f"
 "checksum cuckoofilter 0.3.2 (registry+https://github.com/rust-lang/crates.io-index)" = "8dd43f7cfaffe0a386636a10baea2ee05cc50df3b77bea4a456c9572a939bf1f"
 "checksum curve25519-dalek 1.2.3 (registry+https://github.com/rust-lang/crates.io-index)" = "8b7dcd30ba50cdf88b55b033456138b7c0ac4afdc436d82e1b79f370f24cc66d"
 "checksum curve25519-dalek 2.0.0 (registry+https://github.com/rust-lang/crates.io-index)" = "26778518a7f6cffa1d25a44b602b62b979bd88adb9e99ffec546998cf3404839"
@@ -6376,7 +6344,6 @@ dependencies = [
 "checksum env_logger 0.7.1 (registry+https://github.com/rust-lang/crates.io-index)" = "44533bbbb3bb3c1fa17d9f2e4e38bbbaf8396ba82193c4cb1b6445d711445d36"
 "checksum environmental 1.1.1 (registry+https://github.com/rust-lang/crates.io-index)" = "516aa8d7a71cb00a1c4146f0798549b93d083d4f189b3ced8f3de6b8f11ee6c4"
 "checksum erased-serde 0.3.10 (registry+https://github.com/rust-lang/crates.io-index)" = "cd7d80305c9bd8cd78e3c753eb9fb110f83621e5211f1a3afffcc812b104daf9"
-"checksum exit-future 0.1.4 (registry+https://github.com/rust-lang/crates.io-index)" = "d8013f441e38e31c670e7f34ec8f1d5d3a2bd9d303c1ff83976ca886005e8f48"
 "checksum exit-future 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)" = "e43f2f1833d64e33f15592464d6fdd70f349dda7b1a53088eb83cd94014008c5"
 "checksum failure 0.1.6 (registry+https://github.com/rust-lang/crates.io-index)" = "f8273f13c977665c5db7eb2b99ae520952fe5ac831ae4cd09d80c4c7042b5ed9"
 "checksum failure_derive 0.1.6 (registry+https://github.com/rust-lang/crates.io-index)" = "0bc225b78e0391e4b8683440bf2e63c2deeeb2ce5189eab46e2b68c6d3725d08"
@@ -6532,7 +6499,6 @@ dependencies = [
 "checksum multistream-select 0.7.0 (registry+https://github.com/rust-lang/crates.io-index)" = "f938ffe420493e77c8b6cbcc3f282283f68fc889c5dcbc8e51668d5f3a01ad94"
 "checksum names 0.11.0 (registry+https://github.com/rust-lang/crates.io-index)" = "ef320dab323286b50fb5cdda23f61c796a72a89998ab565ca32525c5c556f2da"
 "checksum net2 0.2.33 (registry+https://github.com/rust-lang/crates.io-index)" = "42550d9fb7b6684a6d404d9fa7250c2eb2646df731d1c06afc06dcee9e1bcf88"
-"checksum nix 0.14.1 (registry+https://github.com/rust-lang/crates.io-index)" = "6c722bee1037d430d0f8e687bbdbf222f27cc6e4e68d5caf630857bb2b6dbdce"
 "checksum nodrop 0.1.14 (registry+https://github.com/rust-lang/crates.io-index)" = "72ef4a56884ca558e5ddb05a1d1e7e1bfd9a68d9ed024c21704cc98872dae1bb"
 "checksum nohash-hasher 0.1.3 (registry+https://github.com/rust-lang/crates.io-index)" = "721a2bf1c26159ebf17e0a980bc4ce61f4b2fec5ec3b42d42fddd7a84a9e538f"
 "checksum nom 4.2.3 (registry+https://github.com/rust-lang/crates.io-index)" = "2ad2a91a8e869eeb30b9cb3119ae87773a8f4ae617f41b1eb9c154b2905f7bd6"
