@@ -390,14 +390,11 @@
 <span id="390">390</span>
 <span id="391">391</span>
 <span id="392">392</span>
-<span id="393">393</span>
-<span id="394">394</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="kw">use</span> <span class="ident">babe_primitives</span>::<span class="ident">AuthorityId</span> <span class="kw">as</span> <span class="ident">BabeId</span>;
 <span class="doccomment">///! Plasm chain configuration.</span>
 <span class="kw">use</span> <span class="ident">chain_spec</span>::<span class="ident">ChainSpecExtension</span>;
 <span class="kw">use</span> <span class="ident">grandpa_primitives</span>::<span class="ident">AuthorityId</span> <span class="kw">as</span> <span class="ident">GrandpaId</span>;
-<span class="kw">use</span> <span class="ident">hex_literal</span>::<span class="ident">hex</span>;
 <span class="kw">use</span> <span class="ident">plasm_primitives</span>::{<span class="ident">AccountId</span>, <span class="ident">Balance</span>, <span class="ident">Signature</span>};
 <span class="kw">use</span> <span class="ident">plasm_runtime</span>::<span class="ident">constants</span>::<span class="ident">currency</span>::<span class="kw-2">*</span>;
 <span class="kw">use</span> <span class="ident">plasm_runtime</span>::<span class="ident">Block</span>;
@@ -406,10 +403,9 @@
     <span class="ident">IndicesConfig</span>, <span class="ident">PlasmStakingConfig</span>, <span class="ident">SessionConfig</span>, <span class="ident">SessionKeys</span>, <span class="ident">SudoConfig</span>, <span class="ident">SystemConfig</span>,
     <span class="ident">WASM_BINARY</span>,
 };
-<span class="kw">use</span> <span class="ident">primitives</span>::{<span class="ident">crypto</span>::<span class="ident">UncheckedInto</span>, <span class="ident">sr25519</span>, <span class="ident">ecdsa</span>, <span class="ident">Pair</span>, <span class="ident">Public</span>};
+<span class="kw">use</span> <span class="ident">primitives</span>::{<span class="ident">sr25519</span>, <span class="ident">Pair</span>, <span class="ident">Public</span>};
 <span class="kw">use</span> <span class="ident">serde</span>::{<span class="ident">Deserialize</span>, <span class="ident">Serialize</span>};
 <span class="kw">use</span> <span class="ident">sp_runtime</span>::<span class="ident">traits</span>::{<span class="ident">IdentifyAccount</span>, <span class="ident">Verify</span>};
-<span class="kw">use</span> <span class="ident">telemetry</span>::<span class="ident">TelemetryEndpoints</span>;
 
 <span class="kw">type</span> <span class="ident">AccountPublic</span> <span class="op">=</span> <span class="op">&lt;</span><span class="ident">Signature</span> <span class="kw">as</span> <span class="ident">Verify</span><span class="op">&gt;</span>::<span class="ident">Signer</span>;
 

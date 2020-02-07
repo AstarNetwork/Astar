@@ -1,1 +1,1 @@
-initSidebarItems({"enum":[["ChainSpec","The chain specification option."]],"fn":[["run","Parse command line arguments into service configuration."]],"mod":[["chain_spec","Plasm chain specification."]],"struct":[["VersionInfo","Executable version. Used to pass version information from the root crate."]]});
+initSidebarItems({"enum":[["ChainSpec","The chain specification option."],["Subcommand",""]],"fn":[["run","Parse command line arguments into service configuration."]],"mod":[["chain_spec","Plasm chain specification."]],"struct":[["Cli",""]]});

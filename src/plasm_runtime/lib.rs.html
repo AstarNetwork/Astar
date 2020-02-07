@@ -521,6 +521,13 @@
 <span id="521">521</span>
 <span id="522">522</span>
 <span id="523">523</span>
+<span id="524">524</span>
+<span id="525">525</span>
+<span id="526">526</span>
+<span id="527">527</span>
+<span id="528">528</span>
+<span id="529">529</span>
+<span id="530">530</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="doccomment">//! The Substrate runtime. This can be compiled with ``#[no_std]`, ready for Wasm.</span>
 
@@ -536,11 +543,11 @@
     <span class="ident">AccountId</span>, <span class="ident">AccountIndex</span>, <span class="ident">Balance</span>, <span class="ident">BlockNumber</span>, <span class="ident">Hash</span>, <span class="ident">Index</span>, <span class="ident">Moment</span>, <span class="ident">Signature</span>,
 };
 <span class="kw">use</span> <span class="ident">plasm_staking</span>::<span class="ident">EraIndex</span>;
-<span class="kw">use</span> <span class="ident">primitives</span>::<span class="ident">OpaqueMetadata</span>;
 <span class="kw">use</span> <span class="ident">sp_api</span>::<span class="ident">impl_runtime_apis</span>;
+<span class="kw">use</span> <span class="ident">sp_core</span>::<span class="ident">OpaqueMetadata</span>;
 <span class="kw">use</span> <span class="ident">sp_runtime</span>::<span class="ident">traits</span>::{
-    <span class="ident">BlakeTwo256</span>, <span class="ident">Block</span> <span class="kw">as</span> <span class="ident">BlockT</span>, <span class="ident">ConvertInto</span>, <span class="ident">Extrinsic</span>, <span class="ident">NumberFor</span>, <span class="ident">OpaqueKeys</span>,
-    <span class="ident">SaturatedConversion</span>, <span class="ident">StaticLookup</span>, <span class="ident">Verify</span>,
+    <span class="ident">BlakeTwo256</span>, <span class="ident">Block</span> <span class="kw">as</span> <span class="ident">BlockT</span>, <span class="ident">ConvertInto</span>, <span class="ident">Extrinsic</span>, <span class="ident">OpaqueKeys</span>, <span class="ident">SaturatedConversion</span>,
+    <span class="ident">StaticLookup</span>, <span class="ident">Verify</span>,
 };
 <span class="kw">use</span> <span class="ident">sp_runtime</span>::<span class="ident">transaction_validity</span>::<span class="ident">TransactionValidity</span>;
 <span class="kw">use</span> <span class="ident">sp_runtime</span>::{<span class="ident">create_runtime_str</span>, <span class="ident">generic</span>, <span class="ident">impl_opaque_keys</span>, <span class="ident">ApplyExtrinsicResult</span>, <span class="ident">Perbill</span>};
@@ -579,8 +586,8 @@
     <span class="comment">// and set impl_version to equal spec_version. If only runtime</span>
     <span class="comment">// implementation changes and behavior does not, then leave spec_version as</span>
     <span class="comment">// is and increment impl_version.</span>
-    <span class="ident">spec_version</span>: <span class="number">31</span>,
-    <span class="ident">impl_version</span>: <span class="number">31</span>,
+    <span class="ident">spec_version</span>: <span class="number">32</span>,
+    <span class="ident">impl_version</span>: <span class="number">32</span>,
     <span class="ident">apis</span>: <span class="ident">RUNTIME_API_VERSIONS</span>,
 };
 
@@ -617,7 +624,7 @@
     <span class="kw">type</span> <span class="ident">MaximumBlockLength</span> <span class="op">=</span> <span class="ident">MaximumBlockLength</span>;
     <span class="kw">type</span> <span class="ident">AvailableBlockRatio</span> <span class="op">=</span> <span class="ident">AvailableBlockRatio</span>;
     <span class="kw">type</span> <span class="ident">Version</span> <span class="op">=</span> <span class="ident">Version</span>;
-    <span class="kw">type</span> <span class="ident">ModuleToIndex</span> <span class="op">=</span> ();
+    <span class="kw">type</span> <span class="ident">ModuleToIndex</span> <span class="op">=</span> <span class="ident">ModuleToIndex</span>;
 }
 
 <span class="macro">parameter_types</span><span class="macro">!</span> {
@@ -648,6 +655,7 @@
     <span class="kw">type</span> <span class="ident">Balance</span> <span class="op">=</span> <span class="ident">Balance</span>;
     <span class="kw">type</span> <span class="ident">OnFreeBalanceZero</span> <span class="op">=</span> <span class="ident">Contracts</span>;
     <span class="kw">type</span> <span class="ident">OnNewAccount</span> <span class="op">=</span> <span class="ident">Indices</span>;
+    <span class="kw">type</span> <span class="ident">OnReapAccount</span> <span class="op">=</span> <span class="ident">System</span>;
     <span class="kw">type</span> <span class="ident">Event</span> <span class="op">=</span> <span class="ident">Event</span>;
     <span class="kw">type</span> <span class="ident">DustRemoval</span> <span class="op">=</span> ();
     <span class="kw">type</span> <span class="ident">TransferPayment</span> <span class="op">=</span> ();
@@ -692,14 +700,13 @@
 }
 
 <span class="kw">impl</span> <span class="ident">session</span>::<span class="ident">Trait</span> <span class="kw">for</span> <span class="ident">Runtime</span> {
-    <span class="kw">type</span> <span class="ident">OnSessionEnding</span> <span class="op">=</span> <span class="ident">PlasmStaking</span>;
+    <span class="kw">type</span> <span class="ident">SessionManager</span> <span class="op">=</span> <span class="ident">PlasmStaking</span>;
     <span class="kw">type</span> <span class="ident">SessionHandler</span> <span class="op">=</span> <span class="op">&lt;</span><span class="ident">SessionKeys</span> <span class="kw">as</span> <span class="ident">OpaqueKeys</span><span class="op">&gt;</span>::<span class="ident">KeyTypeIdProviders</span>;
     <span class="kw">type</span> <span class="ident">ShouldEndSession</span> <span class="op">=</span> <span class="ident">Babe</span>;
     <span class="kw">type</span> <span class="ident">Event</span> <span class="op">=</span> <span class="ident">Event</span>;
     <span class="kw">type</span> <span class="ident">Keys</span> <span class="op">=</span> <span class="ident">SessionKeys</span>;
     <span class="kw">type</span> <span class="ident">ValidatorId</span> <span class="op">=</span> <span class="op">&lt;</span><span class="self">Self</span> <span class="kw">as</span> <span class="ident">system</span>::<span class="ident">Trait</span><span class="op">&gt;</span>::<span class="ident">AccountId</span>;
     <span class="kw">type</span> <span class="ident">ValidatorIdOf</span> <span class="op">=</span> <span class="ident">ConvertInto</span>;
-    <span class="kw">type</span> <span class="ident">SelectInitialValidators</span> <span class="op">=</span> <span class="ident">PlasmStaking</span>;
     <span class="kw">type</span> <span class="ident">DisabledValidatorsThreshold</span> <span class="op">=</span> ();
 }
 
@@ -762,6 +769,13 @@
 
 <span class="kw">impl</span> <span class="ident">operator</span>::<span class="ident">Trait</span> <span class="kw">for</span> <span class="ident">Runtime</span> {
     <span class="kw">type</span> <span class="ident">Parameters</span> <span class="op">=</span> <span class="ident">plasm_staking</span>::<span class="ident">parameters</span>::<span class="ident">StakingParameters</span>;
+    <span class="kw">type</span> <span class="ident">Event</span> <span class="op">=</span> <span class="ident">Event</span>;
+}
+
+<span class="kw">impl</span> <span class="ident">trading</span>::<span class="ident">Trait</span> <span class="kw">for</span> <span class="ident">Runtime</span> {
+    <span class="kw">type</span> <span class="ident">Currency</span> <span class="op">=</span> <span class="ident">Balances</span>;
+    <span class="kw">type</span> <span class="ident">OperatorFinder</span> <span class="op">=</span> <span class="ident">Operator</span>;
+    <span class="kw">type</span> <span class="ident">TransferOperator</span> <span class="op">=</span> <span class="ident">Operator</span>;
     <span class="kw">type</span> <span class="ident">Event</span> <span class="op">=</span> <span class="ident">Event</span>;
 }
 
@@ -834,6 +848,7 @@
         <span class="ident">FinalityTracker</span>: <span class="ident">finality_tracker</span>::{<span class="ident">Module</span>, <span class="ident">Call</span>, <span class="ident">Inherent</span>},
         <span class="ident">Sudo</span>: <span class="ident">sudo</span>,
         <span class="ident">Operator</span>: <span class="ident">operator</span>::{<span class="ident">Module</span>, <span class="ident">Call</span>, <span class="ident">Storage</span>, <span class="ident">Event</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>},
+        <span class="ident">Trading</span>: <span class="ident">trading</span>::{<span class="ident">Module</span>, <span class="ident">Call</span>, <span class="ident">Storage</span>, <span class="ident">Event</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>},
         <span class="ident">RandomnessCollectiveFlip</span>: <span class="ident">randomness_collective_flip</span>::{<span class="ident">Module</span>, <span class="ident">Call</span>, <span class="ident">Storage</span>},
     }
 );
@@ -918,8 +933,8 @@
     }
 
     <span class="kw">impl</span> <span class="ident">offchain_primitives</span>::<span class="ident">OffchainWorkerApi</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">Runtime</span> {
-        <span class="kw">fn</span> <span class="ident">offchain_worker</span>(<span class="ident">number</span>: <span class="ident">NumberFor</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span>) {
-            <span class="ident">Executive</span>::<span class="ident">offchain_worker</span>(<span class="ident">number</span>)
+        <span class="kw">fn</span> <span class="ident">offchain_worker</span>(<span class="ident">header</span>: <span class="kw-2">&amp;</span><span class="op">&lt;</span><span class="ident">Block</span> <span class="kw">as</span> <span class="ident">BlockT</span><span class="op">&gt;</span>::<span class="ident">Header</span>) {
+            <span class="ident">Executive</span>::<span class="ident">offchain_worker</span>(<span class="ident">header</span>)
         }
     }
 
@@ -953,7 +968,7 @@
         }
     }
 
-    <span class="kw">impl</span> <span class="ident">contracts_rpc_runtime_api</span>::<span class="ident">ContractsApi</span><span class="op">&lt;</span><span class="ident">Block</span>, <span class="ident">AccountId</span>, <span class="ident">Balance</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">Runtime</span> {
+    <span class="kw">impl</span> <span class="ident">contracts_rpc_runtime_api</span>::<span class="ident">ContractsApi</span><span class="op">&lt;</span><span class="ident">Block</span>, <span class="ident">AccountId</span>, <span class="ident">Balance</span>, <span class="ident">BlockNumber</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">Runtime</span> {
         <span class="kw">fn</span> <span class="ident">call</span>(
             <span class="ident">origin</span>: <span class="ident">AccountId</span>,
             <span class="ident">dest</span>: <span class="ident">AccountId</span>,
@@ -961,13 +976,8 @@
             <span class="ident">gas_limit</span>: <span class="ident">u64</span>,
             <span class="ident">input_data</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>,
         ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">ContractExecResult</span> {
-            <span class="kw">let</span> <span class="ident">exec_result</span> <span class="op">=</span> <span class="ident">Contracts</span>::<span class="ident">bare_call</span>(
-                <span class="ident">origin</span>,
-                <span class="ident">dest</span>.<span class="ident">into</span>(),
-                <span class="ident">value</span>,
-                <span class="ident">gas_limit</span>,
-                <span class="ident">input_data</span>,
-            );
+            <span class="kw">let</span> <span class="ident">exec_result</span> <span class="op">=</span>
+                <span class="ident">Contracts</span>::<span class="ident">bare_call</span>(<span class="ident">origin</span>, <span class="ident">dest</span>.<span class="ident">into</span>(), <span class="ident">value</span>, <span class="ident">gas_limit</span>, <span class="ident">input_data</span>);
             <span class="kw">match</span> <span class="ident">exec_result</span> {
                 <span class="prelude-val">Ok</span>(<span class="ident">v</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">ContractExecResult</span>::<span class="ident">Success</span> {
                     <span class="ident">status</span>: <span class="ident">v</span>.<span class="ident">status</span>,
@@ -980,16 +990,14 @@
         <span class="kw">fn</span> <span class="ident">get_storage</span>(
             <span class="ident">address</span>: <span class="ident">AccountId</span>,
             <span class="ident">key</span>: [<span class="ident">u8</span>; <span class="number">32</span>],
-        ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">contracts_rpc_runtime_api</span>::<span class="ident">GetStorageResult</span> {
-            <span class="ident">Contracts</span>::<span class="ident">get_storage</span>(<span class="ident">address</span>, <span class="ident">key</span>).<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">rpc_err</span><span class="op">|</span> {
-                <span class="kw">use</span> <span class="ident">contracts</span>::<span class="ident">GetStorageError</span>;
-                <span class="kw">use</span> <span class="ident">contracts_rpc_runtime_api</span>::{<span class="ident">GetStorageError</span> <span class="kw">as</span> <span class="ident">RpcGetStorageError</span>};
-                <span class="doccomment">/// Map the contract error into the RPC layer error.</span>
-                <span class="kw">match</span> <span class="ident">rpc_err</span> {
-                    <span class="ident">GetStorageError</span>::<span class="ident">ContractDoesntExist</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">RpcGetStorageError</span>::<span class="ident">ContractDoesntExist</span>,
-                    <span class="ident">GetStorageError</span>::<span class="ident">IsTombstone</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">RpcGetStorageError</span>::<span class="ident">IsTombstone</span>,
-                }
-            })
+        ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">contracts_primitives</span>::<span class="ident">GetStorageResult</span> {
+            <span class="ident">Contracts</span>::<span class="ident">get_storage</span>(<span class="ident">address</span>, <span class="ident">key</span>)
+        }
+
+        <span class="kw">fn</span> <span class="ident">rent_projection</span>(
+            <span class="ident">address</span>: <span class="ident">AccountId</span>,
+        ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">contracts_primitives</span>::<span class="ident">RentProjectionResult</span><span class="op">&lt;</span><span class="ident">BlockNumber</span><span class="op">&gt;</span> {
+            <span class="ident">Contracts</span>::<span class="ident">rent_projection</span>(<span class="ident">address</span>)
         }
     }
 
@@ -1006,6 +1014,12 @@
     <span class="kw">impl</span> <span class="ident">sp_session</span>::<span class="ident">SessionKeys</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">Runtime</span> {
         <span class="kw">fn</span> <span class="ident">generate_session_keys</span>(<span class="ident">seed</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span> {
             <span class="ident">SessionKeys</span>::<span class="ident">generate</span>(<span class="ident">seed</span>)
+        }
+
+        <span class="kw">fn</span> <span class="ident">decode_session_keys</span>(
+            <span class="ident">encoded</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>,
+        ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span>(<span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>, <span class="ident">sp_core</span>::<span class="ident">crypto</span>::<span class="ident">KeyTypeId</span>)<span class="op">&gt;</span><span class="op">&gt;</span> {
+            <span class="ident">SessionKeys</span>::<span class="ident">decode_into_raw_public_keys</span>(<span class="kw-2">&amp;</span><span class="ident">encoded</span>)
         }
     }
 }

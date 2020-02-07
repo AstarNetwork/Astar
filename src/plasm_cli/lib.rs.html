@@ -52,6 +52,13 @@
 <span id="52">52</span>
 <span id="53">53</span>
 <span id="54">54</span>
+<span id="55">55</span>
+<span id="56">56</span>
+<span id="57">57</span>
+<span id="58">58</span>
+<span id="59">59</span>
+<span id="60">60</span>
+<span id="61">61</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="doccomment">//! Plasm CLI library.</span>
 
@@ -63,12 +70,19 @@
 
 <span class="attribute">#[<span class="ident">macro_use</span>]</span>
 <span class="kw">mod</span> <span class="ident">service</span>;
-
+<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;browser&quot;</span>)]</span>
+<span class="kw">mod</span> <span class="ident">browser</span>;
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;cli&quot;</span>)]</span>
 <span class="kw">mod</span> <span class="ident">cli</span>;
+<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;cli&quot;</span>)]</span>
+<span class="kw">mod</span> <span class="ident">command</span>;
 
+<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;browser&quot;</span>)]</span>
+<span class="kw">pub</span> <span class="kw">use</span> <span class="ident">browser</span>::<span class="kw-2">*</span>;
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;cli&quot;</span>)]</span>
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident">cli</span>::<span class="kw-2">*</span>;
+<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;cli&quot;</span>)]</span>
+<span class="kw">pub</span> <span class="kw">use</span> <span class="ident">command</span>::<span class="kw-2">*</span>;
 
 <span class="doccomment">/// The chain specification option.</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>, <span class="ident">Debug</span>, <span class="ident">PartialEq</span>)]</span>
