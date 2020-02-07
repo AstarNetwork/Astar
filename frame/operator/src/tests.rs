@@ -123,6 +123,7 @@ impl balances::Trait for Test {
     type Balance = u64;
     type OnFreeBalanceZero = Contract;
     type OnNewAccount = ();
+    type OnReapAccount = System;
     type Event = MetaEvent;
     type DustRemoval = ();
     type TransferPayment = ();
@@ -421,7 +422,7 @@ fn instantiate_and_call_and_deposit_event() {
                     },
                     EventRecord {
                         phase: Phase::ApplyExtrinsic(0),
-                        event: MetaEvent::contracts(contracts::RawEvent::Contract(
+                        event: MetaEvent::contracts(contracts::RawEvent::ContractExecution(
                             BOB,
                             vec![1, 2, 3, 4],
                         )),
@@ -492,7 +493,7 @@ fn instantiate_and_relate_operator() {
                     },
                     EventRecord {
                         phase: Phase::ApplyExtrinsic(0),
-                        event: MetaEvent::contracts(contracts::RawEvent::Contract(
+                        event: MetaEvent::contracts(contracts::RawEvent::ContractExecution(
                             BOB,
                             vec![1, 2, 3, 4],
                         )),
@@ -604,7 +605,7 @@ fn valid_instatiate(wasm: Vec<u8>, code_hash: CodeHash<Test>) {
             },
             EventRecord {
                 phase: Phase::ApplyExtrinsic(0),
-                event: MetaEvent::contracts(contracts::RawEvent::Contract(BOB, vec![1, 2, 3, 4])),
+                event: MetaEvent::contracts(contracts::RawEvent::ContractExecution(BOB, vec![1, 2, 3, 4])),
                 topics: vec![],
             },
             EventRecord {
@@ -693,7 +694,7 @@ fn update_parameters_passed() {
                     },
                     EventRecord {
                         phase: Phase::ApplyExtrinsic(0),
-                        event: MetaEvent::contracts(contracts::RawEvent::Contract(
+                        event: MetaEvent::contracts(contracts::RawEvent::ContractExecution(
                             BOB,
                             vec![1, 2, 3, 4],
                         )),
@@ -821,7 +822,7 @@ fn change_operator_passed() {
                     },
                     EventRecord {
                         phase: Phase::ApplyExtrinsic(0),
-                        event: MetaEvent::contracts(contracts::RawEvent::Contract(
+                        event: MetaEvent::contracts(contracts::RawEvent::ContractExecution(
                             BOB,
                             vec![1, 2, 3, 4],
                         )),

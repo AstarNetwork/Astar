@@ -2,7 +2,6 @@
 
 use codec::{Decode, Encode};
 use operator::{OperatorFinder, TransferOperator};
-use sp_runtime::traits::Bounded;
 use sp_std::fmt::Debug;
 use sp_std::prelude::*;
 use support::{
@@ -67,7 +66,7 @@ pub trait Trait: system::Trait {
 decl_storage! {
     trait Store for Module<T: Trait> as Operator {
         /// A mapping from the offering account id to Offer
-        pub Offers: linked_map T::AccountId => Option<OfferOf<T>>;
+        pub Offers: linked_map hasher(blake2_256) T::AccountId => Option<OfferOf<T>>;
     }
 }
 

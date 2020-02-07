@@ -5,7 +5,7 @@
 
 use codec::{Decode, Encode, HasCompact};
 use operator::ContractFinder;
-use session::OnSessionEnding;
+use session::SessionManager;
 use sp_runtime::RuntimeDebug;
 use sp_runtime::{
     traits::{
@@ -17,8 +17,7 @@ use sp_runtime::{
 use sp_std::{collections::btree_map::BTreeMap, convert::TryFrom, prelude::*, result, vec::Vec};
 pub use staking::{Forcing, Nominations, RewardDestination};
 use support::{
-    decl_event, decl_module, decl_storage,
-    ensure,
+    decl_event, decl_module, decl_storage, ensure,
     traits::{
         Currency, Get, Imbalance, LockIdentifier, LockableCurrency, OnUnbalanced, Time,
         WithdrawReasons,
@@ -160,24 +159,24 @@ decl_storage! {
     trait Store for Module<T: Trait> as PlasmStaking {
         // ----- Staking uses.
         /// Map from all locked "stash" accounts to the controller account.
-        pub Bonded get(fn bonded): map T::AccountId => Option<T::AccountId>;
+        pub Bonded get(fn bonded): map hasher(blake2_256) T::AccountId => Option<T::AccountId>;
         /// Map from all (unlocked) "controller" accounts to the info regarding the staking.
         pub Ledger get(fn ledger):
-            map T::AccountId => Option<StakingLedger<T::AccountId, BalanceOf<T>>>;
+            map hasher(blake2_256) T::AccountId => Option<StakingLedger<T::AccountId, BalanceOf<T>>>;
 
         /// Where the reward payment should be made. Keyed by stash.
-        pub Payee get(fn payee): map T::AccountId => RewardDestination;
+        pub Payee get(fn payee): map hasher(blake2_256) T::AccountId => RewardDestination;
 
         /// The map from nominator stash key to the set of stash keys of all contracts to nominate.
         ///
         /// NOTE: is private so that we can ensure upgraded before all typical accesses.
         /// Direct storage APIs can still bypass this protection.
-        DappsNominations get(fn dapps_nominations): linked_map T::AccountId => Option<Nominations<T::AccountId>>;
+        DappsNominations get(fn dapps_nominations): linked_map hasher(blake2_256) T::AccountId => Option<Nominations<T::AccountId>>;
 
         /// Nominators for a particular contract that is in action right now.
         ///
         /// This is keyed by the contract account id.
-        pub StakedContracts get(fn staked_contracts): linked_map T::AccountId => Exposure<T::AccountId, BalanceOf<T>>;
+        pub StakedContracts get(fn staked_contracts): linked_map hasher(blake2_256) T::AccountId => Exposure<T::AccountId, BalanceOf<T>>;
 
         // ---- Era manages.
         /// The currently elected validator set keyed by stash account ID.
@@ -494,7 +493,7 @@ decl_module! {
         /// # <weight>
         /// - No arguments.
         /// # </weight>
-        #[weight = SimpleDispatchInfo::FreeOperational]
+        #[weight = SimpleDispatchInfo::FixedOperational(0)]
         fn force_no_eras(origin) {
             ensure_root(origin)?;
             ForceEra::put(Forcing::ForceNone);
@@ -506,7 +505,7 @@ decl_module! {
         /// # <weight>
         /// - No arguments.
         /// # </weight>
-        #[weight = SimpleDispatchInfo::FreeOperational]
+        #[weight = SimpleDispatchInfo::FixedOperational(0)]
         fn force_new_era(origin) {
             ensure_root(origin)?;
             ForceEra::put(Forcing::ForceNew);
@@ -517,7 +516,7 @@ decl_module! {
         /// # <weight>
         /// - One storage write
         /// # </weight>
-        #[weight = SimpleDispatchInfo::FreeOperational]
+        #[weight = SimpleDispatchInfo::FixedOperational(0)]
         fn force_new_era_always(origin) {
             ensure_root(origin)?;
             ForceEra::put(Forcing::ForceAlways);
@@ -528,7 +527,7 @@ decl_module! {
         /// # <weight>
         /// - One storage write
         /// # </weight>
-        #[weight = SimpleDispatchInfo::FreeOperational]
+        #[weight = SimpleDispatchInfo::FixedOperational(0)]
         fn set_validators(origin, new_validators: Vec<T::AccountId>) {
             ensure_root(origin)?;
             <Validators<T>>::put(&new_validators);
@@ -600,10 +599,9 @@ impl<T: Trait> Module<T> {
     /// Session has just ended. Provide the validator set for the next session if it's an era-end, along
     /// with the exposure of the prior validator set.
     pub fn new_session(
-        ending: SessionIndex,
-        will_apply_at: SessionIndex,
+        new_index: SessionIndex,
     ) -> Option<Vec<T::AccountId>> {
-        let era_length = will_apply_at
+        let era_length = new_index
             .checked_sub(Self::current_era_start_session_index())
             .unwrap_or(0);
         match ForceEra::get() {
@@ -612,7 +610,7 @@ impl<T: Trait> Module<T> {
             Forcing::NotForcing if era_length > T::SessionsPerEra::get() => (),
             _ => return None,
         }
-        Self::new_era(ending, will_apply_at)
+        Self::new_era(new_index)
     }
 
     /// The era has changed - enact new staking set.
@@ -620,8 +618,7 @@ impl<T: Trait> Module<T> {
     /// NOTE: This always happens immediately before a session change to ensure that new validators
     /// get a chance to set their session keys.
     pub fn new_era(
-        _ending: SessionIndex,
-        will_apply_at: SessionIndex,
+        new_index: SessionIndex,
     ) -> Option<Vec<T::AccountId>> {
         let now = T::Time::now();
         let previous_era_start = <CurrentEraStart<T>>::mutate(|v| sp_std::mem::replace(v, now));
@@ -644,7 +641,7 @@ impl<T: Trait> Module<T> {
         }
 
         CurrentEra::mutate(|era| *era += 1);
-        CurrentEraStartSessionIndex::put(will_apply_at - 1);
+        CurrentEraStartSessionIndex::put(new_index - 1);
 
         Self::elected_operators();
 
@@ -830,18 +827,10 @@ impl<T: Trait> Module<T> {
     }
 }
 
-impl<T: Trait> OnSessionEnding<T::AccountId> for Module<T> {
-    fn on_session_ending(
-        ending: SessionIndex,
-        will_apply_at: SessionIndex,
-    ) -> Option<Vec<T::AccountId>> {
+impl<T: Trait> SessionManager<T::AccountId> for Module<T> {
+    fn new_session(new_index: SessionIndex) -> Option<Vec<T::AccountId>> {
         Self::ensure_storage_upgraded();
-        Self::new_session(ending, will_apply_at)
+        Self::new_session(new_index)
     }
-}
-
-impl<T: Trait> session::SelectInitialValidators<T::AccountId> for Module<T> {
-    fn select_initial_validators() -> Option<Vec<T::AccountId>> {
-        Some(<Validators<T>>::get())
-    }
+    fn end_session(_end_index: SessionIndex) {}
 }

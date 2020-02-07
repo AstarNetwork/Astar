@@ -72,11 +72,17 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
     let _ = GenesisConfig::<Test> {
         storage_version: 1,
         force_era: Forcing::NotForcing,
-        validators: validators,
+        validators: validators.clone(),
     }
     .assimilate_storage(&mut storage);
 
-    let _ = session::GenesisConfig::<Test> { keys: vec![] }.assimilate_storage(&mut storage);
+    let _ = session::GenesisConfig::<Test> {
+        keys: validators
+            .iter()
+            .map(|x| (*x, UintAuthorityId(*x)))
+            .collect(),
+    }
+    .assimilate_storage(&mut storage);
 
     storage.into()
 }
@@ -141,8 +147,7 @@ impl session::SessionHandler<u64> for TestSessionHandler {
 
 impl session::Trait for Test {
     type ShouldEndSession = session::PeriodicSessions<Period, Offset>;
-    type OnSessionEnding = PlasmStaking;
-    type SelectInitialValidators = PlasmStaking;
+    type SessionManager = PlasmStaking;
     type SessionHandler = TestSessionHandler;
     type ValidatorId = u64;
     type ValidatorIdOf = ConvertInto;
@@ -161,6 +166,7 @@ impl balances::Trait for Test {
     type Balance = Balance;
     type OnFreeBalanceZero = ();
     type OnNewAccount = ();
+    type OnReapAccount = System;
     type Event = ();
     type DustRemoval = ();
     type TransferPayment = ();
