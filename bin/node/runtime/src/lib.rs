@@ -12,11 +12,11 @@ use plasm_primitives::{
     AccountId, AccountIndex, Balance, BlockNumber, Hash, Index, Moment, Signature,
 };
 use plasm_staking::EraIndex;
-use primitives::OpaqueMetadata;
 use sp_api::impl_runtime_apis;
+use sp_core::OpaqueMetadata;
 use sp_runtime::traits::{
-    BlakeTwo256, Block as BlockT, ConvertInto, Extrinsic, NumberFor, OpaqueKeys,
-    SaturatedConversion, StaticLookup, Verify,
+    BlakeTwo256, Block as BlockT, ConvertInto, Extrinsic, OpaqueKeys, SaturatedConversion,
+    StaticLookup, Verify,
 };
 use sp_runtime::transaction_validity::TransactionValidity;
 use sp_runtime::{create_runtime_str, generic, impl_opaque_keys, ApplyExtrinsicResult, Perbill};
@@ -55,8 +55,8 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     // and set impl_version to equal spec_version. If only runtime
     // implementation changes and behavior does not, then leave spec_version as
     // is and increment impl_version.
-    spec_version: 31,
-    impl_version: 31,
+    spec_version: 32,
+    impl_version: 32,
     apis: RUNTIME_API_VERSIONS,
 };
 
@@ -93,7 +93,7 @@ impl system::Trait for Runtime {
     type MaximumBlockLength = MaximumBlockLength;
     type AvailableBlockRatio = AvailableBlockRatio;
     type Version = Version;
-    type ModuleToIndex = ();
+    type ModuleToIndex = ModuleToIndex;
 }
 
 parameter_types! {
@@ -124,6 +124,7 @@ impl balances::Trait for Runtime {
     type Balance = Balance;
     type OnFreeBalanceZero = Contracts;
     type OnNewAccount = Indices;
+    type OnReapAccount = System;
     type Event = Event;
     type DustRemoval = ();
     type TransferPayment = ();
@@ -168,14 +169,13 @@ impl_opaque_keys! {
 }
 
 impl session::Trait for Runtime {
-    type OnSessionEnding = PlasmStaking;
+    type SessionManager = PlasmStaking;
     type SessionHandler = <SessionKeys as OpaqueKeys>::KeyTypeIdProviders;
     type ShouldEndSession = Babe;
     type Event = Event;
     type Keys = SessionKeys;
     type ValidatorId = <Self as system::Trait>::AccountId;
     type ValidatorIdOf = ConvertInto;
-    type SelectInitialValidators = PlasmStaking;
     type DisabledValidatorsThreshold = ();
 }
 
@@ -238,6 +238,13 @@ impl contracts::Trait for Runtime {
 
 impl operator::Trait for Runtime {
     type Parameters = plasm_staking::parameters::StakingParameters;
+    type Event = Event;
+}
+
+impl trading::Trait for Runtime {
+    type Currency = Balances;
+    type OperatorFinder = Operator;
+    type TransferOperator = Operator;
     type Event = Event;
 }
 
@@ -310,6 +317,7 @@ construct_runtime!(
         FinalityTracker: finality_tracker::{Module, Call, Inherent},
         Sudo: sudo,
         Operator: operator::{Module, Call, Storage, Event<T>},
+        Trading: trading::{Module, Call, Storage, Event<T>},
         RandomnessCollectiveFlip: randomness_collective_flip::{Module, Call, Storage},
     }
 );
@@ -394,8 +402,8 @@ impl_runtime_apis! {
     }
 
     impl offchain_primitives::OffchainWorkerApi<Block> for Runtime {
-        fn offchain_worker(number: NumberFor<Block>) {
-            Executive::offchain_worker(number)
+        fn offchain_worker(header: &<Block as BlockT>::Header) {
+            Executive::offchain_worker(header)
         }
     }
 
@@ -429,7 +437,7 @@ impl_runtime_apis! {
         }
     }
 
-    impl contracts_rpc_runtime_api::ContractsApi<Block, AccountId, Balance> for Runtime {
+    impl contracts_rpc_runtime_api::ContractsApi<Block, AccountId, Balance, BlockNumber> for Runtime {
         fn call(
             origin: AccountId,
             dest: AccountId,
@@ -437,13 +445,8 @@ impl_runtime_apis! {
             gas_limit: u64,
             input_data: Vec<u8>,
         ) -> ContractExecResult {
-            let exec_result = Contracts::bare_call(
-                origin,
-                dest.into(),
-                value,
-                gas_limit,
-                input_data,
-            );
+            let exec_result =
+                Contracts::bare_call(origin, dest.into(), value, gas_limit, input_data);
             match exec_result {
                 Ok(v) => ContractExecResult::Success {
                     status: v.status,
@@ -456,16 +459,14 @@ impl_runtime_apis! {
         fn get_storage(
             address: AccountId,
             key: [u8; 32],
-        ) -> contracts_rpc_runtime_api::GetStorageResult {
-            Contracts::get_storage(address, key).map_err(|rpc_err| {
-                use contracts::GetStorageError;
-                use contracts_rpc_runtime_api::{GetStorageError as RpcGetStorageError};
-                /// Map the contract error into the RPC layer error.
-                match rpc_err {
-                    GetStorageError::ContractDoesntExist => RpcGetStorageError::ContractDoesntExist,
-                    GetStorageError::IsTombstone => RpcGetStorageError::IsTombstone,
-                }
-            })
+        ) -> contracts_primitives::GetStorageResult {
+            Contracts::get_storage(address, key)
+        }
+
+        fn rent_projection(
+            address: AccountId,
+        ) -> contracts_primitives::RentProjectionResult<BlockNumber> {
+            Contracts::rent_projection(address)
         }
     }
 
@@ -482,6 +483,12 @@ impl_runtime_apis! {
     impl sp_session::SessionKeys<Block> for Runtime {
         fn generate_session_keys(seed: Option<Vec<u8>>) -> Vec<u8> {
             SessionKeys::generate(seed)
+        }
+
+        fn decode_session_keys(
+            encoded: Vec<u8>,
+        ) -> Option<Vec<(Vec<u8>, sp_core::crypto::KeyTypeId)>> {
+            SessionKeys::decode_into_raw_public_keys(&encoded)
         }
     }
 }

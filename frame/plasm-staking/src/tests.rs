@@ -5,8 +5,8 @@
 use super::*;
 use crate::mock::*;
 use balances::BalanceLock;
-use support::assert_ok;
 use sp_runtime::DispatchError;
+use support::assert_ok;
 
 #[test]
 fn root_calls_fails_for_user() {
@@ -259,7 +259,9 @@ fn bond_failed_test() {
                 9,
                 RewardDestination::Stash,
             ),
-            Err(DispatchError::Other("can not bond with value less than minimum balance"))
+            Err(DispatchError::Other(
+                "can not bond with value less than minimum balance"
+            ))
         );
 
         success_first_bond(ALICE_STASH, ALICE_CTRL, 10, RewardDestination::Stash);

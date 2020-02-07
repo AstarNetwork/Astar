@@ -1,6 +1,6 @@
 [package]
 name = "plasm-runtime"
-version = "0.7.1"
+version = "0.7.2"
 authors = [
     "Takumi Yamashita <takumi@stake.co.jp>",
     "Aleksandr Krupenkin <aleksandr@stake.co.jp>"
@@ -15,7 +15,7 @@ codec = { package = "parity-scale-codec", version = "1.0.6", default-features = 
 
 # primitives
 plasm-primitives = { path = "../primitives", default-features = false }
-primitives = { package = "sp-core",  git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master", default-features = false }
+sp-core = { package = "sp-core",  git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master", default-features = false }
 sp-runtime = { git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master", default-features = false }
 babe-primitives = { package = "sp-consensus-babe", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master", default-features = false }
 offchain-primitives = { package = "sp-offchain", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master", default-features = false }
@@ -32,10 +32,12 @@ sp-session = { git = "https://github.com/staketechnologies/substrate.git", branc
 # frame dependencies
 operator = { package = "pallet-contract-operator", path = "../../../frame/operator", default-features = false }
 plasm-staking = { package = "pallet-plasm-staking", path = "../../../frame/plasm-staking", default-features = false }
+trading = { package = "pallet-operator-trading", path = "../../../frame/trading", default-features = false }
 executive = { package = "frame-executive", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master", default-features = false }
 babe = { package = "pallet-babe", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master", default-features = false }
 balances = { package = "pallet-balances", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master", default-features = false }
 contracts = { package = "pallet-contracts", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master", default-features = false }
+contracts-primitives = { package = "pallet-contracts-primitives", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master", default-features = false }
 contracts-rpc-runtime-api = { package = "pallet-contracts-rpc-runtime-api", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master", default-features = false }
 finality-tracker = { package = "pallet-finality-tracker", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master", default-features = false }
 grandpa = { package = "pallet-grandpa", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master", default-features = false }
@@ -65,6 +67,7 @@ std = [
     "sp-api/std",
     "codec/std",
     "contracts/std",
+    "contracts-primitives/std",
     "contracts-rpc-runtime-api/std",
     "executive/std",
     "finality-tracker/std",
@@ -73,12 +76,13 @@ std = [
     "operator/std",
     "offchain-primitives/std",
     "plasm-primitives/std",
-    "primitives/std",
+    "sp-core/std",
     "randomness-collective-flip/std",
     "sp-std/std",
     "serde",
     "session/std",
     "plasm-staking/std",
+    "trading/std",
     "sp-runtime/std",
     "sp-session/std",
     "sudo/std",

@@ -6,7 +6,7 @@ use sp_runtime::{
 };
 use sp_std::marker::PhantomData;
 use support::{
-    assert_err, assert_ok, impl_outer_event, impl_outer_origin, parameter_types, traits::Currency,
+    assert_err, assert_ok, impl_outer_event, impl_outer_origin, parameter_types,
     StorageMap,
 };
 use system::{self, EventRecord, Phase};
@@ -62,6 +62,7 @@ parameter_types! {
 impl balances::Trait for Test {
     type Balance = u64;
     type OnFreeBalanceZero = ();
+    type OnReapAccount = System;
     type OnNewAccount = ();
     type Event = MetaEvent;
     type DustRemoval = ();
@@ -79,12 +80,12 @@ impl timestamp::Trait for Test {
     type MinimumPeriod = MinimumPeriod;
 }
 
-// define mock operator trait
+/// define mock operator trait
 pub trait MockOperatorTrait: system::Trait {}
 decl_storage! {
     trait Store for MockOperatorModule<T: MockOperatorTrait> as MockOperator {
         /// A mapping from operators to operated contracts by them.
-        pub OperatorHasContracts: map T::AccountId => Vec<T::AccountId>;
+        pub OperatorHasContracts: map hasher(blake2_256) T::AccountId => Vec<T::AccountId>;
      }
 }
 pub struct MockOperatorModule<T: MockOperatorTrait>(PhantomData<T>);
@@ -181,6 +182,7 @@ fn advance_session() {
         &[0u8; 32].into(),
         &[0u8; 32].into(),
         &Default::default(),
+        system::InitKind::Full,
     );
     // increase timestamp + 10
     let now_time = Timestamp::get();
@@ -226,7 +228,6 @@ fn correct_offer(
     amount: u64,
     expired: u64,
 ) {
-    let buyer_balances = Balances::free_balance(&buyer);
     assert_ok!(Trading::offer(
         Origin::signed(buyer),
         sender,
@@ -251,8 +252,16 @@ fn correct_offer(
         },]
     );
     assert_eq!(Some(offer.clone()), <Offers<Test>>::get(&buyer));
-    // TODO: Locking buyer test
-    //  assert_eq!(vec![Lock{~~}], Balances::locks(&buyer))
+    // Locking buyer test
+    assert_eq!(
+        vec![balances::BalanceLock {
+            id: TRADING_ID,
+            amount: amount,
+            until: expired,
+            reasons: WithdrawReasons::all(),
+        }],
+        Balances::locks(&buyer)
+    )
 }
 
 #[test]
@@ -294,8 +303,11 @@ fn correct_reject(rejector: AccountId, offer_id: AccountId) {
     assert_eq!(Some(reject_offer), <Offers<Test>>::get(&offer_id));
     // not changed.
     assert_eq!(MockOperatorModule::<Test>::contracts(&ALICE), contracts);
-    // TODO: Unlocking buyer test
-    //  assert_eq!(vec![], Balances::locks(&buyer))
+    // Unlocking buyer test
+    assert_eq!(
+        Vec::<balances::BalanceLock<u64, u64>>::new(),
+        Balances::locks(&offer_id)
+    )
 }
 
 #[test]
@@ -408,8 +420,11 @@ fn correct_accept(acceptor: AccountId, offer_id: AccountId) {
         sender_balances + offer.amount,
         Balances::free_balance(&offer.sender)
     );
-    // TODO: Unlocking buyer test
-    //  assert_eq!(vec![], Balances::locks(&buyer))
+    // Unlocking buyer test
+    assert_eq!(
+        Vec::<balances::BalanceLock<u64, u64>>::new(),
+        Balances::locks(&offer.buyer)
+    )
 }
 
 #[test]

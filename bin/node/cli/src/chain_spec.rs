@@ -2,7 +2,6 @@ use babe_primitives::AuthorityId as BabeId;
 ///! Plasm chain configuration.
 use chain_spec::ChainSpecExtension;
 use grandpa_primitives::AuthorityId as GrandpaId;
-use hex_literal::hex;
 use plasm_primitives::{AccountId, Balance, Signature};
 use plasm_runtime::constants::currency::*;
 use plasm_runtime::Block;
@@ -11,10 +10,9 @@ use plasm_runtime::{
     IndicesConfig, PlasmStakingConfig, SessionConfig, SessionKeys, SudoConfig, SystemConfig,
     WASM_BINARY,
 };
-use primitives::{crypto::UncheckedInto, sr25519, ecdsa, Pair, Public};
+use primitives::{sr25519, Pair, Public};
 use serde::{Deserialize, Serialize};
 use sp_runtime::traits::{IdentifyAccount, Verify};
-use telemetry::TelemetryEndpoints;
 
 type AccountPublic = <Signature as Verify>::Signer;
 
