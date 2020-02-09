@@ -165,7 +165,7 @@ decl_event!(
 
 impl<T: Trait> ContractFinder<T::AccountId, T::Parameters> for Module<T> {
     fn is_exists_contract(contract_id: &T::AccountId) -> bool {
-        <ContractHasOperator<T>>::exists(contract_id)
+        <ContractHasOperator<T>>::contains_key(contract_id)
     }
     fn operator(contract_id: &T::AccountId) -> Option<T::AccountId> {
         <ContractHasOperator<T>>::get(contract_id)
