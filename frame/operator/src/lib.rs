@@ -1,7 +1,10 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use contracts::{BalanceOf, CodeHash, ContractAddressFor, Gas};
-use sp_runtime::traits::{MaybeDisplay, MaybeSerialize, Member};
+use sp_runtime::{
+    traits::{MaybeDisplay, MaybeSerialize, Member},
+    DispatchError,
+};
 use sp_std::prelude::*;
 use support::{decl_event, decl_module, decl_storage, Parameter};
 use system::{ensure_signed, RawOrigin};
@@ -16,6 +19,45 @@ pub trait ContractFinder<AccountId, Parameter> {
     fn is_exists_contract(contract_id: &AccountId) -> bool;
     fn operator(contract_id: &AccountId) -> Option<AccountId>;
     fn parameters(contract_id: &AccountId) -> Option<Parameter>;
+}
+
+pub trait OperatorFinder<AccountId: Parameter> {
+    fn contracts(operator_id: &AccountId) -> Vec<AccountId>;
+}
+
+pub trait TransferOperator<AccountId: Parameter>: OperatorFinder<AccountId> {
+    /// Changes an operator for identified contracts with verify.
+    fn transfer_operator(
+        current_operator: AccountId,
+        contracts: Vec<AccountId>,
+        new_operator: AccountId,
+    ) -> Result<(), DispatchError> {
+        Self::verify_transfer_operator(&current_operator, &contracts)?;
+        Self::force_transfer_operator(current_operator, contracts, new_operator);
+        Ok(())
+    }
+
+    fn verify_transfer_operator(
+        current_operator: &AccountId,
+        contracts: &Vec<AccountId>,
+    ) -> Result<(), DispatchError> {
+        let operate_contracts = Self::contracts(current_operator);
+
+        // check the actually operate the contract.
+        if !contracts.iter().all(|c| operate_contracts.contains(c)) {
+            Err(DispatchError::Other(
+                "The sender don't operate the contracts address.",
+            ))?
+        }
+        Ok(())
+    }
+
+    /// Force Changes an operator for identified contracts without verify.
+    fn force_transfer_operator(
+        current_operator: AccountId,
+        contracts: Vec<AccountId>,
+        new_operator: AccountId,
+    );
 }
 
 /// The module's configuration trait.
@@ -36,11 +78,11 @@ pub trait Trait: contracts::Trait {
 decl_storage! {
     trait Store for Module<T: Trait> as Operator {
         /// A mapping from operators to operated contracts by them.
-        pub OperatorHasContracts: map T::AccountId => Vec<T::AccountId>;
+        pub OperatorHasContracts get(fn operator_has_contracts): map hasher(blake2_256) T::AccountId => Vec<T::AccountId>;
         /// A mapping from operated contract by operator to it.
-        pub ContractHasOperator: linked_map T::AccountId => Option<T::AccountId>;
+        pub ContractHasOperator get(fn contract_has_operator): linked_map hasher(blake2_256) T::AccountId => Option<T::AccountId>;
         /// A mapping from contract to it's parameters.
-        pub ContractParameters: map T::AccountId => Option<T::Parameters>;
+        pub ContractParameters get(fn contract_parameters): map hasher(blake2_256) T::AccountId => Option<T::Parameters>;
     }
 }
 
@@ -100,27 +142,7 @@ decl_module! {
         /// Changes an operator for identified contracts.
         pub fn change_operator(origin, contracts: Vec<T::AccountId>, new_operator: T::AccountId) {
             let operator = ensure_signed(origin)?;
-            let operate_contracts = <OperatorHasContracts<T>>::get(&operator);
-
-            // check the actually operate the contract.
-            if !contracts.iter().all(|c| operate_contracts.contains(&c)) {
-                Err("The sender don't operate the contracts address.")?
-            }
-
-            // remove origin operator to contracts
-            <OperatorHasContracts<T>>::mutate(&operator,
-                |tree| *tree = tree.iter().filter(|&x| !contracts.contains(x)).cloned().collect());
-
-            // add new_operator to contracts
-            <OperatorHasContracts<T>>::mutate(&new_operator,
-                |tree| for c in contracts.iter() { (*tree).push(c.clone()); }
-            );
-            for c in contracts.iter() {
-                // add contract to new_operator
-                <ContractHasOperator<T>>::insert(&c, new_operator.clone());
-                // issue an event operator -> contract
-                Self::deposit_event(RawEvent::SetOperator(new_operator.clone(), c.clone()));
-            }
+            Self::transfer_operator(operator, contracts, new_operator)?;
         }
     }
 }
@@ -150,5 +172,41 @@ impl<T: Trait> ContractFinder<T::AccountId, T::Parameters> for Module<T> {
     }
     fn parameters(contract_id: &T::AccountId) -> Option<T::Parameters> {
         <ContractParameters<T>>::get(contract_id)
+    }
+}
+impl<T: Trait> OperatorFinder<T::AccountId> for Module<T> {
+    fn contracts(operator_id: &T::AccountId) -> Vec<T::AccountId> {
+        <OperatorHasContracts<T>>::get(operator_id)
+    }
+}
+
+impl<T: Trait> TransferOperator<T::AccountId> for Module<T> {
+    /// Force Changes an operator for identified contracts without verify.
+    fn force_transfer_operator(
+        current_operator: T::AccountId,
+        contracts: Vec<T::AccountId>,
+        new_operator: T::AccountId,
+    ) {
+        // remove origin operator to contracts
+        <OperatorHasContracts<T>>::mutate(&current_operator, |tree| {
+            *tree = tree
+                .iter()
+                .filter(|&x| !contracts.contains(x))
+                .cloned()
+                .collect()
+        });
+
+        // add new_operator to contracts
+        <OperatorHasContracts<T>>::mutate(&new_operator, |tree| {
+            for c in contracts.iter() {
+                (*tree).push(c.clone());
+            }
+        });
+        for c in contracts.iter() {
+            // add contract to new_operator
+            <ContractHasOperator<T>>::insert(&c, new_operator.clone());
+            // issue an event operator -> contract
+            Self::deposit_event(RawEvent::SetOperator(new_operator.clone(), c.clone()));
+        }
     }
 }

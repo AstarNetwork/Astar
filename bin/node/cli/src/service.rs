@@ -5,23 +5,22 @@ use std::sync::Arc;
 use babe;
 use client::{self, LongestChain};
 use grandpa::{self, FinalityProofProvider as GrandpaFinalityProofProvider};
+use inherents::InherentDataProviders;
+use network::construct_simple_protocol;
 use plasm_executor;
 use plasm_primitives::Block;
 use plasm_runtime::{GenesisConfig, RuntimeApi};
 use sc_service::{
-    AbstractService, ServiceBuilder, config::Configuration, error::{Error as ServiceError},
+    config::Configuration, error::Error as ServiceError, AbstractService, ServiceBuilder,
 };
-use inherents::InherentDataProviders;
-use network::construct_simple_protocol;
 
-use sc_service::{Service, NetworkStatus};
 use client::{Client, LocalCallExecutor};
 use client_db::Backend;
-use sp_runtime::traits::Block as BlockT;
-use plasm_executor::NativeExecutor;
 use network::NetworkService;
 use offchain::OffchainWorkers;
-use primitives::Blake2Hasher;
+use plasm_executor::NativeExecutor;
+use sc_service::{NetworkStatus, Service};
+use sp_runtime::traits::Block as BlockT;
 
 construct_simple_protocol! {
     pub struct NodeProtocol where Block = Block { }
@@ -38,54 +37,56 @@ macro_rules! new_full_start {
         let inherent_data_providers = inherents::InherentDataProviders::new();
 
         let builder = sc_service::ServiceBuilder::new_full::<
-            plasm_primitives::Block, plasm_runtime::RuntimeApi, plasm_executor::Executor
+            plasm_primitives::Block,
+            plasm_runtime::RuntimeApi,
+            plasm_executor::Executor,
         >($config)?
-            .with_select_chain(|_config, backend| {
-                Ok(client::LongestChain::new(backend.clone()))
-            })?
-            .with_transaction_pool(|config, client, _fetcher| {
-                let pool_api = txpool::FullChainApi::new(client.clone());
-                let pool = txpool::BasicPool::new(config, pool_api);
-                let maintainer = txpool::FullBasicPoolMaintainer::new(pool.pool().clone(), client);
-                let maintainable_pool = txpool_api::MaintainableTransactionPool::new(pool, maintainer);
-                Ok(maintainable_pool)
-            })?
-            .with_import_queue(|_config, client, mut select_chain, _transaction_pool| {
-                let select_chain = select_chain.take()
-                    .ok_or_else(|| sc_service::Error::SelectChainRequired)?;
-                let (grandpa_block_import, grandpa_link) = grandpa::block_import(
-                    client.clone(),
-                    &*client,
-                    select_chain,
-                )?;
-                let justification_import = grandpa_block_import.clone();
+        .with_select_chain(|_config, backend| Ok(client::LongestChain::new(backend.clone())))?
+        .with_transaction_pool(|config, client, _fetcher| {
+            let pool_api = txpool::FullChainApi::new(client.clone());
+            let pool = txpool::BasicPool::new(config, std::sync::Arc::new(pool_api));
+            Ok(pool)
+        })?
+        .with_import_queue(|_config, client, mut select_chain, _transaction_pool| {
+            let select_chain = select_chain
+                .take()
+                .ok_or_else(|| sc_service::Error::SelectChainRequired)?;
+            let (grandpa_block_import, grandpa_link) =
+                grandpa::block_import(client.clone(), &*client, select_chain)?;
+            let justification_import = grandpa_block_import.clone();
 
-                let (block_import, babe_link) = babe::block_import(
-                    babe::Config::get_or_compute(&*client)?,
-                    grandpa_block_import,
-                    client.clone(),
-                    client.clone(),
-                )?;
+            let (block_import, babe_link) = babe::block_import(
+                babe::Config::get_or_compute(&*client)?,
+                grandpa_block_import,
+                client.clone(),
+                client.clone(),
+            )?;
 
-                let import_queue = babe::import_queue(
-                    babe_link.clone(),
-                    block_import.clone(),
-                    Some(Box::new(justification_import)),
-                    None,
-                    client.clone(),
+            let import_queue = babe::import_queue(
+                babe_link.clone(),
+                block_import.clone(),
+                Some(Box::new(justification_import)),
+                None,
+                client.clone(),
+                client,
+                inherent_data_providers.clone(),
+            )?;
+
+            import_setup = Some((block_import, grandpa_link, babe_link));
+            Ok(import_queue)
+        })?
+        .with_rpc_extensions(
+            |client, pool, _backend, fetcher, _remote_blockchain| -> Result<RpcExtension, _> {
+                Ok(plasm_rpc::create(
                     client,
-                    inherent_data_providers.clone(),
-                )?;
-
-                import_setup = Some((block_import, grandpa_link, babe_link));
-                Ok(import_queue)
-            })?
-            .with_rpc_extensions(|client, pool, _backend, fetcher, _remote_blockchain| -> Result<RpcExtension, _> {
-                Ok(plasm_rpc::create(client, pool, plasm_rpc::LightDeps::none(fetcher)))
-            })?;
+                    pool,
+                    plasm_rpc::LightDeps::none(fetcher),
+                ))
+            },
+        )?;
 
         (builder, import_setup, inherent_data_providers)
-    }}
+    }};
 }
 
 /// Creates a full service from the configuration.
@@ -94,16 +95,11 @@ macro_rules! new_full_start {
 /// concrete types instead.
 macro_rules! new_full {
     ($config:expr, $with_startup_data: expr) => {{
-        let (
-            is_authority,
-            force_authoring,
-            name,
-            disable_grandpa
-        ) = (
+        let (is_authority, force_authoring, name, disable_grandpa) = (
             $config.roles.is_authority(),
             $config.force_authoring,
             $config.name.clone(),
-            $config.disable_grandpa
+            $config.disable_grandpa,
         );
 
         // sentry nodes announce themselves as authorities to the network
@@ -113,14 +109,16 @@ macro_rules! new_full {
 
         let (builder, mut import_setup, inherent_data_providers) = new_full_start!($config);
 
-        let service = builder.with_network_protocol(|_| Ok(crate::service::NodeProtocol::new()))?
-            .with_finality_proof_provider(|client, backend|
+        let service = builder
+            .with_network_protocol(|_| Ok(crate::service::NodeProtocol::new()))?
+            .with_finality_proof_provider(|client, backend| {
                 Ok(Arc::new(grandpa::FinalityProofProvider::new(backend, client)) as _)
-            )?
+            })?
             .build()?;
 
-        let (block_import, grandpa_link, babe_link) = import_setup.take()
-                .expect("Link Half and Block Import are present for Full Services or setup failed before. qed");
+        let (block_import, grandpa_link, babe_link) = import_setup.take().expect(
+            "Link Half and Block Import are present for Full Services or setup failed before. qed",
+        );
 
         ($with_startup_data)(&block_import, &babe_link);
 
@@ -131,7 +129,8 @@ macro_rules! new_full {
             };
 
             let client = service.client();
-            let select_chain = service.select_chain()
+            let select_chain = service
+                .select_chain()
                 .ok_or(sc_service::Error::SelectChainRequired)?;
 
             let can_author_with =
@@ -151,7 +150,7 @@ macro_rules! new_full {
             };
 
             let babe = babe::start_babe(babe_config)?;
-            service.spawn_essential_task(babe);
+            service.spawn_essential_task("babe-proposer", babe);
         }
 
         // if the node isn't actively participating in consensus then it doesn't
@@ -191,7 +190,8 @@ macro_rules! new_full {
             };
             // the GRANDPA voter task is considered infallible, i.e.
             // if it fails we take down the service with it.
-            service.spawn_essential_task(grandpa::run_grandpa_voter(grandpa_config)?);
+            service
+                .spawn_essential_task("grandpa-voter", grandpa::run_grandpa_voter(grandpa_config)?);
         } else {
             grandpa::setup_disabled_grandpa(
                 service.client(),
@@ -204,124 +204,126 @@ macro_rules! new_full {
     }};
     ($config:expr) => {{
         new_full!($config, |_, _| {})
-    }}
+    }};
 }
 
 #[allow(dead_code)]
 type ConcreteBlock = plasm_primitives::Block;
 #[allow(dead_code)]
-type ConcreteClient =
-    Client<
-        Backend<ConcreteBlock>,
-        LocalCallExecutor<Backend<ConcreteBlock>,
-        NativeExecutor<plasm_executor::Executor>>,
-        ConcreteBlock,
-        plasm_runtime::RuntimeApi
-    >;
+type ConcreteClient = Client<
+    Backend<ConcreteBlock>,
+    LocalCallExecutor<Backend<ConcreteBlock>, NativeExecutor<plasm_executor::Executor>>,
+    ConcreteBlock,
+    plasm_runtime::RuntimeApi,
+>;
 #[allow(dead_code)]
 type ConcreteBackend = Backend<ConcreteBlock>;
 #[allow(dead_code)]
-type ConcreteTransactionPool = txpool_api::MaintainableTransactionPool<
-    txpool::BasicPool<
-        txpool::FullChainApi<ConcreteClient, ConcreteBlock>,
-        ConcreteBlock
-    >,
-    txpool::FullBasicPoolMaintainer<
-        ConcreteClient,
-        txpool::FullChainApi<ConcreteClient, Block>
-    >
->;
+type ConcreteTransactionPool =
+    txpool::BasicPool<txpool::FullChainApi<ConcreteClient, ConcreteBlock>, ConcreteBlock>;
 
 /// A specialized configuration object for setting up the node..
-pub type NodeConfiguration<C> = Configuration<C, GenesisConfig, crate::chain_spec::Extensions>;
+pub type NodeConfiguration = Configuration<GenesisConfig, crate::chain_spec::Extensions>;
 
 /// Builds a new service for a full client.
-pub fn new_full<C: Send + Default + 'static>(config: NodeConfiguration<C>)
--> Result<
+pub fn new_full(
+    config: NodeConfiguration,
+) -> Result<
     Service<
         ConcreteBlock,
         ConcreteClient,
         LongestChain<ConcreteBackend, ConcreteBlock>,
         NetworkStatus<ConcreteBlock>,
-        NetworkService<ConcreteBlock, crate::service::NodeProtocol, <ConcreteBlock as BlockT>::Hash>,
+        NetworkService<
+            ConcreteBlock,
+            crate::service::NodeProtocol,
+            <ConcreteBlock as BlockT>::Hash,
+        >,
         ConcreteTransactionPool,
         OffchainWorkers<
             ConcreteClient,
-            <ConcreteBackend as client_api::backend::Backend<Block, Blake2Hasher>>::OffchainStorage,
+            <ConcreteBackend as client_api::backend::Backend<Block>>::OffchainStorage,
             ConcreteBlock,
-        >
+        >,
     >,
     ServiceError,
->
-{
+> {
     new_full!(config).map(|(service, _)| service)
 }
 
 /// Builds a new service for a light client.
-pub fn new_light<C: Send + Default + 'static>(config: NodeConfiguration<C>)
--> Result<impl AbstractService, ServiceError> {
+pub fn new_light(config: NodeConfiguration) -> Result<impl AbstractService, ServiceError> {
     type RpcExtension = jsonrpc_core::IoHandler<sc_rpc::Metadata>;
     let inherent_data_providers = InherentDataProviders::new();
 
     let service = ServiceBuilder::new_light::<Block, RuntimeApi, plasm_executor::Executor>(config)?
-        .with_select_chain(|_config, backend| {
-            Ok(LongestChain::new(backend.clone()))
-        })?
+        .with_select_chain(|_config, backend| Ok(LongestChain::new(backend.clone())))?
         .with_transaction_pool(|config, client, fetcher| {
             let fetcher = fetcher
                 .ok_or_else(|| "Trying to start light transaction pool without active fetcher")?;
             let pool_api = txpool::LightChainApi::new(client.clone(), fetcher.clone());
-            let pool = txpool::BasicPool::new(config, pool_api);
-            let maintainer = txpool::LightBasicPoolMaintainer::with_defaults(pool.pool().clone(), client, fetcher);
-            let maintainable_pool = txpool_api::MaintainableTransactionPool::new(pool, maintainer);
-            Ok(maintainable_pool)
+            let pool = txpool::BasicPool::with_revalidation_type(
+                config,
+                Arc::new(pool_api),
+                txpool::RevalidationType::Light,
+            );
+            Ok(pool)
         })?
-        .with_import_queue_and_fprb(|_config, client, backend, fetcher, _select_chain, _tx_pool| {
-            let fetch_checker = fetcher
-                .map(|fetcher| fetcher.checker().clone())
-                .ok_or_else(|| "Trying to start light import queue without active fetch checker")?;
-            let grandpa_block_import = grandpa::light_block_import::<_, _, _, RuntimeApi>(
-                client.clone(),
-                backend,
-                &*client,
-                Arc::new(fetch_checker),
-            )?;
+        .with_import_queue_and_fprb(
+            |_config, client, backend, fetcher, _select_chain, _tx_pool| {
+                let fetch_checker = fetcher
+                    .map(|fetcher| fetcher.checker().clone())
+                    .ok_or_else(|| {
+                        "Trying to start light import queue without active fetch checker"
+                    })?;
+                let grandpa_block_import = grandpa::light_block_import::<_, _, _, RuntimeApi>(
+                    client.clone(),
+                    backend,
+                    &*client,
+                    Arc::new(fetch_checker),
+                )?;
 
-            let finality_proof_import = grandpa_block_import.clone();
-            let finality_proof_request_builder =
-                finality_proof_import.create_finality_proof_request_builder();
+                let finality_proof_import = grandpa_block_import.clone();
+                let finality_proof_request_builder =
+                    finality_proof_import.create_finality_proof_request_builder();
 
-            let (babe_block_import, babe_link) = babe::block_import(
-                babe::Config::get_or_compute(&*client)?,
-                grandpa_block_import,
-                client.clone(),
-                client.clone(),
-            )?;
+                let (babe_block_import, babe_link) = babe::block_import(
+                    babe::Config::get_or_compute(&*client)?,
+                    grandpa_block_import,
+                    client.clone(),
+                    client.clone(),
+                )?;
 
-            let import_queue = babe::import_queue(
-                babe_link,
-                babe_block_import,
-                None,
-                Some(Box::new(finality_proof_import)),
-                client.clone(),
-                client,
-                inherent_data_providers.clone(),
-            )?;
+                let import_queue = babe::import_queue(
+                    babe_link,
+                    babe_block_import,
+                    None,
+                    Some(Box::new(finality_proof_import)),
+                    client.clone(),
+                    client,
+                    inherent_data_providers.clone(),
+                )?;
 
-            Ok((import_queue, finality_proof_request_builder))
-        })?
-        .with_network_protocol(|_| Ok(NodeProtocol::new()))?
-        .with_finality_proof_provider(|client, backend|
-            Ok(Arc::new(GrandpaFinalityProofProvider::new(backend, client)) as _)
+                Ok((import_queue, finality_proof_request_builder))
+            },
         )?
-        .with_rpc_extensions(|client, pool, _backend, fetcher, remote_blockchain| -> Result<RpcExtension, _> {
-            let fetcher = fetcher
-                .ok_or_else(|| "Trying to start node RPC without active fetcher")?;
-            let remote_blockchain = remote_blockchain
-                .ok_or_else(|| "Trying to start node RPC without active remote blockchain")?;
-            let light_deps = plasm_rpc::LightDeps { remote_blockchain, fetcher };
-            Ok(plasm_rpc::create(client, pool, Some(light_deps)))
+        .with_network_protocol(|_| Ok(NodeProtocol::new()))?
+        .with_finality_proof_provider(|client, backend| {
+            Ok(Arc::new(GrandpaFinalityProofProvider::new(backend, client)) as _)
         })?
+        .with_rpc_extensions(
+            |client, pool, _backend, fetcher, remote_blockchain| -> Result<RpcExtension, _> {
+                let fetcher =
+                    fetcher.ok_or_else(|| "Trying to start node RPC without active fetcher")?;
+                let remote_blockchain = remote_blockchain
+                    .ok_or_else(|| "Trying to start node RPC without active remote blockchain")?;
+                let light_deps = plasm_rpc::LightDeps {
+                    remote_blockchain,
+                    fetcher,
+                };
+                Ok(plasm_rpc::create(client, pool, Some(light_deps)))
+            },
+        )?
         .build()?;
 
     Ok(service)
