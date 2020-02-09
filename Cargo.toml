@@ -9,6 +9,7 @@ members = [
     "frame/operator",
     "frame/trading",
     "frame/plasm-staking",
+    "frame/plasm-lockdrop",
 ]
 
 exclude = [
