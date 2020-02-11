@@ -1,9 +1,9 @@
 //! Plasm Lockdrop module. This can be compiled with `#[no_std]`, ready for Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use codec::{Encode, Decode, Codec};
+use codec::{Encode, Decode};
 use sp_std::prelude::*;
-use sp_core::{U256, H256};
+use sp_core::{H256, ecdsa, hashing::sha2_256};
 use sp_runtime::{
     RuntimeDebug,
     traits::{Member, IdentifyAccount, BlakeTwo256, Hash},
@@ -21,6 +21,7 @@ use frame_system::{
     self as system, ensure_signed,
     offchain::SubmitSignedTransaction,
 };
+use ripemd160::{Ripemd160, Digest};
 
 /// Plasm Lockdrop Authority local KeyType.
 ///
@@ -98,7 +99,7 @@ pub trait Trait: system::Trait {
     type Event: From<Event<Self>> + Into<<Self as frame_system::Trait>::Event>;
 }
 
-/// Claim id is a hash of claim parameters and sender account id.
+/// Claim id is a hash of claim parameters.
 pub type ClaimId = H256;
 
 /// Type for enumerating claim proof votes. 
@@ -112,13 +113,14 @@ pub enum Lockdrop {
     /// transaction sended with time-lockding opcode,
     /// BTC token locked and could be spend some timestamp.
     /// Duration and value could be derived from BTC transaction.
-    Bitcoin { balance: U256, duration: u64, transaction_hash: H256, },
+    Bitcoin { public: ecdsa::Public, value: u64, duration: u64, transaction_hash: H256, },
 }
 
 impl Default for Lockdrop {
     fn default() -> Self {
         Lockdrop::Bitcoin {
-            balance: Default::default(),
+            public: Default::default(),
+            value: Default::default(),
             duration: Default::default(),
             transaction_hash: Default::default(),
         }
@@ -128,8 +130,7 @@ impl Default for Lockdrop {
 /// Lockdrop claim request description.
 #[cfg_attr(feature = "std", derive(PartialEq, Eq))]
 #[derive(Encode, Decode, RuntimeDebug, Clone, Default)]
-pub struct Claim<AccountId: Member + Codec> {
-    sender: AccountId,
+pub struct Claim {
     params: Lockdrop,
     approve: AuthorityVote,
     decline: AuthorityVote,
@@ -162,8 +163,7 @@ decl_storage! {
         /// List of lockdrop authority id's.
         Keys get(fn keys): Vec<T::AuthorityId>;
         /// Token claim requests.
-        Claims get(fn claims): linked_map hasher(blake2_256)
-                               ClaimId => Claim<T::AccountId>;
+        Claims get(fn claims): linked_map hasher(blake2_256) ClaimId => Claim;
         /// Latest claim index.
         LatestClaim get(fn latest_claim): ClaimId;
     }
@@ -188,13 +188,13 @@ decl_module! {
             origin,
             params: Lockdrop,
         ) {
-            let sender = ensure_signed(origin)?;
-            let claim_id = BlakeTwo256::hash_of(&(sender.clone(), params.clone()));
-            ensure!(!Claims::<T>::get(claim_id).complete, "claim should not be already paid"); 
+            let _ = ensure_signed(origin)?;
+            let claim_id = BlakeTwo256::hash_of(&params);
+            ensure!(!<Claims>::get(claim_id).complete, "claim should not be already paid"); 
 
-            if Claims::<T>::exists(claim_id) {
-                let claim = Claim { sender, params, .. Default::default() };
-                Claims::<T>::insert(claim_id, claim);
+            if <Claims>::exists(claim_id) {
+                let claim = Claim { params, .. Default::default() };
+                <Claims>::insert(claim_id, claim);
             }
 
             <Requests>::mutate(|requests| requests.push(claim_id));
@@ -207,7 +207,7 @@ decl_module! {
             origin,
             _claim_id: ClaimId,
         ) {
-            let _sender = ensure_signed(origin)?;
+            let _ = ensure_signed(origin)?;
             unimplemented!();
         }
 
@@ -220,9 +220,9 @@ decl_module! {
         ) {
             let sender = ensure_signed(origin)?;
             ensure!(Self::is_authority(&sender), "this method for lockdrop authorities only");
-            ensure!(Claims::<T>::exists(claim_id), "request with this id doesn't exist");
+            ensure!(<Claims>::exists(claim_id), "request with this id doesn't exist");
 
-            Claims::<T>::mutate(&claim_id, |claim|
+            <Claims>::mutate(&claim_id, |claim|
                 if approve { claim.approve += 1 }
                 else { claim.decline += 1 }
             );
@@ -237,7 +237,7 @@ decl_module! {
                 match Self::offchain() {
                     Err(e) => debug::error!(
                         target: "lockdrop-offchain-worker",
-                        "Lockdrop worker failed with error: {}", e
+                        "lockdrop worker fails: {}", e
                     ),
                     _ => (),
                 }
@@ -278,27 +278,50 @@ impl<T: Trait> Module<T> {
         Ok(())
     }
 
+    /// Check that authority key list contains given account
     fn is_authority(account: &T::AccountId) -> bool {
         Keys::<T>::get()
             .binary_search_by(|key| key.clone().into_account().cmp(account))
             .is_ok()
     }
 
+    /// Check locking parameters of given claim
     fn check_lock(claim_id: ClaimId) -> Result<bool, String> {
-        let Claim { sender, params, .. } = Self::claims(claim_id);
+        let Claim { params, .. } = Self::claims(claim_id);
         match params {
-            Lockdrop::Bitcoin { balance, duration, transaction_hash } => {
+            Lockdrop::Bitcoin { public, value, duration, transaction_hash } => {
                 let uri = format!(
                     // XXX: Fetch transaction description in BTC Testnet using blockcypher API.
                     "http://api.blockcypher.com/v1/btc/test3/txs/{}",
                     hex::encode(transaction_hash)
                 );
                 let tx = Self::fetch_json(uri)?;
-                unimplemented!()
+                debug::debug!(
+                    target: "lockdrop-offchain-worker",
+                    "claim id {} => fetched transaction: {:?}", claim_id, tx
+                );
+
+                let lock_script = Self::btc_lock_script(public, duration);
+                debug::debug!(
+                    target: "lockdrop-offchain-worker",
+                    "claim id {} => desired lock script: {}", claim_id, hex::encode(lock_script.clone())
+                );
+
+                let script = Self::p2sh(&Self::btc_script_hash(&lock_script[..]));
+                debug::debug!(
+                    target: "lockdrop-offchain-worker",
+                    "claim id {} => desired P2HS script: {}", claim_id, hex::encode(script.clone())
+                );
+
+                // Confirm for 
+                Ok(tx["configurations"].as_u64().unwrap() > 10 &&
+                    tx["outputs"][0]["script"] == serde_json::json!(hex::encode(script)) &&
+                    tx["outputs"][0]["value"].as_u64().unwrap() == value)
             },
         }
     }
 
+    /// HTTP fetch JSON value by URI
     fn fetch_json(uri: String) -> Result<serde_json::Value, String> {
         let request = Request::get(uri.as_ref()).send()
             .map_err(|e| format!("HTTP request error: {:?}", e))?;
@@ -307,6 +330,46 @@ impl<T: Trait> Module<T> {
         serde_json::to_value(response.body().clone().collect::<Vec<_>>())
             .map_err(|e| format!("JSON decode error: {}", e))
     }
+
+    /// Compile BTC sequence lock script for givent public key and duration
+    fn btc_lock_script(
+        public: ecdsa::Public,
+        duration: u64,
+    ) -> Vec<u8> {
+        duration.using_encoded(|enc_duration| {
+            let mut output = vec![];
+            output.extend(vec![ 0x21 ]);                     // Public key lenght (should be 33 bytes)
+            output.extend(public.as_ref());                  // Public key
+            output.extend(vec![ 0xad ]);                     // OP_CHECKSIGVERIFY
+            output.extend(vec![ enc_duration.len() as u8 ]); // Lock duration length
+            output.extend(enc_duration.as_ref());            // Lock duration in blocks
+            output.extend(vec![ 0x27, 0x55, 0x01 ]);         // OP_CHECKSEQUENCEVERIFY OP_DROP 1
+            output
+        })
+    }
+
+    /// Get hash of binary BTC script
+    fn btc_script_hash(script: &[u8]) -> [u8; 20] {
+        ripemd160(&sha2_256(script)[..])
+    }
+
+    /// Compile BTC pay-to-script-hash script for given script hash
+    fn p2sh(script_hash: &[u8; 20]) -> Vec<u8> {
+        let mut output = vec![];
+        output.extend(vec![ 0xa9, 0x14 ]);  // OP_HASH160 20
+        output.extend(script_hash);         // <scriptHash>
+        output.extend(vec![ 0x87 ]);        // OP_EQUAL
+        output
+    }
+}
+
+/// Bitcoin RIPEMD160 hashing function
+fn ripemd160(data: &[u8]) -> [u8; 20] {
+    let mut hasher = Ripemd160::new();
+    hasher.input(data);
+    let mut output = [0u8; 20];
+    output.copy_from_slice(&hasher.result());
+    output
 }
 
 impl<T: Trait> sp_runtime::BoundToRuntimeAppPublic for Module<T> {
@@ -456,8 +519,9 @@ mod tests {
     impl Trait for Runtime {
         type Event = MetaEvent;
         type Call = Call;
+        type AuthorityId = lockdrop::sr25519::AuthorityId;
         type SubmitTransaction = frame_system::offchain::TransactionSubmitter<
-            lockdrop::sr25519::AuthorityId, Call, TestXt,
+            Self::AuthorityId, Self::Call, TestXt,
         >;
         type VoteThreshold = VoteThreshold;
         type PositiveVotes = PositiveVotes;
