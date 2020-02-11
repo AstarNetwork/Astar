@@ -9,6 +9,7 @@ serde = { version = "1.0", optional = true, features = ["derive"] }
 codec = { package = "parity-scale-codec", version = "1.0.0", default-features = false, features = ["derive"] }
 serde_json = "1.0"
 ripemd160 = "0.8"
+median = "0.3"
 hex = "0.4"
 sp-io = { git = "https://github.com/staketechnologies/substrate", default-features = false }
 sp-std = { git = "https://github.com/staketechnologies/substrate", default-features = false }
@@ -17,6 +18,7 @@ sp-runtime = { git = "https://github.com/staketechnologies/substrate", default-f
 frame-system = { git = "https://github.com/staketechnologies/substrate", default-features = false }
 frame-support = { git = "https://github.com/staketechnologies/substrate", default-features = false }
 pallet-session = { git = "https://github.com/staketechnologies/substrate", default-features = false }
+pallet-timestamp = { git = "https://github.com/staketechnologies/substrate", default-features = false }
 
 [dev-dependencies]
 pallet-balances = { git = "https://github.com/staketechnologies/substrate" }
@@ -33,4 +35,5 @@ std = [
     "frame-system/std",
     "frame-support/std",
     "pallet-session/std",
+    "pallet-timestamp/std",
 ]

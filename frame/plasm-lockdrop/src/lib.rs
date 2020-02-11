@@ -6,7 +6,7 @@ use sp_std::prelude::*;
 use sp_core::{H256, ecdsa, hashing::sha2_256};
 use sp_runtime::{
     RuntimeDebug,
-    traits::{Member, IdentifyAccount, BlakeTwo256, Hash},
+    traits::{Member, IdentifyAccount, BlakeTwo256, Hash, SimpleArithmetic},
     app_crypto::{KeyTypeId, RuntimeAppPublic},
     offchain::http::Request,
 };
@@ -14,7 +14,7 @@ use frame_support::{
     decl_module, decl_event, decl_storage, decl_error,
     debug, ensure, StorageValue,
     weights::SimpleDispatchInfo,
-    traits::{Get, Currency},
+    traits::{Get, Currency, Time},
     dispatch::Parameter,
 };
 use frame_system::{
@@ -85,6 +85,12 @@ pub trait Trait: system::Trait {
     ///   Positive votes = approve votes - decline votes.
     type PositiveVotes: Get<AuthorityVote>;
 
+    /// How long dollar rate parameters valid in secs
+    type MedianFilterExpire: Get<Self::Moment>;
+
+    /// Width of dollar rate median filter.
+    type MedianFilterWidth: Get<usize>;
+
     /// A dispatchable call type.
     type Call: From<Call<Self>>;
 
@@ -94,6 +100,15 @@ pub trait Trait: system::Trait {
     /// The identifier type for an authority.
     type AuthorityId: Member + Parameter + RuntimeAppPublic + Default + Ord
         + IdentifyAccount<AccountId=<Self as system::Trait>::AccountId>;
+
+    /// Module that could provide timestamp.
+    type Time: Time<Moment=Self::Moment>;
+
+    /// Timestamp type.
+    type Moment: Parameter + SimpleArithmetic + Default + Copy + From<u64>;
+
+    /// Dollar rate number data type.
+    type DollarRate: Member + Parameter + SimpleArithmetic + Copy + Default + From<u64>;
 
     /// The regular events type.
     type Event: From<Event<Self>> + Into<<Self as frame_system::Trait>::Event>;
@@ -141,11 +156,14 @@ decl_event!(
     pub enum Event<T>
     where <T as system::Trait>::AccountId,
           <T as Trait>::AuthorityId,
+          <T as Trait>::DollarRate,
     {
         /// Lockdrop token claims requested by user
         ClaimRequest(ClaimId),
         /// Lockdrop token claims response by authority
         ClaimResponse(ClaimId, AccountId, bool),
+        /// Dollar rate updated by oracle.
+        NewDollarRate(DollarRate),
         /// New authority list registered
         NewAuthorities(Vec<AuthorityId>),
     }
@@ -163,9 +181,15 @@ decl_storage! {
         /// List of lockdrop authority id's.
         Keys get(fn keys): Vec<T::AuthorityId>;
         /// Token claim requests.
-        Claims get(fn claims): linked_map hasher(blake2_256) ClaimId => Claim;
-        /// Latest claim index.
-        LatestClaim get(fn latest_claim): ClaimId;
+        Claims get(fn claims): linked_map hasher(blake2_256)
+                               ClaimId => Claim;
+        /// Lockdrop alpha parameter.
+        Alpha get(fn alpha) config(): BalanceOf<T>;
+        /// Lockdrop dollar rate parameter.
+        DollarRate get(fn dollar_rate) config(): T::DollarRate;
+        /// Lockdrop dollar rate median filter table.
+        DollarRateF get(fn dollar_rate_f): linked_map hasher(blake2_256)
+                                           T::AccountId => (T::Moment, T::DollarRate);
     }
 }
 
@@ -229,6 +253,31 @@ decl_module! {
             Self::deposit_event(RawEvent::ClaimResponse(claim_id, sender, approve));
         }
 
+        /// Dollar rate oracle method. (for authorities only) 
+        #[weight = SimpleDispatchInfo::FixedOperational(10_000)]
+        fn set_dollar_rate(
+            origin,
+            time: T::Moment,
+            rate: T::DollarRate,
+        ) {
+            let sender = ensure_signed(origin)?;
+            ensure!(Self::is_authority(&sender), "this method for lockdrop authorities only");
+            <DollarRateF<T>>::insert(sender, (time, rate));
+
+            let now = T::Time::now();
+            let expire = T::MedianFilterExpire::get();
+            let mut filter = median::Filter::new(T::MedianFilterWidth::get());
+            let mut filtered_rate = <DollarRate<T>>::get();
+            for (_, item) in <DollarRateF<T>>::enumerate() {
+                if now - item.0 < expire { 
+                    filtered_rate = filter.consume(item.1);
+                }
+            }
+
+            <DollarRate<T>>::put(filtered_rate);
+            Self::deposit_event(RawEvent::NewDollarRate(filtered_rate));
+        }
+
         // Runs after every block within the context and current state of said block.
         fn offchain_worker(_now: T::BlockNumber) {
             debug::RuntimeLogger::init();
@@ -250,6 +299,20 @@ impl<T: Trait> Module<T> {
     /// The main offchain worker entry point.
     fn offchain() -> Result<(), String> {
         // TODO: use permanent storage to track request when temporary failed
+        Self::claim_request_oracle()?;
+
+        // TODO: add delay to prevent frequent transaction sending
+        Self::dollar_rate_oracle()
+    }
+
+    /// Check that authority key list contains given account
+    fn is_authority(account: &T::AccountId) -> bool {
+        Keys::<T>::get()
+            .binary_search_by(|key| key.clone().into_account().cmp(account))
+            .is_ok()
+    }
+
+    fn claim_request_oracle() -> Result<(), String> {
         for claim_id in Self::requests() {
             debug::debug!(
                 target: "lockdrop-offchain-worker",
@@ -278,11 +341,29 @@ impl<T: Trait> Module<T> {
         Ok(())
     }
 
-    /// Check that authority key list contains given account
-    fn is_authority(account: &T::AccountId) -> bool {
-        Keys::<T>::get()
-            .binary_search_by(|key| key.clone().into_account().cmp(account))
-            .is_ok()
+    fn dollar_rate_oracle() -> Result<(), String> {
+        // TODO: Multiple rate sources
+        let res = Self::fetch_json("http://blockchain.info/ticker".to_string())?;
+        let mbrate: Option<_> = res["USD"]["15m"].as_u64();
+        match mbrate {
+            None => Err("BTC ticker JSON parsing error".to_string()),
+            Some(rate) => {
+                let ts_sec = sp_io::offchain::timestamp().unix_millis() / 1000; 
+                let call = Call::set_dollar_rate(ts_sec.into(), rate.into());
+                debug::debug!(
+                    target: "lockdrop-offchain-worker",
+                    "dollar rate extrinsic: {:?}", call
+                );
+
+                let res = T::SubmitTransaction::submit_signed(call);
+                debug::debug!(
+                    target: "lockdrop-offchain-worker",
+                    "dollar rate extrinsic send: {:?}", res
+                );
+
+                Ok(())
+            }
+        }
     }
 
     /// Check locking parameters of given claim
