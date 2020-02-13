@@ -266,8 +266,6 @@ decl_module! {
             claim_id: ClaimId,
         ) {
             let _ = ensure_signed(origin)?;
-            ensure!(T::Time::now() < T::LockdropEnd::get(), "lockdrop should be finished");
-
             let claim = <Claims>::get(claim_id);
             ensure!(!claim.complete, "claim should be already paid"); 
 
