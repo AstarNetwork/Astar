@@ -1,4 +1,5 @@
 use super::*;
+use balances::Reasons;
 use sp_runtime::{
     testing::{Header, H256},
     traits::{BlakeTwo256, IdentityLookup},
@@ -6,8 +7,7 @@ use sp_runtime::{
 };
 use sp_std::marker::PhantomData;
 use support::{
-    assert_err, assert_ok, impl_outer_event, impl_outer_origin, parameter_types,
-    StorageMap,
+    assert_err, assert_ok, impl_outer_event, impl_outer_origin, parameter_types, StorageMap,
 };
 use system::{self, EventRecord, Phase};
 
@@ -56,19 +56,16 @@ impl system::Trait for Test {
 }
 parameter_types! {
     pub const ExistentialDeposit: u64 = 0;
-    pub const TransferFee : u64 = 0;
     pub const CreationFee : u64 = 0;
 }
 impl balances::Trait for Test {
     type Balance = u64;
-    type OnFreeBalanceZero = ();
     type OnReapAccount = System;
     type OnNewAccount = ();
     type Event = MetaEvent;
     type DustRemoval = ();
     type TransferPayment = ();
     type ExistentialDeposit = ExistentialDeposit;
-    type TransferFee = TransferFee;
     type CreationFee = CreationFee;
 }
 parameter_types! {
@@ -137,7 +134,6 @@ impl ExtBuilder {
             .unwrap();
         balances::GenesisConfig::<Test> {
             balances: vec![(ALICE, 1000), (BOB, 1000), (CHARLIE, 1000), (DAVE, 1000)],
-            vesting: vec![],
         }
         .assimilate_storage(&mut t)
         .unwrap();
@@ -257,8 +253,7 @@ fn correct_offer(
         vec![balances::BalanceLock {
             id: TRADING_ID,
             amount: amount,
-            until: expired,
-            reasons: WithdrawReasons::all(),
+            reasons: Reasons::from(WithdrawReasons::all()),
         }],
         Balances::locks(&buyer)
     )
@@ -305,7 +300,7 @@ fn correct_reject(rejector: AccountId, offer_id: AccountId) {
     assert_eq!(MockOperatorModule::<Test>::contracts(&ALICE), contracts);
     // Unlocking buyer test
     assert_eq!(
-        Vec::<balances::BalanceLock<u64, u64>>::new(),
+        Vec::<balances::BalanceLock<u64>>::new(),
         Balances::locks(&offer_id)
     )
 }
@@ -422,7 +417,7 @@ fn correct_accept(acceptor: AccountId, offer_id: AccountId) {
     );
     // Unlocking buyer test
     assert_eq!(
-        Vec::<balances::BalanceLock<u64, u64>>::new(),
+        Vec::<balances::BalanceLock<u64>>::new(),
         Balances::locks(&offer.buyer)
     )
 }
@@ -491,6 +486,9 @@ fn correct_remove(remover: AccountId) {
             topics: vec![],
         },]
     );
-    // TODO: Unlocking buyer test
-    //  assert_eq!(vec![], Balances::locks(&buyer))
+    // Unlocking buyer test
+    assert_eq!(
+        Vec::<balances::BalanceLock<u64>>::new(),
+        Balances::locks(&remover)
+    )
 }
