@@ -7,7 +7,7 @@ use sp_core::{H256, ecdsa};
 use sp_runtime::{
     RuntimeDebug,
     traits::{
-        Member, IdentifyAccount, BlakeTwo256, Hash, SimpleArithmetic
+        Member, IdentifyAccount, BlakeTwo256, Hash, SimpleArithmetic, Saturating
     },
     app_crypto::{KeyTypeId, RuntimeAppPublic},
     offchain::http::Request,
@@ -116,7 +116,7 @@ pub trait Trait: system::Trait {
     type Time: Time<Moment=Self::Moment>;
 
     /// Timestamp type.
-    type Moment: Member + Parameter + SimpleArithmetic
+    type Moment: Member + Parameter + SimpleArithmetic + Saturating
         + Copy + Default + From<u64> + Into<u64> + Into<u128>;
 
     /// Dollar rate number data type.
@@ -321,9 +321,13 @@ decl_module! {
             let expire = T::MedianFilterExpire::get();
             let mut filter = median::Filter::new(T::MedianFilterWidth::get());
             let mut filtered_rate = <DollarRate<T>>::get();
-            for (_, item) in <DollarRateF<T>>::enumerate() {
-                if now - item.0 < expire { 
+            for (a, item) in <DollarRateF<T>>::enumerate() {
+                if now.saturating_sub(item.0) < expire { 
+                    // Use value in filter when not expired
                     filtered_rate = filter.consume(item.1);
+                } else {
+                    // Drop value when expired
+                    <DollarRateF<T>>::remove(a);
                 }
             }
 
