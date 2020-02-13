@@ -116,7 +116,6 @@ decl_module! {
             // lock amount
             T::Currency::set_lock(
                 TRADING_ID, &offer.buyer, offer.amount,
-                expired,
                 WithdrawReasons::all(),
             );
             // insert new a offer.
