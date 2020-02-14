@@ -89,6 +89,10 @@ pub trait Trait: system::Trait {
     ///   Positive votes = approve votes - decline votes.
     type PositiveVotes: Get<AuthorityVote>;
 
+    /// Bitcoin transaction fetch URI.
+    /// For example: http://api.blockcypher.com/v1/btc/test3/txs
+    type BitcoinApiUri: Get<&'static str>;
+
     /// Timestamp of finishing lockdrop.
     type LockdropEnd: Get<Self::Moment>;
 
@@ -429,9 +433,9 @@ impl<T: Trait> Module<T> {
         match params {
             Lockdrop::Bitcoin { public, value, duration, transaction_hash } => {
                 let uri = format!(
-                    // XXX: Fetch transaction description in BTC Testnet using blockcypher API.
-                    "http://api.blockcypher.com/v1/btc/test3/txs/{}",
-                    hex::encode(transaction_hash)
+                    "{}/{}",
+                    T::BitcoinApiUri::get(),
+                    hex::encode(transaction_hash),
                 );
                 let tx = fetch_json(uri)?;
                 debug::debug!(
