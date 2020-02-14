@@ -472,7 +472,7 @@ impl<T: Trait> Module<T> {
         let days: u64 = 24 * 60 * 60; // One day in seconds
         let duration_sec = Into::<u64>::into(duration);
         if duration_sec < 30 * days {
-            1
+            0 // Dont permit to participate with locking less that one month
         } else if duration_sec < 100 * days {
             24
         } else if duration_sec < 300 * days {
