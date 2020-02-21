@@ -243,13 +243,13 @@ decl_module! {
         ) {
             let stash = ensure_signed(origin)?;
 
-            if <Bonded<T>>::exists(&stash) {
+            if <Bonded<T>>::contains_key(&stash) {
                 Err("stash already bonded")?
             }
 
             let controller = T::Lookup::lookup(controller)?;
 
-            if <Ledger<T>>::exists(&controller) {
+            if <Ledger<T>>::contains_key(&controller) {
                 Err("controller already paired")?
             }
 
@@ -476,7 +476,7 @@ decl_module! {
             let stash = ensure_signed(origin)?;
             let old_controller = Self::bonded(&stash).ok_or("not a stash")?;
             let controller = T::Lookup::lookup(controller)?;
-            if <Ledger<T>>::exists(&controller) {
+            if <Ledger<T>>::contains_key(&controller) {
                 Err("controller already paired")?
             }
             if controller != old_controller {
@@ -570,7 +570,6 @@ impl<T: Trait> Module<T> {
             STAKING_ID,
             &ledger.stash,
             ledger.total,
-            <T as system::Trait>::BlockNumber::max_value(),
             WithdrawReasons::all(),
         );
         <Ledger<T>>::insert(controller, ledger);
