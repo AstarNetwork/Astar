@@ -1,7 +1,11 @@
-use babe_primitives::AuthorityId as BabeId;
-///! Plasm chain configuration.
-use chain_spec::ChainSpecExtension;
-use grandpa_primitives::AuthorityId as GrandpaId;
+//! Chain specification.
+
+use serde::{Deserialize, Serialize};
+use sp_core::{sr25519, Pair, Public};
+use sp_runtime::traits::{IdentifyAccount, Verify};
+use sp_consensus_babe::AuthorityId as BabeId;
+use sp_finality_grandpa::AuthorityId as GrandpaId;
+use sc_chain_spec::ChainSpecExtension;
 use plasm_primitives::{AccountId, Balance, Signature};
 use plasm_runtime::constants::currency::*;
 use plasm_runtime::Block;
@@ -10,9 +14,6 @@ use plasm_runtime::{
     IndicesConfig, PlasmStakingConfig, SessionConfig, SessionKeys, SudoConfig, SystemConfig,
     WASM_BINARY,
 };
-use primitives::{sr25519, Pair, Public};
-use serde::{Deserialize, Serialize};
-use sp_runtime::traits::{IdentifyAccount, Verify};
 
 type AccountPublic = <Signature as Verify>::Signer;
 
@@ -30,9 +31,12 @@ const ENDOWMENT: Balance = 1_000 * PLM;
 /// Additional parameters for some Substrate core modules,
 /// customizable from the chain spec.
 #[derive(Default, Clone, Serialize, Deserialize, ChainSpecExtension)]
+#[serde(rename_all = "camelCase")]
 pub struct Extensions {
     /// Block numbers with known hashes.
-    pub fork_blocks: client::ForkBlocks<Block>,
+    pub fork_blocks: sc_client::ForkBlocks<Block>,
+	/// Known bad block hashes.
+	pub bad_blocks: sc_client::BadBlocks<Block>,
 }
 
 /// Specialized `ChainSpec`.
@@ -83,7 +87,6 @@ fn generate_config_genesis(
             (get_account_id_from_seed::<sr25519::Public>("Ferdie"), ENDOWMENT),
         ]
     });
-    let ids = balances.iter().cloned().map(|(a, _)| a).collect::<Vec<_>>();
 
     GenesisConfig {
         system: Some(SystemConfig {
@@ -92,10 +95,9 @@ fn generate_config_genesis(
         }),
         balances: Some(BalancesConfig {
             balances,
-            vesting: vec![],
         }),
         indices: Some(IndicesConfig {
-            ids,
+            indices: vec![],
         }),
         plasm_staking: Some(PlasmStakingConfig {
             storage_version: 1,
@@ -115,7 +117,7 @@ fn generate_config_genesis(
             authorities: vec![],
         }),
         contracts: Some(ContractsConfig {
-            current_schedule: contracts::Schedule {
+            current_schedule: pallet_contracts::Schedule {
                 enable_println, // this should only be enabled on development chains
                 ..Default::default()
             },

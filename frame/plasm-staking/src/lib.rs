@@ -6,13 +6,12 @@
 use codec::{Decode, Encode, HasCompact};
 use operator::ContractFinder;
 use session::SessionManager;
-use sp_runtime::RuntimeDebug;
 use sp_runtime::{
     traits::{
-        Bounded, CheckedAdd, CheckedDiv, CheckedSub, One, SaturatedConversion, Saturating,
+        CheckedAdd, CheckedDiv, CheckedSub, One, SaturatedConversion, Saturating,
         StaticLookup, Zero,
     },
-    Perbill,
+    Perbill, PerThing, RuntimeDebug,
 };
 use sp_std::{collections::btree_map::BTreeMap, convert::TryFrom, prelude::*, result, vec::Vec};
 pub use staking::{Forcing, Nominations, RewardDestination};

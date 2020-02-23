@@ -7,7 +7,8 @@
 //! About each staking, this module computes issuing new tokens.
 
 use super::*;
-use sp_runtime::traits::SimpleArithmetic;
+use sp_runtime::PerThing;
+use sp_arithmetic::traits::BaseArithmetic;
 
 /// The total payout to all operators and validators and their nominators per era.
 ///
@@ -17,7 +18,7 @@ use sp_runtime::traits::SimpleArithmetic;
 /// `era_duration` is expressed in millisecond.
 pub fn compute_total_payout_test<N>(total_tokens: N, era_duration: u64) -> (N, N)
 where
-    N: SimpleArithmetic + Clone,
+    N: BaseArithmetic + Clone + From<u32>,
 {
     // Milliseconds per year for the Julian year (365.25 days).
     const MILLISECONDS_PER_YEAR: u64 = 1000 * 3600 * 24 * 36525 / 100;

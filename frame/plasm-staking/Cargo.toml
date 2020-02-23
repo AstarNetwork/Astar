@@ -25,6 +25,12 @@ git = 'https://github.com/staketechnologies/substrate.git'
 branch = 'plasm-master'
 package = 'sp-runtime'
 
+[dependencies.sp-arithmetic]
+default_features = false
+git = 'https://github.com/staketechnologies/substrate.git'
+branch = 'plasm-master'
+package = 'sp-arithmetic'
+
 [dependencies.sp-io]
 default_features = false
 git = 'https://github.com/staketechnologies/substrate.git'
@@ -111,6 +117,7 @@ std = [
     'serde_derive',
     'primitives/std',
     'sp-runtime/std',
+    'sp-arithmetic/std',
     'sp-io/std',
     'sp-std/std',
     'balances/std',
