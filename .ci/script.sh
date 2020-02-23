@@ -6,9 +6,13 @@ set -eux
 export RUSTFLAGS=" -W unused-extern-crates"
 
 # Install rustup and the specified rust toolchain.
-curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain=$RUST_TOOLCHAIN -y
+curl https://sh.rustup.rs -sSf | sh -s -- --default-toolchain=stable -y
 # Load cargo environment. Specifically, put cargo into PATH.
 source ~/.cargo/env
+# Install supported nightly
+# https://github.com/rustwasm/wasm-bindgen/issues/2009
+export NIGHTLY=nightly-2020-02-01
+rustup install $NIGHTLY 
 
 rustc --version
 rustup --version
@@ -20,7 +24,13 @@ case $TARGET in
 		sudo apt-get -y update
 		sudo apt-get install -y cmake libclang-dev
 
-		./third-party/scripts/init.sh
+        # Add wasm
+        rustup target add wasm32-unknown-unknown --toolchain $NIGHTLY 
+
+        # Install wasm-gc. It's useful for stripping slimming down wasm binaries.
+        command -v wasm-gc || \
+	        cargo install --git https://github.com/alexcrichton/wasm-gc --force
+
 		cargo test
 		;;
 
