@@ -2,10 +2,8 @@
 
 #![warn(missing_docs)]
 
-use sc_cli::VersionInfo;
-
-fn main() -> Result<(), sc_cli::error::Error> {
-    let version = VersionInfo {
+fn main() -> Result<(), sc_cli::Error> {
+    let version = sc_cli::VersionInfo {
         name: "Plasm Node",
         commit: env!("VERGEN_SHA_SHORT"),
         version: env!("CARGO_PKG_VERSION"),
@@ -16,5 +14,5 @@ fn main() -> Result<(), sc_cli::error::Error> {
         copyright_start_year: 2019,
     };
 
-    plasm_cli::run(std::env::args(), version)
+    plasm_cli::run(version)
 }

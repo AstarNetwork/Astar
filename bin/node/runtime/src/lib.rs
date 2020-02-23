@@ -55,8 +55,8 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     // and set impl_version to equal spec_version. If only runtime
     // implementation changes and behavior does not, then leave spec_version as
     // is and increment impl_version.
-    spec_version: 32,
-    impl_version: 32,
+    spec_version: 33,
+    impl_version: 33,
     apis: RUNTIME_API_VERSIONS,
 };
 
@@ -94,6 +94,10 @@ impl system::Trait for Runtime {
     type AvailableBlockRatio = AvailableBlockRatio;
     type Version = Version;
     type ModuleToIndex = ModuleToIndex;
+    type AccountData = balances::AccountData<Balance>;
+    type OnNewAccount = ();
+    type OnReapAccount = (Balances, Contracts, Session);
+    // TODO: OnReapAccount for PlasmStaking
 }
 
 parameter_types! {
@@ -107,30 +111,27 @@ impl babe::Trait for Runtime {
     type EpochChangeTrigger = babe::ExternalTrigger;
 }
 
+parameter_types! {
+    pub const IndexDeposit: Balance = 1 * PLM;
+}
+
 impl indices::Trait for Runtime {
     type AccountIndex = AccountIndex;
-    type IsDeadAccount = Balances;
-    type ResolveHint = indices::SimpleResolveHint<Self::AccountId, Self::AccountIndex>;
     type Event = Event;
+    type Currency = Balances;
+    type Deposit = IndexDeposit;
 }
 
 parameter_types! {
     pub const ExistentialDeposit: Balance = 1 * MILLIPLM;
-    pub const TransferFee: Balance = 1 * MILLIPLM;
-    pub const CreationFee: Balance = 1 * MILLIPLM;
 }
 
 impl balances::Trait for Runtime {
     type Balance = Balance;
-    type OnFreeBalanceZero = Contracts;
-    type OnNewAccount = Indices;
-    type OnReapAccount = System;
-    type Event = Event;
     type DustRemoval = ();
-    type TransferPayment = ();
+    type Event = Event;
     type ExistentialDeposit = ExistentialDeposit;
-    type TransferFee = TransferFee;
-    type CreationFee = CreationFee;
+    type AccountStore = system::Module<Runtime>;
 }
 
 parameter_types! {
@@ -213,7 +214,7 @@ impl contracts::Trait for Runtime {
     type Randomness = RandomnessCollectiveFlip;
     type Call = Call;
     type Event = Event;
-    type DetermineContractAddress = contracts::SimpleAddressDeterminator<Runtime>;
+    type DetermineContractAddress = contracts::SimpleAddressDeterminer<Runtime>;
     type ComputeDispatchFee = contracts::DefaultDispatchFeeComputor<Runtime>;
     type TrieIdGenerator = contracts::TrieIdFromParentCounter<Runtime>;
     type GasPayment = ();
@@ -224,8 +225,6 @@ impl contracts::Trait for Runtime {
     type RentByteFee = RentByteFee;
     type RentDepositOffset = RentDepositOffset;
     type SurchargeReward = SurchargeReward;
-    type TransferFee = ContractTransferFee;
-    type CreationFee = ContractCreationFee;
     type TransactionBaseFee = ContractTransactionBaseFee;
     type TransactionByteFee = ContractTransactionByteFee;
     type ContractFee = ContractFee;
@@ -250,7 +249,7 @@ impl trading::Trait for Runtime {
 
 impl sudo::Trait for Runtime {
     type Event = Event;
-    type Proposal = Call;
+    type Call = Call;
 }
 
 impl grandpa::Trait for Runtime {
@@ -304,18 +303,18 @@ construct_runtime!(
         NodeBlock = plasm_primitives::Block,
         UncheckedExtrinsic = UncheckedExtrinsic
     {
-        System: system::{Module, Call, Storage, Config, Event},
+        System: system::{Module, Call, Storage, Config, Event<T>},
         Timestamp: timestamp::{Module, Call, Storage, Inherent},
         TransactionPayment: transaction_payment::{Module, Storage},
-        Indices: indices,
-        Balances: balances,
-        Contracts: contracts,
+        Indices: indices::{Module, Call, Storage, Event<T>, Config<T>},
+        Balances: balances::{Module, Call, Storage, Event<T>, Config<T>},
+        Contracts: contracts::{Module, Call, Storage, Event<T>, Config<T>},
         PlasmStaking: plasm_staking::{Module, Call, Storage, Event<T>, Config<T>},
         Session: session::{Module, Call, Storage, Event, Config<T>},
         Babe: babe::{Module, Call, Storage, Config, Inherent(Timestamp)},
         Grandpa: grandpa::{Module, Call, Storage, Config, Event},
         FinalityTracker: finality_tracker::{Module, Call, Inherent},
-        Sudo: sudo,
+        Sudo: sudo::{Module, Call, Storage, Event<T>, Config<T>},
         Operator: operator::{Module, Call, Storage, Event<T>},
         Trading: trading::{Module, Call, Storage, Event<T>},
         RandomnessCollectiveFlip: randomness_collective_flip::{Module, Call, Storage},
@@ -378,6 +377,10 @@ impl_runtime_apis! {
             Executive::apply_extrinsic(extrinsic)
         }
 
+        fn apply_trusted_extrinsic(extrinsic: <Block as BlockT>::Extrinsic) -> ApplyExtrinsicResult {
+            Executive::apply_trusted_extrinsic(extrinsic)
+        }
+
         fn finalize_block() -> <Block as BlockT>::Header {
             Executive::finalize_block()
         }
@@ -428,6 +431,10 @@ impl_runtime_apis! {
                 randomness: Babe::randomness(),
                 secondary_slots: true,
             }
+        }
+
+        fn current_epoch_start() -> babe_primitives::SlotNumber {
+            Babe::current_epoch_start()
         }
     }
 

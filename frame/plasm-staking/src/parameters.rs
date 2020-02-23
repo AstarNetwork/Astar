@@ -7,7 +7,7 @@ use codec::{Decode, Encode};
 use operator::parameters::Verifiable;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
-use sp_runtime::{DispatchError, Perbill};
+use sp_runtime::{DispatchError, Perbill, PerThing};
 
 #[derive(Clone, Eq, PartialEq, Default, Encode, Decode, Hash)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
