@@ -1,0 +1,40 @@
+on: [push]
+
+name: Integration
+
+jobs:
+  native:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macOS-latest]
+    steps:
+    - name: Install LLVM (windows only)
+      if: runner.os == 'Windows'
+      run: choco install llvm
+    - uses: hecrj/setup-rust-action@v1
+      with:
+        rust-version: 'nightly-2020-02-02'
+        targets: 'wasm32-unknown-unknown'
+    - name: Checkout the source code
+      uses: actions/checkout@master
+    - name: Check targets are installed correctly
+      run: rustup target list --installed
+    - name: Install build tools
+      run: cargo install --git https://github.com/alexcrichton/wasm-gc --force
+    - name: Run all tests 
+      run: cargo test --all
+    - name: Build optimized binary
+      run: cargo build --release --verbose
+    - name: Upload binary archive into IPFS
+      if: runner.os != 'Windows'
+      run: |
+        cd target/release
+        tar cfJ plasm-${{ matrix.os }}-x86_64.tar.xz plasm-node
+        curl "https://ipfs.infura.io:5001/api/v0/add" -F file=@plasm-${{ matrix.os }}-x86_64.tar.xz
+    - name: Upload binary archive into IPFS (windows only)
+      if: runner.os == 'Windows'
+      run: |
+        cd target/release
+        zip plasm-${{ matrix.os }}-x86_64.zip plasm-node.exe
+        curl "https://ipfs.infura.io:5001/api/v0/add" -F file=@plasm-${{ matrix.os }}-x86_64.zip
