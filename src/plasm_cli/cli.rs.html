@@ -24,19 +24,15 @@
 <span id="24">24</span>
 <span id="25">25</span>
 <span id="26">26</span>
+<span id="27">27</span>
 </pre><div class="example-wrap"><pre class="rust ">
-<span class="kw">use</span> <span class="ident">sc_cli</span>::<span class="ident">RunCmd</span>;
 <span class="kw">use</span> <span class="ident">structopt</span>::<span class="ident">StructOpt</span>;
+<span class="kw">use</span> <span class="ident">sc_cli</span>::<span class="ident">RunCmd</span>;
 
-<span class="attribute">#[<span class="ident">allow</span>(<span class="ident">missing_docs</span>)]</span>
+<span class="doccomment">/// An overarching CLI command definition.</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>, <span class="ident">Debug</span>, <span class="ident">StructOpt</span>)]</span>
-<span class="attribute">#[<span class="ident">structopt</span>(<span class="ident">settings</span> <span class="op">=</span> <span class="kw-2">&amp;</span>[
-<span class="ident">structopt</span>::<span class="ident">clap</span>::<span class="ident">AppSettings</span>::<span class="ident">GlobalVersion</span>,
-<span class="ident">structopt</span>::<span class="ident">clap</span>::<span class="ident">AppSettings</span>::<span class="ident">ArgsNegateSubcommands</span>,
-<span class="ident">structopt</span>::<span class="ident">clap</span>::<span class="ident">AppSettings</span>::<span class="ident">SubcommandsNegateReqs</span>,
-]</span>)]
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Cli</span> {
-    <span class="attribute">#[<span class="ident">allow</span>(<span class="ident">missing_docs</span>)]</span>
+    <span class="doccomment">/// Possible subcommand with parameters.</span>
     <span class="attribute">#[<span class="ident">structopt</span>(<span class="ident">subcommand</span>)]</span>
     <span class="kw">pub</span> <span class="ident">subcommand</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Subcommand</span><span class="op">&gt;</span>,
     <span class="attribute">#[<span class="ident">allow</span>(<span class="ident">missing_docs</span>)]</span>
@@ -44,12 +40,18 @@
     <span class="kw">pub</span> <span class="ident">run</span>: <span class="ident">RunCmd</span>,
 }
 
-<span class="attribute">#[<span class="ident">allow</span>(<span class="ident">missing_docs</span>)]</span>
+<span class="doccomment">/// Possible subcommands of the main binary.</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>, <span class="ident">Debug</span>, <span class="ident">StructOpt</span>)]</span>
 <span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">Subcommand</span> {
-    <span class="attribute">#[<span class="ident">allow</span>(<span class="ident">missing_docs</span>)]</span>
+    <span class="doccomment">/// A set of base subcommands handled by `sc_cli`.</span>
     <span class="attribute">#[<span class="ident">structopt</span>(<span class="ident">flatten</span>)]</span>
     <span class="ident">Base</span>(<span class="ident">sc_cli</span>::<span class="ident">Subcommand</span>),
+    <span class="doccomment">/// The custom benchmark subcommmand benchmarking runtime pallets.</span>
+    <span class="attribute">#[<span class="ident">structopt</span>(
+        <span class="ident">name</span> <span class="op">=</span> <span class="string">&quot;benchmark&quot;</span>,
+        <span class="ident">about</span> <span class="op">=</span> <span class="string">&quot;Benchmark runtime pallets.&quot;</span>
+    )]</span>
+    <span class="ident">Benchmark</span>(<span class="ident">frame_benchmarking_cli</span>::<span class="ident">BenchmarkCmd</span>),
 }
 </pre></div>
 </section><section id="search" class="content hidden"></section><section class="footer"></section><script>window.rootPath = "../../";window.currentCrate = "plasm_cli";</script><script src="../../aliases.js"></script><script src="../../main.js"></script><script src="../../source-script.js"></script><script src="../../source-files.js"></script><script defer src="../../search-index.js"></script></body></html>

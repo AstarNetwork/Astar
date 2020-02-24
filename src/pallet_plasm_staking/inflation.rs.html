@@ -58,6 +58,7 @@
 <span id="58">58</span>
 <span id="59">59</span>
 <span id="60">60</span>
+<span id="61">61</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="doccomment">//! This is explains plasm inflation models.</span>
 <span class="doccomment">//! The staking has 2 kinds.</span>
@@ -68,7 +69,8 @@
 <span class="doccomment">//! About each staking, this module computes issuing new tokens.</span>
 
 <span class="kw">use</span> <span class="kw">super</span>::<span class="kw-2">*</span>;
-<span class="kw">use</span> <span class="ident">sp_runtime</span>::<span class="ident">traits</span>::<span class="ident">SimpleArithmetic</span>;
+<span class="kw">use</span> <span class="ident">sp_runtime</span>::<span class="ident">PerThing</span>;
+<span class="kw">use</span> <span class="ident">sp_arithmetic</span>::<span class="ident">traits</span>::<span class="ident">BaseArithmetic</span>;
 
 <span class="doccomment">/// The total payout to all operators and validators and their nominators per era.</span>
 <span class="doccomment">///</span>
@@ -78,7 +80,7 @@
 <span class="doccomment">/// `era_duration` is expressed in millisecond.</span>
 <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">compute_total_payout_test</span><span class="op">&lt;</span><span class="ident">N</span><span class="op">&gt;</span>(<span class="ident">total_tokens</span>: <span class="ident">N</span>, <span class="ident">era_duration</span>: <span class="ident">u64</span>) <span class="op">-</span><span class="op">&gt;</span> (<span class="ident">N</span>, <span class="ident">N</span>)
 <span class="kw">where</span>
-    <span class="ident">N</span>: <span class="ident">SimpleArithmetic</span> <span class="op">+</span> <span class="ident">Clone</span>,
+    <span class="ident">N</span>: <span class="ident">BaseArithmetic</span> <span class="op">+</span> <span class="ident">Clone</span> <span class="op">+</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">u32</span><span class="op">&gt;</span>,
 {
     <span class="comment">// Milliseconds per year for the Julian year (365.25 days).</span>
     <span class="kw">const</span> <span class="ident">MILLISECONDS_PER_YEAR</span>: <span class="ident">u64</span> <span class="op">=</span> <span class="number">1000</span> <span class="op">*</span> <span class="number">3600</span> <span class="op">*</span> <span class="number">24</span> <span class="op">*</span> <span class="number">36525</span> <span class="op">/</span> <span class="number">100</span>;

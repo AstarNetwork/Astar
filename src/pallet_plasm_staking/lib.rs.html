@@ -832,8 +832,6 @@
 <span id="832">832</span>
 <span id="833">833</span>
 <span id="834">834</span>
-<span id="835">835</span>
-<span id="836">836</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="doccomment">//! # Plasm Staking Module</span>
 <span class="doccomment">//!</span>
@@ -843,13 +841,12 @@
 <span class="kw">use</span> <span class="ident">codec</span>::{<span class="ident">Decode</span>, <span class="ident">Encode</span>, <span class="ident">HasCompact</span>};
 <span class="kw">use</span> <span class="ident">operator</span>::<span class="ident">ContractFinder</span>;
 <span class="kw">use</span> <span class="ident">session</span>::<span class="ident">SessionManager</span>;
-<span class="kw">use</span> <span class="ident">sp_runtime</span>::<span class="ident">RuntimeDebug</span>;
 <span class="kw">use</span> <span class="ident">sp_runtime</span>::{
     <span class="ident">traits</span>::{
-        <span class="ident">Bounded</span>, <span class="ident">CheckedAdd</span>, <span class="ident">CheckedDiv</span>, <span class="ident">CheckedSub</span>, <span class="ident">One</span>, <span class="ident">SaturatedConversion</span>, <span class="ident">Saturating</span>,
+        <span class="ident">CheckedAdd</span>, <span class="ident">CheckedDiv</span>, <span class="ident">CheckedSub</span>, <span class="ident">One</span>, <span class="ident">SaturatedConversion</span>, <span class="ident">Saturating</span>,
         <span class="ident">StaticLookup</span>, <span class="ident">Zero</span>,
     },
-    <span class="ident">Perbill</span>,
+    <span class="ident">Perbill</span>, <span class="ident">PerThing</span>, <span class="ident">RuntimeDebug</span>,
 };
 <span class="kw">use</span> <span class="ident">sp_std</span>::{<span class="ident">collections</span>::<span class="ident">btree_map</span>::<span class="ident">BTreeMap</span>, <span class="ident">convert</span>::<span class="ident">TryFrom</span>, <span class="ident">prelude</span>::<span class="kw-2">*</span>, <span class="ident">result</span>, <span class="ident">vec</span>::<span class="ident">Vec</span>};
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident">staking</span>::{<span class="ident">Forcing</span>, <span class="ident">Nominations</span>, <span class="ident">RewardDestination</span>};
@@ -1080,13 +1077,13 @@
         ) {
             <span class="kw">let</span> <span class="ident">stash</span> <span class="op">=</span> <span class="ident">ensure_signed</span>(<span class="ident">origin</span>)<span class="question-mark">?</span>;
 
-            <span class="kw">if</span> <span class="op">&lt;</span><span class="ident">Bonded</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>::<span class="ident">exists</span>(<span class="kw-2">&amp;</span><span class="ident">stash</span>) {
+            <span class="kw">if</span> <span class="op">&lt;</span><span class="ident">Bonded</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>::<span class="ident">contains_key</span>(<span class="kw-2">&amp;</span><span class="ident">stash</span>) {
                 <span class="prelude-val">Err</span>(<span class="string">&quot;stash already bonded&quot;</span>)<span class="question-mark">?</span>
             }
 
             <span class="kw">let</span> <span class="ident">controller</span> <span class="op">=</span> <span class="ident">T</span>::<span class="ident">Lookup</span>::<span class="ident">lookup</span>(<span class="ident">controller</span>)<span class="question-mark">?</span>;
 
-            <span class="kw">if</span> <span class="op">&lt;</span><span class="ident">Ledger</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>::<span class="ident">exists</span>(<span class="kw-2">&amp;</span><span class="ident">controller</span>) {
+            <span class="kw">if</span> <span class="op">&lt;</span><span class="ident">Ledger</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>::<span class="ident">contains_key</span>(<span class="kw-2">&amp;</span><span class="ident">controller</span>) {
                 <span class="prelude-val">Err</span>(<span class="string">&quot;controller already paired&quot;</span>)<span class="question-mark">?</span>
             }
 
@@ -1313,7 +1310,7 @@
             <span class="kw">let</span> <span class="ident">stash</span> <span class="op">=</span> <span class="ident">ensure_signed</span>(<span class="ident">origin</span>)<span class="question-mark">?</span>;
             <span class="kw">let</span> <span class="ident">old_controller</span> <span class="op">=</span> <span class="self">Self</span>::<span class="ident">bonded</span>(<span class="kw-2">&amp;</span><span class="ident">stash</span>).<span class="ident">ok_or</span>(<span class="string">&quot;not a stash&quot;</span>)<span class="question-mark">?</span>;
             <span class="kw">let</span> <span class="ident">controller</span> <span class="op">=</span> <span class="ident">T</span>::<span class="ident">Lookup</span>::<span class="ident">lookup</span>(<span class="ident">controller</span>)<span class="question-mark">?</span>;
-            <span class="kw">if</span> <span class="op">&lt;</span><span class="ident">Ledger</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>::<span class="ident">exists</span>(<span class="kw-2">&amp;</span><span class="ident">controller</span>) {
+            <span class="kw">if</span> <span class="op">&lt;</span><span class="ident">Ledger</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>::<span class="ident">contains_key</span>(<span class="kw-2">&amp;</span><span class="ident">controller</span>) {
                 <span class="prelude-val">Err</span>(<span class="string">&quot;controller already paired&quot;</span>)<span class="question-mark">?</span>
             }
             <span class="kw">if</span> <span class="ident">controller</span> <span class="op">!</span><span class="op">=</span> <span class="ident">old_controller</span> {
@@ -1407,7 +1404,6 @@
             <span class="ident">STAKING_ID</span>,
             <span class="kw-2">&amp;</span><span class="ident">ledger</span>.<span class="ident">stash</span>,
             <span class="ident">ledger</span>.<span class="ident">total</span>,
-            <span class="op">&lt;</span><span class="ident">T</span> <span class="kw">as</span> <span class="ident">system</span>::<span class="ident">Trait</span><span class="op">&gt;</span>::<span class="ident">BlockNumber</span>::<span class="ident">max_value</span>(),
             <span class="ident">WithdrawReasons</span>::<span class="ident">all</span>(),
         );
         <span class="op">&lt;</span><span class="ident">Ledger</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>::<span class="ident">insert</span>(<span class="ident">controller</span>, <span class="ident">ledger</span>);

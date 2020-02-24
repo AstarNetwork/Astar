@@ -390,11 +390,17 @@
 <span id="390">390</span>
 <span id="391">391</span>
 <span id="392">392</span>
+<span id="393">393</span>
+<span id="394">394</span>
 </pre><div class="example-wrap"><pre class="rust ">
-<span class="kw">use</span> <span class="ident">babe_primitives</span>::<span class="ident">AuthorityId</span> <span class="kw">as</span> <span class="ident">BabeId</span>;
-<span class="doccomment">///! Plasm chain configuration.</span>
-<span class="kw">use</span> <span class="ident">chain_spec</span>::<span class="ident">ChainSpecExtension</span>;
-<span class="kw">use</span> <span class="ident">grandpa_primitives</span>::<span class="ident">AuthorityId</span> <span class="kw">as</span> <span class="ident">GrandpaId</span>;
+<span class="doccomment">//! Chain specification.</span>
+
+<span class="kw">use</span> <span class="ident">serde</span>::{<span class="ident">Deserialize</span>, <span class="ident">Serialize</span>};
+<span class="kw">use</span> <span class="ident">sp_core</span>::{<span class="ident">sr25519</span>, <span class="ident">Pair</span>, <span class="ident">Public</span>};
+<span class="kw">use</span> <span class="ident">sp_runtime</span>::<span class="ident">traits</span>::{<span class="ident">IdentifyAccount</span>, <span class="ident">Verify</span>};
+<span class="kw">use</span> <span class="ident">sp_consensus_babe</span>::<span class="ident">AuthorityId</span> <span class="kw">as</span> <span class="ident">BabeId</span>;
+<span class="kw">use</span> <span class="ident">sp_finality_grandpa</span>::<span class="ident">AuthorityId</span> <span class="kw">as</span> <span class="ident">GrandpaId</span>;
+<span class="kw">use</span> <span class="ident">sc_chain_spec</span>::<span class="ident">ChainSpecExtension</span>;
 <span class="kw">use</span> <span class="ident">plasm_primitives</span>::{<span class="ident">AccountId</span>, <span class="ident">Balance</span>, <span class="ident">Signature</span>};
 <span class="kw">use</span> <span class="ident">plasm_runtime</span>::<span class="ident">constants</span>::<span class="ident">currency</span>::<span class="kw-2">*</span>;
 <span class="kw">use</span> <span class="ident">plasm_runtime</span>::<span class="ident">Block</span>;
@@ -403,9 +409,6 @@
     <span class="ident">IndicesConfig</span>, <span class="ident">PlasmStakingConfig</span>, <span class="ident">SessionConfig</span>, <span class="ident">SessionKeys</span>, <span class="ident">SudoConfig</span>, <span class="ident">SystemConfig</span>,
     <span class="ident">WASM_BINARY</span>,
 };
-<span class="kw">use</span> <span class="ident">primitives</span>::{<span class="ident">sr25519</span>, <span class="ident">Pair</span>, <span class="ident">Public</span>};
-<span class="kw">use</span> <span class="ident">serde</span>::{<span class="ident">Deserialize</span>, <span class="ident">Serialize</span>};
-<span class="kw">use</span> <span class="ident">sp_runtime</span>::<span class="ident">traits</span>::{<span class="ident">IdentifyAccount</span>, <span class="ident">Verify</span>};
 
 <span class="kw">type</span> <span class="ident">AccountPublic</span> <span class="op">=</span> <span class="op">&lt;</span><span class="ident">Signature</span> <span class="kw">as</span> <span class="ident">Verify</span><span class="op">&gt;</span>::<span class="ident">Signer</span>;
 
@@ -423,9 +426,12 @@
 <span class="doccomment">/// Additional parameters for some Substrate core modules,</span>
 <span class="doccomment">/// customizable from the chain spec.</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Default</span>, <span class="ident">Clone</span>, <span class="ident">Serialize</span>, <span class="ident">Deserialize</span>, <span class="ident">ChainSpecExtension</span>)]</span>
+<span class="attribute">#[<span class="ident">serde</span>(<span class="ident">rename_all</span> <span class="op">=</span> <span class="string">&quot;camelCase&quot;</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Extensions</span> {
     <span class="doccomment">/// Block numbers with known hashes.</span>
-    <span class="kw">pub</span> <span class="ident">fork_blocks</span>: <span class="ident">client</span>::<span class="ident">ForkBlocks</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span>,
+    <span class="kw">pub</span> <span class="ident">fork_blocks</span>: <span class="ident">sc_client</span>::<span class="ident">ForkBlocks</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span>,
+	<span class="doccomment">/// Known bad block hashes.</span>
+	<span class="kw">pub</span> <span class="ident">bad_blocks</span>: <span class="ident">sc_client</span>::<span class="ident">BadBlocks</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span>,
 }
 
 <span class="doccomment">/// Specialized `ChainSpec`.</span>
@@ -476,7 +482,6 @@
             (<span class="ident">get_account_id_from_seed</span>::<span class="op">&lt;</span><span class="ident">sr25519</span>::<span class="ident">Public</span><span class="op">&gt;</span>(<span class="string">&quot;Ferdie&quot;</span>), <span class="ident">ENDOWMENT</span>),
         ]
     });
-    <span class="kw">let</span> <span class="ident">ids</span> <span class="op">=</span> <span class="ident">balances</span>.<span class="ident">iter</span>().<span class="ident">cloned</span>().<span class="ident">map</span>(<span class="op">|</span>(<span class="ident">a</span>, <span class="kw">_</span>)<span class="op">|</span> <span class="ident">a</span>).<span class="ident">collect</span>::<span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span><span class="op">&gt;</span>();
 
     <span class="ident">GenesisConfig</span> {
         <span class="ident">system</span>: <span class="prelude-val">Some</span>(<span class="ident">SystemConfig</span> {
@@ -485,10 +490,9 @@
         }),
         <span class="ident">balances</span>: <span class="prelude-val">Some</span>(<span class="ident">BalancesConfig</span> {
             <span class="ident">balances</span>,
-            <span class="ident">vesting</span>: <span class="macro">vec</span><span class="macro">!</span>[],
         }),
         <span class="ident">indices</span>: <span class="prelude-val">Some</span>(<span class="ident">IndicesConfig</span> {
-            <span class="ident">ids</span>,
+            <span class="ident">indices</span>: <span class="macro">vec</span><span class="macro">!</span>[],
         }),
         <span class="ident">plasm_staking</span>: <span class="prelude-val">Some</span>(<span class="ident">PlasmStakingConfig</span> {
             <span class="ident">storage_version</span>: <span class="number">1</span>,
@@ -508,7 +512,7 @@
             <span class="ident">authorities</span>: <span class="macro">vec</span><span class="macro">!</span>[],
         }),
         <span class="ident">contracts</span>: <span class="prelude-val">Some</span>(<span class="ident">ContractsConfig</span> {
-            <span class="ident">current_schedule</span>: <span class="ident">contracts</span>::<span class="ident">Schedule</span> {
+            <span class="ident">current_schedule</span>: <span class="ident">pallet_contracts</span>::<span class="ident">Schedule</span> {
                 <span class="ident">enable_println</span>, <span class="comment">// this should only be enabled on development chains</span>
                 ..<span class="ident">Default</span>::<span class="ident">default</span>()
             },
