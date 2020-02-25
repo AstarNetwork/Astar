@@ -1,6 +1,6 @@
 <div align="center"><img width="1007" alt="plasm_web3" src="https://user-images.githubusercontent.com/6259384/72399615-0e1cbb80-378a-11ea-91af-c1dbdde345f5.png"></div>
 
-![CI](https://github.com/staketechnologies/Plasm/workflows/Integration/badge.svg)
+[![CI](https://github.com/staketechnologies/Plasm/workflows/Integration/badge.svg)](https://github.com/staketechnologies/Plasm/actions)
 
 Plasm is a Substrate Runtime Module Library which allows developers to add Plasma functions to their Substrate chain easily and seamlessly. Since Plasm is an SRML, developers can also make both plasma parent chains and plasma child chains with Substrate. 
 
