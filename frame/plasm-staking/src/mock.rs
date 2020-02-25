@@ -54,7 +54,6 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
             (VALIDATOR_C, 1_000_000),
             (VALIDATOR_D, 1_000_000),
         ],
-        vesting: vec![],
     }
     .assimilate_storage(&mut storage);
 
@@ -114,6 +113,9 @@ impl system::Trait for Test {
     type AvailableBlockRatio = AvailableBlockRatio;
     type Version = ();
     type ModuleToIndex = ();
+    type AccountData = balances::AccountData<u64>;
+    type OnNewAccount = ();
+    type OnReapAccount = (Balances, Session);
 }
 
 parameter_types! {
@@ -158,21 +160,14 @@ impl session::Trait for Test {
 
 parameter_types! {
     pub const ExistentialDeposit: Balance = 10;
-    pub const TransferFee: Balance = 0;
-    pub const CreationFee: Balance = 0;
 }
 
 impl balances::Trait for Test {
     type Balance = Balance;
-    type OnFreeBalanceZero = ();
-    type OnNewAccount = ();
-    type OnReapAccount = System;
     type Event = ();
     type DustRemoval = ();
-    type TransferPayment = ();
     type ExistentialDeposit = ExistentialDeposit;
-    type TransferFee = TransferFee;
-    type CreationFee = CreationFee;
+    type AccountStore = system::Module<Test>;
 }
 
 pub struct DummyContractAddressFor;
@@ -211,8 +206,6 @@ impl contracts::ComputeDispatchFee<Call, u64> for DummyComputeDispatchFee {
 }
 
 parameter_types! {
-    pub const ContractTransferFee: Balance = 0;
-    pub const ContractCreationFee: Balance = 0;
     pub const ContractTransactionBaseFee: Balance = 0;
     pub const ContractTransactionByteFee: Balance = 0;
     pub const ContractFee: Balance = 0;
@@ -239,8 +232,6 @@ impl contracts::Trait for Test {
     type RentByteFee = RentByteFee;
     type RentDepositOffset = RentDepositOffset;
     type SurchargeReward = SurchargeReward;
-    type TransferFee = ContractTransferFee;
-    type CreationFee = ContractCreationFee;
     type TransactionBaseFee = ContractTransactionBaseFee;
     type TransactionByteFee = ContractTransactionByteFee;
     type ContractFee = ContractFee;
@@ -347,17 +338,17 @@ pub fn valid_instatiate() {
         test_params.clone(),
     );
     // checks deployed contract
-    assert!(contracts::ContractInfoOf::<Test>::exists(OPERATED_CONTRACT));
+    assert!(contracts::ContractInfoOf::<Test>::contains_key(OPERATED_CONTRACT));
 
     // checks mapping operator and contract
     // OPERATOR operates a only OPERATED_CONTRACT contract.
-    assert!(operator::OperatorHasContracts::<Test>::exists(OPERATOR));
+    assert!(operator::OperatorHasContracts::<Test>::contains_key(OPERATOR));
     let tree = operator::OperatorHasContracts::<Test>::get(&OPERATOR);
     assert_eq!(tree.len(), 1);
     assert!(tree.contains(&OPERATED_CONTRACT));
 
     // OPERATED_CONTRACT contract is operated by OPERATOR.
-    assert!(operator::ContractHasOperator::<Test>::exists(
+    assert!(operator::ContractHasOperator::<Test>::contains_key(
         OPERATED_CONTRACT
     ));
     assert_eq!(
@@ -366,7 +357,7 @@ pub fn valid_instatiate() {
     );
 
     // OPERATED_CONTRACT's contract Parameters is same test_params.
-    assert!(operator::ContractParameters::<Test>::exists(
+    assert!(operator::ContractParameters::<Test>::contains_key(
         OPERATED_CONTRACT
     ));
     assert_eq!(

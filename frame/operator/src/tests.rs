@@ -40,7 +40,7 @@ mod operator {
 }
 impl_outer_event! {
     pub enum MetaEvent for Test {
-        balances<T>, contracts<T>, operator<T>,
+        system<T>, balances<T>, contracts<T>, operator<T>,
     }
 }
 impl_outer_origin! {
@@ -55,8 +55,6 @@ impl_outer_dispatch! {
 
 thread_local! {
     static EXISTENTIAL_DEPOSIT: RefCell<u64> = RefCell::new(0);
-    static TRANSFER_FEE: RefCell<u64> = RefCell::new(0);
-    static INSTANTIATION_FEE: RefCell<u64> = RefCell::new(0);
     static BLOCK_GAS_LIMIT: RefCell<u64> = RefCell::new(0);
 }
 
@@ -65,22 +63,6 @@ pub struct ExistentialDeposit;
 impl Get<u64> for ExistentialDeposit {
     fn get() -> u64 {
         EXISTENTIAL_DEPOSIT.with(|v| *v.borrow())
-    }
-}
-
-pub struct TransferFee;
-
-impl Get<u64> for TransferFee {
-    fn get() -> u64 {
-        TRANSFER_FEE.with(|v| *v.borrow())
-    }
-}
-
-pub struct CreationFee;
-
-impl Get<u64> for CreationFee {
-    fn get() -> u64 {
-        INSTANTIATION_FEE.with(|v| *v.borrow())
     }
 }
 
@@ -117,19 +99,17 @@ impl system::Trait for Test {
     type MaximumBlockLength = MaximumBlockLength;
     type Version = ();
     type ModuleToIndex = ();
+    type AccountData = balances::AccountData<u64>;
+    type OnNewAccount = ();
+    type OnReapAccount = Balances;
 }
 
 impl balances::Trait for Test {
     type Balance = u64;
-    type OnFreeBalanceZero = Contract;
-    type OnNewAccount = ();
-    type OnReapAccount = System;
     type Event = MetaEvent;
     type DustRemoval = ();
-    type TransferPayment = ();
     type ExistentialDeposit = ExistentialDeposit;
-    type TransferFee = TransferFee;
-    type CreationFee = CreationFee;
+    type AccountStore = system::Module<Test>;
 }
 parameter_types! {
     pub const MinimumPeriod: u64 = 1;
@@ -171,8 +151,6 @@ impl contracts::Trait for Test {
     type RentByteFee = RentByteFee;
     type RentDepositOffset = RentDepositOffset;
     type SurchargeReward = SurchargeReward;
-    type TransferFee = TransferFee;
-    type CreationFee = CreationFee;
     type TransactionBaseFee = TransactionBaseFee;
     type TransactionByteFee = TransactionByteFee;
     type ContractFee = ContractFee;
@@ -304,8 +282,6 @@ impl ExtBuilder {
     }
     pub fn set_associated_consts(&self) {
         EXISTENTIAL_DEPOSIT.with(|v| *v.borrow_mut() = self.existential_deposit);
-        TRANSFER_FEE.with(|v| *v.borrow_mut() = self.transfer_fee);
-        INSTANTIATION_FEE.with(|v| *v.borrow_mut() = self.instantiation_fee);
         BLOCK_GAS_LIMIT.with(|v| *v.borrow_mut() = self.block_gas_limit);
     }
     pub fn build(self) -> sp_io::TestExternalities {
@@ -315,7 +291,6 @@ impl ExtBuilder {
             .unwrap();
         balances::GenesisConfig::<Test> {
             balances: vec![],
-            vesting: vec![],
         }
         .assimilate_storage(&mut t)
         .unwrap();
@@ -400,7 +375,7 @@ fn instantiate_and_call_and_deposit_event() {
                 vec![
                     EventRecord {
                         phase: Phase::ApplyExtrinsic(0),
-                        event: MetaEvent::balances(balances::RawEvent::NewAccount(1, 1_000_000)),
+                        event: MetaEvent::system(system::RawEvent::NewAccount(1)),
                         topics: vec![],
                     },
                     EventRecord {
@@ -412,7 +387,7 @@ fn instantiate_and_call_and_deposit_event() {
                     },
                     EventRecord {
                         phase: Phase::ApplyExtrinsic(0),
-                        event: MetaEvent::balances(balances::RawEvent::NewAccount(BOB, 100)),
+                        event: MetaEvent::system(system::RawEvent::NewAccount(BOB)),
                         topics: vec![],
                     },
                     EventRecord {
@@ -437,7 +412,7 @@ fn instantiate_and_call_and_deposit_event() {
             );
 
             assert_ok!(creation);
-            assert!(ContractInfoOf::<Test>::exists(BOB));
+            assert!(ContractInfoOf::<Test>::contains_key(BOB));
         });
 }
 
@@ -471,7 +446,7 @@ fn instantiate_and_relate_operator() {
                 vec![
                     EventRecord {
                         phase: Phase::ApplyExtrinsic(0),
-                        event: MetaEvent::balances(balances::RawEvent::NewAccount(1, 1_000_000)),
+                        event: MetaEvent::system(system::RawEvent::NewAccount(1)),
                         topics: vec![],
                     },
                     EventRecord {
@@ -483,7 +458,7 @@ fn instantiate_and_relate_operator() {
                     },
                     EventRecord {
                         phase: Phase::ApplyExtrinsic(0),
-                        event: MetaEvent::balances(balances::RawEvent::NewAccount(BOB, 100)),
+                        event: MetaEvent::system(system::RawEvent::NewAccount(BOB)),
                         topics: vec![],
                     },
                     EventRecord {
@@ -513,21 +488,21 @@ fn instantiate_and_relate_operator() {
             );
 
             // checks deployed contract
-            assert!(ContractInfoOf::<Test>::exists(BOB));
+            assert!(ContractInfoOf::<Test>::contains_key(BOB));
 
             // checks mapping operator and contract
             // ALICE operates a only BOB contract.
-            assert!(OperatorHasContracts::<Test>::exists(ALICE));
+            assert!(OperatorHasContracts::<Test>::contains_key(ALICE));
             let tree = OperatorHasContracts::<Test>::get(&ALICE);
             assert_eq!(tree.len(), 1);
             assert!(tree.contains(&BOB));
 
             // BOB contract is operated by ALICE.
-            assert!(ContractHasOperator::<Test>::exists(BOB));
+            assert!(ContractHasOperator::<Test>::contains_key(BOB));
             assert_eq!(ContractHasOperator::<Test>::get(&BOB), Some(ALICE));
 
             // BOB's contract Parameters is same test_params.
-            assert!(ContractParameters::<Test>::exists(BOB));
+            assert!(ContractParameters::<Test>::contains_key(BOB));
             assert_eq!(ContractParameters::<Test>::get(&BOB), Some(test_params));
         });
 }
@@ -585,7 +560,7 @@ fn valid_instatiate(wasm: Vec<u8>, code_hash: CodeHash<Test>) {
         vec![
             EventRecord {
                 phase: Phase::ApplyExtrinsic(0),
-                event: MetaEvent::balances(balances::RawEvent::NewAccount(1, 1_000_000)),
+                event: MetaEvent::system(system::RawEvent::NewAccount(1)),
                 topics: vec![],
             },
             EventRecord {
@@ -595,7 +570,7 @@ fn valid_instatiate(wasm: Vec<u8>, code_hash: CodeHash<Test>) {
             },
             EventRecord {
                 phase: Phase::ApplyExtrinsic(0),
-                event: MetaEvent::balances(balances::RawEvent::NewAccount(BOB, 100)),
+                event: MetaEvent::system(system::RawEvent::NewAccount(BOB)),
                 topics: vec![],
             },
             EventRecord {
@@ -622,21 +597,21 @@ fn valid_instatiate(wasm: Vec<u8>, code_hash: CodeHash<Test>) {
     );
 
     // checks deployed contract
-    assert!(ContractInfoOf::<Test>::exists(BOB));
+    assert!(ContractInfoOf::<Test>::contains_key(BOB));
 
     // checks mapping operator and contract
     // ALICE operates a only BOB contract.
-    assert!(OperatorHasContracts::<Test>::exists(ALICE));
+    assert!(OperatorHasContracts::<Test>::contains_key(ALICE));
     let tree = OperatorHasContracts::<Test>::get(&ALICE);
     assert_eq!(tree.len(), 1);
     assert!(tree.contains(&BOB));
 
     // BOB contract is operated by ALICE.
-    assert!(ContractHasOperator::<Test>::exists(BOB));
+    assert!(ContractHasOperator::<Test>::contains_key(BOB));
     assert_eq!(ContractHasOperator::<Test>::get(&BOB), Some(ALICE));
 
     // BOB's contract Parameters is same test_params.
-    assert!(ContractParameters::<Test>::exists(BOB));
+    assert!(ContractParameters::<Test>::contains_key(BOB));
     assert_eq!(ContractParameters::<Test>::get(&BOB), Some(test_params));
 }
 
@@ -660,7 +635,7 @@ fn update_parameters_passed() {
 
             // check updated paramters
             // BOB's contract Parameters is same test_params.
-            assert!(ContractParameters::<Test>::exists(BOB));
+            assert!(ContractParameters::<Test>::contains_key(BOB));
             assert_eq!(
                 ContractParameters::<Test>::get(&BOB),
                 Some(new_parameters.clone())
@@ -672,7 +647,7 @@ fn update_parameters_passed() {
                 vec![
                     EventRecord {
                         phase: Phase::ApplyExtrinsic(0),
-                        event: MetaEvent::balances(balances::RawEvent::NewAccount(1, 1_000_000)),
+                        event: MetaEvent::system(system::RawEvent::NewAccount(1)),
                         topics: vec![],
                     },
                     EventRecord {
@@ -684,7 +659,7 @@ fn update_parameters_passed() {
                     },
                     EventRecord {
                         phase: Phase::ApplyExtrinsic(0),
-                        event: MetaEvent::balances(balances::RawEvent::NewAccount(BOB, 100)),
+                        event: MetaEvent::system(system::RawEvent::NewAccount(BOB)),
                         topics: vec![],
                     },
                     EventRecord {
@@ -753,7 +728,7 @@ fn update_parameters_failed() {
 
             // check updated paramters
             // BOB's contract Parameters is not changed.
-            assert!(ContractParameters::<Test>::exists(BOB));
+            assert!(ContractParameters::<Test>::contains_key(BOB));
             assert_eq!(
                 ContractParameters::<Test>::get(&BOB),
                 Some(DEFAULT_PARAMETERS)
@@ -785,13 +760,13 @@ fn change_operator_passed() {
             assert_eq!(tree.len(), 0);
 
             // CHARLIE operate a only BOB contract.
-            assert!(OperatorHasContracts::<Test>::exists(CHARLIE));
+            assert!(OperatorHasContracts::<Test>::contains_key(CHARLIE));
             let tree = OperatorHasContracts::<Test>::get(&CHARLIE);
             assert_eq!(tree.len(), 1);
             assert!(tree.contains(&BOB));
 
             // BOB contract is operated by CHARLIE.
-            assert!(ContractHasOperator::<Test>::exists(BOB));
+            assert!(ContractHasOperator::<Test>::contains_key(BOB));
             assert_eq!(ContractHasOperator::<Test>::get(&BOB), Some(CHARLIE));
 
             // To issue SetParameter
@@ -800,7 +775,7 @@ fn change_operator_passed() {
                 vec![
                     EventRecord {
                         phase: Phase::ApplyExtrinsic(0),
-                        event: MetaEvent::balances(balances::RawEvent::NewAccount(1, 1_000_000)),
+                        event: MetaEvent::system(system::RawEvent::NewAccount(1)),
                         topics: vec![],
                     },
                     EventRecord {
@@ -812,7 +787,7 @@ fn change_operator_passed() {
                     },
                     EventRecord {
                         phase: Phase::ApplyExtrinsic(0),
-                        event: MetaEvent::balances(balances::RawEvent::NewAccount(BOB, 100)),
+                        event: MetaEvent::system(system::RawEvent::NewAccount(BOB)),
                         topics: vec![],
                     },
                     EventRecord {
@@ -871,13 +846,13 @@ fn change_operator_failed() {
 
             // checks mapping operator and contract is not changed.
             // ALICE operates a only BOB contract.
-            assert!(OperatorHasContracts::<Test>::exists(ALICE));
+            assert!(OperatorHasContracts::<Test>::contains_key(ALICE));
             let tree = OperatorHasContracts::<Test>::get(&ALICE);
             assert_eq!(tree.len(), 1);
             assert!(tree.contains(&BOB));
 
             // BOB contract is operated by ALICE.
-            assert!(ContractHasOperator::<Test>::exists(BOB));
+            assert!(ContractHasOperator::<Test>::contains_key(BOB));
             assert_eq!(ContractHasOperator::<Test>::get(&BOB), Some(ALICE));
         });
 }

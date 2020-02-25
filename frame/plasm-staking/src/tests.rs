@@ -242,8 +242,7 @@ fn bond_scenario_test() {
             vec![BalanceLock {
                 id: STAKING_ID,
                 amount: 1000,
-                until: <Test as system::Trait>::BlockNumber::max_value(),
-                reasons: WithdrawReasons::all(),
+                reasons: balances::Reasons::All,
             },]
         )
     })
@@ -317,8 +316,7 @@ fn success_first_bond(
         vec![BalanceLock {
             id: STAKING_ID,
             amount: balance,
-            until: <Test as system::Trait>::BlockNumber::max_value(),
-            reasons: WithdrawReasons::all(),
+            reasons: balances::Reasons::All,
         },]
     )
 }
@@ -346,8 +344,7 @@ fn bond_extra_scenario_test() {
             vec![BalanceLock {
                 id: STAKING_ID,
                 amount: 2000,
-                until: <Test as system::Trait>::BlockNumber::max_value(),
-                reasons: WithdrawReasons::all(),
+                reasons: balances::Reasons::All,
             },]
         );
     })
@@ -391,8 +388,7 @@ fn unbond_scenario_test() {
             vec![BalanceLock {
                 id: STAKING_ID,
                 amount: 1000,
-                until: <Test as system::Trait>::BlockNumber::max_value(),
-                reasons: WithdrawReasons::all(),
+                reasons: balances::Reasons::All,
             },]
         );
 
@@ -422,8 +418,7 @@ fn unbond_scenario_test() {
             vec![BalanceLock {
                 id: STAKING_ID,
                 amount: 1000,
-                until: <Test as system::Trait>::BlockNumber::max_value(),
-                reasons: WithdrawReasons::all(),
+                reasons: balances::Reasons::All,
             },]
         );
     })
@@ -501,8 +496,7 @@ fn withdraw_unbonded_scenario_test() {
             vec![BalanceLock {
                 id: STAKING_ID,
                 amount: 1000,
-                until: <Test as system::Trait>::BlockNumber::max_value(),
-                reasons: WithdrawReasons::all(),
+                reasons: balances::Reasons::All,
             },]
         );
 
@@ -524,8 +518,7 @@ fn withdraw_unbonded_scenario_test() {
             vec![BalanceLock {
                 id: STAKING_ID,
                 amount: 700,
-                until: <Test as system::Trait>::BlockNumber::max_value(),
-                reasons: WithdrawReasons::all(),
+                reasons: balances::Reasons::All,
             },]
         );
 

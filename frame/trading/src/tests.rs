@@ -19,7 +19,7 @@ mod trading {
 }
 impl_outer_event! {
     pub enum MetaEvent for Test {
-        balances<T>, trading<T>,
+        system<T>, balances<T>, trading<T>,
     }
 }
 impl_outer_origin! {
@@ -53,20 +53,19 @@ impl system::Trait for Test {
     type MaximumBlockLength = MaximumBlockLength;
     type Version = ();
     type ModuleToIndex = ();
+    type AccountData = balances::AccountData<u64>;
+    type OnNewAccount = ();
+    type OnReapAccount = Balances;
 }
 parameter_types! {
     pub const ExistentialDeposit: u64 = 0;
-    pub const CreationFee : u64 = 0;
 }
 impl balances::Trait for Test {
     type Balance = u64;
-    type OnReapAccount = System;
-    type OnNewAccount = ();
     type Event = MetaEvent;
     type DustRemoval = ();
-    type TransferPayment = ();
     type ExistentialDeposit = ExistentialDeposit;
-    type CreationFee = CreationFee;
+    type AccountStore = system::Module<Test>;
 }
 parameter_types! {
     pub const MinimumPeriod: u64 = 1;
@@ -370,7 +369,6 @@ fn correct_accept(acceptor: AccountId, offer_id: AccountId) {
                     offer.buyer,
                     offer.sender,
                     offer.amount,
-                    0,
                 )),
                 topics: vec![],
             },
