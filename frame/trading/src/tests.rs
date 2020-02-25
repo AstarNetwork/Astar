@@ -58,7 +58,7 @@ impl system::Trait for Test {
     type OnReapAccount = Balances;
 }
 parameter_types! {
-    pub const ExistentialDeposit: u64 = 0;
+    pub const ExistentialDeposit: u64 = 1; // Should be greather than zero
 }
 impl balances::Trait for Test {
     type Balance = u64;
@@ -188,6 +188,7 @@ fn advance_session() {
 fn correct_offer_test() {
     ExtBuilder::build().execute_with(|| {
         initialize_operator_storage_settings();
+        advance_session();
         correct_offer(CHARLIE, ALICE, vec![ANT, BLUE], 800, 2);
     })
 }
@@ -196,6 +197,8 @@ fn correct_offer_test() {
 fn offer_error_test() {
     ExtBuilder::build().execute_with(|| {
         initialize_operator_storage_settings();
+        advance_session();
+
         assert_err!(
             Trading::offer(Origin::signed(CHARLIE), ALICE, vec![CUT, DEEN], 800, 20),
             "sender does not have these contracts.",
@@ -263,6 +266,8 @@ fn offer_and_reject_test() {
     ExtBuilder::build().execute_with(|| {
         initialize_operator_storage_settings();
 
+        advance_session();
+
         correct_offer(CHARLIE, ALICE, vec![ANT, BLUE], 800, 2);
 
         advance_session();
@@ -309,7 +314,9 @@ fn reject_error_test() {
     ExtBuilder::build().execute_with(|| {
         initialize_operator_storage_settings();
 
-        correct_offer(CHARLIE, ALICE, vec![ANT, BLUE], 800, 3);
+        advance_session();
+
+        correct_offer(CHARLIE, ALICE, vec![ANT, BLUE], 800, 5);
 
         advance_session();
 
@@ -336,7 +343,9 @@ fn offer_and_accept_test() {
     ExtBuilder::build().execute_with(|| {
         initialize_operator_storage_settings();
 
-        correct_offer(CHARLIE, ALICE, vec![ANT, BLUE], 800, 3);
+        advance_session();
+
+        correct_offer(CHARLIE, ALICE, vec![ANT, BLUE], 800, 10);
 
         advance_session();
 
@@ -344,7 +353,7 @@ fn offer_and_accept_test() {
 
         advance_session();
 
-        correct_offer(BOB, CHARLIE, vec![ANT], 200, 5);
+        correct_offer(BOB, CHARLIE, vec![ANT], 200, 10);
 
         advance_session();
 
@@ -425,6 +434,8 @@ fn accept_error_test() {
     ExtBuilder::build().execute_with(|| {
         initialize_operator_storage_settings();
 
+        advance_session();
+
         correct_offer(CHARLIE, ALICE, vec![ANT, BLUE], 800, 3);
 
         advance_session();
@@ -454,7 +465,9 @@ fn remove_test() {
     ExtBuilder::build().execute_with(|| {
         initialize_operator_storage_settings();
 
-        correct_offer(CHARLIE, ALICE, vec![ANT, BLUE], 800, 3);
+        advance_session();
+
+        correct_offer(CHARLIE, ALICE, vec![ANT, BLUE], 800, 4);
 
         advance_session();
 

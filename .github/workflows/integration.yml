@@ -26,15 +26,3 @@ jobs:
       run: cargo test --all
     - name: Build optimized binary
       run: cargo build --release --verbose
-    - name: Upload binary archive into IPFS
-      if: runner.os != 'Windows'
-      run: |
-        cd target/release
-        tar cfJ plasm-${{ matrix.os }}-x86_64.tar.xz plasm-node
-        curl "https://ipfs.infura.io:5001/api/v0/add" -F file=@plasm-${{ matrix.os }}-x86_64.tar.xz
-    - name: Upload binary archive into IPFS (windows only)
-      if: runner.os == 'Windows'
-      run: |
-        cd target/release
-        zip plasm-${{ matrix.os }}-x86_64.zip plasm-node.exe
-        curl "https://ipfs.infura.io:5001/api/v0/add" -F file=@plasm-${{ matrix.os }}-x86_64.zip

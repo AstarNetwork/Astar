@@ -375,7 +375,12 @@ fn instantiate_and_call_and_deposit_event() {
                 vec![
                     EventRecord {
                         phase: Phase::ApplyExtrinsic(0),
-                        event: MetaEvent::system(system::RawEvent::NewAccount(1)),
+                        event: MetaEvent::system(system::RawEvent::NewAccount(ALICE)),
+                        topics: vec![],
+                    },
+                    EventRecord {
+                        phase: Phase::ApplyExtrinsic(0),
+                        event: MetaEvent::balances(balances::RawEvent::Endowed(ALICE, 1_000_000)),
                         topics: vec![],
                     },
                     EventRecord {
@@ -388,6 +393,11 @@ fn instantiate_and_call_and_deposit_event() {
                     EventRecord {
                         phase: Phase::ApplyExtrinsic(0),
                         event: MetaEvent::system(system::RawEvent::NewAccount(BOB)),
+                        topics: vec![],
+                    },
+                    EventRecord {
+                        phase: Phase::ApplyExtrinsic(0),
+                        event: MetaEvent::balances(balances::RawEvent::Endowed(BOB, 100)),
                         topics: vec![],
                     },
                     EventRecord {
@@ -446,7 +456,12 @@ fn instantiate_and_relate_operator() {
                 vec![
                     EventRecord {
                         phase: Phase::ApplyExtrinsic(0),
-                        event: MetaEvent::system(system::RawEvent::NewAccount(1)),
+                        event: MetaEvent::system(system::RawEvent::NewAccount(ALICE)),
+                        topics: vec![],
+                    },
+                    EventRecord {
+                        phase: Phase::ApplyExtrinsic(0),
+                        event: MetaEvent::balances(balances::RawEvent::Endowed(ALICE, 1_000_000)),
                         topics: vec![],
                     },
                     EventRecord {
@@ -459,6 +474,11 @@ fn instantiate_and_relate_operator() {
                     EventRecord {
                         phase: Phase::ApplyExtrinsic(0),
                         event: MetaEvent::system(system::RawEvent::NewAccount(BOB)),
+                        topics: vec![],
+                    },
+                    EventRecord {
+                        phase: Phase::ApplyExtrinsic(0),
+                        event: MetaEvent::balances(balances::RawEvent::Endowed(BOB, 100)),
                         topics: vec![],
                     },
                     EventRecord {
@@ -560,7 +580,12 @@ fn valid_instatiate(wasm: Vec<u8>, code_hash: CodeHash<Test>) {
         vec![
             EventRecord {
                 phase: Phase::ApplyExtrinsic(0),
-                event: MetaEvent::system(system::RawEvent::NewAccount(1)),
+                event: MetaEvent::system(system::RawEvent::NewAccount(ALICE)),
+                topics: vec![],
+            },
+            EventRecord {
+                phase: Phase::ApplyExtrinsic(0),
+                event: MetaEvent::balances(balances::RawEvent::Endowed(ALICE, 1_000_000)),
                 topics: vec![],
             },
             EventRecord {
@@ -571,6 +596,11 @@ fn valid_instatiate(wasm: Vec<u8>, code_hash: CodeHash<Test>) {
             EventRecord {
                 phase: Phase::ApplyExtrinsic(0),
                 event: MetaEvent::system(system::RawEvent::NewAccount(BOB)),
+                topics: vec![],
+            },
+            EventRecord {
+                phase: Phase::ApplyExtrinsic(0),
+                event: MetaEvent::balances(balances::RawEvent::Endowed(BOB, 100)),
                 topics: vec![],
             },
             EventRecord {
@@ -647,7 +677,12 @@ fn update_parameters_passed() {
                 vec![
                     EventRecord {
                         phase: Phase::ApplyExtrinsic(0),
-                        event: MetaEvent::system(system::RawEvent::NewAccount(1)),
+                        event: MetaEvent::system(system::RawEvent::NewAccount(ALICE)),
+                        topics: vec![],
+                    },
+                    EventRecord {
+                        phase: Phase::ApplyExtrinsic(0),
+                        event: MetaEvent::balances(balances::RawEvent::Endowed(ALICE, 1_000_000)),
                         topics: vec![],
                     },
                     EventRecord {
@@ -660,6 +695,11 @@ fn update_parameters_passed() {
                     EventRecord {
                         phase: Phase::ApplyExtrinsic(0),
                         event: MetaEvent::system(system::RawEvent::NewAccount(BOB)),
+                        topics: vec![],
+                    },
+                    EventRecord {
+                        phase: Phase::ApplyExtrinsic(0),
+                        event: MetaEvent::balances(balances::RawEvent::Endowed(BOB, 100)),
                         topics: vec![],
                     },
                     EventRecord {
@@ -775,7 +815,12 @@ fn change_operator_passed() {
                 vec![
                     EventRecord {
                         phase: Phase::ApplyExtrinsic(0),
-                        event: MetaEvent::system(system::RawEvent::NewAccount(1)),
+                        event: MetaEvent::system(system::RawEvent::NewAccount(ALICE)),
+                        topics: vec![],
+                    },
+                    EventRecord {
+                        phase: Phase::ApplyExtrinsic(0),
+                        event: MetaEvent::balances(balances::RawEvent::Endowed(ALICE, 1_000_000)),
                         topics: vec![],
                     },
                     EventRecord {
@@ -788,6 +833,11 @@ fn change_operator_passed() {
                     EventRecord {
                         phase: Phase::ApplyExtrinsic(0),
                         event: MetaEvent::system(system::RawEvent::NewAccount(BOB)),
+                        topics: vec![],
+                    },
+                    EventRecord {
+                        phase: Phase::ApplyExtrinsic(0),
+                        event: MetaEvent::balances(balances::RawEvent::Endowed(BOB, 100)),
                         topics: vec![],
                     },
                     EventRecord {
