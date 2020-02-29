@@ -33,6 +33,7 @@ jobs:
           username: ${{ secrets.REGISTRY_USERNAME }}
           password: ${{ secrets.REGISTRY_PASSWORD }}
       - name: Docker build and push
+        run: |
           echo $RELEASE_VERSION
           TAG=${{ steps.get_version.outputs.tag }}
           if [ -n $TAG ]; then TAG='latest'; fi
