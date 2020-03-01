@@ -1,38 +1,30 @@
 name: crates
 on:
+  pull_request:
   push:
     branches:
       - master
 jobs:
-  build:
-    runs-on: ubuntu-latest
+  native:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
     steps:
-      - uses: actions/checkout@master
-      - id: component
-        uses: actions-rs/components-nightly@v1
+      - uses: hecrj/setup-rust-action@v1
         with:
-          component: clippy
-      - uses: actions-rs/toolchain@v1
+          rust-version: 'nightly-2020-02-02'
+          targets: 'wasm32-unknown-unknown'
+      - name: Checkout the source code
+        uses: actions/checkout@master
+      - name: Check targets are installed correctly
+        run: rustup target list --installed
+      - name: Install build tools
+        run: cargo install --git https://github.com/alexcrichton/wasm-gc --force
+      - name: Build doc
+        run: cargo doc --all --all-features --no-deps
+      - name: Deploy
+        uses: peaceiris/actions-gh-pages@v3
         with:
-          toolchain: nightly
-          override: true
-      - name: push-crates
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          rustup target add wasm32-unknown-unknown --toolchain nightly
-          cargo +nightly install --git https://github.com/alexcrichton/wasm-gc --force
-          cargo doc --all --all-features --no-deps
-          cd target
-          mkdir tmp
-          cd tmp
-          git config --global user.email "s.a.t.e.3.ths@gmail.com"
-          git config --global user.name "satellitex"
-          git init
-          git remote add origin https://satellitex:${GITHUB_TOKEN}@github.com/staketechnologies/Plasm.git
-          git checkout -b gh-pages
-          git pull origin gh-pages
-          cp -R ../doc/* .
-          git add .
-          git commit -m 'auto update crates on gh-pages'
-          git push origin gh-pages
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./target/doc

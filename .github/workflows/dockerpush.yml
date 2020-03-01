@@ -1,16 +1,30 @@
 name: Docker Image CI
 on:
+  pull_request:
   push:
     branches:
       - master
     tags:
       - v*
 jobs:
-  build:
-    runs-on: ubuntu-latest
+  native:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
     steps:
-      - name: Checkout
-        uses: actions/checkout@v1
+      - uses: hecrj/setup-rust-action@v1
+        with:
+          rust-version: 'nightly-2020-02-02'
+          targets: 'wasm32-unknown-unknown'
+      - name: Checkout the source code
+        uses: actions/checkout@master
+      - name: Check targets are installed correctly
+        run: rustup target list --installed
+      - name: Install build tools
+        run: cargo install --git https://github.com/alexcrichton/wasm-gc --force
+      - name: Build optimized binary
+        run: cargo build --release --verbose --target-dir third-party/docker/target-debian
       - name: Get the version
         id: get_version
         run: echo ::set-output name=tag::${GITHUB_REF#refs/tags/v}
@@ -18,14 +32,13 @@ jobs:
         with:
           username: ${{ secrets.REGISTRY_USERNAME }}
           password: ${{ secrets.REGISTRY_PASSWORD }}
-      - run: |
+      - name: Docker build and push
+        run: |
           echo $RELEASE_VERSION
           TAG=${{ steps.get_version.outputs.tag }}
           if [ -n $TAG ]; then TAG='latest'; fi
           echo ${{ steps.get_version.outputs.tag }}
           echo $TAG
           cd third-party/docker
-          docker pull staketechnologies/plasm-builder
-          docker run -v $(pwd)/../..:/opt staketechnologies/plasm-builder cargo build --target-dir third-party/docker/target-debian --release
           docker build . -t staketechnologies/plasm-node:$TAG
           docker push staketechnologies/plasm-node:$TAG
