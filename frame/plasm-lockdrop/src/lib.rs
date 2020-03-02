@@ -24,8 +24,10 @@ use frame_system::{
     offchain::SubmitSignedTransaction,
 };
 
-/// Bitcoin script helpers.
+/// Bitcoin helpers.
 mod btc_utils;
+/// Ethereum helpers.
+mod eth_utils;
 
 /// Plasm Lockdrop Authority local KeyType.
 ///
@@ -89,9 +91,22 @@ pub trait Trait: system::Trait {
     ///   Positive votes = approve votes - decline votes.
     type PositiveVotes: Get<AuthorityVote>;
 
+    /// Bitcoin price URI.
+    type BitcoinTickerUri: Get<&'static str>;
+
+    /// Ethereum price URI.
+    type EthereumTickerUri: Get<&'static str>;
+
     /// Bitcoin transaction fetch URI.
     /// For example: http://api.blockcypher.com/v1/btc/test3/txs
     type BitcoinApiUri: Get<&'static str>;
+
+    /// Ethereum public node URI. 
+    /// For example: https://api.blockcypher.com/v1/eth/test/txs/ 
+    type EthereumApiUri: Get<&'static str>;
+
+    /// Ethereum lockdrop contract address.
+    type EthereumContractAddress: Get<&'static str>;
 
     /// Timestamp of finishing lockdrop.
     type LockdropEnd: Get<Self::Moment>;
@@ -151,6 +166,8 @@ pub enum Lockdrop {
     /// BTC token locked and could be spend some timestamp.
     /// Duration in blocks and value in shatoshi could be derived from BTC transaction.
     Bitcoin { public: ecdsa::Public, value: u64, duration: u64, transaction_hash: H256, },
+    /// Ethereum lockdrop transactions is sended to pre-deployed lockdrop smart contract.
+    Ethereum { public: ecdsa::Public, value: u64, duration: u64, transaction_hash: H256, },
 }
 
 impl Default for Lockdrop {
@@ -188,8 +205,8 @@ decl_event!(
         ClaimResponse(ClaimId, AccountId, bool),
         /// Lockdrop token claim paid
         ClaimComplete(ClaimId, AccountId, Balance),
-        /// Dollar rate updated by oracle.
-        NewDollarRate(DollarRate),
+        /// Dollar rate updated by oracle: BTC, ETH.
+        NewDollarRate(DollarRate, DollarRate),
         /// New authority list registered
         NewAuthorities(Vec<AuthorityId>),
     }
@@ -211,11 +228,11 @@ decl_storage! {
                                ClaimId => Claim;
         /// Lockdrop alpha parameter.
         Alpha get(fn alpha) config(): u128;
-        /// Lockdrop dollar rate parameter.
-        DollarRate get(fn dollar_rate) config(): T::DollarRate;
-        /// Lockdrop dollar rate median filter table.
+        /// Lockdrop dollar rate parameter: BTC, ETH.
+        DollarRate get(fn dollar_rate) config(): (T::DollarRate, T::DollarRate);
+        /// Lockdrop dollar rate median filter table: Time, BTC, ETH.
         DollarRateF get(fn dollar_rate_f): linked_map hasher(blake2_256)
-                                           T::AccountId => (T::Moment, T::DollarRate);
+                                           T::AccountId => (T::Moment, T::DollarRate, T::DollarRate);
     }
 }
 
@@ -252,7 +269,15 @@ decl_module! {
                         // PLM unit = PLM * 10^15;
                         // (it also helps to make evaluations more precise)
                         let value_btc = (value as u128) * 1_000_000;
-                        Self::issue_amount(value_btc, duration_sec.into())
+                        Self::btc_issue_amount(value_btc, duration_sec.into())
+                    },
+                    Lockdrop::Ethereum { value, duration, .. } => {
+                        // Cast bitcoin value to PLM order:
+                        // satoshi = ETH * 10^18;
+                        // PLM unit = PLM * 10^15;
+                        // (it also helps to make evaluations more precise)
+                        let value_eth = (value as u128) / 1_000;
+                        Self::eth_issue_amount(value_eth, duration.into())
                     }
                 };
                 let claim = Claim { params, amount, .. Default::default() };
@@ -281,7 +306,8 @@ decl_module! {
 
             // Deposit lockdrop tokens on locking public key.
             let account = match claim.params {
-                Lockdrop::Bitcoin { public, .. } => T::Account::from(public).into_account()
+                Lockdrop::Bitcoin { public, .. }  => T::Account::from(public).into_account(),
+                Lockdrop::Ethereum { public, .. } => T::Account::from(public).into_account(),
             };
             let amount: BalanceOf<T> = T::BalanceConvert::from(claim.amount).into();
             T::Currency::deposit_creating(&account, amount);
@@ -314,29 +340,32 @@ decl_module! {
         #[weight = SimpleDispatchInfo::FixedOperational(10_000)]
         fn set_dollar_rate(
             origin,
-            time: T::Moment,
-            rate: T::DollarRate,
+            btc_rate: T::DollarRate,
+            eth_rate: T::DollarRate,
         ) {
             let sender = ensure_signed(origin)?;
             ensure!(Self::is_authority(&sender), "this method for lockdrop authorities only");
-            <DollarRateF<T>>::insert(sender, (time, rate));
 
             let now = T::Time::now();
+            <DollarRateF<T>>::insert(sender, (now, btc_rate, eth_rate));
+
             let expire = T::MedianFilterExpire::get();
-            let mut filter = median::Filter::new(T::MedianFilterWidth::get());
-            let mut filtered_rate = <DollarRate<T>>::get();
+            let mut btc_filter = median::Filter::new(T::MedianFilterWidth::get());
+            let mut eth_filter = median::Filter::new(T::MedianFilterWidth::get());
+            let (mut btc_filtered_rate, mut eth_filtered_rate) = <DollarRate<T>>::get();
             for (a, item) in <DollarRateF<T>>::enumerate() {
-                if now.saturating_sub(item.0) < expire { 
+                if now.saturating_sub(item.0) < expire {
                     // Use value in filter when not expired
-                    filtered_rate = filter.consume(item.1);
+                    btc_filtered_rate = btc_filter.consume(item.1);
+                    eth_filtered_rate = eth_filter.consume(item.2);
                 } else {
                     // Drop value when expired
                     <DollarRateF<T>>::remove(a);
                 }
             }
 
-            <DollarRate<T>>::put(filtered_rate);
-            Self::deposit_event(RawEvent::NewDollarRate(filtered_rate));
+            <DollarRate<T>>::put((btc_filtered_rate, eth_filtered_rate));
+            Self::deposit_event(RawEvent::NewDollarRate(btc_filtered_rate, eth_filtered_rate));
         }
 
         // Runs after every block within the context and current state of said block.
@@ -404,27 +433,27 @@ impl<T: Trait> Module<T> {
 
     fn dollar_rate_oracle() -> Result<(), String> {
         // TODO: Multiple rate sources
-        let res = fetch_json("http://blockchain.info/ticker".to_string())?;
-        let mbrate: Option<_> = res["USD"]["15m"].as_u64();
-        match mbrate {
-            None => Err("BTC ticker JSON parsing error".to_string()),
-            Some(rate) => {
-                let ts_sec = sp_io::offchain::timestamp().unix_millis() / 1000; 
-                let call = Call::set_dollar_rate(ts_sec.into(), rate.into());
-                debug::debug!(
-                    target: "lockdrop-offchain-worker",
-                    "dollar rate extrinsic: {:?}", call
-                );
+        let res = fetch_json(T::BitcoinTickerUri::get())?;
+        let btc_rate = res["price_usd"].as_u64()
+            .ok_or("BTC ticker JSON parsing error".to_string())?;
 
-                let res = T::SubmitTransaction::submit_signed(call);
-                debug::debug!(
-                    target: "lockdrop-offchain-worker",
-                    "dollar rate extrinsic send: {:?}", res
-                );
+        let res = fetch_json(T::EthereumTickerUri::get())?;
+        let eth_rate = res["price_usd"].as_u64()
+            .ok_or("ETH ticker JSON parsing error".to_string())?;
 
-                Ok(())
-            }
-        }
+        let call = Call::set_dollar_rate(btc_rate.into(), eth_rate.into());
+        debug::debug!(
+            target: "lockdrop-offchain-worker",
+            "dollar rate extrinsic: {:?}", call
+        );
+
+        let res = T::SubmitTransaction::submit_signed(call);
+        debug::debug!(
+            target: "lockdrop-offchain-worker",
+            "dollar rate extrinsic send: {:?}", res
+        );
+
+        Ok(())
     }
 
     /// Check locking parameters of given claim
@@ -437,7 +466,7 @@ impl<T: Trait> Module<T> {
                     T::BitcoinApiUri::get(),
                     hex::encode(transaction_hash),
                 );
-                let tx = fetch_json(uri)?;
+                let tx = fetch_json(uri.as_ref())?;
                 debug::debug!(
                     target: "lockdrop-offchain-worker",
                     "claim id {} => fetched transaction: {:?}", claim_id, tx
@@ -455,17 +484,45 @@ impl<T: Trait> Module<T> {
                     "claim id {} => desired P2HS script: {}", claim_id, hex::encode(script.clone())
                 );
 
-                // Confirm for 
                 Ok(tx["configurations"].as_u64().unwrap() > 10 &&
-                    tx["outputs"][0]["script"] == serde_json::json!(hex::encode(script)) &&
-                    tx["outputs"][0]["value"].as_u64().unwrap() == value)
+                   tx["outputs"][0]["script"] == serde_json::json!(hex::encode(script)) &&
+                   tx["outputs"][0]["value"].as_u64().unwrap() == value)
             },
+            Lockdrop::Ethereum { public, value, duration, transaction_hash } => {
+                let uri = format!(
+                    "{}/{}",
+                    T::EthereumApiUri::get(),
+                    hex::encode(transaction_hash),
+                );
+                let tx = fetch_json(uri.as_ref())?;
+                debug::debug!(
+                    target: "lockdrop-offchain-worker",
+                    "claim id {} => fetched transaction: {:?}", claim_id, tx
+                );
+
+                let script = eth_utils::lock_method(duration);
+                debug::debug!(
+                    target: "lockdrop-offchain-worker",
+                    "claim id {} => desired lock script: {}", claim_id, hex::encode(script.clone())
+                );
+
+                Ok(tx["configurations"].as_u64().unwrap() > 10 &&
+                   tx["inputs"][0]["addresses"] == serde_json::json!(eth_utils::to_address(public)) &&
+                   tx["outputs"][0]["script"] == serde_json::json!(hex::encode(script)) &&
+                   tx["outputs"][0]["value"].as_u64().unwrap() == value &&
+                   tx["outputs"][0]["addresses"][0] == serde_json::json!(T::EthereumContractAddress::get()))
+            }
         }
     }
 
-    fn issue_amount(value: u128, duration: T::Moment) -> u128 {
+    fn btc_issue_amount(value: u128, duration: T::Moment) -> u128 {
         // https://medium.com/stake-technologies/plasm-lockdrop-introduction-99fa2dfc37c0
-        Self::alpha() * value * Self::dollar_rate().into() * Self::time_bonus(duration)
+        Self::alpha() * value * Self::dollar_rate().0.into() * Self::time_bonus(duration)
+    }
+
+    fn eth_issue_amount(value: u128, duration: T::Moment) -> u128 {
+        // https://medium.com/stake-technologies/plasm-lockdrop-introduction-99fa2dfc37c0
+        Self::alpha() * value * Self::dollar_rate().1.into() * Self::time_bonus(duration)
     }
 
     fn time_bonus(duration: T::Moment) -> u128 {
@@ -486,8 +543,8 @@ impl<T: Trait> Module<T> {
 }
 
 /// HTTP fetch JSON value by URI
-fn fetch_json(uri: String) -> Result<serde_json::Value, String> {
-    let request = Request::get(uri.as_ref()).send()
+fn fetch_json(uri: &str) -> Result<serde_json::Value, String> {
+    let request = Request::get(uri).send()
         .map_err(|e| format!("HTTP request error: {:?}", e))?;
     let response = request.wait()
         .map_err(|e| format!("HTTP response error: {:?}", e))?;
