@@ -6,11 +6,8 @@ on:
     tags:
       - v*
 jobs:
-  native:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-latest]
+  build:
+    runs-on: ubuntu-latest
     steps:
       - uses: hecrj/setup-rust-action@v1
         with:

@@ -4,11 +4,8 @@ on:
     branches:
       - master
 jobs:
-  native:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-latest]
+  build:
+    runs-on: ubuntu-latest
     steps:
       - uses: hecrj/setup-rust-action@v1
         with:
@@ -22,6 +19,8 @@ jobs:
         run: cargo install --git https://github.com/alexcrichton/wasm-gc --force
       - name: Build doc
         run: cargo doc --all --all-features --no-deps
+      - name: Push index.html
+        run: echo "<meta http-equiv=\"refresh\" content=\"0; URL='./plasm_cli/index.html'\" />" >> ./target/docs/index.html
       - name: Deploy
         uses: peaceiris/actions-gh-pages@v3
         with:
