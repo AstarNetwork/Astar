@@ -53,9 +53,9 @@ impl ChainSpec {
     }
 }
 
-fn load_spec(id: &str) -> Result<Option<chain_spec::ChainSpec>, String> {
+fn load_spec(id: &str) -> Result<Box<dyn sc_chain_spec::ChainSpec>, String> {
     Ok(match ChainSpec::from(id) {
-        Some(spec) => Some(spec.load()?),
-        None => None,
+        Some(spec) => Box::new(spec.load()?),
+        None => Box::new(ChainSpec::PlasmTestnet.load()?),
     })
 }

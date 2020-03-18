@@ -8,7 +8,11 @@ use sp_runtime::traits::Block as BlockT;
 use sp_inherents::InherentDataProviders;
 use sc_consensus_babe;
 use sc_client::LongestChain;
-use sc_finality_grandpa::FinalityProofProvider as GrandpaFinalityProofProvider;
+use sc_client_api::ExecutorProvider;
+use sc_finality_grandpa::{
+    StorageAndProofProvider,
+    FinalityProofProvider as GrandpaFinalityProofProvider,
+};
 use sc_service::{
     AbstractService, ServiceBuilder, config::Configuration, error::{Error as ServiceError},
 };
@@ -19,7 +23,7 @@ use sc_network::NetworkService;
 use sc_offchain::OffchainWorkers;
 use plasm_executor::NativeExecutor;
 use plasm_primitives::Block;
-use plasm_runtime::{GenesisConfig, RuntimeApi};
+use plasm_runtime::RuntimeApi;
 
 /// Starts a `ServiceBuilder` for a full service.
 ///
@@ -46,7 +50,7 @@ macro_rules! new_full_start {
                     .ok_or_else(|| sc_service::Error::SelectChainRequired)?;
                 let (grandpa_block_import, grandpa_link) = sc_finality_grandpa::block_import(
                     client.clone(),
-                    &*client,
+                    &(client.clone() as std::sync::Arc<_>),
                     select_chain,
                 )?;
                 let justification_import = grandpa_block_import.clone();
@@ -116,9 +120,10 @@ macro_rules! new_full {
         let (builder, mut import_setup, inherent_data_providers) = new_full_start!($config);
 
         let service = builder
-            .with_finality_proof_provider(|client, backend|
-                Ok(Arc::new(GrandpaFinalityProofProvider::new(backend, client)) as _)
-            )?
+            .with_finality_proof_provider(|client, backend| {
+                let provider = client as Arc<dyn StorageAndProofProvider<_, _>>;
+                Ok(Arc::new(GrandpaFinalityProofProvider::new(backend, provider)) as _)
+            })?
             .build()?;
 
         let (block_import, grandpa_link, babe_link) = import_setup.take()
@@ -127,10 +132,10 @@ macro_rules! new_full {
         ($with_startup_data)(&block_import, &babe_link);
 
         if participates_in_consensus {
-            let proposer = sc_basic_authorship::ProposerFactory {
-                client: service.client(),
-                transaction_pool: service.transaction_pool(),
-            };
+            let proposer = sc_basic_authorship::ProposerFactory::new(
+                service.client(),
+                service.transaction_pool(),
+            );
 
             let client = service.client();
             let select_chain = service.select_chain()
@@ -187,9 +192,9 @@ macro_rules! new_full {
                 link: grandpa_link,
                 network: service.network(),
                 inherent_data_providers: inherent_data_providers.clone(),
-                on_exit: service.on_exit(),
                 telemetry_on_connect: Some(service.telemetry_on_connect_stream()),
                 voting_rule: sc_finality_grandpa::VotingRulesBuilder::default().build(),
+                prometheus_registry: service.prometheus_registry(),
             };
 
             // the GRANDPA voter task is considered infallible, i.e.
@@ -228,11 +233,8 @@ type ConcreteTransactionPool = sc_transaction_pool::BasicPool<
     ConcreteBlock
 >;
 
-/// A specialized configuration object for setting up the node..
-pub type NodeConfiguration = Configuration<GenesisConfig, crate::chain_spec::Extensions>;
-
 /// Builds a new service for a full client.
-pub fn new_full(config: NodeConfiguration)
+pub fn new_full(config: Configuration)
 -> Result<
     Service<
         ConcreteBlock,
@@ -254,7 +256,7 @@ pub fn new_full(config: NodeConfiguration)
 }
 
 /// Builds a new service for a light client.
-pub fn new_light(config: NodeConfiguration)
+pub fn new_light(config: Configuration)
 -> Result<impl AbstractService, ServiceError> {
     type RpcExtension = jsonrpc_core::IoHandler<sc_rpc::Metadata>;
     let inherent_data_providers = InherentDataProviders::new();
@@ -276,10 +278,10 @@ pub fn new_light(config: NodeConfiguration)
             let fetch_checker = fetcher
                 .map(|fetcher| fetcher.checker().clone())
                 .ok_or_else(|| "Trying to start light import queue without active fetch checker")?;
-            let grandpa_block_import = sc_finality_grandpa::light_block_import::<_, _, _, RuntimeApi>(
+            let grandpa_block_import = sc_finality_grandpa::light_block_import(
                 client.clone(),
                 backend,
-                &*client,
+                &(client.clone() as Arc<_>),
                 Arc::new(fetch_checker),
             )?;
 
@@ -304,9 +306,10 @@ pub fn new_light(config: NodeConfiguration)
 
             Ok((import_queue, finality_proof_request_builder))
         })?
-        .with_finality_proof_provider(|client, backend|
-            Ok(Arc::new(GrandpaFinalityProofProvider::new(backend, client)) as _)
-        )?
+        .with_finality_proof_provider(|client, backend| {
+            let provider = client as Arc<dyn StorageAndProofProvider<_, _>>;
+            Ok(Arc::new(GrandpaFinalityProofProvider::new(backend, provider)) as _)
+        })?
         .with_rpc_extensions(|builder,| ->
             Result<RpcExtension, _>
         {

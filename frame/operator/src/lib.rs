@@ -78,11 +78,14 @@ pub trait Trait: contracts::Trait {
 decl_storage! {
     trait Store for Module<T: Trait> as Operator {
         /// A mapping from operators to operated contracts by them.
-        pub OperatorHasContracts get(fn operator_has_contracts): map hasher(blake2_256) T::AccountId => Vec<T::AccountId>;
+        pub OperatorHasContracts get(fn operator_has_contracts): map hasher(blake2_128_concat)
+                                                                 T::AccountId => Vec<T::AccountId>;
         /// A mapping from operated contract by operator to it.
-        pub ContractHasOperator get(fn contract_has_operator): linked_map hasher(blake2_256) T::AccountId => Option<T::AccountId>;
+        pub ContractHasOperator get(fn contract_has_operator): map hasher(blake2_128_concat)
+                                                               T::AccountId => Option<T::AccountId>;
         /// A mapping from contract to it's parameters.
-        pub ContractParameters get(fn contract_parameters): map hasher(blake2_256) T::AccountId => Option<T::Parameters>;
+        pub ContractParameters get(fn contract_parameters): map hasher(blake2_128_concat)
+                                                            T::AccountId => Option<T::Parameters>;
     }
 }
 

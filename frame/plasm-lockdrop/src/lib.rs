@@ -7,16 +7,17 @@ use sp_core::{H256, ecdsa};
 use sp_runtime::{
     RuntimeDebug,
     traits::{
-        Member, IdentifyAccount, BlakeTwo256, Hash, SimpleArithmetic, Saturating
+        Member, IdentifyAccount, BlakeTwo256, Hash, Saturating, AtLeast32Bit,
     },
     app_crypto::{KeyTypeId, RuntimeAppPublic},
     offchain::http::Request,
 };
 use frame_support::{
     decl_module, decl_event, decl_storage, decl_error,
-    debug, ensure, StorageValue,
+    debug, ensure, StorageValue, StorageMap,
     weights::SimpleDispatchInfo,
     traits::{Get, Currency, Time},
+    storage::IterableStorageMap,
     dispatch::Parameter,
 };
 use frame_system::{
@@ -135,11 +136,11 @@ pub trait Trait: system::Trait {
     type Time: Time<Moment=Self::Moment>;
 
     /// Timestamp type.
-    type Moment: Member + Parameter + SimpleArithmetic + Saturating
+    type Moment: Member + Parameter + Saturating + AtLeast32Bit
         + Copy + Default + From<u64> + Into<u64> + Into<u128>;
 
     /// Dollar rate number data type.
-    type DollarRate: Member + Parameter + SimpleArithmetic
+    type DollarRate: Member + Parameter + AtLeast32Bit
         + Copy + Default + From<u64> + Into<u128>;
 
     // XXX: I don't known how to convert into Balance from u128 without it
@@ -224,14 +225,14 @@ decl_storage! {
         /// List of lockdrop authority id's.
         Keys get(fn keys): Vec<T::AuthorityId>;
         /// Token claim requests.
-        Claims get(fn claims): linked_map hasher(blake2_256)
+        Claims get(fn claims): map hasher(blake2_128_concat)
                                ClaimId => Claim;
         /// Lockdrop alpha parameter.
         Alpha get(fn alpha) config(): u128;
         /// Lockdrop dollar rate parameter: BTC, ETH.
         DollarRate get(fn dollar_rate) config(): (T::DollarRate, T::DollarRate);
         /// Lockdrop dollar rate median filter table: Time, BTC, ETH.
-        DollarRateF get(fn dollar_rate_f): linked_map hasher(blake2_256)
+        DollarRateF get(fn dollar_rate_f): map hasher(blake2_128_concat)
                                            T::AccountId => (T::Moment, T::DollarRate, T::DollarRate);
     }
 }
@@ -259,7 +260,7 @@ decl_module! {
             let claim_id = BlakeTwo256::hash_of(&params);
             ensure!(!<Claims>::get(claim_id).complete, "claim should not be already paid"); 
 
-            if !<Claims>::exists(claim_id) {
+            if !<Claims>::contains_key(claim_id) {
                 let amount = match params {
                     Lockdrop::Bitcoin { value, duration, .. } => {
                         // Average block duration in BTC is 10 min = 600 sec
@@ -326,7 +327,7 @@ decl_module! {
         ) {
             let sender = ensure_signed(origin)?;
             ensure!(Self::is_authority(&sender), "this method for lockdrop authorities only");
-            ensure!(<Claims>::exists(claim_id), "request with this id doesn't exist");
+            ensure!(<Claims>::contains_key(claim_id), "request with this id doesn't exist");
 
             <Claims>::mutate(&claim_id, |claim|
                 if approve { claim.approve += 1 }
@@ -353,7 +354,7 @@ decl_module! {
             let mut btc_filter = median::Filter::new(T::MedianFilterWidth::get());
             let mut eth_filter = median::Filter::new(T::MedianFilterWidth::get());
             let (mut btc_filtered_rate, mut eth_filtered_rate) = <DollarRate<T>>::get();
-            for (a, item) in <DollarRateF<T>>::enumerate() {
+            for (a, item) in <DollarRateF<T>>::iter() {
                 if now.saturating_sub(item.0) < expire {
                     // Use value in filter when not expired
                     btc_filtered_rate = btc_filter.consume(item.1);

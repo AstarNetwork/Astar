@@ -114,8 +114,9 @@ impl system::Trait for Test {
     type Version = ();
     type ModuleToIndex = ();
     type AccountData = balances::AccountData<u64>;
+    type MigrateAccount = ();
     type OnNewAccount = ();
-    type OnReapAccount = (Balances, Session);
+    type OnKilledAccount = ();
 }
 
 parameter_types! {

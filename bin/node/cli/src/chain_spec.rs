@@ -10,7 +10,7 @@ use plasm_primitives::{AccountId, Balance, Signature};
 use plasm_runtime::constants::currency::*;
 use plasm_runtime::Block;
 use plasm_runtime::{
-    BabeConfig, BalancesConfig, ContractsConfig, Forcing, GenesisConfig, GrandpaConfig,
+    BabeConfig, BalancesConfig, ContractsConfig, GenesisConfig, GrandpaConfig,
     IndicesConfig, PlasmStakingConfig, SessionConfig, SessionKeys, SudoConfig, SystemConfig,
     WASM_BINARY,
 };
@@ -40,7 +40,10 @@ pub struct Extensions {
 }
 
 /// Specialized `ChainSpec`.
-pub type ChainSpec = sc_service::ChainSpec<GenesisConfig, Extensions>;
+pub type ChainSpec = sc_service::GenericChainSpec<
+    GenesisConfig,
+    Extensions,
+>;
 
 /// Helper function to generate a crypto pair from seed
 pub fn get_from_seed<TPublic: Public>(seed: &str) -> <TPublic::Pair as Pair>::Public {
@@ -101,13 +104,13 @@ fn generate_config_genesis(
         }),
         plasm_staking: Some(PlasmStakingConfig {
             storage_version: 1,
-            force_era: Forcing::NotForcing,
+            force_era: pallet_plasm_staking::Forcing::NotForcing,
             validators: initial_authorities.iter().map(|x| x.0.clone()).collect(),
         }),
         session: Some(SessionConfig {
             keys: initial_authorities
                 .iter()
-                .map(|x| (x.0.clone(), session_keys(x.1.clone(), x.2.clone())))
+                .map(|x| (x.0.clone(), x.0.clone(), session_keys(x.1.clone(), x.2.clone())))
                 .collect::<Vec<_>>(),
         }),
         babe: Some(BabeConfig {

@@ -22,7 +22,8 @@ use support::{
         WithdrawReasons,
     },
     weights::SimpleDispatchInfo,
-    StorageLinkedMap, StorageMap, StorageValue,
+    storage::IterableStorageMap,
+    StorageMap, StorageValue,
 };
 use system::{ensure_root, ensure_signed};
 
@@ -158,24 +159,28 @@ decl_storage! {
     trait Store for Module<T: Trait> as PlasmStaking {
         // ----- Staking uses.
         /// Map from all locked "stash" accounts to the controller account.
-        pub Bonded get(fn bonded): map hasher(blake2_256) T::AccountId => Option<T::AccountId>;
+        pub Bonded get(fn bonded): map hasher(blake2_128_concat)
+                                   T::AccountId => Option<T::AccountId>;
         /// Map from all (unlocked) "controller" accounts to the info regarding the staking.
-        pub Ledger get(fn ledger):
-            map hasher(blake2_256) T::AccountId => Option<StakingLedger<T::AccountId, BalanceOf<T>>>;
+        pub Ledger get(fn ledger): map hasher(blake2_128_concat)
+                                   T::AccountId => Option<StakingLedger<T::AccountId, BalanceOf<T>>>;
 
         /// Where the reward payment should be made. Keyed by stash.
-        pub Payee get(fn payee): map hasher(blake2_256) T::AccountId => RewardDestination;
+        pub Payee get(fn payee): map hasher(blake2_128_concat)
+                                 T::AccountId => RewardDestination;
 
         /// The map from nominator stash key to the set of stash keys of all contracts to nominate.
         ///
         /// NOTE: is private so that we can ensure upgraded before all typical accesses.
         /// Direct storage APIs can still bypass this protection.
-        DappsNominations get(fn dapps_nominations): linked_map hasher(blake2_256) T::AccountId => Option<Nominations<T::AccountId>>;
+        DappsNominations get(fn dapps_nominations): map hasher(blake2_128_concat)
+                                                    T::AccountId => Option<Nominations<T::AccountId>>;
 
         /// Nominators for a particular contract that is in action right now.
         ///
         /// This is keyed by the contract account id.
-        pub StakedContracts get(fn staked_contracts): linked_map hasher(blake2_256) T::AccountId => Exposure<T::AccountId, BalanceOf<T>>;
+        pub StakedContracts get(fn staked_contracts): map hasher(blake2_128_concat)
+                                                      T::AccountId => Exposure<T::AccountId, BalanceOf<T>>;
 
         // ---- Era manages.
         /// The currently elected validator set keyed by stash account ID.
@@ -679,7 +684,7 @@ impl<T: Trait> Module<T> {
         let nominators_reward = total_payout
             .checked_sub(&operators_reward)
             .unwrap_or(BalanceOf::<T>::zero());
-        let staked_contracts = <StakedContracts<T>>::enumerate()
+        let staked_contracts = <StakedContracts<T>>::iter()
             .collect::<Vec<(T::AccountId, Exposure<T::AccountId, BalanceOf<T>>)>>();
         let total_staked = staked_contracts
             .iter()
@@ -726,7 +731,7 @@ impl<T: Trait> Module<T> {
     }
 
     fn elected_operators() {
-        let nominations = <DappsNominations<T>>::enumerate()
+        let nominations = <DappsNominations<T>>::iter()
             .filter(|(_, nomination)| !nomination.suppressed)
             .collect::<Vec<(T::AccountId, Nominations<T::AccountId>)>>();
         let nominators = nominations
@@ -771,7 +776,7 @@ impl<T: Trait> Module<T> {
                             contract.clone(),
                             Exposure {
                                 own: BalanceOf::<T>::zero(),
-                                total: value.clone(),
+                                total: value.into(),
                                 others: vec![indv.clone()],
                             },
                         );
@@ -830,5 +835,6 @@ impl<T: Trait> SessionManager<T::AccountId> for Module<T> {
         Self::ensure_storage_upgraded();
         Self::new_session(new_index)
     }
+    fn start_session(_: u32) { todo!() }
     fn end_session(_end_index: SessionIndex) {}
 }
