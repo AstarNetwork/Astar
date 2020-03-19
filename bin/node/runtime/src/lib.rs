@@ -11,7 +11,6 @@ use inherents::{CheckInherentsResult, InherentData};
 use plasm_primitives::{
     AccountId, AccountIndex, Balance, BlockNumber, Hash, Index, Moment, Signature,
 };
-use plasm_staking::EraIndex;
 use sp_api::impl_runtime_apis;
 use sp_core::OpaqueMetadata;
 use sp_runtime::traits::{
@@ -29,7 +28,6 @@ use version::RuntimeVersion;
 
 pub use balances::Call as BalancesCall;
 pub use contracts::Gas;
-pub use plasm_staking::Forcing;
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
 pub use timestamp::Call as TimestampCall;
@@ -95,9 +93,9 @@ impl system::Trait for Runtime {
     type Version = Version;
     type ModuleToIndex = ModuleToIndex;
     type AccountData = balances::AccountData<Balance>;
+    type MigrateAccount = (Balances, Session);
     type OnNewAccount = ();
-    type OnReapAccount = (Balances, Contracts, Session);
-    // TODO: OnReapAccount for PlasmStaking
+    type OnKilledAccount = ();
 }
 
 parameter_types! {
@@ -182,7 +180,7 @@ impl session::Trait for Runtime {
 
 parameter_types! {
     pub const SessionsPerEra: plasm_staking::SessionIndex = 6;
-    pub const BondingDuration: EraIndex = 24 * 28;
+    pub const BondingDuration: plasm_staking::EraIndex = 24 * 28;
 }
 
 impl plasm_staking::Trait for Runtime {
@@ -375,10 +373,6 @@ impl_runtime_apis! {
     impl block_builder_api::BlockBuilder<Block> for Runtime {
         fn apply_extrinsic(extrinsic: <Block as BlockT>::Extrinsic) -> ApplyExtrinsicResult {
             Executive::apply_extrinsic(extrinsic)
-        }
-
-        fn apply_trusted_extrinsic(extrinsic: <Block as BlockT>::Extrinsic) -> ApplyExtrinsicResult {
-            Executive::apply_trusted_extrinsic(extrinsic)
         }
 
         fn finalize_block() -> <Block as BlockT>::Header {

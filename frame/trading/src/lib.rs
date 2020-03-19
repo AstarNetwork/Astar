@@ -9,7 +9,6 @@ use support::{
     traits::{
         Currency, ExistenceRequirement, LockIdentifier, LockableCurrency, WithdrawReasons,
     },
-    StorageLinkedMap,
 };
 use system::ensure_signed;
 
@@ -66,7 +65,7 @@ pub trait Trait: system::Trait {
 decl_storage! {
     trait Store for Module<T: Trait> as Operator {
         /// A mapping from the offering account id to Offer
-        pub Offers: linked_map hasher(blake2_256) T::AccountId => Option<OfferOf<T>>;
+        pub Offers: map hasher(blake2_128_concat) T::AccountId => Option<OfferOf<T>>;
     }
 }
 
