@@ -151,8 +151,7 @@ pub trait Trait: system::Trait {
     type SubmitTransaction: SubmitUnsignedTransaction<Self, <Self as Trait>::Call>;
 
     /// The identifier type for an authority.
-    type AuthorityId: Member + Parameter + RuntimeAppPublic + Default + Ord
-        + IdentifyAccount<AccountId=<Self as system::Trait>::AccountId>;
+    type AuthorityId: Member + Parameter + RuntimeAppPublic + Default + Ord;
 
     /// System level account type.
     /// This used for resolving account ID's of ECDSA lockdrop public keys.
@@ -247,7 +246,7 @@ decl_event!(
         /// Lockdrop token claims requested by user
         ClaimRequest(ClaimId),
         /// Lockdrop token claims response by authority
-        ClaimResponse(ClaimId, AccountId, bool),
+        ClaimResponse(ClaimId, AuthorityId, bool),
         /// Lockdrop token claim paid
         ClaimComplete(ClaimId, AccountId, Balance),
         /// Dollar rate updated by oracle: BTC, ETH.
@@ -378,13 +377,7 @@ decl_module! {
                 else { claim.decline += 1 }
             );
 
-            Self::deposit_event(
-                RawEvent::ClaimResponse(
-                    vote.claim_id,
-                    vote.sender.into_account(),
-                    vote.approve,
-                )
-            );
+            Self::deposit_event(RawEvent::ClaimResponse(vote.claim_id, vote.sender, vote.approve));
         }
 
         /// Dollar Rate oracle entrypoint. (for authorities only) 

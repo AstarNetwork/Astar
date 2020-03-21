@@ -23,6 +23,7 @@ pallet-timestamp = { git = "https://github.com/staketechnologies/substrate", def
 
 [dev-dependencies]
 pallet-balances = { git = "https://github.com/staketechnologies/substrate", branch = "plasm-master" }
+plasm-primitives = { path = "../../bin/node/primitives" }
 
 [features]
 default = ["std"]
