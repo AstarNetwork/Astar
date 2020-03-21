@@ -1,4 +1,21 @@
-//! Plasm Lockdrop module. This can be compiled with `#[no_std]`, ready for Wasm.
+//! # Plasm Lockdrop Module
+//! This module held lockdrop event on live network.
+//!
+//! - [`plasm_lockdrop::Trait`](./trait.Trait.html)
+//! - [`Call`](./enum.Call.html)
+//!
+//! ## Overview
+//!
+//!
+//! ## Interface
+//!
+//! ### Dispatchable Functions
+//!
+//!
+//! [`Call`]: ./enum.Call.html
+//! [`Trait`]: ./trait.Trait.html
+
+// Ensure we're `no_std` when compiling for Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use codec::{Encode, Decode};
@@ -11,6 +28,10 @@ use sp_runtime::{
     },
     app_crypto::{KeyTypeId, RuntimeAppPublic},
     offchain::http::Request,
+    transaction_validity::{
+        ValidTransaction, InvalidTransaction,
+        TransactionValidity, TransactionPriority,
+    },
 };
 use frame_support::{
     decl_module, decl_event, decl_storage, decl_error,
@@ -21,14 +42,19 @@ use frame_support::{
     dispatch::Parameter,
 };
 use frame_system::{
-    self as system, ensure_signed,
-    offchain::SubmitSignedTransaction,
+    self as system, ensure_signed, ensure_none,
+    offchain::SubmitUnsignedTransaction,
 };
 
 /// Bitcoin helpers.
 mod btc_utils;
 /// Ethereum helpers.
 mod eth_utils;
+
+#[cfg(test)]
+mod mock;
+#[cfg(test)]
+mod tests;
 
 /// Plasm Lockdrop Authority local KeyType.
 ///
@@ -122,7 +148,7 @@ pub trait Trait: system::Trait {
     type Call: From<Call<Self>>;
 
     /// Let's define the helper we use to create signed transactions.
-    type SubmitTransaction: SubmitSignedTransaction<Self, <Self as Trait>::Call>;
+    type SubmitTransaction: SubmitUnsignedTransaction<Self, <Self as Trait>::Call>;
 
     /// The identifier type for an authority.
     type AuthorityId: Member + Parameter + RuntimeAppPublic + Default + Ord
@@ -193,6 +219,24 @@ pub struct Claim {
     complete: bool,
 }
 
+/// Lockdrop claim vote.
+#[cfg_attr(feature = "std", derive(PartialEq, Eq))]
+#[derive(Encode, Decode, RuntimeDebug, Clone)]
+pub struct ClaimVote<AuthorityId: Member + Parameter> {
+    sender:   AuthorityId,
+    claim_id: ClaimId,
+    approve:  bool,
+}
+
+/// Oracle dollar rate ticker.
+#[cfg_attr(feature = "std", derive(PartialEq, Eq))]
+#[derive(Encode, Decode, RuntimeDebug, Clone)]
+pub struct TickerRate<AuthorityId: Member + Parameter, DollarRate: Member + Parameter> {
+    sender: AuthorityId,
+    btc:    DollarRate,
+    eth:    DollarRate,
+}
+
 decl_event!(
     pub enum Event<T>
     where <T as system::Trait>::AccountId,
@@ -233,7 +277,7 @@ decl_storage! {
         DollarRate get(fn dollar_rate) config(): (T::DollarRate, T::DollarRate);
         /// Lockdrop dollar rate median filter table: Time, BTC, ETH.
         DollarRateF get(fn dollar_rate_f): map hasher(blake2_128_concat)
-                                           T::AccountId => (T::Moment, T::DollarRate, T::DollarRate);
+                                           T::AuthorityId => (T::Moment, T::DollarRate, T::DollarRate);
     }
 }
 
@@ -322,33 +366,39 @@ decl_module! {
         #[weight = SimpleDispatchInfo::FixedOperational(10_000)]
         fn vote(
             origin,
-            claim_id: ClaimId,
-            approve: bool,
+            vote: ClaimVote<T::AuthorityId>,
+            // since signature verification is done in `validate_unsigned`
+            // we can skip doing it here again.
+            _signature: <T::AuthorityId as RuntimeAppPublic>::Signature,
         ) {
-            let sender = ensure_signed(origin)?;
-            ensure!(Self::is_authority(&sender), "this method for lockdrop authorities only");
-            ensure!(<Claims>::contains_key(claim_id), "request with this id doesn't exist");
+            let _ = ensure_none(origin)?;
 
-            <Claims>::mutate(&claim_id, |claim|
-                if approve { claim.approve += 1 }
+            <Claims>::mutate(&vote.claim_id, |claim|
+                if vote.approve { claim.approve += 1 }
                 else { claim.decline += 1 }
             );
 
-            Self::deposit_event(RawEvent::ClaimResponse(claim_id, sender, approve));
+            Self::deposit_event(
+                RawEvent::ClaimResponse(
+                    vote.claim_id,
+                    vote.sender.into_account(),
+                    vote.approve,
+                )
+            );
         }
 
-        /// Dollar rate oracle method. (for authorities only) 
-        #[weight = SimpleDispatchInfo::FixedOperational(10_000)]
+        /// Dollar Rate oracle entrypoint. (for authorities only) 
         fn set_dollar_rate(
             origin,
-            btc_rate: T::DollarRate,
-            eth_rate: T::DollarRate,
+            rate: TickerRate<T::AuthorityId, T::DollarRate>,
+            // since signature verification is done in `validate_unsigned`
+            // we can skip doing it here again.
+            _signature: <T::AuthorityId as RuntimeAppPublic>::Signature,
         ) {
-            let sender = ensure_signed(origin)?;
-            ensure!(Self::is_authority(&sender), "this method for lockdrop authorities only");
+            ensure_none(origin)?;
 
             let now = T::Time::now();
-            <DollarRateF<T>>::insert(sender, (now, btc_rate, eth_rate));
+            <DollarRateF<T>>::insert(rate.sender, (now, rate.btc, rate.eth));
 
             let expire = T::MedianFilterExpire::get();
             let mut btc_filter = median::Filter::new(T::MedianFilterWidth::get());
@@ -389,17 +439,17 @@ decl_module! {
 impl<T: Trait> Module<T> {
     /// The main offchain worker entry point.
     fn offchain() -> Result<(), String> {
-        // TODO: use permanent storage to track request when temporary failed
-        Self::claim_request_oracle()?;
-
         // TODO: add delay to prevent frequent transaction sending
-        Self::dollar_rate_oracle()
+        Self::dollar_rate_oracle()?;
+
+        // TODO: use permanent storage to track request when temporary failed
+        Self::claim_request_oracle()
     }
 
     /// Check that authority key list contains given account
-    fn is_authority(account: &T::AccountId) -> bool {
+    fn is_authority(account: &T::AuthorityId) -> bool {
         Keys::<T>::get()
-            .binary_search_by(|key| key.clone().into_account().cmp(account))
+            .binary_search_by(|key| key.clone().cmp(account))
             .is_ok()
     }
 
@@ -416,17 +466,21 @@ impl<T: Trait> Module<T> {
                 "claim id {} => check result: {}", claim_id, approve 
             );
 
-            let call = Call::vote(claim_id, approve);
-            debug::debug!(
-                target: "lockdrop-offchain-worker",
-                "claim id {} => vote extrinsic: {:?}", claim_id, call
-            );
+            for key in T::AuthorityId::all() {
+                let vote = ClaimVote { sender: key.clone(), claim_id, approve };
+                let signature = key.sign(&vote.encode()).ok_or("signing error")?;
+                let call = Call::vote(vote, signature);
+                debug::debug!(
+                    target: "lockdrop-offchain-worker",
+                    "claim id {} => vote extrinsic: {:?}", claim_id, call
+                );
 
-            let res = T::SubmitTransaction::submit_signed(call);
-            debug::debug!(
-                target: "lockdrop-offchain-worker",
-                "claim id {} => vote extrinsic send: {:?}", claim_id, res
-            );
+                let res = T::SubmitTransaction::submit_unsigned(call);
+                debug::debug!(
+                    target: "lockdrop-offchain-worker",
+                    "claim id {} => vote extrinsic send: {:?}", claim_id, res
+                );
+            }
         }
 
         Ok(())
@@ -442,17 +496,26 @@ impl<T: Trait> Module<T> {
         let eth_rate = res["price_usd"].as_u64()
             .ok_or("ETH ticker JSON parsing error".to_string())?;
 
-        let call = Call::set_dollar_rate(btc_rate.into(), eth_rate.into());
-        debug::debug!(
-            target: "lockdrop-offchain-worker",
-            "dollar rate extrinsic: {:?}", call
-        );
+        for key in T::AuthorityId::all() {
+            let rate = TickerRate {
+                sender: key.clone(),
+                btc: btc_rate.into(),
+                eth: eth_rate.into(),
+            };
 
-        let res = T::SubmitTransaction::submit_signed(call);
-        debug::debug!(
-            target: "lockdrop-offchain-worker",
-            "dollar rate extrinsic send: {:?}", res
-        );
+            let signature = key.sign(&rate.encode()).ok_or("signing error")?;
+            let call = Call::set_dollar_rate(rate, signature);
+            debug::debug!(
+                target: "lockdrop-offchain-worker",
+                "dollar rate extrinsic: {:?}", call
+            );
+
+            let res = T::SubmitTransaction::submit_unsigned(call);
+            debug::debug!(
+                target: "lockdrop-offchain-worker",
+                "dollar rate extrinsic send: {:?}", res
+            );
+        }
 
         Ok(())
     }
@@ -580,4 +643,51 @@ impl<T: Trait> pallet_session::OneSessionHandler<T::AccountId> for Module<T> {
 
     fn on_before_session_ending() { }
     fn on_disabled(_i: usize) { }
+}
+
+impl<T: Trait> frame_support::unsigned::ValidateUnsigned for Module<T> {
+    type Call = Call<T>;
+
+    fn validate_unsigned(call: &Self::Call) -> TransactionValidity {
+        match call {
+            Call::vote(vote, signature) => {
+                // Verify sender
+                let signature_valid = vote.sender.verify(&vote.encode(), &signature);
+                if !signature_valid || !Self::is_authority(&vote.sender) {
+                    return InvalidTransaction::BadProof.into();
+                }
+
+                // Verify params
+                if !<Claims>::contains_key(vote.claim_id) {
+                    return InvalidTransaction::Call.into();
+                }
+
+                Ok(ValidTransaction {
+                    priority: TransactionPriority::max_value(),
+                    requires: vec![],
+                    provides: vec![vote.encode()],
+                    longevity: 64_u64,
+                    propagate: true,
+                })
+            },
+
+            Call::set_dollar_rate(rate, signature) => {
+                // Verify sender
+                let signature_valid = rate.sender.verify(&rate.encode(), &signature);
+                if !signature_valid || !Self::is_authority(&rate.sender) {
+                    return InvalidTransaction::BadProof.into();
+                }
+
+                Ok(ValidTransaction {
+                    priority: TransactionPriority::max_value(),
+                    requires: vec![],
+                    provides: vec![rate.encode()],
+                    longevity: 64_u64,
+                    propagate: true,
+                })
+            },
+
+            _ => InvalidTransaction::Call.into(),
+        }
+    }
 }
