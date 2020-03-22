@@ -2,17 +2,23 @@
 
 #![cfg(test)]
 
+use std::cell::RefCell;
+
 use super::*;
+use plasm_primitives::{AccountId, Balance, Moment};
+
 use frame_support::{
     impl_outer_dispatch, impl_outer_origin, parameter_types,
     weights::Weight,
 };
-use plasm_primitives::{AccountId, Balance, Moment};
+use sp_keyring::sr25519::Keyring as AccountKeyring;
+use sp_staking::SessionIndex;
 use sp_runtime::{
     testing::{TestXt, Header},
-    traits::IdentityLookup,
-    MultiSigner, Perbill,
+    traits::{IdentityLookup, ConvertInto},
+    MultiSigner, Perbill, impl_opaque_keys,
 };
+use sp_core::Pair;
 
 impl_outer_origin! {
     pub enum Origin for Runtime {}
@@ -23,6 +29,37 @@ impl_outer_dispatch! {
         pallet_balances::Balances,
         pallet_plasm_lockdrop::PlasmLockdrop,
     }
+}
+
+thread_local! {
+    pub static VALIDATORS: RefCell<Option<Vec<AccountId>>> = RefCell::new(Some(vec![
+        AccountKeyring::Alice.into(),
+        AccountKeyring::Bob.into(),
+        AccountKeyring::Charlie.into(),
+    ]));
+}
+
+pub struct TestSessionManager;
+impl pallet_session::SessionManager<AccountId> for TestSessionManager {
+    fn new_session(_new_index: SessionIndex) -> Option<Vec<AccountId>> {
+        VALIDATORS.with(|l| l.borrow_mut().take())
+    }
+    fn end_session(_: SessionIndex) {}
+    fn start_session(_: SessionIndex) {}
+}
+
+impl pallet_session::historical::SessionManager<AccountId, AccountId> for TestSessionManager {
+    fn new_session(_new_index: SessionIndex) -> Option<Vec<(AccountId, AccountId)>> {
+        VALIDATORS.with(|l| l
+            .borrow_mut()
+            .take()
+            .map(|validators| {
+                validators.iter().map(|v| (v.clone(), v.clone())).collect()
+            })
+        )
+    }
+    fn end_session(_: SessionIndex) {}
+    fn start_session(_: SessionIndex) {}
 }
 
 #[derive(Clone, PartialEq, Eq, Debug)]
@@ -66,6 +103,37 @@ impl pallet_timestamp::Trait for Runtime {
     type Moment = u64;
     type OnTimestampSet = ();
     type MinimumPeriod = MinimumPeriod;
+}
+
+parameter_types! {
+    pub const Period: u64 = 1;
+    pub const Offset: u64 = 0;
+}
+
+parameter_types! {
+    pub const DisabledValidatorsThreshold: Perbill = Perbill::from_percent(33);
+}
+
+impl_opaque_keys! {
+	pub struct SessionKeys {
+		pub lockdrop: PlasmLockdrop,
+    }
+}
+
+impl pallet_session::Trait for Runtime {
+    type ShouldEndSession = pallet_session::PeriodicSessions<Period, Offset>;
+    type SessionManager = pallet_session::historical::NoteHistoricalRoot<Runtime, TestSessionManager>;
+    type SessionHandler = (PlasmLockdrop, );
+    type ValidatorId = AccountId;
+    type ValidatorIdOf = ConvertInto;
+    type Keys = SessionKeys;
+    type Event = ();
+    type DisabledValidatorsThreshold = DisabledValidatorsThreshold;
+}
+
+impl pallet_session::historical::Trait for Runtime {
+    type FullIdentification = AccountId;
+    type FullIdentificationOf = ConvertInto;
 }
 
 parameter_types! {
@@ -121,14 +189,38 @@ impl Trait for Runtime {
 }
 
 pub type System = frame_system::Module<Runtime>;
+pub type Session = pallet_session::Module<Runtime>;
 pub type Balances = pallet_balances::Module<Runtime>;
 pub type Timestamp = pallet_timestamp::Module<Runtime>;
 pub type PlasmLockdrop = Module<Runtime>;
+
+fn session_keys(account: &AccountId) -> SessionKeys {
+    SessionKeys {
+        lockdrop: sr25519::AuthorityPair::from_string(&format!("//{}", account), None)
+            .unwrap()
+            .public() 
+    }
+}
 
 pub fn new_test_ext() -> sp_io::TestExternalities {
     let mut storage = system::GenesisConfig::default()
         .build_storage::<Runtime>()
         .unwrap();
 
+    let _ = pallet_session::GenesisConfig::<Runtime> {
+        keys: VALIDATORS.with(|l| l
+            .borrow_mut()
+            .take()
+            .map(|x| x.iter().map(|v|(v.clone(), v.clone(), session_keys(v))).collect())
+        ).unwrap(),
+    }.assimilate_storage(&mut storage);
+
     storage.into()
+}
+
+pub fn advance_session() {
+    let now = System::block_number();
+    System::set_block_number(now + 1);
+    Session::rotate_session();
+    assert_eq!(Session::current_index(), (now / Period::get()) as u32);
 }
