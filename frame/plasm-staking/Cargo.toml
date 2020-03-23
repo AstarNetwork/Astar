@@ -10,7 +10,7 @@ edition = "2018"
 [dependencies.codec]
 default-features = false
 features = ['derive']
-version = "1.0.6"
+version = "1.2.0"
 package = "parity-scale-codec"
 
 [dependencies.primitives]
@@ -102,7 +102,7 @@ version = '1.0'
 
 [dependencies.serde_derive]
 optional = true
-version = '1.0'
+version = "1.0"
 
 [dev-dependencies]
 wabt = "0.9.2"

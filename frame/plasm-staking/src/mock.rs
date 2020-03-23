@@ -33,7 +33,7 @@ impl_outer_dispatch! {
     pub enum Call for Test where origin: Origin {
         session::Session,
         balances::Balances,
-        contracts::Contract,
+        contracts::Contracts,
         plasm_staking::PlasmStaking,
     }
 }
@@ -320,7 +320,7 @@ pub fn valid_instatiate() {
 
     // prepare
     let _ = Balances::deposit_creating(&OPERATOR, 1_000_000);
-    assert_ok!(Contract::put_code(Origin::signed(OPERATOR), 100_000, wasm));
+    assert_ok!(Contracts::put_code(Origin::signed(OPERATOR), 100_000, wasm));
 
     let test_params = parameters::StakingParameters {
         can_be_nominated: true,
