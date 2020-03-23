@@ -20,8 +20,8 @@ crate-type = ["cdylib", "rlib"]
 
 [dependencies]
 # thidr-party dependencies
-codec = { package = "parity-scale-codec", version = "1.0.6" }
-serde = { version = "1.0.102", features = [ "derive" ] }
+codec = { package = "parity-scale-codec", version = "1.2.0" }
+serde = { version = "1.0", features = [ "derive" ] }
 futures = { version = "0.3.1", features = ["compat"] }
 structopt = { version = "0.3.8", optional = true }
 hex-literal = "0.2.1"
