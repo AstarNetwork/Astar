@@ -151,14 +151,14 @@ impl pallet_balances::Trait for Runtime {
 parameter_types! {
     pub const VoteThreshold: AuthorityVote = 3;
     pub const PositiveVotes: AuthorityVote = 2;
-    pub const BitcoinTickerUri: &'static str = "";
-    pub const EthereumTickerUri: &'static str = "";
+    pub const BitcoinTickerUri: &'static str = "http://api.blockcypher.com/v1/btc/test3/txs";
+    pub const EthereumTickerUri: &'static str = "https://api.blockcypher.com/v1/eth/test/txs";
     pub const BitcoinApiUri: &'static str = "";
     pub const EthereumApiUri: &'static str = "";
     pub const EthereumContractAddress: &'static str = "";
     pub const LockdropEnd: Moment = 0;
-    pub const MedianFilterExpire: Moment = 3600;
-    pub const MedianFilterWidth: usize = 5;
+    pub const MedianFilterExpire: Moment = 2;
+    pub const MedianFilterWidth: usize = 3;
 }
 
 /// An extrinsic type used for tests.
@@ -213,6 +213,13 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
             .take()
             .map(|x| x.iter().map(|v|(v.clone(), v.clone(), session_keys(v))).collect())
         ).unwrap(),
+    }.assimilate_storage(&mut storage);
+
+    let _ = GenesisConfig::<Runtime> {
+        // Alpha: 2
+        alpha: 2_000,
+        // BTC: $5000, ETH: $120
+        dollar_rate: (5_000, 120),
     }.assimilate_storage(&mut storage);
 
     storage.into()

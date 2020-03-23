@@ -301,7 +301,7 @@ decl_module! {
         ) {
             let _ = ensure_signed(origin)?;
             let claim_id = BlakeTwo256::hash_of(&params);
-            ensure!(!<Claims>::get(claim_id).complete, "claim should not be already paid"); 
+            ensure!(!<Claims>::get(claim_id).complete, "claim should not be already paid");
 
             if !<Claims>::contains_key(claim_id) {
                 let amount = match params {
@@ -370,7 +370,7 @@ decl_module! {
             // we can skip doing it here again.
             _signature: <T::AuthorityId as RuntimeAppPublic>::Signature,
         ) {
-            let _ = ensure_none(origin)?;
+            ensure_none(origin)?;
 
             <Claims>::mutate(&vote.claim_id, |claim|
                 if vote.approve { claim.approve += 1 }
@@ -380,7 +380,7 @@ decl_module! {
             Self::deposit_event(RawEvent::ClaimResponse(vote.claim_id, vote.sender, vote.approve));
         }
 
-        /// Dollar Rate oracle entrypoint. (for authorities only) 
+        /// Dollar Rate oracle entrypoint. (for authorities only)
         fn set_dollar_rate(
             origin,
             rate: TickerRate<T::AuthorityId, T::DollarRate>,
@@ -441,8 +441,9 @@ impl<T: Trait> Module<T> {
 
     /// Check that authority key list contains given account
     fn is_authority(account: &T::AuthorityId) -> bool {
-        Keys::<T>::get()
-            .binary_search_by(|key| key.clone().cmp(account))
+        let mut keys = Keys::<T>::get();
+        keys.sort();
+        keys.binary_search_by(|key| key.cmp(account))
             .is_ok()
     }
 
@@ -574,12 +575,16 @@ impl<T: Trait> Module<T> {
 
     fn btc_issue_amount(value: u128, duration: T::Moment) -> u128 {
         // https://medium.com/stake-technologies/plasm-lockdrop-introduction-99fa2dfc37c0
+        // Alpha = a * 1000
         Self::alpha() * value * Self::dollar_rate().0.into() * Self::time_bonus(duration)
+            / 1_000
     }
 
     fn eth_issue_amount(value: u128, duration: T::Moment) -> u128 {
         // https://medium.com/stake-technologies/plasm-lockdrop-introduction-99fa2dfc37c0
+        // Alpha = a * 1000
         Self::alpha() * value * Self::dollar_rate().1.into() * Self::time_bonus(duration)
+            / 1_000
     }
 
     fn time_bonus(duration: T::Moment) -> u128 {
