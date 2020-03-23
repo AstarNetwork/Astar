@@ -49,7 +49,7 @@ impl_outer_origin! {
 impl_outer_dispatch! {
     pub enum Call for Test where origin: Origin {
         balances::Balances,
-        contracts::Contract,
+        contracts::Contracts,
     }
 }
 
@@ -99,9 +99,9 @@ impl system::Trait for Test {
     type MaximumBlockLength = MaximumBlockLength;
     type Version = ();
     type ModuleToIndex = ();
-    type AccountData = balances::AccountData<u64>;
-    type OnNewAccount = ();
-    type OnReapAccount = Balances;
+	type AccountData = balances::AccountData<u64>;
+	type MigrateAccount = (); type OnNewAccount = ();
+	type OnKilledAccount = Contracts;
 }
 
 impl balances::Trait for Test {
@@ -188,7 +188,7 @@ impl Trait for Test {
 
 type Balances = balances::Module<Test>;
 type Timestamp = timestamp::Module<Test>;
-type Contract = contracts::Module<Test>;
+type Contracts = contracts::Module<Test>;
 type System = system::Module<Test>;
 type Randomness = randomness_collective_flip::Module<Test>;
 type Operator = Module<Test>;
@@ -359,10 +359,10 @@ fn instantiate_and_call_and_deposit_event() {
         .execute_with(|| {
             Balances::deposit_creating(&ALICE, 1_000_000);
 
-            assert_ok!(Contract::put_code(Origin::signed(ALICE), 100_000, wasm));
+            assert_ok!(Contracts::put_code(Origin::signed(ALICE), 100_000, wasm));
 
             // Check at the end to get hash on error easily
-            let creation = Contract::instantiate(
+            let creation = Contracts::instantiate(
                 Origin::signed(ALICE),
                 100,
                 100_000,
@@ -436,7 +436,7 @@ fn instantiate_and_relate_operator() {
         .execute_with(|| {
             // prepare
             Balances::deposit_creating(&ALICE, 1_000_000);
-            assert_ok!(Contract::put_code(Origin::signed(ALICE), 100_000, wasm));
+            assert_ok!(Contracts::put_code(Origin::signed(ALICE), 100_000, wasm));
 
             let test_params = DEFAULT_PARAMETERS.clone();
 
@@ -537,7 +537,7 @@ fn instantiate_failed() {
         .execute_with(|| {
             // prepare
             Balances::deposit_creating(&ALICE, 1_000_000);
-            assert_ok!(Contract::put_code(Origin::signed(ALICE), 100_000, wasm));
+            assert_ok!(Contracts::put_code(Origin::signed(ALICE), 100_000, wasm));
 
             let test_params = INVALID_PARAMETERS;
 
@@ -560,7 +560,7 @@ fn instantiate_failed() {
 fn valid_instatiate(wasm: Vec<u8>, code_hash: CodeHash<Test>) {
     // prepare
     Balances::deposit_creating(&ALICE, 1_000_000);
-    assert_ok!(Contract::put_code(Origin::signed(ALICE), 100_000, wasm));
+    assert_ok!(Contracts::put_code(Origin::signed(ALICE), 100_000, wasm));
 
     let test_params = TestParameters { a: 5_000_000 };
 
