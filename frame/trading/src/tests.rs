@@ -54,8 +54,8 @@ impl system::Trait for Test {
     type Version = ();
     type ModuleToIndex = ();
     type AccountData = balances::AccountData<u64>;
-    type OnNewAccount = ();
-    type OnReapAccount = Balances;
+    type MigrateAccount = (); type OnNewAccount = ();
+    type OnKilledAccount = ();
 }
 parameter_types! {
     pub const ExistentialDeposit: u64 = 1; // Should be greather than zero
@@ -81,7 +81,7 @@ pub trait MockOperatorTrait: system::Trait {}
 decl_storage! {
     trait Store for MockOperatorModule<T: MockOperatorTrait> as MockOperator {
         /// A mapping from operators to operated contracts by them.
-        pub OperatorHasContracts: map hasher(blake2_256) T::AccountId => Vec<T::AccountId>;
+        pub OperatorHasContracts: map hasher(blake2_128_concat) T::AccountId => Vec<T::AccountId>;
      }
 }
 pub struct MockOperatorModule<T: MockOperatorTrait>(PhantomData<T>);
