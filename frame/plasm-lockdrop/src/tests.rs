@@ -5,9 +5,12 @@
 use super::*;
 use crate::mock::*;
 
+use sp_core::Pair;
 use hex_literal::hex;
-use frame_support::assert_ok;
+use plasm_primitives::AccountId;
 use sp_core::crypto::UncheckedInto;
+use frame_support::unsigned::ValidateUnsigned;
+use frame_support::{assert_ok, assert_noop};
 
 #[test]
 fn session_lockdrop_authorities() {
@@ -17,16 +20,84 @@ fn session_lockdrop_authorities() {
         hex!["fa1b7e37aa3e463c81215f63f65a7c2b36ced251dd6f1511d357047672afa422"].unchecked_into();
     let charlie: <Runtime as Trait>::AuthorityId =
         hex!["88da12401449623ab60f20ed4302ab6e5db53de1e7b5271f35c858ab8b5ab37f"].unchecked_into();
-    let freddy: <Runtime as Trait>::AuthorityId =
-        hex!["18da12401449623ab60f20ed4302ab6e5db53de1e7b5271f35c858ab8b5ab37f"].unchecked_into();
+    let dave: <Runtime as Trait>::AuthorityId =
+        hex!["1a0f0be3d6596d1dbc302243fe4e975ff20de67559100053024d8f5a7b435b2b"].unchecked_into();
 
     new_test_ext().execute_with(|| {
         assert_eq!(<Keys<Runtime>>::get(), vec![alice.clone(), bob.clone(), charlie.clone()]);
         assert_eq!(PlasmLockdrop::is_authority(&alice), true);
         assert_eq!(PlasmLockdrop::is_authority(&bob), true);
         assert_eq!(PlasmLockdrop::is_authority(&charlie), true);
-        assert_eq!(PlasmLockdrop::is_authority(&freddy), false);
+        assert_eq!(PlasmLockdrop::is_authority(&dave), false);
     })
+}
+
+#[test]
+fn oracle_unsinged_transaction() {
+    let alice: <Runtime as Trait>::AuthorityId =
+        hex!["c83f0a4067f1b166132ed45995eee17ba7aeafeea27fe17550728ee34f998c4e"].unchecked_into();
+    let dave: <Runtime as Trait>::AuthorityId =
+        hex!["1a0f0be3d6596d1dbc302243fe4e975ff20de67559100053024d8f5a7b435b2b"].unchecked_into();
+    let rate = TickerRate { btc: 10, eth: 12, sender: alice.clone() };
+    let vote = ClaimVote { claim_id: Default::default(), approve: false, sender: alice.clone() };
+
+    new_test_ext().execute_with(|| {
+        // Invalid signature
+        let dispatch = PlasmLockdrop::pre_dispatch(&crate::Call::set_dollar_rate(rate.clone(), Default::default()))
+            .map_err(|e| <&'static str>::from(e));
+        assert_noop!(dispatch, "Transaction has a bad signature");
+
+        // Invalid signature
+        let dispatch = PlasmLockdrop::pre_dispatch(&crate::Call::vote(vote.clone(), Default::default()))
+            .map_err(|e| <&'static str>::from(e));
+        assert_noop!(dispatch, "Transaction has a bad signature");
+
+        // Invalid call
+        let dispatch = PlasmLockdrop::pre_dispatch(&crate::Call::claim(Default::default()))
+            .map_err(|e| <&'static str>::from(e));
+        assert_noop!(dispatch, "Transaction call is not expected");
+
+        let bad_account: AccountId = sp_keyring::sr25519::Keyring::Dave.into();
+        let bad_pair = sr25519::AuthorityPair::from_string(&format!("//{}", bad_account), None).unwrap(); 
+
+        let bad_rate = TickerRate { btc: 666, eth: 666, sender: dave.clone() };
+        let signature = bad_pair.sign(&bad_rate.encode());
+        let dispatch = PlasmLockdrop::pre_dispatch(&crate::Call::set_dollar_rate(bad_rate, signature))
+            .map_err(|e| <&'static str>::from(e));
+        assert_noop!(dispatch, "Transaction has a bad signature");
+
+        let lockdrop: Lockdrop = Default::default();
+        assert_ok!(PlasmLockdrop::request(Origin::signed(bad_account), lockdrop.clone()));
+        let bad_vote = ClaimVote {
+            claim_id: BlakeTwo256::hash_of(&lockdrop),
+            sender: dave.clone(),
+            ..vote
+        };
+        let signature = bad_pair.sign(&bad_vote.encode());
+        let dispatch = PlasmLockdrop::pre_dispatch(&crate::Call::vote(bad_vote, signature))
+            .map_err(|e| <&'static str>::from(e));
+        assert_noop!(dispatch, "Transaction has a bad signature");
+
+        let account: AccountId = sp_keyring::sr25519::Keyring::Alice.into();
+        let pair = sr25519::AuthorityPair::from_string(&format!("//{}", account), None).unwrap(); 
+
+        // Invalid parameter
+        let signature = pair.sign(&vote.encode());
+        let dispatch = PlasmLockdrop::pre_dispatch(&crate::Call::vote(vote.clone(), signature))
+            .map_err(|e| <&'static str>::from(e));
+        assert_noop!(dispatch, "Transaction call is not expected");
+
+        // Valid signature & params
+        let signature = pair.sign(&rate.encode());
+        let dispatch = PlasmLockdrop::pre_dispatch(&crate::Call::set_dollar_rate(rate, signature));
+        assert_ok!(dispatch);
+
+        // Valid signature & params
+        let valid_vote = ClaimVote { claim_id: BlakeTwo256::hash_of(&lockdrop), ..vote };
+        let signature = pair.sign(&valid_vote.encode());
+        let dispatch = PlasmLockdrop::pre_dispatch(&crate::Call::vote(valid_vote, signature));
+        assert_ok!(dispatch);
+    });
 }
 
 #[test]
