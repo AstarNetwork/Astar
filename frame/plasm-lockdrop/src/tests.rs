@@ -243,3 +243,17 @@ fn check_eth_issue_amount() {
         }
     })
 }
+
+#[test]
+fn simple_lockdrop_request() {
+    new_test_ext().execute_with(|| {
+        let lockdrop: Lockdrop = Default::default();
+        let claim_id = BlakeTwo256::hash_of(&lockdrop);
+        assert_ok!(PlasmLockdrop::request(Origin::signed(Default::default()), lockdrop));
+        let vote = ClaimVote { claim_id, approve: true, sender: Default::default() };
+        assert_ok!(PlasmLockdrop::vote(Origin::NONE, vote.clone(), Default::default()));
+        assert_ok!(PlasmLockdrop::vote(Origin::NONE, vote.clone(), Default::default()));
+        assert_ok!(PlasmLockdrop::vote(Origin::NONE, vote, Default::default()));
+        assert_ok!(PlasmLockdrop::claim(Origin::signed(Default::default()), claim_id));
+    })
+}

@@ -342,10 +342,12 @@ decl_module! {
             let claim = <Claims>::get(claim_id);
             ensure!(!claim.complete, "claim should be already paid"); 
 
-            let positive = claim.approve.saturating_sub(claim.decline) > T::PositiveVotes::get();
-            let threshold = claim.approve + claim.decline > T::VoteThreshold::get();
-            if !threshold || !positive {
-                Err("this request don't get enough authority confirmations")?
+            if claim.approve + claim.decline < T::VoteThreshold::get() {
+                Err("this request don't get enough authority votes")?
+            }
+
+            if claim.approve.saturating_sub(claim.decline) < T::PositiveVotes::get() {
+                Err("this request don't approved by authorities")?
             }
 
             // Deposit lockdrop tokens on locking public key.
