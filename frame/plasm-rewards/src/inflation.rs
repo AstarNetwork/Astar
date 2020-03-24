@@ -40,31 +40,49 @@ impl ComputeTotalPayout for SimpleComputeTotalPayout {
 
 #[cfg(test)]
 mod test {
+    use super::*;
+    fn compute_total_payout_test<N>(
+        total_tokens: N,
+        era_duration: u64,
+        validator_staking: N,
+        dapps_staking: N,
+    ) -> (N, N)
+    where
+        N: BaseArithmetic + Clone + From<u32>,
+    {
+        SimpleComputeTotalPayout::compute_total_payout(
+            total_tokens,
+            era_duration,
+            validator_staking,
+            dapps_staking,
+        )
+    }
+
     #[test]
     fn test_compute_total_payout_test() {
         const YEAR: u64 = 365 * 24 * 60 * 60 * 1000;
         // check maximum inflation.
         // not 10_000 due to rounding error.
         assert_eq!(
-            super::compute_total_payout_test(100_000_000u64, YEAR, 0, 0).0,
+            compute_total_payout_test(100_000_000u64, YEAR, 0, 0).0,
             19_986_311
         );
 
         const DAY: u64 = 24 * 60 * 60 * 1000;
         assert_eq!(
-            super::compute_total_payout_test(100_000_000u64, DAY, 0, 0).0,
+            compute_total_payout_test(100_000_000u64, DAY, 0, 0).0,
             54_757
         );
 
         const SIX_HOURS: u64 = 6 * 60 * 60 * 1000;
         assert_eq!(
-            super::compute_total_payout_test(100_000_000u64, SIX_HOURS, 0, 0).0,
+            compute_total_payout_test(100_000_000u64, SIX_HOURS, 0, 0).0,
             13_689
         );
 
         const HOUR: u64 = 60 * 60 * 1000;
         assert_eq!(
-            super::compute_total_payout_test(100_000_000u64, HOUR, 0, 0).0,
+            compute_total_payout_test(100_000_000u64, HOUR, 0, 0).0,
             2_281
         );
     }

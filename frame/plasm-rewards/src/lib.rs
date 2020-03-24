@@ -15,13 +15,13 @@ use sp_std::{prelude::*, vec::Vec};
 pub use staking::Forcing;
 use support::{
     decl_error, decl_event, decl_module, decl_storage,
-    traits::{Currency, Get, LockableCurrency, OnUnbalanced, Time},
+    traits::{Currency, Get, LockableCurrency, Time},
     weights::SimpleDispatchInfo,
     StorageMap, StorageValue,
 };
 use system::ensure_root;
 
-mod inflation;
+pub mod inflation;
 #[cfg(test)]
 mod mock;
 pub mod traits;
@@ -72,20 +72,14 @@ pub trait Trait: session::Trait {
     /// The staking balance.
     type Currency: LockableCurrency<Self::AccountId, Moment = Self::BlockNumber>;
 
-    /// Number of eras that staked funds must remain bonded for.
-    type BondingDuration: Get<EraIndex>;
-
-    /// Tokens have been minted and are unused for validator-reward. Maybe, plasm-staking uses ().
-    type RewardRemainder: OnUnbalanced<NegativeImbalanceOf<Self>>;
-
-    /// Handler for the unbalanced increment when rewarding a staker. Maybe, plasm-staking uses ().
-    type Reward: OnUnbalanced<PositiveImbalanceOf<Self>>;
-
     /// Time used for computing era duration.
     type Time: Time;
 
     /// Number of sessions per era.
     type SessionsPerEra: Get<SessionIndex>;
+
+    /// Number of eras that staked funds must remain bonded for.
+    type BondingDuration: Get<EraIndex>;
 
     /// Get the amount of staking for dapps per era.
     type GetForDappsStaking: traits::GetEraStakingAmount<EraIndex, BalanceOf<Self>>;
@@ -93,8 +87,10 @@ pub trait Trait: session::Trait {
     /// Get the amount of staking for security per era.
     type GetForSecurityStaking: traits::GetEraStakingAmount<EraIndex, BalanceOf<Self>>;
 
+    /// How to compute total issue PLM for rewards.
     type ComputeTotalPayout: traits::ComputeTotalPayout;
 
+    /// Maybe next validators.
     type MaybeValidators: traits::MaybeValidators<EraIndex, Self::AccountId>;
 
     /// The overarching event type.
@@ -118,7 +114,13 @@ decl_storage! {
         /// Must be more than the number of era delayed by session otherwise.
         /// i.e. active era must always be in history.
         /// i.e. `active_era > current_era - history_depth` must be guaranteed.
-        HistoryDepth get(fn history_depth) config(): u32 = 84;
+        pub HistoryDepth get(fn history_depth) config(): u32 = 84;
+
+        /// A mapping from still-bonded eras to the first session index of that era.
+        ///
+        /// Must contains information for eras for the range:
+        /// `[active_era - bounding_duration; active_era]`
+        pub BondedEras: Vec<(EraIndex, SessionIndex)>;
 
         /// The current era index.
         ///
@@ -328,6 +330,30 @@ impl<T: Trait> Module<T> {
                 start: None,
             });
             new_index
+        });
+
+        // let bonding_duration = T::BondingDuration::get();
+
+        BondedEras::mutate(|bonded| {
+            bonded.push((active_era, start_session));
+
+            // if active_era > bonding_duration {
+            //     let first_kept = active_era - bonding_duration;
+            //
+            //     // prune out everything that's from before the first-kept index.
+            //     let n_to_prune = bonded.iter()
+            //         .take_while(|&&(era_idx, _)| era_idx < first_kept)
+            //         .count();
+            //
+            //     // kill slashing metadata.
+            //     for (pruned_era, _) in bonded.drain(..n_to_prune) {
+            //         slashing::clear_era_metadata::<T>(pruned_era);
+            //     }
+            //
+            //     if let Some(&(_, first_session)) = bonded.first() {
+            //         T::SessionInterface::prune_historical_up_to(first_session);
+            //     }
+            // }
         });
     }
 
