@@ -44,6 +44,7 @@ pub struct MaintainRatioComputeTotalPayout;
 ///
 /// Testnet(Until migrate NPoS) defined as such:
 ///     20% of total issue tokens per a year.
+/// Maintainn is Distribute rewards while maintaining a ratio of validator and dapps-compatible staking amounts.
 ///
 /// `era_duration` is expressed in millisecond.
 impl ComputeTotalPayout for MaintainRatioComputeTotalPayout {

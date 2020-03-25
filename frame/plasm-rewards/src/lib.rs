@@ -177,6 +177,7 @@ decl_module! {
             migrate::<T>();
         }
 
+        /// On finalize is called at after rotate session.
         fn on_finalize() {
             // Set the start of the first era.
             if let Some(mut active_era) = Self::active_era() {
