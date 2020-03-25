@@ -6,10 +6,9 @@ use super::*;
 use primitives::{crypto::key_types, H256};
 use sp_runtime::testing::{Header, UintAuthorityId};
 use sp_runtime::traits::{BlakeTwo256, ConvertInto, IdentityLookup, OnFinalize, OpaqueKeys};
-use sp_runtime::{traits::Hash, KeyTypeId, Perbill};
-use sp_std::marker::PhantomData;
-use support::{assert_ok, impl_outer_dispatch, impl_outer_origin, parameter_types};
-use traits::{ComputeTotalPayout, GetEraStakingAmount, MaybeValidators};
+use sp_runtime::{KeyTypeId, Perbill};
+use support::{impl_outer_dispatch, impl_outer_origin, parameter_types};
+use traits::{GetEraStakingAmount, MaybeValidators};
 
 pub type BlockNumber = u64;
 pub type AccountId = u64;
@@ -35,9 +34,7 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
         .unwrap();
 
     let _ = balances::GenesisConfig::<Test> {
-        balances: vec![
-            (ALICE_STASH, 1_000_000_000_000_000_000),
-        ],
+        balances: vec![(ALICE_STASH, 1_000_000_000_000_000_000)],
     }
     .assimilate_storage(&mut storage);
 
@@ -204,12 +201,4 @@ pub fn advance_session() {
 
     // on finalize
     PlasmRewards::on_finalize(now);
-}
-
-pub fn advance_era() {
-    let current_era = PlasmRewards::current_era().unwrap();
-    assert_ok!(PlasmRewards::force_new_era(Origin::ROOT));
-    assert_eq!(PlasmRewards::force_era(), Forcing::ForceNew);
-    advance_session();
-    assert_eq!(PlasmRewards::current_era().unwrap(), current_era + 1);
 }

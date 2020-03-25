@@ -4,7 +4,6 @@
 
 use super::*;
 use crate::mock::*;
-use balances::BalanceLock;
 use sp_runtime::DispatchError;
 use support::assert_ok;
 

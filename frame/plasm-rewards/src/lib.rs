@@ -36,11 +36,6 @@ pub type BalanceOf<T> =
     <<T as Trait>::Currency as Currency<<T as system::Trait>::AccountId>>::Balance;
 pub type MomentOf<T> = <<T as Trait>::Time as Time>::Moment;
 
-type PositiveImbalanceOf<T> =
-    <<T as Trait>::Currency as Currency<<T as system::Trait>::AccountId>>::PositiveImbalance;
-type NegativeImbalanceOf<T> =
-    <<T as Trait>::Currency as Currency<<T as system::Trait>::AccountId>>::NegativeImbalance;
-
 // A value placed in storage that represents the current version of the Staking storage.
 // This value is used by the `on_runtime_upgrade` logic to determine whether we run
 // storage migration logic. This should match directly with the semantic versions of the Rust crate.
@@ -411,14 +406,6 @@ impl<T: Trait> Module<T> {
         ErasStartSessionIndex::remove(era_index);
         <ForDappsEraReward<T>>::remove(era_index);
         <ForSecurityEraReward<T>>::remove(era_index);
-    }
-
-    /// Ensures that at the end of the current session there will be a new era.
-    fn ensure_new_era() {
-        match ForceEra::get() {
-            Forcing::ForceAlways | Forcing::ForceNew => (),
-            _ => ForceEra::put(Forcing::ForceNew),
-        }
     }
 }
 

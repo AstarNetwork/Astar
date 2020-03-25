@@ -23,8 +23,8 @@ impl ComputeTotalPayout for SimpleComputeTotalPayout {
     fn compute_total_payout<N>(
         total_tokens: N,
         era_duration: u64,
-        validator_staking: N,
-        dapps_staking: N,
+        _validator_staking: N,
+        _dapps_staking: N,
     ) -> (N, N)
     where
         N: BaseArithmetic + Clone + From<u32>,
