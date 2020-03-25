@@ -370,14 +370,18 @@ impl<T: Trait> Module<T> {
                 let for_dapps = T::GetForDappsStaking::get_era_staking_amount(active_era.index);
                 let for_security =
                     T::GetForSecurityStaking::get_era_staking_amount(active_era.index);
+                println!("for_security:{:?}, for_dapps:{:?}", for_security, for_dapps);
                 let (for_security_reward, for_dapps_rewards) =
                     T::ComputeTotalPayout::compute_total_payout(
                         total_payout,
                         era_duration.saturated_into::<u64>(),
-                        for_dapps,
                         for_security,
+                        for_dapps,
                     );
-
+                println!(
+                    "for_security_reward:{:?}, for_dapps_reward:{:?}",
+                    for_security_reward, for_dapps_rewards,
+                );
                 <ForSecurityEraReward<T>>::insert(active_era.index, for_security_reward);
                 <ForDappsEraReward<T>>::insert(active_era.index, for_dapps_rewards);
             }

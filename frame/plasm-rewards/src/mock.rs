@@ -16,14 +16,6 @@ pub type AccountId = u64;
 pub type Balance = u64;
 
 pub const ALICE_STASH: u64 = 1;
-pub const BOB_STASH: u64 = 2;
-pub const ALICE_CTRL: u64 = 3;
-pub const BOB_CTRL: u64 = 4;
-pub const VALIDATOR_A: u64 = 5;
-pub const VALIDATOR_B: u64 = 6;
-pub const VALIDATOR_C: u64 = 7;
-pub const VALIDATOR_D: u64 = 8;
-pub const OPERATOR: u64 = 9;
 
 impl_outer_origin! {
     pub enum Origin for Test {}
@@ -44,14 +36,7 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 
     let _ = balances::GenesisConfig::<Test> {
         balances: vec![
-            (ALICE_STASH, 1000),
-            (BOB_STASH, 2000),
-            (ALICE_CTRL, 10),
-            (BOB_CTRL, 20),
-            (VALIDATOR_A, 1_000_000),
-            (VALIDATOR_B, 1_000_000),
-            (VALIDATOR_C, 1_000_000),
-            (VALIDATOR_D, 1_000_000),
+            (ALICE_STASH, 1_000_000_000_000_000_000),
         ],
     }
     .assimilate_storage(&mut storage);
@@ -169,7 +154,7 @@ impl GetEraStakingAmount<EraIndex, Balance> for DummyForSecurityStaking {
 pub struct DummyForDappsStaking;
 impl GetEraStakingAmount<EraIndex, Balance> for DummyForDappsStaking {
     fn get_era_staking_amount(era: EraIndex) -> Balance {
-        (era * 1_000_000).into()
+        (era * 200_000).into()
     }
 }
 
@@ -192,7 +177,7 @@ impl Trait for Test {
     type BondingDuration = BondingDuration;
     type GetForDappsStaking = DummyForDappsStaking;
     type GetForSecurityStaking = DummyForSecurityStaking;
-    type ComputeTotalPayout = inflation::SimpleComputeTotalPayout;
+    type ComputeTotalPayout = inflation::MaintainRatioComputeTotalPayout;
     type MaybeValidators = DummyMaybeValidators;
     type Event = ();
 }

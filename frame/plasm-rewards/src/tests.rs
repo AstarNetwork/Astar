@@ -35,6 +35,8 @@ fn normal_incremental_era() {
         );
         assert_eq!(PlasmRewards::force_era(), Forcing::NotForcing);
         assert_eq!(PlasmRewards::eras_start_session_index(0).unwrap(), 0);
+        assert_eq!(PlasmRewards::for_dapps_era_reward(0), None);
+        assert_eq!(PlasmRewards::for_security_era_reward(0), None);
         assert_eq!(Session::validators(), vec![1, 2, 3, 100]);
         assert_eq!(Session::current_index(), 0);
 
@@ -50,6 +52,8 @@ fn normal_incremental_era() {
         );
         assert_eq!(PlasmRewards::force_era(), Forcing::NotForcing);
         assert_eq!(PlasmRewards::eras_start_session_index(0).unwrap(), 0);
+        assert_eq!(PlasmRewards::for_dapps_era_reward(0), None);
+        assert_eq!(PlasmRewards::for_security_era_reward(0), None);
         assert_eq!(Session::validators(), vec![1, 2, 3, 100]);
         assert_eq!(Session::current_index(), 1);
 
@@ -69,6 +73,8 @@ fn normal_incremental_era() {
             );
             assert_eq!(PlasmRewards::force_era(), Forcing::NotForcing);
             assert_eq!(PlasmRewards::eras_start_session_index(0).unwrap(), 0);
+            assert_eq!(PlasmRewards::for_dapps_era_reward(0), None);
+            assert_eq!(PlasmRewards::for_security_era_reward(0), None);
             assert_eq!(Session::validators(), vec![1, 2, 3, 100]);
             assert_eq!(Session::current_index(), i);
         }
@@ -89,6 +95,8 @@ fn normal_incremental_era() {
             );
             assert_eq!(PlasmRewards::force_era(), Forcing::NotForcing);
             assert_eq!(PlasmRewards::eras_start_session_index(1).unwrap(), 10);
+            assert_eq!(PlasmRewards::for_security_era_reward(0).unwrap(), 0);
+            assert_eq!(PlasmRewards::for_dapps_era_reward(0).unwrap(), 0);
             assert_eq!(Session::current_index(), i);
             assert_eq!(Session::validators(), vec![1, 2, 3, 101]);
         }
@@ -109,6 +117,11 @@ fn normal_incremental_era() {
             );
             assert_eq!(PlasmRewards::force_era(), Forcing::NotForcing);
             assert_eq!(PlasmRewards::eras_start_session_index(2).unwrap(), 20);
+            assert_eq!(
+                PlasmRewards::for_security_era_reward(1).unwrap(),
+                3167499998733
+            );
+            assert_eq!(PlasmRewards::for_dapps_era_reward(1).unwrap(), 633500001267);
             assert_eq!(Session::current_index(), i);
             assert_eq!(Session::validators(), vec![1, 2, 3, 102]);
         }
@@ -133,6 +146,8 @@ fn force_new_era_incremental_era() {
         );
         assert_eq!(PlasmRewards::force_era(), Forcing::NotForcing);
         assert_eq!(PlasmRewards::eras_start_session_index(0).unwrap(), 0);
+        assert_eq!(PlasmRewards::for_dapps_era_reward(0), None);
+        assert_eq!(PlasmRewards::for_security_era_reward(0), None);
         assert_eq!(Session::validators(), vec![1, 2, 3, 100]);
         assert_eq!(Session::current_index(), 1);
 
@@ -152,6 +167,8 @@ fn force_new_era_incremental_era() {
             );
             assert_eq!(PlasmRewards::force_era(), Forcing::NotForcing);
             assert_eq!(PlasmRewards::eras_start_session_index(1).unwrap(), 2);
+            assert_eq!(PlasmRewards::for_dapps_era_reward(0).unwrap(), 0);
+            assert_eq!(PlasmRewards::for_security_era_reward(0).unwrap(), 0);
             assert_eq!(Session::validators(), vec![1, 2, 3, 101]);
             assert_eq!(Session::current_index(), i);
         }
@@ -167,6 +184,11 @@ fn force_new_era_incremental_era() {
         );
         assert_eq!(PlasmRewards::force_era(), Forcing::NotForcing);
         assert_eq!(PlasmRewards::eras_start_session_index(2).unwrap(), 12);
+        assert_eq!(
+            PlasmRewards::for_security_era_reward(1).unwrap(),
+            3167499998733
+        );
+        assert_eq!(PlasmRewards::for_dapps_era_reward(1).unwrap(), 633500001267);
         assert_eq!(Session::validators(), vec![1, 2, 3, 102]);
         assert_eq!(Session::current_index(), 12);
     })
@@ -193,6 +215,23 @@ fn force_new_era_always_incremental_era() {
             match i {
                 1 => assert_eq!(PlasmRewards::eras_start_session_index(0).unwrap(), 0),
                 _ => assert_eq!(PlasmRewards::eras_start_session_index(i - 1).unwrap(), i),
+            }
+            match i {
+                1 => {
+                    assert_eq!(PlasmRewards::for_dapps_era_reward(0), None);
+                    assert_eq!(PlasmRewards::for_security_era_reward(0), None);
+                }
+                2 => {
+                    assert_eq!(PlasmRewards::for_dapps_era_reward(0).unwrap(), 0);
+                    assert_eq!(PlasmRewards::for_security_era_reward(0).unwrap(), 0);
+                }
+                _ => {
+                    assert_eq!(
+                        PlasmRewards::for_security_era_reward(1).unwrap(),
+                        316666666540
+                    );
+                    assert_eq!(PlasmRewards::for_dapps_era_reward(1).unwrap(), 63333333460);
+                }
             }
             assert_eq!(Session::validators(), vec![1, 2, 3, 100 + (i as u64 - 1)]);
             assert_eq!(Session::current_index(), i);
