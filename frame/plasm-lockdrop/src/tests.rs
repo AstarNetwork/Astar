@@ -29,6 +29,32 @@ fn session_lockdrop_authorities() {
         assert_eq!(PlasmLockdrop::authority_index_of(&bob), Some(1));
         assert_eq!(PlasmLockdrop::authority_index_of(&charlie), Some(2));
         assert_eq!(PlasmLockdrop::authority_index_of(&dave), None);
+
+        VALIDATORS.with(|l| *l.borrow_mut() = Some(vec![
+            sp_keyring::sr25519::Keyring::Bob.into(),
+            sp_keyring::sr25519::Keyring::Charlie.into(),
+        ]));
+        advance_session();
+        advance_session();
+
+        assert_eq!(<Keys<Runtime>>::get(), vec![bob.clone(), charlie.clone()]);
+        assert_eq!(PlasmLockdrop::authority_index_of(&alice), None);
+        assert_eq!(PlasmLockdrop::authority_index_of(&bob), Some(0));
+        assert_eq!(PlasmLockdrop::authority_index_of(&charlie), Some(1));
+        assert_eq!(PlasmLockdrop::authority_index_of(&dave), None);
+
+        VALIDATORS.with(|l| *l.borrow_mut() = Some(vec![
+            sp_keyring::sr25519::Keyring::Alice.into(),
+            sp_keyring::sr25519::Keyring::Bob.into(),
+        ]));
+        advance_session();
+        advance_session();
+
+        assert_eq!(<Keys<Runtime>>::get(), vec![alice.clone(), bob.clone()]);
+        assert_eq!(PlasmLockdrop::authority_index_of(&alice), Some(0));
+        assert_eq!(PlasmLockdrop::authority_index_of(&bob), Some(1));
+        assert_eq!(PlasmLockdrop::authority_index_of(&charlie), None);
+        assert_eq!(PlasmLockdrop::authority_index_of(&dave), None);
     })
 }
 
@@ -242,15 +268,48 @@ fn check_eth_issue_amount() {
 }
 
 #[test]
-fn simple_lockdrop_request() {
+fn simple_success_lockdrop_request() {
     new_test_ext().execute_with(|| {
         let lockdrop: Lockdrop = Default::default();
         let claim_id = BlakeTwo256::hash_of(&lockdrop);
         assert_ok!(PlasmLockdrop::request(Origin::signed(Default::default()), lockdrop));
         let vote = ClaimVote { claim_id, approve: true, authority: 0 };
         assert_ok!(PlasmLockdrop::vote(Origin::NONE, vote.clone(), Default::default()));
+        assert_noop!(
+            PlasmLockdrop::claim(Origin::signed(Default::default()), claim_id),
+            "this request don't get enough authority votes"
+        );
         assert_ok!(PlasmLockdrop::vote(Origin::NONE, vote.clone(), Default::default()));
+        assert_noop!(
+            PlasmLockdrop::claim(Origin::signed(Default::default()), claim_id),
+            "this request don't get enough authority votes"
+        );
         assert_ok!(PlasmLockdrop::vote(Origin::NONE, vote, Default::default()));
         assert_ok!(PlasmLockdrop::claim(Origin::signed(Default::default()), claim_id));
+    })
+}
+
+#[test]
+fn simple_fail_lockdrop_request() {
+    new_test_ext().execute_with(|| {
+        let lockdrop: Lockdrop = Default::default();
+        let claim_id = BlakeTwo256::hash_of(&lockdrop);
+        assert_ok!(PlasmLockdrop::request(Origin::signed(Default::default()), lockdrop));
+        let vote = ClaimVote { claim_id, approve: false, authority: 0 };
+        assert_ok!(PlasmLockdrop::vote(Origin::NONE, vote.clone(), Default::default()));
+        assert_noop!(
+            PlasmLockdrop::claim(Origin::signed(Default::default()), claim_id),
+            "this request don't get enough authority votes"
+        );
+        assert_ok!(PlasmLockdrop::vote(Origin::NONE, vote.clone(), Default::default()));
+        assert_noop!(
+            PlasmLockdrop::claim(Origin::signed(Default::default()), claim_id),
+            "this request don't get enough authority votes"
+        );
+        assert_ok!(PlasmLockdrop::vote(Origin::NONE, vote, Default::default()));
+        assert_noop!(
+            PlasmLockdrop::claim(Origin::signed(Default::default()), claim_id),
+            "this request don't approved by authorities"
+        );
     })
 }
