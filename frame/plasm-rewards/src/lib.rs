@@ -26,8 +26,8 @@ pub mod inflation;
 mod mock;
 pub mod traits;
 use traits::*;
-// #[cfg(test)]
-// mod tests;
+#[cfg(test)]
+mod tests;
 
 pub use sp_staking::SessionIndex;
 
@@ -57,7 +57,7 @@ impl Default for Releases {
 }
 
 /// Information regarding the active era (era in used in session).
-#[derive(Encode, Decode, RuntimeDebug)]
+#[derive(Encode, Decode, RuntimeDebug, PartialEq, Eq)]
 pub struct ActiveEraInfo<Moment> {
     /// Index of era.
     index: EraIndex,

@@ -5,7 +5,7 @@
 use super::*;
 use primitives::{crypto::key_types, H256};
 use sp_runtime::testing::{Header, UintAuthorityId};
-use sp_runtime::traits::{BlakeTwo256, ConvertInto, IdentityLookup, OpaqueKeys};
+use sp_runtime::traits::{BlakeTwo256, ConvertInto, IdentityLookup, OnFinalize, OpaqueKeys};
 use sp_runtime::{traits::Hash, KeyTypeId, Perbill};
 use sp_std::marker::PhantomData;
 use support::{assert_ok, impl_outer_dispatch, impl_outer_origin, parameter_types};
@@ -176,7 +176,7 @@ impl GetEraStakingAmount<EraIndex, Balance> for DummyForDappsStaking {
 pub struct DummyMaybeValidators;
 impl MaybeValidators<EraIndex, AccountId> for DummyMaybeValidators {
     fn maybe_validators(current_era: EraIndex) -> Option<Vec<AccountId>> {
-        Some(vec![1, 2, 3])
+        Some(vec![1, 2, 3, (current_era + 100).into()])
     }
 }
 
@@ -207,14 +207,18 @@ pub type PlasmRewards = Module<Test>;
 pub const PER_SESSION: u64 = 60 * 1000;
 
 pub fn advance_session() {
-    // increase block numebr
     let now = System::block_number();
+    // increase block numebr
     System::set_block_number(now + 1);
     // increase timestamp + 10
     let now_time = Timestamp::get();
+    // on initialize
     Timestamp::set_timestamp(now_time + PER_SESSION);
     Session::rotate_session();
     assert_eq!(Session::current_index(), (now / Period::get()) as u32);
+
+    // on finalize
+    PlasmRewards::on_finalize(now);
 }
 
 pub fn advance_era() {
