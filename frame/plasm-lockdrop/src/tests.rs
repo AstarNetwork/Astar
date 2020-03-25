@@ -25,30 +25,21 @@ fn session_lockdrop_authorities() {
 
     new_test_ext().execute_with(|| {
         assert_eq!(<Keys<Runtime>>::get(), vec![alice.clone(), bob.clone(), charlie.clone()]);
-        assert_eq!(PlasmLockdrop::is_authority(&alice), true);
-        assert_eq!(PlasmLockdrop::is_authority(&bob), true);
-        assert_eq!(PlasmLockdrop::is_authority(&charlie), true);
-        assert_eq!(PlasmLockdrop::is_authority(&dave), false);
+        assert_eq!(PlasmLockdrop::authority_index_of(&alice), Some(0));
+        assert_eq!(PlasmLockdrop::authority_index_of(&bob), Some(1));
+        assert_eq!(PlasmLockdrop::authority_index_of(&charlie), Some(2));
+        assert_eq!(PlasmLockdrop::authority_index_of(&dave), None);
     })
 }
 
 #[test]
 fn oracle_unsinged_transaction() {
-    let alice: <Runtime as Trait>::AuthorityId =
-        hex!["c83f0a4067f1b166132ed45995eee17ba7aeafeea27fe17550728ee34f998c4e"].unchecked_into();
-    let dave: <Runtime as Trait>::AuthorityId =
-        hex!["1a0f0be3d6596d1dbc302243fe4e975ff20de67559100053024d8f5a7b435b2b"].unchecked_into();
-    let rate = TickerRate { btc: 10, eth: 12, sender: alice.clone() };
-    let vote = ClaimVote { claim_id: Default::default(), approve: false, sender: alice.clone() };
+    let rate = TickerRate { btc: 10, eth: 12, authority: 0 };
+    let vote = ClaimVote { claim_id: Default::default(), approve: false, authority: 0 };
 
     new_test_ext().execute_with(|| {
         // Invalid signature
         let dispatch = PlasmLockdrop::pre_dispatch(&crate::Call::set_dollar_rate(rate.clone(), Default::default()))
-            .map_err(|e| <&'static str>::from(e));
-        assert_noop!(dispatch, "Transaction has a bad signature");
-
-        // Invalid signature
-        let dispatch = PlasmLockdrop::pre_dispatch(&crate::Call::vote(vote.clone(), Default::default()))
             .map_err(|e| <&'static str>::from(e));
         assert_noop!(dispatch, "Transaction has a bad signature");
 
@@ -60,7 +51,7 @@ fn oracle_unsinged_transaction() {
         let bad_account: AccountId = sp_keyring::sr25519::Keyring::Dave.into();
         let bad_pair = sr25519::AuthorityPair::from_string(&format!("//{}", bad_account), None).unwrap(); 
 
-        let bad_rate = TickerRate { btc: 666, eth: 666, sender: dave.clone() };
+        let bad_rate = TickerRate { btc: 666, eth: 666, authority: 4 };
         let signature = bad_pair.sign(&bad_rate.encode());
         let dispatch = PlasmLockdrop::pre_dispatch(&crate::Call::set_dollar_rate(bad_rate, signature))
             .map_err(|e| <&'static str>::from(e));
@@ -70,7 +61,7 @@ fn oracle_unsinged_transaction() {
         assert_ok!(PlasmLockdrop::request(Origin::signed(bad_account), lockdrop.clone()));
         let bad_vote = ClaimVote {
             claim_id: BlakeTwo256::hash_of(&lockdrop),
-            sender: dave.clone(),
+            authority: 4,
             ..vote
         };
         let signature = bad_pair.sign(&bad_vote.encode());
@@ -116,34 +107,34 @@ fn set_dollar_rate_should_work() {
         hex!["88da12401449623ab60f20ed4302ab6e5db53de1e7b5271f35c858ab8b5ab37f"].unchecked_into();
 
     new_test_ext().execute_with(|| {
-        let rate = TickerRate { btc: 10, eth: 12, sender: alice.clone() };
+        let rate = TickerRate { btc: 10, eth: 12, authority: 0 };
         assert_ok!(PlasmLockdrop::set_dollar_rate(Origin::NONE, rate, Default::default()));
         assert_eq!(<DollarRate<Runtime>>::get(), (10, 12));
         assert_eq!(<DollarRateF<Runtime>>::get(alice.clone()), (0, 10, 12));
 
-        let rate = TickerRate { btc: 9, eth: 11, sender: bob.clone() };
+        let rate = TickerRate { btc: 9, eth: 11, authority: 1 };
         assert_ok!(PlasmLockdrop::set_dollar_rate(Origin::NONE, rate, Default::default()));
         assert_eq!(<DollarRate<Runtime>>::get(), (9, 11));
         assert_eq!(<DollarRateF<Runtime>>::get(bob.clone()), (0, 9, 11));
 
-        let rate = TickerRate { btc: 15, eth: 3, sender: charlie.clone() };
+        let rate = TickerRate { btc: 15, eth: 3, authority: 2 };
         assert_ok!(PlasmLockdrop::set_dollar_rate(Origin::NONE, rate, Default::default()));
         assert_eq!(<DollarRate<Runtime>>::get(), (10, 11));
         assert_eq!(<DollarRateF<Runtime>>::get(charlie.clone()), (0, 15, 3));
 
         Timestamp::set_timestamp(1);
 
-        let rate = TickerRate { btc: 11, eth: 11, sender: alice.clone() };
+        let rate = TickerRate { btc: 11, eth: 11, authority: 0 };
         assert_ok!(PlasmLockdrop::set_dollar_rate(Origin::NONE, rate, Default::default()));
         assert_eq!(<DollarRate<Runtime>>::get(), (11, 11));
         assert_eq!(<DollarRateF<Runtime>>::get(alice), (1, 11, 11));
 
-        let rate = TickerRate { btc: 9, eth: 11, sender: bob.clone() };
+        let rate = TickerRate { btc: 9, eth: 11, authority: 1 };
         assert_ok!(PlasmLockdrop::set_dollar_rate(Origin::NONE, rate, Default::default()));
         assert_eq!(<DollarRate<Runtime>>::get(), (11, 11));
         assert_eq!(<DollarRateF<Runtime>>::get(bob), (1, 9, 11));
 
-        let rate = TickerRate { btc: 50, eth: 25, sender: charlie.clone() };
+        let rate = TickerRate { btc: 50, eth: 25, authority: 2 };
         assert_ok!(PlasmLockdrop::set_dollar_rate(Origin::NONE, rate, Default::default()));
         assert_eq!(<DollarRate<Runtime>>::get(), (11, 11));
         assert_eq!(<DollarRateF<Runtime>>::get(charlie), (1, 50, 25));
@@ -160,31 +151,31 @@ fn dollar_rate_should_expire() {
         hex!["88da12401449623ab60f20ed4302ab6e5db53de1e7b5271f35c858ab8b5ab37f"].unchecked_into();
 
     new_test_ext().execute_with(|| {
-        let rate = TickerRate { btc: 10, eth: 12, sender: alice.clone() };
+        let rate = TickerRate { btc: 10, eth: 12, authority: 0 };
         assert_ok!(PlasmLockdrop::set_dollar_rate(Origin::NONE, rate, Default::default()));
         assert_eq!(<DollarRate<Runtime>>::get(), (10, 12));
         assert_eq!(<DollarRateF<Runtime>>::get(alice.clone()), (0, 10, 12));
 
-        let rate = TickerRate { btc: 9, eth: 11, sender: bob.clone() };
+        let rate = TickerRate { btc: 9, eth: 11, authority: 1 };
         assert_ok!(PlasmLockdrop::set_dollar_rate(Origin::NONE, rate, Default::default()));
         assert_eq!(<DollarRate<Runtime>>::get(), (9, 11));
         assert_eq!(<DollarRateF<Runtime>>::get(bob.clone()), (0, 9, 11));
 
-        let rate = TickerRate { btc: 15, eth: 3, sender: charlie.clone() };
+        let rate = TickerRate { btc: 15, eth: 3, authority: 2 };
         assert_ok!(PlasmLockdrop::set_dollar_rate(Origin::NONE, rate, Default::default()));
         assert_eq!(<DollarRate<Runtime>>::get(), (10, 11));
         assert_eq!(<DollarRateF<Runtime>>::get(charlie.clone()), (0, 15, 3));
 
         Timestamp::set_timestamp(1);
 
-        let rate = TickerRate { btc: 50, eth: 50, sender: alice.clone() };
+        let rate = TickerRate { btc: 50, eth: 50, authority: 0 };
         assert_ok!(PlasmLockdrop::set_dollar_rate(Origin::NONE, rate, Default::default()));
         assert_eq!(<DollarRate<Runtime>>::get(), (15, 11));
         assert_eq!(<DollarRateF<Runtime>>::get(alice.clone()), (1, 50, 50));
 
         Timestamp::set_timestamp(2);
 
-        let rate = TickerRate { btc: 55, eth: 55, sender: alice.clone() };
+        let rate = TickerRate { btc: 55, eth: 55, authority: 0 };
         assert_ok!(PlasmLockdrop::set_dollar_rate(Origin::NONE, rate, Default::default()));
         assert_eq!(<DollarRate<Runtime>>::get(), (55, 55));
         assert_eq!(<DollarRateF<Runtime>>::get(alice), (2, 55, 55));
@@ -256,7 +247,7 @@ fn simple_lockdrop_request() {
         let lockdrop: Lockdrop = Default::default();
         let claim_id = BlakeTwo256::hash_of(&lockdrop);
         assert_ok!(PlasmLockdrop::request(Origin::signed(Default::default()), lockdrop));
-        let vote = ClaimVote { claim_id, approve: true, sender: Default::default() };
+        let vote = ClaimVote { claim_id, approve: true, authority: 0 };
         assert_ok!(PlasmLockdrop::vote(Origin::NONE, vote.clone(), Default::default()));
         assert_ok!(PlasmLockdrop::vote(Origin::NONE, vote.clone(), Default::default()));
         assert_ok!(PlasmLockdrop::vote(Origin::NONE, vote, Default::default()));

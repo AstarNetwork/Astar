@@ -183,6 +183,9 @@ pub type ClaimId = H256;
 /// Type for enumerating claim proof votes. 
 pub type AuthorityVote = u32;
 
+/// Type for enumerating authorities in list (2^16 authorities is enough).
+pub type AuthorityIndex = u16;
+
 /// Plasm Lockdrop parameters.
 #[cfg_attr(feature = "std", derive(PartialEq, Eq))]
 #[derive(Encode, Decode, RuntimeDebug, Clone)]
@@ -221,19 +224,19 @@ pub struct Claim {
 /// Lockdrop claim vote.
 #[cfg_attr(feature = "std", derive(PartialEq, Eq))]
 #[derive(Encode, Decode, RuntimeDebug, Clone)]
-pub struct ClaimVote<AuthorityId: Member + Parameter> {
-    sender:   AuthorityId,
-    claim_id: ClaimId,
-    approve:  bool,
+pub struct ClaimVote {
+    claim_id:  ClaimId,
+    approve:   bool,
+    authority: AuthorityIndex,
 }
 
 /// Oracle dollar rate ticker.
 #[cfg_attr(feature = "std", derive(PartialEq, Eq))]
 #[derive(Encode, Decode, RuntimeDebug, Clone)]
-pub struct TickerRate<AuthorityId: Member + Parameter, DollarRate: Member + Parameter> {
-    sender: AuthorityId,
-    btc:    DollarRate,
-    eth:    DollarRate,
+pub struct TickerRate<DollarRate: Member + Parameter> {
+    authority: AuthorityIndex,
+    btc:       DollarRate,
+    eth:       DollarRate,
 }
 
 decl_event!(
@@ -373,7 +376,7 @@ decl_module! {
         #[weight = SimpleDispatchInfo::FixedOperational(10_000)]
         fn vote(
             origin,
-            vote: ClaimVote<T::AuthorityId>,
+            vote: ClaimVote,
             // since signature verification is done in `validate_unsigned`
             // we can skip doing it here again.
             _signature: <T::AuthorityId as RuntimeAppPublic>::Signature,
@@ -385,14 +388,19 @@ decl_module! {
                 else { claim.decline += 1 }
             );
 
-            <HasVote<T>>::insert(vote.sender.clone(), vote.claim_id.clone(), true);
-            Self::deposit_event(RawEvent::ClaimResponse(vote.claim_id, vote.sender, vote.approve));
+            let keys = Keys::<T>::get();
+            if let Some(authority) = keys.get(vote.authority as usize) {
+                <HasVote<T>>::insert(authority, &vote.claim_id, true);
+                Self::deposit_event(RawEvent::ClaimResponse(vote.claim_id, authority.clone(), vote.approve));
+            } else {
+                return Err("unable get authority by index")?;
+            }
         }
 
         /// Dollar Rate oracle entrypoint. (for authorities only)
         fn set_dollar_rate(
             origin,
-            rate: TickerRate<T::AuthorityId, T::DollarRate>,
+            rate: TickerRate<T::DollarRate>,
             // since signature verification is done in `validate_unsigned`
             // we can skip doing it here again.
             _signature: <T::AuthorityId as RuntimeAppPublic>::Signature,
@@ -400,7 +408,13 @@ decl_module! {
             ensure_none(origin)?;
 
             let now = T::Time::now();
-            <DollarRateF<T>>::insert(rate.sender, (now, rate.btc, rate.eth));
+
+            let keys = Keys::<T>::get();
+            if let Some(authority) = keys.get(rate.authority as usize) {
+                DollarRateF::<T>::insert(authority, (now, rate.btc, rate.eth));
+            } else {
+                return Err("unable to get authority by index")?;
+            }
 
             let expire = T::MedianFilterExpire::get();
             let mut btc_filter = median::Filter::new(T::MedianFilterWidth::get());
@@ -449,11 +463,15 @@ impl<T: Trait> Module<T> {
     }
 
     /// Check that authority key list contains given account
-    fn is_authority(account: &T::AuthorityId) -> bool {
-        let mut keys = Keys::<T>::get();
-        keys.sort();
-        keys.binary_search_by(|key| key.cmp(account))
-            .is_ok()
+    fn authority_index_of(public: &T::AuthorityId) -> Option<AuthorityIndex> {
+        let keys = Keys::<T>::get();
+        // O(n) is ok because of short list
+        for (i, elem) in keys.iter().enumerate() {
+            if elem.eq(public) {
+                return Some(i as AuthorityIndex);
+            }
+        }
+        None
     }
 
     fn claim_request_oracle() -> Result<(), String> {
@@ -470,19 +488,21 @@ impl<T: Trait> Module<T> {
             );
 
             for key in T::AuthorityId::all() {
-                let vote = ClaimVote { sender: key.clone(), claim_id, approve };
-                let signature = key.sign(&vote.encode()).ok_or("signing error")?;
-                let call = Call::vote(vote, signature);
-                debug::debug!(
-                    target: "lockdrop-offchain-worker",
-                    "claim id {} => vote extrinsic: {:?}", claim_id, call
-                );
+                if let Some(authority) = Self::authority_index_of(&key) {
+                    let vote = ClaimVote { authority, claim_id, approve };
+                    let signature = key.sign(&vote.encode()).ok_or("signing error")?;
+                    let call = Call::vote(vote, signature);
+                    debug::debug!(
+                        target: "lockdrop-offchain-worker",
+                        "claim id {} => vote extrinsic: {:?}", claim_id, call
+                    );
 
-                let res = T::SubmitTransaction::submit_unsigned(call);
-                debug::debug!(
-                    target: "lockdrop-offchain-worker",
-                    "claim id {} => vote extrinsic send: {:?}", claim_id, res
-                );
+                    let res = T::SubmitTransaction::submit_unsigned(call);
+                    debug::debug!(
+                        target: "lockdrop-offchain-worker",
+                        "claim id {} => vote extrinsic send: {:?}", claim_id, res
+                    );
+                }
             }
         }
 
@@ -500,24 +520,21 @@ impl<T: Trait> Module<T> {
             .ok_or("ETH ticker JSON parsing error".to_string())?;
 
         for key in T::AuthorityId::all() {
-            let rate = TickerRate {
-                sender: key.clone(),
-                btc: btc_rate.into(),
-                eth: eth_rate.into(),
-            };
+            if let Some(authority) = Self::authority_index_of(&key) {
+                let rate = TickerRate { authority, btc: btc_rate.into(), eth: eth_rate.into() };
+                let signature = key.sign(&rate.encode()).ok_or("signing error")?;
+                let call = Call::set_dollar_rate(rate, signature);
+                debug::debug!(
+                    target: "lockdrop-offchain-worker",
+                    "dollar rate extrinsic: {:?}", call
+                );
 
-            let signature = key.sign(&rate.encode()).ok_or("signing error")?;
-            let call = Call::set_dollar_rate(rate, signature);
-            debug::debug!(
-                target: "lockdrop-offchain-worker",
-                "dollar rate extrinsic: {:?}", call
-            );
-
-            let res = T::SubmitTransaction::submit_unsigned(call);
-            debug::debug!(
-                target: "lockdrop-offchain-worker",
-                "dollar rate extrinsic send: {:?}", res
-            );
+                let res = T::SubmitTransaction::submit_unsigned(call);
+                debug::debug!(
+                    target: "lockdrop-offchain-worker",
+                    "dollar rate extrinsic send: {:?}", res
+                );
+            }
         }
 
         Ok(())
@@ -658,44 +675,56 @@ impl<T: Trait> frame_support::unsigned::ValidateUnsigned for Module<T> {
     fn validate_unsigned(call: &Self::Call) -> TransactionValidity {
         match call {
             Call::vote(vote, signature) => {
-                // Verify sender
-                let signature_valid = vote.sender.verify(&vote.encode(), &signature);
-                if !signature_valid || !Self::is_authority(&vote.sender) {
-                    return InvalidTransaction::BadProof.into();
-                }
-
-                // Verify params
+                // Verify call params
                 if !<Claims>::contains_key(vote.claim_id.clone()) {
                     return InvalidTransaction::Call.into();
                 }
 
-                // Double voting guard
-                if <HasVote<T>>::get(vote.sender.clone(), vote.claim_id.clone()) {
-                    return InvalidTransaction::Call.into();
-                }
+                vote.using_encoded(|encoded_vote| {
+                    // Verify authority
+                    let keys = Keys::<T>::get();
+                    if let Some(authority) = keys.get(vote.authority as usize) {
+                        // Check that sender is authority 
+                        if !authority.verify(&encoded_vote, &signature) {
+                            return InvalidTransaction::BadProof.into();
+                        }
+                        // Double voting guard
+                        if <HasVote<T>>::get(authority, vote.claim_id.clone()) {
+                            return InvalidTransaction::Call.into();
+                        }
+                    } else {
+                        return InvalidTransaction::BadProof.into();
+                    }
 
-                Ok(ValidTransaction {
-                    priority: TransactionPriority::max_value(),
-                    requires: vec![],
-                    provides: vec![vote.encode()],
-                    longevity: 64_u64,
-                    propagate: true,
+                    Ok(ValidTransaction {
+                        priority: TransactionPriority::max_value(),
+                        requires: vec![],
+                        provides: vec![encoded_vote.to_vec()],
+                        longevity: 64_u64,
+                        propagate: true,
+                    })
                 })
             },
 
             Call::set_dollar_rate(rate, signature) => {
-                // Verify sender
-                let signature_valid = rate.sender.verify(&rate.encode(), &signature);
-                if !signature_valid || !Self::is_authority(&rate.sender) {
-                    return InvalidTransaction::BadProof.into();
-                }
+                rate.using_encoded(|encoded_rate| {
+                    let keys = Keys::<T>::get();
+                    if let Some(authority) = keys.get(rate.authority as usize) {
+                        // checkauthority
+                        if !authority.verify(&encoded_rate, &signature) {
+                            return InvalidTransaction::BadProof.into();
+                        }
+                    } else {
+                        return InvalidTransaction::BadProof.into();
+                    }
 
-                Ok(ValidTransaction {
-                    priority: TransactionPriority::max_value(),
-                    requires: vec![],
-                    provides: vec![rate.encode()],
-                    longevity: 64_u64,
-                    propagate: true,
+                    Ok(ValidTransaction {
+                        priority: TransactionPriority::max_value(),
+                        requires: vec![],
+                        provides: vec![encoded_rate.to_vec()],
+                        longevity: 64_u64,
+                        propagate: true,
+                    })
                 })
             },
 
