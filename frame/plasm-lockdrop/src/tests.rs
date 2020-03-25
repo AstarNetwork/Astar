@@ -95,8 +95,14 @@ fn oracle_unsinged_transaction() {
         // Valid signature & params
         let valid_vote = ClaimVote { claim_id: BlakeTwo256::hash_of(&lockdrop), ..vote };
         let signature = pair.sign(&valid_vote.encode());
-        let dispatch = PlasmLockdrop::pre_dispatch(&crate::Call::vote(valid_vote, signature));
+        let dispatch = PlasmLockdrop::pre_dispatch(&crate::Call::vote(valid_vote.clone(), signature.clone()));
         assert_ok!(dispatch);
+        assert_ok!(PlasmLockdrop::vote(Origin::NONE, valid_vote.clone(), signature.clone()));
+
+        // Double vote
+        let dispatch = PlasmLockdrop::pre_dispatch(&crate::Call::vote(valid_vote, signature))
+            .map_err(|e| <&'static str>::from(e));
+        assert_noop!(dispatch, "Transaction call is not expected");
     });
 }
 

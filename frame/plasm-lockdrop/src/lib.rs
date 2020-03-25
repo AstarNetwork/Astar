@@ -268,15 +268,21 @@ decl_storage! {
         /// List of lockdrop authority id's.
         Keys get(fn keys): Vec<T::AuthorityId>;
         /// Token claim requests.
-        Claims get(fn claims): map hasher(blake2_128_concat)
-                               ClaimId => Claim;
+        Claims get(fn claims):
+            map hasher(blake2_128_concat) ClaimId
+            => Claim;
+        /// Double vote prevention registry.
+        HasVote get(fn has_vote):
+            double_map hasher(blake2_128_concat) T::AuthorityId, hasher(blake2_128_concat) ClaimId
+            => bool;
         /// Lockdrop alpha parameter.
         Alpha get(fn alpha) config(): u128;
         /// Lockdrop dollar rate parameter: BTC, ETH.
         DollarRate get(fn dollar_rate) config(): (T::DollarRate, T::DollarRate);
         /// Lockdrop dollar rate median filter table: Time, BTC, ETH.
-        DollarRateF get(fn dollar_rate_f): map hasher(blake2_128_concat)
-                                           T::AuthorityId => (T::Moment, T::DollarRate, T::DollarRate);
+        DollarRateF get(fn dollar_rate_f):
+            map hasher(blake2_128_concat) T::AuthorityId
+            => (T::Moment, T::DollarRate, T::DollarRate);
     }
 }
 
@@ -379,6 +385,7 @@ decl_module! {
                 else { claim.decline += 1 }
             );
 
+            <HasVote<T>>::insert(vote.sender.clone(), vote.claim_id.clone(), true);
             Self::deposit_event(RawEvent::ClaimResponse(vote.claim_id, vote.sender, vote.approve));
         }
 
@@ -658,7 +665,12 @@ impl<T: Trait> frame_support::unsigned::ValidateUnsigned for Module<T> {
                 }
 
                 // Verify params
-                if !<Claims>::contains_key(vote.claim_id) {
+                if !<Claims>::contains_key(vote.claim_id.clone()) {
+                    return InvalidTransaction::Call.into();
+                }
+
+                // Double voting guard
+                if <HasVote<T>>::get(vote.sender.clone(), vote.claim_id.clone()) {
                     return InvalidTransaction::Call.into();
                 }
 
