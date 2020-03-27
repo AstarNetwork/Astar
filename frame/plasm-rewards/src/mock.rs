@@ -3,11 +3,11 @@
 #![cfg(test)]
 
 use super::*;
+use frame_support::{impl_outer_dispatch, impl_outer_origin, parameter_types};
 use sp_core::{crypto::key_types, H256};
 use sp_runtime::testing::{Header, UintAuthorityId};
 use sp_runtime::traits::{BlakeTwo256, ConvertInto, IdentityLookup, OnFinalize, OpaqueKeys};
 use sp_runtime::{KeyTypeId, Perbill};
-use frame_support::{impl_outer_dispatch, impl_outer_origin, parameter_types};
 use traits::{GetEraStakingAmount, MaybeValidators};
 
 pub type BlockNumber = u64;

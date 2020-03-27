@@ -1,4 +1,12 @@
-//! # Plasm Staking Module
+//! # Plasm rewards Module
+//!
+//! The Plasm rewards module provides functionality for handling whole rewards and era.
+//!
+//! - [`plasm_rewards::Trait`](./trait.Trait.html)
+//! - [`Call`](./enum.Call.html)
+//! - [`Module`](./struct.Module.html)
+//!
+//! ## Overview
 //!
 //! The Plasm staking module puts together the management and compensation payment logic of the ERA.
 //! The Plasm Rewards module calls the Dapps Staking and Validator.
@@ -6,13 +14,6 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use codec::{Decode, Encode};
-use pallet_session::SessionManager;
-use sp_runtime::{
-    traits::{SaturatedConversion, Zero},
-    Perbill, RuntimeDebug,
-};
-use sp_std::{prelude::*, vec::Vec};
-pub use pallet_staking::Forcing;
 use frame_support::{
     decl_error, decl_event, decl_module, decl_storage,
     traits::{Currency, Get, LockableCurrency, Time},
@@ -20,6 +21,13 @@ use frame_support::{
     StorageMap, StorageValue,
 };
 use frame_system::{self as system, ensure_root};
+use pallet_session::SessionManager;
+pub use pallet_staking::Forcing;
+use sp_runtime::{
+    traits::{SaturatedConversion, Zero},
+    Perbill, RuntimeDebug,
+};
+use sp_std::{prelude::*, vec::Vec};
 
 pub mod inflation;
 #[cfg(test)]
@@ -41,13 +49,12 @@ pub type MomentOf<T> = <<T as Trait>::Time as Time>::Moment;
 // storage migration logic. This should match directly with the semantic versions of the Rust crate.
 #[derive(Encode, Decode, Clone, Copy, PartialEq, Eq, RuntimeDebug)]
 enum Releases {
-    V1_0_0Ancient,
-    V2_0_0,
+    V1_0_0,
 }
 
 impl Default for Releases {
     fn default() -> Self {
-        Releases::V2_0_0
+        Releases::V1_0_0
     }
 }
 
@@ -139,7 +146,7 @@ decl_storage! {
         /// Storage version of the pallet.
         ///
         /// This is set to v2.0.0 for new networks.
-        StorageVersion build(|_: &GenesisConfig| Releases::V2_0_0): Releases;
+        StorageVersion build(|_: &GenesisConfig| Releases::V1_0_0): Releases;
     }
 }
 
@@ -194,7 +201,7 @@ decl_module! {
         /// # <weight>
         /// - No arguments.
         /// # </weight>
-        #[weight = SimpleDispatchInfo::FixedNormal(5_000)]
+        #[weight = SimpleDispatchInfo::FixedOperational(5_000)]
         fn force_no_eras(origin) {
             ensure_root(origin)?;
             ForceEra::put(Forcing::ForceNone);
@@ -206,7 +213,7 @@ decl_module! {
         /// # <weight>
         /// - No arguments.
         /// # </weight>
-        #[weight = SimpleDispatchInfo::FixedNormal(5_000)]
+        #[weight = SimpleDispatchInfo::FixedOperational(5_000)]
         fn force_new_era(origin) {
             ensure_root(origin)?;
             ForceEra::put(Forcing::ForceNew);
@@ -217,7 +224,7 @@ decl_module! {
         /// # <weight>
         /// - One storage write
         /// # </weight>
-        #[weight = SimpleDispatchInfo::FixedNormal(5_000)]
+        #[weight = SimpleDispatchInfo::FixedOperational(5_000)]
         fn force_new_era_always(origin) {
             ensure_root(origin)?;
             ForceEra::put(Forcing::ForceAlways);

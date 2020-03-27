@@ -4,8 +4,8 @@
 
 use super::*;
 use crate::mock::*;
-use sp_runtime::DispatchError;
 use frame_support::assert_ok;
+use sp_runtime::DispatchError;
 
 #[test]
 fn root_calls_fails_for_user() {
