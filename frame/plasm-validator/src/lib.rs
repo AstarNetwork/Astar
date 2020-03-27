@@ -21,10 +21,10 @@ use sp_runtime::{
 pub use sp_staking::SessionIndex;
 use sp_std::{prelude::*, vec::Vec};
 
-// #[cfg(test)]
-// mod mock;
-// #[cfg(test)]
-// mod tests;
+#[cfg(test)]
+mod mock;
+#[cfg(test)]
+mod tests;
 
 pub type BalanceOf<T> =
     <<T as Trait>::Currency as Currency<<T as system::Trait>::AccountId>>::Balance;
@@ -39,17 +39,14 @@ pub trait Trait: system::Trait {
     /// The staking balance.
     type Currency: LockableCurrency<Self::AccountId, Moment = Self::BlockNumber>;
 
+    /// Time used for computing era duration.
+    type Time: Time;
+
     /// Tokens have been minted and are unused for validator-reward. Maybe, plasm-staking uses ().
     type RewardRemainder: OnUnbalanced<NegativeImbalanceOf<Self>>;
 
     /// Handler for the unbalanced increment when rewarding a staker. Maybe, plasm-staking uses ().
     type Reward: OnUnbalanced<PositiveImbalanceOf<Self>>;
-
-    /// Time used for computing era duration.
-    type Time: Time;
-
-    /// Number of sessions per era.
-    type SessionsPerEra: Get<SessionIndex>;
 
     /// The information of era.
     type EraFinder: EraFinder<EraIndex, SessionIndex, MomentOf<Self>>;

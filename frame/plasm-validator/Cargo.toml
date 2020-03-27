@@ -25,6 +25,9 @@ pallet-plasm-rewards = { path = '../plasm-rewards', default_features = false }
 
 [dev-dependencies]
 hex-literal = "0.2.1"
+pallet-timestamp = { git = 'https://github.com/staketechnologies/substrate.git', branch = 'plasm-master' }
+pallet-session = { git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master" }
+pallet-staking = { git = 'https://github.com/staketechnologies/substrate.git', branch = 'plasm-master' }
 randomness-collective-flip = { package = "pallet-randomness-collective-flip", git = 'https://github.com/staketechnologies/substrate.git', branch = "plasm-master" }
 
 [features]
