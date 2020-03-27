@@ -6,20 +6,20 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use codec::{Decode, Encode};
-use session::SessionManager;
+use pallet_session::SessionManager;
 use sp_runtime::{
     traits::{SaturatedConversion, Zero},
     Perbill, RuntimeDebug,
 };
 use sp_std::{prelude::*, vec::Vec};
-pub use staking::Forcing;
-use support::{
+pub use pallet_staking::Forcing;
+use frame_support::{
     decl_error, decl_event, decl_module, decl_storage,
     traits::{Currency, Get, LockableCurrency, Time},
     weights::SimpleDispatchInfo,
     StorageMap, StorageValue,
 };
-use system::ensure_root;
+use frame_system::{self as system, ensure_root};
 
 pub mod inflation;
 #[cfg(test)]
@@ -33,7 +33,7 @@ pub use sp_staking::SessionIndex;
 
 pub type EraIndex = u32;
 pub type BalanceOf<T> =
-    <<T as Trait>::Currency as Currency<<T as system::Trait>::AccountId>>::Balance;
+    <<T as Trait>::Currency as Currency<<T as frame_system::Trait>::AccountId>>::Balance;
 pub type MomentOf<T> = <<T as Trait>::Time as Time>::Moment;
 
 // A value placed in storage that represents the current version of the Staking storage.
@@ -63,7 +63,7 @@ pub struct ActiveEraInfo<Moment> {
     start: Option<Moment>,
 }
 
-pub trait Trait: session::Trait {
+pub trait Trait: pallet_session::Trait {
     /// The staking balance.
     type Currency: LockableCurrency<Self::AccountId, Moment = Self::BlockNumber>;
 
@@ -89,7 +89,7 @@ pub trait Trait: session::Trait {
     type MaybeValidators: traits::MaybeValidators<EraIndex, Self::AccountId>;
 
     /// The overarching event type.
-    type Event: From<Event<Self>> + Into<<Self as system::Trait>::Event>;
+    type Event: From<Event<Self>> + Into<<Self as frame_system::Trait>::Event>;
 }
 
 decl_storage! {
@@ -262,7 +262,7 @@ impl<T: Trait> Module<T> {
 
             let current_era_start_session_index = Self::eras_start_session_index(current_era)
                 .unwrap_or_else(|| {
-                    support::print("Error: start_session_index must be set for current_era");
+                    frame_support::print("Error: start_session_index must be set for current_era");
                     0
                 });
 
@@ -295,7 +295,7 @@ impl<T: Trait> Module<T> {
             } else if next_active_era_start_session_index < start_session {
                 // This arm should never happen, but better handle it than to stall the
                 // staking pallet.
-                support::print("Warning: A session appears to have been skipped.");
+                frame_support::print("Warning: A session appears to have been skipped.");
                 Self::start_era(start_session);
             }
         }
