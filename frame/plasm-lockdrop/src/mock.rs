@@ -151,10 +151,10 @@ impl pallet_balances::Trait for Runtime {
 parameter_types! {
     pub const VoteThreshold: AuthorityVote = 3;
     pub const PositiveVotes: AuthorityVote = 2;
-    pub const BitcoinTickerUri: &'static str = "http://api.blockcypher.com/v1/btc/test3/txs";
-    pub const EthereumTickerUri: &'static str = "https://api.blockcypher.com/v1/eth/test/txs";
-    pub const BitcoinApiUri: &'static str = "";
-    pub const EthereumApiUri: &'static str = "";
+    pub const BitcoinTickerUri: &'static str = "http://api.coingecko.com/api/v3/coins/bitcoin";
+    pub const EthereumTickerUri: &'static str = "http://api.coingecko.com/api/v3/coins/ethereum";
+    pub const BitcoinApiUri: &'static str = "http://api.blockcypher.com/v1/btc/test3/txs";
+    pub const EthereumApiUri: &'static str = "http://api.blockcypher.com/v1/eth/test/txs";
     pub const EthereumContractAddress: &'static str = "";
     pub const LockdropEnd: Moment = 0;
     pub const MedianFilterExpire: Moment = 2;
@@ -231,3 +231,11 @@ pub fn advance_session() {
     Session::rotate_session();
     assert_eq!(Session::current_index(), (now / Period::get()) as u32);
 }
+
+pub const COINGECKO_BTC_TICKER: &str = r#"
+{"id":"bitcoin","symbol":"btc","name":"Bitcoin","market_data":{"current_price":{"usd": 6766.77}}}
+"#;
+
+pub const COINGECKO_ETH_TICKER: &str = r#"
+{"id":"ethereum","symbol":"eth","name":"Ethereum","market_data":{"current_price":{"usd": 139.4}}}
+"#;

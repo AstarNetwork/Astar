@@ -5,12 +5,23 @@
 use super::*;
 use crate::mock::*;
 
-use sp_core::Pair;
 use hex_literal::hex;
 use plasm_primitives::AccountId;
-use sp_core::crypto::UncheckedInto;
 use frame_support::unsigned::ValidateUnsigned;
 use frame_support::{assert_ok, assert_noop};
+use sp_core::{
+    Pair, crypto::UncheckedInto,
+    testing::KeyStore,
+    traits::KeystoreExt,
+    offchain::{
+        OffchainExt,
+        TransactionPoolExt,
+        testing::{
+            TestOffchainExt,
+            TestTransactionPoolExt,
+        },
+    },
+};
 
 #[test]
 fn session_lockdrop_authorities() {
@@ -124,7 +135,7 @@ fn oracle_unsinged_transaction() {
 }
 
 #[test]
-fn set_dollar_rate_should_work() {
+fn dollar_rate_median_filter() {
     let alice: <Runtime as Trait>::AuthorityId =
         hex!["c83f0a4067f1b166132ed45995eee17ba7aeafeea27fe17550728ee34f998c4e"].unchecked_into();
     let bob: <Runtime as Trait>::AuthorityId =
@@ -263,6 +274,141 @@ fn check_eth_issue_amount() {
                 assert_eq!(PlasmLockdrop::eth_issue_amount(1, i * day), 384000);
                 assert_eq!(PlasmLockdrop::eth_issue_amount(i as u128, i * day), 384000 * i as u128);
             }
+        }
+    })
+}
+
+#[test]
+fn fetch_json_works() {
+    let mut ext = new_test_ext();
+    let (offchain, state) = TestOffchainExt::new();
+    ext.register_extension(OffchainExt::new(offchain));
+
+    let json = serde_json::json!({
+        "galactic": "milkyway",
+        "answer": 42,
+    });
+
+
+    ext.execute_with(|| {
+        state.write().expect_request(
+            0,
+            sp_core::offchain::testing::PendingRequest {
+                method: "GET".into(),
+                uri: "http://localhost/test".into(),
+                sent: true,
+                response: Some(json.to_string().as_bytes().to_vec()),
+                ..Default::default()
+            },
+        );
+        assert_eq!(
+            crate::fetch_json("http://localhost/test"),
+            Ok(json.clone()),
+        );
+
+        state.write().expect_request(
+            0,
+            sp_core::offchain::testing::PendingRequest {
+                method: "GET".into(),
+                uri: "http://localhost/ticker".into(),
+                sent: true,
+                response: Some(COINGECKO_BTC_TICKER.into()),
+                ..Default::default()
+            },
+        );
+        assert_eq!(
+            crate::fetch_json("http://localhost/ticker"),
+            Ok(serde_json::from_str(COINGECKO_BTC_TICKER).unwrap())
+        );
+    })
+}
+
+#[test]
+fn dollar_rate_ticker_works() {
+    let mut ext = new_test_ext();
+    let (offchain, state) = TestOffchainExt::new();
+    ext.register_extension(OffchainExt::new(offchain));
+
+    ext.execute_with(|| {
+        state.write().expect_request(
+            0,
+            sp_core::offchain::testing::PendingRequest {
+                method: "GET".into(),
+                uri: "http://api.coingecko.com/api/v3/coins/bitcoin".into(),
+                sent: true,
+                response: Some(COINGECKO_BTC_TICKER.into()),
+                ..Default::default()
+            },
+        );
+        assert_eq!(PlasmLockdrop::btc_ticker(), Ok(6766));
+        state.write().expect_request(
+            0,
+            sp_core::offchain::testing::PendingRequest {
+                method: "GET".into(),
+                uri: "http://api.coingecko.com/api/v3/coins/ethereum".into(),
+                sent: true,
+                response: Some(COINGECKO_ETH_TICKER.into()),
+                ..Default::default()
+            },
+        );
+        assert_eq!(PlasmLockdrop::eth_ticker(), Ok(139));
+    })
+}
+
+#[test]
+fn dollar_rate_offchain_worker() {
+    let mut ext = new_test_ext();
+    let (offchain, state) = TestOffchainExt::new();
+    let (pool, pool_state) = TestTransactionPoolExt::new();
+    ext.register_extension(KeystoreExt(KeyStore::new()));
+    ext.register_extension(OffchainExt::new(offchain));
+    ext.register_extension(TransactionPoolExt::new(pool));
+
+    let account: AccountId = sp_keyring::sr25519::Keyring::Alice.into();
+    ext.execute_with(|| {
+        let seed = format!("//{}", account).as_bytes().to_vec();
+        <Runtime as Trait>::AuthorityId::generate_pair(Some(seed)); 
+
+        state.write().expect_request(
+            0,
+            sp_core::offchain::testing::PendingRequest {
+                method: "GET".into(),
+                uri: "http://api.coingecko.com/api/v3/coins/bitcoin".into(),
+                sent: true,
+                response: Some(COINGECKO_BTC_TICKER.into()),
+                ..Default::default()
+            },
+        );
+        let btc = PlasmLockdrop::btc_ticker().unwrap();
+
+        state.write().expect_request(
+            0,
+            sp_core::offchain::testing::PendingRequest {
+                method: "GET".into(),
+                uri: "http://api.coingecko.com/api/v3/coins/ethereum".into(),
+                sent: true,
+                response: Some(COINGECKO_ETH_TICKER.into()),
+                ..Default::default()
+            },
+        );
+        let eth = PlasmLockdrop::eth_ticker().unwrap();
+
+        assert_ok!(PlasmLockdrop::send_dollar_rate(btc.into(), eth.into()));
+
+        let transaction = pool_state.write().transactions.pop().unwrap();
+        let ex: Extrinsic = Decode::decode(&mut &*transaction).unwrap();
+        // Simple parameter checks
+        match ex.call {
+            crate::mock::Call::PlasmLockdrop(call) => {
+                if let crate::Call::set_dollar_rate(rate, signature) = call.clone() {
+                    assert_eq!(rate, TickerRate { authority: 0, btc: 6766, eth: 139 });
+                    assert!(Keys::<Runtime>::get()[rate.authority as usize].verify(&rate.encode(), &signature));
+                }
+
+                let dispatch = PlasmLockdrop::pre_dispatch(&call).map_err(|e| <&'static str>::from(e));
+                assert_ok!(dispatch);
+            },
+            e => panic!("Unexpected call: {:?}", e),
         }
     })
 }

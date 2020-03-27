@@ -166,7 +166,7 @@ pub trait Trait: system::Trait {
 
     /// Dollar rate number data type.
     type DollarRate: Member + Parameter + AtLeast32Bit
-        + Copy + Default + From<u64> + Into<u128>;
+        + Copy + Default + Into<u128> + From<u64>;
 
     // XXX: I don't known how to convert into Balance from u128 without it
     // TODO: Should be removed
@@ -462,18 +462,6 @@ impl<T: Trait> Module<T> {
         Self::claim_request_oracle()
     }
 
-    /// Check that authority key list contains given account
-    fn authority_index_of(public: &T::AuthorityId) -> Option<AuthorityIndex> {
-        let keys = Keys::<T>::get();
-        // O(n) is ok because of short list
-        for (i, elem) in keys.iter().enumerate() {
-            if elem.eq(public) {
-                return Some(i as AuthorityIndex);
-            }
-        }
-        None
-    }
-
     fn claim_request_oracle() -> Result<(), String> {
         for claim_id in Self::requests() {
             debug::debug!(
@@ -509,19 +497,44 @@ impl<T: Trait> Module<T> {
         Ok(())
     }
 
+    /// BTC and ETH dollar rate Off-chain Worker oracle.
     fn dollar_rate_oracle() -> Result<(), String> {
-        // TODO: Multiple rate sources
-        let res = fetch_json(T::BitcoinTickerUri::get())?;
-        let btc_rate = res["price_usd"].as_u64()
-            .ok_or("BTC ticker JSON parsing error".to_string())?;
+        // Send extrinsic after getting response
+        Self::send_dollar_rate(
+            Self::btc_ticker().map(Into::into)?,
+            Self::eth_ticker().map(Into::into)?,
+        )
+    }
 
-        let res = fetch_json(T::EthereumTickerUri::get())?;
-        let eth_rate = res["price_usd"].as_u64()
-            .ok_or("ETH ticker JSON parsing error".to_string())?;
+    /// Wait response from BTC HTTP ticker, parse it and return dollar rate.
+    fn btc_ticker() -> Result<u64, String> {
+        let ticker = fetch_json(T::BitcoinTickerUri::get())
+            .map_err(|e| format!("BTC ticker fetch error: {:?}", e))?;
+        let usd = ticker["market_data"]["current_price"]["usd"].to_string();
+        let s: Vec<&str> = usd 
+            .split_terminator('.')
+            .collect();
+        s[0].parse()
+            .map_err(|e| format!("BTC ticker JSON parsing error: {}", e))
+    }
 
+    /// Wait response from ETH HTTP ticker, parse it and return dollar rate.
+    fn eth_ticker() -> Result<u64, String> {
+        let ticker = fetch_json(T::EthereumTickerUri::get())
+            .map_err(|e| format!("ETH ticker fetch error: {:?}", e))?;
+        let usd = ticker["market_data"]["current_price"]["usd"].to_string();
+        let s: Vec<&str> = usd 
+            .split_terminator('.')
+            .collect();
+        s[0].parse()
+            .map_err(|e| format!("ETH ticker JSON parsing error: {}", e))
+    }
+
+    /// Send dollar rate as unsigned extrinsic from authority.
+    fn send_dollar_rate(btc: T::DollarRate, eth: T::DollarRate) -> Result<(), String> { 
         for key in T::AuthorityId::all() {
             if let Some(authority) = Self::authority_index_of(&key) {
-                let rate = TickerRate { authority, btc: btc_rate.into(), eth: eth_rate.into() };
+                let rate = TickerRate { authority, btc, eth };
                 let signature = key.sign(&rate.encode()).ok_or("signing error")?;
                 let call = Call::set_dollar_rate(rate, signature);
                 debug::debug!(
@@ -536,11 +549,10 @@ impl<T: Trait> Module<T> {
                 );
             }
         }
-
         Ok(())
     }
 
-    /// Check locking parameters of given claim
+    /// Check locking parameters of given claim.
     fn check_lock(claim_id: ClaimId) -> Result<bool, String> {
         let Claim { params, .. } = Self::claims(claim_id);
         match params {
@@ -599,6 +611,7 @@ impl<T: Trait> Module<T> {
         }
     }
 
+    /// PLM issue amount for given BTC value and locking duration.
     fn btc_issue_amount(value: u128, duration: T::Moment) -> u128 {
         // https://medium.com/stake-technologies/plasm-lockdrop-introduction-99fa2dfc37c0
         // Alpha = a * 1000
@@ -606,6 +619,7 @@ impl<T: Trait> Module<T> {
             / 1_000
     }
 
+    /// PLM issue amount for given ETH value and locking duration.
     fn eth_issue_amount(value: u128, duration: T::Moment) -> u128 {
         // https://medium.com/stake-technologies/plasm-lockdrop-introduction-99fa2dfc37c0
         // Alpha = a * 1000
@@ -613,6 +627,7 @@ impl<T: Trait> Module<T> {
             / 1_000
     }
 
+    /// Lockdrop bonus depends of lockding duration.
     fn time_bonus(duration: T::Moment) -> u128 {
         let days: u64 = 24 * 60 * 60; // One day in seconds
         let duration_sec = Into::<u64>::into(duration);
@@ -628,16 +643,28 @@ impl<T: Trait> Module<T> {
             1600
         }
     }
+
+    /// Check that authority key list contains given account
+    fn authority_index_of(public: &T::AuthorityId) -> Option<AuthorityIndex> {
+        let keys = Keys::<T>::get();
+        // O(n) is ok because of short list
+        for (i, elem) in keys.iter().enumerate() {
+            if elem.eq(public) {
+                return Some(i as AuthorityIndex);
+            }
+        }
+        None
+    }
 }
 
 /// HTTP fetch JSON value by URI
 fn fetch_json(uri: &str) -> Result<serde_json::Value, String> {
     let request = Request::get(uri).send()
-        .map_err(|e| format!("HTTP request error: {:?}", e))?;
+        .map_err(|e| format!("HTTP request: {:?}", e))?;
     let response = request.wait()
-        .map_err(|e| format!("HTTP response error: {:?}", e))?;
-    serde_json::to_value(response.body().clone().collect::<Vec<_>>())
-        .map_err(|e| format!("JSON decode error: {}", e))
+        .map_err(|e| format!("HTTP response: {:?}", e))?;
+    serde_json::from_slice(&response.body().collect::<Vec<_>>()[..])
+        .map_err(|e| format!("JSON decode: {}", e))
 }
 
 impl<T: Trait> sp_runtime::BoundToRuntimeAppPublic for Module<T> {
@@ -710,7 +737,7 @@ impl<T: Trait> frame_support::unsigned::ValidateUnsigned for Module<T> {
                 rate.using_encoded(|encoded_rate| {
                     let keys = Keys::<T>::get();
                     if let Some(authority) = keys.get(rate.authority as usize) {
-                        // checkauthority
+                        // Check that sender is authority 
                         if !authority.verify(&encoded_rate, &signature) {
                             return InvalidTransaction::BadProof.into();
                         }
