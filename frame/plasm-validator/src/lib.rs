@@ -87,9 +87,6 @@ decl_storage! {
 
 decl_module! {
     pub struct Module<T: Trait> for enum Call where origin: T::Origin {
-        /// Number of sessions per era.
-        const SessionsPerEra: SessionIndex = T::SessionsPerEra::get();
-
         fn deposit_event() = default;
 
         fn on_initialize() {
@@ -97,10 +94,7 @@ decl_module! {
         }
 
         fn on_finalize() {
-            // Set the start of the first era.
-            if !<CurrentEraStart<T>>::exists() {
-                <CurrentEraStart<T>>::put(T::Time::now());
-            }
+            // TODOT::GettingEra
         }
 
         // ----- Root calls.
@@ -115,6 +109,8 @@ decl_module! {
             <Validators<T>>::put(&new_validators);
             Self::deposit_event(RawEvent::NewValidators(new_validators));
         }
+
+
     }
 }
 
@@ -132,58 +128,6 @@ decl_event!(
 );
 
 impl<T: Trait> Module<T> {
-    // MUTABLES (DANGEROUS)
-
-    /// Session has just ended. Provide the validator set for the next session if it's an era-end, along
-    /// with the exposure of the prior validator set.
-    pub fn new_session(new_index: SessionIndex) -> Option<Vec<T::AccountId>> {
-        let era_length = new_index
-            .checked_sub(Self::current_era_start_session_index())
-            .unwrap_or(0);
-        match ForceEra::get() {
-            Forcing::ForceNew => ForceEra::kill(),
-            Forcing::ForceAlways => (),
-            Forcing::NotForcing if era_length > T::SessionsPerEra::get() => (),
-            _ => return None,
-        }
-        Self::new_era(new_index)
-    }
-
-    /// The era has changed - enact new staking set.
-    ///
-    /// NOTE: This always happens immediately before a session change to ensure that new validators
-    /// get a chance to set their session keys.
-    pub fn new_era(new_index: SessionIndex) -> Option<Vec<T::AccountId>> {
-        let now = T::Time::now();
-        let previous_era_start = <CurrentEraStart<T>>::mutate(|v| sp_std::mem::replace(v, now));
-        let era_duration = now - previous_era_start;
-        if !era_duration.is_zero() {
-            // When PoA, used by compute_total_payout_test.
-            let (total_payout, _) = inflation::compute_total_payout_test(
-                T::Currency::total_issuance(),
-                era_duration.saturated_into::<u64>(),
-            );
-            let total_payout_v = total_payout
-                .checked_div(&BalanceOf::<T>::from(2))
-                .unwrap_or(BalanceOf::<T>::zero());
-            let total_payout_o = total_payout
-                .checked_sub(&total_payout_v)
-                .unwrap_or(BalanceOf::<T>::zero());
-            let reward_v = Self::reward_to_validators(total_payout_v.clone(), total_payout_v);
-            let reward_o = Self::reward_to_operators(total_payout_o.clone(), total_payout_o);
-            Self::deposit_event(RawEvent::Reward(reward_v, reward_o));
-        }
-
-        CurrentEra::mutate(|era| *era += 1);
-        CurrentEraStartSessionIndex::put(new_index - 1);
-
-        Self::elected_operators();
-
-        // Apply new validator set
-        <CurrentElected<T>>::put(<Validators<T>>::get());
-        Some(<Validators<T>>::get())
-    }
-
     pub fn reward_to_validators(
         total_payout: BalanceOf<T>,
         max_payout: BalanceOf<T>,
@@ -204,170 +148,25 @@ impl<T: Trait> Module<T> {
         total_payout
     }
 
-    pub fn reward_to_operators(
-        total_payout: BalanceOf<T>,
-        max_payout: BalanceOf<T>,
-    ) -> BalanceOf<T> {
-        let mut total_imbalance = <PositiveImbalanceOf<T>>::zero();
-        let operators_reward =
-            Perbill::from_rational_approximation(BalanceOf::<T>::from(4), BalanceOf::<T>::from(5))
-                * total_payout;
-        let nominators_reward = total_payout
-            .checked_sub(&operators_reward)
-            .unwrap_or(BalanceOf::<T>::zero());
-        let staked_contracts = <StakedContracts<T>>::iter()
-            .collect::<Vec<(T::AccountId, Exposure<T::AccountId, BalanceOf<T>>)>>();
-        let total_staked = staked_contracts
-            .iter()
-            .fold(BalanceOf::<T>::zero(), |sum, (_, exposure)| {
-                sum.checked_add(&exposure.total).unwrap_or(sum)
-            });
-
-        for (contract, exposure) in staked_contracts.iter() {
-            let reward = Perbill::from_rational_approximation(exposure.total, total_staked)
-                * operators_reward;
-            total_imbalance.subsume(Self::reward_contract(&contract, reward));
-        }
-
-        let nominate_totals = staked_contracts.iter().fold(
-            BTreeMap::<T::AccountId, BalanceOf<T>>::new(),
-            |bmap, (_, exposure)| {
-                exposure.others.iter().fold(bmap, |mut bmap, ind| {
-                    if bmap.contains_key(&ind.who) {
-                        if let Some(indv) = bmap.get_mut(&ind.who) {
-                            *indv += ind.value;
-                        }
-                    } else {
-                        bmap.insert(ind.who.clone(), ind.value);
-                    }
-                    return bmap;
-                })
-            },
-        );
-
-        for (nominator, staked) in nominate_totals.iter() {
-            let reward =
-                Perbill::from_rational_approximation(*staked, total_staked) * nominators_reward;
-            total_imbalance.subsume(
-                Self::make_payout(nominator, reward).unwrap_or(PositiveImbalanceOf::<T>::zero()),
-            );
-        }
-        let total_payout = total_imbalance.peek();
-
-        let rest = max_payout.saturating_sub(total_payout.clone());
-
-        T::Reward::on_unbalanced(total_imbalance);
-        T::RewardRemainder::on_unbalanced(T::Currency::issue(rest));
-        total_payout
-    }
-
-    fn elected_operators() {
-        let nominations = <DappsNominations<T>>::iter()
-            .filter(|(_, nomination)| !nomination.suppressed)
-            .collect::<Vec<(T::AccountId, Nominations<T::AccountId>)>>();
-        let nominators = nominations
-            .iter()
-            .cloned()
-            .map(|(stash, _)| stash)
-            .collect::<Vec<T::AccountId>>();
-        let nominators_to_staking = nominators
-            .into_iter()
-            .map(|nominator| {
-                if let Some(ctrl) = Self::bonded(&nominator) {
-                    if let Some(ledger) = Self::ledger(&ctrl) {
-                        return (nominator, ledger.active);
-                    }
-                }
-                (nominator, BalanceOf::<T>::zero())
-            })
-            .collect::<BTreeMap<T::AccountId, BalanceOf<T>>>();
-
-        let staked_contracts = nominations.iter().fold(
-            BTreeMap::<T::AccountId, Exposure<T::AccountId, BalanceOf<T>>>::new(),
-            |mut bmap, (stash, nomination)| {
-                let value = Perbill::from_rational_approximation(
-                    BalanceOf::<T>::from(1),
-                    BalanceOf::<T>::try_from(nomination.targets.len())
-                        .unwrap_or(BalanceOf::<T>::one()),
-                ) * *(nominators_to_staking
-                    .get(stash)
-                    .unwrap_or(&BalanceOf::<T>::zero()));
-                let indv = IndividualExposure {
-                    who: stash.clone(),
-                    value: value,
-                };
-                for contract in nomination.targets.iter() {
-                    if bmap.contains_key(&contract) {
-                        if let Some(exposure) = bmap.get_mut(&contract) {
-                            (*exposure).total += value;
-                            (*exposure).others.push(indv.clone())
-                        }
-                    } else {
-                        bmap.insert(
-                            contract.clone(),
-                            Exposure {
-                                own: BalanceOf::<T>::zero(),
-                                total: value.into(),
-                                others: vec![indv.clone()],
-                            },
-                        );
-                    }
-                }
-                return bmap;
-            },
-        );
-
-        // Updating staked contracts info
-        for (contract, exposure) in staked_contracts.iter() {
-            <StakedContracts<T>>::mutate(&contract, |ex| *ex = exposure.clone());
-        }
-    }
-
     fn reward_validator(stash: &T::AccountId, reward: BalanceOf<T>) -> PositiveImbalanceOf<T> {
         T::Currency::deposit_into_existing(&stash, reward)
             .unwrap_or(PositiveImbalanceOf::<T>::zero())
     }
+}
 
-    fn reward_contract(contract: &T::AccountId, reward: BalanceOf<T>) -> PositiveImbalanceOf<T> {
-        if let Some(operator) = T::ContractFinder::operator(contract) {
-            return T::Currency::deposit_into_existing(&operator, reward)
-                .unwrap_or(PositiveImbalanceOf::<T>::zero());
-        }
-        PositiveImbalanceOf::<T>::zero()
-    }
-
-    fn make_payout(stash: &T::AccountId, amount: BalanceOf<T>) -> Option<PositiveImbalanceOf<T>> {
-        let dest = Self::payee(stash);
-        match dest {
-            RewardDestination::Controller => Self::bonded(stash).and_then(|controller| {
-                T::Currency::deposit_into_existing(&controller, amount).ok()
-            }),
-            RewardDestination::Stash => T::Currency::deposit_into_existing(stash, amount).ok(),
-            RewardDestination::Staked => Self::bonded(stash)
-                .and_then(|c| Self::ledger(&c).map(|l| (c, l)))
-                .and_then(|(controller, mut l)| {
-                    l.active += amount;
-                    l.total += amount;
-                    let r = T::Currency::deposit_into_existing(stash, amount).ok();
-                    Self::update_ledger(&controller, &l);
-                    r
-                }),
-        }
-    }
-
-    /// Ensures storage is upgraded to most recent necessary state.
-    fn ensure_storage_upgraded() {
-        migration::perform_migrations::<T>();
+/// Returns the next validator candidate for calling by plasm-rewards when new era.
+impl<T: Trait> MaybeValidators<EraIndex, T::AccountId> for Module<T> {
+    fn maybe_validators(_current_era: EraIndex) -> Option<Vec<T::AccountId>> {
+        // Apply new validator set
+        <CurrentElected<T>>::put(<Validators<T>>::get());
+        Some(Self::validators())
     }
 }
 
-impl<T: Trait> SessionManager<T::AccountId> for Module<T> {
-    fn new_session(new_index: SessionIndex) -> Option<Vec<T::AccountId>> {
-        Self::ensure_storage_upgraded();
-        Self::new_session(new_index)
+/// Get the amount of staking per Era in a module in the Plasm Network
+/// for callinng by plasm-rewards when end era.
+impl<T: Trait> GetEraStakingAmount<EraIndex, T::Balance> for Module<T> {
+    fn get_era_staking_amount(era: EraIndex) -> T::Balance {
+        0
     }
-    fn start_session(_: u32) {
-        todo!()
-    }
-    fn end_session(_end_index: SessionIndex) {}
 }
