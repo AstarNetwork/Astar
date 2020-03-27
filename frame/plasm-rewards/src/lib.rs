@@ -426,3 +426,19 @@ impl<T: Trait> SessionManager<T::AccountId> for Module<T> {
         Self::end_session(end_index)
     }
 }
+
+/// In this implementation using validator and dapps rewards module.
+impl<T: Trait> EraFinder for Module<T> {
+    fn bonded_eras() -> Vec<(EraIndex, SessionIndex)> {
+        Self::bonded_eras()
+    }
+    fn current_era() -> Option<EraIndex> {
+        Self::current_era()
+    }
+    fn active_era() -> Option<ActiveEraInfo<MomentOf<T>>> {
+        Self::active_era()
+    }
+    fn eras_start_session_index(era: &EraIndex) -> Option<SessionIndex> {
+        Self::eras_start_session_index(&era)
+    }
+}
