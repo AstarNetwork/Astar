@@ -116,7 +116,10 @@ decl_storage! {
         /// Must be more than the number of era delayed by session otherwise.
         /// i.e. active era must always be in history.
         /// i.e. `active_era > current_era - history_depth` must be guaranteed.
-        pub HistoryDepth get(fn history_depth) config(): u32 = 84;
+        ///
+        /// 24 * 28 = 672 eras is roughly 28 days on current Plasm Network.
+        /// That seems like a reasonable length of time for users to claim a payout
+        pub HistoryDepth get(fn history_depth) config(): u32 = 672;
 
         /// A mapping from still-bonded eras to the first session index of that era.
         ///
