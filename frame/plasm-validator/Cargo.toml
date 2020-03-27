@@ -1,5 +1,5 @@
 [package]
-name = "pallet-plasm-staking"
+name = "pallet-plasm-validator"
 version = "0.1.0"
 authors = [
     "Takumi Yamashita <takumi@stake.co.jp>",
@@ -7,22 +7,21 @@ authors = [
 ]
 edition = "2018"
 
+[dependencies]
 codec = { package = "parity-scale-codec", version = "1.2.0", features = ['derive'], default-features = false }
 serde = { version = "1.0", optional = true }
 
-primitives = { package = 'sp-core', git = 'https://github.com/staketechnologies/substrate.git', branch = 'plasm-master', default_features = false }
-sp-runtime = { package = 'sp-runtime', git = 'https://github.com/staketechnologies/substrate.git', branch = 'plasm-master', default_features = false }
-sp-arithmetic = { package = 'sp-arithmetic', git = 'https://github.com/staketechnologies/substrate.git', branch = 'plasm-master', default_features = false }
-sp-io = { package = 'sp-io', git = 'https://github.com/staketechnologies/substrate.git', branch = 'plasm-master', default_features = false }
-sp-std = { package = 'sp-std', git = 'https://github.com/staketechnologies/substrate.git', branch = 'plasm-master', default_features = false }
-balances = { package = 'pallet-balances', git = 'https://github.com/staketechnologies/substrate.git', branch = 'plasm-master', default_features = false }
-support = { package = 'frame-support', git = 'https://github.com/staketechnologies/substrate.git', branch = 'plasm-master', default_features = false }
-session = { package = "pallet-session", git = 'https://github.com/staketechnologies/substrate.git', branch = 'plasm-master', default_features = false }
-timestamp = { package = 'pallet-timestamp', git = 'https://github.com/staketechnologies/substrate.git', branch = 'plasm-master', default_features = false }
-system = { package = 'frame-system', git = 'https://github.com/staketechnologies/substrate.git', branch = 'plasm-master', default_features = false }
-contracts = { package = 'pallet-contracts', git = 'https://github.com/staketechnologies/substrate.git', branch = 'plasm-master', default_features = false }
-staking = { package = 'pallet-staking', git = 'https://github.com/staketechnologies/substrate.git', branch = 'plasm-master', default_features = false }
-sp-staking = { package = 'sp-staking', git = 'https://github.com/staketechnologies/substrate.git', branch = 'plasm-master', default_features = false }
+sp-core = { git = 'https://github.com/staketechnologies/substrate.git', branch = 'plasm-master', default_features = false }
+sp-runtime = { git = 'https://github.com/staketechnologies/substrate.git', branch = 'plasm-master', default_features = false }
+sp-arithmetic = { git = 'https://github.com/staketechnologies/substrate.git', branch = 'plasm-master', default_features = false }
+sp-io = { git = 'https://github.com/staketechnologies/substrate.git', branch = 'plasm-master', default_features = false }
+sp-std = { git = 'https://github.com/staketechnologies/substrate.git', branch = 'plasm-master', default_features = false }
+pallet-balances = { git = 'https://github.com/staketechnologies/substrate.git', branch = 'plasm-master', default_features = false }
+frame-support = { git = 'https://github.com/staketechnologies/substrate.git', branch = 'plasm-master', default_features = false }
+frame-system = { git = 'https://github.com/staketechnologies/substrate.git', branch = 'plasm-master', default_features = false }
+sp-staking = { git = 'https://github.com/staketechnologies/substrate.git', branch = 'plasm-master', default_features = false }
+
+pallet-plasm-rewards = { path = '../plasm-rewards', default_features = false }
 
 [dev-dependencies]
 hex-literal = "0.2.1"
@@ -32,19 +31,15 @@ randomness-collective-flip = { package = "pallet-randomness-collective-flip", gi
 default = ["std"]
 std = [
     'codec/std',
-    'primitives/std',
+    'sp-core/std',
     'sp-runtime/std',
     'sp-arithmetic/std',
     'sp-io/std',
     'sp-std/std',
-    'balances/std',
-    'support/std',
-    'session/std',
-    'timestamp/std',
-    'system/std',
-    'contracts/std',
-    'staking/std',
-    'operator/std',
+    'pallet-balances/std',
+    'frame-support/std',
+    'frame-system/std',
     'sp-staking/std',
     'serde/std',
+    'pallet-plasm-rewards/std',
 ]

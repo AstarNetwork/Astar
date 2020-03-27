@@ -20,8 +20,6 @@ frame-system = { git = 'https://github.com/staketechnologies/substrate.git', bra
 pallet-staking = { git = 'https://github.com/staketechnologies/substrate.git', branch = 'plasm-master', default_features = false }
 sp-staking = { git = 'https://github.com/staketechnologies/substrate.git', branch = 'plasm-master', default_features = false }
 
-rewards = { package = 'plasm-rewards', path = '../plasm-rewards', default_features = false }
-
 [dev-dependencies]
 hex-literal = "0.2.1"
 sp-core = { git = 'https://github.com/staketechnologies/substrate.git', branch = 'plasm-master' }
@@ -43,5 +41,4 @@ std = [
     'frame-system/std',
     'pallet-staking/std',
     'sp-staking/std',
-    'rewards/std',
 ]

@@ -3,39 +3,29 @@
 //! The Plasm staking module manages era, total amounts of rewards and how to distribute.
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use codec::{Decode, Encode, HasCompact};
-use operator::ContractFinder;
-use rewards::traits::EraFinder;
-use session::SessionManager;
-use sp_runtime::{
-    traits::{
-        CheckedAdd, CheckedDiv, CheckedSub, One, SaturatedConversion, Saturating, StaticLookup,
-        Zero,
-    },
-    PerThing, Perbill, RuntimeDebug,
-};
-use sp_std::{collections::btree_map::BTreeMap, convert::TryFrom, prelude::*, result, vec::Vec};
-pub use staking::{Forcing, Nominations, RewardDestination};
-use support::{
-    decl_event, decl_module, decl_storage, ensure,
-    storage::IterableStorageMap,
-    traits::{
-        Currency, Get, Imbalance, LockIdentifier, LockableCurrency, OnUnbalanced, Time,
-        WithdrawReasons,
-    },
+use frame_support::{
+    decl_event, decl_module, decl_storage,
+    traits::{Currency, Get, Imbalance, LockableCurrency, OnUnbalanced, Time},
     weights::SimpleDispatchInfo,
     StorageMap, StorageValue,
 };
-use system::{ensure_root, ensure_signed};
-
-#[cfg(test)]
-mod mock;
-#[cfg(test)]
-mod tests;
-
+use frame_system::{self as system, ensure_root};
+use pallet_plasm_rewards::{
+    traits::{EraFinder, ForSecurityEraRewardFinder, GetEraStakingAmount, MaybeValidators},
+    EraIndex,
+};
+use sp_runtime::{
+    traits::{Saturating, Zero},
+    PerThing, Perbill,
+};
 pub use sp_staking::SessionIndex;
+use sp_std::{prelude::*, vec::Vec};
 
-pub type EraIndex = u32;
+// #[cfg(test)]
+// mod mock;
+// #[cfg(test)]
+// mod tests;
+
 pub type BalanceOf<T> =
     <<T as Trait>::Currency as Currency<<T as system::Trait>::AccountId>>::Balance;
 pub type MomentOf<T> = <<T as Trait>::Time as Time>::Moment;
@@ -45,12 +35,9 @@ type PositiveImbalanceOf<T> =
 type NegativeImbalanceOf<T> =
     <<T as Trait>::Currency as Currency<<T as system::Trait>::AccountId>>::NegativeImbalance;
 
-pub trait Trait: session::Trait {
+pub trait Trait: system::Trait {
     /// The staking balance.
     type Currency: LockableCurrency<Self::AccountId, Moment = Self::BlockNumber>;
-
-    /// Number of eras that staked funds must remain bonded for.
-    type BondingDuration: Get<EraIndex>;
 
     /// Tokens have been minted and are unused for validator-reward. Maybe, plasm-staking uses ().
     type RewardRemainder: OnUnbalanced<NegativeImbalanceOf<Self>>;
@@ -65,7 +52,10 @@ pub trait Trait: session::Trait {
     type SessionsPerEra: Get<SessionIndex>;
 
     /// The information of era.
-    type EraFinder: EraFinder;
+    type EraFinder: EraFinder<EraIndex, SessionIndex, MomentOf<Self>>;
+
+    /// The rewards for validators.
+    type ForSecurityEraReward: ForSecurityEraRewardFinder<BalanceOf<Self>>;
 
     /// The overarching event type.
     type Event: From<Event<Self>> + Into<<Self as system::Trait>::Event>;
@@ -73,12 +63,12 @@ pub trait Trait: session::Trait {
 
 decl_storage! {
     trait Store for Module<T: Trait> as PlasmStaking {
-        // ---- Era manages.
-        /// The currently elected validator set keyed by stash account ID.
-        pub CurrentElected get(fn current_elected): Vec<T::AccountId>;
+        /// The already untreated era is EraIndex.
+        pub UntreatedEra get(fn untreated_era): EraIndex;
 
-        /// The version of storage for upgrade.
-        pub StorageVersion get(fn storage_version) config(): u32;
+        /// The currently elected validator set keyed by stash account ID.
+        pub ElectedValidators get(fn elected_validators):
+            map hasher(twox_64_concat) EraIndex => Option<Vec<T::AccountId>>;
 
         /// Set of next era accounts that can validate blocks.
         pub Validators get(fn validators) config(): Vec<T::AccountId>;
@@ -89,12 +79,27 @@ decl_module! {
     pub struct Module<T: Trait> for enum Call where origin: T::Origin {
         fn deposit_event() = default;
 
-        fn on_initialize() {
-            Self::ensure_storage_upgraded();
-        }
-
         fn on_finalize() {
-            // TODOT::GettingEra
+            if let Some(active_era) = T::EraFinder::active_era() {
+                let mut untreated_era = Self::untreated_era();
+
+                while active_era.index > untreated_era {
+                    let rewards = match T::ForSecurityEraReward::for_security_era_reward(&untreated_era) {
+                        Some(rewards) => rewards,
+                        None => {
+                            frame_support::print("Error: start_session_index must be set for current_era");
+                            return;
+                        }
+                    };
+                    let actual_rewarded = Self::reward_to_validators(&untreated_era, &rewards);
+
+                    // deposit event to total validator rewards
+                    Self::deposit_event(RawEvent::TotalValidatorRewards(untreated_era, actual_rewarded));
+
+                    untreated_era+=1;
+                }
+                UntreatedEra::put(untreated_era);
+            }
         }
 
         // ----- Root calls.
@@ -109,8 +114,6 @@ decl_module! {
             <Validators<T>>::put(&new_validators);
             Self::deposit_event(RawEvent::NewValidators(new_validators));
         }
-
-
     }
 }
 
@@ -123,29 +126,32 @@ decl_event!(
         /// Validator set changed.
         NewValidators(Vec<AccountId>),
         /// The amount of minted rewards for validators.
-        ValidatorReward(AccountId, Balance),
+        ValidatorReward(EraIndex, AccountId, Balance),
+        /// The total amount of minted rewards for validators.
+        TotalValidatorRewards(EraIndex, Balance),
     }
 );
 
 impl<T: Trait> Module<T> {
-    pub fn reward_to_validators(
-        total_payout: BalanceOf<T>,
-        max_payout: BalanceOf<T>,
-    ) -> BalanceOf<T> {
-        let validators = Self::current_elected();
-        let validator_len: u64 = validators.len() as u64;
-        let mut total_imbalance = <PositiveImbalanceOf<T>>::zero();
-        for v in validators.iter() {
-            let reward = Perbill::from_rational_approximation(1, validator_len) * total_payout;
-            total_imbalance.subsume(Self::reward_validator(v, reward));
+    pub fn reward_to_validators(era: &EraIndex, max_payout: &BalanceOf<T>) -> BalanceOf<T> {
+        if let Some(validators) = Self::elected_validators(era) {
+            let validator_len: u64 = validators.len() as u64;
+            let mut total_imbalance = <PositiveImbalanceOf<T>>::zero();
+            for v in validators.iter() {
+                let reward =
+                    Perbill::from_rational_approximation(1, validator_len) * max_payout.clone();
+                total_imbalance.subsume(Self::reward_validator(v, reward));
+            }
+            let total_payout = total_imbalance.peek();
+
+            let rest = max_payout.saturating_sub(total_payout.clone());
+
+            T::Reward::on_unbalanced(total_imbalance);
+            T::RewardRemainder::on_unbalanced(T::Currency::issue(rest));
+            total_payout
+        } else {
+            BalanceOf::<T>::zero()
         }
-        let total_payout = total_imbalance.peek();
-
-        let rest = max_payout.saturating_sub(total_payout.clone());
-
-        T::Reward::on_unbalanced(total_imbalance);
-        T::RewardRemainder::on_unbalanced(T::Currency::issue(rest));
-        total_payout
     }
 
     fn reward_validator(stash: &T::AccountId, reward: BalanceOf<T>) -> PositiveImbalanceOf<T> {
@@ -156,17 +162,17 @@ impl<T: Trait> Module<T> {
 
 /// Returns the next validator candidate for calling by plasm-rewards when new era.
 impl<T: Trait> MaybeValidators<EraIndex, T::AccountId> for Module<T> {
-    fn maybe_validators(_current_era: EraIndex) -> Option<Vec<T::AccountId>> {
+    fn maybe_validators(current_era: EraIndex) -> Option<Vec<T::AccountId>> {
         // Apply new validator set
-        <CurrentElected<T>>::put(<Validators<T>>::get());
+        <ElectedValidators<T>>::insert(&current_era, <Validators<T>>::get());
         Some(Self::validators())
     }
 }
 
 /// Get the amount of staking per Era in a module in the Plasm Network
 /// for callinng by plasm-rewards when end era.
-impl<T: Trait> GetEraStakingAmount<EraIndex, T::Balance> for Module<T> {
-    fn get_era_staking_amount(era: EraIndex) -> T::Balance {
-        0
+impl<T: Trait> GetEraStakingAmount<EraIndex, BalanceOf<T>> for Module<T> {
+    fn get_era_staking_amount(_era: EraIndex) -> BalanceOf<T> {
+        BalanceOf::<T>::zero()
     }
 }
