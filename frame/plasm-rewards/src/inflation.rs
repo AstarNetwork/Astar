@@ -20,19 +20,22 @@ pub struct SimpleComputeTotalPayout;
 ///
 /// `era_duration` is expressed in millisecond.
 impl ComputeTotalPayout for SimpleComputeTotalPayout {
-    fn compute_total_payout<N>(
+    fn compute_total_payout<N, M>(
         total_tokens: N,
-        era_duration: u64,
+        era_duration: M,
         _validator_staking: N,
         _dapps_staking: N,
     ) -> (N, N)
     where
         N: BaseArithmetic + Clone + From<u32>,
+        M: BaseArithmetic + Clone + From<u32>,
     {
         // Milliseconds per year for the Julian year (365.25 days).
         const MILLISECONDS_PER_YEAR: u64 = 1000 * 3600 * 24 * 36525 / 100;
-        let portion =
-            Perbill::from_rational_approximation(era_duration as u64, MILLISECONDS_PER_YEAR * 5);
+        let portion = Perbill::from_rational_approximation(
+            era_duration.unique_saturated_into(),
+            MILLISECONDS_PER_YEAR * 5,
+        );
         let payout = portion * total_tokens;
         (payout.clone(), payout)
     }
@@ -48,19 +51,22 @@ pub struct MaintainRatioComputeTotalPayout;
 ///
 /// `era_duration` is expressed in millisecond.
 impl ComputeTotalPayout for MaintainRatioComputeTotalPayout {
-    fn compute_total_payout<N>(
+    fn compute_total_payout<N, M>(
         total_tokens: N,
-        era_duration: u64,
+        era_duration: M,
         validator_staking: N,
         dapps_staking: N,
     ) -> (N, N)
     where
         N: BaseArithmetic + Clone + From<u32>,
+        M: BaseArithmetic + Clone + From<u32>,
     {
         // Milliseconds per year for the Julian year (365.25 days).
         const MILLISECONDS_PER_YEAR: u64 = 1000 * 60 * 60 * 24 * 36525 / 100;
-        let portion =
-            Perbill::from_rational_approximation(era_duration as u64, MILLISECONDS_PER_YEAR * 5);
+        let portion = Perbill::from_rational_approximation(
+            era_duration.unique_saturated_into(),
+            MILLISECONDS_PER_YEAR * 5,
+        );
         let payout = portion * total_tokens;
         if validator_staking == N::zero() {
             if dapps_staking == N::zero() {

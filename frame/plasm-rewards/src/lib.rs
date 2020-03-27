@@ -1,4 +1,12 @@
-//! # Plasm Staking Module
+//! # Plasm rewards Module
+//!
+//! The Plasm rewards module provides functionality for handling whole rewards and era.
+//!
+//! - [`plasm_rewards::Trait`](./trait.Trait.html)
+//! - [`Call`](./enum.Call.html)
+//! - [`Module`](./struct.Module.html)
+//!
+//! ## Overview
 //!
 //! The Plasm staking module puts together the management and compensation payment logic of the ERA.
 //! The Plasm Rewards module calls the Dapps Staking and Validator.
@@ -6,20 +14,20 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use codec::{Decode, Encode};
-use session::SessionManager;
-use sp_runtime::{
-    traits::{SaturatedConversion, Zero},
-    Perbill, RuntimeDebug,
-};
-use sp_std::{prelude::*, vec::Vec};
-pub use staking::Forcing;
-use support::{
+use frame_support::{
     decl_error, decl_event, decl_module, decl_storage,
     traits::{Currency, Get, LockableCurrency, Time},
     weights::SimpleDispatchInfo,
     StorageMap, StorageValue,
 };
-use system::ensure_root;
+use frame_system::{self as system, ensure_root};
+use pallet_session::SessionManager;
+pub use pallet_staking::Forcing;
+use sp_runtime::{
+    traits::{SaturatedConversion, Zero},
+    Perbill, RuntimeDebug,
+};
+use sp_std::{prelude::*, vec::Vec};
 
 pub mod inflation;
 #[cfg(test)]
@@ -33,7 +41,7 @@ pub use sp_staking::SessionIndex;
 
 pub type EraIndex = u32;
 pub type BalanceOf<T> =
-    <<T as Trait>::Currency as Currency<<T as system::Trait>::AccountId>>::Balance;
+    <<T as Trait>::Currency as Currency<<T as frame_system::Trait>::AccountId>>::Balance;
 pub type MomentOf<T> = <<T as Trait>::Time as Time>::Moment;
 
 // A value placed in storage that represents the current version of the Staking storage.
@@ -41,13 +49,12 @@ pub type MomentOf<T> = <<T as Trait>::Time as Time>::Moment;
 // storage migration logic. This should match directly with the semantic versions of the Rust crate.
 #[derive(Encode, Decode, Clone, Copy, PartialEq, Eq, RuntimeDebug)]
 enum Releases {
-    V1_0_0Ancient,
-    V2_0_0,
+    V1_0_0,
 }
 
 impl Default for Releases {
     fn default() -> Self {
-        Releases::V2_0_0
+        Releases::V1_0_0
     }
 }
 
@@ -63,7 +70,7 @@ pub struct ActiveEraInfo<Moment> {
     start: Option<Moment>,
 }
 
-pub trait Trait: session::Trait {
+pub trait Trait: pallet_session::Trait {
     /// The staking balance.
     type Currency: LockableCurrency<Self::AccountId, Moment = Self::BlockNumber>;
 
@@ -89,7 +96,7 @@ pub trait Trait: session::Trait {
     type MaybeValidators: traits::MaybeValidators<EraIndex, Self::AccountId>;
 
     /// The overarching event type.
-    type Event: From<Event<Self>> + Into<<Self as system::Trait>::Event>;
+    type Event: From<Event<Self>> + Into<<Self as frame_system::Trait>::Event>;
 }
 
 decl_storage! {
@@ -109,7 +116,10 @@ decl_storage! {
         /// Must be more than the number of era delayed by session otherwise.
         /// i.e. active era must always be in history.
         /// i.e. `active_era > current_era - history_depth` must be guaranteed.
-        pub HistoryDepth get(fn history_depth) config(): u32 = 84;
+        ///
+        /// 24 * 28 = 672 eras is roughly 28 days on current Plasm Network.
+        /// That seems like a reasonable length of time for users to claim a payout
+        pub HistoryDepth get(fn history_depth) config(): u32 = 672;
 
         /// A mapping from still-bonded eras to the first session index of that era.
         ///
@@ -139,7 +149,7 @@ decl_storage! {
         /// Storage version of the pallet.
         ///
         /// This is set to v2.0.0 for new networks.
-        StorageVersion build(|_: &GenesisConfig| Releases::V2_0_0): Releases;
+        StorageVersion build(|_: &GenesisConfig| Releases::V1_0_0): Releases;
     }
 }
 
@@ -194,7 +204,7 @@ decl_module! {
         /// # <weight>
         /// - No arguments.
         /// # </weight>
-        #[weight = SimpleDispatchInfo::FixedNormal(5_000)]
+        #[weight = SimpleDispatchInfo::FixedOperational(5_000)]
         fn force_no_eras(origin) {
             ensure_root(origin)?;
             ForceEra::put(Forcing::ForceNone);
@@ -206,7 +216,7 @@ decl_module! {
         /// # <weight>
         /// - No arguments.
         /// # </weight>
-        #[weight = SimpleDispatchInfo::FixedNormal(5_000)]
+        #[weight = SimpleDispatchInfo::FixedOperational(5_000)]
         fn force_new_era(origin) {
             ensure_root(origin)?;
             ForceEra::put(Forcing::ForceNew);
@@ -217,7 +227,7 @@ decl_module! {
         /// # <weight>
         /// - One storage write
         /// # </weight>
-        #[weight = SimpleDispatchInfo::FixedNormal(5_000)]
+        #[weight = SimpleDispatchInfo::FixedOperational(5_000)]
         fn force_new_era_always(origin) {
             ensure_root(origin)?;
             ForceEra::put(Forcing::ForceAlways);
@@ -244,12 +254,13 @@ decl_module! {
 }
 
 fn migrate<T: Trait>() {
-    if let Some(current_era) = CurrentEra::get() {
-        let history_depth = HistoryDepth::get();
-        for era in current_era.saturating_sub(history_depth)..=current_era {
-            ErasStartSessionIndex::migrate_key_from_blake(era);
-        }
-    }
+    // TODO: When runtime upgrade, migrate stroage.
+    // if let Some(current_era) = CurrentEra::get() {
+    //     let history_depth = HistoryDepth::get();
+    //     for era in current_era.saturating_sub(history_depth)..=current_era {
+    //         ErasStartSessionIndex::migrate_key_from_blake(era);
+    //     }
+    // }
 }
 
 impl<T: Trait> Module<T> {
@@ -262,7 +273,7 @@ impl<T: Trait> Module<T> {
 
             let current_era_start_session_index = Self::eras_start_session_index(current_era)
                 .unwrap_or_else(|| {
-                    support::print("Error: start_session_index must be set for current_era");
+                    frame_support::print("Error: start_session_index must be set for current_era");
                     0
                 });
 
@@ -295,7 +306,7 @@ impl<T: Trait> Module<T> {
             } else if next_active_era_start_session_index < start_session {
                 // This arm should never happen, but better handle it than to stall the
                 // staking pallet.
-                support::print("Warning: A session appears to have been skipped.");
+                frame_support::print("Warning: A session appears to have been skipped.");
                 Self::start_era(start_session);
             }
         }
@@ -366,7 +377,7 @@ impl<T: Trait> Module<T> {
                 let for_dapps = T::GetForDappsStaking::get_era_staking_amount(active_era.index);
                 let for_security =
                     T::GetForSecurityStaking::get_era_staking_amount(active_era.index);
-                println!("for_security:{:?}, for_dapps:{:?}", for_security, for_dapps);
+
                 let (for_security_reward, for_dapps_rewards) =
                     T::ComputeTotalPayout::compute_total_payout(
                         total_payout,
@@ -374,10 +385,7 @@ impl<T: Trait> Module<T> {
                         for_security,
                         for_dapps,
                     );
-                println!(
-                    "for_security_reward:{:?}, for_dapps_reward:{:?}",
-                    for_security_reward, for_dapps_rewards,
-                );
+
                 <ForSecurityEraReward<T>>::insert(active_era.index, for_security_reward);
                 <ForDappsEraReward<T>>::insert(active_era.index, for_dapps_rewards);
             }

@@ -3,11 +3,11 @@
 #![cfg(test)]
 
 use super::*;
-use primitives::{crypto::key_types, H256};
+use frame_support::{impl_outer_dispatch, impl_outer_origin, parameter_types};
+use sp_core::{crypto::key_types, H256};
 use sp_runtime::testing::{Header, UintAuthorityId};
 use sp_runtime::traits::{BlakeTwo256, ConvertInto, IdentityLookup, OnFinalize, OpaqueKeys};
 use sp_runtime::{KeyTypeId, Perbill};
-use support::{impl_outer_dispatch, impl_outer_origin, parameter_types};
 use traits::{GetEraStakingAmount, MaybeValidators};
 
 pub type BlockNumber = u64;
@@ -22,18 +22,18 @@ impl_outer_origin! {
 
 impl_outer_dispatch! {
     pub enum Call for Test where origin: Origin {
-        session::Session,
-        balances::Balances,
+        pallet_session::Session,
+        pallet_balances::Balances,
         plasm_rewards::PlasmRewards,
     }
 }
 
 pub fn new_test_ext() -> sp_io::TestExternalities {
-    let mut storage = system::GenesisConfig::default()
+    let mut storage = frame_system::GenesisConfig::default()
         .build_storage::<Test>()
         .unwrap();
 
-    let _ = balances::GenesisConfig::<Test> {
+    let _ = pallet_balances::GenesisConfig::<Test> {
         balances: vec![(ALICE_STASH, 1_000_000_000_000_000_000)],
     }
     .assimilate_storage(&mut storage);
@@ -45,7 +45,7 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
     }
     .assimilate_storage(&mut storage);
 
-    let _ = session::GenesisConfig::<Test> {
+    let _ = pallet_session::GenesisConfig::<Test> {
         keys: validators
             .iter()
             .map(|x| (*x, *x, UintAuthorityId(*x)))
@@ -66,7 +66,7 @@ parameter_types! {
     pub const AvailableBlockRatio: Perbill = Perbill::one();
 }
 
-impl system::Trait for Test {
+impl frame_system::Trait for Test {
     type Origin = Origin;
     type Index = u64;
     type BlockNumber = BlockNumber;
@@ -83,7 +83,7 @@ impl system::Trait for Test {
     type AvailableBlockRatio = AvailableBlockRatio;
     type Version = ();
     type ModuleToIndex = ();
-    type AccountData = balances::AccountData<u64>;
+    type AccountData = pallet_balances::AccountData<u64>;
     type MigrateAccount = ();
     type OnNewAccount = ();
     type OnKilledAccount = ();
@@ -92,7 +92,7 @@ impl system::Trait for Test {
 parameter_types! {
     pub const MinimumPeriod: u64 = 1;
 }
-impl timestamp::Trait for Test {
+impl pallet_timestamp::Trait for Test {
     type Moment = u64;
     type OnTimestampSet = ();
     type MinimumPeriod = MinimumPeriod;
@@ -105,7 +105,7 @@ parameter_types! {
 
 pub struct TestSessionHandler;
 
-impl session::SessionHandler<u64> for TestSessionHandler {
+impl pallet_session::SessionHandler<u64> for TestSessionHandler {
     const KEY_TYPE_IDS: &'static [KeyTypeId] = &[key_types::DUMMY];
     fn on_genesis_session<T: OpaqueKeys>(_validators: &[(u64, T)]) {}
     fn on_new_session<T: OpaqueKeys>(
@@ -118,8 +118,8 @@ impl session::SessionHandler<u64> for TestSessionHandler {
     fn on_before_session_ending() {}
 }
 
-impl session::Trait for Test {
-    type ShouldEndSession = session::PeriodicSessions<Period, Offset>;
+impl pallet_session::Trait for Test {
+    type ShouldEndSession = pallet_session::PeriodicSessions<Period, Offset>;
     type SessionManager = PlasmRewards;
     type SessionHandler = TestSessionHandler;
     type ValidatorId = u64;
@@ -133,12 +133,12 @@ parameter_types! {
     pub const ExistentialDeposit: Balance = 10;
 }
 
-impl balances::Trait for Test {
+impl pallet_balances::Trait for Test {
     type Balance = Balance;
     type Event = ();
     type DustRemoval = ();
     type ExistentialDeposit = ExistentialDeposit;
-    type AccountStore = system::Module<Test>;
+    type AccountStore = frame_system::Module<Test>;
 }
 
 pub struct DummyForSecurityStaking;
@@ -180,10 +180,10 @@ impl Trait for Test {
 }
 
 /// ValidatorManager module.
-pub type System = system::Module<Test>;
-pub type Session = session::Module<Test>;
-pub type Balances = balances::Module<Test>;
-pub type Timestamp = timestamp::Module<Test>;
+pub type System = frame_system::Module<Test>;
+pub type Session = pallet_session::Module<Test>;
+pub type Balances = pallet_balances::Module<Test>;
+pub type Timestamp = pallet_timestamp::Module<Test>;
 pub type PlasmRewards = Module<Test>;
 
 pub const PER_SESSION: u64 = 60 * 1000;

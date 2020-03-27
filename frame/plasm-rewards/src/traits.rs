@@ -9,14 +9,15 @@ pub trait GetEraStakingAmount<EraIndex, Balance> {
 /// The reward is allocated from the total supply of tokens,
 /// the time for Era, the amount of staking for Security, and the amount of staking for Dapps.
 pub trait ComputeTotalPayout {
-    fn compute_total_payout<N>(
+    fn compute_total_payout<N, M>(
         total_tokens: N,
-        era_duration: u64,
+        era_duration: M,
         validator_staking: N,
         dapps_staking: N,
     ) -> (N, N)
     where
-        N: BaseArithmetic + Clone + From<u32>;
+        N: BaseArithmetic + Clone + From<u32>,
+        M: BaseArithmetic + Clone + From<u32>;
 }
 
 /// Returns the next validator candidate.
