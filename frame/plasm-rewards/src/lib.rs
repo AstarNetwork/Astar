@@ -397,7 +397,10 @@ impl<T: Trait> Module<T> {
         // Increment or set current era.
         let current_era = CurrentEra::mutate(|s| {
             *s = Some(s.map(|s| s + 1).unwrap_or(0));
-            s.unwrap()
+            match s {
+                Some(x) => x + 1,
+                None => 0,
+            }
         });
         ErasStartSessionIndex::insert(&current_era, &start_session_index);
 
