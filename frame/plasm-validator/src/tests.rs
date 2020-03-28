@@ -13,36 +13,61 @@ fn set_validators_works_for_root() {
     new_test_ext().execute_with(|| {
         advance_session();
         assert_eq!(Session::current_index(), 1);
-        assert_eq!(Session::validators(), vec![1, 2]);
+        assert_eq!(
+            Session::validators(),
+            vec![VALIDATOR_A, VALIDATOR_B, VALIDATOR_C, VALIDATOR_D]
+        );
 
-        assert_ok!(PlasmValidator::set_validators(Origin::ROOT, vec![1, 2, 3]));
+        assert_ok!(PlasmValidator::set_validators(
+            Origin::ROOT,
+            vec![VALIDATOR_A, VALIDATOR_B, VALIDATOR_C]
+        ));
+        assert_eq!(
+            PlasmValidator::validators(),
+            vec![VALIDATOR_A, VALIDATOR_B, VALIDATOR_C]
+        );
         for i in 1..10 {
             assert_eq!(Session::current_index(), i);
-            assert_eq!(Session::validators(), vec![1, 2]);
+            assert_eq!(
+                Session::validators(),
+                vec![VALIDATOR_A, VALIDATOR_B, VALIDATOR_C, VALIDATOR_D]
+            );
             advance_session();
         }
 
         advance_session();
-        assert_eq!(Session::validators(), vec![1, 2, 3]);
+        assert_eq!(
+            Session::validators(),
+            vec![VALIDATOR_A, VALIDATOR_B, VALIDATOR_C]
+        );
 
         for i in 11..25 {
             assert_eq!(Session::current_index(), i);
-            assert_eq!(Session::validators(), vec![1, 2, 3]);
+            assert_eq!(
+                Session::validators(),
+                vec![VALIDATOR_A, VALIDATOR_B, VALIDATOR_C]
+            );
             advance_session();
         }
 
-        assert_ok!(PlasmValidator::set_validators(Origin::ROOT, vec![1, 2]));
-        assert_eq!(PlasmValidator::validators(), vec![1, 2]);
+        assert_ok!(PlasmValidator::set_validators(
+            Origin::ROOT,
+            vec![VALIDATOR_A, VALIDATOR_B]
+        ));
+        assert_eq!(PlasmValidator::validators(), vec![VALIDATOR_A, VALIDATOR_B]);
 
         for i in 25..30 {
             assert_eq!(Session::current_index(), i);
-            assert_eq!(Session::validators(), vec![1, 2, 3]);
+            assert_eq!(
+                Session::validators(),
+                vec![VALIDATOR_A, VALIDATOR_B, VALIDATOR_C]
+            );
             advance_session();
         }
 
         advance_session();
         assert_eq!(Session::current_index(), 31);
-        assert_eq!(Session::validators(), vec![1, 2]);
+        assert_eq!(Session::validators(), vec![VALIDATOR_A, VALIDATOR_B]);
     })
 }
 
@@ -71,21 +96,31 @@ fn reward_to_validator_test() {
             ]
         ));
         advance_era();
-        assert_eq!(PlasmValidator::elected_validators(1), None);
+        assert_eq!(PlasmRewards::current_era().unwrap(), 1);
         assert_eq!(
-            Session::validators(),
-            vec![VALIDATOR_A, VALIDATOR_B, VALIDATOR_C, VALIDATOR_D]
-        );
-        advance_session();
-        assert_eq!(
-            PlasmValidator::elected_validators(1).unwrap(),
-            vec![
+            PlasmValidator::elected_validators(1),
+            Some(vec![
                 VALIDATOR_A,
                 VALIDATOR_B,
                 VALIDATOR_C,
                 VALIDATOR_D,
                 VALIDATOR_E
-            ]
+            ])
+        );
+        assert_eq!(
+            Session::validators(),
+            vec![VALIDATOR_A, VALIDATOR_B, VALIDATOR_C, VALIDATOR_D,]
+        );
+        advance_session();
+        assert_eq!(
+            PlasmValidator::elected_validators(1),
+            Some(vec![
+                VALIDATOR_A,
+                VALIDATOR_B,
+                VALIDATOR_C,
+                VALIDATOR_D,
+                VALIDATOR_E
+            ])
         );
         assert_eq!(
             Session::validators(),
@@ -100,19 +135,32 @@ fn reward_to_validator_test() {
 
         let pre_total_issuarance = Balances::total_issuance();
 
-        let (a, b) =
+        let (a, _) =
             <mock::Test as pallet_plasm_rewards::Trait>::ComputeTotalPayout::compute_total_payout(
                 pre_total_issuarance,
                 SIX_HOURS,
                 0,
                 0,
             );
+        println!("pre_total:{}, a:{}", pre_total_issuarance, a);
         let positive_imbalance = PlasmValidator::reward_to_validators(&0, &a);
-        assert_eq!(Balances::free_balance(&VALIDATOR_A), 1_000_068);
-        assert_eq!(Balances::free_balance(&VALIDATOR_B), 1_000_068);
-        assert_eq!(Balances::free_balance(&VALIDATOR_C), 1_000_068);
-        assert_eq!(Balances::free_balance(&VALIDATOR_D), 1_000_068);
-        assert_eq!(positive_imbalance, 272);
-        assert_eq!(Balances::total_issuance(), pre_total_issuarance + 272);
+        assert_eq!(
+            Balances::free_balance(&VALIDATOR_A),
+            1_000_000_000_000_000_000 + a / 4
+        );
+        assert_eq!(
+            Balances::free_balance(&VALIDATOR_B),
+            1_000_000_000_000_000_000 + a / 4
+        );
+        assert_eq!(
+            Balances::free_balance(&VALIDATOR_C),
+            1_000_000_000_000_000_000 + a / 4
+        );
+        assert_eq!(
+            Balances::free_balance(&VALIDATOR_D),
+            1_000_000_000_000_000_000 + a / 4
+        );
+        assert_eq!(positive_imbalance, a);
+        assert_eq!(Balances::total_issuance(), pre_total_issuarance + a);
     })
 }

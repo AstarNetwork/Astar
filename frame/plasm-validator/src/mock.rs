@@ -55,8 +55,21 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 
     let validators = vec![VALIDATOR_A, VALIDATOR_B, VALIDATOR_C, VALIDATOR_D];
 
+    let _ = pallet_plasm_rewards::GenesisConfig {
+        ..Default::default()
+    }
+    .assimilate_storage(&mut storage);
+
     let _ = GenesisConfig::<Test> {
-        validators: validators,
+        validators: validators.clone(),
+    }
+    .assimilate_storage(&mut storage);
+
+    let _ = pallet_session::GenesisConfig::<Test> {
+        keys: validators
+            .iter()
+            .map(|x| (*x, *x, UintAuthorityId(*x)))
+            .collect(),
     }
     .assimilate_storage(&mut storage);
 
@@ -200,7 +213,7 @@ pub fn advance_session() {
 
 pub fn advance_era() {
     let current_era = PlasmRewards::current_era().unwrap();
-    while current_era < PlasmRewards::current_era().unwrap() {
+    while current_era == PlasmRewards::current_era().unwrap() {
         advance_session();
     }
 }

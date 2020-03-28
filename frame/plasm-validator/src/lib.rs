@@ -5,7 +5,7 @@
 
 use frame_support::{
     decl_event, decl_module, decl_storage,
-    traits::{Currency, Get, Imbalance, LockableCurrency, OnUnbalanced, Time},
+    traits::{Currency, Imbalance, LockableCurrency, OnUnbalanced, Time},
     weights::SimpleDispatchInfo,
     StorageMap, StorageValue,
 };
@@ -160,6 +160,7 @@ impl<T: Trait> Module<T> {
 /// Returns the next validator candidate for calling by plasm-rewards when new era.
 impl<T: Trait> MaybeValidators<EraIndex, T::AccountId> for Module<T> {
     fn maybe_validators(current_era: EraIndex) -> Option<Vec<T::AccountId>> {
+        println!("maybe {} , {:?}", current_era, Self::validators());
         // Apply new validator set
         <ElectedValidators<T>>::insert(&current_era, <Validators<T>>::get());
         Some(Self::validators())
