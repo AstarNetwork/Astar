@@ -2807,6 +2807,7 @@ dependencies = [
  "pallet-balances 2.0.0-alpha.4 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "pallet-contract-operator 0.1.0",
  "pallet-contracts 2.0.0-alpha.4 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
+ "pallet-plasm-rewards 0.1.0",
  "pallet-randomness-collective-flip 2.0.0-alpha.4 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "pallet-session 2.0.0-alpha.4 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "pallet-staking 2.0.0-alpha.4 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",

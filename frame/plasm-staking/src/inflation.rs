@@ -7,8 +7,8 @@
 //! About each staking, this module computes issuing new tokens.
 
 use super::*;
-use sp_runtime::PerThing;
 use sp_arithmetic::traits::BaseArithmetic;
+use sp_runtime::PerThing;
 
 /// The total payout to all operators and validators and their nominators per era.
 ///
