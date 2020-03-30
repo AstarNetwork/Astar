@@ -148,7 +148,7 @@ decl_storage! {
 
         /// Storage version of the pallet.
         ///
-        /// This is set to v2.0.0 for new networks.
+        /// This is set to v1.0.0 for new networks.
         StorageVersion build(|_: &GenesisConfig| Releases::V1_0_0): Releases;
     }
 }
