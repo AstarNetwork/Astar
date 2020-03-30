@@ -2834,7 +2834,6 @@ dependencies = [
  "pallet-plasm-rewards 0.1.0",
  "pallet-randomness-collective-flip 2.0.0-alpha.4 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "pallet-session 2.0.0-alpha.4 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
- "pallet-staking 2.0.0-alpha.4 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "pallet-timestamp 2.0.0-alpha.4 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "parity-scale-codec 1.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde 1.0.105 (registry+https://github.com/rust-lang/crates.io-index)",

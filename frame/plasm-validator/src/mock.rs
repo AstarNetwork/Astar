@@ -3,12 +3,10 @@
 #![cfg(test)]
 
 use super::*;
-use frame_support::{assert_ok, impl_outer_dispatch, impl_outer_origin, parameter_types};
+use frame_support::{impl_outer_dispatch, impl_outer_origin, parameter_types};
 use pallet_plasm_rewards::{
     inflation::SimpleComputeTotalPayout,
-    traits::{GetEraStakingAmount, MaybeValidators},
 };
-use pallet_staking::Forcing;
 use sp_core::{crypto::key_types, H256};
 use sp_runtime::testing::{Header, UintAuthorityId};
 use sp_runtime::traits::{BlakeTwo256, ConvertInto, IdentityLookup, OnFinalize, OpaqueKeys};
@@ -23,7 +21,6 @@ pub const VALIDATOR_B: u64 = 2;
 pub const VALIDATOR_C: u64 = 3;
 pub const VALIDATOR_D: u64 = 4;
 pub const VALIDATOR_E: u64 = 5;
-pub const VALIDATOR_F: u64 = 6;
 
 impl_outer_origin! {
     pub enum Origin for Test {}

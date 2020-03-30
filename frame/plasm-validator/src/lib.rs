@@ -160,7 +160,6 @@ impl<T: Trait> Module<T> {
 /// Returns the next validator candidate for calling by plasm-rewards when new era.
 impl<T: Trait> MaybeValidators<EraIndex, T::AccountId> for Module<T> {
     fn maybe_validators(current_era: EraIndex) -> Option<Vec<T::AccountId>> {
-        println!("maybe {} , {:?}", current_era, Self::validators());
         // Apply new validator set
         <ElectedValidators<T>>::insert(&current_era, <Validators<T>>::get());
         Some(Self::validators())
