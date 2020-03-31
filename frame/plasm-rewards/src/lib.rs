@@ -374,9 +374,9 @@ impl<T: Trait> Module<T> {
 
             if !era_duration.is_zero() {
                 let total_payout = T::Currency::total_issuance();
-                let for_dapps = T::GetForDappsStaking::get_era_staking_amount(active_era.index);
+                let for_dapps = T::GetForDappsStaking::get_era_staking_amount(&active_era.index);
                 let for_security =
-                    T::GetForSecurityStaking::get_era_staking_amount(active_era.index);
+                    T::GetForSecurityStaking::get_era_staking_amount(&active_era.index);
 
                 let (for_security_reward, for_dapps_rewards) =
                     T::ComputeTotalPayout::compute_total_payout(

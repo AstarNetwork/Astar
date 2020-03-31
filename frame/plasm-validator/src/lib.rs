@@ -169,7 +169,7 @@ impl<T: Trait> MaybeValidators<EraIndex, T::AccountId> for Module<T> {
 /// Get the amount of staking per Era in a module in the Plasm Network
 /// for callinng by plasm-rewards when end era.
 impl<T: Trait> GetEraStakingAmount<EraIndex, BalanceOf<T>> for Module<T> {
-    fn get_era_staking_amount(_era: EraIndex) -> BalanceOf<T> {
+    fn get_era_staking_amount(_era: &EraIndex) -> BalanceOf<T> {
         BalanceOf::<T>::zero()
     }
 }
