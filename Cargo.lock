@@ -2775,6 +2775,28 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-plasm-rewards"
+version = "0.1.0"
+dependencies = [
+ "frame-support 2.0.0-alpha.4 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
+ "frame-system 2.0.0-alpha.4 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
+ "hex-literal 0.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "pallet-balances 2.0.0-alpha.4 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
+ "pallet-randomness-collective-flip 2.0.0-alpha.4 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
+ "pallet-session 2.0.0-alpha.4 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
+ "pallet-staking 2.0.0-alpha.4 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
+ "pallet-timestamp 2.0.0-alpha.4 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
+ "parity-scale-codec 1.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "serde 1.0.105 (registry+https://github.com/rust-lang/crates.io-index)",
+ "sp-arithmetic 2.0.0-alpha.4 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
+ "sp-core 2.0.0-alpha.4 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
+ "sp-io 2.0.0-alpha.4 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
+ "sp-runtime 2.0.0-alpha.4 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
+ "sp-staking 2.0.0-alpha.4 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
+ "sp-std 2.0.0-alpha.4 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
+]
+
+[[package]]
 name = "pallet-plasm-staking"
 version = "0.1.0"
 dependencies = [
@@ -2799,6 +2821,28 @@ dependencies = [
  "sp-staking 2.0.0-alpha.4 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "sp-std 2.0.0-alpha.4 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "wabt 0.9.2 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "pallet-plasm-validator"
+version = "0.1.0"
+dependencies = [
+ "frame-support 2.0.0-alpha.4 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
+ "frame-system 2.0.0-alpha.4 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
+ "hex-literal 0.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "pallet-balances 2.0.0-alpha.4 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
+ "pallet-plasm-rewards 0.1.0",
+ "pallet-randomness-collective-flip 2.0.0-alpha.4 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
+ "pallet-session 2.0.0-alpha.4 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
+ "pallet-timestamp 2.0.0-alpha.4 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
+ "parity-scale-codec 1.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "serde 1.0.105 (registry+https://github.com/rust-lang/crates.io-index)",
+ "sp-arithmetic 2.0.0-alpha.4 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
+ "sp-core 2.0.0-alpha.4 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
+ "sp-io 2.0.0-alpha.4 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
+ "sp-runtime 2.0.0-alpha.4 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
+ "sp-staking 2.0.0-alpha.4 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
+ "sp-std 2.0.0-alpha.4 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
 ]
 
 [[package]]
