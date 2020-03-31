@@ -5,6 +5,7 @@
 
 use codec::{Decode, Encode, HasCompact};
 use frame_support::{
+    dispatch::DispatchResult,
     decl_event, decl_module, decl_storage, ensure,
     storage::IterableStorageMap,
     traits::{
@@ -420,6 +421,9 @@ decl_module! {
             <Bonded<T>>::insert(&stash, &controller);
             <Payee<T>>::insert(&stash, payee);
 
+            // increments account reference counter for not removing accounts.
+			system::Module::<T>::inc_ref(&stash);
+
             let stash_balance = T::Currency::free_balance(&stash);
             let value = value.min(stash_balance);
             Self::deposit_event(RawEvent::Bonded(stash.clone(), value.clone()));
@@ -667,7 +671,11 @@ decl_module! {
         }
     }
 }
-// TODO ----------------------------------
+
+fn migrate<T: Trait>() {
+    todo!();
+}
+
 impl<T: Trait> Module<T> {
     // MUTABLES (DANGEROUS)
 
@@ -701,12 +709,15 @@ impl<T: Trait> Module<T> {
     /// This is called :
     /// - Immediately when an account's balance falls below existential deposit.
     /// - after a `withdraw_unbond()` call that frees all of a stash's bonded balance.
-    fn kill_stash(stash: &T::AccountId) {
-        if let Some(controller) = <Bonded<T>>::take(stash) {
-            <Ledger<T>>::remove(&controller);
-        }
+    fn kill_stash(stash: &T::AccountId)  -> DispatchResult {
+        let controller = Bonded::<T>::take(stash).ok_or(Error::<T>::NotStash)?;
+        <Ledger<T>>::remove(&controller);
+
         <Payee<T>>::remove(stash);
         <DappsNominations<T>>::remove(stash);
+
+        system::Module::<T>::dec_ref(stash);
+        Ok(())
     }
 
     /// Chill a stash account.
