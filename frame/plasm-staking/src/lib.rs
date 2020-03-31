@@ -5,44 +5,40 @@
 
 use codec::{Decode, Encode, HasCompact};
 use frame_support::{
+    decl_error, decl_event, decl_module, decl_storage,
     dispatch::DispatchResult,
-    decl_event, decl_module, decl_storage, ensure,
-    storage::IterableStorageMap,
+    ensure,
+    storage::{IterableStorageDoubleMap, IterableStorageMap},
     traits::{
-        Currency, Imbalance, LockIdentifier, LockableCurrency, OnUnbalanced, Time,
+        Currency, Get, Imbalance, LockIdentifier, LockableCurrency, OnUnbalanced, Time,
         WithdrawReasons,
     },
     weights::SimpleDispatchInfo,
     StorageMap, StorageValue,
 };
-use frame_system::{self as system, ensure_root, ensure_signed};
-use operator::ContractFinder;
+use frame_system::{self as system, ensure_signed};
+use pallet_contract_operator::ContractFinder;
 use pallet_plasm_rewards::{
-    traits::{EraFinder, ForDappsEraRewardFinder, GetEraStakingAmount, MaybeValidators},
+    traits::{EraFinder, ForDappsEraRewardFinder, GetEraStakingAmount},
     EraIndex,
 };
-use pallet_session::SessionManager;
 pub use pallet_staking::{Forcing, RewardDestination};
 use sp_runtime::{
-    traits::{
-        CheckedAdd, CheckedDiv, CheckedSub, One, SaturatedConversion, Saturating, StaticLookup,
-        Zero,
-    },
+    traits::{CheckedAdd, CheckedSub, Saturating, StaticLookup, Zero},
     PerThing, Perbill, RuntimeDebug,
 };
-use sp_std::{
-    collections::btree_map::BTreeMap, convert::TryFrom, prelude::*, result, vec::Vec, SessionIndex,
-};
+use sp_std::{collections::btree_map::BTreeMap, prelude::*, result, vec::Vec};
 
-mod inflation;
-mod migration;
 pub mod parameters;
+pub mod rewards;
 // #[cfg(test)]
 // mod mock;
 // #[cfg(test)]
 // mod tests;
 
-pub use sp_pallet_staking::SessionIndex;
+pub use parameters::StakingParameters;
+pub use rewards::ComputeRewardsForDapps;
+pub use sp_staking::SessionIndex;
 
 pub type BalanceOf<T> =
     <<T as Trait>::Currency as Currency<<T as system::Trait>::AccountId>>::Balance;
@@ -70,37 +66,14 @@ pub struct Nominations<AccountId, Balance> {
     pub suppressed: bool,
 }
 
-/// The amount of exposure (to slashing) than an individual nominator has.
-#[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Encode, Decode, RuntimeDebug)]
-pub struct IndividualExposure<AccountId, Balance: HasCompact> {
-    /// The stash account of the nominator in question.
-    pub who: AccountId,
-    /// Amount of funds exposed.
-    #[codec(compact)]
-    pub value: Balance,
-}
-
-/// A snapshot of the stake backing a single validator in the system.
-#[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Encode, Decode, Default, RuntimeDebug)]
-pub struct Exposure<AccountId, Balance: HasCompact> {
-    /// The total balance backing this validator.
-    #[codec(compact)]
-    pub total: Balance,
-    /// The validator's own stash that is exposed.
-    #[codec(compact)]
-    pub own: Balance,
-    /// The portions of nominators stashes that are exposed.
-    pub others: Vec<IndividualExposure<AccountId, Balance>>,
-}
-
 /// Reward points of an era. Used to split era total payout between dapps rewards.
 ///
 /// This points will be used to reward contracts operators and their respective nominators.
 #[derive(PartialEq, Encode, Decode, Default, RuntimeDebug)]
-pub struct EraRewardPoints<AccountId: Ord, Balance: HasCompact> {
-    /// Total number of points. Equals the sum of reward points for each validator.
+pub struct EraStakingPoints<AccountId: Ord, Balance: HasCompact> {
+    /// Total number of staking. Equals the sum of staking points for each contracts.
     total: Balance,
-    /// The reward points earned by a given validator.
+    /// The balance of stakinng earned by a given contracts.
     individual: BTreeMap<AccountId, Balance>,
 }
 
@@ -160,31 +133,6 @@ impl<AccountId, Balance: HasCompact + Copy + Saturating> StakingLedger<AccountId
             last_reward: self.last_reward,
         }
     }
-
-    /// Re-bond funds that were scheduled for unlocking.
-    fn rebond(mut self, value: Balance) -> Self {
-        let mut unlocking_balance: Balance = Zero::zero();
-
-        while let Some(last) = self.unlocking.last_mut() {
-            if unlocking_balance + last.value <= value {
-                unlocking_balance += last.value;
-                self.active += last.value;
-                self.unlocking.pop();
-            } else {
-                let diff = value - unlocking_balance;
-
-                unlocking_balance += diff;
-                self.active += diff;
-                last.value -= diff;
-            }
-
-            if unlocking_balance >= value {
-                break;
-            }
-        }
-
-        self
-    }
 }
 
 pub trait Trait: pallet_session::Trait {
@@ -192,7 +140,7 @@ pub trait Trait: pallet_session::Trait {
     type Currency: LockableCurrency<Self::AccountId, Moment = Self::BlockNumber>;
 
     // The check valid operated contracts.
-    type ContractFinder: operator::ContractFinder<Self::AccountId, parameters::StakingParameters>;
+    type ContractFinder: ContractFinder<Self::AccountId, parameters::StakingParameters>;
 
     /// Number of eras that staked funds must remain bonded for.
     type BondingDuration: Get<EraIndex>;
@@ -219,6 +167,8 @@ pub trait Trait: pallet_session::Trait {
     /// Time used for computing era duration.
     type Time: Time;
 
+    type ComputeRewardsForDapps: ComputeRewardsForDapps;
+
     /// The information of era.
     type EraFinder: EraFinder<EraIndex, SessionIndex, MomentOf<Self>>;
 
@@ -231,6 +181,9 @@ pub trait Trait: pallet_session::Trait {
 
 decl_storage! {
     trait Store for Module<T: Trait> as PlasmStaking {
+        /// The already untreated era is EraIndex.
+        pub UntreatedEra get(fn untreated_era): EraIndex;
+
         // ----- Staking uses.
         /// Map from all locked "stash" accounts to the controller account.
         pub Bonded get(fn bonded): map hasher(twox_64_concat) T::AccountId => Option<T::AccountId>;
@@ -250,29 +203,24 @@ decl_storage! {
         DappsNominations get(fn dapps_nominations): map hasher(twox_64_concat)
                                                     T::AccountId => Option<Nominations<T::AccountId, BalanceOf<T>>>;
 
-        /// Exposure of stakers for contracts(called by "Dapps Nominator") at era.
-        ///
-        /// This is keyed first by the era index to allow bulk deletion and then the stash account.
-        ///
-        /// Is it removed after `HISTORY_DEPTH` eras on plasm-rewards module.
-        /// If stakers hasn't been set or has been removed then empty exposure is returned.
-        pub ErasStakers get(fn eras_stakers):
-            double_map hasher(twox_64_concat) EraIndex, hasher(twox_64_concat) T::AccountId
-            => Exposure<T::AccountId, BalanceOf<T>>;
-
         /// Similarly to `ErasStakers` this holds the parameters of contracts.
         ///
-        /// This is keyed first by the era index to allow bulk deletion and then the stash account.
+        /// This is keyed first by the era index to allow bulk deletion and then the contracts account.
         ///
         /// Is it removed after `HISTORY_DEPTH` eras.
-        pub ErasContractsParameters get(fn eras_validator_prefs):
+        pub ErasContractsParameters get(fn eras_contracts_parameters):
             double_map hasher(twox_64_concat) EraIndex, hasher(twox_64_concat) T::AccountId
-            => Optoin<StakingParameters>;
+            => Option<StakingParameters>;
 
+        /// Rewards of stakers for contracts(called by "Dapps Nominator") at era.
+        ///
+        /// This is keyed first by the era index, 2nd keyed contract account to allow the stash account.
         /// Rewards for the last `HISTORY_DEPTH` eras.
+        ///
         /// If reward hasn't been set or has been removed then 0 reward is returned.
-        pub ErasRewardPoints get(fn eras_reward_points):
-            map hasher(twox_64_concat) EraIndex => EraRewardPoints<T::AccountId>;
+        pub ErasStakingPoints get(fn eras_staking_points):
+            double_map hasher(twox_64_concat) EraIndex, hasher(twox_64_concat) T::AccountId
+            => EraStakingPoints<T::AccountId, BalanceOf<T>>;
 
         /// The total amount staked for the last `HISTORY_DEPTH` eras.
         /// If total hasn't been set or has been removed then 0 stake is returned.
@@ -303,7 +251,7 @@ decl_event!(
         /// from the unlocking queue.
         Withdrawn(AccountId, Balance),
         /// The total amount of minted rewards for dapps.
-        TotalDappsRewards(Balance),
+        TotalDappsRewards(EraIndex, Balance),
         /// Nominate of stash address.
         Nominate(AccountId),
     }
@@ -347,9 +295,6 @@ decl_error! {
 
 decl_module! {
     pub struct Module<T: Trait> for enum Call where origin: T::Origin {
-        /// Number of sessions per era.
-        const SessionsPerEra: SessionIndex = T::SessionsPerEra::get();
-
         fn deposit_event() = default;
 
         fn on_runtime_upgrade() {
@@ -360,17 +305,15 @@ decl_module! {
             if let Some(active_era) = T::EraFinder::active_era() {
                 let mut untreated_era = Self::untreated_era();
                 while active_era.index > untreated_era {
-                    // electe operators.
-                    Self::elected_operators(&untreated_era);
                     let rewards = match T::ForDappsEraReward::for_dapps_era_reward(&untreated_era) {
                         Some(rewards) => rewards,
                         None => {
                             frame_support::print("Error: start_session_index must be set for current_era");
-                            return;
+                            BalanceOf::<T>::zero()
                         }
                     };
 
-                    let actual_rewarded = Self::reward_to_operators(&untreated_era, &rewards);
+                    let actual_rewarded = Self::reward_for_dapps(&untreated_era, rewards);
                     // deposit event to total validator rewards
                     Self::deposit_event(RawEvent::TotalDappsRewards(untreated_era, actual_rewarded));
                     untreated_era+=1;
@@ -423,7 +366,7 @@ decl_module! {
             <Payee<T>>::insert(&stash, payee);
 
             // increments account reference counter for not removing accounts.
-			system::Module::<T>::inc_ref(&stash);
+            system::Module::<T>::inc_ref(&stash);
 
             let stash_balance = T::Currency::free_balance(&stash);
             let value = value.min(stash_balance);
@@ -433,7 +376,7 @@ decl_module! {
                 total: value,
                 active: value,
                 unlocking: vec![],
-                last_rewards: T::EraFinder::current_era()
+                last_reward: T::EraFinder::current_era()
             };
             Self::update_ledger(&controller, &item);
         }
@@ -515,7 +458,7 @@ decl_module! {
                 }
 
                 Self::deposit_event(RawEvent::Unbonded(ledger.stash.clone(), value));
-                let era = Self::current_era() + T::BondingDuration::get();
+                let era = T::EraFinder::current_era().unwrap_or(Zero::zero()) + T::BondingDuration::get();
                 ledger.unlocking.push(UnlockChunk { value, era });
                 Self::update_ledger(&controller, &ledger);
             }
@@ -542,9 +485,9 @@ decl_module! {
         #[weight = SimpleDispatchInfo::FixedNormal(400_000)]
         fn withdraw_unbonded(origin) {
             let controller = ensure_signed(origin)?;
-            let ledger = Self::ledger(&controller).ok_or(Error::<T>::NotController)?;
+            let mut ledger = Self::ledger(&controller).ok_or(Error::<T>::NotController)?;
             let (stash, old_total) = (ledger.stash.clone(), ledger.total);
-            if let Some(current_era) = Self::current_era() {
+            if let Some(current_era) = T::EraFinder::current_era() {
                 ledger = ledger.consolidate_unlocked(current_era)
             }
 
@@ -581,15 +524,18 @@ decl_module! {
         /// - Both the reads and writes follow a similar pattern.
         /// # </weight>
         #[weight = SimpleDispatchInfo::FixedNormal(750_000)]
-        fn nominate_contracts(origin, targets: Vec<(<T::Lookup as StaticLookup>::Source>, BalanceOf<T>)>) {
+        fn nominate_contracts(origin, targets: Vec<(<T::Lookup as StaticLookup>::Source, BalanceOf<T>)>) {
             let controller = ensure_signed(origin)?;
             let ledger = Self::ledger(&controller).ok_or(Error::<T>::NotController)?;
             let stash = &ledger.stash;
             ensure!(!targets.is_empty(), Error::<T>::NotController);
             let targets = targets.into_iter()
                 .take(MAX_NOMINATIONS)
-                .map(|t| (T::Lookup::lookup(t.0), t.1))
-                .collect::<result::Result<Vec<(T::AccountId, BalanceOf<T>>, _>>()?;
+                .map(|t| match T::Lookup::lookup(t.0) {
+                    Ok(a) => Ok((a, t.1)),
+                    Err(err) => Err(err),
+                })
+                .collect::<result::Result<Vec<(T::AccountId, BalanceOf<T>)>, _>>()?;
 
             // check the is targets operated contracts?
             if !targets.iter().all(|t| T::ContractFinder::is_exists_contract(&(t.0))) {
@@ -598,12 +544,11 @@ decl_module! {
 
             let nominations = Nominations {
                 targets,
-                amounts,
-                submitted_in: Self::current_era(),
+                submitted_in: T::EraFinder::current_era().unwrap_or(Zero::zero()),
                 suppressed: false,
             };
 
-            Self::deposit_event(RawEvent::Nominate(stash.clone());
+            Self::deposit_event(RawEvent::Nominate(stash.clone()));
             <DappsNominations<T>>::insert(stash, &nominations);
         }
 
@@ -680,14 +625,6 @@ fn migrate<T: Trait>() {
 impl<T: Trait> Module<T> {
     // MUTABLES (DANGEROUS)
 
-    /// The total balance that can be slashed from a stash account as of right now.
-    pub fn slashable_balance_of(stash: &T::AccountId) -> BalanceOf<T> {
-        Self::bonded(stash)
-            .and_then(Self::ledger)
-            .map(|l| l.active)
-            .unwrap_or_default()
-    }
-
     /// Update the ledger for a controller. This will also update the stash lock. The lock will
     /// will lock the entire funds except paying for further transactions.
     fn update_ledger(
@@ -710,7 +647,7 @@ impl<T: Trait> Module<T> {
     /// This is called :
     /// - Immediately when an account's balance falls below existential deposit.
     /// - after a `withdraw_unbond()` call that frees all of a stash's bonded balance.
-    fn kill_stash(stash: &T::AccountId)  -> DispatchResult {
+    fn kill_stash(stash: &T::AccountId) -> DispatchResult {
         let controller = Bonded::<T>::take(stash).ok_or(Error::<T>::NotStash)?;
         <Ledger<T>>::remove(&controller);
 
@@ -726,44 +663,42 @@ impl<T: Trait> Module<T> {
         <DappsNominations<T>>::remove(stash);
     }
 
-    pub fn reward_to_operators(
-        total_payout: BalanceOf<T>,
-        max_payout: BalanceOf<T>,
-    ) -> BalanceOf<T> {
+    pub fn reward_for_dapps(era: &EraIndex, max_payout: BalanceOf<T>) -> BalanceOf<T> {
         let mut total_imbalance = <PositiveImbalanceOf<T>>::zero();
-        let operators_reward =
-            Perbill::from_rational_approximation(BalanceOf::<T>::from(4), BalanceOf::<T>::from(5))
-                * total_payout;
-        let nominators_reward = total_payout
-            .checked_sub(&operators_reward)
-            .unwrap_or(BalanceOf::<T>::zero());
-        let staked_contracts = <StakedContracts<T>>::iter()
-            .collect::<Vec<(T::AccountId, Exposure<T::AccountId, BalanceOf<T>>)>>();
-        let total_staked = staked_contracts
+        let (operators_reward, nominators_reward) =
+            T::ComputeRewardsForDapps::compute_rewards_for_dapps(max_payout);
+
+        let staking_points = <ErasStakingPoints<T>>::iter(&era)
+            .collect::<Vec<(T::AccountId, EraStakingPoints<T::AccountId, BalanceOf<T>>)>>();
+
+        let total_staked = staking_points
             .iter()
-            .fold(BalanceOf::<T>::zero(), |sum, (_, exposure)| {
-                sum.checked_add(&exposure.total).unwrap_or(sum)
+            .fold(BalanceOf::<T>::zero(), |sum, (_, points)| {
+                sum.checked_add(&points.total).unwrap_or(sum)
             });
 
-        for (contract, exposure) in staked_contracts.iter() {
-            let reward = Perbill::from_rational_approximation(exposure.total, total_staked)
-                * operators_reward;
+        for (contract, points) in staking_points.iter() {
+            let reward =
+                Perbill::from_rational_approximation(points.total, total_staked) * operators_reward;
             total_imbalance.subsume(Self::reward_contract(&contract, reward));
         }
 
-        let nominate_totals = staked_contracts.iter().fold(
+        let nominate_totals = staking_points.iter().fold(
             BTreeMap::<T::AccountId, BalanceOf<T>>::new(),
-            |bmap, (_, exposure)| {
-                exposure.others.iter().fold(bmap, |mut bmap, ind| {
-                    if bmap.contains_key(&ind.who) {
-                        if let Some(indv) = bmap.get_mut(&ind.who) {
-                            *indv += ind.value;
+            |bmap, (_, points)| {
+                points
+                    .individual
+                    .iter()
+                    .fold(bmap, |mut bmap, (key, value)| {
+                        if bmap.contains_key(&key) {
+                            if let Some(bmap_value) = bmap.get_mut(&key) {
+                                *bmap_value += value.clone();
+                            }
+                        } else {
+                            bmap.insert(key.clone(), value.clone());
                         }
-                    } else {
-                        bmap.insert(ind.who.clone(), ind.value);
-                    }
-                    return bmap;
-                })
+                        return bmap;
+                    })
             },
         );
 
@@ -783,54 +718,28 @@ impl<T: Trait> Module<T> {
         total_payout
     }
 
-    fn elected_operators() {
+    fn elected_operators(era: &EraIndex) -> BalanceOf<T> {
         let nominations = <DappsNominations<T>>::iter()
             .filter(|(_, nomination)| !nomination.suppressed)
-            .collect::<Vec<(T::AccountId, Nominations<T::AccountId>)>>();
-        let nominators = nominations
-            .iter()
-            .cloned()
-            .map(|(stash, _)| stash)
-            .collect::<Vec<T::AccountId>>();
-        let nominators_to_staking = nominators
-            .into_iter()
-            .map(|nominator| {
-                if let Some(ctrl) = Self::bonded(&nominator) {
-                    if let Some(ledger) = Self::ledger(&ctrl) {
-                        return (nominator, ledger.active);
-                    }
-                }
-                (nominator, BalanceOf::<T>::zero())
-            })
-            .collect::<BTreeMap<T::AccountId, BalanceOf<T>>>();
+            .collect::<Vec<(T::AccountId, Nominations<T::AccountId, BalanceOf<T>>)>>();
 
         let staked_contracts = nominations.iter().fold(
-            BTreeMap::<T::AccountId, Exposure<T::AccountId, BalanceOf<T>>>::new(),
+            BTreeMap::<T::AccountId, EraStakingPoints<T::AccountId, BalanceOf<T>>>::new(),
             |mut bmap, (stash, nomination)| {
-                let value = Perbill::from_rational_approximation(
-                    BalanceOf::<T>::from(1),
-                    BalanceOf::<T>::try_from(nomination.targets.len())
-                        .unwrap_or(BalanceOf::<T>::one()),
-                ) * *(nominators_to_staking
-                    .get(stash)
-                    .unwrap_or(&BalanceOf::<T>::zero()));
-                let indv = IndividualExposure {
-                    who: stash.clone(),
-                    value: value,
-                };
-                for contract in nomination.targets.iter() {
+                for (contract, value) in nomination.targets.iter() {
                     if bmap.contains_key(&contract) {
-                        if let Some(exposure) = bmap.get_mut(&contract) {
-                            (*exposure).total += value;
-                            (*exposure).others.push(indv.clone())
+                        if let Some(points) = bmap.get_mut(&contract) {
+                            (*points).total += value.clone();
+                            (*points).individual.insert(stash.clone(), value.clone());
                         }
                     } else {
                         bmap.insert(
                             contract.clone(),
-                            Exposure {
-                                own: BalanceOf::<T>::zero(),
-                                total: value.into(),
-                                others: vec![indv.clone()],
+                            EraStakingPoints {
+                                total: value.clone(),
+                                individual: vec![(stash.clone(), value.clone())]
+                                    .into_iter()
+                                    .collect::<BTreeMap<T::AccountId, BalanceOf<T>>>(),
                             },
                         );
                     }
@@ -839,10 +748,14 @@ impl<T: Trait> Module<T> {
             },
         );
 
+        let total_staked = BalanceOf::<T>::zero();
         // Updating staked contracts info
-        for (contract, exposure) in staked_contracts.iter() {
-            <StakedContracts<T>>::mutate(&contract, |ex| *ex = exposure.clone());
+        for (contract, points) in staked_contracts.iter() {
+            <ErasStakingPoints<T>>::insert(&era, &contract, &points);
+            total_staked.saturating_add(points.total);
         }
+        <ErasTotalStake<T>>::insert(&era, total_staked);
+        total_staked
     }
 
     fn reward_contract(contract: &T::AccountId, reward: BalanceOf<T>) -> PositiveImbalanceOf<T> {
@@ -873,13 +786,9 @@ impl<T: Trait> Module<T> {
     }
 }
 
-impl<T: Trait> SessionManager<T::AccountId> for Module<T> {
-    fn new_session(new_index: SessionIndex) -> Option<Vec<T::AccountId>> {
-        Self::ensure_storage_upgraded();
-        Self::new_session(new_index)
+/// Get the amount of staking per Era in a module in the Plasm Network.
+impl<T: Trait> GetEraStakingAmount<EraIndex, BalanceOf<T>> for Module<T> {
+    fn get_era_staking_amount(era: &EraIndex) -> BalanceOf<T> {
+        Self::elected_operators(era)
     }
-    fn start_session(_: u32) {
-        todo!()
-    }
-    fn end_session(_end_index: SessionIndex) {}
 }
