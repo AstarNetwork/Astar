@@ -11,6 +11,7 @@ members = [
     "frame/plasm-staking",
     "frame/plasm-rewards",
     "frame/plasm-lockdrop",
+    "frame/plasm-validator",
 ]
 
 exclude = [

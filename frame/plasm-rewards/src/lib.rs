@@ -33,7 +33,7 @@ pub mod inflation;
 #[cfg(test)]
 mod mock;
 pub mod traits;
-use traits::*;
+pub use traits::*;
 #[cfg(test)]
 mod tests;
 
@@ -62,12 +62,12 @@ impl Default for Releases {
 #[derive(Encode, Decode, RuntimeDebug, PartialEq, Eq)]
 pub struct ActiveEraInfo<Moment> {
     /// Index of era.
-    index: EraIndex,
+    pub index: EraIndex,
     /// Moment of start
     ///
     /// Start can be none if start hasn't been set for the era yet,
     /// Start is set on the first on_finalize of the era to guarantee usage of `Time`.
-    start: Option<Moment>,
+    pub start: Option<Moment>,
 }
 
 pub trait Trait: pallet_session::Trait {
@@ -435,5 +435,35 @@ impl<T: Trait> SessionManager<T::AccountId> for Module<T> {
     }
     fn end_session(end_index: SessionIndex) {
         Self::end_session(end_index)
+    }
+}
+
+/// In this implementation using validator and dapps rewards module.
+impl<T: Trait> EraFinder<EraIndex, SessionIndex, MomentOf<T>> for Module<T> {
+    fn bonded_eras() -> Vec<(EraIndex, SessionIndex)> {
+        Self::bonded_eras()
+    }
+    fn current_era() -> Option<EraIndex> {
+        Self::current_era()
+    }
+    fn active_era() -> Option<ActiveEraInfo<MomentOf<T>>> {
+        Self::active_era()
+    }
+    fn eras_start_session_index(era: &EraIndex) -> Option<SessionIndex> {
+        Self::eras_start_session_index(&era)
+    }
+}
+
+/// Get the security rewards for validator module.
+impl<T: Trait> ForSecurityEraRewardFinder<BalanceOf<T>> for Module<T> {
+    fn for_security_era_reward(era: &EraIndex) -> Option<BalanceOf<T>> {
+        Self::for_security_era_reward(&era)
+    }
+}
+
+/// Get the dapps rewards for dapps staking module.
+impl<T: Trait> ForDappsEraRewardFinder<BalanceOf<T>> for Module<T> {
+    fn for_dapps_era_reward(era: &EraIndex) -> Option<BalanceOf<T>> {
+        Self::for_dapps_era_reward(&era)
     }
 }
