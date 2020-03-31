@@ -148,7 +148,7 @@ decl_storage! {
 
         /// Storage version of the pallet.
         ///
-        /// This is set to v2.0.0 for new networks.
+        /// This is set to v1.0.0 for new networks.
         StorageVersion build(|_: &GenesisConfig| Releases::V1_0_0): Releases;
     }
 }
@@ -395,10 +395,8 @@ impl<T: Trait> Module<T> {
     /// Plan a new era. Return the potential new staking set.
     fn new_era(start_session_index: SessionIndex) -> Option<Vec<T::AccountId>> {
         // Increment or set current era.
-        let current_era = CurrentEra::mutate(|s| {
-            *s = Some(s.map(|s| s + 1).unwrap_or(0));
-            s.unwrap()
-        });
+        let current_era = CurrentEra::get().map(|s| s + 1).unwrap_or(0);
+        CurrentEra::put(current_era.clone());
         ErasStartSessionIndex::insert(&current_era, &start_session_index);
 
         // Clean old era information.

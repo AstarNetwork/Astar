@@ -9,7 +9,8 @@ use frame_support::{
     decl_event, decl_module, decl_storage, ensure,
     storage::IterableStorageMap,
     traits::{
-        Currency, Imbalance, LockIdentifier, LockableCurrency, OnUnbalanced, Time, WithdrawReasons,
+        Currency, Imbalance, LockIdentifier, LockableCurrency, OnUnbalanced, Time,
+        WithdrawReasons,
     },
     weights::SimpleDispatchInfo,
     StorageMap, StorageValue,
