@@ -18,7 +18,7 @@ pub use staking::{Forcing, Nominations, RewardDestination};
 use support::{
     decl_event, decl_module, decl_storage, ensure,
     traits::{
-        Currency, Get, Imbalance, LockIdentifier, LockableCurrency, OnUnbalanced, Time,
+        Currency, Imbalance, LockIdentifier, LockableCurrency, OnUnbalanced, Time,
         WithdrawReasons,
     },
     weights::SimpleDispatchInfo,
