@@ -16,11 +16,11 @@ use frame_support::{
 use frame_system::{self as system, ensure_root, ensure_signed};
 use operator::ContractFinder;
 use pallet_plasm_rewards::{
-    traits::{EraFinder, ForSecurityEraRewardFinder, GetEraStakingAmount, MaybeValidators},
+    traits::{EraFinder, ForDappsEraRewardFinder, GetEraStakingAmount, MaybeValidators},
     EraIndex,
 };
 use pallet_session::SessionManager;
-pub use pallet_staking::{Forcing, Nominations, RewardDestination};
+pub use pallet_staking::{Forcing, RewardDestination};
 use sp_runtime::{
     traits::{
         CheckedAdd, CheckedDiv, CheckedSub, One, SaturatedConversion, Saturating, StaticLookup,
@@ -28,7 +28,9 @@ use sp_runtime::{
     },
     PerThing, Perbill, RuntimeDebug,
 };
-use sp_std::{collections::btree_map::BTreeMap, convert::TryFrom, prelude::*, result, vec::Vec};
+use sp_std::{
+    collections::btree_map::BTreeMap, convert::TryFrom, prelude::*, result, vec::Vec, SessionIndex,
+};
 
 mod inflation;
 mod migration;
@@ -49,9 +51,22 @@ type PositiveImbalanceOf<T> =
 type NegativeImbalanceOf<T> =
     <<T as Trait>::Currency as Currency<<T as system::Trait>::AccountId>>::NegativeImbalance;
 
-const MAX_NOMINATIONS: usize = 16;
+const MAX_NOMINATIONS: usize = 128;
 const MAX_UNLOCKING_CHUNKS: usize = 32;
-const STAKING_ID: LockIdentifier = *b"plmstake";
+const STAKING_ID: LockIdentifier = *b"dapstake";
+
+/// A record of the nominations made by a specific account.
+#[derive(PartialEq, Eq, Clone, Encode, Decode, RuntimeDebug)]
+pub struct Nominations<AccountId, Balance> {
+    /// The targets of nomination and amounts of staking.
+    pub targets: Vec<(AccountId, Balance)>,
+    /// The era the nominations were submitted.
+    ///
+    /// Except for initial nominations which are considered submitted at era 0.
+    pub submitted_in: EraIndex,
+    /// Whether the nominations have been suppressed.
+    pub suppressed: bool,
+}
 
 /// The amount of exposure (to slashing) than an individual nominator has.
 #[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Encode, Decode, RuntimeDebug)]
@@ -114,6 +129,8 @@ pub struct StakingLedger<AccountId, Balance: HasCompact> {
     /// Any balance that is becoming free, which may eventually be transferred out
     /// of the stash (assuming it doesn't get slashed first).
     pub unlocking: Vec<UnlockChunk<Balance>>,
+    /// The latest and highest era which the staker has claimed reward for.
+    pub last_reward: Option<EraIndex>,
 }
 
 impl<AccountId, Balance: HasCompact + Copy + Saturating> StakingLedger<AccountId, Balance> {
@@ -138,7 +155,33 @@ impl<AccountId, Balance: HasCompact + Copy + Saturating> StakingLedger<AccountId
             active: self.active,
             stash: self.stash,
             unlocking,
+            last_reward: self.last_reward,
         }
+    }
+
+    /// Re-bond funds that were scheduled for unlocking.
+    fn rebond(mut self, value: Balance) -> Self {
+        let mut unlocking_balance: Balance = Zero::zero();
+
+        while let Some(last) = self.unlocking.last_mut() {
+            if unlocking_balance + last.value <= value {
+                unlocking_balance += last.value;
+                self.active += last.value;
+                self.unlocking.pop();
+            } else {
+                let diff = value - unlocking_balance;
+
+                unlocking_balance += diff;
+                self.active += diff;
+                last.value -= diff;
+            }
+
+            if unlocking_balance >= value {
+                break;
+            }
+        }
+
+        self
     }
 }
 
@@ -203,7 +246,7 @@ decl_storage! {
         /// NOTE: is private so that we can ensure upgraded before all typical accesses.
         /// Direct storage APIs can still bypass this protection.
         DappsNominations get(fn dapps_nominations): map hasher(twox_64_concat)
-                                                    T::AccountId => Option<Nominations<T::AccountId>>;
+                                                    T::AccountId => Option<Nominations<T::AccountId, BalanceOf<T>>>;
 
         /// Exposure of stakers for contracts(called by "Dapps Nominator") at era.
         ///
@@ -248,54 +291,57 @@ decl_event!(
         /// The amount of minted rewards. (for dapps with nominators)
         Reward(Balance, Balance),
         /// An account has bonded this amount.
-		///
-		/// NOTE: This event is only emitted when funds are bonded via a dispatchable. Notably,
-		/// it will not be emitted for staking rewards when they are added to stake.
-		Bonded(AccountId, Balance),
-		/// An account has unbonded this amount.
-		Unbonded(AccountId, Balance),
-		/// An account has called `withdraw_unbonded` and removed unbonding chunks worth `Balance`
-		/// from the unlocking queue.
-		Withdrawn(AccountId, Balance),
-		/// The total amount of minted rewards for dapps.
-		TotalDappsRewards(Balance),
+        ///
+        /// NOTE: This event is only emitted when funds are bonded via a dispatchable. Notably,
+        /// it will not be emitted for staking rewards when they are added to stake.
+        Bonded(AccountId, Balance),
+        /// An account has unbonded this amount.
+        Unbonded(AccountId, Balance),
+        /// An account has called `withdraw_unbonded` and removed unbonding chunks worth `Balance`
+        /// from the unlocking queue.
+        Withdrawn(AccountId, Balance),
+        /// The total amount of minted rewards for dapps.
+        TotalDappsRewards(Balance),
+        /// Nominate of stash address.
+        Nominate(AccountId),
     }
 );
 
 decl_error! {
-	/// Error for the staking module.
-	pub enum Error for Module<T: Trait> {
-		/// Not a controller account.
-		NotController,
-		/// Not a stash account.
-		NotStash,
-		/// Stash is already bonded.
-		AlreadyBonded,
-		/// Controller is already paired.
-		AlreadyPaired,
-		/// Targets cannot be empty.
-		EmptyTargets,
-		/// Duplicate index.
-		DuplicateIndex,
-		/// Slash record index out of bounds.
-		InvalidSlashIndex,
-		/// Can not bond with value less than minimum balance.
-		InsufficientValue,
-		/// Can not schedule more unlock chunks.
-		NoMoreChunks,
-		/// Can not rebond without unlocking chunks.
-		NoUnlockChunk,
-		/// Attempting to target a stash that still has funds.
-		FundedTarget,
-		/// Invalid era to reward.
-		InvalidEraToReward,
-		/// Invalid number of nominations.
-		InvalidNumberOfNominations,
-		/// Items are not sorted and unique.
-		NotSortedAndUnique,
-	}
+    /// Error for the staking module.
+    pub enum Error for Module<T: Trait> {
+        /// Not a controller account.
+        NotController,
+        /// Not a stash account.
+        NotStash,
+        /// Stash is already bonded.
+        AlreadyBonded,
+        /// Controller is already paired.
+        AlreadyPaired,
+        /// Targets cannot be empty.
+        EmptyTargets,
+        /// Duplicate index.
+        DuplicateIndex,
+        /// Slash record index out of bounds.
+        InvalidSlashIndex,
+        /// Can not bond with value less than minimum balance.
+        InsufficientValue,
+        /// Can not schedule more unlock chunks.
+        NoMoreChunks,
+        /// Can not rebond without unlocking chunks.
+        NoUnlockChunk,
+        /// Attempting to target a stash that still has funds.
+        FundedTarget,
+        /// Invalid era to reward.
+        InvalidEraToReward,
+        /// Invalid number of nominations.
+        InvalidNumberOfNominations,
+        /// Items are not sorted and unique.
+        NotSortedAndUnique,
+        /// Targets must be operated contracts
+        NotOperatedContracts,
+    }
 }
-
 
 decl_module! {
     pub struct Module<T: Trait> for enum Call where origin: T::Origin {
@@ -305,13 +351,15 @@ decl_module! {
         fn deposit_event() = default;
 
         fn on_runtime_upgrade() {
-			migrate::<T>();
-		}
+            migrate::<T>();
+        }
 
-		fn on_finalize() {
+        fn on_finalize() {
             if let Some(active_era) = T::EraFinder::active_era() {
                 let mut untreated_era = Self::untreated_era();
                 while active_era.index > untreated_era {
+                    // electe operators.
+                    Self::elected_operators(&untreated_era);
                     let rewards = match T::ForDappsEraReward::for_dapps_era_reward(&untreated_era) {
                         Some(rewards) => rewards,
                         None => {
@@ -326,10 +374,8 @@ decl_module! {
                     untreated_era+=1;
                 }
                 UntreatedEra::put(untreated_era);
-                // electe operators.
-                Self::elected_operators();
             }
-		}
+        }
 
         /// Take the origin account as a stash and lock up `value` of its balance. `controller` will
         /// be the account that controls it.
@@ -376,7 +422,14 @@ decl_module! {
 
             let stash_balance = T::Currency::free_balance(&stash);
             let value = value.min(stash_balance);
-            let item = StakingLedger { stash, total: value, active: value, unlocking: vec![] };
+            Self::deposit_event(RawEvent::Bonded(stash.clone(), value.clone()));
+            let item = StakingLedger {
+                stash,
+                total: value,
+                active: value,
+                unlocking: vec![],
+                last_rewards: T::EraFinder::current_era()
+            };
             Self::update_ledger(&controller, &item);
         }
 
@@ -398,8 +451,8 @@ decl_module! {
         fn bond_extra(origin, #[compact] max_additional: BalanceOf<T>) {
             let stash = ensure_signed(origin)?;
 
-            let controller = Self::bonded(&stash).ok_or("not a stash")?;
-            let mut ledger = Self::ledger(&controller).ok_or("not a controller")?;
+            let controller = Self::bonded(&stash).ok_or(Error::<T>::NotStash)?;
+            let mut ledger = Self::ledger(&controller).ok_or(Error::<T>::NotController)?;
 
             let stash_balance = T::Currency::free_balance(&stash);
 
@@ -407,6 +460,7 @@ decl_module! {
                 let extra = extra.min(max_additional);
                 ledger.total += extra;
                 ledger.active += extra;
+                Self::deposit_event(RawEvent::Bonded(stash, extra));
                 Self::update_ledger(&controller, &ledger);
             }
         }
@@ -426,21 +480,22 @@ decl_module! {
         ///
         /// See also [`Call::withdraw_unbonded`].
         ///
-        /// # <weight>
+         /// # <weight>
         /// - Independent of the arguments. Limited but potentially exploitable complexity.
         /// - Contains a limited number of reads.
         /// - Each call (requires the remainder of the bonded balance to be above `minimum_balance`)
         ///   will cause a new entry to be inserted into a vector (`Ledger.unlocking`) kept in storage.
-        ///   The only way to clean the aforementioned storage item is also user-controlled via `withdraw_unbonded`.
+        ///   The only way to clean the aforementioned storage item is also user-controlled via
+        ///   `withdraw_unbonded`.
         /// - One DB entry.
         /// </weight>
         #[weight = SimpleDispatchInfo::FixedNormal(400_000)]
         fn unbond(origin, #[compact] value: BalanceOf<T>) {
             let controller = ensure_signed(origin)?;
-            let mut ledger = Self::ledger(&controller).ok_or("not a controller")?;
+            let mut ledger = Self::ledger(&controller).ok_or(Error::<T>::NotController)?;
             ensure!(
                 ledger.unlocking.len() < MAX_UNLOCKING_CHUNKS,
-                "can not schedule more unlock chunks"
+                Error::<T>::NoMoreChunks
             );
 
             let mut value = value.min(ledger.active);
@@ -454,6 +509,7 @@ decl_module! {
                     ledger.active = Zero::zero();
                 }
 
+                Self::deposit_event(RawEvent::Unbonded(ledger.stash.clone(), value));
                 let era = Self::current_era() + T::BondingDuration::get();
                 ledger.unlocking.push(UnlockChunk { value, era });
                 Self::update_ledger(&controller, &ledger);
@@ -467,6 +523,8 @@ decl_module! {
         ///
         /// The dispatch origin for this call must be _Signed_ by the controller, not the stash.
         ///
+        /// Emits `Withdrawn`.
+        ///
         /// See also [`Call::unbond`].
         ///
         /// # <weight>
@@ -479,21 +537,30 @@ decl_module! {
         #[weight = SimpleDispatchInfo::FixedNormal(400_000)]
         fn withdraw_unbonded(origin) {
             let controller = ensure_signed(origin)?;
-            let ledger = Self::ledger(&controller).ok_or("not a controller")?;
-            let ledger = ledger.consolidate_unlocked(Self::current_era());
+            let ledger = Self::ledger(&controller).ok_or(Error::<T>::NotController)?;
+            let (stash, old_total) = (ledger.stash.clone(), ledger.total);
+            if let Some(current_era) = Self::current_era() {
+                ledger = ledger.consolidate_unlocked(current_era)
+            }
 
             if ledger.unlocking.is_empty() && ledger.active.is_zero() {
                 // This account must have called `unbond()` with some value that caused the active
                 // portion to fall below existential deposit + will have no more unlocking chunks
-                // left. We can now safely remove this.
-                let stash = ledger.stash;
+                // left. We can now safely remove all staking-related information.
+                Self::kill_stash(&stash)?;
                 // remove the lock.
                 T::Currency::remove_lock(STAKING_ID, &stash);
-                // remove all staking-related information.
-                Self::kill_stash(&stash);
             } else {
                 // This was the consequence of a partial unbond. just update the ledger and move on.
                 Self::update_ledger(&controller, &ledger);
+            }
+
+            // `old_total` should never be less than the new total because
+            // `consolidate_unlocked` strictly subtracts balance.
+            if ledger.total < old_total {
+                // Already checked that this won't overflow by entry condition.
+                let value = old_total - ledger.total;
+                Self::deposit_event(RawEvent::Withdrawn(stash, value));
             }
         }
 
@@ -509,28 +576,29 @@ decl_module! {
         /// - Both the reads and writes follow a similar pattern.
         /// # </weight>
         #[weight = SimpleDispatchInfo::FixedNormal(750_000)]
-        fn nominate_contracts(origin, targets: Vec<<T::Lookup as StaticLookup>::Source>) {
-            Self::ensure_storage_upgraded();
-
+        fn nominate_contracts(origin, targets: Vec<(<T::Lookup as StaticLookup>::Source>, BalanceOf<T>)>) {
             let controller = ensure_signed(origin)?;
-            let ledger = Self::ledger(&controller).ok_or("not a controller")?;
+            let ledger = Self::ledger(&controller).ok_or(Error::<T>::NotController)?;
             let stash = &ledger.stash;
-            ensure!(!targets.is_empty(), "targets cannot be empty");
+            ensure!(!targets.is_empty(), Error::<T>::NotController);
             let targets = targets.into_iter()
                 .take(MAX_NOMINATIONS)
-                .map(|t| T::Lookup::lookup(t))
-                .collect::<result::Result<Vec<T::AccountId>, _>>()?;
+                .map(|t| (T::Lookup::lookup(t.0), t.1))
+                .collect::<result::Result<Vec<(T::AccountId, BalanceOf<T>>, _>>()?;
 
-            if !targets.iter().all(|t| T::ContractFinder::is_exists_contract(&t)) {
-                Err("tragets must be operated contracts")?
+            // check the is targets operated contracts?
+            if !targets.iter().all(|t| T::ContractFinder::is_exists_contract(&(t.0))) {
+                Err(Error::<T>::NotOperatedContracts)?
             }
 
             let nominations = Nominations {
                 targets,
+                amounts,
                 submitted_in: Self::current_era(),
                 suppressed: false,
             };
 
+            Self::deposit_event(RawEvent::Nominate(stash.clone());
             <DappsNominations<T>>::insert(stash, &nominations);
         }
 
@@ -548,7 +616,7 @@ decl_module! {
         #[weight = SimpleDispatchInfo::FixedNormal(500_000)]
         fn chill(origin) {
             let controller = ensure_signed(origin)?;
-            let ledger = Self::ledger(&controller).ok_or("not a controller")?;
+            let ledger = Self::ledger(&controller).ok_or(Error::<T>::NotController)?;
             Self::chill_stash(&ledger.stash);
         }
 
@@ -566,7 +634,7 @@ decl_module! {
         #[weight = SimpleDispatchInfo::FixedNormal(500_000)]
         fn set_payee(origin, payee: RewardDestination) {
             let controller = ensure_signed(origin)?;
-            let ledger = Self::ledger(&controller).ok_or("not a controller")?;
+            let ledger = Self::ledger(&controller).ok_or(Error::<T>::NotController)?;
             let stash = &ledger.stash;
             <Payee<T>>::insert(stash, payee);
         }
@@ -585,7 +653,7 @@ decl_module! {
         #[weight = SimpleDispatchInfo::FixedNormal(750_000)]
         fn set_controller(origin, controller: <T::Lookup as StaticLookup>::Source) {
             let stash = ensure_signed(origin)?;
-            let old_controller = Self::bonded(&stash).ok_or("not a stash")?;
+            let old_controller = Self::bonded(&stash).ok_or(Error::<T>::NotStash)?;
             let controller = T::Lookup::lookup(controller)?;
             if <Ledger<T>>::contains_key(&controller) {
                 Err("controller already paired")?
@@ -599,7 +667,7 @@ decl_module! {
         }
     }
 }
-
+// TODO ----------------------------------
 impl<T: Trait> Module<T> {
     // MUTABLES (DANGEROUS)
 

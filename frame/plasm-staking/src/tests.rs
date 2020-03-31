@@ -355,12 +355,12 @@ fn bond_extra_failed_test() {
     new_test_ext().execute_with(|| {
         assert_eq!(
             PlasmStaking::bond_extra(Origin::signed(BOB_STASH), 1000),
-            Err(DispatchError::Other("not a stash"))
+            Err(DispatchError::Other(Error::<T>::NotStash))
         );
         <Bonded<Test>>::insert(BOB_STASH, BOB_CTRL);
         assert_eq!(
             PlasmStaking::bond_extra(Origin::signed(BOB_STASH), 1000),
-            Err(DispatchError::Other("not a controller"))
+            Err(DispatchError::Other(Error::<T>::NotController))
         );
     })
 }
@@ -452,14 +452,14 @@ fn unbond_failed_test() {
         success_first_bond(BOB_STASH, BOB_CTRL, 1000, RewardDestination::Stash);
         assert_eq!(
             PlasmStaking::unbond(Origin::signed(BOB_STASH), 300),
-            Err(DispatchError::Other("not a controller"))
+            Err(DispatchError::Other(Error::<T>::NotController))
         );
         for _ in 0..32 {
             success_unbond(BOB_CTRL, 10);
         }
         assert_eq!(
             PlasmStaking::unbond(Origin::signed(BOB_CTRL), 300),
-            Err(DispatchError::Other("can not schedule more unlock chunks"))
+            Err(DispatchError::Other(Error::<T>::NoMoreChunks))
         );
     })
 }
@@ -538,7 +538,7 @@ fn withdraw_unbonded_failed_test() {
         success_unbond(BOB_CTRL, 300);
         assert_eq!(
             PlasmStaking::withdraw_unbonded(Origin::signed(BOB_STASH)),
-            Err(DispatchError::Other("not a controller"))
+            Err(DispatchError::Other(Error::<T>::NotController))
         );
     })
 }
@@ -587,7 +587,7 @@ fn nominate_contracts_failed_test() {
         success_first_bond(BOB_STASH, BOB_CTRL, 1000, RewardDestination::Stash);
         assert_eq!(
             PlasmStaking::nominate_contracts(Origin::signed(BOB_STASH), vec![OPERATED_CONTRACT]),
-            Err(DispatchError::Other("not a controller"))
+            Err(DispatchError::Other(Error::<T>::NotController))
         );
         assert_eq!(
             PlasmStaking::nominate_contracts(Origin::signed(BOB_CTRL), vec![]),
@@ -595,7 +595,7 @@ fn nominate_contracts_failed_test() {
         );
         assert_eq!(
             PlasmStaking::nominate_contracts(Origin::signed(BOB_CTRL), vec![BOB_CONTRACT]),
-            Err(DispatchError::Other("tragets must be operated contracts"))
+            Err(DispatchError::Other(Error::<T>::NotOperatedContracts))
         );
     })
 }
@@ -619,7 +619,7 @@ fn chill_failed_test() {
         success_nominate_contracts(BOB_CTRL, vec![OPERATED_CONTRACT]);
         assert_eq!(
             PlasmStaking::chill(Origin::signed(BOB_STASH)),
-            Err(DispatchError::Other("not a controller"))
+            Err(DispatchError::Other(Error::<T>::NotController))
         );
     })
 }
@@ -645,7 +645,7 @@ fn set_payee_failed_test() {
         success_first_bond(ALICE_STASH, ALICE_CTRL, 1000, RewardDestination::Stash);
         assert_eq!(
             PlasmStaking::set_payee(Origin::signed(ALICE_STASH), RewardDestination::Controller),
-            Err(DispatchError::Other("not a controller"))
+            Err(DispatchError::Other(Error::<T>::NotController))
         );
     })
 }
@@ -678,7 +678,7 @@ fn set_controller_failed_test() {
         success_first_bond(ALICE_STASH, ALICE_CTRL, 1000, RewardDestination::Stash);
         assert_eq!(
             PlasmStaking::set_controller(Origin::signed(ALICE_CTRL), BOB_CTRL),
-            Err(DispatchError::Other("not a stash"))
+            Err(DispatchError::Other(Error::<T>::NotStash))
         );
         success_first_bond(BOB_STASH, BOB_CTRL, 1000, RewardDestination::Stash);
         assert_eq!(
