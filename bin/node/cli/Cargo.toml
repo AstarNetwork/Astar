@@ -65,7 +65,7 @@ pallet-timestamp = { git = "https://github.com/staketechnologies/substrate.git",
 pallet-contracts = { git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master", default-features = false }
 pallet-transaction-payment = { git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master" }
 pallet-finality-tracker = { git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master" }
-pallet-plasm-staking = { path = "../../../frame/plasm-staking" }
+pallet-dapps-staking = { path = "../../../frame/dapps-staking" }
 
 # CLI-specific dependencies
 sc-cli = { git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master", optional = true }

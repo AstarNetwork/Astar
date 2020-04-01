@@ -168,7 +168,7 @@ impl_opaque_keys! {
 }
 
 impl session::Trait for Runtime {
-    type SessionManager = PlasmStaking;
+    type SessionManager = DappsStaking;
     type SessionHandler = <SessionKeys as OpaqueKeys>::KeyTypeIdProviders;
     type ShouldEndSession = Babe;
     type Event = Event;
@@ -179,11 +179,11 @@ impl session::Trait for Runtime {
 }
 
 parameter_types! {
-    pub const SessionsPerEra: plasm_staking::SessionIndex = 6;
-    pub const BondingDuration: plasm_staking::EraIndex = 24 * 28;
+    pub const SessionsPerEra: dapps_staking::SessionIndex = 6;
+    pub const BondingDuration: dapps_staking::EraIndex = 24 * 28;
 }
 
-impl plasm_staking::Trait for Runtime {
+impl dapps_staking::Trait for Runtime {
     type Currency = Balances;
     type BondingDuration = BondingDuration;
     type ContractFinder = Operator;
@@ -234,7 +234,7 @@ impl contracts::Trait for Runtime {
 }
 
 impl operator::Trait for Runtime {
-    type Parameters = plasm_staking::parameters::StakingParameters;
+    type Parameters = dapps_staking::parameters::StakingParameters;
     type Event = Event;
 }
 
@@ -307,7 +307,7 @@ construct_runtime!(
         Indices: indices::{Module, Call, Storage, Event<T>, Config<T>},
         Balances: balances::{Module, Call, Storage, Event<T>, Config<T>},
         Contracts: contracts::{Module, Call, Storage, Event<T>, Config<T>},
-        PlasmStaking: plasm_staking::{Module, Call, Storage, Event<T>, Config<T>},
+        DappsStaking: dapps_staking::{Module, Call, Storage, Event<T>, Config<T>},
         Session: session::{Module, Call, Storage, Event, Config<T>},
         Babe: babe::{Module, Call, Storage, Config, Inherent(Timestamp)},
         Grandpa: grandpa::{Module, Call, Storage, Config, Event},

@@ -3,7 +3,7 @@ use sp_arithmetic::traits::BaseArithmetic;
 
 /// Get the amount of staking per Era in a module in the Plasm Network.
 pub trait GetEraStakingAmount<EraIndex, Balance> {
-    fn get_era_staking_amount(era: EraIndex) -> Balance;
+    fn get_era_staking_amount(era: &EraIndex) -> Balance;
 }
 
 /// The reward is allocated from the total supply of tokens,
