@@ -1,4 +1,4 @@
-//! Tests for the plasm-staking module.
+//! Tests for the dapps-staking module.
 
 #![cfg(test)]
 

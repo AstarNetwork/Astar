@@ -42,10 +42,10 @@ pub trait Trait: system::Trait {
     /// Time used for computing era duration.
     type Time: Time;
 
-    /// Tokens have been minted and are unused for validator-reward. Maybe, plasm-staking uses ().
+    /// Tokens have been minted and are unused for validator-reward. Maybe, dapps-staking uses ().
     type RewardRemainder: OnUnbalanced<NegativeImbalanceOf<Self>>;
 
-    /// Handler for the unbalanced increment when rewarding a staker. Maybe, plasm-staking uses ().
+    /// Handler for the unbalanced increment when rewarding a staker. Maybe, dapps-staking uses ().
     type Reward: OnUnbalanced<PositiveImbalanceOf<Self>>;
 
     /// The information of era.
@@ -59,7 +59,7 @@ pub trait Trait: system::Trait {
 }
 
 decl_storage! {
-    trait Store for Module<T: Trait> as PlasmStaking {
+    trait Store for Module<T: Trait> as DappsStaking {
         /// The already untreated era is EraIndex.
         pub UntreatedEra get(fn untreated_era): EraIndex;
 
