@@ -22,7 +22,7 @@ use codec::{Encode, Decode};
 use sp_std::prelude::*;
 use sp_core::{H256, ecdsa};
 use sp_runtime::{
-    RuntimeDebug,
+    RuntimeDebug, Perbill,
     traits::{
         Member, IdentifyAccount, BlakeTwo256, Hash, Saturating, AtLeast32Bit,
     },
@@ -278,8 +278,9 @@ decl_storage! {
         HasVote get(fn has_vote):
             double_map hasher(blake2_128_concat) T::AuthorityId, hasher(blake2_128_concat) ClaimId
             => bool;
-        /// Lockdrop alpha parameter.
-        Alpha get(fn alpha) config(): u128;
+        /// Lockdrop alpha parameter (fixed point at 1_000_000_000).
+        /// α ∈ [0; 10]
+        Alpha get(fn alpha) config(): Perbill;
         /// Lockdrop dollar rate parameter: BTC, ETH.
         DollarRate get(fn dollar_rate) config(): (T::DollarRate, T::DollarRate);
         /// Lockdrop dollar rate median filter table: Time, BTC, ETH.
@@ -614,21 +615,19 @@ impl<T: Trait> Module<T> {
     /// PLM issue amount for given BTC value and locking duration.
     fn btc_issue_amount(value: u128, duration: T::Moment) -> u128 {
         // https://medium.com/stake-technologies/plasm-lockdrop-introduction-99fa2dfc37c0
-        // Alpha = a * 1000
-        Self::alpha() * value * Self::dollar_rate().0.into() * Self::time_bonus(duration)
-            / 1_000
+        let rate = Self::alpha() * Self::dollar_rate().0 * Self::time_bonus(duration).into();
+        rate.into() * value * 10
     }
 
     /// PLM issue amount for given ETH value and locking duration.
     fn eth_issue_amount(value: u128, duration: T::Moment) -> u128 {
         // https://medium.com/stake-technologies/plasm-lockdrop-introduction-99fa2dfc37c0
-        // Alpha = a * 1000
-        Self::alpha() * value * Self::dollar_rate().1.into() * Self::time_bonus(duration)
-            / 1_000
+        let rate = Self::alpha() * Self::dollar_rate().1 * Self::time_bonus(duration).into();
+        rate.into() * value * 10
     }
 
     /// Lockdrop bonus depends of lockding duration.
-    fn time_bonus(duration: T::Moment) -> u128 {
+    fn time_bonus(duration: T::Moment) -> u16 {
         let days: u64 = 24 * 60 * 60; // One day in seconds
         let duration_sec = Into::<u64>::into(duration);
         if duration_sec < 30 * days {

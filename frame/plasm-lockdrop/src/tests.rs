@@ -226,7 +226,7 @@ fn dollar_rate_should_expire() {
 fn check_btc_issue_amount() {
     new_test_ext().execute_with(|| {
         assert_eq!(<DollarRate<Runtime>>::get(), (5000, 120));
-        assert_eq!(<Alpha>::get(), 2000);
+        assert_eq!(<Alpha>::get(), Perbill::from_parts(200_000_000));
 
         let day = 24 * 60 * 60;
         for i in 1..2000 {
@@ -254,7 +254,7 @@ fn check_btc_issue_amount() {
 fn check_eth_issue_amount() {
     new_test_ext().execute_with(|| {
         assert_eq!(<DollarRate<Runtime>>::get(), (5000, 120));
-        assert_eq!(<Alpha>::get(), 2000);
+        assert_eq!(<Alpha>::get(), Perbill::from_parts(200_000_000));
 
         let day = 24 * 60 * 60;
         for i in 1..2000 {

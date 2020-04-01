@@ -217,7 +217,7 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 
     let _ = GenesisConfig::<Runtime> {
         // Alpha: 2
-        alpha: 2_000,
+        alpha: Perbill::from_parts(200_000_000),
         // BTC: $5000, ETH: $120
         dollar_rate: (5_000, 120),
     }.assimilate_storage(&mut storage);
