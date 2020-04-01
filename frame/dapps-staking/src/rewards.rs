@@ -54,14 +54,8 @@ mod test {
             (80_000_000, 20_000_000)
         );
 
-        assert_eq!(
-            compute_payout_test(10_000_000u64),
-            (8_000_000, 2_000_000)
-        );
+        assert_eq!(compute_payout_test(10_000_000u64), (8_000_000, 2_000_000));
 
-        assert_eq!(
-            compute_payout_test(11_111_111u64),
-            (8_888_889, 2_222_222)
-        );
+        assert_eq!(compute_payout_test(11_111_111u64), (8_888_889, 2_222_222));
     }
 }

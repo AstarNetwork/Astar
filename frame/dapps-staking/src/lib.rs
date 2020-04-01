@@ -631,9 +631,7 @@ decl_module! {
     }
 }
 
-fn migrate<T: Trait>() {
-    todo!();
-}
+fn migrate<T: Trait>() {}
 
 impl<T: Trait> Module<T> {
     // MUTABLES (DANGEROUS)
