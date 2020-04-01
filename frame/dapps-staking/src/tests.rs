@@ -4,215 +4,11 @@
 
 use super::*;
 use crate::mock::*;
-use balances::BalanceLock;
+use frame_support::{assert_noop, assert_ok};
+use pallet_balances::{BalanceLock, Reasons};
+use pallet_plasm_rewards::traits::ComputeTotalPayout;
+use sp_runtime::traits::OnFinalize;
 use sp_runtime::DispatchError;
-use support::assert_ok;
-
-#[test]
-fn root_calls_fails_for_user() {
-    new_test_ext().execute_with(|| {
-        let res = DappsStaking::force_no_eras(Origin::signed(0));
-        assert_eq!(res, Err(DispatchError::BadOrigin));
-
-        let res = DappsStaking::force_new_era(Origin::signed(0));
-        assert_eq!(res, Err(DispatchError::BadOrigin));
-
-        let res = DappsStaking::force_new_era_always(Origin::signed(0));
-        assert_eq!(res, Err(DispatchError::BadOrigin));
-
-        let res = DappsStaking::set_validators(Origin::signed(0), vec![]);
-        assert_eq!(res, Err(DispatchError::BadOrigin));
-    })
-}
-
-#[test]
-fn set_validators_works_for_root() {
-    new_test_ext().execute_with(|| {
-        advance_session();
-        assert_eq!(Session::current_index(), 1);
-        assert_eq!(Session::validators(), vec![1, 2]);
-
-        assert_ok!(DappsStaking::set_validators(Origin::ROOT, vec![1, 2, 3]));
-        for i in 1..10 {
-            assert_eq!(Session::current_index(), i);
-            assert_eq!(Session::validators(), vec![1, 2]);
-            advance_session();
-        }
-
-        advance_session();
-        assert_eq!(Session::validators(), vec![1, 2, 3]);
-
-        for i in 11..25 {
-            assert_eq!(Session::current_index(), i);
-            assert_eq!(Session::validators(), vec![1, 2, 3]);
-            advance_session();
-        }
-
-        assert_ok!(DappsStaking::set_validators(Origin::ROOT, vec![1, 2]));
-        assert_eq!(DappsStaking::validators(), vec![1, 2]);
-
-        for i in 25..30 {
-            assert_eq!(Session::current_index(), i);
-            assert_eq!(Session::validators(), vec![1, 2, 3]);
-            advance_session();
-        }
-
-        advance_session();
-        assert_eq!(Session::current_index(), 31);
-        assert_eq!(Session::validators(), vec![1, 2]);
-    })
-}
-
-#[test]
-fn noraml_incremental_era() {
-    new_test_ext().execute_with(|| {
-        assert_eq!(DappsStaking::current_era(), 0);
-        assert_eq!(DappsStaking::current_era_start(), 0);
-        assert_eq!(DappsStaking::current_era_start_session_index(), 0);
-        assert_eq!(DappsStaking::force_era(), Forcing::NotForcing);
-        assert_eq!(DappsStaking::storage_version(), 1);
-        assert_eq!(Session::validators(), vec![1, 2]);
-        assert_eq!(Session::current_index(), 0);
-
-        advance_session();
-
-        assert_eq!(DappsStaking::current_era(), 0);
-        assert_eq!(DappsStaking::current_era_start(), 0);
-        assert_eq!(DappsStaking::current_era_start_session_index(), 0);
-        assert_eq!(DappsStaking::force_era(), Forcing::NotForcing);
-        assert_eq!(DappsStaking::storage_version(), 1);
-        assert_eq!(Session::validators(), vec![1, 2]);
-        assert_eq!(Session::current_index(), 1);
-
-        assert_ok!(DappsStaking::set_validators(
-            Origin::ROOT,
-            vec![1, 2, 3, 4, 5]
-        ));
-
-        assert_eq!(Session::validators(), vec![1, 2]);
-        assert_eq!(Session::current_index(), 1);
-
-        // 2~9-th session
-        for i in 2..10 {
-            advance_session();
-            assert_eq!(DappsStaking::current_era(), 0);
-            assert_eq!(DappsStaking::current_era_start(), 0);
-            assert_eq!(DappsStaking::current_era_start_session_index(), 0);
-            assert_eq!(DappsStaking::force_era(), Forcing::NotForcing);
-            assert_eq!(DappsStaking::storage_version(), 1);
-            assert_eq!(Session::validators(), vec![1, 2]);
-            assert_eq!(Session::current_index(), i);
-        }
-
-        // 10~19-th session
-        for i in 10..20 {
-            advance_session();
-            assert_eq!(DappsStaking::current_era(), 1);
-            assert_eq!(DappsStaking::current_era_start(), 10 * PER_SESSION);
-            assert_eq!(DappsStaking::current_era_start_session_index(), 10);
-            assert_eq!(DappsStaking::force_era(), Forcing::NotForcing);
-            assert_eq!(DappsStaking::storage_version(), 1);
-            assert_eq!(Session::current_index(), i);
-            match i {
-                10 => assert_eq!(Session::validators(), vec![1, 2]),
-                _ => assert_eq!(Session::validators(), vec![1, 2, 3, 4, 5]),
-            }
-        }
-
-        assert_ok!(DappsStaking::set_validators(Origin::ROOT, vec![1, 3, 5]));
-
-        // 20~29-th session
-        for i in 20..30 {
-            advance_session();
-            assert_eq!(DappsStaking::current_era(), 2);
-            assert_eq!(DappsStaking::current_era_start(), 20 * PER_SESSION);
-            assert_eq!(DappsStaking::current_era_start_session_index(), 20);
-            assert_eq!(DappsStaking::force_era(), Forcing::NotForcing);
-            assert_eq!(DappsStaking::storage_version(), 1);
-            assert_eq!(Session::current_index(), i);
-            match i {
-                20 => assert_eq!(Session::validators(), vec![1, 2, 3, 4, 5]),
-                _ => assert_eq!(Session::validators(), vec![1, 3, 5]),
-            }
-        }
-    })
-}
-
-#[test]
-fn force_new_era_incremental_era() {
-    new_test_ext().execute_with(|| {
-        assert_eq!(DappsStaking::force_era(), Forcing::NotForcing);
-        assert_ok!(DappsStaking::force_new_era(Origin::ROOT));
-        assert_eq!(DappsStaking::force_era(), Forcing::ForceNew);
-
-        assert_ok!(DappsStaking::set_validators(
-            Origin::ROOT,
-            vec![1, 2, 3, 4, 5]
-        ));
-
-        advance_session();
-        assert_eq!(DappsStaking::current_era(), 1);
-        assert_eq!(DappsStaking::current_era_start(), PER_SESSION);
-        assert_eq!(DappsStaking::current_era_start_session_index(), 1);
-        assert_eq!(DappsStaking::force_era(), Forcing::NotForcing);
-        assert_eq!(DappsStaking::storage_version(), 1);
-        assert_eq!(Session::validators(), vec![1, 2]);
-        assert_eq!(Session::current_index(), 1);
-
-        // 2-11-th sesson
-        for i in 2..11 {
-            advance_session();
-            assert_eq!(DappsStaking::current_era(), 1);
-            assert_eq!(DappsStaking::current_era_start(), PER_SESSION);
-            assert_eq!(DappsStaking::current_era_start_session_index(), 1);
-            assert_eq!(DappsStaking::force_era(), Forcing::NotForcing);
-            assert_eq!(DappsStaking::storage_version(), 1);
-            assert_eq!(Session::validators(), vec![1, 2, 3, 4, 5]);
-            assert_eq!(Session::current_index(), i);
-        }
-
-        advance_session();
-        assert_eq!(DappsStaking::current_era(), 2);
-        assert_eq!(DappsStaking::current_era_start(), 11 * PER_SESSION);
-        assert_eq!(DappsStaking::current_era_start_session_index(), 11);
-        assert_eq!(DappsStaking::force_era(), Forcing::NotForcing);
-        assert_eq!(DappsStaking::storage_version(), 1);
-        assert_eq!(Session::validators(), vec![1, 2, 3, 4, 5]);
-        assert_eq!(Session::current_index(), 11);
-    })
-}
-
-#[test]
-fn force_new_era_always_incremental_era() {
-    new_test_ext().execute_with(|| {
-        assert_eq!(DappsStaking::force_era(), Forcing::NotForcing);
-        assert_ok!(DappsStaking::force_new_era_always(Origin::ROOT));
-        assert_eq!(DappsStaking::force_era(), Forcing::ForceAlways);
-
-        assert_ok!(DappsStaking::set_validators(
-            Origin::ROOT,
-            vec![1, 2, 3, 4, 5]
-        ));
-
-        advance_session();
-        assert_eq!(DappsStaking::current_era(), 1);
-        assert_eq!(DappsStaking::current_era_start(), PER_SESSION);
-        assert_eq!(DappsStaking::current_era_start_session_index(), 1);
-        assert_eq!(DappsStaking::force_era(), Forcing::ForceAlways);
-        assert_eq!(DappsStaking::storage_version(), 1);
-        assert_eq!(Session::validators(), vec![1, 2]);
-        assert_eq!(Session::current_index(), 1);
-
-        advance_session();
-        assert_eq!(DappsStaking::current_era(), 2);
-        assert_eq!(DappsStaking::current_era_start(), 2 * PER_SESSION);
-        assert_eq!(DappsStaking::current_era_start_session_index(), 2);
-        assert_eq!(DappsStaking::force_era(), Forcing::ForceAlways);
-        assert_eq!(DappsStaking::storage_version(), 1);
-        assert_eq!(Session::validators(), vec![1, 2, 3, 4, 5]);
-        assert_eq!(Session::current_index(), 2);
-    })
-}
 
 #[test]
 fn bond_scenario_test() {
@@ -234,6 +30,7 @@ fn bond_scenario_test() {
                 total: 1000,
                 active: 1000,
                 unlocking: vec![],
+                last_reward: Some(0),
             })
         );
         assert_eq!(DappsStaking::ledger(ALICE_STASH), None);
@@ -242,7 +39,7 @@ fn bond_scenario_test() {
             vec![BalanceLock {
                 id: STAKING_ID,
                 amount: 1000,
-                reasons: balances::Reasons::All,
+                reasons: Reasons::All,
             },]
         )
     })
@@ -309,6 +106,7 @@ fn success_first_bond(
             total: balance,
             active: balance,
             unlocking: vec![],
+            last_reward: Some(0),
         })
     );
     assert_eq!(
@@ -316,7 +114,7 @@ fn success_first_bond(
         vec![BalanceLock {
             id: STAKING_ID,
             amount: balance,
-            reasons: balances::Reasons::All,
+            reasons: Reasons::All,
         },]
     )
 }
@@ -337,6 +135,7 @@ fn bond_extra_scenario_test() {
                 total: 2000,
                 active: 2000,
                 unlocking: vec![],
+                last_reward: Some(0),
             })
         );
         assert_eq!(
@@ -344,7 +143,7 @@ fn bond_extra_scenario_test() {
             vec![BalanceLock {
                 id: STAKING_ID,
                 amount: 2000,
-                reasons: balances::Reasons::All,
+                reasons: Reasons::All,
             },]
         );
     })
@@ -353,14 +152,14 @@ fn bond_extra_scenario_test() {
 #[test]
 fn bond_extra_failed_test() {
     new_test_ext().execute_with(|| {
-        assert_eq!(
+        assert_noop!(
             DappsStaking::bond_extra(Origin::signed(BOB_STASH), 1000),
-            Err(DispatchError::Other("not a stash"))
+            Error::<Test>::NotStash,
         );
         <Bonded<Test>>::insert(BOB_STASH, BOB_CTRL);
-        assert_eq!(
+        assert_noop!(
             DappsStaking::bond_extra(Origin::signed(BOB_STASH), 1000),
-            Err(DispatchError::Other("not a controller"))
+            Error::<Test>::NotController,
         );
     })
 }
@@ -381,6 +180,7 @@ fn unbond_scenario_test() {
                     value: 300,
                     era: 3, // current_era(0) + bonding_duration(3)
                 }],
+                last_reward: Some(0),
             })
         );
         assert_eq!(
@@ -388,7 +188,7 @@ fn unbond_scenario_test() {
             vec![BalanceLock {
                 id: STAKING_ID,
                 amount: 1000,
-                reasons: balances::Reasons::All,
+                reasons: Reasons::All,
             },]
         );
 
@@ -411,6 +211,7 @@ fn unbond_scenario_test() {
                         era: 4, // current_era(1) + bonding_duration(3)
                     }
                 ],
+                last_reward: Some(0),
             })
         );
         assert_eq!(
@@ -418,7 +219,7 @@ fn unbond_scenario_test() {
             vec![BalanceLock {
                 id: STAKING_ID,
                 amount: 1000,
-                reasons: balances::Reasons::All,
+                reasons: Reasons::All,
             },]
         );
     })
@@ -428,7 +229,7 @@ fn success_unbond(ctrl: AccountId, balance: Balance) {
     let now_ledger = DappsStaking::ledger(ctrl).unwrap();
     let now_unlock_chunk = now_ledger.unlocking;
     let now_len = now_unlock_chunk.len();
-    let current_era = DappsStaking::current_era();
+    let current_era = PlasmRewards::current_era().unwrap();
 
     assert_ok!(DappsStaking::unbond(Origin::signed(ctrl), balance));
 
@@ -450,16 +251,16 @@ fn success_unbond(ctrl: AccountId, balance: Balance) {
 fn unbond_failed_test() {
     new_test_ext().execute_with(|| {
         success_first_bond(BOB_STASH, BOB_CTRL, 1000, RewardDestination::Stash);
-        assert_eq!(
+        assert_noop!(
             DappsStaking::unbond(Origin::signed(BOB_STASH), 300),
-            Err(DispatchError::Other("not a controller"))
+            Error::<Test>::NotController,
         );
         for _ in 0..32 {
             success_unbond(BOB_CTRL, 10);
         }
-        assert_eq!(
+        assert_noop!(
             DappsStaking::unbond(Origin::signed(BOB_CTRL), 300),
-            Err(DispatchError::Other("can not schedule more unlock chunks"))
+            Error::<Test>::NoMoreChunks,
         );
     })
 }
@@ -489,6 +290,7 @@ fn withdraw_unbonded_scenario_test() {
                     UnlockChunk { value: 300, era: 3 },
                     UnlockChunk { value: 700, era: 4 },
                 ],
+                last_reward: Some(0),
             })
         );
         assert_eq!(
@@ -496,7 +298,7 @@ fn withdraw_unbonded_scenario_test() {
             vec![BalanceLock {
                 id: STAKING_ID,
                 amount: 1000,
-                reasons: balances::Reasons::All,
+                reasons: Reasons::All,
             },]
         );
 
@@ -511,6 +313,7 @@ fn withdraw_unbonded_scenario_test() {
                 total: 700,
                 active: 0,
                 unlocking: vec![UnlockChunk { value: 700, era: 4 },],
+                last_reward: Some(0),
             })
         );
         assert_eq!(
@@ -518,7 +321,7 @@ fn withdraw_unbonded_scenario_test() {
             vec![BalanceLock {
                 id: STAKING_ID,
                 amount: 700,
-                reasons: balances::Reasons::All,
+                reasons: Reasons::All,
             },]
         );
 
@@ -536,9 +339,9 @@ fn withdraw_unbonded_failed_test() {
     new_test_ext().execute_with(|| {
         success_first_bond(BOB_STASH, BOB_CTRL, 1000, RewardDestination::Stash);
         success_unbond(BOB_CTRL, 300);
-        assert_eq!(
+        assert_noop!(
             DappsStaking::withdraw_unbonded(Origin::signed(BOB_STASH)),
-            Err(DispatchError::Other("not a controller"))
+            Error::<Test>::NotController,
         );
     })
 }
@@ -550,12 +353,12 @@ fn nominate_contracts_scenario_test() {
         success_first_bond(BOB_STASH, BOB_CTRL, 1000, RewardDestination::Stash);
         assert_ok!(DappsStaking::nominate_contracts(
             Origin::signed(BOB_CTRL),
-            vec![OPERATED_CONTRACT]
+            vec![(OPERATED_CONTRACT, 1000)]
         ));
         assert_eq!(
             DappsStaking::dapps_nominations(BOB_STASH),
-            Some(staking::Nominations {
-                targets: vec![OPERATED_CONTRACT],
+            Some(Nominations {
+                targets: vec![(OPERATED_CONTRACT, 1000)],
                 submitted_in: 0,
                 suppressed: false,
             })
@@ -563,16 +366,16 @@ fn nominate_contracts_scenario_test() {
     })
 }
 
-fn success_nominate_contracts(ctrl: AccountId, targets: Vec<AccountId>) {
+fn success_nominate_contracts(ctrl: AccountId, targets: Vec<(AccountId, Balance)>) {
     assert_ok!(DappsStaking::nominate_contracts(
         Origin::signed(ctrl),
         targets.clone()
     ));
     let stash = DappsStaking::ledger(&ctrl).unwrap().stash;
-    let current_era = DappsStaking::current_era();
+    let current_era = PlasmRewards::current_era().unwrap();
     assert_eq!(
         DappsStaking::dapps_nominations(stash),
-        Some(staking::Nominations {
+        Some(Nominations {
             targets: targets,
             submitted_in: current_era,
             suppressed: false,
@@ -585,17 +388,27 @@ fn nominate_contracts_failed_test() {
     new_test_ext().execute_with(|| {
         valid_instatiate();
         success_first_bond(BOB_STASH, BOB_CTRL, 1000, RewardDestination::Stash);
-        assert_eq!(
-            DappsStaking::nominate_contracts(Origin::signed(BOB_STASH), vec![OPERATED_CONTRACT]),
-            Err(DispatchError::Other("not a controller"))
+        assert_noop!(
+            DappsStaking::nominate_contracts(
+                Origin::signed(BOB_STASH),
+                vec![(OPERATED_CONTRACT, 1_000)]
+            ),
+            Error::<Test>::NotController,
         );
-        assert_eq!(
+        assert_noop!(
             DappsStaking::nominate_contracts(Origin::signed(BOB_CTRL), vec![]),
-            Err(DispatchError::Other("targets cannot be empty"))
+            Error::<Test>::EmptyNominateTargets,
         );
-        assert_eq!(
-            DappsStaking::nominate_contracts(Origin::signed(BOB_CTRL), vec![BOB_CONTRACT]),
-            Err(DispatchError::Other("tragets must be operated contracts"))
+        assert_noop!(
+            DappsStaking::nominate_contracts(Origin::signed(BOB_CTRL), vec![(BOB_CONTRACT, 1_000)]),
+            Error::<Test>::NotOperatedContracts,
+        );
+        assert_noop!(
+            DappsStaking::nominate_contracts(
+                Origin::signed(BOB_CTRL),
+                vec![(OPERATED_CONTRACT, 5_000)]
+            ),
+            Error::<Test>::NotEnoughStaking,
         );
     })
 }
@@ -605,7 +418,7 @@ fn chill_scenario_test() {
     new_test_ext().execute_with(|| {
         valid_instatiate();
         success_first_bond(BOB_STASH, BOB_CTRL, 1000, RewardDestination::Stash);
-        success_nominate_contracts(BOB_CTRL, vec![OPERATED_CONTRACT]);
+        success_nominate_contracts(BOB_CTRL, vec![(OPERATED_CONTRACT, 1000)]);
         assert_ok!(DappsStaking::chill(Origin::signed(BOB_CTRL)));
         assert_eq!(DappsStaking::dapps_nominations(BOB_STASH), None);
     })
@@ -616,10 +429,10 @@ fn chill_failed_test() {
     new_test_ext().execute_with(|| {
         valid_instatiate();
         success_first_bond(BOB_STASH, BOB_CTRL, 1000, RewardDestination::Stash);
-        success_nominate_contracts(BOB_CTRL, vec![OPERATED_CONTRACT]);
-        assert_eq!(
+        success_nominate_contracts(BOB_CTRL, vec![(OPERATED_CONTRACT, 1000)]);
+        assert_noop!(
             DappsStaking::chill(Origin::signed(BOB_STASH)),
-            Err(DispatchError::Other("not a controller"))
+            Error::<Test>::NotController,
         );
     })
 }
@@ -643,9 +456,9 @@ fn set_payee_scenario_test() {
 fn set_payee_failed_test() {
     new_test_ext().execute_with(|| {
         success_first_bond(ALICE_STASH, ALICE_CTRL, 1000, RewardDestination::Stash);
-        assert_eq!(
+        assert_noop!(
             DappsStaking::set_payee(Origin::signed(ALICE_STASH), RewardDestination::Controller),
-            Err(DispatchError::Other("not a controller"))
+            Error::<Test>::NotController,
         );
     })
 }
@@ -666,6 +479,7 @@ fn set_controller_scenario_test() {
                 total: 1000,
                 active: 1000,
                 unlocking: vec![],
+                last_reward: Some(0),
             })
         );
         assert_eq!(DappsStaking::ledger(ALICE_CTRL), None);
@@ -676,51 +490,19 @@ fn set_controller_scenario_test() {
 fn set_controller_failed_test() {
     new_test_ext().execute_with(|| {
         success_first_bond(ALICE_STASH, ALICE_CTRL, 1000, RewardDestination::Stash);
-        assert_eq!(
+        assert_noop!(
             DappsStaking::set_controller(Origin::signed(ALICE_CTRL), BOB_CTRL),
-            Err(DispatchError::Other("not a stash"))
+            Error::<Test>::NotStash,
         );
         success_first_bond(BOB_STASH, BOB_CTRL, 1000, RewardDestination::Stash);
-        assert_eq!(
+        assert_noop!(
             DappsStaking::set_controller(Origin::signed(ALICE_STASH), BOB_CTRL),
-            Err(DispatchError::Other("controller already paired"))
+            "controller already paired",
         );
     })
 }
 
 const SIX_HOURS: u64 = 6 * 60 * 60 * 1000;
-
-#[test]
-fn reward_to_validator_test() {
-    new_test_ext().execute_with(|| {
-        advance_session();
-        assert_ok!(DappsStaking::set_validators(
-            Origin::ROOT,
-            vec![VALIDATOR_A, VALIDATOR_B, VALIDATOR_C, VALIDATOR_D]
-        ));
-        advance_era();
-        assert_eq!(
-            DappsStaking::current_elected(),
-            vec![VALIDATOR_A, VALIDATOR_B, VALIDATOR_C, VALIDATOR_D]
-        );
-        advance_session();
-        assert_eq!(
-            Session::validators(),
-            vec![VALIDATOR_A, VALIDATOR_B, VALIDATOR_C, VALIDATOR_D]
-        );
-
-        let pre_total_issuarance = Balances::total_issuance();
-
-        let (a, b) = inflation::compute_total_payout_test(pre_total_issuarance, SIX_HOURS);
-        let positive_imbalance = DappsStaking::reward_to_validators(a / 2, b / 2);
-        assert_eq!(Balances::free_balance(&VALIDATOR_A), 1_000_068);
-        assert_eq!(Balances::free_balance(&VALIDATOR_B), 1_000_068);
-        assert_eq!(Balances::free_balance(&VALIDATOR_C), 1_000_068);
-        assert_eq!(Balances::free_balance(&VALIDATOR_D), 1_000_068);
-        assert_eq!(positive_imbalance, 272);
-        assert_eq!(Balances::total_issuance(), pre_total_issuarance + 272);
-    })
-}
 
 #[test]
 fn reward_to_operators_test() {
@@ -738,21 +520,30 @@ fn reward_to_operators_test() {
             1_000,
             RewardDestination::Controller,
         );
-        success_nominate_contracts(BOB_CTRL, vec![OPERATED_CONTRACT]);
-        success_nominate_contracts(ALICE_CTRL, vec![OPERATED_CONTRACT]);
+        success_nominate_contracts(BOB_CTRL, vec![(OPERATED_CONTRACT, 1_000)]);
+        success_nominate_contracts(ALICE_CTRL, vec![(OPERATED_CONTRACT, 1_000)]);
 
         advance_era();
 
+        let active_era = PlasmRewards::active_era().unwrap();
         let pre_total_issuarance = Balances::total_issuance();
+        let (_, b) =
+            <Test as pallet_plasm_rewards::Trait>::ComputeTotalPayout::compute_total_payout(
+                pre_total_issuarance,
+                SIX_HOURS,
+                0,
+                0,
+            );
 
-        let (a, b) = inflation::compute_total_payout_test(pre_total_issuarance, SIX_HOURS);
-        let positive_imbalance = DappsStaking::reward_to_operators(a - a / 2, b - b / 2);
-        assert_eq!(Balances::free_balance(&BOB_STASH), 2_000 + 34); // +nomiante reward
+        advance_session();
+
+        let positive_imbalance = DappsStaking::reward_for_dapps(&active_era.index, b);
+        assert_eq!(Balances::free_balance(&BOB_STASH), 2_000 + 41); // +nomiante reward
         assert_eq!(Balances::free_balance(&BOB_CTRL), 20 + 0); // +0
-        assert_eq!(Balances::free_balance(&ALICE_STASH), 1_000 + 274); // +operator reward
-        assert_eq!(Balances::free_balance(&ALICE_CTRL), 10 + 34); // +nominate reward
-        assert_eq!(positive_imbalance, 342);
-        assert_eq!(Balances::total_issuance(), pre_total_issuarance + 342);
+        assert_eq!(Balances::free_balance(&ALICE_STASH), 1_000 + 329); // +operator reward
+        assert_eq!(Balances::free_balance(&ALICE_CTRL), 10 + 41); // +nominate reward
+        assert_eq!(positive_imbalance, 411);
+        assert_eq!(Balances::total_issuance(), pre_total_issuarance + 411);
     })
 }
 
@@ -760,11 +551,6 @@ fn reward_to_operators_test() {
 fn new_session_scenario_test() {
     new_test_ext().execute_with(|| {
         advance_session();
-        assert_ok!(DappsStaking::set_validators(
-            Origin::ROOT,
-            vec![VALIDATOR_A, VALIDATOR_B, VALIDATOR_C, VALIDATOR_D]
-        ));
-
         valid_instatiate();
         assert_ok!(Operator::change_operator(
             Origin::signed(OPERATOR),
@@ -778,37 +564,26 @@ fn new_session_scenario_test() {
             1_000,
             RewardDestination::Controller,
         );
-        success_nominate_contracts(BOB_CTRL, vec![OPERATED_CONTRACT]);
-        success_nominate_contracts(ALICE_CTRL, vec![OPERATED_CONTRACT]);
+        success_nominate_contracts(BOB_CTRL, vec![(OPERATED_CONTRACT, 1_000)]);
+        success_nominate_contracts(ALICE_CTRL, vec![(OPERATED_CONTRACT, 1_000)]);
 
         advance_era();
-        advance_session();
-        assert_eq!(
-            DappsStaking::current_elected(),
-            vec![VALIDATOR_A, VALIDATOR_B, VALIDATOR_C, VALIDATOR_D]
-        );
+        DappsStaking::on_finalize(0);
 
         let pre_total_issuarance = Balances::total_issuance();
-        assert_eq!(Balances::free_balance(&VALIDATOR_A), 1_000_000);
-        assert_eq!(Balances::free_balance(&VALIDATOR_B), 1_000_000);
-        assert_eq!(Balances::free_balance(&VALIDATOR_C), 1_000_000);
-        assert_eq!(Balances::free_balance(&VALIDATOR_D), 1_000_000);
         assert_eq!(Balances::free_balance(&BOB_STASH), 2_000);
         assert_eq!(Balances::free_balance(&BOB_CTRL), 20);
         assert_eq!(Balances::free_balance(&ALICE_STASH), 1_000);
         assert_eq!(Balances::free_balance(&ALICE_CTRL), 10);
-        assert_eq!(pre_total_issuarance, 5_002_318);
-        for _ in 0..10 {
-            advance_session();
-        }
-        assert_eq!(Balances::free_balance(&VALIDATOR_A), 1_000_000 + 2); // +validator reward
-        assert_eq!(Balances::free_balance(&VALIDATOR_B), 1_000_000 + 2); // +validator reward
-        assert_eq!(Balances::free_balance(&VALIDATOR_C), 1_000_000 + 2); // +validator reward
-        assert_eq!(Balances::free_balance(&VALIDATOR_D), 1_000_000 + 2); // +validator reward
+        assert_eq!(pre_total_issuarance, 3_002_318);
+
+        advance_era();
+        DappsStaking::on_finalize(0);
+
         assert_eq!(Balances::free_balance(&BOB_STASH), 2_000 + 1); // +nomiante reward
         assert_eq!(Balances::free_balance(&BOB_CTRL), 20 + 0); // +0
         assert_eq!(Balances::free_balance(&ALICE_STASH), 1_000 + 8); // +operator reward
         assert_eq!(Balances::free_balance(&ALICE_CTRL), 10 + 1); // +nominate reward
-        assert_eq!(Balances::total_issuance(), 5_002_318 + 18);
+        assert_eq!(Balances::total_issuance(), 3_002_318 + 10);
     })
 }

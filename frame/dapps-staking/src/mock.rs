@@ -3,11 +3,14 @@
 #![cfg(test)]
 
 use super::*;
-use primitives::{crypto::key_types, H256};
-use sp_runtime::testing::{Header, UintAuthorityId};
-use sp_runtime::traits::{BlakeTwo256, ConvertInto, IdentityLookup, OpaqueKeys};
-use sp_runtime::{traits::Hash, KeyTypeId, Perbill};
-use support::{assert_ok, impl_outer_dispatch, impl_outer_origin, parameter_types};
+use frame_support::{assert_ok, impl_outer_dispatch, impl_outer_origin, parameter_types};
+use pallet_plasm_rewards::{inflation::SimpleComputeTotalPayout, traits::MaybeValidators};
+use sp_core::{crypto::key_types, H256};
+use sp_runtime::{
+    testing::{Header, UintAuthorityId},
+    traits::{BlakeTwo256, ConvertInto, Hash, IdentityLookup, OnFinalize, OpaqueKeys},
+    KeyTypeId, Perbill,
+};
 
 pub type BlockNumber = u64;
 pub type AccountId = u64;
@@ -19,8 +22,6 @@ pub const ALICE_CTRL: u64 = 3;
 pub const BOB_CTRL: u64 = 4;
 pub const VALIDATOR_A: u64 = 5;
 pub const VALIDATOR_B: u64 = 6;
-pub const VALIDATOR_C: u64 = 7;
-pub const VALIDATOR_D: u64 = 8;
 pub const OPERATOR: u64 = 9;
 pub const OPERATED_CONTRACT: u64 = 19;
 pub const BOB_CONTRACT: u64 = 12;
@@ -31,10 +32,10 @@ impl_outer_origin! {
 
 impl_outer_dispatch! {
     pub enum Call for Test where origin: Origin {
-        session::Session,
-        balances::Balances,
-        contracts::Contracts,
-        plasm_staking::PlasmStaking,
+        pallet_session::Session,
+        pallet_balances::Balances,
+        pallet_contracts::Contracts,
+        dapps_staking::DappsStaking,
     }
 }
 
@@ -43,7 +44,7 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
         .build_storage::<Test>()
         .unwrap();
 
-    let _ = balances::GenesisConfig::<Test> {
+    let _ = pallet_balances::GenesisConfig::<Test> {
         balances: vec![
             (ALICE_STASH, 1000),
             (BOB_STASH, 2000),
@@ -51,14 +52,12 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
             (BOB_CTRL, 20),
             (VALIDATOR_A, 1_000_000),
             (VALIDATOR_B, 1_000_000),
-            (VALIDATOR_C, 1_000_000),
-            (VALIDATOR_D, 1_000_000),
         ],
     }
     .assimilate_storage(&mut storage);
 
-    let _ = contracts::GenesisConfig::<Test> {
-        current_schedule: contracts::Schedule {
+    let _ = pallet_contracts::GenesisConfig::<Test> {
+        current_schedule: pallet_contracts::Schedule {
             enable_println: true,
             ..Default::default()
         },
@@ -66,19 +65,22 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
     }
     .assimilate_storage(&mut storage);
 
-    let validators = vec![1, 2];
-
-    let _ = GenesisConfig::<Test> {
-        storage_version: 1,
-        force_era: Forcing::NotForcing,
-        validators: validators.clone(),
+    let _ = pallet_plasm_rewards::GenesisConfig {
+        ..Default::default()
     }
     .assimilate_storage(&mut storage);
 
-    let _ = session::GenesisConfig::<Test> {
+    let _ = GenesisConfig {
+        ..Default::default()
+    }
+    .assimilate_storage(&mut storage);
+
+    let validators = vec![VALIDATOR_A, VALIDATOR_B];
+
+    let _ = pallet_session::GenesisConfig::<Test> {
         keys: validators
             .iter()
-            .map(|x| (*x, UintAuthorityId(*x)))
+            .map(|x| (*x, *x, UintAuthorityId(*x)))
             .collect(),
     }
     .assimilate_storage(&mut storage);
@@ -113,7 +115,7 @@ impl system::Trait for Test {
     type AvailableBlockRatio = AvailableBlockRatio;
     type Version = ();
     type ModuleToIndex = ();
-    type AccountData = balances::AccountData<u64>;
+    type AccountData = pallet_balances::AccountData<u64>;
     type MigrateAccount = ();
     type OnNewAccount = ();
     type OnKilledAccount = ();
@@ -122,7 +124,7 @@ impl system::Trait for Test {
 parameter_types! {
     pub const MinimumPeriod: u64 = 1;
 }
-impl timestamp::Trait for Test {
+impl pallet_timestamp::Trait for Test {
     type Moment = u64;
     type OnTimestampSet = ();
     type MinimumPeriod = MinimumPeriod;
@@ -135,7 +137,7 @@ parameter_types! {
 
 pub struct TestSessionHandler;
 
-impl session::SessionHandler<u64> for TestSessionHandler {
+impl pallet_session::SessionHandler<u64> for TestSessionHandler {
     const KEY_TYPE_IDS: &'static [KeyTypeId] = &[key_types::DUMMY];
     fn on_genesis_session<T: OpaqueKeys>(_validators: &[(u64, T)]) {}
     fn on_new_session<T: OpaqueKeys>(
@@ -148,9 +150,9 @@ impl session::SessionHandler<u64> for TestSessionHandler {
     fn on_before_session_ending() {}
 }
 
-impl session::Trait for Test {
-    type ShouldEndSession = session::PeriodicSessions<Period, Offset>;
-    type SessionManager = PlasmStaking;
+impl pallet_session::Trait for Test {
+    type ShouldEndSession = pallet_session::PeriodicSessions<Period, Offset>;
+    type SessionManager = PlasmRewards;
     type SessionHandler = TestSessionHandler;
     type ValidatorId = u64;
     type ValidatorIdOf = ConvertInto;
@@ -163,7 +165,7 @@ parameter_types! {
     pub const ExistentialDeposit: Balance = 10;
 }
 
-impl balances::Trait for Test {
+impl pallet_balances::Trait for Test {
     type Balance = Balance;
     type Event = ();
     type DustRemoval = ();
@@ -172,7 +174,7 @@ impl balances::Trait for Test {
 }
 
 pub struct DummyContractAddressFor;
-impl contracts::ContractAddressFor<H256, u64> for DummyContractAddressFor {
+impl pallet_contracts::ContractAddressFor<H256, u64> for DummyContractAddressFor {
     fn contract_address_for(_code_hash: &H256, _data: &[u8], origin: &u64) -> u64 {
         *origin + 10
     }
@@ -180,11 +182,11 @@ impl contracts::ContractAddressFor<H256, u64> for DummyContractAddressFor {
 
 pub struct DummyTrieIdGenerator;
 
-impl contracts::TrieIdGenerator<u64> for DummyTrieIdGenerator {
-    fn trie_id(account_id: &u64) -> contracts::TrieId {
-        use primitives::storage::well_known_keys;
+impl pallet_contracts::TrieIdGenerator<u64> for DummyTrieIdGenerator {
+    fn trie_id(account_id: &u64) -> pallet_contracts::TrieId {
+        use sp_core::storage::well_known_keys;
 
-        let new_seed = contracts::AccountCounter::mutate(|v| {
+        let new_seed = pallet_contracts::AccountCounter::mutate(|v| {
             *v = v.wrapping_add(1);
             *v
         });
@@ -200,7 +202,7 @@ impl contracts::TrieIdGenerator<u64> for DummyTrieIdGenerator {
 }
 
 pub struct DummyComputeDispatchFee;
-impl contracts::ComputeDispatchFee<Call, u64> for DummyComputeDispatchFee {
+impl pallet_contracts::ComputeDispatchFee<Call, u64> for DummyComputeDispatchFee {
     fn compute_dispatch_fee(_call: &Call) -> u64 {
         69
     }
@@ -216,7 +218,7 @@ parameter_types! {
     pub const SurchargeReward: Balance = 0;
 }
 
-impl contracts::Trait for Test {
+impl pallet_contracts::Trait for Test {
     type Currency = Balances;
     type Time = Timestamp;
     type Randomness = randomness_collective_flip::Module<Test>;
@@ -227,30 +229,49 @@ impl contracts::Trait for Test {
     type TrieIdGenerator = DummyTrieIdGenerator;
     type GasPayment = ();
     type RentPayment = ();
-    type SignedClaimHandicap = contracts::DefaultSignedClaimHandicap;
+    type SignedClaimHandicap = pallet_contracts::DefaultSignedClaimHandicap;
     type TombstoneDeposit = TombstoneDeposit;
-    type StorageSizeOffset = contracts::DefaultStorageSizeOffset;
+    type StorageSizeOffset = pallet_contracts::DefaultStorageSizeOffset;
     type RentByteFee = RentByteFee;
     type RentDepositOffset = RentDepositOffset;
     type SurchargeReward = SurchargeReward;
     type TransactionBaseFee = ContractTransactionBaseFee;
     type TransactionByteFee = ContractTransactionByteFee;
     type ContractFee = ContractFee;
-    type CallBaseFee = contracts::DefaultCallBaseFee;
-    type InstantiateBaseFee = contracts::DefaultInstantiateBaseFee;
-    type MaxDepth = contracts::DefaultMaxDepth;
-    type MaxValueSize = contracts::DefaultMaxValueSize;
-    type BlockGasLimit = contracts::DefaultBlockGasLimit;
+    type CallBaseFee = pallet_contracts::DefaultCallBaseFee;
+    type InstantiateBaseFee = pallet_contracts::DefaultInstantiateBaseFee;
+    type MaxDepth = pallet_contracts::DefaultMaxDepth;
+    type MaxValueSize = pallet_contracts::DefaultMaxValueSize;
+    type BlockGasLimit = pallet_contracts::DefaultBlockGasLimit;
 }
 
-impl operator::Trait for Test {
+impl pallet_contract_operator::Trait for Test {
     type Parameters = parameters::StakingParameters;
     type Event = ();
+}
+
+pub struct DummyMaybeValidators;
+impl MaybeValidators<EraIndex, AccountId> for DummyMaybeValidators {
+    fn maybe_validators(_current_era: EraIndex) -> Option<Vec<AccountId>> {
+        Some(vec![1, 2, 3])
+    }
 }
 
 parameter_types! {
     pub const SessionsPerEra: sp_staking::SessionIndex = 10;
     pub const BondingDuration: EraIndex = 3;
+}
+
+impl pallet_plasm_rewards::Trait for Test {
+    type Currency = Balances;
+    type Time = Timestamp;
+    type SessionsPerEra = SessionsPerEra;
+    type BondingDuration = BondingDuration;
+    type GetForDappsStaking = DappsStaking;
+    type GetForSecurityStaking = DappsStaking;
+    type ComputeTotalPayout = SimpleComputeTotalPayout;
+    type MaybeValidators = DummyMaybeValidators;
+    type Event = ();
 }
 
 impl Trait for Test {
@@ -260,18 +281,21 @@ impl Trait for Test {
     type RewardRemainder = (); // Reward remainder is burned.
     type Reward = (); // Reward is minted.
     type Time = Timestamp;
+    type ComputeRewardsForDapps = rewards::BasedComputeRewardsForDapps;
+    type EraFinder = PlasmRewards;
+    type ForDappsEraReward = PlasmRewards;
     type Event = ();
-    type SessionsPerEra = SessionsPerEra;
 }
 
 /// ValidatorManager module.
 pub type System = system::Module<Test>;
-pub type Session = session::Module<Test>;
-pub type Balances = balances::Module<Test>;
-pub type Timestamp = timestamp::Module<Test>;
-pub type Contract = contracts::Module<Test>;
-pub type Operator = operator::Module<Test>;
-pub type PlasmStaking = Module<Test>;
+pub type Session = pallet_session::Module<Test>;
+pub type Balances = pallet_balances::Module<Test>;
+pub type Timestamp = pallet_timestamp::Module<Test>;
+pub type Contracts = pallet_contracts::Module<Test>;
+pub type Operator = pallet_contract_operator::Module<Test>;
+pub type PlasmRewards = pallet_plasm_rewards::Module<Test>;
+pub type DappsStaking = Module<Test>;
 
 /// Generate Wasm binary and code hash from wabt source.
 pub fn compile_module<T>(
@@ -339,30 +363,28 @@ pub fn valid_instatiate() {
         test_params.clone(),
     );
     // checks deployed contract
-    assert!(contracts::ContractInfoOf::<Test>::contains_key(OPERATED_CONTRACT));
+    assert!(pallet_contracts::ContractInfoOf::<Test>::contains_key(
+        OPERATED_CONTRACT
+    ));
 
     // checks mapping operator and contract
     // OPERATOR operates a only OPERATED_CONTRACT contract.
-    assert!(operator::OperatorHasContracts::<Test>::contains_key(OPERATOR));
-    let tree = operator::OperatorHasContracts::<Test>::get(&OPERATOR);
+    assert!(pallet_contract_operator::OperatorHasContracts::<Test>::contains_key(OPERATOR));
+    let tree = pallet_contract_operator::OperatorHasContracts::<Test>::get(&OPERATOR);
     assert_eq!(tree.len(), 1);
     assert!(tree.contains(&OPERATED_CONTRACT));
 
     // OPERATED_CONTRACT contract is operated by OPERATOR.
-    assert!(operator::ContractHasOperator::<Test>::contains_key(
-        OPERATED_CONTRACT
-    ));
+    assert!(pallet_contract_operator::ContractHasOperator::<Test>::contains_key(OPERATED_CONTRACT));
     assert_eq!(
-        operator::ContractHasOperator::<Test>::get(&OPERATED_CONTRACT),
+        pallet_contract_operator::ContractHasOperator::<Test>::get(&OPERATED_CONTRACT),
         Some(OPERATOR)
     );
 
     // OPERATED_CONTRACT's contract Parameters is same test_params.
-    assert!(operator::ContractParameters::<Test>::contains_key(
-        OPERATED_CONTRACT
-    ));
+    assert!(pallet_contract_operator::ContractParameters::<Test>::contains_key(OPERATED_CONTRACT));
     assert_eq!(
-        operator::ContractParameters::<Test>::get(&OPERATED_CONTRACT),
+        pallet_contract_operator::ContractParameters::<Test>::get(&OPERATED_CONTRACT),
         Some(test_params)
     );
 }
@@ -378,12 +400,14 @@ pub fn advance_session() {
     Timestamp::set_timestamp(now_time + PER_SESSION);
     Session::rotate_session();
     assert_eq!(Session::current_index(), (now / Period::get()) as u32);
+
+    // on finalize
+    PlasmRewards::on_finalize(now);
 }
 
 pub fn advance_era() {
-    let current_era = PlasmStaking::current_era();
-    assert_ok!(PlasmStaking::force_new_era(Origin::ROOT));
-    assert_eq!(PlasmStaking::force_era(), Forcing::ForceNew);
-    advance_session();
-    assert_eq!(PlasmStaking::current_era(), current_era + 1);
+    let current_era = PlasmRewards::current_era().unwrap();
+    while current_era == PlasmRewards::current_era().unwrap() {
+        advance_session();
+    }
 }

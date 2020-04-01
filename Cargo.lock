@@ -2685,6 +2685,34 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-dapps-staking"
+version = "0.1.0"
+dependencies = [
+ "derive_more 0.14.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "frame-support 2.0.0-alpha.4 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
+ "frame-system 2.0.0-alpha.4 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
+ "hex-literal 0.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "pallet-balances 2.0.0-alpha.4 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
+ "pallet-contract-operator 0.1.0",
+ "pallet-contracts 2.0.0-alpha.4 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
+ "pallet-plasm-rewards 0.1.0",
+ "pallet-randomness-collective-flip 2.0.0-alpha.4 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
+ "pallet-session 2.0.0-alpha.4 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
+ "pallet-staking 2.0.0-alpha.4 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
+ "pallet-timestamp 2.0.0-alpha.4 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
+ "parity-scale-codec 1.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "serde 1.0.105 (registry+https://github.com/rust-lang/crates.io-index)",
+ "serde_derive 1.0.105 (registry+https://github.com/rust-lang/crates.io-index)",
+ "sp-arithmetic 2.0.0-alpha.4 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
+ "sp-core 2.0.0-alpha.4 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
+ "sp-io 2.0.0-alpha.4 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
+ "sp-runtime 2.0.0-alpha.4 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
+ "sp-staking 2.0.0-alpha.4 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
+ "sp-std 2.0.0-alpha.4 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
+ "wabt 0.9.2 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
 name = "pallet-finality-tracker"
 version = "2.0.0-alpha.4"
 source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#9fa8589d9b8cfe8716e9e4c48f9e3f238c1e502f"
@@ -2794,33 +2822,6 @@ dependencies = [
  "sp-runtime 2.0.0-alpha.4 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "sp-staking 2.0.0-alpha.4 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "sp-std 2.0.0-alpha.4 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
-]
-
-[[package]]
-name = "pallet-plasm-staking"
-version = "0.1.0"
-dependencies = [
- "derive_more 0.14.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "frame-support 2.0.0-alpha.4 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
- "frame-system 2.0.0-alpha.4 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
- "hex-literal 0.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "pallet-balances 2.0.0-alpha.4 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
- "pallet-contract-operator 0.1.0",
- "pallet-contracts 2.0.0-alpha.4 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
- "pallet-randomness-collective-flip 2.0.0-alpha.4 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
- "pallet-session 2.0.0-alpha.4 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
- "pallet-staking 2.0.0-alpha.4 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
- "pallet-timestamp 2.0.0-alpha.4 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
- "parity-scale-codec 1.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "serde 1.0.105 (registry+https://github.com/rust-lang/crates.io-index)",
- "serde_derive 1.0.105 (registry+https://github.com/rust-lang/crates.io-index)",
- "sp-arithmetic 2.0.0-alpha.4 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
- "sp-core 2.0.0-alpha.4 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
- "sp-io 2.0.0-alpha.4 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
- "sp-runtime 2.0.0-alpha.4 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
- "sp-staking 2.0.0-alpha.4 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
- "sp-std 2.0.0-alpha.4 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
- "wabt 0.9.2 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -3235,8 +3236,8 @@ dependencies = [
  "jsonrpc-core 14.0.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "log 0.4.8 (registry+https://github.com/rust-lang/crates.io-index)",
  "pallet-contracts 2.0.0-alpha.4 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
+ "pallet-dapps-staking 0.1.0",
  "pallet-finality-tracker 2.0.0-alpha.4 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
- "pallet-plasm-staking 0.1.0",
  "pallet-timestamp 2.0.0-alpha.4 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "pallet-transaction-payment 2.0.0-alpha.4 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "parity-scale-codec 1.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -3326,11 +3327,11 @@ dependencies = [
  "pallet-contracts 2.0.0-alpha.4 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "pallet-contracts-primitives 2.0.0-alpha.4 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "pallet-contracts-rpc-runtime-api 0.8.0-alpha.4 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
+ "pallet-dapps-staking 0.1.0",
  "pallet-finality-tracker 2.0.0-alpha.4 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "pallet-grandpa 2.0.0-alpha.4 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "pallet-indices 2.0.0-alpha.4 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "pallet-operator-trading 0.1.0",
- "pallet-plasm-staking 0.1.0",
  "pallet-randomness-collective-flip 2.0.0-alpha.4 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "pallet-session 2.0.0-alpha.4 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "pallet-sudo 2.0.0-alpha.4 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",

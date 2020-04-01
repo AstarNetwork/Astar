@@ -32,7 +32,7 @@ sp-session = { git = "https://github.com/staketechnologies/substrate.git", branc
 # frame dependencies
 operator = { package = "pallet-contract-operator", path = "../../../frame/operator", default-features = false }
 trading = { package = "pallet-operator-trading", path = "../../../frame/trading", default-features = false }
-plasm-staking = { package = "pallet-plasm-staking", path = "../../../frame/plasm-staking", default-features = false }
+dapps-staking = { package = "pallet-dapps-staking", path = "../../../frame/dapps-staking", default-features = false }
 executive = { package = "frame-executive", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master", default-features = false }
 babe = { package = "pallet-babe", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master", default-features = false }
 balances = { package = "pallet-balances", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master", default-features = false }
@@ -82,7 +82,7 @@ std = [
     "session/std",
     "operator/std",
     "trading/std",
-    "plasm-staking/std",
+    "dapps-staking/std",
     "sp-runtime/std",
     "sp-session/std",
     "sudo/std",

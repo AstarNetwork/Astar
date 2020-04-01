@@ -48,7 +48,7 @@ pub type MomentOf<T> = <<T as Trait>::Time as Time>::Moment;
 // This value is used by the `on_runtime_upgrade` logic to determine whether we run
 // storage migration logic. This should match directly with the semantic versions of the Rust crate.
 #[derive(Encode, Decode, Clone, Copy, PartialEq, Eq, RuntimeDebug)]
-enum Releases {
+pub enum Releases {
     V1_0_0,
 }
 
@@ -100,7 +100,7 @@ pub trait Trait: pallet_session::Trait {
 }
 
 decl_storage! {
-    trait Store for Module<T: Trait> as PlasmStaking {
+    trait Store for Module<T: Trait> as DappsStaking {
         /// This is the compensation paid for the dapps operator of the Plasm Network.
         /// This is stored on a per-era basis.
         pub ForDappsEraReward get(fn for_dapps_era_reward): map hasher(twox_64_concat) EraIndex => Option<BalanceOf<T>>;
@@ -374,9 +374,9 @@ impl<T: Trait> Module<T> {
 
             if !era_duration.is_zero() {
                 let total_payout = T::Currency::total_issuance();
-                let for_dapps = T::GetForDappsStaking::get_era_staking_amount(active_era.index);
+                let for_dapps = T::GetForDappsStaking::get_era_staking_amount(&active_era.index);
                 let for_security =
-                    T::GetForSecurityStaking::get_era_staking_amount(active_era.index);
+                    T::GetForSecurityStaking::get_era_staking_amount(&active_era.index);
 
                 let (for_security_reward, for_dapps_rewards) =
                     T::ComputeTotalPayout::compute_total_payout(

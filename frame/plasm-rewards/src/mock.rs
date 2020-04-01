@@ -143,14 +143,14 @@ impl pallet_balances::Trait for Test {
 
 pub struct DummyForSecurityStaking;
 impl GetEraStakingAmount<EraIndex, Balance> for DummyForSecurityStaking {
-    fn get_era_staking_amount(era: EraIndex) -> Balance {
+    fn get_era_staking_amount(era: &EraIndex) -> Balance {
         (era * 1_000_000).into()
     }
 }
 
 pub struct DummyForDappsStaking;
 impl GetEraStakingAmount<EraIndex, Balance> for DummyForDappsStaking {
-    fn get_era_staking_amount(era: EraIndex) -> Balance {
+    fn get_era_staking_amount(era: &EraIndex) -> Balance {
         (era * 200_000).into()
     }
 }
