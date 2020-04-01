@@ -3332,6 +3332,8 @@ dependencies = [
  "pallet-grandpa 2.0.0-alpha.4 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "pallet-indices 2.0.0-alpha.4 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "pallet-operator-trading 0.1.0",
+ "pallet-plasm-rewards 0.1.0",
+ "pallet-plasm-validator 0.1.0",
  "pallet-randomness-collective-flip 2.0.0-alpha.4 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "pallet-session 2.0.0-alpha.4 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
  "pallet-sudo 2.0.0-alpha.4 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",

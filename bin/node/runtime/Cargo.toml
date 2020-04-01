@@ -33,6 +33,8 @@ sp-session = { git = "https://github.com/staketechnologies/substrate.git", branc
 operator = { package = "pallet-contract-operator", path = "../../../frame/operator", default-features = false }
 trading = { package = "pallet-operator-trading", path = "../../../frame/trading", default-features = false }
 dapps-staking = { package = "pallet-dapps-staking", path = "../../../frame/dapps-staking", default-features = false }
+plasm-rewards = { package = "pallet-plasm-rewards", path = "../../../frame/plasm-rewards", default-features = false }
+plasm-validator = { package = "pallet-plasm-validator", path = "../../../frame/plasm-validator", default-features = false }
 executive = { package = "frame-executive", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master", default-features = false }
 babe = { package = "pallet-babe", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master", default-features = false }
 balances = { package = "pallet-balances", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master", default-features = false }

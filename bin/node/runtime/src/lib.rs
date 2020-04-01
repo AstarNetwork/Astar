@@ -179,8 +179,30 @@ impl session::Trait for Runtime {
 }
 
 parameter_types! {
-    pub const SessionsPerEra: dapps_staking::SessionIndex = 6;
-    pub const BondingDuration: dapps_staking::EraIndex = 24 * 28;
+    pub const SessionsPerEra: sp_staking::SessionIndex = 6;
+    pub const BondingDuration: EraIndex = 24 * 28;
+}
+
+impl plasm_rewards::Trait for Test {
+    type Currency = Balances;
+    type Time = Timestamp;
+    type SessionsPerEra = SessionsPerEra;
+    type BondingDuration = BondingDuration;
+    type GetForDappsStaking = DappsStaking;
+    type GetForSecurityStaking = DappsStaking;
+    type ComputeTotalPayout = SimpleComputeTotalPayout;
+    type MaybeValidators = DummyMaybeValidators;
+    type Event = Event;
+}
+
+impl plasm_validator::Trait for Test {
+    type Currency = Balances;
+    type Time = Timestamp;
+    type RewardRemainder = (); // Reward remainder is burned.
+    type Reward = (); // Reward is minted.
+    type EraFinder = PlasmRewards;
+    type ForSecurityEraReward = PlasmRewards;
+    type Event = Event;
 }
 
 impl dapps_staking::Trait for Runtime {
@@ -190,8 +212,10 @@ impl dapps_staking::Trait for Runtime {
     type RewardRemainder = (); // Reward remainder is burned.
     type Reward = (); // Reward is minted.
     type Time = Timestamp;
+    type ComputeRewardsForDapps = dapps_staking::rewards::BasedComputeRewardsForDapps;
+    type EraFinder = PlasmRewards;
+    type ForDappsEraReward = PlasmRewards;
     type Event = Event;
-    type SessionsPerEra = SessionsPerEra;
 }
 
 parameter_types! {
@@ -307,7 +331,6 @@ construct_runtime!(
         Indices: indices::{Module, Call, Storage, Event<T>, Config<T>},
         Balances: balances::{Module, Call, Storage, Event<T>, Config<T>},
         Contracts: contracts::{Module, Call, Storage, Event<T>, Config<T>},
-        DappsStaking: dapps_staking::{Module, Call, Storage, Event<T>, Config<T>},
         Session: session::{Module, Call, Storage, Event, Config<T>},
         Babe: babe::{Module, Call, Storage, Config, Inherent(Timestamp)},
         Grandpa: grandpa::{Module, Call, Storage, Config, Event},
@@ -315,6 +338,9 @@ construct_runtime!(
         Sudo: sudo::{Module, Call, Storage, Event<T>, Config<T>},
         Operator: operator::{Module, Call, Storage, Event<T>},
         Trading: trading::{Module, Call, Storage, Event<T>},
+        PlasmRewards: plasm_rewards::{Module, Call, Storage, Event<T>, Config<T>},
+        PlasmValidator: plasm_validator::{Module, Call, Storage, Event<T>, Config<T>},
+        DappsStaking: dapps_staking::{Module, Call, Storage, Event<T>, Config<T>},
         RandomnessCollectiveFlip: randomness_collective_flip::{Module, Call, Storage},
     }
 );
