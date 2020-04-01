@@ -20,7 +20,7 @@ use frame_system::{self as system, ensure_signed};
 use pallet_contract_operator::ContractFinder;
 use pallet_plasm_rewards::{
     traits::{EraFinder, ForDappsEraRewardFinder, GetEraStakingAmount},
-    EraIndex,
+    EraIndex, Releases,
 };
 pub use pallet_staking::{Forcing, RewardDestination};
 use sp_runtime::{
@@ -29,12 +29,12 @@ use sp_runtime::{
 };
 use sp_std::{collections::btree_map::BTreeMap, prelude::*, result, vec::Vec};
 
+#[cfg(test)]
+mod mock;
 pub mod parameters;
 pub mod rewards;
-// #[cfg(test)]
-// mod mock;
-// #[cfg(test)]
-// mod tests;
+#[cfg(test)]
+mod tests;
 
 pub use parameters::StakingParameters;
 pub use rewards::ComputeRewardsForDapps;
@@ -145,10 +145,10 @@ pub trait Trait: pallet_session::Trait {
     /// Number of eras that staked funds must remain bonded for.
     type BondingDuration: Get<EraIndex>;
 
-    /// Tokens have been minted and are unused for validator-reward. Maybe, plasm-staking uses ().
+    /// Tokens have been minted and are unused for validator-reward. Maybe, dapps-staking uses ().
     type RewardRemainder: OnUnbalanced<NegativeImbalanceOf<Self>>;
 
-    /// Handler for the unbalanced increment when rewarding a staker. Maybe, plasm-staking uses ().
+    /// Handler for the unbalanced increment when rewarding a staker. Maybe, dapps-staking uses ().
     type Reward: OnUnbalanced<PositiveImbalanceOf<Self>>;
 
     //TODO Handler for the unbalanced reduction when slashing a staker.
@@ -180,7 +180,7 @@ pub trait Trait: pallet_session::Trait {
 }
 
 decl_storage! {
-    trait Store for Module<T: Trait> as PlasmStaking {
+    trait Store for Module<T: Trait> as DappsStaking {
         /// The already untreated era is EraIndex.
         pub UntreatedEra get(fn untreated_era): EraIndex;
 
@@ -227,8 +227,10 @@ decl_storage! {
         pub ErasTotalStake get(fn eras_total_stake):
             map hasher(twox_64_concat) EraIndex => BalanceOf<T>;
 
-        /// The version of storage for upgrade.
-        pub StorageVersion get(fn storage_version) config(): u32;
+        /// Storage version of the pallet.
+        ///
+        /// This is set to v1.0.0 for new networks.
+        StorageVersion build(|_: &GenesisConfig| Releases::V1_0_0): Releases;
     }
 }
 
@@ -288,8 +290,12 @@ decl_error! {
         InvalidNumberOfNominations,
         /// Items are not sorted and unique.
         NotSortedAndUnique,
+        /// Targets must be latest 1.
+        EmptyNominateTargets,
         /// Targets must be operated contracts
         NotOperatedContracts,
+        /// The nominations amount more than active staking amount.
+        NotEnoughStaking,
     }
 }
 
@@ -528,7 +534,7 @@ decl_module! {
             let controller = ensure_signed(origin)?;
             let ledger = Self::ledger(&controller).ok_or(Error::<T>::NotController)?;
             let stash = &ledger.stash;
-            ensure!(!targets.is_empty(), Error::<T>::NotController);
+            ensure!(!targets.is_empty(), Error::<T>::EmptyNominateTargets);
             let targets = targets.into_iter()
                 .take(MAX_NOMINATIONS)
                 .map(|t| match T::Lookup::lookup(t.0) {
@@ -540,6 +546,13 @@ decl_module! {
             // check the is targets operated contracts?
             if !targets.iter().all(|t| T::ContractFinder::is_exists_contract(&(t.0))) {
                 Err(Error::<T>::NotOperatedContracts)?
+            }
+
+            if targets
+                .iter()
+                .fold(BalanceOf::<T>::zero(),
+                 |sum, t| sum.saturating_add(t.1)) > ledger.active {
+                Err(Error::<T>::NotEnoughStaking)?
             }
 
             let nominations = Nominations {

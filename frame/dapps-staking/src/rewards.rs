@@ -49,12 +49,24 @@ mod test {
     #[test]
     fn test_compute_payout_test() {
         // TODO tests
-        assert_eq!(compute_payout_test(100_000_000u64), 19_986_311);
+        assert_eq!(
+            compute_payout_test(100_000_000u64),
+            (80_000_000, 20_000_000)
+        );
 
-        assert_eq!(compute_payout_test(100_000_000u64), 54_757);
+        assert_eq!(
+            compute_payout_test(100_000_000u64),
+            (80_000_000, 20_000_000)
+        );
 
-        assert_eq!(compute_payout_test(100_000_000u64), 13_689);
+        assert_eq!(
+            compute_payout_test(100_000_000u64),
+            (80_000_000, 20_000_000)
+        );
 
-        assert_eq!(compute_payout_test(100_000_000u64), 2_281);
+        assert_eq!(
+            compute_payout_test(100_000_000u64),
+            (80_000_000, 20_000_000)
+        );
     }
 }
