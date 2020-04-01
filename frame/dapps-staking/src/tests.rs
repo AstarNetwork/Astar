@@ -7,6 +7,7 @@ use crate::mock::*;
 use frame_support::{assert_noop, assert_ok};
 use pallet_balances::{BalanceLock, Reasons};
 use pallet_plasm_rewards::traits::ComputeTotalPayout;
+use sp_runtime::traits::OnFinalize;
 use sp_runtime::DispatchError;
 
 #[test]
@@ -29,7 +30,7 @@ fn bond_scenario_test() {
                 total: 1000,
                 active: 1000,
                 unlocking: vec![],
-                last_reward: None,
+                last_reward: Some(0),
             })
         );
         assert_eq!(DappsStaking::ledger(ALICE_STASH), None);
@@ -105,7 +106,7 @@ fn success_first_bond(
             total: balance,
             active: balance,
             unlocking: vec![],
-            last_reward: None,
+            last_reward: Some(0),
         })
     );
     assert_eq!(
@@ -134,7 +135,7 @@ fn bond_extra_scenario_test() {
                 total: 2000,
                 active: 2000,
                 unlocking: vec![],
-                last_reward: None,
+                last_reward: Some(0),
             })
         );
         assert_eq!(
@@ -179,7 +180,7 @@ fn unbond_scenario_test() {
                     value: 300,
                     era: 3, // current_era(0) + bonding_duration(3)
                 }],
-                last_reward: None,
+                last_reward: Some(0),
             })
         );
         assert_eq!(
@@ -210,7 +211,7 @@ fn unbond_scenario_test() {
                         era: 4, // current_era(1) + bonding_duration(3)
                     }
                 ],
-                last_reward: None,
+                last_reward: Some(0),
             })
         );
         assert_eq!(
@@ -289,7 +290,7 @@ fn withdraw_unbonded_scenario_test() {
                     UnlockChunk { value: 300, era: 3 },
                     UnlockChunk { value: 700, era: 4 },
                 ],
-                last_reward: None,
+                last_reward: Some(0),
             })
         );
         assert_eq!(
@@ -312,7 +313,7 @@ fn withdraw_unbonded_scenario_test() {
                 total: 700,
                 active: 0,
                 unlocking: vec![UnlockChunk { value: 700, era: 4 },],
-                last_reward: None,
+                last_reward: Some(0),
             })
         );
         assert_eq!(
@@ -357,7 +358,7 @@ fn nominate_contracts_scenario_test() {
         assert_eq!(
             DappsStaking::dapps_nominations(BOB_STASH),
             Some(Nominations {
-                targets: vec![(OPERATED_CONTRACT, 100)],
+                targets: vec![(OPERATED_CONTRACT, 1000)],
                 submitted_in: 0,
                 suppressed: false,
             })
@@ -478,7 +479,7 @@ fn set_controller_scenario_test() {
                 total: 1000,
                 active: 1000,
                 unlocking: vec![],
-                last_reward: None,
+                last_reward: Some(0),
             })
         );
         assert_eq!(DappsStaking::ledger(ALICE_CTRL), None);
@@ -526,20 +527,23 @@ fn reward_to_operators_test() {
 
         let active_era = PlasmRewards::active_era().unwrap();
         let pre_total_issuarance = Balances::total_issuance();
-        let (a, b) =
+        let (_, b) =
             <Test as pallet_plasm_rewards::Trait>::ComputeTotalPayout::compute_total_payout(
                 pre_total_issuarance,
                 SIX_HOURS,
                 0,
                 0,
             );
+
+        advance_session();
+
         let positive_imbalance = DappsStaking::reward_for_dapps(&active_era.index, b);
-        assert_eq!(Balances::free_balance(&BOB_STASH), 2_000 + 34); // +nomiante reward
+        assert_eq!(Balances::free_balance(&BOB_STASH), 2_000 + 41); // +nomiante reward
         assert_eq!(Balances::free_balance(&BOB_CTRL), 20 + 0); // +0
-        assert_eq!(Balances::free_balance(&ALICE_STASH), 1_000 + 274); // +operator reward
-        assert_eq!(Balances::free_balance(&ALICE_CTRL), 10 + 34); // +nominate reward
-        assert_eq!(positive_imbalance, 342);
-        assert_eq!(Balances::total_issuance(), pre_total_issuarance + 342);
+        assert_eq!(Balances::free_balance(&ALICE_STASH), 1_000 + 329); // +operator reward
+        assert_eq!(Balances::free_balance(&ALICE_CTRL), 10 + 41); // +nominate reward
+        assert_eq!(positive_imbalance, 411);
+        assert_eq!(Balances::total_issuance(), pre_total_issuarance + 411);
     })
 }
 
@@ -564,21 +568,22 @@ fn new_session_scenario_test() {
         success_nominate_contracts(ALICE_CTRL, vec![(OPERATED_CONTRACT, 1_000)]);
 
         advance_era();
-        advance_session();
+        DappsStaking::on_finalize(0);
 
         let pre_total_issuarance = Balances::total_issuance();
         assert_eq!(Balances::free_balance(&BOB_STASH), 2_000);
         assert_eq!(Balances::free_balance(&BOB_CTRL), 20);
         assert_eq!(Balances::free_balance(&ALICE_STASH), 1_000);
         assert_eq!(Balances::free_balance(&ALICE_CTRL), 10);
-        assert_eq!(pre_total_issuarance, 5_002_318);
-        for _ in 0..10 {
-            advance_session();
-        }
+        assert_eq!(pre_total_issuarance, 3_002_318);
+
+        advance_era();
+        DappsStaking::on_finalize(0);
+
         assert_eq!(Balances::free_balance(&BOB_STASH), 2_000 + 1); // +nomiante reward
         assert_eq!(Balances::free_balance(&BOB_CTRL), 20 + 0); // +0
         assert_eq!(Balances::free_balance(&ALICE_STASH), 1_000 + 8); // +operator reward
         assert_eq!(Balances::free_balance(&ALICE_CTRL), 10 + 1); // +nominate reward
-        assert_eq!(Balances::total_issuance(), 5_002_318 + 18);
+        assert_eq!(Balances::total_issuance(), 3_002_318 + 10);
     })
 }
