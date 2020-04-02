@@ -16,16 +16,21 @@ sp-io = { git = "https://github.com/staketechnologies/substrate", default-featur
 sp-std = { git = "https://github.com/staketechnologies/substrate", default-features = false, branch = "plasm-master" }
 sp-core = { git = "https://github.com/staketechnologies/substrate", default-features = false, branch = "plasm-master" }
 sp-runtime = { git = "https://github.com/staketechnologies/substrate", default-features = false, branch = "plasm-master" }
+sp-arithmetic = { git = "https://github.com/staketechnologies/substrate", default-features = false, branch = "plasm-master" }
 frame-system = { git = "https://github.com/staketechnologies/substrate", default-features = false, branch = "plasm-master" }
 frame-support = { git = "https://github.com/staketechnologies/substrate", default-features = false, branch = "plasm-master" }
 pallet-session = { git = "https://github.com/staketechnologies/substrate", default-features = false, branch = "plasm-master" }
 pallet-timestamp = { git = "https://github.com/staketechnologies/substrate", default-features = false, branch = "plasm-master" }
 
 [dev-dependencies]
+hex-literal = "0.2.1"
 pallet-balances = { git = "https://github.com/staketechnologies/substrate", branch = "plasm-master" }
+sp-staking = { git = "https://github.com/staketechnologies/substrate", branch = "plasm-master" }
+sp-keyring = { git = "https://github.com/staketechnologies/substrate", branch = "plasm-master" }
+plasm-primitives = { path = "../../bin/node/primitives" }
 
 [features]
-default = ["std"]
+default = ["std","pallet-session/historical"]
 std = [
     "serde",
     "codec/std",
