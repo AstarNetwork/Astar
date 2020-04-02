@@ -529,6 +529,31 @@
 <span id="529">529</span>
 <span id="530">530</span>
 <span id="531">531</span>
+<span id="532">532</span>
+<span id="533">533</span>
+<span id="534">534</span>
+<span id="535">535</span>
+<span id="536">536</span>
+<span id="537">537</span>
+<span id="538">538</span>
+<span id="539">539</span>
+<span id="540">540</span>
+<span id="541">541</span>
+<span id="542">542</span>
+<span id="543">543</span>
+<span id="544">544</span>
+<span id="545">545</span>
+<span id="546">546</span>
+<span id="547">547</span>
+<span id="548">548</span>
+<span id="549">549</span>
+<span id="550">550</span>
+<span id="551">551</span>
+<span id="552">552</span>
+<span id="553">553</span>
+<span id="554">554</span>
+<span id="555">555</span>
+<span id="556">556</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="doccomment">//! The Substrate runtime. This can be compiled with ``#[no_std]`, ready for Wasm.</span>
 
@@ -625,7 +650,6 @@
     <span class="kw">type</span> <span class="ident">Version</span> <span class="op">=</span> <span class="ident">Version</span>;
     <span class="kw">type</span> <span class="ident">ModuleToIndex</span> <span class="op">=</span> <span class="ident">ModuleToIndex</span>;
     <span class="kw">type</span> <span class="ident">AccountData</span> <span class="op">=</span> <span class="ident">balances</span>::<span class="ident">AccountData</span><span class="op">&lt;</span><span class="ident">Balance</span><span class="op">&gt;</span>;
-    <span class="kw">type</span> <span class="ident">MigrateAccount</span> <span class="op">=</span> (<span class="ident">Balances</span>, <span class="ident">Session</span>);
     <span class="kw">type</span> <span class="ident">OnNewAccount</span> <span class="op">=</span> ();
     <span class="kw">type</span> <span class="ident">OnKilledAccount</span> <span class="op">=</span> ();
 }
@@ -700,7 +724,7 @@
 }
 
 <span class="kw">impl</span> <span class="ident">session</span>::<span class="ident">Trait</span> <span class="kw">for</span> <span class="ident">Runtime</span> {
-    <span class="kw">type</span> <span class="ident">SessionManager</span> <span class="op">=</span> <span class="ident">PlasmStaking</span>;
+    <span class="kw">type</span> <span class="ident">SessionManager</span> <span class="op">=</span> <span class="ident">PlasmRewards</span>;
     <span class="kw">type</span> <span class="ident">SessionHandler</span> <span class="op">=</span> <span class="op">&lt;</span><span class="ident">SessionKeys</span> <span class="kw">as</span> <span class="ident">OpaqueKeys</span><span class="op">&gt;</span>::<span class="ident">KeyTypeIdProviders</span>;
     <span class="kw">type</span> <span class="ident">ShouldEndSession</span> <span class="op">=</span> <span class="ident">Babe</span>;
     <span class="kw">type</span> <span class="ident">Event</span> <span class="op">=</span> <span class="ident">Event</span>;
@@ -711,19 +735,43 @@
 }
 
 <span class="macro">parameter_types</span><span class="macro">!</span> {
-    <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">SessionsPerEra</span>: <span class="ident">plasm_staking</span>::<span class="ident">SessionIndex</span> <span class="op">=</span> <span class="number">6</span>;
-    <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">BondingDuration</span>: <span class="ident">plasm_staking</span>::<span class="ident">EraIndex</span> <span class="op">=</span> <span class="number">24</span> <span class="op">*</span> <span class="number">28</span>;
+    <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">SessionsPerEra</span>: <span class="ident">plasm_rewards</span>::<span class="ident">SessionIndex</span> <span class="op">=</span> <span class="number">6</span>;
+    <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">BondingDuration</span>: <span class="ident">plasm_rewards</span>::<span class="ident">EraIndex</span> <span class="op">=</span> <span class="number">24</span> <span class="op">*</span> <span class="number">28</span>;
 }
 
-<span class="kw">impl</span> <span class="ident">plasm_staking</span>::<span class="ident">Trait</span> <span class="kw">for</span> <span class="ident">Runtime</span> {
+<span class="kw">impl</span> <span class="ident">plasm_rewards</span>::<span class="ident">Trait</span> <span class="kw">for</span> <span class="ident">Runtime</span> {
+    <span class="kw">type</span> <span class="ident">Currency</span> <span class="op">=</span> <span class="ident">Balances</span>;
+    <span class="kw">type</span> <span class="ident">Time</span> <span class="op">=</span> <span class="ident">Timestamp</span>;
+    <span class="kw">type</span> <span class="ident">SessionsPerEra</span> <span class="op">=</span> <span class="ident">SessionsPerEra</span>;
+    <span class="kw">type</span> <span class="ident">BondingDuration</span> <span class="op">=</span> <span class="ident">BondingDuration</span>;
+    <span class="kw">type</span> <span class="ident">GetForDappsStaking</span> <span class="op">=</span> <span class="ident">DappsStaking</span>;
+    <span class="kw">type</span> <span class="ident">GetForSecurityStaking</span> <span class="op">=</span> <span class="ident">PlasmValidator</span>;
+    <span class="kw">type</span> <span class="ident">ComputeTotalPayout</span> <span class="op">=</span> <span class="ident">plasm_rewards</span>::<span class="ident">inflation</span>::<span class="ident">SimpleComputeTotalPayout</span>;
+    <span class="kw">type</span> <span class="ident">MaybeValidators</span> <span class="op">=</span> <span class="ident">PlasmValidator</span>;
+    <span class="kw">type</span> <span class="ident">Event</span> <span class="op">=</span> <span class="ident">Event</span>;
+}
+
+<span class="kw">impl</span> <span class="ident">plasm_validator</span>::<span class="ident">Trait</span> <span class="kw">for</span> <span class="ident">Runtime</span> {
+    <span class="kw">type</span> <span class="ident">Currency</span> <span class="op">=</span> <span class="ident">Balances</span>;
+    <span class="kw">type</span> <span class="ident">Time</span> <span class="op">=</span> <span class="ident">Timestamp</span>;
+    <span class="kw">type</span> <span class="ident">RewardRemainder</span> <span class="op">=</span> (); <span class="comment">// Reward remainder is burned.</span>
+    <span class="kw">type</span> <span class="ident">Reward</span> <span class="op">=</span> (); <span class="comment">// Reward is minted.</span>
+    <span class="kw">type</span> <span class="ident">EraFinder</span> <span class="op">=</span> <span class="ident">PlasmRewards</span>;
+    <span class="kw">type</span> <span class="ident">ForSecurityEraReward</span> <span class="op">=</span> <span class="ident">PlasmRewards</span>;
+    <span class="kw">type</span> <span class="ident">Event</span> <span class="op">=</span> <span class="ident">Event</span>;
+}
+
+<span class="kw">impl</span> <span class="ident">dapps_staking</span>::<span class="ident">Trait</span> <span class="kw">for</span> <span class="ident">Runtime</span> {
     <span class="kw">type</span> <span class="ident">Currency</span> <span class="op">=</span> <span class="ident">Balances</span>;
     <span class="kw">type</span> <span class="ident">BondingDuration</span> <span class="op">=</span> <span class="ident">BondingDuration</span>;
     <span class="kw">type</span> <span class="ident">ContractFinder</span> <span class="op">=</span> <span class="ident">Operator</span>;
     <span class="kw">type</span> <span class="ident">RewardRemainder</span> <span class="op">=</span> (); <span class="comment">// Reward remainder is burned.</span>
     <span class="kw">type</span> <span class="ident">Reward</span> <span class="op">=</span> (); <span class="comment">// Reward is minted.</span>
     <span class="kw">type</span> <span class="ident">Time</span> <span class="op">=</span> <span class="ident">Timestamp</span>;
+    <span class="kw">type</span> <span class="ident">ComputeRewardsForDapps</span> <span class="op">=</span> <span class="ident">dapps_staking</span>::<span class="ident">rewards</span>::<span class="ident">BasedComputeRewardsForDapps</span>;
+    <span class="kw">type</span> <span class="ident">EraFinder</span> <span class="op">=</span> <span class="ident">PlasmRewards</span>;
+    <span class="kw">type</span> <span class="ident">ForDappsEraReward</span> <span class="op">=</span> <span class="ident">PlasmRewards</span>;
     <span class="kw">type</span> <span class="ident">Event</span> <span class="op">=</span> <span class="ident">Event</span>;
-    <span class="kw">type</span> <span class="ident">SessionsPerEra</span> <span class="op">=</span> <span class="ident">SessionsPerEra</span>;
 }
 
 <span class="macro">parameter_types</span><span class="macro">!</span> {
@@ -766,7 +814,7 @@
 }
 
 <span class="kw">impl</span> <span class="ident">operator</span>::<span class="ident">Trait</span> <span class="kw">for</span> <span class="ident">Runtime</span> {
-    <span class="kw">type</span> <span class="ident">Parameters</span> <span class="op">=</span> <span class="ident">plasm_staking</span>::<span class="ident">parameters</span>::<span class="ident">StakingParameters</span>;
+    <span class="kw">type</span> <span class="ident">Parameters</span> <span class="op">=</span> <span class="ident">dapps_staking</span>::<span class="ident">parameters</span>::<span class="ident">StakingParameters</span>;
     <span class="kw">type</span> <span class="ident">Event</span> <span class="op">=</span> <span class="ident">Event</span>;
 }
 
@@ -839,7 +887,6 @@
         <span class="ident">Indices</span>: <span class="ident">indices</span>::{<span class="ident">Module</span>, <span class="ident">Call</span>, <span class="ident">Storage</span>, <span class="ident">Event</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>, <span class="ident">Config</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>},
         <span class="ident">Balances</span>: <span class="ident">balances</span>::{<span class="ident">Module</span>, <span class="ident">Call</span>, <span class="ident">Storage</span>, <span class="ident">Event</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>, <span class="ident">Config</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>},
         <span class="ident">Contracts</span>: <span class="ident">contracts</span>::{<span class="ident">Module</span>, <span class="ident">Call</span>, <span class="ident">Storage</span>, <span class="ident">Event</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>, <span class="ident">Config</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>},
-        <span class="ident">PlasmStaking</span>: <span class="ident">plasm_staking</span>::{<span class="ident">Module</span>, <span class="ident">Call</span>, <span class="ident">Storage</span>, <span class="ident">Event</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>, <span class="ident">Config</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>},
         <span class="ident">Session</span>: <span class="ident">session</span>::{<span class="ident">Module</span>, <span class="ident">Call</span>, <span class="ident">Storage</span>, <span class="ident">Event</span>, <span class="ident">Config</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>},
         <span class="ident">Babe</span>: <span class="ident">babe</span>::{<span class="ident">Module</span>, <span class="ident">Call</span>, <span class="ident">Storage</span>, <span class="ident">Config</span>, <span class="ident">Inherent</span>(<span class="ident">Timestamp</span>)},
         <span class="ident">Grandpa</span>: <span class="ident">grandpa</span>::{<span class="ident">Module</span>, <span class="ident">Call</span>, <span class="ident">Storage</span>, <span class="ident">Config</span>, <span class="ident">Event</span>},
@@ -847,6 +894,9 @@
         <span class="ident">Sudo</span>: <span class="ident">sudo</span>::{<span class="ident">Module</span>, <span class="ident">Call</span>, <span class="ident">Storage</span>, <span class="ident">Event</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>, <span class="ident">Config</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>},
         <span class="ident">Operator</span>: <span class="ident">operator</span>::{<span class="ident">Module</span>, <span class="ident">Call</span>, <span class="ident">Storage</span>, <span class="ident">Event</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>},
         <span class="ident">Trading</span>: <span class="ident">trading</span>::{<span class="ident">Module</span>, <span class="ident">Call</span>, <span class="ident">Storage</span>, <span class="ident">Event</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>},
+        <span class="ident">PlasmRewards</span>: <span class="ident">plasm_rewards</span>::{<span class="ident">Module</span>, <span class="ident">Call</span>, <span class="ident">Storage</span>, <span class="ident">Event</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>, <span class="ident">Config</span>},
+        <span class="ident">PlasmValidator</span>: <span class="ident">plasm_validator</span>::{<span class="ident">Module</span>, <span class="ident">Call</span>, <span class="ident">Storage</span>, <span class="ident">Event</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>, <span class="ident">Config</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>},
+        <span class="ident">DappsStaking</span>: <span class="ident">dapps_staking</span>::{<span class="ident">Module</span>, <span class="ident">Call</span>, <span class="ident">Storage</span>, <span class="ident">Event</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>, <span class="ident">Config</span>},
         <span class="ident">RandomnessCollectiveFlip</span>: <span class="ident">randomness_collective_flip</span>::{<span class="ident">Module</span>, <span class="ident">Call</span>, <span class="ident">Storage</span>},
     }
 );
