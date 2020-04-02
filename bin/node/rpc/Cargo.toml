@@ -1,6 +1,6 @@
 [package]
 name = "plasm-rpc"
-version = "0.7.2"
+version = "0.8.0"
 authors = [
     "Takumi Yamashita <takumi@stake.co.jp>",
     "Aleksandr Krupenkin <aleksandr@stake.co.jp>"
@@ -11,17 +11,17 @@ edition = "2018"
 jsonrpc-core = "14.0.3"
 plasm-runtime = { path = "../runtime" }
 plasm-primitives = { path = "../primitives" }
-sp-api = { git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master" }
-sp-runtime = { git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master" }
-sp-blockchain= { git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master" }
-sp-consensus = { git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master" }
-sp-consensus-babe = { git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master" }
-sp-transaction-pool = { git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master" }
-sc-client = { git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master" }
-sc-keystore = { git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master" }
-sc-consensus-epochs = { git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master" }
-sc-consensus-babe = { git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master" }
-sc-consensus-babe-rpc = { git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master" }
-pallet-contracts-rpc = { git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master" }
-pallet-transaction-payment-rpc = { git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master" }
-substrate-frame-rpc-system = { git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master" }
+sp-api = { git = "https://github.com/staketechnologies/substrate.git", tag = "ci-release-2.0.0-alpha.5+6" }
+sp-runtime = { git = "https://github.com/staketechnologies/substrate.git", tag = "ci-release-2.0.0-alpha.5+6" }
+sp-blockchain= { git = "https://github.com/staketechnologies/substrate.git", tag = "ci-release-2.0.0-alpha.5+6" }
+sp-consensus = { git = "https://github.com/staketechnologies/substrate.git", tag = "ci-release-2.0.0-alpha.5+6" }
+sp-consensus-babe = { git = "https://github.com/staketechnologies/substrate.git", tag = "ci-release-2.0.0-alpha.5+6" }
+sp-transaction-pool = { git = "https://github.com/staketechnologies/substrate.git", tag = "ci-release-2.0.0-alpha.5+6" }
+sc-client = { git = "https://github.com/staketechnologies/substrate.git", tag = "ci-release-2.0.0-alpha.5+6" }
+sc-keystore = { git = "https://github.com/staketechnologies/substrate.git", tag = "ci-release-2.0.0-alpha.5+6" }
+sc-consensus-epochs = { git = "https://github.com/staketechnologies/substrate.git", tag = "ci-release-2.0.0-alpha.5+6" }
+sc-consensus-babe = { git = "https://github.com/staketechnologies/substrate.git", tag = "ci-release-2.0.0-alpha.5+6" }
+sc-consensus-babe-rpc = { git = "https://github.com/staketechnologies/substrate.git", tag = "ci-release-2.0.0-alpha.5+6" }
+pallet-contracts-rpc = { git = "https://github.com/staketechnologies/substrate.git", tag = "ci-release-2.0.0-alpha.5+6" }
+pallet-transaction-payment-rpc = { git = "https://github.com/staketechnologies/substrate.git", tag = "ci-release-2.0.0-alpha.5+6" }
+substrate-frame-rpc-system = { git = "https://github.com/staketechnologies/substrate.git", tag = "ci-release-2.0.0-alpha.5+6" }

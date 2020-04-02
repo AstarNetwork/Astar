@@ -12,17 +12,17 @@ serde_json = "1.0"
 ripemd160 = "0.8"
 median = "0.3"
 hex = "0.4"
-sp-io = { git = "https://github.com/staketechnologies/substrate", default-features = false, branch = "plasm-master" }
-sp-std = { git = "https://github.com/staketechnologies/substrate", default-features = false, branch = "plasm-master" }
-sp-core = { git = "https://github.com/staketechnologies/substrate", default-features = false, branch = "plasm-master" }
-sp-runtime = { git = "https://github.com/staketechnologies/substrate", default-features = false, branch = "plasm-master" }
-frame-system = { git = "https://github.com/staketechnologies/substrate", default-features = false, branch = "plasm-master" }
-frame-support = { git = "https://github.com/staketechnologies/substrate", default-features = false, branch = "plasm-master" }
-pallet-session = { git = "https://github.com/staketechnologies/substrate", default-features = false, branch = "plasm-master" }
-pallet-timestamp = { git = "https://github.com/staketechnologies/substrate", default-features = false, branch = "plasm-master" }
+sp-io = { git = "https://github.com/staketechnologies/substrate", default-features = false, tag = "ci-release-2.0.0-alpha.5+6" }
+sp-std = { git = "https://github.com/staketechnologies/substrate", default-features = false, tag = "ci-release-2.0.0-alpha.5+6" }
+sp-core = { git = "https://github.com/staketechnologies/substrate", default-features = false, tag = "ci-release-2.0.0-alpha.5+6" }
+sp-runtime = { git = "https://github.com/staketechnologies/substrate", default-features = false, tag = "ci-release-2.0.0-alpha.5+6" }
+frame-system = { git = "https://github.com/staketechnologies/substrate", default-features = false, tag = "ci-release-2.0.0-alpha.5+6" }
+frame-support = { git = "https://github.com/staketechnologies/substrate", default-features = false, tag = "ci-release-2.0.0-alpha.5+6" }
+pallet-session = { git = "https://github.com/staketechnologies/substrate", default-features = false, tag = "ci-release-2.0.0-alpha.5+6" }
+pallet-timestamp = { git = "https://github.com/staketechnologies/substrate", default-features = false, tag = "ci-release-2.0.0-alpha.5+6" }
 
 [dev-dependencies]
-pallet-balances = { git = "https://github.com/staketechnologies/substrate", branch = "plasm-master" }
+pallet-balances = { git = "https://github.com/staketechnologies/substrate", tag = "ci-release-2.0.0-alpha.5+6" }
 
 [features]
 default = ["std"]

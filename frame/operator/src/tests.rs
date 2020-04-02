@@ -5,13 +5,24 @@
 
 use super::*;
 use codec::{Decode, Encode, KeyedVec};
-use contracts::{
-    BalanceOf, ComputeDispatchFee, ContractAddressFor, ContractInfo, ContractInfoOf,
-    RawAliveContractInfo, Schedule, TrieId, TrieIdFromParentCounter, TrieIdGenerator,
+use frame_support::{
+    assert_err, assert_ok, impl_outer_dispatch, impl_outer_event, impl_outer_origin,
+    parameter_types,
+    storage::child,
+    traits::{Currency, Get},
+    weights::{DispatchClass, DispatchInfo},
+    StorageMap, StorageValue,
 };
+use frame_system::{self, EventRecord, Phase};
 use hex_literal::*;
-use primitives::storage::well_known_keys;
+use pallet_balances as balances;
+use pallet_contracts::{
+    self as contracts, BalanceOf, ComputeDispatchFee, ContractAddressFor, ContractInfo,
+    ContractInfoOf, RawAliveContractInfo, Schedule, TrieId, TrieIdFromParentCounter,
+    TrieIdGenerator,
+};
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
+use sp_core::storage::well_known_keys;
 use sp_runtime::{
     testing::{Digest, DigestItem, Header, UintAuthorityId, H256},
     traits::{BlakeTwo256, Hash, IdentityLookup, SignedExtension},
@@ -21,22 +32,13 @@ use std::{
     cell::RefCell,
     sync::atomic::{AtomicUsize, Ordering},
 };
-use support::{
-    assert_err, assert_ok, impl_outer_dispatch, impl_outer_event, impl_outer_origin,
-    parameter_types,
-    storage::child,
-    traits::{Currency, Get},
-    weights::{DispatchClass, DispatchInfo},
-    StorageMap, StorageValue,
-};
-use system::{self, EventRecord, Phase};
 
 mod operator {
     // Re-export contents of the root. This basically
     // needs to give a name for the current crate.
     // This hack is required for `impl_outer_event!`.
     pub use super::super::*;
-    use support::impl_outer_event;
+    use frame_support::impl_outer_event;
 }
 impl_outer_event! {
     pub enum MetaEvent for Test {
@@ -48,8 +50,8 @@ impl_outer_origin! {
 }
 impl_outer_dispatch! {
     pub enum Call for Test where origin: Origin {
-        balances::Balances,
-        contracts::Contracts,
+        pallet_balances::Balances,
+        pallet_contracts::Contracts,
     }
 }
 
@@ -82,7 +84,7 @@ parameter_types! {
     pub const MaximumBlockLength: u32 = 2 * 1024;
     pub const AvailableBlockRatio: Perbill = Perbill::one();
 }
-impl system::Trait for Test {
+impl frame_system::Trait for Test {
     type Origin = Origin;
     type Index = u64;
     type BlockNumber = u64;
@@ -99,22 +101,22 @@ impl system::Trait for Test {
     type MaximumBlockLength = MaximumBlockLength;
     type Version = ();
     type ModuleToIndex = ();
-	type AccountData = balances::AccountData<u64>;
-	type MigrateAccount = (); type OnNewAccount = ();
-	type OnKilledAccount = Contracts;
+    type AccountData = pallet_balances::AccountData<u64>;
+    type OnNewAccount = ();
+    type OnKilledAccount = Contracts;
 }
 
-impl balances::Trait for Test {
+impl pallet_balances::Trait for Test {
     type Balance = u64;
     type Event = MetaEvent;
     type DustRemoval = ();
     type ExistentialDeposit = ExistentialDeposit;
-    type AccountStore = system::Module<Test>;
+    type AccountStore = frame_system::Module<Test>;
 }
 parameter_types! {
     pub const MinimumPeriod: u64 = 1;
 }
-impl timestamp::Trait for Test {
+impl pallet_timestamp::Trait for Test {
     type Moment = u64;
     type OnTimestampSet = ();
     type MinimumPeriod = MinimumPeriod;
@@ -134,7 +136,7 @@ parameter_types! {
     pub const MaxDepth: u32 = 100;
     pub const MaxValueSize: u32 = 16_384;
 }
-impl contracts::Trait for Test {
+impl pallet_contracts::Trait for Test {
     type Currency = Balances;
     type Time = Timestamp;
     type Randomness = Randomness;
@@ -186,10 +188,10 @@ impl Trait for Test {
     type Event = MetaEvent;
 }
 
-type Balances = balances::Module<Test>;
-type Timestamp = timestamp::Module<Test>;
-type Contracts = contracts::Module<Test>;
-type System = system::Module<Test>;
+type Balances = pallet_balances::Module<Test>;
+type Timestamp = pallet_timestamp::Module<Test>;
+type Contracts = pallet_contracts::Module<Test>;
+type System = frame_system::Module<Test>;
 type Randomness = randomness_collective_flip::Module<Test>;
 type Operator = Module<Test>;
 
@@ -205,9 +207,9 @@ pub struct DummyTrieIdGenerator;
 
 impl TrieIdGenerator<u64> for DummyTrieIdGenerator {
     fn trie_id(account_id: &u64) -> TrieId {
-        use primitives::storage::well_known_keys;
+        use sp_core::storage::well_known_keys;
 
-        let new_seed = contracts::AccountCounter::mutate(|v| {
+        let new_seed = pallet_contracts::AccountCounter::mutate(|v| {
             *v = v.wrapping_add(1);
             *v
         });
@@ -286,15 +288,13 @@ impl ExtBuilder {
     }
     pub fn build(self) -> sp_io::TestExternalities {
         self.set_associated_consts();
-        let mut t = system::GenesisConfig::default()
+        let mut t = frame_system::GenesisConfig::default()
             .build_storage::<Test>()
             .unwrap();
-        balances::GenesisConfig::<Test> {
-            balances: vec![],
-        }
-        .assimilate_storage(&mut t)
-        .unwrap();
-        contracts::GenesisConfig::<Test> {
+        pallet_balances::GenesisConfig::<Test> { balances: vec![] }
+            .assimilate_storage(&mut t)
+            .unwrap();
+        pallet_contracts::GenesisConfig::<Test> {
             current_schedule: Schedule {
                 enable_println: true,
                 ..Default::default()
@@ -312,7 +312,7 @@ fn compile_module<T>(
     wabt_module: &str,
 ) -> std::result::Result<(Vec<u8>, <T::Hashing as Hash>::Output), wabt::Error>
 where
-    T: system::Trait,
+    T: frame_system::Trait,
 {
     let wasm = wabt::wat2wasm(wabt_module)?;
     let code_hash = T::Hashing::hash(&wasm);
@@ -374,48 +374,54 @@ fn instantiate_and_call_and_deposit_event() {
                 System::events(),
                 vec![
                     EventRecord {
-                        phase: Phase::ApplyExtrinsic(0),
-                        event: MetaEvent::system(system::RawEvent::NewAccount(ALICE)),
+                        phase: Phase::Initialization,
+                        event: MetaEvent::system(frame_system::RawEvent::NewAccount(ALICE)),
                         topics: vec![],
                     },
                     EventRecord {
-                        phase: Phase::ApplyExtrinsic(0),
-                        event: MetaEvent::balances(balances::RawEvent::Endowed(ALICE, 1_000_000)),
+                        phase: Phase::Initialization,
+                        event: MetaEvent::balances(pallet_balances::RawEvent::Endowed(
+                            ALICE, 1_000_000
+                        )),
                         topics: vec![],
                     },
                     EventRecord {
-                        phase: Phase::ApplyExtrinsic(0),
-                        event: MetaEvent::contracts(contracts::RawEvent::CodeStored(
+                        phase: Phase::Initialization,
+                        event: MetaEvent::contracts(pallet_contracts::RawEvent::CodeStored(
                             code_hash.into()
                         )),
                         topics: vec![],
                     },
                     EventRecord {
-                        phase: Phase::ApplyExtrinsic(0),
-                        event: MetaEvent::system(system::RawEvent::NewAccount(BOB)),
+                        phase: Phase::Initialization,
+                        event: MetaEvent::system(frame_system::RawEvent::NewAccount(BOB)),
                         topics: vec![],
                     },
                     EventRecord {
-                        phase: Phase::ApplyExtrinsic(0),
-                        event: MetaEvent::balances(balances::RawEvent::Endowed(BOB, 100)),
+                        phase: Phase::Initialization,
+                        event: MetaEvent::balances(pallet_balances::RawEvent::Endowed(BOB, 100)),
                         topics: vec![],
                     },
                     EventRecord {
-                        phase: Phase::ApplyExtrinsic(0),
-                        event: MetaEvent::contracts(contracts::RawEvent::Transfer(ALICE, BOB, 100)),
+                        phase: Phase::Initialization,
+                        event: MetaEvent::contracts(pallet_contracts::RawEvent::Transfer(
+                            ALICE, BOB, 100
+                        )),
                         topics: vec![],
                     },
                     EventRecord {
-                        phase: Phase::ApplyExtrinsic(0),
-                        event: MetaEvent::contracts(contracts::RawEvent::ContractExecution(
+                        phase: Phase::Initialization,
+                        event: MetaEvent::contracts(pallet_contracts::RawEvent::ContractExecution(
                             BOB,
                             vec![1, 2, 3, 4],
                         )),
                         topics: vec![],
                     },
                     EventRecord {
-                        phase: Phase::ApplyExtrinsic(0),
-                        event: MetaEvent::contracts(contracts::RawEvent::Instantiated(ALICE, BOB)),
+                        phase: Phase::Initialization,
+                        event: MetaEvent::contracts(pallet_contracts::RawEvent::Instantiated(
+                            ALICE, BOB
+                        )),
                         topics: vec![],
                     }
                 ]
@@ -455,52 +461,58 @@ fn instantiate_and_relate_operator() {
                 System::events(),
                 vec![
                     EventRecord {
-                        phase: Phase::ApplyExtrinsic(0),
-                        event: MetaEvent::system(system::RawEvent::NewAccount(ALICE)),
+                        phase: Phase::Initialization,
+                        event: MetaEvent::system(frame_system::RawEvent::NewAccount(ALICE)),
                         topics: vec![],
                     },
                     EventRecord {
-                        phase: Phase::ApplyExtrinsic(0),
-                        event: MetaEvent::balances(balances::RawEvent::Endowed(ALICE, 1_000_000)),
+                        phase: Phase::Initialization,
+                        event: MetaEvent::balances(pallet_balances::RawEvent::Endowed(
+                            ALICE, 1_000_000
+                        )),
                         topics: vec![],
                     },
                     EventRecord {
-                        phase: Phase::ApplyExtrinsic(0),
-                        event: MetaEvent::contracts(contracts::RawEvent::CodeStored(
+                        phase: Phase::Initialization,
+                        event: MetaEvent::contracts(pallet_contracts::RawEvent::CodeStored(
                             code_hash.into()
                         )),
                         topics: vec![],
                     },
                     EventRecord {
-                        phase: Phase::ApplyExtrinsic(0),
-                        event: MetaEvent::system(system::RawEvent::NewAccount(BOB)),
+                        phase: Phase::Initialization,
+                        event: MetaEvent::system(frame_system::RawEvent::NewAccount(BOB)),
                         topics: vec![],
                     },
                     EventRecord {
-                        phase: Phase::ApplyExtrinsic(0),
-                        event: MetaEvent::balances(balances::RawEvent::Endowed(BOB, 100)),
+                        phase: Phase::Initialization,
+                        event: MetaEvent::balances(pallet_balances::RawEvent::Endowed(BOB, 100)),
                         topics: vec![],
                     },
                     EventRecord {
-                        phase: Phase::ApplyExtrinsic(0),
-                        event: MetaEvent::contracts(contracts::RawEvent::Transfer(ALICE, BOB, 100)),
+                        phase: Phase::Initialization,
+                        event: MetaEvent::contracts(pallet_contracts::RawEvent::Transfer(
+                            ALICE, BOB, 100
+                        )),
                         topics: vec![],
                     },
                     EventRecord {
-                        phase: Phase::ApplyExtrinsic(0),
-                        event: MetaEvent::contracts(contracts::RawEvent::ContractExecution(
+                        phase: Phase::Initialization,
+                        event: MetaEvent::contracts(pallet_contracts::RawEvent::ContractExecution(
                             BOB,
                             vec![1, 2, 3, 4],
                         )),
                         topics: vec![],
                     },
                     EventRecord {
-                        phase: Phase::ApplyExtrinsic(0),
-                        event: MetaEvent::contracts(contracts::RawEvent::Instantiated(ALICE, BOB)),
+                        phase: Phase::Initialization,
+                        event: MetaEvent::contracts(pallet_contracts::RawEvent::Instantiated(
+                            ALICE, BOB
+                        )),
                         topics: vec![],
                     },
                     EventRecord {
-                        phase: Phase::ApplyExtrinsic(0),
+                        phase: Phase::Initialization,
                         event: MetaEvent::operator(RawEvent::SetOperator(ALICE, BOB)),
                         topics: vec![],
                     }
@@ -579,47 +591,52 @@ fn valid_instatiate(wasm: Vec<u8>, code_hash: CodeHash<Test>) {
         System::events(),
         vec![
             EventRecord {
-                phase: Phase::ApplyExtrinsic(0),
-                event: MetaEvent::system(system::RawEvent::NewAccount(ALICE)),
+                phase: Phase::Initialization,
+                event: MetaEvent::system(frame_system::RawEvent::NewAccount(ALICE)),
                 topics: vec![],
             },
             EventRecord {
-                phase: Phase::ApplyExtrinsic(0),
-                event: MetaEvent::balances(balances::RawEvent::Endowed(ALICE, 1_000_000)),
+                phase: Phase::Initialization,
+                event: MetaEvent::balances(pallet_balances::RawEvent::Endowed(ALICE, 1_000_000)),
                 topics: vec![],
             },
             EventRecord {
-                phase: Phase::ApplyExtrinsic(0),
-                event: MetaEvent::contracts(contracts::RawEvent::CodeStored(code_hash.into())),
+                phase: Phase::Initialization,
+                event: MetaEvent::contracts(pallet_contracts::RawEvent::CodeStored(
+                    code_hash.into()
+                )),
                 topics: vec![],
             },
             EventRecord {
-                phase: Phase::ApplyExtrinsic(0),
-                event: MetaEvent::system(system::RawEvent::NewAccount(BOB)),
+                phase: Phase::Initialization,
+                event: MetaEvent::system(frame_system::RawEvent::NewAccount(BOB)),
                 topics: vec![],
             },
             EventRecord {
-                phase: Phase::ApplyExtrinsic(0),
-                event: MetaEvent::balances(balances::RawEvent::Endowed(BOB, 100)),
+                phase: Phase::Initialization,
+                event: MetaEvent::balances(pallet_balances::RawEvent::Endowed(BOB, 100)),
                 topics: vec![],
             },
             EventRecord {
-                phase: Phase::ApplyExtrinsic(0),
-                event: MetaEvent::contracts(contracts::RawEvent::Transfer(ALICE, BOB, 100)),
+                phase: Phase::Initialization,
+                event: MetaEvent::contracts(pallet_contracts::RawEvent::Transfer(ALICE, BOB, 100)),
                 topics: vec![],
             },
             EventRecord {
-                phase: Phase::ApplyExtrinsic(0),
-                event: MetaEvent::contracts(contracts::RawEvent::ContractExecution(BOB, vec![1, 2, 3, 4])),
+                phase: Phase::Initialization,
+                event: MetaEvent::contracts(pallet_contracts::RawEvent::ContractExecution(
+                    BOB,
+                    vec![1, 2, 3, 4]
+                )),
                 topics: vec![],
             },
             EventRecord {
-                phase: Phase::ApplyExtrinsic(0),
-                event: MetaEvent::contracts(contracts::RawEvent::Instantiated(ALICE, BOB)),
+                phase: Phase::Initialization,
+                event: MetaEvent::contracts(pallet_contracts::RawEvent::Instantiated(ALICE, BOB)),
                 topics: vec![],
             },
             EventRecord {
-                phase: Phase::ApplyExtrinsic(0),
+                phase: Phase::Initialization,
                 event: MetaEvent::operator(RawEvent::SetOperator(ALICE, BOB)),
                 topics: vec![],
             }
@@ -676,57 +693,63 @@ fn update_parameters_passed() {
                 System::events(),
                 vec![
                     EventRecord {
-                        phase: Phase::ApplyExtrinsic(0),
-                        event: MetaEvent::system(system::RawEvent::NewAccount(ALICE)),
+                        phase: Phase::Initialization,
+                        event: MetaEvent::system(frame_system::RawEvent::NewAccount(ALICE)),
                         topics: vec![],
                     },
                     EventRecord {
-                        phase: Phase::ApplyExtrinsic(0),
-                        event: MetaEvent::balances(balances::RawEvent::Endowed(ALICE, 1_000_000)),
+                        phase: Phase::Initialization,
+                        event: MetaEvent::balances(pallet_balances::RawEvent::Endowed(
+                            ALICE, 1_000_000
+                        )),
                         topics: vec![],
                     },
                     EventRecord {
-                        phase: Phase::ApplyExtrinsic(0),
-                        event: MetaEvent::contracts(contracts::RawEvent::CodeStored(
+                        phase: Phase::Initialization,
+                        event: MetaEvent::contracts(pallet_contracts::RawEvent::CodeStored(
                             code_hash.into()
                         )),
                         topics: vec![],
                     },
                     EventRecord {
-                        phase: Phase::ApplyExtrinsic(0),
-                        event: MetaEvent::system(system::RawEvent::NewAccount(BOB)),
+                        phase: Phase::Initialization,
+                        event: MetaEvent::system(frame_system::RawEvent::NewAccount(BOB)),
                         topics: vec![],
                     },
                     EventRecord {
-                        phase: Phase::ApplyExtrinsic(0),
-                        event: MetaEvent::balances(balances::RawEvent::Endowed(BOB, 100)),
+                        phase: Phase::Initialization,
+                        event: MetaEvent::balances(pallet_balances::RawEvent::Endowed(BOB, 100)),
                         topics: vec![],
                     },
                     EventRecord {
-                        phase: Phase::ApplyExtrinsic(0),
-                        event: MetaEvent::contracts(contracts::RawEvent::Transfer(ALICE, BOB, 100)),
+                        phase: Phase::Initialization,
+                        event: MetaEvent::contracts(pallet_contracts::RawEvent::Transfer(
+                            ALICE, BOB, 100
+                        )),
                         topics: vec![],
                     },
                     EventRecord {
-                        phase: Phase::ApplyExtrinsic(0),
-                        event: MetaEvent::contracts(contracts::RawEvent::ContractExecution(
+                        phase: Phase::Initialization,
+                        event: MetaEvent::contracts(pallet_contracts::RawEvent::ContractExecution(
                             BOB,
                             vec![1, 2, 3, 4],
                         )),
                         topics: vec![],
                     },
                     EventRecord {
-                        phase: Phase::ApplyExtrinsic(0),
-                        event: MetaEvent::contracts(contracts::RawEvent::Instantiated(ALICE, BOB)),
+                        phase: Phase::Initialization,
+                        event: MetaEvent::contracts(pallet_contracts::RawEvent::Instantiated(
+                            ALICE, BOB
+                        )),
                         topics: vec![],
                     },
                     EventRecord {
-                        phase: Phase::ApplyExtrinsic(0),
+                        phase: Phase::Initialization,
                         event: MetaEvent::operator(RawEvent::SetOperator(ALICE, BOB)),
                         topics: vec![],
                     },
                     EventRecord {
-                        phase: Phase::ApplyExtrinsic(0),
+                        phase: Phase::Initialization,
                         event: MetaEvent::operator(RawEvent::SetParameters(BOB, new_parameters)),
                         topics: vec![],
                     },
@@ -814,57 +837,63 @@ fn change_operator_passed() {
                 System::events(),
                 vec![
                     EventRecord {
-                        phase: Phase::ApplyExtrinsic(0),
-                        event: MetaEvent::system(system::RawEvent::NewAccount(ALICE)),
+                        phase: Phase::Initialization,
+                        event: MetaEvent::system(frame_system::RawEvent::NewAccount(ALICE)),
                         topics: vec![],
                     },
                     EventRecord {
-                        phase: Phase::ApplyExtrinsic(0),
-                        event: MetaEvent::balances(balances::RawEvent::Endowed(ALICE, 1_000_000)),
+                        phase: Phase::Initialization,
+                        event: MetaEvent::balances(pallet_balances::RawEvent::Endowed(
+                            ALICE, 1_000_000
+                        )),
                         topics: vec![],
                     },
                     EventRecord {
-                        phase: Phase::ApplyExtrinsic(0),
-                        event: MetaEvent::contracts(contracts::RawEvent::CodeStored(
+                        phase: Phase::Initialization,
+                        event: MetaEvent::contracts(pallet_contracts::RawEvent::CodeStored(
                             code_hash.into()
                         )),
                         topics: vec![],
                     },
                     EventRecord {
-                        phase: Phase::ApplyExtrinsic(0),
-                        event: MetaEvent::system(system::RawEvent::NewAccount(BOB)),
+                        phase: Phase::Initialization,
+                        event: MetaEvent::system(frame_system::RawEvent::NewAccount(BOB)),
                         topics: vec![],
                     },
                     EventRecord {
-                        phase: Phase::ApplyExtrinsic(0),
-                        event: MetaEvent::balances(balances::RawEvent::Endowed(BOB, 100)),
+                        phase: Phase::Initialization,
+                        event: MetaEvent::balances(pallet_balances::RawEvent::Endowed(BOB, 100)),
                         topics: vec![],
                     },
                     EventRecord {
-                        phase: Phase::ApplyExtrinsic(0),
-                        event: MetaEvent::contracts(contracts::RawEvent::Transfer(ALICE, BOB, 100)),
+                        phase: Phase::Initialization,
+                        event: MetaEvent::contracts(pallet_contracts::RawEvent::Transfer(
+                            ALICE, BOB, 100
+                        )),
                         topics: vec![],
                     },
                     EventRecord {
-                        phase: Phase::ApplyExtrinsic(0),
-                        event: MetaEvent::contracts(contracts::RawEvent::ContractExecution(
+                        phase: Phase::Initialization,
+                        event: MetaEvent::contracts(pallet_contracts::RawEvent::ContractExecution(
                             BOB,
                             vec![1, 2, 3, 4],
                         )),
                         topics: vec![],
                     },
                     EventRecord {
-                        phase: Phase::ApplyExtrinsic(0),
-                        event: MetaEvent::contracts(contracts::RawEvent::Instantiated(ALICE, BOB)),
+                        phase: Phase::Initialization,
+                        event: MetaEvent::contracts(pallet_contracts::RawEvent::Instantiated(
+                            ALICE, BOB
+                        )),
                         topics: vec![],
                     },
                     EventRecord {
-                        phase: Phase::ApplyExtrinsic(0),
+                        phase: Phase::Initialization,
                         event: MetaEvent::operator(RawEvent::SetOperator(ALICE, BOB)),
                         topics: vec![],
                     },
                     EventRecord {
-                        phase: Phase::ApplyExtrinsic(0),
+                        phase: Phase::Initialization,
                         event: MetaEvent::operator(RawEvent::SetOperator(CHARLIE, BOB)),
                         topics: vec![],
                     },
