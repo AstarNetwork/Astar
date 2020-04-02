@@ -9,5 +9,5 @@ description = "Plasm runtime executor library."
 edition = "2018"
 
 [dependencies]
-sc-executor = { git = "https://github.com/staketechnologies/substrate.git", tag = "ci-release-2.0.0-alpha.5+6" }
+sc-executor = { git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master" }
 plasm-runtime = { path = "../runtime" }
