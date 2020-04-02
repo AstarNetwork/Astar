@@ -1,13 +1,13 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use contracts::{BalanceOf, CodeHash, ContractAddressFor, Gas};
+use frame_support::{decl_event, decl_module, decl_storage, Parameter};
+use frame_system::{self as system, ensure_signed, RawOrigin};
+use pallet_contracts::{BalanceOf, CodeHash, ContractAddressFor, Gas};
 use sp_runtime::{
     traits::{MaybeDisplay, MaybeSerialize, Member},
     DispatchError,
 };
 use sp_std::prelude::*;
-use support::{decl_event, decl_module, decl_storage, Parameter};
-use system::{ensure_signed, RawOrigin};
 
 pub mod parameters;
 #[cfg(test)]
@@ -61,7 +61,7 @@ pub trait TransferOperator<AccountId: Parameter>: OperatorFinder<AccountId> {
 }
 
 /// The module's configuration trait.
-pub trait Trait: contracts::Trait {
+pub trait Trait: pallet_contracts::Trait {
     type Parameters: Parameter
         + Member
         + MaybeSerialize
@@ -71,7 +71,7 @@ pub trait Trait: contracts::Trait {
         + parameters::Verifiable;
 
     /// The overarching event type.
-    type Event: From<Event<Self>> + Into<<Self as system::Trait>::Event>;
+    type Event: From<Event<Self>> + Into<<Self as frame_system::Trait>::Event>;
 }
 
 // This module's storage items.
@@ -109,7 +109,7 @@ decl_module! {
             parameters.verify()?;
 
             let contract = T::DetermineContractAddress::contract_address_for(&code_hash, &data, &operator);
-            contracts::Module::<T>::instantiate(RawOrigin::Signed(operator.clone()).into(), endowment, gas_limit, code_hash, data)?;
+            pallet_contracts::Module::<T>::instantiate(RawOrigin::Signed(operator.clone()).into(), endowment, gas_limit, code_hash, data)?;
 
             // add operator to contracts
             <OperatorHasContracts<T>>::mutate(&operator, {|tree| (*tree).push(contract.clone()) });
@@ -153,7 +153,7 @@ decl_module! {
 decl_event!(
     pub enum Event<T>
     where
-        AccountId = <T as system::Trait>::AccountId,
+        AccountId = <T as frame_system::Trait>::AccountId,
         Parameters = <T as Trait>::Parameters,
     {
         /// When operator changed,

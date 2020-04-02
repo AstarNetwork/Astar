@@ -90,7 +90,6 @@ impl frame_system::Trait for Runtime {
     type Version = ();
     type ModuleToIndex = ();
     type AccountData = pallet_balances::AccountData<Balance>;
-    type MigrateAccount = ();
     type OnNewAccount = ();
     type OnKilledAccount = ();
 }
@@ -198,7 +197,7 @@ fn session_keys(account: &AccountId) -> SessionKeys {
     SessionKeys {
         lockdrop: sr25519::AuthorityPair::from_string(&format!("//{}", account), None)
             .unwrap()
-            .public() 
+            .public()
     }
 }
 

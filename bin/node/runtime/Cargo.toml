@@ -1,6 +1,6 @@
 [package]
 name = "plasm-runtime"
-version = "0.7.2"
+version = "0.8.0"
 authors = [
     "Takumi Yamashita <takumi@stake.co.jp>",
     "Aleksandr Krupenkin <aleksandr@stake.co.jp>"
@@ -33,6 +33,8 @@ sp-session = { git = "https://github.com/staketechnologies/substrate.git", branc
 operator = { package = "pallet-contract-operator", path = "../../../frame/operator", default-features = false }
 trading = { package = "pallet-operator-trading", path = "../../../frame/trading", default-features = false }
 dapps-staking = { package = "pallet-dapps-staking", path = "../../../frame/dapps-staking", default-features = false }
+plasm-rewards = { package = "pallet-plasm-rewards", path = "../../../frame/plasm-rewards", default-features = false }
+plasm-validator = { package = "pallet-plasm-validator", path = "../../../frame/plasm-validator", default-features = false }
 executive = { package = "frame-executive", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master", default-features = false }
 babe = { package = "pallet-babe", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master", default-features = false }
 balances = { package = "pallet-balances", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master", default-features = false }
@@ -56,7 +58,7 @@ transaction-payment-rpc-runtime-api = { package = "pallet-transaction-payment-rp
 sp-io = { git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master" }
 
 [build-dependencies]
-wasm-builder-runner = { package = "substrate-wasm-builder-runner", version = "1.0.4", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master" }
+wasm-builder-runner = { package = "substrate-wasm-builder-runner", version = "1.0.5", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master" }
 
 [features]
 default = ["std"]

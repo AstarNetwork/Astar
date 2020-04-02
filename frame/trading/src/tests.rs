@@ -1,15 +1,15 @@
 use super::*;
-use balances::Reasons;
+use frame_support::{
+    assert_err, assert_ok, impl_outer_event, impl_outer_origin, parameter_types, StorageMap,
+};
+use frame_system::{self, EventRecord, Phase};
+use pallet_balances::{self as balances, Reasons};
 use sp_runtime::{
     testing::{Header, H256},
     traits::{BlakeTwo256, IdentityLookup},
     Perbill,
 };
 use sp_std::marker::PhantomData;
-use support::{
-    assert_err, assert_ok, impl_outer_event, impl_outer_origin, parameter_types, StorageMap,
-};
-use system::{self, EventRecord, Phase};
 
 mod trading {
     // Re-export contents of the root. This basically
@@ -36,7 +36,7 @@ parameter_types! {
     pub const MaximumBlockLength: u32 = 2 * 1024;
     pub const AvailableBlockRatio: Perbill = Perbill::one();
 }
-impl system::Trait for Test {
+impl frame_system::Trait for Test {
     type Origin = Origin;
     type Index = u64;
     type BlockNumber = u64;
@@ -53,31 +53,31 @@ impl system::Trait for Test {
     type MaximumBlockLength = MaximumBlockLength;
     type Version = ();
     type ModuleToIndex = ();
-    type AccountData = balances::AccountData<u64>;
-    type MigrateAccount = (); type OnNewAccount = ();
+    type AccountData = pallet_balances::AccountData<u64>;
+    type OnNewAccount = ();
     type OnKilledAccount = ();
 }
 parameter_types! {
     pub const ExistentialDeposit: u64 = 1; // Should be greather than zero
 }
-impl balances::Trait for Test {
+impl pallet_balances::Trait for Test {
     type Balance = u64;
     type Event = MetaEvent;
     type DustRemoval = ();
     type ExistentialDeposit = ExistentialDeposit;
-    type AccountStore = system::Module<Test>;
+    type AccountStore = frame_system::Module<Test>;
 }
 parameter_types! {
     pub const MinimumPeriod: u64 = 1;
 }
-impl timestamp::Trait for Test {
+impl pallet_timestamp::Trait for Test {
     type Moment = u64;
     type OnTimestampSet = ();
     type MinimumPeriod = MinimumPeriod;
 }
 
 /// define mock operator trait
-pub trait MockOperatorTrait: system::Trait {}
+pub trait MockOperatorTrait: frame_system::Trait {}
 decl_storage! {
     trait Store for MockOperatorModule<T: MockOperatorTrait> as MockOperator {
         /// A mapping from operators to operated contracts by them.
@@ -128,10 +128,10 @@ impl Trait for Test {
 struct ExtBuilder;
 impl ExtBuilder {
     pub fn build() -> sp_io::TestExternalities {
-        let mut t = system::GenesisConfig::default()
+        let mut t = frame_system::GenesisConfig::default()
             .build_storage::<Test>()
             .unwrap();
-        balances::GenesisConfig::<Test> {
+        pallet_balances::GenesisConfig::<Test> {
             balances: vec![(ALICE, 1000), (BOB, 1000), (CHARLIE, 1000), (DAVE, 1000)],
         }
         .assimilate_storage(&mut t)
@@ -140,9 +140,9 @@ impl ExtBuilder {
     }
 }
 
-type System = system::Module<Test>;
-type Balances = balances::Module<Test>;
-type Timestamp = timestamp::Module<Test>;
+type System = frame_system::Module<Test>;
+type Balances = pallet_balances::Module<Test>;
+type Timestamp = pallet_timestamp::Module<Test>;
 type Trading = Module<Test>;
 
 // operators
@@ -177,7 +177,7 @@ fn advance_session() {
         &[0u8; 32].into(),
         &[0u8; 32].into(),
         &Default::default(),
-        system::InitKind::Full,
+        frame_system::InitKind::Full,
     );
     // increase timestamp + 10
     let now_time = Timestamp::get();
@@ -244,7 +244,7 @@ fn correct_offer(
     assert_eq!(
         System::events(),
         vec![EventRecord {
-            phase: Phase::ApplyExtrinsic(0),
+            phase: Phase::Initialization,
             event: MetaEvent::trading(RawEvent::Offer(buyer, sender)),
             topics: vec![],
         },]
@@ -252,7 +252,7 @@ fn correct_offer(
     assert_eq!(Some(offer.clone()), <Offers<Test>>::get(&buyer));
     // Locking buyer test
     assert_eq!(
-        vec![balances::BalanceLock {
+        vec![pallet_balances::BalanceLock {
             id: TRADING_ID,
             amount: amount,
             reasons: Reasons::from(WithdrawReasons::all()),
@@ -291,7 +291,7 @@ fn correct_reject(rejector: AccountId, offer_id: AccountId) {
     assert_eq!(
         System::events(),
         vec![EventRecord {
-            phase: Phase::ApplyExtrinsic(0),
+            phase: Phase::Initialization,
             event: MetaEvent::trading(RawEvent::Reject(rejector, offer_id.clone())),
             topics: vec![],
         },]
@@ -304,7 +304,7 @@ fn correct_reject(rejector: AccountId, offer_id: AccountId) {
     assert_eq!(MockOperatorModule::<Test>::contracts(&ALICE), contracts);
     // Unlocking buyer test
     assert_eq!(
-        Vec::<balances::BalanceLock<u64>>::new(),
+        Vec::<pallet_balances::BalanceLock<u64>>::new(),
         Balances::locks(&offer_id)
     )
 }
@@ -373,8 +373,8 @@ fn correct_accept(acceptor: AccountId, offer_id: AccountId) {
         System::events(),
         vec![
             EventRecord {
-                phase: Phase::ApplyExtrinsic(0),
-                event: MetaEvent::balances(balances::RawEvent::Transfer(
+                phase: Phase::Initialization,
+                event: MetaEvent::balances(pallet_balances::RawEvent::Transfer(
                     offer.buyer,
                     offer.sender,
                     offer.amount,
@@ -382,7 +382,7 @@ fn correct_accept(acceptor: AccountId, offer_id: AccountId) {
                 topics: vec![],
             },
             EventRecord {
-                phase: Phase::ApplyExtrinsic(0),
+                phase: Phase::Initialization,
                 event: MetaEvent::trading(RawEvent::Accept(acceptor, offer_id.clone())),
                 topics: vec![],
             },
@@ -424,7 +424,7 @@ fn correct_accept(acceptor: AccountId, offer_id: AccountId) {
     );
     // Unlocking buyer test
     assert_eq!(
-        Vec::<balances::BalanceLock<u64>>::new(),
+        Vec::<pallet_balances::BalanceLock<u64>>::new(),
         Balances::locks(&offer.buyer)
     )
 }
@@ -492,14 +492,14 @@ fn correct_remove(remover: AccountId) {
     assert_eq!(
         System::events(),
         vec![EventRecord {
-            phase: Phase::ApplyExtrinsic(0),
+            phase: Phase::Initialization,
             event: MetaEvent::trading(RawEvent::Remove(remover)),
             topics: vec![],
         },]
     );
     // Unlocking buyer test
     assert_eq!(
-        Vec::<balances::BalanceLock<u64>>::new(),
+        Vec::<pallet_balances::BalanceLock<u64>>::new(),
         Balances::locks(&remover)
     )
 }
