@@ -11,7 +11,7 @@ use plasm_runtime::constants::currency::*;
 use plasm_runtime::Block;
 use plasm_runtime::{
     BabeConfig, BalancesConfig, ContractsConfig, GenesisConfig, GrandpaConfig,
-    IndicesConfig, PlasmStakingConfig, SessionConfig, SessionKeys, SudoConfig, SystemConfig,
+    IndicesConfig, DappsStakingConfig, SessionConfig, SessionKeys, SudoConfig, SystemConfig,
     WASM_BINARY,
 };
 
@@ -102,9 +102,9 @@ fn generate_config_genesis(
         indices: Some(IndicesConfig {
             indices: vec![],
         }),
-        plasm_staking: Some(PlasmStakingConfig {
+        dapps_staking: Some(DappsStakingConfig {
             storage_version: 1,
-            force_era: pallet_plasm_staking::Forcing::NotForcing,
+            force_era: pallet_dapps_staking::Forcing::NotForcing,
             validators: initial_authorities.iter().map(|x| x.0.clone()).collect(),
         }),
         session: Some(SessionConfig {

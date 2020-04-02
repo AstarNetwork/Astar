@@ -20,8 +20,8 @@ crate-type = ["cdylib", "rlib"]
 
 [dependencies]
 # thidr-party dependencies
-codec = { package = "parity-scale-codec", version = "1.0.6" }
-serde = { version = "1.0.102", features = [ "derive" ] }
+codec = { package = "parity-scale-codec", version = "1.2.0" }
+serde = { version = "1.0", features = [ "derive" ] }
 futures = { version = "0.3.1", features = ["compat"] }
 structopt = { version = "0.3.8", optional = true }
 hex-literal = "0.2.1"
@@ -65,7 +65,7 @@ pallet-timestamp = { git = "https://github.com/staketechnologies/substrate.git",
 pallet-contracts = { git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master", default-features = false }
 pallet-transaction-payment = { git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master" }
 pallet-finality-tracker = { git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master" }
-pallet-plasm-staking = { path = "../../../frame/plasm-staking" }
+pallet-dapps-staking = { path = "../../../frame/dapps-staking" }
 
 # CLI-specific dependencies
 sc-cli = { git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master", optional = true }

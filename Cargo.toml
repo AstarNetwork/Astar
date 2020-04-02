@@ -8,8 +8,10 @@ members = [
     "bin/subkey",
     "frame/operator",
     "frame/trading",
-    "frame/plasm-staking",
+    "frame/dapps-staking",
+    "frame/plasm-rewards",
     "frame/plasm-lockdrop",
+    "frame/plasm-validator",
 ]
 
 exclude = [
