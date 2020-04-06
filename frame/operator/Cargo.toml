@@ -4,73 +4,20 @@ version = "0.1.0"
 authors = ["Takumi Yamashita <takumi@stake.co.jp>"]
 edition = "2018"
 
-[dependencies.codec]
-default-features = false
-features = ['derive']
-version = "1.2.0"
-package = "parity-scale-codec"
+[dependencies]
+codec = { package = "parity-scale-codec", version = "1.2.0", features = ['derive'], default-features = false }
+serde = { version = '1.0', optional = true }
+serde_derive = { version = "1.0", optional = true }
 
-[dependencies.primitives]
-default_features = false
-git = 'https://github.com/staketechnologies/substrate.git'
-branch = 'plasm-master'
-package = 'sp-core'
-
-[dependencies.sp-runtime]
-default_features = false
-git = 'https://github.com/staketechnologies/substrate.git'
-branch = 'plasm-master'
-package = 'sp-runtime'
-
-[dependencies.sp-io]
-default_features = false
-git = 'https://github.com/staketechnologies/substrate.git'
-branch = 'plasm-master'
-package = 'sp-io'
-
-[dependencies.sp-std]
-default_features = false
-git = 'https://github.com/staketechnologies/substrate.git'
-branch = 'plasm-master'
-package = 'sp-std'
-
-[dependencies.balances]
-default_features = false
-git = 'https://github.com/staketechnologies/substrate.git'
-branch = 'plasm-master'
-package = 'pallet-balances'
-
-[dependencies.support]
-default_features = false
-git = 'https://github.com/staketechnologies/substrate.git'
-branch = 'plasm-master'
-package = 'frame-support'
-
-[dependencies.timestamp]
-default_features = false
-git = 'https://github.com/staketechnologies/substrate.git'
-branch = 'plasm-master'
-package = 'pallet-timestamp'
-
-[dependencies.system]
-default_features = false
-git = 'https://github.com/staketechnologies/substrate.git'
-branch = 'plasm-master'
-package = 'frame-system'
-
-[dependencies.contracts]
-default_features = false
-git = 'https://github.com/staketechnologies/substrate.git'
-branch = 'plasm-master'
-package = 'pallet-contracts'
-
-[dependencies.serde]
-optional = true
-version = "1.0"
-
-[dependencies.serde_derive]
-optional = true
-version = "1.0"
+sp-core = { git = 'https://github.com/staketechnologies/substrate.git', branch = "plasm-master", default_features = false }
+sp-runtime = { git = 'https://github.com/staketechnologies/substrate.git', branch = "plasm-master", default_features = false }
+sp-io = { git = 'https://github.com/staketechnologies/substrate.git', branch = "plasm-master", default_features = false }
+sp-std = { git = 'https://github.com/staketechnologies/substrate.git', branch = "plasm-master", default_features = false }
+pallet-balances = { git = 'https://github.com/staketechnologies/substrate.git', branch = "plasm-master", default_features = false }
+frame-support = { git = 'https://github.com/staketechnologies/substrate.git', branch = "plasm-master", default_features = false }
+pallet-timestamp = { git = 'https://github.com/staketechnologies/substrate.git', branch = "plasm-master", default_features = false }
+frame-system = { git = 'https://github.com/staketechnologies/substrate.git', branch = "plasm-master", default_features = false }
+pallet-contracts = { git = 'https://github.com/staketechnologies/substrate.git', branch = "plasm-master", default_features = false }
 
 [dev-dependencies]
 wabt = "0.9.2"
@@ -82,15 +29,15 @@ randomness-collective-flip = { package = "pallet-randomness-collective-flip", gi
 default = ["std"]
 std = [
     'codec/std',
-    'primitives/std',
+    'sp-core/std',
     'sp-runtime/std',
     'sp-io/std',
     'sp-std/std',
-    'balances/std',
-    'support/std',
-    'timestamp/std',
-    'system/std',
-    'contracts/std',
+    'pallet-balances/std',
+    'frame-support/std',
+    'pallet-timestamp/std',
+    'frame-system/std',
+    'pallet-contracts/std',
     'serde_derive',
     'serde/std',
 ]

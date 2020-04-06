@@ -1,19 +1,19 @@
 //! Chain specification.
 
-use serde::{Deserialize, Serialize};
-use sp_core::{sr25519, Pair, Public};
-use sp_runtime::traits::{IdentifyAccount, Verify};
-use sp_consensus_babe::AuthorityId as BabeId;
-use sp_finality_grandpa::AuthorityId as GrandpaId;
-use sc_chain_spec::ChainSpecExtension;
 use plasm_primitives::{AccountId, Balance, Signature};
 use plasm_runtime::constants::currency::*;
 use plasm_runtime::Block;
 use plasm_runtime::{
-    BabeConfig, BalancesConfig, ContractsConfig, GenesisConfig, GrandpaConfig,
-    IndicesConfig, DappsStakingConfig, SessionConfig, SessionKeys, SudoConfig, SystemConfig,
-    WASM_BINARY,
+    BabeConfig, BalancesConfig, ContractsConfig, DappsStakingConfig, GenesisConfig, GrandpaConfig,
+    IndicesConfig, PlasmRewardsConfig, PlasmValidatorConfig, SessionConfig, SessionKeys,
+    SudoConfig, SystemConfig, WASM_BINARY,
 };
+use sc_chain_spec::ChainSpecExtension;
+use serde::{Deserialize, Serialize};
+use sp_consensus_babe::AuthorityId as BabeId;
+use sp_core::{sr25519, Pair, Public};
+use sp_finality_grandpa::AuthorityId as GrandpaId;
+use sp_runtime::traits::{IdentifyAccount, Verify};
 
 type AccountPublic = <Signature as Verify>::Signer;
 
@@ -35,15 +35,12 @@ const ENDOWMENT: Balance = 1_000 * PLM;
 pub struct Extensions {
     /// Block numbers with known hashes.
     pub fork_blocks: sc_client::ForkBlocks<Block>,
-	/// Known bad block hashes.
-	pub bad_blocks: sc_client::BadBlocks<Block>,
+    /// Known bad block hashes.
+    pub bad_blocks: sc_client::BadBlocks<Block>,
 }
 
 /// Specialized `ChainSpec`.
-pub type ChainSpec = sc_service::GenericChainSpec<
-    GenesisConfig,
-    Extensions,
->;
+pub type ChainSpec = sc_service::GenericChainSpec<GenesisConfig, Extensions>;
 
 /// Helper function to generate a crypto pair from seed
 pub fn get_from_seed<TPublic: Public>(seed: &str) -> <TPublic::Pair as Pair>::Public {
@@ -82,12 +79,30 @@ fn generate_config_genesis(
 ) -> GenesisConfig {
     let balances: Vec<(AccountId, Balance)> = balances.unwrap_or_else(|| {
         vec![
-            (get_account_id_from_seed::<sr25519::Public>("Alice"), ENDOWMENT),
-            (get_account_id_from_seed::<sr25519::Public>("Bob"), ENDOWMENT),
-            (get_account_id_from_seed::<sr25519::Public>("Charlie"), ENDOWMENT),
-            (get_account_id_from_seed::<sr25519::Public>("Dave"), ENDOWMENT),
-            (get_account_id_from_seed::<sr25519::Public>("Eve"), ENDOWMENT),
-            (get_account_id_from_seed::<sr25519::Public>("Ferdie"), ENDOWMENT),
+            (
+                get_account_id_from_seed::<sr25519::Public>("Alice"),
+                ENDOWMENT,
+            ),
+            (
+                get_account_id_from_seed::<sr25519::Public>("Bob"),
+                ENDOWMENT,
+            ),
+            (
+                get_account_id_from_seed::<sr25519::Public>("Charlie"),
+                ENDOWMENT,
+            ),
+            (
+                get_account_id_from_seed::<sr25519::Public>("Dave"),
+                ENDOWMENT,
+            ),
+            (
+                get_account_id_from_seed::<sr25519::Public>("Eve"),
+                ENDOWMENT,
+            ),
+            (
+                get_account_id_from_seed::<sr25519::Public>("Ferdie"),
+                ENDOWMENT,
+            ),
         ]
     });
 
@@ -96,21 +111,30 @@ fn generate_config_genesis(
             code: WASM_BINARY.to_vec(),
             changes_trie_config: Default::default(),
         }),
-        balances: Some(BalancesConfig {
-            balances,
+        balances: Some(BalancesConfig { balances }),
+        indices: Some(IndicesConfig { indices: vec![] }),
+        plasm_rewards: Some(PlasmRewardsConfig {
+            ..Default::default()
         }),
-        indices: Some(IndicesConfig {
-            indices: vec![],
+        plasm_validator: Some(PlasmValidatorConfig {
+            validators: initial_authorities
+                .iter()
+                .map(|x| x.0.clone())
+                .collect::<Vec<_>>(),
         }),
         dapps_staking: Some(DappsStakingConfig {
-            storage_version: 1,
-            force_era: pallet_dapps_staking::Forcing::NotForcing,
-            validators: initial_authorities.iter().map(|x| x.0.clone()).collect(),
+            ..Default::default()
         }),
         session: Some(SessionConfig {
             keys: initial_authorities
                 .iter()
-                .map(|x| (x.0.clone(), x.0.clone(), session_keys(x.1.clone(), x.2.clone())))
+                .map(|x| {
+                    (
+                        x.0.clone(),
+                        x.0.clone(),
+                        session_keys(x.1.clone(), x.2.clone()),
+                    )
+                })
                 .collect::<Vec<_>>(),
         }),
         babe: Some(BabeConfig {

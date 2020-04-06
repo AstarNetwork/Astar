@@ -1,16 +1,14 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use codec::{Decode, Encode};
-use operator::{OperatorFinder, TransferOperator};
+use frame_support::{
+    decl_event, decl_module, decl_storage,
+    traits::{Currency, ExistenceRequirement, LockIdentifier, LockableCurrency, WithdrawReasons},
+};
+use frame_system::{self as system, ensure_signed};
+use pallet_contract_operator::{OperatorFinder, TransferOperator};
 use sp_std::fmt::Debug;
 use sp_std::prelude::*;
-use support::{
-    decl_event, decl_module, decl_storage,
-    traits::{
-        Currency, ExistenceRequirement, LockIdentifier, LockableCurrency, WithdrawReasons,
-    },
-};
-use system::ensure_signed;
 
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
@@ -44,14 +42,17 @@ pub struct Offer<AccountId, Balance, Moment> {
 }
 
 pub type BalanceOf<T> =
-    <<T as Trait>::Currency as Currency<<T as system::Trait>::AccountId>>::Balance;
-pub type OfferOf<T> =
-    Offer<<T as system::Trait>::AccountId, BalanceOf<T>, <T as system::Trait>::BlockNumber>;
+    <<T as Trait>::Currency as Currency<<T as frame_system::Trait>::AccountId>>::Balance;
+pub type OfferOf<T> = Offer<
+    <T as frame_system::Trait>::AccountId,
+    BalanceOf<T>,
+    <T as frame_system::Trait>::BlockNumber,
+>;
 
 const TRADING_ID: LockIdentifier = *b"trading_";
 
 /// The module's configuration trait.
-pub trait Trait: system::Trait {
+pub trait Trait: frame_system::Trait {
     // use amount of values.
     type Currency: LockableCurrency<Self::AccountId, Moment = Self::BlockNumber>;
     /// The helper of checking the state of operators.
@@ -59,7 +60,7 @@ pub trait Trait: system::Trait {
     /// The helper of transfering operator's authorities.
     type TransferOperator: TransferOperator<Self::AccountId>;
     /// The overarching event type.
-    type Event: From<Event<Self>> + Into<<Self as system::Trait>::Event>;
+    type Event: From<Event<Self>> + Into<<Self as frame_system::Trait>::Event>;
 }
 
 decl_storage! {
@@ -162,7 +163,7 @@ decl_module! {
             if acceptor != offer.sender {
                 Err("the accept can not accept. only sender can accept.")?;
             }
-            if <system::Module<T>>::block_number() >= offer.expired {
+            if <frame_system::Module<T>>::block_number() >= offer.expired {
                 Err("the offer was already expired.")?;
             }
 
@@ -193,7 +194,7 @@ decl_module! {
                 Some(o) => o,
                 None => Err("the remover does not have a offer.")?
             };
-            if offer.state == OfferState::Waiting  && offer.expired > <system::Module<T>>::block_number() {
+            if offer.state == OfferState::Waiting  && offer.expired > <frame_system::Module<T>>::block_number() {
                 Err("the offer is living.")?
             }
             // unlock amount
@@ -208,7 +209,7 @@ decl_module! {
 decl_event!(
     pub enum Event<T>
     where
-        AccountId = <T as system::Trait>::AccountId,
+        AccountId = <T as frame_system::Trait>::AccountId,
     {
         /// When call offer,
         /// it is issued arguments:

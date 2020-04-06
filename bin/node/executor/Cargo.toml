@@ -1,6 +1,6 @@
 [package]
 name = "plasm-executor"
-version = "0.7.2"
+version = "0.8.0"
 authors = [
     "Takumi Yamashita <takumi@stake.co.jp>",
     "Aleksandr Krupenkin <aleksandr@stake.co.jp>",
