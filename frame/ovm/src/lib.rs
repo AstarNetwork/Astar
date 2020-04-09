@@ -158,12 +158,24 @@ decl_error! {
         CiamIsNotEmpty,
         /// Does not exist game
         DoesNotExistGame,
+        /// Does not exist predicate
+        DoesNotExistPredicate,
         /// claim should be decidable
         ClaimShouldBeDecidable,
         /// challenge isn't valid
         ChallengeIsNotValid,
         /// challenging game haven't been decided true
         ChallengingGameNotTrue,
+        /// Decision must be undecided
+        DecisionMustBeUndecided,
+        /// There must be no challenge
+        ThereMustBeNoChallenge,
+        /// property must be true with given witness
+        PropertyMustBeTrue,
+        /// challenging game haven't been decided false
+        ChallengingGameNotFalse,
+        /// setPredicateDecision must be called from predicate
+        MustBeCalledFromPredicate,
     }
 }
 
@@ -216,13 +228,15 @@ decl_module! {
 
         /// Claims property and create new game. Id of game is hash of claimed property
         fn claim_property(origin, claim: PropertyOf<T>) {
-            let _ = ensure_signed(origin)?;
             // get the id of this property
             let game_id = Self::get_property_id(&claim);
             let block_number = Self::block_number();
 
             // make sure a claim on this property has not already been made
-            ensure!(None == Self::instantiated_games(&game_id), Error::<T>::CiamIsNotEmpty);
+            ensure!(
+                None == Self::instantiated_games(&game_id),
+                Error::<T>::CiamIsNotEmpty,
+            );
 
             // create the claim status. Always begins with no proven contradictions
             let new_game = ChallengeGameOf::<T> {
@@ -240,7 +254,10 @@ decl_module! {
 
         /// Sets the game decision true when its dispute period has already passed.
         fn decide_claim_to_true(origin, game_id: T::Hash) {
-            ensure!(Self::is_decidable(&game_id), Error::<T>::ClaimShouldBeDecidable);
+            ensure!(
+                Self::is_decidable(&game_id),
+                Error::<T>::ClaimShouldBeDecidable,
+            );
 
             // Note: if is_deciable(&game_id) is true, must exists instantiated_games(&game_id).
             let mut game = Self::instantiated_games(&game_id).unwrap();
@@ -266,15 +283,19 @@ decl_module! {
 
             // check _challenge is in game.challenges
             let challenging_game_id = Self::get_property_id(&challenging_game.property);
-            ensure!(game.challenges
-                .iter()
-                .any(|challenge| challenge == &challenging_game_id),
-                Error::<T>::ChallengeIsNotValid);
+            ensure!(
+                game.challenges
+                    .iter()
+                    .any(|challenge| challenge == &challenging_game_id),
+                Error::<T>::ChallengeIsNotValid,
+            );
 
             // game.createdBlock > block.number - dispute
             // check _challenge have been decided true
-            ensure!(challenging_game.decision == Decision::True,
-                Error::<T>::ChallengingGameNotTrue);
+            ensure!(
+                challenging_game.decision == Decision::True,
+                Error::<T>::ChallengingGameNotTrue,
+            );
 
             // game should be decided false
             game.decision = Decision::False;
@@ -284,17 +305,98 @@ decl_module! {
         }
 
         /// Decide the game decision with given witness.
-        fn decide_claim_with_witness(origin, gameId: T::Hash, witness: Vec<u8>) {
+        fn decide_claim_with_witness(origin, game_id: T::Hash, witness: Vec<u8>) {
+            let mut game = match Self::instantiated_games(&game_id) {
+                Some(game) => game,
+                None => Err(Error::<T>::DoesNotExistGame)?,
+            };
 
+            // Decision must be undecided
+            ensure!(
+                game.decision == Decision::Undecided,
+                Error::<T>::DecisionMustBeUndecided,
+            );
+            // There must be no challenge
+            ensure!(
+                game.challenges.is_empty(),
+                Error::<T>::ThereMustBeNoChallenge,
+            );
+
+            let property = match Self::predicates(&game.property.predicate_address) {
+                Some(predicate) => predicate,
+                None => Err(Error::<T>::DoesNotExistPredicate)?,
+            };
+
+            // TODO: property must be true with given witness
+            // ensure!(property.decide_with_witness(game.property.inputs, witness),
+            //     Error::<T>::PropertyMustBeTrue);
+
+            game.decision = Decision::True;
+            <InstantiatedGames<T>>::insert(&game_id, game);
+            Self::deposit_event(RawEvent::ClaimDecided(game_id, true));
         }
 
         /// Removes a challenge when its decision has been evaluated to false.
         fn remove_challenge(origin, game_id: T::Hash, challenging_game_id: T::Hash) {
+            let mut game = match Self::instantiated_games(&game_id) {
+                Some(game) => game,
+                None => Err(Error::<T>::DoesNotExistGame)?,
+            };
+
+            let challenging_game = match Self::instantiated_games(&game_id) {
+                Some(game) => game,
+                None => Err(Error::<T>::DoesNotExistGame)?,
+            };
+
+            // check _challenge is in _game.challenges
+            let challenging_game_id = Self::get_property_id(&challenging_game.property);
+
+            // challenge isn't valid
+            ensure!(
+                game.challenges
+                    .iter()
+                    .any(|challenge| challenge == &challenging_game_id),
+                Error::<T>::ChallengeIsNotValid,
+            );
+
+            // _game.createdBlock > block.number - dispute
+            // check _challenge have been decided true
+            ensure!(
+                challenging_game.decision == Decision::False,
+                Error::<T>::ChallengingGameNotFalse,
+            );
+
+            // remove challenge
+            game.challenges = game
+                .challenges
+                .into_iter()
+                .filter(|challenge| challenge != &challenging_game_id)
+                .collect();
+            <InstantiatedGames<T>>::insert(&game_id, game);
+
+            Self::deposit_event(RawEvent::ChallengeRemoved(game_id, challenging_game_id));
         }
 
         /// Set a predicate decision by called from Predicate itself.
         fn set_predicate_decision(origin, game_id: T::Hash, decision: bool) {
+            let origin = ensure_signed(origin)?;
+            let mut game = match Self::instantiated_games(&game_id) {
+                Some(game) => game,
+                None => Err(Error::<T>::DoesNotExistGame)?,
+            };
 
+            // only the prodicate can decide a claim
+            ensure!(
+                game.property.predicate_address == origin,
+                Error::<T>::MustBeCalledFromPredicate,
+            );
+
+            if decision {
+                game.decision = Decision::True;
+            } else {
+                game.decision = Decision::False;
+            }
+            Self::deposit_event(RawEvent::AtomicPropositionDecided(game_id, decision));
         }
 
         /// Challenge a game specified by gameId with a challengingGame specified by _challengingGameId.
