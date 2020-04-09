@@ -15,7 +15,7 @@
 
 use codec::{Decode, Encode};
 use frame_support::{
-    decl_error, decl_event, decl_module, decl_storage,
+    decl_error, decl_event, decl_module, decl_storage, ensure,
     traits::{Currency, Get, Time},
     weights::SimpleDispatchInfo,
     StorageMap, StorageValue,
@@ -73,11 +73,11 @@ pub enum Decision {
 /// ChallengeGame is a part of L2 dispute. It's instantiated by claiming property.
 /// The client can get a game instance from this module.
 #[derive(Encode, Decode, RuntimeDebug, PartialEq, Eq)]
-pub struct ChallengeGame<AccountId, BlockNumber> {
+pub struct ChallengeGame<AccountId, Hash, BlockNumber> {
     /// Property of challenging targets.
     property: Property<AccountId>,
     /// challenges inputs
-    challenges: Vec<u8>,
+    challenges: Vec<Hash>,
     /// the result of this challenge.
     decision: Decision,
     /// the block number when this was issued.
@@ -87,7 +87,7 @@ pub struct ChallengeGame<AccountId, BlockNumber> {
 pub type PredicateHash<T> = <T as system::Trait>::Hash;
 pub type MomentOf<T> = <<T as Trait>::Time as Time>::Moment;
 pub type ChallengeGameOf<T> =
-    ChallengeGame<<T as system::Trait>::AccountId, <T as system::Trait>::BlockNumber>;
+    ChallengeGame<<T as system::Trait>::AccountId, <T as system::Trait>::Hash, <T as system::Trait>::BlockNumber>;
 pub type PropertyOf<T> = Property<<T as system::Trait>::AccountId>;
 
 pub trait Trait: system::Trait {
@@ -154,6 +154,10 @@ decl_error! {
     pub enum Error for Module<T: Trait> {
         /// Duplicate index.
         DuplicateIndex,
+        /// claim isn't empty
+        CiamIsNotEmpty,
+        /// No property id
+        NoPropertyId,
     }
 }
 
@@ -202,10 +206,33 @@ decl_module! {
 
         /// Claims property and create new game. Id of game is hash of claimed property
         fn claim_property(origin, claim: PropertyOf<T>) {
+            let _ = ensure_signed(origin)?;
+            // get the id of this property
+            let game_id = match Self::get_property_id(&claim) {
+                Some(id) => id,
+                None => Err(Error::<T>::NoPropertyId)?,
+            };
+            let block_number = Self::block_number();
+
+            // make sure a claim on this property has not already been made
+            ensure!(None == Self::instantiated_games(&game_id), Error::<T>::CiamIsNotEmpty);
+
+            // create the claim status. Always begins with no proven contradictions
+            let new_game = ChallengeGameOf::<T> {
+                property: claim.clone(),
+                challenges: vec!{},
+                decision: Decision::Undecided,
+                created_block: block_number.clone(),
+            };
+
+            // store the claim
+           <InstantiatedGames<T>>::insert(&game_id, new_game);
+           Self::deposit_event(RawEvent::NewPropertyClaimed(game_id, claim, block_number));
         }
 
         /// Sets the game decision true when its dispute period has already passed.
         fn decide_claim_to_true(origin, game_id: T::Hash) {
+
         }
 
         /// Sets the game decision false when its challenge has been evaluated to true.
@@ -250,15 +277,20 @@ fn migrate<T: Trait>() {
 impl<T: Trait> Module<T> {
     // ======= callable ======
     /// Get of true/false the decision of property.
-    fn is_decided(property: PropertyOf<T>) -> Decision {
+    fn is_decided(property: &PropertyOf<T>) -> Decision {
         Decision::Undecided
     }
     /// Get of the instatiated challenge game from claim_id.
-    fn get_game(claim_id: T::Hash) -> Option<ChallengeGameOf<T>> {
+    fn get_game(claim_id: &T::Hash) -> Option<ChallengeGameOf<T>> {
         None
     }
     /// Get of the property id from the propaty itself.
-    fn get_property_id(property: PropertyOf<T>) -> Option<T::Hash> {
+    fn get_property_id(property: &PropertyOf<T>) -> Option<T::Hash> {
         None
+    }
+
+    // ======= heler =======
+    fn block_number() -> <T as system::Trait>::BlockNumber {
+        <system::Module::<T>>::block_number()
     }
 }
