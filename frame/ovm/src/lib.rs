@@ -1,13 +1,14 @@
 //! # OVM Module
 //!
 //! The OVM module provides functionality for handling layer2 dispute logics.
+//! This refer to: https://github.com/cryptoeconomicslab/ovm-contracts/blob/master/contracts/UniversalAdjudicationContract.sol
 //!
-//! - [`plasm_rewards::Trait`](./trait.Trait.html)
+//! - [`ovm::Trait`](./trait.Trait.html)
 //! - [`Call`](./enum.Call.html)
 //! - [`Module`](./struct.Module.html)
 //!
 //! ## Overview
-//!
+//! OVM module is the substrate pallet to archive dispute game defined by predicate logic.
 //!
 //!
 //!
@@ -85,7 +86,6 @@ pub struct ChallengeGame<AccountId, Hash, BlockNumber> {
 }
 
 pub type PredicateHash<T> = <T as system::Trait>::Hash;
-pub type MomentOf<T> = <<T as Trait>::Time as Time>::Moment;
 pub type ChallengeGameOf<T> = ChallengeGame<
     <T as system::Trait>::AccountId,
     <T as system::Trait>::Hash,
@@ -97,12 +97,9 @@ pub trait Trait: system::Trait {
     /// The balance.
     type Currency: Currency<Self::AccountId>;
 
-    /// Time used for computing era duration.
-    type Time: Time;
-
     /// During the dispute period defined here, the user can challenge.
     /// If nothing is found, the state is determined after the dispute period.
-    type DisputePeriod: Get<MomentOf<Self>>;
+    type DisputePeriod: Get<Self::BlockNumber>;
 
     /// A function type to get the contract address given the instantiator.
     type DeterminePredicateAddress: PredicateAddressFor<PredicateHash<Self>, Self::AccountId>;
@@ -159,8 +156,14 @@ decl_error! {
         DuplicateIndex,
         /// claim isn't empty
         CiamIsNotEmpty,
-        /// No property id
-        NoPropertyId,
+        /// Does not exist game
+        DoesNotExistGame,
+        /// claim should be decidable
+        ClaimShouldBeDecidable,
+        /// challenge isn't valid
+        ChallengeIsNotValid,
+        /// challenging game haven't been decided true
+        ChallengingGameNotTrue,
     }
 }
 
@@ -168,7 +171,7 @@ decl_module! {
     pub struct Module<T: Trait> for enum Call where origin: T::Origin {
         /// During the dispute period defined here, the user can challenge.
         /// If nothing is found, the state is determined after the dispute period.
-        const DisputePeriod: MomentOf<T> = T::DisputePeriod::get();
+        const DisputePeriod: <T as system::Trait>::BlockNumber = T::DisputePeriod::get();
 
         type Error = Error<T>;
 
@@ -194,6 +197,8 @@ decl_module! {
         /// Deploy predicate and made predicate address as AccountId.
         fn instantiate(origin, predicate_hash: PredicateHash<T>, inputs: Vec<u8>) {
             let origin = ensure_signed(origin)?;
+
+            // Calc predicate address.
             let predicate_address = T::DeterminePredicateAddress::predicate_address_for(
                 &predicate_hash,
                 &inputs,
@@ -203,7 +208,9 @@ decl_module! {
                 predicate_hash,
                 inputs,
             };
+
             <Predicates<T>>::insert(&predicate_address, predicate_contract);
+
             Self::deposit_event(RawEvent::InstantiatePredicate(predicate_address));
         }
 
@@ -211,10 +218,7 @@ decl_module! {
         fn claim_property(origin, claim: PropertyOf<T>) {
             let _ = ensure_signed(origin)?;
             // get the id of this property
-            let game_id = match Self::get_property_id(&claim) {
-                Some(id) => id,
-                None => Err(Error::<T>::NoPropertyId)?,
-            };
+            let game_id = Self::get_property_id(&claim);
             let block_number = Self::block_number();
 
             // make sure a claim on this property has not already been made
@@ -230,16 +234,53 @@ decl_module! {
 
             // store the claim
            <InstantiatedGames<T>>::insert(&game_id, new_game);
+
            Self::deposit_event(RawEvent::NewPropertyClaimed(game_id, claim, block_number));
         }
 
         /// Sets the game decision true when its dispute period has already passed.
         fn decide_claim_to_true(origin, game_id: T::Hash) {
+            ensure!(Self::is_decidable(&game_id), Error::<T>::ClaimShouldBeDecidable);
 
+            // Note: if is_deciable(&game_id) is true, must exists instantiated_games(&game_id).
+            let mut game = Self::instantiated_games(&game_id).unwrap();
+
+            // game should be decided true
+            game.decision = Decision::True;
+            <InstantiatedGames<T>>::insert(&game_id, game);
+
+            Self::deposit_event(RawEvent::ClaimDecided(game_id, true));
         }
 
         /// Sets the game decision false when its challenge has been evaluated to true.
         fn decide_claim_to_false(origin, game_id: T::Hash, challenging_game_id: T::Hash) {
+            let mut game = match Self::instantiated_games(&game_id) {
+                Some(game) => game,
+                None => Err(Error::<T>::DoesNotExistGame)?,
+            };
+
+            let challenging_game = match Self::instantiated_games(&game_id) {
+                Some(game) => game,
+                None => Err(Error::<T>::DoesNotExistGame)?,
+            };
+
+            // check _challenge is in game.challenges
+            let challenging_game_id = Self::get_property_id(&challenging_game.property);
+            ensure!(game.challenges
+                .iter()
+                .any(|challenge| challenge == &challenging_game_id),
+                Error::<T>::ChallengeIsNotValid);
+
+            // game.createdBlock > block.number - dispute
+            // check _challenge have been decided true
+            ensure!(challenging_game.decision == Decision::True,
+                Error::<T>::ChallengingGameNotTrue);
+
+            // game should be decided false
+            game.decision = Decision::False;
+            <InstantiatedGames<T>>::insert(&game_id, game);
+
+            Self::deposit_event(RawEvent::ClaimDecided(game_id, false));
         }
 
         /// Decide the game decision with given witness.
@@ -288,12 +329,33 @@ impl<T: Trait> Module<T> {
         None
     }
     /// Get of the property id from the propaty itself.
-    fn get_property_id(property: &PropertyOf<T>) -> Option<T::Hash> {
-        None
+    fn get_property_id(property: &PropertyOf<T>) -> T::Hash {
+        T::Hashing::hash_of(property)
     }
 
-    // ======= heler =======
+    // ======= helper =======
     fn block_number() -> <T as system::Trait>::BlockNumber {
         <system::Module<T>>::block_number()
+    }
+
+    fn is_decidable(property_id: &T::Hash) -> bool {
+        let game = match Self::instantiated_games(property_id) {
+            Some(game) => game,
+            None => return false,
+        };
+
+        if game.created_block > Self::block_number() - T::DisputePeriod::get() {
+            return false;
+        }
+
+        // check all game.challenges should be false
+        for challenge in game.challenges.iter() {
+            if let Some(challenging_game) = Self::instantiated_games(&challenge) {
+                if challenging_game.decision != Decision::False {
+                    return false;
+                }
+            }
+        }
+        true
     }
 }
