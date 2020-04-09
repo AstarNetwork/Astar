@@ -20,9 +20,9 @@ use frame_support::{
     weights::SimpleDispatchInfo,
     StorageMap, StorageValue,
 };
-use frame_system::{self as system, ensure_root};
+use frame_system::{self as system, ensure_root, ensure_signed};
 use sp_runtime::{
-    traits::{SaturatedConversion, Zero},
+    traits::{SaturatedConversion, Zero, Hash},
     Perbill, RuntimeDebug,
 };
 use sp_std::{prelude::*, vec::Vec};
@@ -32,14 +32,25 @@ use sp_std::{prelude::*, vec::Vec};
 // #[cfg(test)]
 // mod tests;
 
+pub mod traits;
+use traits::{PredicateAddressFor};
+
 /// Predicates write properties and it can prove to true or false under dispute logic.
-///
-/// Required functions of each Predicate:
-/// - isValidChallenge
-/// - decide
-/// isValidChallenge validates valid child node of game tree.
 #[derive(Encode, Decode, Clone, Default, RuntimeDebug, PartialEq, Eq)]
 pub struct Predicate(Vec<u8>);
+
+/// PredicateContract wrapped Predicate and initial arguments.
+///
+/// Required functions of each PredicateContract:
+/// - isValidChallenge
+/// - decide
+///
+/// isValidChallenge validates valid child node of game tree.
+#[derive(Encode, Decode, Clone, Default, RuntimeDebug, PartialEq, Eq)]
+pub struct PredicateContract<CodeHash> {
+    pub predicate_hash: CodeHash,
+    pub inputs: Vec<u8>,
+}
 
 /// Property stands for dispute logic and we can claim every Properties to Adjudicator Contract.
 /// Property has its predicate address and array of input.
@@ -73,12 +84,13 @@ pub struct ChallengeGame<AccountId, BlockNumber> {
     created_block: BlockNumber,
 }
 
+pub type PredicateHash<T> = <T as system::Trait>::Hash;
 pub type MomentOf<T> = <<T as Trait>::Time as Time>::Moment;
 pub type ChallengeGameOf<T> =
-    ChallengeGame<<T as frame_system::Trait>::AccountId, <T as frame_system::Trait>::BlockNumber>;
-pub type PropertyOf<T> = Property<<T as frame_system::Trait>::AccountId>;
+    ChallengeGame<<T as system::Trait>::AccountId, <T as system::Trait>::BlockNumber>;
+pub type PropertyOf<T> = Property<<T as system::Trait>::AccountId>;
 
-pub trait Trait: frame_system::Trait {
+pub trait Trait: system::Trait {
     /// The balance.
     type Currency: Currency<Self::AccountId>;
 
@@ -89,19 +101,25 @@ pub trait Trait: frame_system::Trait {
     /// If nothing is found, the state is determined after the dispute period.
     type DisputePeriod: Get<MomentOf<Self>>;
 
+    /// A function type to get the contract address given the instantiator.
+    type DeterminePredicateAddress: PredicateAddressFor<PredicateHash<Self>, Self::AccountId>;
+
     /// The overarching event type.
-    type Event: From<Event<Self>> + Into<<Self as frame_system::Trait>::Event>;
+    type Event: From<Event<Self>> + Into<<Self as system::Trait>::Event>;
 }
 
 decl_storage! {
     trait Store for Module<T: Trait> as OVM {
+        /// A mapping from an original code hash to the original code, untouched by instrumentation.
+		pub PredicateCodes get(fn predicate_codes): map hasher(identity) PredicateHash<T> => Option<Predicate>;
+
         /// Mapping the predicate address to Predicate.
         /// Predicate is handled similar to contracts.
-        Predicates get(fn predicate): map hasher(blake2_128_concat)
-         T::AccountId => Option<Predicate>;
+        pub Predicates get(fn predicates): map hasher(blake2_128_concat)
+         T::AccountId => Option<PredicateContract<PredicateHash<T>>>;
 
         /// Mapping the game id to Challenge Game.
-        InstantiatedGames get(fn instantiated_games):
+        pub InstantiatedGames get(fn instantiated_games):
          map hasher(blake2_128_concat) T::Hash => Option<ChallengeGameOf<T>>;
     }
 }
@@ -109,13 +127,15 @@ decl_storage! {
 decl_event!(
     pub enum Event<T>
     where
-        AccountId = <T as frame_system::Trait>::AccountId,
+        AccountId = <T as system::Trait>::AccountId,
         Property = PropertyOf<T>,
-        Hash = <T as frame_system::Trait>::Hash,
-        BlockNumber = <T as frame_system::Trait>::BlockNumber,
+        Hash = <T as system::Trait>::Hash,
+        BlockNumber = <T as system::Trait>::BlockNumber,
     {
         /// (predicate_address: AccountId);
-        DeployPredicate(AccountId),
+        PutPredicate(Hash),
+        /// (predicate_address: AccountId);
+        InstantiatePredicate(AccountId),
         /// (gameId: Hash, decision: bool)
         AtomicPropositionDecided(Hash, bool),
         /// (game_id: Hash, property: Property, createdBlock: BlockNumber)
@@ -151,8 +171,33 @@ decl_module! {
             migrate::<T>();
         }
 
+        /// Stores the given binary Wasm code into the chain's storage and returns its `codehash`.
+		/// You can instantiate contracts only with stored code.
+		pub fn put_code(
+			origin,
+			predicate: Predicate
+		) {
+            let _ = ensure_signed(origin)?;
+            let predicate_hash = <T as system::Trait>::Hashing::hash_of(&predicate);
+            <PredicateCodes<T>>::insert(&predicate_hash, predicate);
+            Self::deposit_event(RawEvent::PutPredicate(predicate_hash));
+		}
+
+
         /// Deploy predicate and made predicate address as AccountId.
-        fn deploy(origin, predicate: Predicate) {
+        fn instantiate(origin, predicate_hash: PredicateHash<T>, inputs: Vec<u8>) {
+            let origin = ensure_signed(origin)?;
+            let predicate_address = T::DeterminePredicateAddress::predicate_address_for(
+                &predicate_hash,
+                &inputs,
+                &origin);
+            let predicate = Self::predicate_codes(&predicate_hash);
+            let predicate_contract = PredicateContract {
+                predicate_hash,
+                inputs,
+            };
+            <Predicates<T>>::insert(&predicate_address, predicate_contract);
+            Self::deposit_event(RawEvent::InstantiatePredicate(predicate_address));
         }
 
         /// Claims property and create new game. Id of game is hash of claimed property
@@ -204,13 +249,15 @@ fn migrate<T: Trait>() {
 
 impl<T: Trait> Module<T> {
     // ======= callable ======
-    /// Get of true/false the result of decided property
+    /// Get of true/false the decision of property.
     fn is_decided(property: PropertyOf<T>) -> Decision {
         Decision::Undecided
     }
+    /// Get of the instatiated challenge game from claim_id.
     fn get_game(claim_id: T::Hash) -> Option<ChallengeGameOf<T>> {
         None
     }
+    /// Get of the property id from the propaty itself.
     fn get_property_id(property: PropertyOf<T>) -> Option<T::Hash> {
         None
     }
