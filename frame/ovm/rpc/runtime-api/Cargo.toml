@@ -1,19 +1,17 @@
 [package]
 name = "pallet-ovm-rpc-runtime-api"
 version = "0.1.0"
-authors = ["Parity Technologies <admin@parity.io>"]
+authors = ["Takumi Yamashita <takumi@stake.co.jp>"]
 edition = "2018"
 license = "GPL-3.0"
-homepage = "https://substrate.dev"
-repository = "https://github.com/paritytech/substrate/"
-description = "Runtime API definition required by Contracts RPC extensions."
+homepage = "https://plasmnet.io"
+repository = "https://github.com/staketechnologies/Plasm/"
+description = "Runtime API definition required by OVM RPC extensions."
 
 [dependencies]
 sp-api = { git = 'https://github.com/staketechnologies/substrate.git', branch = "plasm-master", default-features = false }
 codec = { package = "parity-scale-codec", version = "1.2.0", default-features = false, features = ["derive"] }
 sp-std = { git = 'https://github.com/staketechnologies/substrate.git', branch = "plasm-master", default-features = false }
-sp-runtime = { git = 'https://github.com/staketechnologies/substrate.git', branch = "plasm-master", default-features = false }
-pallet-contracts-primitives = { git = 'https://github.com/staketechnologies/substrate.git', branch = "plasm-master", default-features = false }
 
 [features]
 default = ["std"]
@@ -21,6 +19,4 @@ std = [
 	"sp-api/std",
 	"codec/std",
 	"sp-std/std",
-	"sp-runtime/std",
-	"pallet-contracts-primitives/std",
 ]
