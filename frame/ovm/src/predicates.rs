@@ -1,5 +1,5 @@
-use super::*;
 use super::traits::*;
+use super::*;
 
 // predicate must be derive to:
 // address()
@@ -20,13 +20,10 @@ impl AtomicPredicate for BaseAtomicPredicate {
         }
         property = Property {
             predicate_address: Self::address(),
-            inputs: inputs
+            inputs: inputs,
         };
 
-        T::set_predicate_decision(
-            utils.getPropertyId(property),
-            true
-        )
+        T::set_predicate_decision(utils.getPropertyId(property), true)
     }
     fn decide(_inputs: Vec<u8>) -> Decision {
         Decision::False
@@ -34,10 +31,7 @@ impl AtomicPredicate for BaseAtomicPredicate {
 }
 
 impl DecidablePredicate for BaseAtomicPredicate {
-    fn decide_with_witness(
-        inputs: Vec<u8>,
-        _witness: Vec<u8>,
-    ) -> Decision {
+    fn decide_with_witness(inputs: Vec<u8>, _witness: Vec<u8>) -> Decision {
         Self::decide(inputs)
     }
 }

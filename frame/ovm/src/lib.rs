@@ -22,7 +22,7 @@ use frame_support::{
 };
 use frame_system::{self as system, ensure_root, ensure_signed};
 use sp_runtime::{
-    traits::{SaturatedConversion, Zero, Hash},
+    traits::{Hash, SaturatedConversion, Zero},
     Perbill, RuntimeDebug,
 };
 use sp_std::{prelude::*, vec::Vec};
@@ -33,7 +33,7 @@ use sp_std::{prelude::*, vec::Vec};
 // mod tests;
 
 pub mod traits;
-use traits::{PredicateAddressFor};
+use traits::PredicateAddressFor;
 
 /// Predicates write properties and it can prove to true or false under dispute logic.
 #[derive(Encode, Decode, Clone, Default, RuntimeDebug, PartialEq, Eq)]
@@ -86,8 +86,11 @@ pub struct ChallengeGame<AccountId, Hash, BlockNumber> {
 
 pub type PredicateHash<T> = <T as system::Trait>::Hash;
 pub type MomentOf<T> = <<T as Trait>::Time as Time>::Moment;
-pub type ChallengeGameOf<T> =
-    ChallengeGame<<T as system::Trait>::AccountId, <T as system::Trait>::Hash, <T as system::Trait>::BlockNumber>;
+pub type ChallengeGameOf<T> = ChallengeGame<
+    <T as system::Trait>::AccountId,
+    <T as system::Trait>::Hash,
+    <T as system::Trait>::BlockNumber,
+>;
 pub type PropertyOf<T> = Property<<T as system::Trait>::AccountId>;
 
 pub trait Trait: system::Trait {
@@ -111,7 +114,7 @@ pub trait Trait: system::Trait {
 decl_storage! {
     trait Store for Module<T: Trait> as OVM {
         /// A mapping from an original code hash to the original code, untouched by instrumentation.
-		pub PredicateCodes get(fn predicate_codes): map hasher(identity) PredicateHash<T> => Option<Predicate>;
+        pub PredicateCodes get(fn predicate_codes): map hasher(identity) PredicateHash<T> => Option<Predicate>;
 
         /// Mapping the predicate address to Predicate.
         /// Predicate is handled similar to contracts.
@@ -176,16 +179,16 @@ decl_module! {
         }
 
         /// Stores the given binary Wasm code into the chain's storage and returns its `codehash`.
-		/// You can instantiate contracts only with stored code.
-		pub fn put_code(
-			origin,
-			predicate: Predicate
-		) {
+        /// You can instantiate contracts only with stored code.
+        pub fn put_code(
+            origin,
+            predicate: Predicate
+        ) {
             let _ = ensure_signed(origin)?;
             let predicate_hash = <T as system::Trait>::Hashing::hash_of(&predicate);
             <PredicateCodes<T>>::insert(&predicate_hash, predicate);
             Self::deposit_event(RawEvent::PutPredicate(predicate_hash));
-		}
+        }
 
 
         /// Deploy predicate and made predicate address as AccountId.
@@ -291,6 +294,6 @@ impl<T: Trait> Module<T> {
 
     // ======= heler =======
     fn block_number() -> <T as system::Trait>::BlockNumber {
-        <system::Module::<T>>::block_number()
+        <system::Module<T>>::block_number()
     }
 }
