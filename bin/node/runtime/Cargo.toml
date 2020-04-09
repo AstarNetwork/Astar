@@ -15,19 +15,19 @@ codec = { package = "parity-scale-codec", version = "1.2.0", default-features = 
 
 # primitives
 plasm-primitives = { path = "../primitives", default-features = false }
-sp-core = { package = "sp-core",  git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master", default-features = false }
-sp-runtime = { git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master", default-features = false }
-babe-primitives = { package = "sp-consensus-babe", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master", default-features = false }
-offchain-primitives = { package = "sp-offchain", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master", default-features = false }
+sp-core = { package = "sp-core",  git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-dusty", default-features = false }
+sp-runtime = { git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-dusty", default-features = false }
+babe-primitives = { package = "sp-consensus-babe", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-dusty", default-features = false }
+offchain-primitives = { package = "sp-offchain", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-dusty", default-features = false }
 
 # core dependencies
-sp-api = { package = "sp-api", git = "https://github.com/staketechnologies/substrate", branch = "plasm-master", default-features = false }
-inherents = { package = "sp-inherents", git = "https://github.com/staketechnologies/substrate", branch = "plasm-master", default-features = false }
-block-builder-api = { package = "sp-block-builder", git = "https://github.com/staketechnologies/substrate", branch = "plasm-master", default-features = false }
-sp-transaction-pool = { git = "https://github.com/staketechnologies/substrate", branch = "plasm-master", default-features = false }
-sp-std = { package = "sp-std", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master", default-features = false }
-version = { package = "sp-version", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master", default-features = false }
-sp-session = { git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master", default-features = false }
+sp-api = { package = "sp-api", git = "https://github.com/staketechnologies/substrate", branch = "plasm-dusty", default-features = false }
+inherents = { package = "sp-inherents", git = "https://github.com/staketechnologies/substrate", branch = "plasm-dusty", default-features = false }
+block-builder-api = { package = "sp-block-builder", git = "https://github.com/staketechnologies/substrate", branch = "plasm-dusty", default-features = false }
+sp-transaction-pool = { git = "https://github.com/staketechnologies/substrate", branch = "plasm-dusty", default-features = false }
+sp-std = { package = "sp-std", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-dusty", default-features = false }
+version = { package = "sp-version", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-dusty", default-features = false }
+sp-session = { git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-dusty", default-features = false }
 
 # frame dependencies
 operator = { package = "pallet-contract-operator", path = "../../../frame/operator", default-features = false }
@@ -35,30 +35,30 @@ trading = { package = "pallet-operator-trading", path = "../../../frame/trading"
 dapps-staking = { package = "pallet-dapps-staking", path = "../../../frame/dapps-staking", default-features = false }
 plasm-rewards = { package = "pallet-plasm-rewards", path = "../../../frame/plasm-rewards", default-features = false }
 plasm-validator = { package = "pallet-plasm-validator", path = "../../../frame/plasm-validator", default-features = false }
-executive = { package = "frame-executive", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master", default-features = false }
-babe = { package = "pallet-babe", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master", default-features = false }
-balances = { package = "pallet-balances", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master", default-features = false }
-contracts = { package = "pallet-contracts", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master", default-features = false }
-contracts-primitives = { package = "pallet-contracts-primitives", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master", default-features = false }
-contracts-rpc-runtime-api = { package = "pallet-contracts-rpc-runtime-api", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master", default-features = false }
-finality-tracker = { package = "pallet-finality-tracker", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master", default-features = false }
-grandpa = { package = "pallet-grandpa", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master", default-features = false }
-indices = { package = "pallet-indices", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master", default-features = false }
-randomness-collective-flip = { package = "pallet-randomness-collective-flip", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master", default-features = false }
-session = { package = "pallet-session", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master", default-features = false, features = ["historical"] }
-sudo = { package = "pallet-sudo", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master", default-features = false }
-support = { package = "frame-support", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master", default-features = false }
-system = { package = "frame-system", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master", default-features = false }
-system-rpc-runtime-api = { package = "frame-system-rpc-runtime-api", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master", default-features = false }
-timestamp = { package = "pallet-timestamp", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master", default-features = false }
-transaction-payment = { package = "pallet-transaction-payment", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master", default-features = false }
-transaction-payment-rpc-runtime-api = { package = "pallet-transaction-payment-rpc-runtime-api", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master", default-features = false }
+executive = { package = "frame-executive", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-dusty", default-features = false }
+babe = { package = "pallet-babe", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-dusty", default-features = false }
+balances = { package = "pallet-balances", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-dusty", default-features = false }
+contracts = { package = "pallet-contracts", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-dusty", default-features = false }
+contracts-primitives = { package = "pallet-contracts-primitives", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-dusty", default-features = false }
+contracts-rpc-runtime-api = { package = "pallet-contracts-rpc-runtime-api", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-dusty", default-features = false }
+finality-tracker = { package = "pallet-finality-tracker", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-dusty", default-features = false }
+grandpa = { package = "pallet-grandpa", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-dusty", default-features = false }
+indices = { package = "pallet-indices", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-dusty", default-features = false }
+randomness-collective-flip = { package = "pallet-randomness-collective-flip", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-dusty", default-features = false }
+session = { package = "pallet-session", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-dusty", default-features = false, features = ["historical"] }
+sudo = { package = "pallet-sudo", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-dusty", default-features = false }
+support = { package = "frame-support", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-dusty", default-features = false }
+system = { package = "frame-system", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-dusty", default-features = false }
+system-rpc-runtime-api = { package = "frame-system-rpc-runtime-api", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-dusty", default-features = false }
+timestamp = { package = "pallet-timestamp", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-dusty", default-features = false }
+transaction-payment = { package = "pallet-transaction-payment", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-dusty", default-features = false }
+transaction-payment-rpc-runtime-api = { package = "pallet-transaction-payment-rpc-runtime-api", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-dusty", default-features = false }
 
 [dev-dependencies]
-sp-io = { git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master" }
+sp-io = { git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-dusty" }
 
 [build-dependencies]
-wasm-builder-runner = { package = "substrate-wasm-builder-runner", version = "1.0.5", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master" }
+wasm-builder-runner = { package = "substrate-wasm-builder-runner", version = "1.0.5", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-dusty" }
 
 [features]
 default = ["std"]

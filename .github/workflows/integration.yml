@@ -14,7 +14,7 @@ jobs:
       run: choco install llvm
     - uses: hecrj/setup-rust-action@v1
       with:
-        rust-version: 'nightly-2020-03-21'
+        rust-version: 'nightly-2020-04-04'
         targets: 'wasm32-unknown-unknown'
     - name: Checkout the source coder
       uses: actions/checkout@master
