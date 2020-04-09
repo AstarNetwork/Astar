@@ -27,12 +27,13 @@ use sp_std::vec::Vec;
 
 sp_api::decl_runtime_apis! {
     /// The API to interact with contracts without using executive.
-    pub trait OVMApi<Property, ChallengeGame, Hash> where
+    pub trait OVMApi<Property, Decision, ChallengeGame, Hash> where
         Property: Codec,
+        Decision: Codec,
         ChallengeGame: Codec,
         Hash: Codec,
     {
-        fn is_decided(property: Property) -> bool;
+        fn is_decided(property: Property) -> Decision;
         fn get_game(claim_id: Hash) -> Option<ChallengeGame>;
         fn get_property_id(property: Property) -> Option<Hash>;
     }

@@ -32,16 +32,26 @@ use sp_std::{prelude::*, vec::Vec};
 // #[cfg(test)]
 // mod tests;
 
+/// Predicates write properties and it can prove to true or false under dispute logic.
+///
+/// Required functions of each Predicate:
+/// - isValidChallenge
+/// - decide
+/// isValidChallenge validates valid child node of game tree.
 #[derive(Encode, Decode, Clone, Default, RuntimeDebug, PartialEq, Eq)]
 pub struct Predicate(Vec<u8>);
 
+/// Property stands for dispute logic and we can claim every Properties to Adjudicator Contract.
+/// Property has its predicate address and array of input.
 #[derive(Encode, Decode, Clone, RuntimeDebug, PartialEq, Eq)]
 pub struct Property<AccountId> {
+    /// Indicates the address of Predicate.
     predicate_address: AccountId,
-    // Every input are bytes. Each Atomic Predicate decode inputs to the specific type.
+    /// Every input are bytes. Each Atomic Predicate decode inputs to the specific type.
     inputs: Vec<u8>,
 }
 
+/// The game decision by predicates.
 #[derive(Encode, Decode, RuntimeDebug, PartialEq, Eq)]
 pub enum Decision {
     Undecided,
@@ -49,22 +59,20 @@ pub enum Decision {
     False,
 }
 
+/// ChallengeGame is a part of L2 dispute. It's instantiated by claiming property.
+/// The client can get a game instance from this module.
 #[derive(Encode, Decode, RuntimeDebug, PartialEq, Eq)]
 pub struct ChallengeGame<AccountId, BlockNumber> {
+    /// Property of challenging targets.
     property: Property<AccountId>,
+    /// challenges inputs
     challenges: Vec<u8>,
+    /// the result of this challenge.
     decision: Decision,
+    /// the block number when this was issued.
     created_block: BlockNumber,
 }
 
-#[derive(Encode, Decode, RuntimeDebug, PartialEq, Eq)]
-pub struct Range<Balance> {
-    start: Balance,
-    end: Balance,
-}
-
-pub type BalanceOf<T> =
-    <<T as Trait>::Currency as Currency<<T as frame_system::Trait>::AccountId>>::Balance;
 pub type MomentOf<T> = <<T as Trait>::Time as Time>::Moment;
 pub type ChallengeGameOf<T> =
     ChallengeGame<<T as frame_system::Trait>::AccountId, <T as frame_system::Trait>::BlockNumber>;
@@ -87,9 +95,12 @@ pub trait Trait: frame_system::Trait {
 
 decl_storage! {
     trait Store for Module<T: Trait> as OVM {
+        /// Mapping the predicate address to Predicate.
+        /// Predicate is handled similar to contracts.
         Predicates get(fn predicate): map hasher(blake2_128_concat)
          T::AccountId => Option<Predicate>;
-        DisputePeriod get(fn dispute_period): MomentOf<T>;
+
+        /// Mapping the game id to Challenge Game.
         InstantiatedGames get(fn instantiated_games):
          map hasher(blake2_128_concat) T::Hash => Option<ChallengeGameOf<T>>;
     }
@@ -103,17 +114,17 @@ decl_event!(
         Hash = <T as frame_system::Trait>::Hash,
         BlockNumber = <T as frame_system::Trait>::BlockNumber,
     {
-        // (predicate_address: AccountId);
+        /// (predicate_address: AccountId);
         DeployPredicate(AccountId),
-        // (gameId: Hash, decision: bool)
+        /// (gameId: Hash, decision: bool)
         AtomicPropositionDecided(Hash, bool),
-        // (game_id: Hash, property: Property, createdBlock: BlockNumber)
+        /// (game_id: Hash, property: Property, createdBlock: BlockNumber)
         NewPropertyClaimed(Hash, Property, BlockNumber),
-        // (game_id: Hash, challengeGameId: Hash)
+        /// (game_id: Hash, challengeGameId: Hash)
         ClaimChallenged(Hash, Hash),
-        // (game_id: Hash, decision: bool)
+        /// (game_id: Hash, decision: bool)
         ClaimDecided(Hash, bool),
-        // (game_id: Hash, challengeGameId: Hash)
+        /// (game_id: Hash, challengeGameId: Hash)
         ChallengeRemoved(Hash, Hash),
     }
 );
@@ -140,31 +151,41 @@ decl_module! {
             migrate::<T>();
         }
 
+        /// Deploy predicate and made predicate address as AccountId.
         fn deploy(origin, predicate: Predicate) {
         }
 
+        /// Claims property and create new game. Id of game is hash of claimed property
         fn claim_property(origin, claim: PropertyOf<T>) {
         }
 
+        /// Sets the game decision true when its dispute period has already passed.
         fn decide_claim_to_true(origin, game_id: T::Hash) {
         }
 
+        /// Sets the game decision false when its challenge has been evaluated to true.
         fn decide_claim_to_false(origin, game_id: T::Hash, challenging_game_id: T::Hash) {
         }
 
+        /// Decide the game decision with given witness.
+        fn decide_claim_with_witness(origin, gameId: T::Hash, witness: Vec<u8>) {
+
+        }
+
+        /// Removes a challenge when its decision has been evaluated to false.
         fn remove_challenge(origin, game_id: T::Hash, challenging_game_id: T::Hash) {
         }
 
+        /// Set a predicate decision by called from Predicate itself.
         fn set_predicate_decision(origin, game_id: T::Hash, decision: bool) {
 
         }
 
-        /**
-       * @dev challenge a game specified by gameId with a challengingGame specified by _challengingGameId
-       * @param _gameId challenged game id
-       * @param _challengeInputs array of input to verify child of game tree
-       * @param _challengingGameId child of game tree
-       */
+        /// Challenge a game specified by gameId with a challengingGame specified by _challengingGameId.
+        ///
+        /// @param game_id challenged game id.
+        /// @param challenge_inputs array of input to verify child of game tree.
+        /// @param challenging_game_id child of game tree.
         fn challenge(origin, game_id: T::Hash, challenge_inputs: Vec<u8>, challenging_game_id: T::Hash) {
 
         }
@@ -184,8 +205,8 @@ fn migrate<T: Trait>() {
 impl<T: Trait> Module<T> {
     // ======= callable ======
     /// Get of true/false the result of decided property
-    fn is_decided(property: PropertyOf<T>) -> bool {
-        true
+    fn is_decided(property: PropertyOf<T>) -> Decision {
+        Decision::Undecided
     }
     fn get_game(claim_id: T::Hash) -> Option<ChallengeGameOf<T>> {
         None
