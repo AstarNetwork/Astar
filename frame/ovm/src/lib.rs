@@ -276,7 +276,7 @@ decl_module! {
                 None => Err(Error::<T>::DoesNotExistGame)?,
             };
 
-            let challenging_game = match Self::instantiated_games(&game_id) {
+            let challenging_game = match Self::instantiated_games(&challenging_game_id) {
                 Some(game) => game,
                 None => Err(Error::<T>::DoesNotExistGame)?,
             };
@@ -343,7 +343,7 @@ decl_module! {
                 None => Err(Error::<T>::DoesNotExistGame)?,
             };
 
-            let challenging_game = match Self::instantiated_games(&game_id) {
+            let challenging_game = match Self::instantiated_games(&challenging_game_id) {
                 Some(game) => game,
                 None => Err(Error::<T>::DoesNotExistGame)?,
             };
@@ -405,7 +405,27 @@ decl_module! {
         /// @param challenge_inputs array of input to verify child of game tree.
         /// @param challenging_game_id child of game tree.
         fn challenge(origin, game_id: T::Hash, challenge_inputs: Vec<u8>, challenging_game_id: T::Hash) {
+            let mut game = match Self::instantiated_games(&game_id) {
+                Some(game) => game,
+                None => Err(Error::<T>::DoesNotExistGame)?,
+            };
 
+            let challenging_game = match Self::instantiated_games(&challenging_game_id) {
+                Some(game) => game,
+                None => Err(Error::<T>::DoesNotExistGame)?,
+            };
+
+            // TODO: challenge isn't valid
+            // ensure!(
+            //     LogicalConnective(game.property.predicate_address).isValidChallenge(
+            //         game.property.inputs,
+            //         _challengeInputs,
+            //         challengingGame.property
+            //     ),
+            //     Error::<T>::ChallengeIsNotValid,
+            // );
+            game.challenges.push(challenging_game_id.clone());
+            Self::deposit_event(RawEvent::ClaimChallenged(game_id, challenging_game_id));
         }
     }
 }
@@ -423,24 +443,30 @@ fn migrate<T: Trait>() {
 impl<T: Trait> Module<T> {
     // ======= callable ======
     /// Get of true/false the decision of property.
-    fn is_decided(property: &PropertyOf<T>) -> Decision {
-        Decision::Undecided
+    pub fn is_decided(property: &PropertyOf<T>) -> Decision {
+        let game = match Self::instantiated_games(Self::get_property_id(property)) {
+            Some(game) => game,
+            None => return Decision::Undecided,
+        };
+        game.decision
     }
+
     /// Get of the instatiated challenge game from claim_id.
-    fn get_game(claim_id: &T::Hash) -> Option<ChallengeGameOf<T>> {
-        None
+    pub fn get_game(claim_id: &T::Hash) -> Option<ChallengeGameOf<T>> {
+        Self::instantiated_games(claim_id)
     }
+
     /// Get of the property id from the propaty itself.
-    fn get_property_id(property: &PropertyOf<T>) -> T::Hash {
+    pub fn get_property_id(property: &PropertyOf<T>) -> T::Hash {
         T::Hashing::hash_of(property)
     }
 
     // ======= helper =======
-    fn block_number() -> <T as system::Trait>::BlockNumber {
+    pub fn block_number() -> <T as system::Trait>::BlockNumber {
         <system::Module<T>>::block_number()
     }
 
-    fn is_decidable(property_id: &T::Hash) -> bool {
+    pub fn is_decidable(property_id: &T::Hash) -> bool {
         let game = match Self::instantiated_games(property_id) {
             Some(game) => game,
             None => return false,
@@ -451,13 +477,11 @@ impl<T: Trait> Module<T> {
         }
 
         // check all game.challenges should be false
-        for challenge in game.challenges.iter() {
-            if let Some(challenging_game) = Self::instantiated_games(&challenge) {
-                if challenging_game.decision != Decision::False {
-                    return false;
-                }
+        game.challenges.iter().all(|challenge| {
+            if let Some(challenging_game) = Self::instantiated_games(challenge) {
+                return challenging_game.decision == Decision::False;
             }
-        }
-        true
+            false
+        })
     }
 }
