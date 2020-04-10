@@ -1,11 +1,10 @@
 use crate::ChainSpec;
-use log::info;
-use wasm_bindgen::prelude::*;
-use sc_service::Configuration;
 use browser_utils::{
-    Transport, Client,
-    browser_configuration, set_console_error_panic_hook, init_console_log,
+    browser_configuration, init_console_log, set_console_error_panic_hook, Client, Transport,
 };
+use log::info;
+use sc_service::Configuration;
+use wasm_bindgen::prelude::*;
 
 /// Starts the client.
 #[wasm_bindgen]
@@ -19,11 +18,11 @@ async fn start_inner(wasm_ext: Transport) -> Result<Client, Box<dyn std::error::
     set_console_error_panic_hook();
     init_console_log(log::Level::Info)?;
 
-    let chain_spec = ChainSpec::FlamingFir.load()
+    let chain_spec = ChainSpec::FlamingFir
+        .load()
         .map_err(|e| format!("{:?}", e))?;
 
-    let config: Configuration<_, _> = browser_configuration(wasm_ext, chain_spec)
-        .await?;
+    let config: Configuration<_, _> = browser_configuration(wasm_ext, chain_spec).await?;
 
     info!("{}", config.name);
     info!("  version {}", config.full_version());
@@ -33,8 +32,7 @@ async fn start_inner(wasm_ext: Transport) -> Result<Client, Box<dyn std::error::
     info!("Roles: {}", display_role(&config));
 
     // Create the service. This is the most heavy initialization step.
-    let service = crate::service::new_light(config)
-        .map_err(|e| format!("{:?}", e))?;
+    let service = crate::service::new_light(config).map_err(|e| format!("{:?}", e))?;
 
     Ok(browser_utils::start_client(service))
 }

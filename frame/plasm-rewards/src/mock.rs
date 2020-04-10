@@ -142,21 +142,21 @@ impl pallet_balances::Trait for Test {
 
 pub struct DummyForSecurityStaking;
 impl GetEraStakingAmount<EraIndex, Balance> for DummyForSecurityStaking {
-    fn get_era_staking_amount(era: &EraIndex) -> Balance {
+    fn compute(era: &EraIndex) -> Balance {
         (era * 1_000_000).into()
     }
 }
 
 pub struct DummyForDappsStaking;
 impl GetEraStakingAmount<EraIndex, Balance> for DummyForDappsStaking {
-    fn get_era_staking_amount(era: &EraIndex) -> Balance {
+    fn compute(era: &EraIndex) -> Balance {
         (era * 200_000).into()
     }
 }
 
 pub struct DummyMaybeValidators;
 impl MaybeValidators<EraIndex, AccountId> for DummyMaybeValidators {
-    fn maybe_validators(current_era: EraIndex) -> Option<Vec<AccountId>> {
+    fn compute(current_era: EraIndex) -> Option<Vec<AccountId>> {
         Some(vec![1, 2, 3, (current_era + 100).into()])
     }
 }

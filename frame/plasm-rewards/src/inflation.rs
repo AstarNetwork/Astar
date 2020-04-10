@@ -20,7 +20,7 @@ pub struct SimpleComputeTotalPayout;
 ///
 /// `era_duration` is expressed in millisecond.
 impl ComputeTotalPayout for SimpleComputeTotalPayout {
-    fn compute_total_payout<N, M>(
+    fn compute<N, M>(
         total_tokens: N,
         era_duration: M,
         _validator_staking: N,
@@ -51,7 +51,7 @@ pub struct MaintainRatioComputeTotalPayout;
 ///
 /// `era_duration` is expressed in millisecond.
 impl ComputeTotalPayout for MaintainRatioComputeTotalPayout {
-    fn compute_total_payout<N, M>(
+    fn compute<N, M>(
         total_tokens: N,
         era_duration: M,
         validator_staking: N,
@@ -87,7 +87,7 @@ impl ComputeTotalPayout for MaintainRatioComputeTotalPayout {
 #[cfg(test)]
 mod test {
     use super::*;
-    fn compute_total_payout_test<N>(
+    fn compute_test<N>(
         total_tokens: N,
         era_duration: u64,
         validator_staking: N,
@@ -96,7 +96,7 @@ mod test {
     where
         N: BaseArithmetic + Clone + From<u32>,
     {
-        SimpleComputeTotalPayout::compute_total_payout(
+        SimpleComputeTotalPayout::compute(
             total_tokens,
             era_duration,
             validator_staking,
@@ -113,7 +113,7 @@ mod test {
     where
         N: BaseArithmetic + Clone + From<u32>,
     {
-        MaintainRatioComputeTotalPayout::compute_total_payout(
+        MaintainRatioComputeTotalPayout::compute(
             total_tokens,
             era_duration,
             validator_staking,
@@ -122,36 +122,24 @@ mod test {
     }
 
     #[test]
-    fn test_compute_total_payout_test() {
+    fn test_compute_test() {
         const YEAR: u64 = 365 * 24 * 60 * 60 * 1000;
         // check maximum inflation.
         // not 10_000 due to rounding error.
-        assert_eq!(
-            compute_total_payout_test(100_000_000u64, YEAR, 0, 0).0,
-            19_986_311
-        );
+        assert_eq!(compute_test(100_000_000u64, YEAR, 0, 0).0, 19_986_311);
 
         const DAY: u64 = 24 * 60 * 60 * 1000;
-        assert_eq!(
-            compute_total_payout_test(100_000_000u64, DAY, 0, 0).0,
-            54_757
-        );
+        assert_eq!(compute_test(100_000_000u64, DAY, 0, 0).0, 54_757);
 
         const SIX_HOURS: u64 = 6 * 60 * 60 * 1000;
-        assert_eq!(
-            compute_total_payout_test(100_000_000u64, SIX_HOURS, 0, 0).0,
-            13_689
-        );
+        assert_eq!(compute_test(100_000_000u64, SIX_HOURS, 0, 0).0, 13_689);
 
         const HOUR: u64 = 60 * 60 * 1000;
-        assert_eq!(
-            compute_total_payout_test(100_000_000u64, HOUR, 0, 0).0,
-            2_281
-        );
+        assert_eq!(compute_test(100_000_000u64, HOUR, 0, 0).0, 2_281);
     }
 
     #[test]
-    fn test_maintain_compute_total_payout_test() {
+    fn test_maintain_compute_test() {
         const YEAR: u64 = 365 * 24 * 60 * 60 * 1000;
         // check maximum inflation.
         // not 10_000 due to rounding error.
