@@ -38,13 +38,10 @@
 <span id="38">38</span>
 <span id="39">39</span>
 <span id="40">40</span>
-<span id="41">41</span>
-<span id="42">42</span>
-<span id="43">43</span>
 </pre><div class="example-wrap"><pre class="rust ">
-<span class="kw">use</span> <span class="ident">ripemd160</span>::{<span class="ident">Ripemd160</span>, <span class="ident">Digest</span>};
-<span class="kw">use</span> <span class="ident">sp_core</span>::{<span class="ident">ecdsa</span>, <span class="ident">hashing</span>::<span class="ident">sha2_256</span>};
 <span class="kw">use</span> <span class="ident">codec</span>::<span class="ident">Encode</span>;
+<span class="kw">use</span> <span class="ident">ripemd160</span>::{<span class="ident">Digest</span>, <span class="ident">Ripemd160</span>};
+<span class="kw">use</span> <span class="ident">sp_core</span>::{<span class="ident">ecdsa</span>, <span class="ident">hashing</span>::<span class="ident">sha2_256</span>};
 
 <span class="doccomment">/// Bitcoin RIPEMD160 hashing function</span>
 <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">ripemd160</span>(<span class="ident">data</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>]) <span class="op">-</span><span class="op">&gt;</span> [<span class="ident">u8</span>; <span class="number">20</span>] {
@@ -56,18 +53,15 @@
 }
 
 <span class="doccomment">/// Compile BTC sequence lock script for givent public key and duration</span>
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">lock_script</span>(
-    <span class="ident">public</span>: <span class="ident">ecdsa</span>::<span class="ident">Public</span>,
-    <span class="ident">duration</span>: <span class="ident">u64</span>,
-) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span> {
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">lock_script</span>(<span class="ident">public</span>: <span class="ident">ecdsa</span>::<span class="ident">Public</span>, <span class="ident">duration</span>: <span class="ident">u64</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span> {
     <span class="ident">duration</span>.<span class="ident">using_encoded</span>(<span class="op">|</span><span class="ident">enc_duration</span><span class="op">|</span> {
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">output</span> <span class="op">=</span> <span class="macro">vec</span><span class="macro">!</span>[];
-        <span class="ident">output</span>.<span class="ident">extend</span>(<span class="macro">vec</span><span class="macro">!</span>[ <span class="number">0x21</span> ]);                     <span class="comment">// Public key lenght (should be 33 bytes)</span>
-        <span class="ident">output</span>.<span class="ident">extend</span>(<span class="ident">public</span>.<span class="ident">as_ref</span>());                  <span class="comment">// Public key</span>
-        <span class="ident">output</span>.<span class="ident">extend</span>(<span class="macro">vec</span><span class="macro">!</span>[ <span class="number">0xad</span> ]);                     <span class="comment">// OP_CHECKSIGVERIFY</span>
-        <span class="ident">output</span>.<span class="ident">extend</span>(<span class="macro">vec</span><span class="macro">!</span>[ <span class="ident">enc_duration</span>.<span class="ident">len</span>() <span class="kw">as</span> <span class="ident">u8</span> ]); <span class="comment">// Lock duration length</span>
-        <span class="ident">output</span>.<span class="ident">extend</span>(<span class="ident">enc_duration</span>.<span class="ident">as_ref</span>());            <span class="comment">// Lock duration in blocks</span>
-        <span class="ident">output</span>.<span class="ident">extend</span>(<span class="macro">vec</span><span class="macro">!</span>[ <span class="number">0x27</span>, <span class="number">0x55</span>, <span class="number">0x01</span> ]);         <span class="comment">// OP_CHECKSEQUENCEVERIFY OP_DROP 1</span>
+        <span class="ident">output</span>.<span class="ident">extend</span>(<span class="macro">vec</span><span class="macro">!</span>[<span class="number">0x21</span>]); <span class="comment">// Public key lenght (should be 33 bytes)</span>
+        <span class="ident">output</span>.<span class="ident">extend</span>(<span class="ident">public</span>.<span class="ident">as_ref</span>()); <span class="comment">// Public key</span>
+        <span class="ident">output</span>.<span class="ident">extend</span>(<span class="macro">vec</span><span class="macro">!</span>[<span class="number">0xad</span>]); <span class="comment">// OP_CHECKSIGVERIFY</span>
+        <span class="ident">output</span>.<span class="ident">extend</span>(<span class="macro">vec</span><span class="macro">!</span>[<span class="ident">enc_duration</span>.<span class="ident">len</span>() <span class="kw">as</span> <span class="ident">u8</span>]); <span class="comment">// Lock duration length</span>
+        <span class="ident">output</span>.<span class="ident">extend</span>(<span class="ident">enc_duration</span>.<span class="ident">as_ref</span>()); <span class="comment">// Lock duration in blocks</span>
+        <span class="ident">output</span>.<span class="ident">extend</span>(<span class="macro">vec</span><span class="macro">!</span>[<span class="number">0x27</span>, <span class="number">0x55</span>, <span class="number">0x01</span>]); <span class="comment">// OP_CHECKSEQUENCEVERIFY OP_DROP 1</span>
         <span class="ident">output</span>
     })
 }
@@ -80,9 +74,9 @@
 <span class="doccomment">/// Compile BTC pay-to-script-hash script for given script hash</span>
 <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">p2sh</span>(<span class="ident">script_hash</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>; <span class="number">20</span>]) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span> {
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">output</span> <span class="op">=</span> <span class="macro">vec</span><span class="macro">!</span>[];
-    <span class="ident">output</span>.<span class="ident">extend</span>(<span class="macro">vec</span><span class="macro">!</span>[ <span class="number">0xa9</span>, <span class="number">0x14</span> ]);  <span class="comment">// OP_HASH160 20</span>
-    <span class="ident">output</span>.<span class="ident">extend</span>(<span class="ident">script_hash</span>);         <span class="comment">// &lt;scriptHash&gt;</span>
-    <span class="ident">output</span>.<span class="ident">extend</span>(<span class="macro">vec</span><span class="macro">!</span>[ <span class="number">0x87</span> ]);        <span class="comment">// OP_EQUAL</span>
+    <span class="ident">output</span>.<span class="ident">extend</span>(<span class="macro">vec</span><span class="macro">!</span>[<span class="number">0xa9</span>, <span class="number">0x14</span>]); <span class="comment">// OP_HASH160 20</span>
+    <span class="ident">output</span>.<span class="ident">extend</span>(<span class="ident">script_hash</span>); <span class="comment">// &lt;scriptHash&gt;</span>
+    <span class="ident">output</span>.<span class="ident">extend</span>(<span class="macro">vec</span><span class="macro">!</span>[<span class="number">0x87</span>]); <span class="comment">// OP_EQUAL</span>
     <span class="ident">output</span>
 }
 </pre></div>

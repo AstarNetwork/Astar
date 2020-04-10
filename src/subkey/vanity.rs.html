@@ -174,6 +174,7 @@
 <span id="174">174</span>
 <span id="175">175</span>
 <span id="176">176</span>
+<span id="177">177</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright 2018-2019 Parity Technologies (UK) Ltd.</span>
 <span class="comment">// This file is part of Substrate.</span>
@@ -191,165 +192,166 @@
 <span class="comment">// You should have received a copy of the GNU General Public License</span>
 <span class="comment">// along with Substrate.  If not, see &lt;http://www.gnu.org/licenses/&gt;.</span>
 
-<span class="kw">use</span> <span class="kw">super</span>::{<span class="ident">PublicOf</span>, <span class="ident">PublicT</span>, <span class="ident">Crypto</span>};
-<span class="kw">use</span> <span class="ident">sp_core</span>::<span class="ident">Pair</span>;
+<span class="kw">use</span> <span class="kw">super</span>::{<span class="ident">Crypto</span>, <span class="ident">PublicOf</span>, <span class="ident">PublicT</span>};
 <span class="kw">use</span> <span class="ident">rand</span>::{<span class="ident">rngs</span>::<span class="ident">OsRng</span>, <span class="ident">RngCore</span>};
+<span class="kw">use</span> <span class="ident">sp_core</span>::<span class="ident">Pair</span>;
 
 <span class="kw">fn</span> <span class="ident">good_waypoint</span>(<span class="ident">done</span>: <span class="ident">u64</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">u64</span> {
-	<span class="kw">match</span> <span class="ident">done</span> {
-		<span class="number">0</span>..<span class="op">=</span><span class="number">1_000_000</span> <span class="op">=</span><span class="op">&gt;</span> <span class="number">100_000</span>,
-		<span class="number">0</span>..<span class="op">=</span><span class="number">10_000_000</span> <span class="op">=</span><span class="op">&gt;</span> <span class="number">1_000_000</span>,
-		<span class="number">0</span>..<span class="op">=</span><span class="number">100_000_000</span> <span class="op">=</span><span class="op">&gt;</span> <span class="number">10_000_000</span>,
-		<span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> <span class="number">100_000_000</span>,
-	}
+    <span class="kw">match</span> <span class="ident">done</span> {
+        <span class="number">0</span>..<span class="op">=</span><span class="number">1_000_000</span> <span class="op">=</span><span class="op">&gt;</span> <span class="number">100_000</span>,
+        <span class="number">0</span>..<span class="op">=</span><span class="number">10_000_000</span> <span class="op">=</span><span class="op">&gt;</span> <span class="number">1_000_000</span>,
+        <span class="number">0</span>..<span class="op">=</span><span class="number">100_000_000</span> <span class="op">=</span><span class="op">&gt;</span> <span class="number">10_000_000</span>,
+        <span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> <span class="number">100_000_000</span>,
+    }
 }
 
 <span class="kw">fn</span> <span class="ident">next_seed</span>(<span class="ident">seed</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> [<span class="ident">u8</span>]) {
-	<span class="kw">for</span> <span class="ident">i</span> <span class="kw">in</span> <span class="number">0</span>..<span class="ident">seed</span>.<span class="ident">len</span>() {
-		<span class="kw">match</span> <span class="ident">seed</span>[<span class="ident">i</span>] {
-			<span class="number">255</span> <span class="op">=</span><span class="op">&gt;</span> {
-				<span class="ident">seed</span>[<span class="ident">i</span>] <span class="op">=</span> <span class="number">0</span>;
-			}
-			<span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> {
-				<span class="ident">seed</span>[<span class="ident">i</span>] <span class="op">+</span><span class="op">=</span> <span class="number">1</span>;
-				<span class="kw">break</span>;
-			}
-		}
-	}
+    <span class="kw">for</span> <span class="ident">i</span> <span class="kw">in</span> <span class="number">0</span>..<span class="ident">seed</span>.<span class="ident">len</span>() {
+        <span class="kw">match</span> <span class="ident">seed</span>[<span class="ident">i</span>] {
+            <span class="number">255</span> <span class="op">=</span><span class="op">&gt;</span> {
+                <span class="ident">seed</span>[<span class="ident">i</span>] <span class="op">=</span> <span class="number">0</span>;
+            }
+            <span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> {
+                <span class="ident">seed</span>[<span class="ident">i</span>] <span class="op">+</span><span class="op">=</span> <span class="number">1</span>;
+                <span class="kw">break</span>;
+            }
+        }
+    }
 }
 
 <span class="doccomment">/// A structure used to carry both Pair and seed.</span>
 <span class="doccomment">/// This should usually NOT been used. If unsure, use Pair.</span>
 <span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">struct</span> <span class="ident">KeyPair</span><span class="op">&lt;</span><span class="ident">C</span>: <span class="ident">Crypto</span><span class="op">&gt;</span> {
-	<span class="kw">pub</span> <span class="ident">pair</span>: <span class="ident">C</span>::<span class="ident">Pair</span>,
-	<span class="kw">pub</span> <span class="ident">seed</span>: <span class="op">&lt;</span><span class="ident">C</span>::<span class="ident">Pair</span> <span class="kw">as</span> <span class="ident">Pair</span><span class="op">&gt;</span>::<span class="ident">Seed</span>,
-	<span class="kw">pub</span> <span class="ident">score</span>: <span class="ident">usize</span>,
+    <span class="kw">pub</span> <span class="ident">pair</span>: <span class="ident">C</span>::<span class="ident">Pair</span>,
+    <span class="kw">pub</span> <span class="ident">seed</span>: <span class="op">&lt;</span><span class="ident">C</span>::<span class="ident">Pair</span> <span class="kw">as</span> <span class="ident">Pair</span><span class="op">&gt;</span>::<span class="ident">Seed</span>,
+    <span class="kw">pub</span> <span class="ident">score</span>: <span class="ident">usize</span>,
 }
 
 <span class="doccomment">/// Calculate the score of a key based on the desired</span>
 <span class="doccomment">/// input.</span>
 <span class="kw">fn</span> <span class="ident">calculate_score</span>(<span class="ident">_desired</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>, <span class="ident">key</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">usize</span> {
-	<span class="kw">for</span> <span class="ident">truncate</span> <span class="kw">in</span> <span class="number">0</span>..<span class="ident">_desired</span>.<span class="ident">len</span>() {
-		<span class="kw">let</span> <span class="ident">snip_size</span> <span class="op">=</span> <span class="ident">_desired</span>.<span class="ident">len</span>() <span class="op">-</span> <span class="ident">truncate</span>;
-		<span class="kw">let</span> <span class="ident">truncated</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">_desired</span>[<span class="number">0</span>..<span class="ident">snip_size</span>];
-		<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">pos</span>) <span class="op">=</span> <span class="ident">key</span>.<span class="ident">find</span>(<span class="ident">truncated</span>) {
-			<span class="kw">return</span> (<span class="number">47</span> <span class="op">-</span> <span class="ident">pos</span>) <span class="op">+</span> (<span class="ident">snip_size</span> <span class="op">*</span> <span class="number">48</span>);
-		}
-	}
-	<span class="number">0</span>
+    <span class="kw">for</span> <span class="ident">truncate</span> <span class="kw">in</span> <span class="number">0</span>..<span class="ident">_desired</span>.<span class="ident">len</span>() {
+        <span class="kw">let</span> <span class="ident">snip_size</span> <span class="op">=</span> <span class="ident">_desired</span>.<span class="ident">len</span>() <span class="op">-</span> <span class="ident">truncate</span>;
+        <span class="kw">let</span> <span class="ident">truncated</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">_desired</span>[<span class="number">0</span>..<span class="ident">snip_size</span>];
+        <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">pos</span>) <span class="op">=</span> <span class="ident">key</span>.<span class="ident">find</span>(<span class="ident">truncated</span>) {
+            <span class="kw">return</span> (<span class="number">47</span> <span class="op">-</span> <span class="ident">pos</span>) <span class="op">+</span> (<span class="ident">snip_size</span> <span class="op">*</span> <span class="number">48</span>);
+        }
+    }
+    <span class="number">0</span>
 }
 
-<span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">fn</span> <span class="ident">generate_key</span><span class="op">&lt;</span><span class="ident">C</span>: <span class="ident">Crypto</span><span class="op">&gt;</span>(<span class="ident">desired</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">KeyPair</span><span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>, <span class="kw-2">&amp;</span><span class="ident">str</span><span class="op">&gt;</span> <span class="kw">where</span>
-		<span class="ident">PublicOf</span><span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>: <span class="ident">PublicT</span>,
+<span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">fn</span> <span class="ident">generate_key</span><span class="op">&lt;</span><span class="ident">C</span>: <span class="ident">Crypto</span><span class="op">&gt;</span>(<span class="ident">desired</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">KeyPair</span><span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>, <span class="kw-2">&amp;</span><span class="ident">str</span><span class="op">&gt;</span>
+<span class="kw">where</span>
+    <span class="ident">PublicOf</span><span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>: <span class="ident">PublicT</span>,
 {
-	<span class="kw">if</span> <span class="ident">desired</span>.<span class="ident">is_empty</span>() {
-		<span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="string">&quot;Pattern must not be empty&quot;</span>);
-	}
+    <span class="kw">if</span> <span class="ident">desired</span>.<span class="ident">is_empty</span>() {
+        <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="string">&quot;Pattern must not be empty&quot;</span>);
+    }
 
-	<span class="macro">println</span><span class="macro">!</span>(<span class="string">&quot;Generating key containing pattern &#39;{}&#39;&quot;</span>, <span class="ident">desired</span>);
+    <span class="macro">println</span><span class="macro">!</span>(<span class="string">&quot;Generating key containing pattern &#39;{}&#39;&quot;</span>, <span class="ident">desired</span>);
 
-	<span class="kw">let</span> <span class="ident">top</span> <span class="op">=</span> <span class="number">45</span> <span class="op">+</span> (<span class="ident">desired</span>.<span class="ident">len</span>() <span class="op">*</span> <span class="number">48</span>);
-	<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">best</span> <span class="op">=</span> <span class="number">0</span>;
-	<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">seed</span> <span class="op">=</span> <span class="op">&lt;</span><span class="ident">C</span>::<span class="ident">Pair</span> <span class="kw">as</span> <span class="ident">Pair</span><span class="op">&gt;</span>::<span class="ident">Seed</span>::<span class="ident">default</span>();
-	<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">done</span> <span class="op">=</span> <span class="number">0</span>;
+    <span class="kw">let</span> <span class="ident">top</span> <span class="op">=</span> <span class="number">45</span> <span class="op">+</span> (<span class="ident">desired</span>.<span class="ident">len</span>() <span class="op">*</span> <span class="number">48</span>);
+    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">best</span> <span class="op">=</span> <span class="number">0</span>;
+    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">seed</span> <span class="op">=</span> <span class="op">&lt;</span><span class="ident">C</span>::<span class="ident">Pair</span> <span class="kw">as</span> <span class="ident">Pair</span><span class="op">&gt;</span>::<span class="ident">Seed</span>::<span class="ident">default</span>();
+    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">done</span> <span class="op">=</span> <span class="number">0</span>;
 
-	<span class="kw">loop</span> {
-		<span class="kw">if</span> <span class="ident">done</span> <span class="op">%</span> <span class="number">100000</span> <span class="op">=</span><span class="op">=</span> <span class="number">0</span> {
-			<span class="ident">OsRng</span>.<span class="ident">fill_bytes</span>(<span class="ident">seed</span>.<span class="ident">as_mut</span>());
-		} <span class="kw">else</span> {
-			<span class="ident">next_seed</span>(<span class="ident">seed</span>.<span class="ident">as_mut</span>());
-		}
+    <span class="kw">loop</span> {
+        <span class="kw">if</span> <span class="ident">done</span> <span class="op">%</span> <span class="number">100000</span> <span class="op">=</span><span class="op">=</span> <span class="number">0</span> {
+            <span class="ident">OsRng</span>.<span class="ident">fill_bytes</span>(<span class="ident">seed</span>.<span class="ident">as_mut</span>());
+        } <span class="kw">else</span> {
+            <span class="ident">next_seed</span>(<span class="ident">seed</span>.<span class="ident">as_mut</span>());
+        }
 
-		<span class="kw">let</span> <span class="ident">p</span> <span class="op">=</span> <span class="ident">C</span>::<span class="ident">Pair</span>::<span class="ident">from_seed</span>(<span class="kw-2">&amp;</span><span class="ident">seed</span>);
-		<span class="kw">let</span> <span class="ident">ss58</span> <span class="op">=</span> <span class="ident">C</span>::<span class="ident">ss58_from_pair</span>(<span class="kw-2">&amp;</span><span class="ident">p</span>);
-		<span class="kw">let</span> <span class="ident">score</span> <span class="op">=</span> <span class="ident">calculate_score</span>(<span class="kw-2">&amp;</span><span class="ident">desired</span>, <span class="kw-2">&amp;</span><span class="ident">ss58</span>);
-		<span class="kw">if</span> <span class="ident">score</span> <span class="op">&gt;</span> <span class="ident">best</span> <span class="op">|</span><span class="op">|</span> <span class="ident">desired</span>.<span class="ident">len</span>() <span class="op">&lt;</span> <span class="number">2</span> {
-			<span class="ident">best</span> <span class="op">=</span> <span class="ident">score</span>;
-			<span class="kw">let</span> <span class="ident">keypair</span> <span class="op">=</span> <span class="ident">KeyPair</span> {
-				<span class="ident">pair</span>: <span class="ident">p</span>,
-				<span class="ident">seed</span>: <span class="ident">seed</span>.<span class="ident">clone</span>(),
-				<span class="ident">score</span>: <span class="ident">score</span>,
-			};
-			<span class="kw">if</span> <span class="ident">best</span> <span class="op">&gt;</span><span class="op">=</span> <span class="ident">top</span> {
-				<span class="macro">println</span><span class="macro">!</span>(<span class="string">&quot;best: {} == top: {}&quot;</span>, <span class="ident">best</span>, <span class="ident">top</span>);
-				<span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="ident">keypair</span>);
-			}
-		}
-		<span class="ident">done</span> <span class="op">+</span><span class="op">=</span> <span class="number">1</span>;
+        <span class="kw">let</span> <span class="ident">p</span> <span class="op">=</span> <span class="ident">C</span>::<span class="ident">Pair</span>::<span class="ident">from_seed</span>(<span class="kw-2">&amp;</span><span class="ident">seed</span>);
+        <span class="kw">let</span> <span class="ident">ss58</span> <span class="op">=</span> <span class="ident">C</span>::<span class="ident">ss58_from_pair</span>(<span class="kw-2">&amp;</span><span class="ident">p</span>);
+        <span class="kw">let</span> <span class="ident">score</span> <span class="op">=</span> <span class="ident">calculate_score</span>(<span class="kw-2">&amp;</span><span class="ident">desired</span>, <span class="kw-2">&amp;</span><span class="ident">ss58</span>);
+        <span class="kw">if</span> <span class="ident">score</span> <span class="op">&gt;</span> <span class="ident">best</span> <span class="op">|</span><span class="op">|</span> <span class="ident">desired</span>.<span class="ident">len</span>() <span class="op">&lt;</span> <span class="number">2</span> {
+            <span class="ident">best</span> <span class="op">=</span> <span class="ident">score</span>;
+            <span class="kw">let</span> <span class="ident">keypair</span> <span class="op">=</span> <span class="ident">KeyPair</span> {
+                <span class="ident">pair</span>: <span class="ident">p</span>,
+                <span class="ident">seed</span>: <span class="ident">seed</span>.<span class="ident">clone</span>(),
+                <span class="ident">score</span>: <span class="ident">score</span>,
+            };
+            <span class="kw">if</span> <span class="ident">best</span> <span class="op">&gt;</span><span class="op">=</span> <span class="ident">top</span> {
+                <span class="macro">println</span><span class="macro">!</span>(<span class="string">&quot;best: {} == top: {}&quot;</span>, <span class="ident">best</span>, <span class="ident">top</span>);
+                <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="ident">keypair</span>);
+            }
+        }
+        <span class="ident">done</span> <span class="op">+</span><span class="op">=</span> <span class="number">1</span>;
 
-		<span class="kw">if</span> <span class="ident">done</span> <span class="op">%</span> <span class="ident">good_waypoint</span>(<span class="ident">done</span>) <span class="op">=</span><span class="op">=</span> <span class="number">0</span> {
-			<span class="macro">println</span><span class="macro">!</span>(<span class="string">&quot;{} keys searched; best is {}/{} complete&quot;</span>, <span class="ident">done</span>, <span class="ident">best</span>, <span class="ident">top</span>);
-		}
-	}
+        <span class="kw">if</span> <span class="ident">done</span> <span class="op">%</span> <span class="ident">good_waypoint</span>(<span class="ident">done</span>) <span class="op">=</span><span class="op">=</span> <span class="number">0</span> {
+            <span class="macro">println</span><span class="macro">!</span>(<span class="string">&quot;{} keys searched; best is {}/{} complete&quot;</span>, <span class="ident">done</span>, <span class="ident">best</span>, <span class="ident">top</span>);
+        }
+    }
 }
 
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">test</span>)]</span>
 <span class="kw">mod</span> <span class="ident">tests</span> {
-	<span class="kw">use</span> <span class="kw">super</span>::<span class="kw">super</span>::<span class="ident">Ed25519</span>;
-	<span class="kw">use</span> <span class="kw">super</span>::<span class="kw-2">*</span>;
-	<span class="kw">use</span> <span class="ident">sp_core</span>::{<span class="ident">crypto</span>::<span class="ident">Ss58Codec</span>, <span class="ident">Pair</span>};
-	<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;bench&quot;</span>)]</span>
-	<span class="kw">use</span> <span class="ident">test</span>::<span class="ident">Bencher</span>;
+    <span class="kw">use</span> <span class="kw">super</span>::<span class="kw">super</span>::<span class="ident">Ed25519</span>;
+    <span class="kw">use</span> <span class="kw">super</span>::<span class="kw-2">*</span>;
+    <span class="kw">use</span> <span class="ident">sp_core</span>::{<span class="ident">crypto</span>::<span class="ident">Ss58Codec</span>, <span class="ident">Pair</span>};
+    <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;bench&quot;</span>)]</span>
+    <span class="kw">use</span> <span class="ident">test</span>::<span class="ident">Bencher</span>;
 
-	<span class="attribute">#[<span class="ident">test</span>]</span>
-	<span class="kw">fn</span> <span class="ident">test_generation_with_single_char</span>() {
-		<span class="macro">assert</span><span class="macro">!</span>(<span class="ident">generate_key</span>::<span class="op">&lt;</span><span class="ident">Ed25519</span><span class="op">&gt;</span>(<span class="string">&quot;j&quot;</span>)
-			.<span class="ident">unwrap</span>()
-			.<span class="ident">pair</span>
-			.<span class="ident">public</span>()
-			.<span class="ident">to_ss58check</span>()
-			.<span class="ident">contains</span>(<span class="string">&quot;j&quot;</span>));
-	}
+    <span class="attribute">#[<span class="ident">test</span>]</span>
+    <span class="kw">fn</span> <span class="ident">test_generation_with_single_char</span>() {
+        <span class="macro">assert</span><span class="macro">!</span>(<span class="ident">generate_key</span>::<span class="op">&lt;</span><span class="ident">Ed25519</span><span class="op">&gt;</span>(<span class="string">&quot;j&quot;</span>)
+            .<span class="ident">unwrap</span>()
+            .<span class="ident">pair</span>
+            .<span class="ident">public</span>()
+            .<span class="ident">to_ss58check</span>()
+            .<span class="ident">contains</span>(<span class="string">&quot;j&quot;</span>));
+    }
 
-	<span class="attribute">#[<span class="ident">test</span>]</span>
-	<span class="kw">fn</span> <span class="ident">test_score_1_char_100</span>() {
-		<span class="kw">let</span> <span class="ident">score</span> <span class="op">=</span> <span class="ident">calculate_score</span>(<span class="string">&quot;j&quot;</span>, <span class="string">&quot;5jolkadotwHY5k9GpdTgpqs9xjuNvtv8EcwCFpEeyEf3KHim&quot;</span>);
-		<span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">score</span>, <span class="number">94</span>);
-	}
+    <span class="attribute">#[<span class="ident">test</span>]</span>
+    <span class="kw">fn</span> <span class="ident">test_score_1_char_100</span>() {
+        <span class="kw">let</span> <span class="ident">score</span> <span class="op">=</span> <span class="ident">calculate_score</span>(<span class="string">&quot;j&quot;</span>, <span class="string">&quot;5jolkadotwHY5k9GpdTgpqs9xjuNvtv8EcwCFpEeyEf3KHim&quot;</span>);
+        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">score</span>, <span class="number">94</span>);
+    }
 
-	<span class="attribute">#[<span class="ident">test</span>]</span>
-	<span class="kw">fn</span> <span class="ident">test_score_100</span>() {
-		<span class="kw">let</span> <span class="ident">score</span> <span class="op">=</span> <span class="ident">calculate_score</span>(
-			<span class="string">&quot;Polkadot&quot;</span>,
-			<span class="string">&quot;5PolkadotwHY5k9GpdTgpqs9xjuNvtv8EcwCFpEeyEf3KHim&quot;</span>,
-		);
-		<span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">score</span>, <span class="number">430</span>);
-	}
+    <span class="attribute">#[<span class="ident">test</span>]</span>
+    <span class="kw">fn</span> <span class="ident">test_score_100</span>() {
+        <span class="kw">let</span> <span class="ident">score</span> <span class="op">=</span> <span class="ident">calculate_score</span>(
+            <span class="string">&quot;Polkadot&quot;</span>,
+            <span class="string">&quot;5PolkadotwHY5k9GpdTgpqs9xjuNvtv8EcwCFpEeyEf3KHim&quot;</span>,
+        );
+        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">score</span>, <span class="number">430</span>);
+    }
 
-	<span class="attribute">#[<span class="ident">test</span>]</span>
-	<span class="kw">fn</span> <span class="ident">test_score_50_2</span>() {
-		<span class="comment">// 50% for the position + 50% for the size</span>
-		<span class="macro">assert_eq</span><span class="macro">!</span>(
-			<span class="ident">calculate_score</span>(
-				<span class="string">&quot;Polkadot&quot;</span>,
-				<span class="string">&quot;5PolkXXXXwHY5k9GpdTgpqs9xjuNvtv8EcwCFpEeyEf3KHim&quot;</span>
-			),
-			<span class="number">238</span>
-		);
-	}
+    <span class="attribute">#[<span class="ident">test</span>]</span>
+    <span class="kw">fn</span> <span class="ident">test_score_50_2</span>() {
+        <span class="comment">// 50% for the position + 50% for the size</span>
+        <span class="macro">assert_eq</span><span class="macro">!</span>(
+            <span class="ident">calculate_score</span>(
+                <span class="string">&quot;Polkadot&quot;</span>,
+                <span class="string">&quot;5PolkXXXXwHY5k9GpdTgpqs9xjuNvtv8EcwCFpEeyEf3KHim&quot;</span>
+            ),
+            <span class="number">238</span>
+        );
+    }
 
-	<span class="attribute">#[<span class="ident">test</span>]</span>
-	<span class="kw">fn</span> <span class="ident">test_score_0</span>() {
-		<span class="macro">assert_eq</span><span class="macro">!</span>(
-			<span class="ident">calculate_score</span>(
-				<span class="string">&quot;Polkadot&quot;</span>,
-				<span class="string">&quot;5GUWv4bLCchGUHJrzULXnh4JgXsMpTKRnjuXTY7Qo1Kh9uYK&quot;</span>
-			),
-			<span class="number">0</span>
-		);
-	}
+    <span class="attribute">#[<span class="ident">test</span>]</span>
+    <span class="kw">fn</span> <span class="ident">test_score_0</span>() {
+        <span class="macro">assert_eq</span><span class="macro">!</span>(
+            <span class="ident">calculate_score</span>(
+                <span class="string">&quot;Polkadot&quot;</span>,
+                <span class="string">&quot;5GUWv4bLCchGUHJrzULXnh4JgXsMpTKRnjuXTY7Qo1Kh9uYK&quot;</span>
+            ),
+            <span class="number">0</span>
+        );
+    }
 
-	<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;bench&quot;</span>)]</span>
-	<span class="attribute">#[<span class="ident">bench</span>]</span>
-	<span class="kw">fn</span> <span class="ident">bench_paranoiac</span>(<span class="ident">b</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">Bencher</span>) {
-		<span class="ident">b</span>.<span class="ident">iter</span>(<span class="op">|</span><span class="op">|</span> <span class="ident">generate_key</span>(<span class="string">&quot;polk&quot;</span>));
-	}
+    <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;bench&quot;</span>)]</span>
+    <span class="attribute">#[<span class="ident">bench</span>]</span>
+    <span class="kw">fn</span> <span class="ident">bench_paranoiac</span>(<span class="ident">b</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">Bencher</span>) {
+        <span class="ident">b</span>.<span class="ident">iter</span>(<span class="op">|</span><span class="op">|</span> <span class="ident">generate_key</span>(<span class="string">&quot;polk&quot;</span>));
+    }
 
-	<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;bench&quot;</span>)]</span>
-	<span class="attribute">#[<span class="ident">bench</span>]</span>
-	<span class="kw">fn</span> <span class="ident">bench_not_paranoiac</span>(<span class="ident">b</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">Bencher</span>) {
-		<span class="ident">b</span>.<span class="ident">iter</span>(<span class="op">|</span><span class="op">|</span> <span class="ident">generate_key</span>(<span class="string">&quot;polk&quot;</span>));
-	}
+    <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;bench&quot;</span>)]</span>
+    <span class="attribute">#[<span class="ident">bench</span>]</span>
+    <span class="kw">fn</span> <span class="ident">bench_not_paranoiac</span>(<span class="ident">b</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">Bencher</span>) {
+        <span class="ident">b</span>.<span class="ident">iter</span>(<span class="op">|</span><span class="op">|</span> <span class="ident">generate_key</span>(<span class="string">&quot;polk&quot;</span>));
+    }
 }
 </pre></div>
 </section><section id="search" class="content hidden"></section><section class="footer"></section><script>window.rootPath = "../../";window.currentCrate = "subkey";</script><script src="../../aliases.js"></script><script src="../../main.js"></script><script src="../../source-script.js"></script><script src="../../source-files.js"></script><script defer src="../../search-index.js"></script></body></html>

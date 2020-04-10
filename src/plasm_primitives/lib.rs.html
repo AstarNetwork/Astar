@@ -46,15 +46,17 @@
 <span id="46">46</span>
 <span id="47">47</span>
 <span id="48">48</span>
+<span id="49">49</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="doccomment">//! Low-level types used throughout the node code.</span>
 
 <span class="attribute">#![<span class="ident">warn</span>(<span class="ident">missing_docs</span>)]</span>
-
 <span class="attribute">#![<span class="ident">cfg_attr</span>(<span class="ident">not</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>), <span class="ident">no_std</span>)]</span>
 
 <span class="kw">use</span> <span class="ident">sp_runtime</span>::{
-    <span class="ident">generic</span>, <span class="ident">traits</span>::{<span class="ident">Verify</span>, <span class="ident">IdentifyAccount</span>, <span class="ident">BlakeTwo256</span>}, <span class="ident">MultiSignature</span>, <span class="ident">OpaqueExtrinsic</span>
+    <span class="ident">generic</span>,
+    <span class="ident">traits</span>::{<span class="ident">BlakeTwo256</span>, <span class="ident">IdentifyAccount</span>, <span class="ident">Verify</span>},
+    <span class="ident">MultiSignature</span>, <span class="ident">OpaqueExtrinsic</span>,
 };
 
 <span class="doccomment">/// An index to a block.</span>

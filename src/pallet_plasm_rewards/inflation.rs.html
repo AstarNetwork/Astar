@@ -179,18 +179,6 @@
 <span id="179">179</span>
 <span id="180">180</span>
 <span id="181">181</span>
-<span id="182">182</span>
-<span id="183">183</span>
-<span id="184">184</span>
-<span id="185">185</span>
-<span id="186">186</span>
-<span id="187">187</span>
-<span id="188">188</span>
-<span id="189">189</span>
-<span id="190">190</span>
-<span id="191">191</span>
-<span id="192">192</span>
-<span id="193">193</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="doccomment">//! This is explains plasm inflation models.</span>
 <span class="doccomment">//! The staking has 2 kinds.</span>
@@ -214,7 +202,7 @@
 <span class="doccomment">///</span>
 <span class="doccomment">/// `era_duration` is expressed in millisecond.</span>
 <span class="kw">impl</span> <span class="ident">ComputeTotalPayout</span> <span class="kw">for</span> <span class="ident">SimpleComputeTotalPayout</span> {
-    <span class="kw">fn</span> <span class="ident">compute_total_payout</span><span class="op">&lt;</span><span class="ident">N</span>, <span class="ident">M</span><span class="op">&gt;</span>(
+    <span class="kw">fn</span> <span class="ident">compute</span><span class="op">&lt;</span><span class="ident">N</span>, <span class="ident">M</span><span class="op">&gt;</span>(
         <span class="ident">total_tokens</span>: <span class="ident">N</span>,
         <span class="ident">era_duration</span>: <span class="ident">M</span>,
         <span class="ident">_validator_staking</span>: <span class="ident">N</span>,
@@ -245,7 +233,7 @@
 <span class="doccomment">///</span>
 <span class="doccomment">/// `era_duration` is expressed in millisecond.</span>
 <span class="kw">impl</span> <span class="ident">ComputeTotalPayout</span> <span class="kw">for</span> <span class="ident">MaintainRatioComputeTotalPayout</span> {
-    <span class="kw">fn</span> <span class="ident">compute_total_payout</span><span class="op">&lt;</span><span class="ident">N</span>, <span class="ident">M</span><span class="op">&gt;</span>(
+    <span class="kw">fn</span> <span class="ident">compute</span><span class="op">&lt;</span><span class="ident">N</span>, <span class="ident">M</span><span class="op">&gt;</span>(
         <span class="ident">total_tokens</span>: <span class="ident">N</span>,
         <span class="ident">era_duration</span>: <span class="ident">M</span>,
         <span class="ident">validator_staking</span>: <span class="ident">N</span>,
@@ -281,7 +269,7 @@
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">test</span>)]</span>
 <span class="kw">mod</span> <span class="ident">test</span> {
     <span class="kw">use</span> <span class="kw">super</span>::<span class="kw-2">*</span>;
-    <span class="kw">fn</span> <span class="ident">compute_total_payout_test</span><span class="op">&lt;</span><span class="ident">N</span><span class="op">&gt;</span>(
+    <span class="kw">fn</span> <span class="ident">compute_test</span><span class="op">&lt;</span><span class="ident">N</span><span class="op">&gt;</span>(
         <span class="ident">total_tokens</span>: <span class="ident">N</span>,
         <span class="ident">era_duration</span>: <span class="ident">u64</span>,
         <span class="ident">validator_staking</span>: <span class="ident">N</span>,
@@ -290,7 +278,7 @@
     <span class="kw">where</span>
         <span class="ident">N</span>: <span class="ident">BaseArithmetic</span> <span class="op">+</span> <span class="ident">Clone</span> <span class="op">+</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">u32</span><span class="op">&gt;</span>,
     {
-        <span class="ident">SimpleComputeTotalPayout</span>::<span class="ident">compute_total_payout</span>(
+        <span class="ident">SimpleComputeTotalPayout</span>::<span class="ident">compute</span>(
             <span class="ident">total_tokens</span>,
             <span class="ident">era_duration</span>,
             <span class="ident">validator_staking</span>,
@@ -307,7 +295,7 @@
     <span class="kw">where</span>
         <span class="ident">N</span>: <span class="ident">BaseArithmetic</span> <span class="op">+</span> <span class="ident">Clone</span> <span class="op">+</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">u32</span><span class="op">&gt;</span>,
     {
-        <span class="ident">MaintainRatioComputeTotalPayout</span>::<span class="ident">compute_total_payout</span>(
+        <span class="ident">MaintainRatioComputeTotalPayout</span>::<span class="ident">compute</span>(
             <span class="ident">total_tokens</span>,
             <span class="ident">era_duration</span>,
             <span class="ident">validator_staking</span>,
@@ -316,36 +304,24 @@
     }
 
     <span class="attribute">#[<span class="ident">test</span>]</span>
-    <span class="kw">fn</span> <span class="ident">test_compute_total_payout_test</span>() {
+    <span class="kw">fn</span> <span class="ident">test_compute_test</span>() {
         <span class="kw">const</span> <span class="ident">YEAR</span>: <span class="ident">u64</span> <span class="op">=</span> <span class="number">365</span> <span class="op">*</span> <span class="number">24</span> <span class="op">*</span> <span class="number">60</span> <span class="op">*</span> <span class="number">60</span> <span class="op">*</span> <span class="number">1000</span>;
         <span class="comment">// check maximum inflation.</span>
         <span class="comment">// not 10_000 due to rounding error.</span>
-        <span class="macro">assert_eq</span><span class="macro">!</span>(
-            <span class="ident">compute_total_payout_test</span>(<span class="number">100_000_000u64</span>, <span class="ident">YEAR</span>, <span class="number">0</span>, <span class="number">0</span>).<span class="number">0</span>,
-            <span class="number">19_986_311</span>
-        );
+        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">compute_test</span>(<span class="number">100_000_000u64</span>, <span class="ident">YEAR</span>, <span class="number">0</span>, <span class="number">0</span>).<span class="number">0</span>, <span class="number">19_986_311</span>);
 
         <span class="kw">const</span> <span class="ident">DAY</span>: <span class="ident">u64</span> <span class="op">=</span> <span class="number">24</span> <span class="op">*</span> <span class="number">60</span> <span class="op">*</span> <span class="number">60</span> <span class="op">*</span> <span class="number">1000</span>;
-        <span class="macro">assert_eq</span><span class="macro">!</span>(
-            <span class="ident">compute_total_payout_test</span>(<span class="number">100_000_000u64</span>, <span class="ident">DAY</span>, <span class="number">0</span>, <span class="number">0</span>).<span class="number">0</span>,
-            <span class="number">54_757</span>
-        );
+        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">compute_test</span>(<span class="number">100_000_000u64</span>, <span class="ident">DAY</span>, <span class="number">0</span>, <span class="number">0</span>).<span class="number">0</span>, <span class="number">54_757</span>);
 
         <span class="kw">const</span> <span class="ident">SIX_HOURS</span>: <span class="ident">u64</span> <span class="op">=</span> <span class="number">6</span> <span class="op">*</span> <span class="number">60</span> <span class="op">*</span> <span class="number">60</span> <span class="op">*</span> <span class="number">1000</span>;
-        <span class="macro">assert_eq</span><span class="macro">!</span>(
-            <span class="ident">compute_total_payout_test</span>(<span class="number">100_000_000u64</span>, <span class="ident">SIX_HOURS</span>, <span class="number">0</span>, <span class="number">0</span>).<span class="number">0</span>,
-            <span class="number">13_689</span>
-        );
+        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">compute_test</span>(<span class="number">100_000_000u64</span>, <span class="ident">SIX_HOURS</span>, <span class="number">0</span>, <span class="number">0</span>).<span class="number">0</span>, <span class="number">13_689</span>);
 
         <span class="kw">const</span> <span class="ident">HOUR</span>: <span class="ident">u64</span> <span class="op">=</span> <span class="number">60</span> <span class="op">*</span> <span class="number">60</span> <span class="op">*</span> <span class="number">1000</span>;
-        <span class="macro">assert_eq</span><span class="macro">!</span>(
-            <span class="ident">compute_total_payout_test</span>(<span class="number">100_000_000u64</span>, <span class="ident">HOUR</span>, <span class="number">0</span>, <span class="number">0</span>).<span class="number">0</span>,
-            <span class="number">2_281</span>
-        );
+        <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">compute_test</span>(<span class="number">100_000_000u64</span>, <span class="ident">HOUR</span>, <span class="number">0</span>, <span class="number">0</span>).<span class="number">0</span>, <span class="number">2_281</span>);
     }
 
     <span class="attribute">#[<span class="ident">test</span>]</span>
-    <span class="kw">fn</span> <span class="ident">test_maintain_compute_total_payout_test</span>() {
+    <span class="kw">fn</span> <span class="ident">test_maintain_compute_test</span>() {
         <span class="kw">const</span> <span class="ident">YEAR</span>: <span class="ident">u64</span> <span class="op">=</span> <span class="number">365</span> <span class="op">*</span> <span class="number">24</span> <span class="op">*</span> <span class="number">60</span> <span class="op">*</span> <span class="number">60</span> <span class="op">*</span> <span class="number">1000</span>;
         <span class="comment">// check maximum inflation.</span>
         <span class="comment">// not 10_000 due to rounding error.</span>

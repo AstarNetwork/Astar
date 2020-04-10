@@ -22,12 +22,9 @@
 <span id="22">22</span>
 <span id="23">23</span>
 <span id="24">24</span>
-<span id="25">25</span>
-<span id="26">26</span>
-<span id="27">27</span>
 </pre><div class="example-wrap"><pre class="rust ">
-<span class="kw">use</span> <span class="ident">structopt</span>::<span class="ident">StructOpt</span>;
 <span class="kw">use</span> <span class="ident">sc_cli</span>::<span class="ident">RunCmd</span>;
+<span class="kw">use</span> <span class="ident">structopt</span>::<span class="ident">StructOpt</span>;
 
 <span class="doccomment">/// An overarching CLI command definition.</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>, <span class="ident">Debug</span>, <span class="ident">StructOpt</span>)]</span>
@@ -47,10 +44,7 @@
     <span class="attribute">#[<span class="ident">structopt</span>(<span class="ident">flatten</span>)]</span>
     <span class="ident">Base</span>(<span class="ident">sc_cli</span>::<span class="ident">Subcommand</span>),
     <span class="doccomment">/// The custom benchmark subcommmand benchmarking runtime pallets.</span>
-    <span class="attribute">#[<span class="ident">structopt</span>(
-        <span class="ident">name</span> <span class="op">=</span> <span class="string">&quot;benchmark&quot;</span>,
-        <span class="ident">about</span> <span class="op">=</span> <span class="string">&quot;Benchmark runtime pallets.&quot;</span>
-    )]</span>
+    <span class="attribute">#[<span class="ident">structopt</span>(<span class="ident">name</span> <span class="op">=</span> <span class="string">&quot;benchmark&quot;</span>, <span class="ident">about</span> <span class="op">=</span> <span class="string">&quot;Benchmark runtime pallets.&quot;</span>)]</span>
     <span class="ident">Benchmark</span>(<span class="ident">frame_benchmarking_cli</span>::<span class="ident">BenchmarkCmd</span>),
 }
 </pre></div>

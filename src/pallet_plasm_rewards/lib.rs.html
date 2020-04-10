@@ -457,11 +457,6 @@
 <span id="457">457</span>
 <span id="458">458</span>
 <span id="459">459</span>
-<span id="460">460</span>
-<span id="461">461</span>
-<span id="462">462</span>
-<span id="463">463</span>
-<span id="464">464</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="doccomment">//! # Plasm rewards Module</span>
 <span class="doccomment">//!</span>
@@ -839,17 +834,15 @@
 
             <span class="kw">if</span> <span class="op">!</span><span class="ident">era_duration</span>.<span class="ident">is_zero</span>() {
                 <span class="kw">let</span> <span class="ident">total_payout</span> <span class="op">=</span> <span class="ident">T</span>::<span class="ident">Currency</span>::<span class="ident">total_issuance</span>();
-                <span class="kw">let</span> <span class="ident">for_dapps</span> <span class="op">=</span> <span class="ident">T</span>::<span class="ident">GetForDappsStaking</span>::<span class="ident">get_era_staking_amount</span>(<span class="kw-2">&amp;</span><span class="ident">active_era</span>.<span class="ident">index</span>);
-                <span class="kw">let</span> <span class="ident">for_security</span> <span class="op">=</span>
-                    <span class="ident">T</span>::<span class="ident">GetForSecurityStaking</span>::<span class="ident">get_era_staking_amount</span>(<span class="kw-2">&amp;</span><span class="ident">active_era</span>.<span class="ident">index</span>);
+                <span class="kw">let</span> <span class="ident">for_dapps</span> <span class="op">=</span> <span class="ident">T</span>::<span class="ident">GetForDappsStaking</span>::<span class="ident">compute</span>(<span class="kw-2">&amp;</span><span class="ident">active_era</span>.<span class="ident">index</span>);
+                <span class="kw">let</span> <span class="ident">for_security</span> <span class="op">=</span> <span class="ident">T</span>::<span class="ident">GetForSecurityStaking</span>::<span class="ident">compute</span>(<span class="kw-2">&amp;</span><span class="ident">active_era</span>.<span class="ident">index</span>);
 
-                <span class="kw">let</span> (<span class="ident">for_security_reward</span>, <span class="ident">for_dapps_rewards</span>) <span class="op">=</span>
-                    <span class="ident">T</span>::<span class="ident">ComputeTotalPayout</span>::<span class="ident">compute_total_payout</span>(
-                        <span class="ident">total_payout</span>,
-                        <span class="ident">era_duration</span>.<span class="ident">saturated_into</span>::<span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span>(),
-                        <span class="ident">for_security</span>,
-                        <span class="ident">for_dapps</span>,
-                    );
+                <span class="kw">let</span> (<span class="ident">for_security_reward</span>, <span class="ident">for_dapps_rewards</span>) <span class="op">=</span> <span class="ident">T</span>::<span class="ident">ComputeTotalPayout</span>::<span class="ident">compute</span>(
+                    <span class="ident">total_payout</span>,
+                    <span class="ident">era_duration</span>.<span class="ident">saturated_into</span>::<span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span>(),
+                    <span class="ident">for_security</span>,
+                    <span class="ident">for_dapps</span>,
+                );
 
                 <span class="op">&lt;</span><span class="ident">ForSecurityEraReward</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>::<span class="ident">insert</span>(<span class="ident">active_era</span>.<span class="ident">index</span>, <span class="ident">for_security_reward</span>);
                 <span class="op">&lt;</span><span class="ident">ForDappsEraReward</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>::<span class="ident">insert</span>(<span class="ident">active_era</span>.<span class="ident">index</span>, <span class="ident">for_dapps_rewards</span>);
@@ -870,7 +863,7 @@
         }
 
         <span class="comment">// Return maybe validators.</span>
-        <span class="ident">T</span>::<span class="ident">MaybeValidators</span>::<span class="ident">maybe_validators</span>(<span class="ident">current_era</span>)
+        <span class="ident">T</span>::<span class="ident">MaybeValidators</span>::<span class="ident">compute</span>(<span class="ident">current_era</span>)
     }
 
     <span class="doccomment">/// Clear all era information for given era.</span>
@@ -900,30 +893,27 @@
 
 <span class="doccomment">/// In this implementation using validator and dapps rewards module.</span>
 <span class="kw">impl</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Trait</span><span class="op">&gt;</span> <span class="ident">EraFinder</span><span class="op">&lt;</span><span class="ident">EraIndex</span>, <span class="ident">SessionIndex</span>, <span class="ident">MomentOf</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">Module</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
-    <span class="kw">fn</span> <span class="ident">bonded_eras</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Vec</span><span class="op">&lt;</span>(<span class="ident">EraIndex</span>, <span class="ident">SessionIndex</span>)<span class="op">&gt;</span> {
-        <span class="self">Self</span>::<span class="ident">bonded_eras</span>()
-    }
-    <span class="kw">fn</span> <span class="ident">current_era</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">EraIndex</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">current</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">EraIndex</span><span class="op">&gt;</span> {
         <span class="self">Self</span>::<span class="ident">current_era</span>()
     }
-    <span class="kw">fn</span> <span class="ident">active_era</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">ActiveEraInfo</span><span class="op">&lt;</span><span class="ident">MomentOf</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">active</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">ActiveEraInfo</span><span class="op">&lt;</span><span class="ident">MomentOf</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span> {
         <span class="self">Self</span>::<span class="ident">active_era</span>()
     }
-    <span class="kw">fn</span> <span class="ident">eras_start_session_index</span>(<span class="ident">era</span>: <span class="kw-2">&amp;</span><span class="ident">EraIndex</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">SessionIndex</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">start_session_index</span>(<span class="ident">era</span>: <span class="kw-2">&amp;</span><span class="ident">EraIndex</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">SessionIndex</span><span class="op">&gt;</span> {
         <span class="self">Self</span>::<span class="ident">eras_start_session_index</span>(<span class="kw-2">&amp;</span><span class="ident">era</span>)
     }
 }
 
 <span class="doccomment">/// Get the security rewards for validator module.</span>
 <span class="kw">impl</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Trait</span><span class="op">&gt;</span> <span class="ident">ForSecurityEraRewardFinder</span><span class="op">&lt;</span><span class="ident">BalanceOf</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">Module</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
-    <span class="kw">fn</span> <span class="ident">for_security_era_reward</span>(<span class="ident">era</span>: <span class="kw-2">&amp;</span><span class="ident">EraIndex</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">BalanceOf</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">get</span>(<span class="ident">era</span>: <span class="kw-2">&amp;</span><span class="ident">EraIndex</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">BalanceOf</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span> {
         <span class="self">Self</span>::<span class="ident">for_security_era_reward</span>(<span class="kw-2">&amp;</span><span class="ident">era</span>)
     }
 }
 
 <span class="doccomment">/// Get the dapps rewards for dapps staking module.</span>
 <span class="kw">impl</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Trait</span><span class="op">&gt;</span> <span class="ident">ForDappsEraRewardFinder</span><span class="op">&lt;</span><span class="ident">BalanceOf</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">Module</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
-    <span class="kw">fn</span> <span class="ident">for_dapps_era_reward</span>(<span class="ident">era</span>: <span class="kw-2">&amp;</span><span class="ident">EraIndex</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">BalanceOf</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">get</span>(<span class="ident">era</span>: <span class="kw-2">&amp;</span><span class="ident">EraIndex</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">BalanceOf</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span> {
         <span class="self">Self</span>::<span class="ident">for_dapps_era_reward</span>(<span class="kw-2">&amp;</span><span class="ident">era</span>)
     }
 }

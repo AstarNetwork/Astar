@@ -156,6 +156,11 @@
 <span id="156">156</span>
 <span id="157">157</span>
 <span id="158">158</span>
+<span id="159">159</span>
+<span id="160">160</span>
+<span id="161">161</span>
+<span id="162">162</span>
+<span id="163">163</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright 2019-2020 Parity Technologies (UK) Ltd.</span>
 <span class="comment">// This file is part of Substrate.</span>
@@ -188,132 +193,137 @@
 
 <span class="attribute">#![<span class="ident">warn</span>(<span class="ident">missing_docs</span>)]</span>
 
-<span class="kw">use</span> <span class="ident">std</span>::{<span class="ident">sync</span>::<span class="ident">Arc</span>, <span class="ident">fmt</span>};
+<span class="kw">use</span> <span class="ident">std</span>::{<span class="ident">fmt</span>, <span class="ident">sync</span>::<span class="ident">Arc</span>};
 
-<span class="kw">use</span> <span class="ident">plasm_primitives</span>::{<span class="ident">Block</span>, <span class="ident">BlockNumber</span>, <span class="ident">AccountId</span>, <span class="ident">Index</span>, <span class="ident">Balance</span>};
+<span class="kw">use</span> <span class="ident">plasm_primitives</span>::{<span class="ident">AccountId</span>, <span class="ident">Balance</span>, <span class="ident">Block</span>, <span class="ident">BlockNumber</span>, <span class="ident">Index</span>};
 <span class="kw">use</span> <span class="ident">plasm_runtime</span>::<span class="ident">UncheckedExtrinsic</span>;
-<span class="kw">use</span> <span class="ident">sp_api</span>::<span class="ident">ProvideRuntimeApi</span>;
-<span class="kw">use</span> <span class="ident">sp_transaction_pool</span>::<span class="ident">TransactionPool</span>;
-<span class="kw">use</span> <span class="ident">sp_blockchain</span>::{<span class="ident">Error</span> <span class="kw">as</span> <span class="ident">BlockChainError</span>, <span class="ident">HeaderMetadata</span>, <span class="ident">HeaderBackend</span>};
-<span class="kw">use</span> <span class="ident">sp_consensus</span>::<span class="ident">SelectChain</span>;
-<span class="kw">use</span> <span class="ident">sc_keystore</span>::<span class="ident">KeyStorePtr</span>;
-<span class="kw">use</span> <span class="ident">sp_consensus_babe</span>::<span class="ident">BabeApi</span>;
-<span class="kw">use</span> <span class="ident">sc_consensus_epochs</span>::<span class="ident">SharedEpochChanges</span>;
 <span class="kw">use</span> <span class="ident">sc_consensus_babe</span>::{<span class="ident">Config</span>, <span class="ident">Epoch</span>};
 <span class="kw">use</span> <span class="ident">sc_consensus_babe_rpc</span>::<span class="ident">BabeRPCHandler</span>;
+<span class="kw">use</span> <span class="ident">sc_consensus_epochs</span>::<span class="ident">SharedEpochChanges</span>;
+<span class="kw">use</span> <span class="ident">sc_keystore</span>::<span class="ident">KeyStorePtr</span>;
+<span class="kw">use</span> <span class="ident">sp_api</span>::<span class="ident">ProvideRuntimeApi</span>;
+<span class="kw">use</span> <span class="ident">sp_blockchain</span>::{<span class="ident">Error</span> <span class="kw">as</span> <span class="ident">BlockChainError</span>, <span class="ident">HeaderBackend</span>, <span class="ident">HeaderMetadata</span>};
+<span class="kw">use</span> <span class="ident">sp_consensus</span>::<span class="ident">SelectChain</span>;
+<span class="kw">use</span> <span class="ident">sp_consensus_babe</span>::<span class="ident">BabeApi</span>;
+<span class="kw">use</span> <span class="ident">sp_transaction_pool</span>::<span class="ident">TransactionPool</span>;
 
 <span class="doccomment">/// Light client extra dependencies.</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">LightDeps</span><span class="op">&lt;</span><span class="ident">C</span>, <span class="ident">F</span>, <span class="ident">P</span><span class="op">&gt;</span> {
-	<span class="doccomment">/// The client instance to use.</span>
-	<span class="kw">pub</span> <span class="ident">client</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>,
-	<span class="doccomment">/// Transaction pool instance.</span>
-	<span class="kw">pub</span> <span class="ident">pool</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">P</span><span class="op">&gt;</span>,
-	<span class="doccomment">/// Remote access to the blockchain (async).</span>
-	<span class="kw">pub</span> <span class="ident">remote_blockchain</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">sc_client</span>::<span class="ident">light</span>::<span class="ident">blockchain</span>::<span class="ident">RemoteBlockchain</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-	<span class="doccomment">/// Fetcher instance.</span>
-	<span class="kw">pub</span> <span class="ident">fetcher</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">F</span><span class="op">&gt;</span>,
+    <span class="doccomment">/// The client instance to use.</span>
+    <span class="kw">pub</span> <span class="ident">client</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>,
+    <span class="doccomment">/// Transaction pool instance.</span>
+    <span class="kw">pub</span> <span class="ident">pool</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">P</span><span class="op">&gt;</span>,
+    <span class="doccomment">/// Remote access to the blockchain (async).</span>
+    <span class="kw">pub</span> <span class="ident">remote_blockchain</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">sc_client</span>::<span class="ident">light</span>::<span class="ident">blockchain</span>::<span class="ident">RemoteBlockchain</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+    <span class="doccomment">/// Fetcher instance.</span>
+    <span class="kw">pub</span> <span class="ident">fetcher</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">F</span><span class="op">&gt;</span>,
 }
 
 <span class="doccomment">/// Extra dependencies for BABE.</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">BabeDeps</span> {
-	<span class="doccomment">/// BABE protocol config.</span>
-	<span class="kw">pub</span> <span class="ident">babe_config</span>: <span class="ident">Config</span>,
-	<span class="doccomment">/// BABE pending epoch changes.</span>
-	<span class="kw">pub</span> <span class="ident">shared_epoch_changes</span>: <span class="ident">SharedEpochChanges</span><span class="op">&lt;</span><span class="ident">Block</span>, <span class="ident">Epoch</span><span class="op">&gt;</span>,
-	<span class="doccomment">/// The keystore that manages the keys of the node.</span>
-	<span class="kw">pub</span> <span class="ident">keystore</span>: <span class="ident">KeyStorePtr</span>,
+    <span class="doccomment">/// BABE protocol config.</span>
+    <span class="kw">pub</span> <span class="ident">babe_config</span>: <span class="ident">Config</span>,
+    <span class="doccomment">/// BABE pending epoch changes.</span>
+    <span class="kw">pub</span> <span class="ident">shared_epoch_changes</span>: <span class="ident">SharedEpochChanges</span><span class="op">&lt;</span><span class="ident">Block</span>, <span class="ident">Epoch</span><span class="op">&gt;</span>,
+    <span class="doccomment">/// The keystore that manages the keys of the node.</span>
+    <span class="kw">pub</span> <span class="ident">keystore</span>: <span class="ident">KeyStorePtr</span>,
 }
 
 <span class="doccomment">/// Full client dependencies.</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">FullDeps</span><span class="op">&lt;</span><span class="ident">C</span>, <span class="ident">P</span>, <span class="ident">SC</span><span class="op">&gt;</span> {
-	<span class="doccomment">/// The client instance to use.</span>
-	<span class="kw">pub</span> <span class="ident">client</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>,
-	<span class="doccomment">/// Transaction pool instance.</span>
-	<span class="kw">pub</span> <span class="ident">pool</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">P</span><span class="op">&gt;</span>,
-	<span class="doccomment">/// The SelectChain Strategy</span>
-	<span class="kw">pub</span> <span class="ident">select_chain</span>: <span class="ident">SC</span>,
-	<span class="doccomment">/// BABE specific dependencies.</span>
-	<span class="kw">pub</span> <span class="ident">babe</span>: <span class="ident">BabeDeps</span>,
+    <span class="doccomment">/// The client instance to use.</span>
+    <span class="kw">pub</span> <span class="ident">client</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>,
+    <span class="doccomment">/// Transaction pool instance.</span>
+    <span class="kw">pub</span> <span class="ident">pool</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">P</span><span class="op">&gt;</span>,
+    <span class="doccomment">/// The SelectChain Strategy</span>
+    <span class="kw">pub</span> <span class="ident">select_chain</span>: <span class="ident">SC</span>,
+    <span class="doccomment">/// BABE specific dependencies.</span>
+    <span class="kw">pub</span> <span class="ident">babe</span>: <span class="ident">BabeDeps</span>,
 }
 
 <span class="doccomment">/// Instantiate all Full RPC extensions.</span>
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">create_full</span><span class="op">&lt;</span><span class="ident">C</span>, <span class="ident">P</span>, <span class="ident">M</span>, <span class="ident">SC</span><span class="op">&gt;</span>(
-	<span class="ident">deps</span>: <span class="ident">FullDeps</span><span class="op">&lt;</span><span class="ident">C</span>, <span class="ident">P</span>, <span class="ident">SC</span><span class="op">&gt;</span>,
-) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">jsonrpc_core</span>::<span class="ident">IoHandler</span><span class="op">&lt;</span><span class="ident">M</span><span class="op">&gt;</span> <span class="kw">where</span>
-	<span class="ident">C</span>: <span class="ident">ProvideRuntimeApi</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span>,
-	<span class="ident">C</span>: <span class="ident">HeaderBackend</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">HeaderMetadata</span><span class="op">&lt;</span><span class="ident">Block</span>, <span class="ident">Error</span><span class="op">=</span><span class="ident">BlockChainError</span><span class="op">&gt;</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
-	<span class="ident">C</span>: <span class="ident">Send</span> <span class="op">+</span> <span class="ident">Sync</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
-	<span class="ident">C</span>::<span class="ident">Api</span>: <span class="ident">substrate_frame_rpc_system</span>::<span class="ident">AccountNonceApi</span><span class="op">&lt;</span><span class="ident">Block</span>, <span class="ident">AccountId</span>, <span class="ident">Index</span><span class="op">&gt;</span>,
-	<span class="ident">C</span>::<span class="ident">Api</span>: <span class="ident">pallet_contracts_rpc</span>::<span class="ident">ContractsRuntimeApi</span><span class="op">&lt;</span><span class="ident">Block</span>, <span class="ident">AccountId</span>, <span class="ident">Balance</span>, <span class="ident">BlockNumber</span><span class="op">&gt;</span>,
-	<span class="ident">C</span>::<span class="ident">Api</span>: <span class="ident">pallet_transaction_payment_rpc</span>::<span class="ident">TransactionPaymentRuntimeApi</span><span class="op">&lt;</span><span class="ident">Block</span>, <span class="ident">Balance</span>, <span class="ident">UncheckedExtrinsic</span><span class="op">&gt;</span>,
-	<span class="ident">C</span>::<span class="ident">Api</span>: <span class="ident">BabeApi</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span>,
-	<span class="op">&lt;</span><span class="ident">C</span>::<span class="ident">Api</span> <span class="kw">as</span> <span class="ident">sp_api</span>::<span class="ident">ApiErrorExt</span><span class="op">&gt;</span>::<span class="ident">Error</span>: <span class="ident">fmt</span>::<span class="ident">Debug</span>,
-	<span class="ident">P</span>: <span class="ident">TransactionPool</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
-	<span class="ident">M</span>: <span class="ident">jsonrpc_core</span>::<span class="ident">Metadata</span> <span class="op">+</span> <span class="ident">Default</span>,
-	<span class="ident">SC</span>: <span class="ident">SelectChain</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span> <span class="op">+</span><span class="lifetime">&#39;static</span>,
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">create_full</span><span class="op">&lt;</span><span class="ident">C</span>, <span class="ident">P</span>, <span class="ident">M</span>, <span class="ident">SC</span><span class="op">&gt;</span>(<span class="ident">deps</span>: <span class="ident">FullDeps</span><span class="op">&lt;</span><span class="ident">C</span>, <span class="ident">P</span>, <span class="ident">SC</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">jsonrpc_core</span>::<span class="ident">IoHandler</span><span class="op">&lt;</span><span class="ident">M</span><span class="op">&gt;</span>
+<span class="kw">where</span>
+    <span class="ident">C</span>: <span class="ident">ProvideRuntimeApi</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span>,
+    <span class="ident">C</span>: <span class="ident">HeaderBackend</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">HeaderMetadata</span><span class="op">&lt;</span><span class="ident">Block</span>, <span class="ident">Error</span> <span class="op">=</span> <span class="ident">BlockChainError</span><span class="op">&gt;</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
+    <span class="ident">C</span>: <span class="ident">Send</span> <span class="op">+</span> <span class="ident">Sync</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
+    <span class="ident">C</span>::<span class="ident">Api</span>: <span class="ident">substrate_frame_rpc_system</span>::<span class="ident">AccountNonceApi</span><span class="op">&lt;</span><span class="ident">Block</span>, <span class="ident">AccountId</span>, <span class="ident">Index</span><span class="op">&gt;</span>,
+    <span class="ident">C</span>::<span class="ident">Api</span>: <span class="ident">pallet_contracts_rpc</span>::<span class="ident">ContractsRuntimeApi</span><span class="op">&lt;</span><span class="ident">Block</span>, <span class="ident">AccountId</span>, <span class="ident">Balance</span>, <span class="ident">BlockNumber</span><span class="op">&gt;</span>,
+    <span class="ident">C</span>::<span class="ident">Api</span>: <span class="ident">pallet_transaction_payment_rpc</span>::<span class="ident">TransactionPaymentRuntimeApi</span><span class="op">&lt;</span>
+        <span class="ident">Block</span>,
+        <span class="ident">Balance</span>,
+        <span class="ident">UncheckedExtrinsic</span>,
+    <span class="op">&gt;</span>,
+    <span class="ident">C</span>::<span class="ident">Api</span>: <span class="ident">BabeApi</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span>,
+    <span class="op">&lt;</span><span class="ident">C</span>::<span class="ident">Api</span> <span class="kw">as</span> <span class="ident">sp_api</span>::<span class="ident">ApiErrorExt</span><span class="op">&gt;</span>::<span class="ident">Error</span>: <span class="ident">fmt</span>::<span class="ident">Debug</span>,
+    <span class="ident">P</span>: <span class="ident">TransactionPool</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
+    <span class="ident">M</span>: <span class="ident">jsonrpc_core</span>::<span class="ident">Metadata</span> <span class="op">+</span> <span class="ident">Default</span>,
+    <span class="ident">SC</span>: <span class="ident">SelectChain</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
 {
-	<span class="kw">use</span> <span class="ident">substrate_frame_rpc_system</span>::{<span class="ident">FullSystem</span>, <span class="ident">SystemApi</span>};
-	<span class="kw">use</span> <span class="ident">pallet_contracts_rpc</span>::{<span class="ident">Contracts</span>, <span class="ident">ContractsApi</span>};
-	<span class="kw">use</span> <span class="ident">pallet_transaction_payment_rpc</span>::{<span class="ident">TransactionPayment</span>, <span class="ident">TransactionPaymentApi</span>};
+    <span class="kw">use</span> <span class="ident">pallet_contracts_rpc</span>::{<span class="ident">Contracts</span>, <span class="ident">ContractsApi</span>};
+    <span class="kw">use</span> <span class="ident">pallet_transaction_payment_rpc</span>::{<span class="ident">TransactionPayment</span>, <span class="ident">TransactionPaymentApi</span>};
+    <span class="kw">use</span> <span class="ident">substrate_frame_rpc_system</span>::{<span class="ident">FullSystem</span>, <span class="ident">SystemApi</span>};
 
-	<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">io</span> <span class="op">=</span> <span class="ident">jsonrpc_core</span>::<span class="ident">IoHandler</span>::<span class="ident">default</span>();
-	<span class="kw">let</span> <span class="ident">FullDeps</span> {
-		<span class="ident">client</span>,
-		<span class="ident">pool</span>,
-		<span class="ident">select_chain</span>,
-		<span class="ident">babe</span>
-	} <span class="op">=</span> <span class="ident">deps</span>;
-	<span class="kw">let</span> <span class="ident">BabeDeps</span> {
-		<span class="ident">keystore</span>,
-		<span class="ident">babe_config</span>,
-		<span class="ident">shared_epoch_changes</span>,
-	} <span class="op">=</span> <span class="ident">babe</span>;
+    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">io</span> <span class="op">=</span> <span class="ident">jsonrpc_core</span>::<span class="ident">IoHandler</span>::<span class="ident">default</span>();
+    <span class="kw">let</span> <span class="ident">FullDeps</span> {
+        <span class="ident">client</span>,
+        <span class="ident">pool</span>,
+        <span class="ident">select_chain</span>,
+        <span class="ident">babe</span>,
+    } <span class="op">=</span> <span class="ident">deps</span>;
+    <span class="kw">let</span> <span class="ident">BabeDeps</span> {
+        <span class="ident">keystore</span>,
+        <span class="ident">babe_config</span>,
+        <span class="ident">shared_epoch_changes</span>,
+    } <span class="op">=</span> <span class="ident">babe</span>;
 
-	<span class="ident">io</span>.<span class="ident">extend_with</span>(
-		<span class="ident">SystemApi</span>::<span class="ident">to_delegate</span>(<span class="ident">FullSystem</span>::<span class="ident">new</span>(<span class="ident">client</span>.<span class="ident">clone</span>(), <span class="ident">pool</span>))
-	);
-	<span class="comment">// Making synchronous calls in light client freezes the browser currently,</span>
-	<span class="comment">// more context: https://github.com/paritytech/substrate/pull/3480</span>
-	<span class="comment">// These RPCs should use an asynchronous caller instead.</span>
-	<span class="ident">io</span>.<span class="ident">extend_with</span>(
-		<span class="ident">ContractsApi</span>::<span class="ident">to_delegate</span>(<span class="ident">Contracts</span>::<span class="ident">new</span>(<span class="ident">client</span>.<span class="ident">clone</span>()))
-	);
-	<span class="ident">io</span>.<span class="ident">extend_with</span>(
-		<span class="ident">TransactionPaymentApi</span>::<span class="ident">to_delegate</span>(<span class="ident">TransactionPayment</span>::<span class="ident">new</span>(<span class="ident">client</span>.<span class="ident">clone</span>()))
-	);
-	<span class="ident">io</span>.<span class="ident">extend_with</span>(
-		<span class="ident">sc_consensus_babe_rpc</span>::<span class="ident">BabeApi</span>::<span class="ident">to_delegate</span>(
-			<span class="ident">BabeRPCHandler</span>::<span class="ident">new</span>(<span class="ident">client</span>, <span class="ident">shared_epoch_changes</span>, <span class="ident">keystore</span>, <span class="ident">babe_config</span>, <span class="ident">select_chain</span>)
-		)
-	);
+    <span class="ident">io</span>.<span class="ident">extend_with</span>(<span class="ident">SystemApi</span>::<span class="ident">to_delegate</span>(<span class="ident">FullSystem</span>::<span class="ident">new</span>(
+        <span class="ident">client</span>.<span class="ident">clone</span>(),
+        <span class="ident">pool</span>,
+    )));
+    <span class="comment">// Making synchronous calls in light client freezes the browser currently,</span>
+    <span class="comment">// more context: https://github.com/paritytech/substrate/pull/3480</span>
+    <span class="comment">// These RPCs should use an asynchronous caller instead.</span>
+    <span class="ident">io</span>.<span class="ident">extend_with</span>(<span class="ident">ContractsApi</span>::<span class="ident">to_delegate</span>(<span class="ident">Contracts</span>::<span class="ident">new</span>(<span class="ident">client</span>.<span class="ident">clone</span>())));
+    <span class="ident">io</span>.<span class="ident">extend_with</span>(<span class="ident">TransactionPaymentApi</span>::<span class="ident">to_delegate</span>(<span class="ident">TransactionPayment</span>::<span class="ident">new</span>(
+        <span class="ident">client</span>.<span class="ident">clone</span>(),
+    )));
+    <span class="ident">io</span>.<span class="ident">extend_with</span>(<span class="ident">sc_consensus_babe_rpc</span>::<span class="ident">BabeApi</span>::<span class="ident">to_delegate</span>(
+        <span class="ident">BabeRPCHandler</span>::<span class="ident">new</span>(
+            <span class="ident">client</span>,
+            <span class="ident">shared_epoch_changes</span>,
+            <span class="ident">keystore</span>,
+            <span class="ident">babe_config</span>,
+            <span class="ident">select_chain</span>,
+        ),
+    ));
 
-	<span class="ident">io</span>
+    <span class="ident">io</span>
 }
 
 <span class="doccomment">/// Instantiate all Light RPC extensions.</span>
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">create_light</span><span class="op">&lt;</span><span class="ident">C</span>, <span class="ident">P</span>, <span class="ident">M</span>, <span class="ident">F</span><span class="op">&gt;</span>(
-	<span class="ident">deps</span>: <span class="ident">LightDeps</span><span class="op">&lt;</span><span class="ident">C</span>, <span class="ident">F</span>, <span class="ident">P</span><span class="op">&gt;</span>,
-) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">jsonrpc_core</span>::<span class="ident">IoHandler</span><span class="op">&lt;</span><span class="ident">M</span><span class="op">&gt;</span> <span class="kw">where</span>
-	<span class="ident">C</span>: <span class="ident">sc_client</span>::<span class="ident">blockchain</span>::<span class="ident">HeaderBackend</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span>,
-	<span class="ident">C</span>: <span class="ident">Send</span> <span class="op">+</span> <span class="ident">Sync</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
-	<span class="ident">F</span>: <span class="ident">sc_client</span>::<span class="ident">light</span>::<span class="ident">fetcher</span>::<span class="ident">Fetcher</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
-	<span class="ident">P</span>: <span class="ident">TransactionPool</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
-	<span class="ident">M</span>: <span class="ident">jsonrpc_core</span>::<span class="ident">Metadata</span> <span class="op">+</span> <span class="ident">Default</span>,
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">create_light</span><span class="op">&lt;</span><span class="ident">C</span>, <span class="ident">P</span>, <span class="ident">M</span>, <span class="ident">F</span><span class="op">&gt;</span>(<span class="ident">deps</span>: <span class="ident">LightDeps</span><span class="op">&lt;</span><span class="ident">C</span>, <span class="ident">F</span>, <span class="ident">P</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">jsonrpc_core</span>::<span class="ident">IoHandler</span><span class="op">&lt;</span><span class="ident">M</span><span class="op">&gt;</span>
+<span class="kw">where</span>
+    <span class="ident">C</span>: <span class="ident">sc_client</span>::<span class="ident">blockchain</span>::<span class="ident">HeaderBackend</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span>,
+    <span class="ident">C</span>: <span class="ident">Send</span> <span class="op">+</span> <span class="ident">Sync</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
+    <span class="ident">F</span>: <span class="ident">sc_client</span>::<span class="ident">light</span>::<span class="ident">fetcher</span>::<span class="ident">Fetcher</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
+    <span class="ident">P</span>: <span class="ident">TransactionPool</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
+    <span class="ident">M</span>: <span class="ident">jsonrpc_core</span>::<span class="ident">Metadata</span> <span class="op">+</span> <span class="ident">Default</span>,
 {
-	<span class="kw">use</span> <span class="ident">substrate_frame_rpc_system</span>::{<span class="ident">LightSystem</span>, <span class="ident">SystemApi</span>};
+    <span class="kw">use</span> <span class="ident">substrate_frame_rpc_system</span>::{<span class="ident">LightSystem</span>, <span class="ident">SystemApi</span>};
 
-	<span class="kw">let</span> <span class="ident">LightDeps</span> {
-		<span class="ident">client</span>,
-		<span class="ident">pool</span>,
-		<span class="ident">remote_blockchain</span>,
-		<span class="ident">fetcher</span>
-	} <span class="op">=</span> <span class="ident">deps</span>;
-	<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">io</span> <span class="op">=</span> <span class="ident">jsonrpc_core</span>::<span class="ident">IoHandler</span>::<span class="ident">default</span>();
-	<span class="ident">io</span>.<span class="ident">extend_with</span>(
-		<span class="ident">SystemApi</span>::<span class="op">&lt;</span><span class="ident">AccountId</span>, <span class="ident">Index</span><span class="op">&gt;</span>::<span class="ident">to_delegate</span>(<span class="ident">LightSystem</span>::<span class="ident">new</span>(<span class="ident">client</span>, <span class="ident">remote_blockchain</span>, <span class="ident">fetcher</span>, <span class="ident">pool</span>))
-	);
+    <span class="kw">let</span> <span class="ident">LightDeps</span> {
+        <span class="ident">client</span>,
+        <span class="ident">pool</span>,
+        <span class="ident">remote_blockchain</span>,
+        <span class="ident">fetcher</span>,
+    } <span class="op">=</span> <span class="ident">deps</span>;
+    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">io</span> <span class="op">=</span> <span class="ident">jsonrpc_core</span>::<span class="ident">IoHandler</span>::<span class="ident">default</span>();
+    <span class="ident">io</span>.<span class="ident">extend_with</span>(<span class="ident">SystemApi</span>::<span class="op">&lt;</span><span class="ident">AccountId</span>, <span class="ident">Index</span><span class="op">&gt;</span>::<span class="ident">to_delegate</span>(
+        <span class="ident">LightSystem</span>::<span class="ident">new</span>(<span class="ident">client</span>, <span class="ident">remote_blockchain</span>, <span class="ident">fetcher</span>, <span class="ident">pool</span>),
+    ));
 
-	<span class="ident">io</span>
+    <span class="ident">io</span>
 }
 </pre></div>
 </section><section id="search" class="content hidden"></section><section class="footer"></section><script>window.rootPath = "../../";window.currentCrate = "plasm_rpc";</script><script src="../../aliases.js"></script><script src="../../main.js"></script><script src="../../source-script.js"></script><script src="../../source-files.js"></script><script defer src="../../search-index.js"></script></body></html>
