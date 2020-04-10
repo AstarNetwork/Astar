@@ -34,6 +34,7 @@ use sp_std::{prelude::*, vec::Vec};
 // mod tests;
 
 pub mod traits;
+pub mod predicate;
 use traits::PredicateAddressFor;
 
 /// Predicates write properties and it can prove to true or false under dispute logic.
@@ -85,6 +86,73 @@ pub struct ChallengeGame<AccountId, Hash, BlockNumber> {
     created_block: BlockNumber,
 }
 
+/// Definition of the cost schedule and other parameterizations for optimistic virtual machine.
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+#[derive(Clone, Encode, Decode, PartialEq, Eq, RuntimeDebug)]
+pub struct Schedule {
+    /// Version of the schedule.
+    pub version: u32,
+
+    /// The maximum number of topics supported by an event.
+    pub max_event_topics: u32,
+
+    /// Maximum allowed stack height.
+    ///
+    /// See https://wiki.parity.io/WebAssembly-StackHeight to find out
+    /// how the stack frame cost is calculated.
+    pub max_stack_height: u32,
+
+    /// Maximum number of memory pages allowed for a contract.
+    pub max_memory_pages: u32,
+
+    /// Maximum allowed size of a declared table.
+    pub max_table_size: u32,
+
+    /// Whether the `ext_println` function is allowed to be used contracts.
+    /// MUST only be enabled for `dev` chains, NOT for production chains
+    pub enable_println: bool,
+
+    /// The maximum length of a subject used for PRNG generation.
+    pub max_subject_len: u32,
+}
+
+// TODO default schedule value by ovm.
+impl Default for Schedule {
+    fn default() -> Schedule {
+        Schedule {
+            version: 0,
+            max_event_topics: 4,
+            max_stack_height: 64 * 1024,
+            max_memory_pages: 16,
+            max_table_size: 16 * 1024,
+            enable_println: false,
+            max_subject_len: 32,
+        }
+    }
+}
+
+/// TODO design Config
+/// In-memory cache of configuration values.
+///
+/// We assume that these values can't be changed in the
+/// course of transaction execution.
+pub struct Config<T: Trait> {
+    pub schedule: Schedule,
+    // pub max_depth: u32,
+    // pub max_value_size: u32,
+}
+
+impl<T: Trait> Config<T> {
+    fn preload() -> Config<T> {
+        Config {
+            schedule: <Module<T>>::current_schedule(),
+            // max_depth: T::MaxDepth::get(),
+            // max_value_size: T::MaxValueSize::get(),
+        }
+    }
+}
+
+
 pub type PredicateHash<T> = <T as system::Trait>::Hash;
 pub type ChallengeGameOf<T> = ChallengeGame<
     <T as system::Trait>::AccountId,
@@ -92,6 +160,7 @@ pub type ChallengeGameOf<T> = ChallengeGame<
     <T as system::Trait>::BlockNumber,
 >;
 pub type PropertyOf<T> = Property<<T as system::Trait>::AccountId>;
+pub type AccountIdOf<T> = <T as frame_system::Trait>::AccountId;
 
 pub trait Trait: system::Trait {
     /// The balance.
@@ -110,6 +179,9 @@ pub trait Trait: system::Trait {
 
 decl_storage! {
     trait Store for Module<T: Trait> as OVM {
+        /// Current cost schedule for contracts.
+		CurrentSchedule get(fn current_schedule) config(): Schedule = Schedule::default();
+
         /// A mapping from an original code hash to the original code, untouched by instrumentation.
         pub PredicateCodes get(fn predicate_codes): map hasher(identity) PredicateHash<T> => Option<Predicate>;
 
