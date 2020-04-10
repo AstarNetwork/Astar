@@ -251,7 +251,7 @@ impl pallet_contract_operator::Trait for Test {
 
 pub struct DummyMaybeValidators;
 impl MaybeValidators<EraIndex, AccountId> for DummyMaybeValidators {
-    fn maybe_validators(_current_era: EraIndex) -> Option<Vec<AccountId>> {
+    fn compute(_current_era: EraIndex) -> Option<Vec<AccountId>> {
         Some(vec![1, 2, 3])
     }
 }

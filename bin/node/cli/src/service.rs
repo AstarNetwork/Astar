@@ -4,26 +4,25 @@
 
 use std::sync::Arc;
 
-use sp_runtime::traits::Block as BlockT;
-use sp_inherents::InherentDataProviders;
-use sc_consensus_babe;
-use sc_client::LongestChain;
-use sc_client_api::ExecutorProvider;
-use sc_finality_grandpa::{
-    StorageAndProofProvider,
-    FinalityProofProvider as GrandpaFinalityProofProvider,
-};
-use sc_service::{
-    AbstractService, ServiceBuilder, config::Configuration, error::{Error as ServiceError},
-};
-use sc_service::{Service, NetworkStatus};
-use sc_client::{Client, LocalCallExecutor};
-use sc_client_db::Backend;
-use sc_network::NetworkService;
-use sc_offchain::OffchainWorkers;
 use plasm_executor::NativeExecutor;
 use plasm_primitives::Block;
 use plasm_runtime::RuntimeApi;
+use sc_client::LongestChain;
+use sc_client::{Client, LocalCallExecutor};
+use sc_client_api::ExecutorProvider;
+use sc_client_db::Backend;
+use sc_consensus_babe;
+use sc_finality_grandpa::{
+    FinalityProofProvider as GrandpaFinalityProofProvider, StorageAndProofProvider,
+};
+use sc_network::NetworkService;
+use sc_offchain::OffchainWorkers;
+use sc_service::{
+    config::Configuration, error::Error as ServiceError, AbstractService, ServiceBuilder,
+};
+use sc_service::{NetworkStatus, Service};
+use sp_inherents::InherentDataProviders;
+use sp_runtime::traits::Block as BlockT;
 
 /// Starts a `ServiceBuilder` for a full service.
 ///
@@ -36,62 +35,71 @@ macro_rules! new_full_start {
         let inherent_data_providers = sp_inherents::InherentDataProviders::new();
 
         let builder = sc_service::ServiceBuilder::new_full::<
-            plasm_primitives::Block, plasm_runtime::RuntimeApi, plasm_executor::Executor
+            plasm_primitives::Block,
+            plasm_runtime::RuntimeApi,
+            plasm_executor::Executor,
         >($config)?
-            .with_select_chain(|_config, backend| {
-                Ok(sc_client::LongestChain::new(backend.clone()))
-            })?
-            .with_transaction_pool(|config, client, _fetcher| {
-                let pool_api = sc_transaction_pool::FullChainApi::new(client.clone());
-                Ok(sc_transaction_pool::BasicPool::new(config, std::sync::Arc::new(pool_api)))
-            })?
-            .with_import_queue(|_config, client, mut select_chain, _transaction_pool| {
-                let select_chain = select_chain.take()
-                    .ok_or_else(|| sc_service::Error::SelectChainRequired)?;
-                let (grandpa_block_import, grandpa_link) = sc_finality_grandpa::block_import(
-                    client.clone(),
-                    &(client.clone() as std::sync::Arc<_>),
-                    select_chain,
-                )?;
-                let justification_import = grandpa_block_import.clone();
+        .with_select_chain(|_config, backend| Ok(sc_client::LongestChain::new(backend.clone())))?
+        .with_transaction_pool(|config, client, _fetcher| {
+            let pool_api = sc_transaction_pool::FullChainApi::new(client.clone());
+            Ok(sc_transaction_pool::BasicPool::new(
+                config,
+                std::sync::Arc::new(pool_api),
+            ))
+        })?
+        .with_import_queue(|_config, client, mut select_chain, _transaction_pool| {
+            let select_chain = select_chain
+                .take()
+                .ok_or_else(|| sc_service::Error::SelectChainRequired)?;
+            let (grandpa_block_import, grandpa_link) = sc_finality_grandpa::block_import(
+                client.clone(),
+                &(client.clone() as std::sync::Arc<_>),
+                select_chain,
+            )?;
+            let justification_import = grandpa_block_import.clone();
 
-                let (block_import, babe_link) = sc_consensus_babe::block_import(
-                    sc_consensus_babe::Config::get_or_compute(&*client)?,
-                    grandpa_block_import,
-                    client.clone(),
-                )?;
+            let (block_import, babe_link) = sc_consensus_babe::block_import(
+                sc_consensus_babe::Config::get_or_compute(&*client)?,
+                grandpa_block_import,
+                client.clone(),
+            )?;
 
-                let import_queue = sc_consensus_babe::import_queue(
-                    babe_link.clone(),
-                    block_import.clone(),
-                    Some(Box::new(justification_import)),
-                    None,
-                    client,
-                    inherent_data_providers.clone(),
-                )?;
+            let import_queue = sc_consensus_babe::import_queue(
+                babe_link.clone(),
+                block_import.clone(),
+                Some(Box::new(justification_import)),
+                None,
+                client,
+                inherent_data_providers.clone(),
+            )?;
 
-                import_setup = Some((block_import, grandpa_link, babe_link));
-                Ok(import_queue)
-            })?
-            .with_rpc_extensions(|builder| -> Result<RpcExtension, _> {
-                let babe_link = import_setup.as_ref().map(|s| &s.2)
-                    .expect("BabeLink is present for full services or set up failed; qed.");
-                let deps = plasm_rpc::FullDeps {
-                    client: builder.client().clone(),
-                    pool: builder.pool(),
-                    select_chain: builder.select_chain().cloned()
-                        .expect("SelectChain is present for full services or set up failed; qed."),
-                    babe: plasm_rpc::BabeDeps {
-                        keystore: builder.keystore(),
-                        babe_config: sc_consensus_babe::BabeLink::config(babe_link).clone(),
-                        shared_epoch_changes: sc_consensus_babe::BabeLink::epoch_changes(babe_link).clone()
-                    }
-                };
-                Ok(plasm_rpc::create_full(deps))
-            })?;
+            import_setup = Some((block_import, grandpa_link, babe_link));
+            Ok(import_queue)
+        })?
+        .with_rpc_extensions(|builder| -> Result<RpcExtension, _> {
+            let babe_link = import_setup
+                .as_ref()
+                .map(|s| &s.2)
+                .expect("BabeLink is present for full services or set up failed; qed.");
+            let deps = plasm_rpc::FullDeps {
+                client: builder.client().clone(),
+                pool: builder.pool(),
+                select_chain: builder
+                    .select_chain()
+                    .cloned()
+                    .expect("SelectChain is present for full services or set up failed; qed."),
+                babe: plasm_rpc::BabeDeps {
+                    keystore: builder.keystore(),
+                    babe_config: sc_consensus_babe::BabeLink::config(babe_link).clone(),
+                    shared_epoch_changes: sc_consensus_babe::BabeLink::epoch_changes(babe_link)
+                        .clone(),
+                },
+            };
+            Ok(plasm_rpc::create_full(deps))
+        })?;
 
         (builder, import_setup, inherent_data_providers)
-    }}
+    }};
 }
 
 /// Creates a full service from the configuration.
@@ -100,12 +108,7 @@ macro_rules! new_full_start {
 /// concrete types instead.
 macro_rules! new_full {
     ($config:expr, $with_startup_data: expr) => {{
-        let (
-            is_authority,
-            force_authoring,
-            name,
-            disable_grandpa,
-        ) = (
+        let (is_authority, force_authoring, name, disable_grandpa) = (
             $config.roles.is_authority(),
             $config.force_authoring,
             $config.name.clone(),
@@ -126,8 +129,9 @@ macro_rules! new_full {
             })?
             .build()?;
 
-        let (block_import, grandpa_link, babe_link) = import_setup.take()
-                .expect("Link Half and Block Import are present for Full Services or setup failed before. qed");
+        let (block_import, grandpa_link, babe_link) = import_setup.take().expect(
+            "Link Half and Block Import are present for Full Services or setup failed before. qed",
+        );
 
         ($with_startup_data)(&block_import, &babe_link);
 
@@ -138,7 +142,8 @@ macro_rules! new_full {
             );
 
             let client = service.client();
-            let select_chain = service.select_chain()
+            let select_chain = service
+                .select_chain()
                 .ok_or(sc_service::Error::SelectChainRequired)?;
 
             let can_author_with =
@@ -201,7 +206,7 @@ macro_rules! new_full {
             // if it fails we take down the service with it.
             service.spawn_essential_task(
                 "grandpa-voter",
-                sc_finality_grandpa::run_grandpa_voter(grandpa_config)?
+                sc_finality_grandpa::run_grandpa_voter(grandpa_config)?,
             );
         } else {
             sc_finality_grandpa::setup_disabled_grandpa(
@@ -215,27 +220,26 @@ macro_rules! new_full {
     }};
     ($config:expr) => {{
         new_full!($config, |_, _| {})
-    }}
+    }};
 }
 
 type ConcreteBlock = plasm_primitives::Block;
-type ConcreteClient =
-    Client<
-        Backend<ConcreteBlock>,
-        LocalCallExecutor<Backend<ConcreteBlock>,
-        NativeExecutor<plasm_executor::Executor>>,
-        ConcreteBlock,
-        plasm_runtime::RuntimeApi
-    >;
+type ConcreteClient = Client<
+    Backend<ConcreteBlock>,
+    LocalCallExecutor<Backend<ConcreteBlock>, NativeExecutor<plasm_executor::Executor>>,
+    ConcreteBlock,
+    plasm_runtime::RuntimeApi,
+>;
 type ConcreteBackend = Backend<ConcreteBlock>;
 type ConcreteTransactionPool = sc_transaction_pool::BasicPool<
     sc_transaction_pool::FullChainApi<ConcreteClient, ConcreteBlock>,
-    ConcreteBlock
+    ConcreteBlock,
 >;
 
 /// Builds a new service for a full client.
-pub fn new_full(config: Configuration)
--> Result<
+pub fn new_full(
+    config: Configuration,
+) -> Result<
     Service<
         ConcreteBlock,
         ConcreteClient,
@@ -247,75 +251,77 @@ pub fn new_full(config: Configuration)
             ConcreteClient,
             <ConcreteBackend as sc_client_api::backend::Backend<Block>>::OffchainStorage,
             ConcreteBlock,
-        >
+        >,
     >,
     ServiceError,
->
-{
+> {
     new_full!(config).map(|(service, _)| service)
 }
 
 /// Builds a new service for a light client.
-pub fn new_light(config: Configuration)
--> Result<impl AbstractService, ServiceError> {
+pub fn new_light(config: Configuration) -> Result<impl AbstractService, ServiceError> {
     type RpcExtension = jsonrpc_core::IoHandler<sc_rpc::Metadata>;
     let inherent_data_providers = InherentDataProviders::new();
 
     let service = ServiceBuilder::new_light::<Block, RuntimeApi, plasm_executor::Executor>(config)?
-        .with_select_chain(|_config, backend| {
-            Ok(LongestChain::new(backend.clone()))
-        })?
+        .with_select_chain(|_config, backend| Ok(LongestChain::new(backend.clone())))?
         .with_transaction_pool(|config, client, fetcher| {
             let fetcher = fetcher
                 .ok_or_else(|| "Trying to start light transaction pool without active fetcher")?;
             let pool_api = sc_transaction_pool::LightChainApi::new(client.clone(), fetcher.clone());
             let pool = sc_transaction_pool::BasicPool::with_revalidation_type(
-                config, Arc::new(pool_api), sc_transaction_pool::RevalidationType::Light,
+                config,
+                Arc::new(pool_api),
+                sc_transaction_pool::RevalidationType::Light,
             );
             Ok(pool)
         })?
-        .with_import_queue_and_fprb(|_config, client, backend, fetcher, _select_chain, _tx_pool| {
-            let fetch_checker = fetcher
-                .map(|fetcher| fetcher.checker().clone())
-                .ok_or_else(|| "Trying to start light import queue without active fetch checker")?;
-            let grandpa_block_import = sc_finality_grandpa::light_block_import(
-                client.clone(),
-                backend,
-                &(client.clone() as Arc<_>),
-                Arc::new(fetch_checker),
-            )?;
+        .with_import_queue_and_fprb(
+            |_config, client, backend, fetcher, _select_chain, _tx_pool| {
+                let fetch_checker = fetcher
+                    .map(|fetcher| fetcher.checker().clone())
+                    .ok_or_else(|| {
+                        "Trying to start light import queue without active fetch checker"
+                    })?;
+                let grandpa_block_import = sc_finality_grandpa::light_block_import(
+                    client.clone(),
+                    backend,
+                    &(client.clone() as Arc<_>),
+                    Arc::new(fetch_checker),
+                )?;
 
-            let finality_proof_import = grandpa_block_import.clone();
-            let finality_proof_request_builder =
-                finality_proof_import.create_finality_proof_request_builder();
+                let finality_proof_import = grandpa_block_import.clone();
+                let finality_proof_request_builder =
+                    finality_proof_import.create_finality_proof_request_builder();
 
-            let (babe_block_import, babe_link) = sc_consensus_babe::block_import(
-                sc_consensus_babe::Config::get_or_compute(&*client)?,
-                grandpa_block_import,
-                client.clone(),
-            )?;
+                let (babe_block_import, babe_link) = sc_consensus_babe::block_import(
+                    sc_consensus_babe::Config::get_or_compute(&*client)?,
+                    grandpa_block_import,
+                    client.clone(),
+                )?;
 
-            let import_queue = sc_consensus_babe::import_queue(
-                babe_link,
-                babe_block_import,
-                None,
-                Some(Box::new(finality_proof_import)),
-                client.clone(),
-                inherent_data_providers.clone(),
-            )?;
+                let import_queue = sc_consensus_babe::import_queue(
+                    babe_link,
+                    babe_block_import,
+                    None,
+                    Some(Box::new(finality_proof_import)),
+                    client.clone(),
+                    inherent_data_providers.clone(),
+                )?;
 
-            Ok((import_queue, finality_proof_request_builder))
-        })?
+                Ok((import_queue, finality_proof_request_builder))
+            },
+        )?
         .with_finality_proof_provider(|client, backend| {
             let provider = client as Arc<dyn StorageAndProofProvider<_, _>>;
             Ok(Arc::new(GrandpaFinalityProofProvider::new(backend, provider)) as _)
         })?
-        .with_rpc_extensions(|builder,| ->
-            Result<RpcExtension, _>
-        {
-            let fetcher = builder.fetcher()
+        .with_rpc_extensions(|builder| -> Result<RpcExtension, _> {
+            let fetcher = builder
+                .fetcher()
                 .ok_or_else(|| "Trying to start node RPC without active fetcher")?;
-            let remote_blockchain = builder.remote_backend()
+            let remote_blockchain = builder
+                .remote_backend()
                 .ok_or_else(|| "Trying to start node RPC without active remote blockchain")?;
 
             let light_deps = plasm_rpc::LightDeps {
