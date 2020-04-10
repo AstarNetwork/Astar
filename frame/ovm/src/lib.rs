@@ -108,10 +108,6 @@ pub struct Schedule {
     /// Maximum allowed size of a declared table.
     pub max_table_size: u32,
 
-    /// Whether the `ext_println` function is allowed to be used contracts.
-    /// MUST only be enabled for `dev` chains, NOT for production chains
-    pub enable_println: bool,
-
     /// The maximum length of a subject used for PRNG generation.
     pub max_subject_len: u32,
 }
@@ -125,7 +121,6 @@ impl Default for Schedule {
             max_stack_height: 64 * 1024,
             max_memory_pages: 16,
             max_table_size: 16 * 1024,
-            enable_println: false,
             max_subject_len: 32,
         }
     }
@@ -161,6 +156,7 @@ pub type ChallengeGameOf<T> = ChallengeGame<
 >;
 pub type PropertyOf<T> = Property<<T as system::Trait>::AccountId>;
 pub type AccountIdOf<T> = <T as frame_system::Trait>::AccountId;
+pub type PredicateContractOf<T> = PredicateContract<<T as frame_system::Trait>::Hash>;
 
 pub trait Trait: system::Trait {
     /// The balance.

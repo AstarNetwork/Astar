@@ -1,5 +1,5 @@
 use super::*;
-use crate::predicate::{PredicateResult, ExecError};
+use crate::predicate::{ExecResult, ExecError};
 
 /// A function that generates an `AccountId` for a predicate upon instantiation.
 pub trait PredicateAddressFor<PredicateHash, AccountId> {
@@ -71,7 +71,7 @@ pub trait Vm<T: Trait> {
         exec: &Self::Executable,
         ext: E,
         input_data: Vec<u8>,
-    ) -> PredicateResult;
+    ) -> ExecResult;
 }
 
 
