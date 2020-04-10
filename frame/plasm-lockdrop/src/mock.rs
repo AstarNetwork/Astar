@@ -7,18 +7,16 @@ use std::cell::RefCell;
 use super::*;
 use plasm_primitives::{AccountId, Balance, Moment};
 
-use frame_support::{
-    impl_outer_dispatch, impl_outer_origin, parameter_types,
-    weights::Weight,
-};
-use sp_keyring::sr25519::Keyring as AccountKeyring;
-use sp_staking::SessionIndex;
-use sp_runtime::{
-    testing::{TestXt, Header},
-    traits::{IdentityLookup, ConvertInto},
-    MultiSigner, Perbill, impl_opaque_keys,
-};
+use frame_support::{impl_outer_dispatch, impl_outer_origin, parameter_types, weights::Weight};
 use sp_core::Pair;
+use sp_keyring::sr25519::Keyring as AccountKeyring;
+use sp_runtime::{
+    impl_opaque_keys,
+    testing::{Header, TestXt},
+    traits::{ConvertInto, IdentityLookup},
+    MultiSigner, Perbill,
+};
+use sp_staking::SessionIndex;
 
 impl_outer_origin! {
     pub enum Origin for Runtime {}
@@ -50,13 +48,11 @@ impl pallet_session::SessionManager<AccountId> for TestSessionManager {
 
 impl pallet_session::historical::SessionManager<AccountId, AccountId> for TestSessionManager {
     fn new_session(_new_index: SessionIndex) -> Option<Vec<(AccountId, AccountId)>> {
-        VALIDATORS.with(|l| l
-            .borrow_mut()
-            .take()
-            .map(|validators| {
-                validators.iter().map(|v| (v.clone(), v.clone())).collect()
-            })
-        )
+        VALIDATORS.with(|l| {
+            l.borrow_mut()
+                .take()
+                .map(|validators| validators.iter().map(|v| (v.clone(), v.clone())).collect())
+        })
     }
     fn end_session(_: SessionIndex) {}
     fn start_session(_: SessionIndex) {}
@@ -114,15 +110,16 @@ parameter_types! {
 }
 
 impl_opaque_keys! {
-	pub struct SessionKeys {
-		pub lockdrop: PlasmLockdrop,
+    pub struct SessionKeys {
+        pub lockdrop: PlasmLockdrop,
     }
 }
 
 impl pallet_session::Trait for Runtime {
     type ShouldEndSession = pallet_session::PeriodicSessions<Period, Offset>;
-    type SessionManager = pallet_session::historical::NoteHistoricalRoot<Runtime, TestSessionManager>;
-    type SessionHandler = (PlasmLockdrop, );
+    type SessionManager =
+        pallet_session::historical::NoteHistoricalRoot<Runtime, TestSessionManager>;
+    type SessionHandler = (PlasmLockdrop,);
     type ValidatorId = AccountId;
     type ValidatorIdOf = ConvertInto;
     type Keys = SessionKeys;
@@ -197,7 +194,7 @@ fn session_keys(account: &AccountId) -> SessionKeys {
     SessionKeys {
         lockdrop: sr25519::AuthorityPair::from_string(&format!("//{}", account), None)
             .unwrap()
-            .public()
+            .public(),
     }
 }
 
@@ -207,19 +204,25 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
         .unwrap();
 
     let _ = pallet_session::GenesisConfig::<Runtime> {
-        keys: VALIDATORS.with(|l| l
-            .borrow_mut()
-            .take()
-            .map(|x| x.iter().map(|v|(v.clone(), v.clone(), session_keys(v))).collect())
-        ).unwrap(),
-    }.assimilate_storage(&mut storage);
+        keys: VALIDATORS
+            .with(|l| {
+                l.borrow_mut().take().map(|x| {
+                    x.iter()
+                        .map(|v| (v.clone(), v.clone(), session_keys(v)))
+                        .collect()
+                })
+            })
+            .unwrap(),
+    }
+    .assimilate_storage(&mut storage);
 
     let _ = GenesisConfig::<Runtime> {
         // Alpha: 2
         alpha: Perbill::from_parts(200_000_000),
         // BTC: $5000, ETH: $120
         dollar_rate: (5_000, 120),
-    }.assimilate_storage(&mut storage);
+    }
+    .assimilate_storage(&mut storage);
 
     storage.into()
 }

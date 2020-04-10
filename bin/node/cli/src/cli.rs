@@ -1,5 +1,5 @@
-use structopt::StructOpt;
 use sc_cli::RunCmd;
+use structopt::StructOpt;
 
 /// An overarching CLI command definition.
 #[derive(Clone, Debug, StructOpt)]
@@ -19,9 +19,6 @@ pub enum Subcommand {
     #[structopt(flatten)]
     Base(sc_cli::Subcommand),
     /// The custom benchmark subcommmand benchmarking runtime pallets.
-    #[structopt(
-        name = "benchmark",
-        about = "Benchmark runtime pallets."
-    )]
+    #[structopt(name = "benchmark", about = "Benchmark runtime pallets.")]
     Benchmark(frame_benchmarking_cli::BenchmarkCmd),
 }

@@ -4,9 +4,7 @@
 
 use super::*;
 use frame_support::{impl_outer_dispatch, impl_outer_origin, parameter_types};
-use pallet_plasm_rewards::{
-    inflation::SimpleComputeTotalPayout,
-};
+use pallet_plasm_rewards::inflation::SimpleComputeTotalPayout;
 use sp_core::{crypto::key_types, H256};
 use sp_runtime::testing::{Header, UintAuthorityId};
 use sp_runtime::traits::{BlakeTwo256, ConvertInto, IdentityLookup, OnFinalize, OpaqueKeys};
