@@ -1,5 +1,5 @@
-use sp_core::{keccak_256, ecdsa, U256};
 use codec::Encode;
+use sp_core::{ecdsa, keccak_256, U256};
 
 pub fn to_address(public: ecdsa::Public) -> [u8; 20] {
     let pubkey = secp256k1::PublicKey::parse_slice(public.as_ref(), None)
@@ -10,7 +10,7 @@ pub fn to_address(public: ecdsa::Public) -> [u8; 20] {
 }
 
 pub fn lock_method(duration: u64) -> Vec<u8> {
-    let mut method = vec![0xdd, 0x46, 0x70, 0x64];  // lock(uint256) signature
+    let mut method = vec![0xdd, 0x46, 0x70, 0x64]; // lock(uint256) signature
     method.extend(&U256::from(duration).encode()[..]);
     method
 }

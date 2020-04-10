@@ -18,33 +18,30 @@
 // Ensure we're `no_std` when compiling for Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use codec::{Encode, Decode};
-use sp_std::prelude::*;
-use sp_core::{H256, ecdsa};
-use sp_runtime::{
-    RuntimeDebug, Perbill,
-    traits::{
-        Member, IdentifyAccount, BlakeTwo256, Hash, Saturating, AtLeast32Bit,
-    },
-    app_crypto::{KeyTypeId, RuntimeAppPublic},
-    offchain::http::Request,
-    transaction_validity::{
-        ValidTransaction, InvalidTransaction,
-        TransactionValidity, TransactionPriority,
-    },
-};
+use codec::{Decode, Encode};
 use frame_support::{
-    decl_module, decl_event, decl_storage, decl_error,
-    debug, ensure, StorageValue, StorageMap,
-    weights::SimpleDispatchInfo,
-    traits::{Get, Currency, Time},
-    storage::IterableStorageMap,
+    debug, decl_error, decl_event, decl_module, decl_storage,
     dispatch::Parameter,
+    ensure,
+    storage::IterableStorageMap,
+    traits::{Currency, Get, Time},
+    weights::SimpleDispatchInfo,
+    StorageMap, StorageValue,
 };
 use frame_system::{
-    self as system, ensure_signed, ensure_none,
-    offchain::SubmitUnsignedTransaction,
+    self as system, ensure_none, ensure_signed, offchain::SubmitUnsignedTransaction,
 };
+use sp_core::{ecdsa, H256};
+use sp_runtime::{
+    app_crypto::{KeyTypeId, RuntimeAppPublic},
+    offchain::http::Request,
+    traits::{AtLeast32Bit, BlakeTwo256, Hash, IdentifyAccount, Member, Saturating},
+    transaction_validity::{
+        InvalidTransaction, TransactionPriority, TransactionValidity, ValidTransaction,
+    },
+    Perbill, RuntimeDebug,
+};
+use sp_std::prelude::*;
 
 /// Bitcoin helpers.
 mod btc_utils;
@@ -68,8 +65,8 @@ pub type BalanceOf<T> =
 /// SR25519 keys support
 pub mod sr25519 {
     mod app_sr25519 {
-        use sp_runtime::app_crypto::{app_crypto, sr25519};
         use crate::KEY_TYPE;
+        use sp_runtime::app_crypto::{app_crypto, sr25519};
         app_crypto!(sr25519, KEY_TYPE);
     }
 
@@ -87,8 +84,8 @@ pub mod sr25519 {
 /// ED25519 keys support
 pub mod ed25519 {
     mod app_ed25519 {
-        use sp_runtime::app_crypto::{app_crypto, ed25519};
         use crate::KEY_TYPE;
+        use sp_runtime::app_crypto::{app_crypto, ed25519};
         app_crypto!(ed25519, KEY_TYPE);
     }
 
@@ -128,8 +125,8 @@ pub trait Trait: system::Trait {
     /// For example: http://api.blockcypher.com/v1/btc/test3/txs
     type BitcoinApiUri: Get<&'static str>;
 
-    /// Ethereum public node URI. 
-    /// For example: https://api.blockcypher.com/v1/eth/test/txs/ 
+    /// Ethereum public node URI.
+    /// For example: https://api.blockcypher.com/v1/eth/test/txs/
     type EthereumApiUri: Get<&'static str>;
 
     /// Ethereum lockdrop contract address.
@@ -155,23 +152,29 @@ pub trait Trait: system::Trait {
 
     /// System level account type.
     /// This used for resolving account ID's of ECDSA lockdrop public keys.
-    type Account: IdentifyAccount<AccountId=Self::AccountId> + From<ecdsa::Public>;
+    type Account: IdentifyAccount<AccountId = Self::AccountId> + From<ecdsa::Public>;
 
     /// Module that could provide timestamp.
-    type Time: Time<Moment=Self::Moment>;
+    type Time: Time<Moment = Self::Moment>;
 
     /// Timestamp type.
-    type Moment: Member + Parameter + Saturating + AtLeast32Bit
-        + Copy + Default + From<u64> + Into<u64> + Into<u128>;
+    type Moment: Member
+        + Parameter
+        + Saturating
+        + AtLeast32Bit
+        + Copy
+        + Default
+        + From<u64>
+        + Into<u64>
+        + Into<u128>;
 
     /// Dollar rate number data type.
-    type DollarRate: Member + Parameter + AtLeast32Bit
-        + Copy + Default + Into<u128> + From<u64>;
+    type DollarRate: Member + Parameter + AtLeast32Bit + Copy + Default + Into<u128> + From<u64>;
 
     // XXX: I don't known how to convert into Balance from u128 without it
     // TODO: Should be removed
-    type BalanceConvert: From<u128> +
-        Into<<Self::Currency as Currency<<Self as frame_system::Trait>::AccountId>>::Balance>;
+    type BalanceConvert: From<u128>
+        + Into<<Self::Currency as Currency<<Self as frame_system::Trait>::AccountId>>::Balance>;
 
     /// The regular events type.
     type Event: From<Event<Self>> + Into<<Self as frame_system::Trait>::Event>;
@@ -180,7 +183,7 @@ pub trait Trait: system::Trait {
 /// Claim id is a hash of claim parameters.
 pub type ClaimId = H256;
 
-/// Type for enumerating claim proof votes. 
+/// Type for enumerating claim proof votes.
 pub type AuthorityVote = u32;
 
 /// Type for enumerating authorities in list (2^16 authorities is enough).
@@ -194,9 +197,19 @@ pub enum Lockdrop {
     /// transaction sended with time-lockding opcode,
     /// BTC token locked and could be spend some timestamp.
     /// Duration in blocks and value in shatoshi could be derived from BTC transaction.
-    Bitcoin { public: ecdsa::Public, value: u64, duration: u64, transaction_hash: H256, },
+    Bitcoin {
+        public: ecdsa::Public,
+        value: u64,
+        duration: u64,
+        transaction_hash: H256,
+    },
     /// Ethereum lockdrop transactions is sended to pre-deployed lockdrop smart contract.
-    Ethereum { public: ecdsa::Public, value: u64, duration: u64, transaction_hash: H256, },
+    Ethereum {
+        public: ecdsa::Public,
+        value: u64,
+        duration: u64,
+        transaction_hash: H256,
+    },
 }
 
 impl Default for Lockdrop {
@@ -214,10 +227,10 @@ impl Default for Lockdrop {
 #[cfg_attr(feature = "std", derive(PartialEq, Eq))]
 #[derive(Encode, Decode, RuntimeDebug, Default, Clone)]
 pub struct Claim {
-    params:   Lockdrop,
-    approve:  AuthorityVote,
-    decline:  AuthorityVote,
-    amount:   u128,
+    params: Lockdrop,
+    approve: AuthorityVote,
+    decline: AuthorityVote,
+    amount: u128,
     complete: bool,
 }
 
@@ -225,8 +238,8 @@ pub struct Claim {
 #[cfg_attr(feature = "std", derive(PartialEq, Eq))]
 #[derive(Encode, Decode, RuntimeDebug, Clone)]
 pub struct ClaimVote {
-    claim_id:  ClaimId,
-    approve:   bool,
+    claim_id: ClaimId,
+    approve: bool,
     authority: AuthorityIndex,
 }
 
@@ -235,8 +248,8 @@ pub struct ClaimVote {
 #[derive(Encode, Decode, RuntimeDebug, Clone)]
 pub struct TickerRate<DollarRate: Member + Parameter> {
     authority: AuthorityIndex,
-    btc:       DollarRate,
-    eth:       DollarRate,
+    btc: DollarRate,
+    eth: DollarRate,
 }
 
 decl_event!(
@@ -303,7 +316,7 @@ decl_module! {
             <Requests>::kill();
         }
 
-        /// Request authorities to check locking transaction. 
+        /// Request authorities to check locking transaction.
         #[weight = SimpleDispatchInfo::FixedNormal(1_000_000)]
         fn request(
             origin,
@@ -350,7 +363,7 @@ decl_module! {
         ) {
             let _ = ensure_signed(origin)?;
             let claim = <Claims>::get(claim_id);
-            ensure!(!claim.complete, "claim should be already paid"); 
+            ensure!(!claim.complete, "claim should be already paid");
 
             if claim.approve + claim.decline < T::VoteThreshold::get() {
                 Err("this request don't get enough authority votes")?
@@ -373,7 +386,7 @@ decl_module! {
             Self::deposit_event(RawEvent::ClaimComplete(claim_id, account, amount));
         }
 
-        /// Vote for claim request according to check results. (for authorities only) 
+        /// Vote for claim request according to check results. (for authorities only)
         #[weight = SimpleDispatchInfo::FixedOperational(10_000)]
         fn vote(
             origin,
@@ -467,18 +480,22 @@ impl<T: Trait> Module<T> {
         for claim_id in Self::requests() {
             debug::debug!(
                 target: "lockdrop-offchain-worker",
-                "new claim request: id = {}", claim_id 
+                "new claim request: id = {}", claim_id
             );
 
             let approve = Self::check_lock(claim_id)?;
             debug::info!(
                 target: "lockdrop-offchain-worker",
-                "claim id {} => check result: {}", claim_id, approve 
+                "claim id {} => check result: {}", claim_id, approve
             );
 
             for key in T::AuthorityId::all() {
                 if let Some(authority) = Self::authority_index_of(&key) {
-                    let vote = ClaimVote { authority, claim_id, approve };
+                    let vote = ClaimVote {
+                        authority,
+                        claim_id,
+                        approve,
+                    };
                     let signature = key.sign(&vote.encode()).ok_or("signing error")?;
                     let call = Call::vote(vote, signature);
                     debug::debug!(
@@ -512,9 +529,7 @@ impl<T: Trait> Module<T> {
         let ticker = fetch_json(T::BitcoinTickerUri::get())
             .map_err(|e| format!("BTC ticker fetch error: {:?}", e))?;
         let usd = ticker["market_data"]["current_price"]["usd"].to_string();
-        let s: Vec<&str> = usd 
-            .split_terminator('.')
-            .collect();
+        let s: Vec<&str> = usd.split_terminator('.').collect();
         s[0].parse()
             .map_err(|e| format!("BTC ticker JSON parsing error: {}", e))
     }
@@ -524,18 +539,20 @@ impl<T: Trait> Module<T> {
         let ticker = fetch_json(T::EthereumTickerUri::get())
             .map_err(|e| format!("ETH ticker fetch error: {:?}", e))?;
         let usd = ticker["market_data"]["current_price"]["usd"].to_string();
-        let s: Vec<&str> = usd 
-            .split_terminator('.')
-            .collect();
+        let s: Vec<&str> = usd.split_terminator('.').collect();
         s[0].parse()
             .map_err(|e| format!("ETH ticker JSON parsing error: {}", e))
     }
 
     /// Send dollar rate as unsigned extrinsic from authority.
-    fn send_dollar_rate(btc: T::DollarRate, eth: T::DollarRate) -> Result<(), String> { 
+    fn send_dollar_rate(btc: T::DollarRate, eth: T::DollarRate) -> Result<(), String> {
         for key in T::AuthorityId::all() {
             if let Some(authority) = Self::authority_index_of(&key) {
-                let rate = TickerRate { authority, btc, eth };
+                let rate = TickerRate {
+                    authority,
+                    btc,
+                    eth,
+                };
                 let signature = key.sign(&rate.encode()).ok_or("signing error")?;
                 let call = Call::set_dollar_rate(rate, signature);
                 debug::debug!(
@@ -557,7 +574,12 @@ impl<T: Trait> Module<T> {
     fn check_lock(claim_id: ClaimId) -> Result<bool, String> {
         let Claim { params, .. } = Self::claims(claim_id);
         match params {
-            Lockdrop::Bitcoin { public, value, duration, transaction_hash } => {
+            Lockdrop::Bitcoin {
+                public,
+                value,
+                duration,
+                transaction_hash,
+            } => {
                 let uri = format!(
                     "{}/{}",
                     T::BitcoinApiUri::get(),
@@ -581,11 +603,16 @@ impl<T: Trait> Module<T> {
                     "claim id {} => desired P2HS script: {}", claim_id, hex::encode(script.clone())
                 );
 
-                Ok(tx["configurations"].as_u64().unwrap() > 10 &&
-                   tx["outputs"][0]["script"] == serde_json::json!(hex::encode(script)) &&
-                   tx["outputs"][0]["value"].as_u64().unwrap() == value)
-            },
-            Lockdrop::Ethereum { public, value, duration, transaction_hash } => {
+                Ok(tx["configurations"].as_u64().unwrap() > 10
+                    && tx["outputs"][0]["script"] == serde_json::json!(hex::encode(script))
+                    && tx["outputs"][0]["value"].as_u64().unwrap() == value)
+            }
+            Lockdrop::Ethereum {
+                public,
+                value,
+                duration,
+                transaction_hash,
+            } => {
                 let uri = format!(
                     "{}/{}",
                     T::EthereumApiUri::get(),
@@ -603,11 +630,13 @@ impl<T: Trait> Module<T> {
                     "claim id {} => desired lock script: {}", claim_id, hex::encode(script.clone())
                 );
 
-                Ok(tx["configurations"].as_u64().unwrap() > 10 &&
-                   tx["inputs"][0]["addresses"] == serde_json::json!(eth_utils::to_address(public)) &&
-                   tx["outputs"][0]["script"] == serde_json::json!(hex::encode(script)) &&
-                   tx["outputs"][0]["value"].as_u64().unwrap() == value &&
-                   tx["outputs"][0]["addresses"][0] == serde_json::json!(T::EthereumContractAddress::get()))
+                Ok(tx["configurations"].as_u64().unwrap() > 10
+                    && tx["inputs"][0]["addresses"]
+                        == serde_json::json!(eth_utils::to_address(public))
+                    && tx["outputs"][0]["script"] == serde_json::json!(hex::encode(script))
+                    && tx["outputs"][0]["value"].as_u64().unwrap() == value
+                    && tx["outputs"][0]["addresses"][0]
+                        == serde_json::json!(T::EthereumContractAddress::get()))
             }
         }
     }
@@ -658,9 +687,11 @@ impl<T: Trait> Module<T> {
 
 /// HTTP fetch JSON value by URI
 fn fetch_json(uri: &str) -> Result<serde_json::Value, String> {
-    let request = Request::get(uri).send()
+    let request = Request::get(uri)
+        .send()
         .map_err(|e| format!("HTTP request: {:?}", e))?;
-    let response = request.wait()
+    let response = request
+        .wait()
         .map_err(|e| format!("HTTP response: {:?}", e))?;
     serde_json::from_slice(&response.body().collect::<Vec<_>>()[..])
         .map_err(|e| format!("JSON decode: {}", e))
@@ -674,7 +705,8 @@ impl<T: Trait> pallet_session::OneSessionHandler<T::AccountId> for Module<T> {
     type Key = T::AuthorityId;
 
     fn on_genesis_session<'a, I: 'a>(validators: I)
-        where I: Iterator<Item=(&'a T::AccountId, T::AuthorityId)>
+    where
+        I: Iterator<Item = (&'a T::AccountId, T::AuthorityId)>,
     {
         // Init authorities on genesis session.
         let authorities: Vec<_> = validators.map(|x| x.1).collect();
@@ -683,7 +715,8 @@ impl<T: Trait> pallet_session::OneSessionHandler<T::AccountId> for Module<T> {
     }
 
     fn on_new_session<'a, I: 'a>(_changed: bool, validators: I, _queued_validators: I)
-        where I: Iterator<Item=(&'a T::AccountId, T::AuthorityId)>
+    where
+        I: Iterator<Item = (&'a T::AccountId, T::AuthorityId)>,
     {
         // Remember who the authorities are for the new session.
         let authorities: Vec<_> = validators.map(|x| x.1).collect();
@@ -691,8 +724,8 @@ impl<T: Trait> pallet_session::OneSessionHandler<T::AccountId> for Module<T> {
         Self::deposit_event(RawEvent::NewAuthorities(authorities));
     }
 
-    fn on_before_session_ending() { }
-    fn on_disabled(_i: usize) { }
+    fn on_before_session_ending() {}
+    fn on_disabled(_i: usize) {}
 }
 
 impl<T: Trait> frame_support::unsigned::ValidateUnsigned for Module<T> {
@@ -710,7 +743,7 @@ impl<T: Trait> frame_support::unsigned::ValidateUnsigned for Module<T> {
                     // Verify authority
                     let keys = Keys::<T>::get();
                     if let Some(authority) = keys.get(vote.authority as usize) {
-                        // Check that sender is authority 
+                        // Check that sender is authority
                         if !authority.verify(&encoded_vote, &signature) {
                             return InvalidTransaction::BadProof.into();
                         }
@@ -730,13 +763,13 @@ impl<T: Trait> frame_support::unsigned::ValidateUnsigned for Module<T> {
                         propagate: true,
                     })
                 })
-            },
+            }
 
             Call::set_dollar_rate(rate, signature) => {
                 rate.using_encoded(|encoded_rate| {
                     let keys = Keys::<T>::get();
                     if let Some(authority) = keys.get(rate.authority as usize) {
-                        // Check that sender is authority 
+                        // Check that sender is authority
                         if !authority.verify(&encoded_rate, &signature) {
                             return InvalidTransaction::BadProof.into();
                         }
@@ -752,7 +785,7 @@ impl<T: Trait> frame_support::unsigned::ValidateUnsigned for Module<T> {
                         propagate: true,
                     })
                 })
-            },
+            }
 
             _ => InvalidTransaction::Call.into(),
         }
