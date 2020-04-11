@@ -14,11 +14,11 @@
 // You should have received a copy of the GNU General Public License
 // along with Substrate.  If not, see <http://www.gnu.org/licenses/>.
 
-//! Runtime API definition required by Contracts RPC extensions.
+//! Runtime API definition required by Ovm RPC extensions.
 //!
 //! This API should be imported and implemented by the runtime,
 //! of a node that wants to use the custom RPC extension
-//! adding Contracts access methods.
+//! adding Ovm access methods.
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
@@ -27,7 +27,7 @@ use sp_std::vec::Vec;
 
 sp_api::decl_runtime_apis! {
     /// The API to interact with contracts without using executive.
-    pub trait OVMApi<Property, Decision, ChallengeGame, Hash> where
+    pub trait OvmApi<Property, Decision, ChallengeGame, Hash> where
         Property: Codec,
         Decision: Codec,
         ChallengeGame: Codec,

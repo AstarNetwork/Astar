@@ -1,12 +1,23 @@
 use super::*;
 use crate::traits::*;
 
+mod code_cache;
+mod prepare;
+
+pub use self::code_cache::save as save_code;
+
 /// Reason why a predicate call failed
 #[derive(Eq, PartialEq, Clone, Copy, Encode, Decode, RuntimeDebug)]
 #[cfg_attr(feature = "std", derive(Serialize))]
 pub enum PredicateError {
     /// Some error occurred.
     Other(#[codec(skip)] &'static str),
+}
+
+impl From<&'static str> for PredicateError {
+    fn from(err: &'static str) -> PredicateError {
+        PredicateError::Other(err)
+    }
 }
 
 /// An error indicating some failure to execute a contract call or instantiation. This can include
@@ -27,21 +38,24 @@ pub struct ExecError {
 /// ownership of buffer unless there is an error.
 #[macro_export]
 macro_rules! try_or_exec_error {
-	($e:expr, $buffer:expr) => {
-		match $e {
-			Ok(val) => val,
-			Err(reason) => return Err(
-				$crate::exec::ExecError { reason: reason.into(), buffer: $buffer }
-			),
-		}
-	}
+    ($e:expr, $buffer:expr) => {
+        match $e {
+            Ok(val) => val,
+            Err(reason) => {
+                return Err($crate::predicate::ExecError {
+                    reason: reason.into(),
+                    buffer: $buffer,
+                })
+            }
+        }
+    };
 }
 
 pub type ExecResult = Result<bool, ExecError>;
 
 /// A prepared wasm module ready for execution.
 #[derive(Clone, Encode, Decode)]
-pub struct PrefabOVMModule {
+pub struct PrefabOvmModule {
     /// Version of the schedule with which the code was instrumented.
     #[codec(compact)]
     schedule_version: u32,
@@ -49,10 +63,33 @@ pub struct PrefabOVMModule {
     code: Vec<u8>,
 }
 
-/// OVM executable loaded by `OVMLoader` and executed by `OptimisticVm`.
-pub struct OVMExecutable {
+/// Ovm executable loaded by `OvmLoader` and executed by `OptimisticOvm`.
+pub struct OvmExecutable {
     entrypoint_name: &'static str,
-    prefab_module: PrefabOVMModule,
+    prefab_module: PrefabOvmModule,
+}
+
+/// Loader which fetches `OvmExecutable` from the code cache.
+pub struct PredicateLoader<'a> {
+    schedule: &'a Schedule,
+}
+
+impl<'a> PredicateLoader<'a> {
+    pub fn new(schedule: &'a Schedule) -> Self {
+        PredicateLoader { schedule }
+    }
+}
+
+impl<'a, T: Trait> Loader<T> for PredicateLoader<'a> {
+    type Executable = OvmExecutable;
+
+    fn load_main(&self, code_hash: &PredicateHash<T>) -> Result<OvmExecutable, &'static str> {
+        let prefab_module = code_cache::load::<T>(code_hash, self.schedule)?;
+        Ok(OvmExecutable {
+            entrypoint_name: "call",
+            prefab_module,
+        })
+    }
 }
 
 pub struct ExecutionContext<'a, T: Trait + 'a, V, L> {
@@ -71,7 +108,7 @@ impl<'a, T, E, V, L> ExecutionContext<'a, T, V, L>
 where
     T: Trait,
     L: Loader<T, Executable = E>,
-    V: Vm<T, Executable = E>,
+    V: Ovm<T, Executable = E>,
 {
     /// Create the top level execution context.
     ///
@@ -108,7 +145,7 @@ where
     /// Make a call to the specified address, optionally transferring some funds.
     pub fn call(&mut self, dest: T::AccountId, input_data: Vec<u8>) -> ExecResult {
         if self.depth == self.config.max_depth as usize {
-            return Err(PredicateError {
+            return Err(ExecError {
                 reason: "reached maximum depth, cannot make a call".into(),
                 buffer: input_data,
             });
@@ -128,103 +165,29 @@ where
         };
 
         let caller = self.self_account.clone();
-        let nested = self.nested(&dest);
-        let executable = try_or_exec_error!(nested.loader.load_main(&predicate.predicate_hash), input_data);
-        self.nested(&dest).vm.execute(
-            &executable,
-            nested.new_call_context(caller),
-            input_data,
-        )
-    }
-
-    // TODO kokokara
-    pub fn instantiate(
-        &mut self,
-        code_hash: &CodeHash<T>,
-        input_data: Vec<u8>,
-    ) -> Result<T::AccountId, ExecError> {
-        if self.depth == self.config.max_depth as usize {
-            return Err(ExecError {
-                reason: "reached maximum depth, cannot instantiate".into(),
-                buffer: input_data,
-            });
-        }
-
-        if gas_meter
-            .charge(self.config, ExecFeeToken::Instantiate)
-            .is_out_of_gas()
-        {
-            return Err(ExecError {
-                reason: "not enough gas to pay base instantiate fee".into(),
-                buffer: input_data,
-            });
-        }
-
-        let caller = self.self_account.clone();
-        let dest = T::DetermineContractAddress::contract_address_for(
-            code_hash,
-            &input_data,
-            &caller,
+        let mut nested = self.nested(dest);
+        let executable = try_or_exec_error!(
+            nested.loader.load_main(&predicate.predicate_hash),
+            input_data
         );
-
-        // TrieId has not been generated yet and storage is empty since contract is new.
-        let dest_trie_id = None;
-
-        let output = self.with_nested_context(dest.clone(), dest_trie_id, |nested| {
-            try_or_exec_error!(
-				nested.overlay.instantiate_contract(&dest, code_hash.clone()),
-				input_data
-			);
-
-            // Send funds unconditionally here. If the `endowment` is below existential_deposit
-            // then error will be returned here.
-            try_or_exec_error!(
-				transfer(
-					gas_meter,
-					TransferCause::Instantiate,
-					&caller,
-					&dest,
-					endowment,
-					nested,
-				),
-				input_data
-			);
-
-            let executable = try_or_exec_error!(
-				nested.loader.load_init(&code_hash),
-				input_data
-			);
-            let output = nested.vm
-                .execute(
-                    &executable,
-                    nested.new_call_context(caller.clone(), endowment),
-                    input_data,
-                    gas_meter,
-                )?;
-
-            // Error out if insufficient remaining balance.
-            if nested.overlay.get_balance(&dest) < nested.config.existential_deposit {
-                return Err(ExecError {
-                    reason: "insufficient remaining balance".into(),
-                    buffer: output.data,
-                });
-            }
-
-            // Deposit an instantiation event.
-            nested.deferred.push(DeferredAction::DepositEvent {
-                event: RawEvent::Instantiated(caller.clone(), dest.clone()),
-                topics: Vec::new(),
-            });
-
-            Ok(output)
-        })?;
-
-        Ok((dest, output))
+        nested
+            .vm
+            .execute(&executable, nested.new_call_context(caller), input_data)
     }
 
+    fn new_call_context<'b>(&'b mut self, caller: T::AccountId) -> CallContext<'b, 'a, T, V, L> {
+        let timestamp = self.timestamp.clone();
+        let block_number = self.block_number.clone();
+        CallContext {
+            ctx: self,
+            caller,
+            timestamp,
+            block_number,
+        }
+    }
 }
 
-pub struct CallContext<'a, 'b: 'a, T: Trait + 'b, V: Vm<T> + 'b, L: Loader<T>> {
+pub struct CallContext<'a, 'b: 'a, T: Trait + 'b, V: Ovm<T> + 'b, L: Loader<T>> {
     ctx: &'a mut ExecutionContext<'b, T, V, L>,
     caller: T::AccountId,
     timestamp: MomentOf<T>,
@@ -236,27 +199,16 @@ pub struct CallContext<'a, 'b: 'a, T: Trait + 'b, V: Vm<T> + 'b, L: Loader<T>> {
 ///
 /// This interface is specialized to an account of the executing code, so all
 /// operations are implicitly performed on that account.
-impl<'a, 'b: 'a, T, V, L> Ext for CallContext<'a, 'b, T, V, L>
+impl<'a, 'b: 'a, E, T, V, L> Ext for CallContext<'a, 'b, T, V, L>
 where
     T: Trait + 'b,
-    V: Vm<T, Executable = E>,
+    V: Ovm<T, Executable = E>,
     L: Loader<T, Executable = E>,
 {
     type T = T;
 
-    /// Instantiate a predicate from the given code.
-    ///
-    /// The newly created account will be associated with `code`.
-    fn instantiate(
-        &mut self,
-        code: &PredicateHash<Self::T>,
-        input_data: Vec<u8>,
-    ) -> Result<AccountIdOf<Self::T>, ExecError> {
-        self.ctx.instantiate(code_hash, input_data)
-    }
-
     /// Call (possibly other predicate) into the specified account.
-    fn call(&mut self, to: &AccountIdOf<Self::T>, input_data: Vec<u8>) -> bool {
+    fn call(&mut self, to: &AccountIdOf<Self::T>, input_data: Vec<u8>) -> ExecResult {
         self.ctx.call(to.clone(), input_data)
     }
 
@@ -283,12 +235,12 @@ where
     /// Deposit an event with the given topics.
     ///
     /// There should not be any duplicates in `topics`.
-    fn deposit_event(&mut self, topics: Vec<TopicOf<Self::T>>, data: Vec<u8>) {
-        // self.ctx.deferred.push(DeferredAction::DepositEvent {
-        //     topics,
-        //     event: RawEvent::ContractExecution(self.ctx.self_account.clone(), data),
-        // });
-    }
+    // fn deposit_event(&mut self, topics: Vec<TopicOf<Self::T>>, data: Vec<u8>) {
+    //     self.ctx.deferred.push(DeferredAction::DepositEvent {
+    //         topics,
+    //         event: RawEvent::ContractExecution(self.ctx.self_account.clone(), data),
+    //     });
+    // }
 
     /// Returns the current block number.
     fn block_number(&self) -> BlockNumberOf<Self::T> {
@@ -296,23 +248,49 @@ where
     }
 }
 
-/// A trait that represent an optimistic virtual machine.
-///
-/// You can view an optimistic virtual machine as something that takes code, an input data buffer,
-/// queries it and/or performs actions on the given `Ext` and optionally
-/// returns an output data buffer. The type of code depends on the particular virtual machine.
-///
-/// Execution of code can end by either implicit termination (that is, reached the end of
-/// executable), explicit termination via returning a buffer or termination due to a trap.
-pub trait Vm<T: Trait> {
-    type Executable;
+/// Implementation of `Ovm` that takes `PredicateOvm` and executes it.
+pub struct PredicateOvm<'a> {
+    schedule: &'a Schedule,
+}
+
+impl<'a> PredicateOvm<'a> {
+    pub fn new(schedule: &'a Schedule) -> Self {
+        PredicateOvm { schedule }
+    }
+}
+
+impl<'a, T: Trait> Ovm<T> for PredicateOvm<'a> {
+    type Executable = OvmExecutable;
 
     fn execute<E: Ext<T = T>>(
         &self,
         exec: &Self::Executable,
         ext: E,
         input_data: Vec<u8>,
-    ) -> ExecResult;
+    ) -> ExecResult {
+        // TODO: make sandbox environments(Is it needed?)
+        // let mut imports = sp_sandbox::EnvironmentDefinitionBuilder::new();
+
+        // TODO: runtime setup.
+        // runtime::Env::impls(&mut |name, func_ptr| {
+        //     imports.add_host_func("env", name, func_ptr);
+        // });
+        //
+        // let mut runtime = Runtime::new(
+        //     &mut ext,
+        //     input_data,
+        //     &self.schedule,
+        // );
+
+        // TODO: instantiate vm and execute and get results.
+        // Instantiate the instance from the instrumented module code and invoke the contract
+        // entrypoint.
+        // let result = sp_sandbox::Instance::new(&exec.prefab_module.code, &imports, &mut runtime)
+        //     .and_then(|mut instance| instance.invoke(exec.entrypoint_name, &[], &mut runtime));
+        // to_execution_result(runtime, result)
+
+        Ok(true)
+    }
 }
 
 // address()

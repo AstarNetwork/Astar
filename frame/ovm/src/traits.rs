@@ -1,5 +1,5 @@
 use super::*;
-use crate::predicate::{ExecResult, ExecError};
+use crate::predicate::{ExecError, ExecResult};
 
 /// A function that generates an `AccountId` for a predicate upon instantiation.
 pub trait PredicateAddressFor<PredicateHash, AccountId> {
@@ -10,6 +10,16 @@ pub trait PredicateAddressFor<PredicateHash, AccountId> {
     ) -> AccountId;
 }
 
+/// Loader is a companion of the `Ovm` trait. It loads an appropriate abstract
+/// executable to be executed by an accompanying `Ovm` implementation.
+pub trait Loader<T: Trait> {
+    type Executable;
+
+    /// Load the main portion of the code specified by the `code_hash`. This executable
+    /// is called for each call to a contract.
+    fn load_main(&self, code_hash: &PredicateHash<T>) -> Result<Self::Executable, &'static str>;
+}
+
 /// An interface that provides access to the external environment in which the
 /// predicate-contract is executed similar to a smart-contract.
 ///
@@ -18,21 +28,8 @@ pub trait PredicateAddressFor<PredicateHash, AccountId> {
 pub trait Ext {
     type T: Trait;
 
-    /// Instantiate a predicate from the given code.
-    ///
-    /// The newly created account will be associated with `code`.
-    fn instantiate(
-        &mut self,
-        code: &PredicateHash<Self::T>,
-        input_data: Vec<u8>,
-    ) -> Result<AccountIdOf<Self::T>, ExecError>;
-
     /// Call (possibly other predicate) into the specified account.
-    fn call(
-        &mut self,
-        to: &AccountIdOf<Self::T>,
-        input_data: Vec<u8>,
-    ) -> bool;
+    fn call(&mut self, to: &AccountIdOf<Self::T>, input_data: Vec<u8>) -> ExecResult;
 
     /// Returns a reference to the account id of the caller.
     fn caller(&self) -> &AccountIdOf<Self::T>;
@@ -49,7 +46,7 @@ pub trait Ext {
     /// Deposit an event with the given topics.
     ///
     /// There should not be any duplicates in `topics`.
-    fn deposit_event(&mut self, topics: Vec<TopicOf<Self::T>>, data: Vec<u8>);
+    // fn deposit_event(&mut self, topics: Vec<TopicOf<Self::T>>, data: Vec<u8>);
 
     /// Returns the current block number.
     fn block_number(&self) -> BlockNumberOf<Self::T>;
@@ -63,7 +60,7 @@ pub trait Ext {
 ///
 /// Execution of code can end by either implicit termination (that is, reached the end of
 /// executable), explicit termination via returning a buffer or termination due to a trap.
-pub trait Vm<T: Trait> {
+pub trait Ovm<T: Trait> {
     type Executable;
 
     fn execute<E: Ext<T = T>>(
@@ -73,7 +70,6 @@ pub trait Vm<T: Trait> {
         input_data: Vec<u8>,
     ) -> ExecResult;
 }
-
 
 pub trait AtomicPredicate {
     fn decide_true(inputs: Vec<u8>);

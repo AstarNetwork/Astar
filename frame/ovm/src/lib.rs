@@ -1,6 +1,6 @@
-//! # OVM Module
+//! # Ovm Module
 //!
-//! The OVM module provides functionality for handling layer2 dispute logics.
+//! The Ovm module provides functionality for handling layer2 dispute logics.
 //! This refer to: https://github.com/cryptoeconomicslab/ovm-contracts/blob/master/contracts/UniversalAdjudicationContract.sol
 //!
 //! - [`ovm::Trait`](./trait.Trait.html)
@@ -8,7 +8,7 @@
 //! - [`Module`](./struct.Module.html)
 //!
 //! ## Overview
-//! OVM module is the substrate pallet to archive dispute game defined by predicate logic.
+//! Ovm module is the substrate pallet to archive dispute game defined by predicate logic.
 //!
 //!
 //!
@@ -16,30 +16,32 @@
 
 use codec::{Decode, Encode};
 use frame_support::{
-    decl_error, decl_event, decl_module, decl_storage, ensure,
-    traits::{Currency, Get, Time},
+    decl_error, decl_event, decl_module, decl_storage,
+    dispatch::DispatchResult,
+    ensure,
+    traits::{Currency, Get, Randomness, Time},
     weights::SimpleDispatchInfo,
     StorageMap, StorageValue,
 };
 use frame_system::{self as system, ensure_root, ensure_signed};
+#[cfg(feature = "std")]
+use serde::{Deserialize, Serialize};
 use sp_runtime::{
     traits::{Hash, SaturatedConversion, Zero},
     Perbill, RuntimeDebug,
 };
-use sp_std::{prelude::*, vec::Vec};
+use sp_std::{marker::PhantomData, prelude::*, vec::Vec};
 
 // #[cfg(test)]
 // mod mock;
 // #[cfg(test)]
 // mod tests;
 
-pub mod traits;
 pub mod predicate;
-use traits::PredicateAddressFor;
+pub mod traits;
 
-/// Predicates write properties and it can prove to true or false under dispute logic.
-#[derive(Encode, Decode, Clone, Default, RuntimeDebug, PartialEq, Eq)]
-pub struct Predicate(Vec<u8>);
+use predicate::{ExecResult, ExecutionContext, PredicateLoader, PredicateOvm};
+use traits::{Ext, Loader, Ovm, PredicateAddressFor};
 
 /// PredicateContract wrapped Predicate and initial arguments.
 ///
@@ -133,20 +135,21 @@ impl Default for Schedule {
 /// course of transaction execution.
 pub struct Config<T: Trait> {
     pub schedule: Schedule,
-    // pub max_depth: u32,
-    // pub max_value_size: u32,
+    pub max_depth: u32,
+    pub max_value_size: u32,
+    _phantom: PhantomData<T>,
 }
 
 impl<T: Trait> Config<T> {
     fn preload() -> Config<T> {
         Config {
             schedule: <Module<T>>::current_schedule(),
-            // max_depth: T::MaxDepth::get(),
-            // max_value_size: T::MaxValueSize::get(),
+            max_depth: 0,      //T::MaxDepth::get(),
+            max_value_size: 0, // T::MaxValueSize::get(),
+            _phantom: PhantomData::<T>,
         }
     }
 }
-
 
 pub type PredicateHash<T> = <T as system::Trait>::Hash;
 pub type ChallengeGameOf<T> = ChallengeGame<
@@ -156,11 +159,15 @@ pub type ChallengeGameOf<T> = ChallengeGame<
 >;
 pub type PropertyOf<T> = Property<<T as system::Trait>::AccountId>;
 pub type AccountIdOf<T> = <T as frame_system::Trait>::AccountId;
+pub type MomentOf<T> = <<T as Trait>::Time as Time>::Moment;
+pub type SeedOf<T> = <T as frame_system::Trait>::Hash;
 pub type PredicateContractOf<T> = PredicateContract<<T as frame_system::Trait>::Hash>;
+pub type BlockNumberOf<T> = <T as frame_system::Trait>::BlockNumber;
 
 pub trait Trait: system::Trait {
-    /// The balance.
-    type Currency: Currency<Self::AccountId>;
+    type Time: Time;
+
+    type Randomness: Randomness<Self::Hash>;
 
     /// During the dispute period defined here, the user can challenge.
     /// If nothing is found, the state is determined after the dispute period.
@@ -174,12 +181,15 @@ pub trait Trait: system::Trait {
 }
 
 decl_storage! {
-    trait Store for Module<T: Trait> as OVM {
+    trait Store for Module<T: Trait> as Ovm {
         /// Current cost schedule for contracts.
-		CurrentSchedule get(fn current_schedule) config(): Schedule = Schedule::default();
+        pub CurrentSchedule get(fn current_schedule) config(): Schedule = Schedule::default();
 
         /// A mapping from an original code hash to the original code, untouched by instrumentation.
-        pub PredicateCodes get(fn predicate_codes): map hasher(identity) PredicateHash<T> => Option<Predicate>;
+        pub PredicateCodes get(fn predicate_codes): map hasher(identity) PredicateHash<T> => Option<Vec<u8>>;
+
+        /// A mapping between an original code hash and instrumented ovm(predicate) code, ready for execution.
+        pub PredicateCache get(fn predicate_cache): map hasher(identity) PredicateHash<T> => Option<predicate::PrefabOvmModule>;
 
         /// Mapping the predicate address to Predicate.
         /// Predicate is handled similar to contracts.
@@ -265,12 +275,16 @@ decl_module! {
         /// You can instantiate contracts only with stored code.
         pub fn put_code(
             origin,
-            predicate: Predicate
-        ) {
+            predicate: Vec<u8>
+        ) -> DispatchResult {
             let _ = ensure_signed(origin)?;
-            let predicate_hash = <T as system::Trait>::Hashing::hash_of(&predicate);
-            <PredicateCodes<T>>::insert(&predicate_hash, predicate);
-            Self::deposit_event(RawEvent::PutPredicate(predicate_hash));
+            let schedule = Self::current_schedule();
+            match predicate::save_code::<T>(predicate, &schedule) {
+                Ok(predicate_hash) =>
+                    Self::deposit_event(RawEvent::PutPredicate(predicate_hash)),
+                Err(err) => return Err(err.into()),
+            }
+            Ok(())
         }
 
 
@@ -509,6 +523,27 @@ fn migrate<T: Trait>() {
 }
 
 impl<T: Trait> Module<T> {
+    // ======= main ==========
+    /// Perform a call to a specified contract.
+    ///
+    /// This function is similar to `Self::call`, but doesn't perform any address lookups and better
+    /// suitable for calling directly from Rust.
+    pub fn bare_call(origin: T::AccountId, dest: T::AccountId, input_data: Vec<u8>) -> ExecResult {
+        Self::execute_ovm(origin, |ctx| ctx.call(dest, input_data))
+    }
+
+    fn execute_ovm(
+        origin: T::AccountId,
+        func: impl FnOnce(&mut ExecutionContext<T, PredicateOvm, PredicateLoader>) -> ExecResult,
+    ) -> ExecResult {
+        let cfg = Config::preload();
+        let vm = PredicateOvm::new(&cfg.schedule);
+        let loader = PredicateLoader::new(&cfg.schedule);
+        let mut ctx = ExecutionContext::top_level(origin.clone(), &cfg, &vm, &loader);
+
+        func(&mut ctx)
+    }
+
     // ======= callable ======
     /// Get of true/false the decision of property.
     pub fn is_decided(property: &PropertyOf<T>) -> Decision {
