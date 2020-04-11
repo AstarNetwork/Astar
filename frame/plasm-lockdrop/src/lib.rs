@@ -20,7 +20,7 @@
 
 use codec::{Encode, Decode};
 use sp_std::prelude::*;
-use sp_core::{H256, U256, ecdsa};
+use sp_core::{H256, ecdsa};
 use sp_runtime::{
     RuntimeDebug, Perbill,
     traits::{
@@ -55,8 +55,8 @@ mod crypto;
 /// Oracle traits.
 mod oracle;
 
-use oracle::{PriceOracle, ChainOracle};
-
+pub use oracle::{PriceOracle, ChainOracle};
+pub use crypto::*;
 
 #[cfg(test)]
 mod mock;
@@ -71,30 +71,17 @@ pub trait Trait: system::Trait {
     /// The lockdrop balance.
     type Currency: Currency<Self::AccountId>;
 
-    /// How much authority votes module should receive to decide claim result.
-    type VoteThreshold: Get<AuthorityVote>;
-
-    /// How much positive votes requered to approve claim.
-    ///   Positive votes = approve votes - decline votes.
-    type PositiveVotes: Get<AuthorityVote>;
-
     /// Bitcoin price oracle. 
     type BitcoinTicker: PriceOracle<Self::DollarRate>;
-
-    /// Bitcoin transaction oracle.
-    type BitcoinApi: ChainOracle<H256>;
 
     /// Ethereum price oracle.
     type EthereumTicker: PriceOracle<Self::DollarRate>;
 
+    /// Bitcoin transaction oracle.
+    type BitcoinApi: ChainOracle<H256>;
+
     /// Ethereum transaction oracle.
     type EthereumApi: ChainOracle<H256>;
-
-    /// Ethereum lockdrop contract address.
-    type EthereumContractAddress: Get<Vec<u8>>;
-
-    /// Timestamp of finishing lockdrop.
-    type LockdropEnd: Get<Self::Moment>;
 
     /// How long dollar rate parameters valid in secs
     type MedianFilterExpire: Get<Self::Moment>;
@@ -124,11 +111,11 @@ pub trait Trait: system::Trait {
 
     /// Dollar rate number data type.
     type DollarRate: Member + Parameter + AtLeast32Bit
-        + Copy + Default + Into<U256> + From<u64>;
+        + Copy + Default + Into<u128> + From<u64>;
 
     // XXX: I don't known how to convert into Balance from u128 without it
     // TODO: Should be removed
-    type BalanceConvert: From<U256> +
+    type BalanceConvert: From<u128> +
         Into<<Self::Currency as Currency<<Self as frame_system::Trait>::AccountId>>::Balance>;
 
     /// The regular events type.
@@ -152,9 +139,9 @@ pub enum Lockdrop {
     /// transaction sended with time-lockding opcode,
     /// BTC token locked and could be spend some timestamp.
     /// Duration in blocks and value in shatoshi could be derived from BTC transaction.
-    Bitcoin { public: ecdsa::Public, value: U256, duration: u64, transaction_hash: H256, },
+    Bitcoin { public: ecdsa::Public, value: u128, duration: u64, transaction_hash: H256, },
     /// Ethereum lockdrop transactions is sended to pre-deployed lockdrop smart contract.
-    Ethereum { public: ecdsa::Public, value: U256, duration: u64, transaction_hash: H256, },
+    Ethereum { public: ecdsa::Public, value: u128, duration: u64, transaction_hash: H256, },
 }
 
 impl Default for Lockdrop {
@@ -175,7 +162,7 @@ pub struct Claim {
     params:   Lockdrop,
     approve:  AuthorityVote,
     decline:  AuthorityVote,
-    amount:   U256,
+    amount:   u128,
     complete: bool,
 }
 
@@ -245,6 +232,15 @@ decl_storage! {
         DollarRateF get(fn dollar_rate_f):
             map hasher(blake2_128_concat) T::AuthorityId
             => (T::Moment, T::DollarRate, T::DollarRate);
+        /// How much authority votes module should receive to decide claim result.
+        VoteThreshold get(fn vote_threshold) config(): AuthorityVote;
+        /// How much positive votes requered to approve claim.
+        ///   Positive votes = approve votes - decline votes.
+        PositiveVotes get(fn positive_votes) config(): AuthorityVote;
+        /// Ethereum lockdrop contract address.
+        EthereumContract get(fn ethereum_contract) config(): String; 
+        /// Timestamp of finishing lockdrop.
+        LockdropEnd get(fn lockdrop_end) config(): T::Moment;
     }
 }
 
@@ -314,11 +310,11 @@ decl_module! {
             let claim = <Claims>::get(claim_id);
             ensure!(!claim.complete, "claim should be already paid"); 
 
-            if claim.approve + claim.decline < T::VoteThreshold::get() {
+            if claim.approve + claim.decline < <VoteThreshold>::get() {
                 Err("this request don't get enough authority votes")?
             }
 
-            if claim.approve.saturating_sub(claim.decline) < T::PositiveVotes::get() {
+            if claim.approve.saturating_sub(claim.decline) < <PositiveVotes>::get() {
                 Err("this request don't approved by authorities")?
             }
 
@@ -530,22 +526,22 @@ impl<T: Trait> Module<T> {
                 let valid = tx.confirmations > 10 
                          && tx.value == value
                          && tx.script == script
-                         && tx.recipient == T::EthereumContractAddress::get()
-                         && tx.sender == eth_utils::to_address(public);
+                         && tx.recipient == <EthereumContract>::get()
+                         && tx.sender == hex::encode(eth_utils::to_address(public));
                 Ok(valid)
             }
         }
     }
 
     /// PLM issue amount for given BTC value and locking duration.
-    fn btc_issue_amount(value: U256, duration: T::Moment) -> U256 {
+    fn btc_issue_amount(value: u128, duration: T::Moment) -> u128 {
         // https://medium.com/stake-technologies/plasm-lockdrop-introduction-99fa2dfc37c0
         let rate = Self::alpha() * Self::dollar_rate().0 * Self::time_bonus(duration).into();
         rate.into() * value * 10
     }
 
     /// PLM issue amount for given ETH value and locking duration.
-    fn eth_issue_amount(value: U256, duration: T::Moment) -> U256 {
+    fn eth_issue_amount(value: u128, duration: T::Moment) -> u128 {
         // https://medium.com/stake-technologies/plasm-lockdrop-introduction-99fa2dfc37c0
         let rate = Self::alpha() * Self::dollar_rate().1 * Self::time_bonus(duration).into();
         rate.into() * value * 10
