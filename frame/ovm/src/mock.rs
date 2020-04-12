@@ -3,12 +3,12 @@
 #![cfg(test)]
 
 use super::*;
-use frame_support::{impl_outer_dispatch, impl_outer_origin, parameter_types};
+use frame_support::{impl_outer_dispatch, impl_outer_event, impl_outer_origin, parameter_types};
+use pallet_balances as balances;
 use sp_core::{crypto::key_types, H256};
 use sp_runtime::testing::{Header, UintAuthorityId};
-use sp_runtime::traits::{BlakeTwo256, ConvertInto, IdentityLookup, OnFinalize, OpaqueKeys};
+use sp_runtime::traits::{BlakeTwo256, ConvertInto, IdentityLookup, OnFinalize};
 use sp_runtime::{KeyTypeId, Perbill};
-use traits::{GetEraStakingAmount, MaybeValidators};
 
 pub type BlockNumber = u64;
 pub type AccountId = u64;
@@ -22,12 +22,25 @@ impl_outer_origin! {
 
 impl_outer_dispatch! {
     pub enum Call for Test where origin: Origin {
-        pallet_session::Session,
         pallet_balances::Balances,
-        plasm_rewards::PlasmRewards,
     }
 }
 
+mod ovm {
+    // Re-export contents of the root. This basically
+    // needs to give a name for the current crate.
+    // This hack is required for `impl_outer_event!`.
+    pub use super::super::*;
+    use frame_support::impl_outer_event;
+}
+
+impl_outer_event! {
+    pub enum MetaEvent for Test {
+        system<T>,
+        balances<T>,
+        ovm<T>,
+    }
+}
 pub fn new_test_ext() -> sp_io::TestExternalities {
     let mut storage = frame_system::GenesisConfig::default()
         .build_storage::<Test>()
@@ -41,15 +54,7 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
     let validators = vec![1, 2];
 
     let _ = GenesisConfig {
-        ..Default::default()
-    }
-    .assimilate_storage(&mut storage);
-
-    let _ = pallet_session::GenesisConfig::<Test> {
-        keys: validators
-            .iter()
-            .map(|x| (*x, *x, UintAuthorityId(*x)))
-            .collect(),
+        current_schedule: Default::default(),
     }
     .assimilate_storage(&mut storage);
 
@@ -76,7 +81,7 @@ impl frame_system::Trait for Test {
     type AccountId = AccountId;
     type Lookup = IdentityLookup<Self::AccountId>;
     type Header = Header;
-    type Event = ();
+    type Event = MetaEvent;
     type BlockHashCount = BlockHashCount;
     type MaximumBlockWeight = MaximumBlockWeight;
     type MaximumBlockLength = MaximumBlockLength;
@@ -98,106 +103,60 @@ impl pallet_timestamp::Trait for Test {
 }
 
 parameter_types! {
-    pub const Period: u64 = 1;
-    pub const Offset: u64 = 0;
-}
-
-pub struct TestSessionHandler;
-
-impl pallet_session::SessionHandler<u64> for TestSessionHandler {
-    const KEY_TYPE_IDS: &'static [KeyTypeId] = &[key_types::DUMMY];
-    fn on_genesis_session<T: OpaqueKeys>(_validators: &[(u64, T)]) {}
-    fn on_new_session<T: OpaqueKeys>(
-        _changed: bool,
-        _validators: &[(u64, T)],
-        _queued_validators: &[(u64, T)],
-    ) {
-    }
-    fn on_disabled(_validator_index: usize) {}
-    fn on_before_session_ending() {}
-}
-
-impl pallet_session::Trait for Test {
-    type ShouldEndSession = pallet_session::PeriodicSessions<Period, Offset>;
-    type SessionManager = PlasmRewards;
-    type SessionHandler = TestSessionHandler;
-    type ValidatorId = u64;
-    type ValidatorIdOf = ConvertInto;
-    type Keys = UintAuthorityId;
-    type Event = ();
-    type DisabledValidatorsThreshold = ();
-}
-
-parameter_types! {
     pub const ExistentialDeposit: Balance = 10;
 }
 
 impl pallet_balances::Trait for Test {
     type Balance = Balance;
-    type Event = ();
+    type Event = MetaEvent;
     type DustRemoval = ();
     type ExistentialDeposit = ExistentialDeposit;
     type AccountStore = frame_system::Module<Test>;
 }
 
-pub struct DummyForSecurityStaking;
-impl GetEraStakingAmount<EraIndex, Balance> for DummyForSecurityStaking {
-    fn get_era_staking_amount(era: &EraIndex) -> Balance {
-        (era * 1_000_000).into()
-    }
-}
-
-pub struct DummyForDappsStaking;
-impl GetEraStakingAmount<EraIndex, Balance> for DummyForDappsStaking {
-    fn get_era_staking_amount(era: &EraIndex) -> Balance {
-        (era * 200_000).into()
-    }
-}
-
-pub struct DummyMaybeValidators;
-impl MaybeValidators<EraIndex, AccountId> for DummyMaybeValidators {
-    fn maybe_validators(current_era: EraIndex) -> Option<Vec<AccountId>> {
-        Some(vec![1, 2, 3, (current_era + 100).into()])
-    }
-}
-
 parameter_types! {
-    pub const SessionsPerEra: sp_staking::SessionIndex = 10;
-    pub const BondingDuration: EraIndex = 3;
+    pub const DisputePeriod: BlockNumber = 7;
+}
+
+pub struct DummyPredicateAddressFor;
+impl PredicateAddressFor<H256, u64> for DummyPredicateAddressFor {
+    fn predicate_address_for(_code_hash: &H256, _data: &[u8], origin: &u64) -> u64 {
+        *origin + 1
+    }
 }
 
 impl Trait for Test {
-    type Currency = Balances;
     type Time = Timestamp;
-    type SessionsPerEra = SessionsPerEra;
-    type BondingDuration = BondingDuration;
-    type GetForDappsStaking = DummyForDappsStaking;
-    type GetForSecurityStaking = DummyForSecurityStaking;
-    type ComputeTotalPayout = inflation::MaintainRatioComputeTotalPayout;
-    type MaybeValidators = DummyMaybeValidators;
-    type Event = ();
+    type Randomness = Randomness;
+    type DisputePeriod = DisputePeriod;
+    type DeterminePredicateAddress = DummyPredicateAddressFor;
+    type Event = MetaEvent;
 }
 
-/// ValidatorManager module.
 pub type System = frame_system::Module<Test>;
-pub type Session = pallet_session::Module<Test>;
 pub type Balances = pallet_balances::Module<Test>;
 pub type Timestamp = pallet_timestamp::Module<Test>;
-pub type PlasmRewards = Module<Test>;
+pub type Randomness = pallet_randomness_collective_flip::Module<Test>;
+pub type Ovm = Module<Test>;
 
-pub const PER_SESSION: u64 = 60 * 1000;
+const PER_BLOCK: u64 = 1000;
 
-pub fn advance_session() {
+pub fn advance_block() {
     let now = System::block_number();
     // increase block numebr
     System::set_block_number(now + 1);
     // increase timestamp + 10
     let now_time = Timestamp::get();
-    // on initialize
-    Timestamp::set_timestamp(now_time + PER_SESSION);
-    Session::rotate_session();
-    assert_eq!(Session::current_index(), (now / Period::get()) as u32);
+    Timestamp::set_timestamp(now_time + PER_BLOCK);
+}
 
-    // on finalize
-    PlasmRewards::on_finalize(now);
+/// Generate compiled predicate binary and code hash from predicate source.
+pub fn compile_predicate<T>(predicate_module: &str) -> (Vec<u8>, <T::Hashing as Hash>::Output)
+where
+    T: frame_system::Trait,
+{
+    // TODO actually predicate to compiled predicate.
+    let compiled_predicate = predicate_module.as_bytes().to_vec();
+    let code_hash = T::Hashing::hash_of(&compiled_predicate);
+    (compiled_predicate.to_vec(), code_hash)
 }

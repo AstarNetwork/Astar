@@ -108,7 +108,7 @@ impl<'a, T, E, V, L> ExecutionContext<'a, T, V, L>
 where
     T: Trait,
     L: Loader<T, Executable = E>,
-    V: Ovm<T, Executable = E>,
+    V: Vm<T, Executable = E>,
 {
     /// Create the top level execution context.
     ///
@@ -187,7 +187,7 @@ where
     }
 }
 
-pub struct CallContext<'a, 'b: 'a, T: Trait + 'b, V: Ovm<T> + 'b, L: Loader<T>> {
+pub struct CallContext<'a, 'b: 'a, T: Trait + 'b, V: Vm<T> + 'b, L: Loader<T>> {
     ctx: &'a mut ExecutionContext<'b, T, V, L>,
     caller: T::AccountId,
     timestamp: MomentOf<T>,
@@ -202,7 +202,7 @@ pub struct CallContext<'a, 'b: 'a, T: Trait + 'b, V: Ovm<T> + 'b, L: Loader<T>> 
 impl<'a, 'b: 'a, E, T, V, L> Ext for CallContext<'a, 'b, T, V, L>
 where
     T: Trait + 'b,
-    V: Ovm<T, Executable = E>,
+    V: Vm<T, Executable = E>,
     L: Loader<T, Executable = E>,
 {
     type T = T;
@@ -248,7 +248,7 @@ where
     }
 }
 
-/// Implementation of `Ovm` that takes `PredicateOvm` and executes it.
+/// Implementation of `Vm` that takes `PredicateOvm` and executes it.
 pub struct PredicateOvm<'a> {
     schedule: &'a Schedule,
 }
@@ -259,7 +259,7 @@ impl<'a> PredicateOvm<'a> {
     }
 }
 
-impl<'a, T: Trait> Ovm<T> for PredicateOvm<'a> {
+impl<'a, T: Trait> Vm<T> for PredicateOvm<'a> {
     type Executable = OvmExecutable;
 
     fn execute<E: Ext<T = T>>(

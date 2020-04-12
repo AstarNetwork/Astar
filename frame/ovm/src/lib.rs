@@ -20,28 +20,27 @@ use frame_support::{
     dispatch::DispatchResult,
     ensure,
     traits::{Currency, Get, Randomness, Time},
-    weights::SimpleDispatchInfo,
-    StorageMap, StorageValue,
+    StorageMap,
 };
-use frame_system::{self as system, ensure_root, ensure_signed};
+use frame_system::{self as system, ensure_signed};
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
 use sp_runtime::{
-    traits::{Hash, SaturatedConversion, Zero},
+    traits::{Hash, Zero},
     Perbill, RuntimeDebug,
 };
 use sp_std::{marker::PhantomData, prelude::*, vec::Vec};
 
-// #[cfg(test)]
-// mod mock;
-// #[cfg(test)]
-// mod tests;
+#[cfg(test)]
+mod mock;
+#[cfg(test)]
+mod tests;
 
 pub mod predicate;
 pub mod traits;
 
 use predicate::{ExecResult, ExecutionContext, PredicateLoader, PredicateOvm};
-use traits::{Ext, Loader, Ovm, PredicateAddressFor};
+use traits::PredicateAddressFor;
 
 /// PredicateContract wrapped Predicate and initial arguments.
 ///
@@ -151,18 +150,18 @@ impl<T: Trait> Config<T> {
     }
 }
 
-pub type PredicateHash<T> = <T as system::Trait>::Hash;
-pub type ChallengeGameOf<T> = ChallengeGame<
+type PredicateHash<T> = <T as system::Trait>::Hash;
+type ChallengeGameOf<T> = ChallengeGame<
     <T as system::Trait>::AccountId,
     <T as system::Trait>::Hash,
     <T as system::Trait>::BlockNumber,
 >;
-pub type PropertyOf<T> = Property<<T as system::Trait>::AccountId>;
-pub type AccountIdOf<T> = <T as frame_system::Trait>::AccountId;
-pub type MomentOf<T> = <<T as Trait>::Time as Time>::Moment;
-pub type SeedOf<T> = <T as frame_system::Trait>::Hash;
-pub type PredicateContractOf<T> = PredicateContract<<T as frame_system::Trait>::Hash>;
-pub type BlockNumberOf<T> = <T as frame_system::Trait>::BlockNumber;
+type PropertyOf<T> = Property<<T as system::Trait>::AccountId>;
+type AccountIdOf<T> = <T as frame_system::Trait>::AccountId;
+type MomentOf<T> = <<T as Trait>::Time as Time>::Moment;
+type SeedOf<T> = <T as frame_system::Trait>::Hash;
+type PredicateContractOf<T> = PredicateContract<<T as frame_system::Trait>::Hash>;
+type BlockNumberOf<T> = <T as frame_system::Trait>::BlockNumber;
 
 pub trait Trait: system::Trait {
     type Time: Time;
@@ -297,7 +296,6 @@ decl_module! {
                 &predicate_hash,
                 &inputs,
                 &origin);
-            let predicate = Self::predicate_codes(&predicate_hash);
             let predicate_contract = PredicateContract {
                 predicate_hash,
                 inputs,

@@ -1,5 +1,5 @@
 use super::*;
-use crate::predicate::{ExecError, ExecResult};
+use crate::predicate::ExecResult;
 
 /// A function that generates an `AccountId` for a predicate upon instantiation.
 pub trait PredicateAddressFor<PredicateHash, AccountId> {
@@ -10,8 +10,8 @@ pub trait PredicateAddressFor<PredicateHash, AccountId> {
     ) -> AccountId;
 }
 
-/// Loader is a companion of the `Ovm` trait. It loads an appropriate abstract
-/// executable to be executed by an accompanying `Ovm` implementation.
+/// Loader is a companion of the `Vm` trait. It loads an appropriate abstract
+/// executable to be executed by an accompanying `Vm` implementation.
 pub trait Loader<T: Trait> {
     type Executable;
 
@@ -60,7 +60,7 @@ pub trait Ext {
 ///
 /// Execution of code can end by either implicit termination (that is, reached the end of
 /// executable), explicit termination via returning a buffer or termination due to a trap.
-pub trait Ovm<T: Trait> {
+pub trait Vm<T: Trait> {
     type Executable;
 
     fn execute<E: Ext<T = T>>(
