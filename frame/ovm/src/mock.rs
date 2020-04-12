@@ -142,12 +142,12 @@ pub type Ovm = Module<Test>;
 const PER_BLOCK: u64 = 1000;
 
 pub fn advance_block() {
-    let now = System::block_number();
+    let next = System::block_number() + 1;
     // increase block numebr
-    System::set_block_number(now + 1);
-    // increase timestamp + 10
-    let now_time = Timestamp::get();
-    Timestamp::set_timestamp(now_time + PER_BLOCK);
+    System::set_block_number(next);
+    // increase timestamp + 1000
+    let next_time = Timestamp::get() + PER_BLOCK;
+    Timestamp::set_timestamp(next_time);
 }
 
 /// Generate compiled predicate binary and code hash from predicate source.
