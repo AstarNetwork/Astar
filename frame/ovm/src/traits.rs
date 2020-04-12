@@ -37,9 +37,11 @@ pub trait Ext {
     /// Returns a reference to the account id of the current contract.
     fn address(&self) -> &AccountIdOf<Self::T>;
 
+    // TODO: Is it neeed?
     /// Returns a reference to the timestamp of the current block
     fn now(&self) -> &MomentOf<Self::T>;
 
+    // TODO: Is it neeed?
     /// Returns a random number for the current block with the given subject.
     fn random(&self, subject: &[u8]) -> SeedOf<Self::T>;
 
