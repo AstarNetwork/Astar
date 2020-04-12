@@ -154,7 +154,6 @@ parameter_types! {
     pub const BitcoinApiUri: &'static str = "http://api.blockcypher.com/v1/btc/test3/txs";
     pub const EthereumApiUri: &'static str = "http://api.blockcypher.com/v1/eth/test/txs";
     pub const MedianFilterExpire: Moment = 2;
-    pub const MedianFilterWidth: usize = 3;
 }
 
 /// An extrinsic type used for tests.
@@ -163,12 +162,12 @@ type SubmitTransaction = frame_system::offchain::TransactionSubmitter<(), Call, 
 
 impl Trait for Runtime {
     type Currency = Balances;
-    type BitcoinTicker = oracle::CoinGecko<BitcoinTickerUri>;
-    type EthereumTicker = oracle::CoinGecko<EthereumTickerUri>;
-    type BitcoinApi = oracle::BlockCypher<BitcoinApiUri>;
-    type EthereumApi = oracle::BlockCypher<EthereumApiUri>;
+    type BitcoinTicker = CoinGecko<BitcoinTickerUri>;
+    type EthereumTicker = CoinGecko<EthereumTickerUri>;
+    type BitcoinApi = BlockCypher<BitcoinApiUri, BitcoinAddress>;
+    type EthereumApi = BlockCypher<EthereumApiUri, EthereumAddress>;
     type MedianFilterExpire = MedianFilterExpire;
-    type MedianFilterWidth = MedianFilterWidth;
+    type MedianFilterWidth = generic_array::typenum::U3;
     type Call = Call;
     type SubmitTransaction = SubmitTransaction;
     type AuthorityId = sr25519::AuthorityId;
@@ -215,7 +214,7 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
         vote_threshold: 3,
         positive_votes: 2,
         lockdrop_end: 0,
-        ethereum_contract: "0x458dabf1eff8fcdfbf0896a6bd1f457c01e2ffd6".to_owned(),
+        ethereum_contract: hex_literal::hex!["458dabf1eff8fcdfbf0896a6bd1f457c01e2ffd6"],
     }.assimilate_storage(&mut storage);
 
     storage.into()

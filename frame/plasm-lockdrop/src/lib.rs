@@ -45,6 +45,8 @@ use frame_system::{
     self as system, ensure_signed, ensure_none,
     offchain::SubmitUnsignedTransaction,
 };
+use median::{Filter, ListNode};
+pub use generic_array::typenum;
 
 /// Bitcoin helpers.
 mod btc_utils;
@@ -55,7 +57,7 @@ mod crypto;
 /// Oracle traits.
 mod oracle;
 
-pub use oracle::{PriceOracle, ChainOracle};
+pub use oracle::*;
 pub use crypto::*;
 
 #[cfg(test)]
@@ -83,11 +85,11 @@ pub trait Trait: system::Trait {
     /// Ethereum transaction oracle.
     type EthereumApi: ChainOracle<H256>;
 
-    /// How long dollar rate parameters valid in secs
+    /// How long dollar rate parameters valid in secs.
     type MedianFilterExpire: Get<Self::Moment>;
-
-    /// Width of dollar rate median filter.
-    type MedianFilterWidth: Get<usize>;
+    
+    /// Median filter window size.
+    type MedianFilterWidth: generic_array::ArrayLength<ListNode<Self::DollarRate>>;
 
     /// A dispatchable call type.
     type Call: From<Call<Self>>;
@@ -132,8 +134,8 @@ pub type AuthorityVote = u32;
 pub type AuthorityIndex = u16;
 
 /// Plasm Lockdrop parameters.
-#[cfg_attr(feature = "std", derive(PartialEq, Eq))]
-#[derive(Encode, Decode, RuntimeDebug, Clone)]
+#[cfg_attr(feature = "std", derive(Eq))]
+#[derive(Encode, Decode, RuntimeDebug, PartialEq, Clone)]
 pub enum Lockdrop {
     /// Bitcoin lockdrop is pretty simple:
     /// transaction sended with time-lockding opcode,
@@ -156,8 +158,8 @@ impl Default for Lockdrop {
 }
 
 /// Lockdrop claim request description.
-#[cfg_attr(feature = "std", derive(PartialEq, Eq))]
-#[derive(Encode, Decode, RuntimeDebug, Default, Clone)]
+#[cfg_attr(feature = "std", derive(Eq))]
+#[derive(Encode, Decode, RuntimeDebug, PartialEq, Default, Clone)]
 pub struct Claim {
     params:   Lockdrop,
     approve:  AuthorityVote,
@@ -238,7 +240,7 @@ decl_storage! {
         ///   Positive votes = approve votes - decline votes.
         PositiveVotes get(fn positive_votes) config(): AuthorityVote;
         /// Ethereum lockdrop contract address.
-        EthereumContract get(fn ethereum_contract) config(): String; 
+        EthereumContract get(fn ethereum_contract) config(): [u8; 20];
         /// Timestamp of finishing lockdrop.
         LockdropEnd get(fn lockdrop_end) config(): T::Moment;
     }
@@ -246,8 +248,6 @@ decl_storage! {
 
 decl_module! {
     pub struct Module<T: Trait> for enum Call where origin: T::Origin {
-        type Error = Error<T>;
-
         /// Initializing events
         fn deposit_event() = default;
 
@@ -377,8 +377,8 @@ decl_module! {
             }
 
             let expire = T::MedianFilterExpire::get();
-            let mut btc_filter = median::Filter::new(T::MedianFilterWidth::get());
-            let mut eth_filter = median::Filter::new(T::MedianFilterWidth::get());
+            let mut btc_filter: Filter<T::DollarRate, T::MedianFilterWidth> = Filter::new();
+            let mut eth_filter: Filter<T::DollarRate, T::MedianFilterWidth> = Filter::new();
             let (mut btc_filtered_rate, mut eth_filtered_rate) = <DollarRate<T>>::get();
             for (a, item) in <DollarRateF<T>>::iter() {
                 if now.saturating_sub(item.0) < expire {
@@ -401,9 +401,8 @@ decl_module! {
 
             if sp_io::offchain::is_validator() {
                 match Self::offchain() {
-                    Err(e) => debug::error!(
-                        target: "lockdrop-offchain-worker",
-                        "lockdrop worker fails: {}", e
+                    Err(_) => debug::error!(
+                        target: "lockdrop-offchain-worker", "lockdrop worker failed"
                     ),
                     _ => (),
                 }
@@ -414,7 +413,7 @@ decl_module! {
 
 impl<T: Trait> Module<T> {
     /// The main offchain worker entry point.
-    fn offchain() -> Result<(), String> {
+    fn offchain() -> Result<(), ()> {
         // TODO: add delay to prevent frequent transaction sending
         Self::send_dollar_rate(
             T::BitcoinTicker::fetch()?,
@@ -425,7 +424,7 @@ impl<T: Trait> Module<T> {
         Self::claim_request_oracle()
     }
 
-    fn claim_request_oracle() -> Result<(), String> {
+    fn claim_request_oracle() -> Result<(), ()> {
         for claim_id in Self::requests() {
             debug::debug!(
                 target: "lockdrop-offchain-worker",
@@ -441,7 +440,7 @@ impl<T: Trait> Module<T> {
             for key in T::AuthorityId::all() {
                 if let Some(authority) = Self::authority_index_of(&key) {
                     let vote = ClaimVote { authority, claim_id, approve };
-                    let signature = key.sign(&vote.encode()).ok_or("signing error")?;
+                    let signature = key.sign(&vote.encode()).ok_or(())?;
                     let call = Call::vote(vote, signature);
                     debug::debug!(
                         target: "lockdrop-offchain-worker",
@@ -461,11 +460,11 @@ impl<T: Trait> Module<T> {
     }
 
     /// Send dollar rate as unsigned extrinsic from authority.
-    fn send_dollar_rate(btc: T::DollarRate, eth: T::DollarRate) -> Result<(), String> { 
+    fn send_dollar_rate(btc: T::DollarRate, eth: T::DollarRate) -> Result<(), ()> { 
         for key in T::AuthorityId::all() {
             if let Some(authority) = Self::authority_index_of(&key) {
                 let rate = TickerRate { authority, btc, eth };
-                let signature = key.sign(&rate.encode()).ok_or("signing error")?;
+                let signature = key.sign(&rate.encode()).ok_or(())?;
                 let call = Call::set_dollar_rate(rate, signature);
                 debug::debug!(
                     target: "lockdrop-offchain-worker",
@@ -483,7 +482,7 @@ impl<T: Trait> Module<T> {
     }
 
     /// Check locking parameters of given claim.
-    fn check_lock(claim_id: ClaimId) -> Result<bool, String> {
+    fn check_lock(claim_id: ClaimId) -> Result<bool, ()> {
         let Claim { params, .. } = Self::claims(claim_id);
         match params {
             Lockdrop::Bitcoin { public, value, duration, transaction_hash } => {
@@ -527,7 +526,7 @@ impl<T: Trait> Module<T> {
                          && tx.value == value
                          && tx.script == script
                          && tx.recipient == <EthereumContract>::get()
-                         && tx.sender == hex::encode(eth_utils::to_address(public));
+                         && tx.sender == eth_utils::to_address(public);
                 Ok(valid)
             }
         }

@@ -13,7 +13,7 @@ use frame_support::{
         Currency, Get, Imbalance, LockIdentifier, LockableCurrency, OnUnbalanced, Time,
         WithdrawReasons,
     },
-    weights::SimpleDispatchInfo,
+    weights::{SimpleDispatchInfo, Weight},
     StorageMap, StorageValue,
 };
 use frame_system::{self as system, ensure_signed};
@@ -25,7 +25,7 @@ use pallet_plasm_rewards::{
 pub use pallet_staking::{Forcing, RewardDestination};
 use sp_runtime::{
     traits::{CheckedAdd, CheckedSub, Saturating, StaticLookup, Zero},
-    PerThing, Perbill, RuntimeDebug,
+    Perbill, RuntimeDebug,
 };
 use sp_std::{collections::btree_map::BTreeMap, prelude::*, result, vec::Vec};
 
@@ -303,8 +303,9 @@ decl_module! {
     pub struct Module<T: Trait> for enum Call where origin: T::Origin {
         fn deposit_event() = default;
 
-        fn on_runtime_upgrade() {
+        fn on_runtime_upgrade() -> Weight {
             migrate::<T>();
+            50_000
         }
 
         fn on_finalize() {

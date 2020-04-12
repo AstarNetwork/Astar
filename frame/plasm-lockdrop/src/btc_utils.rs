@@ -1,6 +1,17 @@
 use ripemd160::{Ripemd160, Digest};
-use sp_core::{ecdsa, hashing::sha2_256};
+use sha2::Sha256;
+use sp_core::ecdsa;
+use sp_std::prelude::*;
 use codec::Encode;
+
+/// Do a sha2 256-bit hash and return result.
+pub fn sha2_256(data: &[u8]) -> [u8; 32] {
+	let mut hasher = Sha256::new();
+	hasher.input(data);
+	let mut output = [0u8; 32];
+	output.copy_from_slice(&hasher.result());
+	output
+}
 
 /// Bitcoin RIPEMD160 hashing function
 pub fn ripemd160(data: &[u8]) -> [u8; 20] {

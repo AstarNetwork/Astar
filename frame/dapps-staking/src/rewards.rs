@@ -8,7 +8,6 @@
 
 use super::*;
 use sp_arithmetic::traits::BaseArithmetic;
-use sp_runtime::PerThing;
 
 /// Compute reards for dapps from total dapps rewards to operators and nominators.
 pub trait ComputeRewardsForDapps {
