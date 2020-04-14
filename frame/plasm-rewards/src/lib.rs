@@ -17,7 +17,7 @@ use codec::{Decode, Encode};
 use frame_support::{
     decl_error, decl_event, decl_module, decl_storage,
     traits::{Currency, Get, LockableCurrency, Time},
-    weights::SimpleDispatchInfo,
+    weights::{SimpleDispatchInfo, Weight},
     StorageMap, StorageValue,
 };
 use frame_system::{self as system, ensure_root};
@@ -183,8 +183,9 @@ decl_module! {
 
         fn deposit_event() = default;
 
-        fn on_runtime_upgrade() {
+        fn on_runtime_upgrade() -> Weight {
             migrate::<T>();
+            50_000
         }
 
         /// On finalize is called at after rotate session.

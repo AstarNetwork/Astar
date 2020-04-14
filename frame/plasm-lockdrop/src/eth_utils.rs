@@ -1,5 +1,16 @@
 use codec::Encode;
-use sp_core::{ecdsa, keccak_256, U256};
+use sp_core::{ecdsa, U256};
+use sp_std::prelude::*;
+use tiny_keccak::{Hasher, Keccak};
+
+/// Do a keccak 256-bit hash and return result.
+pub fn keccak_256(data: &[u8]) -> [u8; 32] {
+    let mut keccak = Keccak::v256();
+    keccak.update(data);
+    let mut output = [0u8; 32];
+    keccak.finalize(&mut output);
+    output
+}
 
 pub fn to_address(public: ecdsa::Public) -> [u8; 20] {
     let pubkey = secp256k1::PublicKey::parse_slice(public.as_ref(), None)

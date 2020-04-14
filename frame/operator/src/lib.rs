@@ -1,6 +1,9 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use frame_support::{decl_event, decl_module, decl_storage, Parameter};
+use frame_support::{
+    decl_event, decl_module, decl_storage,
+    Parameter, weights::SimpleDispatchInfo,
+};
 use frame_system::{self as system, ensure_signed, RawOrigin};
 use pallet_contracts::{BalanceOf, CodeHash, ContractAddressFor, Gas};
 use sp_runtime::{
@@ -97,6 +100,7 @@ decl_module! {
         fn deposit_event() = default;
 
         /// Deploys a contact and insert relation of a contract and an operator to mapping.
+        #[weight = SimpleDispatchInfo::FixedNormal(500_000)]
         pub fn instantiate(origin,
             #[compact] endowment: BalanceOf<T>,
             #[compact] gas_limit: Gas,
@@ -123,6 +127,7 @@ decl_module! {
         }
 
         /// Updates parameters for an identified contact.
+        #[weight = SimpleDispatchInfo::FixedNormal(50_000)]
         pub fn update_parameters(origin, contract: T::AccountId, parameters: T::Parameters) {
             let operator = ensure_signed(origin)?;
 
@@ -143,6 +148,7 @@ decl_module! {
         }
 
         /// Changes an operator for identified contracts.
+        #[weight = SimpleDispatchInfo::FixedNormal(100_000)]
         pub fn change_operator(origin, contracts: Vec<T::AccountId>, new_operator: T::AccountId) {
             let operator = ensure_signed(origin)?;
             Self::transfer_operator(operator, contracts, new_operator)?;

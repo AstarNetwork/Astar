@@ -15,8 +15,7 @@ use pallet_plasm_rewards::{
     EraIndex,
 };
 use sp_runtime::{
-    traits::{Saturating, Zero},
-    PerThing, Perbill,
+    traits::{Saturating, Zero}, Perbill,
 };
 pub use sp_staking::SessionIndex;
 use sp_std::{prelude::*, vec::Vec};

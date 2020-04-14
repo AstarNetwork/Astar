@@ -8,8 +8,8 @@ authors = [
 edition = "2018"
 
 [dependencies]
-primitives = { package = "sp-core", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master", default-features = false }
-sp-runtime = { git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-master", default-features = false }
+primitives = { package = "sp-core", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-dusty", default-features = false }
+sp-runtime = { git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-dusty", default-features = false }
 
 [features]
 default = ["std"]
