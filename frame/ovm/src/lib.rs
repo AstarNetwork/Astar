@@ -19,17 +19,14 @@ use frame_support::{
     decl_error, decl_event, decl_module, decl_storage,
     dispatch::DispatchResult,
     ensure,
-    traits::{Currency, Get, Randomness, Time},
+    traits::{Get, Time},
     StorageMap,
 };
 use frame_system::{self as system, ensure_signed};
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
-use sp_runtime::{
-    traits::{Hash, Zero},
-    Perbill, RuntimeDebug,
-};
-use sp_std::{marker::PhantomData, prelude::*, vec::Vec};
+use sp_runtime::{traits::Hash, RuntimeDebug};
+use sp_std::{prelude::*, vec::Vec};
 
 #[cfg(test)]
 mod mock;
@@ -94,9 +91,6 @@ pub struct Schedule {
     /// Version of the schedule.
     pub version: u32,
 
-    /// The maximum number of topics supported by an event.
-    pub max_event_topics: u32,
-
     /// Maximum allowed stack height.
     ///
     /// See https://wiki.parity.io/WebAssembly-StackHeight to find out
@@ -108,44 +102,34 @@ pub struct Schedule {
 
     /// Maximum allowed size of a declared table.
     pub max_table_size: u32,
-
-    /// The maximum length of a subject used for PRNG generation.
-    pub max_subject_len: u32,
+    // TODO: add logical conecctive addresses.
 }
 
-// TODO default schedule value by ovm.
 impl Default for Schedule {
     fn default() -> Schedule {
         Schedule {
             version: 0,
-            max_event_topics: 4,
             max_stack_height: 64 * 1024,
             max_memory_pages: 16,
             max_table_size: 16 * 1024,
-            max_subject_len: 32,
         }
     }
 }
 
-/// TODO design Config
 /// In-memory cache of configuration values.
 ///
 /// We assume that these values can't be changed in the
 /// course of transaction execution.
-pub struct Config<T: Trait> {
+pub struct Config {
     pub schedule: Schedule,
-    pub max_depth: u32,
-    pub max_value_size: u32,
-    _phantom: PhantomData<T>,
+    pub max_depth: u32, // about down 30.
 }
 
-impl<T: Trait> Config<T> {
-    fn preload() -> Config<T> {
+impl Config {
+    fn preload<T: Trait>() -> Config {
         Config {
             schedule: <Module<T>>::current_schedule(),
-            max_depth: 0,      //T::MaxDepth::get(),
-            max_value_size: 0, // T::MaxValueSize::get(),
-            _phantom: PhantomData::<T>,
+            max_depth: T::MaxDepth::get(),
         }
     }
 }
@@ -158,15 +142,11 @@ type ChallengeGameOf<T> = ChallengeGame<
 >;
 type PropertyOf<T> = Property<<T as system::Trait>::AccountId>;
 type AccountIdOf<T> = <T as frame_system::Trait>::AccountId;
-type MomentOf<T> = <<T as Trait>::Time as Time>::Moment;
-type SeedOf<T> = <T as frame_system::Trait>::Hash;
 type PredicateContractOf<T> = PredicateContract<<T as frame_system::Trait>::Hash>;
-type BlockNumberOf<T> = <T as frame_system::Trait>::BlockNumber;
 
 pub trait Trait: system::Trait {
-    type Time: Time;
-
-    type Randomness: Randomness<Self::Hash>;
+    /// The maximum nesting level of a call/instantiate stack.
+    type MaxDepth: Get<u32>;
 
     /// During the dispute period defined here, the user can challenge.
     /// If nothing is found, the state is determined after the dispute period.
@@ -193,7 +173,7 @@ decl_storage! {
         /// Mapping the predicate address to Predicate.
         /// Predicate is handled similar to contracts.
         pub Predicates get(fn predicates): map hasher(blake2_128_concat)
-         T::AccountId => Option<PredicateContract<PredicateHash<T>>>;
+         T::AccountId => Option<PredicateContractOf<T>>;
 
         /// Mapping the game id to Challenge Game.
         pub InstantiatedGames get(fn instantiated_games):
@@ -534,7 +514,7 @@ impl<T: Trait> Module<T> {
         origin: T::AccountId,
         func: impl FnOnce(&mut ExecutionContext<T, PredicateOvm, PredicateLoader>) -> ExecResult,
     ) -> ExecResult {
-        let cfg = Config::preload();
+        let cfg = Config::preload::<T>();
         let vm = PredicateOvm::new(&cfg.schedule);
         let loader = PredicateLoader::new(&cfg.schedule);
         let mut ctx = ExecutionContext::top_level(origin.clone(), &cfg, &vm, &loader);

@@ -94,15 +94,6 @@ impl frame_system::Trait for Test {
 }
 
 parameter_types! {
-    pub const MinimumPeriod: u64 = 1;
-}
-impl pallet_timestamp::Trait for Test {
-    type Moment = u64;
-    type OnTimestampSet = ();
-    type MinimumPeriod = MinimumPeriod;
-}
-
-parameter_types! {
     pub const ExistentialDeposit: Balance = 10;
 }
 
@@ -125,9 +116,12 @@ impl PredicateAddressFor<H256, u64> for DummyPredicateAddressFor {
     }
 }
 
+parameter_types! {
+    pub const MaxDepth: u32 = 32;
+}
+
 impl Trait for Test {
-    type Time = Timestamp;
-    type Randomness = Randomness;
+    type MaxDepth = MaxDepth;
     type DisputePeriod = DisputePeriod;
     type DeterminePredicateAddress = DummyPredicateAddressFor;
     type Event = MetaEvent;
@@ -135,8 +129,6 @@ impl Trait for Test {
 
 pub type System = frame_system::Module<Test>;
 pub type Balances = pallet_balances::Module<Test>;
-pub type Timestamp = pallet_timestamp::Module<Test>;
-pub type Randomness = pallet_randomness_collective_flip::Module<Test>;
 pub type Ovm = Module<Test>;
 
 const PER_BLOCK: u64 = 1000;
@@ -145,9 +137,6 @@ pub fn advance_block() {
     let next = System::block_number() + 1;
     // increase block numebr
     System::set_block_number(next);
-    // increase timestamp + 1000
-    let next_time = Timestamp::get() + PER_BLOCK;
-    Timestamp::set_timestamp(next_time);
 }
 
 /// Generate compiled predicate binary and code hash from predicate source.

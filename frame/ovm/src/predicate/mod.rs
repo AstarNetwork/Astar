@@ -65,6 +65,7 @@ pub struct PrefabOvmModule {
 
 /// Ovm executable loaded by `OvmLoader` and executed by `OptimisticOvm`.
 pub struct OvmExecutable {
+    /// "is_valid_challenge", "decide_true", etc...
     entrypoint_name: &'static str,
     prefab_module: PrefabOvmModule,
 }
@@ -97,11 +98,9 @@ pub struct ExecutionContext<'a, T: Trait + 'a, V, L> {
     pub self_account: T::AccountId,
     pub depth: usize,
     // pub deferred: Vec<DeferredAction<T>>,
-    pub config: &'a Config<T>,
+    pub config: &'a Config,
     pub vm: &'a V,
     pub loader: &'a L,
-    pub timestamp: MomentOf<T>,
-    pub block_number: T::BlockNumber,
 }
 
 impl<'a, T, E, V, L> ExecutionContext<'a, T, V, L>
@@ -114,7 +113,7 @@ where
     ///
     /// The specified `origin` address will be used as `sender` for. The `origin` must be a regular
     /// account (not a contract).
-    pub fn top_level(origin: T::AccountId, cfg: &'a Config<T>, vm: &'a V, loader: &'a L) -> Self {
+    pub fn top_level(origin: T::AccountId, cfg: &'a Config, vm: &'a V, loader: &'a L) -> Self {
         ExecutionContext {
             caller: None,
             self_account: origin,
@@ -123,8 +122,6 @@ where
             config: &cfg,
             vm: &vm,
             loader: &loader,
-            timestamp: T::Time::now(),
-            block_number: <frame_system::Module<T>>::block_number(),
         }
     }
 
@@ -137,8 +134,6 @@ where
             config: self.config,
             vm: self.vm,
             loader: self.loader,
-            timestamp: self.timestamp.clone(),
-            block_number: self.block_number.clone(),
         }
     }
 
@@ -176,22 +171,13 @@ where
     }
 
     fn new_call_context<'b>(&'b mut self, caller: T::AccountId) -> CallContext<'b, 'a, T, V, L> {
-        let timestamp = self.timestamp.clone();
-        let block_number = self.block_number.clone();
-        CallContext {
-            ctx: self,
-            caller,
-            timestamp,
-            block_number,
-        }
+        CallContext { ctx: self, caller }
     }
 }
 
 pub struct CallContext<'a, 'b: 'a, T: Trait + 'b, V: Vm<T> + 'b, L: Loader<T>> {
     ctx: &'a mut ExecutionContext<'b, T, V, L>,
     caller: T::AccountId,
-    timestamp: MomentOf<T>,
-    block_number: T::BlockNumber,
 }
 
 /// An interface that provides access to the external environment in which the
@@ -221,31 +207,6 @@ where
     fn address(&self) -> &AccountIdOf<Self::T> {
         &self.ctx.self_account
     }
-
-    /// Returns a reference to the timestamp of the current block
-    fn now(&self) -> &MomentOf<Self::T> {
-        &self.timestamp
-    }
-
-    /// Returns a random number for the current block with the given subject.
-    fn random(&self, subject: &[u8]) -> SeedOf<Self::T> {
-        T::Randomness::random(subject)
-    }
-
-    /// Deposit an event with the given topics.
-    ///
-    /// There should not be any duplicates in `topics`.
-    // fn deposit_event(&mut self, topics: Vec<TopicOf<Self::T>>, data: Vec<u8>) {
-    //     self.ctx.deferred.push(DeferredAction::DepositEvent {
-    //         topics,
-    //         event: RawEvent::ContractExecution(self.ctx.self_account.clone(), data),
-    //     });
-    // }
-
-    /// Returns the current block number.
-    fn block_number(&self) -> BlockNumberOf<Self::T> {
-        self.block_number
-    }
 }
 
 /// Implementation of `Vm` that takes `PredicateOvm` and executes it.
@@ -268,7 +229,7 @@ impl<'a, T: Trait> Vm<T> for PredicateOvm<'a> {
         ext: E,
         input_data: Vec<u8>,
     ) -> ExecResult {
-        // TODO: make sandbox environments(Is it needed?)
+        // TODO: make sandbox environments(Is it needed?) -> needed
         // let mut imports = sp_sandbox::EnvironmentDefinitionBuilder::new();
 
         // TODO: runtime setup.
@@ -292,38 +253,3 @@ impl<'a, T: Trait> Vm<T> for PredicateOvm<'a> {
         Ok(true)
     }
 }
-
-// address()
-
-// // predicate must be derive to:
-// #[derive(Encode, Decode, Clone, Default, RuntimeDebug, PartialEq, Eq)]
-// pub struct BaseAtomicPredicate;
-//
-// impl BaseAtomicPredicate {
-//     pub fn new() -> BaseAtomicPredicate {
-//         Self
-//     }
-// }
-//
-// impl AtomicPredicate for BaseAtomicPredicate {
-//     fn decide_true(inputs: Vec<u8>) -> Result {
-//         if Self::decide(_inputs) != Decision::True {
-//             // error: "must decide true"
-//         }
-//         property = Property {
-//             predicate_address: Self::address(),
-//             inputs: inputs,
-//         };
-//
-//         T::set_predicate_decision(utils.getPropertyId(property), true)
-//     }
-//     fn decide(_inputs: Vec<u8>) -> Decision {
-//         Decision::False
-//     }
-// }
-//
-// impl DecidablePredicate for BaseAtomicPredicate {
-//     fn decide_with_witness(inputs: Vec<u8>, _witness: Vec<u8>) -> Decision {
-//         Self::decide(inputs)
-//     }
-// }

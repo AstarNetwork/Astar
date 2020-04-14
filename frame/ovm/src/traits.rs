@@ -25,6 +25,12 @@ pub trait Loader<T: Trait> {
 ///
 /// This interface is specialized to an account of the executing code, so all
 /// operations are implicitly performed on that account.
+///
+/// Predicate call the only below functions.
+/// - call: call to other predicate.
+/// - caller: get of the caller of this predicate.
+/// - address: the predicate's address.
+/// - is_stored: check the storage of other modules or contracts.
 pub trait Ext {
     type T: Trait;
 
@@ -37,21 +43,11 @@ pub trait Ext {
     /// Returns a reference to the account id of the current contract.
     fn address(&self) -> &AccountIdOf<Self::T>;
 
-    // TODO: Is it neeed?
-    /// Returns a reference to the timestamp of the current block
-    fn now(&self) -> &MomentOf<Self::T>;
-
-    // TODO: Is it neeed?
-    /// Returns a random number for the current block with the given subject.
-    fn random(&self, subject: &[u8]) -> SeedOf<Self::T>;
-
-    /// Deposit an event with the given topics.
-    ///
-    /// There should not be any duplicates in `topics`.
-    // fn deposit_event(&mut self, topics: Vec<TopicOf<Self::T>>, data: Vec<u8>);
-
-    /// Returns the current block number.
-    fn block_number(&self) -> BlockNumberOf<Self::T>;
+    // TODO: Notes a call other storage.
+    // Only return true or false.
+    // CommitmentAddress(special) isCommitment(address) -> Commitment
+    // is_stored_predicate(&mut self, address, key, value);?
+    // ref: https://github.com/cryptoeconomicslab/ovm-contracts/blob/master/contracts/Predicate/Atomic/IsStoredPredicate.sol
 }
 
 /// A trait that represent an optimistic virtual machine.
@@ -71,21 +67,4 @@ pub trait Vm<T: Trait> {
         ext: E,
         input_data: Vec<u8>,
     ) -> ExecResult;
-}
-
-pub trait AtomicPredicate {
-    fn decide_true(inputs: Vec<u8>);
-    fn decide(inputs: Vec<u8>) -> Decision;
-}
-
-pub trait DecidablePredicate {
-    fn decide_with_witness(inputs: Vec<u8>, witness: Vec<u8>) -> Decision;
-}
-
-pub trait LogicalConnective<AccountId> {
-    fn is_valid_challenge(
-        inputs: Vec<u8>,
-        challenge_inputs: Vec<u8>,
-        challenge: Property<AccountId>,
-    ) -> Decision;
 }

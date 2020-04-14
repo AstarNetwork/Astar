@@ -16,13 +16,11 @@ sp-io = { git = 'https://github.com/staketechnologies/substrate.git', branch = "
 sp-std = { git = 'https://github.com/staketechnologies/substrate.git', branch = "plasm-master", default_features = false }
 frame-support = { git = 'https://github.com/staketechnologies/substrate.git', branch = "plasm-master", default_features = false }
 frame-system = { git = 'https://github.com/staketechnologies/substrate.git', branch = "plasm-master", default_features = false }
-pallet-timestamp = { git = 'https://github.com/staketechnologies/substrate.git', branch = "plasm-master" }
 
 [dev-dependencies]
 hex-literal = "0.2.1"
 sp-core = { git = 'https://github.com/staketechnologies/substrate.git', branch = "plasm-master" }
 pallet-balances = { git = 'https://github.com/staketechnologies/substrate.git', branch = "plasm-master" }
-pallet-randomness-collective-flip = { git = 'https://github.com/staketechnologies/substrate.git', branch = "plasm-master" }
 
 [features]
 default = ["std"]
@@ -35,5 +33,4 @@ std = [
     'sp-std/std',
     'frame-support/std',
     'frame-system/std',
-    'pallet-timestamp/std',
 ]
