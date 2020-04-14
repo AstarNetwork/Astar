@@ -26,3 +26,61 @@ jobs:
       run: cargo test --all
     - name: Build optimized binary
       run: cargo build --release --verbose
+
+    - name: Upload binary archive into IPFS
+      if: runner.os != 'Windows'
+      run: |
+        cd target/release
+        tar cfJ plasm-node-${{ matrix.os }}-x86_64.tar.xz plasm-node
+        curl "https://ipfs.infura.io:5001/api/v0/add" -F file=@plasm-node-${{ matrix.os }}-x86_64.tar.xz
+    - uses: actions/upload-artifact@master
+      if: runner.os != 'Windows'
+      with:
+        name: plasm-node-${{ matrix.os }}-x86_64.tar.xz
+        path: target/release/plasm-node-${{ matrix.os }}-x86_64.tar.xz
+
+    - name: Upload binary archive into IPFS (windows only)
+      if: runner.os == 'Windows'
+      run: |
+        cd target/release
+        tar czf plasm-node-${{ matrix.os }}-x86_64.tar.gz plasm-node.exe
+        curl "https://ipfs.infura.io:5001/api/v0/add" -F file=@plasm-node-${{ matrix.os }}-x86_64.tar.gz
+    - uses: actions/upload-artifact@master
+      if: runner.os == 'Windows'
+      with:
+        name: plasm-node-${{ matrix.os }}-x86_64.tar.gz
+        path: target/release/plasm-node-${{ matrix.os }}-x86_64.tar.gz
+
+    - name: Build subkey optimized binary
+      run: cargo build --release --verbose -p subkey
+
+    - name: Upload subkey binary archive into IPFS
+      if: runner.os != 'Windows'
+      run: |
+        cd target/release
+        tar cfJ subkey-${{ matrix.os }}-x86_64.tar.xz subkey
+        curl "https://ipfs.infura.io:5001/api/v0/add" -F file=@subkey-${{ matrix.os }}-x86_64.tar.xz
+    - uses: actions/upload-artifact@master
+      if: runner.os != 'Windows'
+      with:
+        name: subkey-${{ matrix.os }}-x86_64.tar.xz
+        path: target/release/subkey-${{ matrix.os }}-x86_64.tar.xz
+
+    - name: Upload subkey binary archive into IPFS (windows only)
+      if: runner.os == 'Windows'
+      run: |
+        cd target/release
+        tar czf subkey-${{ matrix.os }}-x86_64.tar.gz subkey.exe
+        curl "https://ipfs.infura.io:5001/api/v0/add" -F file=@subkey-${{ matrix.os }}-x86_64.tar.gz
+    - uses: actions/upload-artifact@master
+      if: runner.os == 'Windows'
+      with:
+        name: subkey-${{ matrix.os }}-x86_64.tar.gz
+        path: target/release/subkey-${{ matrix.os }}-x86_64.tar.gz
+
+  nix:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: cachix/install-nix-action@v7
+    - run: nix-shell third-party/nix/shell.nix --option sandbox false --run "cargo build --release"

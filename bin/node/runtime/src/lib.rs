@@ -17,7 +17,7 @@ use sp_runtime::traits::{
     BlakeTwo256, Block as BlockT, ConvertInto, Extrinsic, OpaqueKeys, SaturatedConversion,
     StaticLookup, Verify,
 };
-use sp_runtime::transaction_validity::TransactionValidity;
+use sp_runtime::transaction_validity::{TransactionSource, TransactionValidity};
 use sp_runtime::{create_runtime_str, generic, impl_opaque_keys, ApplyExtrinsicResult, Perbill};
 use sp_std::prelude::*;
 use support::{construct_runtime, parameter_types, traits::Randomness, weights::Weight};
@@ -66,6 +66,10 @@ pub fn native_version() -> NativeVersion {
         can_author_with: Default::default(),
     }
 }
+
+/// A transaction submitter with the given key type.
+pub type TransactionSubmitterOf<KeyType> =
+    system::offchain::TransactionSubmitter<KeyType, Runtime, UncheckedExtrinsic>;
 
 parameter_types! {
     pub const BlockHashCount: BlockNumber = 250;
@@ -170,6 +174,7 @@ impl session::Trait for Runtime {
     type SessionManager = PlasmRewards;
     type SessionHandler = <SessionKeys as OpaqueKeys>::KeyTypeIdProviders;
     type ShouldEndSession = Babe;
+    type NextSessionRotation = Babe;
     type Event = Event;
     type Keys = SessionKeys;
     type ValidatorId = <Self as system::Trait>::AccountId;
@@ -288,6 +293,33 @@ impl finality_tracker::Trait for Runtime {
     type ReportLatency = ReportLatency;
 }
 
+parameter_types! {
+    pub const BitcoinTickerUri: &'static str = "http://api.coingecko.com/api/v3/coins/bitcoin";
+    pub const EthereumTickerUri: &'static str = "http://api.coingecko.com/api/v3/coins/ethereum";
+    pub const BitcoinApiUri: &'static str = "http://api.blockcypher.com/v1/btc/test3/txs";
+    pub const EthereumApiUri: &'static str = "http://api.blockcypher.com/v1/eth/test/txs";
+    pub const MedianFilterExpire: Moment = 300; // 10 blocks is one minute, 300 - half hour
+}
+
+impl plasm_lockdrop::Trait for Runtime {
+    type Currency = Balances;
+    type BitcoinTicker = plasm_lockdrop::CoinGecko<BitcoinTickerUri>;
+    type EthereumTicker = plasm_lockdrop::CoinGecko<EthereumTickerUri>;
+    type BitcoinApi = plasm_lockdrop::BlockCypher<BitcoinApiUri, plasm_lockdrop::BitcoinAddress>;
+    type EthereumApi = plasm_lockdrop::BlockCypher<EthereumApiUri, plasm_lockdrop::EthereumAddress>;
+    type MedianFilterExpire = MedianFilterExpire;
+    type MedianFilterWidth = plasm_lockdrop::typenum::U5;
+    type Call = Call;
+    type SubmitTransaction = TransactionSubmitterOf<Self::AuthorityId>;
+    type AuthorityId = plasm_lockdrop::sr25519::AuthorityId;
+    type Account = sp_runtime::MultiSigner;
+    type Time = Timestamp;
+    type Moment = <Self as timestamp::Trait>::Moment;
+    type DollarRate = <Self as balances::Trait>::Balance;
+    type BalanceConvert = <Self as balances::Trait>::Balance;
+    type Event = Event;
+}
+
 impl system::offchain::CreateTransaction<Runtime, UncheckedExtrinsic> for Runtime {
     type Public = <Signature as Verify>::Signer;
     type Signature = Signature;
@@ -339,6 +371,7 @@ construct_runtime!(
         Trading: trading::{Module, Call, Storage, Event<T>},
         PlasmRewards: plasm_rewards::{Module, Call, Storage, Event<T>, Config},
         PlasmValidator: plasm_validator::{Module, Call, Storage, Event<T>, Config<T>},
+        PlasmLockdrop: plasm_lockdrop::{Module, Call, Storage, Event<T>, Config<T>},
         DappsStaking: dapps_staking::{Module, Call, Storage, Event<T>, Config},
         RandomnessCollectiveFlip: randomness_collective_flip::{Module, Call, Storage},
     }
@@ -418,8 +451,11 @@ impl_runtime_apis! {
     }
 
     impl sp_transaction_pool::runtime_api::TaggedTransactionQueue<Block> for Runtime {
-        fn validate_transaction(tx: <Block as BlockT>::Extrinsic) -> TransactionValidity {
-            Executive::validate_transaction(tx)
+        fn validate_transaction(
+            source: TransactionSource,
+            tx: <Block as BlockT>::Extrinsic,
+        ) -> TransactionValidity {
+            Executive::validate_transaction(source, tx)
         }
     }
 

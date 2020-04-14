@@ -8,7 +8,6 @@
 
 use super::*;
 use sp_arithmetic::traits::BaseArithmetic;
-use sp_runtime::PerThing;
 use traits::ComputeTotalPayout;
 
 pub struct SimpleComputeTotalPayout;

@@ -120,7 +120,6 @@ impl_opaque_keys! {
 }
 
 impl pallet_session::Trait for Runtime {
-    type ShouldEndSession = pallet_session::PeriodicSessions<Period, Offset>;
     type SessionManager = pallet_session::historical::NoteHistoricalRoot<Runtime, TestSessionManager>;
     type SessionHandler = (PlasmLockdrop, );
     type ValidatorId = AccountId;
@@ -128,6 +127,8 @@ impl pallet_session::Trait for Runtime {
     type Keys = SessionKeys;
     type Event = ();
     type DisabledValidatorsThreshold = DisabledValidatorsThreshold;
+    type NextSessionRotation = pallet_session::PeriodicSessions<Period, Offset>;
+    type ShouldEndSession = pallet_session::PeriodicSessions<Period, Offset>;
 }
 
 impl pallet_session::historical::Trait for Runtime {
@@ -148,16 +149,11 @@ impl pallet_balances::Trait for Runtime {
 }
 
 parameter_types! {
-    pub const VoteThreshold: AuthorityVote = 3;
-    pub const PositiveVotes: AuthorityVote = 2;
     pub const BitcoinTickerUri: &'static str = "http://api.coingecko.com/api/v3/coins/bitcoin";
     pub const EthereumTickerUri: &'static str = "http://api.coingecko.com/api/v3/coins/ethereum";
     pub const BitcoinApiUri: &'static str = "http://api.blockcypher.com/v1/btc/test3/txs";
     pub const EthereumApiUri: &'static str = "http://api.blockcypher.com/v1/eth/test/txs";
-    pub const EthereumContractAddress: &'static str = "";
-    pub const LockdropEnd: Moment = 0;
     pub const MedianFilterExpire: Moment = 2;
-    pub const MedianFilterWidth: usize = 3;
 }
 
 /// An extrinsic type used for tests.
@@ -166,16 +162,12 @@ type SubmitTransaction = frame_system::offchain::TransactionSubmitter<(), Call, 
 
 impl Trait for Runtime {
     type Currency = Balances;
-    type VoteThreshold = VoteThreshold;
-    type PositiveVotes = PositiveVotes;
-    type BitcoinTickerUri = BitcoinTickerUri;
-    type EthereumTickerUri = EthereumTickerUri;
-    type BitcoinApiUri = BitcoinApiUri;
-    type EthereumApiUri = EthereumApiUri;
-    type EthereumContractAddress = EthereumContractAddress;
-    type LockdropEnd = LockdropEnd;
+    type BitcoinTicker = CoinGecko<BitcoinTickerUri>;
+    type EthereumTicker = CoinGecko<EthereumTickerUri>;
+    type BitcoinApi = BlockCypher<BitcoinApiUri, BitcoinAddress>;
+    type EthereumApi = BlockCypher<EthereumApiUri, EthereumAddress>;
     type MedianFilterExpire = MedianFilterExpire;
-    type MedianFilterWidth = MedianFilterWidth;
+    type MedianFilterWidth = generic_array::typenum::U3;
     type Call = Call;
     type SubmitTransaction = SubmitTransaction;
     type AuthorityId = sr25519::AuthorityId;
@@ -219,16 +211,20 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
         alpha: Perbill::from_parts(200_000_000),
         // BTC: $5000, ETH: $120
         dollar_rate: (5_000, 120),
+        vote_threshold: 3,
+        positive_votes: 2,
+        lockdrop_end: 0,
+        ethereum_contract: hex_literal::hex!["458dabf1eff8fcdfbf0896a6bd1f457c01e2ffd6"],
     }.assimilate_storage(&mut storage);
 
     storage.into()
 }
 
 pub fn advance_session() {
-    let now = System::block_number();
-    System::set_block_number(now + 1);
+    let next = System::block_number() + 1;
+    System::set_block_number(next);
     Session::rotate_session();
-    assert_eq!(Session::current_index(), (now / Period::get()) as u32);
+    assert_eq!(Session::current_index(), (next / Period::get()) as u32);
 }
 
 pub const COINGECKO_BTC_TICKER: &str = r#"

@@ -279,51 +279,6 @@ fn check_eth_issue_amount() {
 }
 
 #[test]
-fn fetch_json_works() {
-    let mut ext = new_test_ext();
-    let (offchain, state) = TestOffchainExt::new();
-    ext.register_extension(OffchainExt::new(offchain));
-
-    let json = serde_json::json!({
-        "galactic": "milkyway",
-        "answer": 42,
-    });
-
-
-    ext.execute_with(|| {
-        state.write().expect_request(
-            0,
-            sp_core::offchain::testing::PendingRequest {
-                method: "GET".into(),
-                uri: "http://localhost/test".into(),
-                sent: true,
-                response: Some(json.to_string().as_bytes().to_vec()),
-                ..Default::default()
-            },
-        );
-        assert_eq!(
-            crate::fetch_json("http://localhost/test"),
-            Ok(json.clone()),
-        );
-
-        state.write().expect_request(
-            0,
-            sp_core::offchain::testing::PendingRequest {
-                method: "GET".into(),
-                uri: "http://localhost/ticker".into(),
-                sent: true,
-                response: Some(COINGECKO_BTC_TICKER.into()),
-                ..Default::default()
-            },
-        );
-        assert_eq!(
-            crate::fetch_json("http://localhost/ticker"),
-            Ok(serde_json::from_str(COINGECKO_BTC_TICKER).unwrap())
-        );
-    })
-}
-
-#[test]
 fn dollar_rate_ticker_works() {
     let mut ext = new_test_ext();
     let (offchain, state) = TestOffchainExt::new();
@@ -340,7 +295,7 @@ fn dollar_rate_ticker_works() {
                 ..Default::default()
             },
         );
-        assert_eq!(PlasmLockdrop::btc_ticker(), Ok(6766));
+        assert_eq!(<Runtime as Trait>::BitcoinTicker::fetch(), Ok(6766));
         state.write().expect_request(
             0,
             sp_core::offchain::testing::PendingRequest {
@@ -351,7 +306,7 @@ fn dollar_rate_ticker_works() {
                 ..Default::default()
             },
         );
-        assert_eq!(PlasmLockdrop::eth_ticker(), Ok(139));
+        assert_eq!(<Runtime as Trait>::EthereumTicker::fetch(), Ok(139));
     })
 }
 
@@ -379,7 +334,7 @@ fn dollar_rate_offchain_worker() {
                 ..Default::default()
             },
         );
-        let btc = PlasmLockdrop::btc_ticker().unwrap();
+        let btc = <Runtime as Trait>::BitcoinTicker::fetch().unwrap();
 
         state.write().expect_request(
             0,
@@ -391,9 +346,9 @@ fn dollar_rate_offchain_worker() {
                 ..Default::default()
             },
         );
-        let eth = PlasmLockdrop::eth_ticker().unwrap();
+        let eth = <Runtime as Trait>::EthereumTicker::fetch().unwrap();
 
-        assert_ok!(PlasmLockdrop::send_dollar_rate(btc.into(), eth.into()));
+        assert_ok!(PlasmLockdrop::send_dollar_rate(btc, eth));
 
         let transaction = pool_state.write().transactions.pop().unwrap();
         let ex: Extrinsic = Decode::decode(&mut &*transaction).unwrap();
