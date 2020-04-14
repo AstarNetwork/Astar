@@ -3,11 +3,13 @@
 #![cfg(test)]
 
 use super::*;
-use frame_support::{impl_outer_dispatch, impl_outer_event, impl_outer_origin, parameter_types};
+use frame_support::{
+    impl_outer_dispatch, impl_outer_event, impl_outer_origin, parameter_types, traits::OnFinalize,
+};
 use pallet_balances as balances;
 use sp_core::{crypto::key_types, H256};
 use sp_runtime::testing::{Header, UintAuthorityId};
-use sp_runtime::traits::{BlakeTwo256, ConvertInto, IdentityLookup, OnFinalize};
+use sp_runtime::traits::{BlakeTwo256, ConvertInto, IdentityLookup};
 use sp_runtime::{KeyTypeId, Perbill};
 
 pub type BlockNumber = u64;

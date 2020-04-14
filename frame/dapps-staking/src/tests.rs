@@ -4,10 +4,9 @@
 
 use super::*;
 use crate::mock::*;
-use frame_support::{assert_noop, assert_ok};
+use frame_support::{assert_noop, assert_ok, traits::OnFinalize};
 use pallet_balances::{BalanceLock, Reasons};
 use pallet_plasm_rewards::traits::ComputeTotalPayout;
-use sp_runtime::traits::OnFinalize;
 use sp_runtime::DispatchError;
 
 #[test]

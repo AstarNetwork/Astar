@@ -938,32 +938,16 @@ name = "frame-benchmarking"
 version = "2.0.0-alpha.5"
 source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty#0366301736cb7c121452e9a1c19a350923d40e87"
 dependencies = [
- "frame-support 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "frame-system 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "frame-support",
+ "frame-system",
  "linregress",
  "parity-scale-codec",
  "paste",
- "sp-api 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-io 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-runtime 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-runtime-interface 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-std 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
-]
-
-[[package]]
-name = "frame-benchmarking"
-version = "2.0.0-alpha.5"
-source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#d9a75f6f365d2aa9872c9e21760ee2d85614d018"
-dependencies = [
- "frame-support 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
- "frame-system 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
- "linregress",
- "parity-scale-codec",
- "sp-api 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
- "sp-io 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
- "sp-runtime 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
- "sp-runtime-interface 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
- "sp-std 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
+ "sp-api",
+ "sp-io",
+ "sp-runtime",
+ "sp-runtime-interface",
+ "sp-std",
 ]
 
 [[package]]
@@ -971,17 +955,17 @@ name = "frame-benchmarking-cli"
 version = "2.0.0-alpha.5"
 source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty#0366301736cb7c121452e9a1c19a350923d40e87"
 dependencies = [
- "frame-benchmarking 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "frame-benchmarking",
  "parity-scale-codec",
  "sc-cli",
  "sc-client",
  "sc-client-db",
  "sc-executor",
  "sc-service",
- "sp-core 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-externalities 0.8.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-runtime 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-state-machine 0.8.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "sp-core",
+ "sp-externalities",
+ "sp-runtime",
+ "sp-state-machine",
  "structopt",
 ]
 
@@ -990,12 +974,12 @@ name = "frame-executive"
 version = "2.0.0-alpha.5"
 source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty#0366301736cb7c121452e9a1c19a350923d40e87"
 dependencies = [
- "frame-support 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "frame-system 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "frame-support",
+ "frame-system",
  "parity-scale-codec",
  "serde",
- "sp-runtime 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-std 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "sp-runtime",
+ "sp-std",
 ]
 
 [[package]]
@@ -1005,19 +989,8 @@ source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-du
 dependencies = [
  "parity-scale-codec",
  "serde",
- "sp-core 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-std 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
-]
-
-[[package]]
-name = "frame-metadata"
-version = "11.0.0-alpha.5"
-source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#d9a75f6f365d2aa9872c9e21760ee2d85614d018"
-dependencies = [
- "parity-scale-codec",
- "serde",
- "sp-core 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
- "sp-std 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
+ "sp-core",
+ "sp-std",
 ]
 
 [[package]]
@@ -1026,45 +999,21 @@ version = "2.0.0-alpha.5"
 source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty#0366301736cb7c121452e9a1c19a350923d40e87"
 dependencies = [
  "bitmask",
- "frame-metadata 11.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "frame-support-procedural 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "frame-metadata",
+ "frame-support-procedural",
  "impl-trait-for-tuples",
  "log",
  "once_cell 1.3.1",
  "parity-scale-codec",
  "paste",
  "serde",
- "sp-arithmetic 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-core 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-inherents 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-io 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-runtime 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-state-machine 0.8.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-std 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "tracing",
-]
-
-[[package]]
-name = "frame-support"
-version = "2.0.0-alpha.5"
-source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#d9a75f6f365d2aa9872c9e21760ee2d85614d018"
-dependencies = [
- "bitmask",
- "frame-metadata 11.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
- "frame-support-procedural 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
- "impl-trait-for-tuples",
- "log",
- "once_cell 1.3.1",
- "parity-scale-codec",
- "paste",
- "serde",
- "sp-arithmetic 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
- "sp-core 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
- "sp-inherents 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
- "sp-io 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
- "sp-runtime 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
- "sp-state-machine 0.8.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
- "sp-std 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
+ "sp-arithmetic",
+ "sp-core",
+ "sp-inherents",
+ "sp-io",
+ "sp-runtime",
+ "sp-state-machine",
+ "sp-std",
  "tracing",
 ]
 
@@ -1073,18 +1022,7 @@ name = "frame-support-procedural"
 version = "2.0.0-alpha.5"
 source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty#0366301736cb7c121452e9a1c19a350923d40e87"
 dependencies = [
- "frame-support-procedural-tools 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "proc-macro2 1.0.10",
- "quote 1.0.3",
- "syn 1.0.17",
-]
-
-[[package]]
-name = "frame-support-procedural"
-version = "2.0.0-alpha.5"
-source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#d9a75f6f365d2aa9872c9e21760ee2d85614d018"
-dependencies = [
- "frame-support-procedural-tools 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
+ "frame-support-procedural-tools",
  "proc-macro2 1.0.10",
  "quote 1.0.3",
  "syn 1.0.17",
@@ -1095,19 +1033,7 @@ name = "frame-support-procedural-tools"
 version = "2.0.0-alpha.5"
 source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty#0366301736cb7c121452e9a1c19a350923d40e87"
 dependencies = [
- "frame-support-procedural-tools-derive 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "proc-macro-crate",
- "proc-macro2 1.0.10",
- "quote 1.0.3",
- "syn 1.0.17",
-]
-
-[[package]]
-name = "frame-support-procedural-tools"
-version = "2.0.0-alpha.5"
-source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#d9a75f6f365d2aa9872c9e21760ee2d85614d018"
-dependencies = [
- "frame-support-procedural-tools-derive 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
+ "frame-support-procedural-tools-derive",
  "proc-macro-crate",
  "proc-macro2 1.0.10",
  "quote 1.0.3",
@@ -1125,45 +1051,19 @@ dependencies = [
 ]
 
 [[package]]
-name = "frame-support-procedural-tools-derive"
-version = "2.0.0-alpha.5"
-source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#d9a75f6f365d2aa9872c9e21760ee2d85614d018"
-dependencies = [
- "proc-macro2 1.0.10",
- "quote 1.0.3",
- "syn 1.0.17",
-]
-
-[[package]]
 name = "frame-system"
 version = "2.0.0-alpha.5"
 source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty#0366301736cb7c121452e9a1c19a350923d40e87"
 dependencies = [
- "frame-support 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "frame-support",
  "impl-trait-for-tuples",
  "parity-scale-codec",
  "serde",
- "sp-core 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-io 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-runtime 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-std 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-version 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
-]
-
-[[package]]
-name = "frame-system"
-version = "2.0.0-alpha.5"
-source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#d9a75f6f365d2aa9872c9e21760ee2d85614d018"
-dependencies = [
- "frame-support 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
- "impl-trait-for-tuples",
- "parity-scale-codec",
- "serde",
- "sp-core 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
- "sp-io 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
- "sp-runtime 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
- "sp-std 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
- "sp-version 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+ "sp-version",
 ]
 
 [[package]]
@@ -1172,7 +1072,7 @@ version = "2.0.0-alpha.5"
 source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty#0366301736cb7c121452e9a1c19a350923d40e87"
 dependencies = [
  "parity-scale-codec",
- "sp-api 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "sp-api",
 ]
 
 [[package]]
@@ -2889,16 +2789,16 @@ name = "pallet-authorship"
 version = "2.0.0-alpha.5"
 source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty#0366301736cb7c121452e9a1c19a350923d40e87"
 dependencies = [
- "frame-support 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "frame-system 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "frame-support",
+ "frame-system",
  "impl-trait-for-tuples",
  "parity-scale-codec",
  "sp-authorship",
- "sp-core 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-inherents 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-io 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-runtime 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-std 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "sp-core",
+ "sp-inherents",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
 ]
 
 [[package]]
@@ -2906,19 +2806,19 @@ name = "pallet-babe"
 version = "2.0.0-alpha.5"
 source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty#0366301736cb7c121452e9a1c19a350923d40e87"
 dependencies = [
- "frame-support 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "frame-system 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "frame-support",
+ "frame-system",
  "pallet-session",
  "pallet-timestamp",
  "parity-scale-codec",
  "serde",
  "sp-consensus-babe",
  "sp-consensus-vrf",
- "sp-inherents 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-io 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-runtime 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "sp-inherents",
+ "sp-io",
+ "sp-runtime",
  "sp-staking",
- "sp-std 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "sp-std",
  "sp-timestamp",
 ]
 
@@ -2927,29 +2827,14 @@ name = "pallet-balances"
 version = "2.0.0-alpha.5"
 source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty#0366301736cb7c121452e9a1c19a350923d40e87"
 dependencies = [
- "frame-benchmarking 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "frame-support 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "frame-system 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
  "parity-scale-codec",
  "serde",
- "sp-io 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-runtime 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-std 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
-]
-
-[[package]]
-name = "pallet-balances"
-version = "2.0.0-alpha.5"
-source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#d9a75f6f365d2aa9872c9e21760ee2d85614d018"
-dependencies = [
- "frame-benchmarking 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
- "frame-support 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
- "frame-system 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
- "parity-scale-codec",
- "serde",
- "sp-io 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
- "sp-runtime 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
- "sp-std 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
 ]
 
 [[package]]
@@ -2957,19 +2842,19 @@ name = "pallet-contract-operator"
 version = "0.1.0"
 dependencies = [
  "derive_more 0.14.1",
- "frame-support 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "frame-system 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "frame-support",
+ "frame-system",
  "hex-literal",
- "pallet-balances 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "pallet-balances",
  "pallet-contracts",
  "pallet-randomness-collective-flip",
  "pallet-timestamp",
  "parity-scale-codec",
  "serde",
- "sp-core 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-io 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-runtime 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-std 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
  "wabt",
 ]
 
@@ -2978,18 +2863,18 @@ name = "pallet-contracts"
 version = "2.0.0-alpha.5"
 source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty#0366301736cb7c121452e9a1c19a350923d40e87"
 dependencies = [
- "frame-support 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "frame-system 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "frame-support",
+ "frame-system",
  "pallet-contracts-primitives",
  "parity-scale-codec",
  "parity-wasm",
  "pwasm-utils",
  "serde",
- "sp-core 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-io 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-runtime 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
  "sp-sandbox",
- "sp-std 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "sp-std",
  "wasmi-validation",
 ]
 
@@ -2999,8 +2884,8 @@ version = "2.0.0-alpha.5"
 source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty#0366301736cb7c121452e9a1c19a350923d40e87"
 dependencies = [
  "parity-scale-codec",
- "sp-runtime 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-std 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "sp-runtime",
+ "sp-std",
 ]
 
 [[package]]
@@ -3015,11 +2900,11 @@ dependencies = [
  "pallet-contracts-rpc-runtime-api",
  "parity-scale-codec",
  "serde",
- "sp-api 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "sp-api",
  "sp-blockchain",
- "sp-core 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "sp-core",
  "sp-rpc",
- "sp-runtime 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "sp-runtime",
 ]
 
 [[package]]
@@ -3029,9 +2914,9 @@ source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-du
 dependencies = [
  "pallet-contracts-primitives",
  "parity-scale-codec",
- "sp-api 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-runtime 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-std 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "sp-api",
+ "sp-runtime",
+ "sp-std",
 ]
 
 [[package]]
@@ -3039,10 +2924,10 @@ name = "pallet-dapps-staking"
 version = "0.1.0"
 dependencies = [
  "derive_more 0.14.1",
- "frame-support 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "frame-system 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "frame-support",
+ "frame-system",
  "hex-literal",
- "pallet-balances 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "pallet-balances",
  "pallet-contract-operator",
  "pallet-contracts",
  "pallet-plasm-rewards",
@@ -3052,12 +2937,12 @@ dependencies = [
  "pallet-timestamp",
  "parity-scale-codec",
  "serde",
- "sp-arithmetic 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-core 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-io 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-runtime 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "sp-arithmetic",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
  "sp-staking",
- "sp-std 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "sp-std",
  "wabt",
 ]
 
@@ -3066,15 +2951,15 @@ name = "pallet-finality-tracker"
 version = "2.0.0-alpha.5"
 source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty#0366301736cb7c121452e9a1c19a350923d40e87"
 dependencies = [
- "frame-support 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "frame-system 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "frame-support",
+ "frame-system",
  "impl-trait-for-tuples",
  "parity-scale-codec",
  "serde",
  "sp-finality-tracker",
- "sp-inherents 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-runtime 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-std 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "sp-inherents",
+ "sp-runtime",
+ "sp-std",
 ]
 
 [[package]]
@@ -3082,17 +2967,17 @@ name = "pallet-grandpa"
 version = "2.0.0-alpha.5"
 source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty#0366301736cb7c121452e9a1c19a350923d40e87"
 dependencies = [
- "frame-support 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "frame-system 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "frame-support",
+ "frame-system",
  "pallet-finality-tracker",
  "pallet-session",
  "parity-scale-codec",
  "serde",
- "sp-core 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "sp-core",
  "sp-finality-grandpa",
- "sp-runtime 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "sp-runtime",
  "sp-staking",
- "sp-std 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "sp-std",
 ]
 
 [[package]]
@@ -3100,49 +2985,49 @@ name = "pallet-indices"
 version = "2.0.0-alpha.5"
 source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty#0366301736cb7c121452e9a1c19a350923d40e87"
 dependencies = [
- "frame-support 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "frame-system 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "frame-support",
+ "frame-system",
  "parity-scale-codec",
  "serde",
- "sp-core 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-io 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "sp-core",
+ "sp-io",
  "sp-keyring",
- "sp-runtime 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-std 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "sp-runtime",
+ "sp-std",
 ]
 
 [[package]]
 name = "pallet-operator-trading"
 version = "0.1.0"
 dependencies = [
- "frame-support 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "frame-system 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "pallet-balances 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "frame-support",
+ "frame-system",
+ "pallet-balances",
  "pallet-contract-operator",
  "pallet-timestamp",
  "parity-scale-codec",
  "serde",
- "sp-core 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-io 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-runtime 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-std 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
 ]
 
 [[package]]
 name = "pallet-ovm"
 version = "1.0.0"
 dependencies = [
- "frame-support 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
- "frame-system 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
+ "frame-support",
+ "frame-system",
  "hex-literal",
- "pallet-balances 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
+ "pallet-balances",
  "parity-scale-codec",
  "serde",
- "sp-arithmetic 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
- "sp-core 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
- "sp-io 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
- "sp-runtime 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
- "sp-std 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
+ "sp-arithmetic",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
 ]
 
 [[package]]
@@ -3150,8 +3035,8 @@ name = "pallet-ovm-rpc-runtime-api"
 version = "0.1.0"
 dependencies = [
  "parity-scale-codec",
- "sp-api 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
- "sp-std 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
+ "sp-api",
+ "sp-std",
 ]
 
 [[package]]
@@ -3159,14 +3044,14 @@ name = "pallet-plasm-lockdrop"
 version = "0.1.0"
 dependencies = [
  "bs58",
- "frame-support 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "frame-system 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "frame-support",
+ "frame-system",
  "generic-array 0.11.1",
  "hex",
  "hex-literal",
  "libsecp256k1",
  "median",
- "pallet-balances 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "pallet-balances",
  "pallet-session",
  "pallet-timestamp",
  "parity-scale-codec",
@@ -3175,13 +3060,13 @@ dependencies = [
  "serde",
  "sha2",
  "simple-json",
- "sp-arithmetic 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-core 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-io 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "sp-arithmetic",
+ "sp-core",
+ "sp-io",
  "sp-keyring",
- "sp-runtime 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "sp-runtime",
  "sp-staking",
- "sp-std 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "sp-std",
  "tiny-keccak",
 ]
 
@@ -3189,44 +3074,44 @@ dependencies = [
 name = "pallet-plasm-rewards"
 version = "0.1.0"
 dependencies = [
- "frame-support 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "frame-system 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "frame-support",
+ "frame-system",
  "hex-literal",
- "pallet-balances 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "pallet-balances",
  "pallet-randomness-collective-flip",
  "pallet-session",
  "pallet-staking",
  "pallet-timestamp",
  "parity-scale-codec",
  "serde",
- "sp-arithmetic 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-core 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-io 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-runtime 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "sp-arithmetic",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
  "sp-staking",
- "sp-std 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "sp-std",
 ]
 
 [[package]]
 name = "pallet-plasm-validator"
 version = "0.1.0"
 dependencies = [
- "frame-support 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "frame-system 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "frame-support",
+ "frame-system",
  "hex-literal",
- "pallet-balances 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "pallet-balances",
  "pallet-plasm-rewards",
  "pallet-randomness-collective-flip",
  "pallet-session",
  "pallet-timestamp",
  "parity-scale-codec",
  "serde",
- "sp-arithmetic 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-core 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-io 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-runtime 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "sp-arithmetic",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
  "sp-staking",
- "sp-std 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "sp-std",
 ]
 
 [[package]]
@@ -3234,12 +3119,12 @@ name = "pallet-randomness-collective-flip"
 version = "2.0.0-alpha.5"
 source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty#0366301736cb7c121452e9a1c19a350923d40e87"
 dependencies = [
- "frame-support 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "frame-system 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "frame-support",
+ "frame-system",
  "parity-scale-codec",
  "safe-mix",
- "sp-runtime 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-std 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "sp-runtime",
+ "sp-std",
 ]
 
 [[package]]
@@ -3247,17 +3132,17 @@ name = "pallet-session"
 version = "2.0.0-alpha.5"
 source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty#0366301736cb7c121452e9a1c19a350923d40e87"
 dependencies = [
- "frame-support 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "frame-system 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "frame-support",
+ "frame-system",
  "impl-trait-for-tuples",
  "pallet-timestamp",
  "parity-scale-codec",
  "serde",
- "sp-io 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-runtime 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "sp-io",
+ "sp-runtime",
  "sp-staking",
- "sp-std 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-trie 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "sp-std",
+ "sp-trie",
 ]
 
 [[package]]
@@ -3265,19 +3150,19 @@ name = "pallet-staking"
 version = "2.0.0-alpha.5"
 source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty#0366301736cb7c121452e9a1c19a350923d40e87"
 dependencies = [
- "frame-support 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "frame-system 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "frame-support",
+ "frame-system",
  "pallet-authorship",
  "pallet-session",
  "parity-scale-codec",
  "serde",
- "sp-application-crypto 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-core 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-io 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "sp-application-crypto",
+ "sp-core",
+ "sp-io",
  "sp-phragmen",
- "sp-runtime 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "sp-runtime",
  "sp-staking",
- "sp-std 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "sp-std",
  "static_assertions",
 ]
 
@@ -3286,13 +3171,13 @@ name = "pallet-sudo"
 version = "2.0.0-alpha.5"
 source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty#0366301736cb7c121452e9a1c19a350923d40e87"
 dependencies = [
- "frame-support 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "frame-system 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "frame-support",
+ "frame-system",
  "parity-scale-codec",
  "serde",
- "sp-io 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-runtime 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-std 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
 ]
 
 [[package]]
@@ -3300,15 +3185,15 @@ name = "pallet-timestamp"
 version = "2.0.0-alpha.5"
 source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty#0366301736cb7c121452e9a1c19a350923d40e87"
 dependencies = [
- "frame-benchmarking 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "frame-support 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "frame-system 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
  "impl-trait-for-tuples",
  "parity-scale-codec",
  "serde",
- "sp-inherents 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-runtime 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-std 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "sp-inherents",
+ "sp-runtime",
+ "sp-std",
  "sp-timestamp",
 ]
 
@@ -3317,12 +3202,12 @@ name = "pallet-transaction-payment"
 version = "2.0.0-alpha.5"
 source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty#0366301736cb7c121452e9a1c19a350923d40e87"
 dependencies = [
- "frame-support 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "frame-system 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "frame-support",
+ "frame-system",
  "pallet-transaction-payment-rpc-runtime-api",
  "parity-scale-codec",
- "sp-runtime 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-std 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "sp-runtime",
+ "sp-std",
 ]
 
 [[package]]
@@ -3336,11 +3221,11 @@ dependencies = [
  "pallet-transaction-payment-rpc-runtime-api",
  "parity-scale-codec",
  "serde",
- "sp-api 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "sp-api",
  "sp-blockchain",
- "sp-core 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "sp-core",
  "sp-rpc",
- "sp-runtime 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "sp-runtime",
 ]
 
 [[package]]
@@ -3348,12 +3233,12 @@ name = "pallet-transaction-payment-rpc-runtime-api"
 version = "2.0.0-alpha.5"
 source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty#0366301736cb7c121452e9a1c19a350923d40e87"
 dependencies = [
- "frame-support 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "frame-support",
  "parity-scale-codec",
  "serde",
- "sp-api 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-runtime 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-std 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "sp-api",
+ "sp-runtime",
+ "sp-std",
 ]
 
 [[package]]
@@ -3655,7 +3540,7 @@ name = "plasm-cli"
 version = "0.8.0"
 dependencies = [
  "frame-benchmarking-cli",
- "frame-system 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "frame-system",
  "futures 0.3.4",
  "hex-literal",
  "jsonrpc-core",
@@ -3689,10 +3574,10 @@ dependencies = [
  "serde_json",
  "sp-consensus",
  "sp-consensus-babe",
- "sp-core 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "sp-core",
  "sp-finality-grandpa",
- "sp-inherents 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-runtime 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "sp-inherents",
+ "sp-runtime",
  "sp-transaction-pool",
  "structopt",
  "substrate-build-script-utils",
@@ -3711,8 +3596,8 @@ dependencies = [
 name = "plasm-primitives"
 version = "0.8.0"
 dependencies = [
- "sp-core 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-runtime 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "sp-core",
+ "sp-runtime",
 ]
 
 [[package]]
@@ -3729,11 +3614,11 @@ dependencies = [
  "sc-consensus-babe-rpc",
  "sc-consensus-epochs",
  "sc-keystore",
- "sp-api 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "sp-api",
  "sp-blockchain",
  "sp-consensus",
  "sp-consensus-babe",
- "sp-runtime 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "sp-runtime",
  "sp-transaction-pool",
  "substrate-frame-rpc-system",
 ]
@@ -3743,11 +3628,11 @@ name = "plasm-runtime"
 version = "0.8.0"
 dependencies = [
  "frame-executive",
- "frame-support 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "frame-system 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "frame-support",
+ "frame-system",
  "frame-system-rpc-runtime-api",
  "pallet-babe",
- "pallet-balances 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "pallet-balances",
  "pallet-contract-operator",
  "pallet-contracts",
  "pallet-contracts-primitives",
@@ -3769,18 +3654,18 @@ dependencies = [
  "parity-scale-codec",
  "plasm-primitives",
  "serde",
- "sp-api 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "sp-api",
  "sp-block-builder",
  "sp-consensus-babe",
- "sp-core 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-inherents 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-io 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "sp-core",
+ "sp-inherents",
+ "sp-io",
  "sp-offchain",
- "sp-runtime 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "sp-runtime",
  "sp-session",
- "sp-std 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "sp-std",
  "sp-transaction-pool",
- "sp-version 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "sp-version",
  "substrate-wasm-builder-runner",
 ]
 
@@ -4424,12 +4309,12 @@ dependencies = [
  "sc-block-builder",
  "sc-client-api",
  "sc-telemetry",
- "sp-api 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "sp-api",
  "sp-blockchain",
  "sp-consensus",
- "sp-core 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-inherents 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-runtime 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "sp-core",
+ "sp-inherents",
+ "sp-runtime",
  "sp-transaction-pool",
  "tokio-executor 0.2.0-alpha.6",
 ]
@@ -4441,13 +4326,13 @@ source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-du
 dependencies = [
  "parity-scale-codec",
  "sc-client-api",
- "sp-api 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "sp-api",
  "sp-block-builder",
  "sp-blockchain",
  "sp-consensus",
- "sp-core 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-runtime 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-state-machine 0.8.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "sp-core",
+ "sp-runtime",
+ "sp-state-machine",
 ]
 
 [[package]]
@@ -4462,8 +4347,8 @@ dependencies = [
  "serde",
  "serde_json",
  "sp-chain-spec",
- "sp-core 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-runtime 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "sp-core",
+ "sp-runtime",
 ]
 
 [[package]]
@@ -4506,13 +4391,13 @@ dependencies = [
  "sc-tracing",
  "serde_json",
  "sp-blockchain",
- "sp-core 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "sp-core",
  "sp-keyring",
- "sp-panic-handler 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-runtime 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-state-machine 0.8.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "sp-panic-handler",
+ "sp-runtime",
+ "sp-state-machine",
  "sp-utils",
- "sp-version 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "sp-version",
  "structopt",
  "substrate-prometheus-endpoint",
  "time",
@@ -4537,19 +4422,19 @@ dependencies = [
  "sc-client-api",
  "sc-executor",
  "sc-telemetry",
- "sp-api 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "sp-api",
  "sp-blockchain",
  "sp-consensus",
- "sp-core 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-externalities 0.8.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-inherents 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "sp-core",
+ "sp-externalities",
+ "sp-inherents",
  "sp-keyring",
- "sp-runtime 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-state-machine 0.8.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-std 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-trie 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "sp-runtime",
+ "sp-state-machine",
+ "sp-std",
+ "sp-trie",
  "sp-utils",
- "sp-version 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "sp-version",
  "substrate-prometheus-endpoint",
  "tracing",
 ]
@@ -4571,21 +4456,21 @@ dependencies = [
  "parking_lot 0.10.2",
  "sc-executor",
  "sc-telemetry",
- "sp-api 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "sp-api",
  "sp-blockchain",
  "sp-consensus",
- "sp-core 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-externalities 0.8.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-inherents 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "sp-core",
+ "sp-externalities",
+ "sp-inherents",
  "sp-keyring",
- "sp-runtime 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-state-machine 0.8.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-std 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-storage 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "sp-runtime",
+ "sp-state-machine",
+ "sp-std",
+ "sp-storage",
  "sp-transaction-pool",
- "sp-trie 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "sp-trie",
  "sp-utils",
- "sp-version 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "sp-version",
 ]
 
 [[package]]
@@ -4608,10 +4493,10 @@ dependencies = [
  "sc-state-db",
  "sp-blockchain",
  "sp-consensus",
- "sp-core 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-runtime 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-state-machine 0.8.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-trie 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "sp-core",
+ "sp-runtime",
+ "sp-state-machine",
+ "sp-trie",
  "substrate-prometheus-endpoint",
 ]
 
@@ -4642,19 +4527,19 @@ dependencies = [
  "sc-telemetry",
  "schnorrkel 0.9.1",
  "serde",
- "sp-api 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-application-crypto 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "sp-api",
+ "sp-application-crypto",
  "sp-block-builder",
  "sp-blockchain",
  "sp-consensus",
  "sp-consensus-babe",
  "sp-consensus-vrf",
- "sp-core 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-inherents 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-io 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-runtime 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "sp-core",
+ "sp-inherents",
+ "sp-io",
+ "sp-runtime",
  "sp-timestamp",
- "sp-version 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "sp-version",
 ]
 
 [[package]]
@@ -4671,12 +4556,12 @@ dependencies = [
  "sc-consensus-epochs",
  "sc-keystore",
  "serde",
- "sp-api 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "sp-api",
  "sp-blockchain",
  "sp-consensus",
  "sp-consensus-babe",
- "sp-core 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-runtime 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "sp-core",
+ "sp-runtime",
 ]
 
 [[package]]
@@ -4689,7 +4574,7 @@ dependencies = [
  "parking_lot 0.10.2",
  "sc-client-api",
  "sp-blockchain",
- "sp-runtime 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "sp-runtime",
 ]
 
 [[package]]
@@ -4704,13 +4589,13 @@ dependencies = [
  "parking_lot 0.10.2",
  "sc-client-api",
  "sc-telemetry",
- "sp-api 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "sp-api",
  "sp-blockchain",
  "sp-consensus",
- "sp-core 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-inherents 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-runtime 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-state-machine 0.8.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "sp-core",
+ "sp-inherents",
+ "sp-runtime",
+ "sp-state-machine",
 ]
 
 [[package]]
@@ -4722,9 +4607,9 @@ dependencies = [
  "sc-client-api",
  "sp-authorship",
  "sp-consensus",
- "sp-core 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-inherents 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-runtime 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "sp-core",
+ "sp-inherents",
+ "sp-runtime",
 ]
 
 [[package]]
@@ -4741,15 +4626,15 @@ dependencies = [
  "parking_lot 0.10.2",
  "sc-executor-common",
  "sc-executor-wasmi",
- "sp-core 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-externalities 0.8.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-io 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-panic-handler 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-runtime-interface 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "sp-core",
+ "sp-externalities",
+ "sp-io",
+ "sp-panic-handler",
+ "sp-runtime-interface",
  "sp-serializer",
- "sp-trie 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-version 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-wasm-interface 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "sp-trie",
+ "sp-version",
+ "sp-wasm-interface",
  "wasmi",
 ]
 
@@ -4763,10 +4648,10 @@ dependencies = [
  "parity-scale-codec",
  "parity-wasm",
  "sp-allocator",
- "sp-core 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-runtime-interface 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "sp-core",
+ "sp-runtime-interface",
  "sp-serializer",
- "sp-wasm-interface 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "sp-wasm-interface",
  "wasmi",
 ]
 
@@ -4779,9 +4664,9 @@ dependencies = [
  "parity-scale-codec",
  "sc-executor-common",
  "sp-allocator",
- "sp-core 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-runtime-interface 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-wasm-interface 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "sp-core",
+ "sp-runtime-interface",
+ "sp-wasm-interface",
  "wasmi",
 ]
 
@@ -4808,15 +4693,15 @@ dependencies = [
  "sc-network-gossip",
  "sc-telemetry",
  "serde_json",
- "sp-api 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-arithmetic 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "sp-api",
+ "sp-arithmetic",
  "sp-blockchain",
  "sp-consensus",
- "sp-core 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "sp-core",
  "sp-finality-grandpa",
  "sp-finality-tracker",
- "sp-inherents 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-runtime 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "sp-inherents",
+ "sp-runtime",
  "sp-utils",
  "substrate-prometheus-endpoint",
 ]
@@ -4834,7 +4719,7 @@ dependencies = [
  "sc-network",
  "sc-service",
  "sp-blockchain",
- "sp-runtime 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "sp-runtime",
  "wasm-timer",
 ]
 
@@ -4848,8 +4733,8 @@ dependencies = [
  "parking_lot 0.10.2",
  "rand 0.7.3",
  "serde_json",
- "sp-application-crypto 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-core 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "sp-application-crypto",
+ "sp-core",
  "subtle 2.2.2",
 ]
 
@@ -4890,12 +4775,12 @@ dependencies = [
  "slog",
  "slog_derive",
  "smallvec 0.6.13",
- "sp-arithmetic 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "sp-arithmetic",
  "sp-blockchain",
  "sp-consensus",
  "sp-consensus-babe",
- "sp-core 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-runtime 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "sp-core",
+ "sp-runtime",
  "sp-utils",
  "substrate-prometheus-endpoint",
  "thiserror",
@@ -4916,7 +4801,7 @@ dependencies = [
  "log",
  "lru",
  "sc-network",
- "sp-runtime 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "sp-runtime",
  "sp-utils",
  "wasm-timer",
 ]
@@ -4940,10 +4825,10 @@ dependencies = [
  "sc-client-api",
  "sc-keystore",
  "sc-network",
- "sp-api 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-core 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "sp-api",
+ "sp-core",
  "sp-offchain",
- "sp-runtime 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "sp-runtime",
  "sp-utils",
  "threadpool",
 ]
@@ -4980,18 +4865,18 @@ dependencies = [
  "sc-keystore",
  "sc-rpc-api",
  "serde_json",
- "sp-api 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "sp-api",
  "sp-blockchain",
  "sp-chain-spec",
- "sp-core 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "sp-core",
  "sp-offchain",
  "sp-rpc",
- "sp-runtime 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "sp-runtime",
  "sp-session",
- "sp-state-machine 0.8.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "sp-state-machine",
  "sp-transaction-pool",
  "sp-utils",
- "sp-version 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "sp-version",
 ]
 
 [[package]]
@@ -5011,11 +4896,11 @@ dependencies = [
  "serde",
  "serde_json",
  "sp-chain-spec",
- "sp-core 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "sp-core",
  "sp-rpc",
- "sp-runtime 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "sp-runtime",
  "sp-transaction-pool",
- "sp-version 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "sp-version",
 ]
 
 [[package]]
@@ -5030,7 +4915,7 @@ dependencies = [
  "log",
  "serde",
  "serde_json",
- "sp-runtime 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "sp-runtime",
 ]
 
 [[package]]
@@ -5068,13 +4953,13 @@ dependencies = [
  "serde",
  "serde_json",
  "slog",
- "sp-api 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-application-crypto 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "sp-api",
+ "sp-application-crypto",
  "sp-blockchain",
  "sp-consensus",
- "sp-core 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-io 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-runtime 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
  "sp-session",
  "sp-transaction-pool",
  "sp-utils",
@@ -5098,8 +4983,8 @@ dependencies = [
  "sc-network",
  "sc-service",
  "sp-consensus",
- "sp-core 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-runtime 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "sp-core",
+ "sp-runtime",
  "sp-transaction-pool",
  "tempfile",
  "tokio 0.1.22",
@@ -5116,7 +5001,7 @@ dependencies = [
  "parity-util-mem-derive",
  "parking_lot 0.10.2",
  "sc-client-api",
- "sp-core 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "sp-core",
 ]
 
 [[package]]
@@ -5169,8 +5054,8 @@ dependencies = [
  "parking_lot 0.10.2",
  "serde",
  "sp-blockchain",
- "sp-core 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-runtime 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "sp-core",
+ "sp-runtime",
  "sp-transaction-pool",
  "sp-utils",
  "wasm-timer",
@@ -5191,10 +5076,10 @@ dependencies = [
  "parking_lot 0.10.2",
  "sc-client-api",
  "sc-transaction-graph",
- "sp-api 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "sp-api",
  "sp-blockchain",
- "sp-core 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-runtime 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "sp-core",
+ "sp-runtime",
  "sp-transaction-pool",
  "sp-utils",
  "wasm-timer",
@@ -5530,9 +5415,9 @@ source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-du
 dependencies = [
  "derive_more 0.99.5",
  "log",
- "sp-core 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-std 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-wasm-interface 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "sp-core",
+ "sp-std",
+ "sp-wasm-interface",
 ]
 
 [[package]]
@@ -5542,27 +5427,12 @@ source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-du
 dependencies = [
  "hash-db",
  "parity-scale-codec",
- "sp-api-proc-macro 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-core 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-runtime 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-state-machine 0.8.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-std 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-version 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
-]
-
-[[package]]
-name = "sp-api"
-version = "2.0.0-alpha.5"
-source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#d9a75f6f365d2aa9872c9e21760ee2d85614d018"
-dependencies = [
- "hash-db",
- "parity-scale-codec",
- "sp-api-proc-macro 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
- "sp-core 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
- "sp-runtime 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
- "sp-state-machine 0.8.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
- "sp-std 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
- "sp-version 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
+ "sp-api-proc-macro",
+ "sp-core",
+ "sp-runtime",
+ "sp-state-machine",
+ "sp-std",
+ "sp-version",
 ]
 
 [[package]]
@@ -5578,39 +5448,15 @@ dependencies = [
 ]
 
 [[package]]
-name = "sp-api-proc-macro"
-version = "2.0.0-alpha.5"
-source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#d9a75f6f365d2aa9872c9e21760ee2d85614d018"
-dependencies = [
- "blake2-rfc",
- "proc-macro-crate",
- "proc-macro2 1.0.10",
- "quote 1.0.3",
- "syn 1.0.17",
-]
-
-[[package]]
 name = "sp-application-crypto"
 version = "2.0.0-alpha.5"
 source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty#0366301736cb7c121452e9a1c19a350923d40e87"
 dependencies = [
  "parity-scale-codec",
  "serde",
- "sp-core 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-io 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-std 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
-]
-
-[[package]]
-name = "sp-application-crypto"
-version = "2.0.0-alpha.5"
-source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#d9a75f6f365d2aa9872c9e21760ee2d85614d018"
-dependencies = [
- "parity-scale-codec",
- "serde",
- "sp-core 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
- "sp-io 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
- "sp-std 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
+ "sp-core",
+ "sp-io",
+ "sp-std",
 ]
 
 [[package]]
@@ -5622,21 +5468,8 @@ dependencies = [
  "num-traits 0.2.11",
  "parity-scale-codec",
  "serde",
- "sp-debug-derive 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-std 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
-]
-
-[[package]]
-name = "sp-arithmetic"
-version = "2.0.0-alpha.5"
-source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#d9a75f6f365d2aa9872c9e21760ee2d85614d018"
-dependencies = [
- "integer-sqrt",
- "num-traits 0.2.11",
- "parity-scale-codec",
- "serde",
- "sp-debug-derive 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
- "sp-std 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
+ "sp-debug-derive",
+ "sp-std",
 ]
 
 [[package]]
@@ -5645,9 +5478,9 @@ version = "2.0.0-alpha.5"
 source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty#0366301736cb7c121452e9a1c19a350923d40e87"
 dependencies = [
  "parity-scale-codec",
- "sp-inherents 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-runtime 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-std 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "sp-inherents",
+ "sp-runtime",
+ "sp-std",
 ]
 
 [[package]]
@@ -5656,10 +5489,10 @@ version = "2.0.0-alpha.5"
 source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty#0366301736cb7c121452e9a1c19a350923d40e87"
 dependencies = [
  "parity-scale-codec",
- "sp-api 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-inherents 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-runtime 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-std 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "sp-api",
+ "sp-inherents",
+ "sp-runtime",
+ "sp-std",
 ]
 
 [[package]]
@@ -5674,8 +5507,8 @@ dependencies = [
  "parking_lot 0.10.2",
  "sp-block-builder",
  "sp-consensus",
- "sp-runtime 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-state-machine 0.8.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "sp-runtime",
+ "sp-state-machine",
 ]
 
 [[package]]
@@ -5701,13 +5534,13 @@ dependencies = [
  "parity-scale-codec",
  "parking_lot 0.10.2",
  "serde",
- "sp-core 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-inherents 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-runtime 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-state-machine 0.8.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-std 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "sp-core",
+ "sp-inherents",
+ "sp-runtime",
+ "sp-state-machine",
+ "sp-std",
  "sp-utils",
- "sp-version 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "sp-version",
 ]
 
 [[package]]
@@ -5716,13 +5549,13 @@ version = "0.8.0-alpha.5"
 source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty#0366301736cb7c121452e9a1c19a350923d40e87"
 dependencies = [
  "parity-scale-codec",
- "sp-api 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-application-crypto 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "sp-api",
+ "sp-application-crypto",
  "sp-consensus",
  "sp-consensus-vrf",
- "sp-inherents 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-runtime 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-std 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "sp-inherents",
+ "sp-runtime",
+ "sp-std",
  "sp-timestamp",
 ]
 
@@ -5733,9 +5566,9 @@ source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-du
 dependencies = [
  "parity-scale-codec",
  "schnorrkel 0.9.1",
- "sp-core 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-runtime 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-std 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "sp-core",
+ "sp-runtime",
+ "sp-std",
 ]
 
 [[package]]
@@ -5765,52 +5598,11 @@ dependencies = [
  "schnorrkel 0.9.1",
  "serde",
  "sha2",
- "sp-debug-derive 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-externalities 0.8.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-runtime-interface 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-std 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-storage 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "substrate-bip39 0.4.1",
- "tiny-bip39 0.7.3",
- "tiny-keccak",
- "twox-hash",
- "wasmi",
- "zeroize 1.1.0",
-]
-
-[[package]]
-name = "sp-core"
-version = "2.0.0-alpha.5"
-source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#d9a75f6f365d2aa9872c9e21760ee2d85614d018"
-dependencies = [
- "base58",
- "blake2-rfc",
- "byteorder",
- "ed25519-dalek",
- "futures 0.3.4",
- "hash-db",
- "hash256-std-hasher",
- "hex",
- "impl-serde 0.3.0",
- "lazy_static",
- "libsecp256k1",
- "log",
- "num-traits 0.2.11",
- "parity-scale-codec",
- "parity-util-mem",
- "parking_lot 0.10.2",
- "primitive-types",
- "rand 0.7.3",
- "regex",
- "rustc-hex",
- "schnorrkel 0.9.1",
- "serde",
- "sha2",
- "sp-debug-derive 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
- "sp-externalities 0.8.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
- "sp-runtime-interface 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
- "sp-std 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
- "sp-storage 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
+ "sp-debug-derive",
+ "sp-externalities",
+ "sp-runtime-interface",
+ "sp-std",
+ "sp-storage",
  "substrate-bip39 0.4.1",
  "tiny-bip39 0.7.3",
  "tiny-keccak",
@@ -5830,33 +5622,13 @@ dependencies = [
 ]
 
 [[package]]
-name = "sp-debug-derive"
-version = "2.0.0-alpha.5"
-source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#d9a75f6f365d2aa9872c9e21760ee2d85614d018"
-dependencies = [
- "proc-macro2 1.0.10",
- "quote 1.0.3",
- "syn 1.0.17",
-]
-
-[[package]]
 name = "sp-externalities"
 version = "0.8.0-alpha.5"
 source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty#0366301736cb7c121452e9a1c19a350923d40e87"
 dependencies = [
  "environmental",
- "sp-std 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-storage 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
-]
-
-[[package]]
-name = "sp-externalities"
-version = "0.8.0-alpha.5"
-source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#d9a75f6f365d2aa9872c9e21760ee2d85614d018"
-dependencies = [
- "environmental",
- "sp-std 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
- "sp-storage 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
+ "sp-std",
+ "sp-storage",
 ]
 
 [[package]]
@@ -5866,10 +5638,10 @@ source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-du
 dependencies = [
  "parity-scale-codec",
  "serde",
- "sp-api 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-application-crypto 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-runtime 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-std 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "sp-api",
+ "sp-application-crypto",
+ "sp-runtime",
+ "sp-std",
 ]
 
 [[package]]
@@ -5878,8 +5650,8 @@ version = "2.0.0-alpha.5"
 source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty#0366301736cb7c121452e9a1c19a350923d40e87"
 dependencies = [
  "parity-scale-codec",
- "sp-inherents 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-std 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "sp-inherents",
+ "sp-std",
 ]
 
 [[package]]
@@ -5890,20 +5662,8 @@ dependencies = [
  "derive_more 0.99.5",
  "parity-scale-codec",
  "parking_lot 0.10.2",
- "sp-core 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-std 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
-]
-
-[[package]]
-name = "sp-inherents"
-version = "2.0.0-alpha.5"
-source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#d9a75f6f365d2aa9872c9e21760ee2d85614d018"
-dependencies = [
- "derive_more 0.99.5",
- "parity-scale-codec",
- "parking_lot 0.10.2",
- "sp-core 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
- "sp-std 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
+ "sp-core",
+ "sp-std",
 ]
 
 [[package]]
@@ -5915,31 +5675,13 @@ dependencies = [
  "libsecp256k1",
  "log",
  "parity-scale-codec",
- "sp-core 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-externalities 0.8.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-runtime-interface 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-state-machine 0.8.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-std 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-trie 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-wasm-interface 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
-]
-
-[[package]]
-name = "sp-io"
-version = "2.0.0-alpha.5"
-source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#d9a75f6f365d2aa9872c9e21760ee2d85614d018"
-dependencies = [
- "hash-db",
- "libsecp256k1",
- "log",
- "parity-scale-codec",
- "sp-core 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
- "sp-externalities 0.8.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
- "sp-runtime-interface 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
- "sp-state-machine 0.8.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
- "sp-std 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
- "sp-trie 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
- "sp-wasm-interface 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
+ "sp-core",
+ "sp-externalities",
+ "sp-runtime-interface",
+ "sp-state-machine",
+ "sp-std",
+ "sp-trie",
+ "sp-wasm-interface",
 ]
 
 [[package]]
@@ -5948,8 +5690,8 @@ version = "2.0.0-alpha.5"
 source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty#0366301736cb7c121452e9a1c19a350923d40e87"
 dependencies = [
  "lazy_static",
- "sp-core 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-runtime 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "sp-core",
+ "sp-runtime",
  "strum",
 ]
 
@@ -5958,23 +5700,14 @@ name = "sp-offchain"
 version = "2.0.0-alpha.5"
 source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty#0366301736cb7c121452e9a1c19a350923d40e87"
 dependencies = [
- "sp-api 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-runtime 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "sp-api",
+ "sp-runtime",
 ]
 
 [[package]]
 name = "sp-panic-handler"
 version = "2.0.0-alpha.5"
 source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty#0366301736cb7c121452e9a1c19a350923d40e87"
-dependencies = [
- "backtrace",
- "log",
-]
-
-[[package]]
-name = "sp-panic-handler"
-version = "2.0.0-alpha.5"
-source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#d9a75f6f365d2aa9872c9e21760ee2d85614d018"
 dependencies = [
  "backtrace",
  "log",
@@ -5988,8 +5721,8 @@ dependencies = [
  "parity-scale-codec",
  "serde",
  "sp-phragmen-compact",
- "sp-runtime 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-std 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "sp-runtime",
+ "sp-std",
 ]
 
 [[package]]
@@ -6009,7 +5742,7 @@ version = "2.0.0-alpha.5"
 source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty#0366301736cb7c121452e9a1c19a350923d40e87"
 dependencies = [
  "serde",
- "sp-core 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "sp-core",
 ]
 
 [[package]]
@@ -6025,33 +5758,12 @@ dependencies = [
  "paste",
  "rand 0.7.3",
  "serde",
- "sp-application-crypto 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-arithmetic 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-core 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-inherents 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-io 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-std 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
-]
-
-[[package]]
-name = "sp-runtime"
-version = "2.0.0-alpha.5"
-source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#d9a75f6f365d2aa9872c9e21760ee2d85614d018"
-dependencies = [
- "hash256-std-hasher",
- "impl-trait-for-tuples",
- "log",
- "parity-scale-codec",
- "parity-util-mem",
- "paste",
- "rand 0.7.3",
- "serde",
- "sp-application-crypto 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
- "sp-arithmetic 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
- "sp-core 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
- "sp-inherents 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
- "sp-io 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
- "sp-std 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
+ "sp-application-crypto",
+ "sp-arithmetic",
+ "sp-core",
+ "sp-inherents",
+ "sp-io",
+ "sp-std",
 ]
 
 [[package]]
@@ -6061,24 +5773,10 @@ source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-du
 dependencies = [
  "parity-scale-codec",
  "primitive-types",
- "sp-externalities 0.8.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-runtime-interface-proc-macro 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-std 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-wasm-interface 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "static_assertions",
-]
-
-[[package]]
-name = "sp-runtime-interface"
-version = "2.0.0-alpha.5"
-source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#d9a75f6f365d2aa9872c9e21760ee2d85614d018"
-dependencies = [
- "parity-scale-codec",
- "primitive-types",
- "sp-externalities 0.8.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
- "sp-runtime-interface-proc-macro 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
- "sp-std 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
- "sp-wasm-interface 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
+ "sp-externalities",
+ "sp-runtime-interface-proc-macro",
+ "sp-std",
+ "sp-wasm-interface",
  "static_assertions",
 ]
 
@@ -6086,18 +5784,6 @@ dependencies = [
 name = "sp-runtime-interface-proc-macro"
 version = "2.0.0-alpha.5"
 source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty#0366301736cb7c121452e9a1c19a350923d40e87"
-dependencies = [
- "Inflector",
- "proc-macro-crate",
- "proc-macro2 1.0.10",
- "quote 1.0.3",
- "syn 1.0.17",
-]
-
-[[package]]
-name = "sp-runtime-interface-proc-macro"
-version = "2.0.0-alpha.5"
-source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#d9a75f6f365d2aa9872c9e21760ee2d85614d018"
 dependencies = [
  "Inflector",
  "proc-macro-crate",
@@ -6112,10 +5798,10 @@ version = "0.8.0-alpha.5"
 source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty#0366301736cb7c121452e9a1c19a350923d40e87"
 dependencies = [
  "parity-scale-codec",
- "sp-core 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-io 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-std 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-wasm-interface 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "sp-core",
+ "sp-io",
+ "sp-std",
+ "sp-wasm-interface",
  "wasmi",
 ]
 
@@ -6133,10 +5819,10 @@ name = "sp-session"
 version = "2.0.0-alpha.5"
 source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty#0366301736cb7c121452e9a1c19a350923d40e87"
 dependencies = [
- "sp-api 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-core 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-runtime 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-std 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "sp-api",
+ "sp-core",
+ "sp-runtime",
+ "sp-std",
 ]
 
 [[package]]
@@ -6145,8 +5831,8 @@ version = "2.0.0-alpha.5"
 source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty#0366301736cb7c121452e9a1c19a350923d40e87"
 dependencies = [
  "parity-scale-codec",
- "sp-runtime 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-std 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "sp-runtime",
+ "sp-std",
 ]
 
 [[package]]
@@ -6160,29 +5846,10 @@ dependencies = [
  "parity-scale-codec",
  "parking_lot 0.10.2",
  "rand 0.7.3",
- "sp-core 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-externalities 0.8.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-panic-handler 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-trie 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "trie-db",
- "trie-root",
-]
-
-[[package]]
-name = "sp-state-machine"
-version = "0.8.0-alpha.5"
-source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#d9a75f6f365d2aa9872c9e21760ee2d85614d018"
-dependencies = [
- "hash-db",
- "log",
- "num-traits 0.2.11",
- "parity-scale-codec",
- "parking_lot 0.10.2",
- "rand 0.7.3",
- "sp-core 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
- "sp-externalities 0.8.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
- "sp-panic-handler 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
- "sp-trie 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
+ "sp-core",
+ "sp-externalities",
+ "sp-panic-handler",
+ "sp-trie",
  "trie-db",
  "trie-root",
 ]
@@ -6193,30 +5860,14 @@ version = "2.0.0-alpha.5"
 source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty#0366301736cb7c121452e9a1c19a350923d40e87"
 
 [[package]]
-name = "sp-std"
-version = "2.0.0-alpha.5"
-source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#d9a75f6f365d2aa9872c9e21760ee2d85614d018"
-
-[[package]]
 name = "sp-storage"
 version = "2.0.0-alpha.5"
 source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty#0366301736cb7c121452e9a1c19a350923d40e87"
 dependencies = [
  "impl-serde 0.2.3",
  "serde",
- "sp-debug-derive 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-std 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
-]
-
-[[package]]
-name = "sp-storage"
-version = "2.0.0-alpha.5"
-source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#d9a75f6f365d2aa9872c9e21760ee2d85614d018"
-dependencies = [
- "impl-serde 0.2.3",
- "serde",
- "sp-debug-derive 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
- "sp-std 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
+ "sp-debug-derive",
+ "sp-std",
 ]
 
 [[package]]
@@ -6226,10 +5877,10 @@ source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-du
 dependencies = [
  "impl-trait-for-tuples",
  "parity-scale-codec",
- "sp-api 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-inherents 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-runtime 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-std 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "sp-api",
+ "sp-inherents",
+ "sp-runtime",
+ "sp-std",
  "wasm-timer",
 ]
 
@@ -6243,8 +5894,8 @@ dependencies = [
  "log",
  "parity-scale-codec",
  "serde",
- "sp-api 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-runtime 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "sp-api",
+ "sp-runtime",
  "sp-utils",
 ]
 
@@ -6256,22 +5907,8 @@ dependencies = [
  "hash-db",
  "memory-db",
  "parity-scale-codec",
- "sp-core 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-std 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "trie-db",
- "trie-root",
-]
-
-[[package]]
-name = "sp-trie"
-version = "2.0.0-alpha.5"
-source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#d9a75f6f365d2aa9872c9e21760ee2d85614d018"
-dependencies = [
- "hash-db",
- "memory-db",
- "parity-scale-codec",
- "sp-core 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
- "sp-std 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
+ "sp-core",
+ "sp-std",
  "trie-db",
  "trie-root",
 ]
@@ -6295,20 +5932,8 @@ dependencies = [
  "impl-serde 0.2.3",
  "parity-scale-codec",
  "serde",
- "sp-runtime 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-std 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
-]
-
-[[package]]
-name = "sp-version"
-version = "2.0.0-alpha.5"
-source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#d9a75f6f365d2aa9872c9e21760ee2d85614d018"
-dependencies = [
- "impl-serde 0.2.3",
- "parity-scale-codec",
- "serde",
- "sp-runtime 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
- "sp-std 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
+ "sp-runtime",
+ "sp-std",
 ]
 
 [[package]]
@@ -6318,18 +5943,7 @@ source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-du
 dependencies = [
  "impl-trait-for-tuples",
  "parity-scale-codec",
- "sp-std 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "wasmi",
-]
-
-[[package]]
-name = "sp-wasm-interface"
-version = "2.0.0-alpha.5"
-source = "git+https://github.com/staketechnologies/substrate.git?branch=plasm-master#d9a75f6f365d2aa9872c9e21760ee2d85614d018"
-dependencies = [
- "impl-trait-for-tuples",
- "parity-scale-codec",
- "sp-std 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-master)",
+ "sp-std",
  "wasmi",
 ]
 
@@ -6425,10 +6039,10 @@ name = "subkey"
 version = "2.0.0"
 dependencies = [
  "clap",
- "frame-system 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "frame-system",
  "hex",
  "hex-literal",
- "pallet-balances 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "pallet-balances",
  "pallet-transaction-payment",
  "parity-scale-codec",
  "plasm-primitives",
@@ -6436,8 +6050,8 @@ dependencies = [
  "rand 0.7.3",
  "rpassword",
  "rustc-hex",
- "sp-core 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-runtime 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "sp-core",
+ "sp-runtime",
  "substrate-bip39 0.3.1",
  "tiny-bip39 0.6.2",
 ]
@@ -6488,10 +6102,10 @@ dependencies = [
  "parity-scale-codec",
  "sc-client",
  "serde",
- "sp-api 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "sp-api",
  "sp-blockchain",
- "sp-core 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
- "sp-runtime 2.0.0-alpha.5 (git+https://github.com/staketechnologies/substrate.git?branch=plasm-dusty)",
+ "sp-core",
+ "sp-runtime",
  "sp-transaction-pool",
 ]
 

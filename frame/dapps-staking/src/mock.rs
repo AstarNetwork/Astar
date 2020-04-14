@@ -3,12 +3,12 @@
 #![cfg(test)]
 
 use super::*;
-use frame_support::{assert_ok, impl_outer_dispatch, impl_outer_origin, parameter_types};
+use frame_support::{assert_ok, impl_outer_dispatch, impl_outer_origin, parameter_types, traits::OnFinalize};
 use pallet_plasm_rewards::{inflation::SimpleComputeTotalPayout, traits::MaybeValidators};
 use sp_core::{crypto::key_types, H256};
 use sp_runtime::{
     testing::{Header, UintAuthorityId},
-    traits::{BlakeTwo256, ConvertInto, Hash, IdentityLookup, OnFinalize, OpaqueKeys},
+    traits::{BlakeTwo256, ConvertInto, Hash, IdentityLookup, OpaqueKeys},
     KeyTypeId, Perbill,
 };
 
@@ -150,6 +150,7 @@ impl pallet_session::SessionHandler<u64> for TestSessionHandler {
 }
 
 impl pallet_session::Trait for Test {
+    type NextSessionRotation = pallet_session::PeriodicSessions<Period, Offset>;
     type ShouldEndSession = pallet_session::PeriodicSessions<Period, Offset>;
     type SessionManager = PlasmRewards;
     type SessionHandler = TestSessionHandler;

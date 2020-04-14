@@ -9,9 +9,9 @@ repository = "https://github.com/staketechnologies/Plasm/"
 description = "Runtime API definition required by Ovm RPC extensions."
 
 [dependencies]
-sp-api = { git = 'https://github.com/staketechnologies/substrate.git', branch = "plasm-master", default-features = false }
+sp-api = { git = 'https://github.com/staketechnologies/substrate.git', branch = "plasm-dusty", default-features = false }
 codec = { package = "parity-scale-codec", version = "1.2.0", default-features = false, features = ["derive"] }
-sp-std = { git = 'https://github.com/staketechnologies/substrate.git', branch = "plasm-master", default-features = false }
+sp-std = { git = 'https://github.com/staketechnologies/substrate.git', branch = "plasm-dusty", default-features = false }
 
 [features]
 default = ["std"]

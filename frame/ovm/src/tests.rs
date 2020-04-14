@@ -6,7 +6,6 @@ use super::*;
 use crate::mock::*;
 use frame_support::assert_ok;
 use frame_system::{self as system, EventRecord, Phase};
-use sp_runtime::DispatchError;
 
 const VALID_PREDICATE: &str = r#"valid."#;
 
