@@ -2,10 +2,17 @@
 
 /// Money matters.
 pub mod currency {
-    use plasm_primitives::Balance;
+    use plasm_primitives::{AccountId, Balance};
 
     pub const MILLIPLM: Balance = 1_000_000_000_000;
     pub const PLM: Balance = 1_000 * MILLIPLM;
+
+    #[cfg(feature = "std")]
+    lazy_static::lazy_static! {
+        /// PLASM GENESIS TOKEN HODERS
+        pub static ref HOLDERS: Vec<(AccountId, Balance)> = vec![
+        ]; 
+    }
 }
 
 /// Time.

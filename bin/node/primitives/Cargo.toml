@@ -8,12 +8,12 @@ authors = [
 edition = "2018"
 
 [dependencies]
-primitives = { package = "sp-core", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-dusty", default-features = false }
-sp-runtime = { git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-dusty", default-features = false }
+sp-core = { version = "2.0.0-alpha.6", default-features = false }
+sp-runtime = { version = "2.0.0-alpha.6", default-features = false }
 
 [features]
 default = ["std"]
 std = [
-    "primitives/std",
+    "sp-core/std",
     "sp-runtime/std",
 ]

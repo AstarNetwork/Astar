@@ -8,12 +8,10 @@ mod cli {
 
     use sc_cli::structopt::clap::Shell;
     use std::{env, fs, path::Path};
-    use vergen::{generate_cargo_keys, ConstantsFlags};
 
     pub fn main() {
         build_shell_completion();
-        generate_cargo_keys(ConstantsFlags::all()).expect("Failed to generate metadata files");
-
+        build_script_utils::generate_cargo_keys();
         build_script_utils::rerun_if_git_head_changed();
     }
 

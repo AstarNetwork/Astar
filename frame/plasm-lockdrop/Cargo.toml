@@ -15,22 +15,22 @@ tiny-keccak = { version = "2.0.1", default-features = false, features = ["keccak
 sha2 = { version = "0.8.0", default-features = false }
 hex = { version = "0.4", default-features = false }
 bs58 = { version = "0.3.0", default-features = false, features = ["alloc"] }
-sp-io = { git = "https://github.com/staketechnologies/substrate", default-features = false, branch = "plasm-dusty" }
-sp-std = { git = "https://github.com/staketechnologies/substrate", default-features = false, branch = "plasm-dusty" }
-sp-core = { git = "https://github.com/staketechnologies/substrate", default-features = false, branch = "plasm-dusty" }
-sp-runtime = { git = "https://github.com/staketechnologies/substrate", default-features = false, branch = "plasm-dusty" }
-sp-arithmetic = { git = "https://github.com/staketechnologies/substrate", default-features = false, branch = "plasm-dusty" }
+sp-io = { version = "2.0.0-alpha.6", default-features = false }
+sp-std = { version = "2.0.0-alpha.6", default-features = false }
+sp-core = { version = "2.0.0-alpha.6", default-features = false }
+sp-runtime = { version = "2.0.0-alpha.6", default-features = false }
+sp-arithmetic = { version = "2.0.0-alpha.6", default-features = false }
 simple-json = { git = "https://github.com/staketechnologies/simple-json", default-features = false }
-frame-system = { git = "https://github.com/staketechnologies/substrate", default-features = false, branch = "plasm-dusty" }
-frame-support = { git = "https://github.com/staketechnologies/substrate", default-features = false, branch = "plasm-dusty" }
-pallet-session = { git = "https://github.com/staketechnologies/substrate", default-features = false, branch = "plasm-dusty" }
-pallet-timestamp = { git = "https://github.com/staketechnologies/substrate", default-features = false, branch = "plasm-dusty" }
+frame-system = { version = "2.0.0-alpha.6", default-features = false }
+frame-support = { version = "2.0.0-alpha.6", default-features = false }
+pallet-session = { version = "2.0.0-alpha.6", default-features = false }
+pallet-timestamp = { version = "2.0.0-alpha.6", default-features = false }
 
 [dev-dependencies]
 hex-literal = "0.2.1"
-pallet-balances = { git = "https://github.com/staketechnologies/substrate", branch = "plasm-dusty" }
-sp-staking = { git = "https://github.com/staketechnologies/substrate", branch = "plasm-dusty" }
-sp-keyring = { git = "https://github.com/staketechnologies/substrate", branch = "plasm-dusty" }
+pallet-balances = { version = "2.0.0-alpha.6" }
+sp-staking = { version = "2.0.0-alpha.6" }
+sp-keyring = { version = "2.0.0-alpha.6" }
 plasm-primitives = { path = "../../bin/node/primitives" }
 
 [features]

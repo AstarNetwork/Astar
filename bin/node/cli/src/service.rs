@@ -21,9 +21,18 @@ use sc_client::{Client, LocalCallExecutor};
 use sc_client_db::Backend;
 use sc_network::NetworkService;
 use sc_offchain::OffchainWorkers;
+use sc_executor::native_executor_instance;
 use plasm_executor::NativeExecutor;
 use plasm_primitives::Block;
 use plasm_runtime::RuntimeApi;
+
+// Declare an instance of the native executor named `Executor`. Include the wasm binary as the
+// equivalent wasm code.
+native_executor_instance!(
+    pub Executor,
+    plasm_runtime::api::dispatch,
+    plasm_runtime::native_version
+);
 
 /// Starts a `ServiceBuilder` for a full service.
 ///
@@ -73,7 +82,7 @@ macro_rules! new_full_start {
                 import_setup = Some((block_import, grandpa_link, babe_link));
                 Ok(import_queue)
             })?
-            .with_rpc_extensions(|builder| -> Result<RpcExtension, _> {
+            .with_rpc_extensions(|builder| -> std::result::Result<RpcExtension, _> {
                 let babe_link = import_setup.as_ref().map(|s| &s.2)
                     .expect("BabeLink is present for full services or set up failed; qed.");
                 let deps = plasm_rpc::FullDeps {
@@ -101,26 +110,22 @@ macro_rules! new_full_start {
 macro_rules! new_full {
     ($config:expr, $with_startup_data: expr) => {{
         let (
-            is_authority,
+            role,
             force_authoring,
             name,
             disable_grandpa,
         ) = (
-            $config.roles.is_authority(),
+            $config.role.clone(),
             $config.force_authoring,
-            $config.name.clone(),
+            $config.network.node_name.clone(),
             $config.disable_grandpa,
         );
-
-        // sentry nodes announce themselves as authorities to the network
-        // and should run the same protocols authorities do, but it should
-        // never actively participate in any consensus process.
-        let participates_in_consensus = is_authority && !$config.sentry_mode;
 
         let (builder, mut import_setup, inherent_data_providers) = new_full_start!($config);
 
         let service = builder
             .with_finality_proof_provider(|client, backend| {
+				// GenesisAuthoritySetProvider is implemented for StorageAndProofProvider
                 let provider = client as Arc<dyn StorageAndProofProvider<_, _>>;
                 Ok(Arc::new(GrandpaFinalityProofProvider::new(backend, provider)) as _)
             })?
@@ -131,7 +136,7 @@ macro_rules! new_full {
 
         ($with_startup_data)(&block_import, &babe_link);
 
-        if participates_in_consensus {
+		if let sc_service::config::Role::Authority { sentry_nodes: _ } = &role {
             let proposer = sc_basic_authorship::ProposerFactory::new(
                 service.client(),
                 service.transaction_pool(),
@@ -163,7 +168,7 @@ macro_rules! new_full {
 
         // if the node isn't actively participating in consensus then it doesn't
         // need a keystore, regardless of which protocol we use below.
-        let keystore = if participates_in_consensus {
+        let keystore = if role.is_authority() {
             Some(service.keystore())
         } else {
             None
@@ -176,7 +181,7 @@ macro_rules! new_full {
             name: Some(name),
             observer_enabled: false,
             keystore,
-            is_authority,
+            is_authority: role.is_network_authority(),
         };
 
         let enable_grandpa = !disable_grandpa;
@@ -310,8 +315,7 @@ pub fn new_light(config: Configuration)
             let provider = client as Arc<dyn StorageAndProofProvider<_, _>>;
             Ok(Arc::new(GrandpaFinalityProofProvider::new(backend, provider)) as _)
         })?
-        .with_rpc_extensions(|builder,| ->
-            Result<RpcExtension, _>
+        .with_rpc_extensions(|builder,| -> std::result::Result<RpcExtension, _>
         {
             let fetcher = builder.fetcher()
                 .ok_or_else(|| "Trying to start node RPC without active fetcher")?;
