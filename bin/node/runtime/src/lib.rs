@@ -562,35 +562,29 @@ impl_runtime_apis! {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use frame_system::offchain::{SignAndSubmitTransaction, SubmitSignedTransaction};
+    use pallet_plasm_lockdrop::sr25519::AuthorityId as LockdropAuthorityId;
 
     #[test]
-    fn block_hooks_weight_should_not_exceed_limits() {
-        use frame_support::weights::WeighBlock;
-        let check_for_block = |b| {
-            let block_hooks_weight = <AllModules as WeighBlock<BlockNumber>>::on_initialize(b)
-                + <AllModules as WeighBlock<BlockNumber>>::on_finalize(b);
+    fn validate_transaction_submitter_bounds() {
+        fn is_submit_signed_transaction<T>() where
+            T: SubmitSignedTransaction<
+                Runtime,
+                Call,
+            >,
+        {}
 
-            assert_eq!(
-                block_hooks_weight,
-                0,
-                "This test might fail simply because the value being compared to has increased to a \
-                module declaring a new weight for a hook or call. In this case update the test and \
-                happily move on.",
-            );
+        fn is_sign_and_submit_transaction<T>() where
+            T: SignAndSubmitTransaction<
+                Runtime,
+                Call,
+                Extrinsic=UncheckedExtrinsic,
+                CreateTransaction=Runtime,
+                Signer=LockdropAuthorityId,
+            >,
+        {}
 
-            // Invariant. Always must be like this to have a sane chain.
-            assert!(block_hooks_weight < MaximumBlockWeight::get());
-
-            // Warning.
-            if block_hooks_weight > MaximumBlockWeight::get() / 2 {
-                println!(
-                    "block hooks weight is consuming more than a block's capacity. You probably want \
-                    to re-think this. This test will fail now."
-                );
-                assert!(false);
-            }
-        };
-
-        let _ = (0..100_000).for_each(check_for_block);
+        is_submit_signed_transaction::<TransactionSubmitterOf<LockdropAuthorityId>>();
+        is_sign_and_submit_transaction::<TransactionSubmitterOf<LockdropAuthorityId>>();
     }
 }
