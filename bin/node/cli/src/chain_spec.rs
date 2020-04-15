@@ -118,25 +118,25 @@ fn make_genesis(
     enable_println: bool,
 ) -> GenesisConfig {
     GenesisConfig {
-        system: Some(SystemConfig {
+        frame_system: Some(SystemConfig {
             code: WASM_BINARY.to_vec(),
             changes_trie_config: Default::default(),
         }),
-        balances: Some(BalancesConfig { balances }),
-        indices: Some(IndicesConfig { indices: vec![] }),
-        plasm_rewards: Some(PlasmRewardsConfig {
+        pallet_balances: Some(BalancesConfig { balances }),
+        pallet_indices: Some(IndicesConfig { indices: vec![] }),
+        pallet_plasm_rewards: Some(PlasmRewardsConfig {
             ..Default::default()
         }),
-        plasm_validator: Some(PlasmValidatorConfig {
+        pallet_plasm_validator: Some(PlasmValidatorConfig {
             validators: initial_authorities
                 .iter()
                 .map(|x| x.0.clone())
                 .collect::<Vec<_>>(),
         }),
-        dapps_staking: Some(DappsStakingConfig {
+        pallet_dapps_staking: Some(DappsStakingConfig {
             ..Default::default()
         }),
-        session: Some(SessionConfig {
+        pallet_session: Some(SessionConfig {
             keys: initial_authorities
                 .iter()
                 .map(|x| {
@@ -148,20 +148,20 @@ fn make_genesis(
                 })
                 .collect::<Vec<_>>(),
         }),
-        babe: Some(BabeConfig {
+        pallet_babe: Some(BabeConfig {
             authorities: vec![],
         }),
-        grandpa: Some(GrandpaConfig {
+        pallet_grandpa: Some(GrandpaConfig {
             authorities: vec![],
         }),
-        contracts: Some(ContractsConfig {
+        pallet_contracts: Some(ContractsConfig {
             current_schedule: pallet_contracts::Schedule {
                 enable_println, // this should only be enabled on development chains
                 ..Default::default()
             },
             gas_price: 1 * MILLIPLM,
         }),
-        plasm_lockdrop: Some(PlasmLockdropConfig {
+        pallet_plasm_lockdrop: Some(PlasmLockdropConfig {
             alpha: sp_runtime::Perbill::from_parts(200_000_000),
             dollar_rate: (5_000, 120),
             vote_threshold: 3,
@@ -169,7 +169,7 @@ fn make_genesis(
             lockdrop_end: 0,
             ethereum_contract: hex!["458dabf1eff8fcdfbf0896a6bd1f457c01e2ffd6"],
         }),
-        sudo: Some(SudoConfig { key: root_key }),
+        pallet_sudo: Some(SudoConfig { key: root_key }),
     }
 }
 

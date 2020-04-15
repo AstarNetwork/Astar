@@ -4,7 +4,7 @@ use crate::{MaximumBlockWeight, System};
 use plasm_primitives::Balance;
 use sp_runtime::traits::{Convert, Saturating};
 use sp_runtime::{Fixed64, Perbill};
-use support::{traits::Get, weights::Weight};
+use frame_support::{traits::Get, weights::Weight};
 
 /// Convert from weight to balance via a simple coefficient multiplication
 /// The associated type C encapsulates a constant in units of balance per weight

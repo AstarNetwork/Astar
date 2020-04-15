@@ -1,5 +1,4 @@
 use crate::{chain_spec, service, Cli, Subcommand};
-use plasm_executor::Executor;
 use plasm_runtime::Block;
 use sc_cli::SubstrateCli;
 
@@ -63,7 +62,7 @@ pub fn run() -> sc_cli::Result<()> {
             if cfg!(feature = "runtime-benchmarks") {
                 let runner = cli.create_runner(cmd)?;
 
-                runner.sync_run(|config| cmd.run::<Block, Executor>(config))
+                runner.sync_run(|config| cmd.run::<Block, service::Executor>(config))
             } else {
                 println!("Benchmarking wasn't enabled when building the node. \
                 You can enable it with `--features runtime-benchmarks`.");

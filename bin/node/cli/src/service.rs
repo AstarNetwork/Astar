@@ -21,8 +21,7 @@ use sc_client::{Client, LocalCallExecutor};
 use sc_client_db::Backend;
 use sc_network::NetworkService;
 use sc_offchain::OffchainWorkers;
-use sc_executor::native_executor_instance;
-use plasm_executor::NativeExecutor;
+use sc_executor::{native_executor_instance, NativeExecutor};
 use plasm_primitives::Block;
 use plasm_runtime::RuntimeApi;
 
@@ -45,7 +44,7 @@ macro_rules! new_full_start {
         let inherent_data_providers = sp_inherents::InherentDataProviders::new();
 
         let builder = sc_service::ServiceBuilder::new_full::<
-            plasm_primitives::Block, plasm_runtime::RuntimeApi, plasm_executor::Executor
+            plasm_primitives::Block, plasm_runtime::RuntimeApi, crate::service::Executor
         >($config)?
             .with_select_chain(|_config, backend| {
                 Ok(sc_client::LongestChain::new(backend.clone()))
@@ -228,7 +227,7 @@ type ConcreteClient =
     Client<
         Backend<ConcreteBlock>,
         LocalCallExecutor<Backend<ConcreteBlock>,
-        NativeExecutor<plasm_executor::Executor>>,
+        NativeExecutor<Executor>>,
         ConcreteBlock,
         plasm_runtime::RuntimeApi
     >;
@@ -266,7 +265,7 @@ pub fn new_light(config: Configuration)
     type RpcExtension = jsonrpc_core::IoHandler<sc_rpc::Metadata>;
     let inherent_data_providers = InherentDataProviders::new();
 
-    let service = ServiceBuilder::new_light::<Block, RuntimeApi, plasm_executor::Executor>(config)?
+    let service = ServiceBuilder::new_light::<Block, RuntimeApi, Executor>(config)?
         .with_select_chain(|_config, backend| {
             Ok(LongestChain::new(backend.clone()))
         })?
