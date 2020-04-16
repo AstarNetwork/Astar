@@ -284,17 +284,17 @@ decl_module! {
                         let duration_sec = duration * 600;
                         // Cast bitcoin value to PLM order:
                         // satoshi = BTC * 10^9;
-                        // PLM unit = PLM * 10^15;
+                        // PLM unit = PLM * 10^12;
                         // (it also helps to make evaluations more precise)
-                        let value_btc = value * 1_000_000;
+                        let value_btc = value * 1_000;
                         Self::btc_issue_amount(value_btc, duration_sec.into())
                     },
                     Lockdrop::Ethereum { value, duration, .. } => {
                         // Cast bitcoin value to PLM order:
                         // satoshi = ETH * 10^18;
-                        // PLM unit = PLM * 10^15;
+                        // PLM unit = PLM * 10^12;
                         // (it also helps to make evaluations more precise)
-                        let value_eth = value / 1_000;
+                        let value_eth = value / 1_000_000;
                         Self::eth_issue_amount(value_eth, duration.into())
                     }
                 };

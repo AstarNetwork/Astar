@@ -3625,6 +3625,7 @@ dependencies = [
  "frame-support",
  "frame-system",
  "frame-system-rpc-runtime-api",
+ "hex-literal",
  "lazy_static",
  "pallet-babe",
  "pallet-balances",
