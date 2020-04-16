@@ -9,7 +9,7 @@ pub mod currency {
     use plasm_primitives::{Balance, AccountId};
     use sp_runtime::{MultiSigner, traits::IdentifyAccount};
 
-    pub const MILLIPLM: Balance = 1_000_000_000;
+    pub const MILLIPLM: Balance = 1_000_000_000_000;
     pub const PLM: Balance = 1_000 * MILLIPLM;
 
     #[cfg(feature = "std")]
