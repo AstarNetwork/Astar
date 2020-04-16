@@ -4,7 +4,6 @@
 
 use std::sync::Arc;
 
-use plasm_executor::NativeExecutor;
 use plasm_primitives::Block;
 use plasm_runtime::RuntimeApi;
 use sc_client::LongestChain;
@@ -17,12 +16,20 @@ use sc_finality_grandpa::{
 };
 use sc_network::NetworkService;
 use sc_offchain::OffchainWorkers;
+use sc_executor::{native_executor_instance, NativeExecutor};
 use sc_service::{
-    config::Configuration, error::Error as ServiceError, AbstractService, ServiceBuilder,
+    AbstractService, Service, ServiceBuilder, NetworkStatus,
+    config::Configuration, error::{Error as ServiceError},
 };
-use sc_service::{NetworkStatus, Service};
-use sp_inherents::InherentDataProviders;
 use sp_runtime::traits::Block as BlockT;
+
+// Declare an instance of the native executor named `Executor`. Include the wasm binary as the
+// equivalent wasm code.
+native_executor_instance!(
+    pub Executor,
+    plasm_runtime::api::dispatch,
+    plasm_runtime::native_version
+);
 
 /// Starts a `ServiceBuilder` for a full service.
 ///
@@ -37,7 +44,7 @@ macro_rules! new_full_start {
         let builder = sc_service::ServiceBuilder::new_full::<
             plasm_primitives::Block,
             plasm_runtime::RuntimeApi,
-            plasm_executor::Executor,
+            crate::service::Executor,
         >($config)?
         .with_select_chain(|_config, backend| Ok(sc_client::LongestChain::new(backend.clone())))?
         .with_transaction_pool(|config, client, _fetcher| {
@@ -76,24 +83,19 @@ macro_rules! new_full_start {
             import_setup = Some((block_import, grandpa_link, babe_link));
             Ok(import_queue)
         })?
-        .with_rpc_extensions(|builder| -> Result<RpcExtension, _> {
-            let babe_link = import_setup
-                .as_ref()
-                .map(|s| &s.2)
+        .with_rpc_extensions(|builder| -> std::result::Result<RpcExtension, _> {
+            let babe_link = import_setup.as_ref().map(|s| &s.2)
                 .expect("BabeLink is present for full services or set up failed; qed.");
             let deps = plasm_rpc::FullDeps {
                 client: builder.client().clone(),
                 pool: builder.pool(),
-                select_chain: builder
-                    .select_chain()
-                    .cloned()
+                select_chain: builder.select_chain().cloned()
                     .expect("SelectChain is present for full services or set up failed; qed."),
                 babe: plasm_rpc::BabeDeps {
                     keystore: builder.keystore(),
                     babe_config: sc_consensus_babe::BabeLink::config(babe_link).clone(),
-                    shared_epoch_changes: sc_consensus_babe::BabeLink::epoch_changes(babe_link)
-                        .clone(),
-                },
+                    shared_epoch_changes: sc_consensus_babe::BabeLink::epoch_changes(babe_link).clone()
+                }
             };
             Ok(plasm_rpc::create_full(deps))
         })?;
@@ -108,22 +110,23 @@ macro_rules! new_full_start {
 /// concrete types instead.
 macro_rules! new_full {
     ($config:expr, $with_startup_data: expr) => {{
-        let (is_authority, force_authoring, name, disable_grandpa) = (
-            $config.roles.is_authority(),
+        let (
+            role,
+            force_authoring,
+            name,
+            disable_grandpa,
+        ) = (
+            $config.role.clone(),
             $config.force_authoring,
-            $config.name.clone(),
+            $config.network.node_name.clone(),
             $config.disable_grandpa,
         );
-
-        // sentry nodes announce themselves as authorities to the network
-        // and should run the same protocols authorities do, but it should
-        // never actively participate in any consensus process.
-        let participates_in_consensus = is_authority && !$config.sentry_mode;
 
         let (builder, mut import_setup, inherent_data_providers) = new_full_start!($config);
 
         let service = builder
             .with_finality_proof_provider(|client, backend| {
+				// GenesisAuthoritySetProvider is implemented for StorageAndProofProvider
                 let provider = client as Arc<dyn StorageAndProofProvider<_, _>>;
                 Ok(Arc::new(GrandpaFinalityProofProvider::new(backend, provider)) as _)
             })?
@@ -135,7 +138,7 @@ macro_rules! new_full {
 
         ($with_startup_data)(&block_import, &babe_link);
 
-        if participates_in_consensus {
+		if let sc_service::config::Role::Authority { sentry_nodes: _ } = &role {
             let proposer = sc_basic_authorship::ProposerFactory::new(
                 service.client(),
                 service.transaction_pool(),
@@ -168,7 +171,7 @@ macro_rules! new_full {
 
         // if the node isn't actively participating in consensus then it doesn't
         // need a keystore, regardless of which protocol we use below.
-        let keystore = if participates_in_consensus {
+        let keystore = if role.is_authority() {
             Some(service.keystore())
         } else {
             None
@@ -181,7 +184,7 @@ macro_rules! new_full {
             name: Some(name),
             observer_enabled: false,
             keystore,
-            is_authority,
+            is_authority: role.is_network_authority(),
         };
 
         let enable_grandpa = !disable_grandpa;
@@ -224,12 +227,14 @@ macro_rules! new_full {
 }
 
 type ConcreteBlock = plasm_primitives::Block;
-type ConcreteClient = Client<
-    Backend<ConcreteBlock>,
-    LocalCallExecutor<Backend<ConcreteBlock>, NativeExecutor<plasm_executor::Executor>>,
-    ConcreteBlock,
-    plasm_runtime::RuntimeApi,
->;
+type ConcreteClient =
+    Client<
+        Backend<ConcreteBlock>,
+        LocalCallExecutor<Backend<ConcreteBlock>,
+        NativeExecutor<Executor>>,
+        ConcreteBlock,
+        plasm_runtime::RuntimeApi
+    >;
 type ConcreteBackend = Backend<ConcreteBlock>;
 type ConcreteTransactionPool = sc_transaction_pool::BasicPool<
     sc_transaction_pool::FullChainApi<ConcreteClient, ConcreteBlock>,
@@ -261,10 +266,12 @@ pub fn new_full(
 /// Builds a new service for a light client.
 pub fn new_light(config: Configuration) -> Result<impl AbstractService, ServiceError> {
     type RpcExtension = jsonrpc_core::IoHandler<sc_rpc::Metadata>;
-    let inherent_data_providers = InherentDataProviders::new();
+    let inherent_data_providers = sp_inherents::InherentDataProviders::new();
 
-    let service = ServiceBuilder::new_light::<Block, RuntimeApi, plasm_executor::Executor>(config)?
-        .with_select_chain(|_config, backend| Ok(LongestChain::new(backend.clone())))?
+    let service = ServiceBuilder::new_light::<Block, RuntimeApi, Executor>(config)?
+        .with_select_chain(|_config, backend| {
+            Ok(LongestChain::new(backend.clone()))
+        })?
         .with_transaction_pool(|config, client, fetcher| {
             let fetcher = fetcher
                 .ok_or_else(|| "Trying to start light transaction pool without active fetcher")?;
@@ -316,9 +323,9 @@ pub fn new_light(config: Configuration) -> Result<impl AbstractService, ServiceE
             let provider = client as Arc<dyn StorageAndProofProvider<_, _>>;
             Ok(Arc::new(GrandpaFinalityProofProvider::new(backend, provider)) as _)
         })?
-        .with_rpc_extensions(|builder| -> Result<RpcExtension, _> {
-            let fetcher = builder
-                .fetcher()
+        .with_rpc_extensions(|builder,| -> std::result::Result<RpcExtension, _>
+        {
+            let fetcher = builder.fetcher()
                 .ok_or_else(|| "Trying to start node RPC without active fetcher")?;
             let remote_blockchain = builder
                 .remote_backend()

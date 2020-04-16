@@ -7,7 +7,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest, macOS-latest]
+        os: [ubuntu-latest, macOS-latest]
     steps:
     - name: Install LLVM (windows only)
       if: runner.os == 'Windows'
@@ -22,8 +22,10 @@ jobs:
       run: rustup target list --installed
     - name: Install build tools
       run: cargo install --git https://github.com/alexcrichton/wasm-gc --force
+
     - name: Run all tests
       run: cargo test --all
+
     - name: Build optimized binary
       run: cargo build --release --verbose
 
@@ -83,4 +85,4 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - uses: cachix/install-nix-action@v7
-    - run: nix-shell third-party/nix/shell.nix --option sandbox false --run "cargo build --release"
+    - run: nix-shell third-party/nix/shell.nix --run "cargo build --release"

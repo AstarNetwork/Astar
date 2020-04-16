@@ -11,23 +11,23 @@ edition = "2018"
 serde = { version = "1.0.106", optional = true }
 codec = { package = "parity-scale-codec", version = "1.3.0", features = ["derive"], default-features = false }
 
-sp-core = { git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-dusty", default_features = false }
-sp-runtime = { git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-dusty", default_features = false }
-sp-arithmetic = { git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-dusty", default_features = false }
-sp-io = { git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-dusty", default_features = false }
-sp-std = { git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-dusty", default_features = false }
-pallet-balances = { git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-dusty", default_features = false }
-frame-support = { git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-dusty", default_features = false }
-frame-system = { git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-dusty", default_features = false }
-sp-staking = { git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-dusty", default_features = false }
+sp-core = { version = "2.0.0-alpha.6", default_features = false }
+sp-runtime = { version = "2.0.0-alpha.6", default_features = false }
+sp-arithmetic = { version = "2.0.0-alpha.6", default_features = false }
+sp-io = { version = "2.0.0-alpha.6", default_features = false }
+sp-std = { version = "2.0.0-alpha.6", default_features = false }
+pallet-balances = { version = "2.0.0-alpha.6", default_features = false }
+frame-support = { version = "2.0.0-alpha.6", default_features = false }
+frame-system = { version = "2.0.0-alpha.6", default_features = false }
+sp-staking = { version = "2.0.0-alpha.6", default_features = false }
 
 pallet-plasm-rewards = { path = "../plasm-rewards", default_features = false }
 
 [dev-dependencies]
 hex-literal = "0.2.1"
-pallet-timestamp = { git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-dusty" }
-pallet-session = { git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-dusty" }
-randomness-collective-flip = { package = "pallet-randomness-collective-flip", git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-dusty" }
+pallet-timestamp = "2.0.0-alpha.6"
+pallet-session = "2.0.0-alpha.6"
+pallet-randomness-collective-flip = "2.0.0-alpha.6"
 
 [features]
 default = ["std"]

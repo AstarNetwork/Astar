@@ -262,8 +262,9 @@ decl_module! {
             let _ = ensure_signed(origin)?;
             let schedule = Self::current_schedule();
             match predicate::save_code::<T>(predicate, &schedule) {
-                Ok(predicate_hash) =>
-                    Self::deposit_event(RawEvent::PutPredicate(predicate_hash)),
+                Ok(predicate_hash) => {
+                    Self::deposit_event(RawEvent::PutPredicate(predicate_hash));
+                },
                 Err(err) => return Err(err.into()),
             }
             Ok(())

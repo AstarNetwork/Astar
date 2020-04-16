@@ -13,15 +13,15 @@ const VALID_PREDICATE: &str = r#"valid."#;
 fn test_calls() {
     let (valid_predicate, code_hash) = compile_predicate::<Test>(VALID_PREDICATE);
     new_test_ext().execute_with(|| {
-        assert_ok!(Ovm::put_code(Origin::signed(0), valid_predicate));
+        advance_block();
+        assert_ok!(Ovm::put_code(Origin::signed(0), valid_predicate.clone()));
+        assert_eq!(
+            Ovm::predicate_codes(&code_hash),
+            Some(valid_predicate),
+        );
         assert_eq!(
             System::events(),
             vec![
-                EventRecord {
-                    phase: Phase::Initialization,
-                    event: MetaEvent::system(system::RawEvent::NewAccount(1)),
-                    topics: vec![]
-                },
                 EventRecord {
                     phase: Phase::Initialization,
                     event: MetaEvent::ovm(RawEvent::PutPredicate(code_hash)),

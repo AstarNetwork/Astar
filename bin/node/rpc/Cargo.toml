@@ -8,20 +8,20 @@ authors = [
 edition = "2018"
 
 [dependencies]
-jsonrpc-core = "14.0.3"
 plasm-runtime = { path = "../runtime" }
 plasm-primitives = { path = "../primitives" }
-sp-api = { git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-dusty" }
-sp-runtime = { git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-dusty" }
-sp-blockchain= { git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-dusty" }
-sp-consensus = { git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-dusty" }
-sp-consensus-babe = { git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-dusty" }
-sp-transaction-pool = { git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-dusty" }
-sc-client = { git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-dusty" }
-sc-keystore = { git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-dusty" }
-sc-consensus-epochs = { git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-dusty" }
-sc-consensus-babe = { git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-dusty" }
-sc-consensus-babe-rpc = { git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-dusty" }
-pallet-contracts-rpc = { git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-dusty" }
-pallet-transaction-payment-rpc = { git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-dusty" }
-substrate-frame-rpc-system = { git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-dusty" }
+jsonrpc-core = "14.0.3"
+sp-api = "2.0.0-alpha.6"
+sp-runtime = "2.0.0-alpha.6"
+sp-blockchain = "2.0.0-alpha.6"
+sp-consensus = "0.8.0-alpha.6"
+sp-consensus-babe = "0.8.0-alpha.6"
+sp-transaction-pool = "2.0.0-alpha.6"
+sc-client = "0.8.0-alpha.6"
+sc-keystore = "2.0.0-alpha.6"
+sc-consensus-babe = "0.8.0-alpha.6"
+sc-consensus-babe-rpc = "0.8.0-alpha.6"
+sc-consensus-epochs = "0.8.0-alpha.6"
+pallet-contracts-rpc = "0.8.0-alpha.6"
+pallet-transaction-payment-rpc = "2.0.0-alpha.6"
+substrate-frame-rpc-system = "2.0.0-alpha.6"

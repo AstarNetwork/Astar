@@ -19,7 +19,7 @@ pub type Balance = u64;
 pub const ALICE_STASH: u64 = 1;
 
 impl_outer_origin! {
-    pub enum Origin for Test {}
+    pub enum Origin for Test  where system = frame_system {}
 }
 
 impl_outer_dispatch! {
