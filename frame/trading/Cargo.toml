@@ -8,14 +8,14 @@ edition = "2018"
 codec = { package = "parity-scale-codec", version = "1.3.0", features = ["derive"], default-features = false }
 serde = { version = "1.0.106", features = ["derive"], optional = true }
 
-sp-core = { git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-dusty", default_features = false }
-sp-runtime = { git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-dusty", default_features = false }
-sp-io = { git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-dusty", default_features = false }
-sp-std = { git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-dusty", default_features = false }
-pallet-balances = { git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-dusty", default_features = false }
-frame-support = { git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-dusty", default_features = false }
-pallet-timestamp = { git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-dusty", default_features = false }
-frame-system = { git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-dusty", default_features = false }
+sp-core = { version = "2.0.0-alpha.6", default_features = false }
+sp-runtime = { version = "2.0.0-alpha.6", default_features = false }
+sp-io = { version = "2.0.0-alpha.6", default_features = false }
+sp-std = { version = "2.0.0-alpha.6", default_features = false }
+pallet-balances = { version = "2.0.0-alpha.6", default_features = false }
+frame-support = { version = "2.0.0-alpha.6", default_features = false }
+pallet-timestamp = { version = "2.0.0-alpha.6", default_features = false }
+frame-system = { version = "2.0.0-alpha.6", default_features = false }
 pallet-contract-operator = { path = "../operator", default_features = false }
 
 [features]

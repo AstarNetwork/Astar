@@ -1,35 +1,78 @@
-use sc_cli::VersionInfo;
-use crate::{Cli, service, load_spec, Subcommand};
+use crate::{chain_spec, service, Cli, Subcommand};
+use plasm_runtime::Block;
+use sc_cli::SubstrateCli;
+
+impl SubstrateCli for Cli {
+    fn impl_name() -> &'static str {
+        "Plasm Node"
+    }
+
+    fn impl_version() -> &'static str {
+        env!("SUBSTRATE_CLI_IMPL_VERSION")
+    }
+
+    fn description() -> &'static str {
+        env!("CARGO_PKG_DESCRIPTION")
+    }
+
+    fn author() -> &'static str {
+        env!("CARGO_PKG_AUTHORS")
+    }
+
+    fn support_url() -> &'static str {
+        "https://github.com/staketechnologies/plasm/issues/new"
+    }
+
+    fn copyright_start_year() -> i32 {
+        2019
+    }
+
+    fn executable_name() -> &'static str {
+        "plasm-node"
+    }
+
+    fn load_spec(&self, id: &str) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
+        Ok(match id {
+            "dev" => Box::new(chain_spec::development_config()),
+            "local" => Box::new(chain_spec::local_testnet_config()),
+            "" | "dusty" => Box::new(chain_spec::dusty_config()),
+            path => Box::new(chain_spec::ChainSpec::from_json_file(
+                std::path::PathBuf::from(path),
+            )?),
+        })
+    }
+}
 
 /// Parse command line arguments into service configuration.
-pub fn run(version: VersionInfo) -> sc_cli::Result<()> {
-    let opt = sc_cli::from_args::<Cli>(&version);
-    let mut config = sc_service::Configuration::from_version(&version);
+pub fn run() -> sc_cli::Result<()> {
+    sc_cli::reset_signal_pipe_handler()?;
 
-    match opt.subcommand {
+    let cli = Cli::from_args();
+
+    match &cli.subcommand {
         None => {
-            opt.run.init(&version)?;
-            opt.run.update_config(&mut config, load_spec, &version)?;
-            opt.run.run(
-                config,
+            let runner = cli.create_runner(&cli.run)?;
+            runner.run_node(
                 service::new_light,
                 service::new_full,
-                &version,
+                plasm_runtime::VERSION
             )
         },
         Some(Subcommand::Benchmark(cmd)) => {
-            cmd.init(&version)?;
-            cmd.update_config(&mut config, load_spec, &version)?;
+            if cfg!(feature = "runtime-benchmarks") {
+                let runner = cli.create_runner(cmd)?;
 
-            cmd.run::<plasm_runtime::Block, plasm_executor::Executor>(config)
+                runner.sync_run(|config| cmd.run::<Block, service::Executor>(config))
+            } else {
+                println!("Benchmarking wasn't enabled when building the node. \
+                You can enable it with `--features runtime-benchmarks`.");
+                Ok(())
+            }
         },
         Some(Subcommand::Base(subcommand)) => {
-            subcommand.init(&version)?;
-            subcommand.update_config(&mut config, load_spec, &version)?;
-            subcommand.run(
-                config,
-                |config: sc_service::Configuration| Ok(new_full_start!(config).0),
-            )
+            let runner = cli.create_runner(subcommand)?;
+
+            runner.run_subcommand(subcommand, |config| Ok(new_full_start!(config).0))
         },
     }
 }

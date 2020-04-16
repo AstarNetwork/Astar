@@ -3,10 +3,10 @@
 #![cfg(test)]
 
 use super::*;
-use frame_support::{impl_outer_dispatch, impl_outer_origin, parameter_types};
+use frame_support::{impl_outer_dispatch, impl_outer_origin, parameter_types, traits::OnFinalize};
 use sp_core::{crypto::key_types, H256};
 use sp_runtime::testing::{Header, UintAuthorityId};
-use sp_runtime::traits::{BlakeTwo256, ConvertInto, IdentityLookup, OnFinalize, OpaqueKeys};
+use sp_runtime::traits::{BlakeTwo256, ConvertInto, IdentityLookup, OpaqueKeys};
 use sp_runtime::{KeyTypeId, Perbill};
 use traits::{GetEraStakingAmount, MaybeValidators};
 
@@ -119,6 +119,7 @@ impl pallet_session::SessionHandler<u64> for TestSessionHandler {
 
 impl pallet_session::Trait for Test {
     type ShouldEndSession = pallet_session::PeriodicSessions<Period, Offset>;
+    type NextSessionRotation = pallet_session::PeriodicSessions<Period, Offset>;
     type SessionManager = PlasmRewards;
     type SessionHandler = TestSessionHandler;
     type ValidatorId = u64;
@@ -142,21 +143,21 @@ impl pallet_balances::Trait for Test {
 
 pub struct DummyForSecurityStaking;
 impl GetEraStakingAmount<EraIndex, Balance> for DummyForSecurityStaking {
-    fn get_era_staking_amount(era: &EraIndex) -> Balance {
+    fn compute(era: &EraIndex) -> Balance {
         (era * 1_000_000).into()
     }
 }
 
 pub struct DummyForDappsStaking;
 impl GetEraStakingAmount<EraIndex, Balance> for DummyForDappsStaking {
-    fn get_era_staking_amount(era: &EraIndex) -> Balance {
+    fn compute(era: &EraIndex) -> Balance {
         (era * 200_000).into()
     }
 }
 
 pub struct DummyMaybeValidators;
 impl MaybeValidators<EraIndex, AccountId> for DummyMaybeValidators {
-    fn maybe_validators(current_era: EraIndex) -> Option<Vec<AccountId>> {
+    fn compute(current_era: EraIndex) -> Option<Vec<AccountId>> {
         Some(vec![1, 2, 3, (current_era + 100).into()])
     }
 }
@@ -188,16 +189,16 @@ pub type PlasmRewards = Module<Test>;
 pub const PER_SESSION: u64 = 60 * 1000;
 
 pub fn advance_session() {
-    let now = System::block_number();
+    let next = System::block_number() + 1;
     // increase block numebr
-    System::set_block_number(now + 1);
+    System::set_block_number(next);
     // increase timestamp + 10
     let now_time = Timestamp::get();
     // on initialize
     Timestamp::set_timestamp(now_time + PER_SESSION);
     Session::rotate_session();
-    assert_eq!(Session::current_index(), (now / Period::get()) as u32);
+    assert_eq!(Session::current_index(), (next / Period::get()) as u32);
 
     // on finalize
-    PlasmRewards::on_finalize(now);
+    PlasmRewards::on_finalize(next);
 }

@@ -5,10 +5,10 @@ authors = ["Parity Technologies <admin@parity.io>"]
 edition = "2018"
 
 [dependencies]
-sp-core = { git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-dusty" }
-node-runtime = { package = "plasm-runtime", path = "../node/runtime" }
-node-primitives = { package = "plasm-primitives", path = "../node/primitives" }
-sp-runtime = { git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-dusty" }
+sp-core = "2.0.0-alpha.6"
+plasm-runtime = { path = "../node/runtime" }
+plasm-primitives = { path = "../node/primitives" }
+sp-runtime = "2.0.0-alpha.6"
 rand = "0.7.2"
 clap = "2.33.0"
 tiny-bip39 = "0.6.2"
@@ -17,9 +17,9 @@ substrate-bip39 = "0.3.1"
 hex = "0.4.0"
 hex-literal = "0.2.1"
 codec = { package = "parity-scale-codec", version = "1.0.0" }
-frame-system = { git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-dusty" }
-pallet-balances = { git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-dusty" }
-pallet-transaction-payment = { git = "https://github.com/staketechnologies/substrate.git", branch = "plasm-dusty" }
+frame-system = "2.0.0-alpha.6"
+pallet-balances = "2.0.0-alpha.6"
+pallet-transaction-payment = "2.0.0-alpha.6"
 rpassword = "4.0.1"
 
 [features]

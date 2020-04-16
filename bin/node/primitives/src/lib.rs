@@ -1,11 +1,12 @@
 //! Low-level types used throughout the node code.
 
 #![warn(missing_docs)]
-
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use sp_runtime::{
-    generic, traits::{Verify, IdentifyAccount, BlakeTwo256}, MultiSignature, OpaqueExtrinsic
+    generic,
+    traits::{BlakeTwo256, IdentifyAccount, Verify},
+    MultiSignature, OpaqueExtrinsic,
 };
 
 /// An index to a block.
@@ -31,7 +32,7 @@ pub type Moment = u64;
 pub type Index = u32;
 
 /// A hash of some data used by the chain.
-pub type Hash = primitives::H256;
+pub type Hash = sp_core::H256;
 
 /// A timestamp: milliseconds since the unix epoch.
 /// `u64` is enough to represent a duration of half a billion years, when the

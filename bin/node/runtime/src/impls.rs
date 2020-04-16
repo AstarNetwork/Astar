@@ -4,7 +4,7 @@ use crate::{MaximumBlockWeight, System};
 use plasm_primitives::Balance;
 use sp_runtime::traits::{Convert, Saturating};
 use sp_runtime::{Fixed64, Perbill};
-use support::{traits::Get, weights::Weight};
+use frame_support::{traits::Get, weights::Weight};
 
 /// Convert from weight to balance via a simple coefficient multiplication
 /// The associated type C encapsulates a constant in units of balance per weight
@@ -80,7 +80,7 @@ mod tests {
     use crate::{constants::currency::*, TargetBlockFullness, TransactionPayment};
     use crate::{AvailableBlockRatio, MaximumBlockWeight, Runtime};
     use sp_runtime::assert_eq_error_rate;
-    use support::weights::Weight;
+    use frame_support::weights::Weight;
 
     fn max() -> Weight {
         MaximumBlockWeight::get()
@@ -115,7 +115,7 @@ mod tests {
     where
         F: Fn() -> (),
     {
-        let mut t: sp_io::TestExternalities = system::GenesisConfig::default()
+        let mut t: sp_io::TestExternalities = frame_system::GenesisConfig::default()
             .build_storage::<Runtime>()
             .unwrap()
             .into();
@@ -203,7 +203,7 @@ mod tests {
                 }
                 fm = next;
                 iterations += 1;
-                let fee = <Runtime as transaction_payment::Trait>::WeightToFee::convert(tx_weight);
+                let fee = <Runtime as pallet_transaction_payment::Trait>::WeightToFee::convert(tx_weight);
                 let adjusted_fee = fm.saturated_multiply_accumulate(fee);
                 println!(
                     "iteration {}, new fm = {:?}. Fee at this point is: {} units / {} mPLM, \

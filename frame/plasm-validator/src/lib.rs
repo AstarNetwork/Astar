@@ -76,11 +76,11 @@ decl_module! {
         fn deposit_event() = default;
 
         fn on_finalize() {
-            if let Some(active_era) = T::EraFinder::active_era() {
+            if let Some(active_era) = T::EraFinder::active() {
                 let mut untreated_era = Self::untreated_era();
 
                 while active_era.index > untreated_era {
-                    let rewards = match T::ForSecurityEraReward::for_security_era_reward(&untreated_era) {
+                    let rewards = match T::ForSecurityEraReward::get(&untreated_era) {
                         Some(rewards) => rewards,
                         None => {
                             frame_support::print("Error: start_session_index must be set for current_era");
@@ -158,7 +158,7 @@ impl<T: Trait> Module<T> {
 
 /// Returns the next validator candidate for calling by plasm-rewards when new era.
 impl<T: Trait> MaybeValidators<EraIndex, T::AccountId> for Module<T> {
-    fn maybe_validators(current_era: EraIndex) -> Option<Vec<T::AccountId>> {
+    fn compute(current_era: EraIndex) -> Option<Vec<T::AccountId>> {
         // Apply new validator set
         <ElectedValidators<T>>::insert(&current_era, <Validators<T>>::get());
         Some(Self::validators())
@@ -168,7 +168,7 @@ impl<T: Trait> MaybeValidators<EraIndex, T::AccountId> for Module<T> {
 /// Get the amount of staking per Era in a module in the Plasm Network
 /// for callinng by plasm-rewards when end era.
 impl<T: Trait> GetEraStakingAmount<EraIndex, BalanceOf<T>> for Module<T> {
-    fn get_era_staking_amount(_era: &EraIndex) -> BalanceOf<T> {
+    fn compute(_era: &EraIndex) -> BalanceOf<T> {
         BalanceOf::<T>::zero()
     }
 }

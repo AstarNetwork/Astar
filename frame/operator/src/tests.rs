@@ -192,7 +192,7 @@ type Balances = pallet_balances::Module<Test>;
 type Timestamp = pallet_timestamp::Module<Test>;
 type Contracts = pallet_contracts::Module<Test>;
 type System = frame_system::Module<Test>;
-type Randomness = randomness_collective_flip::Module<Test>;
+type Randomness = pallet_randomness_collective_flip::Module<Test>;
 type Operator = Module<Test>;
 
 pub struct DummyContractAddressFor;
@@ -303,7 +303,9 @@ impl ExtBuilder {
         }
         .assimilate_storage(&mut t)
         .unwrap();
-        sp_io::TestExternalities::new(t)
+        let mut ext = sp_io::TestExternalities::new(t);
+        ext.execute_with(|| System::set_block_number(1));
+        ext
     }
 }
 

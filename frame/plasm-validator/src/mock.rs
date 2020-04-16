@@ -3,13 +3,13 @@
 #![cfg(test)]
 
 use super::*;
-use frame_support::{impl_outer_dispatch, impl_outer_origin, parameter_types};
+use frame_support::{impl_outer_dispatch, impl_outer_origin, parameter_types, traits::OnFinalize};
 use pallet_plasm_rewards::{
     inflation::SimpleComputeTotalPayout,
 };
 use sp_core::{crypto::key_types, H256};
 use sp_runtime::testing::{Header, UintAuthorityId};
-use sp_runtime::traits::{BlakeTwo256, ConvertInto, IdentityLookup, OnFinalize, OpaqueKeys};
+use sp_runtime::traits::{BlakeTwo256, ConvertInto, IdentityLookup, OpaqueKeys};
 use sp_runtime::{KeyTypeId, Perbill};
 
 pub type BlockNumber = u64;
@@ -135,6 +135,7 @@ impl pallet_session::SessionHandler<u64> for TestSessionHandler {
 
 impl pallet_session::Trait for Test {
     type ShouldEndSession = pallet_session::PeriodicSessions<Period, Offset>;
+    type NextSessionRotation = pallet_session::PeriodicSessions<Period, Offset>;
     type SessionManager = PlasmRewards;
     type SessionHandler = TestSessionHandler;
     type ValidatorId = u64;
@@ -193,18 +194,18 @@ pub type PlasmValidator = Module<Test>;
 pub const PER_SESSION: u64 = 60 * 1000;
 
 pub fn advance_session() {
-    let now = System::block_number();
+    let next = System::block_number() + 1;
     // increase block numebr
-    System::set_block_number(now + 1);
+    System::set_block_number(next);
     // increase timestamp + 10
     let now_time = Timestamp::get();
     // on initialize
     Timestamp::set_timestamp(now_time + PER_SESSION);
     Session::rotate_session();
-    assert_eq!(Session::current_index(), (now / Period::get()) as u32);
+    assert_eq!(Session::current_index(), (next / Period::get()) as u32);
 
     // on finalize
-    PlasmRewards::on_finalize(now);
+    PlasmRewards::on_finalize(next);
 }
 
 pub fn advance_era() {
