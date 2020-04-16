@@ -21,7 +21,7 @@ pub fn to_address(public: ecdsa::Public) -> [u8; 20] {
 }
 
 pub fn lock_method(duration: u64) -> Vec<u8> {
-    let mut method = vec![0xdd, 0x46, 0x70, 0x64];  // lock(uint256) signature
+    let mut method = vec![0xdd, 0x46, 0x70, 0x64]; // lock(uint256) signature
     method.extend(&U256::from(duration).encode()[..]);
     method
 }

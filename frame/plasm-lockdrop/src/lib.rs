@@ -18,9 +18,9 @@
 // Ensure we're `no_std` when compiling for Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use codec::{Encode, Decode};
 use sp_std::prelude::*;
-use sp_core::{H256, ecdsa};
+use codec::{Decode, Encode};
+use sp_core::{ecdsa, H256};
 use sp_runtime::{
     RuntimeDebug, Perbill,
     traits::{
@@ -102,23 +102,29 @@ pub trait Trait: system::Trait {
 
     /// System level account type.
     /// This used for resolving account ID's of ECDSA lockdrop public keys.
-    type Account: IdentifyAccount<AccountId=Self::AccountId> + From<ecdsa::Public>;
+    type Account: IdentifyAccount<AccountId = Self::AccountId> + From<ecdsa::Public>;
 
     /// Module that could provide timestamp.
-    type Time: Time<Moment=Self::Moment>;
+    type Time: Time<Moment = Self::Moment>;
 
     /// Timestamp type.
-    type Moment: Member + Parameter + Saturating + AtLeast32Bit
-        + Copy + Default + From<u64> + Into<u64> + Into<u128>;
+    type Moment: Member
+        + Parameter
+        + Saturating
+        + AtLeast32Bit
+        + Copy
+        + Default
+        + From<u64>
+        + Into<u64>
+        + Into<u128>;
 
     /// Dollar rate number data type.
-    type DollarRate: Member + Parameter + AtLeast32Bit
-        + Copy + Default + Into<u128> + From<u64>;
+    type DollarRate: Member + Parameter + AtLeast32Bit + Copy + Default + Into<u128> + From<u64>;
 
     // XXX: I don't known how to convert into Balance from u128 without it
     // TODO: Should be removed
-    type BalanceConvert: From<u128> +
-        Into<<Self::Currency as Currency<<Self as frame_system::Trait>::AccountId>>::Balance>;
+    type BalanceConvert: From<u128>
+        + Into<<Self::Currency as Currency<<Self as frame_system::Trait>::AccountId>>::Balance>;
 
     /// The regular events type.
     type Event: From<Event<Self>> + Into<<Self as frame_system::Trait>::Event>;
@@ -127,7 +133,7 @@ pub trait Trait: system::Trait {
 /// Claim id is a hash of claim parameters.
 pub type ClaimId = H256;
 
-/// Type for enumerating claim proof votes. 
+/// Type for enumerating claim proof votes.
 pub type AuthorityVote = u32;
 
 /// Type for enumerating authorities in list (2^16 authorities is enough).
@@ -161,10 +167,10 @@ impl Default for Lockdrop {
 #[cfg_attr(feature = "std", derive(Eq))]
 #[derive(Encode, Decode, RuntimeDebug, PartialEq, Default, Clone)]
 pub struct Claim {
-    params:   Lockdrop,
-    approve:  AuthorityVote,
-    decline:  AuthorityVote,
-    amount:   u128,
+    params: Lockdrop,
+    approve: AuthorityVote,
+    decline: AuthorityVote,
+    amount: u128,
     complete: bool,
 }
 
@@ -172,8 +178,8 @@ pub struct Claim {
 #[cfg_attr(feature = "std", derive(Eq))]
 #[derive(Encode, Decode, RuntimeDebug, PartialEq, Clone)]
 pub struct ClaimVote {
-    claim_id:  ClaimId,
-    approve:   bool,
+    claim_id: ClaimId,
+    approve: bool,
     authority: AuthorityIndex,
 }
 
@@ -182,8 +188,8 @@ pub struct ClaimVote {
 #[derive(Encode, Decode, RuntimeDebug, PartialEq, Clone)]
 pub struct TickerRate<DollarRate: Member + Parameter> {
     authority: AuthorityIndex,
-    btc:       DollarRate,
-    eth:       DollarRate,
+    btc: DollarRate,
+    eth: DollarRate,
 }
 
 decl_event!(
@@ -261,7 +267,7 @@ decl_module! {
             50_000
         }
 
-        /// Request authorities to check locking transaction. 
+        /// Request authorities to check locking transaction.
         #[weight = SimpleDispatchInfo::FixedNormal(1_000_000)]
         fn request(
             origin,
@@ -308,7 +314,7 @@ decl_module! {
         ) {
             let _ = ensure_signed(origin)?;
             let claim = <Claims>::get(claim_id);
-            ensure!(!claim.complete, "claim should be already paid"); 
+            ensure!(!claim.complete, "claim should be already paid");
 
             if claim.approve + claim.decline < <VoteThreshold>::get() {
                 Err("this request don't get enough authority votes")?
@@ -428,13 +434,13 @@ impl<T: Trait> Module<T> {
         for claim_id in Self::requests() {
             debug::debug!(
                 target: "lockdrop-offchain-worker",
-                "new claim request: id = {}", claim_id 
+                "new claim request: id = {}", claim_id
             );
 
             let approve = Self::check_lock(claim_id)?;
             debug::info!(
                 target: "lockdrop-offchain-worker",
-                "claim id {} => check result: {}", claim_id, approve 
+                "claim id {} => check result: {}", claim_id, approve
             );
 
             for key in T::AuthorityId::all() {
@@ -584,7 +590,8 @@ impl<T: Trait> pallet_session::OneSessionHandler<T::AccountId> for Module<T> {
     type Key = T::AuthorityId;
 
     fn on_genesis_session<'a, I: 'a>(validators: I)
-        where I: Iterator<Item=(&'a T::AccountId, T::AuthorityId)>
+    where
+        I: Iterator<Item = (&'a T::AccountId, T::AuthorityId)>,
     {
         // Init authorities on genesis session.
         let authorities: Vec<_> = validators.map(|x| x.1).collect();
@@ -593,7 +600,8 @@ impl<T: Trait> pallet_session::OneSessionHandler<T::AccountId> for Module<T> {
     }
 
     fn on_new_session<'a, I: 'a>(_changed: bool, validators: I, _queued_validators: I)
-        where I: Iterator<Item=(&'a T::AccountId, T::AuthorityId)>
+    where
+        I: Iterator<Item = (&'a T::AccountId, T::AuthorityId)>,
     {
         // Remember who the authorities are for the new session.
         let authorities: Vec<_> = validators.map(|x| x.1).collect();
@@ -601,8 +609,8 @@ impl<T: Trait> pallet_session::OneSessionHandler<T::AccountId> for Module<T> {
         Self::deposit_event(RawEvent::NewAuthorities(authorities));
     }
 
-    fn on_before_session_ending() { }
-    fn on_disabled(_i: usize) { }
+    fn on_before_session_ending() {}
+    fn on_disabled(_i: usize) {}
 }
 
 impl<T: Trait> frame_support::unsigned::ValidateUnsigned for Module<T> {
@@ -623,7 +631,7 @@ impl<T: Trait> frame_support::unsigned::ValidateUnsigned for Module<T> {
                     // Verify authority
                     let keys = Keys::<T>::get();
                     if let Some(authority) = keys.get(vote.authority as usize) {
-                        // Check that sender is authority 
+                        // Check that sender is authority
                         if !authority.verify(&encoded_vote, &signature) {
                             return InvalidTransaction::BadProof.into();
                         }
@@ -643,13 +651,13 @@ impl<T: Trait> frame_support::unsigned::ValidateUnsigned for Module<T> {
                         propagate: true,
                     })
                 })
-            },
+            }
 
             Call::set_dollar_rate(rate, signature) => {
                 rate.using_encoded(|encoded_rate| {
                     let keys = Keys::<T>::get();
                     if let Some(authority) = keys.get(rate.authority as usize) {
-                        // Check that sender is authority 
+                        // Check that sender is authority
                         if !authority.verify(&encoded_rate, &signature) {
                             return InvalidTransaction::BadProof.into();
                         }
@@ -665,7 +673,7 @@ impl<T: Trait> frame_support::unsigned::ValidateUnsigned for Module<T> {
                         propagate: true,
                     })
                 })
-            },
+            }
 
             _ => InvalidTransaction::Call.into(),
         }

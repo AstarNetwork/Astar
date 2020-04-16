@@ -1,6 +1,6 @@
 //! Oracle traits that used in Lockdrop module.
 
-use frame_support::traits::Get;
+use frame_support::{debug, traits::Get};
 use sp_runtime::offchain::http::Request;
 use sp_runtime::RuntimeDebug;
 use sp_std::prelude::*;
@@ -17,8 +17,23 @@ pub trait PriceOracle<T> {
     /// Fetch price data, parse it and return raw dollar rate.
     /// Note: this method requires off-chain worker context.
     fn fetch() -> Result<T, ()> {
-        let request = Request::get(Self::Uri::get()).send().map_err(|_| ())?;
-        let response = request.wait().map_err(|_| ())?;
+        let uri = Self::Uri::get();
+        debug::debug!(
+            target: "lockdrop-offchain-worker",
+            "Price oracle request to {}", uri
+        );
+        let request = Request::get(uri).send().map_err(|e| {
+            debug::error!(
+                target: "lockdrop-offchain-worker",
+                "Request error {:?}", e
+            );
+        })?;
+        let response = request.wait().map_err(|e| {
+            debug::error!(
+                target: "lockdrop-offchain-worker",
+                "Response error {:?}", e
+            );
+        })?;
         Self::parse(response.body().collect::<Vec<_>>())
     }
 }

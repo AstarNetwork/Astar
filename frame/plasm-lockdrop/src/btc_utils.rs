@@ -23,18 +23,15 @@ pub fn ripemd160(data: &[u8]) -> [u8; 20] {
 }
 
 /// Compile BTC sequence lock script for givent public key and duration
-pub fn lock_script(
-    public: ecdsa::Public,
-    duration: u64,
-) -> Vec<u8> {
+pub fn lock_script(public: ecdsa::Public, duration: u64) -> Vec<u8> {
     duration.using_encoded(|enc_duration| {
         let mut output = vec![];
-        output.extend(vec![ 0x21 ]);                     // Public key lenght (should be 33 bytes)
-        output.extend(public.as_ref());                  // Public key
-        output.extend(vec![ 0xad ]);                     // OP_CHECKSIGVERIFY
-        output.extend(vec![ enc_duration.len() as u8 ]); // Lock duration length
-        output.extend(enc_duration.as_ref());            // Lock duration in blocks
-        output.extend(vec![ 0x27, 0x55, 0x01 ]);         // OP_CHECKSEQUENCEVERIFY OP_DROP 1
+        output.extend(vec![0x21]); // Public key lenght (should be 33 bytes)
+        output.extend(public.as_ref()); // Public key
+        output.extend(vec![0xad]); // OP_CHECKSIGVERIFY
+        output.extend(vec![enc_duration.len() as u8]); // Lock duration length
+        output.extend(enc_duration.as_ref()); // Lock duration in blocks
+        output.extend(vec![0x27, 0x55, 0x01]); // OP_CHECKSEQUENCEVERIFY OP_DROP 1
         output
     })
 }
@@ -47,8 +44,8 @@ pub fn script_hash(script: &[u8]) -> [u8; 20] {
 /// Compile BTC pay-to-script-hash script for given script hash
 pub fn p2sh(script_hash: &[u8; 20]) -> Vec<u8> {
     let mut output = vec![];
-    output.extend(vec![ 0xa9, 0x14 ]);  // OP_HASH160 20
-    output.extend(script_hash);         // <scriptHash>
-    output.extend(vec![ 0x87 ]);        // OP_EQUAL
+    output.extend(vec![0xa9, 0x14]); // OP_HASH160 20
+    output.extend(script_hash); // <scriptHash>
+    output.extend(vec![0x87]); // OP_EQUAL
     output
 }

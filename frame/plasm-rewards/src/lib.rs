@@ -375,17 +375,15 @@ impl<T: Trait> Module<T> {
 
             if !era_duration.is_zero() {
                 let total_payout = T::Currency::total_issuance();
-                let for_dapps = T::GetForDappsStaking::get_era_staking_amount(&active_era.index);
-                let for_security =
-                    T::GetForSecurityStaking::get_era_staking_amount(&active_era.index);
+                let for_dapps = T::GetForDappsStaking::compute(&active_era.index);
+                let for_security = T::GetForSecurityStaking::compute(&active_era.index);
 
-                let (for_security_reward, for_dapps_rewards) =
-                    T::ComputeTotalPayout::compute_total_payout(
-                        total_payout,
-                        era_duration.saturated_into::<u64>(),
-                        for_security,
-                        for_dapps,
-                    );
+                let (for_security_reward, for_dapps_rewards) = T::ComputeTotalPayout::compute(
+                    total_payout,
+                    era_duration.saturated_into::<u64>(),
+                    for_security,
+                    for_dapps,
+                );
 
                 <ForSecurityEraReward<T>>::insert(active_era.index, for_security_reward);
                 <ForDappsEraReward<T>>::insert(active_era.index, for_dapps_rewards);
@@ -406,7 +404,7 @@ impl<T: Trait> Module<T> {
         }
 
         // Return maybe validators.
-        T::MaybeValidators::maybe_validators(current_era)
+        T::MaybeValidators::compute(current_era)
     }
 
     /// Clear all era information for given era.
@@ -436,30 +434,27 @@ impl<T: Trait> SessionManager<T::AccountId> for Module<T> {
 
 /// In this implementation using validator and dapps rewards module.
 impl<T: Trait> EraFinder<EraIndex, SessionIndex, MomentOf<T>> for Module<T> {
-    fn bonded_eras() -> Vec<(EraIndex, SessionIndex)> {
-        Self::bonded_eras()
-    }
-    fn current_era() -> Option<EraIndex> {
+    fn current() -> Option<EraIndex> {
         Self::current_era()
     }
-    fn active_era() -> Option<ActiveEraInfo<MomentOf<T>>> {
+    fn active() -> Option<ActiveEraInfo<MomentOf<T>>> {
         Self::active_era()
     }
-    fn eras_start_session_index(era: &EraIndex) -> Option<SessionIndex> {
+    fn start_session_index(era: &EraIndex) -> Option<SessionIndex> {
         Self::eras_start_session_index(&era)
     }
 }
 
 /// Get the security rewards for validator module.
 impl<T: Trait> ForSecurityEraRewardFinder<BalanceOf<T>> for Module<T> {
-    fn for_security_era_reward(era: &EraIndex) -> Option<BalanceOf<T>> {
+    fn get(era: &EraIndex) -> Option<BalanceOf<T>> {
         Self::for_security_era_reward(&era)
     }
 }
 
 /// Get the dapps rewards for dapps staking module.
 impl<T: Trait> ForDappsEraRewardFinder<BalanceOf<T>> for Module<T> {
-    fn for_dapps_era_reward(era: &EraIndex) -> Option<BalanceOf<T>> {
+    fn get(era: &EraIndex) -> Option<BalanceOf<T>> {
         Self::for_dapps_era_reward(&era)
     }
 }
