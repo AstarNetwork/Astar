@@ -21,7 +21,10 @@ pub mod currency {
     lazy_static::lazy_static! {
         /// PLASM GENESIS TOKEN HODERS
         pub static ref HOLDERS: Vec<(plasm_primitives::AccountId, Balance)> = sp_std::vec![
-            (to_account(&hex!["1f57f692ecc6c7031f7b89e283a14a111a273ef5ca4295ed114cef5faed3f1a66da013f76b420d7a054aec6e76ecc077a70dc9951dc41b1679e20d1d9eb665b0"][..]), 216982973545339075380)
+            // Stake Technologies & affilation participants
+            (hex!["16eb796bee0c857db3d646ee7070252707aec0c7d82b2eda856632f6a2306a58"].into(), 71020337610241566546887)
+            // Direct Lockdrop participants
+          , (to_account(&hex!["1f57f692ecc6c7031f7b89e283a14a111a273ef5ca4295ed114cef5faed3f1a66da013f76b420d7a054aec6e76ecc077a70dc9951dc41b1679e20d1d9eb665b0"][..]), 216982973545339075380)
           , (to_account(&hex!["dc9381468a9712dfae81b5c88827cd824c189db9f7f49d4571cfe67b498b691204ae6d4c354a3677788828830649b682c91eeef379daec40f56a9ac7c4a669bd"][..]), 245318656574379798128)
           , (to_account(&hex!["718d7dbc47423bef210b00867fad556a54f6a6ea4fa5964d08a49ba9a0759ccedb2374c5d7067af49b4aa936f1706ee69704e5315ed821fb7c9079a2ba9c23df"][..]), 3964349490241977537795)
           , (to_account(&hex!["0a50f3242e28ecf0e516e8b0c2023046fbc1739f0055794b3469e5bf24996b8413036ec72faf504fc41e532f3915a5afa088f1ad2657170aeddd287163531a54"][..]), 68645121610430949354)

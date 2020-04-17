@@ -220,6 +220,12 @@ fn dusty_genesis() -> GenesisConfig {
     // akru 
     let root_key = hex!["16eb796bee0c857db3d646ee7070252707aec0c7d82b2eda856632f6a2306a58"];
 
+    // token holders
+    let holders = HOLDERS.to_vec();
+    // quick check
+    let total_amount = holders.iter().fold(0, |sum, (_, v)| sum + v);
+    assert!(total_amount == 500_000_000 * plasm_runtime::constants::currency::PLM);
+
     make_genesis(
         authorities,
         HOLDERS.to_vec(),
