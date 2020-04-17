@@ -112,8 +112,6 @@ mod tests {
     use super::super::Ed25519;
     use super::*;
     use sp_core::{crypto::Ss58Codec, Pair};
-    #[cfg(feature = "bench")]
-    use test::Bencher;
 
     #[test]
     fn test_generation_with_single_char() {
@@ -161,17 +159,5 @@ mod tests {
             ),
             0
         );
-    }
-
-    #[cfg(feature = "bench")]
-    #[bench]
-    fn bench_paranoiac(b: &mut Bencher) {
-        b.iter(|| generate_key("polk"));
-    }
-
-    #[cfg(feature = "bench")]
-    #[bench]
-    fn bench_not_paranoiac(b: &mut Bencher) {
-        b.iter(|| generate_key("polk"));
     }
 }
