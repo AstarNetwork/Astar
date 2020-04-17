@@ -66,13 +66,16 @@ Ensure you have Rust and the support software installed:
 
     rustup update nightly
     rustup target add wasm32-unknown-unknown --toolchain nightly
-    cargo install --git https://github.com/alexcrichton/wasm-gc
 
-You will also need to install the following packages:
+You will also need to install the following dependencies:
 
 * Linux: `sudo apt install cmake git clang libclang-dev build-essential`
 * Mac: `brew install cmake git llvm`
 * Windows: Download and install the Pre Build Windows binaries of LLVM from http://releases.llvm.org/download.html
+
+Install additional build tools:
+
+    cargo install --git https://github.com/alexcrichton/wasm-gc
 
 Install Plasm node from git source:
 
