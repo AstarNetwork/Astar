@@ -116,8 +116,9 @@ impl_opaque_keys! {
 }
 
 impl pallet_session::Trait for Runtime {
-    type SessionManager = pallet_session::historical::NoteHistoricalRoot<Runtime, TestSessionManager>;
-    type SessionHandler = (PlasmLockdrop, );
+    type SessionManager =
+        pallet_session::historical::NoteHistoricalRoot<Runtime, TestSessionManager>;
+    type SessionHandler = (PlasmLockdrop,);
     type ValidatorId = AccountId;
     type ValidatorIdOf = ConvertInto;
     type Keys = SessionKeys;
@@ -216,7 +217,8 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
         positive_votes: 2,
         lockdrop_end: 0,
         ethereum_contract: hex_literal::hex!["458dabf1eff8fcdfbf0896a6bd1f457c01e2ffd6"],
-    }.assimilate_storage(&mut storage);
+    }
+    .assimilate_storage(&mut storage);
 
     storage.into()
 }

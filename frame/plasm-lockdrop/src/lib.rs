@@ -18,47 +18,44 @@
 // Ensure we're `no_std` when compiling for Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use sp_std::prelude::*;
 use codec::{Decode, Encode};
-use sp_core::{ecdsa, H256};
-use sp_runtime::{
-    RuntimeDebug, Perbill,
-    traits::{
-        Member, IdentifyAccount, BlakeTwo256, Hash, Saturating, AtLeast32Bit,
-    },
-    app_crypto::RuntimeAppPublic,
-    transaction_validity::{
-        ValidTransaction, InvalidTransaction,
-        TransactionValidity, TransactionPriority,
-        TransactionSource,
-    },
-};
 use frame_support::{
-    decl_module, decl_event, decl_storage, decl_error,
-    debug, ensure, StorageValue, StorageMap,
-    weights::{SimpleDispatchInfo, Weight},
-    traits::{Get, Currency, Time},
-    storage::IterableStorageMap,
+    debug, decl_error, decl_event, decl_module, decl_storage,
     dispatch::Parameter,
+    ensure,
+    storage::IterableStorageMap,
+    traits::{Currency, Get, Time},
+    weights::{SimpleDispatchInfo, Weight},
+    StorageMap, StorageValue,
 };
 use frame_system::{
-    self as system, ensure_signed, ensure_none,
-    offchain::SubmitUnsignedTransaction,
+    self as system, ensure_none, ensure_signed, offchain::SubmitUnsignedTransaction,
 };
-use median::{Filter, ListNode};
 pub use generic_array::typenum;
+use median::{Filter, ListNode};
+use sp_core::{ecdsa, H256};
+use sp_runtime::{
+    app_crypto::RuntimeAppPublic,
+    traits::{AtLeast32Bit, BlakeTwo256, Hash, IdentifyAccount, Member, Saturating},
+    transaction_validity::{
+        InvalidTransaction, TransactionPriority, TransactionSource, TransactionValidity,
+        ValidTransaction,
+    },
+    Perbill, RuntimeDebug,
+};
+use sp_std::prelude::*;
 
 /// Bitcoin helpers.
 mod btc_utils;
-/// Ethereum helpers.
-mod eth_utils;
 /// Authority keys.
 mod crypto;
+/// Ethereum helpers.
+mod eth_utils;
 /// Oracle traits.
 mod oracle;
 
-pub use oracle::*;
 pub use crypto::*;
+pub use oracle::*;
 
 #[cfg(test)]
 mod mock;
@@ -73,7 +70,7 @@ pub trait Trait: system::Trait {
     /// The lockdrop balance.
     type Currency: Currency<Self::AccountId>;
 
-    /// Bitcoin price oracle. 
+    /// Bitcoin price oracle.
     type BitcoinTicker: PriceOracle<Self::DollarRate>;
 
     /// Ethereum price oracle.
@@ -87,7 +84,7 @@ pub trait Trait: system::Trait {
 
     /// How long dollar rate parameters valid in secs.
     type MedianFilterExpire: Get<Self::Moment>;
-    
+
     /// Median filter window size.
     type MedianFilterWidth: generic_array::ArrayLength<ListNode<Self::DollarRate>>;
 
@@ -147,9 +144,19 @@ pub enum Lockdrop {
     /// transaction sended with time-lockding opcode,
     /// BTC token locked and could be spend some timestamp.
     /// Duration in blocks and value in shatoshi could be derived from BTC transaction.
-    Bitcoin { public: ecdsa::Public, value: u128, duration: u64, transaction_hash: H256, },
+    Bitcoin {
+        public: ecdsa::Public,
+        value: u128,
+        duration: u64,
+        transaction_hash: H256,
+    },
     /// Ethereum lockdrop transactions is sended to pre-deployed lockdrop smart contract.
-    Ethereum { public: ecdsa::Public, value: u128, duration: u64, transaction_hash: H256, },
+    Ethereum {
+        public: ecdsa::Public,
+        value: u128,
+        duration: u64,
+        transaction_hash: H256,
+    },
 }
 
 impl Default for Lockdrop {
@@ -337,7 +344,7 @@ decl_module! {
             Self::deposit_event(RawEvent::ClaimComplete(claim_id, account, amount));
         }
 
-        /// Vote for claim request according to check results. (for authorities only) 
+        /// Vote for claim request according to check results. (for authorities only)
         #[weight = SimpleDispatchInfo::default()]
         fn vote(
             origin,
@@ -421,10 +428,7 @@ impl<T: Trait> Module<T> {
     /// The main offchain worker entry point.
     fn offchain() -> Result<(), ()> {
         // TODO: add delay to prevent frequent transaction sending
-        Self::send_dollar_rate(
-            T::BitcoinTicker::fetch()?,
-            T::EthereumTicker::fetch()?,
-        )?;
+        Self::send_dollar_rate(T::BitcoinTicker::fetch()?, T::EthereumTicker::fetch()?)?;
 
         // TODO: use permanent storage to track request when temporary failed
         Self::claim_request_oracle()
@@ -445,7 +449,11 @@ impl<T: Trait> Module<T> {
 
             for key in T::AuthorityId::all() {
                 if let Some(authority) = Self::authority_index_of(&key) {
-                    let vote = ClaimVote { authority, claim_id, approve };
+                    let vote = ClaimVote {
+                        authority,
+                        claim_id,
+                        approve,
+                    };
                     let signature = key.sign(&vote.encode()).ok_or(())?;
                     let call = Call::vote(vote, signature);
                     debug::debug!(
@@ -466,10 +474,14 @@ impl<T: Trait> Module<T> {
     }
 
     /// Send dollar rate as unsigned extrinsic from authority.
-    fn send_dollar_rate(btc: T::DollarRate, eth: T::DollarRate) -> Result<(), ()> { 
+    fn send_dollar_rate(btc: T::DollarRate, eth: T::DollarRate) -> Result<(), ()> {
         for key in T::AuthorityId::all() {
             if let Some(authority) = Self::authority_index_of(&key) {
-                let rate = TickerRate { authority, btc, eth };
+                let rate = TickerRate {
+                    authority,
+                    btc,
+                    eth,
+                };
                 let signature = key.sign(&rate.encode()).ok_or(())?;
                 let call = Call::set_dollar_rate(rate, signature);
                 debug::debug!(
@@ -491,7 +503,12 @@ impl<T: Trait> Module<T> {
     fn check_lock(claim_id: ClaimId) -> Result<bool, ()> {
         let Claim { params, .. } = Self::claims(claim_id);
         match params {
-            Lockdrop::Bitcoin { public, value, duration, transaction_hash } => {
+            Lockdrop::Bitcoin {
+                public,
+                value,
+                duration,
+                transaction_hash,
+            } => {
                 let tx = T::BitcoinApi::fetch(transaction_hash)?;
                 debug::debug!(
                     target: "lockdrop-offchain-worker",
@@ -510,13 +527,16 @@ impl<T: Trait> Module<T> {
                     "claim id {} => desired P2HS script: {}", claim_id, hex::encode(script.clone())
                 );
 
-                let valid = tx.confirmations > 8
-                         && tx.value == value
-                         && tx.script == script;
+                let valid = tx.confirmations > 8 && tx.value == value && tx.script == script;
                 Ok(valid)
-            },
-            Lockdrop::Ethereum { public, value, duration, transaction_hash } => {
-                let tx = T::EthereumApi::fetch(transaction_hash)?; 
+            }
+            Lockdrop::Ethereum {
+                public,
+                value,
+                duration,
+                transaction_hash,
+            } => {
+                let tx = T::EthereumApi::fetch(transaction_hash)?;
                 debug::debug!(
                     target: "lockdrop-offchain-worker",
                     "claim id {} => fetched transaction: {:?}", claim_id, tx
@@ -528,11 +548,11 @@ impl<T: Trait> Module<T> {
                     "claim id {} => desired lock script: {}", claim_id, hex::encode(script.clone())
                 );
 
-                let valid = tx.confirmations > 10 
-                         && tx.value == value
-                         && tx.script == script
-                         && tx.recipient == <EthereumContract>::get()
-                         && tx.sender == eth_utils::to_address(public);
+                let valid = tx.confirmations > 10
+                    && tx.value == value
+                    && tx.script == script
+                    && tx.recipient == <EthereumContract>::get()
+                    && tx.sender == eth_utils::to_address(public);
                 Ok(valid)
             }
         }
@@ -616,10 +636,7 @@ impl<T: Trait> pallet_session::OneSessionHandler<T::AccountId> for Module<T> {
 impl<T: Trait> frame_support::unsigned::ValidateUnsigned for Module<T> {
     type Call = Call<T>;
 
-    fn validate_unsigned(
-        _source: TransactionSource,
-        call: &Self::Call
-    ) -> TransactionValidity {
+    fn validate_unsigned(_source: TransactionSource, call: &Self::Call) -> TransactionValidity {
         match call {
             Call::vote(vote, signature) => {
                 // Verify call params

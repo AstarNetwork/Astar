@@ -20,7 +20,7 @@ use sc_executor::{native_executor_instance, NativeExecutor};
 use sc_service::{
     AbstractService, Service, ServiceBuilder, NetworkStatus,
     config::Configuration, error::{Error as ServiceError},
-}; 
+};
 use sp_runtime::traits::Block as BlockT;
 
 // Declare an instance of the native executor named `Executor`. Include the wasm binary as the
