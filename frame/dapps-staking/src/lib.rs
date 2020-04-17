@@ -308,10 +308,10 @@ decl_module! {
         }
 
         fn on_finalize() {
-            if let Some(active_era) = T::EraFinder::active_era() {
+            if let Some(active_era) = T::EraFinder::active() {
                 let mut untreated_era = Self::untreated_era();
                 while active_era.index > untreated_era {
-                    let rewards = match T::ForDappsEraReward::for_dapps_era_reward(&untreated_era) {
+                    let rewards = match T::ForDappsEraReward::get(&untreated_era) {
                         Some(rewards) => rewards,
                         None => {
                             frame_support::print("Error: start_session_index must be set for current_era");
@@ -382,7 +382,7 @@ decl_module! {
                 total: value,
                 active: value,
                 unlocking: vec![],
-                last_reward: T::EraFinder::current_era()
+                last_reward: T::EraFinder::current()
             };
             Self::update_ledger(&controller, &item);
         }
@@ -464,7 +464,7 @@ decl_module! {
                 }
 
                 Self::deposit_event(RawEvent::Unbonded(ledger.stash.clone(), value));
-                let era = T::EraFinder::current_era().unwrap_or(Zero::zero()) + T::BondingDuration::get();
+                let era = T::EraFinder::current().unwrap_or(Zero::zero()) + T::BondingDuration::get();
                 ledger.unlocking.push(UnlockChunk { value, era });
                 Self::update_ledger(&controller, &ledger);
             }
@@ -493,7 +493,7 @@ decl_module! {
             let controller = ensure_signed(origin)?;
             let mut ledger = Self::ledger(&controller).ok_or(Error::<T>::NotController)?;
             let (stash, old_total) = (ledger.stash.clone(), ledger.total);
-            if let Some(current_era) = T::EraFinder::current_era() {
+            if let Some(current_era) = T::EraFinder::current() {
                 ledger = ledger.consolidate_unlocked(current_era)
             }
 
@@ -557,7 +557,7 @@ decl_module! {
 
             let nominations = Nominations {
                 targets,
-                submitted_in: T::EraFinder::current_era().unwrap_or(Zero::zero()),
+                submitted_in: T::EraFinder::current().unwrap_or(Zero::zero()),
                 suppressed: false,
             };
 
@@ -799,7 +799,7 @@ impl<T: Trait> Module<T> {
 
 /// Get the amount of staking per Era in a module in the Plasm Network.
 impl<T: Trait> GetEraStakingAmount<EraIndex, BalanceOf<T>> for Module<T> {
-    fn get_era_staking_amount(era: &EraIndex) -> BalanceOf<T> {
+    fn compute(era: &EraIndex) -> BalanceOf<T> {
         Self::elected_operators(era)
     }
 }

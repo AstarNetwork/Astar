@@ -527,13 +527,12 @@ fn reward_to_operators_test() {
 
         let active_era = PlasmRewards::active_era().unwrap();
         let pre_total_issuarance = Balances::total_issuance();
-        let (_, b) =
-            <Test as pallet_plasm_rewards::Trait>::ComputeTotalPayout::compute_total_payout(
-                pre_total_issuarance,
-                SIX_HOURS,
-                0,
-                0,
-            );
+        let (_, b) = <Test as pallet_plasm_rewards::Trait>::ComputeTotalPayout::compute(
+            pre_total_issuarance,
+            SIX_HOURS,
+            0,
+            0,
+        );
 
         advance_session();
 
