@@ -6,7 +6,7 @@ use plasm_runtime::Block;
 use plasm_runtime::{
     BabeConfig, BalancesConfig, ContractsConfig, DappsStakingConfig, GenesisConfig, GrandpaConfig,
     IndicesConfig, PlasmRewardsConfig, PlasmValidatorConfig, SessionConfig, SessionKeys,
-    SudoConfig, SystemConfig, PlasmLockdropConfig, WASM_BINARY,
+    SudoConfig, SystemConfig, WASM_BINARY,
 };
 use sc_chain_spec::ChainSpecExtension;
 use sc_service::ChainType;
@@ -160,14 +160,6 @@ fn make_genesis(
                 ..Default::default()
             },
             gas_price: 1 * MILLIPLM,
-        }),
-        pallet_plasm_lockdrop: Some(PlasmLockdropConfig {
-            alpha: sp_runtime::Perbill::from_parts(200_000_000),
-            dollar_rate: (5_000, 120),
-            vote_threshold: 3,
-            positive_votes: 2,
-            lockdrop_end: 0,
-            ethereum_contract: hex!["458dabf1eff8fcdfbf0896a6bd1f457c01e2ffd6"],
         }),
         pallet_sudo: Some(SudoConfig { key: root_key }),
     }

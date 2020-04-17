@@ -300,25 +300,6 @@ parameter_types! {
     pub const MedianFilterExpire: Moment = 300; // 10 blocks is one minute, 300 - half hour
 }
 
-impl pallet_plasm_lockdrop::Trait for Runtime {
-    type Currency = Balances;
-    type BitcoinTicker = pallet_plasm_lockdrop::CoinGecko<BitcoinTickerUri>;
-    type EthereumTicker = pallet_plasm_lockdrop::CoinGecko<EthereumTickerUri>;
-    type BitcoinApi = pallet_plasm_lockdrop::BlockCypher<BitcoinApiUri, pallet_plasm_lockdrop::BitcoinAddress>;
-    type EthereumApi = pallet_plasm_lockdrop::BlockCypher<EthereumApiUri, pallet_plasm_lockdrop::EthereumAddress>;
-    type MedianFilterExpire = MedianFilterExpire;
-    type MedianFilterWidth = pallet_plasm_lockdrop::typenum::U5;
-    type Call = Call;
-    type SubmitTransaction = TransactionSubmitterOf<Self::AuthorityId>;
-    type AuthorityId = pallet_plasm_lockdrop::sr25519::AuthorityId;
-    type Account = sp_runtime::MultiSigner;
-    type Time = Timestamp;
-    type Moment = <Self as pallet_timestamp::Trait>::Moment;
-    type DollarRate = <Self as pallet_balances::Trait>::Balance;
-    type BalanceConvert = <Self as pallet_balances::Trait>::Balance;
-    type Event = Event;
-}
-
 impl frame_system::offchain::CreateTransaction<Runtime, UncheckedExtrinsic> for Runtime {
     type Public = <Signature as Verify>::Signer;
     type Signature = Signature;
@@ -369,7 +350,6 @@ construct_runtime!(
         FinalityTracker: pallet_finality_tracker::{Module, Call, Inherent},
         Operator: pallet_contract_operator::{Module, Call, Storage, Event<T>},
         Trading: pallet_operator_trading::{Module, Call, Storage, Event<T>},
-        PlasmLockdrop: pallet_plasm_lockdrop::{Module, Call, Storage, Event<T>, Config<T>},
         DappsStaking: pallet_dapps_staking::{Module, Call, Storage, Event<T>, Config},
         RandomnessCollectiveFlip: pallet_randomness_collective_flip::{Module, Call, Storage},
         Sudo: pallet_sudo::{Module, Call, Storage, Event<T>, Config<T>},

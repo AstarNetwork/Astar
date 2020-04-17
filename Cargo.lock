@@ -3638,7 +3638,6 @@ dependencies = [
  "pallet-grandpa",
  "pallet-indices",
  "pallet-operator-trading",
- "pallet-plasm-lockdrop",
  "pallet-plasm-rewards",
  "pallet-plasm-validator",
  "pallet-randomness-collective-flip",
