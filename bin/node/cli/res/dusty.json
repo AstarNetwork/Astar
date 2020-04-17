@@ -3,7 +3,11 @@
   "id": "dusty",
   "chainType": "Live",
   "bootNodes": [
-    "/ip4/127.0.0.1/tcp/30333/p2p/12D3KooWGXFZFnRNTPH2BvddPzLabW46NyVaUwLNMdTkPM5P1kvX"
+    "/ip4/54.64.145.3/tcp/30333/p2p/QmTFWr36gcQ5aRUQCuAFSUdaoBid4ChfHaKdiYwa6hUyLw",
+    "/ip4/3.115.175.152/tcp/30333/p2p/QmWKdqqaKr3pWujhbv5CvNPLry7WqHXouSYUZDvfusNFWp",
+    "/ip4/3.114.81.104/tcp/30333/p2p/QmXELPiGCywBdgtQRewie5VEpxgxbWFDm6rk87YmrTkBet",
+    "/ip4/3.114.90.94/tcp/30333/p2p/QmRCJbRdkJv8gGQcUZrUYnhQLB9EavEo1LEnr52xiXqqqs",
+    "/ip4/95.216.202.55/tcp/30333/p2p/QmS2hSkyLWWopScxJ3BWhnMGELX6BNHL43YCGtSZi5u7De"
   ],
   "telemetryEndpoints": [
     [
