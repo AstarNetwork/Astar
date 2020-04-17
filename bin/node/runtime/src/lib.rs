@@ -538,33 +538,3 @@ impl_runtime_apis! {
         }
     }
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use frame_system::offchain::{SignAndSubmitTransaction, SubmitSignedTransaction};
-    use pallet_plasm_lockdrop::sr25519::AuthorityId as LockdropAuthorityId;
-
-    #[test]
-    fn validate_transaction_submitter_bounds() {
-        fn is_submit_signed_transaction<T>() where
-            T: SubmitSignedTransaction<
-                Runtime,
-                Call,
-            >,
-        {}
-
-        fn is_sign_and_submit_transaction<T>() where
-            T: SignAndSubmitTransaction<
-                Runtime,
-                Call,
-                Extrinsic=UncheckedExtrinsic,
-                CreateTransaction=Runtime,
-                Signer=LockdropAuthorityId,
-            >,
-        {}
-
-        is_submit_signed_transaction::<TransactionSubmitterOf<LockdropAuthorityId>>();
-        is_sign_and_submit_transaction::<TransactionSubmitterOf<LockdropAuthorityId>>();
-    }
-}
