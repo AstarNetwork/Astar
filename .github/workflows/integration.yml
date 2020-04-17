@@ -85,4 +85,4 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - uses: cachix/install-nix-action@v7
-    - run: nix-shell third-party/nix/shell.nix --run "cargo build --release"
+    - run: nix-shell third-party/nix/shell.nix --option sandbox false --run "cargo build --release"

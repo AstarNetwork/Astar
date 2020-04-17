@@ -16,11 +16,8 @@ rustc-hex = "2.0.1"
 substrate-bip39 = "0.3.1"
 hex = "0.4.0"
 hex-literal = "0.2.1"
-codec = { package = "parity-scale-codec", version = "1.0.0" }
+codec = { package = "parity-scale-codec", version = "1.3.0" }
 frame-system = "2.0.0-alpha.6"
 pallet-balances = "2.0.0-alpha.6"
 pallet-transaction-payment = "2.0.0-alpha.6"
 rpassword = "4.0.1"
-
-[features]
-bench = []

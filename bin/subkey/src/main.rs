@@ -14,10 +14,6 @@
 // You should have received a copy of the GNU General Public License
 // along with Substrate.  If not, see <http://www.gnu.org/licenses/>.
 
-#![cfg_attr(feature = "bench", feature(test))]
-#[cfg(feature = "bench")]
-extern crate test;
-
 use bip39::{Language, Mnemonic, MnemonicType};
 use clap::{App, ArgMatches, SubCommand};
 use codec::{Decode, Encode};
@@ -68,10 +64,10 @@ trait Crypto: Sized {
             let public_key = Self::public_from_pair(&pair);
             println!(
                 "Secret phrase `{}` is account:\n  \
-				Secret seed:      {}\n  \
-				Public key (hex): {}\n  \
-				Account ID:       {}\n  \
-				SS58 Address:     {}",
+                Secret seed:      {}\n  \
+                Public key (hex): {}\n  \
+                Account ID:       {}\n  \
+                SS58 Address:     {}",
                 uri,
                 format_seed::<Self>(seed),
                 format_public_key::<Self>(public_key.clone()),
@@ -82,10 +78,10 @@ trait Crypto: Sized {
             let public_key = Self::public_from_pair(&pair);
             println!(
                 "Secret Key URI `{}` is account:\n  \
-				Secret seed:      {}\n  \
-				Public key (hex): {}\n  \
-				Account ID:       {}\n  \
-				SS58 Address:     {}",
+                Secret seed:      {}\n  \
+                Public key (hex): {}\n  \
+                Account ID:       {}\n  \
+                SS58 Address:     {}",
                 uri,
                 if let Some(seed) = seed {
                     format_seed::<Self>(seed)
@@ -102,10 +98,10 @@ trait Crypto: Sized {
             let v = network_override.unwrap_or(v);
             println!(
                 "Public Key URI `{}` is account:\n  \
-				Network ID/version: {}\n  \
-				Public key (hex):   {}\n  \
-				Account ID:         {}\n  \
-				SS58 Address:       {}",
+                Network ID/version: {}\n  \
+                Public key (hex):   {}\n  \
+                Account ID:         {}\n  \
+                SS58 Address:       {}",
                 uri,
                 String::from(v),
                 format_public_key::<Self>(public_key.clone()),
@@ -199,69 +195,69 @@ fn get_app<'a, 'b>() -> App<'a, 'b> {
         .version(env!("CARGO_PKG_VERSION"))
         .args_from_usage(
             "
-			-e, --ed25519 'Use Ed25519/BIP39 cryptography'
-			-k, --secp256k1 'Use SECP256k1/ECDSA/BIP39 cryptography'
-			-s, --sr25519 'Use Schnorr/Ristretto x25519/BIP39 cryptography'
-			[network] -n, --network <network> 'Specify a network. One of substrate \
-									 (default), polkadot, kusama, dothereum, edgeware, or kulupu'
-			[password] -p, --password <password> 'The password for the key'
-			--password-interactive 'You will be prompted for the password for the key.'
-		",
+            -e, --ed25519 'Use Ed25519/BIP39 cryptography'
+            -k, --secp256k1 'Use SECP256k1/ECDSA/BIP39 cryptography'
+            -s, --sr25519 'Use Schnorr/Ristretto x25519/BIP39 cryptography'
+            [network] -n, --network <network> 'Specify a network. One of substrate \
+                                     (default), polkadot, kusama, dothereum, edgeware, or kulupu'
+            [password] -p, --password <password> 'The password for the key'
+            --password-interactive 'You will be prompted for the password for the key.'
+        ",
         )
         .subcommands(vec![
-			SubCommand::with_name("generate")
-				.about("Generate a random account")
-				.args_from_usage("[words] -w, --words <words> \
-						'The number of words in the phrase to generate. One of 12 \
-						(default), 15, 18, 21 and 24.'
-				"),
-			SubCommand::with_name("inspect")
-				.about("Gets a public key and a SS58 address from the provided Secret URI")
-				.args_from_usage("[uri] 'A Key URI to be inspected. May be a secret seed, \
-						secret URI (with derivation paths and password), SS58 or public URI. \
-						If not given, you will be prompted for the URI.'
-				"),
-			SubCommand::with_name("sign")
-				.about("Sign a message, provided on STDIN, with a given (secret) key")
-				.args_from_usage("
-					-h, --hex 'The message on STDIN is hex-encoded data'
-					<suri> 'The secret key URI.'
-				"),
-			SubCommand::with_name("sign-transaction")
-				.about("Sign transaction from encoded Call. Returns a signed and encoded \
-						UncheckedMortalCompactExtrinsic as hex.")
-				.args_from_usage("
-					-c, --call <call> 'The call, hex-encoded.'
-					-n, --nonce <nonce> 'The nonce.'
-					-p, --password <password> 'The password for the key.'
-					-h, --prior-block-hash <prior-block-hash> 'The prior block hash, hex-encoded.'
-					-s, --suri <suri> 'The secret key URI.'
-				"),
-			SubCommand::with_name("transfer")
-				.about("Author and sign a Node pallet_balances::Transfer transaction with a given (secret) key")
-				.args_from_usage("
-					<genesis> -g, --genesis <genesis> 'The genesis hash or a recognised \
-											chain identifier (dev, elm, alex).'
-					<from> 'The signing secret key URI.'
-					<to> 'The destination account public key URI.'
-					<amount> 'The number of units to transfer.'
-					<index> 'The signing account's transaction index.'
-				"),
-			SubCommand::with_name("vanity")
-				.about("Generate a seed that provides a vanity address")
-				.args_from_usage("
-					-n, --number <number> 'Number of keys to generate'
-					<pattern> 'Desired pattern'
-				"),
-			SubCommand::with_name("verify")
-				.about("Verify a signature for a message, provided on STDIN, with a given \
-						(public or secret) key")
-				.args_from_usage("
-					-h, --hex 'The message on STDIN is hex-encoded data'
-					<sig> 'Signature, hex-encoded.'
-					<uri> 'The public or secret key URI.'
-				"),
-		])
+            SubCommand::with_name("generate")
+                .about("Generate a random account")
+                .args_from_usage("[words] -w, --words <words> \
+                        'The number of words in the phrase to generate. One of 12 \
+                        (default), 15, 18, 21 and 24.'
+                "),
+            SubCommand::with_name("inspect")
+                .about("Gets a public key and a SS58 address from the provided Secret URI")
+                .args_from_usage("[uri] 'A Key URI to be inspected. May be a secret seed, \
+                        secret URI (with derivation paths and password), SS58 or public URI. \
+                        If not given, you will be prompted for the URI.'
+                "),
+            SubCommand::with_name("sign")
+                .about("Sign a message, provided on STDIN, with a given (secret) key")
+                .args_from_usage("
+                    -h, --hex 'The message on STDIN is hex-encoded data'
+                    <suri> 'The secret key URI.'
+                "),
+            SubCommand::with_name("sign-transaction")
+                .about("Sign transaction from encoded Call. Returns a signed and encoded \
+                        UncheckedMortalCompactExtrinsic as hex.")
+                .args_from_usage("
+                    -c, --call <call> 'The call, hex-encoded.'
+                    -n, --nonce <nonce> 'The nonce.'
+                    -p, --password <password> 'The password for the key.'
+                    -h, --prior-block-hash <prior-block-hash> 'The prior block hash, hex-encoded.'
+                    -s, --suri <suri> 'The secret key URI.'
+                "),
+            SubCommand::with_name("transfer")
+                .about("Author and sign a Node pallet_balances::Transfer transaction with a given (secret) key")
+                .args_from_usage("
+                    [genesis] -g, --genesis <genesis> 'The genesis hash or a recognised \
+                                            chain identifier (dusty).'
+                    <from> 'The signing secret key URI.'
+                    <to> 'The destination account public key URI.'
+                    <amount> 'The number of units to transfer.'
+                    <index> 'The signing account's transaction index.'
+                "),
+            SubCommand::with_name("vanity")
+                .about("Generate a seed that provides a vanity address")
+                .args_from_usage("
+                    -n, --number <number> 'Number of keys to generate'
+                    <pattern> 'Desired pattern'
+                "),
+            SubCommand::with_name("verify")
+                .about("Verify a signature for a message, provided on STDIN, with a given \
+                        (public or secret) key")
+                .args_from_usage("
+                    -h, --hex 'The message on STDIN is hex-encoded data'
+                    <sig> 'Signature, hex-encoded.'
+                    <uri> 'The public or secret key URI.'
+                "),
+        ])
 }
 
 fn main() {
@@ -433,9 +429,8 @@ where
 }
 
 fn read_genesis_hash(matches: &ArgMatches) -> H256 {
-    let genesis_hash: Hash = match matches.value_of("genesis").unwrap_or("alex") {
-        "elm" => hex!["10c08714a10c7da78f40a60f6f732cf0dba97acfb5e2035445b032386157d5c3"].into(),
-        "alex" => hex!["dcd1346701ca8396496e52aa2785b1748deb6db09551b72159dcb3e08991025b"].into(),
+    let genesis_hash: Hash = match matches.value_of("genesis").unwrap_or("dusty") {
+        "dusty" => hex!["5bde5ea1f236802c5711abd3b0ca9fc748d654b2c1055290fdf7bf2b4f282428"].into(),
         h => hex::decode(h)
             .ok()
             .and_then(|x| Decode::decode(&mut &x[..]).ok())

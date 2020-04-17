@@ -6,23 +6,23 @@ use plasm_runtime::Block;
 use plasm_runtime::{
     BabeConfig, BalancesConfig, ContractsConfig, DappsStakingConfig, GenesisConfig, GrandpaConfig,
     IndicesConfig, PlasmRewardsConfig, PlasmValidatorConfig, SessionConfig, SessionKeys,
-    SudoConfig, SystemConfig, PlasmLockdropConfig, WASM_BINARY,
+    SudoConfig, SystemConfig, WASM_BINARY,
 };
 use sc_chain_spec::ChainSpecExtension;
 use sc_service::ChainType;
 use serde::{Deserialize, Serialize};
 use sp_consensus_babe::AuthorityId as BabeId;
 use sp_core::{sr25519, Pair, Public};
-use sp_core::crypto::UncheckedInto;
 use sp_finality_grandpa::AuthorityId as GrandpaId;
 use sp_runtime::traits::{IdentifyAccount, Verify};
-use hex_literal::hex;
 
 type AccountPublic = <Signature as Verify>::Signer;
 
+/*
+use hex_literal::hex;
+use sp_core::crypto::UncheckedInto;
 const STAGING_TELEMETRY_URL: &str = "wss://telemetry.polkadot.io/submit/";
 
-/*
 const PLASM_PROPERTIES: &str = r#"
         {
             "ss58Format": 5,
@@ -30,7 +30,6 @@ const PLASM_PROPERTIES: &str = r#"
             "tokenSymbol": "PLM"
         }"#;
 const PLASM_PROTOCOL_ID: &str = "plm";
-*/
 
 const DUSTY_PROPERTIES: &str = r#"
         {
@@ -39,6 +38,7 @@ const DUSTY_PROPERTIES: &str = r#"
             "tokenSymbol": "PLD"
         }"#;
 const DUSTY_PROTOCOL_ID: &str = "pld";
+*/
 
 /// Node `ChainSpec` extensions.
 ///
@@ -161,25 +161,16 @@ fn make_genesis(
             },
             gas_price: 1 * MILLIPLM,
         }),
-        pallet_plasm_lockdrop: Some(PlasmLockdropConfig {
-            alpha: sp_runtime::Perbill::from_parts(200_000_000),
-            dollar_rate: (5_000, 120),
-            vote_threshold: 3,
-            positive_votes: 2,
-            lockdrop_end: 0,
-            ethereum_contract: hex!["458dabf1eff8fcdfbf0896a6bd1f457c01e2ffd6"],
-        }),
         pallet_sudo: Some(SudoConfig { key: root_key }),
     }
 }
 
-/*
 /// Plasm testnet file config.
-pub fn plasm_testnet_config() -> ChainSpec {
-    ChainSpec::from_json_bytes(&include_bytes!("../res/testnet_v3.json")[..]).unwrap()
+pub fn dusty_config() -> ChainSpec {
+    ChainSpec::from_json_bytes(&include_bytes!("../res/dusty.json")[..]).unwrap()
 }
-*/
 
+/*
 /// Dusty native config.
 pub fn dusty_config() -> ChainSpec {
     ChainSpec::from_genesis(
@@ -228,6 +219,12 @@ fn dusty_genesis() -> GenesisConfig {
     // akru 
     let root_key = hex!["16eb796bee0c857db3d646ee7070252707aec0c7d82b2eda856632f6a2306a58"];
 
+    // token holders
+    let holders = HOLDERS.to_vec();
+    // quick check
+    let total_amount = holders.iter().fold(0, |sum, (_, v)| sum + v);
+    assert!(total_amount == 500_000_000 * plasm_runtime::constants::currency::PLM);
+
     make_genesis(
         authorities,
         HOLDERS.to_vec(),
@@ -235,6 +232,7 @@ fn dusty_genesis() -> GenesisConfig {
         false,
     )
 }
+*/
 
 fn development_config_genesis() -> GenesisConfig {
     testnet_genesis(
