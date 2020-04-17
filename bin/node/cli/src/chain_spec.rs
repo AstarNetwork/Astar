@@ -13,16 +13,16 @@ use sc_service::ChainType;
 use serde::{Deserialize, Serialize};
 use sp_consensus_babe::AuthorityId as BabeId;
 use sp_core::{sr25519, Pair, Public};
-use sp_core::crypto::UncheckedInto;
 use sp_finality_grandpa::AuthorityId as GrandpaId;
 use sp_runtime::traits::{IdentifyAccount, Verify};
-use hex_literal::hex;
 
 type AccountPublic = <Signature as Verify>::Signer;
 
+/*
+use hex_literal::hex;
+use sp_core::crypto::UncheckedInto;
 const STAGING_TELEMETRY_URL: &str = "wss://telemetry.polkadot.io/submit/";
 
-/*
 const PLASM_PROPERTIES: &str = r#"
         {
             "ss58Format": 5,
@@ -30,7 +30,6 @@ const PLASM_PROPERTIES: &str = r#"
             "tokenSymbol": "PLM"
         }"#;
 const PLASM_PROTOCOL_ID: &str = "plm";
-*/
 
 const DUSTY_PROPERTIES: &str = r#"
         {
@@ -39,6 +38,7 @@ const DUSTY_PROPERTIES: &str = r#"
             "tokenSymbol": "PLD"
         }"#;
 const DUSTY_PROTOCOL_ID: &str = "pld";
+*/
 
 /// Node `ChainSpec` extensions.
 ///
@@ -165,13 +165,12 @@ fn make_genesis(
     }
 }
 
-/*
 /// Plasm testnet file config.
-pub fn plasm_testnet_config() -> ChainSpec {
-    ChainSpec::from_json_bytes(&include_bytes!("../res/testnet_v3.json")[..]).unwrap()
+pub fn dusty_config() -> ChainSpec {
+    ChainSpec::from_json_bytes(&include_bytes!("../res/dusty.json")[..]).unwrap()
 }
-*/
 
+/*
 /// Dusty native config.
 pub fn dusty_config() -> ChainSpec {
     ChainSpec::from_genesis(
@@ -233,6 +232,7 @@ fn dusty_genesis() -> GenesisConfig {
         false,
     )
 }
+*/
 
 fn development_config_genesis() -> GenesisConfig {
     testnet_genesis(
