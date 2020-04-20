@@ -41,5 +41,8 @@
 #![warn(missing_docs)]
 #![cfg_attr(not(feature = "std"), no_std)]
 
-mod prepare;
+pub mod prepare;
+mod compiled_predicate;
+pub use compiled_predicate::CompiledPredicate;
+pub use prepare::compile_from_json;
 
