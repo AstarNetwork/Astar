@@ -325,6 +325,16 @@ mod tests {
         }"#
     );
 
+    serde_from_test!(
+        constant_variable_test,
+        ConstantVariable,
+        r#"
+        {
+            "varType": "bytes",
+            "name": "secp256k1"
+        }"#
+    );
+
     #[derive(Serialize, Deserialize, Debug)]
     enum Message {
         Request { id: String, method: String },
