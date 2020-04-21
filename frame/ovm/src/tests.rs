@@ -15,19 +15,14 @@ fn test_calls() {
     new_test_ext().execute_with(|| {
         advance_block();
         assert_ok!(Ovm::put_code(Origin::signed(0), valid_predicate.clone()));
-        assert_eq!(
-            Ovm::predicate_codes(&code_hash),
-            Some(valid_predicate),
-        );
+        assert_eq!(Ovm::predicate_codes(&code_hash), Some(valid_predicate),);
         assert_eq!(
             System::events(),
-            vec![
-                EventRecord {
-                    phase: Phase::Initialization,
-                    event: MetaEvent::ovm(RawEvent::PutPredicate(code_hash)),
-                    topics: vec![],
-                }
-            ]
+            vec![EventRecord {
+                phase: Phase::Initialization,
+                event: MetaEvent::ovm(RawEvent::PutPredicate(code_hash)),
+                topics: vec![],
+            }]
         );
     })
 }

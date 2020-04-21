@@ -1,8 +1,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use frame_support::{
-    decl_event, decl_module, decl_storage,
-    Parameter, weights::SimpleDispatchInfo,
+    decl_event, decl_module, decl_storage, weights::SimpleDispatchInfo, Parameter,
 };
 use frame_system::{self as system, ensure_signed, RawOrigin};
 use pallet_contracts::{BalanceOf, CodeHash, ContractAddressFor, Gas};
