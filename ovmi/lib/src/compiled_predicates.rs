@@ -4,11 +4,26 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Eq, PartialEq, Encode, Decode, Hash)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize, Debug))]
-pub enum TypeCode {
+pub enum PredicateType {
     CompiledPredicate,
     IntermediateCompiledPredicate,
+    AtomicProposition,
+    AtomicPredicateCall,
+    InputPredicateCall,
+    VariablePredicateCall,
+    CompiledPredicateCall,
+    CompiledInput,
+    ConstantInput,
+    LabelInput,
+    NormalInput,
+    VariableInput,
+    SelfInput,
     Address,
     Bytes,
+}
+
+pub enum CallablePredicate {
+    CompiledPredicate(CompiledPredicate),
 }
 
 /// Compiled Property definition
@@ -16,7 +31,7 @@ pub enum TypeCode {
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize, Debug))]
 #[cfg_attr(feature = "std", serde(rename_all = "camelCase"))]
 pub struct CompiledPredicate {
-    pub r#type: String,
+    pub r#type: PredicateType,
     pub name: String,
     pub input_defs: Vec<String>,
     pub contracts: Vec<IntermediateCompiledPredicate>,
@@ -39,7 +54,7 @@ pub struct ConstantVariable {
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize, Debug))]
 #[cfg_attr(feature = "std", serde(rename_all = "camelCase"))]
 pub struct IntermediateCompiledPredicate {
-    pub r#type: String,
+    pub r#type: PredicateType,
     pub name: String,
     pub original_predicate_name: String,
     // logical connective
@@ -61,7 +76,7 @@ pub enum AtomicPropositionOrPlaceholder {
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize, Debug))]
 #[cfg_attr(feature = "std", serde(rename_all = "camelCase"))]
 pub struct AtomicProposition {
-    pub r#type: String,
+    pub r#type: PredicateType,
     pub predicate: PredicateCall,
     pub inputs: Vec<CompiledInput>,
     pub is_compiled: Option<bool>,
@@ -83,7 +98,7 @@ pub enum PredicateCall {
 #[derive(Clone, Eq, PartialEq, Encode, Decode, Hash)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize, Debug))]
 pub struct AtomicPredicateCall {
-    pub r#type: String,
+    pub r#type: PredicateType,
     pub source: String,
 }
 
@@ -91,7 +106,7 @@ pub struct AtomicPredicateCall {
 #[derive(Clone, Eq, PartialEq, Encode, Decode, Hash)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize, Debug))]
 pub struct InputPredicateCall {
-    pub r#type: String,
+    pub r#type: PredicateType,
     pub source: NormalInput,
 }
 
@@ -99,7 +114,7 @@ pub struct InputPredicateCall {
 #[derive(Clone, Eq, PartialEq, Encode, Decode, Hash)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize, Debug))]
 pub struct VariablePredicateCall {
-    pub r#type: String,
+    pub r#type: PredicateType,
 }
 
 /// For predicates dynamic linking
@@ -107,7 +122,7 @@ pub struct VariablePredicateCall {
 #[derive(Clone, Eq, PartialEq, Encode, Decode, Hash)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize, Debug))]
 pub struct CompiledPredicateCall {
-    pub r#type: String,
+    pub r#type: PredicateType,
     pub source: String,
 }
 
@@ -127,14 +142,14 @@ pub enum CompiledInput {
 #[derive(Clone, Eq, PartialEq, Encode, Decode, Hash)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize, Debug))]
 pub struct ConstantInput {
-    pub r#type: String,
+    pub r#type: PredicateType,
     pub name: String,
 }
 
 #[derive(Clone, Eq, PartialEq, Encode, Decode, Hash)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize, Debug))]
 pub struct LabelInput {
-    pub r#type: String,
+    pub r#type: PredicateType,
     pub label: String,
 }
 
@@ -142,7 +157,7 @@ pub struct LabelInput {
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize, Debug))]
 #[cfg_attr(feature = "std", serde(rename_all = "camelCase"))]
 pub struct NormalInput {
-    pub r#type: String,
+    pub r#type: PredicateType,
     pub input_index: u8,
     pub children: Vec<u8>,
 }
@@ -150,7 +165,7 @@ pub struct NormalInput {
 #[derive(Clone, Eq, PartialEq, Encode, Decode, Hash)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize, Debug))]
 pub struct VariableInput {
-    pub r#type: String,
+    pub r#type: PredicateType,
     pub placeholder: Placeholder,
     pub children: Vec<u8>,
 }
@@ -158,7 +173,7 @@ pub struct VariableInput {
 #[derive(Clone, Eq, PartialEq, Encode, Decode, Hash)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize, Debug))]
 pub struct SelfInput {
-    pub r#type: String,
+    pub r#type: PredicateType,
     pub children: Vec<u8>,
 }
 

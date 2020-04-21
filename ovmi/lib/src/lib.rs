@@ -42,7 +42,16 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 pub mod prepare;
-mod compiled_predicate;
-pub use compiled_predicate::CompiledPredicate;
+pub mod executor;
+pub mod predicates;
+mod compiled_predicates;
+pub use compiled_predicates::CompiledPredicate;
 pub use prepare::compile_from_json;
 
+#[cfg(test)]
+mod tests;
+
+/// An opaque 32-byte cryptographic identifier.
+#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Default, Encode, Decode)]
+#[cfg_attr(feature = "std", derive(Hash))]
+pub struct AccountId([u8; 32]);
