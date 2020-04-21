@@ -1,4 +1,4 @@
-name: crates
+name: fmt
 on: [push]
 jobs:
   build:
