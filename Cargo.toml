@@ -13,7 +13,8 @@ members = [
     "frame/plasm-validator",
     "frame/ovm",
     "frame/ovm/rpc/runtime-api",
-    "ovmi/core",
+    "ovmi/lib",
+    "ovmi/cli",
 ]
 
 exclude = [
