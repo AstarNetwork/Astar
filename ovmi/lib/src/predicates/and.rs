@@ -6,6 +6,7 @@ pub struct AndPredicate {
 }
 
 impl AndPredicate {
+    // TODO これ derive したいね。
     fn create_property_from_input(_input: Vec<Vec<u8>>) -> Property {
             Property {
                 predicate_address: ext_address(),
