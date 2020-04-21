@@ -4,15 +4,17 @@
 // `construct_runtime!` does a lot of recursion and requires us to increase the limit to 256.
 #![recursion_limit = "256"]
 
+use frame_support::{construct_runtime, parameter_types, traits::Randomness, weights::Weight};
 use pallet_contracts_rpc_runtime_api::ContractExecResult;
 use pallet_grandpa::fg_primitives;
 use pallet_grandpa::AuthorityList as GrandpaAuthorityList;
-use sp_inherents::{CheckInherentsResult, InherentData};
+use pallet_transaction_payment_rpc_runtime_api::RuntimeDispatchInfo;
 use plasm_primitives::{
     AccountId, AccountIndex, Balance, BlockNumber, Hash, Index, Moment, Signature,
 };
 use sp_api::impl_runtime_apis;
 use sp_core::OpaqueMetadata;
+use sp_inherents::{CheckInherentsResult, InherentData};
 use sp_runtime::traits::{
     BlakeTwo256, Block as BlockT, ConvertInto, Extrinsic, OpaqueKeys, SaturatedConversion,
     StaticLookup, Verify,
@@ -20,17 +22,15 @@ use sp_runtime::traits::{
 use sp_runtime::transaction_validity::{TransactionSource, TransactionValidity};
 use sp_runtime::{create_runtime_str, generic, impl_opaque_keys, ApplyExtrinsicResult, Perbill};
 use sp_std::prelude::*;
-use frame_support::{construct_runtime, parameter_types, traits::Randomness, weights::Weight};
-use pallet_transaction_payment_rpc_runtime_api::RuntimeDispatchInfo;
 #[cfg(any(feature = "std", test))]
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
 
 pub use pallet_balances::Call as BalancesCall;
 pub use pallet_contracts::Gas;
+pub use pallet_timestamp::Call as TimestampCall;
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
-pub use pallet_timestamp::Call as TimestampCall;
 
 /// Implementations of some helper traits passed into runtime modules as associated types.
 pub mod impls;
@@ -304,7 +304,9 @@ impl frame_system::offchain::CreateTransaction<Runtime, UncheckedExtrinsic> for 
     type Public = <Signature as Verify>::Signer;
     type Signature = Signature;
 
-    fn create_transaction<TSigner: frame_system::offchain::Signer<Self::Public, Self::Signature>>(
+    fn create_transaction<
+        TSigner: frame_system::offchain::Signer<Self::Public, Self::Signature>,
+    >(
         call: Call,
         public: Self::Public,
         account: AccountId,

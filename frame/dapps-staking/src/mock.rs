@@ -3,7 +3,9 @@
 #![cfg(test)]
 
 use super::*;
-use frame_support::{assert_ok, impl_outer_dispatch, impl_outer_origin, parameter_types, traits::OnFinalize};
+use frame_support::{
+    assert_ok, impl_outer_dispatch, impl_outer_origin, parameter_types, traits::OnFinalize,
+};
 use pallet_plasm_rewards::{inflation::SimpleComputeTotalPayout, traits::MaybeValidators};
 use sp_core::{crypto::key_types, H256};
 use sp_runtime::{

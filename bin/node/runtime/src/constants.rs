@@ -12,7 +12,7 @@ pub mod currency {
 
     #[cfg(feature = "std")]
     fn to_account(full_public: &[u8]) -> plasm_primitives::AccountId {
-        use sp_runtime::{MultiSigner, traits::IdentifyAccount};
+        use sp_runtime::{traits::IdentifyAccount, MultiSigner};
         let public = sp_core::ecdsa::Public::from_full(full_public).unwrap();
         MultiSigner::from(public).into_account()
     }
@@ -286,7 +286,7 @@ pub mod currency {
           , (to_account(&hex!["239e8f64e31160d21e7da7efcaa4920c4066896399ae0770f36a7fe9871cd5bfe549f59489c69067954190bd3f5b292f013fe86570e11086b759d423945427c7"][..]), 60135395590491354663083)
           , (to_account(&hex!["5ae3c95414793303b9a46eccd424b789cd4d873e5ebee2d2a8bcfb2ca3fe6b9323025774b7cf15a4af777e953a16fc117187ef70580be9dfaf9d0235e8eb51f1"][..]), 3969200735585470891107)
           , (to_account(&hex!["9b9be3dcefb7184344b31386d6164717f49ed3971280532edcde1fd9ad5386fffb560042f5df49863481a5f4ba9ef2fb3ca3fbb86b5ae3a130fd2ad4e90ab715"][..]), 176408921581576484049)
-        ]; 
+        ];
     }
 }
 
