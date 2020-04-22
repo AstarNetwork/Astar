@@ -19,7 +19,7 @@ use frame_support::{
 use frame_system::{self as system, ensure_signed};
 use pallet_contract_operator::ContractFinder;
 use pallet_plasm_rewards::{
-    traits::{EraFinder, ForDappsEraRewardFinder, GetEraStakingAmount},
+    traits::{ComputeEraWithParam, EraFinder, ForDappsEraRewardFinder},
     EraIndex, Releases,
 };
 pub use pallet_staking::{Forcing, RewardDestination};
@@ -799,7 +799,8 @@ impl<T: Trait> Module<T> {
 }
 
 /// Get the amount of staking per Era in a module in the Plasm Network.
-impl<T: Trait> GetEraStakingAmount<EraIndex, BalanceOf<T>> for Module<T> {
+impl<T: Trait> ComputeEraWithParam<EraIndex> for Module<T> {
+    type Param = BalanceOf<T>;
     fn compute(era: &EraIndex) -> BalanceOf<T> {
         Self::elected_operators(era)
     }
