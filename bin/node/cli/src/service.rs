@@ -11,15 +11,15 @@ use sc_client::{Client, LocalCallExecutor};
 use sc_client_api::ExecutorProvider;
 use sc_client_db::Backend;
 use sc_consensus_babe;
+use sc_executor::{native_executor_instance, NativeExecutor};
 use sc_finality_grandpa::{
     FinalityProofProvider as GrandpaFinalityProofProvider, StorageAndProofProvider,
 };
 use sc_network::NetworkService;
 use sc_offchain::OffchainWorkers;
-use sc_executor::{native_executor_instance, NativeExecutor};
 use sc_service::{
-    AbstractService, Service, ServiceBuilder, NetworkStatus,
-    config::Configuration, error::{Error as ServiceError},
+    config::Configuration, error::Error as ServiceError, AbstractService, NetworkStatus, Service,
+    ServiceBuilder,
 };
 use sp_runtime::traits::Block as BlockT;
 
@@ -84,18 +84,23 @@ macro_rules! new_full_start {
             Ok(import_queue)
         })?
         .with_rpc_extensions(|builder| -> std::result::Result<RpcExtension, _> {
-            let babe_link = import_setup.as_ref().map(|s| &s.2)
+            let babe_link = import_setup
+                .as_ref()
+                .map(|s| &s.2)
                 .expect("BabeLink is present for full services or set up failed; qed.");
             let deps = plasm_rpc::FullDeps {
                 client: builder.client().clone(),
                 pool: builder.pool(),
-                select_chain: builder.select_chain().cloned()
+                select_chain: builder
+                    .select_chain()
+                    .cloned()
                     .expect("SelectChain is present for full services or set up failed; qed."),
                 babe: plasm_rpc::BabeDeps {
                     keystore: builder.keystore(),
                     babe_config: sc_consensus_babe::BabeLink::config(babe_link).clone(),
-                    shared_epoch_changes: sc_consensus_babe::BabeLink::epoch_changes(babe_link).clone()
-                }
+                    shared_epoch_changes: sc_consensus_babe::BabeLink::epoch_changes(babe_link)
+                        .clone(),
+                },
             };
             Ok(plasm_rpc::create_full(deps))
         })?;
@@ -110,12 +115,7 @@ macro_rules! new_full_start {
 /// concrete types instead.
 macro_rules! new_full {
     ($config:expr, $with_startup_data: expr) => {{
-        let (
-            role,
-            force_authoring,
-            name,
-            disable_grandpa,
-        ) = (
+        let (role, force_authoring, name, disable_grandpa) = (
             $config.role.clone(),
             $config.force_authoring,
             $config.network.node_name.clone(),
@@ -126,7 +126,7 @@ macro_rules! new_full {
 
         let service = builder
             .with_finality_proof_provider(|client, backend| {
-				// GenesisAuthoritySetProvider is implemented for StorageAndProofProvider
+                // GenesisAuthoritySetProvider is implemented for StorageAndProofProvider
                 let provider = client as Arc<dyn StorageAndProofProvider<_, _>>;
                 Ok(Arc::new(GrandpaFinalityProofProvider::new(backend, provider)) as _)
             })?
@@ -138,7 +138,7 @@ macro_rules! new_full {
 
         ($with_startup_data)(&block_import, &babe_link);
 
-		if let sc_service::config::Role::Authority { sentry_nodes: _ } = &role {
+        if let sc_service::config::Role::Authority { sentry_nodes: _ } = &role {
             let proposer = sc_basic_authorship::ProposerFactory::new(
                 service.client(),
                 service.transaction_pool(),
@@ -227,14 +227,12 @@ macro_rules! new_full {
 }
 
 type ConcreteBlock = plasm_primitives::Block;
-type ConcreteClient =
-    Client<
-        Backend<ConcreteBlock>,
-        LocalCallExecutor<Backend<ConcreteBlock>,
-        NativeExecutor<Executor>>,
-        ConcreteBlock,
-        plasm_runtime::RuntimeApi
-    >;
+type ConcreteClient = Client<
+    Backend<ConcreteBlock>,
+    LocalCallExecutor<Backend<ConcreteBlock>, NativeExecutor<Executor>>,
+    ConcreteBlock,
+    plasm_runtime::RuntimeApi,
+>;
 type ConcreteBackend = Backend<ConcreteBlock>;
 type ConcreteTransactionPool = sc_transaction_pool::BasicPool<
     sc_transaction_pool::FullChainApi<ConcreteClient, ConcreteBlock>,
@@ -269,9 +267,7 @@ pub fn new_light(config: Configuration) -> Result<impl AbstractService, ServiceE
     let inherent_data_providers = sp_inherents::InherentDataProviders::new();
 
     let service = ServiceBuilder::new_light::<Block, RuntimeApi, Executor>(config)?
-        .with_select_chain(|_config, backend| {
-            Ok(LongestChain::new(backend.clone()))
-        })?
+        .with_select_chain(|_config, backend| Ok(LongestChain::new(backend.clone())))?
         .with_transaction_pool(|config, client, fetcher| {
             let fetcher = fetcher
                 .ok_or_else(|| "Trying to start light transaction pool without active fetcher")?;
@@ -323,9 +319,9 @@ pub fn new_light(config: Configuration) -> Result<impl AbstractService, ServiceE
             let provider = client as Arc<dyn StorageAndProofProvider<_, _>>;
             Ok(Arc::new(GrandpaFinalityProofProvider::new(backend, provider)) as _)
         })?
-        .with_rpc_extensions(|builder,| -> std::result::Result<RpcExtension, _>
-        {
-            let fetcher = builder.fetcher()
+        .with_rpc_extensions(|builder| -> std::result::Result<RpcExtension, _> {
+            let fetcher = builder
+                .fetcher()
                 .ok_or_else(|| "Trying to start node RPC without active fetcher")?;
             let remote_blockchain = builder
                 .remote_backend()

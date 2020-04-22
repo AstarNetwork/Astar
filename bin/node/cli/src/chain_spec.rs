@@ -91,23 +91,23 @@ fn testnet_genesis(
 ) -> GenesisConfig {
     const ENDOWMENT: Balance = 1_000_000_000_000_000_000;
 
-    let endowed_accounts: Vec<(AccountId, Balance)> = endowed_accounts.unwrap_or_else(|| {
-        vec![
-            get_account_id_from_seed::<sr25519::Public>("Alice"),
-            get_account_id_from_seed::<sr25519::Public>("Bob"),
-            get_account_id_from_seed::<sr25519::Public>("Charlie"),
-            get_account_id_from_seed::<sr25519::Public>("Dave"),
-            get_account_id_from_seed::<sr25519::Public>("Eve"),
-            get_account_id_from_seed::<sr25519::Public>("Ferdie"),
-        ]
-    }).iter().cloned().map(|acc| (acc, ENDOWMENT)).collect();
+    let endowed_accounts: Vec<(AccountId, Balance)> = endowed_accounts
+        .unwrap_or_else(|| {
+            vec![
+                get_account_id_from_seed::<sr25519::Public>("Alice"),
+                get_account_id_from_seed::<sr25519::Public>("Bob"),
+                get_account_id_from_seed::<sr25519::Public>("Charlie"),
+                get_account_id_from_seed::<sr25519::Public>("Dave"),
+                get_account_id_from_seed::<sr25519::Public>("Eve"),
+                get_account_id_from_seed::<sr25519::Public>("Ferdie"),
+            ]
+        })
+        .iter()
+        .cloned()
+        .map(|acc| (acc, ENDOWMENT))
+        .collect();
 
-    make_genesis(
-        initial_authorities,
-        endowed_accounts,
-        sudo_key,
-        true,
-    )
+    make_genesis(initial_authorities, endowed_accounts, sudo_key, true)
 }
 
 /// Helper function to create GenesisConfig
@@ -176,7 +176,7 @@ pub fn dusty_config() -> ChainSpec {
     ChainSpec::from_genesis(
         "Dusty",
         "dusty",
-		ChainType::Live,
+        ChainType::Live,
         dusty_genesis,
         vec![],
         Some(sc_telemetry::TelemetryEndpoints::new(vec![(STAGING_TELEMETRY_URL.to_string(),0)]).unwrap()),
@@ -216,7 +216,7 @@ fn dusty_genesis() -> GenesisConfig {
         ),
     ];
 
-    // akru 
+    // akru
     let root_key = hex!["16eb796bee0c857db3d646ee7070252707aec0c7d82b2eda856632f6a2306a58"];
 
     // token holders
@@ -247,7 +247,7 @@ pub fn development_config() -> ChainSpec {
     ChainSpec::from_genesis(
         "Development",
         "dev",
-		ChainType::Development,
+        ChainType::Development,
         development_config_genesis,
         vec![],
         None,
@@ -273,7 +273,7 @@ pub fn local_testnet_config() -> ChainSpec {
     ChainSpec::from_genesis(
         "Local Testnet",
         "local_testnet",
-		ChainType::Local,
+        ChainType::Local,
         local_testnet_genesis,
         vec![],
         None,

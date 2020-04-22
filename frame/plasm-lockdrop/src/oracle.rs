@@ -1,11 +1,10 @@
 //! Oracle traits that used in Lockdrop module.
 
 use frame_support::{debug, traits::Get};
+use simple_json::*;
 use sp_runtime::offchain::http::Request;
 use sp_runtime::RuntimeDebug;
 use sp_std::prelude::*;
-use simple_json::*;
-
 
 /// HTTP source of currency price.
 pub trait PriceOracle<T> {
