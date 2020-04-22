@@ -10,6 +10,30 @@ use super::*;
 use sp_arithmetic::traits::BaseArithmetic;
 use traits::ComputeTotalPayout;
 
+// pub struct FirstPlasmIncentive;
+//
+// impl ComputeTotalPayout for FirstPlasmIncentive {
+//     fn compute<N, M>(
+//         total_tokens: N,
+//         era_duration: M,
+//         _validator_staking: N,
+//         _dapps_staking: N,
+//     ) -> (N, N)
+//     where
+//         N: BaseArithmetic + Clone + From<u32>,
+//         M: BaseArithmetic + Clone + From<u32>,
+//     {
+//         // Milliseconds per year for the Julian year (365.25 days).
+//         const MILLISECONDS_PER_YEAR: u64 = 1000 * 3600 * 24 * 36525 / 100;
+//         let portion = Perbill::from_rational_approximation(
+//             era_duration.unique_saturated_into(),
+//             MILLISECONDS_PER_YEAR * 5,
+//         );
+//         let payout = portion * total_tokens;
+//         (payout.clone(), payout)
+//     }
+// }
+
 pub struct SimpleComputeTotalPayout;
 
 /// The total payout to all operators and validators and their nominators per era.
@@ -18,12 +42,12 @@ pub struct SimpleComputeTotalPayout;
 ///     20% of total issue tokens per a year.
 ///
 /// `era_duration` is expressed in millisecond.
-impl ComputeTotalPayout for SimpleComputeTotalPayout {
+impl<V, D> ComputeTotalPayout<V, D> for SimpleComputeTotalPayout {
     fn compute<N, M>(
         total_tokens: N,
         era_duration: M,
-        _validator_staking: N,
-        _dapps_staking: N,
+        _validator_staking: V,
+        _dapps_staking: D,
     ) -> (N, N)
     where
         N: BaseArithmetic + Clone + From<u32>,
@@ -40,7 +64,12 @@ impl ComputeTotalPayout for SimpleComputeTotalPayout {
     }
 }
 
-pub struct MaintainRatioComputeTotalPayout;
+pub struct MaintainRatioComputeTotalPayout<Balance>
+where
+    Balance: BaseArithmetic + Clone + From<u32>,
+{
+    _phantom: sp_std::marker::PhantomData<Balance>,
+}
 
 /// The total payout to all operators and validators and their nominators per era.
 ///
@@ -49,12 +78,15 @@ pub struct MaintainRatioComputeTotalPayout;
 /// Maintainn is Distribute rewards while maintaining a ratio of validator and dapps-compatible staking amounts.
 ///
 /// `era_duration` is expressed in millisecond.
-impl ComputeTotalPayout for MaintainRatioComputeTotalPayout {
+impl<Balance> ComputeTotalPayout<Balance, Balance> for MaintainRatioComputeTotalPayout<Balance>
+where
+    Balance: BaseArithmetic + Clone + From<u32>,
+{
     fn compute<N, M>(
         total_tokens: N,
         era_duration: M,
-        validator_staking: N,
-        dapps_staking: N,
+        validator_staking: Balance,
+        dapps_staking: Balance,
     ) -> (N, N)
     where
         N: BaseArithmetic + Clone + From<u32>,
@@ -67,8 +99,8 @@ impl ComputeTotalPayout for MaintainRatioComputeTotalPayout {
             MILLISECONDS_PER_YEAR * 5,
         );
         let payout = portion * total_tokens;
-        if validator_staking == N::zero() {
-            if dapps_staking == N::zero() {
+        if validator_staking == Balance::zero() {
+            if dapps_staking == Balance::zero() {
                 return (N::zero(), N::zero());
             }
             return (N::zero(), payout);
@@ -112,7 +144,7 @@ mod test {
     where
         N: BaseArithmetic + Clone + From<u32>,
     {
-        MaintainRatioComputeTotalPayout::compute(
+        MaintainRatioComputeTotalPayout::<N>::compute(
             total_tokens,
             era_duration,
             validator_staking,

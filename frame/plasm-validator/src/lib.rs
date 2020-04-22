@@ -11,11 +11,12 @@ use frame_support::{
 };
 use frame_system::{self as system, ensure_root};
 use pallet_plasm_rewards::{
-    traits::{EraFinder, ForSecurityEraRewardFinder, GetEraStakingAmount, MaybeValidators},
+    traits::{ComputeEraWithParam, EraFinder, ForSecurityEraRewardFinder, MaybeValidators},
     EraIndex,
 };
 use sp_runtime::{
-    traits::{Saturating, Zero}, Perbill,
+    traits::{Saturating, Zero},
+    Perbill,
 };
 pub use sp_staking::SessionIndex;
 use sp_std::{prelude::*, vec::Vec};
@@ -167,7 +168,8 @@ impl<T: Trait> MaybeValidators<EraIndex, T::AccountId> for Module<T> {
 
 /// Get the amount of staking per Era in a module in the Plasm Network
 /// for callinng by plasm-rewards when end era.
-impl<T: Trait> GetEraStakingAmount<EraIndex, BalanceOf<T>> for Module<T> {
+impl<T: Trait> ComputeEraWithParam<EraIndex> for Module<T> {
+    type Param = BalanceOf<T>;
     fn compute(_era: &EraIndex) -> BalanceOf<T> {
         BalanceOf::<T>::zero()
     }

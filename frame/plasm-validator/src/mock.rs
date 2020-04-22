@@ -4,9 +4,7 @@
 
 use super::*;
 use frame_support::{impl_outer_dispatch, impl_outer_origin, parameter_types, traits::OnFinalize};
-use pallet_plasm_rewards::{
-    inflation::SimpleComputeTotalPayout,
-};
+use pallet_plasm_rewards::inflation::SimpleComputeTotalPayout;
 use sp_core::{crypto::key_types, H256};
 use sp_runtime::testing::{Header, UintAuthorityId};
 use sp_runtime::traits::{BlakeTwo256, ConvertInto, IdentityLookup, OpaqueKeys};
@@ -167,8 +165,8 @@ impl pallet_plasm_rewards::Trait for Test {
     type Time = Timestamp;
     type SessionsPerEra = SessionsPerEra;
     type BondingDuration = BondingDuration;
-    type GetForDappsStaking = PlasmValidator;
-    type GetForSecurityStaking = PlasmValidator;
+    type ComputeForDappsStaking = PlasmValidator;
+    type ComputeForForSecurity = PlasmValidator;
     type ComputeTotalPayout = SimpleComputeTotalPayout;
     type MaybeValidators = PlasmValidator;
     type Event = ();

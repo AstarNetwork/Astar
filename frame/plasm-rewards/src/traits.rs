@@ -2,18 +2,19 @@ use super::*;
 use sp_arithmetic::traits::BaseArithmetic;
 
 /// Get the amount of staking per Era in a module in the Plasm Network.
-pub trait GetEraStakingAmount<EraIndex, Balance> {
-    fn compute(era: &EraIndex) -> Balance;
+pub trait ComputeEraWithParam<EraIndex> {
+    type Param;
+    fn compute(era: &EraIndex) -> Self::Param;
 }
 
 /// The reward is allocated from the total supply of tokens,
 /// the time for Era, the amount of staking for Security, and the amount of staking for Dapps.
-pub trait ComputeTotalPayout {
+pub trait ComputeTotalPayout<ValidatorParam, DappsParam> {
     fn compute<N, M>(
         total_tokens: N,
         era_duration: M,
-        validator_staking: N,
-        dapps_staking: N,
+        for_security_parm: ValidatorParam,
+        for_dapps_param: DappsParam,
     ) -> (N, N)
     where
         N: BaseArithmetic + Clone + From<u32>,
