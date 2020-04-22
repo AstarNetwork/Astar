@@ -174,8 +174,8 @@ impl Trait for Test {
     type Time = Timestamp;
     type SessionsPerEra = SessionsPerEra;
     type BondingDuration = BondingDuration;
-    type ComputeForDappsStaking = DummyForDappsStaking;
-    type ComputeForForSecurity = DummyForSecurityStaking;
+    type ComputeEraForDapps = DummyForDappsStaking;
+    type ComputeEraForSecurity = DummyForSecurityStaking;
     type ComputeTotalPayout = inflation::MaintainRatioComputeTotalPayout<Balance>;
     type MaybeValidators = DummyMaybeValidators;
     type Event = ();

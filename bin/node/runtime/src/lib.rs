@@ -193,7 +193,7 @@ impl pallet_plasm_rewards::Trait for Runtime {
     type BondingDuration = BondingDuration;
     type ComputeEraForDapps = DappsStaking;
     type ComputeEraForSecurity = PlasmValidator;
-    type ComputeTotalPayout = pallet_plasm_rewards::inflation::SimpleComputeTotalPayout;
+    type ComputeTotalPayout = pallet_plasm_rewards::inflation::FirstPlasmIncentive<u32>;
     type MaybeValidators = PlasmValidator;
     type Event = Event;
 }

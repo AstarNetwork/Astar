@@ -269,8 +269,8 @@ impl pallet_plasm_rewards::Trait for Test {
     type Time = Timestamp;
     type SessionsPerEra = SessionsPerEra;
     type BondingDuration = BondingDuration;
-    type ComputeForDappsStaking = DappsStaking;
-    type ComputeForForSecurity = DappsStaking;
+    type ComputeEraForDapps = DappsStaking;
+    type ComputeEraForSecurity = DappsStaking;
     type ComputeTotalPayout = SimpleComputeTotalPayout;
     type MaybeValidators = DummyMaybeValidators;
     type Event = ();
