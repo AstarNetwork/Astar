@@ -8,31 +8,60 @@
 
 use super::*;
 use sp_arithmetic::traits::BaseArithmetic;
+use sp_std::marker::PhantomData;
 use traits::ComputeTotalPayout;
 
-// pub struct FirstPlasmIncentive;
-//
-// impl ComputeTotalPayout for FirstPlasmIncentive {
-//     fn compute<N, M>(
-//         total_tokens: N,
-//         era_duration: M,
-//         _validator_staking: N,
-//         _dapps_staking: N,
-//     ) -> (N, N)
-//     where
-//         N: BaseArithmetic + Clone + From<u32>,
-//         M: BaseArithmetic + Clone + From<u32>,
-//     {
-//         // Milliseconds per year for the Julian year (365.25 days).
-//         const MILLISECONDS_PER_YEAR: u64 = 1000 * 3600 * 24 * 36525 / 100;
-//         let portion = Perbill::from_rational_approximation(
-//             era_duration.unique_saturated_into(),
-//             MILLISECONDS_PER_YEAR * 5,
-//         );
-//         let payout = portion * total_tokens;
-//         (payout.clone(), payout)
-//     }
-// }
+pub struct FirstPlasmIncentive<N: BaseArithmetic + Clone + From<u32>> {
+    _phantom: PhantomData<N>,
+}
+
+impl<L, D> ComputeTotalPayout<L, D> for FirstPlasmIncentive<L>
+where
+    L: BaseArithmetic + Clone + From<u32>,
+{
+    fn compute<N, M>(
+        total_tokens: N,
+        era_duration: M,
+        number_of_validator: L,
+        _dapps_staking: D,
+    ) -> (N, N)
+    where
+        N: BaseArithmetic + Clone + From<u32>,
+        M: BaseArithmetic + Clone + From<u32>,
+    {
+        const TARGETS_NUMBER: u128 = 100;
+        const MILLISECONDS_PER_YEAR: u128 = 1000 * 3600 * 24 * 36525 / 100;
+        // I_0 = 2.5%.
+        const I_0_DENOMINATOR: u128 = 25;
+        const I_0_NUMERATOR: u128 = 1000;
+        let number_of_validator_clone: u128 = number_of_validator.clone().unique_saturated_into();
+        let era_duration_clone: u128 = era_duration.clone().unique_saturated_into();
+        let number_of_validator: u128 = number_of_validator.unique_saturated_into();
+        let portion = if TARGETS_NUMBER < number_of_validator_clone {
+            // TotalForSecurityRewards
+            // = TotalAmountOfIssue * I_0% * (EraDuration / 1year)
+
+            // denominator: I_0_DENOMINATOR * EraDuration
+            // numerator: 1year * I_0_NUMERATOR
+            Perbill::from_rational_approximation(
+                I_0_DENOMINATOR * era_duration_clone,
+                MILLISECONDS_PER_YEAR * I_0_NUMERATOR,
+            )
+        } else {
+            // TotalForSecurityRewards
+            // = TotalAmountOfIssue * I_0% * (NumberOfValidators/TargetsNumber) * (EraDuration/1year)
+
+            // denominator: I_0_DENOMINATOR * NumberOfValidators * EraDuration
+            // numerator: 1year * I_0_NUMERATOR * TargetsNumber
+            Perbill::from_rational_approximation(
+                I_0_DENOMINATOR * number_of_validator * era_duration_clone,
+                MILLISECONDS_PER_YEAR * I_0_NUMERATOR * TARGETS_NUMBER,
+            )
+        };
+        let payout = portion * total_tokens;
+        (payout, N::zero())
+    }
+}
 
 pub struct SimpleComputeTotalPayout;
 
@@ -68,7 +97,7 @@ pub struct MaintainRatioComputeTotalPayout<Balance>
 where
     Balance: BaseArithmetic + Clone + From<u32>,
 {
-    _phantom: sp_std::marker::PhantomData<Balance>,
+    _phantom: PhantomData<Balance>,
 }
 
 /// The total payout to all operators and validators and their nominators per era.
@@ -152,6 +181,17 @@ mod test {
         )
     }
 
+    fn compute_first_rewards_test<N>(
+        total_tokens: N,
+        era_duration: u64,
+        number_of_validator: u32,
+    ) -> (N, N)
+    where
+        N: BaseArithmetic + Clone + From<u32>,
+    {
+        FirstPlasmIncentive::<u32>::compute(total_tokens, era_duration, number_of_validator, 0)
+    }
+
     #[test]
     fn test_compute_test() {
         const YEAR: u64 = 365 * 24 * 60 * 60 * 1000;
@@ -207,6 +247,30 @@ mod test {
         assert_eq!(
             compute_maintain_total_payout_test(100_000_000u64, YEAR, 0, 0),
             (0, 0)
+        );
+    }
+
+    #[test]
+    fn test_first_rewards_compute() {
+        const YEAR: u64 = 1000 * 3600 * 24 * 36525 / 100;
+        assert_eq!(
+            compute_first_rewards_test(100_000_000u64, YEAR, 100),
+            (2_500_000, 0)
+        );
+
+        assert_eq!(
+            compute_first_rewards_test(100_000_000u64, YEAR, 150),
+            (2_500_000, 0)
+        );
+
+        assert_eq!(
+            compute_first_rewards_test(100_000_000u64, YEAR, 50),
+            (1_250_000, 0)
+        );
+
+        assert_eq!(
+            compute_first_rewards_test(100_000_000u64, YEAR / 365, 100),
+            (2_500_000 / 365, 0)
         );
     }
 }
