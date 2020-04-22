@@ -205,6 +205,8 @@ impl pallet_plasm_validator::Trait for Runtime {
     type Reward = (); // Reward is minted.
     type EraFinder = PlasmRewards;
     type ForSecurityEraReward = PlasmRewards;
+    type ComputeEraParam = u32;
+    type ComputeEra = PlasmValidator;
     type Event = Event;
 }
 
