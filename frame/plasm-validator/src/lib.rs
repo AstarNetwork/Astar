@@ -26,6 +26,9 @@ mod mock;
 #[cfg(test)]
 mod tests;
 
+mod compute_era;
+pub use compute_era::*;
+
 pub type BalanceOf<T> =
     <<T as Trait>::Currency as Currency<<T as system::Trait>::AccountId>>::Balance;
 pub type MomentOf<T> = <<T as Trait>::Time as Time>::Moment;
@@ -53,6 +56,12 @@ pub trait Trait: system::Trait {
 
     /// The rewards for validators.
     type ForSecurityEraReward: ForSecurityEraRewardFinder<BalanceOf<Self>>;
+
+    /// The return type of ComputeEraWithParam.
+    type ComputeEraParam;
+
+    /// Acutually computing of ComputeEraWithParam.
+    type ComputeEra: ComputeEraOnModule<Self::ComputeEraParam>;
 
     /// The overarching event type.
     type Event: From<Event<Self>> + Into<<Self as system::Trait>::Event>;
@@ -169,8 +178,8 @@ impl<T: Trait> MaybeValidators<EraIndex, T::AccountId> for Module<T> {
 /// Get the amount of staking per Era in a module in the Plasm Network
 /// for callinng by plasm-rewards when end era.
 impl<T: Trait> ComputeEraWithParam<EraIndex> for Module<T> {
-    type Param = BalanceOf<T>;
-    fn compute(_era: &EraIndex) -> BalanceOf<T> {
-        BalanceOf::<T>::zero()
+    type Param = T::ComputeEraParam;
+    fn compute(era: &EraIndex) -> T::ComputeEraParam {
+        T::ComputeEra::compute(era)
     }
 }

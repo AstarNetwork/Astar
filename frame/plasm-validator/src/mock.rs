@@ -179,6 +179,8 @@ impl Trait for Test {
     type Reward = (); // Reward is minted.
     type EraFinder = PlasmRewards;
     type ForSecurityEraReward = PlasmRewards;
+    type ComputeEraParam = u32;
+    type ComputeEra = PlasmValidator;
     type Event = ();
 }
 
