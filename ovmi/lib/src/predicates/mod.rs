@@ -8,9 +8,22 @@ use crate::executor::ExecResult;
 macro_rules! require {
     ($val:expr) => {
         if not $val {
-            return ExecError::RequireError{msg: "Unexpected error by: $val"}
+            return ExecError::RequireError{msg: "Required error by: $val"}
         }
     };
+}
+
+pub enum InterfacePredicates {
+    CompiledPredicate(ExecutablePredicate),
+    AtomicPredicate(),
+    DecidablePredicate(),
+    LogicalConnective(),
+    BaseAtomicPredicate(),
+}
+
+pub enum AtomicPredicates {
+    And(And),
+    Not(Not),
 }
 
 /// Property stands for dispute logic and we can claim every Properties to Adjudicator Contract.

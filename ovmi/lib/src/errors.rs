@@ -7,4 +7,6 @@ pub enum ExecError {
     RequireError { msg: String },
     #[snafu(display("Unexpected error: {}", msg))]
     UnexpectedError { msg: String },
+    #[snafu(display("Unexpected error: {}", msg))]
+    UnexpectedError { msg: String },
 }
