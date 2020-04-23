@@ -1,5 +1,6 @@
 use super::*;
 use crate::compiled_predicates::*;
+use crate::predicates::*;
 use codec::Codec;
 use core::marker::PhantomData;
 use snafu::{ResultExt, Snafu};
@@ -14,8 +15,8 @@ pub enum ExecError {
         expected
     ))]
     CallMethod {
-        call_method: PredicateCallMethods,
-        expected: Vec<PredicateCallMethods>,
+        call_method: PredicateCallInputs,
+        expected: String,
     },
     #[snafu(display("Unexpected error: {}", msg))]
     UnexpectedError { msg: String },
@@ -43,26 +44,9 @@ pub trait ExternalCall {
     fn ext_is_stored(&mut self, address: &Self::Address, key: &[u8], value: &[u8]) -> bool;
 }
 
-#[derive(Clone, Eq, PartialEq, Encode, Decode, Hash)]
-#[cfg_attr(feature = "std", derive(Serialize, Deserialize, Debug))]
-pub enum PredicateCallMethods {
-    /// Be able to call by LogicalConnective & CompiledPredicate.
-    IsValidChallenge,
-    /// Be able to call by BaseAtomicPredicate & AtomicPredicate
-    Decide,
-    /// Be able to call by BaseAtomicPredicate & DecidablePredicate
-    DecideWithWitness,
-    /// Be able to call by BaseAtomicPredicate & AtomicPredicate
-    DecideTrue,
-    /// Be able to call by CompiledPredicate.
-    PayoutContractAddress,
-    /// Be able to call by CompiledPredicate.
-    GetChild,
-}
-
 pub trait OvmExecutor {
     type ExtCall: ExternalCall;
-    fn execute<P>(executable: P, call_method: PredicateCallMethods) -> ExecResult;
+    fn execute<P>(executable: P, call_method: PredicateCallInputs) -> ExecResult;
 }
 
 pub struct AtomicExeuctor<Ext> {
@@ -71,23 +55,24 @@ pub struct AtomicExeuctor<Ext> {
 
 impl OvmExecutor for AtomicExecutor<Ext> {
     type ExtCall = Ext;
-    fn execute<P>(predicate: P, call_method: PredicateCallMethods) -> ExecResult
+    fn execute<P>(predicate: P, call_method: PredicateCallInputs) -> ExecResult
     where
         P: predicates::AtomicPredicate,
     {
         match call_method {
-            PredicateCallMethods::Decide => predicate.decide(),
-            PredicateCallMethods::DecideTrue => return predicate.decide_true(),
-            _ => {
-                return Err(ExecError::CallMethod {
-                    call_method,
-                    expected: vec![
-                        PredicateCallMethods::Decide,
-                        PredicateCallMethods::DecideTrue,
-                    ],
-                });
+            PredicateCallInputs::AtomicPredicate(atomic) => {
+                match atomic {
+                    AtomicPredicateCallInputs::Decide { inputs } => return predicate.decide(input),
+                    AtomicPredicateCallInputs::DecideTrue { inputs } => {
+                        predicate.decide_true(inputs);
+                        return Ok(true);
+                    }
+                };
             }
+            other => Err(ExecError::CallMethod {
+                call_method: other,
+                expected: "AtomicPredicateCallInputs".to_string(),
+            }),
         }
-        Ok(true)
     }
 }
