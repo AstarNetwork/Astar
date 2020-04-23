@@ -5,6 +5,7 @@
 
 use crate::executor::ExecResult;
 use codec::{Decode, Encode};
+use core::fmt;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
 
@@ -16,7 +17,7 @@ macro_rules! require {
     };
 }
 
-#[derive(Clone, Eq, PartialEq, Encode, Decode, Hash)]
+#[derive(Clone, Eq, PartialEq, Encode, Decode, Hash, derive_more::Display)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize, Debug))]
 pub enum PredicateCallInputs<Address> {
     AtomicPredicate(AtomicPredicateCallInputs),
@@ -33,6 +34,16 @@ pub enum AtomicPredicateCallInputs {
     Decide { inputs: Vec<Vec<u8>> },
 }
 
+impl fmt::Display for AtomicPredicateCallInputs {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> fmt::Result {
+        let state = match self {
+            AtomicPredicateCallInputs::Decide { inputs: _ } => "Decide",
+            AtomicPredicateCallInputs::DecideTrue { inputs: _ } => "DecideTrue",
+        };
+        write!(f, "{}", state)
+    }
+}
+
 #[derive(Clone, Eq, PartialEq, Encode, Decode, Hash)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize, Debug))]
 pub enum DecidablePredicateCallInputs {
@@ -40,6 +51,18 @@ pub enum DecidablePredicateCallInputs {
         inputs: Vec<Vec<u8>>,
         witness: Vec<Vec<u8>>,
     },
+}
+
+impl fmt::Display for DecidablePredicateCallInputs {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> fmt::Result {
+        let state = match self {
+            DecidablePredicateCallInputs::DecideWithWitness {
+                inputs: _,
+                witness: _,
+            } => "DecideWithWitness",
+        };
+        write!(f, "{}", state)
+    }
 }
 
 #[derive(Clone, Eq, PartialEq, Encode, Decode, Hash)]
@@ -50,6 +73,19 @@ pub enum LogicalConnectiveCallInputs<Address> {
         challenge_inputs: Vec<Vec<u8>>,
         challenge: Property<Address>,
     },
+}
+
+impl<Address> fmt::Display for LogicalConnectiveCallInputs<Address> {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> fmt::Result {
+        let state = match self {
+            LogicalConnectiveCallInputs::IsValidChallenge {
+                inputs: _,
+                challenge_inputs: _,
+                challenge: _,
+            } => "IsValidChallenge",
+        };
+        write!(f, "{}", state)
+    }
 }
 
 #[derive(Clone, Eq, PartialEq, Encode, Decode, Hash)]
@@ -65,6 +101,20 @@ pub enum BaseAtomicPredicateCallInputs {
     DecideTrue {
         inputs: Vec<Vec<u8>>,
     },
+}
+
+impl fmt::Display for BaseAtomicPredicateCallInputs {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> fmt::Result {
+        let state = match self {
+            BaseAtomicPredicateCallInputs::Decide { inputs: _ } => "Decide",
+            BaseAtomicPredicateCallInputs::DecideTrue { inputs: _ } => "DecideTrue",
+            BaseAtomicPredicateCallInputs::DecideWithWitness {
+                inputs: _,
+                witness: _,
+            } => "DecideWithWitness",
+        };
+        write!(f, "{}", state)
+    }
 }
 
 #[derive(Clone, Eq, PartialEq, Encode, Decode, Hash)]
@@ -91,6 +141,35 @@ pub enum CompiledPredicateCallInputs<Address> {
         inputs: Vec<Vec<u8>>,
         witness: Vec<Vec<u8>>,
     },
+}
+
+impl<Address> fmt::Display for CompiledPredicateCallInputs<Address> {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> fmt::Result {
+        let state = match self {
+            CompiledPredicateCallInputs::IsValidChallenge {
+                inputs: _,
+                challenge_inputs: _,
+                challenge: _,
+            } => "IsValidChallenge",
+            CompiledPredicateCallInputs::GetChild {
+                inputs: _,
+                challenge_input: _,
+            } => "GetChild",
+            CompiledPredicateCallInputs::Decide {
+                inputs: _,
+                witness: _,
+            } => "Decide",
+            CompiledPredicateCallInputs::DecideTrue {
+                inputs: _,
+                witness: _,
+            } => "DecideTrue",
+            CompiledPredicateCallInputs::DecideWithWitness {
+                inputs: _,
+                witness: _,
+            } => "DecideWithWitness",
+        };
+        write!(f, "{}", state)
+    }
 }
 
 /// Property stands for dispute logic and we can claim every Properties to Adjudicator Contract.
@@ -139,16 +218,16 @@ pub trait BaseAtomicPredicate<Address, Hash>:
 }
 
 pub trait AtomicPredicate<Address> {
-    fn decide_true(_inputs: Vec<Vec<u8>>);
-    fn decide(_inputs: Vec<Vec<u8>>) -> ExecResult<Address>;
+    fn decide_true(&self, _inputs: Vec<Vec<u8>>);
+    fn decide(&self, _inputs: Vec<Vec<u8>>) -> ExecResult<Address>;
 }
 
 pub trait DecidablePredicate<Address> {
-    fn decide_with_witness(_inputs: Vec<Vec<u8>>, _witness: Vec<Vec<u8>>) -> ExecResult<Address>;
+    fn decide_with_witness(&self, _inputs: Vec<Vec<u8>>, _witness: Vec<Vec<u8>>) -> ExecResult<Address>;
 }
 
 pub trait CompiledPredicate<Address> {
-    fn payout_contract_address() -> Address;
+    fn payout_contract_address(&self) -> Address;
 
     fn is_valid_challenge(
         _inputs: Vec<Vec<u8>>,

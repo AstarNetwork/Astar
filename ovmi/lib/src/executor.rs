@@ -4,8 +4,12 @@ use crate::predicates::*;
 use codec::Codec;
 use core::marker::PhantomData;
 use snafu::{ResultExt, Snafu};
+use core::fmt::Display;
 
-#[derive(Debug, Snafu)]
+use crate::predicates::AtomicPredicate;
+
+#[derive(Snafu)]
+#[cfg_attr(feature = "std", derive(Debug))]
 pub enum ExecError<Address> {
     #[snafu(display("Require error: {}", msg))]
     RequireError { msg: String },
@@ -27,6 +31,10 @@ pub type AddressOf<Ext> = <Ext as ExternalCall>::Address;
 
 pub trait ExternalCall {
     type Address: Codec;
+    type Hash: Codec;
+
+    // relation const any predicate address.
+    const NotPredicate: Address;
 
     /// Call (other predicate) into the specified account.
     fn ext_call(&mut self, to: &Self::Address, input_data: Vec<u8>) -> ExecResult<Self::Address>;
