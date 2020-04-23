@@ -16,7 +16,7 @@ impl<Address> CompiledPredicate<Address> for ExecutablePredicate<Address> {
         _inputs: Vec<Vec<u8>>,
         _challenge_inputs: Vec<Vec<u8>>,
         _challenge: Property<Address>,
-    ) -> ExecResult {
+    ) -> ExecResult<Address> {
         Ok(true)
     }
 
@@ -25,7 +25,7 @@ impl<Address> CompiledPredicate<Address> for ExecutablePredicate<Address> {
         Ok(true)
     }
 
-    fn decide(_inputs: Vec<Vec<u8>>, _witness: Vec<Vec<u8>>) -> ExecResult {
+    fn decide(_inputs: Vec<Vec<u8>>, _witness: Vec<Vec<u8>>) -> ExecResult<Address> {
         Ok(true)
     }
 
@@ -33,7 +33,7 @@ impl<Address> CompiledPredicate<Address> for ExecutablePredicate<Address> {
 
     }
 
-    fn decide_with_witness(_inputs: Vec<Vec<u8>>, _witness: Vec<Vec<u8>>) -> ExecResult {
+    fn decide_with_witness(_inputs: Vec<Vec<u8>>, _witness: Vec<Vec<u8>>) -> ExecResult<Address> {
         Ok(true)
     }
 }

@@ -4,6 +4,9 @@
 //!
 
 use crate::executor::ExecResult;
+use codec::{Decode, Encode};
+#[cfg(feature = "std")]
+use serde::{Deserialize, Serialize};
 
 macro_rules! require {
     ($val:expr) => {
@@ -15,12 +18,12 @@ macro_rules! require {
 
 #[derive(Clone, Eq, PartialEq, Encode, Decode, Hash)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize, Debug))]
-pub enum PredicateCallInputs {
+pub enum PredicateCallInputs<Address> {
     AtomicPredicate(AtomicPredicateCallInputs),
     DecidablePredicate(DecidablePredicateCallInputs),
-    LogicalConnective(LogicalConnectiveCallInputs),
+    LogicalConnective(LogicalConnectiveCallInputs<Address>),
     BaseAtomicPredicate(BaseAtomicPredicateCallInputs),
-    CompiledPredicate(CompiledPredicateCallInputs),
+    CompiledPredicate(CompiledPredicateCallInputs<Address>),
 }
 
 #[derive(Clone, Eq, PartialEq, Encode, Decode, Hash)]
@@ -41,7 +44,7 @@ pub enum DecidablePredicateCallInputs {
 
 #[derive(Clone, Eq, PartialEq, Encode, Decode, Hash)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize, Debug))]
-pub enum LogicalConnectiveCallInputs {
+pub enum LogicalConnectiveCallInputs<Address> {
     IsValidChallenge {
         inputs: Vec<Vec<u8>>,
         challenge_inputs: Vec<Vec<u8>>,
@@ -66,7 +69,7 @@ pub enum BaseAtomicPredicateCallInputs {
 
 #[derive(Clone, Eq, PartialEq, Encode, Decode, Hash)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize, Debug))]
-pub enum CompiledPredicateCallInputs {
+pub enum CompiledPredicateCallInputs<Address> {
     IsValidChallenge {
         inputs: Vec<Vec<u8>>,
         challenge_inputs: Vec<Vec<u8>>,
@@ -109,16 +112,16 @@ pub trait Utils<Hash> {
 }
 
 pub trait BaseAtomicPredicate<Address, Hash>:
-    AtomicPredicate<Address> + DecidablePredicate
+    AtomicPredicate<Address> + DecidablePredicate<Address>
 {
     type UniversalAdjudication: UniversalAdjudication<Hash>;
     type Utils: Utils<Hash>;
 
-    fn decide(_inputs: Vec<Vec<u8>>) -> ExecResult {
+    fn decide(_inputs: Vec<Vec<u8>>) -> ExecResult<Address> {
         return Ok(false);
     }
 
-    fn decide_with_witness(_inputs: Vec<Vec<u8>>, _witness: Vec<Vec<u8>>) -> ExecResult {
+    fn decide_with_witness(_inputs: Vec<Vec<u8>>, _witness: Vec<Vec<u8>>) -> ExecResult<Address> {
         return Self::decide(_inputs);
     }
 
@@ -135,13 +138,13 @@ pub trait BaseAtomicPredicate<Address, Hash>:
     }
 }
 
-pub trait AtomicPredicate {
+pub trait AtomicPredicate<Address> {
     fn decide_true(_inputs: Vec<Vec<u8>>);
-    fn decide(_inputs: Vec<Vec<u8>>) -> ExecResult;
+    fn decide(_inputs: Vec<Vec<u8>>) -> ExecResult<Address>;
 }
 
-pub trait DecidablePredicate {
-    fn decide_with_witness(_inputs: Vec<Vec<u8>>, _witness: Vec<Vec<u8>>) -> ExecResult;
+pub trait DecidablePredicate<Address> {
+    fn decide_with_witness(_inputs: Vec<Vec<u8>>, _witness: Vec<Vec<u8>>) -> ExecResult<Address>;
 }
 
 pub trait CompiledPredicate<Address> {
@@ -151,14 +154,14 @@ pub trait CompiledPredicate<Address> {
         _inputs: Vec<Vec<u8>>,
         _challenge_inputs: Vec<Vec<u8>>,
         _challenge: Property<Address>,
-    ) -> ExecResult;
+    ) -> ExecResult<Address>;
 
     /// @dev get valid child property of game tree with challenge_inputs
     fn get_child(inputs: Vec<Vec<u8>>, challenge_input: Vec<Vec<u8>>) -> Property<Address>;
 
-    fn decide(_inputs: Vec<Vec<u8>>, _witness: Vec<Vec<u8>>) -> ExecResult;
+    fn decide(_inputs: Vec<Vec<u8>>, _witness: Vec<Vec<u8>>) -> ExecResult<Address>;
     fn decide_true(_inputs: Vec<Vec<u8>>, _witness: Vec<Vec<u8>>);
-    fn decide_with_witness(_inputs: Vec<Vec<u8>>, _witness: Vec<Vec<u8>>) -> ExecResult;
+    fn decide_with_witness(_inputs: Vec<Vec<u8>>, _witness: Vec<Vec<u8>>) -> ExecResult<Address>;
 }
 
 pub trait LogicalConnective<Address> {
@@ -166,5 +169,5 @@ pub trait LogicalConnective<Address> {
         _inputs: Vec<Vec<u8>>,
         _challenge_inputs: Vec<Vec<u8>>,
         _challenge: Property<Address>,
-    ) -> ExecResult;
+    ) -> ExecResult<Address>;
 }

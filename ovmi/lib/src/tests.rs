@@ -11,7 +11,7 @@ impl ExternalCall for MockExternalCall {
     type Address = Address;
 
     /// Call (possibly other predicate) into the specified account.
-    fn ext_call(&mut self, to: &Self::Address, input_data: Vec<u8>) -> ExecResult {
+    fn ext_call(&mut self, to: &Self::Address, input_data: Vec<u8>) -> ExecResult<Address> {
         Ok(true)
     }
 

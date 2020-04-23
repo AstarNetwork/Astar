@@ -21,7 +21,7 @@ impl LogicalConnective for AndPredicate {
         _inputs: Vec<Vec<u8>>,
         _challenge_inputs: Vec<Vec<u8>>,
         _challenge: Property<Address>,
-    ) -> ExecResult {
+    ) -> ExecResult<Address> {
         // challenge_input is index of child property
         let index: uint256 = Decode::decode(_challenge_inputs[0]);
 
@@ -53,7 +53,7 @@ impl DecidablePredicate for AndPredicate {
         //     true
         // );
     }
-    fn decide(_inputs: Vec<Vec<u8>>) -> ExecResult {
+    fn decide(_inputs: Vec<Vec<u8>>) -> ExecResult<Address> {
         Ok(false)
     }
 }

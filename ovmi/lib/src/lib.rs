@@ -47,6 +47,7 @@ pub mod predicates;
 mod compiled_predicates;
 pub use compiled_predicates::CompiledPredicate;
 pub use prepare::compile_from_json;
+use codec::{Encode, Decode};
 
 #[cfg(test)]
 mod tests;
