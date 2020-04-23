@@ -163,3 +163,37 @@ fn reward_to_validator_test() {
         assert_eq!(Balances::total_issuance(), pre_total_issuarance + a);
     })
 }
+
+// The test will delete, when change the compute algorithm.
+#[test]
+fn first_reward_to_validator_test() {
+    new_test_ext().execute_with(|| {
+        advance_session();
+        assert_ok!(PlasmValidator::set_validators(
+            Origin::ROOT,
+            vec![VALIDATOR_A, VALIDATOR_B,]
+        ));
+        advance_era();
+        assert_eq!(PlasmRewards::current_era().unwrap(), 1);
+        assert_eq!(
+            <PlasmValidator as ComputeEraWithParam<EraIndex>>::compute(&1),
+            2
+        );
+
+        assert_ok!(PlasmValidator::set_validators(
+            Origin::ROOT,
+            vec![
+                VALIDATOR_A,
+                VALIDATOR_B,
+                VALIDATOR_C,
+                VALIDATOR_D,
+                VALIDATOR_E
+            ]
+        ));
+        advance_era();
+        assert_eq!(
+            <PlasmValidator as ComputeEraWithParam<EraIndex>>::compute(&2),
+            5
+        );
+    })
+}

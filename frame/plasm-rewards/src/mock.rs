@@ -8,7 +8,7 @@ use sp_core::{crypto::key_types, H256};
 use sp_runtime::testing::{Header, UintAuthorityId};
 use sp_runtime::traits::{BlakeTwo256, ConvertInto, IdentityLookup, OpaqueKeys};
 use sp_runtime::{KeyTypeId, Perbill};
-use traits::{GetEraStakingAmount, MaybeValidators};
+use traits::{ComputeEraWithParam, MaybeValidators};
 
 pub type BlockNumber = u64;
 pub type AccountId = u64;
@@ -142,14 +142,16 @@ impl pallet_balances::Trait for Test {
 }
 
 pub struct DummyForSecurityStaking;
-impl GetEraStakingAmount<EraIndex, Balance> for DummyForSecurityStaking {
+impl ComputeEraWithParam<EraIndex> for DummyForSecurityStaking {
+    type Param = Balance;
     fn compute(era: &EraIndex) -> Balance {
         (era * 1_000_000).into()
     }
 }
 
 pub struct DummyForDappsStaking;
-impl GetEraStakingAmount<EraIndex, Balance> for DummyForDappsStaking {
+impl ComputeEraWithParam<EraIndex> for DummyForDappsStaking {
+    type Param = Balance;
     fn compute(era: &EraIndex) -> Balance {
         (era * 200_000).into()
     }
@@ -172,9 +174,9 @@ impl Trait for Test {
     type Time = Timestamp;
     type SessionsPerEra = SessionsPerEra;
     type BondingDuration = BondingDuration;
-    type GetForDappsStaking = DummyForDappsStaking;
-    type GetForSecurityStaking = DummyForSecurityStaking;
-    type ComputeTotalPayout = inflation::MaintainRatioComputeTotalPayout;
+    type ComputeEraForDapps = DummyForDappsStaking;
+    type ComputeEraForSecurity = DummyForSecurityStaking;
+    type ComputeTotalPayout = inflation::MaintainRatioComputeTotalPayout<Balance>;
     type MaybeValidators = DummyMaybeValidators;
     type Event = ();
 }

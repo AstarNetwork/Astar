@@ -11,11 +11,12 @@ use frame_support::{
 };
 use frame_system::{self as system, ensure_root};
 use pallet_plasm_rewards::{
-    traits::{EraFinder, ForSecurityEraRewardFinder, GetEraStakingAmount, MaybeValidators},
+    traits::{ComputeEraWithParam, EraFinder, ForSecurityEraRewardFinder, MaybeValidators},
     EraIndex,
 };
 use sp_runtime::{
-    traits::{Saturating, Zero}, Perbill,
+    traits::{Saturating, Zero},
+    Perbill,
 };
 pub use sp_staking::SessionIndex;
 use sp_std::{prelude::*, vec::Vec};
@@ -24,6 +25,9 @@ use sp_std::{prelude::*, vec::Vec};
 mod mock;
 #[cfg(test)]
 mod tests;
+
+mod compute_era;
+pub use compute_era::*;
 
 pub type BalanceOf<T> =
     <<T as Trait>::Currency as Currency<<T as system::Trait>::AccountId>>::Balance;
@@ -52,6 +56,12 @@ pub trait Trait: system::Trait {
 
     /// The rewards for validators.
     type ForSecurityEraReward: ForSecurityEraRewardFinder<BalanceOf<Self>>;
+
+    /// The return type of ComputeEraWithParam.
+    type ComputeEraParam;
+
+    /// Acutually computing of ComputeEraWithParam.
+    type ComputeEra: ComputeEraOnModule<Self::ComputeEraParam>;
 
     /// The overarching event type.
     type Event: From<Event<Self>> + Into<<Self as system::Trait>::Event>;
@@ -167,8 +177,9 @@ impl<T: Trait> MaybeValidators<EraIndex, T::AccountId> for Module<T> {
 
 /// Get the amount of staking per Era in a module in the Plasm Network
 /// for callinng by plasm-rewards when end era.
-impl<T: Trait> GetEraStakingAmount<EraIndex, BalanceOf<T>> for Module<T> {
-    fn compute(_era: &EraIndex) -> BalanceOf<T> {
-        BalanceOf::<T>::zero()
+impl<T: Trait> ComputeEraWithParam<EraIndex> for Module<T> {
+    type Param = T::ComputeEraParam;
+    fn compute(era: &EraIndex) -> T::ComputeEraParam {
+        T::ComputeEra::compute(era)
     }
 }

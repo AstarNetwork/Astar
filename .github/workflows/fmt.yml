@@ -1,0 +1,13 @@
+name: fmt
+on: [push]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: hecrj/setup-rust-action@v1
+      - name: Checkout the source code
+        uses: actions/checkout@master
+      - name: Check targets are installed correctly
+        run: rustup target list --installed
+      - name: Check fmt
+        run: cargo fmt -- --check

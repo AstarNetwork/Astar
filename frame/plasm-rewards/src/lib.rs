@@ -84,13 +84,16 @@ pub trait Trait: pallet_session::Trait {
     type BondingDuration: Get<EraIndex>;
 
     /// Get the amount of staking for dapps per era.
-    type GetForDappsStaking: traits::GetEraStakingAmount<EraIndex, BalanceOf<Self>>;
+    type ComputeEraForDapps: ComputeEraWithParam<EraIndex>;
 
     /// Get the amount of staking for security per era.
-    type GetForSecurityStaking: traits::GetEraStakingAmount<EraIndex, BalanceOf<Self>>;
+    type ComputeEraForSecurity: ComputeEraWithParam<EraIndex>;
 
     /// How to compute total issue PLM for rewards.
-    type ComputeTotalPayout: traits::ComputeTotalPayout;
+    type ComputeTotalPayout: ComputeTotalPayout<
+        <Self::ComputeEraForSecurity as ComputeEraWithParam<EraIndex>>::Param,
+        <Self::ComputeEraForDapps as ComputeEraWithParam<EraIndex>>::Param,
+    >;
 
     /// Maybe next validators.
     type MaybeValidators: traits::MaybeValidators<EraIndex, Self::AccountId>;
@@ -375,8 +378,8 @@ impl<T: Trait> Module<T> {
 
             if !era_duration.is_zero() {
                 let total_payout = T::Currency::total_issuance();
-                let for_dapps = T::GetForDappsStaking::compute(&active_era.index);
-                let for_security = T::GetForSecurityStaking::compute(&active_era.index);
+                let for_dapps = T::ComputeEraForDapps::compute(&active_era.index);
+                let for_security = T::ComputeEraForSecurity::compute(&active_era.index);
 
                 let (for_security_reward, for_dapps_rewards) = T::ComputeTotalPayout::compute(
                     total_payout,

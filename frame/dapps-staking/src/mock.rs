@@ -3,7 +3,9 @@
 #![cfg(test)]
 
 use super::*;
-use frame_support::{assert_ok, impl_outer_dispatch, impl_outer_origin, parameter_types, traits::OnFinalize};
+use frame_support::{
+    assert_ok, impl_outer_dispatch, impl_outer_origin, parameter_types, traits::OnFinalize,
+};
 use pallet_plasm_rewards::{inflation::SimpleComputeTotalPayout, traits::MaybeValidators};
 use sp_core::{crypto::key_types, H256};
 use sp_runtime::{
@@ -267,8 +269,8 @@ impl pallet_plasm_rewards::Trait for Test {
     type Time = Timestamp;
     type SessionsPerEra = SessionsPerEra;
     type BondingDuration = BondingDuration;
-    type GetForDappsStaking = DappsStaking;
-    type GetForSecurityStaking = DappsStaking;
+    type ComputeEraForDapps = DappsStaking;
+    type ComputeEraForSecurity = DappsStaking;
     type ComputeTotalPayout = SimpleComputeTotalPayout;
     type MaybeValidators = DummyMaybeValidators;
     type Event = ();
