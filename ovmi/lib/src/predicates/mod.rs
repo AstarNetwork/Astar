@@ -174,7 +174,8 @@ impl<Address> fmt::Display for CompiledPredicateCallInputs<Address> {
 
 /// Property stands for dispute logic and we can claim every Properties to Adjudicator Contract.
 /// Property has its predicate address and array of input.
-#[derive(Encode, Decode, Clone, PartialEq, Eq)]
+#[derive(Encode, Decode, Clone, PartialEq, Eq, Hash)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize, Debug))]
 pub struct Property<Address> {
     /// Indicates the address of Predicate.
     predicate_address: Address,
@@ -183,11 +184,11 @@ pub struct Property<Address> {
 }
 
 pub trait UniversalAdjudication<Hash> {
-    fn set_predicate_decision(game_id: Hash, decision: bool);
+    fn set_predicate_decision(&self, game_id: Hash, decision: bool);
 }
 
 pub trait Utils<Hash> {
-    fn get_property_id() -> Hash;
+    fn get_property_id(&self) -> Hash;
 }
 
 pub trait BaseAtomicPredicate<Address, Hash>:
@@ -196,15 +197,19 @@ pub trait BaseAtomicPredicate<Address, Hash>:
     type UniversalAdjudication: UniversalAdjudication<Hash>;
     type Utils: Utils<Hash>;
 
-    fn decide(_inputs: Vec<Vec<u8>>) -> ExecResult<Address> {
+    fn decide(&self, _inputs: Vec<Vec<u8>>) -> ExecResult<Address> {
         return Ok(false);
     }
 
-    fn decide_with_witness(_inputs: Vec<Vec<u8>>, _witness: Vec<Vec<u8>>) -> ExecResult<Address> {
-        return Self::decide(_inputs);
+    fn decide_with_witness(
+        &self,
+        _inputs: Vec<Vec<u8>>,
+        _witness: Vec<Vec<u8>>,
+    ) -> ExecResult<Address> {
+        BaseAtomicPredicate::decide(self, _inputs)
     }
 
-    fn decide_true(_inputs: Vec<Vec<u8>>) {
+    fn decide_true(&self, _inputs: Vec<Vec<u8>>) {
         // require(decide(_inputs), "must decide true");
         // types.Property memory property = types.Property({
         //     predicateAddress: address(this),
@@ -223,28 +228,38 @@ pub trait AtomicPredicate<Address> {
 }
 
 pub trait DecidablePredicate<Address> {
-    fn decide_with_witness(&self, _inputs: Vec<Vec<u8>>, _witness: Vec<Vec<u8>>) -> ExecResult<Address>;
+    fn decide_with_witness(
+        &self,
+        _inputs: Vec<Vec<u8>>,
+        _witness: Vec<Vec<u8>>,
+    ) -> ExecResult<Address>;
 }
 
 pub trait CompiledPredicate<Address> {
     fn payout_contract_address(&self) -> Address;
 
     fn is_valid_challenge(
+        &self,
         _inputs: Vec<Vec<u8>>,
         _challenge_inputs: Vec<Vec<u8>>,
         _challenge: Property<Address>,
     ) -> ExecResult<Address>;
 
     /// @dev get valid child property of game tree with challenge_inputs
-    fn get_child(inputs: Vec<Vec<u8>>, challenge_input: Vec<Vec<u8>>) -> Property<Address>;
+    fn get_child(&self, inputs: Vec<Vec<u8>>, challenge_input: Vec<Vec<u8>>) -> Property<Address>;
 
-    fn decide(_inputs: Vec<Vec<u8>>, _witness: Vec<Vec<u8>>) -> ExecResult<Address>;
-    fn decide_true(_inputs: Vec<Vec<u8>>, _witness: Vec<Vec<u8>>);
-    fn decide_with_witness(_inputs: Vec<Vec<u8>>, _witness: Vec<Vec<u8>>) -> ExecResult<Address>;
+    fn decide(&self, _inputs: Vec<Vec<u8>>, _witness: Vec<Vec<u8>>) -> ExecResult<Address>;
+    fn decide_true(&self, _inputs: Vec<Vec<u8>>, _witness: Vec<Vec<u8>>);
+    fn decide_with_witness(
+        &self,
+        _inputs: Vec<Vec<u8>>,
+        _witness: Vec<Vec<u8>>,
+    ) -> ExecResult<Address>;
 }
 
 pub trait LogicalConnective<Address> {
     fn is_valid_challenge(
+        &self,
         _inputs: Vec<Vec<u8>>,
         _challenge_inputs: Vec<Vec<u8>>,
         _challenge: Property<Address>,

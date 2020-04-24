@@ -7,7 +7,7 @@ pub struct AndPredicate {
 
 impl AndPredicate {
     // TODO これ derive したいね。
-    fn create_property_from_input(_input: Vec<Vec<u8>>) -> Property {
+    fn create_property_from_input(&self, _input: Vec<Vec<u8>>) -> Property {
             Property {
                 predicate_address: ext_address(),
                 inputs: _input
@@ -18,6 +18,7 @@ impl AndPredicate {
 impl LogicalConnective for AndPredicate {
     /// @dev Validates a child node of And property in game tree.
     fn is_valid_challenge(
+        &self,
         _inputs: Vec<Vec<u8>>,
         _challenge_inputs: Vec<Vec<u8>>,
         _challenge: Property<Address>,
@@ -34,7 +35,7 @@ impl LogicalConnective for AndPredicate {
 
 impl DecidablePredicate for AndPredicate {
     ///  @dev Can decide true when all child properties are decided true
-    fn decide_true(_inputs: Vec<Vec<u8>>) {
+    fn decide_true(&self, _inputs: Vec<Vec<u8>>) {
         // for (uint256 i = 0; i < inner_properties.length; i++) {
         //     require(
         //         UniversalAdjudicationContract(uacAddress).isDecided(
@@ -53,7 +54,7 @@ impl DecidablePredicate for AndPredicate {
         //     true
         // );
     }
-    fn decide(_inputs: Vec<Vec<u8>>) -> ExecResult<Address> {
+    fn decide(&self, _inputs: Vec<Vec<u8>>) -> ExecResult<Address> {
         Ok(false)
     }
 }

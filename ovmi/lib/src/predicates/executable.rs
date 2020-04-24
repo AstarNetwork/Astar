@@ -13,6 +13,7 @@ impl<Address> CompiledPredicate<Address> for ExecutablePredicate<Address> {
     }
 
     fn is_valid_challenge(
+        &self,
         _inputs: Vec<Vec<u8>>,
         _challenge_inputs: Vec<Vec<u8>>,
         _challenge: Property<Address>,
@@ -21,19 +22,19 @@ impl<Address> CompiledPredicate<Address> for ExecutablePredicate<Address> {
     }
 
     /// @dev get valid child property of game tree with challenge_inputs
-    fn get_child(inputs: Vec<Vec<u8>>, challenge_input: Vec<Vec<u8>>) -> Property<Address> {
+    fn get_child(&self, inputs: Vec<Vec<u8>>, challenge_input: Vec<Vec<u8>>) -> Property<Address> {
         Ok(true)
     }
 
-    fn decide(_inputs: Vec<Vec<u8>>, _witness: Vec<Vec<u8>>) -> ExecResult<Address> {
+    fn decide(&self, _inputs: Vec<Vec<u8>>, _witness: Vec<Vec<u8>>) -> ExecResult<Address> {
         Ok(true)
     }
 
-    fn decide_true(_inputs: Vec<Vec<u8>>, _witness: Vec<Vec<u8>>) {
+    fn decide_true(&self, _inputs: Vec<Vec<u8>>, _witness: Vec<Vec<u8>>) {
 
     }
 
-    fn decide_with_witness(_inputs: Vec<Vec<u8>>, _witness: Vec<Vec<u8>>) -> ExecResult<Address> {
+    fn decide_with_witness(&self, _inputs: Vec<Vec<u8>>, _witness: Vec<Vec<u8>>) -> ExecResult<Address> {
         Ok(true)
     }
 }

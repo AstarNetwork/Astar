@@ -2,9 +2,9 @@ use super::*;
 use crate::compiled_predicates::*;
 use crate::predicates::*;
 use codec::Codec;
+use core::fmt::Display;
 use core::marker::PhantomData;
 use snafu::{ResultExt, Snafu};
-use core::fmt::Display;
 
 use crate::predicates::AtomicPredicate;
 
@@ -33,8 +33,9 @@ pub trait ExternalCall {
     type Address: Codec;
     type Hash: Codec;
 
-    // relation const any predicate address.
-    const NotPredicate: Address;
+    // relation const any atomic predicate address.
+    const NotPredicate: Self::Address;
+    const AndPredicate: Self::Address;
 
     /// Call (other predicate) into the specified account.
     fn ext_call(&mut self, to: &Self::Address, input_data: Vec<u8>) -> ExecResult<Self::Address>;
