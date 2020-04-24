@@ -2,14 +2,18 @@
 //! Executable Predicates instanced from Compiled Predicates and Atomic Predicates.
 //!
 //!
-use crate::executor::ExecResult;
+use crate::executor::{ExecResult, ExecResultT};
 use codec::{Decode, Encode};
 use core::fmt;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
 
 mod and;
+mod executable;
 mod not;
+pub use and::AndPredicate;
+pub use executable::ExecutablePredicate;
+pub use not::NotPredicate;
 
 #[derive(Clone, Eq, PartialEq, Encode, Decode, Hash, derive_more::Display)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize, Debug))]
@@ -240,7 +244,11 @@ pub trait CompiledPredicate<Address> {
     ) -> ExecResult<Address>;
 
     /// @dev get valid child property of game tree with challenge_inputs
-    fn get_child(&self, inputs: Vec<Vec<u8>>, challenge_input: Vec<Vec<u8>>) -> Property<Address>;
+    fn get_child(
+        &self,
+        inputs: Vec<Vec<u8>>,
+        challenge_input: Vec<Vec<u8>>,
+    ) -> ExecResultT<Property<Address>, Address>;
 
     fn decide(&self, _inputs: Vec<Vec<u8>>, _witness: Vec<Vec<u8>>) -> ExecResult<Address>;
     fn decide_true(&self, _inputs: Vec<Vec<u8>>, _witness: Vec<Vec<u8>>);

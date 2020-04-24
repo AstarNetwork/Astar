@@ -29,6 +29,7 @@ pub enum ExecError<Address> {
 }
 
 pub type ExecResult<Address> = core::result::Result<bool, ExecError<Address>>;
+pub type ExecResultT<T, Address> = core::result::Result<T, ExecError<Address>>;
 pub type AddressOf<Ext> = <Ext as ExternalCall>::Address;
 
 pub trait ExternalCall {
