@@ -1,28 +1,37 @@
-use super::executor::*;
-use super::*;
+use crate::executor::*;
+use crate::predicates::PredicateCallInputs;
+use crate::*;
 
 type Address = u64;
+type Hash = u64;
 struct MockExternalCall;
 
-const Caller: Address = 0;
-const PredicateX: Address = 1;
+const Caller: Address = 1001;
+const PredicateX: Address = 101;
 
 impl ExternalCall for MockExternalCall {
     type Address = Address;
+    type Hash = Hash;
+    const NotPredicate: Address = 1;
+    const AndPredicate: Address = 2;
 
     /// Call (possibly other predicate) into the specified account.
-    fn ext_call(&mut self, to: &Self::Address, input_data: Vec<u8>) -> ExecResult<Address> {
+    fn ext_call(
+        &mut self,
+        to: &Self::Address,
+        input_data: PredicateCallInputs<Self::Address>,
+    ) -> ExecResult<Address> {
         Ok(true)
     }
 
     /// Returns a reference to the account id of the caller.
-    fn ext_caller(&self) -> &Self::Address {
-        &Caller
+    fn ext_caller(&self) -> Self::Address {
+        Caller
     }
 
     /// Returns a reference to the account id of the current contract.
-    fn ext_address(&self) -> &Self::Address {
-        &PredicateX
+    fn ext_address(&self) -> Self::Address {
+        PredicateX
     }
 
     // Notes a call other storage.
