@@ -38,7 +38,11 @@ pub trait ExternalCall {
     const AndPredicate: Self::Address;
 
     /// Call (other predicate) into the specified account.
-    fn ext_call(&mut self, to: &Self::Address, input_data: Vec<u8>) -> ExecResult<Self::Address>;
+    fn ext_call(
+        &mut self,
+        to: &Self::Address,
+        input_data: PredicateCallInputs<Self::Address>,
+    ) -> ExecResult<Self::Address>;
 
     /// Returns a reference to the account id of the caller.
     fn ext_caller(&self) -> &Self::Address;

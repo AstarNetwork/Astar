@@ -1,21 +1,21 @@
-use crate::predicates::*;
 use crate::executor::*;
+use crate::predicates::*;
 
-pub struct AndPredicate {
-    // not_predicate: NotPrediaate,
+pub struct AndPredicate<'a, Ext: ExternalCall> {
+    ext: &'a mut Ext,
 }
 
-impl AndPredicate {
+impl<'a, Ext: ExternalCall> AndPredicate<'a, Ext> {
     // TODO これ derive したいね。
     fn create_property_from_input(&self, _input: Vec<Vec<u8>>) -> Property {
-            Property {
-                predicate_address: ext_address(),
-                inputs: _input
-            }
+        Property {
+            predicate_address: ext_address(),
+            inputs: _input,
+        }
     }
 }
 
-impl LogicalConnective for AndPredicate {
+impl<'a, Ext: ExternalCall> LogicalConnective<AddressOf<Ext>> for AndPredicate<'a, Ext> {
     /// @dev Validates a child node of And property in game tree.
     fn is_valid_challenge(
         &self,
@@ -33,7 +33,9 @@ impl LogicalConnective for AndPredicate {
     }
 }
 
-impl DecidablePredicate for AndPredicate {
+impl<'a, Ext: ExternalCall> DecidablePredicate<AddressOf<Ext>>
+    for AndPredicate<'a, Ext: ExternalCall>
+{
     ///  @dev Can decide true when all child properties are decided true
     fn decide_true(&self, _inputs: Vec<Vec<u8>>) {
         // for (uint256 i = 0; i < inner_properties.length; i++) {
