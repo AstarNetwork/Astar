@@ -33,9 +33,7 @@ impl<'a, Ext: ExternalCall> LogicalConnective<AddressOf<Ext>> for AndPredicate<'
     }
 }
 
-impl<'a, Ext: ExternalCall> DecidablePredicate<AddressOf<Ext>>
-    for AndPredicate<'a, Ext: ExternalCall>
-{
+impl<'a, Ext: ExternalCall> DecidablePredicate for AndPredicate<'a, Ext> {
     ///  @dev Can decide true when all child properties are decided true
     fn decide_true(&self, _inputs: Vec<Vec<u8>>) {
         // for (uint256 i = 0; i < inner_properties.length; i++) {
