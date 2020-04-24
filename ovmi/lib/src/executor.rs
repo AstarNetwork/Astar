@@ -2,7 +2,7 @@ use super::*;
 use crate::compiled_predicates::*;
 use crate::predicates::*;
 use codec::Codec;
-use core::fmt::Display;
+use core::fmt::{Debug, Display};
 use core::marker::PhantomData;
 use snafu::{ResultExt, Snafu};
 
@@ -12,7 +12,7 @@ use crate::predicates::AtomicPredicate;
 #[cfg_attr(feature = "std", derive(Debug))]
 pub enum ExecError<Address> {
     #[snafu(display("Require error: {}", msg))]
-    RequireError { msg: String },
+    Require { msg: &'static str },
     #[snafu(display(
         "Can not call method error: you call {}, expected {}",
         call_method,
@@ -20,18 +20,20 @@ pub enum ExecError<Address> {
     ))]
     CallMethod {
         call_method: PredicateCallInputs<Address>,
-        expected: String,
+        expected: &'static str,
     },
+    #[snafu(display("Codec error: type name is {}", type_name))]
+    CodecError { type_name: &'static str },
     #[snafu(display("Unexpected error: {}", msg))]
-    UnexpectedError { msg: String },
+    Unexpected { msg: &'static str },
 }
 
 pub type ExecResult<Address> = core::result::Result<bool, ExecError<Address>>;
 pub type AddressOf<Ext> = <Ext as ExternalCall>::Address;
 
 pub trait ExternalCall {
-    type Address: Codec;
-    type Hash: Codec;
+    type Address: Codec + Debug + Clone + Eq + PartialEq;
+    type Hash: Codec + Debug + Clone + Eq + PartialEq;
 
     // relation const any atomic predicate address.
     const NotPredicate: Self::Address;
@@ -45,10 +47,10 @@ pub trait ExternalCall {
     ) -> ExecResult<Self::Address>;
 
     /// Returns a reference to the account id of the caller.
-    fn ext_caller(&self) -> &Self::Address;
+    fn ext_caller(&self) -> Self::Address;
 
     /// Returns a reference to the account id of the current contract.
-    fn ext_address(&self) -> &Self::Address;
+    fn ext_address(&self) -> Self::Address;
 
     // Notes a call other storage.
     // Only return true or false.
@@ -94,7 +96,7 @@ where
             }
             other => Err(ExecError::CallMethod {
                 call_method: other,
-                expected: "AtomicPredicateCallInputs".to_string(),
+                expected: "AtomicPredicateCallInputs",
             }),
         }
     }

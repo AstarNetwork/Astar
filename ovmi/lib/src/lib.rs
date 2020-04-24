@@ -40,14 +40,26 @@
 
 #![warn(missing_docs)]
 #![cfg_attr(not(feature = "std"), no_std)]
+#![macro_use]
 
-pub mod prepare;
+#[macro_export]
+macro_rules! require {
+    ($val:expr) => {
+        if !($val) {
+            return Err(ExecError::Require {
+                msg: "Required error by: $val",
+            });
+        }
+    };
+}
+
+mod compiled_predicates;
 pub mod executor;
 pub mod predicates;
-mod compiled_predicates;
+pub mod prepare;
+use codec::{Decode, Encode};
 pub use compiled_predicates::CompiledPredicate;
 pub use prepare::compile_from_json;
-use codec::{Encode, Decode};
 
 #[cfg(test)]
 mod tests;

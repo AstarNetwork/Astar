@@ -1,5 +1,5 @@
-use super::*;
 use super::executor::*;
+use super::*;
 
 type Address = u64;
 struct MockExternalCall;
@@ -37,5 +37,4 @@ impl ExternalCall for MockExternalCall {
 
 struct MockExecutor {
     call: compiled_predicates::PredicateType,
-
 }

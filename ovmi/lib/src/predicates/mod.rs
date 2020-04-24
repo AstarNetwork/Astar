@@ -2,20 +2,14 @@
 //! Executable Predicates instanced from Compiled Predicates and Atomic Predicates.
 //!
 //!
-
 use crate::executor::ExecResult;
 use codec::{Decode, Encode};
 use core::fmt;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
 
-macro_rules! require {
-    ($val:expr) => {
-        if not $val {
-            return ExecError::RequireError{msg: "Required error by: $val"}
-        }
-    };
-}
+mod and;
+mod not;
 
 #[derive(Clone, Eq, PartialEq, Encode, Decode, Hash, derive_more::Display)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize, Debug))]
@@ -180,7 +174,7 @@ pub struct Property<Address> {
     /// Indicates the address of Predicate.
     predicate_address: Address,
     /// Every input are bytes. Each Atomic Predicate decode inputs to the specific type.
-    inputs: Vec<u8>,
+    inputs: Vec<Vec<u8>>,
 }
 
 pub trait UniversalAdjudication<Hash> {
