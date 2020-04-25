@@ -1,3 +1,4 @@
+use crate::compiled_predicates::*;
 use crate::executor::*;
 use crate::predicates::*;
 use crate::*;
@@ -6,7 +7,10 @@ use crate::*;
 pub struct ExecutablePredicate<'a, Ext: ExternalCall> {
     pub ext: &'a Ext,
     pub payout: AddressOf<Ext>,
-    pub constants: Option<BTreeMap<HashOf<Ext>, Vec<AddressOf<Ext>>>>,
+    pub code: CompiledPredicate,
+    pub constants: BTreeMap<HashOf<Ext>, VarType>,
+    pub address_inputs: BTreeMap<HashOf<Ext>, AddressOf<Ext>>,
+    pub bytes_inputs: BTreeMap<HashOf<Ext>, Vec<u8>>,
 }
 
 impl<'a, Ext: ExternalCall> CompiledPredicateInterface<AddressOf<Ext>>

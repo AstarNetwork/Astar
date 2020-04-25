@@ -56,7 +56,7 @@ macro_rules! require {
 pub extern crate alloc;
 use alloc::collections::btree_map::BTreeMap;
 
-mod compiled_predicates;
+pub mod compiled_predicates;
 pub mod executor;
 pub mod predicates;
 pub mod prepare;

@@ -46,7 +46,8 @@ pub trait ExternalCall {
         + Clone
         + Copy
         + Eq
-        + PartialEq;
+        + PartialEq
+        + Ord;
     type Hashing: Hasher<Out = Self::Hash>;
 
     // relation const any atomic predicate address.
