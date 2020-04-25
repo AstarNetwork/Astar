@@ -19,32 +19,15 @@ pub enum PredicateType {
     NormalInput,
     VariableInput,
     SelfInput,
+}
+
+#[derive(Clone, Eq, PartialEq, Encode, Decode, Hash)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize, Debug))]
+#[cfg_attr(feature = "std", serde(rename_all = "camelCase"))]
+pub enum VarType {
     Address,
     Bytes,
 }
-
-// impl fmt::Display for PredicateType {
-//     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> fmt::Result {
-//         let state = match self {
-//             PredicateType::CompiledPredicate => "CompiledPredicate",
-//             PredicateType::IntermediateCompiledPredicate => "IntermediateCompiledPredicate",
-//             PredicateType::AtomicProposition => "AtomicProposition",
-//             PredicateType::AtomicPredicateCall => "AtomicPredicateCall",
-//             PredicateType::InputPredicateCall => "InputPredicateCall",
-//             PredicateType::VariablePredicateCall => "VariablePredicateCall",
-//             PredicateType::CompiledPredicateCall => "CompiledPredicateCall",
-//             PredicateType::CompiledInput => "CompiledInput",
-//             PredicateType::ConstantInput => "ConstantInput",
-//             PredicateType::LabelInput => "LabelInput",
-//             PredicateType::NormalInput => "NormalInput",
-//             PredicateType::VariableInput => "VariableInput",
-//             PredicateType::SelfInput => "SelfInput",
-//             PredicateType::Address => "Address",
-//             PredicateType::Bytes => "Bytes",
-//         };
-//         write!(f, "{}", state)
-//     }
-// }
 
 pub enum CallablePredicate {
     CompiledPredicate(CompiledPredicate),
@@ -67,7 +50,7 @@ pub struct CompiledPredicate {
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize, Debug))]
 #[cfg_attr(feature = "std", serde(rename_all = "camelCase"))]
 pub struct ConstantVariable {
-    pub var_type: String, //'address' | 'bytes'
+    pub var_type: VarType,
     pub name: String,
 }
 

@@ -19,9 +19,10 @@ pub fn validate(code: Vec<u8>) -> Result<(), Error> {
 }
 
 pub fn executable_from_compiled<'a, Ext: ExternalCall>(
-    _code: CompiledPredicate,
-    payout: AddressOf<Ext>,
     ext: &'a Ext,
+    code: CompiledPredicate,
+    payout: AddressOf<Ext>,
+    inputs: Vec<Vec<u8>>,
 ) -> ExecutablePredicate<'a, Ext> {
     ExecutablePredicate { ext, payout }
 }

@@ -5,6 +5,7 @@ use crate::predicates::*;
 pub struct ExecutablePredicate<'a, Ext: ExternalCall> {
     pub ext: &'a Ext,
     pub payout: AddressOf<Ext>,
+    // pub constants: BTreeMap<&'static str, Vec<AddressOf<Ext>>>,
 }
 
 impl<'a, Ext: ExternalCall> CompiledPredicate<AddressOf<Ext>> for ExecutablePredicate<'a, Ext> {

@@ -6,8 +6,6 @@ use core::fmt::{Debug, Display};
 use core::marker::PhantomData;
 use snafu::{ResultExt, Snafu};
 
-use crate::predicates::AtomicPredicate;
-
 #[derive(Snafu)]
 #[cfg_attr(feature = "std", derive(Debug))]
 pub enum ExecError<Address> {

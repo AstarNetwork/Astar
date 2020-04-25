@@ -119,7 +119,7 @@ fn ownership_predicate_test() {
             property_inputs: vec![],
         }],
         constants: Some(vec![ConstantVariable {
-            var_type: "bytes".to_string(),
+            var_type: VarType::Bytes,
             name: "secp256k1".to_string(),
         }]),
         entry_point: "OwnershipT".to_string(),
