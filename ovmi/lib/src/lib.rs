@@ -31,12 +31,70 @@
 //! # Loading and Validation
 //! Before execution, a module must be validated. This process checks that the module is well-formed and makes only allowed operations.
 //!
-//! # Instantiation
-//! TODO
+//! You can get the binary of predicate from json.
+//! The json format is refer to: https://github.com/cryptoeconomicslab/wakkanay/blob/master/packages/ovm-transpiler/src/CompiledPredicate.ts
+//! ```ignore
+//! use ovmi::prepare;
+//! let compiled_predicate = prepare::compile_from_json("<compiled_predicate_json>").unwrap();
+//! let binary_predicate = compiled_predicate::encode();
 //!
-//! # Execution
-//! TODO
+//! if let Err(err) = prepare::validate(binary_predicate) {
+//!     panic!(err);
+//! }
+//! ```
 //!
+//! # Set external environments and.
+//!
+//! ## Example) Compiled Predicate Execute
+//! ```ignore
+//! use ovmi::prepare;
+//!
+//! type AccountId = u64;
+//!
+//! // Setting External environment.
+//! struct MockExternalCall{..};
+//! impl ExternalCall for MockExternalCall {
+//!     ...
+//! }
+//!
+//! fn call_execute(inputs: Vec<Vec<u8>>, inputs: PredicateCallInputs<AccountId>) -> ExecResult<AccountId> {
+//!     let compiled_predicate = prepare::compile_from_json("<compiled_predicate_json>").unwrap();
+//!     let (payout, address_input, bytes_inputs) = prepare::parse_inputs(inputs);
+//!     let ext = MockExternalCall{..};
+//!     let executable = prepare::executable_from_compiled(
+//!         &mut ext,
+//!         code: compiled_predicate,
+//!         payout,
+//!         address_inputs,
+//!         bytes_inputs,
+//!     );
+//!     // execute and return value.
+//!     CompiledExecutor::execute(&executable, inputs)
+//! }
+//! ```
+//!
+//! ## Example) Logical Connective Predicate Execute
+//! ```ignore
+//! use ovmi::prepare;
+//!
+//! type AccountId = u64;
+//!
+//! // Setting External environment.
+//! struct MockExternalCall{..};
+//! impl ExternalCall for MockExternalCall {
+//!     ...
+//! }
+//!
+//! fn call_execute(address: AccountId, inputs: PredicateCallInputs<AccountId>) -> ExecResult<AccountId> {
+//!     let ext = MockExternalCall{..};
+//!     let executable = prepare::logical_connective_executable_from_address(
+//!         &mut ext,
+//!         address,
+//!     );
+//!     // execute and return value.
+//!     LogicalConnectiveExecutor::execute(&executable, inputs)
+//! }
+//! ```
 
 #![warn(missing_docs)]
 #![cfg_attr(not(feature = "std"), no_std)]

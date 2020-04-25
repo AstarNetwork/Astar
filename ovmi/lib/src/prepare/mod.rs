@@ -54,7 +54,6 @@ pub fn executable_from_compiled<'a, Ext: ExternalCall>(
     }
 }
 
-// TODO atomic predicate from address.
 pub fn logical_connective_executable_from_address<'a, Ext: ExternalCall>(
     ext: &'a mut Ext,
     address: AddressOf<Ext>,
