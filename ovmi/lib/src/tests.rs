@@ -2,8 +2,11 @@ use crate::executor::*;
 use crate::predicates::PredicateCallInputs;
 use crate::*;
 
+use primitive_types::H256;
+use sp_runtime::traits::BlakeTwo256;
+
 type Address = u64;
-type Hash = u64;
+type Hash = H256;
 struct MockExternalCall;
 
 const Caller: Address = 1001;
@@ -12,6 +15,7 @@ const PredicateX: Address = 101;
 impl ExternalCall for MockExternalCall {
     type Address = Address;
     type Hash = Hash;
+    type Hashing = BlakeTwo256;
     const NotPredicate: Address = 1;
     const AndPredicate: Address = 2;
 

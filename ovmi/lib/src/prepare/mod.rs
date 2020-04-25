@@ -24,5 +24,9 @@ pub fn executable_from_compiled<'a, Ext: ExternalCall>(
     payout: AddressOf<Ext>,
     inputs: Vec<Vec<u8>>,
 ) -> ExecutablePredicate<'a, Ext> {
-    ExecutablePredicate { ext, payout }
+    ExecutablePredicate {
+        ext,
+        payout,
+        constants: None,
+    }
 }

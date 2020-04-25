@@ -1,14 +1,17 @@
 use crate::executor::*;
 use crate::predicates::*;
+use crate::*;
 
 // Compiled Predicate transpiles to this structure.
 pub struct ExecutablePredicate<'a, Ext: ExternalCall> {
     pub ext: &'a Ext,
     pub payout: AddressOf<Ext>,
-    // pub constants: BTreeMap<&'static str, Vec<AddressOf<Ext>>>,
+    pub constants: Option<BTreeMap<HashOf<Ext>, Vec<AddressOf<Ext>>>>,
 }
 
-impl<'a, Ext: ExternalCall> CompiledPredicate<AddressOf<Ext>> for ExecutablePredicate<'a, Ext> {
+impl<'a, Ext: ExternalCall> CompiledPredicateInterface<AddressOf<Ext>>
+    for ExecutablePredicate<'a, Ext>
+{
     fn payout_contract_address(&self) -> AddressOf<Ext> {
         self.payout.clone()
     }

@@ -189,8 +189,8 @@ pub trait Utils<Hash> {
     fn get_property_id(&self) -> Hash;
 }
 
-pub trait BaseAtomicPredicate<Address, Hash>:
-    AtomicPredicate<Address> + DecidablePredicate<Address>
+pub trait BaseAtomicPredicateInterface<Address, Hash>:
+    AtomicPredicateInterface<Address> + DecidablePredicateInterface<Address>
 {
     type UniversalAdjudication: UniversalAdjudication<Hash>;
     type Utils: Utils<Hash>;
@@ -204,7 +204,7 @@ pub trait BaseAtomicPredicate<Address, Hash>:
         _inputs: Vec<Vec<u8>>,
         _witness: Vec<Vec<u8>>,
     ) -> ExecResult<Address> {
-        BaseAtomicPredicate::decide(self, _inputs)
+        BaseAtomicPredicateInterface::decide(self, _inputs)
     }
 
     fn decide_true(&self, _inputs: Vec<Vec<u8>>) {
@@ -220,12 +220,12 @@ pub trait BaseAtomicPredicate<Address, Hash>:
     }
 }
 
-pub trait AtomicPredicate<Address> {
+pub trait AtomicPredicateInterface<Address> {
     fn decide_true(&self, _inputs: Vec<Vec<u8>>);
     fn decide(&self, _inputs: Vec<Vec<u8>>) -> ExecResult<Address>;
 }
 
-pub trait DecidablePredicate<Address> {
+pub trait DecidablePredicateInterface<Address> {
     fn decide_with_witness(
         &self,
         _inputs: Vec<Vec<u8>>,
@@ -233,7 +233,7 @@ pub trait DecidablePredicate<Address> {
     ) -> ExecResult<Address>;
 }
 
-pub trait CompiledPredicate<Address> {
+pub trait CompiledPredicateInterface<Address> {
     fn payout_contract_address(&self) -> Address;
 
     fn is_valid_challenge(
@@ -259,7 +259,7 @@ pub trait CompiledPredicate<Address> {
     ) -> ExecResult<Address>;
 }
 
-pub trait LogicalConnective<Address> {
+pub trait LogicalConnectiveInterface<Address> {
     fn is_valid_challenge(
         &self,
         _inputs: Vec<Vec<u8>>,

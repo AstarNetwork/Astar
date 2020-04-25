@@ -14,7 +14,7 @@ impl<'a, Ext: ExternalCall> NotPredicate<'a, Ext> {
     }
 }
 
-impl<'a, Ext: ExternalCall> LogicalConnective<AddressOf<Ext>> for NotPredicate<'a, Ext> {
+impl<'a, Ext: ExternalCall> LogicalConnectiveInterface<AddressOf<Ext>> for NotPredicate<'a, Ext> {
     /// @dev Validates a child node of Not property in game tree.
     fn is_valid_challenge(
         &self,
@@ -27,7 +27,7 @@ impl<'a, Ext: ExternalCall> LogicalConnective<AddressOf<Ext>> for NotPredicate<'
         Ok(true)
     }
 }
-impl<'a, Ext: ExternalCall> DecidablePredicate<AddressOf<Ext>> for NotPredicate<'a, Ext> {
+impl<'a, Ext: ExternalCall> DecidablePredicateInterface<AddressOf<Ext>> for NotPredicate<'a, Ext> {
     /// @dev Decides true
     fn decide_with_witness(
         &self,

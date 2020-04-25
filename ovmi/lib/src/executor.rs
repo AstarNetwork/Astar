@@ -4,6 +4,7 @@ use crate::predicates::*;
 use codec::Codec;
 use core::fmt::{Debug, Display};
 use core::marker::PhantomData;
+pub use hash_db::Hasher;
 use snafu::{ResultExt, Snafu};
 
 #[derive(Snafu)]
@@ -29,10 +30,24 @@ pub enum ExecError<Address> {
 pub type ExecResult<Address> = core::result::Result<bool, ExecError<Address>>;
 pub type ExecResultT<T, Address> = core::result::Result<T, ExecError<Address>>;
 pub type AddressOf<Ext> = <Ext as ExternalCall>::Address;
+pub type HashOf<Ext> = <Ext as ExternalCall>::Hash;
+pub type HashingOf<Ext> = <Ext as ExternalCall>::Hashing;
 
 pub trait ExternalCall {
     type Address: Codec + Debug + Clone + Eq + PartialEq;
-    type Hash: Codec + Debug + Clone + Eq + PartialEq;
+    type Hash: AsRef<[u8]>
+        + AsMut<[u8]>
+        + Default
+        + Codec
+        + Debug
+        + core::hash::Hash
+        + Send
+        + Sync
+        + Clone
+        + Copy
+        + Eq
+        + PartialEq;
+    type Hashing: Hasher<Out = Self::Hash>;
 
     // relation const any atomic predicate address.
     const NotPredicate: Self::Address;
@@ -73,7 +88,7 @@ pub struct AtomicExecutor<P, Ext> {
 
 impl<P, Ext> OvmExecutor<P> for AtomicExecutor<P, Ext>
 where
-    P: predicates::AtomicPredicate<AddressOf<Ext>>,
+    P: predicates::AtomicPredicateInterface<AddressOf<Ext>>,
     Ext: ExternalCall,
 {
     type ExtCall = Ext;

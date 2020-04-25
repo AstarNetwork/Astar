@@ -14,7 +14,7 @@ impl<'a, Ext: ExternalCall> AndPredicate<'a, Ext> {
     }
 }
 
-impl<'a, Ext: ExternalCall> LogicalConnective<AddressOf<Ext>> for AndPredicate<'a, Ext> {
+impl<'a, Ext: ExternalCall> LogicalConnectiveInterface<AddressOf<Ext>> for AndPredicate<'a, Ext> {
     /// @dev Validates a child node of And property in game tree.
     fn is_valid_challenge(
         &self,
@@ -40,7 +40,7 @@ impl<'a, Ext: ExternalCall> LogicalConnective<AddressOf<Ext>> for AndPredicate<'
     }
 }
 
-impl<'a, Ext: ExternalCall> DecidablePredicate<AddressOf<Ext>> for AndPredicate<'a, Ext> {
+impl<'a, Ext: ExternalCall> DecidablePredicateInterface<AddressOf<Ext>> for AndPredicate<'a, Ext> {
     //  @dev Can decide true when all child properties are decided true
     // fn decide_true(&self, _inputs: Vec<Vec<u8>>) {
     // for (uint256 i = 0; i < inner_properties.length; i++) {
