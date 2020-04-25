@@ -2,7 +2,7 @@ use crate::executor::*;
 use crate::predicates::*;
 
 pub struct AndPredicate<'a, Ext: ExternalCall> {
-    ext: &'a mut Ext,
+    pub ext: &'a mut Ext,
 }
 
 impl<'a, Ext: ExternalCall> AndPredicate<'a, Ext> {
@@ -25,7 +25,7 @@ impl<'a, Ext: ExternalCall> LogicalConnectiveInterface<AddressOf<Ext>> for AndPr
         // challenge_input is index of child property
         require!((&challenge_inputs).len() > 0);
         let index: u128 = Decode::decode(&mut &challenge_inputs[0][..])
-            .map_err(|err| ExecError::CodecError { type_name: "u128" })?;
+            .map_err(|_| ExecError::CodecError { type_name: "u128" })?;
         let index: usize = index as usize;
 
         // challenge should be not(p[index])
@@ -49,7 +49,7 @@ impl<'a, Ext: ExternalCall> DecidablePredicateInterface<AddressOf<Ext>> for AndP
     ) -> ExecResult<AddressOf<Ext>> {
         for input in inputs.iter() {
             let property: PropertyOf<Ext> =
-                Decode::decode(&mut &input[..]).map_err(|err| ExecError::CodecError {
+                Decode::decode(&mut &input[..]).map_err(|_| ExecError::CodecError {
                     type_name: "Property<Ext>",
                 })?;
             require_with_message!(

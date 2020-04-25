@@ -2,7 +2,7 @@ use crate::executor::*;
 use crate::predicates::*;
 
 pub struct NotPredicate<'a, Ext: ExternalCall> {
-    ext: &'a mut Ext,
+    pub ext: &'a mut Ext,
 }
 
 impl<'a, Ext: ExternalCall> NotPredicate<'a, Ext> {

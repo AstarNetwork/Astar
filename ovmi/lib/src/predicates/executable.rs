@@ -4,8 +4,8 @@ use crate::predicates::*;
 use crate::*;
 
 // Compiled Predicate transpiles to this structure.
-pub struct ExecutablePredicate<'a, Ext: ExternalCall> {
-    pub ext: &'a Ext,
+pub struct CompiledExecutable<'a, Ext: ExternalCall> {
+    pub ext: &'a mut Ext,
     pub payout: AddressOf<Ext>,
     pub code: CompiledPredicate,
     pub constants: BTreeMap<HashOf<Ext>, VarType>,
@@ -14,7 +14,7 @@ pub struct ExecutablePredicate<'a, Ext: ExternalCall> {
 }
 
 impl<'a, Ext: ExternalCall> CompiledPredicateInterface<AddressOf<Ext>>
-    for ExecutablePredicate<'a, Ext>
+    for CompiledExecutable<'a, Ext>
 {
     fn payout_contract_address(&self) -> AddressOf<Ext> {
         self.payout.clone()

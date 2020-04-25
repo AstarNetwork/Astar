@@ -2,7 +2,7 @@
 //! Executable Predicates instanced from Compiled Predicates and Atomic Predicates.
 //!
 //!
-use crate::executor::{ExecResult, ExecResultT, ExternalCall, MaybeAddress, MaybeHash};
+use crate::executor::{AddressOf, ExecResult, ExecResultT, ExternalCall};
 use codec::{Decode, Encode};
 use core::fmt;
 #[cfg(feature = "std")]
@@ -12,15 +12,44 @@ mod and;
 mod executable;
 mod not;
 pub use and::AndPredicate;
-pub use executable::ExecutablePredicate;
+pub use executable::CompiledExecutable;
 pub use not::NotPredicate;
 
 // #[derive(Clone, Eq, PartialEq, Encode, Decode, Hash, derive_more::Display)]
 // #[cfg_attr(feature = "std", derive(Serialize, Deserialize, Debug))]
-// pub enum AtomicExecutablePredicate<'a, Ext: ExternalCall> {
-//     And(AndPredicate<'a, Ext>),
-//     Not(NotPredicate<'a, Ext>),
+// pub enum AtomicExecutable<'a, Ext: ExternalCall> {
+//     None,
 // }
+
+pub enum LogicalConnectiveExecutable<'a, Ext: ExternalCall> {
+    And(AndPredicate<'a, Ext>),
+    Not(NotPredicate<'a, Ext>),
+}
+
+impl<'a, Ext: ExternalCall> LogicalConnectiveInterface<AddressOf<Ext>>
+    for LogicalConnectiveExecutable<'a, Ext>
+{
+    fn is_valid_challenge(
+        &self,
+        inputs: Vec<Vec<u8>>,
+        challenge_inputs: Vec<Vec<u8>>,
+        challenge: Property<AddressOf<Ext>>,
+    ) -> ExecResult<AddressOf<Ext>> {
+        match self {
+            LogicalConnectiveExecutable::And(and) => {
+                and.is_valid_challenge(inputs, challenge_inputs, challenge)
+            }
+            LogicalConnectiveExecutable::Not(not) => {
+                not.is_valid_challenge(inputs, challenge_inputs, challenge)
+            }
+        }
+    }
+}
+
+pub enum DeciableExecutable<'a, Ext: ExternalCall> {
+    And(AndPredicate<'a, Ext>),
+    Not(NotPredicate<'a, Ext>),
+}
 
 #[derive(Clone, Eq, PartialEq, Encode, Decode, Hash, derive_more::Display)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize, Debug))]

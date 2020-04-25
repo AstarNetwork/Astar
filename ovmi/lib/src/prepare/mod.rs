@@ -1,5 +1,5 @@
 use crate::executor::*;
-use crate::predicates::{ExecutablePredicate, NotPredicate};
+use crate::predicates::*;
 use crate::*;
 
 mod errors;
@@ -27,12 +27,12 @@ pub enum VarValue<Address> {
 }
 
 pub fn executable_from_compiled<'a, Ext: ExternalCall>(
-    ext: &'a Ext,
+    ext: &'a mut Ext,
     code: CompiledPredicate,
     payout: AddressOf<Ext>,
     address_inputs: BTreeMap<HashOf<Ext>, AddressOf<Ext>>,
     bytes_inputs: BTreeMap<HashOf<Ext>, Vec<u8>>,
-) -> ExecutablePredicate<'a, Ext> {
+) -> CompiledExecutable<'a, Ext> {
     // mapping constants[ hash(name) ] = var_type.
     let constants = code.constants.clone().map_or(BTreeMap::new(), |var| {
         var.iter()
@@ -44,7 +44,7 @@ pub fn executable_from_compiled<'a, Ext: ExternalCall>(
             })
             .collect::<BTreeMap<HashOf<Ext>, VarType>>()
     });
-    ExecutablePredicate {
+    CompiledExecutable {
         ext,
         payout,
         code,
@@ -55,12 +55,14 @@ pub fn executable_from_compiled<'a, Ext: ExternalCall>(
 }
 
 // TODO atomic predicate from address.
-// pub fn executable_from_atomic<'a, Ext: ExternalCall>(
-//     ext: &'a Ext,
-//     address: AddressOf<Ext>,
-// ) -> AtomicExecutablePredicate<'a, Ext> {
-//     match address {
-//         Ext::NotPredicate => AtomicExecutablePredicate::Not(NotPredicate {ext}),
-//         Ext:AndPredicate => AtomicExecutablePredicate::And(AndPredicate {ext}),
-//     }
-// }
+pub fn logical_connective_executable_from_address<'a, Ext: ExternalCall>(
+    ext: &'a mut Ext,
+    address: AddressOf<Ext>,
+) -> Option<LogicalConnectiveExecutable<'a, Ext>> where
+{
+    match address {
+        x if x == Ext::NotPredicate => Some(LogicalConnectiveExecutable::Not(NotPredicate { ext })),
+        x if x == Ext::AndPredicate => Some(LogicalConnectiveExecutable::And(AndPredicate { ext })),
+        _ => None,
+    }
+}
