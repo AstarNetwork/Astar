@@ -46,8 +46,19 @@
 macro_rules! require {
     ($val:expr) => {
         if !($val) {
-            return Err(ExecError::Require {
+            return Err(crate::executor::ExecError::Require {
                 msg: "Required error by: $val",
+            });
+        }
+    };
+}
+
+#[macro_export]
+macro_rules! require_with_message {
+    ($val:expr, $message:expr) => {
+        if !($val) {
+            return Err(crate::executor::ExecError::Require {
+                msg: r#"Required error by: $val, message: $message"#,
             });
         }
     };

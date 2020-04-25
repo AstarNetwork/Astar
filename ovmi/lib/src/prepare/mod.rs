@@ -1,5 +1,5 @@
 use crate::executor::*;
-use crate::predicates::ExecutablePredicate;
+use crate::predicates::{ExecutablePredicate, NotPredicate};
 use crate::*;
 
 mod errors;
@@ -53,3 +53,14 @@ pub fn executable_from_compiled<'a, Ext: ExternalCall>(
         bytes_inputs,
     }
 }
+
+// TODO atomic predicate from address.
+// pub fn executable_from_atomic<'a, Ext: ExternalCall>(
+//     ext: &'a Ext,
+//     address: AddressOf<Ext>,
+// ) -> AtomicExecutablePredicate<'a, Ext> {
+//     match address {
+//         Ext::NotPredicate => AtomicExecutablePredicate::Not(NotPredicate {ext}),
+//         Ext:AndPredicate => AtomicExecutablePredicate::And(AndPredicate {ext}),
+//     }
+// }

@@ -2,7 +2,7 @@
 //! Executable Predicates instanced from Compiled Predicates and Atomic Predicates.
 //!
 //!
-use crate::executor::{ExecResult, ExecResultT};
+use crate::executor::{ExecResult, ExecResultT, ExternalCall, MaybeAddress, MaybeHash};
 use codec::{Decode, Encode};
 use core::fmt;
 #[cfg(feature = "std")]
@@ -14,6 +14,13 @@ mod not;
 pub use and::AndPredicate;
 pub use executable::ExecutablePredicate;
 pub use not::NotPredicate;
+
+// #[derive(Clone, Eq, PartialEq, Encode, Decode, Hash, derive_more::Display)]
+// #[cfg_attr(feature = "std", derive(Serialize, Deserialize, Debug))]
+// pub enum AtomicExecutablePredicate<'a, Ext: ExternalCall> {
+//     And(AndPredicate<'a, Ext>),
+//     Not(NotPredicate<'a, Ext>),
+// }
 
 #[derive(Clone, Eq, PartialEq, Encode, Decode, Hash, derive_more::Display)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize, Debug))]
@@ -123,10 +130,6 @@ pub enum CompiledPredicateCallInputs<Address> {
         challenge_inputs: Vec<Vec<u8>>,
         challenge: Property<Address>,
     },
-    GetChild {
-        inputs: Vec<Vec<u8>>,
-        challenge_input: Vec<Vec<u8>>,
-    },
     Decide {
         inputs: Vec<Vec<u8>>,
         witness: Vec<Vec<u8>>,
@@ -149,10 +152,6 @@ impl<Address> fmt::Display for CompiledPredicateCallInputs<Address> {
                 challenge_inputs: _,
                 challenge: _,
             } => "IsValidChallenge",
-            CompiledPredicateCallInputs::GetChild {
-                inputs: _,
-                challenge_input: _,
-            } => "GetChild",
             CompiledPredicateCallInputs::Decide {
                 inputs: _,
                 witness: _,
@@ -182,46 +181,46 @@ pub struct Property<Address> {
 }
 
 pub trait UniversalAdjudication<Hash> {
-    fn set_predicate_decision(&self, game_id: Hash, decision: bool);
+    fn ext_set_predicate_decision(&self, game_id: Hash, decision: bool);
 }
 
 pub trait Utils<Hash> {
-    fn get_property_id(&self) -> Hash;
+    fn ext_get_property_id(&self) -> Hash;
 }
 
 pub trait BaseAtomicPredicateInterface<Address, Hash>:
     AtomicPredicateInterface<Address> + DecidablePredicateInterface<Address>
 {
-    type UniversalAdjudication: UniversalAdjudication<Hash>;
-    type Utils: Utils<Hash>;
-
     fn decide(&self, _inputs: Vec<Vec<u8>>) -> ExecResult<Address> {
         return Ok(false);
     }
 
     fn decide_with_witness(
         &self,
-        _inputs: Vec<Vec<u8>>,
+        inputs: Vec<Vec<u8>>,
         _witness: Vec<Vec<u8>>,
     ) -> ExecResult<Address> {
-        BaseAtomicPredicateInterface::decide(self, _inputs)
+        BaseAtomicPredicateInterface::decide(self, inputs)
     }
 
-    fn decide_true(&self, _inputs: Vec<Vec<u8>>) {
-        // require(decide(_inputs), "must decide true");
-        // types.Property memory property = types.Property({
-        //     predicateAddress: address(this),
-        //     inputs: _inputs,
-        // });
-        // Self::UniversalAdjudication::set_predicate_decision(
-        //     Self::Utils::get_property_id(property),
-        //     true
-        // );
+    fn decide_true(&self, inputs: Vec<Vec<u8>>) -> ExecResult<Address> {
+        let result_of_decide = BaseAtomicPredicateInterface::decide(self, inputs.clone())?;
+        require_with_message!(result_of_decide, "must decide true");
+        let property = Property {
+            predicate_address: self.ext_address(),
+            inputs: inputs,
+        };
+        self.ext_set_predicate_decision(self.ext_get_property_id(&property), true)?;
+        Ok(true)
     }
+
+    fn ext_address(&self) -> Address;
+    fn ext_set_predicate_decision(&self, game_id: Hash, decision: bool) -> ExecResult<Address>;
+    fn ext_get_property_id(&self, property: &Property<Address>) -> Hash;
 }
 
 pub trait AtomicPredicateInterface<Address> {
-    fn decide_true(&self, _inputs: Vec<Vec<u8>>);
+    fn decide_true(&self, _inputs: Vec<Vec<u8>>) -> ExecResult<Address>;
     fn decide(&self, _inputs: Vec<Vec<u8>>) -> ExecResult<Address>;
 }
 
@@ -251,7 +250,7 @@ pub trait CompiledPredicateInterface<Address> {
     ) -> ExecResultT<Property<Address>, Address>;
 
     fn decide(&self, _inputs: Vec<Vec<u8>>, _witness: Vec<Vec<u8>>) -> ExecResult<Address>;
-    fn decide_true(&self, _inputs: Vec<Vec<u8>>, _witness: Vec<Vec<u8>>);
+    fn decide_true(&self, _inputs: Vec<Vec<u8>>, _witness: Vec<Vec<u8>>) -> ExecResult<Address>;
     fn decide_with_witness(
         &self,
         _inputs: Vec<Vec<u8>>,

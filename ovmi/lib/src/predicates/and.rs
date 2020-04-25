@@ -41,31 +41,25 @@ impl<'a, Ext: ExternalCall> LogicalConnectiveInterface<AddressOf<Ext>> for AndPr
 }
 
 impl<'a, Ext: ExternalCall> DecidablePredicateInterface<AddressOf<Ext>> for AndPredicate<'a, Ext> {
-    //  @dev Can decide true when all child properties are decided true
-    // fn decide_true(&self, _inputs: Vec<Vec<u8>>) {
-    // for (uint256 i = 0; i < inner_properties.length; i++) {
-    //     require(
-    //         UniversalAdjudicationContract(uacAddress).isDecided(
-    //             innerProperties[i]
-    //         ),
-    //         "This property isn't true"
-    //     );
-    // }Property
-    // bytes[] memory inputs = new bytes[](innerProperties.length);
-    // for (uint256 i = 0; i < inner_properties.length; i++) {
-    //     inputs[i] = abi.encode(innerProperties[i]);
-    // }
-    // types.Property memory property = create_property_from_input(inputs);
-    // UniversalAdjudicationContract(uacAddress).setPredicateDecision(
-    //     utils.getPropertyId(property),
-    //     true
-    // );
-    // }
+    /// @dev Can decide true when all child properties are decided true
     fn decide_with_witness(
         &self,
-        _inputs: Vec<Vec<u8>>,
+        inputs: Vec<Vec<u8>>,
         _witness: Vec<Vec<u8>>,
     ) -> ExecResult<AddressOf<Ext>> {
+        for input in inputs.iter() {
+            let property: PropertyOf<Ext> =
+                Decode::decode(&mut &input[..]).map_err(|err| ExecError::CodecError {
+                    type_name: "Property<Ext>",
+                })?;
+            require_with_message!(
+                self.ext.ext_is_decided(&property),
+                "This property isn't true"
+            );
+        }
+        let property = self.create_property_from_input(inputs);
+        let property_id = self.ext.ext_get_property_id(&property);
+        self.ext.ext_set_predicate_decision(property_id, true)?;
         Ok(false)
     }
 }

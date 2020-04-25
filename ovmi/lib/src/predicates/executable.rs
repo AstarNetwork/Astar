@@ -46,7 +46,13 @@ impl<'a, Ext: ExternalCall> CompiledPredicateInterface<AddressOf<Ext>>
         Ok(true)
     }
 
-    fn decide_true(&self, _inputs: Vec<Vec<u8>>, _witness: Vec<Vec<u8>>) {}
+    fn decide_true(
+        &self,
+        _inputs: Vec<Vec<u8>>,
+        _witness: Vec<Vec<u8>>,
+    ) -> ExecResult<AddressOf<Ext>> {
+        Ok(true)
+    }
 
     fn decide_with_witness(
         &self,

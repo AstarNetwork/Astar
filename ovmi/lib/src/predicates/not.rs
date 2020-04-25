@@ -18,13 +18,13 @@ impl<'a, Ext: ExternalCall> LogicalConnectiveInterface<AddressOf<Ext>> for NotPr
     /// @dev Validates a child node of Not property in game tree.
     fn is_valid_challenge(
         &self,
-        _inputs: Vec<Vec<u8>>,
+        inputs: Vec<Vec<u8>>,
         _challenge_inputs: Vec<Vec<u8>>,
-        _challenge: Property<AddressOf<Ext>>,
+        challenge: Property<AddressOf<Ext>>,
     ) -> ExecResult<AddressOf<Ext>> {
         // The valid challenge of not(p) is p and _inputs[0] is p here
-        // return keccak256(_inputs[0]) == keccak256(abi.encode(_challenge));
-        Ok(true)
+        require!(inputs.len() > 0);
+        Ok(Ext::hash_of(&inputs[0]) == Ext::hash_of(&challenge))
     }
 }
 impl<'a, Ext: ExternalCall> DecidablePredicateInterface<AddressOf<Ext>> for NotPredicate<'a, Ext> {
