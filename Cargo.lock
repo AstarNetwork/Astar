@@ -3566,7 +3566,7 @@ checksum = "05da548ad6865900e60eaba7f589cc0783590a92e940c26953ff81ddbab2d677"
 
 [[package]]
 name = "plasm-cli"
-version = "0.8.1"
+version = "0.9.9"
 dependencies = [
  "frame-benchmarking-cli",
  "frame-system",
@@ -3614,7 +3614,7 @@ dependencies = [
 
 [[package]]
 name = "plasm-primitives"
-version = "0.8.1"
+version = "0.9.9"
 dependencies = [
  "sp-core",
  "sp-runtime",
@@ -3622,7 +3622,7 @@ dependencies = [
 
 [[package]]
 name = "plasm-rpc"
-version = "0.8.1"
+version = "0.9.9"
 dependencies = [
  "jsonrpc-core",
  "pallet-contracts-rpc",
@@ -3645,7 +3645,7 @@ dependencies = [
 
 [[package]]
 name = "plasm-runtime"
-version = "0.8.1"
+version = "0.9.9"
 dependencies = [
  "frame-executive",
  "frame-support",
