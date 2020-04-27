@@ -652,11 +652,6 @@
 <span id="652">652</span>
 <span id="653">653</span>
 <span id="654">654</span>
-<span id="655">655</span>
-<span id="656">656</span>
-<span id="657">657</span>
-<span id="658">658</span>
-<span id="659">659</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="comment">// Copyright 2018-2019 Parity Technologies (UK) Ltd.</span>
 <span class="comment">// This file is part of Substrate.</span>
@@ -674,16 +669,12 @@
 <span class="comment">// You should have received a copy of the GNU General Public License</span>
 <span class="comment">// along with Substrate.  If not, see &lt;http://www.gnu.org/licenses/&gt;.</span>
 
-<span class="attribute">#![<span class="ident">cfg_attr</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;bench&quot;</span>, <span class="ident">feature</span>(<span class="ident">test</span>))]</span>
-<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;bench&quot;</span>)]</span>
-<span class="kw">extern</span> <span class="kw">crate</span> <span class="ident">test</span>;
-
 <span class="kw">use</span> <span class="ident">bip39</span>::{<span class="ident">Language</span>, <span class="ident">Mnemonic</span>, <span class="ident">MnemonicType</span>};
 <span class="kw">use</span> <span class="ident">clap</span>::{<span class="ident">App</span>, <span class="ident">ArgMatches</span>, <span class="ident">SubCommand</span>};
 <span class="kw">use</span> <span class="ident">codec</span>::{<span class="ident">Decode</span>, <span class="ident">Encode</span>};
 <span class="kw">use</span> <span class="ident">hex_literal</span>::<span class="ident">hex</span>;
-<span class="kw">use</span> <span class="ident">node_primitives</span>::{<span class="ident">AccountId</span>, <span class="ident">Balance</span>, <span class="ident">Hash</span>, <span class="ident">Index</span>, <span class="ident">Signature</span>};
-<span class="kw">use</span> <span class="ident">node_runtime</span>::{<span class="ident">BalancesCall</span>, <span class="ident">Call</span>, <span class="ident">Runtime</span>, <span class="ident">SignedPayload</span>, <span class="ident">UncheckedExtrinsic</span>, <span class="ident">VERSION</span>};
+<span class="kw">use</span> <span class="ident">plasm_primitives</span>::{<span class="ident">AccountId</span>, <span class="ident">Balance</span>, <span class="ident">Hash</span>, <span class="ident">Index</span>, <span class="ident">Signature</span>};
+<span class="kw">use</span> <span class="ident">plasm_runtime</span>::{<span class="ident">BalancesCall</span>, <span class="ident">Call</span>, <span class="ident">Runtime</span>, <span class="ident">SignedPayload</span>, <span class="ident">UncheckedExtrinsic</span>, <span class="ident">VERSION</span>};
 <span class="kw">use</span> <span class="ident">sp_core</span>::{
     <span class="ident">crypto</span>::{<span class="ident">set_default_ss58_version</span>, <span class="ident">Ss58AddressFormat</span>, <span class="ident">Ss58Codec</span>},
     <span class="ident">ecdsa</span>, <span class="ident">ed25519</span>,
@@ -728,10 +719,10 @@
             <span class="kw">let</span> <span class="ident">public_key</span> <span class="op">=</span> <span class="self">Self</span>::<span class="ident">public_from_pair</span>(<span class="kw-2">&amp;</span><span class="ident">pair</span>);
             <span class="macro">println</span><span class="macro">!</span>(
                 <span class="string">&quot;Secret phrase `{}` is account:\n  \
-				Secret seed:      {}\n  \
-				Public key (hex): {}\n  \
-				Account ID:       {}\n  \
-				SS58 Address:     {}&quot;</span>,
+                Secret seed:      {}\n  \
+                Public key (hex): {}\n  \
+                Account ID:       {}\n  \
+                SS58 Address:     {}&quot;</span>,
                 <span class="ident">uri</span>,
                 <span class="ident">format_seed</span>::<span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span>(<span class="ident">seed</span>),
                 <span class="ident">format_public_key</span>::<span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span>(<span class="ident">public_key</span>.<span class="ident">clone</span>()),
@@ -742,10 +733,10 @@
             <span class="kw">let</span> <span class="ident">public_key</span> <span class="op">=</span> <span class="self">Self</span>::<span class="ident">public_from_pair</span>(<span class="kw-2">&amp;</span><span class="ident">pair</span>);
             <span class="macro">println</span><span class="macro">!</span>(
                 <span class="string">&quot;Secret Key URI `{}` is account:\n  \
-				Secret seed:      {}\n  \
-				Public key (hex): {}\n  \
-				Account ID:       {}\n  \
-				SS58 Address:     {}&quot;</span>,
+                Secret seed:      {}\n  \
+                Public key (hex): {}\n  \
+                Account ID:       {}\n  \
+                SS58 Address:     {}&quot;</span>,
                 <span class="ident">uri</span>,
                 <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">seed</span>) <span class="op">=</span> <span class="ident">seed</span> {
                     <span class="ident">format_seed</span>::<span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span>(<span class="ident">seed</span>)
@@ -762,10 +753,10 @@
             <span class="kw">let</span> <span class="ident">v</span> <span class="op">=</span> <span class="ident">network_override</span>.<span class="ident">unwrap_or</span>(<span class="ident">v</span>);
             <span class="macro">println</span><span class="macro">!</span>(
                 <span class="string">&quot;Public Key URI `{}` is account:\n  \
-				Network ID/version: {}\n  \
-				Public key (hex):   {}\n  \
-				Account ID:         {}\n  \
-				SS58 Address:       {}&quot;</span>,
+                Network ID/version: {}\n  \
+                Public key (hex):   {}\n  \
+                Account ID:         {}\n  \
+                SS58 Address:       {}&quot;</span>,
                 <span class="ident">uri</span>,
                 <span class="ident">String</span>::<span class="ident">from</span>(<span class="ident">v</span>),
                 <span class="ident">format_public_key</span>::<span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span>(<span class="ident">public_key</span>.<span class="ident">clone</span>()),
@@ -859,69 +850,69 @@
         .<span class="ident">version</span>(<span class="macro">env</span><span class="macro">!</span>(<span class="string">&quot;CARGO_PKG_VERSION&quot;</span>))
         .<span class="ident">args_from_usage</span>(
             <span class="string">&quot;
-			-e, --ed25519 &#39;Use Ed25519/BIP39 cryptography&#39;
-			-k, --secp256k1 &#39;Use SECP256k1/ECDSA/BIP39 cryptography&#39;
-			-s, --sr25519 &#39;Use Schnorr/Ristretto x25519/BIP39 cryptography&#39;
-			[network] -n, --network &lt;network&gt; &#39;Specify a network. One of substrate \
-									 (default), polkadot, kusama, dothereum, edgeware, or kulupu&#39;
-			[password] -p, --password &lt;password&gt; &#39;The password for the key&#39;
-			--password-interactive &#39;You will be prompted for the password for the key.&#39;
-		&quot;</span>,
+            -e, --ed25519 &#39;Use Ed25519/BIP39 cryptography&#39;
+            -k, --secp256k1 &#39;Use SECP256k1/ECDSA/BIP39 cryptography&#39;
+            -s, --sr25519 &#39;Use Schnorr/Ristretto x25519/BIP39 cryptography&#39;
+            [network] -n, --network &lt;network&gt; &#39;Specify a network. One of substrate \
+                                     (default), polkadot, kusama, dothereum, edgeware, or kulupu&#39;
+            [password] -p, --password &lt;password&gt; &#39;The password for the key&#39;
+            --password-interactive &#39;You will be prompted for the password for the key.&#39;
+        &quot;</span>,
         )
         .<span class="ident">subcommands</span>(<span class="macro">vec</span><span class="macro">!</span>[
-			<span class="ident">SubCommand</span>::<span class="ident">with_name</span>(<span class="string">&quot;generate&quot;</span>)
-				.<span class="ident">about</span>(<span class="string">&quot;Generate a random account&quot;</span>)
-				.<span class="ident">args_from_usage</span>(<span class="string">&quot;[words] -w, --words &lt;words&gt; \
-						&#39;The number of words in the phrase to generate. One of 12 \
-						(default), 15, 18, 21 and 24.&#39;
-				&quot;</span>),
-			<span class="ident">SubCommand</span>::<span class="ident">with_name</span>(<span class="string">&quot;inspect&quot;</span>)
-				.<span class="ident">about</span>(<span class="string">&quot;Gets a public key and a SS58 address from the provided Secret URI&quot;</span>)
-				.<span class="ident">args_from_usage</span>(<span class="string">&quot;[uri] &#39;A Key URI to be inspected. May be a secret seed, \
-						secret URI (with derivation paths and password), SS58 or public URI. \
-						If not given, you will be prompted for the URI.&#39;
-				&quot;</span>),
-			<span class="ident">SubCommand</span>::<span class="ident">with_name</span>(<span class="string">&quot;sign&quot;</span>)
-				.<span class="ident">about</span>(<span class="string">&quot;Sign a message, provided on STDIN, with a given (secret) key&quot;</span>)
-				.<span class="ident">args_from_usage</span>(<span class="string">&quot;
-					-h, --hex &#39;The message on STDIN is hex-encoded data&#39;
-					&lt;suri&gt; &#39;The secret key URI.&#39;
-				&quot;</span>),
-			<span class="ident">SubCommand</span>::<span class="ident">with_name</span>(<span class="string">&quot;sign-transaction&quot;</span>)
-				.<span class="ident">about</span>(<span class="string">&quot;Sign transaction from encoded Call. Returns a signed and encoded \
-						UncheckedMortalCompactExtrinsic as hex.&quot;</span>)
-				.<span class="ident">args_from_usage</span>(<span class="string">&quot;
-					-c, --call &lt;call&gt; &#39;The call, hex-encoded.&#39;
-					-n, --nonce &lt;nonce&gt; &#39;The nonce.&#39;
-					-p, --password &lt;password&gt; &#39;The password for the key.&#39;
-					-h, --prior-block-hash &lt;prior-block-hash&gt; &#39;The prior block hash, hex-encoded.&#39;
-					-s, --suri &lt;suri&gt; &#39;The secret key URI.&#39;
-				&quot;</span>),
-			<span class="ident">SubCommand</span>::<span class="ident">with_name</span>(<span class="string">&quot;transfer&quot;</span>)
-				.<span class="ident">about</span>(<span class="string">&quot;Author and sign a Node pallet_balances::Transfer transaction with a given (secret) key&quot;</span>)
-				.<span class="ident">args_from_usage</span>(<span class="string">&quot;
-					&lt;genesis&gt; -g, --genesis &lt;genesis&gt; &#39;The genesis hash or a recognised \
-											chain identifier (dev, elm, alex).&#39;
-					&lt;from&gt; &#39;The signing secret key URI.&#39;
-					&lt;to&gt; &#39;The destination account public key URI.&#39;
-					&lt;amount&gt; &#39;The number of units to transfer.&#39;
-					&lt;index&gt; &#39;The signing account&#39;s transaction index.&#39;
-				&quot;</span>),
-			<span class="ident">SubCommand</span>::<span class="ident">with_name</span>(<span class="string">&quot;vanity&quot;</span>)
-				.<span class="ident">about</span>(<span class="string">&quot;Generate a seed that provides a vanity address&quot;</span>)
-				.<span class="ident">args_from_usage</span>(<span class="string">&quot;
-					-n, --number &lt;number&gt; &#39;Number of keys to generate&#39;
-					&lt;pattern&gt; &#39;Desired pattern&#39;
-				&quot;</span>),
-			<span class="ident">SubCommand</span>::<span class="ident">with_name</span>(<span class="string">&quot;verify&quot;</span>)
-				.<span class="ident">about</span>(<span class="string">&quot;Verify a signature for a message, provided on STDIN, with a given \
-						(public or secret) key&quot;</span>)
-				.<span class="ident">args_from_usage</span>(<span class="string">&quot;
-					-h, --hex &#39;The message on STDIN is hex-encoded data&#39;
-					&lt;sig&gt; &#39;Signature, hex-encoded.&#39;
-					&lt;uri&gt; &#39;The public or secret key URI.&#39;
-				&quot;</span>),
-		])
+            <span class="ident">SubCommand</span>::<span class="ident">with_name</span>(<span class="string">&quot;generate&quot;</span>)
+                .<span class="ident">about</span>(<span class="string">&quot;Generate a random account&quot;</span>)
+                .<span class="ident">args_from_usage</span>(<span class="string">&quot;[words] -w, --words &lt;words&gt; \
+                        &#39;The number of words in the phrase to generate. One of 12 \
+                        (default), 15, 18, 21 and 24.&#39;
+                &quot;</span>),
+            <span class="ident">SubCommand</span>::<span class="ident">with_name</span>(<span class="string">&quot;inspect&quot;</span>)
+                .<span class="ident">about</span>(<span class="string">&quot;Gets a public key and a SS58 address from the provided Secret URI&quot;</span>)
+                .<span class="ident">args_from_usage</span>(<span class="string">&quot;[uri] &#39;A Key URI to be inspected. May be a secret seed, \
+                        secret URI (with derivation paths and password), SS58 or public URI. \
+                        If not given, you will be prompted for the URI.&#39;
+                &quot;</span>),
+            <span class="ident">SubCommand</span>::<span class="ident">with_name</span>(<span class="string">&quot;sign&quot;</span>)
+                .<span class="ident">about</span>(<span class="string">&quot;Sign a message, provided on STDIN, with a given (secret) key&quot;</span>)
+                .<span class="ident">args_from_usage</span>(<span class="string">&quot;
+                    -h, --hex &#39;The message on STDIN is hex-encoded data&#39;
+                    &lt;suri&gt; &#39;The secret key URI.&#39;
+                &quot;</span>),
+            <span class="ident">SubCommand</span>::<span class="ident">with_name</span>(<span class="string">&quot;sign-transaction&quot;</span>)
+                .<span class="ident">about</span>(<span class="string">&quot;Sign transaction from encoded Call. Returns a signed and encoded \
+                        UncheckedMortalCompactExtrinsic as hex.&quot;</span>)
+                .<span class="ident">args_from_usage</span>(<span class="string">&quot;
+                    -c, --call &lt;call&gt; &#39;The call, hex-encoded.&#39;
+                    -n, --nonce &lt;nonce&gt; &#39;The nonce.&#39;
+                    -p, --password &lt;password&gt; &#39;The password for the key.&#39;
+                    -h, --prior-block-hash &lt;prior-block-hash&gt; &#39;The prior block hash, hex-encoded.&#39;
+                    -s, --suri &lt;suri&gt; &#39;The secret key URI.&#39;
+                &quot;</span>),
+            <span class="ident">SubCommand</span>::<span class="ident">with_name</span>(<span class="string">&quot;transfer&quot;</span>)
+                .<span class="ident">about</span>(<span class="string">&quot;Author and sign a Node pallet_balances::Transfer transaction with a given (secret) key&quot;</span>)
+                .<span class="ident">args_from_usage</span>(<span class="string">&quot;
+                    [genesis] -g, --genesis &lt;genesis&gt; &#39;The genesis hash or a recognised \
+                                            chain identifier (dusty).&#39;
+                    &lt;from&gt; &#39;The signing secret key URI.&#39;
+                    &lt;to&gt; &#39;The destination account public key URI.&#39;
+                    &lt;amount&gt; &#39;The number of units to transfer.&#39;
+                    &lt;index&gt; &#39;The signing account&#39;s transaction index.&#39;
+                &quot;</span>),
+            <span class="ident">SubCommand</span>::<span class="ident">with_name</span>(<span class="string">&quot;vanity&quot;</span>)
+                .<span class="ident">about</span>(<span class="string">&quot;Generate a seed that provides a vanity address&quot;</span>)
+                .<span class="ident">args_from_usage</span>(<span class="string">&quot;
+                    -n, --number &lt;number&gt; &#39;Number of keys to generate&#39;
+                    &lt;pattern&gt; &#39;Desired pattern&#39;
+                &quot;</span>),
+            <span class="ident">SubCommand</span>::<span class="ident">with_name</span>(<span class="string">&quot;verify&quot;</span>)
+                .<span class="ident">about</span>(<span class="string">&quot;Verify a signature for a message, provided on STDIN, with a given \
+                        (public or secret) key&quot;</span>)
+                .<span class="ident">args_from_usage</span>(<span class="string">&quot;
+                    -h, --hex &#39;The message on STDIN is hex-encoded data&#39;
+                    &lt;sig&gt; &#39;Signature, hex-encoded.&#39;
+                    &lt;uri&gt; &#39;The public or secret key URI.&#39;
+                &quot;</span>),
+        ])
 }
 
 <span class="kw">fn</span> <span class="ident">main</span>() {
@@ -1093,9 +1084,8 @@
 }
 
 <span class="kw">fn</span> <span class="ident">read_genesis_hash</span>(<span class="ident">matches</span>: <span class="kw-2">&amp;</span><span class="ident">ArgMatches</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">H256</span> {
-    <span class="kw">let</span> <span class="ident">genesis_hash</span>: <span class="ident">Hash</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">matches</span>.<span class="ident">value_of</span>(<span class="string">&quot;genesis&quot;</span>).<span class="ident">unwrap_or</span>(<span class="string">&quot;alex&quot;</span>) {
-        <span class="string">&quot;elm&quot;</span> <span class="op">=</span><span class="op">&gt;</span> <span class="macro">hex</span><span class="macro">!</span>[<span class="string">&quot;10c08714a10c7da78f40a60f6f732cf0dba97acfb5e2035445b032386157d5c3&quot;</span>].<span class="ident">into</span>(),
-        <span class="string">&quot;alex&quot;</span> <span class="op">=</span><span class="op">&gt;</span> <span class="macro">hex</span><span class="macro">!</span>[<span class="string">&quot;dcd1346701ca8396496e52aa2785b1748deb6db09551b72159dcb3e08991025b&quot;</span>].<span class="ident">into</span>(),
+    <span class="kw">let</span> <span class="ident">genesis_hash</span>: <span class="ident">Hash</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">matches</span>.<span class="ident">value_of</span>(<span class="string">&quot;genesis&quot;</span>).<span class="ident">unwrap_or</span>(<span class="string">&quot;dusty&quot;</span>) {
+        <span class="string">&quot;dusty&quot;</span> <span class="op">=</span><span class="op">&gt;</span> <span class="macro">hex</span><span class="macro">!</span>[<span class="string">&quot;5bde5ea1f236802c5711abd3b0ca9fc748d654b2c1055290fdf7bf2b4f282428&quot;</span>].<span class="ident">into</span>(),
         <span class="ident">h</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">hex</span>::<span class="ident">decode</span>(<span class="ident">h</span>)
             .<span class="ident">ok</span>()
             .<span class="ident">and_then</span>(<span class="op">|</span><span class="ident">x</span><span class="op">|</span> <span class="ident">Decode</span>::<span class="ident">decode</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="kw-2">&amp;</span><span class="ident">x</span>[..]).<span class="ident">ok</span>())

@@ -1,1 +1,1 @@
-initSidebarItems({"constant":[["MILLIPLM",""],["PLM",""]]});
+initSidebarItems({"constant":[["MILLIPLM",""],["PLM",""]],"struct":[["HOLDERS","PLASM GENESIS TOKEN HODERS"]]});

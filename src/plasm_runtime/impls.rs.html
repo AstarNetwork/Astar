@@ -337,14 +337,15 @@
 <span id="337">337</span>
 <span id="338">338</span>
 <span id="339">339</span>
+<span id="340">340</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="doccomment">//! Some configurable implementations as associated type for the plasm runtime.</span>
 
 <span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">MaximumBlockWeight</span>, <span class="ident">System</span>};
+<span class="kw">use</span> <span class="ident">frame_support</span>::{<span class="ident">traits</span>::<span class="ident">Get</span>, <span class="ident">weights</span>::<span class="ident">Weight</span>};
 <span class="kw">use</span> <span class="ident">plasm_primitives</span>::<span class="ident">Balance</span>;
 <span class="kw">use</span> <span class="ident">sp_runtime</span>::<span class="ident">traits</span>::{<span class="ident">Convert</span>, <span class="ident">Saturating</span>};
 <span class="kw">use</span> <span class="ident">sp_runtime</span>::{<span class="ident">Fixed64</span>, <span class="ident">Perbill</span>};
-<span class="kw">use</span> <span class="ident">support</span>::{<span class="ident">traits</span>::<span class="ident">Get</span>, <span class="ident">weights</span>::<span class="ident">Weight</span>};
 
 <span class="doccomment">/// Convert from weight to balance via a simple coefficient multiplication</span>
 <span class="doccomment">/// The associated type C encapsulates a constant in units of balance per weight</span>
@@ -419,8 +420,8 @@
     <span class="kw">use</span> <span class="kw">super</span>::<span class="kw-2">*</span>;
     <span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">constants</span>::<span class="ident">currency</span>::<span class="kw-2">*</span>, <span class="ident">TargetBlockFullness</span>, <span class="ident">TransactionPayment</span>};
     <span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">AvailableBlockRatio</span>, <span class="ident">MaximumBlockWeight</span>, <span class="ident">Runtime</span>};
+    <span class="kw">use</span> <span class="ident">frame_support</span>::<span class="ident">weights</span>::<span class="ident">Weight</span>;
     <span class="kw">use</span> <span class="ident">sp_runtime</span>::<span class="ident">assert_eq_error_rate</span>;
-    <span class="kw">use</span> <span class="ident">support</span>::<span class="ident">weights</span>::<span class="ident">Weight</span>;
 
     <span class="kw">fn</span> <span class="ident">max</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Weight</span> {
         <span class="ident">MaximumBlockWeight</span>::<span class="ident">get</span>()
@@ -455,7 +456,7 @@
     <span class="kw">where</span>
         <span class="ident">F</span>: <span class="ident">Fn</span>() <span class="op">-</span><span class="op">&gt;</span> (),
     {
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">t</span>: <span class="ident">sp_io</span>::<span class="ident">TestExternalities</span> <span class="op">=</span> <span class="ident">system</span>::<span class="ident">GenesisConfig</span>::<span class="ident">default</span>()
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">t</span>: <span class="ident">sp_io</span>::<span class="ident">TestExternalities</span> <span class="op">=</span> <span class="ident">frame_system</span>::<span class="ident">GenesisConfig</span>::<span class="ident">default</span>()
             .<span class="ident">build_storage</span>::<span class="op">&lt;</span><span class="ident">Runtime</span><span class="op">&gt;</span>()
             .<span class="ident">unwrap</span>()
             .<span class="ident">into</span>();
@@ -543,7 +544,8 @@
                 }
                 <span class="ident">fm</span> <span class="op">=</span> <span class="ident">next</span>;
                 <span class="ident">iterations</span> <span class="op">+</span><span class="op">=</span> <span class="number">1</span>;
-                <span class="kw">let</span> <span class="ident">fee</span> <span class="op">=</span> <span class="op">&lt;</span><span class="ident">Runtime</span> <span class="kw">as</span> <span class="ident">transaction_payment</span>::<span class="ident">Trait</span><span class="op">&gt;</span>::<span class="ident">WeightToFee</span>::<span class="ident">convert</span>(<span class="ident">tx_weight</span>);
+                <span class="kw">let</span> <span class="ident">fee</span> <span class="op">=</span>
+                    <span class="op">&lt;</span><span class="ident">Runtime</span> <span class="kw">as</span> <span class="ident">pallet_transaction_payment</span>::<span class="ident">Trait</span><span class="op">&gt;</span>::<span class="ident">WeightToFee</span>::<span class="ident">convert</span>(<span class="ident">tx_weight</span>);
                 <span class="kw">let</span> <span class="ident">adjusted_fee</span> <span class="op">=</span> <span class="ident">fm</span>.<span class="ident">saturated_multiply_accumulate</span>(<span class="ident">fee</span>);
                 <span class="macro">println</span><span class="macro">!</span>(
                     <span class="string">&quot;iteration {}, new fm = {:?}. Fee at this point is: {} units / {} mPLM, \

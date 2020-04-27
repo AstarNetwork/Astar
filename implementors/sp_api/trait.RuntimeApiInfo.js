@@ -1,0 +1,3 @@
+(function() {var implementors = {};
+implementors["pallet_ovm_rpc_runtime_api"] = [{"text":"impl&lt;Block:&nbsp;BlockT, Property, Decision, ChallengeGame, Hash, __Sr_Api_Error__&gt; RuntimeApiInfo for dyn <a class=\"trait\" href=\"pallet_ovm_rpc_runtime_api/trait.OvmApi.html\" title=\"trait pallet_ovm_rpc_runtime_api::OvmApi\">OvmApi</a>&lt;Block, Property, Decision, ChallengeGame, Hash, Error = __Sr_Api_Error__&gt;","synthetic":false,"types":["pallet_ovm_rpc_runtime_api::OvmApi"]}];
+if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

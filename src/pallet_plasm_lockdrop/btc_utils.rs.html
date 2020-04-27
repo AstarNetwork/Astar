@@ -38,10 +38,32 @@
 <span id="38">38</span>
 <span id="39">39</span>
 <span id="40">40</span>
+<span id="41">41</span>
+<span id="42">42</span>
+<span id="43">43</span>
+<span id="44">44</span>
+<span id="45">45</span>
+<span id="46">46</span>
+<span id="47">47</span>
+<span id="48">48</span>
+<span id="49">49</span>
+<span id="50">50</span>
+<span id="51">51</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="kw">use</span> <span class="ident">codec</span>::<span class="ident">Encode</span>;
 <span class="kw">use</span> <span class="ident">ripemd160</span>::{<span class="ident">Digest</span>, <span class="ident">Ripemd160</span>};
-<span class="kw">use</span> <span class="ident">sp_core</span>::{<span class="ident">ecdsa</span>, <span class="ident">hashing</span>::<span class="ident">sha2_256</span>};
+<span class="kw">use</span> <span class="ident">sha2</span>::<span class="ident">Sha256</span>;
+<span class="kw">use</span> <span class="ident">sp_core</span>::<span class="ident">ecdsa</span>;
+<span class="kw">use</span> <span class="ident">sp_std</span>::<span class="ident">prelude</span>::<span class="kw-2">*</span>;
+
+<span class="doccomment">/// Do a sha2 256-bit hash and return result.</span>
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">sha2_256</span>(<span class="ident">data</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>]) <span class="op">-</span><span class="op">&gt;</span> [<span class="ident">u8</span>; <span class="number">32</span>] {
+    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">hasher</span> <span class="op">=</span> <span class="ident">Sha256</span>::<span class="ident">new</span>();
+    <span class="ident">hasher</span>.<span class="ident">input</span>(<span class="ident">data</span>);
+    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">output</span> <span class="op">=</span> [<span class="number">0u8</span>; <span class="number">32</span>];
+    <span class="ident">output</span>.<span class="ident">copy_from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">hasher</span>.<span class="ident">result</span>());
+    <span class="ident">output</span>
+}
 
 <span class="doccomment">/// Bitcoin RIPEMD160 hashing function</span>
 <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">ripemd160</span>(<span class="ident">data</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>]) <span class="op">-</span><span class="op">&gt;</span> [<span class="ident">u8</span>; <span class="number">20</span>] {

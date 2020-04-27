@@ -336,6 +336,9 @@
 <span id="336">336</span>
 <span id="337">337</span>
 <span id="338">338</span>
+<span id="339">339</span>
+<span id="340">340</span>
+<span id="341">341</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="attribute">#![<span class="ident">warn</span>(<span class="ident">unused_extern_crates</span>)]</span>
 
@@ -343,7 +346,6 @@
 
 <span class="kw">use</span> <span class="ident">std</span>::<span class="ident">sync</span>::<span class="ident">Arc</span>;
 
-<span class="kw">use</span> <span class="ident">plasm_executor</span>::<span class="ident">NativeExecutor</span>;
 <span class="kw">use</span> <span class="ident">plasm_primitives</span>::<span class="ident">Block</span>;
 <span class="kw">use</span> <span class="ident">plasm_runtime</span>::<span class="ident">RuntimeApi</span>;
 <span class="kw">use</span> <span class="ident">sc_client</span>::<span class="ident">LongestChain</span>;
@@ -351,17 +353,25 @@
 <span class="kw">use</span> <span class="ident">sc_client_api</span>::<span class="ident">ExecutorProvider</span>;
 <span class="kw">use</span> <span class="ident">sc_client_db</span>::<span class="ident">Backend</span>;
 <span class="kw">use</span> <span class="ident">sc_consensus_babe</span>;
+<span class="kw">use</span> <span class="ident">sc_executor</span>::{<span class="ident">native_executor_instance</span>, <span class="ident">NativeExecutor</span>};
 <span class="kw">use</span> <span class="ident">sc_finality_grandpa</span>::{
     <span class="ident">FinalityProofProvider</span> <span class="kw">as</span> <span class="ident">GrandpaFinalityProofProvider</span>, <span class="ident">StorageAndProofProvider</span>,
 };
 <span class="kw">use</span> <span class="ident">sc_network</span>::<span class="ident">NetworkService</span>;
 <span class="kw">use</span> <span class="ident">sc_offchain</span>::<span class="ident">OffchainWorkers</span>;
 <span class="kw">use</span> <span class="ident">sc_service</span>::{
-    <span class="ident">config</span>::<span class="ident">Configuration</span>, <span class="ident">error</span>::<span class="ident">Error</span> <span class="kw">as</span> <span class="ident">ServiceError</span>, <span class="ident">AbstractService</span>, <span class="ident">ServiceBuilder</span>,
+    <span class="ident">config</span>::<span class="ident">Configuration</span>, <span class="ident">error</span>::<span class="ident">Error</span> <span class="kw">as</span> <span class="ident">ServiceError</span>, <span class="ident">AbstractService</span>, <span class="ident">NetworkStatus</span>, <span class="ident">Service</span>,
+    <span class="ident">ServiceBuilder</span>,
 };
-<span class="kw">use</span> <span class="ident">sc_service</span>::{<span class="ident">NetworkStatus</span>, <span class="ident">Service</span>};
-<span class="kw">use</span> <span class="ident">sp_inherents</span>::<span class="ident">InherentDataProviders</span>;
 <span class="kw">use</span> <span class="ident">sp_runtime</span>::<span class="ident">traits</span>::<span class="ident">Block</span> <span class="kw">as</span> <span class="ident">BlockT</span>;
+
+<span class="comment">// Declare an instance of the native executor named `Executor`. Include the wasm binary as the</span>
+<span class="comment">// equivalent wasm code.</span>
+<span class="macro">native_executor_instance</span><span class="macro">!</span>(
+    <span class="kw">pub</span> <span class="ident">Executor</span>,
+    <span class="ident">plasm_runtime</span>::<span class="ident">api</span>::<span class="ident">dispatch</span>,
+    <span class="ident">plasm_runtime</span>::<span class="ident">native_version</span>
+);
 
 <span class="doccomment">/// Starts a `ServiceBuilder` for a full service.</span>
 <span class="doccomment">///</span>
@@ -376,7 +386,7 @@
         <span class="kw">let</span> <span class="ident">builder</span> <span class="op">=</span> <span class="ident">sc_service</span>::<span class="ident">ServiceBuilder</span>::<span class="ident">new_full</span>::<span class="op">&lt;</span>
             <span class="ident">plasm_primitives</span>::<span class="ident">Block</span>,
             <span class="ident">plasm_runtime</span>::<span class="ident">RuntimeApi</span>,
-            <span class="ident">plasm_executor</span>::<span class="ident">Executor</span>,
+            <span class="kw">crate</span>::<span class="ident">service</span>::<span class="ident">Executor</span>,
         <span class="op">&gt;</span>(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">config</span>)<span class="question-mark">?</span>
         .<span class="ident">with_select_chain</span>(<span class="op">|</span><span class="ident">_config</span>, <span class="ident">backend</span><span class="op">|</span> <span class="prelude-val">Ok</span>(<span class="ident">sc_client</span>::<span class="ident">LongestChain</span>::<span class="ident">new</span>(<span class="ident">backend</span>.<span class="ident">clone</span>())))<span class="question-mark">?</span>
         .<span class="ident">with_transaction_pool</span>(<span class="op">|</span><span class="ident">config</span>, <span class="ident">client</span>, <span class="ident">_fetcher</span><span class="op">|</span> {
@@ -415,7 +425,7 @@
             <span class="ident">import_setup</span> <span class="op">=</span> <span class="prelude-val">Some</span>((<span class="ident">block_import</span>, <span class="ident">grandpa_link</span>, <span class="ident">babe_link</span>));
             <span class="prelude-val">Ok</span>(<span class="ident">import_queue</span>)
         })<span class="question-mark">?</span>
-        .<span class="ident">with_rpc_extensions</span>(<span class="op">|</span><span class="ident">builder</span><span class="op">|</span> <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">RpcExtension</span>, <span class="kw">_</span><span class="op">&gt;</span> {
+        .<span class="ident">with_rpc_extensions</span>(<span class="op">|</span><span class="ident">builder</span><span class="op">|</span> <span class="op">-</span><span class="op">&gt;</span> <span class="ident">std</span>::<span class="ident">result</span>::<span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">RpcExtension</span>, <span class="kw">_</span><span class="op">&gt;</span> {
             <span class="kw">let</span> <span class="ident">babe_link</span> <span class="op">=</span> <span class="ident">import_setup</span>
                 .<span class="ident">as_ref</span>()
                 .<span class="ident">map</span>(<span class="op">|</span><span class="ident">s</span><span class="op">|</span> <span class="kw-2">&amp;</span><span class="ident">s</span>.<span class="number">2</span>)
@@ -447,22 +457,18 @@
 <span class="doccomment">/// concrete types instead.</span>
 <span class="macro">macro_rules</span><span class="macro">!</span> <span class="ident">new_full</span> {
     (<span class="macro-nonterminal">$</span><span class="macro-nonterminal">config</span>:<span class="ident">expr</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">with_startup_data</span>: <span class="ident">expr</span>) <span class="op">=</span><span class="op">&gt;</span> {{
-        <span class="kw">let</span> (<span class="ident">is_authority</span>, <span class="ident">force_authoring</span>, <span class="ident">name</span>, <span class="ident">disable_grandpa</span>) <span class="op">=</span> (
-            <span class="macro-nonterminal">$</span><span class="macro-nonterminal">config</span>.<span class="ident">roles</span>.<span class="ident">is_authority</span>(),
+        <span class="kw">let</span> (<span class="ident">role</span>, <span class="ident">force_authoring</span>, <span class="ident">name</span>, <span class="ident">disable_grandpa</span>) <span class="op">=</span> (
+            <span class="macro-nonterminal">$</span><span class="macro-nonterminal">config</span>.<span class="ident">role</span>.<span class="ident">clone</span>(),
             <span class="macro-nonterminal">$</span><span class="macro-nonterminal">config</span>.<span class="ident">force_authoring</span>,
-            <span class="macro-nonterminal">$</span><span class="macro-nonterminal">config</span>.<span class="ident">name</span>.<span class="ident">clone</span>(),
+            <span class="macro-nonterminal">$</span><span class="macro-nonterminal">config</span>.<span class="ident">network</span>.<span class="ident">node_name</span>.<span class="ident">clone</span>(),
             <span class="macro-nonterminal">$</span><span class="macro-nonterminal">config</span>.<span class="ident">disable_grandpa</span>,
         );
-
-        <span class="comment">// sentry nodes announce themselves as authorities to the network</span>
-        <span class="comment">// and should run the same protocols authorities do, but it should</span>
-        <span class="comment">// never actively participate in any consensus process.</span>
-        <span class="kw">let</span> <span class="ident">participates_in_consensus</span> <span class="op">=</span> <span class="ident">is_authority</span> <span class="kw-2">&amp;</span><span class="op">&amp;</span> <span class="op">!</span><span class="macro-nonterminal">$</span><span class="macro-nonterminal">config</span>.<span class="ident">sentry_mode</span>;
 
         <span class="kw">let</span> (<span class="ident">builder</span>, <span class="kw-2">mut</span> <span class="ident">import_setup</span>, <span class="ident">inherent_data_providers</span>) <span class="op">=</span> <span class="macro">new_full_start</span><span class="macro">!</span>(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">config</span>);
 
         <span class="kw">let</span> <span class="ident">service</span> <span class="op">=</span> <span class="ident">builder</span>
             .<span class="ident">with_finality_proof_provider</span>(<span class="op">|</span><span class="ident">client</span>, <span class="ident">backend</span><span class="op">|</span> {
+                <span class="comment">// GenesisAuthoritySetProvider is implemented for StorageAndProofProvider</span>
                 <span class="kw">let</span> <span class="ident">provider</span> <span class="op">=</span> <span class="ident">client</span> <span class="kw">as</span> <span class="ident">Arc</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">StorageAndProofProvider</span><span class="op">&lt;</span><span class="kw">_</span>, <span class="kw">_</span><span class="op">&gt;</span><span class="op">&gt;</span>;
                 <span class="prelude-val">Ok</span>(<span class="ident">Arc</span>::<span class="ident">new</span>(<span class="ident">GrandpaFinalityProofProvider</span>::<span class="ident">new</span>(<span class="ident">backend</span>, <span class="ident">provider</span>)) <span class="kw">as</span> <span class="kw">_</span>)
             })<span class="question-mark">?</span>
@@ -474,7 +480,7 @@
 
         (<span class="macro-nonterminal">$</span><span class="macro-nonterminal">with_startup_data</span>)(<span class="kw-2">&amp;</span><span class="ident">block_import</span>, <span class="kw-2">&amp;</span><span class="ident">babe_link</span>);
 
-        <span class="kw">if</span> <span class="ident">participates_in_consensus</span> {
+        <span class="kw">if</span> <span class="kw">let</span> <span class="ident">sc_service</span>::<span class="ident">config</span>::<span class="ident">Role</span>::<span class="ident">Authority</span> { <span class="ident">sentry_nodes</span>: <span class="kw">_</span> } <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">role</span> {
             <span class="kw">let</span> <span class="ident">proposer</span> <span class="op">=</span> <span class="ident">sc_basic_authorship</span>::<span class="ident">ProposerFactory</span>::<span class="ident">new</span>(
                 <span class="ident">service</span>.<span class="ident">client</span>(),
                 <span class="ident">service</span>.<span class="ident">transaction_pool</span>(),
@@ -507,7 +513,7 @@
 
         <span class="comment">// if the node isn&#39;t actively participating in consensus then it doesn&#39;t</span>
         <span class="comment">// need a keystore, regardless of which protocol we use below.</span>
-        <span class="kw">let</span> <span class="ident">keystore</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">participates_in_consensus</span> {
+        <span class="kw">let</span> <span class="ident">keystore</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">role</span>.<span class="ident">is_authority</span>() {
             <span class="prelude-val">Some</span>(<span class="ident">service</span>.<span class="ident">keystore</span>())
         } <span class="kw">else</span> {
             <span class="prelude-val">None</span>
@@ -520,7 +526,7 @@
             <span class="ident">name</span>: <span class="prelude-val">Some</span>(<span class="ident">name</span>),
             <span class="ident">observer_enabled</span>: <span class="bool-val">false</span>,
             <span class="ident">keystore</span>,
-            <span class="ident">is_authority</span>,
+            <span class="ident">is_authority</span>: <span class="ident">role</span>.<span class="ident">is_network_authority</span>(),
         };
 
         <span class="kw">let</span> <span class="ident">enable_grandpa</span> <span class="op">=</span> <span class="op">!</span><span class="ident">disable_grandpa</span>;
@@ -565,7 +571,7 @@
 <span class="kw">type</span> <span class="ident">ConcreteBlock</span> <span class="op">=</span> <span class="ident">plasm_primitives</span>::<span class="ident">Block</span>;
 <span class="kw">type</span> <span class="ident">ConcreteClient</span> <span class="op">=</span> <span class="ident">Client</span><span class="op">&lt;</span>
     <span class="ident">Backend</span><span class="op">&lt;</span><span class="ident">ConcreteBlock</span><span class="op">&gt;</span>,
-    <span class="ident">LocalCallExecutor</span><span class="op">&lt;</span><span class="ident">Backend</span><span class="op">&lt;</span><span class="ident">ConcreteBlock</span><span class="op">&gt;</span>, <span class="ident">NativeExecutor</span><span class="op">&lt;</span><span class="ident">plasm_executor</span>::<span class="ident">Executor</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+    <span class="ident">LocalCallExecutor</span><span class="op">&lt;</span><span class="ident">Backend</span><span class="op">&lt;</span><span class="ident">ConcreteBlock</span><span class="op">&gt;</span>, <span class="ident">NativeExecutor</span><span class="op">&lt;</span><span class="ident">Executor</span><span class="op">&gt;</span><span class="op">&gt;</span>,
     <span class="ident">ConcreteBlock</span>,
     <span class="ident">plasm_runtime</span>::<span class="ident">RuntimeApi</span>,
 <span class="op">&gt;</span>;
@@ -600,9 +606,9 @@
 <span class="doccomment">/// Builds a new service for a light client.</span>
 <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new_light</span>(<span class="ident">config</span>: <span class="ident">Configuration</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="kw">impl</span> <span class="ident">AbstractService</span>, <span class="ident">ServiceError</span><span class="op">&gt;</span> {
     <span class="kw">type</span> <span class="ident">RpcExtension</span> <span class="op">=</span> <span class="ident">jsonrpc_core</span>::<span class="ident">IoHandler</span><span class="op">&lt;</span><span class="ident">sc_rpc</span>::<span class="ident">Metadata</span><span class="op">&gt;</span>;
-    <span class="kw">let</span> <span class="ident">inherent_data_providers</span> <span class="op">=</span> <span class="ident">InherentDataProviders</span>::<span class="ident">new</span>();
+    <span class="kw">let</span> <span class="ident">inherent_data_providers</span> <span class="op">=</span> <span class="ident">sp_inherents</span>::<span class="ident">InherentDataProviders</span>::<span class="ident">new</span>();
 
-    <span class="kw">let</span> <span class="ident">service</span> <span class="op">=</span> <span class="ident">ServiceBuilder</span>::<span class="ident">new_light</span>::<span class="op">&lt;</span><span class="ident">Block</span>, <span class="ident">RuntimeApi</span>, <span class="ident">plasm_executor</span>::<span class="ident">Executor</span><span class="op">&gt;</span>(<span class="ident">config</span>)<span class="question-mark">?</span>
+    <span class="kw">let</span> <span class="ident">service</span> <span class="op">=</span> <span class="ident">ServiceBuilder</span>::<span class="ident">new_light</span>::<span class="op">&lt;</span><span class="ident">Block</span>, <span class="ident">RuntimeApi</span>, <span class="ident">Executor</span><span class="op">&gt;</span>(<span class="ident">config</span>)<span class="question-mark">?</span>
         .<span class="ident">with_select_chain</span>(<span class="op">|</span><span class="ident">_config</span>, <span class="ident">backend</span><span class="op">|</span> <span class="prelude-val">Ok</span>(<span class="ident">LongestChain</span>::<span class="ident">new</span>(<span class="ident">backend</span>.<span class="ident">clone</span>())))<span class="question-mark">?</span>
         .<span class="ident">with_transaction_pool</span>(<span class="op">|</span><span class="ident">config</span>, <span class="ident">client</span>, <span class="ident">fetcher</span><span class="op">|</span> {
             <span class="kw">let</span> <span class="ident">fetcher</span> <span class="op">=</span> <span class="ident">fetcher</span>
@@ -655,7 +661,7 @@
             <span class="kw">let</span> <span class="ident">provider</span> <span class="op">=</span> <span class="ident">client</span> <span class="kw">as</span> <span class="ident">Arc</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">StorageAndProofProvider</span><span class="op">&lt;</span><span class="kw">_</span>, <span class="kw">_</span><span class="op">&gt;</span><span class="op">&gt;</span>;
             <span class="prelude-val">Ok</span>(<span class="ident">Arc</span>::<span class="ident">new</span>(<span class="ident">GrandpaFinalityProofProvider</span>::<span class="ident">new</span>(<span class="ident">backend</span>, <span class="ident">provider</span>)) <span class="kw">as</span> <span class="kw">_</span>)
         })<span class="question-mark">?</span>
-        .<span class="ident">with_rpc_extensions</span>(<span class="op">|</span><span class="ident">builder</span><span class="op">|</span> <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">RpcExtension</span>, <span class="kw">_</span><span class="op">&gt;</span> {
+        .<span class="ident">with_rpc_extensions</span>(<span class="op">|</span><span class="ident">builder</span><span class="op">|</span> <span class="op">-</span><span class="op">&gt;</span> <span class="ident">std</span>::<span class="ident">result</span>::<span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">RpcExtension</span>, <span class="kw">_</span><span class="op">&gt;</span> {
             <span class="kw">let</span> <span class="ident">fetcher</span> <span class="op">=</span> <span class="ident">builder</span>
                 .<span class="ident">fetcher</span>()
                 .<span class="ident">ok_or_else</span>(<span class="op">|</span><span class="op">|</span> <span class="string">&quot;Trying to start node RPC without active fetcher&quot;</span>)<span class="question-mark">?</span>;

@@ -21,44 +21,6 @@
 <span id="21">21</span>
 <span id="22">22</span>
 <span id="23">23</span>
-<span id="24">24</span>
-<span id="25">25</span>
-<span id="26">26</span>
-<span id="27">27</span>
-<span id="28">28</span>
-<span id="29">29</span>
-<span id="30">30</span>
-<span id="31">31</span>
-<span id="32">32</span>
-<span id="33">33</span>
-<span id="34">34</span>
-<span id="35">35</span>
-<span id="36">36</span>
-<span id="37">37</span>
-<span id="38">38</span>
-<span id="39">39</span>
-<span id="40">40</span>
-<span id="41">41</span>
-<span id="42">42</span>
-<span id="43">43</span>
-<span id="44">44</span>
-<span id="45">45</span>
-<span id="46">46</span>
-<span id="47">47</span>
-<span id="48">48</span>
-<span id="49">49</span>
-<span id="50">50</span>
-<span id="51">51</span>
-<span id="52">52</span>
-<span id="53">53</span>
-<span id="54">54</span>
-<span id="55">55</span>
-<span id="56">56</span>
-<span id="57">57</span>
-<span id="58">58</span>
-<span id="59">59</span>
-<span id="60">60</span>
-<span id="61">61</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="doccomment">//! Plasm CLI library.</span>
 
@@ -83,43 +45,5 @@
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident">cli</span>::<span class="kw-2">*</span>;
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;cli&quot;</span>)]</span>
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident">command</span>::<span class="kw-2">*</span>;
-
-<span class="doccomment">/// The chain specification option.</span>
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>, <span class="ident">Debug</span>, <span class="ident">PartialEq</span>)]</span>
-<span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">ChainSpec</span> {
-    <span class="doccomment">/// Whatever the current runtime is, with just Alice as an auth.</span>
-    <span class="ident">Development</span>,
-    <span class="doccomment">/// Whatever the current runtime is, with simple Alice/Bob auths.</span>
-    <span class="ident">LocalTestnet</span>,
-    <span class="doccomment">/// Whatever the current runtime is with the &quot;global testnet&quot; defaults.</span>
-    <span class="ident">PlasmTestnet</span>,
-}
-
-<span class="doccomment">/// Get a chain config from a spec setting.</span>
-<span class="kw">impl</span> <span class="ident">ChainSpec</span> {
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">load</span>(<span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">chain_spec</span>::<span class="ident">ChainSpec</span>, <span class="ident">String</span><span class="op">&gt;</span> {
-        <span class="prelude-val">Ok</span>(<span class="kw">match</span> <span class="self">self</span> {
-            <span class="ident">ChainSpec</span>::<span class="ident">Development</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">chain_spec</span>::<span class="ident">development_config</span>(),
-            <span class="ident">ChainSpec</span>::<span class="ident">LocalTestnet</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">chain_spec</span>::<span class="ident">local_testnet_config</span>(),
-            <span class="ident">ChainSpec</span>::<span class="ident">PlasmTestnet</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">chain_spec</span>::<span class="ident">plasm_testnet_config</span>(),
-        })
-    }
-
-    <span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">s</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span> {
-        <span class="kw">match</span> <span class="ident">s</span> {
-            <span class="string">&quot;dev&quot;</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Some</span>(<span class="ident">ChainSpec</span>::<span class="ident">Development</span>),
-            <span class="string">&quot;local&quot;</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Some</span>(<span class="ident">ChainSpec</span>::<span class="ident">LocalTestnet</span>),
-            <span class="string">&quot;&quot;</span> <span class="op">|</span> <span class="string">&quot;testnet&quot;</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Some</span>(<span class="ident">ChainSpec</span>::<span class="ident">PlasmTestnet</span>),
-            <span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">None</span>,
-        }
-    }
-}
-
-<span class="kw">fn</span> <span class="ident">load_spec</span>(<span class="ident">id</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Box</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">sc_chain_spec</span>::<span class="ident">ChainSpec</span><span class="op">&gt;</span>, <span class="ident">String</span><span class="op">&gt;</span> {
-    <span class="prelude-val">Ok</span>(<span class="kw">match</span> <span class="ident">ChainSpec</span>::<span class="ident">from</span>(<span class="ident">id</span>) {
-        <span class="prelude-val">Some</span>(<span class="ident">spec</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">Box</span>::<span class="ident">new</span>(<span class="ident">spec</span>.<span class="ident">load</span>()<span class="question-mark">?</span>),
-        <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">Box</span>::<span class="ident">new</span>(<span class="ident">ChainSpec</span>::<span class="ident">PlasmTestnet</span>.<span class="ident">load</span>()<span class="question-mark">?</span>),
-    })
-}
 </pre></div>
 </section><section id="search" class="content hidden"></section><section class="footer"></section><script>window.rootPath = "../../";window.currentCrate = "plasm_cli";</script><script src="../../aliases.js"></script><script src="../../main.js"></script><script src="../../source-script.js"></script><script src="../../source-files.js"></script><script defer src="../../search-index.js"></script></body></html>

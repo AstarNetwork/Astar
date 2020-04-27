@@ -1,1 +1,1 @@
-initSidebarItems({"struct":[["MaintainRatioComputeTotalPayout",""],["SimpleComputeTotalPayout",""]]});
+initSidebarItems({"struct":[["FirstPlasmIncentive",""],["MaintainRatioComputeTotalPayout",""],["SimpleComputeTotalPayout",""]]});

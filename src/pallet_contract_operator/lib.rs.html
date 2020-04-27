@@ -213,10 +213,17 @@
 <span id="213">213</span>
 <span id="214">214</span>
 <span id="215">215</span>
+<span id="216">216</span>
+<span id="217">217</span>
+<span id="218">218</span>
+<span id="219">219</span>
+<span id="220">220</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="attribute">#![<span class="ident">cfg_attr</span>(<span class="ident">not</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>), <span class="ident">no_std</span>)]</span>
 
-<span class="kw">use</span> <span class="ident">frame_support</span>::{<span class="ident">decl_event</span>, <span class="ident">decl_module</span>, <span class="ident">decl_storage</span>, <span class="ident">Parameter</span>};
+<span class="kw">use</span> <span class="ident">frame_support</span>::{
+    <span class="ident">decl_event</span>, <span class="ident">decl_module</span>, <span class="ident">decl_storage</span>, <span class="ident">weights</span>::<span class="ident">SimpleDispatchInfo</span>, <span class="ident">Parameter</span>,
+};
 <span class="kw">use</span> <span class="ident">frame_system</span>::{<span class="self">self</span> <span class="kw">as</span> <span class="ident">system</span>, <span class="ident">ensure_signed</span>, <span class="ident">RawOrigin</span>};
 <span class="kw">use</span> <span class="ident">pallet_contracts</span>::{<span class="ident">BalanceOf</span>, <span class="ident">CodeHash</span>, <span class="ident">ContractAddressFor</span>, <span class="ident">Gas</span>};
 <span class="kw">use</span> <span class="ident">sp_runtime</span>::{
@@ -313,6 +320,7 @@
         <span class="kw">fn</span> <span class="ident">deposit_event</span>() <span class="op">=</span> <span class="ident">default</span>;
 
         <span class="doccomment">/// Deploys a contact and insert relation of a contract and an operator to mapping.</span>
+        <span class="attribute">#[<span class="ident">weight</span> <span class="op">=</span> <span class="ident">SimpleDispatchInfo</span>::<span class="ident">FixedNormal</span>(<span class="number">500_000</span>)]</span>
         <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">instantiate</span>(<span class="ident">origin</span>,
             <span class="attribute">#[<span class="ident">compact</span>]</span> <span class="ident">endowment</span>: <span class="ident">BalanceOf</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>,
             <span class="attribute">#[<span class="ident">compact</span>]</span> <span class="ident">gas_limit</span>: <span class="ident">Gas</span>,
@@ -339,6 +347,7 @@
         }
 
         <span class="doccomment">/// Updates parameters for an identified contact.</span>
+        <span class="attribute">#[<span class="ident">weight</span> <span class="op">=</span> <span class="ident">SimpleDispatchInfo</span>::<span class="ident">FixedNormal</span>(<span class="number">50_000</span>)]</span>
         <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">update_parameters</span>(<span class="ident">origin</span>, <span class="ident">contract</span>: <span class="ident">T</span>::<span class="ident">AccountId</span>, <span class="ident">parameters</span>: <span class="ident">T</span>::<span class="ident">Parameters</span>) {
             <span class="kw">let</span> <span class="ident">operator</span> <span class="op">=</span> <span class="ident">ensure_signed</span>(<span class="ident">origin</span>)<span class="question-mark">?</span>;
 
@@ -359,6 +368,7 @@
         }
 
         <span class="doccomment">/// Changes an operator for identified contracts.</span>
+        <span class="attribute">#[<span class="ident">weight</span> <span class="op">=</span> <span class="ident">SimpleDispatchInfo</span>::<span class="ident">FixedNormal</span>(<span class="number">100_000</span>)]</span>
         <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">change_operator</span>(<span class="ident">origin</span>, <span class="ident">contracts</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">T</span>::<span class="ident">AccountId</span><span class="op">&gt;</span>, <span class="ident">new_operator</span>: <span class="ident">T</span>::<span class="ident">AccountId</span>) {
             <span class="kw">let</span> <span class="ident">operator</span> <span class="op">=</span> <span class="ident">ensure_signed</span>(<span class="ident">origin</span>)<span class="question-mark">?</span>;
             <span class="self">Self</span>::<span class="ident">transfer_operator</span>(<span class="ident">operator</span>, <span class="ident">contracts</span>, <span class="ident">new_operator</span>)<span class="question-mark">?</span>;
