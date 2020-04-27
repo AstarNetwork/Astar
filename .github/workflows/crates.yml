@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - master
+      - dusty
 jobs:
   build:
     runs-on: ubuntu-latest
