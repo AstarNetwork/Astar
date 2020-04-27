@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - master
+      - dusty
     tags:
       - v*
 jobs:
@@ -31,7 +32,7 @@ jobs:
       - name: Docker build and push
         run: |
           TAG=${{ steps.get_version.outputs.tag }}
-          if [ -n $TAG ]; then TAG='latest'; fi
+          if [ `echo $TAG | grep 'refs'` ]; then TAG='latest'; fi
           echo ${{ steps.get_version.outputs.tag }}
           echo $TAG
           cd third-party/docker
