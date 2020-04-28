@@ -1,4 +1,4 @@
-//! Tests for the dapps-staking module.
+//! Tests for the ovm module.
 
 #![cfg(test)]
 
