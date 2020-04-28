@@ -1,0 +1,3 @@
+(function() {var implementors = {};
+implementors["ovmi"] = [{"text":"impl <a class=\"trait\" href=\"https://doc.rust-lang.org/nightly/core/cmp/trait.Ord.html\" title=\"trait core::cmp::Ord\">Ord</a> for <a class=\"struct\" href=\"ovmi/struct.AccountId.html\" title=\"struct ovmi::AccountId\">AccountId</a>","synthetic":false,"types":["ovmi::AccountId"]}];
+if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

@@ -1,4 +1,6 @@
 var ALIASES = {};
+ALIASES["ovmi"] = {};
+ALIASES["ovmi_cli"] = {};
 ALIASES["pallet_contract_operator"] = {};
 ALIASES["pallet_dapps_staking"] = {};
 ALIASES["pallet_operator_trading"] = {};
