@@ -191,7 +191,7 @@ impl pallet_plasm_rewards::Trait for Runtime {
     type Time = Timestamp;
     type SessionsPerEra = SessionsPerEra;
     type BondingDuration = BondingDuration;
-    type ComputeEraForDapps = DappsStaking;
+    type ComputeEraForDapps = pallet_plasm_rewards::DefaultForDappsStaking<Runtime>;
     type ComputeEraForSecurity = PlasmValidator;
     type ComputeTotalPayout = pallet_plasm_rewards::inflation::FirstPlasmIncentive<u32>;
     type MaybeValidators = PlasmValidator;
@@ -210,18 +210,18 @@ impl pallet_plasm_validator::Trait for Runtime {
     type Event = Event;
 }
 
-impl pallet_dapps_staking::Trait for Runtime {
-    type Currency = Balances;
-    type BondingDuration = BondingDuration;
-    type ContractFinder = Operator;
-    type RewardRemainder = (); // Reward remainder is burned.
-    type Reward = (); // Reward is minted.
-    type Time = Timestamp;
-    type ComputeRewardsForDapps = pallet_dapps_staking::rewards::BasedComputeRewardsForDapps;
-    type EraFinder = PlasmRewards;
-    type ForDappsEraReward = PlasmRewards;
-    type Event = Event;
-}
+// impl pallet_dapps_staking::Trait for Runtime {
+//     type Currency = Balances;
+//     type BondingDuration = BondingDuration;
+//     type ContractFinder = Operator;
+//     type RewardRemainder = (); // Reward remainder is burned.
+//     type Reward = (); // Reward is minted.
+//     type Time = Timestamp;
+//     type ComputeRewardsForDapps = pallet_dapps_staking::rewards::BasedComputeRewardsForDapps;
+//     type EraFinder = PlasmRewards;
+//     type ForDappsEraReward = PlasmRewards;
+//     type Event = Event;
+// }
 
 parameter_types! {
     pub const ContractTransferFee: Balance = 1 * MILLIPLM;
@@ -354,7 +354,6 @@ construct_runtime!(
         FinalityTracker: pallet_finality_tracker::{Module, Call, Inherent},
         Operator: pallet_contract_operator::{Module, Call, Storage, Event<T>},
         Trading: pallet_operator_trading::{Module, Call, Storage, Event<T>},
-        DappsStaking: pallet_dapps_staking::{Module, Call, Storage, Event<T>, Config},
         RandomnessCollectiveFlip: pallet_randomness_collective_flip::{Module, Call, Storage},
         Sudo: pallet_sudo::{Module, Call, Storage, Event<T>, Config<T>},
     }
