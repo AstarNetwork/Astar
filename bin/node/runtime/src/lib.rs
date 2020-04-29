@@ -191,7 +191,7 @@ impl pallet_plasm_rewards::Trait for Runtime {
     type Time = Timestamp;
     type SessionsPerEra = SessionsPerEra;
     type BondingDuration = BondingDuration;
-    type ComputeEraForDapps = pallet_plasm_rewards::traits::DefaultForDappsStaking<Runtime>;
+    type ComputeEraForDapps = pallet_plasm_rewards::DefaultForDappsStaking<Runtime>;
     type ComputeEraForSecurity = PlasmValidator;
     type ComputeTotalPayout = pallet_plasm_rewards::inflation::FirstPlasmIncentive<u32>;
     type MaybeValidators = PlasmValidator;

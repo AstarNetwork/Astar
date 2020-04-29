@@ -4,9 +4,9 @@ use plasm_primitives::{AccountId, Balance, Signature};
 use plasm_runtime::constants::currency::*;
 use plasm_runtime::Block;
 use plasm_runtime::{
-    BabeConfig, BalancesConfig, ContractsConfig, DappsStakingConfig, GenesisConfig, GrandpaConfig,
-    IndicesConfig, PlasmRewardsConfig, PlasmValidatorConfig, SessionConfig, SessionKeys,
-    SudoConfig, SystemConfig, WASM_BINARY,
+    BabeConfig, BalancesConfig, ContractsConfig, GenesisConfig, GrandpaConfig, IndicesConfig,
+    PlasmRewardsConfig, PlasmValidatorConfig, SessionConfig, SessionKeys, SudoConfig, SystemConfig,
+    WASM_BINARY,
 };
 use sc_chain_spec::ChainSpecExtension;
 use sc_service::ChainType;
@@ -133,9 +133,9 @@ fn make_genesis(
                 .map(|x| x.0.clone())
                 .collect::<Vec<_>>(),
         }),
-        pallet_dapps_staking: Some(DappsStakingConfig {
-            ..Default::default()
-        }),
+        // pallet_dapps_staking: Some(DappsStakingConfig {
+        //     ..Default::default()
+        // }),
         pallet_session: Some(SessionConfig {
             keys: initial_authorities
                 .iter()
