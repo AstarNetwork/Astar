@@ -646,7 +646,7 @@
 }
 
 <span class="macro">parameter_types</span><span class="macro">!</span> {
-    <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">EpochDuration</span>: <span class="ident">u64</span> <span class="op">=</span> <span class="ident">EPOCH_DURATION_IN_SLOTS</span>;
+    <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">EpochDuration</span>: <span class="ident">u64</span> <span class="op">=</span> <span class="ident">EPOCH_DURATION_IN_BLOCKS</span> <span class="kw">as</span> <span class="ident">u64</span>;
     <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">ExpectedBlockTime</span>: <span class="ident">Moment</span> <span class="op">=</span> <span class="ident">MILLISECS_PER_BLOCK</span>;
 }
 

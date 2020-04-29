@@ -342,11 +342,6 @@
 <span id="342">342</span>
 <span id="343">343</span>
 <span id="344">344</span>
-<span id="345">345</span>
-<span id="346">346</span>
-<span id="347">347</span>
-<span id="348">348</span>
-<span id="349">349</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="doccomment">//! A set of constant values used in substrate runtime.</span>
 
@@ -669,12 +664,7 @@
     <span class="comment">// 1 in 4 blocks (on average, not counting collisions) will be primary BABE blocks.</span>
     <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">PRIMARY_PROBABILITY</span>: (<span class="ident">u64</span>, <span class="ident">u64</span>) <span class="op">=</span> (<span class="number">1</span>, <span class="number">4</span>);
 
-    <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">EPOCH_DURATION_IN_BLOCKS</span>: <span class="ident">BlockNumber</span> <span class="op">=</span> <span class="number">10</span> <span class="op">*</span> <span class="ident">MINUTES</span>;
-    <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">EPOCH_DURATION_IN_SLOTS</span>: <span class="ident">u64</span> <span class="op">=</span> {
-        <span class="kw">const</span> <span class="ident">SLOT_FILL_RATE</span>: <span class="ident">f64</span> <span class="op">=</span> <span class="ident">MILLISECS_PER_BLOCK</span> <span class="kw">as</span> <span class="ident">f64</span> <span class="op">/</span> <span class="ident">SLOT_DURATION</span> <span class="kw">as</span> <span class="ident">f64</span>;
-
-        (<span class="ident">EPOCH_DURATION_IN_BLOCKS</span> <span class="kw">as</span> <span class="ident">f64</span> <span class="op">*</span> <span class="ident">SLOT_FILL_RATE</span>) <span class="kw">as</span> <span class="ident">u64</span>
-    };
+    <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">EPOCH_DURATION_IN_BLOCKS</span>: <span class="ident">BlockNumber</span> <span class="op">=</span> <span class="number">4</span> <span class="op">*</span> <span class="ident">HOURS</span>;
 
     <span class="comment">// These time units are defined in number of blocks.</span>
     <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">MINUTES</span>: <span class="ident">BlockNumber</span> <span class="op">=</span> <span class="number">60</span> <span class="op">/</span> (<span class="ident">SECS_PER_BLOCK</span> <span class="kw">as</span> <span class="ident">BlockNumber</span>);
