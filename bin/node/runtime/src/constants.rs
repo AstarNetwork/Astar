@@ -22,7 +22,7 @@ pub mod currency {
         /// PLASM GENESIS TOKEN HODERS
         pub static ref HOLDERS: Vec<(plasm_primitives::AccountId, Balance)> = sp_std::vec![
             // Stake Technologies & affilation participants
-            (hex!["16eb796bee0c857db3d646ee7070252707aec0c7d82b2eda856632f6a2306a58"].into(), 71020337610241566546887)
+            (hex!["2424a6cab9711ae2f8572a221c52308842639344887175d1f08e66e71b003d6e"].into(), 71020337610241566546887)
             // Direct Lockdrop participants
           , (to_account(&hex!["1f57f692ecc6c7031f7b89e283a14a111a273ef5ca4295ed114cef5faed3f1a66da013f76b420d7a054aec6e76ecc077a70dc9951dc41b1679e20d1d9eb665b0"][..]), 216982973545339075380)
           , (to_account(&hex!["dc9381468a9712dfae81b5c88827cd824c189db9f7f49d4571cfe67b498b691204ae6d4c354a3677788828830649b682c91eeef379daec40f56a9ac7c4a669bd"][..]), 245318656574379798128)
