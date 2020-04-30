@@ -2875,7 +2875,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-contract-operator"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "derive_more 0.14.1",
  "frame-support",
@@ -2961,7 +2961,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-dapps-staking"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "derive_more 0.14.1",
  "frame-support",
@@ -3041,7 +3041,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-operator-trading"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -3084,7 +3084,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-plasm-lockdrop"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "bs58",
  "frame-support",
@@ -3115,7 +3115,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-plasm-rewards"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -3137,7 +3137,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-plasm-validator"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "frame-support",
  "frame-system",
