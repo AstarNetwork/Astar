@@ -3,7 +3,11 @@
   "id": "plasm",
   "chainType": "Live",
   "bootNodes": [
-    "/ip4/95.217.129.149/tcp/30333/p2p/12D3KooWMWk8YeBLsPYX2WKdyCc9ZXGqyDrKTJcjvqYqcSfZbVP2"
+    "/ip4/95.217.129.149/tcp/30333/p2p/12D3KooWMWk8YeBLsPYX2WKdyCc9ZXGqyDrKTJcjvqYqcSfZbVP2",
+    "/ip4/18.177.171.227/tcp/30333/p2p/12D3KooWJuV3afUCWRPqZjoDWCRoLUBSHrJpFpf2SLwz4dY6iQfV",
+    "/ip4/54.238.88.252/tcp/30333/p2p/12D3KooWR5p6khYqH9QmYSMn5eKYpoYTqXyzrY8HZ4PinogkviDw",
+    "/ip4/18.180.219.81/tcp/30333/p2p/12D3KooWFaZzXrWxxU3gTryYwF9YqZaJ2dBT5Nb7QSpukPgUkiFY",
+    "/ip4/54.250.229.76/tcp/30333/p2p/12D3KooWN29Fcxn3fBCx9zo5wdWhVzxXjJcWLYxtCZDcYbrQLd1d"
   ],
   "telemetryEndpoints": [
     [
