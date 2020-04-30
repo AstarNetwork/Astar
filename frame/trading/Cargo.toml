@@ -1,6 +1,6 @@
 [package]
 name = "pallet-operator-trading"
-version = "0.1.0"
+version = "1.0.0"
 authors = ["Takumi Yamashita <takumi@stake.co.jp>"]
 edition = "2018"
 

@@ -170,54 +170,59 @@ pub fn dusty_config() -> ChainSpec {
     ChainSpec::from_json_bytes(&include_bytes!("../res/dusty.json")[..]).unwrap()
 }
 
+/// Plasm mainnet file config.
+pub fn plasm_config() -> ChainSpec {
+    ChainSpec::from_json_bytes(&include_bytes!("../res/plasm.json")[..]).unwrap()
+}
+
 /*
-/// Dusty native config.
-pub fn dusty_config() -> ChainSpec {
+/// Mainnet native config.
+pub fn plasm_config() -> ChainSpec {
     ChainSpec::from_genesis(
-        "Dusty",
-        "dusty",
+        "Plasm",
+        "plasm",
         ChainType::Live,
-        dusty_genesis,
+        plasm_genesis,
         vec![],
         Some(sc_telemetry::TelemetryEndpoints::new(vec![(STAGING_TELEMETRY_URL.to_string(),0)]).unwrap()),
-        Some(DUSTY_PROTOCOL_ID),
-        serde_json::from_str(DUSTY_PROPERTIES).unwrap(),
+        Some(PLASM_PROTOCOL_ID),
+        serde_json::from_str(PLASM_PROPERTIES).unwrap(),
         Default::default(),
     )
 }
 
-fn dusty_genesis() -> GenesisConfig {
-    // Dusty initial authorities
+fn plasm_genesis() -> GenesisConfig {
+    // Plasm initial authorities
     let authorities = vec![
         (   // akru
-            hex!["16eb796bee0c857db3d646ee7070252707aec0c7d82b2eda856632f6a2306a58"].into(),
-            hex!["ac2bbc1877441591e997a7bd8043f4df4f7ca69bd05a762b0661ec376f64f551"].unchecked_into(),
-            hex!["0e95fb00ea007cd02b7b0065840d4572aeab5dbf77f148a62330168e7092703d"].unchecked_into(),
+            hex!["34141c0c21335e3d0ee1a036793cd329a1a24abd617fc37ce2382c340be96a56"].into(),
+            hex!["e0c4aae64015c19224b8a054a072a375168ccde72d3d960e8b06f2bb30167d4a"].unchecked_into(),
+            hex!["9cc6e9120f5fae0ec6d2b1d6ca8a14bed7a5055a66daf8e64e41cb2700678584"].unchecked_into(),
         ),
         (   // staketech-01
-            hex!["48cdc7ef880c80e8475170f206381d2cb13a87c209452fc6d8a1e14186d61b28"].into(),
-            hex!["70887b6d5241f2483fd7f199697a2f4ccfe3aedbfa60fe0c82fe476a4b08a320"].unchecked_into(),
-            hex!["c62110354d58905bbfa894a1d82f0c175dfc7720758b28d18bc2118ef5f54f91"].unchecked_into(),
+            hex!["84fb8020ed0b8e4ca4b574b9480ff2f4d37a0b46ce46e65d05468f9d65150d21"].into(),
+            hex!["fe6d0ed26feab814e4c844f639dd7b5c9c1da84f130bf047e4a37d9b57c5a214"].unchecked_into(),
+            hex!["f5c5a9d0a9d19f9ee41a8e442758674294035cde4703c4ace5d4f2683ca2243f"].unchecked_into(),
         ),
         (   // staketech-02
-            hex!["38cdc7ef880c80e8475170f206381d2cb13a87c209452fc6d8a1e14186d61b28"].into(),
-            hex!["d409311bae981d87dee63d4c799723a33d509d7388db4c530a10e607937e547d"].unchecked_into(),
-            hex!["36aaade466263a00ec16a1a1c301636ff8488fc28a08e6a7eca7ac8496e35dca"].unchecked_into(),
+            hex!["8e067f3e41cdd90c11ac2f7f3b1a70ee511867fa4e7dfd85f08ff16c3245ad01"].into(),
+            hex!["6c35e8a3eb4839ea8b7438ae59d7d49fe43529943b2812ea5f704d6f9cee640e"].unchecked_into(),
+            hex!["7a6a1d203f0ee6112b108faa17808f88b89b5f3fdfea9e4434ae51d28a81508f"].unchecked_into(),
         ),
         (   // staketech-03
-            hex!["28cdc7ef880c80e8475170f206381d2cb13a87c209452fc6d8a1e14186d61b28"].into(),
-            hex!["266f53d34490e10e6c818a1f6208dd285a74c01e022cb3b725cf5888bc89136f"].unchecked_into(),
-            hex!["c379204b0b450bb62006a0df2b4abac72c79909248fc0f30ce0b05fcb9c102fa"].unchecked_into(),
+            hex!["32b0c306a3f85902e504ed971ca0323f42c3fd209cb275aaabcc22f1c054da79"].into(),
+            hex!["f617e63ea7f69f5d83e3718b30db7a5b1d41abb24835a92053bc8bcd252c861c"].unchecked_into(),
+            hex!["8f6d7375f702f327b3779ef8ba567530764ea9f71dc638dafbadd29786640eec"].unchecked_into(),
         ),
         (   // staketech-04
-            hex!["18cdc7ef880c80e8475170f206381d2cb13a87c209452fc6d8a1e14186d61b28"].into(),
-            hex!["96e2554353e7a8de10a388a5dda42096d3c7768403f3735d0a939bc3fd39bc54"].unchecked_into(),
-            hex!["674bd4f2670c0e99edcccd5d3821c54b9d559580a31d8e2ca1e88c1e3db28021"].unchecked_into(),
+            hex!["1e4f5e33dfb4fc38e3b2c3bf91eae6c5443095627d1e0a8595354fcbb2163a2c"].into(),
+            hex!["80a9e57aace4b42c158ab336360bca4b8373ae049b58357c04df29a37b564f35"].unchecked_into(),
+            hex!["139e66014a330d35cbd662905e9e4ad4fb8d6ef0d3681d95f53cbf9c0abb7967"].unchecked_into(),
         ),
     ];
 
-    // akru
-    let root_key = hex!["16eb796bee0c857db3d646ee7070252707aec0c7d82b2eda856632f6a2306a58"];
+    // Stake Technologies
+    let root_key = hex!["4217f22e9a29af49fd087008d593d07b73d628867f95402885c0651da2c8a432"];
 
     // token holders
     let holders = HOLDERS.to_vec();
