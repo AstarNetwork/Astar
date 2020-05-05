@@ -11,6 +11,3 @@
 
 ## Dependencies
 {Dependencies issue or PR.}
-Last Modified:
-05/05/2020 20:39:57
-(timezone is UTC)
