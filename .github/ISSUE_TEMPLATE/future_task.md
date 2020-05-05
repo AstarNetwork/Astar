@@ -6,7 +6,7 @@
 - [ ] {task 2}
 - [ ] ...
 
-## Expired
+## Estimated done.
 {When finished this task?}
 
 ## Dependencies
