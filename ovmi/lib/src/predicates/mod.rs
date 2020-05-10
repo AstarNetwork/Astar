@@ -11,9 +11,15 @@ use serde::{Deserialize, Serialize};
 mod and;
 mod executable;
 mod not;
+mod or;
+mod for_all;
+mod there_exists;
 pub use and::AndPredicate;
 pub use executable::CompiledExecutable;
+pub use for_all::ForAllPredicate;
 pub use not::NotPredicate;
+pub use or::OrPredicate;
+pub use there_exists::ThereExistsPredicate;
 
 // #[derive(Clone, Eq, PartialEq, Encode, Decode, Hash, derive_more::Display)]
 // #[cfg_attr(feature = "std", derive(Serialize, Deserialize, Debug))]
@@ -24,6 +30,9 @@ pub use not::NotPredicate;
 pub enum LogicalConnectiveExecutable<'a, Ext: ExternalCall> {
     And(AndPredicate<'a, Ext>),
     Not(NotPredicate<'a, Ext>),
+    Or(OrPredicate<'a, Ext>),
+    ForAll(ForAllPredicate<'a, Ext>),
+    ThereExists(ThereExistsPredicate<'a, Ext>),
 }
 
 impl<'a, Ext: ExternalCall> LogicalConnectiveInterface<AddressOf<Ext>>
@@ -42,6 +51,15 @@ impl<'a, Ext: ExternalCall> LogicalConnectiveInterface<AddressOf<Ext>>
             LogicalConnectiveExecutable::Not(not) => {
                 not.is_valid_challenge(inputs, challenge_inputs, challenge)
             }
+            LogicalConnectiveExecutable::Or(or) => {
+                or.is_valid_challenge(inputs, challenge_inputs, challenge)
+            }
+            LogicalConnectiveExecutable::ForAll(for_all) => {
+                for_all.is_valid_challenge(inputs, challenge_inputs, challenge)
+            }
+            LogicalConnectiveExecutable::ThereExists(there_exists) => {
+                there_exists.is_valid_challenge(inputs, challenge_inputs, challenge)
+            }
         }
     }
 }
@@ -49,6 +67,9 @@ impl<'a, Ext: ExternalCall> LogicalConnectiveInterface<AddressOf<Ext>>
 pub enum DeciableExecutable<'a, Ext: ExternalCall> {
     And(AndPredicate<'a, Ext>),
     Not(NotPredicate<'a, Ext>),
+    Or(OrPredicate<'a, Ext>),
+    ForAll(ForAllPredicate<'a, Ext>),
+    ThereExists(ThereExistsPredicate<'a, Ext>),
 }
 
 #[derive(Clone, Eq, PartialEq, Encode, Decode, Hash, derive_more::Display)]

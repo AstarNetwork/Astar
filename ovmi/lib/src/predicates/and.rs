@@ -29,10 +29,10 @@ impl<'a, Ext: ExternalCall> LogicalConnectiveInterface<AddressOf<Ext>> for AndPr
         let index: usize = index as usize;
 
         // challenge should be not(p[index])
-        // require!(_challnge.predicateAddress == not_predicateAddress);
-        require!(challenge.predicate_address == Ext::NotPredicate);
+        // require!(_challenge.predicateAddress == not_predicateAddress);
+        require!(challenge.predicate_address == Ext::NotAddress);
 
-        // require!(keccak256(_inputs[index]) == keccak256(_challnge.inputs[0]));
+        // require!(keccak256(_inputs[index]) == keccak256(_challenge.inputs[0]));
         require!(inputs.len() > index);
         require!(challenge.inputs.len() > 0);
         require!(inputs[index as usize] == challenge.inputs[0]);

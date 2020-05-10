@@ -60,8 +60,8 @@ pub fn logical_connective_executable_from_address<'a, Ext: ExternalCall>(
 ) -> Option<LogicalConnectiveExecutable<'a, Ext>> where
 {
     match address {
-        x if x == Ext::NotPredicate => Some(LogicalConnectiveExecutable::Not(NotPredicate { ext })),
-        x if x == Ext::AndPredicate => Some(LogicalConnectiveExecutable::And(AndPredicate { ext })),
+        x if x == Ext::NotAddress => Some(LogicalConnectiveExecutable::Not(NotPredicate { ext })),
+        x if x == Ext::AndAddress => Some(LogicalConnectiveExecutable::And(AndPredicate { ext })),
         _ => None,
     }
 }

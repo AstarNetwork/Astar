@@ -77,9 +77,11 @@ pub trait ExternalCall {
     type Hashing: Hasher<Out = Self::Hash>;
 
     // relation const any atomic predicate address.
-    const NotPredicate: Self::Address;
-    const AndPredicate: Self::Address;
-    const OrPredicate: Self::Address;
+    const NotAddress: Self::Address;
+    const AndAddress: Self::Address;
+    const OrAddress: Self::Address;
+    const ForAllAddress: Self::Address;
+    const ThereExistsAddress: Self::Address;
 
     /// Produce the hash of some codec-encodable value.
     fn hash_of<S: Encode>(s: &S) -> Self::Hash {
@@ -88,7 +90,7 @@ pub trait ExternalCall {
 
     /// Call (other predicate) into the specified account.
     fn ext_call(
-        &mut self,
+        &self,
         to: &Self::Address,
         input_data: PredicateCallInputs<Self::Address>,
     ) -> ExecResult<Self::Address>;
@@ -117,8 +119,33 @@ pub trait ExternalCall {
         game_id: Self::Hash,
         decision: bool,
     ) -> ExecResult<Self::Address>;
-}
 
+    /* Helpers of UtilsContract. */
+    /// @dev check target is variable or not.
+    /// A variable has prefix V and its length is less than 20.
+    fn is_placeholder(target: &Vec<u8>) -> bool {
+        return target.len() < 20 && target.get(0) == Some(&(b'V' as u8));
+    }
+
+    /// @dev check target is label or not.
+    /// A label has prefix L and its length is less than 20.
+    fn is_label(target: &Vec<u8>) -> bool {
+        return target.len() < 20 && target.get(0) == Some(&(b'L' as u8));
+    }
+
+    /// sub_bytes of [start_idnex, end_idnex).
+    fn sub_bytes(target: &Vec<u8>, start_index: u128, end_index: u128) -> Vec<u8> {
+        target
+            .as_slice()
+            .get((start_index as usize)..(end_index as usize))
+            .unwrap_or(vec![].as_slice())
+            .to_vec()
+    }
+
+    fn get_input_value(target: &Vec<u8>) -> Vec<u8> {
+        Self::sub_bytes(target, 1, target.len() as u128)
+    }
+}
 pub trait OvmExecutor<P> {
     type ExtCall: ExternalCall;
     fn execute(

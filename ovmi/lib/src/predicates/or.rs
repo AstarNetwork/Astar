@@ -24,18 +24,17 @@ impl<'a, Ext: ExternalCall> LogicalConnectiveInterface<AddressOf<Ext>> for OrPre
     ) -> ExecResult<AddressOf<Ext>> {
         // challenge must be and(not(p[0]), not(p[1]), ...)
         require_with_message!(
-            challenge.predicate_address == Ext::AndPredicate,
+            challenge.predicate_address == Ext::AndAddress,
             "challenge must be And"
         );
-        for (i, input) in inputs.enumerate() {
+        for (i, input) in inputs.iter().enumerate() {
             let not_inputs = vec![input.clone()];
-            inputs[0] = input;
             let p = Property {
-                predicate_address: Ext::NotPredicate,
+                predicate_address: Ext::NotAddress,
                 inputs: not_inputs,
             };
             require!(challenge.inputs.len() > i);
-            require_with_message!(p == challnge.inputs[i], "inputs must be same");
+            require_with_message!(p.encode() == challenge.inputs[i], "inputs must be same");
         }
         Ok(true)
     }
@@ -49,20 +48,28 @@ impl<'a, Ext: ExternalCall> DecidablePredicateInterface<AddressOf<Ext>> for OrPr
         witness: Vec<Vec<u8>>,
     ) -> ExecResult<AddressOf<Ext>> {
         require!(witness.len() > 0);
-        let index: u128 = Decode::decode(&mut &witness[0][..])?;
+        let index: u128 = Decode::decode(&mut &witness[0][..])
+            .map_err(|_| ExecError::CodecError { type_name: "u128" })?;
         require_with_message!(
-            (index as usize) < inputs.length,
+            (index as usize) < inputs.len(),
             "witness must be smaller than inputs length"
         );
-        let property_bytes = inputs[index as usize];
-        let property: Property<AddressOf<Ext>> = Decode::decode(&mut &property_bytes[0][..])?;
+        let property_bytes = inputs[index as usize].clone();
+        let property: Property<AddressOf<Ext>> =
+            Decode::decode(&mut &property_bytes[..]).map_err(|_| ExecError::CodecError {
+                type_name: "Property<Ext>",
+            })?;
 
         self.ext.ext_call(
-            property.predicate_address,
+            &property.predicate_address,
             PredicateCallInputs::DecidablePredicate(
-                DeciablePredicateCallInput::DecideWithWitness {
+                DecidablePredicateCallInputs::DecideWithWitness {
                     inputs: property.inputs,
-                    witness: witness.as_slice().get(1..).to_vec(),
+                    witness: witness
+                        .as_slice()
+                        .get(1..)
+                        .unwrap_or(vec![].as_slice())
+                        .to_vec(),
                 },
             ),
         )

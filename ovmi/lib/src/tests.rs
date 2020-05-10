@@ -20,7 +20,7 @@ impl ExternalCall for MockExternalCall {
     const AndPredicate: Address = 2;
 
     fn ext_call(
-        &mut self,
+        &self,
         to: &Self::Address,
         input_data: PredicateCallInputs<Self::Address>,
     ) -> ExecResult<Address> {
