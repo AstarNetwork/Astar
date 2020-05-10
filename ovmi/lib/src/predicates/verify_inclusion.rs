@@ -1,16 +1,25 @@
 use crate::executor::*;
 use crate::predicates::*;
+use crate::Range;
 
-pub struct EqualPredicate<'a, Ext: ExternalCall> {
+pub struct VerifyInclusionPredicate<'a, Ext: ExternalCall> {
     pub ext: &'a mut Ext,
 }
 
-impl<'a, Ext: ExternalCall> AtomicPredicateInterface<AddressOf<Ext>> for EqualPredicate<'a, Ext> {
+impl<'a, Ext: ExternalCall> AtomicPredicateInterface<AddressOf<Ext>>
+    for VerifyInclusionPredicate<'a, Ext>
+{
     type Hash = HashOf<Ext>;
     fn decide(&self, inputs: Vec<Vec<u8>>) -> ExecResult<AddressOf<Ext>> {
-        require!(inputs.len() > 1);
-        require_with_message!(inputs[0] == inputs[1], "2 inputs must be equal");
-        Ok(true)
+        require!(inputs.len() > 4);
+        let address = Ext::bytes_to_address(&inputs[1])?;
+        Ok(self.ext.ext_verify_inclusion_with_root(
+            Ext::hash_of(&inputs[0]),
+            address,
+            &inputs[2][..], // range
+            &inputs[3][..], // inclusionProof
+            &inputs[4][..], // bytes32
+        ))
     }
 
     fn ext_address(&self) -> AddressOf<Ext> {
@@ -29,7 +38,7 @@ impl<'a, Ext: ExternalCall> AtomicPredicateInterface<AddressOf<Ext>> for EqualPr
 }
 
 impl<'a, Ext: ExternalCall> DecidablePredicateInterface<AddressOf<Ext>>
-    for EqualPredicate<'a, Ext>
+    for VerifyInclusionPredicate<'a, Ext>
 {
     fn decide_with_witness(
         &self,

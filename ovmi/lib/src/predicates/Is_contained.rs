@@ -1,15 +1,23 @@
 use crate::executor::*;
 use crate::predicates::*;
+use crate::Range;
 
-pub struct EqualPredicate<'a, Ext: ExternalCall> {
+pub struct IsContainedPredicate<'a, Ext: ExternalCall> {
     pub ext: &'a mut Ext,
 }
 
-impl<'a, Ext: ExternalCall> AtomicPredicateInterface<AddressOf<Ext>> for EqualPredicate<'a, Ext> {
+impl<'a, Ext: ExternalCall> AtomicPredicateInterface<AddressOf<Ext>>
+    for IsContainedPredicate<'a, Ext>
+{
     type Hash = HashOf<Ext>;
     fn decide(&self, inputs: Vec<Vec<u8>>) -> ExecResult<AddressOf<Ext>> {
         require!(inputs.len() > 1);
-        require_with_message!(inputs[0] == inputs[1], "2 inputs must be equal");
+        let range: Range = Ext::bytes_to_range(&inputs[0])?;
+        let sub_range: Range = Ext::bytes_to_range(&inputs[1])?;
+        require_with_message!(
+            range.start <= sub_range.start && sub_range.end <= range.end,
+            "range must contain subrange"
+        );
         Ok(true)
     }
 
@@ -29,7 +37,7 @@ impl<'a, Ext: ExternalCall> AtomicPredicateInterface<AddressOf<Ext>> for EqualPr
 }
 
 impl<'a, Ext: ExternalCall> DecidablePredicateInterface<AddressOf<Ext>>
-    for EqualPredicate<'a, Ext>
+    for IsContainedPredicate<'a, Ext>
 {
     fn decide_with_witness(
         &self,

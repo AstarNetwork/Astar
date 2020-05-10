@@ -106,7 +106,11 @@ pub trait ExternalCall {
     /// CommitmentAddress(special) isCommitment(address) -> Commitment
     /// is_stored_predicate(&mut self, address, key, value);?
     /// ref: https://github.com/cryptoeconomicslab/ovm-contracts/blob/master/contracts/Predicate/Atomic/IsStoredPredicate.sol
-    fn ext_is_stored(&mut self, address: &Self::Address, key: &[u8], value: &[u8]) -> bool;
+    fn ext_is_stored(&self, address: &Self::Address, key: &[u8], value: &[u8]) -> bool;
+
+    /// verifyInclusionWithRoot method verifies inclusion proof in Double Layer Tree.
+    /// Must be used by kind of Commitment contract by Plasma module.
+    fn ext_verify_inclusion_with_root(&self, leaf: Self::Hash, token_address: Self::Address, range: &[u8], inclusion_proof: &[u8], root: &[u8]) -> bool;
 
     /* Helpers of UniversalAdjudicationContract. */
     /// `is_decided` function of UniversalAdjudication in OVM module.
@@ -144,6 +148,20 @@ pub trait ExternalCall {
 
     fn get_input_value(target: &Vec<u8>) -> Vec<u8> {
         Self::sub_bytes(target, 1, target.len() as u128)
+    }
+
+    fn bytes_to_u128(target: &Vec<u8>) -> ExecResultT<u128, Self::Address> {
+        Decode::decode(&mut &target[..]).map_err(|_| ExecError::CodecError { type_name: "u128" })
+    }
+
+    fn bytes_to_range(target: &Vec<u8>) -> ExecResultT<Range, Self::Address> {
+        Decode::decode(&mut &target[..]).map_err(|_| ExecError::CodecError { type_name: "Range" })
+    }
+
+    fn bytes_to_address(target: &Vec<u8>) -> ExecResultT<Self::Address, Self::Address> {
+        Decode::decode(&mut &target[..]).map_err(|_| ExecError::CodecError {
+            type_name: "Address",
+        })
     }
 }
 pub trait OvmExecutor<P> {

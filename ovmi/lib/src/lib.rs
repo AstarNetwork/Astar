@@ -140,3 +140,11 @@ mod tests;
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Default, Encode, Decode)]
 #[cfg_attr(feature = "std", derive(Hash))]
 pub struct AccountId([u8; 32]);
+
+/// An opaque Range(u128, u128).
+#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Default, Encode, Decode)]
+#[cfg_attr(feature = "std", derive(Hash))]
+pub struct Range {
+    pub start: u128,
+    pub end: u128,
+}

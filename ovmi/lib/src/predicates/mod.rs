@@ -2,7 +2,7 @@
 //! Executable Predicates instanced from Compiled Predicates and Atomic Predicates.
 //!
 //!
-use crate::executor::{AddressOf, ExecResult, ExecResultT, ExternalCall};
+use crate::executor::{AddressOf, ExecResult, ExecResultT, ExternalCall, MaybeAddress};
 use codec::{Decode, Encode};
 use core::fmt;
 #[cfg(feature = "std")]
@@ -23,7 +23,17 @@ pub use or::OrPredicate;
 pub use there_exists::ThereExistsPredicate;
 
 mod equal;
+mod is_contained;
+mod is_less;
+mod is_stored;
+mod is_valid_signature;
+mod verify_inclusion;
 pub use equal::EqualPredicate;
+pub use is_contained::IsContainedPredicate;
+pub use is_less::IsLessThanPredicate;
+pub use is_stored::IsStoredPredicate;
+pub use is_valid_signature::IsValidSignaturePredicate;
+pub use verify_inclusion::VerifyInclusionPredicate;
 
 // #[derive(Clone, Eq, PartialEq, Encode, Decode, Hash, derive_more::Display)]
 // #[cfg_attr(feature = "std", derive(Serialize, Deserialize, Debug))]
@@ -74,6 +84,7 @@ pub enum DeciableExecutable<'a, Ext: ExternalCall> {
     Or(OrPredicate<'a, Ext>),
     ForAll(ForAllPredicate<'a, Ext>),
     ThereExists(ThereExistsPredicate<'a, Ext>),
+    Equal(EqualPredicate<'a, Ext>),
 }
 
 #[derive(Clone, Eq, PartialEq, Encode, Decode, Hash, derive_more::Display)]
@@ -279,19 +290,6 @@ pub trait DecidablePredicateInterface<Address> {
         _inputs: Vec<Vec<u8>>,
         _witness: Vec<Vec<u8>>,
     ) -> ExecResult<Address>;
-}
-
-impl<Address, T> DecidablePredicateInterface<Address> for T
-where
-    T: BaseAtomicPredicateInterface<Address>,
-{
-    fn decide_with_witness(
-        &self,
-        inputs: Vec<Vec<u8>>,
-        _witness: Vec<Vec<u8>>,
-    ) -> ExecResult<Address> {
-        BaseAtomicPredicateInterface::decide(self, inputs)
-    }
 }
 
 pub trait CompiledPredicateInterface<Address> {

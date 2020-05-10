@@ -1,16 +1,21 @@
 use crate::executor::*;
 use crate::predicates::*;
+use crate::Range;
 
-pub struct EqualPredicate<'a, Ext: ExternalCall> {
+pub struct IsStoredPredicate<'a, Ext: ExternalCall> {
     pub ext: &'a mut Ext,
 }
 
-impl<'a, Ext: ExternalCall> AtomicPredicateInterface<AddressOf<Ext>> for EqualPredicate<'a, Ext> {
+impl<'a, Ext: ExternalCall> AtomicPredicateInterface<AddressOf<Ext>>
+    for IsStoredPredicate<'a, Ext>
+{
     type Hash = HashOf<Ext>;
     fn decide(&self, inputs: Vec<Vec<u8>>) -> ExecResult<AddressOf<Ext>> {
-        require!(inputs.len() > 1);
-        require_with_message!(inputs[0] == inputs[1], "2 inputs must be equal");
-        Ok(true)
+        require!(inputs.len() > 2);
+        let address = Ext::bytes_to_address(&inputs[0])?;
+        Ok(self
+            .ext
+            .ext_is_stored(&address, &inputs[1][..], &inputs[2][..]))
     }
 
     fn ext_address(&self) -> AddressOf<Ext> {
@@ -29,7 +34,7 @@ impl<'a, Ext: ExternalCall> AtomicPredicateInterface<AddressOf<Ext>> for EqualPr
 }
 
 impl<'a, Ext: ExternalCall> DecidablePredicateInterface<AddressOf<Ext>>
-    for EqualPredicate<'a, Ext>
+    for IsStoredPredicate<'a, Ext>
 {
     fn decide_with_witness(
         &self,
