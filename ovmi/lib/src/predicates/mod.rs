@@ -10,16 +10,20 @@ use serde::{Deserialize, Serialize};
 
 mod and;
 mod executable;
+mod for_all;
 mod not;
 mod or;
-mod for_all;
 mod there_exists;
+
 pub use and::AndPredicate;
 pub use executable::CompiledExecutable;
 pub use for_all::ForAllPredicate;
 pub use not::NotPredicate;
 pub use or::OrPredicate;
 pub use there_exists::ThereExistsPredicate;
+
+mod equal;
+pub use equal::EqualPredicate;
 
 // #[derive(Clone, Eq, PartialEq, Encode, Decode, Hash, derive_more::Display)]
 // #[cfg_attr(feature = "std", derive(Serialize, Deserialize, Debug))]
@@ -238,23 +242,19 @@ pub trait Utils<Hash> {
     fn ext_get_property_id(&self) -> Hash;
 }
 
-pub trait BaseAtomicPredicateInterface<Address, Hash>:
+pub trait BaseAtomicPredicateInterface<Address>:
     AtomicPredicateInterface<Address> + DecidablePredicateInterface<Address>
 {
+}
+
+pub trait AtomicPredicateInterface<Address> {
+    type Hash;
     fn decide(&self, _inputs: Vec<Vec<u8>>) -> ExecResult<Address> {
         return Ok(false);
     }
 
-    fn decide_with_witness(
-        &self,
-        inputs: Vec<Vec<u8>>,
-        _witness: Vec<Vec<u8>>,
-    ) -> ExecResult<Address> {
-        BaseAtomicPredicateInterface::decide(self, inputs)
-    }
-
     fn decide_true(&self, inputs: Vec<Vec<u8>>) -> ExecResult<Address> {
-        let result_of_decide = BaseAtomicPredicateInterface::decide(self, inputs.clone())?;
+        let result_of_decide = AtomicPredicateInterface::decide(self, inputs.clone())?;
         require_with_message!(result_of_decide, "must decide true");
         let property = Property {
             predicate_address: self.ext_address(),
@@ -265,13 +265,12 @@ pub trait BaseAtomicPredicateInterface<Address, Hash>:
     }
 
     fn ext_address(&self) -> Address;
-    fn ext_set_predicate_decision(&self, game_id: Hash, decision: bool) -> ExecResult<Address>;
-    fn ext_get_property_id(&self, property: &Property<Address>) -> Hash;
-}
-
-pub trait AtomicPredicateInterface<Address> {
-    fn decide_true(&self, _inputs: Vec<Vec<u8>>) -> ExecResult<Address>;
-    fn decide(&self, _inputs: Vec<Vec<u8>>) -> ExecResult<Address>;
+    fn ext_set_predicate_decision(
+        &self,
+        game_id: Self::Hash,
+        decision: bool,
+    ) -> ExecResult<Address>;
+    fn ext_get_property_id(&self, property: &Property<Address>) -> Self::Hash;
 }
 
 pub trait DecidablePredicateInterface<Address> {
@@ -280,6 +279,19 @@ pub trait DecidablePredicateInterface<Address> {
         _inputs: Vec<Vec<u8>>,
         _witness: Vec<Vec<u8>>,
     ) -> ExecResult<Address>;
+}
+
+impl<Address, T> DecidablePredicateInterface<Address> for T
+where
+    T: BaseAtomicPredicateInterface<Address>,
+{
+    fn decide_with_witness(
+        &self,
+        inputs: Vec<Vec<u8>>,
+        _witness: Vec<Vec<u8>>,
+    ) -> ExecResult<Address> {
+        BaseAtomicPredicateInterface::decide(self, inputs)
+    }
 }
 
 pub trait CompiledPredicateInterface<Address> {

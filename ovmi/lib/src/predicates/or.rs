@@ -5,15 +5,6 @@ pub struct OrPredicate<'a, Ext: ExternalCall> {
     pub ext: &'a mut Ext,
 }
 
-impl<'a, Ext: ExternalCall> OrPredicate<'a, Ext> {
-    fn create_property_from_input(&self, input: Vec<Vec<u8>>) -> Property<AddressOf<Ext>> {
-        Property {
-            predicate_address: self.ext.ext_address(),
-            inputs: input,
-        }
-    }
-}
-
 impl<'a, Ext: ExternalCall> LogicalConnectiveInterface<AddressOf<Ext>> for OrPredicate<'a, Ext> {
     /// @dev Validates a child node of Or property in game tree.
     fn is_valid_challenge(

@@ -154,13 +154,13 @@ pub trait OvmExecutor<P> {
     ) -> ExecResult<AddressOf<Self::ExtCall>>;
 }
 
-pub struct AtomicExecutor<P, Ext> {
+pub struct BaseAtomicExecutor<P, Ext> {
     _phantom: PhantomData<(P, Ext)>,
 }
 
-impl<P, Ext> OvmExecutor<P> for AtomicExecutor<P, Ext>
+impl<P, Ext> OvmExecutor<P> for BaseAtomicExecutor<P, Ext>
 where
-    P: predicates::AtomicPredicateInterface<AddressOf<Ext>>,
+    P: predicates::BaseAtomicPredicateInterface<AddressOf<Ext>>,
     Ext: ExternalCall,
 {
     type ExtCall = Ext;
@@ -169,20 +169,23 @@ where
         call_method: PredicateCallInputs<AddressOf<Ext>>,
     ) -> ExecResult<AddressOf<Ext>> {
         match call_method {
-            PredicateCallInputs::AtomicPredicate(atomic) => {
+            PredicateCallInputs::BaseAtomicPredicate(atomic) => {
                 match atomic {
-                    AtomicPredicateCallInputs::Decide { inputs } => {
+                    BaseAtomicPredicateCallInputs::Decide { inputs } => {
                         return predicate.decide(inputs);
                     }
-                    AtomicPredicateCallInputs::DecideTrue { inputs } => {
+                    BaseAtomicPredicateCallInputs::DecideTrue { inputs } => {
                         predicate.decide_true(inputs);
                         return Ok(true);
+                    }
+                    BaseAtomicPredicateCallInputs::DecideWithWitness { inputs, witness } => {
+                        return predicate.decide_with_witness(inputs, witness);
                     }
                 };
             }
             other => Err(ExecError::CallMethod {
                 call_method: other,
-                expected: "AtomicPredicateCallInputs",
+                expected: "BaseAtomicPredicateCallInputs",
             }),
         }
     }
