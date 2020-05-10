@@ -79,6 +79,7 @@ pub trait ExternalCall {
     // relation const any atomic predicate address.
     const NotPredicate: Self::Address;
     const AndPredicate: Self::Address;
+    const OrPredicate: Self::Address;
 
     /// Produce the hash of some codec-encodable value.
     fn hash_of<S: Encode>(s: &S) -> Self::Hash {
