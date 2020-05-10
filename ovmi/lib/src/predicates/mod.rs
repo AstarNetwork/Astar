@@ -85,6 +85,11 @@ pub enum DeciableExecutable<'a, Ext: ExternalCall> {
     ForAll(ForAllPredicate<'a, Ext>),
     ThereExists(ThereExistsPredicate<'a, Ext>),
     Equal(EqualPredicate<'a, Ext>),
+    IsContained(IsContainedPredicate<'a, Ext>),
+    IsLess(IsLessThanPredicate<'a, Ext>),
+    IsStored(IsStoredPredicate<'a, Ext>),
+    IsValidSignature(IsValidSignaturePredicate<'a, Ext>),
+    VerifyInclusion(VerifyInclusionPredicate<'a, Ext>),
 }
 
 #[derive(Clone, Eq, PartialEq, Encode, Decode, Hash, derive_more::Display)]

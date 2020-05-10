@@ -110,7 +110,14 @@ pub trait ExternalCall {
 
     /// verifyInclusionWithRoot method verifies inclusion proof in Double Layer Tree.
     /// Must be used by kind of Commitment contract by Plasma module.
-    fn ext_verify_inclusion_with_root(&self, leaf: Self::Hash, token_address: Self::Address, range: &[u8], inclusion_proof: &[u8], root: &[u8]) -> bool;
+    fn ext_verify_inclusion_with_root(
+        &self,
+        leaf: Self::Hash,
+        token_address: Self::Address,
+        range: &[u8],
+        inclusion_proof: &[u8],
+        root: &[u8],
+    ) -> bool;
 
     /* Helpers of UniversalAdjudicationContract. */
     /// `is_decided` function of UniversalAdjudication in OVM module.
