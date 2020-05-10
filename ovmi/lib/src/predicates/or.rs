@@ -49,40 +49,22 @@ impl<'a, Ext: ExternalCall> DecidablePredicateInterface<AddressOf<Ext>> for OrPr
         witness: Vec<Vec<u8>>,
     ) -> ExecResult<AddressOf<Ext>> {
         require!(witness.len() > 0);
-        let index: u128 = Decode::decode(&mut &witness[0][..]);
-        uint256 index = abi.decode(_witness[0], (uint256));
-        require(
-            index < _inputs.length,
+        let index: u128 = Decode::decode(&mut &witness[0][..])?;
+        require_with_message!(
+            (index as usize) < inputs.length,
             "witness must be smaller than inputs length"
         );
-        bytes memory propertyBytes = _inputs[index];
-        types.Property memory property = abi.decode(
-            propertyBytes,
-            (types.Property)
-        );
-        DecidablePredicate predicate = DecidablePredicate(
-            property.predicateAddress
-        );
-        bytes[] memory witness = new bytes[](_witness.length - 1);
-        for (uint256 i = 0; i < _witness.length - 1; i++) {
-            witness[i] = _witness[i + 1];
-        }
-        return predicate.decideWithWitness(property.inputs, witness);
+        let property_bytes = inputs[index as usize];
+        let property: Property<AddressOf<Ext>> = Decode::decode(&mut &property_bytes[0][..])?;
 
-
-        for input in inputs.iter() {
-            let property: PropertyOf<Ext> =
-                Decode::decode(&mut &input[..]).map_err(|_| ExecError::CodecError {
-                    type_name: "Property<Ext>",
-                })?;
-            require_with_message!(
-                self.ext.ext_is_decided(&property),
-                "This property isn't true"
-            );
-        }
-        let property = self.create_property_from_input(inputs);
-        let property_id = self.ext.ext_get_property_id(&property);
-        self.ext.ext_set_predicate_decision(property_id, true)?;
-        Ok(false)
+        self.ext.ext_call(
+            property.predicate_address,
+            PredicateCallInputs::DecidablePredicate(
+                DeciablePredicateCallInput::DecideWithWitness {
+                    inputs: property.inputs,
+                    witness: witness.as_slice().get(1..).to_vec(),
+                },
+            ),
+        )
     }
 }
