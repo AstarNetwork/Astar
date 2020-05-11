@@ -3,7 +3,7 @@ use crate::predicates::*;
 use crate::Range;
 
 pub struct IsStoredPredicate<'a, Ext: ExternalCall> {
-    pub ext: &'a  Ext,
+    pub ext: &'a Ext,
 }
 
 impl<'a, Ext: ExternalCall> AtomicPredicateInterface<AddressOf<Ext>>

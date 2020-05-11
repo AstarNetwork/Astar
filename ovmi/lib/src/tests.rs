@@ -1,9 +1,6 @@
 use crate::executor::*;
-use crate::predicates::PredicateCallInputs;
 use crate::mock::*;
+use crate::predicates::PredicateCallInputs;
 
 #[test]
-fn first_test() {
-
-}
-
+fn first_test() {}

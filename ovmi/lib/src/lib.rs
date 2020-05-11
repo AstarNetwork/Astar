@@ -134,9 +134,9 @@ pub use compiled_predicates::CompiledPredicate;
 pub use prepare::compile_from_json;
 
 #[cfg(test)]
-mod tests;
-#[cfg(test)]
 mod mock;
+#[cfg(test)]
+mod tests;
 
 /// An opaque 32-byte cryptographic identifier.
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Default, Encode, Decode)]
