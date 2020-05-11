@@ -23,6 +23,10 @@ pub enum ExecError<Address> {
         call_method: PredicateCallInputs<Address>,
         expected: &'static str,
     },
+    #[snafu(display("Can not call address error."))]
+    CallAddress {
+        address: Address,
+    },
     #[snafu(display("Codec error: type name is {}", type_name))]
     CodecError {
         type_name: &'static str,
@@ -117,7 +121,7 @@ pub trait ExternalCall {
     /// Notes a call other storage.
     /// Only return true or false.
     /// CommitmentAddress(special) isCommitment(address) -> Commitment
-    /// is_stored_predicate(&mut self, address, key, value);?
+    /// is_stored_predicate(&self, address, key, value);?
     /// ref: https://github.com/cryptoeconomicslab/ovm-contracts/blob/master/contracts/Predicate/Atomic/IsStoredPredicate.sol
     fn ext_is_stored(&self, address: &Self::Address, key: &[u8], value: &[u8]) -> bool;
 

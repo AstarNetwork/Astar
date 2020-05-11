@@ -5,7 +5,7 @@ use crate::*;
 
 // Compiled Predicate transpiles to this structure.
 pub struct CompiledExecutable<'a, Ext: ExternalCall> {
-    pub ext: &'a mut Ext,
+    pub ext: &'a  Ext,
     pub payout: AddressOf<Ext>,
     pub code: CompiledPredicate,
     pub constants: BTreeMap<HashOf<Ext>, VarType>,

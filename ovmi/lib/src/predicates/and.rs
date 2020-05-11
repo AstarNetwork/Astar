@@ -2,7 +2,7 @@ use crate::executor::*;
 use crate::predicates::*;
 
 pub struct AndPredicate<'a, Ext: ExternalCall> {
-    pub ext: &'a mut Ext,
+    pub ext: &'a  Ext,
 }
 
 impl<'a, Ext: ExternalCall> AndPredicate<'a, Ext> {

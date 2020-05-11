@@ -27,7 +27,7 @@ pub enum VarValue<Address> {
 }
 
 pub fn executable_from_compiled<'a, Ext: ExternalCall>(
-    ext: &'a mut Ext,
+    ext: &'a Ext,
     code: CompiledPredicate,
     payout: AddressOf<Ext>,
     address_inputs: BTreeMap<HashOf<Ext>, AddressOf<Ext>>,
@@ -55,18 +55,18 @@ pub fn executable_from_compiled<'a, Ext: ExternalCall>(
 }
 
 pub fn logical_connective_executable_from_address<'a, Ext: ExternalCall>(
-    ext: &'a mut Ext,
-    address: AddressOf<Ext>,
+    ext: &'a Ext,
+    address: &AddressOf<Ext>,
 ) -> Option<LogicalConnectiveExecutable<'a, Ext>> where
 {
     match address {
-        x if x == Ext::NotAddress => Some(LogicalConnectiveExecutable::Not(NotPredicate { ext })),
-        x if x == Ext::AndAddress => Some(LogicalConnectiveExecutable::And(AndPredicate { ext })),
-        x if x == Ext::OrAddress => Some(LogicalConnectiveExecutable::Or(OrPredicate { ext })),
-        x if x == Ext::ForAllAddress => {
+        x if x == &Ext::NotAddress => Some(LogicalConnectiveExecutable::Not(NotPredicate { ext })),
+        x if x == &Ext::AndAddress => Some(LogicalConnectiveExecutable::And(AndPredicate { ext })),
+        x if x == &Ext::OrAddress => Some(LogicalConnectiveExecutable::Or(OrPredicate { ext })),
+        x if x == &Ext::ForAllAddress => {
             Some(LogicalConnectiveExecutable::ForAll(ForAllPredicate { ext }))
         }
-        x if x == Ext::ThereExistsAddress => Some(LogicalConnectiveExecutable::ThereExists(
+        x if x == &Ext::ThereExistsAddress => Some(LogicalConnectiveExecutable::ThereExists(
             ThereExistsPredicate { ext },
         )),
         _ => None,
@@ -74,36 +74,36 @@ pub fn logical_connective_executable_from_address<'a, Ext: ExternalCall>(
 }
 
 pub fn deciable_executable_from_address<'a, Ext: ExternalCall>(
-    ext: &'a mut Ext,
-    address: AddressOf<Ext>,
+    ext: &'a Ext,
+    address: &AddressOf<Ext>,
 ) -> Option<DecidableExecutable<'a, Ext>> where
 {
     match address {
-        x if x == Ext::NotAddress => Some(DecidableExecutable::Not(NotPredicate { ext })),
-        x if x == Ext::AndAddress => Some(DecidableExecutable::And(AndPredicate { ext })),
-        x if x == Ext::OrAddress => Some(DecidableExecutable::Or(OrPredicate { ext })),
-        x if x == Ext::ForAllAddress => Some(DecidableExecutable::ForAll(ForAllPredicate { ext })),
-        x if x == Ext::ThereExistsAddress => {
+        x if x == &Ext::NotAddress => Some(DecidableExecutable::Not(NotPredicate { ext })),
+        x if x == &Ext::AndAddress => Some(DecidableExecutable::And(AndPredicate { ext })),
+        x if x == &Ext::OrAddress => Some(DecidableExecutable::Or(OrPredicate { ext })),
+        x if x == &Ext::ForAllAddress => Some(DecidableExecutable::ForAll(ForAllPredicate { ext })),
+        x if x == &Ext::ThereExistsAddress => {
             Some(DecidableExecutable::ThereExists(ThereExistsPredicate {
                 ext,
             }))
         }
-        x if x == Ext::EqualAddress => Some(DecidableExecutable::Equal(EqualPredicate { ext })),
-        x if x == Ext::IsContainedAddress => {
+        x if x == &Ext::EqualAddress => Some(DecidableExecutable::Equal(EqualPredicate { ext })),
+        x if x == &Ext::IsContainedAddress => {
             Some(DecidableExecutable::IsContained(IsContainedPredicate {
                 ext,
             }))
         }
-        x if x == Ext::IsLessAddress => {
+        x if x == &Ext::IsLessAddress => {
             Some(DecidableExecutable::IsLess(IsLessThanPredicate { ext }))
         }
-        x if x == Ext::IsStoredAddress => {
+        x if x == &Ext::IsStoredAddress => {
             Some(DecidableExecutable::IsStored(IsStoredPredicate { ext }))
         }
-        x if x == Ext::IsValidSignatureAddress => Some(DecidableExecutable::IsValidSignature(
+        x if x == &Ext::IsValidSignatureAddress => Some(DecidableExecutable::IsValidSignature(
             IsValidSignaturePredicate { ext },
         )),
-        x if x == Ext::VerifyInclusion => Some(DecidableExecutable::VerifyInclusion(
+        x if x == &Ext::VerifyInclusion => Some(DecidableExecutable::VerifyInclusion(
             VerifyInclusionPredicate { ext },
         )),
         _ => None,
@@ -111,27 +111,27 @@ pub fn deciable_executable_from_address<'a, Ext: ExternalCall>(
 }
 
 pub fn base_atomic_executable_from_address<'a, Ext: ExternalCall>(
-    ext: &'a mut Ext,
-    address: AddressOf<Ext>,
+    ext: &'a Ext,
+    address: &AddressOf<Ext>,
 ) -> Option<BaseAtomicExecutable<'a, Ext>> where
 {
     match address {
-        x if x == Ext::EqualAddress => Some(BaseAtomicExecutable::Equal(EqualPredicate { ext })),
-        x if x == Ext::IsContainedAddress => {
+        x if x == &Ext::EqualAddress => Some(BaseAtomicExecutable::Equal(EqualPredicate { ext })),
+        x if x == &Ext::IsContainedAddress => {
             Some(BaseAtomicExecutable::IsContained(IsContainedPredicate {
                 ext,
             }))
         }
-        x if x == Ext::IsLessAddress => {
+        x if x == &Ext::IsLessAddress => {
             Some(BaseAtomicExecutable::IsLess(IsLessThanPredicate { ext }))
         }
-        x if x == Ext::IsStoredAddress => {
+        x if x == &Ext::IsStoredAddress => {
             Some(BaseAtomicExecutable::IsStored(IsStoredPredicate { ext }))
         }
-        x if x == Ext::IsValidSignatureAddress => Some(BaseAtomicExecutable::IsValidSignature(
+        x if x == &Ext::IsValidSignatureAddress => Some(BaseAtomicExecutable::IsValidSignature(
             IsValidSignaturePredicate { ext },
         )),
-        x if x == Ext::VerifyInclusion => Some(BaseAtomicExecutable::VerifyInclusion(
+        x if x == &Ext::VerifyInclusion => Some(BaseAtomicExecutable::VerifyInclusion(
             VerifyInclusionPredicate { ext },
         )),
         _ => None,
