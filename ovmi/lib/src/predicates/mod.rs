@@ -2,7 +2,9 @@
 //! Executable Predicates instanced from Compiled Predicates and Atomic Predicates.
 //!
 //!
-use crate::executor::{AddressOf, ExecResult, ExecResultT, ExternalCall, MaybeAddress};
+use crate::executor::{
+    AddressOf, ExecError, ExecResult, ExecResultT, ExternalCall, HashOf, MaybeAddress,
+};
 use codec::{Decode, Encode};
 use core::fmt;
 #[cfg(feature = "std")]
@@ -78,7 +80,7 @@ impl<'a, Ext: ExternalCall> LogicalConnectiveInterface<AddressOf<Ext>>
     }
 }
 
-pub enum DeciableExecutable<'a, Ext: ExternalCall> {
+pub enum DecidableExecutable<'a, Ext: ExternalCall> {
     And(AndPredicate<'a, Ext>),
     Not(NotPredicate<'a, Ext>),
     Or(OrPredicate<'a, Ext>),
@@ -90,6 +92,108 @@ pub enum DeciableExecutable<'a, Ext: ExternalCall> {
     IsStored(IsStoredPredicate<'a, Ext>),
     IsValidSignature(IsValidSignaturePredicate<'a, Ext>),
     VerifyInclusion(VerifyInclusionPredicate<'a, Ext>),
+}
+
+impl<'a, Ext: ExternalCall> DecidablePredicateInterface<AddressOf<Ext>>
+    for DecidableExecutable<'a, Ext>
+{
+    fn decide_with_witness(
+        &self,
+        inputs: Vec<Vec<u8>>,
+        witness: Vec<Vec<u8>>,
+    ) -> ExecResult<AddressOf<Ext>> {
+        match self {
+            DecidableExecutable::And(and) => and.decide_with_witness(inputs, witness),
+            DecidableExecutable::Not(not) => not.decide_with_witness(inputs, witness),
+            DecidableExecutable::Or(or) => or.decide_with_witness(inputs, witness),
+            DecidableExecutable::ForAll(for_all) => for_all.decide_with_witness(inputs, witness),
+            DecidableExecutable::ThereExists(p) => p.decide_with_witness(inputs, witness),
+            DecidableExecutable::Equal(p) => p.decide_with_witness(inputs, witness),
+            DecidableExecutable::IsContained(p) => p.decide_with_witness(inputs, witness),
+            DecidableExecutable::IsLess(p) => p.decide_with_witness(inputs, witness),
+            DecidableExecutable::IsStored(p) => p.decide_with_witness(inputs, witness),
+            DecidableExecutable::IsValidSignature(p) => p.decide_with_witness(inputs, witness),
+            DecidableExecutable::VerifyInclusion(p) => p.decide_with_witness(inputs, witness),
+        }
+    }
+}
+
+pub enum BaseAtomicExecutable<'a, Ext: ExternalCall> {
+    Equal(EqualPredicate<'a, Ext>),
+    IsContained(IsContainedPredicate<'a, Ext>),
+    IsLess(IsLessThanPredicate<'a, Ext>),
+    IsStored(IsStoredPredicate<'a, Ext>),
+    IsValidSignature(IsValidSignaturePredicate<'a, Ext>),
+    VerifyInclusion(VerifyInclusionPredicate<'a, Ext>),
+}
+
+impl<'a, Ext: ExternalCall> DecidablePredicateInterface<AddressOf<Ext>>
+    for BaseAtomicExecutable<'a, Ext>
+{
+    fn decide_with_witness(
+        &self,
+        inputs: Vec<Vec<u8>>,
+        witness: Vec<Vec<u8>>,
+    ) -> ExecResult<AddressOf<Ext>> {
+        match self {
+            BaseAtomicExecutable::Equal(p) => p.decide_with_witness(inputs, witness),
+            BaseAtomicExecutable::IsContained(p) => p.decide_with_witness(inputs, witness),
+            BaseAtomicExecutable::IsLess(p) => p.decide_with_witness(inputs, witness),
+            BaseAtomicExecutable::IsStored(p) => p.decide_with_witness(inputs, witness),
+            BaseAtomicExecutable::IsValidSignature(p) => p.decide_with_witness(inputs, witness),
+            BaseAtomicExecutable::VerifyInclusion(p) => p.decide_with_witness(inputs, witness),
+        }
+    }
+}
+
+impl<'a, Ext: ExternalCall> AtomicPredicateInterface<AddressOf<Ext>>
+    for BaseAtomicExecutable<'a, Ext>
+{
+    fn decide(&self, inputs: Vec<Vec<u8>>) -> ExecResult<AddressOf<Ext>> {
+        match self {
+            BaseAtomicExecutable::Equal(p) => p.decide(inputs),
+            BaseAtomicExecutable::IsContained(p) => p.decide(inputs),
+            BaseAtomicExecutable::IsLess(p) => p.decide(inputs),
+            BaseAtomicExecutable::IsStored(p) => p.decide(inputs),
+            BaseAtomicExecutable::IsValidSignature(p) => p.decide(inputs),
+            BaseAtomicExecutable::VerifyInclusion(p) => p.decide(inputs),
+        }
+    }
+
+    fn decide_true(&self, inputs: Vec<Vec<u8>>) -> ExecResult<AddressOf<Ext>> {
+        match self {
+            BaseAtomicExecutable::Equal(p) => p.decide_true(inputs),
+            BaseAtomicExecutable::IsContained(p) => p.decide_true(inputs),
+            BaseAtomicExecutable::IsLess(p) => p.decide_true(inputs),
+            BaseAtomicExecutable::IsStored(p) => p.decide_true(inputs),
+            BaseAtomicExecutable::IsValidSignature(p) => p.decide_true(inputs),
+            BaseAtomicExecutable::VerifyInclusion(p) => p.decide_true(inputs),
+        }
+    }
+}
+
+impl<'a, Ext: ExternalCall> BaseAtomicPredicateInterface<AddressOf<Ext>>
+    for BaseAtomicExecutable<'a, Ext>
+{
+}
+
+impl<'a, Ext: ExternalCall> AtomicHelperInterface<AddressOf<Ext>>
+    for BaseAtomicExecutable<'a, Ext>
+{
+    type Hash = HashOf<Ext>;
+    fn ext_address(&self) -> AddressOf<Ext> {
+        AddressOf::<Ext>::default()
+    }
+    fn ext_set_predicate_decision(
+        &self,
+        _game_id: Self::Hash,
+        _decision: bool,
+    ) -> ExecResult<AddressOf<Ext>> {
+        Err(ExecError::Unimplemented)
+    }
+    fn ext_get_property_id(&self, _property: &Property<AddressOf<Ext>>) -> Self::Hash {
+        Self::Hash::default()
+    }
 }
 
 #[derive(Clone, Eq, PartialEq, Encode, Decode, Hash, derive_more::Display)]
@@ -263,8 +367,7 @@ pub trait BaseAtomicPredicateInterface<Address>:
 {
 }
 
-pub trait AtomicPredicateInterface<Address> {
-    type Hash;
+pub trait AtomicPredicateInterface<Address>: AtomicHelperInterface<Address> {
     fn decide(&self, _inputs: Vec<Vec<u8>>) -> ExecResult<Address> {
         return Ok(false);
     }
@@ -276,10 +379,17 @@ pub trait AtomicPredicateInterface<Address> {
             predicate_address: self.ext_address(),
             inputs: inputs,
         };
-        self.ext_set_predicate_decision(self.ext_get_property_id(&property), true)?;
+        AtomicHelperInterface::ext_set_predicate_decision(
+            self,
+            AtomicHelperInterface::ext_get_property_id(self, &property),
+            true,
+        )?;
         Ok(true)
     }
+}
 
+pub trait AtomicHelperInterface<Address> {
+    type Hash;
     fn ext_address(&self) -> Address;
     fn ext_set_predicate_decision(
         &self,

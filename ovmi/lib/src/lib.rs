@@ -135,6 +135,8 @@ pub use prepare::compile_from_json;
 
 #[cfg(test)]
 mod tests;
+#[cfg(test)]
+mod mock;
 
 /// An opaque 32-byte cryptographic identifier.
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Default, Encode, Decode)]

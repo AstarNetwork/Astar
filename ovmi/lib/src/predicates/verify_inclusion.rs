@@ -9,7 +9,6 @@ pub struct VerifyInclusionPredicate<'a, Ext: ExternalCall> {
 impl<'a, Ext: ExternalCall> AtomicPredicateInterface<AddressOf<Ext>>
     for VerifyInclusionPredicate<'a, Ext>
 {
-    type Hash = HashOf<Ext>;
     fn decide(&self, inputs: Vec<Vec<u8>>) -> ExecResult<AddressOf<Ext>> {
         require!(inputs.len() > 4);
         let address = Ext::bytes_to_address(&inputs[1])?;
@@ -21,7 +20,11 @@ impl<'a, Ext: ExternalCall> AtomicPredicateInterface<AddressOf<Ext>>
             &inputs[4][..], // bytes32
         ))
     }
-
+}
+impl<'a, Ext: ExternalCall> AtomicHelperInterface<AddressOf<Ext>>
+    for VerifyInclusionPredicate<'a, Ext>
+{
+    type Hash = HashOf<Ext>;
     fn ext_address(&self) -> AddressOf<Ext> {
         self.ext.ext_address()
     }
@@ -47,4 +50,9 @@ impl<'a, Ext: ExternalCall> DecidablePredicateInterface<AddressOf<Ext>>
     ) -> ExecResult<AddressOf<Ext>> {
         Self::decide(self, inputs)
     }
+}
+
+impl<'a, Ext: ExternalCall> BaseAtomicPredicateInterface<AddressOf<Ext>>
+    for VerifyInclusionPredicate<'a, Ext>
+{
 }

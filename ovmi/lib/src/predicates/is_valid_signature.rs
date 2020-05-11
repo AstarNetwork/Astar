@@ -9,7 +9,6 @@ pub struct IsValidSignaturePredicate<'a, Ext: ExternalCall> {
 impl<'a, Ext: ExternalCall> AtomicPredicateInterface<AddressOf<Ext>>
     for IsValidSignaturePredicate<'a, Ext>
 {
-    type Hash = HashOf<Ext>;
     fn decide(&self, inputs: Vec<Vec<u8>>) -> ExecResult<AddressOf<Ext>> {
         // TODO: signature
         // require_with_message!(
@@ -19,7 +18,7 @@ impl<'a, Ext: ExternalCall> AtomicPredicateInterface<AddressOf<Ext>>
         //         keccak256("secp256k1"),
         //     "verifierType must be secp256k1"
         // );
-        // require(
+        // require_with_message!(
         //     ECRecover.ecverify(
         //         keccak256(_inputs[0]),
         //         _inputs[1],
@@ -27,10 +26,13 @@ impl<'a, Ext: ExternalCall> AtomicPredicateInterface<AddressOf<Ext>>
         //     ),
         //     "_inputs[1] must be signature of _inputs[0] by _inputs[2]"
         // );
-        // return true;
         Ok(true)
     }
-
+}
+impl<'a, Ext: ExternalCall> AtomicHelperInterface<AddressOf<Ext>>
+    for IsValidSignaturePredicate<'a, Ext>
+{
+    type Hash = HashOf<Ext>;
     fn ext_address(&self) -> AddressOf<Ext> {
         self.ext.ext_address()
     }
@@ -56,4 +58,9 @@ impl<'a, Ext: ExternalCall> DecidablePredicateInterface<AddressOf<Ext>>
     ) -> ExecResult<AddressOf<Ext>> {
         Self::decide(self, inputs)
     }
+}
+
+impl<'a, Ext: ExternalCall> BaseAtomicPredicateInterface<AddressOf<Ext>>
+    for IsValidSignaturePredicate<'a, Ext>
+{
 }

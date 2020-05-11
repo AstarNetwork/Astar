@@ -11,7 +11,9 @@ use snafu::{ResultExt, Snafu};
 #[cfg_attr(feature = "std", derive(Debug))]
 pub enum ExecError<Address> {
     #[snafu(display("Require error: {}", msg))]
-    Require { msg: &'static str },
+    Require {
+        msg: &'static str,
+    },
     #[snafu(display(
         "Can not call method error: you call {}, expected {}",
         call_method,
@@ -22,9 +24,14 @@ pub enum ExecError<Address> {
         expected: &'static str,
     },
     #[snafu(display("Codec error: type name is {}", type_name))]
-    CodecError { type_name: &'static str },
+    CodecError {
+        type_name: &'static str,
+    },
     #[snafu(display("Unexpected error: {}", msg))]
-    Unexpected { msg: &'static str },
+    Unexpected {
+        msg: &'static str,
+    },
+    Unimplemented,
 }
 
 pub type ExecResult<Address> = core::result::Result<bool, ExecError<Address>>;
@@ -34,8 +41,8 @@ pub type HashOf<Ext> = <Ext as ExternalCall>::Hash;
 pub type HashingOf<Ext> = <Ext as ExternalCall>::Hashing;
 pub type PropertyOf<Ext> = Property<<Ext as ExternalCall>::Address>;
 
-pub trait MaybeAddress: Codec + Debug + Clone + Eq + PartialEq {}
-impl<T: Codec + Debug + Clone + Eq + PartialEq> MaybeAddress for T {}
+pub trait MaybeAddress: Codec + Debug + Clone + Eq + PartialEq + Default {}
+impl<T: Codec + Debug + Clone + Eq + PartialEq + Default> MaybeAddress for T {}
 
 pub trait MaybeHash:
     AsRef<[u8]>
@@ -82,6 +89,12 @@ pub trait ExternalCall {
     const OrAddress: Self::Address;
     const ForAllAddress: Self::Address;
     const ThereExistsAddress: Self::Address;
+    const EqualAddress: Self::Address;
+    const IsContainedAddress: Self::Address;
+    const IsLessAddress: Self::Address;
+    const IsStoredAddress: Self::Address;
+    const IsValidSignatureAddress: Self::Address;
+    const VerifyInclusion: Self::Address;
 
     /// Produce the hash of some codec-encodable value.
     fn hash_of<S: Encode>(s: &S) -> Self::Hash {
@@ -153,18 +166,22 @@ pub trait ExternalCall {
             .to_vec()
     }
 
+    /// sub_bytes of [1...).
     fn get_input_value(target: &Vec<u8>) -> Vec<u8> {
         Self::sub_bytes(target, 1, target.len() as u128)
     }
 
+    /// Decoded to u128
     fn bytes_to_u128(target: &Vec<u8>) -> ExecResultT<u128, Self::Address> {
         Decode::decode(&mut &target[..]).map_err(|_| ExecError::CodecError { type_name: "u128" })
     }
 
+    /// Decoded to range
     fn bytes_to_range(target: &Vec<u8>) -> ExecResultT<Range, Self::Address> {
         Decode::decode(&mut &target[..]).map_err(|_| ExecError::CodecError { type_name: "Range" })
     }
 
+    /// Decoded to Address
     fn bytes_to_address(target: &Vec<u8>) -> ExecResultT<Self::Address, Self::Address> {
         Decode::decode(&mut &target[..]).map_err(|_| ExecError::CodecError {
             type_name: "Address",
