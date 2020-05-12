@@ -286,6 +286,7 @@ impl Trait for Test {
     type ComputeRewardsForDapps = rewards::BasedComputeRewardsForDapps;
     type EraFinder = PlasmRewards;
     type ForDappsEraReward = PlasmRewards;
+    type HistoryDepthFinder = PlasmRewards;
     type Event = ();
 }
 

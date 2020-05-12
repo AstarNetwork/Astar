@@ -19,7 +19,7 @@ use frame_support::{
 use frame_system::{self as system, ensure_signed};
 use pallet_contract_operator::ContractFinder;
 use pallet_plasm_rewards::{
-    traits::{ComputeEraWithParam, EraFinder, ForDappsEraRewardFinder},
+    traits::{ComputeEraWithParam, EraFinder, ForDappsEraRewardFinder, HistoryDepthFinder},
     EraIndex, Releases,
 };
 pub use pallet_staking::{Forcing, RewardDestination};
@@ -174,6 +174,9 @@ pub trait Trait: pallet_session::Trait {
 
     /// The rewards for dapps operator.
     type ForDappsEraReward: ForDappsEraRewardFinder<BalanceOf<Self>>;
+
+    /// the history depth
+    type HistoryDepthFinder: HistoryDepthFinder;
 
     /// The overarching event type.
     type Event: From<Event<Self>> + Into<<Self as system::Trait>::Event>;
@@ -625,11 +628,19 @@ decl_module! {
         #[weight = SimpleDispatchInfo::FixedNormal(1_000)]
         fn claim_for_nominator(origin, era: EraIndex) {
             let nominator = ensure_signed(origin)?;
+
+            // check if era is valid
             if let Some(active_era) = T::EraFinder::active() {
                 if era >= active_era.index {
                     Err("cannot claim yet")?
                 }
             }
+            if let Some(current_era) = T::EraFinder::current() {
+                if era < current_era.saturating_sub(T::HistoryDepthFinder::get()) {
+                    Err("the era is expired")?
+                }
+            }
+
             let mut untreated_era = Self::nominators_untreated_era(&nominator);
             if era == untreated_era {
                 Err("the nominator already rewarded")?
@@ -656,11 +667,19 @@ decl_module! {
         #[weight = SimpleDispatchInfo::FixedNormal(1_000)]
         fn claim_for_operator(origin, era: EraIndex) {
             let operator = ensure_signed(origin)?;
+
+            // check if era is valid
             if let Some(active_era) = T::EraFinder::active() {
                 if era >= active_era.index {
                     Err("cannot claim yet")?
                 }
             }
+            if let Some(current_era) = T::EraFinder::current() {
+                if era < current_era.saturating_sub(T::HistoryDepthFinder::get()) {
+                    Err("the era is expired")?
+                }
+            }
+
             let mut untreated_era = Self::operators_untreated_era(&operator);
             if era == untreated_era {
                 Err("the operator already rewarded")?

@@ -461,3 +461,10 @@ impl<T: Trait> ForDappsEraRewardFinder<BalanceOf<T>> for Module<T> {
         Self::for_dapps_era_reward(&era)
     }
 }
+
+/// Get the history depth
+impl<T: Trait> HistoryDepthFinder for Module<T> {
+    fn get() -> u32 {
+        Self::history_depth()
+    }
+}
