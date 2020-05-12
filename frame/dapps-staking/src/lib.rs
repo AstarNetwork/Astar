@@ -733,14 +733,7 @@ impl<T: Trait> Module<T> {
         let mut untreated_era = Self::untreated_era();
         while *era > untreated_era {
             let total = Self::eras_total_stake(&untreated_era);
-            if <ErasTotalStake<T>>::contains_key(&untreated_era + 1) {
-                <ErasTotalStake<T>>::insert(
-                    &untreated_era + 1,
-                    total + Self::eras_total_stake(&untreated_era + 1),
-                );
-            } else {
-                <ErasTotalStake<T>>::insert(&untreated_era + 1, total);
-            }
+            <ErasTotalStake<T>>::mutate(&untreated_era + 1, |next_total| *next_total += total);
             untreated_era += 1;
         }
         UntreatedEra::put(untreated_era);
@@ -832,24 +825,13 @@ impl<T: Trait> Module<T> {
                     <ErasStakingPoints<T>>::insert(&next_era, &target, points);
                 }
 
-                if <ErasNominateTotals<T>>::contains_key(&next_era, stash) {
-                    <ErasNominateTotals<T>>::insert(
-                        &next_era,
-                        stash,
-                        value.clone() + Self::eras_nominate_totals(&next_era, stash),
-                    );
-                } else {
-                    <ErasNominateTotals<T>>::insert(&next_era, stash, value.clone());
-                }
+                <ErasNominateTotals<T>>::mutate(&next_era, stash, |total| {
+                    *total += value.clone();
+                });
 
-                if <ErasTotalStake<T>>::contains_key(&next_era) {
-                    <ErasTotalStake<T>>::insert(
-                        &next_era,
-                        value.clone() + Self::eras_total_stake(&next_era),
-                    );
-                } else {
-                    <ErasTotalStake<T>>::insert(&next_era, value.clone());
-                }
+                <ErasTotalStake<T>>::mutate(&next_era, |total| {
+                    *total += value.clone();
+                });
             }
         }
         <DappsNominations<T>>::insert(stash, nominations);
@@ -861,24 +843,18 @@ impl<T: Trait> Module<T> {
     ) {
         let era = nominations.submitted_in + 1;
         for (target, value) in nominations.targets.iter() {
-            if <ErasStakingPoints<T>>::contains_key(&era, &target) {
-                <ErasStakingPoints<T>>::mutate(&era, &target, |points| {
-                    (*points).total -= value.clone();
-                    (*points).individual.remove(stash);
-                });
-            }
+            <ErasStakingPoints<T>>::mutate(&era, &target, |points| {
+                (*points).total -= value.clone();
+                (*points).individual.remove(stash);
+            });
 
-            if <ErasNominateTotals<T>>::contains_key(&era, stash) {
-                <ErasNominateTotals<T>>::insert(
-                    &era,
-                    stash,
-                    value.clone() - Self::eras_nominate_totals(&era, stash),
-                );
-            }
+            <ErasNominateTotals<T>>::mutate(&era, stash, |total| {
+                *total -= value.clone();
+            });
 
-            if <ErasTotalStake<T>>::contains_key(&era) {
-                <ErasTotalStake<T>>::insert(&era, value.clone() - Self::eras_total_stake(&era));
-            }
+            <ErasTotalStake<T>>::mutate(&era, |total| {
+                *total -= value.clone();
+            });
         }
         <DappsNominations<T>>::remove(stash);
     }
