@@ -625,6 +625,11 @@ decl_module! {
             }
         }
 
+        /// rewards are claimed by the nominator.
+        ///
+        /// era must be in the range `[current_era - history_depth; active_era)`.
+        ///
+        /// The dispatch origin for this call must be _Signed_ by the stash, not the controller.
         #[weight = SimpleDispatchInfo::FixedNormal(1_000)]
         fn claim_for_nominator(origin, era: EraIndex) {
             let nominator = ensure_signed(origin)?;
@@ -664,6 +669,11 @@ decl_module! {
             Self::deposit_event(RawEvent::TotalDappsRewards(era, actual_rewarded));
         }
 
+        /// rewards are claimed by the operator.
+        ///
+        /// era must be in the range [current_era - history_depth; active_era).
+        ///
+        /// The dispatch origin for this call must be _Signed_ by the stash, not the controller
         #[weight = SimpleDispatchInfo::FixedNormal(1_000)]
         fn claim_for_operator(origin, era: EraIndex) {
             let operator = ensure_signed(origin)?;
