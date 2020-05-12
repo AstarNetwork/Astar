@@ -130,7 +130,7 @@ fn make_genesis(
             ..Default::default()
         }),
         pallet_plasm_validator: Some(PlasmValidatorConfig {
-            validators: initial_authorities
+            validators: initial_authorities,
         }),
         // pallet_dapps_staking: Some(DappsStakingConfig {
         //     ..Default::default()
@@ -936,7 +936,7 @@ fn dusty_genesis() -> GenesisConfig {
 (hex!["161cea308e5c5574a27112e88793ad1f8f493335848a80c5a03c2e3710645000"].into(), 5345190323921767466),
     ];
 
-    // akru 
+    // akru
     let root_key = hex!["16eb796bee0c857db3d646ee7070252707aec0c7d82b2eda856632f6a2306a58"];
 
     make_genesis(
@@ -1023,7 +1023,7 @@ fn development_config_genesis() -> GenesisConfig {
         vec![get_account_id_from_seed::<sr25519::Public>("Alice")],
         vec![get_authority_keys_from_seed("Alice")],
         None,
-        get_account_id_from_seed::<sr25519::Public>("Alice")
+        get_account_id_from_seed::<sr25519::Public>("Alice"),
     )
 }
 
