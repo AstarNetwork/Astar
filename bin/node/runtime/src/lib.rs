@@ -45,7 +45,7 @@ include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
 /// Runtime version.
 pub const VERSION: RuntimeVersion = RuntimeVersion {
-    spec_name: create_runtime_str!("plasm"),
+    spec_name: create_runtime_str!("dusty2"),
     impl_name: create_runtime_str!("staketechnologies-plasm"),
     authoring_version: 1,
     // Per convention: if the runtime behavior changes, increment spec_version
