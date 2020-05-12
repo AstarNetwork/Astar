@@ -539,19 +539,18 @@ fn reward_to_operators_test() {
         advance_session();
 
         let current_era = PlasmRewards::current_era().unwrap();
-        let positive_imbalance = DappsStaking::reward_for_dapps(&current_era, b, &BOB_STASH);
+        let positive_imbalance = DappsStaking::reward_nominator(&current_era, b, &BOB_STASH);
         assert_eq!(Balances::free_balance(&BOB_STASH), 2_000 + 41); // +nomiante reward
         assert_eq!(Balances::free_balance(&BOB_CTRL), 20 + 0); // +0
         assert_eq!(positive_imbalance, 41);
         assert_eq!(Balances::total_issuance(), pre_total_issuarance + 41);
 
-        let positive_imbalance =
-            DappsStaking::reward_for_dapps(&current_era, b, &OPERATED_CONTRACT);
+        let positive_imbalance = DappsStaking::reward_operator(&current_era, b, &ALICE_STASH);
         assert_eq!(Balances::free_balance(&ALICE_STASH), 1_000 + 329); // +operator reward
         assert_eq!(positive_imbalance, 329);
         assert_eq!(Balances::total_issuance(), pre_total_issuarance + 370);
 
-        let positive_imbalance = DappsStaking::reward_for_dapps(&current_era, b, &ALICE_STASH);
+        let positive_imbalance = DappsStaking::reward_nominator(&current_era, b, &ALICE_STASH);
         assert_eq!(Balances::free_balance(&ALICE_CTRL), 10 + 41); // +nominate reward
         assert_eq!(positive_imbalance, 41);
         assert_eq!(Balances::total_issuance(), pre_total_issuarance + 411);
@@ -598,16 +597,22 @@ fn new_session_scenario_test() {
         DappsStaking::on_finalize(0);
         advance_session();
 
-        assert_ok!(DappsStaking::claim(Origin::signed(BOB_STASH), target_era));
+        assert_ok!(DappsStaking::claim_for_nominator(
+            Origin::signed(BOB_STASH),
+            target_era
+        ));
 
         assert_eq!(Balances::free_balance(&BOB_STASH), 2_000 + 1); // +nomiante reward
         assert_eq!(Balances::free_balance(&BOB_CTRL), 20 + 0); // +0
 
-        assert_ok!(DappsStaking::claim(
-            Origin::signed(OPERATED_CONTRACT),
+        assert_ok!(DappsStaking::claim_for_operator(
+            Origin::signed(ALICE_STASH),
             target_era
         ));
-        assert_ok!(DappsStaking::claim(Origin::signed(ALICE_STASH), target_era));
+        assert_ok!(DappsStaking::claim_for_nominator(
+            Origin::signed(ALICE_STASH),
+            target_era
+        ));
 
         assert_eq!(Balances::free_balance(&ALICE_STASH), 1_000 + 9); // +operator reward
         assert_eq!(Balances::free_balance(&ALICE_CTRL), 10 + 1); // +nominate reward
