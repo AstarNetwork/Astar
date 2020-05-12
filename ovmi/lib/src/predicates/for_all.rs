@@ -25,7 +25,7 @@ impl<'a, Ext: ExternalCall> ForAllPredicate<'a, Ext> {
             .map_err(|_| ExecError::CodecError {
                 type_name: "Property<Ext>",
             })?;
-        if property.predicate_address == Ext::NotAddress {
+        if property.predicate_address == Ext::NOT_ADDRESS {
             require!(property.inputs.len() > 0);
             property.inputs[0] =
                 self.replace_variable(&property.inputs[0], placeholder, quantified)?;
@@ -33,7 +33,7 @@ impl<'a, Ext: ExternalCall> ForAllPredicate<'a, Ext> {
             require!(property.inputs.len() > 2);
             property.inputs[2] =
                 self.replace_variable(&property.inputs[2], placeholder, quantified)?;
-        } else if property.predicate_address == Ext::AndAddress {
+        } else if property.predicate_address == Ext::AND_ADDRESS {
             property.inputs = property
                 .inputs
                 .iter()
@@ -69,7 +69,7 @@ impl<'a, Ext: ExternalCall> LogicalConnectiveInterface<AddressOf<Ext>>
     ) -> ExecResult<AddressOf<Ext>> {
         // challenge should be not(p[quantified])
         require_with_message!(
-            challenge.predicate_address == Ext::NotAddress,
+            challenge.predicate_address == Ext::NOT_ADDRESS,
             "_challenge must be Not predicate"
         );
         // check inner property

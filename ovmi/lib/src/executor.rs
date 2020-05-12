@@ -7,7 +7,7 @@ use core::marker::PhantomData;
 pub use hash_db::Hasher;
 use snafu::{ResultExt, Snafu};
 
-#[derive(Snafu)]
+#[derive(Snafu, PartialEq)]
 #[cfg_attr(feature = "std", derive(Debug))]
 pub enum ExecError<Address> {
     #[snafu(display("Require error: {}", msg))]
@@ -88,17 +88,17 @@ pub trait ExternalCall {
     type Hashing: Hasher<Out = Self::Hash>;
 
     // relation const any atomic predicate address.
-    const NotAddress: Self::Address;
-    const AndAddress: Self::Address;
-    const OrAddress: Self::Address;
-    const ForAllAddress: Self::Address;
-    const ThereExistsAddress: Self::Address;
-    const EqualAddress: Self::Address;
-    const IsContainedAddress: Self::Address;
-    const IsLessAddress: Self::Address;
-    const IsStoredAddress: Self::Address;
-    const IsValidSignatureAddress: Self::Address;
-    const VerifyInclusion: Self::Address;
+    const NOT_ADDRESS: Self::Address;
+    const AND_ADDRESS: Self::Address;
+    const OR_ADDRESS: Self::Address;
+    const FOR_ALL_ADDRESS: Self::Address;
+    const THERE_EXISTS_ADDRESS: Self::Address;
+    const EQUAL_ADDRESS: Self::Address;
+    const IS_CONTAINED_ADDRESS: Self::Address;
+    const IS_LESS_ADDRESS: Self::Address;
+    const IS_STORED_ADDRESS: Self::Address;
+    const IS_VALID_SIGNATURE_ADDRESS: Self::Address;
+    const VERIFY_INCLUAION_ADDRESS: Self::Address;
 
     /// Produce the hash of some codec-encodable value.
     fn hash_of<S: Encode>(s: &S) -> Self::Hash {
@@ -221,7 +221,7 @@ where
                         return predicate.decide(inputs);
                     }
                     BaseAtomicPredicateCallInputs::DecideTrue { inputs } => {
-                        predicate.decide_true(inputs);
+                        predicate.decide_true(inputs)?;
                         return Ok(true);
                     }
                     BaseAtomicPredicateCallInputs::DecideWithWitness { inputs, witness } => {

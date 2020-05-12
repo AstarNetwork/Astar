@@ -115,9 +115,7 @@ macro_rules! require {
 macro_rules! require_with_message {
     ($val:expr, $message:expr) => {
         if !($val) {
-            return Err(crate::executor::ExecError::Require {
-                msg: r#"Required error by: $val, message: $message"#,
-            });
+            return Err(crate::executor::ExecError::Require { msg: $message });
         }
     };
 }

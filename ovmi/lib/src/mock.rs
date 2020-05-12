@@ -2,6 +2,7 @@ use crate::executor::*;
 use crate::predicates::*;
 use crate::prepare::*;
 use crate::*;
+use alloc::collections::btree_map::BTreeMap;
 
 use crate::prepare::{
     base_atomic_executable_from_address, deciable_executable_from_address,
@@ -10,15 +11,29 @@ use crate::prepare::{
 use primitive_types::H256;
 use sp_runtime::traits::BlakeTwo256;
 
-type Address = u64;
-type Hash = H256;
-struct MockExternalCall;
+pub type Address = u64;
+pub type Hash = H256;
+pub struct MockExternalCall {
+    mock_stored: BTreeMap<Address, BTreeMap<Vec<u8>, Vec<u8>>>,
+}
 
-const PayOutContract: Address = 10001;
-const Caller: Address = 1001;
-const PredicateX: Address = 101;
+pub const PAY_OUT_CONTRACT_ADDRESS: Address = 10001;
+pub const CALLER_ADDRESS: Address = 1001;
+pub const PREDICATE_X_ADDRESS: Address = 101;
 
-const JSON: &str = r#"
+pub const NOT_ADDRESS: Address = 1;
+pub const AND_ADDRESS: Address = 2;
+pub const OR_ADDRESS: Address = 3;
+pub const FOR_ALL_ADDRESS: Address = 4;
+pub const THERE_EXISTS_ADDRESS: Address = 5;
+pub const EQUAL_ADDRESS: Address = 6;
+pub const IS_CONTAINED_ADDRESS: Address = 7;
+pub const IS_LESS_ADDRESS: Address = 8;
+pub const IS_STORED_ADDRESS: Address = 9;
+pub const IS_VALID_SIGNATURE_ADDRESS: Address = 10;
+pub const VERIFY_INCLUAION_ADDRESS: Address = 11;
+
+pub const JSON: &str = r#"
   {
     "type": "CompiledPredicate",
     "name": "Ownership",
@@ -82,8 +97,28 @@ const JSON: &str = r#"
   }"#;
 
 impl MockExternalCall {
+    pub fn init() -> Self {
+        MockExternalCall {
+            mock_stored: BTreeMap::new(),
+        }
+    }
+
+    // test set stored.
+    pub fn set_stored(&mut self, address: &Address, key: &[u8], value: &[u8]) {
+        if !self.mock_stored.contains_key(&address) {
+            self.mock_stored.insert(address.clone(), BTreeMap::new());
+        }
+        let mut s = self
+            .mock_stored
+            .get_mut(address)
+            .map(|s| s.clone())
+            .unwrap();
+        s.insert(key.to_vec(), value.to_vec());
+        self.mock_stored.insert(address.clone(), s);
+    }
+
     // test compiled_parts_from_address
-    fn compiled_parts_from_address(
+    pub fn compiled_parts_from_address(
         address: &Address,
     ) -> (
         CompiledPredicate,
@@ -92,7 +127,7 @@ impl MockExternalCall {
         BTreeMap<Hash, Vec<u8>>,
     ) {
         let code = compile_from_json(JSON).unwrap();
-        let payout = PayOutContract;
+        let payout = PAY_OUT_CONTRACT_ADDRESS;
         let address_inputs = BTreeMap::new();
         let bytes_inputs = vec![(Hash::default(), vec![0 as u8, 1 as u8])]
             .iter()
@@ -100,29 +135,11 @@ impl MockExternalCall {
             .collect();
         (code, payout, address_inputs, bytes_inputs)
     }
-}
 
-impl ExternalCall for MockExternalCall {
-    type Address = Address;
-    type Hash = Hash;
-    type Hashing = BlakeTwo256;
-
-    const NotAddress: Address = 1;
-    const AndAddress: Address = 2;
-    const OrAddress: Address = 3;
-    const ForAllAddress: Address = 4;
-    const ThereExistsAddress: Address = 5;
-    const EqualAddress: Address = 6;
-    const IsContainedAddress: Address = 7;
-    const IsLessAddress: Address = 8;
-    const IsStoredAddress: Address = 9;
-    const IsValidSignatureAddress: Address = 10;
-    const VerifyInclusion: Address = 11;
-
-    fn ext_call(
+    pub fn call_execute(
         &self,
-        to: &Self::Address,
-        input_data: PredicateCallInputs<Self::Address>,
+        to: &Address,
+        input_data: PredicateCallInputs<Address>,
     ) -> ExecResult<Address> {
         match &input_data {
             PredicateCallInputs::DecidablePredicate(_) => {
@@ -159,17 +176,48 @@ impl ExternalCall for MockExternalCall {
             _ => Err(ExecError::Unimplemented),
         }
     }
+}
+
+impl ExternalCall for MockExternalCall {
+    type Address = Address;
+    type Hash = Hash;
+    type Hashing = BlakeTwo256;
+
+    const NOT_ADDRESS: Address = NOT_ADDRESS;
+    const AND_ADDRESS: Address = AND_ADDRESS;
+    const OR_ADDRESS: Address = OR_ADDRESS;
+    const FOR_ALL_ADDRESS: Address = FOR_ALL_ADDRESS;
+    const THERE_EXISTS_ADDRESS: Address = THERE_EXISTS_ADDRESS;
+    const EQUAL_ADDRESS: Address = EQUAL_ADDRESS;
+    const IS_CONTAINED_ADDRESS: Address = IS_CONTAINED_ADDRESS;
+    const IS_LESS_ADDRESS: Address = IS_LESS_ADDRESS;
+    const IS_STORED_ADDRESS: Address = IS_STORED_ADDRESS;
+    const IS_VALID_SIGNATURE_ADDRESS: Address = IS_VALID_SIGNATURE_ADDRESS;
+    const VERIFY_INCLUAION_ADDRESS: Address = VERIFY_INCLUAION_ADDRESS;
+
+    fn ext_call(
+        &self,
+        to: &Self::Address,
+        input_data: PredicateCallInputs<Self::Address>,
+    ) -> ExecResult<Address> {
+        self.call_execute(to, input_data)
+    }
 
     fn ext_caller(&self) -> Self::Address {
-        Caller
+        CALLER_ADDRESS
     }
 
     fn ext_address(&self) -> Self::Address {
-        PredicateX
+        PREDICATE_X_ADDRESS
     }
 
     fn ext_is_stored(&self, address: &Self::Address, key: &[u8], value: &[u8]) -> bool {
-        true
+        if let Some(s) = self.mock_stored.get(address) {
+            if let Some(res) = s.get(&key.to_vec()) {
+                return res == &value.to_vec();
+            }
+        }
+        false
     }
 
     fn ext_verify_inclusion_with_root(
@@ -196,8 +244,4 @@ impl ExternalCall for MockExternalCall {
     ) -> ExecResult<Self::Address> {
         Ok(true)
     }
-}
-
-struct MockExecutor {
-    call: compiled_predicates::PredicateType,
 }

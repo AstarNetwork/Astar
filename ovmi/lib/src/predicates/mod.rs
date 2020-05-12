@@ -379,11 +379,7 @@ pub trait AtomicPredicateInterface<Address>: AtomicHelperInterface<Address> {
             predicate_address: self.ext_address(),
             inputs: inputs,
         };
-        AtomicHelperInterface::ext_set_predicate_decision(
-            self,
-            AtomicHelperInterface::ext_get_property_id(self, &property),
-            true,
-        )?;
+        self.ext_set_predicate_decision(self.ext_get_property_id(&property), true)?;
         Ok(true)
     }
 }

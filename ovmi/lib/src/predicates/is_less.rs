@@ -29,7 +29,7 @@ impl<'a, Ext: ExternalCall> AtomicHelperInterface<AddressOf<Ext>> for IsLessThan
         self.ext.ext_set_predicate_decision(game_id, decision)
     }
     fn ext_get_property_id(&self, property: &Property<AddressOf<Ext>>) -> Self::Hash {
-        self.ext_get_property_id(property)
+        self.ext.ext_get_property_id(property)
     }
 }
 

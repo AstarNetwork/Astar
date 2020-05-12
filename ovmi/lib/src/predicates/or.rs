@@ -15,13 +15,13 @@ impl<'a, Ext: ExternalCall> LogicalConnectiveInterface<AddressOf<Ext>> for OrPre
     ) -> ExecResult<AddressOf<Ext>> {
         // challenge must be and(not(p[0]), not(p[1]), ...)
         require_with_message!(
-            challenge.predicate_address == Ext::AndAddress,
+            challenge.predicate_address == Ext::AND_ADDRESS,
             "challenge must be And"
         );
         for (i, input) in inputs.iter().enumerate() {
             let not_inputs = vec![input.clone()];
             let p = Property {
-                predicate_address: Ext::NotAddress,
+                predicate_address: Ext::NOT_ADDRESS,
                 inputs: not_inputs,
             };
             require!(challenge.inputs.len() > i);
