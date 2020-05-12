@@ -698,7 +698,11 @@ impl<T: Trait> Module<T> {
         }
     }
 
-    fn reward_for_dapps(era: &EraIndex, max_payout: BalanceOf<T>, stash: &T::AccountId) -> BalanceOf<T> {
+    fn reward_for_dapps(
+        era: &EraIndex,
+        max_payout: BalanceOf<T>,
+        stash: &T::AccountId,
+    ) -> BalanceOf<T> {
         let mut total_imbalance = <PositiveImbalanceOf<T>>::zero();
         let (operators_reward, nominators_reward) =
             T::ComputeRewardsForDapps::compute_rewards_for_dapps(max_payout);
@@ -706,16 +710,15 @@ impl<T: Trait> Module<T> {
         let total_staked = Self::eras_total_stake(era);
 
         let staking_points = Self::eras_staking_points(era, stash);
-        let reward =
-                Perbill::from_rational_approximation(staking_points.total, total_staked) * operators_reward;
+        let reward = Perbill::from_rational_approximation(staking_points.total, total_staked)
+            * operators_reward;
         total_imbalance.subsume(Self::reward_contract(stash, reward));
 
         let nominate_total = Self::eras_nominate_totals(era, stash);
         let reward =
             Perbill::from_rational_approximation(nominate_total, total_staked) * nominators_reward;
-        total_imbalance.subsume(
-            Self::make_payout(stash, reward).unwrap_or(PositiveImbalanceOf::<T>::zero()),
-        );
+        total_imbalance
+            .subsume(Self::make_payout(stash, reward).unwrap_or(PositiveImbalanceOf::<T>::zero()));
 
         let total_payout = total_imbalance.peek();
 
@@ -731,7 +734,10 @@ impl<T: Trait> Module<T> {
         while *era > untreated_era {
             let total = Self::eras_total_stake(&untreated_era);
             if <ErasTotalStake<T>>::contains_key(&untreated_era + 1) {
-                <ErasTotalStake<T>>::insert(&untreated_era + 1, total + Self::eras_total_stake(&untreated_era + 1));
+                <ErasTotalStake<T>>::insert(
+                    &untreated_era + 1,
+                    total + Self::eras_total_stake(&untreated_era + 1),
+                );
             } else {
                 <ErasTotalStake<T>>::insert(&untreated_era + 1, total);
             }
@@ -792,15 +798,21 @@ impl<T: Trait> Module<T> {
             let untreated_nootate_total = <ErasNominateTotals<T>>::get(src_era, stash);
 
             if <ErasNominateTotals<T>>::contains_key(dst_era, stash) {
-                <ErasNominateTotals<T>>::insert(dst_era, stash,
-                    untreated_nootate_total + Self::eras_nominate_totals(dst_era, stash));
+                <ErasNominateTotals<T>>::insert(
+                    dst_era,
+                    stash,
+                    untreated_nootate_total + Self::eras_nominate_totals(dst_era, stash),
+                );
             } else {
                 <ErasNominateTotals<T>>::insert(dst_era, stash, untreated_nootate_total);
             }
         }
     }
 
-    fn take_in_nominations(stash: &T::AccountId, nominations: Nominations<T::AccountId, BalanceOf<T>>) {
+    fn take_in_nominations(
+        stash: &T::AccountId,
+        nominations: Nominations<T::AccountId, BalanceOf<T>>,
+    ) {
         if let Some(current_era) = T::EraFinder::current() {
             let next_era = current_era + 1;
 
@@ -821,14 +833,20 @@ impl<T: Trait> Module<T> {
                 }
 
                 if <ErasNominateTotals<T>>::contains_key(&next_era, stash) {
-                    <ErasNominateTotals<T>>::insert(&next_era, stash,
-                        value.clone() + Self::eras_nominate_totals(&next_era, stash));
+                    <ErasNominateTotals<T>>::insert(
+                        &next_era,
+                        stash,
+                        value.clone() + Self::eras_nominate_totals(&next_era, stash),
+                    );
                 } else {
                     <ErasNominateTotals<T>>::insert(&next_era, stash, value.clone());
                 }
 
                 if <ErasTotalStake<T>>::contains_key(&next_era) {
-                    <ErasTotalStake<T>>::insert(&next_era, value.clone() + Self::eras_total_stake(&next_era));
+                    <ErasTotalStake<T>>::insert(
+                        &next_era,
+                        value.clone() + Self::eras_total_stake(&next_era),
+                    );
                 } else {
                     <ErasTotalStake<T>>::insert(&next_era, value.clone());
                 }
@@ -837,7 +855,10 @@ impl<T: Trait> Module<T> {
         <DappsNominations<T>>::insert(stash, nominations);
     }
 
-    fn remove_nominations(stash: &T::AccountId, nominations: Nominations<T::AccountId, BalanceOf<T>>) {
+    fn remove_nominations(
+        stash: &T::AccountId,
+        nominations: Nominations<T::AccountId, BalanceOf<T>>,
+    ) {
         let era = nominations.submitted_in + 1;
         for (target, value) in nominations.targets.iter() {
             if <ErasStakingPoints<T>>::contains_key(&era, &target) {
@@ -848,8 +869,11 @@ impl<T: Trait> Module<T> {
             }
 
             if <ErasNominateTotals<T>>::contains_key(&era, stash) {
-                <ErasNominateTotals<T>>::insert(&era, stash,
-                    value.clone() - Self::eras_nominate_totals(&era, stash));
+                <ErasNominateTotals<T>>::insert(
+                    &era,
+                    stash,
+                    value.clone() - Self::eras_nominate_totals(&era, stash),
+                );
             }
 
             if <ErasTotalStake<T>>::contains_key(&era) {

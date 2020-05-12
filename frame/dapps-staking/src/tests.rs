@@ -545,7 +545,8 @@ fn reward_to_operators_test() {
         assert_eq!(positive_imbalance, 41);
         assert_eq!(Balances::total_issuance(), pre_total_issuarance + 41);
 
-        let positive_imbalance = DappsStaking::reward_for_dapps(&current_era, b, &OPERATED_CONTRACT);
+        let positive_imbalance =
+            DappsStaking::reward_for_dapps(&current_era, b, &OPERATED_CONTRACT);
         assert_eq!(Balances::free_balance(&ALICE_STASH), 1_000 + 329); // +operator reward
         assert_eq!(positive_imbalance, 329);
         assert_eq!(Balances::total_issuance(), pre_total_issuarance + 370);
@@ -597,10 +598,7 @@ fn new_session_scenario_test() {
         DappsStaking::on_finalize(0);
         advance_session();
 
-        assert_ok!(DappsStaking::claim(
-            Origin::signed(BOB_STASH),
-            target_era
-        ));
+        assert_ok!(DappsStaking::claim(Origin::signed(BOB_STASH), target_era));
 
         assert_eq!(Balances::free_balance(&BOB_STASH), 2_000 + 1); // +nomiante reward
         assert_eq!(Balances::free_balance(&BOB_CTRL), 20 + 0); // +0
@@ -609,10 +607,7 @@ fn new_session_scenario_test() {
             Origin::signed(OPERATED_CONTRACT),
             target_era
         ));
-        assert_ok!(DappsStaking::claim(
-            Origin::signed(ALICE_STASH),
-            target_era
-        ));
+        assert_ok!(DappsStaking::claim(Origin::signed(ALICE_STASH), target_era));
 
         assert_eq!(Balances::free_balance(&ALICE_STASH), 1_000 + 9); // +operator reward
         assert_eq!(Balances::free_balance(&ALICE_CTRL), 10 + 1); // +nominate reward
