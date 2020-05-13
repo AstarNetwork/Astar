@@ -1,7 +1,9 @@
 use crate::executor::*;
 use crate::mock::*;
 use crate::predicates::*;
+use crate::*;
 use codec::Encode;
+use std::str::FromStr;
 
 macro_rules! assert_require {
     ($res:expr, $msg:expr) => {
@@ -123,4 +125,72 @@ fn is_valid_signature_decide_true() {
     //     let res = ext.call_execute(&IS_VALID_SIGNATURE_ADDRESS, input_data);
     //     assert_require!(res, "must decide true");
     // }
+}
+
+#[test]
+fn verify_inclusion_decide_true() {
+    let mut ext = MockExternalCall::init();
+    let address_1: Address = 88;
+    let address_2: Address = 99;
+
+    let leaf = b"leaf".to_vec();
+    let token = Address::default().encode();
+    let range = Range {
+        start: 100,
+        end: 200,
+    }
+    .encode();
+    let inclusion_proof: Vec<(
+        (Address, u128, Vec<(Hash, Address)>),
+        (u128, u128, Vec<(Hash, u128)>),
+    )> = vec![(
+        (
+            address_1,
+            0,
+            vec![(
+                Hash::from_str("dd779be20b84ced84b7cbbdc8dc98d901ecd198642313d35d32775d75d916d3a")
+                    .unwrap(),
+                address_2,
+            )],
+        ),
+        (
+            0,
+            0,
+            vec![
+                (
+                    Hash::from_str(
+                        "036491cc10808eeb0ff717314df6f19ba2e232d04d5f039f6fa382cae41641da",
+                    )
+                    .unwrap(),
+                    7,
+                ),
+                (
+                    Hash::from_str(
+                        "ef583c07cae62e3a002a9ad558064ae80db17162801132f9327e8bb6da16ea8a",
+                    )
+                    .unwrap(),
+                    5000,
+                ),
+            ],
+        ),
+    )];
+    let inclusion_proof_bytes = inclusion_proof.encode();
+    let root = Hash::from_str("ef583c07cae62e3a002a9ad558064ae80db0000000000000000000b6da16ea8a")
+        .unwrap()
+        .encode();
+
+    // true case
+    {
+        let input_data = make_decide_true(vec![
+            leaf.clone(),
+            token.clone(),
+            range.clone(),
+            inclusion_proof_bytes.clone(),
+            root.clone(),
+        ]);
+        let res = ext
+            .call_execute(&VERIFY_INCLUAION_ADDRESS, input_data)
+            .unwrap();
+        assert!(res);
+    }
 }

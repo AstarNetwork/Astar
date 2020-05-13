@@ -82,7 +82,9 @@ pub fn deciable_executable_from_address<'a, Ext: ExternalCall>(
         x if x == &Ext::NOT_ADDRESS => Some(DecidableExecutable::Not(NotPredicate { ext })),
         x if x == &Ext::AND_ADDRESS => Some(DecidableExecutable::And(AndPredicate { ext })),
         x if x == &Ext::OR_ADDRESS => Some(DecidableExecutable::Or(OrPredicate { ext })),
-        x if x == &Ext::FOR_ALL_ADDRESS => Some(DecidableExecutable::ForAll(ForAllPredicate { ext })),
+        x if x == &Ext::FOR_ALL_ADDRESS => {
+            Some(DecidableExecutable::ForAll(ForAllPredicate { ext }))
+        }
         x if x == &Ext::THERE_EXISTS_ADDRESS => {
             Some(DecidableExecutable::ThereExists(ThereExistsPredicate {
                 ext,
