@@ -20,7 +20,6 @@ sp-std = { version = "2.0.0-alpha.6", default-features = false }
 sp-core = { version = "2.0.0-alpha.6", default-features = false }
 sp-runtime = { version = "2.0.0-alpha.6", default-features = false }
 sp-arithmetic = { version = "2.0.0-alpha.6", default-features = false }
-simple-json = { git = "https://github.com/staketechnologies/simple-json", default-features = false }
 frame-system = { version = "2.0.0-alpha.6", default-features = false }
 frame-support = { version = "2.0.0-alpha.6", default-features = false }
 pallet-session = { version = "2.0.0-alpha.6", default-features = false }
@@ -46,7 +45,6 @@ std = [
     "sp-std/std",
     "sp-core/std",
     "sp-runtime/std",
-    "simple-json/std",
     "frame-system/std",
     "frame-support/std",
     "pallet-session/std",

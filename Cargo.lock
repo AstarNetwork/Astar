@@ -3102,7 +3102,6 @@ dependencies = [
  "ripemd160",
  "serde",
  "sha2",
- "simple-json",
  "sp-arithmetic",
  "sp-core",
  "sp-io",
@@ -5348,15 +5347,6 @@ checksum = "94f478ede9f64724c5d173d7bb56099ec3e2d9fc2774aac65d34b8b890405f41"
 dependencies = [
  "arc-swap",
  "libc",
-]
-
-[[package]]
-name = "simple-json"
-version = "0.1.5"
-source = "git+https://github.com/staketechnologies/simple-json#e5e51a2733a9de76aa6afad30b46cbafa509a13d"
-dependencies = [
- "num-traits 0.2.11",
- "paste",
 ]
 
 [[package]]

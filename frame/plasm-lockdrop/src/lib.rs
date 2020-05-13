@@ -70,18 +70,6 @@ pub trait Trait: system::Trait {
     /// The lockdrop balance.
     type Currency: Currency<Self::AccountId>;
 
-    /// Bitcoin price oracle.
-    type BitcoinTicker: PriceOracle<Self::DollarRate>;
-
-    /// Ethereum price oracle.
-    type EthereumTicker: PriceOracle<Self::DollarRate>;
-
-    /// Bitcoin transaction oracle.
-    type BitcoinApi: ChainOracle<H256>;
-
-    /// Ethereum transaction oracle.
-    type EthereumApi: ChainOracle<H256>;
-
     /// How long dollar rate parameters valid in secs.
     type MedianFilterExpire: Get<Self::Moment>;
 
@@ -116,7 +104,14 @@ pub trait Trait: system::Trait {
         + Into<u128>;
 
     /// Dollar rate number data type.
-    type DollarRate: Member + Parameter + AtLeast32Bit + Copy + Default + Into<u128> + From<u64>;
+    type DollarRate: Member
+        + Parameter
+        + AtLeast32Bit
+        + Copy
+        + Default
+        + Into<u128>
+        + From<u64>
+        + sp_std::str::FromStr;
 
     // XXX: I don't known how to convert into Balance from u128 without it
     // TODO: Should be removed
@@ -238,8 +233,7 @@ decl_storage! {
         HasVote get(fn has_vote):
             double_map hasher(blake2_128_concat) T::AuthorityId, hasher(blake2_128_concat) ClaimId
             => bool;
-        /// Lockdrop alpha parameter (fixed point at 1_000_000_000).
-        /// α ∈ [0; 10]
+        /// Lockdrop alpha parameter, where α ∈ [0; 1]
         Alpha get(fn alpha) config(): Perbill;
         /// Lockdrop dollar rate parameter: BTC, ETH.
         DollarRate get(fn dollar_rate) config(): (T::DollarRate, T::DollarRate);
@@ -428,7 +422,7 @@ impl<T: Trait> Module<T> {
     /// The main offchain worker entry point.
     fn offchain() -> Result<(), ()> {
         // TODO: add delay to prevent frequent transaction sending
-        Self::send_dollar_rate(T::BitcoinTicker::fetch()?, T::EthereumTicker::fetch()?)?;
+        Self::send_dollar_rate(BitcoinPrice::fetch()?, EthereumPrice::fetch()?)?;
 
         // TODO: use permanent storage to track request when temporary failed
         Self::claim_request_oracle()
@@ -509,7 +503,7 @@ impl<T: Trait> Module<T> {
                 duration,
                 transaction_hash,
             } => {
-                let tx = T::BitcoinApi::fetch(transaction_hash)?;
+                let tx = BitcoinChain::fetch(transaction_hash)?;
                 debug::debug!(
                     target: "lockdrop-offchain-worker",
                     "claim id {} => fetched transaction: {:?}", claim_id, tx
@@ -536,7 +530,7 @@ impl<T: Trait> Module<T> {
                 duration,
                 transaction_hash,
             } => {
-                let tx = T::EthereumApi::fetch(transaction_hash)?;
+                let tx = EthereumChain::fetch(transaction_hash)?;
                 debug::debug!(
                     target: "lockdrop-offchain-worker",
                     "claim id {} => fetched transaction: {:?}", claim_id, tx
@@ -562,14 +556,14 @@ impl<T: Trait> Module<T> {
     fn btc_issue_amount(value: u128, duration: T::Moment) -> u128 {
         // https://medium.com/stake-technologies/plasm-lockdrop-introduction-99fa2dfc37c0
         let rate = Self::alpha() * Self::dollar_rate().0 * Self::time_bonus(duration).into();
-        rate.into() * value * 10
+        rate.into() * value
     }
 
     /// PLM issue amount for given ETH value and locking duration.
     fn eth_issue_amount(value: u128, duration: T::Moment) -> u128 {
         // https://medium.com/stake-technologies/plasm-lockdrop-introduction-99fa2dfc37c0
         let rate = Self::alpha() * Self::dollar_rate().1 * Self::time_bonus(duration).into();
-        rate.into() * value * 10
+        rate.into() * value
     }
 
     /// Lockdrop bonus depends of lockding duration.
