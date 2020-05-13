@@ -25,13 +25,13 @@ pub use or::OrPredicate;
 pub use there_exists::ThereExistsPredicate;
 
 mod equal;
-mod is_contained;
+mod aaais_contained;
 mod is_less;
 mod is_stored;
 mod is_valid_signature;
 mod verify_inclusion;
 pub use equal::EqualPredicate;
-pub use is_contained::IsContainedPredicate;
+pub use aaais_contained::IsContainedPredicate;
 pub use is_less::IsLessThanPredicate;
 pub use is_stored::IsStoredPredicate;
 pub use is_valid_signature::IsValidSignaturePredicate;
