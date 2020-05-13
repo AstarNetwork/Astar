@@ -33,6 +33,8 @@ pub const IS_STORED_ADDRESS: Address = 9;
 pub const IS_VALID_SIGNATURE_ADDRESS: Address = 10;
 pub const VERIFY_INCLUAION_ADDRESS: Address = 11;
 
+pub const SECP_256_K1: Hash = BlakeTwo256::hash(&b"secp256k1".to_vec()[..]);
+
 pub const JSON: &str = r#"
   {
     "type": "CompiledPredicate",
@@ -194,6 +196,8 @@ impl ExternalCall for MockExternalCall {
     const IS_STORED_ADDRESS: Address = IS_STORED_ADDRESS;
     const IS_VALID_SIGNATURE_ADDRESS: Address = IS_VALID_SIGNATURE_ADDRESS;
     const VERIFY_INCLUAION_ADDRESS: Address = VERIFY_INCLUAION_ADDRESS;
+
+    const SECP_256_K1: Hash = SECP_256_K1;
 
     fn ext_call(
         &self,

@@ -10,14 +10,18 @@ impl<'a, Ext: ExternalCall> AtomicPredicateInterface<AddressOf<Ext>>
     for IsValidSignaturePredicate<'a, Ext>
 {
     fn decide(&self, inputs: Vec<Vec<u8>>) -> ExecResult<AddressOf<Ext>> {
-        // TODO: signature
-        // require_with_message!(
-        //     keccak256(
-        //         abi.encodePacked(string(utils.getInputValue(_inputs[3])))
-        //     ) ==
-        //         keccak256("secp256k1"),
-        //     "verifierType must be secp256k1"
-        // );
+        require!(inputs.len() > 3);
+        require_with_message!(
+            Ext::Hashing::hash(&self.get_input_value(inputs[3]).to_vec()[..]) == Ext::SECP_256_K1,
+            "verifierType must be secp256k1"
+        );
+
+        /// Verify a signature on a message. Returns true if the signature is good.
+        fn verify<M: AsRef<[u8]>>(sig: &Self::Signature, message: M, pubkey: &Self::Public) -> bool;
+
+        let hash = Ext::Hashing::hash(&inputs[0][..]);
+        let address = self.bytes_to_address(&inputs[2]);
+
         // require_with_message!(
         //     ECRecover.ecverify(
         //         keccak256(_inputs[0]),

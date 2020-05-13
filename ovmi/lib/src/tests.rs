@@ -102,16 +102,22 @@ fn is_valid_signature_decide_true() {
     let signature = hex::decode("3050ed8255d5599ebce4be5ef23eceeb61bfae924db5e5b12fc975663854629204a68351940fcea4231e9e4af515e2a10c187fcd7f88f4e5ffed218c76a5553b1b").unwrap();
     let invalid_signature = hex::decode("00b0ed8255d5599ebce4be5ef23eceeb16bfae924db5e5b12fc975663854629204a68351940fcea4231e9e4af515e2a10c187fcd7f88f4e5ffed218c76a1113bb2").unwrap();
     let message = b"message".to_vec();
+    let verifier_type = BlakeTwo256::hash(&b"secp256k1".to_vec()[..]);
 
-    // // true case
-    // {
-    //     let input_data = make_decide_true(vec![address_bytes.clone(), key.clone(), value.clone()]);
-    //     let res = ext
-    //         .call_execute(&IS_VALID_SIGNATURE_ADDRESS, input_data)
-    //         .unwrap();
-    //     assert!(res);
-    // }
-    //
+    // true case
+    {
+        let input_data = make_decide_true(vec![
+            message.clone(),
+            signature.clone(),
+            address.to_vec(),
+            verifier_type.clone(),
+        ]);
+        let res = ext
+            .call_execute(&IS_VALID_SIGNATURE_ADDRESS, input_data)
+            .unwrap();
+        assert!(res);
+    }
+
     // // false case (value)
     // {
     //     let input_data = make_decide_true(vec![address_bytes.clone(), key.clone(), false_value]);

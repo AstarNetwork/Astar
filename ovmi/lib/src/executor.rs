@@ -100,6 +100,9 @@ pub trait ExternalCall {
     const IS_VALID_SIGNATURE_ADDRESS: Self::Address;
     const VERIFY_INCLUAION_ADDRESS: Self::Address;
 
+    // relation const any signature algorithm.
+    const SECP_256_K1: Self::Hash;
+
     /// Produce the hash of some codec-encodable value.
     fn hash_of<S: Encode>(s: &S) -> Self::Hash {
         Encode::using_encoded(s, Self::Hashing::hash)
