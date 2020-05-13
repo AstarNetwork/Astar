@@ -86,7 +86,7 @@ pub trait ChainOracle {
         let uri = [Self::uri(), hex::encode(transaction_hash).as_str()].join("/");
         let request = Request::get(uri.as_ref()).send().map_err(|_| ())?;
         let response = request.wait().map_err(|_| ())?;
-        let body = response.body().collect::<Vec<_>>();
+        let body = hex::decode(response.body().collect::<Vec<_>>()).map_err(|_| ())?;
         Transaction::decode(&mut &body[..]).map_err(|_| ())
     }
 }
