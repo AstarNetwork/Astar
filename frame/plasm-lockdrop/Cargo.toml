@@ -1,6 +1,6 @@
 [package]
 name = "pallet-plasm-lockdrop"
-version = "0.1.0"
+version = "1.0.0"
 authors = ["Aleksandr Krupenkin <aleksandr@stake.co.jp>"]
 edition = "2018"
 

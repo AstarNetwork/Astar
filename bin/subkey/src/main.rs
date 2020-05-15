@@ -237,7 +237,7 @@ fn get_app<'a, 'b>() -> App<'a, 'b> {
                 .about("Author and sign a Node pallet_balances::Transfer transaction with a given (secret) key")
                 .args_from_usage("
                     [genesis] -g, --genesis <genesis> 'The genesis hash or a recognised \
-                                            chain identifier (dusty).'
+                                            chain identifier (plasm, dusty).'
                     <from> 'The signing secret key URI.'
                     <to> 'The destination account public key URI.'
                     <amount> 'The number of units to transfer.'
@@ -429,8 +429,9 @@ where
 }
 
 fn read_genesis_hash(matches: &ArgMatches) -> H256 {
-    let genesis_hash: Hash = match matches.value_of("genesis").unwrap_or("dusty") {
-        "dusty" => hex!["5bde5ea1f236802c5711abd3b0ca9fc748d654b2c1055290fdf7bf2b4f282428"].into(),
+    let genesis_hash: Hash = match matches.value_of("genesis").unwrap_or("plasm") {
+        "dusty" => hex!["c10deaf46d28e8398d238981b74d3a9b63198668e0c14562b7365f3958d2eade"].into(),
+        "plasm" => hex!["3e86364d4b4894021cb2a0390bcf2feb5517d5292f2de2bb9404227e908b0b8b"].into(),
         h => hex::decode(h)
             .ok()
             .and_then(|x| Decode::decode(&mut &x[..]).ok())
