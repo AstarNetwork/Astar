@@ -6,9 +6,7 @@ pub struct IsContainedPredicate<'a, Ext: ExternalCall> {
     pub ext: &'a Ext,
 }
 
-impl<'a, Ext: ExternalCall> AtomicPredicateInterface<AddressOf<Ext>>
-    for IsContainedPredicate<'a, Ext>
-{
+impl<Ext: ExternalCall> AtomicPredicateInterface<AddressOf<Ext>> for IsContainedPredicate<'_, Ext> {
     fn decide(&self, inputs: Vec<Vec<u8>>) -> ExecResult<AddressOf<Ext>> {
         require!(inputs.len() > 1);
         let range: Range = Ext::bytes_to_range(&inputs[0])?;
@@ -21,9 +19,7 @@ impl<'a, Ext: ExternalCall> AtomicPredicateInterface<AddressOf<Ext>>
     }
 }
 
-impl<'a, Ext: ExternalCall> AtomicHelperInterface<AddressOf<Ext>>
-    for IsContainedPredicate<'a, Ext>
-{
+impl<Ext: ExternalCall> AtomicHelperInterface<AddressOf<Ext>> for IsContainedPredicate<'_, Ext> {
     type Hash = HashOf<Ext>;
     fn ext_address(&self) -> AddressOf<Ext> {
         self.ext.ext_address()
@@ -40,8 +36,8 @@ impl<'a, Ext: ExternalCall> AtomicHelperInterface<AddressOf<Ext>>
     }
 }
 
-impl<'a, Ext: ExternalCall> DecidablePredicateInterface<AddressOf<Ext>>
-    for IsContainedPredicate<'a, Ext>
+impl<Ext: ExternalCall> DecidablePredicateInterface<AddressOf<Ext>>
+    for IsContainedPredicate<'_, Ext>
 {
     fn decide_with_witness(
         &self,
@@ -52,7 +48,7 @@ impl<'a, Ext: ExternalCall> DecidablePredicateInterface<AddressOf<Ext>>
     }
 }
 
-impl<'a, Ext: ExternalCall> BaseAtomicPredicateInterface<AddressOf<Ext>>
-    for IsContainedPredicate<'a, Ext>
+impl<Ext: ExternalCall> BaseAtomicPredicateInterface<AddressOf<Ext>>
+    for IsContainedPredicate<'_, Ext>
 {
 }

@@ -13,9 +13,7 @@ pub struct CompiledExecutable<'a, Ext: ExternalCall> {
     pub bytes_inputs: BTreeMap<HashOf<Ext>, Vec<u8>>,
 }
 
-impl<'a, Ext: ExternalCall> CompiledPredicateInterface<AddressOf<Ext>>
-    for CompiledExecutable<'a, Ext>
-{
+impl<Ext: ExternalCall> CompiledPredicateInterface<AddressOf<Ext>> for CompiledExecutable<'_, Ext> {
     fn payout_contract_address(&self) -> AddressOf<Ext> {
         self.payout.clone()
     }

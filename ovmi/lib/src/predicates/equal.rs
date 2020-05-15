@@ -5,21 +5,15 @@ pub struct EqualPredicate<'a, Ext: ExternalCall> {
     pub ext: &'a Ext,
 }
 
-impl<'a, Ext: ExternalCall> AtomicPredicateInterface<AddressOf<Ext>> for EqualPredicate<'a, Ext> {
+impl<Ext: ExternalCall> AtomicPredicateInterface<AddressOf<Ext>> for EqualPredicate<'_, Ext> {
     fn decide(&self, inputs: Vec<Vec<u8>>) -> ExecResult<AddressOf<Ext>> {
-        println!(
-            "call decide! {:?}, {:?}, result: {:?}",
-            inputs[0],
-            inputs[1],
-            inputs[0] == inputs[1]
-        );
         require!(inputs.len() > 1);
         require_with_message!(inputs[0] == inputs[1], "2 inputs must be equal");
         Ok(true)
     }
 }
 
-impl<'a, Ext: ExternalCall> AtomicHelperInterface<AddressOf<Ext>> for EqualPredicate<'a, Ext> {
+impl<Ext: ExternalCall> AtomicHelperInterface<AddressOf<Ext>> for EqualPredicate<'_, Ext> {
     type Hash = HashOf<Ext>;
     fn ext_address(&self) -> AddressOf<Ext> {
         self.ext.ext_address()
@@ -36,9 +30,7 @@ impl<'a, Ext: ExternalCall> AtomicHelperInterface<AddressOf<Ext>> for EqualPredi
     }
 }
 
-impl<'a, Ext: ExternalCall> DecidablePredicateInterface<AddressOf<Ext>>
-    for EqualPredicate<'a, Ext>
-{
+impl<Ext: ExternalCall> DecidablePredicateInterface<AddressOf<Ext>> for EqualPredicate<'_, Ext> {
     fn decide_with_witness(
         &self,
         inputs: Vec<Vec<u8>>,
@@ -48,7 +40,4 @@ impl<'a, Ext: ExternalCall> DecidablePredicateInterface<AddressOf<Ext>>
     }
 }
 
-impl<'a, Ext: ExternalCall> BaseAtomicPredicateInterface<AddressOf<Ext>>
-    for EqualPredicate<'a, Ext>
-{
-}
+impl<Ext: ExternalCall> BaseAtomicPredicateInterface<AddressOf<Ext>> for EqualPredicate<'_, Ext> {}

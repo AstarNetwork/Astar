@@ -6,21 +6,21 @@ pub struct IsValidSignaturePredicate<'a, Ext: ExternalCall> {
     pub ext: &'a Ext,
 }
 
-impl<'a, Ext: ExternalCall> AtomicPredicateInterface<AddressOf<Ext>>
-    for IsValidSignaturePredicate<'a, Ext>
+impl<Ext: ExternalCall> AtomicPredicateInterface<AddressOf<Ext>>
+    for IsValidSignaturePredicate<'_, Ext>
 {
-    fn decide(&self, inputs: Vec<Vec<u8>>) -> ExecResult<AddressOf<Ext>> {
-        require!(inputs.len() > 3);
-        require_with_message!(
-            Ext::Hashing::hash(&self.get_input_value(inputs[3]).to_vec()[..]) == Ext::SECP_256_K1,
-            "verifierType must be secp256k1"
-        );
-
-        /// Verify a signature on a message. Returns true if the signature is good.
-        fn verify<M: AsRef<[u8]>>(sig: &Self::Signature, message: M, pubkey: &Self::Public) -> bool;
-
-        let hash = Ext::Hashing::hash(&inputs[0][..]);
-        let address = self.bytes_to_address(&inputs[2]);
+    fn decide(&self, _inputs: Vec<Vec<u8>>) -> ExecResult<AddressOf<Ext>> {
+        // require!(inputs.len() > 3);
+        // require_with_message!(
+        //     Ext::Hashing::hash(&self.get_input_value(inputs[3]).to_vec()[..]) == Ext::SECP_256_K1,
+        //     "verifierType must be secp256k1"
+        // );
+        //
+        // /// Verify a signature on a message. Returns true if the signature is good.
+        // fn verify<M: AsRef<[u8]>>(sig: &Self::Signature, message: M, pubkey: &Self::Public) -> bool;
+        //
+        // let hash = Ext::Hashing::hash(&inputs[0][..]);
+        // let address = self.bytes_to_address(&inputs[2]);
 
         // require_with_message!(
         //     ECRecover.ecverify(
@@ -33,8 +33,8 @@ impl<'a, Ext: ExternalCall> AtomicPredicateInterface<AddressOf<Ext>>
         Ok(true)
     }
 }
-impl<'a, Ext: ExternalCall> AtomicHelperInterface<AddressOf<Ext>>
-    for IsValidSignaturePredicate<'a, Ext>
+impl<Ext: ExternalCall> AtomicHelperInterface<AddressOf<Ext>>
+    for IsValidSignaturePredicate<'_, Ext>
 {
     type Hash = HashOf<Ext>;
     fn ext_address(&self) -> AddressOf<Ext> {
@@ -52,8 +52,8 @@ impl<'a, Ext: ExternalCall> AtomicHelperInterface<AddressOf<Ext>>
     }
 }
 
-impl<'a, Ext: ExternalCall> DecidablePredicateInterface<AddressOf<Ext>>
-    for IsValidSignaturePredicate<'a, Ext>
+impl<Ext: ExternalCall> DecidablePredicateInterface<AddressOf<Ext>>
+    for IsValidSignaturePredicate<'_, Ext>
 {
     fn decide_with_witness(
         &self,
@@ -64,7 +64,7 @@ impl<'a, Ext: ExternalCall> DecidablePredicateInterface<AddressOf<Ext>>
     }
 }
 
-impl<'a, Ext: ExternalCall> BaseAtomicPredicateInterface<AddressOf<Ext>>
-    for IsValidSignaturePredicate<'a, Ext>
+impl<Ext: ExternalCall> BaseAtomicPredicateInterface<AddressOf<Ext>>
+    for IsValidSignaturePredicate<'_, Ext>
 {
 }

@@ -5,7 +5,7 @@ pub struct ForAllPredicate<'a, Ext: ExternalCall> {
     pub ext: &'a Ext,
 }
 
-impl<'a, Ext: ExternalCall> ForAllPredicate<'a, Ext> {
+impl<Ext: ExternalCall> ForAllPredicate<'_, Ext> {
     /// @dev Replace placeholder by quantified in propertyBytes
     fn replace_variable(
         &self,
@@ -57,9 +57,7 @@ impl<'a, Ext: ExternalCall> ForAllPredicate<'a, Ext> {
     }
 }
 
-impl<'a, Ext: ExternalCall> LogicalConnectiveInterface<AddressOf<Ext>>
-    for ForAllPredicate<'a, Ext>
-{
+impl<Ext: ExternalCall> LogicalConnectiveInterface<AddressOf<Ext>> for ForAllPredicate<'_, Ext> {
     /// @dev Validates a child node of ForAll property in game tree.
     fn is_valid_challenge(
         &self,
@@ -86,9 +84,7 @@ impl<'a, Ext: ExternalCall> LogicalConnectiveInterface<AddressOf<Ext>>
     }
 }
 
-impl<'a, Ext: ExternalCall> DecidablePredicateInterface<AddressOf<Ext>>
-    for ForAllPredicate<'a, Ext>
-{
+impl<Ext: ExternalCall> DecidablePredicateInterface<AddressOf<Ext>> for ForAllPredicate<'_, Ext> {
     /// @dev Can decide true when all child properties are decided true
     fn decide_with_witness(
         &self,

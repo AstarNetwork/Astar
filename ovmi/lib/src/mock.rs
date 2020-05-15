@@ -9,7 +9,7 @@ use crate::prepare::{
     executable_from_compiled, logical_connective_executable_from_address,
 };
 use primitive_types::H256;
-use sp_runtime::traits::BlakeTwo256;
+pub use sp_runtime::traits::BlakeTwo256;
 
 pub type Address = u64;
 pub type Hash = H256;
@@ -33,7 +33,7 @@ pub const IS_STORED_ADDRESS: Address = 9;
 pub const IS_VALID_SIGNATURE_ADDRESS: Address = 10;
 pub const VERIFY_INCLUAION_ADDRESS: Address = 11;
 
-pub const SECP_256_K1: Hash = BlakeTwo256::hash(&b"secp256k1".to_vec()[..]);
+// pub const SECP_256_K1: Hash = ;
 
 pub const JSON: &str = r#"
   {
@@ -197,7 +197,7 @@ impl ExternalCall for MockExternalCall {
     const IS_VALID_SIGNATURE_ADDRESS: Address = IS_VALID_SIGNATURE_ADDRESS;
     const VERIFY_INCLUAION_ADDRESS: Address = VERIFY_INCLUAION_ADDRESS;
 
-    const SECP_256_K1: Hash = SECP_256_K1;
+    // const SECP_256_K1: Hash = SECP_256_K1;
 
     fn ext_call(
         &self,

@@ -6,9 +6,7 @@ pub struct IsLessThanPredicate<'a, Ext: ExternalCall> {
     pub ext: &'a Ext,
 }
 
-impl<'a, Ext: ExternalCall> AtomicPredicateInterface<AddressOf<Ext>>
-    for IsLessThanPredicate<'a, Ext>
-{
+impl<Ext: ExternalCall> AtomicPredicateInterface<AddressOf<Ext>> for IsLessThanPredicate<'_, Ext> {
     fn decide(&self, inputs: Vec<Vec<u8>>) -> ExecResult<AddressOf<Ext>> {
         let first: u128 = Ext::bytes_to_u128(&inputs[0])?;
         let second: u128 = Ext::bytes_to_u128(&inputs[1])?;
@@ -16,7 +14,7 @@ impl<'a, Ext: ExternalCall> AtomicPredicateInterface<AddressOf<Ext>>
         Ok(true)
     }
 }
-impl<'a, Ext: ExternalCall> AtomicHelperInterface<AddressOf<Ext>> for IsLessThanPredicate<'a, Ext> {
+impl<Ext: ExternalCall> AtomicHelperInterface<AddressOf<Ext>> for IsLessThanPredicate<'_, Ext> {
     type Hash = HashOf<Ext>;
     fn ext_address(&self) -> AddressOf<Ext> {
         self.ext.ext_address()
@@ -33,8 +31,8 @@ impl<'a, Ext: ExternalCall> AtomicHelperInterface<AddressOf<Ext>> for IsLessThan
     }
 }
 
-impl<'a, Ext: ExternalCall> DecidablePredicateInterface<AddressOf<Ext>>
-    for IsLessThanPredicate<'a, Ext>
+impl<Ext: ExternalCall> DecidablePredicateInterface<AddressOf<Ext>>
+    for IsLessThanPredicate<'_, Ext>
 {
     fn decide_with_witness(
         &self,
@@ -45,7 +43,7 @@ impl<'a, Ext: ExternalCall> DecidablePredicateInterface<AddressOf<Ext>>
     }
 }
 
-impl<'a, Ext: ExternalCall> BaseAtomicPredicateInterface<AddressOf<Ext>>
-    for IsLessThanPredicate<'a, Ext>
+impl<Ext: ExternalCall> BaseAtomicPredicateInterface<AddressOf<Ext>>
+    for IsLessThanPredicate<'_, Ext>
 {
 }
