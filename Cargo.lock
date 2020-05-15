@@ -2792,6 +2792,7 @@ version = "0.1.0"
 dependencies = [
  "derive_more 0.99.5",
  "hash-db",
+ "hex",
  "parity-scale-codec",
  "primitive-types",
  "serde",
