@@ -51,8 +51,8 @@ pub enum LogicalConnectiveExecutable<'a, Ext: ExternalCall> {
     ThereExists(ThereExistsPredicate<'a, Ext>),
 }
 
-impl<'a, Ext: ExternalCall> LogicalConnectiveInterface<AddressOf<Ext>>
-    for LogicalConnectiveExecutable<'a, Ext>
+impl<Ext: ExternalCall> LogicalConnectiveInterface<AddressOf<Ext>>
+    for LogicalConnectiveExecutable<'_, Ext>
 {
     fn is_valid_challenge(
         &self,
@@ -94,8 +94,8 @@ pub enum DecidableExecutable<'a, Ext: ExternalCall> {
     VerifyInclusion(VerifyInclusionPredicate<'a, Ext>),
 }
 
-impl<'a, Ext: ExternalCall> DecidablePredicateInterface<AddressOf<Ext>>
-    for DecidableExecutable<'a, Ext>
+impl<Ext: ExternalCall> DecidablePredicateInterface<AddressOf<Ext>>
+    for DecidableExecutable<'_, Ext>
 {
     fn decide_with_witness(
         &self,
@@ -127,8 +127,8 @@ pub enum BaseAtomicExecutable<'a, Ext: ExternalCall> {
     VerifyInclusion(VerifyInclusionPredicate<'a, Ext>),
 }
 
-impl<'a, Ext: ExternalCall> DecidablePredicateInterface<AddressOf<Ext>>
-    for BaseAtomicExecutable<'a, Ext>
+impl<Ext: ExternalCall> DecidablePredicateInterface<AddressOf<Ext>>
+    for BaseAtomicExecutable<'_, Ext>
 {
     fn decide_with_witness(
         &self,
@@ -146,9 +146,7 @@ impl<'a, Ext: ExternalCall> DecidablePredicateInterface<AddressOf<Ext>>
     }
 }
 
-impl<'a, Ext: ExternalCall> AtomicPredicateInterface<AddressOf<Ext>>
-    for BaseAtomicExecutable<'a, Ext>
-{
+impl<Ext: ExternalCall> AtomicPredicateInterface<AddressOf<Ext>> for BaseAtomicExecutable<'_, Ext> {
     fn decide(&self, inputs: Vec<Vec<u8>>) -> ExecResult<AddressOf<Ext>> {
         match self {
             BaseAtomicExecutable::Equal(p) => p.decide(inputs),
@@ -172,14 +170,12 @@ impl<'a, Ext: ExternalCall> AtomicPredicateInterface<AddressOf<Ext>>
     }
 }
 
-impl<'a, Ext: ExternalCall> BaseAtomicPredicateInterface<AddressOf<Ext>>
-    for BaseAtomicExecutable<'a, Ext>
+impl<Ext: ExternalCall> BaseAtomicPredicateInterface<AddressOf<Ext>>
+    for BaseAtomicExecutable<'_, Ext>
 {
 }
 
-impl<'a, Ext: ExternalCall> AtomicHelperInterface<AddressOf<Ext>>
-    for BaseAtomicExecutable<'a, Ext>
-{
+impl<Ext: ExternalCall> AtomicHelperInterface<AddressOf<Ext>> for BaseAtomicExecutable<'_, Ext> {
     type Hash = HashOf<Ext>;
     fn ext_address(&self) -> AddressOf<Ext> {
         AddressOf::<Ext>::default()
