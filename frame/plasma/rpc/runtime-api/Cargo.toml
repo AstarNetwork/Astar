@@ -1,0 +1,22 @@
+[package]
+name = "pallet-ovm-rpc-runtime-api"
+version = "0.1.0"
+authors = ["Takumi Yamashita <takumi@stake.co.jp>"]
+edition = "2018"
+license = "GPL-3.0"
+homepage = "https://plasmnet.io"
+repository = "https://github.com/staketechnologies/Plasm/"
+description = "Runtime API definition required by Ovm RPC extensions."
+
+[dependencies]
+sp-api = { version = "2.0.0-alpha.6", default-features = false }
+codec = { package = "parity-scale-codec", version = "1.2.0", default-features = false, features = ["derive"] }
+sp-std = { version = "2.0.0-alpha.6", default-features = false }
+
+[features]
+default = ["std"]
+std = [
+	"sp-api/std",
+	"codec/std",
+	"sp-std/std",
+]

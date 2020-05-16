@@ -55,7 +55,7 @@ pub struct PredicateContract<CodeHash> {
 
 /// Property stands for dispute logic and we can claim every Properties to Adjudicator Contract.
 /// Property has its predicate address and array of input.
-#[derive(Encode, Decode, Clone, RuntimeDebug, PartialEq, Eq)]
+#[derive(Encode, Decode, Clone, Default, RuntimeDebug, PartialEq, Eq)]
 pub struct Property<AccountId> {
     /// Indicates the address of Predicate.
     predicate_address: AccountId,
