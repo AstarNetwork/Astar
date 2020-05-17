@@ -243,6 +243,11 @@ decl_storage! {
             double_map hasher(twox_64_concat) EraIndex, hasher(twox_64_concat) T::AccountId
             => BalanceOf<T>;
 
+        /// The total amounts of staking for each operators
+        ErasStakedOperators get(fn eras_staked_operators):
+            double_map hasher(twox_64_concat) EraIndex, hasher(twox_64_concat) T::AccountId
+            => BalanceOf<T>;
+
         /// Storage version of the pallet.
         ///
         /// This is set to v1.0.0 for new networks.
@@ -695,7 +700,7 @@ decl_module! {
                 Err("the operator already rewarded")?
             }
             while era > untreated_era {
-                Self::propagate_eras_staking_points(&operator, &untreated_era, &(untreated_era + 1));
+                Self::propagate_eras_staked_operators(&operator, &untreated_era, &(untreated_era + 1));
                 untreated_era += 1;
             }
             <OperatorsUntreatedEra<T>>::insert(&operator, untreated_era);
@@ -799,27 +804,17 @@ impl<T: Trait> Module<T> {
         total_payout
     }
 
-    fn propagate_eras_staking_points(
+    fn propagate_eras_staked_operators(
         operator: &T::AccountId,
         src_era: &EraIndex,
         dst_era: &EraIndex,
     ) {
-        if <ErasStakingPoints<T>>::contains_key(src_era, operator) {
-            let untreated_points = <ErasStakingPoints<T>>::get(src_era, operator);
+        if <ErasStakedOperators<T>>::contains_key(src_era, operator) {
+            let untreated_staked_operator = <ErasStakedOperators<T>>::get(src_era, operator);
 
-            if <ErasStakingPoints<T>>::contains_key(dst_era, operator) {
-                <ErasStakingPoints<T>>::mutate(dst_era, operator, |points| {
-                    (*points).total += untreated_points.total;
-                });
-            } else {
-                let points = EraStakingPoints {
-                    total: untreated_points.total,
-                    individual: vec![]
-                        .into_iter()
-                        .collect::<BTreeMap<T::AccountId, BalanceOf<T>>>(),
-                };
-                <ErasStakingPoints<T>>::insert(&dst_era, operator, points);
-            }
+            <ErasStakedOperators<T>>::mutate(dst_era, operator, |total| {
+                *total += untreated_staked_operator;
+            });
         }
     }
 
@@ -834,9 +829,9 @@ impl<T: Trait> Module<T> {
 
         let total_staked = Self::eras_total_stake(era);
 
-        let staking_points = Self::eras_staking_points(era, operator);
-        let reward = Perbill::from_rational_approximation(staking_points.total, total_staked)
-            * operators_reward;
+        let staked_operator = Self::eras_staked_operators(era, operator);
+        let reward =
+            Perbill::from_rational_approximation(staked_operator, total_staked) * operators_reward;
         total_imbalance.subsume(
             T::Currency::deposit_into_existing(operator, reward)
                 .unwrap_or(PositiveImbalanceOf::<T>::zero()),
@@ -889,27 +884,31 @@ impl<T: Trait> Module<T> {
         if let Some(current_era) = T::EraFinder::current() {
             let next_era = current_era + 1;
 
-            for (target, value) in nominations.targets.iter() {
-                if let Some(operator) = T::ContractFinder::operator(&target) {
-                    if <ErasStakingPoints<T>>::contains_key(&next_era, &operator) {
-                        <ErasStakingPoints<T>>::mutate(&next_era, &operator, |points| {
-                            (*points).total += value.clone();
-                            (*points).individual.insert(stash.clone(), value.clone());
-                        });
-                    } else {
-                        let points = EraStakingPoints {
-                            total: value.clone(),
-                            individual: vec![(stash.clone(), value.clone())]
-                                .into_iter()
-                                .collect::<BTreeMap<T::AccountId, BalanceOf<T>>>(),
-                        };
-                        <ErasStakingPoints<T>>::insert(&next_era, &operator, points);
-                    }
+            for (contract, value) in nominations.targets.iter() {
+                if <ErasStakingPoints<T>>::contains_key(&next_era, &contract) {
+                    <ErasStakingPoints<T>>::mutate(&next_era, &contract, |points| {
+                        (*points).total += value.clone();
+                        (*points).individual.insert(stash.clone(), value.clone());
+                    });
+                } else {
+                    let points = EraStakingPoints {
+                        total: value.clone(),
+                        individual: vec![(stash.clone(), value.clone())]
+                            .into_iter()
+                            .collect::<BTreeMap<T::AccountId, BalanceOf<T>>>(),
+                    };
+                    <ErasStakingPoints<T>>::insert(&next_era, &contract, points);
                 }
 
                 <ErasNominateTotals<T>>::mutate(&next_era, stash, |total| {
                     *total += value.clone();
                 });
+
+                if let Some(operator) = T::ContractFinder::operator(&contract) {
+                    <ErasStakedOperators<T>>::mutate(&next_era, operator, |total| {
+                        *total += value.clone();
+                    });
+                }
 
                 <ErasTotalStake<T>>::mutate(&next_era, |total| {
                     *total += value.clone();
@@ -924,17 +923,21 @@ impl<T: Trait> Module<T> {
         nominations: Nominations<T::AccountId, BalanceOf<T>>,
     ) {
         let era = nominations.submitted_in + 1;
-        for (target, value) in nominations.targets.iter() {
-            if let Some(operator) = T::ContractFinder::operator(&target) {
-                <ErasStakingPoints<T>>::mutate(&era, &operator, |points| {
-                    (*points).total = points.total.saturating_sub(value.clone());
-                    (*points).individual.remove(stash);
-                });
-            }
+        for (contract, value) in nominations.targets.iter() {
+            <ErasStakingPoints<T>>::mutate(&era, &contract, |points| {
+                (*points).total = points.total.saturating_sub(value.clone());
+                (*points).individual.remove(stash);
+            });
 
             <ErasNominateTotals<T>>::mutate(&era, stash, |total| {
                 *total = total.saturating_sub(value.clone());
             });
+
+            if let Some(operator) = T::ContractFinder::operator(&contract) {
+                <ErasStakedOperators<T>>::mutate(&era, &operator, |total| {
+                    *total = total.saturating_sub(value.clone());
+                });
+            }
 
             <ErasTotalStake<T>>::mutate(&era, |total| {
                 *total = total.saturating_sub(value.clone());
