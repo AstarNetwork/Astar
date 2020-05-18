@@ -159,10 +159,6 @@ type SubmitTransaction = frame_system::offchain::TransactionSubmitter<(), Call, 
 
 impl Trait for Runtime {
     type Currency = Balances;
-    type BitcoinTicker = CoinGecko<BitcoinTickerUri>;
-    type EthereumTicker = CoinGecko<EthereumTickerUri>;
-    type BitcoinApi = BlockCypher<BitcoinApiUri, BitcoinAddress>;
-    type EthereumApi = BlockCypher<EthereumApiUri, EthereumAddress>;
     type MedianFilterExpire = MedianFilterExpire;
     type MedianFilterWidth = generic_array::typenum::U3;
     type Call = Call;
@@ -209,10 +205,10 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
     .assimilate_storage(&mut storage);
 
     let _ = GenesisConfig::<Runtime> {
-        // Alpha: 2
-        alpha: Perbill::from_parts(200_000_000),
-        // BTC: $5000, ETH: $120
-        dollar_rate: (5_000, 120),
+        // Alpha2: 0.44698108660714747
+        alpha: Perbill::from_parts(446_981_087),
+        // Price in cents: BTC $9000, ETH $200
+        dollar_rate: (9_000, 200),
         vote_threshold: 3,
         positive_votes: 2,
         lockdrop_end: 0,
@@ -229,11 +225,3 @@ pub fn advance_session() {
     Session::rotate_session();
     assert_eq!(Session::current_index(), (next / Period::get()) as u32);
 }
-
-pub const COINGECKO_BTC_TICKER: &str = r#"
-{"id":"bitcoin","symbol":"btc","name":"Bitcoin","market_data":{"current_price":{"usd": 6766.77}}}
-"#;
-
-pub const COINGECKO_ETH_TICKER: &str = r#"
-{"id":"ethereum","symbol":"eth","name":"Ethereum","market_data":{"current_price":{"usd": 139.4}}}
-"#;
