@@ -90,7 +90,6 @@ cli = [
     "frame-benchmarking-cli",
     "sc-service/rocksdb",
     "structopt",
-    "oracle",
 	"vergen",
 ]
 oracle = [
