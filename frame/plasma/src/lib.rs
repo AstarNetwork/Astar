@@ -24,16 +24,17 @@ use frame_support::{
     decl_error, decl_event, decl_module, decl_storage,
     dispatch::DispatchResult,
     ensure,
-    traits::{Currency},
+    traits::Currency,
     weights::{SimpleDispatchInfo, WeighData, Weight},
     StorageDoubleMap, StorageMap,
 };
 use frame_system::{self as system, ensure_signed};
+use sp_core::crypto::UncheckedFrom;
 use sp_runtime::{
     traits::{Hash, One},
     RuntimeDebug,
 };
-use sp_std::{prelude::*, vec::Vec};
+use sp_std::{marker::PhantomData, prelude::*, vec::Vec};
 
 use pallet_ovm::{Property, PropertyOf};
 #[cfg(test)]
@@ -105,9 +106,36 @@ pub type CheckpointOf<T> = Checkpoint<<T as frame_system::Trait>::AccountId, Bal
 pub type RangeOf<T> = Range<BalanceOf<T>>;
 pub type InclusionProofOf<T> = InclusionProof<<T as frame_system::Trait>::AccountId, BalanceOf<T>>;
 
+pub trait PlappsAddressFor<Hash, AccountId> {
+    fn plapps_address_for(hash: &Hash, origin: &AccountId) -> AccountId;
+}
+
+/// Simple plapps address determiner.
+///
+/// Address calculated from the code (of the constructor), input data to the constructor,
+/// and the account id that requested the account creation.
+///
+/// Formula: `blake2_256(blake2_256(code) + blake2_256(data) + origin)`
+pub struct SimpleAddressDeterminer<T: Trait>(PhantomData<T>);
+impl<T: Trait> PlappsAddressFor<T::Hash, T::AccountId> for SimpleAddressDeterminer<T>
+where
+    T::AccountId: UncheckedFrom<T::Hash> + AsRef<[u8]>,
+{
+    fn plapps_address_for(hash: &T::Hash, origin: &T::AccountId) -> T::AccountId {
+        let mut buf = Vec::new();
+        buf.extend_from_slice(hash.as_ref());
+        buf.extend_from_slice(origin.as_ref());
+
+        UncheckedFrom::unchecked_from(T::Hashing::hash(&buf[..]))
+    }
+}
+
 pub trait Trait: system::Trait {
     /// Plasma Range's currency.
     type Currency: Currency<Self::AccountId>;
+
+    /// A function type to get the contract address given the instantiator.
+    type DeterminePlappsAddress: PlappsAddressFor<Self::Hash, Self::AccountId>;
 
     /// The overarching event type.
     type Event: From<Event<Self>> + Into<<Self as system::Trait>::Event>;
@@ -117,8 +145,8 @@ decl_storage! {
     trait Store for Module<T: Trait> as Plasma {
         // Commitment storage: Plapps address => Commitment Child Storage. ====
 
-        /// Single operator address: OperatorId
-        OperatorAddress get(fn operator_address): map hasher(twox_64_concat) T::AccountId => T::AccountId;
+        /// Single aggregator address: AggregatorId
+        AggregatorAddress get(fn aggregator_address): map hasher(twox_64_concat) T::AccountId => T::AccountId;
         /// Current block number of commitment chain: BlockNumber
         CurrentBlock get(fn current_block): map hasher(twox_64_concat) T::AccountId => T::BlockNumber;
         /// History of Merkle Root
@@ -130,6 +158,10 @@ decl_storage! {
         ERC20 get(fn erc20): map hasher(twox_64_concat) T::AccountId => T::AccountId;
         /// mapping from Plapps address to StateUpdate predicate address.
         StateUpdatePredicate get(fn state_update_predicate): map hasher(twox_64_concat) T::AccountId => T::AccountId;
+        /// mapping from Plapps address to Exit predicate address.
+        ExitPredicate get(fn exit_predicate): map hasher(twox_64_concat) T::AccountId => T::AccountId;
+        /// mapping from Plapps address to ExitDeposit predicate address.
+        ExitDepositPredicate get(fn exit_deposit_predicate): map hasher(twox_64_concat) T::AccountId => T::AccountId;
 
         /// TotalDeposited is the most right coin id which has been deposited.
         TotalDeposited get(fn total_deposited): map hasher(twox_64_concat) T::AccountId => BalanceOf<T>;
@@ -152,15 +184,17 @@ decl_event!(
         Range = RangeOf<T>,
         Checkpoint = CheckpointOf<T>,
     {
-        // Event definitions (AccountID: PlappsAddress, BlockNumber, Hash: root)
+        /// Deplpoyed Plapps. (creator: AccountId, plapps_id: AccountId)
+        Deploy(AccountId, AccountId),
+        /// Event definitions (AccountID: PlappsAddress, BlockNumber, Hash: root)
         BlockSubmitted(AccountId, BlockNumber, Hash),
-        // (checkpointId: Hash, checkpoint: Checkpoint);
+        /// (checkpointId: Hash, checkpoint: Checkpoint);
         CheckpointFinalized(Hash, Checkpoint),
-        // (exit_id: Hash)
+        /// (exit_id: Hash)
         ExitFinalized(Hash),
-        // (new_range: Range)
+        /// (new_range: Range)
         DepositedRangeExtended(Range),
-        // (removed_range: Range)
+        /// (removed_range: Range)
         DepositedRangeRemoved(Range),
     }
 );
@@ -168,8 +202,8 @@ decl_event!(
 decl_error! {
     /// Error for the staking module.
     pub enum Error for Module<T: Trait> {
-        /// Sender isn't valid operator.
-        IsNotOperator,
+        /// Sender isn't valid aggregator.
+        IsNotAggregator,
         /// blkNumber should be next block.
         BlockNumberShouldBeNextBlock,
     }
@@ -184,14 +218,41 @@ decl_module! {
             SimpleDispatchInfo::default().weigh_data(())
         }
 
+        /// Commitment constructor + Deposit constructor
+        #[weight = SimpleDispatchInfo::default()]
+        fn deploy(
+            origin,
+            aggregator_id: T::AccountId,
+            erc20: T::AccountId,
+            state_update_predicate: T::AccountId,
+            exit_predicate: T::AccountId,
+            exit_deposit_predicate: T::AccountId,
+        ) {
+            let sender = ensure_signed(origin)?;
+            let plapps_hash = T::Hashing::hash_of(&(
+                T::Hashing::hash_of(&aggregator_id),
+                T::Hashing::hash_of(&erc20),
+                T::Hashing::hash_of(&state_update_predicate),
+                T::Hashing::hash_of(&exit_predicate),
+                T::Hashing::hash_of(&exit_deposit_predicate),
+            ));
+            let plapps_id = T::DeterminePlappsAddress::plapps_address_for(&plapps_hash, &sender);
+            <AggregatorAddress<T>>::insert(&plapps_id, aggregator_id);
+            <ERC20<T>>::insert(&plapps_id, erc20);
+            <StateUpdatePredicate<T>>::insert(&plapps_id, state_update_predicate);
+            <ExitPredicate<T>>::insert(&plapps_id, exit_predicate);
+            <ExitDepositPredicate<T>>::insert(&plapps_id, exit_deposit_predicate);
+            Self::deposit_event(RawEvent::Deploy(sender, plapps_id));
+        }
+
         // Commitment callable methods. ========
 
         /// Submit root hash of Plasma chain.
         #[weight = SimpleDispatchInfo::default()]
         fn submit_root(origin, plapps_id: T::AccountId,
             block_number: T::BlockNumber, root: T::Hash) {
-            let operator = ensure_signed(origin)?;
-            Self::ensure_operator(&plapps_id, &operator)?;
+            let aggregator = ensure_signed(origin)?;
+            Self::ensure_aggregator(&plapps_id, &aggregator)?;
             ensure!(
                 Self::current_block(&plapps_id) + T::BlockNumber::one() == block_number,
                 Error::<T>::BlockNumberShouldBeNextBlock,
@@ -212,7 +273,7 @@ decl_module! {
         /// - @param _blkNumber block number where the Merkle root is stored
         #[weight = SimpleDispatchInfo::default()]
         fn verify_inclusion(origin, plapps_id: T::AccountId,
-            leaf: T::Hash, address: T::AccountId, range: RangeOf<T>, inclusionProof: InclusionProofOf<T>, block_number: T::BlockNumber) {
+            leaf: T::Hash, address: T::AccountId, range: RangeOf<T>, inclusion_proof: InclusionProofOf<T>, block_number: T::BlockNumber) {
         }
 
 
@@ -235,7 +296,7 @@ decl_module! {
 
         #[weight = SimpleDispatchInfo::default()]
         fn remove_deposited_range(origin, plapps_id: T::AccountId,
-            range: RangeOf<T>, deposited_rangeId: BalanceOf<T>) {
+            range: RangeOf<T>, deposited_range_id: BalanceOf<T>) {
 
         }
 
@@ -278,10 +339,10 @@ fn migrate<T: Trait>() {
 }
 
 impl<T: Trait> Module<T> {
-    fn ensure_operator(plapps_id: &T::AccountId, sender: &T::AccountId) -> DispatchResult {
+    fn ensure_aggregator(plapps_id: &T::AccountId, sender: &T::AccountId) -> DispatchResult {
         ensure!(
-            sender != &Self::operator_address(plapps_id),
-            Error::<T>::IsNotOperator,
+            sender != &Self::aggregator_address(plapps_id),
+            Error::<T>::IsNotAggregator,
         );
         Ok(())
     }

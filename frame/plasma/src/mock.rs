@@ -7,6 +7,7 @@ use frame_support::{
     impl_outer_dispatch, impl_outer_event, impl_outer_origin, parameter_types, traits::OnFinalize,
 };
 use pallet_balances as balances;
+use pallet_ovm as ovm;
 use sp_core::{crypto::key_types, H256};
 use sp_runtime::testing::{Header, UintAuthorityId};
 use sp_runtime::traits::{BlakeTwo256, ConvertInto, IdentityLookup};
@@ -28,7 +29,7 @@ impl_outer_dispatch! {
     }
 }
 
-mod ovm {
+mod plasma {
     // Re-export contents of the root. This basically
     // needs to give a name for the current crate.
     // This hack is required for `impl_outer_event!`.
@@ -41,6 +42,7 @@ impl_outer_event! {
         system<T>,
         balances<T>,
         ovm<T>,
+        plasma<T>,
     }
 }
 pub fn new_test_ext() -> sp_io::TestExternalities {
@@ -55,7 +57,7 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 
     let validators = vec![1, 2];
 
-    let _ = GenesisConfig {
+    let _ = ovm::GenesisConfig {
         current_schedule: Default::default(),
     }
     .assimilate_storage(&mut storage);
@@ -112,7 +114,7 @@ parameter_types! {
 }
 
 pub struct DummyPredicateAddressFor;
-impl PredicateAddressFor<H256, u64> for DummyPredicateAddressFor {
+impl ovm::PredicateAddressFor<H256, u64> for DummyPredicateAddressFor {
     fn predicate_address_for(_code_hash: &H256, _data: &[u8], origin: &u64) -> u64 {
         *origin + 1
     }
@@ -122,16 +124,30 @@ parameter_types! {
     pub const MaxDepth: u32 = 32;
 }
 
-impl Trait for Test {
+impl pallet_ovm::Trait for Test {
     type MaxDepth = MaxDepth;
     type DisputePeriod = DisputePeriod;
     type DeterminePredicateAddress = DummyPredicateAddressFor;
     type Event = MetaEvent;
 }
 
+pub struct DummyPlappsAddressFor;
+impl PlappsAddressFor<H256, u64> for DummyPlappsAddressFor {
+    fn plapps_address_for(_hash: &H256, origin: &u64) -> u64 {
+        *origin + 10000
+    }
+}
+
+impl Trait for Test {
+    type Currency = Balances;
+    type DeterminePlappsAddress = DummyPlappsAddressFor;
+    type Event = MetaEvent;
+}
+
 pub type System = frame_system::Module<Test>;
 pub type Balances = pallet_balances::Module<Test>;
-pub type Ovm = Module<Test>;
+pub type Ovm = pallet_ovm::Module<Test>;
+pub type Plasma = Module<Test>;
 
 const PER_BLOCK: u64 = 1000;
 

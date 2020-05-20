@@ -38,7 +38,7 @@ pub mod predicate;
 pub mod traits;
 
 use predicate::{ExecResult, ExecutionContext, PredicateLoader, PredicateOvm};
-use traits::PredicateAddressFor;
+pub use traits::PredicateAddressFor;
 
 /// PredicateContract wrapped Predicate and initial arguments.
 ///
