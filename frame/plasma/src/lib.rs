@@ -34,7 +34,7 @@ use serde::{Deserialize, Serialize};
 use sp_runtime::{traits::Hash, RuntimeDebug};
 use sp_std::{prelude::*, vec::Vec};
 
-use pallet_ovm::Property;
+use pallet_ovm::{Property, PropertyOf};
 #[cfg(test)]
 mod mock;
 #[cfg(test)]
@@ -61,28 +61,28 @@ pub struct Checkpoint<AccountId, Balance> {
 }
 
 #[derive(Encode, Decode, Clone, Default, RuntimeDebug, PartialEq, Eq)]
-pub struct Exit<AccountId, Range, BlockNumber, Balance, Index> {
+pub struct Exit<AccountId, Range, BlockNumber, Balance> {
     state_update: StateUpdate<AccountId, Range, BlockNumber>,
-    inclusion_proof: InclusionProof<AccountId, Balance, Index>,
+    inclusion_proof: InclusionProof<AccountId, Balance>,
 }
 
 #[derive(Encode, Decode, Clone, Default, RuntimeDebug, PartialEq, Eq)]
-pub struct InclusionProof<AccountId, Balance, Index> {
-    address_inclusion_proof: AddressInclusionProof<AccountId, Index>,
-    interval_inclusion_proof: IntervalInclusionProof<Balance, Index>,
+pub struct InclusionProof<AccountId, Balance> {
+    address_inclusion_proof: AddressInclusionProof<AccountId, Balance>,
+    interval_inclusion_proof: IntervalInclusionProof<Balance>,
 }
 
 #[derive(Encode, Decode, Clone, Default, RuntimeDebug, PartialEq, Eq)]
-pub struct IntervalInclusionProof<Balance, Index> {
-    leaf_index: Index,
-    leaf_position: Index,
+pub struct IntervalInclusionProof<Balance> {
+    leaf_index: Balance,
+    leaf_position: Balance,
     sibilings: Vec<IntervalTreeNode<Balance>>,
 }
 
 #[derive(Encode, Decode, Clone, Default, RuntimeDebug, PartialEq, Eq)]
-pub struct AddressInclusionProof<AccountId, Index> {
+pub struct AddressInclusionProof<AccountId, Balance> {
     leaf_index: AccountId,
-    leaf_position: Index,
+    leaf_position: Balance,
     siblings: Vec<AddressTreeNode<AccountId>>,
 }
 
@@ -102,6 +102,7 @@ pub type BalanceOf<T> =
     <<T as Trait>::Currency as Currency<<T as frame_system::Trait>::AccountId>>::Balance;
 pub type CheckpointOf<T> = Checkpoint<<T as frame_system::Trait>::AccountId, BalanceOf<T>>;
 pub type RangeOf<T> = Range<BalanceOf<T>>;
+pub type InclusionProofOf<T> = InclusionProof<<T as frame_system::Trait>::AccountId, BalanceOf<T>>;
 
 pub trait Trait: system::Trait {
     /// Plasma Range's currency.
@@ -177,7 +178,7 @@ decl_module! {
         /// Submit root hash of Plasma chain.
         #[weight = SimpleDispatchInfo::default()]
         fn submit_root(origin, plapps_id: T::AccountId,
-            blk_number: u64, root: T::Hash) {
+            blk_number: T::BlockNumber, root: T::Hash) {
         }
 
         /// verifyInclusion method verifies inclusion of message in Double Layer Tree.
@@ -189,54 +190,59 @@ decl_module! {
         /// - @param _inclusionProof The proof data to verify inclusion
         /// - @param _blkNumber block number where the Merkle root is stored
         #[weight = SimpleDispatchInfo::default()]
-        fn verifyInclusion(origin, plapps_id: T::AccountId,
-            leaf: T::Hash, address, T::AccountId, range: RangeOf<T>, inclusionProof: InclusionProof, blk_number) {
+        fn verify_inclusion(origin, plapps_id: T::AccountId,
+            leaf: T::Hash, address: T::AccountId, range: RangeOf<T>, inclusionProof: InclusionProofOf<T>, blk_number: T::BlockNumber) {
         }
 
 
-         // Deposit callable methods. ========
-         /// deposit ERC20 token to deposit contract with initial state.
-         /// following https://docs.plasma.group/projects/spec/en/latest/src/02-contracts/deposit-contract.html#deposit
-         /// - @param _amount to deposit
-         /// - @param _initialState The initial state of deposit
-         fn deposit(origin, plapps_id: T::AccountId,
-            amount: BalanceOf<T>, initial_state: T::Property) {
+        // Deposit callable methods. ========
 
-         }
+        /// deposit ERC20 token to deposit contract with initial state.
+        /// following https://docs.plasma.group/projects/spec/en/latest/src/02-contracts/deposit-contract.html#deposit
+        /// - @param amount to deposit
+        /// - @param initial_state The initial state of deposit
+        #[weight = SimpleDispatchInfo::default()]
+        fn deposit(origin, plapps_id: T::AccountId,
+            amount: BalanceOf<T>, initial_state: PropertyOf<T>) {
 
-         fn extend_deposited_ranges(origin, plapps_id: T::AccountId,
-            amount: BalanceOf<T>) {
+        }
 
-         }
+        #[weight = SimpleDispatchInfo::default()]
+        fn extend_deposited_ranges(origin, plapps_id: T::AccountId, amount: BalanceOf<T>) {
 
-         fn remove_deposited_range(origin, plapps_id: T::AccountId,
-            range: RangeOf<T>, depositedRangeId: BalanceOf<T>) {
+        }
 
-         }
+        #[weight = SimpleDispatchInfo::default()]
+        fn remove_deposited_range(origin, plapps_id: T::AccountId,
+            range: RangeOf<T>, deposited_rangeId: BalanceOf<T>) {
 
-         /// finalizeCheckpoint
-         /// - @param _checkpointProperty A property which is instance of checkpoint predicate
-         /// its first input is range to create checkpoint and second input is property for stateObject.
-         fn finalize_check_point(origin, plapps_id: T::AccountId,
-            checkpoint_property: T::Property) {
+        }
 
-         }
+        /// finalizeCheckpoint
+        /// - @param _checkpointProperty A property which is instance of checkpoint predicate
+        /// its first input is range to create checkpoint and second input is property for stateObject.
+        #[weight = SimpleDispatchInfo::default()]
+        fn finalize_check_point(origin, plapps_id: T::AccountId,
+            checkpoint_property: PropertyOf<T>) {
 
-         /// finalizeExit
-         /// - @param _exitProperty A property which is instance of exit predicate and its inputs are range and StateUpdate that exiting account wants to withdraw.
-         /// _exitProperty can be a property of ether ExitPredicate or ExitDepositPredicate.
-         /// - @param _depositedRangeId Id of deposited range
-         /// - @return return StateUpdate of exit property which is finalized.
-         /// - @dev The steps of finalizeExit.
-         /// 1. Serialize exit property
-         /// 2. check the property is decided by Adjudication Contract.
-         /// 3. Transfer asset to payout contract corresponding to StateObject.
-         ///
-         /// Please alse see https://docs.plasma.group/projects/spec/en/latest/src/02-contracts/deposit-contract.html#finalizeexit
-         fn finalizeExit(origin, plapps_id: T::AccountId,
-            exit_property: T::Property, deposited_range_id: BalanceOf<T>) {
+        }
 
-         }
+        /// finalizeExit
+        /// - @param _exitProperty A property which is instance of exit predicate and its inputs are range and StateUpdate that exiting account wants to withdraw.
+        /// _exitProperty can be a property of ether ExitPredicate or ExitDepositPredicate.
+        /// - @param _depositedRangeId Id of deposited range
+        /// - @return return StateUpdate of exit property which is finalized.
+        /// - @dev The steps of finalizeExit.
+        /// 1. Serialize exit property
+        /// 2. check the property is decided by Adjudication Contract.
+        /// 3. Transfer asset to payout contract corresponding to StateObject.
+        ///
+        /// Please alse see https://docs.plasma.group/projects/spec/en/latest/src/02-contracts/deposit-contract.html#finalizeexit
+        #[weight = SimpleDispatchInfo::default()]
+        fn finalize_exit(origin, plapps_id: T::AccountId,
+            exit_property: PropertyOf<T>, deposited_range_id: BalanceOf<T>) {
+
+        }
     }
 }
 

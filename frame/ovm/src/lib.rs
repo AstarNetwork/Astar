@@ -141,7 +141,7 @@ type ChallengeGameOf<T> = ChallengeGame<
     <T as system::Trait>::Hash,
     <T as system::Trait>::BlockNumber,
 >;
-type PropertyOf<T> = Property<<T as system::Trait>::AccountId>;
+pub type PropertyOf<T> = Property<<T as system::Trait>::AccountId>;
 type AccountIdOf<T> = <T as frame_system::Trait>::AccountId;
 type PredicateContractOf<T> = PredicateContract<<T as frame_system::Trait>::Hash>;
 
