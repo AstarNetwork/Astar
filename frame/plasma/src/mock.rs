@@ -3,15 +3,15 @@
 #![cfg(test)]
 
 use super::*;
-use frame_support::{
+pub use frame_support::{
     impl_outer_dispatch, impl_outer_event, impl_outer_origin, parameter_types, traits::OnFinalize,
 };
-use pallet_balances as balances;
-use pallet_ovm as ovm;
-use sp_core::{crypto::key_types, H256};
-use sp_runtime::testing::{Header, UintAuthorityId};
-use sp_runtime::traits::{BlakeTwo256, ConvertInto, IdentityLookup};
-use sp_runtime::{KeyTypeId, Perbill};
+pub use pallet_balances as balances;
+pub use pallet_ovm as ovm;
+pub use sp_core::{crypto::key_types, H256};
+pub use sp_runtime::testing::{Header, UintAuthorityId};
+pub use sp_runtime::traits::{BlakeTwo256, ConvertInto, IdentityLookup};
+pub use sp_runtime::{KeyTypeId, Perbill};
 
 pub type BlockNumber = u64;
 pub type AccountId = u64;
@@ -152,9 +152,18 @@ pub type Plasma = Module<Test>;
 const PER_BLOCK: u64 = 1000;
 
 pub fn advance_block() {
+    System::finalize();
     let next = System::block_number() + 1;
     // increase block numebr
     System::set_block_number(next);
+    System::initialize(
+        &next,
+        &[0u8; 32].into(),
+        &[0u8; 32].into(),
+        &Default::default(),
+        system::InitKind::Full,
+    );
+    System::note_finished_initialize();
 }
 
 /// Generate compiled predicate binary and code hash from predicate source.

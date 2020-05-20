@@ -274,6 +274,7 @@ decl_module! {
         #[weight = SimpleDispatchInfo::default()]
         fn verify_inclusion(origin, plapps_id: T::AccountId,
             leaf: T::Hash, address: T::AccountId, range: RangeOf<T>, inclusion_proof: InclusionProofOf<T>, block_number: T::BlockNumber) {
+
         }
 
 
@@ -339,7 +340,7 @@ fn migrate<T: Trait>() {
 }
 
 impl<T: Trait> Module<T> {
-    fn ensure_aggregator(plapps_id: &T::AccountId, sender: &T::AccountId) -> DispatchResult {
+    fn ensure_aggregator(sender: &T::AccountId, plapps_id: &T::AccountId) -> DispatchResult {
         ensure!(
             sender != &Self::aggregator_address(plapps_id),
             Error::<T>::IsNotAggregator,
