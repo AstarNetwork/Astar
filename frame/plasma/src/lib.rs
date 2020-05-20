@@ -24,14 +24,15 @@ use frame_support::{
     decl_error, decl_event, decl_module, decl_storage,
     dispatch::DispatchResult,
     ensure,
-    traits::{Currency, Get},
+    traits::{Currency},
     weights::{SimpleDispatchInfo, WeighData, Weight},
-    StorageMap,
+    StorageDoubleMap, StorageMap,
 };
 use frame_system::{self as system, ensure_signed};
-#[cfg(feature = "std")]
-use serde::{Deserialize, Serialize};
-use sp_runtime::{traits::Hash, RuntimeDebug};
+use sp_runtime::{
+    traits::{Hash, One},
+    RuntimeDebug,
+};
 use sp_std::{prelude::*, vec::Vec};
 
 use pallet_ovm::{Property, PropertyOf};
@@ -121,7 +122,7 @@ decl_storage! {
         /// Current block number of commitment chain: BlockNumber
         CurrentBlock get(fn current_block): map hasher(twox_64_concat) T::AccountId => T::BlockNumber;
         /// History of Merkle Root
-        Blocks get(fn blocks): double_map hasher(twox_64_concat) T::AccountId, hasher(blake2_128_concat) u128 => T::Hash;
+        Blocks get(fn blocks): double_map hasher(twox_64_concat) T::AccountId, hasher(blake2_128_concat) T::BlockNumber => T::Hash;
 
 
         // Deposit storage: Plapps address => Deposit Child Storage. ====
@@ -164,6 +165,16 @@ decl_event!(
     }
 );
 
+decl_error! {
+    /// Error for the staking module.
+    pub enum Error for Module<T: Trait> {
+        /// Sender isn't valid operator.
+        IsNotOperator,
+        /// blkNumber should be next block.
+        BlockNumberShouldBeNextBlock,
+    }
+}
+
 decl_module! {
     pub struct Module<T: Trait> for enum Call where origin: T::Origin {
         fn deposit_event() = default;
@@ -178,7 +189,17 @@ decl_module! {
         /// Submit root hash of Plasma chain.
         #[weight = SimpleDispatchInfo::default()]
         fn submit_root(origin, plapps_id: T::AccountId,
-            blk_number: T::BlockNumber, root: T::Hash) {
+            block_number: T::BlockNumber, root: T::Hash) {
+            let operator = ensure_signed(origin)?;
+            Self::ensure_operator(&plapps_id, &operator)?;
+            ensure!(
+                Self::current_block(&plapps_id) + T::BlockNumber::one() == block_number,
+                Error::<T>::BlockNumberShouldBeNextBlock,
+            );
+
+            <Blocks<T>>::insert(&plapps_id, &block_number, root.clone());
+            <CurrentBlock<T>>::insert(&plapps_id, block_number.clone());
+            Self::deposit_event(RawEvent::BlockSubmitted(plapps_id, block_number, root));
         }
 
         /// verifyInclusion method verifies inclusion of message in Double Layer Tree.
@@ -191,7 +212,7 @@ decl_module! {
         /// - @param _blkNumber block number where the Merkle root is stored
         #[weight = SimpleDispatchInfo::default()]
         fn verify_inclusion(origin, plapps_id: T::AccountId,
-            leaf: T::Hash, address: T::AccountId, range: RangeOf<T>, inclusionProof: InclusionProofOf<T>, blk_number: T::BlockNumber) {
+            leaf: T::Hash, address: T::AccountId, range: RangeOf<T>, inclusionProof: InclusionProofOf<T>, block_number: T::BlockNumber) {
         }
 
 
@@ -254,4 +275,14 @@ fn migrate<T: Trait>() {
     //         ErasStartSessionIndex::migrate_key_from_blake(era);
     //     }
     // }
+}
+
+impl<T: Trait> Module<T> {
+    fn ensure_operator(plapps_id: &T::AccountId, sender: &T::AccountId) -> DispatchResult {
+        ensure!(
+            sender != &Self::operator_address(plapps_id),
+            Error::<T>::IsNotOperator,
+        );
+        Ok(())
+    }
 }
