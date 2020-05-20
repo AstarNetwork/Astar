@@ -14,11 +14,11 @@
 // You should have received a copy of the GNU General Public License
 // along with Substrate.  If not, see <http://www.gnu.org/licenses/>.
 
-//! Runtime API definition required by Ovm RPC extensions.
+//! Runtime API definition required by Plasma RPC extensions.
 //!
 //! This API should be imported and implemented by the runtime,
 //! of a node that wants to use the custom RPC extension
-//! adding Ovm access methods.
+//! adding Plasma access methods.
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
@@ -27,14 +27,30 @@ use sp_std::vec::Vec;
 
 sp_api::decl_runtime_apis! {
     /// The API to interact with contracts without using executive.
-    pub trait OvmApi<Property, Decision, ChallengeGame, Hash> where
-        Property: Codec,
-        Decision: Codec,
-        ChallengeGame: Codec,
+    pub trait PlasmaApi<AccountId, BlockNumber, Range, Hash, InclusionProof> where
+        AccountId: Codec,
+        BlockNumber: Codec,
+        Range: Codec,
         Hash: Codec,
+        InclusionProof: Codec,
     {
-        fn is_decided(property: Property) -> Decision;
-        fn get_game(claim_id: Hash) -> Option<ChallengeGame>;
-        fn get_property_id(property: Property) -> Option<Hash>;
+        fn retrieve(plapps_id: AccountId, block_number: BlockNumber) -> Hash;
+
+        fn verify_inclusion_with(
+            plapps_id: AccountId,
+            leaf: Hash,
+            token_address: AccountId,
+            range: Range,
+            inclusion_proof: InclusionProof,
+            block_number: BlockNumber,
+        ) -> bool;
+
+        fn verify_inclusion_with_root(
+            leaf: Hash,
+            token_address: AccountId,
+            range: Range,
+            inclusion_proof: InclusionProof,
+            root: Hash,
+        ) -> bool;
     }
 }

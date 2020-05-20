@@ -14,6 +14,7 @@ members = [
     "frame/ovm",
     "frame/ovm/rpc/runtime-api",
     "frame/plasma",
+    "frame/plasma/rpc/runtime-api",
     "ovmi/lib",
     "ovmi/cli",
 ]
