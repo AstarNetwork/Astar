@@ -20,7 +20,10 @@ use sp_runtime::traits::{
     StaticLookup, Verify,
 };
 use sp_runtime::transaction_validity::{TransactionSource, TransactionValidity};
-use sp_runtime::{create_runtime_str, generic, impl_opaque_keys, ApplyExtrinsicResult, Perbill};
+use sp_runtime::{
+    create_runtime_str, generic, impl_opaque_keys,
+    ApplyExtrinsicResult, Perbill, MultiSigner,
+};
 use sp_std::prelude::*;
 #[cfg(any(feature = "std", test))]
 use sp_version::NativeVersion;
@@ -38,6 +41,8 @@ pub mod impls;
 /// Constant values used within the runtime.
 pub mod constants;
 use constants::{currency::*, time::*};
+
+type SubmitTransaction = frame_system::offchain::TransactionSubmitter<(), Call, UncheckedExtrinsic>;
 
 // Make the WASM binary available.
 #[cfg(feature = "std")]
@@ -166,6 +171,7 @@ impl_opaque_keys! {
     pub struct SessionKeys {
         pub babe: Babe,
         pub grandpa: Grandpa,
+        pub lockdrop: PlasmLockdrop,
     }
 }
 
@@ -295,11 +301,22 @@ impl pallet_finality_tracker::Trait for Runtime {
 }
 
 parameter_types! {
-    pub const BitcoinTickerUri: &'static str = "http://api.coingecko.com/api/v3/coins/bitcoin";
-    pub const EthereumTickerUri: &'static str = "http://api.coingecko.com/api/v3/coins/ethereum";
-    pub const BitcoinApiUri: &'static str = "http://api.blockcypher.com/v1/btc/test3/txs";
-    pub const EthereumApiUri: &'static str = "http://api.blockcypher.com/v1/eth/test/txs";
     pub const MedianFilterExpire: Moment = 300; // 10 blocks is one minute, 300 - half hour
+}
+
+impl pallet_plasm_lockdrop::Trait for Runtime {
+    type Currency = Balances;
+    type MedianFilterExpire = MedianFilterExpire;
+    type MedianFilterWidth = pallet_plasm_lockdrop::typenum::U3;
+    type Call = Call;
+    type SubmitTransaction = SubmitTransaction;
+    type AuthorityId = pallet_plasm_lockdrop::sr25519::AuthorityId;
+    type Account = MultiSigner;
+    type Time = Timestamp;
+    type Moment = Moment;
+    type DollarRate = Balance;
+    type BalanceConvert = Balance;
+    type Event = Event;
 }
 
 impl frame_system::offchain::CreateTransaction<Runtime, UncheckedExtrinsic> for Runtime {
@@ -348,6 +365,7 @@ construct_runtime!(
         Contracts: pallet_contracts::{Module, Call, Storage, Event<T>, Config<T>},
         PlasmValidator: pallet_plasm_validator::{Module, Call, Storage, Event<T>, Config<T>},
         PlasmRewards: pallet_plasm_rewards::{Module, Call, Storage, Event<T>, Config},
+        PlasmLockdrop: pallet_plasm_lockdrop::{Module, Call, Storage, Event<T>, Config<T>, ValidateUnsigned},
         Session: pallet_session::{Module, Call, Storage, Event, Config<T>},
         Babe: pallet_babe::{Module, Call, Storage, Config, Inherent(Timestamp)},
         Grandpa: pallet_grandpa::{Module, Call, Storage, Config, Event},

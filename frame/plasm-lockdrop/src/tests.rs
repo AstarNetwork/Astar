@@ -433,7 +433,7 @@ fn dollar_rate_ticker_works() {
             0,
             sp_core::offchain::testing::PendingRequest {
                 method: "GET".into(),
-                uri: "http://127.0.0.1:34347/ticker/btc".into(),
+                uri: "http://127.0.0.1:34347/btc/ticker".into(),
                 sent: true,
                 response: Some("6766".into()),
                 ..Default::default()
@@ -444,7 +444,7 @@ fn dollar_rate_ticker_works() {
             0,
             sp_core::offchain::testing::PendingRequest {
                 method: "GET".into(),
-                uri: "http://127.0.0.1:34347/ticker/eth".into(),
+                uri: "http://127.0.0.1:34347/eth/ticker".into(),
                 sent: true,
                 response: Some("139".into()),
                 ..Default::default()
@@ -472,7 +472,7 @@ fn dollar_rate_offchain_worker() {
             0,
             sp_core::offchain::testing::PendingRequest {
                 method: "GET".into(),
-                uri: "http://127.0.0.1:34347/ticker/btc".into(),
+                uri: "http://127.0.0.1:34347/btc/ticker".into(),
                 sent: true,
                 response: Some("6766".into()),
                 ..Default::default()
@@ -484,7 +484,7 @@ fn dollar_rate_offchain_worker() {
             0,
             sp_core::offchain::testing::PendingRequest {
                 method: "GET".into(),
-                uri: "http://127.0.0.1:34347/ticker/eth".into(),
+                uri: "http://127.0.0.1:34347/eth/ticker".into(),
                 sent: true,
                 response: Some("139".into()),
                 ..Default::default()
