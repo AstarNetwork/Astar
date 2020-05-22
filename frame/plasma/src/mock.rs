@@ -45,6 +45,7 @@ impl_outer_event! {
         plasma<T>,
     }
 }
+
 pub fn new_test_ext() -> sp_io::TestExternalities {
     let mut storage = frame_system::GenesisConfig::default()
         .build_storage::<Test>()
@@ -54,8 +55,6 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
         balances: vec![(ALICE_STASH, 1_000_000_000_000_000_000)],
     }
     .assimilate_storage(&mut storage);
-
-    let validators = vec![1, 2];
 
     let _ = ovm::GenesisConfig {
         current_schedule: Default::default(),
@@ -138,18 +137,23 @@ impl PlappsAddressFor<H256, u64> for DummyPlappsAddressFor {
     }
 }
 
+parameter_types! {
+    pub const MaximumTokenAddress: AccountId = AccountId::max_value();
+}
+
 impl Trait for Test {
     type Currency = Balances;
     type DeterminePlappsAddress = DummyPlappsAddressFor;
+    type MaximumTokenAddress = MaximumTokenAddress;
+    // TODO: should be Keccak;
+    type PlasmaHashing = BlakeTwo256;
     type Event = MetaEvent;
 }
 
 pub type System = frame_system::Module<Test>;
 pub type Balances = pallet_balances::Module<Test>;
-pub type Ovm = pallet_ovm::Module<Test>;
+// pub type Ovm = pallet_ovm::Module<Test>;
 pub type Plasma = Module<Test>;
-
-const PER_BLOCK: u64 = 1000;
 
 pub fn advance_block() {
     System::finalize();

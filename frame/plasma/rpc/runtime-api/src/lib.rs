@@ -36,7 +36,7 @@ sp_api::decl_runtime_apis! {
     {
         fn retrieve(plapps_id: AccountId, block_number: BlockNumber) -> Hash;
 
-        fn verify_inclusion_with(
+        fn verify_inclusion(
             plapps_id: AccountId,
             leaf: Hash,
             token_address: AccountId,

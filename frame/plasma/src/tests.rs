@@ -5,9 +5,9 @@
 use super::*;
 use crate::mock::*;
 use frame_support::assert_ok;
-use frame_system::{self as system, EventRecord, Phase};
+use frame_system::{EventRecord, Phase};
+use hex_literal::hex;
 
-const VALID_PREDICATE: &str = r#"valid."#;
 const AGGREGATOR_ID: u64 = 101;
 const ERC20_ID: u64 = 101;
 const STATE_UPDATE_ID: u64 = 101;
@@ -124,5 +124,88 @@ fn submit_root_success() {
         success_submit_root(AGGREGATOR_ID, plapps_id.clone(), 2, H256::default());
         advance_block();
         success_submit_root(AGGREGATOR_ID, plapps_id.clone(), 3, H256::default());
+    })
+}
+
+#[test]
+fn verify_inclusion_test() {
+    /*
+     * Tree for test case
+     *         root
+     *         / \
+     *    root0   root1
+     *    / \
+     *  / \ / \   /   \
+     * 0  1 2  3 1-0 1-1
+     */
+    new_test_ext().execute_with(|| {
+        let token_address: AccountId = 1;
+        let leaf_0: H256 = BlakeTwo256::hash("leaf0".as_bytes());
+        let leaf_1: H256 = BlakeTwo256::hash("leaf1".as_bytes());
+        let leaf_2: H256 = BlakeTwo256::hash("leaf2".as_bytes());
+        let leaf_3: H256 = BlakeTwo256::hash("leaf3".as_bytes());
+        let block_number: BlockNumber = 1;
+        let root: H256 = H256::from(hex![
+            "1aa3429d5aa7bf693f3879fdfe0f1a979a4b49eaeca9638fea07ad7ee5f0b64f"
+        ]);
+        let valid_inclusion_proof: InclusionProof<AccountId, Balance, H256> =
+            InclusionProof::<AccountId, Balance, H256> {
+                address_inclusion_proof: AddressInclusionProof {
+                    leaf_position: 0,
+                    leaf_index: 0,
+                    siblings: vec![AddressTreeNode {
+                        token_address: 1,
+                        data: H256::from(hex![
+                            "dd779be20b84ced84b7cbbdc8dc98d901ecd198642313d35d32775d75d916d3a"
+                        ]),
+                    }],
+                },
+                interval_inclusion_proof: IntervalInclusionProof {
+                    leaf_position: 0,
+                    leaf_index: 0,
+                    siblings: vec![
+                        IntervalTreeNode {
+                            start: 7,
+                            data: H256::from(hex![
+                                "036491cc10808eeb0ff717314df6f19ba2e232d04d5f039f6fa382cae41641da"
+                            ]),
+                        },
+                        IntervalTreeNode {
+                            start: 5000,
+                            data: H256::from(hex![
+                                "ef583c07cae62e3a002a9ad558064ae80db17162801132f9327e8bb6da16ea8a"
+                            ]),
+                        },
+                    ],
+                },
+            };
+
+        advance_block();
+        // previous tests.
+
+        let plapps_id = success_deploy(
+            ALICE_STASH,
+            AGGREGATOR_ID,
+            ERC20_ID,
+            STATE_UPDATE_ID,
+            EXIT_ID,
+            EXIT_DEPOSIT_ID,
+        );
+
+        advance_block();
+        // 1-indexed.
+        success_submit_root(AGGREGATOR_ID, plapps_id.clone(), block_number, root);
+
+        // suceed to verify inclusion of the most left leaf
+        let result = Plasma::verify_inclusion(
+            plapps_id,
+            leaf_0.clone(),
+            token_address,
+            Range::<Balance> { start: 0, end: 5 },
+            valid_inclusion_proof,
+            block_number,
+        );
+        // TODO: shuld be passed true.
+        assert_eq!(result, Ok(false));
     })
 }

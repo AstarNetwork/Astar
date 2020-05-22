@@ -150,7 +150,11 @@ pub trait Trait: system::Trait {
     /// A function type to get the contract address given the instantiator.
     type DeterminePlappsAddress: PlappsAddressFor<Self::Hash, Self::AccountId>;
 
+    /// The using initial right over token address.
     type MaximumTokenAddress: Get<Self::AccountId>;
+
+    /// The hashing system (algorithm) being used in the Plasma module (e.g. Keccak256).
+    type PlasmaHashing: Hash<Output = Self::Hash>;
 
     /// The overarching event type.
     type Event: From<Event<Self>> + Into<<Self as system::Trait>::Event>;
@@ -288,7 +292,7 @@ decl_module! {
             Self::deposit_event(RawEvent::BlockSubmitted(plapps_id, block_number, root));
         }
 
-        // Deposit callable methods. ========
+        // TODO: Deposit callable methods. ========
 
         /// deposit ERC20 token to deposit contract with initial state.
         /// following https://docs.plasma.group/projects/spec/en/latest/src/02-contracts/deposit-contract.html#deposit
@@ -297,7 +301,6 @@ decl_module! {
         #[weight = SimpleDispatchInfo::default()]
         fn deposit(origin, plapps_id: T::AccountId,
             amount: BalanceOf<T>, initial_state: PropertyOf<T>) {
-
         }
 
         #[weight = SimpleDispatchInfo::default()]
@@ -352,7 +355,7 @@ fn migrate<T: Trait>() {
 impl<T: Trait> Module<T> {
     // Public ====
     pub fn retrieve(plapps_id: T::AccountId, block_number: T::BlockNumber) -> T::Hash {
-        return <Blocks<T>>::get(&plapps_id, &block_number);
+        <Blocks<T>>::get(&plapps_id, &block_number)
     }
 
     /// verifyInclusion method verifies inclusion of message in Double Layer Tree.
@@ -363,7 +366,7 @@ impl<T: Trait> Module<T> {
     /// - @param range range of the message
     /// - @param inclusion_proof The proof data to verify inclusion
     /// - @param block_number block number where the Merkle root is stored
-    pub fn verify_inclusion_with(
+    pub fn verify_inclusion(
         plapps_id: T::AccountId,
         leaf: T::Hash,
         token_address: T::AccountId,
@@ -521,7 +524,12 @@ impl<T: Trait> Module<T> {
             right_start >= left_start,
             Error::<T>::LeftMustBeLessThanRight,
         );
-        return Ok(T::Hashing::hash_of(&(left, left_start, right, right_start)));
+        return Ok(T::PlasmaHashing::hash_of(&(
+            left,
+            left_start,
+            right,
+            right_start,
+        )));
     }
 
     pub fn get_parent_of_address_tree_node(
@@ -530,6 +538,6 @@ impl<T: Trait> Module<T> {
         right: &T::Hash,
         right_address: &T::AccountId,
     ) -> T::Hash {
-        T::Hashing::hash_of(&(left, left_address, right, right_address))
+        T::PlasmaHashing::hash_of(&(left, left_address, right, right_address))
     }
 }
