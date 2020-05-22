@@ -115,9 +115,7 @@ macro_rules! require {
 macro_rules! require_with_message {
     ($val:expr, $message:expr) => {
         if !($val) {
-            return Err(crate::executor::ExecError::Require {
-                msg: r#"Required error by: $val, message: $message"#,
-            });
+            return Err(crate::executor::ExecError::Require { msg: $message });
         }
     };
 }
@@ -134,9 +132,19 @@ pub use compiled_predicates::CompiledPredicate;
 pub use prepare::compile_from_json;
 
 #[cfg(test)]
+mod mock;
+#[cfg(test)]
 mod tests;
 
 /// An opaque 32-byte cryptographic identifier.
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Default, Encode, Decode)]
 #[cfg_attr(feature = "std", derive(Hash))]
 pub struct AccountId([u8; 32]);
+
+/// An opaque Range(u128, u128).
+#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Default, Encode, Decode)]
+#[cfg_attr(feature = "std", derive(Hash))]
+pub struct Range {
+    pub start: u128,
+    pub end: u128,
+}

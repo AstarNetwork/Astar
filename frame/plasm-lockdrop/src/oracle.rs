@@ -1,23 +1,26 @@
-//! Oracle traits that used in Lockdrop module.
+//! Plasm Lockdrop Oracle module client.
+//!
+//! Lockdrop Oracle has REST HTTP API:
+//! - /ticker/btc - returns BTC price in USD
+//! - /ticker/eth - returns ETH price in USD
+//! - /tx/btc/${tx_hash} - returns transaction by it's hash
+//! - /tx/eth/${tx_hash} - returns transaction by it's hash
 
-use frame_support::{debug, traits::Get};
-use simple_json::*;
+use codec::{Decode, Encode};
+use frame_support::debug;
 use sp_runtime::offchain::http::Request;
 use sp_runtime::RuntimeDebug;
 use sp_std::prelude::*;
 
 /// HTTP source of currency price.
-pub trait PriceOracle<T> {
+pub trait PriceOracle<T: sp_std::str::FromStr> {
     /// HTTP request URI
-    type Uri: Get<&'static str>;
-
-    /// This method should parse HTTP response and return dollar price.
-    fn parse(response: Vec<u8>) -> Result<T, ()>;
+    fn uri() -> &'static str;
 
     /// Fetch price data, parse it and return raw dollar rate.
     /// Note: this method requires off-chain worker context.
     fn fetch() -> Result<T, ()> {
-        let uri = Self::Uri::get();
+        let uri = Self::uri();
         debug::debug!(
             target: "lockdrop-offchain-worker",
             "Price oracle request to {}", uri
@@ -34,53 +37,31 @@ pub trait PriceOracle<T> {
                 "Response error {:?}", e
             );
         })?;
-        Self::parse(response.body().collect::<Vec<_>>())
+        let body = response.body().collect::<Vec<_>>();
+        let price = sp_std::str::from_utf8(&body[..]).map_err(|_| ())?;
+        price.parse().map_err(|_| ())
     }
 }
 
-/// CoinGecko(https://coingecko.com) API
-pub struct CoinGecko<T: Get<&'static str>>(sp_std::marker::PhantomData<T>);
-
-fn jget(object: json::JsonValue, key: &str) -> Result<json::JsonValue, ()> {
-    let key_chars: Vec<char> = key.chars().collect();
-    if let json::JsonValue::Object(obj) = object {
-        obj.iter()
-            .find(|&(k, _)| *k == key_chars)
-            .map(|(_, v)| v.clone())
-            .ok_or(())
-    } else {
-        Err(())
+/// BTC price oracle.
+pub struct BitcoinPrice;
+impl<T: sp_std::str::FromStr> PriceOracle<T> for BitcoinPrice {
+    fn uri() -> &'static str {
+        "http://127.0.0.1:34347/ticker/btc"
     }
 }
 
-fn jarr(array: json::JsonValue, key: usize) -> Result<json::JsonValue, ()> {
-    if let json::JsonValue::Array(arr) = array {
-        arr.get(key).map(|v| v.clone()).ok_or(())
-    } else {
-        Err(())
-    }
-}
-
-impl<T> PriceOracle<u128> for CoinGecko<T>
-where
-    T: Get<&'static str>,
-{
-    type Uri = T;
-    fn parse(response: Vec<u8>) -> Result<u128, ()> {
-        let str_response = sp_std::str::from_utf8(&response.as_slice()).map_err(|_| ())?;
-        let ticker = parse_json(str_response).map_err(|_| ())?;
-        let market_data = jget(ticker, "market_data")?;
-        let current_price = jget(market_data, "current_price")?;
-        match jget(current_price, "usd")? {
-            json::JsonValue::Number(usd) => Ok(usd.integer as u128),
-            _ => Err(()),
-        }
+/// ETH price oracle.
+pub struct EthereumPrice;
+impl<T: sp_std::str::FromStr> PriceOracle<T> for EthereumPrice {
+    fn uri() -> &'static str {
+        "http://127.0.0.1:34347/ticker/eth"
     }
 }
 
 /// Common transaction type.
-#[cfg_attr(feature = "std", derive(Eq))]
-#[derive(RuntimeDebug, PartialEq, Clone)]
+#[cfg_attr(feature = "std", derive(Eq, Encode))]
+#[derive(RuntimeDebug, PartialEq, Clone, Decode)]
 pub struct Transaction {
     /// Transaction sender address.
     pub sender: Vec<u8>,
@@ -95,101 +76,33 @@ pub struct Transaction {
 }
 
 /// HTTP source of blockchain transactions.
-/// For example: http://api.blockcypher.com/v1/btc/test3/txs
-pub trait ChainOracle<Hash: AsRef<[u8]>> {
+pub trait ChainOracle {
     /// HTTP request URI
-    type Uri: Get<&'static str>;
-
-    /// Parse response and return transaction data.
-    fn parse(response: Vec<u8>) -> Result<Transaction, ()>;
+    fn uri() -> &'static str;
 
     /// Fetch transaction data from source by given hash.
     /// Note: this method requires off-chain worker context.
-    fn fetch(transaction_hash: Hash) -> Result<Transaction, ()> {
-        let uri = [Self::Uri::get(), hex::encode(transaction_hash).as_str()].join("/");
+    fn fetch<Hash: AsRef<[u8]>>(transaction_hash: Hash) -> Result<Transaction, ()> {
+        let uri = [Self::uri(), hex::encode(transaction_hash).as_str()].join("/");
         let request = Request::get(uri.as_ref()).send().map_err(|_| ())?;
         let response = request.wait().map_err(|_| ())?;
-        Self::parse(response.body().collect::<Vec<_>>())
+        let body = hex::decode(response.body().collect::<Vec<_>>()).map_err(|_| ())?;
+        Transaction::decode(&mut &body[..]).map_err(|_| ())
     }
 }
 
-pub trait AddressDecoder {
-    fn decode(input: Vec<char>) -> Result<Vec<u8>, ()>;
-}
-
-fn encode_ascii(input: Vec<char>) -> Vec<u8> {
-    input
-        .iter()
-        .map(|b| {
-            let mut buf = [0; 2];
-            b.encode_utf8(&mut buf);
-            buf[0]
-        })
-        .collect()
-}
-
-/// Standard bitcoin address decoder.
-pub struct BitcoinAddress;
-impl AddressDecoder for BitcoinAddress {
-    fn decode(input: Vec<char>) -> Result<Vec<u8>, ()> {
-        // input is ascii string
-        bs58::decode(encode_ascii(input)).into_vec().map_err(|_| ())
+/// Bitcoin chain transactions oracle.
+pub struct BitcoinChain;
+impl ChainOracle for BitcoinChain {
+    fn uri() -> &'static str {
+        "http://127.0.0.1:34347/tx/btc"
     }
 }
 
-/// Standard ethereum address decoder.
-pub struct EthereumAddress;
-impl AddressDecoder for EthereumAddress {
-    fn decode(input: Vec<char>) -> Result<Vec<u8>, ()> {
-        hex::decode(encode_ascii(input)).map_err(|_| ())
-    }
-}
-
-/// BlockCypher(https://www.blockcypher.com/) API
-pub struct BlockCypher<T: Get<&'static str>, D: AddressDecoder>(
-    sp_std::marker::PhantomData<(T, D)>,
-);
-
-impl<T, D, H> ChainOracle<H> for BlockCypher<T, D>
-where
-    T: Get<&'static str>,
-    H: AsRef<[u8]>,
-    D: AddressDecoder,
-{
-    type Uri = T;
-    fn parse(response: Vec<u8>) -> Result<Transaction, ()> {
-        let str_response = sp_std::str::from_utf8(&response.as_slice()).map_err(|_| ())?;
-        let tx = parse_json(str_response).map_err(|_| ())?;
-        let inputs = jget(tx.clone(), "inputs")?;
-        let outputs = jget(tx.clone(), "outputs")?;
-
-        let sender = match jget(jarr(inputs, 0)?, "addresses")? {
-            json::JsonValue::String(sender) => D::decode(sender)?,
-            _ => Err(())?,
-        };
-        let recipient = match jget(jarr(outputs.clone(), 0)?, "addresses")? {
-            json::JsonValue::String(recipient) => D::decode(recipient)?,
-            _ => Err(())?,
-        };
-        let value = match jget(jarr(outputs.clone(), 0)?, "value")? {
-            json::JsonValue::Number(value) => value.integer as u128,
-            _ => Err(())?,
-        };
-        let script = match jget(jarr(outputs, 0)?, "script")? {
-            json::JsonValue::String(script) => hex::decode(encode_ascii(script)).map_err(|_| ())?,
-            _ => Err(())?,
-        };
-        let confirmations = match jget(tx, "confirmations")? {
-            json::JsonValue::Number(confirmations) => confirmations.integer as u64,
-            _ => Err(())?,
-        };
-
-        Ok(Transaction {
-            sender,
-            recipient,
-            value,
-            script,
-            confirmations,
-        })
+/// Ethereum chain transactions oracle.
+pub struct EthereumChain;
+impl ChainOracle for EthereumChain {
+    fn uri() -> &'static str {
+        "http://127.0.0.1:34347/tx/eth"
     }
 }

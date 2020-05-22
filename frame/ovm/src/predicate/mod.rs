@@ -138,7 +138,7 @@ where
     }
 
     /// Make a call to the specified address, optionally transferring some funds.
-    pub fn call(&mut self, dest: T::AccountId, input_data: Vec<u8>) -> ExecResult {
+    pub fn call(&self, dest: T::AccountId, input_data: Vec<u8>) -> ExecResult {
         if self.depth == self.config.max_depth as usize {
             return Err(ExecError {
                 reason: "reached maximum depth, cannot make a call".into(),
@@ -160,7 +160,7 @@ where
         };
 
         let caller = self.self_account.clone();
-        let mut nested = self.nested(dest);
+        let nested = self.nested(dest);
         let executable = try_or_exec_error!(
             nested.loader.load_main(&predicate.predicate_hash),
             input_data
@@ -170,13 +170,13 @@ where
             .execute(&executable, nested.new_call_context(caller), input_data)
     }
 
-    fn new_call_context<'b>(&'b mut self, caller: T::AccountId) -> CallContext<'b, 'a, T, V, L> {
+    fn new_call_context<'b>(&'b self, caller: T::AccountId) -> CallContext<'b, 'a, T, V, L> {
         CallContext { ctx: self, caller }
     }
 }
 
 pub struct CallContext<'a, 'b: 'a, T: Trait + 'b, V: Vm<T> + 'b, L: Loader<T>> {
-    ctx: &'a mut ExecutionContext<'b, T, V, L>,
+    ctx: &'a ExecutionContext<'b, T, V, L>,
     caller: T::AccountId,
 }
 
@@ -194,7 +194,7 @@ where
     type T = T;
 
     /// Call (possibly other predicate) into the specified account.
-    fn call(&mut self, to: &AccountIdOf<Self::T>, input_data: Vec<u8>) -> ExecResult {
+    fn call(&self, to: &AccountIdOf<Self::T>, input_data: Vec<u8>) -> ExecResult {
         self.ctx.call(to.clone(), input_data)
     }
 

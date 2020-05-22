@@ -219,6 +219,12 @@ macro_rules! new_full {
             )?;
         }
 
+        // Enable lockdrop oracle on authority nodes.
+        #[cfg(feature = "oracle")]
+        if role.is_authority() {
+            service.spawn_essential_task("lockdrop-oracle", super::oracle::start());
+        }
+
         Ok((service, inherent_data_providers))
     }};
     ($config:expr) => {{

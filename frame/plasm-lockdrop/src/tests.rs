@@ -345,8 +345,8 @@ fn dollar_rate_should_expire() {
 #[test]
 fn check_btc_issue_amount() {
     new_test_ext().execute_with(|| {
-        assert_eq!(<DollarRate<Runtime>>::get(), (5000, 120));
-        assert_eq!(<Alpha>::get(), Perbill::from_parts(200_000_000));
+        assert_eq!(<DollarRate<Runtime>>::get(), (9_000, 200));
+        assert_eq!(<Alpha>::get(), Perbill::from_parts(446_981_087));
 
         let day = 24 * 60 * 60;
         for i in 1..2000 {
@@ -354,28 +354,28 @@ fn check_btc_issue_amount() {
                 assert_eq!(PlasmLockdrop::btc_issue_amount(1, i * day), 0);
                 assert_eq!(PlasmLockdrop::btc_issue_amount(i as u128, i * day), 0);
             } else if i < 100 {
-                assert_eq!(PlasmLockdrop::btc_issue_amount(1, i * day), 240000);
+                assert_eq!(PlasmLockdrop::btc_issue_amount(1, i * day), 96552);
                 assert_eq!(
                     PlasmLockdrop::btc_issue_amount(i as u128, i * day),
-                    240000 * i as u128
+                    96552 * i as u128
                 );
             } else if i < 300 {
-                assert_eq!(PlasmLockdrop::btc_issue_amount(1, i * day), 1000000);
+                assert_eq!(PlasmLockdrop::btc_issue_amount(1, i * day), 402300);
                 assert_eq!(
                     PlasmLockdrop::btc_issue_amount(i as u128, i * day),
-                    1000000 * i as u128
+                    402300 * i as u128
                 );
             } else if i < 1000 {
-                assert_eq!(PlasmLockdrop::btc_issue_amount(1, i * day), 3600000);
+                assert_eq!(PlasmLockdrop::btc_issue_amount(1, i * day), 1448280);
                 assert_eq!(
                     PlasmLockdrop::btc_issue_amount(i as u128, i * day),
-                    3600000 * i as u128
+                    1448280 * i as u128
                 );
             } else {
-                assert_eq!(PlasmLockdrop::btc_issue_amount(1, i * day), 16000000);
+                assert_eq!(PlasmLockdrop::btc_issue_amount(1, i * day), 6436800);
                 assert_eq!(
                     PlasmLockdrop::btc_issue_amount(i as u128, i * day),
-                    16000000 * i as u128
+                    6436800 * i as u128
                 );
             }
         }
@@ -385,8 +385,8 @@ fn check_btc_issue_amount() {
 #[test]
 fn check_eth_issue_amount() {
     new_test_ext().execute_with(|| {
-        assert_eq!(<DollarRate<Runtime>>::get(), (5000, 120));
-        assert_eq!(<Alpha>::get(), Perbill::from_parts(200_000_000));
+        assert_eq!(<DollarRate<Runtime>>::get(), (9_000, 200));
+        assert_eq!(<Alpha>::get(), Perbill::from_parts(446_981_087));
 
         let day = 24 * 60 * 60;
         for i in 1..2000 {
@@ -394,28 +394,28 @@ fn check_eth_issue_amount() {
                 assert_eq!(PlasmLockdrop::eth_issue_amount(1, i * day), 0);
                 assert_eq!(PlasmLockdrop::eth_issue_amount(i as u128, i * day), 0);
             } else if i < 100 {
-                assert_eq!(PlasmLockdrop::eth_issue_amount(1, i * day), 5760);
+                assert_eq!(PlasmLockdrop::eth_issue_amount(1, i * day), 2136);
                 assert_eq!(
                     PlasmLockdrop::eth_issue_amount(i as u128, i * day),
-                    5760 * i as u128
+                    2136 * i as u128
                 );
             } else if i < 300 {
-                assert_eq!(PlasmLockdrop::eth_issue_amount(1, i * day), 24000);
+                assert_eq!(PlasmLockdrop::eth_issue_amount(1, i * day), 8900);
                 assert_eq!(
                     PlasmLockdrop::eth_issue_amount(i as u128, i * day),
-                    24000 * i as u128
+                    8900 * i as u128
                 );
             } else if i < 1000 {
-                assert_eq!(PlasmLockdrop::eth_issue_amount(1, i * day), 86400);
+                assert_eq!(PlasmLockdrop::eth_issue_amount(1, i * day), 32040);
                 assert_eq!(
                     PlasmLockdrop::eth_issue_amount(i as u128, i * day),
-                    86400 * i as u128
+                    32040 * i as u128
                 );
             } else {
-                assert_eq!(PlasmLockdrop::eth_issue_amount(1, i * day), 384000);
+                assert_eq!(PlasmLockdrop::eth_issue_amount(1, i * day), 142400);
                 assert_eq!(
                     PlasmLockdrop::eth_issue_amount(i as u128, i * day),
-                    384000 * i as u128
+                    142400 * i as u128
                 );
             }
         }
@@ -433,24 +433,24 @@ fn dollar_rate_ticker_works() {
             0,
             sp_core::offchain::testing::PendingRequest {
                 method: "GET".into(),
-                uri: "http://api.coingecko.com/api/v3/coins/bitcoin".into(),
+                uri: "http://127.0.0.1:34347/ticker/btc".into(),
                 sent: true,
-                response: Some(COINGECKO_BTC_TICKER.into()),
+                response: Some("6766".into()),
                 ..Default::default()
             },
         );
-        assert_eq!(<Runtime as Trait>::BitcoinTicker::fetch(), Ok(6766));
+        assert_eq!(BitcoinPrice::fetch(), Ok(6766));
         state.write().expect_request(
             0,
             sp_core::offchain::testing::PendingRequest {
                 method: "GET".into(),
-                uri: "http://api.coingecko.com/api/v3/coins/ethereum".into(),
+                uri: "http://127.0.0.1:34347/ticker/eth".into(),
                 sent: true,
-                response: Some(COINGECKO_ETH_TICKER.into()),
+                response: Some("139".into()),
                 ..Default::default()
             },
         );
-        assert_eq!(<Runtime as Trait>::EthereumTicker::fetch(), Ok(139));
+        assert_eq!(EthereumPrice::fetch(), Ok(139));
     })
 }
 
@@ -472,25 +472,25 @@ fn dollar_rate_offchain_worker() {
             0,
             sp_core::offchain::testing::PendingRequest {
                 method: "GET".into(),
-                uri: "http://api.coingecko.com/api/v3/coins/bitcoin".into(),
+                uri: "http://127.0.0.1:34347/ticker/btc".into(),
                 sent: true,
-                response: Some(COINGECKO_BTC_TICKER.into()),
+                response: Some("6766".into()),
                 ..Default::default()
             },
         );
-        let btc = <Runtime as Trait>::BitcoinTicker::fetch().unwrap();
+        let btc = BitcoinPrice::fetch().unwrap();
 
         state.write().expect_request(
             0,
             sp_core::offchain::testing::PendingRequest {
                 method: "GET".into(),
-                uri: "http://api.coingecko.com/api/v3/coins/ethereum".into(),
+                uri: "http://127.0.0.1:34347/ticker/eth".into(),
                 sent: true,
-                response: Some(COINGECKO_ETH_TICKER.into()),
+                response: Some("139".into()),
                 ..Default::default()
             },
         );
-        let eth = <Runtime as Trait>::EthereumTicker::fetch().unwrap();
+        let eth = EthereumPrice::fetch().unwrap();
 
         assert_ok!(PlasmLockdrop::send_dollar_rate(btc, eth));
 
