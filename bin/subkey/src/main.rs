@@ -53,6 +53,22 @@ trait Crypto: Sized {
     fn public_from_pair(pair: &Self::Pair) -> Self::Public {
         pair.public()
     }
+    fn print_from_public(message: &Vec<u8>)
+    where
+        <Self as Crypto>::Public: PublicT,
+    {
+        let account_id = plasm_account_from_public(&message[..]);
+        println!(
+            "  Public key (hex): {}\n  \
+            Plasm AccountId:   {}\n  \
+            Ethereum Address:  {:?}\n  \
+            Plasm Address:     {}",
+            hex::encode(&message),
+            account_id,
+            eth_account_from_public(&message[..]),
+            account_id.to_ss58check_with_version(Ss58AddressFormat::PlasmAccount),
+        )
+    }
     fn print_from_uri(
         uri: &str,
         password: Option<&str>,
@@ -257,6 +273,9 @@ fn get_app<'a, 'b>() -> App<'a, 'b> {
                     <sig> 'Signature, hex-encoded.'
                     <uri> 'The public or secret key URI.'
                 "),
+            SubCommand::with_name("claim")
+                .about("Gets a SS58 address or Ethereum address from public key")
+                .args_from_usage("[pubkey] 'A public key to be claimed."),
         ])
 }
 
@@ -367,6 +386,13 @@ where
             let extrinsic = create_extrinsic::<C>(function, index, signer, genesis_hash);
 
             print_extrinsic(extrinsic);
+        }
+        ("claim", Some(matches)) => {
+            let pubkey = match matches.value_of("pubkey") {
+                Some(pubkey) => hex::decode(&pubkey).expect("inputs must be hex."),
+                None => read_message_from_stdin(true),
+            };
+            C::print_from_public(&pubkey);
         }
         _ => print_usage(&matches),
     }
@@ -583,6 +609,16 @@ fn print_usage(matches: &ArgMatches) {
     println!("{}", matches.usage());
 }
 
+fn plasm_account_from_public(full_public: &[u8]) -> plasm_primitives::AccountId {
+    use sp_runtime::MultiSigner;
+    let public = sp_core::ecdsa::Public::from_full(full_public).unwrap();
+    MultiSigner::from(public).into_account()
+}
+
+fn eth_account_from_public(full_public: &[u8]) -> sp_core::H160 {
+    sp_core::H160::from_slice(&sp_core::hashing::keccak_256(&full_public)[12..32])
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -651,5 +687,18 @@ mod tests {
         };
 
         assert_eq!(d1, d2);
+    }
+
+    #[test]
+    fn should_claim_work() {
+        let full_public = hex!["3e909fb1f265942dbbf5e0659ee5c74820c8ecb5a55eecba5752f3cd55293ef98fa8efc553f174ddf3f7e2b5d99ab731da7cff2c1ed7d20579c59e85ab6772dc"];
+        assert_eq!(
+            plasm_account_from_public(&full_public[..]).to_string(),
+            "5HYaXhCVqDgjkbpUTXJKzc2bFNSwpt7Xm7znS7WaqGNSUEfG"
+        );
+        assert_eq!(
+            eth_account_from_public(&full_public[..]).as_bytes(),
+            &hex!["e0e0b97949687e5cdc9ca843c0428bd0437e176d"][..]
+        );
     }
 }
