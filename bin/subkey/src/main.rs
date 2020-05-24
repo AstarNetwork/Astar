@@ -53,22 +53,6 @@ trait Crypto: Sized {
     fn public_from_pair(pair: &Self::Pair) -> Self::Public {
         pair.public()
     }
-    fn print_from_public(message: &Vec<u8>)
-    where
-        <Self as Crypto>::Public: PublicT,
-    {
-        let account_id = plasm_account_from_public(&message[..]);
-        println!(
-            "  Public key (hex): {}\n  \
-            Plasm AccountId:   {}\n  \
-            Ethereum Address:  {:?}\n  \
-            Plasm Address:     {}",
-            hex::encode(&message),
-            account_id,
-            eth_account_from_public(&message[..]),
-            account_id.to_ss58check_with_version(Ss58AddressFormat::PlasmAccount),
-        )
-    }
     fn print_from_uri(
         uri: &str,
         password: Option<&str>,
@@ -123,6 +107,18 @@ trait Crypto: Sized {
                 format_public_key::<Self>(public_key.clone()),
                 format_account_id::<Self>(public_key.clone()),
                 public_key.to_ss58check_with_version(v)
+            );
+        } else if let Ok(message) = hex::decode(uri) {
+            let account_id = plasm_account_from_public(&message[..]);
+            println!(
+                "Public Key (hex): `{}` is account:\n  \
+                Plasm AccountId:   {}\n  \
+                Ethereum Address:  {:?}\n  \
+                Plasm Address:     {}",
+                uri,
+                account_id,
+                eth_account_from_public(&message),
+                account_id.to_ss58check_with_version(Ss58AddressFormat::PlasmAccount)
             );
         } else {
             println!("Invalid phrase/URI given");
@@ -273,9 +269,6 @@ fn get_app<'a, 'b>() -> App<'a, 'b> {
                     <sig> 'Signature, hex-encoded.'
                     <uri> 'The public or secret key URI.'
                 "),
-            SubCommand::with_name("claim")
-                .about("Gets a SS58 address or Ethereum address from public key")
-                .args_from_usage("[pubkey] 'A public key to be claimed."),
         ])
 }
 
@@ -386,13 +379,6 @@ where
             let extrinsic = create_extrinsic::<C>(function, index, signer, genesis_hash);
 
             print_extrinsic(extrinsic);
-        }
-        ("claim", Some(matches)) => {
-            let pubkey = match matches.value_of("pubkey") {
-                Some(pubkey) => hex::decode(&pubkey).expect("inputs must be hex."),
-                None => read_message_from_stdin(true),
-            };
-            C::print_from_public(&pubkey);
         }
         _ => print_usage(&matches),
     }
@@ -611,7 +597,8 @@ fn print_usage(matches: &ArgMatches) {
 
 fn plasm_account_from_public(full_public: &[u8]) -> plasm_primitives::AccountId {
     use sp_runtime::MultiSigner;
-    let public = sp_core::ecdsa::Public::from_full(full_public).unwrap();
+    let public =
+        sp_core::ecdsa::Public::from_full(full_public).expect("Not convert from_full publickey.");
     MultiSigner::from(public).into_account()
 }
 
@@ -690,7 +677,7 @@ mod tests {
     }
 
     #[test]
-    fn should_claim_work() {
+    fn should_from_public_work() {
         let full_public = hex!["3e909fb1f265942dbbf5e0659ee5c74820c8ecb5a55eecba5752f3cd55293ef98fa8efc553f174ddf3f7e2b5d99ab731da7cff2c1ed7d20579c59e85ab6772dc"];
         assert_eq!(
             plasm_account_from_public(&full_public[..]).to_string(),
