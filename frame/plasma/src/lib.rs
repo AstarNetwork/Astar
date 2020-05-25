@@ -128,7 +128,14 @@ pub trait PlappsAddressFor<Hash, AccountId> {
 /// Address calculated from the code (of the constructor), input data to the constructor,
 /// and the account id that requested the account creation.
 ///
-/// Formula: `blake2_256(blake2_256(code) + blake2_256(data) + origin)`
+/// Formula: `blake2_256(plapps_hash + origin)`
+/// ```plapps_hash = blake2_256(&(
+///     blake2_256(&aggregator_id),
+///     blake2_256(&erc20),
+///     blake2_256(&state_update_predicate),
+///     blake2_256(&exit_predicate),
+///     blake2_256(&exit_deposit_predicate),
+// ));```
 pub struct SimpleAddressDeterminer<T: Trait>(PhantomData<T>);
 impl<T: Trait> PlappsAddressFor<T::Hash, T::AccountId> for SimpleAddressDeterminer<T>
 where
