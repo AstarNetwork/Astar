@@ -3,6 +3,7 @@
 use codec::Decode;
 use pallet_plasm_lockdrop::LockCheck;
 use web3::futures::Future;
+use tide::{http::StatusCode, Response};
 
 mod btc_utils;
 mod eth_utils;
@@ -11,9 +12,9 @@ const COINGECKO_BTC_API: &'static str = "https://api.coingecko.com/api/v3/coins/
 const COINGECKO_ETH_API: &'static str = "https://api.coingecko.com/api/v3/coins/ethereum";
 
 const BLOCKCYPHER_BTC_API: &'static str = "https://api.blockcypher.com/v1/btc/test3/txs";
-const INFURA_ETH_API: &'static str = "https://ropsten.infura.io/v3";
+const INFURA_ETH_API: &'static str = "https://ropsten.infura.io/v3/e673f1634f174971890bf13130751704";
 
-const LOCKDROP_ETH_CONTRACT: &'static str = "0xEEd84A89675342fB04faFE06F7BB176fE35Cb168";
+const LOCKDROP_ETH_CONTRACT: &'static str = "EEd84A89675342fB04faFE06F7BB176fE35Cb168";
 const SAFE_ETH_CONFIRMATIONS: u64 = 10;
 
 pub async fn start() {
@@ -51,10 +52,16 @@ pub async fn start() {
             let tx_confirmations = tx["confirmations"].as_u64().unwrap_or(0);
 
             // check transaction confirmations
-            assert!(tx_confirmations >= 8);
+            if tx_confirmations < 8 {
+                log::debug!(target: "lockdrop-oracle", "transaction isn't confirmed yet");
+                return Ok(Response::new(StatusCode::BadRequest))
+            }
 
             // check transaction value
-            assert!(tx_value == lock.value);
+            if tx_value != lock.value {
+                log::debug!(target: "lockdrop-oracle", "lock value mismatch");
+                return Ok(Response::new(StatusCode::BadRequest))
+            }
 
             let lock_sender = btc_utils::to_address(&lock.public_key, btc_utils::BTC_TESTNET);
             log::debug!(
@@ -64,7 +71,10 @@ pub async fn start() {
                 lock_sender,
             );
             // check transaction sender address
-            assert!(tx_sender == lock_sender);
+            if tx_sender != lock_sender {
+                log::debug!(target: "lockdrop-oracle", "sender address mismatch");
+                return Ok(Response::new(StatusCode::BadRequest))
+            }
 
             // assembly bitcoin script for given params
             let lock_script = btc_utils::lock_script(&lock.public_key, lock.duration);
@@ -83,9 +93,12 @@ pub async fn start() {
                 hex::encode(&script),
             );
             // check script code
-            assert!(tx_script == script);
+            if tx_script != script {
+                log::debug!(target: "lockdrop-oracle", "lock script mismatch");
+                return Ok(Response::new(StatusCode::BadRequest))
+            }
 
-            Ok("OK")
+            Ok(Response::new(StatusCode::Ok))
         });
 
     app.at("/eth/lock")
@@ -111,37 +124,46 @@ pub async fn start() {
             );
 
             // check transaction value
-            assert!(tx.value == lock.value.into());
+            if tx.value != lock.value.into() {
+                log::debug!(target: "lockdrop-oracle", "lock value mismatch");
+                return Ok(Response::new(StatusCode::BadRequest))
+            }
 
             let tx_confirmations = block_number - tx.block_number.unwrap_or(Default::default());
             log::debug!(
                 target: "lockdrop-oracle",
                 "Transaction confirmations: {}", tx_confirmations
             );
-            assert!(tx_confirmations >= SAFE_ETH_CONFIRMATIONS.into());
+            if tx_confirmations < SAFE_ETH_CONFIRMATIONS.into() {
+                log::debug!(target: "lockdrop-oracle", "transaction isn't confirmed yet");
+                return Ok(Response::new(StatusCode::BadRequest))
+            }
 
-            let sender = eth_utils::to_address(&lock.public_key);
+            let sender = eth_utils::to_address(lock.public_key.as_ref()).unwrap_or(Default::default());
             log::debug!(
                 target: "lockdrop-oracle",
                 "ETH address for public key {}: {}",
                 lock.public_key, sender
             );
             // check sender address
-            assert!(tx.from == sender);
+            if tx.from != sender {
+                log::debug!(target: "lockdrop-oracle", "sender address mismatch");
+                return Ok(Response::new(StatusCode::BadRequest))
+            }
 
             // check that destination is lockdrop smart contract
-            assert!(tx.to == Some(LOCKDROP_ETH_CONTRACT.parse()?));
+            if tx.to != Some(LOCKDROP_ETH_CONTRACT.parse()?) {
+                log::debug!(target: "lockdrop-oracle", "contract address mismatch");
+                return Ok(Response::new(StatusCode::BadRequest))
+            }
 
             // check smart contract method input
-            let lock_input = eth_utils::lock_method(lock.duration);
-            log::debug!(
-                target: "lockdrop-oracle",
-                "Lock method for duration {}: {}",
-                lock.duration, hex::encode(lock_input.clone()),
-            );
-            assert!(tx.input == lock_input.into());
+            if !eth_utils::lock_method_check(tx.input.0.as_ref(), lock.duration) {
+                log::debug!(target: "lockdrop-oracle", "lock method mismatch");
+                return Ok(Response::new(StatusCode::BadRequest))
+            }
 
-            Ok("OK")
+            Ok(Response::new(StatusCode::Ok))
         });
 
     app.listen("127.0.0.1:34347")

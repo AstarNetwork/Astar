@@ -151,7 +151,7 @@ fn make_genesis(
             dollar_rate: (9_000, 200),
             vote_threshold: 2,
             positive_votes: 2,
-            lockdrop_end: 0,
+            lockdrop_end: 1_592_623_404,
         }),
         pallet_session: Some(SessionConfig {
             keys: keys

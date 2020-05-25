@@ -124,7 +124,7 @@ pub trait LockOracle {
             );
         })?;
 
-        Ok(response.body().collect::<Vec<_>>() == vec![79, 75]) // == "OK"
+        Ok(response.code == 200)
     }
 }
 

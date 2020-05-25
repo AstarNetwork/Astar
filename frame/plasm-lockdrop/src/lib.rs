@@ -334,7 +334,7 @@ decl_module! {
         }
 
         /// Vote for claim request according to check results. (for authorities only)
-        #[weight = SimpleDispatchInfo::default()]
+        #[weight = SimpleDispatchInfo::FixedOperational(100_000)]
         fn vote(
             origin,
             vote: ClaimVote,
@@ -359,7 +359,7 @@ decl_module! {
         }
 
         /// Dollar Rate oracle entrypoint. (for authorities only)
-        #[weight = SimpleDispatchInfo::default()]
+        #[weight = SimpleDispatchInfo::FixedOperational(100_000)]
         fn set_dollar_rate(
             origin,
             rate: TickerRate<T::DollarRate>,
