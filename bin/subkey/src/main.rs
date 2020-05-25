@@ -118,7 +118,7 @@ trait Crypto: Sized {
                 uri,
                 account_id,
                 eth_account_from_public(&message),
-                account_id.to_ss58check_with_version(v)
+                account_id.to_ss58check_with_version(Ss58AddressFormat::PlasmAccount)
             );
         } else {
             println!("Invalid phrase/URI given");
