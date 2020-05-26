@@ -38,7 +38,7 @@ pub mod predicate;
 pub mod traits;
 
 use predicate::{ExecResult, ExecutionContext, PredicateLoader, PredicateOvm};
-use traits::PredicateAddressFor;
+pub use traits::PredicateAddressFor;
 
 /// PredicateContract wrapped Predicate and initial arguments.
 ///
@@ -55,7 +55,7 @@ pub struct PredicateContract<CodeHash> {
 
 /// Property stands for dispute logic and we can claim every Properties to Adjudicator Contract.
 /// Property has its predicate address and array of input.
-#[derive(Encode, Decode, Clone, RuntimeDebug, PartialEq, Eq)]
+#[derive(Encode, Decode, Clone, Default, RuntimeDebug, PartialEq, Eq)]
 pub struct Property<AccountId> {
     /// Indicates the address of Predicate.
     predicate_address: AccountId,
@@ -141,7 +141,7 @@ type ChallengeGameOf<T> = ChallengeGame<
     <T as system::Trait>::Hash,
     <T as system::Trait>::BlockNumber,
 >;
-type PropertyOf<T> = Property<<T as system::Trait>::AccountId>;
+pub type PropertyOf<T> = Property<<T as system::Trait>::AccountId>;
 type AccountIdOf<T> = <T as frame_system::Trait>::AccountId;
 type PredicateContractOf<T> = PredicateContract<<T as frame_system::Trait>::Hash>;
 

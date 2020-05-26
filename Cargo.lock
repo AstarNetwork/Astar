@@ -3304,6 +3304,33 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-plasma"
+version = "1.0.0"
+dependencies = [
+ "frame-support",
+ "frame-system",
+ "hex-literal",
+ "pallet-balances",
+ "pallet-ovm",
+ "parity-scale-codec",
+ "serde",
+ "sp-arithmetic",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
+name = "pallet-plasma-rpc-runtime-api"
+version = "0.1.0"
+dependencies = [
+ "parity-scale-codec",
+ "sp-api",
+ "sp-std",
+]
+
+[[package]]
 name = "pallet-randomness-collective-flip"
 version = "2.0.0-alpha.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
