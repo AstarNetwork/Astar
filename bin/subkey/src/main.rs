@@ -556,13 +556,14 @@ where
 {
     let extra = |i: Index, f: Balance| {
         (
-            frame_system::CheckVersion::<Runtime>::new(),
+            frame_system::CheckSpecVersion::<Runtime>::new(),
+            frame_system::CheckTxVersion::<Runtime>::new(),
             frame_system::CheckGenesis::<Runtime>::new(),
             frame_system::CheckEra::<Runtime>::from(Era::Immortal),
             frame_system::CheckNonce::<Runtime>::from(i),
             frame_system::CheckWeight::<Runtime>::new(),
             pallet_transaction_payment::ChargeTransactionPayment::<Runtime>::from(f),
-            Default::default(),
+            pallet_grandpa::ValidateEquivocationReport::<Runtime>::new(),
         )
     };
     let raw_payload = SignedPayload::from_raw(
@@ -570,6 +571,7 @@ where
         extra(index, 0),
         (
             VERSION.spec_version as u32,
+            VERSION.transaction_version as u32,
             genesis_hash,
             genesis_hash,
             (),

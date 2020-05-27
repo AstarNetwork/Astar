@@ -4,8 +4,11 @@
 
 use super::*;
 use frame_support::{
-    assert_ok, impl_outer_dispatch, impl_outer_origin, parameter_types, traits::OnFinalize,
+    assert_ok, impl_outer_dispatch, impl_outer_origin, parameter_types,
+    traits::OnFinalize,
+    weights::{WeightToFeeCoefficients, WeightToFeePolynomial},
 };
+use pallet_contracts::Gas;
 use pallet_plasm_rewards::{inflation::SimpleComputeTotalPayout, traits::MaybeValidators};
 use sp_core::{crypto::key_types, H256};
 use sp_runtime::{
@@ -58,12 +61,11 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
     }
     .assimilate_storage(&mut storage);
 
-    let _ = pallet_contracts::GenesisConfig::<Test> {
+    let _ = pallet_contracts::GenesisConfig {
         current_schedule: pallet_contracts::Schedule {
             enable_println: true,
             ..Default::default()
         },
-        gas_price: 2,
     }
     .assimilate_storage(&mut storage);
 
@@ -120,6 +122,10 @@ impl system::Trait for Test {
     type AccountData = pallet_balances::AccountData<u64>;
     type OnNewAccount = ();
     type OnKilledAccount = ();
+    type DbWeight = ();
+    type BlockExecutionWeight = ();
+    type ExtrinsicBaseWeight = ();
+    type MaximumExtrinsicWeight = ();
 }
 
 parameter_types! {
@@ -175,6 +181,26 @@ impl pallet_balances::Trait for Test {
     type AccountStore = system::Module<Test>;
 }
 
+pub struct WeightToFee;
+impl WeightToFeePolynomial for WeightToFee {
+    type Balance = u64;
+    fn polynomial() -> WeightToFeeCoefficients<Self::Balance> {
+        Default::default()
+    }
+}
+
+parameter_types! {
+    pub const TransactionByteFee: u64 = 0;
+}
+
+impl pallet_transaction_payment::Trait for Test {
+    type Currency = Balances;
+    type OnTransactionPayment = ();
+    type TransactionByteFee = TransactionByteFee;
+    type WeightToFee = WeightToFee;
+    type FeeMultiplierUpdate = ();
+}
+
 pub struct DummyContractAddressFor;
 impl pallet_contracts::ContractAddressFor<H256, u64> for DummyContractAddressFor {
     fn contract_address_for(_code_hash: &H256, _data: &[u8], origin: &u64) -> u64 {
@@ -221,15 +247,12 @@ parameter_types! {
 }
 
 impl pallet_contracts::Trait for Test {
-    type Currency = Balances;
     type Time = Timestamp;
     type Randomness = pallet_randomness_collective_flip::Module<Test>;
     type Call = Call;
     type Event = ();
     type DetermineContractAddress = DummyContractAddressFor;
-    type ComputeDispatchFee = DummyComputeDispatchFee;
     type TrieIdGenerator = DummyTrieIdGenerator;
-    type GasPayment = ();
     type RentPayment = ();
     type SignedClaimHandicap = pallet_contracts::DefaultSignedClaimHandicap;
     type TombstoneDeposit = TombstoneDeposit;
@@ -237,14 +260,8 @@ impl pallet_contracts::Trait for Test {
     type RentByteFee = RentByteFee;
     type RentDepositOffset = RentDepositOffset;
     type SurchargeReward = SurchargeReward;
-    type TransactionBaseFee = ContractTransactionBaseFee;
-    type TransactionByteFee = ContractTransactionByteFee;
-    type ContractFee = ContractFee;
-    type CallBaseFee = pallet_contracts::DefaultCallBaseFee;
-    type InstantiateBaseFee = pallet_contracts::DefaultInstantiateBaseFee;
     type MaxDepth = pallet_contracts::DefaultMaxDepth;
     type MaxValueSize = pallet_contracts::DefaultMaxValueSize;
-    type BlockGasLimit = pallet_contracts::DefaultBlockGasLimit;
 }
 
 impl pallet_contract_operator::Trait for Test {
@@ -347,7 +364,7 @@ pub fn valid_instatiate() {
 
     // prepare
     let _ = Balances::deposit_creating(&OPERATOR, 1_000_000);
-    assert_ok!(Contracts::put_code(Origin::signed(OPERATOR), 100_000, wasm));
+    assert_ok!(Contracts::put_code(Origin::signed(OPERATOR), wasm));
 
     let test_params = parameters::StakingParameters {
         can_be_nominated: true,
@@ -360,7 +377,7 @@ pub fn valid_instatiate() {
     let _ = Operator::instantiate(
         Origin::signed(OPERATOR),
         100,
-        100_000,
+        Gas::max_value(),
         code_hash.into(),
         vec![],
         test_params.clone(),
