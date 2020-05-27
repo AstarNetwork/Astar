@@ -214,14 +214,14 @@ decl_event!(
         Deploy(AccountId, AccountId),
         /// Event definitions (AccountID: PlappsAddress, BlockNumber, Hash: root)
         BlockSubmitted(AccountId, BlockNumber, Hash),
-        /// (checkpointId: Hash, checkpoint: Checkpoint);
-        CheckpointFinalized(Hash, Checkpoint),
-        /// (exit_id: Hash)
-        ExitFinalized(Hash),
-        /// (new_range: Range)
-        DepositedRangeExtended(Range),
-        /// (removed_range: Range)
-        DepositedRangeRemoved(Range),
+        /// (AccountID: PlappsAddress, checkpointId: Hash, checkpoint: Checkpoint);
+        CheckpointFinalized(AccountID, Hash, Checkpoint),
+        /// (AccountID: PlappsAddress, exit_id: Hash)
+        ExitFinalized(AccountId, Hash),
+        /// (AccountID: PlappsAddress, new_range: Range)
+        DepositedRangeExtended(AccountId, Range),
+        /// (AccountID: PlappsAddress, removed_range: Range)
+        DepositedRangeRemoved(AccountID, Range),
     }
 );
 
@@ -240,6 +240,10 @@ decl_error! {
         RangeMustNotExceedTheImplicitRange,
         /// required address must not exceed the implicit address
         AddressMustNotExceedTheImplicitAddress,
+        /// DepositContract: totalDeposited exceed max uint256
+        TotalDepositedExceedMaxBalance,
+        /// must approved
+        MustApproved,
     }
 }
 
@@ -307,12 +311,48 @@ decl_module! {
         /// - @param initial_state The initial state of deposit
         #[weight = SimpleDispatchInfo::default()]
         fn deposit(origin, plapps_id: T::AccountId,
-            amount: BalanceOf<T>, initial_state: PropertyOf<T>) {
+            amount: BalanceOf<T>, initial_state: PropertyOf<T>, gas_limit: Gas) {
+            let origin = ensure_signed(origin)?;
+            let total_deposited = Self::total_deposited(&plapps_id);
+            ensure!(
+                total_deposited < BalanceOf<T>::max_value().saturating_sub(amount),
+                Error::<T>::TotalDepositedExceedMaxBalance,
+            );
+            // TODO: transfer_from origin -> plapps_id (amount) at erc20.
+            // let _ = contracts::bare_call(
+            //     origin,
+            //     Self::erc20(&plapps_id),
+            //     BalanceOf<T>::zero(),
+            //     gas_limit,
+            //     "transfer_from(origin, plapps_id, amount)",
+            // )?;
+
+            let deposit_range = RangeOf::<T> {
+                start: total_deposited,
+                end: total_deposited.saturating_add(amount),
+            }
+            let state_update = PropertyOf::<T> {
+                predicate_address: Self::stateupdate_predicate_contract(&plapps_id),
+                inputs: vec![
+                    plapps_id.encode(),
+                    deposit_range.encode(),
+                    Self::get_latest_plasma_block_number(&plapps_id).encode(),
+                    initial_state.encode(),
+                ],
+            }
+            let checkpoint = CheckpointOf::<T> {
+                state_update: state_update,
+            };
+            Self::extend_deposited_ranges(amount)?;
+            let checkpoint_id = Self::get_checkpoint_id(&checkpoint);
+            <Checkpoints<T>>::insert(&checkpint_id, true);
+            Self::deposit_event(RawEvent::CheckpointFinalized(plapps_id, checkpoint_id, checkpoint));
         }
 
         #[weight = SimpleDispatchInfo::default()]
         fn extend_deposited_ranges(origin, plapps_id: T::AccountId, amount: BalanceOf<T>) {
-
+            ensure_sigend(origin)?;
+            Self::extend_deposited_ranges(&plapps_id, &amount);
         }
 
         #[weight = SimpleDispatchInfo::default()]
@@ -359,8 +399,9 @@ fn migrate<T: Trait>() {
     // }
 }
 
+/// Public callable Plasma commitment module methods.
 impl<T: Trait> Module<T> {
-    // Public ====
+    // Plasma Commitment parts ====
     pub fn retrieve(plapps_id: T::AccountId, block_number: T::BlockNumber) -> T::Hash {
         <Blocks<T>>::get(&plapps_id, &block_number)
     }
@@ -420,8 +461,11 @@ impl<T: Trait> Module<T> {
         );
         return Ok(computed_root == root);
     }
+}
 
-    // Private(Helper) ====
+/// Private(Helper) Plasma commitment module methods.
+impl<T: Trait> Module<T> {
+    // Plasma Commitment Parts
     fn ensure_aggregator(sender: &T::AccountId, plapps_id: &T::AccountId) -> DispatchResult {
         ensure!(
             sender != &Self::aggregator_address(plapps_id),
@@ -521,7 +565,7 @@ impl<T: Trait> Module<T> {
         Ok((ret_computed_root, first_right_sibling_address))
     }
 
-    pub fn get_parent(
+    fn get_parent(
         left: &T::Hash,
         left_start: &BalanceOf<T>,
         right: &T::Hash,
@@ -538,13 +582,61 @@ impl<T: Trait> Module<T> {
             right_start,
         )));
     }
+}
 
-    pub fn get_parent_of_address_tree_node(
+/// Public callable Plasma deposit module methods.
+impl<T: Trait> Module<T> {
+    // Plasma Deposit parst ===
+    pub fn extend_deposited_ranges(plapps_id: &T::AccountId, amount: &BalanceOf<T>) {
+        let total_deposited = Self::total_deposited(plapps_id);
+        let old_range = Self::deposited_ranges(plapps_id, &total_deposited);
+        let new_start = if old_range.start == 0 && old_range.end == 0 {
+            // Creat a new range when the rightmost range has been removed
+            new_start = total_deposited
+        } else {
+            // Delete the old range and make a new one with the total length
+            <DepositedRanges<T>>::remove(plapps_id, old_range.end);
+            old_range.start
+        };
+
+        let new_end = total_deposited.saturated_add(amount);
+        let new_range = Range {
+            start: new_start,
+            end: new_end,
+        };
+        <depositedRanges<T>>::insert(plapps_id, &new_end, new_range.clone());
+        <TotalDeposited<T>>::insert(total_deposited.saturated_add(amount));
+        Self::deposit_event(RawEvent::DepositedRangeExtended(
+            plapps_id.clone(),
+            new_range,
+        ));
+    }
+}
+
+/// Priavte(Helper) callable Plasma deposit module methods.
+impl<T: Trait> Module<T> {
+    fn get_parent_of_address_tree_node(
         left: &T::Hash,
         left_address: &T::AccountId,
         right: &T::Hash,
         right_address: &T::AccountId,
     ) -> T::Hash {
         T::PlasmaHashing::hash_of(&(left, left_address, right, right_address))
+    }
+
+    fn get_latest_plasma_block_number(plapps_id: &T::AccountId) -> BalanceOf<T> {
+        return Self::current_block(&plapps_id);
+    }
+
+    fn get_checkpoint_id(checkpoint: &CheckpointOf<T>) -> T::Hash {
+        <T as system::Trait>::Hashing::hash_of(checkpoint)
+    }
+
+    fn get_exit_id(exit: &PropertyOf<T>) -> T::Hash {
+        <T as system::Trait>::Hashing::hash_of(exit)
+    }
+
+    fn is_subrange(subrange: RangeOf<T>, surrounding_range: RangeOf<T>) -> bool {
+        _subrange.start >= _surrounding_range.start && _subrange.end <= _surrounding_range.end
     }
 }
