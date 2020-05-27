@@ -225,34 +225,6 @@ decl_event!(
     }
 );
 
-decl_error! {
-    /// Error for the staking module.
-    pub enum Error for Module<T: Trait> {
-        /// Sender isn't valid aggregator.
-        IsNotAggregator,
-        /// blkNumber should be next block.
-        BlockNumberShouldBeNextBlock,
-        /// leftStart must be less than _rightStart
-        LeftMustBeLessThanRight,
-        /// firstRightSiblingStart must be greater than siblingStart
-        FirstRightMustBeGreaterThanSibling,
-        /// required range must not exceed the implicit range
-        RangeMustNotExceedTheImplicitRange,
-        /// required address must not exceed the implicit address
-        AddressMustNotExceedTheImplicitAddress,
-        /// DepositContract: totalDeposited exceed max uint256
-        TotalDepositedExceedMaxBalance,
-        /// must approved
-        MustApproved,
-        /// range must be of a depostied range (the one that has not been exited
-        RangeMustBeOfDepositedRange,
-        /// Checkpointing claim must be decied
-        ClaimMustBeDecided,
-        /// Must decode from checkpointInputs[0] to Property.
-        MustBeDecodable,
-    }
-}
-
 decl_module! {
     pub struct Module<T: Trait> for enum Call where origin: T::Origin {
         fn deposit_event() = default;
@@ -395,21 +367,66 @@ decl_module! {
         }
 
         /// finalizeExit
-        /// - @param _exitProperty A property which is instance of exit predicate and its inputs are range and StateUpdate that exiting account wants to withdraw.
-        /// _exitProperty can be a property of ether ExitPredicate or ExitDepositPredicate.
-        /// - @param _depositedRangeId Id of deposited range
-        /// - @return return StateUpdate of exit property which is finalized.
-        /// - @dev The steps of finalizeExit.
-        /// 1. Serialize exit property
-        /// 2. check the property is decided by Adjudication Contract.
-        /// 3. Transfer asset to payout contract corresponding to StateObject.
-        ///
-        /// Please alse see https://docs.plasma.group/projects/spec/en/latest/src/02-contracts/deposit-contract.html#finalizeexit
+        /// @dev finalize exit and withdraw asset with ownership state.
         #[weight = SimpleDispatchInfo::default()]
         fn finalize_exit(origin, plapps_id: T::AccountId,
-            exit_property: PropertyOf<T>, deposited_range_id: BalanceOf<T>) {
-
+            exit_property: PropertyOf<T>, deposited_range_id: BalanceOf<T>, _owner) {
+            let origin = ensure_signed(origin)?;
+            let state_update = Self::bare_finalize_exit(
+                &plapps_id,
+                &exit_property,
+                &deposited_range_id
+            )?;
+            let owner: T::AccountId = Decode::decode(&mut &state_update.state_obeject.inptus[0][..])
+                .map_err(|| Error::<T>::MustBeDecodable)?;
+            let amounnt = state_update.range.end - state_update.range.start;
+            ensure!(
+                origin == owner,
+                Error::<T>::OriginMustBeOwner,
+            );
+            // TODO: transfer plapps_id -> owner (amount) at erc20.
+            // let _ = contracts::bare_call(
+            //     origin,
+            //     Self::erc20(&plapps_id),
+            //     BalanceOf<T>::zero(),
+            //     gas_limit,
+            //     "transfer(payout, amount)",
+            // )?;
         }
+    }
+}
+
+decl_error! {
+    /// Error for the staking module.
+    pub enum Error for Module<T: Trait> {
+        /// Sender isn't valid aggregator.
+        IsNotAggregator,
+        /// blkNumber should be next block.
+        BlockNumberShouldBeNextBlock,
+        /// leftStart must be less than _rightStart
+        LeftMustBeLessThanRight,
+        /// firstRightSiblingStart must be greater than siblingStart
+        FirstRightMustBeGreaterThanSibling,
+        /// required range must not exceed the implicit range
+        RangeMustNotExceedTheImplicitRange,
+        /// required address must not exceed the implicit address
+        AddressMustNotExceedTheImplicitAddress,
+        /// DepositContract: totalDeposited exceed max uint256
+        TotalDepositedExceedMaxBalance,
+        /// must approved
+        MustApproved,
+        /// range must be of a depostied range (the one that has not been exited
+        RangeMustBeOfDepositedRange,
+        /// Checkpointing claim must be decied
+        ClaimMustBeDecided,
+        /// Must decode from checkpointInputs[0] to Property.
+        MustBeDecodable,
+        /// Exit must be decided after this block
+        ExitMustBeDecided,
+        /// finalizeExit must be called from payout contract
+        FinalizeExitMustBeCalledFromPayout
+        /// origin must be owner
+        OriginMustBeOwner,
     }
 }
 
@@ -682,6 +699,63 @@ impl<T: Trait> Module<T> {
         Self::deposit_event(RawEvent::DepositedRangeRemoved(plapps_id.clone(), range));
         Ok(())
     }
+
+    /// bare_finalize_exit
+    /// called by this module.
+    /// - @param _exitProperty A property which is instance of exit predicate and its inputs are range and StateUpdate that exiting account wants to withdraw.
+    /// _exitProperty can be a property of ether ExitPredicate or ExitDepositPredicate.
+    /// - @param _depositedRangeId Id of deposited range
+    /// - @return return StateUpdate of exit property which is finalized.
+    /// - @dev The steps of finalizeExit.
+    /// 1. Serialize exit property
+    /// 2. check the property is decided by Adjudication Contract.
+    /// 3. Transfer asset to payout contract corresponding to StateObject.
+    ///
+    /// Please alse see https://docs.plasma.group/projects/spec/en/latest/src/02-contracts/deposit-contract.html#finalizeexit
+    pub fn bare_finalize_exit(plapps_id: T::AccountId,
+                              exit_property: PropertyOf<T>, deposited_range_id: BalanceOf<T>) -> StateUpdateOf<T> {
+        let origin = ensure_signed(origin)?;
+        let state_update = Self::verify_exit_property(&exit_property);
+        let exit_id = Self::get_exit_id(&exit_property);
+        // get payout contract address
+        let payout = Self::payout_contract_address(&plapps_id);
+        //     &state_update
+        //         .state_object
+        //         .predicate_address
+        // ).payoutContractAddress();
+
+        // Check that we are authorized to finalize this exit
+        ensure!(
+                <pallet_ovm::Module<T>>::is_decided(&exit_property),
+                Error::<T>::ExitMustBeDecided,
+            );
+        // ensure!(
+        //     payout == origin,
+        //     "finalizeExit must be called from payout contract"
+        // )
+
+        // ensure!(
+        //     state_update.deposit_contract_address == address(this),
+        //     "StateUpdate.depositContractAddress must be this contract address"
+        // );
+
+        // Remove the deposited range
+        Self::removeDepositedRange(&state_update.range, &deposited_range_id);
+        //Transfer tokens to its predicate
+        let amount = state_update.range.end - state_update.range.start;
+
+        // TODO: transfer_from this -> payout (amount) at erc20.
+        // let _ = contracts::bare_call(
+        //     origin,
+        //     Self::erc20(&plapps_id),
+        //     BalanceOf<T>::zero(),
+        //     gas_limit,
+        //     "transfer(payout, amount)",
+        // )?;
+        Self::deposit_events(RawEvents::ExitFianlzied(exit_id));
+        state_update
+    }
+
 }
 
 /// Priavte(Helper) callable Plasma deposit module methods.
