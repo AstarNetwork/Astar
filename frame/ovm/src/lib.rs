@@ -58,9 +58,9 @@ pub struct PredicateContract<CodeHash> {
 #[derive(Encode, Decode, Clone, Default, RuntimeDebug, PartialEq, Eq)]
 pub struct Property<AccountId> {
     /// Indicates the address of Predicate.
-    predicate_address: AccountId,
+    pub predicate_address: AccountId,
     /// Every input are bytes. Each Atomic Predicate decode inputs to the specific type.
-    inputs: Vec<u8>,
+    pub inputs: Vec<Vec<u8>>,
 }
 
 /// The game decision by predicates.

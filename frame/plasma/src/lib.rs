@@ -29,9 +29,10 @@ use frame_support::{
     StorageDoubleMap, StorageMap,
 };
 use frame_system::{self as system, ensure_signed};
+use pallet_contracts::Gas;
 use sp_core::crypto::UncheckedFrom;
 use sp_runtime::{
-    traits::{Bounded, Hash, One, SaturatedConversion},
+    traits::{Bounded, Hash, One, SaturatedConversion, Saturating, Zero},
     DispatchError, RuntimeDebug,
 };
 use sp_std::{marker::PhantomData, prelude::*, vec::Vec};
@@ -58,7 +59,7 @@ pub struct StateUpdate<AccountId, Balance, BlockNumber> {
 
 #[derive(Encode, Decode, Clone, Default, RuntimeDebug, PartialEq, Eq)]
 pub struct Checkpoint<AccountId, Balance> {
-    subsrange: Range<Balance>,
+    subrange: Range<Balance>,
     state_update: Property<AccountId>,
 }
 
@@ -194,7 +195,7 @@ decl_storage! {
         /// DepositedRanges are currently deposited ranges.
         DepositedRanges get(fn deposited_ranges): double_map hasher(twox_64_concat) T::AccountId, hasher(blake2_128_concat) BalanceOf<T> => RangeOf<T>;
         /// Range's Checkpoints.
-        Checkpoints get(fn checkpoints): double_map hasher(twox_64_concat) T::AccountId, hasher(blake2_128_concat) T::Hash => CheckpointOf<T>;
+        Checkpoints get(fn checkpoints): double_map hasher(twox_64_concat) T::AccountId, hasher(blake2_128_concat) T::Hash => bool;
 
         /// predicate address => payout address
         PayoutContractAddress get(fn payout_contract_address): map hasher(twox_64_concat) T::AccountId => T::AccountId;
@@ -215,13 +216,13 @@ decl_event!(
         /// Event definitions (AccountID: PlappsAddress, BlockNumber, Hash: root)
         BlockSubmitted(AccountId, BlockNumber, Hash),
         /// (AccountID: PlappsAddress, checkpointId: Hash, checkpoint: Checkpoint);
-        CheckpointFinalized(AccountID, Hash, Checkpoint),
+        CheckpointFinalized(AccountId, Hash, Checkpoint),
         /// (AccountID: PlappsAddress, exit_id: Hash)
         ExitFinalized(AccountId, Hash),
         /// (AccountID: PlappsAddress, new_range: Range)
         DepositedRangeExtended(AccountId, Range),
         /// (AccountID: PlappsAddress, removed_range: Range)
-        DepositedRangeRemoved(AccountID, Range),
+        DepositedRangeRemoved(AccountId, Range),
     }
 );
 
@@ -312,16 +313,16 @@ decl_module! {
         #[weight = SimpleDispatchInfo::default()]
         fn deposit(origin, plapps_id: T::AccountId,
             amount: BalanceOf<T>, initial_state: PropertyOf<T>, gas_limit: Gas) {
-            let origin = ensure_signed(origin)?;
+            let _ = ensure_signed(origin)?;
             let total_deposited = Self::total_deposited(&plapps_id);
             ensure!(
-                total_deposited < BalanceOf<T>::max_value().saturating_sub(amount),
+                total_deposited < BalanceOf::<T>::max_value().saturating_sub(amount),
                 Error::<T>::TotalDepositedExceedMaxBalance,
             );
             // TODO: transfer_from origin -> plapps_id (amount) at erc20.
             // let _ = contracts::bare_call(
             //     origin,
-            //     Self::erc20(&plapps_id),
+            //     Self::erc20(&plapps_id),fAccountID
             //     BalanceOf<T>::zero(),
             //     gas_limit,
             //     "transfer_from(origin, plapps_id, amount)",
@@ -329,30 +330,31 @@ decl_module! {
 
             let deposit_range = RangeOf::<T> {
                 start: total_deposited,
-                end: total_deposited.saturating_add(amount),
-            }
+                end: total_deposited.saturating_add(amount.clone()),
+            };
             let state_update = PropertyOf::<T> {
-                predicate_address: Self::stateupdate_predicate_contract(&plapps_id),
+                predicate_address: Self::state_update_predicate(&plapps_id),
                 inputs: vec![
                     plapps_id.encode(),
                     deposit_range.encode(),
                     Self::get_latest_plasma_block_number(&plapps_id).encode(),
                     initial_state.encode(),
                 ],
-            }
+            };
             let checkpoint = CheckpointOf::<T> {
+                subrange: Default::default(),
                 state_update: state_update,
             };
-            Self::extend_deposited_ranges(amount)?;
+            Self::bare_extend_deposited_ranges(&plapps_id, amount);
             let checkpoint_id = Self::get_checkpoint_id(&checkpoint);
-            <Checkpoints<T>>::insert(&checkpint_id, true);
-            Self::deposit_event(RawEvent::CheckpointFinalized(plapps_id, checkpoint_id, checkpoint));
+            <Checkpoints<T>>::insert(plapps_id.clone(), &checkpoint_id, true);
+            Self::deposit_event(RawEvent::CheckpointFinalized(plapps_id.clone(), checkpoint_id, checkpoint));
         }
 
         #[weight = SimpleDispatchInfo::default()]
         fn extend_deposited_ranges(origin, plapps_id: T::AccountId, amount: BalanceOf<T>) {
-            ensure_sigend(origin)?;
-            Self::extend_deposited_ranges(&plapps_id, &amount);
+            ensure_signed(origin)?;
+            Self::bare_extend_deposited_ranges(&plapps_id, amount);
         }
 
         #[weight = SimpleDispatchInfo::default()]
@@ -587,25 +589,27 @@ impl<T: Trait> Module<T> {
 /// Public callable Plasma deposit module methods.
 impl<T: Trait> Module<T> {
     // Plasma Deposit parst ===
-    pub fn extend_deposited_ranges(plapps_id: &T::AccountId, amount: &BalanceOf<T>) {
+    pub fn bare_extend_deposited_ranges(plapps_id: &T::AccountId, amount: BalanceOf<T>) {
         let total_deposited = Self::total_deposited(plapps_id);
         let old_range = Self::deposited_ranges(plapps_id, &total_deposited);
-        let new_start = if old_range.start == 0 && old_range.end == 0 {
+        let new_start = if old_range.start == BalanceOf::<T>::zero()
+            && old_range.end == BalanceOf::<T>::zero()
+        {
             // Creat a new range when the rightmost range has been removed
-            new_start = total_deposited
+            total_deposited
         } else {
             // Delete the old range and make a new one with the total length
             <DepositedRanges<T>>::remove(plapps_id, old_range.end);
             old_range.start
         };
 
-        let new_end = total_deposited.saturated_add(amount);
+        let new_end = total_deposited.saturating_add(amount.clone());
         let new_range = Range {
             start: new_start,
             end: new_end,
         };
-        <depositedRanges<T>>::insert(plapps_id, &new_end, new_range.clone());
-        <TotalDeposited<T>>::insert(total_deposited.saturated_add(amount));
+        <DepositedRanges<T>>::insert(plapps_id, &new_end, new_range.clone());
+        <TotalDeposited<T>>::insert(plapps_id, total_deposited.saturating_add(amount));
         Self::deposit_event(RawEvent::DepositedRangeExtended(
             plapps_id.clone(),
             new_range,
@@ -624,7 +628,7 @@ impl<T: Trait> Module<T> {
         T::PlasmaHashing::hash_of(&(left, left_address, right, right_address))
     }
 
-    fn get_latest_plasma_block_number(plapps_id: &T::AccountId) -> BalanceOf<T> {
+    fn get_latest_plasma_block_number(plapps_id: &T::AccountId) -> T::BlockNumber {
         return Self::current_block(&plapps_id);
     }
 
@@ -637,6 +641,6 @@ impl<T: Trait> Module<T> {
     }
 
     fn is_subrange(subrange: RangeOf<T>, surrounding_range: RangeOf<T>) -> bool {
-        _subrange.start >= _surrounding_range.start && _subrange.end <= _surrounding_range.end
+        subrange.start >= surrounding_range.start && subrange.end <= surrounding_range.end
     }
 }
