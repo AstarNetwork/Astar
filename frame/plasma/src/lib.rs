@@ -37,7 +37,7 @@ use sp_runtime::{
 };
 use sp_std::{marker::PhantomData, prelude::*, vec::Vec};
 
-use pallet_ovm::{Property, PropertyOf};
+use pallet_ovm::{Decision, Property, PropertyOf};
 #[cfg(test)]
 mod mock;
 #[cfg(test)]
@@ -58,8 +58,7 @@ pub struct StateUpdate<AccountId, Balance, BlockNumber> {
 }
 
 #[derive(Encode, Decode, Clone, Default, RuntimeDebug, PartialEq, Eq)]
-pub struct Checkpoint<AccountId, Balance> {
-    subrange: Range<Balance>,
+pub struct Checkpoint<AccountId> {
     state_update: Property<AccountId>,
 }
 
@@ -103,7 +102,7 @@ pub struct AddressTreeNode<AccountId, Hash> {
 
 pub type BalanceOf<T> =
     <<T as Trait>::Currency as Currency<<T as frame_system::Trait>::AccountId>>::Balance;
-pub type CheckpointOf<T> = Checkpoint<<T as frame_system::Trait>::AccountId, BalanceOf<T>>;
+pub type CheckpointOf<T> = Checkpoint<<T as frame_system::Trait>::AccountId>;
 pub type RangeOf<T> = Range<BalanceOf<T>>;
 pub type InclusionProofOf<T> = InclusionProof<
     <T as frame_system::Trait>::AccountId,
@@ -151,7 +150,7 @@ where
     }
 }
 
-pub trait Trait: system::Trait {
+pub trait Trait: pallet_ovm::Trait + pallet_contracts::Trait {
     /// Plasma Range's currency.
     type Currency: Currency<Self::AccountId>;
 
@@ -245,6 +244,12 @@ decl_error! {
         TotalDepositedExceedMaxBalance,
         /// must approved
         MustApproved,
+        /// range must be of a depostied range (the one that has not been exited
+        RangeMustBeOfDepositedRange,
+        /// Checkpointing claim must be decied
+        ClaimMustBeDecided,
+        /// Must decode from checkpointInputs[0] to Property.
+        MustBeDecodable,
     }
 }
 
@@ -341,14 +346,13 @@ decl_module! {
                     initial_state.encode(),
                 ],
             };
-            let checkpoint = CheckpointOf::<T> {
-                subrange: Default::default(),
+            let checkpoint = Checkpoint {
                 state_update: state_update,
             };
             Self::bare_extend_deposited_ranges(&plapps_id, amount);
             let checkpoint_id = Self::get_checkpoint_id(&checkpoint);
             <Checkpoints<T>>::insert(plapps_id.clone(), &checkpoint_id, true);
-            Self::deposit_event(RawEvent::CheckpointFinalized(plapps_id.clone(), checkpoint_id, checkpoint));
+            Self::deposit_event(RawEvent::CheckpointFinalized(plapps_id, checkpoint_id, checkpoint));
         }
 
         #[weight = SimpleDispatchInfo::default()]
@@ -360,16 +364,34 @@ decl_module! {
         #[weight = SimpleDispatchInfo::default()]
         fn remove_deposited_range(origin, plapps_id: T::AccountId,
             range: RangeOf<T>, deposited_range_id: BalanceOf<T>) {
-
+            ensure_signed(origin)?;
+            Self::bare_remove_deposited_range(
+                &plapps_id,
+                range,
+                deposited_range_id,
+            )?;
         }
 
         /// finalizeCheckpoint
         /// - @param _checkpointProperty A property which is instance of checkpoint predicate
         /// its first input is range to create checkpoint and second input is property for stateObject.
         #[weight = SimpleDispatchInfo::default()]
-        fn finalize_check_point(origin, plapps_id: T::AccountId,
+        fn finalize_checkpoint(origin, plapps_id: T::AccountId,
             checkpoint_property: PropertyOf<T>) {
+            ensure!(
+                <pallet_ovm::Module<T>>::is_decided(&checkpoint_property) != Decision::True,
+                Error::<T>::ClaimMustBeDecided,
+            );
+            let property: PropertyOf<T> = Decode::decode(&mut &checkpoint_property.inputs[0][..])
+                .map_err(|_| Error::<T>::MustBeDecodable)?;
+            let checkpoint = Checkpoint {
+                state_update: property,
+            };
 
+            let checkpoint_id = Self::get_checkpoint_id(&checkpoint);
+            // store the checkpoint
+            <Checkpoints<T>>::insert(&plapps_id, &checkpoint_id, true);
+            Self::deposit_event(RawEvent::CheckpointFinalized(plapps_id, checkpoint_id, checkpoint));
         }
 
         /// finalizeExit
@@ -588,7 +610,6 @@ impl<T: Trait> Module<T> {
 
 /// Public callable Plasma deposit module methods.
 impl<T: Trait> Module<T> {
-    // Plasma Deposit parst ===
     pub fn bare_extend_deposited_ranges(plapps_id: &T::AccountId, amount: BalanceOf<T>) {
         let total_deposited = Self::total_deposited(plapps_id);
         let old_range = Self::deposited_ranges(plapps_id, &total_deposited);
@@ -615,6 +636,52 @@ impl<T: Trait> Module<T> {
             new_range,
         ));
     }
+
+    pub fn bare_remove_deposited_range(
+        plapps_id: &T::AccountId,
+        range: RangeOf<T>,
+        deposited_range_id: BalanceOf<T>,
+    ) -> DispatchResult {
+        let deposited_ranges = Self::deposited_ranges(plapps_id, deposited_range_id);
+        ensure!(
+            Self::is_subrange(&range, &deposited_ranges),
+            Error::<T>::RangeMustBeOfDepositedRange,
+        );
+
+        /*
+         * depositedRanges makes O(1) checking existence of certain range.
+         * Since _range is subrange of encompasingRange, we only have to check is each start and end are same or not.
+         * So, there are 2 patterns for each start and end of _range and encompasingRange.
+         * There are nothing todo for _range.start is equal to encompasingRange.start.
+         */
+        // Check start of range
+        if range.start != deposited_ranges.start {
+            let left_split_range = Range {
+                start: deposited_ranges.start,
+                end: range.start,
+            };
+            <DepositedRanges<T>>::insert(plapps_id, left_split_range.end, left_split_range);
+        }
+        // Check end of range
+        if range.end == deposited_ranges.end {
+            /*
+             * Deposited range Id is end value of the range, we must remove the range from depositedRanges
+             *     when range.end is changed.
+             */
+            <DepositedRanges<T>>::remove(plapps_id, &deposited_ranges.end);
+        } else {
+            <DepositedRanges<T>>::insert(
+                plapps_id,
+                &deposited_ranges.end,
+                Range {
+                    start: range.end,
+                    end: deposited_ranges.end,
+                },
+            );
+        }
+        Self::deposit_event(RawEvent::DepositedRangeRemoved(plapps_id.clone(), range));
+        Ok(())
+    }
 }
 
 /// Priavte(Helper) callable Plasma deposit module methods.
@@ -640,7 +707,7 @@ impl<T: Trait> Module<T> {
         <T as system::Trait>::Hashing::hash_of(exit)
     }
 
-    fn is_subrange(subrange: RangeOf<T>, surrounding_range: RangeOf<T>) -> bool {
+    fn is_subrange(subrange: &RangeOf<T>, surrounding_range: &RangeOf<T>) -> bool {
         subrange.start >= surrounding_range.start && subrange.end <= surrounding_range.end
     }
 }
