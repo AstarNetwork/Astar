@@ -1070,7 +1070,6 @@
 <span id="1070">1070</span>
 <span id="1071">1071</span>
 <span id="1072">1072</span>
-<span id="1073">1073</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="doccomment">//! Chain specification.</span>
 
@@ -1122,9 +1121,9 @@ const DUSTY_PROTOCOL_ID: &amp;str = &quot;pld&quot;;
 <span class="attribute">#[<span class="ident">serde</span>(<span class="ident">rename_all</span> <span class="op">=</span> <span class="string">&quot;camelCase&quot;</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Extensions</span> {
     <span class="doccomment">/// Block numbers with known hashes.</span>
-    <span class="kw">pub</span> <span class="ident">fork_blocks</span>: <span class="ident">sc_client</span>::<span class="ident">ForkBlocks</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span>,
+    <span class="kw">pub</span> <span class="ident">fork_blocks</span>: <span class="ident">sc_client_api</span>::<span class="ident">ForkBlocks</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span>,
     <span class="doccomment">/// Known bad block hashes.</span>
-    <span class="kw">pub</span> <span class="ident">bad_blocks</span>: <span class="ident">sc_client</span>::<span class="ident">BadBlocks</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span>,
+    <span class="kw">pub</span> <span class="ident">bad_blocks</span>: <span class="ident">sc_client_api</span>::<span class="ident">BadBlocks</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span>,
 }
 
 <span class="doccomment">/// Specialized `ChainSpec`.</span>
@@ -1232,7 +1231,6 @@ const DUSTY_PROTOCOL_ID: &amp;str = &quot;pld&quot;;
                 <span class="ident">enable_println</span>, <span class="comment">// this should only be enabled on development chains</span>
                 ..<span class="ident">Default</span>::<span class="ident">default</span>()
             },
-            <span class="ident">gas_price</span>: <span class="number">1</span> <span class="op">*</span> <span class="ident">MILLIPLM</span>,
         }),
         <span class="ident">pallet_sudo</span>: <span class="prelude-val">Some</span>(<span class="ident">SudoConfig</span> { <span class="ident">key</span>: <span class="ident">root_key</span> }),
     }

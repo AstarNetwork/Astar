@@ -11,21 +11,25 @@
 <div id="variant.offer" class="variant small-section-header"><a href="#variant.offer" class="anchor field"></a><code id='offer.v'>offer(T::AccountId,&nbsp;<a class="struct" href="https://doc.rust-lang.org/nightly/alloc/vec/struct.Vec.html" title="struct alloc::vec::Vec">Vec</a>&lt;T::AccountId&gt;,&nbsp;<a class="type" href="../pallet_operator_trading/type.BalanceOf.html" title="type pallet_operator_trading::BalanceOf">BalanceOf</a>&lt;T&gt;,&nbsp;T::BlockNumber)</code></div><div class='docblock'><p>Offer is an easy contract to trade.
 If the sender <code>accept</code> during the period, the operator trading will be completed.
 After the offer, the part of the amount of the buyer's balances will lock.</p>
-<p>Note: Only one offer can be issued at the same time each an account.</p>
+<p>Note: Only one offer can be issued at the same time each an account.
+TODO: weight</p>
 </div><div id="variant.reject" class="variant small-section-header"><a href="#variant.reject" class="anchor field"></a><code id='reject.v'>reject(T::AccountId)</code></div><div class='docblock'><p>Reject the target offer.
 the offer's buyer or sender can reject the offer.
-After the reject, the buyer's balances will be unlock.</p>
+After the reject, the buyer's balances will be unlock.
+TODO: weight</p>
 </div><div id="variant.accept" class="variant small-section-header"><a href="#variant.accept" class="anchor field"></a><code id='accept.v'>accept(T::AccountId)</code></div><div class='docblock'><p>Accept the target offer.
 Only the offer's sender can accept the offer.
 After the accept:</p>
 <ol>
 <li>the buyer's balances will be unlock.</li>
 <li>the buyer's balances tranfer to the sender.</li>
-<li>the sender's target contracts transfer to the buyer.</li>
+<li>the sender's target contracts transfer to the buyer.
+TODO: weight</li>
 </ol>
 </div><div id="variant.remove" class="variant small-section-header"><a href="#variant.remove" class="anchor field"></a><code id='remove.v'>remove()</code></div><div class='docblock'><p>Remove the offer.
 The offer's owner can remove the offer.
-But, if the offer is living(until expired), he can not remove the offer.</p>
+But, if the offer is living(until expired), he can not remove the offer.
+TODO: weight</p>
 </div><h2 id='implementations' class='small-section-header'>Trait Implementations<a href='#implementations' class='anchor'></a></h2><div id='implementations-list'><h3 id='impl-Clone' class='impl'><code class='in-band'>impl&lt;T:&nbsp;<a class="trait" href="../pallet_operator_trading/trait.Trait.html" title="trait pallet_operator_trading::Trait">Trait</a>&gt; <a class="trait" href="https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html" title="trait core::clone::Clone">Clone</a> for <a class="enum" href="../pallet_operator_trading/enum.Call.html" title="enum pallet_operator_trading::Call">Call</a>&lt;T&gt;</code><a href='#impl-Clone' class='anchor'></a></h3><div class='impl-items'><h4 id='method.clone' class="method hidden"><code id='clone.v'>fn <a href='https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#tymethod.clone' class='fnname'>clone</a>(&amp;self) -&gt; Self</code></h4><div class='docblock hidden'><p>Returns a copy of the value. <a href="https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#tymethod.clone">Read more</a></p>
 </div><h4 id='method.clone_from' class="method hidden"><code id='clone_from.v'>fn <a href='https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#method.clone_from' class='fnname'>clone_from</a>(&amp;mut self, source: <a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.reference.html">&amp;</a>Self)</code><span class='since' title='Stable since Rust version 1.0.0'>1.0.0</span><a class='srclink' href='https://doc.rust-lang.org/nightly/src/core/clone.rs.html#131-133' title='goto source code'>[src]</a></h4><div class='docblock hidden'><p>Performs copy-assignment from <code>source</code>. <a href="https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#method.clone_from">Read more</a></p>
 </div></div><h3 id='impl-Debug' class='impl'><code class='in-band'>impl&lt;T:&nbsp;<a class="trait" href="../pallet_operator_trading/trait.Trait.html" title="trait pallet_operator_trading::Trait">Trait</a>&gt; <a class="trait" href="https://doc.rust-lang.org/nightly/core/fmt/trait.Debug.html" title="trait core::fmt::Debug">Debug</a> for <a class="enum" href="../pallet_operator_trading/enum.Call.html" title="enum pallet_operator_trading::Call">Call</a>&lt;T&gt;</code><a href='#impl-Debug' class='anchor'></a></h3><div class='impl-items'><h4 id='method.fmt' class="method hidden"><code id='fmt.v'>fn <a href='https://doc.rust-lang.org/nightly/core/fmt/trait.Debug.html#tymethod.fmt' class='fnname'>fmt</a>(&amp;self, _f: &amp;mut <a class="struct" href="https://doc.rust-lang.org/nightly/core/fmt/struct.Formatter.html" title="struct core::fmt::Formatter">Formatter</a>) -&gt; <a class="enum" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html" title="enum core::result::Result">Result</a>&lt;<a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.unit.html">()</a>, <a class="struct" href="https://doc.rust-lang.org/nightly/core/fmt/struct.Error.html" title="struct core::fmt::Error">Error</a>&gt;</code></h4><div class='docblock hidden'><p>Formats the value using the given formatter. <a href="https://doc.rust-lang.org/nightly/core/fmt/trait.Debug.html#tymethod.fmt">Read more</a></p>
