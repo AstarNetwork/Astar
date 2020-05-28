@@ -25,7 +25,7 @@ use frame_support::{
     dispatch::DispatchResult,
     ensure,
     traits::{Currency, Get},
-    weights::{SimpleDispatchInfo, WeighData, Weight},
+    weights::{WeighData, Weight},
     StorageDoubleMap, StorageMap,
 };
 use frame_system::{self as system, ensure_signed};
@@ -251,11 +251,14 @@ decl_module! {
 
         fn on_runtime_upgrade() -> Weight {
             migrate::<T>();
-            SimpleDispatchInfo::default().weigh_data(())
+            // TODO: weight
+            Default::default()
         }
 
         /// Commitment constructor + Deposit constructor
-        #[weight = SimpleDispatchInfo::default()]
+        ///
+        /// TODO: weight
+        #[weight = 100_000]
         fn deploy(
             origin,
             aggregator_id: T::AccountId,
@@ -284,7 +287,8 @@ decl_module! {
         // Commitment callable methods. ========
 
         /// Submit root hash of Plasma chain.
-        #[weight = SimpleDispatchInfo::default()]
+        /// TODO: weight
+        #[weight = 100_000]
         fn submit_root(origin, plapps_id: T::AccountId,
             block_number: T::BlockNumber, root: T::Hash) {
             let aggregator = ensure_signed(origin)?;
@@ -305,17 +309,20 @@ decl_module! {
         /// following https://docs.plasma.group/projects/spec/en/latest/src/02-contracts/deposit-contract.html#deposit
         /// - @param amount to deposit
         /// - @param initial_state The initial state of deposit
-        #[weight = SimpleDispatchInfo::default()]
+        /// TODO: weight
+        #[weight = 100_000]
         fn deposit(origin, plapps_id: T::AccountId,
             amount: BalanceOf<T>, initial_state: PropertyOf<T>) {
         }
 
-        #[weight = SimpleDispatchInfo::default()]
+        /// TODO: weight
+        #[weight = 100_000]
         fn extend_deposited_ranges(origin, plapps_id: T::AccountId, amount: BalanceOf<T>) {
 
         }
 
-        #[weight = SimpleDispatchInfo::default()]
+        /// TODO: weight
+        #[weight = 100_000]
         fn remove_deposited_range(origin, plapps_id: T::AccountId,
             range: RangeOf<T>, deposited_range_id: BalanceOf<T>) {
 
@@ -324,7 +331,8 @@ decl_module! {
         /// finalizeCheckpoint
         /// - @param _checkpointProperty A property which is instance of checkpoint predicate
         /// its first input is range to create checkpoint and second input is property for stateObject.
-        #[weight = SimpleDispatchInfo::default()]
+        /// TODO: weight
+        #[weight = 100_000]
         fn finalize_check_point(origin, plapps_id: T::AccountId,
             checkpoint_property: PropertyOf<T>) {
 
@@ -341,7 +349,8 @@ decl_module! {
         /// 3. Transfer asset to payout contract corresponding to StateObject.
         ///
         /// Please alse see https://docs.plasma.group/projects/spec/en/latest/src/02-contracts/deposit-contract.html#finalizeexit
-        #[weight = SimpleDispatchInfo::default()]
+        /// TODO: weight
+        #[weight = 100_000]
         fn finalize_exit(origin, plapps_id: T::AccountId,
             exit_property: PropertyOf<T>, deposited_range_id: BalanceOf<T>) {
 

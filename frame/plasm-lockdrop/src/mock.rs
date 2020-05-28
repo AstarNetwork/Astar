@@ -88,6 +88,10 @@ impl frame_system::Trait for Runtime {
     type AccountData = pallet_balances::AccountData<Balance>;
     type OnNewAccount = ();
     type OnKilledAccount = ();
+    type DbWeight = ();
+    type BlockExecutionWeight = ();
+    type ExtrinsicBaseWeight = ();
+    type MaximumExtrinsicWeight = ();
 }
 
 parameter_types! {
@@ -155,14 +159,19 @@ parameter_types! {
 
 /// An extrinsic type used for tests.
 pub type Extrinsic = TestXt<Call, ()>;
-type SubmitTransaction = frame_system::offchain::TransactionSubmitter<(), Call, Extrinsic>;
+
+impl<LocalCall> frame_system::offchain::SendTransactionTypes<LocalCall> for Runtime
+where
+    Call: From<LocalCall>,
+{
+    type OverarchingCall = Call;
+    type Extrinsic = Extrinsic;
+}
 
 impl Trait for Runtime {
     type Currency = Balances;
     type MedianFilterExpire = MedianFilterExpire;
     type MedianFilterWidth = generic_array::typenum::U3;
-    type Call = Call;
-    type SubmitTransaction = SubmitTransaction;
     type AuthorityId = sr25519::AuthorityId;
     type Account = MultiSigner;
     type Time = Timestamp;
@@ -170,6 +179,7 @@ impl Trait for Runtime {
     type DollarRate = Balance;
     type BalanceConvert = Balance;
     type Event = ();
+    type UnsignedPriority = ();
 }
 
 pub type System = frame_system::Module<Runtime>;

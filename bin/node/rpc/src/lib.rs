@@ -1,19 +1,3 @@
-// Copyright 2019-2020 Parity Technologies (UK) Ltd.
-// This file is part of Substrate.
-
-// Substrate is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-
-// Substrate is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-
-// You should have received a copy of the GNU General Public License
-// along with Substrate.  If not, see <http://www.gnu.org/licenses/>.
-
 //! A collection of node-specific RPC methods.
 //!
 //! Since `substrate` core functionality makes no assumptions
@@ -31,12 +15,15 @@
 
 use std::{fmt, sync::Arc};
 
-use plasm_primitives::{AccountId, Balance, Block, BlockNumber, Index};
+use plasm_primitives::{AccountId, Balance, Block, BlockNumber, Hash, Index};
 use plasm_runtime::UncheckedExtrinsic;
 use sc_consensus_babe::{Config, Epoch};
-use sc_consensus_babe_rpc::BabeRPCHandler;
+use sc_consensus_babe_rpc::BabeRpcHandler;
 use sc_consensus_epochs::SharedEpochChanges;
+use sc_finality_grandpa::{SharedAuthoritySet, SharedVoterState};
+use sc_finality_grandpa_rpc::GrandpaRpcHandler;
 use sc_keystore::KeyStorePtr;
+use sc_rpc_api::DenyUnsafe;
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::{Error as BlockChainError, HeaderBackend, HeaderMetadata};
 use sp_consensus::SelectChain;
@@ -50,7 +37,7 @@ pub struct LightDeps<C, F, P> {
     /// Transaction pool instance.
     pub pool: Arc<P>,
     /// Remote access to the blockchain (async).
-    pub remote_blockchain: Arc<dyn sc_client::light::blockchain::RemoteBlockchain<Block>>,
+    pub remote_blockchain: Arc<dyn sc_client_api::light::RemoteBlockchain<Block>>,
     /// Fetcher instance.
     pub fetcher: Arc<F>,
 }
@@ -65,6 +52,14 @@ pub struct BabeDeps {
     pub keystore: KeyStorePtr,
 }
 
+/// Extra dependencies for GRANDPA
+pub struct GrandpaDeps {
+    /// Voting round info.
+    pub shared_voter_state: SharedVoterState,
+    /// Authority set info.
+    pub shared_authority_set: SharedAuthoritySet<Hash, BlockNumber>,
+}
+
 /// Full client dependencies.
 pub struct FullDeps<C, P, SC> {
     /// The client instance to use.
@@ -73,8 +68,12 @@ pub struct FullDeps<C, P, SC> {
     pub pool: Arc<P>,
     /// The SelectChain Strategy
     pub select_chain: SC,
+    /// Whether to deny unsafe calls
+    pub deny_unsafe: DenyUnsafe,
     /// BABE specific dependencies.
     pub babe: BabeDeps,
+    /// GRANDPA specific dependencies.
+    pub grandpa: GrandpaDeps,
 }
 
 /// Instantiate all Full RPC extensions.
@@ -105,13 +104,19 @@ where
         client,
         pool,
         select_chain,
+        deny_unsafe,
         babe,
+        grandpa,
     } = deps;
     let BabeDeps {
         keystore,
         babe_config,
         shared_epoch_changes,
     } = babe;
+    let GrandpaDeps {
+        shared_voter_state,
+        shared_authority_set,
+    } = grandpa;
 
     io.extend_with(SystemApi::to_delegate(FullSystem::new(
         client.clone(),
@@ -125,13 +130,17 @@ where
         client.clone(),
     )));
     io.extend_with(sc_consensus_babe_rpc::BabeApi::to_delegate(
-        BabeRPCHandler::new(
+        BabeRpcHandler::new(
             client,
             shared_epoch_changes,
             keystore,
             babe_config,
             select_chain,
+            deny_unsafe,
         ),
+    ));
+    io.extend_with(sc_finality_grandpa_rpc::GrandpaApi::to_delegate(
+        GrandpaRpcHandler::new(shared_authority_set, shared_voter_state),
     ));
 
     io
@@ -140,9 +149,9 @@ where
 /// Instantiate all Light RPC extensions.
 pub fn create_light<C, P, M, F>(deps: LightDeps<C, F, P>) -> jsonrpc_core::IoHandler<M>
 where
-    C: sc_client::blockchain::HeaderBackend<Block>,
+    C: sp_blockchain::HeaderBackend<Block>,
     C: Send + Sync + 'static,
-    F: sc_client::light::fetcher::Fetcher<Block> + 'static,
+    F: sc_client_api::light::Fetcher<Block> + 'static,
     P: TransactionPool + 'static,
     M: jsonrpc_core::Metadata + Default,
 {

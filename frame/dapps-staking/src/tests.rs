@@ -591,7 +591,7 @@ fn new_session_scenario_test() {
         assert_eq!(Balances::free_balance(&BOB_CTRL), 20);
         assert_eq!(Balances::free_balance(&ALICE_STASH), 1_000);
         assert_eq!(Balances::free_balance(&ALICE_CTRL), 10);
-        assert_eq!(pre_total_issuarance, 3_002_318);
+        assert_eq!(pre_total_issuarance, 3_003_030);
 
         advance_era();
         DappsStaking::on_finalize(0);
@@ -616,6 +616,6 @@ fn new_session_scenario_test() {
 
         assert_eq!(Balances::free_balance(&ALICE_STASH), 1_000 + 9); // +operator reward
         assert_eq!(Balances::free_balance(&ALICE_CTRL), 10 + 1); // +nominate reward
-        assert_eq!(Balances::total_issuance(), 3_002_318 + 11);
+        assert_eq!(Balances::total_issuance(), 3_003_030 + 11);
     })
 }

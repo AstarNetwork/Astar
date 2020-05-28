@@ -4,7 +4,6 @@ use codec::{Decode, Encode};
 use frame_support::{
     decl_event, decl_module, decl_storage,
     traits::{Currency, ExistenceRequirement, LockIdentifier, LockableCurrency, WithdrawReasons},
-    weights::SimpleDispatchInfo,
 };
 use frame_system::{self as system, ensure_signed};
 use pallet_contract_operator::{OperatorFinder, TransferOperator};
@@ -82,7 +81,8 @@ decl_module! {
         /// After the offer, the part of the amount of the buyer's balances will lock.
         ///
         /// Note: Only one offer can be issued at the same time each an account.
-        #[weight = SimpleDispatchInfo::FixedNormal(500_000)]
+        /// TODO: weight
+        #[weight = 500_000]
         pub fn offer(origin, sender: T::AccountId, contracts: Vec<T::AccountId>, amount: BalanceOf<T>, expired: T::BlockNumber) {
             let buyer = ensure_signed(origin)?;
             let offer_account = buyer.clone();
@@ -127,7 +127,8 @@ decl_module! {
         /// Reject the target offer.
         /// the offer's buyer or sender can reject the offer.
         /// After the reject, the buyer's balances will be unlock.
-        #[weight = SimpleDispatchInfo::FixedNormal(100_000)]
+        /// TODO: weight
+        #[weight = 100_000]
         pub fn reject(origin, offer_id: T::AccountId) {
             let rejector = ensure_signed(origin)?;
             let mut offer = match <Offers<T>>::get(&offer_id) {
@@ -156,7 +157,8 @@ decl_module! {
         ///  1. the buyer's balances will be unlock.
         ///  2. the buyer's balances tranfer to the sender.
         ///  3. the sender's target contracts transfer to the buyer.
-        #[weight = SimpleDispatchInfo::FixedNormal(500_000)]
+        /// TODO: weight
+        #[weight = 500_000]
         pub fn accept(origin, offer_id: T::AccountId) {
             let acceptor = ensure_signed(origin)?;
             let mut offer = match <Offers<T>>::get(&offer_id) {
@@ -191,7 +193,8 @@ decl_module! {
         /// Remove the offer.
         /// The offer's owner can remove the offer.
         /// But, if the offer is living(until expired), he can not remove the offer.
-        #[weight = SimpleDispatchInfo::FixedNormal(100_000)]
+        /// TODO: weight
+        #[weight = 100_000]
         pub fn remove(origin) {
             let remover = ensure_signed(origin)?;
             let offer = match <Offers<T>>::get(&remover) {

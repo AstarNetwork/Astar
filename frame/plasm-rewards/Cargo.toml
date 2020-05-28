@@ -10,22 +10,22 @@ edition = "2018"
 [dependencies]
 serde = { version = "1.0.106", optional = true }
 codec = { package = "parity-scale-codec", version = "1.3.0", features = ["derive"], default-features = false }
-sp-runtime = { version = "2.0.0-alpha.6", default_features = false }
-sp-arithmetic = { version = "2.0.0-alpha.6", default_features = false }
-sp-io = { version = "2.0.0-alpha.6", default_features = false }
-sp-std = { version = "2.0.0-alpha.6", default_features = false }
-frame-support = { version = "2.0.0-alpha.6", default_features = false }
-pallet-session = { version = "2.0.0-alpha.6", default-features = false }
-frame-system = { version = "2.0.0-alpha.6", default_features = false }
-pallet-staking = { version = "2.0.0-alpha.6", default_features = false }
-sp-staking = { version = "2.0.0-alpha.6", default_features = false }
+sp-runtime = { version = "2.0.0-rc2", default_features = false }
+sp-arithmetic = { version = "2.0.0-rc2", default_features = false }
+sp-io = { version = "2.0.0-rc2", default_features = false }
+sp-std = { version = "2.0.0-rc2", default_features = false }
+frame-support = { version = "2.0.0-rc2", default_features = false }
+pallet-session = { version = "2.0.0-rc2", default-features = false }
+frame-system = { version = "2.0.0-rc2", default_features = false }
+pallet-staking = { version = "2.0.0-rc2", default_features = false }
+sp-staking = { version = "2.0.0-rc2", default_features = false }
 
 [dev-dependencies]
 hex-literal = "0.2.1"
-sp-core = "2.0.0-alpha.6"
-pallet-balances = "2.0.0-alpha.6"
-pallet-timestamp = "2.0.0-alpha.6"
-pallet-randomness-collective-flip = "2.0.0-alpha.6"
+sp-core = "2.0.0-rc2"
+pallet-balances = "2.0.0-rc2"
+pallet-timestamp = "2.0.0-rc2"
+pallet-randomness-collective-flip = "2.0.0-rc2"
 
 [features]
 default = ["std"]
