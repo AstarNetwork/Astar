@@ -1,7 +1,7 @@
 //! Some configurable implementations as associated type for the substrate runtime.
 
 use crate::{Balances, MaximumBlockWeight, System};
-use frame_support::traits::{Currency, Get, OnUnbalanced};
+use frame_support::traits::Get;
 use plasm_primitives::Balance;
 use sp_runtime::traits::{Convert, Saturating};
 use sp_runtime::{Fixed128, FixedPointNumber, Perquintill};
