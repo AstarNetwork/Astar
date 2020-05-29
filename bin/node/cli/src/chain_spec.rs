@@ -1,7 +1,6 @@
 //! Chain specification.
 
 use plasm_primitives::{AccountId, Balance, Signature};
-use plasm_runtime::constants::currency::*;
 use plasm_runtime::Block;
 use plasm_runtime::{
     BabeConfig, BalancesConfig, ContractsConfig, GenesisConfig, GrandpaConfig, IndicesConfig,
@@ -21,6 +20,7 @@ type AccountPublic = <Signature as Verify>::Signer;
 /*
 use hex_literal::hex;
 use sp_core::crypto::UncheckedInto;
+use plasm_runtime::constants::currency::*;
 const STAGING_TELEMETRY_URL: &str = "wss://telemetry.polkadot.io/submit/";
 
 const PLASM_PROPERTIES: &str = r#"

@@ -229,25 +229,7 @@ impl pallet_plasm_validator::Trait for Runtime {
     type Event = Event;
 }
 
-// impl pallet_dapps_staking::Trait for Runtime {
-//     type Currency = Balances;
-//     type BondingDuration = BondingDuration;
-//     type ContractFinder = Operator;
-//     type RewardRemainder = (); // Reward remainder is burned.
-//     type Reward = (); // Reward is minted.
-//     type Time = Timestamp;
-//     type ComputeRewardsForDapps = pallet_dapps_staking::rewards::BasedComputeRewardsForDapps;
-//     type EraFinder = PlasmRewards;
-//     type ForDappsEraReward = PlasmRewards;
-//     type Event = Event;
-// }
-
 parameter_types! {
-    pub const ContractTransferFee: Balance = 1 * MILLIPLM;
-    pub const ContractCreationFee: Balance = 1 * MILLIPLM;
-    pub const ContractTransactionBaseFee: Balance = 1 * MILLIPLM;
-    pub const ContractTransactionByteFee: Balance = 10 * MILLIPLM;
-    pub const ContractFee: Balance = 1 * MILLIPLM;
     pub const TombstoneDeposit: Balance = 1 * PLM;
     pub const RentByteFee: Balance = 1 * PLM;
     pub const RentDepositOffset: Balance = 1000 * PLM;
