@@ -20,6 +20,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use codec::{Decode, Encode};
+pub use deserializer::Deserializer;
 use frame_support::{
     decl_error, decl_event, decl_module, decl_storage,
     dispatch::DispatchResult,
@@ -37,11 +38,13 @@ use sp_runtime::{
 };
 use sp_std::{marker::PhantomData, prelude::*, vec::Vec};
 
-use pallet_ovm::{Decision, Property, PropertyOf};
+pub use pallet_ovm::{Decision, Property, PropertyOf};
 #[cfg(test)]
 mod mock;
 #[cfg(test)]
 mod tests;
+
+pub type DispatchResultT<T> = Result<T, DispatchError>;
 
 #[derive(Encode, Decode, Clone, Default, RuntimeDebug, PartialEq, Eq)]
 pub struct Range<Balance> {
@@ -100,9 +103,17 @@ pub struct AddressTreeNode<AccountId, Hash> {
     token_address: AccountId,
 }
 
+#[derive(Encode, Decode, Clone, Default, RuntimeDebug, PartialEq, Eq)]
+pub struct ExitDeposit<AccountId, Range, BlockNumber> {
+    state_update: StateUpdate<AccountId, Range, BlockNumber>,
+    checkpoint: Checkpoint<AccountId>,
+}
+
 pub type BalanceOf<T> =
     <<T as Trait>::Currency as Currency<<T as frame_system::Trait>::AccountId>>::Balance;
 pub type CheckpointOf<T> = Checkpoint<<T as frame_system::Trait>::AccountId>;
+pub type ExitDepositOf<T> =
+    ExitDeposit<<T as frame_system::Trait>::AccountId, RangeOf<T>, T::BlockNumber>;
 pub type RangeOf<T> = Range<BalanceOf<T>>;
 pub type InclusionProofOf<T> = InclusionProof<
     <T as frame_system::Trait>::AccountId,
@@ -197,7 +208,7 @@ decl_storage! {
         Checkpoints get(fn checkpoints): double_map hasher(twox_64_concat) T::AccountId, hasher(blake2_128_concat) T::Hash => bool;
 
         /// predicate address => payout address
-        PayoutContractAddress get(fn payout_contract_address): map hasher(twox_64_concat) T::AccountId => T::AccountId;
+        Payout get(fn payout): map hasher(twox_64_concat) T::AccountId => T::AccountId;
     }
 }
 
@@ -367,10 +378,10 @@ decl_module! {
         }
 
         /// finalizeExit
-        /// @dev finalize exit and withdraw asset with ownership state.
+        /// @dev check the finalize exit and withdraw asset with ownership state.
         #[weight = SimpleDispatchInfo::default()]
         fn finalize_exit(origin, plapps_id: T::AccountId,
-            exit_property: PropertyOf<T>, deposited_range_id: BalanceOf<T>, _owner) {
+            exit_property: PropertyOf<T>, deposited_range_id: BalanceOf<T>, _owner: T::AccountId) {
             let origin = ensure_signed(origin)?;
             let state_update = Self::bare_finalize_exit(
                 &plapps_id,
@@ -384,13 +395,13 @@ decl_module! {
                 origin == owner,
                 Error::<T>::OriginMustBeOwner,
             );
-            // TODO: transfer plapps_id -> owner (amount) at erc20.
+            // TODO: finalize_exit plapps_id -> owner[state_update.state_objects.inputs[0]] (amount[state_update.range]) at payout.
             // let _ = contracts::bare_call(
-            //     origin,
-            //     Self::erc20(&plapps_id),
+            //     plapps_id,
+            //     Self::payout(&plapps_id),
             //     BalanceOf<T>::zero(),
             //     gas_limit,
-            //     "transfer(payout, amount)",
+            //     "finalize_exit(state_update)",
             // )?;
         }
     }
@@ -427,6 +438,8 @@ decl_error! {
         FinalizeExitMustBeCalledFromPayout
         /// origin must be owner
         OriginMustBeOwner,
+        /// checkpoint must be finalized
+        CheckpointMustBeFinalized
     }
 }
 
@@ -462,7 +475,7 @@ impl<T: Trait> Module<T> {
         range: RangeOf<T>,
         inclusion_proof: InclusionProofOf<T>,
         block_number: T::BlockNumber,
-    ) -> Result<bool, DispatchError> {
+    ) -> DispatchResultT<bool> {
         let root = <Blocks<T>>::get(&plapps_id, &block_number);
         Self::verify_inclusion_with_root(leaf, token_address, range, inclusion_proof, root)
     }
@@ -473,7 +486,7 @@ impl<T: Trait> Module<T> {
         range: RangeOf<T>,
         inclusion_proof: InclusionProofOf<T>,
         root: T::Hash,
-    ) -> Result<bool, DispatchError> {
+    ) -> DispatchResultT<bool> {
         // Calcurate the root of interval tree
         let (computed_root, implicit_end) = Self::compute_interval_tree_root(
             &leaf,
@@ -522,7 +535,7 @@ impl<T: Trait> Module<T> {
         computed_start: &BalanceOf<T>,
         interval_tree_merkle_path: &BalanceOf<T>,
         interval_tree_proof: &Vec<IntervalTreeNodeOf<T>>,
-    ) -> Result<(T::Hash, BalanceOf<T>), DispatchError> {
+    ) -> DispatchResultT<(T::Hash, BalanceOf<T>)> {
         let mut first_right_sibling_start = BalanceOf::<T>::max_value();
         let mut is_first_right_sibling_start_set = false;
         let mut ret_computed_root: T::Hash = computed_root.clone();
@@ -568,7 +581,7 @@ impl<T: Trait> Module<T> {
         compute_address: &T::AccountId,
         address_tree_merkle_path: &BalanceOf<T>,
         address_tree_proof: &Vec<AddressTreeNodeOf<T>>,
-    ) -> Result<(T::Hash, T::AccountId), DispatchError> {
+    ) -> DispatchResultT<(T::Hash, T::AccountId)> {
         let mut first_right_sibling_address = T::MaximumTokenAddress::get();
         let mut is_first_right_sibling_address_set = false;
         let mut ret_computed_root: T::Hash = computed_root.clone();
@@ -611,7 +624,7 @@ impl<T: Trait> Module<T> {
         left_start: &BalanceOf<T>,
         right: &T::Hash,
         right_start: &BalanceOf<T>,
-    ) -> Result<T::Hash, DispatchError> {
+    ) -> DispatchResultT<T::Hash> {
         ensure!(
             right_start >= left_start,
             Error::<T>::LeftMustBeLessThanRight,
@@ -712,13 +725,16 @@ impl<T: Trait> Module<T> {
     /// 3. Transfer asset to payout contract corresponding to StateObject.
     ///
     /// Please alse see https://docs.plasma.group/projects/spec/en/latest/src/02-contracts/deposit-contract.html#finalizeexit
-    pub fn bare_finalize_exit(plapps_id: T::AccountId,
-                              exit_property: PropertyOf<T>, deposited_range_id: BalanceOf<T>) -> StateUpdateOf<T> {
+    pub fn bare_finalize_exit(
+        plapps_id: T::AccountId,
+        exit_property: PropertyOf<T>,
+        deposited_range_id: BalanceOf<T>,
+    ) -> StateUpdateOf<T> {
         let origin = ensure_signed(origin)?;
         let state_update = Self::verify_exit_property(&exit_property);
         let exit_id = Self::get_exit_id(&exit_property);
         // get payout contract address
-        let payout = Self::payout_contract_address(&plapps_id);
+        let payout = Self::payout(&plapps_id);
         //     &state_update
         //         .state_object
         //         .predicate_address
@@ -726,9 +742,9 @@ impl<T: Trait> Module<T> {
 
         // Check that we are authorized to finalize this exit
         ensure!(
-                <pallet_ovm::Module<T>>::is_decided(&exit_property),
-                Error::<T>::ExitMustBeDecided,
-            );
+            <pallet_ovm::Module<T>>::is_decided(&exit_property),
+            Error::<T>::ExitMustBeDecided,
+        );
         // ensure!(
         //     payout == origin,
         //     "finalizeExit must be called from payout contract"
@@ -756,6 +772,41 @@ impl<T: Trait> Module<T> {
         state_update
     }
 
+    /// @dev verify StateUpdate in Exit property.
+    /// _exitProperty must be instance of ether ExitPredicate or ExitDepositPredicate.
+    /// if _exitProperty is instance of ExitDepositPredicate, check _exitProperty.su is subrange of _exitProperty.checkpoint.
+    pub fn verify_exit_property(
+        plapps_id: &T::AccountId,
+        exit_property: &PropertyOf<T>,
+    ) -> DispatchResultT<StateUpdateOf<T>> {
+        if exit_property.predicateAddress == Self::exit_predicate(plapps_id) {
+            let exit: ExitOf<T> = <Deserializer<T>>::deserialize_exit(exit_property)?;
+            // TODO: check inclusion proof
+            return exit.state_udpate;
+        } else if exit_property.predicate_address == Self::exit_deposit_predicate(plapps_id) {
+            let exit_deposit = <Deserializer<T>>::deserialize_exit_deposit(exit_property)?;
+            let checkpoint = exit_deposit.checkpoint;
+            let state_update = <Deserializer<T>>::deserialize_state_update(checkpoint.stateUpdate);
+            ensure!(
+                Self::checkpoints.get(Self::get_checkpoint_id(&checkpoint)),
+                Error::<T>::CheckpointMustBeFinalized,
+            );
+            require(
+                stateUpdate.depositContractAddress
+                    == exitDeposit.stateUpdate.depositContractAddress,
+                "depositContractAddress must be same",
+            );
+            require(
+                stateUpdate.blockNumber == exitDeposit.stateUpdate.blockNumber,
+                "blockNumber must be same",
+            );
+            require(
+                isSubrange(exitDeposit.stateUpdate.range, stateUpdate.range),
+                "range must be subrange of checkpoint",
+            );
+        }
+        return exitDeposit.stateUpdate;
+    }
 }
 
 /// Priavte(Helper) callable Plasma deposit module methods.
