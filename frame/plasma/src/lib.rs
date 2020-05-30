@@ -395,7 +395,7 @@ decl_module! {
                 origin == owner,
                 Error::<T>::OriginMustBeOwner,
             );
-            // TODO: finalize_exit plapps_id -> owner[state_update.state_objects.inputs[0]] (amount[state_update.range]) at payout.
+            // TODO: finalize_exit payout -> owner[state_update.state_objects.inputs[0]] (amount[state_update.range]) at payout.
             // let _ = contracts::bare_call(
             //     plapps_id,
             //     Self::payout(&plapps_id),
@@ -439,7 +439,15 @@ decl_error! {
         /// origin must be owner
         OriginMustBeOwner,
         /// checkpoint must be finalized
-        CheckpointMustBeFinalized
+        CheckpointMustBeFinalized,
+        /// depositContractAddress must be same
+        DepositContractAddressMustBeSame,
+        /// blockNumber must be same,
+        BlockNumberMustBeSame,
+        /// range must be subrange of checkpoint
+        RangeMustBeSubrangeOfCheckpoint,
+        /// StateUpdate.depositContractAddress must be this contract address
+        DepositContractAddressMustBePlappsId,
     }
 }
 
@@ -735,32 +743,24 @@ impl<T: Trait> Module<T> {
         let exit_id = Self::get_exit_id(&exit_property);
         // get payout contract address
         let payout = Self::payout(&plapps_id);
-        //     &state_update
-        //         .state_object
-        //         .predicate_address
-        // ).payoutContractAddress();
 
         // Check that we are authorized to finalize this exit
         ensure!(
             <pallet_ovm::Module<T>>::is_decided(&exit_property),
             Error::<T>::ExitMustBeDecided,
         );
-        // ensure!(
-        //     payout == origin,
-        //     "finalizeExit must be called from payout contract"
-        // )
 
-        // ensure!(
-        //     state_update.deposit_contract_address == address(this),
-        //     "StateUpdate.depositContractAddress must be this contract address"
-        // );
+        ensure!(
+            state_update.deposit_contract_address == plapps_id,
+            Error::<T>::DepositContractAddressMustBePlappsId,
+        );
 
         // Remove the deposited range
-        Self::removeDepositedRange(&state_update.range, &deposited_range_id);
-        //Transfer tokens to its predicate
+        Self::remove_deposited_range(&state_update.range, &deposited_range_id);
+        // Transfer tokens to its predicate
         let amount = state_update.range.end - state_update.range.start;
 
-        // TODO: transfer_from this -> payout (amount) at erc20.
+        // TODO: transfer plapps_id -> payout (amount) at erc20.
         // let _ = contracts::bare_call(
         //     origin,
         //     Self::erc20(&plapps_id),
@@ -791,21 +791,21 @@ impl<T: Trait> Module<T> {
                 Self::checkpoints.get(Self::get_checkpoint_id(&checkpoint)),
                 Error::<T>::CheckpointMustBeFinalized,
             );
-            require(
-                stateUpdate.depositContractAddress
-                    == exitDeposit.stateUpdate.depositContractAddress,
-                "depositContractAddress must be same",
+            ensure!(
+                state_update.deposit_contract_address == exit_deposit.state_update.deposit_contract_address,
+                Error::<T>::DepositContractAddressMustBeSame,
             );
-            require(
-                stateUpdate.blockNumber == exitDeposit.stateUpdate.blockNumber,
-                "blockNumber must be same",
+            ensure!(
+                state_update.block_number == exit_deposit.state_udpate.block_number,
+                Error::<T>::BlockNumberMustBeSame,
             );
-            require(
-                isSubrange(exitDeposit.stateUpdate.range, stateUpdate.range),
-                "range must be subrange of checkpoint",
+            ensure!(
+                Self::is_subrange(exit_deposit.state_update.range, state_update.range),
+                Error::<T>::RangeMustBeSubrangeOfCheckpoint,
             );
+            return exit_deposit.state_update;
         }
-        return exitDeposit.stateUpdate;
+        Err(DispatchError::Other("verify_exit_property not return value."))
     }
 }
 
