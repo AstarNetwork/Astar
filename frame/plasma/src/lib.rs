@@ -20,7 +20,6 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use codec::{Decode, Encode};
-pub use deserializer::Deserializer;
 use frame_support::{
     decl_error, decl_event, decl_module, decl_storage,
     dispatch::DispatchResult,
@@ -39,11 +38,14 @@ use sp_runtime::{
 use sp_std::{marker::PhantomData, prelude::*, vec::Vec};
 
 pub use pallet_ovm::{Decision, Property, PropertyOf};
+
+mod deserializer;
 #[cfg(test)]
 mod mock;
 #[cfg(test)]
 mod tests;
 
+pub use deserializer::Deserializer;
 pub type DispatchResultT<T> = Result<T, DispatchError>;
 
 #[derive(Encode, Decode, Clone, Default, RuntimeDebug, PartialEq, Eq)]
@@ -435,7 +437,7 @@ decl_error! {
         /// Exit must be decided after this block
         ExitMustBeDecided,
         /// finalizeExit must be called from payout contract
-        FinalizeExitMustBeCalledFromPayout
+        FinalizeExitMustBeCalledFromPayout,
         /// origin must be owner
         OriginMustBeOwner,
         /// checkpoint must be finalized
