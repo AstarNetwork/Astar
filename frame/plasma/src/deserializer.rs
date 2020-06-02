@@ -7,11 +7,11 @@ impl<T: Trait> Deserializer<T> {
     /// @dev deserialize property to Exit instance
     pub fn deserialize_exit(exit: &PropertyOf<T>) -> DispatchResultT<ExitOf<T>> {
         let state_update_property: PropertyOf<T> =
-            Decode::decode(&mut &exit.inptuts[0][..]).map_err(|_| Error::<T>::MustBeDecodable)?;
+            Decode::decode(&mut &exit.inputs[0][..]).map_err(|_| Error::<T>::MustBeDecodable)?;
         let inclusion_proof: InclusionProofOf<T> =
             Decode::decode(&mut &exit.inputs[1][..]).map_err(|_| Error::<T>::MustBeDecodable)?;
         Ok(ExitOf::<T> {
-            state_update: Self::deserialize_state_update(state_update_property),
+            state_update: Self::deserialize_state_update(&state_update_property)?,
             inclusion_proof,
         })
     }
@@ -24,8 +24,8 @@ impl<T: Trait> Deserializer<T> {
             Decode::decode(&mut &exit.inputs[1][..]).map_err(|_| Error::<T>::MustBeDecodable)?;
 
         Ok(ExitDeposit {
-            state_update: Self::deserialize_state_update(&state_update_property),
-            checkpoint: Self::deserialize_checkpoint(&checkpoint_property),
+            state_update: Self::deserialize_state_update(&state_update_property)?,
+            checkpoint: Self::deserialize_checkpoint(&checkpoint_property)?,
         })
     }
 
@@ -35,7 +35,7 @@ impl<T: Trait> Deserializer<T> {
     ) -> DispatchResultT<StateUpdateOf<T>> {
         let deposit_address: T::AccountId = Decode::decode(&mut &state_update.inputs[0][..])
             .map_err(|_| Error::<T>::MustBeDecodable)?;
-        let range: RangeOf<T> = Decode::decode(&mut &state_update.inptus[1][..])
+        let range: RangeOf<T> = Decode::decode(&mut &state_update.inputs[1][..])
             .map_err(|_| Error::<T>::MustBeDecodable)?;
 
         let block_number: T::BlockNumber = Decode::decode(&mut &state_update.inputs[2][..])
@@ -52,9 +52,9 @@ impl<T: Trait> Deserializer<T> {
         })
     }
 
-    pub fn deserialize_checkpoint(checkpoint: &PropertyOf<T>) -> CheckpointOf<T> {
+    pub fn deserialize_checkpoint(checkpoint: &PropertyOf<T>) -> DispatchResultT<CheckpointOf<T>> {
         let state_update: PropertyOf<T> = Decode::decode(&mut &checkpoint.inputs[0][..])
             .map_err(|_| Error::<T>::MustBeDecodable)?;
-        Checkpoint { state_update }
+        Ok(Checkpoint { state_update })
     }
 }

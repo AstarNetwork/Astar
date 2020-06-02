@@ -57,7 +57,7 @@ pub struct Range<Balance> {
 #[derive(Encode, Decode, Clone, Default, RuntimeDebug, PartialEq, Eq)]
 pub struct StateUpdate<AccountId, Balance, BlockNumber> {
     deposit_contract_address: AccountId,
-    ragne: Range<Balance>,
+    range: Range<Balance>,
     block_number: BlockNumber,
     state_object: Property<AccountId>,
 }
@@ -68,8 +68,8 @@ pub struct Checkpoint<AccountId> {
 }
 
 #[derive(Encode, Decode, Clone, Default, RuntimeDebug, PartialEq, Eq)]
-pub struct Exit<AccountId, Range, BlockNumber, Balance, Hash> {
-    state_update: StateUpdate<AccountId, Range, BlockNumber>,
+pub struct Exit<AccountId, BlockNumber, Balance, Hash> {
+    state_update: StateUpdate<AccountId, Balance, BlockNumber>,
     inclusion_proof: InclusionProof<AccountId, Balance, Hash>,
 }
 
@@ -106,17 +106,31 @@ pub struct AddressTreeNode<AccountId, Hash> {
 }
 
 #[derive(Encode, Decode, Clone, Default, RuntimeDebug, PartialEq, Eq)]
-pub struct ExitDeposit<AccountId, Range, BlockNumber> {
-    state_update: StateUpdate<AccountId, Range, BlockNumber>,
+pub struct ExitDeposit<AccountId, Balance, BlockNumber> {
+    state_update: StateUpdate<AccountId, Balance, BlockNumber>,
     checkpoint: Checkpoint<AccountId>,
 }
 
 pub type BalanceOf<T> =
     <<T as Trait>::Currency as Currency<<T as frame_system::Trait>::AccountId>>::Balance;
 pub type CheckpointOf<T> = Checkpoint<<T as frame_system::Trait>::AccountId>;
-pub type ExitDepositOf<T> =
-    ExitDeposit<<T as frame_system::Trait>::AccountId, RangeOf<T>, T::BlockNumber>;
+pub type ExitDepositOf<T> = ExitDeposit<
+    <T as frame_system::Trait>::AccountId,
+    BalanceOf<T>,
+    <T as frame_system::Trait>::BlockNumber,
+>;
 pub type RangeOf<T> = Range<BalanceOf<T>>;
+pub type ExitOf<T> = Exit<
+    <T as frame_system::Trait>::AccountId,
+    <T as frame_system::Trait>::BlockNumber,
+    BalanceOf<T>,
+    <T as frame_system::Trait>::Hash,
+>;
+pub type StateUpdateOf<T> = StateUpdate<
+    <T as frame_system::Trait>::AccountId,
+    BalanceOf<T>,
+    <T as frame_system::Trait>::BlockNumber,
+>;
 pub type InclusionProofOf<T> = InclusionProof<
     <T as frame_system::Trait>::AccountId,
     BalanceOf<T>,
@@ -352,8 +366,8 @@ decl_module! {
             ensure_signed(origin)?;
             Self::bare_remove_deposited_range(
                 &plapps_id,
-                range,
-                deposited_range_id,
+                &range,
+                &deposited_range_id,
             )?;
         }
 
@@ -390,9 +404,9 @@ decl_module! {
                 &exit_property,
                 &deposited_range_id
             )?;
-            let owner: T::AccountId = Decode::decode(&mut &state_update.state_obeject.inptus[0][..])
-                .map_err(|| Error::<T>::MustBeDecodable)?;
-            let amounnt = state_update.range.end - state_update.range.start;
+            let owner: T::AccountId = Decode::decode(&mut &state_update.state_object.inputs[0][..])
+                .map_err(|_| Error::<T>::MustBeDecodable)?;
+            let amount = state_update.range.end - state_update.range.start;
             ensure!(
                 origin == owner,
                 Error::<T>::OriginMustBeOwner,
@@ -679,12 +693,12 @@ impl<T: Trait> Module<T> {
 
     pub fn bare_remove_deposited_range(
         plapps_id: &T::AccountId,
-        range: RangeOf<T>,
-        deposited_range_id: BalanceOf<T>,
+        range: &RangeOf<T>,
+        deposited_range_id: &BalanceOf<T>,
     ) -> DispatchResult {
         let deposited_ranges = Self::deposited_ranges(plapps_id, deposited_range_id);
         ensure!(
-            Self::is_subrange(&range, &deposited_ranges),
+            Self::is_subrange(range, &deposited_ranges),
             Error::<T>::RangeMustBeOfDepositedRange,
         );
 
@@ -719,7 +733,10 @@ impl<T: Trait> Module<T> {
                 },
             );
         }
-        Self::deposit_event(RawEvent::DepositedRangeRemoved(plapps_id.clone(), range));
+        Self::deposit_event(RawEvent::DepositedRangeRemoved(
+            plapps_id.clone(),
+            range.clone(),
+        ));
         Ok(())
     }
 
@@ -736,29 +753,28 @@ impl<T: Trait> Module<T> {
     ///
     /// Please alse see https://docs.plasma.group/projects/spec/en/latest/src/02-contracts/deposit-contract.html#finalizeexit
     pub fn bare_finalize_exit(
-        plapps_id: T::AccountId,
-        exit_property: PropertyOf<T>,
-        deposited_range_id: BalanceOf<T>,
-    ) -> StateUpdateOf<T> {
-        let origin = ensure_signed(origin)?;
-        let state_update = Self::verify_exit_property(&exit_property);
-        let exit_id = Self::get_exit_id(&exit_property);
+        plapps_id: &T::AccountId,
+        exit_property: &PropertyOf<T>,
+        deposited_range_id: &BalanceOf<T>,
+    ) -> DispatchResultT<StateUpdateOf<T>> {
+        let state_update = Self::verify_exit_property(plapps_id, exit_property)?;
+        let exit_id = Self::get_exit_id(exit_property);
         // get payout contract address
-        let payout = Self::payout(&plapps_id);
+        let payout = Self::payout(plapps_id);
 
         // Check that we are authorized to finalize this exit
         ensure!(
-            <pallet_ovm::Module<T>>::is_decided(&exit_property),
+            <pallet_ovm::Module<T>>::is_decided(exit_property) != Decision::True,
             Error::<T>::ExitMustBeDecided,
         );
 
         ensure!(
-            state_update.deposit_contract_address == plapps_id,
+            &state_update.deposit_contract_address == plapps_id,
             Error::<T>::DepositContractAddressMustBePlappsId,
         );
 
         // Remove the deposited range
-        Self::remove_deposited_range(&state_update.range, &deposited_range_id);
+        Self::bare_remove_deposited_range(plapps_id, &state_update.range, deposited_range_id)?;
         // Transfer tokens to its predicate
         let amount = state_update.range.end - state_update.range.start;
 
@@ -770,8 +786,8 @@ impl<T: Trait> Module<T> {
         //     gas_limit,
         //     "transfer(payout, amount)",
         // )?;
-        Self::deposit_events(RawEvents::ExitFianlzied(exit_id));
-        state_update
+        Self::deposit_event(RawEvent::ExitFinalized(plapps_id.clone(), exit_id));
+        Ok(state_update)
     }
 
     /// @dev verify StateUpdate in Exit property.
@@ -781,33 +797,37 @@ impl<T: Trait> Module<T> {
         plapps_id: &T::AccountId,
         exit_property: &PropertyOf<T>,
     ) -> DispatchResultT<StateUpdateOf<T>> {
-        if exit_property.predicateAddress == Self::exit_predicate(plapps_id) {
+        if exit_property.predicate_address == Self::exit_predicate(plapps_id) {
             let exit: ExitOf<T> = <Deserializer<T>>::deserialize_exit(exit_property)?;
             // TODO: check inclusion proof
-            return exit.state_udpate;
+            return Ok(exit.state_update);
         } else if exit_property.predicate_address == Self::exit_deposit_predicate(plapps_id) {
             let exit_deposit = <Deserializer<T>>::deserialize_exit_deposit(exit_property)?;
             let checkpoint = exit_deposit.checkpoint;
-            let state_update = <Deserializer<T>>::deserialize_state_update(checkpoint.stateUpdate);
+            let state_update =
+                <Deserializer<T>>::deserialize_state_update(&checkpoint.state_update)?;
             ensure!(
-                Self::checkpoints.get(Self::get_checkpoint_id(&checkpoint)),
+                Self::checkpoints(plapps_id, Self::get_checkpoint_id(&checkpoint)),
                 Error::<T>::CheckpointMustBeFinalized,
             );
             ensure!(
-                state_update.deposit_contract_address == exit_deposit.state_update.deposit_contract_address,
+                state_update.deposit_contract_address
+                    == exit_deposit.state_update.deposit_contract_address,
                 Error::<T>::DepositContractAddressMustBeSame,
             );
             ensure!(
-                state_update.block_number == exit_deposit.state_udpate.block_number,
+                state_update.block_number == exit_deposit.state_update.block_number,
                 Error::<T>::BlockNumberMustBeSame,
             );
             ensure!(
-                Self::is_subrange(exit_deposit.state_update.range, state_update.range),
+                Self::is_subrange(&exit_deposit.state_update.range, &state_update.range),
                 Error::<T>::RangeMustBeSubrangeOfCheckpoint,
             );
-            return exit_deposit.state_update;
+            return Ok(exit_deposit.state_update);
         }
-        Err(DispatchError::Other("verify_exit_property not return value."))
+        Err(DispatchError::Other(
+            "verify_exit_property not return value.",
+        ))
     }
 }
 
