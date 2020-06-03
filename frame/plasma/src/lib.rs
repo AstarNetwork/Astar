@@ -25,7 +25,7 @@ use frame_support::{
     dispatch::DispatchResult,
     ensure,
     traits::{Currency, Get},
-    weights::{SimpleDispatchInfo, WeighData, Weight},
+    weights::Weight,
     StorageDoubleMap, StorageMap,
 };
 use frame_system::{self as system, ensure_signed};
@@ -260,11 +260,11 @@ decl_module! {
 
         fn on_runtime_upgrade() -> Weight {
             migrate::<T>();
-            SimpleDispatchInfo::default().weigh_data(())
+            T::MaximumBlockWeight::get()
         }
 
         /// Commitment constructor + Deposit constructor
-        #[weight = SimpleDispatchInfo::default()]
+        #[weight = 50_000_000]
         fn deploy(
             origin,
             aggregator_id: T::AccountId,
@@ -293,7 +293,7 @@ decl_module! {
         // Commitment callable methods. ========
 
         /// Submit root hash of Plasma chain.
-        #[weight = SimpleDispatchInfo::default()]
+        #[weight = 50_000_000]
         fn submit_root(origin, plapps_id: T::AccountId,
             block_number: T::BlockNumber, root: T::Hash) {
             let aggregator = ensure_signed(origin)?;
@@ -312,7 +312,7 @@ decl_module! {
         /// following https://docs.plasma.group/projects/spec/en/latest/src/02-contracts/deposit-contract.html#deposit
         /// - @param amount to deposit
         /// - @param initial_state The initial state of deposit
-        #[weight = SimpleDispatchInfo::default()]
+        #[weight = 50_000_000]
         fn deposit(origin, plapps_id: T::AccountId,
             amount: BalanceOf<T>, initial_state: PropertyOf<T>, gas_limit: Gas) {
             let _ = ensure_signed(origin)?;
@@ -352,13 +352,13 @@ decl_module! {
             Self::deposit_event(RawEvent::CheckpointFinalized(plapps_id, checkpoint_id, checkpoint));
         }
 
-        #[weight = SimpleDispatchInfo::default()]
+        #[weight = 50_000_000]
         fn extend_deposited_ranges(origin, plapps_id: T::AccountId, amount: BalanceOf<T>) {
             ensure_signed(origin)?;
             Self::bare_extend_deposited_ranges(&plapps_id, amount);
         }
 
-        #[weight = SimpleDispatchInfo::default()]
+        #[weight = 50_000_000]
         fn remove_deposited_range(origin, plapps_id: T::AccountId,
             range: RangeOf<T>, deposited_range_id: BalanceOf<T>) {
             ensure_signed(origin)?;
@@ -372,7 +372,7 @@ decl_module! {
         /// finalizeCheckpoint
         /// - @param _checkpointProperty A property which is instance of checkpoint predicate
         /// its first input is range to create checkpoint and second input is property for stateObject.
-        #[weight = SimpleDispatchInfo::default()]
+        #[weight = 50_000_000]
         fn finalize_checkpoint(origin, plapps_id: T::AccountId,
             checkpoint_property: PropertyOf<T>) {
             ensure!(
@@ -393,7 +393,7 @@ decl_module! {
 
         /// finalizeExit
         /// @dev check the finalize exit and withdraw asset with ownership state.
-        #[weight = SimpleDispatchInfo::default()]
+        #[weight = 50_000_000]
         fn finalize_exit(origin, plapps_id: T::AccountId,
             exit_property: PropertyOf<T>, deposited_range_id: BalanceOf<T>, _owner: T::AccountId) {
             let origin = ensure_signed(origin)?;

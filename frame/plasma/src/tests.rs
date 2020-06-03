@@ -18,7 +18,7 @@ fn success_deploy(
     sender: AccountId,
     aggregator_id: AccountId,
     erc20: AccountId,
-    state_update_predicate: AccountId,
+    state_fupdate_predicate: AccountId,
     exit_predicate: AccountId,
     exit_deposit_predicate: AccountId,
 ) -> AccountId {
