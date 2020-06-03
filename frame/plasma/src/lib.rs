@@ -25,7 +25,7 @@ use frame_support::{
     dispatch::DispatchResult,
     ensure,
     traits::{Currency, Get},
-    weights::{WeighData, Weight},
+    weights::Weight,
     StorageDoubleMap, StorageMap,
 };
 use frame_system::{self as system, ensure_signed};

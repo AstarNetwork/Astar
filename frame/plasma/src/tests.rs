@@ -18,7 +18,7 @@ fn success_deploy(
     sender: AccountId,
     aggregator_id: AccountId,
     erc20: AccountId,
-    state_fupdate_predicate: AccountId,
+    state_update_predicate: AccountId,
     exit_predicate: AccountId,
     exit_deposit_predicate: AccountId,
 ) -> AccountId {
@@ -211,21 +211,19 @@ fn verify_inclusion_test() {
 }
 
 fn success_deposit(
+    sender: AccountId,
     plapps_id: AccountId,
     amount: BalanceOf<Test>,
     initial_state: PropertyOf<Test>,
     gas_limit: Gas,
 ) {
-    assert_ok!(Plasma::deposit(
-        Origin::signed(plapps_id),
-        amount,
-        initial_state,
-        gas_limit,
-    ));
-
     let total_deposited = Plasma::total_deposited(&plapps_id);
     let deposit_range = RangeOf::<Test> {
         start: total_deposited,
+        end: total_deposited.saturating_add(amount.clone()),
+    };
+    let new_range = RangeOf::<Test> {
+        start: 0,
         end: total_deposited.saturating_add(amount.clone()),
     };
     let state_update = PropertyOf::<Test> {
@@ -240,22 +238,41 @@ fn success_deposit(
     let checkpoint = Checkpoint {
         state_update: state_update,
     };
-    Plasma::bare_extend_deposited_ranges(&plapps_id, amount);
     let checkpoint_id = Plasma::get_checkpoint_id(&checkpoint);
 
-    assert_eq!(Plasma::checkpoints(plapps_id.clone(), &checkpoint_id), true);
+    assert_ok!(Plasma::deposit(
+        Origin::signed(sender.clone()),
+        plapps_id,
+        amount,
+        initial_state.clone(),
+        gas_limit,
+    ));
+
+    assert_eq!(
+        Plasma::deposited_ranges(plapps_id, new_range.end),
+        new_range,
+    );
+    assert_eq!(Plasma::total_deposited(plapps_id), total_deposited + amount);
     assert_eq!(
         System::events(),
-        vec![EventRecord {
-            phase: Phase::ApplyExtrinsic(0),
-            event: MetaEvent::plasma(RawEvent::CheckpointFinalized(
-                plapps_id.clone(),
-                checkpoint_id.clone(),
-                checkpoint.clone(),
-            )),
-            topics: vec![],
-        }]
+        vec![
+            EventRecord {
+                phase: Phase::ApplyExtrinsic(0),
+                event: MetaEvent::plasma(RawEvent::DepositedRangeExtended(plapps_id, new_range)),
+                topics: vec![],
+            },
+            EventRecord {
+                phase: Phase::ApplyExtrinsic(0),
+                event: MetaEvent::plasma(RawEvent::CheckpointFinalized(
+                    plapps_id.clone(),
+                    checkpoint_id.clone(),
+                    checkpoint.clone(),
+                )),
+                topics: vec![],
+            }
+        ]
     );
+    assert_eq!(Plasma::checkpoints(plapps_id.clone(), &checkpoint_id), true);
 }
 
 #[test]
@@ -273,8 +290,33 @@ fn deposit_test() {
 
         advance_block();
         success_deposit(
+            ALICE_STASH,
             plapps_id,
             10,
+            PropertyOf::<Test> {
+                predicate_address: STATE_UPDATE_ID,
+                inputs: vec![hex!["01"].to_vec()],
+            },
+            1000000,
+        );
+
+        advance_block();
+        success_deposit(
+            BOB_STASH,
+            plapps_id,
+            30,
+            PropertyOf::<Test> {
+                predicate_address: STATE_UPDATE_ID,
+                inputs: vec![hex!["01"].to_vec()],
+            },
+            1000000,
+        );
+
+        advance_block();
+        success_deposit(
+            CHARLIE_STASH,
+            plapps_id,
+            80,
             PropertyOf::<Test> {
                 predicate_address: STATE_UPDATE_ID,
                 inputs: vec![hex!["01"].to_vec()],
