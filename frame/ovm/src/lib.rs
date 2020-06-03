@@ -19,8 +19,8 @@ use frame_support::{
     decl_error, decl_event, decl_module, decl_storage,
     dispatch::DispatchResult,
     ensure,
-    traits::Get,
-    weights::{DispatchClass, FunctionOf, Pays, Weight},
+    traits::{Get, Time},
+    weights::{DispatchClass, FunctionOf, Pays, WeighData, Weight},
     StorageMap,
 };
 use frame_system::{self as system, ensure_signed};
@@ -259,6 +259,7 @@ decl_module! {
 
         fn on_runtime_upgrade() -> Weight {
             migrate::<T>();
+            // TODO: weight
             T::MaximumBlockWeight::get()
         }
 
@@ -286,7 +287,8 @@ decl_module! {
 
 
         /// Deploy predicate and made predicate address as AccountId.
-        #[weight = 5_000]
+        /// TODO: weight
+        #[weight = 100_000]
         pub fn instantiate(origin, predicate_hash: PredicateHash<T>, inputs: Vec<u8>) {
             let origin = ensure_signed(origin)?;
 
@@ -306,7 +308,8 @@ decl_module! {
         }
 
         /// Claims property and create new game. Id of game is hash of claimed property
-        #[weight = 5_000]
+        /// TODO: weight
+        #[weight = 100_000]
         fn claim_property(origin, claim: PropertyOf<T>) {
             // get the id of this property
             let game_id = Self::get_property_id(&claim);
@@ -333,7 +336,8 @@ decl_module! {
         }
 
         /// Sets the game decision true when its dispute period has already passed.
-        #[weight = 5_000]
+        /// TODO: weight
+        #[weight = 100_000]
         fn decide_claim_to_true(origin, game_id: T::Hash) {
             ensure!(
                 Self::is_decidable(&game_id),
@@ -351,7 +355,8 @@ decl_module! {
         }
 
         /// Sets the game decision false when its challenge has been evaluated to true.
-        #[weight = 5_000]
+        /// TODO: weight
+        #[weight = 100_000]
         fn decide_claim_to_false(origin, game_id: T::Hash, challenging_game_id: T::Hash) {
             let mut game = match Self::instantiated_games(&game_id) {
                 Some(game) => game,
@@ -387,7 +392,8 @@ decl_module! {
         }
 
         /// Decide the game decision with given witness.
-        #[weight = 5_000]
+        /// TODO: weight
+        #[weight = 100_000]
         fn decide_claim_with_witness(origin, game_id: T::Hash, witness: Vec<u8>) {
             let mut game = match Self::instantiated_games(&game_id) {
                 Some(game) => game,
@@ -420,7 +426,9 @@ decl_module! {
         }
 
         /// Removes a challenge when its decision has been evaluated to false.
-        #[weight = 5_000]
+        ///
+        /// TODO: weight
+        #[weight = 100_000]
         fn remove_challenge(origin, game_id: T::Hash, challenging_game_id: T::Hash) {
             let mut game = match Self::instantiated_games(&game_id) {
                 Some(game) => game,
@@ -462,7 +470,9 @@ decl_module! {
         }
 
         /// Set a predicate decision by called from Predicate itself.
-        #[weight = 5_000]
+        ///
+        /// TODO: weight
+        #[weight = 100_000]
         fn set_predicate_decision(origin, game_id: T::Hash, decision: bool) {
             let origin = ensure_signed(origin)?;
             let mut game = match Self::instantiated_games(&game_id) {
@@ -489,7 +499,9 @@ decl_module! {
         /// @param game_id challenged game id.
         /// @param challenge_inputs array of input to verify child of game tree.
         /// @param challenging_game_id child of game tree.
-        #[weight = 5_000]
+        ///
+        /// TODO: weight
+        #[weight = 100_000]
         fn challenge(origin, game_id: T::Hash, challenge_inputs: Vec<u8>, challenging_game_id: T::Hash) {
             let mut game = match Self::instantiated_games(&game_id) {
                 Some(game) => game,

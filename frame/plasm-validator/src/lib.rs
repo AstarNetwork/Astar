@@ -6,7 +6,6 @@
 use frame_support::{
     decl_event, decl_module, decl_storage,
     traits::{Currency, Imbalance, LockableCurrency, OnUnbalanced, Time},
-    weights::SimpleDispatchInfo,
     StorageMap, StorageValue,
 };
 use frame_system::{self as system, ensure_root};
@@ -114,7 +113,8 @@ decl_module! {
         /// # <weight>
         /// - One storage write
         /// # </weight>
-        #[weight = SimpleDispatchInfo::FixedOperational(0)]
+        /// TODO: weight
+        #[weight = 50_000]
         fn set_validators(origin, new_validators: Vec<T::AccountId>) {
             ensure_root(origin)?;
             <Validators<T>>::put(&new_validators);

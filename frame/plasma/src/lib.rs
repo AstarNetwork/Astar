@@ -25,7 +25,7 @@ use frame_support::{
     dispatch::DispatchResult,
     ensure,
     traits::{Currency, Get},
-    weights::Weight,
+    weights::{WeighData, Weight},
     StorageDoubleMap, StorageMap,
 };
 use frame_system::{self as system, ensure_signed};
@@ -264,7 +264,8 @@ decl_module! {
         }
 
         /// Commitment constructor + Deposit constructor
-        #[weight = 50_000_000]
+        /// TODO: weight
+        #[weight = 100_000]
         fn deploy(
             origin,
             aggregator_id: T::AccountId,
@@ -293,7 +294,8 @@ decl_module! {
         // Commitment callable methods. ========
 
         /// Submit root hash of Plasma chain.
-        #[weight = 50_000_000]
+        /// TODO: weight
+        #[weight = 100_000]
         fn submit_root(origin, plapps_id: T::AccountId,
             block_number: T::BlockNumber, root: T::Hash) {
             let aggregator = ensure_signed(origin)?;
@@ -312,7 +314,8 @@ decl_module! {
         /// following https://docs.plasma.group/projects/spec/en/latest/src/02-contracts/deposit-contract.html#deposit
         /// - @param amount to deposit
         /// - @param initial_state The initial state of deposit
-        #[weight = 50_000_000]
+        /// TODO: weight
+        #[weight = 100_000]
         fn deposit(origin, plapps_id: T::AccountId,
             amount: BalanceOf<T>, initial_state: PropertyOf<T>, gas_limit: Gas) {
             let _ = ensure_signed(origin)?;
@@ -352,13 +355,15 @@ decl_module! {
             Self::deposit_event(RawEvent::CheckpointFinalized(plapps_id, checkpoint_id, checkpoint));
         }
 
-        #[weight = 50_000_000]
+        /// TODO: weight
+        #[weight = 100_000]
         fn extend_deposited_ranges(origin, plapps_id: T::AccountId, amount: BalanceOf<T>) {
             ensure_signed(origin)?;
             Self::bare_extend_deposited_ranges(&plapps_id, amount);
         }
 
-        #[weight = 50_000_000]
+        /// TODO: weight
+        #[weight = 100_000]
         fn remove_deposited_range(origin, plapps_id: T::AccountId,
             range: RangeOf<T>, deposited_range_id: BalanceOf<T>) {
             ensure_signed(origin)?;
@@ -372,7 +377,8 @@ decl_module! {
         /// finalizeCheckpoint
         /// - @param _checkpointProperty A property which is instance of checkpoint predicate
         /// its first input is range to create checkpoint and second input is property for stateObject.
-        #[weight = 50_000_000]
+        /// TODO: weight
+        #[weight = 100_000]
         fn finalize_checkpoint(origin, plapps_id: T::AccountId,
             checkpoint_property: PropertyOf<T>) {
             ensure!(
@@ -392,7 +398,17 @@ decl_module! {
         }
 
         /// finalizeExit
-        /// @dev check the finalize exit and withdraw asset with ownership state.
+        /// - @param _exitProperty A property which is instance of exit predicate and its inputs are range and StateUpdate that exiting account wants to withdraw.
+        /// _exitProperty can be a property of ether ExitPredicate or ExitDepositPredicate.
+        /// - @param _depositedRangeId Id of deposited range
+        /// - @return return StateUpdate of exit property which is finalized.
+        /// - @dev The steps of finalizeExit.
+        /// 1. Serialize exit property
+        /// 2. check the property is decided by Adjudication Contract.
+        /// 3. Transfer asset to payout contract corresponding to StateObject.
+        ///
+        /// Please alse see https://docs.plasma.group/projects/spec/en/latest/src/02-contracts/deposit-contract.html#finalizeexit
+        /// TODO: weight
         #[weight = 50_000_000]
         fn finalize_exit(origin, plapps_id: T::AccountId,
             exit_property: PropertyOf<T>, deposited_range_id: BalanceOf<T>, _owner: T::AccountId) {

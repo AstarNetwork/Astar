@@ -17,7 +17,7 @@ use codec::{Decode, Encode};
 use frame_support::{
     decl_error, decl_event, decl_module, decl_storage,
     traits::{Currency, Get, LockableCurrency, Time},
-    weights::{SimpleDispatchInfo, Weight},
+    weights::Weight,
     StorageMap, StorageValue,
 };
 use frame_system::{self as system, ensure_root};
@@ -208,7 +208,7 @@ decl_module! {
         /// # <weight>
         /// - No arguments.
         /// # </weight>
-        #[weight = SimpleDispatchInfo::FixedOperational(5_000)]
+        #[weight = 5_000]
         fn force_no_eras(origin) {
             ensure_root(origin)?;
             ForceEra::put(Forcing::ForceNone);
@@ -220,7 +220,7 @@ decl_module! {
         /// # <weight>
         /// - No arguments.
         /// # </weight>
-        #[weight = SimpleDispatchInfo::FixedOperational(5_000)]
+        #[weight = 5_000]
         fn force_new_era(origin) {
             ensure_root(origin)?;
             ForceEra::put(Forcing::ForceNew);
@@ -231,7 +231,7 @@ decl_module! {
         /// # <weight>
         /// - One storage write
         /// # </weight>
-        #[weight = SimpleDispatchInfo::FixedOperational(5_000)]
+        #[weight = 5_000]
         fn force_new_era_always(origin) {
             ensure_root(origin)?;
             ForceEra::put(Forcing::ForceAlways);
@@ -240,7 +240,7 @@ decl_module! {
         /// Set history_depth value.
         ///
         /// Origin must be root.
-        #[weight = SimpleDispatchInfo::FixedOperational(500_000)]
+        #[weight = 500_000]
         fn set_history_depth(origin, #[compact] new_history_depth: EraIndex) {
             ensure_root(origin)?;
             if let Some(current_era) = Self::current_era() {

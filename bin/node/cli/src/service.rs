@@ -6,26 +6,17 @@ use std::sync::Arc;
 
 use plasm_primitives::Block;
 use plasm_runtime::RuntimeApi;
-use sc_client::LongestChain;
-use sc_client::{Client, LocalCallExecutor};
-use sc_client_api::ExecutorProvider;
-use sc_client_db::Backend;
+use sc_consensus::LongestChain;
 use sc_consensus_babe;
-use sc_executor::{native_executor_instance, NativeExecutor};
 use sc_finality_grandpa::{
     FinalityProofProvider as GrandpaFinalityProofProvider, StorageAndProofProvider,
 };
-use sc_network::NetworkService;
-use sc_offchain::OffchainWorkers;
 use sc_service::{
-    config::Configuration, error::Error as ServiceError, AbstractService, NetworkStatus, Service,
-    ServiceBuilder,
+    config::Configuration, error::Error as ServiceError, AbstractService, ServiceBuilder,
 };
-use sp_runtime::traits::Block as BlockT;
+use sp_inherents::InherentDataProviders;
 
-// Declare an instance of the native executor named `Executor`. Include the wasm binary as the
-// equivalent wasm code.
-native_executor_instance!(
+sc_executor::native_executor_instance!(
     pub Executor,
     plasm_runtime::api::dispatch,
     plasm_runtime::native_version
@@ -37,8 +28,10 @@ native_executor_instance!(
 /// be able to perform chain operations.
 macro_rules! new_full_start {
     ($config:expr) => {{
-        type RpcExtension = jsonrpc_core::IoHandler<sc_rpc::Metadata>;
+        use std::sync::Arc;
+
         let mut import_setup = None;
+        let mut rpc_setup = None;
         let inherent_data_providers = sp_inherents::InherentDataProviders::new();
 
         let builder = sc_service::ServiceBuilder::new_full::<
@@ -46,66 +39,102 @@ macro_rules! new_full_start {
             plasm_runtime::RuntimeApi,
             crate::service::Executor,
         >($config)?
-        .with_select_chain(|_config, backend| Ok(sc_client::LongestChain::new(backend.clone())))?
-        .with_transaction_pool(|config, client, _fetcher| {
+        .with_select_chain(|_config, backend| Ok(sc_consensus::LongestChain::new(backend.clone())))?
+        .with_transaction_pool(|config, client, _fetcher, prometheus_registry| {
             let pool_api = sc_transaction_pool::FullChainApi::new(client.clone());
             Ok(sc_transaction_pool::BasicPool::new(
                 config,
                 std::sync::Arc::new(pool_api),
+                prometheus_registry,
             ))
         })?
-        .with_import_queue(|_config, client, mut select_chain, _transaction_pool| {
-            let select_chain = select_chain
-                .take()
-                .ok_or_else(|| sc_service::Error::SelectChainRequired)?;
-            let (grandpa_block_import, grandpa_link) = sc_finality_grandpa::block_import(
-                client.clone(),
-                &(client.clone() as std::sync::Arc<_>),
-                select_chain,
-            )?;
-            let justification_import = grandpa_block_import.clone();
+        .with_import_queue(
+            |_config,
+             client,
+             mut select_chain,
+             _transaction_pool,
+             spawn_task_handle,
+             prometheus_registry| {
+                let select_chain = select_chain
+                    .take()
+                    .ok_or_else(|| sc_service::Error::SelectChainRequired)?;
+                let (grandpa_block_import, grandpa_link) = sc_finality_grandpa::block_import(
+                    client.clone(),
+                    &(client.clone() as Arc<_>),
+                    select_chain,
+                )?;
+                let justification_import = grandpa_block_import.clone();
 
-            let (block_import, babe_link) = sc_consensus_babe::block_import(
-                sc_consensus_babe::Config::get_or_compute(&*client)?,
-                grandpa_block_import,
-                client.clone(),
-            )?;
+                let (block_import, babe_link) = sc_consensus_babe::block_import(
+                    sc_consensus_babe::Config::get_or_compute(&*client)?,
+                    grandpa_block_import,
+                    client.clone(),
+                )?;
 
-            let import_queue = sc_consensus_babe::import_queue(
-                babe_link.clone(),
-                block_import.clone(),
-                Some(Box::new(justification_import)),
-                None,
-                client,
-                inherent_data_providers.clone(),
-            )?;
+                let import_queue = sc_consensus_babe::import_queue(
+                    babe_link.clone(),
+                    block_import.clone(),
+                    Some(Box::new(justification_import)),
+                    None,
+                    client,
+                    inherent_data_providers.clone(),
+                    spawn_task_handle,
+                    prometheus_registry,
+                )?;
 
-            import_setup = Some((block_import, grandpa_link, babe_link));
-            Ok(import_queue)
-        })?
-        .with_rpc_extensions(|builder| -> std::result::Result<RpcExtension, _> {
+                import_setup = Some((block_import, grandpa_link, babe_link));
+                Ok(import_queue)
+            },
+        )?
+        .with_rpc_extensions_builder(|builder| {
+            let grandpa_link = import_setup
+                .as_ref()
+                .map(|s| &s.1)
+                .expect("GRANDPA LinkHalf is present for full services or set up failed; qed.");
+
+            let shared_authority_set = grandpa_link.shared_authority_set().clone();
+            let shared_voter_state = sc_finality_grandpa::SharedVoterState::empty();
+
+            rpc_setup = Some((shared_voter_state.clone()));
+
             let babe_link = import_setup
                 .as_ref()
                 .map(|s| &s.2)
                 .expect("BabeLink is present for full services or set up failed; qed.");
-            let deps = plasm_rpc::FullDeps {
-                client: builder.client().clone(),
-                pool: builder.pool(),
-                select_chain: builder
-                    .select_chain()
-                    .cloned()
-                    .expect("SelectChain is present for full services or set up failed; qed."),
-                babe: plasm_rpc::BabeDeps {
-                    keystore: builder.keystore(),
-                    babe_config: sc_consensus_babe::BabeLink::config(babe_link).clone(),
-                    shared_epoch_changes: sc_consensus_babe::BabeLink::epoch_changes(babe_link)
-                        .clone(),
-                },
-            };
-            Ok(plasm_rpc::create_full(deps))
+
+            let babe_config = babe_link.config().clone();
+            let shared_epoch_changes = babe_link.epoch_changes().clone();
+
+            let client = builder.client().clone();
+            let pool = builder.pool().clone();
+            let select_chain = builder
+                .select_chain()
+                .cloned()
+                .expect("SelectChain is present for full services or set up failed; qed.");
+            let keystore = builder.keystore().clone();
+
+            Ok(move |deny_unsafe| {
+                let deps = plasm_rpc::FullDeps {
+                    client: client.clone(),
+                    pool: pool.clone(),
+                    select_chain: select_chain.clone(),
+                    deny_unsafe,
+                    babe: plasm_rpc::BabeDeps {
+                        babe_config: babe_config.clone(),
+                        shared_epoch_changes: shared_epoch_changes.clone(),
+                        keystore: keystore.clone(),
+                    },
+                    grandpa: plasm_rpc::GrandpaDeps {
+                        shared_voter_state: shared_voter_state.clone(),
+                        shared_authority_set: shared_authority_set.clone(),
+                    },
+                };
+
+                plasm_rpc::create_full(deps)
+            })
         })?;
 
-        (builder, import_setup, inherent_data_providers)
+        (builder, import_setup, inherent_data_providers, rpc_setup)
     }};
 }
 
@@ -115,6 +144,8 @@ macro_rules! new_full_start {
 /// concrete types instead.
 macro_rules! new_full {
     ($config:expr, $with_startup_data: expr) => {{
+        use sc_client_api::ExecutorProvider;
+
         let (role, force_authoring, name, disable_grandpa) = (
             $config.role.clone(),
             $config.force_authoring,
@@ -122,13 +153,17 @@ macro_rules! new_full {
             $config.disable_grandpa,
         );
 
-        let (builder, mut import_setup, inherent_data_providers) = new_full_start!($config);
+        let (builder, mut import_setup, inherent_data_providers, mut rpc_setup) =
+            new_full_start!($config);
 
         let service = builder
             .with_finality_proof_provider(|client, backend| {
                 // GenesisAuthoritySetProvider is implemented for StorageAndProofProvider
-                let provider = client as Arc<dyn StorageAndProofProvider<_, _>>;
-                Ok(Arc::new(GrandpaFinalityProofProvider::new(backend, provider)) as _)
+                let provider =
+                    client as Arc<dyn sc_finality_grandpa::StorageAndProofProvider<_, _>>;
+                Ok(Arc::new(sc_finality_grandpa::FinalityProofProvider::new(
+                    backend, provider,
+                )) as _)
             })?
             .build()?;
 
@@ -136,12 +171,17 @@ macro_rules! new_full {
             "Link Half and Block Import are present for Full Services or setup failed before. qed",
         );
 
+        let shared_voter_state = rpc_setup.take().expect(
+            "The SharedVoterState is present for Full Services or setup failed before. qed",
+        );
+
         ($with_startup_data)(&block_import, &babe_link);
 
-        if let sc_service::config::Role::Authority { sentry_nodes: _ } = &role {
+        if let sc_service::config::Role::Authority { .. } = &role {
             let proposer = sc_basic_authorship::ProposerFactory::new(
                 service.client(),
                 service.transaction_pool(),
+                service.prometheus_registry().as_ref(),
             );
 
             let client = service.client();
@@ -203,6 +243,7 @@ macro_rules! new_full {
                 telemetry_on_connect: Some(service.telemetry_on_connect_stream()),
                 voting_rule: sc_finality_grandpa::VotingRulesBuilder::default().build(),
                 prometheus_registry: service.prometheus_registry(),
+                shared_voter_state,
             };
 
             // the GRANDPA voter task is considered infallible, i.e.
@@ -219,12 +260,6 @@ macro_rules! new_full {
             )?;
         }
 
-        // Enable lockdrop oracle on authority nodes.
-        #[cfg(feature = "oracle")]
-        if role.is_authority() {
-            service.spawn_essential_task("lockdrop-oracle", super::oracle::start());
-        }
-
         Ok((service, inherent_data_providers))
     }};
     ($config:expr) => {{
@@ -232,61 +267,38 @@ macro_rules! new_full {
     }};
 }
 
-type ConcreteBlock = plasm_primitives::Block;
-type ConcreteClient = Client<
-    Backend<ConcreteBlock>,
-    LocalCallExecutor<Backend<ConcreteBlock>, NativeExecutor<Executor>>,
-    ConcreteBlock,
-    plasm_runtime::RuntimeApi,
->;
-type ConcreteBackend = Backend<ConcreteBlock>;
-type ConcreteTransactionPool = sc_transaction_pool::BasicPool<
-    sc_transaction_pool::FullChainApi<ConcreteClient, ConcreteBlock>,
-    ConcreteBlock,
->;
-
 /// Builds a new service for a full client.
-pub fn new_full(
-    config: Configuration,
-) -> Result<
-    Service<
-        ConcreteBlock,
-        ConcreteClient,
-        LongestChain<ConcreteBackend, ConcreteBlock>,
-        NetworkStatus<ConcreteBlock>,
-        NetworkService<ConcreteBlock, <ConcreteBlock as BlockT>::Hash>,
-        ConcreteTransactionPool,
-        OffchainWorkers<
-            ConcreteClient,
-            <ConcreteBackend as sc_client_api::backend::Backend<Block>>::OffchainStorage,
-            ConcreteBlock,
-        >,
-    >,
-    ServiceError,
-> {
+pub fn new_full(config: Configuration) -> Result<impl AbstractService, ServiceError> {
     new_full!(config).map(|(service, _)| service)
 }
 
 /// Builds a new service for a light client.
 pub fn new_light(config: Configuration) -> Result<impl AbstractService, ServiceError> {
-    type RpcExtension = jsonrpc_core::IoHandler<sc_rpc::Metadata>;
-    let inherent_data_providers = sp_inherents::InherentDataProviders::new();
+    let inherent_data_providers = InherentDataProviders::new();
 
     let service = ServiceBuilder::new_light::<Block, RuntimeApi, Executor>(config)?
         .with_select_chain(|_config, backend| Ok(LongestChain::new(backend.clone())))?
-        .with_transaction_pool(|config, client, fetcher| {
+        .with_transaction_pool(|config, client, fetcher, prometheus_registry| {
             let fetcher = fetcher
                 .ok_or_else(|| "Trying to start light transaction pool without active fetcher")?;
             let pool_api = sc_transaction_pool::LightChainApi::new(client.clone(), fetcher.clone());
             let pool = sc_transaction_pool::BasicPool::with_revalidation_type(
                 config,
                 Arc::new(pool_api),
+                prometheus_registry,
                 sc_transaction_pool::RevalidationType::Light,
             );
             Ok(pool)
         })?
         .with_import_queue_and_fprb(
-            |_config, client, backend, fetcher, _select_chain, _tx_pool| {
+            |_config,
+             client,
+             backend,
+             fetcher,
+             _select_chain,
+             _tx_pool,
+             spawn_task_handle,
+             registry| {
                 let fetch_checker = fetcher
                     .map(|fetcher| fetcher.checker().clone())
                     .ok_or_else(|| {
@@ -316,16 +328,19 @@ pub fn new_light(config: Configuration) -> Result<impl AbstractService, ServiceE
                     Some(Box::new(finality_proof_import)),
                     client.clone(),
                     inherent_data_providers.clone(),
+                    spawn_task_handle,
+                    registry,
                 )?;
 
                 Ok((import_queue, finality_proof_request_builder))
             },
         )?
         .with_finality_proof_provider(|client, backend| {
+            // GenesisAuthoritySetProvider is implemented for StorageAndProofProvider
             let provider = client as Arc<dyn StorageAndProofProvider<_, _>>;
             Ok(Arc::new(GrandpaFinalityProofProvider::new(backend, provider)) as _)
         })?
-        .with_rpc_extensions(|builder| -> std::result::Result<RpcExtension, _> {
+        .with_rpc_extensions(|builder| {
             let fetcher = builder
                 .fetcher()
                 .ok_or_else(|| "Trying to start node RPC without active fetcher")?;
@@ -339,6 +354,7 @@ pub fn new_light(config: Configuration) -> Result<impl AbstractService, ServiceE
                 client: builder.client().clone(),
                 pool: builder.pool(),
             };
+
             Ok(plasm_rpc::create_light(light_deps))
         })?
         .build()?;

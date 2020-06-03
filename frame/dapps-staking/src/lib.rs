@@ -13,7 +13,7 @@ use frame_support::{
         Currency, Get, Imbalance, LockIdentifier, LockableCurrency, OnUnbalanced, Time,
         WithdrawReasons,
     },
-    weights::{SimpleDispatchInfo, Weight},
+    weights::Weight,
     StorageMap, StorageValue,
 };
 use frame_system::{self as system, ensure_signed};
@@ -326,6 +326,7 @@ decl_module! {
 
         fn on_runtime_upgrade() -> Weight {
             migrate::<T>();
+            // TODO: weight
             50_000
         }
 
@@ -344,7 +345,8 @@ decl_module! {
         /// NOTE: Two of the storage writes (`Self::bonded`, `Self::payee`) are _never_ cleaned unless
         /// the `origin` falls below _existential deposit_ and gets removed as dust.
         /// # </weight>
-        #[weight = SimpleDispatchInfo::FixedNormal(500_000)]
+        /// TODO: weight
+        #[weight = 500_000]
         fn bond(origin,
             controller: <T::Lookup as StaticLookup>::Source,
             #[compact] value: BalanceOf<T>,
@@ -402,7 +404,8 @@ decl_module! {
         /// - O(1).
         /// - One DB entry.
         /// # </weight>
-        #[weight = SimpleDispatchInfo::FixedNormal(500_000)]
+        /// TODO: weight
+        #[weight = 500_000]
         fn bond_extra(origin, #[compact] max_additional: BalanceOf<T>) {
             let stash = ensure_signed(origin)?;
 
@@ -444,7 +447,8 @@ decl_module! {
         ///   `withdraw_unbonded`.
         /// - One DB entry.
         /// </weight>
-        #[weight = SimpleDispatchInfo::FixedNormal(400_000)]
+        /// TODO: weight
+        #[weight = 400_000]
         fn unbond(origin, #[compact] value: BalanceOf<T>) {
             let controller = ensure_signed(origin)?;
             let mut ledger = Self::ledger(&controller).ok_or(Error::<T>::NotController)?;
@@ -489,7 +493,8 @@ decl_module! {
         /// - Contains a limited number of reads, yet the size of which could be large based on `ledger`.
         /// - Writes are limited to the `origin` account key.
         /// # </weight>
-        #[weight = SimpleDispatchInfo::FixedNormal(400_000)]
+        /// TODO: weight
+        #[weight = 400_000]
         fn withdraw_unbonded(origin) {
             let controller = ensure_signed(origin)?;
             let mut ledger = Self::ledger(&controller).ok_or(Error::<T>::NotController)?;
@@ -530,7 +535,8 @@ decl_module! {
         /// which is capped at `MAX_NOMINATIONS`.
         /// - Both the reads and writes follow a similar pattern.
         /// # </weight>
-        #[weight = SimpleDispatchInfo::FixedNormal(750_000)]
+        /// TODO: weight
+        #[weight = 750_000]
         fn nominate_contracts(origin, targets: Vec<(<T::Lookup as StaticLookup>::Source, BalanceOf<T>)>) {
             let controller = ensure_signed(origin)?;
             let ledger = Self::ledger(&controller).ok_or(Error::<T>::NotController)?;
@@ -577,7 +583,8 @@ decl_module! {
         /// - Contains one read.
         /// - Writes are limited to the `origin` account key.
         /// # </weight>
-        #[weight = SimpleDispatchInfo::FixedNormal(500_000)]
+        /// TODO: weight
+        #[weight = 500_000]
         fn chill(origin) {
             let controller = ensure_signed(origin)?;
             let ledger = Self::ledger(&controller).ok_or(Error::<T>::NotController)?;
@@ -595,7 +602,8 @@ decl_module! {
         /// - Contains a limited number of reads.
         /// - Writes are limited to the `origin` account key.
         /// # </weight>
-        #[weight = SimpleDispatchInfo::FixedNormal(500_000)]
+        /// TODO: weight
+        #[weight = 500_000]
         fn set_payee(origin, payee: RewardDestination) {
             let controller = ensure_signed(origin)?;
             let ledger = Self::ledger(&controller).ok_or(Error::<T>::NotController)?;
@@ -614,7 +622,8 @@ decl_module! {
         /// - Contains a limited number of reads.
         /// - Writes are limited to the `origin` account key.
         /// # </weight>
-        #[weight = SimpleDispatchInfo::FixedNormal(750_000)]
+        /// TODO: weight
+        #[weight = 750_000]
         fn set_controller(origin, controller: <T::Lookup as StaticLookup>::Source) {
             let stash = ensure_signed(origin)?;
             let old_controller = Self::bonded(&stash).ok_or(Error::<T>::NotStash)?;
@@ -635,7 +644,8 @@ decl_module! {
         /// era must be in the range `[current_era - history_depth; active_era)`.
         ///
         /// The dispatch origin for this call must be _Signed_ by the stash, not the controller.
-        #[weight = SimpleDispatchInfo::FixedNormal(1_000)]
+        /// TODO: weight
+        #[weight = 1_000]
         fn claim_for_nominator(origin, era: EraIndex) {
             let nominator = ensure_signed(origin)?;
 
@@ -679,7 +689,8 @@ decl_module! {
         /// era must be in the range [current_era - history_depth; active_era).
         ///
         /// The dispatch origin for this call must be _Signed_ by the stash, not the controller
-        #[weight = SimpleDispatchInfo::FixedNormal(1_000)]
+        /// TODO: weight
+        #[weight = 1_000]
         fn claim_for_operator(origin, era: EraIndex) {
             let operator = ensure_signed(origin)?;
 
