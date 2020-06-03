@@ -308,8 +308,6 @@ decl_module! {
             Self::deposit_event(RawEvent::BlockSubmitted(plapps_id, block_number, root));
         }
 
-        // TODO: Deposit callable methods. ========
-
         /// deposit ERC20 token to deposit contract with initial state.
         /// following https://docs.plasma.group/projects/spec/en/latest/src/02-contracts/deposit-contract.html#deposit
         /// - @param amount to deposit

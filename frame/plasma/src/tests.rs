@@ -209,3 +209,77 @@ fn verify_inclusion_test() {
         assert_eq!(result, Ok(false));
     })
 }
+
+fn success_deposit(
+    plapps_id: AccountId,
+    amount: BalanceOf<Test>,
+    initial_state: PropertyOf<Test>,
+    gas_limit: Gas,
+) {
+    assert_ok!(Plasma::deposit(
+        Origin::signed(plapps_id),
+        amount,
+        initial_state,
+        gas_limit,
+    ));
+
+    let total_deposited = Plasma::total_deposited(&plapps_id);
+    let deposit_range = RangeOf::<Test> {
+        start: total_deposited,
+        end: total_deposited.saturating_add(amount.clone()),
+    };
+    let state_update = PropertyOf::<Test> {
+        predicate_address: Plasma::state_update_predicate(&plapps_id),
+        inputs: vec![
+            plapps_id.encode(),
+            deposit_range.encode(),
+            Plasma::get_latest_plasma_block_number(&plapps_id).encode(),
+            initial_state.encode(),
+        ],
+    };
+    let checkpoint = Checkpoint {
+        state_update: state_update,
+    };
+    Plasma::bare_extend_deposited_ranges(&plapps_id, amount);
+    let checkpoint_id = Plasma::get_checkpoint_id(&checkpoint);
+
+    assert_eq!(Plasma::checkpoints(plapps_id.clone(), &checkpoint_id), true);
+    assert_eq!(
+        System::events(),
+        vec![EventRecord {
+            phase: Phase::ApplyExtrinsic(0),
+            event: MetaEvent::plasma(RawEvent::CheckpointFinalized(
+                plapps_id.clone(),
+                checkpoint_id.clone(),
+                checkpoint.clone(),
+            )),
+            topics: vec![],
+        }]
+    );
+}
+
+#[test]
+fn deposit_test() {
+    new_test_ext().execute_with(|| {
+        advance_block();
+        let plapps_id = success_deploy(
+            ALICE_STASH,
+            AGGREGATOR_ID,
+            ERC20_ID,
+            STATE_UPDATE_ID,
+            EXIT_ID,
+            EXIT_DEPOSIT_ID,
+        );
+
+        advance_block();
+        success_deposit(
+            plapps_id,
+            10,
+            PropertyOf::<Test> {
+                predicate_address: STATE_UPDATE_ID,
+                inputs: vec![hex!["01"].to_vec()],
+            },
+            1000000,
+        );
+    });
+}

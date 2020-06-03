@@ -26,6 +26,7 @@ impl_outer_origin! {
 impl_outer_dispatch! {
     pub enum Call for Test where origin: Origin {
         pallet_balances::Balances,
+        pallet_contracts::Contracts,
     }
 }
 
@@ -109,6 +110,59 @@ impl pallet_balances::Trait for Test {
 }
 
 parameter_types! {
+    pub const MinimumPeriod: u64 = 1;
+}
+
+impl pallet_timestamp::Trait for Test {
+    type Moment = u64;
+    type OnTimestampSet = ();
+    type MinimumPeriod = MinimumPeriod;
+}
+
+parameter_types! {
+    pub const SignedClaimHandicap: u64 = 2;
+    pub const TombstoneDeposit: u64 = 16;
+    pub const StorageSizeOffset: u32 = 8;
+    pub const RentByteFee: u64 = 4;
+    pub const RentDepositOffset: u64 = 10_000;
+    pub const SurchargeReward: u64 = 150;
+    pub const TransactionBaseFee: u64 = 2;
+    pub const TransactionByteFee: u64 = 6;
+    pub const ContractFee: u64 = 21;
+    pub const CallBaseFee: u64 = 135;
+    pub const InstantiateBaseFee: u64 = 175;
+    pub const MaxDepth: u32 = 100;
+    pub const MaxValueSize: u32 = 16_384;
+}
+
+impl pallet_contracts::Trait for Test {
+    type Currency = Balances;
+    type Time = Timestamp;
+    type Randomness = Randomness;
+    type Call = Call;
+    type DetermineContractAddress = DummyContractAddressFor;
+    type Event = MetaEvent;
+    type ComputeDispatchFee = DummyComputeDispatchFee;
+    type TrieIdGenerator = DummyTrieIdGenerator;
+    type GasPayment = ();
+    type RentPayment = ();
+    type SignedClaimHandicap = SignedClaimHandicap;
+    type TombstoneDeposit = TombstoneDeposit;
+    type StorageSizeOffset = StorageSizeOffset;
+    type RentByteFee = RentByteFee;
+    type RentDepositOffset = RentDepositOffset;
+    type SurchargeReward = SurchargeReward;
+    type TransactionBaseFee = TransactionBaseFee;
+    type TransactionByteFee = TransactionByteFee;
+    type ContractFee = ContractFee;
+    type CallBaseFee = CallBaseFee;
+    type InstantiateBaseFee = InstantiateBaseFee;
+    type MaxDepth = MaxDepth;
+    type MaxValueSize = MaxValueSize;
+    type BlockGasLimit = BlockGasLimit;
+}
+
+parameter_types! {
     pub const DisputePeriod: BlockNumber = 7;
 }
 
@@ -117,10 +171,6 @@ impl ovm::PredicateAddressFor<H256, u64> for DummyPredicateAddressFor {
     fn predicate_address_for(_code_hash: &H256, _data: &[u8], origin: &u64) -> u64 {
         *origin + 1
     }
-}
-
-parameter_types! {
-    pub const MaxDepth: u32 = 32;
 }
 
 impl pallet_ovm::Trait for Test {
@@ -154,6 +204,8 @@ pub type System = frame_system::Module<Test>;
 pub type Balances = pallet_balances::Module<Test>;
 // pub type Ovm = pallet_ovm::Module<Test>;
 pub type Plasma = Module<Test>;
+pub type Timestamp = pallet_timestamp::Module<Test>;
+pub type Randomness = pallet_randomness_collective_flip::Module<Test>;
 
 pub fn advance_block() {
     System::finalize();
