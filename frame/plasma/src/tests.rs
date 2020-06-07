@@ -210,6 +210,27 @@ fn verify_inclusion_test() {
     })
 }
 
+fn simulation_extend_ranges(plapps_id: &AccountId, amount: &Balance) -> RangeOf<Test> {
+    let total_deposited = Plasma::total_deposited(plapps_id);
+    let old_range = Plasma::deposited_ranges(plapps_id, &total_deposited);
+    let new_start = if old_range.start == BalanceOf::<Test>::zero()
+        && old_range.end == BalanceOf::<Test>::zero()
+    {
+        // Creat a new range when the rightmost range has been removed
+        total_deposited
+    } else {
+        // Delete the old range and make a new one with the total length
+        <DepositedRanges<Test>>::remove(plapps_id, old_range.end);
+        old_range.start
+    };
+
+    let new_end = total_deposited.saturating_add(amount.clone());
+    Range {
+        start: new_start,
+        end: new_end,
+    }
+}
+
 fn success_deposit(
     sender: AccountId,
     plapps_id: AccountId,
@@ -222,10 +243,7 @@ fn success_deposit(
         start: total_deposited,
         end: total_deposited.saturating_add(amount.clone()),
     };
-    let new_range = RangeOf::<Test> {
-        start: 0,
-        end: total_deposited.saturating_add(amount.clone()),
-    };
+    let new_range = simulation_extend_ranges(&plapps_id, &amount);
     let state_update = PropertyOf::<Test> {
         predicate_address: Plasma::state_update_predicate(&plapps_id),
         inputs: vec![
@@ -275,8 +293,28 @@ fn success_deposit(
     assert_eq!(Plasma::checkpoints(plapps_id.clone(), &checkpoint_id), true);
 }
 
+fn success_extend_deposited_ranges(sender: AccountId, plapps_id: AccountId, amount: Balance) {
+    let total_deposited = Plasma::total_deposited(plapps_id);
+    let new_range = simulation_extend_ranges(&plapps_id, &amount);
+
+    Plasma::extend_deposited_ranges(Origin::signed(sender), plapps_id, amount);
+    assert_eq!(
+        Plasma::deposited_ranges(plapps_id, new_range.end),
+        new_range,
+    );
+    assert_eq!(Plasma::total_deposited(plapps_id), total_deposited + amount);
+    assert_eq!(
+        System::events(),
+        vec![EventRecord {
+            phase: Phase::ApplyExtrinsic(0),
+            event: MetaEvent::plasma(RawEvent::DepositedRangeExtended(plapps_id, new_range)),
+            topics: vec![],
+        },]
+    );
+}
+
 #[test]
-fn deposit_test() {
+fn scenario_test() {
     new_test_ext().execute_with(|| {
         advance_block();
         let plapps_id = success_deploy(
@@ -323,64 +361,8 @@ fn deposit_test() {
             },
             1000000,
         );
-    });
-}
 
-fn success_extend_deposited_ranges(sender: AccountId, plapps_id: AccountId, amount: Balance) {
-    let total_deposited = Plasma::total_deposited(plapps_id);
-    let old_range = Plasma::deposited_ranges(plapps_id, &total_deposited);
-    let new_start = if old_range.start == BalanceOf::<T>::zero()
-        && old_range.end == BalanceOf::<T>::zero()
-    {
-        // Creat a new range when the rightmost range has been removed
-        total_deposited
-    } else {
-        // Delete the old range and make a new one with the total length
-        <DepositedRanges<T>>::remove(plapps_id, old_range.end);
-        old_range.start
-    };
-
-    let new_end = total_deposited.saturating_add(amount.clone());
-    let new_range = Range {
-        start: new_start,
-        end: new_end,
-    };
-
-    Plasma::extend_deposited_ranges(Origin::signed(sender), plapps_id, amount);
-
-    assert_eq!(
-        Plasma::deposited_ranges(plapps_id, new_range.end),
-        new_range,
-    );
-    assert_eq!(Plasma::total_deposited(plapps_id), total_deposited + amount);
-    assert_eq!(
-        System::events(),
-        vec![
-            EventRecord {
-                phase: Phase::ApplyExtrinsic(0),
-                event: MetaEvent::plasma(RawEvent::DepositedRangeExtended(plapps_id, new_range)),
-                topics: vec![],
-            },
-            EventRecord {
-                phase: Phase::ApplyExtrinsic(0),
-                event: MetaEvent::plasma(RawEvent::CheckpointFinalized(
-                    plapps_id.clone(),
-                    checkpoint_id.clone(),
-                    checkpoint.clone(),
-                )),
-                topics: vec![],
-            }
-        ]
-    );
-    assert_eq!(Plasma::checkpoints(plapps_id.clone(), &checkpoint_id), true);
-
-
-}
-
-#[test]
-fn extend_deposited_ranges_test() {
-    new_test_ext().execute_with(|| {
         advance_block();
-
+        success_extend_deposited_ranges(ALICE_STASH, plapps_id, 100);
     });
 }
