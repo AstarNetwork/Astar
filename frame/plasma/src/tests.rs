@@ -216,11 +216,8 @@ fn simulation_extend_ranges(plapps_id: &AccountId, amount: &Balance) -> RangeOf<
     let new_start = if old_range.start == BalanceOf::<Test>::zero()
         && old_range.end == BalanceOf::<Test>::zero()
     {
-        // Creat a new range when the rightmost range has been removed
         total_deposited
     } else {
-        // Delete the old range and make a new one with the total length
-        <DepositedRanges<Test>>::remove(plapps_id, old_range.end);
         old_range.start
     };
 
@@ -296,8 +293,11 @@ fn success_deposit(
 fn success_extend_deposited_ranges(sender: AccountId, plapps_id: AccountId, amount: Balance) {
     let total_deposited = Plasma::total_deposited(plapps_id);
     let new_range = simulation_extend_ranges(&plapps_id, &amount);
-
-    Plasma::extend_deposited_ranges(Origin::signed(sender), plapps_id, amount);
+    assert_ok!(Plasma::extend_deposited_ranges(
+        Origin::signed(sender),
+        plapps_id,
+        amount
+    ));
     assert_eq!(
         Plasma::deposited_ranges(plapps_id, new_range.end),
         new_range,
@@ -308,6 +308,28 @@ fn success_extend_deposited_ranges(sender: AccountId, plapps_id: AccountId, amou
         vec![EventRecord {
             phase: Phase::ApplyExtrinsic(0),
             event: MetaEvent::plasma(RawEvent::DepositedRangeExtended(plapps_id, new_range)),
+            topics: vec![],
+        },]
+    );
+}
+
+fn success_remove_deposited_range(
+    sender: AccountId,
+    plapps_id: AccountId,
+    range: RangeOf<Test>,
+    deposited_range_id: Balance,
+) {
+    assert_ok!(Plasma::remove_deposited_range(
+        Origin::signed(sender),
+        plapps_id,
+        range.clone(),
+        deposited_range_id
+    ));
+    assert_eq!(
+        System::events(),
+        vec![EventRecord {
+            phase: Phase::ApplyExtrinsic(0),
+            event: MetaEvent::plasma(RawEvent::DepositedRangeRemoved(plapps_id, range)),
             topics: vec![],
         },]
     );
@@ -364,5 +386,27 @@ fn scenario_test() {
 
         advance_block();
         success_extend_deposited_ranges(ALICE_STASH, plapps_id, 100);
+
+        advance_block();
+        success_remove_deposited_range(
+            ALICE_STASH,
+            plapps_id,
+            Range {
+                start: 120,
+                end: 200,
+            },
+            220,
+        );
+
+        advance_block();
+        success_remove_deposited_range(
+            ALICE_STASH,
+            plapps_id,
+            Range {
+                start: 200,
+                end: 220,
+            },
+            220,
+        );
     });
 }
