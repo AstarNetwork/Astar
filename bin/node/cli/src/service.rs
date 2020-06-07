@@ -19,7 +19,8 @@ use sp_inherents::InherentDataProviders;
 sc_executor::native_executor_instance!(
     pub Executor,
     plasm_runtime::api::dispatch,
-    plasm_runtime::native_version
+    plasm_runtime::native_version,
+    plasm_runtime::legacy::storage::HostFunctions,
 );
 
 /// Starts a `ServiceBuilder` for a full service.

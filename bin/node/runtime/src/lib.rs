@@ -46,6 +46,9 @@ pub use sp_runtime::BuildStorage;
 /// Implementations of some helper traits passed into runtime modules as associated types.
 pub mod impls;
 
+/// Deprecated but used runtime interfaces.
+pub mod legacy;
+
 /// Constant values used within the runtime.
 pub mod constants;
 use constants::{currency::*, time::*};
