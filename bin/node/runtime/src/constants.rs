@@ -1,5 +1,4 @@
 //! A set of constant values used in substrate runtime.
-
 /// Money matters.
 pub mod currency {
     use plasm_primitives::Balance;

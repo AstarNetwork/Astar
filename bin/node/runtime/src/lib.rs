@@ -386,7 +386,7 @@ impl pallet_ovm::Trait for Runtime {
 }
 
 parameter_types! {
-    pub const MaximumTokenAddress: AccountId = AccountId::max_value();
+    pub const MaximumTokenAddress: AccountId = ([255; 32]).into();
 }
 
 impl pallet_plasma::Trait for Runtime {
@@ -421,6 +421,8 @@ construct_runtime!(
         Trading: pallet_operator_trading::{Module, Call, Storage, Event<T>},
         RandomnessCollectiveFlip: pallet_randomness_collective_flip::{Module, Call, Storage},
         Sudo: pallet_sudo::{Module, Call, Storage, Event<T>, Config<T>},
+        OVM: pallet_ovm::{Module, Call, Storage, Event<T>, Config},
+        Plasma: pallet_plasma::{Module, Call, Storage, Event<T>},
     }
 );
 

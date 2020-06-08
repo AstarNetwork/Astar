@@ -18,11 +18,12 @@ use codec::{Decode, Encode};
 use frame_support::{
     decl_error, decl_event, decl_module, decl_storage,
     dispatch::DispatchResult,
-    ensure,
-    traits::{Get, Time},
-    weights::{DispatchClass, FunctionOf, Pays, WeighData, Weight},
+    ensure, parameter_types,
+    traits::Get,
+    weights::{DispatchClass, FunctionOf, Pays, Weight},
     StorageMap,
 };
+
 use frame_system::{self as system, ensure_signed};
 
 #[cfg(feature = "std")]
@@ -187,7 +188,7 @@ parameter_types! {
     /// A reasonable default value for [`Trait::MaxDepth`].
     pub const DefaultMaxDepth: u32 = 32;
     /// A reasonable default value for [`Trait::DisputePeriod`].
-    pub const DefaultDisputePeriod: BlockNumber = 7;
+    pub const DefaultDisputePeriod: u32 = 7;
 }
 
 pub trait Trait: system::Trait {

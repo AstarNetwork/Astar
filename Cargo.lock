@@ -3891,6 +3891,7 @@ dependencies = [
  "pallet-contracts",
  "pallet-dapps-staking",
  "pallet-finality-tracker",
+ "pallet-ovm",
  "pallet-plasm-lockdrop",
  "pallet-timestamp",
  "pallet-transaction-payment",
