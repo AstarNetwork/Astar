@@ -18,11 +18,15 @@ sp-std = { version = "2.0.0-rc2", default_features = false }
 frame-support = { version = "2.0.0-rc2", default_features = false }
 frame-system = { version = "2.0.0-rc2", default_features = false }
 pallet-ovm = { path = "../ovm", default_features = false }
+pallet-contracts = { version = "2.0.0-rc2", default_features = false }
 
 [dev-dependencies]
 hex-literal = "0.2.1"
 sp-core = { version = "2.0.0-rc2" }
-pallet-balances = { version = "2.0.0-rc2" }
+pallet-balances = "2.0.0-rc2"
+pallet-timestamp = "2.0.0-rc2"
+pallet-randomness-collective-flip = "2.0.0-rc2"
+pallet-transaction-payment = "2.0.0-rc2"
 
 [features]
 default = ["std"]
@@ -37,4 +41,5 @@ std = [
     'frame-support/std',
     'frame-system/std',
     'pallet-ovm/std',
+    'pallet-contracts/std',
 ]

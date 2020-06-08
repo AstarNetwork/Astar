@@ -25,22 +25,28 @@ use frame_support::{
     dispatch::DispatchResult,
     ensure,
     traits::{Currency, Get},
-    weights::{WeighData, Weight},
+    weights::Weight,
     StorageDoubleMap, StorageMap,
 };
 use frame_system::{self as system, ensure_signed};
+use pallet_contracts::Gas;
 use sp_core::crypto::UncheckedFrom;
 use sp_runtime::{
-    traits::{Bounded, Hash, One, SaturatedConversion},
+    traits::{Bounded, Hash, One, SaturatedConversion, Saturating, Zero},
     DispatchError, RuntimeDebug,
 };
 use sp_std::{marker::PhantomData, prelude::*, vec::Vec};
 
-use pallet_ovm::{Property, PropertyOf};
+pub use pallet_ovm::{Decision, Property, PropertyOf};
+
+mod deserializer;
 #[cfg(test)]
 mod mock;
 #[cfg(test)]
 mod tests;
+
+pub use deserializer::Deserializer;
+pub type DispatchResultT<T> = Result<T, DispatchError>;
 
 #[derive(Encode, Decode, Clone, Default, RuntimeDebug, PartialEq, Eq)]
 pub struct Range<Balance> {
@@ -51,20 +57,19 @@ pub struct Range<Balance> {
 #[derive(Encode, Decode, Clone, Default, RuntimeDebug, PartialEq, Eq)]
 pub struct StateUpdate<AccountId, Balance, BlockNumber> {
     deposit_contract_address: AccountId,
-    ragne: Range<Balance>,
+    range: Range<Balance>,
     block_number: BlockNumber,
     state_object: Property<AccountId>,
 }
 
 #[derive(Encode, Decode, Clone, Default, RuntimeDebug, PartialEq, Eq)]
-pub struct Checkpoint<AccountId, Balance> {
-    subsrange: Range<Balance>,
+pub struct Checkpoint<AccountId> {
     state_update: Property<AccountId>,
 }
 
 #[derive(Encode, Decode, Clone, Default, RuntimeDebug, PartialEq, Eq)]
-pub struct Exit<AccountId, Range, BlockNumber, Balance, Hash> {
-    state_update: StateUpdate<AccountId, Range, BlockNumber>,
+pub struct Exit<AccountId, BlockNumber, Balance, Hash> {
+    state_update: StateUpdate<AccountId, Balance, BlockNumber>,
     inclusion_proof: InclusionProof<AccountId, Balance, Hash>,
 }
 
@@ -100,10 +105,32 @@ pub struct AddressTreeNode<AccountId, Hash> {
     token_address: AccountId,
 }
 
+#[derive(Encode, Decode, Clone, Default, RuntimeDebug, PartialEq, Eq)]
+pub struct ExitDeposit<AccountId, Balance, BlockNumber> {
+    state_update: StateUpdate<AccountId, Balance, BlockNumber>,
+    checkpoint: Checkpoint<AccountId>,
+}
+
 pub type BalanceOf<T> =
     <<T as Trait>::Currency as Currency<<T as frame_system::Trait>::AccountId>>::Balance;
-pub type CheckpointOf<T> = Checkpoint<<T as frame_system::Trait>::AccountId, BalanceOf<T>>;
+pub type CheckpointOf<T> = Checkpoint<<T as frame_system::Trait>::AccountId>;
+pub type ExitDepositOf<T> = ExitDeposit<
+    <T as frame_system::Trait>::AccountId,
+    BalanceOf<T>,
+    <T as frame_system::Trait>::BlockNumber,
+>;
 pub type RangeOf<T> = Range<BalanceOf<T>>;
+pub type ExitOf<T> = Exit<
+    <T as frame_system::Trait>::AccountId,
+    <T as frame_system::Trait>::BlockNumber,
+    BalanceOf<T>,
+    <T as frame_system::Trait>::Hash,
+>;
+pub type StateUpdateOf<T> = StateUpdate<
+    <T as frame_system::Trait>::AccountId,
+    BalanceOf<T>,
+    <T as frame_system::Trait>::BlockNumber,
+>;
 pub type InclusionProofOf<T> = InclusionProof<
     <T as frame_system::Trait>::AccountId,
     BalanceOf<T>,
@@ -150,7 +177,7 @@ where
     }
 }
 
-pub trait Trait: system::Trait {
+pub trait Trait: pallet_ovm::Trait + pallet_contracts::Trait {
     /// Plasma Range's currency.
     type Currency: Currency<Self::AccountId>;
 
@@ -194,10 +221,10 @@ decl_storage! {
         /// DepositedRanges are currently deposited ranges.
         DepositedRanges get(fn deposited_ranges): double_map hasher(twox_64_concat) T::AccountId, hasher(blake2_128_concat) BalanceOf<T> => RangeOf<T>;
         /// Range's Checkpoints.
-        Checkpoints get(fn checkpoints): double_map hasher(twox_64_concat) T::AccountId, hasher(blake2_128_concat) T::Hash => CheckpointOf<T>;
+        Checkpoints get(fn checkpoints): double_map hasher(twox_64_concat) T::AccountId, hasher(blake2_128_concat) T::Hash => bool;
 
         /// predicate address => payout address
-        PayoutContractAddress get(fn payout_contract_address): map hasher(twox_64_concat) T::AccountId => T::AccountId;
+        Payout get(fn payout): map hasher(twox_64_concat) T::AccountId => T::AccountId;
     }
 }
 
@@ -214,34 +241,16 @@ decl_event!(
         Deploy(AccountId, AccountId),
         /// Event definitions (AccountID: PlappsAddress, BlockNumber, Hash: root)
         BlockSubmitted(AccountId, BlockNumber, Hash),
-        /// (checkpointId: Hash, checkpoint: Checkpoint);
-        CheckpointFinalized(Hash, Checkpoint),
-        /// (exit_id: Hash)
-        ExitFinalized(Hash),
-        /// (new_range: Range)
-        DepositedRangeExtended(Range),
-        /// (removed_range: Range)
-        DepositedRangeRemoved(Range),
+        /// (AccountID: PlappsAddress, checkpointId: Hash, checkpoint: Checkpoint);
+        CheckpointFinalized(AccountId, Hash, Checkpoint),
+        /// (AccountID: PlappsAddress, exit_id: Hash)
+        ExitFinalized(AccountId, Hash),
+        /// (AccountID: PlappsAddress, new_range: Range)
+        DepositedRangeExtended(AccountId, Range),
+        /// (AccountID: PlappsAddress, removed_range: Range)
+        DepositedRangeRemoved(AccountId, Range),
     }
 );
-
-decl_error! {
-    /// Error for the staking module.
-    pub enum Error for Module<T: Trait> {
-        /// Sender isn't valid aggregator.
-        IsNotAggregator,
-        /// blkNumber should be next block.
-        BlockNumberShouldBeNextBlock,
-        /// leftStart must be less than _rightStart
-        LeftMustBeLessThanRight,
-        /// firstRightSiblingStart must be greater than siblingStart
-        FirstRightMustBeGreaterThanSibling,
-        /// required range must not exceed the implicit range
-        RangeMustNotExceedTheImplicitRange,
-        /// required address must not exceed the implicit address
-        AddressMustNotExceedTheImplicitAddress,
-    }
-}
 
 decl_module! {
     pub struct Module<T: Trait> for enum Call where origin: T::Origin {
@@ -251,12 +260,10 @@ decl_module! {
 
         fn on_runtime_upgrade() -> Weight {
             migrate::<T>();
-            // TODO: weight
-            Default::default()
+            T::MaximumBlockWeight::get()
         }
 
         /// Commitment constructor + Deposit constructor
-        ///
         /// TODO: weight
         #[weight = 100_000]
         fn deploy(
@@ -303,8 +310,6 @@ decl_module! {
             Self::deposit_event(RawEvent::BlockSubmitted(plapps_id, block_number, root));
         }
 
-        // TODO: Deposit callable methods. ========
-
         /// deposit ERC20 token to deposit contract with initial state.
         /// following https://docs.plasma.group/projects/spec/en/latest/src/02-contracts/deposit-contract.html#deposit
         /// - @param amount to deposit
@@ -312,20 +317,61 @@ decl_module! {
         /// TODO: weight
         #[weight = 100_000]
         fn deposit(origin, plapps_id: T::AccountId,
-            amount: BalanceOf<T>, initial_state: PropertyOf<T>) {
+            amount: BalanceOf<T>, initial_state: PropertyOf<T>, gas_limit: Gas) {
+            let _ = ensure_signed(origin)?;
+            let total_deposited = Self::total_deposited(&plapps_id);
+            ensure!(
+                total_deposited < BalanceOf::<T>::max_value().saturating_sub(amount),
+                Error::<T>::TotalDepositedExceedMaxBalance,
+            );
+            // TODO: transfer_from origin -> plapps_id (amount) at erc20.
+            // let _ = contracts::bare_call(
+            //     origin,
+            //     Self::erc20(&plapps_id),fAccountID
+            //     BalanceOf<T>::zero(),
+            //     gas_limit,
+            //     "transfer_from(origin, plapps_id, amount)",
+            // )?;
+
+            let deposit_range = RangeOf::<T> {
+                start: total_deposited,
+                end: total_deposited.saturating_add(amount.clone()),
+            };
+            let state_update = PropertyOf::<T> {
+                predicate_address: Self::state_update_predicate(&plapps_id),
+                inputs: vec![
+                    plapps_id.encode(),
+                    deposit_range.encode(),
+                    Self::get_latest_plasma_block_number(&plapps_id).encode(),
+                    initial_state.encode(),
+                ],
+            };
+            let checkpoint = Checkpoint {
+                state_update: state_update,
+            };
+            Self::bare_extend_deposited_ranges(&plapps_id, amount);
+            let checkpoint_id = Self::get_checkpoint_id(&checkpoint);
+            <Checkpoints<T>>::insert(plapps_id.clone(), &checkpoint_id, true);
+            Self::deposit_event(RawEvent::CheckpointFinalized(plapps_id, checkpoint_id, checkpoint));
         }
 
-        /// TODO: weight
+        /// TODO: weight, not external
         #[weight = 100_000]
         fn extend_deposited_ranges(origin, plapps_id: T::AccountId, amount: BalanceOf<T>) {
-
+            ensure_signed(origin)?;
+            Self::bare_extend_deposited_ranges(&plapps_id, amount);
         }
 
-        /// TODO: weight
+        /// TODO: weight, not external
         #[weight = 100_000]
         fn remove_deposited_range(origin, plapps_id: T::AccountId,
             range: RangeOf<T>, deposited_range_id: BalanceOf<T>) {
-
+            ensure_signed(origin)?;
+            Self::bare_remove_deposited_range(
+                &plapps_id,
+                &range,
+                &deposited_range_id,
+            )?;
         }
 
         /// finalizeCheckpoint
@@ -333,9 +379,22 @@ decl_module! {
         /// its first input is range to create checkpoint and second input is property for stateObject.
         /// TODO: weight
         #[weight = 100_000]
-        fn finalize_check_point(origin, plapps_id: T::AccountId,
+        fn finalize_checkpoint(origin, plapps_id: T::AccountId,
             checkpoint_property: PropertyOf<T>) {
+            ensure!(
+                <pallet_ovm::Module<T>>::is_decided(&checkpoint_property) != Decision::True,
+                Error::<T>::ClaimMustBeDecided,
+            );
+            let property: PropertyOf<T> = Decode::decode(&mut &checkpoint_property.inputs[0][..])
+                .map_err(|_| Error::<T>::MustBeDecodable)?;
+            let checkpoint = Checkpoint {
+                state_update: property,
+            };
 
+            let checkpoint_id = Self::get_checkpoint_id(&checkpoint);
+            // store the checkpoint
+            <Checkpoints<T>>::insert(&plapps_id, &checkpoint_id, true);
+            Self::deposit_event(RawEvent::CheckpointFinalized(plapps_id, checkpoint_id, checkpoint));
         }
 
         /// finalizeExit
@@ -350,11 +409,75 @@ decl_module! {
         ///
         /// Please alse see https://docs.plasma.group/projects/spec/en/latest/src/02-contracts/deposit-contract.html#finalizeexit
         /// TODO: weight
-        #[weight = 100_000]
+        #[weight = 50_000_000]
         fn finalize_exit(origin, plapps_id: T::AccountId,
-            exit_property: PropertyOf<T>, deposited_range_id: BalanceOf<T>) {
-
+            exit_property: PropertyOf<T>, deposited_range_id: BalanceOf<T>, _owner: T::AccountId) {
+            let origin = ensure_signed(origin)?;
+            let state_update = Self::bare_finalize_exit(
+                &plapps_id,
+                &exit_property,
+                &deposited_range_id
+            )?;
+            let owner: T::AccountId = Decode::decode(&mut &state_update.state_object.inputs[0][..])
+                .map_err(|_| Error::<T>::MustBeDecodable)?;
+            let amount = state_update.range.end - state_update.range.start;
+            ensure!(
+                origin == owner,
+                Error::<T>::OriginMustBeOwner,
+            );
+            // TODO: finalize_exit payout -> owner[state_update.state_objects.inputs[0]] (amount[state_update.range]) at payout.
+            // let _ = contracts::bare_call(
+            //     plapps_id,
+            //     Self::payout(&plapps_id),
+            //     BalanceOf<T>::zero(),
+            //     gas_limit,
+            //     "finalize_exit(state_update)",
+            // )?;
         }
+    }
+}
+
+decl_error! {
+    /// Error for the staking module.
+    pub enum Error for Module<T: Trait> {
+        /// Sender isn't valid aggregator.
+        IsNotAggregator,
+        /// blkNumber should be next block.
+        BlockNumberShouldBeNextBlock,
+        /// leftStart must be less than _rightStart
+        LeftMustBeLessThanRight,
+        /// firstRightSiblingStart must be greater than siblingStart
+        FirstRightMustBeGreaterThanSibling,
+        /// required range must not exceed the implicit range
+        RangeMustNotExceedTheImplicitRange,
+        /// required address must not exceed the implicit address
+        AddressMustNotExceedTheImplicitAddress,
+        /// DepositContract: totalDeposited exceed max uint256
+        TotalDepositedExceedMaxBalance,
+        /// must approved
+        MustApproved,
+        /// range must be of a depostied range (the one that has not been exited
+        RangeMustBeOfDepositedRange,
+        /// Checkpointing claim must be decied
+        ClaimMustBeDecided,
+        /// Must decode from checkpointInputs[0] to Property.
+        MustBeDecodable,
+        /// Exit must be decided after this block
+        ExitMustBeDecided,
+        /// finalizeExit must be called from payout contract
+        FinalizeExitMustBeCalledFromPayout,
+        /// origin must be owner
+        OriginMustBeOwner,
+        /// checkpoint must be finalized
+        CheckpointMustBeFinalized,
+        /// depositContractAddress must be same
+        DepositContractAddressMustBeSame,
+        /// blockNumber must be same,
+        BlockNumberMustBeSame,
+        /// range must be subrange of checkpoint
+        RangeMustBeSubrangeOfCheckpoint,
+        /// StateUpdate.depositContractAddress must be this contract address
+        DepositContractAddressMustBePlappsId,
     }
 }
 
@@ -368,8 +491,9 @@ fn migrate<T: Trait>() {
     // }
 }
 
+/// Public callable Plasma commitment module methods.
 impl<T: Trait> Module<T> {
-    // Public ====
+    // Plasma Commitment parts ====
     pub fn retrieve(plapps_id: T::AccountId, block_number: T::BlockNumber) -> T::Hash {
         <Blocks<T>>::get(&plapps_id, &block_number)
     }
@@ -389,7 +513,7 @@ impl<T: Trait> Module<T> {
         range: RangeOf<T>,
         inclusion_proof: InclusionProofOf<T>,
         block_number: T::BlockNumber,
-    ) -> Result<bool, DispatchError> {
+    ) -> DispatchResultT<bool> {
         let root = <Blocks<T>>::get(&plapps_id, &block_number);
         Self::verify_inclusion_with_root(leaf, token_address, range, inclusion_proof, root)
     }
@@ -400,7 +524,7 @@ impl<T: Trait> Module<T> {
         range: RangeOf<T>,
         inclusion_proof: InclusionProofOf<T>,
         root: T::Hash,
-    ) -> Result<bool, DispatchError> {
+    ) -> DispatchResultT<bool> {
         // Calcurate the root of interval tree
         let (computed_root, implicit_end) = Self::compute_interval_tree_root(
             &leaf,
@@ -429,8 +553,11 @@ impl<T: Trait> Module<T> {
         );
         return Ok(computed_root == root);
     }
+}
 
-    // Private(Helper) ====
+/// Private(Helper) Plasma commitment module methods.
+impl<T: Trait> Module<T> {
+    // Plasma Commitment Parts
     fn ensure_aggregator(sender: &T::AccountId, plapps_id: &T::AccountId) -> DispatchResult {
         ensure!(
             sender != &Self::aggregator_address(plapps_id),
@@ -446,7 +573,7 @@ impl<T: Trait> Module<T> {
         computed_start: &BalanceOf<T>,
         interval_tree_merkle_path: &BalanceOf<T>,
         interval_tree_proof: &Vec<IntervalTreeNodeOf<T>>,
-    ) -> Result<(T::Hash, BalanceOf<T>), DispatchError> {
+    ) -> DispatchResultT<(T::Hash, BalanceOf<T>)> {
         let mut first_right_sibling_start = BalanceOf::<T>::max_value();
         let mut is_first_right_sibling_start_set = false;
         let mut ret_computed_root: T::Hash = computed_root.clone();
@@ -492,7 +619,7 @@ impl<T: Trait> Module<T> {
         compute_address: &T::AccountId,
         address_tree_merkle_path: &BalanceOf<T>,
         address_tree_proof: &Vec<AddressTreeNodeOf<T>>,
-    ) -> Result<(T::Hash, T::AccountId), DispatchError> {
+    ) -> DispatchResultT<(T::Hash, T::AccountId)> {
         let mut first_right_sibling_address = T::MaximumTokenAddress::get();
         let mut is_first_right_sibling_address_set = false;
         let mut ret_computed_root: T::Hash = computed_root.clone();
@@ -530,12 +657,12 @@ impl<T: Trait> Module<T> {
         Ok((ret_computed_root, first_right_sibling_address))
     }
 
-    pub fn get_parent(
+    fn get_parent(
         left: &T::Hash,
         left_start: &BalanceOf<T>,
         right: &T::Hash,
         right_start: &BalanceOf<T>,
-    ) -> Result<T::Hash, DispatchError> {
+    ) -> DispatchResultT<T::Hash> {
         ensure!(
             right_start >= left_start,
             Error::<T>::LeftMustBeLessThanRight,
@@ -547,13 +674,201 @@ impl<T: Trait> Module<T> {
             right_start,
         )));
     }
+}
 
-    pub fn get_parent_of_address_tree_node(
+/// Public callable Plasma deposit module methods.
+impl<T: Trait> Module<T> {
+    pub fn bare_extend_deposited_ranges(plapps_id: &T::AccountId, amount: BalanceOf<T>) {
+        let total_deposited = Self::total_deposited(plapps_id);
+        let old_range = Self::deposited_ranges(plapps_id, &total_deposited);
+        let new_start = if old_range.start == BalanceOf::<T>::zero()
+            && old_range.end == BalanceOf::<T>::zero()
+        {
+            // Creat a new range when the rightmost range has been removed
+            total_deposited
+        } else {
+            // Delete the old range and make a new one with the total length
+            <DepositedRanges<T>>::remove(plapps_id, old_range.end);
+            old_range.start
+        };
+
+        let new_end = total_deposited.saturating_add(amount.clone());
+        let new_range = Range {
+            start: new_start,
+            end: new_end,
+        };
+        <DepositedRanges<T>>::insert(plapps_id, &new_end, new_range.clone());
+        <TotalDeposited<T>>::insert(plapps_id, total_deposited.saturating_add(amount));
+        Self::deposit_event(RawEvent::DepositedRangeExtended(
+            plapps_id.clone(),
+            new_range,
+        ));
+    }
+
+    pub fn bare_remove_deposited_range(
+        plapps_id: &T::AccountId,
+        range: &RangeOf<T>,
+        deposited_range_id: &BalanceOf<T>,
+    ) -> DispatchResult {
+        let deposited_ranges = Self::deposited_ranges(plapps_id, deposited_range_id);
+        ensure!(
+            Self::is_subrange(range, &deposited_ranges),
+            Error::<T>::RangeMustBeOfDepositedRange,
+        );
+
+        /*
+         * depositedRanges makes O(1) checking existence of certain range.
+         * Since _range is subrange of encompasingRange, we only have to check is each start and end are same or not.
+         * So, there are 2 patterns for each start and end of _range and encompasingRange.
+         * There are nothing todo for _range.start is equal to encompasingRange.start.
+         */
+        // Check start of range
+        if range.start != deposited_ranges.start {
+            let left_split_range = Range {
+                start: deposited_ranges.start,
+                end: range.start,
+            };
+            <DepositedRanges<T>>::insert(plapps_id, left_split_range.end, left_split_range);
+        }
+        // Check end of range
+        if range.end == deposited_ranges.end {
+            /*
+             * Deposited range Id is end value of the range, we must remove the range from depositedRanges
+             *     when range.end is changed.
+             */
+            <DepositedRanges<T>>::remove(plapps_id, &deposited_ranges.end);
+        } else {
+            <DepositedRanges<T>>::insert(
+                plapps_id,
+                &deposited_ranges.end,
+                Range {
+                    start: range.end,
+                    end: deposited_ranges.end,
+                },
+            );
+        }
+        Self::deposit_event(RawEvent::DepositedRangeRemoved(
+            plapps_id.clone(),
+            range.clone(),
+        ));
+        Ok(())
+    }
+
+    /// bare_finalize_exit
+    /// called by this module.
+    /// - @param _exitProperty A property which is instance of exit predicate and its inputs are range and StateUpdate that exiting account wants to withdraw.
+    /// _exitProperty can be a property of ether ExitPredicate or ExitDepositPredicate.
+    /// - @param _depositedRangeId Id of deposited range
+    /// - @return return StateUpdate of exit property which is finalized.
+    /// - @dev The steps of finalizeExit.
+    /// 1. Serialize exit property
+    /// 2. check the property is decided by Adjudication Contract.
+    /// 3. Transfer asset to payout contract corresponding to StateObject.
+    ///
+    /// Please alse see https://docs.plasma.group/projects/spec/en/latest/src/02-contracts/deposit-contract.html#finalizeexit
+    pub fn bare_finalize_exit(
+        plapps_id: &T::AccountId,
+        exit_property: &PropertyOf<T>,
+        deposited_range_id: &BalanceOf<T>,
+    ) -> DispatchResultT<StateUpdateOf<T>> {
+        let state_update = Self::verify_exit_property(plapps_id, exit_property)?;
+        let exit_id = Self::get_exit_id(exit_property);
+        // get payout contract address
+        let payout = Self::payout(plapps_id);
+
+        // Check that we are authorized to finalize this exit
+        ensure!(
+            <pallet_ovm::Module<T>>::is_decided(exit_property) != Decision::True,
+            Error::<T>::ExitMustBeDecided,
+        );
+
+        ensure!(
+            &state_update.deposit_contract_address == plapps_id,
+            Error::<T>::DepositContractAddressMustBePlappsId,
+        );
+
+        // Remove the deposited range
+        Self::bare_remove_deposited_range(plapps_id, &state_update.range, deposited_range_id)?;
+        // Transfer tokens to its predicate
+        let amount = state_update.range.end - state_update.range.start;
+
+        // TODO: transfer plapps_id -> payout (amount) at erc20.
+        // let _ = contracts::bare_call(
+        //     origin,
+        //     Self::erc20(&plapps_id),
+        //     BalanceOf<T>::zero(),
+        //     gas_limit,
+        //     "transfer(payout, amount)",
+        // )?;
+        Self::deposit_event(RawEvent::ExitFinalized(plapps_id.clone(), exit_id));
+        Ok(state_update)
+    }
+
+    /// @dev verify StateUpdate in Exit property.
+    /// _exitProperty must be instance of ether ExitPredicate or ExitDepositPredicate.
+    /// if _exitProperty is instance of ExitDepositPredicate, check _exitProperty.su is subrange of _exitProperty.checkpoint.
+    pub fn verify_exit_property(
+        plapps_id: &T::AccountId,
+        exit_property: &PropertyOf<T>,
+    ) -> DispatchResultT<StateUpdateOf<T>> {
+        if exit_property.predicate_address == Self::exit_predicate(plapps_id) {
+            let exit: ExitOf<T> = <Deserializer<T>>::deserialize_exit(exit_property)?;
+            // TODO: check inclusion proof
+            return Ok(exit.state_update);
+        } else if exit_property.predicate_address == Self::exit_deposit_predicate(plapps_id) {
+            let exit_deposit = <Deserializer<T>>::deserialize_exit_deposit(exit_property)?;
+            let checkpoint = exit_deposit.checkpoint;
+            let state_update =
+                <Deserializer<T>>::deserialize_state_update(&checkpoint.state_update)?;
+            ensure!(
+                Self::checkpoints(plapps_id, Self::get_checkpoint_id(&checkpoint)),
+                Error::<T>::CheckpointMustBeFinalized,
+            );
+            ensure!(
+                state_update.deposit_contract_address
+                    == exit_deposit.state_update.deposit_contract_address,
+                Error::<T>::DepositContractAddressMustBeSame,
+            );
+            ensure!(
+                state_update.block_number == exit_deposit.state_update.block_number,
+                Error::<T>::BlockNumberMustBeSame,
+            );
+            ensure!(
+                Self::is_subrange(&exit_deposit.state_update.range, &state_update.range),
+                Error::<T>::RangeMustBeSubrangeOfCheckpoint,
+            );
+            return Ok(exit_deposit.state_update);
+        }
+        Err(DispatchError::Other(
+            "verify_exit_property not return value.",
+        ))
+    }
+}
+
+/// Priavte(Helper) callable Plasma deposit module methods.
+impl<T: Trait> Module<T> {
+    fn get_parent_of_address_tree_node(
         left: &T::Hash,
         left_address: &T::AccountId,
         right: &T::Hash,
         right_address: &T::AccountId,
     ) -> T::Hash {
         T::PlasmaHashing::hash_of(&(left, left_address, right, right_address))
+    }
+
+    fn get_latest_plasma_block_number(plapps_id: &T::AccountId) -> T::BlockNumber {
+        return Self::current_block(&plapps_id);
+    }
+
+    fn get_checkpoint_id(checkpoint: &CheckpointOf<T>) -> T::Hash {
+        <T as system::Trait>::Hashing::hash_of(checkpoint)
+    }
+
+    fn get_exit_id(exit: &PropertyOf<T>) -> T::Hash {
+        <T as system::Trait>::Hashing::hash_of(exit)
+    }
+
+    fn is_subrange(subrange: &RangeOf<T>, surrounding_range: &RangeOf<T>) -> bool {
+        subrange.start >= surrounding_range.start && subrange.end <= surrounding_range.end
     }
 }
