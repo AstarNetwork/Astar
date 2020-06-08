@@ -14,8 +14,7 @@
 </div><h2 id='variants' class='variants small-section-header'>
                    Variants<a href='#variants' class='anchor'></a></h2>
 <div id="variant.put_code" class="variant small-section-header"><a href="#variant.put_code" class="anchor field"></a><code id='put_code.v'>put_code(<a class="struct" href="https://doc.rust-lang.org/nightly/alloc/vec/struct.Vec.html" title="struct alloc::vec::Vec">Vec</a>&lt;<a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.u8.html">u8</a>&gt;)</code></div><div class='docblock'><p>Stores the given binary Wasm code into the chain's storage and returns its <code>codehash</code>.
-You can instantiate contracts only with stored code.
-TODO: weight</p>
+You can instantiate contracts only with stored code.</p>
 </div><div id="variant.instantiate" class="variant small-section-header"><a href="#variant.instantiate" class="anchor field"></a><code id='instantiate.v'>instantiate(&lt;T as Trait&gt;::Hash,&nbsp;<a class="struct" href="https://doc.rust-lang.org/nightly/alloc/vec/struct.Vec.html" title="struct alloc::vec::Vec">Vec</a>&lt;<a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.u8.html">u8</a>&gt;)</code></div><div class='docblock'><p>Deploy predicate and made predicate address as AccountId.
 TODO: weight</p>
 </div><div id="variant.claim_property" class="variant small-section-header"><a href="#variant.claim_property" class="anchor field"></a><code id='claim_property.v'>claim_property(<a class="type" href="../pallet_ovm/type.PropertyOf.html" title="type pallet_ovm::PropertyOf">PropertyOf</a>&lt;T&gt;)</code></div><div class='docblock'><p>Claims property and create new game. Id of game is hash of claimed property
@@ -24,8 +23,8 @@ TODO: weight</p>
 TODO: weight</p>
 </div><div id="variant.decide_claim_to_false" class="variant small-section-header"><a href="#variant.decide_claim_to_false" class="anchor field"></a><code id='decide_claim_to_false.v'>decide_claim_to_false(T::Hash,&nbsp;T::Hash)</code></div><div class='docblock'><p>Sets the game decision false when its challenge has been evaluated to true.
 TODO: weight</p>
-</div><div id="variant.decide_claim_with_witness" class="variant small-section-header"><a href="#variant.decide_claim_with_witness" class="anchor field"></a><code id='decide_claim_with_witness.v'>decide_claim_with_witness(T::Hash,&nbsp;<a class="struct" href="https://doc.rust-lang.org/nightly/alloc/vec/struct.Vec.html" title="struct alloc::vec::Vec">Vec</a>&lt;<a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.u8.html">u8</a>&gt;)</code></div><div class='docblock'><p>Decide the game decision with given witness.</p>
-<p>TODO: weight</p>
+</div><div id="variant.decide_claim_with_witness" class="variant small-section-header"><a href="#variant.decide_claim_with_witness" class="anchor field"></a><code id='decide_claim_with_witness.v'>decide_claim_with_witness(T::Hash,&nbsp;<a class="struct" href="https://doc.rust-lang.org/nightly/alloc/vec/struct.Vec.html" title="struct alloc::vec::Vec">Vec</a>&lt;<a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.u8.html">u8</a>&gt;)</code></div><div class='docblock'><p>Decide the game decision with given witness.
+TODO: weight</p>
 </div><div id="variant.remove_challenge" class="variant small-section-header"><a href="#variant.remove_challenge" class="anchor field"></a><code id='remove_challenge.v'>remove_challenge(T::Hash,&nbsp;T::Hash)</code></div><div class='docblock'><p>Removes a challenge when its decision has been evaluated to false.</p>
 <p>TODO: weight</p>
 </div><div id="variant.set_predicate_decision" class="variant small-section-header"><a href="#variant.set_predicate_decision" class="anchor field"></a><code id='set_predicate_decision.v'>set_predicate_decision(T::Hash,&nbsp;<a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.bool.html">bool</a>)</code></div><div class='docblock'><p>Set a predicate decision by called from Predicate itself.</p>
