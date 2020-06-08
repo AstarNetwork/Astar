@@ -35,6 +35,8 @@ pallet-operator-trading = { path = "../../../frame/trading", default-features = 
 pallet-dapps-staking = { path = "../../../frame/dapps-staking", default-features = false }
 pallet-plasm-rewards = { path = "../../../frame/plasm-rewards", default-features = false }
 pallet-plasm-validator = { path = "../../../frame/plasm-validator", default-features = false }
+pallet-ovm = { path = "../../../frame/ovm", default-features = false }
+pallet-plasma = { path = "../../../frame/plasma", default-features = false }
 frame-executive = { version = "2.0.0-rc2", default-features = false }
 pallet-babe = { version = "2.0.0-rc2", default-features = false }
 pallet-balances = { version = "2.0.0-rc2", default-features = false }

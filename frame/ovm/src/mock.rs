@@ -111,10 +111,6 @@ impl pallet_balances::Trait for Test {
     type AccountStore = frame_system::Module<Test>;
 }
 
-parameter_types! {
-    pub const DisputePeriod: BlockNumber = 7;
-}
-
 pub struct DummyPredicateAddressFor;
 impl PredicateAddressFor<H256, u64> for DummyPredicateAddressFor {
     fn predicate_address_for(_code_hash: &H256, _data: &[u8], origin: &u64) -> u64 {
@@ -123,6 +119,7 @@ impl PredicateAddressFor<H256, u64> for DummyPredicateAddressFor {
 }
 
 parameter_types! {
+    pub const DisputePeriod: BlockNumber = 7;
     pub const MaxDepth: u32 = 32;
 }
 

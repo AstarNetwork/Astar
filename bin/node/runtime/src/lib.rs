@@ -378,6 +378,30 @@ where
     type Extrinsic = UncheckedExtrinsic;
 }
 
+parameter_types! {
+    pub const DisputePeriod: BlockNumber = 7;
+}
+
+impl pallet_ovm::Trait for Runtime {
+    type MaxDepth = MaxDepth;
+    type DisputePeriod = DisputePeriod;
+    type DeterminePredicateAddress = pallet_ovm::SimpleAddressDeterminer<Runtime>;
+    type Event = Event;
+}
+
+parameter_types! {
+    pub const MaximumTokenAddress: AccountId = AccountId::max_value();
+}
+
+impl pallet_plasma::Trait for Runtime {
+    type Currency = Balances;
+    type DeterminePlappsAddress = pallet_plasma::SimpleAddressDeterminer<Runtime>;
+    type MaximumTokenAddress = MaximumTokenAddress;
+    // TODO: should be Keccak;
+    type PlasmaHashing = BlakeTwo256;
+    type Event = Event;
+}
+
 construct_runtime!(
     pub enum Runtime where
         Block = Block,

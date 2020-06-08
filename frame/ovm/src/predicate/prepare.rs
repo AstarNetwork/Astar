@@ -1,5 +1,6 @@
 use crate::predicate::PrefabOvmModule;
 use crate::Schedule;
+use sp_std::{prelude::*, vec::*};
 
 struct PredicateModule<'a> {
     /// A deserialized module. The predicate module is valid (this is Guaranteed by `new` method).

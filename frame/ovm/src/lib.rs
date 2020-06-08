@@ -27,8 +27,9 @@ use frame_system::{self as system, ensure_signed};
 
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
+use sp_core::crypto::UncheckedFrom;
 use sp_runtime::{traits::Hash, RuntimeDebug};
-use sp_std::{prelude::*, vec::Vec};
+use sp_std::{marker::PhantomData, prelude::*, vec::Vec};
 
 #[cfg(test)]
 mod mock;
@@ -142,6 +143,33 @@ impl Config {
             schedule: <Module<T>>::current_schedule(),
             max_depth: T::MaxDepth::get(),
         }
+    }
+}
+
+/// Simple predicate address determiner.
+///
+/// Address calculated from the code (of the constructor), input data to the constructor,
+/// and the account id that requested the account creation.
+///
+/// Formula: `blake2_256(blake2_256(code) + blake2_256(data) + origin)`
+pub struct SimpleAddressDeterminer<T: Trait>(PhantomData<T>);
+impl<T: Trait> PredicateAddressFor<PredicateHash<T>, T::AccountId> for SimpleAddressDeterminer<T>
+where
+    T::AccountId: UncheckedFrom<T::Hash> + AsRef<[u8]>,
+{
+    fn predicate_address_for(
+        code_hash: &PredicateHash<T>,
+        data: &[u8],
+        origin: &T::AccountId,
+    ) -> T::AccountId {
+        let data_hash = T::Hashing::hash(data);
+
+        let mut buf = Vec::new();
+        buf.extend_from_slice(code_hash.as_ref());
+        buf.extend_from_slice(data_hash.as_ref());
+        buf.extend_from_slice(origin.as_ref());
+
+        UncheckedFrom::unchecked_from(T::Hashing::hash(&buf[..]))
     }
 }
 
