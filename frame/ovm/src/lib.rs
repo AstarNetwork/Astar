@@ -183,6 +183,13 @@ pub type PropertyOf<T> = Property<<T as system::Trait>::AccountId>;
 type AccountIdOf<T> = <T as frame_system::Trait>::AccountId;
 type PredicateContractOf<T> = PredicateContract<<T as frame_system::Trait>::Hash>;
 
+parameter_types! {
+    /// A reasonable default value for [`Trait::MaxDepth`].
+    pub const DefaultMaxDepth: u32 = 32;
+    /// A reasonable default value for [`Trait::DisputePeriod`].
+    pub const DefaultDisputePeriod: BlockNumber = 7;
+}
+
 pub trait Trait: system::Trait {
     /// The maximum nesting level of a call/instantiate stack.
     type MaxDepth: Get<u32>;

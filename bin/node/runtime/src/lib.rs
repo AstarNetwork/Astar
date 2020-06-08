@@ -378,13 +378,9 @@ where
     type Extrinsic = UncheckedExtrinsic;
 }
 
-parameter_types! {
-    pub const DisputePeriod: BlockNumber = 7;
-}
-
 impl pallet_ovm::Trait for Runtime {
-    type MaxDepth = MaxDepth;
-    type DisputePeriod = DisputePeriod;
+    type MaxDepth = pallet_ovm::DefaultMaxDepth;
+    type DisputePeriod = pallet_ovm::DefaultDisputePeriod;
     type DeterminePredicateAddress = pallet_ovm::SimpleAddressDeterminer<Runtime>;
     type Event = Event;
 }
