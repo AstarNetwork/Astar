@@ -355,14 +355,14 @@ decl_module! {
             Self::deposit_event(RawEvent::CheckpointFinalized(plapps_id, checkpoint_id, checkpoint));
         }
 
-        /// TODO: weight
+        /// TODO: weight, not external
         #[weight = 100_000]
         fn extend_deposited_ranges(origin, plapps_id: T::AccountId, amount: BalanceOf<T>) {
             ensure_signed(origin)?;
             Self::bare_extend_deposited_ranges(&plapps_id, amount);
         }
 
-        /// TODO: weight
+        /// TODO: weight, not external
         #[weight = 100_000]
         fn remove_deposited_range(origin, plapps_id: T::AccountId,
             range: RangeOf<T>, deposited_range_id: BalanceOf<T>) {
