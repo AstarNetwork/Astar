@@ -104,4 +104,6 @@ std = [
     "pallet-timestamp/std",
     "pallet-transaction-payment/std",
     "pallet-transaction-payment-rpc-runtime-api/std",
+    "pallet-plasma/std",
+    "pallet-ovm/std",
 ]
