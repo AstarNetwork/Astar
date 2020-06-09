@@ -229,18 +229,19 @@ impl pallet_plasm_validator::Trait for Runtime {
     type Event = Event;
 }
 
-// impl pallet_dapps_staking::Trait for Runtime {
-//     type Currency = Balances;
-//     type BondingDuration = BondingDuration;
-//     type ContractFinder = Operator;
-//     type RewardRemainder = (); // Reward remainder is burned.
-//     type Reward = (); // Reward is minted.
-//     type Time = Timestamp;
-//     type ComputeRewardsForDapps = pallet_dapps_staking::rewards::BasedComputeRewardsForDapps;
-//     type EraFinder = PlasmRewards;
-//     type ForDappsEraReward = PlasmRewards;
-//     type Event = Event;
-// }
+impl pallet_dapps_staking::Trait for Runtime {
+    type Currency = Balances;
+    type BondingDuration = BondingDuration;
+    type ContractFinder = Operator;
+    type RewardRemainder = (); // Reward remainder is burned.
+    type Reward = (); // Reward is minted.
+    type Time = Timestamp;
+    type ComputeRewardsForDapps = pallet_dapps_staking::rewards::BasedComputeRewardsForDapps;
+    type EraFinder = PlasmRewards;
+    type ForDappsEraReward = PlasmRewards;
+    type HistoryDepthFinder = PlasmRewards;
+    type Event = Event;
+}
 
 parameter_types! {
     pub const ContractTransferFee: Balance = 1 * MILLIPLM;
@@ -390,6 +391,7 @@ construct_runtime!(
         Indices: pallet_indices::{Module, Call, Storage, Event<T>, Config<T>},
         Balances: pallet_balances::{Module, Call, Storage, Event<T>, Config<T>},
         Contracts: pallet_contracts::{Module, Call, Storage, Event<T>, Config},
+        DappsStaking: pallet_dapps_staking::{Module, Call, Storage, Event<T>},
         PlasmValidator: pallet_plasm_validator::{Module, Call, Storage, Event<T>, Config<T>},
         PlasmRewards: pallet_plasm_rewards::{Module, Call, Storage, Event<T>, Config},
         Session: pallet_session::{Module, Call, Storage, Event, Config<T>},
