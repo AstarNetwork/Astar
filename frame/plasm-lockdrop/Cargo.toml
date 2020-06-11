@@ -15,21 +15,21 @@ tiny-keccak = { version = "2.0.1", default-features = false, features = ["keccak
 sha2 = { version = "0.8.0", default-features = false }
 hex = { version = "0.4", default-features = false }
 bs58 = { version = "0.3.0", default-features = false, features = ["alloc"] }
-sp-io = { version = "2.0.0-rc2", default-features = false }
-sp-std = { version = "2.0.0-rc2", default-features = false }
-sp-core = { version = "2.0.0-rc2", default-features = false }
-sp-runtime = { version = "2.0.0-rc2", default-features = false }
-sp-arithmetic = { version = "2.0.0-rc2", default-features = false }
-frame-system = { version = "2.0.0-rc2", default-features = false }
-frame-support = { version = "2.0.0-rc2", default-features = false }
-pallet-session = { version = "2.0.0-rc2", default-features = false }
-pallet-timestamp = { version = "2.0.0-rc2", default-features = false }
+sp-io = { version = "2.0.0-rc3", default-features = false }
+sp-std = { version = "2.0.0-rc3", default-features = false }
+sp-core = { version = "2.0.0-rc3", default-features = false }
+sp-runtime = { version = "2.0.0-rc3", default-features = false }
+sp-arithmetic = { version = "2.0.0-rc3", default-features = false }
+frame-system = { version = "2.0.0-rc3", default-features = false }
+frame-support = { version = "2.0.0-rc3", default-features = false }
+pallet-session = { version = "2.0.0-rc3", default-features = false }
+pallet-timestamp = { version = "2.0.0-rc3", default-features = false }
 
 [dev-dependencies]
 hex-literal = "0.2.1"
-pallet-balances = { version = "2.0.0-rc2" }
-sp-staking = { version = "2.0.0-rc2" }
-sp-keyring = { version = "2.0.0-rc2" }
+pallet-balances = { version = "2.0.0-rc3" }
+sp-staking = { version = "2.0.0-rc3" }
+sp-keyring = { version = "2.0.0-rc3" }
 plasm-primitives = { path = "../../bin/node/primitives" }
 
 [features]

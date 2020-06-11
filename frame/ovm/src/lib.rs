@@ -20,10 +20,11 @@ use frame_support::{
     dispatch::DispatchResult,
     ensure,
     traits::{Get, Time},
-    weights::{WeighData, Weight},
+    weights::{DispatchClass, FunctionOf, Pays, WeighData, Weight},
     StorageMap,
 };
 use frame_system::{self as system, ensure_signed};
+
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
 use sp_runtime::{traits::Hash, RuntimeDebug};
@@ -58,9 +59,9 @@ pub struct PredicateContract<CodeHash> {
 #[derive(Encode, Decode, Clone, Default, RuntimeDebug, PartialEq, Eq)]
 pub struct Property<AccountId> {
     /// Indicates the address of Predicate.
-    predicate_address: AccountId,
+    pub predicate_address: AccountId,
     /// Every input are bytes. Each Atomic Predicate decode inputs to the specific type.
-    inputs: Vec<u8>,
+    pub inputs: Vec<Vec<u8>>,
 }
 
 /// The game decision by predicates.
@@ -92,6 +93,9 @@ pub struct Schedule {
     /// Version of the schedule.
     pub version: u32,
 
+    /// Cost of putting a byte of code into storage.
+    pub put_code_per_byte_cost: Weight,
+
     /// Maximum allowed stack height.
     ///
     /// See https://wiki.parity.io/WebAssembly-StackHeight to find out
@@ -106,10 +110,16 @@ pub struct Schedule {
     // TODO: add logical conecctive addresses.
 }
 
+// 500 (2 instructions per nano second on 2GHZ) * 1000x slowdown through wasmi
+// This is a wild guess and should be viewed as a rough estimation.
+// Proper benchmarks are needed before this value and its derivatives can be used in production.
+const WASM_INSTRUCTION_COST: Weight = 500_000;
+
 impl Default for Schedule {
     fn default() -> Schedule {
         Schedule {
             version: 0,
+            put_code_per_byte_cost: WASM_INSTRUCTION_COST,
             max_stack_height: 64 * 1024,
             max_memory_pages: 16,
             max_table_size: 16 * 1024,
@@ -250,13 +260,16 @@ decl_module! {
         fn on_runtime_upgrade() -> Weight {
             migrate::<T>();
             // TODO: weight
-            Default::default()
+            T::MaximumBlockWeight::get()
         }
 
         /// Stores the given binary Wasm code into the chain's storage and returns its `codehash`.
         /// You can instantiate contracts only with stored code.
-        /// TODO: weight
-        #[weight = 100_000]
+        #[weight = FunctionOf(
+            |args: (&Vec<u8>,)| Module::<T>::calc_code_put_costs(args.0),
+            DispatchClass::Normal,
+            Pays::Yes
+        )]
         pub fn put_code(
             origin,
             predicate: Vec<u8>
@@ -379,7 +392,6 @@ decl_module! {
         }
 
         /// Decide the game decision with given witness.
-        ///
         /// TODO: weight
         #[weight = 100_000]
         fn decide_claim_with_witness(origin, game_id: T::Hash, witness: Vec<u8>) {
@@ -523,10 +535,15 @@ fn migrate<T: Trait>() {
     //     for era in current_era.saturating_sub(history_depth)..=current_era {
     //         ErasStartSessionIndex::migrate_key_from_blake(era);
     //     }
-    // }
 }
 
 impl<T: Trait> Module<T> {
+    fn calc_code_put_costs(code: &Vec<u8>) -> Weight {
+        <Module<T>>::current_schedule()
+            .put_code_per_byte_cost
+            .saturating_mul(code.len() as Weight)
+    }
+
     // ======= main ==========
     /// Perform a call to a specified contract.
     ///
