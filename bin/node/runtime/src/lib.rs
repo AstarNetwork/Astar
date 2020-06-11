@@ -46,6 +46,9 @@ pub use sp_runtime::BuildStorage;
 /// Implementations of some helper traits passed into runtime modules as associated types.
 pub mod impls;
 
+/// Deprecated but used runtime interfaces.
+pub mod legacy;
+
 /// Constant values used within the runtime.
 pub mod constants;
 use constants::{currency::*, time::*};
@@ -63,8 +66,8 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     // and set impl_version to equal spec_version. If only runtime
     // implementation changes and behavior does not, then leave spec_version as
     // is and increment impl_version.
-    spec_version: 1,
-    impl_version: 1,
+    spec_version: 2,
+    impl_version: 2,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 1,
 };
@@ -79,13 +82,13 @@ pub fn native_version() -> NativeVersion {
 }
 
 parameter_types! {
-    pub const BlockHashCount: BlockNumber = 250;
+    pub const BlockHashCount: BlockNumber = 2400;
     /// We allow for 3 seconds of compute with a 10 second average block time.
     pub const MaximumBlockWeight: Weight = 3 * WEIGHT_PER_SECOND;
     pub const MaximumBlockLength: u32 = 5 * 1024 * 1024;
     pub const AvailableBlockRatio: Perbill = Perbill::from_percent(75);
     /// Assume 10% of weight for average on_initialize calls
-    pub const MaximumExtrinsicWeight: Weight = AvailableBlockRatio::get()
+    pub MaximumExtrinsicWeight: Weight = AvailableBlockRatio::get()
         .saturating_sub(Perbill::from_percent(10)) * MaximumBlockWeight::get();
     pub const Version: RuntimeVersion = VERSION;
 }
@@ -244,11 +247,6 @@ impl pallet_dapps_staking::Trait for Runtime {
 }
 
 parameter_types! {
-    pub const ContractTransferFee: Balance = 1 * MILLIPLM;
-    pub const ContractCreationFee: Balance = 1 * MILLIPLM;
-    pub const ContractTransactionBaseFee: Balance = 1 * MILLIPLM;
-    pub const ContractTransactionByteFee: Balance = 10 * MILLIPLM;
-    pub const ContractFee: Balance = 1 * MILLIPLM;
     pub const TombstoneDeposit: Balance = 1 * PLM;
     pub const RentByteFee: Balance = 1 * PLM;
     pub const RentDepositOffset: Balance = 1000 * PLM;

@@ -1,18 +1,15 @@
 [package]
 name = "plasm-primitives"
-version = "1.0.1"
-authors = [
-    "Takumi Yamashita <takumi@stake.co.jp>",
-    "Aleksandr Krupenkin <aleksandr@stake.co.jp>"
-]
+version = "1.1.0"
+authors = ["Stake Technologies <devops@stake.co.jp>"]
 edition = "2018"
 
 [dependencies]
 codec = { package = "parity-scale-codec", version = "1.3.0", default-features = false }
-sp-core = { version = "2.0.0-rc2", default-features = false }
-sp-runtime = { version = "2.0.0-rc2", default-features = false }
-sp-application-crypto = { version = "2.0.0-rc2", default-features = false }
-frame-system = { version = "2.0.0-rc2", default-features = false }
+sp-core = { version = "2.0.0-rc3", default-features = false }
+sp-runtime = { version = "2.0.0-rc3", default-features = false }
+sp-application-crypto = { version = "2.0.0-rc3", default-features = false }
+frame-system = { version = "2.0.0-rc3", default-features = false }
 
 [features]
 default = ["std"]

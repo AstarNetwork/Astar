@@ -1,30 +1,27 @@
 [package]
 name = "plasm-rpc"
-version = "1.0.1"
-authors = [
-    "Takumi Yamashita <takumi@stake.co.jp>",
-    "Aleksandr Krupenkin <aleksandr@stake.co.jp>"
-]
+version = "1.1.0"
+authors = ["Stake Technologies <devops@stake.co.jp>"]
 edition = "2018"
 
 [dependencies]
 plasm-runtime = { path = "../runtime" }
 plasm-primitives = { path = "../primitives" }
 jsonrpc-core = "14.0.3"
-sp-api = "2.0.0-rc2"
-sp-runtime = "2.0.0-rc2"
-sp-blockchain = "2.0.0-rc2"
-sp-consensus = "0.8.0-rc2"
-sp-consensus-babe = "0.8.0-rc2"
-sp-transaction-pool = "2.0.0-rc2"
-sc-rpc-api = "0.8.0-rc2"
-sc-keystore = "2.0.0-rc2"
-sc-client-api = "2.0.0-rc2"
-sc-consensus-babe = "0.8.0-rc2"
-sc-consensus-babe-rpc = "0.8.0-rc2"
-sc-consensus-epochs = "0.8.0-rc2"
-sc-finality-grandpa = "0.8.0-rc2"
-sc-finality-grandpa-rpc = "0.8.0-rc2"
-pallet-contracts-rpc = "0.8.0-rc2"
-pallet-transaction-payment-rpc = "2.0.0-rc2"
-substrate-frame-rpc-system = "2.0.0-rc2"
+sp-api = "2.0.0-rc3"
+sp-runtime = "2.0.0-rc3"
+sp-blockchain = "2.0.0-rc3"
+sp-consensus = "0.8.0-rc3"
+sp-consensus-babe = "0.8.0-rc3"
+sp-transaction-pool = "2.0.0-rc3"
+sc-rpc-api = "0.8.0-rc3"
+sc-keystore = "2.0.0-rc3"
+sc-client-api = "2.0.0-rc3"
+sc-consensus-babe = "0.8.0-rc3"
+sc-consensus-babe-rpc = "0.8.0-rc3"
+sc-consensus-epochs = "0.8.0-rc3"
+sc-finality-grandpa = "0.8.0-rc3"
+sc-finality-grandpa-rpc = "0.8.0-rc3"
+pallet-contracts-rpc = "0.8.0-rc3"
+pallet-transaction-payment-rpc = "2.0.0-rc3"
+substrate-frame-rpc-system = "2.0.0-rc3"

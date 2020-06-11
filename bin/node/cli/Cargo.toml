@@ -1,10 +1,7 @@
 [package]
 name = "plasm-cli"
-version = "1.0.1"
-authors = [
-    "Takumi Yamashita <takumi@stake.co.jp>",
-    "Aleksandr Krupenkin <aleksandr@stake.co.jp>",
-]
+version = "1.1.0"
+authors = ["Stake Technologies <devops@stake.co.jp>"]
 description = "Plasm node implementation in Rust."
 build = "build.rs"
 edition = "2018"
@@ -34,29 +31,29 @@ log = "0.4.8"
 hex = "0.4" 
 
 # primitives
-sp-core = "2.0.0-rc2"
-sp-runtime = "2.0.0-rc2"
-sp-inherents = "2.0.0-rc2"
-sp-consensus = "0.8.0-rc2"
-sp-consensus-babe = "0.8.0-rc2"
-sp-finality-grandpa = "2.0.0-rc2"
-sp-transaction-pool = "2.0.0-rc2"
+sp-core = "2.0.0-rc3"
+sp-runtime = "2.0.0-rc3"
+sp-inherents = "2.0.0-rc3"
+sp-consensus = "0.8.0-rc3"
+sp-consensus-babe = "0.8.0-rc3"
+sp-finality-grandpa = "2.0.0-rc3"
+sp-transaction-pool = "2.0.0-rc3"
 
 # client dependencies
-sc-client-api = "2.0.0-rc2"
-sc-chain-spec = "2.0.0-rc2"
-sc-consensus = "0.8.0-rc2"
-sc-executor = "0.8.0-rc2"
-sc-transaction-pool = "2.0.0-rc2"
-sc-network = "0.8.0-rc2"
-sc-finality-grandpa = "0.8.0-rc2"
-sc-offchain = "2.0.0-rc2"
-sc-client-db = { version = "0.8.0-rc2", default-features = false }
-sc-rpc = "2.0.0-rc2"
-sc-basic-authorship = "0.8.0-rc2"
-sc-service = "0.8.0-rc2"
-sc-telemetry = "2.0.0-rc2"
-sc-consensus-babe = "0.8.0-rc2"
+sc-client-api = "2.0.0-rc3"
+sc-chain-spec = "2.0.0-rc3"
+sc-consensus = "0.8.0-rc3"
+sc-executor = "0.8.0-rc3"
+sc-transaction-pool = "2.0.0-rc3"
+sc-network = "0.8.0-rc3"
+sc-finality-grandpa = "0.8.0-rc3"
+sc-offchain = "2.0.0-rc3"
+sc-client-db = { version = "0.8.0-rc3", default-features = false }
+sc-rpc = "2.0.0-rc3"
+sc-basic-authorship = "0.8.0-rc3"
+sc-service = "0.8.0-rc3"
+sc-telemetry = "2.0.0-rc3"
+sc-consensus-babe = "0.8.0-rc3"
 
 # plasm-specific dependencies
 plasm-primitives = { path = "../primitives" }
@@ -64,22 +61,22 @@ plasm-runtime = { path = "../runtime" }
 plasm-rpc = { path = "../rpc" }
 
 # frame dependencies
-frame-system = "2.0.0-rc2"
-pallet-timestamp = "2.0.0-rc2"
-pallet-contracts = { version = "2.0.0-rc2", default-features = false }
-pallet-transaction-payment = "2.0.0-rc2"
-pallet-finality-tracker = "2.0.0-rc2"
+frame-system = "2.0.0-rc3"
+pallet-timestamp = "2.0.0-rc3"
+pallet-contracts = { version = "2.0.0-rc3", default-features = false }
+pallet-transaction-payment = "2.0.0-rc3"
+pallet-finality-tracker = "2.0.0-rc3"
 pallet-dapps-staking = { path = "../../../frame/dapps-staking" }
 pallet-plasm-lockdrop = { path = "../../../frame/plasm-lockdrop" }
 
 # CLI-specific dependencies
-sc-cli = { version = "0.8.0-rc2", optional = true }
-frame-benchmarking-cli = { version = "2.0.0-rc2", optional = true }
+sc-cli = { version = "0.8.0-rc3", optional = true }
+frame-benchmarking-cli = { version = "2.0.0-rc3", optional = true }
 
 [build-dependencies]
-sc-cli = "0.8.0-rc2"
-frame-benchmarking-cli = { version = "2.0.0-rc2", optional = true }
-build-script-utils = { package = "substrate-build-script-utils", version = "2.0.0-rc2" }
+sc-cli = "0.8.0-rc3"
+frame-benchmarking-cli = { version = "2.0.0-rc3", optional = true }
+build-script-utils = { package = "substrate-build-script-utils", version = "2.0.0-rc3" }
 structopt = { version = "0.3.8", optional = true }
 vergen = { version = "3.0.4", optional = true }
 
