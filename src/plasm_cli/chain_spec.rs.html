@@ -1074,7 +1074,6 @@
 <span class="doccomment">//! Chain specification.</span>
 
 <span class="kw">use</span> <span class="ident">plasm_primitives</span>::{<span class="ident">AccountId</span>, <span class="ident">Balance</span>, <span class="ident">Signature</span>};
-<span class="kw">use</span> <span class="ident">plasm_runtime</span>::<span class="ident">constants</span>::<span class="ident">currency</span>::<span class="kw-2">*</span>;
 <span class="kw">use</span> <span class="ident">plasm_runtime</span>::<span class="ident">Block</span>;
 <span class="kw">use</span> <span class="ident">plasm_runtime</span>::{
     <span class="ident">BabeConfig</span>, <span class="ident">BalancesConfig</span>, <span class="ident">ContractsConfig</span>, <span class="ident">GenesisConfig</span>, <span class="ident">GrandpaConfig</span>, <span class="ident">IndicesConfig</span>,
@@ -1094,6 +1093,7 @@
 <span class="comment">/*
 use hex_literal::hex;
 use sp_core::crypto::UncheckedInto;
+use plasm_runtime::constants::currency::*;
 const STAGING_TELEMETRY_URL: &amp;str = &quot;wss://telemetry.polkadot.io/submit/&quot;;
 
 const PLASM_PROPERTIES: &amp;str = r#&quot;

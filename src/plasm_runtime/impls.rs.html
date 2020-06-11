@@ -349,14 +349,17 @@
 <span id="349">349</span>
 <span id="350">350</span>
 <span id="351">351</span>
+<span id="352">352</span>
+<span id="353">353</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="doccomment">//! Some configurable implementations as associated type for the substrate runtime.</span>
 
 <span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">Balances</span>, <span class="ident">MaximumBlockWeight</span>, <span class="ident">System</span>};
 <span class="kw">use</span> <span class="ident">frame_support</span>::<span class="ident">traits</span>::<span class="ident">Get</span>;
+<span class="kw">use</span> <span class="ident">pallet_transaction_payment</span>::<span class="ident">Multiplier</span>;
 <span class="kw">use</span> <span class="ident">plasm_primitives</span>::<span class="ident">Balance</span>;
 <span class="kw">use</span> <span class="ident">sp_runtime</span>::<span class="ident">traits</span>::{<span class="ident">Convert</span>, <span class="ident">Saturating</span>};
-<span class="kw">use</span> <span class="ident">sp_runtime</span>::{<span class="ident">Fixed128</span>, <span class="ident">FixedPointNumber</span>, <span class="ident">Perquintill</span>};
+<span class="kw">use</span> <span class="ident">sp_runtime</span>::{<span class="ident">FixedPointNumber</span>, <span class="ident">Perquintill</span>};
 
 <span class="doccomment">/// Struct that handles the conversion of Balance -&gt; `u64`. This is used for staking&#39;s election</span>
 <span class="doccomment">/// calculation.</span>
@@ -390,8 +393,8 @@
 <span class="doccomment">/// https://research.web3.foundation/en/latest/polkadot/Token%20Economics/#relay-chain-transaction-fees</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">TargetedFeeAdjustment</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>(<span class="ident">sp_std</span>::<span class="ident">marker</span>::<span class="ident">PhantomData</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>);
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Get</span><span class="op">&lt;</span><span class="ident">Perquintill</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="ident">Convert</span><span class="op">&lt;</span><span class="ident">Fixed128</span>, <span class="ident">Fixed128</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">TargetedFeeAdjustment</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
-    <span class="kw">fn</span> <span class="ident">convert</span>(<span class="ident">multiplier</span>: <span class="ident">Fixed128</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Fixed128</span> {
+<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Get</span><span class="op">&lt;</span><span class="ident">Perquintill</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="ident">Convert</span><span class="op">&lt;</span><span class="ident">Multiplier</span>, <span class="ident">Multiplier</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">TargetedFeeAdjustment</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">convert</span>(<span class="ident">multiplier</span>: <span class="ident">Multiplier</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Multiplier</span> {
         <span class="kw">let</span> <span class="ident">max_weight</span> <span class="op">=</span> <span class="ident">MaximumBlockWeight</span>::<span class="ident">get</span>();
         <span class="kw">let</span> <span class="ident">block_weight</span> <span class="op">=</span> <span class="ident">System</span>::<span class="ident">block_weight</span>().<span class="ident">total</span>().<span class="ident">min</span>(<span class="ident">max_weight</span>);
         <span class="kw">let</span> <span class="ident">target_weight</span> <span class="op">=</span> (<span class="ident">T</span>::<span class="ident">get</span>() <span class="op">*</span> <span class="ident">max_weight</span>) <span class="kw">as</span> <span class="ident">u128</span>;
@@ -401,13 +404,13 @@
         <span class="kw">let</span> <span class="ident">positive</span> <span class="op">=</span> <span class="ident">block_weight</span> <span class="op">&gt;</span><span class="op">=</span> <span class="ident">target_weight</span>;
         <span class="kw">let</span> <span class="ident">diff_abs</span> <span class="op">=</span> <span class="ident">block_weight</span>.<span class="ident">max</span>(<span class="ident">target_weight</span>) <span class="op">-</span> <span class="ident">block_weight</span>.<span class="ident">min</span>(<span class="ident">target_weight</span>);
         <span class="comment">// safe, diff_abs cannot exceed u64.</span>
-        <span class="kw">let</span> <span class="ident">diff</span> <span class="op">=</span> <span class="ident">Fixed128</span>::<span class="ident">saturating_from_rational</span>(<span class="ident">diff_abs</span>, <span class="ident">max_weight</span>.<span class="ident">max</span>(<span class="number">1</span>));
+        <span class="kw">let</span> <span class="ident">diff</span> <span class="op">=</span> <span class="ident">Multiplier</span>::<span class="ident">saturating_from_rational</span>(<span class="ident">diff_abs</span>, <span class="ident">max_weight</span>.<span class="ident">max</span>(<span class="number">1</span>));
         <span class="kw">let</span> <span class="ident">diff_squared</span> <span class="op">=</span> <span class="ident">diff</span>.<span class="ident">saturating_mul</span>(<span class="ident">diff</span>);
 
         <span class="comment">// 0.00004 = 4/100_000 = 40_000/10^9</span>
-        <span class="kw">let</span> <span class="ident">v</span> <span class="op">=</span> <span class="ident">Fixed128</span>::<span class="ident">saturating_from_rational</span>(<span class="number">4</span>, <span class="number">100_000</span>);
+        <span class="kw">let</span> <span class="ident">v</span> <span class="op">=</span> <span class="ident">Multiplier</span>::<span class="ident">saturating_from_rational</span>(<span class="number">4</span>, <span class="number">100_000</span>);
         <span class="comment">// 0.00004^2 = 16/10^10 Taking the future /2 into account... 8/10^10</span>
-        <span class="kw">let</span> <span class="ident">v_squared_2</span> <span class="op">=</span> <span class="ident">Fixed128</span>::<span class="ident">saturating_from_rational</span>(<span class="number">8</span>, <span class="number">10_000_000_000u64</span>);
+        <span class="kw">let</span> <span class="ident">v_squared_2</span> <span class="op">=</span> <span class="ident">Multiplier</span>::<span class="ident">saturating_from_rational</span>(<span class="number">8</span>, <span class="number">10_000_000_000u64</span>);
 
         <span class="kw">let</span> <span class="ident">first_term</span> <span class="op">=</span> <span class="ident">v</span>.<span class="ident">saturating_mul</span>(<span class="ident">diff</span>);
         <span class="kw">let</span> <span class="ident">second_term</span> <span class="op">=</span> <span class="ident">v_squared_2</span>.<span class="ident">saturating_mul</span>(<span class="ident">diff_squared</span>);
@@ -427,7 +430,7 @@
                 <span class="comment">// multiplier. While at -1, it means that the network is so un-congested that all</span>
                 <span class="comment">// transactions have no weight fee. We stop here and only increase if the network</span>
                 <span class="comment">// became more busy.</span>
-                .<span class="ident">max</span>(<span class="ident">Fixed128</span>::<span class="ident">saturating_from_integer</span>(<span class="op">-</span><span class="number">1</span>))
+                .<span class="ident">max</span>(<span class="ident">Multiplier</span>::<span class="ident">saturating_from_integer</span>(<span class="op">-</span><span class="number">1</span>))
         }
     }
 }
@@ -449,7 +452,7 @@
     }
 
     <span class="comment">// poc reference implementation.</span>
-    <span class="kw">fn</span> <span class="ident">fee_multiplier_update</span>(<span class="ident">block_weight</span>: <span class="ident">Weight</span>, <span class="ident">previous</span>: <span class="ident">Fixed128</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Fixed128</span> {
+    <span class="kw">fn</span> <span class="ident">fee_multiplier_update</span>(<span class="ident">block_weight</span>: <span class="ident">Weight</span>, <span class="ident">previous</span>: <span class="ident">Multiplier</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Multiplier</span> {
         <span class="comment">// maximum tx weight</span>
         <span class="kw">let</span> <span class="ident">m</span> <span class="op">=</span> <span class="ident">max</span>() <span class="kw">as</span> <span class="ident">f64</span>;
         <span class="comment">// block weight always truncated to max weight</span>
@@ -462,7 +465,8 @@
         <span class="kw">let</span> <span class="ident">s</span> <span class="op">=</span> <span class="ident">block_weight</span>;
 
         <span class="kw">let</span> <span class="ident">fm</span> <span class="op">=</span> <span class="ident">v</span> <span class="op">*</span> (<span class="ident">s</span> <span class="op">/</span> <span class="ident">m</span> <span class="op">-</span> <span class="ident">ss</span> <span class="op">/</span> <span class="ident">m</span>) <span class="op">+</span> <span class="ident">v</span>.<span class="ident">powi</span>(<span class="number">2</span>) <span class="op">*</span> (<span class="ident">s</span> <span class="op">/</span> <span class="ident">m</span> <span class="op">-</span> <span class="ident">ss</span> <span class="op">/</span> <span class="ident">m</span>).<span class="ident">powi</span>(<span class="number">2</span>) <span class="op">/</span> <span class="number">2.0</span>;
-        <span class="kw">let</span> <span class="ident">addition_fm</span> <span class="op">=</span> <span class="ident">Fixed128</span>::<span class="ident">from_inner</span>((<span class="ident">fm</span> <span class="op">*</span> <span class="ident">Fixed128</span>::<span class="ident">accuracy</span>() <span class="kw">as</span> <span class="ident">f64</span>).<span class="ident">round</span>() <span class="kw">as</span> <span class="ident">i128</span>);
+        <span class="kw">let</span> <span class="ident">addition_fm</span> <span class="op">=</span>
+            <span class="ident">Multiplier</span>::<span class="ident">from_inner</span>((<span class="ident">fm</span> <span class="op">*</span> <span class="ident">Multiplier</span>::<span class="ident">accuracy</span>() <span class="kw">as</span> <span class="ident">f64</span>).<span class="ident">round</span>() <span class="kw">as</span> <span class="ident">i128</span>);
         <span class="ident">previous</span>.<span class="ident">saturating_add</span>(<span class="ident">addition_fm</span>)
     }
 
@@ -482,7 +486,7 @@
 
     <span class="attribute">#[<span class="ident">test</span>]</span>
     <span class="kw">fn</span> <span class="ident">fee_multiplier_update_poc_works</span>() {
-        <span class="kw">let</span> <span class="ident">fm</span> <span class="op">=</span> <span class="ident">Fixed128</span>::<span class="ident">saturating_from_rational</span>(<span class="number">0</span>, <span class="number">1</span>);
+        <span class="kw">let</span> <span class="ident">fm</span> <span class="op">=</span> <span class="ident">Multiplier</span>::<span class="ident">saturating_from_rational</span>(<span class="number">0</span>, <span class="number">1</span>);
         <span class="kw">let</span> <span class="ident">test_set</span> <span class="op">=</span> <span class="macro">vec</span><span class="macro">!</span>[
             (<span class="number">0</span>, <span class="ident">fm</span>.<span class="ident">clone</span>()),
             (<span class="number">100</span>, <span class="ident">fm</span>.<span class="ident">clone</span>()),
@@ -496,7 +500,7 @@
                     <span class="ident">fee_multiplier_update</span>(<span class="ident">w</span>, <span class="ident">fm</span>),
                     <span class="ident">TargetedFeeAdjustment</span>::<span class="op">&lt;</span><span class="ident">TargetBlockFullness</span><span class="op">&gt;</span>::<span class="ident">convert</span>(<span class="ident">fm</span>),
                     <span class="comment">// Error is only 1 in 10^18</span>
-                    <span class="ident">Fixed128</span>::<span class="ident">from_inner</span>(<span class="number">1</span>),
+                    <span class="ident">Multiplier</span>::<span class="ident">from_inner</span>(<span class="number">1</span>),
                 );
             })
         })
@@ -507,12 +511,12 @@
         <span class="comment">// just a few txs per_block.</span>
         <span class="kw">let</span> <span class="ident">block_weight</span> <span class="op">=</span> <span class="number">0</span>;
         <span class="ident">run_with_system_weight</span>(<span class="ident">block_weight</span>, <span class="op">|</span><span class="op">|</span> {
-            <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">fm</span> <span class="op">=</span> <span class="ident">Fixed128</span>::<span class="ident">default</span>();
+            <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">fm</span> <span class="op">=</span> <span class="ident">Multiplier</span>::<span class="ident">default</span>();
             <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">iterations</span>: <span class="ident">u64</span> <span class="op">=</span> <span class="number">0</span>;
             <span class="kw">loop</span> {
                 <span class="kw">let</span> <span class="ident">next</span> <span class="op">=</span> <span class="ident">TargetedFeeAdjustment</span>::<span class="op">&lt;</span><span class="ident">TargetBlockFullness</span><span class="op">&gt;</span>::<span class="ident">convert</span>(<span class="ident">fm</span>);
                 <span class="ident">fm</span> <span class="op">=</span> <span class="ident">next</span>;
-                <span class="kw">if</span> <span class="ident">fm</span> <span class="op">=</span><span class="op">=</span> <span class="ident">Fixed128</span>::<span class="ident">saturating_from_integer</span>(<span class="op">-</span><span class="number">1</span>) {
+                <span class="kw">if</span> <span class="ident">fm</span> <span class="op">=</span><span class="op">=</span> <span class="ident">Multiplier</span>::<span class="ident">saturating_from_integer</span>(<span class="op">-</span><span class="number">1</span>) {
                     <span class="kw">break</span>;
                 }
                 <span class="ident">iterations</span> <span class="op">+</span><span class="op">=</span> <span class="number">1</span>;
@@ -547,7 +551,7 @@
 
         <span class="ident">run_with_system_weight</span>(<span class="ident">block_weight</span>, <span class="op">|</span><span class="op">|</span> {
             <span class="comment">// initial value configured on module</span>
-            <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">fm</span> <span class="op">=</span> <span class="ident">Fixed128</span>::<span class="ident">default</span>();
+            <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">fm</span> <span class="op">=</span> <span class="ident">Multiplier</span>::<span class="ident">default</span>();
             <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">fm</span>, <span class="ident">TransactionPayment</span>::<span class="ident">next_fee_multiplier</span>());
 
             <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">iterations</span>: <span class="ident">u64</span> <span class="op">=</span> <span class="number">0</span>;
@@ -576,48 +580,48 @@
         <span class="comment">// and light blocks will have a weight multiplier less than 0.</span>
         <span class="ident">run_with_system_weight</span>(<span class="ident">target</span>() <span class="op">/</span> <span class="number">4</span>, <span class="op">|</span><span class="op">|</span> {
             <span class="comment">// `fee_multiplier_update` is enough as it is the absolute truth value.</span>
-            <span class="kw">let</span> <span class="ident">next</span> <span class="op">=</span> <span class="ident">TargetedFeeAdjustment</span>::<span class="op">&lt;</span><span class="ident">TargetBlockFullness</span><span class="op">&gt;</span>::<span class="ident">convert</span>(<span class="ident">Fixed128</span>::<span class="ident">default</span>());
+            <span class="kw">let</span> <span class="ident">next</span> <span class="op">=</span> <span class="ident">TargetedFeeAdjustment</span>::<span class="op">&lt;</span><span class="ident">TargetBlockFullness</span><span class="op">&gt;</span>::<span class="ident">convert</span>(<span class="ident">Multiplier</span>::<span class="ident">default</span>());
             <span class="macro">assert_eq</span><span class="macro">!</span>(
                 <span class="ident">next</span>,
-                <span class="ident">fee_multiplier_update</span>(<span class="ident">target</span>() <span class="op">/</span> <span class="number">4</span>, <span class="ident">Fixed128</span>::<span class="ident">default</span>())
+                <span class="ident">fee_multiplier_update</span>(<span class="ident">target</span>() <span class="op">/</span> <span class="number">4</span>, <span class="ident">Multiplier</span>::<span class="ident">default</span>())
             );
 
             <span class="comment">// Light block. Fee is reduced a little.</span>
-            <span class="macro">assert</span><span class="macro">!</span>(<span class="ident">next</span> <span class="op">&lt;</span> <span class="ident">Fixed128</span>::<span class="ident">zero</span>())
+            <span class="macro">assert</span><span class="macro">!</span>(<span class="ident">next</span> <span class="op">&lt;</span> <span class="ident">Multiplier</span>::<span class="ident">zero</span>())
         });
         <span class="ident">run_with_system_weight</span>(<span class="ident">target</span>() <span class="op">/</span> <span class="number">2</span>, <span class="op">|</span><span class="op">|</span> {
-            <span class="kw">let</span> <span class="ident">next</span> <span class="op">=</span> <span class="ident">TargetedFeeAdjustment</span>::<span class="op">&lt;</span><span class="ident">TargetBlockFullness</span><span class="op">&gt;</span>::<span class="ident">convert</span>(<span class="ident">Fixed128</span>::<span class="ident">default</span>());
+            <span class="kw">let</span> <span class="ident">next</span> <span class="op">=</span> <span class="ident">TargetedFeeAdjustment</span>::<span class="op">&lt;</span><span class="ident">TargetBlockFullness</span><span class="op">&gt;</span>::<span class="ident">convert</span>(<span class="ident">Multiplier</span>::<span class="ident">default</span>());
             <span class="macro">assert_eq</span><span class="macro">!</span>(
                 <span class="ident">next</span>,
-                <span class="ident">fee_multiplier_update</span>(<span class="ident">target</span>() <span class="op">/</span> <span class="number">2</span>, <span class="ident">Fixed128</span>::<span class="ident">default</span>())
+                <span class="ident">fee_multiplier_update</span>(<span class="ident">target</span>() <span class="op">/</span> <span class="number">2</span>, <span class="ident">Multiplier</span>::<span class="ident">default</span>())
             );
 
             <span class="comment">// Light block. Fee is reduced a little.</span>
-            <span class="macro">assert</span><span class="macro">!</span>(<span class="ident">next</span> <span class="op">&lt;</span> <span class="ident">Fixed128</span>::<span class="ident">zero</span>())
+            <span class="macro">assert</span><span class="macro">!</span>(<span class="ident">next</span> <span class="op">&lt;</span> <span class="ident">Multiplier</span>::<span class="ident">zero</span>())
         });
         <span class="ident">run_with_system_weight</span>(<span class="ident">target</span>(), <span class="op">|</span><span class="op">|</span> {
             <span class="comment">// ideal. Original fee. No changes.</span>
-            <span class="kw">let</span> <span class="ident">next</span> <span class="op">=</span> <span class="ident">TargetedFeeAdjustment</span>::<span class="op">&lt;</span><span class="ident">TargetBlockFullness</span><span class="op">&gt;</span>::<span class="ident">convert</span>(<span class="ident">Fixed128</span>::<span class="ident">default</span>());
-            <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">next</span>, <span class="ident">Fixed128</span>::<span class="ident">zero</span>())
+            <span class="kw">let</span> <span class="ident">next</span> <span class="op">=</span> <span class="ident">TargetedFeeAdjustment</span>::<span class="op">&lt;</span><span class="ident">TargetBlockFullness</span><span class="op">&gt;</span>::<span class="ident">convert</span>(<span class="ident">Multiplier</span>::<span class="ident">default</span>());
+            <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">next</span>, <span class="ident">Multiplier</span>::<span class="ident">zero</span>())
         });
         <span class="ident">run_with_system_weight</span>(<span class="ident">target</span>() <span class="op">*</span> <span class="number">2</span>, <span class="op">|</span><span class="op">|</span> {
             <span class="comment">// More than ideal. Fee is increased.</span>
-            <span class="kw">let</span> <span class="ident">next</span> <span class="op">=</span> <span class="ident">TargetedFeeAdjustment</span>::<span class="op">&lt;</span><span class="ident">TargetBlockFullness</span><span class="op">&gt;</span>::<span class="ident">convert</span>(<span class="ident">Fixed128</span>::<span class="ident">default</span>());
+            <span class="kw">let</span> <span class="ident">next</span> <span class="op">=</span> <span class="ident">TargetedFeeAdjustment</span>::<span class="op">&lt;</span><span class="ident">TargetBlockFullness</span><span class="op">&gt;</span>::<span class="ident">convert</span>(<span class="ident">Multiplier</span>::<span class="ident">default</span>());
             <span class="macro">assert_eq</span><span class="macro">!</span>(
                 <span class="ident">next</span>,
-                <span class="ident">fee_multiplier_update</span>(<span class="ident">target</span>() <span class="op">*</span> <span class="number">2</span>, <span class="ident">Fixed128</span>::<span class="ident">default</span>())
+                <span class="ident">fee_multiplier_update</span>(<span class="ident">target</span>() <span class="op">*</span> <span class="number">2</span>, <span class="ident">Multiplier</span>::<span class="ident">default</span>())
             );
 
             <span class="comment">// Heavy block. Fee is increased a little.</span>
-            <span class="macro">assert</span><span class="macro">!</span>(<span class="ident">next</span> <span class="op">&gt;</span> <span class="ident">Fixed128</span>::<span class="ident">zero</span>())
+            <span class="macro">assert</span><span class="macro">!</span>(<span class="ident">next</span> <span class="op">&gt;</span> <span class="ident">Multiplier</span>::<span class="ident">zero</span>())
         });
     }
 
     <span class="attribute">#[<span class="ident">test</span>]</span>
     <span class="kw">fn</span> <span class="ident">stateful_weight_mul_grow_to_infinity</span>() {
         <span class="ident">run_with_system_weight</span>(<span class="ident">target</span>() <span class="op">*</span> <span class="number">2</span>, <span class="op">|</span><span class="op">|</span> {
-            <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">original</span> <span class="op">=</span> <span class="ident">Fixed128</span>::<span class="ident">default</span>();
-            <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">next</span> <span class="op">=</span> <span class="ident">Fixed128</span>::<span class="ident">default</span>();
+            <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">original</span> <span class="op">=</span> <span class="ident">Multiplier</span>::<span class="ident">default</span>();
+            <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">next</span> <span class="op">=</span> <span class="ident">Multiplier</span>::<span class="ident">default</span>();
 
             (<span class="number">0</span>..<span class="number">1_000</span>).<span class="ident">for_each</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> {
                 <span class="ident">next</span> <span class="op">=</span> <span class="ident">TargetedFeeAdjustment</span>::<span class="op">&lt;</span><span class="ident">TargetBlockFullness</span><span class="op">&gt;</span>::<span class="ident">convert</span>(<span class="ident">original</span>);
@@ -632,7 +636,7 @@
     <span class="attribute">#[<span class="ident">test</span>]</span>
     <span class="kw">fn</span> <span class="ident">stateful_weight_mil_collapse_to_minus_one</span>() {
         <span class="ident">run_with_system_weight</span>(<span class="number">0</span>, <span class="op">|</span><span class="op">|</span> {
-            <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">original</span> <span class="op">=</span> <span class="ident">Fixed128</span>::<span class="ident">default</span>(); <span class="comment">// 0</span>
+            <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">original</span> <span class="op">=</span> <span class="ident">Multiplier</span>::<span class="ident">default</span>(); <span class="comment">// 0</span>
             <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">next</span>;
 
             <span class="comment">// decreases</span>
@@ -649,9 +653,9 @@
             <span class="comment">// ... stops going down at -1</span>
             <span class="macro">assert_eq</span><span class="macro">!</span>(
                 <span class="ident">TargetedFeeAdjustment</span>::<span class="op">&lt;</span><span class="ident">TargetBlockFullness</span><span class="op">&gt;</span>::<span class="ident">convert</span>(
-                    <span class="ident">Fixed128</span>::<span class="ident">saturating_from_integer</span>(<span class="op">-</span><span class="number">1</span>)
+                    <span class="ident">Multiplier</span>::<span class="ident">saturating_from_integer</span>(<span class="op">-</span><span class="number">1</span>)
                 ),
-                <span class="ident">Fixed128</span>::<span class="ident">saturating_from_integer</span>(<span class="op">-</span><span class="number">1</span>)
+                <span class="ident">Multiplier</span>::<span class="ident">saturating_from_integer</span>(<span class="op">-</span><span class="number">1</span>)
             );
         })
     }
@@ -660,7 +664,7 @@
     <span class="kw">fn</span> <span class="ident">weight_to_fee_should_not_overflow_on_large_weights</span>() {
         <span class="kw">let</span> <span class="ident">kb</span> <span class="op">=</span> <span class="number">1024</span> <span class="kw">as</span> <span class="ident">Weight</span>;
         <span class="kw">let</span> <span class="ident">mb</span> <span class="op">=</span> <span class="ident">kb</span> <span class="op">*</span> <span class="ident">kb</span>;
-        <span class="kw">let</span> <span class="ident">max_fm</span> <span class="op">=</span> <span class="ident">Fixed128</span>::<span class="ident">saturating_from_integer</span>(<span class="ident">i128</span>::<span class="ident">max_value</span>());
+        <span class="kw">let</span> <span class="ident">max_fm</span> <span class="op">=</span> <span class="ident">Multiplier</span>::<span class="ident">saturating_from_integer</span>(<span class="ident">i128</span>::<span class="ident">max_value</span>());
 
         <span class="comment">// check that for all values it can compute, correctly.</span>
         <span class="macro">vec</span><span class="macro">!</span>[
@@ -684,9 +688,9 @@
         .<span class="ident">for_each</span>(<span class="op">|</span><span class="ident">i</span><span class="op">|</span> {
             <span class="ident">run_with_system_weight</span>(<span class="ident">i</span>, <span class="op">|</span><span class="op">|</span> {
                 <span class="kw">let</span> <span class="ident">next</span> <span class="op">=</span>
-                    <span class="ident">TargetedFeeAdjustment</span>::<span class="op">&lt;</span><span class="ident">TargetBlockFullness</span><span class="op">&gt;</span>::<span class="ident">convert</span>(<span class="ident">Fixed128</span>::<span class="ident">default</span>());
-                <span class="kw">let</span> <span class="ident">truth</span> <span class="op">=</span> <span class="ident">fee_multiplier_update</span>(<span class="ident">i</span>, <span class="ident">Fixed128</span>::<span class="ident">default</span>());
-                <span class="macro">assert_eq_error_rate</span><span class="macro">!</span>(<span class="ident">truth</span>, <span class="ident">next</span>, <span class="ident">Fixed128</span>::<span class="ident">from_inner</span>(<span class="number">50_000_000</span>));
+                    <span class="ident">TargetedFeeAdjustment</span>::<span class="op">&lt;</span><span class="ident">TargetBlockFullness</span><span class="op">&gt;</span>::<span class="ident">convert</span>(<span class="ident">Multiplier</span>::<span class="ident">default</span>());
+                <span class="kw">let</span> <span class="ident">truth</span> <span class="op">=</span> <span class="ident">fee_multiplier_update</span>(<span class="ident">i</span>, <span class="ident">Multiplier</span>::<span class="ident">default</span>());
+                <span class="macro">assert_eq_error_rate</span><span class="macro">!</span>(<span class="ident">truth</span>, <span class="ident">next</span>, <span class="ident">Multiplier</span>::<span class="ident">from_inner</span>(<span class="number">50_000_000</span>));
             });
         });
 

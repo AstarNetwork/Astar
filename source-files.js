@@ -15,6 +15,6 @@ sourcesIndex["plasm_cli"] = {"name":"","files":["chain_spec.rs","cli.rs","comman
 sourcesIndex["plasm_node"] = {"name":"","files":["main.rs"]};
 sourcesIndex["plasm_primitives"] = {"name":"","files":["lib.rs"]};
 sourcesIndex["plasm_rpc"] = {"name":"","files":["lib.rs"]};
-sourcesIndex["plasm_runtime"] = {"name":"","files":["constants.rs","impls.rs","lib.rs"]};
+sourcesIndex["plasm_runtime"] = {"name":"","files":["constants.rs","impls.rs","legacy.rs","lib.rs"]};
 sourcesIndex["subkey"] = {"name":"","files":["main.rs","vanity.rs"]};
 createSourceSidebar();

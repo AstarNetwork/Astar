@@ -613,8 +613,6 @@
 <span id="613">613</span>
 <span id="614">614</span>
 <span id="615">615</span>
-<span id="616">616</span>
-<span id="617">617</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="doccomment">//! The Substrate runtime. This can be compiled with ``#[no_std]`, ready for Wasm.</span>
 
@@ -664,6 +662,9 @@
 <span class="doccomment">/// Implementations of some helper traits passed into runtime modules as associated types.</span>
 <span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">impls</span>;
 
+<span class="doccomment">/// Deprecated but used runtime interfaces.</span>
+<span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">legacy</span>;
+
 <span class="doccomment">/// Constant values used within the runtime.</span>
 <span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">constants</span>;
 <span class="kw">use</span> <span class="ident">constants</span>::{<span class="ident">currency</span>::<span class="kw-2">*</span>, <span class="ident">time</span>::<span class="kw-2">*</span>};
@@ -681,8 +682,8 @@
     <span class="comment">// and set impl_version to equal spec_version. If only runtime</span>
     <span class="comment">// implementation changes and behavior does not, then leave spec_version as</span>
     <span class="comment">// is and increment impl_version.</span>
-    <span class="ident">spec_version</span>: <span class="number">1</span>,
-    <span class="ident">impl_version</span>: <span class="number">1</span>,
+    <span class="ident">spec_version</span>: <span class="number">2</span>,
+    <span class="ident">impl_version</span>: <span class="number">2</span>,
     <span class="ident">apis</span>: <span class="ident">RUNTIME_API_VERSIONS</span>,
     <span class="ident">transaction_version</span>: <span class="number">1</span>,
 };
@@ -697,13 +698,13 @@
 }
 
 <span class="macro">parameter_types</span><span class="macro">!</span> {
-    <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">BlockHashCount</span>: <span class="ident">BlockNumber</span> <span class="op">=</span> <span class="number">250</span>;
+    <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">BlockHashCount</span>: <span class="ident">BlockNumber</span> <span class="op">=</span> <span class="number">2400</span>;
     <span class="doccomment">/// We allow for 3 seconds of compute with a 10 second average block time.</span>
     <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">MaximumBlockWeight</span>: <span class="ident">Weight</span> <span class="op">=</span> <span class="number">3</span> <span class="op">*</span> <span class="ident">WEIGHT_PER_SECOND</span>;
     <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">MaximumBlockLength</span>: <span class="ident">u32</span> <span class="op">=</span> <span class="number">5</span> <span class="op">*</span> <span class="number">1024</span> <span class="op">*</span> <span class="number">1024</span>;
     <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">AvailableBlockRatio</span>: <span class="ident">Perbill</span> <span class="op">=</span> <span class="ident">Perbill</span>::<span class="ident">from_percent</span>(<span class="number">75</span>);
     <span class="doccomment">/// Assume 10% of weight for average on_initialize calls</span>
-    <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">MaximumExtrinsicWeight</span>: <span class="ident">Weight</span> <span class="op">=</span> <span class="ident">AvailableBlockRatio</span>::<span class="ident">get</span>()
+    <span class="kw">pub</span> <span class="ident">MaximumExtrinsicWeight</span>: <span class="ident">Weight</span> <span class="op">=</span> <span class="ident">AvailableBlockRatio</span>::<span class="ident">get</span>()
         .<span class="ident">saturating_sub</span>(<span class="ident">Perbill</span>::<span class="ident">from_percent</span>(<span class="number">10</span>)) <span class="op">*</span> <span class="ident">MaximumBlockWeight</span>::<span class="ident">get</span>();
     <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">Version</span>: <span class="ident">RuntimeVersion</span> <span class="op">=</span> <span class="ident">VERSION</span>;
 }
@@ -862,11 +863,6 @@
 }
 
 <span class="macro">parameter_types</span><span class="macro">!</span> {
-    <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">ContractTransferFee</span>: <span class="ident">Balance</span> <span class="op">=</span> <span class="number">1</span> <span class="op">*</span> <span class="ident">MILLIPLM</span>;
-    <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">ContractCreationFee</span>: <span class="ident">Balance</span> <span class="op">=</span> <span class="number">1</span> <span class="op">*</span> <span class="ident">MILLIPLM</span>;
-    <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">ContractTransactionBaseFee</span>: <span class="ident">Balance</span> <span class="op">=</span> <span class="number">1</span> <span class="op">*</span> <span class="ident">MILLIPLM</span>;
-    <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">ContractTransactionByteFee</span>: <span class="ident">Balance</span> <span class="op">=</span> <span class="number">10</span> <span class="op">*</span> <span class="ident">MILLIPLM</span>;
-    <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">ContractFee</span>: <span class="ident">Balance</span> <span class="op">=</span> <span class="number">1</span> <span class="op">*</span> <span class="ident">MILLIPLM</span>;
     <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">TombstoneDeposit</span>: <span class="ident">Balance</span> <span class="op">=</span> <span class="number">1</span> <span class="op">*</span> <span class="ident">PLM</span>;
     <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">RentByteFee</span>: <span class="ident">Balance</span> <span class="op">=</span> <span class="number">1</span> <span class="op">*</span> <span class="ident">PLM</span>;
     <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">RentDepositOffset</span>: <span class="ident">Balance</span> <span class="op">=</span> <span class="number">1000</span> <span class="op">*</span> <span class="ident">PLM</span>;
