@@ -4,7 +4,7 @@ use sc_cli::SubstrateCli;
 
 impl SubstrateCli for Cli {
     fn impl_name() -> &'static str {
-        "plasm"
+        "Plasm Node"
     }
 
     fn impl_version() -> &'static str {
@@ -46,8 +46,6 @@ impl SubstrateCli for Cli {
 
 /// Parse command line arguments into service configuration.
 pub fn run() -> sc_cli::Result<()> {
-    sc_cli::reset_signal_pipe_handler()?;
-
     let cli = Cli::from_args();
 
     match &cli.subcommand {

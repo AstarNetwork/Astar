@@ -108,6 +108,18 @@ trait Crypto: Sized {
                 format_account_id::<Self>(public_key.clone()),
                 public_key.to_ss58check_with_version(v)
             );
+        } else if let Ok(message) = hex::decode(uri) {
+            let account_id = plasm_account_from_public(&message[..]);
+            println!(
+                "Public Key (hex): `{}` is account:\n  \
+                Plasm AccountId:   {}\n  \
+                Ethereum Address:  {:?}\n  \
+                Plasm Address:     {}",
+                uri,
+                account_id,
+                eth_account_from_public(&message),
+                account_id.to_ss58check_with_version(Ss58AddressFormat::PlasmAccount)
+            );
         } else {
             println!("Invalid phrase/URI given");
         }
@@ -544,13 +556,14 @@ where
 {
     let extra = |i: Index, f: Balance| {
         (
-            frame_system::CheckVersion::<Runtime>::new(),
+            frame_system::CheckSpecVersion::<Runtime>::new(),
+            frame_system::CheckTxVersion::<Runtime>::new(),
             frame_system::CheckGenesis::<Runtime>::new(),
             frame_system::CheckEra::<Runtime>::from(Era::Immortal),
             frame_system::CheckNonce::<Runtime>::from(i),
             frame_system::CheckWeight::<Runtime>::new(),
             pallet_transaction_payment::ChargeTransactionPayment::<Runtime>::from(f),
-            Default::default(),
+            pallet_grandpa::ValidateEquivocationReport::<Runtime>::new(),
         )
     };
     let raw_payload = SignedPayload::from_raw(
@@ -558,6 +571,7 @@ where
         extra(index, 0),
         (
             VERSION.spec_version as u32,
+            VERSION.transaction_version as u32,
             genesis_hash,
             genesis_hash,
             (),
@@ -581,6 +595,17 @@ fn print_extrinsic(extrinsic: UncheckedExtrinsic) {
 
 fn print_usage(matches: &ArgMatches) {
     println!("{}", matches.usage());
+}
+
+fn plasm_account_from_public(full_public: &[u8]) -> plasm_primitives::AccountId {
+    use sp_runtime::MultiSigner;
+    let public =
+        sp_core::ecdsa::Public::from_full(full_public).expect("Not convert from_full publickey.");
+    MultiSigner::from(public).into_account()
+}
+
+fn eth_account_from_public(full_public: &[u8]) -> sp_core::H160 {
+    sp_core::H160::from_slice(&sp_core::hashing::keccak_256(&full_public)[12..32])
 }
 
 #[cfg(test)]
@@ -651,5 +676,18 @@ mod tests {
         };
 
         assert_eq!(d1, d2);
+    }
+
+    #[test]
+    fn should_from_public_work() {
+        let full_public = hex!["3e909fb1f265942dbbf5e0659ee5c74820c8ecb5a55eecba5752f3cd55293ef98fa8efc553f174ddf3f7e2b5d99ab731da7cff2c1ed7d20579c59e85ab6772dc"];
+        assert_eq!(
+            plasm_account_from_public(&full_public[..]).to_string(),
+            "5HYaXhCVqDgjkbpUTXJKzc2bFNSwpt7Xm7znS7WaqGNSUEfG"
+        );
+        assert_eq!(
+            eth_account_from_public(&full_public[..]).as_bytes(),
+            &hex!["e0e0b97949687e5cdc9ca843c0428bd0437e176d"][..]
+        );
     }
 }

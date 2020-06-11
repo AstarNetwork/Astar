@@ -2,7 +2,6 @@
 
 use pallet_plasm_lockdrop::sr25519::AuthorityId as LockdropId;
 use plasm_primitives::{AccountId, Balance, Signature};
-use plasm_runtime::constants::currency::*;
 use plasm_runtime::Block;
 use plasm_runtime::{
     BabeConfig, BalancesConfig, ContractsConfig, GenesisConfig, GrandpaConfig, IndicesConfig,
@@ -25,6 +24,7 @@ type AccountPublic = <Signature as Verify>::Signer;
 /*
 use hex_literal::hex;
 use sp_core::crypto::UncheckedInto;
+use plasm_runtime::constants::currency::*;
 const STAGING_TELEMETRY_URL: &str = "wss://telemetry.polkadot.io/submit/";
 
 const PLASM_PROPERTIES: &str = r#"
@@ -52,9 +52,9 @@ const DUSTY_PROTOCOL_ID: &str = "pld";
 #[serde(rename_all = "camelCase")]
 pub struct Extensions {
     /// Block numbers with known hashes.
-    pub fork_blocks: sc_client::ForkBlocks<Block>,
+    pub fork_blocks: sc_client_api::ForkBlocks<Block>,
     /// Known bad block hashes.
-    pub bad_blocks: sc_client::BadBlocks<Block>,
+    pub bad_blocks: sc_client_api::BadBlocks<Block>,
 }
 
 /// Specialized `ChainSpec`.
@@ -176,7 +176,6 @@ fn make_genesis(
                 enable_println, // this should only be enabled on development chains
                 ..Default::default()
             },
-            gas_price: 1 * MILLIPLM,
         }),
         pallet_sudo: Some(SudoConfig { key: root_key }),
     }

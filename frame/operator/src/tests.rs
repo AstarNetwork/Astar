@@ -10,12 +10,13 @@ use frame_support::{
     parameter_types,
     storage::child,
     traits::{Currency, Get},
-    weights::{DispatchClass, DispatchInfo},
+    weights::{DispatchClass, DispatchInfo, WeightToFeeCoefficients, WeightToFeePolynomial},
     StorageMap, StorageValue,
 };
 use frame_system::{self, EventRecord, Phase};
 use hex_literal::*;
 use pallet_balances as balances;
+use pallet_contracts::Gas;
 use pallet_contracts::{
     self as contracts, BalanceOf, ComputeDispatchFee, ContractAddressFor, ContractInfo,
     ContractInfoOf, RawAliveContractInfo, Schedule, TrieId, TrieIdFromParentCounter,
@@ -104,6 +105,10 @@ impl frame_system::Trait for Test {
     type AccountData = pallet_balances::AccountData<u64>;
     type OnNewAccount = ();
     type OnKilledAccount = ();
+    type DbWeight = ();
+    type BlockExecutionWeight = ();
+    type ExtrinsicBaseWeight = ();
+    type MaximumExtrinsicWeight = ();
 }
 
 impl pallet_balances::Trait for Test {
@@ -113,14 +118,37 @@ impl pallet_balances::Trait for Test {
     type ExistentialDeposit = ExistentialDeposit;
     type AccountStore = frame_system::Module<Test>;
 }
+
 parameter_types! {
     pub const MinimumPeriod: u64 = 1;
 }
+
 impl pallet_timestamp::Trait for Test {
     type Moment = u64;
     type OnTimestampSet = ();
     type MinimumPeriod = MinimumPeriod;
 }
+
+pub struct WeightToFee;
+impl WeightToFeePolynomial for WeightToFee {
+    type Balance = u64;
+    fn polynomial() -> WeightToFeeCoefficients<Self::Balance> {
+        Default::default()
+    }
+}
+
+parameter_types! {
+    pub const TransactionByteFee: u64 = 0;
+}
+
+impl pallet_transaction_payment::Trait for Test {
+    type Currency = Balances;
+    type OnTransactionPayment = ();
+    type TransactionByteFee = TransactionByteFee;
+    type WeightToFee = WeightToFee;
+    type FeeMultiplierUpdate = ();
+}
+
 parameter_types! {
     pub const SignedClaimHandicap: u64 = 2;
     pub const TombstoneDeposit: u64 = 16;
@@ -128,24 +156,17 @@ parameter_types! {
     pub const RentByteFee: u64 = 4;
     pub const RentDepositOffset: u64 = 10_000;
     pub const SurchargeReward: u64 = 150;
-    pub const TransactionBaseFee: u64 = 2;
-    pub const TransactionByteFee: u64 = 6;
-    pub const ContractFee: u64 = 21;
-    pub const CallBaseFee: u64 = 135;
-    pub const InstantiateBaseFee: u64 = 175;
     pub const MaxDepth: u32 = 100;
     pub const MaxValueSize: u32 = 16_384;
 }
+
 impl pallet_contracts::Trait for Test {
-    type Currency = Balances;
     type Time = Timestamp;
     type Randomness = Randomness;
     type Call = Call;
     type DetermineContractAddress = DummyContractAddressFor;
     type Event = MetaEvent;
-    type ComputeDispatchFee = DummyComputeDispatchFee;
     type TrieIdGenerator = DummyTrieIdGenerator;
-    type GasPayment = ();
     type RentPayment = ();
     type SignedClaimHandicap = SignedClaimHandicap;
     type TombstoneDeposit = TombstoneDeposit;
@@ -153,14 +174,8 @@ impl pallet_contracts::Trait for Test {
     type RentByteFee = RentByteFee;
     type RentDepositOffset = RentDepositOffset;
     type SurchargeReward = SurchargeReward;
-    type TransactionBaseFee = TransactionBaseFee;
-    type TransactionByteFee = TransactionByteFee;
-    type ContractFee = ContractFee;
-    type CallBaseFee = CallBaseFee;
-    type InstantiateBaseFee = InstantiateBaseFee;
     type MaxDepth = MaxDepth;
     type MaxValueSize = MaxValueSize;
-    type BlockGasLimit = BlockGasLimit;
 }
 
 #[derive(Clone, Eq, PartialEq, Default, Encode, Decode, Hash)]
@@ -294,12 +309,11 @@ impl ExtBuilder {
         pallet_balances::GenesisConfig::<Test> { balances: vec![] }
             .assimilate_storage(&mut t)
             .unwrap();
-        pallet_contracts::GenesisConfig::<Test> {
+        pallet_contracts::GenesisConfig {
             current_schedule: Schedule {
                 enable_println: true,
                 ..Default::default()
             },
-            gas_price: self.gas_price,
         }
         .assimilate_storage(&mut t)
         .unwrap();
@@ -361,13 +375,13 @@ fn instantiate_and_call_and_deposit_event() {
         .execute_with(|| {
             Balances::deposit_creating(&ALICE, 1_000_000);
 
-            assert_ok!(Contracts::put_code(Origin::signed(ALICE), 100_000, wasm));
+            assert_ok!(Contracts::put_code(Origin::signed(ALICE), wasm));
 
             // Check at the end to get hash on error easily
             let creation = Contracts::instantiate(
                 Origin::signed(ALICE),
                 100,
-                100_000,
+                Gas::max_value(),
                 code_hash.into(),
                 vec![],
             );
@@ -444,7 +458,7 @@ fn instantiate_and_relate_operator() {
         .execute_with(|| {
             // prepare
             Balances::deposit_creating(&ALICE, 1_000_000);
-            assert_ok!(Contracts::put_code(Origin::signed(ALICE), 100_000, wasm));
+            assert_ok!(Contracts::put_code(Origin::signed(ALICE), wasm));
 
             let test_params = DEFAULT_PARAMETERS.clone();
 
@@ -453,7 +467,7 @@ fn instantiate_and_relate_operator() {
             assert_ok!(Operator::instantiate(
                 Origin::signed(ALICE),
                 100,
-                100_000,
+                Gas::max_value(),
                 code_hash.into(),
                 vec![],
                 test_params.clone(),
@@ -551,7 +565,7 @@ fn instantiate_failed() {
         .execute_with(|| {
             // prepare
             Balances::deposit_creating(&ALICE, 1_000_000);
-            assert_ok!(Contracts::put_code(Origin::signed(ALICE), 100_000, wasm));
+            assert_ok!(Contracts::put_code(Origin::signed(ALICE), wasm));
 
             let test_params = INVALID_PARAMETERS;
 
@@ -561,7 +575,7 @@ fn instantiate_failed() {
                 Operator::instantiate(
                     Origin::signed(ALICE),
                     100,
-                    100_000,
+                    Gas::max_value(),
                     code_hash.into(),
                     vec![],
                     test_params,
@@ -574,7 +588,7 @@ fn instantiate_failed() {
 fn valid_instatiate(wasm: Vec<u8>, code_hash: CodeHash<Test>) {
     // prepare
     Balances::deposit_creating(&ALICE, 1_000_000);
-    assert_ok!(Contracts::put_code(Origin::signed(ALICE), 100_000, wasm));
+    assert_ok!(Contracts::put_code(Origin::signed(ALICE), wasm));
 
     let test_params = TestParameters { a: 5_000_000 };
 
@@ -583,7 +597,7 @@ fn valid_instatiate(wasm: Vec<u8>, code_hash: CodeHash<Test>) {
     let creation = Operator::instantiate(
         Origin::signed(ALICE),
         100,
-        100_000,
+        Gas::max_value(),
         code_hash.into(),
         vec![],
         test_params.clone(),
