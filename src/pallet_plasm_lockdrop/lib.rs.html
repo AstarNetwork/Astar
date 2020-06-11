@@ -691,6 +691,11 @@
 <span id="691">691</span>
 <span id="692">692</span>
 <span id="693">693</span>
+<span id="694">694</span>
+<span id="695">695</span>
+<span id="696">696</span>
+<span id="697">697</span>
+<span id="698">698</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="doccomment">//! # Plasm Lockdrop Module</span>
 <span class="doccomment">//! This module held lockdrop event on live network.</span>
@@ -719,12 +724,11 @@
     <span class="ident">ensure</span>,
     <span class="ident">storage</span>::<span class="ident">IterableStorageMap</span>,
     <span class="ident">traits</span>::{<span class="ident">Currency</span>, <span class="ident">Get</span>, <span class="ident">Time</span>},
-    <span class="ident">weights</span>::<span class="ident">Weight</span>,
+    <span class="ident">weights</span>::{<span class="ident">SimpleDispatchInfo</span>, <span class="ident">Weight</span>},
     <span class="ident">StorageMap</span>, <span class="ident">StorageValue</span>,
 };
 <span class="kw">use</span> <span class="ident">frame_system</span>::{
-    <span class="self">self</span> <span class="kw">as</span> <span class="ident">system</span>, <span class="ident">ensure_none</span>, <span class="ident">ensure_signed</span>,
-    <span class="ident">offchain</span>::{<span class="ident">SendTransactionTypes</span>, <span class="ident">SubmitTransaction</span>},
+    <span class="self">self</span> <span class="kw">as</span> <span class="ident">system</span>, <span class="ident">ensure_none</span>, <span class="ident">ensure_signed</span>, <span class="ident">offchain</span>::<span class="ident">SubmitUnsignedTransaction</span>,
 };
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident">generic_array</span>::<span class="ident">typenum</span>;
 <span class="kw">use</span> <span class="ident">median</span>::{<span class="ident">Filter</span>, <span class="ident">ListNode</span>};
@@ -761,15 +765,33 @@
     <span class="op">&lt;</span><span class="op">&lt;</span><span class="ident">T</span> <span class="kw">as</span> <span class="ident">Trait</span><span class="op">&gt;</span>::<span class="ident">Currency</span> <span class="kw">as</span> <span class="ident">Currency</span><span class="op">&lt;</span><span class="op">&lt;</span><span class="ident">T</span> <span class="kw">as</span> <span class="ident">frame_system</span>::<span class="ident">Trait</span><span class="op">&gt;</span>::<span class="ident">AccountId</span><span class="op">&gt;</span><span class="op">&gt;</span>::<span class="ident">Balance</span>;
 
 <span class="doccomment">/// The module&#39;s main configuration trait.</span>
-<span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">Trait</span>: <span class="ident">SendTransactionTypes</span><span class="op">&lt;</span><span class="ident">Call</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">frame_system</span>::<span class="ident">Trait</span> {
+<span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">Trait</span>: <span class="ident">system</span>::<span class="ident">Trait</span> {
     <span class="doccomment">/// The lockdrop balance.</span>
     <span class="kw">type</span> <span class="ident">Currency</span>: <span class="ident">Currency</span><span class="op">&lt;</span><span class="self">Self</span>::<span class="ident">AccountId</span><span class="op">&gt;</span>;
+
+    <span class="doccomment">/// Bitcoin price oracle.</span>
+    <span class="kw">type</span> <span class="ident">BitcoinTicker</span>: <span class="ident">PriceOracle</span><span class="op">&lt;</span><span class="self">Self</span>::<span class="ident">DollarRate</span><span class="op">&gt;</span>;
+
+    <span class="doccomment">/// Ethereum price oracle.</span>
+    <span class="kw">type</span> <span class="ident">EthereumTicker</span>: <span class="ident">PriceOracle</span><span class="op">&lt;</span><span class="self">Self</span>::<span class="ident">DollarRate</span><span class="op">&gt;</span>;
+
+    <span class="doccomment">/// Bitcoin transaction oracle.</span>
+    <span class="kw">type</span> <span class="ident">BitcoinApi</span>: <span class="ident">ChainOracle</span><span class="op">&lt;</span><span class="ident">H256</span><span class="op">&gt;</span>;
+
+    <span class="doccomment">/// Ethereum transaction oracle.</span>
+    <span class="kw">type</span> <span class="ident">EthereumApi</span>: <span class="ident">ChainOracle</span><span class="op">&lt;</span><span class="ident">H256</span><span class="op">&gt;</span>;
 
     <span class="doccomment">/// How long dollar rate parameters valid in secs.</span>
     <span class="kw">type</span> <span class="ident">MedianFilterExpire</span>: <span class="ident">Get</span><span class="op">&lt;</span><span class="self">Self</span>::<span class="ident">Moment</span><span class="op">&gt;</span>;
 
     <span class="doccomment">/// Median filter window size.</span>
     <span class="kw">type</span> <span class="ident">MedianFilterWidth</span>: <span class="ident">generic_array</span>::<span class="ident">ArrayLength</span><span class="op">&lt;</span><span class="ident">ListNode</span><span class="op">&lt;</span><span class="self">Self</span>::<span class="ident">DollarRate</span><span class="op">&gt;</span><span class="op">&gt;</span>;
+
+    <span class="doccomment">/// A dispatchable call type.</span>
+    <span class="kw">type</span> <span class="ident">Call</span>: <span class="ident">From</span><span class="op">&lt;</span><span class="ident">Call</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span><span class="op">&gt;</span>;
+
+    <span class="doccomment">/// Let&#39;s define the helper we use to create signed transactions.</span>
+    <span class="kw">type</span> <span class="ident">SubmitTransaction</span>: <span class="ident">SubmitUnsignedTransaction</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="op">&lt;</span><span class="self">Self</span> <span class="kw">as</span> <span class="ident">Trait</span><span class="op">&gt;</span>::<span class="ident">Call</span><span class="op">&gt;</span>;
 
     <span class="doccomment">/// The identifier type for an authority.</span>
     <span class="kw">type</span> <span class="ident">AuthorityId</span>: <span class="ident">Member</span> <span class="op">+</span> <span class="ident">Parameter</span> <span class="op">+</span> <span class="ident">RuntimeAppPublic</span> <span class="op">+</span> <span class="ident">Default</span> <span class="op">+</span> <span class="ident">Ord</span>;
@@ -793,14 +815,7 @@
         <span class="op">+</span> <span class="ident">Into</span><span class="op">&lt;</span><span class="ident">u128</span><span class="op">&gt;</span>;
 
     <span class="doccomment">/// Dollar rate number data type.</span>
-    <span class="kw">type</span> <span class="ident">DollarRate</span>: <span class="ident">Member</span>
-        <span class="op">+</span> <span class="ident">Parameter</span>
-        <span class="op">+</span> <span class="ident">AtLeast32Bit</span>
-        <span class="op">+</span> <span class="ident">Copy</span>
-        <span class="op">+</span> <span class="ident">Default</span>
-        <span class="op">+</span> <span class="ident">Into</span><span class="op">&lt;</span><span class="ident">u128</span><span class="op">&gt;</span>
-        <span class="op">+</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span>
-        <span class="op">+</span> <span class="ident">sp_std</span>::<span class="ident">str</span>::<span class="ident">FromStr</span>;
+    <span class="kw">type</span> <span class="ident">DollarRate</span>: <span class="ident">Member</span> <span class="op">+</span> <span class="ident">Parameter</span> <span class="op">+</span> <span class="ident">AtLeast32Bit</span> <span class="op">+</span> <span class="ident">Copy</span> <span class="op">+</span> <span class="ident">Default</span> <span class="op">+</span> <span class="ident">Into</span><span class="op">&lt;</span><span class="ident">u128</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">u64</span><span class="op">&gt;</span>;
 
     <span class="comment">// XXX: I don&#39;t known how to convert into Balance from u128 without it</span>
     <span class="comment">// TODO: Should be removed</span>
@@ -809,9 +824,6 @@
 
     <span class="doccomment">/// The regular events type.</span>
     <span class="kw">type</span> <span class="ident">Event</span>: <span class="ident">From</span><span class="op">&lt;</span><span class="ident">Event</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Into</span><span class="op">&lt;</span><span class="op">&lt;</span><span class="self">Self</span> <span class="kw">as</span> <span class="ident">frame_system</span>::<span class="ident">Trait</span><span class="op">&gt;</span>::<span class="ident">Event</span><span class="op">&gt;</span>;
-
-    <span class="doccomment">/// Base priority for unsigned transactions.</span>
-    <span class="kw">type</span> <span class="ident">UnsignedPriority</span>: <span class="ident">Get</span><span class="op">&lt;</span><span class="ident">TransactionPriority</span><span class="op">&gt;</span>;
 }
 
 <span class="doccomment">/// Claim id is a hash of claim parameters.</span>
@@ -925,7 +937,8 @@
         <span class="ident">HasVote</span> <span class="ident">get</span>(<span class="kw">fn</span> <span class="ident">has_vote</span>):
             <span class="ident">double_map</span> <span class="ident">hasher</span>(<span class="ident">blake2_128_concat</span>) <span class="ident">T</span>::<span class="ident">AuthorityId</span>, <span class="ident">hasher</span>(<span class="ident">blake2_128_concat</span>) <span class="ident">ClaimId</span>
             <span class="op">=</span><span class="op">&gt;</span> <span class="ident">bool</span>;
-        <span class="doccomment">/// Lockdrop alpha parameter, where α ∈ [0; 1]</span>
+        <span class="doccomment">/// Lockdrop alpha parameter (fixed point at 1_000_000_000).</span>
+        <span class="doccomment">/// α ∈ [0; 10]</span>
         <span class="ident">Alpha</span> <span class="ident">get</span>(<span class="kw">fn</span> <span class="ident">alpha</span>) <span class="ident">config</span>(): <span class="ident">Perbill</span>;
         <span class="doccomment">/// Lockdrop dollar rate parameter: BTC, ETH.</span>
         <span class="ident">DollarRate</span> <span class="ident">get</span>(<span class="kw">fn</span> <span class="ident">dollar_rate</span>) <span class="ident">config</span>(): (<span class="ident">T</span>::<span class="ident">DollarRate</span>, <span class="ident">T</span>::<span class="ident">DollarRate</span>);
@@ -956,13 +969,12 @@
             <span class="comment">// `on_initialize` functions, which allows us to set up some temporary state or - like</span>
             <span class="comment">// in this case - clean up other states</span>
             <span class="op">&lt;</span><span class="ident">Requests</span><span class="op">&gt;</span>::<span class="ident">kill</span>();
-            <span class="comment">// TODO: weight</span>
+
             <span class="number">50_000</span>
         }
 
         <span class="doccomment">/// Request authorities to check locking transaction.</span>
-        <span class="doccomment">/// TODO: weight</span>
-        <span class="attribute">#[<span class="ident">weight</span> <span class="op">=</span> <span class="number">1_000_000</span>]</span>
+        <span class="attribute">#[<span class="ident">weight</span> <span class="op">=</span> <span class="ident">SimpleDispatchInfo</span>::<span class="ident">FixedNormal</span>(<span class="number">1_000_000</span>)]</span>
         <span class="kw">fn</span> <span class="ident">request</span>(
             <span class="ident">origin</span>,
             <span class="ident">params</span>: <span class="ident">Lockdrop</span>,
@@ -1001,8 +1013,7 @@
         }
 
         <span class="doccomment">/// Claim tokens according to lockdrop procedure.</span>
-        <span class="doccomment">/// TODO: weight</span>
-        <span class="attribute">#[<span class="ident">weight</span> <span class="op">=</span> <span class="number">1_000_000</span>]</span>
+        <span class="attribute">#[<span class="ident">weight</span> <span class="op">=</span> <span class="ident">SimpleDispatchInfo</span>::<span class="ident">FixedNormal</span>(<span class="number">1_000_000</span>)]</span>
         <span class="kw">fn</span> <span class="ident">claim</span>(
             <span class="ident">origin</span>,
             <span class="ident">claim_id</span>: <span class="ident">ClaimId</span>,
@@ -1033,8 +1044,7 @@
         }
 
         <span class="doccomment">/// Vote for claim request according to check results. (for authorities only)</span>
-        <span class="doccomment">/// TODO: weight</span>
-        <span class="attribute">#[<span class="ident">weight</span> <span class="op">=</span> <span class="number">50_000</span>]</span>
+        <span class="attribute">#[<span class="ident">weight</span> <span class="op">=</span> <span class="ident">SimpleDispatchInfo</span>::<span class="ident">default</span>()]</span>
         <span class="kw">fn</span> <span class="ident">vote</span>(
             <span class="ident">origin</span>,
             <span class="ident">vote</span>: <span class="ident">ClaimVote</span>,
@@ -1059,8 +1069,7 @@
         }
 
         <span class="doccomment">/// Dollar Rate oracle entrypoint. (for authorities only)</span>
-        <span class="doccomment">/// TODO: weight</span>
-        <span class="attribute">#[<span class="ident">weight</span> <span class="op">=</span> <span class="number">50_000</span>]</span>
+        <span class="attribute">#[<span class="ident">weight</span> <span class="op">=</span> <span class="ident">SimpleDispatchInfo</span>::<span class="ident">default</span>()]</span>
         <span class="kw">fn</span> <span class="ident">set_dollar_rate</span>(
             <span class="ident">origin</span>,
             <span class="ident">rate</span>: <span class="ident">TickerRate</span><span class="op">&lt;</span><span class="ident">T</span>::<span class="ident">DollarRate</span><span class="op">&gt;</span>,
@@ -1118,7 +1127,7 @@
     <span class="doccomment">/// The main offchain worker entry point.</span>
     <span class="kw">fn</span> <span class="ident">offchain</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), ()<span class="op">&gt;</span> {
         <span class="comment">// TODO: add delay to prevent frequent transaction sending</span>
-        <span class="self">Self</span>::<span class="ident">send_dollar_rate</span>(<span class="ident">BitcoinPrice</span>::<span class="ident">fetch</span>()<span class="question-mark">?</span>, <span class="ident">EthereumPrice</span>::<span class="ident">fetch</span>()<span class="question-mark">?</span>)<span class="question-mark">?</span>;
+        <span class="self">Self</span>::<span class="ident">send_dollar_rate</span>(<span class="ident">T</span>::<span class="ident">BitcoinTicker</span>::<span class="ident">fetch</span>()<span class="question-mark">?</span>, <span class="ident">T</span>::<span class="ident">EthereumTicker</span>::<span class="ident">fetch</span>()<span class="question-mark">?</span>)<span class="question-mark">?</span>;
 
         <span class="comment">// TODO: use permanent storage to track request when temporary failed</span>
         <span class="self">Self</span>::<span class="ident">claim_request_oracle</span>()
@@ -1151,8 +1160,7 @@
                         <span class="string">&quot;claim id {} =&gt; vote extrinsic: {:?}&quot;</span>, <span class="ident">claim_id</span>, <span class="ident">call</span>
                     );
 
-                    <span class="kw">let</span> <span class="ident">res</span> <span class="op">=</span>
-                        <span class="ident">SubmitTransaction</span>::<span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">Call</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>::<span class="ident">submit_unsigned_transaction</span>(<span class="ident">call</span>.<span class="ident">into</span>());
+                    <span class="kw">let</span> <span class="ident">res</span> <span class="op">=</span> <span class="ident">T</span>::<span class="ident">SubmitTransaction</span>::<span class="ident">submit_unsigned</span>(<span class="ident">call</span>);
                     <span class="ident">debug</span>::<span class="macro">debug</span><span class="macro">!</span>(
                         <span class="ident">target</span>: <span class="string">&quot;lockdrop-offchain-worker&quot;</span>,
                         <span class="string">&quot;claim id {} =&gt; vote extrinsic send: {:?}&quot;</span>, <span class="ident">claim_id</span>, <span class="ident">res</span>
@@ -1180,7 +1188,7 @@
                     <span class="string">&quot;dollar rate extrinsic: {:?}&quot;</span>, <span class="ident">call</span>
                 );
 
-                <span class="kw">let</span> <span class="ident">res</span> <span class="op">=</span> <span class="ident">SubmitTransaction</span>::<span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">Call</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>::<span class="ident">submit_unsigned_transaction</span>(<span class="ident">call</span>.<span class="ident">into</span>());
+                <span class="kw">let</span> <span class="ident">res</span> <span class="op">=</span> <span class="ident">T</span>::<span class="ident">SubmitTransaction</span>::<span class="ident">submit_unsigned</span>(<span class="ident">call</span>);
                 <span class="ident">debug</span>::<span class="macro">debug</span><span class="macro">!</span>(
                     <span class="ident">target</span>: <span class="string">&quot;lockdrop-offchain-worker&quot;</span>,
                     <span class="string">&quot;dollar rate extrinsic send: {:?}&quot;</span>, <span class="ident">res</span>
@@ -1200,7 +1208,7 @@
                 <span class="ident">duration</span>,
                 <span class="ident">transaction_hash</span>,
             } <span class="op">=</span><span class="op">&gt;</span> {
-                <span class="kw">let</span> <span class="ident">tx</span> <span class="op">=</span> <span class="ident">BitcoinChain</span>::<span class="ident">fetch</span>(<span class="ident">transaction_hash</span>)<span class="question-mark">?</span>;
+                <span class="kw">let</span> <span class="ident">tx</span> <span class="op">=</span> <span class="ident">T</span>::<span class="ident">BitcoinApi</span>::<span class="ident">fetch</span>(<span class="ident">transaction_hash</span>)<span class="question-mark">?</span>;
                 <span class="ident">debug</span>::<span class="macro">debug</span><span class="macro">!</span>(
                     <span class="ident">target</span>: <span class="string">&quot;lockdrop-offchain-worker&quot;</span>,
                     <span class="string">&quot;claim id {} =&gt; fetched transaction: {:?}&quot;</span>, <span class="ident">claim_id</span>, <span class="ident">tx</span>
@@ -1227,7 +1235,7 @@
                 <span class="ident">duration</span>,
                 <span class="ident">transaction_hash</span>,
             } <span class="op">=</span><span class="op">&gt;</span> {
-                <span class="kw">let</span> <span class="ident">tx</span> <span class="op">=</span> <span class="ident">EthereumChain</span>::<span class="ident">fetch</span>(<span class="ident">transaction_hash</span>)<span class="question-mark">?</span>;
+                <span class="kw">let</span> <span class="ident">tx</span> <span class="op">=</span> <span class="ident">T</span>::<span class="ident">EthereumApi</span>::<span class="ident">fetch</span>(<span class="ident">transaction_hash</span>)<span class="question-mark">?</span>;
                 <span class="ident">debug</span>::<span class="macro">debug</span><span class="macro">!</span>(
                     <span class="ident">target</span>: <span class="string">&quot;lockdrop-offchain-worker&quot;</span>,
                     <span class="string">&quot;claim id {} =&gt; fetched transaction: {:?}&quot;</span>, <span class="ident">claim_id</span>, <span class="ident">tx</span>
@@ -1253,14 +1261,14 @@
     <span class="kw">fn</span> <span class="ident">btc_issue_amount</span>(<span class="ident">value</span>: <span class="ident">u128</span>, <span class="ident">duration</span>: <span class="ident">T</span>::<span class="ident">Moment</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">u128</span> {
         <span class="comment">// https://medium.com/stake-technologies/plasm-lockdrop-introduction-99fa2dfc37c0</span>
         <span class="kw">let</span> <span class="ident">rate</span> <span class="op">=</span> <span class="self">Self</span>::<span class="ident">alpha</span>() <span class="op">*</span> <span class="self">Self</span>::<span class="ident">dollar_rate</span>().<span class="number">0</span> <span class="op">*</span> <span class="self">Self</span>::<span class="ident">time_bonus</span>(<span class="ident">duration</span>).<span class="ident">into</span>();
-        <span class="ident">rate</span>.<span class="ident">into</span>() <span class="op">*</span> <span class="ident">value</span>
+        <span class="ident">rate</span>.<span class="ident">into</span>() <span class="op">*</span> <span class="ident">value</span> <span class="op">*</span> <span class="number">10</span>
     }
 
     <span class="doccomment">/// PLM issue amount for given ETH value and locking duration.</span>
     <span class="kw">fn</span> <span class="ident">eth_issue_amount</span>(<span class="ident">value</span>: <span class="ident">u128</span>, <span class="ident">duration</span>: <span class="ident">T</span>::<span class="ident">Moment</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">u128</span> {
         <span class="comment">// https://medium.com/stake-technologies/plasm-lockdrop-introduction-99fa2dfc37c0</span>
         <span class="kw">let</span> <span class="ident">rate</span> <span class="op">=</span> <span class="self">Self</span>::<span class="ident">alpha</span>() <span class="op">*</span> <span class="self">Self</span>::<span class="ident">dollar_rate</span>().<span class="number">1</span> <span class="op">*</span> <span class="self">Self</span>::<span class="ident">time_bonus</span>(<span class="ident">duration</span>).<span class="ident">into</span>();
-        <span class="ident">rate</span>.<span class="ident">into</span>() <span class="op">*</span> <span class="ident">value</span>
+        <span class="ident">rate</span>.<span class="ident">into</span>() <span class="op">*</span> <span class="ident">value</span> <span class="op">*</span> <span class="number">10</span>
     }
 
     <span class="doccomment">/// Lockdrop bonus depends of lockding duration.</span>
@@ -1351,12 +1359,13 @@
                         <span class="kw">return</span> <span class="ident">InvalidTransaction</span>::<span class="ident">BadProof</span>.<span class="ident">into</span>();
                     }
 
-                    <span class="ident">ValidTransaction</span>::<span class="ident">with_tag_prefix</span>(<span class="string">&quot;PlasmLockdrop&quot;</span>)
-                        .<span class="ident">priority</span>(<span class="ident">T</span>::<span class="ident">UnsignedPriority</span>::<span class="ident">get</span>())
-                        .<span class="ident">and_provides</span>(<span class="ident">encoded_vote</span>)
-                        .<span class="ident">longevity</span>(<span class="number">64_u64</span>)
-                        .<span class="ident">propagate</span>(<span class="bool-val">true</span>)
-                        .<span class="ident">build</span>()
+                    <span class="prelude-val">Ok</span>(<span class="ident">ValidTransaction</span> {
+                        <span class="ident">priority</span>: <span class="ident">TransactionPriority</span>::<span class="ident">max_value</span>(),
+                        <span class="ident">requires</span>: <span class="macro">vec</span><span class="macro">!</span>[],
+                        <span class="ident">provides</span>: <span class="macro">vec</span><span class="macro">!</span>[<span class="ident">encoded_vote</span>.<span class="ident">to_vec</span>()],
+                        <span class="ident">longevity</span>: <span class="number">64_u64</span>,
+                        <span class="ident">propagate</span>: <span class="bool-val">true</span>,
+                    })
                 })
             }
 
@@ -1372,12 +1381,13 @@
                         <span class="kw">return</span> <span class="ident">InvalidTransaction</span>::<span class="ident">BadProof</span>.<span class="ident">into</span>();
                     }
 
-                    <span class="ident">ValidTransaction</span>::<span class="ident">with_tag_prefix</span>(<span class="string">&quot;PlasmLockdrop&quot;</span>)
-                        .<span class="ident">priority</span>(<span class="ident">T</span>::<span class="ident">UnsignedPriority</span>::<span class="ident">get</span>())
-                        .<span class="ident">and_provides</span>(<span class="ident">encoded_rate</span>.<span class="ident">to_vec</span>())
-                        .<span class="ident">longevity</span>(<span class="number">64_u64</span>)
-                        .<span class="ident">propagate</span>(<span class="bool-val">true</span>)
-                        .<span class="ident">build</span>()
+                    <span class="prelude-val">Ok</span>(<span class="ident">ValidTransaction</span> {
+                        <span class="ident">priority</span>: <span class="ident">TransactionPriority</span>::<span class="ident">max_value</span>(),
+                        <span class="ident">requires</span>: <span class="macro">vec</span><span class="macro">!</span>[],
+                        <span class="ident">provides</span>: <span class="macro">vec</span><span class="macro">!</span>[<span class="ident">encoded_rate</span>.<span class="ident">to_vec</span>()],
+                        <span class="ident">longevity</span>: <span class="number">64_u64</span>,
+                        <span class="ident">propagate</span>: <span class="bool-val">true</span>,
+                    })
                 })
             }
 
