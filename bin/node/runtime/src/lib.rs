@@ -85,13 +85,13 @@ pub fn native_version() -> NativeVersion {
 }
 
 parameter_types! {
-    pub const BlockHashCount: BlockNumber = 250;
+    pub const BlockHashCount: BlockNumber = 2400;
     /// We allow for 3 seconds of compute with a 10 second average block time.
     pub const MaximumBlockWeight: Weight = 3 * WEIGHT_PER_SECOND;
     pub const MaximumBlockLength: u32 = 5 * 1024 * 1024;
     pub const AvailableBlockRatio: Perbill = Perbill::from_percent(75);
     /// Assume 10% of weight for average on_initialize calls
-    pub const MaximumExtrinsicWeight: Weight = AvailableBlockRatio::get()
+    pub MaximumExtrinsicWeight: Weight = AvailableBlockRatio::get()
         .saturating_sub(Perbill::from_percent(10)) * MaximumBlockWeight::get();
     pub const Version: RuntimeVersion = VERSION;
 }
