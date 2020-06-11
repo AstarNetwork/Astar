@@ -578,6 +578,37 @@
 <span id="578">578</span>
 <span id="579">579</span>
 <span id="580">580</span>
+<span id="581">581</span>
+<span id="582">582</span>
+<span id="583">583</span>
+<span id="584">584</span>
+<span id="585">585</span>
+<span id="586">586</span>
+<span id="587">587</span>
+<span id="588">588</span>
+<span id="589">589</span>
+<span id="590">590</span>
+<span id="591">591</span>
+<span id="592">592</span>
+<span id="593">593</span>
+<span id="594">594</span>
+<span id="595">595</span>
+<span id="596">596</span>
+<span id="597">597</span>
+<span id="598">598</span>
+<span id="599">599</span>
+<span id="600">600</span>
+<span id="601">601</span>
+<span id="602">602</span>
+<span id="603">603</span>
+<span id="604">604</span>
+<span id="605">605</span>
+<span id="606">606</span>
+<span id="607">607</span>
+<span id="608">608</span>
+<span id="609">609</span>
+<span id="610">610</span>
+<span id="611">611</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="doccomment">//! # Ovm Module</span>
 <span class="doccomment">//!</span>
@@ -601,10 +632,11 @@
     <span class="ident">dispatch</span>::<span class="ident">DispatchResult</span>,
     <span class="ident">ensure</span>,
     <span class="ident">traits</span>::{<span class="ident">Get</span>, <span class="ident">Time</span>},
-    <span class="ident">weights</span>::{<span class="ident">SimpleDispatchInfo</span>, <span class="ident">WeighData</span>, <span class="ident">Weight</span>},
+    <span class="ident">weights</span>::{<span class="ident">DispatchClass</span>, <span class="ident">FunctionOf</span>, <span class="ident">Pays</span>, <span class="ident">WeighData</span>, <span class="ident">Weight</span>},
     <span class="ident">StorageMap</span>,
 };
 <span class="kw">use</span> <span class="ident">frame_system</span>::{<span class="self">self</span> <span class="kw">as</span> <span class="ident">system</span>, <span class="ident">ensure_signed</span>};
+
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>)]</span>
 <span class="kw">use</span> <span class="ident">serde</span>::{<span class="ident">Deserialize</span>, <span class="ident">Serialize</span>};
 <span class="kw">use</span> <span class="ident">sp_runtime</span>::{<span class="ident">traits</span>::<span class="ident">Hash</span>, <span class="ident">RuntimeDebug</span>};
@@ -619,7 +651,7 @@
 <span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">traits</span>;
 
 <span class="kw">use</span> <span class="ident">predicate</span>::{<span class="ident">ExecResult</span>, <span class="ident">ExecutionContext</span>, <span class="ident">PredicateLoader</span>, <span class="ident">PredicateOvm</span>};
-<span class="kw">use</span> <span class="ident">traits</span>::<span class="ident">PredicateAddressFor</span>;
+<span class="kw">pub</span> <span class="kw">use</span> <span class="ident">traits</span>::<span class="ident">PredicateAddressFor</span>;
 
 <span class="doccomment">/// PredicateContract wrapped Predicate and initial arguments.</span>
 <span class="doccomment">///</span>
@@ -636,12 +668,12 @@
 
 <span class="doccomment">/// Property stands for dispute logic and we can claim every Properties to Adjudicator Contract.</span>
 <span class="doccomment">/// Property has its predicate address and array of input.</span>
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Encode</span>, <span class="ident">Decode</span>, <span class="ident">Clone</span>, <span class="ident">RuntimeDebug</span>, <span class="ident">PartialEq</span>, <span class="ident">Eq</span>)]</span>
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Encode</span>, <span class="ident">Decode</span>, <span class="ident">Clone</span>, <span class="ident">Default</span>, <span class="ident">RuntimeDebug</span>, <span class="ident">PartialEq</span>, <span class="ident">Eq</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Property</span><span class="op">&lt;</span><span class="ident">AccountId</span><span class="op">&gt;</span> {
     <span class="doccomment">/// Indicates the address of Predicate.</span>
-    <span class="ident">predicate_address</span>: <span class="ident">AccountId</span>,
+    <span class="kw">pub</span> <span class="ident">predicate_address</span>: <span class="ident">AccountId</span>,
     <span class="doccomment">/// Every input are bytes. Each Atomic Predicate decode inputs to the specific type.</span>
-    <span class="ident">inputs</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>,
+    <span class="kw">pub</span> <span class="ident">inputs</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span><span class="op">&gt;</span>,
 }
 
 <span class="doccomment">/// The game decision by predicates.</span>
@@ -673,6 +705,9 @@
     <span class="doccomment">/// Version of the schedule.</span>
     <span class="kw">pub</span> <span class="ident">version</span>: <span class="ident">u32</span>,
 
+    <span class="doccomment">/// Cost of putting a byte of code into storage.</span>
+    <span class="kw">pub</span> <span class="ident">put_code_per_byte_cost</span>: <span class="ident">Weight</span>,
+
     <span class="doccomment">/// Maximum allowed stack height.</span>
     <span class="doccomment">///</span>
     <span class="doccomment">/// See https://wiki.parity.io/WebAssembly-StackHeight to find out</span>
@@ -687,10 +722,16 @@
     <span class="comment">// TODO: add logical conecctive addresses.</span>
 }
 
+<span class="comment">// 500 (2 instructions per nano second on 2GHZ) * 1000x slowdown through wasmi</span>
+<span class="comment">// This is a wild guess and should be viewed as a rough estimation.</span>
+<span class="comment">// Proper benchmarks are needed before this value and its derivatives can be used in production.</span>
+<span class="kw">const</span> <span class="ident">WASM_INSTRUCTION_COST</span>: <span class="ident">Weight</span> <span class="op">=</span> <span class="number">500_000</span>;
+
 <span class="kw">impl</span> <span class="ident">Default</span> <span class="kw">for</span> <span class="ident">Schedule</span> {
     <span class="kw">fn</span> <span class="ident">default</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Schedule</span> {
         <span class="ident">Schedule</span> {
             <span class="ident">version</span>: <span class="number">0</span>,
+            <span class="ident">put_code_per_byte_cost</span>: <span class="ident">WASM_INSTRUCTION_COST</span>,
             <span class="ident">max_stack_height</span>: <span class="number">64</span> <span class="op">*</span> <span class="number">1024</span>,
             <span class="ident">max_memory_pages</span>: <span class="number">16</span>,
             <span class="ident">max_table_size</span>: <span class="number">16</span> <span class="op">*</span> <span class="number">1024</span>,
@@ -722,7 +763,7 @@
     <span class="op">&lt;</span><span class="ident">T</span> <span class="kw">as</span> <span class="ident">system</span>::<span class="ident">Trait</span><span class="op">&gt;</span>::<span class="ident">Hash</span>,
     <span class="op">&lt;</span><span class="ident">T</span> <span class="kw">as</span> <span class="ident">system</span>::<span class="ident">Trait</span><span class="op">&gt;</span>::<span class="ident">BlockNumber</span>,
 <span class="op">&gt;</span>;
-<span class="kw">type</span> <span class="ident">PropertyOf</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">Property</span><span class="op">&lt;</span><span class="op">&lt;</span><span class="ident">T</span> <span class="kw">as</span> <span class="ident">system</span>::<span class="ident">Trait</span><span class="op">&gt;</span>::<span class="ident">AccountId</span><span class="op">&gt;</span>;
+<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">PropertyOf</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">Property</span><span class="op">&lt;</span><span class="op">&lt;</span><span class="ident">T</span> <span class="kw">as</span> <span class="ident">system</span>::<span class="ident">Trait</span><span class="op">&gt;</span>::<span class="ident">AccountId</span><span class="op">&gt;</span>;
 <span class="kw">type</span> <span class="ident">AccountIdOf</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> <span class="op">=</span> <span class="op">&lt;</span><span class="ident">T</span> <span class="kw">as</span> <span class="ident">frame_system</span>::<span class="ident">Trait</span><span class="op">&gt;</span>::<span class="ident">AccountId</span>;
 <span class="kw">type</span> <span class="ident">PredicateContractOf</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">PredicateContract</span><span class="op">&lt;</span><span class="op">&lt;</span><span class="ident">T</span> <span class="kw">as</span> <span class="ident">frame_system</span>::<span class="ident">Trait</span><span class="op">&gt;</span>::<span class="ident">Hash</span><span class="op">&gt;</span>;
 
@@ -830,12 +871,17 @@
 
         <span class="kw">fn</span> <span class="ident">on_runtime_upgrade</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Weight</span> {
             <span class="ident">migrate</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>();
-            <span class="ident">SimpleDispatchInfo</span>::<span class="ident">default</span>().<span class="ident">weigh_data</span>(())
+            <span class="comment">// TODO: weight</span>
+            <span class="ident">T</span>::<span class="ident">MaximumBlockWeight</span>::<span class="ident">get</span>()
         }
 
         <span class="doccomment">/// Stores the given binary Wasm code into the chain&#39;s storage and returns its `codehash`.</span>
         <span class="doccomment">/// You can instantiate contracts only with stored code.</span>
-        <span class="attribute">#[<span class="ident">weight</span> <span class="op">=</span> <span class="ident">SimpleDispatchInfo</span>::<span class="ident">default</span>()]</span>
+        <span class="attribute">#[<span class="ident">weight</span> <span class="op">=</span> <span class="ident">FunctionOf</span>(
+            <span class="op">|</span><span class="ident">args</span>: (<span class="kw-2">&amp;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>,)<span class="op">|</span> <span class="ident">Module</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>::<span class="ident">calc_code_put_costs</span>(<span class="ident">args</span>.<span class="number">0</span>),
+            <span class="ident">DispatchClass</span>::<span class="ident">Normal</span>,
+            <span class="ident">Pays</span>::<span class="ident">Yes</span>
+        )]</span>
         <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">put_code</span>(
             <span class="ident">origin</span>,
             <span class="ident">predicate</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>
@@ -853,7 +899,8 @@
 
 
         <span class="doccomment">/// Deploy predicate and made predicate address as AccountId.</span>
-        <span class="attribute">#[<span class="ident">weight</span> <span class="op">=</span> <span class="ident">frame_support</span>::<span class="ident">weights</span>::<span class="ident">SimpleDispatchInfo</span>::<span class="ident">default</span>()]</span>
+        <span class="doccomment">/// TODO: weight</span>
+        <span class="attribute">#[<span class="ident">weight</span> <span class="op">=</span> <span class="number">100_000</span>]</span>
         <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">instantiate</span>(<span class="ident">origin</span>, <span class="ident">predicate_hash</span>: <span class="ident">PredicateHash</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>, <span class="ident">inputs</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>) {
             <span class="kw">let</span> <span class="ident">origin</span> <span class="op">=</span> <span class="ident">ensure_signed</span>(<span class="ident">origin</span>)<span class="question-mark">?</span>;
 
@@ -873,7 +920,8 @@
         }
 
         <span class="doccomment">/// Claims property and create new game. Id of game is hash of claimed property</span>
-        <span class="attribute">#[<span class="ident">weight</span> <span class="op">=</span> <span class="ident">frame_support</span>::<span class="ident">weights</span>::<span class="ident">SimpleDispatchInfo</span>::<span class="ident">default</span>()]</span>
+        <span class="doccomment">/// TODO: weight</span>
+        <span class="attribute">#[<span class="ident">weight</span> <span class="op">=</span> <span class="number">100_000</span>]</span>
         <span class="kw">fn</span> <span class="ident">claim_property</span>(<span class="ident">origin</span>, <span class="ident">claim</span>: <span class="ident">PropertyOf</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>) {
             <span class="comment">// get the id of this property</span>
             <span class="kw">let</span> <span class="ident">game_id</span> <span class="op">=</span> <span class="self">Self</span>::<span class="ident">get_property_id</span>(<span class="kw-2">&amp;</span><span class="ident">claim</span>);
@@ -900,7 +948,8 @@
         }
 
         <span class="doccomment">/// Sets the game decision true when its dispute period has already passed.</span>
-        <span class="attribute">#[<span class="ident">weight</span> <span class="op">=</span> <span class="ident">frame_support</span>::<span class="ident">weights</span>::<span class="ident">SimpleDispatchInfo</span>::<span class="ident">default</span>()]</span>
+        <span class="doccomment">/// TODO: weight</span>
+        <span class="attribute">#[<span class="ident">weight</span> <span class="op">=</span> <span class="number">100_000</span>]</span>
         <span class="kw">fn</span> <span class="ident">decide_claim_to_true</span>(<span class="ident">origin</span>, <span class="ident">game_id</span>: <span class="ident">T</span>::<span class="ident">Hash</span>) {
             <span class="macro">ensure</span><span class="macro">!</span>(
                 <span class="self">Self</span>::<span class="ident">is_decidable</span>(<span class="kw-2">&amp;</span><span class="ident">game_id</span>),
@@ -918,7 +967,8 @@
         }
 
         <span class="doccomment">/// Sets the game decision false when its challenge has been evaluated to true.</span>
-        <span class="attribute">#[<span class="ident">weight</span> <span class="op">=</span> <span class="ident">frame_support</span>::<span class="ident">weights</span>::<span class="ident">SimpleDispatchInfo</span>::<span class="ident">default</span>()]</span>
+        <span class="doccomment">/// TODO: weight</span>
+        <span class="attribute">#[<span class="ident">weight</span> <span class="op">=</span> <span class="number">100_000</span>]</span>
         <span class="kw">fn</span> <span class="ident">decide_claim_to_false</span>(<span class="ident">origin</span>, <span class="ident">game_id</span>: <span class="ident">T</span>::<span class="ident">Hash</span>, <span class="ident">challenging_game_id</span>: <span class="ident">T</span>::<span class="ident">Hash</span>) {
             <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">game</span> <span class="op">=</span> <span class="kw">match</span> <span class="self">Self</span>::<span class="ident">instantiated_games</span>(<span class="kw-2">&amp;</span><span class="ident">game_id</span>) {
                 <span class="prelude-val">Some</span>(<span class="ident">game</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">game</span>,
@@ -954,7 +1004,8 @@
         }
 
         <span class="doccomment">/// Decide the game decision with given witness.</span>
-        <span class="attribute">#[<span class="ident">weight</span> <span class="op">=</span> <span class="ident">frame_support</span>::<span class="ident">weights</span>::<span class="ident">SimpleDispatchInfo</span>::<span class="ident">default</span>()]</span>
+        <span class="doccomment">/// TODO: weight</span>
+        <span class="attribute">#[<span class="ident">weight</span> <span class="op">=</span> <span class="number">100_000</span>]</span>
         <span class="kw">fn</span> <span class="ident">decide_claim_with_witness</span>(<span class="ident">origin</span>, <span class="ident">game_id</span>: <span class="ident">T</span>::<span class="ident">Hash</span>, <span class="ident">witness</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>) {
             <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">game</span> <span class="op">=</span> <span class="kw">match</span> <span class="self">Self</span>::<span class="ident">instantiated_games</span>(<span class="kw-2">&amp;</span><span class="ident">game_id</span>) {
                 <span class="prelude-val">Some</span>(<span class="ident">game</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">game</span>,
@@ -987,7 +1038,9 @@
         }
 
         <span class="doccomment">/// Removes a challenge when its decision has been evaluated to false.</span>
-        <span class="attribute">#[<span class="ident">weight</span> <span class="op">=</span> <span class="ident">frame_support</span>::<span class="ident">weights</span>::<span class="ident">SimpleDispatchInfo</span>::<span class="ident">default</span>()]</span>
+        <span class="doccomment">///</span>
+        <span class="doccomment">/// TODO: weight</span>
+        <span class="attribute">#[<span class="ident">weight</span> <span class="op">=</span> <span class="number">100_000</span>]</span>
         <span class="kw">fn</span> <span class="ident">remove_challenge</span>(<span class="ident">origin</span>, <span class="ident">game_id</span>: <span class="ident">T</span>::<span class="ident">Hash</span>, <span class="ident">challenging_game_id</span>: <span class="ident">T</span>::<span class="ident">Hash</span>) {
             <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">game</span> <span class="op">=</span> <span class="kw">match</span> <span class="self">Self</span>::<span class="ident">instantiated_games</span>(<span class="kw-2">&amp;</span><span class="ident">game_id</span>) {
                 <span class="prelude-val">Some</span>(<span class="ident">game</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">game</span>,
@@ -1029,7 +1082,9 @@
         }
 
         <span class="doccomment">/// Set a predicate decision by called from Predicate itself.</span>
-        <span class="attribute">#[<span class="ident">weight</span> <span class="op">=</span> <span class="ident">frame_support</span>::<span class="ident">weights</span>::<span class="ident">SimpleDispatchInfo</span>::<span class="ident">default</span>()]</span>
+        <span class="doccomment">///</span>
+        <span class="doccomment">/// TODO: weight</span>
+        <span class="attribute">#[<span class="ident">weight</span> <span class="op">=</span> <span class="number">100_000</span>]</span>
         <span class="kw">fn</span> <span class="ident">set_predicate_decision</span>(<span class="ident">origin</span>, <span class="ident">game_id</span>: <span class="ident">T</span>::<span class="ident">Hash</span>, <span class="ident">decision</span>: <span class="ident">bool</span>) {
             <span class="kw">let</span> <span class="ident">origin</span> <span class="op">=</span> <span class="ident">ensure_signed</span>(<span class="ident">origin</span>)<span class="question-mark">?</span>;
             <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">game</span> <span class="op">=</span> <span class="kw">match</span> <span class="self">Self</span>::<span class="ident">instantiated_games</span>(<span class="kw-2">&amp;</span><span class="ident">game_id</span>) {
@@ -1056,7 +1111,9 @@
         <span class="doccomment">/// @param game_id challenged game id.</span>
         <span class="doccomment">/// @param challenge_inputs array of input to verify child of game tree.</span>
         <span class="doccomment">/// @param challenging_game_id child of game tree.</span>
-        <span class="attribute">#[<span class="ident">weight</span> <span class="op">=</span> <span class="ident">frame_support</span>::<span class="ident">weights</span>::<span class="ident">SimpleDispatchInfo</span>::<span class="ident">default</span>()]</span>
+        <span class="doccomment">///</span>
+        <span class="doccomment">/// TODO: weight</span>
+        <span class="attribute">#[<span class="ident">weight</span> <span class="op">=</span> <span class="number">100_000</span>]</span>
         <span class="kw">fn</span> <span class="ident">challenge</span>(<span class="ident">origin</span>, <span class="ident">game_id</span>: <span class="ident">T</span>::<span class="ident">Hash</span>, <span class="ident">challenge_inputs</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>, <span class="ident">challenging_game_id</span>: <span class="ident">T</span>::<span class="ident">Hash</span>) {
             <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">game</span> <span class="op">=</span> <span class="kw">match</span> <span class="self">Self</span>::<span class="ident">instantiated_games</span>(<span class="kw-2">&amp;</span><span class="ident">game_id</span>) {
                 <span class="prelude-val">Some</span>(<span class="ident">game</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">game</span>,
@@ -1090,10 +1147,15 @@
     <span class="comment">//     for era in current_era.saturating_sub(history_depth)..=current_era {</span>
     <span class="comment">//         ErasStartSessionIndex::migrate_key_from_blake(era);</span>
     <span class="comment">//     }</span>
-    <span class="comment">// }</span>
 }
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Trait</span><span class="op">&gt;</span> <span class="ident">Module</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">calc_code_put_costs</span>(<span class="ident">code</span>: <span class="kw-2">&amp;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Weight</span> {
+        <span class="op">&lt;</span><span class="ident">Module</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>::<span class="ident">current_schedule</span>()
+            .<span class="ident">put_code_per_byte_cost</span>
+            .<span class="ident">saturating_mul</span>(<span class="ident">code</span>.<span class="ident">len</span>() <span class="kw">as</span> <span class="ident">Weight</span>)
+    }
+
     <span class="comment">// ======= main ==========</span>
     <span class="doccomment">/// Perform a call to a specified contract.</span>
     <span class="doccomment">///</span>

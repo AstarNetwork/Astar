@@ -218,16 +218,31 @@
 <span id="218">218</span>
 <span id="219">219</span>
 <span id="220">220</span>
+<span id="221">221</span>
+<span id="222">222</span>
+<span id="223">223</span>
+<span id="224">224</span>
+<span id="225">225</span>
+<span id="226">226</span>
+<span id="227">227</span>
+<span id="228">228</span>
+<span id="229">229</span>
+<span id="230">230</span>
+<span id="231">231</span>
+<span id="232">232</span>
+<span id="233">233</span>
+<span id="234">234</span>
+<span id="235">235</span>
+<span id="236">236</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="attribute">#![<span class="ident">cfg_attr</span>(<span class="ident">not</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>), <span class="ident">no_std</span>)]</span>
 
-<span class="kw">use</span> <span class="ident">frame_support</span>::{
-    <span class="ident">decl_event</span>, <span class="ident">decl_module</span>, <span class="ident">decl_storage</span>, <span class="ident">weights</span>::<span class="ident">SimpleDispatchInfo</span>, <span class="ident">Parameter</span>,
-};
+<span class="kw">use</span> <span class="ident">frame_support</span>::<span class="ident">weights</span>::{<span class="ident">DispatchClass</span>, <span class="ident">FunctionOf</span>, <span class="ident">Pays</span>, <span class="ident">Weight</span>};
+<span class="kw">use</span> <span class="ident">frame_support</span>::{<span class="ident">decl_event</span>, <span class="ident">decl_module</span>, <span class="ident">decl_storage</span>, <span class="ident">Parameter</span>};
 <span class="kw">use</span> <span class="ident">frame_system</span>::{<span class="self">self</span> <span class="kw">as</span> <span class="ident">system</span>, <span class="ident">ensure_signed</span>, <span class="ident">RawOrigin</span>};
 <span class="kw">use</span> <span class="ident">pallet_contracts</span>::{<span class="ident">BalanceOf</span>, <span class="ident">CodeHash</span>, <span class="ident">ContractAddressFor</span>, <span class="ident">Gas</span>};
 <span class="kw">use</span> <span class="ident">sp_runtime</span>::{
-    <span class="ident">traits</span>::{<span class="ident">MaybeDisplay</span>, <span class="ident">MaybeSerialize</span>, <span class="ident">Member</span>},
+    <span class="ident">traits</span>::{<span class="ident">Dispatchable</span>, <span class="ident">MaybeDisplay</span>, <span class="ident">MaybeSerialize</span>, <span class="ident">Member</span>},
     <span class="ident">DispatchError</span>,
 };
 <span class="kw">use</span> <span class="ident">sp_std</span>::<span class="ident">prelude</span>::<span class="kw-2">*</span>;
@@ -313,30 +328,37 @@
 }
 
 <span class="macro">decl_module</span><span class="macro">!</span> {
-    <span class="doccomment">/// The module declaration.</span>
     <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Module</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Trait</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="kw">enum</span> <span class="ident">Call</span> <span class="kw">where</span> <span class="ident">origin</span>: <span class="ident">T</span>::<span class="ident">Origin</span> {
         <span class="comment">// Initializing events</span>
         <span class="comment">// this is needed only if you are using events in your module</span>
         <span class="kw">fn</span> <span class="ident">deposit_event</span>() <span class="op">=</span> <span class="ident">default</span>;
 
         <span class="doccomment">/// Deploys a contact and insert relation of a contract and an operator to mapping.</span>
-        <span class="attribute">#[<span class="ident">weight</span> <span class="op">=</span> <span class="ident">SimpleDispatchInfo</span>::<span class="ident">FixedNormal</span>(<span class="number">500_000</span>)]</span>
-        <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">instantiate</span>(<span class="ident">origin</span>,
+        <span class="attribute">#[<span class="ident">weight</span> <span class="op">=</span> <span class="ident">FunctionOf</span>(
+            <span class="op">|</span><span class="ident">args</span>: (<span class="kw-2">&amp;</span><span class="ident">BalanceOf</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>, <span class="kw-2">&amp;</span><span class="ident">Weight</span>, <span class="kw-2">&amp;</span><span class="ident">CodeHash</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>, <span class="kw-2">&amp;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>, <span class="kw-2">&amp;</span><span class="ident">T</span>::<span class="ident">Parameters</span>)<span class="op">|</span> <span class="kw-2">*</span><span class="ident">args</span>.<span class="number">1</span>,
+            <span class="ident">DispatchClass</span>::<span class="ident">Normal</span>,
+            <span class="ident">Pays</span>::<span class="ident">Yes</span>
+        )]</span>
+        <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">instantiate</span>(
+            <span class="ident">origin</span>,
             <span class="attribute">#[<span class="ident">compact</span>]</span> <span class="ident">endowment</span>: <span class="ident">BalanceOf</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>,
             <span class="attribute">#[<span class="ident">compact</span>]</span> <span class="ident">gas_limit</span>: <span class="ident">Gas</span>,
             <span class="ident">code_hash</span>: <span class="ident">CodeHash</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>,
             <span class="ident">data</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>,
-            <span class="ident">parameters</span>: <span class="ident">T</span>::<span class="ident">Parameters</span>) {
+            <span class="ident">parameters</span>: <span class="ident">T</span>::<span class="ident">Parameters</span>,
+        ) {
             <span class="kw">let</span> <span class="ident">operator</span> <span class="op">=</span> <span class="ident">ensure_signed</span>(<span class="ident">origin</span>)<span class="question-mark">?</span>;
 
             <span class="comment">// verify parameters.</span>
             <span class="ident">parameters</span>.<span class="ident">verify</span>()<span class="question-mark">?</span>;
 
             <span class="kw">let</span> <span class="ident">contract</span> <span class="op">=</span> <span class="ident">T</span>::<span class="ident">DetermineContractAddress</span>::<span class="ident">contract_address_for</span>(<span class="kw-2">&amp;</span><span class="ident">code_hash</span>, <span class="kw-2">&amp;</span><span class="ident">data</span>, <span class="kw-2">&amp;</span><span class="ident">operator</span>);
-            <span class="ident">pallet_contracts</span>::<span class="ident">Module</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>::<span class="ident">instantiate</span>(<span class="ident">RawOrigin</span>::<span class="ident">Signed</span>(<span class="ident">operator</span>.<span class="ident">clone</span>()).<span class="ident">into</span>(), <span class="ident">endowment</span>, <span class="ident">gas_limit</span>, <span class="ident">code_hash</span>, <span class="ident">data</span>)<span class="question-mark">?</span>;
+            <span class="ident">pallet_contracts</span>::<span class="ident">Call</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>::<span class="ident">instantiate</span>(<span class="ident">endowment</span>, <span class="ident">gas_limit</span>, <span class="ident">code_hash</span>, <span class="ident">data</span>)
+                .<span class="ident">dispatch</span>(<span class="ident">RawOrigin</span>::<span class="ident">Signed</span>(<span class="ident">operator</span>.<span class="ident">clone</span>()).<span class="ident">into</span>())
+                .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="ident">e</span>.<span class="ident">error</span>)<span class="question-mark">?</span>;
 
             <span class="comment">// add operator to contracts</span>
-            <span class="op">&lt;</span><span class="ident">OperatorHasContracts</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>::<span class="ident">mutate</span>(<span class="kw-2">&amp;</span><span class="ident">operator</span>, {<span class="op">|</span><span class="ident">tree</span><span class="op">|</span> (<span class="kw-2">*</span><span class="ident">tree</span>).<span class="ident">push</span>(<span class="ident">contract</span>.<span class="ident">clone</span>()) });
+            <span class="op">&lt;</span><span class="ident">OperatorHasContracts</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>::<span class="ident">mutate</span>(<span class="kw-2">&amp;</span><span class="ident">operator</span>, <span class="op">|</span><span class="ident">tree</span><span class="op">|</span> (<span class="kw-2">*</span><span class="ident">tree</span>).<span class="ident">push</span>(<span class="ident">contract</span>.<span class="ident">clone</span>()));
             <span class="comment">// add contract to operator</span>
             <span class="op">&lt;</span><span class="ident">ContractHasOperator</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>::<span class="ident">insert</span>(<span class="kw-2">&amp;</span><span class="ident">contract</span>, <span class="ident">operator</span>.<span class="ident">clone</span>());
             <span class="comment">// add contract to parameters</span>
@@ -347,8 +369,13 @@
         }
 
         <span class="doccomment">/// Updates parameters for an identified contact.</span>
-        <span class="attribute">#[<span class="ident">weight</span> <span class="op">=</span> <span class="ident">SimpleDispatchInfo</span>::<span class="ident">FixedNormal</span>(<span class="number">50_000</span>)]</span>
-        <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">update_parameters</span>(<span class="ident">origin</span>, <span class="ident">contract</span>: <span class="ident">T</span>::<span class="ident">AccountId</span>, <span class="ident">parameters</span>: <span class="ident">T</span>::<span class="ident">Parameters</span>) {
+        <span class="doccomment">/// TODO: weight</span>
+        <span class="attribute">#[<span class="ident">weight</span> <span class="op">=</span> <span class="number">50_000</span>]</span>
+        <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">update_parameters</span>(
+            <span class="ident">origin</span>,
+            <span class="ident">contract</span>: <span class="ident">T</span>::<span class="ident">AccountId</span>,
+            <span class="ident">parameters</span>: <span class="ident">T</span>::<span class="ident">Parameters</span>,
+        ) {
             <span class="kw">let</span> <span class="ident">operator</span> <span class="op">=</span> <span class="ident">ensure_signed</span>(<span class="ident">origin</span>)<span class="question-mark">?</span>;
 
             <span class="comment">// verify parameters</span>
@@ -368,8 +395,13 @@
         }
 
         <span class="doccomment">/// Changes an operator for identified contracts.</span>
-        <span class="attribute">#[<span class="ident">weight</span> <span class="op">=</span> <span class="ident">SimpleDispatchInfo</span>::<span class="ident">FixedNormal</span>(<span class="number">100_000</span>)]</span>
-        <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">change_operator</span>(<span class="ident">origin</span>, <span class="ident">contracts</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">T</span>::<span class="ident">AccountId</span><span class="op">&gt;</span>, <span class="ident">new_operator</span>: <span class="ident">T</span>::<span class="ident">AccountId</span>) {
+        <span class="doccomment">/// TODO: weight</span>
+        <span class="attribute">#[<span class="ident">weight</span> <span class="op">=</span> <span class="number">100_000</span>]</span>
+        <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">change_operator</span>(
+            <span class="ident">origin</span>,
+            <span class="ident">contracts</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">T</span>::<span class="ident">AccountId</span><span class="op">&gt;</span>,
+            <span class="ident">new_operator</span>: <span class="ident">T</span>::<span class="ident">AccountId</span>,
+        ) {
             <span class="kw">let</span> <span class="ident">operator</span> <span class="op">=</span> <span class="ident">ensure_signed</span>(<span class="ident">origin</span>)<span class="question-mark">?</span>;
             <span class="self">Self</span>::<span class="ident">transfer_operator</span>(<span class="ident">operator</span>, <span class="ident">contracts</span>, <span class="ident">new_operator</span>)<span class="question-mark">?</span>;
         }
