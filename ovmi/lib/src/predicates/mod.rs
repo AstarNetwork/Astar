@@ -2,9 +2,7 @@
 //! Executable Predicates instanced from Compiled Predicates and Atomic Predicates.
 //!
 //!
-use crate::executor::{
-    AddressOf, ExecError, ExecResult, ExecResultT, ExternalCall, HashOf,
-};
+use crate::executor::{AddressOf, ExecError, ExecResult, ExecResultT, ExternalCall, HashOf};
 use codec::{Decode, Encode};
 use core::fmt;
 #[cfg(feature = "std")]

@@ -60,8 +60,12 @@ pub fn logical_connective_executable_from_address<'a, Ext: ExternalCall>(
 ) -> Option<LogicalConnectiveExecutable<'a, Ext>> where
 {
     match address {
-        x if x == &Ext::not_address() => Some(LogicalConnectiveExecutable::Not(NotPredicate { ext })),
-        x if x == &Ext::and_address() => Some(LogicalConnectiveExecutable::And(AndPredicate { ext })),
+        x if x == &Ext::not_address() => {
+            Some(LogicalConnectiveExecutable::Not(NotPredicate { ext }))
+        }
+        x if x == &Ext::and_address() => {
+            Some(LogicalConnectiveExecutable::And(AndPredicate { ext }))
+        }
         x if x == &Ext::or_address() => Some(LogicalConnectiveExecutable::Or(OrPredicate { ext })),
         x if x == &Ext::for_all_address() => {
             Some(LogicalConnectiveExecutable::ForAll(ForAllPredicate { ext }))
@@ -102,9 +106,9 @@ pub fn deciable_executable_from_address<'a, Ext: ExternalCall>(
         x if x == &Ext::is_stored_address() => {
             Some(DecidableExecutable::IsStored(IsStoredPredicate { ext }))
         }
-        x if x == &Ext::is_valid_signature_address() => Some(DecidableExecutable::IsValidSignature(
-            IsValidSignaturePredicate { ext },
-        )),
+        x if x == &Ext::is_valid_signature_address() => Some(
+            DecidableExecutable::IsValidSignature(IsValidSignaturePredicate { ext }),
+        ),
         x if x == &Ext::verify_inclusion_address() => Some(DecidableExecutable::VerifyInclusion(
             VerifyInclusionPredicate { ext },
         )),
@@ -118,7 +122,9 @@ pub fn base_atomic_executable_from_address<'a, Ext: ExternalCall>(
 ) -> Option<BaseAtomicExecutable<'a, Ext>> where
 {
     match address {
-        x if x == &Ext::equal_address() => Some(BaseAtomicExecutable::Equal(EqualPredicate { ext })),
+        x if x == &Ext::equal_address() => {
+            Some(BaseAtomicExecutable::Equal(EqualPredicate { ext }))
+        }
         x if x == &Ext::is_contained_address() => {
             Some(BaseAtomicExecutable::IsContained(IsContainedPredicate {
                 ext,
@@ -130,9 +136,9 @@ pub fn base_atomic_executable_from_address<'a, Ext: ExternalCall>(
         x if x == &Ext::is_stored_address() => {
             Some(BaseAtomicExecutable::IsStored(IsStoredPredicate { ext }))
         }
-        x if x == &Ext::is_valid_signature_address() => Some(BaseAtomicExecutable::IsValidSignature(
-            IsValidSignaturePredicate { ext },
-        )),
+        x if x == &Ext::is_valid_signature_address() => Some(
+            BaseAtomicExecutable::IsValidSignature(IsValidSignaturePredicate { ext }),
+        ),
         x if x == &Ext::verify_inclusion_address() => Some(BaseAtomicExecutable::VerifyInclusion(
             VerifyInclusionPredicate { ext },
         )),

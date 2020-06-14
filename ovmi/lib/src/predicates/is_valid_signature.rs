@@ -19,11 +19,7 @@ impl<Ext: ExternalCall> AtomicPredicateInterface<AddressOf<Ext>>
         let address = Ext::bytes_to_address(&inputs[2])?;
 
         require_with_message!(
-            self.ext.ext_verify(
-                &hash,
-                &inputs[1][..],
-                &address,
-            ),
+            self.ext.ext_verify(&hash, &inputs[1][..], &address,),
             "_inputs[1] must be signature of _inputs[0] by _inputs[2]"
         );
         Ok(true)
