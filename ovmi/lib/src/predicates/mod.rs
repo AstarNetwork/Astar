@@ -3,7 +3,7 @@
 //!
 //!
 use crate::executor::{
-    AddressOf, ExecError, ExecResult, ExecResultT, ExternalCall, HashOf, MaybeAddress,
+    AddressOf, ExecError, ExecResult, ExecResultT, ExternalCall, HashOf,
 };
 use codec::{Decode, Encode};
 use core::fmt;

@@ -25,7 +25,7 @@ impl<'a, Ext: ExternalCall> ThereExistsPredicate<'a, Ext> {
             .map_err(|_| ExecError::CodecError {
                 type_name: "Property<Ext>",
             })?;
-        if property.predicate_address == Ext::NOT_ADDRESS {
+        if property.predicate_address == Ext::not_address() {
             require!(property.inputs.len() > 0);
             property.inputs[0] =
                 self.replace_variable(&property.inputs[0], placeholder, quantified)?;
@@ -33,8 +33,8 @@ impl<'a, Ext: ExternalCall> ThereExistsPredicate<'a, Ext> {
             require!(property.inputs.len() > 2);
             property.inputs[2] =
                 self.replace_variable(&property.inputs[2], placeholder, quantified)?;
-        } else if property.predicate_address == Ext::AND_ADDRESS
-            || property.predicate_address == Ext::OR_ADDRESS
+        } else if property.predicate_address == Ext::and_address()
+            || property.predicate_address == Ext::or_address()
         {
             property.inputs = property
                 .inputs
@@ -71,13 +71,13 @@ impl<'a, Ext: ExternalCall> LogicalConnectiveInterface<AddressOf<Ext>>
     ) -> ExecResult<AddressOf<Ext>> {
         // challenge must be for(, , not(p))
         require_with_message!(
-            challenge.predicate_address == Ext::FOR_ALL_ADDRESS,
+            challenge.predicate_address == Ext::for_all_address(),
             "challenge must be ForAllSuchThat"
         );
         require!(inputs.len() > 2);
         let new_inputs = vec![inputs[2].clone()];
         let p = Property::<AddressOf<Ext>> {
-            predicate_address: Ext::NOT_ADDRESS,
+            predicate_address: Ext::not_address().clone(),
             inputs: new_inputs,
         };
 

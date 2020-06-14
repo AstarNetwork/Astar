@@ -1,11 +1,10 @@
 use super::*;
-use crate::compiled_predicates::*;
 use crate::predicates::*;
 use codec::Codec;
-use core::fmt::{Debug, Display};
+use core::fmt::Debug;
 use core::marker::PhantomData;
 pub use hash_db::Hasher;
-use snafu::{ResultExt, Snafu};
+use snafu::Snafu;
 
 #[derive(Snafu, PartialEq)]
 #[cfg_attr(feature = "std", derive(Debug))]
@@ -88,20 +87,20 @@ pub trait ExternalCall {
     type Hashing: Hasher<Out = Self::Hash>;
 
     // relation const any atomic predicate address.
-    const NOT_ADDRESS: Self::Address;
-    const AND_ADDRESS: Self::Address;
-    const OR_ADDRESS: Self::Address;
-    const FOR_ALL_ADDRESS: Self::Address;
-    const THERE_EXISTS_ADDRESS: Self::Address;
-    const EQUAL_ADDRESS: Self::Address;
-    const IS_CONTAINED_ADDRESS: Self::Address;
-    const IS_LESS_ADDRESS: Self::Address;
-    const IS_STORED_ADDRESS: Self::Address;
-    const IS_VALID_SIGNATURE_ADDRESS: Self::Address;
-    const VERIFY_INCLUAION_ADDRESS: Self::Address;
+    fn not_address() -> Self::Address;
+    fn and_address() -> Self::Address;
+    fn or_address() -> Self::Address;
+    fn for_all_address() -> Self::Address;
+    fn there_exists_address() -> Self::Address;
+    fn equal_address() -> Self::Address;
+    fn is_contained_address() -> Self::Address;
+    fn is_less_address() -> Self::Address;
+    fn is_stored_address() -> Self::Address;
+    fn is_valid_signature_address() -> Self::Address;
+    fn verify_inclusion_address() -> Self::Address;
 
     // relation const any signature algorithm.
-    // const SECP_256_K1: Self::Hash;
+    fn secp256k1() -> Self::Hash;
 
     /// Produce the hash of some codec-encodable value.
     fn hash_of<S: Encode>(s: &S) -> Self::Hash {
@@ -127,6 +126,10 @@ pub trait ExternalCall {
     /// is_stored_predicate(&self, address, key, value);?
     /// ref: https://github.com/cryptoeconomicslab/ovm-contracts/blob/master/contracts/Predicate/Atomic/IsStoredPredicate.sol
     fn ext_is_stored(&self, address: &Self::Address, key: &[u8], value: &[u8]) -> bool;
+
+    /// Verify messagge hash with signature and address.
+    /// Should be used by ECDSA.
+    fn ext_verify(&self, hash: &Self::Hash, signature: &[u8], address: &Self::Address) -> bool;
 
     /// verifyInclusionWithRoot method verifies inclusion proof in Double Layer Tree.
     /// Must be used by kind of Commitment contract by Plasma module.

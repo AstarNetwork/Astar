@@ -1,7 +1,6 @@
 #![cfg(test)]
 use super::super::*;
 use crate::compiled_predicates::*;
-use crate::*;
 use codec::{Decode, Encode};
 
 const JSON: &str = r#"

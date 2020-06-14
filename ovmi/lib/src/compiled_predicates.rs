@@ -1,5 +1,4 @@
 use codec::{Decode, Encode};
-use core::fmt;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
 
