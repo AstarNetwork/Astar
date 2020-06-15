@@ -5,6 +5,7 @@ use codec::Encode;
 use sp_core::{
     crypto::{Pair, UncheckedInto},
     ecdsa::Pair as ECDSAPair,
+    KeccakHasher,
 };
 use sp_runtime::traits::IdentifyAccount;
 
@@ -104,18 +105,21 @@ fn is_stored_decide_true() {
 #[test]
 fn is_valid_signature_decide_true() {
     let mut ext = MockExternalCall::init();
-    let address: Address = to_account(hex!["1f57f692ecc6c7031f7b89e283a14a111a273ef5ca4295ed114cef5faed3f1a66da013f76b420d7a054aec6e76ecc077a70dc9951dc41b1679e20d1d9eb665b0"].as_ref());
-    let miss_address: Address = to_account(hex!["1f57f692ecc6c7031f7b89e283a14a111a273ef5ca4295ed114cef5faed3f1a66da013f76b420d7a054aec6e76ecc077a70dc9951dc41b1679e20d1d9eb665b0"].as_ref());
+    let pair: ECDSAPair = ECDSAPair::from_seed(&[1; 32]);
+    let miss_pair: ECDSAPair = ECDSAPair::from_seed(&[2; 32]);
+    let address: Address = to_account(pair.public().as_ref());
+    let miss_address: Address = to_account(miss_pair.public().as_ref());
 
     let address_bytes = address.encode();
-    let signature = hex::decode("3050ed8255d5599ebce4be5ef23eceeb61bfae924db5e5b12fc975663854629204a68351940fcea4231e9e4af515e2a10c187fcd7f88f4e5ffed218c76a5553b1b").unwrap();
-    let invalid_signature = hex::decode("00b0ed8255d5599ebce4be5ef23eceeb16bfae924db5e5b12fc975663854629204a68351940fcea4231e9e4af515e2a10c187fcd7f88f4e5ffed218c76a1113bb2").unwrap();
     let message = b"message".to_vec();
+    let message_hash = KeccakHasher::hash(&message[..]);
+    let signature: Vec<u8> = (pair.sign(&message_hash.0).as_ref() as &[u8]).into();
+    let miss_signature: Vec<u8> = (miss_pair.sign(&message_hash.0).as_ref() as &[u8]).into();
     let verifier = b"secp256k1".to_vec();
-    let verifier_hash: Hash = Keccak256::hash(b"secp256k1");
-    println!("verifier_hash: {:?}", verifier_hash);
-    let verifier_type = verifier_hash.encode();
-    println!("verifier_type: {:?}", verifier_type);
+
+    // Use check by frontend.
+    println!("message_hash: {:?}", message_hash);
+    println!("signature   : {:?}", message_hash);
 
     // true case
     {
@@ -140,7 +144,10 @@ fn is_valid_signature_decide_true() {
             verifier.clone(),
         ]);
         let res = ext.call_execute(&IS_VALID_SIGNATURE_ADDRESS, input_data);
-        assert_require!(res, "must decide true");
+        assert_require!(
+            res,
+            "_inputs[1] must be signature of _inputs[0] by _inputs[2]"
+        );
     }
 
     // false case (address)
@@ -152,7 +159,25 @@ fn is_valid_signature_decide_true() {
             verifier.clone(),
         ]);
         let res = ext.call_execute(&IS_VALID_SIGNATURE_ADDRESS, input_data);
-        assert_require!(res, "must decide true");
+        assert_require!(
+            res,
+            "_inputs[1] must be signature of _inputs[0] by _inputs[2]"
+        );
+    }
+
+    // false case (address)
+    {
+        let input_data = make_decide_true(vec![
+            message.clone(),
+            miss_signature.clone(),
+            address.encode(),
+            verifier.clone(),
+        ]);
+        let res = ext.call_execute(&IS_VALID_SIGNATURE_ADDRESS, input_data);
+        assert_require!(
+            res,
+            "_inputs[1] must be signature of _inputs[0] by _inputs[2]"
+        );
     }
 }
 

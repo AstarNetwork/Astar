@@ -11,13 +11,12 @@ impl<Ext: ExternalCall> AtomicPredicateInterface<AddressOf<Ext>>
     fn decide(&self, inputs: Vec<Vec<u8>>) -> ExecResult<AddressOf<Ext>> {
         require!(inputs.len() > 3);
         require_with_message!(
-            Ext::Hashing::hash(&Ext::get_input_value(&inputs[3]).to_vec()[..]) == Ext::secp256k1(),
+            Ext::Hashing::hash(&inputs[3][..]) == Ext::secp256k1(),
             "verifierType must be secp256k1"
         );
 
         let hash = Ext::Hashing::hash(&inputs[0][..]);
         let address = Ext::bytes_to_address(&inputs[2])?;
-
         require_with_message!(
             self.ext.ext_verify(&hash, &inputs[1][..], &address,),
             "_inputs[1] must be signature of _inputs[0] by _inputs[2]"
