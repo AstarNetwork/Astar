@@ -295,152 +295,12 @@
 <span id="295">295</span>
 <span id="296">296</span>
 <span id="297">297</span>
-<span id="298">298</span>
-<span id="299">299</span>
-<span id="300">300</span>
-<span id="301">301</span>
-<span id="302">302</span>
-<span id="303">303</span>
-<span id="304">304</span>
-<span id="305">305</span>
-<span id="306">306</span>
-<span id="307">307</span>
-<span id="308">308</span>
-<span id="309">309</span>
-<span id="310">310</span>
-<span id="311">311</span>
-<span id="312">312</span>
-<span id="313">313</span>
-<span id="314">314</span>
-<span id="315">315</span>
-<span id="316">316</span>
-<span id="317">317</span>
-<span id="318">318</span>
-<span id="319">319</span>
-<span id="320">320</span>
-<span id="321">321</span>
-<span id="322">322</span>
-<span id="323">323</span>
-<span id="324">324</span>
-<span id="325">325</span>
-<span id="326">326</span>
-<span id="327">327</span>
-<span id="328">328</span>
-<span id="329">329</span>
-<span id="330">330</span>
-<span id="331">331</span>
-<span id="332">332</span>
-<span id="333">333</span>
-<span id="334">334</span>
-<span id="335">335</span>
-<span id="336">336</span>
-<span id="337">337</span>
-<span id="338">338</span>
-<span id="339">339</span>
-<span id="340">340</span>
-<span id="341">341</span>
-<span id="342">342</span>
-<span id="343">343</span>
-<span id="344">344</span>
-<span id="345">345</span>
-<span id="346">346</span>
-<span id="347">347</span>
-<span id="348">348</span>
-<span id="349">349</span>
-<span id="350">350</span>
-<span id="351">351</span>
-<span id="352">352</span>
-<span id="353">353</span>
-<span id="354">354</span>
-<span id="355">355</span>
-<span id="356">356</span>
-<span id="357">357</span>
-<span id="358">358</span>
-<span id="359">359</span>
-<span id="360">360</span>
-<span id="361">361</span>
-<span id="362">362</span>
-<span id="363">363</span>
-<span id="364">364</span>
-<span id="365">365</span>
-<span id="366">366</span>
-<span id="367">367</span>
-<span id="368">368</span>
-<span id="369">369</span>
-<span id="370">370</span>
-<span id="371">371</span>
-<span id="372">372</span>
-<span id="373">373</span>
-<span id="374">374</span>
-<span id="375">375</span>
-<span id="376">376</span>
-<span id="377">377</span>
-<span id="378">378</span>
-<span id="379">379</span>
-<span id="380">380</span>
-<span id="381">381</span>
-<span id="382">382</span>
-<span id="383">383</span>
-<span id="384">384</span>
-<span id="385">385</span>
-<span id="386">386</span>
-<span id="387">387</span>
-<span id="388">388</span>
-<span id="389">389</span>
-<span id="390">390</span>
-<span id="391">391</span>
-<span id="392">392</span>
-<span id="393">393</span>
-<span id="394">394</span>
-<span id="395">395</span>
-<span id="396">396</span>
-<span id="397">397</span>
-<span id="398">398</span>
-<span id="399">399</span>
-<span id="400">400</span>
-<span id="401">401</span>
-<span id="402">402</span>
-<span id="403">403</span>
-<span id="404">404</span>
-<span id="405">405</span>
-<span id="406">406</span>
-<span id="407">407</span>
-<span id="408">408</span>
-<span id="409">409</span>
-<span id="410">410</span>
-<span id="411">411</span>
-<span id="412">412</span>
-<span id="413">413</span>
-<span id="414">414</span>
-<span id="415">415</span>
-<span id="416">416</span>
-<span id="417">417</span>
-<span id="418">418</span>
-<span id="419">419</span>
-<span id="420">420</span>
-<span id="421">421</span>
-<span id="422">422</span>
-<span id="423">423</span>
-<span id="424">424</span>
-<span id="425">425</span>
-<span id="426">426</span>
-<span id="427">427</span>
-<span id="428">428</span>
-<span id="429">429</span>
-<span id="430">430</span>
-<span id="431">431</span>
-<span id="432">432</span>
-<span id="433">433</span>
-<span id="434">434</span>
-<span id="435">435</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="doccomment">//! # Executable Predicates.</span>
 <span class="doccomment">//! Executable Predicates instanced from Compiled Predicates and Atomic Predicates.</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//!</span>
-<span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">executor</span>::{
-    <span class="ident">AddressOf</span>, <span class="ident">ExecError</span>, <span class="ident">ExecResult</span>, <span class="ident">ExecResultT</span>, <span class="ident">ExternalCall</span>, <span class="ident">HashOf</span>, <span class="ident">MaybeAddress</span>,
-};
+<span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">executor</span>::{<span class="ident">AddressOf</span>, <span class="ident">ExecResult</span>, <span class="ident">ExecResultT</span>, <span class="ident">ExternalCall</span>};
 <span class="kw">use</span> <span class="ident">codec</span>::{<span class="ident">Decode</span>, <span class="ident">Encode</span>};
 <span class="kw">use</span> <span class="ident">core</span>::<span class="ident">fmt</span>;
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>)]</span>
@@ -448,30 +308,10 @@
 
 <span class="kw">mod</span> <span class="ident">and</span>;
 <span class="kw">mod</span> <span class="ident">executable</span>;
-<span class="kw">mod</span> <span class="ident">for_all</span>;
 <span class="kw">mod</span> <span class="ident">not</span>;
-<span class="kw">mod</span> <span class="ident">or</span>;
-<span class="kw">mod</span> <span class="ident">there_exists</span>;
-
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident">and</span>::<span class="ident">AndPredicate</span>;
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident">executable</span>::<span class="ident">CompiledExecutable</span>;
-<span class="kw">pub</span> <span class="kw">use</span> <span class="ident">for_all</span>::<span class="ident">ForAllPredicate</span>;
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident">not</span>::<span class="ident">NotPredicate</span>;
-<span class="kw">pub</span> <span class="kw">use</span> <span class="ident">or</span>::<span class="ident">OrPredicate</span>;
-<span class="kw">pub</span> <span class="kw">use</span> <span class="ident">there_exists</span>::<span class="ident">ThereExistsPredicate</span>;
-
-<span class="kw">mod</span> <span class="ident">equal</span>;
-<span class="kw">mod</span> <span class="ident">is_contained</span>;
-<span class="kw">mod</span> <span class="ident">is_less</span>;
-<span class="kw">mod</span> <span class="ident">is_stored</span>;
-<span class="kw">mod</span> <span class="ident">is_valid_signature</span>;
-<span class="kw">mod</span> <span class="ident">verify_inclusion</span>;
-<span class="kw">pub</span> <span class="kw">use</span> <span class="ident">equal</span>::<span class="ident">EqualPredicate</span>;
-<span class="kw">pub</span> <span class="kw">use</span> <span class="ident">is_contained</span>::<span class="ident">IsContainedPredicate</span>;
-<span class="kw">pub</span> <span class="kw">use</span> <span class="ident">is_less</span>::<span class="ident">IsLessThanPredicate</span>;
-<span class="kw">pub</span> <span class="kw">use</span> <span class="ident">is_stored</span>::<span class="ident">IsStoredPredicate</span>;
-<span class="kw">pub</span> <span class="kw">use</span> <span class="ident">is_valid_signature</span>::<span class="ident">IsValidSignaturePredicate</span>;
-<span class="kw">pub</span> <span class="kw">use</span> <span class="ident">verify_inclusion</span>::<span class="ident">VerifyInclusionPredicate</span>;
 
 <span class="comment">// #[derive(Clone, Eq, PartialEq, Encode, Decode, Hash, derive_more::Display)]</span>
 <span class="comment">// #[cfg_attr(feature = &quot;std&quot;, derive(Serialize, Deserialize, Debug))]</span>
@@ -482,13 +322,10 @@
 <span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">LogicalConnectiveExecutable</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, <span class="ident">Ext</span>: <span class="ident">ExternalCall</span><span class="op">&gt;</span> {
     <span class="ident">And</span>(<span class="ident">AndPredicate</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, <span class="ident">Ext</span><span class="op">&gt;</span>),
     <span class="ident">Not</span>(<span class="ident">NotPredicate</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, <span class="ident">Ext</span><span class="op">&gt;</span>),
-    <span class="ident">Or</span>(<span class="ident">OrPredicate</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, <span class="ident">Ext</span><span class="op">&gt;</span>),
-    <span class="ident">ForAll</span>(<span class="ident">ForAllPredicate</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, <span class="ident">Ext</span><span class="op">&gt;</span>),
-    <span class="ident">ThereExists</span>(<span class="ident">ThereExistsPredicate</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, <span class="ident">Ext</span><span class="op">&gt;</span>),
 }
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">Ext</span>: <span class="ident">ExternalCall</span><span class="op">&gt;</span> <span class="ident">LogicalConnectiveInterface</span><span class="op">&lt;</span><span class="ident">AddressOf</span><span class="op">&lt;</span><span class="ident">Ext</span><span class="op">&gt;</span><span class="op">&gt;</span>
-    <span class="kw">for</span> <span class="ident">LogicalConnectiveExecutable</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span>, <span class="ident">Ext</span><span class="op">&gt;</span>
+<span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, <span class="ident">Ext</span>: <span class="ident">ExternalCall</span><span class="op">&gt;</span> <span class="ident">LogicalConnectiveInterface</span><span class="op">&lt;</span><span class="ident">AddressOf</span><span class="op">&lt;</span><span class="ident">Ext</span><span class="op">&gt;</span><span class="op">&gt;</span>
+    <span class="kw">for</span> <span class="ident">LogicalConnectiveExecutable</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, <span class="ident">Ext</span><span class="op">&gt;</span>
 {
     <span class="kw">fn</span> <span class="ident">is_valid_challenge</span>(
         <span class="kw-2">&amp;</span><span class="self">self</span>,
@@ -503,129 +340,13 @@
             <span class="ident">LogicalConnectiveExecutable</span>::<span class="ident">Not</span>(<span class="ident">not</span>) <span class="op">=</span><span class="op">&gt;</span> {
                 <span class="ident">not</span>.<span class="ident">is_valid_challenge</span>(<span class="ident">inputs</span>, <span class="ident">challenge_inputs</span>, <span class="ident">challenge</span>)
             }
-            <span class="ident">LogicalConnectiveExecutable</span>::<span class="ident">Or</span>(<span class="ident">or</span>) <span class="op">=</span><span class="op">&gt;</span> {
-                <span class="ident">or</span>.<span class="ident">is_valid_challenge</span>(<span class="ident">inputs</span>, <span class="ident">challenge_inputs</span>, <span class="ident">challenge</span>)
-            }
-            <span class="ident">LogicalConnectiveExecutable</span>::<span class="ident">ForAll</span>(<span class="ident">for_all</span>) <span class="op">=</span><span class="op">&gt;</span> {
-                <span class="ident">for_all</span>.<span class="ident">is_valid_challenge</span>(<span class="ident">inputs</span>, <span class="ident">challenge_inputs</span>, <span class="ident">challenge</span>)
-            }
-            <span class="ident">LogicalConnectiveExecutable</span>::<span class="ident">ThereExists</span>(<span class="ident">there_exists</span>) <span class="op">=</span><span class="op">&gt;</span> {
-                <span class="ident">there_exists</span>.<span class="ident">is_valid_challenge</span>(<span class="ident">inputs</span>, <span class="ident">challenge_inputs</span>, <span class="ident">challenge</span>)
-            }
         }
     }
 }
 
-<span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">DecidableExecutable</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, <span class="ident">Ext</span>: <span class="ident">ExternalCall</span><span class="op">&gt;</span> {
+<span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">DeciableExecutable</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, <span class="ident">Ext</span>: <span class="ident">ExternalCall</span><span class="op">&gt;</span> {
     <span class="ident">And</span>(<span class="ident">AndPredicate</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, <span class="ident">Ext</span><span class="op">&gt;</span>),
     <span class="ident">Not</span>(<span class="ident">NotPredicate</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, <span class="ident">Ext</span><span class="op">&gt;</span>),
-    <span class="ident">Or</span>(<span class="ident">OrPredicate</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, <span class="ident">Ext</span><span class="op">&gt;</span>),
-    <span class="ident">ForAll</span>(<span class="ident">ForAllPredicate</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, <span class="ident">Ext</span><span class="op">&gt;</span>),
-    <span class="ident">ThereExists</span>(<span class="ident">ThereExistsPredicate</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, <span class="ident">Ext</span><span class="op">&gt;</span>),
-    <span class="ident">Equal</span>(<span class="ident">EqualPredicate</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, <span class="ident">Ext</span><span class="op">&gt;</span>),
-    <span class="ident">IsContained</span>(<span class="ident">IsContainedPredicate</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, <span class="ident">Ext</span><span class="op">&gt;</span>),
-    <span class="ident">IsLess</span>(<span class="ident">IsLessThanPredicate</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, <span class="ident">Ext</span><span class="op">&gt;</span>),
-    <span class="ident">IsStored</span>(<span class="ident">IsStoredPredicate</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, <span class="ident">Ext</span><span class="op">&gt;</span>),
-    <span class="ident">IsValidSignature</span>(<span class="ident">IsValidSignaturePredicate</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, <span class="ident">Ext</span><span class="op">&gt;</span>),
-    <span class="ident">VerifyInclusion</span>(<span class="ident">VerifyInclusionPredicate</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, <span class="ident">Ext</span><span class="op">&gt;</span>),
-}
-
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">Ext</span>: <span class="ident">ExternalCall</span><span class="op">&gt;</span> <span class="ident">DecidablePredicateInterface</span><span class="op">&lt;</span><span class="ident">AddressOf</span><span class="op">&lt;</span><span class="ident">Ext</span><span class="op">&gt;</span><span class="op">&gt;</span>
-    <span class="kw">for</span> <span class="ident">DecidableExecutable</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span>, <span class="ident">Ext</span><span class="op">&gt;</span>
-{
-    <span class="kw">fn</span> <span class="ident">decide_with_witness</span>(
-        <span class="kw-2">&amp;</span><span class="self">self</span>,
-        <span class="ident">inputs</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-        <span class="ident">witness</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">ExecResult</span><span class="op">&lt;</span><span class="ident">AddressOf</span><span class="op">&lt;</span><span class="ident">Ext</span><span class="op">&gt;</span><span class="op">&gt;</span> {
-        <span class="kw">match</span> <span class="self">self</span> {
-            <span class="ident">DecidableExecutable</span>::<span class="ident">And</span>(<span class="ident">and</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">and</span>.<span class="ident">decide_with_witness</span>(<span class="ident">inputs</span>, <span class="ident">witness</span>),
-            <span class="ident">DecidableExecutable</span>::<span class="ident">Not</span>(<span class="ident">not</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">not</span>.<span class="ident">decide_with_witness</span>(<span class="ident">inputs</span>, <span class="ident">witness</span>),
-            <span class="ident">DecidableExecutable</span>::<span class="ident">Or</span>(<span class="ident">or</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">or</span>.<span class="ident">decide_with_witness</span>(<span class="ident">inputs</span>, <span class="ident">witness</span>),
-            <span class="ident">DecidableExecutable</span>::<span class="ident">ForAll</span>(<span class="ident">for_all</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">for_all</span>.<span class="ident">decide_with_witness</span>(<span class="ident">inputs</span>, <span class="ident">witness</span>),
-            <span class="ident">DecidableExecutable</span>::<span class="ident">ThereExists</span>(<span class="ident">p</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">p</span>.<span class="ident">decide_with_witness</span>(<span class="ident">inputs</span>, <span class="ident">witness</span>),
-            <span class="ident">DecidableExecutable</span>::<span class="ident">Equal</span>(<span class="ident">p</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">p</span>.<span class="ident">decide_with_witness</span>(<span class="ident">inputs</span>, <span class="ident">witness</span>),
-            <span class="ident">DecidableExecutable</span>::<span class="ident">IsContained</span>(<span class="ident">p</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">p</span>.<span class="ident">decide_with_witness</span>(<span class="ident">inputs</span>, <span class="ident">witness</span>),
-            <span class="ident">DecidableExecutable</span>::<span class="ident">IsLess</span>(<span class="ident">p</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">p</span>.<span class="ident">decide_with_witness</span>(<span class="ident">inputs</span>, <span class="ident">witness</span>),
-            <span class="ident">DecidableExecutable</span>::<span class="ident">IsStored</span>(<span class="ident">p</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">p</span>.<span class="ident">decide_with_witness</span>(<span class="ident">inputs</span>, <span class="ident">witness</span>),
-            <span class="ident">DecidableExecutable</span>::<span class="ident">IsValidSignature</span>(<span class="ident">p</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">p</span>.<span class="ident">decide_with_witness</span>(<span class="ident">inputs</span>, <span class="ident">witness</span>),
-            <span class="ident">DecidableExecutable</span>::<span class="ident">VerifyInclusion</span>(<span class="ident">p</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">p</span>.<span class="ident">decide_with_witness</span>(<span class="ident">inputs</span>, <span class="ident">witness</span>),
-        }
-    }
-}
-
-<span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">BaseAtomicExecutable</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, <span class="ident">Ext</span>: <span class="ident">ExternalCall</span><span class="op">&gt;</span> {
-    <span class="ident">Equal</span>(<span class="ident">EqualPredicate</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, <span class="ident">Ext</span><span class="op">&gt;</span>),
-    <span class="ident">IsContained</span>(<span class="ident">IsContainedPredicate</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, <span class="ident">Ext</span><span class="op">&gt;</span>),
-    <span class="ident">IsLess</span>(<span class="ident">IsLessThanPredicate</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, <span class="ident">Ext</span><span class="op">&gt;</span>),
-    <span class="ident">IsStored</span>(<span class="ident">IsStoredPredicate</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, <span class="ident">Ext</span><span class="op">&gt;</span>),
-    <span class="ident">IsValidSignature</span>(<span class="ident">IsValidSignaturePredicate</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, <span class="ident">Ext</span><span class="op">&gt;</span>),
-    <span class="ident">VerifyInclusion</span>(<span class="ident">VerifyInclusionPredicate</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, <span class="ident">Ext</span><span class="op">&gt;</span>),
-}
-
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">Ext</span>: <span class="ident">ExternalCall</span><span class="op">&gt;</span> <span class="ident">DecidablePredicateInterface</span><span class="op">&lt;</span><span class="ident">AddressOf</span><span class="op">&lt;</span><span class="ident">Ext</span><span class="op">&gt;</span><span class="op">&gt;</span>
-    <span class="kw">for</span> <span class="ident">BaseAtomicExecutable</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span>, <span class="ident">Ext</span><span class="op">&gt;</span>
-{
-    <span class="kw">fn</span> <span class="ident">decide_with_witness</span>(
-        <span class="kw-2">&amp;</span><span class="self">self</span>,
-        <span class="ident">inputs</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-        <span class="ident">witness</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">ExecResult</span><span class="op">&lt;</span><span class="ident">AddressOf</span><span class="op">&lt;</span><span class="ident">Ext</span><span class="op">&gt;</span><span class="op">&gt;</span> {
-        <span class="kw">match</span> <span class="self">self</span> {
-            <span class="ident">BaseAtomicExecutable</span>::<span class="ident">Equal</span>(<span class="ident">p</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">p</span>.<span class="ident">decide_with_witness</span>(<span class="ident">inputs</span>, <span class="ident">witness</span>),
-            <span class="ident">BaseAtomicExecutable</span>::<span class="ident">IsContained</span>(<span class="ident">p</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">p</span>.<span class="ident">decide_with_witness</span>(<span class="ident">inputs</span>, <span class="ident">witness</span>),
-            <span class="ident">BaseAtomicExecutable</span>::<span class="ident">IsLess</span>(<span class="ident">p</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">p</span>.<span class="ident">decide_with_witness</span>(<span class="ident">inputs</span>, <span class="ident">witness</span>),
-            <span class="ident">BaseAtomicExecutable</span>::<span class="ident">IsStored</span>(<span class="ident">p</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">p</span>.<span class="ident">decide_with_witness</span>(<span class="ident">inputs</span>, <span class="ident">witness</span>),
-            <span class="ident">BaseAtomicExecutable</span>::<span class="ident">IsValidSignature</span>(<span class="ident">p</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">p</span>.<span class="ident">decide_with_witness</span>(<span class="ident">inputs</span>, <span class="ident">witness</span>),
-            <span class="ident">BaseAtomicExecutable</span>::<span class="ident">VerifyInclusion</span>(<span class="ident">p</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">p</span>.<span class="ident">decide_with_witness</span>(<span class="ident">inputs</span>, <span class="ident">witness</span>),
-        }
-    }
-}
-
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">Ext</span>: <span class="ident">ExternalCall</span><span class="op">&gt;</span> <span class="ident">AtomicPredicateInterface</span><span class="op">&lt;</span><span class="ident">AddressOf</span><span class="op">&lt;</span><span class="ident">Ext</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">BaseAtomicExecutable</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span>, <span class="ident">Ext</span><span class="op">&gt;</span> {
-    <span class="kw">fn</span> <span class="ident">decide</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">inputs</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">ExecResult</span><span class="op">&lt;</span><span class="ident">AddressOf</span><span class="op">&lt;</span><span class="ident">Ext</span><span class="op">&gt;</span><span class="op">&gt;</span> {
-        <span class="kw">match</span> <span class="self">self</span> {
-            <span class="ident">BaseAtomicExecutable</span>::<span class="ident">Equal</span>(<span class="ident">p</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">p</span>.<span class="ident">decide</span>(<span class="ident">inputs</span>),
-            <span class="ident">BaseAtomicExecutable</span>::<span class="ident">IsContained</span>(<span class="ident">p</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">p</span>.<span class="ident">decide</span>(<span class="ident">inputs</span>),
-            <span class="ident">BaseAtomicExecutable</span>::<span class="ident">IsLess</span>(<span class="ident">p</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">p</span>.<span class="ident">decide</span>(<span class="ident">inputs</span>),
-            <span class="ident">BaseAtomicExecutable</span>::<span class="ident">IsStored</span>(<span class="ident">p</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">p</span>.<span class="ident">decide</span>(<span class="ident">inputs</span>),
-            <span class="ident">BaseAtomicExecutable</span>::<span class="ident">IsValidSignature</span>(<span class="ident">p</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">p</span>.<span class="ident">decide</span>(<span class="ident">inputs</span>),
-            <span class="ident">BaseAtomicExecutable</span>::<span class="ident">VerifyInclusion</span>(<span class="ident">p</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">p</span>.<span class="ident">decide</span>(<span class="ident">inputs</span>),
-        }
-    }
-
-    <span class="kw">fn</span> <span class="ident">decide_true</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">inputs</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">ExecResult</span><span class="op">&lt;</span><span class="ident">AddressOf</span><span class="op">&lt;</span><span class="ident">Ext</span><span class="op">&gt;</span><span class="op">&gt;</span> {
-        <span class="kw">match</span> <span class="self">self</span> {
-            <span class="ident">BaseAtomicExecutable</span>::<span class="ident">Equal</span>(<span class="ident">p</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">p</span>.<span class="ident">decide_true</span>(<span class="ident">inputs</span>),
-            <span class="ident">BaseAtomicExecutable</span>::<span class="ident">IsContained</span>(<span class="ident">p</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">p</span>.<span class="ident">decide_true</span>(<span class="ident">inputs</span>),
-            <span class="ident">BaseAtomicExecutable</span>::<span class="ident">IsLess</span>(<span class="ident">p</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">p</span>.<span class="ident">decide_true</span>(<span class="ident">inputs</span>),
-            <span class="ident">BaseAtomicExecutable</span>::<span class="ident">IsStored</span>(<span class="ident">p</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">p</span>.<span class="ident">decide_true</span>(<span class="ident">inputs</span>),
-            <span class="ident">BaseAtomicExecutable</span>::<span class="ident">IsValidSignature</span>(<span class="ident">p</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">p</span>.<span class="ident">decide_true</span>(<span class="ident">inputs</span>),
-            <span class="ident">BaseAtomicExecutable</span>::<span class="ident">VerifyInclusion</span>(<span class="ident">p</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">p</span>.<span class="ident">decide_true</span>(<span class="ident">inputs</span>),
-        }
-    }
-}
-
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">Ext</span>: <span class="ident">ExternalCall</span><span class="op">&gt;</span> <span class="ident">BaseAtomicPredicateInterface</span><span class="op">&lt;</span><span class="ident">AddressOf</span><span class="op">&lt;</span><span class="ident">Ext</span><span class="op">&gt;</span><span class="op">&gt;</span>
-    <span class="kw">for</span> <span class="ident">BaseAtomicExecutable</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span>, <span class="ident">Ext</span><span class="op">&gt;</span>
-{
-}
-
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">Ext</span>: <span class="ident">ExternalCall</span><span class="op">&gt;</span> <span class="ident">AtomicHelperInterface</span><span class="op">&lt;</span><span class="ident">AddressOf</span><span class="op">&lt;</span><span class="ident">Ext</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">BaseAtomicExecutable</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span>, <span class="ident">Ext</span><span class="op">&gt;</span> {
-    <span class="kw">type</span> <span class="ident">Hash</span> <span class="op">=</span> <span class="ident">HashOf</span><span class="op">&lt;</span><span class="ident">Ext</span><span class="op">&gt;</span>;
-    <span class="kw">fn</span> <span class="ident">ext_address</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">AddressOf</span><span class="op">&lt;</span><span class="ident">Ext</span><span class="op">&gt;</span> {
-        <span class="ident">AddressOf</span>::<span class="op">&lt;</span><span class="ident">Ext</span><span class="op">&gt;</span>::<span class="ident">default</span>()
-    }
-    <span class="kw">fn</span> <span class="ident">ext_set_predicate_decision</span>(
-        <span class="kw-2">&amp;</span><span class="self">self</span>,
-        <span class="ident">_game_id</span>: <span class="self">Self</span>::<span class="ident">Hash</span>,
-        <span class="ident">_decision</span>: <span class="ident">bool</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">ExecResult</span><span class="op">&lt;</span><span class="ident">AddressOf</span><span class="op">&lt;</span><span class="ident">Ext</span><span class="op">&gt;</span><span class="op">&gt;</span> {
-        <span class="prelude-val">Err</span>(<span class="ident">ExecError</span>::<span class="ident">Unimplemented</span>)
-    }
-    <span class="kw">fn</span> <span class="ident">ext_get_property_id</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">_property</span>: <span class="kw-2">&amp;</span><span class="ident">Property</span><span class="op">&lt;</span><span class="ident">AddressOf</span><span class="op">&lt;</span><span class="ident">Ext</span><span class="op">&gt;</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span>::<span class="ident">Hash</span> {
-        <span class="self">Self</span>::<span class="ident">Hash</span>::<span class="ident">default</span>()
-    }
 }
 
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>, <span class="ident">Eq</span>, <span class="ident">PartialEq</span>, <span class="ident">Encode</span>, <span class="ident">Decode</span>, <span class="ident">Hash</span>, <span class="ident">derive_more</span>::<span class="ident">Display</span>)]</span>
@@ -794,18 +515,23 @@
     <span class="kw">fn</span> <span class="ident">ext_get_property_id</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Hash</span>;
 }
 
-<span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">BaseAtomicPredicateInterface</span><span class="op">&lt;</span><span class="ident">Address</span><span class="op">&gt;</span>:
+<span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">BaseAtomicPredicateInterface</span><span class="op">&lt;</span><span class="ident">Address</span>, <span class="ident">Hash</span><span class="op">&gt;</span>:
     <span class="ident">AtomicPredicateInterface</span><span class="op">&lt;</span><span class="ident">Address</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">DecidablePredicateInterface</span><span class="op">&lt;</span><span class="ident">Address</span><span class="op">&gt;</span>
 {
-}
-
-<span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">AtomicPredicateInterface</span><span class="op">&lt;</span><span class="ident">Address</span><span class="op">&gt;</span>: <span class="ident">AtomicHelperInterface</span><span class="op">&lt;</span><span class="ident">Address</span><span class="op">&gt;</span> {
     <span class="kw">fn</span> <span class="ident">decide</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">_inputs</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">ExecResult</span><span class="op">&lt;</span><span class="ident">Address</span><span class="op">&gt;</span> {
         <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="bool-val">false</span>);
     }
 
+    <span class="kw">fn</span> <span class="ident">decide_with_witness</span>(
+        <span class="kw-2">&amp;</span><span class="self">self</span>,
+        <span class="ident">inputs</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+        <span class="ident">_witness</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">ExecResult</span><span class="op">&lt;</span><span class="ident">Address</span><span class="op">&gt;</span> {
+        <span class="ident">BaseAtomicPredicateInterface</span>::<span class="ident">decide</span>(<span class="self">self</span>, <span class="ident">inputs</span>)
+    }
+
     <span class="kw">fn</span> <span class="ident">decide_true</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">inputs</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">ExecResult</span><span class="op">&lt;</span><span class="ident">Address</span><span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="ident">result_of_decide</span> <span class="op">=</span> <span class="ident">AtomicPredicateInterface</span>::<span class="ident">decide</span>(<span class="self">self</span>, <span class="ident">inputs</span>.<span class="ident">clone</span>())<span class="question-mark">?</span>;
+        <span class="kw">let</span> <span class="ident">result_of_decide</span> <span class="op">=</span> <span class="ident">BaseAtomicPredicateInterface</span>::<span class="ident">decide</span>(<span class="self">self</span>, <span class="ident">inputs</span>.<span class="ident">clone</span>())<span class="question-mark">?</span>;
         <span class="macro">require_with_message</span><span class="macro">!</span>(<span class="ident">result_of_decide</span>, <span class="string">&quot;must decide true&quot;</span>);
         <span class="kw">let</span> <span class="ident">property</span> <span class="op">=</span> <span class="ident">Property</span> {
             <span class="ident">predicate_address</span>: <span class="self">self</span>.<span class="ident">ext_address</span>(),
@@ -814,17 +540,15 @@
         <span class="self">self</span>.<span class="ident">ext_set_predicate_decision</span>(<span class="self">self</span>.<span class="ident">ext_get_property_id</span>(<span class="kw-2">&amp;</span><span class="ident">property</span>), <span class="bool-val">true</span>)<span class="question-mark">?</span>;
         <span class="prelude-val">Ok</span>(<span class="bool-val">true</span>)
     }
+
+    <span class="kw">fn</span> <span class="ident">ext_address</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Address</span>;
+    <span class="kw">fn</span> <span class="ident">ext_set_predicate_decision</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">game_id</span>: <span class="ident">Hash</span>, <span class="ident">decision</span>: <span class="ident">bool</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">ExecResult</span><span class="op">&lt;</span><span class="ident">Address</span><span class="op">&gt;</span>;
+    <span class="kw">fn</span> <span class="ident">ext_get_property_id</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">property</span>: <span class="kw-2">&amp;</span><span class="ident">Property</span><span class="op">&lt;</span><span class="ident">Address</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Hash</span>;
 }
 
-<span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">AtomicHelperInterface</span><span class="op">&lt;</span><span class="ident">Address</span><span class="op">&gt;</span> {
-    <span class="kw">type</span> <span class="ident">Hash</span>;
-    <span class="kw">fn</span> <span class="ident">ext_address</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Address</span>;
-    <span class="kw">fn</span> <span class="ident">ext_set_predicate_decision</span>(
-        <span class="kw-2">&amp;</span><span class="self">self</span>,
-        <span class="ident">game_id</span>: <span class="self">Self</span>::<span class="ident">Hash</span>,
-        <span class="ident">decision</span>: <span class="ident">bool</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">ExecResult</span><span class="op">&lt;</span><span class="ident">Address</span><span class="op">&gt;</span>;
-    <span class="kw">fn</span> <span class="ident">ext_get_property_id</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">property</span>: <span class="kw-2">&amp;</span><span class="ident">Property</span><span class="op">&lt;</span><span class="ident">Address</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span>::<span class="ident">Hash</span>;
+<span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">AtomicPredicateInterface</span><span class="op">&lt;</span><span class="ident">Address</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">decide_true</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">_inputs</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">ExecResult</span><span class="op">&lt;</span><span class="ident">Address</span><span class="op">&gt;</span>;
+    <span class="kw">fn</span> <span class="ident">decide</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">_inputs</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">ExecResult</span><span class="op">&lt;</span><span class="ident">Address</span><span class="op">&gt;</span>;
 }
 
 <span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">DecidablePredicateInterface</span><span class="op">&lt;</span><span class="ident">Address</span><span class="op">&gt;</span> {

@@ -140,14 +140,6 @@
 <span id="140">140</span>
 <span id="141">141</span>
 <span id="142">142</span>
-<span id="143">143</span>
-<span id="144">144</span>
-<span id="145">145</span>
-<span id="146">146</span>
-<span id="147">147</span>
-<span id="148">148</span>
-<span id="149">149</span>
-<span id="150">150</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="doccomment">//! # ovmi</span>
 <span class="doccomment">//! This library allows **Predicate** to be loaded in binary format and their functions invoked.</span>
@@ -266,7 +258,9 @@
 <span class="macro">macro_rules</span><span class="macro">!</span> <span class="ident">require_with_message</span> {
     (<span class="macro-nonterminal">$</span><span class="macro-nonterminal">val</span>:<span class="ident">expr</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">message</span>:<span class="ident">expr</span>) <span class="op">=</span><span class="op">&gt;</span> {
         <span class="kw">if</span> <span class="op">!</span>(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">val</span>) {
-            <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="kw">crate</span>::<span class="ident">executor</span>::<span class="ident">ExecError</span>::<span class="ident">Require</span> { <span class="ident">msg</span>: <span class="macro-nonterminal">$</span><span class="macro-nonterminal">message</span> });
+            <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="kw">crate</span>::<span class="ident">executor</span>::<span class="ident">ExecError</span>::<span class="ident">Require</span> {
+                <span class="ident">msg</span>: <span class="string">r#&quot;Required error by: $val, message: $message&quot;#</span>,
+            });
         }
     };
 }
@@ -283,21 +277,11 @@
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident">prepare</span>::<span class="ident">compile_from_json</span>;
 
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">test</span>)]</span>
-<span class="kw">mod</span> <span class="ident">mock</span>;
-<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">test</span>)]</span>
 <span class="kw">mod</span> <span class="ident">tests</span>;
 
 <span class="doccomment">/// An opaque 32-byte cryptographic identifier.</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>, <span class="ident">Eq</span>, <span class="ident">PartialEq</span>, <span class="ident">Ord</span>, <span class="ident">PartialOrd</span>, <span class="ident">Default</span>, <span class="ident">Encode</span>, <span class="ident">Decode</span>)]</span>
 <span class="attribute">#[<span class="ident">cfg_attr</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>, <span class="ident">derive</span>(<span class="ident">Hash</span>))]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">AccountId</span>([<span class="ident">u8</span>; <span class="number">32</span>]);
-
-<span class="doccomment">/// An opaque Range(u128, u128).</span>
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>, <span class="ident">Eq</span>, <span class="ident">PartialEq</span>, <span class="ident">Ord</span>, <span class="ident">PartialOrd</span>, <span class="ident">Default</span>, <span class="ident">Encode</span>, <span class="ident">Decode</span>)]</span>
-<span class="attribute">#[<span class="ident">cfg_attr</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>, <span class="ident">derive</span>(<span class="ident">Hash</span>))]</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Range</span> {
-    <span class="kw">pub</span> <span class="ident">start</span>: <span class="ident">u128</span>,
-    <span class="kw">pub</span> <span class="ident">end</span>: <span class="ident">u128</span>,
-}
 </pre></div>
 </section><section id="search" class="content hidden"></section><section class="footer"></section><script>window.rootPath = "../../";window.currentCrate = "ovmi";</script><script src="../../aliases.js"></script><script src="../../main.js"></script><script src="../../source-script.js"></script><script src="../../source-files.js"></script><script defer src="../../search-index.js"></script></body></html>
