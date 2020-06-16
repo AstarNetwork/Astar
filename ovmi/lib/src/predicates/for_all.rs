@@ -22,9 +22,7 @@ impl<Ext: ExternalCall> ForAllPredicate<'_, Ext> {
             }
         }
         let mut property: Property<AddressOf<Ext>> = Decode::decode(&mut &property_bytes[..])
-            .map_err(|_| ExecError::CodecError {
-                type_name: "Property<Ext>",
-            })?;
+            .map_err(|_| codec_error::<Ext>("PropertyOf<Ext>"))?;
         if property.predicate_address == Ext::not_address() {
             require!(property.inputs.len() > 0);
             property.inputs[0] =

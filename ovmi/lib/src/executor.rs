@@ -26,7 +26,7 @@ pub enum ExecError<Address> {
     CallAddress {
         address: Address,
     },
-    #[snafu(display("Codec error: type name is {}", type_name))]
+    #[snafu(display("Codec error: expected type name is {}", type_name))]
     CodecError {
         type_name: &'static str,
     },
@@ -37,8 +37,17 @@ pub enum ExecError<Address> {
     Unimplemented,
 }
 
+pub fn codec_error<Ext: ExternalCall>(
+    expected_type_name: &'static str,
+) -> ExecError<AddressOf<Ext>> {
+    ExecError::CodecError {
+        type_name: expected_type_name,
+    }
+}
+
 pub type ExecResult<Address> = core::result::Result<bool, ExecError<Address>>;
 pub type ExecResultT<T, Address> = core::result::Result<T, ExecError<Address>>;
+pub type ExecResultTOf<T, Ext> = core::result::Result<T, ExecError<AddressOf<Ext>>>;
 pub type AddressOf<Ext> = <Ext as ExternalCall>::Address;
 pub type HashOf<Ext> = <Ext as ExternalCall>::Hash;
 pub type HashingOf<Ext> = <Ext as ExternalCall>::Hashing;
@@ -112,7 +121,7 @@ pub trait ExternalCall {
         &self,
         to: &Self::Address,
         input_data: PredicateCallInputs<Self::Address>,
-    ) -> ExecResult<Self::Address>;
+    ) -> ExecResultT<Vec<u8>, Self::Address>;
 
     /// Returns a reference to the account id of the caller.
     fn ext_caller(&self) -> Self::Address;
@@ -176,6 +185,15 @@ pub trait ExternalCall {
             .to_vec()
     }
 
+    /// sub array of [start_idnex, end_idnex).
+    fn sub_array(target: &Vec<Vec<u8>>, start_index: u128, end_index: u128) -> Vec<Vec<u8>> {
+        target
+            .as_slice()
+            .get((start_index as usize)..(end_index as usize))
+            .unwrap_or(vec![].as_slice())
+            .to_vec()
+    }
+
     /// sub_bytes of [1...).
     fn get_input_value(target: &Vec<u8>) -> Vec<u8> {
         Self::sub_bytes(target, 1, target.len() as u128)
@@ -183,19 +201,29 @@ pub trait ExternalCall {
 
     /// Decoded to u128
     fn bytes_to_u128(target: &Vec<u8>) -> ExecResultT<u128, Self::Address> {
-        Decode::decode(&mut &target[..]).map_err(|_| ExecError::CodecError { type_name: "u128" })
+        Decode::decode(&mut &target[..]).map_err(|_| codec_error::<Ext>("u128"))
     }
 
     /// Decoded to range
     fn bytes_to_range(target: &Vec<u8>) -> ExecResultT<Range, Self::Address> {
-        Decode::decode(&mut &target[..]).map_err(|_| ExecError::CodecError { type_name: "Range" })
+        Decode::decode(&mut &target[..]).map_err(|_| codec_error::<Ext>("Range"))
     }
 
     /// Decoded to Address
     fn bytes_to_address(target: &Vec<u8>) -> ExecResultT<Self::Address, Self::Address> {
-        Decode::decode(&mut &target[..]).map_err(|_| ExecError::CodecError {
-            type_name: "Address",
-        })
+        Decode::decode(&mut &target[..]).map_err(|_| codec_error::<Ext>("Address"))
+    }
+
+    fn prefix_label(source: &Vec<u8>) -> Vec<u8> {
+        Self::prefix(b'L', source)
+    }
+
+    fn prefix_variable(source: &Vec<u8>) -> Vec<u8> {
+        Self::prefix(b'V', source)
+    }
+
+    fn prefix(prefix: u8, source: &Vec<u8>) -> Vec<u8> {
+        vec![vec![prefix], source.clone()].concat()
     }
 }
 pub trait OvmExecutor<P> {

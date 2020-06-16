@@ -183,6 +183,7 @@ fn is_valid_signature_decide_true() {
 
 #[test]
 fn verify_inclusion_decide_true() {
+    // tested in plasma module.
     // let mut ext = MockExternalCall::init();
     // let address_1: Address = 88;
     // let address_2: Address = 99;

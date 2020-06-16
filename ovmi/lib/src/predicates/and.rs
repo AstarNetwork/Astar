@@ -25,7 +25,7 @@ impl<Ext: ExternalCall> LogicalConnectiveInterface<AddressOf<Ext>> for AndPredic
         // challenge_input is index of child property
         require!((&challenge_inputs).len() > 0);
         let index: u128 = Decode::decode(&mut &challenge_inputs[0][..])
-            .map_err(|_| ExecError::CodecError { type_name: "u128" })?;
+            .map_err(|_| codec_error::<Ext>("u128"))?;
         let index: usize = index as usize;
 
         // challenge should be not(p[index])
@@ -49,9 +49,7 @@ impl<Ext: ExternalCall> DecidablePredicateInterface<AddressOf<Ext>> for AndPredi
     ) -> ExecResult<AddressOf<Ext>> {
         for input in inputs.iter() {
             let property: PropertyOf<Ext> =
-                Decode::decode(&mut &input[..]).map_err(|_| ExecError::CodecError {
-                    type_name: "Property<Ext>",
-                })?;
+                Decode::decode(&mut &input[..]).map_err(|_| codec_error::<Ext>("PropertyOf<Ext>"))?;
             require_with_message!(
                 self.ext.ext_is_decided(&property),
                 "This property isn't true"

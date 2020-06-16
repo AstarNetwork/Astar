@@ -310,6 +310,10 @@ pub enum CompiledPredicateCallInputs<Address> {
         inputs: Vec<Vec<u8>>,
         witness: Vec<Vec<u8>>,
     },
+    GetChild {
+        inputs: Vec<Vec<u8>>,
+        challenge_input: Vec<Vec<u8>>,
+    },
 }
 
 impl<Address> fmt::Display for CompiledPredicateCallInputs<Address> {
