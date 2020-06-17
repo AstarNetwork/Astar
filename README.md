@@ -15,9 +15,9 @@ Whitepaper
 Community
 --------- 
 
-* [Telegram](https://t.me/PlasmOfficial)
-* [Discord](https://discord.gg/Z3nC9U4)
-* [Twitter](https://twitter.com/Plasm_Network)
+* Common group: [Telegram](https://t.me/PlasmOfficial)
+* Technical group: [Discord](https://discord.gg/Z3nC9U4)
+* Subscribe on [Twitter](https://twitter.com/Plasm_Network)
 
 Table of Contents
 -----------------
