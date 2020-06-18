@@ -263,6 +263,11 @@ macro_rules! new_full {
             )?;
         }
 
+        #[cfg(feature = "oracle")]
+        if let sc_service::config::Role::Authority { .. } = &role {
+            service.spawn_essential_task("lockdrop-oracle", crate::oracle::start());
+        }
+
         Ok((service, inherent_data_providers))
     }};
     ($config:expr) => {{

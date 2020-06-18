@@ -28,10 +28,10 @@ use sp_runtime::traits::{
     BlakeTwo256, Block as BlockT, ConvertInto, Extrinsic, NumberFor, OpaqueKeys,
     SaturatedConversion, Saturating, StaticLookup, Verify,
 };
-use sp_runtime::transaction_validity::{TransactionSource, TransactionValidity};
+use sp_runtime::transaction_validity::{TransactionSource, TransactionValidity, TransactionPriority};
 use sp_runtime::{
-    ApplyExtrinsicResult, Perbill, MultiSigner,
-    create_runtime_str, generic, impl_opaque_keys, ApplyExtrinsicResult, Perbill, Perquintill,
+    ApplyExtrinsicResult, Perbill, Perquintill, MultiSigner,
+    create_runtime_str, generic, impl_opaque_keys,
 };
 use sp_std::prelude::*;
 #[cfg(any(feature = "std", test))]
@@ -53,8 +53,6 @@ pub mod legacy;
 /// Constant values used within the runtime.
 pub mod constants;
 use constants::{currency::*, time::*};
-
-type SubmitTransaction = frame_system::offchain::TransactionSubmitter<(), Call, UncheckedExtrinsic>;
 
 // Make the WASM binary available.
 #[cfg(feature = "std")]
@@ -327,14 +325,13 @@ impl pallet_finality_tracker::Trait for Runtime {
 
 parameter_types! {
     pub const MedianFilterExpire: Moment = 300; // 10 blocks is one minute, 300 - half hour
+    pub const LockdropUnsignedPriority: TransactionPriority = TransactionPriority::max_value();
 }
 
 impl pallet_plasm_lockdrop::Trait for Runtime {
     type Currency = Balances;
     type MedianFilterExpire = MedianFilterExpire;
-    type MedianFilterWidth = pallet_plasm_lockdrop::typenum::U3;
-    type Call = Call;
-    type SubmitTransaction = SubmitTransaction;
+    type MedianFilterWidth = pallet_plasm_lockdrop::typenum::U5;
     type AuthorityId = pallet_plasm_lockdrop::sr25519::AuthorityId;
     type Account = MultiSigner;
     type Time = Timestamp;
@@ -342,6 +339,7 @@ impl pallet_plasm_lockdrop::Trait for Runtime {
     type DollarRate = Balance;
     type BalanceConvert = Balance;
     type Event = Event;
+    type UnsignedPriority = LockdropUnsignedPriority;
 }
 
 impl<LocalCall> frame_system::offchain::CreateSignedTransaction<LocalCall> for Runtime

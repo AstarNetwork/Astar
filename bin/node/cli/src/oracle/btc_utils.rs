@@ -14,16 +14,20 @@ pub fn ripemd160(data: &[u8]) -> [u8; 20] {
     output
 }
 
-/// Compile BTC sequence lock script for givent public key and duration.
+/// Compile BTC sequence lock script for givent public key and duration in blocks.
 pub fn lock_script(public: &ecdsa::Public, duration: u64) -> Vec<u8> {
-    duration.using_encoded(|enc_duration| {
+    let blocks = duration / 600;
+    let full_public = secp256k1::PublicKey::parse_slice(public.as_ref(), None)
+        .expect("public key has correct length")
+        .serialize(); 
+    blocks.using_encoded(|enc_blocks| {
         let mut output = vec![];
-        output.extend(vec![0x21]); // Public key lenght (should be 33 bytes)
-        output.extend(public.as_ref()); // Public key
-        output.extend(vec![0xad]); // OP_CHECKSIGVERIFY
-        output.extend(vec![enc_duration.len() as u8]); // Lock duration length
-        output.extend(enc_duration); // Lock duration in blocks
-        output.extend(vec![0x27, 0x55, 0x01]); // OP_CHECKSEQUENCEVERIFY OP_DROP 1
+        output.extend(vec![enc_blocks.len() as u8]); // Lock duration length
+        output.extend(enc_blocks); // Lock duration in blocks
+        output.extend(vec![0x27, 0x55]); // OP_CHECKSEQUENCEVERIFY OP_DROP
+        output.extend(vec![full_public.len() as u8 - 1]); // Public key lenght
+        output.extend(&full_public[1..]); // Public key
+        output.extend(vec![0xAC]); // OP_CHECKSIG
         output
     })
 }
