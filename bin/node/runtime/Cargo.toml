@@ -54,6 +54,9 @@ pallet-timestamp = { version = "2.0.0-rc3", default-features = false }
 pallet-transaction-payment = { version = "2.0.0-rc3", default-features = false }
 pallet-transaction-payment-rpc-runtime-api = { version = "2.0.0-rc3", default-features = false }
 
+[dev-dependencies]
+sp-io = "2.0.0-rc3"
+
 [build-dependencies]
 wasm-builder-runner = { package = "substrate-wasm-builder-runner", version = "1.0.5" }
 
