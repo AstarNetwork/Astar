@@ -117,8 +117,9 @@ fn oracle_unsinged_transaction() {
 
         let lockdrop: Lockdrop = Default::default();
         assert_ok!(PlasmLockdrop::request(
-            Origin::signed(bad_account),
-            lockdrop.clone()
+            Origin::NONE,
+            lockdrop.clone(),
+            Default::default(),
         ));
         let bad_vote = ClaimVote {
             claim_id: BlakeTwo256::hash_of(&lockdrop),
@@ -527,8 +528,9 @@ fn simple_success_lockdrop_request() {
         let lockdrop: Lockdrop = Default::default();
         let claim_id = BlakeTwo256::hash_of(&lockdrop);
         assert_ok!(PlasmLockdrop::request(
-            Origin::signed(Default::default()),
-            lockdrop
+            Origin::NONE,
+            lockdrop,
+            Default::default(),
         ));
         let vote = ClaimVote {
             claim_id,
@@ -538,26 +540,23 @@ fn simple_success_lockdrop_request() {
         assert_ok!(PlasmLockdrop::vote(
             Origin::NONE,
             vote.clone(),
-            Default::default()
+            Default::default(),
         ));
         assert_noop!(
-            PlasmLockdrop::claim(Origin::signed(Default::default()), claim_id),
+            PlasmLockdrop::claim(Origin::NONE, claim_id),
             "this request don't get enough authority votes"
         );
         assert_ok!(PlasmLockdrop::vote(
             Origin::NONE,
             vote.clone(),
-            Default::default()
+            Default::default(),
         ));
         assert_noop!(
-            PlasmLockdrop::claim(Origin::signed(Default::default()), claim_id),
+            PlasmLockdrop::claim(Origin::NONE, claim_id),
             "this request don't get enough authority votes"
         );
         assert_ok!(PlasmLockdrop::vote(Origin::NONE, vote, Default::default()));
-        assert_ok!(PlasmLockdrop::claim(
-            Origin::signed(Default::default()),
-            claim_id
-        ));
+        assert_ok!(PlasmLockdrop::claim(Origin::NONE, claim_id));
     })
 }
 
@@ -567,8 +566,9 @@ fn simple_fail_lockdrop_request() {
         let lockdrop: Lockdrop = Default::default();
         let claim_id = BlakeTwo256::hash_of(&lockdrop);
         assert_ok!(PlasmLockdrop::request(
-            Origin::signed(Default::default()),
-            lockdrop
+            Origin::NONE,
+            lockdrop,
+            Default::default(),
         ));
         let vote = ClaimVote {
             claim_id,
@@ -578,24 +578,24 @@ fn simple_fail_lockdrop_request() {
         assert_ok!(PlasmLockdrop::vote(
             Origin::NONE,
             vote.clone(),
-            Default::default()
+            Default::default(),
         ));
         assert_noop!(
-            PlasmLockdrop::claim(Origin::signed(Default::default()), claim_id),
+            PlasmLockdrop::claim(Origin::NONE, claim_id),
             "this request don't get enough authority votes"
         );
         assert_ok!(PlasmLockdrop::vote(
             Origin::NONE,
             vote.clone(),
-            Default::default()
+            Default::default(),
         ));
         assert_noop!(
-            PlasmLockdrop::claim(Origin::signed(Default::default()), claim_id),
+            PlasmLockdrop::claim(Origin::NONE, claim_id),
             "this request don't get enough authority votes"
         );
         assert_ok!(PlasmLockdrop::vote(Origin::NONE, vote, Default::default()));
         assert_noop!(
-            PlasmLockdrop::claim(Origin::signed(Default::default()), claim_id),
+            PlasmLockdrop::claim(Origin::NONE, claim_id),
             "this request don't approved by authorities"
         );
     })

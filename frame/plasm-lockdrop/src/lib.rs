@@ -29,7 +29,7 @@ use frame_support::{
     StorageMap, StorageValue,
 };
 use frame_system::{
-    self as system, ensure_none, ensure_signed,
+    self as system, ensure_none,
     offchain::{SendTransactionTypes, SubmitTransaction},
 };
 pub use generic_array::typenum;
@@ -58,6 +58,9 @@ pub use oracle::*;
 mod mock;
 #[cfg(test)]
 mod tests;
+
+/// Claim request PoW difficulty mask.
+const POW_MASK: u8 = 0b0000_1111;
 
 pub type BalanceOf<T> =
     <<T as Trait>::Currency as Currency<<T as frame_system::Trait>::AccountId>>::Balance;
@@ -262,12 +265,14 @@ decl_module! {
 
         /// Request authorities to check locking transaction.
         /// TODO: weight
-        #[weight = 1_000_000]
+        #[weight = 50_000]
         fn request(
             origin,
             params: Lockdrop,
+            _nonce: H256,
         ) {
-            let _ = ensure_signed(origin)?;
+            ensure_none(origin)?;
+
             let claim_id = BlakeTwo256::hash_of(&params);
             ensure!(!<Claims>::get(claim_id).complete, "claim should not be already paid");
 
@@ -302,22 +307,24 @@ decl_module! {
 
         /// Claim tokens according to lockdrop procedure.
         /// TODO: weight
-        #[weight = 1_000_000]
+        #[weight = 50_000]
         fn claim(
             origin,
             claim_id: ClaimId,
         ) {
-            let _ = ensure_signed(origin)?;
+            ensure_none(origin)?;
+
             let claim = <Claims>::get(claim_id);
-            ensure!(!claim.complete, "claim should be already paid");
+            ensure!(!claim.complete, "claim should not be already paid");
+            ensure!(
+                claim.approve + claim.decline >= <VoteThreshold>::get(),
+                "this request don't get enough authority votes",
+            );
+            ensure!(
+                claim.approve.saturating_sub(claim.decline) >= <PositiveVotes>::get(),
+                "this request don't approved by authorities",
+            );
 
-            if claim.approve + claim.decline < <VoteThreshold>::get() {
-                Err("this request don't get enough authority votes")?
-            }
-
-            if claim.approve.saturating_sub(claim.decline) < <PositiveVotes>::get() {
-                Err("this request don't approved by authorities")?
-            }
 
             // Deposit lockdrop tokens on locking public key.
             let public_key = match claim.params {
@@ -606,6 +613,42 @@ impl<T: Trait> frame_support::unsigned::ValidateUnsigned for Module<T> {
 
     fn validate_unsigned(_source: TransactionSource, call: &Self::Call) -> TransactionValidity {
         match call {
+            Call::request(params, nonce) => {
+                let claim_id = BlakeTwo256::hash_of(&params);
+                if <Claims>::get(claim_id).complete {
+                    return InvalidTransaction::Call.into()
+                }
+
+                // Simple proof of work
+                let pow_byte = BlakeTwo256::hash_of(&(claim_id, nonce)).as_bytes()[0];
+                if pow_byte & POW_MASK > 0 {
+                    return InvalidTransaction::Call.into()
+                }
+
+                ValidTransaction::with_tag_prefix("PlasmLockdrop")
+                    .priority(T::UnsignedPriority::get())
+                    .and_provides((params, nonce))
+                    .longevity(64_u64)
+                    .propagate(true)
+                    .build()
+            }
+
+            Call::claim(claim_id) => {
+                let claim = <Claims>::get(claim_id);
+                let on_vote = claim.approve + claim.decline < <VoteThreshold>::get();
+                let not_approved = claim.approve.saturating_sub(claim.decline) < <PositiveVotes>::get();
+                if claim.complete || on_vote || not_approved {
+                    return InvalidTransaction::Call.into()
+                }
+
+                ValidTransaction::with_tag_prefix("PlasmLockdrop")
+                    .priority(T::UnsignedPriority::get())
+                    .and_provides(claim_id)
+                    .longevity(64_u64)
+                    .propagate(true)
+                    .build()
+            }
+
             Call::vote(vote, signature) => {
                 // Verify call params
                 if !<Claims>::contains_key(vote.claim_id.clone()) {
