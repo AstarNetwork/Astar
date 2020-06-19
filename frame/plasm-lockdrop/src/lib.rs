@@ -616,13 +616,13 @@ impl<T: Trait> frame_support::unsigned::ValidateUnsigned for Module<T> {
             Call::request(params, nonce) => {
                 let claim_id = BlakeTwo256::hash_of(&params);
                 if <Claims>::get(claim_id).complete {
-                    return InvalidTransaction::Call.into()
+                    return InvalidTransaction::Call.into();
                 }
 
                 // Simple proof of work
                 let pow_byte = BlakeTwo256::hash_of(&(claim_id, nonce)).as_bytes()[0];
                 if pow_byte & POW_MASK > 0 {
-                    return InvalidTransaction::Call.into()
+                    return InvalidTransaction::Call.into();
                 }
 
                 ValidTransaction::with_tag_prefix("PlasmLockdrop")
@@ -636,9 +636,10 @@ impl<T: Trait> frame_support::unsigned::ValidateUnsigned for Module<T> {
             Call::claim(claim_id) => {
                 let claim = <Claims>::get(claim_id);
                 let on_vote = claim.approve + claim.decline < <VoteThreshold>::get();
-                let not_approved = claim.approve.saturating_sub(claim.decline) < <PositiveVotes>::get();
+                let not_approved =
+                    claim.approve.saturating_sub(claim.decline) < <PositiveVotes>::get();
                 if claim.complete || on_vote || not_approved {
-                    return InvalidTransaction::Call.into()
+                    return InvalidTransaction::Call.into();
                 }
 
                 ValidTransaction::with_tag_prefix("PlasmLockdrop")
