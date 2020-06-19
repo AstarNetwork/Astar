@@ -214,6 +214,26 @@ pub trait ExternalCall {
         Decode::decode(&mut &target[..]).map_err(|_| codec_error::<Ext>("Address"))
     }
 
+    /// Decoded to bool
+    fn bytes_to_bool(target: &Vec<u8>) -> ExecResultT<bool, Self::Address> {
+        Decode::decode(&mut &target[..]).map_err(|_| codec_error::<Ext>("bool"))
+    }
+
+    /// Decoded to String
+    fn bytes_to_string(target: &Vec<u8>) -> ExecResultT<String, Self::Address> {
+        Decode::decode(&mut &target[..]).map_err(|_| codec_error::<Ext>("String"))
+    }
+
+    /// Decoded to Property
+    fn bytes_to_property(target: &Vec<u8>) -> ExecResultT<PropertyOf<Self>, Self::Address> {
+        Decode::decode(&mut &target[..]).map_err(|_| codec_error::<Ext>("PropertyOf<Ext>"))
+    }
+
+    /// Decoded to Vec<Vec<u8>>
+    fn bytes_to_bytes_array(target: &Vec<u8>) -> ExecResultT<Vec<Vec<u8>>, Self::Address> {
+        Decode::decode(&mut &target[..]).map_err(|_| codec_error::<Ext>("Vec<Vec<u8>>"))
+    }
+
     fn prefix_label(source: &Vec<u8>) -> Vec<u8> {
         Self::prefix(b'L', source)
     }

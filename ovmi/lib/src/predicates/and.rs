@@ -48,8 +48,8 @@ impl<Ext: ExternalCall> DecidablePredicateInterface<AddressOf<Ext>> for AndPredi
         _witness: Vec<Vec<u8>>,
     ) -> ExecResult<AddressOf<Ext>> {
         for input in inputs.iter() {
-            let property: PropertyOf<Ext> =
-                Decode::decode(&mut &input[..]).map_err(|_| codec_error::<Ext>("PropertyOf<Ext>"))?;
+            let property: PropertyOf<Ext> = Decode::decode(&mut &input[..])
+                .map_err(|_| codec_error::<Ext>("PropertyOf<Ext>"))?;
             require_with_message!(
                 self.ext.ext_is_decided(&property),
                 "This property isn't true"

@@ -5,6 +5,7 @@ use crate::compiled_predicates::*;
 use crate::executor::*;
 use crate::predicates::*;
 use crate::*;
+use sp_core::LogLevel::Error;
 
 // Compiled Predicate transpiles to this structure.
 pub struct CompiledExecutable<'a, Ext: ExternalCall> {
@@ -21,12 +22,17 @@ impl<Ext: ExternalCall> CompiledPredicateInterface<AddressOf<Ext>> for CompiledE
         self.payout.clone()
     }
 
+    /// @dev Validates a child node of the property in game tree.
     fn is_valid_challenge(
         &self,
-        _inputs: Vec<Vec<u8>>,
-        _challenge_inputs: Vec<Vec<u8>>,
-        _challenge: Property<AddressOf<Ext>>,
+        inputs: Vec<Vec<u8>>,
+        challenge_inputs: Vec<Vec<u8>>,
+        challenge: Property<AddressOf<Ext>>,
     ) -> ExecResult<AddressOf<Ext>> {
+        require!(
+            Ext::hash_of(&self.get_child(inputs, challenge_inputs)?) == Ext::hash_of(&challenge),
+            "_challenge must be valud child of game tree"
+        );
         Ok(true)
     }
 
@@ -49,16 +55,22 @@ impl<Ext: ExternalCall> CompiledPredicateInterface<AddressOf<Ext>> for CompiledE
         return self.get_child_intermediate(intermediate, &sub_inputs, &challenge_inputs);
     }
 
-    fn decide(&self, _inputs: Vec<Vec<u8>>, _witness: Vec<Vec<u8>>) -> ExecResult<AddressOf<Ext>> {
-        Ok(true)
+    fn decide(&self, inputs: Vec<Vec<u8>>, witness: Vec<Vec<u8>>) -> ExecResult<AddressOf<Ext>> {
+        if !Ext::is_label(&inputs[0]) {
+            return self.decide(inputs, witness);
+        }
+        let input_0 = Ext::hash_of(&self.get_input_value(&inputs[0]));
+        let sub_inputs = Ext::sub_array(&inputs, 1, inputs.len());
+        let intermediate = self.resolve_intermediate(&input0)?;
+        self.decide_intermediate(&intermediate, &sub_inputs, &witness)
     }
 
     fn decide_true(
         &self,
-        _inputs: Vec<Vec<u8>>,
-        _witness: Vec<Vec<u8>>,
+        inputs: Vec<Vec<u8>>,
+        witness: Vec<Vec<u8>>,
     ) -> ExecResult<AddressOf<Ext>> {
-        Ok(true)
+        self.decide(inputs, witness)
     }
 
     fn decide_with_witness(
@@ -66,45 +78,250 @@ impl<Ext: ExternalCall> CompiledPredicateInterface<AddressOf<Ext>> for CompiledE
         _inputs: Vec<Vec<u8>>,
         _witness: Vec<Vec<u8>>,
     ) -> ExecResult<AddressOf<Ext>> {
-        Ok(true)
+        let result = self.decide(inputs, witness)?;
+        require!(result, "must be true");
+        let property = Property {
+            predicate_address: self.ext.ext_address(),
+            inputs: inputs,
+        };
+        self.ext
+            .ext_set_predicate_decision(self.ext.ext_get_property_id(&property), true)
     }
 }
 
 impl<Ext: ExternalCall> CompiledExecutable<'_, Ext> {
+    // decide_** --------------------------------------
+    fn decide_intermediate(
+        &self,
+        inter: &IntermediateCompiledPredicate,
+        inputs: &Vec<Vec<u8>>,
+        witness: &Vec<Vec<u8>>,
+    ) -> ExecResult<AddressOf<Ext>> {
+        let input_property_list = self.get_input_property_list(inter, inputs)?;
+        let input_property_list_child_list =
+            self.get_input_property_list_child_list(inter, inputs)?;
+
+        match &inter.connective {
+            LogicalConnective::And => self.decide_and(
+                inter,
+                inputs,
+                witness,
+                input_property_list,
+                input_property_list_child_list,
+            ),
+            LogicalConnective::ThereExistsSuchThat => self.decide_there_exists_such_that(
+                inter,
+                inputs,
+                witness,
+                input_property_list,
+                input_property_list_child_list,
+            ),
+            LogicalConnective::Or => self.decide_or(
+                inter,
+                inputs,
+                witness,
+                input_property_list,
+                input_property_list_child_list,
+            ),
+            _ => Ok(false),
+        }
+    }
+
+    fn decide_and(
+        &self,
+        inter: &IntermediateCompiledPredicate,
+        inputs: &Vec<Vec<u8>>,
+        witness: &Vec<Vec<u8>>,
+        input_property: &Vec<PropertyOf<Ext>>,
+        input_property_list_child_list: &Vec<BTreeMap<i8, PropertyOf<Ext>>>,
+    ) -> ExecResult<AddressOf<Ext>> {
+        require!(witness.len() >= inter.inputs.len());
+        for (i, item) in inter.inputs.iter().enumerate() {
+            if let AtomicPropositionOrPlaceholder::AtomicProposition(item) = item {
+                if item.is_compiled {
+                    let child_inputs = self.construct_inputs(
+                        item,
+                        witness[0],
+                        inputs,
+                        input_property,
+                        input_property_list_child_list,
+                    )?;
+                    require!(self.decide(child_inputs, witness[i]))
+                }
+                self.decide_property(
+                    item,
+                    witness,
+                    inputs,
+                    input_property,
+                    input_property_list_child_list,
+                    &Ext::bytes_to_bytes_array(&witness[i])?,
+                );
+            }
+        }
+        Ok(true)
+    }
+
+    fn decide_there_exists_such_that(
+        &self,
+        inter: &IntermediateCompiledPredicate,
+        inputs: &Vec<Vec<u8>>,
+        witness: &Vec<Vec<u8>>,
+        input_property: &Vec<PropertyOf<Ext>>,
+        input_property_list_child_list: &Vec<BTreeMap<i8, PropertyOf<Ext>>>,
+    ) -> ExecResult<AddressOf<Ext>> {
+        require!(inter.inputs.len() > 2);
+        let inner_property = match &inter.inputs[2] {
+            AtomicPropositionOrPlaceholder::AtomicProposition(x) => x,
+            _ => return Ok(true),
+        };
+        if inner_property.is_compiled {
+            let child_inputs = self.construct_inputs(
+                inner_property,
+                witness[0],
+                inputs,
+                input_property,
+                input_property_list_child_list,
+            )?;
+            require!(self.decide(child_inputs, Ext::sub_array(&witness, 1, witness.len())));
+        } else {
+            require!(self.decide_property(
+                innner_property,
+                witness,
+                inputs,
+                input_property,
+                input_property_list_child_list,
+                Ext::sub_array(&witness, 1, witness.len()),
+            ));
+        }
+        Ok(true)
+    }
+
+    fn decide_or(
+        &self,
+        inter: &IntermediateCompiledPredicate,
+        inputs: &Vec<Vec<u8>>,
+        witness: &Vec<Vec<u8>>,
+        input_property: &Vec<PropertyOf<Ext>>,
+        input_property_list_child_list: &Vec<BTreeMap<i8, PropertyOf<Ext>>>,
+    ) -> ExecResult<AddressOf<Ext>> {
+        let or_index = Ext::bytes_to_u128(witness[0])?;
+        for (index, item) in inter.inputs.iter().enumerate() {
+            if or_index as usize == index {
+                if let AtomicPropositionOrPlaceholder::AtomicProposition(item) = item {
+                    if item.is_compiled {
+                        let child_inputs = self.construct_inputs(
+                            item,
+                            witness[0],
+                            inputs,
+                            input_property,
+                            input_property_list_child_list,
+                        );
+                        require!(
+                            self.decide(child_inputs, &Ext::sub_array(witness, 1, _witness.len()))
+                        );
+                    } else {
+                        self.decide_property(
+                            item,
+                            inputs,
+                            witness,
+                            input_property,
+                            input_property_list_child_list,
+                            &Ext::sub_array(witness, 1, _witness.len()),
+                        )
+                    }
+                }
+            }
+        }
+        Ok(true)
+    }
+
+    fn decide_property(
+        &self,
+        inter: &AtomicProposition,
+        inputs: &Vec<Vec<u8>>,
+        witness: &Vec<Vec<u8>>,
+        input_property: &Vec<PropertyOf<Ext>>,
+        input_property_list_child_list: &Vec<BTreeMap<i8, PropertyOf<Ext>>>,
+        child_witnesses: &Vec<Vec<u8>>,
+    ) -> ExecResult<AddressOf<Ext>> {
+        if let PredicateCall::InputPredicateCall(call) = &inter.predicate {
+            require!(inputs.len() > call.source.input_index - 1);
+            if inter.inputs.len() == 0 {
+                require!(self.ext.ext_is_decided(Ext::bytes_to_property(
+                    &inputs[call.source.input_index - 1]
+                )?));
+            } else {
+                let input_predicate_property =
+                    Ext::bytes_to_property(&inputs[call.source.input_index - 1])?;
+                let mut new_inputs = input_predicate_property.inputs.clone();
+                if let CompiledInput::NormalInput(normal_input) = &inter.inputs[0] {
+                    require!(inputs.len() > normal_input.input_index - 1);
+                    new_inputs.push(inputs[normal_input.input_index - 1]);
+                    let result = self.ext.ext_call(
+                        input_predicate_property.predicate_address,
+                        PredicateCallInputs::CompiledPredicate(
+                            CompiledPredicateCallInputs::Decide {
+                                inputs: new_inputs,
+                                witness: child_witness.clone(),
+                            },
+                        ),
+                    )?;
+                    require_with_message!(bytes_to_bool(&result)?, "InputPredicate must be true");
+                }
+            }
+        } else if let PredicateCall::VariablePredicateCall(call) = &inter.predicate {
+            require_with_message!(
+                self.ext.is_decided(&bytes_to_property(&challenge_input)),
+                "VariablePredicate must be true"
+            );
+        } else {
+            let new_inputs = self.construct_inputs(
+                inter,
+                &witness[0],
+                inputs,
+                input_property,
+                input_property_list_child_list,
+            )?;
+            if let PredicateCall::CompiledPredicateCall(call) = &inter.predicate {
+                // This is for predicates dynamic linking.
+                let result = self.ext.ext_call(
+                    self.bytes_to_address(&call.source)?,
+                    PredicateCallInputs::CompiledPredicate(CompiledPredicateCallInputs::Decide {
+                        inputs: new_inputs,
+                        witness: child_witnesses.clone(),
+                    }),
+                )?;
+                require!(
+                    Ext::bytes_to_bool(&result)?,
+                    "property.predicate.source must be true"
+                );
+            } else {
+                // TODO: inter.predicate.source -> self.get_source(inter.predicate)
+                let result = self.ext.ext_call(
+                    self.bytes_to_address(&inter.predicate.source)?,
+                    PredicateCallInputs::AtomicPredicate(AtomicPredicateCallInputs::Decide {
+                        inputs: new_inputs,
+                    }),
+                )?;
+                require!(
+                    Ext::bytes_to_bool(&result)?,
+                    "property.predicate.source must be true"
+                );
+            }
+        }
+        Ok(true)
+    }
+
+    // get_child_** --------------------------------------
     fn get_child_intermediate(
         &self,
         inter: &IntermediateCompiledPredicate,
         inputs: &Vec<Vec<u8>>,
         challenge_inputs: &Vec<Vec<u8>>,
     ) -> ExecResultTOf<PropertyOf<Ext>, Ext> {
-        let input_property_list = inter
-            .property_inputs
-            .iter()
-            .map(|property_input| {
-                Decode::decode(&mut &inputs[property_input.input_index - 1][..])
-                    .map_err(codec_error::<Ext>("PropertyOf<Ext>"))?
-            })
-            .collect::<Vec<PropertyOf<Ext>>>();
-        let input_property_list_child_list = inter
-            .property_inputs
-            .iter()
-            .map(|property_input| {
-                let mut ret = BTreeMap::new();
-                if property_input.children.len() > 0 {
-                    require!(
-                        input_property[property_input.input_index].inputs
-                            > property_input.children[0]
-                    );
-                    ret.insert(
-                        property_input.children[0],
-                        input_property[property_input.input_index].inputs
-                            [property_input.children[0]],
-                    );
-                }
-                Ok(ret)
-            })
-            .map(|res| res?)
-            .collect::<Vec<BTreeMap<i8, PropertyOf<Ext>>>>();
+        let input_property_list = self.get_input_property_list(inter, inputs)?;
+        let input_property_list_child_list =
+            self.get_input_property_list_child_list(inter, inputs)?;
 
         match &inter.connective {
             LogicalConnective::And => self.get_child_and(
@@ -114,14 +331,34 @@ impl<Ext: ExternalCall> CompiledExecutable<'_, Ext> {
                 &input_property_list,
                 &input_property_list_child_list,
             ),
-            LogicalConnective::ForAllSuchThat => {
-                self.get_child_for_all_such_that(inter, inputs, challenge_inputs)
-            }
-            LogicalConnective::Not => self.get_child_not(inter, inputs, challenge_inputs),
-            LogicalConnective::Or => self.get_child_or(inter, inputs, challenge_inputs),
-            LogicalConnective::ThereExistsSuchThat => {
-                self.get_child_there_exists_such_that(inter, inputs, challenge_inputs)
-            }
+            LogicalConnective::ForAllSuchThat => self.get_child_for_all_such_that(
+                inter,
+                inputs,
+                challenge_inputs,
+                &input_property_list,
+                &input_property_list_child_list,
+            ),
+            LogicalConnective::Not => self.get_child_not(
+                inter,
+                inputs,
+                challenge_inputs,
+                &input_property_list,
+                &input_property_list_child_list,
+            ),
+            LogicalConnective::Or => self.get_child_or(
+                inter,
+                inputs,
+                challenge_inputs,
+                &input_property_list,
+                &input_property_list_child_list,
+            ),
+            LogicalConnective::ThereExistsSuchThat => self.get_child_there_exists_such_that(
+                inter,
+                inputs,
+                challenge_inputs,
+                &input_property_list,
+                &input_property_list_child_list,
+            ),
         }
     }
 
@@ -254,15 +491,20 @@ impl<Ext: ExternalCall> CompiledExecutable<'_, Ext> {
         input_property: &Vec<PropertyOf<Ext>>,
         input_property_list_child_list: &Vec<BTreeMap<i8, PropertyOf<Ext>>>,
     ) -> ExecResultTOf<PropertyOf<Ext>, Ext> {
-        let inner_property = &property.inputs[0];
-        self.construct_property(
-            inner_property,
-            fasle,
-            inputs,
-            challenge_inputs,
-            input_property,
-            input_property_list_child_list,
-        )
+        let inner_property = &inter.inputs[0];
+        if let AtomicPropositionOrPlaceholder::AtomicProposition(inner_property) = inner_property {
+            self.construct_property(
+                inner_property,
+                fasle,
+                inputs,
+                challenge_inputs,
+                input_property,
+                input_property_list_child_list,
+            )
+        }
+        Err(ExecError::Unexpected {
+            msg: "get_child_not must be AtomicProposition.",
+        })
     }
 
     fn get_child_there_exists_such_that(
@@ -273,6 +515,37 @@ impl<Ext: ExternalCall> CompiledExecutable<'_, Ext> {
         input_property: &Vec<PropertyOf<Ext>>,
         input_property_list_child_list: &Vec<BTreeMap<i8, PropertyOf<Ext>>>,
     ) -> ExecResultTOf<PropertyOf<Ext>, Ext> {
+        if let AtomicPropositionOrPlaceholder::AtomicProposition(inner_property) = &inter.inputs[2]
+        {
+            if let AtomicPropositionOrPlaceholder::Placeholder(property_input_1) = &inter.inputs[1]
+            {
+                let not_input = self.construct_property(
+                    inner_property,
+                    Ext::bytes_to_bool(&mut &self.get_bytes_variable(&Ext::bytes_to_string(
+                        &Ext::prefix_variable(&property_input_1.encode()),
+                    )?)?)?,
+                    inptus,
+                    challenge_inputs,
+                    input_property,
+                    input_property_list_child_list,
+                )?;
+                let for_all_such_that_inputs = vec![
+                    vec![],
+                    property_input_1.encode(),
+                    vec![Property {
+                        predicate_address: self.ext.not_inputs(),
+                        inputs: vec![not_input.encode()],
+                    }],
+                ];
+                Ok(Property {
+                    predicate_address: self.ext.for_all_such_that_address(),
+                    inputs: for_all_such_that_inputs,
+                })
+            }
+        }
+        Err(ExecError::Unexpected {
+            msg: "get_child_there_exists_such_that must be inter.inputs[1] is Placeholder, inter.inputs[2] is AtomicProposition.",
+        })
     }
 
     fn get_child_or(
@@ -283,8 +556,50 @@ impl<Ext: ExternalCall> CompiledExecutable<'_, Ext> {
         input_property: &Vec<PropertyOf<Ext>>,
         input_property_list_child_list: &Vec<BTreeMap<i8, PropertyOf<Ext>>>,
     ) -> ExecResultTOf<PropertyOf<Ext>, Ext> {
+        Ok(Property {
+            predicate_address: self.ext.and_address(),
+            inputs: inter.inputs.iter().map(|item| {
+                if let AtomicPropositionOrPlaceholder::AtomicProposition(item) = &item {
+                    if let PredicateCall::CompiledPredicateCall(predicate) = &item.predicate {
+                        // not (compiled predicate)
+                        let not_inputs = vec![self
+                            .construct_property(
+                                item,
+                                false,
+                                inputs,
+                                challenge_inputs,
+                                input_property,
+                                input_property_list_child_list,
+                            )?
+                            .encode()];
+                        Ok(Property {
+                            predicate_address: self.ext.not_address(),
+                            inputs: not_inputs,
+                        })
+                    } else {
+                        // The valid challenge of "p1 ∨ p2" is "¬(p1) ∧ ¬(p2)".
+                        // If p1 is "¬(p1_1)", the valid challenge is "p1_1 ∧ ¬(p2)",
+                        //   then returning getChild of "¬(p1_1)" here.
+                        let child_inputs = self.construct_inputs(
+                            item,
+                            &challenge_inputs[0],
+                            inputs,
+                            input_property,
+                            input_property_list_child_list,
+                        )?;
+                        Ok(self
+                            .get_child(child_inputs, challenge_inputs.clone())?
+                            .encode())
+                    }
+                }
+                Err(ExecError::Unexpected {
+                    msg: "get_child_or must be all inter.inputs AtomicProposition.",
+                })
+            })?,
+        })
     }
 
+    // helper -----------------------------------------------
     fn resolve_intermediate(
         &self,
         name: &String,
@@ -300,6 +615,46 @@ impl<Ext: ExternalCall> CompiledExecutable<'_, Ext> {
         Err(ExecError::Require {
             msg: "Required error by: resolve_intermediate",
         })
+    }
+
+    fn get_input_property_list(
+        inter: &IntermediateCompiledPredicate,
+        inputs: &Vec<Vec<u8>>,
+    ) -> ExecResultTOf<Vec<PropertyOf<Ext>>, Ext> {
+        Ok(inter
+            .property_inputs
+            .iter()
+            .map(|property_input| {
+                Decode::decode(&mut &inputs[property_input.input_index - 1][..])
+                    .map_err(codec_error::<Ext>("PropertyOf<Ext>"))?
+            })
+            .collect::<Vec<PropertyOf<Ext>>>())
+    }
+
+    fn get_input_property_list_child_list(
+        inter: &IntermediateCompiledPredicate,
+        inputs: &Vec<Vec<u8>>,
+    ) -> ExecResultTOf<Vec<BTreeMap<i8, PropertyOf<Ext>>>, Ext> {
+        Ok(inter
+            .property_inputs
+            .iter()
+            .map(|property_input| {
+                let mut ret = BTreeMap::new();
+                if property_input.children.len() > 0 {
+                    require!(
+                        input_property[property_input.input_index].inputs
+                            > property_input.children[0]
+                    );
+                    ret.insert(
+                        property_input.children[0],
+                        input_property[property_input.input_index].inputs
+                            [property_input.children[0]],
+                    );
+                }
+                Ok(ret)
+            })
+            .map(|res| res?)
+            .collect::<Vec<BTreeMap<i8, PropertyOf<Ext>>>>())
     }
 
     fn construct_inputs(
@@ -406,11 +761,11 @@ impl<Ext: ExternalCall> CompiledExecutable<'_, Ext> {
             PredicateCall::VariablePredicateCall(call) => {
                 if property.inputs.len() == 0 {
                     require!(challenge_inputs.len() > 0);
-                    return Ok(challenge_inputs[0]);
+                    return Ext::bytes_to_property(&challenge_inputs[0]);
                 }
 
-                let input_predicate_property: PropertyOf<EXt> = Decode::decode(challenge_inputs[0])
-                    .map_err(|| codec_error::<Ext>("PropertyOf<Ext>"))?;
+                let input_predicate_property: PropertyOf<EXt> =
+                    Ext::bytes_to_property(&challenge_inputs[0])?;
                 let mut child_inputs_of = input_predicate_property.inputs;
                 child_inputs_of.push(inputs[property.inputs[0].input_index - 1]);
                 Ok(Property {
@@ -420,13 +775,13 @@ impl<Ext: ExternalCall> CompiledExecutable<'_, Ext> {
             }
             call => {
                 let witness = if free_variable {
-                    self.get_bytes_variable(&"freeVariable".to_string())?
+                    &self.get_bytes_variable(&"freeVariable".to_string())?
                 } else {
-                    challenge_inputs[0]
+                    &challenge_inputs[0]
                 };
                 let child_inputs_of = self.construct_inputs(
                     property,
-                    &witness,
+                    witness,
                     inputs,
                     input_property,
                     input_property_list_child_list,

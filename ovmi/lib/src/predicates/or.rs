@@ -39,15 +39,15 @@ impl<'a, Ext: ExternalCall> DecidablePredicateInterface<AddressOf<Ext>> for OrPr
         witness: Vec<Vec<u8>>,
     ) -> ExecResult<AddressOf<Ext>> {
         require!(witness.len() > 0);
-        let index: u128 = Decode::decode(&mut &witness[0][..])
-            .map_err(|_| codec_error::<Ext>("u128"))?;
+        let index: u128 =
+            Decode::decode(&mut &witness[0][..]).map_err(|_| codec_error::<Ext>("u128"))?;
         require_with_message!(
             (index as usize) < inputs.len(),
             "witness must be smaller than inputs length"
         );
         let property_bytes = inputs[index as usize].clone();
-        let property: Property<AddressOf<Ext>> =
-            Decode::decode(&mut &property_bytes[..]).map_err(|_|  codec_error::<Ext>("PropertyOf<Ext>"))?;
+        let property: Property<AddressOf<Ext>> = Decode::decode(&mut &property_bytes[..])
+            .map_err(|_| codec_error::<Ext>("PropertyOf<Ext>"))?;
 
         self.ext.ext_call(
             &property.predicate_address,
