@@ -421,10 +421,7 @@ impl<T: Trait> Module<T> {
         let btc_price: f32 = BitcoinPrice::fetch()?;
         let eth_price: f32 = EthereumPrice::fetch()?;
         // TODO: add delay to prevent frequent transaction sending
-        Self::send_dollar_rate(
-            (btc_price as u32).into(),
-            (eth_price as u32).into(),
-        )?;
+        Self::send_dollar_rate((btc_price as u32).into(), (eth_price as u32).into())?;
 
         // TODO: use permanent storage to track request when temporary failed
         Self::claim_request_oracle()
@@ -506,12 +503,7 @@ impl<T: Trait> Module<T> {
                 duration,
                 transaction_hash,
             } => {
-                let success = BitcoinLock::check(
-                    transaction_hash,
-                    public_key,
-                    duration,
-                    value,
-                )?;
+                let success = BitcoinLock::check(transaction_hash, public_key, duration, value)?;
                 debug::debug!(
                     target: "lockdrop-offchain-worker",
                     "claim id {} => lock result: {}", claim_id, success
@@ -524,12 +516,7 @@ impl<T: Trait> Module<T> {
                 duration,
                 value,
             } => {
-                let success = EthereumLock::check(
-                    transaction_hash,
-                    public_key,
-                    duration,
-                    value,
-                )?;
+                let success = EthereumLock::check(transaction_hash, public_key, duration, value)?;
                 debug::debug!(
                     target: "lockdrop-offchain-worker",
                     "claim id {} => lock result: {}", claim_id, success

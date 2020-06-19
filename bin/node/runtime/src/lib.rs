@@ -28,10 +28,12 @@ use sp_runtime::traits::{
     BlakeTwo256, Block as BlockT, ConvertInto, Extrinsic, NumberFor, OpaqueKeys,
     SaturatedConversion, Saturating, StaticLookup, Verify,
 };
-use sp_runtime::transaction_validity::{TransactionSource, TransactionValidity, TransactionPriority};
+use sp_runtime::transaction_validity::{
+    TransactionPriority, TransactionSource, TransactionValidity,
+};
 use sp_runtime::{
-    ApplyExtrinsicResult, Perbill, Perquintill, MultiSigner,
-    create_runtime_str, generic, impl_opaque_keys,
+    create_runtime_str, generic, impl_opaque_keys, ApplyExtrinsicResult, MultiSigner, Perbill,
+    Perquintill,
 };
 use sp_std::prelude::*;
 #[cfg(any(feature = "std", test))]

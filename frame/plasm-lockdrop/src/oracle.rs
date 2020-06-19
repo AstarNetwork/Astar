@@ -9,18 +9,18 @@
 //! **POST**
 //! - /eth/lock
 //!   Body: LockCheck struct
-//!   Returns: `OK` when lock success 
+//!   Returns: `OK` when lock success
 //!
 //! - /btc/lock
 //!   Body: LockCheck struct
-//!   Returns `OK` when lock success 
+//!   Returns `OK` when lock success
 //!
 
-use codec::{Encode, Decode};
+use codec::{Decode, Encode};
 use frame_support::debug;
-use sp_runtime::{RuntimeDebug, offchain::http::Request};
+use sp_core::{ecdsa, H256};
+use sp_runtime::{offchain::http::Request, RuntimeDebug};
 use sp_std::prelude::*;
-use sp_core::{H256, ecdsa};
 
 /// HTTP source of currency price.
 pub trait PriceOracle<T: sp_std::str::FromStr> {
@@ -109,13 +109,20 @@ pub trait LockOracle {
         duration: u64,
         value: u128,
     ) -> Result<bool, ()> {
-        let lock = LockCheck { tx_hash, public_key, duration, value };
-        let request = Request::post(Self::uri(), vec![lock.encode()]).send().map_err(|e| {
-            debug::error!(
-                target: "lockdrop-offchain-worker",
-                "Request error: {:?}", e
-            );
-        })?;
+        let lock = LockCheck {
+            tx_hash,
+            public_key,
+            duration,
+            value,
+        };
+        let request = Request::post(Self::uri(), vec![lock.encode()])
+            .send()
+            .map_err(|e| {
+                debug::error!(
+                    target: "lockdrop-offchain-worker",
+                    "Request error: {:?}", e
+                );
+            })?;
 
         let response = request.wait().map_err(|e| {
             debug::error!(

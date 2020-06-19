@@ -19,7 +19,7 @@ pub fn lock_script(public: &ecdsa::Public, duration: u64) -> Vec<u8> {
     let blocks = duration / 600;
     let full_public = secp256k1::PublicKey::parse_slice(public.as_ref(), None)
         .expect("public key has correct length")
-        .serialize(); 
+        .serialize();
     blocks.using_encoded(|enc_blocks| {
         let mut output = vec![];
         output.extend(vec![enc_blocks.len() as u8]); // Lock duration length
