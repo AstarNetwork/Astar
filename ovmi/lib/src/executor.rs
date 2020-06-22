@@ -37,9 +37,7 @@ pub enum ExecError<Address> {
     Unimplemented,
 }
 
-pub fn codec_error<Ext: ExternalCall>(
-    expected_type_name: &'static str,
-) -> ExecError<AddressOf<Ext>> {
+pub fn codec_error<Address>(expected_type_name: &'static str) -> ExecError<Address> {
     ExecError::CodecError {
         type_name: expected_type_name,
     }
@@ -154,6 +152,8 @@ pub trait ExternalCall {
     /* Helpers of UniversalAdjudicationContract. */
     /// `is_decided` function of UniversalAdjudication in OVM module.
     fn ext_is_decided(&self, property: &PropertyOf<Self>) -> bool;
+    /// `is_decided_by_id` function of UniversalAdjudication in OVM module.
+    fn ext_is_decided_by_id(&self, id: Self::Hash) -> bool;
     /// `get_property_id` function of UniversalAdjudication in OVM module.
     fn ext_get_property_id(&self, property: &PropertyOf<Self>) -> Self::Hash;
     /// `set_predicate_decision` function of UniversalAdjudication in OVM module.
@@ -186,10 +186,10 @@ pub trait ExternalCall {
     }
 
     /// sub array of [start_idnex, end_idnex).
-    fn sub_array(target: &Vec<Vec<u8>>, start_index: u128, end_index: u128) -> Vec<Vec<u8>> {
+    fn sub_array(target: &Vec<Vec<u8>>, start_index: usize, end_index: usize) -> Vec<Vec<u8>> {
         target
             .as_slice()
-            .get((start_index as usize)..(end_index as usize))
+            .get((start_index)..(end_index))
             .unwrap_or(vec![].as_slice())
             .to_vec()
     }
@@ -201,37 +201,43 @@ pub trait ExternalCall {
 
     /// Decoded to u128
     fn bytes_to_u128(target: &Vec<u8>) -> ExecResultT<u128, Self::Address> {
-        Decode::decode(&mut &target[..]).map_err(|_| codec_error::<Ext>("u128"))
+        Decode::decode(&mut &target[..]).map_err(|_| codec_error::<Self::Address>("u128"))
     }
 
     /// Decoded to range
     fn bytes_to_range(target: &Vec<u8>) -> ExecResultT<Range, Self::Address> {
-        Decode::decode(&mut &target[..]).map_err(|_| codec_error::<Ext>("Range"))
+        Decode::decode(&mut &target[..]).map_err(|_| codec_error::<Self::Address>("Range"))
     }
 
     /// Decoded to Address
     fn bytes_to_address(target: &Vec<u8>) -> ExecResultT<Self::Address, Self::Address> {
-        Decode::decode(&mut &target[..]).map_err(|_| codec_error::<Ext>("Address"))
+        Decode::decode(&mut &target[..]).map_err(|_| codec_error::<Self::Address>("Address"))
     }
 
     /// Decoded to bool
     fn bytes_to_bool(target: &Vec<u8>) -> ExecResultT<bool, Self::Address> {
-        Decode::decode(&mut &target[..]).map_err(|_| codec_error::<Ext>("bool"))
+        Decode::decode(&mut &target[..]).map_err(|_| codec_error::<Self::Address>("bool"))
     }
 
     /// Decoded to String
     fn bytes_to_string(target: &Vec<u8>) -> ExecResultT<String, Self::Address> {
-        Decode::decode(&mut &target[..]).map_err(|_| codec_error::<Ext>("String"))
+        Decode::decode(&mut &target[..]).map_err(|_| codec_error::<Self::Address>("String"))
     }
 
     /// Decoded to Property
     fn bytes_to_property(target: &Vec<u8>) -> ExecResultT<PropertyOf<Self>, Self::Address> {
-        Decode::decode(&mut &target[..]).map_err(|_| codec_error::<Ext>("PropertyOf<Ext>"))
+        Decode::decode(&mut &target[..])
+            .map_err(|_| codec_error::<Self::Address>("PropertyOf<Ext>"))
     }
 
     /// Decoded to Vec<Vec<u8>>
     fn bytes_to_bytes_array(target: &Vec<u8>) -> ExecResultT<Vec<Vec<u8>>, Self::Address> {
-        Decode::decode(&mut &target[..]).map_err(|_| codec_error::<Ext>("Vec<Vec<u8>>"))
+        Decode::decode(&mut &target[..]).map_err(|_| codec_error::<Self::Address>("Vec<Vec<u8>>"))
+    }
+
+    /// Decoded to String
+    fn bytes_to_bytes_string(target: &Vec<u8>) -> ExecResultT<String, Self::Address> {
+        Decode::decode(&mut &target[..]).map_err(|_| codec_error::<Self::Address>("String"))
     }
 
     fn prefix_label(source: &Vec<u8>) -> Vec<u8> {

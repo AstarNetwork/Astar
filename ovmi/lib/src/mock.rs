@@ -310,6 +310,9 @@ impl ExternalCall for MockExternalCall {
     fn ext_is_decided(&self, property: &PropertyOf<Self>) -> bool {
         true
     }
+    fn ext_is_decided_by_id(&self, id: Self::Hash) -> bool {
+        true
+    }
     fn ext_get_property_id(&self, property: &PropertyOf<Self>) -> Self::Hash {
         Self::hash_of(property)
     }

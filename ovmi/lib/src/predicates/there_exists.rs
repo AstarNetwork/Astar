@@ -21,8 +21,7 @@ impl<'a, Ext: ExternalCall> ThereExistsPredicate<'a, Ext> {
                 return Ok(quantified.clone());
             }
         }
-        let mut property: Property<AddressOf<Ext>> = Decode::decode(&mut &property_bytes[..])
-            .map_err(|_| codec_error::<Ext>("PropertyOf<Ext>"))?;
+        let mut property: Property<AddressOf<Ext>> = Ext::bytes_to_property(&property_bytes)?;
         if property.predicate_address == Ext::not_address() {
             require!(property.inputs.len() > 0);
             property.inputs[0] =
@@ -98,8 +97,7 @@ impl<'a, Ext: ExternalCall> DecidablePredicateInterface<AddressOf<Ext>>
         require!(inputs.len() > 2);
         require!(witness.len() > 0);
         let property_bytes = self.replace_variable(&inputs[2], &inputs[1], &witness[0])?;
-        let property: Property<AddressOf<Ext>> = Decode::decode(&mut &property_bytes[..])
-            .map_err(|_| codec_error::<Ext>("PropertyOf<Ext>"))?;
+        let property: Property<AddressOf<Ext>> = Ext::bytes_to_property(&property_bytes)?;
         self.ext.ext_call(
             &property.predicate_address,
             PredicateCallInputs::DecidablePredicate(
