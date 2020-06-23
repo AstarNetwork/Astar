@@ -560,42 +560,47 @@ impl<Ext: ExternalCall> CompiledExecutable<'_, Ext> {
         input_property: &Vec<PropertyOf<Ext>>,
         input_property_list_child_list: &Vec<BTreeMap<i8, PropertyOf<Ext>>>,
     ) -> ExecResultTOf<PropertyOf<Ext>, Ext> {
-        let inputs = inter.inputs.iter().map(|item| {
-            if let AtomicPropositionOrPlaceholder::AtomicProposition(item) = &item {
-                if let PredicateCall::CompiledPredicateCall(predicate) = &item.predicate {
-                    // not (compiled predicate)
-                    let not_inputs = vec![self
-                        .construct_property(
+        let inputs = inter
+            .inputs
+            .iter()
+            .map(|item| {
+                if let AtomicPropositionOrPlaceholder::AtomicProposition(item) = &item {
+                    if let PredicateCall::CompiledPredicateCall(predicate) = &item.predicate {
+                        // not (compiled predicate)
+                        let not_inputs = vec![self
+                            .construct_property(
+                                item,
+                                false,
+                                inputs,
+                                challenge_inputs,
+                                input_property,
+                                input_property_list_child_list,
+                            )?
+                            .encode()];
+                        return Ok(Property {
+                            predicate_address: Ext::not_address(),
+                            inputs: not_inputs,
+                        }.encode());
+                    } else {
+                        // The valid challenge of "p1 ∨ p2" is "¬(p1) ∧ ¬(p2)".
+                        // If p1 is "¬(p1_1)", the valid challenge is "p1_1 ∧ ¬(p2)",
+                        //   then returning getChild of "¬(p1_1)" here.
+                        let child_inputs = self.construct_inputs(
                             item,
-                            false,
+                            &challenge_inputs[0],
                             inputs,
-                            challenge_inputs,
                             input_property,
                             input_property_list_child_list,
-                        )?
-                        .encode()];
-                    return Ok(Property {
-                        predicate_address: Ext::not_address(),
-                        inputs: not_inputs,
-                    });
-                } else {
-                    // The valid challenge of "p1 ∨ p2" is "¬(p1) ∧ ¬(p2)".
-                    // If p1 is "¬(p1_1)", the valid challenge is "p1_1 ∧ ¬(p2)",
-                    //   then returning getChild of "¬(p1_1)" here.
-                    let child_inputs = self.construct_inputs(
-                        item,
-                        &challenge_inputs[0],
-                        inputs,
-                        input_property,
-                        input_property_list_child_list,
-                    )?;
-                    return Ok(self.get_child(child_inputs, challenge_inputs.clone())?);
+                        )?;
+                        return Ok(self.get_child(child_inputs, challenge_inputs.clone())?);
+                    }
                 }
-            }
-            Err(ExecError::Unexpected {
-                msg: "get_child_or must be all inter.inputs AtomicProposition.",
+                Err(ExecError::Unexpected {
+                    msg: "get_child_or must be all inter.inputs AtomicProposition.",
+                })
             })
-        })?;
+            .map(|res| res?)
+            .collect::<Vec<Vec<u8>>>();
         Ok(Property {
             predicate_address: Ext::and_address(),
             inputs: inputs,
@@ -692,13 +697,13 @@ impl<Ext: ExternalCall> CompiledExecutable<'_, Ext> {
     ) -> ExecResultTOf<Vec<u8>, Ext> {
         match compiled_input {
             CompiledInput::ConstantInput(inp) => Ok(inp.name.encode()),
-            CompiledInput::LabelInput(inp) => Ok(Self::prefix_label(
-                self.bytes_inputs(self.get_bytes_variable(&inp.label)),
-            )),
+            CompiledInput::LabelInput(inp) => {
+                Ok(Self::prefix_label(self.get_bytes_variable(&inp.label)))
+            }
             CompiledInput::NormalInput(inp) => {
                 if inp.children.len() == 1 {
-                    require!(input_property.len() > inp.input_index);
-                    let input_property_input = input_property[inp.input_index];
+                    require!(input_property.len() > inp.input_index as usize);
+                    let input_property_input = &input_property[inp.input_index as usize];
                     if inp.children[0] >= 0 {
                         require!(input_property_input.len() > inp.children[0]);
                         Ok(input_property_input.inputs[inp.children[0]])
@@ -707,8 +712,8 @@ impl<Ext: ExternalCall> CompiledExecutable<'_, Ext> {
                     }
                 } else if inp.children.len() == 2 {
                     require!(input_property_list_child_list.len() > inp.input_index);
-                    let input_child_list = input_property_list_child_list[inp.input_index]
-                        .get(inp.children[0])
+                    let input_child_list = input_property_list_child_list[inp.input_index as usize]
+                        .get(&inp.children[0])
                         .ok_or(ExecError::Require {
                             msg: "invalid index children[0]",
                         })?;
@@ -818,10 +823,7 @@ impl<Ext: ExternalCall> CompiledExecutable<'_, Ext> {
     }
 
     fn get_bytes_variable(&self, key: &String) -> ExecResultTOf<Vec<u8>, Ext> {
-        if let Some(ret) = self
-            .bytes_inputs
-            .get(Ext::Hashing::hash(&mut &key.encode()[..]))
-        {
+        if let Some(ret) = self.bytes_inputs.get(Ext::hash_of(&key.encode())) {
             Ok(ret.clone())
         }
         Err(ExecError::Require {
@@ -830,10 +832,7 @@ impl<Ext: ExternalCall> CompiledExecutable<'_, Ext> {
     }
 
     fn get_address_variable(&self, key: &String) -> ExecResultTOf<AddressOf<Ext>, Ext> {
-        if let Some(ret) = self
-            .address_inputs
-            .get(Ext::Hashing::hash(&mut &key.encode()[..]))
-        {
+        if let Some(ret) = self.address_inputs.get(Ext::hash_of(&key.encode())) {
             Ok(ret.clone())
         }
         Err(ExecError::Require {
