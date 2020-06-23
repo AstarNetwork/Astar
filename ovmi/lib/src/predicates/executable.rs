@@ -580,7 +580,8 @@ impl<Ext: ExternalCall> CompiledExecutable<'_, Ext> {
                         return Ok(Property {
                             predicate_address: Ext::not_address(),
                             inputs: not_inputs,
-                        }.encode());
+                        }
+                        .encode());
                     } else {
                         // The valid challenge of "p1 ∨ p2" is "¬(p1) ∧ ¬(p2)".
                         // If p1 is "¬(p1_1)", the valid challenge is "p1_1 ∧ ¬(p2)",
@@ -592,15 +593,16 @@ impl<Ext: ExternalCall> CompiledExecutable<'_, Ext> {
                             input_property,
                             input_property_list_child_list,
                         )?;
-                        return Ok(self.get_child(child_inputs, challenge_inputs.clone())?);
+                        return Ok(self
+                            .get_child(child_inputs, challenge_inputs.clone())?
+                            .encode());
                     }
                 }
                 Err(ExecError::Unexpected {
                     msg: "get_child_or must be all inter.inputs AtomicProposition.",
                 })
             })
-            .map(|res| res?)
-            .collect::<Vec<Vec<u8>>>();
+            .collect::<Result<Vec<Vec<u8>>, _>>()?;
         Ok(Property {
             predicate_address: Ext::and_address(),
             inputs: inputs,
@@ -633,15 +635,16 @@ impl<Ext: ExternalCall> CompiledExecutable<'_, Ext> {
             .property_inputs
             .iter()
             .map(|property_input| {
-                Ext::bytes_to_property(&inputs[(property_input.input_index - 1) as usize])?
+                Ext::bytes_to_property(&inputs[(property_input.input_index - 1) as usize])
             })
-            .collect::<Vec<PropertyOf<Ext>>>())
+            .collect::<Result<Vec<PropertyOf<Ext>>, _>>()?)
     }
 
     fn get_input_property_list_child_list(
         inter: &IntermediateCompiledPredicate,
         inputs: &Vec<Vec<u8>>,
     ) -> ExecResultTOf<Vec<BTreeMap<i8, PropertyOf<Ext>>>, Ext> {
+        //TODO: fixkoko
         Ok(inter
             .property_inputs
             .iter()
@@ -649,19 +652,19 @@ impl<Ext: ExternalCall> CompiledExecutable<'_, Ext> {
                 let mut ret = BTreeMap::new();
                 if property_input.children.len() > 0 {
                     require!(
-                        property_input[property_input.input_index as usize].inputs
+                        inter.property_inputs[property_input.input_index as usize].inputs
                             > property_input.children[0]
                     );
                     ret.insert(
-                        property_input.children[0],
-                        property_input[property_input.input_index as usize].inputs
-                            [property_input.children[0]],
+                        property_input.children[0].clone(),
+                        inter.property_inputs[property_input.input_index as usize].inputs
+                            [property_input.children[0]]
+                            .clone(),
                     );
                 }
                 Ok(ret)
             })
-            .map(|res| res?)
-            .collect::<Vec<BTreeMap<i8, PropertyOf<Ext>>>>())
+            .collect::<Result<Vec<BTreeMap<i8, PropertyOf<Ext>>>, _>>()?)
     }
 
     fn construct_inputs(
@@ -682,7 +685,7 @@ impl<Ext: ExternalCall> CompiledExecutable<'_, Ext> {
                     inputs,
                     input_property,
                     input_property_list_child_list,
-                )?
+                )
             })
             .collect()
     }
