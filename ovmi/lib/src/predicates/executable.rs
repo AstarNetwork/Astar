@@ -97,7 +97,7 @@ impl<Ext: ExternalCall> CompiledExecutable<'_, Ext> {
     ) -> ExecResult<AddressOf<Ext>> {
         let input_property_list = Self::get_input_property_list(inter, inputs)?;
         let input_property_list_child_list =
-            Self::get_input_property_list_child_list(inter, inputs)?;
+            Self::get_input_property_list_child_list(inter, &input_property_list)?;
 
         match &inter.connective {
             LogicalConnective::And => self.decide_and(
@@ -326,7 +326,7 @@ impl<Ext: ExternalCall> CompiledExecutable<'_, Ext> {
     ) -> ExecResultTOf<PropertyOf<Ext>, Ext> {
         let input_property_list = Self::get_input_property_list(inter, inputs)?;
         let input_property_list_child_list =
-            Self::get_input_property_list_child_list(inter, inputs)?;
+            Self::get_input_property_list_child_list(inter, &input_property_list)?;
 
         match &inter.connective {
             LogicalConnective::And => self.get_child_and(
@@ -642,29 +642,31 @@ impl<Ext: ExternalCall> CompiledExecutable<'_, Ext> {
 
     fn get_input_property_list_child_list(
         inter: &IntermediateCompiledPredicate,
-        inputs: &Vec<Vec<u8>>,
+        input_property: &Vec<PropertyOf<Ext>>,
     ) -> ExecResultTOf<Vec<BTreeMap<i8, PropertyOf<Ext>>>, Ext> {
-        //TODO: fixkoko
-        Ok(inter
+        inter
             .property_inputs
             .iter()
             .map(|property_input| {
                 let mut ret = BTreeMap::new();
                 if property_input.children.len() > 0 {
                     require!(
-                        inter.property_inputs[property_input.input_index as usize].inputs
-                            > property_input.children[0]
+                        input_property[property_input.input_index as usize]
+                            .inputs
+                            .len()
+                            > property_input.children[0] as usize
                     );
                     ret.insert(
                         property_input.children[0].clone(),
-                        inter.property_inputs[property_input.input_index as usize].inputs
-                            [property_input.children[0]]
-                            .clone(),
+                        Ext::bytes_to_property(
+                            &input_property[property_input.input_index as usize].inputs
+                                [property_input.children[0] as usize],
+                        )?,
                     );
                 }
                 Ok(ret)
             })
-            .collect::<Result<Vec<BTreeMap<i8, PropertyOf<Ext>>>, _>>()?)
+            .collect::<Result<Vec<BTreeMap<i8, PropertyOf<Ext>>>, _>>()
     }
 
     fn construct_inputs(
@@ -701,36 +703,36 @@ impl<Ext: ExternalCall> CompiledExecutable<'_, Ext> {
         match compiled_input {
             CompiledInput::ConstantInput(inp) => Ok(inp.name.encode()),
             CompiledInput::LabelInput(inp) => {
-                Ok(Self::prefix_label(self.get_bytes_variable(&inp.label)))
+                Ok(Ext::prefix_label(&self.get_bytes_variable(&inp.label)?))
             }
             CompiledInput::NormalInput(inp) => {
                 if inp.children.len() == 1 {
                     require!(input_property.len() > inp.input_index as usize);
                     let input_property_input = &input_property[inp.input_index as usize];
                     if inp.children[0] >= 0 {
-                        require!(input_property_input.len() > inp.children[0]);
-                        Ok(input_property_input.inputs[inp.children[0]])
+                        require!(input_property_input.inputs.len() > inp.children[0] as usize);
+                        return Ok(input_property_input.inputs[inp.children[0] as usize].clone());
                     } else {
-                        Ok(input_property_input.predicate_address.encode())
+                        return Ok(input_property_input.predicate_address.encode());
                     }
                 } else if inp.children.len() == 2 {
-                    require!(input_property_list_child_list.len() > inp.input_index);
+                    require!(input_property_list_child_list.len() > inp.input_index as usize);
                     let input_child_list = input_property_list_child_list[inp.input_index as usize]
                         .get(&inp.children[0])
                         .ok_or(ExecError::Require {
                             msg: "invalid index children[0]",
                         })?;
                     if inp.children[1] >= 0 {
-                        Ok(input_child_list[inp.children[1]])
+                        return Ok(input_child_list.inputs[inp.children[1] as usize].clone());
                     } else {
-                        Ok(input_child_list.predicate_address.encode())
+                        return Ok(input_child_list.predicate_address.encode());
                     }
                 }
-                require!(inputs.len() > inp.input_index - 1);
-                Ok(inputs[inp.input_index - 1])
+                require!(inputs.len() > (inp.input_index - 1) as usize);
+                Ok(inputs[(inp.input_index - 1) as usize].clone())
             }
             CompiledInput::VariableInput(_) => Ok(witness.clone()),
-            CompiledInput::SelfInput(_) => Ok(self.ext_address().encode()),
+            CompiledInput::SelfInput(_) => Ok(self.ext.ext_address().encode()),
             _ => Err(ExecError::Unexpected {
                 msg: "error unknown input type",
             }),
@@ -748,11 +750,11 @@ impl<Ext: ExternalCall> CompiledExecutable<'_, Ext> {
     ) -> ExecResultTOf<PropertyOf<Ext>, Ext> {
         match &property.predicate {
             PredicateCall::InputPredicateCall(call) => {
-                require!(inputs.len() > call.source.input_index - 1);
+                require!(inputs.len() > (call.source.input_index - 1) as usize);
                 if property.inputs.len() == 0 {
                     return Ext::bytes_to_property(&inputs[(call.source.input_index - 1) as usize]);
                 }
-                require!(inputs.len() > call.source.input_index - 1);
+                require!(inputs.len() > (call.source.input_index - 1) as usize);
                 require!(challenge_inputs.len() > 0);
                 let input_predicate_property: PropertyOf<Ext> =
                     Ext::bytes_to_property(&inputs[(call.source.input_index - 1) as usize])?;
@@ -778,7 +780,9 @@ impl<Ext: ExternalCall> CompiledExecutable<'_, Ext> {
                 let input_predicate_property: PropertyOf<Ext> =
                     Ext::bytes_to_property(&challenge_inputs[0])?;
                 let mut child_inputs_of = input_predicate_property.inputs;
-                child_inputs_of.push(inputs[property.inputs[0].input_index - 1]);
+                let property_inputs_input_index =
+                    self.get_input_index_from_atomic_proposition(&property)?;
+                child_inputs_of.push(inputs[property_inputs_input_index - 1]);
                 Ok(Property {
                     predicate_address: input_predicate_property.predicate_address,
                     inputs: child_inputs_of,
@@ -797,7 +801,7 @@ impl<Ext: ExternalCall> CompiledExecutable<'_, Ext> {
                     input_property,
                     input_property_list_child_list,
                 )?;
-                if property.is_compiled {
+                if property.is_compiled.unwrap_or(false) {
                     return Ok(Property {
                         predicate_address: self.ext.ext_address(),
                         inputs: child_inputs_of,
@@ -858,6 +862,17 @@ impl<Ext: ExternalCall> CompiledExecutable<'_, Ext> {
             PredicateCall::InputPredicateCall(predicate) => Ok(predicate.source.clone()),
             _ => Err(ExecError::Unexpected {
                 msg: "The intermediate must have source as NormalInput.",
+            }),
+        }
+    }
+
+    fn get_input_index_from_atomic_proposition(
+        property: &AtomicProposition,
+    ) -> ExecResultTOf<u8, Ext> {
+        match property {
+            CompiledInput::NormalInput(normal) => Ok(normal.input_index),
+            _ => Err(ExecError::Unexpected {
+                msg: "The atomic proposition must have NormalInput and input_index.",
             }),
         }
     }
