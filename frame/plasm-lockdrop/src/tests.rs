@@ -600,3 +600,28 @@ fn simple_fail_lockdrop_request() {
         );
     })
 }
+
+#[test]
+fn lockdrop_request_hash() {
+    let transaction_hash =
+        hex!["6c4364b2f5a847ffc69f787a0894191b75aa278a95020f02e4753c76119324e0"].into();
+    let public_key = ecdsa::Public::from_raw(hex![
+        "039360c9cbbede9ee771a55581d4a53cbcc4640953169549993a3b0e6ec7984061"
+    ]);
+    let params = Lockdrop::Ethereum {
+        transaction_hash,
+        public_key,
+        duration: 2592000,
+        value: 100000000000000000,
+    };
+    let claim_id = hex!["a94710e9db798a7d1e977b9f748ae802031eee2400a77600c526158892cd93d8"].into();
+    assert_eq!(BlakeTwo256::hash_of(&params), claim_id);
+}
+
+#[test]
+fn lockdrop_request_pow() {
+    let nonce = hex!["30df083c7f59ea11a39bb341d37bd26d126d8522d408ebc2133bf7c7dc9d0c38"];
+    let claim_id = hex!["a94710e9db798a7d1e977b9f748ae802031eee2400a77600c526158892cd93d8"];
+    let pow_byte = BlakeTwo256::hash_of(&(claim_id, nonce)).as_bytes()[0];
+    assert_eq!(pow_byte, 0);
+}

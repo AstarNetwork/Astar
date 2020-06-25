@@ -59,9 +59,6 @@ mod mock;
 #[cfg(test)]
 mod tests;
 
-/// Claim request PoW difficulty mask.
-const POW_MASK: u8 = 0b0000_1111;
-
 pub type BalanceOf<T> =
     <<T as Trait>::Currency as Currency<<T as frame_system::Trait>::AccountId>>::Balance;
 
@@ -621,7 +618,7 @@ impl<T: Trait> frame_support::unsigned::ValidateUnsigned for Module<T> {
 
                 // Simple proof of work
                 let pow_byte = BlakeTwo256::hash_of(&(claim_id, nonce)).as_bytes()[0];
-                if pow_byte & POW_MASK > 0 {
+                if pow_byte > 0 {
                     return InvalidTransaction::Call.into();
                 }
 
