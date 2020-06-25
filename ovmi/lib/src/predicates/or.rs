@@ -47,18 +47,20 @@ impl<'a, Ext: ExternalCall> DecidablePredicateInterface<AddressOf<Ext>> for OrPr
         let property_bytes = inputs[index as usize].clone();
         let property: Property<AddressOf<Ext>> = Ext::bytes_to_property(&property_bytes)?;
 
-        self.ext.ext_call(
-            &property.predicate_address,
-            PredicateCallInputs::DecidablePredicate(
-                DecidablePredicateCallInputs::DecideWithWitness {
-                    inputs: property.inputs,
-                    witness: witness
-                        .as_slice()
-                        .get(1..)
-                        .unwrap_or(vec![].as_slice())
-                        .to_vec(),
-                },
-            ),
+        Ext::bytes_to_bool(
+            &self.ext.ext_call(
+                &property.predicate_address,
+                PredicateCallInputs::DecidablePredicate(
+                    DecidablePredicateCallInputs::DecideWithWitness {
+                        inputs: property.inputs,
+                        witness: witness
+                            .as_slice()
+                            .get(1..)
+                            .unwrap_or(vec![].as_slice())
+                            .to_vec(),
+                    },
+                ),
+            )?,
         )
     }
 }

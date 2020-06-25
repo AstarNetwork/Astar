@@ -336,6 +336,10 @@ impl<Address> fmt::Display for CompiledPredicateCallInputs<Address> {
                 inputs: _,
                 witness: _,
             } => "DecideWithWitness",
+            CompiledPredicateCallInputs::GetChild {
+                inputs: _,
+                challenge_input: _,
+            } => "GetChild",
         };
         write!(f, "{}", state)
     }

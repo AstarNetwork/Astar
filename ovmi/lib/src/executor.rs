@@ -252,12 +252,13 @@ pub trait ExternalCall {
         vec![vec![prefix], source.clone()].concat()
     }
 }
+
 pub trait OvmExecutor<P> {
     type ExtCall: ExternalCall;
     fn execute(
         executable: P,
         call_method: PredicateCallInputs<AddressOf<Self::ExtCall>>,
-    ) -> ExecResult<AddressOf<Self::ExtCall>>;
+    ) -> ExecResultT<Vec<u8>, AddressOf<Self::ExtCall>>;
 }
 
 pub struct BaseAtomicExecutor<P, Ext> {
@@ -273,19 +274,19 @@ where
     fn execute(
         predicate: P,
         call_method: PredicateCallInputs<AddressOf<Ext>>,
-    ) -> ExecResult<AddressOf<Ext>> {
+    ) -> ExecResultT<Vec<u8>, Ext::Address> {
         match call_method {
             PredicateCallInputs::BaseAtomicPredicate(atomic) => {
                 match atomic {
                     BaseAtomicPredicateCallInputs::Decide { inputs } => {
-                        return predicate.decide(inputs);
+                        return Ok(predicate.decide(inputs)?.encode());
                     }
                     BaseAtomicPredicateCallInputs::DecideTrue { inputs } => {
                         predicate.decide_true(inputs)?;
-                        return Ok(true);
+                        return Ok(true.encode());
                     }
                     BaseAtomicPredicateCallInputs::DecideWithWitness { inputs, witness } => {
-                        return predicate.decide_with_witness(inputs, witness);
+                        return Ok(predicate.decide_with_witness(inputs, witness)?.encode());
                     }
                 };
             }
@@ -310,7 +311,7 @@ where
     fn execute(
         predicate: P,
         call_method: PredicateCallInputs<AddressOf<Ext>>,
-    ) -> ExecResult<AddressOf<Ext>> {
+    ) -> ExecResultT<Vec<u8>, Ext::Address> {
         match call_method {
             PredicateCallInputs::LogicalConnective(atomic) => {
                 match atomic {
@@ -318,7 +319,11 @@ where
                         inputs,
                         challenge_inputs,
                         challenge,
-                    } => return predicate.is_valid_challenge(inputs, challenge_inputs, challenge),
+                    } => {
+                        return Ok(predicate
+                            .is_valid_challenge(inputs, challenge_inputs, challenge)?
+                            .encode())
+                    }
                 };
             }
             other => Err(ExecError::CallMethod {
@@ -342,12 +347,12 @@ where
     fn execute(
         predicate: P,
         call_method: PredicateCallInputs<AddressOf<Ext>>,
-    ) -> ExecResult<AddressOf<Ext>> {
+    ) -> ExecResultT<Vec<u8>, Ext::Address> {
         match call_method {
             PredicateCallInputs::DecidablePredicate(atomic) => {
                 match atomic {
                     DecidablePredicateCallInputs::DecideWithWitness { inputs, witness } => {
-                        return predicate.decide_with_witness(inputs, witness);
+                        return Ok(predicate.decide_with_witness(inputs, witness)?.encode());
                     }
                 };
             }
@@ -372,7 +377,7 @@ where
     fn execute(
         predicate: P,
         call_method: PredicateCallInputs<AddressOf<Ext>>,
-    ) -> ExecResult<AddressOf<Ext>> {
+    ) -> ExecResultT<Vec<u8>, Ext::Address> {
         match call_method {
             PredicateCallInputs::CompiledPredicate(atomic) => {
                 match atomic {
@@ -381,16 +386,24 @@ where
                         challenge_inputs,
                         challenge,
                     } => {
-                        return predicate.is_valid_challenge(inputs, challenge_inputs, challenge);
+                        return Ok(predicate
+                            .is_valid_challenge(inputs, challenge_inputs, challenge)?
+                            .encode());
                     }
                     CompiledPredicateCallInputs::Decide { inputs, witness } => {
-                        return predicate.decide(inputs, witness);
+                        return Ok(predicate.decide(inputs, witness)?.encode());
                     }
                     CompiledPredicateCallInputs::DecideTrue { inputs, witness } => {
-                        return predicate.decide_true(inputs, witness);
+                        return Ok(predicate.decide_true(inputs, witness)?.encode());
                     }
                     CompiledPredicateCallInputs::DecideWithWitness { inputs, witness } => {
-                        return predicate.decide_with_witness(inputs, witness)
+                        return Ok(predicate.decide_with_witness(inputs, witness)?.encode());
+                    }
+                    CompiledPredicateCallInputs::GetChild {
+                        inputs,
+                        challenge_input,
+                    } => {
+                        return Ok(predicate.get_child(inputs, challenge_input)?.encode());
                     }
                 };
             }

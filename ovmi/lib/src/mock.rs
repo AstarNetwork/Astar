@@ -183,7 +183,7 @@ impl MockExternalCall {
         &self,
         to: &Address,
         input_data: PredicateCallInputs<Address>,
-    ) -> ExecResult<Address> {
+    ) -> ExecResultT<Vec<u8>, Self::Address> {
         match &input_data {
             PredicateCallInputs::DecidablePredicate(_) => {
                 let p =

@@ -215,7 +215,7 @@ impl<Ext: ExternalCall> CompiledExecutable<'_, Ext> {
                             input_property_list_child_list,
                         )?;
                         require!(
-                            self.decide(child_inputs, Ext::sub_array(witness, 1, witness.len()))
+                            self.decide(child_inputs, Ext::sub_array(witness, 1, witness.len()))?
                         );
                     } else {
                         return self.decide_property(
@@ -781,8 +781,8 @@ impl<Ext: ExternalCall> CompiledExecutable<'_, Ext> {
                     Ext::bytes_to_property(&challenge_inputs[0])?;
                 let mut child_inputs_of = input_predicate_property.inputs;
                 let property_inputs_input_index =
-                    self.get_input_index_from_atomic_proposition(&property)?;
-                child_inputs_of.push(inputs[property_inputs_input_index - 1]);
+                    Self::get_input_index_from_atomic_proposition(&property.inputs[0])?;
+                child_inputs_of.push(inputs[(property_inputs_input_index - 1) as usize].clone());
                 Ok(Property {
                     predicate_address: input_predicate_property.predicate_address,
                     inputs: child_inputs_of,
@@ -790,13 +790,13 @@ impl<Ext: ExternalCall> CompiledExecutable<'_, Ext> {
             }
             call => {
                 let witness = if free_variable {
-                    &self.get_bytes_variable(&"freeVariable".to_string())?
+                    self.get_bytes_variable(&"freeVariable".to_string())?
                 } else {
-                    &challenge_inputs[0]
+                    challenge_inputs[0].clone()
                 };
                 let child_inputs_of = self.construct_inputs(
                     property,
-                    witness,
+                    &witness,
                     inputs,
                     input_property,
                     input_property_list_child_list,
@@ -807,20 +807,8 @@ impl<Ext: ExternalCall> CompiledExecutable<'_, Ext> {
                         inputs: child_inputs_of,
                     });
                 }
-                let predicate_address = match property {
-                    PredicateCall::AtomicPredicateCall(call) => {
-                        self.get_bytes_variable(&call.source)
-                    }
-                    PredicateCall::VariablePredicateCall(call) => {
-                        self.get_bytes_variable(&call.source)
-                    }
-                    PredicateCall::CompiledPredicateCall(call) => {
-                        self.get_bytes_variable(&call.source)
-                    }
-                    _ => Err(ExecError::Unexpected {
-                        msg: "unexpected predicate address call in construct_property.",
-                    }),
-                }?;
+                let predicate_address = self
+                    .get_address_variable(&Self::get_source_str_from_inter(&property.predicate)?)?;
                 Ok(PropertyOf::<Ext> {
                     predicate_address,
                     inputs: child_inputs_of,
@@ -830,8 +818,8 @@ impl<Ext: ExternalCall> CompiledExecutable<'_, Ext> {
     }
 
     fn get_bytes_variable(&self, key: &String) -> ExecResultTOf<Vec<u8>, Ext> {
-        if let Some(ret) = self.bytes_inputs.get(Ext::hash_of(&key.encode())) {
-            Ok(ret.clone())
+        if let Some(ret) = self.bytes_inputs.get(&Ext::hash_of(&key.encode())) {
+            return Ok(ret.clone());
         }
         Err(ExecError::Require {
             msg: "invalid bytes variable name.",
@@ -839,8 +827,8 @@ impl<Ext: ExternalCall> CompiledExecutable<'_, Ext> {
     }
 
     fn get_address_variable(&self, key: &String) -> ExecResultTOf<AddressOf<Ext>, Ext> {
-        if let Some(ret) = self.address_inputs.get(Ext::hash_of(&key.encode())) {
-            Ok(ret.clone())
+        if let Some(ret) = self.address_inputs.get(&Ext::hash_of(&key.encode())) {
+            return Ok(ret.clone());
         }
         Err(ExecError::Require {
             msg: "invalid address variable name.",
@@ -867,9 +855,9 @@ impl<Ext: ExternalCall> CompiledExecutable<'_, Ext> {
     }
 
     fn get_input_index_from_atomic_proposition(
-        property: &AtomicProposition,
+        compiled_input: &CompiledInput,
     ) -> ExecResultTOf<u8, Ext> {
-        match property {
+        match compiled_input {
             CompiledInput::NormalInput(normal) => Ok(normal.input_index),
             _ => Err(ExecError::Unexpected {
                 msg: "The atomic proposition must have NormalInput and input_index.",

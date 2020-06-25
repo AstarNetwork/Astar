@@ -98,18 +98,20 @@ impl<'a, Ext: ExternalCall> DecidablePredicateInterface<AddressOf<Ext>>
         require!(witness.len() > 0);
         let property_bytes = self.replace_variable(&inputs[2], &inputs[1], &witness[0])?;
         let property: Property<AddressOf<Ext>> = Ext::bytes_to_property(&property_bytes)?;
-        self.ext.ext_call(
-            &property.predicate_address,
-            PredicateCallInputs::DecidablePredicate(
-                DecidablePredicateCallInputs::DecideWithWitness {
-                    inputs: property.inputs,
-                    witness: witness
-                        .as_slice()
-                        .get(1..)
-                        .unwrap_or(vec![].as_slice())
-                        .to_vec(),
-                },
-            ),
-        )
+        Ok(Ext::bytes_to_bool(
+            &self.ext.ext_call(
+                &property.predicate_address,
+                PredicateCallInputs::DecidablePredicate(
+                    DecidablePredicateCallInputs::DecideWithWitness {
+                        inputs: property.inputs,
+                        witness: witness
+                            .as_slice()
+                            .get(1..)
+                            .unwrap_or(vec![].as_slice())
+                            .to_vec(),
+                    },
+                ),
+            )?,
+        )?)
     }
 }
