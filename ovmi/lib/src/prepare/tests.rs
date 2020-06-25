@@ -3,7 +3,7 @@ use super::super::*;
 use crate::compiled_predicates::*;
 use codec::{Decode, Encode};
 use std::fs::File;
-use std::io::{BufReader, Read};
+use std::io::Read;
 
 pub fn load_predicate_json(filename: &str) -> String {
     let path = ["tests/", filename].concat();

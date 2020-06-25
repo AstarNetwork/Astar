@@ -162,7 +162,7 @@ impl MockExternalCall {
 
     // test compiled_parts_from_address
     pub fn compiled_parts_from_address(
-        address: &Address,
+        _address: &Address,
     ) -> (
         CompiledPredicate,
         Address,
@@ -183,7 +183,7 @@ impl MockExternalCall {
         &self,
         to: &Address,
         input_data: PredicateCallInputs<Address>,
-    ) -> ExecResultT<Vec<u8>, Self::Address> {
+    ) -> ExecResultT<Vec<u8>, Address> {
         match &input_data {
             PredicateCallInputs::DecidablePredicate(_) => {
                 let p =
@@ -267,7 +267,7 @@ impl ExternalCall for MockExternalCall {
         &self,
         to: &Self::Address,
         input_data: PredicateCallInputs<Self::Address>,
-    ) -> ExecResult<Address> {
+    ) -> ExecResultT<Vec<u8>, Address> {
         self.call_execute(to, input_data)
     }
 
@@ -298,19 +298,19 @@ impl ExternalCall for MockExternalCall {
 
     fn ext_verify_inclusion_with_root(
         &self,
-        leaf: Self::Hash,
-        token_address: Self::Address,
-        range: &[u8],
-        inclusion_proof: &[u8],
-        root: &[u8],
+        _leaf: Self::Hash,
+        _token_address: Self::Address,
+        _range: &[u8],
+        _inclusion_proof: &[u8],
+        _root: &[u8],
     ) -> bool {
         true
     }
 
-    fn ext_is_decided(&self, property: &PropertyOf<Self>) -> bool {
+    fn ext_is_decided(&self, _property: &PropertyOf<Self>) -> bool {
         true
     }
-    fn ext_is_decided_by_id(&self, id: Self::Hash) -> bool {
+    fn ext_is_decided_by_id(&self, _id: Self::Hash) -> bool {
         true
     }
     fn ext_get_property_id(&self, property: &PropertyOf<Self>) -> Self::Hash {
@@ -318,8 +318,8 @@ impl ExternalCall for MockExternalCall {
     }
     fn ext_set_predicate_decision(
         &self,
-        game_id: Self::Hash,
-        decision: bool,
+        _game_id: Self::Hash,
+        _decision: bool,
     ) -> ExecResult<Self::Address> {
         Ok(true)
     }

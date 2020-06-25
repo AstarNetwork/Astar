@@ -2,12 +2,7 @@ use crate::executor::*;
 use crate::mock::*;
 use crate::predicates::*;
 use codec::Encode;
-use sp_core::{
-    crypto::{Pair, UncheckedInto},
-    ecdsa::Pair as ECDSAPair,
-    KeccakHasher,
-};
-use sp_runtime::traits::IdentifyAccount;
+use sp_core::{crypto::Pair, ecdsa::Pair as ECDSAPair, KeccakHasher};
 
 macro_rules! assert_require {
     ($res:expr, $msg:expr) => {
@@ -32,7 +27,9 @@ fn equal_predicate_decide_true() {
     // true case
     {
         let input_data = make_decide_true(vec![input0.clone(), input0.clone()]);
-        let res = ext.call_execute(&EQUAL_ADDRESS, input_data).unwrap();
+        let res =
+            MockExternalCall::bytes_to_bool(&ext.call_execute(&EQUAL_ADDRESS, input_data).unwrap())
+                .unwrap();
         assert!(res);
     }
 
@@ -53,7 +50,10 @@ fn is_less_than_predicate_decide_true() {
     // true case
     {
         let input_data = make_decide_true(vec![input0.clone(), input1.clone()]);
-        let res = ext.call_execute(&IS_LESS_ADDRESS, input_data).unwrap();
+        let res = MockExternalCall::bytes_to_bool(
+            &ext.call_execute(&IS_LESS_ADDRESS, input_data).unwrap(),
+        )
+        .unwrap();
         assert!(res);
     }
 
@@ -83,7 +83,10 @@ fn is_stored_decide_true() {
     // true case
     {
         let input_data = make_decide_true(vec![address_bytes.clone(), key.clone(), value.clone()]);
-        let res = ext.call_execute(&IS_STORED_ADDRESS, input_data).unwrap();
+        let res = MockExternalCall::bytes_to_bool(
+            &ext.call_execute(&IS_STORED_ADDRESS, input_data).unwrap(),
+        )
+        .unwrap();
         assert!(res);
     }
 
@@ -104,7 +107,7 @@ fn is_stored_decide_true() {
 
 #[test]
 fn is_valid_signature_decide_true() {
-    let mut ext = MockExternalCall::init();
+    let ext = MockExternalCall::init();
     let pair: ECDSAPair = ECDSAPair::from_seed(&[1; 32]);
     let miss_pair: ECDSAPair = ECDSAPair::from_seed(&[2; 32]);
     let address: Address = to_account(pair.public().as_ref());
@@ -129,9 +132,11 @@ fn is_valid_signature_decide_true() {
             address_bytes.clone(),
             verifier.clone(),
         ]);
-        let res = ext
-            .call_execute(&IS_VALID_SIGNATURE_ADDRESS, input_data)
-            .unwrap();
+        let res = MockExternalCall::bytes_to_bool(
+            &ext.call_execute(&IS_VALID_SIGNATURE_ADDRESS, input_data)
+                .unwrap(),
+        )
+        .unwrap();
         assert!(res);
     }
 
