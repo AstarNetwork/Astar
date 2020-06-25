@@ -1,6 +1,5 @@
 use crate::executor::*;
 use crate::predicates::*;
-use crate::Range;
 
 pub struct VerifyInclusionPredicate<'a, Ext: ExternalCall> {
     pub ext: &'a Ext,

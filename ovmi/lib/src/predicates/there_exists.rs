@@ -63,7 +63,7 @@ impl<'a, Ext: ExternalCall> LogicalConnectiveInterface<AddressOf<Ext>>
     fn is_valid_challenge(
         &self,
         inputs: Vec<Vec<u8>>,
-        challenge_inputs: Vec<Vec<u8>>,
+        _challenge_inputs: Vec<Vec<u8>>,
         challenge: Property<AddressOf<Ext>>,
     ) -> ExecResult<AddressOf<Ext>> {
         // challenge must be for(, , not(p))

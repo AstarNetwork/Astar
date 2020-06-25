@@ -15,7 +15,7 @@ pub fn compile_from_json(json: &str) -> Result<CompiledPredicate, serde_json::Er
 use crate::compiled_predicates::VarType;
 pub use errors::Error;
 
-pub fn validate(code: Vec<u8>) -> Result<(), Error> {
+pub fn validate(_code: Vec<u8>) -> Result<(), Error> {
     Ok(())
 }
 

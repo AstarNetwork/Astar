@@ -24,7 +24,7 @@ impl<Ext: ExternalCall> LogicalConnectiveInterface<AddressOf<Ext>> for AndPredic
     ) -> ExecResult<AddressOf<Ext>> {
         // challenge_input is index of child property
         require!((&challenge_inputs).len() > 0);
-        let index: usize = (Ext::bytes_to_u128(&challenge_inputs[0])? as usize);
+        let index = Ext::bytes_to_u128(&challenge_inputs[0])? as usize;
 
         // challenge should be not(p[index])
         // require!(_challenge.predicateAddress == not_predicateAddress);
