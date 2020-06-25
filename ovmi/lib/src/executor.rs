@@ -10,9 +10,7 @@ use snafu::Snafu;
 #[cfg_attr(feature = "std", derive(Debug))]
 pub enum ExecError<Address> {
     #[snafu(display("Require error: {}", msg))]
-    Require {
-        msg: &'static str,
-    },
+    Require { msg: &'static str },
     #[snafu(display(
         "Can not call method error: you call {}, expected {}",
         call_method,
@@ -23,34 +21,38 @@ pub enum ExecError<Address> {
         expected: &'static str,
     },
     #[snafu(display("Can not call address error."))]
-    CallAddress {
-        address: Address,
-    },
+    CallAddress { address: Address },
     #[snafu(display("Codec error: expected type name is {}", type_name))]
-    CodecError {
-        type_name: &'static str,
-    },
+    CodecError { type_name: &'static str },
     #[snafu(display("Unexpected error: {}", msg))]
-    Unexpected {
-        msg: &'static str,
-    },
+    Unexpected { msg: &'static str },
+    /// Unimplemented error.
     Unimplemented,
 }
 
+/// convert to error code from error tyoe.
 pub fn codec_error<Address>(expected_type_name: &'static str) -> ExecError<Address> {
     ExecError::CodecError {
         type_name: expected_type_name,
     }
 }
 
+/// Default ExecResult type bool.
 pub type ExecResult<Address> = core::result::Result<bool, ExecError<Address>>;
+/// Generic ExecResult type.
 pub type ExecResultT<T, Address> = core::result::Result<T, ExecError<Address>>;
+/// Generic ExecResult tyoe from Ext.
 pub type ExecResultTOf<T, Ext> = core::result::Result<T, ExecError<AddressOf<Ext>>>;
+/// Address type from external.
 pub type AddressOf<Ext> = <Ext as ExternalCall>::Address;
+/// Hash type from external.
 pub type HashOf<Ext> = <Ext as ExternalCall>::Hash;
+/// Hashing type from external.
 pub type HashingOf<Ext> = <Ext as ExternalCall>::Hashing;
+/// Property type from external.
 pub type PropertyOf<Ext> = Property<<Ext as ExternalCall>::Address>;
 
+/// Maybe Address defines the traits should be implemented.
 pub trait MaybeAddress: Codec + Debug + Clone + Eq + PartialEq + Default {}
 impl<T: Codec + Debug + Clone + Eq + PartialEq + Default> MaybeAddress for T {}
 
@@ -89,24 +91,38 @@ impl<
 }
 
 pub trait ExternalCall {
+    /// The address type of Plasma child chain (default: AccountId32)
     type Address: MaybeAddress;
+    /// The hash type of Plasma child chain (default: H256)
     type Hash: MaybeHash;
+    /// The hashing type of Plasma child chain (default: Keccak256)
     type Hashing: Hasher<Out = Self::Hash>;
 
     // relation const any atomic predicate address.
+    /// The address of not predicate address.
     fn not_address() -> Self::Address;
+    /// The address of and predicate address.
     fn and_address() -> Self::Address;
+    /// The address of or predicate address.
     fn or_address() -> Self::Address;
+    /// The address of for all predicate address.
     fn for_all_address() -> Self::Address;
+    /// The address of there exists predicate address.
     fn there_exists_address() -> Self::Address;
+    /// The address of equal predicate address.
     fn equal_address() -> Self::Address;
+    /// The address of is contained predicate address.
     fn is_contained_address() -> Self::Address;
+    /// The address of is less than  predicate address.
     fn is_less_address() -> Self::Address;
+    /// The address of is stored predicate address.
     fn is_stored_address() -> Self::Address;
+    /// The address of is valid signature predicate address.
     fn is_valid_signature_address() -> Self::Address;
+    /// The address of verify inclusion predicate address.
     fn verify_inclusion_address() -> Self::Address;
 
-    // relation const any signature algorithm.
+    /// relation const any signature algorithm.
     fn secp256k1() -> Self::Hash;
 
     /// Produce the hash of some codec-encodable value.
