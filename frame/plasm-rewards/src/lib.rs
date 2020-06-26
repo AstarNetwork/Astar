@@ -10,7 +10,7 @@
 //!
 //! The Plasm staking module puts together the management and compensation payment logic of the ERA.
 //! The Plasm Rewards module calls the Dapps Staking and Validator.
-//! It also allocates rewards to each module according to the [Plasm Token Ecosystem inflation model](https://docs.plasmnet.io/PlasmNetwork/TokenEcosystem.html).
+//! It also allocates rewards to each module according to the [Plasm Token Ecosystem inflation model](https://docs.plasmnet.io/learn/token-economy#inflation-model).
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use codec::{Decode, Encode};
