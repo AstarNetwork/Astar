@@ -187,6 +187,11 @@ fn is_valid_signature_decide_true() {
 }
 
 #[test]
+fn ownership_predicate_true() {
+
+}
+
+#[test]
 fn verify_inclusion_decide_true() {
     // tested in plasma module.
     // let mut ext = MockExternalCall::init();

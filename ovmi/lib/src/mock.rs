@@ -160,6 +160,13 @@ impl MockExternalCall {
         self.mock_stored.insert(address.clone(), s);
     }
 
+    // test deploy
+    pub fn deploy(
+        compiled_predicate: CompiledPredicate,
+    ) -> Address {
+
+    }
+
     // test compiled_parts_from_address
     pub fn compiled_parts_from_address(
         _address: &Address,
