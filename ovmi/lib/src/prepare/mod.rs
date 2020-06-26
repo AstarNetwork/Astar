@@ -2,6 +2,11 @@ use crate::executor::*;
 use crate::predicates::*;
 use crate::*;
 
+#[cfg(feature = "std")]
+use std::fs::File;
+#[cfg(feature = "std")]
+use std::io::Read;
+
 mod errors;
 
 #[cfg(test)]
@@ -10,6 +15,17 @@ mod tests;
 #[cfg(feature = "std")]
 pub fn compile_from_json(json: &str) -> Result<CompiledPredicate, serde_json::Error> {
     serde_json::from_str(json)
+}
+
+#[cfg(feature = "std")]
+pub fn load_predicate_json(filename: &str) -> String {
+    let path = ["tests/", filename].concat();
+    let mut file = File::open(path).expect("file laod error");
+    let mut predicate_json = String::new();
+    file.read_to_string(&mut predicate_json)
+        .expect("something went wrong reading the file");
+    println!("predicate json : {:?}", predicate_json);
+    predicate_json
 }
 
 use crate::compiled_predicates::VarType;

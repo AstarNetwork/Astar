@@ -1,6 +1,8 @@
 use crate::executor::*;
 use crate::mock::*;
 use crate::predicates::*;
+use crate::prepare::*;
+use alloc::collections::btree_map::BTreeMap;
 use codec::Encode;
 use sp_core::{crypto::Pair, ecdsa::Pair as ECDSAPair, KeccakHasher};
 
@@ -188,7 +190,17 @@ fn is_valid_signature_decide_true() {
 
 #[test]
 fn ownership_predicate_true() {
-
+    let mut ext = MockExternalCall::init();
+    let ownership_predicate_str = load_predicate_json("ownership.json");
+    let compiled_predicate = compile_from_json(ownership_predicate_str.as_str()).unwrap();
+    let address = ext.deploy(
+        compiled_predicate,
+        PAY_OUT_CONTRACT_ADDRESS.clone(),
+        BTreeMap::new(),
+        BTreeMap::new(),
+    );
+    println!("ownership address: {:?}", address);
+    assert!(false);
 }
 
 #[test]

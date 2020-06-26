@@ -21,8 +21,18 @@ use sp_runtime::{traits::IdentifyAccount, MultiSigner};
 
 pub type Address = AccountId32;
 pub type Hash = H256;
+
+#[derive(Clone, Eq, PartialEq, Encode, Decode, Hash)]
+struct StoredPredicate {
+    pub code: CompiledPredicate,
+    pub payout: Address,
+    address_inputs: BTreeMap<Hash, Address>,
+    bytes_inputs: BTreeMap<Hash, Address>,
+}
+
 pub struct MockExternalCall {
     mock_stored: BTreeMap<Address, BTreeMap<Vec<u8>, Vec<u8>>>,
+    mock_predicate: BTreeMap<Address, StoredPredicate>,
 }
 
 lazy_static! {
@@ -143,6 +153,7 @@ impl MockExternalCall {
     pub fn init() -> Self {
         MockExternalCall {
             mock_stored: BTreeMap::new(),
+            mock_predicate: BTreeMap::new(),
         }
     }
 
@@ -162,9 +173,22 @@ impl MockExternalCall {
 
     // test deploy
     pub fn deploy(
+        &mut self,
         compiled_predicate: CompiledPredicate,
+        payout: Address,
+        address_inputs: BTreeMap<Hash, Address>,
+        bytes_inputs: BTreeMap<Hash, Address>,
     ) -> Address {
-
+        let stored = StoredPredicate {
+            code: compiled_predicate,
+            payout,
+            address_inputs,
+            bytes_inputs,
+        };
+        let hash = Self::hash_of(&stored);
+        let address: Address = UncheckedFrom::unchecked_from(hash);
+        self.mock_predicate.insert(address.clone(), stored);
+        address
     }
 
     // test compiled_parts_from_address

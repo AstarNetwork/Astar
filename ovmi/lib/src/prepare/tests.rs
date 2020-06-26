@@ -1,20 +1,8 @@
 #![cfg(test)]
 use super::super::*;
+use super::load_predicate_json;
 use crate::compiled_predicates::*;
 use codec::{Decode, Encode};
-use std::fs::File;
-use std::io::Read;
-
-pub fn load_predicate_json(filename: &str) -> String {
-    let path = ["tests/", filename].concat();
-    let mut file = File::open(path).expect("file laod error");
-    let mut predicate_json = String::new();
-    file.read_to_string(&mut predicate_json)
-        // ファイルの読み込み中に問題がありました
-        .expect("something went wrong reading the file");
-    println!("predicate json : {:?}", predicate_json);
-    predicate_json
-}
 
 #[test]
 fn ownership_predicate_test() {
