@@ -148,6 +148,7 @@ macro_rules! new_full_start {
 macro_rules! new_full {
     ($config:expr, $with_startup_data: expr) => {{
         use sc_client_api::ExecutorProvider;
+        use sp_core::traits::BareCryptoStorePtr;
 
         let (role, force_authoring, name, disable_grandpa) = (
             $config.role.clone(),
@@ -168,7 +169,7 @@ macro_rules! new_full {
                     backend, provider,
                 )) as _)
             })?
-            .build()?;
+            .build_full()?;
 
         let (block_import, grandpa_link, babe_link) = import_setup.take().expect(
             "Link Half and Block Import are present for Full Services or setup failed before. qed",
@@ -215,7 +216,7 @@ macro_rules! new_full {
         // if the node isn't actively participating in consensus then it doesn't
         // need a keystore, regardless of which protocol we use below.
         let keystore = if role.is_authority() {
-            Some(service.keystore())
+            Some(service.keystore() as BareCryptoStorePtr)
         } else {
             None
         };
@@ -367,7 +368,7 @@ pub fn new_light(config: Configuration) -> Result<impl AbstractService, ServiceE
 
             Ok(plasm_rpc::create_light(light_deps))
         })?
-        .build()?;
+        .build_light()?;
 
     Ok(service)
 }

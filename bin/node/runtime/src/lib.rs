@@ -97,6 +97,7 @@ parameter_types! {
 }
 
 impl frame_system::Trait for Runtime {
+    type BaseCallFilter = ();
     type Origin = Origin;
     type Call = Call;
     type Index = Index;
@@ -260,7 +261,7 @@ parameter_types! {
 impl pallet_contracts::Trait for Runtime {
     type Time = Timestamp;
     type Randomness = RandomnessCollectiveFlip;
-    type Call = Call;
+    type Currency = Balances;
     type Event = Event;
     type DetermineContractAddress = pallet_contracts::SimpleAddressDeterminer<Runtime>;
     type TrieIdGenerator = pallet_contracts::TrieIdFromParentCounter<Runtime>;
@@ -273,6 +274,7 @@ impl pallet_contracts::Trait for Runtime {
     type SurchargeReward = SurchargeReward;
     type MaxDepth = pallet_contracts::DefaultMaxDepth;
     type MaxValueSize = pallet_contracts::DefaultMaxValueSize;
+    type WeightPrice = pallet_transaction_payment::Module<Self>;
 }
 
 impl pallet_contract_operator::Trait for Runtime {

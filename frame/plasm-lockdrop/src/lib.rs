@@ -98,6 +98,7 @@ pub trait Trait: SendTransactionTypes<Call<Self>> + frame_system::Trait {
     type DollarRate: Member
         + Parameter
         + AtLeast32Bit
+        + num_traits::sign::Unsigned
         + Copy
         + Default
         + Into<u128>

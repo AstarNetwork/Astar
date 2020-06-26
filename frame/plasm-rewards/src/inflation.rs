@@ -26,7 +26,7 @@ where
         _dapps_staking: D,
     ) -> (N, N)
     where
-        N: BaseArithmetic + Clone + From<u32>,
+        N: BaseArithmetic + num_traits::sign::Unsigned + Clone + From<u32>,
         M: BaseArithmetic + Clone + From<u32>,
     {
         const TARGETS_NUMBER: u128 = 100;
@@ -79,7 +79,7 @@ impl<V, D> ComputeTotalPayout<V, D> for SimpleComputeTotalPayout {
         _dapps_staking: D,
     ) -> (N, N)
     where
-        N: BaseArithmetic + Clone + From<u32>,
+        N: BaseArithmetic + num_traits::sign::Unsigned + Clone + From<u32>,
         M: BaseArithmetic + Clone + From<u32>,
     {
         // Milliseconds per year for the Julian year (365.25 days).
@@ -109,7 +109,7 @@ where
 /// `era_duration` is expressed in millisecond.
 impl<Balance> ComputeTotalPayout<Balance, Balance> for MaintainRatioComputeTotalPayout<Balance>
 where
-    Balance: BaseArithmetic + Clone + From<u32>,
+    Balance: BaseArithmetic + num_traits::sign::Unsigned + Clone + From<u32>,
 {
     fn compute<N, M>(
         total_tokens: N,
@@ -118,7 +118,7 @@ where
         dapps_staking: Balance,
     ) -> (N, N)
     where
-        N: BaseArithmetic + Clone + From<u32>,
+        N: BaseArithmetic + num_traits::sign::Unsigned + Clone + From<u32>,
         M: BaseArithmetic + Clone + From<u32>,
     {
         // Milliseconds per year for the Julian year (365.25 days).

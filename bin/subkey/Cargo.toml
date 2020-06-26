@@ -5,8 +5,8 @@ authors = ["Parity Technologies <admin@parity.io>"]
 edition = "2018"
 
 [dependencies]
-sp-core = "2.0.0-rc3"
-sp-runtime = "2.0.0-rc3"
+sp-core = "2.0.0-rc4"
+sp-runtime = "2.0.0-rc4"
 plasm-runtime = { path = "../node/runtime" }
 plasm-primitives = { path = "../node/primitives" }
 rand = "0.7.2"
@@ -17,8 +17,8 @@ substrate-bip39 = "0.3.1"
 hex = "0.4.0"
 hex-literal = "0.2.1"
 codec = { package = "parity-scale-codec", version = "1.3.0" }
-frame-system = "2.0.0-rc3"
-pallet-grandpa = "2.0.0-rc3"
-pallet-balances = "2.0.0-rc3"
-pallet-transaction-payment = "2.0.0-rc3"
+frame-system = "2.0.0-rc4"
+pallet-grandpa = "2.0.0-rc4"
+pallet-balances = "2.0.0-rc4"
+pallet-transaction-payment = "2.0.0-rc4"
 rpassword = "4.0.1"
