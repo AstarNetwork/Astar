@@ -200,6 +200,7 @@ fn ownership_predicate_true() {
         BTreeMap::new(),
     );
     println!("ownership address: {:?}", address);
+
     assert!(false);
 }
 
