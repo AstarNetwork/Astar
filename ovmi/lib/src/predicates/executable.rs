@@ -54,8 +54,10 @@ impl<Ext: ExternalCall> CompiledPredicateInterface<AddressOf<Ext>> for CompiledE
     }
 
     fn decide(&self, inputs: Vec<Vec<u8>>, witness: Vec<Vec<u8>>) -> ExecResult<AddressOf<Ext>> {
+        println!("decide: {:?}, {:?}", inputs, witness);
         if !Ext::is_label(&inputs[0]) {
-            return self.decide(inputs, witness);
+            // TODO: Unimplemented label string??
+            return Err(ExecError::Unimplemented);
         }
         let input_0 = Ext::bytes_to_bytes_string(&Ext::get_input_value(&inputs[0]))?;
         let sub_inputs = Ext::sub_array(&inputs, 1, inputs.len());

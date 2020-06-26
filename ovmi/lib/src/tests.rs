@@ -21,6 +21,16 @@ fn make_decide_true(inputs: Vec<Vec<u8>>) -> PredicateCallInputs<Address> {
     })
 }
 
+fn make_decide_true_ex(
+    inputs: Vec<Vec<u8>>,
+    witness: Vec<Vec<u8>>,
+) -> PredicateCallInputs<Address> {
+    PredicateCallInputs::CompiledPredicate::<Address>(CompiledPredicateCallInputs::DecideTrue {
+        inputs,
+        witness,
+    })
+}
+
 #[test]
 fn equal_predicate_decide_true() {
     let ext = MockExternalCall::init();
@@ -193,15 +203,29 @@ fn ownership_predicate_true() {
     let mut ext = MockExternalCall::init();
     let ownership_predicate_str = load_predicate_json("ownership.json");
     let compiled_predicate = compile_from_json(ownership_predicate_str.as_str()).unwrap();
-    let address = ext.deploy(
+    let ownership_address = ext.deploy(
         compiled_predicate,
         PAY_OUT_CONTRACT_ADDRESS.clone(),
         BTreeMap::new(),
         BTreeMap::new(),
     );
-    println!("ownership address: {:?}", address);
+    println!("ownership address: {:?}", ownership_address);
 
-    assert!(false);
+    let pair: ECDSAPair = ECDSAPair::from_seed(&[1; 32]);
+    let wallet_address: Address = to_account(pair.public().as_ref());
+    let label = "LOwnershipT".to_string().encode();
+    let transaction = b"001234567890".to_vec();
+    let signature: Vec<u8> = (pair.sign(&transaction[..]).as_ref() as &[u8]).into();
+
+    // false case (address)
+    {
+        let input_data = make_decide_true_ex(vec![label, wallet_address.encode()], vec![signature]);
+        let res = ext.call_execute(&ownership_address, input_data);
+        assert_require!(
+            res,
+            "_inputs[1] must be signature of _inputs[0] by _inputs[2]"
+        );
+    }
 }
 
 #[test]
