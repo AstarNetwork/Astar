@@ -25,11 +25,12 @@ use frame_support::{
     ensure,
     storage::IterableStorageMap,
     traits::{Currency, Get, Time},
-    weights::{SimpleDispatchInfo, Weight},
+    weights::Weight,
     StorageMap, StorageValue,
 };
 use frame_system::{
-    self as system, ensure_none, ensure_signed, offchain::SubmitUnsignedTransaction,
+    self as system, ensure_none, ensure_signed,
+    offchain::{SendTransactionTypes, SubmitTransaction},
 };
 pub use generic_array::typenum;
 use median::{Filter, ListNode};
@@ -66,33 +67,15 @@ pub type BalanceOf<T> =
     <<T as Trait>::Currency as Currency<<T as frame_system::Trait>::AccountId>>::Balance;
 
 /// The module's main configuration trait.
-pub trait Trait: system::Trait {
+pub trait Trait: SendTransactionTypes<Call<Self>> + frame_system::Trait {
     /// The lockdrop balance.
     type Currency: Currency<Self::AccountId>;
-
-    /// Bitcoin price oracle.
-    type BitcoinTicker: PriceOracle<Self::DollarRate>;
-
-    /// Ethereum price oracle.
-    type EthereumTicker: PriceOracle<Self::DollarRate>;
-
-    /// Bitcoin transaction oracle.
-    type BitcoinApi: ChainOracle<H256>;
-
-    /// Ethereum transaction oracle.
-    type EthereumApi: ChainOracle<H256>;
 
     /// How long dollar rate parameters valid in secs.
     type MedianFilterExpire: Get<Self::Moment>;
 
     /// Median filter window size.
     type MedianFilterWidth: generic_array::ArrayLength<ListNode<Self::DollarRate>>;
-
-    /// A dispatchable call type.
-    type Call: From<Call<Self>>;
-
-    /// Let's define the helper we use to create signed transactions.
-    type SubmitTransaction: SubmitUnsignedTransaction<Self, <Self as Trait>::Call>;
 
     /// The identifier type for an authority.
     type AuthorityId: Member + Parameter + RuntimeAppPublic + Default + Ord;
@@ -116,7 +99,14 @@ pub trait Trait: system::Trait {
         + Into<u128>;
 
     /// Dollar rate number data type.
-    type DollarRate: Member + Parameter + AtLeast32Bit + Copy + Default + Into<u128> + From<u64>;
+    type DollarRate: Member
+        + Parameter
+        + AtLeast32Bit
+        + Copy
+        + Default
+        + Into<u128>
+        + From<u64>
+        + sp_std::str::FromStr;
 
     // XXX: I don't known how to convert into Balance from u128 without it
     // TODO: Should be removed
@@ -125,6 +115,9 @@ pub trait Trait: system::Trait {
 
     /// The regular events type.
     type Event: From<Event<Self>> + Into<<Self as frame_system::Trait>::Event>;
+
+    /// Base priority for unsigned transactions.
+    type UnsignedPriority: Get<TransactionPriority>;
 }
 
 /// Claim id is a hash of claim parameters.
@@ -238,8 +231,7 @@ decl_storage! {
         HasVote get(fn has_vote):
             double_map hasher(blake2_128_concat) T::AuthorityId, hasher(blake2_128_concat) ClaimId
             => bool;
-        /// Lockdrop alpha parameter (fixed point at 1_000_000_000).
-        /// α ∈ [0; 10]
+        /// Lockdrop alpha parameter, where α ∈ [0; 1]
         Alpha get(fn alpha) config(): Perbill;
         /// Lockdrop dollar rate parameter: BTC, ETH.
         DollarRate get(fn dollar_rate) config(): (T::DollarRate, T::DollarRate);
@@ -270,12 +262,13 @@ decl_module! {
             // `on_initialize` functions, which allows us to set up some temporary state or - like
             // in this case - clean up other states
             <Requests>::kill();
-
+            // TODO: weight
             50_000
         }
 
         /// Request authorities to check locking transaction.
-        #[weight = SimpleDispatchInfo::FixedNormal(1_000_000)]
+        /// TODO: weight
+        #[weight = 1_000_000]
         fn request(
             origin,
             params: Lockdrop,
@@ -314,7 +307,8 @@ decl_module! {
         }
 
         /// Claim tokens according to lockdrop procedure.
-        #[weight = SimpleDispatchInfo::FixedNormal(1_000_000)]
+        /// TODO: weight
+        #[weight = 1_000_000]
         fn claim(
             origin,
             claim_id: ClaimId,
@@ -345,7 +339,8 @@ decl_module! {
         }
 
         /// Vote for claim request according to check results. (for authorities only)
-        #[weight = SimpleDispatchInfo::default()]
+        /// TODO: weight
+        #[weight = 50_000]
         fn vote(
             origin,
             vote: ClaimVote,
@@ -370,7 +365,8 @@ decl_module! {
         }
 
         /// Dollar Rate oracle entrypoint. (for authorities only)
-        #[weight = SimpleDispatchInfo::default()]
+        /// TODO: weight
+        #[weight = 50_000]
         fn set_dollar_rate(
             origin,
             rate: TickerRate<T::DollarRate>,
@@ -428,7 +424,7 @@ impl<T: Trait> Module<T> {
     /// The main offchain worker entry point.
     fn offchain() -> Result<(), ()> {
         // TODO: add delay to prevent frequent transaction sending
-        Self::send_dollar_rate(T::BitcoinTicker::fetch()?, T::EthereumTicker::fetch()?)?;
+        Self::send_dollar_rate(BitcoinPrice::fetch()?, EthereumPrice::fetch()?)?;
 
         // TODO: use permanent storage to track request when temporary failed
         Self::claim_request_oracle()
@@ -461,7 +457,8 @@ impl<T: Trait> Module<T> {
                         "claim id {} => vote extrinsic: {:?}", claim_id, call
                     );
 
-                    let res = T::SubmitTransaction::submit_unsigned(call);
+                    let res =
+                        SubmitTransaction::<T, Call<T>>::submit_unsigned_transaction(call.into());
                     debug::debug!(
                         target: "lockdrop-offchain-worker",
                         "claim id {} => vote extrinsic send: {:?}", claim_id, res
@@ -489,7 +486,7 @@ impl<T: Trait> Module<T> {
                     "dollar rate extrinsic: {:?}", call
                 );
 
-                let res = T::SubmitTransaction::submit_unsigned(call);
+                let res = SubmitTransaction::<T, Call<T>>::submit_unsigned_transaction(call.into());
                 debug::debug!(
                     target: "lockdrop-offchain-worker",
                     "dollar rate extrinsic send: {:?}", res
@@ -509,7 +506,7 @@ impl<T: Trait> Module<T> {
                 duration,
                 transaction_hash,
             } => {
-                let tx = T::BitcoinApi::fetch(transaction_hash)?;
+                let tx = BitcoinChain::fetch(transaction_hash)?;
                 debug::debug!(
                     target: "lockdrop-offchain-worker",
                     "claim id {} => fetched transaction: {:?}", claim_id, tx
@@ -536,7 +533,7 @@ impl<T: Trait> Module<T> {
                 duration,
                 transaction_hash,
             } => {
-                let tx = T::EthereumApi::fetch(transaction_hash)?;
+                let tx = EthereumChain::fetch(transaction_hash)?;
                 debug::debug!(
                     target: "lockdrop-offchain-worker",
                     "claim id {} => fetched transaction: {:?}", claim_id, tx
@@ -562,14 +559,14 @@ impl<T: Trait> Module<T> {
     fn btc_issue_amount(value: u128, duration: T::Moment) -> u128 {
         // https://medium.com/stake-technologies/plasm-lockdrop-introduction-99fa2dfc37c0
         let rate = Self::alpha() * Self::dollar_rate().0 * Self::time_bonus(duration).into();
-        rate.into() * value * 10
+        rate.into() * value
     }
 
     /// PLM issue amount for given ETH value and locking duration.
     fn eth_issue_amount(value: u128, duration: T::Moment) -> u128 {
         // https://medium.com/stake-technologies/plasm-lockdrop-introduction-99fa2dfc37c0
         let rate = Self::alpha() * Self::dollar_rate().1 * Self::time_bonus(duration).into();
-        rate.into() * value * 10
+        rate.into() * value
     }
 
     /// Lockdrop bonus depends of lockding duration.
@@ -660,13 +657,12 @@ impl<T: Trait> frame_support::unsigned::ValidateUnsigned for Module<T> {
                         return InvalidTransaction::BadProof.into();
                     }
 
-                    Ok(ValidTransaction {
-                        priority: TransactionPriority::max_value(),
-                        requires: vec![],
-                        provides: vec![encoded_vote.to_vec()],
-                        longevity: 64_u64,
-                        propagate: true,
-                    })
+                    ValidTransaction::with_tag_prefix("PlasmLockdrop")
+                        .priority(T::UnsignedPriority::get())
+                        .and_provides(encoded_vote)
+                        .longevity(64_u64)
+                        .propagate(true)
+                        .build()
                 })
             }
 
@@ -682,13 +678,12 @@ impl<T: Trait> frame_support::unsigned::ValidateUnsigned for Module<T> {
                         return InvalidTransaction::BadProof.into();
                     }
 
-                    Ok(ValidTransaction {
-                        priority: TransactionPriority::max_value(),
-                        requires: vec![],
-                        provides: vec![encoded_rate.to_vec()],
-                        longevity: 64_u64,
-                        propagate: true,
-                    })
+                    ValidTransaction::with_tag_prefix("PlasmLockdrop")
+                        .priority(T::UnsignedPriority::get())
+                        .and_provides(encoded_rate.to_vec())
+                        .longevity(64_u64)
+                        .propagate(true)
+                        .build()
                 })
             }
 

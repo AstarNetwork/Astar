@@ -20,10 +20,11 @@ use frame_support::{
     dispatch::DispatchResult,
     ensure,
     traits::{Get, Time},
-    weights::{SimpleDispatchInfo, WeighData, Weight},
+    weights::{DispatchClass, FunctionOf, Pays, WeighData, Weight},
     StorageMap,
 };
 use frame_system::{self as system, ensure_signed};
+
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
 use sp_runtime::{traits::Hash, RuntimeDebug};
@@ -38,7 +39,7 @@ pub mod predicate;
 pub mod traits;
 
 use predicate::{ExecResult, ExecutionContext, PredicateLoader, PredicateOvm};
-use traits::PredicateAddressFor;
+pub use traits::PredicateAddressFor;
 
 /// PredicateContract wrapped Predicate and initial arguments.
 ///
@@ -55,12 +56,12 @@ pub struct PredicateContract<CodeHash> {
 
 /// Property stands for dispute logic and we can claim every Properties to Adjudicator Contract.
 /// Property has its predicate address and array of input.
-#[derive(Encode, Decode, Clone, RuntimeDebug, PartialEq, Eq)]
+#[derive(Encode, Decode, Clone, Default, RuntimeDebug, PartialEq, Eq)]
 pub struct Property<AccountId> {
     /// Indicates the address of Predicate.
-    predicate_address: AccountId,
+    pub predicate_address: AccountId,
     /// Every input are bytes. Each Atomic Predicate decode inputs to the specific type.
-    inputs: Vec<u8>,
+    pub inputs: Vec<Vec<u8>>,
 }
 
 /// The game decision by predicates.
@@ -92,6 +93,9 @@ pub struct Schedule {
     /// Version of the schedule.
     pub version: u32,
 
+    /// Cost of putting a byte of code into storage.
+    pub put_code_per_byte_cost: Weight,
+
     /// Maximum allowed stack height.
     ///
     /// See https://wiki.parity.io/WebAssembly-StackHeight to find out
@@ -106,10 +110,16 @@ pub struct Schedule {
     // TODO: add logical conecctive addresses.
 }
 
+// 500 (2 instructions per nano second on 2GHZ) * 1000x slowdown through wasmi
+// This is a wild guess and should be viewed as a rough estimation.
+// Proper benchmarks are needed before this value and its derivatives can be used in production.
+const WASM_INSTRUCTION_COST: Weight = 500_000;
+
 impl Default for Schedule {
     fn default() -> Schedule {
         Schedule {
             version: 0,
+            put_code_per_byte_cost: WASM_INSTRUCTION_COST,
             max_stack_height: 64 * 1024,
             max_memory_pages: 16,
             max_table_size: 16 * 1024,
@@ -141,7 +151,7 @@ type ChallengeGameOf<T> = ChallengeGame<
     <T as system::Trait>::Hash,
     <T as system::Trait>::BlockNumber,
 >;
-type PropertyOf<T> = Property<<T as system::Trait>::AccountId>;
+pub type PropertyOf<T> = Property<<T as system::Trait>::AccountId>;
 type AccountIdOf<T> = <T as frame_system::Trait>::AccountId;
 type PredicateContractOf<T> = PredicateContract<<T as frame_system::Trait>::Hash>;
 
@@ -249,12 +259,17 @@ decl_module! {
 
         fn on_runtime_upgrade() -> Weight {
             migrate::<T>();
-            SimpleDispatchInfo::default().weigh_data(())
+            // TODO: weight
+            T::MaximumBlockWeight::get()
         }
 
         /// Stores the given binary Wasm code into the chain's storage and returns its `codehash`.
         /// You can instantiate contracts only with stored code.
-        #[weight = SimpleDispatchInfo::default()]
+        #[weight = FunctionOf(
+            |args: (&Vec<u8>,)| Module::<T>::calc_code_put_costs(args.0),
+            DispatchClass::Normal,
+            Pays::Yes
+        )]
         pub fn put_code(
             origin,
             predicate: Vec<u8>
@@ -272,7 +287,8 @@ decl_module! {
 
 
         /// Deploy predicate and made predicate address as AccountId.
-        #[weight = frame_support::weights::SimpleDispatchInfo::default()]
+        /// TODO: weight
+        #[weight = 100_000]
         pub fn instantiate(origin, predicate_hash: PredicateHash<T>, inputs: Vec<u8>) {
             let origin = ensure_signed(origin)?;
 
@@ -292,7 +308,8 @@ decl_module! {
         }
 
         /// Claims property and create new game. Id of game is hash of claimed property
-        #[weight = frame_support::weights::SimpleDispatchInfo::default()]
+        /// TODO: weight
+        #[weight = 100_000]
         fn claim_property(origin, claim: PropertyOf<T>) {
             // get the id of this property
             let game_id = Self::get_property_id(&claim);
@@ -319,7 +336,8 @@ decl_module! {
         }
 
         /// Sets the game decision true when its dispute period has already passed.
-        #[weight = frame_support::weights::SimpleDispatchInfo::default()]
+        /// TODO: weight
+        #[weight = 100_000]
         fn decide_claim_to_true(origin, game_id: T::Hash) {
             ensure!(
                 Self::is_decidable(&game_id),
@@ -337,7 +355,8 @@ decl_module! {
         }
 
         /// Sets the game decision false when its challenge has been evaluated to true.
-        #[weight = frame_support::weights::SimpleDispatchInfo::default()]
+        /// TODO: weight
+        #[weight = 100_000]
         fn decide_claim_to_false(origin, game_id: T::Hash, challenging_game_id: T::Hash) {
             let mut game = match Self::instantiated_games(&game_id) {
                 Some(game) => game,
@@ -373,7 +392,8 @@ decl_module! {
         }
 
         /// Decide the game decision with given witness.
-        #[weight = frame_support::weights::SimpleDispatchInfo::default()]
+        /// TODO: weight
+        #[weight = 100_000]
         fn decide_claim_with_witness(origin, game_id: T::Hash, witness: Vec<u8>) {
             let mut game = match Self::instantiated_games(&game_id) {
                 Some(game) => game,
@@ -406,7 +426,9 @@ decl_module! {
         }
 
         /// Removes a challenge when its decision has been evaluated to false.
-        #[weight = frame_support::weights::SimpleDispatchInfo::default()]
+        ///
+        /// TODO: weight
+        #[weight = 100_000]
         fn remove_challenge(origin, game_id: T::Hash, challenging_game_id: T::Hash) {
             let mut game = match Self::instantiated_games(&game_id) {
                 Some(game) => game,
@@ -448,7 +470,9 @@ decl_module! {
         }
 
         /// Set a predicate decision by called from Predicate itself.
-        #[weight = frame_support::weights::SimpleDispatchInfo::default()]
+        ///
+        /// TODO: weight
+        #[weight = 100_000]
         fn set_predicate_decision(origin, game_id: T::Hash, decision: bool) {
             let origin = ensure_signed(origin)?;
             let mut game = match Self::instantiated_games(&game_id) {
@@ -475,7 +499,9 @@ decl_module! {
         /// @param game_id challenged game id.
         /// @param challenge_inputs array of input to verify child of game tree.
         /// @param challenging_game_id child of game tree.
-        #[weight = frame_support::weights::SimpleDispatchInfo::default()]
+        ///
+        /// TODO: weight
+        #[weight = 100_000]
         fn challenge(origin, game_id: T::Hash, challenge_inputs: Vec<u8>, challenging_game_id: T::Hash) {
             let mut game = match Self::instantiated_games(&game_id) {
                 Some(game) => game,
@@ -509,10 +535,15 @@ fn migrate<T: Trait>() {
     //     for era in current_era.saturating_sub(history_depth)..=current_era {
     //         ErasStartSessionIndex::migrate_key_from_blake(era);
     //     }
-    // }
 }
 
 impl<T: Trait> Module<T> {
+    fn calc_code_put_costs(code: &Vec<u8>) -> Weight {
+        <Module<T>>::current_schedule()
+            .put_code_per_byte_cost
+            .saturating_mul(code.len() as Weight)
+    }
+
     // ======= main ==========
     /// Perform a call to a specified contract.
     ///

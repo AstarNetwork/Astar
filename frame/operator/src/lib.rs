@@ -1,12 +1,11 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use frame_support::{
-    decl_event, decl_module, decl_storage, weights::SimpleDispatchInfo, Parameter,
-};
+use frame_support::weights::{DispatchClass, FunctionOf, Pays, Weight};
+use frame_support::{decl_event, decl_module, decl_storage, Parameter};
 use frame_system::{self as system, ensure_signed, RawOrigin};
 use pallet_contracts::{BalanceOf, CodeHash, ContractAddressFor, Gas};
 use sp_runtime::{
-    traits::{MaybeDisplay, MaybeSerialize, Member},
+    traits::{Dispatchable, MaybeDisplay, MaybeSerialize, Member},
     DispatchError,
 };
 use sp_std::prelude::*;
@@ -92,30 +91,37 @@ decl_storage! {
 }
 
 decl_module! {
-    /// The module declaration.
     pub struct Module<T: Trait> for enum Call where origin: T::Origin {
         // Initializing events
         // this is needed only if you are using events in your module
         fn deposit_event() = default;
 
         /// Deploys a contact and insert relation of a contract and an operator to mapping.
-        #[weight = SimpleDispatchInfo::FixedNormal(500_000)]
-        pub fn instantiate(origin,
+        #[weight = FunctionOf(
+            |args: (&BalanceOf<T>, &Weight, &CodeHash<T>, &Vec<u8>, &T::Parameters)| *args.1,
+            DispatchClass::Normal,
+            Pays::Yes
+        )]
+        pub fn instantiate(
+            origin,
             #[compact] endowment: BalanceOf<T>,
             #[compact] gas_limit: Gas,
             code_hash: CodeHash<T>,
             data: Vec<u8>,
-            parameters: T::Parameters) {
+            parameters: T::Parameters,
+        ) {
             let operator = ensure_signed(origin)?;
 
             // verify parameters.
             parameters.verify()?;
 
             let contract = T::DetermineContractAddress::contract_address_for(&code_hash, &data, &operator);
-            pallet_contracts::Module::<T>::instantiate(RawOrigin::Signed(operator.clone()).into(), endowment, gas_limit, code_hash, data)?;
+            pallet_contracts::Call::<T>::instantiate(endowment, gas_limit, code_hash, data)
+                .dispatch(RawOrigin::Signed(operator.clone()).into())
+                .map_err(|e| e.error)?;
 
             // add operator to contracts
-            <OperatorHasContracts<T>>::mutate(&operator, {|tree| (*tree).push(contract.clone()) });
+            <OperatorHasContracts<T>>::mutate(&operator, |tree| (*tree).push(contract.clone()));
             // add contract to operator
             <ContractHasOperator<T>>::insert(&contract, operator.clone());
             // add contract to parameters
@@ -126,8 +132,13 @@ decl_module! {
         }
 
         /// Updates parameters for an identified contact.
-        #[weight = SimpleDispatchInfo::FixedNormal(50_000)]
-        pub fn update_parameters(origin, contract: T::AccountId, parameters: T::Parameters) {
+        /// TODO: weight
+        #[weight = 50_000]
+        pub fn update_parameters(
+            origin,
+            contract: T::AccountId,
+            parameters: T::Parameters,
+        ) {
             let operator = ensure_signed(origin)?;
 
             // verify parameters
@@ -147,8 +158,13 @@ decl_module! {
         }
 
         /// Changes an operator for identified contracts.
-        #[weight = SimpleDispatchInfo::FixedNormal(100_000)]
-        pub fn change_operator(origin, contracts: Vec<T::AccountId>, new_operator: T::AccountId) {
+        /// TODO: weight
+        #[weight = 100_000]
+        pub fn change_operator(
+            origin,
+            contracts: Vec<T::AccountId>,
+            new_operator: T::AccountId,
+        ) {
             let operator = ensure_signed(origin)?;
             Self::transfer_operator(operator, contracts, new_operator)?;
         }

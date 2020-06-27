@@ -2,10 +2,10 @@ use crate::executor::*;
 use crate::predicates::*;
 
 pub struct AndPredicate<'a, Ext: ExternalCall> {
-    pub ext: &'a mut Ext,
+    pub ext: &'a Ext,
 }
 
-impl<'a, Ext: ExternalCall> AndPredicate<'a, Ext> {
+impl<Ext: ExternalCall> AndPredicate<'_, Ext> {
     fn create_property_from_input(&self, input: Vec<Vec<u8>>) -> Property<AddressOf<Ext>> {
         Property {
             predicate_address: self.ext.ext_address(),
@@ -14,7 +14,7 @@ impl<'a, Ext: ExternalCall> AndPredicate<'a, Ext> {
     }
 }
 
-impl<'a, Ext: ExternalCall> LogicalConnectiveInterface<AddressOf<Ext>> for AndPredicate<'a, Ext> {
+impl<Ext: ExternalCall> LogicalConnectiveInterface<AddressOf<Ext>> for AndPredicate<'_, Ext> {
     /// @dev Validates a child node of And property in game tree.
     fn is_valid_challenge(
         &self,
@@ -29,10 +29,10 @@ impl<'a, Ext: ExternalCall> LogicalConnectiveInterface<AddressOf<Ext>> for AndPr
         let index: usize = index as usize;
 
         // challenge should be not(p[index])
-        // require!(_challnge.predicateAddress == not_predicateAddress);
-        require!(challenge.predicate_address == Ext::NotPredicate);
+        // require!(_challenge.predicateAddress == not_predicateAddress);
+        require!(challenge.predicate_address == Ext::NOT_ADDRESS);
 
-        // require!(keccak256(_inputs[index]) == keccak256(_challnge.inputs[0]));
+        // require!(keccak256(_inputs[index]) == keccak256(_challenge.inputs[0]));
         require!(inputs.len() > index);
         require!(challenge.inputs.len() > 0);
         require!(inputs[index as usize] == challenge.inputs[0]);
@@ -40,7 +40,7 @@ impl<'a, Ext: ExternalCall> LogicalConnectiveInterface<AddressOf<Ext>> for AndPr
     }
 }
 
-impl<'a, Ext: ExternalCall> DecidablePredicateInterface<AddressOf<Ext>> for AndPredicate<'a, Ext> {
+impl<Ext: ExternalCall> DecidablePredicateInterface<AddressOf<Ext>> for AndPredicate<'_, Ext> {
     /// @dev Can decide true when all child properties are decided true
     fn decide_with_witness(
         &self,

@@ -17,7 +17,7 @@ pub trait ComputeRewardsForDapps {
 }
 
 /// The based compute rewards for dapps.
-/// Following of https://docs.plasmnet.io/PlasmNetwork/TokenEcosystem.html, `t = 4`.
+/// Following of https://docs.plasmnet.io/learn/token-economy#inflation-model, `t = 4`.
 pub struct BasedComputeRewardsForDapps;
 
 impl ComputeRewardsForDapps for BasedComputeRewardsForDapps {
@@ -47,7 +47,6 @@ mod test {
 
     #[test]
     fn test_compute_payout_test() {
-        // TODO tests
         assert_eq!(
             compute_payout_test(100_000_000u64),
             (80_000_000, 20_000_000)

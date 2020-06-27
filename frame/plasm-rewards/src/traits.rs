@@ -64,3 +64,8 @@ pub trait ForSecurityEraRewardFinder<Balance> {
 pub trait ForDappsEraRewardFinder<Balance> {
     fn get(era: &EraIndex) -> Option<Balance>;
 }
+
+/// Get the history depth
+pub trait HistoryDepthFinder {
+    fn get() -> u32;
+}
