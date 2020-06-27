@@ -28,12 +28,30 @@
 <span id="28">28</span>
 <span id="29">29</span>
 <span id="30">30</span>
+<span id="31">31</span>
+<span id="32">32</span>
+<span id="33">33</span>
+<span id="34">34</span>
+<span id="35">35</span>
+<span id="36">36</span>
+<span id="37">37</span>
+<span id="38">38</span>
+<span id="39">39</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">executor</span>::<span class="kw-2">*</span>;
 <span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">predicates</span>::<span class="kw-2">*</span>;
 
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">NotPredicate</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, <span class="ident">Ext</span>: <span class="ident">ExternalCall</span><span class="op">&gt;</span> {
-    <span class="kw">pub</span> <span class="ident">ext</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">Ext</span>,
+    <span class="kw">pub</span> <span class="ident">ext</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="kw-2">mut</span> <span class="ident">Ext</span>,
+}
+
+<span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, <span class="ident">Ext</span>: <span class="ident">ExternalCall</span><span class="op">&gt;</span> <span class="ident">NotPredicate</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, <span class="ident">Ext</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">create_property_from_input</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">input</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Property</span><span class="op">&lt;</span><span class="ident">AddressOf</span><span class="op">&lt;</span><span class="ident">Ext</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+        <span class="ident">Property</span> {
+            <span class="ident">predicate_address</span>: <span class="self">self</span>.<span class="ident">ext</span>.<span class="ident">ext_address</span>(),
+            <span class="ident">inputs</span>: <span class="ident">input</span>,
+        }
+    }
 }
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, <span class="ident">Ext</span>: <span class="ident">ExternalCall</span><span class="op">&gt;</span> <span class="ident">LogicalConnectiveInterface</span><span class="op">&lt;</span><span class="ident">AddressOf</span><span class="op">&lt;</span><span class="ident">Ext</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">NotPredicate</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, <span class="ident">Ext</span><span class="op">&gt;</span> {

@@ -461,13 +461,6 @@
 <span id="461">461</span>
 <span id="462">462</span>
 <span id="463">463</span>
-<span id="464">464</span>
-<span id="465">465</span>
-<span id="466">466</span>
-<span id="467">467</span>
-<span id="468">468</span>
-<span id="469">469</span>
-<span id="470">470</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="doccomment">//! # Plasm rewards Module</span>
 <span class="doccomment">//!</span>
@@ -481,14 +474,14 @@
 <span class="doccomment">//!</span>
 <span class="doccomment">//! The Plasm staking module puts together the management and compensation payment logic of the ERA.</span>
 <span class="doccomment">//! The Plasm Rewards module calls the Dapps Staking and Validator.</span>
-<span class="doccomment">//! It also allocates rewards to each module according to the [Plasm Token Ecosystem inflation model](https://docs.plasmnet.io/learn/token-economy#inflation-model).</span>
+<span class="doccomment">//! It also allocates rewards to each module according to the [Plasm Token Ecosystem inflation model](https://docs.plasmnet.io/PlasmNetwork/TokenEcosystem.html).</span>
 <span class="attribute">#![<span class="ident">cfg_attr</span>(<span class="ident">not</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>), <span class="ident">no_std</span>)]</span>
 
 <span class="kw">use</span> <span class="ident">codec</span>::{<span class="ident">Decode</span>, <span class="ident">Encode</span>};
 <span class="kw">use</span> <span class="ident">frame_support</span>::{
     <span class="ident">decl_error</span>, <span class="ident">decl_event</span>, <span class="ident">decl_module</span>, <span class="ident">decl_storage</span>,
     <span class="ident">traits</span>::{<span class="ident">Currency</span>, <span class="ident">Get</span>, <span class="ident">LockableCurrency</span>, <span class="ident">Time</span>},
-    <span class="ident">weights</span>::<span class="ident">Weight</span>,
+    <span class="ident">weights</span>::{<span class="ident">SimpleDispatchInfo</span>, <span class="ident">Weight</span>},
     <span class="ident">StorageMap</span>, <span class="ident">StorageValue</span>,
 };
 <span class="kw">use</span> <span class="ident">frame_system</span>::{<span class="self">self</span> <span class="kw">as</span> <span class="ident">system</span>, <span class="ident">ensure_root</span>};
@@ -679,7 +672,7 @@
         <span class="doccomment">/// # &lt;weight&gt;</span>
         <span class="doccomment">/// - No arguments.</span>
         <span class="doccomment">/// # &lt;/weight&gt;</span>
-        <span class="attribute">#[<span class="ident">weight</span> <span class="op">=</span> <span class="number">5_000</span>]</span>
+        <span class="attribute">#[<span class="ident">weight</span> <span class="op">=</span> <span class="ident">SimpleDispatchInfo</span>::<span class="ident">FixedOperational</span>(<span class="number">5_000</span>)]</span>
         <span class="kw">fn</span> <span class="ident">force_no_eras</span>(<span class="ident">origin</span>) {
             <span class="ident">ensure_root</span>(<span class="ident">origin</span>)<span class="question-mark">?</span>;
             <span class="ident">ForceEra</span>::<span class="ident">put</span>(<span class="ident">Forcing</span>::<span class="ident">ForceNone</span>);
@@ -691,7 +684,7 @@
         <span class="doccomment">/// # &lt;weight&gt;</span>
         <span class="doccomment">/// - No arguments.</span>
         <span class="doccomment">/// # &lt;/weight&gt;</span>
-        <span class="attribute">#[<span class="ident">weight</span> <span class="op">=</span> <span class="number">5_000</span>]</span>
+        <span class="attribute">#[<span class="ident">weight</span> <span class="op">=</span> <span class="ident">SimpleDispatchInfo</span>::<span class="ident">FixedOperational</span>(<span class="number">5_000</span>)]</span>
         <span class="kw">fn</span> <span class="ident">force_new_era</span>(<span class="ident">origin</span>) {
             <span class="ident">ensure_root</span>(<span class="ident">origin</span>)<span class="question-mark">?</span>;
             <span class="ident">ForceEra</span>::<span class="ident">put</span>(<span class="ident">Forcing</span>::<span class="ident">ForceNew</span>);
@@ -702,7 +695,7 @@
         <span class="doccomment">/// # &lt;weight&gt;</span>
         <span class="doccomment">/// - One storage write</span>
         <span class="doccomment">/// # &lt;/weight&gt;</span>
-        <span class="attribute">#[<span class="ident">weight</span> <span class="op">=</span> <span class="number">5_000</span>]</span>
+        <span class="attribute">#[<span class="ident">weight</span> <span class="op">=</span> <span class="ident">SimpleDispatchInfo</span>::<span class="ident">FixedOperational</span>(<span class="number">5_000</span>)]</span>
         <span class="kw">fn</span> <span class="ident">force_new_era_always</span>(<span class="ident">origin</span>) {
             <span class="ident">ensure_root</span>(<span class="ident">origin</span>)<span class="question-mark">?</span>;
             <span class="ident">ForceEra</span>::<span class="ident">put</span>(<span class="ident">Forcing</span>::<span class="ident">ForceAlways</span>);
@@ -711,7 +704,7 @@
         <span class="doccomment">/// Set history_depth value.</span>
         <span class="doccomment">///</span>
         <span class="doccomment">/// Origin must be root.</span>
-        <span class="attribute">#[<span class="ident">weight</span> <span class="op">=</span> <span class="number">500_000</span>]</span>
+        <span class="attribute">#[<span class="ident">weight</span> <span class="op">=</span> <span class="ident">SimpleDispatchInfo</span>::<span class="ident">FixedOperational</span>(<span class="number">500_000</span>)]</span>
         <span class="kw">fn</span> <span class="ident">set_history_depth</span>(<span class="ident">origin</span>, <span class="attribute">#[<span class="ident">compact</span>]</span> <span class="ident">new_history_depth</span>: <span class="ident">EraIndex</span>) {
             <span class="ident">ensure_root</span>(<span class="ident">origin</span>)<span class="question-mark">?</span>;
             <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">current_era</span>) <span class="op">=</span> <span class="self">Self</span>::<span class="ident">current_era</span>() {
@@ -930,13 +923,6 @@
 <span class="kw">impl</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Trait</span><span class="op">&gt;</span> <span class="ident">ForDappsEraRewardFinder</span><span class="op">&lt;</span><span class="ident">BalanceOf</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">Module</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
     <span class="kw">fn</span> <span class="ident">get</span>(<span class="ident">era</span>: <span class="kw-2">&amp;</span><span class="ident">EraIndex</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">BalanceOf</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span> {
         <span class="self">Self</span>::<span class="ident">for_dapps_era_reward</span>(<span class="kw-2">&amp;</span><span class="ident">era</span>)
-    }
-}
-
-<span class="doccomment">/// Get the history depth</span>
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Trait</span><span class="op">&gt;</span> <span class="ident">HistoryDepthFinder</span> <span class="kw">for</span> <span class="ident">Module</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
-    <span class="kw">fn</span> <span class="ident">get</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">u32</span> {
-        <span class="self">Self</span>::<span class="ident">history_depth</span>()
     }
 }
 </pre></div>
