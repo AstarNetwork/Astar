@@ -56,7 +56,7 @@ Install Plasm
 Building from source
 --------------------
 
-Ensure you have Rust and the support software installed:
+Ensure you have Rust and the support software:
 
     curl https://sh.rustup.rs -sSf | sh
     # on Windows download and run rustup-init.exe
@@ -75,15 +75,15 @@ Install additional build tools:
 
     cargo install --git https://github.com/alexcrichton/wasm-gc
 
-Install Plasm node from git source:
+Install the Plasm node from git source:
 
     cargo install --force --git https://github.com/staketechnologies/Plasm --tag v1.0.0 plasm-cli
 
-Run node in [Plasm testnet](https://telemetry.polkadot.io/#/PlasmTestnet%20v1):
+Run node on [Plasm testnet](https://telemetry.polkadot.io/#/PlasmTestnet%20v1):
 
     plasm-node
 
-Or run in your local development network:
+Or run on your local development network:
 
     plasm-node --dev
 
