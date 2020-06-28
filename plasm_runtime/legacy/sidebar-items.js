@@ -1,1 +1,0 @@
-initSidebarItems({"mod":[["storage","Interface for accessing the storage from within the runtime. * Removed in substrate >2.0.0-alpha.6 but used in Plasm Mainnet genesis."]]});

@@ -1,1 +1,1 @@
-initSidebarItems({"enum":[["Error",""],["VarValue",""]],"fn":[["base_atomic_executable_from_address",""],["compile_from_json",""],["deciable_executable_from_address",""],["executable_from_compiled",""],["logical_connective_executable_from_address",""],["validate",""]]});
+initSidebarItems({"enum":[["Error",""],["VarValue",""]],"fn":[["compile_from_json",""],["executable_from_compiled",""],["logical_connective_executable_from_address",""],["validate",""]]});
