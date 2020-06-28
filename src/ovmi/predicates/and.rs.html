@@ -68,10 +68,10 @@
 <span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">predicates</span>::<span class="kw-2">*</span>;
 
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">AndPredicate</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, <span class="ident">Ext</span>: <span class="ident">ExternalCall</span><span class="op">&gt;</span> {
-    <span class="kw">pub</span> <span class="ident">ext</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="kw-2">mut</span> <span class="ident">Ext</span>,
+    <span class="kw">pub</span> <span class="ident">ext</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">Ext</span>,
 }
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, <span class="ident">Ext</span>: <span class="ident">ExternalCall</span><span class="op">&gt;</span> <span class="ident">AndPredicate</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, <span class="ident">Ext</span><span class="op">&gt;</span> {
+<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">Ext</span>: <span class="ident">ExternalCall</span><span class="op">&gt;</span> <span class="ident">AndPredicate</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span>, <span class="ident">Ext</span><span class="op">&gt;</span> {
     <span class="kw">fn</span> <span class="ident">create_property_from_input</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">input</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Property</span><span class="op">&lt;</span><span class="ident">AddressOf</span><span class="op">&lt;</span><span class="ident">Ext</span><span class="op">&gt;</span><span class="op">&gt;</span> {
         <span class="ident">Property</span> {
             <span class="ident">predicate_address</span>: <span class="self">self</span>.<span class="ident">ext</span>.<span class="ident">ext_address</span>(),
@@ -80,7 +80,7 @@
     }
 }
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, <span class="ident">Ext</span>: <span class="ident">ExternalCall</span><span class="op">&gt;</span> <span class="ident">LogicalConnectiveInterface</span><span class="op">&lt;</span><span class="ident">AddressOf</span><span class="op">&lt;</span><span class="ident">Ext</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">AndPredicate</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, <span class="ident">Ext</span><span class="op">&gt;</span> {
+<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">Ext</span>: <span class="ident">ExternalCall</span><span class="op">&gt;</span> <span class="ident">LogicalConnectiveInterface</span><span class="op">&lt;</span><span class="ident">AddressOf</span><span class="op">&lt;</span><span class="ident">Ext</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">AndPredicate</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span>, <span class="ident">Ext</span><span class="op">&gt;</span> {
     <span class="doccomment">/// @dev Validates a child node of And property in game tree.</span>
     <span class="kw">fn</span> <span class="ident">is_valid_challenge</span>(
         <span class="kw-2">&amp;</span><span class="self">self</span>,
@@ -95,10 +95,10 @@
         <span class="kw">let</span> <span class="ident">index</span>: <span class="ident">usize</span> <span class="op">=</span> <span class="ident">index</span> <span class="kw">as</span> <span class="ident">usize</span>;
 
         <span class="comment">// challenge should be not(p[index])</span>
-        <span class="comment">// require!(_challnge.predicateAddress == not_predicateAddress);</span>
-        <span class="macro">require</span><span class="macro">!</span>(<span class="ident">challenge</span>.<span class="ident">predicate_address</span> <span class="op">=</span><span class="op">=</span> <span class="ident">Ext</span>::<span class="ident">NotPredicate</span>);
+        <span class="comment">// require!(_challenge.predicateAddress == not_predicateAddress);</span>
+        <span class="macro">require</span><span class="macro">!</span>(<span class="ident">challenge</span>.<span class="ident">predicate_address</span> <span class="op">=</span><span class="op">=</span> <span class="ident">Ext</span>::<span class="ident">NOT_ADDRESS</span>);
 
-        <span class="comment">// require!(keccak256(_inputs[index]) == keccak256(_challnge.inputs[0]));</span>
+        <span class="comment">// require!(keccak256(_inputs[index]) == keccak256(_challenge.inputs[0]));</span>
         <span class="macro">require</span><span class="macro">!</span>(<span class="ident">inputs</span>.<span class="ident">len</span>() <span class="op">&gt;</span> <span class="ident">index</span>);
         <span class="macro">require</span><span class="macro">!</span>(<span class="ident">challenge</span>.<span class="ident">inputs</span>.<span class="ident">len</span>() <span class="op">&gt;</span> <span class="number">0</span>);
         <span class="macro">require</span><span class="macro">!</span>(<span class="ident">inputs</span>[<span class="ident">index</span> <span class="kw">as</span> <span class="ident">usize</span>] <span class="op">=</span><span class="op">=</span> <span class="ident">challenge</span>.<span class="ident">inputs</span>[<span class="number">0</span>]);
@@ -106,7 +106,7 @@
     }
 }
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, <span class="ident">Ext</span>: <span class="ident">ExternalCall</span><span class="op">&gt;</span> <span class="ident">DecidablePredicateInterface</span><span class="op">&lt;</span><span class="ident">AddressOf</span><span class="op">&lt;</span><span class="ident">Ext</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">AndPredicate</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, <span class="ident">Ext</span><span class="op">&gt;</span> {
+<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">Ext</span>: <span class="ident">ExternalCall</span><span class="op">&gt;</span> <span class="ident">DecidablePredicateInterface</span><span class="op">&lt;</span><span class="ident">AddressOf</span><span class="op">&lt;</span><span class="ident">Ext</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">AndPredicate</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span>, <span class="ident">Ext</span><span class="op">&gt;</span> {
     <span class="doccomment">/// @dev Can decide true when all child properties are decided true</span>
     <span class="kw">fn</span> <span class="ident">decide_with_witness</span>(
         <span class="kw-2">&amp;</span><span class="self">self</span>,
