@@ -193,7 +193,11 @@ decl_storage! {
 
         // The untreated era for each operator
         pub OperatorsUntreatedEra get(fn operators_untreated_era):
-                map hasher(twox_64_concat) T::AccountId => EraIndex;
+            map hasher(twox_64_concat) T::AccountId => EraIndex;
+
+        // The untreated era for each contract
+        pub ContractsUntreatedEra get(fn contracts_untreated_era):
+            map hasher(twox_64_concat) T::AccountId => EraIndex;
 
         // ----- Staking uses.
         /// Map from all locked "stash" accounts to the controller account.
@@ -671,6 +675,22 @@ decl_module! {
             }
             <NominatorsUntreatedEra<T>>::insert(&nominator, untreated_era);
 
+            for (contract, _) in <ErasStakingPoints<T>>::iter_prefix(&era) {
+                let mut untreated_era = Self::contracts_untreated_era(&contract);
+                if era != untreated_era {
+                    while era > untreated_era {
+                        Self::propagate_eras_staking_points_total(&contract, &untreated_era, &(untreated_era + 1));
+                        untreated_era += 1;
+                    }
+                    <ContractsUntreatedEra<T>>::insert(&contract, untreated_era);
+                }
+            }
+
+            // for community rewards
+            if !Self::is_payable(&era, &nominator) {
+                Err("the nominator cannot claim rewards")?
+            }
+
             let rewards = match T::ForDappsEraReward::get(&era) {
                 Some(rewards) => rewards,
                 None => {
@@ -855,6 +875,34 @@ impl<T: Trait> Module<T> {
         T::Reward::on_unbalanced(total_imbalance);
         T::RewardRemainder::on_unbalanced(T::Currency::issue(rest));
         total_payout
+    }
+
+    fn propagate_eras_staking_points_total(
+        contract: &T::AccountId,
+        src_era: &EraIndex,
+        dst_era: &EraIndex,
+    ) {
+        if <ErasStakingPoints<T>>::contains_key(src_era, contract) {
+            let untreated_points = <ErasStakingPoints<T>>::get(src_era, contract);
+
+            <ErasStakingPoints<T>>::mutate(&dst_era, &contract, |points| {
+                (*points).total += untreated_points.total.clone();
+            });
+        }
+    }
+
+    fn is_payable(era: &EraIndex, nominator: &T::AccountId) -> bool {
+        let threshold = Self::eras_total_stake(&era) / BalanceOf::<T>::from(10);
+        for target_era in era.saturating_sub(T::HistoryDepthFinder::get())..=*era {
+            for (_, points) in <ErasStakingPoints<T>>::iter_prefix(&target_era) {
+                for (account, value) in points.individual {
+                    if account == *nominator && value < threshold {
+                        return false;
+                    }
+                }
+            }
+        }
+        true
     }
 
     fn compute_total_stake(era: &EraIndex) -> BalanceOf<T> {

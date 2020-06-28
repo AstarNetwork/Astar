@@ -619,3 +619,62 @@ fn new_session_scenario_test() {
         assert_eq!(Balances::total_issuance(), 3_003_030 + 11);
     })
 }
+
+#[test]
+fn claim_error_test() {
+    new_test_ext().execute_with(|| {
+        advance_session();
+        valid_instatiate();
+        assert_ok!(Operator::change_operator(
+            Origin::signed(OPERATOR),
+            vec![OPERATED_CONTRACT],
+            ALICE_STASH
+        ));
+        success_first_bond(BOB_STASH, BOB_CTRL, 1_000, RewardDestination::Stash);
+        success_first_bond(
+            ALICE_STASH,
+            ALICE_CTRL,
+            1_000,
+            RewardDestination::Controller,
+        );
+        success_nominate_contracts(BOB_CTRL, vec![(OPERATED_CONTRACT, 1_000)]);
+        success_nominate_contracts(ALICE_CTRL, vec![(OPERATED_CONTRACT, 1)]);
+
+        let current_era = PlasmRewards::current_era().unwrap();
+        assert_eq!(DappsStaking::eras_total_stake(current_era), 0);
+        assert_eq!(DappsStaking::eras_total_stake(current_era + 1), 1_001);
+        let target_era = current_era + 1;
+
+        advance_era();
+        DappsStaking::on_finalize(0);
+        advance_session();
+
+        let pre_total_issuarance = Balances::total_issuance();
+        assert_eq!(Balances::free_balance(&BOB_STASH), 2_000);
+        assert_eq!(Balances::free_balance(&BOB_CTRL), 20);
+        assert_eq!(Balances::free_balance(&ALICE_STASH), 1_000);
+        assert_eq!(Balances::free_balance(&ALICE_CTRL), 10);
+        assert_eq!(pre_total_issuarance, 3_003_030);
+
+        advance_era();
+        DappsStaking::on_finalize(0);
+        advance_session();
+
+        assert_ok!(DappsStaking::claim_for_nominator(
+            Origin::signed(BOB_STASH),
+            target_era
+        ));
+
+        assert_eq!(Balances::free_balance(&BOB_STASH), 2_000 + 2); // +nomiante reward
+        assert_eq!(Balances::free_balance(&BOB_CTRL), 20 + 0); // +0
+
+        assert_ok!(DappsStaking::claim_for_operator(
+            Origin::signed(ALICE_STASH),
+            target_era
+        ));
+        assert_eq!(
+            DappsStaking::claim_for_nominator(Origin::signed(ALICE_STASH), target_era),
+            Err(DispatchError::Other("the nominator cannot claim rewards"))
+        );
+    })
+}

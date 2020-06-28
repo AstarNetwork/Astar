@@ -35,6 +35,23 @@ impl ComputeRewardsForDapps for BasedComputeRewardsForDapps {
     }
 }
 
+pub struct CommunityRewards;
+
+impl ComputeRewardsForDapps for CommunityRewards {
+    fn compute_rewards_for_dapps<N>(total_dapps_rewards: N) -> (N, N)
+    where
+        N: BaseArithmetic + Clone + From<u32>,
+    {
+        let operators_reward =
+            Perbill::from_rational_approximation(N::from(1 as u32), N::from(2 as u32))
+                * total_dapps_rewards.clone();
+        let nominators_reward = total_dapps_rewards
+            .checked_sub(&operators_reward)
+            .unwrap_or(N::zero());
+        (operators_reward, nominators_reward)
+    }
+}
+
 #[cfg(test)]
 mod test {
     use super::*;
@@ -43,6 +60,13 @@ mod test {
         N: BaseArithmetic + Clone + From<u32>,
     {
         BasedComputeRewardsForDapps::compute_rewards_for_dapps(total_dapps_tokens)
+    }
+
+    fn compute_community_rewards_payout<N>(total_dapps_tokens: N) -> (N, N)
+    where
+        N: BaseArithmetic + Clone + From<u32>,
+    {
+        CommunityRewards::compute_rewards_for_dapps(total_dapps_tokens)
     }
 
     #[test]
@@ -55,5 +79,23 @@ mod test {
         assert_eq!(compute_payout_test(10_000_000u64), (8_000_000, 2_000_000));
 
         assert_eq!(compute_payout_test(11_111_111u64), (8_888_889, 2_222_222));
+    }
+
+    #[test]
+    fn test_compute_community_rewards_payout() {
+        assert_eq!(
+            compute_payout_test(100_000_000u64),
+            (80_000_000, 20_000_000)
+        );
+
+        assert_eq!(
+            compute_community_rewards_payout(10_000_000u64),
+            (5_000_000, 5_000_000)
+        );
+
+        assert_eq!(
+            compute_community_rewards_payout(11_111_111u64),
+            (5_555_555, 5_555_556)
+        );
     }
 }
