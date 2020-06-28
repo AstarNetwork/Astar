@@ -81,7 +81,7 @@ Install Plasm node from git source:
 
     cargo install --locked --force --git https://github.com/staketechnologies/Plasm --tag v1.0.0 plasm-cli
 
-Run node in [Plasm testnet](https://telemetry.polkadot.io/#/PlasmTestnet%20v1):
+Run node in [Plasm Mainnet](https://telemetry.polkadot.io/#/Plasm):
 
     plasm-node
 
