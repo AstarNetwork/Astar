@@ -215,6 +215,8 @@ impl MockExternalCall {
         to: &Address,
         input_data: PredicateCallInputs<Address>,
     ) -> ExecResultT<Vec<u8>, Address> {
+        println!("call_execute to:         {:?}", to);
+        println!("call_execute input_data: {:?}", input_data);
         match &input_data {
             PredicateCallInputs::DecidablePredicate(_) => {
                 let p =
@@ -233,6 +235,12 @@ impl MockExternalCall {
                     p, input_data,
                 )
             }
+            PredicateCallInputs::AtomicPredicate(_) => {
+                let p = atomic_executable_from_address(self, to).ok_or(ExecError::CallAddress {
+                    address: to.clone(),
+                })?;
+                AtomicExecutor::<AtomicExecutable<Self>, Self>::execute(p, input_data)
+            }
             PredicateCallInputs::BaseAtomicPredicate(_) => {
                 let p = base_atomic_executable_from_address(self, to).ok_or(
                     ExecError::CallAddress {
@@ -247,7 +255,6 @@ impl MockExternalCall {
                 let p = executable_from_compiled(self, cp, payout, address_inputs, bytes_inputs);
                 CompiledExecutor::<CompiledExecutable<Self>, Self>::execute(p, input_data)
             }
-            _ => Err(ExecError::Unimplemented),
         }
     }
 }

@@ -132,6 +132,32 @@ pub fn deciable_executable_from_address<'a, Ext: ExternalCall>(
     }
 }
 
+pub fn atomic_executable_from_address<'a, Ext: ExternalCall>(
+    ext: &'a Ext,
+    address: &AddressOf<Ext>,
+) -> Option<AtomicExecutable<'a, Ext>> where
+{
+    match address {
+        x if x == &Ext::equal_address() => Some(AtomicExecutable::Equal(EqualPredicate { ext })),
+        x if x == &Ext::is_contained_address() => {
+            Some(AtomicExecutable::IsContained(IsContainedPredicate { ext }))
+        }
+        x if x == &Ext::is_less_address() => {
+            Some(AtomicExecutable::IsLess(IsLessThanPredicate { ext }))
+        }
+        x if x == &Ext::is_stored_address() => {
+            Some(AtomicExecutable::IsStored(IsStoredPredicate { ext }))
+        }
+        x if x == &Ext::is_valid_signature_address() => Some(AtomicExecutable::IsValidSignature(
+            IsValidSignaturePredicate { ext },
+        )),
+        x if x == &Ext::verify_inclusion_address() => Some(AtomicExecutable::VerifyInclusion(
+            VerifyInclusionPredicate { ext },
+        )),
+        _ => None,
+    }
+}
+
 pub fn base_atomic_executable_from_address<'a, Ext: ExternalCall>(
     ext: &'a Ext,
     address: &AddressOf<Ext>,

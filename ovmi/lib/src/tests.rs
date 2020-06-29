@@ -213,13 +213,16 @@ fn ownership_predicate_true() {
 
     let pair: ECDSAPair = ECDSAPair::from_seed(&[1; 32]);
     let wallet_address: Address = to_account(pair.public().as_ref());
-    let label = "LOwnershipT".to_string().encode();
+    let label = b"LOwnershipT".encode();
     let transaction = b"001234567890".to_vec();
     let signature: Vec<u8> = (pair.sign(&transaction[..]).as_ref() as &[u8]).into();
 
     // false case (address)
     {
-        let input_data = make_decide_true_ex(vec![label, wallet_address.encode()], vec![signature]);
+        let input_data = make_decide_true_ex(
+            vec![label, wallet_address.encode(), transaction],
+            vec![signature],
+        );
         let res = ext.call_execute(&ownership_address, input_data);
         assert_require!(
             res,

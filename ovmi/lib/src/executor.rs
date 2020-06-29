@@ -90,6 +90,18 @@ impl<
 {
 }
 
+pub const NOT_VARIABLE: &'static str = "Not";
+pub const AND_VARIABLE: &'static str = "And";
+pub const OR_VARIABLE: &'static str = "Or";
+pub const FOR_ALL_VARIABLE: &'static str = "ForAllSuchThat";
+pub const THERE_EXISTS_VARIABLE: &'static str = "ThereExistsSuchThat";
+pub const EQUAL_VARIABLE: &'static str = "Equal";
+pub const IS_CONTAINED_VARIABLE: &'static str = "IsContained";
+pub const IS_LESS_VARIABLE: &'static str = "IsLessThan";
+pub const IS_STORED_VARIABLE: &'static str = "IsStored";
+pub const IS_VALID_SIGNATURE_VARIABLE: &'static str = "IsValidSignature";
+pub const VERIFY_INCLUSION_VARIABLE: &'static str = "VerifyInclusion";
+
 pub trait ExternalCall {
     /// The address type of Plasma child chain (default: AccountId32)
     type Address: MaybeAddress;
@@ -121,6 +133,25 @@ pub trait ExternalCall {
     fn is_valid_signature_address() -> Self::Address;
     /// The address of verify inclusion predicate address.
     fn verify_inclusion_address() -> Self::Address;
+
+    fn str_to_address(key: &String) -> Option<Self::Address> {
+        match key {
+            x if x.as_str() == NOT_VARIABLE => Some(Self::not_address()),
+            x if x.as_str() == AND_VARIABLE => Some(Self::and_address()),
+            x if x.as_str() == OR_VARIABLE => Some(Self::or_address()),
+            x if x.as_str() == FOR_ALL_VARIABLE => Some(Self::for_all_address()),
+            x if x.as_str() == THERE_EXISTS_VARIABLE => Some(Self::there_exists_address()),
+            x if x.as_str() == EQUAL_VARIABLE => Some(Self::equal_address()),
+            x if x.as_str() == IS_CONTAINED_VARIABLE => Some(Self::is_contained_address()),
+            x if x.as_str() == IS_LESS_VARIABLE => Some(Self::is_less_address()),
+            x if x.as_str() == IS_STORED_VARIABLE => Some(Self::is_stored_address()),
+            x if x.as_str() == IS_VALID_SIGNATURE_VARIABLE => {
+                Some(Self::is_valid_signature_address())
+            }
+            x if x.as_str() == VERIFY_INCLUSION_VARIABLE => Some(Self::verify_inclusion_address()),
+            _ => None,
+        }
+    }
 
     /// relation const any signature algorithm.
     fn secp256k1() -> Self::Hash;
@@ -235,9 +266,14 @@ pub trait ExternalCall {
         Decode::decode(&mut &target[..]).map_err(|_| codec_error::<Self::Address>("bool"))
     }
 
-    /// Decoded to String
+    /// Decoded to String from bytes str.
     fn bytes_to_string(target: &Vec<u8>) -> ExecResultT<String, Self::Address> {
-        Decode::decode(&mut &target[..]).map_err(|_| codec_error::<Self::Address>("String"))
+        String::from_utf8(target.clone()).map_err(|_| codec_error::<Self::Address>("String"))
+    }
+
+    /// Encode to bytes from String
+    fn string_to_bytes(target: &String) -> Vec<u8> {
+        target.as_bytes().to_vec()
     }
 
     /// Decoded to Property
@@ -249,11 +285,6 @@ pub trait ExternalCall {
     /// Decoded to Vec<Vec<u8>>
     fn bytes_to_bytes_array(target: &Vec<u8>) -> ExecResultT<Vec<Vec<u8>>, Self::Address> {
         Decode::decode(&mut &target[..]).map_err(|_| codec_error::<Self::Address>("Vec<Vec<u8>>"))
-    }
-
-    /// Decoded to String
-    fn bytes_to_bytes_string(target: &Vec<u8>) -> ExecResultT<String, Self::Address> {
-        Decode::decode(&mut &target[..]).map_err(|_| codec_error::<Self::Address>("String"))
     }
 
     fn prefix_label(source: &Vec<u8>) -> Vec<u8> {
@@ -275,6 +306,40 @@ pub trait OvmExecutor<P> {
         executable: P,
         call_method: PredicateCallInputs<AddressOf<Self::ExtCall>>,
     ) -> ExecResultT<Vec<u8>, AddressOf<Self::ExtCall>>;
+}
+
+pub struct AtomicExecutor<P, Ext> {
+    _phantom: PhantomData<(P, Ext)>,
+}
+
+impl<P, Ext> OvmExecutor<P> for AtomicExecutor<P, Ext>
+where
+    P: predicates::AtomicPredicateInterface<AddressOf<Ext>>,
+    Ext: ExternalCall,
+{
+    type ExtCall = Ext;
+    fn execute(
+        predicate: P,
+        call_method: PredicateCallInputs<AddressOf<Ext>>,
+    ) -> ExecResultT<Vec<u8>, Ext::Address> {
+        match call_method {
+            PredicateCallInputs::AtomicPredicate(atomic) => {
+                match atomic {
+                    AtomicPredicateCallInputs::Decide { inputs } => {
+                        return Ok(predicate.decide(inputs)?.encode());
+                    }
+                    AtomicPredicateCallInputs::DecideTrue { inputs } => {
+                        predicate.decide_true(inputs)?;
+                        return Ok(true.encode());
+                    }
+                };
+            }
+            other => Err(ExecError::CallMethod {
+                call_method: other,
+                expected: "AtomicPredicateCallInputs",
+            }),
+        }
+    }
 }
 
 pub struct BaseAtomicExecutor<P, Ext> {
