@@ -214,14 +214,32 @@ fn ownership_predicate_true() {
     let pair: ECDSAPair = ECDSAPair::from_seed(&[1; 32]);
     let wallet_address: Address = to_account(pair.public().as_ref());
     let label = b"LOwnershipT".encode();
-    let transaction = b"001234567890".to_vec();
-    let signature: Vec<u8> = (pair.sign(&transaction[..]).as_ref() as &[u8]).into();
+    let transaction = hex!["00000000000000000000000000000000000000050000000000000000000000001080000000000000000000000000000000000000000100000000000000000000000080000000000000000000000000000000000a000000000000000000000000000000400a0000000000000000000000000000000901000000000000000000000000000000000000000200000000000000000000000004800000000000000000000000000000000000000003000000000000000000000000"].to_vec();
+    let tx_hash = KeccakHasher::hash(&transaction[..]);
+    let signature: Vec<u8> = (pair.sign(&tx_hash.0).as_ref() as &[u8]).into();
+    let signature_dummy =
+        hex!["2131311021311102131311021313110213131102131311021313110213131102"].to_vec();
+
+    println!("transaction : {:?}", transaction);
+    println!("signature   : {:?}", signature);
+    println!("wallet      : {:?}", wallet_address);
+
+    // success case(address)
+    {
+        let input_data = make_decide_true_ex(
+            vec![label.clone(), wallet_address.encode(), transaction.clone()],
+            vec![signature.clone()],
+        );
+        let res = ext.call_execute(&ownership_address, input_data);
+        let ret: bool = MockExternalCall::bytes_to_bool(&res.unwrap()).unwrap();
+        assert!(ret);
+    }
 
     // false case (address)
     {
         let input_data = make_decide_true_ex(
             vec![label, wallet_address.encode(), transaction],
-            vec![signature],
+            vec![signature_dummy],
         );
         let res = ext.call_execute(&ownership_address, input_data);
         assert_require!(

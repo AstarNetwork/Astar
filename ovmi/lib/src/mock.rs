@@ -327,8 +327,19 @@ impl ExternalCall for MockExternalCall {
     }
 
     fn ext_verify(&self, hash: &Self::Hash, signature: &[u8], address: &Self::Address) -> bool {
+        println!("ext_verify hash     : {:?}", hash);
+        println!("ext_verify signature: {:?}", signature);
+        println!("ext_verify address  : {:?}", address);
+        if signature.len() != 65 {
+            return false;
+        }
         let sig: Signature = Signature::from_slice(signature);
+        println!("ext_verify after    : {:?}", sig);
         if let Some(public) = sig.recover(hash) {
+            println!(
+                "ext_verify public    : {:?}",
+                &MultiSigner::from(public.clone()).into_account()
+            );
             return address == &MultiSigner::from(public).into_account();
         }
         false

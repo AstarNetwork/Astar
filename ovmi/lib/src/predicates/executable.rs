@@ -54,8 +54,8 @@ impl<Ext: ExternalCall> CompiledPredicateInterface<AddressOf<Ext>> for CompiledE
     }
 
     fn decide(&self, inputs: Vec<Vec<u8>>, witness: Vec<Vec<u8>>) -> ExecResult<AddressOf<Ext>> {
-        println!("decide inputs: {:?}", inputs);
-        println!("decide witness:{:?}", witness);
+        // println!("decide inputs: {:?}", inputs);
+        // println!("decide witness:{:?}", witness);
         if !Ext::is_label(&inputs[0]) {
             return Err(ExecError::Unimplemented);
         }
@@ -97,9 +97,9 @@ impl<Ext: ExternalCall> CompiledExecutable<'_, Ext> {
         inputs: &Vec<Vec<u8>>,
         witness: &Vec<Vec<u8>>,
     ) -> ExecResult<AddressOf<Ext>> {
-        println!("decide_intermediate inter    : {:?}", inter);
-        println!("decide_intermediate inputs   : {:?}", inputs);
-        println!("decide_intermediate witness  : {:?}", witness);
+        // println!("decide_intermediate inter    : {:?}", inter);
+        // println!("decide_intermediate inputs   : {:?}", inputs);
+        // println!("decide_intermediate witness  : {:?}", witness);
 
         let input_property_list = Self::get_input_property_list(inter, inputs)?;
         let input_property_list_child_list =
@@ -330,9 +330,9 @@ impl<Ext: ExternalCall> CompiledExecutable<'_, Ext> {
         inputs: &Vec<Vec<u8>>,
         challenge_inputs: &Vec<Vec<u8>>,
     ) -> ExecResultTOf<PropertyOf<Ext>, Ext> {
-        println!("get_child_intermediate inter    : {:?}", inter);
-        println!("get_child_intermediate inputs   : {:?}", inputs);
-        println!("get_child_intermediate challenge: {:?}", challenge_inputs);
+        // println!("get_child_intermediate inter    : {:?}", inter);
+        // println!("get_child_intermediate inputs   : {:?}", inputs);
+        // println!("get_child_intermediate challenge: {:?}", challenge_inputs);
         let input_property_list = Self::get_input_property_list(inter, inputs)?;
         let input_property_list_child_list =
             Self::get_input_property_list_child_list(inter, &input_property_list)?;
@@ -737,8 +737,6 @@ impl<Ext: ExternalCall> CompiledExecutable<'_, Ext> {
                         return Ok(input_child_list.predicate_address.encode());
                     }
                 }
-                println!("inputs: {:?}", inputs);
-                println!("inp: {:?}", inp);
                 require!(inputs.len() > (inp.input_index - 1) as usize);
                 Ok(inputs[(inp.input_index - 1) as usize].clone())
             }
@@ -835,7 +833,7 @@ impl<Ext: ExternalCall> CompiledExecutable<'_, Ext> {
     }
 
     fn get_address_variable(&self, key: &String) -> ExecResultTOf<AddressOf<Ext>, Ext> {
-        println!("get_address_variable: {}", key);
+        // println!("get_address_variable: {}", key);
         if let Some(ret) = self.address_inputs.get(&Ext::hash_of(&key.encode())) {
             return Ok(ret.clone());
         }
