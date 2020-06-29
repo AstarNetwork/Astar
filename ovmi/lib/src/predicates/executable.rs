@@ -710,7 +710,7 @@ impl<Ext: ExternalCall> CompiledExecutable<'_, Ext> {
         input_property_list_child_list: &Vec<BTreeMap<i8, PropertyOf<Ext>>>,
     ) -> ExecResultTOf<Vec<u8>, Ext> {
         match compiled_input {
-            CompiledInput::ConstantInput(inp) => Ok(inp.name.encode()),
+            CompiledInput::ConstantInput(inp) => Ok(Ext::string_to_bytes(&inp.name)),
             CompiledInput::LabelInput(inp) => {
                 Ok(Ext::prefix_label(&self.get_bytes_variable(&inp.label)?))
             }
