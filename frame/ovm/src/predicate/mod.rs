@@ -2,6 +2,7 @@ use super::*;
 use crate::traits::*;
 
 mod code_cache;
+mod ext;
 mod prepare;
 
 pub use self::code_cache::save as save_code;

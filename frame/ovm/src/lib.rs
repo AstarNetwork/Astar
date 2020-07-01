@@ -20,7 +20,7 @@ use frame_support::{
     dispatch::DispatchResult,
     ensure,
     traits::{Get, Time},
-    weights::{DispatchClass, FunctionOf, Pays, WeighData, Weight},
+    weights::{DispatchClass, FunctionOf, Pays, Weight},
     StorageMap,
 };
 use frame_system::{self as system, ensure_signed};
@@ -165,6 +165,18 @@ pub trait Trait: system::Trait {
 
     /// A function type to get the contract address given the instantiator.
     type DeterminePredicateAddress: PredicateAddressFor<PredicateHash<Self>, Self::AccountId>;
+
+    /// The user account on Layer2 identifier type for the runtime.
+    type AccountIdL2: Parameter
+        + Member
+        + MaybeSerializeDeserialize
+        + Debug
+        + MaybeDisplay
+        + Ord
+        + Default;
+
+    /// The hashing system (algorithm) being used in the runtime (e.g. Keccak256).
+    type HashingL2: Hash<Output = Self::Hash>;
 
     /// The overarching event type.
     type Event: From<Event<Self>> + Into<<Self as system::Trait>::Event>;

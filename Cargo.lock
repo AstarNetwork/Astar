@@ -3222,6 +3222,7 @@ dependencies = [
  "frame-support",
  "frame-system",
  "hex-literal",
+ "ovmi",
  "pallet-balances",
  "parity-scale-codec",
  "serde",
