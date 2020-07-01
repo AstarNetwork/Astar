@@ -3,7 +3,7 @@ use ripemd160::{Digest, Ripemd160};
 use sp_core::{ecdsa, hashing::sha2_256};
 
 pub const BTC_TESTNET: u8 = 0x6f;
-pub const BTC_MAINNET: u8 = 0x00;
+//pub const BTC_MAINNET: u8 = 0x00;
 
 /// Bitcoin RIPEMD160 hashing function.
 pub fn ripemd160(data: &[u8]) -> [u8; 20] {

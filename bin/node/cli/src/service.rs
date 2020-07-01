@@ -210,7 +210,9 @@ macro_rules! new_full {
             };
 
             let babe = sc_consensus_babe::start_babe(babe_config)?;
-            service.spawn_essential_task("babe-proposer", babe);
+            service
+                .spawn_essential_task_handle()
+                .spawn_blocking("babe-proposer", babe);
         }
 
         // if the node isn't actively participating in consensus then it doesn't
@@ -252,7 +254,7 @@ macro_rules! new_full {
 
             // the GRANDPA voter task is considered infallible, i.e.
             // if it fails we take down the service with it.
-            service.spawn_essential_task(
+            service.spawn_essential_task_handle().spawn_blocking(
                 "grandpa-voter",
                 sc_finality_grandpa::run_grandpa_voter(grandpa_config)?,
             );
@@ -262,11 +264,6 @@ macro_rules! new_full {
                 &inherent_data_providers,
                 service.network(),
             )?;
-        }
-
-        #[cfg(feature = "oracle")]
-        if let sc_service::config::Role::Authority { .. } = &role {
-            service.spawn_essential_task("lockdrop-oracle", crate::oracle::start());
         }
 
         Ok((service, inherent_data_providers))

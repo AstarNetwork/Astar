@@ -7,19 +7,15 @@ use web3::futures::Future;
 
 mod btc_utils;
 mod eth_utils;
+mod cli;
+
+pub use cli::Config;
 
 const COINGECKO_BTC_API: &'static str = "https://api.coingecko.com/api/v3/coins/bitcoin";
 const COINGECKO_ETH_API: &'static str = "https://api.coingecko.com/api/v3/coins/ethereum";
 
-const BLOCKCYPHER_BTC_API: &'static str = "https://api.blockcypher.com/v1/btc/test3/txs";
-const INFURA_ETH_API: &'static str =
-    "https://ropsten.infura.io/v3/e673f1634f174971890bf13130751704";
-
-const LOCKDROP_ETH_CONTRACT: &'static str = "EEd84A89675342fB04faFE06F7BB176fE35Cb168";
-const SAFE_ETH_CONFIRMATIONS: u64 = 10;
-
-pub async fn start() {
-    let mut app = tide::new();
+pub async fn start(config: Config) {
+    let mut app = tide::with_state(config);
 
     app.at("/btc/ticker").get(|_| async {
         let ticker: serde_json::Value = reqwest::blocking::get(COINGECKO_BTC_API)?.json()?;
@@ -32,7 +28,7 @@ pub async fn start() {
     });
 
     app.at("/btc/lock")
-        .post(|mut req: tide::Request<()>| async move {
+        .post(|mut req: tide::Request<Config>| async move {
             let body = req.body_bytes().await?;
             let lock = LockCheck::decode(&mut &body[..])?;
             log::debug!(
@@ -40,7 +36,7 @@ pub async fn start() {
                 "BTC lock check request: {:#?}", lock
             );
 
-            let uri = format!("{}/{}", BLOCKCYPHER_BTC_API, hex::encode(lock.tx_hash));
+            let uri = format!("{}/{}", req.state().bitcoin_endpoint, hex::encode(lock.tx_hash));
             let tx: serde_json::Value = reqwest::blocking::get(uri.as_str())?.json()?;
             log::debug!(
                 target: "lockdrop-oracle",
@@ -53,7 +49,7 @@ pub async fn start() {
             let tx_confirmations = tx["confirmations"].as_u64().unwrap_or(0);
 
             // check transaction confirmations
-            if tx_confirmations < 8 {
+            if tx_confirmations < req.state().safe_btc_confirmations {
                 log::debug!(target: "lockdrop-oracle", "transaction isn't confirmed yet");
                 return Ok(Response::new(StatusCode::BadRequest));
             }
@@ -103,7 +99,7 @@ pub async fn start() {
         });
 
     app.at("/eth/lock")
-        .post(|mut req: tide::Request<()>| async move {
+        .post(|mut req: tide::Request<Config>| async move {
             let body = req.body_bytes().await?;
             let lock = LockCheck::decode(&mut &body[..])?;
             log::debug!(
@@ -111,7 +107,9 @@ pub async fn start() {
                 "ETH lock check request: {:#?}", lock
             );
 
-            let (_eloop, transport) = web3::transports::Http::new(INFURA_ETH_API).unwrap();
+            let (_eloop, transport) = web3::transports::Http::new(
+                req.state().ethereum_endpoint.as_str()
+            ).unwrap();
             let web3 = web3::Web3::new(transport);
             let block_number = web3.eth().block_number().wait()?;
             let tx = web3
@@ -135,7 +133,7 @@ pub async fn start() {
                 target: "lockdrop-oracle",
                 "Transaction confirmations: {}", tx_confirmations
             );
-            if tx_confirmations < SAFE_ETH_CONFIRMATIONS.into() {
+            if tx_confirmations < req.state().safe_eth_confirmations.into() {
                 log::debug!(target: "lockdrop-oracle", "transaction isn't confirmed yet");
                 return Ok(Response::new(StatusCode::BadRequest));
             }
@@ -154,7 +152,7 @@ pub async fn start() {
             }
 
             // check that destination is lockdrop smart contract
-            if tx.to != Some(LOCKDROP_ETH_CONTRACT.parse()?) {
+            if tx.to != Some(req.state().lockdrop_contract.parse()?) {
                 log::debug!(target: "lockdrop-oracle", "contract address mismatch");
                 return Ok(Response::new(StatusCode::BadRequest));
             }

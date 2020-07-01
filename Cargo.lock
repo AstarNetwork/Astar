@@ -2703,6 +2703,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "lockdrop-oracle"
+version = "1.1.0"
+dependencies = [
+ "bs58",
+ "hex",
+ "libsecp256k1",
+ "log",
+ "pallet-plasm-lockdrop",
+ "parity-scale-codec",
+ "reqwest",
+ "ripemd160",
+ "sc-service",
+ "serde_json",
+ "sp-core",
+ "structopt",
+ "tide",
+ "web3",
+]
+
+[[package]]
 name = "log"
 version = "0.4.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4094,20 +4114,17 @@ dependencies = [
  "hex",
  "hex-literal",
  "jsonrpc-core",
- "libsecp256k1",
+ "lockdrop-oracle",
  "log",
  "pallet-contracts",
  "pallet-dapps-staking",
  "pallet-finality-tracker",
  "pallet-plasm-lockdrop",
- "pallet-timestamp",
  "pallet-transaction-payment",
  "parity-scale-codec",
  "plasm-primitives",
  "plasm-rpc",
  "plasm-runtime",
- "reqwest",
- "ripemd160",
  "sc-basic-authorship",
  "sc-chain-spec",
  "sc-cli",
@@ -4124,7 +4141,6 @@ dependencies = [
  "sc-telemetry",
  "sc-transaction-pool",
  "serde",
- "serde_json",
  "sp-consensus",
  "sp-consensus-babe",
  "sp-core",
@@ -4134,9 +4150,7 @@ dependencies = [
  "sp-transaction-pool",
  "structopt",
  "substrate-build-script-utils",
- "tide",
  "vergen",
- "web3",
 ]
 
 [[package]]
