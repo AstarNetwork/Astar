@@ -1,74 +1,12 @@
 #![cfg(test)]
 use super::super::*;
+use super::load_predicate_json;
 use crate::compiled_predicates::*;
-use crate::*;
 use codec::{Decode, Encode};
-
-const JSON: &str = r#"
-  {
-    "type": "CompiledPredicate",
-    "name": "Ownership",
-    "inputDefs": [
-      "owner",
-      "tx"
-    ],
-    "contracts": [
-      {
-        "type": "IntermediateCompiledPredicate",
-        "originalPredicateName": "Ownership",
-        "name": "OwnershipT",
-        "connective": "ThereExistsSuchThat",
-        "inputDefs": [
-          "OwnershipT",
-          "owner",
-          "tx"
-        ],
-        "inputs": [
-          "signatures,KEY,${tx}",
-          "v0",
-          {
-            "type": "AtomicProposition",
-            "predicate": {
-              "type": "AtomicPredicateCall",
-              "source": "IsValidSignature"
-            },
-            "inputs": [
-              {
-                "type": "NormalInput",
-                "inputIndex": 2,
-                "children": []
-              },
-              {
-                "type": "VariableInput",
-                "placeholder": "v0",
-                "children": []
-              },
-              {
-                "type": "NormalInput",
-                "inputIndex": 1,
-                "children": []
-              },
-              {
-                "type": "ConstantInput",
-                "name": "secp256k1"
-              }
-            ]
-          }
-        ],
-        "propertyInputs": []
-      }
-    ],
-    "entryPoint": "OwnershipT",
-    "constants": [
-      {
-        "varType": "bytes",
-        "name": "secp256k1"
-      }
-    ]
-  }"#;
 
 #[test]
 fn ownership_predicate_test() {
+    let ownership_predicate_str = load_predicate_json("ownership.json");
     let ans = CompiledPredicate {
         r#type: PredicateType::CompiledPredicate,
         name: "Ownership".to_string(),
@@ -124,7 +62,7 @@ fn ownership_predicate_test() {
         }]),
         entry_point: "OwnershipT".to_string(),
     };
-    let res = match compile_from_json(JSON) {
+    let res = match compile_from_json(ownership_predicate_str.as_str()) {
         Ok(res) => res,
         Err(err) => {
             println!("ERR: {:?}", err.classify());

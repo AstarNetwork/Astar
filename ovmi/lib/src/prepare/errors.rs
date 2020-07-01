@@ -1,7 +1,5 @@
 use crate::compiled_predicates::*;
-#[cfg(feature = "std")]
-use serde::{Deserialize, Serialize};
-use snafu::{ResultExt, Snafu};
+use snafu::Snafu;
 
 #[derive(Snafu)]
 #[cfg_attr(feature = "std", derive(Debug))]

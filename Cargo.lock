@@ -3248,11 +3248,14 @@ dependencies = [
  "derive_more 0.99.8",
  "hash-db",
  "hex",
+ "hex-literal",
+ "lazy_static",
  "parity-scale-codec",
  "primitive-types",
  "serde",
  "serde_json",
  "snafu",
+ "sp-core",
  "sp-runtime",
 ]
 

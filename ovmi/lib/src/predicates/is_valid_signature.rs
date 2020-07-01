@@ -1,6 +1,5 @@
 use crate::executor::*;
 use crate::predicates::*;
-use crate::Range;
 
 pub struct IsValidSignaturePredicate<'a, Ext: ExternalCall> {
     pub ext: &'a Ext,
@@ -9,27 +8,19 @@ pub struct IsValidSignaturePredicate<'a, Ext: ExternalCall> {
 impl<Ext: ExternalCall> AtomicPredicateInterface<AddressOf<Ext>>
     for IsValidSignaturePredicate<'_, Ext>
 {
-    fn decide(&self, _inputs: Vec<Vec<u8>>) -> ExecResult<AddressOf<Ext>> {
-        // require!(inputs.len() > 3);
-        // require_with_message!(
-        //     Ext::Hashing::hash(&self.get_input_value(inputs[3]).to_vec()[..]) == Ext::SECP_256_K1,
-        //     "verifierType must be secp256k1"
-        // );
-        //
-        // /// Verify a signature on a message. Returns true if the signature is good.
-        // fn verify<M: AsRef<[u8]>>(sig: &Self::Signature, message: M, pubkey: &Self::Public) -> bool;
-        //
-        // let hash = Ext::Hashing::hash(&inputs[0][..]);
-        // let address = self.bytes_to_address(&inputs[2]);
+    fn decide(&self, inputs: Vec<Vec<u8>>) -> ExecResult<AddressOf<Ext>> {
+        require!(inputs.len() > 3);
+        require_with_message!(
+            Ext::Hashing::hash(&inputs[3][..]) == Ext::secp256k1(),
+            "verifierType must be secp256k1"
+        );
 
-        // require_with_message!(
-        //     ECRecover.ecverify(
-        //         keccak256(_inputs[0]),
-        //         _inputs[1],
-        //         utils.bytesToAddress(_inputs[2])
-        //     ),
-        //     "_inputs[1] must be signature of _inputs[0] by _inputs[2]"
-        // );
+        let hash = Ext::Hashing::hash(&inputs[0][..]);
+        let address = Ext::bytes_to_address(&inputs[2])?;
+        require_with_message!(
+            self.ext.ext_verify(&hash, &inputs[1][..], &address,),
+            "_inputs[1] must be signature of _inputs[0] by _inputs[2]"
+        );
         Ok(true)
     }
 }

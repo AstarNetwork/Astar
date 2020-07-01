@@ -83,6 +83,7 @@ parameter_types! {
 
 impl frame_system::Trait for Test {
     type Origin = Origin;
+    type BaseCallFilter = ();
     type Index = u64;
     type BlockNumber = BlockNumber;
     type Call = Call;
@@ -186,9 +187,9 @@ impl TrieIdGenerator<u64> for DummyTrieIdGenerator {
 impl pallet_contracts::Trait for Test {
     type Time = Timestamp;
     type Randomness = Randomness;
-    type Call = Call;
-    type DetermineContractAddress = DummyContractAddressFor;
+    type Currency = Balances;
     type Event = MetaEvent;
+    type DetermineContractAddress = DummyContractAddressFor;
     type TrieIdGenerator = DummyTrieIdGenerator;
     type RentPayment = ();
     type SignedClaimHandicap = SignedClaimHandicap;
@@ -199,6 +200,7 @@ impl pallet_contracts::Trait for Test {
     type SurchargeReward = SurchargeReward;
     type MaxDepth = MaxDepth;
     type MaxValueSize = MaxValueSize;
+    type WeightPrice = ();
 }
 
 parameter_types! {
