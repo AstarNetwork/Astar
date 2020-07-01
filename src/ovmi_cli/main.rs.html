@@ -4,12 +4,18 @@
 <span id="4">4</span>
 <span id="5">5</span>
 <span id="6">6</span>
+<span id="7">7</span>
+<span id="8">8</span>
+<span id="9">9</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="kw">use</span> <span class="ident">ovmi</span>;
 
 <span class="kw">fn</span> <span class="ident">main</span>() {
-    <span class="ident">ovmi</span>::<span class="ident">compile_from_json</span>(<span class="string">&quot;{}&quot;</span>);
-    <span class="macro">println</span><span class="macro">!</span>(<span class="string">&quot;Hello, world!&quot;</span>);
+    <span class="kw">let</span> <span class="ident">compiled_predicate</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">ovmi</span>::<span class="ident">compile_from_json</span>(<span class="string">&quot;{}&quot;</span>) {
+        <span class="prelude-val">Ok</span>(<span class="ident">res</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">res</span>,
+        <span class="prelude-val">Err</span>(<span class="ident">err</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="macro">panic</span><span class="macro">!</span>(<span class="ident">err</span>),
+    };
+    <span class="macro">println</span><span class="macro">!</span>(<span class="string">&quot;{:?}&quot;</span>, <span class="ident">compiled_predicate</span>);
 }
 </pre></div>
 </section><section id="search" class="content hidden"></section><section class="footer"></section><script>window.rootPath = "../../";window.currentCrate = "ovmi_cli";</script><script src="../../aliases.js"></script><script src="../../main.js"></script><script src="../../source-script.js"></script><script src="../../source-files.js"></script><script defer src="../../search-index.js"></script></body></html>

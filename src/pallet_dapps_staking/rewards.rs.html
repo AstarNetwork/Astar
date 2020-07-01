@@ -57,7 +57,6 @@
 <span id="57">57</span>
 <span id="58">58</span>
 <span id="59">59</span>
-<span id="60">60</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="doccomment">//! This is explains plasm inflation models.</span>
 <span class="doccomment">//! The staking has 2 kinds.</span>
@@ -78,7 +77,7 @@
 }
 
 <span class="doccomment">/// The based compute rewards for dapps.</span>
-<span class="doccomment">/// Following of https://docs.plasmnet.io/PlasmNetwork/TokenEcosystem.html, `t = 4`.</span>
+<span class="doccomment">/// Following of https://docs.plasmnet.io/learn/token-economy#inflation-model, `t = 4`.</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">BasedComputeRewardsForDapps</span>;
 
 <span class="kw">impl</span> <span class="ident">ComputeRewardsForDapps</span> <span class="kw">for</span> <span class="ident">BasedComputeRewardsForDapps</span> {
@@ -108,7 +107,6 @@
 
     <span class="attribute">#[<span class="ident">test</span>]</span>
     <span class="kw">fn</span> <span class="ident">test_compute_payout_test</span>() {
-        <span class="comment">// TODO tests</span>
         <span class="macro">assert_eq</span><span class="macro">!</span>(
             <span class="ident">compute_payout_test</span>(<span class="number">100_000_000u64</span>),
             (<span class="number">80_000_000</span>, <span class="number">20_000_000</span>)

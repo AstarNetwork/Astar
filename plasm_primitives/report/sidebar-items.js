@@ -1,0 +1,1 @@
+initSidebarItems({"constant":[["KEY_TYPE","Key type for the reporting module. Used for reporting BABE and GRANDPA equivocations."]],"struct":[["ReporterAppCrypto","An `AppCrypto` type to allow submitting signed transactions using the reporting application key as signer."]],"type":[["ReporterId","Identity of the equivocation/misbehavior reporter."]]});
