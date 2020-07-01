@@ -21,11 +21,8 @@ impl<Ext: ExternalCall> ForAllPredicate<'_, Ext> {
                 return Ok(quantified.clone());
             }
         }
-        let mut property: Property<AddressOf<Ext>> = Decode::decode(&mut &property_bytes[..])
-            .map_err(|_| ExecError::CodecError {
-                type_name: "Property<Ext>",
-            })?;
-        if property.predicate_address == Ext::NOT_ADDRESS {
+        let mut property: Property<AddressOf<Ext>> = Ext::bytes_to_property(&property_bytes)?;
+        if property.predicate_address == Ext::not_address() {
             require!(property.inputs.len() > 0);
             property.inputs[0] =
                 self.replace_variable(&property.inputs[0], placeholder, quantified)?;
@@ -33,7 +30,7 @@ impl<Ext: ExternalCall> ForAllPredicate<'_, Ext> {
             require!(property.inputs.len() > 2);
             property.inputs[2] =
                 self.replace_variable(&property.inputs[2], placeholder, quantified)?;
-        } else if property.predicate_address == Ext::AND_ADDRESS {
+        } else if property.predicate_address == Ext::and_address() {
             property.inputs = property
                 .inputs
                 .iter()
@@ -67,7 +64,7 @@ impl<Ext: ExternalCall> LogicalConnectiveInterface<AddressOf<Ext>> for ForAllPre
     ) -> ExecResult<AddressOf<Ext>> {
         // challenge should be not(p[quantified])
         require_with_message!(
-            challenge.predicate_address == Ext::NOT_ADDRESS,
+            challenge.predicate_address == Ext::not_address(),
             "_challenge must be Not predicate"
         );
         // check inner property
