@@ -128,7 +128,12 @@ pub async fn start(config: Config) {
                 return Ok(Response::new(StatusCode::BadRequest));
             }
 
-            let tx_confirmations = block_number - tx.block_number.unwrap_or(Default::default());
+            let tx_block_number = tx.block_number.unwrap_or(Default::default());
+            let tx_confirmations = if block_number > tx_block_number {
+                block_number - tx_block_number
+            } else {
+                Default::default()
+            };
             log::debug!(
                 target: "lockdrop-oracle",
                 "Transaction confirmations: {}", tx_confirmations
