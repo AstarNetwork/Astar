@@ -28,9 +28,12 @@ use sp_runtime::traits::{
     BlakeTwo256, Block as BlockT, ConvertInto, Extrinsic, NumberFor, OpaqueKeys,
     SaturatedConversion, Saturating, StaticLookup, Verify,
 };
-use sp_runtime::transaction_validity::{TransactionSource, TransactionValidity};
+use sp_runtime::transaction_validity::{
+    TransactionPriority, TransactionSource, TransactionValidity,
+};
 use sp_runtime::{
-    create_runtime_str, generic, impl_opaque_keys, ApplyExtrinsicResult, Perbill, Perquintill,
+    create_runtime_str, generic, impl_opaque_keys, ApplyExtrinsicResult, MultiSigner, Perbill,
+    Perquintill,
 };
 use sp_std::prelude::*;
 #[cfg(any(feature = "std", test))]
@@ -94,6 +97,7 @@ parameter_types! {
 }
 
 impl frame_system::Trait for Runtime {
+    type BaseCallFilter = ();
     type Origin = Origin;
     type Call = Call;
     type Index = Index;
@@ -183,6 +187,7 @@ impl_opaque_keys! {
     pub struct SessionKeys {
         pub babe: Babe,
         pub grandpa: Grandpa,
+        pub lockdrop: PlasmLockdrop,
     }
 }
 
@@ -256,7 +261,7 @@ parameter_types! {
 impl pallet_contracts::Trait for Runtime {
     type Time = Timestamp;
     type Randomness = RandomnessCollectiveFlip;
-    type Call = Call;
+    type Currency = Balances;
     type Event = Event;
     type DetermineContractAddress = pallet_contracts::SimpleAddressDeterminer<Runtime>;
     type TrieIdGenerator = pallet_contracts::TrieIdFromParentCounter<Runtime>;
@@ -269,6 +274,7 @@ impl pallet_contracts::Trait for Runtime {
     type SurchargeReward = SurchargeReward;
     type MaxDepth = pallet_contracts::DefaultMaxDepth;
     type MaxValueSize = pallet_contracts::DefaultMaxValueSize;
+    type WeightPrice = pallet_transaction_payment::Module<Self>;
 }
 
 impl pallet_contract_operator::Trait for Runtime {
@@ -319,6 +325,25 @@ impl pallet_finality_tracker::Trait for Runtime {
     type OnFinalizationStalled = Grandpa;
     type WindowSize = WindowSize;
     type ReportLatency = ReportLatency;
+}
+
+parameter_types! {
+    pub const MedianFilterExpire: Moment = 300; // 10 blocks is one minute, 300 - half hour
+    pub const LockdropUnsignedPriority: TransactionPriority = TransactionPriority::max_value();
+}
+
+impl pallet_plasm_lockdrop::Trait for Runtime {
+    type Currency = Balances;
+    type MedianFilterExpire = MedianFilterExpire;
+    type MedianFilterWidth = pallet_plasm_lockdrop::typenum::U5;
+    type AuthorityId = pallet_plasm_lockdrop::sr25519::AuthorityId;
+    type Account = MultiSigner;
+    type Time = Timestamp;
+    type Moment = Moment;
+    type DollarRate = Balance;
+    type BalanceConvert = Balance;
+    type Event = Event;
+    type UnsignedPriority = LockdropUnsignedPriority;
 }
 
 impl<LocalCall> frame_system::offchain::CreateSignedTransaction<LocalCall> for Runtime
@@ -392,6 +417,7 @@ construct_runtime!(
         DappsStaking: pallet_dapps_staking::{Module, Call, Storage, Event<T>},
         PlasmValidator: pallet_plasm_validator::{Module, Call, Storage, Event<T>, Config<T>},
         PlasmRewards: pallet_plasm_rewards::{Module, Call, Storage, Event<T>, Config},
+        PlasmLockdrop: pallet_plasm_lockdrop::{Module, Call, Storage, Event<T>, Config<T>, ValidateUnsigned},
         Session: pallet_session::{Module, Call, Storage, Event, Config<T>},
         Historical: pallet_session_historical::{Module},
         Babe: pallet_babe::{Module, Call, Storage, Config, Inherent(Timestamp)},

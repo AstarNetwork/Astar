@@ -18,7 +18,7 @@ use hex_literal::*;
 use pallet_balances as balances;
 use pallet_contracts::Gas;
 use pallet_contracts::{
-    self as contracts, BalanceOf, ComputeDispatchFee, ContractAddressFor, ContractInfo,
+    self as contracts, BalanceOf, ContractAddressFor, ContractInfo,
     ContractInfoOf, RawAliveContractInfo, Schedule, TrieId, TrieIdFromParentCounter,
     TrieIdGenerator,
 };
@@ -163,7 +163,6 @@ parameter_types! {
 impl pallet_contracts::Trait for Test {
     type Time = Timestamp;
     type Randomness = Randomness;
-    type Call = Call;
     type DetermineContractAddress = DummyContractAddressFor;
     type Event = MetaEvent;
     type TrieIdGenerator = DummyTrieIdGenerator;
@@ -236,14 +235,6 @@ impl TrieIdGenerator<u64> for DummyTrieIdGenerator {
         res.extend_from_slice(&new_seed.to_le_bytes());
         res.extend_from_slice(&account_id.to_le_bytes());
         res
-    }
-}
-
-pub struct DummyComputeDispatchFee;
-
-impl ComputeDispatchFee<Call, u64> for DummyComputeDispatchFee {
-    fn compute_dispatch_fee(call: &Call) -> u64 {
-        69
     }
 }
 

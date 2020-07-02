@@ -29,7 +29,7 @@ use frame_support::{
     StorageMap, StorageValue,
 };
 use frame_system::{
-    self as system, ensure_none, ensure_signed,
+    self as system, ensure_none,
     offchain::{SendTransactionTypes, SubmitTransaction},
 };
 pub use generic_array::typenum;
@@ -46,13 +46,9 @@ use sp_runtime::{
 };
 use sp_std::prelude::*;
 
-/// Bitcoin helpers.
-mod btc_utils;
 /// Authority keys.
 mod crypto;
-/// Ethereum helpers.
-mod eth_utils;
-/// Oracle traits.
+/// Oracle client.
 mod oracle;
 
 pub use crypto::*;
@@ -102,6 +98,7 @@ pub trait Trait: SendTransactionTypes<Call<Self>> + frame_system::Trait {
     type DollarRate: Member
         + Parameter
         + AtLeast32Bit
+        + num_traits::sign::Unsigned
         + Copy
         + Default
         + Into<u128>
@@ -138,24 +135,24 @@ pub enum Lockdrop {
     /// BTC token locked and could be spend some timestamp.
     /// Duration in blocks and value in shatoshi could be derived from BTC transaction.
     Bitcoin {
-        public: ecdsa::Public,
-        value: u128,
-        duration: u64,
         transaction_hash: H256,
+        public_key: ecdsa::Public,
+        duration: u64,
+        value: u128,
     },
-    /// Ethereum lockdrop transactions is sended to pre-deployed lockdrop smart contract.
+    /// Ethereum lockdrop transactions sent to pre-deployed smart contract.
     Ethereum {
-        public: ecdsa::Public,
-        value: u128,
-        duration: u64,
         transaction_hash: H256,
+        public_key: ecdsa::Public,
+        duration: u64,
+        value: u128,
     },
 }
 
 impl Default for Lockdrop {
     fn default() -> Self {
         Lockdrop::Bitcoin {
-            public: Default::default(),
+            public_key: Default::default(),
             value: Default::default(),
             duration: Default::default(),
             transaction_hash: Default::default(),
@@ -244,8 +241,6 @@ decl_storage! {
         /// How much positive votes requered to approve claim.
         ///   Positive votes = approve votes - decline votes.
         PositiveVotes get(fn positive_votes) config(): AuthorityVote;
-        /// Ethereum lockdrop contract address.
-        EthereumContract get(fn ethereum_contract) config(): [u8; 20];
         /// Timestamp of finishing lockdrop.
         LockdropEnd get(fn lockdrop_end) config(): T::Moment;
     }
@@ -268,12 +263,14 @@ decl_module! {
 
         /// Request authorities to check locking transaction.
         /// TODO: weight
-        #[weight = 1_000_000]
+        #[weight = 50_000]
         fn request(
             origin,
             params: Lockdrop,
+            _nonce: H256,
         ) {
-            let _ = ensure_signed(origin)?;
+            ensure_none(origin)?;
+
             let claim_id = BlakeTwo256::hash_of(&params);
             ensure!(!<Claims>::get(claim_id).complete, "claim should not be already paid");
 
@@ -308,28 +305,31 @@ decl_module! {
 
         /// Claim tokens according to lockdrop procedure.
         /// TODO: weight
-        #[weight = 1_000_000]
+        #[weight = 50_000]
         fn claim(
             origin,
             claim_id: ClaimId,
         ) {
-            let _ = ensure_signed(origin)?;
+            ensure_none(origin)?;
+
             let claim = <Claims>::get(claim_id);
-            ensure!(!claim.complete, "claim should be already paid");
+            ensure!(!claim.complete, "claim should not be already paid");
+            ensure!(
+                claim.approve + claim.decline >= <VoteThreshold>::get(),
+                "this request don't get enough authority votes",
+            );
+            ensure!(
+                claim.approve.saturating_sub(claim.decline) >= <PositiveVotes>::get(),
+                "this request don't approved by authorities",
+            );
 
-            if claim.approve + claim.decline < <VoteThreshold>::get() {
-                Err("this request don't get enough authority votes")?
-            }
-
-            if claim.approve.saturating_sub(claim.decline) < <PositiveVotes>::get() {
-                Err("this request don't approved by authorities")?
-            }
 
             // Deposit lockdrop tokens on locking public key.
-            let account = match claim.params {
-                Lockdrop::Bitcoin { public, .. }  => T::Account::from(public).into_account(),
-                Lockdrop::Ethereum { public, .. } => T::Account::from(public).into_account(),
+            let public_key = match claim.params {
+                Lockdrop::Bitcoin { public_key, .. } => public_key,
+                Lockdrop::Ethereum { public_key, .. } => public_key,
             };
+            let account = T::Account::from(public_key).into_account();
             let amount: BalanceOf<T> = T::BalanceConvert::from(claim.amount).into();
             T::Currency::deposit_creating(&account, amount);
 
@@ -423,8 +423,10 @@ decl_module! {
 impl<T: Trait> Module<T> {
     /// The main offchain worker entry point.
     fn offchain() -> Result<(), ()> {
+        let btc_price: f32 = BitcoinPrice::fetch()?;
+        let eth_price: f32 = EthereumPrice::fetch()?;
         // TODO: add delay to prevent frequent transaction sending
-        Self::send_dollar_rate(BitcoinPrice::fetch()?, EthereumPrice::fetch()?)?;
+        Self::send_dollar_rate((btc_price as u32).into(), (eth_price as u32).into())?;
 
         // TODO: use permanent storage to track request when temporary failed
         Self::claim_request_oracle()
@@ -501,56 +503,30 @@ impl<T: Trait> Module<T> {
         let Claim { params, .. } = Self::claims(claim_id);
         match params {
             Lockdrop::Bitcoin {
-                public,
+                public_key,
                 value,
                 duration,
                 transaction_hash,
             } => {
-                let tx = BitcoinChain::fetch(transaction_hash)?;
+                let success = BitcoinLock::check(transaction_hash, public_key, duration, value)?;
                 debug::debug!(
                     target: "lockdrop-offchain-worker",
-                    "claim id {} => fetched transaction: {:?}", claim_id, tx
+                    "claim id {} => lock result: {}", claim_id, success
                 );
-
-                let lock_script = btc_utils::lock_script(public, duration);
-                debug::debug!(
-                    target: "lockdrop-offchain-worker",
-                    "claim id {} => desired lock script: {}", claim_id, hex::encode(lock_script.clone())
-                );
-
-                let script = btc_utils::p2sh(&btc_utils::script_hash(&lock_script[..]));
-                debug::debug!(
-                    target: "lockdrop-offchain-worker",
-                    "claim id {} => desired P2HS script: {}", claim_id, hex::encode(script.clone())
-                );
-
-                let valid = tx.confirmations > 8 && tx.value == value && tx.script == script;
-                Ok(valid)
+                Ok(success)
             }
             Lockdrop::Ethereum {
-                public,
-                value,
-                duration,
                 transaction_hash,
+                public_key,
+                duration,
+                value,
             } => {
-                let tx = EthereumChain::fetch(transaction_hash)?;
+                let success = EthereumLock::check(transaction_hash, public_key, duration, value)?;
                 debug::debug!(
                     target: "lockdrop-offchain-worker",
-                    "claim id {} => fetched transaction: {:?}", claim_id, tx
+                    "claim id {} => lock result: {}", claim_id, success
                 );
-
-                let script = eth_utils::lock_method(duration);
-                debug::debug!(
-                    target: "lockdrop-offchain-worker",
-                    "claim id {} => desired lock script: {}", claim_id, hex::encode(script.clone())
-                );
-
-                let valid = tx.confirmations > 10
-                    && tx.value == value
-                    && tx.script == script
-                    && tx.recipient == <EthereumContract>::get()
-                    && tx.sender == eth_utils::to_address(public);
-                Ok(valid)
+                Ok(success)
             }
         }
     }
@@ -635,6 +611,43 @@ impl<T: Trait> frame_support::unsigned::ValidateUnsigned for Module<T> {
 
     fn validate_unsigned(_source: TransactionSource, call: &Self::Call) -> TransactionValidity {
         match call {
+            Call::request(params, nonce) => {
+                let claim_id = BlakeTwo256::hash_of(&params);
+                if <Claims>::get(claim_id).complete {
+                    return InvalidTransaction::Call.into();
+                }
+
+                // Simple proof of work
+                let pow_byte = BlakeTwo256::hash_of(&(claim_id, nonce)).as_bytes()[0];
+                if pow_byte > 0 {
+                    return InvalidTransaction::Call.into();
+                }
+
+                ValidTransaction::with_tag_prefix("PlasmLockdrop")
+                    .priority(T::UnsignedPriority::get())
+                    .and_provides((params, nonce))
+                    .longevity(64_u64)
+                    .propagate(true)
+                    .build()
+            }
+
+            Call::claim(claim_id) => {
+                let claim = <Claims>::get(claim_id);
+                let on_vote = claim.approve + claim.decline < <VoteThreshold>::get();
+                let not_approved =
+                    claim.approve.saturating_sub(claim.decline) < <PositiveVotes>::get();
+                if claim.complete || on_vote || not_approved {
+                    return InvalidTransaction::Call.into();
+                }
+
+                ValidTransaction::with_tag_prefix("PlasmLockdrop")
+                    .priority(T::UnsignedPriority::get())
+                    .and_provides(claim_id)
+                    .longevity(64_u64)
+                    .propagate(true)
+                    .build()
+            }
+
             Call::vote(vote, signature) => {
                 // Verify call params
                 if !<Claims>::contains_key(vote.claim_id.clone()) {

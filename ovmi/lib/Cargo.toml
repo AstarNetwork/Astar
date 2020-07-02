@@ -16,8 +16,8 @@ hash-db = { version = "0.15", optional = true }
 
 [dev-dependencies]
 primitive-types = { version = "0.7" }
-sp-runtime = "2.0.0-rc3"
-sp-core = "2.0.0-rc3"
+sp-runtime = "2.0.0-rc4"
+sp-core = "2.0.0-rc4"
 hex = "0.4"
 hex-literal = "0.2.1"
 lazy_static = "1.4.0"

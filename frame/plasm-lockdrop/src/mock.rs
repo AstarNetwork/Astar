@@ -150,10 +150,6 @@ impl pallet_balances::Trait for Runtime {
 }
 
 parameter_types! {
-    pub const BitcoinTickerUri: &'static str = "http://api.coingecko.com/api/v3/coins/bitcoin";
-    pub const EthereumTickerUri: &'static str = "http://api.coingecko.com/api/v3/coins/ethereum";
-    pub const BitcoinApiUri: &'static str = "http://api.blockcypher.com/v1/btc/test3/txs";
-    pub const EthereumApiUri: &'static str = "http://api.blockcypher.com/v1/eth/test/txs";
     pub const MedianFilterExpire: Moment = 2;
 }
 
@@ -222,7 +218,6 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
         vote_threshold: 3,
         positive_votes: 2,
         lockdrop_end: 0,
-        ethereum_contract: hex_literal::hex!["458dabf1eff8fcdfbf0896a6bd1f457c01e2ffd6"],
     }
     .assimilate_storage(&mut storage);
 
