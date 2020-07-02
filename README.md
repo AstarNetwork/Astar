@@ -56,15 +56,15 @@ Install Plasm
 Building from source
 --------------------
 
-Ensure you have Rust and the support software installed:
-```
-curl https://sh.rustup.rs -sSf | sh
-# on Windows download and run rustup-init.exe
-# from https://rustup.rs instead
+Ensure you have Rust and the support software:
 
-rustup update nightly
-rustup target add wasm32-unknown-unknown --toolchain nightly
-```
+    curl https://sh.rustup.rs -sSf | sh
+    # on Windows download and run rustup-init.exe
+    # from https://rustup.rs instead
+
+    rustup update nightly
+    rustup target add wasm32-unknown-unknown --toolchain nightly
+
 You will also need to install the following dependencies:
 
 * Linux: `sudo apt install cmake git clang libclang-dev build-essential`
@@ -72,59 +72,60 @@ You will also need to install the following dependencies:
 * Windows: Download and install the Pre Build Windows binaries of LLVM from http://releases.llvm.org/download.html
 
 Install additional build tools:
-```
-cargo install --git https://github.com/alexcrichton/wasm-gc
-```
-Install Plasm node from git source:
-```
-cargo install --force --git https://github.com/staketechnologies/Plasm --tag v1.0.0 plasm-cli
-```
-Run node in [Dusty](https://telemetry.polkadot.io/#/Dusty):
-```
-plasm-node
-```
-Or run in your local development network:
-```
-plasm-node --dev
-```
+
+    cargo install --git https://github.com/alexcrichton/wasm-gc
+
+Install the Plasm node from git source:
+
+    cargo install --locked --force --git https://github.com/staketechnologies/Plasm --tag v1.0.0 plasm-cli
+
+Run node on [Dusty Network](https://telemetry.polkadot.io/#list/Dusty):
+
+    plasm-node
+
+Or run on your local development network:
+
+    plasm-node --dev
+
 Building with Nix
 -----------------
-
+​
 Install Nix package manager:
-```
-curl https://nixos.org/nix/install | sh
-```
-Run in Nix shell:
-```
-git clone https://github.com/staketechnologies/Plasm && cd Plasm
-nix-shell nix/shell.nix --run "cargo run --release"
-```
+
+    curl https://nixos.org/nix/install | sh
+
+Run on your Nix shell:
+
+    git clone https://github.com/staketechnologies/Plasm && cd Plasm
+    nix-shell nix/shell.nix --run "cargo run --release"
+
 Plasm Validator Program
 =======================
-Since we launched our Plasm Network testnet, we are looking for around 50 validators all over the world. This is a testnet like Ethereum Rinkeby, Kovan, and Ropsten. So, PLM (Plasm Network native token called PLUM) doesn’t have any values. Therefore, there is no incentive to be a validator on the testnet. To solve this problem,
-We will provide you with a right to be the first validator during the PoA term (between Lockdrop1 and Lockdrop2 described below) on the mainnet if you are a validator on the Plasm testnet.
+Currently, we have 2 networks, [Dusty Network](https://telemetry.polkadot.io/#list/Dusty) and [Plasm Network](https://telemetry.polkadot.io/#list/Plasm). Dusty is our canary R&D chain like Kusama. The stable validators on Dusty can be the first validators on Plasm mainnet. We are looking for 100 validators on the Plasm Network. 
 
-<img width="1287" alt="Screen Shot 2019-11-16 at 22 24 37" src="https://user-images.githubusercontent.com/29359048/68994354-799af780-08c5-11ea-9a6f-7e9080ddc893.png">
-
-1. Run a node on [Plasm testnet](https://telemetry.polkadot.io/#/PlasmTestnet%20v1):
-```
-plasm-node --validator
-```
-2. Apply the validator program:
-
-* https://docs.google.com/forms/d/1g0XGDQ0qg-YipwmHlmrnszF8BI0E85xY42pMZpF0knI/viewform
+If you would like to be the validator, please check out [our tutorial](https://docs.plasmnet.io/workshop-and-tutorial/untitled) and join [Discord tech channel](https://discord.gg/wUcQt3R)
 
 Examples
 ========
 
-You can see our demo: 
+You can see our demo and presentation: 
 * [Version1](https://www.youtube.com/watch?v=T70iEgyuXbw&feature=youtu.be): 2019/04/25 CLI Demo 
 * [Version2](https://youtu.be/5MoO3Epgvv0): 2019/05/22 UI Demo No explanations yet.
+* [Subzero Summit](https://www.youtube.com/watch?v=OyKvA_vx1z0): 2020/04 Presentation at Subzero Summit
+* [DOT CON][https://www.youtube.com/watch?v=og0yUFdYyLY]: 2019/10 Presentation at DOT CON
 
 Future Works
 ------------
-![Milestones](https://user-images.githubusercontent.com/6259384/73917595-14bece80-4903-11ea-9d61-6a162b9d0118.png)
+Here are the key milestones.
 
+1. Start the 2nd Lockdrop on Dusty Network (July)
+1. Start the 2nd Lockdrop on Plasm Network (August)
+1. Support the Optimistic Virtual Machine (September to October)
+1. Start the 3nd Lockdrop on Plasm Network (During Polkadot Parachain Auction)
+1. Start the 3nd Lockdrop on Plasm Network (During Polkadot Parachain Auction)
+1. Become a Polkadot Parachain. (TBA)
+
+If you have any questions, please ask us on [Discord](https://discord.gg/Z3nC9U4)
 
 Contacts
 --------
