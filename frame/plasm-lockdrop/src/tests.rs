@@ -555,7 +555,11 @@ fn simple_success_lockdrop_request() {
             PlasmLockdrop::claim(Origin::none(), claim_id),
             "this request don't get enough authority votes"
         );
-        assert_ok!(PlasmLockdrop::vote(Origin::none(), vote, Default::default()));
+        assert_ok!(PlasmLockdrop::vote(
+            Origin::none(),
+            vote,
+            Default::default()
+        ));
         assert_ok!(PlasmLockdrop::claim(Origin::none(), claim_id));
     })
 }
@@ -593,7 +597,11 @@ fn simple_fail_lockdrop_request() {
             PlasmLockdrop::claim(Origin::none(), claim_id),
             "this request don't get enough authority votes"
         );
-        assert_ok!(PlasmLockdrop::vote(Origin::none(), vote, Default::default()));
+        assert_ok!(PlasmLockdrop::vote(
+            Origin::none(),
+            vote,
+            Default::default()
+        ));
         assert_noop!(
             PlasmLockdrop::claim(Origin::none(), claim_id),
             "this request don't approved by authorities"

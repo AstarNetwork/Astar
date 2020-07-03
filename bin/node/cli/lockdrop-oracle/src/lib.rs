@@ -1,13 +1,15 @@
 //! Web-server helper for Lockdrop runtime module.
 
+#![feature(proc_macro_hygiene)]
+
 use codec::Decode;
 use pallet_plasm_lockdrop::LockCheck;
 use tide::{http::StatusCode, Response};
 use web3::futures::Future;
 
 mod btc_utils;
-mod eth_utils;
 mod cli;
+mod eth_utils;
 
 pub use cli::Config;
 
@@ -36,7 +38,11 @@ pub async fn start(config: Config) {
                 "BTC lock check request: {:#?}", lock
             );
 
-            let uri = format!("{}/{}", req.state().bitcoin_endpoint, hex::encode(lock.tx_hash));
+            let uri = format!(
+                "{}/{}",
+                req.state().bitcoin_endpoint,
+                hex::encode(lock.tx_hash)
+            );
             let tx: serde_json::Value = reqwest::blocking::get(uri.as_str())?.json()?;
             log::debug!(
                 target: "lockdrop-oracle",
@@ -101,9 +107,8 @@ pub async fn start(config: Config) {
                 "ETH lock check request: {:#?}", lock
             );
 
-            let (_eloop, transport) = web3::transports::Http::new(
-                req.state().ethereum_endpoint.as_str()
-            ).unwrap();
+            let (_eloop, transport) =
+                web3::transports::Http::new(req.state().ethereum_endpoint.as_str()).unwrap();
             let web3 = web3::Web3::new(transport);
             let block_number = web3.eth().block_number().wait()?;
             let tx = web3

@@ -1,8 +1,8 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
+use frame_support::dispatch::UnfilteredDispatchable;
 use frame_support::weights::{DispatchClass, FunctionOf, Pays, Weight};
 use frame_support::{decl_event, decl_module, decl_storage, Parameter};
-use frame_support::dispatch::UnfilteredDispatchable;
 use frame_system::{self as system, ensure_signed, RawOrigin};
 use pallet_contracts::{BalanceOf, CodeHash, ContractAddressFor, Gas};
 use sp_runtime::{

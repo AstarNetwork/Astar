@@ -1,9 +1,11 @@
-use sp_core::ecdsa;
-use bitcoin_script::bitcoin_script;
-use bitcoin::util::key::PublicKey;
-use bitcoin::util::address::Address;
+//! Bitcoin locking helpers.
+
 use bitcoin::blockdata::script::Script;
 use bitcoin::network::constants::Network;
+use bitcoin::util::address::Address;
+use bitcoin::util::key::PublicKey;
+use bitcoin_script::bitcoin_script;
+use sp_core::ecdsa;
 
 /// Encode block delay in BIP68 standard
 fn bip68_encode(blocks: u32) -> u32 {
@@ -32,13 +34,13 @@ pub fn to_address(public: &ecdsa::Public) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use sp_core::crypto::Public;
     use hex_literal::hex;
+    use sp_core::crypto::Public;
 
     #[test]
     fn test_lock_scipt() {
         let public = ecdsa::Public::from_slice(
-            &hex!["038ea27103fb646a2cea9eca9080737e0b23640caaaef2853416c9b286b353313e"][..]
+            &hex!["038ea27103fb646a2cea9eca9080737e0b23640caaaef2853416c9b286b353313e"][..],
         );
         let duration = 10;
         let script = lock_script(&public, duration);
@@ -51,6 +53,6 @@ mod tests {
         let public = ecdsa::Public::from_full(
             &hex!["0431e12c2db27f3b07fcc560cdbff90923bf9b5b03769103a44b38426f9469172f3eef59e4f01df729428161c33ec5b32763e2e5a0072551b7808ae9d89286b37b"][..]
         ).unwrap();
-        assert_eq!(to_address(&public), "mzUQaN6vnYDYNNYJVpRz2ipxLcWsQg6b8z"); 
+        assert_eq!(to_address(&public), "mzUQaN6vnYDYNNYJVpRz2ipxLcWsQg6b8z");
     }
 }

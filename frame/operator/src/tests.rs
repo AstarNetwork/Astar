@@ -18,9 +18,8 @@ use hex_literal::*;
 use pallet_balances as balances;
 use pallet_contracts::Gas;
 use pallet_contracts::{
-    self as contracts, BalanceOf, ContractAddressFor, ContractInfo,
-    ContractInfoOf, RawAliveContractInfo, Schedule, TrieId, TrieIdFromParentCounter,
-    TrieIdGenerator,
+    self as contracts, BalanceOf, ContractAddressFor, ContractInfo, ContractInfoOf,
+    RawAliveContractInfo, Schedule, TrieId, TrieIdFromParentCounter, TrieIdGenerator,
 };
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use sp_core::storage::well_known_keys;

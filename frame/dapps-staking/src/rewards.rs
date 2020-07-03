@@ -7,8 +7,8 @@
 //! About each staking, this module computes issuing new tokens.
 
 use super::*;
-use sp_arithmetic::traits::BaseArithmetic;
 use num_traits::sign::Unsigned;
+use sp_arithmetic::traits::BaseArithmetic;
 
 /// Compute reards for dapps from total dapps rewards to operators and nominators.
 pub trait ComputeRewardsForDapps {

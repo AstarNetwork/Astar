@@ -78,7 +78,9 @@ pub fn run() -> sc_cli::Result<()> {
         Some(Subcommand::LockdropOracle(config)) => {
             sc_cli::init_logger("");
             log::info!("Plasm Lockdrop oracle launched.");
-            Ok(futures::executor::block_on(lockdrop_oracle::start(config.clone())))
+            Ok(futures::executor::block_on(lockdrop_oracle::start(
+                config.clone(),
+            )))
         }
     }
 }

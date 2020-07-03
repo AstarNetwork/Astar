@@ -8,6 +8,7 @@ let
 
 in rec {
   rustWasm = channel.rust.override {
+    extensions = [ "rustfmt-preview" ];
     targets = [ "wasm32-unknown-unknown" ];
   };
   plasm-node = callPackage ./. { inherit rustWasm; };
