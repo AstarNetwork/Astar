@@ -1,4 +1,4 @@
-//! Lockdrop module CLI parameters. 
+//! Lockdrop module CLI parameters.
 
 use structopt::StructOpt;
 

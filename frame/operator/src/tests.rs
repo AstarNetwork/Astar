@@ -18,9 +18,8 @@ use hex_literal::*;
 use pallet_balances as balances;
 use pallet_contracts::Gas;
 use pallet_contracts::{
-    self as contracts, BalanceOf, ContractAddressFor, ContractInfo,
-    ContractInfoOf, RawAliveContractInfo, Schedule, TrieId, TrieIdFromParentCounter,
-    TrieIdGenerator,
+    self as contracts, BalanceOf, ContractAddressFor, ContractInfo, ContractInfoOf,
+    RawAliveContractInfo, Schedule, TrieId, TrieIdFromParentCounter, TrieIdGenerator,
 };
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 use sp_core::storage::well_known_keys;
@@ -43,16 +42,19 @@ mod operator {
 }
 impl_outer_event! {
     pub enum MetaEvent for Test {
-        system<T>, balances<T>, contracts<T>, operator<T>,
+        system<T>,
+        balances<T>,
+        contracts<T>,
+        operator<T>,
     }
 }
 impl_outer_origin! {
-    pub enum Origin for Test { }
+    pub enum Origin for Test where system = frame_system { }
 }
 impl_outer_dispatch! {
     pub enum Call for Test where origin: Origin {
-        pallet_balances::Balances,
-        pallet_contracts::Contracts,
+        balances::Balances,
+        contracts::Contracts,
     }
 }
 
@@ -87,10 +89,11 @@ parameter_types! {
 }
 impl frame_system::Trait for Test {
     type Origin = Origin;
+    type BaseCallFilter = ();
     type Index = u64;
     type BlockNumber = u64;
     type Hash = H256;
-    type Call = ();
+    type Call = Call;
     type Hashing = BlakeTwo256;
     type AccountId = u64;
     type Lookup = IdentityLookup<Self::AccountId>;
@@ -156,13 +159,12 @@ parameter_types! {
     pub const RentByteFee: u64 = 4;
     pub const RentDepositOffset: u64 = 10_000;
     pub const SurchargeReward: u64 = 150;
-    pub const MaxDepth: u32 = 100;
-    pub const MaxValueSize: u32 = 16_384;
 }
 
 impl pallet_contracts::Trait for Test {
     type Time = Timestamp;
     type Randomness = Randomness;
+    type Currency = Balances;
     type DetermineContractAddress = DummyContractAddressFor;
     type Event = MetaEvent;
     type TrieIdGenerator = DummyTrieIdGenerator;
@@ -173,8 +175,9 @@ impl pallet_contracts::Trait for Test {
     type RentByteFee = RentByteFee;
     type RentDepositOffset = RentDepositOffset;
     type SurchargeReward = SurchargeReward;
-    type MaxDepth = MaxDepth;
-    type MaxValueSize = MaxValueSize;
+    type MaxDepth = pallet_contracts::DefaultMaxDepth;
+    type MaxValueSize = pallet_contracts::DefaultMaxValueSize;
+    type WeightPrice = pallet_transaction_payment::Module<Self>;
 }
 
 #[derive(Clone, Eq, PartialEq, Default, Encode, Decode, Hash)]
@@ -411,7 +414,7 @@ fn instantiate_and_call_and_deposit_event() {
                     },
                     EventRecord {
                         phase: Phase::Initialization,
-                        event: MetaEvent::contracts(pallet_contracts::RawEvent::Transfer(
+                        event: MetaEvent::balances(pallet_balances::RawEvent::Transfer(
                             ALICE, BOB, 100
                         )),
                         topics: vec![],
@@ -498,7 +501,7 @@ fn instantiate_and_relate_operator() {
                     },
                     EventRecord {
                         phase: Phase::Initialization,
-                        event: MetaEvent::contracts(pallet_contracts::RawEvent::Transfer(
+                        event: MetaEvent::balances(pallet_balances::RawEvent::Transfer(
                             ALICE, BOB, 100
                         )),
                         topics: vec![],
@@ -626,7 +629,7 @@ fn valid_instatiate(wasm: Vec<u8>, code_hash: CodeHash<Test>) {
             },
             EventRecord {
                 phase: Phase::Initialization,
-                event: MetaEvent::contracts(pallet_contracts::RawEvent::Transfer(ALICE, BOB, 100)),
+                event: MetaEvent::balances(pallet_balances::RawEvent::Transfer(ALICE, BOB, 100)),
                 topics: vec![],
             },
             EventRecord {
@@ -730,7 +733,7 @@ fn update_parameters_passed() {
                     },
                     EventRecord {
                         phase: Phase::Initialization,
-                        event: MetaEvent::contracts(pallet_contracts::RawEvent::Transfer(
+                        event: MetaEvent::balances(pallet_balances::RawEvent::Transfer(
                             ALICE, BOB, 100
                         )),
                         topics: vec![],
@@ -874,7 +877,7 @@ fn change_operator_passed() {
                     },
                     EventRecord {
                         phase: Phase::Initialization,
-                        event: MetaEvent::contracts(pallet_contracts::RawEvent::Transfer(
+                        event: MetaEvent::balances(pallet_balances::RawEvent::Transfer(
                             ALICE, BOB, 100
                         )),
                         topics: vec![],

@@ -1,13 +1,15 @@
 //! Web-server helper for Lockdrop runtime module.
 
+#![feature(proc_macro_hygiene)]
+
 use codec::Decode;
 use pallet_plasm_lockdrop::LockCheck;
 use tide::{http::StatusCode, Response};
 use web3::futures::Future;
 
 mod btc_utils;
-mod eth_utils;
 mod cli;
+mod eth_utils;
 
 pub use cli::Config;
 
@@ -36,7 +38,11 @@ pub async fn start(config: Config) {
                 "BTC lock check request: {:#?}", lock
             );
 
-            let uri = format!("{}/{}", req.state().bitcoin_endpoint, hex::encode(lock.tx_hash));
+            let uri = format!(
+                "{}/{}",
+                req.state().bitcoin_endpoint,
+                hex::encode(lock.tx_hash)
+            );
             let tx: serde_json::Value = reqwest::blocking::get(uri.as_str())?.json()?;
             log::debug!(
                 target: "lockdrop-oracle",
@@ -60,7 +66,7 @@ pub async fn start(config: Config) {
                 return Ok(Response::new(StatusCode::BadRequest));
             }
 
-            let lock_sender = btc_utils::to_address(&lock.public_key, btc_utils::BTC_TESTNET);
+            let lock_sender = btc_utils::to_address(&lock.public_key);
             log::debug!(
                 target: "lockdrop-oracle",
                 "BTC address for public key {}: {}",
@@ -74,23 +80,17 @@ pub async fn start(config: Config) {
             }
 
             // assembly bitcoin script for given params
-            let lock_script = btc_utils::lock_script(&lock.public_key, lock.duration);
+            let blocks = (lock.duration / 600) as u32;
+            let lock_script = btc_utils::lock_script(&lock.public_key, blocks);
             log::debug!(
                 target: "lockdrop-oracle",
-                "BTC lock script for public key ({}) and duration ({}): {}",
-                lock.public_key,
+                "Lock script address for public ({}), duration({}): {}",
+                hex::encode(lock.public_key),
                 lock.duration,
-                hex::encode(lock_script.clone()),
-            );
-            let script = btc_utils::p2sh(&btc_utils::script_hash(&lock_script[..]));
-            log::debug!(
-                target: "lockdrop-oracle",
-                "P2SH for script {}: {}",
-                hex::encode(lock_script),
-                hex::encode(&script),
+                hex::encode(lock_script.as_bytes()),
             );
             // check script code
-            if tx_script != script {
+            if tx_script != lock_script.into_bytes() {
                 log::debug!(target: "lockdrop-oracle", "lock script mismatch");
                 return Ok(Response::new(StatusCode::BadRequest));
             }
@@ -107,9 +107,8 @@ pub async fn start(config: Config) {
                 "ETH lock check request: {:#?}", lock
             );
 
-            let (_eloop, transport) = web3::transports::Http::new(
-                req.state().ethereum_endpoint.as_str()
-            ).unwrap();
+            let (_eloop, transport) =
+                web3::transports::Http::new(req.state().ethereum_endpoint.as_str()).unwrap();
             let web3 = web3::Web3::new(transport);
             let block_number = web3.eth().block_number().wait()?;
             let tx = web3

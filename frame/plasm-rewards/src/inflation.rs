@@ -7,6 +7,7 @@
 //! About each staking, this module computes issuing new tokens.
 
 use super::*;
+use num_traits::sign::Unsigned;
 use sp_arithmetic::traits::BaseArithmetic;
 use sp_std::marker::PhantomData;
 use traits::ComputeTotalPayout;
@@ -154,7 +155,7 @@ mod test {
         dapps_staking: N,
     ) -> (N, N)
     where
-        N: BaseArithmetic + Clone + From<u32>,
+        N: BaseArithmetic + Unsigned + Clone + From<u32>,
     {
         SimpleComputeTotalPayout::compute(
             total_tokens,
@@ -171,7 +172,7 @@ mod test {
         dapps_staking: N,
     ) -> (N, N)
     where
-        N: BaseArithmetic + Clone + From<u32>,
+        N: BaseArithmetic + Unsigned + Clone + From<u32>,
     {
         MaintainRatioComputeTotalPayout::<N>::compute(
             total_tokens,
@@ -187,7 +188,7 @@ mod test {
         number_of_validator: u32,
     ) -> (N, N)
     where
-        N: BaseArithmetic + Clone + From<u32>,
+        N: BaseArithmetic + Unsigned + Clone + From<u32>,
     {
         FirstPlasmIncentive::<u32>::compute(total_tokens, era_duration, number_of_validator, 0)
     }

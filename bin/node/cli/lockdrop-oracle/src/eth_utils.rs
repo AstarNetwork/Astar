@@ -1,3 +1,5 @@
+//! Ethereum locking helpers.
+
 use sp_core::{keccak_256, H160, U256};
 
 /// Get Ethereum address for given ECDSA public key.

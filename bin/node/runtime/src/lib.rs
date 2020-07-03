@@ -17,6 +17,7 @@ use pallet_contracts_rpc_runtime_api::ContractExecResult;
 use pallet_grandpa::fg_primitives;
 use pallet_grandpa::{AuthorityId as GrandpaId, AuthorityList as GrandpaAuthorityList};
 use pallet_session::historical as pallet_session_historical;
+use pallet_transaction_payment::{Multiplier, TargetedFeeAdjustment};
 use pallet_transaction_payment_rpc_runtime_api::RuntimeDispatchInfo;
 use plasm_primitives::{
     AccountId, AccountIndex, Balance, BlockNumber, Hash, Index, Moment, Signature,
@@ -32,8 +33,8 @@ use sp_runtime::transaction_validity::{
     TransactionPriority, TransactionSource, TransactionValidity,
 };
 use sp_runtime::{
-    create_runtime_str, generic, impl_opaque_keys, ApplyExtrinsicResult, MultiSigner, Perbill,
-    Perquintill,
+    create_runtime_str, generic, impl_opaque_keys, ApplyExtrinsicResult, FixedPointNumber,
+    MultiSigner, Perbill, Perquintill,
 };
 use sp_std::prelude::*;
 #[cfg(any(feature = "std", test))]
@@ -45,9 +46,6 @@ pub use pallet_contracts::Gas;
 pub use pallet_timestamp::Call as TimestampCall;
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
-
-/// Implementations of some helper traits passed into runtime modules as associated types.
-pub mod impls;
 
 /// Deprecated but used runtime interfaces.
 pub mod legacy;
@@ -159,10 +157,9 @@ impl pallet_balances::Trait for Runtime {
 
 parameter_types! {
     pub const TransactionByteFee: Balance = 10 * MILLIPLM;
-    // setting this to zero will disable the weight fee.
-    pub const WeightFeeCoefficient: Balance = 1_000;
-    // for a sane configuration, this should always be less than `AvailableBlockRatio`.
     pub const TargetBlockFullness: Perquintill = Perquintill::from_percent(25);
+    pub AdjustmentVariable: Multiplier = Multiplier::saturating_from_rational(1, 100_000);
+    pub MinimumMultiplier: Multiplier = Multiplier::saturating_from_rational(1, 1_000_000_000u128);
 }
 
 impl pallet_transaction_payment::Trait for Runtime {
@@ -170,7 +167,8 @@ impl pallet_transaction_payment::Trait for Runtime {
     type OnTransactionPayment = ();
     type TransactionByteFee = TransactionByteFee;
     type WeightToFee = IdentityFee<Balance>;
-    type FeeMultiplierUpdate = impls::TargetedFeeAdjustment<TargetBlockFullness>;
+    type FeeMultiplierUpdate =
+        TargetedFeeAdjustment<Self, TargetBlockFullness, AdjustmentVariable, MinimumMultiplier>;
 }
 
 parameter_types! {
