@@ -1,10 +1,10 @@
 //! The external call function connecting to OVMinterpreter.
 
+use crate::traits::Ext;
 use crate::*;
 use ovmi::prepare;
 use ovmi::ExternalCall;
 use ovmi::PredicateCallInputs;
-use crate::traits::Ext;
 
 lazy_static! {
     pub static ref PAY_OUT_CONTRACT_ADDRESS: Address = to_account_from_seed(&hex![
@@ -109,7 +109,7 @@ impl<T: Trait, E: Ext> ExternalCall for ExternalCallImpl<T, E> {
         to: &Self::Address,
         input_data: PredicateCallInputs<Self::Address>,
     ) -> ExecResultT<Vec<u8>, Address> {
-        self.inter.call(to, input_data.encode());
+        self.inter.call(to, input_data.encode())
     }
 
     fn ext_caller(&self) -> Self::Address {

@@ -77,7 +77,7 @@ pub enum Decision {
 #[derive(Encode, Decode, RuntimeDebug, PartialEq, Eq)]
 pub struct ChallengeGame<AccountId, Hash, BlockNumber> {
     /// Property of challenging targets.
-    property: Property<AccountId>,
+    property_hash: Hash,
     /// challenges inputs
     challenges: Vec<Hash>,
     /// the result of this challenge.
@@ -199,8 +199,8 @@ decl_storage! {
          T::AccountId => Option<PredicateContractOf<T>>;
 
         /// Mapping the game id to Challenge Game.
-        pub InstantiatedGames get(fn instantiated_games):
-         map hasher(blake2_128_concat) T::Hash => Option<ChallengeGameOf<T>>;
+        pub Games get(fn games): map hasher(blake2_128_concat) T::Hash => Option<ChallengeGameOf<T>>;
+
     }
 }
 
@@ -224,6 +224,12 @@ decl_event!(
         ClaimChallenged(Hash, Hash),
         /// (game_id: Hash, decision: bool)
         ClaimDecided(Hash, bool),
+        /// (game_id: Hash, property: Property, created_block: BlockNumber)
+        PropertyClaimed(Hash, Property, BlockNumber),
+        /// (gameId: Hash, challenge_game_id: Hash)
+        PropertyChallenged(Hash, Hash),
+        /// (game_id: Hash, decision: bool)
+        PropertyDecided(Hash, bool),
         /// (game_id: Hash, challengeGameId: Hash)
         ChallengeRemoved(Hash, Hash),
     }
@@ -322,14 +328,17 @@ decl_module! {
         /// Claims property and create new game. Id of game is hash of claimed property
         /// TODO: weight
         #[weight = 100_000]
-        fn claim_property(origin, claim: PropertyOf<T>) {
+        fn claim(origin, claim: PropertyOf<T>) {
+            let origin = ensure_signed(origin)?;
+            Self::only_from_dispute_contract(&origin, &claim)?;
+            // TODO: from
             // get the id of this property
             let game_id = Self::get_property_id(&claim);
             let block_number = Self::block_number();
 
             // make sure a claim on this property has not already been made
             ensure!(
-                None == Self::instantiated_games(&game_id),
+                None == Self::games(&game_id),
                 Error::<T>::CiamIsNotEmpty,
             );
 
@@ -342,7 +351,7 @@ decl_module! {
             };
 
             // store the claim
-           <InstantiatedGames<T>>::insert(&game_id, new_game);
+           <Games<T>>::insert(&game_id, new_game);
 
            Self::deposit_event(RawEvent::NewPropertyClaimed(game_id, claim, block_number));
         }
@@ -356,12 +365,12 @@ decl_module! {
                 Error::<T>::ClaimShouldBeDecidable,
             );
 
-            // Note: if is_deciable(&game_id) is true, must exists instantiated_games(&game_id).
-            let mut game = Self::instantiated_games(&game_id).unwrap();
+            // Note: if is_deciable(&game_id) is true, must exists games(&game_id).
+            let mut game = Self::games(&game_id).unwrap();
 
             // game should be decided true
             game.decision = Decision::True;
-            <InstantiatedGames<T>>::insert(&game_id, game);
+            <Games<T>>::insert(&game_id, game);
 
             Self::deposit_event(RawEvent::ClaimDecided(game_id, true));
         }
@@ -370,12 +379,12 @@ decl_module! {
         /// TODO: weight
         #[weight = 100_000]
         fn decide_claim_to_false(origin, game_id: T::Hash, challenging_game_id: T::Hash) {
-            let mut game = match Self::instantiated_games(&game_id) {
+            let mut game = match Self::games(&game_id) {
                 Some(game) => game,
                 None => Err(Error::<T>::DoesNotExistGame)?,
             };
 
-            let challenging_game = match Self::instantiated_games(&challenging_game_id) {
+            let challenging_game = match Self::games(&challenging_game_id) {
                 Some(game) => game,
                 None => Err(Error::<T>::DoesNotExistGame)?,
             };
@@ -398,7 +407,7 @@ decl_module! {
 
             // game should be decided false
             game.decision = Decision::False;
-            <InstantiatedGames<T>>::insert(&game_id, game);
+            <Games<T>>::insert(&game_id, game);
 
             Self::deposit_event(RawEvent::ClaimDecided(game_id, false));
         }
@@ -407,7 +416,7 @@ decl_module! {
         /// TODO: weight
         #[weight = 100_000]
         fn decide_claim_with_witness(origin, game_id: T::Hash, witness: Vec<u8>) {
-            let mut game = match Self::instantiated_games(&game_id) {
+            let mut game = match Self::games(&game_id) {
                 Some(game) => game,
                 None => Err(Error::<T>::DoesNotExistGame)?,
             };
@@ -433,7 +442,7 @@ decl_module! {
             //     Error::<T>::PropertyMustBeTrue);
 
             game.decision = Decision::True;
-            <InstantiatedGames<T>>::insert(&game_id, game);
+            <Games<T>>::insert(&game_id, game);
             Self::deposit_event(RawEvent::ClaimDecided(game_id, true));
         }
 
@@ -442,12 +451,12 @@ decl_module! {
         /// TODO: weight
         #[weight = 100_000]
         fn remove_challenge(origin, game_id: T::Hash, challenging_game_id: T::Hash) {
-            let mut game = match Self::instantiated_games(&game_id) {
+            let mut game = match Self::games(&game_id) {
                 Some(game) => game,
                 None => Err(Error::<T>::DoesNotExistGame)?,
             };
 
-            let challenging_game = match Self::instantiated_games(&challenging_game_id) {
+            let challenging_game = match Self::games(&challenging_game_id) {
                 Some(game) => game,
                 None => Err(Error::<T>::DoesNotExistGame)?,
             };
@@ -476,7 +485,7 @@ decl_module! {
                 .into_iter()
                 .filter(|challenge| challenge != &challenging_game_id)
                 .collect();
-            <InstantiatedGames<T>>::insert(&game_id, game);
+            <Games<T>>::insert(&game_id, game);
 
             Self::deposit_event(RawEvent::ChallengeRemoved(game_id, challenging_game_id));
         }
@@ -487,7 +496,7 @@ decl_module! {
         #[weight = 100_000]
         fn set_predicate_decision(origin, game_id: T::Hash, decision: bool) {
             let origin = ensure_signed(origin)?;
-            let mut game = match Self::instantiated_games(&game_id) {
+            let mut game = match Self::games(&game_id) {
                 Some(game) => game,
                 None => Err(Error::<T>::DoesNotExistGame)?,
             };
@@ -515,12 +524,12 @@ decl_module! {
         /// TODO: weight
         #[weight = 100_000]
         fn challenge(origin, game_id: T::Hash, challenge_inputs: Vec<u8>, challenging_game_id: T::Hash) {
-            let mut game = match Self::instantiated_games(&game_id) {
+            let mut game = match Self::games(&game_id) {
                 Some(game) => game,
                 None => Err(Error::<T>::DoesNotExistGame)?,
             };
 
-            let challenging_game = match Self::instantiated_games(&challenging_game_id) {
+            let challenging_game = match Self::games(&challenging_game_id) {
                 Some(game) => game,
                 None => Err(Error::<T>::DoesNotExistGame)?,
             };
@@ -580,7 +589,7 @@ impl<T: Trait> Module<T> {
     // ======= callable ======
     /// Get of true/false the decision of property.
     pub fn is_decided(property: &PropertyOf<T>) -> Decision {
-        let game = match Self::instantiated_games(Self::get_property_id(property)) {
+        let game = match Self::games(Self::get_property_id(property)) {
             Some(game) => game,
             None => return Decision::Undecided,
         };
@@ -589,12 +598,31 @@ impl<T: Trait> Module<T> {
 
     /// Get of the instatiated challenge game from claim_id.
     pub fn get_game(claim_id: &T::Hash) -> Option<ChallengeGameOf<T>> {
-        Self::instantiated_games(claim_id)
+        Self::games(claim_id)
     }
 
     /// Get of the property id from the propaty itself.
     pub fn get_property_id(property: &PropertyOf<T>) -> T::Hash {
         T::Hashing::hash_of(property)
+    }
+
+    pub fn is_challenge_of(property: &PropertyOf<T>, challenge_property: &PropertyOf<T>) -> bool {
+        if let Some(game) = Self::get_game(Self::get_property_id(property)) {
+            if let (idx) =
+                Self::find_index(&game.challenges, &Self::get_property_id(challenge_property))
+            {
+                return idx >= 0;
+            }
+        }
+        false
+    }
+
+    /// check if game of given id is already started.
+    pub fn started(id: &T::Hash) -> bool {
+        if let Some(game) = Self::games(id) {
+            return game.created_block != 0;
+        }
+        false
     }
 
     // ======= helper =======
@@ -603,7 +631,7 @@ impl<T: Trait> Module<T> {
     }
 
     pub fn is_decidable(property_id: &T::Hash) -> bool {
-        let game = match Self::instantiated_games(property_id) {
+        let game = match Self::games(property_id) {
             Some(game) => game,
             None => return false,
         };
@@ -614,10 +642,38 @@ impl<T: Trait> Module<T> {
 
         // check all game.challenges should be false
         game.challenges.iter().all(|challenge| {
-            if let Some(challenging_game) = Self::instantiated_games(challenge) {
+            if let Some(challenging_game) = Self::games(challenge) {
                 return challenging_game.decision == Decision::False;
             }
             false
         })
+    }
+
+    fn create_game(id: T::Hash) -> ChallengeGameOf<T> {
+        ChallengeGame {
+            property_hash: id,
+            /// challenges inputs
+            challenges: vec![0],
+            /// the result of this challenge.
+            decision: Decision::Undecided,
+            /// the block number when this was issued.
+            created_block: Self::block_number(),
+        }
+    }
+
+    fn find_index<Hash: PartialEq, Eq>(array: &Vec<Hash>, item: &Hash) -> Option<usize> {
+        array.iter().position(|hash| hash == item)
+    }
+
+    // ======= modifier =======
+    fn only_from_dispute_contract(
+        origin: &T::AccountId,
+        property: &PropertyOf<T>,
+    ) -> DispatchResult {
+        ensure!(
+            property.predicate_address === origin,
+            Error::<T>::MustBeCalledFromPredicate,
+        );
+        Ok(())
     }
 }
