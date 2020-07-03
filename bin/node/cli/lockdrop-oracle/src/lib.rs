@@ -60,7 +60,7 @@ pub async fn start(config: Config) {
                 return Ok(Response::new(StatusCode::BadRequest));
             }
 
-            let lock_sender = btc_utils::to_address(&lock.public_key, btc_utils::BTC_TESTNET);
+            let lock_sender = btc_utils::to_address(&lock.public_key);
             log::debug!(
                 target: "lockdrop-oracle",
                 "BTC address for public key {}: {}",
@@ -74,23 +74,17 @@ pub async fn start(config: Config) {
             }
 
             // assembly bitcoin script for given params
-            let lock_script = btc_utils::lock_script(&lock.public_key, lock.duration);
+            let blocks = (lock.duration / 600) as u32;
+            let lock_script = btc_utils::lock_script(&lock.public_key, blocks);
             log::debug!(
                 target: "lockdrop-oracle",
-                "BTC lock script for public key ({}) and duration ({}): {}",
-                lock.public_key,
+                "Lock script address for public ({}), duration({}): {}",
+                hex::encode(lock.public_key),
                 lock.duration,
-                hex::encode(lock_script.clone()),
-            );
-            let script = btc_utils::p2sh(&btc_utils::script_hash(&lock_script[..]));
-            log::debug!(
-                target: "lockdrop-oracle",
-                "P2SH for script {}: {}",
-                hex::encode(lock_script),
-                hex::encode(&script),
+                hex::encode(lock_script.as_bytes()),
             );
             // check script code
-            if tx_script != script {
+            if tx_script != lock_script.into_bytes() {
                 log::debug!(target: "lockdrop-oracle", "lock script mismatch");
                 return Ok(Response::new(StatusCode::BadRequest));
             }

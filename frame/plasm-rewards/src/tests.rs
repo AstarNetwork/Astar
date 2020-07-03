@@ -131,7 +131,7 @@ fn normal_incremental_era() {
 fn force_new_era_incremental_era() {
     new_test_ext().execute_with(|| {
         assert_eq!(PlasmRewards::force_era(), Forcing::NotForcing);
-        assert_ok!(PlasmRewards::force_new_era(Origin::ROOT));
+        assert_ok!(PlasmRewards::force_new_era(Origin::root()));
         assert_eq!(PlasmRewards::force_era(), Forcing::ForceNew);
 
         advance_session();
@@ -197,7 +197,7 @@ fn force_new_era_incremental_era() {
 fn force_new_era_always_incremental_era() {
     new_test_ext().execute_with(|| {
         assert_eq!(PlasmRewards::force_era(), Forcing::NotForcing);
-        assert_ok!(PlasmRewards::force_new_era_always(Origin::ROOT));
+        assert_ok!(PlasmRewards::force_new_era_always(Origin::root()));
         assert_eq!(PlasmRewards::force_era(), Forcing::ForceAlways);
 
         for i in 1..10 {

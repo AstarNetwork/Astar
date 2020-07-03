@@ -83,6 +83,7 @@ parameter_types! {
 
 impl frame_system::Trait for Test {
     type Origin = Origin;
+    type BaseCallFilter = ();
     type Index = u64;
     type BlockNumber = BlockNumber;
     type Call = Call;
