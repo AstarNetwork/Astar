@@ -262,6 +262,10 @@ decl_error! {
         ChallengingGameNotFalse,
         /// setPredicateDecision must be called from predicate
         MustBeCalledFromPredicate,
+        /// index must be less than challenges.length
+        OutOfRangeOfChallenges,
+        /// game is already started
+        GameIsAlradyStarted,
     }
 }
 
@@ -334,32 +338,21 @@ decl_module! {
             // TODO: from
             // get the id of this property
             let game_id = Self::get_property_id(&claim);
-            let block_number = Self::block_number();
-
-            // make sure a claim on this property has not already been made
             ensure!(
-                None == Self::games(&game_id),
-                Error::<T>::CiamIsNotEmpty,
+                Self::started(game_id),
+                Error::<T>::GameIsAlradyStarted,
             );
 
-            // create the claim status. Always begins with no proven contradictions
-            let new_game = ChallengeGameOf::<T> {
-                property: claim.clone(),
-                challenges: vec!{},
-                decision: Decision::Undecided,
-                created_block: block_number.clone(),
-            };
-
-            // store the claim
-           <Games<T>>::insert(&game_id, new_game);
-
-           Self::deposit_event(RawEvent::NewPropertyClaimed(game_id, claim, block_number));
+            let game = Self::create_game(game_id);
+            <Games<T>>::insert(game_id, game);
+           Self::deposit_event(RawEvent::PropertyClaimed(game_id, claim, block_number));
         }
 
         /// Sets the game decision true when its dispute period has already passed.
         /// TODO: weight
         #[weight = 100_000]
         fn decide_claim_to_true(origin, game_id: T::Hash) {
+            // TODO: -> settleGame
             ensure!(
                 Self::is_decidable(&game_id),
                 Error::<T>::ClaimShouldBeDecidable,
@@ -608,10 +601,10 @@ impl<T: Trait> Module<T> {
 
     pub fn is_challenge_of(property: &PropertyOf<T>, challenge_property: &PropertyOf<T>) -> bool {
         if let Some(game) = Self::get_game(Self::get_property_id(property)) {
-            if let (idx) =
+            if let Some(_) =
                 Self::find_index(&game.challenges, &Self::get_property_id(challenge_property))
             {
-                return idx >= 0;
+                return true;
             }
         }
         false
@@ -661,8 +654,37 @@ impl<T: Trait> Module<T> {
         }
     }
 
+    fn get_decision(result: bool) -> Decision {
+        if result {
+            return Decision::True;
+        }
+        Decision::False
+    }
+
     fn find_index<Hash: PartialEq, Eq>(array: &Vec<Hash>, item: &Hash) -> Option<usize> {
         array.iter().position(|hash| hash == item)
+    }
+
+    // base: removeChallengefromArray
+    fn remove_challenge_from_array(
+        game_id: &T::Hash,
+        game: &ChallengeGameOf<T>,
+        index: usize,
+    ) -> DispatchResult {
+        Games::try_mutate(game_id, |game| {
+            if game.challenges.length > index {
+                *game.challenges = game
+                    .challenges
+                    .iter()
+                    .enumerate()
+                    .filter(|(i, x)| i != index)
+                    .map(|(i, x)| x)
+                    .collect();
+            } else {
+                return Err(Error::<T>::OutOfRangeOfChallenges);
+            }
+            Ok(())
+        })
     }
 
     // ======= modifier =======
