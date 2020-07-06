@@ -2,8 +2,7 @@
 name = "pallet-ovm"
 version = "1.0.0"
 authors = [
-    "Takumi Yamashita <takumi@stake.co.jp>",
-    "Aleksandr Krupenkin <aleksandr@stake.co.jp>"
+    "Stake Technologies <devops@stake.co.jp>",
 ]
 edition = "2018"
 

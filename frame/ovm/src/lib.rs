@@ -266,6 +266,20 @@ decl_error! {
         OutOfRangeOfChallenges,
         /// game is already started
         GameIsAlradyStarted,
+        /// property is not claimed
+        PropertyIsNotClaimed,
+        /// challenge is already started
+        ChallengeIsAlreadyStarted,
+        /// challenge is not in the challenge list
+        ChallengeIsNotInTheChallengeList,
+        /// challenge property is not decided to false
+        ChallengePropertyIsNotDecidedToFalse,
+        /// challenge list is not empty
+        ChallengeListIsNotEmpty,
+        /// dispute period has not been passed
+        DisputePeriodHasNotBeenPassed,
+        /// undecided challenge exists
+        UndecidedChallengeExists,
     }
 }
 
@@ -335,7 +349,6 @@ decl_module! {
         fn claim(origin, claim: PropertyOf<T>) {
             let origin = ensure_signed(origin)?;
             Self::only_from_dispute_contract(&origin, &claim)?;
-            // TODO: from
             // get the id of this property
             let game_id = Self::get_property_id(&claim);
             ensure!(
@@ -348,128 +361,76 @@ decl_module! {
            Self::deposit_event(RawEvent::PropertyClaimed(game_id, claim, block_number));
         }
 
-        /// Sets the game decision true when its dispute period has already passed.
-        /// TODO: weight
-        #[weight = 100_000]
-        fn decide_claim_to_true(origin, game_id: T::Hash) {
-            // TODO: -> settleGame
-            ensure!(
-                Self::is_decidable(&game_id),
-                Error::<T>::ClaimShouldBeDecidable,
-            );
-
-            // Note: if is_deciable(&game_id) is true, must exists games(&game_id).
-            let mut game = Self::games(&game_id).unwrap();
-
-            // game should be decided true
-            game.decision = Decision::True;
-            <Games<T>>::insert(&game_id, game);
-
-            Self::deposit_event(RawEvent::ClaimDecided(game_id, true));
-        }
-
-        /// Sets the game decision false when its challenge has been evaluated to true.
-        /// TODO: weight
-        #[weight = 100_000]
-        fn decide_claim_to_false(origin, game_id: T::Hash, challenging_game_id: T::Hash) {
-            let mut game = match Self::games(&game_id) {
-                Some(game) => game,
-                None => Err(Error::<T>::DoesNotExistGame)?,
-            };
-
-            let challenging_game = match Self::games(&challenging_game_id) {
-                Some(game) => game,
-                None => Err(Error::<T>::DoesNotExistGame)?,
-            };
-
-            // check _challenge is in game.challenges
-            let challenging_game_id = Self::get_property_id(&challenging_game.property);
-            ensure!(
-                game.challenges
-                    .iter()
-                    .any(|challenge| challenge == &challenging_game_id),
-                Error::<T>::ChallengeIsNotValid,
-            );
-
-            // game.createdBlock > block.number - dispute
-            // check _challenge have been decided true
-            ensure!(
-                challenging_game.decision == Decision::True,
-                Error::<T>::ChallengingGameNotTrue,
-            );
-
-            // game should be decided false
-            game.decision = Decision::False;
-            <Games<T>>::insert(&game_id, game);
-
-            Self::deposit_event(RawEvent::ClaimDecided(game_id, false));
-        }
-
-        /// Decide the game decision with given witness.
-        /// TODO: weight
-        #[weight = 100_000]
-        fn decide_claim_with_witness(origin, game_id: T::Hash, witness: Vec<u8>) {
-            let mut game = match Self::games(&game_id) {
-                Some(game) => game,
-                None => Err(Error::<T>::DoesNotExistGame)?,
-            };
-
-            // Decision must be undecided
-            ensure!(
-                game.decision == Decision::Undecided,
-                Error::<T>::DecisionMustBeUndecided,
-            );
-            // There must be no challenge
-            ensure!(
-                game.challenges.is_empty(),
-                Error::<T>::ThereMustBeNoChallenge,
-            );
-
-            let property = match Self::predicates(&game.property.predicate_address) {
-                Some(predicate) => predicate,
-                None => Err(Error::<T>::DoesNotExistPredicate)?,
-            };
-
-            // TODO: property must be true with given witness
-            // ensure!(property.decide_with_witness(game.property.inputs, witness),
-            //     Error::<T>::PropertyMustBeTrue);
-
-            game.decision = Decision::True;
-            <Games<T>>::insert(&game_id, game);
-            Self::deposit_event(RawEvent::ClaimDecided(game_id, true));
-        }
-
-        /// Removes a challenge when its decision has been evaluated to false.
+        /// Challenge to an existing game instance by a property.
+        ///
+        /// challenge will be added to `challenges` field of challenged game instance.
+        /// if property does not exist, revert.
+        /// if challenge with same property was made before, revert.
         ///
         /// TODO: weight
         #[weight = 100_000]
-        fn remove_challenge(origin, game_id: T::Hash, challenging_game_id: T::Hash) {
-            let mut game = match Self::games(&game_id) {
-                Some(game) => game,
-                None => Err(Error::<T>::DoesNotExistGame)?,
-            };
+        fn challenge(origin, property: PropertyOf<T>, challenge_property: PropertyOf<T>) {
+            let origin = ensure_signed(origin)?;
+            Self::only_from_dispute_contract(&origin, &property)?;
 
-            let challenging_game = match Self::games(&challenging_game_id) {
-                Some(game) => game,
-                None => Err(Error::<T>::DoesNotExistGame)?,
-            };
-
-            // check _challenge is in _game.challenges
-            let challenging_game_id = Self::get_property_id(&challenging_game.property);
-
-            // challenge isn't valid
+            // validation
+            let id = Self::get_property_id(&property);
             ensure!(
-                game.challenges
-                    .iter()
-                    .any(|challenge| challenge == &challenging_game_id),
-                Error::<T>::ChallengeIsNotValid,
+                Self::started(&id),
+                Error::<T>::PropertyIsNotClaimed,
             );
 
-            // _game.createdBlock > block.number - dispute
-            // check _challenge have been decided true
+            let challenge_game_id = Self::get_property_id(&property);
             ensure!(
-                challenging_game.decision == Decision::False,
-                Error::<T>::ChallengingGameNotFalse,
+                Self::started(&challenge_game_id),
+                Error::<T>::ChallengeIsAlreadyStarted,
+            );
+
+            // start challenging game
+            let challenge_game = Self::create_game(&challenge_game_id);
+            <Games<T>>::insert(challenge_game_id, challenge_game);
+
+            // add challenge to challenged game's challenge list
+            <Games<T>::mutate(&id, |game| {
+                *game.challenges.push(&challenge_game_id);
+            });
+            Self::deposit_event(RawEvent::PropertyChallenged(id, challenging_game_id));
+        }
+
+        /// remove challenge
+        /// set challenging game decision to false and remove it from challenges field of challenged game
+        /// if property does not exist, revert.
+        /// if challenge property does not exist, revert.
+        ///
+        /// TODO: weight
+        #[weight = 100_000]
+        fn remove_challenge(origin, property: PropertyOf<T>, challenge_property: PropertyOf<T>) {
+            let origin = ensure_signed(origin)?;
+            Self::only_from_dispute_contract(&origin, &property)?;
+
+            let id = Self::get_property_id(&property);
+            ensure!(
+                Self::started(&id),
+                Error::<T>::PropertyIsNotClaimed,
+            );
+
+            let challenge_game_id = Self::get_property_id(&property);
+            ensure!(
+                Self::started(&challenge_game_id),
+                Error::<T>::ChallengeIsAlreadyStarted,
+            );
+
+            let mut game = Self::games(&id);
+            let challenge_index = Self::find_index(&game.challenges, &challenge_game_id);
+            ensure!(
+                challenge_index >= 0,
+                Error::<T>::ChallengeIsNotInTheChallengeList,
+            );
+
+            let challenge_game = Self::games(&challenge_game_id);
+            ensure!(
+                challenge_game.decision == Decision::False,
+                Error::<T>::ChallengePropertyIsNotDecidedToFalse,
             );
 
             // remove challenge
@@ -479,65 +440,76 @@ decl_module! {
                 .filter(|challenge| challenge != &challenging_game_id)
                 .collect();
             <Games<T>>::insert(&game_id, game);
-
-            Self::deposit_event(RawEvent::ChallengeRemoved(game_id, challenging_game_id));
+            Self::deposit_event(RawEvent::ChallengeRemoved(id, challenging_game_id));
         }
 
-        /// Set a predicate decision by called from Predicate itself.
+        /// set game result to given result value.
+        /// only called from dispute contract
         ///
         /// TODO: weight
         #[weight = 100_000]
-        fn set_predicate_decision(origin, game_id: T::Hash, decision: bool) {
+        fn set_game_result(property: PropertyOf<T>, result: bool)
+        {
             let origin = ensure_signed(origin)?;
-            let mut game = match Self::games(&game_id) {
-                Some(game) => game,
-                None => Err(Error::<T>::DoesNotExistGame)?,
-            };
+            Self::only_from_dispute_contract(&origin, &property)?;
 
-            // only the prodicate can decide a claim
+            let id = Self::get_property_id(&property);
             ensure!(
-                game.property.predicate_address == origin,
-                Error::<T>::MustBeCalledFromPredicate,
+                Self::started(&id),
+                Error::<T>::PropertyIsNotClaimed,
             );
 
-            if decision {
-                game.decision = Decision::True;
-            } else {
-                game.decision = Decision::False;
-            }
-            Self::deposit_event(RawEvent::AtomicPropositionDecided(game_id, decision));
+            let mut game = Self::games(&id);
+            ensure!(
+                game.challenges.len() == 0,
+                Error::<T>::ChallengeListIsNotEmpty,
+            );
+
+            game.decision = Self::get_decision(result);
+            Self::deposit_event(RawEvent::PropertyDecided(id, result));
         }
 
-        /// Challenge a game specified by gameId with a challengingGame specified by _challengingGameId.
-        ///
-        /// @param game_id challenged game id.
-        /// @param challenge_inputs array of input to verify child of game tree.
-        /// @param challenging_game_id child of game tree.
+        /// settle game
+        /// settle started game whose dispute period has passed.
+        /// if no challenge for the property exists, decide to true.
+        /// if any of its challenges decided to true, decide game to false.
+        /// if undecided challenge remains, revert.
         ///
         /// TODO: weight
         #[weight = 100_000]
-        fn challenge(origin, game_id: T::Hash, challenge_inputs: Vec<u8>, challenging_game_id: T::Hash) {
-            let mut game = match Self::games(&game_id) {
-                Some(game) => game,
-                None => Err(Error::<T>::DoesNotExistGame)?,
-            };
+        function settle_game(property: Property)
+        {
+            let origin = ensure_signed(origin)?;
+            Self::only_from_dispute_contract(&origin, &property)?;
 
-            let challenging_game = match Self::games(&challenging_game_id) {
-                Some(game) => game,
-                None => Err(Error::<T>::DoesNotExistGame)?,
-            };
+            let id = Self::get_property_id(&property);
+            bytes32 id = utils.getPropertyId(_property);
+            ensure!(
+                Self::started(&id),
+                Error::<T>::PropertyIsNotClaimed,
+            );
 
-            // TODO: challenge isn't valid
-            // ensure!(
-            //     LogicalConnective(game.property.predicate_address).isValidChallenge(
-            //         game.property.inputs,
-            //         _challengeInputs,
-            //         challengingGame.property
-            //     ),
-            //     Error::<T>::ChallengeIsNotValid,
-            // );
-            game.challenges.push(challenging_game_id.clone());
-            Self::deposit_event(RawEvent::ClaimChallenged(game_id, challenging_game_id));
+            let mut game = Self::games(&id);
+            ensure!(
+                game.create_block < Self::block_number() - Self::DisputePeriod(),
+                Error::<T>::DisputePeriodHasNotBeenPassed,
+            );
+
+            for challenge in game.challenges.iter() {
+                let decision = Self::get_game(challenge)?.decision;
+                if decision == Decision::True {
+                    game.decision = Decision::False;
+                    Self::deposit_event(RawEvent::PropertyDecided(id, false));
+                    return Ok(());
+                }
+                ensure!(
+                    decision == Decision::Undecided,
+                    Error::<T>::UndecidedChallengeExists,
+                );
+            }
+            game.decision = Decision::True;
+            <Games<T>>::insert(&id, game);
+            Self::deposit_event(RawEvent::PropertyDecided(id, true));
         }
     }
 }
@@ -663,28 +635,6 @@ impl<T: Trait> Module<T> {
 
     fn find_index<Hash: PartialEq, Eq>(array: &Vec<Hash>, item: &Hash) -> Option<usize> {
         array.iter().position(|hash| hash == item)
-    }
-
-    // base: removeChallengefromArray
-    fn remove_challenge_from_array(
-        game_id: &T::Hash,
-        game: &ChallengeGameOf<T>,
-        index: usize,
-    ) -> DispatchResult {
-        Games::try_mutate(game_id, |game| {
-            if game.challenges.length > index {
-                *game.challenges = game
-                    .challenges
-                    .iter()
-                    .enumerate()
-                    .filter(|(i, x)| i != index)
-                    .map(|(i, x)| x)
-                    .collect();
-            } else {
-                return Err(Error::<T>::OutOfRangeOfChallenges);
-            }
-            Ok(())
-        })
     }
 
     // ======= modifier =======
