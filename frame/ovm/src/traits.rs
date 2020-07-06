@@ -31,23 +31,37 @@ pub trait Loader<T: Trait> {
 /// - caller: get of the caller of this predicate.
 /// - address: the predicate's address.
 /// - is_stored: check the storage of other modules or contracts.
-pub trait Ext {
-    type T: Trait;
-
+pub trait Ext<T: Trait, Err> {
     /// Call (possibly other predicate) into the specified account.
-    fn call(&self, to: &AccountIdOf<Self::T>, input_data: Vec<u8>) -> ExecResult;
+    fn call(&self, to: &AccountIdOf<T>, input_data: Vec<u8>) -> Result<Vec<u8>, Err>;
 
     /// Returns a reference to the account id of the caller.
-    fn caller(&self) -> &AccountIdOf<Self::T>;
+    fn caller(&self) -> &AccountIdOf<T>;
 
     /// Returns a reference to the account id of the current contract.
-    fn address(&self) -> &AccountIdOf<Self::T>;
+    fn address(&self) -> &AccountIdOf<T>;
 
     // TODO: Notes a call other storage.
     // Only return true or false.
     // CommitmentAddress(special) isCommitment(address) -> Commitment
     // is_stored_predicate(&mut self, address, key, value);?
     // ref: https://github.com/cryptoeconomicslab/ovm-contracts/blob/master/contracts/Predicate/Atomic/IsStoredPredicate.sol
+    fn is_stored(&self, _address: &AccountIdOf<T>, _key: &[u8], _value: &[u8]) -> bool;
+
+    /// Needs Plasma.
+    fn verify_inclusion_with_root(
+        &self,
+        leaf: Self::Hash,
+        token_address: Self::Address,
+        range: &[u8],
+        inclusion_proof: &[u8],
+        root: &[u8],
+    ) -> bool;
+
+    fn is_decided(&self, property: &PropertyOf<Self>) -> bool;
+    fn is_decided_by_id(&self, id: Self::Hash) -> bool;
+
+    fn ext_set_predicate_decision(&self, game_id: Self::Hash, decision: bool) -> Result<bool, Err>;
 }
 
 /// A trait that represent an optimistic virtual machine.

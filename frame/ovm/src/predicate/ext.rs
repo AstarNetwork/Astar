@@ -2,9 +2,11 @@
 
 use crate::traits::Ext;
 use crate::*;
+use ovmi::executor::{ExecError, ExecResultT, ExecResultTOf, ExternalCall};
+use ovmi::predicates::PredicateCallInputs;
 use ovmi::prepare;
-use ovmi::ExternalCall;
-use ovmi::PredicateCallInputs;
+
+pub use sp_core::ecdsa;
 
 lazy_static! {
     pub static ref PAY_OUT_CONTRACT_ADDRESS: Address = to_account_from_seed(&hex![
@@ -52,17 +54,15 @@ lazy_static! {
     pub static ref VERIFY_INCLUAION_ADDRESS: Address = to_account_from_seed(&hex![
         "0000000000000000000000000000000000000000000000000000000000000013"
     ]);
-    pub static ref SECP_256_K1: Hash = Hash::from(&hex![
-        "d4fa99b1e08c4e5e6deb461846aa629344d95ff03ed04754c2053d54c756f439"
-    ]);
+    pub static ref SECP_256_K1: Hash = BlakeTwo256::hash(&b"secp256k1".to_vec());
 }
 
 // Setting External environment.
-struct ExternalCallImpl<T: Trait, E: Ext> {
-    pub inter: Ext,
+struct ExternalCallImpl<T: Trait, E: Ext<T, ExecError<T::AccountIdL2>>> {
+    pub inter: E,
 }
 
-impl<T: Trait, E: Ext> ExternalCall for ExternalCallImpl<T, E> {
+impl<T: Trait, E: Ext<T, T::AccountIdL2>> ExternalCall for ExternalCallImpl<T, E> {
     type Address = T::AccountIdL2;
     type Hash = T::Hash;
     type Hashing = T::HashingL2;
@@ -108,41 +108,29 @@ impl<T: Trait, E: Ext> ExternalCall for ExternalCallImpl<T, E> {
         &self,
         to: &Self::Address,
         input_data: PredicateCallInputs<Self::Address>,
-    ) -> ExecResultT<Vec<u8>, Address> {
+    ) -> ExecResultT<Vec<u8>, Self::Address> {
         self.inter.call(to, input_data.encode())
     }
 
     fn ext_caller(&self) -> Self::Address {
-        (*CALLER_ADDRESS).clone()
+        self.inter.caller()
     }
 
     fn ext_address(&self) -> Self::Address {
-        (*PREDICATE_X_ADDRESS).clone()
+        self.inter.address()
     }
 
     fn ext_is_stored(&self, address: &Self::Address, key: &[u8], value: &[u8]) -> bool {
-        if let Some(s) = self.mock_stored.get(address) {
-            if let Some(res) = s.get(&key.to_vec()) {
-                return res == &value.to_vec();
-            }
-        }
-        false
+        self.inter.is_stored(address, key, value)
     }
 
+    /// At first implementing, only ECDSA signature.
     fn ext_verify(&self, hash: &Self::Hash, signature: &[u8], address: &Self::Address) -> bool {
-        println!("ext_verify hash     : {:?}", hash);
-        println!("ext_verify signature: {:?}", signature);
-        println!("ext_verify address  : {:?}", address);
         if signature.len() != 65 {
             return false;
         }
-        let sig: Signature = Signature::from_slice(signature);
-        println!("ext_verify after    : {:?}", sig);
+        let sig: ecdsa::Signature = ecdsa::Signature::from_slice(signature);
         if let Some(public) = sig.recover(hash) {
-            println!(
-                "ext_verify public    : {:?}",
-                &MultiSigner::from(public.clone()).into_account()
-            );
             return address == &MultiSigner::from(public).into_account();
         }
         false
@@ -150,47 +138,30 @@ impl<T: Trait, E: Ext> ExternalCall for ExternalCallImpl<T, E> {
 
     fn ext_verify_inclusion_with_root(
         &self,
-        _leaf: Self::Hash,
-        _token_address: Self::Address,
-        _range: &[u8],
-        _inclusion_proof: &[u8],
-        _root: &[u8],
+        leaf: Self::Hash,
+        token_address: Self::Address,
+        range: &[u8],
+        inclusion_proof: &[u8],
+        root: &[u8],
     ) -> bool {
-        true
+        self.inter
+            .verify_inclusion_with_root(leaf, token_address, range, inclusion_proof, root)
     }
 
-    fn ext_is_decided(&self, _property: &PropertyOf<Self>) -> bool {
-        true
+    fn ext_is_decided(&self, property: &PropertyOf<Self>) -> bool {
+        self.inter.is_decided(property)
     }
-    fn ext_is_decided_by_id(&self, _id: Self::Hash) -> bool {
-        true
+    fn ext_is_decided_by_id(&self, id: Self::Hash) -> bool {
+        self.inter.is_decided_by_id(id)
     }
     fn ext_get_property_id(&self, property: &PropertyOf<Self>) -> Self::Hash {
         Self::hash_of(property)
     }
     fn ext_set_predicate_decision(
         &self,
-        _game_id: Self::Hash,
-        _decision: bool,
-    ) -> ExecResult<Self::Address> {
-        Ok(true)
+        game_id: Self::Hash,
+        decision: bool,
+    ) -> ExecResultT<bool, Self::Address> {
+        self.inter.set_predicate_decision(game_id, decision)
     }
-}
-
-fn call_execute(
-    inputs: Vec<Vec<u8>>,
-    inputs: PredicateCallInputs<AccountId>,
-) -> ExecResult<AccountId> {
-    let compiled_predicate = prepare::compile_from_json("<compiled_predicate_json>").unwrap();
-    let (payout, address_input, bytes_inputs) = prepare::parse_inputs(inputs);
-    let ext = MockExternalCall {};
-    let executable = prepare::executable_from_compiled(
-        &mut ext,
-        code: compiled_predicate,
-        payout,
-        address_inputs,
-        bytes_inputs,
-    );
-    // execute and return value.
-    CompiledExecutor::execute(&executable, inputs)
 }

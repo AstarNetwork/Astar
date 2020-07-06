@@ -21,14 +21,17 @@ use frame_support::{
     ensure,
     traits::{Get, Time},
     weights::{DispatchClass, FunctionOf, Pays, Weight},
-    StorageMap,
+    Parameter, StorageMap,
 };
 use frame_system::{self as system, ensure_signed};
 
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
-use sp_runtime::{traits::Hash, RuntimeDebug};
-use sp_std::{prelude::*, vec::Vec};
+use sp_runtime::{
+    traits::{Hash, Member},
+    RuntimeDebug,
+};
+use sp_std::{fmt::Debug, prelude::*, vec::Vec};
 
 #[cfg(test)]
 mod mock;
@@ -200,7 +203,6 @@ decl_storage! {
 
         /// Mapping the game id to Challenge Game.
         pub Games get(fn games): map hasher(blake2_128_concat) T::Hash => Option<ChallengeGameOf<T>>;
-
     }
 }
 
@@ -321,7 +323,6 @@ decl_module! {
             Ok(())
         }
 
-
         /// Deploy predicate and made predicate address as AccountId.
         /// TODO: weight
         #[weight = 100_000]
@@ -332,7 +333,8 @@ decl_module! {
             let predicate_address = T::DeterminePredicateAddress::predicate_address_for(
                 &predicate_hash,
                 &inputs,
-                &origin);
+                &origin
+            );
             let predicate_contract = PredicateContract {
                 predicate_hash,
                 inputs,
@@ -643,7 +645,7 @@ impl<T: Trait> Module<T> {
         property: &PropertyOf<T>,
     ) -> DispatchResult {
         ensure!(
-            property.predicate_address === origin,
+            property.predicate_address == origin,
             Error::<T>::MustBeCalledFromPredicate,
         );
         Ok(())

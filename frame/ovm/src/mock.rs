@@ -130,6 +130,8 @@ impl Trait for Test {
     type MaxDepth = MaxDepth;
     type DisputePeriod = DisputePeriod;
     type DeterminePredicateAddress = DummyPredicateAddressFor;
+    type AccountIdL2 = AccountId;
+    type HashingL2 = BlakeTwo256;
     type Event = MetaEvent;
 }
 

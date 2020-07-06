@@ -21,6 +21,8 @@ impl From<&'static str> for PredicateError {
     }
 }
 
+pub type ExecResult = Result<bool, ExecError>;
+
 /// An error indicating some failure to execute a contract call or instantiation. This can include
 /// VM-specific errors during execution (eg. division by 0, OOB access, failure to satisfy some
 /// precondition of a system call, etc.) or errors with the orchestration (eg. out-of-gas errors, a
@@ -51,8 +53,6 @@ macro_rules! try_or_exec_error {
         }
     };
 }
-
-pub type ExecResult = Result<bool, ExecError>;
 
 /// A prepared wasm module ready for execution.
 #[derive(Clone, Encode, Decode)]
@@ -195,7 +195,7 @@ where
     type T = T;
 
     /// Call (possibly other predicate) into the specified account.
-    fn call(&self, to: &AccountIdOf<Self::T>, input_data: Vec<u8>) -> ExecResult {
+    fn call(&self, to: &AccountIdOf<Self::T>, input_data: Vec<u8>) -> Result<Vec<u8>> {
         self.ctx.call(to.clone(), input_data)
     }
 
