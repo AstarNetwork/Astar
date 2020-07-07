@@ -26,7 +26,7 @@ pub fn lock_script(public: &ecdsa::Public, duration: u32) -> Result<Script, Stri
         };
         Ok(script.to_p2sh())
     } else {
-        return Err("Lock duration sanity check failed".to_string())
+        return Err("Lock duration sanity check failed".to_string());
     }
 }
 
@@ -46,7 +46,10 @@ mod tests {
         let public = ecdsa::Public::from_slice(
             &hex!["038ea27103fb646a2cea9eca9080737e0b23640caaaef2853416c9b286b353313e"][..],
         );
-        assert_eq!(lock_script(&public, 0), Err("Lock duration sanity check failed".to_string()));
+        assert_eq!(
+            lock_script(&public, 0),
+            Err("Lock duration sanity check failed".to_string())
+        );
 
         let duration = 10;
         let script = lock_script(&public, duration).unwrap();
