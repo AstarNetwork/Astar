@@ -81,7 +81,8 @@ pub async fn start(config: Config) {
 
             // assembly bitcoin script for given params
             let blocks = (lock.duration / 600) as u32;
-            let lock_script = btc_utils::lock_script(&lock.public_key, blocks);
+            let lock_script = btc_utils::lock_script(&lock.public_key, blocks)
+                .map_err(|e| tide::Error::from_str(tide::StatusCode::BadRequest, e))?;
             log::debug!(
                 target: "lockdrop-oracle",
                 "Lock script address for public ({}), duration({}): {}",
