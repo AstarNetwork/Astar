@@ -6,6 +6,7 @@ mod ext;
 mod prepare;
 
 pub use self::code_cache::save as save_code;
+use ovmi::predicates::CompiledExecutable;
 
 /// Reason why a predicate call failed
 #[derive(Eq, PartialEq, Clone, Copy, Encode, Decode, RuntimeDebug)]
@@ -221,36 +222,11 @@ impl<'a> PredicateOvm<'a> {
     }
 }
 
-impl<'a, T: Trait> Vm<T> for PredicateOvm<'a> {
-    type Executable = OvmExecutable;
+impl<'a, T: Trait, E: Ext<T = T>> Vm<T, E> for PredicateOvm<'a> {
+    type Executable = CompiledExecutable<'a, ext::ExternalCallImpl<T, E>>;
 
-    fn execute<E: Ext<T = T>>(
-        &self,
-        exec: &Self::Executable,
-        ext: E,
-        input_data: Vec<u8>,
-    ) -> ExecResult {
-        // TODO: make sandbox environments(Is it needed?) -> needed
-        // let mut imports = sp_sandbox::EnvironmentDefinitionBuilder::new();
-
-        // TODO: runtime setup.
-        // runtime::Env::impls(&mut |name, func_ptr| {
-        //     imports.add_host_func("env", name, func_ptr);
-        // });
-        //
-        // let mut runtime = Runtime::new(
-        //     &mut ext,
-        //     input_data,
-        //     &self.schedule,
-        // );
-
-        // TODO: instantiate vm and execute and get results.
-        // Instantiate the instance from the instrumented module code and invoke the contract
-        // entrypoint.
-        // let result = sp_sandbox::Instance::new(&exec.prefab_module.code, &imports, &mut runtime)
-        //     .and_then(|mut instance| instance.invoke(exec.entrypoint_name, &[], &mut runtime));
-        // to_execution_result(runtime, result)
-
-        Ok(true)
+    fn execute(&self, exec: &Self::Executable, ext: E, input_data: Vec<u8>) -> ExecResult {
+        let ext_impl = ext::ExternalCallImpl::<T, E>::new(ext);
+        CompiledExecutable::execute(&exec, input_data)
     }
 }

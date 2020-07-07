@@ -58,8 +58,14 @@ lazy_static! {
 }
 
 // Setting External environment.
-struct ExternalCallImpl<T: Trait, E: Ext<T, ExecError<T::AccountIdL2>>> {
+pub struct ExternalCallImpl<T: Trait, E: Ext<T, ExecError<T::AccountIdL2>>> {
     pub inter: E,
+}
+
+impl<T: Trait, E: Ext<T, ExecError<T::AccountIdL2>>> ExternalCallImpl<T, E> {
+    pub fn new(inter: E) -> Self {
+        ExternalCallImpl { inter }
+    }
 }
 
 impl<T: Trait, E: Ext<T, T::AccountIdL2>> ExternalCall for ExternalCallImpl<T, E> {
