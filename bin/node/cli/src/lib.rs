@@ -14,6 +14,8 @@ mod browser;
 mod cli;
 #[cfg(feature = "cli")]
 mod command;
+#[cfg(feature = "oracle")]
+mod oracle;
 
 #[cfg(feature = "browser")]
 pub use browser::*;
