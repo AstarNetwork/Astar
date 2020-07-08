@@ -609,10 +609,6 @@
 <span id="609">609</span>
 <span id="610">610</span>
 <span id="611">611</span>
-<span id="612">612</span>
-<span id="613">613</span>
-<span id="614">614</span>
-<span id="615">615</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="doccomment">//! The Substrate runtime. This can be compiled with ``#[no_std]`, ready for Wasm.</span>
 
@@ -675,17 +671,13 @@
 
 <span class="doccomment">/// Runtime version.</span>
 <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">VERSION</span>: <span class="ident">RuntimeVersion</span> <span class="op">=</span> <span class="ident">RuntimeVersion</span> {
-    <span class="ident">spec_name</span>: <span class="macro">create_runtime_str</span><span class="macro">!</span>(<span class="string">&quot;dusty2&quot;</span>),
+    <span class="ident">spec_name</span>: <span class="macro">create_runtime_str</span><span class="macro">!</span>(<span class="string">&quot;plasm&quot;</span>),
     <span class="ident">impl_name</span>: <span class="macro">create_runtime_str</span><span class="macro">!</span>(<span class="string">&quot;staketechnologies-plasm&quot;</span>),
-    <span class="ident">authoring_version</span>: <span class="number">1</span>,
-    <span class="comment">// Per convention: if the runtime behavior changes, increment spec_version</span>
-    <span class="comment">// and set impl_version to equal spec_version. If only runtime</span>
-    <span class="comment">// implementation changes and behavior does not, then leave spec_version as</span>
-    <span class="comment">// is and increment impl_version.</span>
+    <span class="ident">authoring_version</span>: <span class="number">2</span>,
     <span class="ident">spec_version</span>: <span class="number">2</span>,
     <span class="ident">impl_version</span>: <span class="number">2</span>,
+    <span class="ident">transaction_version</span>: <span class="number">2</span>,
     <span class="ident">apis</span>: <span class="ident">RUNTIME_API_VERSIONS</span>,
-    <span class="ident">transaction_version</span>: <span class="number">1</span>,
 };
 
 <span class="doccomment">/// Native version.</span>
