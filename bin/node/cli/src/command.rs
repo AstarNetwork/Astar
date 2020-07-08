@@ -4,7 +4,7 @@ use sc_cli::SubstrateCli;
 
 impl SubstrateCli for Cli {
     fn impl_name() -> &'static str {
-        "plasm"
+        "Plasm Node"
     }
 
     fn impl_version() -> &'static str {
