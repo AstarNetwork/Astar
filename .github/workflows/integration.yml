@@ -84,5 +84,5 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
-    - uses: cachix/install-nix-action@v7
+    - uses: cachix/install-nix-action@v10
     - run: nix-shell third-party/nix/shell.nix --option sandbox false --run "cargo build --release"
