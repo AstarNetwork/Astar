@@ -35,7 +35,7 @@ pub trait Ext {
     type T: Trait;
 
     /// Call (possibly other predicate) into the specified account.
-    fn call(&mut self, to: &AccountIdOf<Self::T>, input_data: Vec<u8>) -> ExecResult;
+    fn call(&self, to: &AccountIdOf<Self::T>, input_data: Vec<u8>) -> ExecResult;
 
     /// Returns a reference to the account id of the caller.
     fn caller(&self) -> &AccountIdOf<Self::T>;

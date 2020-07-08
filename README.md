@@ -79,7 +79,7 @@ Install additional build tools:
 
 Install Plasm node from git source:
 
-    cargo install --locked --force --git https://github.com/staketechnologies/Plasm --tag v1.0.0 plasm-cli
+    cargo install --locked --force --git https://github.com/staketechnologies/Plasm --tag v1.1.0 plasm-cli
 
 Run node in [Plasm Mainnet](https://telemetry.polkadot.io/#/Plasm):
 
