@@ -24,13 +24,11 @@ impl<Ext: ExternalCall> LogicalConnectiveInterface<AddressOf<Ext>> for AndPredic
     ) -> ExecResult<AddressOf<Ext>> {
         // challenge_input is index of child property
         require!((&challenge_inputs).len() > 0);
-        let index: u128 = Decode::decode(&mut &challenge_inputs[0][..])
-            .map_err(|_| ExecError::CodecError { type_name: "u128" })?;
-        let index: usize = index as usize;
+        let index = Ext::bytes_to_u128(&challenge_inputs[0])? as usize;
 
         // challenge should be not(p[index])
         // require!(_challenge.predicateAddress == not_predicateAddress);
-        require!(challenge.predicate_address == Ext::NOT_ADDRESS);
+        require!(challenge.predicate_address == Ext::not_address());
 
         // require!(keccak256(_inputs[index]) == keccak256(_challenge.inputs[0]));
         require!(inputs.len() > index);
@@ -48,10 +46,7 @@ impl<Ext: ExternalCall> DecidablePredicateInterface<AddressOf<Ext>> for AndPredi
         _witness: Vec<Vec<u8>>,
     ) -> ExecResult<AddressOf<Ext>> {
         for input in inputs.iter() {
-            let property: PropertyOf<Ext> =
-                Decode::decode(&mut &input[..]).map_err(|_| ExecError::CodecError {
-                    type_name: "Property<Ext>",
-                })?;
+            let property: PropertyOf<Ext> = Ext::bytes_to_property(input)?;
             require_with_message!(
                 self.ext.ext_is_decided(&property),
                 "This property isn't true"

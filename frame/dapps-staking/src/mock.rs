@@ -106,6 +106,7 @@ parameter_types! {
 
 impl system::Trait for Test {
     type Origin = Origin;
+    type BaseCallFilter = ();
     type Index = u64;
     type BlockNumber = BlockNumber;
     type Call = Call;
@@ -231,13 +232,6 @@ impl pallet_contracts::TrieIdGenerator<u64> for DummyTrieIdGenerator {
     }
 }
 
-pub struct DummyComputeDispatchFee;
-impl pallet_contracts::ComputeDispatchFee<Call, u64> for DummyComputeDispatchFee {
-    fn compute_dispatch_fee(_call: &Call) -> u64 {
-        69
-    }
-}
-
 parameter_types! {
     pub const ContractTransactionBaseFee: Balance = 0;
     pub const ContractTransactionByteFee: Balance = 0;
@@ -251,7 +245,7 @@ parameter_types! {
 impl pallet_contracts::Trait for Test {
     type Time = Timestamp;
     type Randomness = pallet_randomness_collective_flip::Module<Test>;
-    type Call = Call;
+    type Currency = Balances;
     type Event = ();
     type DetermineContractAddress = DummyContractAddressFor;
     type TrieIdGenerator = DummyTrieIdGenerator;
@@ -264,6 +258,7 @@ impl pallet_contracts::Trait for Test {
     type SurchargeReward = SurchargeReward;
     type MaxDepth = pallet_contracts::DefaultMaxDepth;
     type MaxValueSize = pallet_contracts::DefaultMaxValueSize;
+    type WeightPrice = pallet_transaction_payment::Module<Self>;
 }
 
 impl pallet_contract_operator::Trait for Test {

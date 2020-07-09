@@ -1,6 +1,9 @@
 use ovmi;
 
 fn main() {
-    ovmi::compile_from_json("{}");
-    println!("Hello, world!");
+    let compiled_predicate = match ovmi::compile_from_json("{}") {
+        Ok(res) => res,
+        Err(err) => panic!(err),
+    };
+    println!("{:?}", compiled_predicate);
 }

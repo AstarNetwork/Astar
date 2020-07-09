@@ -1,5 +1,4 @@
 use codec::{Decode, Encode};
-use core::fmt;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
 
@@ -166,7 +165,7 @@ pub struct LabelInput {
 pub struct NormalInput {
     pub r#type: PredicateType,
     pub input_index: u8,
-    pub children: Vec<u8>,
+    pub children: Vec<i8>,
 }
 
 #[derive(Clone, Eq, PartialEq, Encode, Decode, Hash)]
@@ -174,14 +173,14 @@ pub struct NormalInput {
 pub struct VariableInput {
     pub r#type: PredicateType,
     pub placeholder: Placeholder,
-    pub children: Vec<u8>,
+    pub children: Vec<i8>,
 }
 
 #[derive(Clone, Eq, PartialEq, Encode, Decode, Hash)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize, Debug))]
 pub struct SelfInput {
     pub r#type: PredicateType,
-    pub children: Vec<u8>,
+    pub children: Vec<i8>,
 }
 
 /// LogicalConnective

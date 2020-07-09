@@ -96,7 +96,6 @@
 //! }
 //! ```
 
-#![warn(missing_docs)]
 #![cfg_attr(not(feature = "std"), no_std)]
 #![macro_use]
 
@@ -105,7 +104,7 @@ macro_rules! require {
     ($val:expr) => {
         if !($val) {
             return Err(crate::executor::ExecError::Require {
-                msg: "Required error by: $val",
+                msg: stringify!($val),
             });
         }
     };
