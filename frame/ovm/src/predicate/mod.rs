@@ -1,5 +1,6 @@
 use super::*;
 use crate::traits::*;
+use snafu::Snafu;
 
 mod code_cache;
 mod ext;
@@ -9,10 +10,11 @@ pub use self::code_cache::save as save_code;
 use ovmi::predicates::CompiledExecutable;
 
 /// Reason why a predicate call failed
-#[derive(Eq, PartialEq, Clone, Copy, Encode, Decode, RuntimeDebug)]
+#[derive(Snafu, Eq, PartialEq, Clone, Copy, Encode, Decode, RuntimeDebug)]
 #[cfg_attr(feature = "std", derive(Serialize))]
 pub enum PredicateError {
     /// Some error occurred.
+    #[snafu(display("Other: {}", msg))]
     Other(#[codec(skip)] &'static str),
 }
 
@@ -28,11 +30,14 @@ pub type ExecResult = Result<bool, ExecError>;
 /// VM-specific errors during execution (eg. division by 0, OOB access, failure to satisfy some
 /// precondition of a system call, etc.) or errors with the orchestration (eg. out-of-gas errors, a
 /// non-existent destination contract, etc.).
+#[derive(Snafu, PartialEq)]
 #[cfg_attr(test, derive(sp_runtime::RuntimeDebug))]
 pub struct ExecError {
+    #[snafu(display("Reason: {}", reason))]
     pub reason: PredicateError,
     /// This is an allocated buffer that may be reused. The buffer must be cleared explicitly
     /// before reuse.
+    #[snafu(display("Buffer: {}", buffer))]
     pub buffer: Vec<u8>,
 }
 

@@ -4,7 +4,7 @@ use codec::Codec;
 use core::fmt::Debug;
 use core::marker::PhantomData;
 pub use hash_db::Hasher;
-use snafu::Snafu;
+use snafu::{Backtrace, Snafu};
 
 #[derive(Snafu, PartialEq)]
 #[cfg_attr(feature = "std", derive(Debug))]
@@ -24,6 +24,8 @@ pub enum ExecError<Address> {
     CallAddress { address: Address },
     #[snafu(display("Codec error: expected type name is {}", type_name))]
     CodecError { type_name: &'static str },
+    #[snafu(display("External error: {}", backtrace))]
+    ExternalError { backtrace: Backtrace },
     #[snafu(display("Unexpected error: {}", msg))]
     Unexpected { msg: &'static str },
     /// Unimplemented error.

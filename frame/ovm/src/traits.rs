@@ -75,10 +75,5 @@ pub trait Ext<T: Trait, Err> {
 pub trait Vm<T: Trait, E: Ext<T = T>> {
     type Executable;
 
-    fn execute(
-        &self,
-        exec: &Self::Executable,
-        ext: E,
-        input_data: Vec<u8>,
-    ) -> ExecResult;
+    fn execute(&self, exec: &Self::Executable, ext: E, input_data: Vec<u8>) -> ExecResult;
 }
