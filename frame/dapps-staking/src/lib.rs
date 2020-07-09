@@ -814,13 +814,11 @@ impl<T: Trait> Module<T> {
 
         let total_staked = Self::eras_total_stake(era);
 
-        let threshold = Self::eras_total_stake(&era) / BalanceOf::<T>::from(10);
-
         let nominate_values = (era.saturating_sub(T::HistoryDepthFinder::get())..=*era)
             .flat_map(|e| <ErasStakingPoints<T>>::iter_prefix(&e))
             .flat_map(|(_, points)| points.individual)
             .filter(|(account, _)| *account == *nominator)
-            .map(|(account, value)| value)
+            .map(|(_, value)| value)
             .collect::<Vec<_>>();
 
         let nominate_total = Self::eras_nominate_totals(era, nominator);

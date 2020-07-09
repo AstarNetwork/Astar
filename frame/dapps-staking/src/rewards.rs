@@ -90,7 +90,7 @@ impl ComputeRewardsForDapps for VoidableRewardsForDapps {
 
     /// stakings that are less than 10% of total staking are ignored
     fn compute_reward_for_nominator<N>(
-        nominate_total: N,
+        _nominate_total: N,
         total_staked: N,
         nominators_reward: N,
         staked_values: Vec<N>,
