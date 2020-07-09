@@ -686,11 +686,6 @@ decl_module! {
                 }
             }
 
-            // for community rewards
-            if !Self::is_payable(&era, &nominator) {
-                Err("the nominator cannot claim rewards")?
-            }
-
             let rewards = match T::ForDappsEraReward::get(&era) {
                 Some(rewards) => rewards,
                 None => {
@@ -819,9 +814,22 @@ impl<T: Trait> Module<T> {
 
         let total_staked = Self::eras_total_stake(era);
 
+        let threshold = Self::eras_total_stake(&era) / BalanceOf::<T>::from(10);
+
+        let nominate_values = (era.saturating_sub(T::HistoryDepthFinder::get())..=*era)
+            .flat_map(|e| <ErasStakingPoints<T>>::iter_prefix(&e))
+            .flat_map(|(_, points)| points.individual)
+            .filter(|(account, _)| *account == *nominator)
+            .map(|(account, value)| value)
+            .collect::<Vec<_>>();
+
         let nominate_total = Self::eras_nominate_totals(era, nominator);
-        let reward =
-            Perbill::from_rational_approximation(nominate_total, total_staked) * nominators_reward;
+        let reward = T::ComputeRewardsForDapps::compute_reward_for_nominator(
+            nominate_total,
+            total_staked,
+            nominators_reward,
+            nominate_values,
+        );
         total_imbalance.subsume(
             Self::make_payout(nominator, reward).unwrap_or(PositiveImbalanceOf::<T>::zero()),
         );
@@ -861,8 +869,11 @@ impl<T: Trait> Module<T> {
         let total_staked = Self::eras_total_stake(era);
 
         let staked_operator = Self::eras_staked_operators(era, operator);
-        let reward =
-            Perbill::from_rational_approximation(staked_operator, total_staked) * operators_reward;
+        let reward = T::ComputeRewardsForDapps::compute_reward_for_operator(
+            staked_operator,
+            total_staked,
+            operators_reward,
+        );
         total_imbalance.subsume(
             T::Currency::deposit_into_existing(operator, reward)
                 .unwrap_or(PositiveImbalanceOf::<T>::zero()),
@@ -889,20 +900,6 @@ impl<T: Trait> Module<T> {
                 (*points).total += untreated_points.total.clone();
             });
         }
-    }
-
-    fn is_payable(era: &EraIndex, nominator: &T::AccountId) -> bool {
-        let threshold = Self::eras_total_stake(&era) / BalanceOf::<T>::from(10);
-        for target_era in era.saturating_sub(T::HistoryDepthFinder::get())..=*era {
-            for (_, points) in <ErasStakingPoints<T>>::iter_prefix(&target_era) {
-                for (account, value) in points.individual {
-                    if account == *nominator && value < threshold {
-                        return false;
-                    }
-                }
-            }
-        }
-        true
     }
 
     fn compute_total_stake(era: &EraIndex) -> BalanceOf<T> {

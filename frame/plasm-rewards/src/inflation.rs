@@ -71,6 +71,7 @@ impl<L, D> ComputeTotalPayout<L, D> for CommunityRewards<L>
 where
     L: BaseArithmetic + Clone + From<u32>,
 {
+    /// budget 2.5% of total tokens to validator staking and also 2.5% of total tokens to dapps staking
     fn compute<N, M>(
         total_tokens: N,
         era_duration: M,
