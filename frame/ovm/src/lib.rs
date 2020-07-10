@@ -13,6 +13,7 @@
 //!
 //!
 #![cfg_attr(not(feature = "std"), no_std)]
+#![allow(deprecated)]
 
 use codec::{Decode, Encode};
 use frame_support::{
