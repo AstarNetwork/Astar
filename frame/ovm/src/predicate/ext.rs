@@ -2,60 +2,10 @@
 
 use crate::traits::Ext;
 use crate::*;
-use ovmi::executor::{ExecError, ExecResultT, ExecResultTOf, ExternalCall};
+use ovmi::executor::{ExecResultT, ExternalCall};
 use ovmi::predicates::PredicateCallInputs;
-use ovmi::prepare;
-
-pub use sp_core::ecdsa;
-
-lazy_static! {
-    pub static ref PAY_OUT_CONTRACT_ADDRESS: Address = to_account_from_seed(&hex![
-        "0000000000000000000000000000000000000000000000000000000000010000"
-    ]);
-    pub static ref CALLER_ADDRESS: Address = to_account_from_seed(&hex![
-        "0000000000000000000000000000000000000000000000000000000000000001"
-    ]);
-    pub static ref PREDICATE_X_ADDRESS: Address = to_account_from_seed(&hex![
-        "0000000000000000000000000000000000000000000000000000000000000002"
-    ]);
-}
-
-lazy_static! {
-    pub static ref NOT_ADDRESS: Address = to_account_from_seed(&hex![
-        "0000000000000000000000000000000000000000000000000000000000000003"
-    ]);
-    pub static ref AND_ADDRESS: Address = to_account_from_seed(&hex![
-        "0000000000000000000000000000000000000000000000000000000000000004"
-    ]);
-    pub static ref OR_ADDRESS: Address = to_account_from_seed(&hex![
-        "0000000000000000000000000000000000000000000000000000000000000005"
-    ]);
-    pub static ref FOR_ALL_ADDRESS: Address = to_account_from_seed(&hex![
-        "0000000000000000000000000000000000000000000000000000000000000006"
-    ]);
-    pub static ref THERE_EXISTS_ADDRESS: Address = to_account_from_seed(&hex![
-        "0000000000000000000000000000000000000000000000000000000000000007"
-    ]);
-    pub static ref EQUAL_ADDRESS: Address = to_account_from_seed(&hex![
-        "0000000000000000000000000000000000000000000000000000000000000008"
-    ]);
-    pub static ref IS_CONTAINED_ADDRESS: Address = to_account_from_seed(&hex![
-        "0000000000000000000000000000000000000000000000000000000000000009"
-    ]);
-    pub static ref IS_LESS_ADDRESS: Address = to_account_from_seed(&hex![
-        "0000000000000000000000000000000000000000000000000000000000000010"
-    ]);
-    pub static ref IS_STORED_ADDRESS: Address = to_account_from_seed(&hex![
-        "0000000000000000000000000000000000000000000000000000000000000011"
-    ]);
-    pub static ref IS_VALID_SIGNATURE_ADDRESS: Address = to_account_from_seed(&hex![
-        "0000000000000000000000000000000000000000000000000000000000000012"
-    ]);
-    pub static ref VERIFY_INCLUAION_ADDRESS: Address = to_account_from_seed(&hex![
-        "0000000000000000000000000000000000000000000000000000000000000013"
-    ]);
-    pub static ref SECP_256_K1: Hash = BlakeTwo256::hash(&b"secp256k1".to_vec());
-}
+use sp_core::ecdsa;
+use sp_runtime::{traits::IdentifyAccount, MultiSigner};
 
 // Setting External environment.
 pub struct ExternalCallImpl<'a, T: Trait> {
@@ -68,46 +18,46 @@ impl<'a, T: Trait> ExternalCallImpl<'a, T> {
     }
 }
 
-impl<T: Trait> ExternalCall for ExternalCallImpl<T> {
-    type Address = T::AccountIdL2;
+impl<T: Trait> ExternalCall for ExternalCallImpl<'_, T> {
+    type Address = T::AccountId;
     type Hash = T::Hash;
     type Hashing = T::HashingL2;
 
     fn not_address() -> Self::Address {
-        (*NOT_ADDRESS).clone().clone()
+        T::AtomicPredicateIdConfig::get().not_address
     }
     fn and_address() -> Self::Address {
-        (*AND_ADDRESS).clone().clone()
+        T::AtomicPredicateIdConfig::get().and_address
     }
     fn or_address() -> Self::Address {
-        (*OR_ADDRESS).clone().clone()
+        T::AtomicPredicateIdConfig::get().or_address
     }
     fn for_all_address() -> Self::Address {
-        (*FOR_ALL_ADDRESS).clone().clone()
+        T::AtomicPredicateIdConfig::get().for_all_address
     }
     fn there_exists_address() -> Self::Address {
-        (*THERE_EXISTS_ADDRESS).clone().clone()
+        T::AtomicPredicateIdConfig::get().there_exists_address
     }
     fn equal_address() -> Self::Address {
-        (*EQUAL_ADDRESS).clone().clone()
+        T::AtomicPredicateIdConfig::get().equal_address
     }
     fn is_contained_address() -> Self::Address {
-        (*IS_CONTAINED_ADDRESS).clone().clone()
+        T::AtomicPredicateIdConfig::get().is_contained_address
     }
     fn is_less_address() -> Self::Address {
-        (*IS_LESS_ADDRESS).clone().clone()
+        T::AtomicPredicateIdConfig::get().is_less_address
     }
     fn is_stored_address() -> Self::Address {
-        (*IS_STORED_ADDRESS).clone().clone()
+        T::AtomicPredicateIdConfig::get().is_stored_address
     }
     fn is_valid_signature_address() -> Self::Address {
-        (*IS_VALID_SIGNATURE_ADDRESS).clone().clone()
+        T::AtomicPredicateIdConfig::get().is_valid_signature_address
     }
     fn verify_inclusion_address() -> Self::Address {
-        (*VERIFY_INCLUAION_ADDRESS).clone().clone()
+        T::AtomicPredicateIdConfig::get().verify_inclusion_address
     }
     fn secp256k1() -> Self::Hash {
-        (*SECP_256_K1).clone()
+        T::AtomicPredicateIdConfig::get().secp256k1
     }
 
     fn ext_call(
@@ -119,11 +69,11 @@ impl<T: Trait> ExternalCall for ExternalCallImpl<T> {
     }
 
     fn ext_caller(&self) -> Self::Address {
-        self.inter.caller()
+        self.inter.caller().clone()
     }
 
     fn ext_address(&self) -> Self::Address {
-        self.inter.address()
+        self.inter.address().clone()
     }
 
     fn ext_is_stored(&self, address: &Self::Address, key: &[u8], value: &[u8]) -> bool {
@@ -154,13 +104,16 @@ impl<T: Trait> ExternalCall for ExternalCallImpl<T> {
             .verify_inclusion_with_root(leaf, token_address, range, inclusion_proof, root)
     }
 
-    fn ext_is_decided(&self, property: &PropertyOf<Self>) -> bool {
-        self.inter.is_decided(property)
+    fn ext_is_decided(&self, property: &ovmi::executor::PropertyOf<Self>) -> bool {
+        if let Ok(property) = Decode::decode(&mut &property.encode()[..]) {
+            return self.inter.is_decided(&property);
+        }
+        false
     }
     fn ext_is_decided_by_id(&self, id: Self::Hash) -> bool {
         self.inter.is_decided_by_id(id)
     }
-    fn ext_get_property_id(&self, property: &PropertyOf<Self>) -> Self::Hash {
+    fn ext_get_property_id(&self, property: &ovmi::executor::PropertyOf<Self>) -> Self::Hash {
         Self::hash_of(property)
     }
     fn ext_set_predicate_decision(

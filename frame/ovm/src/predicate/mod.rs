@@ -1,41 +1,15 @@
 use super::*;
 use crate::traits::*;
-use snafu::Snafu;
-
+use ovmi::executor::{CompiledExecutor, OvmExecutor};
+use sp_std::marker::PhantomData;
 mod call;
 mod code_cache;
 mod ext;
 mod prepare;
 
 pub use self::code_cache::save as save_code;
-use ovmi::predicates::CompiledExecutable;
-
-impl From<&'static str> for PredicateError {
-    fn from(err: &'static str) -> PredicateError {
-        PredicateError::Other(err)
-    }
-}
 
 pub type ExecResult<Err> = Result<Vec<u8>, Err>;
-
-/// Evaluate an expression of type Result<_, &'static str> and either resolve to the value if Ok or
-/// wrap the error string into an ExecutionError with the provided buffer and return from the
-/// enclosing function. This macro is used instead of .map_err(..)? in order to avoid taking
-/// ownership of buffer unless there is an error.
-#[macro_export]
-macro_rules! try_or_exec_error {
-    ($e:expr, $buffer:expr) => {
-        match $e {
-            Ok(val) => val,
-            Err(reason) => {
-                return Err($crate::predicate::ExecError {
-                    reason: reason.into(),
-                    buffer: $buffer,
-                })
-            }
-        }
-    };
-}
 
 /// A prepared wasm module ready for execution.
 #[derive(Clone, Encode, Decode)]
@@ -50,8 +24,8 @@ pub struct PrefabOvmModule {
 /// Ovm executable loaded by `OvmLoader` and executed by `OptimisticOvm`.
 pub struct OvmExecutable<T: Trait> {
     code: ovmi::compiled_predicates::CompiledPredicate,
-    payout: T::AccountIdL2,
-    address_inputs: BTreeMap<T::Hash, T::AccountIdL2>,
+    payout: T::AccountId,
+    address_inputs: BTreeMap<T::Hash, T::AccountId>,
     bytes_inputs: BTreeMap<T::Hash, Vec<u8>>,
 }
 
@@ -69,12 +43,15 @@ impl<'a> PredicateLoader<'a> {
 impl<'a, T: Trait> Loader<T> for PredicateLoader<'a> {
     type Executable = OvmExecutable<T>;
 
-    fn load_main(&self, predicate: &PredicateContractOf<T>) -> Result<OvmExecutable, &'static str> {
-        let prefab_module = code_cache::load::<T>(predicate.code_, self.schedule)?;
-        let code = Decode::decode(&mut &prefab_module.code)
-            .map_err(|| "Predicate code cannot decode error.".into())?;
+    fn load_main(
+        &self,
+        predicate: PredicateContractOf<T>,
+    ) -> Result<OvmExecutable<T>, &'static str> {
+        let prefab_module = code_cache::load::<T>(&predicate.predicate_hash, self.schedule)?;
+        let code = Decode::decode(&mut &prefab_module.code[..])
+            .map_err(|_| "Predicate code cannot decode error.")?;
         let (payout, address_inputs, bytes_inputs) = Decode::decode(&mut &predicate.inputs[..])
-            .map_err(|| "Constructor inputs cannot decode error.")?;
+            .map_err(|_| "Constructor inputs cannot decode error.")?;
         Ok(OvmExecutable {
             code,
             payout,
@@ -92,6 +69,7 @@ pub struct ExecutionContext<'a, T: Trait + 'a, Err, V, L> {
     pub config: &'a Config,
     pub vm: &'a V,
     pub loader: &'a L,
+    pub _phantom: PhantomData<Err>,
 }
 
 impl<'a, T, Err, E, V, L> ExecutionContext<'a, T, Err, V, L>
@@ -114,6 +92,7 @@ where
             config: &cfg,
             vm: &vm,
             loader: &loader,
+            _phantom: PhantomData,
         }
     }
 
@@ -126,13 +105,14 @@ where
             config: self.config,
             vm: self.vm,
             loader: self.loader,
+            _phantom: PhantomData,
         }
     }
 
     /// Make a call to the specified address, optionally transferring some funds.
     pub fn call(&self, dest: T::AccountId, input_data: Vec<u8>) -> ExecResult<Err> {
         if self.depth == self.config.max_depth as usize {
-            return "reached maximum depth, cannot make a call".into();
+            return Err("reached maximum depth, cannot make a call".into());
         }
 
         // Assumption: `collect_rent` doesn't collide with overlay because
@@ -140,23 +120,18 @@ where
         // cannot be changed before the first call
         let predicate = match <Predicates<T>>::get(&dest) {
             Some(predicate) => predicate,
-            None => {
-                return Err(ExecError {
-                    reason: "predicate not found".into(),
-                    buffer: input_data,
-                })
-            }
+            None => return Err("predicate not found".into()),
         };
 
         let caller = self.self_account.clone();
         let nested = self.nested(dest);
-        let executable = try_or_exec_error!(
-            nested.loader.load_main(&predicate.predicate_hash),
-            input_data
-        );
+        let executable = nested
+            .loader
+            .load_main(predicate)
+            .map_err(|err| err.into())?;
         nested
             .vm
-            .execute(&executable, nested.new_call_context(caller), input_data)
+            .execute(executable, nested.new_call_context(caller), input_data)
     }
 
     fn new_call_context<'b>(&'b self, caller: T::AccountId) -> T::ExternalCall {
@@ -167,10 +142,20 @@ where
 /// Implementation of `Vm` that takes `PredicateOvm` and executes it.
 pub struct PredicateOvm<'a, T: Trait> {
     schedule: &'a Schedule,
+    _phantom: PhantomData<T>,
 }
 
-impl<'a, T: Trait, Err: From<&'static str>> Vm<T> for PredicateOvm<'a, T> {
-    type Executable = OvmExecutable<'a, T>;
+impl<'a, T: Trait> PredicateOvm<'a, T> {
+    pub fn new(schedule: &'a Schedule) -> Self {
+        PredicateOvm {
+            schedule,
+            _phantom: PhantomData,
+        }
+    }
+}
+
+impl<'a, T: Trait, Err: From<&'static str>> Vm<T, Err> for PredicateOvm<'a, T> {
+    type Executable = OvmExecutable<T>;
 
     fn execute(
         &self,
@@ -187,7 +172,7 @@ impl<'a, T: Trait, Err: From<&'static str>> Vm<T> for PredicateOvm<'a, T> {
             exec.bytes_inputs.clone(),
         );
         let call_input_data =
-            ovmi::predicates::PredicateCallInputs::<T::AccountIdL2>::decode(&mut &input_data[..])
+            ovmi::predicates::PredicateCallInputs::<T::AccountId>::decode(&mut &input_data[..])
                 .map_err(|_| "Call inputs cannot decode error.".into())?;
         CompiledExecutor::<Self::Executable, ext::ExternalCallImpl<T>>::execute(
             &executable,

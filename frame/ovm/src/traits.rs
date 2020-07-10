@@ -1,5 +1,5 @@
 use super::*;
-use crate::predicate::ExecResult;
+use crate::predicate::{ExecResult, ExecutionContext};
 
 /// A function that generates an `AccountId` for a predicate upon instantiation.
 pub trait PredicateAddressFor<PredicateHash, AccountId> {
@@ -17,7 +17,10 @@ pub trait Loader<T: Trait> {
 
     /// Load the main portion of the code specified by the `code_hash`. This executable
     /// is called for each call to a contract.
-    fn load_main(&self, code_hash: &PredicateHash<T>) -> Result<Self::Executable, &'static str>;
+    fn load_main(
+        &self,
+        predicate: PredicateContractOf<T>,
+    ) -> Result<Self::Executable, &'static str>;
 }
 
 /// An interface that provides access to the external environment in which the
@@ -31,8 +34,16 @@ pub trait Loader<T: Trait> {
 /// - caller: get of the caller of this predicate.
 /// - address: the predicate's address.
 /// - is_stored: check the storage of other modules or contracts.
-pub trait Ext<T: Trait, Err> {
-    fn new<'b, Ctx>(ctx: &'b Ctx, caller: AccountIDOf<T>) -> Self;
+pub trait Ext<T: Trait, Err: From<&'static str>> {
+    fn new<'a, 'b: 'a, E, U, Frr, W, N>(
+        ctx: &'a ExecutionContext<'b, U, Frr, W, N>,
+        caller: AccountIdOf<T>,
+    ) -> Self
+    where
+        U: Trait + 'b,
+        Frr: From<&'static str>,
+        W: Vm<T, Err, Executable = E>,
+        N: Loader<T, Executable = E>;
 
     /// Call (possibly other predicate) into the specified account.
     fn call(&self, to: &AccountIdOf<T>, input_data: Vec<u8>) -> Result<Vec<u8>, Err>;
@@ -53,17 +64,17 @@ pub trait Ext<T: Trait, Err> {
     /// Needs Plasma.
     fn verify_inclusion_with_root(
         &self,
-        leaf: Self::Hash,
-        token_address: Self::Address,
+        leaf: T::Hash,
+        token_address: AccountIdOf<T>,
         range: &[u8],
         inclusion_proof: &[u8],
         root: &[u8],
     ) -> bool;
 
-    fn is_decided(&self, property: &PropertyOf<Self>) -> bool;
-    fn is_decided_by_id(&self, id: Self::Hash) -> bool;
+    fn is_decided(&self, property: &PropertyOf<T>) -> bool;
+    fn is_decided_by_id(&self, id: T::Hash) -> bool;
 
-    fn ext_set_predicate_decision(&self, game_id: Self::Hash, decision: bool) -> Result<bool, Err>;
+    fn set_predicate_decision(&self, game_id: T::Hash, decision: bool) -> Result<bool, Err>;
 }
 
 /// A trait that represent an optimistic virtual machine.
@@ -79,7 +90,7 @@ pub trait Vm<T: Trait, Err: From<&'static str>> {
 
     fn execute(
         &self,
-        exec: &Self::Executable,
+        exec: Self::Executable,
         ext: T::ExternalCall,
         input_data: Vec<u8>,
     ) -> ExecResult<Err>;

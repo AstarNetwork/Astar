@@ -4,11 +4,18 @@
 //! When Plasma module is used, it is implemented by injecting CallContext of Plasma module as Ext of ExecutionContext.
 
 use crate::predicate::*;
-use crate::traits::*;
-use crate::*;
+use crate::traits::{Ext, Loader, Vm};
+use crate::{AccountIdOf, Decision, PropertyOf, Trait};
 
-pub struct CallContext<'a, 'b: 'a, T: Trait + 'b, V: Vm<T, Err> + 'b, L: Loader<T>> {
-    ctx: &'a ExecutionContext<'b, T, V, L>,
+pub struct CallContext<
+    'a,
+    'b: 'a,
+    T: Trait + 'b,
+    Err: From<&'static str>,
+    V: Vm<T, Err> + 'b,
+    L: Loader<T>,
+> {
+    ctx: &'a ExecutionContext<'b, T, Err, V, L>,
     caller: T::AccountId,
 }
 
@@ -17,25 +24,35 @@ pub struct CallContext<'a, 'b: 'a, T: Trait + 'b, V: Vm<T, Err> + 'b, L: Loader<
 ///
 /// This interface is specialized to an account of the executing code, so all
 /// operations are implicitly performed on that account.
-impl<'a, 'b: 'a, E, T, V, L> Ext<T> for CallContext<'a, 'b, T, V, L>
+impl<'a, 'b: 'a, E, T, Err, V, L> Ext<T, Err> for CallContext<'a, 'b, T, Err, V, L>
 where
     T: Trait + 'b,
+    Err: From<&'static str>,
     V: Vm<T, Err, Executable = E>,
     L: Loader<T, Executable = E>,
 {
-    fn new<'b, Ctx>(ctx: &'b Ctx, caller: AccountIdOf<T>) -> Self {
+    fn new<'c, 'd: 'c, F, U, Frr, W, N>(
+        ctx: &'c ExecutionContext<'d, U, Frr, W, N>,
+        caller: AccountIdOf<T>,
+    ) -> Self
+    where
+        U: Trait + 'd,
+        Frr: From<&'static str>,
+        W: Vm<T, Err, Executable = F>,
+        N: Loader<T, Executable = F>,
+    {
         CallContext { ctx, caller }
     }
 
-    fn call(&self, to: &AccountIdOf<Self::T>, input_data: Vec<u8>) -> ExecResultOf<T> {
+    fn call(&self, to: &AccountIdOf<T>, input_data: Vec<u8>) -> ExecResult<Err> {
         self.ctx.call(to.clone(), input_data)
     }
 
-    fn caller(&self) -> &AccountIdOf<Self::T> {
+    fn caller(&self) -> &AccountIdOf<T> {
         &self.caller
     }
 
-    fn address(&self) -> &AccountIdOf<Self::T> {
+    fn address(&self) -> &AccountIdOf<T> {
         &self.ctx.self_account
     }
 
@@ -45,8 +62,8 @@ where
 
     fn verify_inclusion_with_root(
         &self,
-        _leaf: Self::Hash,
-        _token_address: Self::Address,
+        _leaf: T::Hash,
+        _token_address: AccountIdOf<T>,
         _range: &[u8],
         _inclusion_proof: &[u8],
         _root: &[u8],
@@ -54,18 +71,14 @@ where
         true
     }
 
-    fn is_decided(&self, property: &PropertyOf<Self>) -> bool {
-        Decision::True == Module::<T>::is_decided(property)
+    fn is_decided(&self, property: &PropertyOf<T>) -> bool {
+        Decision::True == <Module<T>>::is_decided(property)
     }
-    fn is_decided_by_id(&self, id: Self::Hash) -> bool {
-        Decision::True == Module::<T>::is_decided_by_id(id)
+    fn is_decided_by_id(&self, id: T::Hash) -> bool {
+        Decision::True == <Module<T>>::is_decided_by_id(id)
     }
 
-    fn ext_set_predicate_decision(
-        &self,
-        _game_id: Self::Hash,
-        _decision: bool,
-    ) -> Result<bool, Err> {
+    fn set_predicate_decision(&self, _game_id: T::Hash, _decision: bool) -> Result<bool, Err> {
         Ok(true)
     }
 }

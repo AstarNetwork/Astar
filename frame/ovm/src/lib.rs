@@ -19,16 +19,17 @@ use frame_support::{
     decl_error, decl_event, decl_module, decl_storage,
     dispatch::DispatchResult,
     ensure,
-    traits::{Get, Time},
+    traits::Get,
     weights::{DispatchClass, FunctionOf, Pays, Weight},
     Parameter, StorageMap,
 };
 use frame_system::{self as system, ensure_signed};
 
+use ovmi::executor::ExecError;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
 use sp_runtime::{
-    traits::{Hash, Member},
+    traits::{Hash, MaybeDisplay, MaybeSerializeDeserialize, Member, Zero},
     RuntimeDebug,
 };
 use sp_std::{collections::btree_map::BTreeMap, fmt::Debug, prelude::*, vec::Vec};
@@ -78,7 +79,7 @@ pub enum Decision {
 /// ChallengeGame is a part of L2 dispute. It's instantiated by claiming property.
 /// The client can get a game instance from this module.
 #[derive(Encode, Decode, RuntimeDebug, PartialEq, Eq)]
-pub struct ChallengeGame<AccountId, Hash, BlockNumber> {
+pub struct ChallengeGame<Hash, BlockNumber> {
     /// Property of challenging targets.
     property_hash: Hash,
     /// challenges inputs
@@ -132,12 +133,26 @@ impl Config {
     }
 }
 
+/// Atomic Predicate AccountId List.
+/// It is inject when runtime setup.
+pub struct AtomicPredicateIdConfig<AccountId, Hash> {
+    pub not_address: AccountId,
+    pub and_address: AccountId,
+    pub or_address: AccountId,
+    pub for_all_address: AccountId,
+    pub there_exists_address: AccountId,
+    pub equal_address: AccountId,
+    pub is_contained_address: AccountId,
+    pub is_less_address: AccountId,
+    pub is_stored_address: AccountId,
+    pub is_valid_signature_address: AccountId,
+    pub verify_inclusion_address: AccountId,
+    pub secp256k1: Hash,
+}
+
 type PredicateHash<T> = <T as system::Trait>::Hash;
-type ChallengeGameOf<T> = ChallengeGame<
-    <T as system::Trait>::AccountId,
-    <T as system::Trait>::Hash,
-    <T as system::Trait>::BlockNumber,
->;
+type ChallengeGameOf<T> =
+    ChallengeGame<<T as system::Trait>::Hash, <T as system::Trait>::BlockNumber>;
 pub type PropertyOf<T> = Property<<T as system::Trait>::AccountId>;
 type AccountIdOf<T> = <T as frame_system::Trait>::AccountId;
 type PredicateContractOf<T> = PredicateContract<<T as frame_system::Trait>::Hash>;
@@ -153,23 +168,13 @@ pub trait Trait: system::Trait {
     /// A function type to get the contract address given the instantiator.
     type DeterminePredicateAddress: PredicateAddressFor<PredicateHash<Self>, Self::AccountId>;
 
-    /// The user account on Layer2 identifier type for the runtime.
-    type AccountIdL2: Parameter
-        + Member
-        + MaybeSerializeDeserialize
-        + Debug
-        + MaybeDisplay
-        + Ord
-        + Default;
-
     /// The hashing system (algorithm) being used in the runtime (e.g. Keccak256).
     type HashingL2: Hash<Output = Self::Hash>;
 
-    /// ExternalCallError type.
-    type ExternalCallError: From<&'static str>;
-
     /// ExternalCall context.
-    type ExternalCall: Ext<Self, ovmi::executor::ExecError<Self::AccountIdL2>>;
+    type ExternalCall: Ext<Self, ExecError<Self::AccountId>>;
+
+    type AtomicPredicateIdConfig: Get<AtomicPredicateIdConfig<Self::AccountId, Self::Hash>>;
 
     /// The overarching event type.
     type Event: From<Event<Self>> + Into<<Self as system::Trait>::Event>;
@@ -338,19 +343,19 @@ decl_module! {
         /// Claims property and create new game. Id of game is hash of claimed property
         /// TODO: weight
         #[weight = 100_000]
-        fn claim(origin, claim: PropertyOf<T>) {
+        pub fn claim(origin, claim: PropertyOf<T>) {
             let origin = ensure_signed(origin)?;
             Self::only_from_dispute_contract(&origin, &claim)?;
             // get the id of this property
             let game_id = Self::get_property_id(&claim);
             ensure!(
-                Self::started(game_id),
+                Self::started(&game_id),
                 Error::<T>::GameIsAlradyStarted,
             );
 
             let game = Self::create_game(game_id);
             <Games<T>>::insert(game_id, game);
-           Self::deposit_event(RawEvent::PropertyClaimed(game_id, claim, block_number));
+           Self::deposit_event(RawEvent::PropertyClaimed(game_id, claim, Self::block_number()));
         }
 
         /// Challenge to an existing game instance by a property.
@@ -361,7 +366,7 @@ decl_module! {
         ///
         /// TODO: weight
         #[weight = 100_000]
-        fn challenge(origin, property: PropertyOf<T>, challenge_property: PropertyOf<T>) {
+        pub fn challenge(origin, property: PropertyOf<T>, challenge_property: PropertyOf<T>) {
             let origin = ensure_signed(origin)?;
             Self::only_from_dispute_contract(&origin, &property)?;
 
@@ -372,20 +377,20 @@ decl_module! {
                 Error::<T>::PropertyIsNotClaimed,
             );
 
-            let challenge_game_id = Self::get_property_id(&property);
+            let challenging_game_id = Self::get_property_id(&property);
             ensure!(
-                Self::started(&challenge_game_id),
+                Self::started(&challenging_game_id),
                 Error::<T>::ChallengeIsAlreadyStarted,
             );
 
             // start challenging game
-            let challenge_game = Self::create_game(&challenge_game_id);
-            <Games<T>>::insert(challenge_game_id, challenge_game);
+            let challenge_game = Self::create_game(challenging_game_id);
+            <Games<T>>::insert(challenging_game_id, challenge_game);
 
             // add challenge to challenged game's challenge list
-            <Games<T>::mutate(&id, |game| {
-                *game.challenges.push(&challenge_game_id);
-            });
+            let mut game = Self::games(&id).ok_or(Error::<T>::DoesNotExistGame)?;
+            game.challenges.push(challenging_game_id);
+            <Games<T>>::insert(id, game);
             Self::deposit_event(RawEvent::PropertyChallenged(id, challenging_game_id));
         }
 
@@ -396,7 +401,7 @@ decl_module! {
         ///
         /// TODO: weight
         #[weight = 100_000]
-        fn remove_challenge(origin, property: PropertyOf<T>, challenge_property: PropertyOf<T>) {
+        pub fn remove_challenge(origin, property: PropertyOf<T>, challenge_property: PropertyOf<T>) {
             let origin = ensure_signed(origin)?;
             Self::only_from_dispute_contract(&origin, &property)?;
 
@@ -406,20 +411,17 @@ decl_module! {
                 Error::<T>::PropertyIsNotClaimed,
             );
 
-            let challenge_game_id = Self::get_property_id(&property);
+            let challenging_game_id = Self::get_property_id(&property);
             ensure!(
-                Self::started(&challenge_game_id),
+                Self::started(&challenging_game_id),
                 Error::<T>::ChallengeIsAlreadyStarted,
             );
 
-            let mut game = Self::games(&id);
-            let challenge_index = Self::find_index(&game.challenges, &challenge_game_id);
-            ensure!(
-                challenge_index >= 0,
-                Error::<T>::ChallengeIsNotInTheChallengeList,
-            );
+            let mut game = Self::games(&id).ok_or(Error::<T>::DoesNotExistGame)?;
+            let challenge_index = Self::find_index(&game.challenges, &challenging_game_id)
+                .ok_or(Error::<T>::ChallengeIsNotInTheChallengeList)?;
 
-            let challenge_game = Self::games(&challenge_game_id);
+            let challenge_game = Self::games(&challenging_game_id).ok_or(Error::<T>::DoesNotExistGame)?;
             ensure!(
                 challenge_game.decision == Decision::False,
                 Error::<T>::ChallengePropertyIsNotDecidedToFalse,
@@ -431,7 +433,7 @@ decl_module! {
                 .into_iter()
                 .filter(|challenge| challenge != &challenging_game_id)
                 .collect();
-            <Games<T>>::insert(&game_id, game);
+            <Games<T>>::insert(id, game);
             Self::deposit_event(RawEvent::ChallengeRemoved(id, challenging_game_id));
         }
 
@@ -440,7 +442,7 @@ decl_module! {
         ///
         /// TODO: weight
         #[weight = 100_000]
-        fn set_game_result(property: PropertyOf<T>, result: bool)
+        pub fn set_game_result(origin, property: PropertyOf<T>, result: bool)
         {
             let origin = ensure_signed(origin)?;
             Self::only_from_dispute_contract(&origin, &property)?;
@@ -451,7 +453,7 @@ decl_module! {
                 Error::<T>::PropertyIsNotClaimed,
             );
 
-            let mut game = Self::games(&id);
+            let mut game = Self::games(&id).ok_or(Error::<T>::DoesNotExistGame)?;
             ensure!(
                 game.challenges.len() == 0,
                 Error::<T>::ChallengeListIsNotEmpty,
@@ -469,26 +471,25 @@ decl_module! {
         ///
         /// TODO: weight
         #[weight = 100_000]
-        function settle_game(property: Property)
+        pub fn settle_game(origin, property: PropertyOf<T>)
         {
             let origin = ensure_signed(origin)?;
             Self::only_from_dispute_contract(&origin, &property)?;
 
             let id = Self::get_property_id(&property);
-            bytes32 id = utils.getPropertyId(_property);
             ensure!(
                 Self::started(&id),
                 Error::<T>::PropertyIsNotClaimed,
             );
 
-            let mut game = Self::games(&id);
+            let mut game = Self::games(&id).ok_or(Error::<T>::DoesNotExistGame)?;
             ensure!(
-                game.create_block < Self::block_number() - Self::DisputePeriod(),
+                game.created_block < Self::block_number() - T::DisputePeriod::get(),
                 Error::<T>::DisputePeriodHasNotBeenPassed,
             );
 
             for challenge in game.challenges.iter() {
-                let decision = Self::get_game(challenge)?.decision;
+                let decision = Self::get_game(challenge).ok_or(Error::<T>::DoesNotExistGame)?.decision;
                 if decision == Decision::True {
                     game.decision = Decision::False;
                     Self::deposit_event(RawEvent::PropertyDecided(id, false));
@@ -500,7 +501,7 @@ decl_module! {
                 );
             }
             game.decision = Decision::True;
-            <Games<T>>::insert(&id, game);
+            <Games<T>>::insert(id, game);
             Self::deposit_event(RawEvent::PropertyDecided(id, true));
         }
     }
@@ -531,22 +532,16 @@ impl<T: Trait> Module<T> {
         origin: T::AccountId,
         dest: T::AccountId,
         input_data: Vec<u8>,
-    ) -> ExecResult<T::ExternalCallError> {
+    ) -> ExecResult<ExecError<T::AccountId>> {
         Self::execute_ovm(origin, |ctx| ctx.call(dest, input_data))
     }
 
-    fn execute_ovm(
+    fn execute_ovm<'a>(
         origin: T::AccountId,
         func: impl FnOnce(
-            &mut ExecutionContext<
-                T,
-                T::ExternalCallError,
-                PredicateOvm,
-                PredicateLoader,
-                T::ExteralCall,
-            >,
-        ) -> ExecResult<T::ExternalCallError>,
-    ) -> ExecResult<T::ExternalCallError> {
+            &mut ExecutionContext<T, ExecError<T::AccountId>, PredicateOvm<'a, T>, PredicateLoader>,
+        ) -> ExecResult<ExecError<T::AccountId>>,
+    ) -> ExecResult<ExecError<T::AccountId>> {
         let cfg = Config::preload::<T>();
         let vm = PredicateOvm::new(&cfg.schedule);
         let loader = PredicateLoader::new(&cfg.schedule);
@@ -566,7 +561,7 @@ impl<T: Trait> Module<T> {
     }
 
     /// Get of true/false the decision of game id.
-    pub fn is_decided_by_id(id: Self::Hash) -> Decision {
+    pub fn is_decided_by_id(id: T::Hash) -> Decision {
         let game = match Self::games(&id) {
             Some(game) => game,
             None => return Decision::Undecided,
@@ -585,7 +580,7 @@ impl<T: Trait> Module<T> {
     }
 
     pub fn is_challenge_of(property: &PropertyOf<T>, challenge_property: &PropertyOf<T>) -> bool {
-        if let Some(game) = Self::get_game(Self::get_property_id(property)) {
+        if let Some(game) = Self::get_game(&Self::get_property_id(property)) {
             if let Some(_) =
                 Self::find_index(&game.challenges, &Self::get_property_id(challenge_property))
             {
@@ -598,7 +593,7 @@ impl<T: Trait> Module<T> {
     /// check if game of given id is already started.
     pub fn started(id: &T::Hash) -> bool {
         if let Some(game) = Self::games(id) {
-            return game.created_block != 0;
+            return game.created_block != <T as system::Trait>::BlockNumber::zero();
         }
         false
     }
@@ -631,7 +626,7 @@ impl<T: Trait> Module<T> {
         ChallengeGame {
             property_hash: id,
             /// challenges inputs
-            challenges: vec![0],
+            challenges: vec![],
             /// the result of this challenge.
             decision: Decision::Undecided,
             /// the block number when this was issued.
@@ -646,7 +641,7 @@ impl<T: Trait> Module<T> {
         Decision::False
     }
 
-    fn find_index<Hash: PartialEq, Eq>(array: &Vec<Hash>, item: &Hash) -> Option<usize> {
+    fn find_index<Hash: PartialEq>(array: &Vec<Hash>, item: &Hash) -> Option<usize> {
         array.iter().position(|hash| hash == item)
     }
 
@@ -656,7 +651,7 @@ impl<T: Trait> Module<T> {
         property: &PropertyOf<T>,
     ) -> DispatchResult {
         ensure!(
-            property.predicate_address == origin,
+            &property.predicate_address == origin,
             Error::<T>::MustBeCalledFromPredicate,
         );
         Ok(())
