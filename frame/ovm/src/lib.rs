@@ -21,7 +21,7 @@ use frame_support::{
     ensure,
     traits::Get,
     weights::{DispatchClass, FunctionOf, Pays, Weight},
-    Parameter, StorageMap,
+    StorageMap,
 };
 use frame_system::{self as system, ensure_signed};
 
@@ -29,10 +29,10 @@ use ovmi::executor::ExecError;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
 use sp_runtime::{
-    traits::{Hash, MaybeDisplay, MaybeSerializeDeserialize, Member, Zero},
+    traits::{Hash, Zero},
     RuntimeDebug,
 };
-use sp_std::{collections::btree_map::BTreeMap, fmt::Debug, prelude::*, vec::Vec};
+use sp_std::{collections::btree_map::BTreeMap, prelude::*, vec::Vec};
 
 #[cfg(test)]
 mod mock;

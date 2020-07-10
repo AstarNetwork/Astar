@@ -8,6 +8,7 @@ mod ext;
 mod prepare;
 
 pub use self::code_cache::save as save_code;
+use ovmi::predicates::CompiledExecutable;
 
 pub type ExecResult<Err> = Result<Vec<u8>, Err>;
 
@@ -174,8 +175,8 @@ impl<'a, T: Trait, Err: From<&'static str>> Vm<T, Err> for PredicateOvm<'a, T> {
         let call_input_data =
             ovmi::predicates::PredicateCallInputs::<T::AccountId>::decode(&mut &input_data[..])
                 .map_err(|_| "Call inputs cannot decode error.".into())?;
-        CompiledExecutor::<Self::Executable, ext::ExternalCallImpl<T>>::execute(
-            &executable,
+        CompiledExecutor::<CompiledExecutable<ext::ExternalCallImpl<T>>, ext::ExternalCallImpl<T>>::execute(
+            executable,
             call_input_data,
         )
     }

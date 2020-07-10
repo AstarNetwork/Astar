@@ -87,7 +87,8 @@ impl<T: Trait> ExternalCall for ExternalCallImpl<'_, T> {
         }
         let sig: ecdsa::Signature = ecdsa::Signature::from_slice(signature);
         if let Some(public) = sig.recover(hash) {
-            return address == &MultiSigner::from(public).into_account();
+            return Self::hash_of(address)
+                == Self::hash_of(&MultiSigner::from(public).into_account());
         }
         false
     }
