@@ -117,8 +117,9 @@ fn oracle_unsinged_transaction() {
 
         let lockdrop: Lockdrop = Default::default();
         assert_ok!(PlasmLockdrop::request(
-            Origin::signed(bad_account),
-            lockdrop.clone()
+            Origin::none(),
+            lockdrop.clone(),
+            Default::default(),
         ));
         let bad_vote = ClaimVote {
             claim_id: BlakeTwo256::hash_of(&lockdrop),
@@ -154,7 +155,7 @@ fn oracle_unsinged_transaction() {
             PlasmLockdrop::pre_dispatch(&crate::Call::vote(valid_vote.clone(), signature.clone()));
         assert_ok!(dispatch);
         assert_ok!(PlasmLockdrop::vote(
-            Origin::NONE,
+            Origin::none(),
             valid_vote.clone(),
             signature.clone()
         ));
@@ -182,7 +183,7 @@ fn dollar_rate_median_filter() {
             authority: 0,
         };
         assert_ok!(PlasmLockdrop::set_dollar_rate(
-            Origin::NONE,
+            Origin::none(),
             rate,
             Default::default()
         ));
@@ -195,7 +196,7 @@ fn dollar_rate_median_filter() {
             authority: 1,
         };
         assert_ok!(PlasmLockdrop::set_dollar_rate(
-            Origin::NONE,
+            Origin::none(),
             rate,
             Default::default()
         ));
@@ -208,7 +209,7 @@ fn dollar_rate_median_filter() {
             authority: 2,
         };
         assert_ok!(PlasmLockdrop::set_dollar_rate(
-            Origin::NONE,
+            Origin::none(),
             rate,
             Default::default()
         ));
@@ -223,7 +224,7 @@ fn dollar_rate_median_filter() {
             authority: 0,
         };
         assert_ok!(PlasmLockdrop::set_dollar_rate(
-            Origin::NONE,
+            Origin::none(),
             rate,
             Default::default()
         ));
@@ -236,7 +237,7 @@ fn dollar_rate_median_filter() {
             authority: 1,
         };
         assert_ok!(PlasmLockdrop::set_dollar_rate(
-            Origin::NONE,
+            Origin::none(),
             rate,
             Default::default()
         ));
@@ -249,7 +250,7 @@ fn dollar_rate_median_filter() {
             authority: 2,
         };
         assert_ok!(PlasmLockdrop::set_dollar_rate(
-            Origin::NONE,
+            Origin::none(),
             rate,
             Default::default()
         ));
@@ -274,7 +275,7 @@ fn dollar_rate_should_expire() {
             authority: 0,
         };
         assert_ok!(PlasmLockdrop::set_dollar_rate(
-            Origin::NONE,
+            Origin::none(),
             rate,
             Default::default()
         ));
@@ -287,7 +288,7 @@ fn dollar_rate_should_expire() {
             authority: 1,
         };
         assert_ok!(PlasmLockdrop::set_dollar_rate(
-            Origin::NONE,
+            Origin::none(),
             rate,
             Default::default()
         ));
@@ -300,7 +301,7 @@ fn dollar_rate_should_expire() {
             authority: 2,
         };
         assert_ok!(PlasmLockdrop::set_dollar_rate(
-            Origin::NONE,
+            Origin::none(),
             rate,
             Default::default()
         ));
@@ -315,7 +316,7 @@ fn dollar_rate_should_expire() {
             authority: 0,
         };
         assert_ok!(PlasmLockdrop::set_dollar_rate(
-            Origin::NONE,
+            Origin::none(),
             rate,
             Default::default()
         ));
@@ -330,7 +331,7 @@ fn dollar_rate_should_expire() {
             authority: 0,
         };
         assert_ok!(PlasmLockdrop::set_dollar_rate(
-            Origin::NONE,
+            Origin::none(),
             rate,
             Default::default()
         ));
@@ -433,7 +434,7 @@ fn dollar_rate_ticker_works() {
             0,
             sp_core::offchain::testing::PendingRequest {
                 method: "GET".into(),
-                uri: "http://127.0.0.1:34347/ticker/btc".into(),
+                uri: "http://127.0.0.1:34347/btc/ticker".into(),
                 sent: true,
                 response: Some("6766".into()),
                 ..Default::default()
@@ -444,7 +445,7 @@ fn dollar_rate_ticker_works() {
             0,
             sp_core::offchain::testing::PendingRequest {
                 method: "GET".into(),
-                uri: "http://127.0.0.1:34347/ticker/eth".into(),
+                uri: "http://127.0.0.1:34347/eth/ticker".into(),
                 sent: true,
                 response: Some("139".into()),
                 ..Default::default()
@@ -472,7 +473,7 @@ fn dollar_rate_offchain_worker() {
             0,
             sp_core::offchain::testing::PendingRequest {
                 method: "GET".into(),
-                uri: "http://127.0.0.1:34347/ticker/btc".into(),
+                uri: "http://127.0.0.1:34347/btc/ticker".into(),
                 sent: true,
                 response: Some("6766".into()),
                 ..Default::default()
@@ -484,7 +485,7 @@ fn dollar_rate_offchain_worker() {
             0,
             sp_core::offchain::testing::PendingRequest {
                 method: "GET".into(),
-                uri: "http://127.0.0.1:34347/ticker/eth".into(),
+                uri: "http://127.0.0.1:34347/eth/ticker".into(),
                 sent: true,
                 response: Some("139".into()),
                 ..Default::default()
@@ -527,8 +528,9 @@ fn simple_success_lockdrop_request() {
         let lockdrop: Lockdrop = Default::default();
         let claim_id = BlakeTwo256::hash_of(&lockdrop);
         assert_ok!(PlasmLockdrop::request(
-            Origin::signed(Default::default()),
-            lockdrop
+            Origin::none(),
+            lockdrop,
+            Default::default(),
         ));
         let vote = ClaimVote {
             claim_id,
@@ -536,28 +538,29 @@ fn simple_success_lockdrop_request() {
             authority: 0,
         };
         assert_ok!(PlasmLockdrop::vote(
-            Origin::NONE,
+            Origin::none(),
             vote.clone(),
-            Default::default()
+            Default::default(),
         ));
         assert_noop!(
-            PlasmLockdrop::claim(Origin::signed(Default::default()), claim_id),
+            PlasmLockdrop::claim(Origin::none(), claim_id),
             "this request don't get enough authority votes"
         );
         assert_ok!(PlasmLockdrop::vote(
-            Origin::NONE,
+            Origin::none(),
             vote.clone(),
-            Default::default()
+            Default::default(),
         ));
         assert_noop!(
-            PlasmLockdrop::claim(Origin::signed(Default::default()), claim_id),
+            PlasmLockdrop::claim(Origin::none(), claim_id),
             "this request don't get enough authority votes"
         );
-        assert_ok!(PlasmLockdrop::vote(Origin::NONE, vote, Default::default()));
-        assert_ok!(PlasmLockdrop::claim(
-            Origin::signed(Default::default()),
-            claim_id
+        assert_ok!(PlasmLockdrop::vote(
+            Origin::none(),
+            vote,
+            Default::default()
         ));
+        assert_ok!(PlasmLockdrop::claim(Origin::none(), claim_id));
     })
 }
 
@@ -567,8 +570,9 @@ fn simple_fail_lockdrop_request() {
         let lockdrop: Lockdrop = Default::default();
         let claim_id = BlakeTwo256::hash_of(&lockdrop);
         assert_ok!(PlasmLockdrop::request(
-            Origin::signed(Default::default()),
-            lockdrop
+            Origin::none(),
+            lockdrop,
+            Default::default(),
         ));
         let vote = ClaimVote {
             claim_id,
@@ -576,27 +580,56 @@ fn simple_fail_lockdrop_request() {
             authority: 0,
         };
         assert_ok!(PlasmLockdrop::vote(
-            Origin::NONE,
+            Origin::none(),
             vote.clone(),
-            Default::default()
+            Default::default(),
         ));
         assert_noop!(
-            PlasmLockdrop::claim(Origin::signed(Default::default()), claim_id),
+            PlasmLockdrop::claim(Origin::none(), claim_id),
             "this request don't get enough authority votes"
         );
         assert_ok!(PlasmLockdrop::vote(
-            Origin::NONE,
+            Origin::none(),
             vote.clone(),
+            Default::default(),
+        ));
+        assert_noop!(
+            PlasmLockdrop::claim(Origin::none(), claim_id),
+            "this request don't get enough authority votes"
+        );
+        assert_ok!(PlasmLockdrop::vote(
+            Origin::none(),
+            vote,
             Default::default()
         ));
         assert_noop!(
-            PlasmLockdrop::claim(Origin::signed(Default::default()), claim_id),
-            "this request don't get enough authority votes"
-        );
-        assert_ok!(PlasmLockdrop::vote(Origin::NONE, vote, Default::default()));
-        assert_noop!(
-            PlasmLockdrop::claim(Origin::signed(Default::default()), claim_id),
+            PlasmLockdrop::claim(Origin::none(), claim_id),
             "this request don't approved by authorities"
         );
     })
+}
+
+#[test]
+fn lockdrop_request_hash() {
+    let transaction_hash =
+        hex!["6c4364b2f5a847ffc69f787a0894191b75aa278a95020f02e4753c76119324e0"].into();
+    let public_key = ecdsa::Public::from_raw(hex![
+        "039360c9cbbede9ee771a55581d4a53cbcc4640953169549993a3b0e6ec7984061"
+    ]);
+    let params = Lockdrop::Ethereum {
+        transaction_hash,
+        public_key,
+        duration: 2592000,
+        value: 100000000000000000,
+    };
+    let claim_id = hex!["a94710e9db798a7d1e977b9f748ae802031eee2400a77600c526158892cd93d8"].into();
+    assert_eq!(BlakeTwo256::hash_of(&params), claim_id);
+}
+
+#[test]
+fn lockdrop_request_pow() {
+    let nonce = hex!["30df083c7f59ea11a39bb341d37bd26d126d8522d408ebc2133bf7c7dc9d0c38"];
+    let claim_id = hex!["a94710e9db798a7d1e977b9f748ae802031eee2400a77600c526158892cd93d8"];
+    let pow_byte = BlakeTwo256::hash_of(&(claim_id, nonce)).as_bytes()[0];
+    assert_eq!(pow_byte, 0);
 }

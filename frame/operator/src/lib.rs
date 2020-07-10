@@ -1,5 +1,6 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
+use frame_support::dispatch::UnfilteredDispatchable;
 use frame_support::weights::{DispatchClass, FunctionOf, Pays, Weight};
 use frame_support::{decl_event, decl_module, decl_storage, Parameter};
 use frame_system::{self as system, ensure_signed, RawOrigin};
@@ -117,7 +118,7 @@ decl_module! {
 
             let contract = T::DetermineContractAddress::contract_address_for(&code_hash, &data, &operator);
             pallet_contracts::Call::<T>::instantiate(endowment, gas_limit, code_hash, data)
-                .dispatch(RawOrigin::Signed(operator.clone()).into())
+                .dispatch_bypass_filter(RawOrigin::Signed(operator.clone()).into())
                 .map_err(|e| e.error)?;
 
             // add operator to contracts
