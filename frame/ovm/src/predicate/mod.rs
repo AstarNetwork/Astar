@@ -2,6 +2,7 @@ use super::*;
 use crate::traits::*;
 use snafu::Snafu;
 
+mod call;
 mod code_cache;
 mod ext;
 mod prepare;
@@ -9,37 +10,13 @@ mod prepare;
 pub use self::code_cache::save as save_code;
 use ovmi::predicates::CompiledExecutable;
 
-/// Reason why a predicate call failed
-#[derive(Snafu, Eq, PartialEq, Clone, Copy, Encode, Decode, RuntimeDebug)]
-#[cfg_attr(feature = "std", derive(Serialize))]
-pub enum PredicateError {
-    /// Some error occurred.
-    #[snafu(display("Other: {}", msg))]
-    Other(#[codec(skip)] &'static str),
-}
-
 impl From<&'static str> for PredicateError {
     fn from(err: &'static str) -> PredicateError {
         PredicateError::Other(err)
     }
 }
 
-pub type ExecResult = Result<bool, ExecError>;
-
-/// An error indicating some failure to execute a contract call or instantiation. This can include
-/// VM-specific errors during execution (eg. division by 0, OOB access, failure to satisfy some
-/// precondition of a system call, etc.) or errors with the orchestration (eg. out-of-gas errors, a
-/// non-existent destination contract, etc.).
-#[derive(Snafu, PartialEq)]
-#[cfg_attr(test, derive(sp_runtime::RuntimeDebug))]
-pub struct ExecError {
-    #[snafu(display("Reason: {}", reason))]
-    pub reason: PredicateError,
-    /// This is an allocated buffer that may be reused. The buffer must be cleared explicitly
-    /// before reuse.
-    #[snafu(display("Buffer: {}", buffer))]
-    pub buffer: Vec<u8>,
-}
+pub type ExecResult<Err> = Result<Vec<u8>, Err>;
 
 /// Evaluate an expression of type Result<_, &'static str> and either resolve to the value if Ok or
 /// wrap the error string into an ExecutionError with the provided buffer and return from the
@@ -100,8 +77,8 @@ impl<'a, T: Trait> Loader<T> for PredicateLoader<'a> {
     }
 }
 
-pub struct ExecutionContext<'a, T: Trait + 'a, V, L> {
-    pub caller: Option<&'a ExecutionContext<'a, T, V, L>>,
+pub struct ExecutionContext<'a, T: Trait + 'a, V, L, Err> {
+    pub caller: Option<&'a ExecutionContext<'a, T, V, L, Err>>,
     pub self_account: T::AccountId,
     pub depth: usize,
     // pub deferred: Vec<DeferredAction<T>>,
@@ -110,11 +87,13 @@ pub struct ExecutionContext<'a, T: Trait + 'a, V, L> {
     pub loader: &'a L,
 }
 
-impl<'a, T, E, V, L> ExecutionContext<'a, T, V, L>
+impl<'a, T, Err, E, V, L, Ext> ExecutionContext<'a, T, Err, V, L, Ext>
 where
     T: Trait,
     L: Loader<T, Executable = E>,
-    V: Vm<T, Executable = E>,
+    V: Vm<T, Executable = E, Err>,
+    Err: From<&'static str>,
+    Ext: Ext<T, Err>,
 {
     /// Create the top level execution context.
     ///
@@ -132,7 +111,7 @@ where
         }
     }
 
-    fn nested<'b, 'c: 'b>(&'c self, dest: T::AccountId) -> ExecutionContext<'b, T, V, L> {
+    fn nested<'b, 'c: 'b>(&'c self, dest: T::AccountId) -> ExecutionContext<'b, T, Err, V, L, Ext> {
         ExecutionContext {
             caller: Some(self),
             self_account: dest,
@@ -145,12 +124,9 @@ where
     }
 
     /// Make a call to the specified address, optionally transferring some funds.
-    pub fn call(&self, dest: T::AccountId, input_data: Vec<u8>) -> ExecResult {
+    pub fn call(&self, dest: T::AccountId, input_data: Vec<u8>) -> ExecResult<Err> {
         if self.depth == self.config.max_depth as usize {
-            return Err(ExecError {
-                reason: "reached maximum depth, cannot make a call".into(),
-                buffer: input_data,
-            });
+            return "reached maximum depth, cannot make a call".into();
         }
 
         // Assumption: `collect_rent` doesn't collide with overlay because
@@ -177,42 +153,8 @@ where
             .execute(&executable, nested.new_call_context(caller), input_data)
     }
 
-    fn new_call_context<'b>(&'b self, caller: T::AccountId) -> CallContext<'b, 'a, T, V, L> {
+    fn new_call_context<'b>(&'b self, caller: T::AccountId) -> CallContext<'b, 'a, T, V, L, Err> {
         CallContext { ctx: self, caller }
-    }
-}
-
-pub struct CallContext<'a, 'b: 'a, T: Trait + 'b, V: Vm<T> + 'b, L: Loader<T>> {
-    ctx: &'a ExecutionContext<'b, T, V, L>,
-    caller: T::AccountId,
-}
-
-/// An interface that provides access to the external environment in which the
-/// predicate-contract is executed similar to a smart-contract.
-///
-/// This interface is specialized to an account of the executing code, so all
-/// operations are implicitly performed on that account.
-impl<'a, 'b: 'a, E, T, V, L> Ext for CallContext<'a, 'b, T, V, L>
-where
-    T: Trait + 'b,
-    V: Vm<T, Executable = E>,
-    L: Loader<T, Executable = E>,
-{
-    type T = T;
-
-    /// Call (possibly other predicate) into the specified account.
-    fn call(&self, to: &AccountIdOf<Self::T>, input_data: Vec<u8>) -> Result<Vec<u8>> {
-        self.ctx.call(to.clone(), input_data)
-    }
-
-    /// Returns a reference to the account id of the caller.
-    fn caller(&self) -> &AccountIdOf<Self::T> {
-        &self.caller
-    }
-
-    /// Returns a reference to the account id of the current contract.
-    fn address(&self) -> &AccountIdOf<Self::T> {
-        &self.ctx.self_account
     }
 }
 

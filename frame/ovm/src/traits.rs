@@ -72,8 +72,8 @@ pub trait Ext<T: Trait, Err> {
 ///
 /// Execution of code can end by either implicit termination (that is, reached the end of
 /// executable), explicit termination via returning a buffer or termination due to a trap.
-pub trait Vm<T: Trait, E: Ext<T = T>> {
+pub trait Vm<T: Trait, Err: From<&'static str>, E: Ext<T = T, Err = Err>> {
     type Executable;
 
-    fn execute(&self, exec: &Self::Executable, ext: E, input_data: Vec<u8>) -> ExecResult;
+    fn execute(&self, exec: &Self::Executable, ext: E, input_data: Vec<u8>) -> ExecResult<Err>;
 }
