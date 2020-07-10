@@ -48,10 +48,11 @@ pub struct PrefabOvmModule {
 }
 
 /// Ovm executable loaded by `OvmLoader` and executed by `OptimisticOvm`.
-pub struct OvmExecutable {
-    /// "is_valid_challenge", "decide_true", etc...
-    entrypoint_name: &'static str,
-    prefab_module: PrefabOvmModule,
+pub struct OvmExecutable<T: Trait> {
+    code: ovmi::compiled_predicates::CompiledPredicate,
+    payout: T::AccountIdL2,
+    address_inputs: BTreeMap<T::Hash, T::AccountIdL2>,
+    bytes_inputs: BTreeMap<T::Hash, Vec<u8>>,
 }
 
 /// Loader which fetches `OvmExecutable` from the code cache.
@@ -66,19 +67,25 @@ impl<'a> PredicateLoader<'a> {
 }
 
 impl<'a, T: Trait> Loader<T> for PredicateLoader<'a> {
-    type Executable = OvmExecutable;
+    type Executable = OvmExecutable<T>;
 
-    fn load_main(&self, code_hash: &PredicateHash<T>) -> Result<OvmExecutable, &'static str> {
-        let prefab_module = code_cache::load::<T>(code_hash, self.schedule)?;
+    fn load_main(&self, predicate: &PredicateContractOf<T>) -> Result<OvmExecutable, &'static str> {
+        let prefab_module = code_cache::load::<T>(predicate.code_, self.schedule)?;
+        let code = Decode::decode(&mut &prefab_module.code)
+            .map_err(|| "Predicate code cannot decode error.".into())?;
+        let (payout, address_inputs, bytes_inputs) = Decode::decode(&mut &predicate.inputs[..])
+            .map_err(|| "Constructor inputs cannot decode error.")?;
         Ok(OvmExecutable {
-            entrypoint_name: "call",
-            prefab_module,
+            code,
+            payout,
+            address_inputs,
+            bytes_inputs,
         })
     }
 }
 
-pub struct ExecutionContext<'a, T: Trait + 'a, Err, V, L, Ext> {
-    pub caller: Option<&'a ExecutionContext<'a, T, Err, V, L, Ext>>,
+pub struct ExecutionContext<'a, T: Trait + 'a, Err, V, L> {
+    pub caller: Option<&'a ExecutionContext<'a, T, Err, V, L>>,
     pub self_account: T::AccountId,
     pub depth: usize,
     // pub deferred: Vec<DeferredAction<T>>,
@@ -87,13 +94,12 @@ pub struct ExecutionContext<'a, T: Trait + 'a, Err, V, L, Ext> {
     pub loader: &'a L,
 }
 
-impl<'a, T, Err, E, V, L, Ex> ExecutionContext<'a, T, Err, V, L, Ex>
+impl<'a, T, Err, E, V, L> ExecutionContext<'a, T, Err, V, L>
 where
     T: Trait,
     L: Loader<T, Executable = E>,
     V: Vm<T, Err, Executable = E>,
     Err: From<&'static str>,
-    Ex: Ext<T, Err>,
 {
     /// Create the top level execution context.
     ///
@@ -111,7 +117,7 @@ where
         }
     }
 
-    fn nested<'b, 'c: 'b>(&'c self, dest: T::AccountId) -> ExecutionContext<'b, T, Err, V, L, Ex> {
+    fn nested<'b, 'c: 'b>(&'c self, dest: T::AccountId) -> ExecutionContext<'b, T, Err, V, L> {
         ExecutionContext {
             caller: Some(self),
             self_account: dest,
@@ -153,27 +159,39 @@ where
             .execute(&executable, nested.new_call_context(caller), input_data)
     }
 
-    fn new_call_context<'b>(&'b self, caller: T::AccountId) -> Ex {
-        Ex::new(self, caller)
+    fn new_call_context<'b>(&'b self, caller: T::AccountId) -> T::ExternalCall {
+        T::ExternalCall::new(self, caller)
     }
 }
 
 /// Implementation of `Vm` that takes `PredicateOvm` and executes it.
-pub struct PredicateOvm<'a> {
+pub struct PredicateOvm<'a, T: Trait> {
     schedule: &'a Schedule,
 }
 
-impl<'a> PredicateOvm<'a> {
-    pub fn new(schedule: &'a Schedule) -> Self {
-        PredicateOvm { schedule }
-    }
-}
+impl<'a, T: Trait, Err: From<&'static str>> Vm<T> for PredicateOvm<'a, T> {
+    type Executable = OvmExecutable<'a, T>;
 
-impl<'a, T: Trait, E: Ext<T = T>> Vm<T, E> for PredicateOvm<'a> {
-    type Executable = CompiledExecutable<'a, ext::ExternalCallImpl<T, E>>;
-
-    fn execute(&self, exec: &Self::Executable, ext: E, input_data: Vec<u8>) -> ExecResult {
-        let ext_impl = ext::ExternalCallImpl::<T, E>::new(ext);
-        CompiledExecutable::execute(&exec, input_data)
+    fn execute(
+        &self,
+        exec: Self::Executable,
+        ext: T::ExternalCall,
+        input_data: Vec<u8>,
+    ) -> ExecResult<Err> {
+        let ext_impl = ext::ExternalCallImpl::<T>::new(&ext);
+        let executable = ovmi::prepare::executable_from_compiled(
+            &ext_impl,
+            exec.code,
+            exec.payout,
+            exec.address_inputs.clone(),
+            exec.bytes_inputs.clone(),
+        );
+        let call_input_data =
+            ovmi::predicates::PredicateCallInputs::<T::AccountIdL2>::decode(&mut &input_data[..])
+                .map_err(|_| "Call inputs cannot decode error.".into())?;
+        CompiledExecutor::<Self::Executable, ext::ExternalCallImpl<T>>::execute(
+            &executable,
+            call_input_data,
+        )
     }
 }

@@ -7,16 +7,8 @@ use crate::predicate::*;
 use crate::traits::*;
 use crate::*;
 
-pub struct CallContext<
-    'a,
-    'b: 'a,
-    T: Trait + 'b,
-    Err: From<&'static str>,
-    V: Vm<T, Err> + 'b,
-    L: Loader<T>,
-    Ex: Ext<T, Err>,
-> {
-    ctx: &'a ExecutionContext<'b, T, Err, V, L, Ex>,
+pub struct CallContext<'a, 'b: 'a, T: Trait + 'b, V: Vm<T, Err> + 'b, L: Loader<T>> {
+    ctx: &'a ExecutionContext<'b, T, V, L>,
     caller: T::AccountId,
 }
 
@@ -25,19 +17,17 @@ pub struct CallContext<
 ///
 /// This interface is specialized to an account of the executing code, so all
 /// operations are implicitly performed on that account.
-impl<'a, 'b: 'a, E, Err, T, V, L, Ex> Ext<T, Err> for CallContext<'a, 'b, T, Err, V, L, Ex>
+impl<'a, 'b: 'a, E, T, V, L> Ext<T> for CallContext<'a, 'b, T, V, L>
 where
     T: Trait + 'b,
-    Err: From<&'static str>,
     V: Vm<T, Err, Executable = E>,
     L: Loader<T, Executable = E>,
-    Ex: Ext<T, Err>,
 {
-    fn new<'b, Ctx>(ctx: &'b Ctx, caller: AccountIDOf<T>) -> Self {
+    fn new<'b, Ctx>(ctx: &'b Ctx, caller: AccountIdOf<T>) -> Self {
         CallContext { ctx, caller }
     }
 
-    fn call(&self, to: &AccountIdOf<Self::T>, input_data: Vec<u8>) -> ExecResult<Err> {
+    fn call(&self, to: &AccountIdOf<Self::T>, input_data: Vec<u8>) -> ExecResultOf<T> {
         self.ctx.call(to.clone(), input_data)
     }
 

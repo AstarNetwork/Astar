@@ -31,7 +31,7 @@ use sp_runtime::{
     traits::{Hash, Member},
     RuntimeDebug,
 };
-use sp_std::{fmt::Debug, prelude::*, vec::Vec};
+use sp_std::{collections::btree_map::BTreeMap, fmt::Debug, prelude::*, vec::Vec};
 
 #[cfg(test)]
 mod mock;
@@ -42,7 +42,7 @@ pub mod predicate;
 pub mod traits;
 
 use predicate::{ExecResult, ExecutionContext, PredicateLoader, PredicateOvm};
-pub use traits::PredicateAddressFor;
+use traits::{Ext, PredicateAddressFor};
 
 /// PredicateContract wrapped Predicate and initial arguments.
 ///
@@ -98,34 +98,18 @@ pub struct Schedule {
 
     /// Cost of putting a byte of code into storage.
     pub put_code_per_byte_cost: Weight,
-
-    /// Maximum allowed stack height.
-    ///
-    /// See https://wiki.parity.io/WebAssembly-StackHeight to find out
-    /// how the stack frame cost is calculated.
-    pub max_stack_height: u32,
-
-    /// Maximum number of memory pages allowed for a contract.
-    pub max_memory_pages: u32,
-
-    /// Maximum allowed size of a declared table.
-    pub max_table_size: u32,
-    // TODO: add logical conecctive addresses.
 }
 
 // 500 (2 instructions per nano second on 2GHZ) * 1000x slowdown through wasmi
 // This is a wild guess and should be viewed as a rough estimation.
 // Proper benchmarks are needed before this value and its derivatives can be used in production.
-const WASM_INSTRUCTION_COST: Weight = 500_000;
+const OVM_INSTRUCTION_COST: Weight = 500_000;
 
 impl Default for Schedule {
     fn default() -> Schedule {
         Schedule {
             version: 0,
-            put_code_per_byte_cost: WASM_INSTRUCTION_COST,
-            max_stack_height: 64 * 1024,
-            max_memory_pages: 16,
-            max_table_size: 16 * 1024,
+            put_code_per_byte_cost: OVM_INSTRUCTION_COST,
         }
     }
 }
@@ -180,6 +164,12 @@ pub trait Trait: system::Trait {
 
     /// The hashing system (algorithm) being used in the runtime (e.g. Keccak256).
     type HashingL2: Hash<Output = Self::Hash>;
+
+    /// ExternalCallError type.
+    type ExternalCallError: From<&'static str>;
+
+    /// ExternalCall context.
+    type ExternalCall: Ext<Self, ovmi::executor::ExecError<Self::AccountIdL2>>;
 
     /// The overarching event type.
     type Event: From<Event<Self>> + Into<<Self as system::Trait>::Event>;
@@ -537,14 +527,26 @@ impl<T: Trait> Module<T> {
     ///
     /// This function is similar to `Self::call`, but doesn't perform any address lookups and better
     /// suitable for calling directly from Rust.
-    pub fn bare_call(origin: T::AccountId, dest: T::AccountId, input_data: Vec<u8>) -> ExecResult {
+    pub fn bare_call(
+        origin: T::AccountId,
+        dest: T::AccountId,
+        input_data: Vec<u8>,
+    ) -> ExecResult<T::ExternalCallError> {
         Self::execute_ovm(origin, |ctx| ctx.call(dest, input_data))
     }
 
     fn execute_ovm(
         origin: T::AccountId,
-        func: impl FnOnce(&mut ExecutionContext<T, PredicateOvm, PredicateLoader>) -> ExecResult,
-    ) -> ExecResult {
+        func: impl FnOnce(
+            &mut ExecutionContext<
+                T,
+                T::ExternalCallError,
+                PredicateOvm,
+                PredicateLoader,
+                T::ExteralCall,
+            >,
+        ) -> ExecResult<T::ExternalCallError>,
+    ) -> ExecResult<T::ExternalCallError> {
         let cfg = Config::preload::<T>();
         let vm = PredicateOvm::new(&cfg.schedule);
         let loader = PredicateLoader::new(&cfg.schedule);

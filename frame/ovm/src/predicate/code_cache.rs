@@ -37,7 +37,7 @@ pub fn load<T: Trait>(
         let original_code =
             <PredicateCodes<T>>::get(code_hash).ok_or_else(|| "predicate code is not found")?;
         prefab_module = prepare::prepare_predicate(&original_code, schedule)?;
-        <PredicateCache<T>>::insert(&code_hash, &prefab_module);
+        <PredicateCache<T>>::insert(code_hash, &prefab_module);
     }
     Ok(prefab_module)
 }
