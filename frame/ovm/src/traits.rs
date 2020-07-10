@@ -32,6 +32,8 @@ pub trait Loader<T: Trait> {
 /// - address: the predicate's address.
 /// - is_stored: check the storage of other modules or contracts.
 pub trait Ext<T: Trait, Err> {
+    fn new<'b, Ctx>(ctx: &'b Ctx, caller: AccountIDOf<T>) -> Self;
+
     /// Call (possibly other predicate) into the specified account.
     fn call(&self, to: &AccountIdOf<T>, input_data: Vec<u8>) -> Result<Vec<u8>, Err>;
 

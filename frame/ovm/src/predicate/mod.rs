@@ -77,8 +77,8 @@ impl<'a, T: Trait> Loader<T> for PredicateLoader<'a> {
     }
 }
 
-pub struct ExecutionContext<'a, T: Trait + 'a, V, L, Err> {
-    pub caller: Option<&'a ExecutionContext<'a, T, V, L, Err>>,
+pub struct ExecutionContext<'a, T: Trait + 'a, Err, V, L, Ext> {
+    pub caller: Option<&'a ExecutionContext<'a, T, Err, V, L, Ext>>,
     pub self_account: T::AccountId,
     pub depth: usize,
     // pub deferred: Vec<DeferredAction<T>>,
@@ -87,13 +87,13 @@ pub struct ExecutionContext<'a, T: Trait + 'a, V, L, Err> {
     pub loader: &'a L,
 }
 
-impl<'a, T, Err, E, V, L, Ext> ExecutionContext<'a, T, Err, V, L, Ext>
+impl<'a, T, Err, E, V, L, Ex> ExecutionContext<'a, T, Err, V, L, Ex>
 where
     T: Trait,
     L: Loader<T, Executable = E>,
-    V: Vm<T, Executable = E, Err>,
+    V: Vm<T, Err, Executable = E>,
     Err: From<&'static str>,
-    Ext: Ext<T, Err>,
+    Ex: Ext<T, Err>,
 {
     /// Create the top level execution context.
     ///
@@ -111,7 +111,7 @@ where
         }
     }
 
-    fn nested<'b, 'c: 'b>(&'c self, dest: T::AccountId) -> ExecutionContext<'b, T, Err, V, L, Ext> {
+    fn nested<'b, 'c: 'b>(&'c self, dest: T::AccountId) -> ExecutionContext<'b, T, Err, V, L, Ex> {
         ExecutionContext {
             caller: Some(self),
             self_account: dest,
@@ -153,8 +153,8 @@ where
             .execute(&executable, nested.new_call_context(caller), input_data)
     }
 
-    fn new_call_context<'b>(&'b self, caller: T::AccountId) -> CallContext<'b, 'a, T, V, L, Err> {
-        CallContext { ctx: self, caller }
+    fn new_call_context<'b>(&'b self, caller: T::AccountId) -> Ex {
+        Ex::new(self, caller)
     }
 }
 

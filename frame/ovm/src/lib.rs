@@ -563,6 +563,15 @@ impl<T: Trait> Module<T> {
         game.decision
     }
 
+    /// Get of true/false the decision of game id.
+    pub fn is_decided_by_id(id: Self::Hash) -> Decision {
+        let game = match Self::games(&id) {
+            Some(game) => game,
+            None => return Decision::Undecided,
+        };
+        game.decision
+    }
+
     /// Get of the instatiated challenge game from claim_id.
     pub fn get_game(claim_id: &T::Hash) -> Option<ChallengeGameOf<T>> {
         Self::games(claim_id)

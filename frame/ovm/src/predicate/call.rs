@@ -1,15 +1,22 @@
+//! This CallContext is the mock ExternalCall implementation.
+//! **Note that it is not used in the production environment.**
+//!
+//! When Plasma module is used, it is implemented by injecting CallContext of Plasma module as Ext of ExecutionContext.
+
 use crate::predicate::*;
 use crate::traits::*;
+use crate::*;
 
 pub struct CallContext<
     'a,
     'b: 'a,
     T: Trait + 'b,
-    V: Vm<T> + 'b,
-    L: Loader<T>,
     Err: From<&'static str>,
+    V: Vm<T, Err> + 'b,
+    L: Loader<T>,
+    Ex: Ext<T, Err>,
 > {
-    ctx: &'a ExecutionContext<'b, T, V, L, Err>,
+    ctx: &'a ExecutionContext<'b, T, Err, V, L, Ex>,
     caller: T::AccountId,
 }
 
@@ -18,27 +25,57 @@ pub struct CallContext<
 ///
 /// This interface is specialized to an account of the executing code, so all
 /// operations are implicitly performed on that account.
-impl<'a, 'b: 'a, E, T, V, L, Err> Ext<T, Err> for CallContext<'a, 'b, T, V, L, Err>
+impl<'a, 'b: 'a, E, Err, T, V, L, Ex> Ext<T, Err> for CallContext<'a, 'b, T, Err, V, L, Ex>
 where
     T: Trait + 'b,
-    V: Vm<T, Executable = E, Err>,
-    L: Loader<T, Executable = E>,
     Err: From<&'static str>,
+    V: Vm<T, Err, Executable = E>,
+    L: Loader<T, Executable = E>,
+    Ex: Ext<T, Err>,
 {
-    type T = T;
+    fn new<'b, Ctx>(ctx: &'b Ctx, caller: AccountIDOf<T>) -> Self {
+        CallContext { ctx, caller }
+    }
 
-    /// Call (possibly other predicate) into the specified account.
-    fn call(&self, to: &AccountIdOf<Self::T>, input_data: Vec<u8>) -> Result<Vec<u8>> {
+    fn call(&self, to: &AccountIdOf<Self::T>, input_data: Vec<u8>) -> ExecResult<Err> {
         self.ctx.call(to.clone(), input_data)
     }
 
-    /// Returns a reference to the account id of the caller.
     fn caller(&self) -> &AccountIdOf<Self::T> {
         &self.caller
     }
 
-    /// Returns a reference to the account id of the current contract.
     fn address(&self) -> &AccountIdOf<Self::T> {
         &self.ctx.self_account
+    }
+
+    fn is_stored(&self, _address: &AccountIdOf<T>, _key: &[u8], _value: &[u8]) -> bool {
+        true
+    }
+
+    fn verify_inclusion_with_root(
+        &self,
+        _leaf: Self::Hash,
+        _token_address: Self::Address,
+        _range: &[u8],
+        _inclusion_proof: &[u8],
+        _root: &[u8],
+    ) -> bool {
+        true
+    }
+
+    fn is_decided(&self, property: &PropertyOf<Self>) -> bool {
+        Decision::True == Module::<T>::is_decided(property)
+    }
+    fn is_decided_by_id(&self, id: Self::Hash) -> bool {
+        Decision::True == Module::<T>::is_decided_by_id(id)
+    }
+
+    fn ext_set_predicate_decision(
+        &self,
+        _game_id: Self::Hash,
+        _decision: bool,
+    ) -> Result<bool, Err> {
+        Ok(true)
     }
 }
