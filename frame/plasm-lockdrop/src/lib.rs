@@ -29,7 +29,7 @@ use frame_support::{
     StorageMap, StorageValue,
 };
 use frame_system::{
-    self as system, ensure_none,
+    self as system, ensure_none, ensure_root,
     offchain::{SendTransactionTypes, SubmitTransaction},
 };
 pub use generic_array::typenum;
@@ -42,7 +42,7 @@ use sp_runtime::{
         InvalidTransaction, TransactionPriority, TransactionSource, TransactionValidity,
         ValidTransaction,
     },
-    Perbill, RuntimeDebug,
+    DispatchResult, Perbill, RuntimeDebug,
 };
 use sp_std::prelude::*;
 
@@ -209,8 +209,24 @@ decl_event!(
     }
 );
 
+pub const ERROR_ALREADY_CLAIMED: u8 = 1;
+pub const ERROR_WRONG_POW_PROOF: u8 = 2;
+pub const ERROR_CLAIM_ON_VOTING: u8 = 3;
+pub const ERROR_DOUBLE_VOUTE: u8 = 4;
+pub const ERROR_UNKNOWN_AUTHORITY: u8 = 5;
+
 decl_error! {
     pub enum Error for Module<T: Trait> {
+        /// Unknown authority index in voting message.
+        UnknownAuthority,
+        /// This claim already paid to requester.
+        AlreadyPaid,
+        /// Votes for this claim isn't enough to pay it.
+        NotEnoughVotes,
+        /// Authorities reject this claim request.
+        NotApproved,
+        /// Lockdrop isn't run now, request could not be processed.
+        OutOfTime,
     }
 }
 
@@ -241,13 +257,15 @@ decl_storage! {
         /// How much positive votes requered to approve claim.
         ///   Positive votes = approve votes - decline votes.
         PositiveVotes get(fn positive_votes) config(): AuthorityVote;
-        /// Timestamp of finishing lockdrop.
-        LockdropEnd get(fn lockdrop_end) config(): T::Moment;
+        /// Timestamp bounds of lockdrop held period.
+        TimeBounds get(fn time_bounds) config(): (T::Moment, T::Moment);
     }
 }
 
 decl_module! {
     pub struct Module<T: Trait> for enum Call where origin: T::Origin {
+        type Error = Error<T>;
+
         /// Initializing events
         fn deposit_event() = default;
 
@@ -268,13 +286,18 @@ decl_module! {
             origin,
             params: Lockdrop,
             _nonce: H256,
-        ) {
+        ) -> DispatchResult {
             ensure_none(origin)?;
 
             let claim_id = BlakeTwo256::hash_of(&params);
-            ensure!(!<Claims>::get(claim_id).complete, "claim should not be already paid");
+            ensure!(
+                !<Claims>::get(claim_id).complete,
+                Error::<T>::AlreadyPaid,
+            );
 
             if !<Claims>::contains_key(claim_id) {
+                ensure!(Self::time_guard(), Error::<T>::OutOfTime);
+
                 let amount = match params {
                     Lockdrop::Bitcoin { value, duration, .. } => {
                         // Average block duration in BTC is 10 min = 600 sec
@@ -301,6 +324,8 @@ decl_module! {
 
             <Requests>::mutate(|requests| requests.push(claim_id));
             Self::deposit_event(RawEvent::ClaimRequest(claim_id));
+
+            Ok(())
         }
 
         /// Claim tokens according to lockdrop procedure.
@@ -309,18 +334,18 @@ decl_module! {
         fn claim(
             origin,
             claim_id: ClaimId,
-        ) {
+        ) -> DispatchResult {
             ensure_none(origin)?;
 
             let claim = <Claims>::get(claim_id);
-            ensure!(!claim.complete, "claim should not be already paid");
+            ensure!(!claim.complete, Error::<T>::AlreadyPaid);
             ensure!(
                 claim.approve + claim.decline >= <VoteThreshold>::get(),
-                "this request don't get enough authority votes",
+                Error::<T>::NotEnoughVotes,
             );
             ensure!(
                 claim.approve.saturating_sub(claim.decline) >= <PositiveVotes>::get(),
-                "this request don't approved by authorities",
+                Error::<T>::NotApproved,
             );
 
 
@@ -336,6 +361,8 @@ decl_module! {
             // Finalize claim request
             <Claims>::mutate(claim_id, |claim| claim.complete = true);
             Self::deposit_event(RawEvent::ClaimComplete(claim_id, account, amount));
+
+            Ok(())
         }
 
         /// Vote for claim request according to check results. (for authorities only)
@@ -347,7 +374,7 @@ decl_module! {
             // since signature verification is done in `validate_unsigned`
             // we can skip doing it here again.
             _signature: <T::AuthorityId as RuntimeAppPublic>::Signature,
-        ) {
+        ) -> DispatchResult {
             ensure_none(origin)?;
 
             <Claims>::mutate(&vote.claim_id, |claim|
@@ -359,8 +386,9 @@ decl_module! {
             if let Some(authority) = keys.get(vote.authority as usize) {
                 <HasVote<T>>::insert(authority, &vote.claim_id, true);
                 Self::deposit_event(RawEvent::ClaimResponse(vote.claim_id, authority.clone(), vote.approve));
+                Ok(())
             } else {
-                return Err("unable get authority by index")?;
+                Err(Error::<T>::UnknownAuthority)?
             }
         }
 
@@ -373,7 +401,7 @@ decl_module! {
             // since signature verification is done in `validate_unsigned`
             // we can skip doing it here again.
             _signature: <T::AuthorityId as RuntimeAppPublic>::Signature,
-        ) {
+        ) -> DispatchResult {
             ensure_none(origin)?;
 
             let now = T::Time::now();
@@ -382,7 +410,7 @@ decl_module! {
             if let Some(authority) = keys.get(rate.authority as usize) {
                 DollarRateF::<T>::insert(authority, (now, rate.btc, rate.eth));
             } else {
-                return Err("unable to get authority by index")?;
+                return Err(Error::<T>::UnknownAuthority)?
             }
 
             let expire = T::MedianFilterExpire::get();
@@ -402,6 +430,16 @@ decl_module! {
 
             <DollarRate<T>>::put((btc_filtered_rate, eth_filtered_rate));
             Self::deposit_event(RawEvent::NewDollarRate(btc_filtered_rate, eth_filtered_rate));
+
+            Ok(())
+        }
+
+        /// Set lockdrop held time.
+        #[weight = 50_000]
+        fn set_time_bounds(origin, from: T::Moment, to: T::Moment) {
+            ensure_root(origin)?;
+            ensure!(from < to, "wrong arguments");
+            <TimeBounds<T>>::put((from, to));
         }
 
         // Runs after every block within the context and current state of said block.
@@ -411,7 +449,8 @@ decl_module! {
             if sp_io::offchain::is_validator() {
                 match Self::offchain() {
                     Err(_) => debug::error!(
-                        target: "lockdrop-offchain-worker", "lockdrop worker failed"
+                        target: "lockdrop-offchain-worker",
+                        "lockdrop worker failed",
                     ),
                     _ => (),
                 }
@@ -549,13 +588,13 @@ impl<T: Trait> Module<T> {
     fn time_bonus(duration: T::Moment) -> u16 {
         let days: u64 = 24 * 60 * 60; // One day in seconds
         let duration_sec = Into::<u64>::into(duration);
-        if duration_sec < 30 * days {
+        if duration_sec < 3 * days {
             0 // Dont permit to participate with locking less that one month
-        } else if duration_sec < 100 * days {
+        } else if duration_sec < 10 * days {
             24
-        } else if duration_sec < 300 * days {
+        } else if duration_sec < 30 * days {
             100
-        } else if duration_sec < 1000 * days {
+        } else if duration_sec < 100 * days {
             360
         } else {
             1600
@@ -572,6 +611,13 @@ impl<T: Trait> Module<T> {
             }
         }
         None
+    }
+
+    /// Check that current time suits lockdrop time bounds.
+    fn time_guard() -> bool {
+        let now = T::Time::now();
+        let bounds = <TimeBounds<T>>::get();
+        now >= bounds.0 && now < bounds.1
     }
 }
 
@@ -614,13 +660,19 @@ impl<T: Trait> frame_support::unsigned::ValidateUnsigned for Module<T> {
             Call::request(params, nonce) => {
                 let claim_id = BlakeTwo256::hash_of(&params);
                 if <Claims>::get(claim_id).complete {
-                    return InvalidTransaction::Call.into();
+                    return InvalidTransaction::Custom(ERROR_ALREADY_CLAIMED).into();
                 }
+
+                debug::info!(
+                    target: "lockdrop",
+                    "claim id {} => request: {:?} {}",
+                    claim_id, params, nonce,
+                );
 
                 // Simple proof of work
                 let pow_byte = BlakeTwo256::hash_of(&(claim_id, nonce)).as_bytes()[0];
                 if pow_byte > 0 {
-                    return InvalidTransaction::Call.into();
+                    return InvalidTransaction::Custom(ERROR_WRONG_POW_PROOF).into();
                 }
 
                 ValidTransaction::with_tag_prefix("PlasmLockdrop")
@@ -633,11 +685,15 @@ impl<T: Trait> frame_support::unsigned::ValidateUnsigned for Module<T> {
 
             Call::claim(claim_id) => {
                 let claim = <Claims>::get(claim_id);
+                if claim.complete {
+                    return InvalidTransaction::Custom(ERROR_ALREADY_CLAIMED).into();
+                }
+
                 let on_vote = claim.approve + claim.decline < <VoteThreshold>::get();
                 let not_approved =
                     claim.approve.saturating_sub(claim.decline) < <PositiveVotes>::get();
-                if claim.complete || on_vote || not_approved {
-                    return InvalidTransaction::Call.into();
+                if on_vote || not_approved {
+                    return InvalidTransaction::Custom(ERROR_CLAIM_ON_VOTING).into();
                 }
 
                 ValidTransaction::with_tag_prefix("PlasmLockdrop")
@@ -664,10 +720,10 @@ impl<T: Trait> frame_support::unsigned::ValidateUnsigned for Module<T> {
                         }
                         // Double voting guard
                         if <HasVote<T>>::get(authority, vote.claim_id.clone()) {
-                            return InvalidTransaction::Call.into();
+                            return InvalidTransaction::Custom(ERROR_DOUBLE_VOUTE).into();
                         }
                     } else {
-                        return InvalidTransaction::BadProof.into();
+                        return InvalidTransaction::Custom(ERROR_UNKNOWN_AUTHORITY).into();
                     }
 
                     ValidTransaction::with_tag_prefix("PlasmLockdrop")
@@ -688,7 +744,7 @@ impl<T: Trait> frame_support::unsigned::ValidateUnsigned for Module<T> {
                             return InvalidTransaction::BadProof.into();
                         }
                     } else {
-                        return InvalidTransaction::BadProof.into();
+                        return InvalidTransaction::Custom(ERROR_UNKNOWN_AUTHORITY).into();
                     }
 
                     ValidTransaction::with_tag_prefix("PlasmLockdrop")

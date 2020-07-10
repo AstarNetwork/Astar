@@ -218,7 +218,7 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
         dollar_rate: (9_000, 200),
         vote_threshold: 3,
         positive_votes: 2,
-        lockdrop_end: 0,
+        time_bounds: (0, 100_000_000),
     }
     .assimilate_storage(&mut storage);
 
