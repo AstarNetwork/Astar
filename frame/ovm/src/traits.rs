@@ -23,6 +23,11 @@ pub trait Loader<T: Trait> {
     ) -> Result<Self::Executable, &'static str>;
 }
 
+/// For the initalize call context.
+pub trait NewCallContext<T: Trait, Err: From<&'static str>, V: Vm<T, Err>, L: Loader<T>> {
+    fn new(ctx: &ExecutionContext<T, Err, V, L>, caller: AccountIdOf<T>) -> Self;
+}
+
 /// An interface that provides access to the external environment in which the
 /// predicate-contract is executed similar to a smart-contract.
 ///
@@ -35,16 +40,6 @@ pub trait Loader<T: Trait> {
 /// - address: the predicate's address.
 /// - is_stored: check the storage of other modules or contracts.
 pub trait Ext<T: Trait, Err: From<&'static str>> {
-    fn new<'a, 'b: 'a, E, U, Frr, W, N>(
-        ctx: &'a ExecutionContext<'b, U, Frr, W, N>,
-        caller: AccountIdOf<T>,
-    ) -> Self
-    where
-        U: Trait + 'b,
-        Frr: From<&'static str>,
-        W: Vm<T, Err, Executable = E>,
-        N: Loader<T, Executable = E>;
-
     /// Call (possibly other predicate) into the specified account.
     fn call(&self, to: &AccountIdOf<T>, input_data: Vec<u8>) -> Result<Vec<u8>, Err>;
 

@@ -4,19 +4,23 @@
 //! When Plasma module is used, it is implemented by injecting CallContext of Plasma module as Ext of ExecutionContext.
 
 use crate::predicate::*;
-use crate::traits::{Ext, Loader, Vm};
+use crate::traits::{Ext, Loader, NewCallContext, Vm};
 use crate::{AccountIdOf, Decision, PropertyOf, Trait};
 
-pub struct CallContext<
-    'a,
-    'b: 'a,
-    T: Trait + 'b,
-    Err: From<&'static str>,
-    V: Vm<T, Err> + 'b,
-    L: Loader<T>,
-> {
-    ctx: &'a ExecutionContext<'b, T, Err, V, L>,
+pub struct CallContext<T: Trait, Err: From<&'static str>, V: Vm<T, Err>, L: Loader<T>> {
+    ctx: Rc<ExecutionContext<T, Err, V, L>>,
     caller: T::AccountId,
+}
+
+impl<T: Trait, Err: From<&'static str>, V: Vm<T, Err>, L: Loader<T>> NewCallContext<T, Err, V, L>
+    for CallContext<T, Err, V, L>
+{
+    fn new(ctx: &ExecutionContext<T, Err, V, L>, caller: AccountIdOf<T>) -> Self {
+        CallContext {
+            ctx: Rc::clone(ctx),
+            caller,
+        }
+    }
 }
 
 /// An interface that provides access to the external environment in which the
@@ -24,26 +28,13 @@ pub struct CallContext<
 ///
 /// This interface is specialized to an account of the executing code, so all
 /// operations are implicitly performed on that account.
-impl<'a, 'b: 'a, E, T, Err, V, L> Ext<T, Err> for CallContext<'a, 'b, T, Err, V, L>
+impl<E, T, Err, V, L> Ext<T, Err> for CallContext<T, Err, V, L>
 where
-    T: Trait + 'b,
+    T: Trait,
     Err: From<&'static str>,
     V: Vm<T, Err, Executable = E>,
     L: Loader<T, Executable = E>,
 {
-    fn new<'c, 'd: 'c, F, U, Frr, W, N>(
-        ctx: &'c ExecutionContext<'d, U, Frr, W, N>,
-        caller: AccountIdOf<T>,
-    ) -> Self
-    where
-        U: Trait + 'd,
-        Frr: From<&'static str>,
-        W: Vm<T, Err, Executable = F>,
-        N: Loader<T, Executable = F>,
-    {
-        CallContext { ctx, caller }
-    }
-
     fn call(&self, to: &AccountIdOf<T>, input_data: Vec<u8>) -> ExecResult<Err> {
         self.ctx.call(to.clone(), input_data)
     }

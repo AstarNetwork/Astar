@@ -33,7 +33,7 @@ use sp_runtime::{
     traits::{Hash, Zero},
     RuntimeDebug,
 };
-use sp_std::{collections::btree_map::BTreeMap, prelude::*, vec::Vec};
+use sp_std::{collections::btree_map::BTreeMap, prelude::*, rc::Rc, vec::Vec};
 
 #[cfg(test)]
 mod mock;
@@ -44,7 +44,7 @@ pub mod predicate;
 pub mod traits;
 
 use predicate::{ExecResult, ExecutionContext, PredicateLoader, PredicateOvm};
-use traits::{Ext, PredicateAddressFor};
+use traits::{Ext, NewCallContext, PredicateAddressFor};
 
 /// PredicateContract wrapped Predicate and initial arguments.
 ///
@@ -173,7 +173,8 @@ pub trait Trait: system::Trait {
     type HashingL2: Hash<Output = Self::Hash>;
 
     /// ExternalCall context.
-    type ExternalCall: Ext<Self, ExecError<Self::AccountId>>;
+    type ExternalCall: Ext<Self, ExecError<Self::AccountId>>
+        + NewCallContext<Self, ExecError<Self::AccountId>, PredicateOvm<Self>, PredicateLoader>;
 
     type AtomicPredicateIdConfig: Get<AtomicPredicateIdConfig<Self::AccountId, Self::Hash>>;
 
@@ -214,14 +215,6 @@ decl_event!(
         PutPredicate(Hash),
         /// (predicate_address: AccountId);
         InstantiatePredicate(AccountId),
-        /// (gameId: Hash, decision: bool)
-        AtomicPropositionDecided(Hash, bool),
-        /// (game_id: Hash, property: Property, createdBlock: BlockNumber)
-        NewPropertyClaimed(Hash, Property, BlockNumber),
-        /// (game_id: Hash, challengeGameId: Hash)
-        ClaimChallenged(Hash, Hash),
-        /// (game_id: Hash, decision: bool)
-        ClaimDecided(Hash, bool),
         /// (game_id: Hash, property: Property, created_block: BlockNumber)
         PropertyClaimed(Hash, Property, BlockNumber),
         /// (gameId: Hash, challenge_game_id: Hash)
@@ -236,28 +229,8 @@ decl_event!(
 decl_error! {
     /// Error for the staking module.
     pub enum Error for Module<T: Trait> {
-        /// Duplicate index.
-        DuplicateIndex,
-        /// claim isn't empty
-        CiamIsNotEmpty,
         /// Does not exist game
         DoesNotExistGame,
-        /// Does not exist predicate
-        DoesNotExistPredicate,
-        /// claim should be decidable
-        ClaimShouldBeDecidable,
-        /// challenge isn't valid
-        ChallengeIsNotValid,
-        /// challenging game haven't been decided true
-        ChallengingGameNotTrue,
-        /// Decision must be undecided
-        DecisionMustBeUndecided,
-        /// There must be no challenge
-        ThereMustBeNoChallenge,
-        /// property must be true with given witness
-        PropertyMustBeTrue,
-        /// challenging game haven't been decided false
-        ChallengingGameNotFalse,
         /// setPredicateDecision must be called from predicate
         MustBeCalledFromPredicate,
         /// index must be less than challenges.length
@@ -537,16 +510,17 @@ impl<T: Trait> Module<T> {
         Self::execute_ovm(origin, |ctx| ctx.call(dest, input_data))
     }
 
-    fn execute_ovm<'a>(
+    fn execute_ovm(
         origin: T::AccountId,
         func: impl FnOnce(
-            &mut ExecutionContext<T, ExecError<T::AccountId>, PredicateOvm<'a, T>, PredicateLoader>,
+            &mut ExecutionContext<T, ExecError<T::AccountId>, PredicateOvm<T>, PredicateLoader>,
         ) -> ExecResult<ExecError<T::AccountId>>,
     ) -> ExecResult<ExecError<T::AccountId>> {
-        let cfg = Config::preload::<T>();
-        let vm = PredicateOvm::new(&cfg.schedule);
-        let loader = PredicateLoader::new(&cfg.schedule);
-        let mut ctx = ExecutionContext::top_level(origin.clone(), &cfg, &vm, &loader);
+        let cfg = Rc::new(Config::preload::<T>());
+        let schedule = Rc::new(cfg.schedule.clone());
+        let vm = Rc::new(PredicateOvm::new(Rc::clone(&schedule)));
+        let loader = Rc::new(PredicateLoader::new(Rc::clone(&schedule)));
+        let mut ctx = ExecutionContext::top_level(origin.clone(), cfg, vm, loader);
 
         func(&mut ctx)
     }
