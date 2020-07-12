@@ -7,7 +7,6 @@
 //! About each staking, this module computes issuing new tokens.
 
 use super::*;
-use num_traits::sign::Unsigned;
 use sp_arithmetic::traits::BaseArithmetic;
 use sp_std::marker::PhantomData;
 use traits::ComputeTotalPayout;
