@@ -32,7 +32,6 @@ use frame_system::{
     self as system, ensure_none, ensure_root,
     offchain::{SendTransactionTypes, SubmitTransaction},
 };
-use sp_std::collections::btree_set::BTreeSet;
 pub use generic_array::typenum;
 use median::{Filter, ListNode};
 use sp_core::{ecdsa, H256};
@@ -45,6 +44,7 @@ use sp_runtime::{
     },
     DispatchResult, Perbill, RuntimeDebug,
 };
+use sp_std::collections::btree_set::BTreeSet;
 use sp_std::prelude::*;
 
 /// Authority keys.
@@ -384,11 +384,11 @@ decl_module! {
                 Self::deposit_event(RawEvent::ClaimResponse(vote.claim_id, authority.clone(), vote.approve));
 
                 <Claims<T>>::mutate(&vote.claim_id, |claim|
-                    if vote.approve { 
+                    if vote.approve {
                         claim.approve.insert(authority.clone());
                         claim.decline.remove(&authority);
                     }
-                    else { 
+                    else {
                         claim.decline.insert(authority.clone());
                         claim.approve.remove(&authority);
                     }

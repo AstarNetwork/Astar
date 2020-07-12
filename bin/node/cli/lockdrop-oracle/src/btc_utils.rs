@@ -1,10 +1,10 @@
 //! Bitcoin locking helpers.
 
 use bitcoin::blockdata::script::Script;
+use bitcoin::network::constants::Network;
+use bitcoin::util::address::Address;
 use bitcoin::util::key::PublicKey;
 use bitcoin_script::bitcoin_script;
-use bitcoin::util::address::Address;
-use bitcoin::network::constants::Network;
 use sp_core::ecdsa;
 
 /// Encode block delay in BIP68 standard
