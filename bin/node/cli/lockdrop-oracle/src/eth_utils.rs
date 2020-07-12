@@ -13,9 +13,14 @@ pub fn to_address(public: &[u8]) -> Option<H160> {
 }
 
 /// Compile smart contract input for lock value on given duration.
-pub fn lock_method_check(input: &[u8], duration: u64) -> bool {
-    let method = [0x66, 0xdf, 0xbf, 0xb4]; // lock(uint256,address) signature
-    let mut encoded_duration: [u8; 32] = [0; 32]; // duration in days
-    U256::from(duration / 86400).to_big_endian(&mut encoded_duration);
-    input[0..4] == method && input[4..36] == encoded_duration
+pub fn lock_method(duration: u64) -> Vec<u8> {
+    // Lock method signature
+    let method = keccak_256("lock(uint256,address)".as_bytes());
+    // Duration in days
+    let duration_param = U256::from(duration / 86400);
+    // Transaction input
+    ethabi::encode(&[
+        ethabi::Token::FixedBytes(method[0..4].to_vec()),
+        ethabi::Token::Uint(duration_param),
+    ])
 }

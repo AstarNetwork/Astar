@@ -14,7 +14,7 @@ pub struct Config {
     #[structopt(long, default_value = "https://ropsten.infura.io/v3")]
     pub ethereum_endpoint: String,
     /// Ethereum lockdrop smart contract address.
-    #[structopt(long, default_value = "EEd84A89675342fB04faFE06F7BB176fE35Cb168")]
+    #[structopt(long, default_value = "69e7eb3ab94a10e4f408d842b287c70aa0d11649")]
     pub lockdrop_contract: String,
     /// Ethereum minimum transaction confirmations.
     #[structopt(long, default_value = "10")]

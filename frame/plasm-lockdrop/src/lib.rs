@@ -32,6 +32,7 @@ use frame_system::{
     self as system, ensure_none, ensure_root,
     offchain::{SendTransactionTypes, SubmitTransaction},
 };
+use sp_std::collections::btree_set::BTreeSet;
 pub use generic_array::typenum;
 use median::{Filter, ListNode};
 use sp_core::{ecdsa, H256};
@@ -163,10 +164,10 @@ impl Default for Lockdrop {
 /// Lockdrop claim request description.
 #[cfg_attr(feature = "std", derive(Eq))]
 #[derive(Encode, Decode, RuntimeDebug, PartialEq, Default, Clone)]
-pub struct Claim {
+pub struct Claim<AuthorityId: Ord> {
     params: Lockdrop,
-    approve: AuthorityVote,
-    decline: AuthorityVote,
+    approve: BTreeSet<AuthorityId>,
+    decline: BTreeSet<AuthorityId>,
     amount: u128,
     complete: bool,
 }
@@ -212,8 +213,7 @@ decl_event!(
 pub const ERROR_ALREADY_CLAIMED: u8 = 1;
 pub const ERROR_WRONG_POW_PROOF: u8 = 2;
 pub const ERROR_CLAIM_ON_VOTING: u8 = 3;
-pub const ERROR_DOUBLE_VOUTE: u8 = 4;
-pub const ERROR_UNKNOWN_AUTHORITY: u8 = 5;
+pub const ERROR_UNKNOWN_AUTHORITY: u8 = 4;
 
 decl_error! {
     pub enum Error for Module<T: Trait> {
@@ -239,7 +239,7 @@ decl_storage! {
         /// Token claim requests.
         Claims get(fn claims):
             map hasher(blake2_128_concat) ClaimId
-            => Claim;
+            => Claim<T::AuthorityId>;
         /// Double vote prevention registry.
         HasVote get(fn has_vote):
             double_map hasher(blake2_128_concat) T::AuthorityId, hasher(blake2_128_concat) ClaimId
@@ -291,23 +291,21 @@ decl_module! {
 
             let claim_id = BlakeTwo256::hash_of(&params);
             ensure!(
-                !<Claims>::get(claim_id).complete,
+                !<Claims<T>>::get(claim_id).complete,
                 Error::<T>::AlreadyPaid,
             );
 
-            if !<Claims>::contains_key(claim_id) {
+            if !<Claims<T>>::contains_key(claim_id) {
                 ensure!(Self::time_guard(), Error::<T>::OutOfTime);
 
                 let amount = match params {
                     Lockdrop::Bitcoin { value, duration, .. } => {
-                        // Average block duration in BTC is 10 min = 600 sec
-                        let duration_sec = duration * 600;
                         // Cast bitcoin value to PLM order:
                         // satoshi = BTC * 10^9;
                         // PLM unit = PLM * 10^15;
                         // (it also helps to make evaluations more precise)
                         let value_btc = value * 1_000_000;
-                        Self::btc_issue_amount(value_btc, duration_sec.into())
+                        Self::btc_issue_amount(value_btc, duration)
                     },
                     Lockdrop::Ethereum { value, duration, .. } => {
                         // Cast bitcoin value to PLM order:
@@ -315,11 +313,11 @@ decl_module! {
                         // PLM unit = PLM * 10^15;
                         // (it also helps to make evaluations more precise)
                         let value_eth = value / 1_000;
-                        Self::eth_issue_amount(value_eth, duration.into())
+                        Self::eth_issue_amount(value_eth, duration)
                     }
                 };
                 let claim = Claim { params, amount, .. Default::default() };
-                <Claims>::insert(claim_id, claim);
+                <Claims<T>>::insert(claim_id, claim);
             }
 
             <Requests>::mutate(|requests| requests.push(claim_id));
@@ -337,14 +335,17 @@ decl_module! {
         ) -> DispatchResult {
             ensure_none(origin)?;
 
-            let claim = <Claims>::get(claim_id);
+            let claim = <Claims<T>>::get(claim_id);
             ensure!(!claim.complete, Error::<T>::AlreadyPaid);
+
+            let approve = claim.approve.len();
+            let decline = claim.decline.len();
             ensure!(
-                claim.approve + claim.decline >= <VoteThreshold>::get(),
+                approve + decline >= <VoteThreshold>::get() as usize,
                 Error::<T>::NotEnoughVotes,
             );
             ensure!(
-                claim.approve.saturating_sub(claim.decline) >= <PositiveVotes>::get(),
+                approve.saturating_sub(decline) >= <PositiveVotes>::get() as usize,
                 Error::<T>::NotApproved,
             );
 
@@ -359,7 +360,7 @@ decl_module! {
             T::Currency::deposit_creating(&account, amount);
 
             // Finalize claim request
-            <Claims>::mutate(claim_id, |claim| claim.complete = true);
+            <Claims<T>>::mutate(claim_id, |claim| claim.complete = true);
             Self::deposit_event(RawEvent::ClaimComplete(claim_id, account, amount));
 
             Ok(())
@@ -377,15 +378,22 @@ decl_module! {
         ) -> DispatchResult {
             ensure_none(origin)?;
 
-            <Claims>::mutate(&vote.claim_id, |claim|
-                if vote.approve { claim.approve += 1 }
-                else { claim.decline += 1 }
-            );
-
             let keys = Keys::<T>::get();
             if let Some(authority) = keys.get(vote.authority as usize) {
                 <HasVote<T>>::insert(authority, &vote.claim_id, true);
                 Self::deposit_event(RawEvent::ClaimResponse(vote.claim_id, authority.clone(), vote.approve));
+
+                <Claims<T>>::mutate(&vote.claim_id, |claim|
+                    if vote.approve { 
+                        claim.approve.insert(authority.clone());
+                        claim.decline.remove(&authority);
+                    }
+                    else { 
+                        claim.decline.insert(authority.clone());
+                        claim.approve.remove(&authority);
+                    }
+                );
+
                 Ok(())
             } else {
                 Err(Error::<T>::UnknownAuthority)?
@@ -440,6 +448,20 @@ decl_module! {
             ensure_root(origin)?;
             ensure!(from < to, "wrong arguments");
             <TimeBounds<T>>::put((from, to));
+        }
+
+        /// Set minimum of positive votes required for lock approve.
+        #[weight = 50_000]
+        fn set_positive_votes(origin, count: AuthorityVote) {
+            ensure_root(origin)?;
+            <PositiveVotes>::put(count);
+        }
+
+        /// Set minimum votes required to pass lock confirmation process.
+        #[weight = 50_000]
+        fn set_vote_threshold(origin, count: AuthorityVote) {
+            ensure_root(origin)?;
+            <VoteThreshold>::put(count);
         }
 
         // Runs after every block within the context and current state of said block.
@@ -570,31 +592,30 @@ impl<T: Trait> Module<T> {
         }
     }
 
-    /// PLM issue amount for given BTC value and locking duration.
-    fn btc_issue_amount(value: u128, duration: T::Moment) -> u128 {
+    /// PLM issue amount for given BTC value and locking duration (in secs).
+    fn btc_issue_amount(value: u128, duration: u64) -> u128 {
         // https://medium.com/stake-technologies/plasm-lockdrop-introduction-99fa2dfc37c0
         let rate = Self::alpha() * Self::dollar_rate().0 * Self::time_bonus(duration).into();
         rate.into() * value
     }
 
-    /// PLM issue amount for given ETH value and locking duration.
-    fn eth_issue_amount(value: u128, duration: T::Moment) -> u128 {
+    /// PLM issue amount for given ETH value and locking duration (in secs).
+    fn eth_issue_amount(value: u128, duration: u64) -> u128 {
         // https://medium.com/stake-technologies/plasm-lockdrop-introduction-99fa2dfc37c0
         let rate = Self::alpha() * Self::dollar_rate().1 * Self::time_bonus(duration).into();
         rate.into() * value
     }
 
-    /// Lockdrop bonus depends of lockding duration.
-    fn time_bonus(duration: T::Moment) -> u16 {
-        let days: u64 = 24 * 60 * 60; // One day in seconds
-        let duration_sec = Into::<u64>::into(duration);
-        if duration_sec < 3 * days {
+    /// Lockdrop bonus depends of lockding duration (in secs).
+    fn time_bonus(duration: u64) -> u16 {
+        let days = 24 * 60 * 60; // One day in seconds
+        if duration < 3 * days {
             0 // Dont permit to participate with locking less that one month
-        } else if duration_sec < 10 * days {
+        } else if duration < 10 * days {
             24
-        } else if duration_sec < 30 * days {
+        } else if duration < 30 * days {
             100
-        } else if duration_sec < 100 * days {
+        } else if duration < 100 * days {
             360
         } else {
             1600
@@ -659,15 +680,9 @@ impl<T: Trait> frame_support::unsigned::ValidateUnsigned for Module<T> {
         match call {
             Call::request(params, nonce) => {
                 let claim_id = BlakeTwo256::hash_of(&params);
-                if <Claims>::get(claim_id).complete {
+                if <Claims<T>>::get(claim_id).complete {
                     return InvalidTransaction::Custom(ERROR_ALREADY_CLAIMED).into();
                 }
-
-                debug::info!(
-                    target: "lockdrop",
-                    "claim id {} => request: {:?} {}",
-                    claim_id, params, nonce,
-                );
 
                 // Simple proof of work
                 let pow_byte = BlakeTwo256::hash_of(&(claim_id, nonce)).as_bytes()[0];
@@ -684,14 +699,16 @@ impl<T: Trait> frame_support::unsigned::ValidateUnsigned for Module<T> {
             }
 
             Call::claim(claim_id) => {
-                let claim = <Claims>::get(claim_id);
+                let claim = <Claims<T>>::get(claim_id);
                 if claim.complete {
                     return InvalidTransaction::Custom(ERROR_ALREADY_CLAIMED).into();
                 }
 
-                let on_vote = claim.approve + claim.decline < <VoteThreshold>::get();
+                let approve = claim.approve.len();
+                let decline = claim.decline.len();
+                let on_vote = approve + decline < <VoteThreshold>::get() as usize;
                 let not_approved =
-                    claim.approve.saturating_sub(claim.decline) < <PositiveVotes>::get();
+                    approve.saturating_sub(decline) < <PositiveVotes>::get() as usize;
                 if on_vote || not_approved {
                     return InvalidTransaction::Custom(ERROR_CLAIM_ON_VOTING).into();
                 }
@@ -706,7 +723,7 @@ impl<T: Trait> frame_support::unsigned::ValidateUnsigned for Module<T> {
 
             Call::vote(vote, signature) => {
                 // Verify call params
-                if !<Claims>::contains_key(vote.claim_id.clone()) {
+                if !<Claims<T>>::contains_key(vote.claim_id.clone()) {
                     return InvalidTransaction::Call.into();
                 }
 
@@ -717,10 +734,6 @@ impl<T: Trait> frame_support::unsigned::ValidateUnsigned for Module<T> {
                         // Check that sender is authority
                         if !authority.verify(&encoded_vote, &signature) {
                             return InvalidTransaction::BadProof.into();
-                        }
-                        // Double voting guard
-                        if <HasVote<T>>::get(authority, vote.claim_id.clone()) {
-                            return InvalidTransaction::Custom(ERROR_DOUBLE_VOUTE).into();
                         }
                     } else {
                         return InvalidTransaction::Custom(ERROR_UNKNOWN_AUTHORITY).into();
