@@ -27,6 +27,8 @@ use frame_support::{
 use frame_system::{self as system, ensure_signed};
 
 use ovmi::executor::ExecError;
+pub type ExecResult<T> = Result<Vec<u8>, ExecError<<T as frame_system::Trait>::AccountId>>;
+
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
 use sp_runtime::{
@@ -43,7 +45,7 @@ mod tests;
 pub mod predicate;
 pub mod traits;
 
-use predicate::{ExecResult, ExecutionContext, PredicateLoader, PredicateOvm};
+use predicate::{ExecutionContext, PredicateLoader, PredicateOvm};
 use traits::{Ext, NewCallContext, PredicateAddressFor};
 
 /// PredicateContract wrapped Predicate and initial arguments.
@@ -173,8 +175,7 @@ pub trait Trait: system::Trait {
     type HashingL2: Hash<Output = Self::Hash>;
 
     /// ExternalCall context.
-    type ExternalCall: Ext<Self, ExecError<Self::AccountId>>
-        + NewCallContext<Self, ExecError<Self::AccountId>, PredicateOvm<Self>, PredicateLoader>;
+    type ExternalCall: Ext<Self> + NewCallContext<Self>;
 
     type AtomicPredicateIdConfig: Get<AtomicPredicateIdConfig<Self::AccountId, Self::Hash>>;
 
@@ -506,16 +507,14 @@ impl<T: Trait> Module<T> {
         origin: T::AccountId,
         dest: T::AccountId,
         input_data: Vec<u8>,
-    ) -> ExecResult<ExecError<T::AccountId>> {
+    ) -> ExecResult<T> {
         Self::execute_ovm(origin, |ctx| ctx.call(dest, input_data))
     }
 
     fn execute_ovm(
         origin: T::AccountId,
-        func: impl FnOnce(
-            &mut ExecutionContext<T, ExecError<T::AccountId>, PredicateOvm<T>, PredicateLoader>,
-        ) -> ExecResult<ExecError<T::AccountId>>,
-    ) -> ExecResult<ExecError<T::AccountId>> {
+        func: impl FnOnce(&mut ExecutionContext<T>) -> ExecResult<T>,
+    ) -> ExecResult<T> {
         let cfg = Rc::new(Config::preload::<T>());
         let schedule = Rc::new(cfg.schedule.clone());
         let vm = Rc::new(PredicateOvm::new(Rc::clone(&schedule)));

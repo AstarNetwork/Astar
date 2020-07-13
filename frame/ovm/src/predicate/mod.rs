@@ -10,8 +10,6 @@ mod prepare;
 pub use self::code_cache::save as save_code;
 use ovmi::predicates::CompiledExecutable;
 
-pub type ExecResult<Err> = Result<Vec<u8>, Err>;
-
 /// A prepared wasm module ready for execution.
 #[derive(Clone, Encode, Decode)]
 pub struct PrefabOvmModule {
@@ -62,28 +60,29 @@ impl<T: Trait> Loader<T> for PredicateLoader {
     }
 }
 
-pub struct ExecutionContext<T: Trait, Err, V, L> {
+pub struct ExecutionContext<T: Trait> {
     pub self_account: T::AccountId,
     pub depth: usize,
     // pub deferred: Vec<DeferredAction<T>>,
     pub config: Rc<Config>,
-    pub vm: Rc<V>,
-    pub loader: Rc<L>,
-    pub _phantom: PhantomData<Err>,
+    pub vm: Rc<PredicateOvm<T>>,
+    pub loader: Rc<PredicateLoader>,
 }
 
-impl<T, Err, E, V, L> ExecutionContext<T, Err, V, L>
+impl<T> ExecutionContext<T>
 where
     T: Trait,
-    Err: From<&'static str>,
-    L: Loader<T, Executable = E>,
-    V: Vm<T, Err, Executable = E>,
 {
     /// Create the top level execution context.
     ///
     /// The specified `origin` address will be used as `sender` for. The `origin` must be a regular
     /// account (not a contract).
-    pub fn top_level(origin: T::AccountId, cfg: Rc<Config>, vm: Rc<V>, loader: Rc<L>) -> Self {
+    pub fn top_level(
+        origin: T::AccountId,
+        cfg: Rc<Config>,
+        vm: Rc<PredicateOvm<T>>,
+        loader: Rc<PredicateLoader>,
+    ) -> Self {
         ExecutionContext {
             self_account: origin,
             depth: 0,
@@ -91,11 +90,10 @@ where
             config: cfg,
             vm: vm,
             loader: loader,
-            _phantom: PhantomData,
         }
     }
 
-    fn nested(&self, dest: T::AccountId) -> ExecutionContext<T, Err, V, L> {
+    fn nested(&self, dest: T::AccountId) -> ExecutionContext<T> {
         ExecutionContext {
             self_account: dest,
             depth: self.depth + 1,
@@ -103,12 +101,11 @@ where
             config: Rc::clone(&self.config),
             vm: Rc::clone(&self.vm),
             loader: Rc::clone(&self.loader),
-            _phantom: PhantomData,
         }
     }
 
     /// Make a call to the specified address, optionally transferring some funds.
-    pub fn call(&self, dest: T::AccountId, input_data: Vec<u8>) -> ExecResult<Err> {
+    pub fn call(&self, dest: T::AccountId, input_data: Vec<u8>) -> ExecResult<T> {
         if self.depth == self.config.max_depth as usize {
             return Err("reached maximum depth, cannot make a call".into());
         }
@@ -152,7 +149,7 @@ impl<T: Trait> PredicateOvm<T> {
     }
 }
 
-impl<T: Trait, Err: From<&'static str>> Vm<T, Err> for PredicateOvm<T> {
+impl<T: Trait> Vm<T> for PredicateOvm<T> {
     type Executable = OvmExecutable<T>;
 
     fn execute(
@@ -160,7 +157,7 @@ impl<T: Trait, Err: From<&'static str>> Vm<T, Err> for PredicateOvm<T> {
         exec: Self::Executable,
         ext: T::ExternalCall,
         input_data: Vec<u8>,
-    ) -> ExecResult<Err> {
+    ) -> ExecResult<T> {
         let ext_impl = ext::ExternalCallImpl::<T>::new(&ext);
         let executable = ovmi::prepare::executable_from_compiled(
             &ext_impl,

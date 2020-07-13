@@ -4,18 +4,17 @@
 //! When Plasma module is used, it is implemented by injecting CallContext of Plasma module as Ext of ExecutionContext.
 
 use crate::predicate::*;
-use crate::traits::{Ext, Loader, NewCallContext, Vm};
+use crate::traits::{Ext, NewCallContext};
+use crate::*;
 use crate::{AccountIdOf, Decision, PropertyOf, Trait};
 
-pub struct CallContext<T: Trait, Err: From<&'static str>, V: Vm<T, Err>, L: Loader<T>> {
-    ctx: Rc<ExecutionContext<T, Err, V, L>>,
+pub struct CallContext<T: Trait> {
+    ctx: Rc<ExecutionContext<T>>,
     caller: T::AccountId,
 }
 
-impl<T: Trait, Err: From<&'static str>, V: Vm<T, Err>, L: Loader<T>> NewCallContext<T, Err, V, L>
-    for CallContext<T, Err, V, L>
-{
-    fn new(ctx: &ExecutionContext<T, Err, V, L>, caller: AccountIdOf<T>) -> Self {
+impl<T: Trait> NewCallContext<T> for CallContext<T> {
+    fn new(ctx: &ExecutionContext<T>, caller: AccountIdOf<T>) -> Self {
         CallContext {
             ctx: Rc::clone(ctx),
             caller,
@@ -28,14 +27,11 @@ impl<T: Trait, Err: From<&'static str>, V: Vm<T, Err>, L: Loader<T>> NewCallCont
 ///
 /// This interface is specialized to an account of the executing code, so all
 /// operations are implicitly performed on that account.
-impl<E, T, Err, V, L> Ext<T, Err> for CallContext<T, Err, V, L>
+impl<T> Ext<T> for CallContext<T>
 where
     T: Trait,
-    Err: From<&'static str>,
-    V: Vm<T, Err, Executable = E>,
-    L: Loader<T, Executable = E>,
 {
-    fn call(&self, to: &AccountIdOf<T>, input_data: Vec<u8>) -> ExecResult<Err> {
+    fn call(&self, to: &AccountIdOf<T>, input_data: Vec<u8>) -> ExecResult<T> {
         self.ctx.call(to.clone(), input_data)
     }
 
@@ -65,11 +61,16 @@ where
     fn is_decided(&self, property: &PropertyOf<T>) -> bool {
         Decision::True == <Module<T>>::is_decided(property)
     }
+
     fn is_decided_by_id(&self, id: T::Hash) -> bool {
         Decision::True == <Module<T>>::is_decided_by_id(id)
     }
 
-    fn set_predicate_decision(&self, _game_id: T::Hash, _decision: bool) -> Result<bool, Err> {
+    fn set_predicate_decision(
+        &self,
+        _game_id: T::Hash,
+        _decision: bool,
+    ) -> Result<bool, ExecError<T::AccountId>> {
         Ok(true)
     }
 }

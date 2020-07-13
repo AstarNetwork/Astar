@@ -1,5 +1,5 @@
 use super::*;
-use crate::predicate::{ExecResult, ExecutionContext};
+use crate::predicate::ExecutionContext;
 
 /// A function that generates an `AccountId` for a predicate upon instantiation.
 pub trait PredicateAddressFor<PredicateHash, AccountId> {
@@ -24,8 +24,8 @@ pub trait Loader<T: Trait> {
 }
 
 /// For the initalize call context.
-pub trait NewCallContext<T: Trait, Err: From<&'static str>, V: Vm<T, Err>, L: Loader<T>> {
-    fn new(ctx: &ExecutionContext<T, Err, V, L>, caller: AccountIdOf<T>) -> Self;
+pub trait NewCallContext<T: Trait> {
+    fn new(ctx: &ExecutionContext<T>, caller: AccountIdOf<T>) -> Self;
 }
 
 /// An interface that provides access to the external environment in which the
@@ -39,9 +39,9 @@ pub trait NewCallContext<T: Trait, Err: From<&'static str>, V: Vm<T, Err>, L: Lo
 /// - caller: get of the caller of this predicate.
 /// - address: the predicate's address.
 /// - is_stored: check the storage of other modules or contracts.
-pub trait Ext<T: Trait, Err: From<&'static str>> {
+pub trait Ext<T: Trait> {
     /// Call (possibly other predicate) into the specified account.
-    fn call(&self, to: &AccountIdOf<T>, input_data: Vec<u8>) -> Result<Vec<u8>, Err>;
+    fn call(&self, to: &AccountIdOf<T>, input_data: Vec<u8>) -> ExecResult<T>;
 
     /// Returns a reference to the account id of the caller.
     fn caller(&self) -> &AccountIdOf<T>;
@@ -69,7 +69,11 @@ pub trait Ext<T: Trait, Err: From<&'static str>> {
     fn is_decided(&self, property: &PropertyOf<T>) -> bool;
     fn is_decided_by_id(&self, id: T::Hash) -> bool;
 
-    fn set_predicate_decision(&self, game_id: T::Hash, decision: bool) -> Result<bool, Err>;
+    fn set_predicate_decision(
+        &self,
+        game_id: T::Hash,
+        decision: bool,
+    ) -> Result<bool, ExecError<T::AccountId>>;
 }
 
 /// A trait that represent an optimistic virtual machine.
@@ -80,7 +84,7 @@ pub trait Ext<T: Trait, Err: From<&'static str>> {
 ///
 /// Execution of code can end by either implicit termination (that is, reached the end of
 /// executable), explicit termination via returning a buffer or termination due to a trap.
-pub trait Vm<T: Trait, Err: From<&'static str>> {
+pub trait Vm<T: Trait> {
     type Executable;
 
     fn execute(
@@ -88,5 +92,5 @@ pub trait Vm<T: Trait, Err: From<&'static str>> {
         exec: Self::Executable,
         ext: T::ExternalCall,
         input_data: Vec<u8>,
-    ) -> ExecResult<Err>;
+    ) -> ExecResult<T>;
 }
