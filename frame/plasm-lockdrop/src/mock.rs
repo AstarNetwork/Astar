@@ -167,6 +167,7 @@ where
 
 impl Trait for Runtime {
     type Currency = Balances;
+    type DurationBonus = DustyDurationBonus;
     type MedianFilterExpire = MedianFilterExpire;
     type MedianFilterWidth = generic_array::typenum::U3;
     type AuthorityId = sr25519::AuthorityId;

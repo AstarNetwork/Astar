@@ -161,10 +161,10 @@ fn oracle_unsinged_transaction() {
             signature.clone()
         ));
 
-        // Double vote
-        let dispatch = PlasmLockdrop::pre_dispatch(&crate::Call::vote(valid_vote, signature))
-            .map_err(|e| <&'static str>::from(e));
-        assert_noop!(dispatch, "InvalidTransaction custom error");
+        // Double vote is not a problem, decision could be changed because of transaction
+        // confirmation or other reasons.
+        let dispatch = PlasmLockdrop::pre_dispatch(&crate::Call::vote(valid_vote, signature));
+        assert_ok!(dispatch);
     });
 }
 
@@ -538,35 +538,45 @@ fn simple_success_lockdrop_request() {
             approve: true,
             authority: 0,
         };
-        assert_ok!(PlasmLockdrop::vote(
-            Origin::none(),
-            vote.clone(),
-            Default::default(),
-        ));
-        assert_noop!(
-            PlasmLockdrop::claim(Origin::none(), claim_id),
-            DispatchError::Module {
-                index: 0,
-                error: 2,
-                message: Some("NotEnoughVotes")
-            },
-        );
-        assert_ok!(PlasmLockdrop::vote(
-            Origin::none(),
-            vote.clone(),
-            Default::default(),
-        ));
-        assert_noop!(
-            PlasmLockdrop::claim(Origin::none(), claim_id),
-            DispatchError::Module {
-                index: 0,
-                error: 2,
-                message: Some("NotEnoughVotes")
-            },
-        );
+        let vote2 = ClaimVote {
+            claim_id,
+            approve: true,
+            authority: 1,
+        };
+        let vote3 = ClaimVote {
+            claim_id,
+            approve: true,
+            authority: 2,
+        };
         assert_ok!(PlasmLockdrop::vote(
             Origin::none(),
             vote,
+            Default::default(),
+        ));
+        assert_noop!(
+            PlasmLockdrop::claim(Origin::none(), claim_id),
+            DispatchError::Module {
+                index: 0,
+                error: 2,
+                message: Some("NotEnoughVotes")
+            },
+        );
+        assert_ok!(PlasmLockdrop::vote(
+            Origin::none(),
+            vote2,
+            Default::default(),
+        ));
+        assert_noop!(
+            PlasmLockdrop::claim(Origin::none(), claim_id),
+            DispatchError::Module {
+                index: 0,
+                error: 2,
+                message: Some("NotEnoughVotes")
+            },
+        );
+        assert_ok!(PlasmLockdrop::vote(
+            Origin::none(),
+            vote3,
             Default::default()
         ));
         assert_ok!(PlasmLockdrop::claim(Origin::none(), claim_id));
@@ -588,35 +598,45 @@ fn simple_fail_lockdrop_request() {
             approve: false,
             authority: 0,
         };
-        assert_ok!(PlasmLockdrop::vote(
-            Origin::none(),
-            vote.clone(),
-            Default::default(),
-        ));
-        assert_noop!(
-            PlasmLockdrop::claim(Origin::none(), claim_id),
-            DispatchError::Module {
-                index: 0,
-                error: 2,
-                message: Some("NotEnoughVotes")
-            },
-        );
-        assert_ok!(PlasmLockdrop::vote(
-            Origin::none(),
-            vote.clone(),
-            Default::default(),
-        ));
-        assert_noop!(
-            PlasmLockdrop::claim(Origin::none(), claim_id),
-            DispatchError::Module {
-                index: 0,
-                error: 2,
-                message: Some("NotEnoughVotes")
-            },
-        );
+        let vote2 = ClaimVote {
+            claim_id,
+            approve: false,
+            authority: 1,
+        };
+        let vote3 = ClaimVote {
+            claim_id,
+            approve: false,
+            authority: 2,
+        };
         assert_ok!(PlasmLockdrop::vote(
             Origin::none(),
             vote,
+            Default::default(),
+        ));
+        assert_noop!(
+            PlasmLockdrop::claim(Origin::none(), claim_id),
+            DispatchError::Module {
+                index: 0,
+                error: 2,
+                message: Some("NotEnoughVotes")
+            },
+        );
+        assert_ok!(PlasmLockdrop::vote(
+            Origin::none(),
+            vote2,
+            Default::default(),
+        ));
+        assert_noop!(
+            PlasmLockdrop::claim(Origin::none(), claim_id),
+            DispatchError::Module {
+                index: 0,
+                error: 2,
+                message: Some("NotEnoughVotes")
+            },
+        );
+        assert_ok!(PlasmLockdrop::vote(
+            Origin::none(),
+            vote3,
             Default::default()
         ));
         assert_noop!(

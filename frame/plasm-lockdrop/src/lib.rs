@@ -68,6 +68,9 @@ pub trait Trait: SendTransactionTypes<Call<Self>> + frame_system::Trait {
     /// The lockdrop balance.
     type Currency: Currency<Self::AccountId>;
 
+    /// Lock duration bonuses.
+    type DurationBonus: DurationBonus;
+
     /// How long dollar rate parameters valid in secs.
     type MedianFilterExpire: Get<Self::Moment>;
 
@@ -116,6 +119,31 @@ pub trait Trait: SendTransactionTypes<Call<Self>> + frame_system::Trait {
 
     /// Base priority for unsigned transactions.
     type UnsignedPriority: Get<TransactionPriority>;
+}
+
+/// Lock duration bonuses,
+/// in principle when you lock for long time you'll get more lockdrop tokens.
+pub trait DurationBonus {
+    /// Lockdrop bonus depends of lockding duration (in secs).
+    fn bonus(duration: u64) -> u16;
+}
+
+pub struct DustyDurationBonus;
+impl DurationBonus for DustyDurationBonus {
+    fn bonus(duration: u64) -> u16 {
+        const DAYS: u64 = 24 * 60 * 60; // One day in seconds
+        if duration < 3 * DAYS {
+            0 // Dont permit to participate with locking less
+        } else if duration < 10 * DAYS {
+            24
+        } else if duration < 30 * DAYS {
+            100
+        } else if duration < 100 * DAYS {
+            360
+        } else {
+            1600
+        }
+    }
 }
 
 /// Claim id is a hash of claim parameters.
@@ -595,31 +623,15 @@ impl<T: Trait> Module<T> {
     /// PLM issue amount for given BTC value and locking duration (in secs).
     fn btc_issue_amount(value: u128, duration: u64) -> u128 {
         // https://medium.com/stake-technologies/plasm-lockdrop-introduction-99fa2dfc37c0
-        let rate = Self::alpha() * Self::dollar_rate().0 * Self::time_bonus(duration).into();
+        let rate = Self::alpha() * Self::dollar_rate().0 * T::DurationBonus::bonus(duration).into();
         rate.into() * value
     }
 
     /// PLM issue amount for given ETH value and locking duration (in secs).
     fn eth_issue_amount(value: u128, duration: u64) -> u128 {
         // https://medium.com/stake-technologies/plasm-lockdrop-introduction-99fa2dfc37c0
-        let rate = Self::alpha() * Self::dollar_rate().1 * Self::time_bonus(duration).into();
+        let rate = Self::alpha() * Self::dollar_rate().1 * T::DurationBonus::bonus(duration).into();
         rate.into() * value
-    }
-
-    /// Lockdrop bonus depends of lockding duration (in secs).
-    fn time_bonus(duration: u64) -> u16 {
-        let days = 24 * 60 * 60; // One day in seconds
-        if duration < 3 * days {
-            0 // Dont permit to participate with locking less that one month
-        } else if duration < 10 * days {
-            24
-        } else if duration < 30 * days {
-            100
-        } else if duration < 100 * days {
-            360
-        } else {
-            1600
-        }
     }
 
     /// Check that authority key list contains given account

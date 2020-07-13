@@ -332,6 +332,7 @@ parameter_types! {
 
 impl pallet_plasm_lockdrop::Trait for Runtime {
     type Currency = Balances;
+    type DurationBonus = pallet_plasm_lockdrop::DustyDurationBonus;
     type MedianFilterExpire = MedianFilterExpire;
     type MedianFilterWidth = pallet_plasm_lockdrop::typenum::U5;
     type AuthorityId = pallet_plasm_lockdrop::sr25519::AuthorityId;
