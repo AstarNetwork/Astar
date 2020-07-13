@@ -167,6 +167,7 @@ where
 
 impl Trait for Runtime {
     type Currency = Balances;
+    type DurationBonus = DustyDurationBonus;
     type MedianFilterExpire = MedianFilterExpire;
     type MedianFilterWidth = generic_array::typenum::U3;
     type AuthorityId = sr25519::AuthorityId;
@@ -218,7 +219,7 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
         dollar_rate: (9_000, 200),
         vote_threshold: 3,
         positive_votes: 2,
-        lockdrop_end: 0,
+        time_bounds: (0, 100_000_000),
     }
     .assimilate_storage(&mut storage);
 

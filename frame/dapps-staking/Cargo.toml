@@ -1,10 +1,7 @@
 [package]
 name = "pallet-dapps-staking"
-version = "1.0.0"
-authors = [
-    "Takumi Yamashita <takumi@stake.co.jp>",
-    "Aleksandr Krupenkin <aleksandr@stake.co.jp>"
-]
+version = "1.2.0"
+authors = ["Stake Technologies <devops@stake.co.jp>"]
 edition = "2018"
 
 [dependencies]

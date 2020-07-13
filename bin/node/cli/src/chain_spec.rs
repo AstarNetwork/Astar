@@ -149,9 +149,10 @@ fn make_genesis(
             alpha: Perbill::from_parts(446_981_087),
             // Price in cents: BTC $9000, ETH $200
             dollar_rate: (9_000, 200),
-            vote_threshold: 2,
-            positive_votes: 2,
-            lockdrop_end: 1_592_623_404,
+            vote_threshold: 1,
+            positive_votes: 1,
+            // Max time bounds for testing purposes
+            time_bounds: (0, 2_594_459_790_000u64),
         }),
         pallet_session: Some(SessionConfig {
             keys: keys
