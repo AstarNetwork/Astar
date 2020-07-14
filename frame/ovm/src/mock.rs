@@ -4,25 +4,25 @@
 
 use super::*;
 use crate::predicate::CallContext;
-use frame_support::{
-    impl_outer_dispatch, impl_outer_event, impl_outer_origin, parameter_types, traits::OnFinalize,
-};
+use frame_support::{impl_outer_dispatch, impl_outer_event, impl_outer_origin, parameter_types};
 pub use hex_literal::hex;
-use ovmi::executor::ExternalCall;
 use pallet_balances as balances;
-use sp_core::{
-    crypto::{key_types, AccountId32},
-    H256,
+use sp_core::{crypto::AccountId32, Pair, H256};
+use sp_runtime::{
+    testing::Header,
+    traits::{BlakeTwo256, IdentifyAccount, IdentityLookup},
+    Perbill,
 };
-use sp_runtime::testing::{Header, UintAuthorityId};
-use sp_runtime::traits::{BlakeTwo256, ConvertInto, IdentityLookup};
-use sp_runtime::{KeyTypeId, Perbill};
 
 pub type BlockNumber = u64;
 pub type AccountId = AccountId32;
 pub type Balance = u64;
 
-pub const ALICE_STASH: u64 = 1;
+lazy_static::lazy_static! {
+    pub static ref ALICE_STASH: AccountId = to_account_from_seed(&hex![
+        "0000000000000000000000000000000000000000000000000000000000005553"
+    ]);
+}
 
 impl_outer_origin! {
     pub enum Origin for Test  where system = frame_system {}
@@ -39,7 +39,6 @@ mod ovm {
     // needs to give a name for the current crate.
     // This hack is required for `impl_outer_event!`.
     pub use super::super::*;
-    use frame_support::impl_outer_event;
 }
 
 impl_outer_event! {
@@ -55,11 +54,9 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
         .unwrap();
 
     let _ = pallet_balances::GenesisConfig::<Test> {
-        balances: vec![(ALICE_STASH, 1_000_000_000_000_000_000)],
+        balances: vec![((*ALICE_STASH).clone(), 1_000_000_000_000_000_000)],
     }
     .assimilate_storage(&mut storage);
-
-    let validators = vec![1, 2];
 
     let _ = GenesisConfig {
         current_schedule: Default::default(),
@@ -168,18 +165,18 @@ lazy_static::lazy_static! {
 impl Get<AtomicPredicateIdConfig<AccountId, H256>> for AtomicPredicateIdConfig<AccountId, H256> {
     fn get() -> AtomicPredicateIdConfig<AccountId, H256> {
         AtomicPredicateIdConfig {
-            not_address: *NOT_ADDRESS.clone(),
-            and_address: *AND_ADDRESS.clone(),
-            or_address: *OR_ADDRESS.clone(),
-            for_all_address: *FOR_ALL_ADDRESS.clone(),
-            there_exists_address: *THERE_EXISTS_ADDRESS.clone(),
-            equal_address: *EQUAL_ADDRESS.clone(),
-            is_contained_address: *IS_CONTAINED_ADDRESS.clone(),
-            is_less_address: *IS_LESS_ADDRESS.clone(),
-            is_stored_address: *IS_STORED_ADDRESS.clone(),
-            is_valid_signature_address: *IS_VALID_SIGNATURE_ADDRESS.clone(),
-            verify_inclusion_address: *VERIFY_INCLUSION_ADDRESS.clone(),
-            secp256k1: *SECP_256_K1.clone(),
+            not_address: (*NOT_ADDRESS).clone(),
+            and_address: (*AND_ADDRESS).clone(),
+            or_address: (*OR_ADDRESS).clone(),
+            for_all_address: (*FOR_ALL_ADDRESS).clone(),
+            there_exists_address: (*THERE_EXISTS_ADDRESS).clone(),
+            equal_address: (*EQUAL_ADDRESS).clone(),
+            is_contained_address: (*IS_CONTAINED_ADDRESS).clone(),
+            is_less_address: (*IS_LESS_ADDRESS).clone(),
+            is_stored_address: (*IS_STORED_ADDRESS).clone(),
+            is_valid_signature_address: (*IS_VALID_SIGNATURE_ADDRESS).clone(),
+            verify_inclusion_address: (*VERIFY_INCLUSION_ADDRESS).clone(),
+            secp256k1: (*SECP_256_K1).clone(),
         }
     }
 }
@@ -197,8 +194,6 @@ impl Trait for Test {
 pub type System = frame_system::Module<Test>;
 pub type Balances = pallet_balances::Module<Test>;
 pub type Ovm = Module<Test>;
-
-const PER_BLOCK: u64 = 1000;
 
 pub fn advance_block() {
     let next = System::block_number() + 1;
