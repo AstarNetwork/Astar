@@ -19,6 +19,7 @@ use sp_core::{
     traits::KeystoreExt,
     Pair,
 };
+use sp_runtime::DispatchError;
 
 #[test]
 fn session_lockdrop_authorities() {
@@ -98,7 +99,7 @@ fn oracle_unsinged_transaction() {
         // Invalid call
         let dispatch = PlasmLockdrop::pre_dispatch(&crate::Call::claim(Default::default()))
             .map_err(|e| <&'static str>::from(e));
-        assert_noop!(dispatch, "Transaction call is not expected");
+        assert_noop!(dispatch, "InvalidTransaction custom error");
 
         let bad_account: AccountId = sp_keyring::sr25519::Keyring::Dave.into();
         let bad_pair =
@@ -113,7 +114,7 @@ fn oracle_unsinged_transaction() {
         let dispatch =
             PlasmLockdrop::pre_dispatch(&crate::Call::set_dollar_rate(bad_rate, signature))
                 .map_err(|e| <&'static str>::from(e));
-        assert_noop!(dispatch, "Transaction has a bad signature");
+        assert_noop!(dispatch, "InvalidTransaction custom error");
 
         let lockdrop: Lockdrop = Default::default();
         assert_ok!(PlasmLockdrop::request(
@@ -129,7 +130,7 @@ fn oracle_unsinged_transaction() {
         let signature = bad_pair.sign(&bad_vote.encode());
         let dispatch = PlasmLockdrop::pre_dispatch(&crate::Call::vote(bad_vote, signature))
             .map_err(|e| <&'static str>::from(e));
-        assert_noop!(dispatch, "Transaction has a bad signature");
+        assert_noop!(dispatch, "InvalidTransaction custom error");
 
         let account: AccountId = sp_keyring::sr25519::Keyring::Alice.into();
         let pair = sr25519::AuthorityPair::from_string(&format!("//{}", account), None).unwrap();
@@ -160,10 +161,10 @@ fn oracle_unsinged_transaction() {
             signature.clone()
         ));
 
-        // Double vote
-        let dispatch = PlasmLockdrop::pre_dispatch(&crate::Call::vote(valid_vote, signature))
-            .map_err(|e| <&'static str>::from(e));
-        assert_noop!(dispatch, "Transaction call is not expected");
+        // Double vote is not a problem, decision could be changed because of transaction
+        // confirmation or other reasons.
+        let dispatch = PlasmLockdrop::pre_dispatch(&crate::Call::vote(valid_vote, signature));
+        assert_ok!(dispatch);
     });
 }
 
@@ -351,22 +352,22 @@ fn check_btc_issue_amount() {
 
         let day = 24 * 60 * 60;
         for i in 1..2000 {
-            if i < 30 {
+            if i < 3 {
                 assert_eq!(PlasmLockdrop::btc_issue_amount(1, i * day), 0);
                 assert_eq!(PlasmLockdrop::btc_issue_amount(i as u128, i * day), 0);
-            } else if i < 100 {
+            } else if i < 10 {
                 assert_eq!(PlasmLockdrop::btc_issue_amount(1, i * day), 96552);
                 assert_eq!(
                     PlasmLockdrop::btc_issue_amount(i as u128, i * day),
                     96552 * i as u128
                 );
-            } else if i < 300 {
+            } else if i < 30 {
                 assert_eq!(PlasmLockdrop::btc_issue_amount(1, i * day), 402300);
                 assert_eq!(
                     PlasmLockdrop::btc_issue_amount(i as u128, i * day),
                     402300 * i as u128
                 );
-            } else if i < 1000 {
+            } else if i < 100 {
                 assert_eq!(PlasmLockdrop::btc_issue_amount(1, i * day), 1448280);
                 assert_eq!(
                     PlasmLockdrop::btc_issue_amount(i as u128, i * day),
@@ -391,22 +392,22 @@ fn check_eth_issue_amount() {
 
         let day = 24 * 60 * 60;
         for i in 1..2000 {
-            if i < 30 {
+            if i < 3 {
                 assert_eq!(PlasmLockdrop::eth_issue_amount(1, i * day), 0);
                 assert_eq!(PlasmLockdrop::eth_issue_amount(i as u128, i * day), 0);
-            } else if i < 100 {
+            } else if i < 10 {
                 assert_eq!(PlasmLockdrop::eth_issue_amount(1, i * day), 2136);
                 assert_eq!(
                     PlasmLockdrop::eth_issue_amount(i as u128, i * day),
                     2136 * i as u128
                 );
-            } else if i < 300 {
+            } else if i < 30 {
                 assert_eq!(PlasmLockdrop::eth_issue_amount(1, i * day), 8900);
                 assert_eq!(
                     PlasmLockdrop::eth_issue_amount(i as u128, i * day),
                     8900 * i as u128
                 );
-            } else if i < 1000 {
+            } else if i < 100 {
                 assert_eq!(PlasmLockdrop::eth_issue_amount(1, i * day), 32040);
                 assert_eq!(
                     PlasmLockdrop::eth_issue_amount(i as u128, i * day),
@@ -537,27 +538,45 @@ fn simple_success_lockdrop_request() {
             approve: true,
             authority: 0,
         };
-        assert_ok!(PlasmLockdrop::vote(
-            Origin::none(),
-            vote.clone(),
-            Default::default(),
-        ));
-        assert_noop!(
-            PlasmLockdrop::claim(Origin::none(), claim_id),
-            "this request don't get enough authority votes"
-        );
-        assert_ok!(PlasmLockdrop::vote(
-            Origin::none(),
-            vote.clone(),
-            Default::default(),
-        ));
-        assert_noop!(
-            PlasmLockdrop::claim(Origin::none(), claim_id),
-            "this request don't get enough authority votes"
-        );
+        let vote2 = ClaimVote {
+            claim_id,
+            approve: true,
+            authority: 1,
+        };
+        let vote3 = ClaimVote {
+            claim_id,
+            approve: true,
+            authority: 2,
+        };
         assert_ok!(PlasmLockdrop::vote(
             Origin::none(),
             vote,
+            Default::default(),
+        ));
+        assert_noop!(
+            PlasmLockdrop::claim(Origin::none(), claim_id),
+            DispatchError::Module {
+                index: 0,
+                error: 2,
+                message: Some("NotEnoughVotes")
+            },
+        );
+        assert_ok!(PlasmLockdrop::vote(
+            Origin::none(),
+            vote2,
+            Default::default(),
+        ));
+        assert_noop!(
+            PlasmLockdrop::claim(Origin::none(), claim_id),
+            DispatchError::Module {
+                index: 0,
+                error: 2,
+                message: Some("NotEnoughVotes")
+            },
+        );
+        assert_ok!(PlasmLockdrop::vote(
+            Origin::none(),
+            vote3,
             Default::default()
         ));
         assert_ok!(PlasmLockdrop::claim(Origin::none(), claim_id));
@@ -579,32 +598,54 @@ fn simple_fail_lockdrop_request() {
             approve: false,
             authority: 0,
         };
-        assert_ok!(PlasmLockdrop::vote(
-            Origin::none(),
-            vote.clone(),
-            Default::default(),
-        ));
-        assert_noop!(
-            PlasmLockdrop::claim(Origin::none(), claim_id),
-            "this request don't get enough authority votes"
-        );
-        assert_ok!(PlasmLockdrop::vote(
-            Origin::none(),
-            vote.clone(),
-            Default::default(),
-        ));
-        assert_noop!(
-            PlasmLockdrop::claim(Origin::none(), claim_id),
-            "this request don't get enough authority votes"
-        );
+        let vote2 = ClaimVote {
+            claim_id,
+            approve: false,
+            authority: 1,
+        };
+        let vote3 = ClaimVote {
+            claim_id,
+            approve: false,
+            authority: 2,
+        };
         assert_ok!(PlasmLockdrop::vote(
             Origin::none(),
             vote,
+            Default::default(),
+        ));
+        assert_noop!(
+            PlasmLockdrop::claim(Origin::none(), claim_id),
+            DispatchError::Module {
+                index: 0,
+                error: 2,
+                message: Some("NotEnoughVotes")
+            },
+        );
+        assert_ok!(PlasmLockdrop::vote(
+            Origin::none(),
+            vote2,
+            Default::default(),
+        ));
+        assert_noop!(
+            PlasmLockdrop::claim(Origin::none(), claim_id),
+            DispatchError::Module {
+                index: 0,
+                error: 2,
+                message: Some("NotEnoughVotes")
+            },
+        );
+        assert_ok!(PlasmLockdrop::vote(
+            Origin::none(),
+            vote3,
             Default::default()
         ));
         assert_noop!(
             PlasmLockdrop::claim(Origin::none(), claim_id),
-            "this request don't approved by authorities"
+            DispatchError::Module {
+                index: 0,
+                error: 3,
+                message: Some("NotApproved")
+            },
         );
     })
 }
@@ -624,12 +665,31 @@ fn lockdrop_request_hash() {
     };
     let claim_id = hex!["a94710e9db798a7d1e977b9f748ae802031eee2400a77600c526158892cd93d8"].into();
     assert_eq!(BlakeTwo256::hash_of(&params), claim_id);
+
+    let transaction_hash =
+        hex!["896d1cbe07c0207b714d87bcde04a535fec049a62c4e279dc2a6b71108afa523"].into();
+    let public_key = ecdsa::Public::from_raw(hex![
+        "039360c9cbbede9ee771a55581d4a53cbcc4640953169549993a3b0e6ec7984061"
+    ]);
+    let params = Lockdrop::Ethereum {
+        transaction_hash,
+        public_key,
+        duration: 2592000,
+        value: 100000000000000000,
+    };
+    let claim_id = hex!["0c4fb4f0dd7bdff67e5f8f7df5822d8cd8738f7e60a0a8d6151ef9abf51f8f4d"].into();
+    assert_eq!(BlakeTwo256::hash_of(&params), claim_id);
 }
 
 #[test]
 fn lockdrop_request_pow() {
     let nonce = hex!["30df083c7f59ea11a39bb341d37bd26d126d8522d408ebc2133bf7c7dc9d0c38"];
     let claim_id = hex!["a94710e9db798a7d1e977b9f748ae802031eee2400a77600c526158892cd93d8"];
+    let pow_byte = BlakeTwo256::hash_of(&(claim_id, nonce)).as_bytes()[0];
+    assert_eq!(pow_byte, 0);
+
+    let nonce = hex!["6e64a5e25d145dd43b20c3ba4af5f4673ba88389f17afe2307ee4cb1a513978e"];
+    let claim_id = hex!["0c4fb4f0dd7bdff67e5f8f7df5822d8cd8738f7e60a0a8d6151ef9abf51f8f4d"];
     let pow_byte = BlakeTwo256::hash_of(&(claim_id, nonce)).as_bytes()[0];
     assert_eq!(pow_byte, 0);
 }

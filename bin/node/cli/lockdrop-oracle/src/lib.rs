@@ -49,9 +49,8 @@ pub async fn start(config: Config) {
                 "BTC tx at {}: {}", lock.tx_hash, tx.to_string()
             );
 
-            let tx_sender = tx["inputs"][0]["addresses"].to_string();
             let tx_value = tx["outputs"][0]["value"].as_u64().unwrap_or(0) as u128;
-            let tx_script = hex::decode(tx["outputs"][0]["script"].to_string())?;
+            let tx_recipient = tx["outputs"][0]["addresses"][0].as_str().unwrap_or("");
             let tx_confirmations = tx["confirmations"].as_u64().unwrap_or(0);
 
             // check transaction confirmations
@@ -66,33 +65,22 @@ pub async fn start(config: Config) {
                 return Ok(Response::new(StatusCode::BadRequest));
             }
 
-            let lock_sender = btc_utils::to_address(&lock.public_key);
-            log::debug!(
-                target: "lockdrop-oracle",
-                "BTC address for public key {}: {}",
-                lock.public_key,
-                lock_sender,
-            );
-            // check transaction sender address
-            if tx_sender != lock_sender {
-                log::debug!(target: "lockdrop-oracle", "sender address mismatch");
-                return Ok(Response::new(StatusCode::BadRequest));
-            }
-
             // assembly bitcoin script for given params
             let blocks = (lock.duration / 600) as u32;
-            let lock_script = btc_utils::lock_script(&lock.public_key, blocks)
+            let lock_script = btc_utils::lock_script_address(&lock.public_key, blocks)
                 .map_err(|e| tide::Error::from_str(tide::StatusCode::BadRequest, e))?;
+
             log::debug!(
                 target: "lockdrop-oracle",
                 "Lock script address for public ({}), duration({}): {}",
                 hex::encode(lock.public_key),
                 lock.duration,
-                hex::encode(lock_script.as_bytes()),
+                lock_script,
             );
+
             // check script code
-            if tx_script != lock_script.into_bytes() {
-                log::debug!(target: "lockdrop-oracle", "lock script mismatch");
+            if tx_recipient != lock_script {
+                log::debug!(target: "lockdrop-oracle", "lock script address mismatch");
                 return Ok(Response::new(StatusCode::BadRequest));
             }
 
@@ -163,8 +151,14 @@ pub async fn start(config: Config) {
             }
 
             // check smart contract method input
-            if !eth_utils::lock_method_check(tx.input.0.as_ref(), lock.duration) {
-                log::debug!(target: "lockdrop-oracle", "lock method mismatch");
+            let lock_method = eth_utils::lock_method(lock.duration);
+            if tx.input.0[0..36] == lock_method[0..36] {
+                log::debug!(
+                    target: "lockdrop-oracle",
+                    "lock method mismatch: {} /= {}",
+                    hex::encode(tx.input.0),
+                    hex::encode(lock_method),
+                );
                 return Ok(Response::new(StatusCode::BadRequest));
             }
 
