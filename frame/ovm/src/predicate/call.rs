@@ -5,7 +5,6 @@
 
 use crate::predicate::*;
 use crate::traits::{Ext, NewCallContext};
-use crate::*;
 use crate::{AccountIdOf, Decision, PropertyOf, Trait};
 
 pub struct CallContext<T: Trait> {
@@ -14,11 +13,8 @@ pub struct CallContext<T: Trait> {
 }
 
 impl<T: Trait> NewCallContext<T> for CallContext<T> {
-    fn new(ctx: &ExecutionContext<T>, caller: AccountIdOf<T>) -> Self {
-        CallContext {
-            ctx: Rc::clone(ctx),
-            caller,
-        }
+    fn new(ctx: Rc<ExecutionContext<T>>, caller: AccountIdOf<T>) -> Self {
+        CallContext { ctx: ctx, caller }
     }
 }
 

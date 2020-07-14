@@ -25,7 +25,7 @@ pub trait Loader<T: Trait> {
 
 /// For the initalize call context.
 pub trait NewCallContext<T: Trait> {
-    fn new(ctx: &ExecutionContext<T>, caller: AccountIdOf<T>) -> Self;
+    fn new(ctx: Rc<ExecutionContext<T>>, caller: AccountIdOf<T>) -> Self;
 }
 
 /// An interface that provides access to the external environment in which the

@@ -22,6 +22,7 @@ frame-system = { version = "2.0.0-rc4", default_features = false }
 hex-literal = "0.2.1"
 sp-core = { version = "2.0.0-rc4" }
 pallet-balances = { version = "2.0.0-rc4" }
+lazy_static = { version = "1.4" }
 
 [features]
 default = ["std"]

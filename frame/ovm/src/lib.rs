@@ -31,10 +31,12 @@ pub type ExecResult<T> = Result<Vec<u8>, ExecError<<T as frame_system::Trait>::A
 
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
+use sp_core::crypto::UncheckedFrom;
 use sp_runtime::{
     traits::{Hash, Zero},
     RuntimeDebug,
 };
+use sp_std::marker::PhantomData;
 use sp_std::{collections::btree_map::BTreeMap, prelude::*, rc::Rc, vec::Vec};
 
 #[cfg(test)]
@@ -151,6 +153,27 @@ pub struct AtomicPredicateIdConfig<AccountId, Hash> {
     pub is_valid_signature_address: AccountId,
     pub verify_inclusion_address: AccountId,
     pub secp256k1: Hash,
+}
+
+pub struct SimpleAddressDeterminer<T: Trait>(PhantomData<T>);
+impl<T: Trait> PredicateAddressFor<T::Hash, T::AccountId> for SimpleAddressDeterminer<T>
+where
+    T::AccountId: UncheckedFrom<T::Hash> + AsRef<[u8]>,
+{
+    fn predicate_address_for(
+        code_hash: &T::Hash,
+        data: &[u8],
+        origin: &T::AccountId,
+    ) -> T::AccountId {
+        let data_hash = T::Hashing::hash(data);
+
+        let mut buf = Vec::new();
+        buf.extend_from_slice(code_hash.as_ref());
+        buf.extend_from_slice(data_hash.as_ref());
+        buf.extend_from_slice(origin.as_ref());
+
+        UncheckedFrom::unchecked_from(T::Hashing::hash(&buf[..]))
+    }
 }
 
 type PredicateHash<T> = <T as system::Trait>::Hash;
@@ -393,7 +416,7 @@ decl_module! {
             );
 
             let mut game = Self::games(&id).ok_or(Error::<T>::DoesNotExistGame)?;
-            let challenge_index = Self::find_index(&game.challenges, &challenging_game_id)
+            let _ = Self::find_index(&game.challenges, &challenging_game_id)
                 .ok_or(Error::<T>::ChallengeIsNotInTheChallengeList)?;
 
             let challenge_game = Self::games(&challenging_game_id).ok_or(Error::<T>::DoesNotExistGame)?;

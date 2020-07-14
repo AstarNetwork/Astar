@@ -8,6 +8,7 @@ mod ext;
 mod prepare;
 
 pub use self::code_cache::save as save_code;
+pub use call::CallContext;
 use ovmi::predicates::CompiledExecutable;
 
 /// A prepared wasm module ready for execution.
@@ -60,6 +61,7 @@ impl<T: Trait> Loader<T> for PredicateLoader {
     }
 }
 
+#[derive(Clone)]
 pub struct ExecutionContext<T: Trait> {
     pub self_account: T::AccountId,
     pub depth: usize,
@@ -123,27 +125,27 @@ where
         let executable = nested
             .loader
             .load_main(predicate)
-            .map_err(|err| err.into())?;
+            .map_err(<ExecError<T::AccountId>>::from)?;
         nested
             .vm
             .execute(executable, nested.new_call_context(caller), input_data)
     }
 
     fn new_call_context(&self, caller: T::AccountId) -> T::ExternalCall {
-        T::ExternalCall::new(self, caller)
+        T::ExternalCall::new(Rc::new(self.clone()), caller)
     }
 }
 
 /// Implementation of `Vm` that takes `PredicateOvm` and executes it.
 pub struct PredicateOvm<T: Trait> {
-    schedule: Rc<Schedule>,
+    _schedule: Rc<Schedule>,
     _phantom: PhantomData<T>,
 }
 
 impl<T: Trait> PredicateOvm<T> {
-    pub fn new(schedule: Rc<Schedule>) -> Self {
+    pub fn new(_schedule: Rc<Schedule>) -> Self {
         PredicateOvm {
-            schedule,
+            _schedule,
             _phantom: PhantomData,
         }
     }
@@ -168,7 +170,7 @@ impl<T: Trait> Vm<T> for PredicateOvm<T> {
         );
         let call_input_data =
             ovmi::predicates::PredicateCallInputs::<T::AccountId>::decode(&mut &input_data[..])
-                .map_err(|_| "Call inputs cannot decode error.".into())?;
+                .map_err(|_| <ExecError<T::AccountId>>::from("Call inputs cannot decode error."))?;
         CompiledExecutor::<CompiledExecutable<ext::ExternalCallImpl<T>>, ext::ExternalCallImpl<T>>::execute(
             executable,
             call_input_data,
