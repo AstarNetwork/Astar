@@ -68,23 +68,24 @@
 <span class="doccomment">//! About each staking, this module computes issuing new tokens.</span>
 
 <span class="kw">use</span> <span class="kw">super</span>::<span class="kw-2">*</span>;
+<span class="kw">use</span> <span class="ident">num_traits</span>::<span class="ident">sign</span>::<span class="ident">Unsigned</span>;
 <span class="kw">use</span> <span class="ident">sp_arithmetic</span>::<span class="ident">traits</span>::<span class="ident">BaseArithmetic</span>;
 
 <span class="doccomment">/// Compute reards for dapps from total dapps rewards to operators and nominators.</span>
 <span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">ComputeRewardsForDapps</span> {
     <span class="kw">fn</span> <span class="ident">compute_rewards_for_dapps</span><span class="op">&lt;</span><span class="ident">N</span><span class="op">&gt;</span>(<span class="ident">total_dapps_rewards</span>: <span class="ident">N</span>) <span class="op">-</span><span class="op">&gt;</span> (<span class="ident">N</span>, <span class="ident">N</span>)
     <span class="kw">where</span>
-        <span class="ident">N</span>: <span class="ident">BaseArithmetic</span> <span class="op">+</span> <span class="ident">Clone</span> <span class="op">+</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">u32</span><span class="op">&gt;</span>;
+        <span class="ident">N</span>: <span class="ident">BaseArithmetic</span> <span class="op">+</span> <span class="ident">Unsigned</span> <span class="op">+</span> <span class="ident">Clone</span> <span class="op">+</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">u32</span><span class="op">&gt;</span>;
 }
 
 <span class="doccomment">/// The based compute rewards for dapps.</span>
-<span class="doccomment">/// Following of https://docs.plasmnet.io/PlasmNetwork/TokenEcosystem.html, `t = 4`.</span>
+<span class="doccomment">/// Following of https://docs.plasmnet.io/learn/token-economy#inflation-model, `t = 4`.</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">BasedComputeRewardsForDapps</span>;
 
 <span class="kw">impl</span> <span class="ident">ComputeRewardsForDapps</span> <span class="kw">for</span> <span class="ident">BasedComputeRewardsForDapps</span> {
     <span class="kw">fn</span> <span class="ident">compute_rewards_for_dapps</span><span class="op">&lt;</span><span class="ident">N</span><span class="op">&gt;</span>(<span class="ident">total_dapps_rewards</span>: <span class="ident">N</span>) <span class="op">-</span><span class="op">&gt;</span> (<span class="ident">N</span>, <span class="ident">N</span>)
     <span class="kw">where</span>
-        <span class="ident">N</span>: <span class="ident">BaseArithmetic</span> <span class="op">+</span> <span class="ident">Clone</span> <span class="op">+</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">u32</span><span class="op">&gt;</span>,
+        <span class="ident">N</span>: <span class="ident">BaseArithmetic</span> <span class="op">+</span> <span class="ident">Unsigned</span> <span class="op">+</span> <span class="ident">Clone</span> <span class="op">+</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">u32</span><span class="op">&gt;</span>,
     {
         <span class="kw">let</span> <span class="ident">operators_reward</span> <span class="op">=</span>
             <span class="ident">Perbill</span>::<span class="ident">from_rational_approximation</span>(<span class="ident">N</span>::<span class="ident">from</span>(<span class="number">4</span> <span class="kw">as</span> <span class="ident">u32</span>), <span class="ident">N</span>::<span class="ident">from</span>(<span class="number">5</span> <span class="kw">as</span> <span class="ident">u32</span>))
@@ -101,14 +102,13 @@
     <span class="kw">use</span> <span class="kw">super</span>::<span class="kw-2">*</span>;
     <span class="kw">fn</span> <span class="ident">compute_payout_test</span><span class="op">&lt;</span><span class="ident">N</span><span class="op">&gt;</span>(<span class="ident">total_dapps_tokens</span>: <span class="ident">N</span>) <span class="op">-</span><span class="op">&gt;</span> (<span class="ident">N</span>, <span class="ident">N</span>)
     <span class="kw">where</span>
-        <span class="ident">N</span>: <span class="ident">BaseArithmetic</span> <span class="op">+</span> <span class="ident">Clone</span> <span class="op">+</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">u32</span><span class="op">&gt;</span>,
+        <span class="ident">N</span>: <span class="ident">BaseArithmetic</span> <span class="op">+</span> <span class="ident">Unsigned</span> <span class="op">+</span> <span class="ident">Clone</span> <span class="op">+</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">u32</span><span class="op">&gt;</span>,
     {
         <span class="ident">BasedComputeRewardsForDapps</span>::<span class="ident">compute_rewards_for_dapps</span>(<span class="ident">total_dapps_tokens</span>)
     }
 
     <span class="attribute">#[<span class="ident">test</span>]</span>
     <span class="kw">fn</span> <span class="ident">test_compute_payout_test</span>() {
-        <span class="comment">// TODO tests</span>
         <span class="macro">assert_eq</span><span class="macro">!</span>(
             <span class="ident">compute_payout_test</span>(<span class="number">100_000_000u64</span>),
             (<span class="number">80_000_000</span>, <span class="number">20_000_000</span>)
@@ -120,4 +120,4 @@
     }
 }
 </pre></div>
-</section><section id="search" class="content hidden"></section><section class="footer"></section><script>window.rootPath = "../../";window.currentCrate = "pallet_dapps_staking";</script><script src="../../aliases.js"></script><script src="../../main.js"></script><script src="../../source-script.js"></script><script src="../../source-files.js"></script><script defer src="../../search-index.js"></script></body></html>
+</section><section id="search" class="content hidden"></section><section class="footer"></section><script>window.rootPath = "../../";window.currentCrate = "pallet_dapps_staking";</script><script src="../../main.js"></script><script src="../../source-script.js"></script><script src="../../source-files.js"></script><script defer src="../../search-index.js"></script></body></html>

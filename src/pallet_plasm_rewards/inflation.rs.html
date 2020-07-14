@@ -274,6 +274,7 @@
 <span id="274">274</span>
 <span id="275">275</span>
 <span id="276">276</span>
+<span id="277">277</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="doccomment">//! This is explains plasm inflation models.</span>
 <span class="doccomment">//! The staking has 2 kinds.</span>
@@ -284,6 +285,7 @@
 <span class="doccomment">//! About each staking, this module computes issuing new tokens.</span>
 
 <span class="kw">use</span> <span class="kw">super</span>::<span class="kw-2">*</span>;
+<span class="kw">use</span> <span class="ident">num_traits</span>::<span class="ident">sign</span>::<span class="ident">Unsigned</span>;
 <span class="kw">use</span> <span class="ident">sp_arithmetic</span>::<span class="ident">traits</span>::<span class="ident">BaseArithmetic</span>;
 <span class="kw">use</span> <span class="ident">sp_std</span>::<span class="ident">marker</span>::<span class="ident">PhantomData</span>;
 <span class="kw">use</span> <span class="ident">traits</span>::<span class="ident">ComputeTotalPayout</span>;
@@ -303,7 +305,7 @@
         <span class="ident">_dapps_staking</span>: <span class="ident">D</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> (<span class="ident">N</span>, <span class="ident">N</span>)
     <span class="kw">where</span>
-        <span class="ident">N</span>: <span class="ident">BaseArithmetic</span> <span class="op">+</span> <span class="ident">Clone</span> <span class="op">+</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">u32</span><span class="op">&gt;</span>,
+        <span class="ident">N</span>: <span class="ident">BaseArithmetic</span> <span class="op">+</span> <span class="ident">Unsigned</span> <span class="op">+</span> <span class="ident">Clone</span> <span class="op">+</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">u32</span><span class="op">&gt;</span>,
         <span class="ident">M</span>: <span class="ident">BaseArithmetic</span> <span class="op">+</span> <span class="ident">Clone</span> <span class="op">+</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">u32</span><span class="op">&gt;</span>,
     {
         <span class="kw">const</span> <span class="ident">TARGETS_NUMBER</span>: <span class="ident">u128</span> <span class="op">=</span> <span class="number">100</span>;
@@ -356,7 +358,7 @@
         <span class="ident">_dapps_staking</span>: <span class="ident">D</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> (<span class="ident">N</span>, <span class="ident">N</span>)
     <span class="kw">where</span>
-        <span class="ident">N</span>: <span class="ident">BaseArithmetic</span> <span class="op">+</span> <span class="ident">Clone</span> <span class="op">+</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">u32</span><span class="op">&gt;</span>,
+        <span class="ident">N</span>: <span class="ident">BaseArithmetic</span> <span class="op">+</span> <span class="ident">Unsigned</span> <span class="op">+</span> <span class="ident">Clone</span> <span class="op">+</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">u32</span><span class="op">&gt;</span>,
         <span class="ident">M</span>: <span class="ident">BaseArithmetic</span> <span class="op">+</span> <span class="ident">Clone</span> <span class="op">+</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">u32</span><span class="op">&gt;</span>,
     {
         <span class="comment">// Milliseconds per year for the Julian year (365.25 days).</span>
@@ -386,7 +388,7 @@
 <span class="doccomment">/// `era_duration` is expressed in millisecond.</span>
 <span class="kw">impl</span><span class="op">&lt;</span><span class="ident">Balance</span><span class="op">&gt;</span> <span class="ident">ComputeTotalPayout</span><span class="op">&lt;</span><span class="ident">Balance</span>, <span class="ident">Balance</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">MaintainRatioComputeTotalPayout</span><span class="op">&lt;</span><span class="ident">Balance</span><span class="op">&gt;</span>
 <span class="kw">where</span>
-    <span class="ident">Balance</span>: <span class="ident">BaseArithmetic</span> <span class="op">+</span> <span class="ident">Clone</span> <span class="op">+</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">u32</span><span class="op">&gt;</span>,
+    <span class="ident">Balance</span>: <span class="ident">BaseArithmetic</span> <span class="op">+</span> <span class="ident">Unsigned</span> <span class="op">+</span> <span class="ident">Clone</span> <span class="op">+</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">u32</span><span class="op">&gt;</span>,
 {
     <span class="kw">fn</span> <span class="ident">compute</span><span class="op">&lt;</span><span class="ident">N</span>, <span class="ident">M</span><span class="op">&gt;</span>(
         <span class="ident">total_tokens</span>: <span class="ident">N</span>,
@@ -395,7 +397,7 @@
         <span class="ident">dapps_staking</span>: <span class="ident">Balance</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> (<span class="ident">N</span>, <span class="ident">N</span>)
     <span class="kw">where</span>
-        <span class="ident">N</span>: <span class="ident">BaseArithmetic</span> <span class="op">+</span> <span class="ident">Clone</span> <span class="op">+</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">u32</span><span class="op">&gt;</span>,
+        <span class="ident">N</span>: <span class="ident">BaseArithmetic</span> <span class="op">+</span> <span class="ident">Unsigned</span> <span class="op">+</span> <span class="ident">Clone</span> <span class="op">+</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">u32</span><span class="op">&gt;</span>,
         <span class="ident">M</span>: <span class="ident">BaseArithmetic</span> <span class="op">+</span> <span class="ident">Clone</span> <span class="op">+</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">u32</span><span class="op">&gt;</span>,
     {
         <span class="comment">// Milliseconds per year for the Julian year (365.25 days).</span>
@@ -431,7 +433,7 @@
         <span class="ident">dapps_staking</span>: <span class="ident">N</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> (<span class="ident">N</span>, <span class="ident">N</span>)
     <span class="kw">where</span>
-        <span class="ident">N</span>: <span class="ident">BaseArithmetic</span> <span class="op">+</span> <span class="ident">Clone</span> <span class="op">+</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">u32</span><span class="op">&gt;</span>,
+        <span class="ident">N</span>: <span class="ident">BaseArithmetic</span> <span class="op">+</span> <span class="ident">Unsigned</span> <span class="op">+</span> <span class="ident">Clone</span> <span class="op">+</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">u32</span><span class="op">&gt;</span>,
     {
         <span class="ident">SimpleComputeTotalPayout</span>::<span class="ident">compute</span>(
             <span class="ident">total_tokens</span>,
@@ -448,7 +450,7 @@
         <span class="ident">dapps_staking</span>: <span class="ident">N</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> (<span class="ident">N</span>, <span class="ident">N</span>)
     <span class="kw">where</span>
-        <span class="ident">N</span>: <span class="ident">BaseArithmetic</span> <span class="op">+</span> <span class="ident">Clone</span> <span class="op">+</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">u32</span><span class="op">&gt;</span>,
+        <span class="ident">N</span>: <span class="ident">BaseArithmetic</span> <span class="op">+</span> <span class="ident">Unsigned</span> <span class="op">+</span> <span class="ident">Clone</span> <span class="op">+</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">u32</span><span class="op">&gt;</span>,
     {
         <span class="ident">MaintainRatioComputeTotalPayout</span>::<span class="op">&lt;</span><span class="ident">N</span><span class="op">&gt;</span>::<span class="ident">compute</span>(
             <span class="ident">total_tokens</span>,
@@ -464,7 +466,7 @@
         <span class="ident">number_of_validator</span>: <span class="ident">u32</span>,
     ) <span class="op">-</span><span class="op">&gt;</span> (<span class="ident">N</span>, <span class="ident">N</span>)
     <span class="kw">where</span>
-        <span class="ident">N</span>: <span class="ident">BaseArithmetic</span> <span class="op">+</span> <span class="ident">Clone</span> <span class="op">+</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">u32</span><span class="op">&gt;</span>,
+        <span class="ident">N</span>: <span class="ident">BaseArithmetic</span> <span class="op">+</span> <span class="ident">Unsigned</span> <span class="op">+</span> <span class="ident">Clone</span> <span class="op">+</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">u32</span><span class="op">&gt;</span>,
     {
         <span class="ident">FirstPlasmIncentive</span>::<span class="op">&lt;</span><span class="ident">u32</span><span class="op">&gt;</span>::<span class="ident">compute</span>(<span class="ident">total_tokens</span>, <span class="ident">era_duration</span>, <span class="ident">number_of_validator</span>, <span class="number">0</span>)
     }
@@ -552,4 +554,4 @@
     }
 }
 </pre></div>
-</section><section id="search" class="content hidden"></section><section class="footer"></section><script>window.rootPath = "../../";window.currentCrate = "pallet_plasm_rewards";</script><script src="../../aliases.js"></script><script src="../../main.js"></script><script src="../../source-script.js"></script><script src="../../source-files.js"></script><script defer src="../../search-index.js"></script></body></html>
+</section><section id="search" class="content hidden"></section><section class="footer"></section><script>window.rootPath = "../../";window.currentCrate = "pallet_plasm_rewards";</script><script src="../../main.js"></script><script src="../../source-script.js"></script><script src="../../source-files.js"></script><script defer src="../../search-index.js"></script></body></html>

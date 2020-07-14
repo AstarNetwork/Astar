@@ -1,212 +1,1104 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source to the Rust file `bin/node/cli/src/chain_spec.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>chain_spec.rs.html -- source</title><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../dark.css"><link rel="stylesheet" type="text/css" href="../../light.css" id="themeStyle"><script src="../../storage.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="shortcut icon" href="../../favicon.ico"><style type="text/css">#crate-search{background-image:url("../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../plasm_cli/index.html'><div class='logo-container'><img src='../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!"><img src="../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices"></div></div><script src="../../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><a id="settings-menu" href="../../settings.html"><img src="../../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1">  1</span>
-<span id="2">  2</span>
-<span id="3">  3</span>
-<span id="4">  4</span>
-<span id="5">  5</span>
-<span id="6">  6</span>
-<span id="7">  7</span>
-<span id="8">  8</span>
-<span id="9">  9</span>
-<span id="10"> 10</span>
-<span id="11"> 11</span>
-<span id="12"> 12</span>
-<span id="13"> 13</span>
-<span id="14"> 14</span>
-<span id="15"> 15</span>
-<span id="16"> 16</span>
-<span id="17"> 17</span>
-<span id="18"> 18</span>
-<span id="19"> 19</span>
-<span id="20"> 20</span>
-<span id="21"> 21</span>
-<span id="22"> 22</span>
-<span id="23"> 23</span>
-<span id="24"> 24</span>
-<span id="25"> 25</span>
-<span id="26"> 26</span>
-<span id="27"> 27</span>
-<span id="28"> 28</span>
-<span id="29"> 29</span>
-<span id="30"> 30</span>
-<span id="31"> 31</span>
-<span id="32"> 32</span>
-<span id="33"> 33</span>
-<span id="34"> 34</span>
-<span id="35"> 35</span>
-<span id="36"> 36</span>
-<span id="37"> 37</span>
-<span id="38"> 38</span>
-<span id="39"> 39</span>
-<span id="40"> 40</span>
-<span id="41"> 41</span>
-<span id="42"> 42</span>
-<span id="43"> 43</span>
-<span id="44"> 44</span>
-<span id="45"> 45</span>
-<span id="46"> 46</span>
-<span id="47"> 47</span>
-<span id="48"> 48</span>
-<span id="49"> 49</span>
-<span id="50"> 50</span>
-<span id="51"> 51</span>
-<span id="52"> 52</span>
-<span id="53"> 53</span>
-<span id="54"> 54</span>
-<span id="55"> 55</span>
-<span id="56"> 56</span>
-<span id="57"> 57</span>
-<span id="58"> 58</span>
-<span id="59"> 59</span>
-<span id="60"> 60</span>
-<span id="61"> 61</span>
-<span id="62"> 62</span>
-<span id="63"> 63</span>
-<span id="64"> 64</span>
-<span id="65"> 65</span>
-<span id="66"> 66</span>
-<span id="67"> 67</span>
-<span id="68"> 68</span>
-<span id="69"> 69</span>
-<span id="70"> 70</span>
-<span id="71"> 71</span>
-<span id="72"> 72</span>
-<span id="73"> 73</span>
-<span id="74"> 74</span>
-<span id="75"> 75</span>
-<span id="76"> 76</span>
-<span id="77"> 77</span>
-<span id="78"> 78</span>
-<span id="79"> 79</span>
-<span id="80"> 80</span>
-<span id="81"> 81</span>
-<span id="82"> 82</span>
-<span id="83"> 83</span>
-<span id="84"> 84</span>
-<span id="85"> 85</span>
-<span id="86"> 86</span>
-<span id="87"> 87</span>
-<span id="88"> 88</span>
-<span id="89"> 89</span>
-<span id="90"> 90</span>
-<span id="91"> 91</span>
-<span id="92"> 92</span>
-<span id="93"> 93</span>
-<span id="94"> 94</span>
-<span id="95"> 95</span>
-<span id="96"> 96</span>
-<span id="97"> 97</span>
-<span id="98"> 98</span>
-<span id="99"> 99</span>
-<span id="100">100</span>
-<span id="101">101</span>
-<span id="102">102</span>
-<span id="103">103</span>
-<span id="104">104</span>
-<span id="105">105</span>
-<span id="106">106</span>
-<span id="107">107</span>
-<span id="108">108</span>
-<span id="109">109</span>
-<span id="110">110</span>
-<span id="111">111</span>
-<span id="112">112</span>
-<span id="113">113</span>
-<span id="114">114</span>
-<span id="115">115</span>
-<span id="116">116</span>
-<span id="117">117</span>
-<span id="118">118</span>
-<span id="119">119</span>
-<span id="120">120</span>
-<span id="121">121</span>
-<span id="122">122</span>
-<span id="123">123</span>
-<span id="124">124</span>
-<span id="125">125</span>
-<span id="126">126</span>
-<span id="127">127</span>
-<span id="128">128</span>
-<span id="129">129</span>
-<span id="130">130</span>
-<span id="131">131</span>
-<span id="132">132</span>
-<span id="133">133</span>
-<span id="134">134</span>
-<span id="135">135</span>
-<span id="136">136</span>
-<span id="137">137</span>
-<span id="138">138</span>
-<span id="139">139</span>
-<span id="140">140</span>
-<span id="141">141</span>
-<span id="142">142</span>
-<span id="143">143</span>
-<span id="144">144</span>
-<span id="145">145</span>
-<span id="146">146</span>
-<span id="147">147</span>
-<span id="148">148</span>
-<span id="149">149</span>
-<span id="150">150</span>
-<span id="151">151</span>
-<span id="152">152</span>
-<span id="153">153</span>
-<span id="154">154</span>
-<span id="155">155</span>
-<span id="156">156</span>
-<span id="157">157</span>
-<span id="158">158</span>
-<span id="159">159</span>
-<span id="160">160</span>
-<span id="161">161</span>
-<span id="162">162</span>
-<span id="163">163</span>
-<span id="164">164</span>
-<span id="165">165</span>
-<span id="166">166</span>
-<span id="167">167</span>
-<span id="168">168</span>
-<span id="169">169</span>
-<span id="170">170</span>
-<span id="171">171</span>
-<span id="172">172</span>
-<span id="173">173</span>
-<span id="174">174</span>
-<span id="175">175</span>
-<span id="176">176</span>
-<span id="177">177</span>
-<span id="178">178</span>
-<span id="179">179</span>
-<span id="180">180</span>
-<span id="181">181</span>
-<span id="182">182</span>
-<span id="183">183</span>
-<span id="184">184</span>
-<span id="185">185</span>
-<span id="186">186</span>
-<span id="187">187</span>
-<span id="188">188</span>
-<span id="189">189</span>
-<span id="190">190</span>
-<span id="191">191</span>
-<span id="192">192</span>
-<span id="193">193</span>
-<span id="194">194</span>
-<span id="195">195</span>
-<span id="196">196</span>
-<span id="197">197</span>
-<span id="198">198</span>
-<span id="199">199</span>
-<span id="200">200</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source to the Rust file `bin/node/cli/src/chain_spec.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>chain_spec.rs.html -- source</title><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../dark.css"><link rel="stylesheet" type="text/css" href="../../light.css" id="themeStyle"><script src="../../storage.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="shortcut icon" href="../../favicon.ico"><style type="text/css">#crate-search{background-image:url("../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../plasm_cli/index.html'><div class='logo-container'><img src='../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!"><img src="../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices"></div></div><script src="../../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><a id="settings-menu" href="../../settings.html"><img src="../../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1">   1</span>
+<span id="2">   2</span>
+<span id="3">   3</span>
+<span id="4">   4</span>
+<span id="5">   5</span>
+<span id="6">   6</span>
+<span id="7">   7</span>
+<span id="8">   8</span>
+<span id="9">   9</span>
+<span id="10">  10</span>
+<span id="11">  11</span>
+<span id="12">  12</span>
+<span id="13">  13</span>
+<span id="14">  14</span>
+<span id="15">  15</span>
+<span id="16">  16</span>
+<span id="17">  17</span>
+<span id="18">  18</span>
+<span id="19">  19</span>
+<span id="20">  20</span>
+<span id="21">  21</span>
+<span id="22">  22</span>
+<span id="23">  23</span>
+<span id="24">  24</span>
+<span id="25">  25</span>
+<span id="26">  26</span>
+<span id="27">  27</span>
+<span id="28">  28</span>
+<span id="29">  29</span>
+<span id="30">  30</span>
+<span id="31">  31</span>
+<span id="32">  32</span>
+<span id="33">  33</span>
+<span id="34">  34</span>
+<span id="35">  35</span>
+<span id="36">  36</span>
+<span id="37">  37</span>
+<span id="38">  38</span>
+<span id="39">  39</span>
+<span id="40">  40</span>
+<span id="41">  41</span>
+<span id="42">  42</span>
+<span id="43">  43</span>
+<span id="44">  44</span>
+<span id="45">  45</span>
+<span id="46">  46</span>
+<span id="47">  47</span>
+<span id="48">  48</span>
+<span id="49">  49</span>
+<span id="50">  50</span>
+<span id="51">  51</span>
+<span id="52">  52</span>
+<span id="53">  53</span>
+<span id="54">  54</span>
+<span id="55">  55</span>
+<span id="56">  56</span>
+<span id="57">  57</span>
+<span id="58">  58</span>
+<span id="59">  59</span>
+<span id="60">  60</span>
+<span id="61">  61</span>
+<span id="62">  62</span>
+<span id="63">  63</span>
+<span id="64">  64</span>
+<span id="65">  65</span>
+<span id="66">  66</span>
+<span id="67">  67</span>
+<span id="68">  68</span>
+<span id="69">  69</span>
+<span id="70">  70</span>
+<span id="71">  71</span>
+<span id="72">  72</span>
+<span id="73">  73</span>
+<span id="74">  74</span>
+<span id="75">  75</span>
+<span id="76">  76</span>
+<span id="77">  77</span>
+<span id="78">  78</span>
+<span id="79">  79</span>
+<span id="80">  80</span>
+<span id="81">  81</span>
+<span id="82">  82</span>
+<span id="83">  83</span>
+<span id="84">  84</span>
+<span id="85">  85</span>
+<span id="86">  86</span>
+<span id="87">  87</span>
+<span id="88">  88</span>
+<span id="89">  89</span>
+<span id="90">  90</span>
+<span id="91">  91</span>
+<span id="92">  92</span>
+<span id="93">  93</span>
+<span id="94">  94</span>
+<span id="95">  95</span>
+<span id="96">  96</span>
+<span id="97">  97</span>
+<span id="98">  98</span>
+<span id="99">  99</span>
+<span id="100"> 100</span>
+<span id="101"> 101</span>
+<span id="102"> 102</span>
+<span id="103"> 103</span>
+<span id="104"> 104</span>
+<span id="105"> 105</span>
+<span id="106"> 106</span>
+<span id="107"> 107</span>
+<span id="108"> 108</span>
+<span id="109"> 109</span>
+<span id="110"> 110</span>
+<span id="111"> 111</span>
+<span id="112"> 112</span>
+<span id="113"> 113</span>
+<span id="114"> 114</span>
+<span id="115"> 115</span>
+<span id="116"> 116</span>
+<span id="117"> 117</span>
+<span id="118"> 118</span>
+<span id="119"> 119</span>
+<span id="120"> 120</span>
+<span id="121"> 121</span>
+<span id="122"> 122</span>
+<span id="123"> 123</span>
+<span id="124"> 124</span>
+<span id="125"> 125</span>
+<span id="126"> 126</span>
+<span id="127"> 127</span>
+<span id="128"> 128</span>
+<span id="129"> 129</span>
+<span id="130"> 130</span>
+<span id="131"> 131</span>
+<span id="132"> 132</span>
+<span id="133"> 133</span>
+<span id="134"> 134</span>
+<span id="135"> 135</span>
+<span id="136"> 136</span>
+<span id="137"> 137</span>
+<span id="138"> 138</span>
+<span id="139"> 139</span>
+<span id="140"> 140</span>
+<span id="141"> 141</span>
+<span id="142"> 142</span>
+<span id="143"> 143</span>
+<span id="144"> 144</span>
+<span id="145"> 145</span>
+<span id="146"> 146</span>
+<span id="147"> 147</span>
+<span id="148"> 148</span>
+<span id="149"> 149</span>
+<span id="150"> 150</span>
+<span id="151"> 151</span>
+<span id="152"> 152</span>
+<span id="153"> 153</span>
+<span id="154"> 154</span>
+<span id="155"> 155</span>
+<span id="156"> 156</span>
+<span id="157"> 157</span>
+<span id="158"> 158</span>
+<span id="159"> 159</span>
+<span id="160"> 160</span>
+<span id="161"> 161</span>
+<span id="162"> 162</span>
+<span id="163"> 163</span>
+<span id="164"> 164</span>
+<span id="165"> 165</span>
+<span id="166"> 166</span>
+<span id="167"> 167</span>
+<span id="168"> 168</span>
+<span id="169"> 169</span>
+<span id="170"> 170</span>
+<span id="171"> 171</span>
+<span id="172"> 172</span>
+<span id="173"> 173</span>
+<span id="174"> 174</span>
+<span id="175"> 175</span>
+<span id="176"> 176</span>
+<span id="177"> 177</span>
+<span id="178"> 178</span>
+<span id="179"> 179</span>
+<span id="180"> 180</span>
+<span id="181"> 181</span>
+<span id="182"> 182</span>
+<span id="183"> 183</span>
+<span id="184"> 184</span>
+<span id="185"> 185</span>
+<span id="186"> 186</span>
+<span id="187"> 187</span>
+<span id="188"> 188</span>
+<span id="189"> 189</span>
+<span id="190"> 190</span>
+<span id="191"> 191</span>
+<span id="192"> 192</span>
+<span id="193"> 193</span>
+<span id="194"> 194</span>
+<span id="195"> 195</span>
+<span id="196"> 196</span>
+<span id="197"> 197</span>
+<span id="198"> 198</span>
+<span id="199"> 199</span>
+<span id="200"> 200</span>
+<span id="201"> 201</span>
+<span id="202"> 202</span>
+<span id="203"> 203</span>
+<span id="204"> 204</span>
+<span id="205"> 205</span>
+<span id="206"> 206</span>
+<span id="207"> 207</span>
+<span id="208"> 208</span>
+<span id="209"> 209</span>
+<span id="210"> 210</span>
+<span id="211"> 211</span>
+<span id="212"> 212</span>
+<span id="213"> 213</span>
+<span id="214"> 214</span>
+<span id="215"> 215</span>
+<span id="216"> 216</span>
+<span id="217"> 217</span>
+<span id="218"> 218</span>
+<span id="219"> 219</span>
+<span id="220"> 220</span>
+<span id="221"> 221</span>
+<span id="222"> 222</span>
+<span id="223"> 223</span>
+<span id="224"> 224</span>
+<span id="225"> 225</span>
+<span id="226"> 226</span>
+<span id="227"> 227</span>
+<span id="228"> 228</span>
+<span id="229"> 229</span>
+<span id="230"> 230</span>
+<span id="231"> 231</span>
+<span id="232"> 232</span>
+<span id="233"> 233</span>
+<span id="234"> 234</span>
+<span id="235"> 235</span>
+<span id="236"> 236</span>
+<span id="237"> 237</span>
+<span id="238"> 238</span>
+<span id="239"> 239</span>
+<span id="240"> 240</span>
+<span id="241"> 241</span>
+<span id="242"> 242</span>
+<span id="243"> 243</span>
+<span id="244"> 244</span>
+<span id="245"> 245</span>
+<span id="246"> 246</span>
+<span id="247"> 247</span>
+<span id="248"> 248</span>
+<span id="249"> 249</span>
+<span id="250"> 250</span>
+<span id="251"> 251</span>
+<span id="252"> 252</span>
+<span id="253"> 253</span>
+<span id="254"> 254</span>
+<span id="255"> 255</span>
+<span id="256"> 256</span>
+<span id="257"> 257</span>
+<span id="258"> 258</span>
+<span id="259"> 259</span>
+<span id="260"> 260</span>
+<span id="261"> 261</span>
+<span id="262"> 262</span>
+<span id="263"> 263</span>
+<span id="264"> 264</span>
+<span id="265"> 265</span>
+<span id="266"> 266</span>
+<span id="267"> 267</span>
+<span id="268"> 268</span>
+<span id="269"> 269</span>
+<span id="270"> 270</span>
+<span id="271"> 271</span>
+<span id="272"> 272</span>
+<span id="273"> 273</span>
+<span id="274"> 274</span>
+<span id="275"> 275</span>
+<span id="276"> 276</span>
+<span id="277"> 277</span>
+<span id="278"> 278</span>
+<span id="279"> 279</span>
+<span id="280"> 280</span>
+<span id="281"> 281</span>
+<span id="282"> 282</span>
+<span id="283"> 283</span>
+<span id="284"> 284</span>
+<span id="285"> 285</span>
+<span id="286"> 286</span>
+<span id="287"> 287</span>
+<span id="288"> 288</span>
+<span id="289"> 289</span>
+<span id="290"> 290</span>
+<span id="291"> 291</span>
+<span id="292"> 292</span>
+<span id="293"> 293</span>
+<span id="294"> 294</span>
+<span id="295"> 295</span>
+<span id="296"> 296</span>
+<span id="297"> 297</span>
+<span id="298"> 298</span>
+<span id="299"> 299</span>
+<span id="300"> 300</span>
+<span id="301"> 301</span>
+<span id="302"> 302</span>
+<span id="303"> 303</span>
+<span id="304"> 304</span>
+<span id="305"> 305</span>
+<span id="306"> 306</span>
+<span id="307"> 307</span>
+<span id="308"> 308</span>
+<span id="309"> 309</span>
+<span id="310"> 310</span>
+<span id="311"> 311</span>
+<span id="312"> 312</span>
+<span id="313"> 313</span>
+<span id="314"> 314</span>
+<span id="315"> 315</span>
+<span id="316"> 316</span>
+<span id="317"> 317</span>
+<span id="318"> 318</span>
+<span id="319"> 319</span>
+<span id="320"> 320</span>
+<span id="321"> 321</span>
+<span id="322"> 322</span>
+<span id="323"> 323</span>
+<span id="324"> 324</span>
+<span id="325"> 325</span>
+<span id="326"> 326</span>
+<span id="327"> 327</span>
+<span id="328"> 328</span>
+<span id="329"> 329</span>
+<span id="330"> 330</span>
+<span id="331"> 331</span>
+<span id="332"> 332</span>
+<span id="333"> 333</span>
+<span id="334"> 334</span>
+<span id="335"> 335</span>
+<span id="336"> 336</span>
+<span id="337"> 337</span>
+<span id="338"> 338</span>
+<span id="339"> 339</span>
+<span id="340"> 340</span>
+<span id="341"> 341</span>
+<span id="342"> 342</span>
+<span id="343"> 343</span>
+<span id="344"> 344</span>
+<span id="345"> 345</span>
+<span id="346"> 346</span>
+<span id="347"> 347</span>
+<span id="348"> 348</span>
+<span id="349"> 349</span>
+<span id="350"> 350</span>
+<span id="351"> 351</span>
+<span id="352"> 352</span>
+<span id="353"> 353</span>
+<span id="354"> 354</span>
+<span id="355"> 355</span>
+<span id="356"> 356</span>
+<span id="357"> 357</span>
+<span id="358"> 358</span>
+<span id="359"> 359</span>
+<span id="360"> 360</span>
+<span id="361"> 361</span>
+<span id="362"> 362</span>
+<span id="363"> 363</span>
+<span id="364"> 364</span>
+<span id="365"> 365</span>
+<span id="366"> 366</span>
+<span id="367"> 367</span>
+<span id="368"> 368</span>
+<span id="369"> 369</span>
+<span id="370"> 370</span>
+<span id="371"> 371</span>
+<span id="372"> 372</span>
+<span id="373"> 373</span>
+<span id="374"> 374</span>
+<span id="375"> 375</span>
+<span id="376"> 376</span>
+<span id="377"> 377</span>
+<span id="378"> 378</span>
+<span id="379"> 379</span>
+<span id="380"> 380</span>
+<span id="381"> 381</span>
+<span id="382"> 382</span>
+<span id="383"> 383</span>
+<span id="384"> 384</span>
+<span id="385"> 385</span>
+<span id="386"> 386</span>
+<span id="387"> 387</span>
+<span id="388"> 388</span>
+<span id="389"> 389</span>
+<span id="390"> 390</span>
+<span id="391"> 391</span>
+<span id="392"> 392</span>
+<span id="393"> 393</span>
+<span id="394"> 394</span>
+<span id="395"> 395</span>
+<span id="396"> 396</span>
+<span id="397"> 397</span>
+<span id="398"> 398</span>
+<span id="399"> 399</span>
+<span id="400"> 400</span>
+<span id="401"> 401</span>
+<span id="402"> 402</span>
+<span id="403"> 403</span>
+<span id="404"> 404</span>
+<span id="405"> 405</span>
+<span id="406"> 406</span>
+<span id="407"> 407</span>
+<span id="408"> 408</span>
+<span id="409"> 409</span>
+<span id="410"> 410</span>
+<span id="411"> 411</span>
+<span id="412"> 412</span>
+<span id="413"> 413</span>
+<span id="414"> 414</span>
+<span id="415"> 415</span>
+<span id="416"> 416</span>
+<span id="417"> 417</span>
+<span id="418"> 418</span>
+<span id="419"> 419</span>
+<span id="420"> 420</span>
+<span id="421"> 421</span>
+<span id="422"> 422</span>
+<span id="423"> 423</span>
+<span id="424"> 424</span>
+<span id="425"> 425</span>
+<span id="426"> 426</span>
+<span id="427"> 427</span>
+<span id="428"> 428</span>
+<span id="429"> 429</span>
+<span id="430"> 430</span>
+<span id="431"> 431</span>
+<span id="432"> 432</span>
+<span id="433"> 433</span>
+<span id="434"> 434</span>
+<span id="435"> 435</span>
+<span id="436"> 436</span>
+<span id="437"> 437</span>
+<span id="438"> 438</span>
+<span id="439"> 439</span>
+<span id="440"> 440</span>
+<span id="441"> 441</span>
+<span id="442"> 442</span>
+<span id="443"> 443</span>
+<span id="444"> 444</span>
+<span id="445"> 445</span>
+<span id="446"> 446</span>
+<span id="447"> 447</span>
+<span id="448"> 448</span>
+<span id="449"> 449</span>
+<span id="450"> 450</span>
+<span id="451"> 451</span>
+<span id="452"> 452</span>
+<span id="453"> 453</span>
+<span id="454"> 454</span>
+<span id="455"> 455</span>
+<span id="456"> 456</span>
+<span id="457"> 457</span>
+<span id="458"> 458</span>
+<span id="459"> 459</span>
+<span id="460"> 460</span>
+<span id="461"> 461</span>
+<span id="462"> 462</span>
+<span id="463"> 463</span>
+<span id="464"> 464</span>
+<span id="465"> 465</span>
+<span id="466"> 466</span>
+<span id="467"> 467</span>
+<span id="468"> 468</span>
+<span id="469"> 469</span>
+<span id="470"> 470</span>
+<span id="471"> 471</span>
+<span id="472"> 472</span>
+<span id="473"> 473</span>
+<span id="474"> 474</span>
+<span id="475"> 475</span>
+<span id="476"> 476</span>
+<span id="477"> 477</span>
+<span id="478"> 478</span>
+<span id="479"> 479</span>
+<span id="480"> 480</span>
+<span id="481"> 481</span>
+<span id="482"> 482</span>
+<span id="483"> 483</span>
+<span id="484"> 484</span>
+<span id="485"> 485</span>
+<span id="486"> 486</span>
+<span id="487"> 487</span>
+<span id="488"> 488</span>
+<span id="489"> 489</span>
+<span id="490"> 490</span>
+<span id="491"> 491</span>
+<span id="492"> 492</span>
+<span id="493"> 493</span>
+<span id="494"> 494</span>
+<span id="495"> 495</span>
+<span id="496"> 496</span>
+<span id="497"> 497</span>
+<span id="498"> 498</span>
+<span id="499"> 499</span>
+<span id="500"> 500</span>
+<span id="501"> 501</span>
+<span id="502"> 502</span>
+<span id="503"> 503</span>
+<span id="504"> 504</span>
+<span id="505"> 505</span>
+<span id="506"> 506</span>
+<span id="507"> 507</span>
+<span id="508"> 508</span>
+<span id="509"> 509</span>
+<span id="510"> 510</span>
+<span id="511"> 511</span>
+<span id="512"> 512</span>
+<span id="513"> 513</span>
+<span id="514"> 514</span>
+<span id="515"> 515</span>
+<span id="516"> 516</span>
+<span id="517"> 517</span>
+<span id="518"> 518</span>
+<span id="519"> 519</span>
+<span id="520"> 520</span>
+<span id="521"> 521</span>
+<span id="522"> 522</span>
+<span id="523"> 523</span>
+<span id="524"> 524</span>
+<span id="525"> 525</span>
+<span id="526"> 526</span>
+<span id="527"> 527</span>
+<span id="528"> 528</span>
+<span id="529"> 529</span>
+<span id="530"> 530</span>
+<span id="531"> 531</span>
+<span id="532"> 532</span>
+<span id="533"> 533</span>
+<span id="534"> 534</span>
+<span id="535"> 535</span>
+<span id="536"> 536</span>
+<span id="537"> 537</span>
+<span id="538"> 538</span>
+<span id="539"> 539</span>
+<span id="540"> 540</span>
+<span id="541"> 541</span>
+<span id="542"> 542</span>
+<span id="543"> 543</span>
+<span id="544"> 544</span>
+<span id="545"> 545</span>
+<span id="546"> 546</span>
+<span id="547"> 547</span>
+<span id="548"> 548</span>
+<span id="549"> 549</span>
+<span id="550"> 550</span>
+<span id="551"> 551</span>
+<span id="552"> 552</span>
+<span id="553"> 553</span>
+<span id="554"> 554</span>
+<span id="555"> 555</span>
+<span id="556"> 556</span>
+<span id="557"> 557</span>
+<span id="558"> 558</span>
+<span id="559"> 559</span>
+<span id="560"> 560</span>
+<span id="561"> 561</span>
+<span id="562"> 562</span>
+<span id="563"> 563</span>
+<span id="564"> 564</span>
+<span id="565"> 565</span>
+<span id="566"> 566</span>
+<span id="567"> 567</span>
+<span id="568"> 568</span>
+<span id="569"> 569</span>
+<span id="570"> 570</span>
+<span id="571"> 571</span>
+<span id="572"> 572</span>
+<span id="573"> 573</span>
+<span id="574"> 574</span>
+<span id="575"> 575</span>
+<span id="576"> 576</span>
+<span id="577"> 577</span>
+<span id="578"> 578</span>
+<span id="579"> 579</span>
+<span id="580"> 580</span>
+<span id="581"> 581</span>
+<span id="582"> 582</span>
+<span id="583"> 583</span>
+<span id="584"> 584</span>
+<span id="585"> 585</span>
+<span id="586"> 586</span>
+<span id="587"> 587</span>
+<span id="588"> 588</span>
+<span id="589"> 589</span>
+<span id="590"> 590</span>
+<span id="591"> 591</span>
+<span id="592"> 592</span>
+<span id="593"> 593</span>
+<span id="594"> 594</span>
+<span id="595"> 595</span>
+<span id="596"> 596</span>
+<span id="597"> 597</span>
+<span id="598"> 598</span>
+<span id="599"> 599</span>
+<span id="600"> 600</span>
+<span id="601"> 601</span>
+<span id="602"> 602</span>
+<span id="603"> 603</span>
+<span id="604"> 604</span>
+<span id="605"> 605</span>
+<span id="606"> 606</span>
+<span id="607"> 607</span>
+<span id="608"> 608</span>
+<span id="609"> 609</span>
+<span id="610"> 610</span>
+<span id="611"> 611</span>
+<span id="612"> 612</span>
+<span id="613"> 613</span>
+<span id="614"> 614</span>
+<span id="615"> 615</span>
+<span id="616"> 616</span>
+<span id="617"> 617</span>
+<span id="618"> 618</span>
+<span id="619"> 619</span>
+<span id="620"> 620</span>
+<span id="621"> 621</span>
+<span id="622"> 622</span>
+<span id="623"> 623</span>
+<span id="624"> 624</span>
+<span id="625"> 625</span>
+<span id="626"> 626</span>
+<span id="627"> 627</span>
+<span id="628"> 628</span>
+<span id="629"> 629</span>
+<span id="630"> 630</span>
+<span id="631"> 631</span>
+<span id="632"> 632</span>
+<span id="633"> 633</span>
+<span id="634"> 634</span>
+<span id="635"> 635</span>
+<span id="636"> 636</span>
+<span id="637"> 637</span>
+<span id="638"> 638</span>
+<span id="639"> 639</span>
+<span id="640"> 640</span>
+<span id="641"> 641</span>
+<span id="642"> 642</span>
+<span id="643"> 643</span>
+<span id="644"> 644</span>
+<span id="645"> 645</span>
+<span id="646"> 646</span>
+<span id="647"> 647</span>
+<span id="648"> 648</span>
+<span id="649"> 649</span>
+<span id="650"> 650</span>
+<span id="651"> 651</span>
+<span id="652"> 652</span>
+<span id="653"> 653</span>
+<span id="654"> 654</span>
+<span id="655"> 655</span>
+<span id="656"> 656</span>
+<span id="657"> 657</span>
+<span id="658"> 658</span>
+<span id="659"> 659</span>
+<span id="660"> 660</span>
+<span id="661"> 661</span>
+<span id="662"> 662</span>
+<span id="663"> 663</span>
+<span id="664"> 664</span>
+<span id="665"> 665</span>
+<span id="666"> 666</span>
+<span id="667"> 667</span>
+<span id="668"> 668</span>
+<span id="669"> 669</span>
+<span id="670"> 670</span>
+<span id="671"> 671</span>
+<span id="672"> 672</span>
+<span id="673"> 673</span>
+<span id="674"> 674</span>
+<span id="675"> 675</span>
+<span id="676"> 676</span>
+<span id="677"> 677</span>
+<span id="678"> 678</span>
+<span id="679"> 679</span>
+<span id="680"> 680</span>
+<span id="681"> 681</span>
+<span id="682"> 682</span>
+<span id="683"> 683</span>
+<span id="684"> 684</span>
+<span id="685"> 685</span>
+<span id="686"> 686</span>
+<span id="687"> 687</span>
+<span id="688"> 688</span>
+<span id="689"> 689</span>
+<span id="690"> 690</span>
+<span id="691"> 691</span>
+<span id="692"> 692</span>
+<span id="693"> 693</span>
+<span id="694"> 694</span>
+<span id="695"> 695</span>
+<span id="696"> 696</span>
+<span id="697"> 697</span>
+<span id="698"> 698</span>
+<span id="699"> 699</span>
+<span id="700"> 700</span>
+<span id="701"> 701</span>
+<span id="702"> 702</span>
+<span id="703"> 703</span>
+<span id="704"> 704</span>
+<span id="705"> 705</span>
+<span id="706"> 706</span>
+<span id="707"> 707</span>
+<span id="708"> 708</span>
+<span id="709"> 709</span>
+<span id="710"> 710</span>
+<span id="711"> 711</span>
+<span id="712"> 712</span>
+<span id="713"> 713</span>
+<span id="714"> 714</span>
+<span id="715"> 715</span>
+<span id="716"> 716</span>
+<span id="717"> 717</span>
+<span id="718"> 718</span>
+<span id="719"> 719</span>
+<span id="720"> 720</span>
+<span id="721"> 721</span>
+<span id="722"> 722</span>
+<span id="723"> 723</span>
+<span id="724"> 724</span>
+<span id="725"> 725</span>
+<span id="726"> 726</span>
+<span id="727"> 727</span>
+<span id="728"> 728</span>
+<span id="729"> 729</span>
+<span id="730"> 730</span>
+<span id="731"> 731</span>
+<span id="732"> 732</span>
+<span id="733"> 733</span>
+<span id="734"> 734</span>
+<span id="735"> 735</span>
+<span id="736"> 736</span>
+<span id="737"> 737</span>
+<span id="738"> 738</span>
+<span id="739"> 739</span>
+<span id="740"> 740</span>
+<span id="741"> 741</span>
+<span id="742"> 742</span>
+<span id="743"> 743</span>
+<span id="744"> 744</span>
+<span id="745"> 745</span>
+<span id="746"> 746</span>
+<span id="747"> 747</span>
+<span id="748"> 748</span>
+<span id="749"> 749</span>
+<span id="750"> 750</span>
+<span id="751"> 751</span>
+<span id="752"> 752</span>
+<span id="753"> 753</span>
+<span id="754"> 754</span>
+<span id="755"> 755</span>
+<span id="756"> 756</span>
+<span id="757"> 757</span>
+<span id="758"> 758</span>
+<span id="759"> 759</span>
+<span id="760"> 760</span>
+<span id="761"> 761</span>
+<span id="762"> 762</span>
+<span id="763"> 763</span>
+<span id="764"> 764</span>
+<span id="765"> 765</span>
+<span id="766"> 766</span>
+<span id="767"> 767</span>
+<span id="768"> 768</span>
+<span id="769"> 769</span>
+<span id="770"> 770</span>
+<span id="771"> 771</span>
+<span id="772"> 772</span>
+<span id="773"> 773</span>
+<span id="774"> 774</span>
+<span id="775"> 775</span>
+<span id="776"> 776</span>
+<span id="777"> 777</span>
+<span id="778"> 778</span>
+<span id="779"> 779</span>
+<span id="780"> 780</span>
+<span id="781"> 781</span>
+<span id="782"> 782</span>
+<span id="783"> 783</span>
+<span id="784"> 784</span>
+<span id="785"> 785</span>
+<span id="786"> 786</span>
+<span id="787"> 787</span>
+<span id="788"> 788</span>
+<span id="789"> 789</span>
+<span id="790"> 790</span>
+<span id="791"> 791</span>
+<span id="792"> 792</span>
+<span id="793"> 793</span>
+<span id="794"> 794</span>
+<span id="795"> 795</span>
+<span id="796"> 796</span>
+<span id="797"> 797</span>
+<span id="798"> 798</span>
+<span id="799"> 799</span>
+<span id="800"> 800</span>
+<span id="801"> 801</span>
+<span id="802"> 802</span>
+<span id="803"> 803</span>
+<span id="804"> 804</span>
+<span id="805"> 805</span>
+<span id="806"> 806</span>
+<span id="807"> 807</span>
+<span id="808"> 808</span>
+<span id="809"> 809</span>
+<span id="810"> 810</span>
+<span id="811"> 811</span>
+<span id="812"> 812</span>
+<span id="813"> 813</span>
+<span id="814"> 814</span>
+<span id="815"> 815</span>
+<span id="816"> 816</span>
+<span id="817"> 817</span>
+<span id="818"> 818</span>
+<span id="819"> 819</span>
+<span id="820"> 820</span>
+<span id="821"> 821</span>
+<span id="822"> 822</span>
+<span id="823"> 823</span>
+<span id="824"> 824</span>
+<span id="825"> 825</span>
+<span id="826"> 826</span>
+<span id="827"> 827</span>
+<span id="828"> 828</span>
+<span id="829"> 829</span>
+<span id="830"> 830</span>
+<span id="831"> 831</span>
+<span id="832"> 832</span>
+<span id="833"> 833</span>
+<span id="834"> 834</span>
+<span id="835"> 835</span>
+<span id="836"> 836</span>
+<span id="837"> 837</span>
+<span id="838"> 838</span>
+<span id="839"> 839</span>
+<span id="840"> 840</span>
+<span id="841"> 841</span>
+<span id="842"> 842</span>
+<span id="843"> 843</span>
+<span id="844"> 844</span>
+<span id="845"> 845</span>
+<span id="846"> 846</span>
+<span id="847"> 847</span>
+<span id="848"> 848</span>
+<span id="849"> 849</span>
+<span id="850"> 850</span>
+<span id="851"> 851</span>
+<span id="852"> 852</span>
+<span id="853"> 853</span>
+<span id="854"> 854</span>
+<span id="855"> 855</span>
+<span id="856"> 856</span>
+<span id="857"> 857</span>
+<span id="858"> 858</span>
+<span id="859"> 859</span>
+<span id="860"> 860</span>
+<span id="861"> 861</span>
+<span id="862"> 862</span>
+<span id="863"> 863</span>
+<span id="864"> 864</span>
+<span id="865"> 865</span>
+<span id="866"> 866</span>
+<span id="867"> 867</span>
+<span id="868"> 868</span>
+<span id="869"> 869</span>
+<span id="870"> 870</span>
+<span id="871"> 871</span>
+<span id="872"> 872</span>
+<span id="873"> 873</span>
+<span id="874"> 874</span>
+<span id="875"> 875</span>
+<span id="876"> 876</span>
+<span id="877"> 877</span>
+<span id="878"> 878</span>
+<span id="879"> 879</span>
+<span id="880"> 880</span>
+<span id="881"> 881</span>
+<span id="882"> 882</span>
+<span id="883"> 883</span>
+<span id="884"> 884</span>
+<span id="885"> 885</span>
+<span id="886"> 886</span>
+<span id="887"> 887</span>
+<span id="888"> 888</span>
+<span id="889"> 889</span>
+<span id="890"> 890</span>
+<span id="891"> 891</span>
+<span id="892"> 892</span>
+<span id="893"> 893</span>
+<span id="894"> 894</span>
+<span id="895"> 895</span>
+<span id="896"> 896</span>
+<span id="897"> 897</span>
+<span id="898"> 898</span>
+<span id="899"> 899</span>
+<span id="900"> 900</span>
+<span id="901"> 901</span>
+<span id="902"> 902</span>
+<span id="903"> 903</span>
+<span id="904"> 904</span>
+<span id="905"> 905</span>
+<span id="906"> 906</span>
+<span id="907"> 907</span>
+<span id="908"> 908</span>
+<span id="909"> 909</span>
+<span id="910"> 910</span>
+<span id="911"> 911</span>
+<span id="912"> 912</span>
+<span id="913"> 913</span>
+<span id="914"> 914</span>
+<span id="915"> 915</span>
+<span id="916"> 916</span>
+<span id="917"> 917</span>
+<span id="918"> 918</span>
+<span id="919"> 919</span>
+<span id="920"> 920</span>
+<span id="921"> 921</span>
+<span id="922"> 922</span>
+<span id="923"> 923</span>
+<span id="924"> 924</span>
+<span id="925"> 925</span>
+<span id="926"> 926</span>
+<span id="927"> 927</span>
+<span id="928"> 928</span>
+<span id="929"> 929</span>
+<span id="930"> 930</span>
+<span id="931"> 931</span>
+<span id="932"> 932</span>
+<span id="933"> 933</span>
+<span id="934"> 934</span>
+<span id="935"> 935</span>
+<span id="936"> 936</span>
+<span id="937"> 937</span>
+<span id="938"> 938</span>
+<span id="939"> 939</span>
+<span id="940"> 940</span>
+<span id="941"> 941</span>
+<span id="942"> 942</span>
+<span id="943"> 943</span>
+<span id="944"> 944</span>
+<span id="945"> 945</span>
+<span id="946"> 946</span>
+<span id="947"> 947</span>
+<span id="948"> 948</span>
+<span id="949"> 949</span>
+<span id="950"> 950</span>
+<span id="951"> 951</span>
+<span id="952"> 952</span>
+<span id="953"> 953</span>
+<span id="954"> 954</span>
+<span id="955"> 955</span>
+<span id="956"> 956</span>
+<span id="957"> 957</span>
+<span id="958"> 958</span>
+<span id="959"> 959</span>
+<span id="960"> 960</span>
+<span id="961"> 961</span>
+<span id="962"> 962</span>
+<span id="963"> 963</span>
+<span id="964"> 964</span>
+<span id="965"> 965</span>
+<span id="966"> 966</span>
+<span id="967"> 967</span>
+<span id="968"> 968</span>
+<span id="969"> 969</span>
+<span id="970"> 970</span>
+<span id="971"> 971</span>
+<span id="972"> 972</span>
+<span id="973"> 973</span>
+<span id="974"> 974</span>
+<span id="975"> 975</span>
+<span id="976"> 976</span>
+<span id="977"> 977</span>
+<span id="978"> 978</span>
+<span id="979"> 979</span>
+<span id="980"> 980</span>
+<span id="981"> 981</span>
+<span id="982"> 982</span>
+<span id="983"> 983</span>
+<span id="984"> 984</span>
+<span id="985"> 985</span>
+<span id="986"> 986</span>
+<span id="987"> 987</span>
+<span id="988"> 988</span>
+<span id="989"> 989</span>
+<span id="990"> 990</span>
+<span id="991"> 991</span>
+<span id="992"> 992</span>
+<span id="993"> 993</span>
+<span id="994"> 994</span>
+<span id="995"> 995</span>
+<span id="996"> 996</span>
+<span id="997"> 997</span>
+<span id="998"> 998</span>
+<span id="999"> 999</span>
+<span id="1000">1000</span>
+<span id="1001">1001</span>
+<span id="1002">1002</span>
+<span id="1003">1003</span>
+<span id="1004">1004</span>
+<span id="1005">1005</span>
+<span id="1006">1006</span>
+<span id="1007">1007</span>
+<span id="1008">1008</span>
+<span id="1009">1009</span>
+<span id="1010">1010</span>
+<span id="1011">1011</span>
+<span id="1012">1012</span>
+<span id="1013">1013</span>
+<span id="1014">1014</span>
+<span id="1015">1015</span>
+<span id="1016">1016</span>
+<span id="1017">1017</span>
+<span id="1018">1018</span>
+<span id="1019">1019</span>
+<span id="1020">1020</span>
+<span id="1021">1021</span>
+<span id="1022">1022</span>
+<span id="1023">1023</span>
+<span id="1024">1024</span>
+<span id="1025">1025</span>
+<span id="1026">1026</span>
+<span id="1027">1027</span>
+<span id="1028">1028</span>
+<span id="1029">1029</span>
+<span id="1030">1030</span>
+<span id="1031">1031</span>
+<span id="1032">1032</span>
+<span id="1033">1033</span>
+<span id="1034">1034</span>
+<span id="1035">1035</span>
+<span id="1036">1036</span>
+<span id="1037">1037</span>
+<span id="1038">1038</span>
+<span id="1039">1039</span>
+<span id="1040">1040</span>
+<span id="1041">1041</span>
+<span id="1042">1042</span>
+<span id="1043">1043</span>
+<span id="1044">1044</span>
+<span id="1045">1045</span>
+<span id="1046">1046</span>
+<span id="1047">1047</span>
+<span id="1048">1048</span>
+<span id="1049">1049</span>
+<span id="1050">1050</span>
+<span id="1051">1051</span>
+<span id="1052">1052</span>
+<span id="1053">1053</span>
+<span id="1054">1054</span>
+<span id="1055">1055</span>
+<span id="1056">1056</span>
+<span id="1057">1057</span>
+<span id="1058">1058</span>
+<span id="1059">1059</span>
+<span id="1060">1060</span>
+<span id="1061">1061</span>
+<span id="1062">1062</span>
+<span id="1063">1063</span>
+<span id="1064">1064</span>
+<span id="1065">1065</span>
+<span id="1066">1066</span>
+<span id="1067">1067</span>
+<span id="1068">1068</span>
+<span id="1069">1069</span>
+<span id="1070">1070</span>
+<span id="1071">1071</span>
+<span id="1072">1072</span>
+<span id="1073">1073</span>
+<span id="1074">1074</span>
+<span id="1075">1075</span>
+<span id="1076">1076</span>
+<span id="1077">1077</span>
+<span id="1078">1078</span>
+<span id="1079">1079</span>
+<span id="1080">1080</span>
+<span id="1081">1081</span>
+<span id="1082">1082</span>
+<span id="1083">1083</span>
+<span id="1084">1084</span>
+<span id="1085">1085</span>
+<span id="1086">1086</span>
+<span id="1087">1087</span>
+<span id="1088">1088</span>
+<span id="1089">1089</span>
+<span id="1090">1090</span>
+<span id="1091">1091</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="doccomment">//! Chain specification.</span>
 
+<span class="kw">use</span> <span class="ident">pallet_plasm_lockdrop</span>::<span class="ident">sr25519</span>::<span class="ident">AuthorityId</span> <span class="kw">as</span> <span class="ident">LockdropId</span>;
 <span class="kw">use</span> <span class="ident">plasm_primitives</span>::{<span class="ident">AccountId</span>, <span class="ident">Balance</span>, <span class="ident">Signature</span>};
 <span class="kw">use</span> <span class="ident">plasm_runtime</span>::<span class="ident">Block</span>;
 <span class="kw">use</span> <span class="ident">plasm_runtime</span>::{
     <span class="ident">BabeConfig</span>, <span class="ident">BalancesConfig</span>, <span class="ident">ContractsConfig</span>, <span class="ident">GenesisConfig</span>, <span class="ident">GrandpaConfig</span>, <span class="ident">IndicesConfig</span>,
-    <span class="ident">PlasmRewardsConfig</span>, <span class="ident">PlasmValidatorConfig</span>, <span class="ident">SessionConfig</span>, <span class="ident">SessionKeys</span>, <span class="ident">SudoConfig</span>, <span class="ident">SystemConfig</span>,
-    <span class="ident">WASM_BINARY</span>,
+    <span class="ident">PlasmLockdropConfig</span>, <span class="ident">PlasmRewardsConfig</span>, <span class="ident">PlasmValidatorConfig</span>, <span class="ident">SessionConfig</span>, <span class="ident">SessionKeys</span>,
+    <span class="ident">SudoConfig</span>, <span class="ident">SystemConfig</span>, <span class="ident">WASM_BINARY</span>,
 };
 <span class="kw">use</span> <span class="ident">sc_chain_spec</span>::<span class="ident">ChainSpecExtension</span>;
 <span class="kw">use</span> <span class="ident">sc_service</span>::<span class="ident">ChainType</span>;
@@ -214,9 +1106,35 @@
 <span class="kw">use</span> <span class="ident">sp_consensus_babe</span>::<span class="ident">AuthorityId</span> <span class="kw">as</span> <span class="ident">BabeId</span>;
 <span class="kw">use</span> <span class="ident">sp_core</span>::{<span class="ident">sr25519</span>, <span class="ident">Pair</span>, <span class="ident">Public</span>};
 <span class="kw">use</span> <span class="ident">sp_finality_grandpa</span>::<span class="ident">AuthorityId</span> <span class="kw">as</span> <span class="ident">GrandpaId</span>;
-<span class="kw">use</span> <span class="ident">sp_runtime</span>::<span class="ident">traits</span>::{<span class="ident">IdentifyAccount</span>, <span class="ident">Verify</span>};
+<span class="kw">use</span> <span class="ident">sp_runtime</span>::{
+    <span class="ident">traits</span>::{<span class="ident">IdentifyAccount</span>, <span class="ident">Verify</span>},
+    <span class="ident">Perbill</span>,
+};
 
 <span class="kw">type</span> <span class="ident">AccountPublic</span> <span class="op">=</span> <span class="op">&lt;</span><span class="ident">Signature</span> <span class="kw">as</span> <span class="ident">Verify</span><span class="op">&gt;</span>::<span class="ident">Signer</span>;
+
+<span class="comment">/*
+use hex_literal::hex;
+use sp_core::crypto::UncheckedInto;
+use plasm_runtime::constants::currency::*;
+const STAGING_TELEMETRY_URL: &amp;str = &quot;wss://telemetry.polkadot.io/submit/&quot;;
+
+const PLASM_PROPERTIES: &amp;str = r#&quot;
+        {
+            &quot;ss58Format&quot;: 5,
+            &quot;tokenDecimals&quot;: 15,
+            &quot;tokenSymbol&quot;: &quot;PLM&quot;
+        }&quot;#;
+const PLASM_PROTOCOL_ID: &amp;str = &quot;plm&quot;;
+
+const DUSTY_PROPERTIES: &amp;str = r#&quot;
+        {
+            &quot;ss58Format&quot;: 5,
+            &quot;tokenDecimals&quot;: 15,
+            &quot;tokenSymbol&quot;: &quot;PLD&quot;
+        }&quot;#;
+const DUSTY_PROTOCOL_ID: &amp;str = &quot;pld&quot;;
+*/</span>
 
 <span class="doccomment">/// Node `ChainSpec` extensions.</span>
 <span class="doccomment">///</span>
@@ -250,21 +1168,26 @@
 }
 
 <span class="doccomment">/// Helper function to generate controller and session key from seed</span>
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_authority_keys_from_seed</span>(<span class="ident">seed</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) <span class="op">-</span><span class="op">&gt;</span> (<span class="ident">AccountId</span>, <span class="ident">BabeId</span>, <span class="ident">GrandpaId</span>) {
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_authority_keys_from_seed</span>(<span class="ident">seed</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) <span class="op">-</span><span class="op">&gt;</span> (<span class="ident">AccountId</span>, <span class="ident">BabeId</span>, <span class="ident">GrandpaId</span>, <span class="ident">LockdropId</span>) {
     (
         <span class="ident">get_account_id_from_seed</span>::<span class="op">&lt;</span><span class="ident">sr25519</span>::<span class="ident">Public</span><span class="op">&gt;</span>(<span class="ident">seed</span>),
         <span class="ident">get_from_seed</span>::<span class="op">&lt;</span><span class="ident">BabeId</span><span class="op">&gt;</span>(<span class="ident">seed</span>),
         <span class="ident">get_from_seed</span>::<span class="op">&lt;</span><span class="ident">GrandpaId</span><span class="op">&gt;</span>(<span class="ident">seed</span>),
+        <span class="ident">get_from_seed</span>::<span class="op">&lt;</span><span class="ident">LockdropId</span><span class="op">&gt;</span>(<span class="ident">seed</span>),
     )
 }
 
-<span class="kw">fn</span> <span class="ident">session_keys</span>(<span class="ident">babe</span>: <span class="ident">BabeId</span>, <span class="ident">grandpa</span>: <span class="ident">GrandpaId</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">SessionKeys</span> {
-    <span class="ident">SessionKeys</span> { <span class="ident">babe</span>, <span class="ident">grandpa</span> }
+<span class="kw">fn</span> <span class="ident">session_keys</span>(<span class="ident">babe</span>: <span class="ident">BabeId</span>, <span class="ident">grandpa</span>: <span class="ident">GrandpaId</span>, <span class="ident">lockdrop</span>: <span class="ident">LockdropId</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">SessionKeys</span> {
+    <span class="ident">SessionKeys</span> {
+        <span class="ident">babe</span>,
+        <span class="ident">grandpa</span>,
+        <span class="ident">lockdrop</span>,
+    }
 }
 
 <span class="kw">fn</span> <span class="ident">testnet_genesis</span>(
     <span class="ident">initial_authorities</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">AccountId</span><span class="op">&gt;</span>,
-    <span class="ident">keys</span>: <span class="ident">Vec</span><span class="op">&lt;</span>(<span class="ident">AccountId</span>, <span class="ident">BabeId</span>, <span class="ident">GrandpaId</span>)<span class="op">&gt;</span>,
+    <span class="ident">keys</span>: <span class="ident">Vec</span><span class="op">&lt;</span>(<span class="ident">AccountId</span>, <span class="ident">BabeId</span>, <span class="ident">GrandpaId</span>, <span class="ident">LockdropId</span>)<span class="op">&gt;</span>,
     <span class="ident">endowed_accounts</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">AccountId</span><span class="op">&gt;</span><span class="op">&gt;</span>,
     <span class="ident">sudo_key</span>: <span class="ident">AccountId</span>,
 ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">GenesisConfig</span> {
@@ -292,7 +1215,7 @@
 <span class="doccomment">/// Helper function to create GenesisConfig</span>
 <span class="kw">fn</span> <span class="ident">make_genesis</span>(
     <span class="ident">initial_authorities</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">AccountId</span><span class="op">&gt;</span>,
-    <span class="ident">keys</span>: <span class="ident">Vec</span><span class="op">&lt;</span>(<span class="ident">AccountId</span>, <span class="ident">BabeId</span>, <span class="ident">GrandpaId</span>)<span class="op">&gt;</span>,
+    <span class="ident">keys</span>: <span class="ident">Vec</span><span class="op">&lt;</span>(<span class="ident">AccountId</span>, <span class="ident">BabeId</span>, <span class="ident">GrandpaId</span>, <span class="ident">LockdropId</span>)<span class="op">&gt;</span>,
     <span class="ident">balances</span>: <span class="ident">Vec</span><span class="op">&lt;</span>(<span class="ident">AccountId</span>, <span class="ident">Balance</span>)<span class="op">&gt;</span>,
     <span class="ident">root_key</span>: <span class="ident">AccountId</span>,
     <span class="ident">enable_println</span>: <span class="ident">bool</span>,
@@ -313,6 +1236,16 @@
         <span class="comment">// pallet_dapps_staking: Some(DappsStakingConfig {</span>
         <span class="comment">//     ..Default::default()</span>
         <span class="comment">// }),</span>
+        <span class="ident">pallet_plasm_lockdrop</span>: <span class="prelude-val">Some</span>(<span class="ident">PlasmLockdropConfig</span> {
+            <span class="comment">// Alpha2: 0.44698108660714747</span>
+            <span class="ident">alpha</span>: <span class="ident">Perbill</span>::<span class="ident">from_parts</span>(<span class="number">446_981_087</span>),
+            <span class="comment">// Price in cents: BTC $9000, ETH $200</span>
+            <span class="ident">dollar_rate</span>: (<span class="number">9_000</span>, <span class="number">200</span>),
+            <span class="ident">vote_threshold</span>: <span class="number">1</span>,
+            <span class="ident">positive_votes</span>: <span class="number">1</span>,
+            <span class="comment">// Start from launch for testing purposes</span>
+            <span class="ident">lockdrop_bounds</span>: (<span class="number">0</span>, <span class="number">1_000_000</span>),
+        }),
         <span class="ident">pallet_session</span>: <span class="prelude-val">Some</span>(<span class="ident">SessionConfig</span> {
             <span class="ident">keys</span>: <span class="ident">keys</span>
                 .<span class="ident">iter</span>()
@@ -320,7 +1253,7 @@
                     (
                         <span class="ident">x</span>.<span class="number">0</span>.<span class="ident">clone</span>(),
                         <span class="ident">x</span>.<span class="number">0</span>.<span class="ident">clone</span>(),
-                        <span class="ident">session_keys</span>(<span class="ident">x</span>.<span class="number">1</span>.<span class="ident">clone</span>(), <span class="ident">x</span>.<span class="number">2</span>.<span class="ident">clone</span>()),
+                        <span class="ident">session_keys</span>(<span class="ident">x</span>.<span class="number">1</span>.<span class="ident">clone</span>(), <span class="ident">x</span>.<span class="number">2</span>.<span class="ident">clone</span>(), <span class="ident">x</span>.<span class="number">3</span>.<span class="ident">clone</span>()),
                     )
                 })
                 .<span class="ident">collect</span>::<span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span><span class="op">&gt;</span>(),
@@ -341,10 +1274,859 @@
     }
 }
 
+<span class="doccomment">/// Plasm testnet file config.</span>
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">dusty_config</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">ChainSpec</span> {
+    <span class="ident">ChainSpec</span>::<span class="ident">from_json_bytes</span>(<span class="kw-2">&amp;</span><span class="macro">include_bytes</span><span class="macro">!</span>(<span class="string">&quot;../res/dusty.json&quot;</span>)[..]).<span class="ident">unwrap</span>()
+}
+
+<span class="comment">/*
+/// Dusty native config.
+pub fn dusty_config() -&gt; ChainSpec {
+    ChainSpec::from_genesis(
+        &quot;Dusty&quot;,
+        &quot;dusty2&quot;,
+        ChainType::Live,
+        dusty_genesis,
+        vec![],
+        Some(sc_telemetry::TelemetryEndpoints::new(vec![(STAGING_TELEMETRY_URL.to_string(),0)]).unwrap()),
+        Some(DUSTY_PROTOCOL_ID),
+        serde_json::from_str(DUSTY_PROPERTIES).unwrap(),
+        Default::default(),
+    )
+}
+
+fn dusty_genesis() -&gt; GenesisConfig {
+    let authorities = vec![
+        hex![&quot;16eb796bee0c857db3d646ee7070252707aec0c7d82b2eda856632f6a2306a58&quot;].into(),
+        hex![&quot;48cdc7ef880c80e8475170f206381d2cb13a87c209452fc6d8a1e14186d61b28&quot;].into(),
+        hex![&quot;38cdc7ef880c80e8475170f206381d2cb13a87c209452fc6d8a1e14186d61b28&quot;].into(),
+        hex![&quot;28cdc7ef880c80e8475170f206381d2cb13a87c209452fc6d8a1e14186d61b28&quot;].into(),
+        hex![&quot;18cdc7ef880c80e8475170f206381d2cb13a87c209452fc6d8a1e14186d61b28&quot;].into(),
+    ];
+
+    let keys = vec![
+(
+  hex![&quot;fc1aae21d970b0b6afcb78328cf7aac17e6e9b111be2954613a7e845eb292259&quot;].into(),
+  hex![&quot;ee1c3251c6d423e6a3d5fa3b52526044835a7b754f4c0d83a3ce9cfada23e357&quot;].unchecked_into(),
+  hex![&quot;3d531ea1cb447b7ba1477b5373c69dbd0b990a15093ef23d82cd62f486f248bc&quot;].unchecked_into(),
+),
+(
+  hex![&quot;c04d072348343f8df51745269e90f2914eb3ce1046da3d51cda7e664b71d7047&quot;].into(),
+  hex![&quot;acbd9a668bf8ef12769db3970d31387cea3d0ebe6230bc57d0d027290fed0865&quot;].unchecked_into(),
+  hex![&quot;c237a2dbd94db917b17dc66fefe25bde814ba6578daec2d572a5dd1d2c05150a&quot;].unchecked_into(),
+),
+(
+  hex![&quot;aaed9c9603a9b7689d0758230796529d250a10b1491a423324f7fdeab31c7c29&quot;].into(),
+  hex![&quot;f8c8726828f75c764eed6e7a7eb6005523c827a7438e7981c96d3862b5ef444d&quot;].unchecked_into(),
+  hex![&quot;5b0dd3c4f247ba582bffc5839dd5ed4e48ef3ec436c62762354f0ebbfab4b147&quot;].unchecked_into(),
+),
+(
+  hex![&quot;541e44342fcf707927f33a053b0f1af7ea5d7bfbded04e56f06d0f07b1d1a872&quot;].into(),
+  hex![&quot;66204f3605b5f19540179374673a0de0ce32f1a0432093346e6c150b1cc27657&quot;].unchecked_into(),
+  hex![&quot;b1dca18428ef3999cf5e0464007fa5578b254c02887c83ac91866d68b8f0608f&quot;].unchecked_into(),
+),
+(
+  hex![&quot;107d4ed95a4a60c30c2aad70e8db902a937a1bbe65533de18bd6e61b00971400&quot;].into(),
+  hex![&quot;38397545b0cbda6ed09ab7c8afee6fc13948356ef606faf6164857e509e48b78&quot;].unchecked_into(),
+  hex![&quot;4134f2e2c31dfc6848b513de7caf3588a5640dc3fea15caf0821b14b91e9ec8d&quot;].unchecked_into(),
+),
+(
+  hex![&quot;e6c2da882ea18eb43ce2e3193e35dc89279192eae9a75552b908f150cbf9b367&quot;].into(),
+  hex![&quot;149af4d7e3e2b24e1f316f2902e73918c74c5947dc737d02e9998e67c810b848&quot;].unchecked_into(),
+  hex![&quot;574016f121d1874a3e06c69a29960e3c0382c58ec7bf9c246c4086d591438c39&quot;].unchecked_into(),
+),
+(
+  hex![&quot;38cdc7ef880c80e8475170f206381d2cb13a87c209452fc6d8a1e14186d61b28&quot;].into(),
+  hex![&quot;d409311bae981d87dee63d4c799723a33d509d7388db4c530a10e607937e547d&quot;].unchecked_into(),
+  hex![&quot;36aaade466263a00ec16a1a1c301636ff8488fc28a08e6a7eca7ac8496e35dca&quot;].unchecked_into(),
+),
+(
+  hex![&quot;de03a8a4f772c7d02f2491f95a8dd5cc2fc293fe07758164fcb7884e225fff14&quot;].into(),
+  hex![&quot;f0fb6d0c7e69642eff3e3299b04278300d7f3fe8a126a6a163183860bbd5a233&quot;].unchecked_into(),
+  hex![&quot;b4e47756b593a656407d1c30d00a7e3ef8b1a65676d86c244db231be4760b29e&quot;].unchecked_into(),
+),
+(
+  hex![&quot;2013c8dab5879faf64f9b38ba00cb38711eeb9ad8d0cd7b71433e53e4ee82c20&quot;].into(),
+  hex![&quot;e2e11da3cc2c4e3f74a771211672a5e4cc01d1ab209efd1b8ee9479b22992d19&quot;].unchecked_into(),
+  hex![&quot;b9f5ca1dd840c0691443de7215f849808a606c2428d0481e04a22394fba366d0&quot;].unchecked_into(),
+),
+(
+  hex![&quot;08514468942850978698ddaba8321a2a94aaf45e62071c3eea1f4b0cb488b80a&quot;].into(),
+  hex![&quot;384d97f1e92052c325e79c2d07338cbd0b0772aad2f8d6731d48b0684a920103&quot;].unchecked_into(),
+  hex![&quot;014e74d4646986a0d7b9d5e2566d9b235c7c6b814e94f893e5ab675fecb13039&quot;].unchecked_into(),
+),
+(
+  hex![&quot;48cdc7ef880c80e8475170f206381d2cb13a87c209452fc6d8a1e14186d61b28&quot;].into(),
+  hex![&quot;70887b6d5241f2483fd7f199697a2f4ccfe3aedbfa60fe0c82fe476a4b08a320&quot;].unchecked_into(),
+  hex![&quot;c62110354d58905bbfa894a1d82f0c175dfc7720758b28d18bc2118ef5f54f91&quot;].unchecked_into(),
+),
+(
+  hex![&quot;d8a52ea6f51afc4b356e1bf77525eb5ccf6f10ff1896a0a77108d4e1915d2214&quot;].into(),
+  hex![&quot;cce1120b343fc80d66147d67ffc03731e40e026578e605939b6d872f40133271&quot;].unchecked_into(),
+  hex![&quot;eab0601b064b991604311e2a08132176edd6948bb9f88b856c55e91886cbdc13&quot;].unchecked_into(),
+),
+(
+  hex![&quot;1e7bb944c3caef2c30c3b1493a293f5a422a2b673903a7be4365664297bb8f2d&quot;].into(),
+  hex![&quot;92eea8c97f28fbd3905d741cd5895dd544e1ff641b08042c96787dbe157a4675&quot;].unchecked_into(),
+  hex![&quot;cfc3a70abb269da4984a06d4f8264bdacbbff3e53ea7d7ceb5baf342533d52a3&quot;].unchecked_into(),
+),
+(
+  hex![&quot;16eb796bee0c857db3d646ee7070252707aec0c7d82b2eda856632f6a2306a58&quot;].into(),
+  hex![&quot;ac2bbc1877441591e997a7bd8043f4df4f7ca69bd05a762b0661ec376f64f551&quot;].unchecked_into(),
+  hex![&quot;0e95fb00ea007cd02b7b0065840d4572aeab5dbf77f148a62330168e7092703d&quot;].unchecked_into(),
+),
+(
+  hex![&quot;f614c390ecc98e9097b6f214b5c2f6ddd4b671344d10dcdc0946b297b35e9668&quot;].into(),
+  hex![&quot;0ab54955fdb81295515e7485edf056c305730f03de724d8d147d2bb45336bb37&quot;].unchecked_into(),
+  hex![&quot;a197b24b68c9bd6de1b9a2056640dea68937d486f793b14d54c53324bc91b077&quot;].unchecked_into(),
+),
+(
+  hex![&quot;a0ee2ec1b74695028a995e43e35e6528f945eb119c80affbcfb53bfcd0029266&quot;].into(),
+  hex![&quot;786e41ca6b5300d45e3abe1388e0e5c00e3462f226621c9aacc094d99132cd5a&quot;].unchecked_into(),
+  hex![&quot;c7c04477cce92f1ef5362f1ee0d4d91ea3dedfb7fcb55dbd07bef51c2f2955fc&quot;].unchecked_into(),
+),
+(
+  hex![&quot;cd4f9d12775488ee2457d1e0389cd0d07c77d055f5e1477a13fb92c24a761221&quot;].into(),
+  hex![&quot;9ebdf67000283f4b475547fb844478c68e81caa64a0da55e244910018f3c3e0a&quot;].unchecked_into(),
+  hex![&quot;9eab5bc89dbb9f7d4b376f70f8a7643492a5693285f387f2e79e90489778f08c&quot;].unchecked_into(),
+),
+(
+  hex![&quot;2eaf514f45bfc1611dbd8aa3191a3985dea267d8b59aae9efb6af068b2d6853b&quot;].into(),
+  hex![&quot;0812bd6e89091b8c99d51f11f0e5e6d425bdfa13c80095c7491211b0ef45ab11&quot;].unchecked_into(),
+  hex![&quot;f08291af69651f253ac168c81f6a3d03f1a6668c2e56032c8e1e947510d6f9e5&quot;].unchecked_into(),
+),
+(
+  hex![&quot;602e2ee1447eeb0662cfdb617f96cbf76a9d3a0fcf667cfe202aa2627db14e4a&quot;].into(),
+  hex![&quot;eaae3115e78550f2dfbaf548cc2862b79557ce762c063c766171a57730cc2c70&quot;].unchecked_into(),
+  hex![&quot;70bf98c6b0ab7a61aefa99cd462a03c64829e05e61b0eabb838faa952cfcd811&quot;].unchecked_into(),
+),
+(
+  hex![&quot;0c695fb78934ff885c4cec07327787c0be3d83079a3c4074a397248a5804733d&quot;].into(),
+  hex![&quot;026a1e18a3d29028fe9f8797e79f3c7335b23905d9dbb427f92fcc08bc6b4041&quot;].unchecked_into(),
+  hex![&quot;92e475a2ee36409bcb57ef00dd766888c50f99394672fa6d219570f1c201ee98&quot;].unchecked_into(),
+),
+(
+  hex![&quot;060ef168436268aad1a48384a82308d1a9e70c90064e385ee166f421532aa324&quot;].into(),
+  hex![&quot;1827624d5bbfdf6219cd1af151d522d5a5acfe2dd3d2bce664e9749d3b9d7865&quot;].unchecked_into(),
+  hex![&quot;9767cae477eb66b5b05f0d5c689805ce19af689f58f99f31b068bdd80c1f588a&quot;].unchecked_into(),
+),
+(
+  hex![&quot;ad6e9c078a9744d27b74dde59b4eb74165007a630e1231259e2688d10e14b376&quot;].into(),
+  hex![&quot;8427589e9bb3f16cb584a9fccdc0a64e9397a987bf5e7b955967a0b6c01ea775&quot;].unchecked_into(),
+  hex![&quot;d25f1a4214f13a2102d0007881c4e468be1020155f505f2bf1e46f3f8631d646&quot;].unchecked_into(),
+),
+(
+  hex![&quot;063ca9dbfff008a45135d4f1ddb29431c56711ddf4d705198b4fde441b2f125d&quot;].into(),
+  hex![&quot;5619c0512a47f90f791192393631c21aba0cd27dfea427cc449aef59d40ca61b&quot;].unchecked_into(),
+  hex![&quot;f477042eb78682ee01b7d62f1de056d9cd41bde6b5c2b0d97fa8737e13b30fc3&quot;].unchecked_into(),
+),
+(
+  hex![&quot;006e82dff492a445c51290b83f386f575b9f828bbe9cd50cc4787c2db8e3d039&quot;].into(),
+  hex![&quot;64ea6db51ae4747df8b8b997a4076f6c31e92e2d6244aa2701f7dff15592d129&quot;].unchecked_into(),
+  hex![&quot;7ed76fb858498586de4157426b09e5d84a0eec83149f06e4ce55b501def1059f&quot;].unchecked_into(),
+),
+(
+  hex![&quot;02d8afbd3a0cd892deebaac4db9aec1d99d6a909de745956da334e0837ac293a&quot;].into(),
+  hex![&quot;1c74b2b3b0281be3c465a827a89fdbb5ca0274b3e34e08ac4a0be7b229ccbf6d&quot;].unchecked_into(),
+  hex![&quot;ff5583653f62a53d5821f036841db63deb0a68225bfa59a94360a4536cfe3270&quot;].unchecked_into(),
+),
+(
+  hex![&quot;21a656d9462cd3efc67f7c8b4ffec3a786b581c0237aa850c08ec8c622e0a42c&quot;].into(),
+  hex![&quot;26a6cf41799cf1da305427833b8f83a863b4e3918cff066adc81ea973f18e055&quot;].unchecked_into(),
+  hex![&quot;2a2c2e1dfcc930a1e9d05d8b268fe428dad1c58f830c082f77b51046e41079fc&quot;].unchecked_into(),
+),
+(
+  hex![&quot;24f5a801612f9f7de9da11c3f2229b858f279cc694158ce68be87de01c7ca7fc&quot;].into(),
+  hex![&quot;c2c38791c020acb4866772dec67b41bef489b4d2335a1e097bddc62bfdbed46f&quot;].unchecked_into(),
+  hex![&quot;1b89862a8a21059c678b9d22ab65442de7443c85860fce2f6d7288ecb10756ed&quot;].unchecked_into(),
+),
+(
+  hex![&quot;5e9358d949d35ec66c56e16358471ff8a8a67835fb719fd78e356ce935a3982b&quot;].into(),
+  hex![&quot;76f0c33fe35a156839a340cea6db4cebe9338acd8d4fea4701bcb5547d04eb60&quot;].unchecked_into(),
+  hex![&quot;6a857bf01b82589ce8c96243056c0c7a04558abec31ca9c165dfad49655fa77e&quot;].unchecked_into(),
+),
+(
+  hex![&quot;000e79ea1782c8e00840cd29fed1f68d000bc34a8ed101e251048f4046046743&quot;].into(),
+  hex![&quot;82c96aa6fffcb8c956db1d540f1d2ca9433fb6d67be6dc686369638d4321103d&quot;].unchecked_into(),
+  hex![&quot;e186e108390662ed812270f518b178b679e9a5b160d3d9184bfd229cdd48fdb3&quot;].unchecked_into(),
+),
+(
+  hex![&quot;7032393626db6a8238a275ae047c9704aac7445f94cccdca95eb26102ef6fc75&quot;].into(),
+  hex![&quot;3ce30be3fa13e35357809ec0e011c522dc796338ab688fd3fd6fd5e41fd00b44&quot;].unchecked_into(),
+  hex![&quot;f76b93f631c5dcc0f94eff47591200967c72b30fd83a9a9e04710f460b1dc4de&quot;].unchecked_into(),
+),
+(
+  hex![&quot;de56110ce7ab81e4777c16b0cf2880cc4473462e88550c985644546ed46e383b&quot;].into(),
+  hex![&quot;42bfcdb8668f9432389a7971b51065590f2d28d077b52efebd24f120af5f4407&quot;].unchecked_into(),
+  hex![&quot;863dd4f9a38e301e3d1be371df46d5def055a93993e9a3273f833e12db69a671&quot;].unchecked_into(),
+),
+(
+  hex![&quot;56edbf0dfecfcbec73edb5701d56b3488b97e0388589d3ce70eb4d25bf6acf3d&quot;].into(),
+  hex![&quot;c4f72265a7a5cd16f1cfb8461dc64bb4efcebf552f03dc8acad672a73380c054&quot;].unchecked_into(),
+  hex![&quot;27db04964074313a8cf6653090702d706492508531408fc4c2f5665bd0584c91&quot;].unchecked_into(),
+),
+(
+  hex![&quot;94ac70f400728b7fe1030a703853f05413e9386d50f513466367fbef46f41316&quot;].into(),
+  hex![&quot;32a00f91cd9d83bdea08e66bcb3c4cc852ad42e5b8860ba20930d0c45d0f6117&quot;].unchecked_into(),
+  hex![&quot;63cfe9651258ef2397f57f8dd43dbfc455d6a4cbba9277c5adb04a4024283719&quot;].unchecked_into(),
+),
+(
+  hex![&quot;d860803924ca921e916ea56fcb396093fb99b36b052cad2739b9a8c23744a52e&quot;].into(),
+  hex![&quot;364e5a1a9c229dc165b22768757c013b4af3302e55b11e788b5c3b04c205e57a&quot;].unchecked_into(),
+  hex![&quot;0521653470d697fb151c7e13788d3e4a3f4a793e41bf2fa638d8467f8d924a19&quot;].unchecked_into(),
+),
+(
+  hex![&quot;52dcfe67119a6717dd8cacf36d262e247f604769a5b71700da9a5a605b759366&quot;].into(),
+  hex![&quot;60dde8b38c6f6e187d512adcfbb6c02dc2ed88c0d2281657693e6d0cdd4a7818&quot;].unchecked_into(),
+  hex![&quot;87afbb714cde47eef1a1e441fec98bd28bfe8d3cb690f4dfc8e9668e5e0665ed&quot;].unchecked_into(),
+),
+(
+  hex![&quot;62e88eb06eac67700dc018429743435f893a3ef850802f4666f55fcfe443342d&quot;].into(),
+  hex![&quot;92ed3ee02ce65d7bb91ffd12bb686a7da77dd94df5de69b18e3fa5bdd1bfb543&quot;].unchecked_into(),
+  hex![&quot;d66aff5e3e065ec92d90181bbdfc138f28879e6834ea094411aafb8d64a7f83e&quot;].unchecked_into(),
+),
+(
+  hex![&quot;fa6fceebf2766e46e75155faa520e30f34d80623dbef9fb26f087ec37b896861&quot;].into(),
+  hex![&quot;24317f9e97d88ee88fe0056cce22cce075852319e772e26a323f7288f744e340&quot;].unchecked_into(),
+  hex![&quot;d1df0d13369d952df1732552c58197deaf77978ce1d9d3fc8386af67ee8a717e&quot;].unchecked_into(),
+),
+(
+  hex![&quot;945f0d53f5b08a1d33fb55d997c07444c2eaca05ffb9eb7bae5cdc7fea23c318&quot;].into(),
+  hex![&quot;28af14391f19aab7c6199b6b538050dfbbaea7d24e0cbc5da8f8aca60b9b1f45&quot;].unchecked_into(),
+  hex![&quot;9b6673aeb5236dc51255ca3843ce23f17ca572c34936fa8d5d5edb373fe475ed&quot;].unchecked_into(),
+),
+(
+  hex![&quot;9aa1da29936ea43568224e14e13f61385034b8c25a24e4ae98a0a7f6b71b9b55&quot;].into(),
+  hex![&quot;b070cdd1f2a825b1227c846cd1cb3cd9074bfd4faed9f3faa99fefeef9d18967&quot;].unchecked_into(),
+  hex![&quot;6d3fece47142ea4e1cf6d53b729827ed6f13d756aec1af773f55ebd1e2b3eb18&quot;].unchecked_into(),
+),
+(
+  hex![&quot;2e40fad89da106f5f4250fb8f28d28a0961fe73c88f3101228f53be08aaab06c&quot;].into(),
+  hex![&quot;36877d9006c381a128a955582d9761feadbd3f7f37b08208a6b347654472ac6a&quot;].unchecked_into(),
+  hex![&quot;1fad60e62397d7909dd04e8f94698fcea625ed87e1a6c2af7e6e153c076046aa&quot;].unchecked_into(),
+),
+(
+  hex![&quot;821fa8107191bbc16eef51b9e3a35cdb402aefbb36de6e9d1583f6ee91c6be49&quot;].into(),
+  hex![&quot;2c5d07dd23f7392128f82b1d973f21fed047b8391c3b3def4bbd06cf7df41b04&quot;].unchecked_into(),
+  hex![&quot;3d0c24f39ca982633e5b63511302a067a9f936681e6c04527784218b0ff710d2&quot;].unchecked_into(),
+),
+(
+  hex![&quot;e09e5e7c39f0848410b0a3617fa8c920be4598d976d11a025dfd8eb4d7ce8f2f&quot;].into(),
+  hex![&quot;f4360627770becece1d09da5130670e74217af351c108af600b509d99265203a&quot;].unchecked_into(),
+  hex![&quot;0f6eb79b35b0f3ddeb6cb5776b803052acd916a53fcefa186a68b30cdf9ac68c&quot;].unchecked_into(),
+),
+(
+  hex![&quot;4e778f6ece78fa8524b14bde9adb2be75e74f13b73ddd8cdb4a700c21fd3d978&quot;].into(),
+  hex![&quot;d2e5848e4fc29c3c01f6cca442fe140f2988ae1b157513e875687e21a2e7906b&quot;].unchecked_into(),
+  hex![&quot;ceb2a6d105554a47ddab55a9cfb76774844cf8b543baaa3ea3e726310bc79dd3&quot;].unchecked_into(),
+),
+(
+  hex![&quot;66364e54f63081d4f956c5c510a8eed37850a765474f01aba0d7f0dcd65faa7a&quot;].into(),
+  hex![&quot;0089d9a9cfce6077b049643acb01888bb85484691864a2a0730f41750af6304a&quot;].unchecked_into(),
+  hex![&quot;946ca07c9b08994f50a626886b1127e4630e2faed9d487eb2af60383bbb6550e&quot;].unchecked_into(),
+),
+(
+  hex![&quot;dced9ad2bc97292196fcc12990188c3ec126164cfe4d36d1a51cc8705d42202c&quot;].into(),
+  hex![&quot;c6ebbfffac85fb080cd3f3167f185ebb25c39958757932b3efa8c68e5e10df7c&quot;].unchecked_into(),
+  hex![&quot;2eed080f401001178600bf706ff621ef623c6de318a58c81298513fa17fe2d05&quot;].unchecked_into(),
+),
+(
+  hex![&quot;68de548ba668b1048aa523d6a750bd29d7a530b3928b6cfe632b516bd615aa14&quot;].into(),
+  hex![&quot;3c47f526e568b15d1a76613f13fbd3e4df523d6511fc0fda8da655f041a84b0e&quot;].unchecked_into(),
+  hex![&quot;e1d0dd965adfa10341c7e902132731808e2848eb59ea4327f9c05032c4b94a67&quot;].unchecked_into(),
+),
+(
+  hex![&quot;0c59155a3aa107e57cc6461ba08ef77febfd7578b52e946d17e86a7bc8d52645&quot;].into(),
+  hex![&quot;f406fe06c20fa69038a330b7c9378bec802db4738a9e208911fa0dbf79cf5476&quot;].unchecked_into(),
+  hex![&quot;c8ebff4a77e9fdfcd937677b00d1cab112eeeece8923077002ec7404b5374ed0&quot;].unchecked_into(),
+),
+(
+  hex![&quot;e48c4a22611aa3f0714ec271941b09e6be092027ca5c005d0c78d6ee1fef2d53&quot;].into(),
+  hex![&quot;2675c4ab6a2afbcbefb57d60508cf81235bf961c06bc99658c0dedcc9d5ec86f&quot;].unchecked_into(),
+  hex![&quot;fed146a416464ebefdb0d48f382fd74865c9d302edfe53ed90e89f8db74ab399&quot;].unchecked_into(),
+),
+(
+  hex![&quot;92d3b3f42b2f444b8a1330d8bf1eecaee3ae6c3ead00b1f63bc31a4231468206&quot;].into(),
+  hex![&quot;26a26e41dbf41218cd61b76256db70bcb8a6a437105800f5410ad74519ab792e&quot;].unchecked_into(),
+  hex![&quot;63a09431a5de4b597094cc188c917ff418e0812d0ff56f9c053c1caeb3e337aa&quot;].unchecked_into(),
+),
+(
+  hex![&quot;c8fc74ea0431f0c642fdfaae6a2e6173cb4a43cfd94b2afb3e30b343bfe15c6c&quot;].into(),
+  hex![&quot;9c23b65c2b253440a2c48f3b46bcbb4f213346a7ec3851b8ad17ea4dda28c73f&quot;].unchecked_into(),
+  hex![&quot;946c780ee034ce68eb97eb479331c436b89341c5980259b8c793d6cf8aed849a&quot;].unchecked_into(),
+),
+(
+  hex![&quot;d8a5747a71fb9e8b49d7d87948bdec26656d6aa0c70ec81d09f9b6d5744c5e63&quot;].into(),
+  hex![&quot;3a5e7a51fd41f9ee4cd0c3d727a409754d98d487a38c63cc68f7277cc8c84256&quot;].unchecked_into(),
+  hex![&quot;61a3db89d6624751a2fb01f03e988c567d305305e3a91639ab87c29e299d8834&quot;].unchecked_into(),
+),
+(
+  hex![&quot;ea3b4a5835fd45a5a870df5ca5785e4d8b00881e01d095226553fb7a1bc85f34&quot;].into(),
+  hex![&quot;a2918577bfb33e3c47a32596e0616f379d244bee6d82e442879f6ccc3ea2556b&quot;].unchecked_into(),
+  hex![&quot;9db7da88f760c60278f1970a8625cf3be76951b635eb422c49f30ab97e6a8c97&quot;].unchecked_into(),
+),
+(
+  hex![&quot;ba491c2dd981181506989741a602f794b5a5c63063b27005e6e224bd681a8501&quot;].into(),
+  hex![&quot;72dbce9fc860c3020118a7e37144fadc1fe73df7c15d526ffcc082e6317aa30f&quot;].unchecked_into(),
+  hex![&quot;5f0944debcda5b264e2dc52a50dda1c563208d5fce1a8a410bf2f9341bd7762b&quot;].unchecked_into(),
+),
+(
+  hex![&quot;164772c049dbf312f43bb3f081ff37efe23f4fcf1e49c87e0c194ef1cfb9553d&quot;].into(),
+  hex![&quot;0882a3631204c3c727ae9d72217edd3e5a300dd6158e869e4d2362c5096f6b1a&quot;].unchecked_into(),
+  hex![&quot;9657c96149f9d9cf96b47c1a67e74711add5f21f74c76c4216f13dce7da4a010&quot;].unchecked_into(),
+),
+(
+  hex![&quot;268fec229c5f13af5f5e3288cbe281a4a2c56e73c286c183f56457dfcfb9333c&quot;].into(),
+  hex![&quot;b6b9bc4772099c545698a4f5af3b38cf56a297079a89b4ce060c7debd7b43433&quot;].unchecked_into(),
+  hex![&quot;3a7bcc0ee0031b09c4c00c41a892a154c1e472c7504e03ff8c5d860c3fc44dfc&quot;].unchecked_into(),
+),
+(
+  hex![&quot;0c576d549721022073b2ab856d2138e9d144059660423063e36ec38511131c59&quot;].into(),
+  hex![&quot;5e15369efa0e0f13c0de08b7f84a67db9e71dec360a15dad40a979000060251f&quot;].unchecked_into(),
+  hex![&quot;4e8e4fab3271274874d12ae5de3f7bd9916a0a3b24a349343ebd6aea6f401221&quot;].unchecked_into(),
+),
+(
+  hex![&quot;1c33d683df494bd9c669d1c57eb5d3e2b12ec267dc4ca204ab14e38a1cf7991f&quot;].into(),
+  hex![&quot;b86524703276797c1d4ed3e718bf1e8ecc2789fe3bcd6186d49692d758330248&quot;].unchecked_into(),
+  hex![&quot;a226f3b5bf0ba22cd584e83300347dc78283fae1ff9415fa5da0078e803dd3e7&quot;].unchecked_into(),
+),
+(
+  hex![&quot;8a679616b3ea3c01cf6b3cffa447b544d3a51c50dd0a6429ed6e3b9626d19fbb&quot;].into(),
+  hex![&quot;9e97f067374823516cc4a70e63546550064c402a0ec12347d5e35ea27460b47f&quot;].unchecked_into(),
+  hex![&quot;39e726269bffe1276672d1f89b51b02d25a7ee419268341507633d773e97bbc2&quot;].unchecked_into(),
+),
+(
+  hex![&quot;6e645eed244a003b4316b756a6e5197585b0b54f0027efcf65f54a48f2f85b0c&quot;].into(),
+  hex![&quot;3ebd9bca4cd0436ad649ffe60d93de7c95dce91c9034c6872f228618d5c1af43&quot;].unchecked_into(),
+  hex![&quot;71037ecef701f8e439976b580dc778b90509a77faaaa1fc1c7c685fe5a5828eb&quot;].unchecked_into(),
+),
+(
+  hex![&quot;1d101d2ce73c5b5a0636a1384ca9e486f63f7e19c792ef3b0eaaa9925065e594&quot;].into(),
+  hex![&quot;c23a99a537091758f463f76a3691616a958c41fa4ec7e1533d364ecf78b78c00&quot;].unchecked_into(),
+  hex![&quot;cfb62ef7d85a4cec8ea4a84b23d0d40c5ad893d2021f5b91d3fd151992729a1a&quot;].unchecked_into(),
+),
+(
+  hex![&quot;7c2222c61bafd6ae1196f15c8930626e371cfe63a2c88b4a721e023d9b07d83e&quot;].into(),
+  hex![&quot;ae5d17ab235e9f958f6ff06db97112e446ff1d06664d818f158760976b38f11d&quot;].unchecked_into(),
+  hex![&quot;6e965bba6c73afc891d27be82e22e898d1d2b9de1d3cf9b98ec6f445d72bf1db&quot;].unchecked_into(),
+),
+(
+  hex![&quot;30c6ab03f332c9b941137856e9604a506aa9a4dd8280af941ca50b11589fa47b&quot;].into(),
+  hex![&quot;a8dbfb58e61523c4998d3280aa3b7d56f8ee46a5d7dfb0e7d4d02e78519d8f3c&quot;].unchecked_into(),
+  hex![&quot;868b6297e54d048570e0b077e4c267c25518e87a8fcfdcfba85eb182b209dce7&quot;].unchecked_into(),
+),
+(
+  hex![&quot;2e1005ecea36fc3af8c7a03992f9f383a8c0b065ced0d08006544c20b0390811&quot;].into(),
+  hex![&quot;cc54752f6204766548247988997e861f5e17bcffc7e46f071d4cf5c8786e1110&quot;].unchecked_into(),
+  hex![&quot;0bf19f1e4157b3dd9f9d31ef063777e3a98a1c88612eb677f5ed90708aefcfaf&quot;].unchecked_into(),
+),
+(
+  hex![&quot;4270c49a7fcabf7194d2fd31f0f0c36a308ce20429fd67d3343c7e2f92e74137&quot;].into(),
+  hex![&quot;5483b9f1ebd9ea96bcf4282edb448a52347b6c21ffc47ada1393e3c0ca065a03&quot;].unchecked_into(),
+  hex![&quot;fc9c3bab3c7e7f6eb7b38e015d1fd21b07a6e96c2cab9833dfb1ce153f86180c&quot;].unchecked_into(),
+),
+(
+  hex![&quot;18cdc7ef880c80e8475170f206381d2cb13a87c209452fc6d8a1e14186d61b28&quot;].into(),
+  hex![&quot;96e2554353e7a8de10a388a5dda42096d3c7768403f3735d0a939bc3fd39bc54&quot;].unchecked_into(),
+  hex![&quot;674bd4f2670c0e99edcccd5d3821c54b9d559580a31d8e2ca1e88c1e3db28021&quot;].unchecked_into(),
+),
+(
+  hex![&quot;380477b148049ca59005c2900f51467aaf438f113d5ab061c46e7fb35a145366&quot;].into(),
+  hex![&quot;bcc8c36a42db2d202f5138bbe52253d9f5a05fb87f24d334372c48111443f834&quot;].unchecked_into(),
+  hex![&quot;7e6cf47ef32500e0ab2ff5c29e1c23857ab75b99e688c0866a505a783d7f5178&quot;].unchecked_into(),
+),
+(
+  hex![&quot;cab842b5b724c427d49f3707d688dfa20dc65a488ad81b4cc4a850ad2435c146&quot;].into(),
+  hex![&quot;501b11e5926f9b39e3088ed570b70870cb0315a6135fb5f88772c65b8268b62c&quot;].unchecked_into(),
+  hex![&quot;0a1e9a1ae76fd1e286e6fb7f554640581c360745b4f5ddadcdcf17cc93e63114&quot;].unchecked_into(),
+),
+(
+  hex![&quot;dad22ccd9575d9c5a7290e9ce4984d08752b9d0ba0b9d1daac064a3c3cae0a62&quot;].into(),
+  hex![&quot;ba442fadbb1cfa6ea327a38411c0c765c0993d9131ac0c9267be85556b9aaf77&quot;].unchecked_into(),
+  hex![&quot;adc071861fede64a37c39d9a7bc5492baf8a83dab8214ddc9be240e8f2355438&quot;].unchecked_into(),
+),
+(
+  hex![&quot;10270887a7c74e7b858b70edba7d44c2905295d026e445933c094a0e29414236&quot;].into(),
+  hex![&quot;f0bc957cf56363494f4bac16434e547a2e651166215ae409fe49cb376dd4c031&quot;].unchecked_into(),
+  hex![&quot;9c1ee88efa1f48b1d5cea56df757897ecca77940336b24f0bd75cefaf7a6652f&quot;].unchecked_into(),
+),
+(
+  hex![&quot;806452676c107d381b4009e30b8485a055f4b452f59ba2ada16544609d83bb3b&quot;].into(),
+  hex![&quot;682ad0818dc86d028656df783b93d06e7ecb8dde784de5c88b8aa98b3b5a567a&quot;].unchecked_into(),
+  hex![&quot;1091b11ea548b414559c271ca57b9f1d1bfc34484a69ca34dee9fdbdf032f248&quot;].unchecked_into(),
+),
+(
+  hex![&quot;6cdd7d6626702113ab7efab250706e1e4088ea992e6731d15359dcadd145bb43&quot;].into(),
+  hex![&quot;082c87abc6c50905062361509041620725a5232e2022c41d36d0504c734d7e39&quot;].unchecked_into(),
+  hex![&quot;b19ff0313bad241b19fb56e181ffa264927a537997c89decdf402a9452eb10f9&quot;].unchecked_into(),
+),
+(
+  hex![&quot;a63d081cdb513000e391fbf73429146d996e06fb0b5582fa7df03b957325cf67&quot;].into(),
+  hex![&quot;0499455fc11905091355226fe0302e8a65cea48ce3d476d5881c946630c10446&quot;].unchecked_into(),
+  hex![&quot;ab6e39db5927225ac5ae2286209a5fc1eb8f16115269b2bd3cdfcc26d47861dc&quot;].unchecked_into(),
+),
+(
+  hex![&quot;580d98601f4fe25b7695117052812ee386029b35dcb919285d83e7077ac4f43d&quot;].into(),
+  hex![&quot;44803406bb5d9dc6662c1e51f9b98610c669fcbe9ea2b0672c46a65b6fdc4f32&quot;].unchecked_into(),
+  hex![&quot;1612f3416b1d5aaddffbce4f97b3a86fbf3eab2439880249276869b862310930&quot;].unchecked_into(),
+),
+(
+  hex![&quot;28cdc7ef880c80e8475170f206381d2cb13a87c209452fc6d8a1e14186d61b28&quot;].into(),
+  hex![&quot;266f53d34490e10e6c818a1f6208dd285a74c01e022cb3b725cf5888bc89136f&quot;].unchecked_into(),
+  hex![&quot;c379204b0b450bb62006a0df2b4abac72c79909248fc0f30ce0b05fcb9c102fa&quot;].unchecked_into(),
+),
+(
+  hex![&quot;7221943c63a943fea3385b99ea36238e6fe01a0b08292b32f4b733fe1fbbe400&quot;].into(),
+  hex![&quot;4468330ab7161db932a50dfe871acf81d5a55cfe6671e9d2be28f6d577249477&quot;].unchecked_into(),
+  hex![&quot;bc80657a8ecf6680c1f1106216c06ba2c2e0a17401b2a0a2fcb8efa40ed6b0b2&quot;].unchecked_into(),
+),
+(
+  hex![&quot;e6c925435af92c9d33201361951f4680bafdbc5269b54f9295a2dbedd63d857e&quot;].into(),
+  hex![&quot;5261a999c5f63712758d103799325fe167abb1caa6bcd2e77f523bda8f80f527&quot;].unchecked_into(),
+  hex![&quot;7aa5822d8c0900a21240740349863378e3f82d779e94d42b627243ee2198738a&quot;].unchecked_into(),
+),
+(
+  hex![&quot;34b3baf809571ac6d477f7e6210488843c931c29d8e3273c06cdf802c93eef48&quot;].into(),
+  hex![&quot;7ec007ca1082275cd14ae2a829ce1a39e10eba60669f315ffd5d274050c5fe70&quot;].unchecked_into(),
+  hex![&quot;8e3099fdebef9d44a4e86c71c3899fbe488548fb031189f8d39b3629bee21f54&quot;].unchecked_into(),
+),
+    ];
+
+    let balances = vec![
+(hex![&quot;f4fcabcfad50d265f2d8b3d4aff875b3f60319ac215f89152a7be0556025ae05&quot;].into(), 29989516668868002288),
+(hex![&quot;fc1aae21d970b0b6afcb78328cf7aac17e6e9b111be2954613a7e845eb292259&quot;].into(), 9751936046333727),
+(hex![&quot;c04d072348343f8df51745269e90f2914eb3ce1046da3d51cda7e664b71d7047&quot;].into(), 16387596802882729),
+(hex![&quot;f1bd686f19561df0f0db32d5f7fc19a70a15034eedfeb3ba3bb5d9ccba08ebe8&quot;].into(), 11135813174837015555),
+(hex![&quot;e723d57452606fc5cc469a0ebb2da56f4aec0bd9b93c0a849fb1a9e3a6a06e41&quot;].into(), 7349636695392430266),
+(hex![&quot;aaed9c9603a9b7689d0758230796529d250a10b1491a423324f7fdeab31c7c29&quot;].into(), 8743683578724740),
+(hex![&quot;296fa030d9a93244ddb4ccf31ed57ce585587b566f80dc562270d69e9b667980&quot;].into(), 105845352948945890),
+(hex![&quot;541e44342fcf707927f33a053b0f1af7ea5d7bfbded04e56f06d0f07b1d1a872&quot;].into(), 498530780769917636),
+(hex![&quot;e47105725f05de907e73607879fc5050b7bb335c9471d7ea1846dac423c9db2b&quot;].into(), 22271626349674031111),
+(hex![&quot;f2da18ae94f25ced9d57ae68e3b9fe0f19f712716179e687ff6c9443cac157f6&quot;].into(), 1984600367792735445553),
+(hex![&quot;f61de67c7cbb4ee1d7cc0622056481161b317d418f4e038e0510ad6b7a3f4898&quot;].into(), 176408921581576484049),
+(hex![&quot;6ddbd58a7e9d60ed113b669d4237f3b34b013a48bbd3ffc689e22f35b8508d30&quot;].into(), 297548928031645055643),
+(hex![&quot;b9131f11d6cfc2c9b0e33cba28e7ba97977d0adebfb8f28a8ba01b9d5a05adab&quot;].into(), 756317890738416),
+(hex![&quot;020828aec218c4a75719d054d25662567328e6790127b2aef0b64d0d6c155e83&quot;].into(), 1764089215815764840492),
+(hex![&quot;eaaa47341fad7f360095b2f8f943ae75bd806b3b55ed9c1c9c873c5fbdf56e86&quot;].into(), 26461338237236472),
+(hex![&quot;107d4ed95a4a60c30c2aad70e8db902a937a1bbe65533de18bd6e61b00971400&quot;].into(), 8554578310153003),
+(hex![&quot;4ed1e97e05bd07ed228d24bd57408ea70ea0ba2cf473e350e72dbadee494a509&quot;].into(), 193924324676133150),
+(hex![&quot;e09de189fee3550ff0010208f74b8431ecce3814c49cc90155a0164aa4760d32&quot;].into(), 54767442126382083),
+(hex![&quot;83d390f8fedb2c04119013ec7553a63704e500890b17c49ef6fe76e21301822d&quot;].into(), 31753605884683767128),
+(hex![&quot;e6c2da882ea18eb43ce2e3193e35dc89279192eae9a75552b908f150cbf9b367&quot;].into(), 8524143581738812),
+(hex![&quot;d556541527a56424170cc7670ec4d0b0dd17dd4f40ed9df885a20c587d459c49&quot;].into(), 2756389399712132563268),
+(hex![&quot;2ffa193a2d221cfeb3d2123bf61d87e90bad6503a16559cd1dbbef64515ccb65&quot;].into(), 286664497570061786580),
+(hex![&quot;2d4f14d0de122f5d1d3561818d1cebde491677fc5a134536d7c9cbaaa070ef2f&quot;].into(), 66814879049022093333),
+(hex![&quot;92530e994a5a459b2f918437389283c2dcc8ef57c5cb8acd307c684046a9a01b&quot;].into(), 16423097270249630541),
+(hex![&quot;2ef2e6dd79b88249c53afd5bbe6024686cf414177702860930b56314c053d18d&quot;].into(), 1764089215815764840),
+(hex![&quot;793c504f9c4955c1ce0ea89ba33e436e21042e2561b1d5ed4e5880ec8e27de18&quot;].into(), 17640892158157648404923),
+(hex![&quot;de03a8a4f772c7d02f2491f95a8dd5cc2fc293fe07758164fcb7884e225fff14&quot;].into(), 498314973974264488),
+(hex![&quot;2013c8dab5879faf64f9b38ba00cb38711eeb9ad8d0cd7b71433e53e4ee82c20&quot;].into(), 8613296426913769),
+(hex![&quot;88f2294352edc4fc9d43b5d7dbbd7fe6eebbe381d72e83af717613041387716c&quot;].into(), 303116834619063563422),
+(hex![&quot;3b87fd707ea6d907d2b1c4d4c87dda3228aacf4994352fdcf2314ed9f77dbb02&quot;].into(), 6615334559309118150),
+(hex![&quot;bf88967fac581f67e49185bdc826dd63d38659d3875daff7c82376bf48dc8759&quot;].into(), 739021074735619285802),
+(hex![&quot;08514468942850978698ddaba8321a2a94aaf45e62071c3eea1f4b0cb488b80a&quot;].into(), 98580301108476270),
+(hex![&quot;d8a52ea6f51afc4b356e1bf77525eb5ccf6f10ff1896a0a77108d4e1915d2214&quot;].into(), 8738576731439376),
+(hex![&quot;509ebc3da085b3d640850f9c5eb51d30ff79f61bc946784a4a63bb0aa21165bb&quot;].into(), 2205111519769706050615),
+(hex![&quot;3daf5f990e878e787d7995f9762d931a6ba2fa60ccc9a8b4afeefe30f7572d08&quot;].into(), 6879947941681482877),
+(hex![&quot;d0bfc5b76b9a163bf74d7001080b76125cbdeaa63c76976f342314a2f7152368&quot;].into(), 3969200735585470891107),
+(hex![&quot;62657a49010c09b9aa33204119d49203579d4964c7a28dccc2d51de40a6259ef&quot;].into(), 111358131748370155555),
+(hex![&quot;1e7bb944c3caef2c30c3b1493a293f5a422a2b673903a7be4365664297bb8f2d&quot;].into(), 8613537144374761),
+(hex![&quot;a39c92eaa1c8a20b02f671d836312c1a02889bd472351813d1c5dd881261a774&quot;].into(), 869695983397172066362),
+(hex![&quot;16eb796bee0c857db3d646ee7070252707aec0c7d82b2eda856632f6a2306a58&quot;].into(), 70998190125519226647515),
+(hex![&quot;ddebabf4d0311b50398c54a1bc7ea4b6869f4abc82877c361cade088ce5157a5&quot;].into(), 529226764744729452147),
+(hex![&quot;f614c390ecc98e9097b6f214b5c2f6ddd4b671344d10dcdc0946b297b35e9668&quot;].into(), 548586697324634080),
+(hex![&quot;e377c08ef23ddced91056e4fbfdd31b2d5269aab20cea7c72ebd5a3b3dbf7482&quot;].into(), 198460036779273544555),
+(hex![&quot;48f0543d0340008d0df38ef3146528227ee9fcbdb20e9d7b1bd3a3dbc8409056&quot;].into(), 1378791465243306),
+(hex![&quot;7d537592ba54cf7a97ab7700d07fa770bca56f27120d5d764d0b9373da5cf544&quot;].into(), 38589451595969855885),
+(hex![&quot;a0ee2ec1b74695028a995e43e35e6528f945eb119c80affbcfb53bfcd0029266&quot;].into(), 8743975880710232),
+(hex![&quot;9163f646098ab794e399ce6b4b4cf4157c3ffb2a85dfb75e1cff291fcf197991&quot;].into(), 957679933035983337780),
+(hex![&quot;fb7265e48e839efcc981a607c3dfedeb18accc8bb3f44042f2364f0089f519ff&quot;].into(), 209485594378122074808),
+(hex![&quot;cd4f9d12775488ee2457d1e0389cd0d07c77d055f5e1477a13fb92c24a761221&quot;].into(), 94260284077112259),
+(hex![&quot;b084b10aa13d278659af1c00e130ed6c79743375664da994ffef8bc7823bed14&quot;].into(), 174644832365760719208),
+(hex![&quot;09eff193d7bf27f5b4193ae4e79707a2067c06c96b7612020dd24ea9c0da4a3a&quot;].into(), 30066695572059941999),
+(hex![&quot;7a626aa828ac70bcc6fb6776be8c854ea5b9b663c732868c96736f56ba6972ec&quot;].into(), 17640892158157648404),
+(hex![&quot;7b94d031c16d160b6c2a5accf4e8ecb92635df7b1ab89d1e71e817241b9ee8f3&quot;].into(), 3836894044399288528),
+(hex![&quot;8c5022804400cbc3e2468760b4c46f8e8b1759a6f716c2193c9ef54e014d2dc0&quot;].into(), 44543252699348062222),
+(hex![&quot;8c94b46390156340ecd142f8ef5876143e0ea9782545aa2d5981246d029e2333&quot;].into(), 136716914225721775137),
+(hex![&quot;45586bdc2876afeb807a1fab01db150070ebd0cc750d8761ea27e1df8472e879&quot;].into(), 1268380146171534920314),
+(hex![&quot;2eaf514f45bfc1611dbd8aa3191a3985dea267d8b59aae9efb6af068b2d6853b&quot;].into(), 296584854046590731),
+(hex![&quot;7e5befdefbd3fadb5d72ad8b96f89ae6bbdf601e95c0b059ce98c45edcead992&quot;].into(), 2227162634967403111121),
+(hex![&quot;8f1984912b7b82a98398694449e7a18d42629bbe2191f2180b08a95548ece6ec&quot;].into(), 2458832092256712382736),
+(hex![&quot;a9b86a28ea926907aff80a3f4e83d9ed215bbb39a555a8a614a7d258d5202b87&quot;].into(), 19977648835657605906),
+(hex![&quot;602e2ee1447eeb0662cfdb617f96cbf76a9d3a0fcf667cfe202aa2627db14e4a&quot;].into(), 98755221107530920),
+(hex![&quot;8cd22c2c5bab3e428f9e65e8374d4c79d7e805ab6d6c9407b7f447ef90da12a9&quot;].into(), 306030854210654913653),
+(hex![&quot;9b19ac496ecbc01cd6d36dba81be90fa3c82a4018cd7cbd95a6ae5fa29fc5ddd&quot;].into(), 52922676474472945),
+(hex![&quot;f519aa2dc42ca68223d46d27dd90b08b50e2119651cf5607fa623537d6527153&quot;].into(), 222733904388898468759),
+(hex![&quot;9f8b12050bbef77748216aa0f5d5a3f50f2fcbabaa970ef84eb521f69e2bf3c0&quot;].into(), 7406984764158105),
+(hex![&quot;e7d00c7b07de67381499db0d607ff91e804e898885f1348433e5404a366d4573&quot;].into(), 15434457571476080527),
+(hex![&quot;d519ac8fe5ec131821b918eade8dde8c5c911e88cd2fc72a70556044130ed355&quot;].into(), 517649929265938495381),
+(hex![&quot;31ac0ba13db6edeb3acfebf06d2955326ed53700df0e000a1d7e5edd359f9a6f&quot;].into(), 7216006937294386080033),
+(hex![&quot;fd8896fd5b69b5a43c81faf20f13162d36f1f8896a114ca45016fddab1c95e84&quot;].into(), 1664969453002116553516),
+(hex![&quot;836e5f8a61fc8faf26867e30f8a404355558dae9b17c6f50cd8e9c8667e480ae&quot;].into(), 365410573519101828439),
+(hex![&quot;103b1480b9c2b99512ca56f68017f47692ed7e407206492b334a57ffafb56eee&quot;].into(), 400889274294132560001),
+(hex![&quot;c97f4b603a3ed5fcafe0783eb6b64ca0076c7eef53184021c4a04a01203bdf52&quot;].into(), 1362758919217678339280),
+(hex![&quot;9cc3e564788a9fb93eab610853e514f16956967cf4d2c95779edf3e4a70c20ae&quot;].into(), 5512778799424265126),
+(hex![&quot;c7705512367c49ad317b17da02f6c583d450413e6cdef74703cbbfb943009086&quot;].into(), 129219535058504774565),
+(hex![&quot;f25b5faf78fbddf7af30585686941b6ac4932d390a08874957ab01283b3c0f93&quot;].into(), 17815000000000000000),
+(hex![&quot;0c695fb78934ff885c4cec07327787c0be3d83079a3c4074a397248a5804733d&quot;].into(), 8523799695228822),
+(hex![&quot;a7e3d73d3aa34a8c0f764dd39b69a2deb96bb234ec11ed79f85b1f1edb921dc7&quot;].into(), 33598137369716771040),
+(hex![&quot;ceef2a85f4b72a498217d4a072b86df144e78611c623c40103930c6916df04d9&quot;].into(), 44102230395394121012),
+(hex![&quot;ce3b804035c56ded55a5ed3c66b886a1c40909d29e4eb6ed013f31ade639453d&quot;].into(), 220511151976970605),
+(hex![&quot;00b99f797dc130e14526ab62f6c6f795aa0cd92b7efe5dec22b16dadbf0c9b7e&quot;].into(), 8908650539869612444486),
+(hex![&quot;30a14d47c51991c329877bca224488c3dde42f8f9cf840c5bfebe85bad3c4c82&quot;].into(), 224921375016510017162),
+(hex![&quot;0faad22606464cd112a0244887d2976e8838949d76a895074b1284fef2574af1&quot;].into(), 867579076338193148553),
+(hex![&quot;060ef168436268aad1a48384a82308d1a9e70c90064e385ee166f421532aa324&quot;].into(), 508537022487061972),
+(hex![&quot;3f2d2b09c7ea8d59518689db3970e3c832682fd6ec317716504b9422958fea46&quot;].into(), 2019868921439932124125),
+(hex![&quot;3d94fbcb5b04f3bcaffe1b31fc6e92df012ffeb9f1039327cd51694438cfab1a&quot;].into(), 78590174564592323643),
+(hex![&quot;6b156f197b410ed3b21de970c22a6d5d11a4c462911601b60cf0d0abd5bcf8ba&quot;].into(), 2205111519769706050),
+(hex![&quot;269c3229659dd4f04f2967298d958a43c0f1f2e70d593dceadac7eacdfdb2198&quot;].into(), 531872898568453099407),
+(hex![&quot;8dd1b68696ed262f30b359c80956374dc9c6d31a49d925f2a33ee91588380521&quot;].into(), 672382604608178768953),
+(hex![&quot;40a69b7b56f5de9fa94f527f15cf50c35eaf08dad53f8888a0a88290b8322a54&quot;].into(), 11135813174837015555),
+(hex![&quot;ad6e9c078a9744d27b74dde59b4eb74165007a630e1231259e2688d10e14b376&quot;].into(), 37184343156375958724),
+(hex![&quot;564c7b9358a3228593d238020aa485537775340f17d0450eed90818e18ec88ef&quot;].into(), 3964349490241977537795),
+(hex![&quot;7ae1ac63ee143c46c94ec085c0c8a46c90f550fcbbe23acd26ec653353b8c3ba&quot;].into(), 1143129811848615616639),
+(hex![&quot;063ca9dbfff008a45135d4f1ddb29431c56711ddf4d705198b4fde441b2f125d&quot;].into(), 497277226123967254),
+(hex![&quot;006e82dff492a445c51290b83f386f575b9f828bbe9cd50cc4787c2db8e3d039&quot;].into(), 98744852796986707),
+(hex![&quot;a7048bcee20cfef99a6f6b328af9d6541a1f6d805f1f8304bd217c272e270f5d&quot;].into(), 60861077945643886995),
+(hex![&quot;d9d60d94be6f4df6efd0bb90531ef05aa90046149120aa72aafb4d8f4b5202ee&quot;].into(), 783961247508525895114),
+(hex![&quot;d32d7a36b66247e43e0295034f74fb3342c477af0e80bdd26263b8202b0e4ef4&quot;].into(), 110255575988485302530),
+(hex![&quot;249f0c0859fef45b60b0de5b4f6f16ec0bb86ab6520703db680d5603aff60c6c&quot;].into(), 55679065874185077777),
+(hex![&quot;f2bdd63779b6e2bb4e66828f3663b8a02993fa573339c8399125e274ce0e12cb&quot;].into(), 4410223039539412101230),
+(hex![&quot;27eef26606b5d22bc74a4a388a47288e6a3cc339f18c1bd80efb5dc609f25a14&quot;].into(), 26461338237236472607386),
+(hex![&quot;e1f59bd4acabf3ba8257fb25fdd0d9e0d2d948c55a773d4db6d6a3e77b6d7de4&quot;].into(), 264613382372364726),
+(hex![&quot;e344bd5bf2f2f3351dfdc209c2d5254f59c89dd04bcbf3d04e98b46f5d405cbc&quot;].into(), 27122871693167384422),
+(hex![&quot;34a3636829da24ab2aec8b19069b5c7cf90b875efbc59403bd9e13bbd910ad8f&quot;].into(), 12249394492320717110),
+(hex![&quot;865adbf7513359dbe7c0a088bec21c757875053271f78b003f2442b42720dc31&quot;].into(), 10000000000000000),
+(hex![&quot;d72cc4f3518791291deac9f2b6fcd63152aed955c5503a7f53d14c51398d1db6&quot;].into(), 690420416839894964445),
+(hex![&quot;60d4e639e5d196c9e3bb13e533d72afcae5580da0fdcde0e90a7cc84e640a1e4&quot;].into(), 1380840833679789928894),
+(hex![&quot;7cea4ad6a64a3268f9fddfbc520996d876b0e7532accdb991996e41f2e9fb32c&quot;].into(), 10000000000000000),
+(hex![&quot;8dba7a41c60574691345c87773dbbfedfa10f58364c47766d2e1e64e713e76bc&quot;].into(), 8017785485882651199),
+(hex![&quot;02d8afbd3a0cd892deebaac4db9aec1d99d6a909de745956da334e0837ac293a&quot;].into(), 494247593303947289),
+(hex![&quot;21a656d9462cd3efc67f7c8b4ffec3a786b581c0237aa850c08ec8c622e0a42c&quot;].into(), 9050473414439665),
+(hex![&quot;3453d101b548442d73f34f5fb9c8808cd550ee41581e2f983744fe441d800c3f&quot;].into(), 99009507237659801672),
+(hex![&quot;cd5c7864b095fa09afa7980ff756a5136c4a759e4c3ce758ea7f91626b0c1600&quot;].into(), 765263029540066),
+(hex![&quot;16b9129a07f70d3fa66666d27dec4fd25d7261c7f08a23883b082e945ea50462&quot;].into(), 1377918210708470432620),
+(hex![&quot;24f5a801612f9f7de9da11c3f2229b858f279cc694158ce68be87de01c7ca7fc&quot;].into(), 3521822319416376),
+(hex![&quot;5e9358d949d35ec66c56e16358471ff8a8a67835fb719fd78e356ce935a3982b&quot;].into(), 498939883776862),
+(hex![&quot;c4305fb88b6ccb43d6552dc11d18e7b0ee3185247adcc6e885eb284adf6c563d&quot;].into(), 8821445079078824202),
+(hex![&quot;59e5b18ac29296d3d903f696660a21ea48505f13224292949e5cebef9edce2b7&quot;].into(), 26725951619608837333),
+(hex![&quot;692a89cd3f6f79d6a98c8947718f9cdf8d4f2ff2b73d68a92ea1a1141dfccecb&quot;].into(), 134070780401998127876),
+(hex![&quot;7706f2cf1202cfc5cc6e1cd4a6cee6f2677c429b85548e2a644db7e5f8d1eb1d&quot;].into(), 14994758334434001144),
+(hex![&quot;116817e45dcd842ae9e4452d338d08704de098f6103dad3889c2b8bcd845f9d5&quot;].into(), 53451903239217674666),
+(hex![&quot;f57f37295623a8cd7bb2944bd16c59126ca572dd0579a7edf0f4fff7b26a6969&quot;].into(), 55127787994242651265),
+(hex![&quot;ce346a575587ad8636c217d29c55378308d4f8dd026f4a0e17cf1035d07491f3&quot;].into(), 1190760220675641267332),
+(hex![&quot;c1e6e835faed6339a6019b31b1fc5b9f1a956c0f5c6923b152133efcf5d12276&quot;].into(), 55127787994242651265),
+(hex![&quot;5e35661594f0b8adecf537ad913a78efd57a4d732392e2a972814c8b5a2a3dca&quot;].into(), 200444637147066280000),
+(hex![&quot;6506ccc7c7953893695d20b046899acc3c7c8683abd387f9554f9c4f1b1fc1fb&quot;].into(), 4998000000000000),
+(hex![&quot;65e88211dec057fb6e83be0fd6088474301bd189abab914d274d49698d179153&quot;].into(), 5167017313124375217800),
+(hex![&quot;1d803f1e59d7037225e9623c22ba6226d01b54f0098c1e127c4fd8940b9453f2&quot;].into(), 1113581317483701555560),
+(hex![&quot;000e79ea1782c8e00840cd29fed1f68d000bc34a8ed101e251048f4046046743&quot;].into(), 98745145098972198),
+(hex![&quot;94269f01ad5c086a60ce9932a3cfd38485a42639f4705e4fe7e340f48809699f&quot;].into(), 16935256471831342468),
+(hex![&quot;ec9d43f9edf4bd61b90ccb00061999d0a133dd962a260f74bf9fdb16157a1dd1&quot;].into(), 1113581317483701555560),
+(hex![&quot;638963f44a7fb4fd0f4c640013e2af09a839f9068022465102ce341ceb918da3&quot;].into(), 2271529478745169596859),
+(hex![&quot;7032393626db6a8238a275ae047c9704aac7445f94cccdca95eb26102ef6fc75&quot;].into(), 98521770745211879),
+(hex![&quot;de56110ce7ab81e4777c16b0cf2880cc4473462e88550c985644546ed46e383b&quot;].into(), 498313546905620033),
+(hex![&quot;bc386859f250524e701b452e9266732f077ab9523ed9cfc5be18a7aec8116fa9&quot;].into(), 8908650539869612444),
+(hex![&quot;252288db9cd08946309e9f491accc9c15cdea686e20a6a5280efcdce99e246f3&quot;].into(), 343997397084074143895),
+(hex![&quot;d6989bdc03145b8b180bcfc4b5111a50c90f35ae53c68f7861772187249c965a&quot;].into(), 267259516196087),
+(hex![&quot;80845acc5eed464d434f3d99f94458ce3c4352a710ad74996e6b855c4413b371&quot;].into(), 534519032392176746668),
+(hex![&quot;e6188a6be61ebb512f4e9f09ea9908501f50c7f776057dfae4394bc847a4af4d&quot;].into(), 793840147117094178),
+(hex![&quot;3ba7c59e2a9bd5e09fd66d0d5cd31f08a2618327b7ddaa0be3b28be56b1daf07&quot;].into(), 69916368401578184893),
+(hex![&quot;56edbf0dfecfcbec73edb5701d56b3488b97e0388589d3ce70eb4d25bf6acf3d&quot;].into(), 497663813994033504),
+(hex![&quot;4f5488fafd10aadcbb9c013836dea8e12b55183e5af3cf3bc59cf90821c92326&quot;].into(), 1093715076284718),
+(hex![&quot;79eeb8003ef704f3ae3835a1744e5b4ee46820f46920d1c6606658e50051f361&quot;].into(), 55127787994242651265),
+(hex![&quot;215a9a3e38ba3dcaf8120046e3f4b385b25016575ab8564973edfdb64528493b&quot;].into(), 17639128068941832639),
+(hex![&quot;22093b1c03d7e31ef99707087096780905707d0e047d8e0d604c72779ed28306&quot;].into(), 242551241617068817037),
+(hex![&quot;9af39f4d9ab2089e8416e7bc323be09e2eda58a43707a57cc299c85680412059&quot;].into(), 1670371976225552333340),
+(hex![&quot;76cedb6ed6ad49510f7eb239be061f04e1f09e9d8f7d3b6c1e26b82b43d948a3&quot;].into(), 53451903239217674666),
+(hex![&quot;d80c922667c05e1c735c225ea5902ca56a1c83ec35b3c225c2816e2cfa798ad7&quot;].into(), 15999204365324),
+(hex![&quot;e58fbd604dadbf6ad2d97478f3d516d1d475130ce913f57abf8af36d9e6672e7&quot;].into(), 4454325269934806222243),
+(hex![&quot;861bc9b51a0283a8b32ef194072bfbb19b7abec7d8ac0c59cfc52d1e45dc325d&quot;].into(), 5679264719166877933),
+(hex![&quot;ed22cad0579df6a12bf77f99bb8d3ce3331108bf4055a4e275489f6f994919fd&quot;].into(), 1290096084418226985498),
+(hex![&quot;b3ea6174c0fb7d2af155c23e8135cfdb33f76b482f737abdef8a8b19dd8c7296&quot;].into(), 26725951619608837333),
+(hex![&quot;9c637e1b72be8a4e315479ed25352981f536451ddbfe1fdd26d89900508f3980&quot;].into(), 308715612767758847086),
+(hex![&quot;12c6e5fb069e481836caac799117852d85c29b2a8f8a258fa6a967023ddc761c&quot;].into(), 501111592867665700001),
+(hex![&quot;94ac70f400728b7fe1030a703853f05413e9386d50f513466367fbef46f41316&quot;].into(), 393343907605665718),
+(hex![&quot;8cbd1ab7426acfdcf5a59209d433428b0b66104d8790558c0b46c64586f98605&quot;].into(), 200444637147066280000),
+(hex![&quot;c3784e7f6e7db80cda7d629b9e8a4dc9b2b2a668d7a5d310c4200dc6fb3bb694&quot;].into(), 11025557598848530253),
+(hex![&quot;5cf42b8b29b3ba88bdc8cbecc6abcd562cd224620f5dd556b3c7f62650df972c&quot;].into(), 170675631630175248317),
+(hex![&quot;d860803924ca921e916ea56fcb396093fb99b36b052cad2739b9a8c23744a52e&quot;].into(), 498597116600502737),
+(hex![&quot;52dcfe67119a6717dd8cacf36d262e247f604769a5b71700da9a5a605b759366&quot;].into(), 498994916970994627),
+(hex![&quot;343b451d11d7d2dc79822986662d2f6d7bfa5b3a0afa2cc0f55f3f58812ac5e9&quot;].into(), 52922676474472945214),
+(hex![&quot;78055b8221fcaf9ed7440901bac69a70249bab6b511259d1778fbc5488b42482&quot;].into(), 629173444378291378890),
+(hex![&quot;1623e3dadb9d9c55fc7587ad02545f8e20dc3c88c530a9a73fa36d90afad3298&quot;].into(), 2807229121472869),
+(hex![&quot;7eb44a5e0beb08dba940bb341757b0127c5492e3805f086121b4ba0c7dae3d52&quot;].into(), 50276542650749297954),
+(hex![&quot;7e296a381a68e694449d53ef3577e254e2d5ba6a8c79d79ea67e34a4ba86f920&quot;].into(), 111358131748370155555),
+(hex![&quot;82334b4dd791aa80762e89311f113e6e412085f0359dc439b3f8f1e5c8e02019&quot;].into(), 356346021594784497778),
+(hex![&quot;5908f50504b99f748936bd593856cd221acc503b0862afb751b56dce1e3b69a9&quot;].into(), 52922676474472945214),
+(hex![&quot;c4097d08dbb9785f7a56d9bd8110b0b84851dc9edc102afc39eba31acbe37124&quot;].into(), 1102555759884853025307),
+(hex![&quot;b2fff308d26fa73b561edbbb30bed88c99a8f4271f02a335321fde83b29f99b9&quot;].into(), 119076022067564126733),
+(hex![&quot;62e88eb06eac67700dc018429743435f893a3ef850802f4666f55fcfe443342d&quot;].into(), 8524556247614800),
+(hex![&quot;fa6fceebf2766e46e75155faa520e30f34d80623dbef9fb26f087ec37b896861&quot;].into(), 9094084980930209),
+(hex![&quot;5569a76687ecf8cba9689fd033e55d742de05014e26566bceb7a9d12bd2cae79&quot;].into(), 22271626349674031111),
+(hex![&quot;945f0d53f5b08a1d33fb55d997c07444c2eaca05ffb9eb7bae5cdc7fea23c318&quot;].into(), 498314733277443496),
+(hex![&quot;f26f5f898311d5018be6040dd0d78b587f9f2cc180cc19357fe4bec78f759616&quot;].into(), 144320138745887721599),
+(hex![&quot;9aa1da29936ea43568224e14e13f61385034b8c25a24e4ae98a0a7f6b71b9b55&quot;].into(), 248315266276249979),
+(hex![&quot;44082db8ab51866c17ca8c97fe8ba8827c87b54d7c08181792c6ee633cb3038a&quot;].into(), 368694646105494851662),
+(hex![&quot;16675d8e5e96d482557aa31f2c7b1fbf5a97294e973caa452426453702e3f954&quot;].into(), 26461338237236472606),
+(hex![&quot;9053859fafbc989fdf75ca4826c7fdf035ea1a8c0781f1c04a032b4da19e45a0&quot;].into(), 39180421483268137105),
+(hex![&quot;b9f7297a73f82d8e99aa3cefa1aa50fdf814244e4e8158d68436ab32e63fe1b2&quot;].into(), 1524173082464820822184),
+(hex![&quot;5d32edfe553031dda6f76a84ee8f2b2cc59d19112886e9d4861cbbf4f2d17427&quot;].into(), 606405667936669163919),
+(hex![&quot;b0e65d413f1db486157ea97bbc03a9ea4bd27ec0cf72991512ce724007282be7&quot;].into(), 7772797596036236857),
+(hex![&quot;895777b2b3aa3f909a5ecb035b51dbd6490fb799293a56bb47cdec8d67c3899c&quot;].into(), 60135395590491354663083),
+(hex![&quot;bf0da924fd8100297e5972b91cb5f9a1f3604985204a5dd83318c6d65412935d&quot;].into(), 2421212448707137243575),
+(hex![&quot;764caaabf8d645b19ad8239e03af9b3784a3b515a792c53fde4d71b8d370b072&quot;].into(), 178173010797392248889),
+(hex![&quot;d026641ff61be1f6a79275b70f73209862f7bb3464dd7602864702179376d43c&quot;].into(), 3619845254339315),
+(hex![&quot;ce3c4da26685de067b88b1db4b43e6f0fd665ce085b61e0436c29e53e9983743&quot;].into(), 110255575988485302530),
+(hex![&quot;69f7930c99db741180e47ff8cb035399d1767297f895cb6d000c9dcb18313d8e&quot;].into(), 110255575988485302530),
+(hex![&quot;9722cd3b979a13da6ccd3c0ac0c2d6b8aff49f917e51c770d722abc23822411f&quot;].into(), 264613382372364726073),
+(hex![&quot;c84430432bf81bce8d3d354435e6d1004b73fe2eda45a5d1ad66d1c56396f729&quot;].into(), 222716263496740311111),
+(hex![&quot;2e40fad89da106f5f4250fb8f28d28a0961fe73c88f3101228f53be08aaab06c&quot;].into(), 2458794916799064779464),
+(hex![&quot;4783435e7e90d6fea539f9654a67d27712ac1937f28a404729c9f0f8904df736&quot;].into(), 31312583580729825918),
+(hex![&quot;9a930b26c521f3a618fa581abbdf92198a0fdcac2f3416e4c9ae77ef938c9678&quot;].into(), 2205111519769706050615),
+(hex![&quot;04b6698730c472fbd6f51e4bbc64a24f209e71199181b5ae90ae6a3cec37538b&quot;].into(), 1234862451071035388344),
+(hex![&quot;a7188bda68648c89fd4a5939856e9435fa9ff47ffaa8fdc1140e11a73163b094&quot;].into(), 3034233451203115525646),
+(hex![&quot;a76ae49a9e2d175f2a87fb0e6e3a0f105e201b9bbc3c027da0c848fbd9e5b3d8&quot;].into(), 4643634093907035486688),
+(hex![&quot;821fa8107191bbc16eef51b9e3a35cdb402aefbb36de6e9d1583f6ee91c6be49&quot;].into(), 498315713290528963),
+(hex![&quot;e09e5e7c39f0848410b0a3617fa8c920be4598d976d11a025dfd8eb4d7ce8f2f&quot;].into(), 98314681703238999),
+(hex![&quot;1c6b016d812dc63ce19994551ede778c5319e253ab9b6367f058b9ed8e28f788&quot;].into(), 68645121610430949354),
+(hex![&quot;0938cb561056a376c4d29223ef52bf8323b8b4b08909548a4ae9237183ea34bf&quot;].into(), 612469724616035855558),
+(hex![&quot;de54452c34f991fc0be8ff37e542aaff44c6e4573ac25a02fff1fb6257c55f26&quot;].into(), 50000000000000000),
+(hex![&quot;50623e86c83e646b7a179f51a41506746f8bd07c58af27f4e7ca53442a93f949&quot;].into(), 595380110337820633666),
+(hex![&quot;4e778f6ece78fa8524b14bde9adb2be75e74f13b73ddd8cdb4a700c21fd3d978&quot;].into(), 498604490340393005),
+(hex![&quot;66364e54f63081d4f956c5c510a8eed37850a765474f01aba0d7f0dcd65faa7a&quot;].into(), 8545121236768258),
+(hex![&quot;81ac99e2d0122a26e0181eff02694ef9c16100178164fca7958086b254bfe82b&quot;].into(), 39692007355854708911),
+(hex![&quot;becce72e9d8ce40a728f712165049f218929b9a193d9e9dc2b5772021e449f78&quot;].into(), 226613798107933266556),
+(hex![&quot;c2774e7afb358b2ca05bc2a60b20ca596932fc790a54323cb4358f131f3b891d&quot;].into(), 111358131748370155555),
+(hex![&quot;564ed342c7b035d7cb9757bfe795664ec283f992869dbbcb702179092f725d91&quot;].into(), 2756389399712132563269),
+(hex![&quot;b960d1400a81b74083192f569a4e3bfadd0d944709d580d4d02d0fd1c8b6646d&quot;].into(), 17640892158157648404),
+(hex![&quot;63895912e4a50dfe4e64786fce45311e92997ae7e784d7f95ba6946429794aa4&quot;].into(), 2132730939244785219209),
+(hex![&quot;b37da9676d421fd79b184f5e591c74215c2b1e4eec2702040fed72a1d3d79f92&quot;].into(), 551277879942426512),
+(hex![&quot;0ba4885ce14357b9b489b49db270c07ead6e3fddb2eea16528b1465cd329a486&quot;].into(), 609128980663584750891),
+(hex![&quot;a942bc4a71396429ec503c41949d672d0a6922648c657b3244687aca54bcef96&quot;].into(), 2646133823723647260738),
+(hex![&quot;90ff7fef956105e696bb49787942ec80cb95ba8f693847a1534376b4e9524962&quot;].into(), 4082436848273064866),
+(hex![&quot;94beaa7e63c093f6d6dbfeb9806865336822cc5ebe9a8fe0adf7ee10d1a0797c&quot;].into(), 3572275848940660000000),
+(hex![&quot;ce55679c4ba18240d52c8df56f301574bf8c0e428119caa3a43d3ca7548bf5d7&quot;].into(), 37486895836085002860),
+(hex![&quot;971657e00d92e1b4949bbb8f8e48dfdcfe1f0d3ff825701ff253c1172a3ee011&quot;].into(), 178173010797392248889),
+(hex![&quot;dced9ad2bc97292196fcc12990188c3ec126164cfe4d36d1a51cc8705d42202c&quot;].into(), 48572959131315982),
+(hex![&quot;f099333da90418ba162224306893a1ff160925c761b76942178f276843a66042&quot;].into(), 941847232324036848337),
+(hex![&quot;bcda14fd709fb8b8c667e5c84dce604047cf5c13e91b0197d62fce1ee91ff159&quot;].into(), 16703719762255523332),
+(hex![&quot;fe74f018297259cbdebbf58a5e755f4d74b95b4d45244f736493a7a195e6c14c&quot;].into(), 549282279574633777206),
+(hex![&quot;68de548ba668b1048aa523d6a750bd29d7a530b3928b6cfe632b516bd615aa14&quot;].into(), 8612488290003292),
+(hex![&quot;0735df3d0aac21407d74041faf52f458e16d1f9c7394db11dfb3a03dbd66cd4a&quot;].into(), 3969200735585470891107),
+(hex![&quot;f6b9b0b3d5efccf8c4edf53d743e6da879d1288319a44b7e63ce6bb49121af0b&quot;].into(), 1675884755024976598467),
+(hex![&quot;597617055da94cdeb559767183e02c55a8af0b11bd557deff49d7776acb9223d&quot;].into(), 2672595161960883732),
+(hex![&quot;0c59155a3aa107e57cc6461ba08ef77febfd7578b52e946d17e86a7bc8d52645&quot;].into(), 395876951452969654),
+(hex![&quot;405672d65369bb5cb22b24e2ef42ab4e1561cbb048656580ec24a724d24e0ecf&quot;].into(), 598136499737532766229),
+(hex![&quot;e48c4a22611aa3f0714ec271941b09e6be092027ca5c005d0c78d6ee1fef2d53&quot;].into(), 498635683862866161),
+(hex![&quot;3eda6aec1946a3844a50eee716611706cdad559bc90812ba92733378984e3b8a&quot;].into(), 21751450244651044439),
+(hex![&quot;92d3b3f42b2f444b8a1330d8bf1eecaee3ae6c3ead00b1f63bc31a4231468206&quot;].into(), 8668593943256226),
+(hex![&quot;a3e58bbca608edc629ab62db0d2676ac068fc0271d2949375fa5dc42752855a1&quot;].into(), 213617091321562596064),
+(hex![&quot;c8fc74ea0431f0c642fdfaae6a2e6173cb4a43cfd94b2afb3e30b343bfe15c6c&quot;].into(), 8229962812050724),
+(hex![&quot;d8a5747a71fb9e8b49d7d87948bdec26656d6aa0c70ec81d09f9b6d5744c5e63&quot;].into(), 245117804027413545198),
+(hex![&quot;28308d3c35abedb437a5b3681e2493584e02606cdcf991383f61a3c16089dfbf&quot;].into(), 190521635308102602773),
+(hex![&quot;ea3b4a5835fd45a5a870df5ca5785e4d8b00881e01d095226553fb7a1bc85f34&quot;].into(), 211693573440576557968),
+(hex![&quot;b3cd6c3c1506c188de9a34d58e0e6397bf86e695c7459e47893cee78104bc6f8&quot;].into(), 1764089215815764840),
+(hex![&quot;46d30cddda3742a4476ed710e4f784301a542aa923422d7d0e1a70b10292a6f6&quot;].into(), 26543699152499871127),
+(hex![&quot;ba491c2dd981181506989741a602f794b5a5c63063b27005e6e224bd681a8501&quot;].into(), 98752745208594999),
+(hex![&quot;db19156a60d2369c5e262909ba95bbb69fedcd53c4109d89f5ca19a28673f343&quot;].into(), 178173010797392248889),
+(hex![&quot;50546a124cfa51e1da8061eb8321af5906e9fd2ecee19fd4a7632c2d56083324&quot;].into(), 1102555759884853025307),
+(hex![&quot;5026d4880a84ca1635b356140fe34a587d2b85f31e4684f2466079fe0e5439cf&quot;].into(), 748326645349047445336),
+(hex![&quot;9fe303bf1fcedfc467aea341b325d10d624ef556e7020de37eb7e622e5bb89e5&quot;].into(), 7056356863263059361),
+(hex![&quot;c46a619de6e2d812d9137ff919cf614ad1d3d93253f497f5cd7fb47ee17075db&quot;].into(), 198460036779273544555),
+(hex![&quot;0dcdc317d3bd4691f14270853b72ef81f7bb69918d1e3be834ddb3c010b7bbf0&quot;].into(), 18708166133726186133),
+(hex![&quot;4ec698f97a552d423fc5b04fdbe39f62254695cad42df770ea5ed092ebf03858&quot;].into(), 198460036779273544555),
+(hex![&quot;738db85cb7207d722073ae3825881304cfb785599c65c56668e5a570990fbddc&quot;].into(), 3527157464997876307081),
+(hex![&quot;dcfbefbe9feddbea010203ec80bed2759d5936f35ac06e0b9bf395c8aadfc876&quot;].into(), 49710270012472437439),
+(hex![&quot;164772c049dbf312f43bb3f081ff37efe23f4fcf1e49c87e0c194ef1cfb9553d&quot;].into(), 498896201533865724),
+(hex![&quot;79536ca846e81b15f80e046edb563701b84424891ff3be36cbeca07b647e139c&quot;].into(), 8820446079078824202),
+(hex![&quot;3e19a4556f1a3901b5c7257ee67d43a0895f6b3b377dc4f88f0b0d742361c41d&quot;].into(), 793840147117094178),
+(hex![&quot;e0c66e848204bedce56ffcae67564355363dc1119e70aeb1cff5ff58537bd2fc&quot;].into(), 17817301079739224888),
+(hex![&quot;b591c9caccb3cce8f4589634ce99391422d2944e28ab0097170d71356959beef&quot;].into(), 33341286178917955485),
+(hex![&quot;268fec229c5f13af5f5e3288cbe281a4a2c56e73c286c183f56457dfcfb9333c&quot;].into(), 98754602172356943),
+(hex![&quot;10ea487ef45ee6ce8df1b38f87542b8f21211f1459ba003b2adeba721a7c71ff&quot;].into(), 2877670533299466396053),
+(hex![&quot;4dafa770f39a3e450863347cddf24d39689ed4ecb5160b19475e78667415f39c&quot;].into(), 909573220120687430579),
+(hex![&quot;0c576d549721022073b2ab856d2138e9d144059660423063e36ec38511131c59&quot;].into(), 4068618607173112),
+(hex![&quot;18a86fca77b454f4651ef1b87e3f4b699d0f8bd7c2edfb1e49ae0d857d6d305f&quot;].into(), 5345190323921767466),
+(hex![&quot;0ce5142b4246d526a9cddc3e20201450294c7815227e4aa356e15c687e1d325c&quot;].into(), 15523781872970286),
+(hex![&quot;38b165b6a740de151a850a9a746185b9d7f6edd89a3bb3d71f03a177d20e7a86&quot;].into(), 535768385641867309458),
+(hex![&quot;a06272f9d22415b908045cfa198d7d0425a9865bfae07eb85b14f299f2c0c5a2&quot;].into(), 2672595161960883732),
+(hex![&quot;8e9dd69bb7fb561e74a8d4eccfe08a579c417eaef2bbc71b471ef0ef0572b77c&quot;].into(), 238152044135128253466),
+(hex![&quot;5cd818b5b0724b7cfa35384910f7176141fb3f8fefaeb193e9def4787734c527&quot;].into(), 3307667279654559075),
+(hex![&quot;1c33d683df494bd9c669d1c57eb5d3e2b12ec267dc4ca204ab14e38a1cf7991f&quot;].into(), 8613812251518753),
+(hex![&quot;d873250b266b81a510f42958c4a09085cf28d10be30c86eac9061afe14b0bad7&quot;].into(), 551277879942426512653),
+(hex![&quot;84f39ee093965f1342244e07337b3af7a406b92de394c63a614d35c445351cea&quot;].into(), 11025557598848530253),
+(hex![&quot;60d7059105652857ac00b6827dfeda166a4c25c80f06710d21c1357559ac4ca5&quot;].into(), 66153345593091181517),
+(hex![&quot;8a679616b3ea3c01cf6b3cffa447b544d3a51c50dd0a6429ed6e3b9626d19fbb&quot;].into(), 103587470944581547),
+(hex![&quot;447270ac5f4640438a00322f5f1230c09c2e7bea1a27d33bdd6ebddcbbf85e36&quot;].into(), 110255575988485302),
+(hex![&quot;50ad41e2798992be1a87a70be49323d1cc0883cc249cee2acb4524bdb018d9f6&quot;].into(), 178173010797392248889),
+(hex![&quot;6e645eed244a003b4316b756a6e5197585b0b54f0027efcf65f54a48f2f85b0c&quot;].into(), 498596583581056253),
+(hex![&quot;7bb4076ae5e164cee876a342c2ca8e39fca2e160bf3abab063e630211344275f&quot;].into(), 278282000000000000000),
+(hex![&quot;1d101d2ce73c5b5a0636a1384ca9e486f63f7e19c792ef3b0eaaa9925065e594&quot;].into(), 74595578598839807817),
+(hex![&quot;7c2222c61bafd6ae1196f15c8930626e371cfe63a2c88b4a721e023d9b07d83e&quot;].into(), 497610826972536323),
+(hex![&quot;7a404130dfb5906321f1e6d73f866f84d70c88aacbd9c6b49028a2de95c4723a&quot;].into(), 100553085301498595908),
+(hex![&quot;db42677e9cbdf87814b3404413b2735bcec75463a5557a68db650b069fcfcd50&quot;].into(), 1521526948641097174924),
+(hex![&quot;b2b5e2eba80c6c8276441f025310365b132a8d18f98f606f576e14be889f74e5&quot;].into(), 176408921581576484049),
+(hex![&quot;2b67c39c5833e92804787c849d4b16f8785ca447065e54313e0be2e8f8e5dcb7&quot;].into(), 745327693682160645107),
+(hex![&quot;19127aeaf37d568087cd5e664d6e76789c2de7c32b26e1e0809848663d4ae5f3&quot;].into(), 43529893700437893806),
+(hex![&quot;30c6ab03f332c9b941137856e9604a506aa9a4dd8280af941ca50b11589fa47b&quot;].into(), 8613021319769777),
+(hex![&quot;b22033a7542a2191c3c1873d66ab06a874b9c3c6c34b18c61c0846d43bd4513e&quot;].into(), 17505498310843788452),
+(hex![&quot;2e1005ecea36fc3af8c7a03992f9f383a8c0b065ced0d08006544c20b0390811&quot;].into(), 9250191123496906),
+(hex![&quot;8e780ac6e6123f23dae73e0a250c50437555df1395cef32714f230c39475ecc6&quot;].into(), 4454325269934806222),
+(hex![&quot;4270c49a7fcabf7194d2fd31f0f0c36a308ce20429fd67d3343c7e2f92e74137&quot;].into(), 498315163127840983),
+(hex![&quot;8d9672430f5a6b1af0340408e7ff0f3d106defba1759abe9f89d5f5dce494fd8&quot;].into(), 176408921581576484),
+(hex![&quot;534e3da55fcfdba702cdf293f6ed1510e1c09b5618728610bacb1ed6b1aaef97&quot;].into(), 396920073558547089110),
+(hex![&quot;380477b148049ca59005c2900f51467aaf438f113d5ab061c46e7fb35a145366&quot;].into(), 8509611334358674),
+(hex![&quot;d29636ae232d2b9f3edf2ba2d46becb654ea77d7b4586c245d8a84612affd271&quot;].into(), 376972788023357),
+(hex![&quot;8212370cf6cce6657dc2b9672109e7af243fd5e3eab0443b41a3e050b0345647&quot;].into(), 793840147117094178221),
+(hex![&quot;46adca6ca4b5cb7380555a4829f96db63726fc355f6a0be7dda3f9248095fc64&quot;].into(), 2205111519769706050615),
+(hex![&quot;498a45130cfef583c26bfa01a9f39c20f9f591b73493459ff328662f205603d5&quot;].into(), 17146947177729234249),
+(hex![&quot;0614b363eb92b3c2ddc69e7349d2ed849e6b9fd3ec53d3f66d70aa679802914f&quot;].into(), 2023841987578557),
+(hex![&quot;40713394d2bcff487b717019831cea08573c45f5bd1267c73ae4c981f9321ed6&quot;].into(), 793840147117094178221),
+(hex![&quot;0dd6952a20e581f2115884db0cc19b72554df7dad7e099f5c75bfe5106b27878&quot;].into(), 3775150921845736),
+(hex![&quot;cab842b5b724c427d49f3707d688dfa20dc65a488ad81b4cc4a850ad2435c146&quot;].into(), 248315266276249979),
+(hex![&quot;dad22ccd9575d9c5a7290e9ce4984d08752b9d0ba0b9d1daac064a3c3cae0a62&quot;].into(), 98744422936269219),
+(hex![&quot;c9fcc9c9b4961dc49e43764b07806879373a50bc7505c2e1fe95897c920c05b9&quot;].into(), 11135701816705267185451),
+(hex![&quot;252ca6702a3704a14f3226010015316eba003318318c5173db2000fb1dead3f3&quot;].into(), 106124299556196758244),
+(hex![&quot;284014d40338bdd9e5ca5284f46cdae91b052b5790481a9460ec446f10990f50&quot;].into(), 3437388096333838),
+(hex![&quot;46fb4cd1cb506753d95db839af87f39100971df8e1f78224374efe2b4ee8fcaf&quot;].into(), 1675884755024976598467),
+(hex![&quot;10270887a7c74e7b858b70edba7d44c2905295d026e445933c094a0e29414236&quot;].into(), 8552153916621573),
+(hex![&quot;b151781b912b67e8458601c64555b854715cb4bbadec921ca98b3b269ae3ed75&quot;].into(), 591979828374335746933),
+(hex![&quot;db7954157cf4ea031b14c885e744e8ff94170e7e57049747c77bd40602b39b6b&quot;].into(), 132306691186182363036),
+(hex![&quot;b6ec9ce9d5ab972e51fb236cbfd0d903c6356a47fd4ec9a1ae1f55aa9884f721&quot;].into(), 29933092275300135049946),
+(hex![&quot;b2520c8cbad971c316e92e37dff5076fea66d94a08acbee637053ca67248d50e&quot;].into(), 8195958496680043448927),
+(hex![&quot;808d860a9eaecd9e3ff032c7589e3f0a85c9a0586728c9615df3ca5734740ec5&quot;].into(), 219038137481764441416),
+(hex![&quot;cd5d2dacd3df28449eaccd95219c4fe8118022f40afed6cfb7e962c1f689b13f&quot;].into(), 12160307986922020986),
+(hex![&quot;8dcc84e0a2f0dcf4241c3542c968951e56d2d0fc259932bfd285102cff92e57c&quot;].into(), 2205111519769706050),
+(hex![&quot;44d0941908aab5b78b3ac9a8702b8665ee92177dc65bffae36e991da7fa3e3d9&quot;].into(), 6236937422516636593),
+(hex![&quot;7286230d7b39ece8703f4bc304cd53484afaf7c24a869dd6bd7420bde5bc4b28&quot;].into(), 556790658741850777779),
+(hex![&quot;59a93f3e857503da7aa918cf0963f3d092062b619cd2460bb3b9ea6c9323153e&quot;].into(), 136981527608094139863),
+(hex![&quot;f22985ac845f33cfe3c93427410078435f8debd01575f38bfec784fc17bc052a&quot;].into(), 1058453529489458904295),
+(hex![&quot;45db0edb8c988128070268748499788c99b64488b0a2087d1c3ec93ddddae60f&quot;].into(), 1781730107973922488896),
+(hex![&quot;4217f22e9a29af49fd087008d593d07b73d628867f95402885c0651da2c8a432&quot;].into(), 5000000000000000),
+(hex![&quot;8d4f97c17b3d5b85ae853889a3c2f6d53309571e7e5079d9ce6bf6f98323d858&quot;].into(), 259613404902996729801),
+(hex![&quot;e21247bfe35d10ec100b68e305843803f0614a2d5da308f8e68cc77681a80f69&quot;].into(), 230985431695876708801),
+(hex![&quot;51886bd0b1f7a529994f6dfd551cfa564cc849f7db87198b11323894c87b91df&quot;].into(), 352817843163152968098),
+(hex![&quot;8dc260edd0d5bfec8e9b479121f15cc8df7508440d0b0fa0ed8654c6f329ae78&quot;].into(), 1051220763704614268448),
+(hex![&quot;4923e8954b7b90f6c13eb795956f3d39e6727ffff6f8bca998f74323a20bfac2&quot;].into(), 59979033337736004576),
+(hex![&quot;806452676c107d381b4009e30b8485a055f4b452f59ba2ada16544609d83bb3b&quot;].into(), 498596789908834247),
+(hex![&quot;251bc8e97917f3c94d498cdfe842cb3444e3dbca8efc05c80bcc15ef243e8d65&quot;].into(), 17846258868830223041193),
+(hex![&quot;f85614895a96daf5944a9d577a55a1f3b133b87f3abbacdd4eb0e4371fa1c37c&quot;].into(), 160355709717653024000),
+(hex![&quot;ad6a4f2a2fe1e26466bd8d634db5f95920bb656d660383efef789a64b90bf2ea&quot;].into(), 3563460215947844977793),
+(hex![&quot;a529053b68c21fa38fb9d4755139ab429b02212d85c6f6cd5e9990193b7d7a1f&quot;].into(), 10155861615451358185),
+(hex![&quot;614b32bbb12795b3f5962639b721ac0631148ebb9faa9a3051481937b7511a17&quot;].into(), 1323066911861823630),
+(hex![&quot;288b515a8d86888f643b78765feb73770af7d668bcca4396984fc6a973ada91a&quot;].into(), 216982973545339075380),
+(hex![&quot;6cdd7d6626702113ab7efab250706e1e4088ea992e6731d15359dcadd145bb43&quot;].into(), 98575778995881900),
+(hex![&quot;d61ce0ac83de8437e7c3ffea39d10cd8f61163de12c24823ff1ad910127bae3e&quot;].into(), 5512778799424265126),
+(hex![&quot;7d75a28578fc8af424e2d45fd810f5681fae3506e9da59d00284ddf39f070790&quot;].into(), 17640892158157648404),
+(hex![&quot;d1d96c2bbac2cea6967c1e4a7a262cab2a6aa9a389626468d320a6b8490ff0bc&quot;].into(), 389753461119295543),
+(hex![&quot;09dc8da9dddf6582327651fbd7c4c01915ed436d3647190d9976d47fa9644f53&quot;].into(), 220511151976970605061),
+(hex![&quot;ce8a8c6dcdda22841df58ecae8a0f3e7b998ff653ac94bfd13a5b4cb5eb68811&quot;].into(), 176408921581576484049),
+(hex![&quot;a63d081cdb513000e391fbf73429146d996e06fb0b5582fa7df03b957325cf67&quot;].into(), 98521650391641383),
+(hex![&quot;580d98601f4fe25b7695117052812ee386029b35dcb919285d83e7077ac4f43d&quot;].into(), 98314905194898489),
+(hex![&quot;ae2342c3014aa619b066f8219cf295bc4d6fcc60fcfe4b8b103633305234bfc1&quot;].into(), 6911172320801421915597),
+(hex![&quot;01ce9ba0e10ab6818596fe2a76fe7772473af5ac53b319b74f7353eb3a65e5bf&quot;].into(), 53451903239217674666),
+(hex![&quot;1a18f4d1b8f2cb4ab309e9e38e00528731bb657e9528846f4be89070e6ebaaa8&quot;].into(), 97995155938565736888),
+(hex![&quot;7221943c63a943fea3385b99ea36238e6fe01a0b08292b32f4b733fe1fbbe400&quot;].into(), 8523129106730340),
+(hex![&quot;d574bc0ee6a31c136d75c27947d35f145058074624b3055352661232fe895436&quot;].into(), 1781730107973922488),
+(hex![&quot;da9f81516906f43b0732cc4498973208022fe22b72f98b4107240d570e41ddcf&quot;].into(), 1194729421411226737),
+(hex![&quot;2b7dbb3acc6e227825f3006231711549efb49ad53f0cb287d58c439b6b037037&quot;].into(), 33076672796545590759),
+(hex![&quot;9eb2e9f15ba972e18fa855e3619b7290587bd03a7ac8eb2de43e9fa4868cfa2f&quot;].into(), 3563460215947844977793),
+(hex![&quot;ca43e4a9aedefaa60d70137b18506a0168b45bae08822b4cd1809e4123f3b0db&quot;].into(), 66285652284277363881500),
+(hex![&quot;e6c925435af92c9d33201361951f4680bafdbc5269b54f9295a2dbedd63d857e&quot;].into(), 98314492559982504),
+(hex![&quot;8b49fe4cb915ade1121fe8e68f553f1bd848c0b46f484c24eb89c5110c5b3448&quot;].into(), 7126920431895689954),
+(hex![&quot;4f545762f0b47721a4530b436b78b226a2a4615b515926324ca478184bf33da3&quot;].into(), 13362975809804418666729),
+(hex![&quot;2f1b5044e15cea3aed14fbb24de1b80898a849b9500c3a4b4b03f392d33a668a&quot;].into(), 5578932145017356308056),
+(hex![&quot;c8d513a5d866af83832c32c3c8c6d26ac0ef8a9add93f28ed7c2d8c3e8491b96&quot;].into(), 882044607907882420246),
+(hex![&quot;2cd36ac2a10ddd0e7e797955158ecbbf683a099cfb314a803f37df491e5e13c0&quot;].into(), 27563893997121325632),
+(hex![&quot;a8671d7520c42f20f38f6a7e84131e66d4294cad1e68ca2b327c7bf9d2300d27&quot;].into(), 5000000000000000),
+(hex![&quot;9cbc5e3dd080c241d081d1d50d310fbcb946c8479bd2114b54081afd78387142&quot;].into(), 2772928322862294173),
+(hex![&quot;34b3baf809571ac6d477f7e6210488843c931c29d8e3273c06cdf802c93eef48&quot;].into(), 8542335682765332),
+(hex![&quot;a8ca3849137080fc0d2bda8b460d5b5b3a8f780011482bb38a37c5640e0e41d9&quot;].into(), 26725951619608837333),
+(hex![&quot;161cea308e5c5574a27112e88793ad1f8f493335848a80c5a03c2e3710645000&quot;].into(), 5345190323921767466),
+    ];
+
+    // akru
+    let root_key = hex![&quot;16eb796bee0c857db3d646ee7070252707aec0c7d82b2eda856632f6a2306a58&quot;];
+
+    make_genesis(
+        authorities,
+        keys,
+        balances,
+        root_key.into(),
+        false,
+    )
+}
+*/</span>
+
 <span class="doccomment">/// Plasm mainnet file config.</span>
 <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">plasm_config</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">ChainSpec</span> {
     <span class="ident">ChainSpec</span>::<span class="ident">from_json_bytes</span>(<span class="kw-2">&amp;</span><span class="macro">include_bytes</span><span class="macro">!</span>(<span class="string">&quot;../res/plasm.json&quot;</span>)[..]).<span class="ident">unwrap</span>()
 }
+
+<span class="comment">/*
+/// Mainnet native config.
+pub fn plasm_config() -&gt; ChainSpec {
+    ChainSpec::from_genesis(
+        &quot;Plasm&quot;,
+        &quot;plasm&quot;,
+        ChainType::Live,
+        plasm_genesis,
+        vec![],
+        Some(sc_telemetry::TelemetryEndpoints::new(vec![(STAGING_TELEMETRY_URL.to_string(),0)]).unwrap()),
+        Some(PLASM_PROTOCOL_ID),
+        serde_json::from_str(PLASM_PROPERTIES).unwrap(),
+        Default::default(),
+    )
+}
+
+fn plasm_genesis() -&gt; GenesisConfig {
+    // Plasm initial authorities
+    let authorities = vec![
+        (   // akru
+            hex![&quot;34141c0c21335e3d0ee1a036793cd329a1a24abd617fc37ce2382c340be96a56&quot;].into(),
+            hex![&quot;e0c4aae64015c19224b8a054a072a375168ccde72d3d960e8b06f2bb30167d4a&quot;].unchecked_into(),
+            hex![&quot;9cc6e9120f5fae0ec6d2b1d6ca8a14bed7a5055a66daf8e64e41cb2700678584&quot;].unchecked_into(),
+        ),
+        (   // staketech-01
+            hex![&quot;84fb8020ed0b8e4ca4b574b9480ff2f4d37a0b46ce46e65d05468f9d65150d21&quot;].into(),
+            hex![&quot;fe6d0ed26feab814e4c844f639dd7b5c9c1da84f130bf047e4a37d9b57c5a214&quot;].unchecked_into(),
+            hex![&quot;f5c5a9d0a9d19f9ee41a8e442758674294035cde4703c4ace5d4f2683ca2243f&quot;].unchecked_into(),
+        ),
+        (   // staketech-02
+            hex![&quot;8e067f3e41cdd90c11ac2f7f3b1a70ee511867fa4e7dfd85f08ff16c3245ad01&quot;].into(),
+            hex![&quot;6c35e8a3eb4839ea8b7438ae59d7d49fe43529943b2812ea5f704d6f9cee640e&quot;].unchecked_into(),
+            hex![&quot;7a6a1d203f0ee6112b108faa17808f88b89b5f3fdfea9e4434ae51d28a81508f&quot;].unchecked_into(),
+        ),
+        (   // staketech-03
+            hex![&quot;32b0c306a3f85902e504ed971ca0323f42c3fd209cb275aaabcc22f1c054da79&quot;].into(),
+            hex![&quot;f617e63ea7f69f5d83e3718b30db7a5b1d41abb24835a92053bc8bcd252c861c&quot;].unchecked_into(),
+            hex![&quot;8f6d7375f702f327b3779ef8ba567530764ea9f71dc638dafbadd29786640eec&quot;].unchecked_into(),
+        ),
+        (   // staketech-04
+            hex![&quot;1e4f5e33dfb4fc38e3b2c3bf91eae6c5443095627d1e0a8595354fcbb2163a2c&quot;].into(),
+            hex![&quot;80a9e57aace4b42c158ab336360bca4b8373ae049b58357c04df29a37b564f35&quot;].unchecked_into(),
+            hex![&quot;139e66014a330d35cbd662905e9e4ad4fb8d6ef0d3681d95f53cbf9c0abb7967&quot;].unchecked_into(),
+        ),
+    ];
+
+    // Stake Technologies
+    let root_key = hex![&quot;4217f22e9a29af49fd087008d593d07b73d628867f95402885c0651da2c8a432&quot;];
+
+    // token holders
+    let holders = HOLDERS.to_vec();
+    // quick check
+    let total_amount = holders.iter().fold(0, |sum, (_, v)| sum + v);
+    assert!(total_amount == 500_000_000 * plasm_runtime::constants::currency::PLM);
+
+    make_genesis(
+        authorities,
+        HOLDERS.to_vec(),
+        root_key.into(),
+        false,
+    )
+}
+*/</span>
 
 <span class="kw">fn</span> <span class="ident">development_config_genesis</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">GenesisConfig</span> {
     <span class="ident">testnet_genesis</span>(
@@ -400,4 +2182,4 @@
     )
 }
 </pre></div>
-</section><section id="search" class="content hidden"></section><section class="footer"></section><script>window.rootPath = "../../";window.currentCrate = "plasm_cli";</script><script src="../../aliases.js"></script><script src="../../main.js"></script><script src="../../source-script.js"></script><script src="../../source-files.js"></script><script defer src="../../search-index.js"></script></body></html>
+</section><section id="search" class="content hidden"></section><section class="footer"></section><script>window.rootPath = "../../";window.currentCrate = "plasm_cli";</script><script src="../../main.js"></script><script src="../../source-script.js"></script><script src="../../source-files.js"></script><script defer src="../../search-index.js"></script></body></html>

@@ -964,7 +964,6 @@
 <span id="964">964</span>
 <span id="965">965</span>
 <span id="966">966</span>
-<span id="967">967</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="doccomment">//! # Plasm Staking Module</span>
 <span class="doccomment">//!</span>
@@ -976,7 +975,6 @@
     <span class="ident">decl_error</span>, <span class="ident">decl_event</span>, <span class="ident">decl_module</span>, <span class="ident">decl_storage</span>,
     <span class="ident">dispatch</span>::<span class="ident">DispatchResult</span>,
     <span class="ident">ensure</span>,
-    <span class="ident">storage</span>::{<span class="ident">IterableStorageDoubleMap</span>, <span class="ident">IterableStorageMap</span>},
     <span class="ident">traits</span>::{
         <span class="ident">Currency</span>, <span class="ident">Get</span>, <span class="ident">Imbalance</span>, <span class="ident">LockIdentifier</span>, <span class="ident">LockableCurrency</span>, <span class="ident">OnUnbalanced</span>, <span class="ident">Time</span>,
         <span class="ident">WithdrawReasons</span>,
@@ -992,7 +990,7 @@
 };
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident">pallet_staking</span>::{<span class="ident">Forcing</span>, <span class="ident">RewardDestination</span>};
 <span class="kw">use</span> <span class="ident">sp_runtime</span>::{
-    <span class="ident">traits</span>::{<span class="ident">CheckedAdd</span>, <span class="ident">CheckedSub</span>, <span class="ident">Saturating</span>, <span class="ident">StaticLookup</span>, <span class="ident">Zero</span>},
+    <span class="ident">traits</span>::{<span class="ident">CheckedSub</span>, <span class="ident">Saturating</span>, <span class="ident">StaticLookup</span>, <span class="ident">Zero</span>},
     <span class="ident">Perbill</span>, <span class="ident">RuntimeDebug</span>,
 };
 <span class="kw">use</span> <span class="ident">sp_std</span>::{<span class="ident">collections</span>::<span class="ident">btree_map</span>::<span class="ident">BTreeMap</span>, <span class="ident">prelude</span>::<span class="kw-2">*</span>, <span class="ident">result</span>, <span class="ident">vec</span>::<span class="ident">Vec</span>};
@@ -1934,4 +1932,4 @@
     }
 }
 </pre></div>
-</section><section id="search" class="content hidden"></section><section class="footer"></section><script>window.rootPath = "../../";window.currentCrate = "pallet_dapps_staking";</script><script src="../../aliases.js"></script><script src="../../main.js"></script><script src="../../source-script.js"></script><script src="../../source-files.js"></script><script defer src="../../search-index.js"></script></body></html>
+</section><section id="search" class="content hidden"></section><section class="footer"></section><script>window.rootPath = "../../";window.currentCrate = "pallet_dapps_staking";</script><script src="../../main.js"></script><script src="../../source-script.js"></script><script src="../../source-files.js"></script><script defer src="../../search-index.js"></script></body></html>

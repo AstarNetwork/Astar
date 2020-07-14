@@ -609,6 +609,35 @@
 <span id="609">609</span>
 <span id="610">610</span>
 <span id="611">611</span>
+<span id="612">612</span>
+<span id="613">613</span>
+<span id="614">614</span>
+<span id="615">615</span>
+<span id="616">616</span>
+<span id="617">617</span>
+<span id="618">618</span>
+<span id="619">619</span>
+<span id="620">620</span>
+<span id="621">621</span>
+<span id="622">622</span>
+<span id="623">623</span>
+<span id="624">624</span>
+<span id="625">625</span>
+<span id="626">626</span>
+<span id="627">627</span>
+<span id="628">628</span>
+<span id="629">629</span>
+<span id="630">630</span>
+<span id="631">631</span>
+<span id="632">632</span>
+<span id="633">633</span>
+<span id="634">634</span>
+<span id="635">635</span>
+<span id="636">636</span>
+<span id="637">637</span>
+<span id="638">638</span>
+<span id="639">639</span>
+<span id="640">640</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="doccomment">//! The Substrate runtime. This can be compiled with ``#[no_std]`, ready for Wasm.</span>
 
@@ -629,6 +658,7 @@
 <span class="kw">use</span> <span class="ident">pallet_grandpa</span>::<span class="ident">fg_primitives</span>;
 <span class="kw">use</span> <span class="ident">pallet_grandpa</span>::{<span class="ident">AuthorityId</span> <span class="kw">as</span> <span class="ident">GrandpaId</span>, <span class="ident">AuthorityList</span> <span class="kw">as</span> <span class="ident">GrandpaAuthorityList</span>};
 <span class="kw">use</span> <span class="ident">pallet_session</span>::<span class="ident">historical</span> <span class="kw">as</span> <span class="ident">pallet_session_historical</span>;
+<span class="kw">use</span> <span class="ident">pallet_transaction_payment</span>::{<span class="ident">Multiplier</span>, <span class="ident">TargetedFeeAdjustment</span>};
 <span class="kw">use</span> <span class="ident">pallet_transaction_payment_rpc_runtime_api</span>::<span class="ident">RuntimeDispatchInfo</span>;
 <span class="kw">use</span> <span class="ident">plasm_primitives</span>::{
     <span class="ident">AccountId</span>, <span class="ident">AccountIndex</span>, <span class="ident">Balance</span>, <span class="ident">BlockNumber</span>, <span class="ident">Hash</span>, <span class="ident">Index</span>, <span class="ident">Moment</span>, <span class="ident">Signature</span>,
@@ -640,9 +670,12 @@
     <span class="ident">BlakeTwo256</span>, <span class="ident">Block</span> <span class="kw">as</span> <span class="ident">BlockT</span>, <span class="ident">ConvertInto</span>, <span class="ident">Extrinsic</span>, <span class="ident">NumberFor</span>, <span class="ident">OpaqueKeys</span>,
     <span class="ident">SaturatedConversion</span>, <span class="ident">Saturating</span>, <span class="ident">StaticLookup</span>, <span class="ident">Verify</span>,
 };
-<span class="kw">use</span> <span class="ident">sp_runtime</span>::<span class="ident">transaction_validity</span>::{<span class="ident">TransactionSource</span>, <span class="ident">TransactionValidity</span>};
+<span class="kw">use</span> <span class="ident">sp_runtime</span>::<span class="ident">transaction_validity</span>::{
+    <span class="ident">TransactionPriority</span>, <span class="ident">TransactionSource</span>, <span class="ident">TransactionValidity</span>,
+};
 <span class="kw">use</span> <span class="ident">sp_runtime</span>::{
-    <span class="ident">create_runtime_str</span>, <span class="ident">generic</span>, <span class="ident">impl_opaque_keys</span>, <span class="ident">ApplyExtrinsicResult</span>, <span class="ident">Perbill</span>, <span class="ident">Perquintill</span>,
+    <span class="ident">create_runtime_str</span>, <span class="ident">generic</span>, <span class="ident">impl_opaque_keys</span>, <span class="ident">ApplyExtrinsicResult</span>, <span class="ident">FixedPointNumber</span>,
+    <span class="ident">MultiSigner</span>, <span class="ident">Perbill</span>, <span class="ident">Perquintill</span>,
 };
 <span class="kw">use</span> <span class="ident">sp_std</span>::<span class="ident">prelude</span>::<span class="kw-2">*</span>;
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">any</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>, <span class="ident">test</span>))]</span>
@@ -654,9 +687,6 @@
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident">pallet_timestamp</span>::<span class="ident">Call</span> <span class="kw">as</span> <span class="ident">TimestampCall</span>;
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">any</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>, <span class="ident">test</span>))]</span>
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident">sp_runtime</span>::<span class="ident">BuildStorage</span>;
-
-<span class="doccomment">/// Implementations of some helper traits passed into runtime modules as associated types.</span>
-<span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">impls</span>;
 
 <span class="doccomment">/// Deprecated but used runtime interfaces.</span>
 <span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">legacy</span>;
@@ -671,13 +701,17 @@
 
 <span class="doccomment">/// Runtime version.</span>
 <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">VERSION</span>: <span class="ident">RuntimeVersion</span> <span class="op">=</span> <span class="ident">RuntimeVersion</span> {
-    <span class="ident">spec_name</span>: <span class="macro">create_runtime_str</span><span class="macro">!</span>(<span class="string">&quot;plasm&quot;</span>),
+    <span class="ident">spec_name</span>: <span class="macro">create_runtime_str</span><span class="macro">!</span>(<span class="string">&quot;dusty2&quot;</span>),
     <span class="ident">impl_name</span>: <span class="macro">create_runtime_str</span><span class="macro">!</span>(<span class="string">&quot;staketechnologies-plasm&quot;</span>),
-    <span class="ident">authoring_version</span>: <span class="number">2</span>,
-    <span class="ident">spec_version</span>: <span class="number">2</span>,
-    <span class="ident">impl_version</span>: <span class="number">2</span>,
-    <span class="ident">transaction_version</span>: <span class="number">2</span>,
+    <span class="ident">authoring_version</span>: <span class="number">1</span>,
+    <span class="comment">// Per convention: if the runtime behavior changes, increment spec_version</span>
+    <span class="comment">// and set impl_version to equal spec_version. If only runtime</span>
+    <span class="comment">// implementation changes and behavior does not, then leave spec_version as</span>
+    <span class="comment">// is and increment impl_version.</span>
+    <span class="ident">spec_version</span>: <span class="number">4</span>,
+    <span class="ident">impl_version</span>: <span class="number">4</span>,
     <span class="ident">apis</span>: <span class="ident">RUNTIME_API_VERSIONS</span>,
+    <span class="ident">transaction_version</span>: <span class="number">1</span>,
 };
 
 <span class="doccomment">/// Native version.</span>
@@ -702,6 +736,7 @@
 }
 
 <span class="kw">impl</span> <span class="ident">frame_system</span>::<span class="ident">Trait</span> <span class="kw">for</span> <span class="ident">Runtime</span> {
+    <span class="kw">type</span> <span class="ident">BaseCallFilter</span> <span class="op">=</span> ();
     <span class="kw">type</span> <span class="ident">Origin</span> <span class="op">=</span> <span class="ident">Origin</span>;
     <span class="kw">type</span> <span class="ident">Call</span> <span class="op">=</span> <span class="ident">Call</span>;
     <span class="kw">type</span> <span class="ident">Index</span> <span class="op">=</span> <span class="ident">Index</span>;
@@ -763,10 +798,9 @@
 
 <span class="macro">parameter_types</span><span class="macro">!</span> {
     <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">TransactionByteFee</span>: <span class="ident">Balance</span> <span class="op">=</span> <span class="number">10</span> <span class="op">*</span> <span class="ident">MILLIPLM</span>;
-    <span class="comment">// setting this to zero will disable the weight fee.</span>
-    <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">WeightFeeCoefficient</span>: <span class="ident">Balance</span> <span class="op">=</span> <span class="number">1_000</span>;
-    <span class="comment">// for a sane configuration, this should always be less than `AvailableBlockRatio`.</span>
     <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">TargetBlockFullness</span>: <span class="ident">Perquintill</span> <span class="op">=</span> <span class="ident">Perquintill</span>::<span class="ident">from_percent</span>(<span class="number">25</span>);
+    <span class="kw">pub</span> <span class="ident">AdjustmentVariable</span>: <span class="ident">Multiplier</span> <span class="op">=</span> <span class="ident">Multiplier</span>::<span class="ident">saturating_from_rational</span>(<span class="number">1</span>, <span class="number">100_000</span>);
+    <span class="kw">pub</span> <span class="ident">MinimumMultiplier</span>: <span class="ident">Multiplier</span> <span class="op">=</span> <span class="ident">Multiplier</span>::<span class="ident">saturating_from_rational</span>(<span class="number">1</span>, <span class="number">1_000_000_000u128</span>);
 }
 
 <span class="kw">impl</span> <span class="ident">pallet_transaction_payment</span>::<span class="ident">Trait</span> <span class="kw">for</span> <span class="ident">Runtime</span> {
@@ -774,7 +808,8 @@
     <span class="kw">type</span> <span class="ident">OnTransactionPayment</span> <span class="op">=</span> ();
     <span class="kw">type</span> <span class="ident">TransactionByteFee</span> <span class="op">=</span> <span class="ident">TransactionByteFee</span>;
     <span class="kw">type</span> <span class="ident">WeightToFee</span> <span class="op">=</span> <span class="ident">IdentityFee</span><span class="op">&lt;</span><span class="ident">Balance</span><span class="op">&gt;</span>;
-    <span class="kw">type</span> <span class="ident">FeeMultiplierUpdate</span> <span class="op">=</span> <span class="ident">impls</span>::<span class="ident">TargetedFeeAdjustment</span><span class="op">&lt;</span><span class="ident">TargetBlockFullness</span><span class="op">&gt;</span>;
+    <span class="kw">type</span> <span class="ident">FeeMultiplierUpdate</span> <span class="op">=</span>
+        <span class="ident">TargetedFeeAdjustment</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">TargetBlockFullness</span>, <span class="ident">AdjustmentVariable</span>, <span class="ident">MinimumMultiplier</span><span class="op">&gt;</span>;
 }
 
 <span class="macro">parameter_types</span><span class="macro">!</span> {
@@ -791,6 +826,7 @@
     <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">SessionKeys</span> {
         <span class="kw">pub</span> <span class="ident">babe</span>: <span class="ident">Babe</span>,
         <span class="kw">pub</span> <span class="ident">grandpa</span>: <span class="ident">Grandpa</span>,
+        <span class="kw">pub</span> <span class="ident">lockdrop</span>: <span class="ident">PlasmLockdrop</span>,
     }
 }
 
@@ -864,7 +900,7 @@
 <span class="kw">impl</span> <span class="ident">pallet_contracts</span>::<span class="ident">Trait</span> <span class="kw">for</span> <span class="ident">Runtime</span> {
     <span class="kw">type</span> <span class="ident">Time</span> <span class="op">=</span> <span class="ident">Timestamp</span>;
     <span class="kw">type</span> <span class="ident">Randomness</span> <span class="op">=</span> <span class="ident">RandomnessCollectiveFlip</span>;
-    <span class="kw">type</span> <span class="ident">Call</span> <span class="op">=</span> <span class="ident">Call</span>;
+    <span class="kw">type</span> <span class="ident">Currency</span> <span class="op">=</span> <span class="ident">Balances</span>;
     <span class="kw">type</span> <span class="ident">Event</span> <span class="op">=</span> <span class="ident">Event</span>;
     <span class="kw">type</span> <span class="ident">DetermineContractAddress</span> <span class="op">=</span> <span class="ident">pallet_contracts</span>::<span class="ident">SimpleAddressDeterminer</span><span class="op">&lt;</span><span class="ident">Runtime</span><span class="op">&gt;</span>;
     <span class="kw">type</span> <span class="ident">TrieIdGenerator</span> <span class="op">=</span> <span class="ident">pallet_contracts</span>::<span class="ident">TrieIdFromParentCounter</span><span class="op">&lt;</span><span class="ident">Runtime</span><span class="op">&gt;</span>;
@@ -877,6 +913,7 @@
     <span class="kw">type</span> <span class="ident">SurchargeReward</span> <span class="op">=</span> <span class="ident">SurchargeReward</span>;
     <span class="kw">type</span> <span class="ident">MaxDepth</span> <span class="op">=</span> <span class="ident">pallet_contracts</span>::<span class="ident">DefaultMaxDepth</span>;
     <span class="kw">type</span> <span class="ident">MaxValueSize</span> <span class="op">=</span> <span class="ident">pallet_contracts</span>::<span class="ident">DefaultMaxValueSize</span>;
+    <span class="kw">type</span> <span class="ident">WeightPrice</span> <span class="op">=</span> <span class="ident">pallet_transaction_payment</span>::<span class="ident">Module</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span>;
 }
 
 <span class="kw">impl</span> <span class="ident">pallet_contract_operator</span>::<span class="ident">Trait</span> <span class="kw">for</span> <span class="ident">Runtime</span> {
@@ -927,6 +964,26 @@
     <span class="kw">type</span> <span class="ident">OnFinalizationStalled</span> <span class="op">=</span> <span class="ident">Grandpa</span>;
     <span class="kw">type</span> <span class="ident">WindowSize</span> <span class="op">=</span> <span class="ident">WindowSize</span>;
     <span class="kw">type</span> <span class="ident">ReportLatency</span> <span class="op">=</span> <span class="ident">ReportLatency</span>;
+}
+
+<span class="macro">parameter_types</span><span class="macro">!</span> {
+    <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">MedianFilterExpire</span>: <span class="ident">Moment</span> <span class="op">=</span> <span class="number">300</span>; <span class="comment">// 10 blocks is one minute, 300 - half hour</span>
+    <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">LockdropUnsignedPriority</span>: <span class="ident">TransactionPriority</span> <span class="op">=</span> <span class="ident">TransactionPriority</span>::<span class="ident">max_value</span>();
+}
+
+<span class="kw">impl</span> <span class="ident">pallet_plasm_lockdrop</span>::<span class="ident">Trait</span> <span class="kw">for</span> <span class="ident">Runtime</span> {
+    <span class="kw">type</span> <span class="ident">Currency</span> <span class="op">=</span> <span class="ident">Balances</span>;
+    <span class="kw">type</span> <span class="ident">DurationBonus</span> <span class="op">=</span> <span class="ident">pallet_plasm_lockdrop</span>::<span class="ident">DustyDurationBonus</span>;
+    <span class="kw">type</span> <span class="ident">MedianFilterExpire</span> <span class="op">=</span> <span class="ident">MedianFilterExpire</span>;
+    <span class="kw">type</span> <span class="ident">MedianFilterWidth</span> <span class="op">=</span> <span class="ident">pallet_plasm_lockdrop</span>::<span class="ident">typenum</span>::<span class="ident">U5</span>;
+    <span class="kw">type</span> <span class="ident">AuthorityId</span> <span class="op">=</span> <span class="ident">pallet_plasm_lockdrop</span>::<span class="ident">sr25519</span>::<span class="ident">AuthorityId</span>;
+    <span class="kw">type</span> <span class="ident">Account</span> <span class="op">=</span> <span class="ident">MultiSigner</span>;
+    <span class="kw">type</span> <span class="ident">Time</span> <span class="op">=</span> <span class="ident">Timestamp</span>;
+    <span class="kw">type</span> <span class="ident">Moment</span> <span class="op">=</span> <span class="ident">Moment</span>;
+    <span class="kw">type</span> <span class="ident">DollarRate</span> <span class="op">=</span> <span class="ident">Balance</span>;
+    <span class="kw">type</span> <span class="ident">BalanceConvert</span> <span class="op">=</span> <span class="ident">Balance</span>;
+    <span class="kw">type</span> <span class="ident">Event</span> <span class="op">=</span> <span class="ident">Event</span>;
+    <span class="kw">type</span> <span class="ident">UnsignedPriority</span> <span class="op">=</span> <span class="ident">LockdropUnsignedPriority</span>;
 }
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="ident">LocalCall</span><span class="op">&gt;</span> <span class="ident">frame_system</span>::<span class="ident">offchain</span>::<span class="ident">CreateSignedTransaction</span><span class="op">&lt;</span><span class="ident">LocalCall</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">Runtime</span>
@@ -1000,6 +1057,7 @@
         <span class="ident">DappsStaking</span>: <span class="ident">pallet_dapps_staking</span>::{<span class="ident">Module</span>, <span class="ident">Call</span>, <span class="ident">Storage</span>, <span class="ident">Event</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>},
         <span class="ident">PlasmValidator</span>: <span class="ident">pallet_plasm_validator</span>::{<span class="ident">Module</span>, <span class="ident">Call</span>, <span class="ident">Storage</span>, <span class="ident">Event</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>, <span class="ident">Config</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>},
         <span class="ident">PlasmRewards</span>: <span class="ident">pallet_plasm_rewards</span>::{<span class="ident">Module</span>, <span class="ident">Call</span>, <span class="ident">Storage</span>, <span class="ident">Event</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>, <span class="ident">Config</span>},
+        <span class="ident">PlasmLockdrop</span>: <span class="ident">pallet_plasm_lockdrop</span>::{<span class="ident">Module</span>, <span class="ident">Call</span>, <span class="ident">Storage</span>, <span class="ident">Event</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>, <span class="ident">Config</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>, <span class="ident">ValidateUnsigned</span>},
         <span class="ident">Session</span>: <span class="ident">pallet_session</span>::{<span class="ident">Module</span>, <span class="ident">Call</span>, <span class="ident">Storage</span>, <span class="ident">Event</span>, <span class="ident">Config</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>},
         <span class="ident">Historical</span>: <span class="ident">pallet_session_historical</span>::{<span class="ident">Module</span>},
         <span class="ident">Babe</span>: <span class="ident">pallet_babe</span>::{<span class="ident">Module</span>, <span class="ident">Call</span>, <span class="ident">Storage</span>, <span class="ident">Config</span>, <span class="ident">Inherent</span>(<span class="ident">Timestamp</span>)},
@@ -1222,4 +1280,4 @@
     }
 }
 </pre></div>
-</section><section id="search" class="content hidden"></section><section class="footer"></section><script>window.rootPath = "../../";window.currentCrate = "plasm_runtime";</script><script src="../../aliases.js"></script><script src="../../main.js"></script><script src="../../source-script.js"></script><script src="../../source-files.js"></script><script defer src="../../search-index.js"></script></body></html>
+</section><section id="search" class="content hidden"></section><section class="footer"></section><script>window.rootPath = "../../";window.currentCrate = "plasm_runtime";</script><script src="../../main.js"></script><script src="../../source-script.js"></script><script src="../../source-files.js"></script><script defer src="../../search-index.js"></script></body></html>

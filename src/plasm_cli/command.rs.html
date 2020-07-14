@@ -76,6 +76,14 @@
 <span id="76">76</span>
 <span id="77">77</span>
 <span id="78">78</span>
+<span id="79">79</span>
+<span id="80">80</span>
+<span id="81">81</span>
+<span id="82">82</span>
+<span id="83">83</span>
+<span id="84">84</span>
+<span id="85">85</span>
+<span id="86">86</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">chain_spec</span>, <span class="ident">service</span>, <span class="ident">Cli</span>, <span class="ident">Subcommand</span>};
 <span class="kw">use</span> <span class="ident">plasm_runtime</span>::<span class="ident">Block</span>;
@@ -114,7 +122,8 @@
         <span class="prelude-val">Ok</span>(<span class="kw">match</span> <span class="ident">id</span> {
             <span class="string">&quot;dev&quot;</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">Box</span>::<span class="ident">new</span>(<span class="ident">chain_spec</span>::<span class="ident">development_config</span>()),
             <span class="string">&quot;local&quot;</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">Box</span>::<span class="ident">new</span>(<span class="ident">chain_spec</span>::<span class="ident">local_testnet_config</span>()),
-            <span class="string">&quot;&quot;</span> <span class="op">|</span> <span class="string">&quot;plasm&quot;</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">Box</span>::<span class="ident">new</span>(<span class="ident">chain_spec</span>::<span class="ident">plasm_config</span>()),
+            <span class="string">&quot;&quot;</span> <span class="op">|</span> <span class="string">&quot;dusty&quot;</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">Box</span>::<span class="ident">new</span>(<span class="ident">chain_spec</span>::<span class="ident">dusty_config</span>()),
+            <span class="string">&quot;plasm&quot;</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">Box</span>::<span class="ident">new</span>(<span class="ident">chain_spec</span>::<span class="ident">plasm_config</span>()),
             <span class="ident">path</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">Box</span>::<span class="ident">new</span>(<span class="ident">chain_spec</span>::<span class="ident">ChainSpec</span>::<span class="ident">from_json_file</span>(
                 <span class="ident">std</span>::<span class="ident">path</span>::<span class="ident">PathBuf</span>::<span class="ident">from</span>(<span class="ident">path</span>),
             )<span class="question-mark">?</span>),
@@ -153,7 +162,14 @@
 
             <span class="ident">runner</span>.<span class="ident">run_subcommand</span>(<span class="ident">subcommand</span>, <span class="op">|</span><span class="ident">config</span><span class="op">|</span> <span class="prelude-val">Ok</span>(<span class="macro">new_full_start</span><span class="macro">!</span>(<span class="ident">config</span>).<span class="number">0</span>))
         }
+        <span class="prelude-val">Some</span>(<span class="ident">Subcommand</span>::<span class="ident">LockdropOracle</span>(<span class="ident">config</span>)) <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="ident">sc_cli</span>::<span class="ident">init_logger</span>(<span class="string">&quot;&quot;</span>);
+            <span class="ident">log</span>::<span class="macro">info</span><span class="macro">!</span>(<span class="string">&quot;Plasm Lockdrop oracle launched.&quot;</span>);
+            <span class="prelude-val">Ok</span>(<span class="ident">futures</span>::<span class="ident">executor</span>::<span class="ident">block_on</span>(<span class="ident">lockdrop_oracle</span>::<span class="ident">start</span>(
+                <span class="ident">config</span>.<span class="ident">clone</span>(),
+            )))
+        }
     }
 }
 </pre></div>
-</section><section id="search" class="content hidden"></section><section class="footer"></section><script>window.rootPath = "../../";window.currentCrate = "plasm_cli";</script><script src="../../aliases.js"></script><script src="../../main.js"></script><script src="../../source-script.js"></script><script src="../../source-files.js"></script><script defer src="../../search-index.js"></script></body></html>
+</section><section id="search" class="content hidden"></section><section class="footer"></section><script>window.rootPath = "../../";window.currentCrate = "plasm_cli";</script><script src="../../main.js"></script><script src="../../source-script.js"></script><script src="../../source-files.js"></script><script defer src="../../search-index.js"></script></body></html>

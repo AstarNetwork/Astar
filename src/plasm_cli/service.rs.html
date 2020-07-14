@@ -366,6 +366,9 @@
 <span id="366">366</span>
 <span id="367">367</span>
 <span id="368">368</span>
+<span id="369">369</span>
+<span id="370">370</span>
+<span id="371">371</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="attribute">#![<span class="ident">warn</span>(<span class="ident">unused_extern_crates</span>)]</span>
 
@@ -517,6 +520,7 @@
 <span class="macro">macro_rules</span><span class="macro">!</span> <span class="ident">new_full</span> {
     (<span class="macro-nonterminal">$</span><span class="macro-nonterminal">config</span>:<span class="ident">expr</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">with_startup_data</span>: <span class="ident">expr</span>) <span class="op">=</span><span class="op">&gt;</span> {{
         <span class="kw">use</span> <span class="ident">sc_client_api</span>::<span class="ident">ExecutorProvider</span>;
+        <span class="kw">use</span> <span class="ident">sp_core</span>::<span class="ident">traits</span>::<span class="ident">BareCryptoStorePtr</span>;
 
         <span class="kw">let</span> (<span class="ident">role</span>, <span class="ident">force_authoring</span>, <span class="ident">name</span>, <span class="ident">disable_grandpa</span>) <span class="op">=</span> (
             <span class="macro-nonterminal">$</span><span class="macro-nonterminal">config</span>.<span class="ident">role</span>.<span class="ident">clone</span>(),
@@ -537,7 +541,7 @@
                     <span class="ident">backend</span>, <span class="ident">provider</span>,
                 )) <span class="kw">as</span> <span class="kw">_</span>)
             })<span class="question-mark">?</span>
-            .<span class="ident">build</span>()<span class="question-mark">?</span>;
+            .<span class="ident">build_full</span>()<span class="question-mark">?</span>;
 
         <span class="kw">let</span> (<span class="ident">block_import</span>, <span class="ident">grandpa_link</span>, <span class="ident">babe_link</span>) <span class="op">=</span> <span class="ident">import_setup</span>.<span class="ident">take</span>().<span class="ident">expect</span>(
             <span class="string">&quot;Link Half and Block Import are present for Full Services or setup failed before. qed&quot;</span>,
@@ -578,13 +582,15 @@
             };
 
             <span class="kw">let</span> <span class="ident">babe</span> <span class="op">=</span> <span class="ident">sc_consensus_babe</span>::<span class="ident">start_babe</span>(<span class="ident">babe_config</span>)<span class="question-mark">?</span>;
-            <span class="ident">service</span>.<span class="ident">spawn_essential_task</span>(<span class="string">&quot;babe-proposer&quot;</span>, <span class="ident">babe</span>);
+            <span class="ident">service</span>
+                .<span class="ident">spawn_essential_task_handle</span>()
+                .<span class="ident">spawn_blocking</span>(<span class="string">&quot;babe-proposer&quot;</span>, <span class="ident">babe</span>);
         }
 
         <span class="comment">// if the node isn&#39;t actively participating in consensus then it doesn&#39;t</span>
         <span class="comment">// need a keystore, regardless of which protocol we use below.</span>
         <span class="kw">let</span> <span class="ident">keystore</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">role</span>.<span class="ident">is_authority</span>() {
-            <span class="prelude-val">Some</span>(<span class="ident">service</span>.<span class="ident">keystore</span>())
+            <span class="prelude-val">Some</span>(<span class="ident">service</span>.<span class="ident">keystore</span>() <span class="kw">as</span> <span class="ident">BareCryptoStorePtr</span>)
         } <span class="kw">else</span> {
             <span class="prelude-val">None</span>
         };
@@ -620,7 +626,7 @@
 
             <span class="comment">// the GRANDPA voter task is considered infallible, i.e.</span>
             <span class="comment">// if it fails we take down the service with it.</span>
-            <span class="ident">service</span>.<span class="ident">spawn_essential_task</span>(
+            <span class="ident">service</span>.<span class="ident">spawn_essential_task_handle</span>().<span class="ident">spawn_blocking</span>(
                 <span class="string">&quot;grandpa-voter&quot;</span>,
                 <span class="ident">sc_finality_grandpa</span>::<span class="ident">run_grandpa_voter</span>(<span class="ident">grandpa_config</span>)<span class="question-mark">?</span>,
             );
@@ -731,9 +737,9 @@
 
             <span class="prelude-val">Ok</span>(<span class="ident">plasm_rpc</span>::<span class="ident">create_light</span>(<span class="ident">light_deps</span>))
         })<span class="question-mark">?</span>
-        .<span class="ident">build</span>()<span class="question-mark">?</span>;
+        .<span class="ident">build_light</span>()<span class="question-mark">?</span>;
 
     <span class="prelude-val">Ok</span>(<span class="ident">service</span>)
 }
 </pre></div>
-</section><section id="search" class="content hidden"></section><section class="footer"></section><script>window.rootPath = "../../";window.currentCrate = "plasm_cli";</script><script src="../../aliases.js"></script><script src="../../main.js"></script><script src="../../source-script.js"></script><script src="../../source-files.js"></script><script defer src="../../search-index.js"></script></body></html>
+</section><section id="search" class="content hidden"></section><section class="footer"></section><script>window.rootPath = "../../";window.currentCrate = "plasm_cli";</script><script src="../../main.js"></script><script src="../../source-script.js"></script><script src="../../source-files.js"></script><script defer src="../../search-index.js"></script></body></html>
