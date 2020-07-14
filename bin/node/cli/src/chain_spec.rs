@@ -151,8 +151,8 @@ fn make_genesis(
             dollar_rate: (9_000, 200),
             vote_threshold: 1,
             positive_votes: 1,
-            // Max time bounds for testing purposes
-            time_bounds: (0, 2_594_459_790_000u64),
+            // Start from launch for testing purposes
+            lockdrop_bounds: (0, 1_000_000),
         }),
         pallet_session: Some(SessionConfig {
             keys: keys

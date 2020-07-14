@@ -254,7 +254,7 @@ decl_error! {
         /// Authorities reject this claim request.
         NotApproved,
         /// Lockdrop isn't run now, request could not be processed.
-        OutOfTime,
+        OutOfBounds,
     }
 }
 
@@ -286,7 +286,7 @@ decl_storage! {
         ///   Positive votes = approve votes - decline votes.
         PositiveVotes get(fn positive_votes) config(): AuthorityVote;
         /// Timestamp bounds of lockdrop held period.
-        TimeBounds get(fn time_bounds) config(): (T::Moment, T::Moment);
+        LockdropBounds get(fn lockdrop_bounds) config(): (T::BlockNumber, T::BlockNumber);
     }
 }
 
@@ -324,7 +324,8 @@ decl_module! {
             );
 
             if !<Claims<T>>::contains_key(claim_id) {
-                ensure!(Self::time_guard(), Error::<T>::OutOfTime);
+                let now = <frame_system::Module<T>>::block_number();
+                ensure!(Self::is_active(now), Error::<T>::OutOfBounds);
 
                 let amount = match params {
                     Lockdrop::Bitcoin { value, duration, .. } => {
@@ -472,10 +473,10 @@ decl_module! {
 
         /// Set lockdrop held time.
         #[weight = 50_000]
-        fn set_time_bounds(origin, from: T::Moment, to: T::Moment) {
+        fn set_bounds(origin, from: T::BlockNumber, to: T::BlockNumber) {
             ensure_root(origin)?;
             ensure!(from < to, "wrong arguments");
-            <TimeBounds<T>>::put((from, to));
+            <LockdropBounds<T>>::put((from, to));
         }
 
         /// Set minimum of positive votes required for lock approve.
@@ -493,10 +494,11 @@ decl_module! {
         }
 
         // Runs after every block within the context and current state of said block.
-        fn offchain_worker(_now: T::BlockNumber) {
-            debug::RuntimeLogger::init();
+        fn offchain_worker(now: T::BlockNumber) {
+            // Launch if validator and lockdrop is active
+            if sp_io::offchain::is_validator() && Self::is_active(now) {
+                debug::RuntimeLogger::init();
 
-            if sp_io::offchain::is_validator() {
                 match Self::offchain() {
                     Err(_) => debug::error!(
                         target: "lockdrop-offchain-worker",
@@ -646,10 +648,9 @@ impl<T: Trait> Module<T> {
         None
     }
 
-    /// Check that current time suits lockdrop time bounds.
-    fn time_guard() -> bool {
-        let now = T::Time::now();
-        let bounds = <TimeBounds<T>>::get();
+    /// Check that block suits lockdrop bounds.
+    fn is_active(now: T::BlockNumber) -> bool {
+        let bounds = <LockdropBounds<T>>::get();
         now >= bounds.0 && now < bounds.1
     }
 }
