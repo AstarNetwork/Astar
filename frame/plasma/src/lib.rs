@@ -275,13 +275,13 @@ decl_module! {
             exit_deposit_predicate: T::AccountId,
         ) {
             let sender = ensure_signed(origin)?;
-            let plapps_hash = T::Hashing::hash_of(&(
-                T::Hashing::hash_of(&aggregator_id),
-                T::Hashing::hash_of(&erc20),
-                T::Hashing::hash_of(&state_update_predicate),
-                T::Hashing::hash_of(&exit_predicate),
-                T::Hashing::hash_of(&exit_deposit_predicate),
-            ));
+            let plapps_hash = Self::generate_plapps_hash(
+                &aggregator_id,
+                &erc20,
+                &state_update_predicate,
+                &exit_predicate,
+                &exit_deposit_predicate,
+            );
             let plapps_id = T::DeterminePlappsAddress::plapps_address_for(&plapps_hash, &sender);
             <AggregatorAddress<T>>::insert(&plapps_id, aggregator_id);
             <ERC20<T>>::insert(&plapps_id, erc20);
@@ -420,7 +420,7 @@ decl_module! {
             )?;
             let owner: T::AccountId = Decode::decode(&mut &state_update.state_object.inputs[0][..])
                 .map_err(|_| Error::<T>::MustBeDecodable)?;
-            let amount = state_update.range.end - state_update.range.start;
+            let _amount = state_update.range.end - state_update.range.start;
             ensure!(
                 origin == owner,
                 Error::<T>::OriginMustBeOwner,
@@ -774,7 +774,7 @@ impl<T: Trait> Module<T> {
         let state_update = Self::verify_exit_property(plapps_id, exit_property)?;
         let exit_id = Self::get_exit_id(exit_property);
         // get payout contract address
-        let payout = Self::payout(plapps_id);
+        let _payout = Self::payout(plapps_id);
 
         // Check that we are authorized to finalize this exit
         ensure!(
@@ -790,7 +790,7 @@ impl<T: Trait> Module<T> {
         // Remove the deposited range
         Self::bare_remove_deposited_range(plapps_id, &state_update.range, deposited_range_id)?;
         // Transfer tokens to its predicate
-        let amount = state_update.range.end - state_update.range.start;
+        let _amount = state_update.range.end - state_update.range.start;
 
         // TODO: transfer plapps_id -> payout (amount) at erc20.
         // let _ = contracts::bare_call(
@@ -870,5 +870,21 @@ impl<T: Trait> Module<T> {
 
     fn is_subrange(subrange: &RangeOf<T>, surrounding_range: &RangeOf<T>) -> bool {
         subrange.start >= surrounding_range.start && subrange.end <= surrounding_range.end
+    }
+
+    fn generate_plapps_hash(
+        aggregator_id: &T::AccountId,
+        erc20: &T::AccountId,
+        state_update_predicate: &T::AccountId,
+        exit_predicate: &T::AccountId,
+        exit_deposit_predicate: &T::AccountId,
+    ) -> T::Hash {
+        T::Hashing::hash_of(&(
+            T::Hashing::hash_of(&aggregator_id),
+            T::Hashing::hash_of(&erc20),
+            T::Hashing::hash_of(&state_update_predicate),
+            T::Hashing::hash_of(&exit_predicate),
+            T::Hashing::hash_of(&exit_deposit_predicate),
+        ))
     }
 }

@@ -13,7 +13,10 @@ pub use pallet_balances as balances;
 pub use pallet_contracts::{self as contracts, ContractAddressFor, TrieId, TrieIdGenerator};
 pub use pallet_ovm::{self as ovm, AtomicPredicateIdConfig};
 use sp_core::crypto::AccountId32;
-pub use sp_core::{crypto::key_types, H256};
+pub use sp_core::{
+    crypto::{key_types, UncheckedInto},
+    Pair, H256,
+};
 pub use sp_runtime::testing::{Header, UintAuthorityId};
 pub use sp_runtime::traits::{BlakeTwo256, ConvertInto, IdentifyAccount, IdentityLookup};
 pub use sp_runtime::{KeyTypeId, Perbill};
@@ -50,7 +53,6 @@ mod plasma {
     // needs to give a name for the current crate.
     // This hack is required for `impl_outer_event!`.
     pub use super::super::*;
-    use frame_support::impl_outer_event;
 }
 
 impl_outer_event! {
@@ -69,7 +71,7 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
         .unwrap();
 
     let _ = pallet_balances::GenesisConfig::<Test> {
-        balances: vec![(ALICE_STASH, 1_000_000_000_000_000_000)],
+        balances: vec![((*ALICE_STASH).clone(), 1_000_000_000_000_000_000)],
     }
     .assimilate_storage(&mut storage);
 
@@ -234,7 +236,7 @@ lazy_static::lazy_static! {
     ]);
 }
 
-struct MockAtomicPredicateIdConfigGetter;
+pub struct MockAtomicPredicateIdConfigGetter;
 impl Get<AtomicPredicateIdConfig<AccountId, H256>> for MockAtomicPredicateIdConfigGetter {
     fn get() -> AtomicPredicateIdConfig<AccountId, H256> {
         AtomicPredicateIdConfig {
@@ -264,13 +266,19 @@ impl pallet_ovm::Trait for Test {
     type Event = MetaEvent;
 }
 
-parameter_types! {
-    pub const MaximumTokenAddress: AccountId = AccountId::max_value();
+pub struct MaximumTokenAddress;
+impl Get<AccountId> for MaximumTokenAddress {
+    fn get() -> AccountId {
+        H256::from(&hex![
+            "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+        ])
+        .unchecked_into()
+    }
 }
 
 impl Trait for Test {
     type Currency = Balances;
-    type DeterminePlappsAddress = SimpleAddressDeterminer<T>;
+    type DeterminePlappsAddress = SimpleAddressDeterminer<Test>;
     type MaximumTokenAddress = MaximumTokenAddress;
     // TODO: should be Keccak;
     type PlasmaHashing = BlakeTwo256;

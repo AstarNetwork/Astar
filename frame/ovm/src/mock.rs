@@ -13,7 +13,6 @@ use sp_runtime::{
     traits::{BlakeTwo256, IdentifyAccount, IdentityLookup},
     Perbill,
 };
-
 pub type BlockNumber = u64;
 pub type AccountId = AccountId32;
 pub type Balance = u64;
