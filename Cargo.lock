@@ -3678,6 +3678,7 @@ dependencies = [
  "frame-support",
  "frame-system",
  "hex-literal",
+ "lazy_static",
  "pallet-balances",
  "pallet-contracts",
  "pallet-ovm",
