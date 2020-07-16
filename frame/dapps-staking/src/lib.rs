@@ -8,7 +8,6 @@ use frame_support::{
     decl_error, decl_event, decl_module, decl_storage,
     dispatch::DispatchResult,
     ensure,
-    storage::{IterableStorageDoubleMap, IterableStorageMap},
     traits::{
         Currency, Get, Imbalance, LockIdentifier, LockableCurrency, OnUnbalanced, Time,
         WithdrawReasons,
@@ -24,7 +23,7 @@ use pallet_plasm_rewards::{
 };
 pub use pallet_staking::{Forcing, RewardDestination};
 use sp_runtime::{
-    traits::{CheckedAdd, CheckedSub, Saturating, StaticLookup, Zero},
+    traits::{CheckedSub, Saturating, StaticLookup, Zero},
     Perbill, RuntimeDebug,
 };
 use sp_std::{collections::btree_map::BTreeMap, prelude::*, result, vec::Vec};

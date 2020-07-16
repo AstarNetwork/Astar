@@ -1,12 +1,11 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use frame_support::dispatch::UnfilteredDispatchable;
-use frame_support::weights::{DispatchClass, FunctionOf, Pays, Weight};
 use frame_support::{decl_event, decl_module, decl_storage, Parameter};
 use frame_system::{self as system, ensure_signed, RawOrigin};
 use pallet_contracts::{BalanceOf, CodeHash, ContractAddressFor, Gas};
 use sp_runtime::{
-    traits::{Dispatchable, MaybeDisplay, MaybeSerialize, Member},
+    traits::{MaybeDisplay, MaybeSerialize, Member},
     DispatchError,
 };
 use sp_std::prelude::*;
@@ -98,11 +97,7 @@ decl_module! {
         fn deposit_event() = default;
 
         /// Deploys a contact and insert relation of a contract and an operator to mapping.
-        #[weight = FunctionOf(
-            |args: (&BalanceOf<T>, &Weight, &CodeHash<T>, &Vec<u8>, &T::Parameters)| *args.1,
-            DispatchClass::Normal,
-            Pays::Yes
-        )]
+        #[weight = *gas_limit]
         pub fn instantiate(
             origin,
             #[compact] endowment: BalanceOf<T>,

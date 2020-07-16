@@ -13,7 +13,7 @@ pub struct DefaultForDappsStaking<T: Trait> {
 }
 impl<T: Trait> ComputeEraWithParam<EraIndex> for DefaultForDappsStaking<T> {
     type Param = BalanceOf<T>;
-    fn compute(era: &EraIndex) -> BalanceOf<T> {
+    fn compute(_era: &EraIndex) -> BalanceOf<T> {
         0.into()
     }
 }

@@ -1,7 +1,7 @@
 [package]
 name = "ovmi-cli"
 version = "0.1.0"
-authors = ["satellitex <s.a.t.e.3.ths@gmail.com>"]
+authors = ["Stake Technologies <devops@stake.co.jp>"]
 edition = "2018"
 description = "Optimistic virtual machine innterpreter in Rust."
 

@@ -13,7 +13,7 @@ fn bip68_encode(blocks: u32) -> u32 {
 }
 
 /// Compile BTC sequence lock script for givent public key and duration in blocks.
-pub fn lock_script(public: &ecdsa::Public, duration: u32) -> Result<Script, String> {
+fn lock_script(public: &ecdsa::Public, duration: u32) -> Result<Script, String> {
     if duration > 0 && duration < 65535 {
         let public_key = PublicKey::from_slice(public.as_ref()).unwrap();
         let blocks = bip68_encode(duration) as i64;
@@ -30,9 +30,11 @@ pub fn lock_script(public: &ecdsa::Public, duration: u32) -> Result<Script, Stri
     }
 }
 
-pub fn to_address(public: &ecdsa::Public) -> String {
-    let public_key = PublicKey::from_slice(public.as_ref()).unwrap();
-    Address::p2pkh(&public_key, Network::Testnet).to_string()
+/// Create lock script address from given params.
+pub fn lock_script_address(public: &ecdsa::Public, duration: u32) -> Result<String, String> {
+    let script = lock_script(public, duration)?;
+    let address = Address::from_script(&script, Network::Testnet).unwrap();
+    Ok(address.to_string())
 }
 
 #[cfg(test)]
@@ -55,13 +57,5 @@ mod tests {
         let script = lock_script(&public, duration).unwrap();
         let address = Address::from_script(&script, Network::Testnet).unwrap();
         assert_eq!(address.to_string(), "2MuJcWGWe8XkPc6h7pt6vQDyaTwDZxKJZ8p");
-    }
-
-    #[test]
-    fn test_to_address() {
-        let public = ecdsa::Public::from_full(
-            &hex!["0431e12c2db27f3b07fcc560cdbff90923bf9b5b03769103a44b38426f9469172f3eef59e4f01df729428161c33ec5b32763e2e5a0072551b7808ae9d89286b37b"][..]
-        ).unwrap();
-        assert_eq!(to_address(&public), "mzUQaN6vnYDYNNYJVpRz2ipxLcWsQg6b8z");
     }
 }
