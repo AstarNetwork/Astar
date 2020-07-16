@@ -375,7 +375,7 @@ decl_module! {
                 Error::<T>::PropertyIsNotClaimed,
             );
 
-            let challenging_game_id = Self::get_property_id(&property);
+            let challenging_game_id = Self::get_property_id(&challenge_property);
             ensure!(
                 Self::started(&challenging_game_id),
                 Error::<T>::ChallengeIsAlreadyStarted,
@@ -590,9 +590,16 @@ impl<T: Trait> Module<T> {
     /// check if game of given id is already started.
     pub fn started(id: &T::Hash) -> bool {
         if let Some(game) = Self::games(id) {
+<<<<<<< HEAD
             return game.created_block != <T as system::Trait>::BlockNumber::zero();
         }
         false
+=======
+            game.created_block != <T as system::Trait>::BlockNumber::zero()
+        } else {
+            false
+        }
+>>>>>>> dusty
     }
 
     // ======= helper =======
