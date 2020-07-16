@@ -88,7 +88,7 @@ mod erc20 {
             let balance_from = self.balance_of_or_zero(&self.env().caller());
             self.balances.insert(
                 self.env().caller(),
-                balance_from + self.env().value_transferred(),
+                balance_from + self.env().transferred_balance(),
             );
             let caller = self.env().caller();
             let balance_from = self.balance_of_or_zero(&caller);
@@ -108,7 +108,7 @@ mod erc20 {
                 return false;
             }
             self.balances.insert(caller.clone(), balance_from - amount);
-            // TODO msg.sender.transfer(wad);
+            self.env().transfer(caller.clone(), amount);
             self.env().emit_event(Withdrawal{
                 indexed: caller,
                 amount: balance_from - amount,
