@@ -590,16 +590,10 @@ impl<T: Trait> Module<T> {
     /// check if game of given id is already started.
     pub fn started(id: &T::Hash) -> bool {
         if let Some(game) = Self::games(id) {
-<<<<<<< HEAD
-            return game.created_block != <T as system::Trait>::BlockNumber::zero();
-        }
-        false
-=======
             game.created_block != <T as system::Trait>::BlockNumber::zero()
         } else {
             false
         }
->>>>>>> dusty
     }
 
     // ======= helper =======
