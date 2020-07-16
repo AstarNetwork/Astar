@@ -495,6 +495,14 @@
 <span id="495">495</span>
 <span id="496">496</span>
 <span id="497">497</span>
+<span id="498">498</span>
+<span id="499">499</span>
+<span id="500">500</span>
+<span id="501">501</span>
+<span id="502">502</span>
+<span id="503">503</span>
+<span id="504">504</span>
+<span id="505">505</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="kw">use</span> <span class="kw">super</span>::<span class="kw-2">*</span>;
 <span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">predicates</span>::<span class="kw-2">*</span>;
@@ -522,10 +530,18 @@
     <span class="ident">CallAddress</span> { <span class="ident">address</span>: <span class="ident">Address</span> },
     <span class="attribute">#[<span class="ident">snafu</span>(<span class="ident">display</span>(<span class="string">&quot;Codec error: expected type name is {}&quot;</span>, <span class="ident">type_name</span>))]</span>
     <span class="ident">CodecError</span> { <span class="ident">type_name</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;static</span> <span class="ident">str</span> },
+    <span class="attribute">#[<span class="ident">snafu</span>(<span class="ident">display</span>(<span class="string">&quot;External error: {}&quot;</span>, <span class="ident">msg</span>))]</span>
+    <span class="ident">ExternalError</span> { <span class="ident">msg</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;static</span> <span class="ident">str</span> },
     <span class="attribute">#[<span class="ident">snafu</span>(<span class="ident">display</span>(<span class="string">&quot;Unexpected error: {}&quot;</span>, <span class="ident">msg</span>))]</span>
     <span class="ident">Unexpected</span> { <span class="ident">msg</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;static</span> <span class="ident">str</span> },
     <span class="doccomment">/// Unimplemented error.</span>
     <span class="ident">Unimplemented</span>,
+}
+
+<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">Address</span><span class="op">&gt;</span> <span class="ident">From</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="lifetime">&#39;static</span> <span class="ident">str</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">ExecError</span><span class="op">&lt;</span><span class="ident">Address</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">msg</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;static</span> <span class="ident">str</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">ExecError</span><span class="op">&lt;</span><span class="ident">Address</span><span class="op">&gt;</span> {
+        <span class="ident">ExecError</span>::<span class="op">&lt;</span><span class="ident">Address</span><span class="op">&gt;</span>::<span class="ident">ExternalError</span> { <span class="ident">msg</span> }
+    }
 }
 
 <span class="doccomment">/// convert to error code from error tyoe.</span>
