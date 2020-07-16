@@ -19,10 +19,7 @@ use ink_lang as ink;
 #[ink::contract(version = "0.1.0")]
 mod erc20 {
     #[cfg(not(feature = "ink-as-dependency"))]
-    use ink_core::storage2::{
-        collections::HashMap as StorageHashMap,
-        lazy::Lazy,
-    };
+    use ink_core::storage2::{collections::HashMap as StorageHashMap, lazy::Lazy};
 
     #[ink(storage)]
     struct Erc20 {
@@ -51,6 +48,22 @@ mod erc20 {
         value: Balance,
     }
 
+    #[ink(event)]
+    struct Deposit {
+        #[ink(topic)]
+        indexed: AccountId,
+        #[ink(topic)]
+        amount: Balance,
+    }
+
+    #[ink(event)]
+    struct Withdrawal {
+        #[ink(topic)]
+        indexed: AccountId,
+        #[ink(topic)]
+        amount: Balance,
+    }
+
     impl Erc20 {
         #[ink(constructor)]
         fn new(initial_supply: Balance) -> Self {
@@ -68,6 +81,39 @@ mod erc20 {
                 value: initial_supply,
             });
             instance
+        }
+
+        #[ink(message)]
+        fn deposit(&mut self, amount: Balance) -> bool {
+            let balance_from = self.balance_of_or_zero(&self.env().caller());
+            self.balances.insert(
+                self.env().caller(),
+                balance_from + self.env().value_transferred(),
+            );
+            let caller = self.env().caller();
+            let balance_from = self.balance_of_or_zero(&caller);
+            self.balances.insert(caller.clone(), balance_from + amount);
+            self.env().emit_event(Deposit {
+                indexed: caller,
+                amount: balance_from + amount,
+            });
+            true
+        }
+
+        #[ink(message)]
+        fn withdraw(&mut self, amount: Balance) -> bool {
+            let caller = self.env().caller();
+            let balance_from = self.balance_of_or_zero(&caller);
+            if balance_from >= amount {
+                return false;
+            }
+            self.balances.insert(caller.clone(), balance_from - amount);
+            // TODO msg.sender.transfer(wad);
+            self.env().emit_event(Withdrawal{
+                indexed: caller,
+                amount: balance_from - amount,
+            });
+            true
         }
 
         #[ink(message)]
@@ -104,30 +150,20 @@ mod erc20 {
         }
 
         #[ink(message)]
-        fn transfer_from(
-            &mut self,
-            from: AccountId,
-            to: AccountId,
-            value: Balance,
-        ) -> bool {
+        fn transfer_from(&mut self, from: AccountId, to: AccountId, value: Balance) -> bool {
             let caller = self.env().caller();
             let allowance = self.allowance_of_or_zero(&from, &caller);
             if allowance < value {
-                return false
+                return false;
             }
             self.allowances.insert((from, caller), allowance - value);
             self.transfer_from_to(from, to, value)
         }
 
-        fn transfer_from_to(
-            &mut self,
-            from: AccountId,
-            to: AccountId,
-            value: Balance,
-        ) -> bool {
+        fn transfer_from_to(&mut self, from: AccountId, to: AccountId, value: Balance) -> bool {
             let from_balance = self.balance_of_or_zero(&from);
             if from_balance < value {
-                return false
+                return false;
             }
             self.balances.insert(from, from_balance - value);
             let to_balance = self.balance_of_or_zero(&to);
@@ -144,11 +180,7 @@ mod erc20 {
             *self.balances.get(owner).unwrap_or(&0)
         }
 
-        fn allowance_of_or_zero(
-            &self,
-            owner: &AccountId,
-            spender: &AccountId,
-        ) -> Balance {
+        fn allowance_of_or_zero(&self, owner: &AccountId, spender: &AccountId) -> Balance {
             *self.allowances.get(&(*owner, *spender)).unwrap_or(&0)
         }
     }
@@ -172,11 +204,8 @@ mod erc20 {
             .unwrap()
         }
 
-        fn assert_transfer_event<I>(
-            raw_events: I,
-            transfer_index: usize,
-            expected_value: u128,
-        ) where
+        fn assert_transfer_event<I>(raw_events: I, transfer_index: usize, expected_value: u128)
+        where
             I: IntoIterator<Item = env::test::EmittedEvent>,
         {
             let raw_event = raw_events
@@ -269,11 +298,9 @@ mod erc20 {
 
                 assert_eq!(erc20.balance_of(accounts.bob), 0);
                 // Get contract address.
-                let callee =
-                    env::account_id::<env::DefaultEnvTypes>().unwrap_or([0x0; 32].into());
+                let callee = env::account_id::<env::DefaultEnvTypes>().unwrap_or([0x0; 32].into());
                 // Create call
-                let mut data =
-                    env::test::CallData::new(env::call::Selector::new([0x00; 4])); // balance_of
+                let mut data = env::test::CallData::new(env::call::Selector::new([0x00; 4])); // balance_of
                 data.push_arg(&accounts.bob);
                 // Push the new execution context to set Bob as caller
                 assert_eq!(
@@ -315,11 +342,9 @@ mod erc20 {
                 assert_eq!(env::test::recorded_events().count(), 2);
 
                 // Get contract address.
-                let callee =
-                    env::account_id::<env::DefaultEnvTypes>().unwrap_or([0x0; 32].into());
+                let callee = env::account_id::<env::DefaultEnvTypes>().unwrap_or([0x0; 32].into());
                 // Create call.
-                let mut data =
-                    env::test::CallData::new(env::call::Selector::new([0x00; 4])); // balance_of
+                let mut data = env::test::CallData::new(env::call::Selector::new([0x00; 4])); // balance_of
                 data.push_arg(&accounts.bob);
                 // Push the new execution context to set Bob as caller.
                 assert_eq!(

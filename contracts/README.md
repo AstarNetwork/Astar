@@ -10,6 +10,7 @@ For building the example smart contracts found in this folder you will need to h
 
 ```
 cargo install cargo-contract --force
+rustup update
 ```
 
 We use the `--force` to update to the most recent `cargo-contract` version.
