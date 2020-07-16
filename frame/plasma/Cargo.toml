@@ -19,6 +19,7 @@ pallet-contracts = { version = "2.0.0-rc4", default_features = false }
 
 [dev-dependencies]
 hex-literal = "0.2.1"
+lazy_static = { version = "1.4" }
 sp-core = { version = "2.0.0-rc4" }
 pallet-balances = "2.0.0-rc4"
 pallet-timestamp = "2.0.0-rc4"

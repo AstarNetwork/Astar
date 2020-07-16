@@ -8,21 +8,34 @@ pub use frame_support::{
     traits::OnFinalize,
     weights::{WeightToFeeCoefficients, WeightToFeePolynomial},
 };
+pub use hex_literal::hex;
 pub use pallet_balances as balances;
 pub use pallet_contracts::{self as contracts, ContractAddressFor, TrieId, TrieIdGenerator};
-pub use pallet_ovm as ovm;
-pub use sp_core::{crypto::key_types, H256};
+pub use pallet_ovm::{self as ovm, AtomicPredicateIdConfig};
+use sp_core::crypto::AccountId32;
+pub use sp_core::{
+    crypto::{key_types, UncheckedInto},
+    Pair, H256,
+};
 pub use sp_runtime::testing::{Header, UintAuthorityId};
-pub use sp_runtime::traits::{BlakeTwo256, ConvertInto, IdentityLookup};
+pub use sp_runtime::traits::{BlakeTwo256, ConvertInto, IdentifyAccount, IdentityLookup};
 pub use sp_runtime::{KeyTypeId, Perbill};
 
 pub type BlockNumber = u64;
-pub type AccountId = u64;
+pub type AccountId = AccountId32;
 pub type Balance = u64;
 
-pub const ALICE_STASH: u64 = 1;
-pub const BOB_STASH: u64 = 2;
-pub const CHARLIE_STASH: u64 = 3;
+lazy_static::lazy_static! {
+    pub static ref ALICE_STASH: AccountId = to_account_from_seed(&hex![
+        "0000000000000000000000000000000000000000000000000000000000005553"
+    ]);
+        pub static ref BOB_STASH: AccountId = to_account_from_seed(&hex![
+        "0000000000000000000000000000000000000000000000000000000000008553"
+    ]);
+        pub static ref CHARLIE_STASH: AccountId = to_account_from_seed(&hex![
+        "0000000000000000000000000000000000000000000000000000000000009553"
+    ]);
+}
 
 impl_outer_origin! {
     pub enum Origin for Test  where system = frame_system {}
@@ -40,7 +53,6 @@ mod plasma {
     // needs to give a name for the current crate.
     // This hack is required for `impl_outer_event!`.
     pub use super::super::*;
-    use frame_support::impl_outer_event;
 }
 
 impl_outer_event! {
@@ -59,7 +71,7 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
         .unwrap();
 
     let _ = pallet_balances::GenesisConfig::<Test> {
-        balances: vec![(ALICE_STASH, 1_000_000_000_000_000_000)],
+        balances: vec![((*ALICE_STASH).clone(), 1_000_000_000_000_000_000)],
     }
     .assimilate_storage(&mut storage);
 
@@ -162,35 +174,13 @@ parameter_types! {
     pub const MaxValueSize: u32 = 16_384;
 }
 
-pub struct DummyContractAddressFor;
-impl ContractAddressFor<H256, u64> for DummyContractAddressFor {
-    fn contract_address_for(_code_hash: &H256, _data: &[u8], origin: &u64) -> u64 {
-        *origin + 1
-    }
-}
-
-pub struct DummyTrieIdGenerator;
-impl TrieIdGenerator<u64> for DummyTrieIdGenerator {
-    fn trie_id(account_id: &u64) -> TrieId {
-        let new_seed = <pallet_contracts::AccountCounter>::mutate(|v| {
-            *v = v.wrapping_add(1);
-            *v
-        });
-
-        let mut res = vec![];
-        res.extend_from_slice(&new_seed.to_le_bytes());
-        res.extend_from_slice(&account_id.to_le_bytes());
-        res
-    }
-}
-
 impl pallet_contracts::Trait for Test {
     type Time = Timestamp;
     type Randomness = Randomness;
     type Currency = Balances;
     type Event = MetaEvent;
-    type DetermineContractAddress = DummyContractAddressFor;
-    type TrieIdGenerator = DummyTrieIdGenerator;
+    type DetermineContractAddress = pallet_contracts::SimpleAddressDeterminer<Test>;
+    type TrieIdGenerator = pallet_contracts::TrieIdFromParentCounter<Test>;
     type RentPayment = ();
     type SignedClaimHandicap = SignedClaimHandicap;
     type TombstoneDeposit = TombstoneDeposit;
@@ -207,34 +197,88 @@ parameter_types! {
     pub const DisputePeriod: BlockNumber = 7;
 }
 
-pub struct DummyPredicateAddressFor;
-impl ovm::PredicateAddressFor<H256, u64> for DummyPredicateAddressFor {
-    fn predicate_address_for(_code_hash: &H256, _data: &[u8], origin: &u64) -> u64 {
-        *origin + 1
+lazy_static::lazy_static! {
+    pub static ref NOT_ADDRESS: AccountId = to_account_from_seed(&hex![
+        "0000000000000000000000000000000000000000000000000000000000000003"
+    ]);
+    pub static ref AND_ADDRESS: AccountId = to_account_from_seed(&hex![
+        "0000000000000000000000000000000000000000000000000000000000000004"
+    ]);
+    pub static ref OR_ADDRESS: AccountId = to_account_from_seed(&hex![
+        "0000000000000000000000000000000000000000000000000000000000000005"
+    ]);
+    pub static ref FOR_ALL_ADDRESS: AccountId = to_account_from_seed(&hex![
+        "0000000000000000000000000000000000000000000000000000000000000006"
+    ]);
+    pub static ref THERE_EXISTS_ADDRESS: AccountId = to_account_from_seed(&hex![
+        "0000000000000000000000000000000000000000000000000000000000000007"
+    ]);
+    pub static ref EQUAL_ADDRESS: AccountId = to_account_from_seed(&hex![
+        "0000000000000000000000000000000000000000000000000000000000000008"
+    ]);
+    pub static ref IS_CONTAINED_ADDRESS: AccountId = to_account_from_seed(&hex![
+        "0000000000000000000000000000000000000000000000000000000000000009"
+    ]);
+    pub static ref IS_LESS_ADDRESS: AccountId = to_account_from_seed(&hex![
+        "0000000000000000000000000000000000000000000000000000000000000010"
+    ]);
+    pub static ref IS_STORED_ADDRESS: AccountId = to_account_from_seed(&hex![
+        "0000000000000000000000000000000000000000000000000000000000000011"
+    ]);
+    pub static ref IS_VALID_SIGNATURE_ADDRESS: AccountId = to_account_from_seed(&hex![
+        "0000000000000000000000000000000000000000000000000000000000000012"
+    ]);
+    pub static ref VERIFY_INCLUSION_ADDRESS: AccountId = to_account_from_seed(&hex![
+        "0000000000000000000000000000000000000000000000000000000000000013"
+    ]);
+    pub static ref SECP_256_K1: H256 = H256::from(&hex![
+        "d4fa99b1e08c4e5e6deb461846aa629344d95ff03ed04754c2053d54c756f439"
+    ]);
+}
+
+pub struct MockAtomicPredicateIdConfigGetter;
+impl Get<AtomicPredicateIdConfig<AccountId, H256>> for MockAtomicPredicateIdConfigGetter {
+    fn get() -> AtomicPredicateIdConfig<AccountId, H256> {
+        AtomicPredicateIdConfig {
+            not_address: (*NOT_ADDRESS).clone(),
+            and_address: (*AND_ADDRESS).clone(),
+            or_address: (*OR_ADDRESS).clone(),
+            for_all_address: (*FOR_ALL_ADDRESS).clone(),
+            there_exists_address: (*THERE_EXISTS_ADDRESS).clone(),
+            equal_address: (*EQUAL_ADDRESS).clone(),
+            is_contained_address: (*IS_CONTAINED_ADDRESS).clone(),
+            is_less_address: (*IS_LESS_ADDRESS).clone(),
+            is_stored_address: (*IS_STORED_ADDRESS).clone(),
+            is_valid_signature_address: (*IS_VALID_SIGNATURE_ADDRESS).clone(),
+            verify_inclusion_address: (*VERIFY_INCLUSION_ADDRESS).clone(),
+            secp256k1: (*SECP_256_K1).clone(),
+        }
     }
 }
 
 impl pallet_ovm::Trait for Test {
     type MaxDepth = MaxDepth;
     type DisputePeriod = DisputePeriod;
-    type DeterminePredicateAddress = DummyPredicateAddressFor;
+    type DeterminePredicateAddress = ovm::SimpleAddressDeterminer<Test>;
+    type HashingL2 = BlakeTwo256;
+    type ExternalCall = ovm::predicate::CallContext<Test>;
+    type AtomicPredicateIdConfig = MockAtomicPredicateIdConfigGetter;
     type Event = MetaEvent;
 }
 
-pub struct DummyPlappsAddressFor;
-impl PlappsAddressFor<H256, u64> for DummyPlappsAddressFor {
-    fn plapps_address_for(_hash: &H256, origin: &u64) -> u64 {
-        *origin + 10000
+pub struct MaximumTokenAddress;
+impl Get<AccountId> for MaximumTokenAddress {
+    fn get() -> AccountId {
+        H256::from(&hex![
+            "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+        ])
+        .unchecked_into()
     }
-}
-
-parameter_types! {
-    pub const MaximumTokenAddress: AccountId = AccountId::max_value();
 }
 
 impl Trait for Test {
     type Currency = Balances;
-    type DeterminePlappsAddress = DummyPlappsAddressFor;
+    type DeterminePlappsAddress = SimpleAddressDeterminer<Test>;
     type MaximumTokenAddress = MaximumTokenAddress;
     // TODO: should be Keccak;
     type PlasmaHashing = BlakeTwo256;
@@ -273,4 +317,13 @@ where
     let compiled_predicate = predicate_module.as_bytes().to_vec();
     let code_hash = T::Hashing::hash_of(&compiled_predicate);
     (compiled_predicate.to_vec(), code_hash)
+}
+
+pub fn to_account_from_seed(seed: &[u8; 32]) -> AccountId {
+    to_account(sp_core::ecdsa::Pair::from_seed(&seed).public().as_ref())
+}
+
+pub fn to_account(full_public: &[u8]) -> AccountId {
+    let public = sp_core::ecdsa::Public::from_full(full_public).unwrap();
+    sp_runtime::MultiSigner::from(public).into_account()
 }

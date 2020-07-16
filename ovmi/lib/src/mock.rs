@@ -265,37 +265,37 @@ impl ExternalCall for MockExternalCall {
     type Hashing = Keccak256;
 
     fn not_address() -> Self::Address {
-        (*NOT_ADDRESS).clone().clone()
+        (*NOT_ADDRESS).clone()
     }
     fn and_address() -> Self::Address {
-        (*AND_ADDRESS).clone().clone()
+        (*AND_ADDRESS).clone()
     }
     fn or_address() -> Self::Address {
-        (*OR_ADDRESS).clone().clone()
+        (*OR_ADDRESS).clone()
     }
     fn for_all_address() -> Self::Address {
-        (*FOR_ALL_ADDRESS).clone().clone()
+        (*FOR_ALL_ADDRESS).clone()
     }
     fn there_exists_address() -> Self::Address {
-        (*THERE_EXISTS_ADDRESS).clone().clone()
+        (*THERE_EXISTS_ADDRESS).clone()
     }
     fn equal_address() -> Self::Address {
-        (*EQUAL_ADDRESS).clone().clone()
+        (*EQUAL_ADDRESS).clone()
     }
     fn is_contained_address() -> Self::Address {
-        (*IS_CONTAINED_ADDRESS).clone().clone()
+        (*IS_CONTAINED_ADDRESS).clone()
     }
     fn is_less_address() -> Self::Address {
-        (*IS_LESS_ADDRESS).clone().clone()
+        (*IS_LESS_ADDRESS).clone()
     }
     fn is_stored_address() -> Self::Address {
-        (*IS_STORED_ADDRESS).clone().clone()
+        (*IS_STORED_ADDRESS).clone()
     }
     fn is_valid_signature_address() -> Self::Address {
-        (*IS_VALID_SIGNATURE_ADDRESS).clone().clone()
+        (*IS_VALID_SIGNATURE_ADDRESS).clone()
     }
     fn verify_inclusion_address() -> Self::Address {
-        (*VERIFY_INCLUAION_ADDRESS).clone().clone()
+        (*VERIFY_INCLUAION_ADDRESS).clone()
     }
     fn secp256k1() -> Self::Hash {
         (*SECP_256_K1).clone()

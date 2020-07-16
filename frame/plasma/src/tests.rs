@@ -8,11 +8,24 @@ use frame_support::assert_ok;
 use frame_system::{EventRecord, Phase};
 use hex_literal::hex;
 
-const AGGREGATOR_ID: u64 = 101;
-const ERC20_ID: u64 = 101;
-const STATE_UPDATE_ID: u64 = 101;
-const EXIT_ID: u64 = 101;
-const EXIT_DEPOSIT_ID: u64 = 101;
+lazy_static::lazy_static! {
+    pub static ref AGGREGATOR_ID: AccountId = to_account_from_seed(&hex![
+            "1000000000000000000000000000000000000000000000000000000000005553"
+    ]);
+
+    pub static ref ERC20_ID: AccountId = to_account_from_seed(&hex![
+            "1000000000000000000000000000000000000000000000000000000000005553"
+    ]);
+    pub static ref STATE_UPDATE_ID: AccountId = to_account_from_seed(&hex![
+            "1000000000000000000000000000000000000000000000000000000000005553"
+    ]);
+    pub static ref EXIT_ID: AccountId = to_account_from_seed(&hex![
+            "1000000000000000000000000000000000000000000000000000000000005553"
+    ]);
+    pub static ref EXIT_DEPOSIT_ID: AccountId = to_account_from_seed(&hex![
+            "1000000000000000000000000000000000000000000000000000000000005553"
+    ]);
+}
 
 fn success_deploy(
     sender: AccountId,
@@ -23,15 +36,24 @@ fn success_deploy(
     exit_deposit_predicate: AccountId,
 ) -> AccountId {
     assert_ok!(Plasma::deploy(
-        Origin::signed(sender),
-        aggregator_id,
-        erc20,
-        state_update_predicate,
-        exit_predicate,
-        exit_deposit_predicate
+        Origin::signed(sender.clone()),
+        aggregator_id.clone(),
+        erc20.clone(),
+        state_update_predicate.clone(),
+        exit_predicate.clone(),
+        exit_deposit_predicate.clone()
     ));
 
-    let plapps_id = DummyPlappsAddressFor::plapps_address_for(&H256::default(), &sender);
+    let plapps_id = SimpleAddressDeterminer::<Test>::plapps_address_for(
+        &Module::<Test>::generate_plapps_hash(
+            &aggregator_id,
+            &erc20,
+            &state_update_predicate,
+            &exit_predicate,
+            &exit_deposit_predicate,
+        ),
+        &sender,
+    );
 
     // check initail config ids
     assert_eq!(Plasma::aggregator_address(&plapps_id), aggregator_id);
@@ -49,7 +71,7 @@ fn success_deploy(
         System::events(),
         vec![EventRecord {
             phase: Phase::ApplyExtrinsic(0),
-            event: MetaEvent::plasma(RawEvent::Deploy(sender, plapps_id)),
+            event: MetaEvent::plasma(RawEvent::Deploy(sender, plapps_id.clone())),
             topics: vec![],
         }]
     );
@@ -61,12 +83,12 @@ fn deploy_sucess() {
     new_test_ext().execute_with(|| {
         advance_block();
         success_deploy(
-            ALICE_STASH,
-            AGGREGATOR_ID,
-            ERC20_ID,
-            STATE_UPDATE_ID,
-            EXIT_ID,
-            EXIT_DEPOSIT_ID,
+            (*ALICE_STASH).clone(),
+            (*AGGREGATOR_ID).clone(),
+            (*ERC20_ID).clone(),
+            (*STATE_UPDATE_ID).clone(),
+            (*EXIT_ID).clone(),
+            (*EXIT_DEPOSIT_ID).clone(),
         );
     })
 }
@@ -78,8 +100,8 @@ fn success_submit_root(
     root: H256,
 ) -> (AccountId, BlockNumber, H256) {
     assert_ok!(Plasma::submit_root(
-        Origin::signed(sender),
-        plapps_id,
+        Origin::signed(sender.clone()),
+        plapps_id.clone(),
         block_number,
         root,
     ));
@@ -108,22 +130,37 @@ fn submit_root_success() {
     new_test_ext().execute_with(|| {
         advance_block();
         let plapps_id = success_deploy(
-            ALICE_STASH,
-            AGGREGATOR_ID,
-            ERC20_ID,
-            STATE_UPDATE_ID,
-            EXIT_ID,
-            EXIT_DEPOSIT_ID,
+            (*ALICE_STASH).clone(),
+            (*AGGREGATOR_ID).clone(),
+            (*ERC20_ID).clone(),
+            (*STATE_UPDATE_ID).clone(),
+            (*EXIT_ID).clone(),
+            (*EXIT_DEPOSIT_ID).clone(),
         );
 
         advance_block();
 
         // 1-indexed.
-        success_submit_root(AGGREGATOR_ID, plapps_id.clone(), 1, H256::default());
+        success_submit_root(
+            (*AGGREGATOR_ID).clone(),
+            plapps_id.clone(),
+            1,
+            H256::default(),
+        );
         advance_block();
-        success_submit_root(AGGREGATOR_ID, plapps_id.clone(), 2, H256::default());
+        success_submit_root(
+            (*AGGREGATOR_ID).clone(),
+            plapps_id.clone(),
+            2,
+            H256::default(),
+        );
         advance_block();
-        success_submit_root(AGGREGATOR_ID, plapps_id.clone(), 3, H256::default());
+        success_submit_root(
+            (*AGGREGATOR_ID).clone(),
+            plapps_id.clone(),
+            3,
+            H256::default(),
+        );
     })
 }
 
@@ -139,11 +176,13 @@ fn verify_inclusion_test() {
      * 0  1 2  3 1-0 1-1
      */
     new_test_ext().execute_with(|| {
-        let token_address: AccountId = 1;
+        let token_address: AccountId = to_account_from_seed(&hex![
+            "9000000000000000000000000000000000000000000000000000000000000003"
+        ]);
         let leaf_0: H256 = BlakeTwo256::hash("leaf0".as_bytes());
-        let leaf_1: H256 = BlakeTwo256::hash("leaf1".as_bytes());
-        let leaf_2: H256 = BlakeTwo256::hash("leaf2".as_bytes());
-        let leaf_3: H256 = BlakeTwo256::hash("leaf3".as_bytes());
+        let _leaf_1: H256 = BlakeTwo256::hash("leaf1".as_bytes());
+        let _leaf_2: H256 = BlakeTwo256::hash("leaf2".as_bytes());
+        let _leaf_3: H256 = BlakeTwo256::hash("leaf3".as_bytes());
         let block_number: BlockNumber = 1;
         let root: H256 = H256::from(hex![
             "1aa3429d5aa7bf693f3879fdfe0f1a979a4b49eaeca9638fea07ad7ee5f0b64f"
@@ -152,9 +191,9 @@ fn verify_inclusion_test() {
             InclusionProof::<AccountId, Balance, H256> {
                 address_inclusion_proof: AddressInclusionProof {
                     leaf_position: 0,
-                    leaf_index: 0,
+                    leaf_index: AccountId::default(),
                     siblings: vec![AddressTreeNode {
-                        token_address: 1,
+                        token_address: token_address.clone(),
                         data: H256::from(hex![
                             "dd779be20b84ced84b7cbbdc8dc98d901ecd198642313d35d32775d75d916d3a"
                         ]),
@@ -184,17 +223,22 @@ fn verify_inclusion_test() {
         // previous tests.
 
         let plapps_id = success_deploy(
-            ALICE_STASH,
-            AGGREGATOR_ID,
-            ERC20_ID,
-            STATE_UPDATE_ID,
-            EXIT_ID,
-            EXIT_DEPOSIT_ID,
+            (*ALICE_STASH).clone(),
+            (*AGGREGATOR_ID).clone(),
+            (*ERC20_ID).clone(),
+            (*STATE_UPDATE_ID).clone(),
+            (*EXIT_ID).clone(),
+            (*EXIT_DEPOSIT_ID).clone(),
         );
 
         advance_block();
         // 1-indexed.
-        success_submit_root(AGGREGATOR_ID, plapps_id.clone(), block_number, root);
+        success_submit_root(
+            (*AGGREGATOR_ID).clone(),
+            plapps_id.clone(),
+            block_number,
+            root,
+        );
 
         // suceed to verify inclusion of the most left leaf
         let result = Plasma::verify_inclusion(
@@ -256,24 +300,30 @@ fn success_deposit(
     let checkpoint_id = Plasma::get_checkpoint_id(&checkpoint);
 
     assert_ok!(Plasma::deposit(
-        Origin::signed(sender.clone()),
-        plapps_id,
+        Origin::signed(sender.clone().clone()),
+        plapps_id.clone(),
         amount,
         initial_state.clone(),
         gas_limit,
     ));
 
     assert_eq!(
-        Plasma::deposited_ranges(plapps_id, new_range.end),
+        Plasma::deposited_ranges(plapps_id.clone(), new_range.end),
         new_range,
     );
-    assert_eq!(Plasma::total_deposited(plapps_id), total_deposited + amount);
+    assert_eq!(
+        Plasma::total_deposited(&plapps_id),
+        total_deposited + amount
+    );
     assert_eq!(
         System::events(),
         vec![
             EventRecord {
                 phase: Phase::ApplyExtrinsic(0),
-                event: MetaEvent::plasma(RawEvent::DepositedRangeExtended(plapps_id, new_range)),
+                event: MetaEvent::plasma(RawEvent::DepositedRangeExtended(
+                    plapps_id.clone(),
+                    new_range
+                )),
                 topics: vec![],
             },
             EventRecord {
@@ -291,18 +341,21 @@ fn success_deposit(
 }
 
 fn success_extend_deposited_ranges(sender: AccountId, plapps_id: AccountId, amount: Balance) {
-    let total_deposited = Plasma::total_deposited(plapps_id);
+    let total_deposited = Plasma::total_deposited(&plapps_id);
     let new_range = simulation_extend_ranges(&plapps_id, &amount);
     assert_ok!(Plasma::extend_deposited_ranges(
-        Origin::signed(sender),
-        plapps_id,
+        Origin::signed(sender.clone()),
+        plapps_id.clone(),
         amount
     ));
     assert_eq!(
-        Plasma::deposited_ranges(plapps_id, new_range.end),
+        Plasma::deposited_ranges(plapps_id.clone(), new_range.end),
         new_range,
     );
-    assert_eq!(Plasma::total_deposited(plapps_id), total_deposited + amount);
+    assert_eq!(
+        Plasma::total_deposited(&plapps_id),
+        total_deposited + amount
+    );
     assert_eq!(
         System::events(),
         vec![EventRecord {
@@ -320,8 +373,8 @@ fn success_remove_deposited_range(
     deposited_range_id: Balance,
 ) {
     assert_ok!(Plasma::remove_deposited_range(
-        Origin::signed(sender),
-        plapps_id,
+        Origin::signed(sender.clone()),
+        plapps_id.clone(),
         range.clone(),
         deposited_range_id
     ));
@@ -329,7 +382,7 @@ fn success_remove_deposited_range(
         System::events(),
         vec![EventRecord {
             phase: Phase::ApplyExtrinsic(0),
-            event: MetaEvent::plasma(RawEvent::DepositedRangeRemoved(plapps_id, range)),
+            event: MetaEvent::plasma(RawEvent::DepositedRangeRemoved(plapps_id.clone(), range)),
             topics: vec![],
         },]
     );
@@ -340,21 +393,21 @@ fn scenario_test() {
     new_test_ext().execute_with(|| {
         advance_block();
         let plapps_id = success_deploy(
-            ALICE_STASH,
-            AGGREGATOR_ID,
-            ERC20_ID,
-            STATE_UPDATE_ID,
-            EXIT_ID,
-            EXIT_DEPOSIT_ID,
+            (*ALICE_STASH).clone(),
+            (*AGGREGATOR_ID).clone(),
+            (*ERC20_ID).clone(),
+            (*STATE_UPDATE_ID).clone(),
+            (*EXIT_ID).clone(),
+            (*EXIT_DEPOSIT_ID).clone(),
         );
 
         advance_block();
         success_deposit(
-            ALICE_STASH,
-            plapps_id,
+            (*ALICE_STASH).clone(),
+            plapps_id.clone(),
             10,
             PropertyOf::<Test> {
-                predicate_address: STATE_UPDATE_ID,
+                predicate_address: (*STATE_UPDATE_ID).clone(),
                 inputs: vec![hex!["01"].to_vec()],
             },
             1000000,
@@ -362,11 +415,11 @@ fn scenario_test() {
 
         advance_block();
         success_deposit(
-            BOB_STASH,
-            plapps_id,
+            (*BOB_STASH).clone(),
+            plapps_id.clone(),
             30,
             PropertyOf::<Test> {
-                predicate_address: STATE_UPDATE_ID,
+                predicate_address: (*STATE_UPDATE_ID).clone(),
                 inputs: vec![hex!["01"].to_vec()],
             },
             1000000,
@@ -374,23 +427,23 @@ fn scenario_test() {
 
         advance_block();
         success_deposit(
-            CHARLIE_STASH,
-            plapps_id,
+            (*CHARLIE_STASH).clone(),
+            plapps_id.clone(),
             80,
             PropertyOf::<Test> {
-                predicate_address: STATE_UPDATE_ID,
+                predicate_address: (*STATE_UPDATE_ID).clone(),
                 inputs: vec![hex!["01"].to_vec()],
             },
             1000000,
         );
 
         advance_block();
-        success_extend_deposited_ranges(ALICE_STASH, plapps_id, 100);
+        success_extend_deposited_ranges((*ALICE_STASH).clone(), plapps_id.clone(), 100);
 
         advance_block();
         success_remove_deposited_range(
-            ALICE_STASH,
-            plapps_id,
+            (*ALICE_STASH).clone(),
+            plapps_id.clone(),
             Range {
                 start: 120,
                 end: 200,
@@ -400,8 +453,8 @@ fn scenario_test() {
 
         advance_block();
         success_remove_deposited_range(
-            ALICE_STASH,
-            plapps_id,
+            (*ALICE_STASH).clone(),
+            plapps_id.clone(),
             Range {
                 start: 200,
                 end: 220,

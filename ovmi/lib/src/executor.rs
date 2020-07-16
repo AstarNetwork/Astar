@@ -24,10 +24,18 @@ pub enum ExecError<Address> {
     CallAddress { address: Address },
     #[snafu(display("Codec error: expected type name is {}", type_name))]
     CodecError { type_name: &'static str },
+    #[snafu(display("External error: {}", msg))]
+    ExternalError { msg: &'static str },
     #[snafu(display("Unexpected error: {}", msg))]
     Unexpected { msg: &'static str },
     /// Unimplemented error.
     Unimplemented,
+}
+
+impl<Address> From<&'static str> for ExecError<Address> {
+    fn from(msg: &'static str) -> ExecError<Address> {
+        ExecError::<Address>::ExternalError { msg }
+    }
 }
 
 /// convert to error code from error tyoe.

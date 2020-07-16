@@ -24,6 +24,7 @@ impl<Ext: ExternalCall> AtomicPredicateInterface<AddressOf<Ext>>
         Ok(true)
     }
 }
+
 impl<Ext: ExternalCall> AtomicHelperInterface<AddressOf<Ext>>
     for IsValidSignaturePredicate<'_, Ext>
 {
