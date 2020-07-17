@@ -158,7 +158,7 @@ pub trait PlappsAddressFor<Hash, AccountId> {
 /// Formula: `blake2_256(plapps_hash + origin)`
 /// ```plapps_hash = blake2_256(&(
 ///     blake2_256(&aggregator_id),
-///     blake2_256(&erc20),
+///     blake2_256(&balances),
 ///     blake2_256(&state_update_predicate),
 ///     blake2_256(&exit_predicate),
 ///     blake2_256(&exit_deposit_predicate),
@@ -324,10 +324,10 @@ decl_module! {
                 total_deposited < BalanceOf::<T>::max_value().saturating_sub(amount),
                 Error::<T>::TotalDepositedExceedMaxBalance,
             );
-            // TODO: transfer_from origin -> plapps_id (amount) at erc20.
+            // TODO: transfer_from origin -> plapps_id (amount) at balances.
             // let _ = contracts::bare_call(
             //     origin,
-            //     Self::erc20(&plapps_id),fAccountID
+            //     Self::balances(&plapps_id),fAccountID
             //     BalanceOf<T>::zero(),
             //     gas_limit,
             //     "transfer_from(origin, plapps_id, amount)",
@@ -792,10 +792,10 @@ impl<T: Trait> Module<T> {
         // Transfer tokens to its predicate
         let _amount = state_update.range.end - state_update.range.start;
 
-        // TODO: transfer plapps_id -> payout (amount) at erc20.
+        // TODO: transfer plapps_id -> payout (amount) at balances.
         // let _ = contracts::bare_call(
         //     origin,
-        //     Self::erc20(&plapps_id),
+        //     Self::balances(&plapps_id),
         //     BalanceOf<T>::zero(),
         //     gas_limit,
         //     "transfer(payout, amount)",
