@@ -263,7 +263,7 @@ decl_storage! {
         /// Offchain lock check requests made within this block execution.
         Requests get(fn requests): Vec<ClaimId>;
         /// List of lockdrop authority id's.
-        Keys get(fn keys): Vec<T::AuthorityId>;
+        Keys get(fn keys) config(): Vec<T::AuthorityId>;
         /// Token claim requests.
         Claims get(fn claims):
             map hasher(blake2_128_concat) ClaimId
@@ -502,10 +502,18 @@ decl_module! {
             <VoteThreshold>::put(count);
         }
 
+        /// Set lockdrop authorities list.
+        #[weight = 50_000]
+        fn set_authorities(origin, authorities: Vec<T::AuthorityId>) {
+            ensure_root(origin)?;
+            Keys::<T>::put(authorities.clone());
+            Self::deposit_event(RawEvent::NewAuthorities(authorities));
+        }
+
         // Runs after every block within the context and current state of said block.
         fn offchain_worker(now: T::BlockNumber) {
-            // Launch if validator and lockdrop is active
-            if sp_io::offchain::is_validator() && Self::is_active(now) {
+            // Launch if validator and lockdrop is active.
+            if Self::is_active(now) && T::AuthorityId::all().len() > 0 {
                 debug::RuntimeLogger::init();
 
                 match Self::offchain() {
@@ -666,33 +674,6 @@ impl<T: Trait> Module<T> {
 
 impl<T: Trait> sp_runtime::BoundToRuntimeAppPublic for Module<T> {
     type Public = T::AuthorityId;
-}
-
-impl<T: Trait> pallet_session::OneSessionHandler<T::AccountId> for Module<T> {
-    type Key = T::AuthorityId;
-
-    fn on_genesis_session<'a, I: 'a>(validators: I)
-    where
-        I: Iterator<Item = (&'a T::AccountId, T::AuthorityId)>,
-    {
-        // Init authorities on genesis session.
-        let authorities: Vec<_> = validators.map(|x| x.1).collect();
-        Keys::<T>::put(authorities.clone());
-        Self::deposit_event(RawEvent::NewAuthorities(authorities));
-    }
-
-    fn on_new_session<'a, I: 'a>(_changed: bool, validators: I, _queued_validators: I)
-    where
-        I: Iterator<Item = (&'a T::AccountId, T::AuthorityId)>,
-    {
-        // Remember who the authorities are for the new session.
-        let authorities: Vec<_> = validators.map(|x| x.1).collect();
-        Keys::<T>::put(authorities.clone());
-        Self::deposit_event(RawEvent::NewAuthorities(authorities));
-    }
-
-    fn on_before_session_ending() {}
-    fn on_disabled(_i: usize) {}
 }
 
 impl<T: Trait> frame_support::unsigned::ValidateUnsigned for Module<T> {

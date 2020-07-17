@@ -77,7 +77,7 @@ Install additional build tools:
 
 Install the Plasm node from git source:
 
-    cargo +nightly install --locked --force --git https://github.com/staketechnologies/Plasm --tag v1.2.2 plasm-cli
+    cargo +nightly install --locked --force --git https://github.com/staketechnologies/Plasm --tag v1.3.0 plasm-cli
 
 Run node on [Dusty Network](https://telemetry.polkadot.io/#list/Dusty):
 

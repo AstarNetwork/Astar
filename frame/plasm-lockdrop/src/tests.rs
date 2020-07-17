@@ -22,7 +22,7 @@ use sp_core::{
 use sp_runtime::DispatchError;
 
 #[test]
-fn session_lockdrop_authorities() {
+fn lockdrop_authorities() {
     let alice: <Runtime as Trait>::AuthorityId =
         hex!["c83f0a4067f1b166132ed45995eee17ba7aeafeea27fe17550728ee34f998c4e"].unchecked_into();
     let bob: <Runtime as Trait>::AuthorityId =
@@ -33,39 +33,30 @@ fn session_lockdrop_authorities() {
         hex!["1a0f0be3d6596d1dbc302243fe4e975ff20de67559100053024d8f5a7b435b2b"].unchecked_into();
 
     new_test_ext().execute_with(|| {
-        assert_eq!(
-            <Keys<Runtime>>::get(),
-            vec![alice.clone(), bob.clone(), charlie.clone()]
+        assert_noop!(
+            PlasmLockdrop::set_authorities(Origin::none(), vec![]),
+            DispatchError::BadOrigin,
         );
+
         assert_eq!(PlasmLockdrop::authority_index_of(&alice), Some(0));
         assert_eq!(PlasmLockdrop::authority_index_of(&bob), Some(1));
         assert_eq!(PlasmLockdrop::authority_index_of(&charlie), Some(2));
         assert_eq!(PlasmLockdrop::authority_index_of(&dave), None);
 
-        VALIDATORS.with(|l| {
-            *l.borrow_mut() = Some(vec![
-                sp_keyring::sr25519::Keyring::Bob.into(),
-                sp_keyring::sr25519::Keyring::Charlie.into(),
-            ])
-        });
-        advance_session();
-        advance_session();
-
+        assert_ok!(PlasmLockdrop::set_authorities(
+            Origin::root(),
+            vec![bob.clone(), charlie.clone()],
+        ));
         assert_eq!(<Keys<Runtime>>::get(), vec![bob.clone(), charlie.clone()]);
         assert_eq!(PlasmLockdrop::authority_index_of(&alice), None);
         assert_eq!(PlasmLockdrop::authority_index_of(&bob), Some(0));
         assert_eq!(PlasmLockdrop::authority_index_of(&charlie), Some(1));
         assert_eq!(PlasmLockdrop::authority_index_of(&dave), None);
 
-        VALIDATORS.with(|l| {
-            *l.borrow_mut() = Some(vec![
-                sp_keyring::sr25519::Keyring::Alice.into(),
-                sp_keyring::sr25519::Keyring::Bob.into(),
-            ])
-        });
-        advance_session();
-        advance_session();
-
+        assert_ok!(PlasmLockdrop::set_authorities(
+            Origin::root(),
+            vec![alice.clone(), bob.clone()],
+        ));
         assert_eq!(<Keys<Runtime>>::get(), vec![alice.clone(), bob.clone()]);
         assert_eq!(PlasmLockdrop::authority_index_of(&alice), Some(0));
         assert_eq!(PlasmLockdrop::authority_index_of(&bob), Some(1));
