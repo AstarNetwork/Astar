@@ -3,7 +3,7 @@
 and the account id that requested the account creation.</p>
 <p>Formula: <code>blake2_256(plapps_hash + origin)</code></p>
 <pre><code class="language-plapps_hash">    blake2_256(&amp;aggregator_id),
-    blake2_256(&amp;erc20),
+    blake2_256(&amp;balances),
     blake2_256(&amp;state_update_predicate),
     blake2_256(&amp;exit_predicate),
     blake2_256(&amp;exit_deposit_predicate),</code></pre>

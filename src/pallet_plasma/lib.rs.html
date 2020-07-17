@@ -1049,7 +1049,7 @@
 <span class="doccomment">/// Formula: `blake2_256(plapps_hash + origin)`</span>
 <span class="doccomment">/// ```plapps_hash = blake2_256(&amp;(</span>
 <span class="doccomment">///     blake2_256(&amp;aggregator_id),</span>
-<span class="doccomment">///     blake2_256(&amp;erc20),</span>
+<span class="doccomment">///     blake2_256(&amp;balances),</span>
 <span class="doccomment">///     blake2_256(&amp;state_update_predicate),</span>
 <span class="doccomment">///     blake2_256(&amp;exit_predicate),</span>
 <span class="doccomment">///     blake2_256(&amp;exit_deposit_predicate),</span>
@@ -1215,10 +1215,10 @@
                 <span class="ident">total_deposited</span> <span class="op">&lt;</span> <span class="ident">BalanceOf</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>::<span class="ident">max_value</span>().<span class="ident">saturating_sub</span>(<span class="ident">amount</span>),
                 <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>::<span class="ident">TotalDepositedExceedMaxBalance</span>,
             );
-            <span class="comment">// TODO: transfer_from origin -&gt; plapps_id (amount) at erc20.</span>
+            <span class="comment">// TODO: transfer_from origin -&gt; plapps_id (amount) at balances.</span>
             <span class="comment">// let _ = contracts::bare_call(</span>
             <span class="comment">//     origin,</span>
-            <span class="comment">//     Self::erc20(&amp;plapps_id),fAccountID</span>
+            <span class="comment">//     Self::balances(&amp;plapps_id),fAccountID</span>
             <span class="comment">//     BalanceOf&lt;T&gt;::zero(),</span>
             <span class="comment">//     gas_limit,</span>
             <span class="comment">//     &quot;transfer_from(origin, plapps_id, amount)&quot;,</span>
@@ -1683,10 +1683,10 @@
         <span class="comment">// Transfer tokens to its predicate</span>
         <span class="kw">let</span> <span class="ident">_amount</span> <span class="op">=</span> <span class="ident">state_update</span>.<span class="ident">range</span>.<span class="ident">end</span> <span class="op">-</span> <span class="ident">state_update</span>.<span class="ident">range</span>.<span class="ident">start</span>;
 
-        <span class="comment">// TODO: transfer plapps_id -&gt; payout (amount) at erc20.</span>
+        <span class="comment">// TODO: transfer plapps_id -&gt; payout (amount) at balances.</span>
         <span class="comment">// let _ = contracts::bare_call(</span>
         <span class="comment">//     origin,</span>
-        <span class="comment">//     Self::erc20(&amp;plapps_id),</span>
+        <span class="comment">//     Self::balances(&amp;plapps_id),</span>
         <span class="comment">//     BalanceOf&lt;T&gt;::zero(),</span>
         <span class="comment">//     gas_limit,</span>
         <span class="comment">//     &quot;transfer(payout, amount)&quot;,</span>
