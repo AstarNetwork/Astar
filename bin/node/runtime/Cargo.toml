@@ -1,6 +1,6 @@
 [package]
 name = "plasm-runtime"
-version = "1.2.1"
+version = "1.2.2"
 authors = ["Stake Technologies <devops@stake.co.jp>"]
 edition = "2018"
 build = "build.rs"
