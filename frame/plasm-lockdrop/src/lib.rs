@@ -471,6 +471,13 @@ decl_module! {
             Ok(())
         }
 
+        /// Set lockdrop alpha value.
+        #[weight = 50_000]
+        fn set_alpha(origin, alpha_parts: u32) {
+            ensure_root(origin)?;
+            <Alpha>::put(Perbill::from_parts(alpha_parts));
+        }
+
         /// Set lockdrop held time.
         #[weight = 50_000]
         fn set_bounds(origin, from: T::BlockNumber, to: T::BlockNumber) {
@@ -483,6 +490,7 @@ decl_module! {
         #[weight = 50_000]
         fn set_positive_votes(origin, count: AuthorityVote) {
             ensure_root(origin)?;
+            ensure!(count > 0, "wrong argument");
             <PositiveVotes>::put(count);
         }
 
@@ -490,6 +498,7 @@ decl_module! {
         #[weight = 50_000]
         fn set_vote_threshold(origin, count: AuthorityVote) {
             ensure_root(origin)?;
+            ensure!(count > 0, "wrong argument");
             <VoteThreshold>::put(count);
         }
 
