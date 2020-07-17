@@ -324,7 +324,6 @@ impl pallet_finality_tracker::Trait for Runtime {
     type ReportLatency = ReportLatency;
 }
 
-/*
 parameter_types! {
     pub const MedianFilterExpire: Moment = 300; // 10 blocks is one minute, 300 - half hour
     pub const LockdropUnsignedPriority: TransactionPriority = TransactionPriority::max_value();
@@ -344,7 +343,6 @@ impl pallet_plasm_lockdrop::Trait for Runtime {
     type Event = Event;
     type UnsignedPriority = LockdropUnsignedPriority;
 }
-*/
 
 impl<LocalCall> frame_system::offchain::CreateSignedTransaction<LocalCall> for Runtime
 where
@@ -415,6 +413,7 @@ construct_runtime!(
         Balances: pallet_balances::{Module, Call, Storage, Event<T>, Config<T>},
         Contracts: pallet_contracts::{Module, Call, Storage, Event<T>, Config},
         DappsStaking: pallet_dapps_staking::{Module, Call, Storage, Event<T>},
+        PlasmLockdrop: pallet_plasm_lockdrop::{Module, Call, Storage, Event<T>, Config<T>, ValidateUnsigned},
         PlasmValidator: pallet_plasm_validator::{Module, Call, Storage, Event<T>, Config<T>},
         PlasmRewards: pallet_plasm_rewards::{Module, Call, Storage, Event<T>, Config},
         Session: pallet_session::{Module, Call, Storage, Event, Config<T>},

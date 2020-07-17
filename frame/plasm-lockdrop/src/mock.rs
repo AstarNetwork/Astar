@@ -5,8 +5,8 @@
 use super::*;
 use plasm_primitives::{AccountId, Balance, Moment};
 
-use hex_literal::hex;
 use frame_support::{impl_outer_dispatch, impl_outer_origin, parameter_types, weights::Weight};
+use hex_literal::hex;
 use sp_core::crypto::UncheckedInto;
 use sp_runtime::{
     testing::{Header, TestXt},
