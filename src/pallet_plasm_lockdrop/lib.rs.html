@@ -786,6 +786,15 @@
 <span id="786">786</span>
 <span id="787">787</span>
 <span id="788">788</span>
+<span id="789">789</span>
+<span id="790">790</span>
+<span id="791">791</span>
+<span id="792">792</span>
+<span id="793">793</span>
+<span id="794">794</span>
+<span id="795">795</span>
+<span id="796">796</span>
+<span id="797">797</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="doccomment">//! # Plasm Lockdrop Module</span>
 <span class="doccomment">//! This module held lockdrop event on live network.</span>
@@ -1260,6 +1269,13 @@
             <span class="prelude-val">Ok</span>(())
         }
 
+        <span class="doccomment">/// Set lockdrop alpha value.</span>
+        <span class="attribute">#[<span class="ident">weight</span> <span class="op">=</span> <span class="number">50_000</span>]</span>
+        <span class="kw">fn</span> <span class="ident">set_alpha</span>(<span class="ident">origin</span>, <span class="ident">alpha_parts</span>: <span class="ident">u32</span>) {
+            <span class="ident">ensure_root</span>(<span class="ident">origin</span>)<span class="question-mark">?</span>;
+            <span class="op">&lt;</span><span class="ident">Alpha</span><span class="op">&gt;</span>::<span class="ident">put</span>(<span class="ident">Perbill</span>::<span class="ident">from_parts</span>(<span class="ident">alpha_parts</span>));
+        }
+
         <span class="doccomment">/// Set lockdrop held time.</span>
         <span class="attribute">#[<span class="ident">weight</span> <span class="op">=</span> <span class="number">50_000</span>]</span>
         <span class="kw">fn</span> <span class="ident">set_bounds</span>(<span class="ident">origin</span>, <span class="ident">from</span>: <span class="ident">T</span>::<span class="ident">BlockNumber</span>, <span class="ident">to</span>: <span class="ident">T</span>::<span class="ident">BlockNumber</span>) {
@@ -1272,6 +1288,7 @@
         <span class="attribute">#[<span class="ident">weight</span> <span class="op">=</span> <span class="number">50_000</span>]</span>
         <span class="kw">fn</span> <span class="ident">set_positive_votes</span>(<span class="ident">origin</span>, <span class="ident">count</span>: <span class="ident">AuthorityVote</span>) {
             <span class="ident">ensure_root</span>(<span class="ident">origin</span>)<span class="question-mark">?</span>;
+            <span class="macro">ensure</span><span class="macro">!</span>(<span class="ident">count</span> <span class="op">&gt;</span> <span class="number">0</span>, <span class="string">&quot;wrong argument&quot;</span>);
             <span class="op">&lt;</span><span class="ident">PositiveVotes</span><span class="op">&gt;</span>::<span class="ident">put</span>(<span class="ident">count</span>);
         }
 
@@ -1279,6 +1296,7 @@
         <span class="attribute">#[<span class="ident">weight</span> <span class="op">=</span> <span class="number">50_000</span>]</span>
         <span class="kw">fn</span> <span class="ident">set_vote_threshold</span>(<span class="ident">origin</span>, <span class="ident">count</span>: <span class="ident">AuthorityVote</span>) {
             <span class="ident">ensure_root</span>(<span class="ident">origin</span>)<span class="question-mark">?</span>;
+            <span class="macro">ensure</span><span class="macro">!</span>(<span class="ident">count</span> <span class="op">&gt;</span> <span class="number">0</span>, <span class="string">&quot;wrong argument&quot;</span>);
             <span class="op">&lt;</span><span class="ident">VoteThreshold</span><span class="op">&gt;</span>::<span class="ident">put</span>(<span class="ident">count</span>);
         }
 
