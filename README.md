@@ -73,11 +73,11 @@ You will also need to install the following dependencies:
 
 Install additional build tools:
 
-    cargo install --git https://github.com/alexcrichton/wasm-gc
+    cargo +nightly install --git https://github.com/alexcrichton/wasm-gc
 
 Install the Plasm node from git source:
 
-    cargo install --locked --force --git https://github.com/staketechnologies/Plasm --tag v1.0.0 plasm-cli
+    cargo +nightly install --locked --force --git https://github.com/staketechnologies/Plasm --tag v1.2.2 plasm-cli
 
 Run node on [Dusty Network](https://telemetry.polkadot.io/#list/Dusty):
 
@@ -89,7 +89,7 @@ Or run on your local development network:
 
 Building with Nix
 -----------------
-​
+
 Install Nix package manager:
 
     curl https://nixos.org/nix/install | sh
@@ -101,6 +101,7 @@ Run on your Nix shell:
 
 Plasm Validator Program
 =======================
+
 Currently, we have 2 networks, [Dusty Network](https://telemetry.polkadot.io/#list/Dusty) and [Plasm Network](https://telemetry.polkadot.io/#list/Plasm). Dusty is our canary R&D chain like Kusama. The stable validators on Dusty can be the first validators on Plasm mainnet. We are looking for 100 validators on the Plasm Network. 
 
 If you would like to be the validator, please check out [our tutorial](https://docs.plasmnet.io/workshop-and-tutorial/untitled) and join [Discord tech channel](https://discord.gg/wUcQt3R)
