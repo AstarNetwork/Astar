@@ -442,7 +442,7 @@ where
 
 fn read_genesis_hash(matches: &ArgMatches) -> H256 {
     let genesis_hash: Hash = match matches.value_of("genesis").unwrap_or("plasm") {
-        "dusty" => hex!["c10deaf46d28e8398d238981b74d3a9b63198668e0c14562b7365f3958d2eade"].into(),
+        "dusty" => hex!["8900db704dc3e07ad9126407eb62af6d2cbb4c07d6f936400fc2134330825188"].into(),
         "plasm" => hex!["3e86364d4b4894021cb2a0390bcf2feb5517d5292f2de2bb9404227e908b0b8b"].into(),
         h => hex::decode(h)
             .ok()
