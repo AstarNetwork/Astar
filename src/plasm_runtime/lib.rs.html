@@ -637,7 +637,6 @@
 <span id="637">637</span>
 <span id="638">638</span>
 <span id="639">639</span>
-<span id="640">640</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="doccomment">//! The Substrate runtime. This can be compiled with ``#[no_std]`, ready for Wasm.</span>
 
@@ -701,15 +700,15 @@
 
 <span class="doccomment">/// Runtime version.</span>
 <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">VERSION</span>: <span class="ident">RuntimeVersion</span> <span class="op">=</span> <span class="ident">RuntimeVersion</span> {
-    <span class="ident">spec_name</span>: <span class="macro">create_runtime_str</span><span class="macro">!</span>(<span class="string">&quot;dusty2&quot;</span>),
+    <span class="ident">spec_name</span>: <span class="macro">create_runtime_str</span><span class="macro">!</span>(<span class="string">&quot;dusty3&quot;</span>),
     <span class="ident">impl_name</span>: <span class="macro">create_runtime_str</span><span class="macro">!</span>(<span class="string">&quot;staketechnologies-plasm&quot;</span>),
     <span class="ident">authoring_version</span>: <span class="number">1</span>,
     <span class="comment">// Per convention: if the runtime behavior changes, increment spec_version</span>
     <span class="comment">// and set impl_version to equal spec_version. If only runtime</span>
     <span class="comment">// implementation changes and behavior does not, then leave spec_version as</span>
     <span class="comment">// is and increment impl_version.</span>
-    <span class="ident">spec_version</span>: <span class="number">5</span>,
-    <span class="ident">impl_version</span>: <span class="number">5</span>,
+    <span class="ident">spec_version</span>: <span class="number">1</span>,
+    <span class="ident">impl_version</span>: <span class="number">1</span>,
     <span class="ident">apis</span>: <span class="ident">RUNTIME_API_VERSIONS</span>,
     <span class="ident">transaction_version</span>: <span class="number">1</span>,
 };
@@ -826,7 +825,6 @@
     <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">SessionKeys</span> {
         <span class="kw">pub</span> <span class="ident">babe</span>: <span class="ident">Babe</span>,
         <span class="kw">pub</span> <span class="ident">grandpa</span>: <span class="ident">Grandpa</span>,
-        <span class="kw">pub</span> <span class="ident">lockdrop</span>: <span class="ident">PlasmLockdrop</span>,
     }
 }
 
@@ -1055,9 +1053,9 @@
         <span class="ident">Balances</span>: <span class="ident">pallet_balances</span>::{<span class="ident">Module</span>, <span class="ident">Call</span>, <span class="ident">Storage</span>, <span class="ident">Event</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>, <span class="ident">Config</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>},
         <span class="ident">Contracts</span>: <span class="ident">pallet_contracts</span>::{<span class="ident">Module</span>, <span class="ident">Call</span>, <span class="ident">Storage</span>, <span class="ident">Event</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>, <span class="ident">Config</span>},
         <span class="ident">DappsStaking</span>: <span class="ident">pallet_dapps_staking</span>::{<span class="ident">Module</span>, <span class="ident">Call</span>, <span class="ident">Storage</span>, <span class="ident">Event</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>},
+        <span class="ident">PlasmLockdrop</span>: <span class="ident">pallet_plasm_lockdrop</span>::{<span class="ident">Module</span>, <span class="ident">Call</span>, <span class="ident">Storage</span>, <span class="ident">Event</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>, <span class="ident">Config</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>, <span class="ident">ValidateUnsigned</span>},
         <span class="ident">PlasmValidator</span>: <span class="ident">pallet_plasm_validator</span>::{<span class="ident">Module</span>, <span class="ident">Call</span>, <span class="ident">Storage</span>, <span class="ident">Event</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>, <span class="ident">Config</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>},
         <span class="ident">PlasmRewards</span>: <span class="ident">pallet_plasm_rewards</span>::{<span class="ident">Module</span>, <span class="ident">Call</span>, <span class="ident">Storage</span>, <span class="ident">Event</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>, <span class="ident">Config</span>},
-        <span class="ident">PlasmLockdrop</span>: <span class="ident">pallet_plasm_lockdrop</span>::{<span class="ident">Module</span>, <span class="ident">Call</span>, <span class="ident">Storage</span>, <span class="ident">Event</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>, <span class="ident">Config</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>, <span class="ident">ValidateUnsigned</span>},
         <span class="ident">Session</span>: <span class="ident">pallet_session</span>::{<span class="ident">Module</span>, <span class="ident">Call</span>, <span class="ident">Storage</span>, <span class="ident">Event</span>, <span class="ident">Config</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>},
         <span class="ident">Historical</span>: <span class="ident">pallet_session_historical</span>::{<span class="ident">Module</span>},
         <span class="ident">Babe</span>: <span class="ident">pallet_babe</span>::{<span class="ident">Module</span>, <span class="ident">Call</span>, <span class="ident">Storage</span>, <span class="ident">Config</span>, <span class="ident">Inherent</span>(<span class="ident">Timestamp</span>)},
