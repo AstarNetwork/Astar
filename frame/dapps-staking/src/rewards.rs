@@ -23,7 +23,7 @@ pub trait ComputeRewardsForDapps {
         staked_values: Vec<N>,
     ) -> N
     where
-        N: BaseArithmetic + Clone + From<u32>;
+        N: BaseArithmetic + Unsigned + Clone + From<u32>;
 
     fn compute_reward_for_operator<N>(
         staked_operator: N,
@@ -31,7 +31,7 @@ pub trait ComputeRewardsForDapps {
         operators_reward: N,
     ) -> N
     where
-        N: BaseArithmetic + Clone + From<u32>;
+        N: BaseArithmetic + Unsigned + Clone + From<u32>;
 }
 
 /// The based compute rewards for dapps.
@@ -59,14 +59,14 @@ impl ComputeRewardsForDapps for BasedComputeRewardsForDapps {
         _: Vec<N>,
     ) -> N
     where
-        N: BaseArithmetic + Clone + From<u32>,
+        N: BaseArithmetic + Unsigned + Clone + From<u32>,
     {
         Perbill::from_rational_approximation(nominate_total, total_staked) * nominators_reward
     }
 
     fn compute_reward_for_operator<N>(staked_operator: N, total_staked: N, operators_reward: N) -> N
     where
-        N: BaseArithmetic + Clone + From<u32>,
+        N: BaseArithmetic + Unsigned + Clone + From<u32>,
     {
         Perbill::from_rational_approximation(staked_operator, total_staked) * operators_reward
     }
@@ -78,7 +78,7 @@ impl ComputeRewardsForDapps for VoidableRewardsForDapps {
     /// distribute dapps rewards into 50% to operators and the other 50% to nominators
     fn compute_rewards_for_dapps<N>(total_dapps_rewards: N) -> (N, N)
     where
-        N: BaseArithmetic + Clone + From<u32>,
+        N: BaseArithmetic + Unsigned + Clone + From<u32>,
     {
         let operators_reward =
             Perbill::from_rational_approximation(N::from(1 as u32), N::from(2 as u32))
@@ -97,7 +97,7 @@ impl ComputeRewardsForDapps for VoidableRewardsForDapps {
         staked_values: Vec<N>,
     ) -> N
     where
-        N: BaseArithmetic + Clone + From<u32>,
+        N: BaseArithmetic + Unsigned + Clone + From<u32>,
     {
         let threshold = total_staked.clone() / N::from(10 as u32);
         let valid_staking_total = staked_values
@@ -109,7 +109,7 @@ impl ComputeRewardsForDapps for VoidableRewardsForDapps {
 
     fn compute_reward_for_operator<N>(staked_operator: N, total_staked: N, operators_reward: N) -> N
     where
-        N: BaseArithmetic + Clone + From<u32>,
+        N: BaseArithmetic + Unsigned + Clone + From<u32>,
     {
         Perbill::from_rational_approximation(staked_operator, total_staked) * operators_reward
     }
@@ -127,7 +127,7 @@ mod test {
 
     fn compute_voidable_rewards_payout<N>(total_dapps_tokens: N) -> (N, N)
     where
-        N: BaseArithmetic + Clone + From<u32>,
+        N: BaseArithmetic + Unsigned + Clone + From<u32>,
     {
         VoidableRewardsForDapps::compute_rewards_for_dapps(total_dapps_tokens)
     }

@@ -27,7 +27,7 @@ where
         _dapps_staking: D,
     ) -> (N, N)
     where
-        N: BaseArithmetic + num_traits::sign::Unsigned + Clone + From<u32>,
+        N: BaseArithmetic + Unsigned + Clone + From<u32>,
         M: BaseArithmetic + Clone + From<u32>,
     {
         const TARGETS_NUMBER: u128 = 100;
@@ -80,7 +80,7 @@ where
         _dapps_staking: D,
     ) -> (N, N)
     where
-        N: BaseArithmetic + Clone + From<u32>,
+        N: BaseArithmetic + Unsigned + Clone + From<u32>,
         M: BaseArithmetic + Clone + From<u32>,
     {
         const TARGETS_NUMBER: u128 = 100;
@@ -252,7 +252,7 @@ mod test {
         number_of_validator: u32,
     ) -> (N, N)
     where
-        N: BaseArithmetic + Clone + From<u32>,
+        N: BaseArithmetic + Unsigned + Clone + From<u32>,
     {
         CommunityRewards::<u32>::compute(total_tokens, era_duration, number_of_validator, 0)
     }
