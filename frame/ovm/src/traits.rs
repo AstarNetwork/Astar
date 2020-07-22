@@ -1,5 +1,5 @@
 use super::*;
-use crate::predicate::ExecResult;
+use crate::predicate::ExecutionContext;
 
 /// A function that generates an `AccountId` for a predicate upon instantiation.
 pub trait PredicateAddressFor<PredicateHash, AccountId> {
@@ -17,7 +17,15 @@ pub trait Loader<T: Trait> {
 
     /// Load the main portion of the code specified by the `code_hash`. This executable
     /// is called for each call to a contract.
-    fn load_main(&self, code_hash: &PredicateHash<T>) -> Result<Self::Executable, &'static str>;
+    fn load_main(
+        &self,
+        predicate: PredicateContractOf<T>,
+    ) -> Result<Self::Executable, &'static str>;
+}
+
+/// For the initalize call context.
+pub trait NewCallContext<T: Trait> {
+    fn new(ctx: Rc<ExecutionContext<T>>, caller: AccountIdOf<T>) -> Self;
 }
 
 /// An interface that provides access to the external environment in which the
@@ -31,23 +39,41 @@ pub trait Loader<T: Trait> {
 /// - caller: get of the caller of this predicate.
 /// - address: the predicate's address.
 /// - is_stored: check the storage of other modules or contracts.
-pub trait Ext {
-    type T: Trait;
-
+pub trait Ext<T: Trait> {
     /// Call (possibly other predicate) into the specified account.
-    fn call(&self, to: &AccountIdOf<Self::T>, input_data: Vec<u8>) -> ExecResult;
+    fn call(&self, to: &AccountIdOf<T>, input_data: Vec<u8>) -> ExecResult<T>;
 
     /// Returns a reference to the account id of the caller.
-    fn caller(&self) -> &AccountIdOf<Self::T>;
+    fn caller(&self) -> &AccountIdOf<T>;
 
     /// Returns a reference to the account id of the current contract.
-    fn address(&self) -> &AccountIdOf<Self::T>;
+    fn address(&self) -> &AccountIdOf<T>;
 
     // TODO: Notes a call other storage.
     // Only return true or false.
     // CommitmentAddress(special) isCommitment(address) -> Commitment
     // is_stored_predicate(&mut self, address, key, value);?
     // ref: https://github.com/cryptoeconomicslab/ovm-contracts/blob/master/contracts/Predicate/Atomic/IsStoredPredicate.sol
+    fn is_stored(&self, _address: &AccountIdOf<T>, _key: &[u8], _value: &[u8]) -> bool;
+
+    /// Needs Plasma.
+    fn verify_inclusion_with_root(
+        &self,
+        leaf: T::Hash,
+        token_address: AccountIdOf<T>,
+        range: &[u8],
+        inclusion_proof: &[u8],
+        root: &[u8],
+    ) -> bool;
+
+    fn is_decided(&self, property: &PropertyOf<T>) -> bool;
+    fn is_decided_by_id(&self, id: T::Hash) -> bool;
+
+    fn set_predicate_decision(
+        &self,
+        game_id: T::Hash,
+        decision: bool,
+    ) -> Result<bool, ExecError<T::AccountId>>;
 }
 
 /// A trait that represent an optimistic virtual machine.
@@ -61,10 +87,10 @@ pub trait Ext {
 pub trait Vm<T: Trait> {
     type Executable;
 
-    fn execute<E: Ext<T = T>>(
+    fn execute(
         &self,
-        exec: &Self::Executable,
-        ext: E,
+        exec: Self::Executable,
+        ext: T::ExternalCall,
         input_data: Vec<u8>,
-    ) -> ExecResult;
+    ) -> ExecResult<T>;
 }

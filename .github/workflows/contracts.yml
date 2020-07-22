@@ -1,0 +1,29 @@
+on: [push]
+
+name: Contracts CI
+
+jobs:
+  native:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: contracts/balances
+    steps:
+    - uses: hecrj/setup-rust-action@v1
+      with:
+        rust-version: 'nightly-2020-07-01'
+        targets: 'wasm32-unknown-unknown'
+    - name: Checkout the source coder
+      uses: actions/checkout@master
+    - name: Check targets are installed correctly
+      run: rustup target list --installed
+    - name: Install build tools
+      run: cargo install --git https://github.com/alexcrichton/wasm-gc --force
+    - name: Install build contracts tools
+      run: cargo install cargo-contract --force
+    - name: Run all tests
+      run: cargo test
+    - name: Build cargo contracts
+      run: cargo contract build
+#    - name: Generate metadata
+#      run: cargo contract generate-metadata

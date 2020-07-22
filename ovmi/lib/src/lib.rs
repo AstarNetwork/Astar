@@ -96,7 +96,6 @@
 //! }
 //! ```
 
-#![warn(missing_docs)]
 #![cfg_attr(not(feature = "std"), no_std)]
 #![macro_use]
 
@@ -105,7 +104,7 @@ macro_rules! require {
     ($val:expr) => {
         if !($val) {
             return Err(crate::executor::ExecError::Require {
-                msg: "Required error by: $val",
+                msg: stringify!($val),
             });
         }
     };
@@ -120,8 +119,9 @@ macro_rules! require_with_message {
     };
 }
 
+#[macro_use]
 pub extern crate alloc;
-use alloc::collections::btree_map::BTreeMap;
+use alloc::{vec::Vec, collections::btree_map::BTreeMap};
 
 pub mod compiled_predicates;
 pub mod executor;
@@ -129,6 +129,7 @@ pub mod predicates;
 pub mod prepare;
 use codec::{Decode, Encode};
 pub use compiled_predicates::CompiledPredicate;
+#[cfg(feature = "std")]
 pub use prepare::compile_from_json;
 
 #[cfg(test)]

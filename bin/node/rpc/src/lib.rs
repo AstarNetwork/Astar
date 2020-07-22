@@ -13,7 +13,7 @@
 
 #![warn(missing_docs)]
 
-use std::{fmt, sync::Arc};
+use std::sync::Arc;
 
 use plasm_primitives::{AccountId, Balance, Block, BlockNumber, Hash, Index};
 use plasm_runtime::UncheckedExtrinsic;
@@ -25,6 +25,7 @@ use sc_finality_grandpa_rpc::GrandpaRpcHandler;
 use sc_keystore::KeyStorePtr;
 use sc_rpc_api::DenyUnsafe;
 use sp_api::ProvideRuntimeApi;
+use sp_block_builder::BlockBuilder;
 use sp_blockchain::{Error as BlockChainError, HeaderBackend, HeaderMetadata};
 use sp_consensus::SelectChain;
 use sp_consensus_babe::BabeApi;
@@ -90,7 +91,7 @@ where
         UncheckedExtrinsic,
     >,
     C::Api: BabeApi<Block>,
-    <C::Api as sp_api::ApiErrorExt>::Error: fmt::Debug,
+    C::Api: BlockBuilder<Block>,
     P: TransactionPool + 'static,
     M: jsonrpc_core::Metadata + Default,
     SC: SelectChain<Block> + 'static,
@@ -121,6 +122,7 @@ where
     io.extend_with(SystemApi::to_delegate(FullSystem::new(
         client.clone(),
         pool,
+        deny_unsafe,
     )));
     // Making synchronous calls in light client freezes the browser currently,
     // more context: https://github.com/paritytech/substrate/pull/3480
@@ -164,7 +166,7 @@ where
         fetcher,
     } = deps;
     let mut io = jsonrpc_core::IoHandler::default();
-    io.extend_with(SystemApi::<AccountId, Index>::to_delegate(
+    io.extend_with(SystemApi::<Hash, AccountId, Index>::to_delegate(
         LightSystem::new(client, remote_blockchain, fetcher, pool),
     ));
 

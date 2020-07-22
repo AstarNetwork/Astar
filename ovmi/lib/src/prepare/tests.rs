@@ -1,96 +1,30 @@
 #![cfg(test)]
 use super::super::*;
+use super::load_predicate_json;
 use crate::compiled_predicates::*;
-use crate::*;
 use codec::{Decode, Encode};
-
-const JSON: &str = r#"
-  {
-    "type": "CompiledPredicate",
-    "name": "Ownership",
-    "inputDefs": [
-      "owner",
-      "tx"
-    ],
-    "contracts": [
-      {
-        "type": "IntermediateCompiledPredicate",
-        "originalPredicateName": "Ownership",
-        "name": "OwnershipT",
-        "connective": "ThereExistsSuchThat",
-        "inputDefs": [
-          "OwnershipT",
-          "owner",
-          "tx"
-        ],
-        "inputs": [
-          "signatures,KEY,${tx}",
-          "v0",
-          {
-            "type": "AtomicProposition",
-            "predicate": {
-              "type": "AtomicPredicateCall",
-              "source": "IsValidSignature"
-            },
-            "inputs": [
-              {
-                "type": "NormalInput",
-                "inputIndex": 2,
-                "children": []
-              },
-              {
-                "type": "VariableInput",
-                "placeholder": "v0",
-                "children": []
-              },
-              {
-                "type": "NormalInput",
-                "inputIndex": 1,
-                "children": []
-              },
-              {
-                "type": "ConstantInput",
-                "name": "secp256k1"
-              }
-            ]
-          }
-        ],
-        "propertyInputs": []
-      }
-    ],
-    "entryPoint": "OwnershipT",
-    "constants": [
-      {
-        "varType": "bytes",
-        "name": "secp256k1"
-      }
-    ]
-  }"#;
 
 #[test]
 fn ownership_predicate_test() {
+    let ownership_predicate_str = load_predicate_json("ownership.json");
     let ans = CompiledPredicate {
         r#type: PredicateType::CompiledPredicate,
-        name: "Ownership".to_string(),
-        input_defs: vec!["owner".to_string(), "tx".to_string()],
+        name: b"Ownership".to_vec(),
+        input_defs: vec![b"owner".to_vec(), b"tx".to_vec()],
         contracts: vec![IntermediateCompiledPredicate {
             r#type: PredicateType::IntermediateCompiledPredicate,
-            original_predicate_name: "Ownership".to_string(),
-            name: "OwnershipT".to_string(),
+            original_predicate_name: b"Ownership".to_vec(),
+            name: b"OwnershipT".to_vec(),
             connective: LogicalConnective::ThereExistsSuchThat,
-            input_defs: vec![
-                "OwnershipT".to_string(),
-                "owner".to_string(),
-                "tx".to_string(),
-            ],
+            input_defs: vec![b"OwnershipT".to_vec(), b"owner".to_vec(), b"tx".to_vec()],
             inputs: vec![
-                AtomicPropositionOrPlaceholder::Placeholder("signatures,KEY,${tx}".to_string()),
-                AtomicPropositionOrPlaceholder::Placeholder("v0".to_string()),
+                AtomicPropositionOrPlaceholder::Placeholder(b"signatures,KEY,${tx}".to_vec()),
+                AtomicPropositionOrPlaceholder::Placeholder(b"v0".to_vec()),
                 AtomicPropositionOrPlaceholder::AtomicProposition(AtomicProposition {
                     r#type: PredicateType::AtomicProposition,
                     predicate: PredicateCall::AtomicPredicateCall(AtomicPredicateCall {
                         r#type: PredicateType::AtomicPredicateCall,
-                        source: "IsValidSignature".to_string(),
+                        source: b"IsValidSignature".to_vec(),
                     }),
                     inputs: vec![
                         CompiledInput::NormalInput(NormalInput {
@@ -100,7 +34,7 @@ fn ownership_predicate_test() {
                         }),
                         CompiledInput::VariableInput(VariableInput {
                             r#type: PredicateType::VariableInput,
-                            placeholder: "v0".to_string(),
+                            placeholder: b"v0".to_vec(),
                             children: vec![],
                         }),
                         CompiledInput::NormalInput(NormalInput {
@@ -110,7 +44,7 @@ fn ownership_predicate_test() {
                         }),
                         CompiledInput::ConstantInput(ConstantInput {
                             r#type: PredicateType::ConstantInput,
-                            name: "secp256k1".to_string(),
+                            name: b"secp256k1".to_vec(),
                         }),
                     ],
                     is_compiled: None,
@@ -120,11 +54,11 @@ fn ownership_predicate_test() {
         }],
         constants: Some(vec![ConstantVariable {
             var_type: VarType::Bytes,
-            name: "secp256k1".to_string(),
+            name: b"secp256k1".to_vec(),
         }]),
-        entry_point: "OwnershipT".to_string(),
+        entry_point: b"OwnershipT".to_vec(),
     };
-    let res = match compile_from_json(JSON) {
+    let res = match compile_from_json(ownership_predicate_str.as_str()) {
         Ok(res) => res,
         Err(err) => {
             println!("ERR: {:?}", err.classify());

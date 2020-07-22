@@ -1,7 +1,21 @@
+use super::*;
 use codec::{Decode, Encode};
-use core::fmt;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
+
+// #[derive(Clone, Eq, PartialEq, Encode, Decode, Hash, derive_more::Display)]
+// #[cfg_attr(feature = "std", derive(Debug))]
+// pub struct ByteStrVec(Vec<u8>);
+
+impl Serialize for Vec<u8> {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+    {
+        serializer.serialize_i32(*self)
+    }
+}
+
 
 #[derive(Clone, Eq, PartialEq, Encode, Decode, Hash, derive_more::Display)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize, Debug))]
@@ -39,11 +53,11 @@ pub enum CallablePredicate {
 #[cfg_attr(feature = "std", serde(rename_all = "camelCase"))]
 pub struct CompiledPredicate {
     pub r#type: PredicateType,
-    pub name: String,
-    pub input_defs: Vec<String>,
+    pub name: Vec<u8>,
+    pub input_defs: Vec<Vec<u8>>,
     pub contracts: Vec<IntermediateCompiledPredicate>,
     pub constants: Option<Vec<ConstantVariable>>,
-    pub entry_point: String,
+    pub entry_point: Vec<u8>,
 }
 
 #[derive(Clone, Eq, PartialEq, Encode, Decode, Hash)]
@@ -51,7 +65,7 @@ pub struct CompiledPredicate {
 #[cfg_attr(feature = "std", serde(rename_all = "camelCase"))]
 pub struct ConstantVariable {
     pub var_type: VarType,
-    pub name: String,
+    pub name: Vec<u8>,
 }
 
 /// IntermediateCompiledPredicate is core of compilation which has only atomic propositions as its inputs.
@@ -62,11 +76,11 @@ pub struct ConstantVariable {
 #[cfg_attr(feature = "std", serde(rename_all = "camelCase"))]
 pub struct IntermediateCompiledPredicate {
     pub r#type: PredicateType,
-    pub name: String,
-    pub original_predicate_name: String,
+    pub name: Vec<u8>,
+    pub original_predicate_name: Vec<u8>,
     // logical connective
     pub connective: LogicalConnective,
-    pub input_defs: Vec<String>,
+    pub input_defs: Vec<Vec<u8>>,
     pub inputs: Vec<AtomicPropositionOrPlaceholder>,
     pub property_inputs: Vec<NormalInput>,
 }
@@ -89,7 +103,7 @@ pub struct AtomicProposition {
     pub is_compiled: Option<bool>,
 }
 
-pub type Placeholder = String;
+pub type Placeholder = Vec<u8>;
 
 #[derive(Clone, Eq, PartialEq, Encode, Decode, Hash)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize, Debug))]
@@ -106,7 +120,7 @@ pub enum PredicateCall {
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize, Debug))]
 pub struct AtomicPredicateCall {
     pub r#type: PredicateType,
-    pub source: String,
+    pub source: Vec<u8>,
 }
 
 /// e.g. a() of "def Foo(a) := a()"
@@ -130,7 +144,7 @@ pub struct VariablePredicateCall {
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize, Debug))]
 pub struct CompiledPredicateCall {
     pub r#type: PredicateType,
-    pub source: String,
+    pub source: Vec<u8>,
 }
 
 /// CompiledInput indicates which value to pass to PredicateCall as input of predicate
@@ -150,14 +164,14 @@ pub enum CompiledInput {
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize, Debug))]
 pub struct ConstantInput {
     pub r#type: PredicateType,
-    pub name: String,
+    pub name: Vec<u8>,
 }
 
 #[derive(Clone, Eq, PartialEq, Encode, Decode, Hash)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize, Debug))]
 pub struct LabelInput {
     pub r#type: PredicateType,
-    pub label: String,
+    pub label: Vec<u8>,
 }
 
 #[derive(Clone, Eq, PartialEq, Encode, Decode, Hash)]
@@ -166,7 +180,7 @@ pub struct LabelInput {
 pub struct NormalInput {
     pub r#type: PredicateType,
     pub input_index: u8,
-    pub children: Vec<u8>,
+    pub children: Vec<i8>,
 }
 
 #[derive(Clone, Eq, PartialEq, Encode, Decode, Hash)]
@@ -174,14 +188,14 @@ pub struct NormalInput {
 pub struct VariableInput {
     pub r#type: PredicateType,
     pub placeholder: Placeholder,
-    pub children: Vec<u8>,
+    pub children: Vec<i8>,
 }
 
 #[derive(Clone, Eq, PartialEq, Encode, Decode, Hash)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize, Debug))]
 pub struct SelfInput {
     pub r#type: PredicateType,
-    pub children: Vec<u8>,
+    pub children: Vec<i8>,
 }
 
 /// LogicalConnective
@@ -359,8 +373,8 @@ mod tests {
 
     #[derive(Serialize, Deserialize, Debug)]
     enum Message {
-        Request { id: String, method: String },
-        Response { id: String, result: u8 },
+        Request { id: Vec<u8>, method: Vec<u8> },
+        Response { id: Vec<u8>, result: u8 },
     }
 
     const MES: &str = r#"{"Request": {"id": "...", "method": "..."}}"#;

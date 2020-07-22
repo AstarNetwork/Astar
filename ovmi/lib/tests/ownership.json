@@ -1,0 +1,61 @@
+{
+    "type": "CompiledPredicate",
+    "name": "Ownership",
+    "inputDefs": [
+        "owner",
+        "tx"
+    ],
+    "contracts": [
+        {
+            "type": "IntermediateCompiledPredicate",
+            "originalPredicateName": "Ownership",
+            "name": "OwnershipT",
+            "connective": "ThereExistsSuchThat",
+            "inputDefs": [
+                "OwnershipT",
+                "owner",
+                "tx"
+            ],
+            "inputs": [
+                "signatures,KEY,${tx}",
+                "v0",
+                {
+                    "type": "AtomicProposition",
+                    "predicate": {
+                        "type": "AtomicPredicateCall",
+                        "source": "IsValidSignature"
+                    },
+                    "inputs": [
+                        {
+                            "type": "NormalInput",
+                            "inputIndex": 2,
+                            "children": []
+                        },
+                        {
+                            "type": "VariableInput",
+                            "placeholder": "v0",
+                            "children": []
+                        },
+                        {
+                            "type": "NormalInput",
+                            "inputIndex": 1,
+                            "children": []
+                        },
+                        {
+                            "type": "ConstantInput",
+                            "name": "secp256k1"
+                        }
+                    ]
+                }
+            ],
+            "propertyInputs": []
+        }
+    ],
+    "entryPoint": "OwnershipT",
+    "constants": [
+        {
+            "varType": "bytes",
+            "name": "secp256k1"
+        }
+    ]
+}

@@ -19,7 +19,7 @@ fn set_validators_works_for_root() {
         );
 
         assert_ok!(PlasmValidator::set_validators(
-            Origin::ROOT,
+            Origin::root(),
             vec![VALIDATOR_A, VALIDATOR_B, VALIDATOR_C]
         ));
         assert_eq!(
@@ -51,7 +51,7 @@ fn set_validators_works_for_root() {
         }
 
         assert_ok!(PlasmValidator::set_validators(
-            Origin::ROOT,
+            Origin::root(),
             vec![VALIDATOR_A, VALIDATOR_B]
         ));
         assert_eq!(PlasmValidator::validators(), vec![VALIDATOR_A, VALIDATOR_B]);
@@ -86,7 +86,7 @@ fn reward_to_validator_test() {
     new_test_ext().execute_with(|| {
         advance_session();
         assert_ok!(PlasmValidator::set_validators(
-            Origin::ROOT,
+            Origin::root(),
             vec![
                 VALIDATOR_A,
                 VALIDATOR_B,
@@ -170,7 +170,7 @@ fn first_reward_to_validator_test() {
     new_test_ext().execute_with(|| {
         advance_session();
         assert_ok!(PlasmValidator::set_validators(
-            Origin::ROOT,
+            Origin::root(),
             vec![VALIDATOR_A, VALIDATOR_B,]
         ));
         advance_era();
@@ -181,7 +181,7 @@ fn first_reward_to_validator_test() {
         );
 
         assert_ok!(PlasmValidator::set_validators(
-            Origin::ROOT,
+            Origin::root(),
             vec![
                 VALIDATOR_A,
                 VALIDATOR_B,

@@ -17,6 +17,7 @@ use pallet_contracts_rpc_runtime_api::ContractExecResult;
 use pallet_grandpa::fg_primitives;
 use pallet_grandpa::{AuthorityId as GrandpaId, AuthorityList as GrandpaAuthorityList};
 use pallet_session::historical as pallet_session_historical;
+use pallet_transaction_payment::{Multiplier, TargetedFeeAdjustment};
 use pallet_transaction_payment_rpc_runtime_api::RuntimeDispatchInfo;
 use plasm_primitives::{
     AccountId, AccountIndex, Balance, BlockNumber, Hash, Index, Moment, Signature,
@@ -28,9 +29,12 @@ use sp_runtime::traits::{
     BlakeTwo256, Block as BlockT, ConvertInto, Extrinsic, NumberFor, OpaqueKeys,
     SaturatedConversion, Saturating, StaticLookup, Verify,
 };
-use sp_runtime::transaction_validity::{TransactionSource, TransactionValidity};
+use sp_runtime::transaction_validity::{
+    TransactionPriority, TransactionSource, TransactionValidity,
+};
 use sp_runtime::{
-    create_runtime_str, generic, impl_opaque_keys, ApplyExtrinsicResult, Perbill, Perquintill,
+    create_runtime_str, generic, impl_opaque_keys, ApplyExtrinsicResult, FixedPointNumber,
+    MultiSigner, Perbill, Perquintill,
 };
 use sp_std::prelude::*;
 #[cfg(any(feature = "std", test))]
@@ -43,8 +47,8 @@ pub use pallet_timestamp::Call as TimestampCall;
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
 
-/// Implementations of some helper traits passed into runtime modules as associated types.
-pub mod impls;
+/// Deprecated but used runtime interfaces.
+pub mod legacy;
 
 /// Constant values used within the runtime.
 pub mod constants;
@@ -56,7 +60,7 @@ include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
 /// Runtime version.
 pub const VERSION: RuntimeVersion = RuntimeVersion {
-    spec_name: create_runtime_str!("dusty2"),
+    spec_name: create_runtime_str!("dusty3"),
     impl_name: create_runtime_str!("staketechnologies-plasm"),
     authoring_version: 1,
     // Per convention: if the runtime behavior changes, increment spec_version
@@ -79,18 +83,19 @@ pub fn native_version() -> NativeVersion {
 }
 
 parameter_types! {
-    pub const BlockHashCount: BlockNumber = 250;
+    pub const BlockHashCount: BlockNumber = 2400;
     /// We allow for 3 seconds of compute with a 10 second average block time.
     pub const MaximumBlockWeight: Weight = 3 * WEIGHT_PER_SECOND;
     pub const MaximumBlockLength: u32 = 5 * 1024 * 1024;
     pub const AvailableBlockRatio: Perbill = Perbill::from_percent(75);
     /// Assume 10% of weight for average on_initialize calls
-    pub const MaximumExtrinsicWeight: Weight = AvailableBlockRatio::get()
+    pub MaximumExtrinsicWeight: Weight = AvailableBlockRatio::get()
         .saturating_sub(Perbill::from_percent(10)) * MaximumBlockWeight::get();
     pub const Version: RuntimeVersion = VERSION;
 }
 
 impl frame_system::Trait for Runtime {
+    type BaseCallFilter = ();
     type Origin = Origin;
     type Call = Call;
     type Index = Index;
@@ -152,10 +157,9 @@ impl pallet_balances::Trait for Runtime {
 
 parameter_types! {
     pub const TransactionByteFee: Balance = 10 * MILLIPLM;
-    // setting this to zero will disable the weight fee.
-    pub const WeightFeeCoefficient: Balance = 1_000;
-    // for a sane configuration, this should always be less than `AvailableBlockRatio`.
     pub const TargetBlockFullness: Perquintill = Perquintill::from_percent(25);
+    pub AdjustmentVariable: Multiplier = Multiplier::saturating_from_rational(1, 100_000);
+    pub MinimumMultiplier: Multiplier = Multiplier::saturating_from_rational(1, 1_000_000_000u128);
 }
 
 impl pallet_transaction_payment::Trait for Runtime {
@@ -163,7 +167,8 @@ impl pallet_transaction_payment::Trait for Runtime {
     type OnTransactionPayment = ();
     type TransactionByteFee = TransactionByteFee;
     type WeightToFee = IdentityFee<Balance>;
-    type FeeMultiplierUpdate = impls::TargetedFeeAdjustment<TargetBlockFullness>;
+    type FeeMultiplierUpdate =
+        TargetedFeeAdjustment<Self, TargetBlockFullness, AdjustmentVariable, MinimumMultiplier>;
 }
 
 parameter_types! {
@@ -229,25 +234,21 @@ impl pallet_plasm_validator::Trait for Runtime {
     type Event = Event;
 }
 
-// impl pallet_dapps_staking::Trait for Runtime {
-//     type Currency = Balances;
-//     type BondingDuration = BondingDuration;
-//     type ContractFinder = Operator;
-//     type RewardRemainder = (); // Reward remainder is burned.
-//     type Reward = (); // Reward is minted.
-//     type Time = Timestamp;
-//     type ComputeRewardsForDapps = pallet_dapps_staking::rewards::BasedComputeRewardsForDapps;
-//     type EraFinder = PlasmRewards;
-//     type ForDappsEraReward = PlasmRewards;
-//     type Event = Event;
-// }
+impl pallet_dapps_staking::Trait for Runtime {
+    type Currency = Balances;
+    type BondingDuration = BondingDuration;
+    type ContractFinder = Operator;
+    type RewardRemainder = (); // Reward remainder is burned.
+    type Reward = (); // Reward is minted.
+    type Time = Timestamp;
+    type ComputeRewardsForDapps = pallet_dapps_staking::rewards::BasedComputeRewardsForDapps;
+    type EraFinder = PlasmRewards;
+    type ForDappsEraReward = PlasmRewards;
+    type HistoryDepthFinder = PlasmRewards;
+    type Event = Event;
+}
 
 parameter_types! {
-    pub const ContractTransferFee: Balance = 1 * MILLIPLM;
-    pub const ContractCreationFee: Balance = 1 * MILLIPLM;
-    pub const ContractTransactionBaseFee: Balance = 1 * MILLIPLM;
-    pub const ContractTransactionByteFee: Balance = 10 * MILLIPLM;
-    pub const ContractFee: Balance = 1 * MILLIPLM;
     pub const TombstoneDeposit: Balance = 1 * PLM;
     pub const RentByteFee: Balance = 1 * PLM;
     pub const RentDepositOffset: Balance = 1000 * PLM;
@@ -257,7 +258,7 @@ parameter_types! {
 impl pallet_contracts::Trait for Runtime {
     type Time = Timestamp;
     type Randomness = RandomnessCollectiveFlip;
-    type Call = Call;
+    type Currency = Balances;
     type Event = Event;
     type DetermineContractAddress = pallet_contracts::SimpleAddressDeterminer<Runtime>;
     type TrieIdGenerator = pallet_contracts::TrieIdFromParentCounter<Runtime>;
@@ -270,6 +271,7 @@ impl pallet_contracts::Trait for Runtime {
     type SurchargeReward = SurchargeReward;
     type MaxDepth = pallet_contracts::DefaultMaxDepth;
     type MaxValueSize = pallet_contracts::DefaultMaxValueSize;
+    type WeightPrice = pallet_transaction_payment::Module<Self>;
 }
 
 impl pallet_contract_operator::Trait for Runtime {
@@ -320,6 +322,26 @@ impl pallet_finality_tracker::Trait for Runtime {
     type OnFinalizationStalled = Grandpa;
     type WindowSize = WindowSize;
     type ReportLatency = ReportLatency;
+}
+
+parameter_types! {
+    pub const MedianFilterExpire: Moment = 300; // 10 blocks is one minute, 300 - half hour
+    pub const LockdropUnsignedPriority: TransactionPriority = TransactionPriority::max_value();
+}
+
+impl pallet_plasm_lockdrop::Trait for Runtime {
+    type Currency = Balances;
+    type DurationBonus = pallet_plasm_lockdrop::DustyDurationBonus;
+    type MedianFilterExpire = MedianFilterExpire;
+    type MedianFilterWidth = pallet_plasm_lockdrop::typenum::U5;
+    type AuthorityId = pallet_plasm_lockdrop::sr25519::AuthorityId;
+    type Account = MultiSigner;
+    type Time = Timestamp;
+    type Moment = Moment;
+    type DollarRate = Balance;
+    type BalanceConvert = Balance;
+    type Event = Event;
+    type UnsignedPriority = LockdropUnsignedPriority;
 }
 
 impl<LocalCall> frame_system::offchain::CreateSignedTransaction<LocalCall> for Runtime
@@ -410,6 +432,8 @@ construct_runtime!(
         Indices: pallet_indices::{Module, Call, Storage, Event<T>, Config<T>},
         Balances: pallet_balances::{Module, Call, Storage, Event<T>, Config<T>},
         Contracts: pallet_contracts::{Module, Call, Storage, Event<T>, Config},
+        DappsStaking: pallet_dapps_staking::{Module, Call, Storage, Event<T>},
+        PlasmLockdrop: pallet_plasm_lockdrop::{Module, Call, Storage, Event<T>, Config<T>, ValidateUnsigned},
         PlasmValidator: pallet_plasm_validator::{Module, Call, Storage, Event<T>, Config<T>},
         PlasmRewards: pallet_plasm_rewards::{Module, Call, Storage, Event<T>, Config},
         Session: pallet_session::{Module, Call, Storage, Event, Config<T>},

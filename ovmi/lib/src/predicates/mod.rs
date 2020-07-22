@@ -2,13 +2,10 @@
 //! Executable Predicates instanced from Compiled Predicates and Atomic Predicates.
 //!
 //!
-use crate::executor::{
-    AddressOf, ExecError, ExecResult, ExecResultT, ExternalCall, HashOf, MaybeAddress,
-};
+use crate::executor::{AddressOf, ExecError, ExecResult, ExecResultT, ExternalCall, HashOf};
 use codec::{Decode, Encode};
 use core::fmt;
-#[cfg(feature = "std")]
-use serde::{Deserialize, Serialize};
+use alloc::{vec::Vec, collections::btree_map::BTreeMap};
 
 mod and;
 mod executable;
@@ -37,11 +34,55 @@ pub use is_stored::IsStoredPredicate;
 pub use is_valid_signature::IsValidSignaturePredicate;
 pub use verify_inclusion::VerifyInclusionPredicate;
 
-// #[derive(Clone, Eq, PartialEq, Encode, Decode, Hash, derive_more::Display)]
-// #[cfg_attr(feature = "std", derive(Serialize, Deserialize, Debug))]
-// pub enum AtomicExecutable<'a, Ext: ExternalCall> {
-//     None,
-// }
+pub enum AtomicExecutable<'a, Ext: ExternalCall> {
+    Equal(EqualPredicate<'a, Ext>),
+    IsContained(IsContainedPredicate<'a, Ext>),
+    IsLess(IsLessThanPredicate<'a, Ext>),
+    IsStored(IsStoredPredicate<'a, Ext>),
+    IsValidSignature(IsValidSignaturePredicate<'a, Ext>),
+    VerifyInclusion(VerifyInclusionPredicate<'a, Ext>),
+}
+
+impl<Ext: ExternalCall> AtomicPredicateInterface<AddressOf<Ext>> for AtomicExecutable<'_, Ext> {
+    fn decide(&self, inputs: Vec<Vec<u8>>) -> ExecResult<AddressOf<Ext>> {
+        match self {
+            AtomicExecutable::Equal(p) => p.decide(inputs),
+            AtomicExecutable::IsContained(p) => p.decide(inputs),
+            AtomicExecutable::IsLess(p) => p.decide(inputs),
+            AtomicExecutable::IsStored(p) => p.decide(inputs),
+            AtomicExecutable::IsValidSignature(p) => p.decide(inputs),
+            AtomicExecutable::VerifyInclusion(p) => p.decide(inputs),
+        }
+    }
+
+    fn decide_true(&self, inputs: Vec<Vec<u8>>) -> ExecResult<AddressOf<Ext>> {
+        match self {
+            AtomicExecutable::Equal(p) => p.decide_true(inputs),
+            AtomicExecutable::IsContained(p) => p.decide_true(inputs),
+            AtomicExecutable::IsLess(p) => p.decide_true(inputs),
+            AtomicExecutable::IsStored(p) => p.decide_true(inputs),
+            AtomicExecutable::IsValidSignature(p) => p.decide_true(inputs),
+            AtomicExecutable::VerifyInclusion(p) => p.decide_true(inputs),
+        }
+    }
+}
+
+impl<Ext: ExternalCall> AtomicHelperInterface<AddressOf<Ext>> for AtomicExecutable<'_, Ext> {
+    type Hash = HashOf<Ext>;
+    fn ext_address(&self) -> AddressOf<Ext> {
+        AddressOf::<Ext>::default()
+    }
+    fn ext_set_predicate_decision(
+        &self,
+        _game_id: Self::Hash,
+        _decision: bool,
+    ) -> ExecResult<AddressOf<Ext>> {
+        Err(ExecError::Unimplemented)
+    }
+    fn ext_get_property_id(&self, _property: &Property<AddressOf<Ext>>) -> Self::Hash {
+        Self::Hash::default()
+    }
+}
 
 pub enum LogicalConnectiveExecutable<'a, Ext: ExternalCall> {
     And(AndPredicate<'a, Ext>),
@@ -103,10 +144,10 @@ impl<Ext: ExternalCall> DecidablePredicateInterface<AddressOf<Ext>>
         witness: Vec<Vec<u8>>,
     ) -> ExecResult<AddressOf<Ext>> {
         match self {
-            DecidableExecutable::And(and) => and.decide_with_witness(inputs, witness),
-            DecidableExecutable::Not(not) => not.decide_with_witness(inputs, witness),
-            DecidableExecutable::Or(or) => or.decide_with_witness(inputs, witness),
-            DecidableExecutable::ForAll(for_all) => for_all.decide_with_witness(inputs, witness),
+            DecidableExecutable::And(p) => p.decide_with_witness(inputs, witness),
+            DecidableExecutable::Not(p) => p.decide_with_witness(inputs, witness),
+            DecidableExecutable::Or(p) => p.decide_with_witness(inputs, witness),
+            DecidableExecutable::ForAll(p) => p.decide_with_witness(inputs, witness),
             DecidableExecutable::ThereExists(p) => p.decide_with_witness(inputs, witness),
             DecidableExecutable::Equal(p) => p.decide_with_witness(inputs, witness),
             DecidableExecutable::IsContained(p) => p.decide_with_witness(inputs, witness),
@@ -193,7 +234,7 @@ impl<Ext: ExternalCall> AtomicHelperInterface<AddressOf<Ext>> for BaseAtomicExec
 }
 
 #[derive(Clone, Eq, PartialEq, Encode, Decode, Hash, derive_more::Display)]
-#[cfg_attr(feature = "std", derive(Serialize, Deserialize, Debug))]
+#[cfg_attr(feature = "std", derive(Debug))]
 pub enum PredicateCallInputs<Address> {
     AtomicPredicate(AtomicPredicateCallInputs),
     DecidablePredicate(DecidablePredicateCallInputs),
@@ -203,7 +244,7 @@ pub enum PredicateCallInputs<Address> {
 }
 
 #[derive(Clone, Eq, PartialEq, Encode, Decode, Hash)]
-#[cfg_attr(feature = "std", derive(Serialize, Deserialize, Debug))]
+#[cfg_attr(feature = "std", derive(Debug))]
 pub enum AtomicPredicateCallInputs {
     DecideTrue { inputs: Vec<Vec<u8>> },
     Decide { inputs: Vec<Vec<u8>> },
@@ -220,7 +261,7 @@ impl fmt::Display for AtomicPredicateCallInputs {
 }
 
 #[derive(Clone, Eq, PartialEq, Encode, Decode, Hash)]
-#[cfg_attr(feature = "std", derive(Serialize, Deserialize, Debug))]
+#[cfg_attr(feature = "std", derive(Debug))]
 pub enum DecidablePredicateCallInputs {
     DecideWithWitness {
         inputs: Vec<Vec<u8>>,
@@ -241,7 +282,7 @@ impl fmt::Display for DecidablePredicateCallInputs {
 }
 
 #[derive(Clone, Eq, PartialEq, Encode, Decode, Hash)]
-#[cfg_attr(feature = "std", derive(Serialize, Deserialize, Debug))]
+#[cfg_attr(feature = "std", derive(Debug))]
 pub enum LogicalConnectiveCallInputs<Address> {
     IsValidChallenge {
         inputs: Vec<Vec<u8>>,
@@ -264,7 +305,7 @@ impl<Address> fmt::Display for LogicalConnectiveCallInputs<Address> {
 }
 
 #[derive(Clone, Eq, PartialEq, Encode, Decode, Hash)]
-#[cfg_attr(feature = "std", derive(Serialize, Deserialize, Debug))]
+#[cfg_attr(feature = "std", derive(Debug))]
 pub enum BaseAtomicPredicateCallInputs {
     Decide {
         inputs: Vec<Vec<u8>>,
@@ -293,7 +334,7 @@ impl fmt::Display for BaseAtomicPredicateCallInputs {
 }
 
 #[derive(Clone, Eq, PartialEq, Encode, Decode, Hash)]
-#[cfg_attr(feature = "std", derive(Serialize, Deserialize, Debug))]
+#[cfg_attr(feature = "std", derive(Debug))]
 pub enum CompiledPredicateCallInputs<Address> {
     IsValidChallenge {
         inputs: Vec<Vec<u8>>,
@@ -311,6 +352,10 @@ pub enum CompiledPredicateCallInputs<Address> {
     DecideWithWitness {
         inputs: Vec<Vec<u8>>,
         witness: Vec<Vec<u8>>,
+    },
+    GetChild {
+        inputs: Vec<Vec<u8>>,
+        challenge_input: Vec<Vec<u8>>,
     },
 }
 
@@ -334,6 +379,10 @@ impl<Address> fmt::Display for CompiledPredicateCallInputs<Address> {
                 inputs: _,
                 witness: _,
             } => "DecideWithWitness",
+            CompiledPredicateCallInputs::GetChild {
+                inputs: _,
+                challenge_input: _,
+            } => "GetChild",
         };
         write!(f, "{}", state)
     }
@@ -342,7 +391,7 @@ impl<Address> fmt::Display for CompiledPredicateCallInputs<Address> {
 /// Property stands for dispute logic and we can claim every Properties to Adjudicator Contract.
 /// Property has its predicate address and array of input.
 #[derive(Encode, Decode, Clone, PartialEq, Eq, Hash)]
-#[cfg_attr(feature = "std", derive(Serialize, Deserialize, Debug))]
+#[cfg_attr(feature = "std", derive(Debug))]
 pub struct Property<Address> {
     /// Indicates the address of Predicate.
     predicate_address: Address,
