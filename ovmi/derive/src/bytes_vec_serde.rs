@@ -28,5 +28,14 @@ fn impl_serializable_struct_macro(ast: &syn::DeriveInput, serializable: Ident) -
 }
 
 fn impl_convert_to_original_macro(ast: &syn::DeriveInput, serializable: Ident) -> quote::Tokens {
-
+    let name = &ast.ident;
+    quote! {
+        impl From<#serializable> for #name {
+            fn from(s: #serializable) -> #name {
+                #name {
+                    ...,
+                }
+            }
+        }
+    }
 }
