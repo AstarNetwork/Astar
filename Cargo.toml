@@ -17,6 +17,7 @@ members = [
     "frame/plasma/rpc/runtime-api",
     "ovmi/lib",
     "ovmi/cli",
+    "ovmi/bytes_vec_serde",
 ]
 
 exclude = [

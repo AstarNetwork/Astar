@@ -3,8 +3,8 @@ use codec::{Decode, Encode};
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
 
-// #[derive(Clone, Eq, PartialEq, Encode, Decode, Hash, derive_more::Display)]
-// #[cfg_attr(feature = "std", derive(Debug))]
+// #[bytes_vec_serde(Clone, Eq, PartialEq, Encode, Decode, Hash, derive_more::Display)]
+// #[cfg_attr(feature = "std", bytes_vec_serde(Debug))]
 // pub struct ByteStrVec(Vec<u8>);
 
 impl Serialize for Vec<u8> {

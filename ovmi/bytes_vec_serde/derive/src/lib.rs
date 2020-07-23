@@ -6,6 +6,9 @@ extern crate quote;
 use proc_macro::TokenStream;
 mod bytes_vec_serde;
 
+#[cfg(test)]
+mod tests;
+
 #[proc_macro_derive(BytesVecSerde)]
 pub fn bytes_vec_serde_derive(input: TokenStream) -> TokenStream {
     // Construct a string representation of the type definition
