@@ -192,7 +192,11 @@ decl_storage! {
 
         // The untreated era for each operator
         pub OperatorsUntreatedEra get(fn operators_untreated_era):
-                map hasher(twox_64_concat) T::AccountId => EraIndex;
+            map hasher(twox_64_concat) T::AccountId => EraIndex;
+
+        // The untreated era for each contract
+        pub ContractsUntreatedEra get(fn contracts_untreated_era):
+            map hasher(twox_64_concat) T::AccountId => EraIndex;
 
         // ----- Staking uses.
         /// Map from all locked "stash" accounts to the controller account.
@@ -670,6 +674,17 @@ decl_module! {
             }
             <NominatorsUntreatedEra<T>>::insert(&nominator, untreated_era);
 
+            for (contract, _) in <ErasStakingPoints<T>>::iter_prefix(&era) {
+                let mut untreated_era = Self::contracts_untreated_era(&contract);
+                if era != untreated_era {
+                    while era > untreated_era {
+                        Self::propagate_eras_staking_points_total(&contract, &untreated_era, &(untreated_era + 1));
+                        untreated_era += 1;
+                    }
+                    <ContractsUntreatedEra<T>>::insert(&contract, untreated_era);
+                }
+            }
+
             let rewards = match T::ForDappsEraReward::get(&era) {
                 Some(rewards) => rewards,
                 None => {
@@ -798,9 +813,20 @@ impl<T: Trait> Module<T> {
 
         let total_staked = Self::eras_total_stake(era);
 
+        let nominate_values = (era.saturating_sub(T::HistoryDepthFinder::get())..=*era)
+            .flat_map(|e| <ErasStakingPoints<T>>::iter_prefix(&e))
+            .flat_map(|(_, points)| points.individual)
+            .filter(|(account, _)| *account == *nominator)
+            .map(|(_, value)| value)
+            .collect::<Vec<_>>();
+
         let nominate_total = Self::eras_nominate_totals(era, nominator);
-        let reward =
-            Perbill::from_rational_approximation(nominate_total, total_staked) * nominators_reward;
+        let reward = T::ComputeRewardsForDapps::compute_reward_for_nominator(
+            nominate_total,
+            total_staked,
+            nominators_reward,
+            nominate_values,
+        );
         total_imbalance.subsume(
             Self::make_payout(nominator, reward).unwrap_or(PositiveImbalanceOf::<T>::zero()),
         );
@@ -840,8 +866,11 @@ impl<T: Trait> Module<T> {
         let total_staked = Self::eras_total_stake(era);
 
         let staked_operator = Self::eras_staked_operators(era, operator);
-        let reward =
-            Perbill::from_rational_approximation(staked_operator, total_staked) * operators_reward;
+        let reward = T::ComputeRewardsForDapps::compute_reward_for_operator(
+            staked_operator,
+            total_staked,
+            operators_reward,
+        );
         total_imbalance.subsume(
             T::Currency::deposit_into_existing(operator, reward)
                 .unwrap_or(PositiveImbalanceOf::<T>::zero()),
@@ -854,6 +883,20 @@ impl<T: Trait> Module<T> {
         T::Reward::on_unbalanced(total_imbalance);
         T::RewardRemainder::on_unbalanced(T::Currency::issue(rest));
         total_payout
+    }
+
+    fn propagate_eras_staking_points_total(
+        contract: &T::AccountId,
+        src_era: &EraIndex,
+        dst_era: &EraIndex,
+    ) {
+        if <ErasStakingPoints<T>>::contains_key(src_era, contract) {
+            let untreated_points = <ErasStakingPoints<T>>::get(src_era, contract);
+
+            <ErasStakingPoints<T>>::mutate(&dst_era, &contract, |points| {
+                (*points).total += untreated_points.total.clone();
+            });
+        }
     }
 
     fn compute_total_stake(era: &EraIndex) -> BalanceOf<T> {

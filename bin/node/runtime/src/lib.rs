@@ -217,7 +217,7 @@ impl pallet_plasm_rewards::Trait for Runtime {
     type BondingDuration = BondingDuration;
     type ComputeEraForDapps = pallet_plasm_rewards::DefaultForDappsStaking<Runtime>;
     type ComputeEraForSecurity = PlasmValidator;
-    type ComputeTotalPayout = pallet_plasm_rewards::inflation::FirstPlasmIncentive<u32>;
+    type ComputeTotalPayout = pallet_plasm_rewards::inflation::CommunityRewards<u32>;
     type MaybeValidators = PlasmValidator;
     type Event = Event;
 }
@@ -241,7 +241,7 @@ impl pallet_dapps_staking::Trait for Runtime {
     type RewardRemainder = (); // Reward remainder is burned.
     type Reward = (); // Reward is minted.
     type Time = Timestamp;
-    type ComputeRewardsForDapps = pallet_dapps_staking::rewards::BasedComputeRewardsForDapps;
+    type ComputeRewardsForDapps = pallet_dapps_staking::rewards::VoidableRewardsForDapps;
     type EraFinder = PlasmRewards;
     type ForDappsEraReward = PlasmRewards;
     type HistoryDepthFinder = PlasmRewards;

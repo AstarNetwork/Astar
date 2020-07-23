@@ -27,8 +27,10 @@ pub const ALICE_CTRL: u64 = 3;
 pub const BOB_CTRL: u64 = 4;
 pub const VALIDATOR_A: u64 = 5;
 pub const VALIDATOR_B: u64 = 6;
-pub const OPERATOR: u64 = 9;
-pub const OPERATED_CONTRACT: u64 = 19;
+pub const OPERATOR_A: u64 = 9;
+pub const OPERATOR_B: u64 = 10;
+pub const OPERATED_CONTRACT_A: u64 = 19;
+pub const OPERATED_CONTRACT_B: u64 = 20;
 pub const BOB_CONTRACT: u64 = 12;
 
 impl_outer_origin! {
@@ -295,7 +297,7 @@ impl Trait for Test {
     type RewardRemainder = (); // Reward remainder is burned.
     type Reward = (); // Reward is minted.
     type Time = Timestamp;
-    type ComputeRewardsForDapps = rewards::BasedComputeRewardsForDapps;
+    type ComputeRewardsForDapps = rewards::VoidableRewardsForDapps;
     type EraFinder = PlasmRewards;
     type ForDappsEraReward = PlasmRewards;
     type HistoryDepthFinder = PlasmRewards;
@@ -354,12 +356,19 @@ pub const CODE_RETURN_FROM_START_FN: &str = r#"
 )
 "#;
 
+pub const CODE_RETURN_FROM_START_FN_B: &str = CODE_RETURN_FROM_START_FN;
+
 pub fn valid_instatiate() {
     let (wasm, code_hash) = compile_module::<Test>(CODE_RETURN_FROM_START_FN).unwrap();
 
+    let (wasm_b, code_hash_b) = compile_module::<Test>(CODE_RETURN_FROM_START_FN_B).unwrap();
+
     // prepare
-    let _ = Balances::deposit_creating(&OPERATOR, 1_000_000);
-    assert_ok!(Contracts::put_code(Origin::signed(OPERATOR), wasm));
+    let _ = Balances::deposit_creating(&OPERATOR_A, 1_000_000);
+    assert_ok!(Contracts::put_code(Origin::signed(OPERATOR_A), wasm));
+
+    let _ = Balances::deposit_creating(&OPERATOR_B, 1_000_000);
+    assert_ok!(Contracts::put_code(Origin::signed(OPERATOR_B), wasm_b));
 
     let test_params = parameters::StakingParameters {
         can_be_nominated: true,
@@ -370,36 +379,77 @@ pub fn valid_instatiate() {
     // instantiate
     // Check at the end to get hash on error easily
     let _ = Operator::instantiate(
-        Origin::signed(OPERATOR),
+        Origin::signed(OPERATOR_A),
         100,
         Gas::max_value(),
         code_hash.into(),
         vec![],
         test_params.clone(),
     );
+    let _ = Operator::instantiate(
+        Origin::signed(OPERATOR_B),
+        100,
+        Gas::max_value(),
+        code_hash_b.into(),
+        vec![],
+        test_params.clone(),
+    );
+
     // checks deployed contract
     assert!(pallet_contracts::ContractInfoOf::<Test>::contains_key(
-        OPERATED_CONTRACT
+        OPERATED_CONTRACT_A
+    ));
+    assert!(pallet_contracts::ContractInfoOf::<Test>::contains_key(
+        OPERATED_CONTRACT_B
     ));
 
     // checks mapping operator and contract
-    // OPERATOR operates a only OPERATED_CONTRACT contract.
-    assert!(pallet_contract_operator::OperatorHasContracts::<Test>::contains_key(OPERATOR));
-    let tree = pallet_contract_operator::OperatorHasContracts::<Test>::get(&OPERATOR);
+    // OPERATOR_A operates a only OPERATED_CONTRACT_A contract.
+    assert!(pallet_contract_operator::OperatorHasContracts::<Test>::contains_key(OPERATOR_A));
+    let tree = pallet_contract_operator::OperatorHasContracts::<Test>::get(&OPERATOR_A);
     assert_eq!(tree.len(), 1);
-    assert!(tree.contains(&OPERATED_CONTRACT));
+    assert!(tree.contains(&OPERATED_CONTRACT_A));
 
-    // OPERATED_CONTRACT contract is operated by OPERATOR.
-    assert!(pallet_contract_operator::ContractHasOperator::<Test>::contains_key(OPERATED_CONTRACT));
+    // checks mapping operator and contract
+    // OPERATOR_B operates a only OPERATED_CONTRACT_B contract.
+    assert!(pallet_contract_operator::OperatorHasContracts::<Test>::contains_key(OPERATOR_B));
+    let tree = pallet_contract_operator::OperatorHasContracts::<Test>::get(&OPERATOR_B);
+    assert_eq!(tree.len(), 1);
+    assert!(tree.contains(&OPERATED_CONTRACT_B));
+
+    // OPERATED_CONTRACT_A contract is operated by OPERATOR_A.
+    assert!(
+        pallet_contract_operator::ContractHasOperator::<Test>::contains_key(OPERATED_CONTRACT_A)
+    );
     assert_eq!(
-        pallet_contract_operator::ContractHasOperator::<Test>::get(&OPERATED_CONTRACT),
-        Some(OPERATOR)
+        pallet_contract_operator::ContractHasOperator::<Test>::get(&OPERATED_CONTRACT_A),
+        Some(OPERATOR_A)
+    );
+
+    // OPERATED_CONTRACT_B contract is operated by OPERATOR_B.
+    assert!(
+        pallet_contract_operator::ContractHasOperator::<Test>::contains_key(OPERATED_CONTRACT_B)
+    );
+    assert_eq!(
+        pallet_contract_operator::ContractHasOperator::<Test>::get(&OPERATED_CONTRACT_B),
+        Some(OPERATOR_B)
     );
 
     // OPERATED_CONTRACT's contract Parameters is same test_params.
-    assert!(pallet_contract_operator::ContractParameters::<Test>::contains_key(OPERATED_CONTRACT));
+    assert!(
+        pallet_contract_operator::ContractParameters::<Test>::contains_key(OPERATED_CONTRACT_A)
+    );
     assert_eq!(
-        pallet_contract_operator::ContractParameters::<Test>::get(&OPERATED_CONTRACT),
+        pallet_contract_operator::ContractParameters::<Test>::get(&OPERATED_CONTRACT_A),
+        Some(test_params.clone())
+    );
+
+    // OPERATED_CONTRACT_B's contract Parameters is same test_params.
+    assert!(
+        pallet_contract_operator::ContractParameters::<Test>::contains_key(OPERATED_CONTRACT_B)
+    );
+    assert_eq!(
+        pallet_contract_operator::ContractParameters::<Test>::get(&OPERATED_CONTRACT_B),
         Some(test_params)
     );
 }
