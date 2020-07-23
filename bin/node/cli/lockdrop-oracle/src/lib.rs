@@ -8,26 +8,28 @@ use tide::{http::StatusCode, Response};
 use web3::futures::Future;
 
 mod btc_utils;
+mod chainlink;
 mod cli;
 mod eth_utils;
 
 pub use cli::Config;
 
-const COINGECKO_BTC_API: &'static str = "https://api.coingecko.com/api/v3/coins/bitcoin";
-const COINGECKO_ETH_API: &'static str = "https://api.coingecko.com/api/v3/coins/ethereum";
-
 pub async fn start(config: Config) {
     let mut app = tide::with_state(config);
 
-    app.at("/btc/ticker").get(|_| async {
-        let ticker: serde_json::Value = reqwest::blocking::get(COINGECKO_BTC_API)?.json()?;
-        Ok(ticker["market_data"]["current_price"]["usd"].to_string())
-    });
+    app.at("/btc/ticker")
+        .get(|req: tide::Request<Config>| async move {
+            let endpoint = req.state().ethereum_endpoint.as_str();
+            let usd_price = chainlink::btc_usd(endpoint) / 10_u128.pow(8);
+            Ok(usd_price.to_string())
+        });
 
-    app.at("/eth/ticker").get(|_| async {
-        let ticker: serde_json::Value = reqwest::blocking::get(COINGECKO_ETH_API)?.json()?;
-        Ok(ticker["market_data"]["current_price"]["usd"].to_string())
-    });
+    app.at("/eth/ticker")
+        .get(|req: tide::Request<Config>| async move {
+            let endpoint = req.state().ethereum_endpoint.as_str();
+            let usd_price = chainlink::eth_usd(endpoint) / 10_u128.pow(8);
+            Ok(usd_price.to_string())
+        });
 
     app.at("/btc/lock")
         .post(|mut req: tide::Request<Config>| async move {
