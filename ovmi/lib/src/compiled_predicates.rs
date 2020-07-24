@@ -182,7 +182,7 @@ pub enum LogicalConnective {
 mod tests {
     use super::*;
     use crate::prepare::*;
-    use serde::Serialize;
+    use serde::{Deserialize, Serialize};
     macro_rules! serde_from_test {
         ($name:ident, $t:ty, $s:ty, $pr:expr) => {
             #[test]
@@ -352,7 +352,28 @@ mod tests {
         }"#
     );
 
-    #[derive(Serialize, Debug)]
+    #[derive(Serialize, Deserialize, Debug)]
+    enum MessageSerializable {
+        Request { id: String, method: String },
+        Response { id: String, result: u8 },
+    }
+
+    impl From<MessageSerializable> for Message {
+        fn from(f: MessageSerializable) -> Message {
+            match f {
+                MessageSerializable::Request { id, method } => Message::Request {
+                    id: id.as_bytes().to_vec(),
+                    method: method.as_bytes().to_vec(),
+                },
+                MessageSerializable::Response { id, result } => Message::Response {
+                    id: id.as_bytes().to_vec(),
+                    result,
+                },
+            }
+        }
+    }
+
+    #[derive(Debug)]
     enum Message {
         Request { id: Vec<u8>, method: Vec<u8> },
         Response { id: Vec<u8>, result: u8 },
@@ -360,5 +381,5 @@ mod tests {
 
     const MES: &str = r#"{"Request": {"id": "...", "method": "..."}}"#;
 
-    serde_from_test!(message_test, Message, Message, MES);
+    serde_from_test!(message_test, Message, MessageSerializable, MES);
 }

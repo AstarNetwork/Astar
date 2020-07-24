@@ -84,8 +84,11 @@ impl From<CompiledPredicateSerializable> for CompiledPredicate {
             r#type: f.r#type.into(),
             name: f.name.as_bytes().to_vec(),
             input_defs: f.input_defs.iter().map(|a| a.as_bytes().to_vec()).collect(),
-            contracts: f.contracts.iter().map(|a| a.into()).collect(),
-            constant: f.constant.iter().map(|a| a.into()).collect(),
+            contracts: f.contracts.iter().map(|a| a.clone().into()).collect(),
+            constants: match f.constants {
+                Some(constants) => Some(constants.iter().map(|a| a.clone().into()).collect()),
+                None => None,
+            },
             entry_point: f.entry_point.as_bytes().to_vec(),
         }
     }
@@ -133,8 +136,8 @@ impl From<IntermediateCompiledPredicateSerializable> for IntermediateCompiledPre
             original_predicate_name: f.original_predicate_name.as_bytes().to_vec(),
             connective: f.connective.into(),
             input_defs: f.input_defs.iter().map(|a| a.as_bytes().to_vec()).collect(),
-            inputs: f.inputs.into().map(|a| a.into()).collect(),
-            property_inputs: f.property_inputs.into().map(|a| a.into()).collect(),
+            inputs: f.inputs.iter().map(|a| a.clone().into()).collect(),
+            property_inputs: f.property_inputs.iter().map(|a| a.clone().into()).collect(),
         }
     }
 }
@@ -151,7 +154,7 @@ impl From<AtomicPropositionOrPlaceholderSerializable> for AtomicPropositionOrPla
     fn from(f: AtomicPropositionOrPlaceholderSerializable) -> AtomicPropositionOrPlaceholder {
         match f {
             AtomicPropositionOrPlaceholderSerializable::AtomicProposition(a) => {
-                AtomicPropositionOrPlaceholder::AtomicProposition(a.into())
+                AtomicPropositionOrPlaceholder::AtomicProposition(a.clone().into())
             }
             AtomicPropositionOrPlaceholderSerializable::Placeholder(a) => {
                 AtomicPropositionOrPlaceholder::Placeholder(a.as_bytes().to_vec())
@@ -175,7 +178,7 @@ impl From<AtomicPropositionSerializable> for AtomicProposition {
         AtomicProposition {
             r#type: f.r#type.into(),
             predicate: f.predicate.into(),
-            inputs: f.inputs.iter().map(|a| a.into()).collect(),
+            inputs: f.inputs.iter().map(|a| a.clone().into()).collect(),
             is_compiled: f.is_compiled,
         }
     }
@@ -195,16 +198,16 @@ impl From<PredicateCallSerializable> for PredicateCall {
     fn from(f: PredicateCallSerializable) -> PredicateCall {
         match f {
             PredicateCallSerializable::AtomicPredicateCall(a) => {
-                PredicateCall::AtomicPredicateCall(a.into())
+                PredicateCall::AtomicPredicateCall(a.clone().into())
             }
             PredicateCallSerializable::InputPredicateCall(a) => {
-                PredicateCall::InputPredicateCall(a.into())
+                PredicateCall::InputPredicateCall(a.clone().into())
             }
             PredicateCallSerializable::VariablePredicateCall(a) => {
-                PredicateCall::VariablePredicateCall(a.into())
+                PredicateCall::VariablePredicateCall(a.clone().into())
             }
             PredicateCallSerializable::CompiledPredicateCall(a) => {
-                PredicateCall::CompiledPredicateCall(a.into())
+                PredicateCall::CompiledPredicateCall(a.clone().into())
             }
         }
     }
@@ -239,7 +242,7 @@ impl From<InputPredicateCallSerializable> for InputPredicateCall {
     fn from(f: InputPredicateCallSerializable) -> InputPredicateCall {
         InputPredicateCall {
             r#type: f.r#type.into(),
-            source: f.source.as_bytes().to_vec(),
+            source: f.source.into(),
         }
     }
 }
@@ -293,11 +296,11 @@ pub enum CompiledInputSerializable {
 impl From<CompiledInputSerializable> for CompiledInput {
     fn from(f: CompiledInputSerializable) -> CompiledInput {
         match f {
-            CompiledInputSerializable::ConstantInput(a) => CompiledInput::ConstantInput(a.into()),
-            CompiledInputSerializable::LabelInput(a) => CompiledInput::LabelInput(a.into()),
-            CompiledInputSerializable::NormalInput(a) => CompiledInput::NormalInput(a.into()),
-            CompiledInputSerializable::VariableInput(a) => CompiledInput::VariableInput(a.into()),
-            CompiledInputSerializable::SelfInput(a) => CompiledInput::SelfInput(a.into()),
+            CompiledInputSerializable::ConstantInput(a) => CompiledInput::ConstantInput(a.clone().into()),
+            CompiledInputSerializable::LabelInput(a) => CompiledInput::LabelInput(a.clone().into()),
+            CompiledInputSerializable::NormalInput(a) => CompiledInput::NormalInput(a.clone().into()),
+            CompiledInputSerializable::VariableInput(a) => CompiledInput::VariableInput(a.clone().into()),
+            CompiledInputSerializable::SelfInput(a) => CompiledInput::SelfInput(a.clone().into()),
         }
     }
 }

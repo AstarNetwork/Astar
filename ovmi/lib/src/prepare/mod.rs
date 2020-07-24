@@ -19,7 +19,8 @@ mod tests;
 
 #[cfg(feature = "std")]
 pub fn compile_from_json(json: &str) -> Result<CompiledPredicate, serde_json::Error> {
-    Ok(serde_json::from_str(json)?.into())
+    let ret: CompiledPredicateSerializable = serde_json::from_str(json)?;
+    Ok(ret.into())
 }
 
 #[cfg(feature = "std")]
