@@ -536,22 +536,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "130aac562c0dd69c56b3b1cc8ffd2e17be31d0b6c25b61c96b76231aa23e39e1"
 
 [[package]]
-name = "bytes-vec-serde"
-version = "0.1.0"
-dependencies = [
- "bytes-vec-serde-derive",
- "serde",
-]
-
-[[package]]
-name = "bytes-vec-serde-derive"
-version = "0.1.0"
-dependencies = [
- "quote 0.3.15",
- "syn 0.11.11",
-]
-
-[[package]]
 name = "c_linked_list"
 version = "1.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"

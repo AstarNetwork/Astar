@@ -12,7 +12,6 @@ mod serializable_predicates;
 
 #[cfg(feature = "std")]
 pub use serializable_predicates::*;
-mod errors;
 
 #[cfg(test)]
 mod tests;
@@ -35,11 +34,6 @@ pub fn load_predicate_json(filename: &str) -> String {
 }
 
 use crate::compiled_predicates::VarType;
-pub use errors::Error;
-
-pub fn validate(_code: Vec<u8>) -> Result<(), Error> {
-    Ok(())
-}
 
 #[derive(Clone, Eq, PartialEq, Encode, Decode, Hash)]
 #[cfg_attr(feature = "std", derive(Debug))]

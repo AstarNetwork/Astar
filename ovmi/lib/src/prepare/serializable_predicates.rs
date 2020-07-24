@@ -296,10 +296,16 @@ pub enum CompiledInputSerializable {
 impl From<CompiledInputSerializable> for CompiledInput {
     fn from(f: CompiledInputSerializable) -> CompiledInput {
         match f {
-            CompiledInputSerializable::ConstantInput(a) => CompiledInput::ConstantInput(a.clone().into()),
+            CompiledInputSerializable::ConstantInput(a) => {
+                CompiledInput::ConstantInput(a.clone().into())
+            }
             CompiledInputSerializable::LabelInput(a) => CompiledInput::LabelInput(a.clone().into()),
-            CompiledInputSerializable::NormalInput(a) => CompiledInput::NormalInput(a.clone().into()),
-            CompiledInputSerializable::VariableInput(a) => CompiledInput::VariableInput(a.clone().into()),
+            CompiledInputSerializable::NormalInput(a) => {
+                CompiledInput::NormalInput(a.clone().into())
+            }
+            CompiledInputSerializable::VariableInput(a) => {
+                CompiledInput::VariableInput(a.clone().into())
+            }
             CompiledInputSerializable::SelfInput(a) => CompiledInput::SelfInput(a.clone().into()),
         }
     }
