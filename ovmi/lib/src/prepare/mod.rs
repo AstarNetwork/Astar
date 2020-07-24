@@ -7,6 +7,11 @@ use std::fs::File;
 #[cfg(feature = "std")]
 use std::io::Read;
 
+#[cfg(feature = "std")]
+mod serializable_predicates;
+
+#[cfg(feature = "std")]
+pub use serializable_predicates::*;
 mod errors;
 
 #[cfg(test)]
@@ -14,7 +19,7 @@ mod tests;
 
 #[cfg(feature = "std")]
 pub fn compile_from_json(json: &str) -> Result<CompiledPredicate, serde_json::Error> {
-    serde_json::from_str(json)
+    Ok(serde_json::from_str(json)?.into())
 }
 
 #[cfg(feature = "std")]

@@ -1,21 +1,24 @@
-#[macro_use]
-extern crate bytes_vec_serde_derive;
 use bytes_vec_serde_derive::BytesVecSerde;
+use serde::{Deserialize, Serialize};
+use std::fmt::Debug;
 
-#[derive(BytesVecSerde)]
+#[derive(BytesVecSerde, Debug)]
 struct TestStruct {
-    name: Vec<u8>,
-    value: u128,
+    pub name: Vec<Vec<u8>>,
+    pub value: u128,
 }
 
 #[test]
 fn struct_true() {
-    // let test_struct = TestStruct {
-    //     name: vec![1, 2, 3],
-    //     value: 100,
-    // };
-    assert_eq!(
-        TestStruct::hello_macro(),
-        "Hello, Macro! My name is TestStruct"
-    );
+    let test_struct = TestStruct {
+        name: vec![vec![1, 2, 3]],
+        value: 100,
+    };
+    let test_struct_serde = TestStructSerializable {
+        name: vec!["aa".to_string()],
+        value: 100,
+    };
+    println!("{:?}", test_struct);
+    println!("{:?}", test_struct_serde);
+    assert!(false);
 }

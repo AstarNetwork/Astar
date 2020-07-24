@@ -1,24 +1,8 @@
 use super::*;
 use codec::{Decode, Encode};
-#[cfg(feature = "std")]
-use serde::{Deserialize, Serialize};
-
-// #[bytes_vec_serde(Clone, Eq, PartialEq, Encode, Decode, Hash, derive_more::Display)]
-// #[cfg_attr(feature = "std", bytes_vec_serde(Debug))]
-// pub struct ByteStrVec(Vec<u8>);
-
-impl Serialize for Vec<u8> {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-    {
-        serializer.serialize_i32(*self)
-    }
-}
-
 
 #[derive(Clone, Eq, PartialEq, Encode, Decode, Hash, derive_more::Display)]
-#[cfg_attr(feature = "std", derive(Serialize, Deserialize, Debug))]
+#[cfg_attr(feature = "std", derive(Debug))]
 pub enum PredicateType {
     CompiledPredicate,
     IntermediateCompiledPredicate,
@@ -36,21 +20,15 @@ pub enum PredicateType {
 }
 
 #[derive(Clone, Eq, PartialEq, Encode, Decode, Hash)]
-#[cfg_attr(feature = "std", derive(Serialize, Deserialize, Debug))]
-#[cfg_attr(feature = "std", serde(rename_all = "camelCase"))]
+#[cfg_attr(feature = "std", derive(Debug))]
 pub enum VarType {
     Address,
     Bytes,
 }
 
-pub enum CallablePredicate {
-    CompiledPredicate(CompiledPredicate),
-}
-
 /// Compiled Property definition
 #[derive(Clone, Eq, PartialEq, Encode, Decode, Hash)]
-#[cfg_attr(feature = "std", derive(Serialize, Deserialize, Debug))]
-#[cfg_attr(feature = "std", serde(rename_all = "camelCase"))]
+#[cfg_attr(feature = "std", derive(Debug))]
 pub struct CompiledPredicate {
     pub r#type: PredicateType,
     pub name: Vec<u8>,
@@ -61,8 +39,7 @@ pub struct CompiledPredicate {
 }
 
 #[derive(Clone, Eq, PartialEq, Encode, Decode, Hash)]
-#[cfg_attr(feature = "std", derive(Serialize, Deserialize, Debug))]
-#[cfg_attr(feature = "std", serde(rename_all = "camelCase"))]
+#[cfg_attr(feature = "std", derive(Debug))]
 pub struct ConstantVariable {
     pub var_type: VarType,
     pub name: Vec<u8>,
@@ -72,8 +49,7 @@ pub struct ConstantVariable {
 /// When we have for a in B() {Foo(a) and Bar(a)},
 /// "for a in B() {...}" and "Foo(a) and Bar(a)" are IntermediateCompiledPredicate.
 #[derive(Clone, Eq, PartialEq, Encode, Decode, Hash)]
-#[cfg_attr(feature = "std", derive(Serialize, Deserialize, Debug))]
-#[cfg_attr(feature = "std", serde(rename_all = "camelCase"))]
+#[cfg_attr(feature = "std", derive(Debug))]
 pub struct IntermediateCompiledPredicate {
     pub r#type: PredicateType,
     pub name: Vec<u8>,
@@ -86,16 +62,14 @@ pub struct IntermediateCompiledPredicate {
 }
 
 #[derive(Clone, Eq, PartialEq, Encode, Decode, Hash)]
-#[cfg_attr(feature = "std", derive(Serialize, Deserialize, Debug))]
-#[cfg_attr(feature = "std", serde(untagged))]
+#[cfg_attr(feature = "std", derive(Debug))]
 pub enum AtomicPropositionOrPlaceholder {
     AtomicProposition(AtomicProposition),
-    Placeholder(Placeholder),
+    Placeholder(Vec<u8>),
 }
 
 #[derive(Clone, Eq, PartialEq, Encode, Decode, Hash)]
-#[cfg_attr(feature = "std", derive(Serialize, Deserialize, Debug))]
-#[cfg_attr(feature = "std", serde(rename_all = "camelCase"))]
+#[cfg_attr(feature = "std", derive(Debug))]
 pub struct AtomicProposition {
     pub r#type: PredicateType,
     pub predicate: PredicateCall,
@@ -103,11 +77,8 @@ pub struct AtomicProposition {
     pub is_compiled: Option<bool>,
 }
 
-pub type Placeholder = Vec<u8>;
-
 #[derive(Clone, Eq, PartialEq, Encode, Decode, Hash)]
-#[cfg_attr(feature = "std", derive(Serialize, Deserialize, Debug))]
-#[cfg_attr(feature = "std", serde(untagged))]
+#[cfg_attr(feature = "std", derive(Debug))]
 pub enum PredicateCall {
     AtomicPredicateCall(AtomicPredicateCall),
     InputPredicateCall(InputPredicateCall),
@@ -117,7 +88,7 @@ pub enum PredicateCall {
 
 /// e.g. IsValidSignature()
 #[derive(Clone, Eq, PartialEq, Encode, Decode, Hash)]
-#[cfg_attr(feature = "std", derive(Serialize, Deserialize, Debug))]
+#[cfg_attr(feature = "std", derive(Debug))]
 pub struct AtomicPredicateCall {
     pub r#type: PredicateType,
     pub source: Vec<u8>,
@@ -125,7 +96,7 @@ pub struct AtomicPredicateCall {
 
 /// e.g. a() of "def Foo(a) := a()"
 #[derive(Clone, Eq, PartialEq, Encode, Decode, Hash)]
-#[cfg_attr(feature = "std", derive(Serialize, Deserialize, Debug))]
+#[cfg_attr(feature = "std", derive(Debug))]
 pub struct InputPredicateCall {
     pub r#type: PredicateType,
     pub source: NormalInput,
@@ -133,7 +104,7 @@ pub struct InputPredicateCall {
 
 /// e.g. su() of "def Foo(a) := with SU(a) as su {su()}"
 #[derive(Clone, Eq, PartialEq, Encode, Decode, Hash)]
-#[cfg_attr(feature = "std", derive(Serialize, Deserialize, Debug))]
+#[cfg_attr(feature = "std", derive(Debug))]
 pub struct VariablePredicateCall {
     pub r#type: PredicateType,
 }
@@ -141,7 +112,7 @@ pub struct VariablePredicateCall {
 /// For predicates dynamic linking
 /// e.g. Confsig() user defined predicate
 #[derive(Clone, Eq, PartialEq, Encode, Decode, Hash)]
-#[cfg_attr(feature = "std", derive(Serialize, Deserialize, Debug))]
+#[cfg_attr(feature = "std", derive(Debug))]
 pub struct CompiledPredicateCall {
     pub r#type: PredicateType,
     pub source: Vec<u8>,
@@ -150,8 +121,7 @@ pub struct CompiledPredicateCall {
 /// CompiledInput indicates which value to pass to PredicateCall as input of predicate
 /// For example,parent_property.inputs[0].inputs[1] is NormalInput andinput_index is 0 and children is [1].
 #[derive(Clone, Eq, PartialEq, Encode, Decode, Hash)]
-#[cfg_attr(feature = "std", derive(Serialize, Deserialize, Debug))]
-#[cfg_attr(feature = "std", serde(untagged))]
+#[cfg_attr(feature = "std", derive(Debug))]
 pub enum CompiledInput {
     ConstantInput(ConstantInput),
     LabelInput(LabelInput),
@@ -161,22 +131,21 @@ pub enum CompiledInput {
 }
 
 #[derive(Clone, Eq, PartialEq, Encode, Decode, Hash)]
-#[cfg_attr(feature = "std", derive(Serialize, Deserialize, Debug))]
+#[cfg_attr(feature = "std", derive(Debug))]
 pub struct ConstantInput {
     pub r#type: PredicateType,
     pub name: Vec<u8>,
 }
 
 #[derive(Clone, Eq, PartialEq, Encode, Decode, Hash)]
-#[cfg_attr(feature = "std", derive(Serialize, Deserialize, Debug))]
+#[cfg_attr(feature = "std", derive(Debug))]
 pub struct LabelInput {
     pub r#type: PredicateType,
     pub label: Vec<u8>,
 }
 
 #[derive(Clone, Eq, PartialEq, Encode, Decode, Hash)]
-#[cfg_attr(feature = "std", derive(Serialize, Deserialize, Debug))]
-#[cfg_attr(feature = "std", serde(rename_all = "camelCase"))]
+#[cfg_attr(feature = "std", derive(Debug))]
 pub struct NormalInput {
     pub r#type: PredicateType,
     pub input_index: u8,
@@ -184,15 +153,15 @@ pub struct NormalInput {
 }
 
 #[derive(Clone, Eq, PartialEq, Encode, Decode, Hash)]
-#[cfg_attr(feature = "std", derive(Serialize, Deserialize, Debug))]
+#[cfg_attr(feature = "std", derive(Debug))]
 pub struct VariableInput {
     pub r#type: PredicateType,
-    pub placeholder: Placeholder,
+    pub placeholder: Vec<u8>,
     pub children: Vec<i8>,
 }
 
 #[derive(Clone, Eq, PartialEq, Encode, Decode, Hash)]
-#[cfg_attr(feature = "std", derive(Serialize, Deserialize, Debug))]
+#[cfg_attr(feature = "std", derive(Debug))]
 pub struct SelfInput {
     pub r#type: PredicateType,
     pub children: Vec<i8>,
@@ -200,7 +169,7 @@ pub struct SelfInput {
 
 /// LogicalConnective
 #[derive(Clone, Eq, PartialEq, Encode, Decode, Hash)]
-#[cfg_attr(feature = "std", derive(Serialize, Deserialize, Debug))]
+#[cfg_attr(feature = "std", derive(Debug))]
 pub enum LogicalConnective {
     And,
     ForAllSuchThat,
@@ -212,11 +181,13 @@ pub enum LogicalConnective {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::prepare::*;
+    use serde::Serialize;
     macro_rules! serde_from_test {
-        ($name:ident, $t:ty, $pr:expr) => {
+        ($name:ident, $t:ty, $s:ty, $pr:expr) => {
             #[test]
             fn $name() {
-                let res: $t = match serde_json::from_str($pr) {
+                let res: $s = match serde_json::from_str($pr) {
                     Ok(res) => res,
                     Err(err) => {
                         println!(
@@ -229,7 +200,9 @@ mod tests {
                         return;
                     }
                 };
-                println!("success: {:?}", res);
+                println!("success serde : {:?}", res);
+                let res: $t = res.into();
+                println!("success encode: {:?}", res);
             }
         };
     }
@@ -237,12 +210,14 @@ mod tests {
     serde_from_test!(
         logical_connective_test,
         LogicalConnective,
+        LogicalConnectiveSerializable,
         r#""ThereExistsSuchThat""#
     );
 
     serde_from_test!(
         atomic_predicate_call_test,
         AtomicPredicateCall,
+        AtomicPredicateCallSerializable,
         r#"{
           "type": "AtomicPredicateCall",
           "source": "IsValidSignature"
@@ -252,6 +227,7 @@ mod tests {
     serde_from_test!(
         normal_input_test,
         NormalInput,
+        NormalInputSerializable,
         r#"{
             "type": "NormalInput",
             "inputIndex": 2,
@@ -262,6 +238,7 @@ mod tests {
     serde_from_test!(
         variable_input_test,
         VariableInput,
+        VariableInputSerializable,
         r#"{
             "type": "VariableInput",
             "placeholder": "v0",
@@ -272,6 +249,7 @@ mod tests {
     serde_from_test!(
         constant_input_test,
         ConstantInput,
+        ConstantInputSerializable,
         r#"{
             "type": "ConstantInput",
             "name": "secp256k1"
@@ -281,6 +259,7 @@ mod tests {
     serde_from_test!(
         atomic_proposition_test,
         AtomicProposition,
+        AtomicPropositionSerializable,
         r#"{
             "type": "AtomicProposition",
             "predicate": {
@@ -314,6 +293,7 @@ mod tests {
     serde_from_test!(
         intermediate_compiled_predicate_test,
         IntermediateCompiledPredicate,
+        IntermediateCompiledPredicateSerializable,
         r#"
         {
             "type": "IntermediateCompiledPredicate",
@@ -364,6 +344,7 @@ mod tests {
     serde_from_test!(
         constant_variable_test,
         ConstantVariable,
+        ConstantVariableSerializable,
         r#"
         {
             "varType": "bytes",
@@ -371,7 +352,7 @@ mod tests {
         }"#
     );
 
-    #[derive(Serialize, Deserialize, Debug)]
+    #[derive(Serialize, Debug)]
     enum Message {
         Request { id: Vec<u8>, method: Vec<u8> },
         Response { id: Vec<u8>, result: u8 },
@@ -379,5 +360,5 @@ mod tests {
 
     const MES: &str = r#"{"Request": {"id": "...", "method": "..."}}"#;
 
-    serde_from_test!(message_test, Message, MES);
+    serde_from_test!(message_test, Message, Message, MES);
 }

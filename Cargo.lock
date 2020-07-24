@@ -540,6 +540,7 @@ name = "bytes-vec-serde"
 version = "0.1.0"
 dependencies = [
  "bytes-vec-serde-derive",
+ "serde",
 ]
 
 [[package]]
