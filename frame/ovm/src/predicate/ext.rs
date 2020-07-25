@@ -4,8 +4,6 @@ use crate::traits::Ext;
 use crate::*;
 use ovmi::executor::{ExecResultT, ExternalCall};
 use ovmi::predicates::PredicateCallInputs;
-use sp_core::ecdsa;
-use sp_runtime::{traits::IdentifyAccount, MultiSigner};
 
 // Setting External environment.
 pub struct ExternalCallImpl<'a, T: Trait> {
@@ -81,15 +79,15 @@ impl<T: Trait> ExternalCall for ExternalCallImpl<'_, T> {
     }
 
     /// At first implementing, only ECDSA signature.
-    fn ext_verify(&self, hash: &Self::Hash, signature: &[u8], address: &Self::Address) -> bool {
-        if signature.len() != 65 {
-            return false;
-        }
-        let sig: ecdsa::Signature = ecdsa::Signature::from_slice(signature);
-        if let Some(public) = sig.recover(hash) {
-            return Self::hash_of(address)
-                == Self::hash_of(&MultiSigner::from(public).into_account());
-        }
+    fn ext_verify(&self, _hash: &Self::Hash, _signature: &[u8], _address: &Self::Address) -> bool {
+        // if signature.len() != 65 {
+        //     return false;
+        // }
+        // let sig: ecdsa::Signature = ecdsa::Signature::from_slice(signature);
+        // if let Some(public) = sig.recover(hash) {
+        //     return Self::hash_of(address)
+        //         == Self::hash_of(&MultiSigner::from(public).into_account());
+        // }
         false
     }
 

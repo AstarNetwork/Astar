@@ -1,6 +1,5 @@
 use crate::predicate::PrefabOvmModule;
 use crate::Schedule;
-use sp_std::prelude::*;
 
 /// Loads the given module given in `original_code`, performs some checks on it and
 /// does some preprocessing.
