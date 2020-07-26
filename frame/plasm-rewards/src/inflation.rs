@@ -64,6 +64,59 @@ where
     }
 }
 
+pub struct CommunityRewards<N: BaseArithmetic + Clone + From<u32>> {
+    _phantom: PhantomData<N>,
+}
+
+impl<L, D> ComputeTotalPayout<L, D> for CommunityRewards<L>
+where
+    L: BaseArithmetic + Clone + From<u32>,
+{
+    /// budget 2.5% of total tokens to validator staking and also 2.5% of total tokens to dapps staking
+    fn compute<N, M>(
+        total_tokens: N,
+        era_duration: M,
+        number_of_validator: L,
+        _dapps_staking: D,
+    ) -> (N, N)
+    where
+        N: BaseArithmetic + Unsigned + Clone + From<u32>,
+        M: BaseArithmetic + Clone + From<u32>,
+    {
+        const TARGETS_NUMBER: u128 = 100;
+        const MILLISECONDS_PER_YEAR: u128 = 1000 * 3600 * 24 * 36525 / 100;
+        // I_0 = 2.5%.
+        const I_0_DENOMINATOR: u128 = 25;
+        const I_0_NUMERATOR: u128 = 1000;
+        let number_of_validator_clone: u128 = number_of_validator.clone().unique_saturated_into();
+        let era_duration_clone: u128 = era_duration.clone().unique_saturated_into();
+        let number_of_validator: u128 = number_of_validator.unique_saturated_into();
+        let portion = if TARGETS_NUMBER < number_of_validator_clone {
+            // TotalForSecurityRewards
+            // = TotalAmountOfIssue * I_0% * (EraDuration / 1year)
+
+            // denominator: I_0_DENOMINATOR * EraDuration
+            // numerator: 1year * I_0_NUMERATOR
+            Perbill::from_rational_approximation(
+                I_0_DENOMINATOR * era_duration_clone,
+                MILLISECONDS_PER_YEAR * I_0_NUMERATOR,
+            )
+        } else {
+            // TotalForSecurityRewards
+            // = TotalAmountOfIssue * I_0% * (NumberOfValidators/TargetsNumber) * (EraDuration/1year)
+
+            // denominator: I_0_DENOMINATOR * NumberOfValidators * EraDuration
+            // numerator: 1year * I_0_NUMERATOR * TargetsNumber
+            Perbill::from_rational_approximation(
+                I_0_DENOMINATOR * number_of_validator * era_duration_clone,
+                MILLISECONDS_PER_YEAR * I_0_NUMERATOR * TARGETS_NUMBER,
+            )
+        };
+        let payout = portion * total_tokens;
+        (payout.clone(), payout)
+    }
+}
+
 pub struct SimpleComputeTotalPayout;
 
 /// The total payout to all operators and validators and their nominators per era.
@@ -193,6 +246,17 @@ mod test {
         FirstPlasmIncentive::<u32>::compute(total_tokens, era_duration, number_of_validator, 0)
     }
 
+    fn compute_community_rewards_test<N>(
+        total_tokens: N,
+        era_duration: u64,
+        number_of_validator: u32,
+    ) -> (N, N)
+    where
+        N: BaseArithmetic + Unsigned + Clone + From<u32>,
+    {
+        CommunityRewards::<u32>::compute(total_tokens, era_duration, number_of_validator, 0)
+    }
+
     #[test]
     fn test_compute_test() {
         const YEAR: u64 = 365 * 24 * 60 * 60 * 1000;
@@ -272,6 +336,30 @@ mod test {
         assert_eq!(
             compute_first_rewards_test(100_000_000u64, YEAR / 365, 100),
             (2_500_000 / 365, 0)
+        );
+    }
+
+    #[test]
+    fn test_community_rewards_compute() {
+        const YEAR: u64 = 1000 * 3600 * 24 * 36525 / 100;
+        assert_eq!(
+            compute_community_rewards_test(100_000_000u64, YEAR, 100),
+            (2_500_000, 2_500_000)
+        );
+
+        assert_eq!(
+            compute_community_rewards_test(100_000_000u64, YEAR, 150),
+            (2_500_000, 2_500_000)
+        );
+
+        assert_eq!(
+            compute_community_rewards_test(100_000_000u64, YEAR, 50),
+            (1_250_000, 1_250_000)
+        );
+
+        assert_eq!(
+            compute_community_rewards_test(100_000_000u64, YEAR / 365, 100),
+            (2_500_000 / 365, 2_500_000 / 365)
         );
     }
 }

@@ -26,7 +26,7 @@ use sp_api::impl_runtime_apis;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
 use sp_inherents::{CheckInherentsResult, InherentData};
 use sp_runtime::traits::{
-    BlakeTwo256, Block as BlockT, ConvertInto, Extrinsic, NumberFor, OpaqueKeys,
+    BlakeTwo256, Block as BlockT, ConvertInto, Extrinsic, Keccak256, NumberFor, OpaqueKeys,
     SaturatedConversion, Saturating, StaticLookup, Verify,
 };
 use sp_runtime::transaction_validity::{
@@ -217,7 +217,7 @@ impl pallet_plasm_rewards::Trait for Runtime {
     type BondingDuration = BondingDuration;
     type ComputeEraForDapps = pallet_plasm_rewards::DefaultForDappsStaking<Runtime>;
     type ComputeEraForSecurity = PlasmValidator;
-    type ComputeTotalPayout = pallet_plasm_rewards::inflation::FirstPlasmIncentive<u32>;
+    type ComputeTotalPayout = pallet_plasm_rewards::inflation::CommunityRewards<u32>;
     type MaybeValidators = PlasmValidator;
     type Event = Event;
 }
@@ -241,7 +241,7 @@ impl pallet_dapps_staking::Trait for Runtime {
     type RewardRemainder = (); // Reward remainder is burned.
     type Reward = (); // Reward is minted.
     type Time = Timestamp;
-    type ComputeRewardsForDapps = pallet_dapps_staking::rewards::BasedComputeRewardsForDapps;
+    type ComputeRewardsForDapps = pallet_dapps_staking::rewards::VoidableRewardsForDapps;
     type EraFinder = PlasmRewards;
     type ForDappsEraReward = PlasmRewards;
     type HistoryDepthFinder = PlasmRewards;
@@ -400,10 +400,78 @@ where
     type Extrinsic = UncheckedExtrinsic;
 }
 
+parameter_types! {
+    pub const MaxDepth: u32 = 32;
+    pub const DisputePeriod: BlockNumber = 7;
+}
+
+lazy_static::lazy_static! {
+    pub static ref NOT_ADDRESS: AccountId = to_account_from_seed(&hex![
+        "0000000000000000000000000000000000000000000000000000000000000003"
+    ]);
+    pub static ref AND_ADDRESS: AccountId = to_account_from_seed(&hex![
+        "0000000000000000000000000000000000000000000000000000000000000004"
+    ]);
+    pub static ref OR_ADDRESS: AccountId = to_account_from_seed(&hex![
+        "0000000000000000000000000000000000000000000000000000000000000005"
+    ]);
+    pub static ref FOR_ALL_ADDRESS: AccountId = to_account_from_seed(&hex![
+        "0000000000000000000000000000000000000000000000000000000000000006"
+    ]);
+    pub static ref THERE_EXISTS_ADDRESS: AccountId = to_account_from_seed(&hex![
+        "0000000000000000000000000000000000000000000000000000000000000007"
+    ]);
+    pub static ref EQUAL_ADDRESS: AccountId = to_account_from_seed(&hex![
+        "0000000000000000000000000000000000000000000000000000000000000008"
+    ]);
+    pub static ref IS_CONTAINED_ADDRESS: AccountId = to_account_from_seed(&hex![
+        "0000000000000000000000000000000000000000000000000000000000000009"
+    ]);
+    pub static ref IS_LESS_ADDRESS: AccountId = to_account_from_seed(&hex![
+        "0000000000000000000000000000000000000000000000000000000000000010"
+    ]);
+    pub static ref IS_STORED_ADDRESS: AccountId = to_account_from_seed(&hex![
+        "0000000000000000000000000000000000000000000000000000000000000011"
+    ]);
+    pub static ref IS_VALID_SIGNATURE_ADDRESS: AccountId = to_account_from_seed(&hex![
+        "0000000000000000000000000000000000000000000000000000000000000012"
+    ]);
+    pub static ref VERIFY_INCLUSION_ADDRESS: AccountId = to_account_from_seed(&hex![
+        "0000000000000000000000000000000000000000000000000000000000000013"
+    ]);
+    pub static ref SECP_256_K1: H256 = H256::from(&hex![
+        "d4fa99b1e08c4e5e6deb461846aa629344d95ff03ed04754c2053d54c756f439"
+    ]);
+}
+
+struct GetAtomicPredicateIdConfig;
+
+impl Get<pallet_ovm::AtomicPredicateIdConfig<AccountId, H256>> for GetAtomicPredicateIdConfig {
+    fn get() -> pallet_ovm::AtomicPredicateIdConfig<AccountId, H256> {
+        pallet_ovm::AtomicPredicateIdConfig {
+            not_address: (*NOT_ADDRESS).clone(),
+            and_address: (*AND_ADDRESS).clone(),
+            or_address: (*OR_ADDRESS).clone(),
+            for_all_address: (*FOR_ALL_ADDRESS).clone(),
+            there_exists_address: (*THERE_EXISTS_ADDRESS).clone(),
+            equal_address: (*EQUAL_ADDRESS).clone(),
+            is_contained_address: (*IS_CONTAINED_ADDRESS).clone(),
+            is_less_address: (*IS_LESS_ADDRESS).clone(),
+            is_stored_address: (*IS_STORED_ADDRESS).clone(),
+            is_valid_signature_address: (*IS_VALID_SIGNATURE_ADDRESS).clone(),
+            verify_inclusion_address: (*VERIFY_INCLUSION_ADDRESS).clone(),
+            secp256k1: (*SECP_256_K1).clone(),
+        }
+    }
+}
+
 impl pallet_ovm::Trait for Runtime {
-    type MaxDepth = pallet_ovm::DefaultMaxDepth;
-    type DisputePeriod = pallet_ovm::DefaultDisputePeriod;
+    type MaxDepth = MaxDepth;
+    type DisputePeriod = DisputePeriod;
     type DeterminePredicateAddress = pallet_ovm::SimpleAddressDeterminer<Runtime>;
+    type HashingL2 = Keccak256;
+    type ExternalCall = pallet_ovm::predicate::CallContext<Runtime>;
+    type AtomicPredicateIdConfig = GetAtomicPredicateIdConfig;
     type Event = Event;
 }
 
@@ -415,8 +483,7 @@ impl pallet_plasma::Trait for Runtime {
     type Currency = Balances;
     type DeterminePlappsAddress = pallet_plasma::SimpleAddressDeterminer<Runtime>;
     type MaximumTokenAddress = MaximumTokenAddress;
-    // TODO: should be Keccak;
-    type PlasmaHashing = BlakeTwo256;
+    type PlasmaHashing = Keccak256;
     type Event = Event;
 }
 
