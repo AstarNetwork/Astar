@@ -1,7 +1,7 @@
 use super::*;
 use codec::{Decode, Encode};
 
-#[derive(Clone, Eq, PartialEq, Encode, Decode, Hash, derive_more::Display)]
+#[derive(Clone, Eq, PartialEq, Encode, Decode, Hash)]
 #[cfg_attr(feature = "std", derive(Debug))]
 pub enum PredicateType {
     CompiledPredicate,

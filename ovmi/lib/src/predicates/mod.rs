@@ -233,7 +233,7 @@ impl<Ext: ExternalCall> AtomicHelperInterface<AddressOf<Ext>> for BaseAtomicExec
     }
 }
 
-#[derive(Clone, Eq, PartialEq, Encode, Decode, Hash, derive_more::Display)]
+#[derive(Clone, Eq, PartialEq, Encode, Decode, Hash)]
 #[cfg_attr(feature = "std", derive(Debug))]
 pub enum PredicateCallInputs<Address> {
     AtomicPredicate(AtomicPredicateCallInputs),

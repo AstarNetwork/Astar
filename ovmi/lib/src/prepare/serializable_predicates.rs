@@ -4,7 +4,7 @@ use codec::{Decode, Encode};
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Eq, PartialEq, Encode, Decode, Hash, derive_more::Display)]
+#[derive(Clone, Eq, PartialEq, Encode, Decode, Hash)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize, Debug))]
 pub enum PredicateTypeSerializable {
     CompiledPredicate,
