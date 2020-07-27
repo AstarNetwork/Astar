@@ -120,7 +120,7 @@ macro_rules! require_with_message {
 
 #[macro_use]
 pub extern crate alloc;
-use alloc::{vec::Vec, collections::btree_map::BTreeMap};
+use alloc::{collections::btree_map::BTreeMap, vec::Vec};
 
 pub mod compiled_predicates;
 pub mod executor;

@@ -7,7 +7,7 @@
 use codec::Encode;
 use frame_support::{
     construct_runtime, debug, parameter_types,
-    traits::{KeyOwnerProofSystem, Randomness},
+    traits::{Get, KeyOwnerProofSystem, Randomness},
     weights::{
         constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_PER_SECOND},
         IdentityFee, Weight,
@@ -405,62 +405,27 @@ parameter_types! {
     pub const DisputePeriod: BlockNumber = 7;
 }
 
-lazy_static::lazy_static! {
-    pub static ref NOT_ADDRESS: AccountId = to_account_from_seed(&hex![
-        "0000000000000000000000000000000000000000000000000000000000000003"
-    ]);
-    pub static ref AND_ADDRESS: AccountId = to_account_from_seed(&hex![
-        "0000000000000000000000000000000000000000000000000000000000000004"
-    ]);
-    pub static ref OR_ADDRESS: AccountId = to_account_from_seed(&hex![
-        "0000000000000000000000000000000000000000000000000000000000000005"
-    ]);
-    pub static ref FOR_ALL_ADDRESS: AccountId = to_account_from_seed(&hex![
-        "0000000000000000000000000000000000000000000000000000000000000006"
-    ]);
-    pub static ref THERE_EXISTS_ADDRESS: AccountId = to_account_from_seed(&hex![
-        "0000000000000000000000000000000000000000000000000000000000000007"
-    ]);
-    pub static ref EQUAL_ADDRESS: AccountId = to_account_from_seed(&hex![
-        "0000000000000000000000000000000000000000000000000000000000000008"
-    ]);
-    pub static ref IS_CONTAINED_ADDRESS: AccountId = to_account_from_seed(&hex![
-        "0000000000000000000000000000000000000000000000000000000000000009"
-    ]);
-    pub static ref IS_LESS_ADDRESS: AccountId = to_account_from_seed(&hex![
-        "0000000000000000000000000000000000000000000000000000000000000010"
-    ]);
-    pub static ref IS_STORED_ADDRESS: AccountId = to_account_from_seed(&hex![
-        "0000000000000000000000000000000000000000000000000000000000000011"
-    ]);
-    pub static ref IS_VALID_SIGNATURE_ADDRESS: AccountId = to_account_from_seed(&hex![
-        "0000000000000000000000000000000000000000000000000000000000000012"
-    ]);
-    pub static ref VERIFY_INCLUSION_ADDRESS: AccountId = to_account_from_seed(&hex![
-        "0000000000000000000000000000000000000000000000000000000000000013"
-    ]);
-    pub static ref SECP_256_K1: H256 = H256::from(&hex![
-        "d4fa99b1e08c4e5e6deb461846aa629344d95ff03ed04754c2053d54c756f439"
-    ]);
-}
-
-struct GetAtomicPredicateIdConfig;
-
-impl Get<pallet_ovm::AtomicPredicateIdConfig<AccountId, H256>> for GetAtomicPredicateIdConfig {
-    fn get() -> pallet_ovm::AtomicPredicateIdConfig<AccountId, H256> {
+pub struct GetAtomicPredicateIdConfig;
+impl Get<pallet_ovm::AtomicPredicateIdConfig<AccountId, Hash>> for GetAtomicPredicateIdConfig {
+    fn get() -> pallet_ovm::AtomicPredicateIdConfig<AccountId, Hash> {
         pallet_ovm::AtomicPredicateIdConfig {
-            not_address: (*NOT_ADDRESS).clone(),
-            and_address: (*AND_ADDRESS).clone(),
-            or_address: (*OR_ADDRESS).clone(),
-            for_all_address: (*FOR_ALL_ADDRESS).clone(),
-            there_exists_address: (*THERE_EXISTS_ADDRESS).clone(),
-            equal_address: (*EQUAL_ADDRESS).clone(),
-            is_contained_address: (*IS_CONTAINED_ADDRESS).clone(),
-            is_less_address: (*IS_LESS_ADDRESS).clone(),
-            is_stored_address: (*IS_STORED_ADDRESS).clone(),
-            is_valid_signature_address: (*IS_VALID_SIGNATURE_ADDRESS).clone(),
-            verify_inclusion_address: (*VERIFY_INCLUSION_ADDRESS).clone(),
-            secp256k1: (*SECP_256_K1).clone(),
+            not_address: ([1; 32]).into(),
+            and_address: ([2; 32]).into(),
+            or_address: ([3; 32]).into(),
+            for_all_address: ([4; 32]).into(),
+            there_exists_address: ([5; 32]).into(),
+            equal_address: ([6; 32]).into(),
+            is_contained_address: ([7; 32]).into(),
+            is_less_address: ([8; 32]).into(),
+            is_stored_address: ([9; 32]).into(),
+            is_valid_signature_address: ([10; 32]).into(),
+            verify_inclusion_address: ([11; 32]).into(),
+            // Keccak256::hash("seck256k1") = d4fa99b1e08c4e5e6deb461846aa629344d95ff03ed04754c2053d54c756f439;
+            secp256k1: ([
+                212, 250, 153, 177, 224, 140, 78, 94, 109, 235, 70, 24, 70, 170, 98, 147, 68, 217,
+                95, 240, 62, 208, 71, 84, 194, 5, 61, 84, 199, 86, 244, 57,
+            ])
+            .into(),
         }
     }
 }
@@ -475,8 +440,11 @@ impl pallet_ovm::Trait for Runtime {
     type Event = Event;
 }
 
-parameter_types! {
-    pub const MaximumTokenAddress: AccountId = ([255; 32]).into();
+pub struct MaximumTokenAddress;
+impl Get<AccountId> for MaximumTokenAddress {
+    fn get() -> AccountId {
+        ([255; 32]).into()
+    }
 }
 
 impl pallet_plasma::Trait for Runtime {
@@ -512,7 +480,7 @@ construct_runtime!(
         Trading: pallet_operator_trading::{Module, Call, Storage, Event<T>},
         RandomnessCollectiveFlip: pallet_randomness_collective_flip::{Module, Call, Storage},
         Sudo: pallet_sudo::{Module, Call, Storage, Event<T>, Config<T>},
-        OVM: pallet_ovm::{Module, Call, Storage, Event<T>, Config},
+        OVM: pallet_ovm::{Module, Call, Storage, Event<T>},
         Plasma: pallet_plasma::{Module, Call, Storage, Event<T>},
     }
 );

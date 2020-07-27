@@ -3,9 +3,9 @@
 //!
 //!
 use crate::executor::{AddressOf, ExecError, ExecResult, ExecResultT, ExternalCall, HashOf};
+use alloc::{collections::btree_map::BTreeMap, vec::Vec};
 use codec::{Decode, Encode};
 use core::fmt;
-use alloc::{vec::Vec, collections::btree_map::BTreeMap};
 
 mod and;
 mod executable;

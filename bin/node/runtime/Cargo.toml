@@ -18,6 +18,7 @@ hex-literal = { version = "0.2", optional = true }
 # primitives
 plasm-primitives = { path = "../primitives", default-features = false }
 sp-core = { version = "2.0.0-rc4", default-features = false }
+sp-io = { version = "2.0.0-rc4", default-features = false }
 sp-runtime = { version = "2.0.0-rc4", default-features = false }
 sp-runtime-interface = { version = "2.0.0-rc4", default-features = false }
 sp-consensus-babe = { version = "0.8.0-rc2", default-features = false }
@@ -58,8 +59,6 @@ pallet-timestamp = { version = "2.0.0-rc4", default-features = false }
 pallet-transaction-payment = { version = "2.0.0-rc4", default-features = false }
 pallet-transaction-payment-rpc-runtime-api = { version = "2.0.0-rc4", default-features = false }
 
-[dev-dependencies]
-sp-io = "2.0.0-rc4"
 
 [build-dependencies]
 wasm-builder-runner = { package = "substrate-wasm-builder-runner", version = "1.0.5" }
@@ -74,6 +73,7 @@ std = [
     "sp-std/std",
     "sp-api/std",
     "sp-core/std",
+    "sp-io/std",
     "sp-consensus-babe/std",
     "sp-runtime/std",
     "sp-session/std",
