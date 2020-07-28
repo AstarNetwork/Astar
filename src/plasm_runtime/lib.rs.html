@@ -637,6 +637,63 @@
 <span id="637">637</span>
 <span id="638">638</span>
 <span id="639">639</span>
+<span id="640">640</span>
+<span id="641">641</span>
+<span id="642">642</span>
+<span id="643">643</span>
+<span id="644">644</span>
+<span id="645">645</span>
+<span id="646">646</span>
+<span id="647">647</span>
+<span id="648">648</span>
+<span id="649">649</span>
+<span id="650">650</span>
+<span id="651">651</span>
+<span id="652">652</span>
+<span id="653">653</span>
+<span id="654">654</span>
+<span id="655">655</span>
+<span id="656">656</span>
+<span id="657">657</span>
+<span id="658">658</span>
+<span id="659">659</span>
+<span id="660">660</span>
+<span id="661">661</span>
+<span id="662">662</span>
+<span id="663">663</span>
+<span id="664">664</span>
+<span id="665">665</span>
+<span id="666">666</span>
+<span id="667">667</span>
+<span id="668">668</span>
+<span id="669">669</span>
+<span id="670">670</span>
+<span id="671">671</span>
+<span id="672">672</span>
+<span id="673">673</span>
+<span id="674">674</span>
+<span id="675">675</span>
+<span id="676">676</span>
+<span id="677">677</span>
+<span id="678">678</span>
+<span id="679">679</span>
+<span id="680">680</span>
+<span id="681">681</span>
+<span id="682">682</span>
+<span id="683">683</span>
+<span id="684">684</span>
+<span id="685">685</span>
+<span id="686">686</span>
+<span id="687">687</span>
+<span id="688">688</span>
+<span id="689">689</span>
+<span id="690">690</span>
+<span id="691">691</span>
+<span id="692">692</span>
+<span id="693">693</span>
+<span id="694">694</span>
+<span id="695">695</span>
+<span id="696">696</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="doccomment">//! The Substrate runtime. This can be compiled with ``#[no_std]`, ready for Wasm.</span>
 
@@ -647,7 +704,7 @@
 <span class="kw">use</span> <span class="ident">codec</span>::<span class="ident">Encode</span>;
 <span class="kw">use</span> <span class="ident">frame_support</span>::{
     <span class="ident">construct_runtime</span>, <span class="ident">debug</span>, <span class="ident">parameter_types</span>,
-    <span class="ident">traits</span>::{<span class="ident">KeyOwnerProofSystem</span>, <span class="ident">Randomness</span>},
+    <span class="ident">traits</span>::{<span class="ident">Get</span>, <span class="ident">KeyOwnerProofSystem</span>, <span class="ident">Randomness</span>},
     <span class="ident">weights</span>::{
         <span class="ident">constants</span>::{<span class="ident">BlockExecutionWeight</span>, <span class="ident">ExtrinsicBaseWeight</span>, <span class="ident">RocksDbWeight</span>, <span class="ident">WEIGHT_PER_SECOND</span>},
         <span class="ident">IdentityFee</span>, <span class="ident">Weight</span>,
@@ -666,7 +723,7 @@
 <span class="kw">use</span> <span class="ident">sp_core</span>::{<span class="ident">crypto</span>::<span class="ident">KeyTypeId</span>, <span class="ident">OpaqueMetadata</span>};
 <span class="kw">use</span> <span class="ident">sp_inherents</span>::{<span class="ident">CheckInherentsResult</span>, <span class="ident">InherentData</span>};
 <span class="kw">use</span> <span class="ident">sp_runtime</span>::<span class="ident">traits</span>::{
-    <span class="ident">BlakeTwo256</span>, <span class="ident">Block</span> <span class="kw">as</span> <span class="ident">BlockT</span>, <span class="ident">ConvertInto</span>, <span class="ident">Extrinsic</span>, <span class="ident">NumberFor</span>, <span class="ident">OpaqueKeys</span>,
+    <span class="ident">BlakeTwo256</span>, <span class="ident">Block</span> <span class="kw">as</span> <span class="ident">BlockT</span>, <span class="ident">ConvertInto</span>, <span class="ident">Extrinsic</span>, <span class="ident">Keccak256</span>, <span class="ident">NumberFor</span>, <span class="ident">OpaqueKeys</span>,
     <span class="ident">SaturatedConversion</span>, <span class="ident">Saturating</span>, <span class="ident">StaticLookup</span>, <span class="ident">Verify</span>,
 };
 <span class="kw">use</span> <span class="ident">sp_runtime</span>::<span class="ident">transaction_validity</span>::{
@@ -857,7 +914,7 @@
     <span class="kw">type</span> <span class="ident">BondingDuration</span> <span class="op">=</span> <span class="ident">BondingDuration</span>;
     <span class="kw">type</span> <span class="ident">ComputeEraForDapps</span> <span class="op">=</span> <span class="ident">pallet_plasm_rewards</span>::<span class="ident">DefaultForDappsStaking</span><span class="op">&lt;</span><span class="ident">Runtime</span><span class="op">&gt;</span>;
     <span class="kw">type</span> <span class="ident">ComputeEraForSecurity</span> <span class="op">=</span> <span class="ident">PlasmValidator</span>;
-    <span class="kw">type</span> <span class="ident">ComputeTotalPayout</span> <span class="op">=</span> <span class="ident">pallet_plasm_rewards</span>::<span class="ident">inflation</span>::<span class="ident">FirstPlasmIncentive</span><span class="op">&lt;</span><span class="ident">u32</span><span class="op">&gt;</span>;
+    <span class="kw">type</span> <span class="ident">ComputeTotalPayout</span> <span class="op">=</span> <span class="ident">pallet_plasm_rewards</span>::<span class="ident">inflation</span>::<span class="ident">CommunityRewards</span><span class="op">&lt;</span><span class="ident">u32</span><span class="op">&gt;</span>;
     <span class="kw">type</span> <span class="ident">MaybeValidators</span> <span class="op">=</span> <span class="ident">PlasmValidator</span>;
     <span class="kw">type</span> <span class="ident">Event</span> <span class="op">=</span> <span class="ident">Event</span>;
 }
@@ -881,7 +938,7 @@
     <span class="kw">type</span> <span class="ident">RewardRemainder</span> <span class="op">=</span> (); <span class="comment">// Reward remainder is burned.</span>
     <span class="kw">type</span> <span class="ident">Reward</span> <span class="op">=</span> (); <span class="comment">// Reward is minted.</span>
     <span class="kw">type</span> <span class="ident">Time</span> <span class="op">=</span> <span class="ident">Timestamp</span>;
-    <span class="kw">type</span> <span class="ident">ComputeRewardsForDapps</span> <span class="op">=</span> <span class="ident">pallet_dapps_staking</span>::<span class="ident">rewards</span>::<span class="ident">BasedComputeRewardsForDapps</span>;
+    <span class="kw">type</span> <span class="ident">ComputeRewardsForDapps</span> <span class="op">=</span> <span class="ident">pallet_dapps_staking</span>::<span class="ident">rewards</span>::<span class="ident">VoidableRewardsForDapps</span>;
     <span class="kw">type</span> <span class="ident">EraFinder</span> <span class="op">=</span> <span class="ident">PlasmRewards</span>;
     <span class="kw">type</span> <span class="ident">ForDappsEraReward</span> <span class="op">=</span> <span class="ident">PlasmRewards</span>;
     <span class="kw">type</span> <span class="ident">HistoryDepthFinder</span> <span class="op">=</span> <span class="ident">PlasmRewards</span>;
@@ -1040,6 +1097,61 @@
     <span class="kw">type</span> <span class="ident">Extrinsic</span> <span class="op">=</span> <span class="ident">UncheckedExtrinsic</span>;
 }
 
+<span class="macro">parameter_types</span><span class="macro">!</span> {
+    <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">MaxDepth</span>: <span class="ident">u32</span> <span class="op">=</span> <span class="number">32</span>;
+    <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">DisputePeriod</span>: <span class="ident">BlockNumber</span> <span class="op">=</span> <span class="number">7</span>;
+}
+
+<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">GetAtomicPredicateIdConfig</span>;
+<span class="kw">impl</span> <span class="ident">Get</span><span class="op">&lt;</span><span class="ident">pallet_ovm</span>::<span class="ident">AtomicPredicateIdConfig</span><span class="op">&lt;</span><span class="ident">AccountId</span>, <span class="ident">Hash</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">GetAtomicPredicateIdConfig</span> {
+    <span class="kw">fn</span> <span class="ident">get</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">pallet_ovm</span>::<span class="ident">AtomicPredicateIdConfig</span><span class="op">&lt;</span><span class="ident">AccountId</span>, <span class="ident">Hash</span><span class="op">&gt;</span> {
+        <span class="ident">pallet_ovm</span>::<span class="ident">AtomicPredicateIdConfig</span> {
+            <span class="ident">not_address</span>: ([<span class="number">1</span>; <span class="number">32</span>]).<span class="ident">into</span>(),
+            <span class="ident">and_address</span>: ([<span class="number">2</span>; <span class="number">32</span>]).<span class="ident">into</span>(),
+            <span class="ident">or_address</span>: ([<span class="number">3</span>; <span class="number">32</span>]).<span class="ident">into</span>(),
+            <span class="ident">for_all_address</span>: ([<span class="number">4</span>; <span class="number">32</span>]).<span class="ident">into</span>(),
+            <span class="ident">there_exists_address</span>: ([<span class="number">5</span>; <span class="number">32</span>]).<span class="ident">into</span>(),
+            <span class="ident">equal_address</span>: ([<span class="number">6</span>; <span class="number">32</span>]).<span class="ident">into</span>(),
+            <span class="ident">is_contained_address</span>: ([<span class="number">7</span>; <span class="number">32</span>]).<span class="ident">into</span>(),
+            <span class="ident">is_less_address</span>: ([<span class="number">8</span>; <span class="number">32</span>]).<span class="ident">into</span>(),
+            <span class="ident">is_stored_address</span>: ([<span class="number">9</span>; <span class="number">32</span>]).<span class="ident">into</span>(),
+            <span class="ident">is_valid_signature_address</span>: ([<span class="number">10</span>; <span class="number">32</span>]).<span class="ident">into</span>(),
+            <span class="ident">verify_inclusion_address</span>: ([<span class="number">11</span>; <span class="number">32</span>]).<span class="ident">into</span>(),
+            <span class="comment">// Keccak256::hash(&quot;seck256k1&quot;) = d4fa99b1e08c4e5e6deb461846aa629344d95ff03ed04754c2053d54c756f439;</span>
+            <span class="ident">secp256k1</span>: ([
+                <span class="number">212</span>, <span class="number">250</span>, <span class="number">153</span>, <span class="number">177</span>, <span class="number">224</span>, <span class="number">140</span>, <span class="number">78</span>, <span class="number">94</span>, <span class="number">109</span>, <span class="number">235</span>, <span class="number">70</span>, <span class="number">24</span>, <span class="number">70</span>, <span class="number">170</span>, <span class="number">98</span>, <span class="number">147</span>, <span class="number">68</span>, <span class="number">217</span>,
+                <span class="number">95</span>, <span class="number">240</span>, <span class="number">62</span>, <span class="number">208</span>, <span class="number">71</span>, <span class="number">84</span>, <span class="number">194</span>, <span class="number">5</span>, <span class="number">61</span>, <span class="number">84</span>, <span class="number">199</span>, <span class="number">86</span>, <span class="number">244</span>, <span class="number">57</span>,
+            ])
+            .<span class="ident">into</span>(),
+        }
+    }
+}
+
+<span class="kw">impl</span> <span class="ident">pallet_ovm</span>::<span class="ident">Trait</span> <span class="kw">for</span> <span class="ident">Runtime</span> {
+    <span class="kw">type</span> <span class="ident">MaxDepth</span> <span class="op">=</span> <span class="ident">MaxDepth</span>;
+    <span class="kw">type</span> <span class="ident">DisputePeriod</span> <span class="op">=</span> <span class="ident">DisputePeriod</span>;
+    <span class="kw">type</span> <span class="ident">DeterminePredicateAddress</span> <span class="op">=</span> <span class="ident">pallet_ovm</span>::<span class="ident">SimpleAddressDeterminer</span><span class="op">&lt;</span><span class="ident">Runtime</span><span class="op">&gt;</span>;
+    <span class="kw">type</span> <span class="ident">HashingL2</span> <span class="op">=</span> <span class="ident">Keccak256</span>;
+    <span class="kw">type</span> <span class="ident">ExternalCall</span> <span class="op">=</span> <span class="ident">pallet_ovm</span>::<span class="ident">predicate</span>::<span class="ident">CallContext</span><span class="op">&lt;</span><span class="ident">Runtime</span><span class="op">&gt;</span>;
+    <span class="kw">type</span> <span class="ident">AtomicPredicateIdConfig</span> <span class="op">=</span> <span class="ident">GetAtomicPredicateIdConfig</span>;
+    <span class="kw">type</span> <span class="ident">Event</span> <span class="op">=</span> <span class="ident">Event</span>;
+}
+
+<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">MaximumTokenAddress</span>;
+<span class="kw">impl</span> <span class="ident">Get</span><span class="op">&lt;</span><span class="ident">AccountId</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">MaximumTokenAddress</span> {
+    <span class="kw">fn</span> <span class="ident">get</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">AccountId</span> {
+        ([<span class="number">255</span>; <span class="number">32</span>]).<span class="ident">into</span>()
+    }
+}
+
+<span class="kw">impl</span> <span class="ident">pallet_plasma</span>::<span class="ident">Trait</span> <span class="kw">for</span> <span class="ident">Runtime</span> {
+    <span class="kw">type</span> <span class="ident">Currency</span> <span class="op">=</span> <span class="ident">Balances</span>;
+    <span class="kw">type</span> <span class="ident">DeterminePlappsAddress</span> <span class="op">=</span> <span class="ident">pallet_plasma</span>::<span class="ident">SimpleAddressDeterminer</span><span class="op">&lt;</span><span class="ident">Runtime</span><span class="op">&gt;</span>;
+    <span class="kw">type</span> <span class="ident">MaximumTokenAddress</span> <span class="op">=</span> <span class="ident">MaximumTokenAddress</span>;
+    <span class="kw">type</span> <span class="ident">PlasmaHashing</span> <span class="op">=</span> <span class="ident">Keccak256</span>;
+    <span class="kw">type</span> <span class="ident">Event</span> <span class="op">=</span> <span class="ident">Event</span>;
+}
+
 <span class="macro">construct_runtime</span><span class="macro">!</span>(
     <span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">Runtime</span> <span class="kw">where</span>
         <span class="ident">Block</span> <span class="op">=</span> <span class="ident">Block</span>,
@@ -1065,6 +1177,8 @@
         <span class="ident">Trading</span>: <span class="ident">pallet_operator_trading</span>::{<span class="ident">Module</span>, <span class="ident">Call</span>, <span class="ident">Storage</span>, <span class="ident">Event</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>},
         <span class="ident">RandomnessCollectiveFlip</span>: <span class="ident">pallet_randomness_collective_flip</span>::{<span class="ident">Module</span>, <span class="ident">Call</span>, <span class="ident">Storage</span>},
         <span class="ident">Sudo</span>: <span class="ident">pallet_sudo</span>::{<span class="ident">Module</span>, <span class="ident">Call</span>, <span class="ident">Storage</span>, <span class="ident">Event</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>, <span class="ident">Config</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>},
+        <span class="ident">OVM</span>: <span class="ident">pallet_ovm</span>::{<span class="ident">Module</span>, <span class="ident">Call</span>, <span class="ident">Storage</span>, <span class="ident">Event</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>},
+        <span class="ident">Plasma</span>: <span class="ident">pallet_plasma</span>::{<span class="ident">Module</span>, <span class="ident">Call</span>, <span class="ident">Storage</span>, <span class="ident">Event</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>},
     }
 );
 

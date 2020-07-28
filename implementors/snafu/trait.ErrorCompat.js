@@ -1,3 +1,0 @@
-(function() {var implementors = {};
-implementors["ovmi"] = [{"text":"impl&lt;Address&gt; ErrorCompat for <a class=\"enum\" href=\"ovmi/executor/enum.ExecError.html\" title=\"enum ovmi::executor::ExecError\">ExecError</a>&lt;Address&gt;","synthetic":false,"types":["ovmi::executor::ExecError"]},{"text":"impl ErrorCompat for <a class=\"enum\" href=\"ovmi/prepare/enum.Error.html\" title=\"enum ovmi::prepare::Error\">Error</a>","synthetic":false,"types":["ovmi::prepare::errors::Error"]}];
-if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()
