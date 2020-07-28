@@ -46,7 +46,7 @@ impl<Ext: ExternalCall> CompiledPredicateInterface<AddressOf<Ext>> for CompiledE
             let intermediate = self.resolve_intermediate(&self.code.entry_point)?;
             return self.get_child_intermediate(intermediate, &inputs, &challenge_input);
         }
-        let input_0: String = Ext::bytes_to_string(&Ext::get_input_value(&inputs[0]))?;
+        let input_0 = &Ext::get_input_value(&inputs[0]);
         let sub_inputs = Ext::sub_array(&inputs, 1, inputs.len());
 
         let intermediate = self.resolve_intermediate(&input_0)?;
@@ -59,7 +59,7 @@ impl<Ext: ExternalCall> CompiledPredicateInterface<AddressOf<Ext>> for CompiledE
         if !Ext::is_label(&inputs[0]) {
             return Err(ExecError::Unimplemented);
         }
-        let input_0 = Ext::bytes_to_string(&Ext::get_input_value(&inputs[0]))?;
+        let input_0 = &Ext::get_input_value(&inputs[0]);
         let sub_inputs = Ext::sub_array(&inputs, 1, inputs.len());
         let intermediate = self.resolve_intermediate(&input_0)?;
         self.decide_intermediate(&intermediate, &sub_inputs, &witness)
@@ -531,16 +531,17 @@ impl<Ext: ExternalCall> CompiledExecutable<'_, Ext> {
         {
             if let AtomicPropositionOrPlaceholder::Placeholder(property_input_1) = &inter.inputs[1]
             {
-                let not_input = self.construct_property(
-                    inner_property,
-                    Ext::bytes_to_bool(&mut &self.get_bytes_variable(&Ext::bytes_to_string(
-                        &Ext::prefix_variable(&property_input_1.encode()),
-                    )?)?)?,
-                    inputs,
-                    challenge_inputs,
-                    input_property,
-                    input_property_list_child_list,
-                )?;
+                let not_input =
+                    self.construct_property(
+                        inner_property,
+                        Ext::bytes_to_bool(&mut &self.get_bytes_variable(
+                            &Ext::prefix_variable(&property_input_1.encode()),
+                        )?)?,
+                        inputs,
+                        challenge_inputs,
+                        input_property,
+                        input_property_list_child_list,
+                    )?;
                 let for_all_such_that_inputs = vec![
                     vec![],
                     property_input_1.encode(),
@@ -621,7 +622,7 @@ impl<Ext: ExternalCall> CompiledExecutable<'_, Ext> {
     // helper -----------------------------------------------
     fn resolve_intermediate(
         &self,
-        name: &String,
+        name: &Vec<u8>,
     ) -> ExecResultTOf<&IntermediateCompiledPredicate, Ext> {
         if let Some(index) = self
             .code
@@ -710,7 +711,7 @@ impl<Ext: ExternalCall> CompiledExecutable<'_, Ext> {
         input_property_list_child_list: &Vec<BTreeMap<i8, PropertyOf<Ext>>>,
     ) -> ExecResultTOf<Vec<u8>, Ext> {
         match compiled_input {
-            CompiledInput::ConstantInput(inp) => Ok(Ext::string_to_bytes(&inp.name)),
+            CompiledInput::ConstantInput(inp) => Ok(inp.name.clone()),
             CompiledInput::LabelInput(inp) => {
                 Ok(Ext::prefix_label(&self.get_bytes_variable(&inp.label)?))
             }
@@ -796,7 +797,7 @@ impl<Ext: ExternalCall> CompiledExecutable<'_, Ext> {
             }
             _ => {
                 let witness = if free_variable {
-                    self.get_bytes_variable(&"freeVariable".to_string())?
+                    self.get_bytes_variable(&b"freeVariable".to_vec())?
                 } else {
                     challenge_inputs[0].clone()
                 };
@@ -823,8 +824,8 @@ impl<Ext: ExternalCall> CompiledExecutable<'_, Ext> {
         }
     }
 
-    fn get_bytes_variable(&self, key: &String) -> ExecResultTOf<Vec<u8>, Ext> {
-        if let Some(ret) = self.bytes_inputs.get(&Ext::hash_of(&key.encode())) {
+    fn get_bytes_variable(&self, key: &Vec<u8>) -> ExecResultTOf<Vec<u8>, Ext> {
+        if let Some(ret) = self.bytes_inputs.get(&Ext::hash_of(&key)) {
             return Ok(ret.clone());
         }
         Err(ExecError::Require {
@@ -832,12 +833,12 @@ impl<Ext: ExternalCall> CompiledExecutable<'_, Ext> {
         })
     }
 
-    fn get_address_variable(&self, key: &String) -> ExecResultTOf<AddressOf<Ext>, Ext> {
+    fn get_address_variable(&self, key: &Vec<u8>) -> ExecResultTOf<AddressOf<Ext>, Ext> {
         // println!("get_address_variable: {}", key);
-        if let Some(ret) = self.address_inputs.get(&Ext::hash_of(&key.encode())) {
+        if let Some(ret) = self.address_inputs.get(&Ext::hash_of(key)) {
             return Ok(ret.clone());
         }
-        if let Some(ret) = Ext::str_to_address(key) {
+        if let Some(ret) = Ext::vec_to_address(key) {
             return Ok(ret);
         }
         Err(ExecError::Require {
@@ -845,12 +846,12 @@ impl<Ext: ExternalCall> CompiledExecutable<'_, Ext> {
         })
     }
 
-    fn get_source_str_from_inter(predicate: &PredicateCall) -> ExecResultTOf<String, Ext> {
+    fn get_source_str_from_inter(predicate: &PredicateCall) -> ExecResultTOf<Vec<u8>, Ext> {
         match predicate {
             PredicateCall::AtomicPredicateCall(predicate) => Ok(predicate.source.clone()),
             PredicateCall::CompiledPredicateCall(predicate) => Ok(predicate.source.clone()),
             _ => Err(ExecError::Unexpected {
-                msg: "The intermediate must have source as String.",
+                msg: "The intermediate must have source as bytes string.",
             }),
         }
     }

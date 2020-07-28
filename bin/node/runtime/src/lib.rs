@@ -7,7 +7,7 @@
 use codec::Encode;
 use frame_support::{
     construct_runtime, debug, parameter_types,
-    traits::{KeyOwnerProofSystem, Randomness},
+    traits::{Get, KeyOwnerProofSystem, Randomness},
     weights::{
         constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_PER_SECOND},
         IdentityFee, Weight,
@@ -26,7 +26,7 @@ use sp_api::impl_runtime_apis;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
 use sp_inherents::{CheckInherentsResult, InherentData};
 use sp_runtime::traits::{
-    BlakeTwo256, Block as BlockT, ConvertInto, Extrinsic, NumberFor, OpaqueKeys,
+    BlakeTwo256, Block as BlockT, ConvertInto, Extrinsic, Keccak256, NumberFor, OpaqueKeys,
     SaturatedConversion, Saturating, StaticLookup, Verify,
 };
 use sp_runtime::transaction_validity::{
@@ -400,6 +400,61 @@ where
     type Extrinsic = UncheckedExtrinsic;
 }
 
+parameter_types! {
+    pub const MaxDepth: u32 = 32;
+    pub const DisputePeriod: BlockNumber = 7;
+}
+
+pub struct GetAtomicPredicateIdConfig;
+impl Get<pallet_ovm::AtomicPredicateIdConfig<AccountId, Hash>> for GetAtomicPredicateIdConfig {
+    fn get() -> pallet_ovm::AtomicPredicateIdConfig<AccountId, Hash> {
+        pallet_ovm::AtomicPredicateIdConfig {
+            not_address: ([1; 32]).into(),
+            and_address: ([2; 32]).into(),
+            or_address: ([3; 32]).into(),
+            for_all_address: ([4; 32]).into(),
+            there_exists_address: ([5; 32]).into(),
+            equal_address: ([6; 32]).into(),
+            is_contained_address: ([7; 32]).into(),
+            is_less_address: ([8; 32]).into(),
+            is_stored_address: ([9; 32]).into(),
+            is_valid_signature_address: ([10; 32]).into(),
+            verify_inclusion_address: ([11; 32]).into(),
+            // Keccak256::hash("seck256k1") = d4fa99b1e08c4e5e6deb461846aa629344d95ff03ed04754c2053d54c756f439;
+            secp256k1: ([
+                212, 250, 153, 177, 224, 140, 78, 94, 109, 235, 70, 24, 70, 170, 98, 147, 68, 217,
+                95, 240, 62, 208, 71, 84, 194, 5, 61, 84, 199, 86, 244, 57,
+            ])
+            .into(),
+        }
+    }
+}
+
+impl pallet_ovm::Trait for Runtime {
+    type MaxDepth = MaxDepth;
+    type DisputePeriod = DisputePeriod;
+    type DeterminePredicateAddress = pallet_ovm::SimpleAddressDeterminer<Runtime>;
+    type HashingL2 = Keccak256;
+    type ExternalCall = pallet_ovm::predicate::CallContext<Runtime>;
+    type AtomicPredicateIdConfig = GetAtomicPredicateIdConfig;
+    type Event = Event;
+}
+
+pub struct MaximumTokenAddress;
+impl Get<AccountId> for MaximumTokenAddress {
+    fn get() -> AccountId {
+        ([255; 32]).into()
+    }
+}
+
+impl pallet_plasma::Trait for Runtime {
+    type Currency = Balances;
+    type DeterminePlappsAddress = pallet_plasma::SimpleAddressDeterminer<Runtime>;
+    type MaximumTokenAddress = MaximumTokenAddress;
+    type PlasmaHashing = Keccak256;
+    type Event = Event;
+}
+
 construct_runtime!(
     pub enum Runtime where
         Block = Block,
@@ -425,6 +480,8 @@ construct_runtime!(
         Trading: pallet_operator_trading::{Module, Call, Storage, Event<T>},
         RandomnessCollectiveFlip: pallet_randomness_collective_flip::{Module, Call, Storage},
         Sudo: pallet_sudo::{Module, Call, Storage, Event<T>, Config<T>},
+        OVM: pallet_ovm::{Module, Call, Storage, Event<T>},
+        Plasma: pallet_plasma::{Module, Call, Storage, Event<T>},
     }
 );
 

@@ -4,30 +4,29 @@ use codec::Codec;
 use core::fmt::Debug;
 use core::marker::PhantomData;
 pub use hash_db::Hasher;
-use snafu::Snafu;
 
-#[derive(Snafu, PartialEq)]
+#[derive(PartialEq)]
 #[cfg_attr(feature = "std", derive(Debug))]
 pub enum ExecError<Address> {
-    #[snafu(display("Require error: {}", msg))]
-    Require { msg: &'static str },
-    #[snafu(display(
-        "Can not call method error: you call {}, expected {}",
-        call_method,
-        expected
-    ))]
+    Require {
+        msg: &'static str,
+    },
     CallMethod {
         call_method: PredicateCallInputs<Address>,
         expected: &'static str,
     },
-    #[snafu(display("Can not call address error."))]
-    CallAddress { address: Address },
-    #[snafu(display("Codec error: expected type name is {}", type_name))]
-    CodecError { type_name: &'static str },
-    #[snafu(display("External error: {}", msg))]
-    ExternalError { msg: &'static str },
-    #[snafu(display("Unexpected error: {}", msg))]
-    Unexpected { msg: &'static str },
+    CallAddress {
+        address: Address,
+    },
+    CodecError {
+        type_name: &'static str,
+    },
+    ExternalError {
+        msg: &'static str,
+    },
+    Unexpected {
+        msg: &'static str,
+    },
     /// Unimplemented error.
     Unimplemented,
 }
@@ -98,17 +97,17 @@ impl<
 {
 }
 
-pub const NOT_VARIABLE: &'static str = "Not";
-pub const AND_VARIABLE: &'static str = "And";
-pub const OR_VARIABLE: &'static str = "Or";
-pub const FOR_ALL_VARIABLE: &'static str = "ForAllSuchThat";
-pub const THERE_EXISTS_VARIABLE: &'static str = "ThereExistsSuchThat";
-pub const EQUAL_VARIABLE: &'static str = "Equal";
-pub const IS_CONTAINED_VARIABLE: &'static str = "IsContained";
-pub const IS_LESS_VARIABLE: &'static str = "IsLessThan";
-pub const IS_STORED_VARIABLE: &'static str = "IsStored";
-pub const IS_VALID_SIGNATURE_VARIABLE: &'static str = "IsValidSignature";
-pub const VERIFY_INCLUSION_VARIABLE: &'static str = "VerifyInclusion";
+pub const NOT_VARIABLE: &'static [u8] = b"Not";
+pub const AND_VARIABLE: &'static [u8] = b"And";
+pub const OR_VARIABLE: &'static [u8] = b"Or";
+pub const FOR_ALL_VARIABLE: &'static [u8] = b"ForAllSuchThat";
+pub const THERE_EXISTS_VARIABLE: &'static [u8] = b"ThereExistsSuchThat";
+pub const EQUAL_VARIABLE: &'static [u8] = b"Equal";
+pub const IS_CONTAINED_VARIABLE: &'static [u8] = b"IsContained";
+pub const IS_LESS_VARIABLE: &'static [u8] = b"IsLessThan";
+pub const IS_STORED_VARIABLE: &'static [u8] = b"IsStored";
+pub const IS_VALID_SIGNATURE_VARIABLE: &'static [u8] = b"IsValidSignature";
+pub const VERIFY_INCLUSION_VARIABLE: &'static [u8] = b"VerifyInclusion";
 
 pub trait ExternalCall {
     /// The address type of Plasma child chain (default: AccountId32)
@@ -142,21 +141,23 @@ pub trait ExternalCall {
     /// The address of verify inclusion predicate address.
     fn verify_inclusion_address() -> Self::Address;
 
-    fn str_to_address(key: &String) -> Option<Self::Address> {
+    fn vec_to_address(key: &Vec<u8>) -> Option<Self::Address> {
         match key {
-            x if x.as_str() == NOT_VARIABLE => Some(Self::not_address()),
-            x if x.as_str() == AND_VARIABLE => Some(Self::and_address()),
-            x if x.as_str() == OR_VARIABLE => Some(Self::or_address()),
-            x if x.as_str() == FOR_ALL_VARIABLE => Some(Self::for_all_address()),
-            x if x.as_str() == THERE_EXISTS_VARIABLE => Some(Self::there_exists_address()),
-            x if x.as_str() == EQUAL_VARIABLE => Some(Self::equal_address()),
-            x if x.as_str() == IS_CONTAINED_VARIABLE => Some(Self::is_contained_address()),
-            x if x.as_str() == IS_LESS_VARIABLE => Some(Self::is_less_address()),
-            x if x.as_str() == IS_STORED_VARIABLE => Some(Self::is_stored_address()),
-            x if x.as_str() == IS_VALID_SIGNATURE_VARIABLE => {
+            x if x.as_slice() == NOT_VARIABLE => Some(Self::not_address()),
+            x if x.as_slice() == AND_VARIABLE => Some(Self::and_address()),
+            x if x.as_slice() == OR_VARIABLE => Some(Self::or_address()),
+            x if x.as_slice() == FOR_ALL_VARIABLE => Some(Self::for_all_address()),
+            x if x.as_slice() == THERE_EXISTS_VARIABLE => Some(Self::there_exists_address()),
+            x if x.as_slice() == EQUAL_VARIABLE => Some(Self::equal_address()),
+            x if x.as_slice() == IS_CONTAINED_VARIABLE => Some(Self::is_contained_address()),
+            x if x.as_slice() == IS_LESS_VARIABLE => Some(Self::is_less_address()),
+            x if x.as_slice() == IS_STORED_VARIABLE => Some(Self::is_stored_address()),
+            x if x.as_slice() == IS_VALID_SIGNATURE_VARIABLE => {
                 Some(Self::is_valid_signature_address())
             }
-            x if x.as_str() == VERIFY_INCLUSION_VARIABLE => Some(Self::verify_inclusion_address()),
+            x if x.as_slice() == VERIFY_INCLUSION_VARIABLE => {
+                Some(Self::verify_inclusion_address())
+            }
             _ => None,
         }
     }
@@ -272,16 +273,6 @@ pub trait ExternalCall {
     /// Decoded to bool
     fn bytes_to_bool(target: &Vec<u8>) -> ExecResultT<bool, Self::Address> {
         Decode::decode(&mut &target[..]).map_err(|_| codec_error::<Self::Address>("bool"))
-    }
-
-    /// Decoded to String from bytes str.
-    fn bytes_to_string(target: &Vec<u8>) -> ExecResultT<String, Self::Address> {
-        String::from_utf8(target.clone()).map_err(|_| codec_error::<Self::Address>("String"))
-    }
-
-    /// Encode to bytes from String
-    fn string_to_bytes(target: &String) -> Vec<u8> {
-        target.as_bytes().to_vec()
     }
 
     /// Decoded to Property

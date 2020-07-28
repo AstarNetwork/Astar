@@ -115,11 +115,8 @@ impl pallet_balances::Trait for Test {
 }
 
 parameter_types! {
-    pub const DisputePeriod: BlockNumber = 7;
-}
-
-parameter_types! {
     pub const MaxDepth: u32 = 32;
+    pub const DisputePeriod: BlockNumber = 7;
 }
 
 lazy_static::lazy_static! {

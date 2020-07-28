@@ -24,9 +24,9 @@ jsonrpc-core = "14.0.3"
 hex-literal = "0.2.1"
 serde_json = "1.0"
 futures = "0.3.4"
-bs58 = "0.3" 
+bs58 = "0.3"
 log = "0.4.8"
-hex = "0.4" 
+hex = "0.4"
 
 # primitives
 sp-core = "2.0.0-rc4"
@@ -66,6 +66,7 @@ pallet-transaction-payment = "2.0.0-rc4"
 pallet-finality-tracker = "2.0.0-rc4"
 pallet-dapps-staking = { path = "../../../frame/dapps-staking" }
 pallet-plasm-lockdrop = { path = "../../../frame/plasm-lockdrop" }
+pallet-ovm = { path = "../../../frame/ovm" }
 
 # CLI-specific dependencies
 sc-cli = { version = "0.8.0-rc4", optional = true }

@@ -7,14 +7,19 @@ use std::fs::File;
 #[cfg(feature = "std")]
 use std::io::Read;
 
-mod errors;
+#[cfg(feature = "std")]
+mod serializable_predicates;
+
+#[cfg(feature = "std")]
+pub use serializable_predicates::*;
 
 #[cfg(test)]
 mod tests;
 
 #[cfg(feature = "std")]
 pub fn compile_from_json(json: &str) -> Result<CompiledPredicate, serde_json::Error> {
-    serde_json::from_str(json)
+    let ret: CompiledPredicateSerializable = serde_json::from_str(json)?;
+    Ok(ret.into())
 }
 
 #[cfg(feature = "std")]
@@ -29,11 +34,6 @@ pub fn load_predicate_json(filename: &str) -> String {
 }
 
 use crate::compiled_predicates::VarType;
-pub use errors::Error;
-
-pub fn validate(_code: Vec<u8>) -> Result<(), Error> {
-    Ok(())
-}
 
 #[derive(Clone, Eq, PartialEq, Encode, Decode, Hash)]
 #[cfg_attr(feature = "std", derive(Debug))]
@@ -54,7 +54,7 @@ pub fn executable_from_compiled<'a, Ext: ExternalCall>(
         var.iter()
             .map(|con| {
                 (
-                    Ext::Hashing::hash(con.name.as_bytes()),
+                    Ext::Hashing::hash(con.name.as_slice()),
                     con.var_type.clone(),
                 )
             })

@@ -3,10 +3,9 @@
 //!
 //!
 use crate::executor::{AddressOf, ExecError, ExecResult, ExecResultT, ExternalCall, HashOf};
+use alloc::{collections::btree_map::BTreeMap, vec::Vec};
 use codec::{Decode, Encode};
 use core::fmt;
-#[cfg(feature = "std")]
-use serde::{Deserialize, Serialize};
 
 mod and;
 mod executable;
@@ -234,8 +233,8 @@ impl<Ext: ExternalCall> AtomicHelperInterface<AddressOf<Ext>> for BaseAtomicExec
     }
 }
 
-#[derive(Clone, Eq, PartialEq, Encode, Decode, Hash, derive_more::Display)]
-#[cfg_attr(feature = "std", derive(Serialize, Deserialize, Debug))]
+#[derive(Clone, Eq, PartialEq, Encode, Decode, Hash)]
+#[cfg_attr(feature = "std", derive(Debug))]
 pub enum PredicateCallInputs<Address> {
     AtomicPredicate(AtomicPredicateCallInputs),
     DecidablePredicate(DecidablePredicateCallInputs),
@@ -245,7 +244,7 @@ pub enum PredicateCallInputs<Address> {
 }
 
 #[derive(Clone, Eq, PartialEq, Encode, Decode, Hash)]
-#[cfg_attr(feature = "std", derive(Serialize, Deserialize, Debug))]
+#[cfg_attr(feature = "std", derive(Debug))]
 pub enum AtomicPredicateCallInputs {
     DecideTrue { inputs: Vec<Vec<u8>> },
     Decide { inputs: Vec<Vec<u8>> },
@@ -262,7 +261,7 @@ impl fmt::Display for AtomicPredicateCallInputs {
 }
 
 #[derive(Clone, Eq, PartialEq, Encode, Decode, Hash)]
-#[cfg_attr(feature = "std", derive(Serialize, Deserialize, Debug))]
+#[cfg_attr(feature = "std", derive(Debug))]
 pub enum DecidablePredicateCallInputs {
     DecideWithWitness {
         inputs: Vec<Vec<u8>>,
@@ -283,7 +282,7 @@ impl fmt::Display for DecidablePredicateCallInputs {
 }
 
 #[derive(Clone, Eq, PartialEq, Encode, Decode, Hash)]
-#[cfg_attr(feature = "std", derive(Serialize, Deserialize, Debug))]
+#[cfg_attr(feature = "std", derive(Debug))]
 pub enum LogicalConnectiveCallInputs<Address> {
     IsValidChallenge {
         inputs: Vec<Vec<u8>>,
@@ -306,7 +305,7 @@ impl<Address> fmt::Display for LogicalConnectiveCallInputs<Address> {
 }
 
 #[derive(Clone, Eq, PartialEq, Encode, Decode, Hash)]
-#[cfg_attr(feature = "std", derive(Serialize, Deserialize, Debug))]
+#[cfg_attr(feature = "std", derive(Debug))]
 pub enum BaseAtomicPredicateCallInputs {
     Decide {
         inputs: Vec<Vec<u8>>,
@@ -335,7 +334,7 @@ impl fmt::Display for BaseAtomicPredicateCallInputs {
 }
 
 #[derive(Clone, Eq, PartialEq, Encode, Decode, Hash)]
-#[cfg_attr(feature = "std", derive(Serialize, Deserialize, Debug))]
+#[cfg_attr(feature = "std", derive(Debug))]
 pub enum CompiledPredicateCallInputs<Address> {
     IsValidChallenge {
         inputs: Vec<Vec<u8>>,
@@ -392,7 +391,7 @@ impl<Address> fmt::Display for CompiledPredicateCallInputs<Address> {
 /// Property stands for dispute logic and we can claim every Properties to Adjudicator Contract.
 /// Property has its predicate address and array of input.
 #[derive(Encode, Decode, Clone, PartialEq, Eq, Hash)]
-#[cfg_attr(feature = "std", derive(Serialize, Deserialize, Debug))]
+#[cfg_attr(feature = "std", derive(Debug))]
 pub struct Property<Address> {
     /// Indicates the address of Predicate.
     predicate_address: Address,

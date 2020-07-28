@@ -2803,7 +2803,7 @@ dependencies = [
 
 [[package]]
 name = "lockdrop-oracle"
-version = "1.2.0"
+version = "1.3.0"
 dependencies = [
  "bitcoin",
  "bitcoin-script",
@@ -3352,7 +3352,6 @@ dependencies = [
 name = "ovmi"
 version = "0.1.0"
 dependencies = [
- "derive_more 0.99.9",
  "hash-db",
  "hex",
  "hex-literal",
@@ -3361,7 +3360,6 @@ dependencies = [
  "primitive-types",
  "serde",
  "serde_json",
- "snafu",
  "sp-core",
  "sp-runtime",
 ]
@@ -4232,6 +4230,7 @@ dependencies = [
  "pallet-contracts",
  "pallet-dapps-staking",
  "pallet-finality-tracker",
+ "pallet-ovm",
  "pallet-plasm-lockdrop",
  "pallet-transaction-payment",
  "parity-scale-codec",
@@ -4326,9 +4325,11 @@ dependencies = [
  "pallet-grandpa",
  "pallet-indices",
  "pallet-operator-trading",
+ "pallet-ovm",
  "pallet-plasm-lockdrop",
  "pallet-plasm-rewards",
  "pallet-plasm-validator",
+ "pallet-plasma",
  "pallet-randomness-collective-flip",
  "pallet-session",
  "pallet-sudo",
@@ -6316,27 +6317,6 @@ name = "smallvec"
 version = "1.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3757cb9d89161a2f24e1cf78efa0c1fcff485d18e3f55e0aa3480824ddaa0f3f"
-
-[[package]]
-name = "snafu"
-version = "0.6.8"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c7f5aed652511f5c9123cf2afbe9c244c29db6effa2abb05c866e965c82405ce"
-dependencies = [
- "doc-comment",
- "snafu-derive",
-]
-
-[[package]]
-name = "snafu-derive"
-version = "0.6.8"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ebf8f7d5720104a9df0f7076a8682024e958bba0fe9848767bb44f251f3648e9"
-dependencies = [
- "proc-macro2 1.0.18",
- "quote 1.0.7",
- "syn 1.0.34",
-]
 
 [[package]]
 name = "snow"
