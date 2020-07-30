@@ -15,6 +15,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use ink_lang as ink;
+pub use self::wbalances::WBalances;
 
 #[ink::contract(version = "0.1.0")]
 mod wbalances {
@@ -107,7 +108,8 @@ mod wbalances {
                 return false;
             }
             self.balances.insert(caller.clone(), balance_from - amount);
-            self.env().transfer(caller.clone(), amount);
+            self.env().transfer(caller.clone(), amount)
+                .expect("failed transfer.");
             self.env().emit_event(Withdrawal {
                 indexed: caller,
                 amount: balance_from - amount,
