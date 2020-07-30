@@ -7,7 +7,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: contracts
+        working-directory: [contracts/wbalances, contracts/payout]
     steps:
     - uses: hecrj/setup-rust-action@v1
       with:
@@ -21,7 +21,9 @@ jobs:
       run: cargo install --git https://github.com/alexcrichton/wasm-gc --force
     - name: Install build contracts tools
       run: cargo install cargo-contract --force
-    - name: Run all tests and build
-      run: ./tests.sh
+    - name: Run all tests
+      run: cargo test
+    - name: Build cargo contracts
+      run: cargo contract build
 #    - name: Generate metadata
 #      run: cargo contract generate-metadata

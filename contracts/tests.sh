@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-cd balances
+cd wbalances
 cargo contract build
 cargo test
 cd ../payout/
