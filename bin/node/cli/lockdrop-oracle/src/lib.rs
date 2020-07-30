@@ -61,12 +61,6 @@ pub async fn start(config: Config) {
                 return Ok(Response::new(StatusCode::BadRequest));
             }
 
-            // check transaction value
-            if tx_value != lock.value {
-                log::debug!(target: "lockdrop-oracle", "lock value mismatch");
-                return Ok(Response::new(StatusCode::BadRequest));
-            }
-
             // assembly bitcoin script for given params
             let blocks = (lock.duration / 600) as u32;
             let lock_script = btc_utils::lock_script_address(&lock.public_key, blocks)
@@ -80,13 +74,18 @@ pub async fn start(config: Config) {
                 lock_script,
             );
 
-            // check script code
-            if tx_recipient != lock_script {
-                log::debug!(target: "lockdrop-oracle", "lock script address mismatch");
-                return Ok(Response::new(StatusCode::BadRequest));
+            for output in tx["outputs"].as_array().unwrap_or(&vec![]) {
+                let tx_value = output["value"].as_u64().unwrap_or(0) as u128;
+                let tx_recipient = output["addresses"][0].as_str().unwrap_or("");
+
+                if tx_recipient == lock_script && tx_value == lock.value {
+                    log::debug!(target: "lockdrop-oracle", "BTC tx {} approved", lock.tx_hash);
+                    return Ok(Response::new(StatusCode::Ok))
+                }
             }
 
-            Ok(Response::new(StatusCode::Ok))
+            log::debug!(target: "lockdrop-oracle", "transaction output (recipient and value) mismatch");
+            Ok(Response::new(StatusCode::BadRequest))
         });
 
     app.at("/eth/lock")
