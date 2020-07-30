@@ -2,9 +2,42 @@
 
 use ink_lang as ink;
 
+#[derive(Encode, Decode, Clone, Default, RuntimeDebug, PartialEq, Eq)]
+pub struct StateUpdate<AccountId, Balance, BlockNumber> {
+    deposit_contract_address: AccountId,
+    range: Range<Balance>,
+    block_number: BlockNumber,
+    state_object: Property<AccountId>,
+}
+
 #[ink::contract(version = "0.1.0")]
 mod payout {
     use ink_core::storage;
+
+    #[derive(scale::Encode, scale::Decode)]
+    #[cfg_attr(feature = "std", derive(scale_info::TypeInfo))]
+    pub struct Range {
+        start: Balance,
+        end: Balance,
+    }
+
+    #[derive(scale::Encode, scale::Decode)]
+    #[cfg_attr(feature = "std", derive(scale_info::TypeInfo))]
+    pub struct Property {
+        /// Indicates the address of Predicate.
+        pub predicate_address: AccountId,
+        /// Every input are bytes. Each Atomic Predicate decode inputs to the specific type.
+        pub inputs: Vec<Vec<u8>>,
+    }
+
+    #[derive(scale::Encode, scale::Decode)]
+    #[cfg_attr(feature = "std", derive(scale_info::TypeInfo))]
+    pub struct StateUpdate {
+        deposit_contract_address: AccountId,
+        range: Range,
+        block_number: BlockNumber,
+        state_object: Property,
+    }
 
     /// Defines the storage of your contract.
     /// Add new fields to the below struct in order
@@ -30,19 +63,19 @@ mod payout {
             self.new(false)
         }
 
-        /// A message that can be called on instantiated contracts.
-        /// This one flips the value of the stored `bool` from `true`
-        /// to `false` and vice versa.
+        /// finalizeExit
+        /// @dev finalize exit and withdraw asset with ownership state.
         #[ink(message)]
-        fn flip(&mut self) {
+        fn finalize_exit(&mut self,
+                         state_update: StateUpdate
+        ) {
+            // finalize_exit payout -> owner[state_update.state_objects.inputs[0]] (amount[state_update.range]) at payout.
             *self.value = !self.get();
+            // uint256 amount = stateUpdate.range.end - stateUpdate.range.start;
+            // require(msg.sender == owner, "msg.sender must be owner");
+            // depositContract.erc20().transfer(_owner, amount);
         }
 
-        /// Simply returns the current value of our `bool`.
-        #[ink(message)]
-        fn get(&self) -> bool {
-            *self.value
-        }
     }
 
     /// Unit tests in Rust are normally defined within such a `#[cfg(test)]`
@@ -67,10 +100,10 @@ mod payout {
         /// We test a simple use case of our contract.
         #[test]
         fn it_works() {
-            let mut payout = Payout::new(false);
-            assert_eq!(payout.get(), false);
-            payout.flip();
-            assert_eq!(payout.get(), true);
+            // let mut payout = Payout::new(false);
+            // assert_eq!(payout.get(), false);
+            // payout.flip();
+            // assert_eq!(payout.get(), true);
         }
     }
 }
