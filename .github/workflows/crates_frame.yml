@@ -1,0 +1,36 @@
+name: Crates frame publish
+on:
+  release:
+    types: [created]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: hecrj/setup-rust-action@v1
+        with:
+          rust-version: 'nightly-2020-07-01'
+          targets: 'wasm32-unknown-unknown'
+      - name: Checkout the source code
+        uses: actions/checkout@master
+      - name: Check targets are installed correctly
+        run: rustup target list --installed
+      - name: Install build tools
+        run: cargo install --git https://github.com/alexcrichton/wasm-gc --force
+      - name: Crates login
+        run: cargo login ${{ secrets.CRATES_TOKEN }}
+      - name: Publish dapps-staking
+        run: cd frame/dapps-staking && cargo publish
+      - name: Publish operator
+        run: cd ../operator && cargo publish
+      - name: Publish ovm
+        run: cd ../ovm && cargo publish
+      - name: Publish plasm-lockdrop
+        run: cd ../plasm-lockdrop && cargo publish
+      - name: Publish plasm-rewards
+        run: cd ../plasm-rewards && cargo publish
+      - name: Publish plasm-validator
+        run: cd ../plasm-validator && cargo publish
+      - name: Publish plasma
+        run: cd ../plasma && cargo publish
+      - name: Publish trading
+        run: cd ../trading && cargo publish
