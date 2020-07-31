@@ -1,10 +1,11 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
+pub use self::payout::Payout;
 use ink_lang as ink;
 
 #[ink::contract(version = "0.1.0")]
 mod payout {
-    use ink_core::storage;
+    use ink_prelude::vec::Vec;
 
     use wbalances::WBalances;
 
@@ -37,19 +38,13 @@ mod payout {
     /// Add new fields to the below struct in order
     /// to add new static storage fields to your contract.
     #[ink(storage)]
-    struct Payout{}
+    struct Payout {}
 
     impl Payout {
         /// Constructor that initializes the `bool` value to the given `init_value`.
         #[ink(constructor)]
-        fn new(&mut self) {}
-
-        /// Constructor that initializes the `bool` value to `false`.
-        ///
-        /// Constructors can delegate to other constructors.
-        #[ink(constructor)]
-        fn default(&mut self) {
-            self.new()
+        fn new() -> Self {
+            Self {}
         }
 
         /// finalizeExit
@@ -57,11 +52,11 @@ mod payout {
         #[ink(message)]
         fn finalize_exit(&mut self, erc20_address: AccountId, state_update: StateUpdate) {
             let owner: AccountId =
-                scale::Decode::decode(&mut &state_update.state_object.inputs[0]..);
+                scale::Decode::decode(&mut &state_update.state_object.inputs[0][..])
+                    .expect("failed decode from state_update.state_object.inputs[0] to AccountId.");
             let amount = state_update.range.end - state_update.range.start;
             assert!(self.env().caller() == owner);
-            self.env().transfer(owner, amount);
-            let mut wbalances = WBalances::from_account_id(erc20_address.clone());
+            let mut wbalances = WBalances::from_account_id(erc20_address.clone())
                 .expect("failed at instantiating the `WBalances` contract");
             wbalances.transer(owner, amount);
         }
@@ -82,7 +77,7 @@ mod payout {
             // above as `&mut self` functions that return nothing we can call
             // them in test code as if they were normal Rust constructors
             // that take no `self` argument but return `Self`.
-            let _ = Payout::default();
+            let _ = Payout::new();
         }
 
         /// We test a simple use case of our contract.
