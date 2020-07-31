@@ -7,7 +7,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: [contracts/wbalances, contracts/payout]
+        working-directory: contracts
     steps:
     - uses: hecrj/setup-rust-action@v1
       with:
@@ -22,8 +22,12 @@ jobs:
     - name: Install build contracts tools
       run: cargo install cargo-contract --force
     - name: Run all tests
-      run: cargo test
+      run: cd wbalances && cargo test
     - name: Build cargo contracts
-      run: cargo contract build
+      run: cd wbalances && cargo contract build
+    - name: Run all tests
+      run: cd payout && cargo test
+    - name: Build cargo contracts
+      run: cd payout && cargo contract build
 #    - name: Generate metadata
 #      run: cargo contract generate-metadata

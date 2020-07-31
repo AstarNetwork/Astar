@@ -10,10 +10,11 @@ ink_metadata = { git = "https://github.com/paritytech/ink", version = "2.1.0", d
 ink_core = { git = "https://github.com/paritytech/ink", version = "2.1.0", default-features = false }
 ink_lang = { git = "https://github.com/paritytech/ink", version = "2.1.0", default-features = false }
 ink_prelude = { git = "https://github.com/paritytech/ink", version = "2.1.0", default-features = false }
-wbalances = { path = "../wbalances", default-features = false }
 
 scale = { package = "parity-scale-codec", version = "1.3", default-features = false, features = ["derive"] }
 scale-info = { version = "0.3", default-features = false, features = ["derive"], optional = true }
+
+wbalances = { path = "../wbalances", default-features = false, features = ["ink-as-dependency"] }
 
 [lib]
 name = "payout"
@@ -31,5 +32,7 @@ std = [
     "scale/std",
     "scale-info",
     "scale-info/std",
+
+    "wbalances/std",
 ]
 ink-as-dependency = []
