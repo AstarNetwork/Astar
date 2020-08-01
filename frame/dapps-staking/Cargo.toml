@@ -27,8 +27,8 @@ pallet-contracts = { version = "2.0.0-rc4", default_features = false }
 pallet-staking = { version = "2.0.0-rc4", default_features = false }
 sp-staking = { version = "2.0.0-rc4", default_features = false }
 
-pallet-contract-operator = { path = "../operator", default_features = false }
-pallet-plasm-rewards = { path = "../plasm-rewards", default_features = false }
+pallet-contract-operator = { path = "../operator", versino = "1.3.0", default_features = false }
+pallet-plasm-rewards = { path = "../plasm-rewards", versino = "1.3.0", default_features = false }
 
 
 [dev-dependencies]

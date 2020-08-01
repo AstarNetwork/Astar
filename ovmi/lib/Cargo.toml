@@ -3,6 +3,10 @@ name = "ovmi"
 version = "0.1.0"
 authors = ["Stake Technologies <devops@stake.co.jp>"]
 edition = "2018"
+license = "Apache-2.0"
+homepage = "https://docs.plasmnet.io/"
+repository = "https://github.com/staketechnologies/Plasm/"
+description = "Optimstic virtual machine interperter"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
