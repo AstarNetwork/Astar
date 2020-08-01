@@ -32,7 +32,7 @@ pallet-plasm-rewards = { path = "../plasm-rewards", default_features = false }
 
 
 [dev-dependencies]
-wabt = "0.9.2"
+wabt = "10.0.0"
 derive_more = "0.14.0"
 hex-literal = "0.2.1"
 pallet-randomness-collective-flip = "2.0.0-rc4"
