@@ -144,8 +144,7 @@ impl pallet_babe::Trait for Runtime {
         pallet_babe::AuthorityId,
     )>>::IdentificationTuple;
 
-    type HandleEquivocation =
-        pallet_babe::EquivocationHandler<Self::KeyOwnerIdentification, ()>;
+    type HandleEquivocation = pallet_babe::EquivocationHandler<Self::KeyOwnerIdentification, ()>;
 }
 
 parameter_types! {
@@ -336,8 +335,7 @@ impl pallet_grandpa::Trait for Runtime {
         GrandpaId,
     )>>::IdentificationTuple;
 
-    type HandleEquivocation =
-        pallet_grandpa::EquivocationHandler<Self::KeyOwnerIdentification, ()>;
+    type HandleEquivocation = pallet_grandpa::EquivocationHandler<Self::KeyOwnerIdentification, ()>;
 }
 
 parameter_types! {

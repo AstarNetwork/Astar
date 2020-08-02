@@ -1,7 +1,7 @@
 use crate::{chain_spec, service, Cli, Subcommand};
-use sc_cli::{SubstrateCli, RuntimeVersion, Role, ChainSpec};
-use sc_service::ServiceParams;
 use plasm_runtime::Block;
+use sc_cli::{ChainSpec, Role, RuntimeVersion, SubstrateCli};
+use sc_service::ServiceParams;
 
 impl SubstrateCli for Cli {
     fn impl_name() -> String {
@@ -74,8 +74,16 @@ pub fn run() -> sc_cli::Result<()> {
             let runner = cli.create_runner(subcommand)?;
 
             runner.run_subcommand(subcommand, |config| {
-                let (ServiceParams { client, backend, import_queue, task_manager, .. }, ..)
-                    = service::new_full_params(config)?;
+                let (
+                    ServiceParams {
+                        client,
+                        backend,
+                        import_queue,
+                        task_manager,
+                        ..
+                    },
+                    ..,
+                ) = service::new_full_params(config)?;
                 Ok((client, backend, import_queue, task_manager))
             })
         }
