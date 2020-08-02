@@ -18,19 +18,21 @@ jobs:
         run: cargo install --git https://github.com/alexcrichton/wasm-gc --force
       - name: Crates login
         run: cargo login ${{ secrets.CRATES_TOKEN }}
-      - name: Publish dapps-staking
-        run: cd frame/dapps-staking && cargo publish
+      - name: Publish ovmi
+        run: cd ovmi/lib && cargo publish
       - name: Publish operator
-        run: cd ../operator && cargo publish
-      - name: Publish ovm
-        run: cd ../ovm && cargo publish
-      - name: Publish plasm-lockdrop
-        run: cd ../plasm-lockdrop && cargo publish
-      - name: Publish plasm-rewards
-        run: cd ../plasm-rewards && cargo publish
-      - name: Publish plasm-validator
-        run: cd ../plasm-validator && cargo publish
-      - name: Publish plasma
-        run: cd ../plasma && cargo publish
+        run: cd ../../frame/operator && cargo publish
       - name: Publish trading
         run: cd ../trading && cargo publish
+      - name: Publish plasm-rewards
+        run: cd ../plasm-rewards && cargo publish
+      - name: Publish dapps-staking
+        run: cd ../dapps-staking && cargo publish
+      - name: Publish plasm-lockdrop
+        run: cd ../plasm-lockdrop && cargo publish
+      - name: Publish plasm-validator
+        run: cd ../plasm-validator && cargo publish
+      - name: Publish ovm
+        run: cd ../ovm && cargo publish
+      - name: Publish plasma
+        run: cd ../plasma && cargo publish

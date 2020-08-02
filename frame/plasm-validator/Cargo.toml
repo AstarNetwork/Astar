@@ -22,7 +22,7 @@ frame-support = { version = "2.0.0-rc4", default_features = false }
 frame-system = { version = "2.0.0-rc4", default_features = false }
 sp-staking = { version = "2.0.0-rc4", default_features = false }
 
-pallet-plasm-rewards = { path = "../plasm-rewards", default_features = false }
+pallet-plasm-rewards = { path = "../plasm-rewards", version = "1.3.0", default_features = false }
 
 [dev-dependencies]
 hex-literal = "0.2.1"
