@@ -20,7 +20,7 @@ use frame_support::{
     weights::Weight,
     StorageMap, StorageValue,
 };
-use frame_system::{self as system, ensure_root};
+use frame_system::ensure_root;
 use pallet_session::SessionManager;
 pub use pallet_staking::Forcing;
 use sp_runtime::{
