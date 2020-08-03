@@ -236,21 +236,24 @@ decl_event!(
         BlockNumber = <T as system::Trait>::BlockNumber,
         Range = RangeOf<T>,
         Checkpoint = CheckpointOf<T>,
+        StateUpdate = StateUpdateOf<T>,
+        InclusionProof = InclusionProofOf<T>,
     {
         /// Deplpoyed Plapps. (creator: AccountId, plapps_id: AccountId)
         Deploy(AccountId, AccountId),
         /// Event definitions (AccountID: PlappsAddress, BlockNumber, Hash: root)
         BlockSubmitted(AccountId, BlockNumber, Hash),
-        /// (AccountID: PlappsAddress, checkpointId: Hash, checkpoint: Checkpoint);
-        CheckpointFinalized(AccountId, Hash, Checkpoint),
-        /// (AccountID: PlappsAddress, exit_id: Hash)
-        ExitFinalized(AccountId, Hash),
-        /// (AccountID: PlappsAddress, new_range: Range)
-        DepositedRangeExtended(AccountId, Range),
-        /// (AccountID: PlappsAddress, removed_range: Range)
-        DepositedRangeRemoved(AccountId, Range),
+        /// Event definitions (state_update: StateUpdate, inclusion_proof: InclusionProof)
+        CheckpointClaimed(StateUpdate, InclusionProof),
+        /// Event definitions (state_update: StateUpdate, challenging_state_update: StateUpdate, inclusion_proof: InclusionProof)
+        CheckpointChallenged(StateUpdate, StateUpdate, InclusionProof),
+        /// Event definitions (state_update: StateUpdate, challenging_state_update: StateUpdate)
+        ChallengeRemoved(StateUpdate, StateUpdate),
+        /// Event definitions (state_update: StateUpdate)
+        CheckpointSettled(StateUpdate),
     }
 );
+
 
 decl_module! {
     pub struct Module<T: Trait> for enum Call where origin: T::Origin {
@@ -265,14 +268,16 @@ decl_module! {
 
         /// Commitment constructor + Deposit constructor
         /// TODO: weight
+        /// TODO: AggregatorId が牽引する。
+        /// TODO: あとからadd_erc20_id() で関連する erc20 を追加.
         #[weight = 100_000]
         fn deploy(
             origin,
             aggregator_id: T::AccountId,
             erc20: T::AccountId,
-            state_update_predicate: T::AccountId,
-            exit_predicate: T::AccountId,
-            exit_deposit_predicate: T::AccountId,
+            // state_update_predicate: T::AccountId,
+            // exit_predicate: T::AccountId,
+            // exit_deposit_predicate: T::AccountId,
         ) {
             let sender = ensure_signed(origin)?;
             let plapps_hash = Self::generate_plapps_hash(
@@ -373,6 +378,62 @@ decl_module! {
                 &deposited_range_id,
             )?;
         }
+
+        // ------- CheckpointDispute parts -------
+        /// claim checkpoint
+        ///  _propertyInputs: [encode(stateUpdate)]
+        ///  _witness: [encode(inclusionProof)]
+        ///  NOTE: might be possible to define concrete argument type but bytes[]
+        #[weight = 100_000]
+        fn checkpoint_claim(inputs: Vec<Vec<u8>>, witness: Vec<Vec<u8>>) {
+            // validate inputs
+            ensure!(
+                inputs.len() == 1,
+                Error::<T>::InputLengthDoesNotMatch,
+            );
+            ensure!(
+                witness.len() == 1,
+                Error::<T>::WitnessLengthDoesNotMatch,
+            );
+
+            let su_property: PropertyOf<T> = Decode::decode(&mut &inputs[0][..])
+                .map_err(|_| Error::<T>::DecodeError)?;
+            // TODO: that.
+            // let state_update =
+            types.StateUpdate memory stateUpdate = Deserializer
+                .deserializeStateUpdate(suProperty);
+            types.InclusionProof memory inclusionProof = abi.decode(
+                _witness[0],
+                (types.InclusionProof)
+            );
+
+            // verify inclusion proof
+            bytes memory blockNumberBytes = abi.encode(stateUpdate.blockNumber);
+            bytes32 root = utils.bytesToBytes32(
+                commitmentVerifier.retrieve(blockNumberBytes)
+            );
+            require(
+                commitmentVerifier.verifyInclusionWithRoot(
+                    keccak256(abi.encode(stateUpdate.stateObject)),
+                    stateUpdate.depositContractAddress,
+                    stateUpdate.range,
+                    inclusionProof,
+                    root
+                ),
+                "Inclusion verification failed"
+            );
+
+            // claim property to DisputeManager
+            types.Property memory property = createProperty(_inputs[0], CHECKPOINT_CLAIM);
+            disputeManager.claim(property);
+
+            emit CheckpointClaimed(stateUpdate, inclusionProof);
+
+        }
+
+
+
+        // ------- ExitDispute parts -------
 
         /// finalizeCheckpoint
         /// - @param _checkpointProperty A property which is instance of checkpoint predicate
@@ -478,6 +539,12 @@ decl_error! {
         RangeMustBeSubrangeOfCheckpoint,
         /// StateUpdate.depositContractAddress must be this contract address
         DepositContractAddressMustBePlappsId,
+        /// inputs length does not match. expected 1
+        InputLengthDoesNotMatch,
+        /// witness length does not match. expected 1
+        WitnessLengthDoesNotMatch,
+        /// Decode error.
+        DecodeError,
     }
 }
 

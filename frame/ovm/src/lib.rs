@@ -240,7 +240,7 @@ decl_event!(
         /// (predicate_address: AccountId);
         InstantiatePredicate(AccountId),
         /// (game_id: Hash, property: Property, created_block: BlockNumber)
-        PropertyClaimed(Hash, Property, BlockNumber),
+        PropertyClaimed(Hash,                       Property, BlockNumber),
         /// (gameId: Hash, challenge_game_id: Hash)
         PropertyChallenged(Hash, Hash),
         /// (game_id: Hash, decision: bool)
