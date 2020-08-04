@@ -398,29 +398,21 @@ decl_module! {
 
             let su_property: PropertyOf<T> = Decode::decode(&mut &inputs[0][..])
                 .map_err(|_| Error::<T>::DecodeError)?;
-            // TODO: that.
-            // let state_update =
-            types.StateUpdate memory stateUpdate = Deserializer
-                .deserializeStateUpdate(suProperty);
-            types.InclusionProof memory inclusionProof = abi.decode(
-                _witness[0],
-                (types.InclusionProof)
-            );
+            let state_update = Self::desrializable_state_update(su_property)?;
+            let inclusion_proof: InclusionProofOf<T> = Decode::decode(&mut &witness[0][..])
+                .map_err(|_| Error::<T>::DecodeError)?;
 
             // verify inclusion proof
-            bytes memory blockNumberBytes = abi.encode(stateUpdate.blockNumber);
-            bytes32 root = utils.bytesToBytes32(
-                commitmentVerifier.retrieve(blockNumberBytes)
-            );
-            require(
-                commitmentVerifier.verifyInclusionWithRoot(
-                    keccak256(abi.encode(stateUpdate.stateObject)),
-                    stateUpdate.depositContractAddress,
-                    stateUpdate.range,
-                    inclusionProof,
+            let root = Self::retrive(plapps_id, state_update.block_number);
+            ensure!(
+                Self::verifyInclusion_with_root(
+                    T::Hashing::hash_of(&state_update.state_object),
+                    state_update.deposit_contract_address,
+                    state_update.range,
+                    inclusion_proof,
                     root
                 ),
-                "Inclusion verification failed"
+                Error::<T>::InclusionVerificationFailed,
             );
 
             // claim property to DisputeManager
@@ -545,6 +537,8 @@ decl_error! {
         WitnessLengthDoesNotMatch,
         /// Decode error.
         DecodeError,
+        /// Inclusion verification failed
+        InclusionVerificationFailed,
     }
 }
 
