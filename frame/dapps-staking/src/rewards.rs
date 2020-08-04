@@ -7,8 +7,9 @@
 //! About each staking, this module computes issuing new tokens.
 
 use super::*;
+use log::log2;
 use num_traits::sign::Unsigned;
-use sp_arithmetic::traits::BaseArithmetic;
+use sp_arithmetic::traits::{BaseArithmetic, SaturatedConversion};
 
 /// Compute reards for dapps from total dapps rewards to operators and nominators.
 pub trait ComputeRewardsForDapps {
@@ -20,7 +21,7 @@ pub trait ComputeRewardsForDapps {
         nominate_total: N,
         total_staked: N,
         nominators_reward: N,
-        staked_values: Vec<N>,
+        staked_values: Vec<(N, N)>,
     ) -> N
     where
         N: BaseArithmetic + Unsigned + Clone + From<u32>;
@@ -56,7 +57,7 @@ impl ComputeRewardsForDapps for BasedComputeRewardsForDapps {
         nominate_total: N,
         total_staked: N,
         nominators_reward: N,
-        _: Vec<N>,
+        _: Vec<(N, N)>,
     ) -> N
     where
         N: BaseArithmetic + Unsigned + Clone + From<u32>,
@@ -89,22 +90,40 @@ impl ComputeRewardsForDapps for VoidableRewardsForDapps {
         (operators_reward, nominators_reward)
     }
 
-    /// stakings that are less than 10% of total staking are ignored
+    /// Stakings that are less than 3% of total staking are ignored.
+    /// Nominators get paid according to the value of each staking value multiplied by the scaling value
+    /// Each scaling value is decided like the more staked contract becomes the fewer value.
+    ///
+    /// If you stake against contract A, which accounts for 10% of the total staking volume,
+    /// the scaling value alpha will be -1 * log(10/100)
+    /// In addition, multiply the staking value by the coefficient beta (= 0.197).
+    /// This is necessary to make alpha*beta closer to 1.0 when the ratio is 3%.
     fn compute_reward_for_nominator<N>(
         _nominate_total: N,
         total_staked: N,
         nominators_reward: N,
-        staked_values: Vec<N>,
+        staked_values: Vec<(N, N)>,
     ) -> N
     where
         N: BaseArithmetic + Unsigned + Clone + From<u32>,
     {
-        let threshold = total_staked.clone() / N::from(10 as u32);
-        let valid_staking_total = staked_values
+        let threshold = total_staked.clone() * N::from(3 as u32) / N::from(100 as u32);
+
+        let weighted_staking_total = staked_values
             .iter()
-            .filter(|value| threshold <= *value.clone())
-            .fold(N::from(0 as u32), |sum, value| sum + value.clone());
-        Perbill::from_rational_approximation(valid_staking_total, total_staked) * nominators_reward
+            .filter(|(total, _value)| threshold <= total.clone())
+            .fold(N::from(0 as u32), |sum, (total, value)| {
+                // -1 * log2(p/q) = log2(q/p)
+                let alpha = N::from(log2(
+                    total_staked.clone().saturated_into::<u32>(),
+                    total.clone().saturated_into::<u32>(),
+                ));
+                sum + (value.clone().saturating_mul(alpha) / N::from(1_000 as u32))
+                    .saturating_mul(N::from(197 as u32))
+            });
+        Perbill::from_rational_approximation(weighted_staking_total, total_staked)
+            * N::from(1 as u32)
+            * nominators_reward
     }
 
     fn compute_reward_for_operator<N>(staked_operator: N, total_staked: N, operators_reward: N) -> N

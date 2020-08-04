@@ -521,10 +521,11 @@ fn reward_to_operators_test() {
         );
         success_nominate_contracts(BOB_CTRL, vec![(OPERATED_CONTRACT_A, 1_000)]);
         success_nominate_contracts(ALICE_CTRL, vec![(OPERATED_CONTRACT_A, 1_000)]);
+        success_nominate_contracts(ALICE_CTRL, vec![(OPERATED_CONTRACT_B, 1_000)]);
 
         let current_era = PlasmRewards::current_era().unwrap();
         assert_eq!(DappsStaking::eras_total_stake(current_era), 0);
-        assert_eq!(DappsStaking::eras_total_stake(current_era + 1), 2_000);
+        assert_eq!(DappsStaking::eras_total_stake(current_era + 1), 3_000);
 
         advance_era();
 
@@ -540,20 +541,20 @@ fn reward_to_operators_test() {
 
         let current_era = PlasmRewards::current_era().unwrap();
         let positive_imbalance = DappsStaking::reward_nominator(&current_era, b, &BOB_STASH);
-        assert_eq!(Balances::free_balance(&BOB_STASH), 2_000 + 137); // +nomiante reward
+        assert_eq!(Balances::free_balance(&BOB_STASH), 2_000 + 274); // +nomiante reward
         assert_eq!(Balances::free_balance(&BOB_CTRL), 20 + 0); // +0
-        assert_eq!(positive_imbalance, 137);
-        assert_eq!(Balances::total_issuance(), pre_total_issuarance + 137);
+        assert_eq!(positive_imbalance, 274);
+        assert_eq!(Balances::total_issuance(), pre_total_issuarance + 274);
 
         let positive_imbalance = DappsStaking::reward_operator(&current_era, b, &ALICE_STASH);
-        assert_eq!(Balances::free_balance(&ALICE_STASH), 1_000 + 274); // +operator reward
-        assert_eq!(positive_imbalance, 274);
-        assert_eq!(Balances::total_issuance(), pre_total_issuarance + 411);
+        assert_eq!(Balances::free_balance(&ALICE_STASH), 1_000 + 183); // +operator reward
+        assert_eq!(positive_imbalance, 183);
+        assert_eq!(Balances::total_issuance(), pre_total_issuarance + 457);
 
         let positive_imbalance = DappsStaking::reward_nominator(&current_era, b, &ALICE_STASH);
-        assert_eq!(Balances::free_balance(&ALICE_CTRL), 10 + 137); // +nominate reward
-        assert_eq!(positive_imbalance, 137);
-        assert_eq!(Balances::total_issuance(), pre_total_issuarance + 548);
+        assert_eq!(Balances::free_balance(&ALICE_CTRL), 10 + 274); // +nominate reward
+        assert_eq!(positive_imbalance, 274);
+        assert_eq!(Balances::total_issuance(), pre_total_issuarance + 731);
     })
 }
 
@@ -576,10 +577,11 @@ fn new_session_scenario_test() {
         );
         success_nominate_contracts(BOB_CTRL, vec![(OPERATED_CONTRACT_A, 1_000)]);
         success_nominate_contracts(ALICE_CTRL, vec![(OPERATED_CONTRACT_A, 1_000)]);
+        success_nominate_contracts(ALICE_CTRL, vec![(OPERATED_CONTRACT_B, 1_000)]);
 
         let current_era = PlasmRewards::current_era().unwrap();
         assert_eq!(DappsStaking::eras_total_stake(current_era), 0);
-        assert_eq!(DappsStaking::eras_total_stake(current_era + 1), 2_000);
+        assert_eq!(DappsStaking::eras_total_stake(current_era + 1), 3_000);
         let target_era = current_era + 1;
 
         advance_era();
@@ -602,7 +604,7 @@ fn new_session_scenario_test() {
             target_era
         ));
 
-        assert_eq!(Balances::free_balance(&BOB_STASH), 2_000 + 4); // +nomiante reward
+        assert_eq!(Balances::free_balance(&BOB_STASH), 2_000 + 8); // +nomiante reward
         assert_eq!(Balances::free_balance(&BOB_CTRL), 20 + 0); // +0
 
         assert_ok!(DappsStaking::claim_for_operator(
@@ -614,9 +616,9 @@ fn new_session_scenario_test() {
             target_era
         ));
 
-        assert_eq!(Balances::free_balance(&ALICE_STASH), 1_000 + 7); // +operator reward
-        assert_eq!(Balances::free_balance(&ALICE_CTRL), 10 + 4); // +nominate reward
-        assert_eq!(Balances::total_issuance(), 4_003_030 + 15);
+        assert_eq!(Balances::free_balance(&ALICE_STASH), 1_000 + 5); // +operator reward
+        assert_eq!(Balances::free_balance(&ALICE_CTRL), 10 + 8); // +nominate reward
+        assert_eq!(Balances::total_issuance(), 4_003_030 + 21);
     })
 }
 
@@ -639,11 +641,11 @@ fn ignore_nomination_test() {
         );
         success_nominate_contracts(BOB_CTRL, vec![(OPERATED_CONTRACT_A, 1_000)]);
         success_nominate_contracts(ALICE_CTRL, vec![(OPERATED_CONTRACT_A, 1_000)]);
-        success_nominate_contracts(ALICE_CTRL, vec![(OPERATED_CONTRACT_B, 100)]);
+        success_nominate_contracts(ALICE_CTRL, vec![(OPERATED_CONTRACT_B, 1)]);
 
         let current_era = PlasmRewards::current_era().unwrap();
         assert_eq!(DappsStaking::eras_total_stake(current_era), 0);
-        assert_eq!(DappsStaking::eras_total_stake(current_era + 1), 2_100);
+        assert_eq!(DappsStaking::eras_total_stake(current_era + 1), 2_001);
         let target_era = current_era + 1;
 
         advance_era();
@@ -666,7 +668,7 @@ fn ignore_nomination_test() {
             target_era
         ));
 
-        assert_eq!(Balances::free_balance(&BOB_STASH), 2_000 + 4); // +nomiante reward
+        assert_eq!(Balances::free_balance(&BOB_STASH), 2_000 + 8); // +nomiante reward
         assert_eq!(Balances::free_balance(&BOB_CTRL), 20 + 0); // +0
 
         assert_ok!(DappsStaking::claim_for_operator(
@@ -679,7 +681,7 @@ fn ignore_nomination_test() {
         ));
 
         assert_eq!(Balances::free_balance(&ALICE_STASH), 1_000 + 7); // +operator reward
-        assert_eq!(Balances::free_balance(&ALICE_CTRL), 10 + 4); // +nominate reward
-        assert_eq!(Balances::total_issuance(), 4_003_030 + 15);
+        assert_eq!(Balances::free_balance(&ALICE_CTRL), 10 + 8); // +nominate reward
+        assert_eq!(Balances::total_issuance(), 4_003_030 + 23);
     })
 }
