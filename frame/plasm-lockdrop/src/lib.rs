@@ -678,7 +678,7 @@ impl<T: Trait> Module<T> {
         // O(n) is ok because of short list
         for (i, elem) in keys.iter().enumerate() {
             if elem.eq(public) {
-                return Some(i as AuthorityIndex)
+                return Some(i as AuthorityIndex);
             }
         }
         None
@@ -714,7 +714,7 @@ impl<T: Trait> frame_support::unsigned::ValidateUnsigned for Module<T> {
                 // Simple proof of work
                 let pow_byte = BlakeTwo256::hash_of(&(claim_id, nonce)).as_bytes()[0];
                 if pow_byte > 0 {
-                    return InvalidTransaction::Custom(ERROR_WRONG_POW_PROOF).into()
+                    return InvalidTransaction::Custom(ERROR_WRONG_POW_PROOF).into();
                 }
 
                 ValidTransaction::with_tag_prefix("PlasmLockdrop")
@@ -737,7 +737,7 @@ impl<T: Trait> frame_support::unsigned::ValidateUnsigned for Module<T> {
                 let not_approved =
                     approve.saturating_sub(decline) < <PositiveVotes>::get() as usize;
                 if on_vote || not_approved {
-                    return InvalidTransaction::Custom(ERROR_CLAIM_ON_VOTING).into()
+                    return InvalidTransaction::Custom(ERROR_CLAIM_ON_VOTING).into();
                 }
 
                 ValidTransaction::with_tag_prefix("PlasmLockdrop")
@@ -751,7 +751,7 @@ impl<T: Trait> frame_support::unsigned::ValidateUnsigned for Module<T> {
             Call::claim_to(claim_id, recipient, signature) => {
                 let claim = <Claims<T>>::get(claim_id);
                 if claim.complete {
-                    return InvalidTransaction::Custom(ERROR_ALREADY_CLAIMED).into()
+                    return InvalidTransaction::Custom(ERROR_ALREADY_CLAIMED).into();
                 }
 
                 let approve = claim.approve.len();
@@ -760,7 +760,7 @@ impl<T: Trait> frame_support::unsigned::ValidateUnsigned for Module<T> {
                 let not_approved =
                     approve.saturating_sub(decline) < <PositiveVotes>::get() as usize;
                 if on_vote || not_approved {
-                    return InvalidTransaction::Custom(ERROR_CLAIM_ON_VOTING).into()
+                    return InvalidTransaction::Custom(ERROR_CLAIM_ON_VOTING).into();
                 }
 
                 let msg = Self::claim_message(claim_id, recipient);
@@ -768,13 +768,13 @@ impl<T: Trait> frame_support::unsigned::ValidateUnsigned for Module<T> {
                     Lockdrop::Bitcoin { public_key, .. } => {
                         let signer = crypto::btc_recover(signature, msg.as_ref());
                         if signer != Some(public_key) {
-                            return InvalidTransaction::BadProof.into()
+                            return InvalidTransaction::BadProof.into();
                         }
                     }
                     Lockdrop::Ethereum { public_key, .. } => {
                         let signer = crypto::eth_recover(signature, msg.as_ref());
                         if signer != Some(public_key) {
-                            return InvalidTransaction::BadProof.into()
+                            return InvalidTransaction::BadProof.into();
                         }
                     }
                 }
@@ -790,7 +790,7 @@ impl<T: Trait> frame_support::unsigned::ValidateUnsigned for Module<T> {
             Call::vote(vote, signature) => {
                 // Verify call params
                 if !<Claims<T>>::contains_key(vote.claim_id.clone()) {
-                    return InvalidTransaction::Call.into()
+                    return InvalidTransaction::Call.into();
                 }
 
                 vote.using_encoded(|encoded_vote| {
@@ -799,10 +799,10 @@ impl<T: Trait> frame_support::unsigned::ValidateUnsigned for Module<T> {
                     if let Some(authority) = keys.get(vote.authority as usize) {
                         // Check that sender is authority
                         if !authority.verify(&encoded_vote, &signature) {
-                            return InvalidTransaction::BadProof.into()
+                            return InvalidTransaction::BadProof.into();
                         }
                     } else {
-                        return InvalidTransaction::Custom(ERROR_UNKNOWN_AUTHORITY).into()
+                        return InvalidTransaction::Custom(ERROR_UNKNOWN_AUTHORITY).into();
                     }
 
                     ValidTransaction::with_tag_prefix("PlasmLockdrop")
@@ -820,10 +820,10 @@ impl<T: Trait> frame_support::unsigned::ValidateUnsigned for Module<T> {
                     if let Some(authority) = keys.get(rate.authority as usize) {
                         // Check that sender is authority
                         if !authority.verify(&encoded_rate, &signature) {
-                            return InvalidTransaction::BadProof.into()
+                            return InvalidTransaction::BadProof.into();
                         }
                     } else {
-                        return InvalidTransaction::Custom(ERROR_UNKNOWN_AUTHORITY).into()
+                        return InvalidTransaction::Custom(ERROR_UNKNOWN_AUTHORITY).into();
                     }
 
                     ValidTransaction::with_tag_prefix("PlasmLockdrop")

@@ -1,12 +1,12 @@
 //! Lockdrop authorities keys.
 
-use sp_runtime::app_crypto::KeyTypeId;
+use sp_core::ecdsa;
 use sp_io::{
     crypto::secp256k1_ecdsa_recover_compressed,
     hashing::{keccak_256, sha2_256},
 };
+use sp_runtime::app_crypto::KeyTypeId;
 use sp_std::vec::Vec;
-use sp_core::ecdsa;
 
 use codec::Encode;
 
