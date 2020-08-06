@@ -2,7 +2,7 @@ use super::*;
 use frame_support::{
     assert_err, assert_ok, impl_outer_event, impl_outer_origin, parameter_types, StorageMap,
 };
-use frame_system::{self, EventRecord, Phase};
+use frame_system::{self as system, EventRecord, Phase};
 use pallet_balances::{self as balances, Reasons};
 use sp_runtime::{
     testing::{Header, H256},
@@ -61,6 +61,7 @@ impl frame_system::Trait for Test {
     type BlockExecutionWeight = ();
     type ExtrinsicBaseWeight = ();
     type MaximumExtrinsicWeight = ();
+    type SystemWeightInfo = ();
 }
 parameter_types! {
     pub const ExistentialDeposit: u64 = 1; // Should be greather than zero
@@ -71,6 +72,7 @@ impl pallet_balances::Trait for Test {
     type DustRemoval = ();
     type ExistentialDeposit = ExistentialDeposit;
     type AccountStore = frame_system::Module<Test>;
+    type WeightInfo = ();
 }
 parameter_types! {
     pub const MinimumPeriod: u64 = 1;
@@ -79,6 +81,7 @@ impl pallet_timestamp::Trait for Test {
     type Moment = u64;
     type OnTimestampSet = ();
     type MinimumPeriod = MinimumPeriod;
+    type WeightInfo = ();
 }
 
 /// define mock operator trait
