@@ -19,14 +19,14 @@ pub async fn start(config: Config) {
 
     app.at("/btc/ticker")
         .get(|req: tide::Request<Config>| async move {
-            let endpoint = req.state().ethereum_endpoint.as_str();
+            let endpoint = req.state().feeds_endpoint.as_str();
             let usd_price = chainlink::btc_usd(endpoint) / 10_u128.pow(8);
             Ok(usd_price.to_string())
         });
 
     app.at("/eth/ticker")
         .get(|req: tide::Request<Config>| async move {
-            let endpoint = req.state().ethereum_endpoint.as_str();
+            let endpoint = req.state().feeds_endpoint.as_str();
             let usd_price = chainlink::eth_usd(endpoint) / 10_u128.pow(8);
             Ok(usd_price.to_string())
         });
