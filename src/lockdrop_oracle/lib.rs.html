@@ -168,9 +168,6 @@
 <span id="168">168</span>
 <span id="169">169</span>
 <span id="170">170</span>
-<span id="171">171</span>
-<span id="172">172</span>
-<span id="173">173</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="doccomment">//! Web-server helper for Lockdrop runtime module.</span>
 
@@ -193,14 +190,14 @@
 
     <span class="ident">app</span>.<span class="ident">at</span>(<span class="string">&quot;/btc/ticker&quot;</span>)
         .<span class="ident">get</span>(<span class="op">|</span><span class="ident">req</span>: <span class="ident">tide</span>::<span class="ident">Request</span><span class="op">&lt;</span><span class="ident">Config</span><span class="op">&gt;</span><span class="op">|</span> <span class="kw">async</span> <span class="kw">move</span> {
-            <span class="kw">let</span> <span class="ident">endpoint</span> <span class="op">=</span> <span class="ident">req</span>.<span class="ident">state</span>().<span class="ident">ethereum_endpoint</span>.<span class="ident">as_str</span>();
+            <span class="kw">let</span> <span class="ident">endpoint</span> <span class="op">=</span> <span class="ident">req</span>.<span class="ident">state</span>().<span class="ident">feeds_endpoint</span>.<span class="ident">as_str</span>();
             <span class="kw">let</span> <span class="ident">usd_price</span> <span class="op">=</span> <span class="ident">chainlink</span>::<span class="ident">btc_usd</span>(<span class="ident">endpoint</span>) <span class="op">/</span> <span class="number">10_u128</span>.<span class="ident">pow</span>(<span class="number">8</span>);
             <span class="prelude-val">Ok</span>(<span class="ident">usd_price</span>.<span class="ident">to_string</span>())
         });
 
     <span class="ident">app</span>.<span class="ident">at</span>(<span class="string">&quot;/eth/ticker&quot;</span>)
         .<span class="ident">get</span>(<span class="op">|</span><span class="ident">req</span>: <span class="ident">tide</span>::<span class="ident">Request</span><span class="op">&lt;</span><span class="ident">Config</span><span class="op">&gt;</span><span class="op">|</span> <span class="kw">async</span> <span class="kw">move</span> {
-            <span class="kw">let</span> <span class="ident">endpoint</span> <span class="op">=</span> <span class="ident">req</span>.<span class="ident">state</span>().<span class="ident">ethereum_endpoint</span>.<span class="ident">as_str</span>();
+            <span class="kw">let</span> <span class="ident">endpoint</span> <span class="op">=</span> <span class="ident">req</span>.<span class="ident">state</span>().<span class="ident">feeds_endpoint</span>.<span class="ident">as_str</span>();
             <span class="kw">let</span> <span class="ident">usd_price</span> <span class="op">=</span> <span class="ident">chainlink</span>::<span class="ident">eth_usd</span>(<span class="ident">endpoint</span>) <span class="op">/</span> <span class="number">10_u128</span>.<span class="ident">pow</span>(<span class="number">8</span>);
             <span class="prelude-val">Ok</span>(<span class="ident">usd_price</span>.<span class="ident">to_string</span>())
         });
@@ -225,11 +222,8 @@
                 <span class="string">&quot;BTC tx at {}: {}&quot;</span>, <span class="ident">lock</span>.<span class="ident">tx_hash</span>, <span class="ident">tx</span>.<span class="ident">to_string</span>()
             );
 
-            <span class="kw">let</span> <span class="ident">tx_value</span> <span class="op">=</span> <span class="ident">tx</span>[<span class="string">&quot;outputs&quot;</span>][<span class="number">0</span>][<span class="string">&quot;value&quot;</span>].<span class="ident">as_u64</span>().<span class="ident">unwrap_or</span>(<span class="number">0</span>) <span class="kw">as</span> <span class="ident">u128</span>;
-            <span class="kw">let</span> <span class="ident">tx_recipient</span> <span class="op">=</span> <span class="ident">tx</span>[<span class="string">&quot;outputs&quot;</span>][<span class="number">0</span>][<span class="string">&quot;addresses&quot;</span>][<span class="number">0</span>].<span class="ident">as_str</span>().<span class="ident">unwrap_or</span>(<span class="string">&quot;&quot;</span>);
-            <span class="kw">let</span> <span class="ident">tx_confirmations</span> <span class="op">=</span> <span class="ident">tx</span>[<span class="string">&quot;confirmations&quot;</span>].<span class="ident">as_u64</span>().<span class="ident">unwrap_or</span>(<span class="number">0</span>);
-
             <span class="comment">// check transaction confirmations</span>
+            <span class="kw">let</span> <span class="ident">tx_confirmations</span> <span class="op">=</span> <span class="ident">tx</span>[<span class="string">&quot;confirmations&quot;</span>].<span class="ident">as_u64</span>().<span class="ident">unwrap_or</span>(<span class="number">0</span>);
             <span class="kw">if</span> <span class="ident">tx_confirmations</span> <span class="op">&lt;</span> <span class="ident">req</span>.<span class="ident">state</span>().<span class="ident">safe_btc_confirmations</span> {
                 <span class="ident">log</span>::<span class="macro">debug</span><span class="macro">!</span>(<span class="ident">target</span>: <span class="string">&quot;lockdrop-oracle&quot;</span>, <span class="string">&quot;transaction isn&#39;t confirmed yet&quot;</span>);
                 <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="ident">Response</span>::<span class="ident">new</span>(<span class="ident">StatusCode</span>::<span class="ident">BadRequest</span>));

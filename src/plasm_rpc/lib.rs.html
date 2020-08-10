@@ -172,6 +172,9 @@
 <span id="172">172</span>
 <span id="173">173</span>
 <span id="174">174</span>
+<span id="175">175</span>
+<span id="176">176</span>
+<span id="177">177</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="doccomment">//! A collection of node-specific RPC methods.</span>
 <span class="doccomment">//!</span>
@@ -251,6 +254,9 @@
     <span class="doccomment">/// GRANDPA specific dependencies.</span>
     <span class="kw">pub</span> <span class="ident">grandpa</span>: <span class="ident">GrandpaDeps</span>,
 }
+
+<span class="doccomment">/// A IO handler that uses all Full RPC extensions.</span>
+<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">IoHandler</span> <span class="op">=</span> <span class="ident">jsonrpc_core</span>::<span class="ident">IoHandler</span><span class="op">&lt;</span><span class="ident">sc_rpc</span>::<span class="ident">Metadata</span><span class="op">&gt;</span>;
 
 <span class="doccomment">/// Instantiate all Full RPC extensions.</span>
 <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">create_full</span><span class="op">&lt;</span><span class="ident">C</span>, <span class="ident">P</span>, <span class="ident">M</span>, <span class="ident">SC</span><span class="op">&gt;</span>(<span class="ident">deps</span>: <span class="ident">FullDeps</span><span class="op">&lt;</span><span class="ident">C</span>, <span class="ident">P</span>, <span class="ident">SC</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">jsonrpc_core</span>::<span class="ident">IoHandler</span><span class="op">&lt;</span><span class="ident">M</span><span class="op">&gt;</span>

@@ -20,6 +20,9 @@
 <span id="20">20</span>
 <span id="21">21</span>
 <span id="22">22</span>
+<span id="23">23</span>
+<span id="24">24</span>
+<span id="25">25</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="doccomment">//! Lockdrop module CLI parameters.</span>
 
@@ -36,6 +39,9 @@
     <span class="doccomment">/// Ethereum node endpoint.</span>
     <span class="attribute">#[<span class="ident">structopt</span>(<span class="ident">long</span>, <span class="ident">default_value</span> <span class="op">=</span> <span class="string">&quot;https://ropsten.infura.io/v3&quot;</span>)]</span>
     <span class="kw">pub</span> <span class="ident">ethereum_endpoint</span>: <span class="ident">String</span>,
+    <span class="doccomment">/// Price feeds endpoint.</span>
+    <span class="attribute">#[<span class="ident">structopt</span>(<span class="ident">long</span>, <span class="ident">default_value</span> <span class="op">=</span> <span class="string">&quot;https://ropsten.infura.io/v3&quot;</span>)]</span>
+    <span class="kw">pub</span> <span class="ident">feeds_endpoint</span>: <span class="ident">String</span>,
     <span class="doccomment">/// Ethereum lockdrop smart contract address.</span>
     <span class="attribute">#[<span class="ident">structopt</span>(<span class="ident">long</span>, <span class="ident">default_value</span> <span class="op">=</span> <span class="string">&quot;69e7eb3ab94a10e4f408d842b287c70aa0d11649&quot;</span>)]</span>
     <span class="kw">pub</span> <span class="ident">lockdrop_contract</span>: <span class="ident">String</span>,
