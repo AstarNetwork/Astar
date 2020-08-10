@@ -13,6 +13,9 @@ pub struct Config {
     /// Ethereum node endpoint.
     #[structopt(long, default_value = "https://ropsten.infura.io/v3")]
     pub ethereum_endpoint: String,
+    /// Price feeds endpoint.
+    #[structopt(long, default_value = "https://ropsten.infura.io/v3")]
+    pub feeds_endpoint: String,
     /// Ethereum lockdrop smart contract address.
     #[structopt(long, default_value = "69e7eb3ab94a10e4f408d842b287c70aa0d11649")]
     pub lockdrop_contract: String,

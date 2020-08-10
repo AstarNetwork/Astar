@@ -91,6 +91,7 @@ impl frame_system::Trait for Test {
     type BlockExecutionWeight = ();
     type ExtrinsicBaseWeight = ();
     type MaximumExtrinsicWeight = ();
+    type SystemWeightInfo = ();
 }
 
 parameter_types! {
@@ -100,6 +101,7 @@ impl pallet_timestamp::Trait for Test {
     type Moment = u64;
     type OnTimestampSet = ();
     type MinimumPeriod = MinimumPeriod;
+    type WeightInfo = ();
 }
 
 parameter_types! {
@@ -132,6 +134,7 @@ impl pallet_session::Trait for Test {
     type Keys = UintAuthorityId;
     type Event = ();
     type DisabledValidatorsThreshold = ();
+    type WeightInfo = ();
 }
 
 parameter_types! {
@@ -144,6 +147,7 @@ impl pallet_balances::Trait for Test {
     type DustRemoval = ();
     type ExistentialDeposit = ExistentialDeposit;
     type AccountStore = frame_system::Module<Test>;
+    type WeightInfo = ();
 }
 
 pub struct DummyForSecurityStaking;

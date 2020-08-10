@@ -355,7 +355,7 @@ decl_module! {
             Ok(())
         }
 
-        /// Claim tokens according to lockdrop procedure.
+        /// Claim tokens for the lockdrop public key.
         /// TODO: weight
         #[weight = 50_000]
         fn claim(
@@ -363,36 +363,22 @@ decl_module! {
             claim_id: ClaimId,
         ) -> DispatchResult {
             ensure_none(origin)?;
+            Self::claim_token(claim_id, None)
+        }
 
-            let claim = <Claims<T>>::get(claim_id);
-            ensure!(!claim.complete, Error::<T>::AlreadyPaid);
-
-            let approve = claim.approve.len();
-            let decline = claim.decline.len();
-            ensure!(
-                approve + decline >= <VoteThreshold>::get() as usize,
-                Error::<T>::NotEnoughVotes,
-            );
-            ensure!(
-                approve.saturating_sub(decline) >= <PositiveVotes>::get() as usize,
-                Error::<T>::NotApproved,
-            );
-
-
-            // Deposit lockdrop tokens on locking public key.
-            let public_key = match claim.params {
-                Lockdrop::Bitcoin { public_key, .. } => public_key,
-                Lockdrop::Ethereum { public_key, .. } => public_key,
-            };
-            let account = T::Account::from(public_key).into_account();
-            let amount: BalanceOf<T> = T::BalanceConvert::from(claim.amount).into();
-            T::Currency::deposit_creating(&account, amount);
-
-            // Finalize claim request
-            <Claims<T>>::mutate(claim_id, |claim| claim.complete = true);
-            Self::deposit_event(RawEvent::ClaimComplete(claim_id, account, amount));
-
-            Ok(())
+        /// Claim tokens for any account address.
+        /// TODO: weight
+        #[weight = 50_000]
+        fn claim_to(
+            origin,
+            claim_id: ClaimId,
+            recipient: T::AccountId,
+            // since signature verification is done in `validate_unsigned`
+            // we can skip doing it here again.
+            _signature: ecdsa::Signature,
+        ) -> DispatchResult {
+            ensure_none(origin)?;
+            Self::claim_token(claim_id, Some(recipient))
         }
 
         /// Vote for claim request according to check results. (for authorities only)
@@ -639,6 +625,39 @@ impl<T: Trait> Module<T> {
         }
     }
 
+    fn claim_token(claim_id: ClaimId, recipient: Option<T::AccountId>) -> DispatchResult {
+        let claim = <Claims<T>>::get(claim_id);
+        ensure!(!claim.complete, Error::<T>::AlreadyPaid);
+
+        let approve = claim.approve.len();
+        let decline = claim.decline.len();
+        ensure!(
+            approve + decline >= <VoteThreshold>::get() as usize,
+            Error::<T>::NotEnoughVotes,
+        );
+        ensure!(
+            approve.saturating_sub(decline) >= <PositiveVotes>::get() as usize,
+            Error::<T>::NotApproved,
+        );
+
+        let account = recipient.unwrap_or({
+            // Deposit lockdrop tokens on locking public key.
+            let public_key = match claim.params {
+                Lockdrop::Bitcoin { public_key, .. } => public_key,
+                Lockdrop::Ethereum { public_key, .. } => public_key,
+            };
+            T::Account::from(public_key).into_account()
+        });
+        let amount: BalanceOf<T> = T::BalanceConvert::from(claim.amount).into();
+        T::Currency::deposit_creating(&account, amount);
+
+        // Finalize claim request
+        <Claims<T>>::mutate(claim_id, |claim| claim.complete = true);
+        Self::deposit_event(RawEvent::ClaimComplete(claim_id, account, amount));
+
+        Ok(())
+    }
+
     /// PLM issue amount for given BTC value and locking duration (in secs).
     fn btc_issue_amount(value: u128, duration: u64) -> u128 {
         // https://medium.com/stake-technologies/plasm-lockdrop-introduction-99fa2dfc37c0
@@ -669,6 +688,11 @@ impl<T: Trait> Module<T> {
     fn is_active(now: T::BlockNumber) -> bool {
         let bounds = <LockdropBounds<T>>::get();
         now >= bounds.0 && now < bounds.1
+    }
+
+    /// Create message to sign it for claiming to custom address.
+    fn claim_message(claim_id: &ClaimId, recipient: &T::AccountId) -> Vec<u8> {
+        todo!()
     }
 }
 
@@ -719,6 +743,45 @@ impl<T: Trait> frame_support::unsigned::ValidateUnsigned for Module<T> {
                 ValidTransaction::with_tag_prefix("PlasmLockdrop")
                     .priority(T::UnsignedPriority::get())
                     .and_provides(claim_id)
+                    .longevity(64_u64)
+                    .propagate(true)
+                    .build()
+            }
+
+            Call::claim_to(claim_id, recipient, signature) => {
+                let claim = <Claims<T>>::get(claim_id);
+                if claim.complete {
+                    return InvalidTransaction::Custom(ERROR_ALREADY_CLAIMED).into();
+                }
+
+                let approve = claim.approve.len();
+                let decline = claim.decline.len();
+                let on_vote = approve + decline < <VoteThreshold>::get() as usize;
+                let not_approved =
+                    approve.saturating_sub(decline) < <PositiveVotes>::get() as usize;
+                if on_vote || not_approved {
+                    return InvalidTransaction::Custom(ERROR_CLAIM_ON_VOTING).into();
+                }
+
+                let msg = Self::claim_message(claim_id, recipient);
+                match claim.params {
+                    Lockdrop::Bitcoin { public_key, .. } => {
+                        let signer = crypto::btc_recover(signature, msg.as_ref());
+                        if signer != Some(public_key) {
+                            return InvalidTransaction::BadProof.into();
+                        }
+                    }
+                    Lockdrop::Ethereum { public_key, .. } => {
+                        let signer = crypto::eth_recover(signature, msg.as_ref());
+                        if signer != Some(public_key) {
+                            return InvalidTransaction::BadProof.into();
+                        }
+                    }
+                }
+
+                ValidTransaction::with_tag_prefix("PlasmLockdrop")
+                    .priority(T::UnsignedPriority::get())
+                    .and_provides((claim_id, recipient))
                     .longevity(64_u64)
                     .propagate(true)
                     .build()

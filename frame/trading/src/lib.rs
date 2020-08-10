@@ -5,7 +5,7 @@ use frame_support::{
     decl_event, decl_module, decl_storage,
     traits::{Currency, ExistenceRequirement, LockIdentifier, LockableCurrency, WithdrawReasons},
 };
-use frame_system::{self as system, ensure_signed};
+use frame_system::ensure_signed;
 use pallet_contract_operator::{OperatorFinder, TransferOperator};
 use sp_std::prelude::*;
 

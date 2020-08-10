@@ -1,6 +1,14 @@
 //! Lockdrop authorities keys.
 
+use sp_core::ecdsa;
+use sp_io::{
+    crypto::secp256k1_ecdsa_recover_compressed,
+    hashing::{keccak_256, sha2_256},
+};
 use sp_runtime::app_crypto::KeyTypeId;
+use sp_std::vec::Vec;
+
+use codec::Encode;
 
 /// Plasm Lockdrop Authority local KeyType.
 ///
@@ -44,4 +52,52 @@ pub mod ed25519 {
 
     /// An authority identifier using ed25519 as its crypto.
     pub type AuthorityId = app_ed25519::Public;
+}
+
+// Constructs the message that Ethereum RPC's `personal_sign` and `eth_sign` would sign.
+fn ethereum_signable_message(what: &[u8]) -> Vec<u8> {
+    let mut l = what.len();
+    let mut rev = Vec::new();
+    while l > 0 {
+        rev.push(b'0' + (l % 10) as u8);
+        l /= 10;
+    }
+    let mut v = b"\x19Ethereum Signed Message:\n".to_vec();
+    v.extend(rev.into_iter().rev());
+    v.extend_from_slice(what);
+    v
+}
+
+// Attempts to recover the Ethereum public key from a message signature signed by using
+// the Ethereum RPC's `personal_sign` and `eth_sign`.
+pub fn eth_recover(s: &ecdsa::Signature, what: &[u8]) -> Option<ecdsa::Public> {
+    let msg = keccak_256(&ethereum_signable_message(what));
+    let public = secp256k1_ecdsa_recover_compressed(s.as_ref(), &msg).ok()?;
+    Some(ecdsa::Public::from_raw(public))
+}
+
+// Constructs the message that Bitcoin RPC's would sign.
+fn bitcoin_signable_message(what: &[u8]) -> Vec<u8> {
+    let mut l = what.len();
+    let mut rev = Vec::new();
+    while l > 0 {
+        rev.push(b'0' + (l % 10) as u8);
+        l /= 10;
+    }
+    let mut v = b"\x18Bitcoin Signed Message:\n".to_vec();
+    v.extend(rev.into_iter().rev());
+    v.extend_from_slice(what);
+    v
+}
+
+// Attempts to recover the Bitcoin public key from a message signature signed by using
+// the Bitcoin RPC's.
+pub fn btc_recover(s: &ecdsa::Signature, what: &[u8]) -> Option<ecdsa::Public> {
+    let msg = sha2_256(&bitcoin_signable_message(what));
+    match secp256k1_ecdsa_recover_compressed(s.as_ref(), &msg) {
+        Ok(public) => Some(ecdsa::Public::from_raw(public)),
+        Err(e) => {
+            panic!("recover error: {:?}", e.encode());
+        }
+    }
 }
