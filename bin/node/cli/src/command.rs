@@ -30,10 +30,7 @@ impl SubstrateCli for Cli {
 
     fn load_spec(&self, id: &str) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
         Ok(match id {
-            "dev" => Box::new(chain_spec::development_config()),
-            "local" => Box::new(chain_spec::local_testnet_config()),
-            "" | "dusty" => Box::new(chain_spec::dusty_config()),
-            "plasm" => Box::new(chain_spec::plasm_config()),
+            "" => Box::new(chain_spec::parachain_testnet_config()),
             path => Box::new(chain_spec::ChainSpec::from_json_file(
                 std::path::PathBuf::from(path),
             )?),
@@ -52,47 +49,27 @@ pub fn run() -> sc_cli::Result<()> {
     match &cli.subcommand {
         None => {
             let runner = cli.create_runner(&cli.run)?;
-            runner.run_node_until_exit(|config| match config.role {
-                Role::Light => service::new_light(config),
-                _ => service::new_full(config),
-            })
-        }
-        Some(Subcommand::Benchmark(cmd)) => {
-            if cfg!(feature = "runtime-benchmarks") {
-                let runner = cli.create_runner(cmd)?;
-
-                runner.sync_run(|config| cmd.run::<Block, service::Executor>(config))
-            } else {
-                println!(
-                    "Benchmarking wasn't enabled when building the node. \
-                You can enable it with `--features runtime-benchmarks`."
-                );
-                Ok(())
-            }
+            runner.run_node_until_exit(|config| {
+                if matches!(config.role, Role::Light) {
+                    return Err("Light client not supporter!".into())
+                }
+                service::run_collator(
+                    config,
+                    cli.parachain_id,
+                    &cli.relaychain_args,
+                    cli.run.validator,
+                )
         }
         Some(Subcommand::Base(subcommand)) => {
             let runner = cli.create_runner(subcommand)?;
-
-            runner.run_subcommand(subcommand, |config| {
-                let (
-                    ServiceParams {
-                        client,
-                        backend,
-                        import_queue,
-                        task_manager,
-                        ..
-                    },
-                    ..,
-                ) = service::new_full_params(config)?;
-                Ok((client, backend, import_queue, task_manager))
-            })
-        }
-        Some(Subcommand::LockdropOracle(config)) => {
-            sc_cli::init_logger("");
-            log::info!("Plasm Lockdrop oracle launched.");
-            Ok(futures::executor::block_on(lockdrop_oracle::start(
-                config.clone(),
-            )))
+            let PartialComponents {
+                client,
+                backend,
+                task_manager,
+                import_queue,
+                ..
+            } = service::new_partial(&mut config)?;
+            Ok((client, backend, import_queue, task_manager))
         }
     }
 }

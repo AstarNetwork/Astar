@@ -47,9 +47,6 @@ pub use pallet_timestamp::Call as TimestampCall;
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
 
-/// Deprecated but used runtime interfaces.
-pub mod legacy;
-
 /// Constant values used within the runtime.
 pub mod constants;
 use constants::{currency::*, time::*};
@@ -60,15 +57,11 @@ include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
 /// Runtime version.
 pub const VERSION: RuntimeVersion = RuntimeVersion {
-    spec_name: create_runtime_str!("dusty3"),
+    spec_name: create_runtime_str!("plasm_test_parachain"),
     impl_name: create_runtime_str!("staketechnologies-plasm"),
-    authoring_version: 2,
-    // Per convention: if the runtime behavior changes, increment spec_version
-    // and set impl_version to equal spec_version. If only runtime
-    // implementation changes and behavior does not, then leave spec_version as
-    // is and increment impl_version.
-    spec_version: 2,
-    impl_version: 2,
+    authoring_version: 1,
+    spec_version: 1,
+    impl_version: 1,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 1,
 };
@@ -120,31 +113,6 @@ impl frame_system::Trait for Runtime {
     type OnNewAccount = ();
     type OnKilledAccount = ();
     type SystemWeightInfo = ();
-}
-
-parameter_types! {
-    pub const EpochDuration: u64 = EPOCH_DURATION_IN_BLOCKS as u64;
-    pub const ExpectedBlockTime: Moment = MILLISECS_PER_BLOCK;
-}
-
-impl pallet_babe::Trait for Runtime {
-    type EpochDuration = EpochDuration;
-    type ExpectedBlockTime = ExpectedBlockTime;
-    type EpochChangeTrigger = pallet_babe::ExternalTrigger;
-
-    type KeyOwnerProofSystem = Historical;
-
-    type KeyOwnerProof = <Self::KeyOwnerProofSystem as KeyOwnerProofSystem<(
-        KeyTypeId,
-        pallet_babe::AuthorityId,
-    )>>::Proof;
-
-    type KeyOwnerIdentification = <Self::KeyOwnerProofSystem as KeyOwnerProofSystem<(
-        KeyTypeId,
-        pallet_babe::AuthorityId,
-    )>>::IdentificationTuple;
-
-    type HandleEquivocation = pallet_babe::EquivocationHandler<Self::KeyOwnerIdentification, ()>;
 }
 
 parameter_types! {
@@ -203,79 +171,8 @@ parameter_types! {
     pub const UncleGenerations: BlockNumber = 5;
 }
 
-impl pallet_authorship::Trait for Runtime {
-    type FindAuthor = pallet_session::FindAccountFromAuthorIndex<Self, Babe>;
-    type UncleGenerations = UncleGenerations;
-    type FilterUncle = ();
-    type EventHandler = ();
-}
-
 impl_opaque_keys! {
-    pub struct SessionKeys {
-        pub babe: Babe,
-        pub grandpa: Grandpa,
-    }
-}
-
-impl pallet_session::Trait for Runtime {
-    type SessionManager = PlasmRewards;
-    type SessionHandler = <SessionKeys as OpaqueKeys>::KeyTypeIdProviders;
-    type ShouldEndSession = Babe;
-    type NextSessionRotation = Babe;
-    type Event = Event;
-    type Keys = SessionKeys;
-    type ValidatorId = <Self as frame_system::Trait>::AccountId;
-    type ValidatorIdOf = ConvertInto;
-    type DisabledValidatorsThreshold = ();
-    type WeightInfo = ();
-}
-
-impl pallet_session::historical::Trait for Runtime {
-    type FullIdentification = ();
-    type FullIdentificationOf = ();
-}
-
-parameter_types! {
-    pub const SessionsPerEra: pallet_plasm_rewards::SessionIndex = 6;
-    pub const BondingDuration: pallet_plasm_rewards::EraIndex = 24 * 28;
-}
-
-impl pallet_plasm_rewards::Trait for Runtime {
-    type Currency = Balances;
-    type Time = Timestamp;
-    type SessionsPerEra = SessionsPerEra;
-    type BondingDuration = BondingDuration;
-    type ComputeEraForDapps = pallet_plasm_rewards::DefaultForDappsStaking<Runtime>;
-    type ComputeEraForSecurity = PlasmValidator;
-    type ComputeTotalPayout = pallet_plasm_rewards::inflation::CommunityRewards<u32>;
-    type MaybeValidators = PlasmValidator;
-    type Event = Event;
-}
-
-impl pallet_plasm_validator::Trait for Runtime {
-    type Currency = Balances;
-    type Time = Timestamp;
-    type RewardRemainder = (); // Reward remainder is burned.
-    type Reward = (); // Reward is minted.
-    type EraFinder = PlasmRewards;
-    type ForSecurityEraReward = PlasmRewards;
-    type ComputeEraParam = u32;
-    type ComputeEra = PlasmValidator;
-    type Event = Event;
-}
-
-impl pallet_dapps_staking::Trait for Runtime {
-    type Currency = Balances;
-    type BondingDuration = BondingDuration;
-    type ContractFinder = Operator;
-    type RewardRemainder = (); // Reward remainder is burned.
-    type Reward = (); // Reward is minted.
-    type Time = Timestamp;
-    type ComputeRewardsForDapps = pallet_dapps_staking::rewards::VoidableRewardsForDapps;
-    type EraFinder = PlasmRewards;
-    type ForDappsEraReward = PlasmRewards;
-    type HistoryDepthFinder = PlasmRewards;
-    type Event = Event;
+    pub struct SessionKeys {}
 }
 
 parameter_types! {
@@ -304,69 +201,33 @@ impl pallet_contracts::Trait for Runtime {
     type WeightPrice = pallet_transaction_payment::Module<Self>;
 }
 
-impl pallet_contract_operator::Trait for Runtime {
-    type Parameters = pallet_dapps_staking::parameters::StakingParameters;
-    type Event = Event;
-}
-
-impl pallet_operator_trading::Trait for Runtime {
-    type Currency = Balances;
-    type OperatorFinder = Operator;
-    type TransferOperator = Operator;
-    type Event = Event;
-}
-
 impl pallet_sudo::Trait for Runtime {
     type Event = Event;
     type Call = Call;
 }
 
-impl pallet_grandpa::Trait for Runtime {
+impl cumulus_message_broker::Trait for Runtime {
     type Event = Event;
-    type Call = Call;
-
-    type KeyOwnerProofSystem = Historical;
-
-    type KeyOwnerProof =
-        <Self::KeyOwnerProofSystem as KeyOwnerProofSystem<(KeyTypeId, GrandpaId)>>::Proof;
-
-    type KeyOwnerIdentification = <Self::KeyOwnerProofSystem as KeyOwnerProofSystem<(
-        KeyTypeId,
-        GrandpaId,
-    )>>::IdentificationTuple;
-
-    type HandleEquivocation = pallet_grandpa::EquivocationHandler<Self::KeyOwnerIdentification, ()>;
+    type DownwardMessageHandlers = TokenDealer;
+    type UpwardMessage = cumulus_upward_message::RococoUpwardMessage;
+    type ParachainId = ParachainInfo;
+    type XCMPMessage = cumulus_token_dealer::XCMPMessage<AccountId, Balance>;
+    type XCMPMessageHandlers = TokenDealer;
 }
 
-parameter_types! {
-    pub const WindowSize: BlockNumber = 101;
-    pub const ReportLatency: BlockNumber = 1000;
-}
-
-impl pallet_finality_tracker::Trait for Runtime {
-    type OnFinalizationStalled = Grandpa;
-    type WindowSize = WindowSize;
-    type ReportLatency = ReportLatency;
-}
-
-parameter_types! {
-    pub const MedianFilterExpire: Moment = 300; // 10 blocks is one minute, 300 - half hour
-    pub const LockdropUnsignedPriority: TransactionPriority = TransactionPriority::max_value();
-}
-
-impl pallet_plasm_lockdrop::Trait for Runtime {
+impl cumulus_token_dealer::Trait for Runtime {
+    type Event = Event;
+    type UpwardMessageSender = MessageBroker;
+    type UpwardMessage = cumulus_upward_message::RococoUpwardMessage;
     type Currency = Balances;
-    type DurationBonus = pallet_plasm_lockdrop::DustyDurationBonus;
-    type MedianFilterExpire = MedianFilterExpire;
-    type MedianFilterWidth = pallet_plasm_lockdrop::typenum::U5;
-    type AuthorityId = pallet_plasm_lockdrop::sr25519::AuthorityId;
-    type Account = MultiSigner;
-    type Time = Timestamp;
-    type Moment = Moment;
-    type DollarRate = Balance;
-    type BalanceConvert = Balance;
+    type XCMPMessageSender = MessageBroker;
+}
+
+impl parachain_info::Trait for Runtime {}
+
+impl cumulus_parachain_upgrade::Trait for Runtime {
     type Event = Event;
-    type UnsignedPriority = LockdropUnsignedPriority;
+    type OnValidationFunctionParams = ();
 }
 
 impl<LocalCall> frame_system::offchain::CreateSignedTransaction<LocalCall> for Runtime
@@ -424,61 +285,6 @@ where
     type Extrinsic = UncheckedExtrinsic;
 }
 
-parameter_types! {
-    pub const MaxDepth: u32 = 32;
-    pub const DisputePeriod: BlockNumber = 7;
-}
-
-pub struct GetAtomicPredicateIdConfig;
-impl Get<pallet_ovm::AtomicPredicateIdConfig<AccountId, Hash>> for GetAtomicPredicateIdConfig {
-    fn get() -> pallet_ovm::AtomicPredicateIdConfig<AccountId, Hash> {
-        pallet_ovm::AtomicPredicateIdConfig {
-            not_address: ([1; 32]).into(),
-            and_address: ([2; 32]).into(),
-            or_address: ([3; 32]).into(),
-            for_all_address: ([4; 32]).into(),
-            there_exists_address: ([5; 32]).into(),
-            equal_address: ([6; 32]).into(),
-            is_contained_address: ([7; 32]).into(),
-            is_less_address: ([8; 32]).into(),
-            is_stored_address: ([9; 32]).into(),
-            is_valid_signature_address: ([10; 32]).into(),
-            verify_inclusion_address: ([11; 32]).into(),
-            // Keccak256::hash("seck256k1") = d4fa99b1e08c4e5e6deb461846aa629344d95ff03ed04754c2053d54c756f439;
-            secp256k1: ([
-                212, 250, 153, 177, 224, 140, 78, 94, 109, 235, 70, 24, 70, 170, 98, 147, 68, 217,
-                95, 240, 62, 208, 71, 84, 194, 5, 61, 84, 199, 86, 244, 57,
-            ])
-            .into(),
-        }
-    }
-}
-
-impl pallet_ovm::Trait for Runtime {
-    type MaxDepth = MaxDepth;
-    type DisputePeriod = DisputePeriod;
-    type DeterminePredicateAddress = pallet_ovm::SimpleAddressDeterminer<Runtime>;
-    type HashingL2 = Keccak256;
-    type ExternalCall = pallet_ovm::predicate::CallContext<Runtime>;
-    type AtomicPredicateIdConfig = GetAtomicPredicateIdConfig;
-    type Event = Event;
-}
-
-pub struct MaximumTokenAddress;
-impl Get<AccountId> for MaximumTokenAddress {
-    fn get() -> AccountId {
-        ([255; 32]).into()
-    }
-}
-
-impl pallet_plasma::Trait for Runtime {
-    type Currency = Balances;
-    type DeterminePlappsAddress = pallet_plasma::SimpleAddressDeterminer<Runtime>;
-    type MaximumTokenAddress = MaximumTokenAddress;
-    type PlasmaHashing = Keccak256;
-    type Event = Event;
-}
-
 construct_runtime!(
     pub enum Runtime where
         Block = Block,
@@ -492,21 +298,12 @@ construct_runtime!(
         Indices: pallet_indices::{Module, Call, Storage, Event<T>, Config<T>},
         Balances: pallet_balances::{Module, Call, Storage, Event<T>, Config<T>},
         Contracts: pallet_contracts::{Module, Call, Storage, Event<T>, Config},
-        DappsStaking: pallet_dapps_staking::{Module, Call, Storage, Event<T>},
-        PlasmLockdrop: pallet_plasm_lockdrop::{Module, Call, Storage, Event<T>, Config<T>, ValidateUnsigned},
-        PlasmValidator: pallet_plasm_validator::{Module, Call, Storage, Event<T>, Config<T>},
-        PlasmRewards: pallet_plasm_rewards::{Module, Call, Storage, Event<T>, Config},
-        Session: pallet_session::{Module, Call, Storage, Event, Config<T>},
-        Historical: pallet_session_historical::{Module},
-        Babe: pallet_babe::{Module, Call, Storage, Config, Inherent, ValidateUnsigned},
-        Grandpa: pallet_grandpa::{Module, Call, Storage, Config, Event, ValidateUnsigned},
-        FinalityTracker: pallet_finality_tracker::{Module, Call, Inherent},
-        Operator: pallet_contract_operator::{Module, Call, Storage, Event<T>},
-        Trading: pallet_operator_trading::{Module, Call, Storage, Event<T>},
         RandomnessCollectiveFlip: pallet_randomness_collective_flip::{Module, Call, Storage},
         Sudo: pallet_sudo::{Module, Call, Storage, Event<T>, Config<T>},
-        OVM: pallet_ovm::{Module, Call, Storage, Event<T>},
-        Plasma: pallet_plasma::{Module, Call, Storage, Event<T>},
+        ParachainUpgrade: cumulus_parachain_upgrade::{Module, Call, Storage, Inherent, Event},
+        ParachainInfo: parachain_info::{Module, Storage, Config},
+        MessageBroker: cumulus_message_broker::{Module, Call, Inherent, Event<T>},
+        TokenDealer: cumulus_token_dealer::{Module, Call, Event<T>},
     }
 );
 
@@ -603,83 +400,6 @@ impl_runtime_apis! {
         }
     }
 
-    impl fg_primitives::GrandpaApi<Block> for Runtime {
-        fn grandpa_authorities() -> GrandpaAuthorityList {
-            Grandpa::grandpa_authorities()
-        }
-
-        fn submit_report_equivocation_unsigned_extrinsic(
-            equivocation_proof: fg_primitives::EquivocationProof<
-                <Block as BlockT>::Hash,
-                NumberFor<Block>,
-            >,
-            key_owner_proof: fg_primitives::OpaqueKeyOwnershipProof,
-        ) -> Option<()> {
-            let key_owner_proof = key_owner_proof.decode()?;
-
-            Grandpa::submit_unsigned_equivocation_report(
-                equivocation_proof,
-                key_owner_proof,
-            )
-        }
-
-        fn generate_key_ownership_proof(
-            _set_id: fg_primitives::SetId,
-            authority_id: GrandpaId,
-        ) -> Option<fg_primitives::OpaqueKeyOwnershipProof> {
-            use codec::Encode;
-
-            Historical::prove((fg_primitives::KEY_TYPE, authority_id))
-                .map(|p| p.encode())
-                .map(fg_primitives::OpaqueKeyOwnershipProof::new)
-        }
-    }
-
-    impl sp_consensus_babe::BabeApi<Block> for Runtime {
-        fn configuration() -> sp_consensus_babe::BabeGenesisConfiguration {
-            // The choice of `c` parameter (where `1 - c` represents the
-            // probability of a slot being empty), is done in accordance to the
-            // slot duration and expected target block time, for safely
-            // resisting network delays of maximum two seconds.
-            // <https://research.web3.foundation/en/latest/polkadot/BABE/Babe/#6-practical-results>
-            sp_consensus_babe::BabeGenesisConfiguration {
-                slot_duration: Babe::slot_duration(),
-                epoch_length: EpochDuration::get(),
-                c: PRIMARY_PROBABILITY,
-                genesis_authorities: Babe::authorities(),
-                randomness: Babe::randomness(),
-                allowed_slots: sp_consensus_babe::AllowedSlots::PrimaryAndSecondaryPlainSlots,
-            }
-        }
-
-        fn current_epoch_start() -> sp_consensus_babe::SlotNumber {
-            Babe::current_epoch_start()
-        }
-
-        fn generate_key_ownership_proof(
-            _slot_number: sp_consensus_babe::SlotNumber,
-            authority_id: sp_consensus_babe::AuthorityId,
-        ) -> Option<sp_consensus_babe::OpaqueKeyOwnershipProof> {
-            use codec::Encode;
-
-            Historical::prove((sp_consensus_babe::KEY_TYPE, authority_id))
-                .map(|p| p.encode())
-                .map(sp_consensus_babe::OpaqueKeyOwnershipProof::new)
-        }
-
-        fn submit_report_equivocation_unsigned_extrinsic(
-            equivocation_proof: sp_consensus_babe::EquivocationProof<<Block as BlockT>::Header>,
-            key_owner_proof: sp_consensus_babe::OpaqueKeyOwnershipProof,
-        ) -> Option<()> {
-            let key_owner_proof = key_owner_proof.decode()?;
-
-            Babe::submit_unsigned_equivocation_report(
-                equivocation_proof,
-                key_owner_proof,
-            )
-        }
-    }
-
     impl frame_system_rpc_runtime_api::AccountNonceApi<Block, AccountId, Index> for Runtime {
         fn account_nonce(account: AccountId) -> Index {
             System::account_nonce(account)
@@ -741,3 +461,5 @@ impl_runtime_apis! {
         }
     }
 }
+
+cumulus_runtime::register_validate_block!(Block, Executive);
