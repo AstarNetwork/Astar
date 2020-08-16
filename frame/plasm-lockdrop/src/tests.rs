@@ -422,27 +422,25 @@ fn dollar_rate_ticker_works() {
     ext.register_extension(OffchainExt::new(offchain));
 
     ext.execute_with(|| {
-        state.write().expect_request(
-            0,
-            sp_core::offchain::testing::PendingRequest {
+        state
+            .write()
+            .expect_request(sp_core::offchain::testing::PendingRequest {
                 method: "GET".into(),
                 uri: "http://127.0.0.1:34347/btc/ticker".into(),
                 sent: true,
                 response: Some("6766".into()),
                 ..Default::default()
-            },
-        );
+            });
         assert_eq!(BitcoinPrice::fetch(), Ok(6766));
-        state.write().expect_request(
-            0,
-            sp_core::offchain::testing::PendingRequest {
+        state
+            .write()
+            .expect_request(sp_core::offchain::testing::PendingRequest {
                 method: "GET".into(),
                 uri: "http://127.0.0.1:34347/eth/ticker".into(),
                 sent: true,
                 response: Some("139".into()),
                 ..Default::default()
-            },
-        );
+            });
         assert_eq!(EthereumPrice::fetch(), Ok(139));
     })
 }
@@ -461,28 +459,26 @@ fn dollar_rate_offchain_worker() {
         let seed = format!("//{}", account).as_bytes().to_vec();
         <Runtime as Trait>::AuthorityId::generate_pair(Some(seed));
 
-        state.write().expect_request(
-            0,
-            sp_core::offchain::testing::PendingRequest {
+        state
+            .write()
+            .expect_request(sp_core::offchain::testing::PendingRequest {
                 method: "GET".into(),
                 uri: "http://127.0.0.1:34347/btc/ticker".into(),
                 sent: true,
                 response: Some("6766".into()),
                 ..Default::default()
-            },
-        );
+            });
         let btc = BitcoinPrice::fetch().unwrap();
 
-        state.write().expect_request(
-            0,
-            sp_core::offchain::testing::PendingRequest {
+        state
+            .write()
+            .expect_request(sp_core::offchain::testing::PendingRequest {
                 method: "GET".into(),
                 uri: "http://127.0.0.1:34347/eth/ticker".into(),
                 sent: true,
                 response: Some("139".into()),
                 ..Default::default()
-            },
-        );
+            });
         let eth = EthereumPrice::fetch().unwrap();
 
         assert_ok!(PlasmLockdrop::send_dollar_rate(btc, eth));
@@ -684,3 +680,18 @@ fn lockdrop_request_pow() {
     let pow_byte = BlakeTwo256::hash_of(&(claim_id, nonce)).as_bytes()[0];
     assert_eq!(pow_byte, 0);
 }
+
+/*
+#[test]
+fn btc_recover_works() {
+    use sp_core::ecdsa::{Public, Signature};
+    let msg = "sign test bitcoin message";
+    let public = Public::from_full(&hex!["04e2e48305a063c3d53421a3da8f452d03f06ccf9a192f707a1989b34af92bc9386e5abef3417cad1fbe20858591631cd5793cea033e61a4c91958c0d4a12bb829"][..]).unwrap();
+    let signature = Signature::from_raw(hex!["1f879061a1ba6c3b21fadc27a50c8a1c6091bd225724444a21abc0eb7ef2471ffa52d9c50f6e3bc41dd35d628bd74e3c169e21d3f24e2aa439b914068f16d0802e"]);
+    assert_eq!(btc_recover(&signature, msg.as_ref()), Some(public));
+}
+
+#[test]
+fn eth_recover_works() {
+}
+*/

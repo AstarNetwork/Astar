@@ -13,7 +13,7 @@ use frame_support::{
     weights::{DispatchClass, DispatchInfo, WeightToFeeCoefficients, WeightToFeePolynomial},
     StorageMap, StorageValue,
 };
-use frame_system::{self, EventRecord, Phase};
+use frame_system::{self as system, EventRecord, Phase};
 use hex_literal::*;
 use pallet_balances as balances;
 use pallet_contracts::Gas;
@@ -49,7 +49,7 @@ impl_outer_event! {
     }
 }
 impl_outer_origin! {
-    pub enum Origin for Test where system = frame_system { }
+    pub enum Origin for Test { }
 }
 impl_outer_dispatch! {
     pub enum Call for Test where origin: Origin {
@@ -112,6 +112,7 @@ impl frame_system::Trait for Test {
     type BlockExecutionWeight = ();
     type ExtrinsicBaseWeight = ();
     type MaximumExtrinsicWeight = ();
+    type SystemWeightInfo = ();
 }
 
 impl pallet_balances::Trait for Test {
@@ -120,6 +121,7 @@ impl pallet_balances::Trait for Test {
     type DustRemoval = ();
     type ExistentialDeposit = ExistentialDeposit;
     type AccountStore = frame_system::Module<Test>;
+    type WeightInfo = ();
 }
 
 parameter_types! {
@@ -130,6 +132,7 @@ impl pallet_timestamp::Trait for Test {
     type Moment = u64;
     type OnTimestampSet = ();
     type MinimumPeriod = MinimumPeriod;
+    type WeightInfo = ();
 }
 
 pub struct WeightToFee;

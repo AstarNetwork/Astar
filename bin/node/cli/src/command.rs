@@ -1,34 +1,31 @@
 use crate::{chain_spec, service, Cli, Subcommand};
 use plasm_runtime::Block;
-use sc_cli::SubstrateCli;
+use sc_cli::{ChainSpec, Role, RuntimeVersion, SubstrateCli};
+use sc_service::ServiceParams;
 
 impl SubstrateCli for Cli {
-    fn impl_name() -> &'static str {
-        "Plasm Node"
+    fn impl_name() -> String {
+        "Plasm Node".into()
     }
 
-    fn impl_version() -> &'static str {
-        env!("SUBSTRATE_CLI_IMPL_VERSION")
+    fn impl_version() -> String {
+        env!("SUBSTRATE_CLI_IMPL_VERSION").into()
     }
 
-    fn description() -> &'static str {
-        env!("CARGO_PKG_DESCRIPTION")
+    fn description() -> String {
+        env!("CARGO_PKG_DESCRIPTION").into()
     }
 
-    fn author() -> &'static str {
-        env!("CARGO_PKG_AUTHORS")
+    fn author() -> String {
+        env!("CARGO_PKG_AUTHORS").into()
     }
 
-    fn support_url() -> &'static str {
-        "https://github.com/staketechnologies/plasm/issues/new"
+    fn support_url() -> String {
+        "https://github.com/staketechnologies/plasm/issues/new".into()
     }
 
     fn copyright_start_year() -> i32 {
         2019
-    }
-
-    fn executable_name() -> &'static str {
-        "plasm-node"
     }
 
     fn load_spec(&self, id: &str) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
@@ -42,6 +39,10 @@ impl SubstrateCli for Cli {
             )?),
         })
     }
+
+    fn native_runtime_version(_: &Box<dyn ChainSpec>) -> &'static RuntimeVersion {
+        &plasm_runtime::VERSION
+    }
 }
 
 /// Parse command line arguments into service configuration.
@@ -51,11 +52,10 @@ pub fn run() -> sc_cli::Result<()> {
     match &cli.subcommand {
         None => {
             let runner = cli.create_runner(&cli.run)?;
-            runner.run_node(
-                service::new_light,
-                service::new_full,
-                plasm_runtime::VERSION,
-            )
+            runner.run_node_until_exit(|config| match config.role {
+                Role::Light => service::new_light(config),
+                _ => service::new_full(config),
+            })
         }
         Some(Subcommand::Benchmark(cmd)) => {
             if cfg!(feature = "runtime-benchmarks") {
@@ -73,7 +73,19 @@ pub fn run() -> sc_cli::Result<()> {
         Some(Subcommand::Base(subcommand)) => {
             let runner = cli.create_runner(subcommand)?;
 
-            runner.run_subcommand(subcommand, |config| Ok(new_full_start!(config).0))
+            runner.run_subcommand(subcommand, |config| {
+                let (
+                    ServiceParams {
+                        client,
+                        backend,
+                        import_queue,
+                        task_manager,
+                        ..
+                    },
+                    ..,
+                ) = service::new_full_params(config)?;
+                Ok((client, backend, import_queue, task_manager))
+            })
         }
         Some(Subcommand::LockdropOracle(config)) => {
             sc_cli::init_logger("");

@@ -28,6 +28,7 @@ use sp_runtime::{
 };
 use sp_std::{collections::btree_map::BTreeMap, prelude::*, result, vec::Vec};
 
+mod log;
 #[cfg(test)]
 mod mock;
 pub mod parameters;
@@ -813,12 +814,24 @@ impl<T: Trait> Module<T> {
 
         let total_staked = Self::eras_total_stake(era);
 
-        let nominate_values = (era.saturating_sub(T::HistoryDepthFinder::get())..=*era)
+        let mut nominate_values: Vec<_> = Vec::new();
+
+        let each_points = (era.saturating_sub(T::HistoryDepthFinder::get())..=*era)
             .flat_map(|e| <ErasStakingPoints<T>>::iter_prefix(&e))
-            .flat_map(|(_, points)| points.individual)
-            .filter(|(account, _)| *account == *nominator)
-            .map(|(_, value)| value)
-            .collect::<Vec<_>>();
+            .map(|(contract, points)| {
+                (
+                    Self::eras_staking_points(era, contract).total,
+                    points.individual,
+                )
+            });
+
+        for (total, individual) in each_points {
+            for (account, value) in individual {
+                if account == *nominator {
+                    nominate_values.push((total, value));
+                }
+            }
+        }
 
         let nominate_total = Self::eras_nominate_totals(era, nominator);
         let reward = T::ComputeRewardsForDapps::compute_reward_for_nominator(
