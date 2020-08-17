@@ -59,6 +59,7 @@ pub fn run() -> sc_cli::Result<()> {
                     &cli.relaychain_args,
                     cli.run.validator,
                 )
+            }
         }
         Some(Subcommand::Base(subcommand)) => {
             let runner = cli.create_runner(subcommand)?;

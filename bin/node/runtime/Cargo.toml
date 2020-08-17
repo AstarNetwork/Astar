@@ -38,9 +38,9 @@ pallet-ovm = { path = "../../../frame/ovm", default-features = false }
 pallet-plasma = { path = "../../../frame/plasma", default-features = false }
 frame-executive = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch", default-features = false }
 pallet-balances = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch", default-features = false }
-pallet-contracts = { version = "=2.0.0-rc4", default-features = false }
-pallet-contracts-primitives = { version = "=2.0.0-rc4", default-features = false }
-pallet-contracts-rpc-runtime-api = { version = "=0.8.0-rc4", default-features = false }
+pallet-contracts = { package = "cumulus-pallet-contracts", git = "https://github.com/paritytech/cumulus", default-features = false }
+pallet-contracts-primitives = { package = "cumulus-pallet-contracts-primitives", git = "https://github.com/paritytech/cumulus", default-features = false }
+pallet-contracts-rpc-runtime-api = { package = "cumulus-pallet-contracts-rpc-runtime-api", git = "https://github.com/paritytech/cumulus", default-features = false }
 pallet-finality-tracker = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch", default-features = false }
 pallet-indices = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch", default-features = false }
 pallet-randomness-collective-flip = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch", default-features = false }
@@ -114,4 +114,8 @@ std = [
     "pallet-transaction-payment-rpc-runtime-api/std",
     "pallet-plasma/std",
     "pallet-ovm/std",
+]
+# Will be enabled by the `wasm-builder` when building the runtime for WASM.
+runtime-wasm = [
+    "cumulus-upward-message/runtime-wasm",
 ]

@@ -24,6 +24,6 @@ sc-consensus-babe-rpc = { git = "https://github.com/paritytech/substrate", branc
 sc-consensus-epochs = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
 sc-finality-grandpa = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
 sc-finality-grandpa-rpc = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
-pallet-contracts-rpc = "=0.8.0-rc4"
+pallet-contracts-rpc = { package = "cumulus-pallet-contracts-rpc", git = "https://github.com/paritytech/cumulus" }
 pallet-transaction-payment-rpc = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
 substrate-frame-rpc-system = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }

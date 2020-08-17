@@ -61,7 +61,7 @@ plasm-rpc = { path = "../rpc" }
 
 # frame dependencies
 frame-system = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
-pallet-contracts = { version = "=2.0.0-rc4", default-features = false }
+pallet-contracts = { package = "cumulus-pallet-contracts", git = "https://github.com/paritytech/cumulus", default-features = false }
 pallet-transaction-payment = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
 pallet-finality-tracker = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
 pallet-dapps-staking = { path = "../../../frame/dapps-staking" }

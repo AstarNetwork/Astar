@@ -16,7 +16,6 @@
 use std::sync::Arc;
 
 use plasm_primitives::{AccountId, Balance, Block, BlockNumber, Hash, Index};
-use plasm_runtime::UncheckedExtrinsic;
 use sc_consensus_babe::{Config, Epoch};
 use sc_consensus_babe_rpc::BabeRpcHandler;
 use sc_consensus_epochs::SharedEpochChanges;
@@ -91,7 +90,6 @@ where
     C::Api: pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<
         Block,
         Balance,
-        UncheckedExtrinsic,
     >,
     C::Api: BabeApi<Block>,
     C::Api: BlockBuilder<Block>,

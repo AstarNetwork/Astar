@@ -7,30 +7,27 @@
 use codec::Encode;
 use frame_support::{
     construct_runtime, debug, parameter_types,
-    traits::{Get, KeyOwnerProofSystem, Randomness},
+    traits::{Get, Randomness},
     weights::{
         constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_PER_SECOND},
         IdentityFee, Weight,
     },
 };
 use pallet_contracts_rpc_runtime_api::ContractExecResult;
-use pallet_grandpa::fg_primitives;
-use pallet_grandpa::{AuthorityId as GrandpaId, AuthorityList as GrandpaAuthorityList};
-use pallet_session::historical as pallet_session_historical;
 use pallet_transaction_payment::{Multiplier, TargetedFeeAdjustment};
 use pallet_transaction_payment_rpc_runtime_api::RuntimeDispatchInfo;
 use plasm_primitives::{
     AccountId, AccountIndex, Balance, BlockNumber, Hash, Index, Moment, Signature,
 };
 use sp_api::impl_runtime_apis;
-use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
+use sp_core::OpaqueMetadata;
 use sp_inherents::{CheckInherentsResult, InherentData};
 use sp_runtime::traits::{
-    BlakeTwo256, Block as BlockT, ConvertInto, Extrinsic, Keccak256, NumberFor, OpaqueKeys,
+    BlakeTwo256, Block as BlockT, Extrinsic, OpaqueKeys,
     SaturatedConversion, Saturating, StaticLookup, Verify,
 };
 use sp_runtime::transaction_validity::{
-    TransactionPriority, TransactionSource, TransactionValidity,
+    TransactionSource, TransactionValidity,
 };
 use sp_runtime::{
     create_runtime_str, generic, impl_opaque_keys, ApplyExtrinsicResult, FixedPointNumber,
@@ -162,7 +159,7 @@ parameter_types! {
 
 impl pallet_timestamp::Trait for Runtime {
     type Moment = Moment;
-    type OnTimestampSet = Babe;
+    type OnTimestampSet = ();
     type MinimumPeriod = MinimumPeriod;
     type WeightInfo = ();
 }
@@ -187,6 +184,7 @@ impl pallet_contracts::Trait for Runtime {
     type Randomness = RandomnessCollectiveFlip;
     type Currency = Balances;
     type Event = Event;
+    type Call = Call;
     type DetermineContractAddress = pallet_contracts::SimpleAddressDeterminer<Runtime>;
     type TrieIdGenerator = pallet_contracts::TrieIdFromParentCounter<Runtime>;
     type RentPayment = ();
@@ -413,12 +411,13 @@ impl_runtime_apis! {
             gas_limit: u64,
             input_data: Vec<u8>,
         ) -> ContractExecResult {
-            let exec_result =
+            let (exec_result, gas_consumed) =
                 Contracts::bare_call(origin, dest.into(), value, gas_limit, input_data);
             match exec_result {
                 Ok(v) => ContractExecResult::Success {
-                    status: v.status,
+                    flags: v.status.into(),
                     data: v.data,
+                    gas_consumed: gas_consumed,
                 },
                 Err(_) => ContractExecResult::Error,
             }

@@ -48,7 +48,6 @@ pub fn new_partial(
         sc_transaction_pool::FullPool<Block, TFullClient<Block, RuntimeApi, Executor>>,
         (),
     >,
-    sc_service::Error,
 > {
     let inherent_data_providers = sp_inherents::InherentDataProviders::new();
 
