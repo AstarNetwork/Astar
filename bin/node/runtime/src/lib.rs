@@ -293,17 +293,16 @@ construct_runtime!(
     {
         System: frame_system::{Module, Call, Storage, Config, Event<T>},
         Timestamp: pallet_timestamp::{Module, Call, Storage, Inherent},
-        Authorship: pallet_authorship::{Module, Call, Storage, Inherent},
         TransactionPayment: pallet_transaction_payment::{Module, Storage},
         Indices: pallet_indices::{Module, Call, Storage, Event<T>, Config<T>},
         Balances: pallet_balances::{Module, Call, Storage, Event<T>, Config<T>},
         Contracts: pallet_contracts::{Module, Call, Storage, Event<T>, Config},
         RandomnessCollectiveFlip: pallet_randomness_collective_flip::{Module, Call, Storage},
-        Sudo: pallet_sudo::{Module, Call, Storage, Event<T>, Config<T>},
         ParachainUpgrade: cumulus_parachain_upgrade::{Module, Call, Storage, Inherent, Event},
         ParachainInfo: parachain_info::{Module, Storage, Config},
         MessageBroker: cumulus_message_broker::{Module, Call, Inherent, Event<T>},
         TokenDealer: cumulus_token_dealer::{Module, Call, Event<T>},
+        Sudo: pallet_sudo::{Module, Call, Storage, Event<T>, Config<T>},
     }
 );
 
@@ -442,9 +441,8 @@ impl_runtime_apis! {
     impl pallet_transaction_payment_rpc_runtime_api::TransactionPaymentApi<
         Block,
         Balance,
-        UncheckedExtrinsic,
     > for Runtime {
-        fn query_info(uxt: UncheckedExtrinsic, len: u32) -> RuntimeDispatchInfo<Balance> {
+        fn query_info(uxt: <Block as BlockT>::Extrinsic, len: u32) -> RuntimeDispatchInfo<Balance> {
             TransactionPayment::query_info(uxt, len)
         }
     }

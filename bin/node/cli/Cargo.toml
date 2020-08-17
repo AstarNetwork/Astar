@@ -29,29 +29,29 @@ log = "0.4.8"
 hex = "0.4"
 
 # primitives
-sp-core = "2.0.0-rc5"
-sp-runtime = "2.0.0-rc5"
-sp-inherents = "2.0.0-rc5"
-sp-consensus = "0.8.0-rc5"
-sp-consensus-babe = "0.8.0-rc5"
-sp-finality-grandpa = "2.0.0-rc5"
-sp-transaction-pool = "2.0.0-rc5"
+sp-core = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
+sp-inherents = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
+sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
+sp-consensus-babe = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
+sp-finality-grandpa = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
+sp-transaction-pool = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
 
 # client dependencies
-sc-client-api = "2.0.0-rc5"
-sc-chain-spec = "2.0.0-rc5"
-sc-consensus = "0.8.0-rc5"
-sc-executor = "0.8.0-rc5"
-sc-transaction-pool = "2.0.0-rc5"
-sc-network = "0.8.0-rc5"
-sc-finality-grandpa = "0.8.0-rc5"
-sc-offchain = "2.0.0-rc5"
-sc-client-db = { version = "0.8.0-rc5", default-features = false }
-sc-rpc = "2.0.0-rc5"
-sc-basic-authorship = "0.8.0-rc5"
-sc-service = "0.8.0-rc5"
-sc-telemetry = "2.0.0-rc5"
-sc-consensus-babe = "0.8.0-rc5"
+sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
+sc-chain-spec = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
+sc-consensus = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
+sc-executor = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
+sc-transaction-pool = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
+sc-network = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
+sc-finality-grandpa = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
+sc-offchain = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
+sc-client-db = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch", default-features = false }
+sc-rpc = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
+sc-basic-authorship = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
+sc-service = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
+sc-telemetry = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
+sc-consensus-babe = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
 
 # plasm-specific dependencies
 lockdrop-oracle = { path = "./lockdrop-oracle" }
@@ -60,22 +60,22 @@ plasm-runtime = { path = "../runtime" }
 plasm-rpc = { path = "../rpc" }
 
 # frame dependencies
-frame-system = "2.0.0-rc5"
+frame-system = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
 pallet-contracts = { version = "=2.0.0-rc4", default-features = false }
-pallet-transaction-payment = "2.0.0-rc5"
-pallet-finality-tracker = "2.0.0-rc5"
+pallet-transaction-payment = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
+pallet-finality-tracker = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
 pallet-dapps-staking = { path = "../../../frame/dapps-staking" }
 pallet-plasm-lockdrop = { path = "../../../frame/plasm-lockdrop" }
 pallet-ovm = { path = "../../../frame/ovm" }
 
 # CLI-specific dependencies
-sc-cli = { version = "0.8.0-rc5", optional = true }
-frame-benchmarking-cli = { version = "2.0.0-rc5", optional = true }
+sc-cli = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch", optional = true }
+frame-benchmarking-cli = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch", optional = true }
 
 [build-dependencies]
-sc-cli = "0.8.0-rc5"
-frame-benchmarking-cli = { version = "2.0.0-rc5", optional = true }
-build-script-utils = { package = "substrate-build-script-utils", version = "2.0.0-rc5" }
+sc-cli = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
+frame-benchmarking-cli = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch", optional = true }
+build-script-utils = { package = "substrate-build-script-utils", git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
 lockdrop-oracle = { path = "./lockdrop-oracle" }
 structopt = { version = "0.3.8", optional = true }
 vergen = { version = "3.0.4", optional = true }
