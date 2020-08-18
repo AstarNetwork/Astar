@@ -28,23 +28,13 @@ sp-version = { git = "https://github.com/paritytech/substrate", branch = "rococo
 sp-session = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch", default-features = false }
 
 # frame dependencies
-pallet-contract-operator = { path = "../../../frame/operator", default-features = false }
-pallet-operator-trading = { path = "../../../frame/trading", default-features = false }
-pallet-dapps-staking = { path = "../../../frame/dapps-staking", default-features = false }
-pallet-plasm-rewards = { path = "../../../frame/plasm-rewards", default-features = false }
-pallet-plasm-validator = { path = "../../../frame/plasm-validator", default-features = false }
-pallet-plasm-lockdrop = { path = "../../../frame/plasm-lockdrop", default-features = false }
-pallet-ovm = { path = "../../../frame/ovm", default-features = false }
-pallet-plasma = { path = "../../../frame/plasma", default-features = false }
 frame-executive = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch", default-features = false }
 pallet-balances = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch", default-features = false }
 pallet-contracts = { package = "cumulus-pallet-contracts", git = "https://github.com/paritytech/cumulus", default-features = false }
 pallet-contracts-primitives = { package = "cumulus-pallet-contracts-primitives", git = "https://github.com/paritytech/cumulus", default-features = false }
 pallet-contracts-rpc-runtime-api = { package = "cumulus-pallet-contracts-rpc-runtime-api", git = "https://github.com/paritytech/cumulus", default-features = false }
-pallet-finality-tracker = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch", default-features = false }
 pallet-indices = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch", default-features = false }
 pallet-randomness-collective-flip = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch", default-features = false }
-pallet-session = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch", default-features = false, features = ["historical"] }
 pallet-sudo = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch", default-features = false }
 frame-support = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch", default-features = false }
 frame-system = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch", default-features = false }
@@ -83,7 +73,6 @@ std = [
     "sp-io/std",
     "sp-runtime/std",
     "sp-runtime-interface/std",
-    "sp-session/std",
     "sp-version/std",
     "sp-block-builder/std",
     "sp-transaction-pool/std",
@@ -97,23 +86,13 @@ std = [
     "pallet-contracts/std",
     "pallet-contracts-primitives/std",
     "pallet-contracts-rpc-runtime-api/std",
-    "pallet-finality-tracker/std",
     "pallet-indices/std",
     "sp-offchain/std",
-    "pallet-plasm-rewards/std",
-    "pallet-plasm-validator/std",
-    "pallet-plasm-lockdrop/std",
     "pallet-randomness-collective-flip/std",
-    "pallet-session/std",
-    "pallet-contract-operator/std",
-    "pallet-operator-trading/std",
-    "pallet-dapps-staking/std",
     "pallet-sudo/std",
     "pallet-timestamp/std",
     "pallet-transaction-payment/std",
     "pallet-transaction-payment-rpc-runtime-api/std",
-    "pallet-plasma/std",
-    "pallet-ovm/std",
 ]
 # Will be enabled by the `wasm-builder` when building the runtime for WASM.
 runtime-wasm = [

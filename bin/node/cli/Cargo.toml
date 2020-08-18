@@ -23,60 +23,71 @@ structopt = { version = "0.3.8", optional = true }
 jsonrpc-core = "14.0.3"
 hex-literal = "0.2.1"
 serde_json = "1.0"
+ansi_term = "0.12"
 futures = "0.3.4"
 bs58 = "0.3"
 log = "0.4.8"
 hex = "0.4"
 
 # primitives
+sp-api = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
+sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
+sp-block-builder = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
 sp-core = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
-sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
-sp-inherents = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
 sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
-sp-consensus-babe = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
-sp-finality-grandpa = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
+sp-inherents = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
+sp-trie = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
+sp-timestamp = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
+sp-offchain = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
+sp-session = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
 sp-transaction-pool = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
 
 # client dependencies
+sc-basic-authorship = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
 sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
 sc-chain-spec = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
-sc-consensus = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
 sc-executor = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
+sc-informant = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
 sc-transaction-pool = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
 sc-network = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
-sc-finality-grandpa = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
 sc-offchain = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
 sc-client-db = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch", default-features = false }
 sc-rpc = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
-sc-basic-authorship = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
 sc-service = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
 sc-telemetry = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
-sc-consensus-babe = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
 
 # plasm-specific dependencies
-lockdrop-oracle = { path = "./lockdrop-oracle" }
 plasm-primitives = { path = "../primitives" }
 plasm-runtime = { path = "../runtime" }
-plasm-rpc = { path = "../rpc" }
 
 # frame dependencies
 frame-system = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
 pallet-contracts = { package = "cumulus-pallet-contracts", git = "https://github.com/paritytech/cumulus", default-features = false }
+pallet-contracts-rpc = { package = "cumulus-pallet-contracts-rpc", git = "https://github.com/paritytech/cumulus", default-features = false }
 pallet-transaction-payment = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
-pallet-finality-tracker = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
-pallet-dapps-staking = { path = "../../../frame/dapps-staking" }
-pallet-plasm-lockdrop = { path = "../../../frame/plasm-lockdrop" }
-pallet-ovm = { path = "../../../frame/ovm" }
 
 # CLI-specific dependencies
 sc-cli = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch", optional = true }
-frame-benchmarking-cli = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch", optional = true }
+
+# cumulus dependencies
+cumulus-primitives = { git = "https://github.com/paritytech/cumulus" }
+cumulus-consensus = { git = "https://github.com/paritytech/cumulus" }
+cumulus-collator = { git = "https://github.com/paritytech/cumulus" }
+cumulus-network = { git = "https://github.com/paritytech/cumulus" }
+cumulus-service = { git = "https://github.com/paritytech/cumulus" }
+
+# polkadot dependencies
+polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "rococo-branch" }
+polkadot-parachain = { git = "https://github.com/paritytech/polkadot", branch = "rococo-branch" }
+polkadot-collator = { git = "https://github.com/paritytech/polkadot", branch = "rococo-branch" }
+polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "rococo-branch" }
+polkadot-cli = { git = "https://github.com/paritytech/polkadot", branch = "rococo-branch" }
 
 [build-dependencies]
-sc-cli = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
-frame-benchmarking-cli = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch", optional = true }
+sc-cli = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch", optional = true }
+polkadot-cli = { git = "https://github.com/paritytech/polkadot", branch = "rococo-branch", optional = true }
 build-script-utils = { package = "substrate-build-script-utils", git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
-lockdrop-oracle = { path = "./lockdrop-oracle" }
 structopt = { version = "0.3.8", optional = true }
 vergen = { version = "3.0.4", optional = true }
 
@@ -84,7 +95,7 @@ vergen = { version = "3.0.4", optional = true }
 default = ["cli"]
 cli = [
     "sc-cli",
-    "frame-benchmarking-cli",
+    "polkadot-cli",
     "sc-service/db",
     "structopt",
 	"vergen",
