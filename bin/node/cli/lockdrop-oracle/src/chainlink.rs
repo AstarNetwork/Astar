@@ -3,8 +3,8 @@ use web3::contract::{Contract, Options};
 use web3::futures::Future;
 use web3::types::Address;
 
-const ETHUSD: &str = "F79D6aFBb6dA890132F9D7c355e3015f15F3406F";
-const BTCUSD: &str = "F5fff180082d6017036B771bA883025c654BC935";
+const ETHUSD: &str = "5f4eC3Df9cbd43714FE2740f5E3616155c5b8419";
+const BTCUSD: &str = "F4030086522a5bEEa4988F8cA5B36dbC97BeE88c";
 
 pub fn query(endpoint: &str, contract: Address) -> u128 {
     let (_eloop, transport) = web3::transports::Http::new(endpoint).unwrap();
