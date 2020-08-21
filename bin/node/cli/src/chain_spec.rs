@@ -133,6 +133,12 @@ fn parachain_testnet_genesis(
     make_genesis(endowed_accounts, sudo_key, parachain_id, true)
 }
 
+/// Parachain precompiled confit
+pub fn parachain_testnet_config() -> ChainSpec {
+    ChainSpec::from_json_bytes(&include_bytes!("../res/parachain-testnet.json")[..]).unwrap()
+}
+
+/*
 /// Parachain testnet native config.
 pub fn parachain_testnet_config() -> ChainSpec {
     // akru
@@ -166,3 +172,4 @@ pub fn parachain_testnet_config() -> ChainSpec {
         },
     )
 }
+*/
