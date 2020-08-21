@@ -167,7 +167,7 @@ pub fn parachain_testnet_config() -> ChainSpec {
         Some(PLASM_PROTOCOL_ID),
         serde_json::from_str(PLASM_PROPERTIES).unwrap(),
         Extensions {
-            relay_chain: "rococo_local_testnet".into(),
+            relay_chain: "rococo".into(),
             para_id: PLASM_PARACHAIN_ID,
         },
     )
