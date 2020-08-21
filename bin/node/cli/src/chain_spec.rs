@@ -1,16 +1,15 @@
 //! Chain specification.
 
-use plasm_primitives::{AccountId, Balance, Signature, Block};
+use cumulus_primitives::ParaId;
+use plasm_primitives::{AccountId, Balance, Block, Signature};
 use plasm_runtime::{
-    BalancesConfig, ContractsConfig, GenesisConfig, IndicesConfig,
-    SessionKeys, SudoConfig, SystemConfig, ParachainInfoConfig, WASM_BINARY,
-    constants::currency,
+    constants::currency, BalancesConfig, ContractsConfig, GenesisConfig, IndicesConfig,
+    ParachainInfoConfig, SessionKeys, SudoConfig, SystemConfig, WASM_BINARY,
 };
 use sc_chain_spec::ChainSpecExtension;
 use sc_service::ChainType;
 use serde::{Deserialize, Serialize};
 use sp_core::{sr25519, Pair, Public};
-use cumulus_primitives::ParaId;
 use sp_runtime::{
     traits::{IdentifyAccount, Verify},
     Perbill,
@@ -19,8 +18,8 @@ use sp_runtime::{
 type AccountPublic = <Signature as Verify>::Signer;
 
 use hex_literal::hex;
-use sp_core::crypto::{Ss58Codec, UncheckedInto};
 use plasm_runtime::constants::currency::*;
+use sp_core::crypto::{Ss58Codec, UncheckedInto};
 const STAGING_TELEMETRY_URL: &str = "wss://telemetry.polkadot.io/submit/";
 
 const PLASM_PROPERTIES: &str = r#"
@@ -30,6 +29,7 @@ const PLASM_PROPERTIES: &str = r#"
             "tokenSymbol": "PLM"
         }"#;
 const PLASM_PROTOCOL_ID: &str = "plm";
+const PLASM_PARACHAIN_ID: u32 = 1000;
 
 /// Node `ChainSpec` extensions.
 ///
@@ -101,17 +101,34 @@ fn parachain_testnet_genesis(
 ) -> GenesisConfig {
     const ENDOWMENT: Balance = 1_000_000_000_000_000_000;
 
-    let endowed_accounts: Vec<(AccountId, Balance)> = endowed_accounts
-        .unwrap_or_else(|| {
-            vec![
-                (get_account_id_from_seed::<sr25519::Public>("Alice"), ENDOWMENT),
-                (get_account_id_from_seed::<sr25519::Public>("Bob"), ENDOWMENT),
-                (get_account_id_from_seed::<sr25519::Public>("Charlie"), ENDOWMENT),
-                (get_account_id_from_seed::<sr25519::Public>("Dave"), ENDOWMENT),
-                (get_account_id_from_seed::<sr25519::Public>("Eve"), ENDOWMENT),
-                (get_account_id_from_seed::<sr25519::Public>("Ferdie"), ENDOWMENT),
-            ]
-        });
+    let endowed_accounts: Vec<(AccountId, Balance)> = endowed_accounts.unwrap_or_else(|| {
+        vec![
+            (
+                get_account_id_from_seed::<sr25519::Public>("Alice"),
+                ENDOWMENT,
+            ),
+            (
+                get_account_id_from_seed::<sr25519::Public>("Bob"),
+                ENDOWMENT,
+            ),
+            (
+                get_account_id_from_seed::<sr25519::Public>("Charlie"),
+                ENDOWMENT,
+            ),
+            (
+                get_account_id_from_seed::<sr25519::Public>("Dave"),
+                ENDOWMENT,
+            ),
+            (
+                get_account_id_from_seed::<sr25519::Public>("Eve"),
+                ENDOWMENT,
+            ),
+            (
+                get_account_id_from_seed::<sr25519::Public>("Ferdie"),
+                ENDOWMENT,
+            ),
+        ]
+    });
 
     make_genesis(endowed_accounts, sudo_key, parachain_id, true)
 }
@@ -125,20 +142,27 @@ pub fn parachain_testnet_config() -> ChainSpec {
     let mut balances = currency::HOLDERS.clone();
     balances.extend(vec![(sudo_key.clone(), 50_000 * currency::PLM)]);
 
-    let id: ParaId = 100.into();
-
     ChainSpec::from_genesis(
         "Plasm Test Parachain",
         "plasm_test_parachain",
         ChainType::Live,
-        move || parachain_testnet_genesis(Some(balances.clone()), sudo_key.clone(), id),
+        move || {
+            parachain_testnet_genesis(
+                Some(balances.clone()),
+                sudo_key.clone(),
+                PLASM_PARACHAIN_ID.into(),
+            )
+        },
         vec![],
-        Some(sc_telemetry::TelemetryEndpoints::new(vec![(STAGING_TELEMETRY_URL.to_string(),0)]).unwrap()),
+        Some(
+            sc_telemetry::TelemetryEndpoints::new(vec![(STAGING_TELEMETRY_URL.to_string(), 0)])
+                .unwrap(),
+        ),
         Some(PLASM_PROTOCOL_ID),
         serde_json::from_str(PLASM_PROPERTIES).unwrap(),
-		Extensions {
-			relay_chain: "rococo_local_testnet".into(),
-			para_id: id.into(),
-		},
+        Extensions {
+            relay_chain: "rococo_local_testnet".into(),
+            para_id: PLASM_PARACHAIN_ID,
+        },
     )
 }

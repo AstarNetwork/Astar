@@ -329,9 +329,9 @@ checksum = "1d49d90015b3c36167a20fe2810c5cd875ad504b39cff3d4eae7977e6b7c1cb2"
 
 [[package]]
 name = "autocfg"
-version = "1.0.0"
+version = "1.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f8aac770f1885fd7e387acedd76065302551364496e46b3dd00860b2f8359b9d"
+checksum = "cdb031dd78e28731d87d56cc8ffef4a8f36ca26c38fe2de700543e627f8a464a"
 
 [[package]]
 name = "backtrace"
@@ -588,9 +588,9 @@ checksum = "631ae5198c9be5e753e5cc215e1bd73c2b466a3565173db433f52bb9d3e66dba"
 
 [[package]]
 name = "cc"
-version = "1.0.58"
+version = "1.0.59"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f9a06fb2e53271d7c279ec1efea6ab691c35a2ae67ec0d91d7acec0caf13b518"
+checksum = "66120af515773fb005778dc07c261bd201ec8ce50bd6e7144c927753fe013381"
 dependencies = [
  "jobserver",
 ]
@@ -881,7 +881,7 @@ version = "0.8.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "058ed274caafc1f60c4997b5fc07bf7dc7cca454af7c6e81edffe5f33f70dace"
 dependencies = [
- "autocfg 1.0.0",
+ "autocfg 1.0.1",
  "cfg-if",
  "crossbeam-utils",
  "lazy_static",
@@ -907,7 +907,7 @@ version = "0.7.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c3c7c73a2d1e9fc0886a08b93e98eb643461230d5f1925e4036204d5f2e261a8"
 dependencies = [
- "autocfg 1.0.0",
+ "autocfg 1.0.1",
  "cfg-if",
  "lazy_static",
 ]
@@ -1227,6 +1227,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "curve25519-dalek"
+version = "3.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c8492de420e9e60bc9a1d66e2dbb91825390b738a388606600663fc529b4b307"
+dependencies = [
+ "byteorder",
+ "digest 0.9.0",
+ "rand_core 0.5.1",
+ "subtle 2.2.3",
+ "zeroize 1.1.0",
+]
+
+[[package]]
 name = "data-encoding"
 version = "2.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1362,15 +1375,15 @@ dependencies = [
 
 [[package]]
 name = "ed25519-dalek"
-version = "1.0.0-pre.4"
+version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "21a8a37f4e8b35af971e6db5e3897e7a6344caa3f92f6544f88125a1f5f0035a"
+checksum = "53d2e93f837d749c16d118e7ddf7a4dfd0ac8f452cf51e46e9348824e5ef6851"
 dependencies = [
- "curve25519-dalek 2.1.0",
+ "curve25519-dalek 3.0.0",
  "ed25519",
  "rand 0.7.3",
  "serde",
- "sha2 0.8.2",
+ "sha2 0.9.1",
  "zeroize 1.1.0",
 ]
 
@@ -1471,9 +1484,9 @@ dependencies = [
 
 [[package]]
 name = "event-listener"
-version = "2.3.3"
+version = "2.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7f14646a9e0430150a87951622ba9675472b68e384b7701b8423b30560805c7a"
+checksum = "e1cd41440ae7e4734bbd42302f63eaba892afc93a3912dad84006247f0dedb0e"
 
 [[package]]
 name = "exit-future"
@@ -1535,9 +1548,9 @@ dependencies = [
 
 [[package]]
 name = "file-per-thread-logger"
-version = "0.1.3"
+version = "0.1.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8b3937f028664bd0e13df401ba49a4567ccda587420365823242977f06609ed1"
+checksum = "4fdbe0d94371f9ce939b555dd342d0686cc4c0cadbcd4b61d70af5ff97eb4126"
 dependencies = [
  "env_logger",
  "log 0.4.11",
@@ -1578,9 +1591,9 @@ checksum = "37ab347416e802de484e4d03c7316c48f1ecb56574dfd4a46a80f173ce1de04d"
 
 [[package]]
 name = "flate2"
-version = "1.0.16"
+version = "1.0.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "68c90b0fc46cf89d227cc78b40e494ff81287a92dd07631e5af0d06fe3cf885e"
+checksum = "766d0e77a2c1502169d4a93ff3b8c15a71fd946cd0126309752104e5f3c46d94"
 dependencies = [
  "cfg-if",
  "crc32fast",
@@ -2190,7 +2203,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e91b62f79061a0bc2e046024cb7ba44b08419ed238ecbd9adbd787434b9e8c25"
 dependencies = [
  "ahash 0.3.8",
- "autocfg 1.0.0",
+ "autocfg 1.0.1",
 ]
 
 [[package]]
@@ -2454,7 +2467,7 @@ version = "1.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "86b45e59b16c76b11bf9738fd5d38879d3bd28ad292d7b313608becb17ae2df9"
 dependencies = [
- "autocfg 1.0.0",
+ "autocfg 1.0.1",
  "hashbrown 0.8.2",
  "serde",
 ]
@@ -2685,7 +2698,7 @@ dependencies = [
 [[package]]
 name = "kusama-runtime"
 version = "0.8.22"
-source = "git+https://github.com/paritytech/polkadot?branch=rococo-branch#58830aabfe9640ac773023914104ec08be9122d0"
+source = "git+https://github.com/paritytech/polkadot?branch=rococo-branch#6f057452e620cf7eabd09105a5c8e7710e9ca929"
 dependencies = [
  "bitvec",
  "frame-executive",
@@ -2816,9 +2829,9 @@ checksum = "3576a87f2ba00f6f106fdfcd16db1d698d648a26ad8e0573cad8537c3c362d2a"
 
 [[package]]
 name = "libc"
-version = "0.2.74"
+version = "0.2.76"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a2f02823cf78b754822df5f7f268fb59822e7296276d3e069d8e8cb26a14bd10"
+checksum = "755456fae044e6fa1ebbbd1b3e902ae19e73097ed4ed87bb79934a867c007bc3"
 
 [[package]]
 name = "libflate"
@@ -3171,7 +3184,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "af67924b8dd885cccea261866c8ce5b74d239d272e154053ff927dae839f5ae9"
 dependencies = [
  "cc",
- "libc",
  "pkg-config",
  "vcpkg",
 ]
@@ -3317,7 +3329,7 @@ version = "0.5.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c198b026e1bbf08a937e94c6c60f9ec4a2267f5b0d2eec9c1b21b061ce2be55f"
 dependencies = [
- "autocfg 1.0.0",
+ "autocfg 1.0.1",
 ]
 
 [[package]]
@@ -3622,7 +3634,7 @@ version = "0.2.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "090c7f9998ee0ff65aa5b723e4009f7b217707f1fb5ea551329cc4d6231fb304"
 dependencies = [
- "autocfg 1.0.0",
+ "autocfg 1.0.1",
  "num-integer",
  "num-traits 0.2.12",
 ]
@@ -3633,7 +3645,7 @@ version = "0.2.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b6b19411a9719e753aff12e5187b74d60d3dc449ec3f4dc21e3989c3f554bc95"
 dependencies = [
- "autocfg 1.0.0",
+ "autocfg 1.0.1",
  "num-traits 0.2.12",
 ]
 
@@ -3643,7 +3655,7 @@ version = "0.1.43"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8d59457e662d541ba17869cf51cf177c0b5f0cbf476c66bdc90bf1edac4f875b"
 dependencies = [
- "autocfg 1.0.0",
+ "autocfg 1.0.1",
  "num-traits 0.2.12",
 ]
 
@@ -3653,7 +3665,7 @@ version = "0.2.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5c000134b5dbf44adc5cb772486d335293351644b801551abe8f75c84cfa4aef"
 dependencies = [
- "autocfg 1.0.0",
+ "autocfg 1.0.1",
  "num-bigint",
  "num-integer",
  "num-traits 0.2.12",
@@ -3674,7 +3686,7 @@ version = "0.2.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ac267bcc07f48ee5f8935ab0d24f316fb722d7a1292e2913f0cc196b29ffd611"
 dependencies = [
- "autocfg 1.0.0",
+ "autocfg 1.0.1",
  "libm",
 ]
 
@@ -4943,7 +4955,7 @@ checksum = "feb3b2b1033b8a60b4da6ee470325f887758c95d5320f52f9ce0df055a55940e"
 [[package]]
 name = "polkadot-availability-store"
 version = "0.8.22"
-source = "git+https://github.com/paritytech/polkadot?branch=rococo-branch#58830aabfe9640ac773023914104ec08be9122d0"
+source = "git+https://github.com/paritytech/polkadot?branch=rococo-branch#6f057452e620cf7eabd09105a5c8e7710e9ca929"
 dependencies = [
  "derive_more 0.99.9",
  "exit-future",
@@ -4970,7 +4982,7 @@ dependencies = [
 [[package]]
 name = "polkadot-cli"
 version = "0.8.22"
-source = "git+https://github.com/paritytech/polkadot?branch=rococo-branch#58830aabfe9640ac773023914104ec08be9122d0"
+source = "git+https://github.com/paritytech/polkadot?branch=rococo-branch#6f057452e620cf7eabd09105a5c8e7710e9ca929"
 dependencies = [
  "frame-benchmarking-cli",
  "futures 0.3.5",
@@ -4993,7 +5005,7 @@ dependencies = [
 [[package]]
 name = "polkadot-collator"
 version = "0.8.22"
-source = "git+https://github.com/paritytech/polkadot?branch=rococo-branch#58830aabfe9640ac773023914104ec08be9122d0"
+source = "git+https://github.com/paritytech/polkadot?branch=rococo-branch#6f057452e620cf7eabd09105a5c8e7710e9ca929"
 dependencies = [
  "futures 0.3.5",
  "futures-timer 2.0.2",
@@ -5020,7 +5032,7 @@ dependencies = [
 [[package]]
 name = "polkadot-core-primitives"
 version = "0.7.30"
-source = "git+https://github.com/paritytech/polkadot?branch=rococo-branch#58830aabfe9640ac773023914104ec08be9122d0"
+source = "git+https://github.com/paritytech/polkadot?branch=rococo-branch#6f057452e620cf7eabd09105a5c8e7710e9ca929"
 dependencies = [
  "parity-scale-codec",
  "sp-core",
@@ -5031,7 +5043,7 @@ dependencies = [
 [[package]]
 name = "polkadot-erasure-coding"
 version = "0.8.22"
-source = "git+https://github.com/paritytech/polkadot?branch=rococo-branch#58830aabfe9640ac773023914104ec08be9122d0"
+source = "git+https://github.com/paritytech/polkadot?branch=rococo-branch#6f057452e620cf7eabd09105a5c8e7710e9ca929"
 dependencies = [
  "derive_more 0.15.0",
  "parity-scale-codec",
@@ -5044,7 +5056,7 @@ dependencies = [
 [[package]]
 name = "polkadot-network"
 version = "0.8.22"
-source = "git+https://github.com/paritytech/polkadot?branch=rococo-branch#58830aabfe9640ac773023914104ec08be9122d0"
+source = "git+https://github.com/paritytech/polkadot?branch=rococo-branch#6f057452e620cf7eabd09105a5c8e7710e9ca929"
 dependencies = [
  "arrayvec 0.4.12",
  "bytes 0.5.6",
@@ -5073,7 +5085,7 @@ dependencies = [
 [[package]]
 name = "polkadot-parachain"
 version = "0.8.22"
-source = "git+https://github.com/paritytech/polkadot?branch=rococo-branch#58830aabfe9640ac773023914104ec08be9122d0"
+source = "git+https://github.com/paritytech/polkadot?branch=rococo-branch#6f057452e620cf7eabd09105a5c8e7710e9ca929"
 dependencies = [
  "derive_more 0.99.9",
  "futures 0.3.5",
@@ -5094,7 +5106,7 @@ dependencies = [
 [[package]]
 name = "polkadot-primitives"
 version = "0.8.22"
-source = "git+https://github.com/paritytech/polkadot?branch=rococo-branch#58830aabfe9640ac773023914104ec08be9122d0"
+source = "git+https://github.com/paritytech/polkadot?branch=rococo-branch#6f057452e620cf7eabd09105a5c8e7710e9ca929"
 dependencies = [
  "bitvec",
  "frame-system",
@@ -5117,7 +5129,7 @@ dependencies = [
 [[package]]
 name = "polkadot-rpc"
 version = "0.8.22"
-source = "git+https://github.com/paritytech/polkadot?branch=rococo-branch#58830aabfe9640ac773023914104ec08be9122d0"
+source = "git+https://github.com/paritytech/polkadot?branch=rococo-branch#6f057452e620cf7eabd09105a5c8e7710e9ca929"
 dependencies = [
  "jsonrpc-core",
  "pallet-transaction-payment-rpc",
@@ -5144,7 +5156,7 @@ dependencies = [
 [[package]]
 name = "polkadot-runtime"
 version = "0.8.22"
-source = "git+https://github.com/paritytech/polkadot?branch=rococo-branch#58830aabfe9640ac773023914104ec08be9122d0"
+source = "git+https://github.com/paritytech/polkadot?branch=rococo-branch#6f057452e620cf7eabd09105a5c8e7710e9ca929"
 dependencies = [
  "bitvec",
  "frame-executive",
@@ -5209,7 +5221,7 @@ dependencies = [
 [[package]]
 name = "polkadot-runtime-common"
 version = "0.8.22"
-source = "git+https://github.com/paritytech/polkadot?branch=rococo-branch#58830aabfe9640ac773023914104ec08be9122d0"
+source = "git+https://github.com/paritytech/polkadot?branch=rococo-branch#6f057452e620cf7eabd09105a5c8e7710e9ca929"
 dependencies = [
  "bitvec",
  "frame-support",
@@ -5243,7 +5255,7 @@ dependencies = [
 [[package]]
 name = "polkadot-runtime-parachains"
 version = "0.8.0"
-source = "git+https://github.com/paritytech/polkadot?branch=rococo-branch#58830aabfe9640ac773023914104ec08be9122d0"
+source = "git+https://github.com/paritytech/polkadot?branch=rococo-branch#6f057452e620cf7eabd09105a5c8e7710e9ca929"
 dependencies = [
  "bitvec",
  "frame-support",
@@ -5274,7 +5286,7 @@ dependencies = [
 [[package]]
 name = "polkadot-service"
 version = "0.8.22"
-source = "git+https://github.com/paritytech/polkadot?branch=rococo-branch#58830aabfe9640ac773023914104ec08be9122d0"
+source = "git+https://github.com/paritytech/polkadot?branch=rococo-branch#6f057452e620cf7eabd09105a5c8e7710e9ca929"
 dependencies = [
  "frame-benchmarking",
  "frame-system-rpc-runtime-api",
@@ -5334,7 +5346,7 @@ dependencies = [
 [[package]]
 name = "polkadot-statement-table"
 version = "0.8.22"
-source = "git+https://github.com/paritytech/polkadot?branch=rococo-branch#58830aabfe9640ac773023914104ec08be9122d0"
+source = "git+https://github.com/paritytech/polkadot?branch=rococo-branch#6f057452e620cf7eabd09105a5c8e7710e9ca929"
 dependencies = [
  "parity-scale-codec",
  "polkadot-primitives",
@@ -5344,7 +5356,7 @@ dependencies = [
 [[package]]
 name = "polkadot-validation"
 version = "0.8.22"
-source = "git+https://github.com/paritytech/polkadot?branch=rococo-branch#58830aabfe9640ac773023914104ec08be9122d0"
+source = "git+https://github.com/paritytech/polkadot?branch=rococo-branch#6f057452e620cf7eabd09105a5c8e7710e9ca929"
 dependencies = [
  "ansi_term 0.12.1",
  "bitvec",
@@ -5413,9 +5425,9 @@ dependencies = [
 
 [[package]]
 name = "ppv-lite86"
-version = "0.2.8"
+version = "0.2.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "237a5ed80e274dbc66f86bd59c1e25edc039660be53194b5fe0a482e0f2612ea"
+checksum = "c36fa947111f5c62a733b652544dd0016a43ce89619538a8ef92724a6f501a20"
 
 [[package]]
 name = "primitive-types"
@@ -5845,7 +5857,7 @@ version = "1.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "62f02856753d04e03e26929f820d0a0a337ebe71f849801eea335d464b349080"
 dependencies = [
- "autocfg 1.0.0",
+ "autocfg 1.0.1",
  "crossbeam-deque",
  "either",
  "rayon-core",
@@ -6030,7 +6042,7 @@ dependencies = [
 [[package]]
 name = "rococo-runtime"
 version = "0.8.22"
-source = "git+https://github.com/paritytech/polkadot?branch=rococo-branch#58830aabfe9640ac773023914104ec08be9122d0"
+source = "git+https://github.com/paritytech/polkadot?branch=rococo-branch#6f057452e620cf7eabd09105a5c8e7710e9ca929"
 dependencies = [
  "bitvec",
  "frame-executive",
@@ -6088,6 +6100,7 @@ dependencies = [
  "sp-offchain",
  "sp-runtime",
  "sp-session",
+ "sp-staking",
  "sp-std",
  "sp-transaction-pool",
  "sp-version",
@@ -8836,9 +8849,9 @@ dependencies = [
 
 [[package]]
 name = "tracing-attributes"
-version = "0.1.10"
+version = "0.1.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1fe233f4227389ab7df5b32649239da7ebe0b281824b4e84b342d04d3fd8c25e"
+checksum = "80e0ccfc3378da0cce270c946b676a376943f5cd16aeba64568e7939806f4ada"
 dependencies = [
  "proc-macro2 1.0.19",
  "quote 1.0.7",
@@ -9030,9 +9043,9 @@ checksum = "6454029bf181f092ad1b853286f23e2c507d8e8194d01d92da4a55c274a5508c"
 
 [[package]]
 name = "vec-arena"
-version = "0.5.0"
+version = "0.5.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "17dfb54bf57c9043f4616cb03dab30eff012cc26631b797d8354b916708db919"
+checksum = "8cb18268690309760d59ee1a9b21132c126ba384f374c59a94db4bc03adeb561"
 
 [[package]]
 name = "vec_map"
@@ -9433,7 +9446,7 @@ dependencies = [
 [[package]]
 name = "westend-runtime"
 version = "0.8.22"
-source = "git+https://github.com/paritytech/polkadot?branch=rococo-branch#58830aabfe9640ac773023914104ec08be9122d0"
+source = "git+https://github.com/paritytech/polkadot?branch=rococo-branch#6f057452e620cf7eabd09105a5c8e7710e9ca929"
 dependencies = [
  "bitvec",
  "frame-executive",

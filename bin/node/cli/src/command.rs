@@ -204,13 +204,7 @@ pub fn run() -> Result<()> {
                     if cli.run.base.validator { "yes" } else { "no" }
                 );
 
-                crate::service::start_node(
-                    config,
-                    key,
-                    polkadot_config,
-                    id,
-                    cli.run.base.validator,
-                )
+                crate::service::start_node(config, key, polkadot_config, id, cli.run.base.validator)
             })
         }
     }

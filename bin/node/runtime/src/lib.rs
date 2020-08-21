@@ -23,12 +23,10 @@ use sp_api::impl_runtime_apis;
 use sp_core::OpaqueMetadata;
 use sp_inherents::{CheckInherentsResult, InherentData};
 use sp_runtime::traits::{
-    BlakeTwo256, Block as BlockT, Extrinsic, OpaqueKeys,
-    SaturatedConversion, Saturating, StaticLookup, Verify,
+    BlakeTwo256, Block as BlockT, Extrinsic, OpaqueKeys, SaturatedConversion, Saturating,
+    StaticLookup, Verify,
 };
-use sp_runtime::transaction_validity::{
-    TransactionSource, TransactionValidity,
-};
+use sp_runtime::transaction_validity::{TransactionSource, TransactionValidity};
 use sp_runtime::{
     create_runtime_str, generic, impl_opaque_keys, ApplyExtrinsicResult, FixedPointNumber,
     MultiSigner, Perbill, Perquintill,

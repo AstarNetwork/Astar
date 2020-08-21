@@ -5,8 +5,8 @@ use cumulus_network::DelayedBlockAnnounceValidator;
 use cumulus_service::{
     prepare_node_config, start_collator, start_full_node, StartCollatorParams, StartFullNodeParams,
 };
-use polkadot_primitives::v0::CollatorPair;
 use plasm_primitives::Block;
+use polkadot_primitives::v0::CollatorPair;
 use sc_executor::native_executor_instance;
 pub use sc_executor::NativeExecutor;
 use sc_informant::OutputFormat;
