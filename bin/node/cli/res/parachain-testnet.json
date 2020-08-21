@@ -3,7 +3,7 @@
   "id": "plasm_test_parachain",
   "chainType": "Live",
   "bootNodes": [
-    "/ip4/127.0.0.1/tcp/30333/p2p/12D3KooWA8iBsmPKDKZY1xrXT4GFqqLjWa1tdZ4hy8Wtpy98pWx8"
+    "/ip4/18.180.253.246/tcp/30333/p2p/12D3KooWQb5CGMExaenZ9BCCU5TvYke5pdCLvp1hjrQkwUVXwWox"
   ],
   "telemetryEndpoints": [
     [
