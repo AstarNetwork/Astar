@@ -4,12 +4,14 @@ use structopt::StructOpt;
 
 #[derive(Debug, Clone, StructOpt)]
 pub struct Config {
+    /*
     /// Bitcoin node endpoint.
     #[structopt(long, default_value = "https://api.blockcypher.com/v1/btc/test3/txs")]
     pub bitcoin_endpoint: String,
     /// Bitcoin minimum transaction confirmations.
     #[structopt(long, default_value = "8")]
     pub safe_btc_confirmations: u64,
+    */
     /// Ethereum node endpoint.
     #[structopt(long, default_value = "https://ropsten.infura.io/v3")]
     pub ethereum_endpoint: String,

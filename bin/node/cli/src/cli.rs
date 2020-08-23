@@ -18,9 +18,6 @@ pub enum Subcommand {
     /// A set of base subcommands handled by `sc_cli`.
     #[structopt(flatten)]
     Base(sc_cli::Subcommand),
-    /// The custom benchmark subcommmand benchmarking runtime pallets.
-    #[structopt(name = "benchmark", about = "Benchmark runtime pallets.")]
-    Benchmark(frame_benchmarking_cli::BenchmarkCmd),
     /// Plasm Lockdrop oracle authority support module.
     #[structopt(name = "oracle", about = "Launch lockdrop oracle module.")]
     LockdropOracle(lockdrop_oracle::Config),
