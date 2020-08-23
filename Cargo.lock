@@ -3867,7 +3867,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-contract-operator"
-version = "1.4.0"
+version = "1.5.0"
 dependencies = [
  "derive_more 0.14.1",
  "frame-support",
@@ -3954,7 +3954,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-dapps-staking"
-version = "1.4.0"
+version = "1.5.0"
 dependencies = [
  "derive_more 0.14.1",
  "frame-support",
@@ -4040,7 +4040,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-operator-trading"
-version = "1.4.0"
+version = "1.5.0"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -4057,7 +4057,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-ovm"
-version = "1.4.0"
+version = "1.5.0"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -4085,7 +4085,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-plasm-lockdrop"
-version = "1.4.0"
+version = "1.5.0"
 dependencies = [
  "bs58",
  "frame-support",
@@ -4112,7 +4112,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-plasm-rewards"
-version = "1.4.0"
+version = "1.5.0"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -4135,7 +4135,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-plasm-validator"
-version = "1.4.0"
+version = "1.5.0"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -4157,7 +4157,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-plasma"
-version = "1.4.0"
+version = "1.5.0"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -4657,7 +4657,7 @@ checksum = "d36492546b6af1463394d46f0c834346f31548646f6ba10849802c9c9a27ac33"
 
 [[package]]
 name = "plasm-cli"
-version = "1.4.0"
+version = "1.5.0"
 dependencies = [
  "bs58",
  "frame-system",
@@ -4709,7 +4709,7 @@ dependencies = [
 
 [[package]]
 name = "plasm-primitives"
-version = "1.4.0"
+version = "1.5.0"
 dependencies = [
  "frame-system",
  "parity-scale-codec",
@@ -4720,7 +4720,7 @@ dependencies = [
 
 [[package]]
 name = "plasm-rpc"
-version = "1.4.0"
+version = "1.5.0"
 dependencies = [
  "jsonrpc-core",
  "jsonrpc-pubsub",
@@ -4749,7 +4749,7 @@ dependencies = [
 
 [[package]]
 name = "plasm-runtime"
-version = "1.4.0"
+version = "1.5.0"
 dependencies = [
  "frame-executive",
  "frame-support",
@@ -7672,7 +7672,7 @@ dependencies = [
 
 [[package]]
 name = "subkey"
-version = "1.4.0"
+version = "1.5.0"
 dependencies = [
  "clap",
  "frame-system",
