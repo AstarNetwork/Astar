@@ -572,14 +572,14 @@ impl<T: Trait> Module<T> {
 
     /// Send dollar rate as unsigned extrinsic from authority.
     fn send_dollar_rate(key: T::AuthorityId) -> Result<(), ()> {
-        let btc_price: u32 = BitcoinPrice::fetch()?;
-        let eth_price: u32 = EthereumPrice::fetch()?;
-
         if let Some(authority) = Self::authority_index_of(&key) {
+            let btc_price: f32 = BitcoinPrice::fetch()?;
+            let eth_price: f32 = EthereumPrice::fetch()?;
+
             let rate = TickerRate {
                 authority,
-                btc: btc_price.into(),
-                eth: eth_price.into(),
+                btc: (btc_price as u32).into(),
+                eth: (eth_price as u32).into(),
             };
             let signature = key.sign(&rate.encode()).ok_or(())?;
             let call = Call::set_dollar_rate(rate, signature);
@@ -592,6 +592,11 @@ impl<T: Trait> Module<T> {
             debug::debug!(
                 target: "lockdrop-offchain-worker",
                 "dollar rate extrinsic send: {:?}", res
+            );
+        } else {
+            debug::debug!(
+                target: "lockdrop-offchain-worker",
+                "key {:?} is not lockdrop authority", key
             );
         }
 
