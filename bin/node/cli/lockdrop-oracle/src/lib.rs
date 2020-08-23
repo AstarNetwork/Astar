@@ -18,7 +18,7 @@ struct ServerState {
     pub feeds_transport: web3::transports::Http,
     pub ethereum_transport: web3::transports::Http,
     pub lockdrop_contract: web3::types::Address,
-    pub safe_eth_confirmations: u64, 
+    pub safe_eth_confirmations: u64,
 }
 
 pub async fn start(config: Config) {

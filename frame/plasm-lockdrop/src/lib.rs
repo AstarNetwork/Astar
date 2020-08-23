@@ -336,8 +336,8 @@ decl_module! {
                         // (it also helps to make evaluations more precise)
                         //let value_btc = value * 1_000_000;
                         //Self::btc_issue_amount(value_btc, duration)
-                        
-                        // XXX 
+
+                        // XXX
                         0
                     },
                     Lockdrop::Ethereum { value, duration, .. } => {
@@ -603,14 +603,14 @@ impl<T: Trait> Module<T> {
         let Claim { params, .. } = Self::claims(claim_id);
         match params {
             Lockdrop::Bitcoin { .. } => {
-            /*
-                let success = BitcoinLock::check(transaction_hash, public_key, duration, value)?;
-                debug::debug!(
-                    target: "lockdrop-offchain-worker",
-                    "claim id {} => lock result: {}", claim_id, success
-                );
-                Ok(success)
-            */
+                /*
+                    let success = BitcoinLock::check(transaction_hash, public_key, duration, value)?;
+                    debug::debug!(
+                        target: "lockdrop-offchain-worker",
+                        "claim id {} => lock result: {}", claim_id, success
+                    );
+                    Ok(success)
+                */
                 Err(())
             }
             Lockdrop::Ethereum {
@@ -718,7 +718,7 @@ impl<T: Trait> frame_support::unsigned::ValidateUnsigned for Module<T> {
             Call::request(params, nonce) => {
                 if !matches!(params, Lockdrop::Ethereum{..}) {
                     // Only Ethereum requests allowed
-                    return InvalidTransaction::Call.into()
+                    return InvalidTransaction::Call.into();
                 }
 
                 let claim_id = BlakeTwo256::hash_of(&params);
@@ -782,13 +782,13 @@ impl<T: Trait> frame_support::unsigned::ValidateUnsigned for Module<T> {
                 match claim.params {
                     Lockdrop::Bitcoin { .. } => {
                         // Only Ethereum requests allowed
-                        return InvalidTransaction::Call.into()
-                    /*
-                        let signer = crypto::btc_recover(signature, msg.as_ref());
-                        if signer != Some(public_key) {
-                            return InvalidTransaction::BadProof.into();
-                        }
-                    */
+                        return InvalidTransaction::Call.into();
+                        /*
+                            let signer = crypto::btc_recover(signature, msg.as_ref());
+                            if signer != Some(public_key) {
+                                return InvalidTransaction::BadProof.into();
+                            }
+                        */
                     }
                     Lockdrop::Ethereum { public_key, .. } => {
                         let signer = crypto::eth_recover(signature, msg.as_ref());

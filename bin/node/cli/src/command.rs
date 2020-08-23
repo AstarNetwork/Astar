@@ -1,9 +1,8 @@
-///! Node command handler.
-
-use crate::{chain_spec, service, Cli, Subcommand};
-use sc_cli::{SubstrateCli, RuntimeVersion, ChainSpec, Role};
-use sc_service::PartialComponents;
 use crate::service::new_partial;
+///! Node command handler.
+use crate::{chain_spec, service, Cli, Subcommand};
+use sc_cli::{ChainSpec, Role, RuntimeVersion, SubstrateCli};
+use sc_service::PartialComponents;
 
 impl SubstrateCli for Cli {
     fn impl_name() -> String {
@@ -60,12 +59,17 @@ pub fn run() -> sc_cli::Result<()> {
             })
         }
         Some(Subcommand::Base(subcommand)) => {
-			let runner = cli.create_runner(subcommand)?;
-			runner.run_subcommand(subcommand, |config| {
-				let PartialComponents { client, backend, task_manager, import_queue, ..}
-					= new_partial(&config)?;
-				Ok((client, backend, import_queue, task_manager))
-			})
+            let runner = cli.create_runner(subcommand)?;
+            runner.run_subcommand(subcommand, |config| {
+                let PartialComponents {
+                    client,
+                    backend,
+                    task_manager,
+                    import_queue,
+                    ..
+                } = new_partial(&config)?;
+                Ok((client, backend, import_queue, task_manager))
+            })
         }
         Some(Subcommand::LockdropOracle(config)) => {
             sc_cli::init_logger("");
