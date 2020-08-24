@@ -889,12 +889,12 @@ const DUSTY_PROTOCOL_ID: &amp;str = &quot;pld&quot;;
         <span class="ident">pallet_plasm_lockdrop</span>: <span class="prelude-val">Some</span>(<span class="ident">PlasmLockdropConfig</span> {
             <span class="comment">// Alpha2: 0.44698108660714747</span>
             <span class="ident">alpha</span>: <span class="ident">Perbill</span>::<span class="ident">from_parts</span>(<span class="number">446_981_087</span>),
-            <span class="comment">// Price in cents: BTC $9100, ETH $230</span>
-            <span class="ident">dollar_rate</span>: (<span class="number">9_100</span>, <span class="number">230</span>),
-            <span class="ident">vote_threshold</span>: <span class="number">0</span>,
-            <span class="ident">positive_votes</span>: <span class="number">0</span>,
+            <span class="comment">// Price in dollars: BTC $11000, ETH $400</span>
+            <span class="ident">dollar_rate</span>: (<span class="number">11_000</span>, <span class="number">400</span>),
+            <span class="ident">vote_threshold</span>: <span class="number">1</span>,
+            <span class="ident">positive_votes</span>: <span class="number">1</span>,
             <span class="comment">// Start from launch for testing purposes</span>
-            <span class="ident">lockdrop_bounds</span>: (<span class="number">0</span>, <span class="number">0</span>),
+            <span class="ident">lockdrop_bounds</span>: (<span class="number">0</span>, <span class="number">1_000</span>),
             <span class="ident">keys</span>: <span class="macro">vec</span><span class="macro">!</span>[],
         }),
         <span class="ident">pallet_session</span>: <span class="prelude-val">Some</span>(<span class="ident">SessionConfig</span> {

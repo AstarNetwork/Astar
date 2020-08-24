@@ -1,0 +1,1 @@
+initSidebarItems({"enum":[["ContractAccessError","The possible errors that can happen querying the storage of a contract."],["RentProjection",""]],"type":[["GetStorageResult","A result type of a get storage call."],["RentProjectionResult","A result type of a `rent_projection` call."]]});

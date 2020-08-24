@@ -740,7 +740,6 @@
 <span id="740">740</span>
 <span id="741">741</span>
 <span id="742">742</span>
-<span id="743">743</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="doccomment">//! The Substrate runtime. This can be compiled with ``#[no_std]`, ready for Wasm.</span>
 
@@ -811,8 +810,8 @@
     <span class="comment">// and set impl_version to equal spec_version. If only runtime</span>
     <span class="comment">// implementation changes and behavior does not, then leave spec_version as</span>
     <span class="comment">// is and increment impl_version.</span>
-    <span class="ident">spec_version</span>: <span class="number">2</span>,
-    <span class="ident">impl_version</span>: <span class="number">2</span>,
+    <span class="ident">spec_version</span>: <span class="number">3</span>,
+    <span class="ident">impl_version</span>: <span class="number">3</span>,
     <span class="ident">apis</span>: <span class="ident">RUNTIME_API_VERSIONS</span>,
     <span class="ident">transaction_version</span>: <span class="number">1</span>,
 };
@@ -1466,9 +1465,8 @@
     <span class="kw">impl</span> <span class="ident">pallet_transaction_payment_rpc_runtime_api</span>::<span class="ident">TransactionPaymentApi</span><span class="op">&lt;</span>
         <span class="ident">Block</span>,
         <span class="ident">Balance</span>,
-        <span class="ident">UncheckedExtrinsic</span>,
     <span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">Runtime</span> {
-        <span class="kw">fn</span> <span class="ident">query_info</span>(<span class="ident">uxt</span>: <span class="ident">UncheckedExtrinsic</span>, <span class="ident">len</span>: <span class="ident">u32</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">RuntimeDispatchInfo</span><span class="op">&lt;</span><span class="ident">Balance</span><span class="op">&gt;</span> {
+        <span class="kw">fn</span> <span class="ident">query_info</span>(<span class="ident">uxt</span>: <span class="op">&lt;</span><span class="ident">Block</span> <span class="kw">as</span> <span class="ident">BlockT</span><span class="op">&gt;</span>::<span class="ident">Extrinsic</span>, <span class="ident">len</span>: <span class="ident">u32</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">RuntimeDispatchInfo</span><span class="op">&lt;</span><span class="ident">Balance</span><span class="op">&gt;</span> {
             <span class="ident">TransactionPayment</span>::<span class="ident">query_info</span>(<span class="ident">uxt</span>, <span class="ident">len</span>)
         }
     }

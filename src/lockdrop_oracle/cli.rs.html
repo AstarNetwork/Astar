@@ -23,6 +23,8 @@
 <span id="23">23</span>
 <span id="24">24</span>
 <span id="25">25</span>
+<span id="26">26</span>
+<span id="27">27</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="doccomment">//! Lockdrop module CLI parameters.</span>
 
@@ -30,12 +32,14 @@
 
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">StructOpt</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Config</span> {
-    <span class="doccomment">/// Bitcoin node endpoint.</span>
-    <span class="attribute">#[<span class="ident">structopt</span>(<span class="ident">long</span>, <span class="ident">default_value</span> <span class="op">=</span> <span class="string">&quot;https://api.blockcypher.com/v1/btc/test3/txs&quot;</span>)]</span>
-    <span class="kw">pub</span> <span class="ident">bitcoin_endpoint</span>: <span class="ident">String</span>,
-    <span class="doccomment">/// Bitcoin minimum transaction confirmations.</span>
-    <span class="attribute">#[<span class="ident">structopt</span>(<span class="ident">long</span>, <span class="ident">default_value</span> <span class="op">=</span> <span class="string">&quot;8&quot;</span>)]</span>
-    <span class="kw">pub</span> <span class="ident">safe_btc_confirmations</span>: <span class="ident">u64</span>,
+    <span class="comment">/*
+    /// Bitcoin node endpoint.
+    #[structopt(long, default_value = &quot;https://api.blockcypher.com/v1/btc/test3/txs&quot;)]
+    pub bitcoin_endpoint: String,
+    /// Bitcoin minimum transaction confirmations.
+    #[structopt(long, default_value = &quot;8&quot;)]
+    pub safe_btc_confirmations: u64,
+    */</span>
     <span class="doccomment">/// Ethereum node endpoint.</span>
     <span class="attribute">#[<span class="ident">structopt</span>(<span class="ident">long</span>, <span class="ident">default_value</span> <span class="op">=</span> <span class="string">&quot;https://ropsten.infura.io/v3&quot;</span>)]</span>
     <span class="kw">pub</span> <span class="ident">ethereum_endpoint</span>: <span class="ident">String</span>,
