@@ -10,8 +10,8 @@ pallet-plasm-lockdrop = { path = "../../../../frame/plasm-lockdrop" }
 reqwest = { version = "0.10", default-features = false, features = ["rustls-tls", "json", "blocking"] }
 web3 = { version = "0.11", default-features = false, features = ["http","tls"] }
 ethabi = "12.0"
-sp-core = "2.0.0-rc5"
-sc-service = "0.8.0-rc5"
+sp-core = "2.0.0-rc6"
+sc-service = "0.8.0-rc6"
 bitcoin-script = "0.1.1"
 bitcoin = "0.23.0"
 libsecp256k1 = "0.3.5"

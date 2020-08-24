@@ -1,14 +1,9 @@
 //! Lockdrop authorities keys.
 
 use sp_core::ecdsa;
-use sp_io::{
-    crypto::secp256k1_ecdsa_recover_compressed,
-    hashing::{keccak_256, sha2_256},
-};
+use sp_io::{crypto::secp256k1_ecdsa_recover_compressed, hashing::keccak_256};
 use sp_runtime::app_crypto::KeyTypeId;
 use sp_std::vec::Vec;
-
-use codec::Encode;
 
 /// Plasm Lockdrop Authority local KeyType.
 ///
@@ -76,6 +71,7 @@ pub fn eth_recover(s: &ecdsa::Signature, what: &[u8]) -> Option<ecdsa::Public> {
     Some(ecdsa::Public::from_raw(public))
 }
 
+/*
 // Constructs the message that Bitcoin RPC's would sign.
 fn bitcoin_signable_message(what: &[u8]) -> Vec<u8> {
     let mut l = what.len();
@@ -101,3 +97,4 @@ pub fn btc_recover(s: &ecdsa::Signature, what: &[u8]) -> Option<ecdsa::Public> {
         }
     }
 }
+*/

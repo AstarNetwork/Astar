@@ -335,6 +335,7 @@ fn dollar_rate_should_expire() {
     })
 }
 
+/*
 #[test]
 fn check_btc_issue_amount() {
     new_test_ext().execute_with(|| {
@@ -374,6 +375,7 @@ fn check_btc_issue_amount() {
         }
     })
 }
+*/
 
 #[test]
 fn check_eth_issue_amount() {
@@ -468,8 +470,6 @@ fn dollar_rate_offchain_worker() {
                 response: Some("6766".into()),
                 ..Default::default()
             });
-        let btc = BitcoinPrice::fetch().unwrap();
-
         state
             .write()
             .expect_request(sp_core::offchain::testing::PendingRequest {
@@ -479,9 +479,9 @@ fn dollar_rate_offchain_worker() {
                 response: Some("139".into()),
                 ..Default::default()
             });
-        let eth = EthereumPrice::fetch().unwrap();
 
-        assert_ok!(PlasmLockdrop::send_dollar_rate(btc, eth));
+        let key = <Runtime as Trait>::AuthorityId::all()[0].clone();
+        assert_ok!(PlasmLockdrop::send_dollar_rate(key));
 
         let transaction = pool_state.write().transactions.pop().unwrap();
         let ex: Extrinsic = Decode::decode(&mut &*transaction).unwrap();
@@ -681,17 +681,23 @@ fn lockdrop_request_pow() {
     assert_eq!(pow_byte, 0);
 }
 
-/*
-#[test]
-fn btc_recover_works() {
-    use sp_core::ecdsa::{Public, Signature};
-    let msg = "sign test bitcoin message";
-    let public = Public::from_full(&hex!["04e2e48305a063c3d53421a3da8f452d03f06ccf9a192f707a1989b34af92bc9386e5abef3417cad1fbe20858591631cd5793cea033e61a4c91958c0d4a12bb829"][..]).unwrap();
-    let signature = Signature::from_raw(hex!["1f879061a1ba6c3b21fadc27a50c8a1c6091bd225724444a21abc0eb7ef2471ffa52d9c50f6e3bc41dd35d628bd74e3c169e21d3f24e2aa439b914068f16d0802e"]);
-    assert_eq!(btc_recover(&signature, msg.as_ref()), Some(public));
-}
-
 #[test]
 fn eth_recover_works() {
+    use sp_core::ecdsa;
+    let msg = "test eth signed message";
+    let pair = ecdsa::Pair::from_seed(&hex![
+        "7e9c7ad85df5cdc88659f53e06fb2eb9bab3ebc59083a3190eaf2c730332529c"
+    ]);
+    let signature = ecdsa::Signature::from_raw(hex!["dd0992d40e5cdf99db76bed162808508ac65acd7ae2fdc8573594f03ed9c939773e813181788fc02c3c68f3fdc592759b35f6354484343e18cb5317d34dab6c61b"]);
+    assert_eq!(eth_recover(&signature, msg.as_ref()), Some(pair.public()));
+
+    let claim_id = H256::from(hex![
+        "952e4e0f1f15f5b3828632320c0bcb4941c164974e08bea2e3996ae74c64cf58"
+    ]);
+    let account_id = AccountId::from(hex![
+        "16eb796bee0c857db3d646ee7070252707aec0c7d82b2eda856632f6a2306a58"
+    ]);
+    let msg2 = PlasmLockdrop::claim_message(&claim_id, &account_id);
+    let signature2 = ecdsa::Signature::from_raw(hex!["80137f73ee7c3dc73f1219916dc58deb7ea2b9b00f39dbb01773038ec352efab5c4caf412b40a176a591db858cfa8717fe9f8b81cfd6d40905877c3e301320791b"]);
+    assert_eq!(eth_recover(&signature2, msg2.as_ref()), Some(pair.public()));
 }
-*/

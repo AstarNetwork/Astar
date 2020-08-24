@@ -1,6 +1,6 @@
 [package]
 name = "plasm-runtime"
-version = "1.4.0"
+version = "1.5.0"
 authors = ["Stake Technologies <devops@stake.co.jp>"]
 edition = "2018"
 build = "build.rs"
@@ -14,19 +14,19 @@ hex-literal = { version = "0.2", optional = true }
 
 # primitives
 plasm-primitives = { path = "../primitives", default-features = false }
-sp-core = { version = "2.0.0-rc5", default-features = false }
-sp-io = { version = "2.0.0-rc5", default-features = false }
-sp-runtime = { version = "2.0.0-rc5", default-features = false }
-sp-runtime-interface = { version = "2.0.0-rc5", default-features = false }
-sp-consensus-babe = { version = "0.8.0-rc5", default-features = false }
-sp-offchain = { version = "2.0.0-rc5", default-features = false }
-sp-api = { version = "2.0.0-rc5", default-features = false }
-sp-inherents = { version = "2.0.0-rc5", default-features = false }
-sp-block-builder = { version = "2.0.0-rc5", default-features = false }
-sp-transaction-pool = { version = "2.0.0-rc5", default-features = false }
-sp-std = { version = "2.0.0-rc5", default-features = false }
-sp-version = { version = "2.0.0-rc5", default-features = false }
-sp-session = { version = "2.0.0-rc5", default-features = false }
+sp-core = { version = "2.0.0-rc6", default-features = false }
+sp-io = { version = "2.0.0-rc6", default-features = false }
+sp-runtime = { version = "2.0.0-rc6", default-features = false }
+sp-runtime-interface = { version = "2.0.0-rc6", default-features = false }
+sp-consensus-babe = { version = "0.8.0-rc6", default-features = false }
+sp-offchain = { version = "2.0.0-rc6", default-features = false }
+sp-api = { version = "2.0.0-rc6", default-features = false }
+sp-inherents = { version = "2.0.0-rc6", default-features = false }
+sp-block-builder = { version = "2.0.0-rc6", default-features = false }
+sp-transaction-pool = { version = "2.0.0-rc6", default-features = false }
+sp-std = { version = "2.0.0-rc6", default-features = false }
+sp-version = { version = "2.0.0-rc6", default-features = false }
+sp-session = { version = "2.0.0-rc6", default-features = false }
 
 # frame dependencies
 pallet-contract-operator = { path = "../../../frame/operator", default-features = false }
@@ -37,25 +37,25 @@ pallet-plasm-validator = { path = "../../../frame/plasm-validator", default-feat
 pallet-plasm-lockdrop = { path = "../../../frame/plasm-lockdrop", default-features = false }
 pallet-ovm = { path = "../../../frame/ovm", default-features = false }
 pallet-plasma = { path = "../../../frame/plasma", default-features = false }
-frame-executive = { version = "2.0.0-rc5", default-features = false }
-pallet-authorship = { version = "2.0.0-rc5", default-features = false }
-pallet-babe = { version = "2.0.0-rc5", default-features = false }
-pallet-balances = { version = "2.0.0-rc5", default-features = false }
-pallet-contracts = { version = "=2.0.0-rc4", default-features = false }
-pallet-contracts-primitives = { version = "=2.0.0-rc4", default-features = false }
-pallet-contracts-rpc-runtime-api = { version = "=0.8.0-rc4", default-features = false }
-pallet-finality-tracker = { version = "2.0.0-rc5", default-features = false }
-pallet-grandpa = { version = "2.0.0-rc5", default-features = false }
-pallet-indices = { version = "2.0.0-rc5", default-features = false }
-pallet-randomness-collective-flip = { version = "2.0.0-rc5", default-features = false }
-pallet-session = { version = "2.0.0-rc5", default-features = false, features = ["historical"] }
-pallet-sudo = { version = "2.0.0-rc5", default-features = false }
-frame-support = { version = "2.0.0-rc5", default-features = false }
-frame-system = { version = "2.0.0-rc5", default-features = false }
-frame-system-rpc-runtime-api = { version = "2.0.0-rc5", default-features = false }
-pallet-timestamp = { version = "2.0.0-rc5", default-features = false }
-pallet-transaction-payment = { version = "2.0.0-rc5", default-features = false }
-pallet-transaction-payment-rpc-runtime-api = { version = "2.0.0-rc5", default-features = false }
+pallet-contracts = { path = "../../../frame/contracts", default-features = false }
+pallet-contracts-primitives = { path = "../../../frame/contracts/common", default-features = false }
+pallet-contracts-rpc-runtime-api = { path = "../../../frame/contracts/rpc/runtime-api", default-features = false }
+frame-executive = { version = "2.0.0-rc6", default-features = false }
+pallet-authorship = { version = "2.0.0-rc6", default-features = false }
+pallet-babe = { version = "2.0.0-rc6", default-features = false }
+pallet-balances = { version = "2.0.0-rc6", default-features = false }
+pallet-finality-tracker = { version = "2.0.0-rc6", default-features = false }
+pallet-grandpa = { version = "2.0.0-rc6", default-features = false }
+pallet-indices = { version = "2.0.0-rc6", default-features = false }
+pallet-randomness-collective-flip = { version = "2.0.0-rc6", default-features = false }
+pallet-session = { version = "2.0.0-rc6", default-features = false, features = ["historical"] }
+pallet-sudo = { version = "2.0.0-rc6", default-features = false }
+frame-support = { version = "2.0.0-rc6", default-features = false }
+frame-system = { version = "2.0.0-rc6", default-features = false }
+frame-system-rpc-runtime-api = { version = "2.0.0-rc6", default-features = false }
+pallet-timestamp = { version = "2.0.0-rc6", default-features = false }
+pallet-transaction-payment = { version = "2.0.0-rc6", default-features = false }
+pallet-transaction-payment-rpc-runtime-api = { version = "2.0.0-rc6", default-features = false }
 
 
 [build-dependencies]

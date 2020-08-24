@@ -170,6 +170,7 @@ pub enum Lockdrop {
         value: u128,
     },
     /// Ethereum lockdrop transactions sent to pre-deployed smart contract.
+    #[codec(index = 1)]
     Ethereum {
         transaction_hash: H256,
         public_key: ecdsa::Public,
@@ -180,7 +181,7 @@ pub enum Lockdrop {
 
 impl Default for Lockdrop {
     fn default() -> Self {
-        Lockdrop::Bitcoin {
+        Lockdrop::Ethereum {
             public_key: Default::default(),
             value: Default::default(),
             duration: Default::default(),
@@ -328,16 +329,19 @@ decl_module! {
                 ensure!(Self::is_active(now), Error::<T>::OutOfBounds);
 
                 let amount = match params {
-                    Lockdrop::Bitcoin { value, duration, .. } => {
+                    Lockdrop::Bitcoin { .. } => {
                         // Cast bitcoin value to PLM order:
                         // satoshi = BTC * 10^9;
                         // PLM unit = PLM * 10^15;
                         // (it also helps to make evaluations more precise)
-                        let value_btc = value * 1_000_000;
-                        Self::btc_issue_amount(value_btc, duration)
+                        //let value_btc = value * 1_000_000;
+                        //Self::btc_issue_amount(value_btc, duration)
+
+                        // XXX
+                        0
                     },
                     Lockdrop::Ethereum { value, duration, .. } => {
-                        // Cast bitcoin value to PLM order:
+                        // Cast Ethereum value to PLM order:
                         // satoshi = ETH * 10^18;
                         // PLM unit = PLM * 10^15;
                         // (it also helps to make evaluations more precise)
@@ -517,12 +521,12 @@ decl_module! {
 impl<T: Trait> Module<T> {
     /// The main offchain worker entry point.
     fn offchain() -> Result<(), ()> {
-        let btc_price: f32 = BitcoinPrice::fetch()?;
-        let eth_price: f32 = EthereumPrice::fetch()?;
-        // TODO: add delay to prevent frequent transaction sending
-        Self::send_dollar_rate((btc_price as u32).into(), (eth_price as u32).into())?;
-
-        // TODO: use permanent storage to track request when temporary failed
+        for key in T::AuthorityId::all() {
+            let delay = T::Time::now() - <DollarRateF<T>>::get(key.clone()).0;
+            if delay > T::MedianFilterExpire::get() {
+                Self::send_dollar_rate(key)?;
+            }
+        }
         Self::claim_request_oracle()
     }
 
@@ -567,28 +571,35 @@ impl<T: Trait> Module<T> {
     }
 
     /// Send dollar rate as unsigned extrinsic from authority.
-    fn send_dollar_rate(btc: T::DollarRate, eth: T::DollarRate) -> Result<(), ()> {
-        for key in T::AuthorityId::all() {
-            if let Some(authority) = Self::authority_index_of(&key) {
-                let rate = TickerRate {
-                    authority,
-                    btc,
-                    eth,
-                };
-                let signature = key.sign(&rate.encode()).ok_or(())?;
-                let call = Call::set_dollar_rate(rate, signature);
-                debug::debug!(
-                    target: "lockdrop-offchain-worker",
-                    "dollar rate extrinsic: {:?}", call
-                );
+    fn send_dollar_rate(key: T::AuthorityId) -> Result<(), ()> {
+        if let Some(authority) = Self::authority_index_of(&key) {
+            let btc_price: f32 = BitcoinPrice::fetch()?;
+            let eth_price: f32 = EthereumPrice::fetch()?;
 
-                let res = SubmitTransaction::<T, Call<T>>::submit_unsigned_transaction(call.into());
-                debug::debug!(
-                    target: "lockdrop-offchain-worker",
-                    "dollar rate extrinsic send: {:?}", res
-                );
-            }
+            let rate = TickerRate {
+                authority,
+                btc: (btc_price as u32).into(),
+                eth: (eth_price as u32).into(),
+            };
+            let signature = key.sign(&rate.encode()).ok_or(())?;
+            let call = Call::set_dollar_rate(rate, signature);
+            debug::debug!(
+                target: "lockdrop-offchain-worker",
+                "dollar rate extrinsic: {:?}", call
+            );
+
+            let res = SubmitTransaction::<T, Call<T>>::submit_unsigned_transaction(call.into());
+            debug::debug!(
+                target: "lockdrop-offchain-worker",
+                "dollar rate extrinsic send: {:?}", res
+            );
+        } else {
+            debug::debug!(
+                target: "lockdrop-offchain-worker",
+                "key {:?} is not lockdrop authority", key
+            );
         }
+
         Ok(())
     }
 
@@ -596,18 +607,16 @@ impl<T: Trait> Module<T> {
     fn check_lock(claim_id: ClaimId) -> Result<bool, ()> {
         let Claim { params, .. } = Self::claims(claim_id);
         match params {
-            Lockdrop::Bitcoin {
-                public_key,
-                value,
-                duration,
-                transaction_hash,
-            } => {
-                let success = BitcoinLock::check(transaction_hash, public_key, duration, value)?;
-                debug::debug!(
-                    target: "lockdrop-offchain-worker",
-                    "claim id {} => lock result: {}", claim_id, success
-                );
-                Ok(success)
+            Lockdrop::Bitcoin { .. } => {
+                /*
+                    let success = BitcoinLock::check(transaction_hash, public_key, duration, value)?;
+                    debug::debug!(
+                        target: "lockdrop-offchain-worker",
+                        "claim id {} => lock result: {}", claim_id, success
+                    );
+                    Ok(success)
+                */
+                Err(())
             }
             Lockdrop::Ethereum {
                 transaction_hash,
@@ -658,12 +667,14 @@ impl<T: Trait> Module<T> {
         Ok(())
     }
 
+    /*
     /// PLM issue amount for given BTC value and locking duration (in secs).
     fn btc_issue_amount(value: u128, duration: u64) -> u128 {
         // https://medium.com/stake-technologies/plasm-lockdrop-introduction-99fa2dfc37c0
         let rate = Self::alpha() * Self::dollar_rate().0 * T::DurationBonus::bonus(duration).into();
         rate.into() * value
     }
+    */
 
     /// PLM issue amount for given ETH value and locking duration (in secs).
     fn eth_issue_amount(value: u128, duration: u64) -> u128 {
@@ -692,7 +703,11 @@ impl<T: Trait> Module<T> {
 
     /// Create message to sign it for claiming to custom address.
     fn claim_message(claim_id: &ClaimId, recipient: &T::AccountId) -> Vec<u8> {
-        todo!()
+        let mut v = b"I declare to claim lockdrop reward with ID ".to_vec();
+        v.extend(hex::encode(claim_id).bytes());
+        v.extend(" to AccountId ".bytes());
+        v.extend(hex::encode(recipient.encode()).bytes());
+        v
     }
 }
 
@@ -706,6 +721,11 @@ impl<T: Trait> frame_support::unsigned::ValidateUnsigned for Module<T> {
     fn validate_unsigned(_source: TransactionSource, call: &Self::Call) -> TransactionValidity {
         match call {
             Call::request(params, nonce) => {
+                if !matches!(params, Lockdrop::Ethereum{..}) {
+                    // Only Ethereum requests allowed
+                    return InvalidTransaction::Call.into();
+                }
+
                 let claim_id = BlakeTwo256::hash_of(&params);
                 if <Claims<T>>::get(claim_id).complete {
                     return InvalidTransaction::Custom(ERROR_ALREADY_CLAIMED).into();
@@ -765,11 +785,15 @@ impl<T: Trait> frame_support::unsigned::ValidateUnsigned for Module<T> {
 
                 let msg = Self::claim_message(claim_id, recipient);
                 match claim.params {
-                    Lockdrop::Bitcoin { public_key, .. } => {
-                        let signer = crypto::btc_recover(signature, msg.as_ref());
-                        if signer != Some(public_key) {
-                            return InvalidTransaction::BadProof.into();
-                        }
+                    Lockdrop::Bitcoin { .. } => {
+                        // Only Ethereum requests allowed
+                        return InvalidTransaction::Call.into();
+                        /*
+                            let signer = crypto::btc_recover(signature, msg.as_ref());
+                            if signer != Some(public_key) {
+                                return InvalidTransaction::BadProof.into();
+                            }
+                        */
                     }
                     Lockdrop::Ethereum { public_key, .. } => {
                         let signer = crypto::eth_recover(signature, msg.as_ref());
