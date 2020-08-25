@@ -1,6 +1,7 @@
 //! Chain specification.
 
 use plasm_primitives::{AccountId, Balance, Signature};
+use plasm_runtime::constants::currency::PLM;
 use plasm_runtime::Block;
 use plasm_runtime::{
     BabeConfig, BalancesConfig, ContractsConfig, GenesisConfig, GrandpaConfig, IndicesConfig,
@@ -93,7 +94,7 @@ fn testnet_genesis(
     endowed_accounts: Option<Vec<AccountId>>,
     sudo_key: AccountId,
 ) -> GenesisConfig {
-    const ENDOWMENT: Balance = 1_000_000_000_000_000_000;
+    const ENDOWMENT: Balance = 1_000_000_000 * PLM;
 
     let endowed_accounts: Vec<(AccountId, Balance)> = endowed_accounts
         .unwrap_or_else(|| {
