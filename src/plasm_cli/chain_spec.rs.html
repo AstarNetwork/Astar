@@ -748,10 +748,12 @@
 <span id="748">748</span>
 <span id="749">749</span>
 <span id="750">750</span>
+<span id="751">751</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="doccomment">//! Chain specification.</span>
 
 <span class="kw">use</span> <span class="ident">plasm_primitives</span>::{<span class="ident">AccountId</span>, <span class="ident">Balance</span>, <span class="ident">Signature</span>};
+<span class="kw">use</span> <span class="ident">plasm_runtime</span>::<span class="ident">constants</span>::<span class="ident">currency</span>::<span class="ident">PLM</span>;
 <span class="kw">use</span> <span class="ident">plasm_runtime</span>::<span class="ident">Block</span>;
 <span class="kw">use</span> <span class="ident">plasm_runtime</span>::{
     <span class="ident">BabeConfig</span>, <span class="ident">BalancesConfig</span>, <span class="ident">ContractsConfig</span>, <span class="ident">GenesisConfig</span>, <span class="ident">GrandpaConfig</span>, <span class="ident">IndicesConfig</span>,
@@ -844,7 +846,7 @@ const DUSTY_PROTOCOL_ID: &amp;str = &quot;pld&quot;;
     <span class="ident">endowed_accounts</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">AccountId</span><span class="op">&gt;</span><span class="op">&gt;</span>,
     <span class="ident">sudo_key</span>: <span class="ident">AccountId</span>,
 ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">GenesisConfig</span> {
-    <span class="kw">const</span> <span class="ident">ENDOWMENT</span>: <span class="ident">Balance</span> <span class="op">=</span> <span class="number">1_000_000_000_000_000_000</span>;
+    <span class="kw">const</span> <span class="ident">ENDOWMENT</span>: <span class="ident">Balance</span> <span class="op">=</span> <span class="number">1_000_000_000</span> <span class="op">*</span> <span class="ident">PLM</span>;
 
     <span class="kw">let</span> <span class="ident">endowed_accounts</span>: <span class="ident">Vec</span><span class="op">&lt;</span>(<span class="ident">AccountId</span>, <span class="ident">Balance</span>)<span class="op">&gt;</span> <span class="op">=</span> <span class="ident">endowed_accounts</span>
         .<span class="ident">unwrap_or_else</span>(<span class="op">|</span><span class="op">|</span> {
