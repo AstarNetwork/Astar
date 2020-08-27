@@ -1,1 +1,0 @@
-initSidebarItems({"enum":[["ContractExecResult","A result of execution of a contract."]],"trait":[["ContractsApi","The API to interact with contracts without using executive."]]});

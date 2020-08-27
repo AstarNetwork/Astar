@@ -280,14 +280,14 @@
     <span class="ident">C</span>: <span class="ident">HeaderBackend</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">HeaderMetadata</span><span class="op">&lt;</span><span class="ident">Block</span>, <span class="ident">Error</span> <span class="op">=</span> <span class="ident">BlockChainError</span><span class="op">&gt;</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
     <span class="ident">C</span>: <span class="ident">Send</span> <span class="op">+</span> <span class="ident">Sync</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
     <span class="ident">C</span>::<span class="ident">Api</span>: <span class="ident">substrate_frame_rpc_system</span>::<span class="ident">AccountNonceApi</span><span class="op">&lt;</span><span class="ident">Block</span>, <span class="ident">AccountId</span>, <span class="ident">Index</span><span class="op">&gt;</span>,
-    <span class="ident">C</span>::<span class="ident">Api</span>: <span class="ident">pallet_contracts_rpc</span>::<span class="ident">ContractsRuntimeApi</span><span class="op">&lt;</span><span class="ident">Block</span>, <span class="ident">AccountId</span>, <span class="ident">Balance</span>, <span class="ident">BlockNumber</span><span class="op">&gt;</span>,
+<span class="comment">//    C::Api: pallet_contracts_rpc::ContractsRuntimeApi&lt;Block, AccountId, Balance, BlockNumber&gt;,</span>
     <span class="ident">C</span>::<span class="ident">Api</span>: <span class="ident">pallet_transaction_payment_rpc</span>::<span class="ident">TransactionPaymentRuntimeApi</span><span class="op">&lt;</span><span class="ident">Block</span>, <span class="ident">Balance</span><span class="op">&gt;</span>,
     <span class="ident">C</span>::<span class="ident">Api</span>: <span class="ident">BabeApi</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span>,
     <span class="ident">C</span>::<span class="ident">Api</span>: <span class="ident">BlockBuilder</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span>,
     <span class="ident">P</span>: <span class="ident">TransactionPool</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
     <span class="ident">SC</span>: <span class="ident">SelectChain</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
 {
-    <span class="kw">use</span> <span class="ident">pallet_contracts_rpc</span>::{<span class="ident">Contracts</span>, <span class="ident">ContractsApi</span>};
+<span class="comment">//    use pallet_contracts_rpc::{Contracts, ContractsApi};</span>
     <span class="kw">use</span> <span class="ident">pallet_transaction_payment_rpc</span>::{<span class="ident">TransactionPayment</span>, <span class="ident">TransactionPaymentApi</span>};
     <span class="kw">use</span> <span class="ident">substrate_frame_rpc_system</span>::{<span class="ident">FullSystem</span>, <span class="ident">SystemApi</span>};
 
@@ -321,7 +321,7 @@
     <span class="comment">// Making synchronous calls in light client freezes the browser currently,</span>
     <span class="comment">// more context: https://github.com/paritytech/substrate/pull/3480</span>
     <span class="comment">// These RPCs should use an asynchronous caller instead.</span>
-    <span class="ident">io</span>.<span class="ident">extend_with</span>(<span class="ident">ContractsApi</span>::<span class="ident">to_delegate</span>(<span class="ident">Contracts</span>::<span class="ident">new</span>(<span class="ident">client</span>.<span class="ident">clone</span>())));
+    <span class="comment">//io.extend_with(ContractsApi::to_delegate(Contracts::new(client.clone())));</span>
     <span class="ident">io</span>.<span class="ident">extend_with</span>(<span class="ident">TransactionPaymentApi</span>::<span class="ident">to_delegate</span>(<span class="ident">TransactionPayment</span>::<span class="ident">new</span>(
         <span class="ident">client</span>.<span class="ident">clone</span>(),
     )));
