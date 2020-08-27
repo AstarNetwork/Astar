@@ -65,9 +65,9 @@ fn ethereum_signable_message(what: &[u8]) -> Vec<u8> {
 
 // Attempts to recover the Ethereum public key from a message signature signed by using
 // the Ethereum RPC's `personal_sign` and `eth_sign`.
-pub fn eth_recover(s: &ecdsa::Signature, what: &[u8]) -> Option<ecdsa::Public> {
+pub fn eth_recover(s: &[u8; 65], what: &[u8]) -> Option<ecdsa::Public> {
     let msg = keccak_256(&ethereum_signable_message(what));
-    let public = secp256k1_ecdsa_recover_compressed(s.as_ref(), &msg).ok()?;
+    let public = secp256k1_ecdsa_recover_compressed(s, &msg).ok()?;
     Some(ecdsa::Public::from_raw(public))
 }
 

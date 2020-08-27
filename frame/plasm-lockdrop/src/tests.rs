@@ -688,7 +688,7 @@ fn eth_recover_works() {
     let pair = ecdsa::Pair::from_seed(&hex![
         "7e9c7ad85df5cdc88659f53e06fb2eb9bab3ebc59083a3190eaf2c730332529c"
     ]);
-    let signature = ecdsa::Signature::from_raw(hex!["dd0992d40e5cdf99db76bed162808508ac65acd7ae2fdc8573594f03ed9c939773e813181788fc02c3c68f3fdc592759b35f6354484343e18cb5317d34dab6c61b"]);
+    let signature = hex!["dd0992d40e5cdf99db76bed162808508ac65acd7ae2fdc8573594f03ed9c939773e813181788fc02c3c68f3fdc592759b35f6354484343e18cb5317d34dab6c61b"];
     assert_eq!(eth_recover(&signature, msg.as_ref()), Some(pair.public()));
 
     let claim_id = H256::from(hex![
@@ -698,6 +698,6 @@ fn eth_recover_works() {
         "16eb796bee0c857db3d646ee7070252707aec0c7d82b2eda856632f6a2306a58"
     ]);
     let msg2 = PlasmLockdrop::claim_message(&claim_id, &account_id);
-    let signature2 = ecdsa::Signature::from_raw(hex!["80137f73ee7c3dc73f1219916dc58deb7ea2b9b00f39dbb01773038ec352efab5c4caf412b40a176a591db858cfa8717fe9f8b81cfd6d40905877c3e301320791b"]);
+    let signature2 = hex!["80137f73ee7c3dc73f1219916dc58deb7ea2b9b00f39dbb01773038ec352efab5c4caf412b40a176a591db858cfa8717fe9f8b81cfd6d40905877c3e301320791b"];
     assert_eq!(eth_recover(&signature2, msg2.as_ref()), Some(pair.public()));
 }

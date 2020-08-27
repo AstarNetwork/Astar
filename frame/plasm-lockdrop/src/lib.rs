@@ -63,6 +63,21 @@ mod tests;
 pub type BalanceOf<T> =
     <<T as Trait>::Currency as Currency<<T as frame_system::Trait>::AccountId>>::Balance;
 
+#[derive(Encode, Decode, Clone)]
+pub struct EcdsaSignature(pub [u8; 65]);
+
+impl PartialEq for EcdsaSignature {
+    fn eq(&self, other: &Self) -> bool {
+        &self.0[..] == &other.0[..]
+    }
+}
+
+impl sp_std::fmt::Debug for EcdsaSignature {
+    fn fmt(&self, f: &mut sp_std::fmt::Formatter<'_>) -> sp_std::fmt::Result {
+        write!(f, "EcdsaSignature({:?})", &self.0[..])
+    }
+}
+
 /// The module's main configuration trait.
 pub trait Trait: SendTransactionTypes<Call<Self>> + frame_system::Trait {
     /// The lockdrop balance.
@@ -379,7 +394,7 @@ decl_module! {
             recipient: T::AccountId,
             // since signature verification is done in `validate_unsigned`
             // we can skip doing it here again.
-            _signature: ecdsa::Signature,
+            _signature: EcdsaSignature,
         ) -> DispatchResult {
             ensure_none(origin)?;
             Self::claim_token(claim_id, Some(recipient))
@@ -796,7 +811,7 @@ impl<T: Trait> frame_support::unsigned::ValidateUnsigned for Module<T> {
                         */
                     }
                     Lockdrop::Ethereum { public_key, .. } => {
-                        let signer = crypto::eth_recover(signature, msg.as_ref());
+                        let signer = crypto::eth_recover(&signature.0, msg.as_ref());
                         if signer != Some(public_key) {
                             return InvalidTransaction::BadProof.into();
                         }
