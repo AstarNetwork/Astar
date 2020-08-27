@@ -1,0 +1,1 @@
+initSidebarItems({"macro":[["require",""],["require_with_message",""]],"mod":[["compiled_predicates",""],["executor",""],["predicates","Executable Predicates. Executable Predicates instanced from Compiled Predicates and Atomic Predicates."],["prepare",""]],"struct":[["AccountId","An opaque 32-byte cryptographic identifier."],["Range","An opaque Range(u128, u128)."]]});

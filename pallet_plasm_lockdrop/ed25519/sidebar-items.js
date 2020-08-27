@@ -1,0 +1,1 @@
+initSidebarItems({"type":[["AuthorityId","An authority identifier using ed25519 as its crypto."],["AuthorityPair","An authority keypair using ed25519 as its crypto."],["AuthoritySignature","An authority signature using ed25519 as its crypto."]]});
