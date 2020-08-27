@@ -350,7 +350,7 @@ impl pallet_finality_tracker::Trait for Runtime {
 }
 
 parameter_types! {
-    pub const MedianFilterExpire: Moment = 300; // 10 blocks is one minute, 300 - half hour
+    pub const MedianFilterExpire: Moment = 30000; // ms
     pub const LockdropUnsignedPriority: TransactionPriority = TransactionPriority::max_value();
 }
 
