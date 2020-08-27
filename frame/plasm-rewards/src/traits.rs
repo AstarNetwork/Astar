@@ -13,7 +13,7 @@ pub struct DefaultForDappsStaking<T: Trait> {
 }
 impl<T: Trait> ComputeEraWithParam<EraIndex> for DefaultForDappsStaking<T> {
     type Param = BalanceOf<T>;
-    fn compute(era: &EraIndex) -> BalanceOf<T> {
+    fn compute(_era: &EraIndex) -> BalanceOf<T> {
         0.into()
     }
 }
@@ -28,7 +28,7 @@ pub trait ComputeTotalPayout<ValidatorParam, DappsParam> {
         for_dapps_param: DappsParam,
     ) -> (N, N)
     where
-        N: BaseArithmetic + Clone + From<u32>,
+        N: BaseArithmetic + num_traits::sign::Unsigned + Clone + From<u32>,
         M: BaseArithmetic + Clone + From<u32>;
 }
 

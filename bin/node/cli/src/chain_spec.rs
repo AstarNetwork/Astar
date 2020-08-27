@@ -3,9 +3,9 @@
 use plasm_primitives::{AccountId, Balance, Signature};
 use plasm_runtime::Block;
 use plasm_runtime::{
-    BabeConfig, BalancesConfig, ContractsConfig, GenesisConfig, GrandpaConfig, IndicesConfig,
-    PlasmRewardsConfig, PlasmValidatorConfig, SessionConfig, SessionKeys, SudoConfig, SystemConfig,
-    WASM_BINARY,
+    BabeConfig, BalancesConfig, GenesisConfig, GrandpaConfig, IndicesConfig,
+    PlasmRewardsConfig, PlasmValidatorConfig, SessionConfig, SessionKeys,
+    SudoConfig, SystemConfig, WASM_BINARY,
 };
 use sc_chain_spec::ChainSpecExtension;
 use sc_service::ChainType;
@@ -13,9 +13,34 @@ use serde::{Deserialize, Serialize};
 use sp_consensus_babe::AuthorityId as BabeId;
 use sp_core::{sr25519, Pair, Public};
 use sp_finality_grandpa::AuthorityId as GrandpaId;
-use sp_runtime::traits::{IdentifyAccount, Verify};
+use sp_runtime::{
+    traits::{IdentifyAccount, Verify},
+};
 
 type AccountPublic = <Signature as Verify>::Signer;
+
+/*
+use hex_literal::hex;
+use sp_core::crypto::{Ss58Codec, UncheckedInto};
+use plasm_runtime::constants::currency::*;
+const STAGING_TELEMETRY_URL: &str = "wss://telemetry.polkadot.io/submit/";
+
+const PLASM_PROPERTIES: &str = r#"
+        {
+            "ss58Format": 5,
+            "tokenDecimals": 15,
+            "tokenSymbol": "PLM"
+        }"#;
+const PLASM_PROTOCOL_ID: &str = "plm";
+
+const DUSTY_PROPERTIES: &str = r#"
+        {
+            "ss58Format": 5,
+            "tokenDecimals": 15,
+            "tokenSymbol": "PLD"
+        }"#;
+const DUSTY_PROTOCOL_ID: &str = "pld";
+*/
 
 /// Node `ChainSpec` extensions.
 ///
@@ -94,7 +119,7 @@ fn make_genesis(
     keys: Vec<(AccountId, BabeId, GrandpaId)>,
     balances: Vec<(AccountId, Balance)>,
     root_key: AccountId,
-    enable_println: bool,
+    _enable_println: bool,
 ) -> GenesisConfig {
     GenesisConfig {
         frame_system: Some(SystemConfig {
@@ -109,9 +134,6 @@ fn make_genesis(
         pallet_plasm_validator: Some(PlasmValidatorConfig {
             validators: initial_authorities,
         }),
-        // pallet_dapps_staking: Some(DappsStakingConfig {
-        //     ..Default::default()
-        // }),
         pallet_session: Some(SessionConfig {
             keys: keys
                 .iter()
@@ -129,12 +151,6 @@ fn make_genesis(
         }),
         pallet_grandpa: Some(GrandpaConfig {
             authorities: vec![],
-        }),
-        pallet_contracts: Some(ContractsConfig {
-            current_schedule: pallet_contracts::Schedule {
-                enable_println, // this should only be enabled on development chains
-                ..Default::default()
-            },
         }),
         pallet_sudo: Some(SudoConfig { key: root_key }),
     }

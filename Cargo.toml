@@ -5,23 +5,12 @@ members = [
     "bin/node/runtime",
     "bin/node/primitives",
     "bin/subkey",
-    "frame/operator",
-    "frame/trading",
-    "frame/dapps-staking",
     "frame/plasm-rewards",
-    "frame/plasm-lockdrop",
     "frame/plasm-validator",
-    "frame/ovm",
-    "frame/ovm/rpc/runtime-api",
-    "frame/plasma",
-    "frame/plasma/rpc/runtime-api",
-    "ovmi/lib",
-    "ovmi/cli",
 ]
 
 exclude = [
-    "contracts/balances/.ink",
-    "contracts/cash/.ink",
+    "contracts",
 ]
 
 [profile.release]
