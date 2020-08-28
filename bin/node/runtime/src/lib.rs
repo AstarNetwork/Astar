@@ -55,8 +55,8 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     // and set impl_version to equal spec_version. If only runtime
     // implementation changes and behavior does not, then leave spec_version as
     // is and increment impl_version.
-    spec_version: 2,
-    impl_version: 2,
+    spec_version: 3,
+    impl_version: 3,
     apis: RUNTIME_API_VERSIONS,
 };
 
@@ -289,7 +289,7 @@ impl pallet_plasm_lockdrop::Trait for Runtime {
     type Call = Call;
     type SubmitTransaction = SubmitTransaction; 
     type Currency = Balances;
-    type DurationBonus = pallet_plasm_lockdrop::DustyDurationBonus;
+    type DurationBonus = pallet_plasm_lockdrop::PlasmDurationBonus;
     type MedianFilterExpire = MedianFilterExpire;
     type MedianFilterWidth = pallet_plasm_lockdrop::typenum::U5;
     type AuthorityId = pallet_plasm_lockdrop::sr25519::AuthorityId;

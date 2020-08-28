@@ -164,6 +164,24 @@ impl DurationBonus for DustyDurationBonus {
     }
 }
 
+pub struct PlasmDurationBonus;
+impl DurationBonus for PlasmDurationBonus {
+    fn bonus(duration: u64) -> u16 {
+        const DAYS: u64 = 24 * 60 * 60; // One day in seconds
+        if duration < 30 * DAYS {
+            0 // Dont permit to participate with locking less
+        } else if duration < 100 * DAYS {
+            24
+        } else if duration < 300 * DAYS {
+            100
+        } else if duration < 1000 * DAYS {
+            360
+        } else {
+            1600
+        }
+    }
+}
+
 /// Claim id is a hash of claim parameters.
 pub type ClaimId = H256;
 
