@@ -6,7 +6,7 @@ use plasm_runtime::Block;
 use plasm_runtime::{
     BabeConfig, BalancesConfig, ContractsConfig, GenesisConfig, GrandpaConfig, IndicesConfig,
     PlasmRewardsConfig, PlasmValidatorConfig, SessionConfig, SessionKeys, SudoConfig, SystemConfig,
-    WASM_BINARY,
+    PlasmLockdropConfig, WASM_BINARY,
 };
 use sc_chain_spec::ChainSpecExtension;
 use sc_service::ChainType;
@@ -15,6 +15,7 @@ use sp_consensus_babe::AuthorityId as BabeId;
 use sp_core::{sr25519, Pair, Public};
 use sp_finality_grandpa::AuthorityId as GrandpaId;
 use sp_runtime::traits::{IdentifyAccount, Verify};
+use sp_runtime::Perbill;
 
 type AccountPublic = <Signature as Verify>::Signer;
 
@@ -160,6 +161,17 @@ fn make_genesis(
                 ..Default::default()
             },
             gas_price: 1 * MILLIPLM,
+        }),
+        pallet_plasm_lockdrop: Some(PlasmLockdropConfig {
+            // Alpha2: 0.44698108660714747
+            alpha: Perbill::from_parts(446_981_087),
+            // Price in dollars: BTC $11000, ETH $400
+            dollar_rate: (11_000, 400),
+            vote_threshold: 1,
+            positive_votes: 1,
+            // Start from launch for testing purposes
+            lockdrop_bounds: (0, 1_000),
+            keys: vec![],
         }),
         pallet_sudo: Some(SudoConfig { key: root_key }),
     }

@@ -20,7 +20,10 @@ use sp_runtime::traits::{
     StaticLookup, Verify,
 };
 use sp_runtime::transaction_validity::{TransactionSource, TransactionValidity};
-use sp_runtime::{create_runtime_str, generic, impl_opaque_keys, ApplyExtrinsicResult, Perbill};
+use sp_runtime::{
+    create_runtime_str, generic, impl_opaque_keys,
+    ApplyExtrinsicResult, Perbill, MultiSigner,
+};
 use sp_std::prelude::*;
 #[cfg(any(feature = "std", test))]
 use sp_version::NativeVersion;
@@ -52,8 +55,8 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     // and set impl_version to equal spec_version. If only runtime
     // implementation changes and behavior does not, then leave spec_version as
     // is and increment impl_version.
-    spec_version: 1,
-    impl_version: 1,
+    spec_version: 2,
+    impl_version: 2,
     apis: RUNTIME_API_VERSIONS,
 };
 
@@ -274,6 +277,30 @@ impl pallet_operator_trading::Trait for Runtime {
     type Event = Event;
 }
 
+parameter_types! {
+    pub const MedianFilterExpire: Moment = 600000; // ms, 10 min
+}
+
+/// A unsigned transaction submitter.
+pub type SubmitTransaction =
+    frame_system::offchain::TransactionSubmitter<(), Runtime, UncheckedExtrinsic>;
+
+impl pallet_plasm_lockdrop::Trait for Runtime {
+    type Call = Call;
+    type SubmitTransaction = SubmitTransaction; 
+    type Currency = Balances;
+    type DurationBonus = pallet_plasm_lockdrop::DustyDurationBonus;
+    type MedianFilterExpire = MedianFilterExpire;
+    type MedianFilterWidth = pallet_plasm_lockdrop::typenum::U5;
+    type AuthorityId = pallet_plasm_lockdrop::sr25519::AuthorityId;
+    type Account = MultiSigner;
+    type Time = Timestamp;
+    type Moment = Moment;
+    type DollarRate = Balance;
+    type BalanceConvert = Balance;
+    type Event = Event;
+}
+
 impl pallet_sudo::Trait for Runtime {
     type Event = Event;
     type Call = Call;
@@ -292,14 +319,6 @@ impl pallet_finality_tracker::Trait for Runtime {
     type OnFinalizationStalled = Grandpa;
     type WindowSize = WindowSize;
     type ReportLatency = ReportLatency;
-}
-
-parameter_types! {
-    pub const BitcoinTickerUri: &'static str = "http://api.coingecko.com/api/v3/coins/bitcoin";
-    pub const EthereumTickerUri: &'static str = "http://api.coingecko.com/api/v3/coins/ethereum";
-    pub const BitcoinApiUri: &'static str = "http://api.blockcypher.com/v1/btc/test3/txs";
-    pub const EthereumApiUri: &'static str = "http://api.blockcypher.com/v1/eth/test/txs";
-    pub const MedianFilterExpire: Moment = 300; // 10 blocks is one minute, 300 - half hour
 }
 
 impl frame_system::offchain::CreateTransaction<Runtime, UncheckedExtrinsic> for Runtime {
@@ -334,6 +353,7 @@ impl frame_system::offchain::CreateTransaction<Runtime, UncheckedExtrinsic> for 
     }
 }
 
+//PlasmLockdrop: pallet_plasm_lockdrop::{Module, Call, Storage, Event<T>, Config<T>, ValidateUnsigned},
 construct_runtime!(
     pub enum Runtime where
         Block = Block,
@@ -348,6 +368,7 @@ construct_runtime!(
         Contracts: pallet_contracts::{Module, Call, Storage, Event<T>, Config<T>},
         PlasmValidator: pallet_plasm_validator::{Module, Call, Storage, Event<T>, Config<T>},
         PlasmRewards: pallet_plasm_rewards::{Module, Call, Storage, Event<T>, Config},
+        PlasmLockdrop: pallet_plasm_lockdrop::{Module, Call, Storage, Event<T>, Config<T>, ValidateUnsigned},
         Session: pallet_session::{Module, Call, Storage, Event, Config<T>},
         Babe: pallet_babe::{Module, Call, Storage, Config, Inherent(Timestamp)},
         Grandpa: pallet_grandpa::{Module, Call, Storage, Config, Event},

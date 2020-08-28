@@ -70,9 +70,11 @@ pallet-dapps-staking = { path = "../../../frame/dapps-staking" }
 # CLI-specific dependencies
 sc-cli = { version = "0.8.0-alpha.6", optional = true }
 frame-benchmarking-cli = { version = "2.0.0-alpha.6", optional = true }
+lockdrop-oracle = { path = "./lockdrop-oracle" }
 
 [build-dependencies]
 sc-cli = "0.8.0-alpha.6"
+lockdrop-oracle = { path = "./lockdrop-oracle" }
 frame-benchmarking-cli = { version = "2.0.0-alpha.6", optional = true }
 build-script-utils = { package = "substrate-build-script-utils", version = "2.0.0-alpha.6" }
 structopt = { version = "0.3.8", optional = true }

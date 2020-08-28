@@ -29,7 +29,8 @@ use frame_support::{
     StorageMap, StorageValue,
 };
 use frame_system::{
-    self as system, ensure_none, ensure_signed, offchain::SubmitUnsignedTransaction,
+    self as system, ensure_none, ensure_root,
+    offchain::SubmitUnsignedTransaction,
 };
 pub use generic_array::typenum;
 use median::{Filter, ListNode};
@@ -41,17 +42,14 @@ use sp_runtime::{
         InvalidTransaction, TransactionPriority, TransactionSource, TransactionValidity,
         ValidTransaction,
     },
-    Perbill, RuntimeDebug,
+    DispatchResult, Perbill, RuntimeDebug,
 };
+use sp_std::collections::btree_set::BTreeSet;
 use sp_std::prelude::*;
 
-/// Bitcoin helpers.
-mod btc_utils;
 /// Authority keys.
 mod crypto;
-/// Ethereum helpers.
-mod eth_utils;
-/// Oracle traits.
+/// Oracle client.
 mod oracle;
 
 pub use crypto::*;
@@ -65,34 +63,40 @@ mod tests;
 pub type BalanceOf<T> =
     <<T as Trait>::Currency as Currency<<T as frame_system::Trait>::AccountId>>::Balance;
 
+#[derive(Encode, Decode, Clone)]
+pub struct EcdsaSignature(pub [u8; 65]);
+
+impl PartialEq for EcdsaSignature {
+    fn eq(&self, other: &Self) -> bool {
+        &self.0[..] == &other.0[..]
+    }
+}
+
+impl sp_std::fmt::Debug for EcdsaSignature {
+    fn fmt(&self, f: &mut sp_std::fmt::Formatter<'_>) -> sp_std::fmt::Result {
+        write!(f, "EcdsaSignature({:?})", &self.0[..])
+    }
+}
+
 /// The module's main configuration trait.
-pub trait Trait: system::Trait {
+pub trait Trait: frame_system::Trait {
+    /// A dispatchable call type.
+    type Call: From<Call<Self>>;
+
+    /// Let's define the helper we use to create signed transactions.
+    type SubmitTransaction: SubmitUnsignedTransaction<Self, <Self as Trait>::Call>;
+
     /// The lockdrop balance.
     type Currency: Currency<Self::AccountId>;
 
-    /// Bitcoin price oracle.
-    type BitcoinTicker: PriceOracle<Self::DollarRate>;
-
-    /// Ethereum price oracle.
-    type EthereumTicker: PriceOracle<Self::DollarRate>;
-
-    /// Bitcoin transaction oracle.
-    type BitcoinApi: ChainOracle<H256>;
-
-    /// Ethereum transaction oracle.
-    type EthereumApi: ChainOracle<H256>;
+    /// Lock duration bonuses.
+    type DurationBonus: DurationBonus;
 
     /// How long dollar rate parameters valid in secs.
     type MedianFilterExpire: Get<Self::Moment>;
 
     /// Median filter window size.
     type MedianFilterWidth: generic_array::ArrayLength<ListNode<Self::DollarRate>>;
-
-    /// A dispatchable call type.
-    type Call: From<Call<Self>>;
-
-    /// Let's define the helper we use to create signed transactions.
-    type SubmitTransaction: SubmitUnsignedTransaction<Self, <Self as Trait>::Call>;
 
     /// The identifier type for an authority.
     type AuthorityId: Member + Parameter + RuntimeAppPublic + Default + Ord;
@@ -116,7 +120,15 @@ pub trait Trait: system::Trait {
         + Into<u128>;
 
     /// Dollar rate number data type.
-    type DollarRate: Member + Parameter + AtLeast32Bit + Copy + Default + Into<u128> + From<u64>;
+    type DollarRate: Member
+        + Parameter
+        + AtLeast32Bit
+        + num_traits::sign::Unsigned
+        + Copy
+        + Default
+        + Into<u128>
+        + From<u64>
+        + sp_std::str::FromStr;
 
     // XXX: I don't known how to convert into Balance from u128 without it
     // TODO: Should be removed
@@ -125,6 +137,31 @@ pub trait Trait: system::Trait {
 
     /// The regular events type.
     type Event: From<Event<Self>> + Into<<Self as frame_system::Trait>::Event>;
+}
+
+/// Lock duration bonuses,
+/// in principle when you lock for long time you'll get more lockdrop tokens.
+pub trait DurationBonus {
+    /// Lockdrop bonus depends of lockding duration (in secs).
+    fn bonus(duration: u64) -> u16;
+}
+
+pub struct DustyDurationBonus;
+impl DurationBonus for DustyDurationBonus {
+    fn bonus(duration: u64) -> u16 {
+        const DAYS: u64 = 24 * 60 * 60; // One day in seconds
+        if duration < 3 * DAYS {
+            0 // Dont permit to participate with locking less
+        } else if duration < 10 * DAYS {
+            24
+        } else if duration < 30 * DAYS {
+            100
+        } else if duration < 100 * DAYS {
+            360
+        } else {
+            1600
+        }
+    }
 }
 
 /// Claim id is a hash of claim parameters.
@@ -145,24 +182,25 @@ pub enum Lockdrop {
     /// BTC token locked and could be spend some timestamp.
     /// Duration in blocks and value in shatoshi could be derived from BTC transaction.
     Bitcoin {
-        public: ecdsa::Public,
-        value: u128,
-        duration: u64,
         transaction_hash: H256,
+        public_key: ecdsa::Public,
+        duration: u64,
+        value: u128,
     },
-    /// Ethereum lockdrop transactions is sended to pre-deployed lockdrop smart contract.
+    /// Ethereum lockdrop transactions sent to pre-deployed smart contract.
+    #[codec(index = 1)]
     Ethereum {
-        public: ecdsa::Public,
-        value: u128,
-        duration: u64,
         transaction_hash: H256,
+        public_key: ecdsa::Public,
+        duration: u64,
+        value: u128,
     },
 }
 
 impl Default for Lockdrop {
     fn default() -> Self {
-        Lockdrop::Bitcoin {
-            public: Default::default(),
+        Lockdrop::Ethereum {
+            public_key: Default::default(),
             value: Default::default(),
             duration: Default::default(),
             transaction_hash: Default::default(),
@@ -173,10 +211,10 @@ impl Default for Lockdrop {
 /// Lockdrop claim request description.
 #[cfg_attr(feature = "std", derive(Eq))]
 #[derive(Encode, Decode, RuntimeDebug, PartialEq, Default, Clone)]
-pub struct Claim {
+pub struct Claim<AuthorityId: Ord> {
     params: Lockdrop,
-    approve: AuthorityVote,
-    decline: AuthorityVote,
+    approve: BTreeSet<AuthorityId>,
+    decline: BTreeSet<AuthorityId>,
     amount: u128,
     complete: bool,
 }
@@ -219,8 +257,23 @@ decl_event!(
     }
 );
 
+pub const ERROR_ALREADY_CLAIMED: u8 = 1;
+pub const ERROR_WRONG_POW_PROOF: u8 = 2;
+pub const ERROR_CLAIM_ON_VOTING: u8 = 3;
+pub const ERROR_UNKNOWN_AUTHORITY: u8 = 4;
+
 decl_error! {
     pub enum Error for Module<T: Trait> {
+        /// Unknown authority index in voting message.
+        UnknownAuthority,
+        /// This claim already paid to requester.
+        AlreadyPaid,
+        /// Votes for this claim isn't enough to pay it.
+        NotEnoughVotes,
+        /// Authorities reject this claim request.
+        NotApproved,
+        /// Lockdrop isn't run now, request could not be processed.
+        OutOfBounds,
     }
 }
 
@@ -229,17 +282,16 @@ decl_storage! {
         /// Offchain lock check requests made within this block execution.
         Requests get(fn requests): Vec<ClaimId>;
         /// List of lockdrop authority id's.
-        Keys get(fn keys): Vec<T::AuthorityId>;
+        Keys get(fn keys) config(): Vec<T::AuthorityId>;
         /// Token claim requests.
         Claims get(fn claims):
             map hasher(blake2_128_concat) ClaimId
-            => Claim;
+            => Claim<T::AuthorityId>;
         /// Double vote prevention registry.
         HasVote get(fn has_vote):
             double_map hasher(blake2_128_concat) T::AuthorityId, hasher(blake2_128_concat) ClaimId
             => bool;
-        /// Lockdrop alpha parameter (fixed point at 1_000_000_000).
-        /// α ∈ [0; 10]
+        /// Lockdrop alpha parameter, where α ∈ [0; 1]
         Alpha get(fn alpha) config(): Perbill;
         /// Lockdrop dollar rate parameter: BTC, ETH.
         DollarRate get(fn dollar_rate) config(): (T::DollarRate, T::DollarRate);
@@ -252,15 +304,15 @@ decl_storage! {
         /// How much positive votes requered to approve claim.
         ///   Positive votes = approve votes - decline votes.
         PositiveVotes get(fn positive_votes) config(): AuthorityVote;
-        /// Ethereum lockdrop contract address.
-        EthereumContract get(fn ethereum_contract) config(): [u8; 20];
-        /// Timestamp of finishing lockdrop.
-        LockdropEnd get(fn lockdrop_end) config(): T::Moment;
+        /// Timestamp bounds of lockdrop held period.
+        LockdropBounds get(fn lockdrop_bounds) config(): (T::BlockNumber, T::BlockNumber);
     }
 }
 
 decl_module! {
     pub struct Module<T: Trait> for enum Call where origin: T::Origin {
+        type Error = Error<T>;
+
         /// Initializing events
         fn deposit_event() = default;
 
@@ -270,114 +322,126 @@ decl_module! {
             // `on_initialize` functions, which allows us to set up some temporary state or - like
             // in this case - clean up other states
             <Requests>::kill();
-
+            // TODO: weight
             50_000
         }
 
         /// Request authorities to check locking transaction.
-        #[weight = SimpleDispatchInfo::FixedNormal(1_000_000)]
+        #[weight = SimpleDispatchInfo::FixedNormal(100_000)]
         fn request(
             origin,
             params: Lockdrop,
-        ) {
-            let _ = ensure_signed(origin)?;
-            let claim_id = BlakeTwo256::hash_of(&params);
-            ensure!(!<Claims>::get(claim_id).complete, "claim should not be already paid");
+            _nonce: H256,
+        ) -> DispatchResult {
+            ensure_none(origin)?;
 
-            if !<Claims>::contains_key(claim_id) {
+            let claim_id = BlakeTwo256::hash_of(&params);
+            ensure!(
+                !<Claims<T>>::get(claim_id).complete,
+                Error::<T>::AlreadyPaid,
+            );
+
+            if !<Claims<T>>::contains_key(claim_id) {
+                let now = <frame_system::Module<T>>::block_number();
+                ensure!(Self::is_active(now), Error::<T>::OutOfBounds);
+
                 let amount = match params {
-                    Lockdrop::Bitcoin { value, duration, .. } => {
-                        // Average block duration in BTC is 10 min = 600 sec
-                        let duration_sec = duration * 600;
+                    Lockdrop::Bitcoin { .. } => {
                         // Cast bitcoin value to PLM order:
                         // satoshi = BTC * 10^9;
                         // PLM unit = PLM * 10^15;
                         // (it also helps to make evaluations more precise)
-                        let value_btc = value * 1_000_000;
-                        Self::btc_issue_amount(value_btc, duration_sec.into())
+                        //let value_btc = value * 1_000_000;
+                        //Self::btc_issue_amount(value_btc, duration)
+
+                        // XXX
+                        0
                     },
                     Lockdrop::Ethereum { value, duration, .. } => {
-                        // Cast bitcoin value to PLM order:
+                        // Cast Ethereum value to PLM order:
                         // satoshi = ETH * 10^18;
                         // PLM unit = PLM * 10^15;
                         // (it also helps to make evaluations more precise)
                         let value_eth = value / 1_000;
-                        Self::eth_issue_amount(value_eth, duration.into())
+                        Self::eth_issue_amount(value_eth, duration)
                     }
                 };
                 let claim = Claim { params, amount, .. Default::default() };
-                <Claims>::insert(claim_id, claim);
+                <Claims<T>>::insert(claim_id, claim);
             }
 
             <Requests>::mutate(|requests| requests.push(claim_id));
             Self::deposit_event(RawEvent::ClaimRequest(claim_id));
+
+            Ok(())
         }
 
-        /// Claim tokens according to lockdrop procedure.
-        #[weight = SimpleDispatchInfo::FixedNormal(1_000_000)]
+        /// Claim tokens for the lockdrop public key.
+        #[weight = SimpleDispatchInfo::FixedNormal(100_000)]
         fn claim(
             origin,
             claim_id: ClaimId,
-        ) {
-            let _ = ensure_signed(origin)?;
-            let claim = <Claims>::get(claim_id);
-            ensure!(!claim.complete, "claim should be already paid");
+        ) -> DispatchResult {
+            ensure_none(origin)?;
+            Self::claim_token(claim_id, None)
+        }
 
-            if claim.approve + claim.decline < <VoteThreshold>::get() {
-                Err("this request don't get enough authority votes")?
-            }
-
-            if claim.approve.saturating_sub(claim.decline) < <PositiveVotes>::get() {
-                Err("this request don't approved by authorities")?
-            }
-
-            // Deposit lockdrop tokens on locking public key.
-            let account = match claim.params {
-                Lockdrop::Bitcoin { public, .. }  => T::Account::from(public).into_account(),
-                Lockdrop::Ethereum { public, .. } => T::Account::from(public).into_account(),
-            };
-            let amount: BalanceOf<T> = T::BalanceConvert::from(claim.amount).into();
-            T::Currency::deposit_creating(&account, amount);
-
-            // Finalize claim request
-            <Claims>::mutate(claim_id, |claim| claim.complete = true);
-            Self::deposit_event(RawEvent::ClaimComplete(claim_id, account, amount));
+        /// Claim tokens for any account address.
+        #[weight = SimpleDispatchInfo::FixedNormal(100_000)]
+        fn claim_to(
+            origin,
+            claim_id: ClaimId,
+            recipient: T::AccountId,
+            // since signature verification is done in `validate_unsigned`
+            // we can skip doing it here again.
+            _signature: EcdsaSignature,
+        ) -> DispatchResult {
+            ensure_none(origin)?;
+            Self::claim_token(claim_id, Some(recipient))
         }
 
         /// Vote for claim request according to check results. (for authorities only)
-        #[weight = SimpleDispatchInfo::default()]
+        #[weight = SimpleDispatchInfo::FixedNormal(100_000)]
         fn vote(
             origin,
             vote: ClaimVote,
             // since signature verification is done in `validate_unsigned`
             // we can skip doing it here again.
             _signature: <T::AuthorityId as RuntimeAppPublic>::Signature,
-        ) {
+        ) -> DispatchResult {
             ensure_none(origin)?;
-
-            <Claims>::mutate(&vote.claim_id, |claim|
-                if vote.approve { claim.approve += 1 }
-                else { claim.decline += 1 }
-            );
 
             let keys = Keys::<T>::get();
             if let Some(authority) = keys.get(vote.authority as usize) {
                 <HasVote<T>>::insert(authority, &vote.claim_id, true);
                 Self::deposit_event(RawEvent::ClaimResponse(vote.claim_id, authority.clone(), vote.approve));
+
+                <Claims<T>>::mutate(&vote.claim_id, |claim|
+                    if vote.approve {
+                        claim.approve.insert(authority.clone());
+                        claim.decline.remove(&authority);
+                    }
+                    else {
+                        claim.decline.insert(authority.clone());
+                        claim.approve.remove(&authority);
+                    }
+                );
+
+                Ok(())
             } else {
-                return Err("unable get authority by index")?;
+                Err(Error::<T>::UnknownAuthority)?
             }
         }
 
         /// Dollar Rate oracle entrypoint. (for authorities only)
-        #[weight = SimpleDispatchInfo::default()]
+        #[weight = SimpleDispatchInfo::FixedNormal(100_000)]
         fn set_dollar_rate(
             origin,
             rate: TickerRate<T::DollarRate>,
             // since signature verification is done in `validate_unsigned`
             // we can skip doing it here again.
             _signature: <T::AuthorityId as RuntimeAppPublic>::Signature,
-        ) {
+        ) -> DispatchResult {
             ensure_none(origin)?;
 
             let now = T::Time::now();
@@ -386,7 +450,7 @@ decl_module! {
             if let Some(authority) = keys.get(rate.authority as usize) {
                 DollarRateF::<T>::insert(authority, (now, rate.btc, rate.eth));
             } else {
-                return Err("unable to get authority by index")?;
+                return Err(Error::<T>::UnknownAuthority)?
             }
 
             let expire = T::MedianFilterExpire::get();
@@ -406,16 +470,59 @@ decl_module! {
 
             <DollarRate<T>>::put((btc_filtered_rate, eth_filtered_rate));
             Self::deposit_event(RawEvent::NewDollarRate(btc_filtered_rate, eth_filtered_rate));
+
+            Ok(())
+        }
+
+        /// Set lockdrop alpha value.
+        #[weight = SimpleDispatchInfo::FixedOperational(50_000)]
+        fn set_alpha(origin, alpha_parts: u32) {
+            ensure_root(origin)?;
+            <Alpha>::put(Perbill::from_parts(alpha_parts));
+        }
+
+        /// Set lockdrop held time.
+        #[weight = SimpleDispatchInfo::FixedOperational(50_000)]
+        fn set_bounds(origin, from: T::BlockNumber, to: T::BlockNumber) {
+            ensure_root(origin)?;
+            ensure!(from < to, "wrong arguments");
+            <LockdropBounds<T>>::put((from, to));
+        }
+
+        /// Set minimum of positive votes required for lock approve.
+        #[weight = SimpleDispatchInfo::FixedOperational(50_000)]
+        fn set_positive_votes(origin, count: AuthorityVote) {
+            ensure_root(origin)?;
+            ensure!(count > 0, "wrong argument");
+            <PositiveVotes>::put(count);
+        }
+
+        /// Set minimum votes required to pass lock confirmation process.
+        #[weight = SimpleDispatchInfo::FixedOperational(50_000)]
+        fn set_vote_threshold(origin, count: AuthorityVote) {
+            ensure_root(origin)?;
+            ensure!(count > 0, "wrong argument");
+            <VoteThreshold>::put(count);
+        }
+
+        /// Set lockdrop authorities list.
+        #[weight = SimpleDispatchInfo::FixedOperational(50_000)]
+        fn set_authorities(origin, authorities: Vec<T::AuthorityId>) {
+            ensure_root(origin)?;
+            Keys::<T>::put(authorities.clone());
+            Self::deposit_event(RawEvent::NewAuthorities(authorities));
         }
 
         // Runs after every block within the context and current state of said block.
-        fn offchain_worker(_now: T::BlockNumber) {
-            debug::RuntimeLogger::init();
+        fn offchain_worker(now: T::BlockNumber) {
+            // Launch if validator and lockdrop is active.
+            if Self::is_active(now) && T::AuthorityId::all().len() > 0 {
+                debug::RuntimeLogger::init();
 
-            if sp_io::offchain::is_validator() {
                 match Self::offchain() {
                     Err(_) => debug::error!(
-                        target: "lockdrop-offchain-worker", "lockdrop worker failed"
+                        target: "lockdrop-offchain-worker",
+                        "lockdrop worker failed",
                     ),
                     _ => (),
                 }
@@ -427,10 +534,12 @@ decl_module! {
 impl<T: Trait> Module<T> {
     /// The main offchain worker entry point.
     fn offchain() -> Result<(), ()> {
-        // TODO: add delay to prevent frequent transaction sending
-        Self::send_dollar_rate(T::BitcoinTicker::fetch()?, T::EthereumTicker::fetch()?)?;
-
-        // TODO: use permanent storage to track request when temporary failed
+        for key in T::AuthorityId::all() {
+            let delay = T::Time::now() - <DollarRateF<T>>::get(key.clone()).0;
+            if delay > T::MedianFilterExpire::get() {
+                Self::send_dollar_rate(key)?;
+            }
+        }
         Self::claim_request_oracle()
     }
 
@@ -474,28 +583,35 @@ impl<T: Trait> Module<T> {
     }
 
     /// Send dollar rate as unsigned extrinsic from authority.
-    fn send_dollar_rate(btc: T::DollarRate, eth: T::DollarRate) -> Result<(), ()> {
-        for key in T::AuthorityId::all() {
-            if let Some(authority) = Self::authority_index_of(&key) {
-                let rate = TickerRate {
-                    authority,
-                    btc,
-                    eth,
-                };
-                let signature = key.sign(&rate.encode()).ok_or(())?;
-                let call = Call::set_dollar_rate(rate, signature);
-                debug::debug!(
-                    target: "lockdrop-offchain-worker",
-                    "dollar rate extrinsic: {:?}", call
-                );
+    fn send_dollar_rate(key: T::AuthorityId) -> Result<(), ()> {
+        if let Some(authority) = Self::authority_index_of(&key) {
+            let btc_price: f32 = BitcoinPrice::fetch()?;
+            let eth_price: f32 = EthereumPrice::fetch()?;
 
-                let res = T::SubmitTransaction::submit_unsigned(call);
-                debug::debug!(
-                    target: "lockdrop-offchain-worker",
-                    "dollar rate extrinsic send: {:?}", res
-                );
-            }
+            let rate = TickerRate {
+                authority,
+                btc: (btc_price as u32).into(),
+                eth: (eth_price as u32).into(),
+            };
+            let signature = key.sign(&rate.encode()).ok_or(())?;
+            let call = Call::set_dollar_rate(rate, signature);
+            debug::debug!(
+                target: "lockdrop-offchain-worker",
+                "dollar rate extrinsic: {:?}", call
+            );
+
+            let res = T::SubmitTransaction::submit_unsigned(call);
+            debug::debug!(
+                target: "lockdrop-offchain-worker",
+                "dollar rate extrinsic send: {:?}", res
+            );
+        } else {
+            debug::debug!(
+                target: "lockdrop-offchain-worker",
+                "key {:?} is not lockdrop authority", key
+            );
         }
+
         Ok(())
     }
 
@@ -503,90 +619,80 @@ impl<T: Trait> Module<T> {
     fn check_lock(claim_id: ClaimId) -> Result<bool, ()> {
         let Claim { params, .. } = Self::claims(claim_id);
         match params {
-            Lockdrop::Bitcoin {
-                public,
-                value,
-                duration,
-                transaction_hash,
-            } => {
-                let tx = T::BitcoinApi::fetch(transaction_hash)?;
-                debug::debug!(
-                    target: "lockdrop-offchain-worker",
-                    "claim id {} => fetched transaction: {:?}", claim_id, tx
-                );
-
-                let lock_script = btc_utils::lock_script(public, duration);
-                debug::debug!(
-                    target: "lockdrop-offchain-worker",
-                    "claim id {} => desired lock script: {}", claim_id, hex::encode(lock_script.clone())
-                );
-
-                let script = btc_utils::p2sh(&btc_utils::script_hash(&lock_script[..]));
-                debug::debug!(
-                    target: "lockdrop-offchain-worker",
-                    "claim id {} => desired P2HS script: {}", claim_id, hex::encode(script.clone())
-                );
-
-                let valid = tx.confirmations > 8 && tx.value == value && tx.script == script;
-                Ok(valid)
+            Lockdrop::Bitcoin { .. } => {
+                /*
+                    let success = BitcoinLock::check(transaction_hash, public_key, duration, value)?;
+                    debug::debug!(
+                        target: "lockdrop-offchain-worker",
+                        "claim id {} => lock result: {}", claim_id, success
+                    );
+                    Ok(success)
+                */
+                Err(())
             }
             Lockdrop::Ethereum {
-                public,
-                value,
-                duration,
                 transaction_hash,
+                public_key,
+                duration,
+                value,
             } => {
-                let tx = T::EthereumApi::fetch(transaction_hash)?;
+                let success = EthereumLock::check(transaction_hash, public_key, duration, value)?;
                 debug::debug!(
                     target: "lockdrop-offchain-worker",
-                    "claim id {} => fetched transaction: {:?}", claim_id, tx
+                    "claim id {} => lock result: {}", claim_id, success
                 );
-
-                let script = eth_utils::lock_method(duration);
-                debug::debug!(
-                    target: "lockdrop-offchain-worker",
-                    "claim id {} => desired lock script: {}", claim_id, hex::encode(script.clone())
-                );
-
-                let valid = tx.confirmations > 10
-                    && tx.value == value
-                    && tx.script == script
-                    && tx.recipient == <EthereumContract>::get()
-                    && tx.sender == eth_utils::to_address(public);
-                Ok(valid)
+                Ok(success)
             }
         }
     }
 
-    /// PLM issue amount for given BTC value and locking duration.
-    fn btc_issue_amount(value: u128, duration: T::Moment) -> u128 {
-        // https://medium.com/stake-technologies/plasm-lockdrop-introduction-99fa2dfc37c0
-        let rate = Self::alpha() * Self::dollar_rate().0 * Self::time_bonus(duration).into();
-        rate.into() * value * 10
+    fn claim_token(claim_id: ClaimId, recipient: Option<T::AccountId>) -> DispatchResult {
+        let claim = <Claims<T>>::get(claim_id);
+        ensure!(!claim.complete, Error::<T>::AlreadyPaid);
+
+        let approve = claim.approve.len();
+        let decline = claim.decline.len();
+        ensure!(
+            approve + decline >= <VoteThreshold>::get() as usize,
+            Error::<T>::NotEnoughVotes,
+        );
+        ensure!(
+            approve.saturating_sub(decline) >= <PositiveVotes>::get() as usize,
+            Error::<T>::NotApproved,
+        );
+
+        let account = recipient.unwrap_or({
+            // Deposit lockdrop tokens on locking public key.
+            let public_key = match claim.params {
+                Lockdrop::Bitcoin { public_key, .. } => public_key,
+                Lockdrop::Ethereum { public_key, .. } => public_key,
+            };
+            T::Account::from(public_key).into_account()
+        });
+        let amount: BalanceOf<T> = T::BalanceConvert::from(claim.amount).into();
+        T::Currency::deposit_creating(&account, amount);
+
+        // Finalize claim request
+        <Claims<T>>::mutate(claim_id, |claim| claim.complete = true);
+        Self::deposit_event(RawEvent::ClaimComplete(claim_id, account, amount));
+
+        Ok(())
     }
 
-    /// PLM issue amount for given ETH value and locking duration.
-    fn eth_issue_amount(value: u128, duration: T::Moment) -> u128 {
+    /*
+    /// PLM issue amount for given BTC value and locking duration (in secs).
+    fn btc_issue_amount(value: u128, duration: u64) -> u128 {
         // https://medium.com/stake-technologies/plasm-lockdrop-introduction-99fa2dfc37c0
-        let rate = Self::alpha() * Self::dollar_rate().1 * Self::time_bonus(duration).into();
-        rate.into() * value * 10
+        let rate = Self::alpha() * Self::dollar_rate().0 * T::DurationBonus::bonus(duration).into();
+        rate.into() * value
     }
+    */
 
-    /// Lockdrop bonus depends of lockding duration.
-    fn time_bonus(duration: T::Moment) -> u16 {
-        let days: u64 = 24 * 60 * 60; // One day in seconds
-        let duration_sec = Into::<u64>::into(duration);
-        if duration_sec < 30 * days {
-            0 // Dont permit to participate with locking less that one month
-        } else if duration_sec < 100 * days {
-            24
-        } else if duration_sec < 300 * days {
-            100
-        } else if duration_sec < 1000 * days {
-            360
-        } else {
-            1600
-        }
+    /// PLM issue amount for given ETH value and locking duration (in secs).
+    fn eth_issue_amount(value: u128, duration: u64) -> u128 {
+        // https://medium.com/stake-technologies/plasm-lockdrop-introduction-99fa2dfc37c0
+        let rate = Self::alpha() * Self::dollar_rate().1 * T::DurationBonus::bonus(duration).into();
+        rate.into() * value
     }
 
     /// Check that authority key list contains given account
@@ -600,37 +706,25 @@ impl<T: Trait> Module<T> {
         }
         None
     }
+
+    /// Check that block suits lockdrop bounds.
+    fn is_active(now: T::BlockNumber) -> bool {
+        let bounds = <LockdropBounds<T>>::get();
+        now >= bounds.0 && now < bounds.1
+    }
+
+    /// Create message to sign it for claiming to custom address.
+    fn claim_message(claim_id: &ClaimId, recipient: &T::AccountId) -> Vec<u8> {
+        let mut v = b"I declare to claim lockdrop reward with ID ".to_vec();
+        v.extend(hex::encode(claim_id).bytes());
+        v.extend(" to AccountId ".bytes());
+        v.extend(hex::encode(recipient.encode()).bytes());
+        v
+    }
 }
 
 impl<T: Trait> sp_runtime::BoundToRuntimeAppPublic for Module<T> {
     type Public = T::AuthorityId;
-}
-
-impl<T: Trait> pallet_session::OneSessionHandler<T::AccountId> for Module<T> {
-    type Key = T::AuthorityId;
-
-    fn on_genesis_session<'a, I: 'a>(validators: I)
-    where
-        I: Iterator<Item = (&'a T::AccountId, T::AuthorityId)>,
-    {
-        // Init authorities on genesis session.
-        let authorities: Vec<_> = validators.map(|x| x.1).collect();
-        Keys::<T>::put(authorities.clone());
-        Self::deposit_event(RawEvent::NewAuthorities(authorities));
-    }
-
-    fn on_new_session<'a, I: 'a>(_changed: bool, validators: I, _queued_validators: I)
-    where
-        I: Iterator<Item = (&'a T::AccountId, T::AuthorityId)>,
-    {
-        // Remember who the authorities are for the new session.
-        let authorities: Vec<_> = validators.map(|x| x.1).collect();
-        Keys::<T>::put(authorities.clone());
-        Self::deposit_event(RawEvent::NewAuthorities(authorities));
-    }
-
-    fn on_before_session_ending() {}
-    fn on_disabled(_i: usize) {}
 }
 
 impl<T: Trait> frame_support::unsigned::ValidateUnsigned for Module<T> {
@@ -638,9 +732,103 @@ impl<T: Trait> frame_support::unsigned::ValidateUnsigned for Module<T> {
 
     fn validate_unsigned(_source: TransactionSource, call: &Self::Call) -> TransactionValidity {
         match call {
+            Call::request(params, nonce) => {
+                if !matches!(params, Lockdrop::Ethereum{..}) {
+                    // Only Ethereum requests allowed
+                    return InvalidTransaction::Call.into();
+                }
+
+                let claim_id = BlakeTwo256::hash_of(&params);
+                if <Claims<T>>::get(claim_id).complete {
+                    return InvalidTransaction::Custom(ERROR_ALREADY_CLAIMED).into();
+                }
+
+                // Simple proof of work
+                let pow_byte = BlakeTwo256::hash_of(&(claim_id, nonce)).as_bytes()[0];
+                if pow_byte > 0 {
+                    return InvalidTransaction::Custom(ERROR_WRONG_POW_PROOF).into();
+                }
+
+                Ok(ValidTransaction {
+                    priority: TransactionPriority::max_value(), 
+                    requires: vec![],
+                    provides: vec![(params, nonce).encode()],
+                    longevity: 64_u64,
+                    propagate: true,
+                })
+            }
+
+            Call::claim(claim_id) => {
+                let claim = <Claims<T>>::get(claim_id);
+                if claim.complete {
+                    return InvalidTransaction::Custom(ERROR_ALREADY_CLAIMED).into();
+                }
+
+                let approve = claim.approve.len();
+                let decline = claim.decline.len();
+                let on_vote = approve + decline < <VoteThreshold>::get() as usize;
+                let not_approved =
+                    approve.saturating_sub(decline) < <PositiveVotes>::get() as usize;
+                if on_vote || not_approved {
+                    return InvalidTransaction::Custom(ERROR_CLAIM_ON_VOTING).into();
+                }
+
+                Ok(ValidTransaction {
+                    priority: TransactionPriority::max_value(), 
+                    requires: vec![],
+                    provides: vec![claim_id.encode()],
+                    longevity: 64_u64,
+                    propagate: true,
+                })
+            }
+
+            Call::claim_to(claim_id, recipient, signature) => {
+                let claim = <Claims<T>>::get(claim_id);
+                if claim.complete {
+                    return InvalidTransaction::Custom(ERROR_ALREADY_CLAIMED).into();
+                }
+
+                let approve = claim.approve.len();
+                let decline = claim.decline.len();
+                let on_vote = approve + decline < <VoteThreshold>::get() as usize;
+                let not_approved =
+                    approve.saturating_sub(decline) < <PositiveVotes>::get() as usize;
+                if on_vote || not_approved {
+                    return InvalidTransaction::Custom(ERROR_CLAIM_ON_VOTING).into();
+                }
+
+                let msg = Self::claim_message(claim_id, recipient);
+                match claim.params {
+                    Lockdrop::Bitcoin { .. } => {
+                        // Only Ethereum requests allowed
+                        return InvalidTransaction::Call.into();
+                        /*
+                            let signer = crypto::btc_recover(signature, msg.as_ref());
+                            if signer != Some(public_key) {
+                                return InvalidTransaction::BadProof.into();
+                            }
+                        */
+                    }
+                    Lockdrop::Ethereum { public_key, .. } => {
+                        let signer = crypto::eth_recover(&signature.0, msg.as_ref());
+                        if signer != Some(public_key) {
+                            return InvalidTransaction::BadProof.into();
+                        }
+                    }
+                }
+
+                Ok(ValidTransaction {
+                    priority: TransactionPriority::max_value(), 
+                    requires: vec![],
+                    provides: vec![(claim_id, recipient).encode()],
+                    longevity: 64_u64,
+                    propagate: true,
+                })
+            }
+
             Call::vote(vote, signature) => {
                 // Verify call params
-                if !<Claims>::contains_key(vote.claim_id.clone()) {
+                if !<Claims<T>>::contains_key(vote.claim_id.clone()) {
                     return InvalidTransaction::Call.into();
                 }
 
@@ -652,16 +840,12 @@ impl<T: Trait> frame_support::unsigned::ValidateUnsigned for Module<T> {
                         if !authority.verify(&encoded_vote, &signature) {
                             return InvalidTransaction::BadProof.into();
                         }
-                        // Double voting guard
-                        if <HasVote<T>>::get(authority, vote.claim_id.clone()) {
-                            return InvalidTransaction::Call.into();
-                        }
                     } else {
-                        return InvalidTransaction::BadProof.into();
+                        return InvalidTransaction::Custom(ERROR_UNKNOWN_AUTHORITY).into();
                     }
 
                     Ok(ValidTransaction {
-                        priority: TransactionPriority::max_value(),
+                        priority: TransactionPriority::max_value(), 
                         requires: vec![],
                         provides: vec![encoded_vote.to_vec()],
                         longevity: 64_u64,
@@ -679,11 +863,11 @@ impl<T: Trait> frame_support::unsigned::ValidateUnsigned for Module<T> {
                             return InvalidTransaction::BadProof.into();
                         }
                     } else {
-                        return InvalidTransaction::BadProof.into();
+                        return InvalidTransaction::Custom(ERROR_UNKNOWN_AUTHORITY).into();
                     }
 
                     Ok(ValidTransaction {
-                        priority: TransactionPriority::max_value(),
+                        priority: TransactionPriority::max_value(), 
                         requires: vec![],
                         provides: vec![encoded_rate.to_vec()],
                         longevity: 64_u64,

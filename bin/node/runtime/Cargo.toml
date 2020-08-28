@@ -32,9 +32,10 @@ sp-session = { version = "2.0.0-alpha.6", default-features = false }
 # frame dependencies
 pallet-contract-operator = { path = "../../../frame/operator", default-features = false }
 pallet-operator-trading = { path = "../../../frame/trading", default-features = false }
-pallet-dapps-staking = { path = "../../../frame/dapps-staking", default-features = false }
 pallet-plasm-rewards = { path = "../../../frame/plasm-rewards", default-features = false }
 pallet-plasm-validator = { path = "../../../frame/plasm-validator", default-features = false }
+pallet-dapps-staking = { path = "../../../frame/dapps-staking", default-features = false }
+pallet-plasm-lockdrop = { path = "../../../frame/plasm-lockdrop", default-features = false }
 frame-executive = { version = "2.0.0-alpha.6", default-features = false }
 pallet-babe = { version = "2.0.0-alpha.6", default-features = false }
 pallet-balances = { version = "2.0.0-alpha.6", default-features = false }
@@ -98,6 +99,7 @@ std = [
     "pallet-contract-operator/std",
     "pallet-operator-trading/std",
     "pallet-dapps-staking/std",
+    "pallet-plasm-lockdrop/std",
     "pallet-sudo/std",
     "pallet-timestamp/std",
     "pallet-transaction-payment/std",
