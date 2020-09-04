@@ -47,6 +47,7 @@ pallet-balances = { version = "2.0.0-rc6", default-features = false }
 pallet-finality-tracker = { version = "2.0.0-rc6", default-features = false }
 pallet-grandpa = { version = "2.0.0-rc6", default-features = false }
 pallet-indices = { version = "2.0.0-rc6", default-features = false }
+pallet-nicks = { version = "2.0.0-rc6", default-features = false }
 pallet-randomness-collective-flip = { version = "2.0.0-rc6", default-features = false }
 pallet-session = { version = "2.0.0-rc6", default-features = false, features = ["historical"] }
 pallet-sudo = { version = "2.0.0-rc6", default-features = false }
@@ -94,6 +95,7 @@ std = [
     "pallet-finality-tracker/std",
     "pallet-grandpa/std",
     "pallet-indices/std",
+    "pallet-nicks/std",
     "sp-offchain/std",
     "pallet-plasm-rewards/std",
     "pallet-plasm-validator/std",
