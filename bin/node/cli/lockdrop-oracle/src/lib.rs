@@ -14,23 +14,35 @@ mod eth_utils;
 
 pub use cli::Config;
 
+struct ServerState {
+    pub feeds_transport: web3::transports::Http,
+    pub ethereum_transport: web3::transports::Http,
+    pub lockdrop_contract: web3::types::Address,
+    pub safe_eth_confirmations: u64,
+}
+
 pub async fn start(config: Config) {
-    let mut app = tide::with_state(config);
+    let (_eloop, feeds_transport) =
+        web3::transports::Http::new(config.feeds_endpoint.as_str()).unwrap();
+    let (_eloop, ethereum_transport) =
+        web3::transports::Http::new(config.ethereum_endpoint.as_str()).unwrap();
+    let lockdrop_contract = config.lockdrop_contract.parse().unwrap();
+    let safe_eth_confirmations = config.safe_eth_confirmations;
+    let mut app = tide::with_state(ServerState {
+        feeds_transport,
+        ethereum_transport,
+        lockdrop_contract,
+        safe_eth_confirmations,
+    });
 
     app.at("/btc/ticker")
-        .get(|req: tide::Request<Config>| async move {
-            let endpoint = req.state().feeds_endpoint.as_str();
-            let usd_price = chainlink::btc_usd(endpoint) / 10_u128.pow(8);
+        .get(|req: tide::Request<ServerState>| async move {
+            let web3 = web3::Web3::new(req.state().feeds_transport.clone());
+            let usd_price = chainlink::btc_usd(web3) / 10_u128.pow(8);
             Ok(usd_price.to_string())
         });
 
-    app.at("/eth/ticker")
-        .get(|req: tide::Request<Config>| async move {
-            let endpoint = req.state().feeds_endpoint.as_str();
-            let usd_price = chainlink::eth_usd(endpoint) / 10_u128.pow(8);
-            Ok(usd_price.to_string())
-        });
-
+    /*
     app.at("/btc/lock")
         .post(|mut req: tide::Request<Config>| async move {
             let body = req.body_bytes().await?;
@@ -84,9 +96,17 @@ pub async fn start(config: Config) {
             log::debug!(target: "lockdrop-oracle", "transaction output (recipient and value) mismatch");
             Ok(Response::new(StatusCode::BadRequest))
         });
+    */
+
+    app.at("/eth/ticker")
+        .get(|req: tide::Request<ServerState>| async move {
+            let web3 = web3::Web3::new(req.state().feeds_transport.clone());
+            let usd_price = chainlink::eth_usd(web3) / 10_u128.pow(8);
+            Ok(usd_price.to_string())
+        });
 
     app.at("/eth/lock")
-        .post(|mut req: tide::Request<Config>| async move {
+        .post(|mut req: tide::Request<ServerState>| async move {
             let body = req.body_bytes().await?;
             let lock = LockCheck::decode(&mut &body[..])?;
             log::debug!(
@@ -94,9 +114,7 @@ pub async fn start(config: Config) {
                 "ETH lock check request: {:#?}", lock
             );
 
-            let (_eloop, transport) =
-                web3::transports::Http::new(req.state().ethereum_endpoint.as_str()).unwrap();
-            let web3 = web3::Web3::new(transport);
+            let web3 = web3::Web3::new(req.state().ethereum_transport.clone());
             let block_number = web3.eth().block_number().wait()?;
             let tx = web3
                 .eth()
@@ -143,7 +161,7 @@ pub async fn start(config: Config) {
             }
 
             // check that destination is lockdrop smart contract
-            if tx.to != Some(req.state().lockdrop_contract.parse()?) {
+            if tx.to != Some(req.state().lockdrop_contract) {
                 log::debug!(target: "lockdrop-oracle", "contract address mismatch");
                 return Ok(Response::new(StatusCode::BadRequest));
             }

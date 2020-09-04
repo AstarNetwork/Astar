@@ -1,14 +1,9 @@
 //! Lockdrop authorities keys.
 
 use sp_core::ecdsa;
-use sp_io::{
-    crypto::secp256k1_ecdsa_recover_compressed,
-    hashing::{keccak_256, sha2_256},
-};
+use sp_io::{crypto::secp256k1_ecdsa_recover_compressed, hashing::keccak_256};
 use sp_runtime::app_crypto::KeyTypeId;
 use sp_std::vec::Vec;
-
-use codec::Encode;
 
 /// Plasm Lockdrop Authority local KeyType.
 ///
@@ -70,12 +65,13 @@ fn ethereum_signable_message(what: &[u8]) -> Vec<u8> {
 
 // Attempts to recover the Ethereum public key from a message signature signed by using
 // the Ethereum RPC's `personal_sign` and `eth_sign`.
-pub fn eth_recover(s: &ecdsa::Signature, what: &[u8]) -> Option<ecdsa::Public> {
+pub fn eth_recover(s: &[u8; 65], what: &[u8]) -> Option<ecdsa::Public> {
     let msg = keccak_256(&ethereum_signable_message(what));
-    let public = secp256k1_ecdsa_recover_compressed(s.as_ref(), &msg).ok()?;
+    let public = secp256k1_ecdsa_recover_compressed(s, &msg).ok()?;
     Some(ecdsa::Public::from_raw(public))
 }
 
+/*
 // Constructs the message that Bitcoin RPC's would sign.
 fn bitcoin_signable_message(what: &[u8]) -> Vec<u8> {
     let mut l = what.len();
@@ -101,3 +97,4 @@ pub fn btc_recover(s: &ecdsa::Signature, what: &[u8]) -> Option<ecdsa::Public> {
         }
     }
 }
+*/

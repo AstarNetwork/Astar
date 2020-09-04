@@ -67,10 +67,10 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     // and set impl_version to equal spec_version. If only runtime
     // implementation changes and behavior does not, then leave spec_version as
     // is and increment impl_version.
-    spec_version: 2,
-    impl_version: 2,
+    spec_version: 4,
+    impl_version: 4,
     apis: RUNTIME_API_VERSIONS,
-    transaction_version: 1,
+    transaction_version: 2,
 };
 
 /// Native version.
@@ -350,7 +350,7 @@ impl pallet_finality_tracker::Trait for Runtime {
 }
 
 parameter_types! {
-    pub const MedianFilterExpire: Moment = 300; // 10 blocks is one minute, 300 - half hour
+    pub const MedianFilterExpire: Moment = 30000; // ms
     pub const LockdropUnsignedPriority: TransactionPriority = TransactionPriority::max_value();
 }
 
@@ -479,6 +479,22 @@ impl pallet_plasma::Trait for Runtime {
     type Event = Event;
 }
 
+parameter_types! {
+    pub const NickReservationFee: u128 = 0;
+    pub const MinNickLength: usize = 4;
+    pub const MaxNickLength: usize = 32;
+}
+
+impl pallet_nicks::Trait for Runtime {
+    type Event = Event;
+    type Currency = Balances;
+    type ReservationFee = NickReservationFee;
+    type Slashed = ();
+    type ForceOrigin = frame_system::EnsureRoot<AccountId>;
+    type MinLength = MinNickLength;
+    type MaxLength = MaxNickLength;
+}
+
 construct_runtime!(
     pub enum Runtime where
         Block = Block,
@@ -507,6 +523,7 @@ construct_runtime!(
         Sudo: pallet_sudo::{Module, Call, Storage, Event<T>, Config<T>},
         OVM: pallet_ovm::{Module, Call, Storage, Event<T>},
         Plasma: pallet_plasma::{Module, Call, Storage, Event<T>},
+        Nicks: pallet_nicks::{Module, Call, Storage, Event<T>},
     }
 );
 
@@ -722,9 +739,8 @@ impl_runtime_apis! {
     impl pallet_transaction_payment_rpc_runtime_api::TransactionPaymentApi<
         Block,
         Balance,
-        UncheckedExtrinsic,
     > for Runtime {
-        fn query_info(uxt: UncheckedExtrinsic, len: u32) -> RuntimeDispatchInfo<Balance> {
+        fn query_info(uxt: <Block as BlockT>::Extrinsic, len: u32) -> RuntimeDispatchInfo<Balance> {
             TransactionPayment::query_info(uxt, len)
         }
     }

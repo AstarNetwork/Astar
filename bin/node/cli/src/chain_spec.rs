@@ -1,6 +1,7 @@
 //! Chain specification.
 
 use plasm_primitives::{AccountId, Balance, Signature};
+use plasm_runtime::constants::currency::PLM;
 use plasm_runtime::Block;
 use plasm_runtime::{
     BabeConfig, BalancesConfig, ContractsConfig, GenesisConfig, GrandpaConfig, IndicesConfig,
@@ -93,7 +94,7 @@ fn testnet_genesis(
     endowed_accounts: Option<Vec<AccountId>>,
     sudo_key: AccountId,
 ) -> GenesisConfig {
-    const ENDOWMENT: Balance = 1_000_000_000_000_000_000;
+    const ENDOWMENT: Balance = 1_000_000_000 * PLM;
 
     let endowed_accounts: Vec<(AccountId, Balance)> = endowed_accounts
         .unwrap_or_else(|| {
@@ -138,12 +139,12 @@ fn make_genesis(
         pallet_plasm_lockdrop: Some(PlasmLockdropConfig {
             // Alpha2: 0.44698108660714747
             alpha: Perbill::from_parts(446_981_087),
-            // Price in cents: BTC $9100, ETH $230
-            dollar_rate: (9_100, 230),
-            vote_threshold: 0,
-            positive_votes: 0,
+            // Price in dollars: BTC $11000, ETH $400
+            dollar_rate: (11_000, 400),
+            vote_threshold: 1,
+            positive_votes: 1,
             // Start from launch for testing purposes
-            lockdrop_bounds: (0, 0),
+            lockdrop_bounds: (0, 1_000),
             keys: vec![],
         }),
         pallet_session: Some(SessionConfig {

@@ -1,7 +1,8 @@
+use crate::service::new_partial;
+///! Node command handler.
 use crate::{chain_spec, service, Cli, Subcommand};
-use plasm_runtime::Block;
 use sc_cli::{ChainSpec, Role, RuntimeVersion, SubstrateCli};
-use sc_service::ServiceParams;
+use sc_service::PartialComponents;
 
 impl SubstrateCli for Cli {
     fn impl_name() -> String {
@@ -57,39 +58,22 @@ pub fn run() -> sc_cli::Result<()> {
                 _ => service::new_full(config),
             })
         }
-        Some(Subcommand::Benchmark(cmd)) => {
-            if cfg!(feature = "runtime-benchmarks") {
-                let runner = cli.create_runner(cmd)?;
-
-                runner.sync_run(|config| cmd.run::<Block, service::Executor>(config))
-            } else {
-                println!(
-                    "Benchmarking wasn't enabled when building the node. \
-                You can enable it with `--features runtime-benchmarks`."
-                );
-                Ok(())
-            }
-        }
         Some(Subcommand::Base(subcommand)) => {
             let runner = cli.create_runner(subcommand)?;
-
             runner.run_subcommand(subcommand, |config| {
-                let (
-                    ServiceParams {
-                        client,
-                        backend,
-                        import_queue,
-                        task_manager,
-                        ..
-                    },
-                    ..,
-                ) = service::new_full_params(config)?;
+                let PartialComponents {
+                    client,
+                    backend,
+                    task_manager,
+                    import_queue,
+                    ..
+                } = new_partial(&config)?;
                 Ok((client, backend, import_queue, task_manager))
             })
         }
         Some(Subcommand::LockdropOracle(config)) => {
             sc_cli::init_logger("");
-            log::info!("Plasm Lockdrop oracle launched.");
+            log::info!("Plasm Lockdrop oracle launch...");
             Ok(futures::executor::block_on(lockdrop_oracle::start(
                 config.clone(),
             )))
