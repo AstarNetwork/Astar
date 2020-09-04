@@ -479,6 +479,22 @@ impl pallet_plasma::Trait for Runtime {
     type Event = Event;
 }
 
+parameter_types! {
+    pub const NickReservationFee: u128 = 0;
+    pub const MinNickLength: usize = 4;
+    pub const MaxNickLength: usize = 32;
+}
+
+impl pallet_nicks::Trait for Runtime {
+    type Event = Event;
+    type Currency = Balances;
+    type ReservationFee = NickReservationFee;
+    type Slashed = ();
+    type ForceOrigin = frame_system::EnsureRoot<AccountId>;
+    type MinLength = MinNickLength;
+    type MaxLength = MaxNickLength;
+}
+
 construct_runtime!(
     pub enum Runtime where
         Block = Block,
@@ -507,6 +523,7 @@ construct_runtime!(
         Sudo: pallet_sudo::{Module, Call, Storage, Event<T>, Config<T>},
         OVM: pallet_ovm::{Module, Call, Storage, Event<T>},
         Plasma: pallet_plasma::{Module, Call, Storage, Event<T>},
+        Nicks: pallet_nicks::{Module, Call, Storage, Event<T>},
     }
 );
 
