@@ -379,13 +379,14 @@ decl_module! {
             )?;
         }
 
-        // ------- CheckpointDispute parts -------
+        // TODO: ------- CheckpointDispute parts -------
         /// claim checkpoint
         ///  _propertyInputs: [encode(stateUpdate)]
         ///  _witness: [encode(inclusionProof)]
         ///  NOTE: might be possible to define concrete argument type but bytes[]
         #[weight = 100_000]
-        fn checkpoint_claim(inputs: Vec<Vec<u8>>, witness: Vec<Vec<u8>>) {
+        fn checkpoint_claim(origin, plapps_id: T::AccountId, inputs: Vec<Vec<u8>>, witness: Vec<Vec<u8>>) {
+             ensure_signed(origin)?;
             // validate inputs
             ensure!(
                 inputs.len() == 1,
@@ -416,7 +417,9 @@ decl_module! {
             );
 
             // claim property to DisputeManager
-            types.Property memory property = createProperty(_inputs[0], CHECKPOINT_CLAIM);
+            // TODO: WIP implmenting.
+            let prooerty = Self::create_property(&plapps_id, &_inputs[0], CHECKPOINT_CLAIM);
+            // types.Property memory property = createProperty(_inputs[0], CHECKPOINT_CLAIM);
             disputeManager.claim(property);
 
             emit CheckpointClaimed(stateUpdate, inclusionProof);
@@ -947,5 +950,16 @@ impl<T: Trait> Module<T> {
             T::Hashing::hash_of(&exit_predicate),
             T::Hashing::hash_of(&exit_deposit_predicate),
         ))
+    }
+
+    fn create_property(su_bytes: Vec<u8>, kind: Vec<u8>) -> PropertyOf<T> {
+        let mut inputs = vec![vec![], veec![]];
+        inputs[0] = kind;
+        inputs[1] = su_bytes;
+        PropertyOf::<T> {
+            predicate_address: su_bytes,
+            inputs:
+        }
+        return types.Property(address(this), inputs);
     }
 }
