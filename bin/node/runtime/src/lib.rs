@@ -16,6 +16,17 @@ use frame_support::{
 use pallet_contracts_rpc_runtime_api::ContractExecResult;
 use pallet_transaction_payment::{Multiplier, TargetedFeeAdjustment};
 use pallet_transaction_payment_rpc_runtime_api::RuntimeDispatchInfo;
+use xcm_executor::{
+    XcmExecutor, Config,
+    traits::{NativeAsset, IsConcrete, FilterAssetLocation},
+};
+use polkadot_parachain::primitives::Sibling;
+use xcm::v0::{MultiLocation, NetworkId, Junction, MultiAsset};
+use xcm_builder::{
+    ParentIsDefault, SiblingParachainConvertsVia, AccountId32Aliases, LocationInverter,
+    SovereignSignedViaLocation, SiblingParachainAsNative,
+    RelayChainAsNative, SignedAccountId32AsNative, CurrencyAdapter
+};
 use plasm_primitives::{
     AccountId, AccountIndex, Balance, BlockNumber, Hash, Index, Moment, Signature,
 };
@@ -55,8 +66,8 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("plasm_test_parachain"),
     impl_name: create_runtime_str!("staketechnologies-plasm"),
     authoring_version: 1,
-    spec_version: 1,
-    impl_version: 1,
+    spec_version: 2,
+    impl_version: 2,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 1,
 };
@@ -166,10 +177,6 @@ parameter_types! {
     pub const UncleGenerations: BlockNumber = 5;
 }
 
-impl_opaque_keys! {
-    pub struct SessionKeys {}
-}
-
 parameter_types! {
     pub const TombstoneDeposit: Balance = 1 * PLM;
     pub const RentByteFee: Balance = 1 * PLM;
@@ -202,21 +209,75 @@ impl pallet_sudo::Trait for Runtime {
     type Call = Call;
 }
 
-impl cumulus_message_broker::Trait for Runtime {
-    type Event = Event;
-    type DownwardMessageHandlers = TokenDealer;
-    type UpwardMessage = cumulus_upward_message::RococoUpwardMessage;
-    type ParachainId = ParachainInfo;
-    type XCMPMessage = cumulus_token_dealer::XCMPMessage<AccountId, Balance>;
-    type XCMPMessageHandlers = TokenDealer;
+parameter_types! {
+    pub const RocLocation: MultiLocation = MultiLocation::X1(Junction::Parent);
+    pub const RococoNetwork: NetworkId = NetworkId::Polkadot;
+    pub RelayChainOrigin: Origin = cumulus_message_broker::Origin::Relay.into();
+    pub Ancestry: MultiLocation = Junction::Parachain {
+        id: ParachainInfo::parachain_id().into()
+    }.into();
 }
 
-impl cumulus_token_dealer::Trait for Runtime {
+type LocationConverter = (
+    ParentIsDefault<AccountId>,
+    SiblingParachainConvertsVia<Sibling, AccountId>,
+    AccountId32Aliases<RococoNetwork, AccountId>,
+);
+
+type LocalAssetTransactor =
+    CurrencyAdapter<
+        // Use this currency:
+        Balances,
+        // Use this currency when it is a fungible asset matching the given location or name:
+        IsConcrete<RocLocation>,
+        // Do a simple punn to convert an AccountId32 MultiLocation into a native chain account ID:
+        LocationConverter,
+        // Our chain's account ID type (we can't get away without mentioning it explicitly):
+        AccountId,
+    >;
+
+type LocalOriginConverter = (
+    SovereignSignedViaLocation<LocationConverter, Origin>,
+    RelayChainAsNative<RelayChainOrigin, Origin>,
+    SiblingParachainAsNative<cumulus_message_broker::Origin, Origin>,
+    SignedAccountId32AsNative<RococoNetwork, Origin>,
+);
+
+pub struct XcmConfig;
+impl Config for XcmConfig {
+    type Call = Call;
+    type XcmSender = MessageBroker;
+    // How to withdraw and deposit an asset.
+    type AssetTransactor = LocalAssetTransactor;
+    type OriginConverter = LocalOriginConverter;
+    type IsReserve = NativeAsset;
+    type IsTeleporter = AcalaTeleport;
+    type LocationInverter = LocationInverter<Ancestry>;
+}
+
+pub struct AcalaTeleport;
+impl FilterAssetLocation for AcalaTeleport {
+    fn filter_asset_location(_asset: &MultiAsset, origin: &MultiLocation) -> bool {
+        frame_support::debug::print!("filter_asset_location {:?}", origin);
+        matches!(
+            origin,
+            &MultiLocation::X2(Junction::Parent, Junction::Parachain { id })
+                if id == 5000
+        )
+    }
+}
+
+impl cumulus_message_broker::Trait for Runtime {
     type Event = Event;
-    type UpwardMessageSender = MessageBroker;
-    type UpwardMessage = cumulus_upward_message::RococoUpwardMessage;
-    type Currency = Balances;
-    type XCMPMessageSender = MessageBroker;
+    type XcmExecutor = XcmExecutor<XcmConfig>;
+    type ParachainId = ParachainInfo;
+    type SendDownward = ();
+}
+
+impl pallet_xcm_handler::Trait for Runtime {
+    type Event = Event;
+    type AccountIdConverter = LocationConverter;
+    type XcmExecutor = XcmExecutor<XcmConfig>;
 }
 
 impl parachain_info::Trait for Runtime {}
@@ -296,8 +357,8 @@ construct_runtime!(
         RandomnessCollectiveFlip: pallet_randomness_collective_flip::{Module, Call, Storage},
         ParachainUpgrade: cumulus_parachain_upgrade::{Module, Call, Storage, Inherent, Event},
         ParachainInfo: parachain_info::{Module, Storage, Config},
-        MessageBroker: cumulus_message_broker::{Module, Call, Inherent, Event<T>},
-        TokenDealer: cumulus_token_dealer::{Module, Call, Event<T>},
+        MessageBroker: cumulus_message_broker::{Module, Call, Inherent, Event<T>, Origin},
+        XcmHandler: pallet_xcm_handler::{Module, Call, Event},
         Sudo: pallet_sudo::{Module, Call, Storage, Event<T>, Config<T>},
     }
 );
@@ -441,18 +502,6 @@ impl_runtime_apis! {
     > for Runtime {
         fn query_info(uxt: <Block as BlockT>::Extrinsic, len: u32) -> RuntimeDispatchInfo<Balance> {
             TransactionPayment::query_info(uxt, len)
-        }
-    }
-
-    impl sp_session::SessionKeys<Block> for Runtime {
-        fn generate_session_keys(seed: Option<Vec<u8>>) -> Vec<u8> {
-            SessionKeys::generate(seed)
-        }
-
-        fn decode_session_keys(
-            encoded: Vec<u8>,
-        ) -> Option<Vec<(Vec<u8>, sp_core::crypto::KeyTypeId)>> {
-            SessionKeys::decode_into_raw_public_keys(&encoded)
         }
     }
 }

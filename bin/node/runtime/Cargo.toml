@@ -44,12 +44,18 @@ pallet-transaction-payment = { git = "https://github.com/paritytech/substrate", 
 pallet-transaction-payment-rpc-runtime-api = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch", default-features = false }
 
 # cumulus dependencies
-cumulus-runtime = { git = "https://github.com/paritytech/cumulus", default-features = false }
-cumulus-upward-message = { git = "https://github.com/paritytech/cumulus", default-features = false }
-cumulus-message-broker = { git = "https://github.com/paritytech/cumulus", default-features = false }
-cumulus-parachain-upgrade = { git = "https://github.com/paritytech/cumulus", default-features = false }
-cumulus-token-dealer = { git = "https://github.com/paritytech/cumulus", default-features = false }
-parachain-info = { git = "https://github.com/paritytech/cumulus", default-features = false }
+cumulus-runtime = { git = "https://github.com/paritytech/cumulus", branch = "gav-xcmp", default-features = false }
+cumulus-primitives = { git = "https://github.com/paritytech/cumulus", branch = "gav-xcmp", default-features = false }
+cumulus-message-broker = { git = "https://github.com/paritytech/cumulus", branch = "gav-xcmp", default-features = false }
+cumulus-parachain-upgrade = { git = "https://github.com/paritytech/cumulus", branch = "gav-xcmp", default-features = false }
+parachain-info = { git = "https://github.com/paritytech/cumulus", branch = "gav-xcmp", default-features = false }
+
+# polkadot dependencies
+polkadot-parachain = { git = "https://github.com/paritytech/polkadot", branch = "gav-xcmp", default-features = false }
+xcm = { git = "https://github.com/paritytech/polkadot", branch = "gav-xcmp", default-features = false }
+xcm-executor = { git = "https://github.com/paritytech/polkadot", branch = "gav-xcmp", default-features = false }
+xcm-builder = { git = "https://github.com/paritytech/polkadot", branch = "gav-xcmp", default-features = false }
+pallet-xcm-handler = { git = "https://github.com/paritytech/polkadot", branch = "gav-xcmp", default-features = false }
 
 [build-dependencies]
 wasm-builder-runner = { package = "substrate-wasm-builder-runner", version = "1.0.5" }
@@ -61,12 +67,15 @@ std = [
     "codec/std",
     "lazy_static",
     "hex-literal",
-    "cumulus-runtime/std",
-    "cumulus-upward-message/std",
-    "cumulus-message-broker/std",
-    "cumulus-token-dealer/std",
-    "cumulus-parachain-upgrade/std",
     "parachain-info/std",
+    "cumulus-runtime/std",
+    "cumulus-primitives/std",
+    "cumulus-message-broker/std",
+    "cumulus-parachain-upgrade/std",
+    "polkadot-parachain/std",
+    "xcm/std",
+    "xcm-builder/std",
+    "xcm-executor/std",
     "sp-std/std",
     "sp-api/std",
     "sp-core/std",
@@ -93,8 +102,4 @@ std = [
     "pallet-timestamp/std",
     "pallet-transaction-payment/std",
     "pallet-transaction-payment-rpc-runtime-api/std",
-]
-# Will be enabled by the `wasm-builder` when building the runtime for WASM.
-runtime-wasm = [
-    "cumulus-upward-message/runtime-wasm",
 ]

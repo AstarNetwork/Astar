@@ -78,15 +78,15 @@ cumulus-network = { git = "https://github.com/paritytech/cumulus" }
 cumulus-service = { git = "https://github.com/paritytech/cumulus" }
 
 # polkadot dependencies
-polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "rococo-branch" }
-polkadot-parachain = { git = "https://github.com/paritytech/polkadot", branch = "rococo-branch" }
-polkadot-collator = { git = "https://github.com/paritytech/polkadot", branch = "rococo-branch" }
-polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "rococo-branch" }
-polkadot-cli = { git = "https://github.com/paritytech/polkadot", branch = "rococo-branch" }
+polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "gav-xcmp" }
+polkadot-parachain = { git = "https://github.com/paritytech/polkadot", branch = "gav-xcmp" }
+polkadot-collator = { git = "https://github.com/paritytech/polkadot", branch = "gav-xcmp" }
+polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "gav-xcmp" }
+polkadot-cli = { git = "https://github.com/paritytech/polkadot", branch = "gav-xcmp" }
 
 [build-dependencies]
 sc-cli = { git = "https://github.com/paritytech/substrate", branch = "rococo-branch", optional = true }
-polkadot-cli = { git = "https://github.com/paritytech/polkadot", branch = "rococo-branch", optional = true }
+polkadot-cli = { git = "https://github.com/paritytech/polkadot", branch = "gav-xcmp", optional = true }
 build-script-utils = { package = "substrate-build-script-utils", git = "https://github.com/paritytech/substrate", branch = "rococo-branch" }
 structopt = { version = "0.3.8", optional = true }
 vergen = { version = "3.0.4", optional = true }
