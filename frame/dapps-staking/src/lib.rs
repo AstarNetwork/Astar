@@ -110,7 +110,7 @@ pub struct StakingLedger<AccountId, Balance: HasCompact> {
     pub last_reward: Option<EraIndex>,
 }
 
-impl<AccountId, Balance: HasCompact + Copy + Saturating + std::cmp::PartialOrd + Zero>
+impl<AccountId, Balance: HasCompact + Copy + Saturating + Ord + Zero>
     StakingLedger<AccountId, Balance>
 {
     /// Remove entries from `unlocking` that are sufficiently old and reduce the
