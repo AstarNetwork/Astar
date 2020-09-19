@@ -16,20 +16,10 @@ use frame_support::{
 use pallet_contracts_rpc_runtime_api::ContractExecResult;
 use pallet_transaction_payment::{Multiplier, TargetedFeeAdjustment};
 use pallet_transaction_payment_rpc_runtime_api::RuntimeDispatchInfo;
-use xcm_executor::{
-    XcmExecutor, Config,
-    traits::{NativeAsset, IsConcrete, FilterAssetLocation},
-};
-use polkadot_parachain::primitives::Sibling;
-use xcm::v0::{MultiLocation, NetworkId, Junction, MultiAsset};
-use xcm_builder::{
-    ParentIsDefault, SiblingParachainConvertsVia, AccountId32Aliases, LocationInverter,
-    SovereignSignedViaLocation, SiblingParachainAsNative,
-    RelayChainAsNative, SignedAccountId32AsNative, CurrencyAdapter
-};
 use plasm_primitives::{
     AccountId, AccountIndex, Balance, BlockNumber, Hash, Index, Moment, Signature,
 };
+use polkadot_parachain::primitives::Sibling;
 use sp_api::impl_runtime_apis;
 use sp_core::OpaqueMetadata;
 use sp_inherents::{CheckInherentsResult, InherentData};
@@ -46,6 +36,16 @@ use sp_std::prelude::*;
 #[cfg(any(feature = "std", test))]
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
+use xcm::v0::{Junction, MultiAsset, MultiLocation, NetworkId};
+use xcm_builder::{
+    AccountId32Aliases, CurrencyAdapter, LocationInverter, ParentIsDefault, RelayChainAsNative,
+    SiblingParachainAsNative, SiblingParachainConvertsVia, SignedAccountId32AsNative,
+    SovereignSignedViaLocation,
+};
+use xcm_executor::{
+    traits::{FilterAssetLocation, IsConcrete, NativeAsset},
+    Config, XcmExecutor,
+};
 
 pub use pallet_balances::Call as BalancesCall;
 pub use pallet_contracts::Gas;
@@ -224,17 +224,16 @@ type LocationConverter = (
     AccountId32Aliases<RococoNetwork, AccountId>,
 );
 
-type LocalAssetTransactor =
-    CurrencyAdapter<
-        // Use this currency:
-        Balances,
-        // Use this currency when it is a fungible asset matching the given location or name:
-        IsConcrete<RocLocation>,
-        // Do a simple punn to convert an AccountId32 MultiLocation into a native chain account ID:
-        LocationConverter,
-        // Our chain's account ID type (we can't get away without mentioning it explicitly):
-        AccountId,
-    >;
+type LocalAssetTransactor = CurrencyAdapter<
+    // Use this currency:
+    Balances,
+    // Use this currency when it is a fungible asset matching the given location or name:
+    IsConcrete<RocLocation>,
+    // Do a simple punn to convert an AccountId32 MultiLocation into a native chain account ID:
+    LocationConverter,
+    // Our chain's account ID type (we can't get away without mentioning it explicitly):
+    AccountId,
+>;
 
 type LocalOriginConverter = (
     SovereignSignedViaLocation<LocationConverter, Origin>,
