@@ -67,8 +67,8 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     // and set impl_version to equal spec_version. If only runtime
     // implementation changes and behavior does not, then leave spec_version as
     // is and increment impl_version.
-    spec_version: 4,
-    impl_version: 4,
+    spec_version: 5,
+    impl_version: 5,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 2,
 };
@@ -115,7 +115,7 @@ impl frame_system::Trait for Runtime {
     type MaximumBlockLength = MaximumBlockLength;
     type AvailableBlockRatio = AvailableBlockRatio;
     type Version = Version;
-    type ModuleToIndex = ModuleToIndex;
+    type PalletInfo = PalletInfo;
     type AccountData = pallet_balances::AccountData<Balance>;
     type OnNewAccount = ();
     type OnKilledAccount = ();
@@ -145,6 +145,8 @@ impl pallet_babe::Trait for Runtime {
     )>>::IdentificationTuple;
 
     type HandleEquivocation = pallet_babe::EquivocationHandler<Self::KeyOwnerIdentification, ()>;
+
+    type WeightInfo = ();
 }
 
 parameter_types! {
@@ -161,12 +163,14 @@ impl pallet_indices::Trait for Runtime {
 
 parameter_types! {
     pub const ExistentialDeposit: Balance = 1 * MILLIPLM;
+    pub const MaxLocks: u32 = 50;
 }
 
 impl pallet_balances::Trait for Runtime {
     type Balance = Balance;
     type DustRemoval = ();
     type Event = Event;
+    type MaxLocks = MaxLocks;
     type ExistentialDeposit = ExistentialDeposit;
     type AccountStore = frame_system::Module<Runtime>;
     type WeightInfo = ();
@@ -336,6 +340,8 @@ impl pallet_grandpa::Trait for Runtime {
     )>>::IdentificationTuple;
 
     type HandleEquivocation = pallet_grandpa::EquivocationHandler<Self::KeyOwnerIdentification, ()>;
+
+    type WeightInfo = ();
 }
 
 parameter_types! {
@@ -711,12 +717,13 @@ impl_runtime_apis! {
             gas_limit: u64,
             input_data: Vec<u8>,
         ) -> ContractExecResult {
-            let exec_result =
+            let (exec_result, gas_consumed) =
                 Contracts::bare_call(origin, dest.into(), value, gas_limit, input_data);
             match exec_result {
                 Ok(v) => ContractExecResult::Success {
-                    status: v.status,
+                    flags: v.flags.bits(),
                     data: v.data,
+                    gas_consumed,
                 },
                 Err(_) => ContractExecResult::Error,
             }
