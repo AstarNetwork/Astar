@@ -940,7 +940,9 @@ impl<T: Trait> Module<T> {
                     Self::update_ledger(&controller, &l);
                     r
                 }),
-            RewardDestination::Account(account) => T::Currency::deposit_into_existing(account, amount).ok(),
+            RewardDestination::Account(account) => {
+                T::Currency::deposit_into_existing(account, amount).ok()
+            }
         }
     }
 

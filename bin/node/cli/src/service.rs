@@ -35,10 +35,7 @@ pub fn new_partial(
         sp_consensus::DefaultImportQueue<Block, FullClient>,
         sc_transaction_pool::FullPool<Block, FullClient>,
         (
-            impl Fn(
-                plasm_rpc::DenyUnsafe,
-                sc_rpc::SubscriptionTaskExecutor,
-            ) -> plasm_rpc::IoHandler,
+            impl Fn(plasm_rpc::DenyUnsafe, sc_rpc::SubscriptionTaskExecutor) -> plasm_rpc::IoHandler,
             (
                 sc_consensus_babe::BabeBlockImport<Block, FullClient, FullGrandpaBlockImport>,
                 grandpa::LinkHalf<Block, FullClient, FullSelectChain>,
@@ -47,7 +44,7 @@ pub fn new_partial(
             (
                 grandpa::SharedVoterState,
                 Arc<GrandpaFinalityProofProvider<FullBackend, Block>>,
-            )
+            ),
         ),
     >,
     ServiceError,
