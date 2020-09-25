@@ -44,6 +44,7 @@ frame-executive = { version = "2.0.0-rc6", default-features = false }
 pallet-authorship = { version = "2.0.0-rc6", default-features = false }
 pallet-babe = { version = "2.0.0-rc6", default-features = false }
 pallet-balances = { version = "2.0.0-rc6", default-features = false }
+pallet-evm = { version = "2.0.0-rc6", default-features = false }
 pallet-finality-tracker = { version = "2.0.0-rc6", default-features = false }
 pallet-grandpa = { version = "2.0.0-rc6", default-features = false }
 pallet-indices = { version = "2.0.0-rc6", default-features = false }
@@ -57,7 +58,8 @@ frame-system-rpc-runtime-api = { version = "2.0.0-rc6", default-features = false
 pallet-timestamp = { version = "2.0.0-rc6", default-features = false }
 pallet-transaction-payment = { version = "2.0.0-rc6", default-features = false }
 pallet-transaction-payment-rpc-runtime-api = { version = "2.0.0-rc6", default-features = false }
-
+frontier-rpc-primitives = { default-features = false, git = "https://github.com/paritytech/frontier" }
+ethereum = { default-features = false, package = "pallet-ethereum", git = "https://github.com/paritytech/frontier" }
 
 [build-dependencies]
 wasm-builder-runner = { package = "substrate-wasm-builder-runner", version = "1.0.5" }
@@ -92,6 +94,7 @@ std = [
     "pallet-contracts/std",
     "pallet-contracts-primitives/std",
     "pallet-contracts-rpc-runtime-api/std",
+    "pallet-evm/std",
     "pallet-finality-tracker/std",
     "pallet-grandpa/std",
     "pallet-indices/std",
