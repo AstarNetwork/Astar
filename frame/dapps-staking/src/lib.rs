@@ -23,7 +23,7 @@ use pallet_plasm_rewards::{
 };
 pub use pallet_staking::{Forcing, RewardDestination};
 use sp_runtime::{
-    traits::{CheckedSub, Saturating, StaticLookup, Zero},
+    traits::{AtLeast32BitUnsigned, CheckedSub, Saturating, StaticLookup, Zero},
     Perbill, RuntimeDebug,
 };
 use sp_std::{collections::btree_map::BTreeMap, prelude::*, result, vec::Vec};
@@ -52,6 +52,8 @@ type NegativeImbalanceOf<T> =
 const MAX_NOMINATIONS: usize = 128;
 const MAX_UNLOCKING_CHUNKS: usize = 32;
 const STAKING_ID: LockIdentifier = *b"dapstake";
+const MAX_VOTES: usize = 128;
+const VOTES_REQUIREMENT: u32 = 12;
 
 /// A record of the nominations made by a specific account.
 #[derive(PartialEq, Eq, Clone, Encode, Decode, RuntimeDebug)]
@@ -108,12 +110,14 @@ pub struct StakingLedger<AccountId, Balance: HasCompact> {
     pub last_reward: Option<EraIndex>,
 }
 
-impl<AccountId, Balance: HasCompact + Copy + Saturating> StakingLedger<AccountId, Balance> {
+impl<AccountId, Balance: HasCompact + Copy + Saturating + Ord + Zero>
+    StakingLedger<AccountId, Balance>
+{
     /// Remove entries from `unlocking` that are sufficiently old and reduce the
     /// total by the sum of their balances.
-    fn consolidate_unlocked(self, current_era: EraIndex) -> Self {
+    fn consolidate_unlocked(self, current_era: EraIndex, amount_locked: Balance) -> Self {
         let mut total = self.total;
-        let unlocking = self
+        let mut unlocking: Vec<UnlockChunk<Balance>> = self
             .unlocking
             .into_iter()
             .filter(|chunk| {
@@ -125,6 +129,13 @@ impl<AccountId, Balance: HasCompact + Copy + Saturating> StakingLedger<AccountId
                 }
             })
             .collect();
+        if amount_locked > Zero::zero() {
+            total = total.saturating_add(amount_locked);
+            unlocking.push(UnlockChunk {
+                value: amount_locked,
+                era: current_era,
+            });
+        }
         Self {
             total,
             active: self.active,
@@ -133,6 +144,61 @@ impl<AccountId, Balance: HasCompact + Copy + Saturating> StakingLedger<AccountId
             last_reward: self.last_reward,
         }
     }
+}
+
+impl<AccountId, Balance> StakingLedger<AccountId, Balance>
+where
+    Balance: AtLeast32BitUnsigned + Saturating + Copy,
+{
+    /// Slash the account for a given amount of balance.
+    ///
+    /// Slashes from `active` funds first, and then `unlocking`, starting with the
+    /// chunks that are closest to unlocking.
+    fn slash(&mut self, mut value: Balance) -> Balance {
+        let pre_total = self.total;
+        let total = &mut self.total;
+        let active = &mut self.active;
+
+        let slash_out_of =
+            |total_remaining: &mut Balance, target: &mut Balance, value: &mut Balance| {
+                let slash_from_target = (*value).min(*target);
+
+                if !slash_from_target.is_zero() {
+                    *target -= slash_from_target;
+                    *total_remaining = total_remaining.saturating_sub(slash_from_target);
+                    *value -= slash_from_target;
+                }
+            };
+
+        slash_out_of(total, active, &mut value);
+
+        let i = self
+            .unlocking
+            .iter_mut()
+            .map(|chunk| {
+                slash_out_of(total, &mut chunk.value, &mut value);
+                chunk.value
+            })
+            .take_while(|value| value.is_zero()) // take all fully-consumed chunks out.
+            .count();
+
+        // kill all drained chunks.
+        let _ = self.unlocking.drain(..i);
+
+        pre_total.saturating_sub(*total)
+    }
+}
+
+#[derive(PartialEq, Eq, Clone, Encode, Decode, RuntimeDebug)]
+pub enum Vote {
+    Bad,
+    Good,
+}
+
+#[derive(PartialEq, Eq, Clone, Encode, Decode, Default, RuntimeDebug)]
+pub struct VoteCounts {
+    bad: u32,
+    good: u32,
 }
 
 pub trait Trait: pallet_session::Trait {
@@ -191,12 +257,12 @@ decl_storage! {
         pub NominatorsUntreatedEra get(fn nominators_untreated_era):
             map hasher(twox_64_concat) T::AccountId => EraIndex;
 
-        // The untreated era for each operator
-        pub OperatorsUntreatedEra get(fn operators_untreated_era):
-            map hasher(twox_64_concat) T::AccountId => EraIndex;
-
         // The untreated era for each contract
         pub ContractsUntreatedEra get(fn contracts_untreated_era):
+            map hasher(twox_64_concat) T::AccountId => EraIndex;
+
+        // The untreated era for each contract for votes
+        pub ContractVotesUntreatedEra get(fn contract_votes_untreated_era):
             map hasher(twox_64_concat) T::AccountId => EraIndex;
 
         // ----- Staking uses.
@@ -247,10 +313,18 @@ decl_storage! {
             double_map hasher(twox_64_concat) EraIndex, hasher(twox_64_concat) T::AccountId
             => BalanceOf<T>;
 
-        /// The total amounts of staking for each operators
-        ErasStakedOperators get(fn eras_staked_operators):
-            double_map hasher(twox_64_concat) EraIndex, hasher(twox_64_concat) T::AccountId
+        /// The total amounts of staking for pairs of nominator and contract
+        pub TotalStakes get(fn total_stakes):
+            double_map hasher(twox_64_concat) T::AccountId, hasher(twox_64_concat) T::AccountId
             => BalanceOf<T>;
+
+        /// Votes for pairs of an account and a contract
+        pub AccountsVote get(fn accounts_vote):
+            double_map hasher(twox_64_concat) T::AccountId, hasher(twox_64_concat) T::AccountId => VoteCounts;
+
+        /// Votes for pairs of an era and a contract
+        pub ErasVotes get(fn eras_votes):
+            double_map hasher(twox_64_concat) EraIndex, hasher(twox_64_concat) T::AccountId => VoteCounts;
 
         /// Storage version of the pallet.
         ///
@@ -503,8 +577,17 @@ decl_module! {
             let controller = ensure_signed(origin)?;
             let mut ledger = Self::ledger(&controller).ok_or(Error::<T>::NotController)?;
             let (stash, old_total) = (ledger.stash.clone(), ledger.total);
+
             if let Some(current_era) = T::EraFinder::current() {
-                ledger = ledger.consolidate_unlocked(current_era)
+                let amount_locked = match Self::dapps_nominations(&stash) {
+                    Some(n) => n.targets
+                            .iter()
+                            .filter(|(contract, _)| Self::is_locked(contract, &current_era))
+                            .fold(BalanceOf::<T>::zero(), |sum, (_, value)| sum.saturating_add(*value)),
+                    None => BalanceOf::<T>::zero()
+                };
+
+                ledger = ledger.consolidate_unlocked(current_era, amount_locked)
             }
 
             if ledger.unlocking.is_empty() && ledger.active.is_zero() {
@@ -576,6 +659,50 @@ decl_module! {
             Self::deposit_event(RawEvent::Nominate(stash.clone()));
         }
 
+        /// vote some contracts with Bad/Good.
+        /// If you have already voted for a contract on your account, your vote for that contract will be overridden.
+        ///
+        /// TODO: weight
+        #[weight = 100_000]
+        fn vote_contracts(origin, targets: Vec<(<T::Lookup as StaticLookup>::Source, Vote)>) {
+            let sender = ensure_signed(origin)?;
+            ensure!(!targets.is_empty(), Error::<T>::EmptyNominateTargets);
+
+            let targets = targets.into_iter()
+                .take(MAX_VOTES)
+                .map(|t| match T::Lookup::lookup(t.0) {
+                    Ok(a) => Ok((a, t.1)),
+                    Err(err) => Err(err),
+                })
+                .collect::<result::Result<Vec<(T::AccountId, Vote)>, _>>()?;
+
+            if !targets.iter().all(|t| T::ContractFinder::is_exists_contract(&(t.0))) {
+                Err(Error::<T>::NotOperatedContracts)?
+            }
+
+            if let Some(current_era) = T::EraFinder::current() {
+                let next_era = current_era + 1;
+                for (contract, vote) in targets.iter() {
+                    let counts = Self::vote_counts(vote.clone());
+
+                    if <ErasVotes<T>>::contains_key(&next_era, &contract) {
+                        <ErasVotes<T>>::mutate(&next_era, &contract, |votes| {
+                            if <AccountsVote<T>>::contains_key(&sender, &contract) {
+                                let clear_counts = Self::accounts_vote(&sender, &contract);
+                                (*votes).bad -= clear_counts.bad;
+                                (*votes).good -= clear_counts.good;
+                            }
+                            (*votes).bad += counts.bad;
+                            (*votes).good += counts.good;
+                        });
+                    } else {
+                        <ErasVotes<T>>::insert(&next_era, &contract, &counts);
+                    }
+                    <AccountsVote<T>>::insert(&sender, &contract, counts);
+                }
+            }
+        }
+
         /// Declare no desire to either validate or nominate.
         ///
         /// Effects will be felt at the beginning of the next era.
@@ -613,6 +740,41 @@ decl_module! {
             let ledger = Self::ledger(&controller).ok_or(Error::<T>::NotController)?;
             let stash = &ledger.stash;
             <Payee<T>>::insert(stash, payee);
+        }
+
+        /// slash the account for the contract.
+        ///
+        /// If there are more votes than the required number of votes and
+        ///   the good is less than the bad for two consecutive terms,
+        ///   this function returns true.
+        ///
+        /// TODO: weight
+        #[weight = 100_000]
+        fn slash(origin, controller: <T::Lookup as StaticLookup>::Source, contract: <T::Lookup as StaticLookup>::Source) {
+            ensure_signed(origin)?;
+            let controller = T::Lookup::lookup(controller)?;
+            let mut ledger = Self::ledger(&controller).ok_or(Error::<T>::NotController)?;
+            let stash = &ledger.stash;
+
+            let contract = T::Lookup::lookup(contract)?;
+            if !T::ContractFinder::is_exists_contract(&contract) {
+                Err(Error::<T>::NotOperatedContracts)?
+            }
+
+            if let Some(current_era) = T::EraFinder::current() {
+                if !Self::is_slashable(&contract, &current_era) {
+                    Err("not slashable")?
+                }
+
+                let each_points = (current_era.saturating_sub(T::HistoryDepthFinder::get())..=current_era)
+                    .map(|era| Self::eras_staking_points(&era, &contract));
+                let mut slash_amount = BalanceOf::<T>::zero();
+                for points in each_points {
+                    slash_amount += points.individual.get(&stash).unwrap_or(&BalanceOf::<T>::zero()).clone();
+                }
+
+                ledger.slash(slash_amount);
+            }
         }
 
         /// (Re-)set the controller of a stash.
@@ -721,16 +883,6 @@ decl_module! {
                 }
             }
 
-            let mut untreated_era = Self::operators_untreated_era(&operator);
-            if era == untreated_era {
-                Err("the operator already rewarded")?
-            }
-            while era > untreated_era {
-                Self::propagate_eras_staked_operators(&operator, &untreated_era, &(untreated_era + 1));
-                untreated_era += 1;
-            }
-            <OperatorsUntreatedEra<T>>::insert(&operator, untreated_era);
-
             let rewards = match T::ForDappsEraReward::get(&era) {
                 Some(rewards) => rewards,
                 None => {
@@ -816,14 +968,17 @@ impl<T: Trait> Module<T> {
 
         let mut nominate_values: Vec<_> = Vec::new();
 
-        let each_points = (era.saturating_sub(T::HistoryDepthFinder::get())..=*era)
-            .flat_map(|e| <ErasStakingPoints<T>>::iter_prefix(&e))
-            .map(|(contract, points)| {
-                (
-                    Self::eras_staking_points(era, contract).total,
-                    points.individual,
-                )
-            });
+        let mut each_points: Vec<_> = Vec::new();
+        for e in era.saturating_sub(T::HistoryDepthFinder::get())..=*era {
+            for (contract, points) in <ErasStakingPoints<T>>::iter_prefix(&e) {
+                if Self::is_rewardable(&contract, &e) {
+                    each_points.push((
+                        Self::eras_staking_points(era, contract).total,
+                        points.individual,
+                    ));
+                }
+            }
+        }
 
         for (total, individual) in each_points {
             for (account, value) in individual {
@@ -853,20 +1008,6 @@ impl<T: Trait> Module<T> {
         total_payout
     }
 
-    fn propagate_eras_staked_operators(
-        operator: &T::AccountId,
-        src_era: &EraIndex,
-        dst_era: &EraIndex,
-    ) {
-        if <ErasStakedOperators<T>>::contains_key(src_era, operator) {
-            let untreated_staked_operator = <ErasStakedOperators<T>>::get(src_era, operator);
-
-            <ErasStakedOperators<T>>::mutate(dst_era, operator, |total| {
-                *total += untreated_staked_operator;
-            });
-        }
-    }
-
     fn reward_operator(
         era: &EraIndex,
         max_payout: BalanceOf<T>,
@@ -878,9 +1019,19 @@ impl<T: Trait> Module<T> {
 
         let total_staked = Self::eras_total_stake(era);
 
-        let staked_operator = Self::eras_staked_operators(era, operator);
+        let mut stakes = BalanceOf::<T>::zero();
+        for e in era.saturating_sub(T::HistoryDepthFinder::get())..=*era {
+            for (contract, _) in <ErasStakingPoints<T>>::iter_prefix(&e) {
+                if let Some(o) = T::ContractFinder::operator(&contract) {
+                    if o == *operator && Self::is_rewardable(&contract, &e) {
+                        stakes += Self::eras_staking_points(era, contract).total;
+                    }
+                }
+            }
+        }
+
         let reward = T::ComputeRewardsForDapps::compute_reward_for_operator(
-            staked_operator,
+            stakes,
             total_staked,
             operators_reward,
         );
@@ -970,12 +1121,6 @@ impl<T: Trait> Module<T> {
                     *total += value.clone();
                 });
 
-                if let Some(operator) = T::ContractFinder::operator(&contract) {
-                    <ErasStakedOperators<T>>::mutate(&next_era, operator, |total| {
-                        *total += value.clone();
-                    });
-                }
-
                 <ErasTotalStake<T>>::mutate(&next_era, |total| {
                     *total += value.clone();
                 });
@@ -999,17 +1144,99 @@ impl<T: Trait> Module<T> {
                 *total = total.saturating_sub(value.clone());
             });
 
-            if let Some(operator) = T::ContractFinder::operator(&contract) {
-                <ErasStakedOperators<T>>::mutate(&era, &operator, |total| {
-                    *total = total.saturating_sub(value.clone());
-                });
-            }
-
             <ErasTotalStake<T>>::mutate(&era, |total| {
                 *total = total.saturating_sub(value.clone());
             });
         }
         <DappsNominations<T>>::remove(stash);
+    }
+
+    fn propagate_eras_votes(contract: &T::AccountId, src_era: &EraIndex, dst_era: &EraIndex) {
+        if <ErasVotes<T>>::contains_key(src_era, contract) {
+            let untreated_votes = <ErasVotes<T>>::get(src_era, contract);
+
+            <ErasVotes<T>>::mutate(&dst_era, &contract, |votes| {
+                (*votes).bad += untreated_votes.bad.clone();
+                (*votes).good += untreated_votes.good.clone();
+            });
+        }
+    }
+
+    // lazily update ErasVotes
+    fn update_vote_counts(contract: &T::AccountId, era: &EraIndex) {
+        let current_era = T::EraFinder::current().unwrap_or(Zero::zero());
+        if current_era < *era {
+            return;
+        }
+        let mut untreated_era = Self::contracts_untreated_era(&contract);
+        while *era > untreated_era {
+            Self::propagate_eras_votes(&contract, &untreated_era, &(untreated_era + 1));
+            untreated_era += 1;
+        }
+        <ContractsUntreatedEra<T>>::insert(&contract, untreated_era);
+    }
+
+    // convert Vote into VoteCounts
+    fn vote_counts(vote: Vote) -> VoteCounts {
+        let mut counts = VoteCounts { bad: 0, good: 0 };
+        if vote == Vote::Bad {
+            counts.bad += 1
+        } else {
+            counts.good += 1
+        };
+        counts
+    }
+
+    // check the number of votes meets the required number of votes
+    fn has_votes_requirement(contract: &T::AccountId, era: &EraIndex) -> bool {
+        let vote_counts = Self::eras_votes(era, contract);
+        vote_counts.bad + vote_counts.good >= VOTES_REQUIREMENT
+    }
+
+    // If there are more than the required number of votes and
+    //   the good has been voted for four times the bad in two consecutive periods,
+    //   this function returns true.
+    fn is_rewardable(contract: &T::AccountId, era: &EraIndex) -> bool {
+        Self::update_vote_counts(contract, era);
+        if *era <= Zero::zero() {
+            return false;
+        }
+        let prev_votes = Self::eras_votes(era - 1, contract);
+        let votes = Self::eras_votes(era, contract);
+        Self::has_votes_requirement(contract, &(era - 1))
+            && Self::has_votes_requirement(contract, era)
+            && prev_votes.good >= prev_votes.bad * 4
+            && votes.good >= votes.bad * 4
+    }
+
+    // If there are more votes the required number of votes and
+    //   the good is less than twice the bad in the previous era,
+    //   this function returns true.
+    fn is_locked(contract: &T::AccountId, era: &EraIndex) -> bool {
+        Self::update_vote_counts(contract, era);
+        if *era <= Zero::zero() {
+            return false;
+        }
+        let prev_votes = Self::eras_votes(era - 1, contract);
+        Self::has_votes_requirement(contract, &(era - 1))
+            && Self::has_votes_requirement(contract, era)
+            && prev_votes.good < prev_votes.bad * 2
+    }
+
+    // If there are more votes than the required number of votes and
+    //   the good is less than the bad for two consecutive terms,
+    //   this function returns true.
+    fn is_slashable(contract: &T::AccountId, era: &EraIndex) -> bool {
+        Self::update_vote_counts(contract, era);
+        if *era <= Zero::zero() {
+            return false;
+        }
+        let prev_votes = Self::eras_votes(era - 1, contract);
+        let votes = Self::eras_votes(era, contract);
+        Self::has_votes_requirement(contract, &(era - 1))
+            && Self::has_votes_requirement(contract, era)
+            && prev_votes.good < prev_votes.bad
+            && votes.good < votes.bad
     }
 }
 
