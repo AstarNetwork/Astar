@@ -1,6 +1,5 @@
 ///! Chainlink smart contract based price oracle.
-
-use web3::contract::{Contract, Options, Error};
+use web3::contract::{Contract, Error, Options};
 
 // ROPSTEN
 const ETHUSD: &str = "30B5068156688f818cEa0874B580206dFe081a03";
