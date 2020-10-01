@@ -1,0 +1,54 @@
+[package]
+name = "pallet-contracts"
+version = "2.0.0-rc4"
+authors = ["Parity Technologies <admin@parity.io>"]
+edition = "2018"
+license = "Apache-2.0"
+homepage = "https://substrate.dev"
+repository = "https://github.com/paritytech/substrate/"
+description = "FRAME pallet for WASM contracts"
+
+[package.metadata.docs.rs]
+targets = ["x86_64-unknown-linux-gnu"]
+
+[dependencies]
+serde = { version = "1.0.101", optional = true, features = ["derive"] }
+pwasm-utils = { version = "0.12.0", default-features = false }
+codec = { package = "parity-scale-codec", version = "1.3.1", default-features = false, features = ["derive"] }
+parity-wasm = { version = "0.41.0", default-features = false }
+wasmi-validation = { version = "0.3.0", default-features = false }
+sp-core = { version = "2.0.0-rc4", default-features = false }
+sp-runtime = { version = "2.0.0-rc4", default-features = false }
+sp-io = { version = "2.0.0-rc4", default-features = false }
+sp-std = { version = "2.0.0-rc4", default-features = false }
+sp-sandbox = { version = "0.8.0-rc4", default-features = false }
+frame-support = { version = "2.0.0-rc4", default-features = false }
+frame-system = { version = "2.0.0-rc4", default-features = false }
+pallet-contracts-primitives = { default-features = false, path = "common" }
+
+[dev-dependencies]
+wabt = "0.10.0"
+assert_matches = "1.3.0"
+hex-literal = "0.2.1"
+pretty_assertions = "0.6.1"
+pallet-balances = "2.0.0-rc4"
+pallet-timestamp = "2.0.0-rc4"
+pallet-randomness-collective-flip = "2.0.0-rc4"
+
+[features]
+default = ["std"]
+std = [
+	"serde",
+	"codec/std",
+	"sp-core/std",
+	"sp-runtime/std",
+	"sp-io/std",
+	"sp-std/std",
+	"sp-sandbox/std",
+	"frame-support/std",
+	"frame-system/std",
+	"parity-wasm/std",
+	"pwasm-utils/std",
+	"wasmi-validation/std",
+	"pallet-contracts-primitives/std",
+]

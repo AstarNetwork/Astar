@@ -6,7 +6,7 @@ use plasm_runtime::Block;
 use plasm_runtime::{
     BabeConfig, BalancesConfig, ContractsConfig, GenesisConfig, GrandpaConfig, IndicesConfig,
     PlasmLockdropConfig, PlasmRewardsConfig, PlasmValidatorConfig, SessionConfig, SessionKeys,
-    SudoConfig, SystemConfig, WASM_BINARY,
+    SudoConfig, SystemConfig, EthereumConfig, WASM_BINARY,
 };
 use sc_chain_spec::ChainSpecExtension;
 use sc_service::ChainType;
@@ -170,6 +170,8 @@ fn make_genesis(
                 enable_println, // this should only be enabled on development chains
                 ..Default::default()
             },
+        }),
+        pallet_ethereum: Some(EthereumConfig {
         }),
         pallet_sudo: Some(SudoConfig { key: root_key }),
     }

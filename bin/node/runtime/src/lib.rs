@@ -4,10 +4,10 @@
 // `construct_runtime!` does a lot of recursion and requires us to increase the limit to 256.
 #![recursion_limit = "256"]
 
-use codec::Encode;
+use codec::{Encode, Decode};
 use frame_support::{
     construct_runtime, debug, parameter_types,
-    traits::{Get, KeyOwnerProofSystem, Randomness},
+    traits::{Get, KeyOwnerProofSystem, Randomness, FindAuthor},
     weights::{
         constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_PER_SECOND},
         IdentityFee, Weight,
@@ -22,7 +22,7 @@ use pallet_transaction_payment_rpc_runtime_api::RuntimeDispatchInfo;
 use plasm_primitives::{
     AccountId, AccountIndex, Balance, BlockNumber, Hash, Index, Moment, Signature,
 };
-use ethereum::{Block as EthereumBlock, Transaction as EthereumTransaction, Receipt as EthereumReceipt};
+use pallet_ethereum::{Block as EthereumBlock, Transaction as EthereumTransaction, Receipt as EthereumReceipt};
 use pallet_evm::{Account as EVMAccount, FeeCalculator, HashedAddressMapping, EnsureAddressTruncated};
 use frontier_rpc_primitives::TransactionStatus;
 use sp_api::impl_runtime_apis;
@@ -39,6 +39,7 @@ use sp_runtime::{
     create_runtime_str, generic, impl_opaque_keys, ApplyExtrinsicResult, FixedPointNumber,
     MultiSigner, Perbill, Perquintill,
 };
+use sp_core::{H160, U256, H256};
 use sp_std::prelude::*;
 #[cfg(any(feature = "std", test))]
 use sp_version::NativeVersion;
@@ -531,24 +532,24 @@ impl pallet_evm::Trait for Runtime {
 
 pub struct TransactionConverter;
 impl frontier_rpc_primitives::ConvertTransaction<UncheckedExtrinsic> for TransactionConverter {
-	fn convert_transaction(&self, transaction: ethereum::Transaction) -> UncheckedExtrinsic {
-		UncheckedExtrinsic::new_unsigned(ethereum::Call::<Runtime>::transact(transaction).into())
+	fn convert_transaction(&self, transaction: EthereumTransaction) -> UncheckedExtrinsic {
+		UncheckedExtrinsic::new_unsigned(pallet_ethereum::Call::<Runtime>::transact(transaction).into())
 	}
 }
-impl frontier_rpc_primitives::ConvertTransaction<opaque::UncheckedExtrinsic> for TransactionConverter {
-	fn convert_transaction(&self, transaction: ethereum::Transaction) -> opaque::UncheckedExtrinsic {
-		let extrinsic = UncheckedExtrinsic::new_unsigned(ethereum::Call::<Runtime>::transact(transaction).into());
+impl frontier_rpc_primitives::ConvertTransaction<sp_runtime::OpaqueExtrinsic> for TransactionConverter {
+	fn convert_transaction(&self, transaction: EthereumTransaction) -> sp_runtime::OpaqueExtrinsic {
+		let extrinsic = UncheckedExtrinsic::new_unsigned(pallet_ethereum::Call::<Runtime>::transact(transaction).into());
 		let encoded = extrinsic.encode();
-		opaque::UncheckedExtrinsic::decode(&mut &encoded[..]).expect("Encoded extrinsic is always valid")
+		sp_runtime::OpaqueExtrinsic::decode(&mut &encoded[..]).expect("Encoded extrinsic is always valid")
 	}
 }
 
 // TODO consensus not supported
-pub struct EthereumFindAuthor<F>(PhantomData<F>);
+pub struct EthereumFindAuthor<F>(sp_std::marker::PhantomData<F>);
 impl<F: FindAuthor<u32>> FindAuthor<H160> for EthereumFindAuthor<F>
 {
 	fn find_author<'a, I>(_digests: I) -> Option<H160> where
-		I: 'a + IntoIterator<Item=(ConsensusEngineId, &'a [u8])>
+		I: 'a + IntoIterator<Item=(frame_support::ConsensusEngineId, &'a [u8])>
 	{
 		None
 	}
@@ -558,13 +559,13 @@ impl<F: FindAuthor<u32>> FindAuthor<H160> for EthereumFindAuthor<F>
 pub struct PhantomAura;
 impl FindAuthor<u32> for PhantomAura {
 	fn find_author<'a, I>(_digests: I) -> Option<u32> where
-		I: 'a + IntoIterator<Item=(ConsensusEngineId, &'a [u8])>
+		I: 'a + IntoIterator<Item=(frame_support::ConsensusEngineId, &'a [u8])>
 	{
 		Some(0 as u32)
 	}
 }
 
-impl ethereum::Trait for Runtime {
+impl pallet_ethereum::Trait for Runtime {
 	type Event = Event;
 	type FindAuthor = EthereumFindAuthor<PhantomAura>;
 }
@@ -599,7 +600,7 @@ construct_runtime!(
         Plasma: pallet_plasma::{Module, Call, Storage, Event<T>},
         Nicks: pallet_nicks::{Module, Call, Storage, Event<T>},
         EVM: pallet_evm::{Module, Call, Storage, Event<T>},
-        Ethereum: ethereum::{Module, Call, Storage, Event, Config, ValidateUnsigned},
+        Ethereum: pallet_ethereum::{Module, Call, Storage, Event, Config, ValidateUnsigned},
     }
 );
 
@@ -787,13 +788,12 @@ impl_runtime_apis! {
             gas_limit: u64,
             input_data: Vec<u8>,
         ) -> ContractExecResult {
-            let (exec_result, gas_consumed) =
+            let exec_result =
                 Contracts::bare_call(origin, dest.into(), value, gas_limit, input_data);
             match exec_result {
                 Ok(v) => ContractExecResult::Success {
-                    flags: v.flags.bits(),
+                    status: v.status,
                     data: v.data,
-                    gas_consumed,
                 },
                 Err(_) => ContractExecResult::Error,
             }
@@ -852,7 +852,7 @@ impl_runtime_apis! {
 		}
 
 		fn author() -> H160 {
-			<ethereum::Module<Runtime>>::find_author()
+			<pallet_ethereum::Module<Runtime>>::find_author()
 		}
 
 		fn storage_at(address: H160, index: U256) -> H256 {
@@ -868,10 +868,10 @@ impl_runtime_apis! {
 			gas_limit: U256,
 			gas_price: Option<U256>,
 			nonce: Option<U256>,
-			action: ethereum::TransactionAction,
+			action: pallet_ethereum::TransactionAction,
 		) -> Result<(Vec<u8>, U256), sp_runtime::DispatchError> {
 			match action {
-				ethereum::TransactionAction::Call(to) =>
+				pallet_ethereum::TransactionAction::Call(to) =>
 					EVM::execute_call(
 						from,
 						to,
@@ -882,9 +882,9 @@ impl_runtime_apis! {
 						nonce,
 						false,
 					)
-					.map(|(_, ret, gas)| (ret, gas))
+					.map(|(_, ret, gas, _)| (ret, gas))
 					.map_err(|err| err.into()),
-				ethereum::TransactionAction::Create =>
+				pallet_ethereum::TransactionAction::Create =>
 					EVM::execute_create(
 						from,
 						data,
@@ -894,7 +894,7 @@ impl_runtime_apis! {
 						nonce,
 						false,
 					)
-					.map(|(_, _, gas)| (vec![], gas))
+					.map(|(_, _, gas, _)| (vec![], gas))
 					.map_err(|err| err.into()),
 			}
 		}
@@ -903,11 +903,11 @@ impl_runtime_apis! {
 			Ethereum::current_transaction_statuses()
 		}
 
-		fn current_block() -> Option<ethereum::Block> {
+		fn current_block() -> Option<EthereumBlock> {
 			Ethereum::current_block()
 		}
 
-		fn current_receipts() -> Option<Vec<ethereum::Receipt>> {
+		fn current_receipts() -> Option<Vec<EthereumReceipt>> {
 			Ethereum::current_receipts()
 		}
 	}

@@ -37,14 +37,14 @@ pallet-plasm-validator = { path = "../../../frame/plasm-validator", default-feat
 pallet-plasm-lockdrop = { path = "../../../frame/plasm-lockdrop", default-features = false }
 pallet-ovm = { path = "../../../frame/ovm", default-features = false }
 pallet-plasma = { path = "../../../frame/plasma", default-features = false }
-pallet-contracts-primitives = { version = "2.0.0", default-features = false }
-pallet-contracts-rpc-runtime-api = { version = "0.8.0", default-features = false }
+pallet-contracts-primitives = { path = "../../../frame/contracts/common", default-features = false }
+pallet-contracts-rpc-runtime-api = { path = "../../../frame/contracts/rpc/runtime-api", default-features = false }
 pallet-evm = { version = "2.0.0", default-features = false }
 frame-executive = { version = "2.0.0", default-features = false }
 pallet-authorship = { version = "2.0.0", default-features = false }
 pallet-babe = { version = "2.0.0", default-features = false }
 pallet-balances = { version = "2.0.0", default-features = false }
-pallet-contracts = { version = "2.0.0", default-features = false }
+pallet-contracts = { path = "../../../frame/contracts", default-features = false }
 pallet-finality-tracker = { version = "2.0.0", default-features = false }
 pallet-grandpa = { version = "2.0.0", default-features = false }
 pallet-indices = { version = "2.0.0", default-features = false }
@@ -58,8 +58,8 @@ frame-system-rpc-runtime-api = { version = "2.0.0", default-features = false }
 pallet-timestamp = { version = "2.0.0", default-features = false }
 pallet-transaction-payment = { version = "2.0.0", default-features = false }
 pallet-transaction-payment-rpc-runtime-api = { version = "2.0.0", default-features = false }
-frontier-rpc-primitives = { default-features = false, git = "https://github.com/paritytech/frontier" }
-ethereum = { default-features = false, package = "pallet-ethereum", git = "https://github.com/paritytech/frontier" }
+frontier-rpc-primitives = { path = "../../../vendor/frontier/rpc/primitives", default-features = false }
+pallet-ethereum = { path = "../../../vendor/frontier/frame/ethereum", default-features = false }
 
 [build-dependencies]
 wasm-builder-runner = { package = "substrate-wasm-builder-runner", version = "1.0.5" }
@@ -88,6 +88,7 @@ std = [
     "frame-executive/std",
     "frame-system/std",
     "frame-system-rpc-runtime-api/std",
+    "frontier-rpc-primitives/std",
     "pallet-authorship/std",
     "pallet-babe/std",
     "pallet-balances/std",
@@ -108,6 +109,7 @@ std = [
     "pallet-contract-operator/std",
     "pallet-operator-trading/std",
     "pallet-dapps-staking/std",
+    "pallet-ethereum/std",
     "pallet-sudo/std",
     "pallet-timestamp/std",
     "pallet-transaction-payment/std",
