@@ -14,10 +14,12 @@ jobs:
       run: choco install llvm
     - uses: hecrj/setup-rust-action@v1
       with:
-        rust-version: 'nightly-2020-07-26'
+        rust-version: 'nightly-2020-09-20'
         targets: 'wasm32-unknown-unknown'
     - name: Checkout the source coder
       uses: actions/checkout@master
+    - name: Checkout submodules
+      uses: textbook/git-checkout-submodule-action@master
     - name: Check targets are installed correctly
       run: rustup target list --installed
     - name: Install build tools
@@ -84,5 +86,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
+    - uses: textbook/git-checkout-submodule-action@master
     - uses: cachix/install-nix-action@v10
     - run: nix-shell third-party/nix/shell.nix --option sandbox false --run "cargo build --release"
