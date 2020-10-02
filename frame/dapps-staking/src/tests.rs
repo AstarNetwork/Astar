@@ -87,7 +87,7 @@ fn success_first_bond(
     stash: AccountId,
     ctrl: AccountId,
     balance: Balance,
-    dest: RewardDestination,
+    dest: RewardDestination<AccountId>,
 ) {
     // bond ALICE -> BOB
     assert_ok!(DappsStaking::bond(
