@@ -4,7 +4,6 @@ members = [
     "bin/node/rpc",
     "bin/node/runtime",
     "bin/node/primitives",
-    "bin/subkey",
     "frame/operator",
     "frame/trading",
     "frame/dapps-staking",
@@ -21,6 +20,7 @@ members = [
 
 exclude = [
     "contracts",
+    "vendor",
 ]
 
 [profile.release]

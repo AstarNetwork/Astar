@@ -1,0 +1,3 @@
+[submodule "vendor/frontier"]
+	path = vendor/frontier
+	url = https://github.com/staketechnologies/frontier.git

@@ -1,12 +1,12 @@
-use web3::contract::{Contract, Options};
 ///! Chainlink smart contract based price oracle.
-use web3::futures::Future;
-use web3::types::Address;
+use web3::contract::{Contract, Error, Options};
 
-const ETHUSD: &str = "5f4eC3Df9cbd43714FE2740f5E3616155c5b8419";
-const BTCUSD: &str = "F4030086522a5bEEa4988F8cA5B36dbC97BeE88c";
+// ROPSTEN
+const ETHUSD: &str = "30B5068156688f818cEa0874B580206dFe081a03";
 
-pub fn query<T: web3::Transport>(web3: web3::Web3<T>, contract: Address) -> u128 {
+pub async fn eth_usd<T: web3::Transport>(web3: web3::Web3<T>) -> Result<u128, Error> {
+    let contract = ETHUSD.parse().expect("correct oracle address");
+
     let contract = Contract::from_json(
         web3.eth(),
         contract,
@@ -15,14 +15,5 @@ pub fn query<T: web3::Transport>(web3: web3::Web3<T>, contract: Address) -> u128
     .unwrap();
     contract
         .query("latestAnswer", (), None, Options::default(), None)
-        .wait()
-        .unwrap()
-}
-
-pub fn eth_usd<T: web3::Transport>(web3: web3::Web3<T>) -> u128 {
-    query(web3, ETHUSD.parse().unwrap())
-}
-
-pub fn btc_usd<T: web3::Transport>(web3: web3::Web3<T>) -> u128 {
-    query(web3, BTCUSD.parse().unwrap())
+        .await
 }

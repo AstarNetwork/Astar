@@ -275,7 +275,7 @@ decl_storage! {
             => Option<StakingLedger<T::AccountId, BalanceOf<T>>>;
 
         /// Where the reward payment should be made. Keyed by stash.
-        pub Payee get(fn payee): map hasher(twox_64_concat) T::AccountId => RewardDestination;
+        pub Payee get(fn payee): map hasher(twox_64_concat) T::AccountId => RewardDestination<T::AccountId>;
 
         /// The map from nominator stash key to the set of stash keys of all contracts to nominate.
         ///
@@ -428,7 +428,7 @@ decl_module! {
         fn bond(origin,
             controller: <T::Lookup as StaticLookup>::Source,
             #[compact] value: BalanceOf<T>,
-            payee: RewardDestination
+            payee: RewardDestination<T::AccountId>,
         ) {
             let stash = ensure_signed(origin)?;
 
@@ -735,7 +735,7 @@ decl_module! {
         /// # </weight>
         /// TODO: weight
         #[weight = 500_000]
-        fn set_payee(origin, payee: RewardDestination) {
+        fn set_payee(origin, payee: RewardDestination<T::AccountId>) {
             let controller = ensure_signed(origin)?;
             let ledger = Self::ledger(&controller).ok_or(Error::<T>::NotController)?;
             let stash = &ledger.stash;
@@ -1077,7 +1077,7 @@ impl<T: Trait> Module<T> {
 
     fn make_payout(stash: &T::AccountId, amount: BalanceOf<T>) -> Option<PositiveImbalanceOf<T>> {
         let dest = Self::payee(stash);
-        match dest {
+        match &dest {
             RewardDestination::Controller => Self::bonded(stash).and_then(|controller| {
                 T::Currency::deposit_into_existing(&controller, amount).ok()
             }),
@@ -1091,6 +1091,9 @@ impl<T: Trait> Module<T> {
                     Self::update_ledger(&controller, &l);
                     r
                 }),
+            RewardDestination::Account(account) => {
+                T::Currency::deposit_into_existing(account, amount).ok()
+            }
         }
     }
 

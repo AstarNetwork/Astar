@@ -4,9 +4,9 @@ use plasm_primitives::{AccountId, Balance, Signature};
 use plasm_runtime::constants::currency::PLM;
 use plasm_runtime::Block;
 use plasm_runtime::{
-    BabeConfig, BalancesConfig, ContractsConfig, GenesisConfig, GrandpaConfig, IndicesConfig,
-    PlasmLockdropConfig, PlasmRewardsConfig, PlasmValidatorConfig, SessionConfig, SessionKeys,
-    SudoConfig, SystemConfig, WASM_BINARY,
+    BabeConfig, BalancesConfig, ContractsConfig, EthereumConfig, GenesisConfig, GrandpaConfig,
+    IndicesConfig, PlasmLockdropConfig, PlasmRewardsConfig, PlasmValidatorConfig, SessionConfig,
+    SessionKeys, SudoConfig, SystemConfig, WASM_BINARY,
 };
 use sc_chain_spec::ChainSpecExtension;
 use sc_service::ChainType;
@@ -171,6 +171,7 @@ fn make_genesis(
                 ..Default::default()
             },
         }),
+        pallet_ethereum: Some(EthereumConfig {}),
         pallet_sudo: Some(SudoConfig { key: root_key }),
     }
 }

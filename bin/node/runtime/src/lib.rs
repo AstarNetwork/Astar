@@ -4,16 +4,23 @@
 // `construct_runtime!` does a lot of recursion and requires us to increase the limit to 256.
 #![recursion_limit = "256"]
 
-use codec::Encode;
+use codec::{Decode, Encode};
 use frame_support::{
     construct_runtime, debug, parameter_types,
-    traits::{Get, KeyOwnerProofSystem, Randomness},
+    traits::{FindAuthor, Get, KeyOwnerProofSystem, Randomness},
     weights::{
         constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_PER_SECOND},
         IdentityFee, Weight,
     },
 };
+use frontier_rpc_primitives::TransactionStatus;
 use pallet_contracts_rpc_runtime_api::ContractExecResult;
+use pallet_ethereum::{
+    Block as EthereumBlock, Receipt as EthereumReceipt, Transaction as EthereumTransaction,
+};
+use pallet_evm::{
+    Account as EVMAccount, EnsureAddressTruncated, FeeCalculator, HashedAddressMapping,
+};
 use pallet_grandpa::fg_primitives;
 use pallet_grandpa::{AuthorityId as GrandpaId, AuthorityList as GrandpaAuthorityList};
 use pallet_session::historical as pallet_session_historical;
@@ -24,6 +31,7 @@ use plasm_primitives::{
 };
 use sp_api::impl_runtime_apis;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
+use sp_core::{H160, H256, U256};
 use sp_inherents::{CheckInherentsResult, InherentData};
 use sp_runtime::traits::{
     BlakeTwo256, Block as BlockT, ConvertInto, Extrinsic, Keccak256, NumberFor, OpaqueKeys,
@@ -67,8 +75,8 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     // and set impl_version to equal spec_version. If only runtime
     // implementation changes and behavior does not, then leave spec_version as
     // is and increment impl_version.
-    spec_version: 4,
-    impl_version: 4,
+    spec_version: 5,
+    impl_version: 5,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 2,
 };
@@ -115,7 +123,7 @@ impl frame_system::Trait for Runtime {
     type MaximumBlockLength = MaximumBlockLength;
     type AvailableBlockRatio = AvailableBlockRatio;
     type Version = Version;
-    type ModuleToIndex = ModuleToIndex;
+    type PalletInfo = PalletInfo;
     type AccountData = pallet_balances::AccountData<Balance>;
     type OnNewAccount = ();
     type OnKilledAccount = ();
@@ -145,6 +153,8 @@ impl pallet_babe::Trait for Runtime {
     )>>::IdentificationTuple;
 
     type HandleEquivocation = pallet_babe::EquivocationHandler<Self::KeyOwnerIdentification, ()>;
+
+    type WeightInfo = ();
 }
 
 parameter_types! {
@@ -161,12 +171,14 @@ impl pallet_indices::Trait for Runtime {
 
 parameter_types! {
     pub const ExistentialDeposit: Balance = 1 * MILLIPLM;
+    pub const MaxLocks: u32 = 50;
 }
 
 impl pallet_balances::Trait for Runtime {
     type Balance = Balance;
     type DustRemoval = ();
     type Event = Event;
+    type MaxLocks = MaxLocks;
     type ExistentialDeposit = ExistentialDeposit;
     type AccountStore = frame_system::Module<Runtime>;
     type WeightInfo = ();
@@ -336,6 +348,8 @@ impl pallet_grandpa::Trait for Runtime {
     )>>::IdentificationTuple;
 
     type HandleEquivocation = pallet_grandpa::EquivocationHandler<Self::KeyOwnerIdentification, ()>;
+
+    type WeightInfo = ();
 }
 
 parameter_types! {
@@ -495,6 +509,77 @@ impl pallet_nicks::Trait for Runtime {
     type MaxLength = MaxNickLength;
 }
 
+pub struct FixedGasPrice;
+impl FeeCalculator for FixedGasPrice {
+    fn min_gas_price() -> U256 {
+        // Gas price is always one token per gas.
+        0.into()
+    }
+}
+
+parameter_types! {
+    pub const ChainId: u64 = 5;
+}
+
+impl pallet_evm::Trait for Runtime {
+    type FeeCalculator = FixedGasPrice;
+    type CallOrigin = EnsureAddressTruncated;
+    type WithdrawOrigin = EnsureAddressTruncated;
+    type AddressMapping = HashedAddressMapping<BlakeTwo256>;
+    type Currency = Balances;
+    type Event = Event;
+    type Precompiles = ();
+    type ChainId = ChainId;
+}
+
+pub struct TransactionConverter;
+impl frontier_rpc_primitives::ConvertTransaction<UncheckedExtrinsic> for TransactionConverter {
+    fn convert_transaction(&self, transaction: EthereumTransaction) -> UncheckedExtrinsic {
+        UncheckedExtrinsic::new_unsigned(
+            pallet_ethereum::Call::<Runtime>::transact(transaction).into(),
+        )
+    }
+}
+impl frontier_rpc_primitives::ConvertTransaction<sp_runtime::OpaqueExtrinsic>
+    for TransactionConverter
+{
+    fn convert_transaction(&self, transaction: EthereumTransaction) -> sp_runtime::OpaqueExtrinsic {
+        let extrinsic = UncheckedExtrinsic::new_unsigned(
+            pallet_ethereum::Call::<Runtime>::transact(transaction).into(),
+        );
+        let encoded = extrinsic.encode();
+        sp_runtime::OpaqueExtrinsic::decode(&mut &encoded[..])
+            .expect("Encoded extrinsic is always valid")
+    }
+}
+
+// TODO consensus not supported
+pub struct EthereumFindAuthor<F>(sp_std::marker::PhantomData<F>);
+impl<F: FindAuthor<u32>> FindAuthor<H160> for EthereumFindAuthor<F> {
+    fn find_author<'a, I>(_digests: I) -> Option<H160>
+    where
+        I: 'a + IntoIterator<Item = (frame_support::ConsensusEngineId, &'a [u8])>,
+    {
+        None
+    }
+}
+
+// TODO consensus not supported
+pub struct PhantomAura;
+impl FindAuthor<u32> for PhantomAura {
+    fn find_author<'a, I>(_digests: I) -> Option<u32>
+    where
+        I: 'a + IntoIterator<Item = (frame_support::ConsensusEngineId, &'a [u8])>,
+    {
+        Some(0 as u32)
+    }
+}
+
+impl pallet_ethereum::Trait for Runtime {
+    type Event = Event;
+    type FindAuthor = EthereumFindAuthor<PhantomAura>;
+}
+
 construct_runtime!(
     pub enum Runtime where
         Block = Block,
@@ -524,6 +609,8 @@ construct_runtime!(
         OVM: pallet_ovm::{Module, Call, Storage, Event<T>},
         Plasma: pallet_plasma::{Module, Call, Storage, Event<T>},
         Nicks: pallet_nicks::{Module, Call, Storage, Event<T>},
+        EVM: pallet_evm::{Module, Call, Storage, Event<T>},
+        Ethereum: pallet_ethereum::{Module, Call, Storage, Event, Config, ValidateUnsigned},
     }
 );
 
@@ -754,6 +841,84 @@ impl_runtime_apis! {
             encoded: Vec<u8>,
         ) -> Option<Vec<(Vec<u8>, sp_core::crypto::KeyTypeId)>> {
             SessionKeys::decode_into_raw_public_keys(&encoded)
+        }
+    }
+
+    impl frontier_rpc_primitives::EthereumRuntimeRPCApi<Block> for Runtime {
+        fn chain_id() -> u64 {
+            ChainId::get()
+        }
+
+        fn account_basic(address: H160) -> EVMAccount {
+            EVM::account_basic(&address)
+        }
+
+        fn gas_price() -> U256 {
+            FixedGasPrice::min_gas_price()
+        }
+
+        fn account_code_at(address: H160) -> Vec<u8> {
+            EVM::account_codes(address)
+        }
+
+        fn author() -> H160 {
+            <pallet_ethereum::Module<Runtime>>::find_author()
+        }
+
+        fn storage_at(address: H160, index: U256) -> H256 {
+            let mut tmp = [0u8; 32];
+            index.to_big_endian(&mut tmp);
+            EVM::account_storages(address, H256::from_slice(&tmp[..]))
+        }
+
+        fn call(
+            from: H160,
+            data: Vec<u8>,
+            value: U256,
+            gas_limit: U256,
+            gas_price: Option<U256>,
+            nonce: Option<U256>,
+            action: pallet_ethereum::TransactionAction,
+        ) -> Result<(Vec<u8>, U256), sp_runtime::DispatchError> {
+            match action {
+                pallet_ethereum::TransactionAction::Call(to) =>
+                    EVM::execute_call(
+                        from,
+                        to,
+                        data,
+                        value,
+                        gas_limit.low_u32(),
+                        gas_price.unwrap_or(U256::from(0)),
+                        nonce,
+                        false,
+                    )
+                    .map(|(_, ret, gas, _)| (ret, gas))
+                    .map_err(|err| err.into()),
+                pallet_ethereum::TransactionAction::Create =>
+                    EVM::execute_create(
+                        from,
+                        data,
+                        value,
+                        gas_limit.low_u32(),
+                        gas_price.unwrap_or(U256::from(0)),
+                        nonce,
+                        false,
+                    )
+                    .map(|(_, _, gas, _)| (vec![], gas))
+                    .map_err(|err| err.into()),
+            }
+        }
+
+        fn current_transaction_statuses() -> Option<Vec<TransactionStatus>> {
+            Ethereum::current_transaction_statuses()
+        }
+
+        fn current_block() -> Option<EthereumBlock> {
+            Ethereum::current_block()
+        }
+
+        fn current_receipts() -> Option<Vec<EthereumReceipt>> {
+            Ethereum::current_receipts()
         }
     }
 }

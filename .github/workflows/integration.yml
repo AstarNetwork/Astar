@@ -12,14 +12,20 @@ jobs:
     - name: Install LLVM (windows only)
       if: runner.os == 'Windows'
       run: choco install llvm
+
     - uses: hecrj/setup-rust-action@v1
       with:
-        rust-version: 'nightly-2020-07-26'
+        rust-version: 'nightly-2020-07-20'
         targets: 'wasm32-unknown-unknown'
-    - name: Checkout the source coder
+
+    - name: Checkout the source code
       uses: actions/checkout@master
+      with:
+        submodules: true
+
     - name: Check targets are installed correctly
       run: rustup target list --installed
+
     - name: Install build tools
       run: cargo install --git https://github.com/alexcrichton/wasm-gc --force
 
@@ -83,6 +89,9 @@ jobs:
   nix:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - name: Checkout the source code
+      uses: actions/checkout@v2
+      with:
+        submodules: true
     - uses: cachix/install-nix-action@v10
     - run: nix-shell third-party/nix/shell.nix --option sandbox false --run "cargo build --release"
