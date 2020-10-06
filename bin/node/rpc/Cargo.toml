@@ -25,6 +25,6 @@ sc-consensus-babe-rpc = "0.8.0"
 sc-consensus-epochs = "0.8.0"
 sc-finality-grandpa = "0.8.0"
 sc-finality-grandpa-rpc = "0.8.0"
-pallet-contracts-rpc = { path = "../../../frame/contracts/rpc" } 
+pallet-contracts-rpc = { path = "../../../vendor/contracts/rpc" } 
 pallet-transaction-payment-rpc = "2.0.0"
 substrate-frame-rpc-system = "2.0.0"

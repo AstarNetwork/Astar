@@ -1,6 +1,6 @@
 [package]
 name = "pallet-contract-operator"
-version = "1.5.0"
+version = "1.6.0"
 authors = ["Stake Technologies <devops@stake.co.jp>"]
 edition = "2018"
 license = "Apache-2.0"
@@ -20,7 +20,7 @@ pallet-balances = { version = "2.0.0", default_features = false }
 frame-support = { version = "2.0.0", default_features = false }
 pallet-timestamp = { version = "2.0.0", default_features = false }
 frame-system = { version = "2.0.0", default_features = false }
-pallet-contracts = { path = "../contracts", default_features = false }
+pallet-contracts = { path = "../../vendor/contracts", default_features = false }
 
 [dev-dependencies]
 wabt = "0.10.0"
