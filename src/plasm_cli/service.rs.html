@@ -434,15 +434,6 @@
 <span id="434">434</span>
 <span id="435">435</span>
 <span id="436">436</span>
-<span id="437">437</span>
-<span id="438">438</span>
-<span id="439">439</span>
-<span id="440">440</span>
-<span id="441">441</span>
-<span id="442">442</span>
-<span id="443">443</span>
-<span id="444">444</span>
-<span id="445">445</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="doccomment">//! Service implementation. Specialized wrapper over substrate service.</span>
 
@@ -481,16 +472,9 @@
         <span class="ident">sp_consensus</span>::<span class="ident">DefaultImportQueue</span><span class="op">&lt;</span><span class="ident">Block</span>, <span class="ident">FullClient</span><span class="op">&gt;</span>,
         <span class="ident">sc_transaction_pool</span>::<span class="ident">FullPool</span><span class="op">&lt;</span><span class="ident">Block</span>, <span class="ident">FullClient</span><span class="op">&gt;</span>,
         (
-            <span class="kw">impl</span> <span class="ident">Fn</span>(
-                <span class="ident">plasm_rpc</span>::<span class="ident">DenyUnsafe</span>,
-                <span class="ident">jsonrpc_pubsub</span>::<span class="ident">manager</span>::<span class="ident">SubscriptionManager</span>,
-            ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">plasm_rpc</span>::<span class="ident">IoHandler</span>,
-            (
-                <span class="ident">sc_consensus_babe</span>::<span class="ident">BabeBlockImport</span><span class="op">&lt;</span><span class="ident">Block</span>, <span class="ident">FullClient</span>, <span class="ident">FullGrandpaBlockImport</span><span class="op">&gt;</span>,
-                <span class="ident">grandpa</span>::<span class="ident">LinkHalf</span><span class="op">&lt;</span><span class="ident">Block</span>, <span class="ident">FullClient</span>, <span class="ident">FullSelectChain</span><span class="op">&gt;</span>,
-                <span class="ident">sc_consensus_babe</span>::<span class="ident">BabeLink</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span>,
-            ),
-            <span class="ident">grandpa</span>::<span class="ident">SharedVoterState</span>,
+            <span class="ident">sc_consensus_babe</span>::<span class="ident">BabeBlockImport</span><span class="op">&lt;</span><span class="ident">Block</span>, <span class="ident">FullClient</span>, <span class="ident">FullGrandpaBlockImport</span><span class="op">&gt;</span>,
+            <span class="ident">grandpa</span>::<span class="ident">LinkHalf</span><span class="op">&lt;</span><span class="ident">Block</span>, <span class="ident">FullClient</span>, <span class="ident">FullSelectChain</span><span class="op">&gt;</span>,
+            <span class="ident">sc_consensus_babe</span>::<span class="ident">BabeLink</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span>,
         ),
     <span class="op">&gt;</span>,
     <span class="ident">ServiceError</span>,
@@ -536,50 +520,6 @@
         <span class="ident">sp_consensus</span>::<span class="ident">CanAuthorWithNativeVersion</span>::<span class="ident">new</span>(<span class="ident">client</span>.<span class="ident">executor</span>().<span class="ident">clone</span>()),
     )<span class="question-mark">?</span>;
 
-    <span class="kw">let</span> <span class="ident">import_setup</span> <span class="op">=</span> (<span class="ident">block_import</span>, <span class="ident">grandpa_link</span>, <span class="ident">babe_link</span>);
-
-    <span class="kw">let</span> (<span class="ident">rpc_extensions_builder</span>, <span class="ident">rpc_setup</span>) <span class="op">=</span> {
-        <span class="kw">let</span> (<span class="kw">_</span>, <span class="ident">grandpa_link</span>, <span class="ident">babe_link</span>) <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">import_setup</span>;
-
-        <span class="kw">let</span> <span class="ident">justification_stream</span> <span class="op">=</span> <span class="ident">grandpa_link</span>.<span class="ident">justification_stream</span>();
-        <span class="kw">let</span> <span class="ident">shared_authority_set</span> <span class="op">=</span> <span class="ident">grandpa_link</span>.<span class="ident">shared_authority_set</span>().<span class="ident">clone</span>();
-        <span class="kw">let</span> <span class="ident">shared_voter_state</span> <span class="op">=</span> <span class="ident">grandpa</span>::<span class="ident">SharedVoterState</span>::<span class="ident">empty</span>();
-
-        <span class="kw">let</span> <span class="ident">rpc_setup</span> <span class="op">=</span> <span class="ident">shared_voter_state</span>.<span class="ident">clone</span>();
-
-        <span class="kw">let</span> <span class="ident">babe_config</span> <span class="op">=</span> <span class="ident">babe_link</span>.<span class="ident">config</span>().<span class="ident">clone</span>();
-        <span class="kw">let</span> <span class="ident">shared_epoch_changes</span> <span class="op">=</span> <span class="ident">babe_link</span>.<span class="ident">epoch_changes</span>().<span class="ident">clone</span>();
-
-        <span class="kw">let</span> <span class="ident">client</span> <span class="op">=</span> <span class="ident">client</span>.<span class="ident">clone</span>();
-        <span class="kw">let</span> <span class="ident">pool</span> <span class="op">=</span> <span class="ident">transaction_pool</span>.<span class="ident">clone</span>();
-        <span class="kw">let</span> <span class="ident">select_chain</span> <span class="op">=</span> <span class="ident">select_chain</span>.<span class="ident">clone</span>();
-        <span class="kw">let</span> <span class="ident">keystore</span> <span class="op">=</span> <span class="ident">keystore</span>.<span class="ident">clone</span>();
-
-        <span class="kw">let</span> <span class="ident">rpc_extensions_builder</span> <span class="op">=</span> <span class="kw">move</span> <span class="op">|</span><span class="ident">deny_unsafe</span>, <span class="ident">subscriptions</span><span class="op">|</span> {
-            <span class="kw">let</span> <span class="ident">deps</span> <span class="op">=</span> <span class="ident">plasm_rpc</span>::<span class="ident">FullDeps</span> {
-                <span class="ident">client</span>: <span class="ident">client</span>.<span class="ident">clone</span>(),
-                <span class="ident">pool</span>: <span class="ident">pool</span>.<span class="ident">clone</span>(),
-                <span class="ident">select_chain</span>: <span class="ident">select_chain</span>.<span class="ident">clone</span>(),
-                <span class="ident">deny_unsafe</span>,
-                <span class="ident">babe</span>: <span class="ident">plasm_rpc</span>::<span class="ident">BabeDeps</span> {
-                    <span class="ident">babe_config</span>: <span class="ident">babe_config</span>.<span class="ident">clone</span>(),
-                    <span class="ident">shared_epoch_changes</span>: <span class="ident">shared_epoch_changes</span>.<span class="ident">clone</span>(),
-                    <span class="ident">keystore</span>: <span class="ident">keystore</span>.<span class="ident">clone</span>(),
-                },
-                <span class="ident">grandpa</span>: <span class="ident">plasm_rpc</span>::<span class="ident">GrandpaDeps</span> {
-                    <span class="ident">shared_voter_state</span>: <span class="ident">shared_voter_state</span>.<span class="ident">clone</span>(),
-                    <span class="ident">shared_authority_set</span>: <span class="ident">shared_authority_set</span>.<span class="ident">clone</span>(),
-                    <span class="ident">justification_stream</span>: <span class="ident">justification_stream</span>.<span class="ident">clone</span>(),
-                    <span class="ident">subscriptions</span>,
-                },
-            };
-
-            <span class="ident">plasm_rpc</span>::<span class="ident">create_full</span>(<span class="ident">deps</span>)
-        };
-
-        (<span class="ident">rpc_extensions_builder</span>, <span class="ident">rpc_setup</span>)
-    };
-
     <span class="prelude-val">Ok</span>(<span class="ident">sc_service</span>::<span class="ident">PartialComponents</span> {
         <span class="ident">client</span>,
         <span class="ident">backend</span>,
@@ -589,7 +529,7 @@
         <span class="ident">import_queue</span>,
         <span class="ident">transaction_pool</span>,
         <span class="ident">inherent_data_providers</span>,
-        <span class="ident">other</span>: (<span class="ident">rpc_extensions_builder</span>, <span class="ident">import_setup</span>, <span class="ident">rpc_setup</span>),
+        <span class="ident">other</span>: (<span class="ident">block_import</span>, <span class="ident">grandpa_link</span>, <span class="ident">babe_link</span>),
     })
 }
 
@@ -619,9 +559,14 @@
         <span class="ident">select_chain</span>,
         <span class="ident">transaction_pool</span>,
         <span class="ident">inherent_data_providers</span>,
-        <span class="ident">other</span>: (<span class="ident">rpc_extensions_builder</span>, <span class="ident">import_setup</span>, <span class="ident">rpc_setup</span>),
+        <span class="ident">other</span>: <span class="ident">import_setup</span>,
     } <span class="op">=</span> <span class="ident">new_partial</span>(<span class="kw-2">&amp;</span><span class="ident">config</span>)<span class="question-mark">?</span>;
 
+    <span class="kw">let</span> (<span class="kw">_</span>, <span class="ident">grandpa_link</span>, <span class="ident">babe_link</span>) <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">import_setup</span>;
+
+    <span class="kw">let</span> <span class="ident">justification_stream</span> <span class="op">=</span> <span class="ident">grandpa_link</span>.<span class="ident">justification_stream</span>();
+    <span class="kw">let</span> <span class="ident">shared_authority_set</span> <span class="op">=</span> <span class="ident">grandpa_link</span>.<span class="ident">shared_authority_set</span>().<span class="ident">clone</span>();
+    <span class="kw">let</span> <span class="ident">shared_voter_state</span> <span class="op">=</span> <span class="ident">grandpa</span>::<span class="ident">SharedVoterState</span>::<span class="ident">empty</span>();
     <span class="kw">let</span> <span class="ident">finality_proof_provider</span> <span class="op">=</span>
         <span class="ident">GrandpaFinalityProofProvider</span>::<span class="ident">new_for_service</span>(<span class="ident">backend</span>.<span class="ident">clone</span>(), <span class="ident">client</span>.<span class="ident">clone</span>());
 
@@ -649,11 +594,49 @@
     }
 
     <span class="kw">let</span> <span class="ident">role</span> <span class="op">=</span> <span class="ident">config</span>.<span class="ident">role</span>.<span class="ident">clone</span>();
+    <span class="kw">let</span> <span class="ident">is_authority</span> <span class="op">=</span> <span class="ident">role</span>.<span class="ident">is_authority</span>();
     <span class="kw">let</span> <span class="ident">force_authoring</span> <span class="op">=</span> <span class="ident">config</span>.<span class="ident">force_authoring</span>;
     <span class="kw">let</span> <span class="ident">name</span> <span class="op">=</span> <span class="ident">config</span>.<span class="ident">network</span>.<span class="ident">node_name</span>.<span class="ident">clone</span>();
     <span class="kw">let</span> <span class="ident">enable_grandpa</span> <span class="op">=</span> <span class="op">!</span><span class="ident">config</span>.<span class="ident">disable_grandpa</span>;
     <span class="kw">let</span> <span class="ident">prometheus_registry</span> <span class="op">=</span> <span class="ident">config</span>.<span class="ident">prometheus_registry</span>().<span class="ident">cloned</span>();
     <span class="kw">let</span> <span class="ident">telemetry_connection_sinks</span> <span class="op">=</span> <span class="ident">sc_service</span>::<span class="ident">TelemetryConnectionSinks</span>::<span class="ident">default</span>();
+
+    <span class="kw">let</span> <span class="ident">rpc_extensions_builder</span> <span class="op">=</span> {
+        <span class="kw">let</span> <span class="ident">babe_config</span> <span class="op">=</span> <span class="ident">babe_link</span>.<span class="ident">config</span>().<span class="ident">clone</span>();
+        <span class="kw">let</span> <span class="ident">shared_epoch_changes</span> <span class="op">=</span> <span class="ident">babe_link</span>.<span class="ident">epoch_changes</span>().<span class="ident">clone</span>();
+        <span class="kw">let</span> <span class="ident">shared_voter_state</span> <span class="op">=</span> <span class="ident">shared_voter_state</span>.<span class="ident">clone</span>();
+
+        <span class="kw">let</span> <span class="ident">client</span> <span class="op">=</span> <span class="ident">client</span>.<span class="ident">clone</span>();
+        <span class="kw">let</span> <span class="ident">pool</span> <span class="op">=</span> <span class="ident">transaction_pool</span>.<span class="ident">clone</span>();
+        <span class="kw">let</span> <span class="ident">select_chain</span> <span class="op">=</span> <span class="ident">select_chain</span>.<span class="ident">clone</span>();
+        <span class="kw">let</span> <span class="ident">keystore</span> <span class="op">=</span> <span class="ident">keystore</span>.<span class="ident">clone</span>();
+        <span class="kw">let</span> <span class="ident">network</span> <span class="op">=</span> <span class="ident">network</span>.<span class="ident">clone</span>();
+
+        <span class="kw">move</span> <span class="op">|</span><span class="ident">deny_unsafe</span>, <span class="ident">subscription_executor</span>: <span class="ident">sc_rpc</span>::<span class="ident">SubscriptionTaskExecutor</span><span class="op">|</span> {
+            <span class="kw">let</span> <span class="ident">deps</span> <span class="op">=</span> <span class="ident">plasm_rpc</span>::<span class="ident">FullDeps</span> {
+                <span class="ident">client</span>: <span class="ident">client</span>.<span class="ident">clone</span>(),
+                <span class="ident">pool</span>: <span class="ident">pool</span>.<span class="ident">clone</span>(),
+                <span class="ident">select_chain</span>: <span class="ident">select_chain</span>.<span class="ident">clone</span>(),
+                <span class="ident">deny_unsafe</span>,
+                <span class="ident">is_authority</span>,
+                <span class="ident">network</span>: <span class="ident">network</span>.<span class="ident">clone</span>(),
+                <span class="ident">babe</span>: <span class="ident">plasm_rpc</span>::<span class="ident">BabeDeps</span> {
+                    <span class="ident">babe_config</span>: <span class="ident">babe_config</span>.<span class="ident">clone</span>(),
+                    <span class="ident">shared_epoch_changes</span>: <span class="ident">shared_epoch_changes</span>.<span class="ident">clone</span>(),
+                    <span class="ident">keystore</span>: <span class="ident">keystore</span>.<span class="ident">clone</span>(),
+                },
+                <span class="ident">grandpa</span>: <span class="ident">plasm_rpc</span>::<span class="ident">GrandpaDeps</span> {
+                    <span class="ident">shared_voter_state</span>: <span class="ident">shared_voter_state</span>.<span class="ident">clone</span>(),
+                    <span class="ident">shared_authority_set</span>: <span class="ident">shared_authority_set</span>.<span class="ident">clone</span>(),
+                    <span class="ident">justification_stream</span>: <span class="ident">justification_stream</span>.<span class="ident">clone</span>(),
+                    <span class="ident">subscription_executor</span>: <span class="ident">subscription_executor</span>.<span class="ident">clone</span>(),
+                    <span class="ident">finality_provider</span>: <span class="ident">finality_proof_provider</span>.<span class="ident">clone</span>(),
+                },
+            };
+
+            <span class="ident">plasm_rpc</span>::<span class="ident">create_full</span>(<span class="ident">deps</span>, <span class="ident">subscription_executor</span>)
+        }
+    };
 
     <span class="ident">sc_service</span>::<span class="ident">spawn_tasks</span>(<span class="ident">sc_service</span>::<span class="ident">SpawnTasksParams</span> {
         <span class="ident">config</span>,
@@ -672,7 +655,6 @@
     })<span class="question-mark">?</span>;
 
     <span class="kw">let</span> (<span class="ident">block_import</span>, <span class="ident">grandpa_link</span>, <span class="ident">babe_link</span>) <span class="op">=</span> <span class="ident">import_setup</span>;
-    <span class="kw">let</span> <span class="ident">shared_voter_state</span> <span class="op">=</span> <span class="ident">rpc_setup</span>;
 
     (<span class="ident">with_startup_data</span>)(<span class="kw-2">&amp;</span><span class="ident">block_import</span>, <span class="kw-2">&amp;</span><span class="ident">babe_link</span>);
 

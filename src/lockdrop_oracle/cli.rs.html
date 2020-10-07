@@ -14,17 +14,6 @@
 <span id="14">14</span>
 <span id="15">15</span>
 <span id="16">16</span>
-<span id="17">17</span>
-<span id="18">18</span>
-<span id="19">19</span>
-<span id="20">20</span>
-<span id="21">21</span>
-<span id="22">22</span>
-<span id="23">23</span>
-<span id="24">24</span>
-<span id="25">25</span>
-<span id="26">26</span>
-<span id="27">27</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="doccomment">//! Lockdrop module CLI parameters.</span>
 
@@ -32,22 +21,11 @@
 
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">StructOpt</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Config</span> {
-    <span class="comment">/*
-    /// Bitcoin node endpoint.
-    #[structopt(long, default_value = &quot;https://api.blockcypher.com/v1/btc/test3/txs&quot;)]
-    pub bitcoin_endpoint: String,
-    /// Bitcoin minimum transaction confirmations.
-    #[structopt(long, default_value = &quot;8&quot;)]
-    pub safe_btc_confirmations: u64,
-    */</span>
     <span class="doccomment">/// Ethereum node endpoint.</span>
     <span class="attribute">#[<span class="ident">structopt</span>(<span class="ident">long</span>, <span class="ident">default_value</span> <span class="op">=</span> <span class="string">&quot;https://ropsten.infura.io/v3&quot;</span>)]</span>
     <span class="kw">pub</span> <span class="ident">ethereum_endpoint</span>: <span class="ident">String</span>,
-    <span class="doccomment">/// Price feeds endpoint.</span>
-    <span class="attribute">#[<span class="ident">structopt</span>(<span class="ident">long</span>, <span class="ident">default_value</span> <span class="op">=</span> <span class="string">&quot;https://ropsten.infura.io/v3&quot;</span>)]</span>
-    <span class="kw">pub</span> <span class="ident">feeds_endpoint</span>: <span class="ident">String</span>,
     <span class="doccomment">/// Ethereum lockdrop smart contract address.</span>
-    <span class="attribute">#[<span class="ident">structopt</span>(<span class="ident">long</span>, <span class="ident">default_value</span> <span class="op">=</span> <span class="string">&quot;69e7eb3ab94a10e4f408d842b287c70aa0d11649&quot;</span>)]</span>
+    <span class="attribute">#[<span class="ident">structopt</span>(<span class="ident">long</span>, <span class="ident">default_value</span> <span class="op">=</span> <span class="string">&quot;33251e1298dF5Ff84166E62Abecf85FCCD1A1241&quot;</span>)]</span>
     <span class="kw">pub</span> <span class="ident">lockdrop_contract</span>: <span class="ident">String</span>,
     <span class="doccomment">/// Ethereum minimum transaction confirmations.</span>
     <span class="attribute">#[<span class="ident">structopt</span>(<span class="ident">long</span>, <span class="ident">default_value</span> <span class="op">=</span> <span class="string">&quot;10&quot;</span>)]</span>
