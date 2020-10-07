@@ -12,6 +12,8 @@ jobs:
           targets: 'wasm32-unknown-unknown'
       - name: Checkout the source code
         uses: actions/checkout@master
+        with:
+          submodules: true
       - name: Check targets are installed correctly
         run: rustup target list --installed
       - name: Install build tools
