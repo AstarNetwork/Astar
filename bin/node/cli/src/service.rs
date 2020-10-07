@@ -35,16 +35,9 @@ pub fn new_partial(
         sp_consensus::DefaultImportQueue<Block, FullClient>,
         sc_transaction_pool::FullPool<Block, FullClient>,
         (
-            impl Fn(plasm_rpc::DenyUnsafe, sc_rpc::SubscriptionTaskExecutor) -> plasm_rpc::IoHandler,
-            (
-                sc_consensus_babe::BabeBlockImport<Block, FullClient, FullGrandpaBlockImport>,
-                grandpa::LinkHalf<Block, FullClient, FullSelectChain>,
-                sc_consensus_babe::BabeLink<Block>,
-            ),
-            (
-                grandpa::SharedVoterState,
-                Arc<GrandpaFinalityProofProvider<FullBackend, Block>>,
-            ),
+            sc_consensus_babe::BabeBlockImport<Block, FullClient, FullGrandpaBlockImport>,
+            grandpa::LinkHalf<Block, FullClient, FullSelectChain>,
+            sc_consensus_babe::BabeLink<Block>,
         ),
     >,
     ServiceError,
@@ -90,53 +83,6 @@ pub fn new_partial(
         sp_consensus::CanAuthorWithNativeVersion::new(client.executor().clone()),
     )?;
 
-    let import_setup = (block_import, grandpa_link, babe_link);
-
-    let (rpc_extensions_builder, rpc_setup) = {
-        let (_, grandpa_link, babe_link) = &import_setup;
-
-        let justification_stream = grandpa_link.justification_stream();
-        let shared_authority_set = grandpa_link.shared_authority_set().clone();
-        let shared_voter_state = grandpa::SharedVoterState::empty();
-        let finality_proof_provider =
-            GrandpaFinalityProofProvider::new_for_service(backend.clone(), client.clone());
-
-        let rpc_setup = (shared_voter_state.clone(), finality_proof_provider.clone());
-
-        let babe_config = babe_link.config().clone();
-        let shared_epoch_changes = babe_link.epoch_changes().clone();
-
-        let client = client.clone();
-        let pool = transaction_pool.clone();
-        let select_chain = select_chain.clone();
-        let keystore = keystore.clone();
-
-        let rpc_extensions_builder = move |deny_unsafe, subscription_executor| {
-            let deps = plasm_rpc::FullDeps {
-                client: client.clone(),
-                pool: pool.clone(),
-                select_chain: select_chain.clone(),
-                deny_unsafe,
-                babe: plasm_rpc::BabeDeps {
-                    babe_config: babe_config.clone(),
-                    shared_epoch_changes: shared_epoch_changes.clone(),
-                    keystore: keystore.clone(),
-                },
-                grandpa: plasm_rpc::GrandpaDeps {
-                    shared_voter_state: shared_voter_state.clone(),
-                    shared_authority_set: shared_authority_set.clone(),
-                    justification_stream: justification_stream.clone(),
-                    subscription_executor,
-                    finality_provider: finality_proof_provider.clone(),
-                },
-            };
-
-            plasm_rpc::create_full(deps)
-        };
-
-        (rpc_extensions_builder, rpc_setup)
-    };
-
     Ok(sc_service::PartialComponents {
         client,
         backend,
@@ -146,7 +92,7 @@ pub fn new_partial(
         import_queue,
         transaction_pool,
         inherent_data_providers,
-        other: (rpc_extensions_builder, import_setup, rpc_setup),
+        other: (block_import, grandpa_link, babe_link),
     })
 }
 
@@ -176,10 +122,16 @@ pub fn new_full_base(
         select_chain,
         transaction_pool,
         inherent_data_providers,
-        other: (rpc_extensions_builder, import_setup, rpc_setup),
+        other: import_setup,
     } = new_partial(&config)?;
 
-    let (shared_voter_state, finality_proof_provider) = rpc_setup;
+    let (_, grandpa_link, babe_link) = &import_setup;
+
+    let justification_stream = grandpa_link.justification_stream();
+    let shared_authority_set = grandpa_link.shared_authority_set().clone();
+    let shared_voter_state = grandpa::SharedVoterState::empty();
+    let finality_proof_provider =
+        GrandpaFinalityProofProvider::new_for_service(backend.clone(), client.clone());
 
     let (network, network_status_sinks, system_rpc_tx, network_starter) =
         sc_service::build_network(sc_service::BuildNetworkParams {
@@ -205,11 +157,49 @@ pub fn new_full_base(
     }
 
     let role = config.role.clone();
+    let is_authority = role.is_authority();
     let force_authoring = config.force_authoring;
     let name = config.network.node_name.clone();
     let enable_grandpa = !config.disable_grandpa;
     let prometheus_registry = config.prometheus_registry().cloned();
     let telemetry_connection_sinks = sc_service::TelemetryConnectionSinks::default();
+
+    let rpc_extensions_builder = {
+        let babe_config = babe_link.config().clone();
+        let shared_epoch_changes = babe_link.epoch_changes().clone();
+        let shared_voter_state = shared_voter_state.clone();
+
+        let client = client.clone();
+        let pool = transaction_pool.clone();
+        let select_chain = select_chain.clone();
+        let keystore = keystore.clone();
+        let network = network.clone();
+
+        move |deny_unsafe, subscription_executor: sc_rpc::SubscriptionTaskExecutor| {
+            let deps = plasm_rpc::FullDeps {
+                client: client.clone(),
+                pool: pool.clone(),
+                select_chain: select_chain.clone(),
+                deny_unsafe,
+                is_authority,
+                network: network.clone(),
+                babe: plasm_rpc::BabeDeps {
+                    babe_config: babe_config.clone(),
+                    shared_epoch_changes: shared_epoch_changes.clone(),
+                    keystore: keystore.clone(),
+                },
+                grandpa: plasm_rpc::GrandpaDeps {
+                    shared_voter_state: shared_voter_state.clone(),
+                    shared_authority_set: shared_authority_set.clone(),
+                    justification_stream: justification_stream.clone(),
+                    subscription_executor: subscription_executor.clone(),
+                    finality_provider: finality_proof_provider.clone(),
+                },
+            };
+
+            plasm_rpc::create_full(deps, subscription_executor)
+        }
+    };
 
     sc_service::spawn_tasks(sc_service::SpawnTasksParams {
         config,

@@ -42,7 +42,7 @@ use sp_runtime::transaction_validity::{
 };
 use sp_runtime::{
     create_runtime_str, generic, impl_opaque_keys, ApplyExtrinsicResult, FixedPointNumber,
-    MultiSigner, Perbill, Perquintill,
+    MultiSigner, Perbill, Perquintill, RuntimeAppPublic,
 };
 use sp_std::prelude::*;
 #[cfg(any(feature = "std", test))]
@@ -513,7 +513,7 @@ pub struct FixedGasPrice;
 impl FeeCalculator for FixedGasPrice {
     fn min_gas_price() -> U256 {
         // Gas price is always one token per gas.
-        0.into()
+        1.into()
     }
 }
 
@@ -528,7 +528,12 @@ impl pallet_evm::Trait for Runtime {
     type AddressMapping = HashedAddressMapping<BlakeTwo256>;
     type Currency = Balances;
     type Event = Event;
-    type Precompiles = ();
+    type Precompiles = (
+        pallet_evm::precompiles::ECRecover,
+        pallet_evm::precompiles::Sha256,
+        pallet_evm::precompiles::Ripemd160,
+        pallet_evm::precompiles::Identity,
+    );
     type ChainId = ChainId;
 }
 
@@ -556,28 +561,21 @@ impl frontier_rpc_primitives::ConvertTransaction<sp_runtime::OpaqueExtrinsic>
 // TODO consensus not supported
 pub struct EthereumFindAuthor<F>(sp_std::marker::PhantomData<F>);
 impl<F: FindAuthor<u32>> FindAuthor<H160> for EthereumFindAuthor<F> {
-    fn find_author<'a, I>(_digests: I) -> Option<H160>
+    fn find_author<'a, I>(digests: I) -> Option<H160>
     where
         I: 'a + IntoIterator<Item = (frame_support::ConsensusEngineId, &'a [u8])>,
     {
+        if let Some(author_index) = F::find_author(digests) {
+            let (authority_id, _) = Babe::authorities()[author_index as usize].clone();
+            return Some(H160::from_slice(&authority_id.to_raw_vec()[4..24]));
+        }
         None
-    }
-}
-
-// TODO consensus not supported
-pub struct PhantomAura;
-impl FindAuthor<u32> for PhantomAura {
-    fn find_author<'a, I>(_digests: I) -> Option<u32>
-    where
-        I: 'a + IntoIterator<Item = (frame_support::ConsensusEngineId, &'a [u8])>,
-    {
-        Some(0 as u32)
     }
 }
 
 impl pallet_ethereum::Trait for Runtime {
     type Event = Event;
-    type FindAuthor = EthereumFindAuthor<PhantomAura>;
+    type FindAuthor = EthereumFindAuthor<Babe>;
 }
 
 construct_runtime!(

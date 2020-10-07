@@ -15,7 +15,12 @@
 
 use std::sync::Arc;
 
+use jsonrpc_pubsub::manager::SubscriptionManager;
 use plasm_primitives::{AccountId, Balance, Block, BlockNumber, Hash, Index};
+use sc_client_api::{
+    backend::{AuxStore, StateBackend, StorageProvider},
+    client::BlockchainEvents,
+};
 use sc_consensus_babe::{Config, Epoch};
 use sc_consensus_babe_rpc::BabeRpcHandler;
 use sc_consensus_epochs::SharedEpochChanges;
@@ -79,6 +84,10 @@ pub struct FullDeps<C, P, SC, B> {
     pub select_chain: SC,
     /// Whether to deny unsafe calls
     pub deny_unsafe: DenyUnsafe,
+    /// The Node authority flag
+    pub is_authority: bool,
+    /// Network service
+    pub network: Arc<sc_network::NetworkService<Block, Hash>>,
     /// BABE specific dependencies.
     pub babe: BabeDeps,
     /// GRANDPA specific dependencies.
@@ -91,21 +100,28 @@ pub type IoHandler = jsonrpc_core::IoHandler<sc_rpc::Metadata>;
 /// Instantiate all Full RPC extensions.
 pub fn create_full<C, P, SC, B>(
     deps: FullDeps<C, P, SC, B>,
+    subscription_task_executor: SubscriptionTaskExecutor,
 ) -> jsonrpc_core::IoHandler<sc_rpc_api::Metadata>
 where
-    C: ProvideRuntimeApi<Block>,
+    C: ProvideRuntimeApi<Block> + StorageProvider<Block, B> + AuxStore,
+    C: BlockchainEvents<Block>,
     C: HeaderBackend<Block> + HeaderMetadata<Block, Error = BlockChainError> + 'static,
     C: Send + Sync + 'static,
     C::Api: substrate_frame_rpc_system::AccountNonceApi<Block, AccountId, Index>,
     C::Api: pallet_contracts_rpc::ContractsRuntimeApi<Block, AccountId, Balance, BlockNumber>,
     C::Api: pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>,
+    C::Api: frontier_rpc_primitives::EthereumRuntimeRPCApi<Block>,
     C::Api: BabeApi<Block>,
     C::Api: BlockBuilder<Block>,
-    P: TransactionPool + 'static,
+    <C::Api as sp_api::ApiErrorExt>::Error: std::fmt::Debug,
+    P: TransactionPool<Block = Block> + 'static,
     SC: SelectChain<Block> + 'static,
     B: sc_client_api::Backend<Block> + Send + Sync + 'static,
-    B::State: sc_client_api::backend::StateBackend<sp_runtime::traits::HashFor<Block>>,
+    B::State: StateBackend<sp_runtime::traits::HashFor<Block>>,
 {
+    use frontier_rpc::{
+        EthApi, EthApiServer, EthPubSubApi, EthPubSubApiServer, NetApi, NetApiServer,
+    };
     use pallet_contracts_rpc::{Contracts, ContractsApi};
     use pallet_transaction_payment_rpc::{TransactionPayment, TransactionPaymentApi};
     use substrate_frame_rpc_system::{FullSystem, SystemApi};
@@ -116,6 +132,8 @@ where
         pool,
         select_chain,
         deny_unsafe,
+        is_authority,
+        network,
         babe,
         grandpa,
     } = deps;
@@ -135,7 +153,7 @@ where
 
     io.extend_with(SystemApi::to_delegate(FullSystem::new(
         client.clone(),
-        pool,
+        pool.clone(),
         deny_unsafe,
     )));
     // Making synchronous calls in light client freezes the browser currently,
@@ -147,11 +165,11 @@ where
     )));
     io.extend_with(sc_consensus_babe_rpc::BabeApi::to_delegate(
         BabeRpcHandler::new(
-            client,
+            client.clone(),
             shared_epoch_changes,
             keystore,
             babe_config,
-            select_chain,
+            select_chain.clone(),
             deny_unsafe,
         ),
     ));
@@ -164,6 +182,24 @@ where
             finality_provider,
         ),
     ));
+    io.extend_with(EthApiServer::to_delegate(EthApi::new(
+        client.clone(),
+        select_chain.clone(),
+        pool.clone(),
+        plasm_runtime::TransactionConverter,
+        is_authority,
+    )));
+    io.extend_with(NetApiServer::to_delegate(NetApi::new(
+        client.clone(),
+        select_chain.clone(),
+    )));
+    io.extend_with(EthPubSubApiServer::to_delegate(EthPubSubApi::new(
+        pool.clone(),
+        client.clone(),
+        select_chain.clone(),
+        network.clone(),
+        SubscriptionManager::new(Arc::new(subscription_task_executor)),
+    )));
 
     io
 }

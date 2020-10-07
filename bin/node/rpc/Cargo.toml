@@ -7,6 +7,8 @@ edition = "2018"
 [dependencies]
 plasm-runtime = { path = "../runtime" }
 plasm-primitives = { path = "../primitives" }
+frontier-rpc = { path = "../../../vendor/frontier/rpc" }
+frontier-rpc-primitives = { path = "../../../vendor/frontier/rpc/primitives" }
 jsonrpc-core = "15.0.0"
 jsonrpc-pubsub = "15.0.0"
 sp-api = "2.0.0"
@@ -25,6 +27,7 @@ sc-consensus-babe-rpc = "0.8.0"
 sc-consensus-epochs = "0.8.0"
 sc-finality-grandpa = "0.8.0"
 sc-finality-grandpa-rpc = "0.8.0"
+sc-network = "0.8.0"
 pallet-contracts-rpc = { path = "../../../vendor/contracts/rpc" } 
 pallet-transaction-payment-rpc = "2.0.0"
 substrate-frame-rpc-system = "2.0.0"
