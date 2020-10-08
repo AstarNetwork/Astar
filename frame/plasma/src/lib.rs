@@ -40,6 +40,10 @@ use sp_std::{marker::PhantomData, prelude::*, vec::Vec};
 pub use pallet_ovm::{Decision, Property, PropertyOf};
 
 mod deserializer;
+mod helper;
+mod checkpoint;
+mod exit;
+
 #[cfg(test)]
 mod mock;
 #[cfg(test)]
@@ -558,7 +562,7 @@ fn migrate<T: Trait>() {
 /// Public callable Plasma commitment module methods.
 impl<T: Trait> Module<T> {
     // Plasma Commitment parts ====
-    pub fn retrieve(plapps_id: T::AccountId, block_number: T::BlockNumber) -> T::Hash {
+    pub fn retrieve(plapps_id: &T::AccountId, block_number: T::BlockNumber) -> T::Hash {
         <Blocks<T>>::get(&plapps_id, &block_number)
     }
 
@@ -571,7 +575,7 @@ impl<T: Trait> Module<T> {
     /// - @param inclusion_proof The proof data to verify inclusion
     /// - @param block_number block number where the Merkle root is stored
     pub fn verify_inclusion(
-        plapps_id: T::AccountId,
+        plapps_id: &T::AccountId,
         leaf: T::Hash,
         token_address: T::AccountId,
         range: RangeOf<T>,
