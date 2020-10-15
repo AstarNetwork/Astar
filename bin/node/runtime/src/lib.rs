@@ -19,7 +19,7 @@ use pallet_ethereum::{
     Block as EthereumBlock, Receipt as EthereumReceipt, Transaction as EthereumTransaction,
 };
 use pallet_evm::{
-    Account as EVMAccount, EnsureAddressTruncated, FeeCalculator, HashedAddressMapping,
+    Account as EVMAccount, EnsureAddressRoot, EnsureAddressTruncated, FeeCalculator, HashedAddressMapping,
 };
 use pallet_grandpa::fg_primitives;
 use pallet_grandpa::{AuthorityId as GrandpaId, AuthorityList as GrandpaAuthorityList};
@@ -523,7 +523,7 @@ parameter_types! {
 
 impl pallet_evm::Trait for Runtime {
     type FeeCalculator = FixedGasPrice;
-    type CallOrigin = EnsureAddressTruncated;
+    type CallOrigin = EnsureAddressRoot<Self::AccountId>;
     type WithdrawOrigin = EnsureAddressTruncated;
     type AddressMapping = HashedAddressMapping<BlakeTwo256>;
     type Currency = Balances;
@@ -607,7 +607,7 @@ construct_runtime!(
         OVM: pallet_ovm::{Module, Call, Storage, Event<T>},
         Plasma: pallet_plasma::{Module, Call, Storage, Event<T>},
         Nicks: pallet_nicks::{Module, Call, Storage, Event<T>},
-        EVM: pallet_evm::{Module, Call, Storage, Event<T>},
+        EVM: pallet_evm::{Module, Call, Storage, Config, Event<T>},
         Ethereum: pallet_ethereum::{Module, Call, Storage, Event, Config, ValidateUnsigned},
     }
 );

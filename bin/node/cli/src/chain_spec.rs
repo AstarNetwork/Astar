@@ -4,7 +4,7 @@ use plasm_primitives::{AccountId, Balance, Signature};
 use plasm_runtime::constants::currency::PLM;
 use plasm_runtime::Block;
 use plasm_runtime::{
-    BabeConfig, BalancesConfig, ContractsConfig, EthereumConfig, GenesisConfig, GrandpaConfig,
+    BabeConfig, BalancesConfig, ContractsConfig, EthereumConfig, EVMConfig, GenesisConfig, GrandpaConfig,
     IndicesConfig, PlasmLockdropConfig, PlasmRewardsConfig, PlasmValidatorConfig, SessionConfig,
     SessionKeys, SudoConfig, SystemConfig, WASM_BINARY,
 };
@@ -12,7 +12,7 @@ use sc_chain_spec::ChainSpecExtension;
 use sc_service::ChainType;
 use serde::{Deserialize, Serialize};
 use sp_consensus_babe::AuthorityId as BabeId;
-use sp_core::{sr25519, Pair, Public};
+use sp_core::{sr25519, Pair, Public, H160, U256};
 use sp_finality_grandpa::AuthorityId as GrandpaId;
 use sp_runtime::{
     traits::{IdentifyAccount, Verify},
@@ -170,6 +170,16 @@ fn make_genesis(
                 enable_println, // this should only be enabled on development chains
                 ..Default::default()
             },
+        }),
+        pallet_evm: Some(EVMConfig {
+            accounts: vec![
+                (H160::from(hex_literal::hex!["7EF99B0E5bEb8ae42DbF126B40b87410a440a32a"]), pallet_evm::GenesisAccount {
+                    balance: U256::from(1_000_000_000_000_000_000_000u128),
+                    nonce: Default::default(),
+                    code: Default::default(),
+                    storage: Default::default(),
+                })
+            ].iter().cloned().collect()
         }),
         pallet_ethereum: Some(EthereumConfig {}),
         pallet_sudo: Some(SudoConfig { key: root_key }),

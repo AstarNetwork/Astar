@@ -62,6 +62,7 @@ plasm-rpc = { path = "../rpc" }
 
 # frame dependencies
 frame-system = "2.0.0"
+pallet-evm = "2.0.0"
 pallet-transaction-payment = "2.0.0"
 pallet-finality-tracker = "2.0.0"
 pallet-contracts = { path = "../../../vendor/contracts" } 

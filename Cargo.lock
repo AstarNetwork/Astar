@@ -4917,6 +4917,7 @@ dependencies = [
  "log",
  "pallet-contracts",
  "pallet-dapps-staking",
+ "pallet-evm",
  "pallet-finality-tracker",
  "pallet-ovm",
  "pallet-plasm-lockdrop",
