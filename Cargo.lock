@@ -4939,7 +4939,7 @@ checksum = "3831453b3449ceb48b6d9c7ad7c96d5ea673e9b470a1dc578c2ce6521230884c"
 
 [[package]]
 name = "plasm-cli"
-version = "1.6.0"
+version = "1.6.1"
 dependencies = [
  "bs58",
  "frame-system",
@@ -4992,7 +4992,7 @@ dependencies = [
 
 [[package]]
 name = "plasm-primitives"
-version = "1.6.0"
+version = "1.6.1"
 dependencies = [
  "frame-system",
  "parity-scale-codec",
@@ -5003,7 +5003,7 @@ dependencies = [
 
 [[package]]
 name = "plasm-rpc"
-version = "1.6.0"
+version = "1.6.1"
 dependencies = [
  "frontier-rpc",
  "frontier-rpc-primitives",
@@ -5035,7 +5035,7 @@ dependencies = [
 
 [[package]]
 name = "plasm-runtime"
-version = "1.6.0"
+version = "1.6.1"
 dependencies = [
  "frame-executive",
  "frame-support",

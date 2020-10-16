@@ -19,7 +19,8 @@ use pallet_ethereum::{
     Block as EthereumBlock, Receipt as EthereumReceipt, Transaction as EthereumTransaction,
 };
 use pallet_evm::{
-    Account as EVMAccount, EnsureAddressRoot, EnsureAddressTruncated, FeeCalculator, HashedAddressMapping,
+    Account as EVMAccount, EnsureAddressRoot, EnsureAddressTruncated, FeeCalculator,
+    HashedAddressMapping,
 };
 use pallet_grandpa::fg_primitives;
 use pallet_grandpa::{AuthorityId as GrandpaId, AuthorityList as GrandpaAuthorityList};
@@ -75,8 +76,8 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     // and set impl_version to equal spec_version. If only runtime
     // implementation changes and behavior does not, then leave spec_version as
     // is and increment impl_version.
-    spec_version: 5,
-    impl_version: 5,
+    spec_version: 6,
+    impl_version: 6,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 2,
 };
@@ -917,6 +918,18 @@ impl_runtime_apis! {
 
         fn current_receipts() -> Option<Vec<EthereumReceipt>> {
             Ethereum::current_receipts()
+        }
+
+        fn current_all() -> (
+            Option<EthereumBlock>,
+            Option<Vec<EthereumReceipt>>,
+            Option<Vec<TransactionStatus>>
+        ) {
+            (
+                Ethereum::current_block(),
+                Ethereum::current_receipts(),
+                Ethereum::current_transaction_statuses()
+            )
         }
     }
 }

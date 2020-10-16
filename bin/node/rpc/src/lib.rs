@@ -169,7 +169,7 @@ where
             shared_epoch_changes,
             keystore,
             babe_config,
-            select_chain.clone(),
+            select_chain,
             deny_unsafe,
         ),
     ));
@@ -184,19 +184,14 @@ where
     ));
     io.extend_with(EthApiServer::to_delegate(EthApi::new(
         client.clone(),
-        select_chain.clone(),
         pool.clone(),
         plasm_runtime::TransactionConverter,
         is_authority,
     )));
-    io.extend_with(NetApiServer::to_delegate(NetApi::new(
-        client.clone(),
-        select_chain.clone(),
-    )));
+    io.extend_with(NetApiServer::to_delegate(NetApi::new(client.clone())));
     io.extend_with(EthPubSubApiServer::to_delegate(EthPubSubApi::new(
         pool.clone(),
         client.clone(),
-        select_chain.clone(),
         network.clone(),
         SubscriptionManager::new(Arc::new(subscription_task_executor)),
     )));
