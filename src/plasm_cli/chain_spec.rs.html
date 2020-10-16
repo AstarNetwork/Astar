@@ -750,6 +750,22 @@
 <span id="750">750</span>
 <span id="751">751</span>
 <span id="752">752</span>
+<span id="753">753</span>
+<span id="754">754</span>
+<span id="755">755</span>
+<span id="756">756</span>
+<span id="757">757</span>
+<span id="758">758</span>
+<span id="759">759</span>
+<span id="760">760</span>
+<span id="761">761</span>
+<span id="762">762</span>
+<span id="763">763</span>
+<span id="764">764</span>
+<span id="765">765</span>
+<span id="766">766</span>
+<span id="767">767</span>
+<span id="768">768</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="doccomment">//! Chain specification.</span>
 
@@ -757,15 +773,15 @@
 <span class="kw">use</span> <span class="ident">plasm_runtime</span>::<span class="ident">constants</span>::<span class="ident">currency</span>::<span class="ident">PLM</span>;
 <span class="kw">use</span> <span class="ident">plasm_runtime</span>::<span class="ident">Block</span>;
 <span class="kw">use</span> <span class="ident">plasm_runtime</span>::{
-    <span class="ident">BabeConfig</span>, <span class="ident">BalancesConfig</span>, <span class="ident">ContractsConfig</span>, <span class="ident">EthereumConfig</span>, <span class="ident">GenesisConfig</span>, <span class="ident">GrandpaConfig</span>,
-    <span class="ident">IndicesConfig</span>, <span class="ident">PlasmLockdropConfig</span>, <span class="ident">PlasmRewardsConfig</span>, <span class="ident">PlasmValidatorConfig</span>, <span class="ident">SessionConfig</span>,
-    <span class="ident">SessionKeys</span>, <span class="ident">SudoConfig</span>, <span class="ident">SystemConfig</span>, <span class="ident">WASM_BINARY</span>,
+    <span class="ident">BabeConfig</span>, <span class="ident">BalancesConfig</span>, <span class="ident">ContractsConfig</span>, <span class="ident">EVMConfig</span>, <span class="ident">EthereumConfig</span>, <span class="ident">GenesisConfig</span>,
+    <span class="ident">GrandpaConfig</span>, <span class="ident">IndicesConfig</span>, <span class="ident">PlasmLockdropConfig</span>, <span class="ident">PlasmRewardsConfig</span>, <span class="ident">PlasmValidatorConfig</span>,
+    <span class="ident">SessionConfig</span>, <span class="ident">SessionKeys</span>, <span class="ident">SudoConfig</span>, <span class="ident">SystemConfig</span>, <span class="ident">WASM_BINARY</span>,
 };
 <span class="kw">use</span> <span class="ident">sc_chain_spec</span>::<span class="ident">ChainSpecExtension</span>;
 <span class="kw">use</span> <span class="ident">sc_service</span>::<span class="ident">ChainType</span>;
 <span class="kw">use</span> <span class="ident">serde</span>::{<span class="ident">Deserialize</span>, <span class="ident">Serialize</span>};
 <span class="kw">use</span> <span class="ident">sp_consensus_babe</span>::<span class="ident">AuthorityId</span> <span class="kw">as</span> <span class="ident">BabeId</span>;
-<span class="kw">use</span> <span class="ident">sp_core</span>::{<span class="ident">sr25519</span>, <span class="ident">Pair</span>, <span class="ident">Public</span>};
+<span class="kw">use</span> <span class="ident">sp_core</span>::{<span class="ident">sr25519</span>, <span class="ident">Pair</span>, <span class="ident">Public</span>, <span class="ident">H160</span>, <span class="ident">U256</span>};
 <span class="kw">use</span> <span class="ident">sp_finality_grandpa</span>::<span class="ident">AuthorityId</span> <span class="kw">as</span> <span class="ident">GrandpaId</span>;
 <span class="kw">use</span> <span class="ident">sp_runtime</span>::{
     <span class="ident">traits</span>::{<span class="ident">IdentifyAccount</span>, <span class="ident">Verify</span>},
@@ -923,6 +939,22 @@ const DUSTY_PROTOCOL_ID: &amp;str = &quot;pld&quot;;
                 <span class="ident">enable_println</span>, <span class="comment">// this should only be enabled on development chains</span>
                 ..<span class="ident">Default</span>::<span class="ident">default</span>()
             },
+        }),
+        <span class="ident">pallet_evm</span>: <span class="prelude-val">Some</span>(<span class="ident">EVMConfig</span> {
+            <span class="ident">accounts</span>: <span class="macro">vec</span><span class="macro">!</span>[(
+                <span class="ident">H160</span>::<span class="ident">from</span>(<span class="ident">hex_literal</span>::<span class="macro">hex</span><span class="macro">!</span>[
+                    <span class="string">&quot;7EF99B0E5bEb8ae42DbF126B40b87410a440a32a&quot;</span>
+                ]),
+                <span class="ident">pallet_evm</span>::<span class="ident">GenesisAccount</span> {
+                    <span class="ident">balance</span>: <span class="ident">U256</span>::<span class="ident">from</span>(<span class="number">1_000_000_000_000_000_000_000u128</span>),
+                    <span class="ident">nonce</span>: <span class="ident">Default</span>::<span class="ident">default</span>(),
+                    <span class="ident">code</span>: <span class="ident">Default</span>::<span class="ident">default</span>(),
+                    <span class="ident">storage</span>: <span class="ident">Default</span>::<span class="ident">default</span>(),
+                },
+            )]
+            .<span class="ident">iter</span>()
+            .<span class="ident">cloned</span>()
+            .<span class="ident">collect</span>(),
         }),
         <span class="ident">pallet_ethereum</span>: <span class="prelude-val">Some</span>(<span class="ident">EthereumConfig</span> {}),
         <span class="ident">pallet_sudo</span>: <span class="prelude-val">Some</span>(<span class="ident">SudoConfig</span> { <span class="ident">key</span>: <span class="ident">root_key</span> }),

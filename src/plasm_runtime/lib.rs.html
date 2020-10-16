@@ -920,6 +920,19 @@
 <span id="920">920</span>
 <span id="921">921</span>
 <span id="922">922</span>
+<span id="923">923</span>
+<span id="924">924</span>
+<span id="925">925</span>
+<span id="926">926</span>
+<span id="927">927</span>
+<span id="928">928</span>
+<span id="929">929</span>
+<span id="930">930</span>
+<span id="931">931</span>
+<span id="932">932</span>
+<span id="933">933</span>
+<span id="934">934</span>
+<span id="935">935</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="doccomment">//! The Substrate runtime. This can be compiled with ``#[no_std]`, ready for Wasm.</span>
 
@@ -942,7 +955,8 @@
     <span class="ident">Block</span> <span class="kw">as</span> <span class="ident">EthereumBlock</span>, <span class="ident">Receipt</span> <span class="kw">as</span> <span class="ident">EthereumReceipt</span>, <span class="ident">Transaction</span> <span class="kw">as</span> <span class="ident">EthereumTransaction</span>,
 };
 <span class="kw">use</span> <span class="ident">pallet_evm</span>::{
-    <span class="ident">Account</span> <span class="kw">as</span> <span class="ident">EVMAccount</span>, <span class="ident">EnsureAddressTruncated</span>, <span class="ident">FeeCalculator</span>, <span class="ident">HashedAddressMapping</span>,
+    <span class="ident">Account</span> <span class="kw">as</span> <span class="ident">EVMAccount</span>, <span class="ident">EnsureAddressRoot</span>, <span class="ident">EnsureAddressTruncated</span>, <span class="ident">FeeCalculator</span>,
+    <span class="ident">HashedAddressMapping</span>,
 };
 <span class="kw">use</span> <span class="ident">pallet_grandpa</span>::<span class="ident">fg_primitives</span>;
 <span class="kw">use</span> <span class="ident">pallet_grandpa</span>::{<span class="ident">AuthorityId</span> <span class="kw">as</span> <span class="ident">GrandpaId</span>, <span class="ident">AuthorityList</span> <span class="kw">as</span> <span class="ident">GrandpaAuthorityList</span>};
@@ -998,8 +1012,8 @@
     <span class="comment">// and set impl_version to equal spec_version. If only runtime</span>
     <span class="comment">// implementation changes and behavior does not, then leave spec_version as</span>
     <span class="comment">// is and increment impl_version.</span>
-    <span class="ident">spec_version</span>: <span class="number">5</span>,
-    <span class="ident">impl_version</span>: <span class="number">5</span>,
+    <span class="ident">spec_version</span>: <span class="number">6</span>,
+    <span class="ident">impl_version</span>: <span class="number">6</span>,
     <span class="ident">apis</span>: <span class="ident">RUNTIME_API_VERSIONS</span>,
     <span class="ident">transaction_version</span>: <span class="number">2</span>,
 };
@@ -1446,7 +1460,7 @@
 
 <span class="kw">impl</span> <span class="ident">pallet_evm</span>::<span class="ident">Trait</span> <span class="kw">for</span> <span class="ident">Runtime</span> {
     <span class="kw">type</span> <span class="ident">FeeCalculator</span> <span class="op">=</span> <span class="ident">FixedGasPrice</span>;
-    <span class="kw">type</span> <span class="ident">CallOrigin</span> <span class="op">=</span> <span class="ident">EnsureAddressTruncated</span>;
+    <span class="kw">type</span> <span class="ident">CallOrigin</span> <span class="op">=</span> <span class="ident">EnsureAddressRoot</span><span class="op">&lt;</span><span class="self">Self</span>::<span class="ident">AccountId</span><span class="op">&gt;</span>;
     <span class="kw">type</span> <span class="ident">WithdrawOrigin</span> <span class="op">=</span> <span class="ident">EnsureAddressTruncated</span>;
     <span class="kw">type</span> <span class="ident">AddressMapping</span> <span class="op">=</span> <span class="ident">HashedAddressMapping</span><span class="op">&lt;</span><span class="ident">BlakeTwo256</span><span class="op">&gt;</span>;
     <span class="kw">type</span> <span class="ident">Currency</span> <span class="op">=</span> <span class="ident">Balances</span>;
@@ -1530,7 +1544,7 @@
         <span class="ident">OVM</span>: <span class="ident">pallet_ovm</span>::{<span class="ident">Module</span>, <span class="ident">Call</span>, <span class="ident">Storage</span>, <span class="ident">Event</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>},
         <span class="ident">Plasma</span>: <span class="ident">pallet_plasma</span>::{<span class="ident">Module</span>, <span class="ident">Call</span>, <span class="ident">Storage</span>, <span class="ident">Event</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>},
         <span class="ident">Nicks</span>: <span class="ident">pallet_nicks</span>::{<span class="ident">Module</span>, <span class="ident">Call</span>, <span class="ident">Storage</span>, <span class="ident">Event</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>},
-        <span class="ident">EVM</span>: <span class="ident">pallet_evm</span>::{<span class="ident">Module</span>, <span class="ident">Call</span>, <span class="ident">Storage</span>, <span class="ident">Event</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>},
+        <span class="ident">EVM</span>: <span class="ident">pallet_evm</span>::{<span class="ident">Module</span>, <span class="ident">Call</span>, <span class="ident">Storage</span>, <span class="ident">Config</span>, <span class="ident">Event</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>},
         <span class="ident">Ethereum</span>: <span class="ident">pallet_ethereum</span>::{<span class="ident">Module</span>, <span class="ident">Call</span>, <span class="ident">Storage</span>, <span class="ident">Event</span>, <span class="ident">Config</span>, <span class="ident">ValidateUnsigned</span>},
     }
 );
@@ -1840,6 +1854,18 @@
 
         <span class="kw">fn</span> <span class="ident">current_receipts</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">EthereumReceipt</span><span class="op">&gt;</span><span class="op">&gt;</span> {
             <span class="ident">Ethereum</span>::<span class="ident">current_receipts</span>()
+        }
+
+        <span class="kw">fn</span> <span class="ident">current_all</span>() <span class="op">-</span><span class="op">&gt;</span> (
+            <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">EthereumBlock</span><span class="op">&gt;</span>,
+            <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">EthereumReceipt</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+            <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">TransactionStatus</span><span class="op">&gt;</span><span class="op">&gt;</span>
+        ) {
+            (
+                <span class="ident">Ethereum</span>::<span class="ident">current_block</span>(),
+                <span class="ident">Ethereum</span>::<span class="ident">current_receipts</span>(),
+                <span class="ident">Ethereum</span>::<span class="ident">current_transaction_statuses</span>()
+            )
         }
     }
 }

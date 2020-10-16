@@ -223,11 +223,6 @@
 <span id="223">223</span>
 <span id="224">224</span>
 <span id="225">225</span>
-<span id="226">226</span>
-<span id="227">227</span>
-<span id="228">228</span>
-<span id="229">229</span>
-<span id="230">230</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="doccomment">//! A collection of node-specific RPC methods.</span>
 <span class="doccomment">//!</span>
@@ -400,7 +395,7 @@
             <span class="ident">shared_epoch_changes</span>,
             <span class="ident">keystore</span>,
             <span class="ident">babe_config</span>,
-            <span class="ident">select_chain</span>.<span class="ident">clone</span>(),
+            <span class="ident">select_chain</span>,
             <span class="ident">deny_unsafe</span>,
         ),
     ));
@@ -415,19 +410,14 @@
     ));
     <span class="ident">io</span>.<span class="ident">extend_with</span>(<span class="ident">EthApiServer</span>::<span class="ident">to_delegate</span>(<span class="ident">EthApi</span>::<span class="ident">new</span>(
         <span class="ident">client</span>.<span class="ident">clone</span>(),
-        <span class="ident">select_chain</span>.<span class="ident">clone</span>(),
         <span class="ident">pool</span>.<span class="ident">clone</span>(),
         <span class="ident">plasm_runtime</span>::<span class="ident">TransactionConverter</span>,
         <span class="ident">is_authority</span>,
     )));
-    <span class="ident">io</span>.<span class="ident">extend_with</span>(<span class="ident">NetApiServer</span>::<span class="ident">to_delegate</span>(<span class="ident">NetApi</span>::<span class="ident">new</span>(
-        <span class="ident">client</span>.<span class="ident">clone</span>(),
-        <span class="ident">select_chain</span>.<span class="ident">clone</span>(),
-    )));
+    <span class="ident">io</span>.<span class="ident">extend_with</span>(<span class="ident">NetApiServer</span>::<span class="ident">to_delegate</span>(<span class="ident">NetApi</span>::<span class="ident">new</span>(<span class="ident">client</span>.<span class="ident">clone</span>())));
     <span class="ident">io</span>.<span class="ident">extend_with</span>(<span class="ident">EthPubSubApiServer</span>::<span class="ident">to_delegate</span>(<span class="ident">EthPubSubApi</span>::<span class="ident">new</span>(
         <span class="ident">pool</span>.<span class="ident">clone</span>(),
         <span class="ident">client</span>.<span class="ident">clone</span>(),
-        <span class="ident">select_chain</span>.<span class="ident">clone</span>(),
         <span class="ident">network</span>.<span class="ident">clone</span>(),
         <span class="ident">SubscriptionManager</span>::<span class="ident">new</span>(<span class="ident">Arc</span>::<span class="ident">new</span>(<span class="ident">subscription_task_executor</span>)),
     )));
