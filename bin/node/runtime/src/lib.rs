@@ -76,8 +76,8 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     // and set impl_version to equal spec_version. If only runtime
     // implementation changes and behavior does not, then leave spec_version as
     // is and increment impl_version.
-    spec_version: 6,
-    impl_version: 6,
+    spec_version: 7,
+    impl_version: 7,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 2,
 };
@@ -327,6 +327,12 @@ impl pallet_operator_trading::Trait for Runtime {
     type OperatorFinder = Operator;
     type TransferOperator = Operator;
     type Event = Event;
+}
+
+impl pallet_utility::Trait for Runtime {
+    type Event = Event;
+    type Call = Call;
+    type WeightInfo = ();
 }
 
 impl pallet_sudo::Trait for Runtime {
@@ -586,6 +592,7 @@ construct_runtime!(
         UncheckedExtrinsic = UncheckedExtrinsic
     {
         System: frame_system::{Module, Call, Storage, Config, Event<T>},
+        Utility: pallet_utility::{Module, Call, Event},
         Timestamp: pallet_timestamp::{Module, Call, Storage, Inherent},
         Authorship: pallet_authorship::{Module, Call, Storage, Inherent},
         TransactionPayment: pallet_transaction_payment::{Module, Storage},
@@ -797,12 +804,13 @@ impl_runtime_apis! {
             gas_limit: u64,
             input_data: Vec<u8>,
         ) -> ContractExecResult {
-            let exec_result =
+            let (exec_result, gas_consumed) =
                 Contracts::bare_call(origin, dest.into(), value, gas_limit, input_data);
             match exec_result {
                 Ok(v) => ContractExecResult::Success {
-                    status: v.status,
+                    flags: v.flags.bits(),
                     data: v.data,
+                    gas_consumed: gas_consumed,
                 },
                 Err(_) => ContractExecResult::Error,
             }

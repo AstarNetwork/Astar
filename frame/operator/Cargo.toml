@@ -20,7 +20,7 @@ pallet-balances = { version = "2.0.0", default_features = false }
 frame-support = { version = "2.0.0", default_features = false }
 pallet-timestamp = { version = "2.0.0", default_features = false }
 frame-system = { version = "2.0.0", default_features = false }
-pallet-contracts = { path = "../../vendor/contracts", default_features = false }
+pallet-contracts = { version = "2.0.0", default_features = false }
 
 [dev-dependencies]
 wabt = "0.10.0"
