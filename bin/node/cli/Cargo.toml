@@ -65,7 +65,7 @@ frame-system = "2.0.0"
 pallet-evm = "2.0.0"
 pallet-transaction-payment = "2.0.0"
 pallet-finality-tracker = "2.0.0"
-pallet-contracts = { path = "../../../vendor/contracts" } 
+pallet-contracts = "2.0.0"
 pallet-dapps-staking = { path = "../../../frame/dapps-staking" }
 pallet-plasm-lockdrop = { path = "../../../frame/plasm-lockdrop" }
 pallet-ovm = { path = "../../../frame/ovm" }
