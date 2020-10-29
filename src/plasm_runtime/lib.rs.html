@@ -933,6 +933,14 @@
 <span id="933">933</span>
 <span id="934">934</span>
 <span id="935">935</span>
+<span id="936">936</span>
+<span id="937">937</span>
+<span id="938">938</span>
+<span id="939">939</span>
+<span id="940">940</span>
+<span id="941">941</span>
+<span id="942">942</span>
+<span id="943">943</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="doccomment">//! The Substrate runtime. This can be compiled with ``#[no_std]`, ready for Wasm.</span>
 
@@ -1012,8 +1020,8 @@
     <span class="comment">// and set impl_version to equal spec_version. If only runtime</span>
     <span class="comment">// implementation changes and behavior does not, then leave spec_version as</span>
     <span class="comment">// is and increment impl_version.</span>
-    <span class="ident">spec_version</span>: <span class="number">6</span>,
-    <span class="ident">impl_version</span>: <span class="number">6</span>,
+    <span class="ident">spec_version</span>: <span class="number">7</span>,
+    <span class="ident">impl_version</span>: <span class="number">7</span>,
     <span class="ident">apis</span>: <span class="ident">RUNTIME_API_VERSIONS</span>,
     <span class="ident">transaction_version</span>: <span class="number">2</span>,
 };
@@ -1263,6 +1271,12 @@
     <span class="kw">type</span> <span class="ident">OperatorFinder</span> <span class="op">=</span> <span class="ident">Operator</span>;
     <span class="kw">type</span> <span class="ident">TransferOperator</span> <span class="op">=</span> <span class="ident">Operator</span>;
     <span class="kw">type</span> <span class="ident">Event</span> <span class="op">=</span> <span class="ident">Event</span>;
+}
+
+<span class="kw">impl</span> <span class="ident">pallet_utility</span>::<span class="ident">Trait</span> <span class="kw">for</span> <span class="ident">Runtime</span> {
+    <span class="kw">type</span> <span class="ident">Event</span> <span class="op">=</span> <span class="ident">Event</span>;
+    <span class="kw">type</span> <span class="ident">Call</span> <span class="op">=</span> <span class="ident">Call</span>;
+    <span class="kw">type</span> <span class="ident">WeightInfo</span> <span class="op">=</span> ();
 }
 
 <span class="kw">impl</span> <span class="ident">pallet_sudo</span>::<span class="ident">Trait</span> <span class="kw">for</span> <span class="ident">Runtime</span> {
@@ -1522,6 +1536,7 @@
         <span class="ident">UncheckedExtrinsic</span> <span class="op">=</span> <span class="ident">UncheckedExtrinsic</span>
     {
         <span class="ident">System</span>: <span class="ident">frame_system</span>::{<span class="ident">Module</span>, <span class="ident">Call</span>, <span class="ident">Storage</span>, <span class="ident">Config</span>, <span class="ident">Event</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>},
+        <span class="ident">Utility</span>: <span class="ident">pallet_utility</span>::{<span class="ident">Module</span>, <span class="ident">Call</span>, <span class="ident">Event</span>},
         <span class="ident">Timestamp</span>: <span class="ident">pallet_timestamp</span>::{<span class="ident">Module</span>, <span class="ident">Call</span>, <span class="ident">Storage</span>, <span class="ident">Inherent</span>},
         <span class="ident">Authorship</span>: <span class="ident">pallet_authorship</span>::{<span class="ident">Module</span>, <span class="ident">Call</span>, <span class="ident">Storage</span>, <span class="ident">Inherent</span>},
         <span class="ident">TransactionPayment</span>: <span class="ident">pallet_transaction_payment</span>::{<span class="ident">Module</span>, <span class="ident">Storage</span>},
@@ -1733,12 +1748,13 @@
             <span class="ident">gas_limit</span>: <span class="ident">u64</span>,
             <span class="ident">input_data</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>,
         ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">ContractExecResult</span> {
-            <span class="kw">let</span> <span class="ident">exec_result</span> <span class="op">=</span>
+            <span class="kw">let</span> (<span class="ident">exec_result</span>, <span class="ident">gas_consumed</span>) <span class="op">=</span>
                 <span class="ident">Contracts</span>::<span class="ident">bare_call</span>(<span class="ident">origin</span>, <span class="ident">dest</span>.<span class="ident">into</span>(), <span class="ident">value</span>, <span class="ident">gas_limit</span>, <span class="ident">input_data</span>);
             <span class="kw">match</span> <span class="ident">exec_result</span> {
                 <span class="prelude-val">Ok</span>(<span class="ident">v</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">ContractExecResult</span>::<span class="ident">Success</span> {
-                    <span class="ident">status</span>: <span class="ident">v</span>.<span class="ident">status</span>,
+                    <span class="ident">flags</span>: <span class="ident">v</span>.<span class="ident">flags</span>.<span class="ident">bits</span>(),
                     <span class="ident">data</span>: <span class="ident">v</span>.<span class="ident">data</span>,
+                    <span class="ident">gas_consumed</span>: <span class="ident">gas_consumed</span>,
                 },
                 <span class="prelude-val">Err</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">ContractExecResult</span>::<span class="ident">Error</span>,
             }
