@@ -7,6 +7,7 @@ members = [
     "bin/subkey",
     "frame/operator",
     "frame/trading",
+    "frame/utility",
     "frame/dapps-staking",
     "frame/plasm-rewards",
     "frame/plasm-lockdrop",

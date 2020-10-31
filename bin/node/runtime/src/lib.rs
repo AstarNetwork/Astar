@@ -55,8 +55,8 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     // and set impl_version to equal spec_version. If only runtime
     // implementation changes and behavior does not, then leave spec_version as
     // is and increment impl_version.
-    spec_version: 3,
-    impl_version: 3,
+    spec_version: 4,
+    impl_version: 4,
     apis: RUNTIME_API_VERSIONS,
 };
 
@@ -301,6 +301,11 @@ impl pallet_plasm_lockdrop::Trait for Runtime {
     type Event = Event;
 }
 
+impl pallet_utility::Trait for Runtime {
+    type Event = Event;
+    type Call = Call;
+}
+
 impl pallet_sudo::Trait for Runtime {
     type Event = Event;
     type Call = Call;
@@ -377,6 +382,7 @@ construct_runtime!(
         Trading: pallet_operator_trading::{Module, Call, Storage, Event<T>},
         RandomnessCollectiveFlip: pallet_randomness_collective_flip::{Module, Call, Storage},
         Sudo: pallet_sudo::{Module, Call, Storage, Event<T>, Config<T>},
+        Utility: pallet_sudo::{Module, Call, Event},
     }
 );
 
