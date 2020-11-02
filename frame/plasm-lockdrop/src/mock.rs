@@ -101,12 +101,11 @@ parameter_types! {
 pub type Extrinsic = TestXt<Call, ()>;
 
 /// A unsigned transaction submitter.
-pub type SubmitTransaction =
-    frame_system::offchain::TransactionSubmitter<(), Runtime, Extrinsic>;
+pub type SubmitTransaction = frame_system::offchain::TransactionSubmitter<(), Runtime, Extrinsic>;
 
 impl Trait for Runtime {
     type Call = Call;
-    type SubmitTransaction = SubmitTransaction; 
+    type SubmitTransaction = SubmitTransaction;
     type Currency = Balances;
     type DurationBonus = DustyDurationBonus;
     type MedianFilterExpire = MedianFilterExpire;

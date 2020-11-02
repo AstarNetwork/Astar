@@ -21,8 +21,7 @@ use sp_runtime::traits::{
 };
 use sp_runtime::transaction_validity::{TransactionSource, TransactionValidity};
 use sp_runtime::{
-    create_runtime_str, generic, impl_opaque_keys,
-    ApplyExtrinsicResult, Perbill, MultiSigner,
+    create_runtime_str, generic, impl_opaque_keys, ApplyExtrinsicResult, MultiSigner, Perbill,
 };
 use sp_std::prelude::*;
 #[cfg(any(feature = "std", test))]
@@ -55,8 +54,8 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     // and set impl_version to equal spec_version. If only runtime
     // implementation changes and behavior does not, then leave spec_version as
     // is and increment impl_version.
-    spec_version: 3,
-    impl_version: 3,
+    spec_version: 4,
+    impl_version: 4,
     apis: RUNTIME_API_VERSIONS,
 };
 
@@ -287,7 +286,7 @@ pub type SubmitTransaction =
 
 impl pallet_plasm_lockdrop::Trait for Runtime {
     type Call = Call;
-    type SubmitTransaction = SubmitTransaction; 
+    type SubmitTransaction = SubmitTransaction;
     type Currency = Balances;
     type DurationBonus = pallet_plasm_lockdrop::PlasmDurationBonus;
     type MedianFilterExpire = MedianFilterExpire;
@@ -299,6 +298,11 @@ impl pallet_plasm_lockdrop::Trait for Runtime {
     type DollarRate = Balance;
     type BalanceConvert = Balance;
     type Event = Event;
+}
+
+impl pallet_utility::Trait for Runtime {
+    type Event = Event;
+    type Call = Call;
 }
 
 impl pallet_sudo::Trait for Runtime {
@@ -377,6 +381,7 @@ construct_runtime!(
         Trading: pallet_operator_trading::{Module, Call, Storage, Event<T>},
         RandomnessCollectiveFlip: pallet_randomness_collective_flip::{Module, Call, Storage},
         Sudo: pallet_sudo::{Module, Call, Storage, Event<T>, Config<T>},
+        Utility: pallet_utility::{Module, Call, Event},
     }
 );
 
