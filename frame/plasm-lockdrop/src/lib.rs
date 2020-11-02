@@ -28,10 +28,7 @@ use frame_support::{
     weights::{SimpleDispatchInfo, Weight},
     StorageMap, StorageValue,
 };
-use frame_system::{
-    self as system, ensure_none, ensure_root,
-    offchain::SubmitUnsignedTransaction,
-};
+use frame_system::{self as system, ensure_none, ensure_root, offchain::SubmitUnsignedTransaction};
 pub use generic_array::typenum;
 use median::{Filter, ListNode};
 use sp_core::{ecdsa, H256};
@@ -768,7 +765,7 @@ impl<T: Trait> frame_support::unsigned::ValidateUnsigned for Module<T> {
                 }
 
                 Ok(ValidTransaction {
-                    priority: TransactionPriority::max_value(), 
+                    priority: TransactionPriority::max_value(),
                     requires: vec![],
                     provides: vec![(params, nonce).encode()],
                     longevity: 64_u64,
@@ -792,7 +789,7 @@ impl<T: Trait> frame_support::unsigned::ValidateUnsigned for Module<T> {
                 }
 
                 Ok(ValidTransaction {
-                    priority: TransactionPriority::max_value(), 
+                    priority: TransactionPriority::max_value(),
                     requires: vec![],
                     provides: vec![claim_id.encode()],
                     longevity: 64_u64,
@@ -836,7 +833,7 @@ impl<T: Trait> frame_support::unsigned::ValidateUnsigned for Module<T> {
                 }
 
                 Ok(ValidTransaction {
-                    priority: TransactionPriority::max_value(), 
+                    priority: TransactionPriority::max_value(),
                     requires: vec![],
                     provides: vec![(claim_id, recipient).encode()],
                     longevity: 64_u64,
@@ -863,7 +860,7 @@ impl<T: Trait> frame_support::unsigned::ValidateUnsigned for Module<T> {
                     }
 
                     Ok(ValidTransaction {
-                        priority: TransactionPriority::max_value(), 
+                        priority: TransactionPriority::max_value(),
                         requires: vec![],
                         provides: vec![encoded_vote.to_vec()],
                         longevity: 64_u64,
@@ -885,7 +882,7 @@ impl<T: Trait> frame_support::unsigned::ValidateUnsigned for Module<T> {
                     }
 
                     Ok(ValidTransaction {
-                        priority: TransactionPriority::max_value(), 
+                        priority: TransactionPriority::max_value(),
                         requires: vec![],
                         provides: vec![encoded_rate.to_vec()],
                         longevity: 64_u64,

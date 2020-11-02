@@ -4,11 +4,12 @@
 with nixpkgs;
 
 let
-  channel = rustChannelOf { date = "2020-07-20"; channel = "nightly"; };
+  channel = rustChannelOf { date = "2020-10-20"; channel = "nightly"; };
 
 in rec {
   rustWasm = channel.rust.override {
     targets = [ "wasm32-unknown-unknown" ];
+    extensions = [ "rustfmt-preview" ];
   };
   plasm-node = callPackage ./. { inherit rustWasm; };
 }

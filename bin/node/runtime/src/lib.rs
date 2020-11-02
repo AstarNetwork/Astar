@@ -21,8 +21,7 @@ use sp_runtime::traits::{
 };
 use sp_runtime::transaction_validity::{TransactionSource, TransactionValidity};
 use sp_runtime::{
-    create_runtime_str, generic, impl_opaque_keys,
-    ApplyExtrinsicResult, Perbill, MultiSigner,
+    create_runtime_str, generic, impl_opaque_keys, ApplyExtrinsicResult, MultiSigner, Perbill,
 };
 use sp_std::prelude::*;
 #[cfg(any(feature = "std", test))]
@@ -287,7 +286,7 @@ pub type SubmitTransaction =
 
 impl pallet_plasm_lockdrop::Trait for Runtime {
     type Call = Call;
-    type SubmitTransaction = SubmitTransaction; 
+    type SubmitTransaction = SubmitTransaction;
     type Currency = Balances;
     type DurationBonus = pallet_plasm_lockdrop::PlasmDurationBonus;
     type MedianFilterExpire = MedianFilterExpire;
@@ -382,7 +381,7 @@ construct_runtime!(
         Trading: pallet_operator_trading::{Module, Call, Storage, Event<T>},
         RandomnessCollectiveFlip: pallet_randomness_collective_flip::{Module, Call, Storage},
         Sudo: pallet_sudo::{Module, Call, Storage, Event<T>, Config<T>},
-        Utility: pallet_sudo::{Module, Call, Event},
+        Utility: pallet_utility::{Module, Call, Event},
     }
 );
 
