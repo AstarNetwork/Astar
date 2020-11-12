@@ -36,10 +36,7 @@ pub fn new_partial(
         sp_consensus::DefaultImportQueue<Block, FullClient>,
         sc_transaction_pool::FullPool<Block, FullClient>,
         (
-            impl Fn(
-                plasm_rpc::DenyUnsafe,
-                sc_rpc::SubscriptionTaskExecutor,
-            ) -> plasm_rpc::IoHandler,
+            impl Fn(plasm_rpc::DenyUnsafe, sc_rpc::SubscriptionTaskExecutor) -> plasm_rpc::IoHandler,
             (
                 sc_consensus_babe::BabeBlockImport<Block, FullClient, FullGrandpaBlockImport>,
                 grandpa::LinkHalf<Block, FullClient, FullSelectChain>,
@@ -47,7 +44,7 @@ pub fn new_partial(
             ),
             (
                 grandpa::SharedVoterState,
-			    Arc<GrandpaFinalityProofProvider<FullBackend, Block>>,
+                Arc<GrandpaFinalityProofProvider<FullBackend, Block>>,
             ),
         ),
     >,
@@ -102,8 +99,8 @@ pub fn new_partial(
         let justification_stream = grandpa_link.justification_stream();
         let shared_authority_set = grandpa_link.shared_authority_set().clone();
         let shared_voter_state = grandpa::SharedVoterState::empty();
-		let finality_proof_provider =
-			GrandpaFinalityProofProvider::new_for_service(backend.clone(), client.clone());
+        let finality_proof_provider =
+            GrandpaFinalityProofProvider::new_for_service(backend.clone(), client.clone());
 
         let rpc_setup = (shared_voter_state.clone(), finality_proof_provider.clone());
 
@@ -130,8 +127,8 @@ pub fn new_partial(
                     shared_voter_state: shared_voter_state.clone(),
                     shared_authority_set: shared_authority_set.clone(),
                     justification_stream: justification_stream.clone(),
-					subscription_executor,
-					finality_provider: finality_proof_provider.clone(),
+                    subscription_executor,
+                    finality_provider: finality_proof_provider.clone(),
                 },
             };
 
@@ -183,7 +180,7 @@ pub fn new_full_base(
         other: (rpc_extensions_builder, import_setup, rpc_setup),
     } = new_partial(&config)?;
 
-	let (shared_voter_state, finality_proof_provider) = rpc_setup;
+    let (shared_voter_state, finality_proof_provider) = rpc_setup;
 
     let (network, network_status_sinks, system_rpc_tx, network_starter) =
         sc_service::build_network(sc_service::BuildNetworkParams {
