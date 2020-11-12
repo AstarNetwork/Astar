@@ -7,7 +7,7 @@
 use codec::Encode;
 use frame_support::{
     construct_runtime, debug, parameter_types,
-    traits::{KeyOwnerProofSystem, Randomness},
+    traits::{KeyOwnerProofSystem, Randomness, Filter},
     weights::{
         constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_PER_SECOND},
         IdentityFee, Weight,
@@ -52,6 +52,9 @@ pub mod legacy;
 pub mod constants;
 use constants::{currency::*, time::*};
 
+mod filter;
+use filter::TransactionCallFilter;
+
 // Make the WASM binary available.
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
@@ -60,11 +63,11 @@ include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("plasm"),
     impl_name: create_runtime_str!("staketechnologies-plasm"),
-    authoring_version: 3,
-    spec_version: 3,
-    impl_version: 3,
+    authoring_version: 1,
+    spec_version: 5,
+    impl_version: 5,
     apis: RUNTIME_API_VERSIONS,
-    transaction_version: 3,
+    transaction_version: 2,
 };
 
 /// Native version.
@@ -75,6 +78,20 @@ pub fn native_version() -> NativeVersion {
         can_author_with: Default::default(),
     }
 }
+
+/// Avoid processing transfer transactions.
+pub struct BaseFilter;
+impl Filter<Call> for BaseFilter {
+    fn filter(call: &Call) -> bool {
+        match call {
+            Call::Balances(_) | Call::Indices(pallet_indices::Call::transfer(..)) => false,
+            _ => true,
+        }
+    }
+}
+
+pub struct IsCallable;
+frame_support::impl_filter_stack!(IsCallable, BaseFilter, Call, is_callable);
 
 parameter_types! {
     pub const BlockHashCount: BlockNumber = 2400;
@@ -89,7 +106,7 @@ parameter_types! {
 }
 
 impl frame_system::Trait for Runtime {
-    type BaseCallFilter = ();
+    type BaseCallFilter = BaseFilter;
     type Origin = Origin;
     type Call = Call;
     type Index = Index;
@@ -109,7 +126,7 @@ impl frame_system::Trait for Runtime {
     type MaximumBlockLength = MaximumBlockLength;
     type AvailableBlockRatio = AvailableBlockRatio;
     type Version = Version;
-    type ModuleToIndex = ModuleToIndex;
+    type PalletInfo = PalletInfo;
     type AccountData = pallet_balances::AccountData<Balance>;
     type OnNewAccount = ();
     type OnKilledAccount = ();
@@ -122,6 +139,7 @@ parameter_types! {
 }
 
 impl pallet_babe::Trait for Runtime {
+    type WeightInfo = ();
     type EpochDuration = EpochDuration;
     type ExpectedBlockTime = ExpectedBlockTime;
     type EpochChangeTrigger = pallet_babe::ExternalTrigger;
@@ -155,6 +173,7 @@ impl pallet_indices::Trait for Runtime {
 
 parameter_types! {
     pub const ExistentialDeposit: Balance = 1 * MILLIPLM;
+    pub const MaxLocks: u32 = 50;
 }
 
 impl pallet_balances::Trait for Runtime {
@@ -163,6 +182,7 @@ impl pallet_balances::Trait for Runtime {
     type Event = Event;
     type ExistentialDeposit = ExistentialDeposit;
     type AccountStore = frame_system::Module<Runtime>;
+    type MaxLocks = MaxLocks;
     type WeightInfo = ();
 }
 
@@ -264,6 +284,7 @@ impl pallet_sudo::Trait for Runtime {
 }
 
 impl pallet_grandpa::Trait for Runtime {
+    type WeightInfo = ();
     type Event = Event;
     type Call = Call;
 
@@ -313,6 +334,7 @@ where
             .saturating_sub(1);
         let tip = 0;
         let extra: SignedExtra = (
+            TransactionCallFilter::<IsCallable, Call>::new(),
             frame_system::CheckSpecVersion::<Runtime>::new(),
             frame_system::CheckTxVersion::<Runtime>::new(),
             frame_system::CheckGenesis::<Runtime>::new(),
@@ -382,6 +404,7 @@ pub type SignedBlock = generic::SignedBlock<Block>;
 pub type BlockId = generic::BlockId<Block>;
 /// The SignedExtension to the basic transaction logic.
 pub type SignedExtra = (
+    TransactionCallFilter<IsCallable, Call>,
     frame_system::CheckSpecVersion<Runtime>,
     frame_system::CheckTxVersion<Runtime>,
     frame_system::CheckGenesis<Runtime>,

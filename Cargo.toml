@@ -4,7 +4,6 @@ members = [
     "bin/node/rpc",
     "bin/node/runtime",
     "bin/node/primitives",
-    "bin/subkey",
     "frame/plasm-rewards",
     "frame/plasm-validator",
 ]
