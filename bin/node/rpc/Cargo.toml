@@ -7,8 +7,8 @@ edition = "2018"
 [dependencies]
 plasm-runtime = { path = "../runtime" }
 plasm-primitives = { path = "../primitives" }
-frontier-rpc = { path = "../../../vendor/frontier/rpc" }
-frontier-rpc-primitives = { path = "../../../vendor/frontier/rpc/primitives" }
+frontier-rpc = { git = "https://github.com/paritytech/frontier.git" }
+frontier-rpc-primitives = { git = "https://github.com/paritytech/frontier.git" }
 jsonrpc-core = "15.0.0"
 jsonrpc-pubsub = "15.0.0"
 sp-api = "2.0.0"
