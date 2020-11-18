@@ -3162,6 +3162,22 @@ dependencies = [
 [[package]]
 name = "pallet-balances"
 version = "2.0.0-alpha.6"
+dependencies = [
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "pallet-transaction-payment",
+ "parity-scale-codec",
+ "serde",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
+name = "pallet-balances"
+version = "2.0.0-alpha.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b9ef08001886d3747220630337f7afbb8f1d7cbfacaa3a8a13317e1cb3e8e366"
 dependencies = [
@@ -3183,7 +3199,7 @@ dependencies = [
  "frame-support",
  "frame-system",
  "hex-literal",
- "pallet-balances",
+ "pallet-balances 2.0.0-alpha.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "pallet-contracts",
  "pallet-randomness-collective-flip",
  "pallet-timestamp",
@@ -3269,7 +3285,7 @@ dependencies = [
  "frame-support",
  "frame-system",
  "hex-literal",
- "pallet-balances",
+ "pallet-balances 2.0.0-alpha.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "pallet-contract-operator",
  "pallet-contracts",
  "pallet-plasm-rewards",
@@ -3347,7 +3363,7 @@ version = "1.0.0"
 dependencies = [
  "frame-support",
  "frame-system",
- "pallet-balances",
+ "pallet-balances 2.0.0-alpha.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "pallet-contract-operator",
  "pallet-timestamp",
  "parity-scale-codec",
@@ -3365,7 +3381,7 @@ dependencies = [
  "frame-support",
  "frame-system",
  "hex-literal",
- "pallet-balances",
+ "pallet-balances 2.0.0-alpha.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "parity-scale-codec",
  "serde",
  "sp-arithmetic",
@@ -3396,7 +3412,7 @@ dependencies = [
  "hex-literal",
  "median",
  "num-traits 0.2.11",
- "pallet-balances",
+ "pallet-balances 2.0.0-alpha.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "pallet-session",
  "pallet-timestamp",
  "parity-scale-codec",
@@ -3418,7 +3434,7 @@ dependencies = [
  "frame-support",
  "frame-system",
  "hex-literal",
- "pallet-balances",
+ "pallet-balances 2.0.0-alpha.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "pallet-randomness-collective-flip",
  "pallet-session",
  "pallet-staking",
@@ -3440,7 +3456,7 @@ dependencies = [
  "frame-support",
  "frame-system",
  "hex-literal",
- "pallet-balances",
+ "pallet-balances 2.0.0-alpha.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "pallet-plasm-rewards",
  "pallet-randomness-collective-flip",
  "pallet-session",
@@ -3596,7 +3612,7 @@ version = "2.0.0-alpha.6"
 dependencies = [
  "frame-support",
  "frame-system",
- "pallet-balances",
+ "pallet-balances 2.0.0-alpha.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "parity-scale-codec",
  "serde",
  "sp-core",
@@ -3990,7 +4006,7 @@ dependencies = [
  "hex-literal",
  "lazy_static",
  "pallet-babe",
- "pallet-balances",
+ "pallet-balances 2.0.0-alpha.6",
  "pallet-contract-operator",
  "pallet-contracts",
  "pallet-contracts-primitives",
@@ -6591,7 +6607,7 @@ dependencies = [
  "frame-system",
  "hex",
  "hex-literal",
- "pallet-balances",
+ "pallet-balances 2.0.0-alpha.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "pallet-transaction-payment",
  "parity-scale-codec",
  "plasm-primitives",
