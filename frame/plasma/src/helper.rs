@@ -14,12 +14,10 @@ pub const EXIT_CHECKPOINT_CHALLENGE: &'static [u8] = b"EXIT_CHECKPOINT_CHALLENGE
 
 // Dispute Helper methods.
 impl<T: Trait> Module<T> {
-    fn create_property(su_bytes: Vec<u8>, kind: Vec<u8>) -> PropertyOf<T> {
-        let mut inputs = vec![vec![], veec![]];
-        inputs[0] = kind;
-        inputs[1] = su_bytes.clone();
+    pub fn create_property(su_bytes: &Vec<u8>, kind: &'static [u8]) -> PropertyOf<T> {
+        let mut inputs = vec![kind.to_vec(), su_bytes.clone()];
         PropertyOf::<T> {
-            predicate_address: su_bytes,
+            predicate_address: su_bytes.clone(),
             inputs,
         }
     }
@@ -38,12 +36,14 @@ impl<T: Trait> Module<T> {
         witness: Vec<Vec<u8>>,
     ) -> (StateUpdateOf<T>, StateUpdateOf<T>, InclusionProofOf<T>) {
         let state_update: StateUpdateOf<T> = Decode::decode(&mut &inputs[0][..])?;
-        let challenge_state_update: StateUpdateOf<T> = Decode::decode(&mut &challenge_inputs[0][..])?;
+        let challenge_state_update: StateUpdateOf<T> =
+            Decode::decode(&mut &challenge_inputs[0][..])?;
 
         let inclusion_proof: InclusionProofOf<T> = Decode::decode(&mut &witness[0][..])?;
 
         ensure!(
-            state_update.deposit_contract_address == challenge_state_update.deposit_contract_address,
+            state_update.deposit_contract_address
+                == challenge_state_update.deposit_contract_address,
             "DepositContractAddress is invalid",
         );
         ensure!(
@@ -72,22 +72,12 @@ impl<T: Trait> Module<T> {
         return (stateUpdate, challengeStateUpdate, inclusionProof);
     }
 
-    fn is_sub_range(
-        sub_range: RangeOf<T>,
-        surrounding_range: RangeOf<T>,
-    ) -> boolean {
-        return sub_range.start >= surrounding_range.start && sub_range.end <= surrounding_range.end;
+    fn is_sub_range(sub_range: RangeOf<T>, surrounding_range: RangeOf<T>) -> boolean {
+        return sub_range.start >= surrounding_range.start
+            && sub_range.end <= surrounding_range.end;
     }
 
-    fn bytes_to_bytes32(source: Vec<u8>) -> H256 {
-        Decode::decode(source)?;
-        if (source.length == 0) {
-            return 0x0;
-        }
-        assembly {
-            result: = mload(add(source,
-            32))
-        }
+    pub fn bytes_to_bytes32(source: Vec<u8>) -> T::Hash {
+        Decode::decode(&mut &source[..])?;
     }
-
 }

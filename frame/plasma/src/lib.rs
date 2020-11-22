@@ -39,10 +39,10 @@ use sp_std::{marker::PhantomData, prelude::*, vec::Vec};
 
 pub use pallet_ovm::{Decision, Property, PropertyOf};
 
-mod deserializer;
-mod helper;
 mod checkpoint;
+mod deserializer;
 mod exit;
+mod helper;
 
 #[cfg(test)]
 mod mock;
@@ -255,9 +255,18 @@ decl_event!(
         ChallengeRemoved(StateUpdate, StateUpdate),
         /// Event definitions (state_update: StateUpdate)
         CheckpointSettled(StateUpdate),
+        /// Event definitions (state_update: stateUpdate)
+        ExitClaimed(StateUpdate),
+        /// Event definitions (state_update: stateUpdate)
+        ExitSpentChallenged(StateUpdate),
+        /// Event definitions (state_update: stateUpdate, challenging_state_update: StateUpdate)
+        ExitCheckpointChallenged(StateUpdate, StateUpdate),
+        /// Event definitions (state_update: stateUpdate, challenging_state_update: StateUpdate)
+        ExitChallengeRemoved(StateUpdate, StateUpdate),
+        /// Event definitions (state_update: stateUpdate, decision: bool)
+        ExitSettled(StateUpdate, bool),
     }
 );
-
 
 decl_module! {
     pub struct Module<T: Trait> for enum Call where origin: T::Origin {
@@ -410,7 +419,7 @@ decl_module! {
             // verify inclusion proof
             let root = Self::retrive(plapps_id, state_update.block_number);
             ensure!(
-                Self::verifyInclusion_with_root(
+                Self::verify_inclusion_with_root(
                     T::Hashing::hash_of(&state_update.state_object),
                     state_update.deposit_contract_address,
                     state_update.range,
@@ -422,7 +431,7 @@ decl_module! {
 
             // claim property to DisputeManager
             // TODO: WIP implmenting.
-            let prooerty = Self::create_property(&plapps_id, &_inputs[0], CHECKPOINT_CLAIM);
+            let prooerty = Self::create_property(&plapps_id, &_inputs[0], helper::CHECKPOINT_CLAIM);
             // types.Property memory property = createProperty(_inputs[0], CHECKPOINT_CLAIM);
             disputeManager.claim(property);
 
@@ -954,16 +963,5 @@ impl<T: Trait> Module<T> {
             T::Hashing::hash_of(&exit_predicate),
             T::Hashing::hash_of(&exit_deposit_predicate),
         ))
-    }
-
-    fn create_property(su_bytes: Vec<u8>, kind: Vec<u8>) -> PropertyOf<T> {
-        let mut inputs = vec![vec![], veec![]];
-        inputs[0] = kind;
-        inputs[1] = su_bytes;
-        PropertyOf::<T> {
-            predicate_address: su_bytes,
-            inputs:
-        }
-        return types.Property(address(this), inputs);
     }
 }
