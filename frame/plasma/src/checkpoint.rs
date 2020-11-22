@@ -3,6 +3,7 @@
 //! - CheckpointChallengeValidator.sol
 use super::*;
 use frame_support::dispatch::DispatchResult;
+use frame_support::sp_tracing::tracing::stdlib::collections::hash_map::RawEntryBuilder;
 
 /// claim checkpoint
 ///  _propertyInputs: [encode(stateUpdate)]
@@ -81,12 +82,36 @@ impl<T: Trait> Module<T> {
             "Claim does not exist",
         );
         let plapps_origin_id = Origin::signed(plapps_id);
-        pallet_ovm::challenge(plapps_origin_id, claim_property, challenge_property)?;
+        pallet_ovm::<Module<T>>::challenge(plapps_origin_id, claim_property, challenge_property)?;
 
         Self::deposit_event(RawEvent::CheckpointChallenged(state_update, challenge_state_update, inclusion_proof));
     }
 
-    fn settle(inputs: Vec<Vec<u8>>) -> DispatchResult {
+    fn bare_checkpoint_remove_challenge(inputs: Vec<Vec<u8>>, challenge_inputs: Vec<Vec<u8>>, witness: Vec<Vec<u8>>) -> DispatchResult {
+        ensure!(
+            inputs.len() == 1,
+            "inputs length does not match. expected 1"
+        );
+        ensure!(
+            challenge_inputs.len() == 1,
+            "challenge inputs length does not match. expected 1"
+        );
+        ensure!(witness.len() >= 1, "witness must be at least 1");
+
+        let (
+            challengeProperty,
+            property,
+            stateUpdate,
+            challengeStateUpdate
+        ) = Self::validate_challenge_removal(&inputs, &challengeInputs, &witness);
+
+        pallet_ovm::<Module<T>>::set_game_result(challenge_property.clone(), false)?;
+        pallet_ovm::<Module<T>>::remove_challenge(property, challenge_property)?;
+
+        Self::deposit_event(RawEvent::ChallengeRemoved(state_update, challenge_state_updaet));
+    }
+
+    fn bare_checkpoint_settle(inputs: Vec<Vec<u8>>) -> DispatchResult {
         ensure!(
             inputs.len() == 1,
             "inputs length does not match. expected 1"

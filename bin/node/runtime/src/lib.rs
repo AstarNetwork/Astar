@@ -610,6 +610,7 @@ impl_runtime_apis! {
             source: TransactionSource,
             tx: <Block as BlockT>::Extrinsic,
         ) -> TransactionValidity {
+            // always Err()
             Executive::validate_transaction(source, tx)
         }
     }
