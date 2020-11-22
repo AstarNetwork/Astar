@@ -201,42 +201,49 @@ impl<T: Trait> Module<T> {
 // SpentChallengeValidator.sol
 impl<T: Trait> Module<T> {
     fn validate_spent_challeng(inputs: &Vec<Vec<u8>>, challenge_inputs: &Vec<Vec<u8>>, witness: &Vec<Vec<u8>>) -> DispatchResult {
-        let stateUpdate: StateUpdateOf<T> = Decode::decode(&mut &inputs[0][..])
+        let state_update: StateUpdateOf<T> = Decode::decode(&mut &inputs[0][..])
             .map_err(|_| Error::<T>::DecodeError)?;
-        let transaction: TransactionOf
-        types.Transaction memory transaction = abi.decode(
-        challenge_inputs[0],
-        (types.Transaction)
-        );
+        let transaction: TransactionOf<T> = Decode::decode(&mut &challenge_inputs[0][..])
+            .map_err(|_| Error::<T>::DecodeError)?;
         emsure!(
-        transaction.depositContractAddress ==
-        stateUpdate.depositContractAddress,
-        "token must be same"
+            transaction.deposit_contract_address == state_update.deposit_contract_address,
+            "token must be same"
         );
         // To support spending multiple state updates
         emsure!(
-        utils.hasIntersection(transaction.range, stateUpdate.range),
-        "range must contain subrange"
+            Self::has_intersection(&transaction.range, &state_update.range),
+            "range must contain subrange"
         );
         emsure!(
-        transaction.maxBlockNumber >= stateUpdate.blockNumber,
-        "blockNumber must be valid"
+            transaction.max_block_number >= state_update.block_number,
+            "blockNumber must be valid"
         );
 
-        CompiledPredicate predicate = CompiledPredicate(
-        stateUpdate.stateObject.predicateAddress
-        );
-
-        types.Property memory so = stateUpdate.stateObject;
 
         // inputs for stateObject property
-        bytes[] memory inputs = new bytes[](2);
-        inputs[0] = so.inputs[0];
-        inputs[1] = challenge_inputs[0];
+        let new_inputs = vec![
+            state_update.state_object.inputs[0].clone(),
+            challenge_inputs[0].clone(),
+        ];
+
+        let predicate_decide_inputs = Self::make_compiled_predicate_decide_inputs(
+            new_inputs,
+            witness.clone(),
+        );
 
         emsure!(
-        predicate.decide(inputs, _witness),
-        "State object decided to false"
+            pallet_ovm::<Module<T>>::bare_call_predicate(state_update.state_object.predicate_address, predicate_decide_inputs),
+            "State object decided to false"
         );
+    }
+
+    fn make_compiled_predicate_decide_inputs(
+        inputs: Vec<Vec<u8>>,
+        witness: Vec<Vec<u8>>,
+    ) -> Vec<u8> {
+        ovmi::PredicateCallInputs::CompiledPredicate::<T::AccountId>(ovmi::CompiledPredicateCallInputs::DecideTrue {
+            inputs,
+            witness,
+        }).encode()
     }
 }

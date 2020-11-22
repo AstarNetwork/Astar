@@ -67,6 +67,16 @@ pub struct StateUpdate<AccountId, Balance, BlockNumber> {
 }
 
 #[derive(Encode, Decode, Clone, Default, RuntimeDebug, PartialEq, Eq)]
+pub struct Transaction<AccountId, Balance, BlockNumber, Hash> {
+    deposit_contract_address: AccountId,
+    range: RangeOf<Balance>,
+    max_block_number: BlockNumber,
+    next_state_object: PropertyOf<AccountId>,
+    chunk_id: Hash,
+    from: T::AccountId,
+}
+
+#[derive(Encode, Decode, Clone, Default, RuntimeDebug, PartialEq, Eq)]
 pub struct Checkpoint<AccountId> {
     state_update: Property<AccountId>,
 }
@@ -134,6 +144,12 @@ pub type StateUpdateOf<T> = StateUpdate<
     <T as frame_system::Trait>::AccountId,
     BalanceOf<T>,
     <T as frame_system::Trait>::BlockNumber,
+>;
+pub type TransactionOf<T> = Transaction<
+    <T as frame_system::Trait>::AccountId,
+    BalanceOf<T>,
+    <T as frame_system::Trait>::BlockNumber,
+    <T as frame_system::Trait>::Hash,
 >;
 pub type InclusionProofOf<T> = InclusionProof<
     <T as frame_system::Trait>::AccountId,
