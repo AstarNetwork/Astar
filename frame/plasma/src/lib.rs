@@ -69,11 +69,11 @@ pub struct StateUpdate<AccountId, Balance, BlockNumber> {
 #[derive(Encode, Decode, Clone, Default, RuntimeDebug, PartialEq, Eq)]
 pub struct Transaction<AccountId, Balance, BlockNumber, Hash> {
     deposit_contract_address: AccountId,
-    range: RangeOf<Balance>,
+    range: Range<Balance>,
     max_block_number: BlockNumber,
-    next_state_object: PropertyOf<AccountId>,
+    next_state_object: Property<AccountId>,
     chunk_id: Hash,
-    from: T::AccountId,
+    from: AccountId,
 }
 
 #[derive(Encode, Decode, Clone, Default, RuntimeDebug, PartialEq, Eq)]
@@ -254,8 +254,6 @@ decl_event!(
         AccountId = <T as system::Trait>::AccountId,
         Hash = <T as system::Trait>::Hash,
         BlockNumber = <T as system::Trait>::BlockNumber,
-        Range = RangeOf<T>,
-        Checkpoint = CheckpointOf<T>,
         StateUpdate = StateUpdateOf<T>,
         InclusionProof = InclusionProofOf<T>,
     {
@@ -263,8 +261,8 @@ decl_event!(
         Deploy(AccountId, AccountId),
         /// Event definitions (AccountID: PlappsAddress, BlockNumber, Hash: root)
         BlockSubmitted(AccountId, BlockNumber, Hash),
-        /// Event definitions (state_update: StateUpdate, inclusion_proof: InclusionProof)
-        CheckpointClaimed(StateUpdate, InclusionProof),
+        /// Event definitions (plapps_id: AccountId, state_update: StateUpdate, inclusion_proof: InclusionProof)
+        CheckpointClaimed(AccountId, StateUpdate, InclusionProof),
         /// Event definitions (state_update: StateUpdate, challenging_state_update: StateUpdate, inclusion_proof: InclusionProof)
         CheckpointChallenged(StateUpdate, StateUpdate, InclusionProof),
         /// Event definitions (state_update: StateUpdate, challenging_state_update: StateUpdate)
@@ -417,42 +415,7 @@ decl_module! {
         fn checkpoint_claim(origin, plapps_id: T::AccountId, inputs: Vec<Vec<u8>>, witness: Vec<Vec<u8>>) {
              ensure_signed(origin)?;
             // validate inputs
-            ensure!(
-                inputs.len() == 1,
-                Error::<T>::InputLengthDoesNotMatch,
-            );
-            ensure!(
-                witness.len() == 1,
-                Error::<T>::WitnessLengthDoesNotMatch,
-            );
-
-            let su_property: PropertyOf<T> = Decode::decode(&mut &inputs[0][..])
-                .map_err(|_| Error::<T>::DecodeError)?;
-            let state_update = Self::desrializable_state_update(su_property)?;
-            let inclusion_proof: InclusionProofOf<T> = Decode::decode(&mut &witness[0][..])
-                .map_err(|_| Error::<T>::DecodeError)?;
-
-            // verify inclusion proof
-            let root = Self::retrive(plapps_id, state_update.block_number);
-            ensure!(
-                Self::verify_inclusion_with_root(
-                    T::Hashing::hash_of(&state_update.state_object),
-                    state_update.deposit_contract_address,
-                    state_update.range,
-                    inclusion_proof,
-                    root
-                ),
-                Error::<T>::InclusionVerificationFailed,
-            );
-
-            // claim property to DisputeManager
-            // TODO: WIP implmenting.
-            let prooerty = Self::create_property(&plapps_id, &_inputs[0], helper::CHECKPOINT_CLAIM);
-            // types.Property memory property = createProperty(_inputs[0], CHECKPOINT_CLAIM);
-            disputeManager.claim(property);
-
-            emit CheckpointClaimed(stateUpdate, inclusionProof);
-
+            Self::bare_checkpoint_claim(&plapps_id, &inputs, &witness)
         }
 
 
@@ -961,23 +924,19 @@ impl<T: Trait> Module<T> {
         <T as system::Trait>::Hashing::hash_of(exit)
     }
 
-    fn is_subrange(subrange: &RangeOf<T>, surrounding_range: &RangeOf<T>) -> bool {
-        subrange.start >= surrounding_range.start && subrange.end <= surrounding_range.end
-    }
-
     fn generate_plapps_hash(
-        aggregator_id: &T::AccountId,
-        erc20: &T::AccountId,
-        state_update_predicate: &T::AccountId,
-        exit_predicate: &T::AccountId,
-        exit_deposit_predicate: &T::AccountId,
+        _aggregator_id: &T::AccountId,
+        _erc20: &T::AccountId,
+        _state_update_predicate: &T::AccountId,
+        _exit_predicate: &T::AccountId,
+        _exit_deposit_predicate: &T::AccountId,
     ) -> T::Hash {
         T::Hashing::hash_of(&(
-            T::Hashing::hash_of(&aggregator_id),
-            T::Hashing::hash_of(&erc20),
-            T::Hashing::hash_of(&state_update_predicate),
-            T::Hashing::hash_of(&exit_predicate),
-            T::Hashing::hash_of(&exit_deposit_predicate),
+            T::Hashing::hash_of(&_aggregator_id),
+            T::Hashing::hash_of(&_erc20),
+            T::Hashing::hash_of(&_state_update_predicate),
+            T::Hashing::hash_of(&_exit_predicate),
+            T::Hashing::hash_of(&_exit_deposit_predicate),
         ))
     }
 }

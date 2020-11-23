@@ -2,7 +2,9 @@
 //! - CheckpointDispute.sol
 //! - CheckpointChallengeValidator.sol
 use super::*;
+use super::helper::*;
 use frame_support::dispatch::DispatchResult;
+use frame_system::Origin;
 
 /// claim checkpoint
 ///  _propertyInputs: [encode(stateUpdate)]
@@ -39,10 +41,9 @@ impl<T: Trait> Module<T> {
 
         // claim property to DisputeManager
         // TODO: WIP implmenting.
-        let property = Self::create_property(&plapps_id, &_inputs[0], CHECKPOINT_CLAIM);
-        // types.Property memory property = createProperty(_inputs[0], CHECKPOINT_CLAIM);
+        let property = Self::create_property(&plapps_id, &inputs[0], CHECKPOINT_CLAIM);
         let plapps_origin_id = Origin::signed(plapps_id);
-        pallet_ovm::<Module<T>>::claim(plapps_origin_id, property)?;
+        pallet_ovm::Call::<T>::claim(plapps_origin_id, property)?;
         Self::deposit_event(RawEvent::CheckpointClaimed(
             plapps_id,
             state_update,
@@ -77,13 +78,13 @@ impl<T: Trait> Module<T> {
             Self::create_property(challenge_inputs[0].clone(), helper::CHECKPOINT_CHALLENGE);
 
         ensure!(
-            pallet_ovm::<Module<T>>::started(pallet_ovm::<Module<T>>::get_property_id(
+            pallet_ovm::Module::<T>::started(pallet_ovm::Call::<T>::get_property_id(
                 claim_property
             )),
             "Claim does not exist",
         );
         let plapps_origin_id = Origin::signed(plapps_id);
-        pallet_ovm::<Module<T>>::challenge(plapps_origin_id, claim_property, challenge_property)?;
+        pallet_ovm::Call::<T>::challenge(plapps_origin_id, claim_property, challenge_property)?;
 
         Self::deposit_event(RawEvent::CheckpointChallenged(
             state_update,
@@ -107,32 +108,32 @@ impl<T: Trait> Module<T> {
         );
         ensure!(witness.len() >= 1, "witness must be at least 1");
 
-        let (challengeProperty, property, stateUpdate, challengeStateUpdate) =
-            Self::validate_challenge_removal(&inputs, &challengeInputs, &witness);
+        let (challenge_property, property, state_update, challenge_state_update) =
+            Self::validate_challenge_removal(&inputs, &challenge_inputs, &witness);
 
-        pallet_ovm::<Module<T>>::set_game_result(challenge_property.clone(), false)?;
-        pallet_ovm::<Module<T>>::remove_challenge(property, challenge_property)?;
+        pallet_ovm::Call::<T>::set_game_result(challenge_property.clone(), false)?;
+        pallet_ovm::Call::<T>::remove_challenge(property, challenge_property)?;
 
         Self::deposit_event(RawEvent::ChallengeRemoved(
             state_update,
-            challenge_state_updaet,
+            challenge_state_update,
         ));
     }
 
-    fn bare_checkpoint_settle(inputs: Vec<Vec<u8>>) -> DispatchResult {
+    fn bare_checkpoint_settle(plapps_id: &T::AccountId, inputs: &Vec<Vec<u8>>) -> DispatchResult {
         ensure!(
             inputs.len() == 1,
             "inputs length does not match. expected 1"
         );
         let property = Self::create_property(&inputs[0], helper::CHECKPOINT_CLAIM);
-        let plapps_origin_id = Origin::signed(plapps_id);
-        let result = pallet_plasma::<Module<T>>::settle_game(plapps_origin_id.clone(), property);
+        let plapps_origin_id = Origin::signed(plapps_id.clone());
+        let result = pallet_ovm::Call::<T>::settle_game(plapps_origin_id.clone(), property);
 
         let state_update: StateUpdateOf<T> = Decode::decode(&mut &inputs[0])?;
 
         Self::deposit_event(RawEvent::CheckpointSettled(state_update.clone()));
         if result {
-            return plasma::<Module<T>>::finalize_checkpoint(plapps_origin_id, state_update)?;
+            return Self::bare_finalize_checkpoint(plapps_origin_id, state_update)?;
         }
         Ok(())
     }

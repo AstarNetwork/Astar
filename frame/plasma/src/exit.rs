@@ -1,9 +1,9 @@
 //! The exit dispute logic of plasma modules.
 //! - ExitDispute.sol
 //! - SpentChallengeValidator.sol
-use super::*;
 use super::helper::*;
-use frame_support::dispatch::{DispatchResult, DispatchError};
+use super::*;
+use frame_support::dispatch::{DispatchError, DispatchResult};
 
 // ExitDispute.sol
 impl<T: Trait> Module<T> {
@@ -38,9 +38,9 @@ impl<T: Trait> Module<T> {
         } else {
             // ExitStateUpdate
             let inclusion_proof: InclusionProofOf<T> =
-                Decode::decode(&mut &winess[0][..]).map_err(|_| Error::<T>::DecodeError)?;
+                Decode::decode(&mut &witness[0][..]).map_err(|_| Error::<T>::DecodeError)?;
             let block_number_bytes = state_update.block_number.encode();
-            let root = Self::bytes_to_bytes32(Self::retrieve(plaspps_id, block_number_bytes));
+            let root = Self::bytes_to_bytes32(Self::retrieve(plapps_id, block_number_bytes));
 
             ensure!(
                 Self::verify_inclusion_with_root(
@@ -55,7 +55,7 @@ impl<T: Trait> Module<T> {
         }
         // claim property to DisputeManager
         let property: PropertyOf<T> = Self::create_property(&inputs[0], EXIT_CLAIM);
-        pallet_ovm::<Module<T>>::claim(&property)?;
+        pallet_ovm::Call::<T>::claim(&property)?;
 
         Self::deposit_event(RawEvent::ExitClaimed(state_update));
     }
@@ -88,54 +88,60 @@ impl<T: Trait> Module<T> {
             challenge_inputs.len() == 2,
             "challenge inputs length does not match. expected 2"
         );
-        types.Property memory challengeProperty;
-        let stateUpdate: StateUpdateOf<T> = Decode::decode(&mut &inputs[0][..])
-            .map_err(|_| Error::<T>::DecodeError)?;
-        if T::Hashing::hash_of(&challenge_inputs[0]) == T::Hashing::hash_of(EXIT_SPENT_CHALLENGE) {
+        let state_update: StateUpdateOf<T> =
+            Decode::decode(&mut &inputs[0][..]).map_err(|_| Error::<T>::DecodeError)?;
+        let challenge_property = if T::Hashing::hash_of(&challenge_inputs[0])
+            == T::Hashing::hash_of(EXIT_SPENT_CHALLENGE)
+        {
             let spent_challenge_inputs = vec![challenge_inputs[1]];
             Self::validate_spent_challenge(inputs, &spent_challenge_inputs, witness)?;
-            let challenge_property = Self::create_property(
-                challange_inputs[0],
-                EXIT_SPENT_CHALLENGE,
-            );
             Self::deposit_event(RawEvent::ExitSpentChallenged(state_update));
-        } else if T::Hashing::hash_of(&challenge_inputs[0]), T::Hashing::hash_of(EXIT_CHECKPOINT_CHALLENGE) {
+
+            Ok(Self::create_property(
+                challenge_inputs[0],
+                EXIT_SPENT_CHALLENGE,
+            ))
+        } else if T::Hashing::hash_of(&challenge_inputs[0])
+            == T::Hashing::hash_of(EXIT_CHECKPOINT_CHALLENGE)
+        {
             let invalid_history_challenge_inputs = vec![challenge_inputs[1]];
-            Self::valid_checkpoint_challenge(
-                inputs,
-                &invalid_history_challenge_inputs,
-                witness,
-            )?;
-            let challenge_property = Self::create_property(
+            Self::valid_checkpoint_challenge(inputs, &invalid_history_challenge_inputs, witness)?;
+            let challenge_state_update: StateUpdateOf<T> =
+                Decode::decode(&mut &invalid_history_challenge_inputs[0][..])
+                    .map_err(|_| Error::<T>::DecodeError)?;
+            Self::deposit_event(RawEvent::ExitCheckpointChallenged(
+                state_update,
+                challenge_state_update,
+            ));
+
+            Ok(Self::create_property(
                 &invalid_history_challenge_inputs[0],
                 EXIT_CHECKPOINT_CHALLENGE,
-            );
-            let challenge_state_update: StateUpdateOf<T> = Decode::decode(&mut &invalid_history_challenge_inputs[0][..])
-                .map_err(|_| Error::<T>::DecodeError)?;
-            Self::deposit_event(RawEvent::ExitCheckpointChallenged(state_update, challenge_state_update));
+            ))
         } else {
             return Err(DispatchError::Other("illegal challenge type"));
-        }
+        }?;
 
-        let claimed_property = Self::crate_property(
-            &inputs[0],
-            EXIT_CLAIM,
-        );
+        let claimed_property = Self::crate_property(&inputs[0], EXIT_CLAIM);
         ensure!(
-            pallet_ovm::<Module<T>>::started(Self::get_property_id(&claimed_property)),
+            pallet_ovm::Call::<T>::started(Self::get_property_id(&claimed_property)),
             "Claim does not exist"
         );
 
-        pallet_ovm::<Module<T>>::challenge(
-            Self::create_property(&inputs[0],EXIT_CLAIM),
+        pallet_ovm::Module::<T>::challenge(
+            Self::create_property(&inputs[0], EXIT_CLAIM),
             challenge_property,
-        )
+        );
     }
 
-    pub fn bare_exit_remove_challenge(inputs: Vec<Vec<u8>>, challenge_inputs: Vec<Vec<u8>>, witness: Vec<Vec<u8>>) -> DispatchResult {
+    pub fn bare_exit_remove_challenge(
+        inputs: Vec<Vec<u8>>,
+        challenge_inputs: Vec<Vec<u8>>,
+        witness: Vec<Vec<u8>>,
+    ) -> DispatchResult {
         Ok(())
     }
-    
+
     /// prove exit is coin which hasn't been spent.
     /// check checkpoint
     pub fn bare_exit_settle(inputs: Vec<Vec<u8>>) -> DispatchResult {
@@ -147,8 +153,8 @@ impl<T: Trait> Module<T> {
         let property = Self::create_property(&inputs[0], EXIT_CLAIM);
         let decision = Self::<Module<T>>::settle_game(property)?;
 
-        let state_update: StateUpdateOf<T> = Decode::decode(&mut &inputs[0][..])
-            .map_err(|_| Error::<T>::DecodeError)?;
+        let state_update: StateUpdateOf<T> =
+            Decode::decode(&mut &inputs[0][..]).map_err(|_| Error::<T>::DecodeError)?;
 
         Self::deposit_event(RawEvent::ExitSettled(state_update, true));
     }
@@ -160,20 +166,24 @@ impl<T: Trait> Module<T> {
     fn get_claim_decision(su: &StateUpdateOf<T>) -> Decision {
         let su_bytes = su.encode();
         let exit_property = Self::create_property(su_bytes, EXIT_CLAIM);
-        let id = utils.get_property_id(&exit_property)?;
-        let game = pallet_ovm::<Module<T>>::get_game(id)?;
+        let id = Self::get_property_id(&exit_property)?;
+        let game = pallet_ovm::Module::<T>::get_game(id)?;
         game.decision
     }
 
     /// If the exit can be withdrawable, isCompletable returns true.
     fn is_completable(su: &StateUpdateOf<T>) -> bool {
         let su_bytes = su.encode();
-        let exit_property = Self::create_property(&su_bytes, EXIT_CLAIME);
+        let exit_property = Self::create_property(&su_bytes, EXIT_CLAIM);
         let id = Self::get_property_id(&exit_property);
-        pallet_ovm::<Module<T>>::is_decidable(id)?
+        pallet_ovm::Module::<T>::is_decidable(id)?
     }
 
-    fn checkpoint_exitable(plapps_id: &T::AccountId, state_update: &StateUpdateOf<T>, checkpoint: &StateUpdateOf<T>) -> bool {
+    fn checkpoint_exitable(
+        plapps_id: &T::AccountId,
+        state_update: &StateUpdateOf<T>,
+        checkpoint: &StateUpdateOf<T>,
+    ) -> bool {
         ensure!(
             Self::is_subrange(&state_update.range, &checkpoint.range),
             "StateUpdate range must be subrange of checkpoint"
@@ -184,7 +194,7 @@ impl<T: Trait> Module<T> {
         );
 
         let id = Self::get_id(checkpoint);
-        require(
+        ensure!(
             Self::checkpoints(plapps_id, &id),
             "Checkpoint needs to be finalized or inclusionProof have to be provided"
         );
@@ -194,31 +204,32 @@ impl<T: Trait> Module<T> {
     fn is_subrange(subrange: &RangeOf<T>, surrounding_range: &RangeOf<T>) -> bool {
         subrange.start >= surrounding_range.start && subrange.end <= surrounding_range.end
     }
-    
 }
-
 
 // SpentChallengeValidator.sol
 impl<T: Trait> Module<T> {
-    fn validate_spent_challeng(inputs: &Vec<Vec<u8>>, challenge_inputs: &Vec<Vec<u8>>, witness: &Vec<Vec<u8>>) -> DispatchResult {
-        let state_update: StateUpdateOf<T> = Decode::decode(&mut &inputs[0][..])
-            .map_err(|_| Error::<T>::DecodeError)?;
-        let transaction: TransactionOf<T> = Decode::decode(&mut &challenge_inputs[0][..])
-            .map_err(|_| Error::<T>::DecodeError)?;
-        emsure!(
+    fn validate_spent_challeng(
+        inputs: &Vec<Vec<u8>>,
+        challenge_inputs: &Vec<Vec<u8>>,
+        witness: &Vec<Vec<u8>>,
+    ) -> DispatchResult {
+        let state_update: StateUpdateOf<T> =
+            Decode::decode(&mut &inputs[0][..]).map_err(|_| Error::<T>::DecodeError)?;
+        let transaction: TransactionOf<T> =
+            Decode::decode(&mut &challenge_inputs[0][..]).map_err(|_| Error::<T>::DecodeError)?;
+        ensure!(
             transaction.deposit_contract_address == state_update.deposit_contract_address,
             "token must be same"
         );
         // To support spending multiple state updates
-        emsure!(
+        ensure!(
             Self::has_intersection(&transaction.range, &state_update.range),
             "range must contain subrange"
         );
-        emsure!(
+        ensure!(
             transaction.max_block_number >= state_update.block_number,
             "blockNumber must be valid"
         );
-
 
         // inputs for stateObject property
         let new_inputs = vec![
@@ -226,13 +237,14 @@ impl<T: Trait> Module<T> {
             challenge_inputs[0].clone(),
         ];
 
-        let predicate_decide_inputs = Self::make_compiled_predicate_decide_inputs(
-            new_inputs,
-            witness.clone(),
-        );
+        let predicate_decide_inputs =
+            Self::make_compiled_predicate_decide_inputs(new_inputs, witness.clone());
 
-        emsure!(
-            pallet_ovm::<Module<T>>::bare_call_predicate(state_update.state_object.predicate_address, predicate_decide_inputs),
+        ensure!(
+            pallet_ovm::Module::<T>::bare_call_predicate(
+                state_update.state_object.predicate_address,
+                predicate_decide_inputs
+            ),
             "State object decided to false"
         );
     }
@@ -241,9 +253,9 @@ impl<T: Trait> Module<T> {
         inputs: Vec<Vec<u8>>,
         witness: Vec<Vec<u8>>,
     ) -> Vec<u8> {
-        ovmi::PredicateCallInputs::CompiledPredicate::<T::AccountId>(ovmi::CompiledPredicateCallInputs::DecideTrue {
-            inputs,
-            witness,
-        }).encode()
+        ovmi::predicates::PredicateCallInputs::CompiledPredicate::<T::AccountId>(
+            ovmi::predicates::CompiledPredicateCallInputs::DecideTrue { inputs, witness },
+        )
+        .encode()
     }
 }

@@ -57,24 +57,23 @@ impl<T: Trait> Module<T> {
 
         // verify inclusion proof
         let block_number_bytes = Encode::encode(&challenge_state_update.block_number);
-        let root = pallet_plasma::<Module<T>>::retrieve(plapps_id, block_number_bytes);
+        let root = Self::retrieve(plapps_id, block_number_bytes);
 
         ensure!(
-            plasma::<Module<T>>::verify_inclusion_with_root(
+            Self::verify_inclusion_with_root(
                 T::Hashing::hash_of(&challenge_state_update.state_object),
-                challenge_sate_update.deposit_contract_address,
+                challenge_state_update.deposit_contract_address,
                 challenge_state_update.range,
                 inclusion_proof,
                 root,
             ),
             "Inclusion verification failed",
         );
-        return (stateUpdate, challengeStateUpdate, inclusionProof);
+        return (state_update, challenge_state_update, inclusion_proof);
     }
 
-    fn is_sub_range(sub_range: RangeOf<T>, surrounding_range: RangeOf<T>) -> boolean {
-        return sub_range.start >= surrounding_range.start
-            && sub_range.end <= surrounding_range.end;
+    fn is_sub_range(sub_range: RangeOf<T>, surrounding_range: RangeOf<T>) -> bool {
+        sub_range.start >= surrounding_range.start && sub_range.end <= surrounding_range.end
     }
 
     pub fn bytes_to_bytes32(source: Vec<u8>) -> T::Hash {
