@@ -1,0 +1,213 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="BranchesTreeState">
+    <expand>
+      <path>
+        <item name="ROOT" type="e8cecc67:BranchNodeDescriptor" />
+        <item name="LOCAL_ROOT" type="e8cecc67:BranchNodeDescriptor" />
+      </path>
+      <path>
+        <item name="ROOT" type="e8cecc67:BranchNodeDescriptor" />
+        <item name="LOCAL_ROOT" type="e8cecc67:BranchNodeDescriptor" />
+        <item name="GROUP_NODE:feature" type="e8cecc67:BranchNodeDescriptor" />
+      </path>
+      <path>
+        <item name="ROOT" type="e8cecc67:BranchNodeDescriptor" />
+        <item name="REMOTE_ROOT" type="e8cecc67:BranchNodeDescriptor" />
+      </path>
+      <path>
+        <item name="ROOT" type="e8cecc67:BranchNodeDescriptor" />
+        <item name="REMOTE_ROOT" type="e8cecc67:BranchNodeDescriptor" />
+        <item name="GROUP_NODE:origin" type="e8cecc67:BranchNodeDescriptor" />
+      </path>
+      <path>
+        <item name="ROOT" type="e8cecc67:BranchNodeDescriptor" />
+        <item name="REMOTE_ROOT" type="e8cecc67:BranchNodeDescriptor" />
+        <item name="GROUP_NODE:origin" type="e8cecc67:BranchNodeDescriptor" />
+        <item name="GROUP_NODE:add" type="e8cecc67:BranchNodeDescriptor" />
+      </path>
+      <path>
+        <item name="ROOT" type="e8cecc67:BranchNodeDescriptor" />
+        <item name="REMOTE_ROOT" type="e8cecc67:BranchNodeDescriptor" />
+        <item name="GROUP_NODE:origin" type="e8cecc67:BranchNodeDescriptor" />
+        <item name="GROUP_NODE:feature" type="e8cecc67:BranchNodeDescriptor" />
+      </path>
+      <path>
+        <item name="ROOT" type="e8cecc67:BranchNodeDescriptor" />
+        <item name="REMOTE_ROOT" type="e8cecc67:BranchNodeDescriptor" />
+        <item name="GROUP_NODE:origin" type="e8cecc67:BranchNodeDescriptor" />
+        <item name="GROUP_NODE:fix" type="e8cecc67:BranchNodeDescriptor" />
+      </path>
+      <path>
+        <item name="ROOT" type="e8cecc67:BranchNodeDescriptor" />
+        <item name="REMOTE_ROOT" type="e8cecc67:BranchNodeDescriptor" />
+        <item name="GROUP_NODE:origin" type="e8cecc67:BranchNodeDescriptor" />
+        <item name="GROUP_NODE:issue" type="e8cecc67:BranchNodeDescriptor" />
+      </path>
+      <path>
+        <item name="ROOT" type="e8cecc67:BranchNodeDescriptor" />
+        <item name="REMOTE_ROOT" type="e8cecc67:BranchNodeDescriptor" />
+        <item name="GROUP_NODE:origin" type="e8cecc67:BranchNodeDescriptor" />
+        <item name="GROUP_NODE:release" type="e8cecc67:BranchNodeDescriptor" />
+      </path>
+    </expand>
+    <select />
+  </component>
+  <component name="CMakeRunConfigurationManager" shouldGenerate="true" shouldDeleteObsolete="true">
+    <generated />
+  </component>
+  <component name="CMakeSettings">
+    <configurations>
+      <configuration PROFILE_NAME="Debug" CONFIG_NAME="Debug" />
+    </configurations>
+  </component>
+  <component name="CargoProjects">
+    <cargoProject FILE="$PROJECT_DIR$/Cargo.toml" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="eba95a9d-1865-4ef5-96e2-d15c6c38c9a6" name="Default Changelist" comment="">
+      <change afterPath="$PROJECT_DIR$/../../.gitmodules" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../../vendor/frontier" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../.github/workflows/contracts.yml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../.github/workflows/crates.yml" beforeDir="false" afterPath="$PROJECT_DIR$/../../.github/workflows/crates.yml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../.github/workflows/crates_frame.yml" beforeDir="false" afterPath="$PROJECT_DIR$/../../.github/workflows/crates_frame.yml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../.github/workflows/dockerpush.yml" beforeDir="false" afterPath="$PROJECT_DIR$/../../.github/workflows/dockerpush.yml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../.github/workflows/integration.yml" beforeDir="false" afterPath="$PROJECT_DIR$/../../.github/workflows/integration.yml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../Cargo.lock" beforeDir="false" afterPath="$PROJECT_DIR$/../../Cargo.lock" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/../../Cargo.toml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../bin/node/cli/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/../../bin/node/cli/Cargo.toml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../bin/node/cli/lockdrop-oracle/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/../../bin/node/cli/lockdrop-oracle/Cargo.toml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../bin/node/cli/lockdrop-oracle/src/btc_utils.rs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../bin/node/cli/lockdrop-oracle/src/chainlink.rs" beforeDir="false" afterPath="$PROJECT_DIR$/../../bin/node/cli/lockdrop-oracle/src/chainlink.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../bin/node/cli/lockdrop-oracle/src/cli.rs" beforeDir="false" afterPath="$PROJECT_DIR$/../../bin/node/cli/lockdrop-oracle/src/cli.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../bin/node/cli/lockdrop-oracle/src/lib.rs" beforeDir="false" afterPath="$PROJECT_DIR$/../../bin/node/cli/lockdrop-oracle/src/lib.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../bin/node/cli/res/dusty.json" beforeDir="false" afterPath="$PROJECT_DIR$/../../bin/node/cli/res/dusty.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../bin/node/cli/src/chain_spec.rs" beforeDir="false" afterPath="$PROJECT_DIR$/../../bin/node/cli/src/chain_spec.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../bin/node/cli/src/cli.rs" beforeDir="false" afterPath="$PROJECT_DIR$/../../bin/node/cli/src/cli.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../bin/node/cli/src/command.rs" beforeDir="false" afterPath="$PROJECT_DIR$/../../bin/node/cli/src/command.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../bin/node/cli/src/service.rs" beforeDir="false" afterPath="$PROJECT_DIR$/../../bin/node/cli/src/service.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../bin/node/primitives/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/../../bin/node/primitives/Cargo.toml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../bin/node/rpc/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/../../bin/node/rpc/Cargo.toml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../bin/node/rpc/src/lib.rs" beforeDir="false" afterPath="$PROJECT_DIR$/../../bin/node/rpc/src/lib.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../bin/node/runtime/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/../../bin/node/runtime/Cargo.toml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../bin/node/runtime/src/lib.rs" beforeDir="false" afterPath="$PROJECT_DIR$/../../bin/node/runtime/src/lib.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../bin/subkey/Cargo.toml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../bin/subkey/README.adoc" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../bin/subkey/src/main.rs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../bin/subkey/src/vanity.rs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../contracts/COMPLEXITY.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../contracts/Cargo.toml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../contracts/common/Cargo.toml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../contracts/common/src/lib.rs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../contracts/fixtures/caller_contract.wat" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../contracts/fixtures/check_default_rent_allowance.wat" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../contracts/fixtures/crypto_hashes.wat" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../contracts/fixtures/destroy_and_transfer.wat" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../contracts/fixtures/drain.wat" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../contracts/fixtures/restoration.wat" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../contracts/fixtures/return_from_start_fn.wat" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../contracts/fixtures/return_with_data.wat" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../contracts/fixtures/run_out_of_gas.wat" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../contracts/fixtures/self_destruct.wat" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../contracts/fixtures/self_destructing_constructor.wat" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../contracts/fixtures/set_empty_storage.wat" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../contracts/fixtures/set_rent.wat" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../contracts/fixtures/storage_size.wat" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../contracts/rpc/Cargo.toml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../contracts/rpc/runtime-api/Cargo.toml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../contracts/rpc/runtime-api/src/lib.rs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../contracts/rpc/src/lib.rs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../contracts/src/exec.rs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../contracts/src/gas.rs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../contracts/src/lib.rs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../contracts/src/rent.rs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../contracts/src/storage.rs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../contracts/src/tests.rs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../contracts/src/wasm/code_cache.rs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../contracts/src/wasm/env_def/macros.rs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../contracts/src/wasm/env_def/mod.rs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../contracts/src/wasm/mod.rs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../contracts/src/wasm/prepare.rs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../contracts/src/wasm/runtime.rs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../dapps-staking/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/../dapps-staking/Cargo.toml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../dapps-staking/src/lib.rs" beforeDir="false" afterPath="$PROJECT_DIR$/../dapps-staking/src/lib.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../dapps-staking/src/mock.rs" beforeDir="false" afterPath="$PROJECT_DIR$/../dapps-staking/src/mock.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../dapps-staking/src/tests.rs" beforeDir="false" afterPath="$PROJECT_DIR$/../dapps-staking/src/tests.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../operator/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/../operator/Cargo.toml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../operator/src/tests.rs" beforeDir="false" afterPath="$PROJECT_DIR$/../operator/src/tests.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/Cargo.toml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/rpc/runtime-api/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/rpc/runtime-api/Cargo.toml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/mock.rs" beforeDir="false" afterPath="$PROJECT_DIR$/src/mock.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../plasm-lockdrop/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/../plasm-lockdrop/Cargo.toml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../plasm-lockdrop/src/mock.rs" beforeDir="false" afterPath="$PROJECT_DIR$/../plasm-lockdrop/src/mock.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../plasm-rewards/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/../plasm-rewards/Cargo.toml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../plasm-rewards/src/mock.rs" beforeDir="false" afterPath="$PROJECT_DIR$/../plasm-rewards/src/mock.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../plasm-validator/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/../plasm-validator/Cargo.toml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../plasm-validator/src/mock.rs" beforeDir="false" afterPath="$PROJECT_DIR$/../plasm-validator/src/mock.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../plasma/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/../plasma/Cargo.toml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../plasma/rpc/runtime-api/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/../plasma/rpc/runtime-api/Cargo.toml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../plasma/src/mock.rs" beforeDir="false" afterPath="$PROJECT_DIR$/../plasma/src/mock.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../trading/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/../trading/Cargo.toml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../trading/src/tests.rs" beforeDir="false" afterPath="$PROJECT_DIR$/../trading/src/tests.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../ovmi/lib/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/../../ovmi/lib/Cargo.toml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../third-party/nix/release.nix" beforeDir="false" afterPath="$PROJECT_DIR$/../../third-party/nix/release.nix" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="ClangdSettings">
+    <option name="formatViaClangd" value="false" />
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/../.." />
+  </component>
+  <component name="MacroExpansionManager">
+    <option name="directoryName" value="ezepcwqf" />
+  </component>
+  <component name="ProjectId" id="1keomyEI3Yn9gnChsnb1sm8yMHH" />
+  <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent">
+    <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
+    <property name="WebServerToolWindowFactoryState" value="false" />
+    <property name="cf.first.check.clang-format" value="false" />
+    <property name="org.rust.cargo.project.model.PROJECT_DISCOVERY" value="true" />
+  </component>
+  <component name="RustProjectSettings">
+    <option name="toolchainHomeDirectory" value="$USER_HOME$/.cargo/bin" />
+    <option name="version" value="2" />
+  </component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="eba95a9d-1865-4ef5-96e2-d15c6c38c9a6" name="Default Changelist" comment="" />
+      <created>1606070580831</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1606070580831</updated>
+      <workItem from="1606070581951" duration="11000" />
+      <workItem from="1606070611385" duration="13000" />
+    </task>
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
+    <option name="oldMeFiltersMigrated" value="true" />
+  </component>
+</project>

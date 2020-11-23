@@ -3,15 +3,15 @@
   "id": "dusty3",
   "chainType": "Live",
   "bootNodes": [
-    "/ip4/54.64.145.3/tcp/30333/p2p/QmTFWr36gcQ5aRUQCuAFSUdaoBid4ChfHaKdiYwa6hUyLw",
-    "/ip4/3.115.175.152/tcp/30333/p2p/QmWKdqqaKr3pWujhbv5CvNPLry7WqHXouSYUZDvfusNFWp",
-    "/ip4/3.114.81.104/tcp/30333/p2p/QmXELPiGCywBdgtQRewie5VEpxgxbWFDm6rk87YmrTkBet",
-    "/ip4/3.114.90.94/tcp/30333/p2p/QmRCJbRdkJv8gGQcUZrUYnhQLB9EavEo1LEnr52xiXqqqs",
-    "/ip4/95.217.129.248/tcp/30333/p2p/QmS2hSkyLWWopScxJ3BWhnMGELX6BNHL43YCGtSZi5u7De"
+    "/ip4/54.64.145.3/tcp/30333/p2p/12D3KooWAf96FHbcK8ch9RocVNnMNF87SJ9ZHpNX2TxQwyQSM64L",
+    "/ip4/3.115.175.152/tcp/30333/p2p/12D3KooWFurkxHs12fn44QpppFNivrAM1WrW964Zm7NTeAg8P9hm",
+    "/ip4/3.114.81.104/tcp/30333/p2p/12D3KooWL8EXDNYawpPP5XVKKfazGoK6FrxsyTnByR8vvZXqJ4fD",
+    "/ip4/3.114.90.94/tcp/30333/p2p/12D3KooWG8iZz6JRfezkgrVSf7b595K9cdzr6VFwsP3RfJGHT7mC",
+    "/ip4/95.217.129.248/tcp/30333/p2p/12D3KooWHwiA9G5mevB8Q4wRJxo7tYK4FKEwv8zdMzN3jSmQYVW8"
   ],
   "telemetryEndpoints": [
     [
-      "/dns/telemetry.polkadot.io/tcp/443/x-parity-wss/%2Fsubmit%2F",
+      "wss://telemetry.polkadot.io/submit/",
       0
     ]
   ],
