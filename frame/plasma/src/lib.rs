@@ -564,26 +564,26 @@ impl<T: Trait> Module<T> {
     /// - @param block_number block number where the Merkle root is stored
     pub fn verify_inclusion(
         plapps_id: &T::AccountId,
-        leaf: T::Hash,
-        token_address: T::AccountId,
-        range: RangeOf<T>,
-        inclusion_proof: InclusionProofOf<T>,
-        block_number: T::BlockNumber,
+        leaf: &T::Hash,
+        token_address: &T::AccountId,
+        range: &RangeOf<T>,
+        inclusion_proof: &InclusionProofOf<T>,
+        block_number: &T::BlockNumber,
     ) -> DispatchResultT<bool> {
-        let root = <Blocks<T>>::get(&plapps_id, &block_number);
-        Self::verify_inclusion_with_root(leaf, token_address, range, inclusion_proof, root)
+        let root = <Blocks<T>>::get(plapps_id, block_number);
+        Self::verify_inclusion_with_root(leaf, token_address, range, inclusion_proof, &root)
     }
 
     pub fn verify_inclusion_with_root(
-        leaf: T::Hash,
-        token_address: T::AccountId,
-        range: RangeOf<T>,
-        inclusion_proof: InclusionProofOf<T>,
-        root: T::Hash,
+        leaf: &T::Hash,
+        token_address: &T::AccountId,
+        range: &RangeOf<T>,
+        inclusion_proof: &InclusionProofOf<T>,
+        root: &T::Hash,
     ) -> DispatchResultT<bool> {
         // Calcurate the root of interval tree
         let (computed_root, implicit_end) = Self::compute_interval_tree_root(
-            &leaf,
+            leaf,
             &inclusion_proof.interval_inclusion_proof.leaf_index,
             &inclusion_proof.interval_inclusion_proof.leaf_position,
             &inclusion_proof.interval_inclusion_proof.siblings,
@@ -607,7 +607,7 @@ impl<T: Trait> Module<T> {
             token_address <= implicit_address,
             Error::<T>::AddressMustNotExceedTheImplicitAddress,
         );
-        return Ok(computed_root == root);
+        Ok(computed_root == root)
     }
 }
 

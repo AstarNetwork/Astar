@@ -35,11 +35,13 @@ impl<T: Trait> Module<T> {
         challenge_inputs: Vec<Vec<u8>>,
         witness: Vec<Vec<u8>>,
     ) -> (StateUpdateOf<T>, StateUpdateOf<T>, InclusionProofOf<T>) {
-        let state_update: StateUpdateOf<T> = Decode::decode(&mut &inputs[0][..])?;
+        let state_update: StateUpdateOf<T> =
+            Decode::decode(&mut &inputs[0][..]).map_err(|_| Error::<T>::DecodeError)?;
         let challenge_state_update: StateUpdateOf<T> =
             Decode::decode(&mut &challenge_inputs[0][..])?;
 
-        let inclusion_proof: InclusionProofOf<T> = Decode::decode(&mut &witness[0][..])?;
+        let inclusion_proof: InclusionProofOf<T> =
+            Decode::decode(&mut &witness[0][..]).map_err(|_| Error::<T>::DecodeError)?;
 
         ensure!(
             state_update.deposit_contract_address
@@ -47,11 +49,11 @@ impl<T: Trait> Module<T> {
             "DepositContractAddress is invalid",
         );
         ensure!(
-            state_update.blockNumber > challenge_state_update.blockNumber,
+            state_update.block_number > challenge_state_update.block_number,
             "BlockNumber must be smaller than challenged state",
         );
         ensure!(
-            Self::is_sub_range(challenge_state_update.range, state_update.range),
+            Self::is_sub_range(&challenge_state_update.range, &state_update.range),
             "Range must be subrange of stateUpdate",
         );
 
@@ -62,21 +64,21 @@ impl<T: Trait> Module<T> {
         ensure!(
             Self::verify_inclusion_with_root(
                 T::Hashing::hash_of(&challenge_state_update.state_object),
-                challenge_state_update.deposit_contract_address,
-                challenge_state_update.range,
-                inclusion_proof,
-                root,
+                &challenge_state_update.deposit_contract_address,
+                &challenge_state_update.range,
+                &inclusion_proof,
+                &root,
             ),
             "Inclusion verification failed",
         );
-        return (state_update, challenge_state_update, inclusion_proof);
+        (state_update, challenge_state_update, inclusion_proof)
     }
 
-    fn is_sub_range(sub_range: RangeOf<T>, surrounding_range: RangeOf<T>) -> bool {
+    fn is_sub_range(sub_range: &RangeOf<T>, surrounding_range: &RangeOf<T>) -> bool {
         sub_range.start >= surrounding_range.start && sub_range.end <= surrounding_range.end
     }
 
     pub fn bytes_to_bytes32(source: Vec<u8>) -> T::Hash {
-        Decode::decode(&mut &source[..])?;
+        Decode::decode(&mut &source[..]).map_err(|_| Error::<T>::DecodeError)?;
     }
 }

@@ -1,8 +1,8 @@
 //! The exit dispute logic of plasma modules.
 //! - CheckpointDispute.sol
 //! - CheckpointChallengeValidator.sol
-use super::*;
 use super::helper::*;
+use super::*;
 use frame_support::dispatch::DispatchResult;
 use frame_system::Origin;
 
