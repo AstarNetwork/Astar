@@ -19,7 +19,10 @@ frame-support = { version = "2.0.0", default_features = false }
 frame-system = { version = "2.0.0", default_features = false }
 
 [dev-dependencies]
+pallet-balances = "2.0.0"
+libsecp256k1 = "0.3.2"
 hex-literal = "0.2.1"
+sp-keyring = "2.0.0"
 sp-core = "2.0.0"
 
 [features]

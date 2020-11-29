@@ -4308,10 +4308,13 @@ dependencies = [
  "frame-support",
  "frame-system",
  "hex-literal 0.2.1",
+ "libsecp256k1",
+ "pallet-balances",
  "parity-scale-codec",
  "serde",
  "sp-core",
  "sp-io",
+ "sp-keyring",
  "sp-runtime",
  "sp-std",
 ]
