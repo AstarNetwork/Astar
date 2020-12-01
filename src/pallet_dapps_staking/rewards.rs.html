@@ -1,4 +1,5 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source to the Rust file `frame/dapps-staking/src/rewards.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>rewards.rs.html -- source</title><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../dark.css"><link rel="stylesheet" type="text/css" href="../../light.css" id="themeStyle"><script src="../../storage.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="shortcut icon" href="../../favicon.ico"><style type="text/css">#crate-search{background-image:url("../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../pallet_dapps_staking/index.html'><div class='logo-container'><img src='../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!"><img src="../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices"></div></div><script src="../../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><a id="settings-menu" href="../../settings.html"><img src="../../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1">  1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source to the Rust file `frame/dapps-staking/src/rewards.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>rewards.rs.html -- source</title><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../light.css"  id="themeStyle"><link rel="stylesheet" type="text/css" href="../../dark.css" disabled ><link rel="stylesheet" type="text/css" href="../../ayu.css" disabled ><script src="../../storage.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="shortcut icon" href="../../favicon.ico"><style type="text/css">#crate-search{background-image:url("../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../pallet_dapps_staking/index.html'><div class='logo-container rust-logo'><img src='../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!"><img src="../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices"></div></div><script src="../../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><span class="help-button">?</span>
+                <a id="settings-menu" href="../../settings.html"><img src="../../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1">  1</span>
 <span id="2">  2</span>
 <span id="3">  3</span>
 <span id="4">  4</span>
@@ -197,7 +198,7 @@
 
 <span class="doccomment">/// Compute reards for dapps from total dapps rewards to operators and nominators.</span>
 <span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">ComputeRewardsForDapps</span> {
-    <span class="kw">fn</span> <span class="ident">compute_rewards_for_dapps</span><span class="op">&lt;</span><span class="ident">N</span><span class="op">&gt;</span>(<span class="ident">total_dapps_rewards</span>: <span class="ident">N</span>) <span class="op">-</span><span class="op">&gt;</span> (<span class="ident">N</span>, <span class="ident">N</span>)
+    <span class="kw">fn</span> <span class="ident">compute_rewards_for_dapps</span><span class="op">&lt;</span><span class="ident">N</span><span class="op">&gt;</span>(<span class="ident">total_dapps_rewards</span>: <span class="ident">N</span>) <span class="op">-&gt;</span> (<span class="ident">N</span>, <span class="ident">N</span>)
     <span class="kw">where</span>
         <span class="ident">N</span>: <span class="ident">BaseArithmetic</span> <span class="op">+</span> <span class="ident">Unsigned</span> <span class="op">+</span> <span class="ident">Clone</span> <span class="op">+</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">u32</span><span class="op">&gt;</span>;
 
@@ -206,7 +207,7 @@
         <span class="ident">total_staked</span>: <span class="ident">N</span>,
         <span class="ident">nominators_reward</span>: <span class="ident">N</span>,
         <span class="ident">staked_values</span>: <span class="ident">Vec</span><span class="op">&lt;</span>(<span class="ident">N</span>, <span class="ident">N</span>)<span class="op">&gt;</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">N</span>
+    ) <span class="op">-&gt;</span> <span class="ident">N</span>
     <span class="kw">where</span>
         <span class="ident">N</span>: <span class="ident">BaseArithmetic</span> <span class="op">+</span> <span class="ident">Unsigned</span> <span class="op">+</span> <span class="ident">Clone</span> <span class="op">+</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">u32</span><span class="op">&gt;</span>;
 
@@ -214,7 +215,7 @@
         <span class="ident">staked_operator</span>: <span class="ident">N</span>,
         <span class="ident">total_staked</span>: <span class="ident">N</span>,
         <span class="ident">operators_reward</span>: <span class="ident">N</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">N</span>
+    ) <span class="op">-&gt;</span> <span class="ident">N</span>
     <span class="kw">where</span>
         <span class="ident">N</span>: <span class="ident">BaseArithmetic</span> <span class="op">+</span> <span class="ident">Unsigned</span> <span class="op">+</span> <span class="ident">Clone</span> <span class="op">+</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">u32</span><span class="op">&gt;</span>;
 }
@@ -224,7 +225,7 @@
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">BasedComputeRewardsForDapps</span>;
 
 <span class="kw">impl</span> <span class="ident">ComputeRewardsForDapps</span> <span class="kw">for</span> <span class="ident">BasedComputeRewardsForDapps</span> {
-    <span class="kw">fn</span> <span class="ident">compute_rewards_for_dapps</span><span class="op">&lt;</span><span class="ident">N</span><span class="op">&gt;</span>(<span class="ident">total_dapps_rewards</span>: <span class="ident">N</span>) <span class="op">-</span><span class="op">&gt;</span> (<span class="ident">N</span>, <span class="ident">N</span>)
+    <span class="kw">fn</span> <span class="ident">compute_rewards_for_dapps</span><span class="op">&lt;</span><span class="ident">N</span><span class="op">&gt;</span>(<span class="ident">total_dapps_rewards</span>: <span class="ident">N</span>) <span class="op">-&gt;</span> (<span class="ident">N</span>, <span class="ident">N</span>)
     <span class="kw">where</span>
         <span class="ident">N</span>: <span class="ident">BaseArithmetic</span> <span class="op">+</span> <span class="ident">Unsigned</span> <span class="op">+</span> <span class="ident">Clone</span> <span class="op">+</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">u32</span><span class="op">&gt;</span>,
     {
@@ -242,14 +243,14 @@
         <span class="ident">total_staked</span>: <span class="ident">N</span>,
         <span class="ident">nominators_reward</span>: <span class="ident">N</span>,
         <span class="kw">_</span>: <span class="ident">Vec</span><span class="op">&lt;</span>(<span class="ident">N</span>, <span class="ident">N</span>)<span class="op">&gt;</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">N</span>
+    ) <span class="op">-&gt;</span> <span class="ident">N</span>
     <span class="kw">where</span>
         <span class="ident">N</span>: <span class="ident">BaseArithmetic</span> <span class="op">+</span> <span class="ident">Unsigned</span> <span class="op">+</span> <span class="ident">Clone</span> <span class="op">+</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">u32</span><span class="op">&gt;</span>,
     {
         <span class="ident">Perbill</span>::<span class="ident">from_rational_approximation</span>(<span class="ident">nominate_total</span>, <span class="ident">total_staked</span>) <span class="op">*</span> <span class="ident">nominators_reward</span>
     }
 
-    <span class="kw">fn</span> <span class="ident">compute_reward_for_operator</span><span class="op">&lt;</span><span class="ident">N</span><span class="op">&gt;</span>(<span class="ident">staked_operator</span>: <span class="ident">N</span>, <span class="ident">total_staked</span>: <span class="ident">N</span>, <span class="ident">operators_reward</span>: <span class="ident">N</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">N</span>
+    <span class="kw">fn</span> <span class="ident">compute_reward_for_operator</span><span class="op">&lt;</span><span class="ident">N</span><span class="op">&gt;</span>(<span class="ident">staked_operator</span>: <span class="ident">N</span>, <span class="ident">total_staked</span>: <span class="ident">N</span>, <span class="ident">operators_reward</span>: <span class="ident">N</span>) <span class="op">-&gt;</span> <span class="ident">N</span>
     <span class="kw">where</span>
         <span class="ident">N</span>: <span class="ident">BaseArithmetic</span> <span class="op">+</span> <span class="ident">Unsigned</span> <span class="op">+</span> <span class="ident">Clone</span> <span class="op">+</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">u32</span><span class="op">&gt;</span>,
     {
@@ -261,7 +262,7 @@
 
 <span class="kw">impl</span> <span class="ident">ComputeRewardsForDapps</span> <span class="kw">for</span> <span class="ident">VoidableRewardsForDapps</span> {
     <span class="doccomment">/// distribute dapps rewards into 50% to operators and the other 50% to nominators</span>
-    <span class="kw">fn</span> <span class="ident">compute_rewards_for_dapps</span><span class="op">&lt;</span><span class="ident">N</span><span class="op">&gt;</span>(<span class="ident">total_dapps_rewards</span>: <span class="ident">N</span>) <span class="op">-</span><span class="op">&gt;</span> (<span class="ident">N</span>, <span class="ident">N</span>)
+    <span class="kw">fn</span> <span class="ident">compute_rewards_for_dapps</span><span class="op">&lt;</span><span class="ident">N</span><span class="op">&gt;</span>(<span class="ident">total_dapps_rewards</span>: <span class="ident">N</span>) <span class="op">-&gt;</span> (<span class="ident">N</span>, <span class="ident">N</span>)
     <span class="kw">where</span>
         <span class="ident">N</span>: <span class="ident">BaseArithmetic</span> <span class="op">+</span> <span class="ident">Unsigned</span> <span class="op">+</span> <span class="ident">Clone</span> <span class="op">+</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">u32</span><span class="op">&gt;</span>,
     {
@@ -287,7 +288,7 @@
         <span class="ident">total_staked</span>: <span class="ident">N</span>,
         <span class="ident">nominators_reward</span>: <span class="ident">N</span>,
         <span class="ident">staked_values</span>: <span class="ident">Vec</span><span class="op">&lt;</span>(<span class="ident">N</span>, <span class="ident">N</span>)<span class="op">&gt;</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">N</span>
+    ) <span class="op">-&gt;</span> <span class="ident">N</span>
     <span class="kw">where</span>
         <span class="ident">N</span>: <span class="ident">BaseArithmetic</span> <span class="op">+</span> <span class="ident">Unsigned</span> <span class="op">+</span> <span class="ident">Clone</span> <span class="op">+</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">u32</span><span class="op">&gt;</span>,
     {
@@ -295,7 +296,7 @@
 
         <span class="kw">let</span> <span class="ident">weighted_staking_total</span> <span class="op">=</span> <span class="ident">staked_values</span>
             .<span class="ident">iter</span>()
-            .<span class="ident">filter</span>(<span class="op">|</span>(<span class="ident">total</span>, <span class="ident">_value</span>)<span class="op">|</span> <span class="ident">threshold</span> <span class="op">&lt;</span><span class="op">=</span> <span class="ident">total</span>.<span class="ident">clone</span>())
+            .<span class="ident">filter</span>(<span class="op">|</span>(<span class="ident">total</span>, <span class="ident">_value</span>)<span class="op">|</span> <span class="ident">threshold</span> <span class="op">&lt;=</span> <span class="ident">total</span>.<span class="ident">clone</span>())
             .<span class="ident">fold</span>(<span class="ident">N</span>::<span class="ident">from</span>(<span class="number">0</span> <span class="kw">as</span> <span class="ident">u32</span>), <span class="op">|</span><span class="ident">sum</span>, (<span class="ident">total</span>, <span class="ident">value</span>)<span class="op">|</span> {
                 <span class="comment">// -1 * log2(p/q) = log2(q/p)</span>
                 <span class="kw">let</span> <span class="ident">alpha</span> <span class="op">=</span> <span class="ident">N</span>::<span class="ident">from</span>(<span class="ident">log2</span>(
@@ -310,7 +311,7 @@
             <span class="op">*</span> <span class="ident">nominators_reward</span>
     }
 
-    <span class="kw">fn</span> <span class="ident">compute_reward_for_operator</span><span class="op">&lt;</span><span class="ident">N</span><span class="op">&gt;</span>(<span class="ident">staked_operator</span>: <span class="ident">N</span>, <span class="ident">total_staked</span>: <span class="ident">N</span>, <span class="ident">operators_reward</span>: <span class="ident">N</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">N</span>
+    <span class="kw">fn</span> <span class="ident">compute_reward_for_operator</span><span class="op">&lt;</span><span class="ident">N</span><span class="op">&gt;</span>(<span class="ident">staked_operator</span>: <span class="ident">N</span>, <span class="ident">total_staked</span>: <span class="ident">N</span>, <span class="ident">operators_reward</span>: <span class="ident">N</span>) <span class="op">-&gt;</span> <span class="ident">N</span>
     <span class="kw">where</span>
         <span class="ident">N</span>: <span class="ident">BaseArithmetic</span> <span class="op">+</span> <span class="ident">Unsigned</span> <span class="op">+</span> <span class="ident">Clone</span> <span class="op">+</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">u32</span><span class="op">&gt;</span>,
     {
@@ -321,14 +322,14 @@
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">test</span>)]</span>
 <span class="kw">mod</span> <span class="ident">test</span> {
     <span class="kw">use</span> <span class="kw">super</span>::<span class="kw-2">*</span>;
-    <span class="kw">fn</span> <span class="ident">compute_payout_test</span><span class="op">&lt;</span><span class="ident">N</span><span class="op">&gt;</span>(<span class="ident">total_dapps_tokens</span>: <span class="ident">N</span>) <span class="op">-</span><span class="op">&gt;</span> (<span class="ident">N</span>, <span class="ident">N</span>)
+    <span class="kw">fn</span> <span class="ident">compute_payout_test</span><span class="op">&lt;</span><span class="ident">N</span><span class="op">&gt;</span>(<span class="ident">total_dapps_tokens</span>: <span class="ident">N</span>) <span class="op">-&gt;</span> (<span class="ident">N</span>, <span class="ident">N</span>)
     <span class="kw">where</span>
         <span class="ident">N</span>: <span class="ident">BaseArithmetic</span> <span class="op">+</span> <span class="ident">Unsigned</span> <span class="op">+</span> <span class="ident">Clone</span> <span class="op">+</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">u32</span><span class="op">&gt;</span>,
     {
         <span class="ident">BasedComputeRewardsForDapps</span>::<span class="ident">compute_rewards_for_dapps</span>(<span class="ident">total_dapps_tokens</span>)
     }
 
-    <span class="kw">fn</span> <span class="ident">compute_voidable_rewards_payout</span><span class="op">&lt;</span><span class="ident">N</span><span class="op">&gt;</span>(<span class="ident">total_dapps_tokens</span>: <span class="ident">N</span>) <span class="op">-</span><span class="op">&gt;</span> (<span class="ident">N</span>, <span class="ident">N</span>)
+    <span class="kw">fn</span> <span class="ident">compute_voidable_rewards_payout</span><span class="op">&lt;</span><span class="ident">N</span><span class="op">&gt;</span>(<span class="ident">total_dapps_tokens</span>: <span class="ident">N</span>) <span class="op">-&gt;</span> (<span class="ident">N</span>, <span class="ident">N</span>)
     <span class="kw">where</span>
         <span class="ident">N</span>: <span class="ident">BaseArithmetic</span> <span class="op">+</span> <span class="ident">Unsigned</span> <span class="op">+</span> <span class="ident">Clone</span> <span class="op">+</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">u32</span><span class="op">&gt;</span>,
     {

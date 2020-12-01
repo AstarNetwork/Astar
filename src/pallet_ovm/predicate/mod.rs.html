@@ -1,4 +1,5 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source to the Rust file `frame/ovm/src/predicate/mod.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>mod.rs.html -- source</title><link rel="stylesheet" type="text/css" href="../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../dark.css"><link rel="stylesheet" type="text/css" href="../../../light.css" id="themeStyle"><script src="../../../storage.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="shortcut icon" href="../../../favicon.ico"><style type="text/css">#crate-search{background-image:url("../../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../../pallet_ovm/index.html'><div class='logo-container'><img src='../../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!"><img src="../../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices"></div></div><script src="../../../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><a id="settings-menu" href="../../../settings.html"><img src="../../../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1">  1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source to the Rust file `frame/ovm/src/predicate/mod.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>mod.rs.html -- source</title><link rel="stylesheet" type="text/css" href="../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../light.css"  id="themeStyle"><link rel="stylesheet" type="text/css" href="../../../dark.css" disabled ><link rel="stylesheet" type="text/css" href="../../../ayu.css" disabled ><script src="../../../storage.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="shortcut icon" href="../../../favicon.ico"><style type="text/css">#crate-search{background-image:url("../../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../../pallet_ovm/index.html'><div class='logo-container rust-logo'><img src='../../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!"><img src="../../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices"></div></div><script src="../../../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><span class="help-button">?</span>
+                <a id="settings-menu" href="../../../settings.html"><img src="../../../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1">  1</span>
 <span id="2">  2</span>
 <span id="3">  3</span>
 <span id="4">  4</span>
@@ -206,7 +207,7 @@
     <span class="ident">code</span>: <span class="ident">ovmi</span>::<span class="ident">compiled_predicates</span>::<span class="ident">CompiledPredicate</span>,
     <span class="ident">payout</span>: <span class="ident">T</span>::<span class="ident">AccountId</span>,
     <span class="ident">address_inputs</span>: <span class="ident">BTreeMap</span><span class="op">&lt;</span><span class="ident">T</span>::<span class="ident">Hash</span>, <span class="ident">T</span>::<span class="ident">AccountId</span><span class="op">&gt;</span>,
-    <span class="ident">bytes_inputs</span>: <span class="ident">BTreeMap</span><span class="op">&lt;</span><span class="ident">T</span>::<span class="ident">Hash</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+    <span class="ident">bytes_inputs</span>: <span class="ident">BTreeMap</span><span class="op">&lt;</span><span class="ident">T</span>::<span class="ident">Hash</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;&gt;</span>,
 }
 
 <span class="doccomment">/// Loader which fetches `OvmExecutable` from the code cache.</span>
@@ -215,7 +216,7 @@
 }
 
 <span class="kw">impl</span> <span class="ident">PredicateLoader</span> {
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">schedule</span>: <span class="ident">Rc</span><span class="op">&lt;</span><span class="ident">Schedule</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">schedule</span>: <span class="ident">Rc</span><span class="op">&lt;</span><span class="ident">Schedule</span><span class="op">&gt;</span>) <span class="op">-&gt;</span> <span class="self">Self</span> {
         <span class="ident">PredicateLoader</span> { <span class="ident">schedule</span> }
     }
 }
@@ -226,7 +227,7 @@
     <span class="kw">fn</span> <span class="ident">load_main</span>(
         <span class="kw-2">&amp;</span><span class="self">self</span>,
         <span class="ident">predicate</span>: <span class="ident">PredicateContractOf</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">OvmExecutable</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>, <span class="kw-2">&amp;</span><span class="lifetime">&#39;static</span> <span class="ident">str</span><span class="op">&gt;</span> {
+    ) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">OvmExecutable</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>, <span class="kw-2">&amp;</span><span class="lifetime">&#39;static</span> <span class="ident">str</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">prefab_module</span> <span class="op">=</span> <span class="ident">code_cache</span>::<span class="ident">load</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="ident">predicate</span>.<span class="ident">predicate_hash</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">schedule</span>)<span class="question-mark">?</span>;
         <span class="kw">let</span> <span class="ident">code</span> <span class="op">=</span> <span class="ident">Decode</span>::<span class="ident">decode</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="kw-2">&amp;</span><span class="ident">prefab_module</span>.<span class="ident">code</span>[..])
             .<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="string">&quot;Predicate code cannot decode error.&quot;</span>)<span class="question-mark">?</span>;
@@ -247,7 +248,7 @@
     <span class="kw">pub</span> <span class="ident">depth</span>: <span class="ident">usize</span>,
     <span class="comment">// pub deferred: Vec&lt;DeferredAction&lt;T&gt;&gt;,</span>
     <span class="kw">pub</span> <span class="ident">config</span>: <span class="ident">Rc</span><span class="op">&lt;</span><span class="ident">Config</span><span class="op">&gt;</span>,
-    <span class="kw">pub</span> <span class="ident">vm</span>: <span class="ident">Rc</span><span class="op">&lt;</span><span class="ident">PredicateOvm</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+    <span class="kw">pub</span> <span class="ident">vm</span>: <span class="ident">Rc</span><span class="op">&lt;</span><span class="ident">PredicateOvm</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;&gt;</span>,
     <span class="kw">pub</span> <span class="ident">loader</span>: <span class="ident">Rc</span><span class="op">&lt;</span><span class="ident">PredicateLoader</span><span class="op">&gt;</span>,
 }
 
@@ -262,9 +263,9 @@
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">top_level</span>(
         <span class="ident">origin</span>: <span class="ident">T</span>::<span class="ident">AccountId</span>,
         <span class="ident">cfg</span>: <span class="ident">Rc</span><span class="op">&lt;</span><span class="ident">Config</span><span class="op">&gt;</span>,
-        <span class="ident">vm</span>: <span class="ident">Rc</span><span class="op">&lt;</span><span class="ident">PredicateOvm</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+        <span class="ident">vm</span>: <span class="ident">Rc</span><span class="op">&lt;</span><span class="ident">PredicateOvm</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;&gt;</span>,
         <span class="ident">loader</span>: <span class="ident">Rc</span><span class="op">&lt;</span><span class="ident">PredicateLoader</span><span class="op">&gt;</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    ) <span class="op">-&gt;</span> <span class="self">Self</span> {
         <span class="ident">ExecutionContext</span> {
             <span class="ident">self_account</span>: <span class="ident">origin</span>,
             <span class="ident">depth</span>: <span class="number">0</span>,
@@ -275,7 +276,7 @@
         }
     }
 
-    <span class="kw">fn</span> <span class="ident">nested</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">dest</span>: <span class="ident">T</span>::<span class="ident">AccountId</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">ExecutionContext</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">nested</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">dest</span>: <span class="ident">T</span>::<span class="ident">AccountId</span>) <span class="op">-&gt;</span> <span class="ident">ExecutionContext</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
         <span class="ident">ExecutionContext</span> {
             <span class="ident">self_account</span>: <span class="ident">dest</span>,
             <span class="ident">depth</span>: <span class="self">self</span>.<span class="ident">depth</span> <span class="op">+</span> <span class="number">1</span>,
@@ -287,17 +288,17 @@
     }
 
     <span class="doccomment">/// Make a call to the specified address, optionally transferring some funds.</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">call</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">dest</span>: <span class="ident">T</span>::<span class="ident">AccountId</span>, <span class="ident">input_data</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">ExecResult</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
-        <span class="kw">if</span> <span class="self">self</span>.<span class="ident">depth</span> <span class="op">=</span><span class="op">=</span> <span class="self">self</span>.<span class="ident">config</span>.<span class="ident">max_depth</span> <span class="kw">as</span> <span class="ident">usize</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">call</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">dest</span>: <span class="ident">T</span>::<span class="ident">AccountId</span>, <span class="ident">input_data</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>) <span class="op">-&gt;</span> <span class="ident">ExecResult</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
+        <span class="kw">if</span> <span class="self">self</span>.<span class="ident">depth</span> <span class="op">==</span> <span class="self">self</span>.<span class="ident">config</span>.<span class="ident">max_depth</span> <span class="kw">as</span> <span class="ident">usize</span> {
             <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="string">&quot;reached maximum depth, cannot make a call&quot;</span>.<span class="ident">into</span>());
         }
 
         <span class="comment">// Assumption: `collect_rent` doesn&#39;t collide with overlay because</span>
         <span class="comment">// `collect_rent` will be done on first call and destination contract and balance</span>
         <span class="comment">// cannot be changed before the first call</span>
-        <span class="kw">let</span> <span class="ident">predicate</span> <span class="op">=</span> <span class="kw">match</span> <span class="op">&lt;</span><span class="ident">Predicates</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>::<span class="ident">get</span>(<span class="kw-2">&amp;</span><span class="ident">dest</span>) {
-            <span class="prelude-val">Some</span>(<span class="ident">predicate</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">predicate</span>,
-            <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="string">&quot;predicate not found&quot;</span>.<span class="ident">into</span>()),
+        <span class="kw">let</span> <span class="ident">predicate</span> <span class="op">=</span> <span class="kw">match</span> <span class="op">&lt;</span><span class="ident">Predicates</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;&gt;</span>::<span class="ident">get</span>(<span class="kw-2">&amp;</span><span class="ident">dest</span>) {
+            <span class="prelude-val">Some</span>(<span class="ident">predicate</span>) <span class="op">=&gt;</span> <span class="ident">predicate</span>,
+            <span class="prelude-val">None</span> <span class="op">=&gt;</span> <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="string">&quot;predicate not found&quot;</span>.<span class="ident">into</span>()),
         };
 
         <span class="kw">let</span> <span class="ident">caller</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">self_account</span>.<span class="ident">clone</span>();
@@ -305,13 +306,13 @@
         <span class="kw">let</span> <span class="ident">executable</span> <span class="op">=</span> <span class="ident">nested</span>
             .<span class="ident">loader</span>
             .<span class="ident">load_main</span>(<span class="ident">predicate</span>)
-            .<span class="ident">map_err</span>(<span class="op">&lt;</span><span class="ident">ExecError</span><span class="op">&lt;</span><span class="ident">T</span>::<span class="ident">AccountId</span><span class="op">&gt;</span><span class="op">&gt;</span>::<span class="ident">from</span>)<span class="question-mark">?</span>;
+            .<span class="ident">map_err</span>(<span class="op">&lt;</span><span class="ident">ExecError</span><span class="op">&lt;</span><span class="ident">T</span>::<span class="ident">AccountId</span><span class="op">&gt;&gt;</span>::<span class="ident">from</span>)<span class="question-mark">?</span>;
         <span class="ident">nested</span>
             .<span class="ident">vm</span>
             .<span class="ident">execute</span>(<span class="ident">executable</span>, <span class="ident">nested</span>.<span class="ident">new_call_context</span>(<span class="ident">caller</span>), <span class="ident">input_data</span>)
     }
 
-    <span class="kw">fn</span> <span class="ident">new_call_context</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">caller</span>: <span class="ident">T</span>::<span class="ident">AccountId</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">T</span>::<span class="ident">ExternalCall</span> {
+    <span class="kw">fn</span> <span class="ident">new_call_context</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">caller</span>: <span class="ident">T</span>::<span class="ident">AccountId</span>) <span class="op">-&gt;</span> <span class="ident">T</span>::<span class="ident">ExternalCall</span> {
         <span class="ident">T</span>::<span class="ident">ExternalCall</span>::<span class="ident">new</span>(<span class="ident">Rc</span>::<span class="ident">new</span>(<span class="self">self</span>.<span class="ident">clone</span>()), <span class="ident">caller</span>)
     }
 }
@@ -323,7 +324,7 @@
 }
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Trait</span><span class="op">&gt;</span> <span class="ident">PredicateOvm</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">_schedule</span>: <span class="ident">Rc</span><span class="op">&lt;</span><span class="ident">Schedule</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">_schedule</span>: <span class="ident">Rc</span><span class="op">&lt;</span><span class="ident">Schedule</span><span class="op">&gt;</span>) <span class="op">-&gt;</span> <span class="self">Self</span> {
         <span class="ident">PredicateOvm</span> {
             <span class="ident">_schedule</span>,
             <span class="ident">_phantom</span>: <span class="ident">PhantomData</span>,
@@ -339,7 +340,7 @@
         <span class="ident">exec</span>: <span class="self">Self</span>::<span class="ident">Executable</span>,
         <span class="ident">ext</span>: <span class="ident">T</span>::<span class="ident">ExternalCall</span>,
         <span class="ident">input_data</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">ExecResult</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
+    ) <span class="op">-&gt;</span> <span class="ident">ExecResult</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">ext_impl</span> <span class="op">=</span> <span class="ident">ext</span>::<span class="ident">ExternalCallImpl</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>::<span class="ident">new</span>(<span class="kw-2">&amp;</span><span class="ident">ext</span>);
         <span class="kw">let</span> <span class="ident">executable</span> <span class="op">=</span> <span class="ident">ovmi</span>::<span class="ident">prepare</span>::<span class="ident">executable_from_compiled</span>(
             <span class="kw-2">&amp;</span><span class="ident">ext_impl</span>,
@@ -350,8 +351,8 @@
         );
         <span class="kw">let</span> <span class="ident">call_input_data</span> <span class="op">=</span>
             <span class="ident">ovmi</span>::<span class="ident">predicates</span>::<span class="ident">PredicateCallInputs</span>::<span class="op">&lt;</span><span class="ident">T</span>::<span class="ident">AccountId</span><span class="op">&gt;</span>::<span class="ident">decode</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="kw-2">&amp;</span><span class="ident">input_data</span>[..])
-                .<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="op">&lt;</span><span class="ident">ExecError</span><span class="op">&lt;</span><span class="ident">T</span>::<span class="ident">AccountId</span><span class="op">&gt;</span><span class="op">&gt;</span>::<span class="ident">from</span>(<span class="string">&quot;Call inputs cannot decode error.&quot;</span>))<span class="question-mark">?</span>;
-        <span class="ident">CompiledExecutor</span>::<span class="op">&lt;</span><span class="ident">CompiledExecutable</span><span class="op">&lt;</span><span class="ident">ext</span>::<span class="ident">ExternalCallImpl</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>, <span class="ident">ext</span>::<span class="ident">ExternalCallImpl</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>::<span class="ident">execute</span>(
+                .<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="op">&lt;</span><span class="ident">ExecError</span><span class="op">&lt;</span><span class="ident">T</span>::<span class="ident">AccountId</span><span class="op">&gt;&gt;</span>::<span class="ident">from</span>(<span class="string">&quot;Call inputs cannot decode error.&quot;</span>))<span class="question-mark">?</span>;
+        <span class="ident">CompiledExecutor</span>::<span class="op">&lt;</span><span class="ident">CompiledExecutable</span><span class="op">&lt;</span><span class="ident">ext</span>::<span class="ident">ExternalCallImpl</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;&gt;</span>, <span class="ident">ext</span>::<span class="ident">ExternalCallImpl</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;&gt;</span>::<span class="ident">execute</span>(
             <span class="ident">executable</span>,
             <span class="ident">call_input_data</span>,
         )

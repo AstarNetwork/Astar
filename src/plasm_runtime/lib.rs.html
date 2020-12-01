@@ -1,4 +1,5 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source to the Rust file `bin/node/runtime/src/lib.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>lib.rs.html -- source</title><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../dark.css"><link rel="stylesheet" type="text/css" href="../../light.css" id="themeStyle"><script src="../../storage.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="shortcut icon" href="../../favicon.ico"><style type="text/css">#crate-search{background-image:url("../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../plasm_runtime/index.html'><div class='logo-container'><img src='../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!"><img src="../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices"></div></div><script src="../../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><a id="settings-menu" href="../../settings.html"><img src="../../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1">  1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source to the Rust file `bin/node/runtime/src/lib.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>lib.rs.html -- source</title><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../light.css"  id="themeStyle"><link rel="stylesheet" type="text/css" href="../../dark.css" disabled ><link rel="stylesheet" type="text/css" href="../../ayu.css" disabled ><script src="../../storage.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="shortcut icon" href="../../favicon.ico"><style type="text/css">#crate-search{background-image:url("../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../plasm_runtime/index.html'><div class='logo-container rust-logo'><img src='../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!"><img src="../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices"></div></div><script src="../../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><span class="help-button">?</span>
+                <a id="settings-menu" href="../../settings.html"><img src="../../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1">  1</span>
 <span id="2">  2</span>
 <span id="3">  3</span>
 <span id="4">  4</span>
@@ -1028,7 +1029,7 @@
 
 <span class="doccomment">/// Native version.</span>
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">any</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>, <span class="ident">test</span>))]</span>
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">native_version</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">NativeVersion</span> {
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">native_version</span>() <span class="op">-&gt;</span> <span class="ident">NativeVersion</span> {
     <span class="ident">NativeVersion</span> {
         <span class="ident">runtime_version</span>: <span class="ident">VERSION</span>,
         <span class="ident">can_author_with</span>: <span class="ident">Default</span>::<span class="ident">default</span>(),
@@ -1090,12 +1091,12 @@
     <span class="kw">type</span> <span class="ident">KeyOwnerProof</span> <span class="op">=</span> <span class="op">&lt;</span><span class="self">Self</span>::<span class="ident">KeyOwnerProofSystem</span> <span class="kw">as</span> <span class="ident">KeyOwnerProofSystem</span><span class="op">&lt;</span>(
         <span class="ident">KeyTypeId</span>,
         <span class="ident">pallet_babe</span>::<span class="ident">AuthorityId</span>,
-    )<span class="op">&gt;</span><span class="op">&gt;</span>::<span class="ident">Proof</span>;
+    )<span class="op">&gt;&gt;</span>::<span class="ident">Proof</span>;
 
     <span class="kw">type</span> <span class="ident">KeyOwnerIdentification</span> <span class="op">=</span> <span class="op">&lt;</span><span class="self">Self</span>::<span class="ident">KeyOwnerProofSystem</span> <span class="kw">as</span> <span class="ident">KeyOwnerProofSystem</span><span class="op">&lt;</span>(
         <span class="ident">KeyTypeId</span>,
         <span class="ident">pallet_babe</span>::<span class="ident">AuthorityId</span>,
-    )<span class="op">&gt;</span><span class="op">&gt;</span>::<span class="ident">IdentificationTuple</span>;
+    )<span class="op">&gt;&gt;</span>::<span class="ident">IdentificationTuple</span>;
 
     <span class="kw">type</span> <span class="ident">HandleEquivocation</span> <span class="op">=</span> <span class="ident">pallet_babe</span>::<span class="ident">EquivocationHandler</span><span class="op">&lt;</span><span class="self">Self</span>::<span class="ident">KeyOwnerIdentification</span>, ()<span class="op">&gt;</span>;
 
@@ -1291,12 +1292,12 @@
     <span class="kw">type</span> <span class="ident">KeyOwnerProofSystem</span> <span class="op">=</span> <span class="ident">Historical</span>;
 
     <span class="kw">type</span> <span class="ident">KeyOwnerProof</span> <span class="op">=</span>
-        <span class="op">&lt;</span><span class="self">Self</span>::<span class="ident">KeyOwnerProofSystem</span> <span class="kw">as</span> <span class="ident">KeyOwnerProofSystem</span><span class="op">&lt;</span>(<span class="ident">KeyTypeId</span>, <span class="ident">GrandpaId</span>)<span class="op">&gt;</span><span class="op">&gt;</span>::<span class="ident">Proof</span>;
+        <span class="op">&lt;</span><span class="self">Self</span>::<span class="ident">KeyOwnerProofSystem</span> <span class="kw">as</span> <span class="ident">KeyOwnerProofSystem</span><span class="op">&lt;</span>(<span class="ident">KeyTypeId</span>, <span class="ident">GrandpaId</span>)<span class="op">&gt;&gt;</span>::<span class="ident">Proof</span>;
 
     <span class="kw">type</span> <span class="ident">KeyOwnerIdentification</span> <span class="op">=</span> <span class="op">&lt;</span><span class="self">Self</span>::<span class="ident">KeyOwnerProofSystem</span> <span class="kw">as</span> <span class="ident">KeyOwnerProofSystem</span><span class="op">&lt;</span>(
         <span class="ident">KeyTypeId</span>,
         <span class="ident">GrandpaId</span>,
-    )<span class="op">&gt;</span><span class="op">&gt;</span>::<span class="ident">IdentificationTuple</span>;
+    )<span class="op">&gt;&gt;</span>::<span class="ident">IdentificationTuple</span>;
 
     <span class="kw">type</span> <span class="ident">HandleEquivocation</span> <span class="op">=</span> <span class="ident">pallet_grandpa</span>::<span class="ident">EquivocationHandler</span><span class="op">&lt;</span><span class="self">Self</span>::<span class="ident">KeyOwnerIdentification</span>, ()<span class="op">&gt;</span>;
 
@@ -1338,12 +1339,12 @@
 <span class="kw">where</span>
     <span class="ident">Call</span>: <span class="ident">From</span><span class="op">&lt;</span><span class="ident">LocalCall</span><span class="op">&gt;</span>,
 {
-    <span class="kw">fn</span> <span class="ident">create_transaction</span><span class="op">&lt;</span><span class="ident">C</span>: <span class="ident">frame_system</span>::<span class="ident">offchain</span>::<span class="ident">AppCrypto</span><span class="op">&lt;</span><span class="self">Self</span>::<span class="ident">Public</span>, <span class="self">Self</span>::<span class="ident">Signature</span><span class="op">&gt;</span><span class="op">&gt;</span>(
+    <span class="kw">fn</span> <span class="ident">create_transaction</span><span class="op">&lt;</span><span class="ident">C</span>: <span class="ident">frame_system</span>::<span class="ident">offchain</span>::<span class="ident">AppCrypto</span><span class="op">&lt;</span><span class="self">Self</span>::<span class="ident">Public</span>, <span class="self">Self</span>::<span class="ident">Signature</span><span class="op">&gt;&gt;</span>(
         <span class="ident">call</span>: <span class="ident">Call</span>,
         <span class="ident">public</span>: <span class="op">&lt;</span><span class="ident">Signature</span> <span class="kw">as</span> <span class="ident">Verify</span><span class="op">&gt;</span>::<span class="ident">Signer</span>,
         <span class="ident">account</span>: <span class="ident">AccountId</span>,
         <span class="ident">nonce</span>: <span class="ident">Index</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span>(<span class="ident">Call</span>, <span class="op">&lt;</span><span class="ident">UncheckedExtrinsic</span> <span class="kw">as</span> <span class="ident">Extrinsic</span><span class="op">&gt;</span>::<span class="ident">SignaturePayload</span>)<span class="op">&gt;</span> {
+    ) <span class="op">-&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span>(<span class="ident">Call</span>, <span class="op">&lt;</span><span class="ident">UncheckedExtrinsic</span> <span class="kw">as</span> <span class="ident">Extrinsic</span><span class="op">&gt;</span>::<span class="ident">SignaturePayload</span>)<span class="op">&gt;</span> {
         <span class="comment">// take the biggest period possible.</span>
         <span class="kw">let</span> <span class="ident">period</span> <span class="op">=</span> <span class="ident">BlockHashCount</span>::<span class="ident">get</span>()
             .<span class="ident">checked_next_power_of_two</span>()
@@ -1395,8 +1396,8 @@
 }
 
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">GetAtomicPredicateIdConfig</span>;
-<span class="kw">impl</span> <span class="ident">Get</span><span class="op">&lt;</span><span class="ident">pallet_ovm</span>::<span class="ident">AtomicPredicateIdConfig</span><span class="op">&lt;</span><span class="ident">AccountId</span>, <span class="ident">Hash</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">GetAtomicPredicateIdConfig</span> {
-    <span class="kw">fn</span> <span class="ident">get</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">pallet_ovm</span>::<span class="ident">AtomicPredicateIdConfig</span><span class="op">&lt;</span><span class="ident">AccountId</span>, <span class="ident">Hash</span><span class="op">&gt;</span> {
+<span class="kw">impl</span> <span class="ident">Get</span><span class="op">&lt;</span><span class="ident">pallet_ovm</span>::<span class="ident">AtomicPredicateIdConfig</span><span class="op">&lt;</span><span class="ident">AccountId</span>, <span class="ident">Hash</span><span class="op">&gt;&gt;</span> <span class="kw">for</span> <span class="ident">GetAtomicPredicateIdConfig</span> {
+    <span class="kw">fn</span> <span class="ident">get</span>() <span class="op">-&gt;</span> <span class="ident">pallet_ovm</span>::<span class="ident">AtomicPredicateIdConfig</span><span class="op">&lt;</span><span class="ident">AccountId</span>, <span class="ident">Hash</span><span class="op">&gt;</span> {
         <span class="ident">pallet_ovm</span>::<span class="ident">AtomicPredicateIdConfig</span> {
             <span class="ident">not_address</span>: ([<span class="number">1</span>; <span class="number">32</span>]).<span class="ident">into</span>(),
             <span class="ident">and_address</span>: ([<span class="number">2</span>; <span class="number">32</span>]).<span class="ident">into</span>(),
@@ -1431,7 +1432,7 @@
 
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">MaximumTokenAddress</span>;
 <span class="kw">impl</span> <span class="ident">Get</span><span class="op">&lt;</span><span class="ident">AccountId</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">MaximumTokenAddress</span> {
-    <span class="kw">fn</span> <span class="ident">get</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">AccountId</span> {
+    <span class="kw">fn</span> <span class="ident">get</span>() <span class="op">-&gt;</span> <span class="ident">AccountId</span> {
         ([<span class="number">255</span>; <span class="number">32</span>]).<span class="ident">into</span>()
     }
 }
@@ -1462,7 +1463,7 @@
 
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">FixedGasPrice</span>;
 <span class="kw">impl</span> <span class="ident">FeeCalculator</span> <span class="kw">for</span> <span class="ident">FixedGasPrice</span> {
-    <span class="kw">fn</span> <span class="ident">min_gas_price</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">U256</span> {
+    <span class="kw">fn</span> <span class="ident">min_gas_price</span>() <span class="op">-&gt;</span> <span class="ident">U256</span> {
         <span class="comment">// Gas price is always one token per gas.</span>
         <span class="number">1</span>.<span class="ident">into</span>()
     }
@@ -1490,7 +1491,7 @@
 
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">TransactionConverter</span>;
 <span class="kw">impl</span> <span class="ident">frontier_rpc_primitives</span>::<span class="ident">ConvertTransaction</span><span class="op">&lt;</span><span class="ident">UncheckedExtrinsic</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">TransactionConverter</span> {
-    <span class="kw">fn</span> <span class="ident">convert_transaction</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">transaction</span>: <span class="ident">EthereumTransaction</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">UncheckedExtrinsic</span> {
+    <span class="kw">fn</span> <span class="ident">convert_transaction</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">transaction</span>: <span class="ident">EthereumTransaction</span>) <span class="op">-&gt;</span> <span class="ident">UncheckedExtrinsic</span> {
         <span class="ident">UncheckedExtrinsic</span>::<span class="ident">new_unsigned</span>(
             <span class="ident">pallet_ethereum</span>::<span class="ident">Call</span>::<span class="op">&lt;</span><span class="ident">Runtime</span><span class="op">&gt;</span>::<span class="ident">transact</span>(<span class="ident">transaction</span>).<span class="ident">into</span>(),
         )
@@ -1499,7 +1500,7 @@
 <span class="kw">impl</span> <span class="ident">frontier_rpc_primitives</span>::<span class="ident">ConvertTransaction</span><span class="op">&lt;</span><span class="ident">sp_runtime</span>::<span class="ident">OpaqueExtrinsic</span><span class="op">&gt;</span>
     <span class="kw">for</span> <span class="ident">TransactionConverter</span>
 {
-    <span class="kw">fn</span> <span class="ident">convert_transaction</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">transaction</span>: <span class="ident">EthereumTransaction</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">sp_runtime</span>::<span class="ident">OpaqueExtrinsic</span> {
+    <span class="kw">fn</span> <span class="ident">convert_transaction</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">transaction</span>: <span class="ident">EthereumTransaction</span>) <span class="op">-&gt;</span> <span class="ident">sp_runtime</span>::<span class="ident">OpaqueExtrinsic</span> {
         <span class="kw">let</span> <span class="ident">extrinsic</span> <span class="op">=</span> <span class="ident">UncheckedExtrinsic</span>::<span class="ident">new_unsigned</span>(
             <span class="ident">pallet_ethereum</span>::<span class="ident">Call</span>::<span class="op">&lt;</span><span class="ident">Runtime</span><span class="op">&gt;</span>::<span class="ident">transact</span>(<span class="ident">transaction</span>).<span class="ident">into</span>(),
         );
@@ -1511,8 +1512,8 @@
 
 <span class="comment">// TODO consensus not supported</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">EthereumFindAuthor</span><span class="op">&lt;</span><span class="ident">F</span><span class="op">&gt;</span>(<span class="ident">sp_std</span>::<span class="ident">marker</span>::<span class="ident">PhantomData</span><span class="op">&lt;</span><span class="ident">F</span><span class="op">&gt;</span>);
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">F</span>: <span class="ident">FindAuthor</span><span class="op">&lt;</span><span class="ident">u32</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="ident">FindAuthor</span><span class="op">&lt;</span><span class="ident">H160</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">EthereumFindAuthor</span><span class="op">&lt;</span><span class="ident">F</span><span class="op">&gt;</span> {
-    <span class="kw">fn</span> <span class="ident">find_author</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, <span class="ident">I</span><span class="op">&gt;</span>(<span class="ident">digests</span>: <span class="ident">I</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">H160</span><span class="op">&gt;</span>
+<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">F</span>: <span class="ident">FindAuthor</span><span class="op">&lt;</span><span class="ident">u32</span><span class="op">&gt;&gt;</span> <span class="ident">FindAuthor</span><span class="op">&lt;</span><span class="ident">H160</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">EthereumFindAuthor</span><span class="op">&lt;</span><span class="ident">F</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">find_author</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span>, <span class="ident">I</span><span class="op">&gt;</span>(<span class="ident">digests</span>: <span class="ident">I</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">H160</span><span class="op">&gt;</span>
     <span class="kw">where</span>
         <span class="ident">I</span>: <span class="lifetime">&#39;a</span> <span class="op">+</span> <span class="ident">IntoIterator</span><span class="op">&lt;</span><span class="ident">Item</span> <span class="op">=</span> (<span class="ident">frame_support</span>::<span class="ident">ConsensusEngineId</span>, <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> [<span class="ident">u8</span>])<span class="op">&gt;</span>,
     {
@@ -1601,7 +1602,7 @@
 
 <span class="macro">impl_runtime_apis</span><span class="macro">!</span> {
     <span class="kw">impl</span> <span class="ident">sp_api</span>::<span class="ident">Core</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">Runtime</span> {
-        <span class="kw">fn</span> <span class="ident">version</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">RuntimeVersion</span> {
+        <span class="kw">fn</span> <span class="ident">version</span>() <span class="op">-&gt;</span> <span class="ident">RuntimeVersion</span> {
             <span class="ident">VERSION</span>
         }
 
@@ -1615,29 +1616,29 @@
     }
 
     <span class="kw">impl</span> <span class="ident">sp_api</span>::<span class="ident">Metadata</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">Runtime</span> {
-        <span class="kw">fn</span> <span class="ident">metadata</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">OpaqueMetadata</span> {
+        <span class="kw">fn</span> <span class="ident">metadata</span>() <span class="op">-&gt;</span> <span class="ident">OpaqueMetadata</span> {
             <span class="ident">Runtime</span>::<span class="ident">metadata</span>().<span class="ident">into</span>()
         }
     }
 
     <span class="kw">impl</span> <span class="ident">sp_block_builder</span>::<span class="ident">BlockBuilder</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">Runtime</span> {
-        <span class="kw">fn</span> <span class="ident">apply_extrinsic</span>(<span class="ident">extrinsic</span>: <span class="op">&lt;</span><span class="ident">Block</span> <span class="kw">as</span> <span class="ident">BlockT</span><span class="op">&gt;</span>::<span class="ident">Extrinsic</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">ApplyExtrinsicResult</span> {
+        <span class="kw">fn</span> <span class="ident">apply_extrinsic</span>(<span class="ident">extrinsic</span>: <span class="op">&lt;</span><span class="ident">Block</span> <span class="kw">as</span> <span class="ident">BlockT</span><span class="op">&gt;</span>::<span class="ident">Extrinsic</span>) <span class="op">-&gt;</span> <span class="ident">ApplyExtrinsicResult</span> {
             <span class="ident">Executive</span>::<span class="ident">apply_extrinsic</span>(<span class="ident">extrinsic</span>)
         }
 
-        <span class="kw">fn</span> <span class="ident">finalize_block</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="op">&lt;</span><span class="ident">Block</span> <span class="kw">as</span> <span class="ident">BlockT</span><span class="op">&gt;</span>::<span class="ident">Header</span> {
+        <span class="kw">fn</span> <span class="ident">finalize_block</span>() <span class="op">-&gt;</span> <span class="op">&lt;</span><span class="ident">Block</span> <span class="kw">as</span> <span class="ident">BlockT</span><span class="op">&gt;</span>::<span class="ident">Header</span> {
             <span class="ident">Executive</span>::<span class="ident">finalize_block</span>()
         }
 
-        <span class="kw">fn</span> <span class="ident">inherent_extrinsics</span>(<span class="ident">data</span>: <span class="ident">InherentData</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="op">&lt;</span><span class="ident">Block</span> <span class="kw">as</span> <span class="ident">BlockT</span><span class="op">&gt;</span>::<span class="ident">Extrinsic</span><span class="op">&gt;</span> {
+        <span class="kw">fn</span> <span class="ident">inherent_extrinsics</span>(<span class="ident">data</span>: <span class="ident">InherentData</span>) <span class="op">-&gt;</span> <span class="ident">Vec</span><span class="op">&lt;&lt;</span><span class="ident">Block</span> <span class="kw">as</span> <span class="ident">BlockT</span><span class="op">&gt;</span>::<span class="ident">Extrinsic</span><span class="op">&gt;</span> {
             <span class="ident">data</span>.<span class="ident">create_extrinsics</span>()
         }
 
-        <span class="kw">fn</span> <span class="ident">check_inherents</span>(<span class="ident">block</span>: <span class="ident">Block</span>, <span class="ident">data</span>: <span class="ident">InherentData</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">CheckInherentsResult</span> {
+        <span class="kw">fn</span> <span class="ident">check_inherents</span>(<span class="ident">block</span>: <span class="ident">Block</span>, <span class="ident">data</span>: <span class="ident">InherentData</span>) <span class="op">-&gt;</span> <span class="ident">CheckInherentsResult</span> {
             <span class="ident">data</span>.<span class="ident">check_extrinsics</span>(<span class="kw-2">&amp;</span><span class="ident">block</span>)
         }
 
-        <span class="kw">fn</span> <span class="ident">random_seed</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="op">&lt;</span><span class="ident">Block</span> <span class="kw">as</span> <span class="ident">BlockT</span><span class="op">&gt;</span>::<span class="ident">Hash</span> {
+        <span class="kw">fn</span> <span class="ident">random_seed</span>() <span class="op">-&gt;</span> <span class="op">&lt;</span><span class="ident">Block</span> <span class="kw">as</span> <span class="ident">BlockT</span><span class="op">&gt;</span>::<span class="ident">Hash</span> {
             <span class="ident">RandomnessCollectiveFlip</span>::<span class="ident">random_seed</span>()
         }
     }
@@ -1646,7 +1647,7 @@
         <span class="kw">fn</span> <span class="ident">validate_transaction</span>(
             <span class="ident">source</span>: <span class="ident">TransactionSource</span>,
             <span class="ident">tx</span>: <span class="op">&lt;</span><span class="ident">Block</span> <span class="kw">as</span> <span class="ident">BlockT</span><span class="op">&gt;</span>::<span class="ident">Extrinsic</span>,
-        ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">TransactionValidity</span> {
+        ) <span class="op">-&gt;</span> <span class="ident">TransactionValidity</span> {
             <span class="ident">Executive</span>::<span class="ident">validate_transaction</span>(<span class="ident">source</span>, <span class="ident">tx</span>)
         }
     }
@@ -1658,7 +1659,7 @@
     }
 
     <span class="kw">impl</span> <span class="ident">fg_primitives</span>::<span class="ident">GrandpaApi</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">Runtime</span> {
-        <span class="kw">fn</span> <span class="ident">grandpa_authorities</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">GrandpaAuthorityList</span> {
+        <span class="kw">fn</span> <span class="ident">grandpa_authorities</span>() <span class="op">-&gt;</span> <span class="ident">GrandpaAuthorityList</span> {
             <span class="ident">Grandpa</span>::<span class="ident">grandpa_authorities</span>()
         }
 
@@ -1668,7 +1669,7 @@
                 <span class="ident">NumberFor</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span>,
             <span class="op">&gt;</span>,
             <span class="ident">key_owner_proof</span>: <span class="ident">fg_primitives</span>::<span class="ident">OpaqueKeyOwnershipProof</span>,
-        ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+        ) <span class="op">-&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
             <span class="kw">let</span> <span class="ident">key_owner_proof</span> <span class="op">=</span> <span class="ident">key_owner_proof</span>.<span class="ident">decode</span>()<span class="question-mark">?</span>;
 
             <span class="ident">Grandpa</span>::<span class="ident">submit_unsigned_equivocation_report</span>(
@@ -1680,7 +1681,7 @@
         <span class="kw">fn</span> <span class="ident">generate_key_ownership_proof</span>(
             <span class="ident">_set_id</span>: <span class="ident">fg_primitives</span>::<span class="ident">SetId</span>,
             <span class="ident">authority_id</span>: <span class="ident">GrandpaId</span>,
-        ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">fg_primitives</span>::<span class="ident">OpaqueKeyOwnershipProof</span><span class="op">&gt;</span> {
+        ) <span class="op">-&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">fg_primitives</span>::<span class="ident">OpaqueKeyOwnershipProof</span><span class="op">&gt;</span> {
             <span class="kw">use</span> <span class="ident">codec</span>::<span class="ident">Encode</span>;
 
             <span class="ident">Historical</span>::<span class="ident">prove</span>((<span class="ident">fg_primitives</span>::<span class="ident">KEY_TYPE</span>, <span class="ident">authority_id</span>))
@@ -1690,7 +1691,7 @@
     }
 
     <span class="kw">impl</span> <span class="ident">sp_consensus_babe</span>::<span class="ident">BabeApi</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">Runtime</span> {
-        <span class="kw">fn</span> <span class="ident">configuration</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">sp_consensus_babe</span>::<span class="ident">BabeGenesisConfiguration</span> {
+        <span class="kw">fn</span> <span class="ident">configuration</span>() <span class="op">-&gt;</span> <span class="ident">sp_consensus_babe</span>::<span class="ident">BabeGenesisConfiguration</span> {
             <span class="comment">// The choice of `c` parameter (where `1 - c` represents the</span>
             <span class="comment">// probability of a slot being empty), is done in accordance to the</span>
             <span class="comment">// slot duration and expected target block time, for safely</span>
@@ -1706,14 +1707,14 @@
             }
         }
 
-        <span class="kw">fn</span> <span class="ident">current_epoch_start</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">sp_consensus_babe</span>::<span class="ident">SlotNumber</span> {
+        <span class="kw">fn</span> <span class="ident">current_epoch_start</span>() <span class="op">-&gt;</span> <span class="ident">sp_consensus_babe</span>::<span class="ident">SlotNumber</span> {
             <span class="ident">Babe</span>::<span class="ident">current_epoch_start</span>()
         }
 
         <span class="kw">fn</span> <span class="ident">generate_key_ownership_proof</span>(
             <span class="ident">_slot_number</span>: <span class="ident">sp_consensus_babe</span>::<span class="ident">SlotNumber</span>,
             <span class="ident">authority_id</span>: <span class="ident">sp_consensus_babe</span>::<span class="ident">AuthorityId</span>,
-        ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">sp_consensus_babe</span>::<span class="ident">OpaqueKeyOwnershipProof</span><span class="op">&gt;</span> {
+        ) <span class="op">-&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">sp_consensus_babe</span>::<span class="ident">OpaqueKeyOwnershipProof</span><span class="op">&gt;</span> {
             <span class="kw">use</span> <span class="ident">codec</span>::<span class="ident">Encode</span>;
 
             <span class="ident">Historical</span>::<span class="ident">prove</span>((<span class="ident">sp_consensus_babe</span>::<span class="ident">KEY_TYPE</span>, <span class="ident">authority_id</span>))
@@ -1722,9 +1723,9 @@
         }
 
         <span class="kw">fn</span> <span class="ident">submit_report_equivocation_unsigned_extrinsic</span>(
-            <span class="ident">equivocation_proof</span>: <span class="ident">sp_consensus_babe</span>::<span class="ident">EquivocationProof</span><span class="op">&lt;</span><span class="op">&lt;</span><span class="ident">Block</span> <span class="kw">as</span> <span class="ident">BlockT</span><span class="op">&gt;</span>::<span class="ident">Header</span><span class="op">&gt;</span>,
+            <span class="ident">equivocation_proof</span>: <span class="ident">sp_consensus_babe</span>::<span class="ident">EquivocationProof</span><span class="op">&lt;&lt;</span><span class="ident">Block</span> <span class="kw">as</span> <span class="ident">BlockT</span><span class="op">&gt;</span>::<span class="ident">Header</span><span class="op">&gt;</span>,
             <span class="ident">key_owner_proof</span>: <span class="ident">sp_consensus_babe</span>::<span class="ident">OpaqueKeyOwnershipProof</span>,
-        ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
+        ) <span class="op">-&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span>()<span class="op">&gt;</span> {
             <span class="kw">let</span> <span class="ident">key_owner_proof</span> <span class="op">=</span> <span class="ident">key_owner_proof</span>.<span class="ident">decode</span>()<span class="question-mark">?</span>;
 
             <span class="ident">Babe</span>::<span class="ident">submit_unsigned_equivocation_report</span>(
@@ -1735,7 +1736,7 @@
     }
 
     <span class="kw">impl</span> <span class="ident">frame_system_rpc_runtime_api</span>::<span class="ident">AccountNonceApi</span><span class="op">&lt;</span><span class="ident">Block</span>, <span class="ident">AccountId</span>, <span class="ident">Index</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">Runtime</span> {
-        <span class="kw">fn</span> <span class="ident">account_nonce</span>(<span class="ident">account</span>: <span class="ident">AccountId</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Index</span> {
+        <span class="kw">fn</span> <span class="ident">account_nonce</span>(<span class="ident">account</span>: <span class="ident">AccountId</span>) <span class="op">-&gt;</span> <span class="ident">Index</span> {
             <span class="ident">System</span>::<span class="ident">account_nonce</span>(<span class="ident">account</span>)
         }
     }
@@ -1747,29 +1748,29 @@
             <span class="ident">value</span>: <span class="ident">Balance</span>,
             <span class="ident">gas_limit</span>: <span class="ident">u64</span>,
             <span class="ident">input_data</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>,
-        ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">ContractExecResult</span> {
+        ) <span class="op">-&gt;</span> <span class="ident">ContractExecResult</span> {
             <span class="kw">let</span> (<span class="ident">exec_result</span>, <span class="ident">gas_consumed</span>) <span class="op">=</span>
                 <span class="ident">Contracts</span>::<span class="ident">bare_call</span>(<span class="ident">origin</span>, <span class="ident">dest</span>.<span class="ident">into</span>(), <span class="ident">value</span>, <span class="ident">gas_limit</span>, <span class="ident">input_data</span>);
             <span class="kw">match</span> <span class="ident">exec_result</span> {
-                <span class="prelude-val">Ok</span>(<span class="ident">v</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">ContractExecResult</span>::<span class="ident">Success</span> {
+                <span class="prelude-val">Ok</span>(<span class="ident">v</span>) <span class="op">=&gt;</span> <span class="ident">ContractExecResult</span>::<span class="ident">Success</span> {
                     <span class="ident">flags</span>: <span class="ident">v</span>.<span class="ident">flags</span>.<span class="ident">bits</span>(),
                     <span class="ident">data</span>: <span class="ident">v</span>.<span class="ident">data</span>,
                     <span class="ident">gas_consumed</span>: <span class="ident">gas_consumed</span>,
                 },
-                <span class="prelude-val">Err</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">ContractExecResult</span>::<span class="ident">Error</span>,
+                <span class="prelude-val">Err</span>(<span class="kw">_</span>) <span class="op">=&gt;</span> <span class="ident">ContractExecResult</span>::<span class="ident">Error</span>,
             }
         }
 
         <span class="kw">fn</span> <span class="ident">get_storage</span>(
             <span class="ident">address</span>: <span class="ident">AccountId</span>,
             <span class="ident">key</span>: [<span class="ident">u8</span>; <span class="number">32</span>],
-        ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">pallet_contracts_primitives</span>::<span class="ident">GetStorageResult</span> {
+        ) <span class="op">-&gt;</span> <span class="ident">pallet_contracts_primitives</span>::<span class="ident">GetStorageResult</span> {
             <span class="ident">Contracts</span>::<span class="ident">get_storage</span>(<span class="ident">address</span>, <span class="ident">key</span>)
         }
 
         <span class="kw">fn</span> <span class="ident">rent_projection</span>(
             <span class="ident">address</span>: <span class="ident">AccountId</span>,
-        ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">pallet_contracts_primitives</span>::<span class="ident">RentProjectionResult</span><span class="op">&lt;</span><span class="ident">BlockNumber</span><span class="op">&gt;</span> {
+        ) <span class="op">-&gt;</span> <span class="ident">pallet_contracts_primitives</span>::<span class="ident">RentProjectionResult</span><span class="op">&lt;</span><span class="ident">BlockNumber</span><span class="op">&gt;</span> {
             <span class="ident">Contracts</span>::<span class="ident">rent_projection</span>(<span class="ident">address</span>)
         }
     }
@@ -1778,45 +1779,45 @@
         <span class="ident">Block</span>,
         <span class="ident">Balance</span>,
     <span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">Runtime</span> {
-        <span class="kw">fn</span> <span class="ident">query_info</span>(<span class="ident">uxt</span>: <span class="op">&lt;</span><span class="ident">Block</span> <span class="kw">as</span> <span class="ident">BlockT</span><span class="op">&gt;</span>::<span class="ident">Extrinsic</span>, <span class="ident">len</span>: <span class="ident">u32</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">RuntimeDispatchInfo</span><span class="op">&lt;</span><span class="ident">Balance</span><span class="op">&gt;</span> {
+        <span class="kw">fn</span> <span class="ident">query_info</span>(<span class="ident">uxt</span>: <span class="op">&lt;</span><span class="ident">Block</span> <span class="kw">as</span> <span class="ident">BlockT</span><span class="op">&gt;</span>::<span class="ident">Extrinsic</span>, <span class="ident">len</span>: <span class="ident">u32</span>) <span class="op">-&gt;</span> <span class="ident">RuntimeDispatchInfo</span><span class="op">&lt;</span><span class="ident">Balance</span><span class="op">&gt;</span> {
             <span class="ident">TransactionPayment</span>::<span class="ident">query_info</span>(<span class="ident">uxt</span>, <span class="ident">len</span>)
         }
     }
 
     <span class="kw">impl</span> <span class="ident">sp_session</span>::<span class="ident">SessionKeys</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">Runtime</span> {
-        <span class="kw">fn</span> <span class="ident">generate_session_keys</span>(<span class="ident">seed</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span> {
+        <span class="kw">fn</span> <span class="ident">generate_session_keys</span>(<span class="ident">seed</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;&gt;</span>) <span class="op">-&gt;</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span> {
             <span class="ident">SessionKeys</span>::<span class="ident">generate</span>(<span class="ident">seed</span>)
         }
 
         <span class="kw">fn</span> <span class="ident">decode_session_keys</span>(
             <span class="ident">encoded</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>,
-        ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span>(<span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>, <span class="ident">sp_core</span>::<span class="ident">crypto</span>::<span class="ident">KeyTypeId</span>)<span class="op">&gt;</span><span class="op">&gt;</span> {
+        ) <span class="op">-&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span>(<span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>, <span class="ident">sp_core</span>::<span class="ident">crypto</span>::<span class="ident">KeyTypeId</span>)<span class="op">&gt;&gt;</span> {
             <span class="ident">SessionKeys</span>::<span class="ident">decode_into_raw_public_keys</span>(<span class="kw-2">&amp;</span><span class="ident">encoded</span>)
         }
     }
 
     <span class="kw">impl</span> <span class="ident">frontier_rpc_primitives</span>::<span class="ident">EthereumRuntimeRPCApi</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">Runtime</span> {
-        <span class="kw">fn</span> <span class="ident">chain_id</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">u64</span> {
+        <span class="kw">fn</span> <span class="ident">chain_id</span>() <span class="op">-&gt;</span> <span class="ident">u64</span> {
             <span class="ident">ChainId</span>::<span class="ident">get</span>()
         }
 
-        <span class="kw">fn</span> <span class="ident">account_basic</span>(<span class="ident">address</span>: <span class="ident">H160</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">EVMAccount</span> {
+        <span class="kw">fn</span> <span class="ident">account_basic</span>(<span class="ident">address</span>: <span class="ident">H160</span>) <span class="op">-&gt;</span> <span class="ident">EVMAccount</span> {
             <span class="ident">EVM</span>::<span class="ident">account_basic</span>(<span class="kw-2">&amp;</span><span class="ident">address</span>)
         }
 
-        <span class="kw">fn</span> <span class="ident">gas_price</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">U256</span> {
+        <span class="kw">fn</span> <span class="ident">gas_price</span>() <span class="op">-&gt;</span> <span class="ident">U256</span> {
             <span class="ident">FixedGasPrice</span>::<span class="ident">min_gas_price</span>()
         }
 
-        <span class="kw">fn</span> <span class="ident">account_code_at</span>(<span class="ident">address</span>: <span class="ident">H160</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span> {
+        <span class="kw">fn</span> <span class="ident">account_code_at</span>(<span class="ident">address</span>: <span class="ident">H160</span>) <span class="op">-&gt;</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span> {
             <span class="ident">EVM</span>::<span class="ident">account_codes</span>(<span class="ident">address</span>)
         }
 
-        <span class="kw">fn</span> <span class="ident">author</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">H160</span> {
-            <span class="op">&lt;</span><span class="ident">pallet_ethereum</span>::<span class="ident">Module</span><span class="op">&lt;</span><span class="ident">Runtime</span><span class="op">&gt;</span><span class="op">&gt;</span>::<span class="ident">find_author</span>()
+        <span class="kw">fn</span> <span class="ident">author</span>() <span class="op">-&gt;</span> <span class="ident">H160</span> {
+            <span class="op">&lt;</span><span class="ident">pallet_ethereum</span>::<span class="ident">Module</span><span class="op">&lt;</span><span class="ident">Runtime</span><span class="op">&gt;&gt;</span>::<span class="ident">find_author</span>()
         }
 
-        <span class="kw">fn</span> <span class="ident">storage_at</span>(<span class="ident">address</span>: <span class="ident">H160</span>, <span class="ident">index</span>: <span class="ident">U256</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">H256</span> {
+        <span class="kw">fn</span> <span class="ident">storage_at</span>(<span class="ident">address</span>: <span class="ident">H160</span>, <span class="ident">index</span>: <span class="ident">U256</span>) <span class="op">-&gt;</span> <span class="ident">H256</span> {
             <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">tmp</span> <span class="op">=</span> [<span class="number">0u8</span>; <span class="number">32</span>];
             <span class="ident">index</span>.<span class="ident">to_big_endian</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">tmp</span>);
             <span class="ident">EVM</span>::<span class="ident">account_storages</span>(<span class="ident">address</span>, <span class="ident">H256</span>::<span class="ident">from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">tmp</span>[..]))
@@ -1830,9 +1831,9 @@
             <span class="ident">gas_price</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>,
             <span class="ident">nonce</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>,
             <span class="ident">action</span>: <span class="ident">pallet_ethereum</span>::<span class="ident">TransactionAction</span>,
-        ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(<span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>, <span class="ident">U256</span>), <span class="ident">sp_runtime</span>::<span class="ident">DispatchError</span><span class="op">&gt;</span> {
+        ) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(<span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>, <span class="ident">U256</span>), <span class="ident">sp_runtime</span>::<span class="ident">DispatchError</span><span class="op">&gt;</span> {
             <span class="kw">match</span> <span class="ident">action</span> {
-                <span class="ident">pallet_ethereum</span>::<span class="ident">TransactionAction</span>::<span class="ident">Call</span>(<span class="ident">to</span>) <span class="op">=</span><span class="op">&gt;</span>
+                <span class="ident">pallet_ethereum</span>::<span class="ident">TransactionAction</span>::<span class="ident">Call</span>(<span class="ident">to</span>) <span class="op">=&gt;</span>
                     <span class="ident">EVM</span>::<span class="ident">execute_call</span>(
                         <span class="ident">from</span>,
                         <span class="ident">to</span>,
@@ -1845,7 +1846,7 @@
                     )
                     .<span class="ident">map</span>(<span class="op">|</span>(<span class="kw">_</span>, <span class="ident">ret</span>, <span class="ident">gas</span>, <span class="kw">_</span>)<span class="op">|</span> (<span class="ident">ret</span>, <span class="ident">gas</span>))
                     .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">err</span><span class="op">|</span> <span class="ident">err</span>.<span class="ident">into</span>()),
-                <span class="ident">pallet_ethereum</span>::<span class="ident">TransactionAction</span>::<span class="ident">Create</span> <span class="op">=</span><span class="op">&gt;</span>
+                <span class="ident">pallet_ethereum</span>::<span class="ident">TransactionAction</span>::<span class="ident">Create</span> <span class="op">=&gt;</span>
                     <span class="ident">EVM</span>::<span class="ident">execute_create</span>(
                         <span class="ident">from</span>,
                         <span class="ident">data</span>,
@@ -1860,22 +1861,22 @@
             }
         }
 
-        <span class="kw">fn</span> <span class="ident">current_transaction_statuses</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">TransactionStatus</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+        <span class="kw">fn</span> <span class="ident">current_transaction_statuses</span>() <span class="op">-&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">TransactionStatus</span><span class="op">&gt;&gt;</span> {
             <span class="ident">Ethereum</span>::<span class="ident">current_transaction_statuses</span>()
         }
 
-        <span class="kw">fn</span> <span class="ident">current_block</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">EthereumBlock</span><span class="op">&gt;</span> {
+        <span class="kw">fn</span> <span class="ident">current_block</span>() <span class="op">-&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">EthereumBlock</span><span class="op">&gt;</span> {
             <span class="ident">Ethereum</span>::<span class="ident">current_block</span>()
         }
 
-        <span class="kw">fn</span> <span class="ident">current_receipts</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">EthereumReceipt</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+        <span class="kw">fn</span> <span class="ident">current_receipts</span>() <span class="op">-&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">EthereumReceipt</span><span class="op">&gt;&gt;</span> {
             <span class="ident">Ethereum</span>::<span class="ident">current_receipts</span>()
         }
 
-        <span class="kw">fn</span> <span class="ident">current_all</span>() <span class="op">-</span><span class="op">&gt;</span> (
+        <span class="kw">fn</span> <span class="ident">current_all</span>() <span class="op">-&gt;</span> (
             <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">EthereumBlock</span><span class="op">&gt;</span>,
-            <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">EthereumReceipt</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-            <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">TransactionStatus</span><span class="op">&gt;</span><span class="op">&gt;</span>
+            <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">EthereumReceipt</span><span class="op">&gt;&gt;</span>,
+            <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">TransactionStatus</span><span class="op">&gt;&gt;</span>
         ) {
             (
                 <span class="ident">Ethereum</span>::<span class="ident">current_block</span>(),

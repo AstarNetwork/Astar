@@ -1,4 +1,5 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source to the Rust file `ovmi/lib/src/prepare/serializable_predicates.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>serializable_predicates.rs.html -- source</title><link rel="stylesheet" type="text/css" href="../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../dark.css"><link rel="stylesheet" type="text/css" href="../../../light.css" id="themeStyle"><script src="../../../storage.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="shortcut icon" href="../../../favicon.ico"><style type="text/css">#crate-search{background-image:url("../../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../../ovmi/index.html'><div class='logo-container'><img src='../../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!"><img src="../../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices"></div></div><script src="../../../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><a id="settings-menu" href="../../../settings.html"><img src="../../../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1">  1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source to the Rust file `ovmi/lib/src/prepare/serializable_predicates.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>serializable_predicates.rs.html -- source</title><link rel="stylesheet" type="text/css" href="../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../light.css"  id="themeStyle"><link rel="stylesheet" type="text/css" href="../../../dark.css" disabled ><link rel="stylesheet" type="text/css" href="../../../ayu.css" disabled ><script src="../../../storage.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="shortcut icon" href="../../../favicon.ico"><style type="text/css">#crate-search{background-image:url("../../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../../ovmi/index.html'><div class='logo-container rust-logo'><img src='../../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!"><img src="../../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices"></div></div><script src="../../../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><span class="help-button">?</span>
+                <a id="settings-menu" href="../../../settings.html"><img src="../../../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1">  1</span>
 <span id="2">  2</span>
 <span id="3">  3</span>
 <span id="4">  4</span>
@@ -445,27 +446,27 @@
 }
 
 <span class="kw">impl</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">PredicateTypeSerializable</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">PredicateType</span> {
-    <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">f</span>: <span class="ident">PredicateTypeSerializable</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PredicateType</span> {
+    <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">f</span>: <span class="ident">PredicateTypeSerializable</span>) <span class="op">-&gt;</span> <span class="ident">PredicateType</span> {
         <span class="kw">match</span> <span class="ident">f</span> {
-            <span class="ident">PredicateTypeSerializable</span>::<span class="ident">CompiledPredicate</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">PredicateType</span>::<span class="ident">CompiledPredicate</span>,
-            <span class="ident">PredicateTypeSerializable</span>::<span class="ident">IntermediateCompiledPredicate</span> <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="ident">PredicateTypeSerializable</span>::<span class="ident">CompiledPredicate</span> <span class="op">=&gt;</span> <span class="ident">PredicateType</span>::<span class="ident">CompiledPredicate</span>,
+            <span class="ident">PredicateTypeSerializable</span>::<span class="ident">IntermediateCompiledPredicate</span> <span class="op">=&gt;</span> {
                 <span class="ident">PredicateType</span>::<span class="ident">IntermediateCompiledPredicate</span>
             }
-            <span class="ident">PredicateTypeSerializable</span>::<span class="ident">AtomicProposition</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">PredicateType</span>::<span class="ident">AtomicProposition</span>,
-            <span class="ident">PredicateTypeSerializable</span>::<span class="ident">AtomicPredicateCall</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">PredicateType</span>::<span class="ident">AtomicPredicateCall</span>,
-            <span class="ident">PredicateTypeSerializable</span>::<span class="ident">InputPredicateCall</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">PredicateType</span>::<span class="ident">InputPredicateCall</span>,
-            <span class="ident">PredicateTypeSerializable</span>::<span class="ident">VariablePredicateCall</span> <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="ident">PredicateTypeSerializable</span>::<span class="ident">AtomicProposition</span> <span class="op">=&gt;</span> <span class="ident">PredicateType</span>::<span class="ident">AtomicProposition</span>,
+            <span class="ident">PredicateTypeSerializable</span>::<span class="ident">AtomicPredicateCall</span> <span class="op">=&gt;</span> <span class="ident">PredicateType</span>::<span class="ident">AtomicPredicateCall</span>,
+            <span class="ident">PredicateTypeSerializable</span>::<span class="ident">InputPredicateCall</span> <span class="op">=&gt;</span> <span class="ident">PredicateType</span>::<span class="ident">InputPredicateCall</span>,
+            <span class="ident">PredicateTypeSerializable</span>::<span class="ident">VariablePredicateCall</span> <span class="op">=&gt;</span> {
                 <span class="ident">PredicateType</span>::<span class="ident">VariablePredicateCall</span>
             }
-            <span class="ident">PredicateTypeSerializable</span>::<span class="ident">CompiledPredicateCall</span> <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="ident">PredicateTypeSerializable</span>::<span class="ident">CompiledPredicateCall</span> <span class="op">=&gt;</span> {
                 <span class="ident">PredicateType</span>::<span class="ident">CompiledPredicateCall</span>
             }
-            <span class="ident">PredicateTypeSerializable</span>::<span class="ident">CompiledInput</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">PredicateType</span>::<span class="ident">CompiledInput</span>,
-            <span class="ident">PredicateTypeSerializable</span>::<span class="ident">ConstantInput</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">PredicateType</span>::<span class="ident">ConstantInput</span>,
-            <span class="ident">PredicateTypeSerializable</span>::<span class="ident">LabelInput</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">PredicateType</span>::<span class="ident">LabelInput</span>,
-            <span class="ident">PredicateTypeSerializable</span>::<span class="ident">NormalInput</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">PredicateType</span>::<span class="ident">NormalInput</span>,
-            <span class="ident">PredicateTypeSerializable</span>::<span class="ident">VariableInput</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">PredicateType</span>::<span class="ident">VariableInput</span>,
-            <span class="ident">PredicateTypeSerializable</span>::<span class="ident">SelfInput</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">PredicateType</span>::<span class="ident">SelfInput</span>,
+            <span class="ident">PredicateTypeSerializable</span>::<span class="ident">CompiledInput</span> <span class="op">=&gt;</span> <span class="ident">PredicateType</span>::<span class="ident">CompiledInput</span>,
+            <span class="ident">PredicateTypeSerializable</span>::<span class="ident">ConstantInput</span> <span class="op">=&gt;</span> <span class="ident">PredicateType</span>::<span class="ident">ConstantInput</span>,
+            <span class="ident">PredicateTypeSerializable</span>::<span class="ident">LabelInput</span> <span class="op">=&gt;</span> <span class="ident">PredicateType</span>::<span class="ident">LabelInput</span>,
+            <span class="ident">PredicateTypeSerializable</span>::<span class="ident">NormalInput</span> <span class="op">=&gt;</span> <span class="ident">PredicateType</span>::<span class="ident">NormalInput</span>,
+            <span class="ident">PredicateTypeSerializable</span>::<span class="ident">VariableInput</span> <span class="op">=&gt;</span> <span class="ident">PredicateType</span>::<span class="ident">VariableInput</span>,
+            <span class="ident">PredicateTypeSerializable</span>::<span class="ident">SelfInput</span> <span class="op">=&gt;</span> <span class="ident">PredicateType</span>::<span class="ident">SelfInput</span>,
         }
     }
 }
@@ -479,10 +480,10 @@
 }
 
 <span class="kw">impl</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">VarTypeSerializable</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">VarType</span> {
-    <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">f</span>: <span class="ident">VarTypeSerializable</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">VarType</span> {
+    <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">f</span>: <span class="ident">VarTypeSerializable</span>) <span class="op">-&gt;</span> <span class="ident">VarType</span> {
         <span class="kw">match</span> <span class="ident">f</span> {
-            <span class="ident">VarTypeSerializable</span>::<span class="ident">Address</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">VarType</span>::<span class="ident">Address</span>,
-            <span class="ident">VarTypeSerializable</span>::<span class="ident">Bytes</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">VarType</span>::<span class="ident">Bytes</span>,
+            <span class="ident">VarTypeSerializable</span>::<span class="ident">Address</span> <span class="op">=&gt;</span> <span class="ident">VarType</span>::<span class="ident">Address</span>,
+            <span class="ident">VarTypeSerializable</span>::<span class="ident">Bytes</span> <span class="op">=&gt;</span> <span class="ident">VarType</span>::<span class="ident">Bytes</span>,
         }
     }
 }
@@ -496,20 +497,20 @@
     <span class="kw">pub</span> <span class="ident">name</span>: <span class="ident">String</span>,
     <span class="kw">pub</span> <span class="ident">input_defs</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>,
     <span class="kw">pub</span> <span class="ident">contracts</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">IntermediateCompiledPredicateSerializable</span><span class="op">&gt;</span>,
-    <span class="kw">pub</span> <span class="ident">constants</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">ConstantVariableSerializable</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+    <span class="kw">pub</span> <span class="ident">constants</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">ConstantVariableSerializable</span><span class="op">&gt;&gt;</span>,
     <span class="kw">pub</span> <span class="ident">entry_point</span>: <span class="ident">String</span>,
 }
 
 <span class="kw">impl</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">CompiledPredicateSerializable</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">CompiledPredicate</span> {
-    <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">f</span>: <span class="ident">CompiledPredicateSerializable</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">CompiledPredicate</span> {
+    <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">f</span>: <span class="ident">CompiledPredicateSerializable</span>) <span class="op">-&gt;</span> <span class="ident">CompiledPredicate</span> {
         <span class="ident">CompiledPredicate</span> {
             <span class="ident">r#type</span>: <span class="ident">f</span>.<span class="ident">r#type</span>.<span class="ident">into</span>(),
             <span class="ident">name</span>: <span class="ident">f</span>.<span class="ident">name</span>.<span class="ident">as_bytes</span>().<span class="ident">to_vec</span>(),
             <span class="ident">input_defs</span>: <span class="ident">f</span>.<span class="ident">input_defs</span>.<span class="ident">iter</span>().<span class="ident">map</span>(<span class="op">|</span><span class="ident">a</span><span class="op">|</span> <span class="ident">a</span>.<span class="ident">as_bytes</span>().<span class="ident">to_vec</span>()).<span class="ident">collect</span>(),
             <span class="ident">contracts</span>: <span class="ident">f</span>.<span class="ident">contracts</span>.<span class="ident">iter</span>().<span class="ident">map</span>(<span class="op">|</span><span class="ident">a</span><span class="op">|</span> <span class="ident">a</span>.<span class="ident">clone</span>().<span class="ident">into</span>()).<span class="ident">collect</span>(),
             <span class="ident">constants</span>: <span class="kw">match</span> <span class="ident">f</span>.<span class="ident">constants</span> {
-                <span class="prelude-val">Some</span>(<span class="ident">constants</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Some</span>(<span class="ident">constants</span>.<span class="ident">iter</span>().<span class="ident">map</span>(<span class="op">|</span><span class="ident">a</span><span class="op">|</span> <span class="ident">a</span>.<span class="ident">clone</span>().<span class="ident">into</span>()).<span class="ident">collect</span>()),
-                <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">None</span>,
+                <span class="prelude-val">Some</span>(<span class="ident">constants</span>) <span class="op">=&gt;</span> <span class="prelude-val">Some</span>(<span class="ident">constants</span>.<span class="ident">iter</span>().<span class="ident">map</span>(<span class="op">|</span><span class="ident">a</span><span class="op">|</span> <span class="ident">a</span>.<span class="ident">clone</span>().<span class="ident">into</span>()).<span class="ident">collect</span>()),
+                <span class="prelude-val">None</span> <span class="op">=&gt;</span> <span class="prelude-val">None</span>,
             },
             <span class="ident">entry_point</span>: <span class="ident">f</span>.<span class="ident">entry_point</span>.<span class="ident">as_bytes</span>().<span class="ident">to_vec</span>(),
         }
@@ -525,7 +526,7 @@
 }
 
 <span class="kw">impl</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">ConstantVariableSerializable</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">ConstantVariable</span> {
-    <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">f</span>: <span class="ident">ConstantVariableSerializable</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">ConstantVariable</span> {
+    <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">f</span>: <span class="ident">ConstantVariableSerializable</span>) <span class="op">-&gt;</span> <span class="ident">ConstantVariable</span> {
         <span class="ident">ConstantVariable</span> {
             <span class="ident">var_type</span>: <span class="ident">f</span>.<span class="ident">var_type</span>.<span class="ident">into</span>(),
             <span class="ident">name</span>: <span class="ident">f</span>.<span class="ident">name</span>.<span class="ident">as_bytes</span>().<span class="ident">to_vec</span>(),
@@ -551,7 +552,7 @@
 }
 
 <span class="kw">impl</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">IntermediateCompiledPredicateSerializable</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">IntermediateCompiledPredicate</span> {
-    <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">f</span>: <span class="ident">IntermediateCompiledPredicateSerializable</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">IntermediateCompiledPredicate</span> {
+    <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">f</span>: <span class="ident">IntermediateCompiledPredicateSerializable</span>) <span class="op">-&gt;</span> <span class="ident">IntermediateCompiledPredicate</span> {
         <span class="ident">IntermediateCompiledPredicate</span> {
             <span class="ident">r#type</span>: <span class="ident">f</span>.<span class="ident">r#type</span>.<span class="ident">into</span>(),
             <span class="ident">name</span>: <span class="ident">f</span>.<span class="ident">name</span>.<span class="ident">as_bytes</span>().<span class="ident">to_vec</span>(),
@@ -573,12 +574,12 @@
 }
 
 <span class="kw">impl</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">AtomicPropositionOrPlaceholderSerializable</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">AtomicPropositionOrPlaceholder</span> {
-    <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">f</span>: <span class="ident">AtomicPropositionOrPlaceholderSerializable</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">AtomicPropositionOrPlaceholder</span> {
+    <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">f</span>: <span class="ident">AtomicPropositionOrPlaceholderSerializable</span>) <span class="op">-&gt;</span> <span class="ident">AtomicPropositionOrPlaceholder</span> {
         <span class="kw">match</span> <span class="ident">f</span> {
-            <span class="ident">AtomicPropositionOrPlaceholderSerializable</span>::<span class="ident">AtomicProposition</span>(<span class="ident">a</span>) <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="ident">AtomicPropositionOrPlaceholderSerializable</span>::<span class="ident">AtomicProposition</span>(<span class="ident">a</span>) <span class="op">=&gt;</span> {
                 <span class="ident">AtomicPropositionOrPlaceholder</span>::<span class="ident">AtomicProposition</span>(<span class="ident">a</span>.<span class="ident">clone</span>().<span class="ident">into</span>())
             }
-            <span class="ident">AtomicPropositionOrPlaceholderSerializable</span>::<span class="ident">Placeholder</span>(<span class="ident">a</span>) <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="ident">AtomicPropositionOrPlaceholderSerializable</span>::<span class="ident">Placeholder</span>(<span class="ident">a</span>) <span class="op">=&gt;</span> {
                 <span class="ident">AtomicPropositionOrPlaceholder</span>::<span class="ident">Placeholder</span>(<span class="ident">a</span>.<span class="ident">as_bytes</span>().<span class="ident">to_vec</span>())
             }
         }
@@ -596,7 +597,7 @@
 }
 
 <span class="kw">impl</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">AtomicPropositionSerializable</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">AtomicProposition</span> {
-    <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">f</span>: <span class="ident">AtomicPropositionSerializable</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">AtomicProposition</span> {
+    <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">f</span>: <span class="ident">AtomicPropositionSerializable</span>) <span class="op">-&gt;</span> <span class="ident">AtomicProposition</span> {
         <span class="ident">AtomicProposition</span> {
             <span class="ident">r#type</span>: <span class="ident">f</span>.<span class="ident">r#type</span>.<span class="ident">into</span>(),
             <span class="ident">predicate</span>: <span class="ident">f</span>.<span class="ident">predicate</span>.<span class="ident">into</span>(),
@@ -617,18 +618,18 @@
 }
 
 <span class="kw">impl</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">PredicateCallSerializable</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">PredicateCall</span> {
-    <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">f</span>: <span class="ident">PredicateCallSerializable</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">PredicateCall</span> {
+    <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">f</span>: <span class="ident">PredicateCallSerializable</span>) <span class="op">-&gt;</span> <span class="ident">PredicateCall</span> {
         <span class="kw">match</span> <span class="ident">f</span> {
-            <span class="ident">PredicateCallSerializable</span>::<span class="ident">AtomicPredicateCall</span>(<span class="ident">a</span>) <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="ident">PredicateCallSerializable</span>::<span class="ident">AtomicPredicateCall</span>(<span class="ident">a</span>) <span class="op">=&gt;</span> {
                 <span class="ident">PredicateCall</span>::<span class="ident">AtomicPredicateCall</span>(<span class="ident">a</span>.<span class="ident">clone</span>().<span class="ident">into</span>())
             }
-            <span class="ident">PredicateCallSerializable</span>::<span class="ident">InputPredicateCall</span>(<span class="ident">a</span>) <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="ident">PredicateCallSerializable</span>::<span class="ident">InputPredicateCall</span>(<span class="ident">a</span>) <span class="op">=&gt;</span> {
                 <span class="ident">PredicateCall</span>::<span class="ident">InputPredicateCall</span>(<span class="ident">a</span>.<span class="ident">clone</span>().<span class="ident">into</span>())
             }
-            <span class="ident">PredicateCallSerializable</span>::<span class="ident">VariablePredicateCall</span>(<span class="ident">a</span>) <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="ident">PredicateCallSerializable</span>::<span class="ident">VariablePredicateCall</span>(<span class="ident">a</span>) <span class="op">=&gt;</span> {
                 <span class="ident">PredicateCall</span>::<span class="ident">VariablePredicateCall</span>(<span class="ident">a</span>.<span class="ident">clone</span>().<span class="ident">into</span>())
             }
-            <span class="ident">PredicateCallSerializable</span>::<span class="ident">CompiledPredicateCall</span>(<span class="ident">a</span>) <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="ident">PredicateCallSerializable</span>::<span class="ident">CompiledPredicateCall</span>(<span class="ident">a</span>) <span class="op">=&gt;</span> {
                 <span class="ident">PredicateCall</span>::<span class="ident">CompiledPredicateCall</span>(<span class="ident">a</span>.<span class="ident">clone</span>().<span class="ident">into</span>())
             }
         }
@@ -644,7 +645,7 @@
 }
 
 <span class="kw">impl</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">AtomicPredicateCallSerializable</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">AtomicPredicateCall</span> {
-    <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">f</span>: <span class="ident">AtomicPredicateCallSerializable</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">AtomicPredicateCall</span> {
+    <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">f</span>: <span class="ident">AtomicPredicateCallSerializable</span>) <span class="op">-&gt;</span> <span class="ident">AtomicPredicateCall</span> {
         <span class="ident">AtomicPredicateCall</span> {
             <span class="ident">r#type</span>: <span class="ident">f</span>.<span class="ident">r#type</span>.<span class="ident">into</span>(),
             <span class="ident">source</span>: <span class="ident">f</span>.<span class="ident">source</span>.<span class="ident">as_bytes</span>().<span class="ident">to_vec</span>(),
@@ -661,7 +662,7 @@
 }
 
 <span class="kw">impl</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">InputPredicateCallSerializable</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">InputPredicateCall</span> {
-    <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">f</span>: <span class="ident">InputPredicateCallSerializable</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">InputPredicateCall</span> {
+    <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">f</span>: <span class="ident">InputPredicateCallSerializable</span>) <span class="op">-&gt;</span> <span class="ident">InputPredicateCall</span> {
         <span class="ident">InputPredicateCall</span> {
             <span class="ident">r#type</span>: <span class="ident">f</span>.<span class="ident">r#type</span>.<span class="ident">into</span>(),
             <span class="ident">source</span>: <span class="ident">f</span>.<span class="ident">source</span>.<span class="ident">into</span>(),
@@ -677,7 +678,7 @@
 }
 
 <span class="kw">impl</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">VariablePredicateCallSerializable</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">VariablePredicateCall</span> {
-    <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">f</span>: <span class="ident">VariablePredicateCallSerializable</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">VariablePredicateCall</span> {
+    <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">f</span>: <span class="ident">VariablePredicateCallSerializable</span>) <span class="op">-&gt;</span> <span class="ident">VariablePredicateCall</span> {
         <span class="ident">VariablePredicateCall</span> {
             <span class="ident">r#type</span>: <span class="ident">f</span>.<span class="ident">r#type</span>.<span class="ident">into</span>(),
         }
@@ -694,7 +695,7 @@
 }
 
 <span class="kw">impl</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">CompiledPredicateCallSerializable</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">CompiledPredicateCall</span> {
-    <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">f</span>: <span class="ident">CompiledPredicateCallSerializable</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">CompiledPredicateCall</span> {
+    <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">f</span>: <span class="ident">CompiledPredicateCallSerializable</span>) <span class="op">-&gt;</span> <span class="ident">CompiledPredicateCall</span> {
         <span class="ident">CompiledPredicateCall</span> {
             <span class="ident">r#type</span>: <span class="ident">f</span>.<span class="ident">r#type</span>.<span class="ident">into</span>(),
             <span class="ident">source</span>: <span class="ident">f</span>.<span class="ident">source</span>.<span class="ident">as_bytes</span>().<span class="ident">to_vec</span>(),
@@ -716,19 +717,19 @@
 }
 
 <span class="kw">impl</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">CompiledInputSerializable</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">CompiledInput</span> {
-    <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">f</span>: <span class="ident">CompiledInputSerializable</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">CompiledInput</span> {
+    <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">f</span>: <span class="ident">CompiledInputSerializable</span>) <span class="op">-&gt;</span> <span class="ident">CompiledInput</span> {
         <span class="kw">match</span> <span class="ident">f</span> {
-            <span class="ident">CompiledInputSerializable</span>::<span class="ident">ConstantInput</span>(<span class="ident">a</span>) <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="ident">CompiledInputSerializable</span>::<span class="ident">ConstantInput</span>(<span class="ident">a</span>) <span class="op">=&gt;</span> {
                 <span class="ident">CompiledInput</span>::<span class="ident">ConstantInput</span>(<span class="ident">a</span>.<span class="ident">clone</span>().<span class="ident">into</span>())
             }
-            <span class="ident">CompiledInputSerializable</span>::<span class="ident">LabelInput</span>(<span class="ident">a</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">CompiledInput</span>::<span class="ident">LabelInput</span>(<span class="ident">a</span>.<span class="ident">clone</span>().<span class="ident">into</span>()),
-            <span class="ident">CompiledInputSerializable</span>::<span class="ident">NormalInput</span>(<span class="ident">a</span>) <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="ident">CompiledInputSerializable</span>::<span class="ident">LabelInput</span>(<span class="ident">a</span>) <span class="op">=&gt;</span> <span class="ident">CompiledInput</span>::<span class="ident">LabelInput</span>(<span class="ident">a</span>.<span class="ident">clone</span>().<span class="ident">into</span>()),
+            <span class="ident">CompiledInputSerializable</span>::<span class="ident">NormalInput</span>(<span class="ident">a</span>) <span class="op">=&gt;</span> {
                 <span class="ident">CompiledInput</span>::<span class="ident">NormalInput</span>(<span class="ident">a</span>.<span class="ident">clone</span>().<span class="ident">into</span>())
             }
-            <span class="ident">CompiledInputSerializable</span>::<span class="ident">VariableInput</span>(<span class="ident">a</span>) <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="ident">CompiledInputSerializable</span>::<span class="ident">VariableInput</span>(<span class="ident">a</span>) <span class="op">=&gt;</span> {
                 <span class="ident">CompiledInput</span>::<span class="ident">VariableInput</span>(<span class="ident">a</span>.<span class="ident">clone</span>().<span class="ident">into</span>())
             }
-            <span class="ident">CompiledInputSerializable</span>::<span class="ident">SelfInput</span>(<span class="ident">a</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">CompiledInput</span>::<span class="ident">SelfInput</span>(<span class="ident">a</span>.<span class="ident">clone</span>().<span class="ident">into</span>()),
+            <span class="ident">CompiledInputSerializable</span>::<span class="ident">SelfInput</span>(<span class="ident">a</span>) <span class="op">=&gt;</span> <span class="ident">CompiledInput</span>::<span class="ident">SelfInput</span>(<span class="ident">a</span>.<span class="ident">clone</span>().<span class="ident">into</span>()),
         }
     }
 }
@@ -741,7 +742,7 @@
 }
 
 <span class="kw">impl</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">ConstantInputSerializable</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">ConstantInput</span> {
-    <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">f</span>: <span class="ident">ConstantInputSerializable</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">ConstantInput</span> {
+    <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">f</span>: <span class="ident">ConstantInputSerializable</span>) <span class="op">-&gt;</span> <span class="ident">ConstantInput</span> {
         <span class="ident">ConstantInput</span> {
             <span class="ident">r#type</span>: <span class="ident">f</span>.<span class="ident">r#type</span>.<span class="ident">into</span>(),
             <span class="ident">name</span>: <span class="ident">f</span>.<span class="ident">name</span>.<span class="ident">as_bytes</span>().<span class="ident">to_vec</span>(),
@@ -757,7 +758,7 @@
 }
 
 <span class="kw">impl</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">LabelInputSerializable</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">LabelInput</span> {
-    <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">f</span>: <span class="ident">LabelInputSerializable</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">LabelInput</span> {
+    <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">f</span>: <span class="ident">LabelInputSerializable</span>) <span class="op">-&gt;</span> <span class="ident">LabelInput</span> {
         <span class="ident">LabelInput</span> {
             <span class="ident">r#type</span>: <span class="ident">f</span>.<span class="ident">r#type</span>.<span class="ident">into</span>(),
             <span class="ident">label</span>: <span class="ident">f</span>.<span class="ident">label</span>.<span class="ident">as_bytes</span>().<span class="ident">to_vec</span>(),
@@ -775,7 +776,7 @@
 }
 
 <span class="kw">impl</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">NormalInputSerializable</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">NormalInput</span> {
-    <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">f</span>: <span class="ident">NormalInputSerializable</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">NormalInput</span> {
+    <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">f</span>: <span class="ident">NormalInputSerializable</span>) <span class="op">-&gt;</span> <span class="ident">NormalInput</span> {
         <span class="ident">NormalInput</span> {
             <span class="ident">r#type</span>: <span class="ident">f</span>.<span class="ident">r#type</span>.<span class="ident">into</span>(),
             <span class="ident">input_index</span>: <span class="ident">f</span>.<span class="ident">input_index</span>,
@@ -793,7 +794,7 @@
 }
 
 <span class="kw">impl</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">VariableInputSerializable</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">VariableInput</span> {
-    <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">f</span>: <span class="ident">VariableInputSerializable</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">VariableInput</span> {
+    <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">f</span>: <span class="ident">VariableInputSerializable</span>) <span class="op">-&gt;</span> <span class="ident">VariableInput</span> {
         <span class="ident">VariableInput</span> {
             <span class="ident">r#type</span>: <span class="ident">f</span>.<span class="ident">r#type</span>.<span class="ident">into</span>(),
             <span class="ident">placeholder</span>: <span class="ident">f</span>.<span class="ident">placeholder</span>.<span class="ident">as_bytes</span>().<span class="ident">to_vec</span>(),
@@ -810,7 +811,7 @@
 }
 
 <span class="kw">impl</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">SelfInputSerializable</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">SelfInput</span> {
-    <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">f</span>: <span class="ident">SelfInputSerializable</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">SelfInput</span> {
+    <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">f</span>: <span class="ident">SelfInputSerializable</span>) <span class="op">-&gt;</span> <span class="ident">SelfInput</span> {
         <span class="ident">SelfInput</span> {
             <span class="ident">r#type</span>: <span class="ident">f</span>.<span class="ident">r#type</span>.<span class="ident">into</span>(),
             <span class="ident">children</span>: <span class="ident">f</span>.<span class="ident">children</span>,
@@ -829,13 +830,13 @@
 }
 
 <span class="kw">impl</span> <span class="ident">From</span><span class="op">&lt;</span><span class="ident">LogicalConnectiveSerializable</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">LogicalConnective</span> {
-    <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">f</span>: <span class="ident">LogicalConnectiveSerializable</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">LogicalConnective</span> {
+    <span class="kw">fn</span> <span class="ident">from</span>(<span class="ident">f</span>: <span class="ident">LogicalConnectiveSerializable</span>) <span class="op">-&gt;</span> <span class="ident">LogicalConnective</span> {
         <span class="kw">match</span> <span class="ident">f</span> {
-            <span class="ident">LogicalConnectiveSerializable</span>::<span class="ident">And</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">LogicalConnective</span>::<span class="ident">And</span>,
-            <span class="ident">LogicalConnectiveSerializable</span>::<span class="ident">ForAllSuchThat</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">LogicalConnective</span>::<span class="ident">ForAllSuchThat</span>,
-            <span class="ident">LogicalConnectiveSerializable</span>::<span class="ident">Not</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">LogicalConnective</span>::<span class="ident">Not</span>,
-            <span class="ident">LogicalConnectiveSerializable</span>::<span class="ident">Or</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">LogicalConnective</span>::<span class="ident">Or</span>,
-            <span class="ident">LogicalConnectiveSerializable</span>::<span class="ident">ThereExistsSuchThat</span> <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="ident">LogicalConnectiveSerializable</span>::<span class="ident">And</span> <span class="op">=&gt;</span> <span class="ident">LogicalConnective</span>::<span class="ident">And</span>,
+            <span class="ident">LogicalConnectiveSerializable</span>::<span class="ident">ForAllSuchThat</span> <span class="op">=&gt;</span> <span class="ident">LogicalConnective</span>::<span class="ident">ForAllSuchThat</span>,
+            <span class="ident">LogicalConnectiveSerializable</span>::<span class="ident">Not</span> <span class="op">=&gt;</span> <span class="ident">LogicalConnective</span>::<span class="ident">Not</span>,
+            <span class="ident">LogicalConnectiveSerializable</span>::<span class="ident">Or</span> <span class="op">=&gt;</span> <span class="ident">LogicalConnective</span>::<span class="ident">Or</span>,
+            <span class="ident">LogicalConnectiveSerializable</span>::<span class="ident">ThereExistsSuchThat</span> <span class="op">=&gt;</span> {
                 <span class="ident">LogicalConnective</span>::<span class="ident">ThereExistsSuchThat</span>
             }
         }

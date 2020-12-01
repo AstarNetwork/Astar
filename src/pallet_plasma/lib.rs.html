@@ -1,4 +1,5 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source to the Rust file `frame/plasma/src/lib.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>lib.rs.html -- source</title><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../dark.css"><link rel="stylesheet" type="text/css" href="../../light.css" id="themeStyle"><script src="../../storage.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="shortcut icon" href="../../favicon.ico"><style type="text/css">#crate-search{background-image:url("../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../pallet_plasma/index.html'><div class='logo-container'><img src='../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!"><img src="../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices"></div></div><script src="../../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><a id="settings-menu" href="../../settings.html"><img src="../../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1">  1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source to the Rust file `frame/plasma/src/lib.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>lib.rs.html -- source</title><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../light.css"  id="themeStyle"><link rel="stylesheet" type="text/css" href="../../dark.css" disabled ><link rel="stylesheet" type="text/css" href="../../ayu.css" disabled ><script src="../../storage.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="shortcut icon" href="../../favicon.ico"><style type="text/css">#crate-search{background-image:url("../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../pallet_plasma/index.html'><div class='logo-container rust-logo'><img src='../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!"><img src="../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices"></div></div><script src="../../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><span class="help-button">?</span>
+                <a id="settings-menu" href="../../settings.html"><img src="../../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1">  1</span>
 <span id="2">  2</span>
 <span id="3">  3</span>
 <span id="4">  4</span>
@@ -974,14 +975,14 @@
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">IntervalInclusionProof</span><span class="op">&lt;</span><span class="ident">Balance</span>, <span class="ident">Hash</span><span class="op">&gt;</span> {
     <span class="ident">leaf_index</span>: <span class="ident">Balance</span>,
     <span class="ident">leaf_position</span>: <span class="ident">Balance</span>,
-    <span class="ident">siblings</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">IntervalTreeNode</span><span class="op">&lt;</span><span class="ident">Balance</span>, <span class="ident">Hash</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+    <span class="ident">siblings</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">IntervalTreeNode</span><span class="op">&lt;</span><span class="ident">Balance</span>, <span class="ident">Hash</span><span class="op">&gt;&gt;</span>,
 }
 
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Encode</span>, <span class="ident">Decode</span>, <span class="ident">Clone</span>, <span class="ident">Default</span>, <span class="ident">RuntimeDebug</span>, <span class="ident">PartialEq</span>, <span class="ident">Eq</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">AddressInclusionProof</span><span class="op">&lt;</span><span class="ident">AccountId</span>, <span class="ident">Balance</span>, <span class="ident">Hash</span><span class="op">&gt;</span> {
     <span class="ident">leaf_index</span>: <span class="ident">AccountId</span>,
     <span class="ident">leaf_position</span>: <span class="ident">Balance</span>,
-    <span class="ident">siblings</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">AddressTreeNode</span><span class="op">&lt;</span><span class="ident">AccountId</span>, <span class="ident">Hash</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+    <span class="ident">siblings</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">AddressTreeNode</span><span class="op">&lt;</span><span class="ident">AccountId</span>, <span class="ident">Hash</span><span class="op">&gt;&gt;</span>,
 }
 
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Encode</span>, <span class="ident">Decode</span>, <span class="ident">Clone</span>, <span class="ident">Default</span>, <span class="ident">RuntimeDebug</span>, <span class="ident">PartialEq</span>, <span class="ident">Eq</span>)]</span>
@@ -1003,14 +1004,14 @@
 }
 
 <span class="kw">pub</span> <span class="kw">type</span> <span class="ident">BalanceOf</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> <span class="op">=</span>
-    <span class="op">&lt;</span><span class="op">&lt;</span><span class="ident">T</span> <span class="kw">as</span> <span class="ident">Trait</span><span class="op">&gt;</span>::<span class="ident">Currency</span> <span class="kw">as</span> <span class="ident">Currency</span><span class="op">&lt;</span><span class="op">&lt;</span><span class="ident">T</span> <span class="kw">as</span> <span class="ident">frame_system</span>::<span class="ident">Trait</span><span class="op">&gt;</span>::<span class="ident">AccountId</span><span class="op">&gt;</span><span class="op">&gt;</span>::<span class="ident">Balance</span>;
-<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">CheckpointOf</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">Checkpoint</span><span class="op">&lt;</span><span class="op">&lt;</span><span class="ident">T</span> <span class="kw">as</span> <span class="ident">frame_system</span>::<span class="ident">Trait</span><span class="op">&gt;</span>::<span class="ident">AccountId</span><span class="op">&gt;</span>;
+    <span class="op">&lt;&lt;</span><span class="ident">T</span> <span class="kw">as</span> <span class="ident">Trait</span><span class="op">&gt;</span>::<span class="ident">Currency</span> <span class="kw">as</span> <span class="ident">Currency</span><span class="op">&lt;&lt;</span><span class="ident">T</span> <span class="kw">as</span> <span class="ident">frame_system</span>::<span class="ident">Trait</span><span class="op">&gt;</span>::<span class="ident">AccountId</span><span class="op">&gt;&gt;</span>::<span class="ident">Balance</span>;
+<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">CheckpointOf</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">Checkpoint</span><span class="op">&lt;&lt;</span><span class="ident">T</span> <span class="kw">as</span> <span class="ident">frame_system</span>::<span class="ident">Trait</span><span class="op">&gt;</span>::<span class="ident">AccountId</span><span class="op">&gt;</span>;
 <span class="kw">pub</span> <span class="kw">type</span> <span class="ident">ExitDepositOf</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">ExitDeposit</span><span class="op">&lt;</span>
     <span class="op">&lt;</span><span class="ident">T</span> <span class="kw">as</span> <span class="ident">frame_system</span>::<span class="ident">Trait</span><span class="op">&gt;</span>::<span class="ident">AccountId</span>,
     <span class="ident">BalanceOf</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>,
     <span class="op">&lt;</span><span class="ident">T</span> <span class="kw">as</span> <span class="ident">frame_system</span>::<span class="ident">Trait</span><span class="op">&gt;</span>::<span class="ident">BlockNumber</span>,
 <span class="op">&gt;</span>;
-<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">RangeOf</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">Range</span><span class="op">&lt;</span><span class="ident">BalanceOf</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>;
+<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">RangeOf</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">Range</span><span class="op">&lt;</span><span class="ident">BalanceOf</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;&gt;</span>;
 <span class="kw">pub</span> <span class="kw">type</span> <span class="ident">ExitOf</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">Exit</span><span class="op">&lt;</span>
     <span class="op">&lt;</span><span class="ident">T</span> <span class="kw">as</span> <span class="ident">frame_system</span>::<span class="ident">Trait</span><span class="op">&gt;</span>::<span class="ident">AccountId</span>,
     <span class="op">&lt;</span><span class="ident">T</span> <span class="kw">as</span> <span class="ident">frame_system</span>::<span class="ident">Trait</span><span class="op">&gt;</span>::<span class="ident">BlockNumber</span>,
@@ -1036,9 +1037,9 @@
     <span class="op">&lt;</span><span class="ident">T</span> <span class="kw">as</span> <span class="ident">frame_system</span>::<span class="ident">Trait</span><span class="op">&gt;</span>::<span class="ident">Hash</span>,
 <span class="op">&gt;</span>;
 <span class="kw">pub</span> <span class="kw">type</span> <span class="ident">AddressTreeNodeOf</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> <span class="op">=</span>
-    <span class="ident">AddressTreeNode</span><span class="op">&lt;</span><span class="op">&lt;</span><span class="ident">T</span> <span class="kw">as</span> <span class="ident">frame_system</span>::<span class="ident">Trait</span><span class="op">&gt;</span>::<span class="ident">AccountId</span>, <span class="op">&lt;</span><span class="ident">T</span> <span class="kw">as</span> <span class="ident">frame_system</span>::<span class="ident">Trait</span><span class="op">&gt;</span>::<span class="ident">Hash</span><span class="op">&gt;</span>;
+    <span class="ident">AddressTreeNode</span><span class="op">&lt;&lt;</span><span class="ident">T</span> <span class="kw">as</span> <span class="ident">frame_system</span>::<span class="ident">Trait</span><span class="op">&gt;</span>::<span class="ident">AccountId</span>, <span class="op">&lt;</span><span class="ident">T</span> <span class="kw">as</span> <span class="ident">frame_system</span>::<span class="ident">Trait</span><span class="op">&gt;</span>::<span class="ident">Hash</span><span class="op">&gt;</span>;
 <span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">PlappsAddressFor</span><span class="op">&lt;</span><span class="ident">Hash</span>, <span class="ident">AccountId</span><span class="op">&gt;</span> {
-    <span class="kw">fn</span> <span class="ident">plapps_address_for</span>(<span class="ident">hash</span>: <span class="kw-2">&amp;</span><span class="ident">Hash</span>, <span class="ident">origin</span>: <span class="kw-2">&amp;</span><span class="ident">AccountId</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">AccountId</span>;
+    <span class="kw">fn</span> <span class="ident">plapps_address_for</span>(<span class="ident">hash</span>: <span class="kw-2">&amp;</span><span class="ident">Hash</span>, <span class="ident">origin</span>: <span class="kw-2">&amp;</span><span class="ident">AccountId</span>) <span class="op">-&gt;</span> <span class="ident">AccountId</span>;
 }
 
 <span class="doccomment">/// Simple plapps address determiner.</span>
@@ -1059,7 +1060,7 @@
 <span class="kw">where</span>
     <span class="ident">T</span>::<span class="ident">AccountId</span>: <span class="ident">UncheckedFrom</span><span class="op">&lt;</span><span class="ident">T</span>::<span class="ident">Hash</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">AsRef</span><span class="op">&lt;</span>[<span class="ident">u8</span>]<span class="op">&gt;</span>,
 {
-    <span class="kw">fn</span> <span class="ident">plapps_address_for</span>(<span class="ident">hash</span>: <span class="kw-2">&amp;</span><span class="ident">T</span>::<span class="ident">Hash</span>, <span class="ident">origin</span>: <span class="kw-2">&amp;</span><span class="ident">T</span>::<span class="ident">AccountId</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">T</span>::<span class="ident">AccountId</span> {
+    <span class="kw">fn</span> <span class="ident">plapps_address_for</span>(<span class="ident">hash</span>: <span class="kw-2">&amp;</span><span class="ident">T</span>::<span class="ident">Hash</span>, <span class="ident">origin</span>: <span class="kw-2">&amp;</span><span class="ident">T</span>::<span class="ident">AccountId</span>) <span class="op">-&gt;</span> <span class="ident">T</span>::<span class="ident">AccountId</span> {
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">buf</span> <span class="op">=</span> <span class="ident">Vec</span>::<span class="ident">new</span>();
         <span class="ident">buf</span>.<span class="ident">extend_from_slice</span>(<span class="ident">hash</span>.<span class="ident">as_ref</span>());
         <span class="ident">buf</span>.<span class="ident">extend_from_slice</span>(<span class="ident">origin</span>.<span class="ident">as_ref</span>());
@@ -1082,7 +1083,7 @@
     <span class="kw">type</span> <span class="ident">PlasmaHashing</span>: <span class="ident">Hash</span><span class="op">&lt;</span><span class="ident">Output</span> <span class="op">=</span> <span class="self">Self</span>::<span class="ident">Hash</span><span class="op">&gt;</span>;
 
     <span class="doccomment">/// The overarching event type.</span>
-    <span class="kw">type</span> <span class="ident">Event</span>: <span class="ident">From</span><span class="op">&lt;</span><span class="ident">Event</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Into</span><span class="op">&lt;</span><span class="op">&lt;</span><span class="self">Self</span> <span class="kw">as</span> <span class="ident">system</span>::<span class="ident">Trait</span><span class="op">&gt;</span>::<span class="ident">Event</span><span class="op">&gt;</span>;
+    <span class="kw">type</span> <span class="ident">Event</span>: <span class="ident">From</span><span class="op">&lt;</span><span class="ident">Event</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;&gt;</span> <span class="op">+</span> <span class="ident">Into</span><span class="op">&lt;&lt;</span><span class="self">Self</span> <span class="kw">as</span> <span class="ident">system</span>::<span class="ident">Trait</span><span class="op">&gt;</span>::<span class="ident">Event</span><span class="op">&gt;</span>;
 }
 
 <span class="macro">decl_storage</span><span class="macro">!</span> {
@@ -1090,32 +1091,32 @@
         <span class="comment">// Commitment storage: Plapps address =&gt; Commitment Child Storage. ====</span>
 
         <span class="doccomment">/// Single aggregator address: AggregatorId</span>
-        <span class="ident">AggregatorAddress</span> <span class="ident">get</span>(<span class="kw">fn</span> <span class="ident">aggregator_address</span>): <span class="ident">map</span> <span class="ident">hasher</span>(<span class="ident">twox_64_concat</span>) <span class="ident">T</span>::<span class="ident">AccountId</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">T</span>::<span class="ident">AccountId</span>;
+        <span class="ident">AggregatorAddress</span> <span class="ident">get</span>(<span class="kw">fn</span> <span class="ident">aggregator_address</span>): <span class="ident">map</span> <span class="ident">hasher</span>(<span class="ident">twox_64_concat</span>) <span class="ident">T</span>::<span class="ident">AccountId</span> <span class="op">=&gt;</span> <span class="ident">T</span>::<span class="ident">AccountId</span>;
         <span class="doccomment">/// Current block number of commitment chain: BlockNumber</span>
-        <span class="ident">CurrentBlock</span> <span class="ident">get</span>(<span class="kw">fn</span> <span class="ident">current_block</span>): <span class="ident">map</span> <span class="ident">hasher</span>(<span class="ident">twox_64_concat</span>) <span class="ident">T</span>::<span class="ident">AccountId</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">T</span>::<span class="ident">BlockNumber</span>;
+        <span class="ident">CurrentBlock</span> <span class="ident">get</span>(<span class="kw">fn</span> <span class="ident">current_block</span>): <span class="ident">map</span> <span class="ident">hasher</span>(<span class="ident">twox_64_concat</span>) <span class="ident">T</span>::<span class="ident">AccountId</span> <span class="op">=&gt;</span> <span class="ident">T</span>::<span class="ident">BlockNumber</span>;
         <span class="doccomment">/// History of Merkle Root</span>
-        <span class="ident">Blocks</span> <span class="ident">get</span>(<span class="kw">fn</span> <span class="ident">blocks</span>): <span class="ident">double_map</span> <span class="ident">hasher</span>(<span class="ident">twox_64_concat</span>) <span class="ident">T</span>::<span class="ident">AccountId</span>, <span class="ident">hasher</span>(<span class="ident">blake2_128_concat</span>) <span class="ident">T</span>::<span class="ident">BlockNumber</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">T</span>::<span class="ident">Hash</span>;
+        <span class="ident">Blocks</span> <span class="ident">get</span>(<span class="kw">fn</span> <span class="ident">blocks</span>): <span class="ident">double_map</span> <span class="ident">hasher</span>(<span class="ident">twox_64_concat</span>) <span class="ident">T</span>::<span class="ident">AccountId</span>, <span class="ident">hasher</span>(<span class="ident">blake2_128_concat</span>) <span class="ident">T</span>::<span class="ident">BlockNumber</span> <span class="op">=&gt;</span> <span class="ident">T</span>::<span class="ident">Hash</span>;
 
 
         <span class="comment">// Deposit storage: Plapps address =&gt; Deposit Child Storage. ====</span>
         <span class="doccomment">/// mapping from Plapps address to ERC20 based contract address.</span>
-        <span class="ident">ERC20</span> <span class="ident">get</span>(<span class="kw">fn</span> <span class="ident">erc20</span>): <span class="ident">map</span> <span class="ident">hasher</span>(<span class="ident">twox_64_concat</span>) <span class="ident">T</span>::<span class="ident">AccountId</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">T</span>::<span class="ident">AccountId</span>;
+        <span class="ident">ERC20</span> <span class="ident">get</span>(<span class="kw">fn</span> <span class="ident">erc20</span>): <span class="ident">map</span> <span class="ident">hasher</span>(<span class="ident">twox_64_concat</span>) <span class="ident">T</span>::<span class="ident">AccountId</span> <span class="op">=&gt;</span> <span class="ident">T</span>::<span class="ident">AccountId</span>;
         <span class="doccomment">/// mapping from Plapps address to StateUpdate predicate address.</span>
-        <span class="ident">StateUpdatePredicate</span> <span class="ident">get</span>(<span class="kw">fn</span> <span class="ident">state_update_predicate</span>): <span class="ident">map</span> <span class="ident">hasher</span>(<span class="ident">twox_64_concat</span>) <span class="ident">T</span>::<span class="ident">AccountId</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">T</span>::<span class="ident">AccountId</span>;
+        <span class="ident">StateUpdatePredicate</span> <span class="ident">get</span>(<span class="kw">fn</span> <span class="ident">state_update_predicate</span>): <span class="ident">map</span> <span class="ident">hasher</span>(<span class="ident">twox_64_concat</span>) <span class="ident">T</span>::<span class="ident">AccountId</span> <span class="op">=&gt;</span> <span class="ident">T</span>::<span class="ident">AccountId</span>;
         <span class="doccomment">/// mapping from Plapps address to Exit predicate address.</span>
-        <span class="ident">ExitPredicate</span> <span class="ident">get</span>(<span class="kw">fn</span> <span class="ident">exit_predicate</span>): <span class="ident">map</span> <span class="ident">hasher</span>(<span class="ident">twox_64_concat</span>) <span class="ident">T</span>::<span class="ident">AccountId</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">T</span>::<span class="ident">AccountId</span>;
+        <span class="ident">ExitPredicate</span> <span class="ident">get</span>(<span class="kw">fn</span> <span class="ident">exit_predicate</span>): <span class="ident">map</span> <span class="ident">hasher</span>(<span class="ident">twox_64_concat</span>) <span class="ident">T</span>::<span class="ident">AccountId</span> <span class="op">=&gt;</span> <span class="ident">T</span>::<span class="ident">AccountId</span>;
         <span class="doccomment">/// mapping from Plapps address to ExitDeposit predicate address.</span>
-        <span class="ident">ExitDepositPredicate</span> <span class="ident">get</span>(<span class="kw">fn</span> <span class="ident">exit_deposit_predicate</span>): <span class="ident">map</span> <span class="ident">hasher</span>(<span class="ident">twox_64_concat</span>) <span class="ident">T</span>::<span class="ident">AccountId</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">T</span>::<span class="ident">AccountId</span>;
+        <span class="ident">ExitDepositPredicate</span> <span class="ident">get</span>(<span class="kw">fn</span> <span class="ident">exit_deposit_predicate</span>): <span class="ident">map</span> <span class="ident">hasher</span>(<span class="ident">twox_64_concat</span>) <span class="ident">T</span>::<span class="ident">AccountId</span> <span class="op">=&gt;</span> <span class="ident">T</span>::<span class="ident">AccountId</span>;
 
         <span class="doccomment">/// TotalDeposited is the most right coin id which has been deposited.</span>
-        <span class="ident">TotalDeposited</span> <span class="ident">get</span>(<span class="kw">fn</span> <span class="ident">total_deposited</span>): <span class="ident">map</span> <span class="ident">hasher</span>(<span class="ident">twox_64_concat</span>) <span class="ident">T</span>::<span class="ident">AccountId</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">BalanceOf</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>;
+        <span class="ident">TotalDeposited</span> <span class="ident">get</span>(<span class="kw">fn</span> <span class="ident">total_deposited</span>): <span class="ident">map</span> <span class="ident">hasher</span>(<span class="ident">twox_64_concat</span>) <span class="ident">T</span>::<span class="ident">AccountId</span> <span class="op">=&gt;</span> <span class="ident">BalanceOf</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>;
         <span class="doccomment">/// DepositedRanges are currently deposited ranges.</span>
-        <span class="ident">DepositedRanges</span> <span class="ident">get</span>(<span class="kw">fn</span> <span class="ident">deposited_ranges</span>): <span class="ident">double_map</span> <span class="ident">hasher</span>(<span class="ident">twox_64_concat</span>) <span class="ident">T</span>::<span class="ident">AccountId</span>, <span class="ident">hasher</span>(<span class="ident">blake2_128_concat</span>) <span class="ident">BalanceOf</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">RangeOf</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>;
+        <span class="ident">DepositedRanges</span> <span class="ident">get</span>(<span class="kw">fn</span> <span class="ident">deposited_ranges</span>): <span class="ident">double_map</span> <span class="ident">hasher</span>(<span class="ident">twox_64_concat</span>) <span class="ident">T</span>::<span class="ident">AccountId</span>, <span class="ident">hasher</span>(<span class="ident">blake2_128_concat</span>) <span class="ident">BalanceOf</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> <span class="op">=&gt;</span> <span class="ident">RangeOf</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>;
         <span class="doccomment">/// Range&#39;s Checkpoints.</span>
-        <span class="ident">Checkpoints</span> <span class="ident">get</span>(<span class="kw">fn</span> <span class="ident">checkpoints</span>): <span class="ident">double_map</span> <span class="ident">hasher</span>(<span class="ident">twox_64_concat</span>) <span class="ident">T</span>::<span class="ident">AccountId</span>, <span class="ident">hasher</span>(<span class="ident">blake2_128_concat</span>) <span class="ident">T</span>::<span class="ident">Hash</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">bool</span>;
+        <span class="ident">Checkpoints</span> <span class="ident">get</span>(<span class="kw">fn</span> <span class="ident">checkpoints</span>): <span class="ident">double_map</span> <span class="ident">hasher</span>(<span class="ident">twox_64_concat</span>) <span class="ident">T</span>::<span class="ident">AccountId</span>, <span class="ident">hasher</span>(<span class="ident">blake2_128_concat</span>) <span class="ident">T</span>::<span class="ident">Hash</span> <span class="op">=&gt;</span> <span class="ident">bool</span>;
 
         <span class="doccomment">/// predicate address =&gt; payout address</span>
-        <span class="ident">Payout</span> <span class="ident">get</span>(<span class="kw">fn</span> <span class="ident">payout</span>): <span class="ident">map</span> <span class="ident">hasher</span>(<span class="ident">twox_64_concat</span>) <span class="ident">T</span>::<span class="ident">AccountId</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">T</span>::<span class="ident">AccountId</span>;
+        <span class="ident">Payout</span> <span class="ident">get</span>(<span class="kw">fn</span> <span class="ident">payout</span>): <span class="ident">map</span> <span class="ident">hasher</span>(<span class="ident">twox_64_concat</span>) <span class="ident">T</span>::<span class="ident">AccountId</span> <span class="op">=&gt;</span> <span class="ident">T</span>::<span class="ident">AccountId</span>;
     }
 }
 
@@ -1149,7 +1150,7 @@
 
         <span class="kw">const</span> <span class="ident">MaximumTokenAddress</span>: <span class="op">&lt;</span><span class="ident">T</span> <span class="kw">as</span> <span class="ident">system</span>::<span class="ident">Trait</span><span class="op">&gt;</span>::<span class="ident">AccountId</span> <span class="op">=</span> <span class="ident">T</span>::<span class="ident">MaximumTokenAddress</span>::<span class="ident">get</span>();
 
-        <span class="kw">fn</span> <span class="ident">on_runtime_upgrade</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Weight</span> {
+        <span class="kw">fn</span> <span class="ident">on_runtime_upgrade</span>() <span class="op">-&gt;</span> <span class="ident">Weight</span> {
             <span class="ident">migrate</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>();
             <span class="ident">T</span>::<span class="ident">MaximumBlockWeight</span>::<span class="ident">get</span>()
         }
@@ -1174,11 +1175,11 @@
                 <span class="kw-2">&amp;</span><span class="ident">exit_deposit_predicate</span>,
             );
             <span class="kw">let</span> <span class="ident">plapps_id</span> <span class="op">=</span> <span class="ident">T</span>::<span class="ident">DeterminePlappsAddress</span>::<span class="ident">plapps_address_for</span>(<span class="kw-2">&amp;</span><span class="ident">plapps_hash</span>, <span class="kw-2">&amp;</span><span class="ident">sender</span>);
-            <span class="op">&lt;</span><span class="ident">AggregatorAddress</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>::<span class="ident">insert</span>(<span class="kw-2">&amp;</span><span class="ident">plapps_id</span>, <span class="ident">aggregator_id</span>);
-            <span class="op">&lt;</span><span class="ident">ERC20</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>::<span class="ident">insert</span>(<span class="kw-2">&amp;</span><span class="ident">plapps_id</span>, <span class="ident">erc20</span>);
-            <span class="op">&lt;</span><span class="ident">StateUpdatePredicate</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>::<span class="ident">insert</span>(<span class="kw-2">&amp;</span><span class="ident">plapps_id</span>, <span class="ident">state_update_predicate</span>);
-            <span class="op">&lt;</span><span class="ident">ExitPredicate</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>::<span class="ident">insert</span>(<span class="kw-2">&amp;</span><span class="ident">plapps_id</span>, <span class="ident">exit_predicate</span>);
-            <span class="op">&lt;</span><span class="ident">ExitDepositPredicate</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>::<span class="ident">insert</span>(<span class="kw-2">&amp;</span><span class="ident">plapps_id</span>, <span class="ident">exit_deposit_predicate</span>);
+            <span class="op">&lt;</span><span class="ident">AggregatorAddress</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;&gt;</span>::<span class="ident">insert</span>(<span class="kw-2">&amp;</span><span class="ident">plapps_id</span>, <span class="ident">aggregator_id</span>);
+            <span class="op">&lt;</span><span class="ident">ERC20</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;&gt;</span>::<span class="ident">insert</span>(<span class="kw-2">&amp;</span><span class="ident">plapps_id</span>, <span class="ident">erc20</span>);
+            <span class="op">&lt;</span><span class="ident">StateUpdatePredicate</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;&gt;</span>::<span class="ident">insert</span>(<span class="kw-2">&amp;</span><span class="ident">plapps_id</span>, <span class="ident">state_update_predicate</span>);
+            <span class="op">&lt;</span><span class="ident">ExitPredicate</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;&gt;</span>::<span class="ident">insert</span>(<span class="kw-2">&amp;</span><span class="ident">plapps_id</span>, <span class="ident">exit_predicate</span>);
+            <span class="op">&lt;</span><span class="ident">ExitDepositPredicate</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;&gt;</span>::<span class="ident">insert</span>(<span class="kw-2">&amp;</span><span class="ident">plapps_id</span>, <span class="ident">exit_deposit_predicate</span>);
             <span class="self">Self</span>::<span class="ident">deposit_event</span>(<span class="ident">RawEvent</span>::<span class="ident">Deploy</span>(<span class="ident">sender</span>, <span class="ident">plapps_id</span>));
         }
 
@@ -1192,12 +1193,12 @@
             <span class="kw">let</span> <span class="ident">aggregator</span> <span class="op">=</span> <span class="ident">ensure_signed</span>(<span class="ident">origin</span>)<span class="question-mark">?</span>;
             <span class="self">Self</span>::<span class="ident">ensure_aggregator</span>(<span class="kw-2">&amp;</span><span class="ident">plapps_id</span>, <span class="kw-2">&amp;</span><span class="ident">aggregator</span>)<span class="question-mark">?</span>;
             <span class="macro">ensure</span><span class="macro">!</span>(
-                <span class="self">Self</span>::<span class="ident">current_block</span>(<span class="kw-2">&amp;</span><span class="ident">plapps_id</span>) <span class="op">+</span> <span class="ident">T</span>::<span class="ident">BlockNumber</span>::<span class="ident">one</span>() <span class="op">=</span><span class="op">=</span> <span class="ident">block_number</span>,
+                <span class="self">Self</span>::<span class="ident">current_block</span>(<span class="kw-2">&amp;</span><span class="ident">plapps_id</span>) <span class="op">+</span> <span class="ident">T</span>::<span class="ident">BlockNumber</span>::<span class="ident">one</span>() <span class="op">==</span> <span class="ident">block_number</span>,
                 <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>::<span class="ident">BlockNumberShouldBeNextBlock</span>,
             );
 
-            <span class="op">&lt;</span><span class="ident">Blocks</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>::<span class="ident">insert</span>(<span class="kw-2">&amp;</span><span class="ident">plapps_id</span>, <span class="kw-2">&amp;</span><span class="ident">block_number</span>, <span class="ident">root</span>.<span class="ident">clone</span>());
-            <span class="op">&lt;</span><span class="ident">CurrentBlock</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>::<span class="ident">insert</span>(<span class="kw-2">&amp;</span><span class="ident">plapps_id</span>, <span class="ident">block_number</span>.<span class="ident">clone</span>());
+            <span class="op">&lt;</span><span class="ident">Blocks</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;&gt;</span>::<span class="ident">insert</span>(<span class="kw-2">&amp;</span><span class="ident">plapps_id</span>, <span class="kw-2">&amp;</span><span class="ident">block_number</span>, <span class="ident">root</span>.<span class="ident">clone</span>());
+            <span class="op">&lt;</span><span class="ident">CurrentBlock</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;&gt;</span>::<span class="ident">insert</span>(<span class="kw-2">&amp;</span><span class="ident">plapps_id</span>, <span class="ident">block_number</span>.<span class="ident">clone</span>());
             <span class="self">Self</span>::<span class="ident">deposit_event</span>(<span class="ident">RawEvent</span>::<span class="ident">BlockSubmitted</span>(<span class="ident">plapps_id</span>, <span class="ident">block_number</span>, <span class="ident">root</span>));
         }
 
@@ -1242,7 +1243,7 @@
             };
             <span class="self">Self</span>::<span class="ident">bare_extend_deposited_ranges</span>(<span class="kw-2">&amp;</span><span class="ident">plapps_id</span>, <span class="ident">amount</span>);
             <span class="kw">let</span> <span class="ident">checkpoint_id</span> <span class="op">=</span> <span class="self">Self</span>::<span class="ident">get_checkpoint_id</span>(<span class="kw-2">&amp;</span><span class="ident">checkpoint</span>);
-            <span class="op">&lt;</span><span class="ident">Checkpoints</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>::<span class="ident">insert</span>(<span class="ident">plapps_id</span>.<span class="ident">clone</span>(), <span class="kw-2">&amp;</span><span class="ident">checkpoint_id</span>, <span class="bool-val">true</span>);
+            <span class="op">&lt;</span><span class="ident">Checkpoints</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;&gt;</span>::<span class="ident">insert</span>(<span class="ident">plapps_id</span>.<span class="ident">clone</span>(), <span class="kw-2">&amp;</span><span class="ident">checkpoint_id</span>, <span class="bool-val">true</span>);
             <span class="self">Self</span>::<span class="ident">deposit_event</span>(<span class="ident">RawEvent</span>::<span class="ident">CheckpointFinalized</span>(<span class="ident">plapps_id</span>, <span class="ident">checkpoint_id</span>, <span class="ident">checkpoint</span>));
         }
 
@@ -1273,7 +1274,7 @@
         <span class="kw">fn</span> <span class="ident">finalize_checkpoint</span>(<span class="ident">origin</span>, <span class="ident">plapps_id</span>: <span class="ident">T</span>::<span class="ident">AccountId</span>,
             <span class="ident">checkpoint_property</span>: <span class="ident">PropertyOf</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>) {
             <span class="macro">ensure</span><span class="macro">!</span>(
-                <span class="op">&lt;</span><span class="ident">pallet_ovm</span>::<span class="ident">Module</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>::<span class="ident">is_decided</span>(<span class="kw-2">&amp;</span><span class="ident">checkpoint_property</span>) <span class="op">!</span><span class="op">=</span> <span class="ident">Decision</span>::<span class="ident">True</span>,
+                <span class="op">&lt;</span><span class="ident">pallet_ovm</span>::<span class="ident">Module</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;&gt;</span>::<span class="ident">is_decided</span>(<span class="kw-2">&amp;</span><span class="ident">checkpoint_property</span>) <span class="op">!=</span> <span class="ident">Decision</span>::<span class="ident">True</span>,
                 <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>::<span class="ident">ClaimMustBeDecided</span>,
             );
             <span class="kw">let</span> <span class="ident">property</span>: <span class="ident">PropertyOf</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">Decode</span>::<span class="ident">decode</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="kw-2">&amp;</span><span class="ident">checkpoint_property</span>.<span class="ident">inputs</span>[<span class="number">0</span>][..])
@@ -1284,7 +1285,7 @@
 
             <span class="kw">let</span> <span class="ident">checkpoint_id</span> <span class="op">=</span> <span class="self">Self</span>::<span class="ident">get_checkpoint_id</span>(<span class="kw-2">&amp;</span><span class="ident">checkpoint</span>);
             <span class="comment">// store the checkpoint</span>
-            <span class="op">&lt;</span><span class="ident">Checkpoints</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>::<span class="ident">insert</span>(<span class="kw-2">&amp;</span><span class="ident">plapps_id</span>, <span class="kw-2">&amp;</span><span class="ident">checkpoint_id</span>, <span class="bool-val">true</span>);
+            <span class="op">&lt;</span><span class="ident">Checkpoints</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;&gt;</span>::<span class="ident">insert</span>(<span class="kw-2">&amp;</span><span class="ident">plapps_id</span>, <span class="kw-2">&amp;</span><span class="ident">checkpoint_id</span>, <span class="bool-val">true</span>);
             <span class="self">Self</span>::<span class="ident">deposit_event</span>(<span class="ident">RawEvent</span>::<span class="ident">CheckpointFinalized</span>(<span class="ident">plapps_id</span>, <span class="ident">checkpoint_id</span>, <span class="ident">checkpoint</span>));
         }
 
@@ -1313,7 +1314,7 @@
                 .<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>::<span class="ident">MustBeDecodable</span>)<span class="question-mark">?</span>;
             <span class="kw">let</span> <span class="ident">_amount</span> <span class="op">=</span> <span class="ident">state_update</span>.<span class="ident">range</span>.<span class="ident">end</span> <span class="op">-</span> <span class="ident">state_update</span>.<span class="ident">range</span>.<span class="ident">start</span>;
             <span class="macro">ensure</span><span class="macro">!</span>(
-                <span class="ident">origin</span> <span class="op">=</span><span class="op">=</span> <span class="ident">owner</span>,
+                <span class="ident">origin</span> <span class="op">==</span> <span class="ident">owner</span>,
                 <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>::<span class="ident">OriginMustBeOwner</span>,
             );
             <span class="comment">// TODO: finalize_exit payout -&gt; owner[state_update.state_objects.inputs[0]] (amount[state_update.range]) at payout.</span>
@@ -1385,8 +1386,8 @@
 <span class="doccomment">/// Public callable Plasma commitment module methods.</span>
 <span class="kw">impl</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Trait</span><span class="op">&gt;</span> <span class="ident">Module</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
     <span class="comment">// Plasma Commitment parts ====</span>
-    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">retrieve</span>(<span class="ident">plapps_id</span>: <span class="ident">T</span>::<span class="ident">AccountId</span>, <span class="ident">block_number</span>: <span class="ident">T</span>::<span class="ident">BlockNumber</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">T</span>::<span class="ident">Hash</span> {
-        <span class="op">&lt;</span><span class="ident">Blocks</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>::<span class="ident">get</span>(<span class="kw-2">&amp;</span><span class="ident">plapps_id</span>, <span class="kw-2">&amp;</span><span class="ident">block_number</span>)
+    <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">retrieve</span>(<span class="ident">plapps_id</span>: <span class="ident">T</span>::<span class="ident">AccountId</span>, <span class="ident">block_number</span>: <span class="ident">T</span>::<span class="ident">BlockNumber</span>) <span class="op">-&gt;</span> <span class="ident">T</span>::<span class="ident">Hash</span> {
+        <span class="op">&lt;</span><span class="ident">Blocks</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;&gt;</span>::<span class="ident">get</span>(<span class="kw-2">&amp;</span><span class="ident">plapps_id</span>, <span class="kw-2">&amp;</span><span class="ident">block_number</span>)
     }
 
     <span class="doccomment">/// verifyInclusion method verifies inclusion of message in Double Layer Tree.</span>
@@ -1404,8 +1405,8 @@
         <span class="ident">range</span>: <span class="ident">RangeOf</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>,
         <span class="ident">inclusion_proof</span>: <span class="ident">InclusionProofOf</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>,
         <span class="ident">block_number</span>: <span class="ident">T</span>::<span class="ident">BlockNumber</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">DispatchResultT</span><span class="op">&lt;</span><span class="ident">bool</span><span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="ident">root</span> <span class="op">=</span> <span class="op">&lt;</span><span class="ident">Blocks</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>::<span class="ident">get</span>(<span class="kw-2">&amp;</span><span class="ident">plapps_id</span>, <span class="kw-2">&amp;</span><span class="ident">block_number</span>);
+    ) <span class="op">-&gt;</span> <span class="ident">DispatchResultT</span><span class="op">&lt;</span><span class="ident">bool</span><span class="op">&gt;</span> {
+        <span class="kw">let</span> <span class="ident">root</span> <span class="op">=</span> <span class="op">&lt;</span><span class="ident">Blocks</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;&gt;</span>::<span class="ident">get</span>(<span class="kw-2">&amp;</span><span class="ident">plapps_id</span>, <span class="kw-2">&amp;</span><span class="ident">block_number</span>);
         <span class="self">Self</span>::<span class="ident">verify_inclusion_with_root</span>(<span class="ident">leaf</span>, <span class="ident">token_address</span>, <span class="ident">range</span>, <span class="ident">inclusion_proof</span>, <span class="ident">root</span>)
     }
 
@@ -1415,7 +1416,7 @@
         <span class="ident">range</span>: <span class="ident">RangeOf</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>,
         <span class="ident">inclusion_proof</span>: <span class="ident">InclusionProofOf</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>,
         <span class="ident">root</span>: <span class="ident">T</span>::<span class="ident">Hash</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">DispatchResultT</span><span class="op">&lt;</span><span class="ident">bool</span><span class="op">&gt;</span> {
+    ) <span class="op">-&gt;</span> <span class="ident">DispatchResultT</span><span class="op">&lt;</span><span class="ident">bool</span><span class="op">&gt;</span> {
         <span class="comment">// Calcurate the root of interval tree</span>
         <span class="kw">let</span> (<span class="ident">computed_root</span>, <span class="ident">implicit_end</span>) <span class="op">=</span> <span class="self">Self</span>::<span class="ident">compute_interval_tree_root</span>(
             <span class="kw-2">&amp;</span><span class="ident">leaf</span>,
@@ -1425,8 +1426,8 @@
         )<span class="question-mark">?</span>;
 
         <span class="macro">ensure</span><span class="macro">!</span>(
-            <span class="ident">range</span>.<span class="ident">start</span> <span class="op">&gt;</span><span class="op">=</span> <span class="ident">inclusion_proof</span>.<span class="ident">interval_inclusion_proof</span>.<span class="ident">leaf_index</span>
-                <span class="kw-2">&amp;</span><span class="op">&amp;</span> <span class="ident">range</span>.<span class="ident">end</span> <span class="op">&lt;</span><span class="op">=</span> <span class="ident">implicit_end</span>,
+            <span class="ident">range</span>.<span class="ident">start</span> <span class="op">&gt;=</span> <span class="ident">inclusion_proof</span>.<span class="ident">interval_inclusion_proof</span>.<span class="ident">leaf_index</span>
+                <span class="op">&amp;&amp;</span> <span class="ident">range</span>.<span class="ident">end</span> <span class="op">&lt;=</span> <span class="ident">implicit_end</span>,
             <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>::<span class="ident">RangeMustNotExceedTheImplicitRange</span>,
         );
 
@@ -1439,19 +1440,19 @@
         )<span class="question-mark">?</span>;
 
         <span class="macro">ensure</span><span class="macro">!</span>(
-            <span class="ident">token_address</span> <span class="op">&lt;</span><span class="op">=</span> <span class="ident">implicit_address</span>,
+            <span class="ident">token_address</span> <span class="op">&lt;=</span> <span class="ident">implicit_address</span>,
             <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>::<span class="ident">AddressMustNotExceedTheImplicitAddress</span>,
         );
-        <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="ident">computed_root</span> <span class="op">=</span><span class="op">=</span> <span class="ident">root</span>);
+        <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="ident">computed_root</span> <span class="op">==</span> <span class="ident">root</span>);
     }
 }
 
 <span class="doccomment">/// Private(Helper) Plasma commitment module methods.</span>
 <span class="kw">impl</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Trait</span><span class="op">&gt;</span> <span class="ident">Module</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
     <span class="comment">// Plasma Commitment Parts</span>
-    <span class="kw">fn</span> <span class="ident">ensure_aggregator</span>(<span class="ident">sender</span>: <span class="kw-2">&amp;</span><span class="ident">T</span>::<span class="ident">AccountId</span>, <span class="ident">plapps_id</span>: <span class="kw-2">&amp;</span><span class="ident">T</span>::<span class="ident">AccountId</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">DispatchResult</span> {
+    <span class="kw">fn</span> <span class="ident">ensure_aggregator</span>(<span class="ident">sender</span>: <span class="kw-2">&amp;</span><span class="ident">T</span>::<span class="ident">AccountId</span>, <span class="ident">plapps_id</span>: <span class="kw-2">&amp;</span><span class="ident">T</span>::<span class="ident">AccountId</span>) <span class="op">-&gt;</span> <span class="ident">DispatchResult</span> {
         <span class="macro">ensure</span><span class="macro">!</span>(
-            <span class="ident">sender</span> <span class="op">!</span><span class="op">=</span> <span class="kw-2">&amp;</span><span class="self">Self</span>::<span class="ident">aggregator_address</span>(<span class="ident">plapps_id</span>),
+            <span class="ident">sender</span> <span class="op">!=</span> <span class="kw-2">&amp;</span><span class="self">Self</span>::<span class="ident">aggregator_address</span>(<span class="ident">plapps_id</span>),
             <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>::<span class="ident">IsNotAggregator</span>,
         );
         <span class="prelude-val">Ok</span>(())
@@ -1463,8 +1464,8 @@
         <span class="ident">computed_root</span>: <span class="kw-2">&amp;</span><span class="ident">T</span>::<span class="ident">Hash</span>,
         <span class="ident">computed_start</span>: <span class="kw-2">&amp;</span><span class="ident">BalanceOf</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>,
         <span class="ident">interval_tree_merkle_path</span>: <span class="kw-2">&amp;</span><span class="ident">BalanceOf</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>,
-        <span class="ident">interval_tree_proof</span>: <span class="kw-2">&amp;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">IntervalTreeNodeOf</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">DispatchResultT</span><span class="op">&lt;</span>(<span class="ident">T</span>::<span class="ident">Hash</span>, <span class="ident">BalanceOf</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>)<span class="op">&gt;</span> {
+        <span class="ident">interval_tree_proof</span>: <span class="kw-2">&amp;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">IntervalTreeNodeOf</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;&gt;</span>,
+    ) <span class="op">-&gt;</span> <span class="ident">DispatchResultT</span><span class="op">&lt;</span>(<span class="ident">T</span>::<span class="ident">Hash</span>, <span class="ident">BalanceOf</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>)<span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">first_right_sibling_start</span> <span class="op">=</span> <span class="ident">BalanceOf</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>::<span class="ident">max_value</span>();
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">is_first_right_sibling_start_set</span> <span class="op">=</span> <span class="bool-val">false</span>;
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">ret_computed_root</span>: <span class="ident">T</span>::<span class="ident">Hash</span> <span class="op">=</span> <span class="ident">computed_root</span>.<span class="ident">clone</span>();
@@ -1473,8 +1474,8 @@
             <span class="kw">let</span> <span class="ident">sibling</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">node</span>.<span class="ident">data</span>;
             <span class="kw">let</span> <span class="ident">sibling_start</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">node</span>.<span class="ident">start</span>;
             <span class="kw">let</span> <span class="ident">is_computed_right_sibling</span> <span class="op">=</span>
-                <span class="ident">interval_tree_merkle_path</span>.<span class="ident">clone</span>().<span class="ident">saturated_into</span>::<span class="op">&lt;</span><span class="ident">usize</span><span class="op">&gt;</span>() <span class="op">&gt;</span><span class="op">&gt;</span> <span class="ident">i</span>;
-            <span class="kw">if</span> <span class="ident">is_computed_right_sibling</span> <span class="op">=</span><span class="op">=</span> <span class="number">1</span> {
+                <span class="ident">interval_tree_merkle_path</span>.<span class="ident">clone</span>().<span class="ident">saturated_into</span>::<span class="op">&lt;</span><span class="ident">usize</span><span class="op">&gt;</span>() <span class="op">&gt;&gt;</span> <span class="ident">i</span>;
+            <span class="kw">if</span> <span class="ident">is_computed_right_sibling</span> <span class="op">==</span> <span class="number">1</span> {
                 <span class="ident">ret_computed_root</span> <span class="op">=</span> <span class="self">Self</span>::<span class="ident">get_parent</span>(
                     <span class="ident">sibling</span>,
                     <span class="ident">sibling_start</span>,
@@ -1487,7 +1488,7 @@
                     <span class="ident">is_first_right_sibling_start_set</span> <span class="op">=</span> <span class="bool-val">true</span>;
                 }
                 <span class="macro">ensure</span><span class="macro">!</span>(
-                    <span class="kw-2">&amp;</span><span class="ident">first_right_sibling_start</span> <span class="op">&lt;</span><span class="op">=</span> <span class="ident">sibling_start</span>,
+                    <span class="kw-2">&amp;</span><span class="ident">first_right_sibling_start</span> <span class="op">&lt;=</span> <span class="ident">sibling_start</span>,
                     <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>::<span class="ident">FirstRightMustBeGreaterThanSibling</span>,
                 );
                 <span class="ident">ret_computed_root</span> <span class="op">=</span> <span class="self">Self</span>::<span class="ident">get_parent</span>(
@@ -1509,8 +1510,8 @@
         <span class="ident">computed_root</span>: <span class="kw-2">&amp;</span><span class="ident">T</span>::<span class="ident">Hash</span>,
         <span class="ident">compute_address</span>: <span class="kw-2">&amp;</span><span class="ident">T</span>::<span class="ident">AccountId</span>,
         <span class="ident">address_tree_merkle_path</span>: <span class="kw-2">&amp;</span><span class="ident">BalanceOf</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>,
-        <span class="ident">address_tree_proof</span>: <span class="kw-2">&amp;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">AddressTreeNodeOf</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">DispatchResultT</span><span class="op">&lt;</span>(<span class="ident">T</span>::<span class="ident">Hash</span>, <span class="ident">T</span>::<span class="ident">AccountId</span>)<span class="op">&gt;</span> {
+        <span class="ident">address_tree_proof</span>: <span class="kw-2">&amp;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">AddressTreeNodeOf</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;&gt;</span>,
+    ) <span class="op">-&gt;</span> <span class="ident">DispatchResultT</span><span class="op">&lt;</span>(<span class="ident">T</span>::<span class="ident">Hash</span>, <span class="ident">T</span>::<span class="ident">AccountId</span>)<span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">first_right_sibling_address</span> <span class="op">=</span> <span class="ident">T</span>::<span class="ident">MaximumTokenAddress</span>::<span class="ident">get</span>();
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">is_first_right_sibling_address_set</span> <span class="op">=</span> <span class="bool-val">false</span>;
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">ret_computed_root</span>: <span class="ident">T</span>::<span class="ident">Hash</span> <span class="op">=</span> <span class="ident">computed_root</span>.<span class="ident">clone</span>();
@@ -1519,8 +1520,8 @@
             <span class="kw">let</span> <span class="ident">sibling</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">node</span>.<span class="ident">data</span>;
             <span class="kw">let</span> <span class="ident">sibling_address</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">node</span>.<span class="ident">token_address</span>;
             <span class="kw">let</span> <span class="ident">is_computed_right_sibling</span> <span class="op">=</span>
-                (<span class="ident">address_tree_merkle_path</span>.<span class="ident">clone</span>().<span class="ident">saturated_into</span>::<span class="op">&lt;</span><span class="ident">usize</span><span class="op">&gt;</span>() <span class="op">&gt;</span><span class="op">&gt;</span> <span class="ident">i</span>) <span class="op">&amp;</span> <span class="number">1</span>;
-            <span class="kw">if</span> <span class="ident">is_computed_right_sibling</span> <span class="op">=</span><span class="op">=</span> <span class="number">1</span> {
+                (<span class="ident">address_tree_merkle_path</span>.<span class="ident">clone</span>().<span class="ident">saturated_into</span>::<span class="op">&lt;</span><span class="ident">usize</span><span class="op">&gt;</span>() <span class="op">&gt;&gt;</span> <span class="ident">i</span>) <span class="op">&amp;</span> <span class="number">1</span>;
+            <span class="kw">if</span> <span class="ident">is_computed_right_sibling</span> <span class="op">==</span> <span class="number">1</span> {
                 <span class="ident">ret_computed_root</span> <span class="op">=</span> <span class="self">Self</span>::<span class="ident">get_parent_of_address_tree_node</span>(
                     <span class="ident">sibling</span>,
                     <span class="ident">sibling_address</span>,
@@ -1534,7 +1535,7 @@
                     <span class="ident">is_first_right_sibling_address_set</span> <span class="op">=</span> <span class="bool-val">true</span>;
                 }
                 <span class="macro">ensure</span><span class="macro">!</span>(
-                    <span class="kw-2">&amp;</span><span class="ident">first_right_sibling_address</span> <span class="op">&lt;</span><span class="op">=</span> <span class="ident">sibling_address</span>,
+                    <span class="kw-2">&amp;</span><span class="ident">first_right_sibling_address</span> <span class="op">&lt;=</span> <span class="ident">sibling_address</span>,
                     <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>::<span class="ident">FirstRightMustBeGreaterThanSibling</span>,
                 );
                 <span class="ident">ret_computed_root</span> <span class="op">=</span> <span class="self">Self</span>::<span class="ident">get_parent_of_address_tree_node</span>(
@@ -1553,9 +1554,9 @@
         <span class="ident">left_start</span>: <span class="kw-2">&amp;</span><span class="ident">BalanceOf</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>,
         <span class="ident">right</span>: <span class="kw-2">&amp;</span><span class="ident">T</span>::<span class="ident">Hash</span>,
         <span class="ident">right_start</span>: <span class="kw-2">&amp;</span><span class="ident">BalanceOf</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">DispatchResultT</span><span class="op">&lt;</span><span class="ident">T</span>::<span class="ident">Hash</span><span class="op">&gt;</span> {
+    ) <span class="op">-&gt;</span> <span class="ident">DispatchResultT</span><span class="op">&lt;</span><span class="ident">T</span>::<span class="ident">Hash</span><span class="op">&gt;</span> {
         <span class="macro">ensure</span><span class="macro">!</span>(
-            <span class="ident">right_start</span> <span class="op">&gt;</span><span class="op">=</span> <span class="ident">left_start</span>,
+            <span class="ident">right_start</span> <span class="op">&gt;=</span> <span class="ident">left_start</span>,
             <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>::<span class="ident">LeftMustBeLessThanRight</span>,
         );
         <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="ident">T</span>::<span class="ident">PlasmaHashing</span>::<span class="ident">hash_of</span>(<span class="kw-2">&amp;</span>(
@@ -1572,14 +1573,14 @@
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">bare_extend_deposited_ranges</span>(<span class="ident">plapps_id</span>: <span class="kw-2">&amp;</span><span class="ident">T</span>::<span class="ident">AccountId</span>, <span class="ident">amount</span>: <span class="ident">BalanceOf</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>) {
         <span class="kw">let</span> <span class="ident">total_deposited</span> <span class="op">=</span> <span class="self">Self</span>::<span class="ident">total_deposited</span>(<span class="ident">plapps_id</span>);
         <span class="kw">let</span> <span class="ident">old_range</span> <span class="op">=</span> <span class="self">Self</span>::<span class="ident">deposited_ranges</span>(<span class="ident">plapps_id</span>, <span class="kw-2">&amp;</span><span class="ident">total_deposited</span>);
-        <span class="kw">let</span> <span class="ident">new_start</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">old_range</span>.<span class="ident">start</span> <span class="op">=</span><span class="op">=</span> <span class="ident">BalanceOf</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>::<span class="ident">zero</span>()
-            <span class="kw-2">&amp;</span><span class="op">&amp;</span> <span class="ident">old_range</span>.<span class="ident">end</span> <span class="op">=</span><span class="op">=</span> <span class="ident">BalanceOf</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>::<span class="ident">zero</span>()
+        <span class="kw">let</span> <span class="ident">new_start</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">old_range</span>.<span class="ident">start</span> <span class="op">==</span> <span class="ident">BalanceOf</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>::<span class="ident">zero</span>()
+            <span class="op">&amp;&amp;</span> <span class="ident">old_range</span>.<span class="ident">end</span> <span class="op">==</span> <span class="ident">BalanceOf</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>::<span class="ident">zero</span>()
         {
             <span class="comment">// Creat a new range when the rightmost range has been removed</span>
             <span class="ident">total_deposited</span>
         } <span class="kw">else</span> {
             <span class="comment">// Delete the old range and make a new one with the total length</span>
-            <span class="op">&lt;</span><span class="ident">DepositedRanges</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>::<span class="ident">remove</span>(<span class="ident">plapps_id</span>, <span class="ident">old_range</span>.<span class="ident">end</span>);
+            <span class="op">&lt;</span><span class="ident">DepositedRanges</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;&gt;</span>::<span class="ident">remove</span>(<span class="ident">plapps_id</span>, <span class="ident">old_range</span>.<span class="ident">end</span>);
             <span class="ident">old_range</span>.<span class="ident">start</span>
         };
 
@@ -1588,8 +1589,8 @@
             <span class="ident">start</span>: <span class="ident">new_start</span>,
             <span class="ident">end</span>: <span class="ident">new_end</span>,
         };
-        <span class="op">&lt;</span><span class="ident">DepositedRanges</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>::<span class="ident">insert</span>(<span class="ident">plapps_id</span>, <span class="kw-2">&amp;</span><span class="ident">new_end</span>, <span class="ident">new_range</span>.<span class="ident">clone</span>());
-        <span class="op">&lt;</span><span class="ident">TotalDeposited</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>::<span class="ident">insert</span>(<span class="ident">plapps_id</span>, <span class="ident">total_deposited</span>.<span class="ident">saturating_add</span>(<span class="ident">amount</span>));
+        <span class="op">&lt;</span><span class="ident">DepositedRanges</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;&gt;</span>::<span class="ident">insert</span>(<span class="ident">plapps_id</span>, <span class="kw-2">&amp;</span><span class="ident">new_end</span>, <span class="ident">new_range</span>.<span class="ident">clone</span>());
+        <span class="op">&lt;</span><span class="ident">TotalDeposited</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;&gt;</span>::<span class="ident">insert</span>(<span class="ident">plapps_id</span>, <span class="ident">total_deposited</span>.<span class="ident">saturating_add</span>(<span class="ident">amount</span>));
         <span class="self">Self</span>::<span class="ident">deposit_event</span>(<span class="ident">RawEvent</span>::<span class="ident">DepositedRangeExtended</span>(
             <span class="ident">plapps_id</span>.<span class="ident">clone</span>(),
             <span class="ident">new_range</span>,
@@ -1600,7 +1601,7 @@
         <span class="ident">plapps_id</span>: <span class="kw-2">&amp;</span><span class="ident">T</span>::<span class="ident">AccountId</span>,
         <span class="ident">range</span>: <span class="kw-2">&amp;</span><span class="ident">RangeOf</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>,
         <span class="ident">deposited_range_id</span>: <span class="kw-2">&amp;</span><span class="ident">BalanceOf</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">DispatchResult</span> {
+    ) <span class="op">-&gt;</span> <span class="ident">DispatchResult</span> {
         <span class="kw">let</span> <span class="ident">deposited_ranges</span> <span class="op">=</span> <span class="self">Self</span>::<span class="ident">deposited_ranges</span>(<span class="ident">plapps_id</span>, <span class="ident">deposited_range_id</span>);
         <span class="macro">ensure</span><span class="macro">!</span>(
             <span class="self">Self</span>::<span class="ident">is_subrange</span>(<span class="ident">range</span>, <span class="kw-2">&amp;</span><span class="ident">deposited_ranges</span>),
@@ -1614,22 +1615,22 @@
          * There are nothing todo for _range.start is equal to encompasingRange.start.
          */</span>
         <span class="comment">// Check start of range</span>
-        <span class="kw">if</span> <span class="ident">range</span>.<span class="ident">start</span> <span class="op">!</span><span class="op">=</span> <span class="ident">deposited_ranges</span>.<span class="ident">start</span> {
+        <span class="kw">if</span> <span class="ident">range</span>.<span class="ident">start</span> <span class="op">!=</span> <span class="ident">deposited_ranges</span>.<span class="ident">start</span> {
             <span class="kw">let</span> <span class="ident">left_split_range</span> <span class="op">=</span> <span class="ident">Range</span> {
                 <span class="ident">start</span>: <span class="ident">deposited_ranges</span>.<span class="ident">start</span>,
                 <span class="ident">end</span>: <span class="ident">range</span>.<span class="ident">start</span>,
             };
-            <span class="op">&lt;</span><span class="ident">DepositedRanges</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>::<span class="ident">insert</span>(<span class="ident">plapps_id</span>, <span class="ident">left_split_range</span>.<span class="ident">end</span>, <span class="ident">left_split_range</span>);
+            <span class="op">&lt;</span><span class="ident">DepositedRanges</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;&gt;</span>::<span class="ident">insert</span>(<span class="ident">plapps_id</span>, <span class="ident">left_split_range</span>.<span class="ident">end</span>, <span class="ident">left_split_range</span>);
         }
         <span class="comment">// Check end of range</span>
-        <span class="kw">if</span> <span class="ident">range</span>.<span class="ident">end</span> <span class="op">=</span><span class="op">=</span> <span class="ident">deposited_ranges</span>.<span class="ident">end</span> {
+        <span class="kw">if</span> <span class="ident">range</span>.<span class="ident">end</span> <span class="op">==</span> <span class="ident">deposited_ranges</span>.<span class="ident">end</span> {
             <span class="comment">/*
              * Deposited range Id is end value of the range, we must remove the range from depositedRanges
              *     when range.end is changed.
              */</span>
-            <span class="op">&lt;</span><span class="ident">DepositedRanges</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>::<span class="ident">remove</span>(<span class="ident">plapps_id</span>, <span class="kw-2">&amp;</span><span class="ident">deposited_ranges</span>.<span class="ident">end</span>);
+            <span class="op">&lt;</span><span class="ident">DepositedRanges</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;&gt;</span>::<span class="ident">remove</span>(<span class="ident">plapps_id</span>, <span class="kw-2">&amp;</span><span class="ident">deposited_ranges</span>.<span class="ident">end</span>);
         } <span class="kw">else</span> {
-            <span class="op">&lt;</span><span class="ident">DepositedRanges</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>::<span class="ident">insert</span>(
+            <span class="op">&lt;</span><span class="ident">DepositedRanges</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;&gt;</span>::<span class="ident">insert</span>(
                 <span class="ident">plapps_id</span>,
                 <span class="kw-2">&amp;</span><span class="ident">deposited_ranges</span>.<span class="ident">end</span>,
                 <span class="ident">Range</span> {
@@ -1661,7 +1662,7 @@
         <span class="ident">plapps_id</span>: <span class="kw-2">&amp;</span><span class="ident">T</span>::<span class="ident">AccountId</span>,
         <span class="ident">exit_property</span>: <span class="kw-2">&amp;</span><span class="ident">PropertyOf</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>,
         <span class="ident">deposited_range_id</span>: <span class="kw-2">&amp;</span><span class="ident">BalanceOf</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">DispatchResultT</span><span class="op">&lt;</span><span class="ident">StateUpdateOf</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+    ) <span class="op">-&gt;</span> <span class="ident">DispatchResultT</span><span class="op">&lt;</span><span class="ident">StateUpdateOf</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;&gt;</span> {
         <span class="kw">let</span> <span class="ident">state_update</span> <span class="op">=</span> <span class="self">Self</span>::<span class="ident">verify_exit_property</span>(<span class="ident">plapps_id</span>, <span class="ident">exit_property</span>)<span class="question-mark">?</span>;
         <span class="kw">let</span> <span class="ident">exit_id</span> <span class="op">=</span> <span class="self">Self</span>::<span class="ident">get_exit_id</span>(<span class="ident">exit_property</span>);
         <span class="comment">// get payout contract address</span>
@@ -1669,12 +1670,12 @@
 
         <span class="comment">// Check that we are authorized to finalize this exit</span>
         <span class="macro">ensure</span><span class="macro">!</span>(
-            <span class="op">&lt;</span><span class="ident">pallet_ovm</span>::<span class="ident">Module</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>::<span class="ident">is_decided</span>(<span class="ident">exit_property</span>) <span class="op">!</span><span class="op">=</span> <span class="ident">Decision</span>::<span class="ident">True</span>,
+            <span class="op">&lt;</span><span class="ident">pallet_ovm</span>::<span class="ident">Module</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;&gt;</span>::<span class="ident">is_decided</span>(<span class="ident">exit_property</span>) <span class="op">!=</span> <span class="ident">Decision</span>::<span class="ident">True</span>,
             <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>::<span class="ident">ExitMustBeDecided</span>,
         );
 
         <span class="macro">ensure</span><span class="macro">!</span>(
-            <span class="kw-2">&amp;</span><span class="ident">state_update</span>.<span class="ident">deposit_contract_address</span> <span class="op">=</span><span class="op">=</span> <span class="ident">plapps_id</span>,
+            <span class="kw-2">&amp;</span><span class="ident">state_update</span>.<span class="ident">deposit_contract_address</span> <span class="op">==</span> <span class="ident">plapps_id</span>,
             <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>::<span class="ident">DepositContractAddressMustBePlappsId</span>,
         );
 
@@ -1701,27 +1702,27 @@
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">verify_exit_property</span>(
         <span class="ident">plapps_id</span>: <span class="kw-2">&amp;</span><span class="ident">T</span>::<span class="ident">AccountId</span>,
         <span class="ident">exit_property</span>: <span class="kw-2">&amp;</span><span class="ident">PropertyOf</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">DispatchResultT</span><span class="op">&lt;</span><span class="ident">StateUpdateOf</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span> {
-        <span class="kw">if</span> <span class="ident">exit_property</span>.<span class="ident">predicate_address</span> <span class="op">=</span><span class="op">=</span> <span class="self">Self</span>::<span class="ident">exit_predicate</span>(<span class="ident">plapps_id</span>) {
-            <span class="kw">let</span> <span class="ident">exit</span>: <span class="ident">ExitOf</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> <span class="op">=</span> <span class="op">&lt;</span><span class="ident">Deserializer</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>::<span class="ident">deserialize_exit</span>(<span class="ident">exit_property</span>)<span class="question-mark">?</span>;
+    ) <span class="op">-&gt;</span> <span class="ident">DispatchResultT</span><span class="op">&lt;</span><span class="ident">StateUpdateOf</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;&gt;</span> {
+        <span class="kw">if</span> <span class="ident">exit_property</span>.<span class="ident">predicate_address</span> <span class="op">==</span> <span class="self">Self</span>::<span class="ident">exit_predicate</span>(<span class="ident">plapps_id</span>) {
+            <span class="kw">let</span> <span class="ident">exit</span>: <span class="ident">ExitOf</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> <span class="op">=</span> <span class="op">&lt;</span><span class="ident">Deserializer</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;&gt;</span>::<span class="ident">deserialize_exit</span>(<span class="ident">exit_property</span>)<span class="question-mark">?</span>;
             <span class="comment">// TODO: check inclusion proof</span>
             <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="ident">exit</span>.<span class="ident">state_update</span>);
-        } <span class="kw">else</span> <span class="kw">if</span> <span class="ident">exit_property</span>.<span class="ident">predicate_address</span> <span class="op">=</span><span class="op">=</span> <span class="self">Self</span>::<span class="ident">exit_deposit_predicate</span>(<span class="ident">plapps_id</span>) {
-            <span class="kw">let</span> <span class="ident">exit_deposit</span> <span class="op">=</span> <span class="op">&lt;</span><span class="ident">Deserializer</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>::<span class="ident">deserialize_exit_deposit</span>(<span class="ident">exit_property</span>)<span class="question-mark">?</span>;
+        } <span class="kw">else</span> <span class="kw">if</span> <span class="ident">exit_property</span>.<span class="ident">predicate_address</span> <span class="op">==</span> <span class="self">Self</span>::<span class="ident">exit_deposit_predicate</span>(<span class="ident">plapps_id</span>) {
+            <span class="kw">let</span> <span class="ident">exit_deposit</span> <span class="op">=</span> <span class="op">&lt;</span><span class="ident">Deserializer</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;&gt;</span>::<span class="ident">deserialize_exit_deposit</span>(<span class="ident">exit_property</span>)<span class="question-mark">?</span>;
             <span class="kw">let</span> <span class="ident">checkpoint</span> <span class="op">=</span> <span class="ident">exit_deposit</span>.<span class="ident">checkpoint</span>;
             <span class="kw">let</span> <span class="ident">state_update</span> <span class="op">=</span>
-                <span class="op">&lt;</span><span class="ident">Deserializer</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>::<span class="ident">deserialize_state_update</span>(<span class="kw-2">&amp;</span><span class="ident">checkpoint</span>.<span class="ident">state_update</span>)<span class="question-mark">?</span>;
+                <span class="op">&lt;</span><span class="ident">Deserializer</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;&gt;</span>::<span class="ident">deserialize_state_update</span>(<span class="kw-2">&amp;</span><span class="ident">checkpoint</span>.<span class="ident">state_update</span>)<span class="question-mark">?</span>;
             <span class="macro">ensure</span><span class="macro">!</span>(
                 <span class="self">Self</span>::<span class="ident">checkpoints</span>(<span class="ident">plapps_id</span>, <span class="self">Self</span>::<span class="ident">get_checkpoint_id</span>(<span class="kw-2">&amp;</span><span class="ident">checkpoint</span>)),
                 <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>::<span class="ident">CheckpointMustBeFinalized</span>,
             );
             <span class="macro">ensure</span><span class="macro">!</span>(
                 <span class="ident">state_update</span>.<span class="ident">deposit_contract_address</span>
-                    <span class="op">=</span><span class="op">=</span> <span class="ident">exit_deposit</span>.<span class="ident">state_update</span>.<span class="ident">deposit_contract_address</span>,
+                    <span class="op">==</span> <span class="ident">exit_deposit</span>.<span class="ident">state_update</span>.<span class="ident">deposit_contract_address</span>,
                 <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>::<span class="ident">DepositContractAddressMustBeSame</span>,
             );
             <span class="macro">ensure</span><span class="macro">!</span>(
-                <span class="ident">state_update</span>.<span class="ident">block_number</span> <span class="op">=</span><span class="op">=</span> <span class="ident">exit_deposit</span>.<span class="ident">state_update</span>.<span class="ident">block_number</span>,
+                <span class="ident">state_update</span>.<span class="ident">block_number</span> <span class="op">==</span> <span class="ident">exit_deposit</span>.<span class="ident">state_update</span>.<span class="ident">block_number</span>,
                 <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>::<span class="ident">BlockNumberMustBeSame</span>,
             );
             <span class="macro">ensure</span><span class="macro">!</span>(
@@ -1743,24 +1744,24 @@
         <span class="ident">left_address</span>: <span class="kw-2">&amp;</span><span class="ident">T</span>::<span class="ident">AccountId</span>,
         <span class="ident">right</span>: <span class="kw-2">&amp;</span><span class="ident">T</span>::<span class="ident">Hash</span>,
         <span class="ident">right_address</span>: <span class="kw-2">&amp;</span><span class="ident">T</span>::<span class="ident">AccountId</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">T</span>::<span class="ident">Hash</span> {
+    ) <span class="op">-&gt;</span> <span class="ident">T</span>::<span class="ident">Hash</span> {
         <span class="ident">T</span>::<span class="ident">PlasmaHashing</span>::<span class="ident">hash_of</span>(<span class="kw-2">&amp;</span>(<span class="ident">left</span>, <span class="ident">left_address</span>, <span class="ident">right</span>, <span class="ident">right_address</span>))
     }
 
-    <span class="kw">fn</span> <span class="ident">get_latest_plasma_block_number</span>(<span class="ident">plapps_id</span>: <span class="kw-2">&amp;</span><span class="ident">T</span>::<span class="ident">AccountId</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">T</span>::<span class="ident">BlockNumber</span> {
+    <span class="kw">fn</span> <span class="ident">get_latest_plasma_block_number</span>(<span class="ident">plapps_id</span>: <span class="kw-2">&amp;</span><span class="ident">T</span>::<span class="ident">AccountId</span>) <span class="op">-&gt;</span> <span class="ident">T</span>::<span class="ident">BlockNumber</span> {
         <span class="kw">return</span> <span class="self">Self</span>::<span class="ident">current_block</span>(<span class="kw-2">&amp;</span><span class="ident">plapps_id</span>);
     }
 
-    <span class="kw">fn</span> <span class="ident">get_checkpoint_id</span>(<span class="ident">checkpoint</span>: <span class="kw-2">&amp;</span><span class="ident">CheckpointOf</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">T</span>::<span class="ident">Hash</span> {
+    <span class="kw">fn</span> <span class="ident">get_checkpoint_id</span>(<span class="ident">checkpoint</span>: <span class="kw-2">&amp;</span><span class="ident">CheckpointOf</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>) <span class="op">-&gt;</span> <span class="ident">T</span>::<span class="ident">Hash</span> {
         <span class="op">&lt;</span><span class="ident">T</span> <span class="kw">as</span> <span class="ident">system</span>::<span class="ident">Trait</span><span class="op">&gt;</span>::<span class="ident">Hashing</span>::<span class="ident">hash_of</span>(<span class="ident">checkpoint</span>)
     }
 
-    <span class="kw">fn</span> <span class="ident">get_exit_id</span>(<span class="ident">exit</span>: <span class="kw-2">&amp;</span><span class="ident">PropertyOf</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">T</span>::<span class="ident">Hash</span> {
+    <span class="kw">fn</span> <span class="ident">get_exit_id</span>(<span class="ident">exit</span>: <span class="kw-2">&amp;</span><span class="ident">PropertyOf</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>) <span class="op">-&gt;</span> <span class="ident">T</span>::<span class="ident">Hash</span> {
         <span class="op">&lt;</span><span class="ident">T</span> <span class="kw">as</span> <span class="ident">system</span>::<span class="ident">Trait</span><span class="op">&gt;</span>::<span class="ident">Hashing</span>::<span class="ident">hash_of</span>(<span class="ident">exit</span>)
     }
 
-    <span class="kw">fn</span> <span class="ident">is_subrange</span>(<span class="ident">subrange</span>: <span class="kw-2">&amp;</span><span class="ident">RangeOf</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>, <span class="ident">surrounding_range</span>: <span class="kw-2">&amp;</span><span class="ident">RangeOf</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">bool</span> {
-        <span class="ident">subrange</span>.<span class="ident">start</span> <span class="op">&gt;</span><span class="op">=</span> <span class="ident">surrounding_range</span>.<span class="ident">start</span> <span class="kw-2">&amp;</span><span class="op">&amp;</span> <span class="ident">subrange</span>.<span class="ident">end</span> <span class="op">&lt;</span><span class="op">=</span> <span class="ident">surrounding_range</span>.<span class="ident">end</span>
+    <span class="kw">fn</span> <span class="ident">is_subrange</span>(<span class="ident">subrange</span>: <span class="kw-2">&amp;</span><span class="ident">RangeOf</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>, <span class="ident">surrounding_range</span>: <span class="kw-2">&amp;</span><span class="ident">RangeOf</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>) <span class="op">-&gt;</span> <span class="ident">bool</span> {
+        <span class="ident">subrange</span>.<span class="ident">start</span> <span class="op">&gt;=</span> <span class="ident">surrounding_range</span>.<span class="ident">start</span> <span class="op">&amp;&amp;</span> <span class="ident">subrange</span>.<span class="ident">end</span> <span class="op">&lt;=</span> <span class="ident">surrounding_range</span>.<span class="ident">end</span>
     }
 
     <span class="kw">fn</span> <span class="ident">generate_plapps_hash</span>(
@@ -1769,7 +1770,7 @@
         <span class="ident">state_update_predicate</span>: <span class="kw-2">&amp;</span><span class="ident">T</span>::<span class="ident">AccountId</span>,
         <span class="ident">exit_predicate</span>: <span class="kw-2">&amp;</span><span class="ident">T</span>::<span class="ident">AccountId</span>,
         <span class="ident">exit_deposit_predicate</span>: <span class="kw-2">&amp;</span><span class="ident">T</span>::<span class="ident">AccountId</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">T</span>::<span class="ident">Hash</span> {
+    ) <span class="op">-&gt;</span> <span class="ident">T</span>::<span class="ident">Hash</span> {
         <span class="ident">T</span>::<span class="ident">Hashing</span>::<span class="ident">hash_of</span>(<span class="kw-2">&amp;</span>(
             <span class="ident">T</span>::<span class="ident">Hashing</span>::<span class="ident">hash_of</span>(<span class="kw-2">&amp;</span><span class="ident">aggregator_id</span>),
             <span class="ident">T</span>::<span class="ident">Hashing</span>::<span class="ident">hash_of</span>(<span class="kw-2">&amp;</span><span class="ident">erc20</span>),

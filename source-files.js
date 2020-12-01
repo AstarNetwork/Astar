@@ -3,6 +3,7 @@ sourcesIndex["lockdrop_oracle"] = {"name":"","files":["chainlink.rs","cli.rs","e
 sourcesIndex["ovmi"] = {"name":"","dirs":[{"name":"predicates","files":["and.rs","equal.rs","executable.rs","for_all.rs","is_contained.rs","is_less.rs","is_stored.rs","is_valid_signature.rs","mod.rs","not.rs","or.rs","there_exists.rs","verify_inclusion.rs"]},{"name":"prepare","files":["mod.rs","serializable_predicates.rs"]}],"files":["compiled_predicates.rs","executor.rs","lib.rs"]};
 sourcesIndex["ovmi_cli"] = {"name":"","files":["main.rs"]};
 sourcesIndex["pallet_contract_operator"] = {"name":"","files":["lib.rs","parameters.rs"]};
+sourcesIndex["pallet_custom_signatures"] = {"name":"","files":["ethereum.rs","lib.rs"]};
 sourcesIndex["pallet_dapps_staking"] = {"name":"","files":["lib.rs","log.rs","parameters.rs","rewards.rs"]};
 sourcesIndex["pallet_operator_trading"] = {"name":"","files":["lib.rs"]};
 sourcesIndex["pallet_ovm"] = {"name":"","dirs":[{"name":"predicate","files":["call.rs","code_cache.rs","ext.rs","mod.rs","prepare.rs"]}],"files":["lib.rs","traits.rs"]};

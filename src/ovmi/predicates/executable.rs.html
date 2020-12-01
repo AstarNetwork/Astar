@@ -1,4 +1,5 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source to the Rust file `ovmi/lib/src/predicates/executable.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>executable.rs.html -- source</title><link rel="stylesheet" type="text/css" href="../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../dark.css"><link rel="stylesheet" type="text/css" href="../../../light.css" id="themeStyle"><script src="../../../storage.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="shortcut icon" href="../../../favicon.ico"><style type="text/css">#crate-search{background-image:url("../../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../../ovmi/index.html'><div class='logo-container'><img src='../../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!"><img src="../../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices"></div></div><script src="../../../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><a id="settings-menu" href="../../../settings.html"><img src="../../../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1">  1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source to the Rust file `ovmi/lib/src/predicates/executable.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>executable.rs.html -- source</title><link rel="stylesheet" type="text/css" href="../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../light.css"  id="themeStyle"><link rel="stylesheet" type="text/css" href="../../../dark.css" disabled ><link rel="stylesheet" type="text/css" href="../../../ayu.css" disabled ><script src="../../../storage.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="shortcut icon" href="../../../favicon.ico"><style type="text/css">#crate-search{background-image:url("../../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../../ovmi/index.html'><div class='logo-container rust-logo'><img src='../../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!"><img src="../../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices"></div></div><script src="../../../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><span class="help-button">?</span>
+                <a id="settings-menu" href="../../../settings.html"><img src="../../../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1">  1</span>
 <span id="2">  2</span>
 <span id="3">  3</span>
 <span id="4">  4</span>
@@ -882,24 +883,24 @@
     <span class="kw">pub</span> <span class="ident">payout</span>: <span class="ident">AddressOf</span><span class="op">&lt;</span><span class="ident">Ext</span><span class="op">&gt;</span>,
     <span class="kw">pub</span> <span class="ident">code</span>: <span class="ident">CompiledPredicate</span>,
     <span class="kw">pub</span> <span class="ident">constants</span>: <span class="ident">BTreeMap</span><span class="op">&lt;</span><span class="ident">HashOf</span><span class="op">&lt;</span><span class="ident">Ext</span><span class="op">&gt;</span>, <span class="ident">VarType</span><span class="op">&gt;</span>,
-    <span class="kw">pub</span> <span class="ident">address_inputs</span>: <span class="ident">BTreeMap</span><span class="op">&lt;</span><span class="ident">HashOf</span><span class="op">&lt;</span><span class="ident">Ext</span><span class="op">&gt;</span>, <span class="ident">AddressOf</span><span class="op">&lt;</span><span class="ident">Ext</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-    <span class="kw">pub</span> <span class="ident">bytes_inputs</span>: <span class="ident">BTreeMap</span><span class="op">&lt;</span><span class="ident">HashOf</span><span class="op">&lt;</span><span class="ident">Ext</span><span class="op">&gt;</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+    <span class="kw">pub</span> <span class="ident">address_inputs</span>: <span class="ident">BTreeMap</span><span class="op">&lt;</span><span class="ident">HashOf</span><span class="op">&lt;</span><span class="ident">Ext</span><span class="op">&gt;</span>, <span class="ident">AddressOf</span><span class="op">&lt;</span><span class="ident">Ext</span><span class="op">&gt;&gt;</span>,
+    <span class="kw">pub</span> <span class="ident">bytes_inputs</span>: <span class="ident">BTreeMap</span><span class="op">&lt;</span><span class="ident">HashOf</span><span class="op">&lt;</span><span class="ident">Ext</span><span class="op">&gt;</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;&gt;</span>,
 }
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">Ext</span>: <span class="ident">ExternalCall</span><span class="op">&gt;</span> <span class="ident">CompiledPredicateInterface</span><span class="op">&lt;</span><span class="ident">AddressOf</span><span class="op">&lt;</span><span class="ident">Ext</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">CompiledExecutable</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span>, <span class="ident">Ext</span><span class="op">&gt;</span> {
-    <span class="kw">fn</span> <span class="ident">payout_contract_address</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">AddressOf</span><span class="op">&lt;</span><span class="ident">Ext</span><span class="op">&gt;</span> {
+<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">Ext</span>: <span class="ident">ExternalCall</span><span class="op">&gt;</span> <span class="ident">CompiledPredicateInterface</span><span class="op">&lt;</span><span class="ident">AddressOf</span><span class="op">&lt;</span><span class="ident">Ext</span><span class="op">&gt;&gt;</span> <span class="kw">for</span> <span class="ident">CompiledExecutable</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span>, <span class="ident">Ext</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">payout_contract_address</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-&gt;</span> <span class="ident">AddressOf</span><span class="op">&lt;</span><span class="ident">Ext</span><span class="op">&gt;</span> {
         <span class="self">self</span>.<span class="ident">payout</span>.<span class="ident">clone</span>()
     }
 
     <span class="doccomment">/// @dev Validates a child node of the property in game tree.</span>
     <span class="kw">fn</span> <span class="ident">is_valid_challenge</span>(
         <span class="kw-2">&amp;</span><span class="self">self</span>,
-        <span class="ident">inputs</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-        <span class="ident">challenge_inputs</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-        <span class="ident">challenge</span>: <span class="ident">Property</span><span class="op">&lt;</span><span class="ident">AddressOf</span><span class="op">&lt;</span><span class="ident">Ext</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">ExecResult</span><span class="op">&lt;</span><span class="ident">AddressOf</span><span class="op">&lt;</span><span class="ident">Ext</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+        <span class="ident">inputs</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;&gt;</span>,
+        <span class="ident">challenge_inputs</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;&gt;</span>,
+        <span class="ident">challenge</span>: <span class="ident">Property</span><span class="op">&lt;</span><span class="ident">AddressOf</span><span class="op">&lt;</span><span class="ident">Ext</span><span class="op">&gt;&gt;</span>,
+    ) <span class="op">-&gt;</span> <span class="ident">ExecResult</span><span class="op">&lt;</span><span class="ident">AddressOf</span><span class="op">&lt;</span><span class="ident">Ext</span><span class="op">&gt;&gt;</span> {
         <span class="macro">require_with_message</span><span class="macro">!</span>(
-            <span class="ident">Ext</span>::<span class="ident">hash_of</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">get_child</span>(<span class="ident">inputs</span>, <span class="ident">challenge_inputs</span>)<span class="question-mark">?</span>) <span class="op">=</span><span class="op">=</span> <span class="ident">Ext</span>::<span class="ident">hash_of</span>(<span class="kw-2">&amp;</span><span class="ident">challenge</span>),
+            <span class="ident">Ext</span>::<span class="ident">hash_of</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">get_child</span>(<span class="ident">inputs</span>, <span class="ident">challenge_inputs</span>)<span class="question-mark">?</span>) <span class="op">==</span> <span class="ident">Ext</span>::<span class="ident">hash_of</span>(<span class="kw-2">&amp;</span><span class="ident">challenge</span>),
             <span class="string">&quot;_challenge must be valud child of game tree&quot;</span>
         );
         <span class="prelude-val">Ok</span>(<span class="bool-val">true</span>)
@@ -908,9 +909,9 @@
     <span class="doccomment">/// @dev get valid child property of game tree with challenge_inputs</span>
     <span class="kw">fn</span> <span class="ident">get_child</span>(
         <span class="kw-2">&amp;</span><span class="self">self</span>,
-        <span class="ident">inputs</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-        <span class="ident">challenge_input</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">ExecResultTOf</span><span class="op">&lt;</span><span class="ident">Property</span><span class="op">&lt;</span><span class="ident">AddressOf</span><span class="op">&lt;</span><span class="ident">Ext</span><span class="op">&gt;</span><span class="op">&gt;</span>, <span class="ident">Ext</span><span class="op">&gt;</span> {
+        <span class="ident">inputs</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;&gt;</span>,
+        <span class="ident">challenge_input</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;&gt;</span>,
+    ) <span class="op">-&gt;</span> <span class="ident">ExecResultTOf</span><span class="op">&lt;</span><span class="ident">Property</span><span class="op">&lt;</span><span class="ident">AddressOf</span><span class="op">&lt;</span><span class="ident">Ext</span><span class="op">&gt;&gt;</span>, <span class="ident">Ext</span><span class="op">&gt;</span> {
         <span class="macro">require</span><span class="macro">!</span>(<span class="ident">inputs</span>.<span class="ident">len</span>() <span class="op">&gt;</span> <span class="number">1</span>);
         <span class="kw">if</span> <span class="ident">Ext</span>::<span class="ident">is_label</span>(<span class="kw-2">&amp;</span><span class="ident">inputs</span>[<span class="number">0</span>]) {
             <span class="kw">let</span> <span class="ident">intermediate</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">resolve_intermediate</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">code</span>.<span class="ident">entry_point</span>)<span class="question-mark">?</span>;
@@ -923,7 +924,7 @@
         <span class="kw">return</span> <span class="self">self</span>.<span class="ident">get_child_intermediate</span>(<span class="ident">intermediate</span>, <span class="kw-2">&amp;</span><span class="ident">sub_inputs</span>, <span class="kw-2">&amp;</span><span class="ident">challenge_input</span>);
     }
 
-    <span class="kw">fn</span> <span class="ident">decide</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">inputs</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span><span class="op">&gt;</span>, <span class="ident">witness</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">ExecResult</span><span class="op">&lt;</span><span class="ident">AddressOf</span><span class="op">&lt;</span><span class="ident">Ext</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">decide</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">inputs</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;&gt;</span>, <span class="ident">witness</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;&gt;</span>) <span class="op">-&gt;</span> <span class="ident">ExecResult</span><span class="op">&lt;</span><span class="ident">AddressOf</span><span class="op">&lt;</span><span class="ident">Ext</span><span class="op">&gt;&gt;</span> {
         <span class="comment">// println!(&quot;decide inputs: {:?}&quot;, inputs);</span>
         <span class="comment">// println!(&quot;decide witness:{:?}&quot;, witness);</span>
         <span class="kw">if</span> <span class="op">!</span><span class="ident">Ext</span>::<span class="ident">is_label</span>(<span class="kw-2">&amp;</span><span class="ident">inputs</span>[<span class="number">0</span>]) {
@@ -937,17 +938,17 @@
 
     <span class="kw">fn</span> <span class="ident">decide_true</span>(
         <span class="kw-2">&amp;</span><span class="self">self</span>,
-        <span class="ident">inputs</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-        <span class="ident">witness</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">ExecResult</span><span class="op">&lt;</span><span class="ident">AddressOf</span><span class="op">&lt;</span><span class="ident">Ext</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+        <span class="ident">inputs</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;&gt;</span>,
+        <span class="ident">witness</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;&gt;</span>,
+    ) <span class="op">-&gt;</span> <span class="ident">ExecResult</span><span class="op">&lt;</span><span class="ident">AddressOf</span><span class="op">&lt;</span><span class="ident">Ext</span><span class="op">&gt;&gt;</span> {
         <span class="self">self</span>.<span class="ident">decide</span>(<span class="ident">inputs</span>, <span class="ident">witness</span>)
     }
 
     <span class="kw">fn</span> <span class="ident">decide_with_witness</span>(
         <span class="kw-2">&amp;</span><span class="self">self</span>,
-        <span class="ident">inputs</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-        <span class="ident">witness</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">ExecResult</span><span class="op">&lt;</span><span class="ident">AddressOf</span><span class="op">&lt;</span><span class="ident">Ext</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+        <span class="ident">inputs</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;&gt;</span>,
+        <span class="ident">witness</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;&gt;</span>,
+    ) <span class="op">-&gt;</span> <span class="ident">ExecResult</span><span class="op">&lt;</span><span class="ident">AddressOf</span><span class="op">&lt;</span><span class="ident">Ext</span><span class="op">&gt;&gt;</span> {
         <span class="kw">let</span> <span class="ident">result</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">decide</span>(<span class="ident">inputs</span>.<span class="ident">clone</span>(), <span class="ident">witness</span>)<span class="question-mark">?</span>;
         <span class="macro">require_with_message</span><span class="macro">!</span>(<span class="ident">result</span>, <span class="string">&quot;must be true&quot;</span>);
         <span class="kw">let</span> <span class="ident">property</span> <span class="op">=</span> <span class="ident">Property</span> {
@@ -964,9 +965,9 @@
     <span class="kw">fn</span> <span class="ident">decide_intermediate</span>(
         <span class="kw-2">&amp;</span><span class="self">self</span>,
         <span class="ident">inter</span>: <span class="kw-2">&amp;</span><span class="ident">IntermediateCompiledPredicate</span>,
-        <span class="ident">inputs</span>: <span class="kw-2">&amp;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-        <span class="ident">witness</span>: <span class="kw-2">&amp;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">ExecResult</span><span class="op">&lt;</span><span class="ident">AddressOf</span><span class="op">&lt;</span><span class="ident">Ext</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+        <span class="ident">inputs</span>: <span class="kw-2">&amp;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;&gt;</span>,
+        <span class="ident">witness</span>: <span class="kw-2">&amp;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;&gt;</span>,
+    ) <span class="op">-&gt;</span> <span class="ident">ExecResult</span><span class="op">&lt;</span><span class="ident">AddressOf</span><span class="op">&lt;</span><span class="ident">Ext</span><span class="op">&gt;&gt;</span> {
         <span class="comment">// println!(&quot;decide_intermediate inter    : {:?}&quot;, inter);</span>
         <span class="comment">// println!(&quot;decide_intermediate inputs   : {:?}&quot;, inputs);</span>
         <span class="comment">// println!(&quot;decide_intermediate witness  : {:?}&quot;, witness);</span>
@@ -976,40 +977,40 @@
             <span class="self">Self</span>::<span class="ident">get_input_property_list_child_list</span>(<span class="ident">inter</span>, <span class="kw-2">&amp;</span><span class="ident">input_property_list</span>)<span class="question-mark">?</span>;
 
         <span class="kw">match</span> <span class="kw-2">&amp;</span><span class="ident">inter</span>.<span class="ident">connective</span> {
-            <span class="ident">LogicalConnective</span>::<span class="ident">And</span> <span class="op">=</span><span class="op">&gt;</span> <span class="self">self</span>.<span class="ident">decide_and</span>(
+            <span class="ident">LogicalConnective</span>::<span class="ident">And</span> <span class="op">=&gt;</span> <span class="self">self</span>.<span class="ident">decide_and</span>(
                 <span class="ident">inter</span>,
                 <span class="ident">inputs</span>,
                 <span class="ident">witness</span>,
                 <span class="kw-2">&amp;</span><span class="ident">input_property_list</span>,
                 <span class="kw-2">&amp;</span><span class="ident">input_property_list_child_list</span>,
             ),
-            <span class="ident">LogicalConnective</span>::<span class="ident">ThereExistsSuchThat</span> <span class="op">=</span><span class="op">&gt;</span> <span class="self">self</span>.<span class="ident">decide_there_exists_such_that</span>(
+            <span class="ident">LogicalConnective</span>::<span class="ident">ThereExistsSuchThat</span> <span class="op">=&gt;</span> <span class="self">self</span>.<span class="ident">decide_there_exists_such_that</span>(
                 <span class="ident">inter</span>,
                 <span class="ident">inputs</span>,
                 <span class="ident">witness</span>,
                 <span class="kw-2">&amp;</span><span class="ident">input_property_list</span>,
                 <span class="kw-2">&amp;</span><span class="ident">input_property_list_child_list</span>,
             ),
-            <span class="ident">LogicalConnective</span>::<span class="ident">Or</span> <span class="op">=</span><span class="op">&gt;</span> <span class="self">self</span>.<span class="ident">decide_or</span>(
+            <span class="ident">LogicalConnective</span>::<span class="ident">Or</span> <span class="op">=&gt;</span> <span class="self">self</span>.<span class="ident">decide_or</span>(
                 <span class="ident">inter</span>,
                 <span class="ident">inputs</span>,
                 <span class="ident">witness</span>,
                 <span class="kw-2">&amp;</span><span class="ident">input_property_list</span>,
                 <span class="kw-2">&amp;</span><span class="ident">input_property_list_child_list</span>,
             ),
-            <span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Ok</span>(<span class="bool-val">false</span>),
+            <span class="kw">_</span> <span class="op">=&gt;</span> <span class="prelude-val">Ok</span>(<span class="bool-val">false</span>),
         }
     }
 
     <span class="kw">fn</span> <span class="ident">decide_and</span>(
         <span class="kw-2">&amp;</span><span class="self">self</span>,
         <span class="ident">inter</span>: <span class="kw-2">&amp;</span><span class="ident">IntermediateCompiledPredicate</span>,
-        <span class="ident">inputs</span>: <span class="kw-2">&amp;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-        <span class="ident">witness</span>: <span class="kw-2">&amp;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-        <span class="ident">input_property</span>: <span class="kw-2">&amp;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">PropertyOf</span><span class="op">&lt;</span><span class="ident">Ext</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-        <span class="ident">input_property_list_child_list</span>: <span class="kw-2">&amp;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">BTreeMap</span><span class="op">&lt;</span><span class="ident">i8</span>, <span class="ident">PropertyOf</span><span class="op">&lt;</span><span class="ident">Ext</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">ExecResult</span><span class="op">&lt;</span><span class="ident">AddressOf</span><span class="op">&lt;</span><span class="ident">Ext</span><span class="op">&gt;</span><span class="op">&gt;</span> {
-        <span class="macro">require</span><span class="macro">!</span>(<span class="ident">witness</span>.<span class="ident">len</span>() <span class="op">&gt;</span><span class="op">=</span> <span class="ident">inter</span>.<span class="ident">inputs</span>.<span class="ident">len</span>());
+        <span class="ident">inputs</span>: <span class="kw-2">&amp;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;&gt;</span>,
+        <span class="ident">witness</span>: <span class="kw-2">&amp;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;&gt;</span>,
+        <span class="ident">input_property</span>: <span class="kw-2">&amp;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">PropertyOf</span><span class="op">&lt;</span><span class="ident">Ext</span><span class="op">&gt;&gt;</span>,
+        <span class="ident">input_property_list_child_list</span>: <span class="kw-2">&amp;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">BTreeMap</span><span class="op">&lt;</span><span class="ident">i8</span>, <span class="ident">PropertyOf</span><span class="op">&lt;</span><span class="ident">Ext</span><span class="op">&gt;&gt;</span><span class="op">&gt;</span>,
+    ) <span class="op">-&gt;</span> <span class="ident">ExecResult</span><span class="op">&lt;</span><span class="ident">AddressOf</span><span class="op">&lt;</span><span class="ident">Ext</span><span class="op">&gt;&gt;</span> {
+        <span class="macro">require</span><span class="macro">!</span>(<span class="ident">witness</span>.<span class="ident">len</span>() <span class="op">&gt;=</span> <span class="ident">inter</span>.<span class="ident">inputs</span>.<span class="ident">len</span>());
         <span class="kw">for</span> (<span class="ident">i</span>, <span class="ident">item</span>) <span class="kw">in</span> <span class="ident">inter</span>.<span class="ident">inputs</span>.<span class="ident">iter</span>().<span class="ident">enumerate</span>() {
             <span class="kw">if</span> <span class="kw">let</span> <span class="ident">AtomicPropositionOrPlaceholder</span>::<span class="ident">AtomicProposition</span>(<span class="ident">item</span>) <span class="op">=</span> <span class="ident">item</span> {
                 <span class="kw">if</span> <span class="ident">item</span>.<span class="ident">is_compiled</span>.<span class="ident">unwrap_or</span>(<span class="bool-val">false</span>) {
@@ -1038,15 +1039,15 @@
     <span class="kw">fn</span> <span class="ident">decide_there_exists_such_that</span>(
         <span class="kw-2">&amp;</span><span class="self">self</span>,
         <span class="ident">inter</span>: <span class="kw-2">&amp;</span><span class="ident">IntermediateCompiledPredicate</span>,
-        <span class="ident">inputs</span>: <span class="kw-2">&amp;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-        <span class="ident">witness</span>: <span class="kw-2">&amp;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-        <span class="ident">input_property</span>: <span class="kw-2">&amp;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">PropertyOf</span><span class="op">&lt;</span><span class="ident">Ext</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-        <span class="ident">input_property_list_child_list</span>: <span class="kw-2">&amp;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">BTreeMap</span><span class="op">&lt;</span><span class="ident">i8</span>, <span class="ident">PropertyOf</span><span class="op">&lt;</span><span class="ident">Ext</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">ExecResult</span><span class="op">&lt;</span><span class="ident">AddressOf</span><span class="op">&lt;</span><span class="ident">Ext</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+        <span class="ident">inputs</span>: <span class="kw-2">&amp;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;&gt;</span>,
+        <span class="ident">witness</span>: <span class="kw-2">&amp;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;&gt;</span>,
+        <span class="ident">input_property</span>: <span class="kw-2">&amp;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">PropertyOf</span><span class="op">&lt;</span><span class="ident">Ext</span><span class="op">&gt;&gt;</span>,
+        <span class="ident">input_property_list_child_list</span>: <span class="kw-2">&amp;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">BTreeMap</span><span class="op">&lt;</span><span class="ident">i8</span>, <span class="ident">PropertyOf</span><span class="op">&lt;</span><span class="ident">Ext</span><span class="op">&gt;&gt;</span><span class="op">&gt;</span>,
+    ) <span class="op">-&gt;</span> <span class="ident">ExecResult</span><span class="op">&lt;</span><span class="ident">AddressOf</span><span class="op">&lt;</span><span class="ident">Ext</span><span class="op">&gt;&gt;</span> {
         <span class="macro">require</span><span class="macro">!</span>(<span class="ident">inter</span>.<span class="ident">inputs</span>.<span class="ident">len</span>() <span class="op">&gt;</span> <span class="number">2</span>);
         <span class="kw">let</span> <span class="ident">inner_property</span> <span class="op">=</span> <span class="kw">match</span> <span class="kw-2">&amp;</span><span class="ident">inter</span>.<span class="ident">inputs</span>[<span class="number">2</span>] {
-            <span class="ident">AtomicPropositionOrPlaceholder</span>::<span class="ident">AtomicProposition</span>(<span class="ident">x</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">x</span>,
-            <span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="bool-val">true</span>),
+            <span class="ident">AtomicPropositionOrPlaceholder</span>::<span class="ident">AtomicProposition</span>(<span class="ident">x</span>) <span class="op">=&gt;</span> <span class="ident">x</span>,
+            <span class="kw">_</span> <span class="op">=&gt;</span> <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="bool-val">true</span>),
         };
         <span class="kw">if</span> <span class="ident">inner_property</span>.<span class="ident">is_compiled</span>.<span class="ident">unwrap_or</span>(<span class="bool-val">false</span>) {
             <span class="kw">let</span> <span class="ident">child_inputs</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">construct_inputs</span>(
@@ -1073,14 +1074,14 @@
     <span class="kw">fn</span> <span class="ident">decide_or</span>(
         <span class="kw-2">&amp;</span><span class="self">self</span>,
         <span class="ident">inter</span>: <span class="kw-2">&amp;</span><span class="ident">IntermediateCompiledPredicate</span>,
-        <span class="ident">inputs</span>: <span class="kw-2">&amp;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-        <span class="ident">witness</span>: <span class="kw-2">&amp;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-        <span class="ident">input_property</span>: <span class="kw-2">&amp;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">PropertyOf</span><span class="op">&lt;</span><span class="ident">Ext</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-        <span class="ident">input_property_list_child_list</span>: <span class="kw-2">&amp;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">BTreeMap</span><span class="op">&lt;</span><span class="ident">i8</span>, <span class="ident">PropertyOf</span><span class="op">&lt;</span><span class="ident">Ext</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">ExecResult</span><span class="op">&lt;</span><span class="ident">AddressOf</span><span class="op">&lt;</span><span class="ident">Ext</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+        <span class="ident">inputs</span>: <span class="kw-2">&amp;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;&gt;</span>,
+        <span class="ident">witness</span>: <span class="kw-2">&amp;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;&gt;</span>,
+        <span class="ident">input_property</span>: <span class="kw-2">&amp;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">PropertyOf</span><span class="op">&lt;</span><span class="ident">Ext</span><span class="op">&gt;&gt;</span>,
+        <span class="ident">input_property_list_child_list</span>: <span class="kw-2">&amp;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">BTreeMap</span><span class="op">&lt;</span><span class="ident">i8</span>, <span class="ident">PropertyOf</span><span class="op">&lt;</span><span class="ident">Ext</span><span class="op">&gt;&gt;</span><span class="op">&gt;</span>,
+    ) <span class="op">-&gt;</span> <span class="ident">ExecResult</span><span class="op">&lt;</span><span class="ident">AddressOf</span><span class="op">&lt;</span><span class="ident">Ext</span><span class="op">&gt;&gt;</span> {
         <span class="kw">let</span> <span class="ident">or_index</span> <span class="op">=</span> <span class="ident">Ext</span>::<span class="ident">bytes_to_u128</span>(<span class="kw-2">&amp;</span><span class="ident">witness</span>[<span class="number">0</span>])<span class="question-mark">?</span>;
         <span class="kw">for</span> (<span class="ident">index</span>, <span class="ident">item</span>) <span class="kw">in</span> <span class="ident">inter</span>.<span class="ident">inputs</span>.<span class="ident">iter</span>().<span class="ident">enumerate</span>() {
-            <span class="kw">if</span> <span class="ident">or_index</span> <span class="kw">as</span> <span class="ident">usize</span> <span class="op">=</span><span class="op">=</span> <span class="ident">index</span> {
+            <span class="kw">if</span> <span class="ident">or_index</span> <span class="kw">as</span> <span class="ident">usize</span> <span class="op">==</span> <span class="ident">index</span> {
                 <span class="kw">if</span> <span class="kw">let</span> <span class="ident">AtomicPropositionOrPlaceholder</span>::<span class="ident">AtomicProposition</span>(<span class="ident">item</span>) <span class="op">=</span> <span class="ident">item</span> {
                     <span class="kw">if</span> <span class="ident">item</span>.<span class="ident">is_compiled</span>.<span class="ident">unwrap_or</span>(<span class="bool-val">false</span>) {
                         <span class="kw">let</span> <span class="ident">child_inputs</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">construct_inputs</span>(
@@ -1112,15 +1113,15 @@
     <span class="kw">fn</span> <span class="ident">decide_property</span>(
         <span class="kw-2">&amp;</span><span class="self">self</span>,
         <span class="ident">inter</span>: <span class="kw-2">&amp;</span><span class="ident">AtomicProposition</span>,
-        <span class="ident">inputs</span>: <span class="kw-2">&amp;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-        <span class="ident">witness</span>: <span class="kw-2">&amp;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-        <span class="ident">input_property</span>: <span class="kw-2">&amp;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">PropertyOf</span><span class="op">&lt;</span><span class="ident">Ext</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-        <span class="ident">input_property_list_child_list</span>: <span class="kw-2">&amp;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">BTreeMap</span><span class="op">&lt;</span><span class="ident">i8</span>, <span class="ident">PropertyOf</span><span class="op">&lt;</span><span class="ident">Ext</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-        <span class="ident">child_witnesses</span>: <span class="kw-2">&amp;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">ExecResult</span><span class="op">&lt;</span><span class="ident">AddressOf</span><span class="op">&lt;</span><span class="ident">Ext</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+        <span class="ident">inputs</span>: <span class="kw-2">&amp;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;&gt;</span>,
+        <span class="ident">witness</span>: <span class="kw-2">&amp;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;&gt;</span>,
+        <span class="ident">input_property</span>: <span class="kw-2">&amp;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">PropertyOf</span><span class="op">&lt;</span><span class="ident">Ext</span><span class="op">&gt;&gt;</span>,
+        <span class="ident">input_property_list_child_list</span>: <span class="kw-2">&amp;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">BTreeMap</span><span class="op">&lt;</span><span class="ident">i8</span>, <span class="ident">PropertyOf</span><span class="op">&lt;</span><span class="ident">Ext</span><span class="op">&gt;&gt;</span><span class="op">&gt;</span>,
+        <span class="ident">child_witnesses</span>: <span class="kw-2">&amp;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;&gt;</span>,
+    ) <span class="op">-&gt;</span> <span class="ident">ExecResult</span><span class="op">&lt;</span><span class="ident">AddressOf</span><span class="op">&lt;</span><span class="ident">Ext</span><span class="op">&gt;&gt;</span> {
         <span class="kw">if</span> <span class="kw">let</span> <span class="ident">PredicateCall</span>::<span class="ident">InputPredicateCall</span>(<span class="ident">call</span>) <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">inter</span>.<span class="ident">predicate</span> {
             <span class="macro">require</span><span class="macro">!</span>(<span class="ident">inputs</span>.<span class="ident">len</span>() <span class="op">&gt;</span> (<span class="ident">call</span>.<span class="ident">source</span>.<span class="ident">input_index</span> <span class="op">-</span> <span class="number">1</span>) <span class="kw">as</span> <span class="ident">usize</span>);
-            <span class="kw">if</span> <span class="ident">inter</span>.<span class="ident">inputs</span>.<span class="ident">len</span>() <span class="op">=</span><span class="op">=</span> <span class="number">0</span> {
+            <span class="kw">if</span> <span class="ident">inter</span>.<span class="ident">inputs</span>.<span class="ident">len</span>() <span class="op">==</span> <span class="number">0</span> {
                 <span class="macro">require</span><span class="macro">!</span>(<span class="self">self</span>.<span class="ident">ext</span>.<span class="ident">ext_is_decided</span>(<span class="kw-2">&amp;</span><span class="ident">Ext</span>::<span class="ident">bytes_to_property</span>(
                     <span class="kw-2">&amp;</span><span class="ident">inputs</span>[(<span class="ident">call</span>.<span class="ident">source</span>.<span class="ident">input_index</span> <span class="op">-</span> <span class="number">1</span>) <span class="kw">as</span> <span class="ident">usize</span>]
                 )<span class="question-mark">?</span>));
@@ -1197,9 +1198,9 @@
     <span class="kw">fn</span> <span class="ident">get_child_intermediate</span>(
         <span class="kw-2">&amp;</span><span class="self">self</span>,
         <span class="ident">inter</span>: <span class="kw-2">&amp;</span><span class="ident">IntermediateCompiledPredicate</span>,
-        <span class="ident">inputs</span>: <span class="kw-2">&amp;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-        <span class="ident">challenge_inputs</span>: <span class="kw-2">&amp;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">ExecResultTOf</span><span class="op">&lt;</span><span class="ident">PropertyOf</span><span class="op">&lt;</span><span class="ident">Ext</span><span class="op">&gt;</span>, <span class="ident">Ext</span><span class="op">&gt;</span> {
+        <span class="ident">inputs</span>: <span class="kw-2">&amp;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;&gt;</span>,
+        <span class="ident">challenge_inputs</span>: <span class="kw-2">&amp;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;&gt;</span>,
+    ) <span class="op">-&gt;</span> <span class="ident">ExecResultTOf</span><span class="op">&lt;</span><span class="ident">PropertyOf</span><span class="op">&lt;</span><span class="ident">Ext</span><span class="op">&gt;</span>, <span class="ident">Ext</span><span class="op">&gt;</span> {
         <span class="comment">// println!(&quot;get_child_intermediate inter    : {:?}&quot;, inter);</span>
         <span class="comment">// println!(&quot;get_child_intermediate inputs   : {:?}&quot;, inputs);</span>
         <span class="comment">// println!(&quot;get_child_intermediate challenge: {:?}&quot;, challenge_inputs);</span>
@@ -1208,35 +1209,35 @@
             <span class="self">Self</span>::<span class="ident">get_input_property_list_child_list</span>(<span class="ident">inter</span>, <span class="kw-2">&amp;</span><span class="ident">input_property_list</span>)<span class="question-mark">?</span>;
 
         <span class="kw">match</span> <span class="kw-2">&amp;</span><span class="ident">inter</span>.<span class="ident">connective</span> {
-            <span class="ident">LogicalConnective</span>::<span class="ident">And</span> <span class="op">=</span><span class="op">&gt;</span> <span class="self">self</span>.<span class="ident">get_child_and</span>(
+            <span class="ident">LogicalConnective</span>::<span class="ident">And</span> <span class="op">=&gt;</span> <span class="self">self</span>.<span class="ident">get_child_and</span>(
                 <span class="ident">inter</span>,
                 <span class="ident">inputs</span>,
                 <span class="ident">challenge_inputs</span>,
                 <span class="kw-2">&amp;</span><span class="ident">input_property_list</span>,
                 <span class="kw-2">&amp;</span><span class="ident">input_property_list_child_list</span>,
             ),
-            <span class="ident">LogicalConnective</span>::<span class="ident">ForAllSuchThat</span> <span class="op">=</span><span class="op">&gt;</span> <span class="self">self</span>.<span class="ident">get_child_for_all_such_that</span>(
+            <span class="ident">LogicalConnective</span>::<span class="ident">ForAllSuchThat</span> <span class="op">=&gt;</span> <span class="self">self</span>.<span class="ident">get_child_for_all_such_that</span>(
                 <span class="ident">inter</span>,
                 <span class="ident">inputs</span>,
                 <span class="ident">challenge_inputs</span>,
                 <span class="kw-2">&amp;</span><span class="ident">input_property_list</span>,
                 <span class="kw-2">&amp;</span><span class="ident">input_property_list_child_list</span>,
             ),
-            <span class="ident">LogicalConnective</span>::<span class="ident">Not</span> <span class="op">=</span><span class="op">&gt;</span> <span class="self">self</span>.<span class="ident">get_child_not</span>(
+            <span class="ident">LogicalConnective</span>::<span class="ident">Not</span> <span class="op">=&gt;</span> <span class="self">self</span>.<span class="ident">get_child_not</span>(
                 <span class="ident">inter</span>,
                 <span class="ident">inputs</span>,
                 <span class="ident">challenge_inputs</span>,
                 <span class="kw-2">&amp;</span><span class="ident">input_property_list</span>,
                 <span class="kw-2">&amp;</span><span class="ident">input_property_list_child_list</span>,
             ),
-            <span class="ident">LogicalConnective</span>::<span class="ident">Or</span> <span class="op">=</span><span class="op">&gt;</span> <span class="self">self</span>.<span class="ident">get_child_or</span>(
+            <span class="ident">LogicalConnective</span>::<span class="ident">Or</span> <span class="op">=&gt;</span> <span class="self">self</span>.<span class="ident">get_child_or</span>(
                 <span class="ident">inter</span>,
                 <span class="ident">inputs</span>,
                 <span class="ident">challenge_inputs</span>,
                 <span class="kw-2">&amp;</span><span class="ident">input_property_list</span>,
                 <span class="kw-2">&amp;</span><span class="ident">input_property_list_child_list</span>,
             ),
-            <span class="ident">LogicalConnective</span>::<span class="ident">ThereExistsSuchThat</span> <span class="op">=</span><span class="op">&gt;</span> <span class="self">self</span>.<span class="ident">get_child_there_exists_such_that</span>(
+            <span class="ident">LogicalConnective</span>::<span class="ident">ThereExistsSuchThat</span> <span class="op">=&gt;</span> <span class="self">self</span>.<span class="ident">get_child_there_exists_such_that</span>(
                 <span class="ident">inter</span>,
                 <span class="ident">inputs</span>,
                 <span class="ident">challenge_inputs</span>,
@@ -1249,16 +1250,16 @@
     <span class="kw">fn</span> <span class="ident">get_child_and</span>(
         <span class="kw-2">&amp;</span><span class="self">self</span>,
         <span class="ident">inter</span>: <span class="kw-2">&amp;</span><span class="ident">IntermediateCompiledPredicate</span>,
-        <span class="ident">inputs</span>: <span class="kw-2">&amp;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-        <span class="ident">challenge_inputs</span>: <span class="kw-2">&amp;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-        <span class="ident">input_property</span>: <span class="kw-2">&amp;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">PropertyOf</span><span class="op">&lt;</span><span class="ident">Ext</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-        <span class="ident">input_property_list_child_list</span>: <span class="kw-2">&amp;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">BTreeMap</span><span class="op">&lt;</span><span class="ident">i8</span>, <span class="ident">PropertyOf</span><span class="op">&lt;</span><span class="ident">Ext</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">ExecResultTOf</span><span class="op">&lt;</span><span class="ident">PropertyOf</span><span class="op">&lt;</span><span class="ident">Ext</span><span class="op">&gt;</span>, <span class="ident">Ext</span><span class="op">&gt;</span> {
+        <span class="ident">inputs</span>: <span class="kw-2">&amp;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;&gt;</span>,
+        <span class="ident">challenge_inputs</span>: <span class="kw-2">&amp;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;&gt;</span>,
+        <span class="ident">input_property</span>: <span class="kw-2">&amp;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">PropertyOf</span><span class="op">&lt;</span><span class="ident">Ext</span><span class="op">&gt;&gt;</span>,
+        <span class="ident">input_property_list_child_list</span>: <span class="kw-2">&amp;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">BTreeMap</span><span class="op">&lt;</span><span class="ident">i8</span>, <span class="ident">PropertyOf</span><span class="op">&lt;</span><span class="ident">Ext</span><span class="op">&gt;&gt;</span><span class="op">&gt;</span>,
+    ) <span class="op">-&gt;</span> <span class="ident">ExecResultTOf</span><span class="op">&lt;</span><span class="ident">PropertyOf</span><span class="op">&lt;</span><span class="ident">Ext</span><span class="op">&gt;</span>, <span class="ident">Ext</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">challenge_input</span>: <span class="ident">usize</span> <span class="op">=</span> <span class="ident">Ext</span>::<span class="ident">bytes_to_u128</span>(<span class="kw-2">&amp;</span><span class="ident">challenge_inputs</span>[<span class="number">0</span>])<span class="question-mark">?</span> <span class="kw">as</span> <span class="ident">usize</span>;
         <span class="macro">require</span><span class="macro">!</span>(<span class="ident">inter</span>.<span class="ident">inputs</span>.<span class="ident">len</span>() <span class="op">&gt;</span> <span class="ident">challenge_input</span> <span class="kw">as</span> <span class="ident">usize</span>);
         <span class="kw">let</span> <span class="ident">item</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">inter</span>.<span class="ident">inputs</span>[<span class="ident">challenge_input</span>];
         <span class="kw">match</span> <span class="ident">item</span> {
-            <span class="ident">AtomicPropositionOrPlaceholder</span>::<span class="ident">AtomicProposition</span>(<span class="ident">item</span>) <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="ident">AtomicPropositionOrPlaceholder</span>::<span class="ident">AtomicProposition</span>(<span class="ident">item</span>) <span class="op">=&gt;</span> {
                 <span class="kw">if</span> <span class="ident">item</span>.<span class="ident">is_compiled</span>.<span class="ident">unwrap_or</span>(<span class="bool-val">false</span>) {
                     <span class="macro">require</span><span class="macro">!</span>(<span class="ident">item</span>.<span class="ident">inputs</span>.<span class="ident">len</span>() <span class="op">&gt;</span> <span class="number">1</span>);
                     <span class="kw">let</span> <span class="ident">child_inputs</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">construct_inputs</span>(
@@ -1311,7 +1312,7 @@
                     })
                 }
             }
-            <span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Err</span>(<span class="ident">ExecError</span>::<span class="ident">Unexpected</span> {
+            <span class="kw">_</span> <span class="op">=&gt;</span> <span class="prelude-val">Err</span>(<span class="ident">ExecError</span>::<span class="ident">Unexpected</span> {
                 <span class="ident">msg</span>: <span class="string">&quot;get_child_and must be AtomicProposition.&quot;</span>,
             }),
         }
@@ -1320,16 +1321,16 @@
     <span class="kw">fn</span> <span class="ident">get_child_for_all_such_that</span>(
         <span class="kw-2">&amp;</span><span class="self">self</span>,
         <span class="ident">inter</span>: <span class="kw-2">&amp;</span><span class="ident">IntermediateCompiledPredicate</span>,
-        <span class="ident">inputs</span>: <span class="kw-2">&amp;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-        <span class="ident">challenge_inputs</span>: <span class="kw-2">&amp;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-        <span class="ident">input_property</span>: <span class="kw-2">&amp;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">PropertyOf</span><span class="op">&lt;</span><span class="ident">Ext</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-        <span class="ident">input_property_list_child_list</span>: <span class="kw-2">&amp;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">BTreeMap</span><span class="op">&lt;</span><span class="ident">i8</span>, <span class="ident">PropertyOf</span><span class="op">&lt;</span><span class="ident">Ext</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">ExecResultTOf</span><span class="op">&lt;</span><span class="ident">PropertyOf</span><span class="op">&lt;</span><span class="ident">Ext</span><span class="op">&gt;</span>, <span class="ident">Ext</span><span class="op">&gt;</span> {
+        <span class="ident">inputs</span>: <span class="kw-2">&amp;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;&gt;</span>,
+        <span class="ident">challenge_inputs</span>: <span class="kw-2">&amp;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;&gt;</span>,
+        <span class="ident">input_property</span>: <span class="kw-2">&amp;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">PropertyOf</span><span class="op">&lt;</span><span class="ident">Ext</span><span class="op">&gt;&gt;</span>,
+        <span class="ident">input_property_list_child_list</span>: <span class="kw-2">&amp;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">BTreeMap</span><span class="op">&lt;</span><span class="ident">i8</span>, <span class="ident">PropertyOf</span><span class="op">&lt;</span><span class="ident">Ext</span><span class="op">&gt;&gt;</span><span class="op">&gt;</span>,
+    ) <span class="op">-&gt;</span> <span class="ident">ExecResultTOf</span><span class="op">&lt;</span><span class="ident">PropertyOf</span><span class="op">&lt;</span><span class="ident">Ext</span><span class="op">&gt;</span>, <span class="ident">Ext</span><span class="op">&gt;</span> {
         <span class="macro">require</span><span class="macro">!</span>(<span class="ident">inter</span>.<span class="ident">inputs</span>.<span class="ident">len</span>() <span class="op">&gt;</span> <span class="number">2</span>);
         <span class="comment">// let quantifier = &amp;inter.inputs[0];</span>
         <span class="kw">let</span> <span class="ident">inner_property</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">inter</span>.<span class="ident">inputs</span>[<span class="number">2</span>];
         <span class="kw">match</span> <span class="ident">inner_property</span> {
-            <span class="ident">AtomicPropositionOrPlaceholder</span>::<span class="ident">AtomicProposition</span>(<span class="ident">inner_property</span>) <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="ident">AtomicPropositionOrPlaceholder</span>::<span class="ident">AtomicProposition</span>(<span class="ident">inner_property</span>) <span class="op">=&gt;</span> {
                 <span class="kw">if</span> <span class="ident">inner_property</span>.<span class="ident">is_compiled</span>.<span class="ident">unwrap_or</span>(<span class="bool-val">false</span>) {
                     <span class="kw">let</span> <span class="ident">child_inputs</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">construct_inputs</span>(
                         <span class="ident">inner_property</span>,
@@ -1359,7 +1360,7 @@
                     })
                 }
             }
-            <span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Err</span>(<span class="ident">ExecError</span>::<span class="ident">Unexpected</span> {
+            <span class="kw">_</span> <span class="op">=&gt;</span> <span class="prelude-val">Err</span>(<span class="ident">ExecError</span>::<span class="ident">Unexpected</span> {
                 <span class="ident">msg</span>: <span class="string">&quot;get_child_for_all_such_that must be AtomicProposition.&quot;</span>,
             }),
         }
@@ -1368,11 +1369,11 @@
     <span class="kw">fn</span> <span class="ident">get_child_not</span>(
         <span class="kw-2">&amp;</span><span class="self">self</span>,
         <span class="ident">inter</span>: <span class="kw-2">&amp;</span><span class="ident">IntermediateCompiledPredicate</span>,
-        <span class="ident">inputs</span>: <span class="kw-2">&amp;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-        <span class="ident">challenge_inputs</span>: <span class="kw-2">&amp;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-        <span class="ident">input_property</span>: <span class="kw-2">&amp;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">PropertyOf</span><span class="op">&lt;</span><span class="ident">Ext</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-        <span class="ident">input_property_list_child_list</span>: <span class="kw-2">&amp;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">BTreeMap</span><span class="op">&lt;</span><span class="ident">i8</span>, <span class="ident">PropertyOf</span><span class="op">&lt;</span><span class="ident">Ext</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">ExecResultTOf</span><span class="op">&lt;</span><span class="ident">PropertyOf</span><span class="op">&lt;</span><span class="ident">Ext</span><span class="op">&gt;</span>, <span class="ident">Ext</span><span class="op">&gt;</span> {
+        <span class="ident">inputs</span>: <span class="kw-2">&amp;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;&gt;</span>,
+        <span class="ident">challenge_inputs</span>: <span class="kw-2">&amp;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;&gt;</span>,
+        <span class="ident">input_property</span>: <span class="kw-2">&amp;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">PropertyOf</span><span class="op">&lt;</span><span class="ident">Ext</span><span class="op">&gt;&gt;</span>,
+        <span class="ident">input_property_list_child_list</span>: <span class="kw-2">&amp;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">BTreeMap</span><span class="op">&lt;</span><span class="ident">i8</span>, <span class="ident">PropertyOf</span><span class="op">&lt;</span><span class="ident">Ext</span><span class="op">&gt;&gt;</span><span class="op">&gt;</span>,
+    ) <span class="op">-&gt;</span> <span class="ident">ExecResultTOf</span><span class="op">&lt;</span><span class="ident">PropertyOf</span><span class="op">&lt;</span><span class="ident">Ext</span><span class="op">&gt;</span>, <span class="ident">Ext</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">inner_property</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">inter</span>.<span class="ident">inputs</span>[<span class="number">0</span>];
         <span class="kw">if</span> <span class="kw">let</span> <span class="ident">AtomicPropositionOrPlaceholder</span>::<span class="ident">AtomicProposition</span>(<span class="ident">inner_property</span>) <span class="op">=</span> <span class="ident">inner_property</span> {
             <span class="kw">return</span> <span class="self">self</span>.<span class="ident">construct_property</span>(
@@ -1392,11 +1393,11 @@
     <span class="kw">fn</span> <span class="ident">get_child_there_exists_such_that</span>(
         <span class="kw-2">&amp;</span><span class="self">self</span>,
         <span class="ident">inter</span>: <span class="kw-2">&amp;</span><span class="ident">IntermediateCompiledPredicate</span>,
-        <span class="ident">inputs</span>: <span class="kw-2">&amp;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-        <span class="ident">challenge_inputs</span>: <span class="kw-2">&amp;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-        <span class="ident">input_property</span>: <span class="kw-2">&amp;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">PropertyOf</span><span class="op">&lt;</span><span class="ident">Ext</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-        <span class="ident">input_property_list_child_list</span>: <span class="kw-2">&amp;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">BTreeMap</span><span class="op">&lt;</span><span class="ident">i8</span>, <span class="ident">PropertyOf</span><span class="op">&lt;</span><span class="ident">Ext</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">ExecResultTOf</span><span class="op">&lt;</span><span class="ident">PropertyOf</span><span class="op">&lt;</span><span class="ident">Ext</span><span class="op">&gt;</span>, <span class="ident">Ext</span><span class="op">&gt;</span> {
+        <span class="ident">inputs</span>: <span class="kw-2">&amp;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;&gt;</span>,
+        <span class="ident">challenge_inputs</span>: <span class="kw-2">&amp;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;&gt;</span>,
+        <span class="ident">input_property</span>: <span class="kw-2">&amp;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">PropertyOf</span><span class="op">&lt;</span><span class="ident">Ext</span><span class="op">&gt;&gt;</span>,
+        <span class="ident">input_property_list_child_list</span>: <span class="kw-2">&amp;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">BTreeMap</span><span class="op">&lt;</span><span class="ident">i8</span>, <span class="ident">PropertyOf</span><span class="op">&lt;</span><span class="ident">Ext</span><span class="op">&gt;&gt;</span><span class="op">&gt;</span>,
+    ) <span class="op">-&gt;</span> <span class="ident">ExecResultTOf</span><span class="op">&lt;</span><span class="ident">PropertyOf</span><span class="op">&lt;</span><span class="ident">Ext</span><span class="op">&gt;</span>, <span class="ident">Ext</span><span class="op">&gt;</span> {
         <span class="kw">if</span> <span class="kw">let</span> <span class="ident">AtomicPropositionOrPlaceholder</span>::<span class="ident">AtomicProposition</span>(<span class="ident">inner_property</span>) <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">inter</span>.<span class="ident">inputs</span>[<span class="number">2</span>]
         {
             <span class="kw">if</span> <span class="kw">let</span> <span class="ident">AtomicPropositionOrPlaceholder</span>::<span class="ident">Placeholder</span>(<span class="ident">property_input_1</span>) <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">inter</span>.<span class="ident">inputs</span>[<span class="number">1</span>]
@@ -1435,11 +1436,11 @@
     <span class="kw">fn</span> <span class="ident">get_child_or</span>(
         <span class="kw-2">&amp;</span><span class="self">self</span>,
         <span class="ident">inter</span>: <span class="kw-2">&amp;</span><span class="ident">IntermediateCompiledPredicate</span>,
-        <span class="ident">inputs</span>: <span class="kw-2">&amp;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-        <span class="ident">challenge_inputs</span>: <span class="kw-2">&amp;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-        <span class="ident">input_property</span>: <span class="kw-2">&amp;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">PropertyOf</span><span class="op">&lt;</span><span class="ident">Ext</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-        <span class="ident">input_property_list_child_list</span>: <span class="kw-2">&amp;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">BTreeMap</span><span class="op">&lt;</span><span class="ident">i8</span>, <span class="ident">PropertyOf</span><span class="op">&lt;</span><span class="ident">Ext</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">ExecResultTOf</span><span class="op">&lt;</span><span class="ident">PropertyOf</span><span class="op">&lt;</span><span class="ident">Ext</span><span class="op">&gt;</span>, <span class="ident">Ext</span><span class="op">&gt;</span> {
+        <span class="ident">inputs</span>: <span class="kw-2">&amp;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;&gt;</span>,
+        <span class="ident">challenge_inputs</span>: <span class="kw-2">&amp;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;&gt;</span>,
+        <span class="ident">input_property</span>: <span class="kw-2">&amp;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">PropertyOf</span><span class="op">&lt;</span><span class="ident">Ext</span><span class="op">&gt;&gt;</span>,
+        <span class="ident">input_property_list_child_list</span>: <span class="kw-2">&amp;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">BTreeMap</span><span class="op">&lt;</span><span class="ident">i8</span>, <span class="ident">PropertyOf</span><span class="op">&lt;</span><span class="ident">Ext</span><span class="op">&gt;&gt;</span><span class="op">&gt;</span>,
+    ) <span class="op">-&gt;</span> <span class="ident">ExecResultTOf</span><span class="op">&lt;</span><span class="ident">PropertyOf</span><span class="op">&lt;</span><span class="ident">Ext</span><span class="op">&gt;</span>, <span class="ident">Ext</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">inputs</span> <span class="op">=</span> <span class="ident">inter</span>
             .<span class="ident">inputs</span>
             .<span class="ident">iter</span>()
@@ -1482,7 +1483,7 @@
                     <span class="ident">msg</span>: <span class="string">&quot;get_child_or must be all inter.inputs AtomicProposition.&quot;</span>,
                 })
             })
-            .<span class="ident">collect</span>::<span class="op">&lt;</span><span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span><span class="op">&gt;</span>, <span class="kw">_</span><span class="op">&gt;</span><span class="op">&gt;</span>()<span class="question-mark">?</span>;
+            .<span class="ident">collect</span>::<span class="op">&lt;</span><span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;&gt;</span>, <span class="kw">_</span><span class="op">&gt;&gt;</span>()<span class="question-mark">?</span>;
         <span class="prelude-val">Ok</span>(<span class="ident">Property</span> {
             <span class="ident">predicate_address</span>: <span class="ident">Ext</span>::<span class="ident">and_address</span>(),
             <span class="ident">inputs</span>: <span class="ident">inputs</span>,
@@ -1493,12 +1494,12 @@
     <span class="kw">fn</span> <span class="ident">resolve_intermediate</span>(
         <span class="kw-2">&amp;</span><span class="self">self</span>,
         <span class="ident">name</span>: <span class="kw-2">&amp;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">ExecResultTOf</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">IntermediateCompiledPredicate</span>, <span class="ident">Ext</span><span class="op">&gt;</span> {
+    ) <span class="op">-&gt;</span> <span class="ident">ExecResultTOf</span><span class="op">&lt;</span><span class="kw-2">&amp;</span><span class="ident">IntermediateCompiledPredicate</span>, <span class="ident">Ext</span><span class="op">&gt;</span> {
         <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">index</span>) <span class="op">=</span> <span class="self">self</span>
             .<span class="ident">code</span>
             .<span class="ident">contracts</span>
             .<span class="ident">iter</span>()
-            .<span class="ident">position</span>(<span class="op">|</span><span class="ident">inter</span><span class="op">|</span> <span class="kw-2">&amp;</span><span class="ident">inter</span>.<span class="ident">name</span> <span class="op">=</span><span class="op">=</span> <span class="ident">name</span>)
+            .<span class="ident">position</span>(<span class="op">|</span><span class="ident">inter</span><span class="op">|</span> <span class="kw-2">&amp;</span><span class="ident">inter</span>.<span class="ident">name</span> <span class="op">==</span> <span class="ident">name</span>)
         {
             <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">code</span>.<span class="ident">contracts</span>[<span class="ident">index</span>]);
         }
@@ -1509,21 +1510,21 @@
 
     <span class="kw">fn</span> <span class="ident">get_input_property_list</span>(
         <span class="ident">inter</span>: <span class="kw-2">&amp;</span><span class="ident">IntermediateCompiledPredicate</span>,
-        <span class="ident">inputs</span>: <span class="kw-2">&amp;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">ExecResultTOf</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">PropertyOf</span><span class="op">&lt;</span><span class="ident">Ext</span><span class="op">&gt;</span><span class="op">&gt;</span>, <span class="ident">Ext</span><span class="op">&gt;</span> {
+        <span class="ident">inputs</span>: <span class="kw-2">&amp;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;&gt;</span>,
+    ) <span class="op">-&gt;</span> <span class="ident">ExecResultTOf</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">PropertyOf</span><span class="op">&lt;</span><span class="ident">Ext</span><span class="op">&gt;&gt;</span>, <span class="ident">Ext</span><span class="op">&gt;</span> {
         <span class="prelude-val">Ok</span>(<span class="ident">inter</span>
             .<span class="ident">property_inputs</span>
             .<span class="ident">iter</span>()
             .<span class="ident">map</span>(<span class="op">|</span><span class="ident">property_input</span><span class="op">|</span> {
                 <span class="ident">Ext</span>::<span class="ident">bytes_to_property</span>(<span class="kw-2">&amp;</span><span class="ident">inputs</span>[(<span class="ident">property_input</span>.<span class="ident">input_index</span> <span class="op">-</span> <span class="number">1</span>) <span class="kw">as</span> <span class="ident">usize</span>])
             })
-            .<span class="ident">collect</span>::<span class="op">&lt;</span><span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">PropertyOf</span><span class="op">&lt;</span><span class="ident">Ext</span><span class="op">&gt;</span><span class="op">&gt;</span>, <span class="kw">_</span><span class="op">&gt;</span><span class="op">&gt;</span>()<span class="question-mark">?</span>)
+            .<span class="ident">collect</span>::<span class="op">&lt;</span><span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">PropertyOf</span><span class="op">&lt;</span><span class="ident">Ext</span><span class="op">&gt;&gt;</span>, <span class="kw">_</span><span class="op">&gt;&gt;</span>()<span class="question-mark">?</span>)
     }
 
     <span class="kw">fn</span> <span class="ident">get_input_property_list_child_list</span>(
         <span class="ident">inter</span>: <span class="kw-2">&amp;</span><span class="ident">IntermediateCompiledPredicate</span>,
-        <span class="ident">input_property</span>: <span class="kw-2">&amp;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">PropertyOf</span><span class="op">&lt;</span><span class="ident">Ext</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">ExecResultTOf</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">BTreeMap</span><span class="op">&lt;</span><span class="ident">i8</span>, <span class="ident">PropertyOf</span><span class="op">&lt;</span><span class="ident">Ext</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span>, <span class="ident">Ext</span><span class="op">&gt;</span> {
+        <span class="ident">input_property</span>: <span class="kw-2">&amp;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">PropertyOf</span><span class="op">&lt;</span><span class="ident">Ext</span><span class="op">&gt;&gt;</span>,
+    ) <span class="op">-&gt;</span> <span class="ident">ExecResultTOf</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">BTreeMap</span><span class="op">&lt;</span><span class="ident">i8</span>, <span class="ident">PropertyOf</span><span class="op">&lt;</span><span class="ident">Ext</span><span class="op">&gt;&gt;</span><span class="op">&gt;</span>, <span class="ident">Ext</span><span class="op">&gt;</span> {
         <span class="ident">inter</span>
             .<span class="ident">property_inputs</span>
             .<span class="ident">iter</span>()
@@ -1546,17 +1547,17 @@
                 }
                 <span class="prelude-val">Ok</span>(<span class="ident">ret</span>)
             })
-            .<span class="ident">collect</span>::<span class="op">&lt;</span><span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">BTreeMap</span><span class="op">&lt;</span><span class="ident">i8</span>, <span class="ident">PropertyOf</span><span class="op">&lt;</span><span class="ident">Ext</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span>, <span class="kw">_</span><span class="op">&gt;</span><span class="op">&gt;</span>()
+            .<span class="ident">collect</span>::<span class="op">&lt;</span><span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">BTreeMap</span><span class="op">&lt;</span><span class="ident">i8</span>, <span class="ident">PropertyOf</span><span class="op">&lt;</span><span class="ident">Ext</span><span class="op">&gt;&gt;</span><span class="op">&gt;</span>, <span class="kw">_</span><span class="op">&gt;&gt;</span>()
     }
 
     <span class="kw">fn</span> <span class="ident">construct_inputs</span>(
         <span class="kw-2">&amp;</span><span class="self">self</span>,
         <span class="ident">property</span>: <span class="kw-2">&amp;</span><span class="ident">AtomicProposition</span>,
         <span class="ident">witness</span>: <span class="kw-2">&amp;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>,
-        <span class="ident">inputs</span>: <span class="kw-2">&amp;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-        <span class="ident">input_property</span>: <span class="kw-2">&amp;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">PropertyOf</span><span class="op">&lt;</span><span class="ident">Ext</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-        <span class="ident">input_property_list_child_list</span>: <span class="kw-2">&amp;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">BTreeMap</span><span class="op">&lt;</span><span class="ident">i8</span>, <span class="ident">PropertyOf</span><span class="op">&lt;</span><span class="ident">Ext</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">ExecResultTOf</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span><span class="op">&gt;</span>, <span class="ident">Ext</span><span class="op">&gt;</span> {
+        <span class="ident">inputs</span>: <span class="kw-2">&amp;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;&gt;</span>,
+        <span class="ident">input_property</span>: <span class="kw-2">&amp;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">PropertyOf</span><span class="op">&lt;</span><span class="ident">Ext</span><span class="op">&gt;&gt;</span>,
+        <span class="ident">input_property_list_child_list</span>: <span class="kw-2">&amp;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">BTreeMap</span><span class="op">&lt;</span><span class="ident">i8</span>, <span class="ident">PropertyOf</span><span class="op">&lt;</span><span class="ident">Ext</span><span class="op">&gt;&gt;</span><span class="op">&gt;</span>,
+    ) <span class="op">-&gt;</span> <span class="ident">ExecResultTOf</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;&gt;</span>, <span class="ident">Ext</span><span class="op">&gt;</span> {
         <span class="ident">property</span>
             .<span class="ident">inputs</span>
             .<span class="ident">iter</span>()
@@ -1576,33 +1577,33 @@
         <span class="kw-2">&amp;</span><span class="self">self</span>,
         <span class="ident">compiled_input</span>: <span class="kw-2">&amp;</span><span class="ident">CompiledInput</span>,
         <span class="ident">witness</span>: <span class="kw-2">&amp;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>,
-        <span class="ident">inputs</span>: <span class="kw-2">&amp;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-        <span class="ident">input_property</span>: <span class="kw-2">&amp;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">PropertyOf</span><span class="op">&lt;</span><span class="ident">Ext</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-        <span class="ident">input_property_list_child_list</span>: <span class="kw-2">&amp;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">BTreeMap</span><span class="op">&lt;</span><span class="ident">i8</span>, <span class="ident">PropertyOf</span><span class="op">&lt;</span><span class="ident">Ext</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">ExecResultTOf</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>, <span class="ident">Ext</span><span class="op">&gt;</span> {
+        <span class="ident">inputs</span>: <span class="kw-2">&amp;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;&gt;</span>,
+        <span class="ident">input_property</span>: <span class="kw-2">&amp;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">PropertyOf</span><span class="op">&lt;</span><span class="ident">Ext</span><span class="op">&gt;&gt;</span>,
+        <span class="ident">input_property_list_child_list</span>: <span class="kw-2">&amp;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">BTreeMap</span><span class="op">&lt;</span><span class="ident">i8</span>, <span class="ident">PropertyOf</span><span class="op">&lt;</span><span class="ident">Ext</span><span class="op">&gt;&gt;</span><span class="op">&gt;</span>,
+    ) <span class="op">-&gt;</span> <span class="ident">ExecResultTOf</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>, <span class="ident">Ext</span><span class="op">&gt;</span> {
         <span class="kw">match</span> <span class="ident">compiled_input</span> {
-            <span class="ident">CompiledInput</span>::<span class="ident">ConstantInput</span>(<span class="ident">inp</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Ok</span>(<span class="ident">inp</span>.<span class="ident">name</span>.<span class="ident">clone</span>()),
-            <span class="ident">CompiledInput</span>::<span class="ident">LabelInput</span>(<span class="ident">inp</span>) <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="ident">CompiledInput</span>::<span class="ident">ConstantInput</span>(<span class="ident">inp</span>) <span class="op">=&gt;</span> <span class="prelude-val">Ok</span>(<span class="ident">inp</span>.<span class="ident">name</span>.<span class="ident">clone</span>()),
+            <span class="ident">CompiledInput</span>::<span class="ident">LabelInput</span>(<span class="ident">inp</span>) <span class="op">=&gt;</span> {
                 <span class="prelude-val">Ok</span>(<span class="ident">Ext</span>::<span class="ident">prefix_label</span>(<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">get_bytes_variable</span>(<span class="kw-2">&amp;</span><span class="ident">inp</span>.<span class="ident">label</span>)<span class="question-mark">?</span>))
             }
-            <span class="ident">CompiledInput</span>::<span class="ident">NormalInput</span>(<span class="ident">inp</span>) <span class="op">=</span><span class="op">&gt;</span> {
-                <span class="kw">if</span> <span class="ident">inp</span>.<span class="ident">children</span>.<span class="ident">len</span>() <span class="op">=</span><span class="op">=</span> <span class="number">1</span> {
+            <span class="ident">CompiledInput</span>::<span class="ident">NormalInput</span>(<span class="ident">inp</span>) <span class="op">=&gt;</span> {
+                <span class="kw">if</span> <span class="ident">inp</span>.<span class="ident">children</span>.<span class="ident">len</span>() <span class="op">==</span> <span class="number">1</span> {
                     <span class="macro">require</span><span class="macro">!</span>(<span class="ident">input_property</span>.<span class="ident">len</span>() <span class="op">&gt;</span> <span class="ident">inp</span>.<span class="ident">input_index</span> <span class="kw">as</span> <span class="ident">usize</span>);
                     <span class="kw">let</span> <span class="ident">input_property_input</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">input_property</span>[<span class="ident">inp</span>.<span class="ident">input_index</span> <span class="kw">as</span> <span class="ident">usize</span>];
-                    <span class="kw">if</span> <span class="ident">inp</span>.<span class="ident">children</span>[<span class="number">0</span>] <span class="op">&gt;</span><span class="op">=</span> <span class="number">0</span> {
+                    <span class="kw">if</span> <span class="ident">inp</span>.<span class="ident">children</span>[<span class="number">0</span>] <span class="op">&gt;=</span> <span class="number">0</span> {
                         <span class="macro">require</span><span class="macro">!</span>(<span class="ident">input_property_input</span>.<span class="ident">inputs</span>.<span class="ident">len</span>() <span class="op">&gt;</span> <span class="ident">inp</span>.<span class="ident">children</span>[<span class="number">0</span>] <span class="kw">as</span> <span class="ident">usize</span>);
                         <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="ident">input_property_input</span>.<span class="ident">inputs</span>[<span class="ident">inp</span>.<span class="ident">children</span>[<span class="number">0</span>] <span class="kw">as</span> <span class="ident">usize</span>].<span class="ident">clone</span>());
                     } <span class="kw">else</span> {
                         <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="ident">input_property_input</span>.<span class="ident">predicate_address</span>.<span class="ident">encode</span>());
                     }
-                } <span class="kw">else</span> <span class="kw">if</span> <span class="ident">inp</span>.<span class="ident">children</span>.<span class="ident">len</span>() <span class="op">=</span><span class="op">=</span> <span class="number">2</span> {
+                } <span class="kw">else</span> <span class="kw">if</span> <span class="ident">inp</span>.<span class="ident">children</span>.<span class="ident">len</span>() <span class="op">==</span> <span class="number">2</span> {
                     <span class="macro">require</span><span class="macro">!</span>(<span class="ident">input_property_list_child_list</span>.<span class="ident">len</span>() <span class="op">&gt;</span> <span class="ident">inp</span>.<span class="ident">input_index</span> <span class="kw">as</span> <span class="ident">usize</span>);
                     <span class="kw">let</span> <span class="ident">input_child_list</span> <span class="op">=</span> <span class="ident">input_property_list_child_list</span>[<span class="ident">inp</span>.<span class="ident">input_index</span> <span class="kw">as</span> <span class="ident">usize</span>]
                         .<span class="ident">get</span>(<span class="kw-2">&amp;</span><span class="ident">inp</span>.<span class="ident">children</span>[<span class="number">0</span>])
                         .<span class="ident">ok_or</span>(<span class="ident">ExecError</span>::<span class="ident">Require</span> {
                             <span class="ident">msg</span>: <span class="string">&quot;invalid index children[0]&quot;</span>,
                         })<span class="question-mark">?</span>;
-                    <span class="kw">if</span> <span class="ident">inp</span>.<span class="ident">children</span>[<span class="number">1</span>] <span class="op">&gt;</span><span class="op">=</span> <span class="number">0</span> {
+                    <span class="kw">if</span> <span class="ident">inp</span>.<span class="ident">children</span>[<span class="number">1</span>] <span class="op">&gt;=</span> <span class="number">0</span> {
                         <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="ident">input_child_list</span>.<span class="ident">inputs</span>[<span class="ident">inp</span>.<span class="ident">children</span>[<span class="number">1</span>] <span class="kw">as</span> <span class="ident">usize</span>].<span class="ident">clone</span>());
                     } <span class="kw">else</span> {
                         <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="ident">input_child_list</span>.<span class="ident">predicate_address</span>.<span class="ident">encode</span>());
@@ -1611,8 +1612,8 @@
                 <span class="macro">require</span><span class="macro">!</span>(<span class="ident">inputs</span>.<span class="ident">len</span>() <span class="op">&gt;</span> (<span class="ident">inp</span>.<span class="ident">input_index</span> <span class="op">-</span> <span class="number">1</span>) <span class="kw">as</span> <span class="ident">usize</span>);
                 <span class="prelude-val">Ok</span>(<span class="ident">inputs</span>[(<span class="ident">inp</span>.<span class="ident">input_index</span> <span class="op">-</span> <span class="number">1</span>) <span class="kw">as</span> <span class="ident">usize</span>].<span class="ident">clone</span>())
             }
-            <span class="ident">CompiledInput</span>::<span class="ident">VariableInput</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Ok</span>(<span class="ident">witness</span>.<span class="ident">clone</span>()),
-            <span class="ident">CompiledInput</span>::<span class="ident">SelfInput</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Ok</span>(<span class="self">self</span>.<span class="ident">ext</span>.<span class="ident">ext_address</span>().<span class="ident">encode</span>()),
+            <span class="ident">CompiledInput</span>::<span class="ident">VariableInput</span>(<span class="kw">_</span>) <span class="op">=&gt;</span> <span class="prelude-val">Ok</span>(<span class="ident">witness</span>.<span class="ident">clone</span>()),
+            <span class="ident">CompiledInput</span>::<span class="ident">SelfInput</span>(<span class="kw">_</span>) <span class="op">=&gt;</span> <span class="prelude-val">Ok</span>(<span class="self">self</span>.<span class="ident">ext</span>.<span class="ident">ext_address</span>().<span class="ident">encode</span>()),
         }
     }
 
@@ -1620,15 +1621,15 @@
         <span class="kw-2">&amp;</span><span class="self">self</span>,
         <span class="ident">property</span>: <span class="kw-2">&amp;</span><span class="ident">AtomicProposition</span>,
         <span class="ident">free_variable</span>: <span class="ident">bool</span>,
-        <span class="ident">inputs</span>: <span class="kw-2">&amp;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-        <span class="ident">challenge_inputs</span>: <span class="kw-2">&amp;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-        <span class="ident">input_property</span>: <span class="kw-2">&amp;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">PropertyOf</span><span class="op">&lt;</span><span class="ident">Ext</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-        <span class="ident">input_property_list_child_list</span>: <span class="kw-2">&amp;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">BTreeMap</span><span class="op">&lt;</span><span class="ident">i8</span>, <span class="ident">PropertyOf</span><span class="op">&lt;</span><span class="ident">Ext</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">ExecResultTOf</span><span class="op">&lt;</span><span class="ident">PropertyOf</span><span class="op">&lt;</span><span class="ident">Ext</span><span class="op">&gt;</span>, <span class="ident">Ext</span><span class="op">&gt;</span> {
+        <span class="ident">inputs</span>: <span class="kw-2">&amp;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;&gt;</span>,
+        <span class="ident">challenge_inputs</span>: <span class="kw-2">&amp;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;&gt;</span>,
+        <span class="ident">input_property</span>: <span class="kw-2">&amp;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">PropertyOf</span><span class="op">&lt;</span><span class="ident">Ext</span><span class="op">&gt;&gt;</span>,
+        <span class="ident">input_property_list_child_list</span>: <span class="kw-2">&amp;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">BTreeMap</span><span class="op">&lt;</span><span class="ident">i8</span>, <span class="ident">PropertyOf</span><span class="op">&lt;</span><span class="ident">Ext</span><span class="op">&gt;&gt;</span><span class="op">&gt;</span>,
+    ) <span class="op">-&gt;</span> <span class="ident">ExecResultTOf</span><span class="op">&lt;</span><span class="ident">PropertyOf</span><span class="op">&lt;</span><span class="ident">Ext</span><span class="op">&gt;</span>, <span class="ident">Ext</span><span class="op">&gt;</span> {
         <span class="kw">match</span> <span class="kw-2">&amp;</span><span class="ident">property</span>.<span class="ident">predicate</span> {
-            <span class="ident">PredicateCall</span>::<span class="ident">InputPredicateCall</span>(<span class="ident">call</span>) <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="ident">PredicateCall</span>::<span class="ident">InputPredicateCall</span>(<span class="ident">call</span>) <span class="op">=&gt;</span> {
                 <span class="macro">require</span><span class="macro">!</span>(<span class="ident">inputs</span>.<span class="ident">len</span>() <span class="op">&gt;</span> (<span class="ident">call</span>.<span class="ident">source</span>.<span class="ident">input_index</span> <span class="op">-</span> <span class="number">1</span>) <span class="kw">as</span> <span class="ident">usize</span>);
-                <span class="kw">if</span> <span class="ident">property</span>.<span class="ident">inputs</span>.<span class="ident">len</span>() <span class="op">=</span><span class="op">=</span> <span class="number">0</span> {
+                <span class="kw">if</span> <span class="ident">property</span>.<span class="ident">inputs</span>.<span class="ident">len</span>() <span class="op">==</span> <span class="number">0</span> {
                     <span class="kw">return</span> <span class="ident">Ext</span>::<span class="ident">bytes_to_property</span>(<span class="kw-2">&amp;</span><span class="ident">inputs</span>[(<span class="ident">call</span>.<span class="ident">source</span>.<span class="ident">input_index</span> <span class="op">-</span> <span class="number">1</span>) <span class="kw">as</span> <span class="ident">usize</span>]);
                 }
                 <span class="macro">require</span><span class="macro">!</span>(<span class="ident">inputs</span>.<span class="ident">len</span>() <span class="op">&gt;</span> (<span class="ident">call</span>.<span class="ident">source</span>.<span class="ident">input_index</span> <span class="op">-</span> <span class="number">1</span>) <span class="kw">as</span> <span class="ident">usize</span>);
@@ -1648,8 +1649,8 @@
                     <span class="ident">inputs</span>: <span class="ident">child_inputs_of</span>,
                 })
             }
-            <span class="ident">PredicateCall</span>::<span class="ident">VariablePredicateCall</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> {
-                <span class="kw">if</span> <span class="ident">property</span>.<span class="ident">inputs</span>.<span class="ident">len</span>() <span class="op">=</span><span class="op">=</span> <span class="number">0</span> {
+            <span class="ident">PredicateCall</span>::<span class="ident">VariablePredicateCall</span>(<span class="kw">_</span>) <span class="op">=&gt;</span> {
+                <span class="kw">if</span> <span class="ident">property</span>.<span class="ident">inputs</span>.<span class="ident">len</span>() <span class="op">==</span> <span class="number">0</span> {
                     <span class="macro">require</span><span class="macro">!</span>(<span class="ident">challenge_inputs</span>.<span class="ident">len</span>() <span class="op">&gt;</span> <span class="number">0</span>);
                     <span class="kw">return</span> <span class="ident">Ext</span>::<span class="ident">bytes_to_property</span>(<span class="kw-2">&amp;</span><span class="ident">challenge_inputs</span>[<span class="number">0</span>]);
                 }
@@ -1665,7 +1666,7 @@
                     <span class="ident">inputs</span>: <span class="ident">child_inputs_of</span>,
                 })
             }
-            <span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="kw">_</span> <span class="op">=&gt;</span> {
                 <span class="kw">let</span> <span class="ident">witness</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">free_variable</span> {
                     <span class="self">self</span>.<span class="ident">get_bytes_variable</span>(<span class="kw-2">&amp;</span><span class="string">b&quot;freeVariable&quot;</span>.<span class="ident">to_vec</span>())<span class="question-mark">?</span>
                 } <span class="kw">else</span> {
@@ -1694,7 +1695,7 @@
         }
     }
 
-    <span class="kw">fn</span> <span class="ident">get_bytes_variable</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">key</span>: <span class="kw-2">&amp;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">ExecResultTOf</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>, <span class="ident">Ext</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">get_bytes_variable</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">key</span>: <span class="kw-2">&amp;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>) <span class="op">-&gt;</span> <span class="ident">ExecResultTOf</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>, <span class="ident">Ext</span><span class="op">&gt;</span> {
         <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">ret</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">bytes_inputs</span>.<span class="ident">get</span>(<span class="kw-2">&amp;</span><span class="ident">Ext</span>::<span class="ident">hash_of</span>(<span class="kw-2">&amp;</span><span class="ident">key</span>)) {
             <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="ident">ret</span>.<span class="ident">clone</span>());
         }
@@ -1703,7 +1704,7 @@
         })
     }
 
-    <span class="kw">fn</span> <span class="ident">get_address_variable</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">key</span>: <span class="kw-2">&amp;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">ExecResultTOf</span><span class="op">&lt;</span><span class="ident">AddressOf</span><span class="op">&lt;</span><span class="ident">Ext</span><span class="op">&gt;</span>, <span class="ident">Ext</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">get_address_variable</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">key</span>: <span class="kw-2">&amp;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>) <span class="op">-&gt;</span> <span class="ident">ExecResultTOf</span><span class="op">&lt;</span><span class="ident">AddressOf</span><span class="op">&lt;</span><span class="ident">Ext</span><span class="op">&gt;</span>, <span class="ident">Ext</span><span class="op">&gt;</span> {
         <span class="comment">// println!(&quot;get_address_variable: {}&quot;, key);</span>
         <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">ret</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">address_inputs</span>.<span class="ident">get</span>(<span class="kw-2">&amp;</span><span class="ident">Ext</span>::<span class="ident">hash_of</span>(<span class="ident">key</span>)) {
             <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="ident">ret</span>.<span class="ident">clone</span>());
@@ -1716,11 +1717,11 @@
         })
     }
 
-    <span class="kw">fn</span> <span class="ident">get_source_str_from_inter</span>(<span class="ident">predicate</span>: <span class="kw-2">&amp;</span><span class="ident">PredicateCall</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">ExecResultTOf</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>, <span class="ident">Ext</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">get_source_str_from_inter</span>(<span class="ident">predicate</span>: <span class="kw-2">&amp;</span><span class="ident">PredicateCall</span>) <span class="op">-&gt;</span> <span class="ident">ExecResultTOf</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>, <span class="ident">Ext</span><span class="op">&gt;</span> {
         <span class="kw">match</span> <span class="ident">predicate</span> {
-            <span class="ident">PredicateCall</span>::<span class="ident">AtomicPredicateCall</span>(<span class="ident">predicate</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Ok</span>(<span class="ident">predicate</span>.<span class="ident">source</span>.<span class="ident">clone</span>()),
-            <span class="ident">PredicateCall</span>::<span class="ident">CompiledPredicateCall</span>(<span class="ident">predicate</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Ok</span>(<span class="ident">predicate</span>.<span class="ident">source</span>.<span class="ident">clone</span>()),
-            <span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Err</span>(<span class="ident">ExecError</span>::<span class="ident">Unexpected</span> {
+            <span class="ident">PredicateCall</span>::<span class="ident">AtomicPredicateCall</span>(<span class="ident">predicate</span>) <span class="op">=&gt;</span> <span class="prelude-val">Ok</span>(<span class="ident">predicate</span>.<span class="ident">source</span>.<span class="ident">clone</span>()),
+            <span class="ident">PredicateCall</span>::<span class="ident">CompiledPredicateCall</span>(<span class="ident">predicate</span>) <span class="op">=&gt;</span> <span class="prelude-val">Ok</span>(<span class="ident">predicate</span>.<span class="ident">source</span>.<span class="ident">clone</span>()),
+            <span class="kw">_</span> <span class="op">=&gt;</span> <span class="prelude-val">Err</span>(<span class="ident">ExecError</span>::<span class="ident">Unexpected</span> {
                 <span class="ident">msg</span>: <span class="string">&quot;The intermediate must have source as bytes string.&quot;</span>,
             }),
         }
@@ -1728,10 +1729,10 @@
 
     <span class="kw">fn</span> <span class="ident">get_input_index_from_atomic_proposition</span>(
         <span class="ident">compiled_input</span>: <span class="kw-2">&amp;</span><span class="ident">CompiledInput</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">ExecResultTOf</span><span class="op">&lt;</span><span class="ident">u8</span>, <span class="ident">Ext</span><span class="op">&gt;</span> {
+    ) <span class="op">-&gt;</span> <span class="ident">ExecResultTOf</span><span class="op">&lt;</span><span class="ident">u8</span>, <span class="ident">Ext</span><span class="op">&gt;</span> {
         <span class="kw">match</span> <span class="ident">compiled_input</span> {
-            <span class="ident">CompiledInput</span>::<span class="ident">NormalInput</span>(<span class="ident">normal</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Ok</span>(<span class="ident">normal</span>.<span class="ident">input_index</span>),
-            <span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Err</span>(<span class="ident">ExecError</span>::<span class="ident">Unexpected</span> {
+            <span class="ident">CompiledInput</span>::<span class="ident">NormalInput</span>(<span class="ident">normal</span>) <span class="op">=&gt;</span> <span class="prelude-val">Ok</span>(<span class="ident">normal</span>.<span class="ident">input_index</span>),
+            <span class="kw">_</span> <span class="op">=&gt;</span> <span class="prelude-val">Err</span>(<span class="ident">ExecError</span>::<span class="ident">Unexpected</span> {
                 <span class="ident">msg</span>: <span class="string">&quot;The atomic proposition must have NormalInput and input_index.&quot;</span>,
             }),
         }

@@ -1,3 +1,3 @@
 (function() {var implementors = {};
-implementors["plasm_runtime"] = [{"text":"impl PalletInfo for <a class=\"struct\" href=\"plasm_runtime/struct.PalletInfo.html\" title=\"struct plasm_runtime::PalletInfo\">PalletInfo</a>","synthetic":false,"types":["plasm_runtime::PalletInfo"]}];
+implementors["plasm_runtime"] = [{"text":"impl PalletInfo for PalletInfo","synthetic":false,"types":[]}];
 if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

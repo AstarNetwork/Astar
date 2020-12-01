@@ -1,3 +1,3 @@
 (function() {var implementors = {};
-implementors["plasm_runtime"] = [{"text":"impl&lt;F:&nbsp;FindAuthor&lt;<a class=\"primitive\" href=\"https://doc.rust-lang.org/nightly/std/primitive.u32.html\">u32</a>&gt;&gt; FindAuthor&lt;H160&gt; for <a class=\"struct\" href=\"plasm_runtime/struct.EthereumFindAuthor.html\" title=\"struct plasm_runtime::EthereumFindAuthor\">EthereumFindAuthor</a>&lt;F&gt;","synthetic":false,"types":["plasm_runtime::EthereumFindAuthor"]}];
+implementors["plasm_runtime"] = [{"text":"impl&lt;F:&nbsp;FindAuthor&lt;u32&gt;&gt; FindAuthor&lt;H160&gt; for EthereumFindAuthor&lt;F&gt;","synthetic":false,"types":[]}];
 if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

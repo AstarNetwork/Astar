@@ -1,4 +1,5 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source to the Rust file `frame/plasm-lockdrop/src/lib.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>lib.rs.html -- source</title><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../dark.css"><link rel="stylesheet" type="text/css" href="../../light.css" id="themeStyle"><script src="../../storage.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="shortcut icon" href="../../favicon.ico"><style type="text/css">#crate-search{background-image:url("../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../pallet_plasm_lockdrop/index.html'><div class='logo-container'><img src='../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!"><img src="../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices"></div></div><script src="../../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><a id="settings-menu" href="../../settings.html"><img src="../../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1">  1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source to the Rust file `frame/plasm-lockdrop/src/lib.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>lib.rs.html -- source</title><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../light.css"  id="themeStyle"><link rel="stylesheet" type="text/css" href="../../dark.css" disabled ><link rel="stylesheet" type="text/css" href="../../ayu.css" disabled ><script src="../../storage.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="shortcut icon" href="../../favicon.ico"><style type="text/css">#crate-search{background-image:url("../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../pallet_plasm_lockdrop/index.html'><div class='logo-container rust-logo'><img src='../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!"><img src="../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices"></div></div><script src="../../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><span class="help-button">?</span>
+                <a id="settings-menu" href="../../settings.html"><img src="../../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1">  1</span>
 <span id="2">  2</span>
 <span id="3">  3</span>
 <span id="4">  4</span>
@@ -942,25 +943,25 @@
 <span class="kw">mod</span> <span class="ident">tests</span>;
 
 <span class="kw">pub</span> <span class="kw">type</span> <span class="ident">BalanceOf</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> <span class="op">=</span>
-    <span class="op">&lt;</span><span class="op">&lt;</span><span class="ident">T</span> <span class="kw">as</span> <span class="ident">Trait</span><span class="op">&gt;</span>::<span class="ident">Currency</span> <span class="kw">as</span> <span class="ident">Currency</span><span class="op">&lt;</span><span class="op">&lt;</span><span class="ident">T</span> <span class="kw">as</span> <span class="ident">frame_system</span>::<span class="ident">Trait</span><span class="op">&gt;</span>::<span class="ident">AccountId</span><span class="op">&gt;</span><span class="op">&gt;</span>::<span class="ident">Balance</span>;
+    <span class="op">&lt;&lt;</span><span class="ident">T</span> <span class="kw">as</span> <span class="ident">Trait</span><span class="op">&gt;</span>::<span class="ident">Currency</span> <span class="kw">as</span> <span class="ident">Currency</span><span class="op">&lt;&lt;</span><span class="ident">T</span> <span class="kw">as</span> <span class="ident">frame_system</span>::<span class="ident">Trait</span><span class="op">&gt;</span>::<span class="ident">AccountId</span><span class="op">&gt;&gt;</span>::<span class="ident">Balance</span>;
 
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Encode</span>, <span class="ident">Decode</span>, <span class="ident">Clone</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">EcdsaSignature</span>(<span class="kw">pub</span> [<span class="ident">u8</span>; <span class="number">65</span>]);
 
 <span class="kw">impl</span> <span class="ident">PartialEq</span> <span class="kw">for</span> <span class="ident">EcdsaSignature</span> {
-    <span class="kw">fn</span> <span class="ident">eq</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">other</span>: <span class="kw-2">&amp;</span><span class="self">Self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">bool</span> {
-        <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="number">0</span>[..] <span class="op">=</span><span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">other</span>.<span class="number">0</span>[..]
+    <span class="kw">fn</span> <span class="ident">eq</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">other</span>: <span class="kw-2">&amp;</span><span class="self">Self</span>) <span class="op">-&gt;</span> <span class="ident">bool</span> {
+        <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="number">0</span>[..] <span class="op">==</span> <span class="kw-2">&amp;</span><span class="ident">other</span>.<span class="number">0</span>[..]
     }
 }
 
 <span class="kw">impl</span> <span class="ident">sp_std</span>::<span class="ident">fmt</span>::<span class="ident">Debug</span> <span class="kw">for</span> <span class="ident">EcdsaSignature</span> {
-    <span class="kw">fn</span> <span class="ident">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">f</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">sp_std</span>::<span class="ident">fmt</span>::<span class="ident">Formatter</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">sp_std</span>::<span class="ident">fmt</span>::<span class="prelude-ty">Result</span> {
+    <span class="kw">fn</span> <span class="ident">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">f</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">sp_std</span>::<span class="ident">fmt</span>::<span class="ident">Formatter</span><span class="op">&lt;</span><span class="lifetime">&#39;_</span><span class="op">&gt;</span>) <span class="op">-&gt;</span> <span class="ident">sp_std</span>::<span class="ident">fmt</span>::<span class="prelude-ty">Result</span> {
         <span class="macro">write</span><span class="macro">!</span>(<span class="ident">f</span>, <span class="string">&quot;EcdsaSignature({:?})&quot;</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="number">0</span>[..])
     }
 }
 
 <span class="doccomment">/// The module&#39;s main configuration trait.</span>
-<span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">Trait</span>: <span class="ident">SendTransactionTypes</span><span class="op">&lt;</span><span class="ident">Call</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">frame_system</span>::<span class="ident">Trait</span> {
+<span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">Trait</span>: <span class="ident">SendTransactionTypes</span><span class="op">&lt;</span><span class="ident">Call</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;&gt;</span> <span class="op">+</span> <span class="ident">frame_system</span>::<span class="ident">Trait</span> {
     <span class="doccomment">/// The lockdrop balance.</span>
     <span class="kw">type</span> <span class="ident">Currency</span>: <span class="ident">Currency</span><span class="op">&lt;</span><span class="self">Self</span>::<span class="ident">AccountId</span><span class="op">&gt;</span>;
 
@@ -971,7 +972,7 @@
     <span class="kw">type</span> <span class="ident">MedianFilterExpire</span>: <span class="ident">Get</span><span class="op">&lt;</span><span class="self">Self</span>::<span class="ident">Moment</span><span class="op">&gt;</span>;
 
     <span class="doccomment">/// Median filter window size.</span>
-    <span class="kw">type</span> <span class="ident">MedianFilterWidth</span>: <span class="ident">generic_array</span>::<span class="ident">ArrayLength</span><span class="op">&lt;</span><span class="ident">ListNode</span><span class="op">&lt;</span><span class="self">Self</span>::<span class="ident">DollarRate</span><span class="op">&gt;</span><span class="op">&gt;</span>;
+    <span class="kw">type</span> <span class="ident">MedianFilterWidth</span>: <span class="ident">generic_array</span>::<span class="ident">ArrayLength</span><span class="op">&lt;</span><span class="ident">ListNode</span><span class="op">&lt;</span><span class="self">Self</span>::<span class="ident">DollarRate</span><span class="op">&gt;&gt;</span>;
 
     <span class="doccomment">/// The identifier type for an authority.</span>
     <span class="kw">type</span> <span class="ident">AuthorityId</span>: <span class="ident">Member</span> <span class="op">+</span> <span class="ident">Parameter</span> <span class="op">+</span> <span class="ident">RuntimeAppPublic</span> <span class="op">+</span> <span class="ident">Default</span> <span class="op">+</span> <span class="ident">Ord</span>;
@@ -1008,10 +1009,10 @@
     <span class="comment">// XXX: I don&#39;t known how to convert into Balance from u128 without it</span>
     <span class="comment">// TODO: Should be removed</span>
     <span class="kw">type</span> <span class="ident">BalanceConvert</span>: <span class="ident">From</span><span class="op">&lt;</span><span class="ident">u128</span><span class="op">&gt;</span>
-        <span class="op">+</span> <span class="ident">Into</span><span class="op">&lt;</span><span class="op">&lt;</span><span class="self">Self</span>::<span class="ident">Currency</span> <span class="kw">as</span> <span class="ident">Currency</span><span class="op">&lt;</span><span class="op">&lt;</span><span class="self">Self</span> <span class="kw">as</span> <span class="ident">frame_system</span>::<span class="ident">Trait</span><span class="op">&gt;</span>::<span class="ident">AccountId</span><span class="op">&gt;</span><span class="op">&gt;</span>::<span class="ident">Balance</span><span class="op">&gt;</span>;
+        <span class="op">+</span> <span class="ident">Into</span><span class="op">&lt;&lt;</span><span class="self">Self</span>::<span class="ident">Currency</span> <span class="kw">as</span> <span class="ident">Currency</span><span class="op">&lt;&lt;</span><span class="self">Self</span> <span class="kw">as</span> <span class="ident">frame_system</span>::<span class="ident">Trait</span><span class="op">&gt;</span>::<span class="ident">AccountId</span><span class="op">&gt;&gt;</span>::<span class="ident">Balance</span><span class="op">&gt;</span>;
 
     <span class="doccomment">/// The regular events type.</span>
-    <span class="kw">type</span> <span class="ident">Event</span>: <span class="ident">From</span><span class="op">&lt;</span><span class="ident">Event</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Into</span><span class="op">&lt;</span><span class="op">&lt;</span><span class="self">Self</span> <span class="kw">as</span> <span class="ident">frame_system</span>::<span class="ident">Trait</span><span class="op">&gt;</span>::<span class="ident">Event</span><span class="op">&gt;</span>;
+    <span class="kw">type</span> <span class="ident">Event</span>: <span class="ident">From</span><span class="op">&lt;</span><span class="ident">Event</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;&gt;</span> <span class="op">+</span> <span class="ident">Into</span><span class="op">&lt;&lt;</span><span class="self">Self</span> <span class="kw">as</span> <span class="ident">frame_system</span>::<span class="ident">Trait</span><span class="op">&gt;</span>::<span class="ident">Event</span><span class="op">&gt;</span>;
 
     <span class="doccomment">/// Base priority for unsigned transactions.</span>
     <span class="kw">type</span> <span class="ident">UnsignedPriority</span>: <span class="ident">Get</span><span class="op">&lt;</span><span class="ident">TransactionPriority</span><span class="op">&gt;</span>;
@@ -1021,12 +1022,12 @@
 <span class="doccomment">/// in principle when you lock for long time you&#39;ll get more lockdrop tokens.</span>
 <span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">DurationBonus</span> {
     <span class="doccomment">/// Lockdrop bonus depends of lockding duration (in secs).</span>
-    <span class="kw">fn</span> <span class="ident">bonus</span>(<span class="ident">duration</span>: <span class="ident">u64</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">u16</span>;
+    <span class="kw">fn</span> <span class="ident">bonus</span>(<span class="ident">duration</span>: <span class="ident">u64</span>) <span class="op">-&gt;</span> <span class="ident">u16</span>;
 }
 
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">DustyDurationBonus</span>;
 <span class="kw">impl</span> <span class="ident">DurationBonus</span> <span class="kw">for</span> <span class="ident">DustyDurationBonus</span> {
-    <span class="kw">fn</span> <span class="ident">bonus</span>(<span class="ident">duration</span>: <span class="ident">u64</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">u16</span> {
+    <span class="kw">fn</span> <span class="ident">bonus</span>(<span class="ident">duration</span>: <span class="ident">u64</span>) <span class="op">-&gt;</span> <span class="ident">u16</span> {
         <span class="kw">const</span> <span class="ident">DAYS</span>: <span class="ident">u64</span> <span class="op">=</span> <span class="number">24</span> <span class="op">*</span> <span class="number">60</span> <span class="op">*</span> <span class="number">60</span>; <span class="comment">// One day in seconds</span>
         <span class="kw">if</span> <span class="ident">duration</span> <span class="op">&lt;</span> <span class="number">3</span> <span class="op">*</span> <span class="ident">DAYS</span> {
             <span class="number">0</span> <span class="comment">// Dont permit to participate with locking less</span>
@@ -1076,7 +1077,7 @@
 }
 
 <span class="kw">impl</span> <span class="ident">Default</span> <span class="kw">for</span> <span class="ident">Lockdrop</span> {
-    <span class="kw">fn</span> <span class="ident">default</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">fn</span> <span class="ident">default</span>() <span class="op">-&gt;</span> <span class="self">Self</span> {
         <span class="ident">Lockdrop</span>::<span class="ident">Ethereum</span> {
             <span class="ident">public_key</span>: <span class="ident">Default</span>::<span class="ident">default</span>(),
             <span class="ident">value</span>: <span class="ident">Default</span>::<span class="ident">default</span>(),
@@ -1164,11 +1165,11 @@
         <span class="doccomment">/// Token claim requests.</span>
         <span class="ident">Claims</span> <span class="ident">get</span>(<span class="kw">fn</span> <span class="ident">claims</span>):
             <span class="ident">map</span> <span class="ident">hasher</span>(<span class="ident">blake2_128_concat</span>) <span class="ident">ClaimId</span>
-            <span class="op">=</span><span class="op">&gt;</span> <span class="ident">Claim</span><span class="op">&lt;</span><span class="ident">T</span>::<span class="ident">AuthorityId</span><span class="op">&gt;</span>;
+            <span class="op">=&gt;</span> <span class="ident">Claim</span><span class="op">&lt;</span><span class="ident">T</span>::<span class="ident">AuthorityId</span><span class="op">&gt;</span>;
         <span class="doccomment">/// Double vote prevention registry.</span>
         <span class="ident">HasVote</span> <span class="ident">get</span>(<span class="kw">fn</span> <span class="ident">has_vote</span>):
             <span class="ident">double_map</span> <span class="ident">hasher</span>(<span class="ident">blake2_128_concat</span>) <span class="ident">T</span>::<span class="ident">AuthorityId</span>, <span class="ident">hasher</span>(<span class="ident">blake2_128_concat</span>) <span class="ident">ClaimId</span>
-            <span class="op">=</span><span class="op">&gt;</span> <span class="ident">bool</span>;
+            <span class="op">=&gt;</span> <span class="ident">bool</span>;
         <span class="doccomment">/// Lockdrop alpha parameter, where α ∈ [0; 1]</span>
         <span class="ident">Alpha</span> <span class="ident">get</span>(<span class="kw">fn</span> <span class="ident">alpha</span>) <span class="ident">config</span>(): <span class="ident">Perbill</span>;
         <span class="doccomment">/// Lockdrop dollar rate parameter: BTC, ETH.</span>
@@ -1176,7 +1177,7 @@
         <span class="doccomment">/// Lockdrop dollar rate median filter table: Time, BTC, ETH.</span>
         <span class="ident">DollarRateF</span> <span class="ident">get</span>(<span class="kw">fn</span> <span class="ident">dollar_rate_f</span>):
             <span class="ident">map</span> <span class="ident">hasher</span>(<span class="ident">blake2_128_concat</span>) <span class="ident">T</span>::<span class="ident">AuthorityId</span>
-            <span class="op">=</span><span class="op">&gt;</span> (<span class="ident">T</span>::<span class="ident">Moment</span>, <span class="ident">T</span>::<span class="ident">DollarRate</span>, <span class="ident">T</span>::<span class="ident">DollarRate</span>);
+            <span class="op">=&gt;</span> (<span class="ident">T</span>::<span class="ident">Moment</span>, <span class="ident">T</span>::<span class="ident">DollarRate</span>, <span class="ident">T</span>::<span class="ident">DollarRate</span>);
         <span class="doccomment">/// How much authority votes module should receive to decide claim result.</span>
         <span class="ident">VoteThreshold</span> <span class="ident">get</span>(<span class="kw">fn</span> <span class="ident">vote_threshold</span>) <span class="ident">config</span>(): <span class="ident">AuthorityVote</span>;
         <span class="doccomment">/// How much positive votes requered to approve claim.</span>
@@ -1195,7 +1196,7 @@
         <span class="kw">fn</span> <span class="ident">deposit_event</span>() <span class="op">=</span> <span class="ident">default</span>;
 
         <span class="doccomment">/// Clean the state on initialisation of a block</span>
-        <span class="kw">fn</span> <span class="ident">on_initialize</span>(<span class="ident">_now</span>: <span class="ident">T</span>::<span class="ident">BlockNumber</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Weight</span> {
+        <span class="kw">fn</span> <span class="ident">on_initialize</span>(<span class="ident">_now</span>: <span class="ident">T</span>::<span class="ident">BlockNumber</span>) <span class="op">-&gt;</span> <span class="ident">Weight</span> {
             <span class="comment">// At the beginning of each block execution, system triggers all</span>
             <span class="comment">// `on_initialize` functions, which allows us to set up some temporary state or - like</span>
             <span class="comment">// in this case - clean up other states</span>
@@ -1211,21 +1212,21 @@
             <span class="ident">origin</span>,
             <span class="ident">params</span>: <span class="ident">Lockdrop</span>,
             <span class="ident">_nonce</span>: <span class="ident">H256</span>,
-        ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">DispatchResult</span> {
+        ) <span class="op">-&gt;</span> <span class="ident">DispatchResult</span> {
             <span class="ident">ensure_none</span>(<span class="ident">origin</span>)<span class="question-mark">?</span>;
 
             <span class="kw">let</span> <span class="ident">claim_id</span> <span class="op">=</span> <span class="ident">BlakeTwo256</span>::<span class="ident">hash_of</span>(<span class="kw-2">&amp;</span><span class="ident">params</span>);
             <span class="macro">ensure</span><span class="macro">!</span>(
-                <span class="op">!</span><span class="op">&lt;</span><span class="ident">Claims</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>::<span class="ident">get</span>(<span class="ident">claim_id</span>).<span class="ident">complete</span>,
+                <span class="op">!</span><span class="op">&lt;</span><span class="ident">Claims</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;&gt;</span>::<span class="ident">get</span>(<span class="ident">claim_id</span>).<span class="ident">complete</span>,
                 <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>::<span class="ident">AlreadyPaid</span>,
             );
 
-            <span class="kw">if</span> <span class="op">!</span><span class="op">&lt;</span><span class="ident">Claims</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>::<span class="ident">contains_key</span>(<span class="ident">claim_id</span>) {
-                <span class="kw">let</span> <span class="ident">now</span> <span class="op">=</span> <span class="op">&lt;</span><span class="ident">frame_system</span>::<span class="ident">Module</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>::<span class="ident">block_number</span>();
+            <span class="kw">if</span> <span class="op">!</span><span class="op">&lt;</span><span class="ident">Claims</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;&gt;</span>::<span class="ident">contains_key</span>(<span class="ident">claim_id</span>) {
+                <span class="kw">let</span> <span class="ident">now</span> <span class="op">=</span> <span class="op">&lt;</span><span class="ident">frame_system</span>::<span class="ident">Module</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;&gt;</span>::<span class="ident">block_number</span>();
                 <span class="macro">ensure</span><span class="macro">!</span>(<span class="self">Self</span>::<span class="ident">is_active</span>(<span class="ident">now</span>), <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>::<span class="ident">OutOfBounds</span>);
 
                 <span class="kw">let</span> <span class="ident">amount</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">params</span> {
-                    <span class="ident">Lockdrop</span>::<span class="ident">Bitcoin</span> { .. } <span class="op">=</span><span class="op">&gt;</span> {
+                    <span class="ident">Lockdrop</span>::<span class="ident">Bitcoin</span> { .. } <span class="op">=&gt;</span> {
                         <span class="comment">// Cast bitcoin value to PLM order:</span>
                         <span class="comment">// satoshi = BTC * 10^9;</span>
                         <span class="comment">// PLM unit = PLM * 10^15;</span>
@@ -1236,7 +1237,7 @@
                         <span class="comment">// XXX</span>
                         <span class="number">0</span>
                     },
-                    <span class="ident">Lockdrop</span>::<span class="ident">Ethereum</span> { <span class="ident">value</span>, <span class="ident">duration</span>, .. } <span class="op">=</span><span class="op">&gt;</span> {
+                    <span class="ident">Lockdrop</span>::<span class="ident">Ethereum</span> { <span class="ident">value</span>, <span class="ident">duration</span>, .. } <span class="op">=&gt;</span> {
                         <span class="comment">// Cast Ethereum value to PLM order:</span>
                         <span class="comment">// satoshi = ETH * 10^18;</span>
                         <span class="comment">// PLM unit = PLM * 10^15;</span>
@@ -1246,7 +1247,7 @@
                     }
                 };
                 <span class="kw">let</span> <span class="ident">claim</span> <span class="op">=</span> <span class="ident">Claim</span> { <span class="ident">params</span>, <span class="ident">amount</span>, .. <span class="ident">Default</span>::<span class="ident">default</span>() };
-                <span class="op">&lt;</span><span class="ident">Claims</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>::<span class="ident">insert</span>(<span class="ident">claim_id</span>, <span class="ident">claim</span>);
+                <span class="op">&lt;</span><span class="ident">Claims</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;&gt;</span>::<span class="ident">insert</span>(<span class="ident">claim_id</span>, <span class="ident">claim</span>);
             }
 
             <span class="op">&lt;</span><span class="ident">Requests</span><span class="op">&gt;</span>::<span class="ident">mutate</span>(<span class="op">|</span><span class="ident">requests</span><span class="op">|</span> <span class="ident">requests</span>.<span class="ident">push</span>(<span class="ident">claim_id</span>));
@@ -1261,7 +1262,7 @@
         <span class="kw">fn</span> <span class="ident">claim</span>(
             <span class="ident">origin</span>,
             <span class="ident">claim_id</span>: <span class="ident">ClaimId</span>,
-        ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">DispatchResult</span> {
+        ) <span class="op">-&gt;</span> <span class="ident">DispatchResult</span> {
             <span class="ident">ensure_none</span>(<span class="ident">origin</span>)<span class="question-mark">?</span>;
             <span class="self">Self</span>::<span class="ident">claim_token</span>(<span class="ident">claim_id</span>, <span class="prelude-val">None</span>)
         }
@@ -1276,7 +1277,7 @@
             <span class="comment">// since signature verification is done in `validate_unsigned`</span>
             <span class="comment">// we can skip doing it here again.</span>
             <span class="ident">_signature</span>: <span class="ident">EcdsaSignature</span>,
-        ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">DispatchResult</span> {
+        ) <span class="op">-&gt;</span> <span class="ident">DispatchResult</span> {
             <span class="ident">ensure_none</span>(<span class="ident">origin</span>)<span class="question-mark">?</span>;
             <span class="self">Self</span>::<span class="ident">claim_token</span>(<span class="ident">claim_id</span>, <span class="prelude-val">Some</span>(<span class="ident">recipient</span>))
         }
@@ -1290,15 +1291,15 @@
             <span class="comment">// since signature verification is done in `validate_unsigned`</span>
             <span class="comment">// we can skip doing it here again.</span>
             <span class="ident">_signature</span>: <span class="op">&lt;</span><span class="ident">T</span>::<span class="ident">AuthorityId</span> <span class="kw">as</span> <span class="ident">RuntimeAppPublic</span><span class="op">&gt;</span>::<span class="ident">Signature</span>,
-        ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">DispatchResult</span> {
+        ) <span class="op">-&gt;</span> <span class="ident">DispatchResult</span> {
             <span class="ident">ensure_none</span>(<span class="ident">origin</span>)<span class="question-mark">?</span>;
 
             <span class="kw">let</span> <span class="ident">keys</span> <span class="op">=</span> <span class="ident">Keys</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>::<span class="ident">get</span>();
             <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">authority</span>) <span class="op">=</span> <span class="ident">keys</span>.<span class="ident">get</span>(<span class="ident">vote</span>.<span class="ident">authority</span> <span class="kw">as</span> <span class="ident">usize</span>) {
-                <span class="op">&lt;</span><span class="ident">HasVote</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>::<span class="ident">insert</span>(<span class="ident">authority</span>, <span class="kw-2">&amp;</span><span class="ident">vote</span>.<span class="ident">claim_id</span>, <span class="bool-val">true</span>);
+                <span class="op">&lt;</span><span class="ident">HasVote</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;&gt;</span>::<span class="ident">insert</span>(<span class="ident">authority</span>, <span class="kw-2">&amp;</span><span class="ident">vote</span>.<span class="ident">claim_id</span>, <span class="bool-val">true</span>);
                 <span class="self">Self</span>::<span class="ident">deposit_event</span>(<span class="ident">RawEvent</span>::<span class="ident">ClaimResponse</span>(<span class="ident">vote</span>.<span class="ident">claim_id</span>, <span class="ident">authority</span>.<span class="ident">clone</span>(), <span class="ident">vote</span>.<span class="ident">approve</span>));
 
-                <span class="op">&lt;</span><span class="ident">Claims</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>::<span class="ident">mutate</span>(<span class="kw-2">&amp;</span><span class="ident">vote</span>.<span class="ident">claim_id</span>, <span class="op">|</span><span class="ident">claim</span><span class="op">|</span>
+                <span class="op">&lt;</span><span class="ident">Claims</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;&gt;</span>::<span class="ident">mutate</span>(<span class="kw-2">&amp;</span><span class="ident">vote</span>.<span class="ident">claim_id</span>, <span class="op">|</span><span class="ident">claim</span><span class="op">|</span>
                     <span class="kw">if</span> <span class="ident">vote</span>.<span class="ident">approve</span> {
                         <span class="ident">claim</span>.<span class="ident">approve</span>.<span class="ident">insert</span>(<span class="ident">authority</span>.<span class="ident">clone</span>());
                         <span class="ident">claim</span>.<span class="ident">decline</span>.<span class="ident">remove</span>(<span class="kw-2">&amp;</span><span class="ident">authority</span>);
@@ -1324,7 +1325,7 @@
             <span class="comment">// since signature verification is done in `validate_unsigned`</span>
             <span class="comment">// we can skip doing it here again.</span>
             <span class="ident">_signature</span>: <span class="op">&lt;</span><span class="ident">T</span>::<span class="ident">AuthorityId</span> <span class="kw">as</span> <span class="ident">RuntimeAppPublic</span><span class="op">&gt;</span>::<span class="ident">Signature</span>,
-        ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">DispatchResult</span> {
+        ) <span class="op">-&gt;</span> <span class="ident">DispatchResult</span> {
             <span class="ident">ensure_none</span>(<span class="ident">origin</span>)<span class="question-mark">?</span>;
 
             <span class="kw">let</span> <span class="ident">now</span> <span class="op">=</span> <span class="ident">T</span>::<span class="ident">Time</span>::<span class="ident">now</span>();
@@ -1339,19 +1340,19 @@
             <span class="kw">let</span> <span class="ident">expire</span> <span class="op">=</span> <span class="ident">T</span>::<span class="ident">MedianFilterExpire</span>::<span class="ident">get</span>();
             <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">btc_filter</span>: <span class="ident">Filter</span><span class="op">&lt;</span><span class="ident">T</span>::<span class="ident">DollarRate</span>, <span class="ident">T</span>::<span class="ident">MedianFilterWidth</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">Filter</span>::<span class="ident">new</span>();
             <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">eth_filter</span>: <span class="ident">Filter</span><span class="op">&lt;</span><span class="ident">T</span>::<span class="ident">DollarRate</span>, <span class="ident">T</span>::<span class="ident">MedianFilterWidth</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">Filter</span>::<span class="ident">new</span>();
-            <span class="kw">let</span> (<span class="kw-2">mut</span> <span class="ident">btc_filtered_rate</span>, <span class="kw-2">mut</span> <span class="ident">eth_filtered_rate</span>) <span class="op">=</span> <span class="op">&lt;</span><span class="ident">DollarRate</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>::<span class="ident">get</span>();
-            <span class="kw">for</span> (<span class="ident">a</span>, <span class="ident">item</span>) <span class="kw">in</span> <span class="op">&lt;</span><span class="ident">DollarRateF</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>::<span class="ident">iter</span>() {
+            <span class="kw">let</span> (<span class="kw-2">mut</span> <span class="ident">btc_filtered_rate</span>, <span class="kw-2">mut</span> <span class="ident">eth_filtered_rate</span>) <span class="op">=</span> <span class="op">&lt;</span><span class="ident">DollarRate</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;&gt;</span>::<span class="ident">get</span>();
+            <span class="kw">for</span> (<span class="ident">a</span>, <span class="ident">item</span>) <span class="kw">in</span> <span class="op">&lt;</span><span class="ident">DollarRateF</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;&gt;</span>::<span class="ident">iter</span>() {
                 <span class="kw">if</span> <span class="ident">now</span>.<span class="ident">saturating_sub</span>(<span class="ident">item</span>.<span class="number">0</span>) <span class="op">&lt;</span> <span class="ident">expire</span> {
                     <span class="comment">// Use value in filter when not expired</span>
                     <span class="ident">btc_filtered_rate</span> <span class="op">=</span> <span class="ident">btc_filter</span>.<span class="ident">consume</span>(<span class="ident">item</span>.<span class="number">1</span>);
                     <span class="ident">eth_filtered_rate</span> <span class="op">=</span> <span class="ident">eth_filter</span>.<span class="ident">consume</span>(<span class="ident">item</span>.<span class="number">2</span>);
                 } <span class="kw">else</span> {
                     <span class="comment">// Drop value when expired</span>
-                    <span class="op">&lt;</span><span class="ident">DollarRateF</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>::<span class="ident">remove</span>(<span class="ident">a</span>);
+                    <span class="op">&lt;</span><span class="ident">DollarRateF</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;&gt;</span>::<span class="ident">remove</span>(<span class="ident">a</span>);
                 }
             }
 
-            <span class="op">&lt;</span><span class="ident">DollarRate</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>::<span class="ident">put</span>((<span class="ident">btc_filtered_rate</span>, <span class="ident">eth_filtered_rate</span>));
+            <span class="op">&lt;</span><span class="ident">DollarRate</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;&gt;</span>::<span class="ident">put</span>((<span class="ident">btc_filtered_rate</span>, <span class="ident">eth_filtered_rate</span>));
             <span class="self">Self</span>::<span class="ident">deposit_event</span>(<span class="ident">RawEvent</span>::<span class="ident">NewDollarRate</span>(<span class="ident">btc_filtered_rate</span>, <span class="ident">eth_filtered_rate</span>));
 
             <span class="prelude-val">Ok</span>(())
@@ -1369,7 +1370,7 @@
         <span class="kw">fn</span> <span class="ident">set_bounds</span>(<span class="ident">origin</span>, <span class="ident">from</span>: <span class="ident">T</span>::<span class="ident">BlockNumber</span>, <span class="ident">to</span>: <span class="ident">T</span>::<span class="ident">BlockNumber</span>) {
             <span class="ident">ensure_root</span>(<span class="ident">origin</span>)<span class="question-mark">?</span>;
             <span class="macro">ensure</span><span class="macro">!</span>(<span class="ident">from</span> <span class="op">&lt;</span> <span class="ident">to</span>, <span class="string">&quot;wrong arguments&quot;</span>);
-            <span class="op">&lt;</span><span class="ident">LockdropBounds</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>::<span class="ident">put</span>((<span class="ident">from</span>, <span class="ident">to</span>));
+            <span class="op">&lt;</span><span class="ident">LockdropBounds</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;&gt;</span>::<span class="ident">put</span>((<span class="ident">from</span>, <span class="ident">to</span>));
         }
 
         <span class="doccomment">/// Set minimum of positive votes required for lock approve.</span>
@@ -1399,15 +1400,15 @@
         <span class="comment">// Runs after every block within the context and current state of said block.</span>
         <span class="kw">fn</span> <span class="ident">offchain_worker</span>(<span class="ident">now</span>: <span class="ident">T</span>::<span class="ident">BlockNumber</span>) {
             <span class="comment">// Launch if validator and lockdrop is active.</span>
-            <span class="kw">if</span> <span class="self">Self</span>::<span class="ident">is_active</span>(<span class="ident">now</span>) <span class="kw-2">&amp;</span><span class="op">&amp;</span> <span class="ident">T</span>::<span class="ident">AuthorityId</span>::<span class="ident">all</span>().<span class="ident">len</span>() <span class="op">&gt;</span> <span class="number">0</span> {
+            <span class="kw">if</span> <span class="self">Self</span>::<span class="ident">is_active</span>(<span class="ident">now</span>) <span class="op">&amp;&amp;</span> <span class="ident">T</span>::<span class="ident">AuthorityId</span>::<span class="ident">all</span>().<span class="ident">len</span>() <span class="op">&gt;</span> <span class="number">0</span> {
                 <span class="ident">debug</span>::<span class="ident">RuntimeLogger</span>::<span class="ident">init</span>();
 
                 <span class="kw">match</span> <span class="self">Self</span>::<span class="ident">offchain</span>() {
-                    <span class="prelude-val">Err</span>(<span class="kw">_</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">debug</span>::<span class="macro">error</span><span class="macro">!</span>(
+                    <span class="prelude-val">Err</span>(<span class="kw">_</span>) <span class="op">=&gt;</span> <span class="ident">debug</span>::<span class="macro">error</span><span class="macro">!</span>(
                         <span class="ident">target</span>: <span class="string">&quot;lockdrop-offchain-worker&quot;</span>,
                         <span class="string">&quot;lockdrop worker failed&quot;</span>,
                     ),
-                    <span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> (),
+                    <span class="kw">_</span> <span class="op">=&gt;</span> (),
                 }
             }
         }
@@ -1416,9 +1417,9 @@
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Trait</span><span class="op">&gt;</span> <span class="ident">Module</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
     <span class="doccomment">/// The main offchain worker entry point.</span>
-    <span class="kw">fn</span> <span class="ident">offchain</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), ()<span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">offchain</span>() <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), ()<span class="op">&gt;</span> {
         <span class="kw">for</span> <span class="ident">key</span> <span class="kw">in</span> <span class="ident">T</span>::<span class="ident">AuthorityId</span>::<span class="ident">all</span>() {
-            <span class="kw">let</span> <span class="ident">delay</span> <span class="op">=</span> <span class="ident">T</span>::<span class="ident">Time</span>::<span class="ident">now</span>() <span class="op">-</span> <span class="op">&lt;</span><span class="ident">DollarRateF</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>::<span class="ident">get</span>(<span class="ident">key</span>.<span class="ident">clone</span>()).<span class="number">0</span>;
+            <span class="kw">let</span> <span class="ident">delay</span> <span class="op">=</span> <span class="ident">T</span>::<span class="ident">Time</span>::<span class="ident">now</span>() <span class="op">-</span> <span class="op">&lt;</span><span class="ident">DollarRateF</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;&gt;</span>::<span class="ident">get</span>(<span class="ident">key</span>.<span class="ident">clone</span>()).<span class="number">0</span>;
             <span class="kw">if</span> <span class="ident">delay</span> <span class="op">&gt;</span> <span class="ident">T</span>::<span class="ident">MedianFilterExpire</span>::<span class="ident">get</span>() {
                 <span class="self">Self</span>::<span class="ident">send_dollar_rate</span>(<span class="ident">key</span>)<span class="question-mark">?</span>;
             }
@@ -1426,7 +1427,7 @@
         <span class="self">Self</span>::<span class="ident">claim_request_oracle</span>()
     }
 
-    <span class="kw">fn</span> <span class="ident">claim_request_oracle</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), ()<span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">claim_request_oracle</span>() <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), ()<span class="op">&gt;</span> {
         <span class="kw">for</span> <span class="ident">claim_id</span> <span class="kw">in</span> <span class="self">Self</span>::<span class="ident">requests</span>() {
             <span class="ident">debug</span>::<span class="macro">debug</span><span class="macro">!</span>(
                 <span class="ident">target</span>: <span class="string">&quot;lockdrop-offchain-worker&quot;</span>,
@@ -1454,7 +1455,7 @@
                     );
 
                     <span class="kw">let</span> <span class="ident">res</span> <span class="op">=</span>
-                        <span class="ident">SubmitTransaction</span>::<span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">Call</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>::<span class="ident">submit_unsigned_transaction</span>(<span class="ident">call</span>.<span class="ident">into</span>());
+                        <span class="ident">SubmitTransaction</span>::<span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">Call</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;&gt;</span>::<span class="ident">submit_unsigned_transaction</span>(<span class="ident">call</span>.<span class="ident">into</span>());
                     <span class="ident">debug</span>::<span class="macro">debug</span><span class="macro">!</span>(
                         <span class="ident">target</span>: <span class="string">&quot;lockdrop-offchain-worker&quot;</span>,
                         <span class="string">&quot;claim id {} =&gt; vote extrinsic send: {:?}&quot;</span>, <span class="ident">claim_id</span>, <span class="ident">res</span>
@@ -1467,7 +1468,7 @@
     }
 
     <span class="doccomment">/// Send dollar rate as unsigned extrinsic from authority.</span>
-    <span class="kw">fn</span> <span class="ident">send_dollar_rate</span>(<span class="ident">key</span>: <span class="ident">T</span>::<span class="ident">AuthorityId</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), ()<span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">send_dollar_rate</span>(<span class="ident">key</span>: <span class="ident">T</span>::<span class="ident">AuthorityId</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), ()<span class="op">&gt;</span> {
         <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">authority</span>) <span class="op">=</span> <span class="self">Self</span>::<span class="ident">authority_index_of</span>(<span class="kw-2">&amp;</span><span class="ident">key</span>) {
             <span class="kw">let</span> <span class="ident">btc_price</span>: <span class="ident">f32</span> <span class="op">=</span> <span class="ident">BitcoinPrice</span>::<span class="ident">fetch</span>()<span class="question-mark">?</span>;
             <span class="kw">let</span> <span class="ident">eth_price</span>: <span class="ident">f32</span> <span class="op">=</span> <span class="ident">EthereumPrice</span>::<span class="ident">fetch</span>()<span class="question-mark">?</span>;
@@ -1484,7 +1485,7 @@
                 <span class="string">&quot;dollar rate extrinsic: {:?}&quot;</span>, <span class="ident">call</span>
             );
 
-            <span class="kw">let</span> <span class="ident">res</span> <span class="op">=</span> <span class="ident">SubmitTransaction</span>::<span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">Call</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>::<span class="ident">submit_unsigned_transaction</span>(<span class="ident">call</span>.<span class="ident">into</span>());
+            <span class="kw">let</span> <span class="ident">res</span> <span class="op">=</span> <span class="ident">SubmitTransaction</span>::<span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">Call</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;&gt;</span>::<span class="ident">submit_unsigned_transaction</span>(<span class="ident">call</span>.<span class="ident">into</span>());
             <span class="ident">debug</span>::<span class="macro">debug</span><span class="macro">!</span>(
                 <span class="ident">target</span>: <span class="string">&quot;lockdrop-offchain-worker&quot;</span>,
                 <span class="string">&quot;dollar rate extrinsic send: {:?}&quot;</span>, <span class="ident">res</span>
@@ -1500,10 +1501,10 @@
     }
 
     <span class="doccomment">/// Check locking parameters of given claim.</span>
-    <span class="kw">fn</span> <span class="ident">check_lock</span>(<span class="ident">claim_id</span>: <span class="ident">ClaimId</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">bool</span>, ()<span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">check_lock</span>(<span class="ident">claim_id</span>: <span class="ident">ClaimId</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">bool</span>, ()<span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">Claim</span> { <span class="ident">params</span>, .. } <span class="op">=</span> <span class="self">Self</span>::<span class="ident">claims</span>(<span class="ident">claim_id</span>);
         <span class="kw">match</span> <span class="ident">params</span> {
-            <span class="ident">Lockdrop</span>::<span class="ident">Bitcoin</span> { .. } <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="ident">Lockdrop</span>::<span class="ident">Bitcoin</span> { .. } <span class="op">=&gt;</span> {
                 <span class="comment">/*
                     let success = BitcoinLock::check(transaction_hash, public_key, duration, value)?;
                     debug::debug!(
@@ -1519,7 +1520,7 @@
                 <span class="ident">public_key</span>,
                 <span class="ident">duration</span>,
                 <span class="ident">value</span>,
-            } <span class="op">=</span><span class="op">&gt;</span> {
+            } <span class="op">=&gt;</span> {
                 <span class="kw">let</span> <span class="ident">success</span> <span class="op">=</span> <span class="ident">EthereumLock</span>::<span class="ident">check</span>(<span class="ident">transaction_hash</span>, <span class="ident">public_key</span>, <span class="ident">duration</span>, <span class="ident">value</span>)<span class="question-mark">?</span>;
                 <span class="ident">debug</span>::<span class="macro">debug</span><span class="macro">!</span>(
                     <span class="ident">target</span>: <span class="string">&quot;lockdrop-offchain-worker&quot;</span>,
@@ -1530,26 +1531,26 @@
         }
     }
 
-    <span class="kw">fn</span> <span class="ident">claim_token</span>(<span class="ident">claim_id</span>: <span class="ident">ClaimId</span>, <span class="ident">recipient</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">T</span>::<span class="ident">AccountId</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">DispatchResult</span> {
-        <span class="kw">let</span> <span class="ident">claim</span> <span class="op">=</span> <span class="op">&lt;</span><span class="ident">Claims</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>::<span class="ident">get</span>(<span class="ident">claim_id</span>);
+    <span class="kw">fn</span> <span class="ident">claim_token</span>(<span class="ident">claim_id</span>: <span class="ident">ClaimId</span>, <span class="ident">recipient</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">T</span>::<span class="ident">AccountId</span><span class="op">&gt;</span>) <span class="op">-&gt;</span> <span class="ident">DispatchResult</span> {
+        <span class="kw">let</span> <span class="ident">claim</span> <span class="op">=</span> <span class="op">&lt;</span><span class="ident">Claims</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;&gt;</span>::<span class="ident">get</span>(<span class="ident">claim_id</span>);
         <span class="macro">ensure</span><span class="macro">!</span>(<span class="op">!</span><span class="ident">claim</span>.<span class="ident">complete</span>, <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>::<span class="ident">AlreadyPaid</span>);
 
         <span class="kw">let</span> <span class="ident">approve</span> <span class="op">=</span> <span class="ident">claim</span>.<span class="ident">approve</span>.<span class="ident">len</span>();
         <span class="kw">let</span> <span class="ident">decline</span> <span class="op">=</span> <span class="ident">claim</span>.<span class="ident">decline</span>.<span class="ident">len</span>();
         <span class="macro">ensure</span><span class="macro">!</span>(
-            <span class="ident">approve</span> <span class="op">+</span> <span class="ident">decline</span> <span class="op">&gt;</span><span class="op">=</span> <span class="op">&lt;</span><span class="ident">VoteThreshold</span><span class="op">&gt;</span>::<span class="ident">get</span>() <span class="kw">as</span> <span class="ident">usize</span>,
+            <span class="ident">approve</span> <span class="op">+</span> <span class="ident">decline</span> <span class="op">&gt;=</span> <span class="op">&lt;</span><span class="ident">VoteThreshold</span><span class="op">&gt;</span>::<span class="ident">get</span>() <span class="kw">as</span> <span class="ident">usize</span>,
             <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>::<span class="ident">NotEnoughVotes</span>,
         );
         <span class="macro">ensure</span><span class="macro">!</span>(
-            <span class="ident">approve</span>.<span class="ident">saturating_sub</span>(<span class="ident">decline</span>) <span class="op">&gt;</span><span class="op">=</span> <span class="op">&lt;</span><span class="ident">PositiveVotes</span><span class="op">&gt;</span>::<span class="ident">get</span>() <span class="kw">as</span> <span class="ident">usize</span>,
+            <span class="ident">approve</span>.<span class="ident">saturating_sub</span>(<span class="ident">decline</span>) <span class="op">&gt;=</span> <span class="op">&lt;</span><span class="ident">PositiveVotes</span><span class="op">&gt;</span>::<span class="ident">get</span>() <span class="kw">as</span> <span class="ident">usize</span>,
             <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>::<span class="ident">NotApproved</span>,
         );
 
         <span class="kw">let</span> <span class="ident">account</span> <span class="op">=</span> <span class="ident">recipient</span>.<span class="ident">unwrap_or</span>({
             <span class="comment">// Deposit lockdrop tokens on locking public key.</span>
             <span class="kw">let</span> <span class="ident">public_key</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">claim</span>.<span class="ident">params</span> {
-                <span class="ident">Lockdrop</span>::<span class="ident">Bitcoin</span> { <span class="ident">public_key</span>, .. } <span class="op">=</span><span class="op">&gt;</span> <span class="ident">public_key</span>,
-                <span class="ident">Lockdrop</span>::<span class="ident">Ethereum</span> { <span class="ident">public_key</span>, .. } <span class="op">=</span><span class="op">&gt;</span> <span class="ident">public_key</span>,
+                <span class="ident">Lockdrop</span>::<span class="ident">Bitcoin</span> { <span class="ident">public_key</span>, .. } <span class="op">=&gt;</span> <span class="ident">public_key</span>,
+                <span class="ident">Lockdrop</span>::<span class="ident">Ethereum</span> { <span class="ident">public_key</span>, .. } <span class="op">=&gt;</span> <span class="ident">public_key</span>,
             };
             <span class="ident">T</span>::<span class="ident">Account</span>::<span class="ident">from</span>(<span class="ident">public_key</span>).<span class="ident">into_account</span>()
         });
@@ -1557,7 +1558,7 @@
         <span class="ident">T</span>::<span class="ident">Currency</span>::<span class="ident">deposit_creating</span>(<span class="kw-2">&amp;</span><span class="ident">account</span>, <span class="ident">amount</span>);
 
         <span class="comment">// Finalize claim request</span>
-        <span class="op">&lt;</span><span class="ident">Claims</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>::<span class="ident">mutate</span>(<span class="ident">claim_id</span>, <span class="op">|</span><span class="ident">claim</span><span class="op">|</span> <span class="ident">claim</span>.<span class="ident">complete</span> <span class="op">=</span> <span class="bool-val">true</span>);
+        <span class="op">&lt;</span><span class="ident">Claims</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;&gt;</span>::<span class="ident">mutate</span>(<span class="ident">claim_id</span>, <span class="op">|</span><span class="ident">claim</span><span class="op">|</span> <span class="ident">claim</span>.<span class="ident">complete</span> <span class="op">=</span> <span class="bool-val">true</span>);
         <span class="self">Self</span>::<span class="ident">deposit_event</span>(<span class="ident">RawEvent</span>::<span class="ident">ClaimComplete</span>(<span class="ident">claim_id</span>, <span class="ident">account</span>, <span class="ident">amount</span>));
 
         <span class="prelude-val">Ok</span>(())
@@ -1573,14 +1574,14 @@
     */</span>
 
     <span class="doccomment">/// PLM issue amount for given ETH value and locking duration (in secs).</span>
-    <span class="kw">fn</span> <span class="ident">eth_issue_amount</span>(<span class="ident">value</span>: <span class="ident">u128</span>, <span class="ident">duration</span>: <span class="ident">u64</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">u128</span> {
+    <span class="kw">fn</span> <span class="ident">eth_issue_amount</span>(<span class="ident">value</span>: <span class="ident">u128</span>, <span class="ident">duration</span>: <span class="ident">u64</span>) <span class="op">-&gt;</span> <span class="ident">u128</span> {
         <span class="comment">// https://medium.com/stake-technologies/plasm-lockdrop-introduction-99fa2dfc37c0</span>
         <span class="kw">let</span> <span class="ident">rate</span> <span class="op">=</span> <span class="self">Self</span>::<span class="ident">alpha</span>() <span class="op">*</span> <span class="self">Self</span>::<span class="ident">dollar_rate</span>().<span class="number">1</span> <span class="op">*</span> <span class="ident">T</span>::<span class="ident">DurationBonus</span>::<span class="ident">bonus</span>(<span class="ident">duration</span>).<span class="ident">into</span>();
         <span class="ident">rate</span>.<span class="ident">into</span>() <span class="op">*</span> <span class="ident">value</span>
     }
 
     <span class="doccomment">/// Check that authority key list contains given account</span>
-    <span class="kw">fn</span> <span class="ident">authority_index_of</span>(<span class="ident">public</span>: <span class="kw-2">&amp;</span><span class="ident">T</span>::<span class="ident">AuthorityId</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">AuthorityIndex</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">authority_index_of</span>(<span class="ident">public</span>: <span class="kw-2">&amp;</span><span class="ident">T</span>::<span class="ident">AuthorityId</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">AuthorityIndex</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">keys</span> <span class="op">=</span> <span class="ident">Keys</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>::<span class="ident">get</span>();
         <span class="comment">// O(n) is ok because of short list</span>
         <span class="kw">for</span> (<span class="ident">i</span>, <span class="ident">elem</span>) <span class="kw">in</span> <span class="ident">keys</span>.<span class="ident">iter</span>().<span class="ident">enumerate</span>() {
@@ -1592,13 +1593,13 @@
     }
 
     <span class="doccomment">/// Check that block suits lockdrop bounds.</span>
-    <span class="kw">fn</span> <span class="ident">is_active</span>(<span class="ident">now</span>: <span class="ident">T</span>::<span class="ident">BlockNumber</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">bool</span> {
-        <span class="kw">let</span> <span class="ident">bounds</span> <span class="op">=</span> <span class="op">&lt;</span><span class="ident">LockdropBounds</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>::<span class="ident">get</span>();
-        <span class="ident">now</span> <span class="op">&gt;</span><span class="op">=</span> <span class="ident">bounds</span>.<span class="number">0</span> <span class="kw-2">&amp;</span><span class="op">&amp;</span> <span class="ident">now</span> <span class="op">&lt;</span> <span class="ident">bounds</span>.<span class="number">1</span>
+    <span class="kw">fn</span> <span class="ident">is_active</span>(<span class="ident">now</span>: <span class="ident">T</span>::<span class="ident">BlockNumber</span>) <span class="op">-&gt;</span> <span class="ident">bool</span> {
+        <span class="kw">let</span> <span class="ident">bounds</span> <span class="op">=</span> <span class="op">&lt;</span><span class="ident">LockdropBounds</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;&gt;</span>::<span class="ident">get</span>();
+        <span class="ident">now</span> <span class="op">&gt;=</span> <span class="ident">bounds</span>.<span class="number">0</span> <span class="op">&amp;&amp;</span> <span class="ident">now</span> <span class="op">&lt;</span> <span class="ident">bounds</span>.<span class="number">1</span>
     }
 
     <span class="doccomment">/// Create message to sign it for claiming to custom address.</span>
-    <span class="kw">fn</span> <span class="ident">claim_message</span>(<span class="ident">claim_id</span>: <span class="kw-2">&amp;</span><span class="ident">ClaimId</span>, <span class="ident">recipient</span>: <span class="kw-2">&amp;</span><span class="ident">T</span>::<span class="ident">AccountId</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">claim_message</span>(<span class="ident">claim_id</span>: <span class="kw-2">&amp;</span><span class="ident">ClaimId</span>, <span class="ident">recipient</span>: <span class="kw-2">&amp;</span><span class="ident">T</span>::<span class="ident">AccountId</span>) <span class="op">-&gt;</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">v</span> <span class="op">=</span> <span class="string">b&quot;I declare to claim lockdrop reward with ID &quot;</span>.<span class="ident">to_vec</span>();
         <span class="ident">v</span>.<span class="ident">extend</span>(<span class="ident">hex</span>::<span class="ident">encode</span>(<span class="ident">claim_id</span>).<span class="ident">bytes</span>());
         <span class="ident">v</span>.<span class="ident">extend</span>(<span class="string">&quot; to AccountId &quot;</span>.<span class="ident">bytes</span>());
@@ -1614,16 +1615,16 @@
 <span class="kw">impl</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Trait</span><span class="op">&gt;</span> <span class="ident">frame_support</span>::<span class="ident">unsigned</span>::<span class="ident">ValidateUnsigned</span> <span class="kw">for</span> <span class="ident">Module</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
     <span class="kw">type</span> <span class="ident">Call</span> <span class="op">=</span> <span class="ident">Call</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>;
 
-    <span class="kw">fn</span> <span class="ident">validate_unsigned</span>(<span class="ident">_source</span>: <span class="ident">TransactionSource</span>, <span class="ident">call</span>: <span class="kw-2">&amp;</span><span class="self">Self</span>::<span class="ident">Call</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">TransactionValidity</span> {
+    <span class="kw">fn</span> <span class="ident">validate_unsigned</span>(<span class="ident">_source</span>: <span class="ident">TransactionSource</span>, <span class="ident">call</span>: <span class="kw-2">&amp;</span><span class="self">Self</span>::<span class="ident">Call</span>) <span class="op">-&gt;</span> <span class="ident">TransactionValidity</span> {
         <span class="kw">match</span> <span class="ident">call</span> {
-            <span class="ident">Call</span>::<span class="ident">request</span>(<span class="ident">params</span>, <span class="ident">nonce</span>) <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="ident">Call</span>::<span class="ident">request</span>(<span class="ident">params</span>, <span class="ident">nonce</span>) <span class="op">=&gt;</span> {
                 <span class="kw">if</span> <span class="op">!</span><span class="macro">matches</span><span class="macro">!</span>(<span class="ident">params</span>, <span class="ident">Lockdrop</span>::<span class="ident">Ethereum</span>{..}) {
                     <span class="comment">// Only Ethereum requests allowed</span>
                     <span class="kw">return</span> <span class="ident">InvalidTransaction</span>::<span class="ident">Call</span>.<span class="ident">into</span>();
                 }
 
                 <span class="kw">let</span> <span class="ident">claim_id</span> <span class="op">=</span> <span class="ident">BlakeTwo256</span>::<span class="ident">hash_of</span>(<span class="kw-2">&amp;</span><span class="ident">params</span>);
-                <span class="kw">if</span> <span class="op">&lt;</span><span class="ident">Claims</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>::<span class="ident">get</span>(<span class="ident">claim_id</span>).<span class="ident">complete</span> {
+                <span class="kw">if</span> <span class="op">&lt;</span><span class="ident">Claims</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;&gt;</span>::<span class="ident">get</span>(<span class="ident">claim_id</span>).<span class="ident">complete</span> {
                     <span class="kw">return</span> <span class="ident">InvalidTransaction</span>::<span class="ident">Custom</span>(<span class="ident">ERROR_ALREADY_CLAIMED</span>).<span class="ident">into</span>();
                 }
 
@@ -1641,8 +1642,8 @@
                     .<span class="ident">build</span>()
             }
 
-            <span class="ident">Call</span>::<span class="ident">claim</span>(<span class="ident">claim_id</span>) <span class="op">=</span><span class="op">&gt;</span> {
-                <span class="kw">let</span> <span class="ident">claim</span> <span class="op">=</span> <span class="op">&lt;</span><span class="ident">Claims</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>::<span class="ident">get</span>(<span class="ident">claim_id</span>);
+            <span class="ident">Call</span>::<span class="ident">claim</span>(<span class="ident">claim_id</span>) <span class="op">=&gt;</span> {
+                <span class="kw">let</span> <span class="ident">claim</span> <span class="op">=</span> <span class="op">&lt;</span><span class="ident">Claims</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;&gt;</span>::<span class="ident">get</span>(<span class="ident">claim_id</span>);
                 <span class="kw">if</span> <span class="ident">claim</span>.<span class="ident">complete</span> {
                     <span class="kw">return</span> <span class="ident">InvalidTransaction</span>::<span class="ident">Custom</span>(<span class="ident">ERROR_ALREADY_CLAIMED</span>).<span class="ident">into</span>();
                 }
@@ -1652,7 +1653,7 @@
                 <span class="kw">let</span> <span class="ident">on_vote</span> <span class="op">=</span> <span class="ident">approve</span> <span class="op">+</span> <span class="ident">decline</span> <span class="op">&lt;</span> <span class="op">&lt;</span><span class="ident">VoteThreshold</span><span class="op">&gt;</span>::<span class="ident">get</span>() <span class="kw">as</span> <span class="ident">usize</span>;
                 <span class="kw">let</span> <span class="ident">not_approved</span> <span class="op">=</span>
                     <span class="ident">approve</span>.<span class="ident">saturating_sub</span>(<span class="ident">decline</span>) <span class="op">&lt;</span> <span class="op">&lt;</span><span class="ident">PositiveVotes</span><span class="op">&gt;</span>::<span class="ident">get</span>() <span class="kw">as</span> <span class="ident">usize</span>;
-                <span class="kw">if</span> <span class="ident">on_vote</span> <span class="op">|</span><span class="op">|</span> <span class="ident">not_approved</span> {
+                <span class="kw">if</span> <span class="ident">on_vote</span> <span class="op">||</span> <span class="ident">not_approved</span> {
                     <span class="kw">return</span> <span class="ident">InvalidTransaction</span>::<span class="ident">Custom</span>(<span class="ident">ERROR_CLAIM_ON_VOTING</span>).<span class="ident">into</span>();
                 }
 
@@ -1664,8 +1665,8 @@
                     .<span class="ident">build</span>()
             }
 
-            <span class="ident">Call</span>::<span class="ident">claim_to</span>(<span class="ident">claim_id</span>, <span class="ident">recipient</span>, <span class="ident">signature</span>) <span class="op">=</span><span class="op">&gt;</span> {
-                <span class="kw">let</span> <span class="ident">claim</span> <span class="op">=</span> <span class="op">&lt;</span><span class="ident">Claims</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>::<span class="ident">get</span>(<span class="ident">claim_id</span>);
+            <span class="ident">Call</span>::<span class="ident">claim_to</span>(<span class="ident">claim_id</span>, <span class="ident">recipient</span>, <span class="ident">signature</span>) <span class="op">=&gt;</span> {
+                <span class="kw">let</span> <span class="ident">claim</span> <span class="op">=</span> <span class="op">&lt;</span><span class="ident">Claims</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;&gt;</span>::<span class="ident">get</span>(<span class="ident">claim_id</span>);
                 <span class="kw">if</span> <span class="ident">claim</span>.<span class="ident">complete</span> {
                     <span class="kw">return</span> <span class="ident">InvalidTransaction</span>::<span class="ident">Custom</span>(<span class="ident">ERROR_ALREADY_CLAIMED</span>).<span class="ident">into</span>();
                 }
@@ -1675,13 +1676,13 @@
                 <span class="kw">let</span> <span class="ident">on_vote</span> <span class="op">=</span> <span class="ident">approve</span> <span class="op">+</span> <span class="ident">decline</span> <span class="op">&lt;</span> <span class="op">&lt;</span><span class="ident">VoteThreshold</span><span class="op">&gt;</span>::<span class="ident">get</span>() <span class="kw">as</span> <span class="ident">usize</span>;
                 <span class="kw">let</span> <span class="ident">not_approved</span> <span class="op">=</span>
                     <span class="ident">approve</span>.<span class="ident">saturating_sub</span>(<span class="ident">decline</span>) <span class="op">&lt;</span> <span class="op">&lt;</span><span class="ident">PositiveVotes</span><span class="op">&gt;</span>::<span class="ident">get</span>() <span class="kw">as</span> <span class="ident">usize</span>;
-                <span class="kw">if</span> <span class="ident">on_vote</span> <span class="op">|</span><span class="op">|</span> <span class="ident">not_approved</span> {
+                <span class="kw">if</span> <span class="ident">on_vote</span> <span class="op">||</span> <span class="ident">not_approved</span> {
                     <span class="kw">return</span> <span class="ident">InvalidTransaction</span>::<span class="ident">Custom</span>(<span class="ident">ERROR_CLAIM_ON_VOTING</span>).<span class="ident">into</span>();
                 }
 
                 <span class="kw">let</span> <span class="ident">msg</span> <span class="op">=</span> <span class="self">Self</span>::<span class="ident">claim_message</span>(<span class="ident">claim_id</span>, <span class="ident">recipient</span>);
                 <span class="kw">match</span> <span class="ident">claim</span>.<span class="ident">params</span> {
-                    <span class="ident">Lockdrop</span>::<span class="ident">Bitcoin</span> { .. } <span class="op">=</span><span class="op">&gt;</span> {
+                    <span class="ident">Lockdrop</span>::<span class="ident">Bitcoin</span> { .. } <span class="op">=&gt;</span> {
                         <span class="comment">// Only Ethereum requests allowed</span>
                         <span class="kw">return</span> <span class="ident">InvalidTransaction</span>::<span class="ident">Call</span>.<span class="ident">into</span>();
                         <span class="comment">/*
@@ -1691,9 +1692,9 @@
                             }
                         */</span>
                     }
-                    <span class="ident">Lockdrop</span>::<span class="ident">Ethereum</span> { <span class="ident">public_key</span>, .. } <span class="op">=</span><span class="op">&gt;</span> {
+                    <span class="ident">Lockdrop</span>::<span class="ident">Ethereum</span> { <span class="ident">public_key</span>, .. } <span class="op">=&gt;</span> {
                         <span class="kw">let</span> <span class="ident">signer</span> <span class="op">=</span> <span class="ident">crypto</span>::<span class="ident">eth_recover</span>(<span class="kw-2">&amp;</span><span class="ident">signature</span>.<span class="number">0</span>, <span class="ident">msg</span>.<span class="ident">as_ref</span>());
-                        <span class="kw">if</span> <span class="ident">signer</span> <span class="op">!</span><span class="op">=</span> <span class="prelude-val">Some</span>(<span class="ident">public_key</span>) {
+                        <span class="kw">if</span> <span class="ident">signer</span> <span class="op">!=</span> <span class="prelude-val">Some</span>(<span class="ident">public_key</span>) {
                             <span class="kw">return</span> <span class="ident">InvalidTransaction</span>::<span class="ident">BadProof</span>.<span class="ident">into</span>();
                         }
                     }
@@ -1707,9 +1708,9 @@
                     .<span class="ident">build</span>()
             }
 
-            <span class="ident">Call</span>::<span class="ident">vote</span>(<span class="ident">vote</span>, <span class="ident">signature</span>) <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="ident">Call</span>::<span class="ident">vote</span>(<span class="ident">vote</span>, <span class="ident">signature</span>) <span class="op">=&gt;</span> {
                 <span class="comment">// Verify call params</span>
-                <span class="kw">if</span> <span class="op">!</span><span class="op">&lt;</span><span class="ident">Claims</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>::<span class="ident">contains_key</span>(<span class="ident">vote</span>.<span class="ident">claim_id</span>.<span class="ident">clone</span>()) {
+                <span class="kw">if</span> <span class="op">!</span><span class="op">&lt;</span><span class="ident">Claims</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;&gt;</span>::<span class="ident">contains_key</span>(<span class="ident">vote</span>.<span class="ident">claim_id</span>.<span class="ident">clone</span>()) {
                     <span class="kw">return</span> <span class="ident">InvalidTransaction</span>::<span class="ident">Call</span>.<span class="ident">into</span>();
                 }
 
@@ -1734,7 +1735,7 @@
                 })
             }
 
-            <span class="ident">Call</span>::<span class="ident">set_dollar_rate</span>(<span class="ident">rate</span>, <span class="ident">signature</span>) <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="ident">Call</span>::<span class="ident">set_dollar_rate</span>(<span class="ident">rate</span>, <span class="ident">signature</span>) <span class="op">=&gt;</span> {
                 <span class="ident">rate</span>.<span class="ident">using_encoded</span>(<span class="op">|</span><span class="ident">encoded_rate</span><span class="op">|</span> {
                     <span class="kw">let</span> <span class="ident">keys</span> <span class="op">=</span> <span class="ident">Keys</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>::<span class="ident">get</span>();
                     <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">authority</span>) <span class="op">=</span> <span class="ident">keys</span>.<span class="ident">get</span>(<span class="ident">rate</span>.<span class="ident">authority</span> <span class="kw">as</span> <span class="ident">usize</span>) {
@@ -1755,7 +1756,7 @@
                 })
             }
 
-            <span class="kw">_</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">InvalidTransaction</span>::<span class="ident">Call</span>.<span class="ident">into</span>(),
+            <span class="kw">_</span> <span class="op">=&gt;</span> <span class="ident">InvalidTransaction</span>::<span class="ident">Call</span>.<span class="ident">into</span>(),
         }
     }
 }

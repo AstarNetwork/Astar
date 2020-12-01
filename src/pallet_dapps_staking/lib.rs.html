@@ -1,4 +1,5 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source to the Rust file `frame/dapps-staking/src/lib.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>lib.rs.html -- source</title><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../dark.css"><link rel="stylesheet" type="text/css" href="../../light.css" id="themeStyle"><script src="../../storage.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="shortcut icon" href="../../favicon.ico"><style type="text/css">#crate-search{background-image:url("../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../pallet_dapps_staking/index.html'><div class='logo-container'><img src='../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!"><img src="../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices"></div></div><script src="../../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><a id="settings-menu" href="../../settings.html"><img src="../../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1">   1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source to the Rust file `frame/dapps-staking/src/lib.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>lib.rs.html -- source</title><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../light.css"  id="themeStyle"><link rel="stylesheet" type="text/css" href="../../dark.css" disabled ><link rel="stylesheet" type="text/css" href="../../ayu.css" disabled ><script src="../../storage.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="shortcut icon" href="../../favicon.ico"><style type="text/css">#crate-search{background-image:url("../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../pallet_dapps_staking/index.html'><div class='logo-container rust-logo'><img src='../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!"><img src="../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices"></div></div><script src="../../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><span class="help-button">?</span>
+                <a id="settings-menu" href="../../settings.html"><img src="../../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1">   1</span>
 <span id="2">   2</span>
 <span id="3">   3</span>
 <span id="4">   4</span>
@@ -1294,13 +1295,13 @@
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident">sp_staking</span>::<span class="ident">SessionIndex</span>;
 
 <span class="kw">pub</span> <span class="kw">type</span> <span class="ident">BalanceOf</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> <span class="op">=</span>
-    <span class="op">&lt;</span><span class="op">&lt;</span><span class="ident">T</span> <span class="kw">as</span> <span class="ident">Trait</span><span class="op">&gt;</span>::<span class="ident">Currency</span> <span class="kw">as</span> <span class="ident">Currency</span><span class="op">&lt;</span><span class="op">&lt;</span><span class="ident">T</span> <span class="kw">as</span> <span class="ident">system</span>::<span class="ident">Trait</span><span class="op">&gt;</span>::<span class="ident">AccountId</span><span class="op">&gt;</span><span class="op">&gt;</span>::<span class="ident">Balance</span>;
-<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">MomentOf</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> <span class="op">=</span> <span class="op">&lt;</span><span class="op">&lt;</span><span class="ident">T</span> <span class="kw">as</span> <span class="ident">Trait</span><span class="op">&gt;</span>::<span class="ident">Time</span> <span class="kw">as</span> <span class="ident">Time</span><span class="op">&gt;</span>::<span class="ident">Moment</span>;
+    <span class="op">&lt;&lt;</span><span class="ident">T</span> <span class="kw">as</span> <span class="ident">Trait</span><span class="op">&gt;</span>::<span class="ident">Currency</span> <span class="kw">as</span> <span class="ident">Currency</span><span class="op">&lt;&lt;</span><span class="ident">T</span> <span class="kw">as</span> <span class="ident">system</span>::<span class="ident">Trait</span><span class="op">&gt;</span>::<span class="ident">AccountId</span><span class="op">&gt;&gt;</span>::<span class="ident">Balance</span>;
+<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">MomentOf</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> <span class="op">=</span> <span class="op">&lt;&lt;</span><span class="ident">T</span> <span class="kw">as</span> <span class="ident">Trait</span><span class="op">&gt;</span>::<span class="ident">Time</span> <span class="kw">as</span> <span class="ident">Time</span><span class="op">&gt;</span>::<span class="ident">Moment</span>;
 
 <span class="kw">type</span> <span class="ident">PositiveImbalanceOf</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> <span class="op">=</span>
-    <span class="op">&lt;</span><span class="op">&lt;</span><span class="ident">T</span> <span class="kw">as</span> <span class="ident">Trait</span><span class="op">&gt;</span>::<span class="ident">Currency</span> <span class="kw">as</span> <span class="ident">Currency</span><span class="op">&lt;</span><span class="op">&lt;</span><span class="ident">T</span> <span class="kw">as</span> <span class="ident">system</span>::<span class="ident">Trait</span><span class="op">&gt;</span>::<span class="ident">AccountId</span><span class="op">&gt;</span><span class="op">&gt;</span>::<span class="ident">PositiveImbalance</span>;
+    <span class="op">&lt;&lt;</span><span class="ident">T</span> <span class="kw">as</span> <span class="ident">Trait</span><span class="op">&gt;</span>::<span class="ident">Currency</span> <span class="kw">as</span> <span class="ident">Currency</span><span class="op">&lt;&lt;</span><span class="ident">T</span> <span class="kw">as</span> <span class="ident">system</span>::<span class="ident">Trait</span><span class="op">&gt;</span>::<span class="ident">AccountId</span><span class="op">&gt;&gt;</span>::<span class="ident">PositiveImbalance</span>;
 <span class="kw">type</span> <span class="ident">NegativeImbalanceOf</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> <span class="op">=</span>
-    <span class="op">&lt;</span><span class="op">&lt;</span><span class="ident">T</span> <span class="kw">as</span> <span class="ident">Trait</span><span class="op">&gt;</span>::<span class="ident">Currency</span> <span class="kw">as</span> <span class="ident">Currency</span><span class="op">&lt;</span><span class="op">&lt;</span><span class="ident">T</span> <span class="kw">as</span> <span class="ident">system</span>::<span class="ident">Trait</span><span class="op">&gt;</span>::<span class="ident">AccountId</span><span class="op">&gt;</span><span class="op">&gt;</span>::<span class="ident">NegativeImbalance</span>;
+    <span class="op">&lt;&lt;</span><span class="ident">T</span> <span class="kw">as</span> <span class="ident">Trait</span><span class="op">&gt;</span>::<span class="ident">Currency</span> <span class="kw">as</span> <span class="ident">Currency</span><span class="op">&lt;&lt;</span><span class="ident">T</span> <span class="kw">as</span> <span class="ident">system</span>::<span class="ident">Trait</span><span class="op">&gt;</span>::<span class="ident">AccountId</span><span class="op">&gt;&gt;</span>::<span class="ident">NegativeImbalance</span>;
 
 <span class="kw">const</span> <span class="ident">MAX_NOMINATIONS</span>: <span class="ident">usize</span> <span class="op">=</span> <span class="number">128</span>;
 <span class="kw">const</span> <span class="ident">MAX_UNLOCKING_CHUNKS</span>: <span class="ident">usize</span> <span class="op">=</span> <span class="number">32</span>;
@@ -1358,7 +1359,7 @@
     <span class="kw">pub</span> <span class="ident">active</span>: <span class="ident">Balance</span>,
     <span class="doccomment">/// Any balance that is becoming free, which may eventually be transferred out</span>
     <span class="doccomment">/// of the stash (assuming it doesn&#39;t get slashed first).</span>
-    <span class="kw">pub</span> <span class="ident">unlocking</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">UnlockChunk</span><span class="op">&lt;</span><span class="ident">Balance</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+    <span class="kw">pub</span> <span class="ident">unlocking</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">UnlockChunk</span><span class="op">&lt;</span><span class="ident">Balance</span><span class="op">&gt;&gt;</span>,
     <span class="doccomment">/// The latest and highest era which the staker has claimed reward for.</span>
     <span class="kw">pub</span> <span class="ident">last_reward</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">EraIndex</span><span class="op">&gt;</span>,
 }
@@ -1368,9 +1369,9 @@
 {
     <span class="doccomment">/// Remove entries from `unlocking` that are sufficiently old and reduce the</span>
     <span class="doccomment">/// total by the sum of their balances.</span>
-    <span class="kw">fn</span> <span class="ident">consolidate_unlocked</span>(<span class="self">self</span>, <span class="ident">current_era</span>: <span class="ident">EraIndex</span>, <span class="ident">amount_locked</span>: <span class="ident">Balance</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">fn</span> <span class="ident">consolidate_unlocked</span>(<span class="self">self</span>, <span class="ident">current_era</span>: <span class="ident">EraIndex</span>, <span class="ident">amount_locked</span>: <span class="ident">Balance</span>) <span class="op">-&gt;</span> <span class="self">Self</span> {
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">total</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">total</span>;
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">unlocking</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">UnlockChunk</span><span class="op">&lt;</span><span class="ident">Balance</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="op">=</span> <span class="self">self</span>
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">unlocking</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">UnlockChunk</span><span class="op">&lt;</span><span class="ident">Balance</span><span class="op">&gt;&gt;</span> <span class="op">=</span> <span class="self">self</span>
             .<span class="ident">unlocking</span>
             .<span class="ident">into_iter</span>()
             .<span class="ident">filter</span>(<span class="op">|</span><span class="ident">chunk</span><span class="op">|</span> {
@@ -1407,7 +1408,7 @@
     <span class="doccomment">///</span>
     <span class="doccomment">/// Slashes from `active` funds first, and then `unlocking`, starting with the</span>
     <span class="doccomment">/// chunks that are closest to unlocking.</span>
-    <span class="kw">fn</span> <span class="ident">slash</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="kw-2">mut</span> <span class="ident">value</span>: <span class="ident">Balance</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Balance</span> {
+    <span class="kw">fn</span> <span class="ident">slash</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="kw-2">mut</span> <span class="ident">value</span>: <span class="ident">Balance</span>) <span class="op">-&gt;</span> <span class="ident">Balance</span> {
         <span class="kw">let</span> <span class="ident">pre_total</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">total</span>;
         <span class="kw">let</span> <span class="ident">total</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>.<span class="ident">total</span>;
         <span class="kw">let</span> <span class="ident">active</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>.<span class="ident">active</span>;
@@ -1417,9 +1418,9 @@
                 <span class="kw">let</span> <span class="ident">slash_from_target</span> <span class="op">=</span> (<span class="kw-2">*</span><span class="ident">value</span>).<span class="ident">min</span>(<span class="kw-2">*</span><span class="ident">target</span>);
 
                 <span class="kw">if</span> <span class="op">!</span><span class="ident">slash_from_target</span>.<span class="ident">is_zero</span>() {
-                    <span class="kw-2">*</span><span class="ident">target</span> <span class="op">-</span><span class="op">=</span> <span class="ident">slash_from_target</span>;
+                    <span class="kw-2">*</span><span class="ident">target</span> <span class="op">-=</span> <span class="ident">slash_from_target</span>;
                     <span class="kw-2">*</span><span class="ident">total_remaining</span> <span class="op">=</span> <span class="ident">total_remaining</span>.<span class="ident">saturating_sub</span>(<span class="ident">slash_from_target</span>);
-                    <span class="kw-2">*</span><span class="ident">value</span> <span class="op">-</span><span class="op">=</span> <span class="ident">slash_from_target</span>;
+                    <span class="kw-2">*</span><span class="ident">value</span> <span class="op">-=</span> <span class="ident">slash_from_target</span>;
                 }
             };
 
@@ -1465,10 +1466,10 @@
     <span class="kw">type</span> <span class="ident">BondingDuration</span>: <span class="ident">Get</span><span class="op">&lt;</span><span class="ident">EraIndex</span><span class="op">&gt;</span>;
 
     <span class="doccomment">/// Tokens have been minted and are unused for validator-reward. Maybe, dapps-staking uses ().</span>
-    <span class="kw">type</span> <span class="ident">RewardRemainder</span>: <span class="ident">OnUnbalanced</span><span class="op">&lt;</span><span class="ident">NegativeImbalanceOf</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span><span class="op">&gt;</span>;
+    <span class="kw">type</span> <span class="ident">RewardRemainder</span>: <span class="ident">OnUnbalanced</span><span class="op">&lt;</span><span class="ident">NegativeImbalanceOf</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;&gt;</span>;
 
     <span class="doccomment">/// Handler for the unbalanced increment when rewarding a staker. Maybe, dapps-staking uses ().</span>
-    <span class="kw">type</span> <span class="ident">Reward</span>: <span class="ident">OnUnbalanced</span><span class="op">&lt;</span><span class="ident">PositiveImbalanceOf</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span><span class="op">&gt;</span>;
+    <span class="kw">type</span> <span class="ident">Reward</span>: <span class="ident">OnUnbalanced</span><span class="op">&lt;</span><span class="ident">PositiveImbalanceOf</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;&gt;</span>;
 
     <span class="comment">//TODO Handler for the unbalanced reduction when slashing a staker.</span>
     <span class="comment">//type Slash: OnUnbalanced&lt;NegativeImbalanceOf&lt;Self&gt;&gt;;</span>
@@ -1489,16 +1490,16 @@
     <span class="kw">type</span> <span class="ident">ComputeRewardsForDapps</span>: <span class="ident">ComputeRewardsForDapps</span>;
 
     <span class="doccomment">/// The information of era.</span>
-    <span class="kw">type</span> <span class="ident">EraFinder</span>: <span class="ident">EraFinder</span><span class="op">&lt;</span><span class="ident">EraIndex</span>, <span class="ident">SessionIndex</span>, <span class="ident">MomentOf</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span><span class="op">&gt;</span>;
+    <span class="kw">type</span> <span class="ident">EraFinder</span>: <span class="ident">EraFinder</span><span class="op">&lt;</span><span class="ident">EraIndex</span>, <span class="ident">SessionIndex</span>, <span class="ident">MomentOf</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;&gt;</span>;
 
     <span class="doccomment">/// The rewards for dapps operator.</span>
-    <span class="kw">type</span> <span class="ident">ForDappsEraReward</span>: <span class="ident">ForDappsEraRewardFinder</span><span class="op">&lt;</span><span class="ident">BalanceOf</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span><span class="op">&gt;</span>;
+    <span class="kw">type</span> <span class="ident">ForDappsEraReward</span>: <span class="ident">ForDappsEraRewardFinder</span><span class="op">&lt;</span><span class="ident">BalanceOf</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;&gt;</span>;
 
     <span class="doccomment">/// the history depth</span>
     <span class="kw">type</span> <span class="ident">HistoryDepthFinder</span>: <span class="ident">HistoryDepthFinder</span>;
 
     <span class="doccomment">/// The overarching event type.</span>
-    <span class="kw">type</span> <span class="ident">Event</span>: <span class="ident">From</span><span class="op">&lt;</span><span class="ident">Event</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Into</span><span class="op">&lt;</span><span class="op">&lt;</span><span class="self">Self</span> <span class="kw">as</span> <span class="ident">system</span>::<span class="ident">Trait</span><span class="op">&gt;</span>::<span class="ident">Event</span><span class="op">&gt;</span>;
+    <span class="kw">type</span> <span class="ident">Event</span>: <span class="ident">From</span><span class="op">&lt;</span><span class="ident">Event</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;&gt;</span> <span class="op">+</span> <span class="ident">Into</span><span class="op">&lt;&lt;</span><span class="self">Self</span> <span class="kw">as</span> <span class="ident">system</span>::<span class="ident">Trait</span><span class="op">&gt;</span>::<span class="ident">Event</span><span class="op">&gt;</span>;
 }
 
 <span class="macro">decl_storage</span><span class="macro">!</span> {
@@ -1508,34 +1509,34 @@
 
         <span class="comment">// The untreated era for each nominator</span>
         <span class="kw">pub</span> <span class="ident">NominatorsUntreatedEra</span> <span class="ident">get</span>(<span class="kw">fn</span> <span class="ident">nominators_untreated_era</span>):
-            <span class="ident">map</span> <span class="ident">hasher</span>(<span class="ident">twox_64_concat</span>) <span class="ident">T</span>::<span class="ident">AccountId</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">EraIndex</span>;
+            <span class="ident">map</span> <span class="ident">hasher</span>(<span class="ident">twox_64_concat</span>) <span class="ident">T</span>::<span class="ident">AccountId</span> <span class="op">=&gt;</span> <span class="ident">EraIndex</span>;
 
         <span class="comment">// The untreated era for each contract</span>
         <span class="kw">pub</span> <span class="ident">ContractsUntreatedEra</span> <span class="ident">get</span>(<span class="kw">fn</span> <span class="ident">contracts_untreated_era</span>):
-            <span class="ident">map</span> <span class="ident">hasher</span>(<span class="ident">twox_64_concat</span>) <span class="ident">T</span>::<span class="ident">AccountId</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">EraIndex</span>;
+            <span class="ident">map</span> <span class="ident">hasher</span>(<span class="ident">twox_64_concat</span>) <span class="ident">T</span>::<span class="ident">AccountId</span> <span class="op">=&gt;</span> <span class="ident">EraIndex</span>;
 
         <span class="comment">// The untreated era for each contract for votes</span>
         <span class="kw">pub</span> <span class="ident">ContractVotesUntreatedEra</span> <span class="ident">get</span>(<span class="kw">fn</span> <span class="ident">contract_votes_untreated_era</span>):
-            <span class="ident">map</span> <span class="ident">hasher</span>(<span class="ident">twox_64_concat</span>) <span class="ident">T</span>::<span class="ident">AccountId</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">EraIndex</span>;
+            <span class="ident">map</span> <span class="ident">hasher</span>(<span class="ident">twox_64_concat</span>) <span class="ident">T</span>::<span class="ident">AccountId</span> <span class="op">=&gt;</span> <span class="ident">EraIndex</span>;
 
         <span class="comment">// ----- Staking uses.</span>
         <span class="doccomment">/// Map from all locked &quot;stash&quot; accounts to the controller account.</span>
-        <span class="kw">pub</span> <span class="ident">Bonded</span> <span class="ident">get</span>(<span class="kw">fn</span> <span class="ident">bonded</span>): <span class="ident">map</span> <span class="ident">hasher</span>(<span class="ident">twox_64_concat</span>) <span class="ident">T</span>::<span class="ident">AccountId</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">T</span>::<span class="ident">AccountId</span><span class="op">&gt;</span>;
+        <span class="kw">pub</span> <span class="ident">Bonded</span> <span class="ident">get</span>(<span class="kw">fn</span> <span class="ident">bonded</span>): <span class="ident">map</span> <span class="ident">hasher</span>(<span class="ident">twox_64_concat</span>) <span class="ident">T</span>::<span class="ident">AccountId</span> <span class="op">=&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">T</span>::<span class="ident">AccountId</span><span class="op">&gt;</span>;
 
         <span class="doccomment">/// Map from all (unlocked) &quot;controller&quot; accounts to the info regarding the staking.</span>
         <span class="kw">pub</span> <span class="ident">Ledger</span> <span class="ident">get</span>(<span class="kw">fn</span> <span class="ident">ledger</span>):
             <span class="ident">map</span> <span class="ident">hasher</span>(<span class="ident">blake2_128_concat</span>) <span class="ident">T</span>::<span class="ident">AccountId</span>
-            <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">StakingLedger</span><span class="op">&lt;</span><span class="ident">T</span>::<span class="ident">AccountId</span>, <span class="ident">BalanceOf</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span>;
+            <span class="op">=&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">StakingLedger</span><span class="op">&lt;</span><span class="ident">T</span>::<span class="ident">AccountId</span>, <span class="ident">BalanceOf</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;&gt;</span><span class="op">&gt;</span>;
 
         <span class="doccomment">/// Where the reward payment should be made. Keyed by stash.</span>
-        <span class="kw">pub</span> <span class="ident">Payee</span> <span class="ident">get</span>(<span class="kw">fn</span> <span class="ident">payee</span>): <span class="ident">map</span> <span class="ident">hasher</span>(<span class="ident">twox_64_concat</span>) <span class="ident">T</span>::<span class="ident">AccountId</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">RewardDestination</span><span class="op">&lt;</span><span class="ident">T</span>::<span class="ident">AccountId</span><span class="op">&gt;</span>;
+        <span class="kw">pub</span> <span class="ident">Payee</span> <span class="ident">get</span>(<span class="kw">fn</span> <span class="ident">payee</span>): <span class="ident">map</span> <span class="ident">hasher</span>(<span class="ident">twox_64_concat</span>) <span class="ident">T</span>::<span class="ident">AccountId</span> <span class="op">=&gt;</span> <span class="ident">RewardDestination</span><span class="op">&lt;</span><span class="ident">T</span>::<span class="ident">AccountId</span><span class="op">&gt;</span>;
 
         <span class="doccomment">/// The map from nominator stash key to the set of stash keys of all contracts to nominate.</span>
         <span class="doccomment">///</span>
         <span class="doccomment">/// NOTE: is private so that we can ensure upgraded before all typical accesses.</span>
         <span class="doccomment">/// Direct storage APIs can still bypass this protection.</span>
         <span class="ident">DappsNominations</span> <span class="ident">get</span>(<span class="kw">fn</span> <span class="ident">dapps_nominations</span>): <span class="ident">map</span> <span class="ident">hasher</span>(<span class="ident">twox_64_concat</span>)
-                                                    <span class="ident">T</span>::<span class="ident">AccountId</span> <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Nominations</span><span class="op">&lt;</span><span class="ident">T</span>::<span class="ident">AccountId</span>, <span class="ident">BalanceOf</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span>;
+                                                    <span class="ident">T</span>::<span class="ident">AccountId</span> <span class="op">=&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Nominations</span><span class="op">&lt;</span><span class="ident">T</span>::<span class="ident">AccountId</span>, <span class="ident">BalanceOf</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;&gt;</span><span class="op">&gt;</span>;
 
         <span class="doccomment">/// Similarly to `ErasStakers` this holds the parameters of contracts.</span>
         <span class="doccomment">///</span>
@@ -1544,7 +1545,7 @@
         <span class="doccomment">/// Is it removed after `HISTORY_DEPTH` eras.</span>
         <span class="kw">pub</span> <span class="ident">ErasContractsParameters</span> <span class="ident">get</span>(<span class="kw">fn</span> <span class="ident">eras_contracts_parameters</span>):
             <span class="ident">double_map</span> <span class="ident">hasher</span>(<span class="ident">twox_64_concat</span>) <span class="ident">EraIndex</span>, <span class="ident">hasher</span>(<span class="ident">twox_64_concat</span>) <span class="ident">T</span>::<span class="ident">AccountId</span>
-            <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">StakingParameters</span><span class="op">&gt;</span>;
+            <span class="op">=&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">StakingParameters</span><span class="op">&gt;</span>;
 
         <span class="doccomment">/// Rewards of stakers for contracts(called by &quot;Dapps Nominator&quot;) at era.</span>
         <span class="doccomment">///</span>
@@ -1554,30 +1555,30 @@
         <span class="doccomment">/// If reward hasn&#39;t been set or has been removed then 0 reward is returned.</span>
         <span class="kw">pub</span> <span class="ident">ErasStakingPoints</span> <span class="ident">get</span>(<span class="kw">fn</span> <span class="ident">eras_staking_points</span>):
             <span class="ident">double_map</span> <span class="ident">hasher</span>(<span class="ident">twox_64_concat</span>) <span class="ident">EraIndex</span>, <span class="ident">hasher</span>(<span class="ident">twox_64_concat</span>) <span class="ident">T</span>::<span class="ident">AccountId</span>
-            <span class="op">=</span><span class="op">&gt;</span> <span class="ident">EraStakingPoints</span><span class="op">&lt;</span><span class="ident">T</span>::<span class="ident">AccountId</span>, <span class="ident">BalanceOf</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>;
+            <span class="op">=&gt;</span> <span class="ident">EraStakingPoints</span><span class="op">&lt;</span><span class="ident">T</span>::<span class="ident">AccountId</span>, <span class="ident">BalanceOf</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;&gt;</span>;
 
         <span class="doccomment">/// The total amount staked for the last `HISTORY_DEPTH` eras.</span>
         <span class="doccomment">/// If total hasn&#39;t been set or has been removed then 0 stake is returned.</span>
         <span class="kw">pub</span> <span class="ident">ErasTotalStake</span> <span class="ident">get</span>(<span class="kw">fn</span> <span class="ident">eras_total_stake</span>):
-            <span class="ident">map</span> <span class="ident">hasher</span>(<span class="ident">twox_64_concat</span>) <span class="ident">EraIndex</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">BalanceOf</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>;
+            <span class="ident">map</span> <span class="ident">hasher</span>(<span class="ident">twox_64_concat</span>) <span class="ident">EraIndex</span> <span class="op">=&gt;</span> <span class="ident">BalanceOf</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>;
 
         <span class="doccomment">/// The total amounts of staking for each nominators</span>
         <span class="ident">ErasNominateTotals</span> <span class="ident">get</span>(<span class="kw">fn</span> <span class="ident">eras_nominate_totals</span>):
             <span class="ident">double_map</span> <span class="ident">hasher</span>(<span class="ident">twox_64_concat</span>) <span class="ident">EraIndex</span>, <span class="ident">hasher</span>(<span class="ident">twox_64_concat</span>) <span class="ident">T</span>::<span class="ident">AccountId</span>
-            <span class="op">=</span><span class="op">&gt;</span> <span class="ident">BalanceOf</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>;
+            <span class="op">=&gt;</span> <span class="ident">BalanceOf</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>;
 
         <span class="doccomment">/// The total amounts of staking for pairs of nominator and contract</span>
         <span class="kw">pub</span> <span class="ident">TotalStakes</span> <span class="ident">get</span>(<span class="kw">fn</span> <span class="ident">total_stakes</span>):
             <span class="ident">double_map</span> <span class="ident">hasher</span>(<span class="ident">twox_64_concat</span>) <span class="ident">T</span>::<span class="ident">AccountId</span>, <span class="ident">hasher</span>(<span class="ident">twox_64_concat</span>) <span class="ident">T</span>::<span class="ident">AccountId</span>
-            <span class="op">=</span><span class="op">&gt;</span> <span class="ident">BalanceOf</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>;
+            <span class="op">=&gt;</span> <span class="ident">BalanceOf</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>;
 
         <span class="doccomment">/// Votes for pairs of an account and a contract</span>
         <span class="kw">pub</span> <span class="ident">AccountsVote</span> <span class="ident">get</span>(<span class="kw">fn</span> <span class="ident">accounts_vote</span>):
-            <span class="ident">double_map</span> <span class="ident">hasher</span>(<span class="ident">twox_64_concat</span>) <span class="ident">T</span>::<span class="ident">AccountId</span>, <span class="ident">hasher</span>(<span class="ident">twox_64_concat</span>) <span class="ident">T</span>::<span class="ident">AccountId</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">VoteCounts</span>;
+            <span class="ident">double_map</span> <span class="ident">hasher</span>(<span class="ident">twox_64_concat</span>) <span class="ident">T</span>::<span class="ident">AccountId</span>, <span class="ident">hasher</span>(<span class="ident">twox_64_concat</span>) <span class="ident">T</span>::<span class="ident">AccountId</span> <span class="op">=&gt;</span> <span class="ident">VoteCounts</span>;
 
         <span class="doccomment">/// Votes for pairs of an era and a contract</span>
         <span class="kw">pub</span> <span class="ident">ErasVotes</span> <span class="ident">get</span>(<span class="kw">fn</span> <span class="ident">eras_votes</span>):
-            <span class="ident">double_map</span> <span class="ident">hasher</span>(<span class="ident">twox_64_concat</span>) <span class="ident">EraIndex</span>, <span class="ident">hasher</span>(<span class="ident">twox_64_concat</span>) <span class="ident">T</span>::<span class="ident">AccountId</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">VoteCounts</span>;
+            <span class="ident">double_map</span> <span class="ident">hasher</span>(<span class="ident">twox_64_concat</span>) <span class="ident">EraIndex</span>, <span class="ident">hasher</span>(<span class="ident">twox_64_concat</span>) <span class="ident">T</span>::<span class="ident">AccountId</span> <span class="op">=&gt;</span> <span class="ident">VoteCounts</span>;
 
         <span class="doccomment">/// Storage version of the pallet.</span>
         <span class="doccomment">///</span>
@@ -1655,7 +1656,7 @@
     <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Module</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Trait</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="kw">enum</span> <span class="ident">Call</span> <span class="kw">where</span> <span class="ident">origin</span>: <span class="ident">T</span>::<span class="ident">Origin</span> {
         <span class="kw">fn</span> <span class="ident">deposit_event</span>() <span class="op">=</span> <span class="ident">default</span>;
 
-        <span class="kw">fn</span> <span class="ident">on_runtime_upgrade</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Weight</span> {
+        <span class="kw">fn</span> <span class="ident">on_runtime_upgrade</span>() <span class="op">-&gt;</span> <span class="ident">Weight</span> {
             <span class="ident">migrate</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>();
             <span class="comment">// TODO: weight</span>
             <span class="number">50_000</span>
@@ -1685,13 +1686,13 @@
         ) {
             <span class="kw">let</span> <span class="ident">stash</span> <span class="op">=</span> <span class="ident">ensure_signed</span>(<span class="ident">origin</span>)<span class="question-mark">?</span>;
 
-            <span class="kw">if</span> <span class="op">&lt;</span><span class="ident">Bonded</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>::<span class="ident">contains_key</span>(<span class="kw-2">&amp;</span><span class="ident">stash</span>) {
+            <span class="kw">if</span> <span class="op">&lt;</span><span class="ident">Bonded</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;&gt;</span>::<span class="ident">contains_key</span>(<span class="kw-2">&amp;</span><span class="ident">stash</span>) {
                 <span class="prelude-val">Err</span>(<span class="string">&quot;stash already bonded&quot;</span>)<span class="question-mark">?</span>
             }
 
             <span class="kw">let</span> <span class="ident">controller</span> <span class="op">=</span> <span class="ident">T</span>::<span class="ident">Lookup</span>::<span class="ident">lookup</span>(<span class="ident">controller</span>)<span class="question-mark">?</span>;
 
-            <span class="kw">if</span> <span class="op">&lt;</span><span class="ident">Ledger</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>::<span class="ident">contains_key</span>(<span class="kw-2">&amp;</span><span class="ident">controller</span>) {
+            <span class="kw">if</span> <span class="op">&lt;</span><span class="ident">Ledger</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;&gt;</span>::<span class="ident">contains_key</span>(<span class="kw-2">&amp;</span><span class="ident">controller</span>) {
                 <span class="prelude-val">Err</span>(<span class="string">&quot;controller already paired&quot;</span>)<span class="question-mark">?</span>
             }
 
@@ -1702,8 +1703,8 @@
 
             <span class="comment">// You&#39;re auto-bonded forever, here. We might improve this by only bonding when</span>
             <span class="comment">// you actually validate/nominate and remove once you unbond __everything__.</span>
-            <span class="op">&lt;</span><span class="ident">Bonded</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>::<span class="ident">insert</span>(<span class="kw-2">&amp;</span><span class="ident">stash</span>, <span class="kw-2">&amp;</span><span class="ident">controller</span>);
-            <span class="op">&lt;</span><span class="ident">Payee</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>::<span class="ident">insert</span>(<span class="kw-2">&amp;</span><span class="ident">stash</span>, <span class="ident">payee</span>);
+            <span class="op">&lt;</span><span class="ident">Bonded</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;&gt;</span>::<span class="ident">insert</span>(<span class="kw-2">&amp;</span><span class="ident">stash</span>, <span class="kw-2">&amp;</span><span class="ident">controller</span>);
+            <span class="op">&lt;</span><span class="ident">Payee</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;&gt;</span>::<span class="ident">insert</span>(<span class="kw-2">&amp;</span><span class="ident">stash</span>, <span class="ident">payee</span>);
 
             <span class="comment">// increments account reference counter for not removing accounts.</span>
             <span class="ident">system</span>::<span class="ident">Module</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>::<span class="ident">inc_ref</span>(<span class="kw-2">&amp;</span><span class="ident">stash</span>);
@@ -1747,8 +1748,8 @@
 
             <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">extra</span>) <span class="op">=</span> <span class="ident">stash_balance</span>.<span class="ident">checked_sub</span>(<span class="kw-2">&amp;</span><span class="ident">ledger</span>.<span class="ident">total</span>) {
                 <span class="kw">let</span> <span class="ident">extra</span> <span class="op">=</span> <span class="ident">extra</span>.<span class="ident">min</span>(<span class="ident">max_additional</span>);
-                <span class="ident">ledger</span>.<span class="ident">total</span> <span class="op">+</span><span class="op">=</span> <span class="ident">extra</span>;
-                <span class="ident">ledger</span>.<span class="ident">active</span> <span class="op">+</span><span class="op">=</span> <span class="ident">extra</span>;
+                <span class="ident">ledger</span>.<span class="ident">total</span> <span class="op">+=</span> <span class="ident">extra</span>;
+                <span class="ident">ledger</span>.<span class="ident">active</span> <span class="op">+=</span> <span class="ident">extra</span>;
                 <span class="self">Self</span>::<span class="ident">deposit_event</span>(<span class="ident">RawEvent</span>::<span class="ident">Bonded</span>(<span class="ident">stash</span>, <span class="ident">extra</span>));
                 <span class="self">Self</span>::<span class="ident">update_ledger</span>(<span class="kw-2">&amp;</span><span class="ident">controller</span>, <span class="kw-2">&amp;</span><span class="ident">ledger</span>);
             }
@@ -1791,11 +1792,11 @@
             <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">value</span> <span class="op">=</span> <span class="ident">value</span>.<span class="ident">min</span>(<span class="ident">ledger</span>.<span class="ident">active</span>);
 
             <span class="kw">if</span> <span class="op">!</span><span class="ident">value</span>.<span class="ident">is_zero</span>() {
-                <span class="ident">ledger</span>.<span class="ident">active</span> <span class="op">-</span><span class="op">=</span> <span class="ident">value</span>;
+                <span class="ident">ledger</span>.<span class="ident">active</span> <span class="op">-=</span> <span class="ident">value</span>;
 
                 <span class="comment">// Avoid there being a dust balance left in the staking system.</span>
                 <span class="kw">if</span> <span class="ident">ledger</span>.<span class="ident">active</span> <span class="op">&lt;</span> <span class="ident">T</span>::<span class="ident">Currency</span>::<span class="ident">minimum_balance</span>() {
-                    <span class="ident">value</span> <span class="op">+</span><span class="op">=</span> <span class="ident">ledger</span>.<span class="ident">active</span>;
+                    <span class="ident">value</span> <span class="op">+=</span> <span class="ident">ledger</span>.<span class="ident">active</span>;
                     <span class="ident">ledger</span>.<span class="ident">active</span> <span class="op">=</span> <span class="ident">Zero</span>::<span class="ident">zero</span>();
                 }
 
@@ -1833,17 +1834,17 @@
 
             <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">current_era</span>) <span class="op">=</span> <span class="ident">T</span>::<span class="ident">EraFinder</span>::<span class="ident">current</span>() {
                 <span class="kw">let</span> <span class="ident">amount_locked</span> <span class="op">=</span> <span class="kw">match</span> <span class="self">Self</span>::<span class="ident">dapps_nominations</span>(<span class="kw-2">&amp;</span><span class="ident">stash</span>) {
-                    <span class="prelude-val">Some</span>(<span class="ident">n</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">n</span>.<span class="ident">targets</span>
+                    <span class="prelude-val">Some</span>(<span class="ident">n</span>) <span class="op">=&gt;</span> <span class="ident">n</span>.<span class="ident">targets</span>
                             .<span class="ident">iter</span>()
                             .<span class="ident">filter</span>(<span class="op">|</span>(<span class="ident">contract</span>, <span class="kw">_</span>)<span class="op">|</span> <span class="self">Self</span>::<span class="ident">is_locked</span>(<span class="ident">contract</span>, <span class="kw-2">&amp;</span><span class="ident">current_era</span>))
                             .<span class="ident">fold</span>(<span class="ident">BalanceOf</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>::<span class="ident">zero</span>(), <span class="op">|</span><span class="ident">sum</span>, (<span class="kw">_</span>, <span class="ident">value</span>)<span class="op">|</span> <span class="ident">sum</span>.<span class="ident">saturating_add</span>(<span class="kw-2">*</span><span class="ident">value</span>)),
-                    <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">BalanceOf</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>::<span class="ident">zero</span>()
+                    <span class="prelude-val">None</span> <span class="op">=&gt;</span> <span class="ident">BalanceOf</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>::<span class="ident">zero</span>()
                 };
 
                 <span class="ident">ledger</span> <span class="op">=</span> <span class="ident">ledger</span>.<span class="ident">consolidate_unlocked</span>(<span class="ident">current_era</span>, <span class="ident">amount_locked</span>)
             }
 
-            <span class="kw">if</span> <span class="ident">ledger</span>.<span class="ident">unlocking</span>.<span class="ident">is_empty</span>() <span class="kw-2">&amp;</span><span class="op">&amp;</span> <span class="ident">ledger</span>.<span class="ident">active</span>.<span class="ident">is_zero</span>() {
+            <span class="kw">if</span> <span class="ident">ledger</span>.<span class="ident">unlocking</span>.<span class="ident">is_empty</span>() <span class="op">&amp;&amp;</span> <span class="ident">ledger</span>.<span class="ident">active</span>.<span class="ident">is_zero</span>() {
                 <span class="comment">// This account must have called `unbond()` with some value that caused the active</span>
                 <span class="comment">// portion to fall below existential deposit + will have no more unlocking chunks</span>
                 <span class="comment">// left. We can now safely remove all staking-related information.</span>
@@ -1885,10 +1886,10 @@
             <span class="kw">let</span> <span class="ident">targets</span> <span class="op">=</span> <span class="ident">targets</span>.<span class="ident">into_iter</span>()
                 .<span class="ident">take</span>(<span class="ident">MAX_NOMINATIONS</span>)
                 .<span class="ident">map</span>(<span class="op">|</span><span class="ident">t</span><span class="op">|</span> <span class="kw">match</span> <span class="ident">T</span>::<span class="ident">Lookup</span>::<span class="ident">lookup</span>(<span class="ident">t</span>.<span class="number">0</span>) {
-                    <span class="prelude-val">Ok</span>(<span class="ident">a</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Ok</span>((<span class="ident">a</span>, <span class="ident">t</span>.<span class="number">1</span>)),
-                    <span class="prelude-val">Err</span>(<span class="ident">err</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Err</span>(<span class="ident">err</span>),
+                    <span class="prelude-val">Ok</span>(<span class="ident">a</span>) <span class="op">=&gt;</span> <span class="prelude-val">Ok</span>((<span class="ident">a</span>, <span class="ident">t</span>.<span class="number">1</span>)),
+                    <span class="prelude-val">Err</span>(<span class="ident">err</span>) <span class="op">=&gt;</span> <span class="prelude-val">Err</span>(<span class="ident">err</span>),
                 })
-                .<span class="ident">collect</span>::<span class="op">&lt;</span><span class="ident">result</span>::<span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span>(<span class="ident">T</span>::<span class="ident">AccountId</span>, <span class="ident">BalanceOf</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>)<span class="op">&gt;</span>, <span class="kw">_</span><span class="op">&gt;</span><span class="op">&gt;</span>()<span class="question-mark">?</span>;
+                .<span class="ident">collect</span>::<span class="op">&lt;</span><span class="ident">result</span>::<span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span>(<span class="ident">T</span>::<span class="ident">AccountId</span>, <span class="ident">BalanceOf</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>)<span class="op">&gt;</span>, <span class="kw">_</span><span class="op">&gt;&gt;</span>()<span class="question-mark">?</span>;
 
             <span class="comment">// check the is targets operated contracts?</span>
             <span class="kw">if</span> <span class="op">!</span><span class="ident">targets</span>.<span class="ident">iter</span>().<span class="ident">all</span>(<span class="op">|</span><span class="ident">t</span><span class="op">|</span> <span class="ident">T</span>::<span class="ident">ContractFinder</span>::<span class="ident">is_exists_contract</span>(<span class="kw-2">&amp;</span>(<span class="ident">t</span>.<span class="number">0</span>))) {
@@ -1924,10 +1925,10 @@
             <span class="kw">let</span> <span class="ident">targets</span> <span class="op">=</span> <span class="ident">targets</span>.<span class="ident">into_iter</span>()
                 .<span class="ident">take</span>(<span class="ident">MAX_VOTES</span>)
                 .<span class="ident">map</span>(<span class="op">|</span><span class="ident">t</span><span class="op">|</span> <span class="kw">match</span> <span class="ident">T</span>::<span class="ident">Lookup</span>::<span class="ident">lookup</span>(<span class="ident">t</span>.<span class="number">0</span>) {
-                    <span class="prelude-val">Ok</span>(<span class="ident">a</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Ok</span>((<span class="ident">a</span>, <span class="ident">t</span>.<span class="number">1</span>)),
-                    <span class="prelude-val">Err</span>(<span class="ident">err</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="prelude-val">Err</span>(<span class="ident">err</span>),
+                    <span class="prelude-val">Ok</span>(<span class="ident">a</span>) <span class="op">=&gt;</span> <span class="prelude-val">Ok</span>((<span class="ident">a</span>, <span class="ident">t</span>.<span class="number">1</span>)),
+                    <span class="prelude-val">Err</span>(<span class="ident">err</span>) <span class="op">=&gt;</span> <span class="prelude-val">Err</span>(<span class="ident">err</span>),
                 })
-                .<span class="ident">collect</span>::<span class="op">&lt;</span><span class="ident">result</span>::<span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span>(<span class="ident">T</span>::<span class="ident">AccountId</span>, <span class="ident">Vote</span>)<span class="op">&gt;</span>, <span class="kw">_</span><span class="op">&gt;</span><span class="op">&gt;</span>()<span class="question-mark">?</span>;
+                .<span class="ident">collect</span>::<span class="op">&lt;</span><span class="ident">result</span>::<span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span>(<span class="ident">T</span>::<span class="ident">AccountId</span>, <span class="ident">Vote</span>)<span class="op">&gt;</span>, <span class="kw">_</span><span class="op">&gt;&gt;</span>()<span class="question-mark">?</span>;
 
             <span class="kw">if</span> <span class="op">!</span><span class="ident">targets</span>.<span class="ident">iter</span>().<span class="ident">all</span>(<span class="op">|</span><span class="ident">t</span><span class="op">|</span> <span class="ident">T</span>::<span class="ident">ContractFinder</span>::<span class="ident">is_exists_contract</span>(<span class="kw-2">&amp;</span>(<span class="ident">t</span>.<span class="number">0</span>))) {
                 <span class="prelude-val">Err</span>(<span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>::<span class="ident">NotOperatedContracts</span>)<span class="question-mark">?</span>
@@ -1938,20 +1939,20 @@
                 <span class="kw">for</span> (<span class="ident">contract</span>, <span class="ident">vote</span>) <span class="kw">in</span> <span class="ident">targets</span>.<span class="ident">iter</span>() {
                     <span class="kw">let</span> <span class="ident">counts</span> <span class="op">=</span> <span class="self">Self</span>::<span class="ident">vote_counts</span>(<span class="ident">vote</span>.<span class="ident">clone</span>());
 
-                    <span class="kw">if</span> <span class="op">&lt;</span><span class="ident">ErasVotes</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>::<span class="ident">contains_key</span>(<span class="kw-2">&amp;</span><span class="ident">next_era</span>, <span class="kw-2">&amp;</span><span class="ident">contract</span>) {
-                        <span class="op">&lt;</span><span class="ident">ErasVotes</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>::<span class="ident">mutate</span>(<span class="kw-2">&amp;</span><span class="ident">next_era</span>, <span class="kw-2">&amp;</span><span class="ident">contract</span>, <span class="op">|</span><span class="ident">votes</span><span class="op">|</span> {
-                            <span class="kw">if</span> <span class="op">&lt;</span><span class="ident">AccountsVote</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>::<span class="ident">contains_key</span>(<span class="kw-2">&amp;</span><span class="ident">sender</span>, <span class="kw-2">&amp;</span><span class="ident">contract</span>) {
+                    <span class="kw">if</span> <span class="op">&lt;</span><span class="ident">ErasVotes</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;&gt;</span>::<span class="ident">contains_key</span>(<span class="kw-2">&amp;</span><span class="ident">next_era</span>, <span class="kw-2">&amp;</span><span class="ident">contract</span>) {
+                        <span class="op">&lt;</span><span class="ident">ErasVotes</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;&gt;</span>::<span class="ident">mutate</span>(<span class="kw-2">&amp;</span><span class="ident">next_era</span>, <span class="kw-2">&amp;</span><span class="ident">contract</span>, <span class="op">|</span><span class="ident">votes</span><span class="op">|</span> {
+                            <span class="kw">if</span> <span class="op">&lt;</span><span class="ident">AccountsVote</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;&gt;</span>::<span class="ident">contains_key</span>(<span class="kw-2">&amp;</span><span class="ident">sender</span>, <span class="kw-2">&amp;</span><span class="ident">contract</span>) {
                                 <span class="kw">let</span> <span class="ident">clear_counts</span> <span class="op">=</span> <span class="self">Self</span>::<span class="ident">accounts_vote</span>(<span class="kw-2">&amp;</span><span class="ident">sender</span>, <span class="kw-2">&amp;</span><span class="ident">contract</span>);
-                                (<span class="kw-2">*</span><span class="ident">votes</span>).<span class="ident">bad</span> <span class="op">-</span><span class="op">=</span> <span class="ident">clear_counts</span>.<span class="ident">bad</span>;
-                                (<span class="kw-2">*</span><span class="ident">votes</span>).<span class="ident">good</span> <span class="op">-</span><span class="op">=</span> <span class="ident">clear_counts</span>.<span class="ident">good</span>;
+                                (<span class="kw-2">*</span><span class="ident">votes</span>).<span class="ident">bad</span> <span class="op">-=</span> <span class="ident">clear_counts</span>.<span class="ident">bad</span>;
+                                (<span class="kw-2">*</span><span class="ident">votes</span>).<span class="ident">good</span> <span class="op">-=</span> <span class="ident">clear_counts</span>.<span class="ident">good</span>;
                             }
-                            (<span class="kw-2">*</span><span class="ident">votes</span>).<span class="ident">bad</span> <span class="op">+</span><span class="op">=</span> <span class="ident">counts</span>.<span class="ident">bad</span>;
-                            (<span class="kw-2">*</span><span class="ident">votes</span>).<span class="ident">good</span> <span class="op">+</span><span class="op">=</span> <span class="ident">counts</span>.<span class="ident">good</span>;
+                            (<span class="kw-2">*</span><span class="ident">votes</span>).<span class="ident">bad</span> <span class="op">+=</span> <span class="ident">counts</span>.<span class="ident">bad</span>;
+                            (<span class="kw-2">*</span><span class="ident">votes</span>).<span class="ident">good</span> <span class="op">+=</span> <span class="ident">counts</span>.<span class="ident">good</span>;
                         });
                     } <span class="kw">else</span> {
-                        <span class="op">&lt;</span><span class="ident">ErasVotes</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>::<span class="ident">insert</span>(<span class="kw-2">&amp;</span><span class="ident">next_era</span>, <span class="kw-2">&amp;</span><span class="ident">contract</span>, <span class="kw-2">&amp;</span><span class="ident">counts</span>);
+                        <span class="op">&lt;</span><span class="ident">ErasVotes</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;&gt;</span>::<span class="ident">insert</span>(<span class="kw-2">&amp;</span><span class="ident">next_era</span>, <span class="kw-2">&amp;</span><span class="ident">contract</span>, <span class="kw-2">&amp;</span><span class="ident">counts</span>);
                     }
-                    <span class="op">&lt;</span><span class="ident">AccountsVote</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>::<span class="ident">insert</span>(<span class="kw-2">&amp;</span><span class="ident">sender</span>, <span class="kw-2">&amp;</span><span class="ident">contract</span>, <span class="ident">counts</span>);
+                    <span class="op">&lt;</span><span class="ident">AccountsVote</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;&gt;</span>::<span class="ident">insert</span>(<span class="kw-2">&amp;</span><span class="ident">sender</span>, <span class="kw-2">&amp;</span><span class="ident">contract</span>, <span class="ident">counts</span>);
                 }
             }
         }
@@ -1992,7 +1993,7 @@
             <span class="kw">let</span> <span class="ident">controller</span> <span class="op">=</span> <span class="ident">ensure_signed</span>(<span class="ident">origin</span>)<span class="question-mark">?</span>;
             <span class="kw">let</span> <span class="ident">ledger</span> <span class="op">=</span> <span class="self">Self</span>::<span class="ident">ledger</span>(<span class="kw-2">&amp;</span><span class="ident">controller</span>).<span class="ident">ok_or</span>(<span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>::<span class="ident">NotController</span>)<span class="question-mark">?</span>;
             <span class="kw">let</span> <span class="ident">stash</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">ledger</span>.<span class="ident">stash</span>;
-            <span class="op">&lt;</span><span class="ident">Payee</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>::<span class="ident">insert</span>(<span class="ident">stash</span>, <span class="ident">payee</span>);
+            <span class="op">&lt;</span><span class="ident">Payee</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;&gt;</span>::<span class="ident">insert</span>(<span class="ident">stash</span>, <span class="ident">payee</span>);
         }
 
         <span class="doccomment">/// slash the account for the contract.</span>
@@ -2023,7 +2024,7 @@
                     .<span class="ident">map</span>(<span class="op">|</span><span class="ident">era</span><span class="op">|</span> <span class="self">Self</span>::<span class="ident">eras_staking_points</span>(<span class="kw-2">&amp;</span><span class="ident">era</span>, <span class="kw-2">&amp;</span><span class="ident">contract</span>));
                 <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">slash_amount</span> <span class="op">=</span> <span class="ident">BalanceOf</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>::<span class="ident">zero</span>();
                 <span class="kw">for</span> <span class="ident">points</span> <span class="kw">in</span> <span class="ident">each_points</span> {
-                    <span class="ident">slash_amount</span> <span class="op">+</span><span class="op">=</span> <span class="ident">points</span>.<span class="ident">individual</span>.<span class="ident">get</span>(<span class="kw-2">&amp;</span><span class="ident">stash</span>).<span class="ident">unwrap_or</span>(<span class="kw-2">&amp;</span><span class="ident">BalanceOf</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>::<span class="ident">zero</span>()).<span class="ident">clone</span>();
+                    <span class="ident">slash_amount</span> <span class="op">+=</span> <span class="ident">points</span>.<span class="ident">individual</span>.<span class="ident">get</span>(<span class="kw-2">&amp;</span><span class="ident">stash</span>).<span class="ident">unwrap_or</span>(<span class="kw-2">&amp;</span><span class="ident">BalanceOf</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>::<span class="ident">zero</span>()).<span class="ident">clone</span>();
                 }
 
                 <span class="ident">ledger</span>.<span class="ident">slash</span>(<span class="ident">slash_amount</span>);
@@ -2047,13 +2048,13 @@
             <span class="kw">let</span> <span class="ident">stash</span> <span class="op">=</span> <span class="ident">ensure_signed</span>(<span class="ident">origin</span>)<span class="question-mark">?</span>;
             <span class="kw">let</span> <span class="ident">old_controller</span> <span class="op">=</span> <span class="self">Self</span>::<span class="ident">bonded</span>(<span class="kw-2">&amp;</span><span class="ident">stash</span>).<span class="ident">ok_or</span>(<span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>::<span class="ident">NotStash</span>)<span class="question-mark">?</span>;
             <span class="kw">let</span> <span class="ident">controller</span> <span class="op">=</span> <span class="ident">T</span>::<span class="ident">Lookup</span>::<span class="ident">lookup</span>(<span class="ident">controller</span>)<span class="question-mark">?</span>;
-            <span class="kw">if</span> <span class="op">&lt;</span><span class="ident">Ledger</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>::<span class="ident">contains_key</span>(<span class="kw-2">&amp;</span><span class="ident">controller</span>) {
+            <span class="kw">if</span> <span class="op">&lt;</span><span class="ident">Ledger</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;&gt;</span>::<span class="ident">contains_key</span>(<span class="kw-2">&amp;</span><span class="ident">controller</span>) {
                 <span class="prelude-val">Err</span>(<span class="string">&quot;controller already paired&quot;</span>)<span class="question-mark">?</span>
             }
-            <span class="kw">if</span> <span class="ident">controller</span> <span class="op">!</span><span class="op">=</span> <span class="ident">old_controller</span> {
-                <span class="op">&lt;</span><span class="ident">Bonded</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>::<span class="ident">insert</span>(<span class="kw-2">&amp;</span><span class="ident">stash</span>, <span class="kw-2">&amp;</span><span class="ident">controller</span>);
-                <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">l</span>) <span class="op">=</span> <span class="op">&lt;</span><span class="ident">Ledger</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>::<span class="ident">take</span>(<span class="kw-2">&amp;</span><span class="ident">old_controller</span>) {
-                    <span class="op">&lt;</span><span class="ident">Ledger</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>::<span class="ident">insert</span>(<span class="kw-2">&amp;</span><span class="ident">controller</span>, <span class="ident">l</span>);
+            <span class="kw">if</span> <span class="ident">controller</span> <span class="op">!=</span> <span class="ident">old_controller</span> {
+                <span class="op">&lt;</span><span class="ident">Bonded</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;&gt;</span>::<span class="ident">insert</span>(<span class="kw-2">&amp;</span><span class="ident">stash</span>, <span class="kw-2">&amp;</span><span class="ident">controller</span>);
+                <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">l</span>) <span class="op">=</span> <span class="op">&lt;</span><span class="ident">Ledger</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;&gt;</span>::<span class="ident">take</span>(<span class="kw-2">&amp;</span><span class="ident">old_controller</span>) {
+                    <span class="op">&lt;</span><span class="ident">Ledger</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;&gt;</span>::<span class="ident">insert</span>(<span class="kw-2">&amp;</span><span class="ident">controller</span>, <span class="ident">l</span>);
                 }
             }
         }
@@ -2070,7 +2071,7 @@
 
             <span class="comment">// check if era is valid</span>
             <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">active_era</span>) <span class="op">=</span> <span class="ident">T</span>::<span class="ident">EraFinder</span>::<span class="ident">active</span>() {
-                <span class="kw">if</span> <span class="ident">era</span> <span class="op">&gt;</span><span class="op">=</span> <span class="ident">active_era</span>.<span class="ident">index</span> {
+                <span class="kw">if</span> <span class="ident">era</span> <span class="op">&gt;=</span> <span class="ident">active_era</span>.<span class="ident">index</span> {
                     <span class="prelude-val">Err</span>(<span class="string">&quot;cannot claim yet&quot;</span>)<span class="question-mark">?</span>
                 }
             }
@@ -2081,29 +2082,29 @@
             }
 
             <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">untreated_era</span> <span class="op">=</span> <span class="self">Self</span>::<span class="ident">nominators_untreated_era</span>(<span class="kw-2">&amp;</span><span class="ident">nominator</span>);
-            <span class="kw">if</span> <span class="ident">era</span> <span class="op">=</span><span class="op">=</span> <span class="ident">untreated_era</span> {
+            <span class="kw">if</span> <span class="ident">era</span> <span class="op">==</span> <span class="ident">untreated_era</span> {
                 <span class="prelude-val">Err</span>(<span class="string">&quot;the nominator already rewarded&quot;</span>)<span class="question-mark">?</span>
             }
             <span class="kw">while</span> <span class="ident">era</span> <span class="op">&gt;</span> <span class="ident">untreated_era</span> {
                 <span class="self">Self</span>::<span class="ident">propagate_nominate_totals</span>(<span class="kw-2">&amp;</span><span class="ident">nominator</span>, <span class="kw-2">&amp;</span><span class="ident">untreated_era</span>, <span class="kw-2">&amp;</span>(<span class="ident">untreated_era</span> <span class="op">+</span> <span class="number">1</span>));
-                <span class="ident">untreated_era</span> <span class="op">+</span><span class="op">=</span> <span class="number">1</span>;
+                <span class="ident">untreated_era</span> <span class="op">+=</span> <span class="number">1</span>;
             }
-            <span class="op">&lt;</span><span class="ident">NominatorsUntreatedEra</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>::<span class="ident">insert</span>(<span class="kw-2">&amp;</span><span class="ident">nominator</span>, <span class="ident">untreated_era</span>);
+            <span class="op">&lt;</span><span class="ident">NominatorsUntreatedEra</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;&gt;</span>::<span class="ident">insert</span>(<span class="kw-2">&amp;</span><span class="ident">nominator</span>, <span class="ident">untreated_era</span>);
 
-            <span class="kw">for</span> (<span class="ident">contract</span>, <span class="kw">_</span>) <span class="kw">in</span> <span class="op">&lt;</span><span class="ident">ErasStakingPoints</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>::<span class="ident">iter_prefix</span>(<span class="kw-2">&amp;</span><span class="ident">era</span>) {
+            <span class="kw">for</span> (<span class="ident">contract</span>, <span class="kw">_</span>) <span class="kw">in</span> <span class="op">&lt;</span><span class="ident">ErasStakingPoints</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;&gt;</span>::<span class="ident">iter_prefix</span>(<span class="kw-2">&amp;</span><span class="ident">era</span>) {
                 <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">untreated_era</span> <span class="op">=</span> <span class="self">Self</span>::<span class="ident">contracts_untreated_era</span>(<span class="kw-2">&amp;</span><span class="ident">contract</span>);
-                <span class="kw">if</span> <span class="ident">era</span> <span class="op">!</span><span class="op">=</span> <span class="ident">untreated_era</span> {
+                <span class="kw">if</span> <span class="ident">era</span> <span class="op">!=</span> <span class="ident">untreated_era</span> {
                     <span class="kw">while</span> <span class="ident">era</span> <span class="op">&gt;</span> <span class="ident">untreated_era</span> {
                         <span class="self">Self</span>::<span class="ident">propagate_eras_staking_points_total</span>(<span class="kw-2">&amp;</span><span class="ident">contract</span>, <span class="kw-2">&amp;</span><span class="ident">untreated_era</span>, <span class="kw-2">&amp;</span>(<span class="ident">untreated_era</span> <span class="op">+</span> <span class="number">1</span>));
-                        <span class="ident">untreated_era</span> <span class="op">+</span><span class="op">=</span> <span class="number">1</span>;
+                        <span class="ident">untreated_era</span> <span class="op">+=</span> <span class="number">1</span>;
                     }
-                    <span class="op">&lt;</span><span class="ident">ContractsUntreatedEra</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>::<span class="ident">insert</span>(<span class="kw-2">&amp;</span><span class="ident">contract</span>, <span class="ident">untreated_era</span>);
+                    <span class="op">&lt;</span><span class="ident">ContractsUntreatedEra</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;&gt;</span>::<span class="ident">insert</span>(<span class="kw-2">&amp;</span><span class="ident">contract</span>, <span class="ident">untreated_era</span>);
                 }
             }
 
             <span class="kw">let</span> <span class="ident">rewards</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">T</span>::<span class="ident">ForDappsEraReward</span>::<span class="ident">get</span>(<span class="kw-2">&amp;</span><span class="ident">era</span>) {
-                <span class="prelude-val">Some</span>(<span class="ident">rewards</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">rewards</span>,
-                <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> {
+                <span class="prelude-val">Some</span>(<span class="ident">rewards</span>) <span class="op">=&gt;</span> <span class="ident">rewards</span>,
+                <span class="prelude-val">None</span> <span class="op">=&gt;</span> {
                     <span class="ident">frame_support</span>::<span class="ident">print</span>(<span class="string">&quot;Error: start_session_index must be set for current_era&quot;</span>);
                     <span class="ident">BalanceOf</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>::<span class="ident">zero</span>()
                 }
@@ -2126,7 +2127,7 @@
 
             <span class="comment">// check if era is valid</span>
             <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">active_era</span>) <span class="op">=</span> <span class="ident">T</span>::<span class="ident">EraFinder</span>::<span class="ident">active</span>() {
-                <span class="kw">if</span> <span class="ident">era</span> <span class="op">&gt;</span><span class="op">=</span> <span class="ident">active_era</span>.<span class="ident">index</span> {
+                <span class="kw">if</span> <span class="ident">era</span> <span class="op">&gt;=</span> <span class="ident">active_era</span>.<span class="ident">index</span> {
                     <span class="prelude-val">Err</span>(<span class="string">&quot;cannot claim yet&quot;</span>)<span class="question-mark">?</span>
                 }
             }
@@ -2137,8 +2138,8 @@
             }
 
             <span class="kw">let</span> <span class="ident">rewards</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">T</span>::<span class="ident">ForDappsEraReward</span>::<span class="ident">get</span>(<span class="kw-2">&amp;</span><span class="ident">era</span>) {
-                <span class="prelude-val">Some</span>(<span class="ident">rewards</span>) <span class="op">=</span><span class="op">&gt;</span> <span class="ident">rewards</span>,
-                <span class="prelude-val">None</span> <span class="op">=</span><span class="op">&gt;</span> {
+                <span class="prelude-val">Some</span>(<span class="ident">rewards</span>) <span class="op">=&gt;</span> <span class="ident">rewards</span>,
+                <span class="prelude-val">None</span> <span class="op">=&gt;</span> {
                     <span class="ident">frame_support</span>::<span class="ident">print</span>(<span class="string">&quot;Error: start_session_index must be set for current_era&quot;</span>);
                     <span class="ident">BalanceOf</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>::<span class="ident">zero</span>()
                 }
@@ -2160,7 +2161,7 @@
     <span class="doccomment">/// will lock the entire funds except paying for further transactions.</span>
     <span class="kw">fn</span> <span class="ident">update_ledger</span>(
         <span class="ident">controller</span>: <span class="kw-2">&amp;</span><span class="ident">T</span>::<span class="ident">AccountId</span>,
-        <span class="ident">ledger</span>: <span class="kw-2">&amp;</span><span class="ident">StakingLedger</span><span class="op">&lt;</span><span class="ident">T</span>::<span class="ident">AccountId</span>, <span class="ident">BalanceOf</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+        <span class="ident">ledger</span>: <span class="kw-2">&amp;</span><span class="ident">StakingLedger</span><span class="op">&lt;</span><span class="ident">T</span>::<span class="ident">AccountId</span>, <span class="ident">BalanceOf</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;&gt;</span>,
     ) {
         <span class="ident">T</span>::<span class="ident">Currency</span>::<span class="ident">set_lock</span>(
             <span class="ident">STAKING_ID</span>,
@@ -2168,7 +2169,7 @@
             <span class="ident">ledger</span>.<span class="ident">total</span>,
             <span class="ident">WithdrawReasons</span>::<span class="ident">all</span>(),
         );
-        <span class="op">&lt;</span><span class="ident">Ledger</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>::<span class="ident">insert</span>(<span class="ident">controller</span>, <span class="ident">ledger</span>);
+        <span class="op">&lt;</span><span class="ident">Ledger</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;&gt;</span>::<span class="ident">insert</span>(<span class="ident">controller</span>, <span class="ident">ledger</span>);
     }
 
     <span class="doccomment">/// Remove all associated data of a stash account from the staking system.</span>
@@ -2178,11 +2179,11 @@
     <span class="doccomment">/// This is called :</span>
     <span class="doccomment">/// - Immediately when an account&#39;s balance falls below existential deposit.</span>
     <span class="doccomment">/// - after a `withdraw_unbond()` call that frees all of a stash&#39;s bonded balance.</span>
-    <span class="kw">fn</span> <span class="ident">kill_stash</span>(<span class="ident">stash</span>: <span class="kw-2">&amp;</span><span class="ident">T</span>::<span class="ident">AccountId</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">DispatchResult</span> {
+    <span class="kw">fn</span> <span class="ident">kill_stash</span>(<span class="ident">stash</span>: <span class="kw-2">&amp;</span><span class="ident">T</span>::<span class="ident">AccountId</span>) <span class="op">-&gt;</span> <span class="ident">DispatchResult</span> {
         <span class="kw">let</span> <span class="ident">controller</span> <span class="op">=</span> <span class="ident">Bonded</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>::<span class="ident">take</span>(<span class="ident">stash</span>).<span class="ident">ok_or</span>(<span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>::<span class="ident">NotStash</span>)<span class="question-mark">?</span>;
-        <span class="op">&lt;</span><span class="ident">Ledger</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>::<span class="ident">remove</span>(<span class="kw-2">&amp;</span><span class="ident">controller</span>);
+        <span class="op">&lt;</span><span class="ident">Ledger</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;&gt;</span>::<span class="ident">remove</span>(<span class="kw-2">&amp;</span><span class="ident">controller</span>);
 
-        <span class="op">&lt;</span><span class="ident">Payee</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>::<span class="ident">remove</span>(<span class="ident">stash</span>);
+        <span class="op">&lt;</span><span class="ident">Payee</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;&gt;</span>::<span class="ident">remove</span>(<span class="ident">stash</span>);
         <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">nominations</span>) <span class="op">=</span> <span class="self">Self</span>::<span class="ident">dapps_nominations</span>(<span class="ident">stash</span>) {
             <span class="self">Self</span>::<span class="ident">remove_nominations</span>(<span class="ident">stash</span>, <span class="ident">nominations</span>);
         }
@@ -2199,11 +2200,11 @@
     }
 
     <span class="kw">fn</span> <span class="ident">propagate_nominate_totals</span>(<span class="ident">nominator</span>: <span class="kw-2">&amp;</span><span class="ident">T</span>::<span class="ident">AccountId</span>, <span class="ident">src_era</span>: <span class="kw-2">&amp;</span><span class="ident">EraIndex</span>, <span class="ident">dst_era</span>: <span class="kw-2">&amp;</span><span class="ident">EraIndex</span>) {
-        <span class="kw">if</span> <span class="op">&lt;</span><span class="ident">ErasNominateTotals</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>::<span class="ident">contains_key</span>(<span class="ident">src_era</span>, <span class="ident">nominator</span>) {
-            <span class="kw">let</span> <span class="ident">untreated_nootate_total</span> <span class="op">=</span> <span class="op">&lt;</span><span class="ident">ErasNominateTotals</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>::<span class="ident">get</span>(<span class="ident">src_era</span>, <span class="ident">nominator</span>);
+        <span class="kw">if</span> <span class="op">&lt;</span><span class="ident">ErasNominateTotals</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;&gt;</span>::<span class="ident">contains_key</span>(<span class="ident">src_era</span>, <span class="ident">nominator</span>) {
+            <span class="kw">let</span> <span class="ident">untreated_nootate_total</span> <span class="op">=</span> <span class="op">&lt;</span><span class="ident">ErasNominateTotals</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;&gt;</span>::<span class="ident">get</span>(<span class="ident">src_era</span>, <span class="ident">nominator</span>);
 
-            <span class="op">&lt;</span><span class="ident">ErasNominateTotals</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>::<span class="ident">mutate</span>(<span class="ident">dst_era</span>, <span class="ident">nominator</span>, <span class="op">|</span><span class="ident">total</span><span class="op">|</span> {
-                <span class="kw-2">*</span><span class="ident">total</span> <span class="op">+</span><span class="op">=</span> <span class="ident">untreated_nootate_total</span>;
+            <span class="op">&lt;</span><span class="ident">ErasNominateTotals</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;&gt;</span>::<span class="ident">mutate</span>(<span class="ident">dst_era</span>, <span class="ident">nominator</span>, <span class="op">|</span><span class="ident">total</span><span class="op">|</span> {
+                <span class="kw-2">*</span><span class="ident">total</span> <span class="op">+=</span> <span class="ident">untreated_nootate_total</span>;
             })
         }
     }
@@ -2212,8 +2213,8 @@
         <span class="ident">era</span>: <span class="kw-2">&amp;</span><span class="ident">EraIndex</span>,
         <span class="ident">max_payout</span>: <span class="ident">BalanceOf</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>,
         <span class="ident">nominator</span>: <span class="kw-2">&amp;</span><span class="ident">T</span>::<span class="ident">AccountId</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">BalanceOf</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">total_imbalance</span> <span class="op">=</span> <span class="op">&lt;</span><span class="ident">PositiveImbalanceOf</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>::<span class="ident">zero</span>();
+    ) <span class="op">-&gt;</span> <span class="ident">BalanceOf</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">total_imbalance</span> <span class="op">=</span> <span class="op">&lt;</span><span class="ident">PositiveImbalanceOf</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;&gt;</span>::<span class="ident">zero</span>();
         <span class="kw">let</span> (<span class="kw">_</span>, <span class="ident">nominators_reward</span>) <span class="op">=</span>
             <span class="ident">T</span>::<span class="ident">ComputeRewardsForDapps</span>::<span class="ident">compute_rewards_for_dapps</span>(<span class="ident">max_payout</span>);
 
@@ -2223,7 +2224,7 @@
 
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">each_points</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">Vec</span>::<span class="ident">new</span>();
         <span class="kw">for</span> <span class="ident">e</span> <span class="kw">in</span> <span class="ident">era</span>.<span class="ident">saturating_sub</span>(<span class="ident">T</span>::<span class="ident">HistoryDepthFinder</span>::<span class="ident">get</span>())..<span class="op">=</span><span class="kw-2">*</span><span class="ident">era</span> {
-            <span class="kw">for</span> (<span class="ident">contract</span>, <span class="ident">points</span>) <span class="kw">in</span> <span class="op">&lt;</span><span class="ident">ErasStakingPoints</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>::<span class="ident">iter_prefix</span>(<span class="kw-2">&amp;</span><span class="ident">e</span>) {
+            <span class="kw">for</span> (<span class="ident">contract</span>, <span class="ident">points</span>) <span class="kw">in</span> <span class="op">&lt;</span><span class="ident">ErasStakingPoints</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;&gt;</span>::<span class="ident">iter_prefix</span>(<span class="kw-2">&amp;</span><span class="ident">e</span>) {
                 <span class="kw">if</span> <span class="self">Self</span>::<span class="ident">is_rewardable</span>(<span class="kw-2">&amp;</span><span class="ident">contract</span>, <span class="kw-2">&amp;</span><span class="ident">e</span>) {
                     <span class="ident">each_points</span>.<span class="ident">push</span>((
                         <span class="self">Self</span>::<span class="ident">eras_staking_points</span>(<span class="ident">era</span>, <span class="ident">contract</span>).<span class="ident">total</span>,
@@ -2235,7 +2236,7 @@
 
         <span class="kw">for</span> (<span class="ident">total</span>, <span class="ident">individual</span>) <span class="kw">in</span> <span class="ident">each_points</span> {
             <span class="kw">for</span> (<span class="ident">account</span>, <span class="ident">value</span>) <span class="kw">in</span> <span class="ident">individual</span> {
-                <span class="kw">if</span> <span class="ident">account</span> <span class="op">=</span><span class="op">=</span> <span class="kw-2">*</span><span class="ident">nominator</span> {
+                <span class="kw">if</span> <span class="ident">account</span> <span class="op">==</span> <span class="kw-2">*</span><span class="ident">nominator</span> {
                     <span class="ident">nominate_values</span>.<span class="ident">push</span>((<span class="ident">total</span>, <span class="ident">value</span>));
                 }
             }
@@ -2265,8 +2266,8 @@
         <span class="ident">era</span>: <span class="kw-2">&amp;</span><span class="ident">EraIndex</span>,
         <span class="ident">max_payout</span>: <span class="ident">BalanceOf</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>,
         <span class="ident">operator</span>: <span class="kw-2">&amp;</span><span class="ident">T</span>::<span class="ident">AccountId</span>,
-    ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">BalanceOf</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">total_imbalance</span> <span class="op">=</span> <span class="op">&lt;</span><span class="ident">PositiveImbalanceOf</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>::<span class="ident">zero</span>();
+    ) <span class="op">-&gt;</span> <span class="ident">BalanceOf</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">total_imbalance</span> <span class="op">=</span> <span class="op">&lt;</span><span class="ident">PositiveImbalanceOf</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;&gt;</span>::<span class="ident">zero</span>();
         <span class="kw">let</span> (<span class="ident">operators_reward</span>, <span class="kw">_</span>) <span class="op">=</span>
             <span class="ident">T</span>::<span class="ident">ComputeRewardsForDapps</span>::<span class="ident">compute_rewards_for_dapps</span>(<span class="ident">max_payout</span>);
 
@@ -2274,10 +2275,10 @@
 
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">stakes</span> <span class="op">=</span> <span class="ident">BalanceOf</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>::<span class="ident">zero</span>();
         <span class="kw">for</span> <span class="ident">e</span> <span class="kw">in</span> <span class="ident">era</span>.<span class="ident">saturating_sub</span>(<span class="ident">T</span>::<span class="ident">HistoryDepthFinder</span>::<span class="ident">get</span>())..<span class="op">=</span><span class="kw-2">*</span><span class="ident">era</span> {
-            <span class="kw">for</span> (<span class="ident">contract</span>, <span class="kw">_</span>) <span class="kw">in</span> <span class="op">&lt;</span><span class="ident">ErasStakingPoints</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>::<span class="ident">iter_prefix</span>(<span class="kw-2">&amp;</span><span class="ident">e</span>) {
+            <span class="kw">for</span> (<span class="ident">contract</span>, <span class="kw">_</span>) <span class="kw">in</span> <span class="op">&lt;</span><span class="ident">ErasStakingPoints</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;&gt;</span>::<span class="ident">iter_prefix</span>(<span class="kw-2">&amp;</span><span class="ident">e</span>) {
                 <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">o</span>) <span class="op">=</span> <span class="ident">T</span>::<span class="ident">ContractFinder</span>::<span class="ident">operator</span>(<span class="kw-2">&amp;</span><span class="ident">contract</span>) {
-                    <span class="kw">if</span> <span class="ident">o</span> <span class="op">=</span><span class="op">=</span> <span class="kw-2">*</span><span class="ident">operator</span> <span class="kw-2">&amp;</span><span class="op">&amp;</span> <span class="self">Self</span>::<span class="ident">is_rewardable</span>(<span class="kw-2">&amp;</span><span class="ident">contract</span>, <span class="kw-2">&amp;</span><span class="ident">e</span>) {
-                        <span class="ident">stakes</span> <span class="op">+</span><span class="op">=</span> <span class="self">Self</span>::<span class="ident">eras_staking_points</span>(<span class="ident">era</span>, <span class="ident">contract</span>).<span class="ident">total</span>;
+                    <span class="kw">if</span> <span class="ident">o</span> <span class="op">==</span> <span class="kw-2">*</span><span class="ident">operator</span> <span class="op">&amp;&amp;</span> <span class="self">Self</span>::<span class="ident">is_rewardable</span>(<span class="kw-2">&amp;</span><span class="ident">contract</span>, <span class="kw-2">&amp;</span><span class="ident">e</span>) {
+                        <span class="ident">stakes</span> <span class="op">+=</span> <span class="self">Self</span>::<span class="ident">eras_staking_points</span>(<span class="ident">era</span>, <span class="ident">contract</span>).<span class="ident">total</span>;
                     }
                 }
             }
@@ -2307,44 +2308,44 @@
         <span class="ident">src_era</span>: <span class="kw-2">&amp;</span><span class="ident">EraIndex</span>,
         <span class="ident">dst_era</span>: <span class="kw-2">&amp;</span><span class="ident">EraIndex</span>,
     ) {
-        <span class="kw">if</span> <span class="op">&lt;</span><span class="ident">ErasStakingPoints</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>::<span class="ident">contains_key</span>(<span class="ident">src_era</span>, <span class="ident">contract</span>) {
-            <span class="kw">let</span> <span class="ident">untreated_points</span> <span class="op">=</span> <span class="op">&lt;</span><span class="ident">ErasStakingPoints</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>::<span class="ident">get</span>(<span class="ident">src_era</span>, <span class="ident">contract</span>);
+        <span class="kw">if</span> <span class="op">&lt;</span><span class="ident">ErasStakingPoints</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;&gt;</span>::<span class="ident">contains_key</span>(<span class="ident">src_era</span>, <span class="ident">contract</span>) {
+            <span class="kw">let</span> <span class="ident">untreated_points</span> <span class="op">=</span> <span class="op">&lt;</span><span class="ident">ErasStakingPoints</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;&gt;</span>::<span class="ident">get</span>(<span class="ident">src_era</span>, <span class="ident">contract</span>);
 
-            <span class="op">&lt;</span><span class="ident">ErasStakingPoints</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>::<span class="ident">mutate</span>(<span class="kw-2">&amp;</span><span class="ident">dst_era</span>, <span class="kw-2">&amp;</span><span class="ident">contract</span>, <span class="op">|</span><span class="ident">points</span><span class="op">|</span> {
-                (<span class="kw-2">*</span><span class="ident">points</span>).<span class="ident">total</span> <span class="op">+</span><span class="op">=</span> <span class="ident">untreated_points</span>.<span class="ident">total</span>.<span class="ident">clone</span>();
+            <span class="op">&lt;</span><span class="ident">ErasStakingPoints</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;&gt;</span>::<span class="ident">mutate</span>(<span class="kw-2">&amp;</span><span class="ident">dst_era</span>, <span class="kw-2">&amp;</span><span class="ident">contract</span>, <span class="op">|</span><span class="ident">points</span><span class="op">|</span> {
+                (<span class="kw-2">*</span><span class="ident">points</span>).<span class="ident">total</span> <span class="op">+=</span> <span class="ident">untreated_points</span>.<span class="ident">total</span>.<span class="ident">clone</span>();
             });
         }
     }
 
-    <span class="kw">fn</span> <span class="ident">compute_total_stake</span>(<span class="ident">era</span>: <span class="kw-2">&amp;</span><span class="ident">EraIndex</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">BalanceOf</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">compute_total_stake</span>(<span class="ident">era</span>: <span class="kw-2">&amp;</span><span class="ident">EraIndex</span>) <span class="op">-&gt;</span> <span class="ident">BalanceOf</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">untreated_era</span> <span class="op">=</span> <span class="self">Self</span>::<span class="ident">untreated_era</span>();
         <span class="kw">while</span> <span class="kw-2">*</span><span class="ident">era</span> <span class="op">&gt;</span> <span class="ident">untreated_era</span> {
             <span class="kw">let</span> <span class="ident">total</span> <span class="op">=</span> <span class="self">Self</span>::<span class="ident">eras_total_stake</span>(<span class="kw-2">&amp;</span><span class="ident">untreated_era</span>);
-            <span class="op">&lt;</span><span class="ident">ErasTotalStake</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>::<span class="ident">mutate</span>(<span class="kw-2">&amp;</span><span class="ident">untreated_era</span> <span class="op">+</span> <span class="number">1</span>, <span class="op">|</span><span class="ident">next_total</span><span class="op">|</span> <span class="kw-2">*</span><span class="ident">next_total</span> <span class="op">+</span><span class="op">=</span> <span class="ident">total</span>);
-            <span class="ident">untreated_era</span> <span class="op">+</span><span class="op">=</span> <span class="number">1</span>;
+            <span class="op">&lt;</span><span class="ident">ErasTotalStake</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;&gt;</span>::<span class="ident">mutate</span>(<span class="kw-2">&amp;</span><span class="ident">untreated_era</span> <span class="op">+</span> <span class="number">1</span>, <span class="op">|</span><span class="ident">next_total</span><span class="op">|</span> <span class="kw-2">*</span><span class="ident">next_total</span> <span class="op">+=</span> <span class="ident">total</span>);
+            <span class="ident">untreated_era</span> <span class="op">+=</span> <span class="number">1</span>;
         }
         <span class="ident">UntreatedEra</span>::<span class="ident">put</span>(<span class="ident">untreated_era</span>);
         <span class="kw">let</span> <span class="ident">total_staked</span> <span class="op">=</span> <span class="self">Self</span>::<span class="ident">eras_total_stake</span>(<span class="ident">era</span>);
         <span class="ident">total_staked</span>
     }
 
-    <span class="kw">fn</span> <span class="ident">make_payout</span>(<span class="ident">stash</span>: <span class="kw-2">&amp;</span><span class="ident">T</span>::<span class="ident">AccountId</span>, <span class="ident">amount</span>: <span class="ident">BalanceOf</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">PositiveImbalanceOf</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">make_payout</span>(<span class="ident">stash</span>: <span class="kw-2">&amp;</span><span class="ident">T</span>::<span class="ident">AccountId</span>, <span class="ident">amount</span>: <span class="ident">BalanceOf</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">PositiveImbalanceOf</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;&gt;</span> {
         <span class="kw">let</span> <span class="ident">dest</span> <span class="op">=</span> <span class="self">Self</span>::<span class="ident">payee</span>(<span class="ident">stash</span>);
         <span class="kw">match</span> <span class="kw-2">&amp;</span><span class="ident">dest</span> {
-            <span class="ident">RewardDestination</span>::<span class="ident">Controller</span> <span class="op">=</span><span class="op">&gt;</span> <span class="self">Self</span>::<span class="ident">bonded</span>(<span class="ident">stash</span>).<span class="ident">and_then</span>(<span class="op">|</span><span class="ident">controller</span><span class="op">|</span> {
+            <span class="ident">RewardDestination</span>::<span class="ident">Controller</span> <span class="op">=&gt;</span> <span class="self">Self</span>::<span class="ident">bonded</span>(<span class="ident">stash</span>).<span class="ident">and_then</span>(<span class="op">|</span><span class="ident">controller</span><span class="op">|</span> {
                 <span class="ident">T</span>::<span class="ident">Currency</span>::<span class="ident">deposit_into_existing</span>(<span class="kw-2">&amp;</span><span class="ident">controller</span>, <span class="ident">amount</span>).<span class="ident">ok</span>()
             }),
-            <span class="ident">RewardDestination</span>::<span class="ident">Stash</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">T</span>::<span class="ident">Currency</span>::<span class="ident">deposit_into_existing</span>(<span class="ident">stash</span>, <span class="ident">amount</span>).<span class="ident">ok</span>(),
-            <span class="ident">RewardDestination</span>::<span class="ident">Staked</span> <span class="op">=</span><span class="op">&gt;</span> <span class="self">Self</span>::<span class="ident">bonded</span>(<span class="ident">stash</span>)
+            <span class="ident">RewardDestination</span>::<span class="ident">Stash</span> <span class="op">=&gt;</span> <span class="ident">T</span>::<span class="ident">Currency</span>::<span class="ident">deposit_into_existing</span>(<span class="ident">stash</span>, <span class="ident">amount</span>).<span class="ident">ok</span>(),
+            <span class="ident">RewardDestination</span>::<span class="ident">Staked</span> <span class="op">=&gt;</span> <span class="self">Self</span>::<span class="ident">bonded</span>(<span class="ident">stash</span>)
                 .<span class="ident">and_then</span>(<span class="op">|</span><span class="ident">c</span><span class="op">|</span> <span class="self">Self</span>::<span class="ident">ledger</span>(<span class="kw-2">&amp;</span><span class="ident">c</span>).<span class="ident">map</span>(<span class="op">|</span><span class="ident">l</span><span class="op">|</span> (<span class="ident">c</span>, <span class="ident">l</span>)))
                 .<span class="ident">and_then</span>(<span class="op">|</span>(<span class="ident">controller</span>, <span class="kw-2">mut</span> <span class="ident">l</span>)<span class="op">|</span> {
-                    <span class="ident">l</span>.<span class="ident">active</span> <span class="op">+</span><span class="op">=</span> <span class="ident">amount</span>;
-                    <span class="ident">l</span>.<span class="ident">total</span> <span class="op">+</span><span class="op">=</span> <span class="ident">amount</span>;
+                    <span class="ident">l</span>.<span class="ident">active</span> <span class="op">+=</span> <span class="ident">amount</span>;
+                    <span class="ident">l</span>.<span class="ident">total</span> <span class="op">+=</span> <span class="ident">amount</span>;
                     <span class="kw">let</span> <span class="ident">r</span> <span class="op">=</span> <span class="ident">T</span>::<span class="ident">Currency</span>::<span class="ident">deposit_into_existing</span>(<span class="ident">stash</span>, <span class="ident">amount</span>).<span class="ident">ok</span>();
                     <span class="self">Self</span>::<span class="ident">update_ledger</span>(<span class="kw-2">&amp;</span><span class="ident">controller</span>, <span class="kw-2">&amp;</span><span class="ident">l</span>);
                     <span class="ident">r</span>
                 }),
-            <span class="ident">RewardDestination</span>::<span class="ident">Account</span>(<span class="ident">account</span>) <span class="op">=</span><span class="op">&gt;</span> {
+            <span class="ident">RewardDestination</span>::<span class="ident">Account</span>(<span class="ident">account</span>) <span class="op">=&gt;</span> {
                 <span class="ident">T</span>::<span class="ident">Currency</span>::<span class="ident">deposit_into_existing</span>(<span class="ident">account</span>, <span class="ident">amount</span>).<span class="ident">ok</span>()
             }
         }
@@ -2352,15 +2353,15 @@
 
     <span class="kw">fn</span> <span class="ident">take_in_nominations</span>(
         <span class="ident">stash</span>: <span class="kw-2">&amp;</span><span class="ident">T</span>::<span class="ident">AccountId</span>,
-        <span class="ident">nominations</span>: <span class="ident">Nominations</span><span class="op">&lt;</span><span class="ident">T</span>::<span class="ident">AccountId</span>, <span class="ident">BalanceOf</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+        <span class="ident">nominations</span>: <span class="ident">Nominations</span><span class="op">&lt;</span><span class="ident">T</span>::<span class="ident">AccountId</span>, <span class="ident">BalanceOf</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;&gt;</span>,
     ) {
         <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">current_era</span>) <span class="op">=</span> <span class="ident">T</span>::<span class="ident">EraFinder</span>::<span class="ident">current</span>() {
             <span class="kw">let</span> <span class="ident">next_era</span> <span class="op">=</span> <span class="ident">current_era</span> <span class="op">+</span> <span class="number">1</span>;
 
             <span class="kw">for</span> (<span class="ident">contract</span>, <span class="ident">value</span>) <span class="kw">in</span> <span class="ident">nominations</span>.<span class="ident">targets</span>.<span class="ident">iter</span>() {
-                <span class="kw">if</span> <span class="op">&lt;</span><span class="ident">ErasStakingPoints</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>::<span class="ident">contains_key</span>(<span class="kw-2">&amp;</span><span class="ident">next_era</span>, <span class="kw-2">&amp;</span><span class="ident">contract</span>) {
-                    <span class="op">&lt;</span><span class="ident">ErasStakingPoints</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>::<span class="ident">mutate</span>(<span class="kw-2">&amp;</span><span class="ident">next_era</span>, <span class="kw-2">&amp;</span><span class="ident">contract</span>, <span class="op">|</span><span class="ident">points</span><span class="op">|</span> {
-                        (<span class="kw-2">*</span><span class="ident">points</span>).<span class="ident">total</span> <span class="op">+</span><span class="op">=</span> <span class="ident">value</span>.<span class="ident">clone</span>();
+                <span class="kw">if</span> <span class="op">&lt;</span><span class="ident">ErasStakingPoints</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;&gt;</span>::<span class="ident">contains_key</span>(<span class="kw-2">&amp;</span><span class="ident">next_era</span>, <span class="kw-2">&amp;</span><span class="ident">contract</span>) {
+                    <span class="op">&lt;</span><span class="ident">ErasStakingPoints</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;&gt;</span>::<span class="ident">mutate</span>(<span class="kw-2">&amp;</span><span class="ident">next_era</span>, <span class="kw-2">&amp;</span><span class="ident">contract</span>, <span class="op">|</span><span class="ident">points</span><span class="op">|</span> {
+                        (<span class="kw-2">*</span><span class="ident">points</span>).<span class="ident">total</span> <span class="op">+=</span> <span class="ident">value</span>.<span class="ident">clone</span>();
                         (<span class="kw-2">*</span><span class="ident">points</span>).<span class="ident">individual</span>.<span class="ident">insert</span>(<span class="ident">stash</span>.<span class="ident">clone</span>(), <span class="ident">value</span>.<span class="ident">clone</span>());
                     });
                 } <span class="kw">else</span> {
@@ -2368,52 +2369,52 @@
                         <span class="ident">total</span>: <span class="ident">value</span>.<span class="ident">clone</span>(),
                         <span class="ident">individual</span>: <span class="macro">vec</span><span class="macro">!</span>[(<span class="ident">stash</span>.<span class="ident">clone</span>(), <span class="ident">value</span>.<span class="ident">clone</span>())]
                             .<span class="ident">into_iter</span>()
-                            .<span class="ident">collect</span>::<span class="op">&lt;</span><span class="ident">BTreeMap</span><span class="op">&lt;</span><span class="ident">T</span>::<span class="ident">AccountId</span>, <span class="ident">BalanceOf</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span>(),
+                            .<span class="ident">collect</span>::<span class="op">&lt;</span><span class="ident">BTreeMap</span><span class="op">&lt;</span><span class="ident">T</span>::<span class="ident">AccountId</span>, <span class="ident">BalanceOf</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;&gt;</span><span class="op">&gt;</span>(),
                     };
-                    <span class="op">&lt;</span><span class="ident">ErasStakingPoints</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>::<span class="ident">insert</span>(<span class="kw-2">&amp;</span><span class="ident">next_era</span>, <span class="kw-2">&amp;</span><span class="ident">contract</span>, <span class="ident">points</span>);
+                    <span class="op">&lt;</span><span class="ident">ErasStakingPoints</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;&gt;</span>::<span class="ident">insert</span>(<span class="kw-2">&amp;</span><span class="ident">next_era</span>, <span class="kw-2">&amp;</span><span class="ident">contract</span>, <span class="ident">points</span>);
                 }
 
-                <span class="op">&lt;</span><span class="ident">ErasNominateTotals</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>::<span class="ident">mutate</span>(<span class="kw-2">&amp;</span><span class="ident">next_era</span>, <span class="ident">stash</span>, <span class="op">|</span><span class="ident">total</span><span class="op">|</span> {
-                    <span class="kw-2">*</span><span class="ident">total</span> <span class="op">+</span><span class="op">=</span> <span class="ident">value</span>.<span class="ident">clone</span>();
+                <span class="op">&lt;</span><span class="ident">ErasNominateTotals</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;&gt;</span>::<span class="ident">mutate</span>(<span class="kw-2">&amp;</span><span class="ident">next_era</span>, <span class="ident">stash</span>, <span class="op">|</span><span class="ident">total</span><span class="op">|</span> {
+                    <span class="kw-2">*</span><span class="ident">total</span> <span class="op">+=</span> <span class="ident">value</span>.<span class="ident">clone</span>();
                 });
 
-                <span class="op">&lt;</span><span class="ident">ErasTotalStake</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>::<span class="ident">mutate</span>(<span class="kw-2">&amp;</span><span class="ident">next_era</span>, <span class="op">|</span><span class="ident">total</span><span class="op">|</span> {
-                    <span class="kw-2">*</span><span class="ident">total</span> <span class="op">+</span><span class="op">=</span> <span class="ident">value</span>.<span class="ident">clone</span>();
+                <span class="op">&lt;</span><span class="ident">ErasTotalStake</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;&gt;</span>::<span class="ident">mutate</span>(<span class="kw-2">&amp;</span><span class="ident">next_era</span>, <span class="op">|</span><span class="ident">total</span><span class="op">|</span> {
+                    <span class="kw-2">*</span><span class="ident">total</span> <span class="op">+=</span> <span class="ident">value</span>.<span class="ident">clone</span>();
                 });
             }
         }
-        <span class="op">&lt;</span><span class="ident">DappsNominations</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>::<span class="ident">insert</span>(<span class="ident">stash</span>, <span class="ident">nominations</span>);
+        <span class="op">&lt;</span><span class="ident">DappsNominations</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;&gt;</span>::<span class="ident">insert</span>(<span class="ident">stash</span>, <span class="ident">nominations</span>);
     }
 
     <span class="kw">fn</span> <span class="ident">remove_nominations</span>(
         <span class="ident">stash</span>: <span class="kw-2">&amp;</span><span class="ident">T</span>::<span class="ident">AccountId</span>,
-        <span class="ident">nominations</span>: <span class="ident">Nominations</span><span class="op">&lt;</span><span class="ident">T</span>::<span class="ident">AccountId</span>, <span class="ident">BalanceOf</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+        <span class="ident">nominations</span>: <span class="ident">Nominations</span><span class="op">&lt;</span><span class="ident">T</span>::<span class="ident">AccountId</span>, <span class="ident">BalanceOf</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;&gt;</span>,
     ) {
         <span class="kw">let</span> <span class="ident">era</span> <span class="op">=</span> <span class="ident">nominations</span>.<span class="ident">submitted_in</span> <span class="op">+</span> <span class="number">1</span>;
         <span class="kw">for</span> (<span class="ident">contract</span>, <span class="ident">value</span>) <span class="kw">in</span> <span class="ident">nominations</span>.<span class="ident">targets</span>.<span class="ident">iter</span>() {
-            <span class="op">&lt;</span><span class="ident">ErasStakingPoints</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>::<span class="ident">mutate</span>(<span class="kw-2">&amp;</span><span class="ident">era</span>, <span class="kw-2">&amp;</span><span class="ident">contract</span>, <span class="op">|</span><span class="ident">points</span><span class="op">|</span> {
+            <span class="op">&lt;</span><span class="ident">ErasStakingPoints</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;&gt;</span>::<span class="ident">mutate</span>(<span class="kw-2">&amp;</span><span class="ident">era</span>, <span class="kw-2">&amp;</span><span class="ident">contract</span>, <span class="op">|</span><span class="ident">points</span><span class="op">|</span> {
                 (<span class="kw-2">*</span><span class="ident">points</span>).<span class="ident">total</span> <span class="op">=</span> <span class="ident">points</span>.<span class="ident">total</span>.<span class="ident">saturating_sub</span>(<span class="ident">value</span>.<span class="ident">clone</span>());
                 (<span class="kw-2">*</span><span class="ident">points</span>).<span class="ident">individual</span>.<span class="ident">remove</span>(<span class="ident">stash</span>);
             });
 
-            <span class="op">&lt;</span><span class="ident">ErasNominateTotals</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>::<span class="ident">mutate</span>(<span class="kw-2">&amp;</span><span class="ident">era</span>, <span class="ident">stash</span>, <span class="op">|</span><span class="ident">total</span><span class="op">|</span> {
+            <span class="op">&lt;</span><span class="ident">ErasNominateTotals</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;&gt;</span>::<span class="ident">mutate</span>(<span class="kw-2">&amp;</span><span class="ident">era</span>, <span class="ident">stash</span>, <span class="op">|</span><span class="ident">total</span><span class="op">|</span> {
                 <span class="kw-2">*</span><span class="ident">total</span> <span class="op">=</span> <span class="ident">total</span>.<span class="ident">saturating_sub</span>(<span class="ident">value</span>.<span class="ident">clone</span>());
             });
 
-            <span class="op">&lt;</span><span class="ident">ErasTotalStake</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>::<span class="ident">mutate</span>(<span class="kw-2">&amp;</span><span class="ident">era</span>, <span class="op">|</span><span class="ident">total</span><span class="op">|</span> {
+            <span class="op">&lt;</span><span class="ident">ErasTotalStake</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;&gt;</span>::<span class="ident">mutate</span>(<span class="kw-2">&amp;</span><span class="ident">era</span>, <span class="op">|</span><span class="ident">total</span><span class="op">|</span> {
                 <span class="kw-2">*</span><span class="ident">total</span> <span class="op">=</span> <span class="ident">total</span>.<span class="ident">saturating_sub</span>(<span class="ident">value</span>.<span class="ident">clone</span>());
             });
         }
-        <span class="op">&lt;</span><span class="ident">DappsNominations</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>::<span class="ident">remove</span>(<span class="ident">stash</span>);
+        <span class="op">&lt;</span><span class="ident">DappsNominations</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;&gt;</span>::<span class="ident">remove</span>(<span class="ident">stash</span>);
     }
 
     <span class="kw">fn</span> <span class="ident">propagate_eras_votes</span>(<span class="ident">contract</span>: <span class="kw-2">&amp;</span><span class="ident">T</span>::<span class="ident">AccountId</span>, <span class="ident">src_era</span>: <span class="kw-2">&amp;</span><span class="ident">EraIndex</span>, <span class="ident">dst_era</span>: <span class="kw-2">&amp;</span><span class="ident">EraIndex</span>) {
-        <span class="kw">if</span> <span class="op">&lt;</span><span class="ident">ErasVotes</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>::<span class="ident">contains_key</span>(<span class="ident">src_era</span>, <span class="ident">contract</span>) {
-            <span class="kw">let</span> <span class="ident">untreated_votes</span> <span class="op">=</span> <span class="op">&lt;</span><span class="ident">ErasVotes</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>::<span class="ident">get</span>(<span class="ident">src_era</span>, <span class="ident">contract</span>);
+        <span class="kw">if</span> <span class="op">&lt;</span><span class="ident">ErasVotes</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;&gt;</span>::<span class="ident">contains_key</span>(<span class="ident">src_era</span>, <span class="ident">contract</span>) {
+            <span class="kw">let</span> <span class="ident">untreated_votes</span> <span class="op">=</span> <span class="op">&lt;</span><span class="ident">ErasVotes</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;&gt;</span>::<span class="ident">get</span>(<span class="ident">src_era</span>, <span class="ident">contract</span>);
 
-            <span class="op">&lt;</span><span class="ident">ErasVotes</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>::<span class="ident">mutate</span>(<span class="kw-2">&amp;</span><span class="ident">dst_era</span>, <span class="kw-2">&amp;</span><span class="ident">contract</span>, <span class="op">|</span><span class="ident">votes</span><span class="op">|</span> {
-                (<span class="kw-2">*</span><span class="ident">votes</span>).<span class="ident">bad</span> <span class="op">+</span><span class="op">=</span> <span class="ident">untreated_votes</span>.<span class="ident">bad</span>.<span class="ident">clone</span>();
-                (<span class="kw-2">*</span><span class="ident">votes</span>).<span class="ident">good</span> <span class="op">+</span><span class="op">=</span> <span class="ident">untreated_votes</span>.<span class="ident">good</span>.<span class="ident">clone</span>();
+            <span class="op">&lt;</span><span class="ident">ErasVotes</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;&gt;</span>::<span class="ident">mutate</span>(<span class="kw-2">&amp;</span><span class="ident">dst_era</span>, <span class="kw-2">&amp;</span><span class="ident">contract</span>, <span class="op">|</span><span class="ident">votes</span><span class="op">|</span> {
+                (<span class="kw-2">*</span><span class="ident">votes</span>).<span class="ident">bad</span> <span class="op">+=</span> <span class="ident">untreated_votes</span>.<span class="ident">bad</span>.<span class="ident">clone</span>();
+                (<span class="kw-2">*</span><span class="ident">votes</span>).<span class="ident">good</span> <span class="op">+=</span> <span class="ident">untreated_votes</span>.<span class="ident">good</span>.<span class="ident">clone</span>();
             });
         }
     }
@@ -2427,79 +2428,79 @@
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">untreated_era</span> <span class="op">=</span> <span class="self">Self</span>::<span class="ident">contracts_untreated_era</span>(<span class="kw-2">&amp;</span><span class="ident">contract</span>);
         <span class="kw">while</span> <span class="kw-2">*</span><span class="ident">era</span> <span class="op">&gt;</span> <span class="ident">untreated_era</span> {
             <span class="self">Self</span>::<span class="ident">propagate_eras_votes</span>(<span class="kw-2">&amp;</span><span class="ident">contract</span>, <span class="kw-2">&amp;</span><span class="ident">untreated_era</span>, <span class="kw-2">&amp;</span>(<span class="ident">untreated_era</span> <span class="op">+</span> <span class="number">1</span>));
-            <span class="ident">untreated_era</span> <span class="op">+</span><span class="op">=</span> <span class="number">1</span>;
+            <span class="ident">untreated_era</span> <span class="op">+=</span> <span class="number">1</span>;
         }
-        <span class="op">&lt;</span><span class="ident">ContractsUntreatedEra</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span><span class="op">&gt;</span>::<span class="ident">insert</span>(<span class="kw-2">&amp;</span><span class="ident">contract</span>, <span class="ident">untreated_era</span>);
+        <span class="op">&lt;</span><span class="ident">ContractsUntreatedEra</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;&gt;</span>::<span class="ident">insert</span>(<span class="kw-2">&amp;</span><span class="ident">contract</span>, <span class="ident">untreated_era</span>);
     }
 
     <span class="comment">// convert Vote into VoteCounts</span>
-    <span class="kw">fn</span> <span class="ident">vote_counts</span>(<span class="ident">vote</span>: <span class="ident">Vote</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">VoteCounts</span> {
+    <span class="kw">fn</span> <span class="ident">vote_counts</span>(<span class="ident">vote</span>: <span class="ident">Vote</span>) <span class="op">-&gt;</span> <span class="ident">VoteCounts</span> {
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">counts</span> <span class="op">=</span> <span class="ident">VoteCounts</span> { <span class="ident">bad</span>: <span class="number">0</span>, <span class="ident">good</span>: <span class="number">0</span> };
-        <span class="kw">if</span> <span class="ident">vote</span> <span class="op">=</span><span class="op">=</span> <span class="ident">Vote</span>::<span class="ident">Bad</span> {
-            <span class="ident">counts</span>.<span class="ident">bad</span> <span class="op">+</span><span class="op">=</span> <span class="number">1</span>
+        <span class="kw">if</span> <span class="ident">vote</span> <span class="op">==</span> <span class="ident">Vote</span>::<span class="ident">Bad</span> {
+            <span class="ident">counts</span>.<span class="ident">bad</span> <span class="op">+=</span> <span class="number">1</span>
         } <span class="kw">else</span> {
-            <span class="ident">counts</span>.<span class="ident">good</span> <span class="op">+</span><span class="op">=</span> <span class="number">1</span>
+            <span class="ident">counts</span>.<span class="ident">good</span> <span class="op">+=</span> <span class="number">1</span>
         };
         <span class="ident">counts</span>
     }
 
     <span class="comment">// check the number of votes meets the required number of votes</span>
-    <span class="kw">fn</span> <span class="ident">has_votes_requirement</span>(<span class="ident">contract</span>: <span class="kw-2">&amp;</span><span class="ident">T</span>::<span class="ident">AccountId</span>, <span class="ident">era</span>: <span class="kw-2">&amp;</span><span class="ident">EraIndex</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">bool</span> {
+    <span class="kw">fn</span> <span class="ident">has_votes_requirement</span>(<span class="ident">contract</span>: <span class="kw-2">&amp;</span><span class="ident">T</span>::<span class="ident">AccountId</span>, <span class="ident">era</span>: <span class="kw-2">&amp;</span><span class="ident">EraIndex</span>) <span class="op">-&gt;</span> <span class="ident">bool</span> {
         <span class="kw">let</span> <span class="ident">vote_counts</span> <span class="op">=</span> <span class="self">Self</span>::<span class="ident">eras_votes</span>(<span class="ident">era</span>, <span class="ident">contract</span>);
-        <span class="ident">vote_counts</span>.<span class="ident">bad</span> <span class="op">+</span> <span class="ident">vote_counts</span>.<span class="ident">good</span> <span class="op">&gt;</span><span class="op">=</span> <span class="ident">VOTES_REQUIREMENT</span>
+        <span class="ident">vote_counts</span>.<span class="ident">bad</span> <span class="op">+</span> <span class="ident">vote_counts</span>.<span class="ident">good</span> <span class="op">&gt;=</span> <span class="ident">VOTES_REQUIREMENT</span>
     }
 
     <span class="comment">// If there are more than the required number of votes and</span>
     <span class="comment">//   the good has been voted for four times the bad in two consecutive periods,</span>
     <span class="comment">//   this function returns true.</span>
-    <span class="kw">fn</span> <span class="ident">is_rewardable</span>(<span class="ident">contract</span>: <span class="kw-2">&amp;</span><span class="ident">T</span>::<span class="ident">AccountId</span>, <span class="ident">era</span>: <span class="kw-2">&amp;</span><span class="ident">EraIndex</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">bool</span> {
+    <span class="kw">fn</span> <span class="ident">is_rewardable</span>(<span class="ident">contract</span>: <span class="kw-2">&amp;</span><span class="ident">T</span>::<span class="ident">AccountId</span>, <span class="ident">era</span>: <span class="kw-2">&amp;</span><span class="ident">EraIndex</span>) <span class="op">-&gt;</span> <span class="ident">bool</span> {
         <span class="self">Self</span>::<span class="ident">update_vote_counts</span>(<span class="ident">contract</span>, <span class="ident">era</span>);
-        <span class="kw">if</span> <span class="kw-2">*</span><span class="ident">era</span> <span class="op">&lt;</span><span class="op">=</span> <span class="ident">Zero</span>::<span class="ident">zero</span>() {
+        <span class="kw">if</span> <span class="kw-2">*</span><span class="ident">era</span> <span class="op">&lt;=</span> <span class="ident">Zero</span>::<span class="ident">zero</span>() {
             <span class="kw">return</span> <span class="bool-val">false</span>;
         }
         <span class="kw">let</span> <span class="ident">prev_votes</span> <span class="op">=</span> <span class="self">Self</span>::<span class="ident">eras_votes</span>(<span class="ident">era</span> <span class="op">-</span> <span class="number">1</span>, <span class="ident">contract</span>);
         <span class="kw">let</span> <span class="ident">votes</span> <span class="op">=</span> <span class="self">Self</span>::<span class="ident">eras_votes</span>(<span class="ident">era</span>, <span class="ident">contract</span>);
         <span class="self">Self</span>::<span class="ident">has_votes_requirement</span>(<span class="ident">contract</span>, <span class="kw-2">&amp;</span>(<span class="ident">era</span> <span class="op">-</span> <span class="number">1</span>))
-            <span class="kw-2">&amp;</span><span class="op">&amp;</span> <span class="self">Self</span>::<span class="ident">has_votes_requirement</span>(<span class="ident">contract</span>, <span class="ident">era</span>)
-            <span class="kw-2">&amp;</span><span class="op">&amp;</span> <span class="ident">prev_votes</span>.<span class="ident">good</span> <span class="op">&gt;</span><span class="op">=</span> <span class="ident">prev_votes</span>.<span class="ident">bad</span> <span class="op">*</span> <span class="number">4</span>
-            <span class="kw-2">&amp;</span><span class="op">&amp;</span> <span class="ident">votes</span>.<span class="ident">good</span> <span class="op">&gt;</span><span class="op">=</span> <span class="ident">votes</span>.<span class="ident">bad</span> <span class="op">*</span> <span class="number">4</span>
+            <span class="op">&amp;&amp;</span> <span class="self">Self</span>::<span class="ident">has_votes_requirement</span>(<span class="ident">contract</span>, <span class="ident">era</span>)
+            <span class="op">&amp;&amp;</span> <span class="ident">prev_votes</span>.<span class="ident">good</span> <span class="op">&gt;=</span> <span class="ident">prev_votes</span>.<span class="ident">bad</span> <span class="op">*</span> <span class="number">4</span>
+            <span class="op">&amp;&amp;</span> <span class="ident">votes</span>.<span class="ident">good</span> <span class="op">&gt;=</span> <span class="ident">votes</span>.<span class="ident">bad</span> <span class="op">*</span> <span class="number">4</span>
     }
 
     <span class="comment">// If there are more votes the required number of votes and</span>
     <span class="comment">//   the good is less than twice the bad in the previous era,</span>
     <span class="comment">//   this function returns true.</span>
-    <span class="kw">fn</span> <span class="ident">is_locked</span>(<span class="ident">contract</span>: <span class="kw-2">&amp;</span><span class="ident">T</span>::<span class="ident">AccountId</span>, <span class="ident">era</span>: <span class="kw-2">&amp;</span><span class="ident">EraIndex</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">bool</span> {
+    <span class="kw">fn</span> <span class="ident">is_locked</span>(<span class="ident">contract</span>: <span class="kw-2">&amp;</span><span class="ident">T</span>::<span class="ident">AccountId</span>, <span class="ident">era</span>: <span class="kw-2">&amp;</span><span class="ident">EraIndex</span>) <span class="op">-&gt;</span> <span class="ident">bool</span> {
         <span class="self">Self</span>::<span class="ident">update_vote_counts</span>(<span class="ident">contract</span>, <span class="ident">era</span>);
-        <span class="kw">if</span> <span class="kw-2">*</span><span class="ident">era</span> <span class="op">&lt;</span><span class="op">=</span> <span class="ident">Zero</span>::<span class="ident">zero</span>() {
+        <span class="kw">if</span> <span class="kw-2">*</span><span class="ident">era</span> <span class="op">&lt;=</span> <span class="ident">Zero</span>::<span class="ident">zero</span>() {
             <span class="kw">return</span> <span class="bool-val">false</span>;
         }
         <span class="kw">let</span> <span class="ident">prev_votes</span> <span class="op">=</span> <span class="self">Self</span>::<span class="ident">eras_votes</span>(<span class="ident">era</span> <span class="op">-</span> <span class="number">1</span>, <span class="ident">contract</span>);
         <span class="self">Self</span>::<span class="ident">has_votes_requirement</span>(<span class="ident">contract</span>, <span class="kw-2">&amp;</span>(<span class="ident">era</span> <span class="op">-</span> <span class="number">1</span>))
-            <span class="kw-2">&amp;</span><span class="op">&amp;</span> <span class="self">Self</span>::<span class="ident">has_votes_requirement</span>(<span class="ident">contract</span>, <span class="ident">era</span>)
-            <span class="kw-2">&amp;</span><span class="op">&amp;</span> <span class="ident">prev_votes</span>.<span class="ident">good</span> <span class="op">&lt;</span> <span class="ident">prev_votes</span>.<span class="ident">bad</span> <span class="op">*</span> <span class="number">2</span>
+            <span class="op">&amp;&amp;</span> <span class="self">Self</span>::<span class="ident">has_votes_requirement</span>(<span class="ident">contract</span>, <span class="ident">era</span>)
+            <span class="op">&amp;&amp;</span> <span class="ident">prev_votes</span>.<span class="ident">good</span> <span class="op">&lt;</span> <span class="ident">prev_votes</span>.<span class="ident">bad</span> <span class="op">*</span> <span class="number">2</span>
     }
 
     <span class="comment">// If there are more votes than the required number of votes and</span>
     <span class="comment">//   the good is less than the bad for two consecutive terms,</span>
     <span class="comment">//   this function returns true.</span>
-    <span class="kw">fn</span> <span class="ident">is_slashable</span>(<span class="ident">contract</span>: <span class="kw-2">&amp;</span><span class="ident">T</span>::<span class="ident">AccountId</span>, <span class="ident">era</span>: <span class="kw-2">&amp;</span><span class="ident">EraIndex</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">bool</span> {
+    <span class="kw">fn</span> <span class="ident">is_slashable</span>(<span class="ident">contract</span>: <span class="kw-2">&amp;</span><span class="ident">T</span>::<span class="ident">AccountId</span>, <span class="ident">era</span>: <span class="kw-2">&amp;</span><span class="ident">EraIndex</span>) <span class="op">-&gt;</span> <span class="ident">bool</span> {
         <span class="self">Self</span>::<span class="ident">update_vote_counts</span>(<span class="ident">contract</span>, <span class="ident">era</span>);
-        <span class="kw">if</span> <span class="kw-2">*</span><span class="ident">era</span> <span class="op">&lt;</span><span class="op">=</span> <span class="ident">Zero</span>::<span class="ident">zero</span>() {
+        <span class="kw">if</span> <span class="kw-2">*</span><span class="ident">era</span> <span class="op">&lt;=</span> <span class="ident">Zero</span>::<span class="ident">zero</span>() {
             <span class="kw">return</span> <span class="bool-val">false</span>;
         }
         <span class="kw">let</span> <span class="ident">prev_votes</span> <span class="op">=</span> <span class="self">Self</span>::<span class="ident">eras_votes</span>(<span class="ident">era</span> <span class="op">-</span> <span class="number">1</span>, <span class="ident">contract</span>);
         <span class="kw">let</span> <span class="ident">votes</span> <span class="op">=</span> <span class="self">Self</span>::<span class="ident">eras_votes</span>(<span class="ident">era</span>, <span class="ident">contract</span>);
         <span class="self">Self</span>::<span class="ident">has_votes_requirement</span>(<span class="ident">contract</span>, <span class="kw-2">&amp;</span>(<span class="ident">era</span> <span class="op">-</span> <span class="number">1</span>))
-            <span class="kw-2">&amp;</span><span class="op">&amp;</span> <span class="self">Self</span>::<span class="ident">has_votes_requirement</span>(<span class="ident">contract</span>, <span class="ident">era</span>)
-            <span class="kw-2">&amp;</span><span class="op">&amp;</span> <span class="ident">prev_votes</span>.<span class="ident">good</span> <span class="op">&lt;</span> <span class="ident">prev_votes</span>.<span class="ident">bad</span>
-            <span class="kw-2">&amp;</span><span class="op">&amp;</span> <span class="ident">votes</span>.<span class="ident">good</span> <span class="op">&lt;</span> <span class="ident">votes</span>.<span class="ident">bad</span>
+            <span class="op">&amp;&amp;</span> <span class="self">Self</span>::<span class="ident">has_votes_requirement</span>(<span class="ident">contract</span>, <span class="ident">era</span>)
+            <span class="op">&amp;&amp;</span> <span class="ident">prev_votes</span>.<span class="ident">good</span> <span class="op">&lt;</span> <span class="ident">prev_votes</span>.<span class="ident">bad</span>
+            <span class="op">&amp;&amp;</span> <span class="ident">votes</span>.<span class="ident">good</span> <span class="op">&lt;</span> <span class="ident">votes</span>.<span class="ident">bad</span>
     }
 }
 
 <span class="doccomment">/// Get the amount of staking per Era in a module in the Plasm Network.</span>
 <span class="kw">impl</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Trait</span><span class="op">&gt;</span> <span class="ident">ComputeEraWithParam</span><span class="op">&lt;</span><span class="ident">EraIndex</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">Module</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
     <span class="kw">type</span> <span class="ident">Param</span> <span class="op">=</span> <span class="ident">BalanceOf</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>;
-    <span class="kw">fn</span> <span class="ident">compute</span>(<span class="ident">era</span>: <span class="kw-2">&amp;</span><span class="ident">EraIndex</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">BalanceOf</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">compute</span>(<span class="ident">era</span>: <span class="kw-2">&amp;</span><span class="ident">EraIndex</span>) <span class="op">-&gt;</span> <span class="ident">BalanceOf</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
         <span class="self">Self</span>::<span class="ident">compute_total_stake</span>(<span class="ident">era</span>)
     }
 }
