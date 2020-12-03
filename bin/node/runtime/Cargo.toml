@@ -37,7 +37,7 @@ pallet-plasm-validator = { path = "../../../frame/plasm-validator", default-feat
 pallet-plasm-lockdrop = { path = "../../../frame/plasm-lockdrop", default-features = false }
 pallet-ovm = { path = "../../../frame/ovm", default-features = false }
 pallet-plasma = { path = "../../../frame/plasma", default-features = false }
-pallet-evm = { version = "2.0.0", default-features = false }
+pallet-evm = { path = "../../../vendor/frontier/frame/evm", default-features = false }
 frame-executive = { version = "2.0.0", default-features = false }
 pallet-authorship = { version = "2.0.0", default-features = false }
 pallet-babe = { version = "2.0.0", default-features = false }
@@ -59,7 +59,7 @@ pallet-timestamp = { version = "2.0.0", default-features = false }
 pallet-transaction-payment = { version = "2.0.0", default-features = false }
 pallet-transaction-payment-rpc-runtime-api = { version = "2.0.0", default-features = false }
 pallet-utility = { version = "2.0.0", default-features = false }
-frontier-rpc-primitives = { path = "../../../vendor/frontier/rpc/primitives", default-features = false }
+fp-rpc = { path = "../../../vendor/frontier/primitives/rpc", default-features = false }
 pallet-ethereum = { path = "../../../vendor/frontier/frame/ethereum", default-features = false }
 
 [build-dependencies]
@@ -89,7 +89,7 @@ std = [
     "frame-executive/std",
     "frame-system/std",
     "frame-system-rpc-runtime-api/std",
-    "frontier-rpc-primitives/std",
+    "fp-rpc/std",
     "pallet-authorship/std",
     "pallet-babe/std",
     "pallet-balances/std",
