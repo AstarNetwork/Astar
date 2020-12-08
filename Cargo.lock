@@ -4639,6 +4639,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-register-introrucers"
+version = "1.6.0"
+dependencies = [
+ "frame-support",
+ "frame-system",
+ "hex-literal 0.2.1",
+ "num-traits",
+ "pallet-balances",
+ "pallet-randomness-collective-flip",
+ "pallet-timestamp",
+ "parity-scale-codec",
+ "serde",
+ "sp-arithmetic",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
 name = "pallet-session"
 version = "2.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"

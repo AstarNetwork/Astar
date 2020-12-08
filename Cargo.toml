@@ -15,6 +15,7 @@ members = [
     "frame/plasma",
     "frame/plasma/rpc/runtime-api",
     "frame/custom-signatures",
+    "frame/register-introducers",
     "ovmi/lib",
     "ovmi/cli",
 ]
