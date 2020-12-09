@@ -1,6 +1,6 @@
 [package]
 name = "plasm-runtime"
-version = "1.6.1"
+version = "1.7.0"
 authors = ["Stake Technologies <devops@stake.co.jp>"]
 edition = "2018"
 build = "build.rs"
@@ -35,6 +35,7 @@ pallet-dapps-staking = { path = "../../../frame/dapps-staking", default-features
 pallet-plasm-rewards = { path = "../../../frame/plasm-rewards", default-features = false }
 pallet-plasm-validator = { path = "../../../frame/plasm-validator", default-features = false }
 pallet-plasm-lockdrop = { path = "../../../frame/plasm-lockdrop", default-features = false }
+pallet-custom-signatures = { path = "../../../frame/custom-signatures", default-features = false }
 pallet-ovm = { path = "../../../frame/ovm", default-features = false }
 pallet-plasma = { path = "../../../frame/plasma", default-features = false }
 pallet-evm = { path = "../../../vendor/frontier/frame/evm", default-features = false }
@@ -102,6 +103,7 @@ std = [
     "pallet-indices/std",
     "pallet-nicks/std",
     "sp-offchain/std",
+    "pallet-custom-signatures/std",
     "pallet-plasm-rewards/std",
     "pallet-plasm-validator/std",
     "pallet-plasm-lockdrop/std",

@@ -73,8 +73,8 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     // and set impl_version to equal spec_version. If only runtime
     // implementation changes and behavior does not, then leave spec_version as
     // is and increment impl_version.
-    spec_version: 7,
-    impl_version: 7,
+    spec_version: 8,
+    impl_version: 8,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 2,
 };
@@ -387,6 +387,18 @@ impl pallet_plasm_lockdrop::Trait for Runtime {
     type UnsignedPriority = LockdropUnsignedPriority;
 }
 
+parameter_types! {
+    pub const EcdsaUnsignedPriority: TransactionPriority = TransactionPriority::max_value() / 2;
+}
+
+impl pallet_custom_signatures::Trait for Runtime {
+    type Event = Event;
+    type Call = Call;
+    type Signature = pallet_custom_signatures::ethereum::EthereumSignature;
+    type Signer = <Signature as Verify>::Signer;
+    type UnsignedPriority = EcdsaUnsignedPriority;
+}
+
 impl<LocalCall> frame_system::offchain::CreateSignedTransaction<LocalCall> for Runtime
 where
     Call: From<LocalCall>,
@@ -618,6 +630,7 @@ construct_runtime!(
         Nicks: pallet_nicks::{Module, Call, Storage, Event<T>},
         Ethereum: pallet_ethereum::{Module, Call, Storage, Event, Config, ValidateUnsigned},
         EVM: pallet_evm::{Module, Call, Storage, Config, Event<T>},
+        EcdsaSignature: pallet_custom_signatures::{Module, Call, Event<T>, ValidateUnsigned},
     }
 );
 
