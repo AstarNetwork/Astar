@@ -4264,6 +4264,24 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-custom-signatures"
+version = "1.6.0"
+dependencies = [
+ "frame-support",
+ "frame-system",
+ "hex-literal 0.2.1",
+ "libsecp256k1",
+ "pallet-balances",
+ "parity-scale-codec",
+ "serde",
+ "sp-core",
+ "sp-io",
+ "sp-keyring",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
 name = "pallet-dapps-staking"
 version = "1.6.0"
 dependencies = [
@@ -5090,7 +5108,6 @@ checksum = "3831453b3449ceb48b6d9c7ad7c96d5ea673e9b470a1dc578c2ce6521230884c"
 name = "plasm-cli"
 version = "1.6.1"
 dependencies = [
- "bs58 0.3.1",
  "frame-system",
  "frontier-consensus",
  "futures 0.3.8",

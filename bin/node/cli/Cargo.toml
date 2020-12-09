@@ -25,7 +25,6 @@ jsonrpc-pubsub = "15.0.0"
 hex-literal = "0.2.1"
 serde_json = "1.0"
 futures = "0.3.4"
-bs58 = "0.3"
 log = "0.4.8"
 hex = "0.4"
 
