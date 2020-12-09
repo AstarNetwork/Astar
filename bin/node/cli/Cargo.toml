@@ -53,6 +53,7 @@ sc-basic-authorship = "0.8.0"
 sc-service = "0.8.0"
 sc-telemetry = "2.0.0"
 sc-consensus-babe = "0.8.0"
+frontier-consensus = { path = "../../../vendor/frontier/consensus" }
 
 # plasm-specific dependencies
 lockdrop-oracle = { path = "./lockdrop-oracle" }

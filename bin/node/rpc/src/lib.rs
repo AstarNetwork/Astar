@@ -110,7 +110,7 @@ where
     C::Api: substrate_frame_rpc_system::AccountNonceApi<Block, AccountId, Index>,
     C::Api: pallet_contracts_rpc::ContractsRuntimeApi<Block, AccountId, Balance, BlockNumber>,
     C::Api: pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>,
-    C::Api: fp_rpc::EthereumRuntimeRPCApi<Block>,
+    C::Api: frontier_rpc_primitives::EthereumRuntimeRPCApi<Block>,
     C::Api: BabeApi<Block>,
     C::Api: BlockBuilder<Block>,
     <C::Api as sp_api::ApiErrorExt>::Error: std::fmt::Debug,
@@ -119,8 +119,8 @@ where
     B: sc_client_api::Backend<Block> + Send + Sync + 'static,
     B::State: StateBackend<sp_runtime::traits::HashFor<Block>>,
 {
-    use fc_rpc::{
-        EthApi, EthApiServer, EthPubSubApi, EthPubSubApiServer, HexEncodedIdProvider, NetApi,
+    use frontier_rpc::{
+        EthApi, EthApiServer, EthPubSubApi, EthPubSubApiServer, NetApi,
         NetApiServer,
     };
     use pallet_contracts_rpc::{Contracts, ContractsApi};
@@ -188,21 +188,16 @@ where
         pool.clone(),
         plasm_runtime::TransactionConverter,
         network.clone(),
-        Vec::new(),
         is_authority,
     )));
     io.extend_with(NetApiServer::to_delegate(NetApi::new(
         client.clone(),
-        network.clone(),
     )));
     io.extend_with(EthPubSubApiServer::to_delegate(EthPubSubApi::new(
         pool.clone(),
         client.clone(),
         network.clone(),
-        SubscriptionManager::<HexEncodedIdProvider>::with_id_provider(
-            HexEncodedIdProvider::default(),
-            Arc::new(subscription_task_executor),
-        ),
+        SubscriptionManager::new(Arc::new(subscription_task_executor)),
     )));
 
     io

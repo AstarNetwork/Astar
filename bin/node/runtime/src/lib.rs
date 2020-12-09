@@ -5,7 +5,6 @@
 #![recursion_limit = "256"]
 
 use codec::{Decode, Encode};
-use fp_rpc::TransactionStatus;
 use frame_support::{
     construct_runtime, debug, parameter_types,
     traits::{FindAuthor, Get, KeyOwnerProofSystem, Randomness},
@@ -15,9 +14,7 @@ use frame_support::{
     },
 };
 use pallet_contracts_rpc_runtime_api::ContractExecResult;
-use pallet_ethereum::{
-    Block as EthereumBlock, Receipt as EthereumReceipt, Transaction as EthereumTransaction,
-};
+use frontier_rpc_primitives::TransactionStatus;
 use pallet_evm::{
     Account as EVMAccount, EnsureAddressRoot, EnsureAddressTruncated, FeeCalculator,
     HashedAddressMapping, Runner,
@@ -426,8 +423,8 @@ where
             })
             .ok()?;
         let signature = raw_payload.using_encoded(|payload| C::sign(payload, public))?;
-        let address = Indices::unlookup(account);
         let (call, extra, _) = raw_payload.deconstruct();
+        let address = Indices::unlookup(account);
         Some((call, (address, signature.into(), extra)))
     }
 }
@@ -530,7 +527,6 @@ parameter_types! {
 
 impl pallet_evm::Trait for Runtime {
     type FeeCalculator = FixedGasPrice;
-    type GasToWeight = ();
     type CallOrigin = EnsureAddressRoot<Self::AccountId>;
     type WithdrawOrigin = EnsureAddressTruncated;
     type AddressMapping = HashedAddressMapping<BlakeTwo256>;
@@ -547,15 +543,15 @@ impl pallet_evm::Trait for Runtime {
 }
 
 pub struct TransactionConverter;
-impl fp_rpc::ConvertTransaction<UncheckedExtrinsic> for TransactionConverter {
-    fn convert_transaction(&self, transaction: EthereumTransaction) -> UncheckedExtrinsic {
+impl frontier_rpc_primitives::ConvertTransaction<UncheckedExtrinsic> for TransactionConverter {
+    fn convert_transaction(&self, transaction: pallet_ethereum::Transaction) -> UncheckedExtrinsic {
         UncheckedExtrinsic::new_unsigned(
             pallet_ethereum::Call::<Runtime>::transact(transaction).into(),
         )
     }
 }
-impl fp_rpc::ConvertTransaction<sp_runtime::OpaqueExtrinsic> for TransactionConverter {
-    fn convert_transaction(&self, transaction: EthereumTransaction) -> sp_runtime::OpaqueExtrinsic {
+impl frontier_rpc_primitives::ConvertTransaction<sp_runtime::OpaqueExtrinsic> for TransactionConverter {
+    fn convert_transaction(&self, transaction: pallet_ethereum::Transaction) -> sp_runtime::OpaqueExtrinsic {
         let extrinsic = UncheckedExtrinsic::new_unsigned(
             pallet_ethereum::Call::<Runtime>::transact(transaction).into(),
         );
@@ -615,8 +611,8 @@ construct_runtime!(
         OVM: pallet_ovm::{Module, Call, Storage, Event<T>},
         Plasma: pallet_plasma::{Module, Call, Storage, Event<T>},
         Nicks: pallet_nicks::{Module, Call, Storage, Event<T>},
-        EVM: pallet_evm::{Module, Call, Storage, Config, Event<T>},
         Ethereum: pallet_ethereum::{Module, Call, Storage, Event, Config, ValidateUnsigned},
+        EVM: pallet_evm::{Module, Call, Storage, Config, Event<T>},
     }
 );
 
@@ -851,7 +847,7 @@ impl_runtime_apis! {
         }
     }
 
-    impl fp_rpc::EthereumRuntimeRPCApi<Block> for Runtime {
+    impl frontier_rpc_primitives::EthereumRuntimeRPCApi<Block> for Runtime {
         fn chain_id() -> u64 {
             <Runtime as pallet_evm::Trait>::ChainId::get()
         }
@@ -876,6 +872,30 @@ impl_runtime_apis! {
             let mut tmp = [0u8; 32];
             index.to_big_endian(&mut tmp);
             EVM::account_storages(address, H256::from_slice(&tmp[..]))
+        }
+
+        fn current_transaction_statuses() -> Option<Vec<TransactionStatus>> {
+            Ethereum::current_transaction_statuses()
+        }
+
+        fn current_block() -> Option<pallet_ethereum::Block> {
+            Ethereum::current_block()
+        }
+
+        fn current_receipts() -> Option<Vec<pallet_ethereum::Receipt>> {
+            Ethereum::current_receipts()
+        }
+
+        fn current_all() -> (
+            Option<pallet_ethereum::Block>,
+            Option<Vec<pallet_ethereum::Receipt>>,
+            Option<Vec<TransactionStatus>>
+        ) {
+            (
+                Ethereum::current_block(),
+                Ethereum::current_receipts(),
+                Ethereum::current_transaction_statuses()
+            )
         }
 
         fn call(
@@ -914,30 +934,6 @@ impl_runtime_apis! {
                 gas_price,
                 nonce,
             ).map_err(|err| err.into())
-        }
-
-        fn current_transaction_statuses() -> Option<Vec<TransactionStatus>> {
-            Ethereum::current_transaction_statuses()
-        }
-
-        fn current_block() -> Option<EthereumBlock> {
-            Ethereum::current_block()
-        }
-
-        fn current_receipts() -> Option<Vec<EthereumReceipt>> {
-            Ethereum::current_receipts()
-        }
-
-        fn current_all() -> (
-            Option<EthereumBlock>,
-            Option<Vec<EthereumReceipt>>,
-            Option<Vec<TransactionStatus>>
-        ) {
-            (
-                Ethereum::current_block(),
-                Ethereum::current_receipts(),
-                Ethereum::current_transaction_statuses()
-            )
         }
     }
 }
