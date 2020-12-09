@@ -37,7 +37,7 @@ pallet-plasm-validator = { path = "../../../frame/plasm-validator", default-feat
 pallet-plasm-lockdrop = { path = "../../../frame/plasm-lockdrop", default-features = false }
 pallet-ovm = { path = "../../../frame/ovm", default-features = false }
 pallet-plasma = { path = "../../../frame/plasma", default-features = false }
-pallet-evm = { version = "2.0.0", default-features = false }
+pallet-evm = { path = "../../../vendor/frontier/frame/evm", default-features = false }
 frame-executive = { version = "2.0.0", default-features = false }
 pallet-authorship = { version = "2.0.0", default-features = false }
 pallet-babe = { version = "2.0.0", default-features = false }

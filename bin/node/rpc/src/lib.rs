@@ -186,6 +186,7 @@ where
         client.clone(),
         pool.clone(),
         plasm_runtime::TransactionConverter,
+        network.clone(),
         is_authority,
     )));
     io.extend_with(NetApiServer::to_delegate(NetApi::new(client.clone())));

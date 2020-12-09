@@ -52,6 +52,7 @@ sc-basic-authorship = "0.8.0"
 sc-service = "0.8.0"
 sc-telemetry = "2.0.0"
 sc-consensus-babe = "0.8.0"
+frontier-consensus = { path = "../../../vendor/frontier/consensus" }
 
 # plasm-specific dependencies
 lockdrop-oracle = { path = "./lockdrop-oracle" }
@@ -61,13 +62,13 @@ plasm-rpc = { path = "../rpc" }
 
 # frame dependencies
 frame-system = "2.0.0"
-pallet-evm = "2.0.0"
 pallet-transaction-payment = "2.0.0"
 pallet-finality-tracker = "2.0.0"
 pallet-contracts = "2.0.0"
 pallet-dapps-staking = { path = "../../../frame/dapps-staking" }
 pallet-plasm-lockdrop = { path = "../../../frame/plasm-lockdrop" }
 pallet-ovm = { path = "../../../frame/ovm" }
+pallet-evm = { path = "../../../vendor/frontier/frame/evm" } 
 
 # CLI-specific dependencies
 sc-cli = { version = "0.8.0", optional = true }

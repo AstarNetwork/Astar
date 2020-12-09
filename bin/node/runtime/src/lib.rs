@@ -15,12 +15,9 @@ use frame_support::{
 };
 use frontier_rpc_primitives::TransactionStatus;
 use pallet_contracts_rpc_runtime_api::ContractExecResult;
-use pallet_ethereum::{
-    Block as EthereumBlock, Receipt as EthereumReceipt, Transaction as EthereumTransaction,
-};
 use pallet_evm::{
     Account as EVMAccount, EnsureAddressRoot, EnsureAddressTruncated, FeeCalculator,
-    HashedAddressMapping,
+    HashedAddressMapping, Runner,
 };
 use pallet_grandpa::fg_primitives;
 use pallet_grandpa::{AuthorityId as GrandpaId, AuthorityList as GrandpaAuthorityList};
@@ -426,8 +423,8 @@ where
             })
             .ok()?;
         let signature = raw_payload.using_encoded(|payload| C::sign(payload, public))?;
-        let address = Indices::unlookup(account);
         let (call, extra, _) = raw_payload.deconstruct();
+        let address = Indices::unlookup(account);
         Some((call, (address, signature.into(), extra)))
     }
 }
@@ -535,6 +532,7 @@ impl pallet_evm::Trait for Runtime {
     type AddressMapping = HashedAddressMapping<BlakeTwo256>;
     type Currency = Balances;
     type Event = Event;
+    type Runner = pallet_evm::runner::stack::Runner<Self>;
     type Precompiles = (
         pallet_evm::precompiles::ECRecover,
         pallet_evm::precompiles::Sha256,
@@ -546,7 +544,7 @@ impl pallet_evm::Trait for Runtime {
 
 pub struct TransactionConverter;
 impl frontier_rpc_primitives::ConvertTransaction<UncheckedExtrinsic> for TransactionConverter {
-    fn convert_transaction(&self, transaction: EthereumTransaction) -> UncheckedExtrinsic {
+    fn convert_transaction(&self, transaction: pallet_ethereum::Transaction) -> UncheckedExtrinsic {
         UncheckedExtrinsic::new_unsigned(
             pallet_ethereum::Call::<Runtime>::transact(transaction).into(),
         )
@@ -555,7 +553,10 @@ impl frontier_rpc_primitives::ConvertTransaction<UncheckedExtrinsic> for Transac
 impl frontier_rpc_primitives::ConvertTransaction<sp_runtime::OpaqueExtrinsic>
     for TransactionConverter
 {
-    fn convert_transaction(&self, transaction: EthereumTransaction) -> sp_runtime::OpaqueExtrinsic {
+    fn convert_transaction(
+        &self,
+        transaction: pallet_ethereum::Transaction,
+    ) -> sp_runtime::OpaqueExtrinsic {
         let extrinsic = UncheckedExtrinsic::new_unsigned(
             pallet_ethereum::Call::<Runtime>::transact(transaction).into(),
         );
@@ -615,8 +616,8 @@ construct_runtime!(
         OVM: pallet_ovm::{Module, Call, Storage, Event<T>},
         Plasma: pallet_plasma::{Module, Call, Storage, Event<T>},
         Nicks: pallet_nicks::{Module, Call, Storage, Event<T>},
-        EVM: pallet_evm::{Module, Call, Storage, Config, Event<T>},
         Ethereum: pallet_ethereum::{Module, Call, Storage, Event, Config, ValidateUnsigned},
+        EVM: pallet_evm::{Module, Call, Storage, Config, Event<T>},
     }
 );
 
@@ -853,7 +854,7 @@ impl_runtime_apis! {
 
     impl frontier_rpc_primitives::EthereumRuntimeRPCApi<Block> for Runtime {
         fn chain_id() -> u64 {
-            ChainId::get()
+            <Runtime as pallet_evm::Trait>::ChainId::get()
         }
 
         fn account_basic(address: H160) -> EVMAccount {
@@ -861,7 +862,7 @@ impl_runtime_apis! {
         }
 
         fn gas_price() -> U256 {
-            FixedGasPrice::min_gas_price()
+            <Runtime as pallet_evm::Trait>::FeeCalculator::min_gas_price()
         }
 
         fn account_code_at(address: H160) -> Vec<u8> {
@@ -878,59 +879,21 @@ impl_runtime_apis! {
             EVM::account_storages(address, H256::from_slice(&tmp[..]))
         }
 
-        fn call(
-            from: H160,
-            data: Vec<u8>,
-            value: U256,
-            gas_limit: U256,
-            gas_price: Option<U256>,
-            nonce: Option<U256>,
-            action: pallet_ethereum::TransactionAction,
-        ) -> Result<(Vec<u8>, U256), sp_runtime::DispatchError> {
-            match action {
-                pallet_ethereum::TransactionAction::Call(to) =>
-                    EVM::execute_call(
-                        from,
-                        to,
-                        data,
-                        value,
-                        gas_limit.low_u32(),
-                        gas_price.unwrap_or(U256::from(0)),
-                        nonce,
-                        false,
-                    )
-                    .map(|(_, ret, gas, _)| (ret, gas))
-                    .map_err(|err| err.into()),
-                pallet_ethereum::TransactionAction::Create =>
-                    EVM::execute_create(
-                        from,
-                        data,
-                        value,
-                        gas_limit.low_u32(),
-                        gas_price.unwrap_or(U256::from(0)),
-                        nonce,
-                        false,
-                    )
-                    .map(|(_, _, gas, _)| (vec![], gas))
-                    .map_err(|err| err.into()),
-            }
-        }
-
         fn current_transaction_statuses() -> Option<Vec<TransactionStatus>> {
             Ethereum::current_transaction_statuses()
         }
 
-        fn current_block() -> Option<EthereumBlock> {
+        fn current_block() -> Option<pallet_ethereum::Block> {
             Ethereum::current_block()
         }
 
-        fn current_receipts() -> Option<Vec<EthereumReceipt>> {
+        fn current_receipts() -> Option<Vec<pallet_ethereum::Receipt>> {
             Ethereum::current_receipts()
         }
 
         fn current_all() -> (
-            Option<EthereumBlock>,
-            Option<Vec<EthereumReceipt>>,
+            Option<pallet_ethereum::Block>,
+            Option<Vec<pallet_ethereum::Receipt>>,
             Option<Vec<TransactionStatus>>
         ) {
             (
@@ -938,6 +901,44 @@ impl_runtime_apis! {
                 Ethereum::current_receipts(),
                 Ethereum::current_transaction_statuses()
             )
+        }
+
+        fn call(
+            from: H160,
+            to: H160,
+            data: Vec<u8>,
+            value: U256,
+            gas_limit: U256,
+            gas_price: Option<U256>,
+            nonce: Option<U256>,
+        ) -> Result<pallet_evm::CallInfo, sp_runtime::DispatchError> {
+            <Runtime as pallet_evm::Trait>::Runner::call(
+                from,
+                to,
+                data,
+                value,
+                gas_limit.low_u32(),
+                gas_price,
+                nonce,
+            ).map_err(|err| err.into())
+        }
+
+        fn create(
+            from: H160,
+            data: Vec<u8>,
+            value: U256,
+            gas_limit: U256,
+            gas_price: Option<U256>,
+            nonce: Option<U256>,
+        ) -> Result<pallet_evm::CreateInfo, sp_runtime::DispatchError> {
+            <Runtime as pallet_evm::Trait>::Runner::create(
+                from,
+                data,
+                value,
+                gas_limit.low_u32(),
+                gas_price,
+                nonce,
+            ).map_err(|err| err.into())
         }
     }
 }
