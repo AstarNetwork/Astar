@@ -120,8 +120,7 @@ where
     B::State: StateBackend<sp_runtime::traits::HashFor<Block>>,
 {
     use frontier_rpc::{
-        EthApi, EthApiServer, EthPubSubApi, EthPubSubApiServer, NetApi,
-        NetApiServer,
+        EthApi, EthApiServer, EthPubSubApi, EthPubSubApiServer, NetApi, NetApiServer,
     };
     use pallet_contracts_rpc::{Contracts, ContractsApi};
     use pallet_transaction_payment_rpc::{TransactionPayment, TransactionPaymentApi};
@@ -190,9 +189,7 @@ where
         network.clone(),
         is_authority,
     )));
-    io.extend_with(NetApiServer::to_delegate(NetApi::new(
-        client.clone(),
-    )));
+    io.extend_with(NetApiServer::to_delegate(NetApi::new(client.clone())));
     io.extend_with(EthPubSubApiServer::to_delegate(EthPubSubApi::new(
         pool.clone(),
         client.clone(),

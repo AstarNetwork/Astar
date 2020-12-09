@@ -13,8 +13,8 @@ use frame_support::{
         IdentityFee, Weight,
     },
 };
-use pallet_contracts_rpc_runtime_api::ContractExecResult;
 use frontier_rpc_primitives::TransactionStatus;
+use pallet_contracts_rpc_runtime_api::ContractExecResult;
 use pallet_evm::{
     Account as EVMAccount, EnsureAddressRoot, EnsureAddressTruncated, FeeCalculator,
     HashedAddressMapping, Runner,
@@ -550,8 +550,13 @@ impl frontier_rpc_primitives::ConvertTransaction<UncheckedExtrinsic> for Transac
         )
     }
 }
-impl frontier_rpc_primitives::ConvertTransaction<sp_runtime::OpaqueExtrinsic> for TransactionConverter {
-    fn convert_transaction(&self, transaction: pallet_ethereum::Transaction) -> sp_runtime::OpaqueExtrinsic {
+impl frontier_rpc_primitives::ConvertTransaction<sp_runtime::OpaqueExtrinsic>
+    for TransactionConverter
+{
+    fn convert_transaction(
+        &self,
+        transaction: pallet_ethereum::Transaction,
+    ) -> sp_runtime::OpaqueExtrinsic {
         let extrinsic = UncheckedExtrinsic::new_unsigned(
             pallet_ethereum::Call::<Runtime>::transact(transaction).into(),
         );

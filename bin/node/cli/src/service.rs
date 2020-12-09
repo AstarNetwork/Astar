@@ -1,9 +1,9 @@
 //! Service implementation. Specialized wrapper over substrate service.
 
+use frontier_consensus::FrontierBlockImport;
 use plasm_primitives::Block;
 use plasm_runtime::RuntimeApi;
 use sc_client_api::{ExecutorProvider, RemoteBackend};
-use frontier_consensus::FrontierBlockImport;
 use sc_consensus_babe;
 use sc_finality_grandpa::{self as grandpa, FinalityProofProvider as GrandpaFinalityProofProvider};
 use sc_network::NetworkService;
@@ -67,11 +67,8 @@ pub fn new_partial(
     )?;
     let justification_import = grandpa_block_import.clone();
 
-	let frontier_block_import = FrontierBlockImport::new(
-		grandpa_block_import.clone(),
-		client.clone(),
-		true
-	);
+    let frontier_block_import =
+        FrontierBlockImport::new(grandpa_block_import.clone(), client.clone(), true);
 
     let (block_import, babe_link) = sc_consensus_babe::block_import(
         sc_consensus_babe::Config::get_or_compute(&*client)?,
@@ -297,11 +294,7 @@ pub fn new_full_base(
             .spawn_essential_handle()
             .spawn_blocking("grandpa-voter", grandpa::run_grandpa_voter(grandpa_config)?);
     } else {
-        grandpa::setup_disabled_grandpa(
-            client.clone(),
-            &inherent_data_providers,
-            network.clone(),
-        )?;
+        grandpa::setup_disabled_grandpa(client.clone(), &inherent_data_providers, network.clone())?;
     }
 
     network_starter.start_network();
