@@ -1,4 +1,4 @@
-//! Tests for the plasm-lockdrop module.
+//! Tests for the register-introrucers module.
 
 #![cfg(test)]
 
@@ -49,7 +49,7 @@ fn boundary_test() {
         assert!(!RegisterIntroducers::is_registered(&ACCOUNT_03));
         assert!(!RegisterIntroducers::is_registered(&ACCOUNT_04));
 
-        // Added ACCOUNT_01
+        // Added ACCOUNT_02,04
         assert_ok!(RegisterIntroducers::register(Origin::signed(ACCOUNT_02)));
         assert_ok!(RegisterIntroducers::register(Origin::signed(ACCOUNT_04)));
         assert!(!RegisterIntroducers::is_registered(&ACCOUNT_01));
@@ -69,7 +69,7 @@ fn over_test() {
         assert!(!RegisterIntroducers::is_registered(&ACCOUNT_03));
         assert!(!RegisterIntroducers::is_registered(&ACCOUNT_04));
 
-        // Added ACCOUNT_01
+        // Failed add ACCOUNT_01,02,03,04
         assert_err!(
             RegisterIntroducers::register(Origin::signed(ACCOUNT_01)),
             Error::<Test>::Expired
