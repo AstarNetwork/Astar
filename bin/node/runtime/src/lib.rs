@@ -647,6 +647,7 @@ construct_runtime!(
         Ethereum: pallet_ethereum::{Module, Call, Storage, Event, Config, ValidateUnsigned},
         EVM: pallet_evm::{Module, Call, Storage, Config, Event<T>},
         EcdsaSignature: pallet_custom_signatures::{Module, Call, Event<T>, ValidateUnsigned},
+        Scheduler: pallet_scheduler::{Module, Call, Storage, Event<T>},
     }
 );
 
