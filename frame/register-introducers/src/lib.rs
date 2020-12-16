@@ -28,6 +28,11 @@ use sp_std::prelude::*;
 pub mod traits;
 pub use traits::*;
 
+#[cfg(test)]
+mod mock;
+#[cfg(test)]
+mod tests;
+
 pub trait Trait: system::Trait {
     /// Time used for computing era duration.
     type Time: Time<Moment = Self::Moment>;
@@ -51,7 +56,7 @@ pub trait Trait: system::Trait {
 }
 
 decl_storage! {
-    trait Store for Module<T: Trait> as DappsStaking {
+    trait Store for Module<T: Trait> as RegisterIntroducers {
         /// This is the compensation paid for the dapps operator of the Plasm Network.
         /// This is stored on a per-era basis.
         pub RegisteredIntroducers get(fn registered_introducers): map hasher(twox_64_concat) T::AccountId => Option<()>;
