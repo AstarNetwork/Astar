@@ -51,6 +51,7 @@ pallet-grandpa = { version = "2.0.0", default-features = false }
 pallet-indices = { version = "2.0.0", default-features = false }
 pallet-nicks = { version = "2.0.0", default-features = false }
 pallet-randomness-collective-flip = { version = "2.0.0", default-features = false }
+pallet-scheduler = { version = "2.0.0", default-features = false }
 pallet-session = { version = "2.0.0", default-features = false, features = ["historical"] }
 pallet-sudo = { version = "2.0.0", default-features = false }
 frame-support = { version = "2.0.0", default-features = false }
@@ -80,6 +81,7 @@ std = [
     "sp-consensus-babe/std",
     "sp-runtime/std",
     "sp-runtime-interface/std",
+    "sp-scheduler/std",
     "sp-session/std",
     "sp-version/std",
     "sp-block-builder/std",
