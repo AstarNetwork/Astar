@@ -14,25 +14,37 @@
 //! about a month after the mainnet relaunch.
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use codec::{Decode, Encode};
 use frame_support::{
-    decl_error, decl_event, decl_module, decl_storage, traits::Time, weights::Weight, StorageMap,
-    StorageValue,
+    decl_error, decl_event, decl_module, decl_storage,
+    dispatch::Parameter,
+    ensure,
+    traits::{Get, Time},
+    StorageMap,
 };
 use frame_system::{self as system, ensure_signed};
-use sp_runtime::{
-    traits::{SaturatedConversion, Zero},
-    Perbill, RuntimeDebug,
-};
-use sp_std::{prelude::*, vec::Vec};
+use sp_runtime::traits::{AtLeast32Bit, Member, Saturating};
+use sp_std::prelude::*;
 
 pub mod traits;
 pub use traits::*;
-pub type MomentOf<T> = <<T as Trait>::Time as Time>::Moment;
 
 pub trait Trait: system::Trait {
     /// Time used for computing era duration.
-    type Time: Time;
+    type Time: Time<Moment = Self::Moment>;
+
+    /// The end time of enable this modules.
+    type EndTimeOfRegistering: Get<Self::Moment>;
+
+    /// Timestamp type.
+    type Moment: Member
+        + Parameter
+        + Saturating
+        + AtLeast32Bit
+        + Copy
+        + Default
+        + From<u64>
+        + Into<u64>
+        + Into<u128>;
 
     /// The overarching event type.
     type Event: From<Event<Self>> + Into<<Self as frame_system::Trait>::Event>;
@@ -40,10 +52,6 @@ pub trait Trait: system::Trait {
 
 decl_storage! {
     trait Store for Module<T: Trait> as DappsStaking {
-
-        /// This is the end time of register
-        pub EndTimeOfRegist get(fn end_time_of_regist): MomentOf<T>;
-
         /// This is the compensation paid for the dapps operator of the Plasm Network.
         /// This is stored on a per-era basis.
         pub RegisteredIntroducers get(fn registered_introducers): map hasher(twox_64_concat) T::AccountId => Option<()>;
@@ -64,8 +72,8 @@ decl_event!(
 decl_error! {
     /// Error for the staking module.
     pub enum Error for Module<T: Trait> {
-        /// Duplicate accountId.
-        DuplicateAccountId,
+        /// Expired
+        Expired,
     }
 }
 
@@ -80,7 +88,13 @@ decl_module! {
         #[weight = 100_000]
         pub fn register(origin) {
             let origin = ensure_signed(origin)?;
-            // TODO: timestamp check
+
+            let expired = T::EndTimeOfRegistering::get();
+            let now = T::Time::now();
+            ensure!(
+                expired >= now,
+                Error::<T>::Expired,
+            );
             <RegisteredIntroducers<T>>::insert(&origin, ());
             Self::deposit_event(RawEvent::Registered(origin));
         }
