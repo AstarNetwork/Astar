@@ -59,7 +59,7 @@ decl_storage! {
     trait Store for Module<T: Trait> as RegisterIntroducers {
         /// This is the compensation paid for the dapps operator of the Plasm Network.
         /// This is stored on a per-era basis.
-        pub RegisteredIntroducers get(fn registered_introducers): map hasher(twox_64_concat) T::AccountId => Option<()>;
+        pub RegisteredIntroducers get(fn registered_introducers): map hasher(blake2_128_concat) T::AccountId => Option<()>;
     }
 }
 
