@@ -67,4 +67,6 @@ jobs:
       with:
         submodules: true
     - uses: cachix/install-nix-action@v12
-    - run: nix-shell third-party/nix/shell.nix --option sandbox false --run "cargo build --release"
+      with:
+        nix_path: nixpkgs=channel:nixos-20.09
+    - run: nix-shell third-party/nix/shell.nix --run "cargo build --release"

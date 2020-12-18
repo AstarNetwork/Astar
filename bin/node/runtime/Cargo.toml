@@ -1,6 +1,6 @@
 [package]
 name = "plasm-runtime"
-version = "1.6.1"
+version = "1.7.0"
 authors = ["Stake Technologies <devops@stake.co.jp>"]
 edition = "2018"
 build = "build.rs"
@@ -35,6 +35,7 @@ pallet-dapps-staking = { path = "../../../frame/dapps-staking", default-features
 pallet-plasm-rewards = { path = "../../../frame/plasm-rewards", default-features = false }
 pallet-plasm-validator = { path = "../../../frame/plasm-validator", default-features = false }
 pallet-plasm-lockdrop = { path = "../../../frame/plasm-lockdrop", default-features = false }
+pallet-custom-signatures = { path = "../../../frame/custom-signatures", default-features = false }
 pallet-ovm = { path = "../../../frame/ovm", default-features = false }
 pallet-plasma = { path = "../../../frame/plasma", default-features = false }
 pallet-evm = { path = "../../../vendor/frontier/frame/evm", default-features = false }
@@ -50,6 +51,7 @@ pallet-grandpa = { version = "2.0.0", default-features = false }
 pallet-indices = { version = "2.0.0", default-features = false }
 pallet-nicks = { version = "2.0.0", default-features = false }
 pallet-randomness-collective-flip = { version = "2.0.0", default-features = false }
+pallet-scheduler = { version = "2.0.0", default-features = false }
 pallet-session = { version = "2.0.0", default-features = false, features = ["historical"] }
 pallet-sudo = { version = "2.0.0", default-features = false }
 frame-support = { version = "2.0.0", default-features = false }
@@ -102,11 +104,13 @@ std = [
     "pallet-indices/std",
     "pallet-nicks/std",
     "sp-offchain/std",
+    "pallet-custom-signatures/std",
     "pallet-plasm-rewards/std",
     "pallet-plasm-validator/std",
     "pallet-plasm-lockdrop/std",
     "pallet-plasma/std",
     "pallet-randomness-collective-flip/std",
+    "pallet-scheduler/std",
     "pallet-session/std",
     "pallet-contract-operator/std",
     "pallet-operator-trading/std",

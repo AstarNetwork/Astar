@@ -3530,7 +3530,7 @@ dependencies = [
 
 [[package]]
 name = "lockdrop-oracle"
-version = "1.6.0"
+version = "1.7.0"
 dependencies = [
  "ethabi",
  "hex",
@@ -4177,7 +4177,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-contract-operator"
-version = "1.6.0"
+version = "1.7.0"
 dependencies = [
  "derive_more 0.14.1",
  "frame-support",
@@ -4265,7 +4265,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-custom-signatures"
-version = "1.6.0"
+version = "1.7.0"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -4283,7 +4283,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-dapps-staking"
-version = "1.6.0"
+version = "1.7.0"
 dependencies = [
  "derive_more 0.14.1",
  "frame-support",
@@ -4436,7 +4436,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-operator-trading"
-version = "1.6.0"
+version = "1.7.0"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -4453,7 +4453,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-ovm"
-version = "1.6.0"
+version = "1.7.0"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -4481,7 +4481,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-plasm-lockdrop"
-version = "1.6.0"
+version = "1.7.0"
 dependencies = [
  "bs58 0.3.1",
  "frame-support",
@@ -4508,7 +4508,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-plasm-rewards"
-version = "1.6.0"
+version = "1.7.0"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -4531,7 +4531,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-plasm-validator"
-version = "1.6.0"
+version = "1.7.0"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -4553,7 +4553,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-plasma"
-version = "1.6.0"
+version = "1.7.0"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -4593,6 +4593,22 @@ dependencies = [
  "frame-system",
  "parity-scale-codec",
  "safe-mix",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
+name = "pallet-scheduler"
+version = "2.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5f8abd5ae3f0ca51809f1e5173877ead7b2ffe90704773d150fd27496f91f9a9"
+dependencies = [
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "parity-scale-codec",
+ "serde",
+ "sp-io",
  "sp-runtime",
  "sp-std",
 ]
@@ -5106,7 +5122,7 @@ checksum = "3831453b3449ceb48b6d9c7ad7c96d5ea673e9b470a1dc578c2ce6521230884c"
 
 [[package]]
 name = "plasm-cli"
-version = "1.6.1"
+version = "1.7.0"
 dependencies = [
  "frame-system",
  "frontier-consensus",
@@ -5159,7 +5175,7 @@ dependencies = [
 
 [[package]]
 name = "plasm-primitives"
-version = "1.6.1"
+version = "1.7.0"
 dependencies = [
  "frame-system",
  "parity-scale-codec",
@@ -5170,7 +5186,7 @@ dependencies = [
 
 [[package]]
 name = "plasm-rpc"
-version = "1.6.1"
+version = "1.7.0"
 dependencies = [
  "frontier-rpc",
  "frontier-rpc-primitives",
@@ -5202,7 +5218,7 @@ dependencies = [
 
 [[package]]
 name = "plasm-runtime"
-version = "1.6.1"
+version = "1.7.0"
 dependencies = [
  "frame-executive",
  "frame-support",
@@ -5218,6 +5234,7 @@ dependencies = [
  "pallet-contracts",
  "pallet-contracts-primitives",
  "pallet-contracts-rpc-runtime-api",
+ "pallet-custom-signatures",
  "pallet-dapps-staking",
  "pallet-ethereum",
  "pallet-evm",
@@ -5232,6 +5249,7 @@ dependencies = [
  "pallet-plasm-validator",
  "pallet-plasma",
  "pallet-randomness-collective-flip",
+ "pallet-scheduler",
  "pallet-session",
  "pallet-sudo",
  "pallet-timestamp",
