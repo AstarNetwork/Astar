@@ -414,7 +414,9 @@ fn instantiate_and_call_and_deposit_event() {
                     },
                     EventRecord {
                         phase: Phase::Initialization,
-                        event: MetaEvent::balances(pallet_balances::RawEvent::Endowed(BOB, 1_000_000)),
+                        event: MetaEvent::balances(pallet_balances::RawEvent::Endowed(
+                            BOB, 1_000_000
+                        )),
                         topics: vec![],
                     },
                     EventRecord {
@@ -501,7 +503,9 @@ fn instantiate_and_relate_operator() {
                     },
                     EventRecord {
                         phase: Phase::Initialization,
-                        event: MetaEvent::balances(pallet_balances::RawEvent::Endowed(BOB, 1_000_000)),
+                        event: MetaEvent::balances(pallet_balances::RawEvent::Endowed(
+                            BOB, 1_000_000
+                        )),
                         topics: vec![],
                     },
                     EventRecord {
@@ -634,7 +638,9 @@ fn valid_instatiate(wasm: Vec<u8>, code_hash: CodeHash<Test>) {
             },
             EventRecord {
                 phase: Phase::Initialization,
-                event: MetaEvent::balances(pallet_balances::RawEvent::Transfer(ALICE, BOB, 1_000_000)),
+                event: MetaEvent::balances(pallet_balances::RawEvent::Transfer(
+                    ALICE, BOB, 1_000_000
+                )),
                 topics: vec![],
             },
             EventRecord {
@@ -733,7 +739,9 @@ fn update_parameters_passed() {
                     },
                     EventRecord {
                         phase: Phase::Initialization,
-                        event: MetaEvent::balances(pallet_balances::RawEvent::Endowed(BOB, 1_000_000)),
+                        event: MetaEvent::balances(pallet_balances::RawEvent::Endowed(
+                            BOB, 1_000_000
+                        )),
                         topics: vec![],
                     },
                     EventRecord {
@@ -877,7 +885,9 @@ fn change_operator_passed() {
                     },
                     EventRecord {
                         phase: Phase::Initialization,
-                        event: MetaEvent::balances(pallet_balances::RawEvent::Endowed(BOB, 1_000_000)),
+                        event: MetaEvent::balances(pallet_balances::RawEvent::Endowed(
+                            BOB, 1_000_000
+                        )),
                         topics: vec![],
                     },
                     EventRecord {
