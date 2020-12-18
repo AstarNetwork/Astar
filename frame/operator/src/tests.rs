@@ -372,14 +372,14 @@ fn instantiate_and_call_and_deposit_event() {
         .existential_deposit(100)
         .build()
         .execute_with(|| {
-            Balances::deposit_creating(&ALICE, 1_000_000);
+            Balances::deposit_creating(&ALICE, 2_000_000);
 
             assert_ok!(Contracts::put_code(Origin::signed(ALICE), wasm));
 
             // Check at the end to get hash on error easily
             let creation = Contracts::instantiate(
                 Origin::signed(ALICE),
-                100,
+                1_000_000,
                 Gas::max_value(),
                 code_hash.into(),
                 vec![],
@@ -396,7 +396,7 @@ fn instantiate_and_call_and_deposit_event() {
                     EventRecord {
                         phase: Phase::Initialization,
                         event: MetaEvent::balances(pallet_balances::RawEvent::Endowed(
-                            ALICE, 1_000_000
+                            ALICE, 2_000_000
                         )),
                         topics: vec![],
                     },
@@ -414,13 +414,13 @@ fn instantiate_and_call_and_deposit_event() {
                     },
                     EventRecord {
                         phase: Phase::Initialization,
-                        event: MetaEvent::balances(pallet_balances::RawEvent::Endowed(BOB, 100)),
+                        event: MetaEvent::balances(pallet_balances::RawEvent::Endowed(BOB, 1_000_000)),
                         topics: vec![],
                     },
                     EventRecord {
                         phase: Phase::Initialization,
                         event: MetaEvent::balances(pallet_balances::RawEvent::Transfer(
-                            ALICE, BOB, 100
+                            ALICE, BOB, 1_000_000
                         )),
                         topics: vec![],
                     },
@@ -456,7 +456,7 @@ fn instantiate_and_relate_operator() {
         .build()
         .execute_with(|| {
             // prepare
-            Balances::deposit_creating(&ALICE, 1_000_000);
+            Balances::deposit_creating(&ALICE, 2_000_000);
             assert_ok!(Contracts::put_code(Origin::signed(ALICE), wasm));
 
             let test_params = DEFAULT_PARAMETERS.clone();
@@ -465,7 +465,7 @@ fn instantiate_and_relate_operator() {
             // Check at the end to get hash on error easily
             assert_ok!(Operator::instantiate(
                 Origin::signed(ALICE),
-                100,
+                1_000_000,
                 Gas::max_value(),
                 code_hash.into(),
                 vec![],
@@ -483,7 +483,7 @@ fn instantiate_and_relate_operator() {
                     EventRecord {
                         phase: Phase::Initialization,
                         event: MetaEvent::balances(pallet_balances::RawEvent::Endowed(
-                            ALICE, 1_000_000
+                            ALICE, 2_000_000
                         )),
                         topics: vec![],
                     },
@@ -501,13 +501,13 @@ fn instantiate_and_relate_operator() {
                     },
                     EventRecord {
                         phase: Phase::Initialization,
-                        event: MetaEvent::balances(pallet_balances::RawEvent::Endowed(BOB, 100)),
+                        event: MetaEvent::balances(pallet_balances::RawEvent::Endowed(BOB, 1_000_000)),
                         topics: vec![],
                     },
                     EventRecord {
                         phase: Phase::Initialization,
                         event: MetaEvent::balances(pallet_balances::RawEvent::Transfer(
-                            ALICE, BOB, 100
+                            ALICE, BOB, 1_000_000
                         )),
                         topics: vec![],
                     },
@@ -586,7 +586,7 @@ fn instantiate_failed() {
 
 fn valid_instatiate(wasm: Vec<u8>, code_hash: CodeHash<Test>) {
     // prepare
-    Balances::deposit_creating(&ALICE, 1_000_000);
+    Balances::deposit_creating(&ALICE, 2_000_000);
     assert_ok!(Contracts::put_code(Origin::signed(ALICE), wasm));
 
     let test_params = TestParameters { a: 5_000_000 };
@@ -595,7 +595,7 @@ fn valid_instatiate(wasm: Vec<u8>, code_hash: CodeHash<Test>) {
     // Check at the end to get hash on error easily
     let creation = Operator::instantiate(
         Origin::signed(ALICE),
-        100,
+        1_000_000,
         Gas::max_value(),
         code_hash.into(),
         vec![],
@@ -612,7 +612,7 @@ fn valid_instatiate(wasm: Vec<u8>, code_hash: CodeHash<Test>) {
             },
             EventRecord {
                 phase: Phase::Initialization,
-                event: MetaEvent::balances(pallet_balances::RawEvent::Endowed(ALICE, 1_000_000)),
+                event: MetaEvent::balances(pallet_balances::RawEvent::Endowed(ALICE, 2_000_000)),
                 topics: vec![],
             },
             EventRecord {
@@ -629,12 +629,12 @@ fn valid_instatiate(wasm: Vec<u8>, code_hash: CodeHash<Test>) {
             },
             EventRecord {
                 phase: Phase::Initialization,
-                event: MetaEvent::balances(pallet_balances::RawEvent::Endowed(BOB, 100)),
+                event: MetaEvent::balances(pallet_balances::RawEvent::Endowed(BOB, 1_000_000)),
                 topics: vec![],
             },
             EventRecord {
                 phase: Phase::Initialization,
-                event: MetaEvent::balances(pallet_balances::RawEvent::Transfer(ALICE, BOB, 100)),
+                event: MetaEvent::balances(pallet_balances::RawEvent::Transfer(ALICE, BOB, 1_000_000)),
                 topics: vec![],
             },
             EventRecord {
@@ -715,7 +715,7 @@ fn update_parameters_passed() {
                     EventRecord {
                         phase: Phase::Initialization,
                         event: MetaEvent::balances(pallet_balances::RawEvent::Endowed(
-                            ALICE, 1_000_000
+                            ALICE, 2_000_000
                         )),
                         topics: vec![],
                     },
@@ -733,13 +733,13 @@ fn update_parameters_passed() {
                     },
                     EventRecord {
                         phase: Phase::Initialization,
-                        event: MetaEvent::balances(pallet_balances::RawEvent::Endowed(BOB, 100)),
+                        event: MetaEvent::balances(pallet_balances::RawEvent::Endowed(BOB, 1_000_000)),
                         topics: vec![],
                     },
                     EventRecord {
                         phase: Phase::Initialization,
                         event: MetaEvent::balances(pallet_balances::RawEvent::Transfer(
-                            ALICE, BOB, 100
+                            ALICE, BOB, 1_000_000
                         )),
                         topics: vec![],
                     },
@@ -859,7 +859,7 @@ fn change_operator_passed() {
                     EventRecord {
                         phase: Phase::Initialization,
                         event: MetaEvent::balances(pallet_balances::RawEvent::Endowed(
-                            ALICE, 1_000_000
+                            ALICE, 2_000_000
                         )),
                         topics: vec![],
                     },
@@ -877,13 +877,13 @@ fn change_operator_passed() {
                     },
                     EventRecord {
                         phase: Phase::Initialization,
-                        event: MetaEvent::balances(pallet_balances::RawEvent::Endowed(BOB, 100)),
+                        event: MetaEvent::balances(pallet_balances::RawEvent::Endowed(BOB, 1_000_000)),
                         topics: vec![],
                     },
                     EventRecord {
                         phase: Phase::Initialization,
                         event: MetaEvent::balances(pallet_balances::RawEvent::Transfer(
-                            ALICE, BOB, 100
+                            ALICE, BOB, 1_000_000
                         )),
                         topics: vec![],
                     },
