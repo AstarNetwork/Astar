@@ -71,6 +71,7 @@
 <span id="70">70</span>
 <span id="71">71</span>
 <span id="72">72</span>
+<span id="73">73</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="doccomment">//! Ethereum prefixed signatures compatibility instances.</span>
 
@@ -79,6 +80,7 @@
 <span class="kw">use</span> <span class="ident">sp_io</span>::{<span class="ident">crypto</span>::<span class="ident">secp256k1_ecdsa_recover_compressed</span>, <span class="ident">hashing</span>::<span class="ident">keccak_256</span>};
 <span class="kw">use</span> <span class="ident">sp_runtime</span>::<span class="ident">traits</span>::{<span class="ident">IdentifyAccount</span>, <span class="ident">Lazy</span>, <span class="ident">Verify</span>};
 <span class="kw">use</span> <span class="ident">sp_runtime</span>::<span class="ident">MultiSignature</span>;
+<span class="kw">use</span> <span class="ident">sp_std</span>::<span class="ident">prelude</span>::<span class="kw-2">*</span>;
 
 <span class="doccomment">/// Ethereum-compatible signature type.</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Encode</span>, <span class="ident">Decode</span>, <span class="ident">PartialEq</span>, <span class="ident">Eq</span>, <span class="ident">Clone</span>)]</span>
