@@ -7,27 +7,27 @@ edition = "2018"
 [dependencies]
 plasm-runtime = { path = "../runtime" }
 plasm-primitives = { path = "../primitives" }
-frontier-rpc = { path = "../../../vendor/frontier/rpc" }
-frontier-rpc-primitives = { path = "../../../vendor/frontier/rpc/primitives" }
-jsonrpc-core = "15.0.0"
-jsonrpc-pubsub = "15.0.0"
-sp-api = "2.0.0"
-sp-runtime = "2.0.0"
-sp-blockchain = "2.0.0"
-sp-block-builder = "2.0.0"
-sp-consensus = "0.8.0"
-sp-consensus-babe = "0.8.0"
-sp-transaction-pool = "2.0.0"
-sc-rpc = "2.0.0"
-sc-rpc-api = "0.8.0"
-sc-keystore = "2.0.0"
-sc-client-api = "2.0.0"
-sc-consensus-babe = "0.8.0"
-sc-consensus-babe-rpc = "0.8.0"
-sc-consensus-epochs = "0.8.0"
-sc-finality-grandpa = "0.8.0"
-sc-finality-grandpa-rpc = "0.8.0"
-sc-network = "0.8.0"
-pallet-contracts-rpc = "0.8.0"
-pallet-transaction-payment-rpc = "2.0.0"
-substrate-frame-rpc-system = "2.0.0"
+fc-rpc = { git = "https://github.com/purestake/frontier", branch = "v0.4-hotfixes" }
+fp-rpc = { git = "https://github.com/purestake/frontier", branch = "v0.4-hotfixes" }
+jsonrpc-core = "15.0"
+jsonrpc-pubsub = "15.0"
+sp-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-block-builder = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-consensus-babe = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-transaction-pool = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-rpc = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-rpc-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-keystore = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-consensus-babe = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-consensus-babe-rpc = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-consensus-epochs = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-finality-grandpa = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-finality-grandpa-rpc = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-network = { git = "https://github.com/paritytech/substrate", branch = "master" }
+pallet-contracts-rpc = { git = "https://github.com/paritytech/substrate", branch = "master" }
+pallet-transaction-payment-rpc = { git = "https://github.com/paritytech/substrate", branch = "master" }
+substrate-frame-rpc-system = { git = "https://github.com/paritytech/substrate", branch = "master" }

@@ -4,19 +4,6 @@ members = [
     "bin/node/rpc",
     "bin/node/runtime",
     "bin/node/primitives",
-    "frame/operator",
-    "frame/trading",
-    "frame/dapps-staking",
-    "frame/plasm-rewards",
-    "frame/plasm-lockdrop",
-    "frame/plasm-validator",
-    "frame/ovm",
-    "frame/ovm/rpc/runtime-api",
-    "frame/plasma",
-    "frame/plasma/rpc/runtime-api",
-    "frame/custom-signatures",
-    "ovmi/lib",
-    "ovmi/cli",
 ]
 
 exclude = [
