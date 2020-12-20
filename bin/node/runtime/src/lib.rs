@@ -10,10 +10,10 @@ use frame_support::{
     traits::{FindAuthor, Randomness},
     weights::{
         constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_PER_SECOND},
-        IdentityFee, Weight, DispatchClass,
+        DispatchClass, IdentityFee, Weight,
     },
 };
-use frame_system::limits::{BlockWeights, BlockLength};
+use frame_system::limits::{BlockLength, BlockWeights};
 use frontier_rpc_primitives::TransactionStatus;
 use pallet_evm::{
     Account as EVMAccount, EnsureAddressRoot, EnsureAddressTruncated, FeeCalculator,
@@ -25,18 +25,15 @@ use plasm_primitives::{
     AccountId, AccountIndex, Balance, BlockNumber, Hash, Index, Moment, Signature,
 };
 use sp_api::impl_runtime_apis;
-use sp_core::{H160, H256, U256, OpaqueMetadata};
+use sp_core::{OpaqueMetadata, H160, H256, U256};
 use sp_inherents::{CheckInherentsResult, InherentData};
 use sp_runtime::traits::{
-    BlakeTwo256, Block as BlockT, Extrinsic,
-    SaturatedConversion, StaticLookup, Verify,
+    BlakeTwo256, Block as BlockT, Extrinsic, SaturatedConversion, StaticLookup, Verify,
 };
-use sp_runtime::transaction_validity::{
-    TransactionSource, TransactionValidity,
-};
+use sp_runtime::transaction_validity::{TransactionSource, TransactionValidity};
 use sp_runtime::{
-    create_runtime_str, generic, impl_opaque_keys, ApplyExtrinsicResult, FixedPointNumber,
-    Perbill, Perquintill,
+    create_runtime_str, generic, impl_opaque_keys, ApplyExtrinsicResult, FixedPointNumber, Perbill,
+    Perquintill,
 };
 use sp_std::prelude::*;
 #[cfg(any(feature = "std", test))]
@@ -60,7 +57,6 @@ pub use pallet_contracts::Gas;
 pub use pallet_timestamp::Call as TimestampCall;
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
-
 
 /// Constant values used within the runtime.
 pub mod constants;
@@ -304,7 +300,6 @@ where
     type Extrinsic = UncheckedExtrinsic;
 }
 
-
 parameter_types! {
     pub const NickReservationFee: u128 = 0;
     pub const MinNickLength: usize = 4;
@@ -370,7 +365,8 @@ impl frontier_rpc_primitives::ConvertTransaction<sp_runtime::OpaqueExtrinsic>
 pub struct EthereumFindAuthor<F>(sp_std::marker::PhantomData<F>);
 // TODO Consensus not supported in parachain
 impl<F: FindAuthor<u32>> FindAuthor<H160> for EthereumFindAuthor<F> {
-    fn find_author<'a, I>(_digests: I) -> Option<H160> where
+    fn find_author<'a, I>(_digests: I) -> Option<H160>
+    where
         I: 'a + IntoIterator<Item = (frame_support::ConsensusEngineId, &'a [u8])>,
     {
         None
@@ -379,7 +375,8 @@ impl<F: FindAuthor<u32>> FindAuthor<H160> for EthereumFindAuthor<F> {
 
 pub struct PhantomAura;
 impl FindAuthor<u32> for PhantomAura {
-    fn find_author<'a, I>(_digests: I) -> Option<u32> where
+    fn find_author<'a, I>(_digests: I) -> Option<u32>
+    where
         I: 'a + IntoIterator<Item = (frame_support::ConsensusEngineId, &'a [u8])>,
     {
         Some(0 as u32)

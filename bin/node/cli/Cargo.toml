@@ -5,10 +5,10 @@ authors = ["Stake Technologies <devops@stake.co.jp>"]
 description = "Plasm node implementation in Rust."
 build = "build.rs"
 edition = "2018"
-default-run = "plasm-node"
+default-run = "plasm-collator"
 
 [[bin]]
-name = "plasm-node"
+name = "plasm-collator"
 path = "bin/main.rs"
 required-features = ["cli"]
 
@@ -30,11 +30,13 @@ hex = "0.4"
 
 # primitives
 sp-core = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-trie= { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-inherents = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-consensus-babe = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-finality-grandpa = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sp-timestamp = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-transaction-pool = { git = "https://github.com/paritytech/substrate", branch = "master" }
 
 # client dependencies
@@ -51,6 +53,7 @@ sc-rpc = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-basic-authorship = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-service = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-telemetry = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-tracing = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-consensus-babe = { git = "https://github.com/paritytech/substrate", branch = "master" }
 fc-consensus = { git = "https://github.com/purestake/frontier", branch = "v0.4-hotfixes" }
 
@@ -68,8 +71,19 @@ pallet-evm = { git = "https://github.com/purestake/frontier", branch = "v0.4-hot
 # CLI-specific dependencies
 sc-cli = { git = "https://github.com/paritytech/substrate", branch = "master", optional = true }
 
+# cumulus dependencies
+cumulus-network = { git = "https://github.com/paritytech/cumulus", branch = "master" }
+cumulus-service = { git = "https://github.com/paritytech/cumulus", branch = "master" }
+cumulus-consensus = { git = "https://github.com/paritytech/cumulus", branch = "master" }
+cumulus-primitives = { git = "https://github.com/paritytech/cumulus", branch = "master" }
+polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "master" }
+polkadot-parachain = { git = "https://github.com/paritytech/polkadot", branch = "master" }
+polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "master" }
+polkadot-cli = { git = "https://github.com/paritytech/polkadot", branch = "master", optional = true }
+
 [build-dependencies]
-sc-cli = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-cli = { git = "https://github.com/paritytech/substrate", branch = "master", optional = true }
+polkadot-cli = { git = "https://github.com/paritytech/polkadot", branch = "master", optional = true }
 build-script-utils = { package = "substrate-build-script-utils", git = "https://github.com/paritytech/substrate", branch = "master" }
 structopt = { version = "0.3.8", optional = true }
 vergen = { version = "3.0.4", optional = true }
@@ -78,6 +92,7 @@ vergen = { version = "3.0.4", optional = true }
 default = ["cli"]
 cli = [
     "sc-cli",
+    "polkadot-cli",
     "sc-service/db",
     "structopt",
 	"vergen",
