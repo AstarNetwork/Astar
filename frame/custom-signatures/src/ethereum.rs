@@ -5,6 +5,7 @@ use sp_core::ecdsa;
 use sp_io::{crypto::secp256k1_ecdsa_recover_compressed, hashing::keccak_256};
 use sp_runtime::traits::{IdentifyAccount, Lazy, Verify};
 use sp_runtime::MultiSignature;
+use sp_std::prelude::*;
 
 /// Ethereum-compatible signature type.
 #[derive(Encode, Decode, PartialEq, Eq, Clone)]
