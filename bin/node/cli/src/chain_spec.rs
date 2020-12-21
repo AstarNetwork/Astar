@@ -16,29 +16,6 @@ use sp_runtime::traits::{IdentifyAccount, Verify};
 
 type AccountPublic = <Signature as Verify>::Signer;
 
-/*
-use hex_literal::hex;
-use sp_core::crypto::{Ss58Codec, UncheckedInto};
-use plasm_runtime::constants::currency::*;
-const STAGING_TELEMETRY_URL: &str = "wss://telemetry.polkadot.io/submit/";
-
-const PLASM_PROPERTIES: &str = r#"
-        {
-            "ss58Format": 5,
-            "tokenDecimals": 15,
-            "tokenSymbol": "PLM"
-        }"#;
-const PLASM_PROTOCOL_ID: &str = "plm";
-
-const DUSTY_PROPERTIES: &str = r#"
-        {
-            "ss58Format": 5,
-            "tokenDecimals": 15,
-            "tokenSymbol": "PLD"
-        }"#;
-const DUSTY_PROTOCOL_ID: &str = "pld";
-*/
-
 /// Node `ChainSpec` extensions.
 ///
 /// Additional parameters for some Substrate core modules,
@@ -78,6 +55,10 @@ where
 }
 
 pub fn get_chain_spec(id: ParaId) -> ChainSpec {
+    if id == ParaId::from(5000) {
+        return ChainSpec::from_json_bytes(&include_bytes!("../res/plasm_parachain.json")[..]).unwrap()
+    }
+
     ChainSpec::from_genesis(
         "Local Testnet",
         "local_testnet",
