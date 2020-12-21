@@ -1,15 +1,21 @@
-{ nixpkgs ? import ./nixpkgs.nix { }
-, release ? import ./release.nix { }
+{ release ? import ./release.nix { }
 }:
 
-with nixpkgs;
-with release;
-with llvmPackages_latest;
+with release.pkgs;
+with llvmPackages;
 
 stdenv.mkDerivation {
   name = "plasm-nix-shell";
-  buildInputs = [ rustWasm wasm-gc zlib openssl pkgconfig ];
+  nativeBuildInputs = [ clang ];
+  buildInputs = [
+    release.rust-nightly
+    pkg-config
+    openssl
+    cmake
+  ] ++ stdenv.lib.optionals stdenv.isDarwin [
+    darwin.apple_sdk.frameworks.Security
+  ];
+  ROCKSDB_LIB_DIR = "${rocksdb}/lib";
   LIBCLANG_PATH = "${libclang}/lib";
-  # FIXME: we can remove this once prost is updated.
   PROTOC = "${protobuf}/bin/protoc";
 }

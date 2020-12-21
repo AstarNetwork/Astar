@@ -1,15 +1,13 @@
-{ nixpkgs ? import ./nixpkgs.nix { }
+{ moz_overlay ? import (builtins.fetchTarball https://github.com/mozilla/nixpkgs-mozilla/archive/master.tar.gz)
 }:
 
-with nixpkgs;
-
 let
-  channel = rustChannelOf { date = "2020-09-20"; channel = "nightly"; };
-
-in rec {
-  rustWasm = channel.rust.override {
-    extensions = [ "rustfmt-preview" ];
+  pkgs = import <nixpkgs> { overlays = [ moz_overlay ]; };
+  channel = pkgs.rustChannelOf { date = "2020-08-20"; channel = "nightly"; };
+in {
+  inherit pkgs;
+  rust-nightly = channel.rust.override {
     targets = [ "wasm32-unknown-unknown" ];
+    extensions = [ "rustfmt-preview" ];
   };
-  plasm-node = callPackage ./. { inherit rustWasm; };
 }
