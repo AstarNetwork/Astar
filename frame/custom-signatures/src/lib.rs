@@ -98,6 +98,9 @@ impl<T: Trait> frame_support::unsigned::ValidateUnsigned for Module<T> {
     fn validate_unsigned(_source: TransactionSource, call: &Self::Call) -> TransactionValidity {
         if let Call::call(call, signer, signature) = call {
             if let Ok(signature) = <T as Trait>::Signature::try_from(signature.clone()) {
+                frame_support::debug::print!("CALL: {:?}", call.encode());
+                frame_support::debug::print!("SIGNATURE: {:?}", signature);
+
                 if signature.verify(&call.encode()[..], &signer) {
                     return ValidTransaction::with_tag_prefix("CustomSignatures")
                         .priority(T::UnsignedPriority::get())

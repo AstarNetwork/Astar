@@ -73,8 +73,8 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     // and set impl_version to equal spec_version. If only runtime
     // implementation changes and behavior does not, then leave spec_version as
     // is and increment impl_version.
-    spec_version: 8,
-    impl_version: 8,
+    spec_version: 9,
+    impl_version: 9,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 2,
 };
@@ -646,7 +646,7 @@ construct_runtime!(
         Nicks: pallet_nicks::{Module, Call, Storage, Event<T>},
         Ethereum: pallet_ethereum::{Module, Call, Storage, Event, Config, ValidateUnsigned},
         EVM: pallet_evm::{Module, Call, Storage, Config, Event<T>},
-        EcdsaSignature: pallet_custom_signatures::{Module, Call, Event<T>, ValidateUnsigned},
+        EthCall: pallet_custom_signatures::{Module, Call, Event<T>, ValidateUnsigned},
         Scheduler: pallet_scheduler::{Module, Call, Storage, Event<T>},
     }
 );
