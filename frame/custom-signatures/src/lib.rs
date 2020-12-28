@@ -103,14 +103,13 @@ impl<T: Trait> frame_support::unsigned::ValidateUnsigned for Module<T> {
             frame_support::runtime_print!("SIGNATURE: {:?}", signature);
 
             if let Ok(signature) = <T as Trait>::Signature::try_from(signature.clone()) {
-
                 if signature.verify(&call.encode()[..], &signer) {
                     return ValidTransaction::with_tag_prefix("CustomSignatures")
                         .priority(T::UnsignedPriority::get())
                         .and_provides((call, signer))
                         .longevity(64_u64)
                         .propagate(true)
-                        .build()
+                        .build();
                 } else {
                     InvalidTransaction::BadProof.into()
                 }
@@ -132,7 +131,7 @@ mod tests {
         parameter_types,
     };
     use hex_literal::hex;
-    use sp_core::{ecdsa, Pair, crypto::Ss58Codec};
+    use sp_core::{crypto::Ss58Codec, ecdsa, Pair};
     use sp_io::hashing::keccak_256;
     use sp_keyring::AccountKeyring as Keyring;
     use sp_runtime::{
@@ -267,7 +266,6 @@ mod tests {
         let text = b"Hello Plasm";
         let signature = hex!["79eec99d7f5b321c1b75d2fc044b555f9afdbc4f9b43a011085f575b216f85c452a04373d487671852dca4be4fe5fd90836560afe709d1dab45ab18bc936c2111c"];
         assert_eq!(eth_sign(&seed, &text[..]), signature);
-
     }
 
     #[test]
@@ -291,7 +289,8 @@ mod tests {
             let alice: <Runtime as frame_system::Trait>::AccountId = Keyring::Alice.into();
             assert_eq!(System::account(alice.clone()).data.free, 0);
 
-            let call: Call = pallet_balances::Call::<Runtime>::transfer(alice.clone(), 1_000).into();
+            let call: Call =
+                pallet_balances::Call::<Runtime>::transfer(alice.clone(), 1_000).into();
             let signature = eth_sign(&ECDSA_SEED, call.encode().as_ref()).into();
 
             assert_ok!(CustomSignatures::call(
@@ -309,11 +308,14 @@ mod tests {
         let seed = hex!["7e9c7ad85df5cdc88659f53e06fb2eb9bab3ebc59083a3190eaf2c730332529c"];
         let pair = ecdsa::Pair::from_seed(&seed);
         assert_eq!(
-            MultiSigner::from(pair.public()).into_account().to_ss58check(),
+            MultiSigner::from(pair.public())
+                .into_account()
+                .to_ss58check(),
             "5Geeci7qCoYHyg9z2AwfpiT4CDryvxYyD7SAUdfNBz9CyDSb",
         );
 
-        let dest = AccountId::from_ss58check("5GVwcV6EzxxYbXBm7H6dtxc9TCgL4oepMXtgqWYEc3VXJoaf").unwrap();
+        let dest =
+            AccountId::from_ss58check("5GVwcV6EzxxYbXBm7H6dtxc9TCgL4oepMXtgqWYEc3VXJoaf").unwrap();
         let call: Call = pallet_balances::Call::<Runtime>::transfer(dest, 1000).into();
         assert_eq!(
             call.encode(),

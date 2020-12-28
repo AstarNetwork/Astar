@@ -37,7 +37,6 @@ impl sp_std::convert::TryFrom<Vec<u8>> for EthereumSignature {
     }
 }
 
-
 /// Constructs the message that Ethereum RPC's `personal_sign` and `eth_sign` would sign.
 pub fn signable_message(what: &[u8]) -> Vec<u8> {
     let mut l = what.len();
