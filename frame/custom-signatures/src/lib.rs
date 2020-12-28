@@ -17,6 +17,7 @@ use sp_runtime::{
     },
     DispatchResult,
 };
+use sp_std::convert::TryFrom;
 use sp_std::prelude::*;
 
 /// Ethereum-compatible signatures (eth_sign API call).
@@ -31,7 +32,7 @@ pub trait Trait: frame_system::Trait {
     type Call: Parameter + UnfilteredDispatchable<Origin = Self::Origin> + GetDispatchInfo;
 
     /// User defined signature type.
-    type Signature: Parameter + Verify<Signer = Self::Signer>;
+    type Signature: Parameter + Verify<Signer = Self::Signer> + TryFrom<Vec<u8>>;
 
     /// User defined signer type.
     type Signer: IdentifyAccount<AccountId = Self::AccountId>;
@@ -45,7 +46,9 @@ pub trait Trait: frame_system::Trait {
 
 decl_error! {
     pub enum Error for Module<T: Trait> {
-        /// Provided invalid signature data.
+        /// Signature decode fails.
+        DecodeFailure,
+        /// Signature and account mismatched.
         InvalidSignature,
     }
 }
@@ -71,10 +74,12 @@ decl_module! {
             origin,
             call: Box<<T as Trait>::Call>,
             account: T::AccountId,
-            signature: <T as Trait>::Signature,
+            signature: Vec<u8>,
         ) -> DispatchResultWithPostInfo {
             ensure_none(origin)?;
 
+            let signature = <T as Trait>::Signature::try_from(signature)
+                .map_err(|_| Error::<T>::DecodeFailure)?;
             if signature.verify(&call.encode()[..], &account) {
                 let new_origin = frame_system::RawOrigin::Signed(account.clone()).into();
                 let res = call.dispatch_bypass_filter(new_origin).map(|_| ());
@@ -92,19 +97,18 @@ impl<T: Trait> frame_support::unsigned::ValidateUnsigned for Module<T> {
 
     fn validate_unsigned(_source: TransactionSource, call: &Self::Call) -> TransactionValidity {
         if let Call::call(call, signer, signature) = call {
-            if !signature.verify(call.encode().as_ref(), &signer) {
-                return InvalidTransaction::BadProof.into();
+            if let Ok(signature) = <T as Trait>::Signature::try_from(signature.clone()) {
+                if signature.verify(&call.encode()[..], &signer) {
+                    return ValidTransaction::with_tag_prefix("CustomSignatures")
+                        .priority(T::UnsignedPriority::get())
+                        .and_provides((call, signer))
+                        .longevity(64_u64)
+                        .propagate(true)
+                        .build()
+                }
             }
-
-            ValidTransaction::with_tag_prefix("CustomSignatures")
-                .priority(T::UnsignedPriority::get())
-                .and_provides((call, signer))
-                .longevity(64_u64)
-                .propagate(true)
-                .build()
-        } else {
-            InvalidTransaction::Call.into()
         }
+        InvalidTransaction::Call.into()
     }
 }
 
@@ -235,11 +239,12 @@ mod tests {
         storage.into()
     }
 
-    fn sign_call(call: &Call) -> ecdsa::Signature {
+    fn sign_call(call: &Call) -> Vec<u8> {
         let call_msg = ethereum::signable_message(&call.encode());
         let ecdsa_msg = secp256k1::Message::parse(&keccak_256(&call_msg));
         let secret = secp256k1::SecretKey::parse(&ECDSA_SEED).expect("valid seed");
-        secp256k1::sign(&ecdsa_msg, &secret).into()
+        let ecdsa: ecdsa::Signature = secp256k1::sign(&ecdsa_msg, &secret).into();
+        Vec::from(ecdsa.as_ref() as &[u8])
     }
 
     #[test]
@@ -247,7 +252,7 @@ mod tests {
         let bob: <Runtime as frame_system::Trait>::AccountId = Keyring::Bob.into();
         let alice: <Runtime as frame_system::Trait>::AccountId = Keyring::Alice.into();
         let call = pallet_balances::Call::<Runtime>::transfer(alice.clone(), 1_000).into();
-        let signature = ethereum::EthereumSignature(hex!["dd0992d40e5cdf99db76bed162808508ac65acd7ae2fdc8573594f03ed9c939773e813181788fc02c3c68f3fdc592759b35f6354484343e18cb5317d34dab6c61b"]);
+        let signature = Vec::from(&hex!["dd0992d40e5cdf99db76bed162808508ac65acd7ae2fdc8573594f03ed9c939773e813181788fc02c3c68f3fdc592759b35f6354484343e18cb5317d34dab6c61b"][..]);
         assert_err!(
             CustomSignatures::call(Origin::none(), Box::new(call), bob, signature),
             Error::<Runtime>::InvalidSignature,
