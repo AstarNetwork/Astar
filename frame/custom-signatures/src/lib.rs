@@ -92,14 +92,17 @@ decl_module! {
     }
 }
 
+const SIGNATURE_DECODE_FAILURE: u8 = 1;
+
 impl<T: Trait> frame_support::unsigned::ValidateUnsigned for Module<T> {
     type Call = Call<T>;
 
     fn validate_unsigned(_source: TransactionSource, call: &Self::Call) -> TransactionValidity {
         if let Call::call(call, signer, signature) = call {
+            frame_support::runtime_print!("CALL: {:?}", call.encode());
+            frame_support::runtime_print!("SIGNATURE: {:?}", signature);
+
             if let Ok(signature) = <T as Trait>::Signature::try_from(signature.clone()) {
-                frame_support::debug::print!("CALL: {:?}", call.encode());
-                frame_support::debug::print!("SIGNATURE: {:?}", signature);
 
                 if signature.verify(&call.encode()[..], &signer) {
                     return ValidTransaction::with_tag_prefix("CustomSignatures")
@@ -108,10 +111,15 @@ impl<T: Trait> frame_support::unsigned::ValidateUnsigned for Module<T> {
                         .longevity(64_u64)
                         .propagate(true)
                         .build()
+                } else {
+                    InvalidTransaction::BadProof.into()
                 }
+            } else {
+                InvalidTransaction::Custom(SIGNATURE_DECODE_FAILURE).into()
             }
+        } else {
+            InvalidTransaction::Call.into()
         }
-        InvalidTransaction::Call.into()
     }
 }
 
@@ -124,7 +132,7 @@ mod tests {
         parameter_types,
     };
     use hex_literal::hex;
-    use sp_core::{ecdsa, Pair};
+    use sp_core::{ecdsa, Pair, crypto::Ss58Codec};
     use sp_io::hashing::keccak_256;
     use sp_keyring::AccountKeyring as Keyring;
     use sp_runtime::{
@@ -242,12 +250,24 @@ mod tests {
         storage.into()
     }
 
-    fn sign_call(call: &Call) -> Vec<u8> {
-        let call_msg = ethereum::signable_message(&call.encode());
+    // Simple `eth_sign` implementation, should be equal to exported by RPC
+    fn eth_sign(seed: &[u8; 32], data: &[u8]) -> Vec<u8> {
+        let call_msg = ethereum::signable_message(data);
         let ecdsa_msg = secp256k1::Message::parse(&keccak_256(&call_msg));
-        let secret = secp256k1::SecretKey::parse(&ECDSA_SEED).expect("valid seed");
-        let ecdsa: ecdsa::Signature = secp256k1::sign(&ecdsa_msg, &secret).into();
+        let secret = secp256k1::SecretKey::parse(&seed).expect("valid seed");
+        let mut ecdsa: ecdsa::Signature = secp256k1::sign(&ecdsa_msg, &secret).into();
+        // Fix recovery ID: Ethereum uses 27/28 notation
+        ecdsa.as_mut()[64] += 27;
         Vec::from(ecdsa.as_ref() as &[u8])
+    }
+
+    #[test]
+    fn eth_sign_works() {
+        let seed = hex!["7e9c7ad85df5cdc88659f53e06fb2eb9bab3ebc59083a3190eaf2c730332529c"];
+        let text = b"Hello Plasm";
+        let signature = hex!["79eec99d7f5b321c1b75d2fc044b555f9afdbc4f9b43a011085f575b216f85c452a04373d487671852dca4be4fe5fd90836560afe709d1dab45ab18bc936c2111c"];
+        assert_eq!(eth_sign(&seed, &text[..]), signature);
+
     }
 
     #[test]
@@ -271,8 +291,8 @@ mod tests {
             let alice: <Runtime as frame_system::Trait>::AccountId = Keyring::Alice.into();
             assert_eq!(System::account(alice.clone()).data.free, 0);
 
-            let call = pallet_balances::Call::<Runtime>::transfer(alice.clone(), 1_000).into();
-            let signature = sign_call(&call).into();
+            let call: Call = pallet_balances::Call::<Runtime>::transfer(alice.clone(), 1_000).into();
+            let signature = eth_sign(&ECDSA_SEED, call.encode().as_ref()).into();
 
             assert_ok!(CustomSignatures::call(
                 Origin::none(),
@@ -282,5 +302,25 @@ mod tests {
             ));
             assert_eq!(System::account(alice).data.free, 1_000);
         })
+    }
+
+    #[test]
+    fn call_fixtures() {
+        let seed = hex!["7e9c7ad85df5cdc88659f53e06fb2eb9bab3ebc59083a3190eaf2c730332529c"];
+        let pair = ecdsa::Pair::from_seed(&seed);
+        assert_eq!(
+            MultiSigner::from(pair.public()).into_account().to_ss58check(),
+            "5Geeci7qCoYHyg9z2AwfpiT4CDryvxYyD7SAUdfNBz9CyDSb",
+        );
+
+        let dest = AccountId::from_ss58check("5GVwcV6EzxxYbXBm7H6dtxc9TCgL4oepMXtgqWYEc3VXJoaf").unwrap();
+        let call: Call = pallet_balances::Call::<Runtime>::transfer(dest, 1000).into();
+        assert_eq!(
+            call.encode(),
+            hex!["0000c4305fb88b6ccb43d6552dc11d18e7b0ee3185247adcc6e885eb284adf6c563da10f"],
+        );
+
+        let signature = hex!["96cd8087ef720b0ec10d96996a8bbb45005ba3320d1dde38450a56f77dfd149720cc2e6dcc8f09963aad4cdf5ec15e103ce56d0f4c7a753840217ef1787467a01c"];
+        assert_eq!(eth_sign(&seed, call.encode().as_ref()), signature)
     }
 }
