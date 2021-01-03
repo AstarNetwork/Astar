@@ -5,6 +5,7 @@
 
 /// Plasm chain specification.
 pub mod chain_spec;
+mod balances;
 
 #[macro_use]
 mod service;

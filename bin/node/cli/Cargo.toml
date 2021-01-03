@@ -23,6 +23,7 @@ structopt = { version = "0.3.8", optional = true }
 jsonrpc-core = "15.0"
 jsonrpc-pubsub = "15.0"
 hex-literal = "0.2.1"
+lazy_static = "1.4"
 serde_json = "1.0"
 futures = "0.3.4"
 log = "0.4.8"
@@ -55,7 +56,7 @@ sc-service = { git = "https://github.com/paritytech/substrate", branch = "master
 sc-telemetry = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-tracing = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-consensus-babe = { git = "https://github.com/paritytech/substrate", branch = "master" }
-fc-consensus = { git = "https://github.com/purestake/frontier", branch = "v0.4-hotfixes" }
+fc-consensus = { git = "https://github.com/PlasmNetwork/frontier", branch = "v0.4-hotfixes" }
 
 # plasm-specific dependencies
 plasm-primitives = { path = "../primitives" }
@@ -66,16 +67,16 @@ plasm-rpc = { path = "../rpc" }
 frame-system = { git = "https://github.com/paritytech/substrate", branch = "master" }
 pallet-transaction-payment = { git = "https://github.com/paritytech/substrate", branch = "master" }
 pallet-contracts = { git = "https://github.com/paritytech/substrate", branch = "master" }
-pallet-evm = { git = "https://github.com/purestake/frontier", branch = "v0.4-hotfixes" }
+pallet-evm = { git = "https://github.com/PlasmNetwork/frontier", branch = "v0.4-hotfixes" }
 
 # CLI-specific dependencies
 sc-cli = { git = "https://github.com/paritytech/substrate", branch = "master", optional = true }
 
 # cumulus dependencies
-cumulus-network = { git = "https://github.com/paritytech/cumulus", branch = "master" }
-cumulus-service = { git = "https://github.com/paritytech/cumulus", branch = "master" }
-cumulus-consensus = { git = "https://github.com/paritytech/cumulus", branch = "master" }
-cumulus-primitives = { git = "https://github.com/paritytech/cumulus", branch = "master" }
+cumulus-network = { git = "https://github.com/PlasmNetwork/cumulus", branch = "master" }
+cumulus-service = { git = "https://github.com/PlasmNetwork/cumulus", branch = "master" }
+cumulus-consensus = { git = "https://github.com/PlasmNetwork/cumulus", branch = "master" }
+cumulus-primitives = { git = "https://github.com/PlasmNetwork/cumulus", branch = "master" }
 polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "master" }
 polkadot-parachain = { git = "https://github.com/paritytech/polkadot", branch = "master" }
 polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "master" }

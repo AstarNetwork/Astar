@@ -122,6 +122,7 @@ parameter_types! {
         })
         .avg_block_initialization(AVERAGE_ON_INITIALIZE_RATIO)
         .build_or_panic();
+    pub SS58Prefix: u8 = 5;
 }
 
 impl frame_system::Config for Runtime {
@@ -146,6 +147,7 @@ impl frame_system::Config for Runtime {
     type OnNewAccount = ();
     type OnKilledAccount = ();
     type SystemWeightInfo = ();
+    type SS58Prefix = SS58Prefix;
 }
 
 parameter_types! {
@@ -322,7 +324,7 @@ parameter_types! {
 
 impl pallet_evm::Config for Runtime {
     type FeeCalculator = ();
-    type GasToWeight = ();
+    type GasWeightMapping = ();
     type CallOrigin = EnsureAddressRoot<Self::AccountId>;
     type WithdrawOrigin = EnsureAddressTruncated;
     type AddressMapping = HashedAddressMapping<BlakeTwo256>;

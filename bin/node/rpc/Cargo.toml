@@ -18,10 +18,10 @@ rlp = "0.4"
 sha3 = "0.8"
 plasm-runtime = { path = "../runtime" }
 plasm-primitives = { path = "../primitives" }
-frontier-rpc = { package = "fc-rpc", git = "https://github.com/purestake/frontier", branch = "v0.4-hotfixes" }
-frontier-rpc-core = { package = "fc-rpc-core", git = "https://github.com/purestake/frontier", branch = "v0.4-hotfixes" }
-frontier-rpc-primitives = { package = "fp-rpc", git = "https://github.com/purestake/frontier", branch = "v0.4-hotfixes" }
-frontier-consensus = { package = "fc-consensus", git = "https://github.com/purestake/frontier", branch = "v0.4-hotfixes" }
+frontier-rpc = { package = "fc-rpc", git = "https://github.com/PlasmNetwork/frontier", branch = "v0.4-hotfixes" }
+frontier-rpc-core = { package = "fc-rpc-core", git = "https://github.com/PlasmNetwork/frontier", branch = "v0.4-hotfixes" }
+frontier-rpc-primitives = { package = "fp-rpc", git = "https://github.com/PlasmNetwork/frontier", branch = "v0.4-hotfixes" }
+frontier-consensus = { package = "fc-consensus", git = "https://github.com/PlasmNetwork/frontier", branch = "v0.4-hotfixes" }
 sp-api = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "master" }
