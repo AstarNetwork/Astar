@@ -81,12 +81,11 @@ pub fn get_chain_spec(id: ParaId) -> ChainSpec {
     )
 }
 
-/*
-fn plasm_chain_spec() {
+fn plasm_chain_spec() -> ChainSpec {
     ChainSpec::from_json_bytes(&include_bytes!("../res/plasm_parachain.json")[..]).unwrap()
 }
-*/
 
+/*
 fn plasm_chain_spec() -> ChainSpec {
     let para_id: u32 = 5000;
     let sudo_key = hex_literal::hex!["560f0d83d05728714d8b75f7dca615c4f78ce78bb86e3fcf384c6af3a814602b"];
@@ -113,6 +112,7 @@ fn plasm_chain_spec() -> ChainSpec {
         },
     )
 }
+*/
 
 fn testnet_genesis(
     sudo_key: AccountId,
