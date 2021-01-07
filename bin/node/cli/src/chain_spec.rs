@@ -4,13 +4,13 @@ use cumulus_primitives::ParaId;
 use plasm_primitives::{AccountId, Balance, Signature};
 use plasm_runtime::constants::currency::PLM;
 use plasm_runtime::{
-    BalancesConfig, ContractsConfig, EVMConfig, EthereumConfig, GenesisConfig, IndicesConfig,
+    BalancesConfig, ContractsConfig, GenesisConfig, IndicesConfig,
     ParachainInfoConfig, SudoConfig, SystemConfig, WASM_BINARY,
 };
 use sc_chain_spec::ChainSpecExtension;
 use sc_service::ChainType;
 use serde::{Deserialize, Serialize};
-use sp_core::{sr25519, Pair, Public, H160, U256};
+use sp_core::{sr25519, Pair, Public};
 use sp_runtime::traits::{IdentifyAccount, Verify};
 
 type AccountPublic = <Signature as Verify>::Signer;
@@ -160,23 +160,6 @@ fn make_genesis(
                 ..Default::default()
             },
         }),
-        pallet_evm: Some(EVMConfig {
-            accounts: vec![(
-                H160::from(hex_literal::hex![
-                    "7EF99B0E5bEb8ae42DbF126B40b87410a440a32a"
-                ]),
-                pallet_evm::GenesisAccount {
-                    balance: U256::from(1_000_000_000_000_000_000_000u128),
-                    nonce: Default::default(),
-                    code: Default::default(),
-                    storage: Default::default(),
-                },
-            )]
-            .iter()
-            .cloned()
-            .collect(),
-        }),
-        pallet_ethereum: Some(EthereumConfig {}),
         pallet_sudo: Some(SudoConfig { key: root_key }),
         parachain_info: Some(ParachainInfoConfig { parachain_id }),
     }

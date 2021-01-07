@@ -1,12 +1,7 @@
 //! A collection of node-specific RPC methods.
 
-// Our drop-in replacements for Frontier's RPC servers.
-mod pubsub_hotfixes;
-mod server_hotfixes;
-
 use std::{fmt, sync::Arc};
 
-use frontier_rpc::HexEncodedIdProvider;
 use jsonrpc_pubsub::manager::SubscriptionManager;
 use plasm_primitives::{AccountId, Balance, Block, BlockNumber, Hash, Index};
 use sc_client_api::{
@@ -64,18 +59,12 @@ where
     C::Api: BlockBuilder<Block>,
     C::Api: pallet_contracts_rpc::ContractsRuntimeApi<Block, AccountId, Balance, BlockNumber>,
     C::Api: pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>,
-    C::Api: frontier_rpc_primitives::EthereumRuntimeRPCApi<Block>,
     <C::Api as sp_api::ApiErrorExt>::Error: fmt::Debug,
     P: TransactionPool<Block = Block> + 'static,
 {
-    use frontier_rpc::{EthApiServer, EthPubSubApiServer, NetApi, NetApiServer};
     use pallet_contracts_rpc::{Contracts, ContractsApi};
     use pallet_transaction_payment_rpc::{TransactionPayment, TransactionPaymentApi};
     use substrate_frame_rpc_system::{FullSystem, SystemApi};
-    // Our drop in replacements for the Eth APIs. These can be removed after
-    // https://github.com/paritytech/frontier/pull/199 lands
-    use pubsub_hotfixes::EthPubSubApi;
-    use server_hotfixes::EthApi;
 
     let mut io = jsonrpc_core::IoHandler::default();
     let FullDeps {
@@ -97,31 +86,6 @@ where
     io.extend_with(ContractsApi::to_delegate(Contracts::new(client.clone())));
     io.extend_with(TransactionPaymentApi::to_delegate(TransactionPayment::new(
         client.clone(),
-    )));
-
-    // We currently don't want to support signing in the node. Users should prefer external tools
-    // for transaction signing. So just pass in an empty vector of signers.
-    let signers = Vec::new();
-    io.extend_with(EthApiServer::to_delegate(EthApi::new(
-        client.clone(),
-        pool.clone(),
-        plasm_runtime::TransactionConverter,
-        network.clone(),
-        signers,
-        is_authority,
-    )));
-    io.extend_with(NetApiServer::to_delegate(NetApi::new(
-        client.clone(),
-        network.clone(),
-    )));
-    io.extend_with(EthPubSubApiServer::to_delegate(EthPubSubApi::new(
-        pool.clone(),
-        client.clone(),
-        network.clone(),
-        SubscriptionManager::<HexEncodedIdProvider>::with_id_provider(
-            HexEncodedIdProvider::default(),
-            Arc::new(subscription_task_executor),
-        ),
     )));
 
     io

@@ -14,11 +14,6 @@ use frame_support::{
     },
 };
 use frame_system::limits::{BlockLength, BlockWeights};
-use frontier_rpc_primitives::TransactionStatus;
-use pallet_evm::{
-    Account as EVMAccount, EnsureAddressRoot, EnsureAddressTruncated, FeeCalculator,
-    HashedAddressMapping, Runner,
-};
 use pallet_transaction_payment::{Multiplier, TargetedFeeAdjustment};
 use pallet_transaction_payment_rpc_runtime_api::RuntimeDispatchInfo;
 use plasm_primitives::{
@@ -27,6 +22,7 @@ use plasm_primitives::{
 use sp_api::impl_runtime_apis;
 use sp_core::{OpaqueMetadata, H160, H256, U256};
 use sp_inherents::{CheckInherentsResult, InherentData};
+use pallet_contracts::WeightInfo;
 use sp_runtime::traits::{
     BlakeTwo256, Block as BlockT, Extrinsic, SaturatedConversion, StaticLookup, Verify,
 };
@@ -208,14 +204,27 @@ impl_opaque_keys! {
 }
 
 parameter_types! {
-    pub const TombstoneDeposit: Balance = 1 * PLM;
-    pub const RentByteFee: Balance = 1 * PLM;
-    pub const RentDepositOffset: Balance = 1000 * PLM;
-    pub const SurchargeReward: Balance = 150 * PLM;
+    pub const TombstoneDeposit: Balance = deposit(
+        1,
+        sp_std::mem::size_of::<pallet_contracts::ContractInfo<Runtime>>() as u32
+    );
+    pub const DepositPerContract: Balance = TombstoneDeposit::get();
+    pub const DepositPerStorageByte: Balance = deposit(0, 1);
+    pub const DepositPerStorageItem: Balance = deposit(1, 0);
+    pub RentFraction: Perbill = Perbill::from_rational_approximation(1u32, 30 * DAYS);
+    pub const SurchargeReward: Balance = 150 * MILLIPLM;
     pub const SignedClaimHandicap: u32 = 2;
     pub const MaxDepth: u32 = 32;
-    pub const StorageSizeOffset: u32 = 8;
     pub const MaxValueSize: u32 = 16 * 1024;
+    // The lazy deletion runs inside on_initialize.
+    pub DeletionWeightLimit: Weight = AVERAGE_ON_INITIALIZE_RATIO *
+        RuntimeBlockWeights::get().max_block;
+    // The weight needed for decoding the queue should be less or equal than a fifth
+    // of the overall weight dedicated to the lazy deletion.
+    pub DeletionQueueDepth: u32 = ((DeletionWeightLimit::get() / (
+            <Runtime as pallet_contracts::Config>::WeightInfo::on_initialize_per_queue_item(1) -
+            <Runtime as pallet_contracts::Config>::WeightInfo::on_initialize_per_queue_item(0)
+        )) / 5) as u32;
 }
 
 impl pallet_contracts::Config for Runtime {
@@ -226,14 +235,18 @@ impl pallet_contracts::Config for Runtime {
     type RentPayment = ();
     type SignedClaimHandicap = SignedClaimHandicap;
     type TombstoneDeposit = TombstoneDeposit;
-    type StorageSizeOffset = StorageSizeOffset;
-    type RentByteFee = RentByteFee;
-    type RentDepositOffset = RentDepositOffset;
+    type DepositPerContract = DepositPerContract;
+    type DepositPerStorageByte = DepositPerStorageByte;
+    type DepositPerStorageItem = DepositPerStorageItem;
+    type RentFraction = RentFraction;
     type SurchargeReward = SurchargeReward;
     type MaxDepth = MaxDepth;
     type MaxValueSize = MaxValueSize;
     type WeightPrice = pallet_transaction_payment::Module<Self>;
-    type WeightInfo = ();
+    type WeightInfo = pallet_contracts::weights::SubstrateWeight<Self>;
+    type ChainExtension = ();
+    type DeletionQueueDepth = DeletionQueueDepth;
+    type DeletionWeightLimit = DeletionWeightLimit;
 }
 
 impl pallet_utility::Config for Runtime {
@@ -318,78 +331,6 @@ impl pallet_nicks::Config for Runtime {
     type MaxLength = MaxNickLength;
 }
 
-parameter_types! {
-    pub const ChainId: u64 = 0x50;
-}
-
-impl pallet_evm::Config for Runtime {
-    type FeeCalculator = ();
-    type GasWeightMapping = ();
-    type CallOrigin = EnsureAddressRoot<Self::AccountId>;
-    type WithdrawOrigin = EnsureAddressTruncated;
-    type AddressMapping = HashedAddressMapping<BlakeTwo256>;
-    type Currency = Balances;
-    type Event = Event;
-    type Runner = pallet_evm::runner::stack::Runner<Self>;
-    type Precompiles = (
-        pallet_evm_precompile_simple::ECRecover,
-        pallet_evm_precompile_simple::Sha256,
-        pallet_evm_precompile_simple::Ripemd160,
-        pallet_evm_precompile_simple::Identity,
-    );
-    type ChainId = ChainId;
-}
-
-pub struct TransactionConverter;
-impl frontier_rpc_primitives::ConvertTransaction<UncheckedExtrinsic> for TransactionConverter {
-    fn convert_transaction(&self, transaction: pallet_ethereum::Transaction) -> UncheckedExtrinsic {
-        UncheckedExtrinsic::new_unsigned(
-            pallet_ethereum::Call::<Runtime>::transact(transaction).into(),
-        )
-    }
-}
-impl frontier_rpc_primitives::ConvertTransaction<sp_runtime::OpaqueExtrinsic>
-    for TransactionConverter
-{
-    fn convert_transaction(
-        &self,
-        transaction: pallet_ethereum::Transaction,
-    ) -> sp_runtime::OpaqueExtrinsic {
-        let extrinsic = UncheckedExtrinsic::new_unsigned(
-            pallet_ethereum::Call::<Runtime>::transact(transaction).into(),
-        );
-        let encoded = extrinsic.encode();
-        sp_runtime::OpaqueExtrinsic::decode(&mut &encoded[..])
-            .expect("Encoded extrinsic is always valid")
-    }
-}
-
-pub struct EthereumFindAuthor<F>(sp_std::marker::PhantomData<F>);
-// TODO Consensus not supported in parachain
-impl<F: FindAuthor<u32>> FindAuthor<H160> for EthereumFindAuthor<F> {
-    fn find_author<'a, I>(_digests: I) -> Option<H160>
-    where
-        I: 'a + IntoIterator<Item = (frame_support::ConsensusEngineId, &'a [u8])>,
-    {
-        None
-    }
-}
-
-pub struct PhantomAura;
-impl FindAuthor<u32> for PhantomAura {
-    fn find_author<'a, I>(_digests: I) -> Option<u32>
-    where
-        I: 'a + IntoIterator<Item = (frame_support::ConsensusEngineId, &'a [u8])>,
-    {
-        Some(0 as u32)
-    }
-}
-
-impl pallet_ethereum::Config for Runtime {
-    type Event = Event;
-    type FindAuthor = EthereumFindAuthor<PhantomAura>;
-}
-
 impl parachain_info::Config for Runtime {}
 
 impl cumulus_message_broker::Config for Runtime {
@@ -470,8 +411,6 @@ construct_runtime!(
         RandomnessCollectiveFlip: pallet_randomness_collective_flip::{Module, Call, Storage},
         Sudo: pallet_sudo::{Module, Call, Storage, Event<T>, Config<T>},
         Nicks: pallet_nicks::{Module, Call, Storage, Event<T>},
-        Ethereum: pallet_ethereum::{Module, Call, Storage, Event, Config, ValidateUnsigned},
-        EVM: pallet_evm::{Module, Call, Storage, Config, Event<T>},
         MessageBroker: cumulus_message_broker::{Module, Storage, Call, Inherent},
         ParachainUpgrade: cumulus_parachain_upgrade::{Module, Call, Storage, Inherent, Event},
         ParachainInfo: parachain_info::{Module, Storage, Config},
@@ -621,116 +560,6 @@ impl_runtime_apis! {
             encoded: Vec<u8>,
         ) -> Option<Vec<(Vec<u8>, sp_core::crypto::KeyTypeId)>> {
             SessionKeys::decode_into_raw_public_keys(&encoded)
-        }
-    }
-
-    impl frontier_rpc_primitives::EthereumRuntimeRPCApi<Block> for Runtime {
-        fn chain_id() -> u64 {
-            <Runtime as pallet_evm::Config>::ChainId::get()
-        }
-
-        fn account_basic(address: H160) -> EVMAccount {
-            EVM::account_basic(&address)
-        }
-
-        fn gas_price() -> U256 {
-            <Runtime as pallet_evm::Config>::FeeCalculator::min_gas_price()
-        }
-
-        fn account_code_at(address: H160) -> Vec<u8> {
-            EVM::account_codes(address)
-        }
-
-        fn author() -> H160 {
-            <pallet_ethereum::Module<Runtime>>::find_author()
-        }
-
-        fn storage_at(address: H160, index: U256) -> H256 {
-            let mut tmp = [0u8; 32];
-            index.to_big_endian(&mut tmp);
-            EVM::account_storages(address, H256::from_slice(&tmp[..]))
-        }
-
-        fn current_transaction_statuses() -> Option<Vec<TransactionStatus>> {
-            Ethereum::current_transaction_statuses()
-        }
-
-        fn current_block() -> Option<pallet_ethereum::Block> {
-            Ethereum::current_block()
-        }
-
-        fn current_receipts() -> Option<Vec<pallet_ethereum::Receipt>> {
-            Ethereum::current_receipts()
-        }
-
-        fn current_all() -> (
-            Option<pallet_ethereum::Block>,
-            Option<Vec<pallet_ethereum::Receipt>>,
-            Option<Vec<TransactionStatus>>
-        ) {
-            (
-                Ethereum::current_block(),
-                Ethereum::current_receipts(),
-                Ethereum::current_transaction_statuses()
-            )
-        }
-
-        fn call(
-            from: H160,
-            to: H160,
-            data: Vec<u8>,
-            value: U256,
-            gas_limit: U256,
-            gas_price: Option<U256>,
-            nonce: Option<U256>,
-            estimate: bool,
-        ) -> Result<pallet_evm::CallInfo, sp_runtime::DispatchError> {
-            let config = if estimate {
-                let mut config = <Runtime as pallet_evm::Config>::config().clone();
-                config.estimate = true;
-                Some(config)
-            } else {
-                None
-            };
-
-            <Runtime as pallet_evm::Config>::Runner::call(
-                from,
-                to,
-                data,
-                value,
-                gas_limit.low_u32(),
-                gas_price,
-                nonce,
-                config.as_ref().unwrap_or(<Runtime as pallet_evm::Config>::config()),
-            ).map_err(|err| err.into())
-        }
-
-        fn create(
-            from: H160,
-            data: Vec<u8>,
-            value: U256,
-            gas_limit: U256,
-            gas_price: Option<U256>,
-            nonce: Option<U256>,
-            estimate: bool,
-        ) -> Result<pallet_evm::CreateInfo, sp_runtime::DispatchError> {
-            let config = if estimate {
-                let mut config = <Runtime as pallet_evm::Config>::config().clone();
-                config.estimate = true;
-                Some(config)
-            } else {
-                None
-            };
-
-            <Runtime as pallet_evm::Config>::Runner::create(
-                from,
-                data,
-                value,
-                gas_limit.low_u32(),
-                gas_price,
-                nonce,
-                config.as_ref().unwrap_or(<Runtime as pallet_evm::Config>::config()),
-            ).map_err(|err| err.into())
         }
     }
 }

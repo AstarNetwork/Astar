@@ -56,7 +56,6 @@ sc-service = { git = "https://github.com/paritytech/substrate", branch = "master
 sc-telemetry = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-tracing = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-consensus-babe = { git = "https://github.com/paritytech/substrate", branch = "master" }
-fc-consensus = { git = "https://github.com/PlasmNetwork/frontier", branch = "v0.4-hotfixes" }
 
 # plasm-specific dependencies
 plasm-primitives = { path = "../primitives" }
@@ -67,7 +66,6 @@ plasm-rpc = { path = "../rpc" }
 frame-system = { git = "https://github.com/paritytech/substrate", branch = "master" }
 pallet-transaction-payment = { git = "https://github.com/paritytech/substrate", branch = "master" }
 pallet-contracts = { git = "https://github.com/paritytech/substrate", branch = "master" }
-pallet-evm = { git = "https://github.com/PlasmNetwork/frontier", branch = "v0.4-hotfixes" }
 
 # CLI-specific dependencies
 sc-cli = { git = "https://github.com/paritytech/substrate", branch = "master", optional = true }

@@ -5,6 +5,10 @@ pub mod currency {
 
     pub const MILLIPLM: Balance = 1_000_000_000_000;
     pub const PLM: Balance = 1_000 * MILLIPLM;
+
+    pub const fn deposit(items: u32, bytes: u32) -> Balance {
+        items as Balance * 150 * MILLIPLM + (bytes as Balance) * 60 * MILLIPLM
+    }
 }
 
 /// Time.
