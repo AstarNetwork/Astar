@@ -14,6 +14,7 @@ use frame_support::{
     },
 };
 use frame_system::limits::{BlockLength, BlockWeights};
+use pallet_contracts::WeightInfo;
 use pallet_transaction_payment::{Multiplier, TargetedFeeAdjustment};
 use pallet_transaction_payment_rpc_runtime_api::RuntimeDispatchInfo;
 use plasm_primitives::{
@@ -22,7 +23,6 @@ use plasm_primitives::{
 use sp_api::impl_runtime_apis;
 use sp_core::{OpaqueMetadata, H160, H256, U256};
 use sp_inherents::{CheckInherentsResult, InherentData};
-use pallet_contracts::WeightInfo;
 use sp_runtime::traits::{
     BlakeTwo256, Block as BlockT, Extrinsic, SaturatedConversion, StaticLookup, Verify,
 };

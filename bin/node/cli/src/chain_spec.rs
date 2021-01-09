@@ -4,8 +4,8 @@ use cumulus_primitives::ParaId;
 use plasm_primitives::{AccountId, Balance, Signature};
 use plasm_runtime::constants::currency::PLM;
 use plasm_runtime::{
-    BalancesConfig, ContractsConfig, GenesisConfig, IndicesConfig,
-    ParachainInfoConfig, SudoConfig, SystemConfig, WASM_BINARY,
+    BalancesConfig, ContractsConfig, GenesisConfig, IndicesConfig, ParachainInfoConfig, SudoConfig,
+    SystemConfig, WASM_BINARY,
 };
 use sc_chain_spec::ChainSpecExtension;
 use sc_service::ChainType;
@@ -56,7 +56,7 @@ where
 /// Gen chain specification for given parachain id
 pub fn get_chain_spec(id: ParaId) -> ChainSpec {
     if id == ParaId::from(5000) {
-        return plasm_chain_spec() 
+        return plasm_chain_spec();
     }
 
     ChainSpec::from_genesis(
@@ -88,7 +88,8 @@ fn plasm_chain_spec() -> ChainSpec {
 /*
 fn plasm_chain_spec() -> ChainSpec {
     let para_id: u32 = 5000;
-    let sudo_key = hex_literal::hex!["560f0d83d05728714d8b75f7dca615c4f78ce78bb86e3fcf384c6af3a814602b"];
+    let sudo_key = AccountId::from_ss58check("5GvHmdxMzYLrWCVLeEcGy6YwDxSS47dsTDRGhMvhthJAfMWf")
+        .unwrap();
 
     ChainSpec::from_genesis(
         "Plasm PC2",
@@ -97,7 +98,7 @@ fn plasm_chain_spec() -> ChainSpec {
         move || {
             make_genesis(
                 crate::balances::HOLDERS.clone(),
-                sudo_key.into(),
+                sudo_key.clone(),
                 para_id.into(),
                 false,
             )

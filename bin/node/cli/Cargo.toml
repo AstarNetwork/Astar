@@ -22,7 +22,6 @@ serde = { version = "1.0", features = [ "derive" ] }
 structopt = { version = "0.3.8", optional = true }
 jsonrpc-core = "15.0"
 jsonrpc-pubsub = "15.0"
-hex-literal = "0.2.1"
 lazy_static = "1.4"
 serde_json = "1.0"
 futures = "0.3.4"
@@ -71,10 +70,10 @@ pallet-contracts = { git = "https://github.com/paritytech/substrate", branch = "
 sc-cli = { git = "https://github.com/paritytech/substrate", branch = "master", optional = true }
 
 # cumulus dependencies
-cumulus-network = { git = "https://github.com/PlasmNetwork/cumulus", branch = "master" }
-cumulus-service = { git = "https://github.com/PlasmNetwork/cumulus", branch = "master" }
-cumulus-consensus = { git = "https://github.com/PlasmNetwork/cumulus", branch = "master" }
-cumulus-primitives = { git = "https://github.com/PlasmNetwork/cumulus", branch = "master" }
+cumulus-network = { git = "https://github.com/paritytech/cumulus", branch = "master" }
+cumulus-service = { git = "https://github.com/paritytech/cumulus", branch = "master" }
+cumulus-consensus = { git = "https://github.com/paritytech/cumulus", branch = "master" }
+cumulus-primitives = { git = "https://github.com/paritytech/cumulus", branch = "master" }
 polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "master" }
 polkadot-parachain = { git = "https://github.com/paritytech/polkadot", branch = "master" }
 polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "master" }

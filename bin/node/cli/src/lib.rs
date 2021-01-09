@@ -3,9 +3,9 @@
 #![warn(missing_docs)]
 #![warn(unused_extern_crates)]
 
+mod balances;
 /// Plasm chain specification.
 pub mod chain_spec;
-mod balances;
 
 #[macro_use]
 mod service;
