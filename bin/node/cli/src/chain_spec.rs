@@ -10,7 +10,8 @@ use plasm_runtime::{
 use sc_chain_spec::ChainSpecExtension;
 use sc_service::ChainType;
 use serde::{Deserialize, Serialize};
-use sp_core::{sr25519, Pair, Public};
+use sp_core::{sr25519, Pair, Public, crypto::Ss58Codec};
+
 use sp_runtime::traits::{IdentifyAccount, Verify};
 
 type AccountPublic = <Signature as Verify>::Signer;
