@@ -1049,8 +1049,8 @@
     <span class="comment">// and set impl_version to equal spec_version. If only runtime</span>
     <span class="comment">// implementation changes and behavior does not, then leave spec_version as</span>
     <span class="comment">// is and increment impl_version.</span>
-    <span class="ident">spec_version</span>: <span class="number">8</span>,
-    <span class="ident">impl_version</span>: <span class="number">8</span>,
+    <span class="ident">spec_version</span>: <span class="number">9</span>,
+    <span class="ident">impl_version</span>: <span class="number">9</span>,
     <span class="ident">apis</span>: <span class="ident">RUNTIME_API_VERSIONS</span>,
     <span class="ident">transaction_version</span>: <span class="number">2</span>,
 };
@@ -1622,7 +1622,7 @@
         <span class="ident">Nicks</span>: <span class="ident">pallet_nicks</span>::{<span class="ident">Module</span>, <span class="ident">Call</span>, <span class="ident">Storage</span>, <span class="ident">Event</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>},
         <span class="ident">Ethereum</span>: <span class="ident">pallet_ethereum</span>::{<span class="ident">Module</span>, <span class="ident">Call</span>, <span class="ident">Storage</span>, <span class="ident">Event</span>, <span class="ident">Config</span>, <span class="ident">ValidateUnsigned</span>},
         <span class="ident">EVM</span>: <span class="ident">pallet_evm</span>::{<span class="ident">Module</span>, <span class="ident">Call</span>, <span class="ident">Storage</span>, <span class="ident">Config</span>, <span class="ident">Event</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>},
-        <span class="ident">EcdsaSignature</span>: <span class="ident">pallet_custom_signatures</span>::{<span class="ident">Module</span>, <span class="ident">Call</span>, <span class="ident">Event</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>, <span class="ident">ValidateUnsigned</span>},
+        <span class="ident">EthCall</span>: <span class="ident">pallet_custom_signatures</span>::{<span class="ident">Module</span>, <span class="ident">Call</span>, <span class="ident">Event</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>, <span class="ident">ValidateUnsigned</span>},
         <span class="ident">Scheduler</span>: <span class="ident">pallet_scheduler</span>::{<span class="ident">Module</span>, <span class="ident">Call</span>, <span class="ident">Storage</span>, <span class="ident">Event</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>},
     }
 );
