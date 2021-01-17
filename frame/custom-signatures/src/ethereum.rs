@@ -23,6 +23,20 @@ impl From<ecdsa::Signature> for EthereumSignature {
     }
 }
 
+impl sp_std::convert::TryFrom<Vec<u8>> for EthereumSignature {
+    type Error = ();
+
+    fn try_from(data: Vec<u8>) -> Result<Self, Self::Error> {
+        if data.len() == 65 {
+            let mut inner = [0u8; 65];
+            inner.copy_from_slice(&data[..]);
+            Ok(EthereumSignature(inner))
+        } else {
+            Err(())
+        }
+    }
+}
+
 /// Constructs the message that Ethereum RPC's `personal_sign` and `eth_sign` would sign.
 pub fn signable_message(what: &[u8]) -> Vec<u8> {
     let mut l = what.len();
