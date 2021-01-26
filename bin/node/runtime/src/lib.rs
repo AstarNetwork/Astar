@@ -319,11 +319,6 @@ impl pallet_nicks::Config for Runtime {
 
 impl parachain_info::Config for Runtime {}
 
-impl cumulus_message_broker::Config for Runtime {
-    type DownwardMessageHandlers = ();
-    type HrmpMessageHandlers = ();
-}
-
 parameter_types! {
     pub const RococoLocation: MultiLocation = MultiLocation::X1(Junction::Parent);
     pub const RococoNetwork: NetworkId = NetworkId::Polkadot;
@@ -373,14 +368,16 @@ impl Config for XcmConfig {
 impl xcm_handler::Config for Runtime {
     type Event = Event;
     type XcmExecutor = XcmExecutor<XcmConfig>;
-    type UpwardMessageSender = MessageBroker;
-    type HrmpMessageSender = MessageBroker;
+    type UpwardMessageSender = ParachainSystem;
+    type HrmpMessageSender = ParachainSystem;
 }
 
-impl cumulus_parachain_upgrade::Config for Runtime {
+impl cumulus_parachain_system::Config for Runtime {
     type Event = Event;
     type OnValidationData = ();
     type SelfParaId = parachain_info::Module<Runtime>;
+    type DownwardMessageHandlers = XcmHandler;
+    type HrmpMessageHandlers = XcmHandler;
 }
 
 construct_runtime!(
@@ -398,8 +395,7 @@ construct_runtime!(
         RandomnessCollectiveFlip: pallet_randomness_collective_flip::{Module, Call, Storage},
         Sudo: pallet_sudo::{Module, Call, Storage, Event<T>, Config<T>},
         Nicks: pallet_nicks::{Module, Call, Storage, Event<T>},
-        MessageBroker: cumulus_message_broker::{Module, Storage, Call, Inherent},
-        ParachainUpgrade: cumulus_parachain_upgrade::{Module, Call, Storage, Inherent, Event},
+        ParachainSystem: cumulus_parachain_system::{Module, Call, Storage, Inherent, Event},
         ParachainInfo: parachain_info::{Module, Storage, Config},
         XcmHandler: xcm_handler::{Module, Event<T>, Origin, Call},
     }

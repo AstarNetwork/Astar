@@ -47,8 +47,7 @@ pallet-utility = { git = "https://github.com/paritytech/substrate", branch = "ro
 
 # cumulus dependencies
 cumulus-runtime = { git = "https://github.com/paritytech/cumulus", branch = "rococo-v1", default-features = false }
-cumulus-message-broker = { git = "https://github.com/paritytech/cumulus", branch = "rococo-v1", default-features = false }
-cumulus-parachain-upgrade = { git = "https://github.com/paritytech/cumulus", branch = "rococo-v1", default-features = false }
+cumulus-parachain-system = { git = "https://github.com/paritytech/cumulus", branch = "rococo-v1", default-features = false }
 parachain-info = { git = "https://github.com/paritytech/cumulus", branch = "rococo-v1", default-features = false }
 xcm-handler = { git = "https://github.com/paritytech/cumulus", branch = "rococo-v1", default-features = false }
 
@@ -103,6 +102,5 @@ std = [
     "parachain-info/std",
     "polkadot-parachain/std",
     "cumulus-runtime/std",
-    "cumulus-message-broker/std",
-    "cumulus-parachain-upgrade/std",
+    "cumulus-parachain-system/std",
 ]
