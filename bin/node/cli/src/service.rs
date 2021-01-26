@@ -33,13 +33,13 @@ pub fn new_partial(
         (),
         sp_consensus::import_queue::BasicQueue<Block, PrefixedMemoryDB<BlakeTwo256>>,
         sc_transaction_pool::FullPool<Block, TFullClient<Block, RuntimeApi, Executor>>,
-        (),
+        Option<sc_telemetry::TelemetrySpan>,
     >,
     sc_service::Error,
 > {
     let inherent_data_providers = sp_inherents::InherentDataProviders::new();
 
-    let (client, backend, keystore_container, task_manager) =
+    let (client, backend, keystore_container, task_manager, telemetry_span) =
         sc_service::new_full_parts::<Block, RuntimeApi, Executor>(&config)?;
     let client = Arc::new(client);
 
@@ -69,7 +69,7 @@ pub fn new_partial(
         transaction_pool,
         inherent_data_providers,
         select_chain: (),
-        other: (),
+        other: telemetry_span,
     };
 
     Ok(params)
@@ -78,7 +78,7 @@ pub fn new_partial(
 /// Start a node with the given parachain `Configuration` and relay chain `Configuration`.
 ///
 /// This is the actual implementation that is abstract over the executor and the runtime api.
-#[sc_cli::prefix_logs_with("Parachain")]
+#[sc_tracing::logging::prefix_logs_with("Parachain")]
 pub async fn start_node(
     parachain_config: Configuration,
     collator_key: CollatorPair,
@@ -101,6 +101,7 @@ pub async fn start_node(
         )?;
 
     let params = new_partial(&parachain_config)?;
+    let telemetry_span = params.other;
     params
         .inherent_data_providers
         .register_provider(sp_timestamp::InherentDataProvider)
@@ -133,19 +134,15 @@ pub async fn start_node(
     let rpc_extensions_builder = {
         let client = client.clone();
         let pool = transaction_pool.clone();
-        let network = network.clone();
-        let is_authority = parachain_config.role.is_network_authority();
 
-        let builder = move |deny_unsafe, subscription_executor| {
+        let builder = move |deny_unsafe, _| {
             let deps = plasm_rpc::FullDeps {
-                network: network.clone(),
                 client: client.clone(),
                 pool: pool.clone(),
                 deny_unsafe,
-                is_authority,
             };
 
-            plasm_rpc::create_full(deps, subscription_executor)
+            plasm_rpc::create_full(deps)
         };
         Box::new(builder)
     };
@@ -157,18 +154,18 @@ pub async fn start_node(
         client: client.clone(),
         transaction_pool: transaction_pool.clone(),
         task_manager: &mut task_manager,
-        telemetry_connection_sinks: Default::default(),
         config: parachain_config,
         keystore: params.keystore_container.sync_keystore(),
         backend: backend.clone(),
         network: network.clone(),
         network_status_sinks,
         system_rpc_tx,
+        telemetry_span,
     })?;
 
     let announce_block = {
         let network = network.clone();
-        Arc::new(move |hash, data| network.announce_block(hash, data))
+        Arc::new(move |hash, data| network.announce_block(hash, Some(data)))
     };
 
     if validator {

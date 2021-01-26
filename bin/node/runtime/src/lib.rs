@@ -15,16 +15,15 @@ use frame_support::{
 };
 use frame_system::limits::{BlockLength, BlockWeights};
 use pallet_contracts::WeightInfo;
-use pallet_transaction_payment::{Multiplier, TargetedFeeAdjustment};
-use pallet_transaction_payment_rpc_runtime_api::RuntimeDispatchInfo;
-use plasm_primitives::{
-    AccountId, AccountIndex, Balance, BlockNumber, Hash, Index, Moment, Signature,
+use pallet_transaction_payment::{
+    FeeDetails, Multiplier, RuntimeDispatchInfo, TargetedFeeAdjustment,
 };
+use plasm_primitives::{AccountId, Balance, BlockNumber, Hash, Index, Moment, Signature};
 use sp_api::impl_runtime_apis;
 use sp_core::{OpaqueMetadata, H160, H256, U256};
 use sp_inherents::{CheckInherentsResult, InherentData};
 use sp_runtime::traits::{
-    BlakeTwo256, Block as BlockT, Extrinsic, SaturatedConversion, StaticLookup, Verify,
+    BlakeTwo256, Block as BlockT, Extrinsic, IdentityLookup, SaturatedConversion, Verify,
 };
 use sp_runtime::transaction_validity::{TransactionSource, TransactionValidity};
 use sp_runtime::{
@@ -39,9 +38,9 @@ use sp_version::RuntimeVersion;
 use polkadot_parachain::primitives::Sibling;
 use xcm::v0::{Junction, MultiLocation, NetworkId};
 use xcm_builder::{
-    AccountId32Aliases, LocationInverter, ParentIsDefault, RelayChainAsNative,
-    SiblingParachainAsNative, SiblingParachainConvertsVia, SignedAccountId32AsNative,
-    SovereignSignedViaLocation,
+    AccountId32Aliases, ChildParachainConvertsVia, LocationInverter, ParentIsDefault,
+    RelayChainAsNative, SiblingParachainAsNative, SiblingParachainConvertsVia,
+    SignedAccountId32AsNative, SovereignSignedViaLocation,
 };
 use xcm_executor::{
     traits::{IsConcrete, NativeAsset},
@@ -71,8 +70,8 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     // and set impl_version to equal spec_version. If only runtime
     // implementation changes and behavior does not, then leave spec_version as
     // is and increment impl_version.
-    spec_version: 2,
-    impl_version: 2,
+    spec_version: 1,
+    impl_version: 1,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 1,
 };
@@ -130,7 +129,7 @@ impl frame_system::Config for Runtime {
     type Hash = Hash;
     type Hashing = BlakeTwo256;
     type AccountId = AccountId;
-    type Lookup = Indices;
+    type Lookup = IdentityLookup<AccountId>;
     type Header = generic::Header<BlockNumber, BlakeTwo256>;
     type Event = Event;
     type DbWeight = RocksDbWeight;
@@ -144,18 +143,6 @@ impl frame_system::Config for Runtime {
     type OnKilledAccount = ();
     type SystemWeightInfo = ();
     type SS58Prefix = SS58Prefix;
-}
-
-parameter_types! {
-    pub const IndexDeposit: Balance = 1 * PLM;
-}
-
-impl pallet_indices::Config for Runtime {
-    type AccountIndex = AccountIndex;
-    type Event = Event;
-    type Currency = Balances;
-    type Deposit = IndexDeposit;
-    type WeightInfo = ();
 }
 
 parameter_types! {
@@ -297,8 +284,7 @@ where
             .ok()?;
         let signature = raw_payload.using_encoded(|payload| C::sign(payload, public))?;
         let (call, extra, _) = raw_payload.deconstruct();
-        let address = Indices::unlookup(account);
-        Some((call, (address, signature.into(), extra)))
+        Some((call, (account, signature.into(), extra)))
     }
 }
 
@@ -349,6 +335,7 @@ parameter_types! {
 
 type LocationConverter = (
     ParentIsDefault<AccountId>,
+    ChildParachainConvertsVia<Sibling, AccountId>,
     SiblingParachainConvertsVia<Sibling, AccountId>,
     AccountId32Aliases<RococoNetwork, AccountId>,
 );
@@ -393,6 +380,7 @@ impl xcm_handler::Config for Runtime {
 impl cumulus_parachain_upgrade::Config for Runtime {
     type Event = Event;
     type OnValidationData = ();
+    type SelfParaId = parachain_info::Module<Runtime>;
 }
 
 construct_runtime!(
@@ -405,7 +393,6 @@ construct_runtime!(
         Utility: pallet_utility::{Module, Call, Event},
         Timestamp: pallet_timestamp::{Module, Call, Storage, Inherent},
         TransactionPayment: pallet_transaction_payment::{Module, Storage},
-        Indices: pallet_indices::{Module, Call, Storage, Event<T>, Config<T>},
         Balances: pallet_balances::{Module, Call, Storage, Event<T>, Config<T>},
         Contracts: pallet_contracts::{Module, Call, Storage, Event<T>, Config<T>},
         RandomnessCollectiveFlip: pallet_randomness_collective_flip::{Module, Call, Storage},
@@ -419,7 +406,7 @@ construct_runtime!(
 );
 
 /// The address format for describing accounts.
-pub type Address = sp_runtime::MultiAddress<AccountId, Index>;
+pub type Address = AccountId;
 /// Block header type as expected by this runtime.
 pub type Header = generic::Header<BlockNumber, BlakeTwo256>;
 /// Block type as expected by this runtime.
@@ -517,6 +504,18 @@ impl_runtime_apis! {
         }
     }
 
+    impl pallet_transaction_payment_rpc_runtime_api::TransactionPaymentApi<
+        Block,
+        Balance,
+    > for Runtime {
+        fn query_info(uxt: <Block as BlockT>::Extrinsic, len: u32) -> RuntimeDispatchInfo<Balance> {
+            TransactionPayment::query_info(uxt, len)
+        }
+        fn query_fee_details(uxt: <Block as BlockT>::Extrinsic, len: u32) -> FeeDetails<Balance> {
+            TransactionPayment::query_fee_details(uxt, len)
+        }
+    }
+
     impl pallet_contracts_rpc_runtime_api::ContractsApi<Block, AccountId, Balance, BlockNumber> for Runtime {
         fn call(
             origin: AccountId,
@@ -539,15 +538,6 @@ impl_runtime_apis! {
             address: AccountId,
         ) -> pallet_contracts_primitives::RentProjectionResult<BlockNumber> {
             Contracts::rent_projection(address)
-        }
-    }
-
-    impl pallet_transaction_payment_rpc_runtime_api::TransactionPaymentApi<
-        Block,
-        Balance,
-    > for Runtime {
-        fn query_info(uxt: <Block as BlockT>::Extrinsic, len: u32) -> RuntimeDispatchInfo<Balance> {
-            TransactionPayment::query_info(uxt, len)
         }
     }
 

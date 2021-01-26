@@ -2,14 +2,11 @@
 
 use std::{fmt, sync::Arc};
 
-use jsonrpc_pubsub::manager::SubscriptionManager;
 use plasm_primitives::{AccountId, Balance, Block, BlockNumber, Hash, Index};
 use sc_client_api::{
     backend::{AuxStore, Backend, StateBackend, StorageProvider},
     client::BlockchainEvents,
 };
-use sc_network::NetworkService;
-use sc_rpc::SubscriptionTaskExecutor;
 use sc_rpc_api::DenyUnsafe;
 use sp_api::ProvideRuntimeApi;
 use sp_block_builder::BlockBuilder;
@@ -37,17 +34,10 @@ pub struct FullDeps<C, P> {
     pub pool: Arc<P>,
     /// Whether to deny unsafe calls
     pub deny_unsafe: DenyUnsafe,
-    /// The Node authority flag
-    pub is_authority: bool,
-    /// Network service
-    pub network: Arc<NetworkService<Block, Hash>>,
 }
 
 /// Instantiate all Full RPC extensions.
-pub fn create_full<C, P, BE>(
-    deps: FullDeps<C, P>,
-    subscription_task_executor: SubscriptionTaskExecutor,
-) -> jsonrpc_core::IoHandler<sc_rpc::Metadata>
+pub fn create_full<C, P, BE>(deps: FullDeps<C, P>) -> jsonrpc_core::IoHandler<sc_rpc::Metadata>
 where
     BE: Backend<Block> + 'static,
     BE::State: StateBackend<BlakeTwo256>,
@@ -71,8 +61,6 @@ where
         client,
         pool,
         deny_unsafe,
-        is_authority,
-        network,
     } = deps;
 
     io.extend_with(SystemApi::to_delegate(FullSystem::new(

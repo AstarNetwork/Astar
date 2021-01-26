@@ -4,13 +4,13 @@ use cumulus_primitives::ParaId;
 use plasm_primitives::{AccountId, Balance, Signature};
 use plasm_runtime::constants::currency::PLM;
 use plasm_runtime::{
-    BalancesConfig, ContractsConfig, GenesisConfig, IndicesConfig, ParachainInfoConfig, SudoConfig,
-    SystemConfig, WASM_BINARY,
+    BalancesConfig, ContractsConfig, GenesisConfig, ParachainInfoConfig, SudoConfig, SystemConfig,
+    WASM_BINARY,
 };
 use sc_chain_spec::ChainSpecExtension;
 use sc_service::ChainType;
 use serde::{Deserialize, Serialize};
-use sp_core::{sr25519, Pair, Public, crypto::Ss58Codec};
+use sp_core::{crypto::Ss58Codec, sr25519, Pair, Public};
 
 use sp_runtime::traits::{IdentifyAccount, Verify};
 
@@ -155,7 +155,6 @@ fn make_genesis(
             changes_trie_config: Default::default(),
         }),
         pallet_balances: Some(BalancesConfig { balances }),
-        pallet_indices: Some(IndicesConfig { indices: vec![] }),
         pallet_contracts: Some(ContractsConfig {
             current_schedule: pallet_contracts::Schedule {
                 enable_println, // this should only be enabled on development chains
