@@ -47,7 +47,7 @@ where
     C: Send + Sync + 'static,
     C::Api: substrate_frame_rpc_system::AccountNonceApi<Block, AccountId, Index>,
     C::Api: BlockBuilder<Block>,
-    //C::Api: pallet_contracts_rpc::ContractsRuntimeApi<Block, AccountId, Balance, BlockNumber>,
+    C::Api: pallet_contracts_rpc::ContractsRuntimeApi<Block, AccountId, Balance, BlockNumber>,
     C::Api: pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>,
     <C::Api as sp_api::ApiErrorExt>::Error: fmt::Debug,
     P: TransactionPool<Block = Block> + 'static,
@@ -71,7 +71,7 @@ where
     // Making synchronous calls in light client freezes the browser currently,
     // more context: https://github.com/paritytech/substrate/pull/3480
     // These RPCs should use an asynchronous caller instead.
-    //io.extend_with(ContractsApi::to_delegate(Contracts::new(client.clone())));
+    io.extend_with(ContractsApi::to_delegate(Contracts::new(client.clone())));
     io.extend_with(TransactionPaymentApi::to_delegate(TransactionPayment::new(
         client.clone(),
     )));

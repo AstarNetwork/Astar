@@ -70,8 +70,8 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     // and set impl_version to equal spec_version. If only runtime
     // implementation changes and behavior does not, then leave spec_version as
     // is and increment impl_version.
-    spec_version: 1,
-    impl_version: 1,
+    spec_version: 2,
+    impl_version: 2,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 1,
 };
@@ -190,7 +190,6 @@ impl_opaque_keys! {
     pub struct SessionKeys {}
 }
 
-/*
 parameter_types! {
     pub const TombstoneDeposit: Balance = deposit(
         1,
@@ -236,7 +235,6 @@ impl pallet_contracts::Config for Runtime {
     type DeletionQueueDepth = DeletionQueueDepth;
     type DeletionWeightLimit = DeletionWeightLimit;
 }
-*/
 
 impl pallet_utility::Config for Runtime {
     type Event = Event;
@@ -393,7 +391,7 @@ construct_runtime!(
         Timestamp: pallet_timestamp::{Module, Call, Storage, Inherent},
         TransactionPayment: pallet_transaction_payment::{Module, Storage},
         Balances: pallet_balances::{Module, Call, Storage, Event<T>, Config<T>},
-        //Contracts: pallet_contracts::{Module, Call, Storage, Event<T>, Config<T>},
+        Contracts: pallet_contracts::{Module, Call, Storage, Event<T>, Config<T>},
         RandomnessCollectiveFlip: pallet_randomness_collective_flip::{Module, Call, Storage},
         Sudo: pallet_sudo::{Module, Call, Storage, Event<T>, Config<T>},
         Nicks: pallet_nicks::{Module, Call, Storage, Event<T>},
@@ -514,7 +512,6 @@ impl_runtime_apis! {
         }
     }
 
-    /*
     impl pallet_contracts_rpc_runtime_api::ContractsApi<Block, AccountId, Balance, BlockNumber> for Runtime {
         fn call(
             origin: AccountId,
@@ -539,7 +536,6 @@ impl_runtime_apis! {
             Contracts::rent_projection(address)
         }
     }
-    */
 
     impl sp_session::SessionKeys<Block> for Runtime {
         fn generate_session_keys(seed: Option<Vec<u8>>) -> Vec<u8> {

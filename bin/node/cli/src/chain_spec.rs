@@ -4,7 +4,7 @@ use cumulus_primitives::ParaId;
 use plasm_primitives::{AccountId, Balance, Signature};
 use plasm_runtime::constants::currency::PLM;
 use plasm_runtime::{
-    BalancesConfig, GenesisConfig, ParachainInfoConfig, SudoConfig, SystemConfig,
+    BalancesConfig, GenesisConfig, ParachainInfoConfig, ContractsConfig, SudoConfig, SystemConfig,
     WASM_BINARY,
 };
 use sc_chain_spec::ChainSpecExtension;
@@ -155,6 +155,12 @@ fn make_genesis(
             changes_trie_config: Default::default(),
         }),
         pallet_balances: Some(BalancesConfig { balances }),
+        pallet_contracts: Some(ContractsConfig {
+            current_schedule: pallet_contracts::Schedule {
+                enable_println, // this should only be enabled on development chains
+                ..Default::default()
+            },
+        }),
         pallet_sudo: Some(SudoConfig { key: root_key }),
         parachain_info: Some(ParachainInfoConfig { parachain_id }),
     }
