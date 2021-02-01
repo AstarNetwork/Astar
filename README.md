@@ -40,7 +40,7 @@ Plasm Network is a scalable and interoperable infrastructure for Web3.0. Since P
 Based on the above, Plasm has some features.
 - **[Optimistic Virtual Machine](https://docs.plasmnet.io/learn/optimistic-virtual-machine)**
 - **[ZK Rollups](https://github.com/PlasmNetwork/ZKRollups)**
-- **[DApps Stakking](https://docs.plasmnet.io/learn/dapps-reward)**
+- **[DApps Staking](https://docs.plasmnet.io/learn/dapps-reward)**
 - **[Operator Trading](https://docs.plasmnet.io/learn/operator-trading)**
 - **[Lockdrop](https://docs.plasmnet.io/learn/lockdrop)**
 
@@ -121,7 +121,7 @@ Future Works
 ------------
 Here are the key milestones.
 
-1. Start the 3nd Lockdrop on Plasm Network (During Kusama Parachain Auction)
+1. Start the 3nd Lockdrop on Shiden Network (During Kusama Parachain Auction)
 1. Become a Kusama Parachain (TBA)
 1. Start the 3nd Lockdrop on Plasm Network (During Polkadot Parachain Auction)
 1. Become a Polkadot Parachain. (TBA)
