@@ -249,10 +249,14 @@ fn get_app<'a, 'b>() -> App<'a, 'b> {
                 .about("Author and sign a Node pallet_balances::Transfer transaction with a given (secret) key")
                 .args_from_usage("
 <<<<<<< HEAD
+<<<<<<< HEAD
                     [genesis] -g, --genesis [genesis] 'The genesis hash or a recognised \
 =======
                     [genesis] -g, --genesis <genesis> 'The genesis hash or a recognised \
 >>>>>>> root_branch/dusty
+=======
+                    [genesis] -g, --genesis <genesis> 'The genesis hash or a recognised \
+>>>>>>> upstream/master
                                             chain identifier (plasm, dusty).'
                     <from> 'The signing secret key URI.'
                     <to> 'The destination account public key URI.'
@@ -447,10 +451,14 @@ where
 fn read_genesis_hash(matches: &ArgMatches) -> H256 {
     let genesis_hash: Hash = match matches.value_of("genesis").unwrap_or("plasm") {
 <<<<<<< HEAD
+<<<<<<< HEAD
         "dusty" => hex!["5bde5ea1f236802c5711abd3b0ca9fc748d654b2c1055290fdf7bf2b4f282428"].into(),
 =======
         "dusty" => hex!["c10deaf46d28e8398d238981b74d3a9b63198668e0c14562b7365f3958d2eade"].into(),
 >>>>>>> root_branch/dusty
+=======
+        "dusty" => hex!["8900db704dc3e07ad9126407eb62af6d2cbb4c07d6f936400fc2134330825188"].into(),
+>>>>>>> upstream/master
         "plasm" => hex!["3e86364d4b4894021cb2a0390bcf2feb5517d5292f2de2bb9404227e908b0b8b"].into(),
         h => hex::decode(h)
             .ok()
@@ -571,7 +579,6 @@ where
             frame_system::CheckNonce::<Runtime>::from(i),
             frame_system::CheckWeight::<Runtime>::new(),
             pallet_transaction_payment::ChargeTransactionPayment::<Runtime>::from(f),
-            pallet_grandpa::ValidateEquivocationReport::<Runtime>::new(),
         )
     };
     let raw_payload = SignedPayload::from_raw(
@@ -582,7 +589,6 @@ where
             VERSION.transaction_version as u32,
             genesis_hash,
             genesis_hash,
-            (),
             (),
             (),
             (),

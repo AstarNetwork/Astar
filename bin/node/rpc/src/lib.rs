@@ -13,18 +13,19 @@
 
 #![warn(missing_docs)]
 
-use std::{fmt, sync::Arc};
+use std::sync::Arc;
 
+use jsonrpc_pubsub::manager::SubscriptionManager;
 use plasm_primitives::{AccountId, Balance, Block, BlockNumber, Hash, Index};
-use plasm_runtime::UncheckedExtrinsic;
 use sc_consensus_babe::{Config, Epoch};
 use sc_consensus_babe_rpc::BabeRpcHandler;
 use sc_consensus_epochs::SharedEpochChanges;
-use sc_finality_grandpa::{SharedAuthoritySet, SharedVoterState};
+use sc_finality_grandpa::{GrandpaJustificationStream, SharedAuthoritySet, SharedVoterState};
 use sc_finality_grandpa_rpc::GrandpaRpcHandler;
 use sc_keystore::KeyStorePtr;
-use sc_rpc_api::DenyUnsafe;
+pub use sc_rpc_api::DenyUnsafe;
 use sp_api::ProvideRuntimeApi;
+use sp_block_builder::BlockBuilder;
 use sp_blockchain::{Error as BlockChainError, HeaderBackend, HeaderMetadata};
 use sp_consensus::SelectChain;
 use sp_consensus_babe::BabeApi;
@@ -58,6 +59,10 @@ pub struct GrandpaDeps {
     pub shared_voter_state: SharedVoterState,
     /// Authority set info.
     pub shared_authority_set: SharedAuthoritySet<Hash, BlockNumber>,
+    /// Receives notifications about justification events from Grandpa.
+    pub justification_stream: GrandpaJustificationStream<Block>,
+    /// Subscription manager to keep track of pubsub subscribers.
+    pub subscriptions: SubscriptionManager,
 }
 
 /// Full client dependencies.
@@ -76,26 +81,26 @@ pub struct FullDeps<C, P, SC> {
     pub grandpa: GrandpaDeps,
 }
 
+/// A IO handler that uses all Full RPC extensions.
+pub type IoHandler = jsonrpc_core::IoHandler<sc_rpc::Metadata>;
+
 /// Instantiate all Full RPC extensions.
-pub fn create_full<C, P, M, SC>(deps: FullDeps<C, P, SC>) -> jsonrpc_core::IoHandler<M>
+pub fn create_full<C, P, SC>(
+    deps: FullDeps<C, P, SC>,
+) -> jsonrpc_core::IoHandler<sc_rpc_api::Metadata>
 where
     C: ProvideRuntimeApi<Block>,
     C: HeaderBackend<Block> + HeaderMetadata<Block, Error = BlockChainError> + 'static,
     C: Send + Sync + 'static,
     C::Api: substrate_frame_rpc_system::AccountNonceApi<Block, AccountId, Index>,
-    C::Api: pallet_contracts_rpc::ContractsRuntimeApi<Block, AccountId, Balance, BlockNumber>,
-    C::Api: pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<
-        Block,
-        Balance,
-        UncheckedExtrinsic,
-    >,
+//    C::Api: pallet_contracts_rpc::ContractsRuntimeApi<Block, AccountId, Balance, BlockNumber>,
+    C::Api: pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>,
     C::Api: BabeApi<Block>,
-    <C::Api as sp_api::ApiErrorExt>::Error: fmt::Debug,
+    C::Api: BlockBuilder<Block>,
     P: TransactionPool + 'static,
-    M: jsonrpc_core::Metadata + Default,
     SC: SelectChain<Block> + 'static,
 {
-    use pallet_contracts_rpc::{Contracts, ContractsApi};
+//    use pallet_contracts_rpc::{Contracts, ContractsApi};
     use pallet_transaction_payment_rpc::{TransactionPayment, TransactionPaymentApi};
     use substrate_frame_rpc_system::{FullSystem, SystemApi};
 
@@ -108,6 +113,7 @@ where
         babe,
         grandpa,
     } = deps;
+
     let BabeDeps {
         keystore,
         babe_config,
@@ -116,16 +122,19 @@ where
     let GrandpaDeps {
         shared_voter_state,
         shared_authority_set,
+        justification_stream,
+        subscriptions,
     } = grandpa;
 
     io.extend_with(SystemApi::to_delegate(FullSystem::new(
         client.clone(),
         pool,
+        deny_unsafe,
     )));
     // Making synchronous calls in light client freezes the browser currently,
     // more context: https://github.com/paritytech/substrate/pull/3480
     // These RPCs should use an asynchronous caller instead.
-    io.extend_with(ContractsApi::to_delegate(Contracts::new(client.clone())));
+    //io.extend_with(ContractsApi::to_delegate(Contracts::new(client.clone())));
     io.extend_with(TransactionPaymentApi::to_delegate(TransactionPayment::new(
         client.clone(),
     )));
@@ -140,7 +149,12 @@ where
         ),
     ));
     io.extend_with(sc_finality_grandpa_rpc::GrandpaApi::to_delegate(
-        GrandpaRpcHandler::new(shared_authority_set, shared_voter_state),
+        GrandpaRpcHandler::new(
+            shared_authority_set,
+            shared_voter_state,
+            justification_stream,
+            subscriptions,
+        ),
     ));
 
     io
@@ -164,7 +178,7 @@ where
         fetcher,
     } = deps;
     let mut io = jsonrpc_core::IoHandler::default();
-    io.extend_with(SystemApi::<AccountId, Index>::to_delegate(
+    io.extend_with(SystemApi::<Hash, AccountId, Index>::to_delegate(
         LightSystem::new(client, remote_blockchain, fetcher, pool),
     ));
 

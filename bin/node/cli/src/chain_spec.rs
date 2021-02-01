@@ -1,11 +1,12 @@
 //! Chain specification.
 
 use plasm_primitives::{AccountId, Balance, Signature};
+use plasm_runtime::constants::currency::PLM;
 use plasm_runtime::Block;
 use plasm_runtime::{
-    BabeConfig, BalancesConfig, ContractsConfig, GenesisConfig, GrandpaConfig, IndicesConfig,
-    PlasmRewardsConfig, PlasmValidatorConfig, SessionConfig, SessionKeys, SudoConfig, SystemConfig,
-    WASM_BINARY,
+    BabeConfig, BalancesConfig, GenesisConfig, GrandpaConfig, IndicesConfig,
+    PlasmRewardsConfig, PlasmValidatorConfig, SessionConfig, SessionKeys,
+    SudoConfig, SystemConfig, WASM_BINARY,
 };
 use sc_chain_spec::ChainSpecExtension;
 use sc_service::ChainType;
@@ -13,13 +14,15 @@ use serde::{Deserialize, Serialize};
 use sp_consensus_babe::AuthorityId as BabeId;
 use sp_core::{sr25519, Pair, Public};
 use sp_finality_grandpa::AuthorityId as GrandpaId;
-use sp_runtime::traits::{IdentifyAccount, Verify};
+use sp_runtime::{
+    traits::{IdentifyAccount, Verify},
+};
 
 type AccountPublic = <Signature as Verify>::Signer;
 
 /*
 use hex_literal::hex;
-use sp_core::crypto::UncheckedInto;
+use sp_core::crypto::{Ss58Codec, UncheckedInto};
 use plasm_runtime::constants::currency::*;
 const STAGING_TELEMETRY_URL: &str = "wss://telemetry.polkadot.io/submit/";
 
@@ -90,7 +93,7 @@ fn testnet_genesis(
     endowed_accounts: Option<Vec<AccountId>>,
     sudo_key: AccountId,
 ) -> GenesisConfig {
-    const ENDOWMENT: Balance = 1_000_000_000_000_000_000;
+    const ENDOWMENT: Balance = 1_000_000_000 * PLM;
 
     let endowed_accounts: Vec<(AccountId, Balance)> = endowed_accounts
         .unwrap_or_else(|| {
@@ -117,7 +120,7 @@ fn make_genesis(
     keys: Vec<(AccountId, BabeId, GrandpaId)>,
     balances: Vec<(AccountId, Balance)>,
     root_key: AccountId,
-    enable_println: bool,
+    _enable_println: bool,
 ) -> GenesisConfig {
     GenesisConfig {
         frame_system: Some(SystemConfig {
@@ -132,9 +135,6 @@ fn make_genesis(
         pallet_plasm_validator: Some(PlasmValidatorConfig {
             validators: initial_authorities,
         }),
-        // pallet_dapps_staking: Some(DappsStakingConfig {
-        //     ..Default::default()
-        // }),
         pallet_session: Some(SessionConfig {
             keys: keys
                 .iter()
@@ -153,16 +153,11 @@ fn make_genesis(
         pallet_grandpa: Some(GrandpaConfig {
             authorities: vec![],
         }),
-        pallet_contracts: Some(ContractsConfig {
-            current_schedule: pallet_contracts::Schedule {
-                enable_println, // this should only be enabled on development chains
-                ..Default::default()
-            },
-        }),
         pallet_sudo: Some(SudoConfig { key: root_key }),
     }
 }
 
+<<<<<<< HEAD
 /// Plasm testnet file config.
 pub fn dusty_config() -> ChainSpec {
     ChainSpec::from_json_bytes(&include_bytes!("../res/dusty.json")[..]).unwrap()
@@ -960,11 +955,14 @@ fn dusty_genesis() -> GenesisConfig {
 }
 */
 
+=======
+>>>>>>> upstream/master
 /// Plasm mainnet file config.
 pub fn plasm_config() -> ChainSpec {
     ChainSpec::from_json_bytes(&include_bytes!("../res/plasm.json")[..]).unwrap()
 }
 
+<<<<<<< HEAD
 /*
 /// Mainnet native config.
 pub fn plasm_config() -> ChainSpec {
@@ -1030,6 +1028,8 @@ fn plasm_genesis() -> GenesisConfig {
 }
 */
 
+=======
+>>>>>>> upstream/master
 fn development_config_genesis() -> GenesisConfig {
     testnet_genesis(
         vec![get_account_id_from_seed::<sr25519::Public>("Alice")],

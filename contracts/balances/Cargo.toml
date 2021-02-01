@@ -1,48 +1,33 @@
 [package]
 name = "balances"
-version = "0.1.0"
-authors = ['Takumi Yamashita <takumi@stake.co.jp>']
+version = "2.1.0"
+authors = ["Stake Technologies <devops@stake.co.jp>"]
 edition = "2018"
 
 [dependencies]
-ink_abi = { git = "https://github.com/staketechnologies/ink", branch = "plasm-dusty", package = "ink_abi", default-features = false, optional = true }
-ink_core = { git = "https://github.com/staketechnologies/ink", branch = "plasm-dusty", package = "ink_core", default-features = false }
-ink_model = { git = "https://github.com/staketechnologies/ink", branch = "plasm-dusty", package = "ink_model", default-features = false }
-ink_lang = { git = "https://github.com/staketechnologies/ink", branch = "plasm-dusty", package = "ink_lang", default-features = false }
+ink_primitives = { git = "https://github.com/paritytech/ink", version = "2.1.0", default-features = false }
+ink_metadata = { git = "https://github.com/paritytech/ink", version = "2.1.0", default-features = false, features = ["derive"], optional = true }
+ink_core = { git = "https://github.com/paritytech/ink", version = "2.1.0", default-features = false }
+ink_lang = { git = "https://github.com/paritytech/ink", version = "2.1.0", default-features = false }
 
-scale = { package = "parity-scale-codec", version = "1.0", default-features = false, features = ["derive"] }
-type-metadata = { git = "https://github.com/type-metadata/type-metadata.git", default-features = false, features = ["derive"], optional = true }
+scale = { package = "parity-scale-codec", version = "1.3", default-features = false, features = ["derive"] }
+scale-info = { version = "0.3", default-features = false, features = ["derive"], optional = true }
 
 [lib]
 name = "balances"
-crate-type = [
-    # Used for normal contract Wasm blobs.
-    "cdylib",
-    # Used for ABI generation.
-    "rlib",
-]
+path = "lib.rs"
+crate-type = ["cdylib"]
 
 [features]
-default = ["test-env"]
+default = ["std"]
 std = [
-    "ink_abi/std",
+    "ink_primitives/std",
+    "ink_metadata",
+    "ink_metadata/std",
     "ink_core/std",
-    "ink_model/std",
     "ink_lang/std",
     "scale/std",
-    "type-metadata/std",
-]
-test-env = [
-    "std",
-    "ink_core/test-env",
-    "ink_model/test-env",
-    "ink_lang/test-env",
-]
-ink-generate-abi = [
-    "std",
-    "ink_abi",
-    "type-metadata",
-    "ink_core/ink-generate-abi",
-    "ink_lang/ink-generate-abi",
+    "scale-info",
+    "scale-info/std",
 ]
 ink-as-dependency = []

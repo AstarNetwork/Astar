@@ -1,15 +1,25 @@
 //! Plasm Lockdrop Oracle module client.
 //!
 //! Lockdrop Oracle has REST HTTP API:
-//! - /ticker/btc - returns BTC price in USD
-//! - /ticker/eth - returns ETH price in USD
-//! - /tx/btc/${tx_hash} - returns transaction by it's hash
-//! - /tx/eth/${tx_hash} - returns transaction by it's hash
+//!
+//! **GET**
+//! - /btc/ticker - returns BTC price in USD
+//! - /eth/ticker - returns ETH price in USD
+//!
+//! **POST**
+//! - /eth/lock
+//!   Body: LockCheck struct
+//!   Returns: `OK` when lock success
+//!
+//! - /btc/lock
+//!   Body: LockCheck struct
+//!   Returns `OK` when lock success
+//!
 
 use codec::{Decode, Encode};
 use frame_support::debug;
-use sp_runtime::offchain::http::Request;
-use sp_runtime::RuntimeDebug;
+use sp_core::{ecdsa, H256};
+use sp_runtime::{offchain::http::Request, RuntimeDebug};
 use sp_std::prelude::*;
 
 /// HTTP source of currency price.
@@ -25,21 +35,35 @@ pub trait PriceOracle<T: sp_std::str::FromStr> {
             target: "lockdrop-offchain-worker",
             "Price oracle request to {}", uri
         );
+
         let request = Request::get(uri).send().map_err(|e| {
             debug::error!(
                 target: "lockdrop-offchain-worker",
-                "Request error {:?}", e
+                "Request error: {:?}", e
             );
         })?;
+
         let response = request.wait().map_err(|e| {
             debug::error!(
                 target: "lockdrop-offchain-worker",
-                "Response error {:?}", e
+                "Response error: {:?}", e
             );
         })?;
+
         let body = response.body().collect::<Vec<_>>();
-        let price = sp_std::str::from_utf8(&body[..]).map_err(|_| ())?;
-        price.parse().map_err(|_| ())
+        let price = sp_std::str::from_utf8(&body[..]).map_err(|e| {
+            debug::error!(
+                target: "lockdrop-offchain-worker",
+                "Response body isn't UTF-8 string: {:?}", e
+            );
+        })?;
+
+        price.parse().map_err(|_| {
+            debug::error!(
+                target: "lockdrop-offchain-worker",
+                "Response body string parsing error"
+            );
+        })
     }
 }
 
@@ -47,7 +71,7 @@ pub trait PriceOracle<T: sp_std::str::FromStr> {
 pub struct BitcoinPrice;
 impl<T: sp_std::str::FromStr> PriceOracle<T> for BitcoinPrice {
     fn uri() -> &'static str {
-        "http://127.0.0.1:34347/ticker/btc"
+        "http://127.0.0.1:34347/btc/ticker"
     }
 }
 
@@ -55,54 +79,74 @@ impl<T: sp_std::str::FromStr> PriceOracle<T> for BitcoinPrice {
 pub struct EthereumPrice;
 impl<T: sp_std::str::FromStr> PriceOracle<T> for EthereumPrice {
     fn uri() -> &'static str {
-        "http://127.0.0.1:34347/ticker/eth"
+        "http://127.0.0.1:34347/eth/ticker"
     }
 }
 
-/// Common transaction type.
-#[cfg_attr(feature = "std", derive(Eq, Encode))]
-#[derive(RuntimeDebug, PartialEq, Clone, Decode)]
-pub struct Transaction {
-    /// Transaction sender address.
-    pub sender: Vec<u8>,
-    /// Transaction recipient address.
-    pub recipient: Vec<u8>,
-    /// Value in currency units.
+/// Lock check request parameters.
+#[derive(Clone, PartialEq, Eq, RuntimeDebug, Encode, Decode)]
+pub struct LockCheck {
+    /// Transaction hash.
+    pub tx_hash: H256,
+    /// Sender public key.
+    pub public_key: ecdsa::Public,
+    /// Lock duration in seconds.
+    pub duration: u64,
+    /// Lock value in units.
     pub value: u128,
-    /// Execution script (for Ethereum it's `data` field).
-    pub script: Vec<u8>,
-    /// Confirmations in blocks
-    pub confirmations: u64,
 }
 
 /// HTTP source of blockchain transactions.
-pub trait ChainOracle {
+pub trait LockOracle {
     /// HTTP request URI
     fn uri() -> &'static str;
 
-    /// Fetch transaction data from source by given hash.
+    /// Check lock transaction data.
     /// Note: this method requires off-chain worker context.
-    fn fetch<Hash: AsRef<[u8]>>(transaction_hash: Hash) -> Result<Transaction, ()> {
-        let uri = [Self::uri(), hex::encode(transaction_hash).as_str()].join("/");
-        let request = Request::get(uri.as_ref()).send().map_err(|_| ())?;
-        let response = request.wait().map_err(|_| ())?;
-        let body = hex::decode(response.body().collect::<Vec<_>>()).map_err(|_| ())?;
-        Transaction::decode(&mut &body[..]).map_err(|_| ())
+    fn check(
+        tx_hash: H256,
+        public_key: ecdsa::Public,
+        duration: u64,
+        value: u128,
+    ) -> Result<bool, ()> {
+        let lock = LockCheck {
+            tx_hash,
+            public_key,
+            duration,
+            value,
+        };
+        let request = Request::post(Self::uri(), vec![lock.encode()])
+            .send()
+            .map_err(|e| {
+                debug::error!(
+                    target: "lockdrop-offchain-worker",
+                    "Request error: {:?}", e
+                );
+            })?;
+
+        let response = request.wait().map_err(|e| {
+            debug::error!(
+                target: "lockdrop-offchain-worker",
+                "Response error: {:?}", e
+            );
+        })?;
+
+        Ok(response.code == 200)
     }
 }
 
 /// Bitcoin chain transactions oracle.
-pub struct BitcoinChain;
-impl ChainOracle for BitcoinChain {
+pub struct BitcoinLock;
+impl LockOracle for BitcoinLock {
     fn uri() -> &'static str {
-        "http://127.0.0.1:34347/tx/btc"
+        "http://127.0.0.1:34347/btc/lock"
     }
 }
 
 /// Ethereum chain transactions oracle.
-pub struct EthereumChain;
-impl ChainOracle for EthereumChain {
+pub struct EthereumLock;
+impl LockOracle for EthereumLock {
     fn uri() -> &'static str {
-        "http://127.0.0.1:34347/tx/eth"
+        "http://127.0.0.1:34347/eth/lock"
     }
 }
