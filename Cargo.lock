@@ -3968,6 +3968,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "orml-xtokens"
+version = "0.3.3-dev"
+dependencies = [
+ "cumulus-primitives",
+ "frame-support",
+ "frame-system",
+ "parity-scale-codec",
+ "serde",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+ "xcm",
+ "xcm-executor",
+]
+
+[[package]]
 name = "owning_ref"
 version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5087,11 +5103,13 @@ name = "plasm-runtime"
 version = "1.7.0"
 dependencies = [
  "cumulus-parachain-system",
+ "cumulus-primitives",
  "cumulus-runtime",
  "frame-executive",
  "frame-support",
  "frame-system",
  "frame-system-rpc-runtime-api",
+ "orml-xtokens",
  "pallet-authorship",
  "pallet-balances",
  "pallet-contracts",
