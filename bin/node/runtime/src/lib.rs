@@ -23,7 +23,7 @@ use sp_api::impl_runtime_apis;
 use sp_core::{OpaqueMetadata, H160, H256, U256};
 use sp_inherents::{CheckInherentsResult, InherentData};
 use sp_runtime::traits::{
-    BlakeTwo256, Block as BlockT, Extrinsic, IdentityLookup, SaturatedConversion, Verify, Convert,
+    BlakeTwo256, Block as BlockT, Convert, Extrinsic, IdentityLookup, SaturatedConversion, Verify,
 };
 use sp_runtime::transaction_validity::{TransactionSource, TransactionValidity};
 use sp_runtime::{
@@ -35,8 +35,8 @@ use sp_std::prelude::*;
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
 
-use polkadot_parachain::primitives::Sibling;
 use cumulus_primitives::relay_chain::Balance as RelayChainBalance;
+use polkadot_parachain::primitives::Sibling;
 use xcm::v0::{Junction, MultiLocation, NetworkId};
 use xcm_builder::{
     AccountId32Aliases, ChildParachainConvertsVia, LocationInverter, ParentIsDefault,
@@ -376,20 +376,20 @@ impl xcm_handler::Config for Runtime {
 
 pub struct RelayToNative;
 impl Convert<RelayChainBalance, Balance> for RelayToNative {
-	fn convert(val: u128) -> Balance {
-		// native is 15
-		// relay is 12
-		val * 1_000
-	}
+    fn convert(val: u128) -> Balance {
+        // native is 15
+        // relay is 12
+        val * 1_000
+    }
 }
 
 pub struct NativeToRelay;
 impl Convert<Balance, RelayChainBalance> for NativeToRelay {
-	fn convert(val: u128) -> Balance {
-		// native is 15
-		// relay is 12
-		val / 1_000
-	}
+    fn convert(val: u128) -> Balance {
+        // native is 15
+        // relay is 12
+        val / 1_000
+    }
 }
 
 pub struct AccountId32Convert;
@@ -400,14 +400,14 @@ impl Convert<AccountId, [u8; 32]> for AccountId32Convert {
 }
 
 impl orml_xtokens::Config for Runtime {
-	type Event = Event;
-	type Balance = Balance;
-	type ToRelayChainBalance = NativeToRelay;
-	type AccountId32Convert = AccountId32Convert;
-	type RelayChainNetworkId = PolkadotNetwork;
-	type AccountIdConverter = LocationConverter;
-	type XcmExecutor = XcmExecutor<XcmConfig>;
-	type ParaId = ParachainInfo;
+    type Event = Event;
+    type Balance = Balance;
+    type ToRelayChainBalance = NativeToRelay;
+    type AccountId32Convert = AccountId32Convert;
+    type RelayChainNetworkId = PolkadotNetwork;
+    type AccountIdConverter = LocationConverter;
+    type XcmExecutor = XcmExecutor<XcmConfig>;
+    type ParaId = ParachainInfo;
 }
 
 impl cumulus_parachain_system::Config for Runtime {
