@@ -1,0 +1,26 @@
+[package]
+name = "pallet-plasm-support"
+version = "0.1.0"
+authors = ["Stake Technologies <devops@stake.co.jp>"]
+edition = "2018"
+license = "Apache-2.0"
+homepage = "https://docs.plasmnet.io/"
+repository = "https://github.com/staketechnologies/Plasm/"
+description = "FRAME pallet to manage operator developing smart contracts"
+
+[dependencies]
+sp-runtime = { version = "2.0.0", default_features = false }
+frame-support = { version = "2.0.0", default_features = false }
+sp-std = { version = "2.0.0", default_features = false }
+
+
+[dev-dependencies]
+
+
+[features]
+default = ["std"]
+std = [
+    "sp-runtime/std",
+    "frame-support/std",
+    "sp-std/std",
+]
