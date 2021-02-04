@@ -859,6 +859,7 @@ decl_module! {
                 .map(|era| Self::eras_staking_points(&era, &contract));
             for points in each_points {
                 for (nominator, _) in points.individual {
+                    let mut untreated_era = Self::nominators_untreated_era(&nominator);
                     while era > untreated_era {
                         Self::propagate_nominate_totals(&nominator, &untreated_era, &(untreated_era + 1));
                         untreated_era += 1;
