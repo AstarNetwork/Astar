@@ -253,10 +253,6 @@ decl_storage! {
         /// The already untreated era is EraIndex.
         pub UntreatedEra get(fn untreated_era): EraIndex;
 
-        // The untreated era for each nominator
-        pub NominatorsUntreatedEra get(fn nominators_untreated_era):
-            map hasher(twox_64_concat) T::AccountId => EraIndex;
-
         // The untreated era for each contract
         pub ContractsUntreatedEra get(fn contracts_untreated_era):
             map hasher(twox_64_concat) T::AccountId => EraIndex;
@@ -307,11 +303,6 @@ decl_storage! {
         /// If total hasn't been set or has been removed then 0 stake is returned.
         pub ErasTotalStake get(fn eras_total_stake):
             map hasher(twox_64_concat) EraIndex => BalanceOf<T>;
-
-        /// The total amounts of staking for each nominators
-        ErasNominateTotals get(fn eras_nominate_totals):
-            double_map hasher(twox_64_concat) EraIndex, hasher(twox_64_concat) T::AccountId
-            => BalanceOf<T>;
 
         /// The total amounts of staking for pairs of nominator and contract
         pub TotalStakes get(fn total_stakes):
@@ -805,15 +796,17 @@ decl_module! {
             }
         }
 
-        /// rewards are claimed by the nominator.
+        /// rewards are claimed by the contract.
         ///
         /// era must be in the range `[current_era - history_depth; active_era)`.
-        ///
-        /// The dispatch origin for this call must be _Signed_ by the stash, not the controller.
-        /// TODO: weight
         #[weight = 1_000]
-        fn claim_for_nominator(origin, era: EraIndex) {
-            let nominator = ensure_signed(origin)?;
+        fn claim(origin, contract: <T::Lookup as StaticLookup>::Source, era: EraIndex) {
+            ensure_signed(origin)?;
+
+            let contract = T::Lookup::lookup(contract)?;
+            if !T::ContractFinder::is_exists_contract(&contract) {
+                Err(Error::<T>::NotOperatedContracts)?
+            }
 
             // check if era is valid
             if let Some(active_era) = T::EraFinder::active() {
@@ -827,26 +820,15 @@ decl_module! {
                 }
             }
 
-            let mut untreated_era = Self::nominators_untreated_era(&nominator);
+            let mut untreated_era = Self::contracts_untreated_era(&contract);
             if era == untreated_era {
-                Err("the nominator already rewarded")?
+                Err("the contract is already rewarded")?
             }
             while era > untreated_era {
-                Self::propagate_nominate_totals(&nominator, &untreated_era, &(untreated_era + 1));
+                Self::propagate_eras_staking_points_total(&contract, &untreated_era, &(untreated_era + 1));
                 untreated_era += 1;
             }
-            <NominatorsUntreatedEra<T>>::insert(&nominator, untreated_era);
-
-            for (contract, _) in <ErasStakingPoints<T>>::iter_prefix(&era) {
-                let mut untreated_era = Self::contracts_untreated_era(&contract);
-                if era != untreated_era {
-                    while era > untreated_era {
-                        Self::propagate_eras_staking_points_total(&contract, &untreated_era, &(untreated_era + 1));
-                        untreated_era += 1;
-                    }
-                    <ContractsUntreatedEra<T>>::insert(&contract, untreated_era);
-                }
-            }
+            <ContractsUntreatedEra<T>>::insert(&contract, untreated_era);
 
             let rewards = match T::ForDappsEraReward::get(&era) {
                 Some(rewards) => rewards,
@@ -856,43 +838,23 @@ decl_module! {
                 }
             };
 
-            let actual_rewarded = Self::reward_nominator(&era, rewards, &nominator);
-            // deposit event to total validator rewards
-            Self::deposit_event(RawEvent::TotalDappsRewards(era, actual_rewarded));
-        }
+            let mut actual_rewarded = BalanceOf::<T>::zero();
 
-        /// rewards are claimed by the operator.
-        ///
-        /// era must be in the range [current_era - history_depth; active_era).
-        ///
-        /// The dispatch origin for this call must be _Signed_ by the stash, not the controller
-        /// TODO: weight
-        #[weight = 1_000]
-        fn claim_for_operator(origin, era: EraIndex) {
-            let operator = ensure_signed(origin)?;
-
-            // check if era is valid
-            if let Some(active_era) = T::EraFinder::active() {
-                if era >= active_era.index {
-                    Err("cannot claim yet")?
-                }
+            // rewards for the operator
+            if let Some(operator) = T::ContractFinder::operator(&contract) {
+                actual_rewarded += Self::reward_operator(&era, rewards, &operator, &contract);
             }
-            if let Some(current_era) = T::EraFinder::current() {
-                if era < current_era.saturating_sub(T::HistoryDepthFinder::get()) {
-                    Err("the era is expired")?
+
+            // rewards for nominators
+            let each_points = (era.saturating_sub(T::HistoryDepthFinder::get())..=era)
+                .map(|era| Self::eras_staking_points(&era, &contract));
+            for points in each_points {
+                for (nominator, _) in points.individual {
+                    actual_rewarded += Self::reward_nominator(&era, rewards, &nominator, &contract);
                 }
             }
 
-            let rewards = match T::ForDappsEraReward::get(&era) {
-                Some(rewards) => rewards,
-                None => {
-                    frame_support::print("Error: start_session_index must be set for current_era");
-                    BalanceOf::<T>::zero()
-                }
-            };
-
-            let actual_rewarded = Self::reward_operator(&era, rewards, &operator);
-            // deposit event to total validator rewards
+            // deposit event to total rewards
             Self::deposit_event(RawEvent::TotalDappsRewards(era, actual_rewarded));
         }
     }
@@ -945,20 +907,11 @@ impl<T: Trait> Module<T> {
         }
     }
 
-    fn propagate_nominate_totals(nominator: &T::AccountId, src_era: &EraIndex, dst_era: &EraIndex) {
-        if <ErasNominateTotals<T>>::contains_key(src_era, nominator) {
-            let untreated_nootate_total = <ErasNominateTotals<T>>::get(src_era, nominator);
-
-            <ErasNominateTotals<T>>::mutate(dst_era, nominator, |total| {
-                *total += untreated_nootate_total;
-            })
-        }
-    }
-
     fn reward_nominator(
         era: &EraIndex,
         max_payout: BalanceOf<T>,
         nominator: &T::AccountId,
+        contract: &T::AccountId,
     ) -> BalanceOf<T> {
         let mut total_imbalance = <PositiveImbalanceOf<T>>::zero();
         let (_, nominators_reward) =
@@ -968,9 +921,13 @@ impl<T: Trait> Module<T> {
 
         let mut nominate_values: Vec<_> = Vec::new();
 
+        // collect target points
         let mut each_points: Vec<_> = Vec::new();
         for e in era.saturating_sub(T::HistoryDepthFinder::get())..=*era {
-            for (contract, points) in <ErasStakingPoints<T>>::iter_prefix(&e) {
+            for (c, points) in <ErasStakingPoints<T>>::iter_prefix(&e) {
+                if c != *contract {
+                    continue;
+                }
                 if Self::is_rewardable(&contract, &e) {
                     each_points.push((
                         Self::eras_staking_points(era, contract).total,
@@ -980,15 +937,17 @@ impl<T: Trait> Module<T> {
             }
         }
 
+        // summarize nominated values
+        let mut nominate_total = BalanceOf::<T>::zero();
         for (total, individual) in each_points {
             for (account, value) in individual {
                 if account == *nominator {
+                    nominate_total += value;
                     nominate_values.push((total, value));
                 }
             }
         }
 
-        let nominate_total = Self::eras_nominate_totals(era, nominator);
         let reward = T::ComputeRewardsForDapps::compute_reward_for_nominator(
             nominate_total,
             total_staked,
@@ -1012,6 +971,7 @@ impl<T: Trait> Module<T> {
         era: &EraIndex,
         max_payout: BalanceOf<T>,
         operator: &T::AccountId,
+        contract: &T::AccountId,
     ) -> BalanceOf<T> {
         let mut total_imbalance = <PositiveImbalanceOf<T>>::zero();
         let (operators_reward, _) =
@@ -1021,7 +981,10 @@ impl<T: Trait> Module<T> {
 
         let mut stakes = BalanceOf::<T>::zero();
         for e in era.saturating_sub(T::HistoryDepthFinder::get())..=*era {
-            for (contract, _) in <ErasStakingPoints<T>>::iter_prefix(&e) {
+            for (c, _) in <ErasStakingPoints<T>>::iter_prefix(&e) {
+                if c != *contract {
+                    continue;
+                }
                 if let Some(o) = T::ContractFinder::operator(&contract) {
                     if o == *operator && Self::is_rewardable(&contract, &e) {
                         stakes += Self::eras_staking_points(era, contract).total;
@@ -1120,10 +1083,6 @@ impl<T: Trait> Module<T> {
                     <ErasStakingPoints<T>>::insert(&next_era, &contract, points);
                 }
 
-                <ErasNominateTotals<T>>::mutate(&next_era, stash, |total| {
-                    *total += value.clone();
-                });
-
                 <ErasTotalStake<T>>::mutate(&next_era, |total| {
                     *total += value.clone();
                 });
@@ -1141,10 +1100,6 @@ impl<T: Trait> Module<T> {
             <ErasStakingPoints<T>>::mutate(&era, &contract, |points| {
                 (*points).total = points.total.saturating_sub(value.clone());
                 (*points).individual.remove(stash);
-            });
-
-            <ErasNominateTotals<T>>::mutate(&era, stash, |total| {
-                *total = total.saturating_sub(value.clone());
             });
 
             <ErasTotalStake<T>>::mutate(&era, |total| {
@@ -1171,12 +1126,12 @@ impl<T: Trait> Module<T> {
         if current_era < *era {
             return;
         }
-        let mut untreated_era = Self::contracts_untreated_era(&contract);
+        let mut untreated_era = Self::contract_votes_untreated_era(&contract);
         while *era > untreated_era {
             Self::propagate_eras_votes(&contract, &untreated_era, &(untreated_era + 1));
             untreated_era += 1;
         }
-        <ContractsUntreatedEra<T>>::insert(&contract, untreated_era);
+        <ContractVotesUntreatedEra<T>>::insert(&contract, untreated_era);
     }
 
     // convert Vote into VoteCounts
