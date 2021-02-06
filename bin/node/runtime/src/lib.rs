@@ -23,7 +23,7 @@ use sp_api::impl_runtime_apis;
 use sp_core::{OpaqueMetadata, H160, H256, U256};
 use sp_inherents::{CheckInherentsResult, InherentData};
 use sp_runtime::traits::{
-    BlakeTwo256, Block as BlockT, Extrinsic, IdentityLookup, SaturatedConversion, Verify,
+    BlakeTwo256, Block as BlockT, Convert, Extrinsic, IdentityLookup, SaturatedConversion, Verify,
 };
 use sp_runtime::transaction_validity::{TransactionSource, TransactionValidity};
 use sp_runtime::{
@@ -35,12 +35,13 @@ use sp_std::prelude::*;
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
 
+use cumulus_primitives::relay_chain::Balance as RelayChainBalance;
 use polkadot_parachain::primitives::Sibling;
 use xcm::v0::{Junction, MultiLocation, NetworkId};
 use xcm_builder::{
-    AccountId32Aliases, ChildParachainConvertsVia, LocationInverter, ParentIsDefault,
-    RelayChainAsNative, SiblingParachainAsNative, SiblingParachainConvertsVia,
-    SignedAccountId32AsNative, SovereignSignedViaLocation,
+    AccountId32Aliases, LocationInverter, ParentIsDefault, RelayChainAsNative,
+    SiblingParachainAsNative, SiblingParachainConvertsVia, SignedAccountId32AsNative,
+    SovereignSignedViaLocation,
 };
 use xcm_executor::{
     traits::{IsConcrete, NativeAsset},
@@ -70,8 +71,8 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     // and set impl_version to equal spec_version. If only runtime
     // implementation changes and behavior does not, then leave spec_version as
     // is and increment impl_version.
-    spec_version: 2,
-    impl_version: 2,
+    spec_version: 3,
+    impl_version: 3,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 1,
 };
@@ -321,7 +322,8 @@ impl parachain_info::Config for Runtime {}
 
 parameter_types! {
     pub const RococoLocation: MultiLocation = MultiLocation::X1(Junction::Parent);
-    pub const RococoNetwork: NetworkId = NetworkId::Polkadot;
+    pub PlasmNetwork: NetworkId = NetworkId::Named("plasm".into());
+    pub PolkadotNetwork: NetworkId = NetworkId::Polkadot;
     pub RelayChainOrigin: Origin = xcm_handler::Origin::Relay.into();
     pub Ancestry: MultiLocation = Junction::Parachain {
         id: ParachainInfo::parachain_id().into()
@@ -330,9 +332,8 @@ parameter_types! {
 
 type LocationConverter = (
     ParentIsDefault<AccountId>,
-    ChildParachainConvertsVia<Sibling, AccountId>,
     SiblingParachainConvertsVia<Sibling, AccountId>,
-    AccountId32Aliases<RococoNetwork, AccountId>,
+    AccountId32Aliases<PlasmNetwork, AccountId>,
 );
 
 type LocalAssetTransactor = xcm_builder::CurrencyAdapter<
@@ -350,7 +351,7 @@ type LocalOriginConverter = (
     SovereignSignedViaLocation<LocationConverter, Origin>,
     RelayChainAsNative<RelayChainOrigin, Origin>,
     SiblingParachainAsNative<xcm_handler::Origin, Origin>,
-    SignedAccountId32AsNative<RococoNetwork, Origin>,
+    SignedAccountId32AsNative<PlasmNetwork, Origin>,
 );
 
 pub struct XcmConfig;
@@ -370,6 +371,42 @@ impl xcm_handler::Config for Runtime {
     type XcmExecutor = XcmExecutor<XcmConfig>;
     type UpwardMessageSender = ParachainSystem;
     type HrmpMessageSender = ParachainSystem;
+}
+
+pub struct RelayToNative;
+impl Convert<RelayChainBalance, Balance> for RelayToNative {
+    fn convert(val: u128) -> Balance {
+        // native is 15
+        // relay is 12
+        val * 1_000
+    }
+}
+
+pub struct NativeToRelay;
+impl Convert<Balance, RelayChainBalance> for NativeToRelay {
+    fn convert(val: u128) -> Balance {
+        // native is 15
+        // relay is 12
+        val / 1_000
+    }
+}
+
+pub struct AccountId32Convert;
+impl Convert<AccountId, [u8; 32]> for AccountId32Convert {
+    fn convert(account_id: AccountId) -> [u8; 32] {
+        account_id.into()
+    }
+}
+
+impl orml_xtokens::Config for Runtime {
+    type Event = Event;
+    type Balance = Balance;
+    type ToRelayChainBalance = NativeToRelay;
+    type AccountId32Convert = AccountId32Convert;
+    type RelayChainNetworkId = PolkadotNetwork;
+    type AccountIdConverter = LocationConverter;
+    type XcmExecutor = XcmExecutor<XcmConfig>;
+    type ParaId = ParachainInfo;
 }
 
 impl cumulus_parachain_system::Config for Runtime {
@@ -398,6 +435,7 @@ construct_runtime!(
         ParachainSystem: cumulus_parachain_system::{Module, Call, Storage, Inherent, Event},
         ParachainInfo: parachain_info::{Module, Storage, Config},
         XcmHandler: xcm_handler::{Module, Event<T>, Origin, Call},
+        XTokens: orml_xtokens::{Module, Storage, Call, Event<T>},
     }
 );
 

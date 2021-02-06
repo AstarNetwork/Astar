@@ -1,0 +1,3 @@
+[submodule "vendor/orml"]
+	path = vendor/orml
+	url = https://github.com/open-web3-stack/open-runtime-module-library

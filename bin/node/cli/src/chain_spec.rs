@@ -4,7 +4,7 @@ use cumulus_primitives::ParaId;
 use plasm_primitives::{AccountId, Balance, Signature};
 use plasm_runtime::constants::currency::PLM;
 use plasm_runtime::{
-    BalancesConfig, GenesisConfig, ParachainInfoConfig, ContractsConfig, SudoConfig, SystemConfig,
+    BalancesConfig, ContractsConfig, GenesisConfig, ParachainInfoConfig, SudoConfig, SystemConfig,
     WASM_BINARY,
 };
 use sc_chain_spec::ChainSpecExtension;
