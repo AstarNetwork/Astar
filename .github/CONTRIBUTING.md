@@ -1,6 +1,6 @@
 # Contributing
 
-## The `Neon` project is an **OPENISH Open Source Project**
+## The `Plasm` project is an **OPENISH Open Source Project**
 
 * * *
 
@@ -16,7 +16,7 @@ There are a few basic ground-rules for contributors:
 2. **Non-master branches** ought to be used for ongoing work.
 3. **External API changes and significant modifications** ought to be subject to an **internal pull-request** to solicit feedback from other contributors.
 4. Internal pull-requests to solicit feedback are _encouraged_ for any other non-trivial contribution but left to the discretion of the contributor.
-5. Contributors should adhere to the [house coding style](https://wiki.parity.io/Substrate-Style-Guide).
+5. Contributors should adhere to the [house coding style](https://substrate.dev/recipes/).
 
 ## Releases
 
