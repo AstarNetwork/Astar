@@ -39,9 +39,9 @@ use cumulus_primitives::relay_chain::Balance as RelayChainBalance;
 use polkadot_parachain::primitives::Sibling;
 use xcm::v0::{Junction, MultiLocation, NetworkId};
 use xcm_builder::{
-    AccountId32Aliases, ChildParachainConvertsVia, LocationInverter, ParentIsDefault,
-    RelayChainAsNative, SiblingParachainAsNative, SiblingParachainConvertsVia,
-    SignedAccountId32AsNative, SovereignSignedViaLocation,
+    AccountId32Aliases, LocationInverter, ParentIsDefault, RelayChainAsNative,
+    SiblingParachainAsNative, SiblingParachainConvertsVia, SignedAccountId32AsNative,
+    SovereignSignedViaLocation,
 };
 use xcm_executor::{
     traits::{IsConcrete, NativeAsset},
@@ -332,7 +332,6 @@ parameter_types! {
 
 type LocationConverter = (
     ParentIsDefault<AccountId>,
-    ChildParachainConvertsVia<Sibling, AccountId>,
     SiblingParachainConvertsVia<Sibling, AccountId>,
     AccountId32Aliases<PlasmNetwork, AccountId>,
 );
