@@ -18,17 +18,19 @@ use pallet_contracts::WeightInfo;
 use pallet_transaction_payment::{
     FeeDetails, Multiplier, RuntimeDispatchInfo, TargetedFeeAdjustment,
 };
-use plasm_primitives::{AccountId, Balance, BlockNumber, Hash, Index, Moment, Signature};
+use plasm_primitives::{AccountId, Amount, Balance, BlockNumber, Hash, Index, Moment, Signature, CurrencyId, TokenSymbol};
+use orml_xcm_support::{CurrencyIdConverter, IsConcreteWithGeneralKey, MultiCurrencyAdapter};
 use sp_api::impl_runtime_apis;
 use sp_core::{OpaqueMetadata, H160, H256, U256};
 use sp_inherents::{CheckInherentsResult, InherentData};
 use sp_runtime::traits::{
     BlakeTwo256, Block as BlockT, Convert, Extrinsic, IdentityLookup, SaturatedConversion, Verify,
+    AccountIdConversion,
 };
 use sp_runtime::transaction_validity::{TransactionSource, TransactionValidity};
 use sp_runtime::{
     create_runtime_str, generic, impl_opaque_keys, ApplyExtrinsicResult, FixedPointNumber, Perbill,
-    Perquintill,
+    Perquintill, ModuleId,
 };
 use sp_std::prelude::*;
 #[cfg(any(feature = "std", test))]
@@ -57,6 +59,8 @@ pub use sp_runtime::BuildStorage;
 /// Constant values used within the runtime.
 pub mod constants;
 use constants::{currency::*, time::*};
+mod currency_adapter;
+use currency_adapter::NativeCurrencyAdapter;
 
 // Make the WASM binary available.
 #[cfg(feature = "std")]
@@ -158,6 +162,38 @@ impl pallet_balances::Config for Runtime {
     type MaxLocks = MaxLocks;
     type ExistentialDeposit = ExistentialDeposit;
     type AccountStore = frame_system::Module<Runtime>;
+    type WeightInfo = ();
+}
+
+parameter_types! {
+    pub DustAccount: AccountId = ModuleId(*b"orml/dst").into_account();
+}
+
+orml_traits::parameter_type_with_key! {
+    pub ExistentialDeposits: |currency_id: CurrencyId| -> Balance {
+        Default::default()
+    };
+}
+
+impl orml_tokens::Config for Runtime {
+    type Balance = Balance;
+    type Amount = Amount;
+    type OnDust = orml_tokens::TransferDust<Runtime, DustAccount>;
+    type CurrencyId = CurrencyId;
+    type ExistentialDeposits = ExistentialDeposits;
+    type WeightInfo = ();
+    type Event = Event;
+}
+
+parameter_types! {
+    pub const GetNativeCurrencyId: CurrencyId = CurrencyId::Token(TokenSymbol::PLM);
+}
+
+impl orml_currencies::Config for Runtime {
+    type Event = Event;
+    type MultiCurrency = Tokens;
+    type NativeCurrency = NativeCurrencyAdapter<Runtime, Balances, Amount, Balance>;
+    type GetNativeCurrencyId = GetNativeCurrencyId;
     type WeightInfo = ();
 }
 
@@ -328,6 +364,7 @@ parameter_types! {
     pub Ancestry: MultiLocation = Junction::Parachain {
         id: ParachainInfo::parachain_id().into()
     }.into();
+    pub const RelayChainCurrencyId: CurrencyId = CurrencyId::Token(TokenSymbol::DOT);
 }
 
 type LocationConverter = (
@@ -336,23 +373,21 @@ type LocationConverter = (
     AccountId32Aliases<PlasmNetwork, AccountId>,
 );
 
-type LocalAssetTransactor = xcm_builder::CurrencyAdapter<
-    // Use this currency:
-    Balances,
-    // Use this currency when it is a fungible asset matching the given location or name:
-    IsConcrete<RococoLocation>,
-    // Do a simple punn to convert an AccountId32 MultiLocation into a native chain account ID:
-    LocationConverter,
-    // Our chain's account ID type (we can't get away without mentioning it explicitly):
-    AccountId,
->;
-
 type LocalOriginConverter = (
     SovereignSignedViaLocation<LocationConverter, Origin>,
     RelayChainAsNative<RelayChainOrigin, Origin>,
     SiblingParachainAsNative<xcm_handler::Origin, Origin>,
     SignedAccountId32AsNative<PlasmNetwork, Origin>,
 );
+
+pub type LocalAssetTransactor = MultiCurrencyAdapter<                                                                     
+    Currencies,
+    IsConcreteWithGeneralKey<CurrencyId, RelayToNative>,
+    LocationConverter,
+    AccountId,
+    CurrencyIdConverter<CurrencyId, RelayChainCurrencyId>,
+    CurrencyId,
+>;
 
 pub struct XcmConfig;
 impl Config for XcmConfig {
@@ -428,6 +463,8 @@ construct_runtime!(
         Timestamp: pallet_timestamp::{Module, Call, Storage, Inherent},
         TransactionPayment: pallet_transaction_payment::{Module, Storage},
         Balances: pallet_balances::{Module, Call, Storage, Event<T>, Config<T>},
+        Currencies: orml_currencies::{Module, Call, Event<T>},
+        Tokens: orml_tokens::{Module, Storage, Event<T>, Config<T>},
         Contracts: pallet_contracts::{Module, Call, Storage, Event<T>, Config<T>},
         RandomnessCollectiveFlip: pallet_randomness_collective_flip::{Module, Call, Storage},
         Sudo: pallet_sudo::{Module, Call, Storage, Event<T>, Config<T>},

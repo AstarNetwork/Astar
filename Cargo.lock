@@ -3968,6 +3968,75 @@ dependencies = [
 ]
 
 [[package]]
+name = "orml-currencies"
+version = "0.4.0-dev"
+dependencies = [
+ "frame-support",
+ "frame-system",
+ "orml-traits",
+ "orml-utilities",
+ "parity-scale-codec",
+ "serde",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
+name = "orml-tokens"
+version = "0.4.0-dev"
+dependencies = [
+ "frame-support",
+ "frame-system",
+ "orml-traits",
+ "parity-scale-codec",
+ "serde",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
+name = "orml-traits"
+version = "0.4.0-dev"
+dependencies = [
+ "frame-support",
+ "impl-trait-for-tuples 0.1.3",
+ "num-traits 0.2.14",
+ "orml-utilities",
+ "parity-scale-codec",
+ "serde",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
+name = "orml-utilities"
+version = "0.4.0-dev"
+dependencies = [
+ "frame-support",
+ "parity-scale-codec",
+ "serde",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
+name = "orml-xcm-support"
+version = "0.3.3-dev"
+dependencies = [
+ "frame-support",
+ "orml-traits",
+ "parity-scale-codec",
+ "sp-runtime",
+ "sp-std",
+ "xcm",
+ "xcm-executor",
+]
+
+[[package]]
 name = "orml-xtokens"
 version = "0.3.3-dev"
 dependencies = [
@@ -5058,9 +5127,11 @@ version = "1.7.0"
 dependencies = [
  "frame-system",
  "parity-scale-codec",
+ "serde",
  "sp-application-crypto",
  "sp-core",
  "sp-runtime",
+ "sp-std",
 ]
 
 [[package]]
@@ -5109,6 +5180,10 @@ dependencies = [
  "frame-support",
  "frame-system",
  "frame-system-rpc-runtime-api",
+ "orml-currencies",
+ "orml-tokens",
+ "orml-traits",
+ "orml-xcm-support",
  "orml-xtokens",
  "pallet-authorship",
  "pallet-balances",
