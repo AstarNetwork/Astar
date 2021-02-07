@@ -4,9 +4,7 @@ use frame_support::dispatch::UnfilteredDispatchable;
 use frame_support::{decl_event, decl_module, decl_storage, Parameter};
 use frame_system::{ensure_signed, RawOrigin};
 use pallet_contracts::{BalanceOf, CodeHash, ContractAddressFor, Gas};
-use sp_runtime::{
-    traits::{MaybeDisplay, MaybeSerialize, Member},
-};
+use sp_runtime::traits::{MaybeDisplay, MaybeSerialize, Member};
 use sp_std::prelude::*;
 
 pub mod parameters;
