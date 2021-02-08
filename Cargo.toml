@@ -9,6 +9,7 @@ members = [
     "frame/dapps-staking",
     "frame/plasm-rewards",
     "frame/plasm-lockdrop",
+    "frame/plasm-support",
     "frame/plasm-validator",
     "frame/ovm",
     "frame/ovm/rpc/runtime-api",

@@ -6,7 +6,7 @@ use frame_support::{
     traits::{Currency, ExistenceRequirement, LockIdentifier, LockableCurrency, WithdrawReasons},
 };
 use frame_system::ensure_signed;
-use pallet_contract_operator::{OperatorFinder, TransferOperator};
+use pallet_plasm_support::{OperatorFinder, TransferOperator};
 use sp_std::prelude::*;
 
 #[cfg(feature = "std")]
