@@ -7,8 +7,9 @@ edition = "2018"
 [dependencies]
 plasm-runtime = { path = "../runtime" }
 plasm-primitives = { path = "../primitives" }
-frontier-rpc = { path = "../../../vendor/frontier/rpc" }
-frontier-rpc-primitives = { path = "../../../vendor/frontier/rpc/primitives" }
+fc-rpc = { path = "../../../vendor/frontier/client/rpc" }
+fc-rpc-core = { path = "../../../vendor/frontier/client/rpc-core" }
+fp-rpc = { path = "../../../vendor/frontier/primitives/rpc" }
 jsonrpc-core = "15.0.0"
 jsonrpc-pubsub = "15.0.0"
 sp-api = "2.0.0"
@@ -18,9 +19,9 @@ sp-block-builder = "2.0.0"
 sp-consensus = "0.8.0"
 sp-consensus-babe = "0.8.0"
 sp-transaction-pool = "2.0.0"
+sp-keystore = "0.8.0"
 sc-rpc = "2.0.0"
 sc-rpc-api = "0.8.0"
-sc-keystore = "2.0.0"
 sc-client-api = "2.0.0"
 sc-consensus-babe = "0.8.0"
 sc-consensus-babe-rpc = "0.8.0"

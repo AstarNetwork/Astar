@@ -5,7 +5,7 @@ use plasm_runtime::constants::currency::PLM;
 use plasm_runtime::Block;
 use plasm_runtime::{
     BabeConfig, BalancesConfig, ContractsConfig, EVMConfig, EthereumConfig, GenesisConfig,
-    GrandpaConfig, IndicesConfig, PlasmLockdropConfig, PlasmRewardsConfig, PlasmValidatorConfig,
+    GrandpaConfig, IndicesConfig, PlasmRewardsConfig, PlasmValidatorConfig,
     SessionConfig, SessionKeys, SudoConfig, SystemConfig, WASM_BINARY,
 };
 use sc_chain_spec::ChainSpecExtension;
@@ -135,17 +135,6 @@ fn make_genesis(
         }),
         pallet_plasm_validator: Some(PlasmValidatorConfig {
             validators: initial_authorities,
-        }),
-        pallet_plasm_lockdrop: Some(PlasmLockdropConfig {
-            // Alpha2: 0.44698108660714747
-            alpha: Perbill::from_parts(446_981_087),
-            // Price in dollars: BTC $11000, ETH $400
-            dollar_rate: (11_000, 400),
-            vote_threshold: 1,
-            positive_votes: 1,
-            // Start from launch for testing purposes
-            lockdrop_bounds: (0, 1_000),
-            keys: vec![],
         }),
         pallet_session: Some(SessionConfig {
             keys: keys

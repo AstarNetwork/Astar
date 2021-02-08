@@ -8,13 +8,13 @@ pub trait ComputeEraWithParam<EraIndex> {
     fn compute(era: &EraIndex) -> Self::Param;
 }
 
-pub struct DefaultForDappsStaking<T: Trait> {
+pub struct DefaultForDappsStaking<T: Config> {
     _phantom: PhantomData<T>,
 }
-impl<T: Trait> ComputeEraWithParam<EraIndex> for DefaultForDappsStaking<T> {
+impl<T: Config> ComputeEraWithParam<EraIndex> for DefaultForDappsStaking<T> {
     type Param = BalanceOf<T>;
     fn compute(_era: &EraIndex) -> BalanceOf<T> {
-        0.into()
+        Default::default()
     }
 }
 
