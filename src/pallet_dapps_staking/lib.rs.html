@@ -1225,11 +1225,11 @@
     <span class="ident">IterableStorageDoubleMap</span>, <span class="ident">StorageMap</span>, <span class="ident">StorageValue</span>,
 };
 <span class="kw">use</span> <span class="ident">frame_system</span>::{<span class="self">self</span> <span class="kw">as</span> <span class="ident">system</span>, <span class="ident">ensure_signed</span>};
-<span class="kw">use</span> <span class="ident">pallet_contract_operator</span>::<span class="ident">ContractFinder</span>;
 <span class="kw">use</span> <span class="ident">pallet_plasm_rewards</span>::{
     <span class="ident">traits</span>::{<span class="ident">ComputeEraWithParam</span>, <span class="ident">EraFinder</span>, <span class="ident">ForDappsEraRewardFinder</span>, <span class="ident">HistoryDepthFinder</span>},
     <span class="ident">EraIndex</span>, <span class="ident">Releases</span>,
 };
+<span class="kw">use</span> <span class="ident">pallet_plasm_support</span>::<span class="ident">ContractFinder</span>;
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident">pallet_staking</span>::{<span class="ident">Forcing</span>, <span class="ident">RewardDestination</span>};
 <span class="kw">use</span> <span class="ident">sp_runtime</span>::{
     <span class="ident">traits</span>::{<span class="ident">AtLeast32BitUnsigned</span>, <span class="ident">CheckedSub</span>, <span class="ident">Saturating</span>, <span class="ident">StaticLookup</span>, <span class="ident">Zero</span>},

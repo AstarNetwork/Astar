@@ -185,52 +185,6 @@
 <span id="184">184</span>
 <span id="185">185</span>
 <span id="186">186</span>
-<span id="187">187</span>
-<span id="188">188</span>
-<span id="189">189</span>
-<span id="190">190</span>
-<span id="191">191</span>
-<span id="192">192</span>
-<span id="193">193</span>
-<span id="194">194</span>
-<span id="195">195</span>
-<span id="196">196</span>
-<span id="197">197</span>
-<span id="198">198</span>
-<span id="199">199</span>
-<span id="200">200</span>
-<span id="201">201</span>
-<span id="202">202</span>
-<span id="203">203</span>
-<span id="204">204</span>
-<span id="205">205</span>
-<span id="206">206</span>
-<span id="207">207</span>
-<span id="208">208</span>
-<span id="209">209</span>
-<span id="210">210</span>
-<span id="211">211</span>
-<span id="212">212</span>
-<span id="213">213</span>
-<span id="214">214</span>
-<span id="215">215</span>
-<span id="216">216</span>
-<span id="217">217</span>
-<span id="218">218</span>
-<span id="219">219</span>
-<span id="220">220</span>
-<span id="221">221</span>
-<span id="222">222</span>
-<span id="223">223</span>
-<span id="224">224</span>
-<span id="225">225</span>
-<span id="226">226</span>
-<span id="227">227</span>
-<span id="228">228</span>
-<span id="229">229</span>
-<span id="230">230</span>
-<span id="231">231</span>
-<span id="232">232</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="attribute">#![<span class="ident">cfg_attr</span>(<span class="ident">not</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>), <span class="ident">no_std</span>)]</span>
 
@@ -238,10 +192,7 @@
 <span class="kw">use</span> <span class="ident">frame_support</span>::{<span class="ident">decl_event</span>, <span class="ident">decl_module</span>, <span class="ident">decl_storage</span>, <span class="ident">Parameter</span>};
 <span class="kw">use</span> <span class="ident">frame_system</span>::{<span class="ident">ensure_signed</span>, <span class="ident">RawOrigin</span>};
 <span class="kw">use</span> <span class="ident">pallet_contracts</span>::{<span class="ident">BalanceOf</span>, <span class="ident">CodeHash</span>, <span class="ident">ContractAddressFor</span>, <span class="ident">Gas</span>};
-<span class="kw">use</span> <span class="ident">sp_runtime</span>::{
-    <span class="ident">traits</span>::{<span class="ident">MaybeDisplay</span>, <span class="ident">MaybeSerialize</span>, <span class="ident">Member</span>},
-    <span class="ident">DispatchError</span>,
-};
+<span class="kw">use</span> <span class="ident">sp_runtime</span>::<span class="ident">traits</span>::{<span class="ident">MaybeDisplay</span>, <span class="ident">MaybeSerialize</span>, <span class="ident">Member</span>};
 <span class="kw">use</span> <span class="ident">sp_std</span>::<span class="ident">prelude</span>::<span class="kw-2">*</span>;
 
 <span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">parameters</span>;
@@ -250,50 +201,7 @@
 
 <span class="kw">use</span> <span class="kw">crate</span>::<span class="ident">parameters</span>::<span class="ident">Verifiable</span>;
 
-<span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">ContractFinder</span><span class="op">&lt;</span><span class="ident">AccountId</span>, <span class="ident">Parameter</span><span class="op">&gt;</span> {
-    <span class="kw">fn</span> <span class="ident">is_exists_contract</span>(<span class="ident">contract_id</span>: <span class="kw-2">&amp;</span><span class="ident">AccountId</span>) <span class="op">-&gt;</span> <span class="ident">bool</span>;
-    <span class="kw">fn</span> <span class="ident">operator</span>(<span class="ident">contract_id</span>: <span class="kw-2">&amp;</span><span class="ident">AccountId</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">AccountId</span><span class="op">&gt;</span>;
-    <span class="kw">fn</span> <span class="ident">parameters</span>(<span class="ident">contract_id</span>: <span class="kw-2">&amp;</span><span class="ident">AccountId</span>) <span class="op">-&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Parameter</span><span class="op">&gt;</span>;
-}
-
-<span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">OperatorFinder</span><span class="op">&lt;</span><span class="ident">AccountId</span>: <span class="ident">Parameter</span><span class="op">&gt;</span> {
-    <span class="kw">fn</span> <span class="ident">contracts</span>(<span class="ident">operator_id</span>: <span class="kw-2">&amp;</span><span class="ident">AccountId</span>) <span class="op">-&gt;</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">AccountId</span><span class="op">&gt;</span>;
-}
-
-<span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">TransferOperator</span><span class="op">&lt;</span><span class="ident">AccountId</span>: <span class="ident">Parameter</span><span class="op">&gt;</span>: <span class="ident">OperatorFinder</span><span class="op">&lt;</span><span class="ident">AccountId</span><span class="op">&gt;</span> {
-    <span class="doccomment">/// Changes an operator for identified contracts with verify.</span>
-    <span class="kw">fn</span> <span class="ident">transfer_operator</span>(
-        <span class="ident">current_operator</span>: <span class="ident">AccountId</span>,
-        <span class="ident">contracts</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">AccountId</span><span class="op">&gt;</span>,
-        <span class="ident">new_operator</span>: <span class="ident">AccountId</span>,
-    ) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">DispatchError</span><span class="op">&gt;</span> {
-        <span class="self">Self</span>::<span class="ident">verify_transfer_operator</span>(<span class="kw-2">&amp;</span><span class="ident">current_operator</span>, <span class="kw-2">&amp;</span><span class="ident">contracts</span>)<span class="question-mark">?</span>;
-        <span class="self">Self</span>::<span class="ident">force_transfer_operator</span>(<span class="ident">current_operator</span>, <span class="ident">contracts</span>, <span class="ident">new_operator</span>);
-        <span class="prelude-val">Ok</span>(())
-    }
-
-    <span class="kw">fn</span> <span class="ident">verify_transfer_operator</span>(
-        <span class="ident">current_operator</span>: <span class="kw-2">&amp;</span><span class="ident">AccountId</span>,
-        <span class="ident">contracts</span>: <span class="kw-2">&amp;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">AccountId</span><span class="op">&gt;</span>,
-    ) <span class="op">-&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">DispatchError</span><span class="op">&gt;</span> {
-        <span class="kw">let</span> <span class="ident">operate_contracts</span> <span class="op">=</span> <span class="self">Self</span>::<span class="ident">contracts</span>(<span class="ident">current_operator</span>);
-
-        <span class="comment">// check the actually operate the contract.</span>
-        <span class="kw">if</span> <span class="op">!</span><span class="ident">contracts</span>.<span class="ident">iter</span>().<span class="ident">all</span>(<span class="op">|</span><span class="ident">c</span><span class="op">|</span> <span class="ident">operate_contracts</span>.<span class="ident">contains</span>(<span class="ident">c</span>)) {
-            <span class="prelude-val">Err</span>(<span class="ident">DispatchError</span>::<span class="ident">Other</span>(
-                <span class="string">&quot;The sender don&#39;t operate the contracts address.&quot;</span>,
-            ))<span class="question-mark">?</span>
-        }
-        <span class="prelude-val">Ok</span>(())
-    }
-
-    <span class="doccomment">/// Force Changes an operator for identified contracts without verify.</span>
-    <span class="kw">fn</span> <span class="ident">force_transfer_operator</span>(
-        <span class="ident">current_operator</span>: <span class="ident">AccountId</span>,
-        <span class="ident">contracts</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">AccountId</span><span class="op">&gt;</span>,
-        <span class="ident">new_operator</span>: <span class="ident">AccountId</span>,
-    );
-}
+<span class="kw">use</span> <span class="ident">pallet_plasm_support</span>::{<span class="ident">ContractFinder</span>, <span class="ident">OperatorFinder</span>, <span class="ident">TransferOperator</span>};
 
 <span class="doccomment">/// The module&#39;s configuration trait.</span>
 <span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">Trait</span>: <span class="ident">pallet_contracts</span>::<span class="ident">Trait</span> {

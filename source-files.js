@@ -10,6 +10,7 @@ sourcesIndex["pallet_ovm"] = {"name":"","dirs":[{"name":"predicate","files":["ca
 sourcesIndex["pallet_ovm_rpc_runtime_api"] = {"name":"","files":["lib.rs"]};
 sourcesIndex["pallet_plasm_lockdrop"] = {"name":"","files":["crypto.rs","lib.rs","oracle.rs"]};
 sourcesIndex["pallet_plasm_rewards"] = {"name":"","files":["inflation.rs","lib.rs","traits.rs"]};
+sourcesIndex["pallet_plasm_support"] = {"name":"","files":["lib.rs"]};
 sourcesIndex["pallet_plasm_validator"] = {"name":"","files":["compute_era.rs","lib.rs"]};
 sourcesIndex["pallet_plasma"] = {"name":"","files":["deserializer.rs","lib.rs"]};
 sourcesIndex["pallet_plasma_rpc_runtime_api"] = {"name":"","files":["lib.rs"]};
