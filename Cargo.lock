@@ -4527,7 +4527,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-plasm-support"
-version = "0.1.0"
+version = "1.7.0"
 dependencies = [
  "frame-support",
  "sp-runtime",

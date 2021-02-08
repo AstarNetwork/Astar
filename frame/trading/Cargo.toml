@@ -20,7 +20,7 @@ frame-support = { version = "2.0.0", default_features = false }
 pallet-timestamp = { version = "2.0.0", default_features = false }
 frame-system = { version = "2.0.0", default_features = false }
 
-pallet-plasm-support = { path = "../plasm-support", version = "0.1.0", default_features = false }
+pallet-plasm-support = { path = "../plasm-support", version = "1.7.0", default_features = false }
 
 [features]
 default = ["std"]
