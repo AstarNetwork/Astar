@@ -31,7 +31,7 @@ sp-session = { version = "2.0.0", default-features = false }
 
 # frame dependencies
 #pallet-contract-operator = { path = "../../../frame/operator", default-features = false }
-#pallet-operator-trading = { path = "../../../frame/trading", default-features = false }
+pallet-operator-trading = { path = "../../../frame/trading", default-features = false }
 #pallet-dapps-staking = { path = "../../../frame/dapps-staking", default-features = false }
 pallet-plasm-rewards = { path = "../../../frame/plasm-rewards", default-features = false }
 pallet-plasm-validator = { path = "../../../frame/plasm-validator", default-features = false }
