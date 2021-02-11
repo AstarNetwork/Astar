@@ -3767,6 +3767,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-operator-trading"
+version = "1.7.0"
+dependencies = [
+ "frame-support",
+ "frame-system",
+ "pallet-balances",
+ "pallet-plasm-support",
+ "pallet-timestamp",
+ "parity-scale-codec",
+ "serde",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
 name = "pallet-plasm-rewards"
 version = "1.7.0"
 dependencies = [
@@ -4448,6 +4465,7 @@ dependencies = [
  "pallet-grandpa",
  "pallet-indices",
  "pallet-nicks",
+ "pallet-operator-trading",
  "pallet-plasm-rewards",
  "pallet-plasm-validator",
  "pallet-randomness-collective-flip",
