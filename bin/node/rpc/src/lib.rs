@@ -15,8 +15,8 @@
 
 use std::sync::Arc;
 
+use fc_rpc_core::types::{FilterPool, PendingTransactions};
 use jsonrpc_pubsub::manager::SubscriptionManager;
-use fc_rpc_core::types::{PendingTransactions, FilterPool};
 use plasm_primitives::{AccountId, Balance, Block, BlockNumber, Hash, Index};
 use sc_client_api::{
     backend::{AuxStore, StateBackend, StorageProvider},
@@ -29,7 +29,6 @@ use sc_finality_grandpa::{
     FinalityProofProvider, GrandpaJustificationStream, SharedAuthoritySet, SharedVoterState,
 };
 use sc_finality_grandpa_rpc::GrandpaRpcHandler;
-use sp_keystore::SyncCryptoStorePtr;
 use sc_rpc::SubscriptionTaskExecutor;
 pub use sc_rpc_api::DenyUnsafe;
 use sp_api::ProvideRuntimeApi;
@@ -37,6 +36,7 @@ use sp_block_builder::BlockBuilder;
 use sp_blockchain::{Error as BlockChainError, HeaderBackend, HeaderMetadata};
 use sp_consensus::SelectChain;
 use sp_consensus_babe::BabeApi;
+use sp_keystore::SyncCryptoStorePtr;
 use sp_transaction_pool::TransactionPool;
 
 /// Light client extra dependencies.
@@ -125,8 +125,8 @@ where
     B::State: StateBackend<sp_runtime::traits::HashFor<Block>>,
 {
     use fc_rpc::{
-        EthApi, EthApiServer, EthPubSubApi, EthPubSubApiServer, NetApi, NetApiServer,
-        Web3ApiServer, HexEncodedIdProvider, EthFilterApi, EthFilterApiServer, Web3Api,
+        EthApi, EthApiServer, EthFilterApi, EthFilterApiServer, EthPubSubApi, EthPubSubApiServer,
+        HexEncodedIdProvider, NetApi, NetApiServer, Web3Api, Web3ApiServer,
     };
     use pallet_contracts_rpc::{Contracts, ContractsApi};
     use pallet_transaction_payment_rpc::{TransactionPayment, TransactionPaymentApi};
@@ -200,30 +200,24 @@ where
         is_authority,
     )));
     if let Some(filter_pool) = filter_pool {
-        io.extend_with(
-            EthFilterApiServer::to_delegate(EthFilterApi::new(
-                client.clone(),
-                filter_pool.clone(),
-                500 as usize, // max stored filters
-            ))
-        );
+        io.extend_with(EthFilterApiServer::to_delegate(EthFilterApi::new(
+            client.clone(),
+            filter_pool.clone(),
+            500 as usize, // max stored filters
+        )));
     }
     io.extend_with(NetApiServer::to_delegate(NetApi::new(
         client.clone(),
         network.clone(),
     )));
-    io.extend_with(
-        Web3ApiServer::to_delegate(Web3Api::new(
-            client.clone(),
-        ))
-    );
+    io.extend_with(Web3ApiServer::to_delegate(Web3Api::new(client.clone())));
     io.extend_with(EthPubSubApiServer::to_delegate(EthPubSubApi::new(
         pool.clone(),
         client.clone(),
         network.clone(),
         SubscriptionManager::<HexEncodedIdProvider>::with_id_provider(
             HexEncodedIdProvider::default(),
-            Arc::new(subscription_task_executor)
+            Arc::new(subscription_task_executor),
         ),
     )));
 

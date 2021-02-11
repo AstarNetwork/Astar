@@ -7,7 +7,7 @@ pub mod currency {
     pub const PLM: Balance = 1_000 * MILLIPLM;
 
     pub const fn deposit(items: u32, bytes: u32) -> Balance {
-        items as Balance * 150 * MILLIPLM + (bytes as Balance) * 60 * MILLIPLM 
+        items as Balance * 150 * MILLIPLM + (bytes as Balance) * 60 * MILLIPLM
     }
 
     #[cfg(feature = "std")]

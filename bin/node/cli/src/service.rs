@@ -4,15 +4,18 @@ use fc_consensus::FrontierBlockImport;
 use fc_rpc_core::types::{FilterPool, PendingTransactions};
 use plasm_primitives::Block;
 use plasm_runtime::RuntimeApi;
-use sc_client_api::{ExecutorProvider, RemoteBackend, BlockchainEvents};
+use sc_client_api::{BlockchainEvents, ExecutorProvider, RemoteBackend};
 use sc_consensus_babe;
 use sc_finality_grandpa::{self as grandpa, FinalityProofProvider as GrandpaFinalityProofProvider};
 use sc_network::NetworkService;
 use sc_service::{config::Configuration, error::Error as ServiceError, RpcHandlers, TaskManager};
+use sc_telemetry::TelemetrySpan;
 use sp_inherents::InherentDataProviders;
 use sp_runtime::traits::Block as BlockT;
-use sc_telemetry::TelemetrySpan;
-use std::{sync::{Arc, Mutex}, collections::{HashMap, BTreeMap}};
+use std::{
+    collections::{BTreeMap, HashMap},
+    sync::{Arc, Mutex},
+};
 
 sc_executor::native_executor_instance!(
     pub Executor,
@@ -37,14 +40,14 @@ pub fn new_partial(
         sp_consensus::DefaultImportQueue<Block, FullClient>,
         sc_transaction_pool::FullPool<Block, FullClient>,
         (
-        sc_consensus_babe::BabeBlockImport<
-            Block,
-            FullClient,
-            FrontierBlockImport<Block, FullGrandpaBlockImport, FullClient>,
-        >,
-        grandpa::LinkHalf<Block, FullClient, FullSelectChain>,
-        sc_consensus_babe::BabeLink<Block>,
-        Option<TelemetrySpan>,
+            sc_consensus_babe::BabeBlockImport<
+                Block,
+                FullClient,
+                FrontierBlockImport<Block, FullGrandpaBlockImport, FullClient>,
+            >,
+            grandpa::LinkHalf<Block, FullClient, FullSelectChain>,
+            sc_consensus_babe::BabeLink<Block>,
+            Option<TelemetrySpan>,
         ),
     >,
     ServiceError,
@@ -132,21 +135,18 @@ pub fn new_full_base(
 
     let (block_import, grandpa_link, babe_link, telemetry_span) = import_setup;
 
-    let pending_transactions: PendingTransactions
-        = Some(Arc::new(Mutex::new(HashMap::new())));
+    let pending_transactions: PendingTransactions = Some(Arc::new(Mutex::new(HashMap::new())));
 
-    let filter_pool: Option<FilterPool>
-        = Some(Arc::new(Mutex::new(BTreeMap::new())));
+    let filter_pool: Option<FilterPool> = Some(Arc::new(Mutex::new(BTreeMap::new())));
 
     let justification_stream = grandpa_link.justification_stream();
     let shared_authority_set = grandpa_link.shared_authority_set().clone();
     let shared_voter_state = grandpa::SharedVoterState::empty();
-    let finality_proof_provider =
-        GrandpaFinalityProofProvider::new_for_service(
-            backend.clone(),
-            client.clone(),
-            Some(shared_authority_set.clone()),
-        );
+    let finality_proof_provider = GrandpaFinalityProofProvider::new_for_service(
+        backend.clone(),
+        client.clone(),
+        Some(shared_authority_set.clone()),
+    );
 
     let (network, network_status_sinks, system_rpc_tx, network_starter) =
         sc_service::build_network(sc_service::BuildNetworkParams {
@@ -219,21 +219,22 @@ pub fn new_full_base(
         }
     };
 
-    let (_rpc_handlers, telemetry_connection_notifier) = sc_service::spawn_tasks(sc_service::SpawnTasksParams {
-        config,
-        backend: backend.clone(),
-        client: client.clone(),
-        keystore: keystore_container.sync_keystore(),
-        network: network.clone(),
-        rpc_extensions_builder: Box::new(rpc_extensions_builder),
-        transaction_pool: transaction_pool.clone(),
-        task_manager: &mut task_manager,
-        on_demand: None,
-        remote_blockchain: None,
-        network_status_sinks,
-        system_rpc_tx,
-        telemetry_span,
-    })?;
+    let (_rpc_handlers, telemetry_connection_notifier) =
+        sc_service::spawn_tasks(sc_service::SpawnTasksParams {
+            config,
+            backend: backend.clone(),
+            client: client.clone(),
+            keystore: keystore_container.sync_keystore(),
+            network: network.clone(),
+            rpc_extensions_builder: Box::new(rpc_extensions_builder),
+            transaction_pool: transaction_pool.clone(),
+            task_manager: &mut task_manager,
+            on_demand: None,
+            remote_blockchain: None,
+            network_status_sinks,
+            system_rpc_tx,
+            telemetry_span,
+        })?;
 
     // Spawn Frontier EthFilterApi maintenance task.
     if filter_pool.is_some() {
@@ -242,60 +243,67 @@ pub fn new_full_base(
         const FILTER_RETAIN_THRESHOLD: u64 = 100;
         task_manager.spawn_essential_handle().spawn(
             "frontier-filter-pool",
-            client.import_notification_stream().for_each(move |notification| {
-                if let Ok(locked) = &mut filter_pool.clone().unwrap().lock() {
-                    let imported_number: u64 = notification.header.number as u64;
-                    for (k, v) in locked.clone().iter() {
-                        let lifespan_limit = v.at_block + FILTER_RETAIN_THRESHOLD;
-                        if lifespan_limit <= imported_number {
-                            locked.remove(&k);
+            client
+                .import_notification_stream()
+                .for_each(move |notification| {
+                    if let Ok(locked) = &mut filter_pool.clone().unwrap().lock() {
+                        let imported_number: u64 = notification.header.number as u64;
+                        for (k, v) in locked.clone().iter() {
+                            let lifespan_limit = v.at_block + FILTER_RETAIN_THRESHOLD;
+                            if lifespan_limit <= imported_number {
+                                locked.remove(&k);
+                            }
                         }
                     }
-                }
-                futures::future::ready(())
-            })
+                    futures::future::ready(())
+                }),
         );
     }
 
     // Spawn Frontier pending transactions maintenance task (as essential, otherwise we leak).
     if pending_transactions.is_some() {
+        use fp_consensus::{ConsensusLog, FRONTIER_ENGINE_ID};
         use futures::StreamExt;
-        use fp_consensus::{FRONTIER_ENGINE_ID, ConsensusLog};
         use sp_runtime::generic::OpaqueDigestItemId;
 
         const TRANSACTION_RETAIN_THRESHOLD: u64 = 5;
         task_manager.spawn_essential_handle().spawn(
             "frontier-pending-transactions",
-            client.import_notification_stream().for_each(move |notification| {
-
-                if let Ok(locked) = &mut pending_transactions.clone().unwrap().lock() {
-                    // As pending transactions have a finite lifespan anyway
-                    // we can ignore MultiplePostRuntimeLogs error checks.
-                    let mut frontier_log: Option<_> = None;
-                    for log in notification.header.digest.logs {
-                        let log = log.try_to::<ConsensusLog>(OpaqueDigestItemId::Consensus(&FRONTIER_ENGINE_ID));
-                        if let Some(log) = log {
-                            frontier_log = Some(log);
+            client
+                .import_notification_stream()
+                .for_each(move |notification| {
+                    if let Ok(locked) = &mut pending_transactions.clone().unwrap().lock() {
+                        // As pending transactions have a finite lifespan anyway
+                        // we can ignore MultiplePostRuntimeLogs error checks.
+                        let mut frontier_log: Option<_> = None;
+                        for log in notification.header.digest.logs {
+                            let log = log.try_to::<ConsensusLog>(OpaqueDigestItemId::Consensus(
+                                &FRONTIER_ENGINE_ID,
+                            ));
+                            if let Some(log) = log {
+                                frontier_log = Some(log);
+                            }
                         }
-                    }
 
-                    let imported_number: u64 = notification.header.number as u64;
+                        let imported_number: u64 = notification.header.number as u64;
 
-                    if let Some(ConsensusLog::EndBlock {
-                        block_hash: _, transaction_hashes,
-                    }) = frontier_log {
-                        // Retain all pending transactions that were not
-                        // processed in the current block.
-                        locked.retain(|&k, _| !transaction_hashes.contains(&k));
+                        if let Some(ConsensusLog::EndBlock {
+                            block_hash: _,
+                            transaction_hashes,
+                        }) = frontier_log
+                        {
+                            // Retain all pending transactions that were not
+                            // processed in the current block.
+                            locked.retain(|&k, _| !transaction_hashes.contains(&k));
+                        }
+                        locked.retain(|_, v| {
+                            // Drop all the transactions that exceeded the given lifespan.
+                            let lifespan_limit = v.at_block + TRANSACTION_RETAIN_THRESHOLD;
+                            lifespan_limit > imported_number
+                        });
                     }
-                    locked.retain(|_, v| {
-                        // Drop all the transactions that exceeded the given lifespan.
-                        let lifespan_limit = v.at_block + TRANSACTION_RETAIN_THRESHOLD;
-                        lifespan_limit > imported_number
-                    });
-                }
-                futures::future::ready(())
-            })
+                    futures::future::ready(())
+                }),
         );
     }
 
@@ -473,21 +481,22 @@ pub fn new_light_base(
 
     let rpc_extensions = plasm_rpc::create_light(light_deps);
 
-    let (rpc_handlers, _telemetry_connection_notifier) = sc_service::spawn_tasks(sc_service::SpawnTasksParams {
-        on_demand: Some(on_demand),
-        remote_blockchain: Some(backend.remote_blockchain()),
-        rpc_extensions_builder: Box::new(sc_service::NoopRpcExtensionBuilder(rpc_extensions)),
-        client: client.clone(),
-        transaction_pool: transaction_pool.clone(),
-        config,
-        keystore: keystore_container.sync_keystore(),
-        backend,
-        network_status_sinks,
-        system_rpc_tx,
-        network: network.clone(),
-        task_manager: &mut task_manager,
-        telemetry_span,
-    })?;
+    let (rpc_handlers, _telemetry_connection_notifier) =
+        sc_service::spawn_tasks(sc_service::SpawnTasksParams {
+            on_demand: Some(on_demand),
+            remote_blockchain: Some(backend.remote_blockchain()),
+            rpc_extensions_builder: Box::new(sc_service::NoopRpcExtensionBuilder(rpc_extensions)),
+            client: client.clone(),
+            transaction_pool: transaction_pool.clone(),
+            config,
+            keystore: keystore_container.sync_keystore(),
+            backend,
+            network_status_sinks,
+            system_rpc_tx,
+            network: network.clone(),
+            task_manager: &mut task_manager,
+            telemetry_span,
+        })?;
 
     Ok((
         task_manager,

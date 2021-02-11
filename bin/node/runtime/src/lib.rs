@@ -5,15 +5,16 @@
 #![recursion_limit = "256"]
 
 use codec::{Decode, Encode};
-use frame_system::limits::{BlockWeights, BlockLength};
 use frame_support::{
     construct_runtime, debug, parameter_types,
     traits::{FindAuthor, KeyOwnerProofSystem, Randomness},
     weights::{
         constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_PER_SECOND},
-        IdentityFee, Weight, DispatchClass,
+        DispatchClass, IdentityFee, Weight,
     },
 };
+use frame_system::limits::{BlockLength, BlockWeights};
+use pallet_contracts::WeightInfo;
 use pallet_evm::{
     Account as EVMAccount, EnsureAddressRoot, EnsureAddressTruncated, FeeCalculator,
     HashedAddressMapping, Runner,
@@ -21,7 +22,9 @@ use pallet_evm::{
 use pallet_grandpa::fg_primitives;
 use pallet_grandpa::{AuthorityId as GrandpaId, AuthorityList as GrandpaAuthorityList};
 use pallet_session::historical as pallet_session_historical;
-use pallet_transaction_payment::{Multiplier, TargetedFeeAdjustment, FeeDetails, RuntimeDispatchInfo, CurrencyAdapter};
+use pallet_transaction_payment::{
+    CurrencyAdapter, FeeDetails, Multiplier, RuntimeDispatchInfo, TargetedFeeAdjustment,
+};
 use plasm_primitives::{
     AccountId, AccountIndex, Balance, BlockNumber, Hash, Index, Moment, Signature,
 };
@@ -35,12 +38,11 @@ use sp_runtime::traits::{
 use sp_runtime::transaction_validity::{
     TransactionPriority, TransactionSource, TransactionValidity,
 };
-use sp_std::convert::TryFrom;
-use pallet_contracts::WeightInfo;
 use sp_runtime::{
-    create_runtime_str, generic, impl_opaque_keys, ApplyExtrinsicResult, FixedPointNumber,
-    Perbill, Perquintill, RuntimeAppPublic,
+    create_runtime_str, generic, impl_opaque_keys, ApplyExtrinsicResult, FixedPointNumber, Perbill,
+    Perquintill, RuntimeAppPublic,
 };
+use sp_std::convert::TryFrom;
 use sp_std::prelude::*;
 #[cfg(any(feature = "std", test))]
 use sp_version::NativeVersion;
@@ -602,9 +604,7 @@ impl fp_rpc::ConvertTransaction<UncheckedExtrinsic> for TransactionConverter {
         )
     }
 }
-impl fp_rpc::ConvertTransaction<sp_runtime::OpaqueExtrinsic>
-    for TransactionConverter
-{
+impl fp_rpc::ConvertTransaction<sp_runtime::OpaqueExtrinsic> for TransactionConverter {
     fn convert_transaction(
         &self,
         transaction: pallet_ethereum::Transaction,
