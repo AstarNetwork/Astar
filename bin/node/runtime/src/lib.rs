@@ -26,8 +26,7 @@ use plasm_primitives::{
     AccountId, AccountIndex, Balance, BlockNumber, Hash, Index, Moment, Signature,
 };
 use sp_api::impl_runtime_apis;
-use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
-use primitive_types::{H160, H256, U256};
+use sp_core::{crypto::KeyTypeId, OpaqueMetadata, H160, H256, U256};
 use sp_inherents::{CheckInherentsResult, InherentData};
 use sp_runtime::traits::{
     BlakeTwo256, Block as BlockT, ConvertInto, Extrinsic, NumberFor, OpaqueKeys,

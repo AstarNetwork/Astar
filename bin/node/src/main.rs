@@ -1,4 +1,4 @@
-//! Plasm Node CLI
+//! Plasm Node executable. 
 
 #![warn(missing_docs)]
 
