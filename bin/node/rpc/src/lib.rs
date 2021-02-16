@@ -1,6 +1,6 @@
 //! A collection of node-specific RPC methods.
 
-use std::{fmt, sync::Arc};
+use std::sync::Arc;
 
 use plasm_primitives::{AccountId, Balance, Block, BlockNumber, Hash, Index};
 use sc_client_api::{
@@ -11,7 +11,6 @@ use sc_rpc_api::DenyUnsafe;
 use sp_api::ProvideRuntimeApi;
 use sp_block_builder::BlockBuilder;
 use sp_blockchain::{Error as BlockChainError, HeaderBackend, HeaderMetadata};
-use sp_runtime::traits::BlakeTwo256;
 use sp_transaction_pool::TransactionPool;
 
 /// Light client extra dependencies.
@@ -40,7 +39,7 @@ pub struct FullDeps<C, P> {
 pub fn create_full<C, P, BE>(deps: FullDeps<C, P>) -> jsonrpc_core::IoHandler<sc_rpc::Metadata>
 where
     BE: Backend<Block> + 'static,
-    BE::State: StateBackend<BlakeTwo256>,
+    BE::State: StateBackend<sp_runtime::traits::HashFor<Block>>,
     C: ProvideRuntimeApi<Block> + StorageProvider<Block, BE> + AuxStore,
     C: BlockchainEvents<Block>,
     C: HeaderBackend<Block> + HeaderMetadata<Block, Error = BlockChainError> + 'static,
@@ -49,7 +48,6 @@ where
     C::Api: BlockBuilder<Block>,
     C::Api: pallet_contracts_rpc::ContractsRuntimeApi<Block, AccountId, Balance, BlockNumber>,
     C::Api: pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>,
-    <C::Api as sp_api::ApiErrorExt>::Error: fmt::Debug,
     P: TransactionPool<Block = Block> + 'static,
 {
     use pallet_contracts_rpc::{Contracts, ContractsApi};

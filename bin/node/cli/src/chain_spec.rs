@@ -1,11 +1,11 @@
 //! Chain specification.
 
 use cumulus_primitives_core::ParaId;
-use plasm_primitives::{AccountId, Balance, Signature};
+use plasm_primitives::{AccountId, Balance, Signature, CurrencyId, TokenSymbol};
 use plasm_runtime::constants::currency::PLM;
 use plasm_runtime::{
     BalancesConfig, ContractsConfig, GenesisConfig, ParachainInfoConfig, SudoConfig, SystemConfig,
-    WASM_BINARY,
+    TokensConfig, WASM_BINARY,
 };
 use sc_chain_spec::ChainSpecExtension;
 use sc_service::ChainType;
@@ -82,11 +82,12 @@ pub fn get_chain_spec(id: ParaId) -> ChainSpec {
     )
 }
 
+/*
 fn plasm_chain_spec() -> ChainSpec {
     ChainSpec::from_json_bytes(&include_bytes!("../res/plasm_parachain.json")[..]).unwrap()
 }
+*/
 
-/*
 fn plasm_chain_spec() -> ChainSpec {
     let para_id: u32 = 5000;
     let sudo_key = AccountId::from_ss58check("5GvHmdxMzYLrWCVLeEcGy6YwDxSS47dsTDRGhMvhthJAfMWf")
@@ -114,7 +115,6 @@ fn plasm_chain_spec() -> ChainSpec {
         },
     )
 }
-*/
 
 fn testnet_genesis(
     sudo_key: AccountId,
@@ -153,6 +153,12 @@ fn make_genesis(
         frame_system: Some(SystemConfig {
             code: WASM_BINARY.to_vec(),
             changes_trie_config: Default::default(),
+        }),
+        orml_tokens: Some(TokensConfig { endowed_accounts: balances
+                .iter()
+                .cloned()
+                .map(|(a, b)| (a, CurrencyId::Token(TokenSymbol::PLM), b))
+                .collect()
         }),
         pallet_balances: Some(BalancesConfig { balances }),
         pallet_contracts: Some(ContractsConfig {

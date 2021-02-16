@@ -22,7 +22,7 @@ use plasm_primitives::{
     AccountId, Amount, Balance, BlockNumber, CurrencyId, Hash, Index, Moment, Signature,
     TokenSymbol,
 };
-//use orml_xcm_support::{CurrencyIdConverter, IsConcreteWithGeneralKey, MultiCurrencyAdapter};
+use orml_xcm_support::{CurrencyIdConverter, IsConcreteWithGeneralKey, MultiCurrencyAdapter};
 use sp_api::impl_runtime_apis;
 use sp_core::{OpaqueMetadata, H160, H256, U256};
 use sp_inherents::{CheckInherentsResult, InherentData};
@@ -62,8 +62,8 @@ pub use sp_runtime::BuildStorage;
 /// Constant values used within the runtime.
 pub mod constants;
 use constants::{currency::*, time::*};
-//mod currency_adapter;
-//use currency_adapter::NativeCurrencyAdapter;
+mod currency_adapter;
+use currency_adapter::NativeCurrencyAdapter;
 
 // Make the WASM binary available.
 #[cfg(feature = "std")]
@@ -168,7 +168,6 @@ impl pallet_balances::Config for Runtime {
     type WeightInfo = ();
 }
 
-/*
 parameter_types! {
     pub DustAccount: AccountId = ModuleId(*b"orml/dst").into_account();
 }
@@ -200,7 +199,6 @@ impl orml_currencies::Config for Runtime {
     type GetNativeCurrencyId = GetNativeCurrencyId;
     type WeightInfo = ();
 }
-*/
 
 parameter_types! {
     pub const TransactionByteFee: Balance = 10 * MILLIPLM;
@@ -331,7 +329,6 @@ type LocalOriginConverter = (
     SignedAccountId32AsNative<PlasmNetwork, Origin>,
 );
 
-/*
 pub type LocalAssetTransactor = MultiCurrencyAdapter<
     Currencies,
     IsConcreteWithGeneralKey<CurrencyId, RelayToNative>,
@@ -339,18 +336,6 @@ pub type LocalAssetTransactor = MultiCurrencyAdapter<
     AccountId,
     CurrencyIdConverter<CurrencyId, RelayChainCurrencyId>,
     CurrencyId,
->;
-*/
-
-type LocalAssetTransactor = CurrencyAdapter<
-    // Use this currency:
-    Balances,
-    // Use this currency when it is a fungible asset matching the given location or name:
-    IsConcrete<RococoLocation>,
-    // Do a simple punn to convert an AccountId32 MultiLocation into a native chain account ID:
-    LocationConverter,
-    // Our chain's account ID type (we can't get away without mentioning it explicitly):
-    AccountId,
 >;
 
 pub struct XcmConfig;
@@ -372,7 +357,6 @@ impl cumulus_pallet_xcm_handler::Config for Runtime {
     type HrmpMessageSender = ParachainSystem;
 }
 
-/*
 pub struct RelayToNative;
 impl Convert<RelayChainBalance, Balance> for RelayToNative {
     fn convert(val: u128) -> Balance {
@@ -408,7 +392,6 @@ impl orml_xtokens::Config for Runtime {
     type XcmExecutor = XcmExecutor<XcmConfig>;
     type ParaId = ParachainInfo;
 }
-*/
 
 impl cumulus_pallet_parachain_system::Config for Runtime {
     type Event = Event;
@@ -429,8 +412,8 @@ construct_runtime!(
         Timestamp: pallet_timestamp::{Module, Call, Storage, Inherent},
         TransactionPayment: pallet_transaction_payment::{Module, Storage},
         Balances: pallet_balances::{Module, Call, Storage, Event<T>, Config<T>},
-        //Currencies: orml_currencies::{Module, Call, Event<T>},
-        //Tokens: orml_tokens::{Module, Storage, Event<T>, Config<T>},
+        Currencies: orml_currencies::{Module, Call, Event<T>},
+        Tokens: orml_tokens::{Module, Storage, Event<T>, Config<T>},
         Contracts: pallet_contracts::{Module, Call, Storage, Event<T>, Config<T>},
         RandomnessCollectiveFlip: pallet_randomness_collective_flip::{Module, Call, Storage},
         Sudo: pallet_sudo::{Module, Call, Storage, Event<T>, Config<T>},
@@ -438,7 +421,7 @@ construct_runtime!(
         ParachainSystem: cumulus_pallet_parachain_system::{Module, Call, Storage, Inherent, Event},
         ParachainInfo: parachain_info::{Module, Storage, Config},
         XcmHandler: cumulus_pallet_xcm_handler::{Module, Event<T>, Origin, Call},
-        //XTokens: orml_xtokens::{Module, Storage, Call, Event<T>},
+        XTokens: orml_xtokens::{Module, Storage, Call, Event<T>},
     }
 );
 
