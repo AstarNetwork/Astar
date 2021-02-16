@@ -1,6 +1,6 @@
 //! Chain specification.
 
-use cumulus_primitives::ParaId;
+use cumulus_primitives_core::ParaId;
 use plasm_primitives::{AccountId, Balance, Signature};
 use plasm_runtime::constants::currency::PLM;
 use plasm_runtime::{

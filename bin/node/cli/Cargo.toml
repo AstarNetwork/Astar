@@ -17,7 +17,7 @@ crate-type = ["cdylib", "rlib"]
 
 [dependencies]
 # thidr-party dependencies
-codec = { package = "parity-scale-codec", version = "1.3" }
+codec = { package = "parity-scale-codec", version = "2.0" }
 serde = { version = "1.0", features = [ "derive" ] }
 structopt = { version = "0.3.8", optional = true }
 jsonrpc-core = "15.0"
@@ -70,10 +70,10 @@ pallet-contracts = { git = "https://github.com/paritytech/substrate", branch = "
 sc-cli = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1", optional = true }
 
 # cumulus dependencies
-cumulus-network = { git = "https://github.com/paritytech/cumulus", branch = "rococo-v1" }
-cumulus-service = { git = "https://github.com/paritytech/cumulus", branch = "rococo-v1" }
-cumulus-consensus = { git = "https://github.com/paritytech/cumulus", branch = "rococo-v1" }
-cumulus-primitives = { git = "https://github.com/paritytech/cumulus", branch = "rococo-v1" }
+cumulus-client-network = { git = "https://github.com/paritytech/cumulus", branch = "rococo-v1" }
+cumulus-client-service = { git = "https://github.com/paritytech/cumulus", branch = "rococo-v1" }
+cumulus-client-consensus = { git = "https://github.com/paritytech/cumulus", branch = "rococo-v1" }
+cumulus-primitives-core = { git = "https://github.com/paritytech/cumulus", branch = "rococo-v1" }
 polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "rococo-v1" }
 polkadot-parachain = { git = "https://github.com/paritytech/polkadot", branch = "rococo-v1" }
 polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "rococo-v1" }

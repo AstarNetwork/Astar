@@ -18,30 +18,33 @@ use pallet_contracts::WeightInfo;
 use pallet_transaction_payment::{
     FeeDetails, Multiplier, RuntimeDispatchInfo, TargetedFeeAdjustment,
 };
-use plasm_primitives::{AccountId, Amount, Balance, BlockNumber, Hash, Index, Moment, Signature, CurrencyId, TokenSymbol};
-use orml_xcm_support::{CurrencyIdConverter, IsConcreteWithGeneralKey, MultiCurrencyAdapter};
+use plasm_primitives::{
+    AccountId, Amount, Balance, BlockNumber, CurrencyId, Hash, Index, Moment, Signature,
+    TokenSymbol,
+};
+//use orml_xcm_support::{CurrencyIdConverter, IsConcreteWithGeneralKey, MultiCurrencyAdapter};
 use sp_api::impl_runtime_apis;
 use sp_core::{OpaqueMetadata, H160, H256, U256};
 use sp_inherents::{CheckInherentsResult, InherentData};
 use sp_runtime::traits::{
-    BlakeTwo256, Block as BlockT, Convert, Extrinsic, IdentityLookup, SaturatedConversion, Verify,
-    AccountIdConversion,
+    AccountIdConversion, BlakeTwo256, Block as BlockT, Convert, Extrinsic, IdentityLookup,
+    SaturatedConversion, Verify,
 };
 use sp_runtime::transaction_validity::{TransactionSource, TransactionValidity};
 use sp_runtime::{
-    create_runtime_str, generic, impl_opaque_keys, ApplyExtrinsicResult, FixedPointNumber, Perbill,
-    Perquintill, ModuleId,
+    create_runtime_str, generic, impl_opaque_keys, ApplyExtrinsicResult, FixedPointNumber,
+    ModuleId, Perbill, Perquintill,
 };
 use sp_std::prelude::*;
 #[cfg(any(feature = "std", test))]
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
 
-use cumulus_primitives::relay_chain::Balance as RelayChainBalance;
+use cumulus_primitives_core::relay_chain::Balance as RelayChainBalance;
 use polkadot_parachain::primitives::Sibling;
 use xcm::v0::{Junction, MultiLocation, NetworkId};
 use xcm_builder::{
-    AccountId32Aliases, LocationInverter, ParentIsDefault, RelayChainAsNative,
+    AccountId32Aliases, CurrencyAdapter, LocationInverter, ParentIsDefault, RelayChainAsNative,
     SiblingParachainAsNative, SiblingParachainConvertsVia, SignedAccountId32AsNative,
     SovereignSignedViaLocation,
 };
@@ -59,8 +62,8 @@ pub use sp_runtime::BuildStorage;
 /// Constant values used within the runtime.
 pub mod constants;
 use constants::{currency::*, time::*};
-mod currency_adapter;
-use currency_adapter::NativeCurrencyAdapter;
+//mod currency_adapter;
+//use currency_adapter::NativeCurrencyAdapter;
 
 // Make the WASM binary available.
 #[cfg(feature = "std")]
@@ -75,8 +78,8 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     // and set impl_version to equal spec_version. If only runtime
     // implementation changes and behavior does not, then leave spec_version as
     // is and increment impl_version.
-    spec_version: 3,
-    impl_version: 3,
+    spec_version: 4,
+    impl_version: 4,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 1,
 };
@@ -165,6 +168,7 @@ impl pallet_balances::Config for Runtime {
     type WeightInfo = ();
 }
 
+/*
 parameter_types! {
     pub DustAccount: AccountId = ModuleId(*b"orml/dst").into_account();
 }
@@ -196,6 +200,7 @@ impl orml_currencies::Config for Runtime {
     type GetNativeCurrencyId = GetNativeCurrencyId;
     type WeightInfo = ();
 }
+*/
 
 parameter_types! {
     pub const TransactionByteFee: Balance = 10 * MILLIPLM;
@@ -284,60 +289,6 @@ impl pallet_sudo::Config for Runtime {
     type Call = Call;
 }
 
-impl<LocalCall> frame_system::offchain::CreateSignedTransaction<LocalCall> for Runtime
-where
-    Call: From<LocalCall>,
-{
-    fn create_transaction<C: frame_system::offchain::AppCrypto<Self::Public, Self::Signature>>(
-        call: Call,
-        public: <Signature as Verify>::Signer,
-        account: AccountId,
-        nonce: Index,
-    ) -> Option<(Call, <UncheckedExtrinsic as Extrinsic>::SignaturePayload)> {
-        // take the biggest period possible.
-        let period = BlockHashCount::get()
-            .checked_next_power_of_two()
-            .map(|c| c / 2)
-            .unwrap_or(2) as u64;
-        let current_block = System::block_number()
-            .saturated_into::<u64>()
-            // The `System::block_number` is initialized with `n+1`,
-            // so the actual block number is `n`.
-            .saturating_sub(1);
-        let tip = 0;
-        let extra: SignedExtra = (
-            frame_system::CheckSpecVersion::<Runtime>::new(),
-            frame_system::CheckTxVersion::<Runtime>::new(),
-            frame_system::CheckGenesis::<Runtime>::new(),
-            frame_system::CheckEra::<Runtime>::from(generic::Era::mortal(period, current_block)),
-            frame_system::CheckNonce::<Runtime>::from(nonce),
-            frame_system::CheckWeight::<Runtime>::new(),
-            pallet_transaction_payment::ChargeTransactionPayment::<Runtime>::from(tip),
-        );
-        let raw_payload = SignedPayload::new(call, extra)
-            .map_err(|e| {
-                debug::warn!("Unable to create signed payload: {:?}", e);
-            })
-            .ok()?;
-        let signature = raw_payload.using_encoded(|payload| C::sign(payload, public))?;
-        let (call, extra, _) = raw_payload.deconstruct();
-        Some((call, (account, signature.into(), extra)))
-    }
-}
-
-impl frame_system::offchain::SigningTypes for Runtime {
-    type Public = <Signature as Verify>::Signer;
-    type Signature = Signature;
-}
-
-impl<C> frame_system::offchain::SendTransactionTypes<C> for Runtime
-where
-    Call: From<C>,
-{
-    type OverarchingCall = Call;
-    type Extrinsic = UncheckedExtrinsic;
-}
-
 parameter_types! {
     pub const NickReservationFee: u128 = 0;
     pub const MinNickLength: usize = 4;
@@ -360,7 +311,7 @@ parameter_types! {
     pub const RococoLocation: MultiLocation = MultiLocation::X1(Junction::Parent);
     pub PlasmNetwork: NetworkId = NetworkId::Named("plasm".into());
     pub PolkadotNetwork: NetworkId = NetworkId::Polkadot;
-    pub RelayChainOrigin: Origin = xcm_handler::Origin::Relay.into();
+    pub RelayChainOrigin: Origin = cumulus_pallet_xcm_handler::Origin::Relay.into();
     pub Ancestry: MultiLocation = Junction::Parachain {
         id: ParachainInfo::parachain_id().into()
     }.into();
@@ -376,17 +327,30 @@ type LocationConverter = (
 type LocalOriginConverter = (
     SovereignSignedViaLocation<LocationConverter, Origin>,
     RelayChainAsNative<RelayChainOrigin, Origin>,
-    SiblingParachainAsNative<xcm_handler::Origin, Origin>,
+    SiblingParachainAsNative<cumulus_pallet_xcm_handler::Origin, Origin>,
     SignedAccountId32AsNative<PlasmNetwork, Origin>,
 );
 
-pub type LocalAssetTransactor = MultiCurrencyAdapter<                                                                     
+/*
+pub type LocalAssetTransactor = MultiCurrencyAdapter<
     Currencies,
     IsConcreteWithGeneralKey<CurrencyId, RelayToNative>,
     LocationConverter,
     AccountId,
     CurrencyIdConverter<CurrencyId, RelayChainCurrencyId>,
     CurrencyId,
+>;
+*/
+
+type LocalAssetTransactor = CurrencyAdapter<
+    // Use this currency:
+    Balances,
+    // Use this currency when it is a fungible asset matching the given location or name:
+    IsConcrete<RococoLocation>,
+    // Do a simple punn to convert an AccountId32 MultiLocation into a native chain account ID:
+    LocationConverter,
+    // Our chain's account ID type (we can't get away without mentioning it explicitly):
+    AccountId,
 >;
 
 pub struct XcmConfig;
@@ -401,13 +365,14 @@ impl Config for XcmConfig {
     type LocationInverter = LocationInverter<Ancestry>;
 }
 
-impl xcm_handler::Config for Runtime {
+impl cumulus_pallet_xcm_handler::Config for Runtime {
     type Event = Event;
     type XcmExecutor = XcmExecutor<XcmConfig>;
     type UpwardMessageSender = ParachainSystem;
     type HrmpMessageSender = ParachainSystem;
 }
 
+/*
 pub struct RelayToNative;
 impl Convert<RelayChainBalance, Balance> for RelayToNative {
     fn convert(val: u128) -> Balance {
@@ -443,8 +408,9 @@ impl orml_xtokens::Config for Runtime {
     type XcmExecutor = XcmExecutor<XcmConfig>;
     type ParaId = ParachainInfo;
 }
+*/
 
-impl cumulus_parachain_system::Config for Runtime {
+impl cumulus_pallet_parachain_system::Config for Runtime {
     type Event = Event;
     type OnValidationData = ();
     type SelfParaId = parachain_info::Module<Runtime>;
@@ -463,16 +429,16 @@ construct_runtime!(
         Timestamp: pallet_timestamp::{Module, Call, Storage, Inherent},
         TransactionPayment: pallet_transaction_payment::{Module, Storage},
         Balances: pallet_balances::{Module, Call, Storage, Event<T>, Config<T>},
-        Currencies: orml_currencies::{Module, Call, Event<T>},
-        Tokens: orml_tokens::{Module, Storage, Event<T>, Config<T>},
+        //Currencies: orml_currencies::{Module, Call, Event<T>},
+        //Tokens: orml_tokens::{Module, Storage, Event<T>, Config<T>},
         Contracts: pallet_contracts::{Module, Call, Storage, Event<T>, Config<T>},
         RandomnessCollectiveFlip: pallet_randomness_collective_flip::{Module, Call, Storage},
         Sudo: pallet_sudo::{Module, Call, Storage, Event<T>, Config<T>},
         Nicks: pallet_nicks::{Module, Call, Storage, Event<T>},
-        ParachainSystem: cumulus_parachain_system::{Module, Call, Storage, Inherent, Event},
+        ParachainSystem: cumulus_pallet_parachain_system::{Module, Call, Storage, Inherent, Event},
         ParachainInfo: parachain_info::{Module, Storage, Config},
-        XcmHandler: xcm_handler::{Module, Event<T>, Origin, Call},
-        XTokens: orml_xtokens::{Module, Storage, Call, Event<T>},
+        XcmHandler: cumulus_pallet_xcm_handler::{Module, Event<T>, Origin, Call},
+        //XTokens: orml_xtokens::{Module, Storage, Call, Event<T>},
     }
 );
 
@@ -625,4 +591,4 @@ impl_runtime_apis! {
     }
 }
 
-cumulus_runtime::register_validate_block!(Block, Executive);
+cumulus_pallet_parachain_system::register_validate_block!(Block, Executive);

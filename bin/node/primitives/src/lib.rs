@@ -3,19 +3,16 @@
 #![warn(missing_docs)]
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use codec::{Encode, Decode};
+use codec::{Decode, Encode};
 use sp_runtime::{
     generic,
     traits::{BlakeTwo256, IdentifyAccount, Verify},
     MultiSignature, OpaqueExtrinsic, RuntimeDebug,
 };
-use sp_std::{
-    convert::TryFrom,
-    prelude::*,
-};
+use sp_std::{convert::TryFrom, prelude::*};
 
 #[cfg(feature = "std")]
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 /// An index to a block.
 pub type BlockNumber = u32;
@@ -86,15 +83,15 @@ impl TryFrom<u8> for TokenSymbol {
 
     fn try_from(v: u8) -> Result<Self, Self::Error> {
         match v {
-           0 => Ok(TokenSymbol::ACA),
-           1 => Ok(TokenSymbol::AUSD),
-           2 => Ok(TokenSymbol::DOT),
-           3 => Ok(TokenSymbol::XBTC),
-           4 => Ok(TokenSymbol::LDOT),
-           5 => Ok(TokenSymbol::RENBTC),
-           6 => Ok(TokenSymbol::SDN),
-           7 => Ok(TokenSymbol::PLM),
-           _ => Err(()),
+            0 => Ok(TokenSymbol::ACA),
+            1 => Ok(TokenSymbol::AUSD),
+            2 => Ok(TokenSymbol::DOT),
+            3 => Ok(TokenSymbol::XBTC),
+            4 => Ok(TokenSymbol::LDOT),
+            5 => Ok(TokenSymbol::RENBTC),
+            6 => Ok(TokenSymbol::SDN),
+            7 => Ok(TokenSymbol::PLM),
+            _ => Err(()),
         }
     }
 }
