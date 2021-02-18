@@ -1,7 +1,7 @@
 //! Chain specification.
 
 use cumulus_primitives_core::ParaId;
-use plasm_primitives::{AccountId, Balance, Signature, CurrencyId, TokenSymbol};
+use plasm_primitives::{AccountId, Balance, CurrencyId, Signature, TokenSymbol};
 use plasm_runtime::constants::currency::PLM;
 use plasm_runtime::{
     BalancesConfig, ContractsConfig, GenesisConfig, ParachainInfoConfig, SudoConfig, SystemConfig,
@@ -154,11 +154,12 @@ fn make_genesis(
             code: WASM_BINARY.to_vec(),
             changes_trie_config: Default::default(),
         }),
-        orml_tokens: Some(TokensConfig { endowed_accounts: balances
+        orml_tokens: Some(TokensConfig {
+            endowed_accounts: balances
                 .iter()
                 .cloned()
                 .map(|(a, b)| (a, CurrencyId::Token(TokenSymbol::PLM), b))
-                .collect()
+                .collect(),
         }),
         pallet_balances: Some(BalancesConfig { balances }),
         pallet_contracts: Some(ContractsConfig {

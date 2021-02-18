@@ -1,37 +1,38 @@
 //! Adapt other currency traits implementation to `BasicCurrency`.
 
 use codec::Codec;
-use sp_runtime::DispatchResult;
-use sp_runtime::traits::CheckedSub;
-use frame_system::Config;
 use frame_support::{
     pallet_prelude::*,
     traits::{
-        Currency as PalletCurrency, ExistenceRequirement, LockableCurrency as PalletLockableCurrency,
-        ReservableCurrency as PalletReservableCurrency, WithdrawReasons,
+        Currency as PalletCurrency, ExistenceRequirement,
+        LockableCurrency as PalletLockableCurrency, ReservableCurrency as PalletReservableCurrency,
+        WithdrawReasons,
     },
 };
+use frame_system::Config;
 use orml_traits::{
     arithmetic::{Signed, SimpleArithmetic},
-    BalanceStatus, BasicCurrency, BasicCurrencyExtended, BasicLockableCurrency, BasicReservableCurrency,
-    LockIdentifier,
+    BalanceStatus, BasicCurrency, BasicCurrencyExtended, BasicLockableCurrency,
+    BasicReservableCurrency, LockIdentifier,
 };
+use sp_runtime::traits::CheckedSub;
+use sp_runtime::DispatchResult;
 use sp_std::{
     convert::{TryFrom, TryInto},
-    marker::PhantomData,
     fmt::Debug,
+    marker::PhantomData,
     result,
 };
 
 pub struct NativeCurrencyAdapter<T, Currency, Amount, Moment>(
-    PhantomData<(T, Currency, Amount, Moment)>
+    PhantomData<(T, Currency, Amount, Moment)>,
 );
 
 type PalletBalanceOf<A, Currency> = <Currency as PalletCurrency<A>>::Balance;
 
 impl<T, AccountId, Currency, Amount, Moment> BasicCurrency<AccountId>
     for NativeCurrencyAdapter<T, Currency, Amount, Moment>
-  where
+where
     Currency: PalletCurrency<AccountId>,
     T: Config,
 {
@@ -71,7 +72,13 @@ impl<T, AccountId, Currency, Amount, Moment> BasicCurrency<AccountId>
     }
 
     fn withdraw(who: &AccountId, amount: Self::Balance) -> DispatchResult {
-        Currency::withdraw(who, amount, WithdrawReasons::all(), ExistenceRequirement::AllowDeath).map(|_| ())
+        Currency::withdraw(
+            who,
+            amount,
+            WithdrawReasons::all(),
+            ExistenceRequirement::AllowDeath,
+        )
+        .map(|_| ())
     }
 
     fn can_slash(who: &AccountId, amount: Self::Balance) -> bool {
@@ -86,7 +93,7 @@ impl<T, AccountId, Currency, Amount, Moment> BasicCurrency<AccountId>
 
 impl<T, AccountId, Currency, Amount, Moment> BasicCurrencyExtended<AccountId>
     for NativeCurrencyAdapter<T, Currency, Amount, Moment>
-  where
+where
     Amount: Signed
         + TryInto<PalletBalanceOf<AccountId, Currency>>
         + TryFrom<PalletBalanceOf<AccountId, Currency>>
@@ -116,7 +123,7 @@ impl<T, AccountId, Currency, Amount, Moment> BasicCurrencyExtended<AccountId>
 
 impl<T, AccountId, Currency, Amount, Moment> BasicLockableCurrency<AccountId>
     for NativeCurrencyAdapter<T, Currency, Amount, Moment>
-  where
+where
     Currency: PalletLockableCurrency<AccountId>,
     T: Config,
 {
@@ -127,7 +134,11 @@ impl<T, AccountId, Currency, Amount, Moment> BasicLockableCurrency<AccountId>
         Ok(())
     }
 
-    fn extend_lock(lock_id: LockIdentifier, who: &AccountId, amount: Self::Balance) -> DispatchResult {
+    fn extend_lock(
+        lock_id: LockIdentifier,
+        who: &AccountId,
+        amount: Self::Balance,
+    ) -> DispatchResult {
         Currency::extend_lock(lock_id, who, amount, WithdrawReasons::all());
         Ok(())
     }
@@ -140,7 +151,7 @@ impl<T, AccountId, Currency, Amount, Moment> BasicLockableCurrency<AccountId>
 
 impl<T, AccountId, Currency, Amount, Moment> BasicReservableCurrency<AccountId>
     for NativeCurrencyAdapter<T, Currency, Amount, Moment>
-  where
+where
     Currency: PalletReservableCurrency<AccountId>,
     T: Config,
 {

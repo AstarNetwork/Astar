@@ -14,6 +14,9 @@ use frame_support::{
     },
 };
 use frame_system::limits::{BlockLength, BlockWeights};
+use orml_xcm_support::{
+    CurrencyIdConverter, IsConcreteWithGeneralKey, MultiCurrencyAdapter, NativePalletAssetOr,
+};
 use pallet_contracts::WeightInfo;
 use pallet_transaction_payment::{
     FeeDetails, Multiplier, RuntimeDispatchInfo, TargetedFeeAdjustment,
@@ -22,7 +25,6 @@ use plasm_primitives::{
     AccountId, Amount, Balance, BlockNumber, CurrencyId, Hash, Index, Moment, Signature,
     TokenSymbol,
 };
-use orml_xcm_support::{CurrencyIdConverter, IsConcreteWithGeneralKey, MultiCurrencyAdapter};
 use sp_api::impl_runtime_apis;
 use sp_core::{OpaqueMetadata, H160, H256, U256};
 use sp_inherents::{CheckInherentsResult, InherentData};
@@ -35,7 +37,7 @@ use sp_runtime::{
     create_runtime_str, generic, impl_opaque_keys, ApplyExtrinsicResult, FixedPointNumber,
     ModuleId, Perbill, Perquintill,
 };
-use sp_std::prelude::*;
+use sp_std::{collections::btree_set::BTreeSet, prelude::*};
 #[cfg(any(feature = "std", test))]
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
@@ -78,8 +80,8 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     // and set impl_version to equal spec_version. If only runtime
     // implementation changes and behavior does not, then leave spec_version as
     // is and increment impl_version.
-    spec_version: 4,
-    impl_version: 4,
+    spec_version: 5,
+    impl_version: 5,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 1,
 };
@@ -338,6 +340,19 @@ pub type LocalAssetTransactor = MultiCurrencyAdapter<
     CurrencyId,
 >;
 
+parameter_types! {
+    pub NativeOrmlTokens: BTreeSet<(Vec<u8>, MultiLocation)> = {
+        let mut t = BTreeSet::new();
+        //TODO: might need to add other assets based on orml-tokens
+        /// Acala tokens
+        t.insert(("ACA".into(), (Junction::Parent, Junction::Parachain { id: 666 }).into()));
+        t.insert(("AUSD".into(), (Junction::Parent, Junction::Parachain { id: 666 }).into()));
+        t.insert(("XBTC".into(), (Junction::Parent, Junction::Parachain { id: 666 }).into()));
+        t.insert(("LDOT".into(), (Junction::Parent, Junction::Parachain { id: 666 }).into()));
+        t
+    };
+}
+
 pub struct XcmConfig;
 impl Config for XcmConfig {
     type Call = Call;
@@ -345,7 +360,7 @@ impl Config for XcmConfig {
     // How to withdraw and deposit an asset.
     type AssetTransactor = LocalAssetTransactor;
     type OriginConverter = LocalOriginConverter;
-    type IsReserve = NativeAsset;
+    type IsReserve = NativePalletAssetOr<NativeOrmlTokens>;
     type IsTeleporter = ();
     type LocationInverter = LocationInverter<Ancestry>;
 }
