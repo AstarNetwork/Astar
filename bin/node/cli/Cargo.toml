@@ -55,7 +55,8 @@ plasm-rpc = { path = "../rpc" }
 # frame dependencies
 frame-system = "3.0.0"
 pallet-transaction-payment = "3.0.0"
-pallet-contracts = "3.0.0"
+#pallet-contracts = "3.0.0"
+pallet-contracts = { git = "https://github.com/paritytech/substrate", tag = "v3.0.0" }
 #pallet-dapps-staking = { path = "../../../frame/dapps-staking" }
 #pallet-ovm = { path = "../../../frame/ovm" }
 pallet-evm = { path = "../../../vendor/frontier/frame/evm" } 

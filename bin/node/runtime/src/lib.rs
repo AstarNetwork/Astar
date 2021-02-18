@@ -71,8 +71,8 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     // and set impl_version to equal spec_version. If only runtime
     // implementation changes and behavior does not, then leave spec_version as
     // is and increment impl_version.
-    spec_version: 9,
-    impl_version: 9,
+    spec_version: 10,
+    impl_version: 10,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 2,
 };
@@ -168,7 +168,8 @@ impl pallet_babe::Config for Runtime {
         pallet_babe::AuthorityId,
     )>>::IdentificationTuple;
 
-    type HandleEquivocation = pallet_babe::EquivocationHandler<Self::KeyOwnerIdentification, ()>;
+    type HandleEquivocation =
+        pallet_babe::EquivocationHandler<Self::KeyOwnerIdentification, Offences, ReportLongevity>;
 
     type WeightInfo = ();
 }
@@ -409,7 +410,8 @@ impl pallet_grandpa::Config for Runtime {
         GrandpaId,
     )>>::IdentificationTuple;
 
-    type HandleEquivocation = pallet_grandpa::EquivocationHandler<Self::KeyOwnerIdentification, ()>;
+    type HandleEquivocation =
+        pallet_grandpa::EquivocationHandler<Self::KeyOwnerIdentification, Offences, ReportLongevity>;
 
     type WeightInfo = ();
 }

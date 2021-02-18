@@ -43,9 +43,12 @@ frame-executive = { version = "3.0.0", default-features = false }
 pallet-authorship = { version = "3.0.0", default-features = false }
 pallet-babe = { version = "3.0.0", default-features = false }
 pallet-balances = { version = "3.0.0", default-features = false }
-pallet-contracts = { version = "3.0.0", default-features = false }
-pallet-contracts-primitives = { version = "3.0.0", default-features = false }
-pallet-contracts-rpc-runtime-api = { version = "0.9.0", default-features = false }
+#pallet-contracts = { version = "3.0.0", default-features = false }
+#pallet-contracts-primitives = { version = "3.0.0", default-features = false }
+#pallet-contracts-rpc-runtime-api = { version = "0.9.0", default-features = false }
+pallet-contracts = { git = "https://github.com/paritytech/substrate", tag = "v3.0.0", default-features = false }
+pallet-contracts-primitives = { git = "https://github.com/paritytech/substrate", tag = "v3.0.0", default-features = false }
+pallet-contracts-rpc-runtime-api = { git = "https://github.com/paritytech/substrate", tag = "v3.0.0", default-features = false }
 pallet-grandpa = { version = "3.0.0", default-features = false }
 pallet-indices = { version = "3.0.0", default-features = false }
 pallet-nicks = { version = "3.0.0", default-features = false }
