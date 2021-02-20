@@ -63,6 +63,7 @@ pallet-transaction-payment-rpc-runtime-api = { version = "2.0.0", default-featur
 pallet-utility = { version = "2.0.0", default-features = false }
 frontier-rpc-primitives = { path = "../../../vendor/frontier/rpc/primitives", default-features = false }
 pallet-ethereum = { path = "../../../vendor/frontier/frame/ethereum", default-features = false }
+faucet-pallet = { path = '../../../vendor/faucet_pallet', default-features = false, version = '2.0.0' }
 
 [build-dependencies]
 wasm-builder-runner = { package = "substrate-wasm-builder-runner", version = "1.0.5" }
@@ -122,4 +123,5 @@ std = [
     "pallet-transaction-payment-rpc-runtime-api/std",
     "pallet-utility/std",
     "pallet-ovm/std",
+    "faucet-pallet/std",
 ]

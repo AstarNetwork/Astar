@@ -60,6 +60,9 @@ pub mod legacy;
 pub mod constants;
 use constants::{currency::*, time::*};
 
+/// Faucet pallet
+pub use faucet_pallet;
+
 // Make the WASM binary available.
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
@@ -614,6 +617,11 @@ impl pallet_ethereum::Trait for Runtime {
     type FindAuthor = EthereumFindAuthor<Babe>;
 }
 
+impl faucet_pallet::Trait for Runtime {
+	type Event = Event;
+	type Currency = Balances;
+}
+
 construct_runtime!(
     pub enum Runtime where
         Block = Block,
@@ -648,6 +656,7 @@ construct_runtime!(
         EVM: pallet_evm::{Module, Call, Storage, Config, Event<T>},
         EthCall: pallet_custom_signatures::{Module, Call, Event<T>, ValidateUnsigned},
         Scheduler: pallet_scheduler::{Module, Call, Storage, Event<T>},
+        Faucet: faucet_pallet::{Module, Call, Storage, Event<T>,ValidateUnsigned},
     }
 );
 
