@@ -1,3 +1,6 @@
 [submodule "vendor/orml"]
 	path = vendor/orml
 	url = https://github.com/open-web3-stack/open-runtime-module-library
+[submodule "vendor/frontier"]
+	path = vendor/frontier
+	url = https://github.com/PlasmNetwork/frontier.git
