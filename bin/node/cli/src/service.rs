@@ -22,6 +22,23 @@ native_executor_instance!(
     plasm_runtime::native_version,
 );
 
+pub fn open_frontier_backend(config: &Configuration) -> Result<Arc<fc_db::Backend<Block>>, String> {
+    let config_dir = config.base_path.as_ref()
+        .map(|base_path| base_path.config_dir(config.chain_spec.id()))
+        .unwrap_or_else(|| {
+            BasePath::from_project("", "", &crate::cli::Cli::executable_name())
+                .config_dir(config.chain_spec.id())
+        });
+    let database_dir = config_dir.join("frontier").join("db");
+
+    Ok(Arc::new(fc_db::Backend::<Block>::new(&fc_db::DatabaseSettings {
+        source: fc_db::DatabaseSettingsSrc::RocksDb {
+            path: database_dir,
+            cache_size: 0,
+        }
+    })?))
+}
+
 /// Starts a `ServiceBuilder` for a full service.
 ///
 /// Use this macro if you don't actually need the full service, but just the builder in order to
@@ -35,7 +52,7 @@ pub fn new_partial(
         (),
         sp_consensus::import_queue::BasicQueue<Block, PrefixedMemoryDB<BlakeTwo256>>,
         sc_transaction_pool::FullPool<Block, TFullClient<Block, RuntimeApi, Executor>>,
-        (),
+        Arc<fc_db::Backend<Block>>,
     >,
     sc_service::Error,
 > {
@@ -55,7 +72,14 @@ pub fn new_partial(
         client.clone(),
     );
 
-    let frontier_block_import = FrontierBlockImport::new(client.clone(), client.clone(), true);
+    let frontier_backend = open_frontier_backend(config)?;
+
+    let frontier_block_import = FrontierBlockImport::new(
+        client.clone(),
+        client.clone(),
+        frontier_backend.clone(),
+        true,
+    );
 
     let import_queue = cumulus_client_consensus::import_queue::import_queue(
         client.clone(),
@@ -74,7 +98,7 @@ pub fn new_partial(
         transaction_pool,
         inherent_data_providers,
         select_chain: (),
-        other: (),
+        other: frontier_backend,
     };
 
     Ok(params)
@@ -135,8 +159,8 @@ pub async fn start_node(
         })?;
 
     let pending_transactions: PendingTransactions = Some(Arc::new(Mutex::new(HashMap::new())));
-
     let filter_pool: Option<FilterPool> = Some(Arc::new(Mutex::new(BTreeMap::new())));
+    let frontier_backend = params.others;
 
     let rpc_extensions_builder = {
         let client = client.clone();
@@ -152,6 +176,7 @@ pub async fn start_node(
                 network: network.clone(),
                 pending_transactions: pending.clone(),
                 filter_pool: filter_pool.clone(),
+                backend: frontier_backend,
                 deny_unsafe,
                 is_authority,
             };

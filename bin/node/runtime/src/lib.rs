@@ -6,8 +6,9 @@
 
 use codec::{Decode, Encode};
 use frame_support::{
-    construct_runtime, debug, parameter_types,
+    construct_runtime, debug, parameter_types, ConsensusEngineId,
     traits::{FindAuthor, Randomness},
+    pallet_prelude::PhantomData,
     weights::{
         constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_PER_SECOND},
         DispatchClass, IdentityFee, Weight,
@@ -17,7 +18,7 @@ use frame_system::limits::{BlockLength, BlockWeights};
 use orml_xcm_support::{
     CurrencyIdConverter, IsConcreteWithGeneralKey, MultiCurrencyAdapter, NativePalletAssetOr,
 };
-use pallet_contracts::WeightInfo;
+use pallet_contracts::weights::WeightInfo;
 use pallet_evm::{
     Account as EVMAccount, EnsureAddressRoot, EnsureAddressTruncated, FeeCalculator,
     HashedAddressMapping, Runner,
@@ -41,7 +42,7 @@ use sp_runtime::{
     create_runtime_str, generic, impl_opaque_keys, ApplyExtrinsicResult, FixedPointNumber,
     ModuleId, Perbill, Perquintill,
 };
-use sp_std::{collections::btree_set::BTreeSet, prelude::*};
+use sp_std::{collections::btree_set::BTreeSet, convert::TryFrom, prelude::*};
 #[cfg(any(feature = "std", test))]
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
@@ -60,7 +61,6 @@ use xcm_executor::{
 };
 
 pub use pallet_balances::Call as BalancesCall;
-pub use pallet_contracts::Gas;
 pub use pallet_timestamp::Call as TimestampCall;
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
@@ -84,8 +84,8 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     // and set impl_version to equal spec_version. If only runtime
     // implementation changes and behavior does not, then leave spec_version as
     // is and increment impl_version.
-    spec_version: 5,
-    impl_version: 5,
+    spec_version: 6,
+    impl_version: 6,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 1,
 };
@@ -258,6 +258,7 @@ parameter_types! {
             <Runtime as pallet_contracts::Config>::WeightInfo::on_initialize_per_queue_item(1) -
             <Runtime as pallet_contracts::Config>::WeightInfo::on_initialize_per_queue_item(0)
         )) / 5) as u32;
+    pub MaxCodeSize: u32 = 128 * 1024;
 }
 
 impl pallet_contracts::Config for Runtime {
@@ -280,13 +281,15 @@ impl pallet_contracts::Config for Runtime {
     type ChainExtension = ();
     type DeletionQueueDepth = DeletionQueueDepth;
     type DeletionWeightLimit = DeletionWeightLimit;
+    type MaxCodeSize = MaxCodeSize;
 }
 
 /// Current approximation of the gas/s consumption considering
 /// EVM execution over compiled WASM (on 4.4Ghz CPU).
 /// Given the 500ms Weight, from which 75% only are used for transactions,
 /// the total EVM execution gas limit is: GAS_PER_SECOND * 0.500 * 0.75 => 6_000_000.
-pub const GAS_PER_SECOND: u64 = 16_000_000;
+pub const GAS_PER_SECOND: u64 = 40_000_000;
+
 /// Approximate ratio of the amount of Weight per Gas.
 /// u64 works for approximations because Weight is a very small unit compared to gas.
 pub const WEIGHT_PER_GAS: u64 = WEIGHT_PER_SECOND / GAS_PER_SECOND;
@@ -311,7 +314,7 @@ impl pallet_evm::Config for Runtime {
     type CallOrigin = EnsureAddressRoot<Self::AccountId>;
     type WithdrawOrigin = EnsureAddressTruncated;
     type AddressMapping = HashedAddressMapping<BlakeTwo256>;
-    type Currency = Currencies;
+    type Currency = Balances;
     type Event = Event;
     type Runner = pallet_evm::runner::stack::Runner<Self>;
     type Precompiles = (
@@ -356,13 +359,14 @@ impl<F: FindAuthor<u32>> FindAuthor<H160> for EthereumFindAuthor<F> {
     }
 }
 
-parameter_types! {
-    pub BlockGasLimit: U256 = U256::from(16_000_000u32);
+parameter_types! {                                                                                                         
+    pub BlockGasLimit: U256                                                                                                
+        = U256::from(NORMAL_DISPATCH_RATIO * MAXIMUM_BLOCK_WEIGHT / WEIGHT_PER_GAS);                                       
 }
 
 impl pallet_ethereum::Config for Runtime {
     type Event = Event;
-    type FindAuthor = EthereumFindAuthor<Aura>;
+    type FindAuthor = EthereumFindAuthor<()>;
     type StateRoot = pallet_ethereum::IntermediateStateRoot;
     type BlockGasLimit = BlockGasLimit;
 }

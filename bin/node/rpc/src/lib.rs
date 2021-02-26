@@ -42,6 +42,8 @@ pub struct FullDeps<C, P> {
     pub pending_transactions: PendingTransactions,
     /// EthFilterApi pool.
     pub filter_pool: Option<FilterPool>,
+    /// Backend.
+    pub backend: Arc<fc_db::Backend<Block>>,
 }
 
 /// Instantiate all Full RPC extensions.
@@ -81,6 +83,7 @@ where
         network,
         pending_transactions,
         filter_pool,
+        backend,
     } = deps;
 
     io.extend_with(SystemApi::to_delegate(FullSystem::new(
@@ -103,6 +106,7 @@ where
         network.clone(),
         pending_transactions.clone(),
         Default::default(),
+        backend,
         is_authority,
     )));
 
