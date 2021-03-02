@@ -43,19 +43,18 @@ frame-executive = { version = "3.0.0", default-features = false }
 pallet-authorship = { version = "3.0.0", default-features = false }
 pallet-babe = { version = "3.0.0", default-features = false }
 pallet-balances = { version = "3.0.0", default-features = false }
-#pallet-contracts = { version = "3.0.0", default-features = false }
-#pallet-contracts-primitives = { version = "3.0.0", default-features = false }
-#pallet-contracts-rpc-runtime-api = { version = "0.9.0", default-features = false }
-pallet-contracts = { git = "https://github.com/paritytech/substrate", tag = "v3.0.0", default-features = false }
-pallet-contracts-primitives = { git = "https://github.com/paritytech/substrate", tag = "v3.0.0", default-features = false }
-pallet-contracts-rpc-runtime-api = { git = "https://github.com/paritytech/substrate", tag = "v3.0.0", default-features = false }
+pallet-contracts = { version = "3.0.0", default-features = false }
+pallet-contracts-primitives = { version = "3.0.0", default-features = false }
+pallet-contracts-rpc-runtime-api = { version = "3.0.0", default-features = false }
 pallet-grandpa = { version = "3.0.0", default-features = false }
 pallet-indices = { version = "3.0.0", default-features = false }
+pallet-im-online = { version = "3.0.0", default-features = false }
 pallet-nicks = { version = "3.0.0", default-features = false }
 pallet-randomness-collective-flip = { version = "3.0.0", default-features = false }
 pallet-scheduler = { version = "3.0.0", default-features = false }
 pallet-session = { version = "3.0.0", default-features = false, features = ["historical"] }
 pallet-sudo = { version = "3.0.0", default-features = false }
+pallet-offences = { version = "3.0.0", default-features = false }
 frame-support = { version = "3.0.0", default-features = false }
 frame-system = { version = "3.0.0", default-features = false }
 frame-system-rpc-runtime-api = { version = "3.0.0", default-features = false }
@@ -76,18 +75,19 @@ std = [
     "codec/std",
     "lazy_static",
     "hex-literal",
-    "sp-std/std",
     "sp-api/std",
+    "sp-block-builder/std",
     "sp-core/std",
     "sp-io/std",
     "sp-consensus-babe/std",
     "sp-runtime/std",
     "sp-runtime-interface/std",
     "sp-session/std",
+    "sp-std/std",
     "sp-version/std",
-    "sp-block-builder/std",
     "sp-transaction-pool/std",
     "sp-inherents/std",
+    "sp-offchain/std",
     "plasm-primitives/std",
     "frame-support/std",
     "frame-executive/std",
@@ -104,8 +104,8 @@ std = [
     "pallet-evm-precompile-simple/std",
     "pallet-grandpa/std",
     "pallet-indices/std",
+    "pallet-im-online/std",
     "pallet-nicks/std",
-    "sp-offchain/std",
     "pallet-custom-signatures/std",
     "pallet-plasm-rewards/std",
     "pallet-plasm-validator/std",
@@ -122,5 +122,6 @@ std = [
     "pallet-transaction-payment/std",
     "pallet-transaction-payment-rpc-runtime-api/std",
     "pallet-utility/std",
+    "pallet-offences/std",
 #    "pallet-ovm/std",
 ]
