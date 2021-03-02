@@ -126,10 +126,7 @@ impl<T: Config> frame_support::unsigned::ValidateUnsigned for Module<T> {
 mod tests {
     use crate as custom_signatures;
     use custom_signatures::*;
-    use frame_support::{
-        assert_err, assert_ok, impl_outer_dispatch, impl_outer_event, impl_outer_origin,
-        parameter_types,
-    };
+    use frame_support::{assert_err, assert_ok, parameter_types};
     use hex_literal::hex;
     use sp_core::{crypto::Ss58Codec, ecdsa, Pair};
     use sp_io::hashing::keccak_256;
@@ -138,43 +135,33 @@ mod tests {
         testing::{Header, H256},
         traits::{BlakeTwo256, IdentifyAccount, IdentityLookup, Verify},
         transaction_validity::TransactionPriority,
-        MultiSignature, MultiSigner, Perbill,
+        MultiSignature, MultiSigner,
     };
 
     pub const ECDSA_SEED: [u8; 32] =
         hex_literal::hex!["7e9c7ad85df5cdc88659f53e06fb2eb9bab3ebc59083a3190eaf2c730332529c"];
 
-    #[derive(Clone, PartialEq, Eq, Debug)]
-    pub struct Runtime;
-
     type Balance = u128;
     type BlockNumber = u64;
     type Signature = MultiSignature;
     type AccountId = <<Signature as Verify>::Signer as IdentifyAccount>::AccountId;
+    type Block = frame_system::mocking::MockBlock<Runtime>;
+    type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Runtime>;
 
-    impl_outer_origin! {
-        pub enum Origin for Runtime {}
-    }
-
-    impl_outer_dispatch! {
-        pub enum Call for Runtime where origin: Origin {
-            pallet_balances::Balances,
+    frame_support::construct_runtime!(
+        pub enum Runtime where
+            Block = Block,
+            NodeBlock = Block,
+            UncheckedExtrinsic = UncheckedExtrinsic,
+        {
+            Balances: pallet_balances::{Module, Call, Storage, Config<T>, Event<T>},
+            System: frame_system::{Module, Call, Config, Storage, Event<T>},
+            CustomSignatures: custom_signatures::{Module, Call, Event<T>},
         }
-    }
-
-    impl_outer_event! {
-        pub enum Event for Runtime {
-            frame_system<T>,
-            pallet_balances<T>,
-            custom_signatures<T>,
-        }
-    }
+    );
 
     parameter_types! {
         pub const BlockHashCount: u64 = 250;
-        pub const MaximumBlockWeight: u32 = 1024;
-        pub const MaximumBlockLength: u32 = 2 * 1024;
-        pub const AvailableBlockRatio: Perbill = Perbill::one();
     }
 
     impl frame_system::Config for Runtime {
@@ -190,19 +177,16 @@ mod tests {
         type Header = Header;
         type Event = Event;
         type BlockHashCount = BlockHashCount;
-        type MaximumBlockWeight = MaximumBlockWeight;
-        type MaximumBlockLength = MaximumBlockLength;
-        type AvailableBlockRatio = AvailableBlockRatio;
         type Version = ();
-        type PalletInfo = ();
+        type PalletInfo = PalletInfo;
         type AccountData = pallet_balances::AccountData<Balance>;
         type OnNewAccount = ();
         type OnKilledAccount = ();
         type DbWeight = ();
-        type BlockExecutionWeight = ();
-        type ExtrinsicBaseWeight = ();
-        type MaximumExtrinsicWeight = ();
         type SystemWeightInfo = ();
+        type BlockWeights = ();
+        type BlockLength = ();
+        type SS58Prefix = ();
     }
 
     parameter_types! {
@@ -230,10 +214,6 @@ mod tests {
         type Signer = <Signature as Verify>::Signer;
         type UnsignedPriority = Priority;
     }
-
-    type System = frame_system::Module<Runtime>;
-    type Balances = pallet_balances::Module<Runtime>;
-    type CustomSignatures = custom_signatures::Module<Runtime>;
 
     fn new_test_ext() -> sp_io::TestExternalities {
         let mut storage = frame_system::GenesisConfig::default()
