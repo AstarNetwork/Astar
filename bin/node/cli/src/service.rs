@@ -1,9 +1,9 @@
 //! Service implementation. Specialized wrapper over substrate service.
 
-use plasm_primitives::Block;
-use plasm_runtime::RuntimeApi;
 use fc_consensus::FrontierBlockImport;
 use fc_rpc_core::types::{FilterPool, PendingTransactions};
+use plasm_primitives::Block;
+use plasm_runtime::RuntimeApi;
 use sc_client_api::{BlockchainEvents, ExecutorProvider, RemoteBackend};
 use sc_finality_grandpa::{self as grandpa, FinalityProofProvider as GrandpaFinalityProofProvider};
 use sc_network::NetworkService;

@@ -1,5 +1,6 @@
 //! Chain specification.
 
+use pallet_im_online::sr25519::AuthorityId as ImOnlineId;
 use plasm_primitives::{AccountId, Balance, Signature};
 use plasm_runtime::constants::currency::PLM;
 use plasm_runtime::Block;
@@ -12,10 +13,9 @@ use sc_chain_spec::ChainSpecExtension;
 use sc_service::ChainType;
 use serde::{Deserialize, Serialize};
 use sp_consensus_babe::AuthorityId as BabeId;
-use sp_finality_grandpa::AuthorityId as GrandpaId;
-use pallet_im_online::sr25519::AuthorityId as ImOnlineId;
-use sp_runtime::traits::{IdentifyAccount, Verify};
 use sp_core::{sr25519, Pair, Public, H160, U256};
+use sp_finality_grandpa::AuthorityId as GrandpaId;
+use sp_runtime::traits::{IdentifyAccount, Verify};
 
 type AccountPublic = <Signature as Verify>::Signer;
 
@@ -84,7 +84,11 @@ pub fn get_authority_keys_from_seed(seed: &str) -> (AccountId, BabeId, GrandpaId
 }
 
 fn session_keys(babe: BabeId, grandpa: GrandpaId, im_online: ImOnlineId) -> SessionKeys {
-    SessionKeys { babe, grandpa, im_online }
+    SessionKeys {
+        babe,
+        grandpa,
+        im_online,
+    }
 }
 
 fn testnet_genesis(
@@ -153,9 +157,7 @@ fn make_genesis(
         pallet_grandpa: Some(GrandpaConfig {
             authorities: vec![],
         }),
-        pallet_im_online: Some(ImOnlineConfig {
-            keys: vec![],
-        }),
+        pallet_im_online: Some(ImOnlineConfig { keys: vec![] }),
         pallet_contracts: Some(ContractsConfig {
             current_schedule: pallet_contracts::Schedule {
                 enable_println, // this should only be enabled on development chains
