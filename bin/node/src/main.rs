@@ -1,7 +1,7 @@
-//! Plasm Node executable. 
+//! Plasm Node executable.
 
 #![warn(missing_docs)]
 
-fn main() -> Result<(), sc_cli::Error> {
+fn main() -> Result<(), plasm_cli::Error> {
     plasm_cli::run()
 }

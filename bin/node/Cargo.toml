@@ -1,14 +1,14 @@
 [package]
-name = "plasm-node"
+name = "plasm"
 version = "1.8.0"
 authors = ["Stake Technologies <devops@stake.co.jp>"]
 description = "Plasm node implementation in Rust."
 edition = "2018"
 
 [[bin]]
-name = "plasm-node"
+name = "plasm"
 path = "src/main.rs"
 
 [dependencies]
-parity-util-mem = { version = "0.8.0", default-features = false, features = ["jemalloc-global"] }
-node-cli = { path = "cli" }
+parity-util-mem = { version = "0.9.0", default-features = false, features = ["jemalloc-global"] }
+plasm-cli = { path = "cli" }

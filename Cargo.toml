@@ -1,5 +1,6 @@
 [workspace]
 members = [
+    "bin/node",
     "bin/node/cli",
     "bin/node/rpc",
     "bin/node/runtime",
