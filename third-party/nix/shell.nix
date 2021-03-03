@@ -8,6 +8,7 @@ mkShell {
   nativeBuildInputs = [ clang ];
   buildInputs = [
     release.rust-nightly
+    zlib
   ] ++ stdenv.lib.optionals stdenv.isDarwin [
     darwin.apple_sdk.frameworks.Security
   ];
