@@ -24,9 +24,9 @@ use sp_std::prelude::*;
 pub mod ethereum;
 
 /// The module's configuration trait.
-pub trait Trait: frame_system::Trait {
+pub trait Config: frame_system::Config {
     /// The overarching event type.
-    type Event: From<Event<Self>> + Into<<Self as frame_system::Trait>::Event>;
+    type Event: From<Event<Self>> + Into<<Self as frame_system::Config>::Event>;
 
     /// A signable call.
     type Call: Parameter + UnfilteredDispatchable<Origin = Self::Origin> + GetDispatchInfo;
@@ -45,7 +45,7 @@ pub trait Trait: frame_system::Trait {
 }
 
 decl_error! {
-    pub enum Error for Module<T: Trait> {
+    pub enum Error for Module<T: Config> {
         /// Signature decode fails.
         DecodeFailure,
         /// Signature and account mismatched.
@@ -56,7 +56,7 @@ decl_error! {
 decl_event!(
     pub enum Event<T>
     where
-        AccountId = <T as frame_system::Trait>::AccountId,
+        AccountId = <T as frame_system::Config>::AccountId,
     {
         /// A call just executed. \[result\]
         Executed(AccountId, DispatchResult),
@@ -64,7 +64,7 @@ decl_event!(
 );
 
 decl_module! {
-    pub struct Module<T: Trait> for enum Call where origin: T::Origin {
+    pub struct Module<T: Config> for enum Call where origin: T::Origin {
         type Error = Error<T>;
 
         fn deposit_event() = default;
@@ -72,13 +72,13 @@ decl_module! {
         #[weight = (call.get_dispatch_info().weight + 10_000, call.get_dispatch_info().class)]
         fn call(
             origin,
-            call: Box<<T as Trait>::Call>,
+            call: Box<<T as Config>::Call>,
             account: T::AccountId,
             signature: Vec<u8>,
         ) -> DispatchResultWithPostInfo {
             ensure_none(origin)?;
 
-            let signature = <T as Trait>::Signature::try_from(signature)
+            let signature = <T as Config>::Signature::try_from(signature)
                 .map_err(|_| Error::<T>::DecodeFailure)?;
             if signature.verify(&call.encode()[..], &account) {
                 let new_origin = frame_system::RawOrigin::Signed(account.clone()).into();
@@ -94,7 +94,7 @@ decl_module! {
 
 const SIGNATURE_DECODE_FAILURE: u8 = 1;
 
-impl<T: Trait> frame_support::unsigned::ValidateUnsigned for Module<T> {
+impl<T: Config> frame_support::unsigned::ValidateUnsigned for Module<T> {
     type Call = Call<T>;
 
     fn validate_unsigned(_source: TransactionSource, call: &Self::Call) -> TransactionValidity {
@@ -102,7 +102,7 @@ impl<T: Trait> frame_support::unsigned::ValidateUnsigned for Module<T> {
             frame_support::runtime_print!("CALL: {:?}", call.encode());
             frame_support::runtime_print!("SIGNATURE: {:?}", signature);
 
-            if let Ok(signature) = <T as Trait>::Signature::try_from(signature.clone()) {
+            if let Ok(signature) = <T as Config>::Signature::try_from(signature.clone()) {
                 if signature.verify(&call.encode()[..], &signer) {
                     return ValidTransaction::with_tag_prefix("CustomSignatures")
                         .priority(T::UnsignedPriority::get())
@@ -126,10 +126,7 @@ impl<T: Trait> frame_support::unsigned::ValidateUnsigned for Module<T> {
 mod tests {
     use crate as custom_signatures;
     use custom_signatures::*;
-    use frame_support::{
-        assert_err, assert_ok, impl_outer_dispatch, impl_outer_event, impl_outer_origin,
-        parameter_types,
-    };
+    use frame_support::{assert_err, assert_ok, parameter_types};
     use hex_literal::hex;
     use sp_core::{crypto::Ss58Codec, ecdsa, Pair};
     use sp_io::hashing::keccak_256;
@@ -138,46 +135,36 @@ mod tests {
         testing::{Header, H256},
         traits::{BlakeTwo256, IdentifyAccount, IdentityLookup, Verify},
         transaction_validity::TransactionPriority,
-        MultiSignature, MultiSigner, Perbill,
+        MultiSignature, MultiSigner,
     };
 
     pub const ECDSA_SEED: [u8; 32] =
         hex_literal::hex!["7e9c7ad85df5cdc88659f53e06fb2eb9bab3ebc59083a3190eaf2c730332529c"];
 
-    #[derive(Clone, PartialEq, Eq, Debug)]
-    pub struct Runtime;
-
     type Balance = u128;
     type BlockNumber = u64;
     type Signature = MultiSignature;
     type AccountId = <<Signature as Verify>::Signer as IdentifyAccount>::AccountId;
+    type Block = frame_system::mocking::MockBlock<Runtime>;
+    type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Runtime>;
 
-    impl_outer_origin! {
-        pub enum Origin for Runtime {}
-    }
-
-    impl_outer_dispatch! {
-        pub enum Call for Runtime where origin: Origin {
-            pallet_balances::Balances,
+    frame_support::construct_runtime!(
+        pub enum Runtime where
+            Block = Block,
+            NodeBlock = Block,
+            UncheckedExtrinsic = UncheckedExtrinsic,
+        {
+            Balances: pallet_balances::{Module, Call, Storage, Config<T>, Event<T>},
+            System: frame_system::{Module, Call, Config, Storage, Event<T>},
+            CustomSignatures: custom_signatures::{Module, Call, Event<T>},
         }
-    }
-
-    impl_outer_event! {
-        pub enum Event for Runtime {
-            frame_system<T>,
-            pallet_balances<T>,
-            custom_signatures<T>,
-        }
-    }
+    );
 
     parameter_types! {
         pub const BlockHashCount: u64 = 250;
-        pub const MaximumBlockWeight: u32 = 1024;
-        pub const MaximumBlockLength: u32 = 2 * 1024;
-        pub const AvailableBlockRatio: Perbill = Perbill::one();
     }
 
-    impl frame_system::Trait for Runtime {
+    impl frame_system::Config for Runtime {
         type Origin = Origin;
         type BaseCallFilter = ();
         type Index = u64;
@@ -190,26 +177,23 @@ mod tests {
         type Header = Header;
         type Event = Event;
         type BlockHashCount = BlockHashCount;
-        type MaximumBlockWeight = MaximumBlockWeight;
-        type MaximumBlockLength = MaximumBlockLength;
-        type AvailableBlockRatio = AvailableBlockRatio;
         type Version = ();
-        type PalletInfo = ();
+        type PalletInfo = PalletInfo;
         type AccountData = pallet_balances::AccountData<Balance>;
         type OnNewAccount = ();
         type OnKilledAccount = ();
         type DbWeight = ();
-        type BlockExecutionWeight = ();
-        type ExtrinsicBaseWeight = ();
-        type MaximumExtrinsicWeight = ();
         type SystemWeightInfo = ();
+        type BlockWeights = ();
+        type BlockLength = ();
+        type SS58Prefix = ();
     }
 
     parameter_types! {
         pub const ExistentialDeposit: Balance = 1;
     }
 
-    impl pallet_balances::Trait for Runtime {
+    impl pallet_balances::Config for Runtime {
         type Balance = Balance;
         type Event = Event;
         type DustRemoval = ();
@@ -223,17 +207,13 @@ mod tests {
         pub const Priority: TransactionPriority = TransactionPriority::max_value();
     }
 
-    impl Trait for Runtime {
+    impl Config for Runtime {
         type Event = Event;
         type Call = Call;
         type Signature = ethereum::EthereumSignature;
         type Signer = <Signature as Verify>::Signer;
         type UnsignedPriority = Priority;
     }
-
-    type System = frame_system::Module<Runtime>;
-    type Balances = pallet_balances::Module<Runtime>;
-    type CustomSignatures = custom_signatures::Module<Runtime>;
 
     fn new_test_ext() -> sp_io::TestExternalities {
         let mut storage = frame_system::GenesisConfig::default()
@@ -270,8 +250,8 @@ mod tests {
 
     #[test]
     fn invalid_signature() {
-        let bob: <Runtime as frame_system::Trait>::AccountId = Keyring::Bob.into();
-        let alice: <Runtime as frame_system::Trait>::AccountId = Keyring::Alice.into();
+        let bob: <Runtime as frame_system::Config>::AccountId = Keyring::Bob.into();
+        let alice: <Runtime as frame_system::Config>::AccountId = Keyring::Alice.into();
         let call = pallet_balances::Call::<Runtime>::transfer(alice.clone(), 1_000).into();
         let signature = Vec::from(&hex!["dd0992d40e5cdf99db76bed162808508ac65acd7ae2fdc8573594f03ed9c939773e813181788fc02c3c68f3fdc592759b35f6354484343e18cb5317d34dab6c61b"][..]);
         assert_err!(
@@ -286,7 +266,7 @@ mod tests {
             let pair = ecdsa::Pair::from_seed(&ECDSA_SEED);
             let account = MultiSigner::from(pair.public()).into_account();
 
-            let alice: <Runtime as frame_system::Trait>::AccountId = Keyring::Alice.into();
+            let alice: <Runtime as frame_system::Config>::AccountId = Keyring::Alice.into();
             assert_eq!(System::account(alice.clone()).data.free, 0);
 
             let call: Call =

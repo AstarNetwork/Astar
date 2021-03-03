@@ -4,14 +4,11 @@
 with release.pkgs;
 with llvmPackages;
 
-stdenv.mkDerivation {
-  name = "plasm-nix-shell";
+mkShell {
   nativeBuildInputs = [ clang ];
   buildInputs = [
     release.rust-nightly
-    pkg-config
-    openssl
-    cmake
+    zlib
   ] ++ stdenv.lib.optionals stdenv.isDarwin [
     darwin.apple_sdk.frameworks.Security
   ];

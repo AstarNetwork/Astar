@@ -47,8 +47,4 @@ pub enum Subcommand {
 
     /// Revert the chain to a previous state.
     Revert(sc_cli::RevertCmd),
-
-    /// Plasm Lockdrop oracle authority support module.
-    #[structopt(name = "oracle", about = "Launch lockdrop oracle module.")]
-    LockdropOracle(lockdrop_oracle::Config),
 }
