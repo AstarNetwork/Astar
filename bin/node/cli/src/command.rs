@@ -6,7 +6,7 @@ use sc_service::PartialComponents;
 
 impl SubstrateCli for Cli {
     fn impl_name() -> String {
-        "Plasm Node".into()
+        "Plasm Network".into()
     }
 
     fn impl_version() -> String {
@@ -22,7 +22,7 @@ impl SubstrateCli for Cli {
     }
 
     fn support_url() -> String {
-        "https://github.com/staketechnologies/plasm/issues/new".into()
+        "https://github.com/PlasmNetwork/Plasm/issues/new".into()
     }
 
     fn copyright_start_year() -> i32 {

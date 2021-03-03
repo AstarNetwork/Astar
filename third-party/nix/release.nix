@@ -8,6 +8,5 @@ in {
   inherit pkgs;
   rust-nightly = channel.rust.override {
     targets = [ "wasm32-unknown-unknown" ];
-    extensions = [ "rustfmt-preview" ];
   };
 }
