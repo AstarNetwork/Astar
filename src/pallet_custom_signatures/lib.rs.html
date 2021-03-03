@@ -1,4 +1,6 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source to the Rust file `frame/custom-signatures/src/lib.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>lib.rs.html -- source</title><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../light.css"  id="themeStyle"><link rel="stylesheet" type="text/css" href="../../dark.css" disabled ><link rel="stylesheet" type="text/css" href="../../ayu.css" disabled ><script src="../../storage.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="shortcut icon" href="../../favicon.ico"><style type="text/css">#crate-search{background-image:url("../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../pallet_custom_signatures/index.html'><div class='logo-container rust-logo'><img src='../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!"><img src="../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices"></div></div><script src="../../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><span class="help-button">?</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `frame/custom-signatures/src/lib.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>lib.rs - source</title><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../light.css"  id="themeStyle"><link rel="stylesheet" type="text/css" href="../../dark.css" disabled ><link rel="stylesheet" type="text/css" href="../../ayu.css" disabled ><script id="default-settings"></script><script src="../../storage.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="icon" type="image/svg+xml" href="../../favicon.svg">
+<link rel="alternate icon" type="image/png" href="../../favicon-16x16.png">
+<link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><style type="text/css">#crate-search{background-image:url("../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../pallet_custom_signatures/index.html'><div class='logo-container rust-logo'><img src='../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!" aria-haspopup="menu"><img src="../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices" role="menu"></div></div><script src="../../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><button type="button" class="help-button">?</button>
                 <a id="settings-menu" href="../../settings.html"><img src="../../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1">  1</span>
 <span id="2">  2</span>
 <span id="3">  3</span>
@@ -307,26 +309,6 @@
 <span id="306">306</span>
 <span id="307">307</span>
 <span id="308">308</span>
-<span id="309">309</span>
-<span id="310">310</span>
-<span id="311">311</span>
-<span id="312">312</span>
-<span id="313">313</span>
-<span id="314">314</span>
-<span id="315">315</span>
-<span id="316">316</span>
-<span id="317">317</span>
-<span id="318">318</span>
-<span id="319">319</span>
-<span id="320">320</span>
-<span id="321">321</span>
-<span id="322">322</span>
-<span id="323">323</span>
-<span id="324">324</span>
-<span id="325">325</span>
-<span id="326">326</span>
-<span id="327">327</span>
-<span id="328">328</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="attribute">#![<span class="ident">cfg_attr</span>(<span class="ident">not</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>), <span class="ident">no_std</span>)]</span>
 
@@ -354,15 +336,15 @@
 <span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">ethereum</span>;
 
 <span class="doccomment">/// The module&#39;s configuration trait.</span>
-<span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">Trait</span>: <span class="ident">frame_system</span>::<span class="ident">Trait</span> {
+<span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">Config</span>: <span class="ident">frame_system</span>::<span class="ident">Config</span> {
     <span class="doccomment">/// The overarching event type.</span>
-    <span class="kw">type</span> <span class="ident">Event</span>: <span class="ident">From</span><span class="op">&lt;</span><span class="ident">Event</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;&gt;</span> <span class="op">+</span> <span class="ident">Into</span><span class="op">&lt;&lt;</span><span class="self">Self</span> <span class="kw">as</span> <span class="ident">frame_system</span>::<span class="ident">Trait</span><span class="op">&gt;</span>::<span class="ident">Event</span><span class="op">&gt;</span>;
+    <span class="kw">type</span> <span class="ident">Event</span>: <span class="ident">From</span><span class="op">&lt;</span><span class="ident">Event</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Into</span><span class="op">&lt;</span><span class="op">&lt;</span><span class="self">Self</span> <span class="kw">as</span> <span class="ident">frame_system</span>::<span class="ident">Config</span><span class="op">&gt;</span>::<span class="ident">Event</span><span class="op">&gt;</span>;
 
     <span class="doccomment">/// A signable call.</span>
     <span class="kw">type</span> <span class="ident">Call</span>: <span class="ident">Parameter</span> <span class="op">+</span> <span class="ident">UnfilteredDispatchable</span><span class="op">&lt;</span><span class="ident">Origin</span> <span class="op">=</span> <span class="self">Self</span>::<span class="ident">Origin</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">GetDispatchInfo</span>;
 
     <span class="doccomment">/// User defined signature type.</span>
-    <span class="kw">type</span> <span class="ident">Signature</span>: <span class="ident">Parameter</span> <span class="op">+</span> <span class="ident">Verify</span><span class="op">&lt;</span><span class="ident">Signer</span> <span class="op">=</span> <span class="self">Self</span>::<span class="ident">Signer</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">TryFrom</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;&gt;</span>;
+    <span class="kw">type</span> <span class="ident">Signature</span>: <span class="ident">Parameter</span> <span class="op">+</span> <span class="ident">Verify</span><span class="op">&lt;</span><span class="ident">Signer</span> <span class="op">=</span> <span class="self">Self</span>::<span class="ident">Signer</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">TryFrom</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span><span class="op">&gt;</span>;
 
     <span class="doccomment">/// User defined signer type.</span>
     <span class="kw">type</span> <span class="ident">Signer</span>: <span class="ident">IdentifyAccount</span><span class="op">&lt;</span><span class="ident">AccountId</span> <span class="op">=</span> <span class="self">Self</span>::<span class="ident">AccountId</span><span class="op">&gt;</span>;
@@ -375,7 +357,7 @@
 }
 
 <span class="macro">decl_error</span><span class="macro">!</span> {
-    <span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">Error</span> <span class="kw">for</span> <span class="ident">Module</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Trait</span><span class="op">&gt;</span> {
+    <span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">Error</span> <span class="kw">for</span> <span class="ident">Module</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span> {
         <span class="doccomment">/// Signature decode fails.</span>
         <span class="ident">DecodeFailure</span>,
         <span class="doccomment">/// Signature and account mismatched.</span>
@@ -386,7 +368,7 @@
 <span class="macro">decl_event</span><span class="macro">!</span>(
     <span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">Event</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>
     <span class="kw">where</span>
-        <span class="ident">AccountId</span> <span class="op">=</span> <span class="op">&lt;</span><span class="ident">T</span> <span class="kw">as</span> <span class="ident">frame_system</span>::<span class="ident">Trait</span><span class="op">&gt;</span>::<span class="ident">AccountId</span>,
+        <span class="ident">AccountId</span> <span class="op">=</span> <span class="op">&lt;</span><span class="ident">T</span> <span class="kw">as</span> <span class="ident">frame_system</span>::<span class="ident">Config</span><span class="op">&gt;</span>::<span class="ident">AccountId</span>,
     {
         <span class="doccomment">/// A call just executed. \[result\]</span>
         <span class="ident">Executed</span>(<span class="ident">AccountId</span>, <span class="ident">DispatchResult</span>),
@@ -394,7 +376,7 @@
 );
 
 <span class="macro">decl_module</span><span class="macro">!</span> {
-    <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Module</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Trait</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="kw">enum</span> <span class="ident">Call</span> <span class="kw">where</span> <span class="ident">origin</span>: <span class="ident">T</span>::<span class="ident">Origin</span> {
+    <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Module</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="kw">enum</span> <span class="ident">Call</span> <span class="kw">where</span> <span class="ident">origin</span>: <span class="ident">T</span>::<span class="ident">Origin</span> {
         <span class="kw">type</span> <span class="ident">Error</span> <span class="op">=</span> <span class="ident">Error</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>;
 
         <span class="kw">fn</span> <span class="ident">deposit_event</span>() <span class="op">=</span> <span class="ident">default</span>;
@@ -402,13 +384,13 @@
         <span class="attribute">#[<span class="ident">weight</span> <span class="op">=</span> (<span class="ident">call</span>.<span class="ident">get_dispatch_info</span>().<span class="ident">weight</span> <span class="op">+</span> <span class="number">10_000</span>, <span class="ident">call</span>.<span class="ident">get_dispatch_info</span>().<span class="ident">class</span>)]</span>
         <span class="kw">fn</span> <span class="ident">call</span>(
             <span class="ident">origin</span>,
-            <span class="ident">call</span>: <span class="ident">Box</span><span class="op">&lt;&lt;</span><span class="ident">T</span> <span class="kw">as</span> <span class="ident">Trait</span><span class="op">&gt;</span>::<span class="ident">Call</span><span class="op">&gt;</span>,
+            <span class="ident">call</span>: <span class="ident">Box</span><span class="op">&lt;</span><span class="op">&lt;</span><span class="ident">T</span> <span class="kw">as</span> <span class="ident">Config</span><span class="op">&gt;</span>::<span class="ident">Call</span><span class="op">&gt;</span>,
             <span class="ident">account</span>: <span class="ident">T</span>::<span class="ident">AccountId</span>,
             <span class="ident">signature</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>,
-        ) <span class="op">-&gt;</span> <span class="ident">DispatchResultWithPostInfo</span> {
+        ) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">DispatchResultWithPostInfo</span> {
             <span class="ident">ensure_none</span>(<span class="ident">origin</span>)<span class="question-mark">?</span>;
 
-            <span class="kw">let</span> <span class="ident">signature</span> <span class="op">=</span> <span class="op">&lt;</span><span class="ident">T</span> <span class="kw">as</span> <span class="ident">Trait</span><span class="op">&gt;</span>::<span class="ident">Signature</span>::<span class="ident">try_from</span>(<span class="ident">signature</span>)
+            <span class="kw">let</span> <span class="ident">signature</span> <span class="op">=</span> <span class="op">&lt;</span><span class="ident">T</span> <span class="kw">as</span> <span class="ident">Config</span><span class="op">&gt;</span>::<span class="ident">Signature</span>::<span class="ident">try_from</span>(<span class="ident">signature</span>)
                 .<span class="ident">map_err</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">Error</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>::<span class="ident">DecodeFailure</span>)<span class="question-mark">?</span>;
             <span class="kw">if</span> <span class="ident">signature</span>.<span class="ident">verify</span>(<span class="kw-2">&amp;</span><span class="ident">call</span>.<span class="ident">encode</span>()[..], <span class="kw-2">&amp;</span><span class="ident">account</span>) {
                 <span class="kw">let</span> <span class="ident">new_origin</span> <span class="op">=</span> <span class="ident">frame_system</span>::<span class="ident">RawOrigin</span>::<span class="ident">Signed</span>(<span class="ident">account</span>.<span class="ident">clone</span>()).<span class="ident">into</span>();
@@ -424,15 +406,15 @@
 
 <span class="kw">const</span> <span class="ident">SIGNATURE_DECODE_FAILURE</span>: <span class="ident">u8</span> <span class="op">=</span> <span class="number">1</span>;
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Trait</span><span class="op">&gt;</span> <span class="ident">frame_support</span>::<span class="ident">unsigned</span>::<span class="ident">ValidateUnsigned</span> <span class="kw">for</span> <span class="ident">Module</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
+<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span> <span class="ident">frame_support</span>::<span class="ident">unsigned</span>::<span class="ident">ValidateUnsigned</span> <span class="kw">for</span> <span class="ident">Module</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
     <span class="kw">type</span> <span class="ident">Call</span> <span class="op">=</span> <span class="ident">Call</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>;
 
-    <span class="kw">fn</span> <span class="ident">validate_unsigned</span>(<span class="ident">_source</span>: <span class="ident">TransactionSource</span>, <span class="ident">call</span>: <span class="kw-2">&amp;</span><span class="self">Self</span>::<span class="ident">Call</span>) <span class="op">-&gt;</span> <span class="ident">TransactionValidity</span> {
+    <span class="kw">fn</span> <span class="ident">validate_unsigned</span>(<span class="ident">_source</span>: <span class="ident">TransactionSource</span>, <span class="ident">call</span>: <span class="kw-2">&amp;</span><span class="self">Self</span>::<span class="ident">Call</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">TransactionValidity</span> {
         <span class="kw">if</span> <span class="kw">let</span> <span class="ident">Call</span>::<span class="ident">call</span>(<span class="ident">call</span>, <span class="ident">signer</span>, <span class="ident">signature</span>) <span class="op">=</span> <span class="ident">call</span> {
             <span class="ident">frame_support</span>::<span class="macro">runtime_print</span><span class="macro">!</span>(<span class="string">&quot;CALL: {:?}&quot;</span>, <span class="ident">call</span>.<span class="ident">encode</span>());
             <span class="ident">frame_support</span>::<span class="macro">runtime_print</span><span class="macro">!</span>(<span class="string">&quot;SIGNATURE: {:?}&quot;</span>, <span class="ident">signature</span>);
 
-            <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Ok</span>(<span class="ident">signature</span>) <span class="op">=</span> <span class="op">&lt;</span><span class="ident">T</span> <span class="kw">as</span> <span class="ident">Trait</span><span class="op">&gt;</span>::<span class="ident">Signature</span>::<span class="ident">try_from</span>(<span class="ident">signature</span>.<span class="ident">clone</span>()) {
+            <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Ok</span>(<span class="ident">signature</span>) <span class="op">=</span> <span class="op">&lt;</span><span class="ident">T</span> <span class="kw">as</span> <span class="ident">Config</span><span class="op">&gt;</span>::<span class="ident">Signature</span>::<span class="ident">try_from</span>(<span class="ident">signature</span>.<span class="ident">clone</span>()) {
                 <span class="kw">if</span> <span class="ident">signature</span>.<span class="ident">verify</span>(<span class="kw-2">&amp;</span><span class="ident">call</span>.<span class="ident">encode</span>()[..], <span class="kw-2">&amp;</span><span class="ident">signer</span>) {
                     <span class="kw">return</span> <span class="ident">ValidTransaction</span>::<span class="ident">with_tag_prefix</span>(<span class="string">&quot;CustomSignatures&quot;</span>)
                         .<span class="ident">priority</span>(<span class="ident">T</span>::<span class="ident">UnsignedPriority</span>::<span class="ident">get</span>())
@@ -456,10 +438,7 @@
 <span class="kw">mod</span> <span class="ident">tests</span> {
     <span class="kw">use</span> <span class="kw">crate</span> <span class="kw">as</span> <span class="ident">custom_signatures</span>;
     <span class="kw">use</span> <span class="ident">custom_signatures</span>::<span class="kw-2">*</span>;
-    <span class="kw">use</span> <span class="ident">frame_support</span>::{
-        <span class="ident">assert_err</span>, <span class="ident">assert_ok</span>, <span class="ident">impl_outer_dispatch</span>, <span class="ident">impl_outer_event</span>, <span class="ident">impl_outer_origin</span>,
-        <span class="ident">parameter_types</span>,
-    };
+    <span class="kw">use</span> <span class="ident">frame_support</span>::{<span class="ident">assert_err</span>, <span class="ident">assert_ok</span>, <span class="ident">parameter_types</span>};
     <span class="kw">use</span> <span class="ident">hex_literal</span>::<span class="ident">hex</span>;
     <span class="kw">use</span> <span class="ident">sp_core</span>::{<span class="ident">crypto</span>::<span class="ident">Ss58Codec</span>, <span class="ident">ecdsa</span>, <span class="ident">Pair</span>};
     <span class="kw">use</span> <span class="ident">sp_io</span>::<span class="ident">hashing</span>::<span class="ident">keccak_256</span>;
@@ -468,46 +447,36 @@
         <span class="ident">testing</span>::{<span class="ident">Header</span>, <span class="ident">H256</span>},
         <span class="ident">traits</span>::{<span class="ident">BlakeTwo256</span>, <span class="ident">IdentifyAccount</span>, <span class="ident">IdentityLookup</span>, <span class="ident">Verify</span>},
         <span class="ident">transaction_validity</span>::<span class="ident">TransactionPriority</span>,
-        <span class="ident">MultiSignature</span>, <span class="ident">MultiSigner</span>, <span class="ident">Perbill</span>,
+        <span class="ident">MultiSignature</span>, <span class="ident">MultiSigner</span>,
     };
 
     <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">ECDSA_SEED</span>: [<span class="ident">u8</span>; <span class="number">32</span>] <span class="op">=</span>
         <span class="ident">hex_literal</span>::<span class="macro">hex</span><span class="macro">!</span>[<span class="string">&quot;7e9c7ad85df5cdc88659f53e06fb2eb9bab3ebc59083a3190eaf2c730332529c&quot;</span>];
 
-    <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>, <span class="ident">PartialEq</span>, <span class="ident">Eq</span>, <span class="ident">Debug</span>)]</span>
-    <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Runtime</span>;
-
     <span class="kw">type</span> <span class="ident">Balance</span> <span class="op">=</span> <span class="ident">u128</span>;
     <span class="kw">type</span> <span class="ident">BlockNumber</span> <span class="op">=</span> <span class="ident">u64</span>;
     <span class="kw">type</span> <span class="ident">Signature</span> <span class="op">=</span> <span class="ident">MultiSignature</span>;
-    <span class="kw">type</span> <span class="ident">AccountId</span> <span class="op">=</span> <span class="op">&lt;&lt;</span><span class="ident">Signature</span> <span class="kw">as</span> <span class="ident">Verify</span><span class="op">&gt;</span>::<span class="ident">Signer</span> <span class="kw">as</span> <span class="ident">IdentifyAccount</span><span class="op">&gt;</span>::<span class="ident">AccountId</span>;
+    <span class="kw">type</span> <span class="ident">AccountId</span> <span class="op">=</span> <span class="op">&lt;</span><span class="op">&lt;</span><span class="ident">Signature</span> <span class="kw">as</span> <span class="ident">Verify</span><span class="op">&gt;</span>::<span class="ident">Signer</span> <span class="kw">as</span> <span class="ident">IdentifyAccount</span><span class="op">&gt;</span>::<span class="ident">AccountId</span>;
+    <span class="kw">type</span> <span class="ident">Block</span> <span class="op">=</span> <span class="ident">frame_system</span>::<span class="ident">mocking</span>::<span class="ident">MockBlock</span><span class="op">&lt;</span><span class="ident">Runtime</span><span class="op">&gt;</span>;
+    <span class="kw">type</span> <span class="ident">UncheckedExtrinsic</span> <span class="op">=</span> <span class="ident">frame_system</span>::<span class="ident">mocking</span>::<span class="ident">MockUncheckedExtrinsic</span><span class="op">&lt;</span><span class="ident">Runtime</span><span class="op">&gt;</span>;
 
-    <span class="macro">impl_outer_origin</span><span class="macro">!</span> {
-        <span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">Origin</span> <span class="kw">for</span> <span class="ident">Runtime</span> {}
-    }
-
-    <span class="macro">impl_outer_dispatch</span><span class="macro">!</span> {
-        <span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">Call</span> <span class="kw">for</span> <span class="ident">Runtime</span> <span class="kw">where</span> <span class="ident">origin</span>: <span class="ident">Origin</span> {
-            <span class="ident">pallet_balances</span>::<span class="ident">Balances</span>,
+    <span class="ident">frame_support</span>::<span class="macro">construct_runtime</span><span class="macro">!</span>(
+        <span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">Runtime</span> <span class="kw">where</span>
+            <span class="ident">Block</span> <span class="op">=</span> <span class="ident">Block</span>,
+            <span class="ident">NodeBlock</span> <span class="op">=</span> <span class="ident">Block</span>,
+            <span class="ident">UncheckedExtrinsic</span> <span class="op">=</span> <span class="ident">UncheckedExtrinsic</span>,
+        {
+            <span class="ident">Balances</span>: <span class="ident">pallet_balances</span>::{<span class="ident">Module</span>, <span class="ident">Call</span>, <span class="ident">Storage</span>, <span class="ident">Config</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>, <span class="ident">Event</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>},
+            <span class="ident">System</span>: <span class="ident">frame_system</span>::{<span class="ident">Module</span>, <span class="ident">Call</span>, <span class="ident">Config</span>, <span class="ident">Storage</span>, <span class="ident">Event</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>},
+            <span class="ident">CustomSignatures</span>: <span class="ident">custom_signatures</span>::{<span class="ident">Module</span>, <span class="ident">Call</span>, <span class="ident">Event</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>},
         }
-    }
-
-    <span class="macro">impl_outer_event</span><span class="macro">!</span> {
-        <span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">Event</span> <span class="kw">for</span> <span class="ident">Runtime</span> {
-            <span class="ident">frame_system</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>,
-            <span class="ident">pallet_balances</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>,
-            <span class="ident">custom_signatures</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>,
-        }
-    }
+    );
 
     <span class="macro">parameter_types</span><span class="macro">!</span> {
         <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">BlockHashCount</span>: <span class="ident">u64</span> <span class="op">=</span> <span class="number">250</span>;
-        <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">MaximumBlockWeight</span>: <span class="ident">u32</span> <span class="op">=</span> <span class="number">1024</span>;
-        <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">MaximumBlockLength</span>: <span class="ident">u32</span> <span class="op">=</span> <span class="number">2</span> <span class="op">*</span> <span class="number">1024</span>;
-        <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">AvailableBlockRatio</span>: <span class="ident">Perbill</span> <span class="op">=</span> <span class="ident">Perbill</span>::<span class="ident">one</span>();
     }
 
-    <span class="kw">impl</span> <span class="ident">frame_system</span>::<span class="ident">Trait</span> <span class="kw">for</span> <span class="ident">Runtime</span> {
+    <span class="kw">impl</span> <span class="ident">frame_system</span>::<span class="ident">Config</span> <span class="kw">for</span> <span class="ident">Runtime</span> {
         <span class="kw">type</span> <span class="ident">Origin</span> <span class="op">=</span> <span class="ident">Origin</span>;
         <span class="kw">type</span> <span class="ident">BaseCallFilter</span> <span class="op">=</span> ();
         <span class="kw">type</span> <span class="ident">Index</span> <span class="op">=</span> <span class="ident">u64</span>;
@@ -520,26 +489,23 @@
         <span class="kw">type</span> <span class="ident">Header</span> <span class="op">=</span> <span class="ident">Header</span>;
         <span class="kw">type</span> <span class="ident">Event</span> <span class="op">=</span> <span class="ident">Event</span>;
         <span class="kw">type</span> <span class="ident">BlockHashCount</span> <span class="op">=</span> <span class="ident">BlockHashCount</span>;
-        <span class="kw">type</span> <span class="ident">MaximumBlockWeight</span> <span class="op">=</span> <span class="ident">MaximumBlockWeight</span>;
-        <span class="kw">type</span> <span class="ident">MaximumBlockLength</span> <span class="op">=</span> <span class="ident">MaximumBlockLength</span>;
-        <span class="kw">type</span> <span class="ident">AvailableBlockRatio</span> <span class="op">=</span> <span class="ident">AvailableBlockRatio</span>;
         <span class="kw">type</span> <span class="ident">Version</span> <span class="op">=</span> ();
-        <span class="kw">type</span> <span class="ident">PalletInfo</span> <span class="op">=</span> ();
+        <span class="kw">type</span> <span class="ident">PalletInfo</span> <span class="op">=</span> <span class="ident">PalletInfo</span>;
         <span class="kw">type</span> <span class="ident">AccountData</span> <span class="op">=</span> <span class="ident">pallet_balances</span>::<span class="ident">AccountData</span><span class="op">&lt;</span><span class="ident">Balance</span><span class="op">&gt;</span>;
         <span class="kw">type</span> <span class="ident">OnNewAccount</span> <span class="op">=</span> ();
         <span class="kw">type</span> <span class="ident">OnKilledAccount</span> <span class="op">=</span> ();
         <span class="kw">type</span> <span class="ident">DbWeight</span> <span class="op">=</span> ();
-        <span class="kw">type</span> <span class="ident">BlockExecutionWeight</span> <span class="op">=</span> ();
-        <span class="kw">type</span> <span class="ident">ExtrinsicBaseWeight</span> <span class="op">=</span> ();
-        <span class="kw">type</span> <span class="ident">MaximumExtrinsicWeight</span> <span class="op">=</span> ();
         <span class="kw">type</span> <span class="ident">SystemWeightInfo</span> <span class="op">=</span> ();
+        <span class="kw">type</span> <span class="ident">BlockWeights</span> <span class="op">=</span> ();
+        <span class="kw">type</span> <span class="ident">BlockLength</span> <span class="op">=</span> ();
+        <span class="kw">type</span> <span class="ident">SS58Prefix</span> <span class="op">=</span> ();
     }
 
     <span class="macro">parameter_types</span><span class="macro">!</span> {
         <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">ExistentialDeposit</span>: <span class="ident">Balance</span> <span class="op">=</span> <span class="number">1</span>;
     }
 
-    <span class="kw">impl</span> <span class="ident">pallet_balances</span>::<span class="ident">Trait</span> <span class="kw">for</span> <span class="ident">Runtime</span> {
+    <span class="kw">impl</span> <span class="ident">pallet_balances</span>::<span class="ident">Config</span> <span class="kw">for</span> <span class="ident">Runtime</span> {
         <span class="kw">type</span> <span class="ident">Balance</span> <span class="op">=</span> <span class="ident">Balance</span>;
         <span class="kw">type</span> <span class="ident">Event</span> <span class="op">=</span> <span class="ident">Event</span>;
         <span class="kw">type</span> <span class="ident">DustRemoval</span> <span class="op">=</span> ();
@@ -553,7 +519,7 @@
         <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">Priority</span>: <span class="ident">TransactionPriority</span> <span class="op">=</span> <span class="ident">TransactionPriority</span>::<span class="ident">max_value</span>();
     }
 
-    <span class="kw">impl</span> <span class="ident">Trait</span> <span class="kw">for</span> <span class="ident">Runtime</span> {
+    <span class="kw">impl</span> <span class="ident">Config</span> <span class="kw">for</span> <span class="ident">Runtime</span> {
         <span class="kw">type</span> <span class="ident">Event</span> <span class="op">=</span> <span class="ident">Event</span>;
         <span class="kw">type</span> <span class="ident">Call</span> <span class="op">=</span> <span class="ident">Call</span>;
         <span class="kw">type</span> <span class="ident">Signature</span> <span class="op">=</span> <span class="ident">ethereum</span>::<span class="ident">EthereumSignature</span>;
@@ -561,11 +527,7 @@
         <span class="kw">type</span> <span class="ident">UnsignedPriority</span> <span class="op">=</span> <span class="ident">Priority</span>;
     }
 
-    <span class="kw">type</span> <span class="ident">System</span> <span class="op">=</span> <span class="ident">frame_system</span>::<span class="ident">Module</span><span class="op">&lt;</span><span class="ident">Runtime</span><span class="op">&gt;</span>;
-    <span class="kw">type</span> <span class="ident">Balances</span> <span class="op">=</span> <span class="ident">pallet_balances</span>::<span class="ident">Module</span><span class="op">&lt;</span><span class="ident">Runtime</span><span class="op">&gt;</span>;
-    <span class="kw">type</span> <span class="ident">CustomSignatures</span> <span class="op">=</span> <span class="ident">custom_signatures</span>::<span class="ident">Module</span><span class="op">&lt;</span><span class="ident">Runtime</span><span class="op">&gt;</span>;
-
-    <span class="kw">fn</span> <span class="ident">new_test_ext</span>() <span class="op">-&gt;</span> <span class="ident">sp_io</span>::<span class="ident">TestExternalities</span> {
+    <span class="kw">fn</span> <span class="ident">new_test_ext</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">sp_io</span>::<span class="ident">TestExternalities</span> {
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">storage</span> <span class="op">=</span> <span class="ident">frame_system</span>::<span class="ident">GenesisConfig</span>::<span class="ident">default</span>()
             .<span class="ident">build_storage</span>::<span class="op">&lt;</span><span class="ident">Runtime</span><span class="op">&gt;</span>()
             .<span class="ident">unwrap</span>();
@@ -580,13 +542,13 @@
     }
 
     <span class="comment">// Simple `eth_sign` implementation, should be equal to exported by RPC</span>
-    <span class="kw">fn</span> <span class="ident">eth_sign</span>(<span class="ident">seed</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>; <span class="number">32</span>], <span class="ident">data</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>]) <span class="op">-&gt;</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">eth_sign</span>(<span class="ident">seed</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>; <span class="number">32</span>], <span class="ident">data</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>]) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">call_msg</span> <span class="op">=</span> <span class="ident">ethereum</span>::<span class="ident">signable_message</span>(<span class="ident">data</span>);
         <span class="kw">let</span> <span class="ident">ecdsa_msg</span> <span class="op">=</span> <span class="ident">secp256k1</span>::<span class="ident">Message</span>::<span class="ident">parse</span>(<span class="kw-2">&amp;</span><span class="ident">keccak_256</span>(<span class="kw-2">&amp;</span><span class="ident">call_msg</span>));
         <span class="kw">let</span> <span class="ident">secret</span> <span class="op">=</span> <span class="ident">secp256k1</span>::<span class="ident">SecretKey</span>::<span class="ident">parse</span>(<span class="kw-2">&amp;</span><span class="ident">seed</span>).<span class="ident">expect</span>(<span class="string">&quot;valid seed&quot;</span>);
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">ecdsa</span>: <span class="ident">ecdsa</span>::<span class="ident">Signature</span> <span class="op">=</span> <span class="ident">secp256k1</span>::<span class="ident">sign</span>(<span class="kw-2">&amp;</span><span class="ident">ecdsa_msg</span>, <span class="kw-2">&amp;</span><span class="ident">secret</span>).<span class="ident">into</span>();
         <span class="comment">// Fix recovery ID: Ethereum uses 27/28 notation</span>
-        <span class="ident">ecdsa</span>.<span class="ident">as_mut</span>()[<span class="number">64</span>] <span class="op">+=</span> <span class="number">27</span>;
+        <span class="ident">ecdsa</span>.<span class="ident">as_mut</span>()[<span class="number">64</span>] <span class="op">+</span><span class="op">=</span> <span class="number">27</span>;
         <span class="ident">Vec</span>::<span class="ident">from</span>(<span class="ident">ecdsa</span>.<span class="ident">as_ref</span>() <span class="kw">as</span> <span class="kw-2">&amp;</span>[<span class="ident">u8</span>])
     }
 
@@ -600,8 +562,8 @@
 
     <span class="attribute">#[<span class="ident">test</span>]</span>
     <span class="kw">fn</span> <span class="ident">invalid_signature</span>() {
-        <span class="kw">let</span> <span class="ident">bob</span>: <span class="op">&lt;</span><span class="ident">Runtime</span> <span class="kw">as</span> <span class="ident">frame_system</span>::<span class="ident">Trait</span><span class="op">&gt;</span>::<span class="ident">AccountId</span> <span class="op">=</span> <span class="ident">Keyring</span>::<span class="ident">Bob</span>.<span class="ident">into</span>();
-        <span class="kw">let</span> <span class="ident">alice</span>: <span class="op">&lt;</span><span class="ident">Runtime</span> <span class="kw">as</span> <span class="ident">frame_system</span>::<span class="ident">Trait</span><span class="op">&gt;</span>::<span class="ident">AccountId</span> <span class="op">=</span> <span class="ident">Keyring</span>::<span class="ident">Alice</span>.<span class="ident">into</span>();
+        <span class="kw">let</span> <span class="ident">bob</span>: <span class="op">&lt;</span><span class="ident">Runtime</span> <span class="kw">as</span> <span class="ident">frame_system</span>::<span class="ident">Config</span><span class="op">&gt;</span>::<span class="ident">AccountId</span> <span class="op">=</span> <span class="ident">Keyring</span>::<span class="ident">Bob</span>.<span class="ident">into</span>();
+        <span class="kw">let</span> <span class="ident">alice</span>: <span class="op">&lt;</span><span class="ident">Runtime</span> <span class="kw">as</span> <span class="ident">frame_system</span>::<span class="ident">Config</span><span class="op">&gt;</span>::<span class="ident">AccountId</span> <span class="op">=</span> <span class="ident">Keyring</span>::<span class="ident">Alice</span>.<span class="ident">into</span>();
         <span class="kw">let</span> <span class="ident">call</span> <span class="op">=</span> <span class="ident">pallet_balances</span>::<span class="ident">Call</span>::<span class="op">&lt;</span><span class="ident">Runtime</span><span class="op">&gt;</span>::<span class="ident">transfer</span>(<span class="ident">alice</span>.<span class="ident">clone</span>(), <span class="number">1_000</span>).<span class="ident">into</span>();
         <span class="kw">let</span> <span class="ident">signature</span> <span class="op">=</span> <span class="ident">Vec</span>::<span class="ident">from</span>(<span class="kw-2">&amp;</span><span class="macro">hex</span><span class="macro">!</span>[<span class="string">&quot;dd0992d40e5cdf99db76bed162808508ac65acd7ae2fdc8573594f03ed9c939773e813181788fc02c3c68f3fdc592759b35f6354484343e18cb5317d34dab6c61b&quot;</span>][..]);
         <span class="macro">assert_err</span><span class="macro">!</span>(
@@ -612,11 +574,11 @@
 
     <span class="attribute">#[<span class="ident">test</span>]</span>
     <span class="kw">fn</span> <span class="ident">balance_transfer</span>() {
-        <span class="ident">new_test_ext</span>().<span class="ident">execute_with</span>(<span class="op">||</span> {
+        <span class="ident">new_test_ext</span>().<span class="ident">execute_with</span>(<span class="op">|</span><span class="op">|</span> {
             <span class="kw">let</span> <span class="ident">pair</span> <span class="op">=</span> <span class="ident">ecdsa</span>::<span class="ident">Pair</span>::<span class="ident">from_seed</span>(<span class="kw-2">&amp;</span><span class="ident">ECDSA_SEED</span>);
             <span class="kw">let</span> <span class="ident">account</span> <span class="op">=</span> <span class="ident">MultiSigner</span>::<span class="ident">from</span>(<span class="ident">pair</span>.<span class="ident">public</span>()).<span class="ident">into_account</span>();
 
-            <span class="kw">let</span> <span class="ident">alice</span>: <span class="op">&lt;</span><span class="ident">Runtime</span> <span class="kw">as</span> <span class="ident">frame_system</span>::<span class="ident">Trait</span><span class="op">&gt;</span>::<span class="ident">AccountId</span> <span class="op">=</span> <span class="ident">Keyring</span>::<span class="ident">Alice</span>.<span class="ident">into</span>();
+            <span class="kw">let</span> <span class="ident">alice</span>: <span class="op">&lt;</span><span class="ident">Runtime</span> <span class="kw">as</span> <span class="ident">frame_system</span>::<span class="ident">Config</span><span class="op">&gt;</span>::<span class="ident">AccountId</span> <span class="op">=</span> <span class="ident">Keyring</span>::<span class="ident">Alice</span>.<span class="ident">into</span>();
             <span class="macro">assert_eq</span><span class="macro">!</span>(<span class="ident">System</span>::<span class="ident">account</span>(<span class="ident">alice</span>.<span class="ident">clone</span>()).<span class="ident">data</span>.<span class="ident">free</span>, <span class="number">0</span>);
 
             <span class="kw">let</span> <span class="ident">call</span>: <span class="ident">Call</span> <span class="op">=</span>

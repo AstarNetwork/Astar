@@ -1,4 +1,6 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source to the Rust file `bin/node/cli/src/chain_spec.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>chain_spec.rs.html -- source</title><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../light.css"  id="themeStyle"><link rel="stylesheet" type="text/css" href="../../dark.css" disabled ><link rel="stylesheet" type="text/css" href="../../ayu.css" disabled ><script src="../../storage.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="shortcut icon" href="../../favicon.ico"><style type="text/css">#crate-search{background-image:url("../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../plasm_cli/index.html'><div class='logo-container rust-logo'><img src='../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!"><img src="../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices"></div></div><script src="../../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><span class="help-button">?</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `bin/node/cli/src/chain_spec.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>chain_spec.rs - source</title><link rel="stylesheet" type="text/css" href="../../normalize.css"><link rel="stylesheet" type="text/css" href="../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../light.css"  id="themeStyle"><link rel="stylesheet" type="text/css" href="../../dark.css" disabled ><link rel="stylesheet" type="text/css" href="../../ayu.css" disabled ><script id="default-settings"></script><script src="../../storage.js"></script><noscript><link rel="stylesheet" href="../../noscript.css"></noscript><link rel="icon" type="image/svg+xml" href="../../favicon.svg">
+<link rel="alternate icon" type="image/png" href="../../favicon-16x16.png">
+<link rel="alternate icon" type="image/png" href="../../favicon-32x32.png"><style type="text/css">#crate-search{background-image:url("../../down-arrow.svg");}</style></head><body class="rustdoc source"><!--[if lte IE 8]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="sidebar-menu">&#9776;</div><a href='../../plasm_cli/index.html'><div class='logo-container rust-logo'><img src='../../rust-logo.png' alt='logo'></div></a></nav><div class="theme-picker"><button id="theme-picker" aria-label="Pick another theme!" aria-haspopup="menu"><img src="../../brush.svg" width="18" alt="Pick another theme!"></button><div id="theme-choices" role="menu"></div></div><script src="../../theme.js"></script><nav class="sub"><form class="search-form"><div class="search-container"><div><select id="crate-search"><option value="All crates">All crates</option></select><input class="search-input" name="search" disabled autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"></div><button type="button" class="help-button">?</button>
                 <a id="settings-menu" href="../../settings.html"><img src="../../wheel.svg" width="18" alt="Change settings"></a></div></form></nav><section id="main" class="content"><pre class="line-numbers"><span id="1">  1</span>
 <span id="2">  2</span>
 <span id="3">  3</span>
@@ -760,22 +762,16 @@
 <span id="759">759</span>
 <span id="760">760</span>
 <span id="761">761</span>
-<span id="762">762</span>
-<span id="763">763</span>
-<span id="764">764</span>
-<span id="765">765</span>
-<span id="766">766</span>
-<span id="767">767</span>
-<span id="768">768</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="doccomment">//! Chain specification.</span>
 
+<span class="kw">use</span> <span class="ident">pallet_im_online</span>::<span class="ident">sr25519</span>::<span class="ident">AuthorityId</span> <span class="kw">as</span> <span class="ident">ImOnlineId</span>;
 <span class="kw">use</span> <span class="ident">plasm_primitives</span>::{<span class="ident">AccountId</span>, <span class="ident">Balance</span>, <span class="ident">Signature</span>};
 <span class="kw">use</span> <span class="ident">plasm_runtime</span>::<span class="ident">constants</span>::<span class="ident">currency</span>::<span class="ident">PLM</span>;
 <span class="kw">use</span> <span class="ident">plasm_runtime</span>::<span class="ident">Block</span>;
 <span class="kw">use</span> <span class="ident">plasm_runtime</span>::{
     <span class="ident">BabeConfig</span>, <span class="ident">BalancesConfig</span>, <span class="ident">ContractsConfig</span>, <span class="ident">EVMConfig</span>, <span class="ident">EthereumConfig</span>, <span class="ident">GenesisConfig</span>,
-    <span class="ident">GrandpaConfig</span>, <span class="ident">IndicesConfig</span>, <span class="ident">PlasmLockdropConfig</span>, <span class="ident">PlasmRewardsConfig</span>, <span class="ident">PlasmValidatorConfig</span>,
+    <span class="ident">GrandpaConfig</span>, <span class="ident">ImOnlineConfig</span>, <span class="ident">IndicesConfig</span>, <span class="ident">PlasmRewardsConfig</span>, <span class="ident">PlasmValidatorConfig</span>,
     <span class="ident">SessionConfig</span>, <span class="ident">SessionKeys</span>, <span class="ident">SudoConfig</span>, <span class="ident">SystemConfig</span>, <span class="ident">WASM_BINARY</span>,
 };
 <span class="kw">use</span> <span class="ident">sc_chain_spec</span>::<span class="ident">ChainSpecExtension</span>;
@@ -784,10 +780,7 @@
 <span class="kw">use</span> <span class="ident">sp_consensus_babe</span>::<span class="ident">AuthorityId</span> <span class="kw">as</span> <span class="ident">BabeId</span>;
 <span class="kw">use</span> <span class="ident">sp_core</span>::{<span class="ident">sr25519</span>, <span class="ident">Pair</span>, <span class="ident">Public</span>, <span class="ident">H160</span>, <span class="ident">U256</span>};
 <span class="kw">use</span> <span class="ident">sp_finality_grandpa</span>::<span class="ident">AuthorityId</span> <span class="kw">as</span> <span class="ident">GrandpaId</span>;
-<span class="kw">use</span> <span class="ident">sp_runtime</span>::{
-    <span class="ident">traits</span>::{<span class="ident">IdentifyAccount</span>, <span class="ident">Verify</span>},
-    <span class="ident">Perbill</span>,
-};
+<span class="kw">use</span> <span class="ident">sp_runtime</span>::<span class="ident">traits</span>::{<span class="ident">IdentifyAccount</span>, <span class="ident">Verify</span>};
 
 <span class="kw">type</span> <span class="ident">AccountPublic</span> <span class="op">=</span> <span class="op">&lt;</span><span class="ident">Signature</span> <span class="kw">as</span> <span class="ident">Verify</span><span class="op">&gt;</span>::<span class="ident">Signer</span>;
 
@@ -831,43 +824,48 @@ const DUSTY_PROTOCOL_ID: &amp;str = &quot;pld&quot;;
 <span class="kw">pub</span> <span class="kw">type</span> <span class="ident">ChainSpec</span> <span class="op">=</span> <span class="ident">sc_service</span>::<span class="ident">GenericChainSpec</span><span class="op">&lt;</span><span class="ident">GenesisConfig</span>, <span class="ident">Extensions</span><span class="op">&gt;</span>;
 
 <span class="doccomment">/// Helper function to generate a crypto pair from seed</span>
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_from_seed</span><span class="op">&lt;</span><span class="ident">TPublic</span>: <span class="ident">Public</span><span class="op">&gt;</span>(<span class="ident">seed</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) <span class="op">-&gt;</span> <span class="op">&lt;</span><span class="ident">TPublic</span>::<span class="ident">Pair</span> <span class="kw">as</span> <span class="ident">Pair</span><span class="op">&gt;</span>::<span class="ident">Public</span> {
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_from_seed</span><span class="op">&lt;</span><span class="ident">TPublic</span>: <span class="ident">Public</span><span class="op">&gt;</span>(<span class="ident">seed</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="op">&lt;</span><span class="ident">TPublic</span>::<span class="ident">Pair</span> <span class="kw">as</span> <span class="ident">Pair</span><span class="op">&gt;</span>::<span class="ident">Public</span> {
     <span class="ident">TPublic</span>::<span class="ident">Pair</span>::<span class="ident">from_string</span>(<span class="kw-2">&amp;</span><span class="macro">format</span><span class="macro">!</span>(<span class="string">&quot;//{}&quot;</span>, <span class="ident">seed</span>), <span class="prelude-val">None</span>)
         .<span class="ident">expect</span>(<span class="string">&quot;static values are valid; qed&quot;</span>)
         .<span class="ident">public</span>()
 }
 
 <span class="doccomment">/// Helper function to generate an account ID from seed</span>
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_account_id_from_seed</span><span class="op">&lt;</span><span class="ident">TPublic</span>: <span class="ident">Public</span><span class="op">&gt;</span>(<span class="ident">seed</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) <span class="op">-&gt;</span> <span class="ident">AccountId</span>
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_account_id_from_seed</span><span class="op">&lt;</span><span class="ident">TPublic</span>: <span class="ident">Public</span><span class="op">&gt;</span>(<span class="ident">seed</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">AccountId</span>
 <span class="kw">where</span>
-    <span class="ident">AccountPublic</span>: <span class="ident">From</span><span class="op">&lt;&lt;</span><span class="ident">TPublic</span>::<span class="ident">Pair</span> <span class="kw">as</span> <span class="ident">Pair</span><span class="op">&gt;</span>::<span class="ident">Public</span><span class="op">&gt;</span>,
+    <span class="ident">AccountPublic</span>: <span class="ident">From</span><span class="op">&lt;</span><span class="op">&lt;</span><span class="ident">TPublic</span>::<span class="ident">Pair</span> <span class="kw">as</span> <span class="ident">Pair</span><span class="op">&gt;</span>::<span class="ident">Public</span><span class="op">&gt;</span>,
 {
     <span class="ident">AccountPublic</span>::<span class="ident">from</span>(<span class="ident">get_from_seed</span>::<span class="op">&lt;</span><span class="ident">TPublic</span><span class="op">&gt;</span>(<span class="ident">seed</span>)).<span class="ident">into_account</span>()
 }
 
 <span class="doccomment">/// Helper function to generate controller and session key from seed</span>
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_authority_keys_from_seed</span>(<span class="ident">seed</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) <span class="op">-&gt;</span> (<span class="ident">AccountId</span>, <span class="ident">BabeId</span>, <span class="ident">GrandpaId</span>) {
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_authority_keys_from_seed</span>(<span class="ident">seed</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) <span class="op">-</span><span class="op">&gt;</span> (<span class="ident">AccountId</span>, <span class="ident">BabeId</span>, <span class="ident">GrandpaId</span>, <span class="ident">ImOnlineId</span>) {
     (
         <span class="ident">get_account_id_from_seed</span>::<span class="op">&lt;</span><span class="ident">sr25519</span>::<span class="ident">Public</span><span class="op">&gt;</span>(<span class="ident">seed</span>),
         <span class="ident">get_from_seed</span>::<span class="op">&lt;</span><span class="ident">BabeId</span><span class="op">&gt;</span>(<span class="ident">seed</span>),
         <span class="ident">get_from_seed</span>::<span class="op">&lt;</span><span class="ident">GrandpaId</span><span class="op">&gt;</span>(<span class="ident">seed</span>),
+        <span class="ident">get_from_seed</span>::<span class="op">&lt;</span><span class="ident">ImOnlineId</span><span class="op">&gt;</span>(<span class="ident">seed</span>),
     )
 }
 
-<span class="kw">fn</span> <span class="ident">session_keys</span>(<span class="ident">babe</span>: <span class="ident">BabeId</span>, <span class="ident">grandpa</span>: <span class="ident">GrandpaId</span>) <span class="op">-&gt;</span> <span class="ident">SessionKeys</span> {
-    <span class="ident">SessionKeys</span> { <span class="ident">babe</span>, <span class="ident">grandpa</span> }
+<span class="kw">fn</span> <span class="ident">session_keys</span>(<span class="ident">babe</span>: <span class="ident">BabeId</span>, <span class="ident">grandpa</span>: <span class="ident">GrandpaId</span>, <span class="ident">im_online</span>: <span class="ident">ImOnlineId</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">SessionKeys</span> {
+    <span class="ident">SessionKeys</span> {
+        <span class="ident">babe</span>,
+        <span class="ident">grandpa</span>,
+        <span class="ident">im_online</span>,
+    }
 }
 
 <span class="kw">fn</span> <span class="ident">testnet_genesis</span>(
     <span class="ident">initial_authorities</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">AccountId</span><span class="op">&gt;</span>,
-    <span class="ident">keys</span>: <span class="ident">Vec</span><span class="op">&lt;</span>(<span class="ident">AccountId</span>, <span class="ident">BabeId</span>, <span class="ident">GrandpaId</span>)<span class="op">&gt;</span>,
-    <span class="ident">endowed_accounts</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">AccountId</span><span class="op">&gt;&gt;</span>,
+    <span class="ident">keys</span>: <span class="ident">Vec</span><span class="op">&lt;</span>(<span class="ident">AccountId</span>, <span class="ident">BabeId</span>, <span class="ident">GrandpaId</span>, <span class="ident">ImOnlineId</span>)<span class="op">&gt;</span>,
+    <span class="ident">endowed_accounts</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">AccountId</span><span class="op">&gt;</span><span class="op">&gt;</span>,
     <span class="ident">sudo_key</span>: <span class="ident">AccountId</span>,
-) <span class="op">-&gt;</span> <span class="ident">GenesisConfig</span> {
+) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">GenesisConfig</span> {
     <span class="kw">const</span> <span class="ident">ENDOWMENT</span>: <span class="ident">Balance</span> <span class="op">=</span> <span class="number">1_000_000_000</span> <span class="op">*</span> <span class="ident">PLM</span>;
 
     <span class="kw">let</span> <span class="ident">endowed_accounts</span>: <span class="ident">Vec</span><span class="op">&lt;</span>(<span class="ident">AccountId</span>, <span class="ident">Balance</span>)<span class="op">&gt;</span> <span class="op">=</span> <span class="ident">endowed_accounts</span>
-        .<span class="ident">unwrap_or_else</span>(<span class="op">||</span> {
+        .<span class="ident">unwrap_or_else</span>(<span class="op">|</span><span class="op">|</span> {
             <span class="macro">vec</span><span class="macro">!</span>[
                 <span class="ident">get_account_id_from_seed</span>::<span class="op">&lt;</span><span class="ident">sr25519</span>::<span class="ident">Public</span><span class="op">&gt;</span>(<span class="string">&quot;Alice&quot;</span>),
                 <span class="ident">get_account_id_from_seed</span>::<span class="op">&lt;</span><span class="ident">sr25519</span>::<span class="ident">Public</span><span class="op">&gt;</span>(<span class="string">&quot;Bob&quot;</span>),
@@ -888,11 +886,11 @@ const DUSTY_PROTOCOL_ID: &amp;str = &quot;pld&quot;;
 <span class="doccomment">/// Helper function to create GenesisConfig</span>
 <span class="kw">fn</span> <span class="ident">make_genesis</span>(
     <span class="ident">initial_authorities</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">AccountId</span><span class="op">&gt;</span>,
-    <span class="ident">keys</span>: <span class="ident">Vec</span><span class="op">&lt;</span>(<span class="ident">AccountId</span>, <span class="ident">BabeId</span>, <span class="ident">GrandpaId</span>)<span class="op">&gt;</span>,
+    <span class="ident">keys</span>: <span class="ident">Vec</span><span class="op">&lt;</span>(<span class="ident">AccountId</span>, <span class="ident">BabeId</span>, <span class="ident">GrandpaId</span>, <span class="ident">ImOnlineId</span>)<span class="op">&gt;</span>,
     <span class="ident">balances</span>: <span class="ident">Vec</span><span class="op">&lt;</span>(<span class="ident">AccountId</span>, <span class="ident">Balance</span>)<span class="op">&gt;</span>,
     <span class="ident">root_key</span>: <span class="ident">AccountId</span>,
     <span class="ident">enable_println</span>: <span class="ident">bool</span>,
-) <span class="op">-&gt;</span> <span class="ident">GenesisConfig</span> {
+) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">GenesisConfig</span> {
     <span class="ident">GenesisConfig</span> {
         <span class="ident">frame_system</span>: <span class="prelude-val">Some</span>(<span class="ident">SystemConfig</span> {
             <span class="ident">code</span>: <span class="ident">WASM_BINARY</span>.<span class="ident">to_vec</span>(),
@@ -906,17 +904,6 @@ const DUSTY_PROTOCOL_ID: &amp;str = &quot;pld&quot;;
         <span class="ident">pallet_plasm_validator</span>: <span class="prelude-val">Some</span>(<span class="ident">PlasmValidatorConfig</span> {
             <span class="ident">validators</span>: <span class="ident">initial_authorities</span>,
         }),
-        <span class="ident">pallet_plasm_lockdrop</span>: <span class="prelude-val">Some</span>(<span class="ident">PlasmLockdropConfig</span> {
-            <span class="comment">// Alpha2: 0.44698108660714747</span>
-            <span class="ident">alpha</span>: <span class="ident">Perbill</span>::<span class="ident">from_parts</span>(<span class="number">446_981_087</span>),
-            <span class="comment">// Price in dollars: BTC $11000, ETH $400</span>
-            <span class="ident">dollar_rate</span>: (<span class="number">11_000</span>, <span class="number">400</span>),
-            <span class="ident">vote_threshold</span>: <span class="number">1</span>,
-            <span class="ident">positive_votes</span>: <span class="number">1</span>,
-            <span class="comment">// Start from launch for testing purposes</span>
-            <span class="ident">lockdrop_bounds</span>: (<span class="number">0</span>, <span class="number">1_000</span>),
-            <span class="ident">keys</span>: <span class="macro">vec</span><span class="macro">!</span>[],
-        }),
         <span class="ident">pallet_session</span>: <span class="prelude-val">Some</span>(<span class="ident">SessionConfig</span> {
             <span class="ident">keys</span>: <span class="ident">keys</span>
                 .<span class="ident">iter</span>()
@@ -924,10 +911,10 @@ const DUSTY_PROTOCOL_ID: &amp;str = &quot;pld&quot;;
                     (
                         <span class="ident">x</span>.<span class="number">0</span>.<span class="ident">clone</span>(),
                         <span class="ident">x</span>.<span class="number">0</span>.<span class="ident">clone</span>(),
-                        <span class="ident">session_keys</span>(<span class="ident">x</span>.<span class="number">1</span>.<span class="ident">clone</span>(), <span class="ident">x</span>.<span class="number">2</span>.<span class="ident">clone</span>()),
+                        <span class="ident">session_keys</span>(<span class="ident">x</span>.<span class="number">1</span>.<span class="ident">clone</span>(), <span class="ident">x</span>.<span class="number">2</span>.<span class="ident">clone</span>(), <span class="ident">x</span>.<span class="number">3</span>.<span class="ident">clone</span>()),
                     )
                 })
-                .<span class="ident">collect</span>::<span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;&gt;</span>(),
+                .<span class="ident">collect</span>::<span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span><span class="op">&gt;</span>(),
         }),
         <span class="ident">pallet_babe</span>: <span class="prelude-val">Some</span>(<span class="ident">BabeConfig</span> {
             <span class="ident">authorities</span>: <span class="macro">vec</span><span class="macro">!</span>[],
@@ -935,6 +922,7 @@ const DUSTY_PROTOCOL_ID: &amp;str = &quot;pld&quot;;
         <span class="ident">pallet_grandpa</span>: <span class="prelude-val">Some</span>(<span class="ident">GrandpaConfig</span> {
             <span class="ident">authorities</span>: <span class="macro">vec</span><span class="macro">!</span>[],
         }),
+        <span class="ident">pallet_im_online</span>: <span class="prelude-val">Some</span>(<span class="ident">ImOnlineConfig</span> { <span class="ident">keys</span>: <span class="macro">vec</span><span class="macro">!</span>[] }),
         <span class="ident">pallet_contracts</span>: <span class="prelude-val">Some</span>(<span class="ident">ContractsConfig</span> {
             <span class="ident">current_schedule</span>: <span class="ident">pallet_contracts</span>::<span class="ident">Schedule</span> {
                 <span class="ident">enable_println</span>, <span class="comment">// this should only be enabled on development chains</span>
@@ -963,7 +951,7 @@ const DUSTY_PROTOCOL_ID: &amp;str = &quot;pld&quot;;
 }
 
 <span class="doccomment">/// Dusty testnet file config.</span>
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">dusty_config</span>() <span class="op">-&gt;</span> <span class="ident">ChainSpec</span> {
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">dusty_config</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">ChainSpec</span> {
     <span class="ident">ChainSpec</span>::<span class="ident">from_json_bytes</span>(<span class="kw-2">&amp;</span><span class="macro">include_bytes</span><span class="macro">!</span>(<span class="string">&quot;../res/dusty.json&quot;</span>)[..]).<span class="ident">unwrap</span>()
 }
 
@@ -1479,11 +1467,11 @@ fn dusty_genesis() -&gt; GenesisConfig {
 */</span>
 
 <span class="doccomment">/// Plasm mainnet file config.</span>
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">plasm_config</span>() <span class="op">-&gt;</span> <span class="ident">ChainSpec</span> {
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">plasm_config</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">ChainSpec</span> {
     <span class="ident">ChainSpec</span>::<span class="ident">from_json_bytes</span>(<span class="kw-2">&amp;</span><span class="macro">include_bytes</span><span class="macro">!</span>(<span class="string">&quot;../res/plasm.json&quot;</span>)[..]).<span class="ident">unwrap</span>()
 }
 
-<span class="kw">fn</span> <span class="ident">development_config_genesis</span>() <span class="op">-&gt;</span> <span class="ident">GenesisConfig</span> {
+<span class="kw">fn</span> <span class="ident">development_config_genesis</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">GenesisConfig</span> {
     <span class="ident">testnet_genesis</span>(
         <span class="macro">vec</span><span class="macro">!</span>[<span class="ident">get_account_id_from_seed</span>::<span class="op">&lt;</span><span class="ident">sr25519</span>::<span class="ident">Public</span><span class="op">&gt;</span>(<span class="string">&quot;Alice&quot;</span>)],
         <span class="macro">vec</span><span class="macro">!</span>[<span class="ident">get_authority_keys_from_seed</span>(<span class="string">&quot;Alice&quot;</span>)],
@@ -1493,7 +1481,7 @@ fn dusty_genesis() -&gt; GenesisConfig {
 }
 
 <span class="doccomment">/// Development config (single validator Alice)</span>
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">development_config</span>() <span class="op">-&gt;</span> <span class="ident">ChainSpec</span> {
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">development_config</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">ChainSpec</span> {
     <span class="ident">ChainSpec</span>::<span class="ident">from_genesis</span>(
         <span class="string">&quot;Development&quot;</span>,
         <span class="string">&quot;dev&quot;</span>,
@@ -1507,7 +1495,7 @@ fn dusty_genesis() -&gt; GenesisConfig {
     )
 }
 
-<span class="kw">fn</span> <span class="ident">local_testnet_genesis</span>() <span class="op">-&gt;</span> <span class="ident">GenesisConfig</span> {
+<span class="kw">fn</span> <span class="ident">local_testnet_genesis</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">GenesisConfig</span> {
     <span class="ident">testnet_genesis</span>(
         <span class="macro">vec</span><span class="macro">!</span>[
             <span class="ident">get_account_id_from_seed</span>::<span class="op">&lt;</span><span class="ident">sr25519</span>::<span class="ident">Public</span><span class="op">&gt;</span>(<span class="string">&quot;Alice&quot;</span>),
@@ -1523,7 +1511,7 @@ fn dusty_genesis() -&gt; GenesisConfig {
 }
 
 <span class="doccomment">/// Local testnet config (multivalidator Alice + Bob)</span>
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">local_testnet_config</span>() <span class="op">-&gt;</span> <span class="ident">ChainSpec</span> {
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">local_testnet_config</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">ChainSpec</span> {
     <span class="ident">ChainSpec</span>::<span class="ident">from_genesis</span>(
         <span class="string">&quot;Local Testnet&quot;</span>,
         <span class="string">&quot;local_testnet&quot;</span>,

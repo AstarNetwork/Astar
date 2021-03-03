@@ -1,4 +1,0 @@
-(function() {var implementors = {};
-implementors["pallet_ovm_rpc_runtime_api"] = [{"text":"impl&lt;Block:&nbsp;BlockT, Property, Decision, ChallengeGame, Hash, __Sr_Api_Error__&gt; RuntimeApiInfo for dyn OvmApi&lt;Block, Property, Decision, ChallengeGame, Hash, Error = __Sr_Api_Error__&gt;","synthetic":false,"types":[]}];
-implementors["pallet_plasma_rpc_runtime_api"] = [{"text":"impl&lt;Block:&nbsp;BlockT, AccountId, BlockNumber, Range, Hash, InclusionProof, __Sr_Api_Error__&gt; RuntimeApiInfo for dyn PlasmaApi&lt;Block, AccountId, BlockNumber, Range, Hash, InclusionProof, Error = __Sr_Api_Error__&gt;","synthetic":false,"types":[]}];
-if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

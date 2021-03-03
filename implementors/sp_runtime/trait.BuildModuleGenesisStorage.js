@@ -1,7 +1,4 @@
 (function() {var implementors = {};
-implementors["pallet_dapps_staking"] = [{"text":"impl&lt;T:&nbsp;Trait, __GeneratedInstance:&nbsp;Instance&gt; BuildModuleGenesisStorage&lt;T, __GeneratedInstance&gt; for GenesisConfig","synthetic":false,"types":[]}];
-implementors["pallet_ovm"] = [{"text":"impl&lt;T:&nbsp;Trait, __GeneratedInstance:&nbsp;Instance&gt; BuildModuleGenesisStorage&lt;T, __GeneratedInstance&gt; for GenesisConfig","synthetic":false,"types":[]}];
-implementors["pallet_plasm_lockdrop"] = [{"text":"impl&lt;T:&nbsp;Trait, __GeneratedInstance:&nbsp;Instance&gt; BuildModuleGenesisStorage&lt;T, __GeneratedInstance&gt; for GenesisConfig&lt;T&gt;","synthetic":false,"types":[]}];
-implementors["pallet_plasm_rewards"] = [{"text":"impl&lt;T:&nbsp;Trait, __GeneratedInstance:&nbsp;Instance&gt; BuildModuleGenesisStorage&lt;T, __GeneratedInstance&gt; for GenesisConfig","synthetic":false,"types":[]}];
-implementors["pallet_plasm_validator"] = [{"text":"impl&lt;T:&nbsp;Trait, __GeneratedInstance:&nbsp;Instance&gt; BuildModuleGenesisStorage&lt;T, __GeneratedInstance&gt; for GenesisConfig&lt;T&gt;","synthetic":false,"types":[]}];
+implementors["pallet_plasm_rewards"] = [{"text":"impl&lt;T:&nbsp;Config, __GeneratedInstance:&nbsp;Instance&gt; BuildModuleGenesisStorage&lt;T, __GeneratedInstance&gt; for GenesisConfig","synthetic":false,"types":[]}];
+implementors["pallet_plasm_validator"] = [{"text":"impl&lt;T:&nbsp;Config, __GeneratedInstance:&nbsp;Instance&gt; BuildModuleGenesisStorage&lt;T, __GeneratedInstance&gt; for GenesisConfig&lt;T&gt;","synthetic":false,"types":[]}];
 if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

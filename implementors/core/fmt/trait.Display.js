@@ -1,5 +1,0 @@
-(function() {var implementors = {};
-implementors["ovmi"] = [{"text":"impl Display for AtomicPredicateCallInputs","synthetic":false,"types":[]},{"text":"impl Display for DecidablePredicateCallInputs","synthetic":false,"types":[]},{"text":"impl&lt;Address&gt; Display for LogicalConnectiveCallInputs&lt;Address&gt;","synthetic":false,"types":[]},{"text":"impl Display for BaseAtomicPredicateCallInputs","synthetic":false,"types":[]},{"text":"impl&lt;Address&gt; Display for CompiledPredicateCallInputs&lt;Address&gt;","synthetic":false,"types":[]}];
-implementors["pallet_contract_operator"] = [{"text":"impl Display for DefaultParameters","synthetic":false,"types":[]}];
-implementors["pallet_dapps_staking"] = [{"text":"impl Display for StakingParameters","synthetic":false,"types":[]}];
-if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()
