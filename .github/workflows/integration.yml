@@ -7,7 +7,10 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, macOS-latest, windows-latest]
+        os: [ubuntu-18.04, macOS-latest, windows-latest]
+
+    env:
+      EXE_EXT: ${{ contains(matrix.os, 'windows') && '.exe' || '' }}
 
     steps:
     - name: Install LLVM (windows only)
@@ -32,6 +35,12 @@ jobs:
 
     - name: Build optimized binary
       run: cargo build --release --locked
+
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@master
+      with:
+        name: ${{ matrix.os }}
+        path: target/release/plasm${{ env.EXE_EXT }}
 
   nix:
     runs-on: ubuntu-latest
