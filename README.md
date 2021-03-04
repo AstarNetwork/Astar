@@ -79,15 +79,15 @@ Install additional build tools:
 
 Install the Plasm node from git source:
 
-    cargo +nightly install --locked --force --git https://github.com/staketechnologies/Plasm --tag v1.7.0-dusty plasm-cli
+    cargo +nightly install --locked --force --git https://github.com/staketechnologies/Plasm --tag v1.8.0-dusty plasm-cli
 
 Run node on [Dusty Network](https://telemetry.polkadot.io/#list/Dusty):
 
-    plasm-node
+    plasm
 
 Or run on your local development network:
 
-    plasm-node --dev
+    plasm --dev
 
 Building with Nix
 -----------------
