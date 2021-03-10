@@ -6,7 +6,7 @@
 
 use codec::{Decode, Encode};
 use frame_support::{
-    construct_runtime, debug, parameter_types, ConsensusEngineId,
+    construct_runtime, parameter_types, ConsensusEngineId,
     traits::{FindAuthor, Randomness},
     pallet_prelude::PhantomData,
     weights::{
@@ -34,8 +34,7 @@ use sp_api::impl_runtime_apis;
 use sp_core::{OpaqueMetadata, H160, H256, U256};
 use sp_inherents::{CheckInherentsResult, InherentData};
 use sp_runtime::traits::{
-    AccountIdConversion, BlakeTwo256, Block as BlockT, Convert, Extrinsic, IdentityLookup,
-    SaturatedConversion, Verify,
+    AccountIdConversion, BlakeTwo256, Block as BlockT, Convert, IdentityLookup,
 };
 use sp_runtime::transaction_validity::{TransactionSource, TransactionValidity};
 use sp_runtime::{
@@ -51,14 +50,11 @@ use cumulus_primitives_core::relay_chain::Balance as RelayChainBalance;
 use polkadot_parachain::primitives::Sibling;
 use xcm::v0::{Junction, MultiLocation, NetworkId};
 use xcm_builder::{
-    AccountId32Aliases, CurrencyAdapter, LocationInverter, ParentIsDefault, RelayChainAsNative,
+    AccountId32Aliases, LocationInverter, ParentIsDefault, RelayChainAsNative,
     SiblingParachainAsNative, SiblingParachainConvertsVia, SignedAccountId32AsNative,
     SovereignSignedViaLocation,
 };
-use xcm_executor::{
-    traits::{IsConcrete, NativeAsset},
-    Config, XcmExecutor,
-};
+use xcm_executor::{Config, XcmExecutor};
 
 pub use pallet_balances::Call as BalancesCall;
 pub use pallet_timestamp::Call as TimestampCall;
@@ -74,6 +70,16 @@ use currency_adapter::NativeCurrencyAdapter;
 // Make the WASM binary available.
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
+
+#[cfg(feature = "std")]
+/// Wasm binary unwrapped. If built with `BUILD_DUMMY_WASM_BINARY`, the function panics.
+pub fn wasm_binary_unwrap() -> &'static [u8] {
+    WASM_BINARY.expect(
+        "Development wasm binary is not available. This means the client is \
+                        built with `BUILD_DUMMY_WASM_BINARY` flag and it is only usable for \
+                        production chains. Please rebuild with the flag disabled.",
+    )
+}
 
 /// Runtime version.
 pub const VERSION: RuntimeVersion = RuntimeVersion {
@@ -322,6 +328,7 @@ impl pallet_evm::Config for Runtime {
         pallet_evm_precompile_simple::Sha256,
         pallet_evm_precompile_simple::Ripemd160,
         pallet_evm_precompile_simple::Identity,
+        pallet_evm_precompile_dispatch::Dispatch<Runtime>,
     );
     type ChainId = ChainId;
 }
@@ -350,7 +357,7 @@ impl fp_rpc::ConvertTransaction<sp_runtime::OpaqueExtrinsic> for TransactionConv
 
 pub struct EthereumFindAuthor<F>(PhantomData<F>);
 impl<F: FindAuthor<u32>> FindAuthor<H160> for EthereumFindAuthor<F> {
-    fn find_author<'a, I>(digests: I) -> Option<H160>
+    fn find_author<'a, I>(_digests: I) -> Option<H160>
     where
         I: 'a + IntoIterator<Item = (ConsensusEngineId, &'a [u8])>,
     {

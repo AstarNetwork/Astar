@@ -36,6 +36,7 @@ pallet-contracts-rpc-runtime-api = { git = "https://github.com/paritytech/substr
 pallet-ethereum = { version = "0.1.0", path = "../../../vendor/frontier/frame/ethereum", default-features = false }
 pallet-evm = { version = "3.0.0", path = "../../../vendor/frontier/frame/evm", default-features = false }
 pallet-evm-precompile-simple = { version = "3.0.0", path = "../../../vendor/frontier/frame/evm/precompile/simple", default-features = false }
+pallet-evm-precompile-dispatch = { version = "3.0.0", path = "../../../vendor/frontier/frame/evm/precompile/dispatch", default-features = false }
 pallet-indices = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1", default-features = false }
 pallet-nicks = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1", default-features = false }
 pallet-randomness-collective-flip = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1", default-features = false }
@@ -96,6 +97,7 @@ std = [
     "pallet-ethereum/std",
     "pallet-evm/std",
     "pallet-evm-precompile-simple/std",
+    "pallet-evm-precompile-dispatch/std",
     "pallet-indices/std",
     "pallet-nicks/std",
     "sp-offchain/std",

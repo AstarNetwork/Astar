@@ -13,6 +13,7 @@ use sp_api::ProvideRuntimeApi;
 use sp_block_builder::BlockBuilder;
 use sp_blockchain::{Error as BlockChainError, HeaderBackend, HeaderMetadata};
 use sp_transaction_pool::TransactionPool;
+use jsonrpc_pubsub::manager::SubscriptionManager;
 
 /// Light client extra dependencies.
 pub struct LightDeps<C, F, P> {
@@ -42,8 +43,8 @@ pub struct FullDeps<C, P> {
     pub pending_transactions: PendingTransactions,
     /// EthFilterApi pool.
     pub filter_pool: Option<FilterPool>,
-    /// Backend.
-    pub backend: Arc<fc_db::Backend<Block>>,
+    // Backend.
+    //pub backend: Arc<fc_db::Backend<Block>>,
 }
 
 /// Instantiate all Full RPC extensions.
@@ -66,8 +67,8 @@ where
     P: TransactionPool<Block = Block> + 'static,
 {
     use fc_rpc::{
-        EthApi, EthApiServer, EthDevSigner, EthFilterApi, EthFilterApiServer, EthPubSubApi,
-        EthPubSubApiServer, EthSigner, HexEncodedIdProvider, NetApi, NetApiServer, Web3Api,
+        EthApi, EthApiServer, EthFilterApi, EthFilterApiServer, EthPubSubApi,
+        EthPubSubApiServer, HexEncodedIdProvider, NetApi, NetApiServer, Web3Api,
         Web3ApiServer,
     };
     use pallet_contracts_rpc::{Contracts, ContractsApi};
@@ -83,7 +84,7 @@ where
         network,
         pending_transactions,
         filter_pool,
-        backend,
+        //backend,
     } = deps;
 
     io.extend_with(SystemApi::to_delegate(FullSystem::new(
@@ -106,7 +107,7 @@ where
         network.clone(),
         pending_transactions.clone(),
         Default::default(),
-        backend,
+        //backend,
         is_authority,
     )));
 

@@ -5,12 +5,12 @@ use plasm_primitives::{AccountId, Balance, CurrencyId, Signature, TokenSymbol};
 use plasm_runtime::constants::currency::PLM;
 use plasm_runtime::{
     BalancesConfig, ContractsConfig, GenesisConfig, ParachainInfoConfig, SudoConfig, SystemConfig,
-    TokensConfig, WASM_BINARY,
+    TokensConfig, EVMConfig, EthereumConfig, wasm_binary_unwrap,
 };
 use sc_chain_spec::ChainSpecExtension;
 use sc_service::ChainType;
 use serde::{Deserialize, Serialize};
-use sp_core::{crypto::Ss58Codec, sr25519, Pair, Public};
+use sp_core::{sr25519, Pair, Public};
 
 use sp_runtime::traits::{IdentifyAccount, Verify};
 
@@ -82,12 +82,15 @@ pub fn get_chain_spec(id: ParaId) -> ChainSpec {
     )
 }
 
+/*
 fn plasm_chain_spec() -> ChainSpec {
     ChainSpec::from_json_bytes(&include_bytes!("../res/plasm_parachain.json")[..]).unwrap()
 }
+*/
 
-/*
 fn plasm_chain_spec() -> ChainSpec {
+    use sp_core::crypto::Ss58Codec;
+
     let para_id: u32 = 5000;
     let sudo_key = AccountId::from_ss58check("5GvHmdxMzYLrWCVLeEcGy6YwDxSS47dsTDRGhMvhthJAfMWf")
         .unwrap();
@@ -114,7 +117,6 @@ fn plasm_chain_spec() -> ChainSpec {
         },
     )
 }
-*/
 
 fn testnet_genesis(
     sudo_key: AccountId,
@@ -151,7 +153,7 @@ fn make_genesis(
 ) -> GenesisConfig {
     GenesisConfig {
         frame_system: Some(SystemConfig {
-            code: WASM_BINARY.to_vec(),
+            code: wasm_binary_unwrap().to_vec(),
             changes_trie_config: Default::default(),
         }),
         orml_tokens: Some(TokensConfig {
@@ -168,6 +170,10 @@ fn make_genesis(
                 ..Default::default()
             },
         }),
+		pallet_evm: Some(EVMConfig {
+			accounts: Default::default(),
+		}),
+		pallet_ethereum: Some(EthereumConfig {}),
         pallet_sudo: Some(SudoConfig { key: root_key }),
         parachain_info: Some(ParachainInfoConfig { parachain_id }),
     }
