@@ -1070,6 +1070,8 @@
 <span id="1067">1067</span>
 <span id="1068">1068</span>
 <span id="1069">1069</span>
+<span id="1070">1070</span>
+<span id="1071">1071</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="doccomment">//! The Substrate runtime. This can be compiled with ``#[no_std]`, ready for Wasm.</span>
 
@@ -1144,8 +1146,8 @@
     <span class="comment">// and set impl_version to equal spec_version. If only runtime</span>
     <span class="comment">// implementation changes and behavior does not, then leave spec_version as</span>
     <span class="comment">// is and increment impl_version.</span>
-    <span class="ident">spec_version</span>: <span class="number">10</span>,
-    <span class="ident">impl_version</span>: <span class="number">10</span>,
+    <span class="ident">spec_version</span>: <span class="number">11</span>,
+    <span class="ident">impl_version</span>: <span class="number">11</span>,
     <span class="ident">apis</span>: <span class="ident">RUNTIME_API_VERSIONS</span>,
     <span class="ident">transaction_version</span>: <span class="number">2</span>,
 };
@@ -1740,8 +1742,10 @@ impl pallet_plasma::Config for Runtime {
         <span class="ident">I</span>: <span class="lifetime">&#39;a</span> <span class="op">+</span> <span class="ident">IntoIterator</span><span class="op">&lt;</span><span class="ident">Item</span> <span class="op">=</span> (<span class="ident">frame_support</span>::<span class="ident">ConsensusEngineId</span>, <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> [<span class="ident">u8</span>])<span class="op">&gt;</span>,
     {
         <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">author_index</span>) <span class="op">=</span> <span class="ident">F</span>::<span class="ident">find_author</span>(<span class="ident">digests</span>) {
-            <span class="kw">let</span> (<span class="ident">authority_id</span>, <span class="kw">_</span>) <span class="op">=</span> <span class="ident">Babe</span>::<span class="ident">authorities</span>()[<span class="ident">author_index</span> <span class="kw">as</span> <span class="ident">usize</span>].<span class="ident">clone</span>();
-            <span class="kw">return</span> <span class="prelude-val">Some</span>(<span class="ident">H160</span>::<span class="ident">from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">authority_id</span>.<span class="ident">to_raw_vec</span>()[<span class="number">4</span>..<span class="number">24</span>]));
+            <span class="kw">if</span> (<span class="ident">author_index</span> <span class="kw">as</span> <span class="ident">usize</span>) <span class="op">&lt;</span> <span class="ident">Babe</span>::<span class="ident">authorities</span>().<span class="ident">len</span>() {
+                <span class="kw">let</span> (<span class="ident">authority_id</span>, <span class="kw">_</span>) <span class="op">=</span> <span class="ident">Babe</span>::<span class="ident">authorities</span>()[<span class="ident">author_index</span> <span class="kw">as</span> <span class="ident">usize</span>].<span class="ident">clone</span>();
+                <span class="kw">return</span> <span class="prelude-val">Some</span>(<span class="ident">H160</span>::<span class="ident">from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">authority_id</span>.<span class="ident">to_raw_vec</span>()[<span class="number">4</span>..<span class="number">24</span>]));
+            }
         }
         <span class="prelude-val">None</span>
     }

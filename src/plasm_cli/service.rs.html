@@ -507,8 +507,6 @@
 <span id="504">504</span>
 <span id="505">505</span>
 <span id="506">506</span>
-<span id="507">507</span>
-<span id="508">508</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="doccomment">//! Service implementation. Specialized wrapper over substrate service.</span>
 
@@ -681,8 +679,6 @@
     <span class="kw">let</span> <span class="ident">role</span> <span class="op">=</span> <span class="ident">config</span>.<span class="ident">role</span>.<span class="ident">clone</span>();
     <span class="kw">let</span> <span class="ident">is_authority</span> <span class="op">=</span> <span class="ident">role</span>.<span class="ident">is_authority</span>();
     <span class="kw">let</span> <span class="ident">force_authoring</span> <span class="op">=</span> <span class="ident">config</span>.<span class="ident">force_authoring</span>;
-    <span class="kw">let</span> <span class="ident">backoff_authoring_blocks</span> <span class="op">=</span>
-        <span class="prelude-val">Some</span>(<span class="ident">sc_consensus_slots</span>::<span class="ident">BackoffAuthoringOnFinalizedHeadLagging</span>::<span class="ident">default</span>());
     <span class="kw">let</span> <span class="ident">name</span> <span class="op">=</span> <span class="ident">config</span>.<span class="ident">network</span>.<span class="ident">node_name</span>.<span class="ident">clone</span>();
     <span class="kw">let</span> <span class="ident">enable_grandpa</span> <span class="op">=</span> <span class="op">!</span><span class="ident">config</span>.<span class="ident">disable_grandpa</span>;
     <span class="kw">let</span> <span class="ident">prometheus_registry</span> <span class="op">=</span> <span class="ident">config</span>.<span class="ident">prometheus_registry</span>().<span class="ident">cloned</span>();
@@ -835,7 +831,7 @@
             <span class="ident">sync_oracle</span>: <span class="ident">network</span>.<span class="ident">clone</span>(),
             <span class="ident">inherent_data_providers</span>: <span class="ident">inherent_data_providers</span>.<span class="ident">clone</span>(),
             <span class="ident">force_authoring</span>,
-            <span class="ident">backoff_authoring_blocks</span>,
+            <span class="ident">backoff_authoring_blocks</span>: <span class="prelude-val">Some</span>(()),
             <span class="ident">babe_link</span>,
             <span class="ident">can_author_with</span>,
         };
