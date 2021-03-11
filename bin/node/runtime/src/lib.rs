@@ -71,8 +71,8 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     // and set impl_version to equal spec_version. If only runtime
     // implementation changes and behavior does not, then leave spec_version as
     // is and increment impl_version.
-    spec_version: 10,
-    impl_version: 10,
+    spec_version: 11,
+    impl_version: 11,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 2,
 };
@@ -667,8 +667,10 @@ impl<F: FindAuthor<u32>> FindAuthor<H160> for EthereumFindAuthor<F> {
         I: 'a + IntoIterator<Item = (frame_support::ConsensusEngineId, &'a [u8])>,
     {
         if let Some(author_index) = F::find_author(digests) {
-            let (authority_id, _) = Babe::authorities()[author_index as usize].clone();
-            return Some(H160::from_slice(&authority_id.to_raw_vec()[4..24]));
+            if (author_index as usize) < Babe::authorities().len() {
+                let (authority_id, _) = Babe::authorities()[author_index as usize].clone();
+                return Some(H160::from_slice(&authority_id.to_raw_vec()[4..24]));
+            }
         }
         None
     }
