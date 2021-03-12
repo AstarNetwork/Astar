@@ -152,29 +152,29 @@ fn make_genesis(
     enable_println: bool,
 ) -> GenesisConfig {
     GenesisConfig {
-        frame_system: Some(SystemConfig {
+        frame_system: SystemConfig {
             code: wasm_binary_unwrap().to_vec(),
             changes_trie_config: Default::default(),
-        }),
-        orml_tokens: Some(TokensConfig {
+        },
+        orml_tokens: TokensConfig {
             endowed_accounts: balances
                 .iter()
                 .cloned()
                 .map(|(a, b)| (a, CurrencyId::Token(TokenSymbol::PLM), b))
                 .collect(),
-        }),
-        pallet_balances: Some(BalancesConfig { balances }),
-        pallet_contracts: Some(ContractsConfig {
+        },
+        pallet_balances: BalancesConfig { balances },
+        pallet_contracts: ContractsConfig {
             current_schedule: pallet_contracts::Schedule {
                 enable_println, // this should only be enabled on development chains
                 ..Default::default()
             },
-        }),
-		pallet_evm: Some(EVMConfig {
+        },
+		pallet_evm: EVMConfig {
 			accounts: Default::default(),
-		}),
-		pallet_ethereum: Some(EthereumConfig {}),
-        pallet_sudo: Some(SudoConfig { key: root_key }),
-        parachain_info: Some(ParachainInfoConfig { parachain_id }),
+		},
+		pallet_ethereum: EthereumConfig {},
+        pallet_sudo: SudoConfig { key: root_key },
+        parachain_info: ParachainInfoConfig { parachain_id },
     }
 }

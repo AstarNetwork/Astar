@@ -12,9 +12,7 @@ use polkadot_primitives::v0::CollatorPair;
 use sc_client_api::client::BlockchainEvents;
 use sc_service::{
     Configuration, PartialComponents, Role, TFullBackend, TFullClient, TaskManager,
-    config::BasePath,
 };
-use sc_cli::SubstrateCli;
 use sp_core::Pair;
 use sp_runtime::traits::BlakeTwo256;
 use sp_trie::PrefixedMemoryDB;
