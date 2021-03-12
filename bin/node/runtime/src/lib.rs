@@ -6,13 +6,15 @@
 
 use codec::{Decode, Encode};
 use frame_support::{
-    construct_runtime, parameter_types, ConsensusEngineId,
-    traits::{FindAuthor, Randomness},
+    construct_runtime,
     pallet_prelude::PhantomData,
+    parameter_types,
+    traits::{FindAuthor, Randomness},
     weights::{
         constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_PER_SECOND},
         DispatchClass, IdentityFee, Weight,
     },
+    ConsensusEngineId,
 };
 use frame_system::limits::{BlockLength, BlockWeights};
 use orml_xcm_support::{
@@ -366,9 +368,9 @@ impl<F: FindAuthor<u32>> FindAuthor<H160> for EthereumFindAuthor<F> {
     }
 }
 
-parameter_types! {                                                                                                         
-    pub BlockGasLimit: U256                                                                                                
-        = U256::from(NORMAL_DISPATCH_RATIO * MAXIMUM_BLOCK_WEIGHT / WEIGHT_PER_GAS);                                       
+parameter_types! {
+    pub BlockGasLimit: U256
+        = U256::from(NORMAL_DISPATCH_RATIO * MAXIMUM_BLOCK_WEIGHT / WEIGHT_PER_GAS);
 }
 
 impl pallet_ethereum::Config for Runtime {

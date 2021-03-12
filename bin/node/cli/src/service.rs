@@ -1,5 +1,5 @@
 use cumulus_client_consensus_relay_chain::{
-	build_relay_chain_consensus, BuildRelayChainConsensusParams,
+    build_relay_chain_consensus, BuildRelayChainConsensusParams,
 };
 use cumulus_client_network::build_block_announce_validator;
 use cumulus_client_service::{
@@ -10,9 +10,7 @@ use plasm_primitives::Block;
 use plasm_runtime::RuntimeApi;
 use polkadot_primitives::v0::CollatorPair;
 use sc_client_api::client::BlockchainEvents;
-use sc_service::{
-    Configuration, PartialComponents, Role, TFullBackend, TFullClient, TaskManager,
-};
+use sc_service::{Configuration, PartialComponents, Role, TFullBackend, TFullClient, TaskManager};
 use sp_core::Pair;
 use sp_runtime::traits::BlakeTwo256;
 use sp_trie::PrefixedMemoryDB;
@@ -217,63 +215,67 @@ pub async fn start_node(
         const FILTER_RETAIN_THRESHOLD: u64 = 100;
         task_manager.spawn_essential_handle().spawn(
             "frontier-filter-pool",
-            client.import_notification_stream().for_each(move |notification| {
-                if let Ok(locked) = &mut filter_pool.clone().unwrap().lock() {
-                    let imported_number: u64 = notification.header.number as u64;
-                    for (k, v) in locked.clone().iter() {
-                        let lifespan_limit = v.at_block + FILTER_RETAIN_THRESHOLD;
-                        if lifespan_limit <= imported_number {
-                            locked.remove(&k);
+            client
+                .import_notification_stream()
+                .for_each(move |notification| {
+                    if let Ok(locked) = &mut filter_pool.clone().unwrap().lock() {
+                        let imported_number: u64 = notification.header.number as u64;
+                        for (k, v) in locked.clone().iter() {
+                            let lifespan_limit = v.at_block + FILTER_RETAIN_THRESHOLD;
+                            if lifespan_limit <= imported_number {
+                                locked.remove(&k);
+                            }
                         }
                     }
-                }
-                futures::future::ready(())
-            })
+                    futures::future::ready(())
+                }),
         );
     }
 
     // Spawn Frontier pending transactions maintenance task (as essential, otherwise we leak).
     if pending_transactions.is_some() {
+        use fp_consensus::{ConsensusLog, FRONTIER_ENGINE_ID};
         use futures::StreamExt;
-        use fp_consensus::{FRONTIER_ENGINE_ID, ConsensusLog};
         use sp_runtime::generic::OpaqueDigestItemId;
 
         const TRANSACTION_RETAIN_THRESHOLD: u64 = 5;
         task_manager.spawn_essential_handle().spawn(
             "frontier-pending-transactions",
-            client.import_notification_stream().for_each(move |notification| {
-                if let Ok(locked) = &mut pending_transactions.clone().unwrap().lock() {
-                    // As pending transactions have a finite lifespan anyway
-                    // we can ignore MultiplePostRuntimeLogs error checks.
-                    let mut frontier_log: Option<_> = None;
-                    for log in notification.header.digest.logs {
-                        let log = log.try_to::<ConsensusLog>(OpaqueDigestItemId::Consensus(
-                            &FRONTIER_ENGINE_ID,
-                        ));
-                        if let Some(log) = log {
-                            frontier_log = Some(log);
+            client
+                .import_notification_stream()
+                .for_each(move |notification| {
+                    if let Ok(locked) = &mut pending_transactions.clone().unwrap().lock() {
+                        // As pending transactions have a finite lifespan anyway
+                        // we can ignore MultiplePostRuntimeLogs error checks.
+                        let mut frontier_log: Option<_> = None;
+                        for log in notification.header.digest.logs {
+                            let log = log.try_to::<ConsensusLog>(OpaqueDigestItemId::Consensus(
+                                &FRONTIER_ENGINE_ID,
+                            ));
+                            if let Some(log) = log {
+                                frontier_log = Some(log);
+                            }
                         }
-                    }
 
-                    let imported_number: u64 = notification.header.number as u64;
+                        let imported_number: u64 = notification.header.number as u64;
 
-                    if let Some(ConsensusLog::EndBlock {
-                        block_hash: _,
-                        transaction_hashes,
-                    }) = frontier_log
-                    {
-                        // Retain all pending transactions that were not
-                        // processed in the current block.
-                        locked.retain(|&k, _| !transaction_hashes.contains(&k));
+                        if let Some(ConsensusLog::EndBlock {
+                            block_hash: _,
+                            transaction_hashes,
+                        }) = frontier_log
+                        {
+                            // Retain all pending transactions that were not
+                            // processed in the current block.
+                            locked.retain(|&k, _| !transaction_hashes.contains(&k));
+                        }
+                        locked.retain(|_, v| {
+                            // Drop all the transactions that exceeded the given lifespan.
+                            let lifespan_limit = v.at_block + TRANSACTION_RETAIN_THRESHOLD;
+                            lifespan_limit > imported_number
+                        });
                     }
-                    locked.retain(|_, v| {
-                        // Drop all the transactions that exceeded the given lifespan.
-                        let lifespan_limit = v.at_block + TRANSACTION_RETAIN_THRESHOLD;
-                        lifespan_limit > imported_number
-                    });
-                }
-                futures::future::ready(())
-            }),
+                    futures::future::ready(())
+                }),
         );
     }
 

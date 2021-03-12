@@ -3,6 +3,7 @@
 use std::sync::Arc;
 
 use fc_rpc_core::types::{FilterPool, PendingTransactions};
+use jsonrpc_pubsub::manager::SubscriptionManager;
 use plasm_primitives::{AccountId, Balance, Block, BlockNumber, Hash, Index};
 use sc_client_api::{
     backend::{AuxStore, Backend, StateBackend, StorageProvider},
@@ -13,7 +14,6 @@ use sp_api::ProvideRuntimeApi;
 use sp_block_builder::BlockBuilder;
 use sp_blockchain::{Error as BlockChainError, HeaderBackend, HeaderMetadata};
 use sp_transaction_pool::TransactionPool;
-use jsonrpc_pubsub::manager::SubscriptionManager;
 
 /// Light client extra dependencies.
 pub struct LightDeps<C, F, P> {
@@ -67,9 +67,8 @@ where
     P: TransactionPool<Block = Block> + 'static,
 {
     use fc_rpc::{
-        EthApi, EthApiServer, EthFilterApi, EthFilterApiServer, EthPubSubApi,
-        EthPubSubApiServer, HexEncodedIdProvider, NetApi, NetApiServer, Web3Api,
-        Web3ApiServer,
+        EthApi, EthApiServer, EthFilterApi, EthFilterApiServer, EthPubSubApi, EthPubSubApiServer,
+        HexEncodedIdProvider, NetApi, NetApiServer, Web3Api, Web3ApiServer,
     };
     use pallet_contracts_rpc::{Contracts, ContractsApi};
     use pallet_transaction_payment_rpc::{TransactionPayment, TransactionPaymentApi};

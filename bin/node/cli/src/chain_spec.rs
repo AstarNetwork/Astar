@@ -4,8 +4,8 @@ use cumulus_primitives_core::ParaId;
 use plasm_primitives::{AccountId, Balance, CurrencyId, Signature, TokenSymbol};
 use plasm_runtime::constants::currency::PLM;
 use plasm_runtime::{
-    BalancesConfig, ContractsConfig, GenesisConfig, ParachainInfoConfig, SudoConfig, SystemConfig,
-    TokensConfig, EVMConfig, EthereumConfig, wasm_binary_unwrap,
+    wasm_binary_unwrap, BalancesConfig, ContractsConfig, EVMConfig, EthereumConfig, GenesisConfig,
+    ParachainInfoConfig, SudoConfig, SystemConfig, TokensConfig,
 };
 use sc_chain_spec::ChainSpecExtension;
 use sc_service::ChainType;
@@ -92,8 +92,8 @@ fn plasm_chain_spec() -> ChainSpec {
     use sp_core::crypto::Ss58Codec;
 
     let para_id: u32 = 5000;
-    let sudo_key = AccountId::from_ss58check("5GvHmdxMzYLrWCVLeEcGy6YwDxSS47dsTDRGhMvhthJAfMWf")
-        .unwrap();
+    let sudo_key =
+        AccountId::from_ss58check("5GvHmdxMzYLrWCVLeEcGy6YwDxSS47dsTDRGhMvhthJAfMWf").unwrap();
 
     ChainSpec::from_genesis(
         "Plasm PC3",
@@ -170,10 +170,10 @@ fn make_genesis(
                 ..Default::default()
             },
         },
-		pallet_evm: EVMConfig {
-			accounts: Default::default(),
-		},
-		pallet_ethereum: EthereumConfig {},
+        pallet_evm: EVMConfig {
+            accounts: Default::default(),
+        },
+        pallet_ethereum: EthereumConfig {},
         pallet_sudo: SudoConfig { key: root_key },
         parachain_info: ParachainInfoConfig { parachain_id },
     }
