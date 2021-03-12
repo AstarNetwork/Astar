@@ -1,6 +1,6 @@
 [package]
 name = "plasm-runtime"
-version = "1.7.0"
+version = "1.8.0"
 authors = ["Stake Technologies <devops@stake.co.jp>"]
 edition = "2018"
 build = "build.rs"
@@ -24,6 +24,7 @@ sp-block-builder = { git = "https://github.com/paritytech/substrate", branch = "
 sp-transaction-pool = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1", default-features = false }
 sp-std = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1", default-features = false }
 sp-version = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1", default-features = false }
+fp-rpc = { path = "../../../vendor/frontier/primitives/rpc", default-features = false }
 
 # frame dependencies
 frame-executive = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1", default-features = false }
@@ -32,6 +33,10 @@ pallet-balances = { git = "https://github.com/paritytech/substrate", branch = "r
 pallet-contracts = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1", default-features = false }
 pallet-contracts-primitives = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1", default-features = false }
 pallet-contracts-rpc-runtime-api = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1", default-features = false }
+pallet-ethereum = { version = "0.1.0", path = "../../../vendor/frontier/frame/ethereum", default-features = false }
+pallet-evm = { version = "3.0.0", path = "../../../vendor/frontier/frame/evm", default-features = false }
+pallet-evm-precompile-simple = { version = "3.0.0", path = "../../../vendor/frontier/frame/evm/precompile/simple", default-features = false }
+pallet-evm-precompile-dispatch = { version = "3.0.0", path = "../../../vendor/frontier/frame/evm/precompile/dispatch", default-features = false }
 pallet-indices = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1", default-features = false }
 pallet-nicks = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1", default-features = false }
 pallet-randomness-collective-flip = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1", default-features = false }
@@ -63,7 +68,7 @@ xcm-builder = { git = "https://github.com/paritytech/polkadot", default-features
 xcm = { git = "https://github.com/paritytech/polkadot", default-features = false , branch = "rococo-v1" }
 
 [build-dependencies]
-wasm-builder-runner = { package = "substrate-wasm-builder-runner", version = "1.0.5" }
+substrate-wasm-builder = "3.0.0"
 
 [features]
 default = ["std"]
@@ -89,6 +94,10 @@ std = [
     "pallet-contracts/std",
     "pallet-contracts-primitives/std",
     "pallet-contracts-rpc-runtime-api/std",
+    "pallet-ethereum/std",
+    "pallet-evm/std",
+    "pallet-evm-precompile-simple/std",
+    "pallet-evm-precompile-dispatch/std",
     "pallet-indices/std",
     "pallet-nicks/std",
     "sp-offchain/std",
@@ -113,4 +122,5 @@ std = [
     "cumulus-primitives-core/std",
     "cumulus-pallet-parachain-system/std",
     "cumulus-pallet-xcm-handler/std",
+    "fp-rpc/std",
 ]

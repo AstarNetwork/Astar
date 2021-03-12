@@ -1,6 +1,6 @@
 [package]
 name = "plasm-cli"
-version = "1.7.0"
+version = "1.8.0"
 authors = ["Stake Technologies <devops@stake.co.jp>"]
 description = "Plasm node implementation in Rust."
 build = "build.rs"
@@ -38,6 +38,7 @@ sp-consensus-babe = { git = "https://github.com/paritytech/substrate", branch = 
 sp-finality-grandpa = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
 sp-timestamp = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
 sp-transaction-pool = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
+fp-consensus = { path = "../../../vendor/frontier/primitives/consensus" }
 
 # client dependencies
 sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
@@ -55,6 +56,9 @@ sc-service = { git = "https://github.com/paritytech/substrate", branch = "rococo
 sc-telemetry = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
 sc-tracing = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
 sc-consensus-babe = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
+#fc-db = { path = "../../../vendor/frontier/client/db" }
+fc-rpc-core = { path = "../../../vendor/frontier/client/rpc-core" }
+fc-consensus= { path = "../../../vendor/frontier/client/consensus" }
 
 # plasm-specific dependencies
 plasm-primitives = { path = "../primitives" }
@@ -72,7 +76,7 @@ sc-cli = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1"
 # cumulus dependencies
 cumulus-client-network = { git = "https://github.com/paritytech/cumulus", branch = "rococo-v1" }
 cumulus-client-service = { git = "https://github.com/paritytech/cumulus", branch = "rococo-v1" }
-cumulus-client-consensus = { git = "https://github.com/paritytech/cumulus", branch = "rococo-v1" }
+cumulus-client-consensus-relay-chain = { git = "https://github.com/paritytech/cumulus", branch = "rococo-v1" }
 cumulus-primitives-core = { git = "https://github.com/paritytech/cumulus", branch = "rococo-v1" }
 polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "rococo-v1" }
 polkadot-parachain = { git = "https://github.com/paritytech/polkadot", branch = "rococo-v1" }

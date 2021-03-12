@@ -1,11 +1,12 @@
 [package]
 name = "plasm-rpc"
-version = "1.7.0"
+version = "1.8.0"
 authors = ["Stake Technologies <devops@stake.co.jp>"]
 edition = "2018"
 
 [dependencies]
-jsonrpc-core = "15.0"
+jsonrpc-core = "15.1"
+jsonrpc-pubsub = "15.1"
 plasm-runtime = { path = "../runtime" }
 plasm-primitives = { path = "../primitives" }
 sp-api = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
@@ -21,6 +22,10 @@ sc-keystore = { git = "https://github.com/paritytech/substrate", branch = "rococ
 sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
 sc-consensus-epochs = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
 sc-network = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
+fp-rpc = { path = "../../../vendor/frontier/primitives/rpc" }
+#fc-db = { path = "../../../vendor/frontier/client/db" }
+fc-rpc = { path = "../../../vendor/frontier/client/rpc" }
+fc-rpc-core = { path = "../../../vendor/frontier/client/rpc-core" }
 pallet-contracts-rpc = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
 pallet-transaction-payment-rpc = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
 substrate-frame-rpc-system = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }

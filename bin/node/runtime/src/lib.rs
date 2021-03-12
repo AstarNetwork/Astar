@@ -6,18 +6,25 @@
 
 use codec::{Decode, Encode};
 use frame_support::{
-    construct_runtime, debug, parameter_types,
+    construct_runtime,
+    pallet_prelude::PhantomData,
+    parameter_types,
     traits::{FindAuthor, Randomness},
     weights::{
         constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_PER_SECOND},
         DispatchClass, IdentityFee, Weight,
     },
+    ConsensusEngineId,
 };
 use frame_system::limits::{BlockLength, BlockWeights};
 use orml_xcm_support::{
     CurrencyIdConverter, IsConcreteWithGeneralKey, MultiCurrencyAdapter, NativePalletAssetOr,
 };
-use pallet_contracts::WeightInfo;
+use pallet_contracts::weights::WeightInfo;
+use pallet_evm::{
+    Account as EVMAccount, EnsureAddressRoot, EnsureAddressTruncated, FeeCalculator,
+    HashedAddressMapping, Runner,
+};
 use pallet_transaction_payment::{
     FeeDetails, Multiplier, RuntimeDispatchInfo, TargetedFeeAdjustment,
 };
@@ -29,15 +36,14 @@ use sp_api::impl_runtime_apis;
 use sp_core::{OpaqueMetadata, H160, H256, U256};
 use sp_inherents::{CheckInherentsResult, InherentData};
 use sp_runtime::traits::{
-    AccountIdConversion, BlakeTwo256, Block as BlockT, Convert, Extrinsic, IdentityLookup,
-    SaturatedConversion, Verify,
+    AccountIdConversion, BlakeTwo256, Block as BlockT, Convert, IdentityLookup,
 };
 use sp_runtime::transaction_validity::{TransactionSource, TransactionValidity};
 use sp_runtime::{
     create_runtime_str, generic, impl_opaque_keys, ApplyExtrinsicResult, FixedPointNumber,
     ModuleId, Perbill, Perquintill,
 };
-use sp_std::{collections::btree_set::BTreeSet, prelude::*};
+use sp_std::{collections::btree_set::BTreeSet, convert::TryFrom, prelude::*};
 #[cfg(any(feature = "std", test))]
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
@@ -46,17 +52,13 @@ use cumulus_primitives_core::relay_chain::Balance as RelayChainBalance;
 use polkadot_parachain::primitives::Sibling;
 use xcm::v0::{Junction, MultiLocation, NetworkId};
 use xcm_builder::{
-    AccountId32Aliases, CurrencyAdapter, LocationInverter, ParentIsDefault, RelayChainAsNative,
+    AccountId32Aliases, LocationInverter, ParentIsDefault, RelayChainAsNative,
     SiblingParachainAsNative, SiblingParachainConvertsVia, SignedAccountId32AsNative,
     SovereignSignedViaLocation,
 };
-use xcm_executor::{
-    traits::{IsConcrete, NativeAsset},
-    Config, XcmExecutor,
-};
+use xcm_executor::{Config, XcmExecutor};
 
 pub use pallet_balances::Call as BalancesCall;
-pub use pallet_contracts::Gas;
 pub use pallet_timestamp::Call as TimestampCall;
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
@@ -71,6 +73,16 @@ use currency_adapter::NativeCurrencyAdapter;
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
+#[cfg(feature = "std")]
+/// Wasm binary unwrapped. If built with `BUILD_DUMMY_WASM_BINARY`, the function panics.
+pub fn wasm_binary_unwrap() -> &'static [u8] {
+    WASM_BINARY.expect(
+        "Development wasm binary is not available. This means the client is \
+                        built with `BUILD_DUMMY_WASM_BINARY` flag and it is only usable for \
+                        production chains. Please rebuild with the flag disabled.",
+    )
+}
+
 /// Runtime version.
 pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("plasm-parachain"),
@@ -80,8 +92,8 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     // and set impl_version to equal spec_version. If only runtime
     // implementation changes and behavior does not, then leave spec_version as
     // is and increment impl_version.
-    spec_version: 5,
-    impl_version: 5,
+    spec_version: 6,
+    impl_version: 6,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 1,
 };
@@ -254,6 +266,7 @@ parameter_types! {
             <Runtime as pallet_contracts::Config>::WeightInfo::on_initialize_per_queue_item(1) -
             <Runtime as pallet_contracts::Config>::WeightInfo::on_initialize_per_queue_item(0)
         )) / 5) as u32;
+    pub MaxCodeSize: u32 = 128 * 1024;
 }
 
 impl pallet_contracts::Config for Runtime {
@@ -276,6 +289,95 @@ impl pallet_contracts::Config for Runtime {
     type ChainExtension = ();
     type DeletionQueueDepth = DeletionQueueDepth;
     type DeletionWeightLimit = DeletionWeightLimit;
+    type MaxCodeSize = MaxCodeSize;
+}
+
+/// Current approximation of the gas/s consumption considering
+/// EVM execution over compiled WASM (on 4.4Ghz CPU).
+/// Given the 500ms Weight, from which 75% only are used for transactions,
+/// the total EVM execution gas limit is: GAS_PER_SECOND * 0.500 * 0.75 => 6_000_000.
+pub const GAS_PER_SECOND: u64 = 40_000_000;
+
+/// Approximate ratio of the amount of Weight per Gas.
+/// u64 works for approximations because Weight is a very small unit compared to gas.
+pub const WEIGHT_PER_GAS: u64 = WEIGHT_PER_SECOND / GAS_PER_SECOND;
+
+pub struct GasWeightMapping;
+impl pallet_evm::GasWeightMapping for GasWeightMapping {
+    fn gas_to_weight(gas: u64) -> Weight {
+        Weight::try_from(gas.saturating_mul(WEIGHT_PER_GAS)).unwrap_or(Weight::MAX)
+    }
+    fn weight_to_gas(weight: Weight) -> u64 {
+        u64::try_from(weight.wrapping_div(WEIGHT_PER_GAS)).unwrap_or(u64::MAX)
+    }
+}
+
+parameter_types! {
+    pub const ChainId: u64 = 0x50;
+}
+
+impl pallet_evm::Config for Runtime {
+    type FeeCalculator = ();
+    type GasWeightMapping = GasWeightMapping;
+    type CallOrigin = EnsureAddressRoot<Self::AccountId>;
+    type WithdrawOrigin = EnsureAddressTruncated;
+    type AddressMapping = HashedAddressMapping<BlakeTwo256>;
+    type Currency = Balances;
+    type Event = Event;
+    type Runner = pallet_evm::runner::stack::Runner<Self>;
+    type Precompiles = (
+        pallet_evm_precompile_simple::ECRecover,
+        pallet_evm_precompile_simple::Sha256,
+        pallet_evm_precompile_simple::Ripemd160,
+        pallet_evm_precompile_simple::Identity,
+        pallet_evm_precompile_dispatch::Dispatch<Runtime>,
+    );
+    type ChainId = ChainId;
+}
+
+pub struct TransactionConverter;
+impl fp_rpc::ConvertTransaction<UncheckedExtrinsic> for TransactionConverter {
+    fn convert_transaction(&self, transaction: pallet_ethereum::Transaction) -> UncheckedExtrinsic {
+        UncheckedExtrinsic::new_unsigned(
+            pallet_ethereum::Call::<Runtime>::transact(transaction).into(),
+        )
+    }
+}
+impl fp_rpc::ConvertTransaction<sp_runtime::OpaqueExtrinsic> for TransactionConverter {
+    fn convert_transaction(
+        &self,
+        transaction: pallet_ethereum::Transaction,
+    ) -> sp_runtime::OpaqueExtrinsic {
+        let extrinsic = UncheckedExtrinsic::new_unsigned(
+            pallet_ethereum::Call::<Runtime>::transact(transaction).into(),
+        );
+        let encoded = extrinsic.encode();
+        sp_runtime::OpaqueExtrinsic::decode(&mut &encoded[..])
+            .expect("Encoded extrinsic is always valid")
+    }
+}
+
+pub struct EthereumFindAuthor<F>(PhantomData<F>);
+impl<F: FindAuthor<u32>> FindAuthor<H160> for EthereumFindAuthor<F> {
+    fn find_author<'a, I>(_digests: I) -> Option<H160>
+    where
+        I: 'a + IntoIterator<Item = (ConsensusEngineId, &'a [u8])>,
+    {
+        // TODO: collator as block author
+        None
+    }
+}
+
+parameter_types! {
+    pub BlockGasLimit: U256
+        = U256::from(NORMAL_DISPATCH_RATIO * MAXIMUM_BLOCK_WEIGHT / WEIGHT_PER_GAS);
+}
+
+impl pallet_ethereum::Config for Runtime {
+    type Event = Event;
+    type FindAuthor = EthereumFindAuthor<()>;
+    type StateRoot = pallet_ethereum::IntermediateStateRoot;
+    type BlockGasLimit = BlockGasLimit;
 }
 
 impl pallet_utility::Config for Runtime {
@@ -343,8 +445,7 @@ pub type LocalAssetTransactor = MultiCurrencyAdapter<
 parameter_types! {
     pub NativeOrmlTokens: BTreeSet<(Vec<u8>, MultiLocation)> = {
         let mut t = BTreeSet::new();
-        //TODO: might need to add other assets based on orml-tokens
-        /// Acala tokens
+        // Acala tokens
         t.insert(("ACA".into(), (Junction::Parent, Junction::Parachain { id: 666 }).into()));
         t.insert(("AUSD".into(), (Junction::Parent, Junction::Parachain { id: 666 }).into()));
         t.insert(("XBTC".into(), (Junction::Parent, Junction::Parachain { id: 666 }).into()));
@@ -370,6 +471,8 @@ impl cumulus_pallet_xcm_handler::Config for Runtime {
     type XcmExecutor = XcmExecutor<XcmConfig>;
     type UpwardMessageSender = ParachainSystem;
     type HrmpMessageSender = ParachainSystem;
+    type SendXcmOrigin = frame_system::EnsureRoot<AccountId>;
+    type AccountIdConverter = LocationConverter;
 }
 
 pub struct RelayToNative;
@@ -430,6 +533,8 @@ construct_runtime!(
         Currencies: orml_currencies::{Module, Call, Event<T>},
         Tokens: orml_tokens::{Module, Storage, Event<T>, Config<T>},
         Contracts: pallet_contracts::{Module, Call, Storage, Event<T>, Config<T>},
+        Ethereum: pallet_ethereum::{Module, Call, Storage, Event, Config, ValidateUnsigned},
+        EVM: pallet_evm::{Module, Call, Storage, Config, Event<T>},
         RandomnessCollectiveFlip: pallet_randomness_collective_flip::{Module, Call, Storage},
         Sudo: pallet_sudo::{Module, Call, Storage, Event<T>, Config<T>},
         Nicks: pallet_nicks::{Module, Call, Storage, Event<T>},
@@ -587,6 +692,118 @@ impl_runtime_apis! {
             SessionKeys::decode_into_raw_public_keys(&encoded)
         }
     }
+
+    impl fp_rpc::EthereumRuntimeRPCApi<Block> for Runtime {
+        fn chain_id() -> u64 {
+            <Runtime as pallet_evm::Config>::ChainId::get()
+        }
+
+        fn account_basic(address: H160) -> EVMAccount {
+            EVM::account_basic(&address)
+        }
+
+        fn gas_price() -> U256 {
+            <Runtime as pallet_evm::Config>::FeeCalculator::min_gas_price()
+        }
+
+        fn account_code_at(address: H160) -> Vec<u8> {
+            EVM::account_codes(address)
+        }
+
+        fn author() -> H160 {
+            <pallet_ethereum::Module<Runtime>>::find_author()
+        }
+
+        fn storage_at(address: H160, index: U256) -> H256 {
+            let mut tmp = [0u8; 32];
+            index.to_big_endian(&mut tmp);
+            EVM::account_storages(address, H256::from_slice(&tmp[..]))
+        }
+
+        fn current_transaction_statuses() -> Option<Vec<fp_rpc::TransactionStatus>> {
+            Ethereum::current_transaction_statuses()
+        }
+
+        fn current_block() -> Option<pallet_ethereum::Block> {
+            Ethereum::current_block()
+        }
+
+        fn current_receipts() -> Option<Vec<pallet_ethereum::Receipt>> {
+            Ethereum::current_receipts()
+        }
+
+        fn current_all() -> (
+            Option<pallet_ethereum::Block>,
+            Option<Vec<pallet_ethereum::Receipt>>,
+            Option<Vec<fp_rpc::TransactionStatus>>
+        ) {
+            (
+                Ethereum::current_block(),
+                Ethereum::current_receipts(),
+                Ethereum::current_transaction_statuses()
+            )
+        }
+
+        fn call(
+            from: H160,
+            to: H160,
+            data: Vec<u8>,
+            value: U256,
+            gas_limit: U256,
+            gas_price: Option<U256>,
+            nonce: Option<U256>,
+            estimate: bool,
+        ) -> Result<pallet_evm::CallInfo, sp_runtime::DispatchError> {
+            let config = if estimate {
+                let mut config = <Runtime as pallet_evm::Config>::config().clone();
+                config.estimate = true;
+                Some(config)
+            } else {
+                None
+            };
+
+            #[allow(clippy::or_fun_call)] // suggestion not helpful here
+            <Runtime as pallet_evm::Config>::Runner::call(
+                from,
+                to,
+                data,
+                value,
+                gas_limit.low_u64(),
+                gas_price,
+                nonce,
+                config.as_ref().unwrap_or(<Runtime as pallet_evm::Config>::config()),
+            ).map_err(|err| err.into())
+        }
+
+        fn create(
+            from: H160,
+            data: Vec<u8>,
+            value: U256,
+            gas_limit: U256,
+            gas_price: Option<U256>,
+            nonce: Option<U256>,
+            estimate: bool,
+        ) -> Result<pallet_evm::CreateInfo, sp_runtime::DispatchError> {
+            let config = if estimate {
+                let mut config = <Runtime as pallet_evm::Config>::config().clone();
+                config.estimate = true;
+                Some(config)
+            } else {
+                None
+            };
+
+            #[allow(clippy::or_fun_call)] // suggestion not helpful here
+            <Runtime as pallet_evm::Config>::Runner::create(
+                from,
+                data,
+                value,
+                gas_limit.low_u64(),
+                gas_price,
+                nonce,
+                config.as_ref().unwrap_or(<Runtime as pallet_evm::Config>::config()),
+            ).map_err(|err| err.into())
+        }
+    }
 }
 
-cumulus_pallet_parachain_system::register_validate_block!(Block, Executive);
+cumulus_pallet_parachain_system::register_validate_block!(Runtime, Executive);

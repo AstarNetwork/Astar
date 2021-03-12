@@ -1,24 +1,47 @@
+use cumulus_client_consensus_relay_chain::{
+    build_relay_chain_consensus, BuildRelayChainConsensusParams,
+};
 use cumulus_client_network::build_block_announce_validator;
 use cumulus_client_service::{
     prepare_node_config, start_collator, start_full_node, StartCollatorParams, StartFullNodeParams,
 };
+use fc_rpc_core::types::{FilterPool, PendingTransactions};
 use plasm_primitives::Block;
 use plasm_runtime::RuntimeApi;
 use polkadot_primitives::v0::CollatorPair;
-use sc_executor::native_executor_instance;
-pub use sc_executor::NativeExecutor;
+use sc_client_api::client::BlockchainEvents;
 use sc_service::{Configuration, PartialComponents, Role, TFullBackend, TFullClient, TaskManager};
 use sp_core::Pair;
 use sp_runtime::traits::BlakeTwo256;
 use sp_trie::PrefixedMemoryDB;
-use std::sync::Arc;
+use std::collections::{BTreeMap, HashMap};
+use std::sync::{Arc, Mutex};
 
 // Native executor instance.
-native_executor_instance!(
+sc_executor::native_executor_instance!(
     pub Executor,
     plasm_runtime::api::dispatch,
     plasm_runtime::native_version,
 );
+
+/*
+pub fn open_frontier_backend(config: &Configuration) -> Result<Arc<fc_db::Backend<Block>>, String> {
+    let config_dir = config.base_path.as_ref()
+        .map(|base_path| base_path.config_dir(config.chain_spec.id()))
+        .unwrap_or_else(|| {
+            BasePath::from_project("", "", &crate::cli::Cli::executable_name())
+                .config_dir(config.chain_spec.id())
+        });
+    let database_dir = config_dir.join("frontier").join("db");
+
+    Ok(Arc::new(fc_db::Backend::<Block>::new(&fc_db::DatabaseSettings {
+        source: fc_db::DatabaseSettingsSrc::RocksDb {
+            path: database_dir,
+            cache_size: 0,
+        }
+    })?))
+}
+*/
 
 /// Starts a `ServiceBuilder` for a full service.
 ///
@@ -33,7 +56,7 @@ pub fn new_partial(
         (),
         sp_consensus::import_queue::BasicQueue<Block, PrefixedMemoryDB<BlakeTwo256>>,
         sc_transaction_pool::FullPool<Block, TFullClient<Block, RuntimeApi, Executor>>,
-        (),
+        (), //Arc<fc_db::Backend<Block>>,
     >,
     sc_service::Error,
 > {
@@ -53,11 +76,20 @@ pub fn new_partial(
         client.clone(),
     );
 
-    let import_queue = cumulus_client_consensus::import_queue::import_queue(
+    //let frontier_backend = open_frontier_backend(config)?;
+
+    let frontier_block_import = fc_consensus::FrontierBlockImport::new(
         client.clone(),
         client.clone(),
+        //frontier_backend.clone(),
+        true,
+    );
+
+    let import_queue = cumulus_client_consensus_relay_chain::import_queue(
+        client.clone(),
+        frontier_block_import,
         inherent_data_providers.clone(),
-        &task_manager.spawn_handle(),
+        &task_manager.spawn_essential_handle(),
         registry.clone(),
     )?;
 
@@ -130,22 +162,36 @@ pub async fn start_node(
             block_announce_validator_builder: Some(Box::new(|_| block_announce_validator)),
         })?;
 
+    let pending_transactions: PendingTransactions = Some(Arc::new(Mutex::new(HashMap::new())));
+    let filter_pool: Option<FilterPool> = Some(Arc::new(Mutex::new(BTreeMap::new())));
+    //let frontier_backend = params.other;
+
     let rpc_extensions_builder = {
         let client = client.clone();
         let pool = transaction_pool.clone();
-
-        let builder = move |deny_unsafe, _| {
+        let network = network.clone();
+        let pending = pending_transactions.clone();
+        let filter_pool = filter_pool.clone();
+        let is_authority = parachain_config.role.is_authority();
+        let builder = move |deny_unsafe, subscription| {
             let deps = plasm_rpc::FullDeps {
                 client: client.clone(),
                 pool: pool.clone(),
+                network: network.clone(),
+                pending_transactions: pending.clone(),
+                filter_pool: filter_pool.clone(),
+                //backend: frontier_backend.clone(),
                 deny_unsafe,
+                is_authority,
             };
 
-            plasm_rpc::create_full(deps)
+            plasm_rpc::create_full(deps, subscription)
         };
         Box::new(builder)
     };
 
+    let telemetry_span = sc_telemetry::TelemetrySpan::new();
+    let _telemetry_span_entered = telemetry_span.enter();
     sc_service::spawn_tasks(sc_service::SpawnTasksParams {
         on_demand: None,
         remote_blockchain: None,
@@ -159,7 +205,79 @@ pub async fn start_node(
         network: network.clone(),
         network_status_sinks,
         system_rpc_tx,
+        telemetry_span: Some(telemetry_span.clone()),
     })?;
+
+    // Spawn Frontier EthFilterApi maintenance task.
+    if filter_pool.is_some() {
+        use futures::StreamExt;
+        // Each filter is allowed to stay in the pool for 100 blocks.
+        const FILTER_RETAIN_THRESHOLD: u64 = 100;
+        task_manager.spawn_essential_handle().spawn(
+            "frontier-filter-pool",
+            client
+                .import_notification_stream()
+                .for_each(move |notification| {
+                    if let Ok(locked) = &mut filter_pool.clone().unwrap().lock() {
+                        let imported_number: u64 = notification.header.number as u64;
+                        for (k, v) in locked.clone().iter() {
+                            let lifespan_limit = v.at_block + FILTER_RETAIN_THRESHOLD;
+                            if lifespan_limit <= imported_number {
+                                locked.remove(&k);
+                            }
+                        }
+                    }
+                    futures::future::ready(())
+                }),
+        );
+    }
+
+    // Spawn Frontier pending transactions maintenance task (as essential, otherwise we leak).
+    if pending_transactions.is_some() {
+        use fp_consensus::{ConsensusLog, FRONTIER_ENGINE_ID};
+        use futures::StreamExt;
+        use sp_runtime::generic::OpaqueDigestItemId;
+
+        const TRANSACTION_RETAIN_THRESHOLD: u64 = 5;
+        task_manager.spawn_essential_handle().spawn(
+            "frontier-pending-transactions",
+            client
+                .import_notification_stream()
+                .for_each(move |notification| {
+                    if let Ok(locked) = &mut pending_transactions.clone().unwrap().lock() {
+                        // As pending transactions have a finite lifespan anyway
+                        // we can ignore MultiplePostRuntimeLogs error checks.
+                        let mut frontier_log: Option<_> = None;
+                        for log in notification.header.digest.logs {
+                            let log = log.try_to::<ConsensusLog>(OpaqueDigestItemId::Consensus(
+                                &FRONTIER_ENGINE_ID,
+                            ));
+                            if let Some(log) = log {
+                                frontier_log = Some(log);
+                            }
+                        }
+
+                        let imported_number: u64 = notification.header.number as u64;
+
+                        if let Some(ConsensusLog::EndBlock {
+                            block_hash: _,
+                            transaction_hashes,
+                        }) = frontier_log
+                        {
+                            // Retain all pending transactions that were not
+                            // processed in the current block.
+                            locked.retain(|&k, _| !transaction_hashes.contains(&k));
+                        }
+                        locked.retain(|_, v| {
+                            // Drop all the transactions that exceeded the given lifespan.
+                            let lifespan_limit = v.at_block + TRANSACTION_RETAIN_THRESHOLD;
+                            lifespan_limit > imported_number
+                        });
+                    }
+                    futures::future::ready(())
+                }),
+        );
+    }
 
     let announce_block = {
         let network = network.clone();
@@ -167,7 +285,7 @@ pub async fn start_node(
     };
 
     if validator {
-        let proposer_factory = sc_basic_authorship::ProposerFactory::new(
+        let proposer_factory = sc_basic_authorship::ProposerFactory::with_proof_recording(
             task_manager.spawn_handle(),
             client.clone(),
             transaction_pool,
@@ -175,22 +293,26 @@ pub async fn start_node(
         );
         let spawner = task_manager.spawn_handle();
 
-        let polkadot_backend = polkadot_full_node.backend.clone();
+        let parachain_consensus = build_relay_chain_consensus(BuildRelayChainConsensusParams {
+            para_id: id,
+            proposer_factory,
+            inherent_data_providers: params.inherent_data_providers,
+            block_import: client.clone(),
+            relay_chain_client: polkadot_full_node.client.clone(),
+            relay_chain_backend: polkadot_full_node.backend.clone(),
+        });
 
         let params = StartCollatorParams {
             para_id: id,
-            block_import: client.clone(),
-            proposer_factory,
-            inherent_data_providers: params.inherent_data_providers,
             block_status: client.clone(),
             announce_block,
             client: client.clone(),
             task_manager: &mut task_manager,
             collator_key,
-            polkadot_full_node,
+            relay_chain_full_node: polkadot_full_node,
             spawner,
             backend,
-            polkadot_backend,
+            parachain_consensus,
         };
 
         start_collator(params).await?;
