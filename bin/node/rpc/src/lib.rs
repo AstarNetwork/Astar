@@ -15,6 +15,7 @@
 
 use std::sync::Arc;
 
+use fc_rpc_core::types::{FilterPool, PendingTransactions};
 use jsonrpc_pubsub::manager::SubscriptionManager;
 use plasm_primitives::{AccountId, Balance, Block, BlockNumber, Hash, Index};
 use sc_client_api::{
@@ -28,7 +29,6 @@ use sc_finality_grandpa::{
     FinalityProofProvider, GrandpaJustificationStream, SharedAuthoritySet, SharedVoterState,
 };
 use sc_finality_grandpa_rpc::GrandpaRpcHandler;
-use sc_keystore::KeyStorePtr;
 use sc_rpc::SubscriptionTaskExecutor;
 pub use sc_rpc_api::DenyUnsafe;
 use sp_api::ProvideRuntimeApi;
@@ -36,6 +36,7 @@ use sp_block_builder::BlockBuilder;
 use sp_blockchain::{Error as BlockChainError, HeaderBackend, HeaderMetadata};
 use sp_consensus::SelectChain;
 use sp_consensus_babe::BabeApi;
+use sp_keystore::SyncCryptoStorePtr;
 use sp_transaction_pool::TransactionPool;
 
 /// Light client extra dependencies.
@@ -57,7 +58,7 @@ pub struct BabeDeps {
     /// BABE pending epoch changes.
     pub shared_epoch_changes: SharedEpochChanges<Block, Epoch>,
     /// The keystore that manages the keys of the node.
-    pub keystore: KeyStorePtr,
+    pub keystore: SyncCryptoStorePtr,
 }
 
 /// Extra dependencies for GRANDPA
@@ -88,6 +89,10 @@ pub struct FullDeps<C, P, SC, B> {
     pub is_authority: bool,
     /// Network service
     pub network: Arc<sc_network::NetworkService<Block, Hash>>,
+    /// Ethereum pending transactions.
+    pub pending_transactions: PendingTransactions,
+    /// EthFilterApi pool.
+    pub filter_pool: Option<FilterPool>,
     /// BABE specific dependencies.
     pub babe: BabeDeps,
     /// GRANDPA specific dependencies.
@@ -110,7 +115,7 @@ where
     C::Api: substrate_frame_rpc_system::AccountNonceApi<Block, AccountId, Index>,
     C::Api: pallet_contracts_rpc::ContractsRuntimeApi<Block, AccountId, Balance, BlockNumber>,
     C::Api: pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>,
-    C::Api: frontier_rpc_primitives::EthereumRuntimeRPCApi<Block>,
+    C::Api: fp_rpc::EthereumRuntimeRPCApi<Block>,
     C::Api: BabeApi<Block>,
     C::Api: BlockBuilder<Block>,
     <C::Api as sp_api::ApiErrorExt>::Error: std::fmt::Debug,
@@ -119,8 +124,9 @@ where
     B: sc_client_api::Backend<Block> + Send + Sync + 'static,
     B::State: StateBackend<sp_runtime::traits::HashFor<Block>>,
 {
-    use frontier_rpc::{
-        EthApi, EthApiServer, EthPubSubApi, EthPubSubApiServer, NetApi, NetApiServer,
+    use fc_rpc::{
+        EthApi, EthApiServer, EthFilterApi, EthFilterApiServer, EthPubSubApi, EthPubSubApiServer,
+        HexEncodedIdProvider, NetApi, NetApiServer, Web3Api, Web3ApiServer,
     };
     use pallet_contracts_rpc::{Contracts, ContractsApi};
     use pallet_transaction_payment_rpc::{TransactionPayment, TransactionPaymentApi};
@@ -134,6 +140,8 @@ where
         deny_unsafe,
         is_authority,
         network,
+        pending_transactions,
+        filter_pool,
         babe,
         grandpa,
     } = deps;
@@ -187,14 +195,30 @@ where
         pool.clone(),
         plasm_runtime::TransactionConverter,
         network.clone(),
+        pending_transactions.clone(),
+        Default::default(),
         is_authority,
     )));
-    io.extend_with(NetApiServer::to_delegate(NetApi::new(client.clone())));
+    if let Some(filter_pool) = filter_pool {
+        io.extend_with(EthFilterApiServer::to_delegate(EthFilterApi::new(
+            client.clone(),
+            filter_pool.clone(),
+            500 as usize, // max stored filters
+        )));
+    }
+    io.extend_with(NetApiServer::to_delegate(NetApi::new(
+        client.clone(),
+        network.clone(),
+    )));
+    io.extend_with(Web3ApiServer::to_delegate(Web3Api::new(client.clone())));
     io.extend_with(EthPubSubApiServer::to_delegate(EthPubSubApi::new(
         pool.clone(),
         client.clone(),
         network.clone(),
-        SubscriptionManager::new(Arc::new(subscription_task_executor)),
+        SubscriptionManager::<HexEncodedIdProvider>::with_id_provider(
+            HexEncodedIdProvider::default(),
+            Arc::new(subscription_task_executor),
+        ),
     )));
 
     io

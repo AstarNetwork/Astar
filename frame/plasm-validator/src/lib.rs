@@ -29,15 +29,15 @@ mod compute_era;
 pub use compute_era::*;
 
 pub type BalanceOf<T> =
-    <<T as Trait>::Currency as Currency<<T as system::Trait>::AccountId>>::Balance;
-pub type MomentOf<T> = <<T as Trait>::Time as Time>::Moment;
+    <<T as Config>::Currency as Currency<<T as system::Config>::AccountId>>::Balance;
+pub type MomentOf<T> = <<T as Config>::Time as Time>::Moment;
 
 type PositiveImbalanceOf<T> =
-    <<T as Trait>::Currency as Currency<<T as system::Trait>::AccountId>>::PositiveImbalance;
+    <<T as Config>::Currency as Currency<<T as system::Config>::AccountId>>::PositiveImbalance;
 type NegativeImbalanceOf<T> =
-    <<T as Trait>::Currency as Currency<<T as system::Trait>::AccountId>>::NegativeImbalance;
+    <<T as Config>::Currency as Currency<<T as system::Config>::AccountId>>::NegativeImbalance;
 
-pub trait Trait: system::Trait {
+pub trait Config: system::Config {
     /// The staking balance.
     type Currency: LockableCurrency<Self::AccountId, Moment = Self::BlockNumber>;
 
@@ -63,11 +63,11 @@ pub trait Trait: system::Trait {
     type ComputeEra: ComputeEraOnModule<Self::ComputeEraParam>;
 
     /// The overarching event type.
-    type Event: From<Event<Self>> + Into<<Self as system::Trait>::Event>;
+    type Event: From<Event<Self>> + Into<<Self as system::Config>::Event>;
 }
 
 decl_storage! {
-    trait Store for Module<T: Trait> as DappsStaking {
+    trait Store for Module<T: Config> as DappsStaking {
         /// The already untreated era is EraIndex.
         pub UntreatedEra get(fn untreated_era): EraIndex;
 
@@ -81,7 +81,7 @@ decl_storage! {
 }
 
 decl_module! {
-    pub struct Module<T: Trait> for enum Call where origin: T::Origin {
+    pub struct Module<T: Config> for enum Call where origin: T::Origin {
         fn deposit_event() = default;
 
         fn on_finalize() {
@@ -126,7 +126,7 @@ decl_module! {
 decl_event!(
     pub enum Event<T>
     where
-        AccountId = <T as system::Trait>::AccountId,
+        AccountId = <T as system::Config>::AccountId,
         Balance = BalanceOf<T>,
     {
         /// Validator set changed.
@@ -138,7 +138,7 @@ decl_event!(
     }
 );
 
-impl<T: Trait> Module<T> {
+impl<T: Config> Module<T> {
     pub fn reward_to_validators(era: &EraIndex, max_payout: &BalanceOf<T>) -> BalanceOf<T> {
         if let Some(validators) = Self::elected_validators(era) {
             let validator_len: u64 = validators.len() as u64;
@@ -167,7 +167,7 @@ impl<T: Trait> Module<T> {
 }
 
 /// Returns the next validator candidate for calling by plasm-rewards when new era.
-impl<T: Trait> MaybeValidators<EraIndex, T::AccountId> for Module<T> {
+impl<T: Config> MaybeValidators<EraIndex, T::AccountId> for Module<T> {
     fn compute(current_era: EraIndex) -> Option<Vec<T::AccountId>> {
         // Apply new validator set
         <ElectedValidators<T>>::insert(&current_era, <Validators<T>>::get());
@@ -177,7 +177,7 @@ impl<T: Trait> MaybeValidators<EraIndex, T::AccountId> for Module<T> {
 
 /// Get the amount of staking per Era in a module in the Plasm Network
 /// for callinng by plasm-rewards when end era.
-impl<T: Trait> ComputeEraWithParam<EraIndex> for Module<T> {
+impl<T: Config> ComputeEraWithParam<EraIndex> for Module<T> {
     type Param = T::ComputeEraParam;
     fn compute(era: &EraIndex) -> T::ComputeEraParam {
         T::ComputeEra::compute(era)

@@ -6,7 +6,7 @@ use sc_service::PartialComponents;
 
 impl SubstrateCli for Cli {
     fn impl_name() -> String {
-        "Plasm Node".into()
+        "Plasm Network".into()
     }
 
     fn impl_version() -> String {
@@ -22,7 +22,7 @@ impl SubstrateCli for Cli {
     }
 
     fn support_url() -> String {
-        "https://github.com/staketechnologies/plasm/issues/new".into()
+        "https://github.com/PlasmNetwork/Plasm/issues/new".into()
     }
 
     fn copyright_start_year() -> i32 {
@@ -53,12 +53,15 @@ pub fn run() -> sc_cli::Result<()> {
     match &cli.subcommand {
         None => {
             let runner = cli.create_runner(&cli.run)?;
-            runner.run_node_until_exit(|config| match config.role {
-                Role::Light => service::new_light(config),
-                _ => service::new_full(config),
+            runner.run_node_until_exit(|config| async move {
+                match config.role {
+                    Role::Light => service::new_light(config),
+                    _ => service::new_full(config),
+                }
+                .map_err(sc_cli::Error::Service)
             })
         }
-        Some(Subcommand::Key(cmd)) => cmd.run(),
+        Some(Subcommand::Key(cmd)) => cmd.run(&cli),
         Some(Subcommand::Sign(cmd)) => cmd.run(),
         Some(Subcommand::Verify(cmd)) => cmd.run(),
         Some(Subcommand::Vanity(cmd)) => cmd.run(),
@@ -127,12 +130,6 @@ pub fn run() -> sc_cli::Result<()> {
                 } = new_partial(&config)?;
                 Ok((cmd.run(client, backend), task_manager))
             })
-        }
-        Some(Subcommand::LockdropOracle(config)) => {
-            log::info!("Plasm Lockdrop oracle launch...");
-            Ok(futures::executor::block_on(lockdrop_oracle::start(
-                config.clone(),
-            )))
         }
     }
 }

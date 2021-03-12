@@ -1,6 +1,7 @@
 [submodule "vendor/frontier"]
 	path = vendor/frontier
-	url = https://github.com/staketechnologies/frontier.git
+	url = https://github.com/PlasmNetwork/frontier.git
 [submodule "vendor/faucet_pallet"]
 	path = vendor/faucet_pallet
 	url = https://github.com/realtakahashi/faucet_pallet.git
+

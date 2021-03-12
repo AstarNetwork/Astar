@@ -1,6 +1,6 @@
 [package]
 name = "pallet-plasm-support"
-version = "1.7.0"
+version = "1.8.0"
 authors = ["Stake Technologies <devops@stake.co.jp>"]
 edition = "2018"
 license = "Apache-2.0"
@@ -9,9 +9,9 @@ repository = "https://github.com/staketechnologies/Plasm/"
 description = "FRAME support pallet for Plasm traits"
 
 [dependencies]
-sp-runtime = { version = "2.0.0", default_features = false }
-frame-support = { version = "2.0.0", default_features = false }
-sp-std = { version = "2.0.0", default_features = false }
+sp-runtime = { version = "3.0.0", default_features = false }
+frame-support = { version = "3.0.0", default_features = false }
+sp-std = { version = "3.0.0", default_features = false }
 
 
 [dev-dependencies]

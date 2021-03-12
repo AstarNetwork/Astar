@@ -1,11 +1,12 @@
 //! Chain specification.
 
+use pallet_im_online::sr25519::AuthorityId as ImOnlineId;
 use plasm_primitives::{AccountId, Balance, Signature};
 use plasm_runtime::constants::currency::PLM;
 use plasm_runtime::Block;
 use plasm_runtime::{
     BabeConfig, BalancesConfig, ContractsConfig, EVMConfig, EthereumConfig, GenesisConfig,
-    GrandpaConfig, IndicesConfig, PlasmLockdropConfig, PlasmRewardsConfig, PlasmValidatorConfig,
+    GrandpaConfig, ImOnlineConfig, IndicesConfig, PlasmRewardsConfig, PlasmValidatorConfig,
     SessionConfig, SessionKeys, SudoConfig, SystemConfig, WASM_BINARY,
 };
 use sc_chain_spec::ChainSpecExtension;
@@ -14,10 +15,7 @@ use serde::{Deserialize, Serialize};
 use sp_consensus_babe::AuthorityId as BabeId;
 use sp_core::{sr25519, Pair, Public, H160, U256};
 use sp_finality_grandpa::AuthorityId as GrandpaId;
-use sp_runtime::{
-    traits::{IdentifyAccount, Verify},
-    Perbill,
-};
+use sp_runtime::traits::{IdentifyAccount, Verify};
 
 type AccountPublic = <Signature as Verify>::Signer;
 
@@ -76,21 +74,26 @@ where
 }
 
 /// Helper function to generate controller and session key from seed
-pub fn get_authority_keys_from_seed(seed: &str) -> (AccountId, BabeId, GrandpaId) {
+pub fn get_authority_keys_from_seed(seed: &str) -> (AccountId, BabeId, GrandpaId, ImOnlineId) {
     (
         get_account_id_from_seed::<sr25519::Public>(seed),
         get_from_seed::<BabeId>(seed),
         get_from_seed::<GrandpaId>(seed),
+        get_from_seed::<ImOnlineId>(seed),
     )
 }
 
-fn session_keys(babe: BabeId, grandpa: GrandpaId) -> SessionKeys {
-    SessionKeys { babe, grandpa }
+fn session_keys(babe: BabeId, grandpa: GrandpaId, im_online: ImOnlineId) -> SessionKeys {
+    SessionKeys {
+        babe,
+        grandpa,
+        im_online,
+    }
 }
 
 fn testnet_genesis(
     initial_authorities: Vec<AccountId>,
-    keys: Vec<(AccountId, BabeId, GrandpaId)>,
+    keys: Vec<(AccountId, BabeId, GrandpaId, ImOnlineId)>,
     endowed_accounts: Option<Vec<AccountId>>,
     sudo_key: AccountId,
 ) -> GenesisConfig {
@@ -118,7 +121,7 @@ fn testnet_genesis(
 /// Helper function to create GenesisConfig
 fn make_genesis(
     initial_authorities: Vec<AccountId>,
-    keys: Vec<(AccountId, BabeId, GrandpaId)>,
+    keys: Vec<(AccountId, BabeId, GrandpaId, ImOnlineId)>,
     balances: Vec<(AccountId, Balance)>,
     root_key: AccountId,
     enable_println: bool,
@@ -136,17 +139,6 @@ fn make_genesis(
         pallet_plasm_validator: Some(PlasmValidatorConfig {
             validators: initial_authorities,
         }),
-        pallet_plasm_lockdrop: Some(PlasmLockdropConfig {
-            // Alpha2: 0.44698108660714747
-            alpha: Perbill::from_parts(446_981_087),
-            // Price in dollars: BTC $11000, ETH $400
-            dollar_rate: (11_000, 400),
-            vote_threshold: 1,
-            positive_votes: 1,
-            // Start from launch for testing purposes
-            lockdrop_bounds: (0, 1_000),
-            keys: vec![],
-        }),
         pallet_session: Some(SessionConfig {
             keys: keys
                 .iter()
@@ -154,7 +146,7 @@ fn make_genesis(
                     (
                         x.0.clone(),
                         x.0.clone(),
-                        session_keys(x.1.clone(), x.2.clone()),
+                        session_keys(x.1.clone(), x.2.clone(), x.3.clone()),
                     )
                 })
                 .collect::<Vec<_>>(),
@@ -165,6 +157,7 @@ fn make_genesis(
         pallet_grandpa: Some(GrandpaConfig {
             authorities: vec![],
         }),
+        pallet_im_online: Some(ImOnlineConfig { keys: vec![] }),
         pallet_contracts: Some(ContractsConfig {
             current_schedule: pallet_contracts::Schedule {
                 enable_println, // this should only be enabled on development chains
