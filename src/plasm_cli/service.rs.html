@@ -507,6 +507,20 @@
 <span id="504">504</span>
 <span id="505">505</span>
 <span id="506">506</span>
+<span id="507">507</span>
+<span id="508">508</span>
+<span id="509">509</span>
+<span id="510">510</span>
+<span id="511">511</span>
+<span id="512">512</span>
+<span id="513">513</span>
+<span id="514">514</span>
+<span id="515">515</span>
+<span id="516">516</span>
+<span id="517">517</span>
+<span id="518">518</span>
+<span id="519">519</span>
+<span id="520">520</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="doccomment">//! Service implementation. Specialized wrapper over substrate service.</span>
 
@@ -618,7 +632,7 @@
 
 <span class="doccomment">/// Creates a full service from the configuration.</span>
 <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new_full_base</span>(
-    <span class="ident">config</span>: <span class="ident">Configuration</span>,
+    <span class="kw-2">mut</span> <span class="ident">config</span>: <span class="ident">Configuration</span>,
 ) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Result</span><span class="op">&lt;</span>
     (
         <span class="ident">TaskManager</span>,
@@ -640,6 +654,20 @@
         <span class="ident">inherent_data_providers</span>,
         <span class="ident">other</span>: <span class="ident">import_setup</span>,
     } <span class="op">=</span> <span class="ident">new_partial</span>(<span class="kw-2">&amp;</span><span class="ident">config</span>)<span class="question-mark">?</span>;
+
+    <span class="ident">config</span>
+        .<span class="ident">network</span>
+        .<span class="ident">extra_sets</span>
+        .<span class="ident">push</span>(<span class="ident">grandpa</span>::<span class="ident">grandpa_peers_set_config</span>());
+
+    <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;cli&quot;</span>)]</span>
+    <span class="ident">config</span>.<span class="ident">network</span>.<span class="ident">request_response_protocols</span>.<span class="ident">push</span>(
+        <span class="ident">sc_finality_grandpa_warp_sync</span>::<span class="ident">request_response_config_for_chain</span>(
+            <span class="kw-2">&amp;</span><span class="ident">config</span>,
+            <span class="ident">task_manager</span>.<span class="ident">spawn_handle</span>(),
+            <span class="ident">backend</span>.<span class="ident">clone</span>(),
+        ),
+    );
 
     <span class="kw">let</span> (<span class="ident">block_import</span>, <span class="ident">grandpa_link</span>, <span class="ident">babe_link</span>) <span class="op">=</span> <span class="ident">import_setup</span>;
 
