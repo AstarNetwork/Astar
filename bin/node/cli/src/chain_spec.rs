@@ -82,12 +82,11 @@ pub fn get_chain_spec(id: ParaId) -> ChainSpec {
     )
 }
 
-/*
 fn plasm_chain_spec() -> ChainSpec {
     ChainSpec::from_json_bytes(&include_bytes!("../res/plasm_parachain.json")[..]).unwrap()
 }
-*/
 
+/*
 fn plasm_chain_spec() -> ChainSpec {
     use sp_core::crypto::Ss58Codec;
 
@@ -117,6 +116,7 @@ fn plasm_chain_spec() -> ChainSpec {
         },
     )
 }
+*/
 
 fn testnet_genesis(
     sudo_key: AccountId,
