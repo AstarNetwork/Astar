@@ -4816,6 +4816,7 @@ dependencies = [
  "sc-consensus-slots",
  "sc-executor",
  "sc-finality-grandpa",
+ "sc-finality-grandpa-warp-sync",
  "sc-network",
  "sc-offchain",
  "sc-rpc",
@@ -6138,6 +6139,26 @@ dependencies = [
  "serde_json",
  "sp-blockchain",
  "sp-core",
+ "sp-runtime",
+]
+
+[[package]]
+name = "sc-finality-grandpa-warp-sync"
+version = "0.9.0"
+source = "git+https://github.com/paritytech/substrate?tag=pallet-contracts-v3.0.0#7e2780b66f9d38d27074b5f1963dc92dd637b77b"
+dependencies = [
+ "derive_more",
+ "futures 0.3.13",
+ "log",
+ "num-traits",
+ "parity-scale-codec",
+ "parking_lot 0.11.1",
+ "prost",
+ "sc-client-api",
+ "sc-finality-grandpa",
+ "sc-network",
+ "sc-service",
+ "sp-blockchain",
  "sp-runtime",
 ]
 

@@ -19,3 +19,11 @@ exclude = [
 [profile.release]
 # Plasm runtime requires unwinding.
 panic = "unwind"
+
+[patch.'https://github.com/paritytech/substrate']
+sc-network = "0.9.0"
+sc-finality-grandpa = "0.9.0"
+sp-runtime = "3.0.0"
+sp-blockchain = "3.0.0"
+sc-client-api = "3.0.0"
+sc-service = "0.9.0"

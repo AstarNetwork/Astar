@@ -108,7 +108,7 @@ pub fn new_partial(
 
 /// Creates a full service from the configuration.
 pub fn new_full_base(
-    config: Configuration,
+    mut config: Configuration,
 ) -> Result<
     (
         TaskManager,
@@ -130,6 +130,20 @@ pub fn new_full_base(
         inherent_data_providers,
         other: import_setup,
     } = new_partial(&config)?;
+
+    config
+        .network
+        .extra_sets
+        .push(grandpa::grandpa_peers_set_config());
+
+    #[cfg(feature = "cli")]
+    config.network.request_response_protocols.push(
+        sc_finality_grandpa_warp_sync::request_response_config_for_chain(
+            &config,
+            task_manager.spawn_handle(),
+            backend.clone(),
+        ),
+    );
 
     let (block_import, grandpa_link, babe_link) = import_setup;
 
