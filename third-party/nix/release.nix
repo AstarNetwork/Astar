@@ -3,11 +3,10 @@
 
 let
   pkgs = import <nixpkgs> { overlays = [ moz_overlay ]; };
-  channel = pkgs.rustChannelOf { date = "2020-08-20"; channel = "nightly"; };
+  channel = pkgs.rustChannelOf { date = "2020-12-29"; channel = "nightly"; };
 in {
   inherit pkgs;
   rust-nightly = channel.rust.override {
     targets = [ "wasm32-unknown-unknown" ];
-    extensions = [ "rustfmt-preview" ];
   };
 }
