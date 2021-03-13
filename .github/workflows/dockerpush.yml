@@ -20,8 +20,6 @@ jobs:
           submodules: true
       - name: Check targets are installed correctly
         run: rustup target list --installed
-      - name: Install build tools
-        run: cargo install --git https://github.com/alexcrichton/wasm-gc --force
       - name: Build optimized binary
         run: cargo build --release --verbose --target-dir third-party/docker/target-debian
       - name: Get the version
