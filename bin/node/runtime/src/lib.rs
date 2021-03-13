@@ -690,7 +690,9 @@ impl pallet_ethereum::Config for Runtime {
     type BlockGasLimit = BlockGasLimit;
 }
 
-impl faucet_pallet::Trait for Runtime {
+impl faucet_pallet::Config for Runtime {
+	type AuthorityId = faucet_pallet::crypto::TestAuthId;
+	type Call = Call;
 	type Event = Event;
 	type Currency = Balances;
 }
@@ -729,7 +731,7 @@ construct_runtime!(
         Ethereum: pallet_ethereum::{Module, Call, Storage, Event, Config, ValidateUnsigned},
         EVM: pallet_evm::{Module, Call, Storage, Config, Event<T>},
         EthCall: pallet_custom_signatures::{Module, Call, Event<T>, ValidateUnsigned},
-        Faucet: faucet_pallet::{Module, Call, Storage, Event<T>,ValidateUnsigned},
+        Faucet: faucet_pallet::{Module, Call, Storage, Event<T>},
     }
 );
 
