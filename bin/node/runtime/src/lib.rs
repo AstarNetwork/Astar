@@ -380,11 +380,11 @@ impl pallet_contracts::Config for Runtime {
     type MaxCodeSize = MaxCodeSize;
 }
 
-/*
-impl pallet_contract_operator::Config for Runtime {
-    type Parameters = pallet_dapps_staking::parameters::StakingParameters;
+
+impl plasm_operator::Config for Runtime {
+    //type Parameters = pallet_dapps_staking::parameters::StakingParameters;
     type Event = Event;
-}
+
 
 impl pallet_operator_trading::Config for Runtime {
     type Currency = Balances;
@@ -711,7 +711,7 @@ construct_runtime!(
         Grandpa: pallet_grandpa::{Module, Call, Storage, Config, Event, ValidateUnsigned},
         ImOnline: pallet_im_online::{Module, Call, Storage, Event<T>, ValidateUnsigned, Config<T>},
         Offences: pallet_offences::{Module, Call, Storage, Event},
-        //Operator: pallet_contract_operator::{Module, Call, Storage, Event<T>},
+        Operator: plasm_operator::{Module, Call, Storage, Event<T>},
         //Trading: pallet_operator_trading::{Module, Call, Storage, Event<T>},
         RandomnessCollectiveFlip: pallet_randomness_collective_flip::{Module, Call, Storage},
         Sudo: pallet_sudo::{Module, Call, Storage, Event<T>, Config<T>},
