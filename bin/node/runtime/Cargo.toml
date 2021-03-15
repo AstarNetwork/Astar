@@ -54,6 +54,7 @@ orml-traits = { path = "../../../vendor/orml/traits", default-features = false }
 orml-tokens = { path = "../../../vendor/orml/tokens", default-features = false }
 orml-xtokens = { path = "../../../vendor/orml/xtokens", default-features = false }
 orml-xcm-support = { path = "../../../vendor/orml/xcm-support", default-features = false }
+author-inherent = { path = "../../../vendor/author-inherent", default-features = false }
 
 # cumulus dependencies
 cumulus-primitives-core = { git = "https://github.com/paritytech/cumulus", branch = "rococo-v1", default-features = false }
@@ -123,4 +124,5 @@ std = [
     "cumulus-pallet-parachain-system/std",
     "cumulus-pallet-xcm-handler/std",
     "fp-rpc/std",
+    "author-inherent/std",
 ]
