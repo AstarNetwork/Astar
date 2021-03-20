@@ -34,44 +34,7 @@ use sp_runtime::{ConsensusEngineId, DigestItem, RuntimeString};
 use sp_std::vec::Vec;
 use sp_core::H160;
 
-/// The given account ID is the author of the current block.
-pub trait EventHandler<Author> {
-    fn note_author(author: Author);
-}
-
-impl<T> EventHandler<T> for () {
-    fn note_author(_author: T) {}
-}
-
-/// Permissions for what block author can be set in this pallet
-pub trait CanAuthor<AccountId> {
-    fn can_author(account: &AccountId) -> bool;
-}
-
-/// Default implementation where anyone can author, see `stake` and `author-filter` pallets for
-/// additional implementations.
-impl<T> CanAuthor<T> for () {
-    fn can_author(_: &T) -> bool {
-        true
-    }
-}
-
 pub trait Config: System {
-    /// Other pallets that want to be informed about block authorship
-    type EventHandler: EventHandler<Self::AccountId>;
-
-    /// A preliminary means of checking the validity of this author. This check is run before
-    /// block execution begins when data from previous inherent is unavailable. This is meant to
-    /// quickly invalidate blocks from obviously-invalid authors, although it need not rule out all
-    /// invlaid authors. The final check will be made when executing the inherent.
-    type PreliminaryCanAuthor: CanAuthor<Self::AccountId>;
-
-    /// The final word on whether the reported author can author at this height.
-    /// This will be used when executing the inherent. This check is often stricter than the
-    /// Preliminary check, because it can use more data.
-    /// If the pallet that implements this trait depends on an inherent, that inherent **must**
-    /// be included before this one.
-    type FinalCanAuthor: CanAuthor<Self::AccountId>;
 }
 
 decl_error! {
@@ -107,7 +70,6 @@ decl_module! {
         fn set_author(origin, author: T::AccountId) {
             ensure_none(origin)?;
             ensure!(<Author<T>>::get().is_none(), Error::<T>::AuthorAlreadySet);
-            ensure!(T::FinalCanAuthor::can_author(&author), Error::<T>::CannotBeAuthor);
 
             // Update storage
             Author::<T>::put(&author);
@@ -119,9 +81,6 @@ decl_module! {
                 ENGINE_ID,
                 author.encode(),
             ));
-
-            // Notify any other pallets that are listening (eg rewards) about the author
-            T::EventHandler::note_author(author);
         }
 
         fn on_finalize(_n: T::BlockNumber) {
@@ -229,112 +188,6 @@ impl<T: Config> ProvideInherent for Module<T> {
     }
 
     fn check_inherent(call: &Self::Call, _data: &InherentData) -> Result<(), Self::Error> {
-        // We only care to check the inherent provided by this pallet.
-        if let Self::Call::set_author(claimed_author) = call {
-            ensure!(
-                T::PreliminaryCanAuthor::can_author(&claimed_author),
-                InherentError::Other(sp_runtime::RuntimeString::Borrowed("Cannot Be Author"))
-            );
-        }
-
         Ok(())
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    use frame_support::{
-        assert_noop, assert_ok, impl_outer_origin, parameter_types,
-        traits::{OnFinalize, OnInitialize},
-    };
-    use sp_core::H256;
-    use sp_io::TestExternalities;
-    use sp_runtime::{
-        testing::Header,
-        traits::{BlakeTwo256, IdentityLookup},
-    };
-
-    pub fn new_test_ext() -> TestExternalities {
-        let t = frame_system::GenesisConfig::default()
-            .build_storage::<Test>()
-            .unwrap();
-        TestExternalities::new(t)
-    }
-
-    impl_outer_origin! {
-        pub enum Origin for Test where system = frame_system {}
-    }
-
-    mod author_inherent {
-        pub use super::super::*;
-    }
-
-    #[derive(Clone, Eq, PartialEq)]
-    pub struct Test;
-    parameter_types! {
-        pub const BlockHashCount: u64 = 250;
-    }
-    impl System for Test {
-        type BaseCallFilter = ();
-        type BlockWeights = ();
-        type BlockLength = ();
-        type DbWeight = ();
-        type Origin = Origin;
-        type Index = u64;
-        type BlockNumber = u64;
-        type Call = ();
-        type Hash = H256;
-        type Hashing = BlakeTwo256;
-        type AccountId = u64;
-        type Lookup = IdentityLookup<Self::AccountId>;
-        type Header = Header;
-        type Event = ();
-        type BlockHashCount = BlockHashCount;
-        type Version = ();
-        type PalletInfo = ();
-        type AccountData = ();
-        type OnNewAccount = ();
-        type OnKilledAccount = ();
-        type SystemWeightInfo = ();
-        type SS58Prefix = ();
-    }
-    impl Config for Test {
-        type EventHandler = ();
-        type PreliminaryCanAuthor = ();
-        type FinalCanAuthor = ();
-    }
-    type AuthorInherent = Module<Test>;
-    type Sys = frame_system::Module<Test>;
-
-    pub fn roll_to(n: u64) {
-        while Sys::block_number() < n {
-            Sys::on_finalize(Sys::block_number());
-            Sys::set_block_number(Sys::block_number() + 1);
-            Sys::on_initialize(Sys::block_number());
-            AuthorInherent::on_initialize(Sys::block_number());
-        }
-    }
-
-    #[test]
-    fn set_author_works() {
-        new_test_ext().execute_with(|| {
-            assert_ok!(AuthorInherent::set_author(Origin::none(), 1));
-            roll_to(1);
-            assert_ok!(AuthorInherent::set_author(Origin::none(), 1));
-            roll_to(2);
-        });
-    }
-
-    #[test]
-    fn double_author_fails() {
-        new_test_ext().execute_with(|| {
-            assert_ok!(AuthorInherent::set_author(Origin::none(), 1));
-            assert_noop!(
-                AuthorInherent::set_author(Origin::none(), 1),
-                Error::<Test>::AuthorAlreadySet
-            );
-        });
     }
 }

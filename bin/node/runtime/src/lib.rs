@@ -366,12 +366,7 @@ impl pallet_ethereum::Config for Runtime {
     type BlockGasLimit = BlockGasLimit;
 }
 
-impl author_inherent::Config for Runtime {
-    type EventHandler = ();
-    type PreliminaryCanAuthor = ();
-    // Anyone can author
-    type FinalCanAuthor = ();
-}
+impl author_inherent::Config for Runtime {}
 
 impl pallet_utility::Config for Runtime {
     type Event = Event;
