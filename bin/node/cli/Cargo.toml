@@ -69,6 +69,7 @@ plasm-rpc = { path = "../rpc" }
 frame-system = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
 pallet-transaction-payment = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
 pallet-contracts = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
+author-inherent = { path = "../../../vendor/author-inherent" }
 
 # CLI-specific dependencies
 sc-cli = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1", optional = true }

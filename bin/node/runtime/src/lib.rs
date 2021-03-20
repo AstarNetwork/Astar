@@ -6,15 +6,12 @@
 
 use codec::{Decode, Encode};
 use frame_support::{
-    construct_runtime,
-    pallet_prelude::PhantomData,
-    parameter_types,
-    traits::{FindAuthor, Randomness},
+    construct_runtime, parameter_types,
+    traits::Randomness,
     weights::{
         constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_PER_SECOND},
         DispatchClass, IdentityFee, Weight,
     },
-    ConsensusEngineId,
 };
 use frame_system::limits::{BlockLength, BlockWeights};
 use orml_xcm_support::{
@@ -92,8 +89,8 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     // and set impl_version to equal spec_version. If only runtime
     // implementation changes and behavior does not, then leave spec_version as
     // is and increment impl_version.
-    spec_version: 6,
-    impl_version: 6,
+    spec_version: 7,
+    impl_version: 7,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 1,
 };
@@ -357,17 +354,6 @@ impl fp_rpc::ConvertTransaction<sp_runtime::OpaqueExtrinsic> for TransactionConv
     }
 }
 
-pub struct EthereumFindAuthor<F>(PhantomData<F>);
-impl<F: FindAuthor<u32>> FindAuthor<H160> for EthereumFindAuthor<F> {
-    fn find_author<'a, I>(_digests: I) -> Option<H160>
-    where
-        I: 'a + IntoIterator<Item = (ConsensusEngineId, &'a [u8])>,
-    {
-        // TODO: collator as block author
-        None
-    }
-}
-
 parameter_types! {
     pub BlockGasLimit: U256
         = U256::from(NORMAL_DISPATCH_RATIO * MAXIMUM_BLOCK_WEIGHT / WEIGHT_PER_GAS);
@@ -375,10 +361,12 @@ parameter_types! {
 
 impl pallet_ethereum::Config for Runtime {
     type Event = Event;
-    type FindAuthor = EthereumFindAuthor<()>;
+    type FindAuthor = AuthorInherent;
     type StateRoot = pallet_ethereum::IntermediateStateRoot;
     type BlockGasLimit = BlockGasLimit;
 }
+
+impl author_inherent::Config for Runtime {}
 
 impl pallet_utility::Config for Runtime {
     type Event = Event;
@@ -542,6 +530,7 @@ construct_runtime!(
         ParachainInfo: parachain_info::{Module, Storage, Config},
         XcmHandler: cumulus_pallet_xcm_handler::{Module, Event<T>, Origin, Call},
         XTokens: orml_xtokens::{Module, Storage, Call, Event<T>},
+        AuthorInherent: author_inherent::{Module, Call, Storage, Inherent},
     }
 );
 

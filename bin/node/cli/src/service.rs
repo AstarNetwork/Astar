@@ -11,7 +11,7 @@ use plasm_runtime::RuntimeApi;
 use polkadot_primitives::v0::CollatorPair;
 use sc_client_api::client::BlockchainEvents;
 use sc_service::{Configuration, PartialComponents, Role, TFullBackend, TFullClient, TaskManager};
-use sp_core::Pair;
+use sp_core::{Pair, Public};
 use sp_runtime::traits::BlakeTwo256;
 use sp_trie::PrefixedMemoryDB;
 use std::collections::{BTreeMap, HashMap};
@@ -23,25 +23,6 @@ sc_executor::native_executor_instance!(
     plasm_runtime::api::dispatch,
     plasm_runtime::native_version,
 );
-
-/*
-pub fn open_frontier_backend(config: &Configuration) -> Result<Arc<fc_db::Backend<Block>>, String> {
-    let config_dir = config.base_path.as_ref()
-        .map(|base_path| base_path.config_dir(config.chain_spec.id()))
-        .unwrap_or_else(|| {
-            BasePath::from_project("", "", &crate::cli::Cli::executable_name())
-                .config_dir(config.chain_spec.id())
-        });
-    let database_dir = config_dir.join("frontier").join("db");
-
-    Ok(Arc::new(fc_db::Backend::<Block>::new(&fc_db::DatabaseSettings {
-        source: fc_db::DatabaseSettingsSrc::RocksDb {
-            path: database_dir,
-            cache_size: 0,
-        }
-    })?))
-}
-*/
 
 /// Starts a `ServiceBuilder` for a full service.
 ///
@@ -133,9 +114,18 @@ pub async fn start_node(
             })?;
 
     let params = new_partial(&parachain_config)?;
+
+    // Register time source
     params
         .inherent_data_providers
         .register_provider(sp_timestamp::InherentDataProvider)
+        .unwrap();
+
+    // Register author source
+    let account = Vec::from(collator_key.public().as_slice());
+    params
+        .inherent_data_providers
+        .register_provider(author_inherent::InherentDataProvider(account))
         .unwrap();
 
     let client = params.client.clone();
@@ -248,7 +238,7 @@ pub async fn start_node(
                         // As pending transactions have a finite lifespan anyway
                         // we can ignore MultiplePostRuntimeLogs error checks.
                         let mut frontier_log: Option<_> = None;
-                        for log in notification.header.digest.logs {
+                        for log in notification.header.digest.logs.iter().rev() {
                             let log = log.try_to::<ConsensusLog>(OpaqueDigestItemId::Consensus(
                                 &FRONTIER_ENGINE_ID,
                             ));
