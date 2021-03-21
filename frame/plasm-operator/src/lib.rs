@@ -33,25 +33,22 @@
 pub use pallet::*; // reexport in crate namespace for `construct_runtime!`
 use sp_core::{H160};
 use sp_std::{prelude::*};
-use frame_support::{dispatch::DispatchResultWithPostInfo};
-
-
-
-#[frame_support::pallet]
-// NOTE: The name of the pallet is provided by `construct_runtime` and is used as
-// the unique identifier for the pallet's storage. It is not defined in the pallet itself.
-pub mod pallet {
-    use frame_support::pallet_prelude::*; // Import various types used in the pallet definition
-	use frame_system::pallet_prelude::*; // Import some system helper types.
-    use super::*;
-
-    #[derive(Clone, Encode, Decode, Eq, PartialEq, Debug)]
-    pub enum SmartContract<T: Config>
-    {
-        Wasm(T::AccountId),
-        EVM(H160),
-    }
-
+ 
+    
+    #[frame_support::pallet]
+    // NOTE: The name of the pallet is provided by `construct_runtime` and is used as
+    // the unique identifier for the pallet's storage. It is not defined in the pallet itself.
+    pub mod pallet {
+        use frame_support::pallet_prelude::*; // Import various types used in the pallet definition
+        use frame_system::pallet_prelude::*; // Import some system helper types.
+        use super::*;
+        
+        #[derive(Clone, Encode, Decode, Eq, PartialEq, RuntimeDebug)]
+        pub enum SmartContract<T: Config>
+        {
+            Wasm(T::AccountId),
+            EVM(H160),
+        }
     #[pallet::pallet]
     #[pallet::generate_store(trait Store)]
     pub struct Pallet<T>(PhantomData<T>);
@@ -97,7 +94,7 @@ pub mod pallet {
 
 	}
 
-    /// A mapping from operators to operated contracts by them.
+    /// A mapping from operators to operated contract
 	#[pallet::storage]
 	#[pallet::getter(fn get_contract_wasm)]
     pub(super) type OperatorHasContract<T: Config> = StorageMap<_, Blake2_128Concat, T::AccountId, SmartContract<T> >; 
@@ -107,12 +104,29 @@ pub mod pallet {
 	#[pallet::getter(fn get_operator)]
     pub(super) type ContractHasOperator<T: Config> = StorageMap<_, Blake2_128Concat, SmartContract<T>, T::AccountId >;
         
-}
+    pub trait IsContract<T: Config> {
+        //type SmartContract;
 
-pub trait IsContract<T> {
-    fn claim_contract(&self) -> DispatchResultWithPostInfo;
+        fn claim_contract(origin: OriginFor<T>, contract: SmartContract<T>) -> Result<bool, DispatchError>;
+    }
+    /// implement isContract for SmartContract 
+    impl<T: Config> IsContract<T> for SmartContract<T> {
+        
+        fn claim_contract(origin: OriginFor<T>, contract: SmartContract<T::AccountId>) -> Result<bool, sp_runtime::DispatchError>{
+            let operator = ensure_signed(origin)?;
+            if !pallet::Pallet::<ContractHasOperator<T>>::contains_key(&contract) &&
+                !pallet::Pallet::<OperatorHasContract<T>>::contains_key(&operator) {
+                    // add owner of the contracts
+                    <OperatorHasContract<T>>::insert(&operator, contract.clone());
+                    // assigns the contract to owner for staking purposes
+                    <ContractHasOperator<T>>::insert(&contract, operator.clone());
+                    
+                    Self::deposit_event(Event::ContractClaimed(operator, contract));
+                }
+            Ok(().into())
+        }
+    }
 }
-
 
 // 
 // The main implementation block for the module.
