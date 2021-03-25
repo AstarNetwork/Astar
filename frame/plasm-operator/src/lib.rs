@@ -31,27 +31,27 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 pub use pallet::*; // reexport in crate namespace for `construct_runtime!`
-use sp_core::{H160};
 use sp_std::{prelude::*};
- 
+
+#[frame_support::pallet]
+// NOTE: The name of the pallet is provided by `construct_runtime` and is used as
+// the unique identifier for the pallet's storage. It is not defined in the pallet itself.
+pub mod pallet {
+    use frame_support::pallet_prelude::*; // Import various types used in the pallet definition
+    use frame_system::pallet_prelude::*; // Import some system helper types.
+    use sp_runtime::DispatchError;
+    use sp_core::{H160};
+    use super::*;
     
-    #[frame_support::pallet]
-    // NOTE: The name of the pallet is provided by `construct_runtime` and is used as
-    // the unique identifier for the pallet's storage. It is not defined in the pallet itself.
-    pub mod pallet {
-        use frame_support::pallet_prelude::*; // Import various types used in the pallet definition
-        use frame_system::pallet_prelude::*; // Import some system helper types.
-        use super::*;
-        
-        #[derive(Clone, Encode, Decode, Eq, PartialEq, RuntimeDebug)]
-        pub enum SmartContract<T: Config>
-        {
-            Wasm(T::AccountId),
-            EVM(H160),
-        }
+    #[derive(Clone, Encode, Decode, Eq, PartialEq, RuntimeDebug)]
+    pub enum SmartContract<T: pallet::Config>
+    {
+        Wasm(T::AccountId),
+        EVM(H160),
+    }
     #[pallet::pallet]
     #[pallet::generate_store(trait Store)]
-    pub struct Pallet<T>(PhantomData<T>);
+	pub struct Pallet<T>(_);
 
     #[pallet::config]
 	pub trait Config: frame_system::Config {
@@ -111,11 +111,11 @@ use sp_std::{prelude::*};
     }
     /// implement isContract for SmartContract 
     impl<T: Config> IsContract<T> for SmartContract<T> {
-        
-        fn claim_contract(origin: OriginFor<T>, contract: SmartContract<T::AccountId>) -> Result<bool, sp_runtime::DispatchError>{
+
+        fn claim_contract(origin: OriginFor<T>, contract: SmartContract<T>) -> Result<bool, DispatchError>{
             let operator = ensure_signed(origin)?;
-            if !pallet::Pallet::<ContractHasOperator<T>>::contains_key(&contract) &&
-                !pallet::Pallet::<OperatorHasContract<T>>::contains_key(&operator) {
+            if !<ContractHasOperator<T>>::contains_key(&contract) &&
+                !<OperatorHasContract<T>>::contains_key(&operator) {
                     // add owner of the contracts
                     <OperatorHasContract<T>>::insert(&operator, contract.clone());
                     // assigns the contract to owner for staking purposes
@@ -123,7 +123,7 @@ use sp_std::{prelude::*};
                     
                     Self::deposit_event(Event::ContractClaimed(operator, contract));
                 }
-            Ok(().into())
+            Ok(true)
         }
     }
 }
