@@ -53,6 +53,7 @@ orml-currencies = { path = "../../../vendor/orml/currencies", default-features =
 orml-traits = { path = "../../../vendor/orml/traits", default-features = false }
 orml-tokens = { path = "../../../vendor/orml/tokens", default-features = false }
 orml-xtokens = { path = "../../../vendor/orml/xtokens", default-features = false }
+orml-unknown-tokens = { path = "../../../vendor/orml/unknown-tokens", default-features = false }
 orml-xcm-support = { path = "../../../vendor/orml/xcm-support", default-features = false }
 author-inherent = { path = "../../../vendor/author-inherent", default-features = false }
 
@@ -114,6 +115,7 @@ std = [
     "orml-traits/std",
     "orml-tokens/std",
     "orml-xtokens/std",
+    "orml-unknown-tokens/std",
     "orml-xcm-support/std",
     "xcm/std",
     "xcm-builder/std",

@@ -16,6 +16,7 @@ use frame_support::{
 use frame_system::limits::{BlockLength, BlockWeights};
 use orml_xcm_support::{
     CurrencyIdConverter, IsConcreteWithGeneralKey, MultiCurrencyAdapter, NativePalletAssetOr,
+    XcmHandler as XcmHandlerT,
 };
 use pallet_contracts::weights::WeightInfo;
 use pallet_evm::{
@@ -47,7 +48,7 @@ use sp_version::RuntimeVersion;
 
 use cumulus_primitives_core::relay_chain::Balance as RelayChainBalance;
 use polkadot_parachain::primitives::Sibling;
-use xcm::v0::{Junction, MultiLocation, NetworkId};
+use xcm::v0::{Junction, MultiLocation, NetworkId, Xcm};
 use xcm_builder::{
     AccountId32Aliases, LocationInverter, ParentIsDefault, RelayChainAsNative,
     SiblingParachainAsNative, SiblingParachainConvertsVia, SignedAccountId32AsNative,
@@ -423,6 +424,7 @@ type LocalOriginConverter = (
 
 pub type LocalAssetTransactor = MultiCurrencyAdapter<
     Currencies,
+    UnknownTokens,
     IsConcreteWithGeneralKey<CurrencyId, RelayToNative>,
     LocationConverter,
     AccountId,
@@ -488,15 +490,25 @@ impl Convert<AccountId, [u8; 32]> for AccountId32Convert {
     }
 }
 
+pub struct HandleXcm;
+impl XcmHandlerT<AccountId> for HandleXcm {
+    fn execute_xcm(origin: AccountId, xcm: Xcm) -> sp_runtime::DispatchResult {
+        XcmHandler::execute_xcm(origin, xcm)
+    }
+}
+
 impl orml_xtokens::Config for Runtime {
     type Event = Event;
     type Balance = Balance;
     type ToRelayChainBalance = NativeToRelay;
     type AccountId32Convert = AccountId32Convert;
     type RelayChainNetworkId = PolkadotNetwork;
-    type AccountIdConverter = LocationConverter;
-    type XcmExecutor = XcmExecutor<XcmConfig>;
     type ParaId = ParachainInfo;
+    type XcmHandler = HandleXcm;
+}
+
+impl orml_unknown_tokens::Config for Runtime {
+    type Event = Event;
 }
 
 impl cumulus_pallet_parachain_system::Config for Runtime {
@@ -513,24 +525,25 @@ construct_runtime!(
         NodeBlock = plasm_primitives::Block,
         UncheckedExtrinsic = UncheckedExtrinsic
     {
-        System: frame_system::{Module, Call, Storage, Config, Event<T>},
-        Utility: pallet_utility::{Module, Call, Event},
-        Timestamp: pallet_timestamp::{Module, Call, Storage, Inherent},
-        TransactionPayment: pallet_transaction_payment::{Module, Storage},
-        Balances: pallet_balances::{Module, Call, Storage, Event<T>, Config<T>},
-        Currencies: orml_currencies::{Module, Call, Event<T>},
-        Tokens: orml_tokens::{Module, Storage, Event<T>, Config<T>},
-        Contracts: pallet_contracts::{Module, Call, Storage, Event<T>, Config<T>},
-        Ethereum: pallet_ethereum::{Module, Call, Storage, Event, Config, ValidateUnsigned},
-        EVM: pallet_evm::{Module, Call, Storage, Config, Event<T>},
-        RandomnessCollectiveFlip: pallet_randomness_collective_flip::{Module, Call, Storage},
-        Sudo: pallet_sudo::{Module, Call, Storage, Event<T>, Config<T>},
-        Nicks: pallet_nicks::{Module, Call, Storage, Event<T>},
-        ParachainSystem: cumulus_pallet_parachain_system::{Module, Call, Storage, Inherent, Event},
-        ParachainInfo: parachain_info::{Module, Storage, Config},
-        XcmHandler: cumulus_pallet_xcm_handler::{Module, Event<T>, Origin, Call},
-        XTokens: orml_xtokens::{Module, Storage, Call, Event<T>},
-        AuthorInherent: author_inherent::{Module, Call, Storage, Inherent},
+        System: frame_system::{Pallet, Call, Storage, Config, Event<T>},
+        Utility: pallet_utility::{Pallet, Call, Event},
+        Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
+        TransactionPayment: pallet_transaction_payment::{Pallet, Storage},
+        Balances: pallet_balances::{Pallet, Call, Storage, Event<T>, Config<T>},
+        Currencies: orml_currencies::{Pallet, Call, Event<T>},
+        Tokens: orml_tokens::{Pallet, Storage, Event<T>, Config<T>},
+        Contracts: pallet_contracts::{Pallet, Call, Storage, Event<T>, Config<T>},
+        Ethereum: pallet_ethereum::{Pallet, Call, Storage, Event, Config, ValidateUnsigned},
+        EVM: pallet_evm::{Pallet, Call, Storage, Config, Event<T>},
+        RandomnessCollectiveFlip: pallet_randomness_collective_flip::{Pallet, Call, Storage},
+        Sudo: pallet_sudo::{Pallet, Call, Storage, Event<T>, Config<T>},
+        Nicks: pallet_nicks::{Pallet, Call, Storage, Event<T>},
+        ParachainSystem: cumulus_pallet_parachain_system::{Pallet, Call, Storage, Inherent, Event},
+        ParachainInfo: parachain_info::{Pallet, Storage, Config},
+        XcmHandler: cumulus_pallet_xcm_handler::{Pallet, Event<T>, Origin, Call},
+        XTokens: orml_xtokens::{Pallet, Storage, Call, Event<T>},
+        UnknownTokens: orml_unknown_tokens::{Pallet, Storage, Event},
+        AuthorInherent: author_inherent::{Pallet, Call, Storage, Inherent},
     }
 );
 
@@ -608,7 +621,7 @@ impl_runtime_apis! {
         }
 
         fn random_seed() -> <Block as BlockT>::Hash {
-            RandomnessCollectiveFlip::random_seed()
+            RandomnessCollectiveFlip::random_seed().0
         }
     }
 

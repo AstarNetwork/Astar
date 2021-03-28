@@ -277,7 +277,6 @@ pub fn run() -> Result<()> {
                         &polkadot_cli,
                         &polkadot_cli,
                         task_executor,
-                        None,
                     )
                     .map_err(|err| format!("Relay chain argument error: {}", err))?;
                     let collator = cli.run.base.validator;
@@ -354,7 +353,7 @@ impl CliConfiguration<Self> for RelayChainCli {
         self.base.base.prometheus_config(default_listen_port)
     }
 
-    fn init<C: SubstrateCli>(&self) -> Result<sc_telemetry::TelemetryWorker> {
+    fn init<C: SubstrateCli>(&self) -> Result<()> {
         unreachable!("PolkadotCli is never initialized; qed");
     }
 
