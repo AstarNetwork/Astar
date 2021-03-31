@@ -13,23 +13,10 @@ codec = { package = "parity-scale-codec", version = "2.0", features = ["derive"]
 serde = { version = "1.0.106", features = ["derive"], optional = true }
 
 sp-core = { version = "3.0.0", default_features = false }
-sp-runtime = { version = "3.0.0", default_features = false }
-sp-io = { version = "3.0.0", default_features = false }
-sp-std = { version = "3.0.0", default_features = false }
-pallet-balances = { version = "3.0.0", default_features = false }
-frame-support = { version = "3.0.0", default_features = false }
-pallet-timestamp = { version = "3.0.0", default_features = false }
 frame-system = { version = "3.0.0", default_features = false }
+frame-support = { version = "3.0.0", default_features = false }
+pallet-evm = { path = "../../vendor/frontier/frame/evm", default-features = false }
 pallet-contracts = { version = "3.0.0", default_features = false }
-
-pallet-plasm-support = { path = "../plasm-support", version = "1.8.0", default_features = false }
-
-[dev-dependencies]
-wabt = "0.10.0"
-derive_more = "0.14.0"
-hex-literal = "0.2.1"
-pallet-randomness-collective-flip = "3.0.0"
-pallet-transaction-payment = "3.0.0"
 
 [features]
 default = ["std"]
@@ -37,13 +24,8 @@ std = [
     "serde",
     "codec/std",
     "sp-core/std",
-    "sp-runtime/std",
-    "sp-io/std",
-    "sp-std/std",
-    "pallet-balances/std",
-    "frame-support/std",
-    "pallet-timestamp/std",
     "frame-system/std",
+    "frame-support/std",
+    "pallet-evm/std",
     "pallet-contracts/std",
-    "pallet-plasm-support/std",
 ]
