@@ -90,8 +90,8 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     // and set impl_version to equal spec_version. If only runtime
     // implementation changes and behavior does not, then leave spec_version as
     // is and increment impl_version.
-    spec_version: 7,
-    impl_version: 7,
+    spec_version: 8,
+    impl_version: 8,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 1,
 };
@@ -163,6 +163,7 @@ impl frame_system::Config for Runtime {
     type OnKilledAccount = ();
     type SystemWeightInfo = ();
     type SS58Prefix = SS58Prefix;
+    type OnSetCode = ParachainSystem;
 }
 
 parameter_types! {
@@ -460,7 +461,7 @@ impl cumulus_pallet_xcm_handler::Config for Runtime {
     type Event = Event;
     type XcmExecutor = XcmExecutor<XcmConfig>;
     type UpwardMessageSender = ParachainSystem;
-    type HrmpMessageSender = ParachainSystem;
+    type XcmpMessageSender = ParachainSystem;
     type SendXcmOrigin = frame_system::EnsureRoot<AccountId>;
     type AccountIdConverter = LocationConverter;
 }
@@ -516,7 +517,7 @@ impl cumulus_pallet_parachain_system::Config for Runtime {
     type OnValidationData = ();
     type SelfParaId = parachain_info::Module<Runtime>;
     type DownwardMessageHandlers = XcmHandler;
-    type HrmpMessageHandlers = XcmHandler;
+    type XcmpMessageHandlers = XcmHandler;
 }
 
 construct_runtime!(
