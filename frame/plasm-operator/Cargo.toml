@@ -18,6 +18,15 @@ frame-support = { version = "3.0.0", default_features = false }
 pallet-evm = { path = "../../vendor/frontier/frame/evm", default-features = false }
 pallet-contracts = { version = "3.0.0", default_features = false }
 
+[dev-dependencies]
+wat = "1.0"
+sp-io = "3.0.0"
+sp-std = "3.0.0"
+sp-runtime = "3.0.0"
+pallet-balances = "3.0.0"
+pallet-timestamp = "3.0.0"
+pallet-randomness-collective-flip = "3.0.0"
+
 [features]
 default = ["std"]
 std = [
