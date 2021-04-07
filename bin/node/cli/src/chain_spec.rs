@@ -1,7 +1,7 @@
 //! Chain specification.
 
 use cumulus_primitives_core::ParaId;
-use plasm_primitives::{AccountId, Balance, CurrencyId, Signature, TokenSymbol};
+use plasm_primitives::{AccountId, Balance, currency::{CurrencyId, TokenSymbol}, Signature};
 use plasm_runtime::constants::currency::PLM;
 use plasm_runtime::{
     wasm_binary_unwrap, BalancesConfig, ContractsConfig, EVMConfig, EthereumConfig, GenesisConfig,
@@ -165,10 +165,9 @@ fn make_genesis(
         },
         pallet_balances: BalancesConfig { balances },
         pallet_contracts: ContractsConfig {
-            current_schedule: pallet_contracts::Schedule {
-                enable_println, // this should only be enabled on development chains
-                ..Default::default()
-            },
+			// println should only be enabled on development chains
+			current_schedule: pallet_contracts::Schedule::default()
+				.enable_println(enable_println),
         },
         pallet_evm: EVMConfig {
             accounts: Default::default(),

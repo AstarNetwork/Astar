@@ -1916,6 +1916,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "fc-mapping-sync"
+version = "0.1.0"
+dependencies = [
+ "fc-consensus",
+ "fc-db",
+ "fp-consensus",
+ "fp-rpc",
+ "futures 0.3.13",
+ "futures-timer 3.0.2",
+ "log",
+ "sc-client-api",
+ "sp-api",
+ "sp-blockchain",
+ "sp-runtime",
+]
+
+[[package]]
 name = "fc-rpc"
 version = "0.1.0"
 dependencies = [
@@ -5923,6 +5940,9 @@ dependencies = [
  "cumulus-client-service",
  "cumulus-primitives-core",
  "fc-consensus",
+ "fc-db",
+ "fc-mapping-sync",
+ "fc-rpc",
  "fc-rpc-core",
  "fp-consensus",
  "frame-system",
@@ -5992,12 +6012,14 @@ dependencies = [
 name = "plasm-rpc"
 version = "1.8.0"
 dependencies = [
+ "fc-db",
  "fc-rpc",
  "fc-rpc-core",
  "fp-rpc",
  "jsonrpc-core 15.1.0",
  "jsonrpc-pubsub 15.1.0",
  "pallet-contracts-rpc",
+ "pallet-ethereum",
  "pallet-transaction-payment-rpc",
  "plasm-primitives",
  "plasm-runtime",

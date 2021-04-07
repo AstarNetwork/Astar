@@ -38,12 +38,11 @@ use sp_runtime::{
     create_runtime_str, generic, impl_opaque_keys, ApplyExtrinsicResult, FixedPointNumber,
     ModuleId, Perbill, Perquintill,
 };
-use sp_std::{collections::btree_set::BTreeSet, convert::TryFrom, prelude::*};
+use sp_std::{convert::TryFrom, prelude::*};
 #[cfg(any(feature = "std", test))]
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
 
-use cumulus_primitives_core::relay_chain::Balance as RelayChainBalance;
 use polkadot_parachain::primitives::Sibling;
 use xcm::v0::{Junction::{GeneralKey, Parachain, Parent}, MultiLocation::{self, X1, X2, X3}, MultiAsset, NetworkId, Xcm};
 use xcm_builder::{

@@ -56,9 +56,11 @@ sc-service = { git = "https://github.com/paritytech/substrate", branch = "rococo
 sc-telemetry = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
 sc-tracing = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
 sc-consensus-babe = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
-#fc-db = { path = "../../../vendor/frontier/client/db" }
+fc-db = { path = "../../../vendor/frontier/client/db" }
+fc-rpc = { path = "../../../vendor/frontier/client/rpc" }
 fc-rpc-core = { path = "../../../vendor/frontier/client/rpc-core" }
-fc-consensus= { path = "../../../vendor/frontier/client/consensus" }
+fc-consensus = { path = "../../../vendor/frontier/client/consensus" }
+fc-mapping-sync = { path = "../../../vendor/frontier/client/mapping-sync" }
 
 # plasm-specific dependencies
 plasm-primitives = { path = "../primitives" }

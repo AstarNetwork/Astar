@@ -14,6 +14,9 @@ use sp_api::ProvideRuntimeApi;
 use sp_block_builder::BlockBuilder;
 use sp_blockchain::{Error as BlockChainError, HeaderBackend, HeaderMetadata};
 use sp_transaction_pool::TransactionPool;
+use pallet_ethereum::EthereumStorageSchema;                                                                                
+use fc_rpc::{StorageOverride, SchemaV1Override};
+use std::collections::BTreeMap;
 
 /// Light client extra dependencies.
 pub struct LightDeps<C, F, P> {
@@ -44,7 +47,7 @@ pub struct FullDeps<C, P> {
     /// EthFilterApi pool.
     pub filter_pool: Option<FilterPool>,
     // Backend.
-    //pub backend: Arc<fc_db::Backend<Block>>,
+    pub backend: Arc<fc_db::Backend<Block>>,
 }
 
 /// Instantiate all Full RPC extensions.
@@ -83,8 +86,13 @@ where
         network,
         pending_transactions,
         filter_pool,
-        //backend,
+        backend,
     } = deps;
+    let mut overrides = BTreeMap::new();                                                                                   
+    overrides.insert(                                                                                                      
+        EthereumStorageSchema::V1,                                                                                         
+        Box::new(SchemaV1Override::new(client.clone())) as Box<dyn StorageOverride<_> + Send + Sync>                       
+    );
 
     io.extend_with(SystemApi::to_delegate(FullSystem::new(
         client.clone(),
@@ -106,7 +114,8 @@ where
         network.clone(),
         pending_transactions.clone(),
         Default::default(),
-        //backend,
+        overrides,
+        backend,
         is_authority,
     )));
 

@@ -5,18 +5,22 @@ use cumulus_client_network::build_block_announce_validator;
 use cumulus_client_service::{
     prepare_node_config, start_collator, start_full_node, StartCollatorParams, StartFullNodeParams,
 };
+use futures::StreamExt;
+use fc_mapping_sync::MappingSyncWorker;
 use fc_rpc_core::types::{FilterPool, PendingTransactions};
+use fc_rpc::EthTask;
 use plasm_primitives::Block;
 use plasm_runtime::RuntimeApi;
 use polkadot_primitives::v0::CollatorPair;
 use sc_client_api::client::BlockchainEvents;
-use sc_service::{Configuration, PartialComponents, Role, TFullBackend, TFullClient, TaskManager};
+use sc_service::{Configuration, PartialComponents, Role, TFullBackend, TFullClient, TaskManager, BasePath};
 use sc_telemetry::{Telemetry, TelemetryWorker, TelemetryWorkerHandle};
 use sp_core::{Pair, Public};
 use sp_runtime::traits::BlakeTwo256;
 use sp_trie::PrefixedMemoryDB;
 use std::collections::{BTreeMap, HashMap};
 use std::sync::{Arc, Mutex};
+use std::time::Duration;
 
 // Native executor instance.
 sc_executor::native_executor_instance!(
@@ -24,6 +28,23 @@ sc_executor::native_executor_instance!(
     plasm_runtime::api::dispatch,
     plasm_runtime::native_version,
 );
+
+pub fn open_frontier_backend(config: &Configuration) -> Result<Arc<fc_db::Backend<Block>>, String> {
+    let config_dir = config.base_path.as_ref()
+        .map(|base_path| base_path.config_dir(config.chain_spec.id()))
+        .unwrap_or_else(|| {
+            BasePath::from_project("", "", "plasm")
+                .config_dir(config.chain_spec.id())
+        });
+    let database_dir = config_dir.join("frontier").join("db");
+
+    Ok(Arc::new(fc_db::Backend::<Block>::new(&fc_db::DatabaseSettings {
+        source: fc_db::DatabaseSettingsSrc::RocksDb {
+            path: database_dir,
+            cache_size: 0,
+        }
+    })?))
+}
 
 /// Starts a `ServiceBuilder` for a full service.
 ///
@@ -38,7 +59,7 @@ pub fn new_partial(
         (),
         sp_consensus::import_queue::BasicQueue<Block, PrefixedMemoryDB<BlakeTwo256>>,
         sc_transaction_pool::FullPool<Block, TFullClient<Block, RuntimeApi, Executor>>,
-        (Option<Telemetry>, Option<TelemetryWorkerHandle>),
+        (Option<Telemetry>, Option<TelemetryWorkerHandle>, Arc<fc_db::Backend<Block>>),
     >,
     sc_service::Error,
 > {
@@ -80,10 +101,11 @@ pub fn new_partial(
         client.clone(),
     );
 
+    let frontier_backend = open_frontier_backend(config)?;
     let frontier_block_import = fc_consensus::FrontierBlockImport::new(
         client.clone(),
         client.clone(),
-        true,
+        frontier_backend.clone(),
     );
 
     let import_queue = cumulus_client_consensus_relay_chain::import_queue(
@@ -103,7 +125,7 @@ pub fn new_partial(
         transaction_pool,
         inherent_data_providers,
         select_chain: (),
-        other: (telemetry, telemetry_worker_handle),
+        other: (telemetry, telemetry_worker_handle, frontier_backend),
     };
 
     Ok(params)
@@ -141,7 +163,7 @@ pub async fn start_node(
         .register_provider(author_inherent::InherentDataProvider(account))
         .unwrap();
 
-    let (mut telemetry, telemetry_worker_handle) = params.other;
+    let (mut telemetry, telemetry_worker_handle, frontier_backend) = params.other;
     let polkadot_full_node =
         cumulus_client_service::build_polkadot_full_node(
             polkadot_config,
@@ -179,7 +201,6 @@ pub async fn start_node(
 
     let pending_transactions: PendingTransactions = Some(Arc::new(Mutex::new(HashMap::new())));
     let filter_pool: Option<FilterPool> = Some(Arc::new(Mutex::new(BTreeMap::new())));
-    //let frontier_backend = params.other;
 
     let rpc_extensions_builder = {
         let client = client.clone();
@@ -188,6 +209,7 @@ pub async fn start_node(
         let pending = pending_transactions.clone();
         let filter_pool = filter_pool.clone();
         let is_authority = parachain_config.role.is_authority();
+        let frontier_backend = frontier_backend.clone();
         let builder = move |deny_unsafe, subscription| {
             let deps = plasm_rpc::FullDeps {
                 client: client.clone(),
@@ -195,7 +217,7 @@ pub async fn start_node(
                 network: network.clone(),
                 pending_transactions: pending.clone(),
                 filter_pool: filter_pool.clone(),
-                //backend: frontier_backend.clone(),
+                backend: frontier_backend.clone(),
                 deny_unsafe,
                 is_authority,
             };
@@ -204,6 +226,18 @@ pub async fn start_node(
         };
         Box::new(builder)
     };
+
+    task_manager.spawn_essential_handle().spawn(
+        "frontier-mapping-sync-worker",
+        MappingSyncWorker::new(
+            client.import_notification_stream(),
+            Duration::new(6, 0),
+            client.clone(),
+            backend.clone(),
+            frontier_backend.clone(),
+        ).for_each(|()| futures::future::ready(()))
+    );
+
 
     sc_service::spawn_tasks(sc_service::SpawnTasksParams {
         on_demand: None,
@@ -222,73 +256,29 @@ pub async fn start_node(
     })?;
 
     // Spawn Frontier EthFilterApi maintenance task.
-    if filter_pool.is_some() {
-        use futures::StreamExt;
+    if let Some(filter_pool) = filter_pool {
         // Each filter is allowed to stay in the pool for 100 blocks.
         const FILTER_RETAIN_THRESHOLD: u64 = 100;
         task_manager.spawn_essential_handle().spawn(
             "frontier-filter-pool",
-            client
-                .import_notification_stream()
-                .for_each(move |notification| {
-                    if let Ok(locked) = &mut filter_pool.clone().unwrap().lock() {
-                        let imported_number: u64 = notification.header.number as u64;
-                        for (k, v) in locked.clone().iter() {
-                            let lifespan_limit = v.at_block + FILTER_RETAIN_THRESHOLD;
-                            if lifespan_limit <= imported_number {
-                                locked.remove(&k);
-                            }
-                        }
-                    }
-                    futures::future::ready(())
-                }),
+            EthTask::filter_pool_task(
+                    Arc::clone(&client),
+                    filter_pool,
+                    FILTER_RETAIN_THRESHOLD,
+            )
         );
     }
 
     // Spawn Frontier pending transactions maintenance task (as essential, otherwise we leak).
-    if pending_transactions.is_some() {
-        use fp_consensus::{ConsensusLog, FRONTIER_ENGINE_ID};
-        use futures::StreamExt;
-        use sp_runtime::generic::OpaqueDigestItemId;
-
+    if let Some(pending_transactions) = pending_transactions {
         const TRANSACTION_RETAIN_THRESHOLD: u64 = 5;
         task_manager.spawn_essential_handle().spawn(
             "frontier-pending-transactions",
-            client
-                .import_notification_stream()
-                .for_each(move |notification| {
-                    if let Ok(locked) = &mut pending_transactions.clone().unwrap().lock() {
-                        // As pending transactions have a finite lifespan anyway
-                        // we can ignore MultiplePostRuntimeLogs error checks.
-                        let mut frontier_log: Option<_> = None;
-                        for log in notification.header.digest.logs.iter().rev() {
-                            let log = log.try_to::<ConsensusLog>(OpaqueDigestItemId::Consensus(
-                                &FRONTIER_ENGINE_ID,
-                            ));
-                            if let Some(log) = log {
-                                frontier_log = Some(log);
-                            }
-                        }
-
-                        let imported_number: u64 = notification.header.number as u64;
-
-                        if let Some(ConsensusLog::EndBlock {
-                            block_hash: _,
-                            transaction_hashes,
-                        }) = frontier_log
-                        {
-                            // Retain all pending transactions that were not
-                            // processed in the current block.
-                            locked.retain(|&k, _| !transaction_hashes.contains(&k));
-                        }
-                        locked.retain(|_, v| {
-                            // Drop all the transactions that exceeded the given lifespan.
-                            let lifespan_limit = v.at_block + TRANSACTION_RETAIN_THRESHOLD;
-                            lifespan_limit > imported_number
-                        });
-                    }
-                    futures::future::ready(())
-                }),
+            EthTask::pending_transaction_task(
+                Arc::clone(&client),
+                    pending_transactions,
+                    TRANSACTION_RETAIN_THRESHOLD,
+                )
         );
     }
 
