@@ -7,17 +7,14 @@
 use codec::{Decode, Encode};
 use frame_support::{
     construct_runtime, parameter_types,
-    traits::Randomness,
+    traits::{Get, Randomness},
     weights::{
         constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_PER_SECOND},
         DispatchClass, IdentityFee, Weight,
     },
 };
 use frame_system::limits::{BlockLength, BlockWeights};
-use orml_xcm_support::{
-    CurrencyIdConverter, IsConcreteWithGeneralKey, MultiCurrencyAdapter, NativePalletAssetOr,
-    XcmHandler as XcmHandlerT,
-};
+use orml_xcm_support::{IsNativeConcrete, MultiCurrencyAdapter, MultiNativeAsset, XcmHandler as XcmHandlerT};
 use pallet_contracts::weights::WeightInfo;
 use pallet_evm::{
     Account as EVMAccount, EnsureAddressRoot, EnsureAddressTruncated, FeeCalculator,
@@ -27,8 +24,8 @@ use pallet_transaction_payment::{
     FeeDetails, Multiplier, RuntimeDispatchInfo, TargetedFeeAdjustment,
 };
 use plasm_primitives::{
-    AccountId, Amount, Balance, BlockNumber, CurrencyId, Hash, Index, Moment, Signature,
-    TokenSymbol,
+    AccountId, Amount, Balance, BlockNumber, Hash, Index, Moment, Signature,
+    currency::{CurrencyId, TokenSymbol},
 };
 use sp_api::impl_runtime_apis;
 use sp_core::{OpaqueMetadata, H160, H256, U256};
@@ -48,7 +45,7 @@ use sp_version::RuntimeVersion;
 
 use cumulus_primitives_core::relay_chain::Balance as RelayChainBalance;
 use polkadot_parachain::primitives::Sibling;
-use xcm::v0::{Junction, MultiLocation, NetworkId, Xcm};
+use xcm::v0::{Junction::{GeneralKey, Parachain, Parent}, MultiLocation::{self, X1, X2, X3}, MultiAsset, NetworkId, Xcm};
 use xcm_builder::{
     AccountId32Aliases, LocationInverter, ParentIsDefault, RelayChainAsNative,
     SiblingParachainAsNative, SiblingParachainConvertsVia, SignedAccountId32AsNative,
@@ -163,7 +160,7 @@ impl frame_system::Config for Runtime {
     type OnKilledAccount = ();
     type SystemWeightInfo = ();
     type SS58Prefix = SS58Prefix;
-    type OnSetCode = ParachainSystem;
+    type OnSetCode = cumulus_pallet_parachain_system::ParachainSetCode<Self>;
 }
 
 parameter_types! {
@@ -177,7 +174,7 @@ impl pallet_balances::Config for Runtime {
     type Event = Event;
     type MaxLocks = MaxLocks;
     type ExistentialDeposit = ExistentialDeposit;
-    type AccountStore = frame_system::Module<Runtime>;
+    type AccountStore = frame_system::Pallet<Runtime>;
     type WeightInfo = ();
 }
 
@@ -244,11 +241,11 @@ impl_opaque_keys! {
 }
 
 parameter_types! {
-    pub const TombstoneDeposit: Balance = deposit(
+    pub TombstoneDeposit: Balance = deposit(
         1,
-        sp_std::mem::size_of::<pallet_contracts::ContractInfo<Runtime>>() as u32
+        <pallet_contracts::Pallet<Runtime>>::contract_info_size(),
     );
-    pub const DepositPerContract: Balance = TombstoneDeposit::get();
+    pub DepositPerContract: Balance = TombstoneDeposit::get();
     pub const DepositPerStorageByte: Balance = deposit(0, 1);
     pub const DepositPerStorageItem: Balance = deposit(1, 0);
     pub RentFraction: Perbill = Perbill::from_rational_approximation(1u32, 30 * DAYS);
@@ -283,7 +280,7 @@ impl pallet_contracts::Config for Runtime {
     type SurchargeReward = SurchargeReward;
     type MaxDepth = MaxDepth;
     type MaxValueSize = MaxValueSize;
-    type WeightPrice = pallet_transaction_payment::Module<Self>;
+    type WeightPrice = pallet_transaction_payment::Pallet<Self>;
     type WeightInfo = pallet_contracts::weights::SubstrateWeight<Self>;
     type ChainExtension = ();
     type DeletionQueueDepth = DeletionQueueDepth;
@@ -317,7 +314,9 @@ parameter_types! {
 
 impl pallet_evm::Config for Runtime {
     type FeeCalculator = ();
+    type BlockGasLimit = BlockGasLimit; 
     type GasWeightMapping = GasWeightMapping;
+    type OnChargeTransaction = ();
     type CallOrigin = EnsureAddressRoot<Self::AccountId>;
     type WithdrawOrigin = EnsureAddressTruncated;
     type AddressMapping = HashedAddressMapping<BlakeTwo256>;
@@ -329,6 +328,7 @@ impl pallet_evm::Config for Runtime {
         pallet_evm_precompile_simple::Sha256,
         pallet_evm_precompile_simple::Ripemd160,
         pallet_evm_precompile_simple::Identity,
+        pallet_evm_precompile_simple::ECRecoverPublicKey,
         pallet_evm_precompile_dispatch::Dispatch<Runtime>,
     );
     type ChainId = ChainId;
@@ -365,7 +365,6 @@ impl pallet_ethereum::Config for Runtime {
     type Event = Event;
     type FindAuthor = AuthorInherent;
     type StateRoot = pallet_ethereum::IntermediateStateRoot;
-    type BlockGasLimit = BlockGasLimit;
 }
 
 impl author_inherent::Config for Runtime {}
@@ -400,11 +399,11 @@ impl pallet_nicks::Config for Runtime {
 impl parachain_info::Config for Runtime {}
 
 parameter_types! {
-    pub const RococoLocation: MultiLocation = MultiLocation::X1(Junction::Parent);
+    pub const RococoLocation: MultiLocation = MultiLocation::X1(Parent);
     pub PlasmNetwork: NetworkId = NetworkId::Named("plasm".into());
     pub PolkadotNetwork: NetworkId = NetworkId::Polkadot;
     pub RelayChainOrigin: Origin = cumulus_pallet_xcm_handler::Origin::Relay.into();
-    pub Ancestry: MultiLocation = Junction::Parachain {
+    pub Ancestry: MultiLocation = Parachain {
         id: ParachainInfo::parachain_id().into()
     }.into();
     pub const RelayChainCurrencyId: CurrencyId = CurrencyId::Token(TokenSymbol::DOT);
@@ -426,24 +425,12 @@ type LocalOriginConverter = (
 pub type LocalAssetTransactor = MultiCurrencyAdapter<
     Currencies,
     UnknownTokens,
-    IsConcreteWithGeneralKey<CurrencyId, RelayToNative>,
-    LocationConverter,
+    IsNativeConcrete<CurrencyId, CurrencyIdConvert>,
     AccountId,
-    CurrencyIdConverter<CurrencyId, RelayChainCurrencyId>,
+    LocationConverter,
     CurrencyId,
+    CurrencyIdConvert,
 >;
-
-parameter_types! {
-    pub NativeOrmlTokens: BTreeSet<(Vec<u8>, MultiLocation)> = {
-        let mut t = BTreeSet::new();
-        // Acala tokens
-        t.insert(("ACA".into(), (Junction::Parent, Junction::Parachain { id: 666 }).into()));
-        t.insert(("AUSD".into(), (Junction::Parent, Junction::Parachain { id: 666 }).into()));
-        t.insert(("XBTC".into(), (Junction::Parent, Junction::Parachain { id: 666 }).into()));
-        t.insert(("LDOT".into(), (Junction::Parent, Junction::Parachain { id: 666 }).into()));
-        t
-    };
-}
 
 pub struct XcmConfig;
 impl Config for XcmConfig {
@@ -452,7 +439,7 @@ impl Config for XcmConfig {
     // How to withdraw and deposit an asset.
     type AssetTransactor = LocalAssetTransactor;
     type OriginConverter = LocalOriginConverter;
-    type IsReserve = NativePalletAssetOr<NativeOrmlTokens>;
+    type IsReserve = MultiNativeAsset;
     type IsTeleporter = ();
     type LocationInverter = LocationInverter<Ancestry>;
 }
@@ -466,28 +453,57 @@ impl cumulus_pallet_xcm_handler::Config for Runtime {
     type AccountIdConverter = LocationConverter;
 }
 
-pub struct RelayToNative;
-impl Convert<RelayChainBalance, Balance> for RelayToNative {
-    fn convert(val: u128) -> Balance {
-        // native is 15
-        // relay is 12
-        val * 1_000
-    }
-}
-
-pub struct NativeToRelay;
-impl Convert<Balance, RelayChainBalance> for NativeToRelay {
-    fn convert(val: u128) -> Balance {
-        // native is 15
-        // relay is 12
-        val / 1_000
-    }
+parameter_types! {
+    pub SelfLocation: MultiLocation = MultiLocation::X2(Parent, Parachain { id: ParachainInfo::get().into() });
 }
 
 pub struct AccountId32Convert;
 impl Convert<AccountId, [u8; 32]> for AccountId32Convert {
     fn convert(account_id: AccountId) -> [u8; 32] {
         account_id.into()
+    }
+}
+
+pub struct CurrencyIdConvert;
+impl Convert<CurrencyId, Option<MultiLocation>> for CurrencyIdConvert {
+    fn convert(id: CurrencyId) -> Option<MultiLocation> {
+        use CurrencyId::Token;
+        use TokenSymbol::*;
+        match id {
+            Token(DOT) => Some(X1(Parent)),
+            Token(PLM) | Token(ACA) | Token(AUSD) | Token(LDOT) | Token(RENBTC) => Some(native_currency_location(id)),
+            _ => None,
+        }
+    }
+}
+impl Convert<MultiLocation, Option<CurrencyId>> for CurrencyIdConvert {
+    fn convert(location: MultiLocation) -> Option<CurrencyId> {
+        use CurrencyId::Token;
+        use TokenSymbol::*;
+        let _para_id: u32 = ParachainInfo::get().into();
+        match location {
+            X1(Parent) => Some(Token(DOT)),
+            X3(Parent, Parachain { id: _para_id }, GeneralKey(key)) => {
+                if let Ok(currency_id) = CurrencyId::decode(&mut &key[..]) {
+                    match currency_id {
+                        Token(PLM) | Token(ACA) | Token(AUSD) | Token(LDOT) | Token(RENBTC) => Some(currency_id),
+                        _ => None,
+                    }
+                } else {
+                    None
+                }
+            },
+            _ => None,
+        }
+    }
+}
+impl Convert<MultiAsset, Option<CurrencyId>> for CurrencyIdConvert {
+    fn convert(asset: MultiAsset) -> Option<CurrencyId> {
+        if let MultiAsset::ConcreteFungible { id, amount: _ } = asset {
+            Self::convert(id)
+        } else {
+            None
+        }
     }
 }
 
@@ -498,13 +514,17 @@ impl XcmHandlerT<AccountId> for HandleXcm {
     }
 }
 
+fn native_currency_location(id: CurrencyId) -> MultiLocation {
+    X3(Parent, Parachain { id: ParachainInfo::get().into() }, GeneralKey(id.encode()))
+}
+
 impl orml_xtokens::Config for Runtime {
     type Event = Event;
     type Balance = Balance;
-    type ToRelayChainBalance = NativeToRelay;
+    type CurrencyId = CurrencyId;
+    type CurrencyIdConvert = CurrencyIdConvert; 
     type AccountId32Convert = AccountId32Convert;
-    type RelayChainNetworkId = PolkadotNetwork;
-    type ParaId = ParachainInfo;
+    type SelfLocation = SelfLocation;
     type XcmHandler = HandleXcm;
 }
 
@@ -515,7 +535,7 @@ impl orml_unknown_tokens::Config for Runtime {
 impl cumulus_pallet_parachain_system::Config for Runtime {
     type Event = Event;
     type OnValidationData = ();
-    type SelfParaId = parachain_info::Module<Runtime>;
+    type SelfParaId = parachain_info::Pallet<Runtime>;
     type DownwardMessageHandlers = XcmHandler;
     type XcmpMessageHandlers = XcmHandler;
 }
@@ -580,7 +600,7 @@ pub type Executive = frame_executive::Executive<
     Block,
     frame_system::ChainContext<Runtime>,
     Runtime,
-    AllModules,
+    AllPallets,
 >;
 
 impl_runtime_apis! {
