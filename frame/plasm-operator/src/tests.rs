@@ -1,5 +1,6 @@
 use crate::{self as operator, *};
 use frame_support::{assert_err, assert_ok, parameter_types, traits::Currency, weights::Weight};
+use frame_system::{EventRecord, Phase};
 use pallet_contracts::weights::WeightInfo;
 use sp_core::{H160, U256};
 use sp_runtime::{
@@ -222,17 +223,22 @@ fn test_claim_contract() {
             Error::<Runtime>::NotContract,
         );
 
+        let evm_address = H160::from_str("1000000000000000000000000000000000000001").unwrap();
         let ok_contract =
-            SmartContract::Evm(H160::from_str("1000000000000000000000000000000000000001").unwrap());
+            SmartContract::Evm(evm_address);
         assert_ok!(Module::<Runtime>::claim_contract(
             Origin::signed(ALICE),
             ok_contract.clone()
         ));
+        // assert_eq!(
+        //     last_event(),
+        //     Event::operator(crate::Event::ContractClaimed(ALICE, pallet::SmartContract::Evm(evm_address))),
+        // );
         assert_err!(
             Module::<Runtime>::claim_contract(Origin::signed(BOB), ok_contract),
             Error::<Runtime>::ContractHasOperator,
         );
-
+        
         let _ = Balances::deposit_creating(&ALICE, 1_000_000_000_000_000_000);
         let subsistence = pallet_contracts::Module::<Runtime>::subsistence_threshold();
         let (wasm, code_hash) = compile_module::<Runtime>("return_from_start_fn").unwrap();
@@ -245,7 +251,7 @@ fn test_claim_contract() {
             vec![],
         ));
         let addr = Contracts::contract_address(&ALICE, &code_hash, &[]);
-        let ok_contract = SmartContract::Wasm(addr);
+        let ok_contract = SmartContract::Wasm(addr.clone());
         assert_err!(
             Module::<Runtime>::claim_contract(Origin::signed(ALICE), ok_contract.clone()),
             Error::<Runtime>::OperatorHasContract,
@@ -254,9 +260,29 @@ fn test_claim_contract() {
             Origin::signed(BOB),
             ok_contract.clone()
         ));
+
+        assert_eq!(
+            System::events(),
+            vec![
+                EventRecord {
+                    phase: Phase::ApplyExtrinsic(0),
+                    event: Event::operator(crate::Event::ContractClaimed(
+                        ALICE,
+                        pallet::SmartContract::Wasm(addr)
+                    )),
+                    topics: vec![],
+                },
+            ],
+            
+        );
+
         assert_err!(
             Module::<Runtime>::claim_contract(Origin::signed(CHARLIE), ok_contract),
             Error::<Runtime>::ContractHasOperator,
         );
     })
+}
+
+fn last_event() -> Event {
+    frame_system::Module::<Runtime>::events().pop().expect("Event expected").event
 }
