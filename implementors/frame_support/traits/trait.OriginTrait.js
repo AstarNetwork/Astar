@@ -1,3 +1,3 @@
 (function() {var implementors = {};
-implementors["plasm_runtime"] = [{"text":"impl OriginTrait for Origin","synthetic":false,"types":[]}];
+implementors["plasm_runtime"] = [{"text":"impl OriginTrait for <a class=\"struct\" href=\"plasm_runtime/struct.Origin.html\" title=\"struct plasm_runtime::Origin\">Origin</a>","synthetic":false,"types":["plasm_runtime::Origin"]}];
 if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

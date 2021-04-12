@@ -1,3 +1,3 @@
 (function() {var implementors = {};
-implementors["plasm_runtime"] = [{"text":"impl LazyStatic for HOLDERS","synthetic":false,"types":[]}];
+implementors["plasm_runtime"] = [{"text":"impl <a class=\"trait\" href=\"https://docs.rs/lazy_static/1.4.0/lazy_static/trait.LazyStatic.html\" title=\"trait lazy_static::LazyStatic\">LazyStatic</a> for <a class=\"struct\" href=\"plasm_runtime/constants/currency/struct.HOLDERS.html\" title=\"struct plasm_runtime::constants::currency::HOLDERS\">HOLDERS</a>","synthetic":false,"types":["plasm_runtime::constants::currency::HOLDERS"]}];
 if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

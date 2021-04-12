@@ -1,3 +1,3 @@
 (function() {var implementors = {};
-implementors["plasm_runtime"] = [{"text":"impl Deref for HOLDERS","synthetic":false,"types":[]}];
+implementors["plasm_runtime"] = [{"text":"impl <a class=\"trait\" href=\"https://doc.rust-lang.org/nightly/core/ops/deref/trait.Deref.html\" title=\"trait core::ops::deref::Deref\">Deref</a> for <a class=\"struct\" href=\"plasm_runtime/constants/currency/struct.HOLDERS.html\" title=\"struct plasm_runtime::constants::currency::HOLDERS\">HOLDERS</a>","synthetic":false,"types":["plasm_runtime::constants::currency::HOLDERS"]}];
 if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

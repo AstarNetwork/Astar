@@ -1,4 +1,3 @@
 (function() {var implementors = {};
-implementors["pallet_custom_signatures"] = [{"text":"impl&lt;T:&nbsp;Config&gt; ValidateUnsigned for Module&lt;T&gt;","synthetic":false,"types":[]}];
-implementors["plasm_runtime"] = [{"text":"impl ValidateUnsigned for Runtime","synthetic":false,"types":[]}];
+implementors["plasm_runtime"] = [{"text":"impl ValidateUnsigned for <a class=\"struct\" href=\"plasm_runtime/struct.Runtime.html\" title=\"struct plasm_runtime::Runtime\">Runtime</a>","synthetic":false,"types":["plasm_runtime::Runtime"]}];
 if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

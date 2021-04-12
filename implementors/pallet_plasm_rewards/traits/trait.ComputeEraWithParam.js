@@ -1,4 +1,4 @@
 (function() {var implementors = {};
 implementors["pallet_plasm_rewards"] = [];
-implementors["pallet_plasm_validator"] = [{"text":"impl&lt;T:&nbsp;Config&gt; ComputeEraWithParam&lt;u32&gt; for Module&lt;T&gt;","synthetic":false,"types":[]}];
+implementors["pallet_plasm_validator"] = [{"text":"impl&lt;T:&nbsp;<a class=\"trait\" href=\"pallet_plasm_validator/trait.Trait.html\" title=\"trait pallet_plasm_validator::Trait\">Trait</a>&gt; <a class=\"trait\" href=\"pallet_plasm_rewards/traits/trait.ComputeEraWithParam.html\" title=\"trait pallet_plasm_rewards::traits::ComputeEraWithParam\">ComputeEraWithParam</a>&lt;<a class=\"primitive\" href=\"https://doc.rust-lang.org/nightly/std/primitive.u32.html\">u32</a>&gt; for <a class=\"struct\" href=\"pallet_plasm_validator/struct.Module.html\" title=\"struct pallet_plasm_validator::Module\">Module</a>&lt;T&gt;","synthetic":false,"types":["pallet_plasm_validator::Module"]}];
 if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

@@ -1,3 +1,3 @@
 (function() {var implementors = {};
-implementors["plasm_primitives"] = [{"text":"impl AppCrypto&lt;&lt;MultiSignature as Verify&gt;::Signer, MultiSignature&gt; for ReporterAppCrypto","synthetic":false,"types":[]}];
+implementors["plasm_primitives"] = [{"text":"impl AppCrypto&lt;&lt;MultiSignature as Verify&gt;::Signer, MultiSignature&gt; for <a class=\"struct\" href=\"plasm_primitives/report/struct.ReporterAppCrypto.html\" title=\"struct plasm_primitives::report::ReporterAppCrypto\">ReporterAppCrypto</a>","synthetic":false,"types":["plasm_primitives::report::ReporterAppCrypto"]}];
 if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

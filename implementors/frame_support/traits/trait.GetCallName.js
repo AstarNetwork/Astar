@@ -1,5 +1,4 @@
 (function() {var implementors = {};
-implementors["pallet_custom_signatures"] = [{"text":"impl&lt;T:&nbsp;Config&gt; GetCallName for Call&lt;T&gt;","synthetic":false,"types":[]}];
-implementors["pallet_plasm_rewards"] = [{"text":"impl&lt;T:&nbsp;Config&gt; GetCallName for Call&lt;T&gt;","synthetic":false,"types":[]}];
-implementors["pallet_plasm_validator"] = [{"text":"impl&lt;T:&nbsp;Config&gt; GetCallName for Call&lt;T&gt;","synthetic":false,"types":[]}];
+implementors["pallet_plasm_rewards"] = [{"text":"impl&lt;T:&nbsp;<a class=\"trait\" href=\"pallet_plasm_rewards/trait.Trait.html\" title=\"trait pallet_plasm_rewards::Trait\">Trait</a>&gt; GetCallName for <a class=\"enum\" href=\"pallet_plasm_rewards/enum.Call.html\" title=\"enum pallet_plasm_rewards::Call\">Call</a>&lt;T&gt;","synthetic":false,"types":["pallet_plasm_rewards::Call"]}];
+implementors["pallet_plasm_validator"] = [{"text":"impl&lt;T:&nbsp;<a class=\"trait\" href=\"pallet_plasm_validator/trait.Trait.html\" title=\"trait pallet_plasm_validator::Trait\">Trait</a>&gt; GetCallName for <a class=\"enum\" href=\"pallet_plasm_validator/enum.Call.html\" title=\"enum pallet_plasm_validator::Call\">Call</a>&lt;T&gt;","synthetic":false,"types":["pallet_plasm_validator::Call"]}];
 if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()
