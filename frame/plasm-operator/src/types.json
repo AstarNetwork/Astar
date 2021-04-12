@@ -1,0 +1,8 @@
+{
+    "SmartContract": {
+        "_enum": {
+            "Wasm": "AccountId",
+            "Evm": "H160"
+        }
+    }
+}
