@@ -60,7 +60,7 @@ author-inherent = { path = "../../../vendor/author-inherent", default-features =
 # cumulus dependencies
 cumulus-primitives-core = { git = "https://github.com/paritytech/cumulus", branch = "rococo-v1", default-features = false }
 cumulus-pallet-parachain-system = { git = "https://github.com/paritytech/cumulus", branch = "rococo-v1", default-features = false }
-cumulus-pallet-xcm-handler = { git = "https://github.com/paritytech/cumulus", branch = "rococo-v1", default-features = false }
+cumulus-pallet-xcm = { git = "https://github.com/paritytech/cumulus", branch = "rococo-v1", default-features = false }
 parachain-info = { git = "https://github.com/paritytech/cumulus", branch = "rococo-v1", default-features = false }
 
 # polkadot dependencies
@@ -124,7 +124,7 @@ std = [
     "polkadot-parachain/std",
     "cumulus-primitives-core/std",
     "cumulus-pallet-parachain-system/std",
-    "cumulus-pallet-xcm-handler/std",
+    "cumulus-pallet-xcm/std",
     "fp-rpc/std",
     "author-inherent/std",
 ]
