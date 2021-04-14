@@ -58,6 +58,8 @@ pub use sp_runtime::BuildStorage;
 pub mod constants;
 use constants::{currency::*, time::*};
 
+mod precompiles;
+
 // Make the WASM binary available.
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
@@ -628,12 +630,7 @@ impl pallet_evm::Config for Runtime {
     type Currency = Balances;
     type Event = Event;
     type Runner = pallet_evm::runner::stack::Runner<Self>;
-    type Precompiles = (
-        pallet_evm_precompile_simple::ECRecover,
-        pallet_evm_precompile_simple::Sha256,
-        pallet_evm_precompile_simple::Ripemd160,
-        pallet_evm_precompile_simple::Identity,
-    );
+    type Precompiles = precompiles::PlasmPrecompiles<Self>;
     type ChainId = ChainId;
 }
 
