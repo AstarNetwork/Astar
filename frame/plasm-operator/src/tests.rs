@@ -1,6 +1,5 @@
 use crate::{self as operator, *};
 use frame_support::{assert_err, assert_ok, parameter_types, traits::Currency, weights::Weight};
-use frame_system::{EventRecord, Phase};
 use pallet_contracts::weights::WeightInfo;
 use sp_core::{H160, U256};
 use sp_runtime::{
@@ -181,7 +180,9 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
         .assimilate_storage::<Runtime>(&mut storage)
         .unwrap();
 
-    storage.into()
+    let mut ext = sp_io::TestExternalities::new(storage);
+    ext.execute_with(|| System::set_block_number(1));
+    ext
 }
 
 #[test]
@@ -224,21 +225,36 @@ fn test_claim_contract() {
         );
 
         let evm_address = H160::from_str("1000000000000000000000000000000000000001").unwrap();
-        let ok_contract =
-            SmartContract::Evm(evm_address);
+        let ok_contract = SmartContract::Evm(evm_address);
+
+        //claim evm contract
         assert_ok!(Module::<Runtime>::claim_contract(
             Origin::signed(ALICE),
             ok_contract.clone()
         ));
-        // assert_eq!(
-        //     last_event(),
-        //     Event::operator(crate::Event::ContractClaimed(ALICE, pallet::SmartContract::Evm(evm_address))),
-        // );
+
+        // verify event for new evm contract
+        assert_eq!(
+            last_event(),
+            Event::operator(crate::Event::ContractClaimed(
+                ALICE,
+                pallet::SmartContract::Evm(evm_address)
+            )),
+        );
+
+        // double claim contract - should return error ContractHasOperator
+        assert_err!(
+            Module::<Runtime>::claim_contract(Origin::signed(ALICE), ok_contract.clone()),
+            Error::<Runtime>::ContractHasOperator,
+        );
+
+        // claim already claimed contract - should send error
         assert_err!(
             Module::<Runtime>::claim_contract(Origin::signed(BOB), ok_contract),
             Error::<Runtime>::ContractHasOperator,
         );
-        
+
+        // create wasm contract
         let _ = Balances::deposit_creating(&ALICE, 1_000_000_000_000_000_000);
         let subsistence = pallet_contracts::Module::<Runtime>::subsistence_threshold();
         let (wasm, code_hash) = compile_module::<Runtime>("return_from_start_fn").unwrap();
@@ -250,32 +266,37 @@ fn test_claim_contract() {
             vec![],
             vec![],
         ));
-        let addr = Contracts::contract_address(&ALICE, &code_hash, &[]);
-        let ok_contract = SmartContract::Wasm(addr.clone());
+        let wasm_addr = Contracts::contract_address(&ALICE, &code_hash, &[]);
+        let ok_contract = SmartContract::Wasm(wasm_addr.clone());
+
+        // assign new contract for operator - should return error OperatorHasContract
         assert_err!(
             Module::<Runtime>::claim_contract(Origin::signed(ALICE), ok_contract.clone()),
             Error::<Runtime>::OperatorHasContract,
         );
+
+        // claim wasm contract
         assert_ok!(Module::<Runtime>::claim_contract(
             Origin::signed(BOB),
             ok_contract.clone()
         ));
 
+        // verify event for new wasm contract
         assert_eq!(
-            System::events(),
-            vec![
-                EventRecord {
-                    phase: Phase::ApplyExtrinsic(0),
-                    event: Event::operator(crate::Event::ContractClaimed(
-                        ALICE,
-                        pallet::SmartContract::Wasm(addr)
-                    )),
-                    topics: vec![],
-                },
-            ],
-            
+            last_event(),
+            Event::operator(crate::Event::ContractClaimed(
+                BOB,
+                pallet::SmartContract::Wasm(wasm_addr)
+            )),
         );
 
+        // double claim contract - should return error ContractHasOperator
+        assert_err!(
+            Module::<Runtime>::claim_contract(Origin::signed(BOB), ok_contract.clone()),
+            Error::<Runtime>::ContractHasOperator,
+        );
+
+        // claim already claimed contract - should fail
         assert_err!(
             Module::<Runtime>::claim_contract(Origin::signed(CHARLIE), ok_contract),
             Error::<Runtime>::ContractHasOperator,
@@ -284,5 +305,8 @@ fn test_claim_contract() {
 }
 
 fn last_event() -> Event {
-    frame_system::Module::<Runtime>::events().pop().expect("Event expected").event
+    frame_system::Module::<Runtime>::events()
+        .pop()
+        .expect("Event expected")
+        .event
 }
