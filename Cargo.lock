@@ -1422,6 +1422,40 @@ dependencies = [
 ]
 
 [[package]]
+name = "cumulus-pallet-xcmp-queue"
+version = "0.1.0"
+source = "git+https://github.com/paritytech/cumulus?branch=rococo-v1#6ed96321a6b004eb860454087b3a7e278f326eb1"
+dependencies = [
+ "cumulus-primitives-core",
+ "frame-support",
+ "frame-system",
+ "log",
+ "parity-scale-codec",
+ "rand 0.8.3",
+ "rand_chacha 0.3.0",
+ "sp-runtime",
+ "sp-std",
+ "xcm",
+ "xcm-executor",
+]
+
+[[package]]
+name = "cumulus-ping"
+version = "0.1.0"
+source = "git+https://github.com/paritytech/cumulus?branch=rococo-v1#6ed96321a6b004eb860454087b3a7e278f326eb1"
+dependencies = [
+ "cumulus-pallet-xcm",
+ "cumulus-primitives-core",
+ "frame-support",
+ "frame-system",
+ "parity-scale-codec",
+ "serde",
+ "sp-runtime",
+ "sp-std",
+ "xcm",
+]
+
+[[package]]
 name = "cumulus-primitives-core"
 version = "0.1.0"
 source = "git+https://github.com/paritytech/cumulus?branch=rococo-v1#6ed96321a6b004eb860454087b3a7e278f326eb1"
@@ -1454,6 +1488,24 @@ dependencies = [
  "sp-std",
  "sp-trie",
  "tracing",
+]
+
+[[package]]
+name = "cumulus-primitives-utility"
+version = "0.1.0"
+source = "git+https://github.com/paritytech/cumulus?branch=rococo-v1#6ed96321a6b004eb860454087b3a7e278f326eb1"
+dependencies = [
+ "cumulus-primitives-core",
+ "frame-support",
+ "impl-trait-for-tuples 0.2.1",
+ "parity-scale-codec",
+ "polkadot-core-primitives",
+ "polkadot-parachain",
+ "polkadot-primitives",
+ "sp-runtime",
+ "sp-std",
+ "sp-trie",
+ "xcm",
 ]
 
 [[package]]
@@ -4701,109 +4753,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "orml-currencies"
-version = "0.4.1-dev"
-dependencies = [
- "frame-support",
- "frame-system",
- "funty",
- "orml-traits",
- "orml-utilities",
- "parity-scale-codec",
- "serde",
- "sp-io",
- "sp-runtime",
- "sp-std",
-]
-
-[[package]]
-name = "orml-tokens"
-version = "0.4.1-dev"
-dependencies = [
- "frame-support",
- "frame-system",
- "funty",
- "orml-traits",
- "parity-scale-codec",
- "serde",
- "sp-runtime",
- "sp-std",
-]
-
-[[package]]
-name = "orml-traits"
-version = "0.4.1-dev"
-dependencies = [
- "frame-support",
- "funty",
- "impl-trait-for-tuples 0.2.1",
- "num-traits",
- "orml-utilities",
- "parity-scale-codec",
- "serde",
- "sp-io",
- "sp-runtime",
- "sp-std",
- "xcm",
-]
-
-[[package]]
-name = "orml-unknown-tokens"
-version = "0.4.1-dev"
-dependencies = [
- "frame-support",
- "frame-system",
- "orml-xcm-support",
- "parity-scale-codec",
- "serde",
- "sp-std",
- "xcm",
-]
-
-[[package]]
-name = "orml-utilities"
-version = "0.4.1-dev"
-dependencies = [
- "frame-support",
- "funty",
- "parity-scale-codec",
- "serde",
- "sp-io",
- "sp-runtime",
- "sp-std",
-]
-
-[[package]]
-name = "orml-xcm-support"
-version = "0.4.1-dev"
-dependencies = [
- "frame-support",
- "orml-traits",
- "parity-scale-codec",
- "sp-runtime",
- "sp-std",
- "xcm",
- "xcm-executor",
-]
-
-[[package]]
-name = "orml-xtokens"
-version = "0.4.1-dev"
-dependencies = [
- "cumulus-primitives-core",
- "frame-support",
- "frame-system",
- "orml-traits",
- "orml-xcm-support",
- "parity-scale-codec",
- "serde",
- "sp-io",
- "sp-runtime",
- "sp-std",
- "xcm",
-]
-
-[[package]]
 name = "owning_ref"
 version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -6104,18 +6053,15 @@ dependencies = [
  "author-inherent",
  "cumulus-pallet-parachain-system",
  "cumulus-pallet-xcm",
+ "cumulus-pallet-xcmp-queue",
+ "cumulus-ping",
  "cumulus-primitives-core",
+ "cumulus-primitives-utility",
  "fp-rpc",
  "frame-executive",
  "frame-support",
  "frame-system",
  "frame-system-rpc-runtime-api",
- "orml-currencies",
- "orml-tokens",
- "orml-traits",
- "orml-unknown-tokens",
- "orml-xcm-support",
- "orml-xtokens",
  "pallet-authorship",
  "pallet-balances",
  "pallet-contracts",
@@ -6134,6 +6080,7 @@ dependencies = [
  "pallet-transaction-payment",
  "pallet-transaction-payment-rpc-runtime-api",
  "pallet-utility",
+ "pallet-xcm",
  "parachain-info",
  "parity-scale-codec",
  "plasm-primitives",
@@ -10795,7 +10742,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "04f8ab788026715fa63b31960869617cba39117e520eb415b0139543e325ab59"
 dependencies = [
  "cfg-if 0.1.10",
- "rand 0.7.3",
+ "rand 0.3.23",
  "static_assertions",
 ]
 

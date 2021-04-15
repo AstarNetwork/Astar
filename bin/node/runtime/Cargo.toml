@@ -49,22 +49,20 @@ pallet-timestamp = { git = "https://github.com/paritytech/substrate", branch = "
 pallet-transaction-payment = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1", default-features = false }
 pallet-transaction-payment-rpc-runtime-api = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1", default-features = false }
 pallet-utility = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1", default-features = false }
-orml-currencies = { path = "../../../vendor/orml/currencies", default-features = false }
-orml-traits = { path = "../../../vendor/orml/traits", default-features = false }
-orml-tokens = { path = "../../../vendor/orml/tokens", default-features = false }
-orml-xtokens = { path = "../../../vendor/orml/xtokens", default-features = false }
-orml-unknown-tokens = { path = "../../../vendor/orml/unknown-tokens", default-features = false }
-orml-xcm-support = { path = "../../../vendor/orml/xcm-support", default-features = false }
 author-inherent = { path = "../../../vendor/author-inherent", default-features = false }
 
 # cumulus dependencies
 cumulus-primitives-core = { git = "https://github.com/paritytech/cumulus", branch = "rococo-v1", default-features = false }
+cumulus-primitives-utility = { git = "https://github.com/paritytech/cumulus", branch = "rococo-v1", default-features = false }
 cumulus-pallet-parachain-system = { git = "https://github.com/paritytech/cumulus", branch = "rococo-v1", default-features = false }
+cumulus-pallet-xcmp-queue = { git = "https://github.com/paritytech/cumulus", branch = "rococo-v1", default-features = false }
 cumulus-pallet-xcm = { git = "https://github.com/paritytech/cumulus", branch = "rococo-v1", default-features = false }
+cumulus-ping = { git = "https://github.com/paritytech/cumulus", branch = "rococo-v1", default-features = false }
 parachain-info = { git = "https://github.com/paritytech/cumulus", branch = "rococo-v1", default-features = false }
 
 # polkadot dependencies
 polkadot-parachain = { git = "https://github.com/paritytech/polkadot", default-features = false , branch = "rococo-v1" }
+pallet-xcm = { git = "https://github.com/paritytech/polkadot", default-features = false , branch = "rococo-v1" }
 xcm-executor = { git = "https://github.com/paritytech/polkadot", default-features = false , branch = "rococo-v1" }
 xcm-builder = { git = "https://github.com/paritytech/polkadot", default-features = false , branch = "rococo-v1" }
 xcm = { git = "https://github.com/paritytech/polkadot", default-features = false , branch = "rococo-v1" }
@@ -111,20 +109,18 @@ std = [
     "pallet-transaction-payment/std",
     "pallet-transaction-payment-rpc-runtime-api/std",
     "pallet-utility/std",
-    "orml-currencies/std",
-    "orml-traits/std",
-    "orml-tokens/std",
-    "orml-xtokens/std",
-    "orml-unknown-tokens/std",
-    "orml-xcm-support/std",
+    "pallet-xcm/std",
     "xcm/std",
     "xcm-builder/std",
     "xcm-executor/std",
     "parachain-info/std",
     "polkadot-parachain/std",
     "cumulus-primitives-core/std",
+    "cumulus-primitives-utility/std",
     "cumulus-pallet-parachain-system/std",
+    "cumulus-pallet-xcmp-queue/std",
     "cumulus-pallet-xcm/std",
+    "cumulus-ping/std",
     "fp-rpc/std",
     "author-inherent/std",
 ]
