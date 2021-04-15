@@ -36,7 +36,16 @@ In short:
 
 ### Coding Styles
 
-Contributors should adhere to the [house coding style](https://substrate.dev/recipes/).
+Contributors should adhere to the [house coding style](https://substrate.dev/recipes/) and the [`rustfmt` styles](https://github.com/rust-lang/rustfmt).
+
+### Branch Rules and Release Process
+
+![branch-release](https://mermaid.ink/img/eyJjb2RlIjoiZ3JhcGggVERcbiAgICBGRUFUVVJFW2ZlYXR1cmUgYnJhbmNoXSAtLT58QWRkcyBuZXcgZmVhdHVyZXwgUFIocHVsbCByZXF1ZXN0KVxuICAgIEZJWFtmaXggYnJhbmNoXSAtLT58Rml4ZXMgYnVnfCBQUihwdWxsIHJlcXVlc3QpXG4gICAgRE9DW2RvY3VtZW50IGJyYW5jaF0gLS0-fEFkZHMgZG9jdW1lbnRhdGlvbnwgUFIob3BlbiBwdWxsIHJlcXVlc3QpXG4gICAgUFIgLS0-fFJldmlldyBhbmQgbWVyZ2UgUFJ8IERFVltkZXZlbG9wbWVudCBicmFuY2hdXG4gICAgREVWIC0tPiB8UmVsZWFzZSAmIERlcGxveSB0ZXN0IG5ldHwgVEVTVChhY3RpdmUgdGVzdGluZylcbiAgICBURVNUIC0tPiB8SW1wcm92ZW1lbnRzfCBQUlxuICAgIFRFU1QgLS0-IHxPcGVuIHB1bGwgcmVxdWVzdHwgUkVMRUFTRVtyZWxlYXNlIGJyYW5jaF0iLCJtZXJtYWlkIjp7fSwidXBkYXRlRWRpdG9yIjpmYWxzZX0)
+
+All branch names should adhere to the following rules:
+
+- `release/**`: production/release version of the node will have the `release/` prefix in their branch name. These branches will be protected and no direct pushes will be allowed.
+- `development/**`: nodes that are actively in development (including release candidates) will have the `development/` prefix in their branch name.
 
 ### Contributor Licenses
 
