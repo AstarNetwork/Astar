@@ -5,7 +5,7 @@ use plasm_primitives::{AccountId, Balance, currency::{CurrencyId, TokenSymbol}, 
 use plasm_runtime::constants::currency::PLM;
 use plasm_runtime::{
     wasm_binary_unwrap, BalancesConfig, ContractsConfig, EVMConfig, EthereumConfig, GenesisConfig,
-    ParachainInfoConfig, SudoConfig, SystemConfig, TokensConfig,
+    ParachainInfoConfig, SudoConfig, SystemConfig,
 };
 use sc_chain_spec::ChainSpecExtension;
 use sc_service::ChainType;
@@ -155,13 +155,6 @@ fn make_genesis(
         frame_system: SystemConfig {
             code: wasm_binary_unwrap().to_vec(),
             changes_trie_config: Default::default(),
-        },
-        orml_tokens: TokensConfig {
-            endowed_accounts: balances
-                .iter()
-                .cloned()
-                .map(|(a, b)| (a, CurrencyId::Token(TokenSymbol::PLM), b))
-                .collect(),
         },
         pallet_balances: BalancesConfig { balances },
         pallet_contracts: ContractsConfig {
