@@ -4,10 +4,10 @@
 //!
 //! Used Perbil other parameters.
 use codec::{Decode, Encode};
-use pallet_contract_operator::parameters::Verifiable;
+//use pallet_plasm_operator::parameters::Verifiable;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
-use sp_runtime::{DispatchError, Perbill};
+//use sp_runtime::{DispatchError, Perbill};
 
 #[derive(Clone, Eq, PartialEq, Default, Encode, Decode, Hash)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
@@ -20,14 +20,14 @@ pub struct StakingParameters {
     pub option_p: u32,
 }
 
-impl Verifiable for StakingParameters {
-    fn verify(&self) -> Result<(), DispatchError> {
-        if self.option_p > Perbill::from_percent(20).deconstruct() {
-            Err("**p** of option's parameters must be lower than 20%(0_200_000_000)")?
-        }
-        Ok(())
-    }
-}
+// impl Verifiable for StakingParameters {
+//     fn verify(&self) -> Result<(), DispatchError> {
+//         if self.option_p > Perbill::from_percent(20).deconstruct() {
+//             Err("**p** of option's parameters must be lower than 20%(0_200_000_000)")?
+//         }
+//         Ok(())
+//     }
+// }
 
 #[cfg(feature = "std")]
 impl std::fmt::Display for StakingParameters {

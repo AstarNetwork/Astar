@@ -3,30 +3,13 @@
 //! The Plasm staking module manages era, total amounts of rewards and how to distribute.
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use codec::{Decode, Encode, HasCompact};
-use frame_support::{
-    decl_error, decl_event, decl_module, decl_storage,
-    dispatch::DispatchResult,
-    ensure,
-    traits::{
-        Currency, Get, Imbalance, LockIdentifier, LockableCurrency, OnUnbalanced, Time,
-        WithdrawReasons,
-    },
-    weights::Weight,
-    IterableStorageDoubleMap, StorageMap, StorageValue,
-};
-use frame_system::{self as system, ensure_signed};
-use pallet_contract_operator::ContractFinder;
-use pallet_plasm_rewards::{
-    traits::{ComputeEraWithParam, EraFinder, ForDappsEraRewardFinder, HistoryDepthFinder},
-    EraIndex, Releases,
-};
+// use pallet_plasm_rewards::{
+//     traits::{ComputeEraWithParam, EraFinder, ForDappsEraRewardFinder, HistoryDepthFinder},
+//     EraIndex, Releases,
+// };
 pub use pallet_staking::{Forcing, RewardDestination};
-use sp_runtime::{
-    traits::{AtLeast32BitUnsigned, CheckedSub, Saturating, StaticLookup, Zero},
-    Perbill, RuntimeDebug,
-};
-use sp_std::{collections::btree_map::BTreeMap, prelude::*, result, vec::Vec};
+use sp_runtime::Perbill;
+//use sp_std::{collections::btree_map::BTreeMap, prelude::*, result, vec::Vec};
 
 mod log;
 #[cfg(test)]
@@ -40,20 +23,27 @@ pub use parameters::StakingParameters;
 pub use rewards::ComputeRewardsForDapps;
 pub use sp_staking::SessionIndex;
 
-pub type BalanceOf<T> =
-    <<T as Trait>::Currency as Currency<<T as system::Trait>::AccountId>>::Balance;
-pub type MomentOf<T> = <<T as Trait>::Time as Time>::Moment;
 
-type PositiveImbalanceOf<T> =
-    <<T as Trait>::Currency as Currency<<T as system::Trait>::AccountId>>::PositiveImbalance;
-type NegativeImbalanceOf<T> =
-    <<T as Trait>::Currency as Currency<<T as system::Trait>::AccountId>>::NegativeImbalance;
+#[frame_support::pallet]
+pub mod pallet {
+    use frame_support::pallet_prelude::*; // Import various types used in the pallet definition
+    use system::pallet_prelude::*; // Import some system helper types.
+    use pallet_plasm_operator as Operator;
 
-const MAX_NOMINATIONS: usize = 128;
-const MAX_UNLOCKING_CHUNKS: usize = 32;
-const STAKING_ID: LockIdentifier = *b"dapstake";
-const MAX_VOTES: usize = 128;
-const VOTES_REQUIREMENT: u32 = 12;
+    pub type BalanceOf<T> =
+        <<T as Config>::Currency as Currency<<T as system::Config>::AccountId>>::Balance;
+    pub type MomentOf<T> = <<T as Config>::Time as Time>::Moment;
+    
+    type PositiveImbalanceOf<T> =
+        <<T as Config>::Currency as Currency<<T as system::Config>::AccountId>>::PositiveImbalance;
+    type NegativeImbalanceOf<T> =
+        <<T as Config>::Currency as Currency<<T as system::Config>::AccountId>>::NegativeImbalance;
+    
+    const MAX_NOMINATIONS: usize = 128;
+    const MAX_UNLOCKING_CHUNKS: usize = 32;
+    const STAKING_ID: LockIdentifier = *b"dapstake";
+    const MAX_VOTES: usize = 128;
+    const VOTES_REQUIREMENT: u32 = 12;
 
 /// A record of the nominations made by a specific account.
 #[derive(PartialEq, Eq, Clone, Encode, Decode, RuntimeDebug)]
@@ -201,12 +191,14 @@ pub struct VoteCounts {
     good: u32,
 }
 
-pub trait Trait: pallet_session::Trait {
+#[pallet::config]
+pub trait Config: system::Config{
     /// The staking balance.
     type Currency: LockableCurrency<Self::AccountId, Moment = Self::BlockNumber>;
 
     // The check valid operated contracts.
-    type ContractFinder: ContractFinder<Self::AccountId, parameters::StakingParameters>;
+    
+    //type ContractFinder: ContractFinder<Self::AccountId, parameters::StakingParameters>; TODO delete?
 
     /// Number of eras that staked funds must remain bonded for.
     type BondingDuration: Get<EraIndex>;
@@ -245,99 +237,126 @@ pub trait Trait: pallet_session::Trait {
     type HistoryDepthFinder: HistoryDepthFinder;
 
     /// The overarching event type.
-    type Event: From<Event<Self>> + Into<<Self as system::Trait>::Event>;
+    type Event: From<Event<Self>> + IsType<<Self as system::Config>::Event>;
 }
 
-decl_storage! {
-    trait Store for Module<T: Trait> as DappsStaking {
+        #[pallet::storage]
+        #[pallet::getter(fn untreated_era)]
         /// The already untreated era is EraIndex.
-        pub UntreatedEra get(fn untreated_era): EraIndex;
-
+        pub(super) type EraIndex = 
+            StorageValue <_, EraIndex>;
+        
         // The untreated era for each nominator
-        pub NominatorsUntreatedEra get(fn nominators_untreated_era):
-            map hasher(twox_64_concat) T::AccountId => EraIndex;
-
+        #[pallet::storage]
+        #[pallet::getter(fn nominators_untreated_era)]
+        pub(super) type NominatorsUntreatedEra = 
+            StorageMap<_, twox_64_concat, T::AccountId, EraIndex>;
+        
         // The untreated era for each contract
-        pub ContractsUntreatedEra get(fn contracts_untreated_era):
-            map hasher(twox_64_concat) T::AccountId => EraIndex;
-
+        #[pallet::storage]
+        #[pallet::getter(fn contracts_untreated_era)]
+        pub(super) type ContractsUntreatedEra =
+            StorageMap<_, twox_64_concat, T::AccountId, EraIndex>;
+        
         // The untreated era for each contract for votes
-        pub ContractVotesUntreatedEra get(fn contract_votes_untreated_era):
-            map hasher(twox_64_concat) T::AccountId => EraIndex;
-
+        #[pallet::storage]
+        #[pallet::getter(fn contract_votes_untreated_era)]
+        pub(super) type ContractVotesUntreatedEra =
+            StorageMap<_, twox_64_concat, T::AccountId, EraIndex>;
+        
         // ----- Staking uses.
         /// Map from all locked "stash" accounts to the controller account.
-        pub Bonded get(fn bonded): map hasher(twox_64_concat) T::AccountId => Option<T::AccountId>;
-
+        #[pallet::storage]
+        #[pallet::getter(fn bonded)]
+        pub(super) type Bonded =
+            StorageMap<_, twox_64_concat, T::AccountId, Option<T::AccountId>>;
+        
         /// Map from all (unlocked) "controller" accounts to the info regarding the staking.
-        pub Ledger get(fn ledger):
-            map hasher(blake2_128_concat) T::AccountId
-            => Option<StakingLedger<T::AccountId, BalanceOf<T>>>;
-
+        #[pallet::storage]
+        #[pallet::getter(fn ledger)]
+        pub(super) type  Ledger =
+            StorageMap<_, blake2_128_concat, T::AccountId, Option<StakingLedger<T::AccountId, BalanceOf<T>>>>;
+ 
         /// Where the reward payment should be made. Keyed by stash.
-        pub Payee get(fn payee): map hasher(twox_64_concat) T::AccountId => RewardDestination<T::AccountId>;
-
+        #[pallet::storage]
+        #[pallet::getter(fn payee)]
+        pub(super) type Payee =
+            StorageMap<_, twox_64_concat, T::AccountId, RewardDestination<T::AccountId>>;
+        
         /// The map from nominator stash key to the set of stash keys of all contracts to nominate.
         ///
         /// NOTE: is private so that we can ensure upgraded before all typical accesses.
         /// Direct storage APIs can still bypass this protection.
-        DappsNominations get(fn dapps_nominations): map hasher(twox_64_concat)
-                                                    T::AccountId => Option<Nominations<T::AccountId, BalanceOf<T>>>;
-
+        #[pallet::storage]
+        #[pallet::getter(fn dapps_nominations)]
+        type DappsNominations =
+            StorageMap<_, twox_64_concat, T::AccountId, Option<Nominations<T::AccountId, BalanceOf<T>>>>;
+        
         /// Similarly to `ErasStakers` this holds the parameters of contracts.
         ///
         /// This is keyed first by the era index to allow bulk deletion and then the contracts account.
         ///
         /// Is it removed after `HISTORY_DEPTH` eras.
-        pub ErasContractsParameters get(fn eras_contracts_parameters):
-            double_map hasher(twox_64_concat) EraIndex, hasher(twox_64_concat) T::AccountId
-            => Option<StakingParameters>;
-
+        #[pallet::storage]
+        #[pallet::getter(fn eras_contracts_parameters)]
+        pub(super) type ErasContractsParameters =
+            StorageDoubleMap<_, twox_64_concat, EraIndex, twox_64_concat, T::AccountId, Option<StakingParameters>>;
+        
         /// Rewards of stakers for contracts(called by "Dapps Nominator") at era.
         ///
         /// This is keyed first by the era index, 2nd keyed contract account to allow the stash account.
         /// Rewards for the last `HISTORY_DEPTH` eras.
         ///
         /// If reward hasn't been set or has been removed then 0 reward is returned.
-        pub ErasStakingPoints get(fn eras_staking_points):
-            double_map hasher(twox_64_concat) EraIndex, hasher(twox_64_concat) T::AccountId
-            => EraStakingPoints<T::AccountId, BalanceOf<T>>;
-
+        #[pallet::storage]
+        #[pallet::getter(fn eras_staking_points)]
+        pub(super) type ErasStakingPoints =
+        StorageDoubleMap<_, twox_64_concat, EraIndex, twox_64_concat, T::AccountId, EraStakingPoints<T::AccountId, BalanceOf<T>>>;
+        
         /// The total amount staked for the last `HISTORY_DEPTH` eras.
         /// If total hasn't been set or has been removed then 0 stake is returned.
-        pub ErasTotalStake get(fn eras_total_stake):
-            map hasher(twox_64_concat) EraIndex => BalanceOf<T>;
-
+        #[pallet::storage]
+        #[pallet::getter(fn eras_total_stake)]
+        pub(super) type ErasTotalStake =
+            StorageMap<_, twox_64_concat, EraIndex, BalanceOf<T>>;
+        
         /// The total amounts of staking for each nominators
-        ErasNominateTotals get(fn eras_nominate_totals):
-            double_map hasher(twox_64_concat) EraIndex, hasher(twox_64_concat) T::AccountId
-            => BalanceOf<T>;
-
+        #[pallet::storage]
+        #[pallet::getter(fn eras_nominate_totals)]
+        type ErasNominateTotals =
+            StorageDoubleMap<_, twox_64_concat, EraIndex, twox_64_concat, T::AccountId, BalanceOf<T>>;
+        
         /// The total amounts of staking for pairs of nominator and contract
-        pub TotalStakes get(fn total_stakes):
-            double_map hasher(twox_64_concat) T::AccountId, hasher(twox_64_concat) T::AccountId
-            => BalanceOf<T>;
-
+        #[pallet::storage]
+        #[pallet::getter(fn total_stakes)]
+        pub(super) type TotalStakes =
+            StorageDoubleMap<_, twox_64_concat, T::AccountId, twox_64_concat, T::AccountId, BalanceOf<T>>;
+        
         /// Votes for pairs of an account and a contract
-        pub AccountsVote get(fn accounts_vote):
-            double_map hasher(twox_64_concat) T::AccountId, hasher(twox_64_concat) T::AccountId => VoteCounts;
-
+        #[pallet::storage]
+        #[pallet::getter(fn accounts_vote)]
+        pub(super) type AccountsVote =
+        StorageDoubleMap<_, twox_64_concat, T::AccountId, twox_64_concat, T::AccountId, VoteCounts>;
+        
         /// Votes for pairs of an era and a contract
-        pub ErasVotes get(fn eras_votes):
-            double_map hasher(twox_64_concat) EraIndex, hasher(twox_64_concat) T::AccountId => VoteCounts;
+        #[pallet::storage]
+        #[pallet::getter(fn eras_votes)]
+        pub(super) type ErasVotes =
+        StorageDoubleMap<_, twox_64_concat, EraIndex, twox_64_concat, T::AccountId, VoteCounts>;
+        
+        // Storage version of the pallet.
+        //
+        // This is set to v1.0.0 for new networks.
+        // StorageVersion build(|_: &GenesisConfig| Releases::V1_0_0): Releases; TODO, do we need this?
+    
+    #[pallet::pallet]
+	#[pallet::generate_store(pub(super) trait Store)]
+	pub struct Pallet<T>(PhantomData<T>);
 
-        /// Storage version of the pallet.
-        ///
-        /// This is set to v1.0.0 for new networks.
-        StorageVersion build(|_: &GenesisConfig| Releases::V1_0_0): Releases;
-    }
-}
-
-decl_event!(
-    pub enum Event<T>
-    where
-        AccountId = <T as system::Trait>::AccountId,
-        Balance = BalanceOf<T>,
+    #[pallet::event]
+    #[pallet::metadata(T::AccountId = "AccountId")]
+    #[pallet::generate_deposit(pub(super) fn deposit_event)]
+    pub enum Event<T: Config>
     {
         /// The amount of minted rewards. (for dapps with nominators)
         Reward(Balance, Balance),
@@ -356,11 +375,10 @@ decl_event!(
         /// Nominate of stash address.
         Nominate(AccountId),
     }
-);
 
-decl_error! {
     /// Error for the staking module.
-    pub enum Error for Module<T: Trait> {
+    #[pallet::error]
+    pub enum Error<T> {
         /// Not a controller account.
         NotController,
         /// Not a stash account.
@@ -396,17 +414,19 @@ decl_error! {
         /// The nominations amount more than active staking amount.
         NotEnoughStaking,
     }
-}
 
-decl_module! {
-    pub struct Module<T: Trait> for enum Call where origin: T::Origin {
-        fn deposit_event() = default;
-
+	#[pallet::hooks]
+	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T>
+    {
         fn on_runtime_upgrade() -> Weight {
             migrate::<T>();
             // TODO: weight
             50_000
         }
+    }
+
+    #[pallet::call]
+    impl<T: Config> Pallet<T> {
 
         /// Take the origin account as a stash and lock up `value` of its balance. `controller` will
         /// be the account that controls it.
@@ -425,11 +445,11 @@ decl_module! {
         /// # </weight>
         /// TODO: weight
         #[weight = 500_000]
-        fn bond(origin,
+        fn bond(origin: OriginFor<T>,
             controller: <T::Lookup as StaticLookup>::Source,
             #[compact] value: BalanceOf<T>,
             payee: RewardDestination<T::AccountId>,
-        ) {
+        ) -> DispatchResultWithPostInfo {
             let stash = ensure_signed(origin)?;
 
             if <Bonded<T>>::contains_key(&stash) {
@@ -457,7 +477,7 @@ decl_module! {
 
             let stash_balance = T::Currency::free_balance(&stash);
             let value = value.min(stash_balance);
-            Self::deposit_event(RawEvent::Bonded(stash.clone(), value.clone()));
+            Self::deposit_event(Event::Bonded(stash.clone(), value.clone()));
             let item = StakingLedger {
                 stash,
                 total: value,
@@ -466,6 +486,7 @@ decl_module! {
                 last_reward: T::EraFinder::current()
             };
             Self::update_ledger(&controller, &item);
+            Ok(().into())
         }
 
         /// Add some extra amount that have appeared in the stash `free_balance` into the balance up
@@ -484,7 +505,9 @@ decl_module! {
         /// # </weight>
         /// TODO: weight
         #[weight = 500_000]
-        fn bond_extra(origin, #[compact] max_additional: BalanceOf<T>) {
+        fn bond_extra(origin: OriginFor<T>, #[compact] max_additional: BalanceOf<T>
+        ) -> DispatchResultWithPostInfo 
+        {
             let stash = ensure_signed(origin)?;
 
             let controller = Self::bonded(&stash).ok_or(Error::<T>::NotStash)?;
@@ -496,9 +519,10 @@ decl_module! {
                 let extra = extra.min(max_additional);
                 ledger.total += extra;
                 ledger.active += extra;
-                Self::deposit_event(RawEvent::Bonded(stash, extra));
+                Self::deposit_event(Event::Bonded(stash, extra));
                 Self::update_ledger(&controller, &ledger);
             }
+            Ok(().into())
         }
 
         /// Schedule a portion of the stash to be unlocked ready for transfer out after the bond
@@ -527,7 +551,9 @@ decl_module! {
         /// </weight>
         /// TODO: weight
         #[weight = 400_000]
-        fn unbond(origin, #[compact] value: BalanceOf<T>) {
+        fn unbond(origin: OriginFor<T>, #[compact] value: BalanceOf<T>
+        ) -> DispatchResultWithPostInfo
+        {
             let controller = ensure_signed(origin)?;
             let mut ledger = Self::ledger(&controller).ok_or(Error::<T>::NotController)?;
             ensure!(
@@ -546,11 +572,12 @@ decl_module! {
                     ledger.active = Zero::zero();
                 }
 
-                Self::deposit_event(RawEvent::Unbonded(ledger.stash.clone(), value));
+                Self::deposit_event(Event::Unbonded(ledger.stash.clone(), value));
                 let era = T::EraFinder::current().unwrap_or(Zero::zero()) + T::BondingDuration::get();
                 ledger.unlocking.push(UnlockChunk { value, era });
                 Self::update_ledger(&controller, &ledger);
             }
+            Ok(().into())
         }
 
         /// Remove any unlocked chunks from the `unlocking` queue from our management.
@@ -573,7 +600,8 @@ decl_module! {
         /// # </weight>
         /// TODO: weight
         #[weight = 400_000]
-        fn withdraw_unbonded(origin) {
+        fn withdraw_unbonded(origin: OriginFor<T>) -> DispatchResultWithPostInfo
+        {
             let controller = ensure_signed(origin)?;
             let mut ledger = Self::ledger(&controller).ok_or(Error::<T>::NotController)?;
             let (stash, old_total) = (ledger.stash.clone(), ledger.total);
@@ -607,8 +635,9 @@ decl_module! {
             if ledger.total < old_total {
                 // Already checked that this won't overflow by entry condition.
                 let value = old_total - ledger.total;
-                Self::deposit_event(RawEvent::Withdrawn(stash, value));
+                Self::deposit_event(Event::Withdrawn(stash, value));
             }
+            Ok(().into())
         }
 
         /// Declare the desire to nominate `targets` for the origin controller.
@@ -624,7 +653,9 @@ decl_module! {
         /// # </weight>
         /// TODO: weight
         #[weight = 750_000]
-        fn nominate_contracts(origin, targets: Vec<(<T::Lookup as StaticLookup>::Source, BalanceOf<T>)>) {
+        fn nominate_contracts(origin: OriginFor<T>, targets: Vec<(<T::Lookup as StaticLookup>::Source, BalanceOf<T>)>
+        ) -> DispatchResultWithPostInfo 
+        {
             let controller = ensure_signed(origin)?;
             let ledger = Self::ledger(&controller).ok_or(Error::<T>::NotController)?;
             let stash = &ledger.stash;
@@ -638,7 +669,7 @@ decl_module! {
                 .collect::<result::Result<Vec<(T::AccountId, BalanceOf<T>)>, _>>()?;
 
             // check the is targets operated contracts?
-            if !targets.iter().all(|t| T::ContractFinder::is_exists_contract(&(t.0))) {
+            if !targets.iter().all(|t| Operator::is_contract(&(t.0))) {
                 Err(Error::<T>::NotOperatedContracts)?
             }
 
@@ -656,7 +687,8 @@ decl_module! {
             };
 
             Self::take_in_nominations(stash, nominations);
-            Self::deposit_event(RawEvent::Nominate(stash.clone()));
+            Self::deposit_event(Event::Nominate(stash.clone()));
+            Ok(().into())
         }
 
         /// vote some contracts with Bad/Good.
@@ -664,7 +696,9 @@ decl_module! {
         ///
         /// TODO: weight
         #[weight = 100_000]
-        fn vote_contracts(origin, targets: Vec<(<T::Lookup as StaticLookup>::Source, Vote)>) {
+        fn vote_contracts(origin: OriginFor<T>, targets: Vec<(<T::Lookup as StaticLookup>::Source, Vote)>
+        ) -> DispatchResultWithPostInfo 
+        {
             let sender = ensure_signed(origin)?;
             ensure!(!targets.is_empty(), Error::<T>::EmptyNominateTargets);
 
@@ -676,7 +710,7 @@ decl_module! {
                 })
                 .collect::<result::Result<Vec<(T::AccountId, Vote)>, _>>()?;
 
-            if !targets.iter().all(|t| T::ContractFinder::is_exists_contract(&(t.0))) {
+            if !targets.iter().all(|t| Operator::is_contract(&(t.0))) {
                 Err(Error::<T>::NotOperatedContracts)?
             }
 
@@ -701,6 +735,7 @@ decl_module! {
                     <AccountsVote<T>>::insert(&sender, &contract, counts);
                 }
             }
+            Ok(().into())
         }
 
         /// Declare no desire to either validate or nominate.
@@ -716,10 +751,11 @@ decl_module! {
         /// # </weight>
         /// TODO: weight
         #[weight = 500_000]
-        fn chill(origin) {
+        fn chill(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
             let controller = ensure_signed(origin)?;
             let ledger = Self::ledger(&controller).ok_or(Error::<T>::NotController)?;
             Self::chill_stash(&ledger.stash);
+            Ok(().into())
         }
 
         /// (Re-)set the payment target for a controller.
@@ -735,11 +771,14 @@ decl_module! {
         /// # </weight>
         /// TODO: weight
         #[weight = 500_000]
-        fn set_payee(origin, payee: RewardDestination<T::AccountId>) {
+        fn set_payee(origin: OriginFor<T>, payee: RewardDestination<T::AccountId>
+        ) -> DispatchResultWithPostInfo
+        {
             let controller = ensure_signed(origin)?;
             let ledger = Self::ledger(&controller).ok_or(Error::<T>::NotController)?;
             let stash = &ledger.stash;
             <Payee<T>>::insert(stash, payee);
+            Ok(().into())
         }
 
         /// slash the account for the contract.
@@ -750,14 +789,16 @@ decl_module! {
         ///
         /// TODO: weight
         #[weight = 100_000]
-        fn slash(origin, controller: <T::Lookup as StaticLookup>::Source, contract: <T::Lookup as StaticLookup>::Source) {
+        fn slash(origin: OriginFor<T>, controller: <T::Lookup as StaticLookup>::Source, contract: <T::Lookup as StaticLookup>::Source
+        ) -> DispatchResultWithPostInfo
+        {
             ensure_signed(origin)?;
             let controller = T::Lookup::lookup(controller)?;
             let mut ledger = Self::ledger(&controller).ok_or(Error::<T>::NotController)?;
             let stash = &ledger.stash;
 
             let contract = T::Lookup::lookup(contract)?;
-            if !T::ContractFinder::is_exists_contract(&contract) {
+            if !Operator::is_contract(&contract) {
                 Err(Error::<T>::NotOperatedContracts)?
             }
 
@@ -775,6 +816,7 @@ decl_module! {
 
                 ledger.slash(slash_amount);
             }
+            Ok(().into())
         }
 
         /// (Re-)set the controller of a stash.
@@ -790,7 +832,9 @@ decl_module! {
         /// # </weight>
         /// TODO: weight
         #[weight = 750_000]
-        fn set_controller(origin, controller: <T::Lookup as StaticLookup>::Source) {
+        fn set_controller(origin: OriginFor<T>, controller: <T::Lookup as StaticLookup>::Source
+        ) -> DispatchResultWithPostInfo
+        {
             let stash = ensure_signed(origin)?;
             let old_controller = Self::bonded(&stash).ok_or(Error::<T>::NotStash)?;
             let controller = T::Lookup::lookup(controller)?;
@@ -803,6 +847,7 @@ decl_module! {
                     <Ledger<T>>::insert(&controller, l);
                 }
             }
+            Ok(().into())
         }
 
         /// rewards are claimed by the nominator.
@@ -812,7 +857,8 @@ decl_module! {
         /// The dispatch origin for this call must be _Signed_ by the stash, not the controller.
         /// TODO: weight
         #[weight = 1_000]
-        fn claim_for_nominator(origin, era: EraIndex) {
+        fn claim_for_nominator(origin: OriginFor<T>, era: EraIndex) -> DispatchResultWithPostInfo
+        {
             let nominator = ensure_signed(origin)?;
 
             // check if era is valid
@@ -858,7 +904,8 @@ decl_module! {
 
             let actual_rewarded = Self::reward_nominator(&era, rewards, &nominator);
             // deposit event to total validator rewards
-            Self::deposit_event(RawEvent::TotalDappsRewards(era, actual_rewarded));
+            Self::deposit_event(Event::TotalDappsRewards(era, actual_rewarded));
+            Ok(().into())
         }
 
         /// rewards are claimed by the operator.
@@ -868,7 +915,8 @@ decl_module! {
         /// The dispatch origin for this call must be _Signed_ by the stash, not the controller
         /// TODO: weight
         #[weight = 1_000]
-        fn claim_for_operator(origin, era: EraIndex) {
+        fn claim_for_operator(origin: OriginFor<T>, era: EraIndex) -> DispatchResultWithPostInfo
+        {
             let operator = ensure_signed(origin)?;
 
             // check if era is valid
@@ -893,14 +941,15 @@ decl_module! {
 
             let actual_rewarded = Self::reward_operator(&era, rewards, &operator);
             // deposit event to total validator rewards
-            Self::deposit_event(RawEvent::TotalDappsRewards(era, actual_rewarded));
+            Self::deposit_event(Event::TotalDappsRewards(era, actual_rewarded));
+            Ok(().into())
         }
     }
-}
 
-fn migrate<T: Trait>() {}
+impl<T: Config> Pallet<T>
+{
+    fn migrate<T: Config>() {}
 
-impl<T: Trait> Module<T> {
     // MUTABLES (DANGEROUS)
 
     /// Update the ledger for a controller. This will also update the stash lock. The lock will
@@ -1022,7 +1071,7 @@ impl<T: Trait> Module<T> {
         let mut stakes = BalanceOf::<T>::zero();
         for e in era.saturating_sub(T::HistoryDepthFinder::get())..=*era {
             for (contract, _) in <ErasStakingPoints<T>>::iter_prefix(&e) {
-                if let Some(o) = T::ContractFinder::operator(&contract) {
+                if let Some(o) = Operator::is_contract(&contract) {
                     if o == *operator && Self::is_rewardable(&contract, &e) {
                         stakes += Self::eras_staking_points(era, contract).total;
                     }
@@ -1242,11 +1291,11 @@ impl<T: Trait> Module<T> {
             && votes.good < votes.bad
     }
 }
-
 /// Get the amount of staking per Era in a module in the Plasm Network.
-impl<T: Trait> ComputeEraWithParam<EraIndex> for Module<T> {
+impl<T: Config> ComputeEraWithParam<EraIndex> for Module<T> {
     type Param = BalanceOf<T>;
     fn compute(era: &EraIndex) -> BalanceOf<T> {
         Self::compute_total_stake(era)
     }
+}
 }

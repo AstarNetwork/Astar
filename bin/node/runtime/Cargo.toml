@@ -31,7 +31,7 @@ sp-session = { version = "3.0.0", default-features = false }
 # frame dependencies
 pallet-plasm-operator = { path = "../../../frame/plasm-operator", default-features = false }
 #pallet-operator-trading = { path = "../../../frame/trading", default-features = false }
-#pallet-dapps-staking = { path = "../../../frame/dapps-staking", default-features = false }
+pallet-dapps-staking = { path = "../../../frame/dapps-staking", default-features = false }
 pallet-plasm-rewards = { path = "../../../frame/plasm-rewards", default-features = false }
 pallet-plasm-validator = { path = "../../../frame/plasm-validator", default-features = false }
 pallet-custom-signatures = { path = "../../../frame/custom-signatures", default-features = false }
@@ -115,7 +115,7 @@ std = [
     "pallet-session/std",
     "pallet-plasm-operator/std",
 #    "pallet-operator-trading/std",
-#    "pallet-dapps-staking/std",
+    "pallet-dapps-staking/std",
     "pallet-ethereum/std",
     "pallet-sudo/std",
     "pallet-timestamp/std",

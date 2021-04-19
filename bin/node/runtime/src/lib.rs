@@ -316,7 +316,7 @@ impl pallet_plasm_validator::Config for Runtime {
     type Event = Event;
 }
 
-/*
+
 impl pallet_dapps_staking::Config for Runtime {
     type Currency = Balances;
     type BondingDuration = BondingDuration;
@@ -330,7 +330,7 @@ impl pallet_dapps_staking::Config for Runtime {
     type HistoryDepthFinder = PlasmRewards;
     type Event = Event;
 }
-*/
+
 
 parameter_types! {
     pub const TombstoneDeposit: Balance = deposit(
