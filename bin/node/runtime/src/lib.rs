@@ -702,7 +702,7 @@ construct_runtime!(
         Indices: pallet_indices::{Module, Call, Storage, Event<T>, Config<T>},
         Balances: pallet_balances::{Module, Call, Storage, Event<T>, Config<T>},
         Contracts: pallet_contracts::{Module, Call, Storage, Event<T>, Config<T>},
-        //DappsStaking: pallet_dapps_staking::{Module, Call, Storage, Event<T>},
+        DappsStaking: pallet_dapps_staking::{Module, Call, Storage, Event<T>},
         PlasmValidator: pallet_plasm_validator::{Module, Call, Storage, Event<T>, Config<T>},
         PlasmRewards: pallet_plasm_rewards::{Module, Call, Storage, Event<T>, Config},
         Session: pallet_session::{Module, Call, Storage, Event, Config<T>},
