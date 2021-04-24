@@ -1,6 +1,6 @@
 [package]
 name = "plasm-cli"
-version = "1.9.0"
+version = "1.9.1"
 authors = ["Stake Technologies <devops@stake.co.jp>"]
 description = "Plasm node console line interfaces."
 build = "build.rs"

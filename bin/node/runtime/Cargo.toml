@@ -1,6 +1,6 @@
 [package]
 name = "plasm-runtime"
-version = "1.9.0"
+version = "1.9.1"
 authors = ["Stake Technologies <devops@stake.co.jp>"]
 edition = "2018"
 build = "build.rs"
@@ -11,7 +11,7 @@ serde = { version = "1.0.106", optional = true }
 codec = { package = "parity-scale-codec", version = "2.0", default-features = false, features = ["derive"] }
 lazy_static = { version = "1.4", optional = true }
 hex-literal = { version = "0.2", optional = true }
-evm = { version = "0.24.0", default-features = false }
+evm = { version = "0.26.0", default-features = false }
 
 # primitives
 plasm-primitives = { path = "../primitives", default-features = false }
