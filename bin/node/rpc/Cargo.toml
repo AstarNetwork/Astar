@@ -7,7 +7,7 @@ edition = "2018"
 [dependencies]
 plasm-runtime = { path = "../runtime" }
 plasm-primitives = { path = "../primitives" }
-fc-rpc = { path = "../../../vendor/frontier/client/rpc" }
+fc-rpc = { path = "../../../vendor/frontier/client/rpc", features = ["rpc_binary_search_estimate"] }
 fc-rpc-core = { path = "../../../vendor/frontier/client/rpc-core" }
 fp-rpc = { path = "../../../vendor/frontier/primitives/rpc" }
 jsonrpc-core = "15.0.0"
