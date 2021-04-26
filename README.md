@@ -106,7 +106,7 @@ Plasm Validator Program
 
 Currently, we have 2 networks, [Dusty Network](https://telemetry.polkadot.io/#list/Dusty) and [Plasm Network](https://telemetry.polkadot.io/#list/Plasm). Dusty is our canary R&D chain like Kusama. The stable validators on Dusty can be the first validators on Plasm mainnet. We are looking for 100 validators on the Plasm Network. 
 
-If you would like to be the validator, please check out [our tutorial](https://docs.plasmnet.io/workshop-and-tutorial/untitled) and join [Discord tech channel](https://discord.gg/wUcQt3R)
+If you would like to be the validator, please check out [our tutorial](https://docs.plasmnet.io/build/validator-guide) and join [Discord tech channel](https://discord.gg/wUcQt3R)
 
 Examples
 ========
