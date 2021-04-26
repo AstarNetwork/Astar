@@ -1,0 +1,1 @@
+initSidebarItems({"enum":[["Call",""],["Error",""],["Event",""],["SmartContract","Multi-VM pointer to smart contract instance."]],"struct":[["Pallet",""]],"trait":[["Config",""]],"type":[["Module","Type alias to `Pallet`, to be used by `construct_runtime`."]]});

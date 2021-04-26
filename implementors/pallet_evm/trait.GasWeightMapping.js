@@ -1,0 +1,3 @@
+(function() {var implementors = {};
+implementors["plasm_runtime"] = [{"text":"impl GasWeightMapping for <a class=\"struct\" href=\"plasm_runtime/struct.GasWeightMapping.html\" title=\"struct plasm_runtime::GasWeightMapping\">GasWeightMapping</a>","synthetic":false,"types":["plasm_runtime::GasWeightMapping"]}];
+if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

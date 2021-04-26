@@ -1,3 +1,0 @@
-(function() {var implementors = {};
-implementors["plasm_runtime"] = [{"text":"impl HostFunctions for <a class=\"struct\" href=\"plasm_runtime/legacy/storage/struct.HostFunctions.html\" title=\"struct plasm_runtime::legacy::storage::HostFunctions\">HostFunctions</a>","synthetic":false,"types":["plasm_runtime::legacy::storage::HostFunctions"]}];
-if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

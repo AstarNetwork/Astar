@@ -1,0 +1,1 @@
+window.ALL_CRATES = ["pallet_custom_signatures","pallet_plasm_operator","pallet_plasm_rewards","pallet_plasm_support","pallet_plasm_validator","plasm","plasm_cli","plasm_primitives","plasm_rpc","plasm_runtime"];

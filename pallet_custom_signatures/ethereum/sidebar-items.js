@@ -1,0 +1,1 @@
+initSidebarItems({"fn":[["signable_message","Constructs the message that Ethereum RPC’s `personal_sign` and `eth_sign` would sign."]],"struct":[["EthereumSignature","Ethereum-compatible signature type."]]});

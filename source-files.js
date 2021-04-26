@@ -1,10 +1,12 @@
 var N = null;var sourcesIndex = {};
+sourcesIndex["pallet_custom_signatures"] = {"name":"","files":["ethereum.rs","lib.rs"]};
+sourcesIndex["pallet_plasm_operator"] = {"name":"","files":["lib.rs"]};
 sourcesIndex["pallet_plasm_rewards"] = {"name":"","files":["inflation.rs","lib.rs","traits.rs"]};
+sourcesIndex["pallet_plasm_support"] = {"name":"","files":["lib.rs"]};
 sourcesIndex["pallet_plasm_validator"] = {"name":"","files":["compute_era.rs","lib.rs"]};
+sourcesIndex["plasm"] = {"name":"","files":["main.rs"]};
 sourcesIndex["plasm_cli"] = {"name":"","files":["chain_spec.rs","cli.rs","command.rs","lib.rs","service.rs"]};
-sourcesIndex["plasm_node"] = {"name":"","files":["main.rs"]};
 sourcesIndex["plasm_primitives"] = {"name":"","files":["lib.rs"]};
 sourcesIndex["plasm_rpc"] = {"name":"","files":["lib.rs"]};
-sourcesIndex["plasm_runtime"] = {"name":"","files":["constants.rs","legacy.rs","lib.rs"]};
-sourcesIndex["subkey"] = {"name":"","files":["main.rs","vanity.rs"]};
+sourcesIndex["plasm_runtime"] = {"name":"","files":["constants.rs","lib.rs","precompiles.rs"]};
 createSourceSidebar();
