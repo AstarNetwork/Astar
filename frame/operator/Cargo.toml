@@ -1,0 +1,46 @@
+[package]
+name = "pallet-contract-operator"
+version = "1.10.0"
+authors = ["Stake Technologies <devops@stake.co.jp>"]
+edition = "2018"
+license = "Apache-2.0"
+homepage = "https://docs.plasmnet.io/"
+repository = "https://github.com/PlasmNetwork/Plasm/"
+description = "FRAME pallet to manage operator developing smart contracts"
+
+[dependencies]
+codec = { package = "parity-scale-codec", version = "2.0", features = ["derive"], default-features = false }
+serde = { version = "1.0.106", features = ["derive"], optional = true }
+
+sp-core = { version = "3.0.0", default_features = false }
+sp-runtime = { version = "3.0.0", default_features = false }
+sp-io = { version = "3.0.0", default_features = false }
+sp-std = { version = "3.0.0", default_features = false }
+pallet-balances = { version = "3.0.0", default_features = false }
+frame-support = { version = "3.0.0", default_features = false }
+pallet-timestamp = { version = "3.0.0", default_features = false }
+frame-system = { version = "3.0.0", default_features = false }
+pallet-contracts = { path = "../contracts", default_features = false }
+
+[dev-dependencies]
+wabt = "0.10.0"
+derive_more = "0.14.0"
+hex-literal = "0.2.1"
+pallet-randomness-collective-flip = "3.0.0"
+pallet-transaction-payment = "3.0.0"
+
+[features]
+default = ["std"]
+std = [
+    "serde",
+    "codec/std",
+    "sp-core/std",
+    "sp-runtime/std",
+    "sp-io/std",
+    "sp-std/std",
+    "pallet-balances/std",
+    "frame-support/std",
+    "pallet-timestamp/std",
+    "frame-system/std",
+    "pallet-contracts/std",
+]
