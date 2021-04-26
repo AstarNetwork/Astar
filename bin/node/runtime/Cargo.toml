@@ -1,6 +1,6 @@
 [package]
 name = "plasm-runtime"
-version = "1.9.0"
+version = "1.9.1"
 authors = ["Stake Technologies <devops@stake.co.jp>"]
 edition = "2018"
 build = "build.rs"
@@ -11,6 +11,7 @@ serde = { version = "1.0.106", optional = true }
 codec = { package = "parity-scale-codec", version = "2.0", default-features = false, features = ["derive"] }
 lazy_static = { version = "1.4", optional = true }
 hex-literal = { version = "0.2", optional = true }
+evm = { version = "0.26.0", default-features = false }
 
 # primitives
 plasm-primitives = { path = "../primitives", default-features = false }
@@ -29,17 +30,14 @@ sp-version = { version = "3.0.0", default-features = false }
 sp-session = { version = "3.0.0", default-features = false }
 
 # frame dependencies
-#pallet-contract-operator = { path = "../../../frame/operator", default-features = false }
 pallet-plasm-operator = { path = "../../../frame/plasm-operator", default-features = false }
-#pallet-operator-trading = { path = "../../../frame/trading", default-features = false }
-#pallet-dapps-staking = { path = "../../../frame/dapps-staking", default-features = false }
 pallet-plasm-rewards = { path = "../../../frame/plasm-rewards", default-features = false }
 pallet-plasm-validator = { path = "../../../frame/plasm-validator", default-features = false }
 pallet-custom-signatures = { path = "../../../frame/custom-signatures", default-features = false }
-#pallet-ovm = { path = "../../../frame/ovm", default-features = false }
-#pallet-plasma = { path = "../../../frame/plasma", default-features = false }
 pallet-evm = { path = "../../../vendor/frontier/frame/evm", default-features = false }
+pallet-evm-precompile-bn128 = { path = "../../../vendor/frontier/frame/evm/precompile/bn128", default-features = false }
 pallet-evm-precompile-simple = { path = "../../../vendor/frontier/frame/evm/precompile/simple", default-features = false }
+pallet-evm-precompile-modexp = { path = "../../../vendor/frontier/frame/evm/precompile/modexp", default-features = false }
 frame-executive = { version = "3.0.0", default-features = false }
 pallet-authorship = { version = "3.0.0", default-features = false }
 pallet-babe = { version = "3.0.0", default-features = false }
@@ -76,6 +74,7 @@ std = [
     "codec/std",
     "lazy_static",
     "hex-literal",
+    "evm/std",
     "sp-api/std",
     "sp-block-builder/std",
     "sp-core/std",
@@ -102,7 +101,9 @@ std = [
     "pallet-contracts-primitives/std",
     "pallet-contracts-rpc-runtime-api/std",
     "pallet-evm/std",
+    "pallet-evm-precompile-bn128/std",
     "pallet-evm-precompile-simple/std",
+    "pallet-evm-precompile-modexp/std",
     "pallet-grandpa/std",
     "pallet-indices/std",
     "pallet-im-online/std",
@@ -110,14 +111,10 @@ std = [
     "pallet-custom-signatures/std",
     "pallet-plasm-rewards/std",
     "pallet-plasm-validator/std",
-#    "pallet-plasma/std",
     "pallet-randomness-collective-flip/std",
     "pallet-scheduler/std",
     "pallet-session/std",
     "pallet-plasm-operator/std",
-#    "pallet-contract-operator/std",
-#    "pallet-operator-trading/std",
-#    "pallet-dapps-staking/std",
     "pallet-ethereum/std",
     "pallet-sudo/std",
     "pallet-timestamp/std",
@@ -125,5 +122,4 @@ std = [
     "pallet-transaction-payment-rpc-runtime-api/std",
     "pallet-utility/std",
     "pallet-offences/std",
-#    "pallet-ovm/std",
 ]
