@@ -1,14 +1,14 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use frame_support::{decl_event, decl_module, decl_storage, Parameter};
-use frame_system::{ensure_signed};
+use frame_system::ensure_signed;
 use pallet_contracts::{BalanceOf, CodeHash, ContractAddressFor, Gas};
+use sp_core::crypto::UncheckedFrom;
 use sp_runtime::{
     traits::{MaybeDisplay, MaybeSerialize, Member},
     DispatchError,
 };
 use sp_std::prelude::*;
-use sp_core::crypto::UncheckedFrom;
 
 pub mod parameters;
 #[cfg(test)]
@@ -191,7 +191,7 @@ decl_event!(
 
 impl<T: Config> ContractFinder<T::AccountId, T::Parameters> for Module<T>
 where
-    T::AccountId: UncheckedFrom<T::Hash> + AsRef<[u8]>
+    T::AccountId: UncheckedFrom<T::Hash> + AsRef<[u8]>,
 {
     fn is_exists_contract(contract_id: &T::AccountId) -> bool {
         <ContractHasOperator<T>>::contains_key(contract_id)
@@ -205,7 +205,7 @@ where
 }
 impl<T: Config> OperatorFinder<T::AccountId> for Module<T>
 where
-    T::AccountId: UncheckedFrom<T::Hash> + AsRef<[u8]>
+    T::AccountId: UncheckedFrom<T::Hash> + AsRef<[u8]>,
 {
     fn contracts(operator_id: &T::AccountId) -> Vec<T::AccountId> {
         <OperatorHasContracts<T>>::get(operator_id)
@@ -214,7 +214,7 @@ where
 
 impl<T: Config> TransferOperator<T::AccountId> for Module<T>
 where
-    T::AccountId: UncheckedFrom<T::Hash> + AsRef<[u8]>
+    T::AccountId: UncheckedFrom<T::Hash> + AsRef<[u8]>,
 {
     /// Force Changes an operator for identified contracts without verify.
     fn force_transfer_operator(
