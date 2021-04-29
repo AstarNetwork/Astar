@@ -1151,8 +1151,8 @@
     <span class="comment">// and set impl_version to equal spec_version. If only runtime</span>
     <span class="comment">// implementation changes and behavior does not, then leave spec_version as</span>
     <span class="comment">// is and increment impl_version.</span>
-    <span class="ident">spec_version</span>: <span class="number">2</span>,
-    <span class="ident">impl_version</span>: <span class="number">2</span>,
+    <span class="ident">spec_version</span>: <span class="number">3</span>,
+    <span class="ident">impl_version</span>: <span class="number">3</span>,
     <span class="ident">apis</span>: <span class="ident">RUNTIME_API_VERSIONS</span>,
     <span class="ident">transaction_version</span>: <span class="number">1</span>,
 };
@@ -1434,7 +1434,7 @@ impl pallet_dapps_staking::Config for Runtime {
             <span class="op">&lt;</span><span class="ident">Runtime</span> <span class="kw">as</span> <span class="ident">pallet_contracts</span>::<span class="ident">Config</span><span class="op">&gt;</span>::<span class="ident">WeightInfo</span>::<span class="ident">on_initialize_per_queue_item</span>(<span class="number">1</span>) <span class="op">-</span>
             <span class="op">&lt;</span><span class="ident">Runtime</span> <span class="kw">as</span> <span class="ident">pallet_contracts</span>::<span class="ident">Config</span><span class="op">&gt;</span>::<span class="ident">WeightInfo</span>::<span class="ident">on_initialize_per_queue_item</span>(<span class="number">0</span>)
         )) <span class="op">/</span> <span class="number">5</span>) <span class="kw">as</span> <span class="ident">u32</span>;
-    <span class="kw">pub</span> <span class="ident">MaxCodeSize</span>: <span class="ident">u32</span> <span class="op">=</span> <span class="number">128</span> <span class="op">*</span> <span class="number">1024</span>;
+    <span class="kw">pub</span> <span class="ident">MaxCodeSize</span>: <span class="ident">u32</span> <span class="op">=</span> <span class="number">512</span> <span class="op">*</span> <span class="number">1024</span>;
 }
 
 <span class="kw">impl</span> <span class="ident">pallet_contracts</span>::<span class="ident">Config</span> <span class="kw">for</span> <span class="ident">Runtime</span> {
