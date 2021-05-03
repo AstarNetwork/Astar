@@ -4,22 +4,18 @@
 
 use super::*;
 use frame_support::{
-    assert_ok, impl_outer_dispatch, impl_outer_origin, parameter_types,
+    assert_ok, parameter_types,
     traits::OnFinalize,
     weights::{WeightToFeeCoefficients, WeightToFeePolynomial},
 };
 use pallet_contracts::Gas;
 use pallet_plasm_rewards::{inflation::SimpleComputeTotalPayout, traits::MaybeValidators};
-use pallet_transaction_payment::{
-    CurrencyAdapter, FeeDetails, Multiplier, RuntimeDispatchInfo, TargetedFeeAdjustment,
-};
-use serde::{Deserialize, Serialize};
-use sp_core::crypto::Wraps;
+use pallet_transaction_payment::CurrencyAdapter;
 use sp_core::{crypto::key_types, H256};
 use sp_runtime::{
     testing::{Header, UintAuthorityId},
-    traits::{BlakeTwo256, ConvertInto, Hash, IdentifyAccount, IdentityLookup, OpaqueKeys, Verify},
-    AccountId32, KeyTypeId, MultiSignature, OpaqueExtrinsic, Perbill, RuntimeDebug,
+    traits::{BlakeTwo256, ConvertInto, Hash, IdentityLookup, OpaqueKeys},
+    AccountId32, KeyTypeId, Perbill,
 };
 
 pub type BlockNumber = u64;
@@ -38,18 +34,27 @@ pub const OPERATED_CONTRACT_A: AccountId = AccountId32::new([19u8; 32]);
 pub const OPERATED_CONTRACT_B: AccountId = AccountId32::new([20u8; 32]);
 pub const BOB_CONTRACT: AccountId = AccountId32::new([12u8; 32]);
 
-impl_outer_origin! {
-    pub enum Origin for Test where system = frame_system {}
-}
+use crate as dapps_staking;
+type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
+type Block = frame_system::mocking::MockBlock<Test>;
 
-impl_outer_dispatch! {
-    pub enum Call for Test where origin: Origin {
-        pallet_session::Session,
-        pallet_balances::Balances,
-        pallet_contracts::Contracts,
-        dapps_staking::DappsStaking,
+// Configure a mock runtime to test the pallet.
+frame_support::construct_runtime!(
+    pub enum Test where
+        Block = Block,
+        NodeBlock = Block,
+        UncheckedExtrinsic = UncheckedExtrinsic,
+    {
+        System: frame_system::{Module, Call, Config, Storage, Event<T>},
+        Session: pallet_session::{Module, Call, Storage, Event, Config<T>},
+        Balances: pallet_balances::{Module, Call, Storage, Event<T>, Config<T>},
+        Timestamp: pallet_timestamp::{Module, Call, Storage, Inherent},
+        Contracts: pallet_contracts::{Module, Call, Storage, Event<T>, Config<T>},
+        Operator: pallet_contract_operator::{Module, Call, Storage, Event<T>},
+        PlasmRewards: pallet_plasm_rewards::{Module, Call, Storage, Config, Event<T>},
+        DappsStaking: dapps_staking::{Module, Call, Storage, Event<T>},
     }
-}
+);
 
 pub fn new_test_ext() -> sp_io::TestExternalities {
     let mut storage = system::GenesisConfig::default()
@@ -68,39 +73,21 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
     }
     .assimilate_storage(&mut storage);
 
-    // let _ = pallet_contracts::GenesisConfig {
-    //     current_schedule: pallet_contracts::Schedule {
-    //         enable_println: true,
-    //         ..Default::default()
-    //     },
-    // }
-    // .assimilate_storage(&mut storage);
+    let _ = pallet_contracts::GenesisConfig::<Test> {
+        current_schedule: pallet_contracts::Schedule {
+            enable_println: true,
+            ..Default::default()
+        },
+    }
+    .assimilate_storage(&mut storage);
 
-    // let _ = pallet_plasm_rewards::GenesisConfig {
-    //     ..Default::default()
-    // }
-    // .assimilate_storage(&mut storage);
-
-    // let _ = GenesisConfig {
-    //     ..Default::default()
-    // }
-    // .assimilate_storage(&mut storage);
-
-    // let validators = vec![VALIDATOR_A, VALIDATOR_B];
-
-    // let _ = pallet_session::GenesisConfig::<Test> {
-    //     keys: validators
-    //         .iter()
-    //         .map(|x| (*x, *x, UintAuthorityId(*x)))
-    //         .collect(),
-    // }
-    // .assimilate_storage(&mut storage);
+    let _ = pallet_plasm_rewards::GenesisConfig {
+        ..Default::default()
+    }
+    .assimilate_storage(&mut storage);
 
     storage.into()
 }
-
-#[derive(Clone, PartialEq, Eq, Debug)]
-pub struct Test;
 
 parameter_types! {
     pub const BlockHashCount: u64 = 250;
@@ -169,7 +156,6 @@ impl pallet_session::Config for Test {
     type NextSessionRotation = pallet_session::PeriodicSessions<Period, Offset>;
     type SessionManager = PlasmRewards;
     type SessionHandler = TestSessionHandler;
-    // type ValidatorId = u64;
     type ValidatorId = AccountId32;
     type ValidatorIdOf = ConvertInto;
     type Keys = UintAuthorityId;
@@ -214,7 +200,7 @@ impl pallet_transaction_payment::Config for Test {
 pub struct DummyContractAddressFor;
 impl pallet_contracts::ContractAddressFor<H256, AccountId> for DummyContractAddressFor {
     fn contract_address_for(_code_hash: &H256, _data: &[u8], origin: &AccountId) -> AccountId {
-        *origin
+        origin.clone()
     }
 }
 
@@ -307,16 +293,6 @@ impl Config for Test {
     type Event = ();
 }
 
-/// ValidatorManager module.
-pub type System = system::Module<Test>;
-pub type Session = pallet_session::Module<Test>;
-pub type Balances = pallet_balances::Module<Test>;
-pub type Timestamp = pallet_timestamp::Module<Test>;
-pub type Contracts = pallet_contracts::Module<Test>;
-pub type Operator = pallet_contract_operator::Module<Test>;
-pub type PlasmRewards = pallet_plasm_rewards::Module<Test>;
-pub type DappsStaking = Module<Test>;
-
 /// Generate Wasm binary and code hash from wabt source.
 pub fn compile_module<T>(
     wabt_module: &str,
@@ -361,17 +337,35 @@ pub const CODE_RETURN_FROM_START_FN: &str = r#"
 
 pub const CODE_RETURN_FROM_START_FN_B: &str = CODE_RETURN_FROM_START_FN;
 
+const GAS_LIMIT: Gas = 10_000_000_000;
+
 pub fn valid_instatiate() {
     let (wasm, code_hash) = compile_module::<Test>(CODE_RETURN_FROM_START_FN).unwrap();
 
     let (wasm_b, code_hash_b) = compile_module::<Test>(CODE_RETURN_FROM_START_FN_B).unwrap();
 
+    let subsistence = Contracts::subsistence_threshold();
+
     // prepare
     let _ = Balances::deposit_creating(&OPERATOR_A, 1_000_000);
-    assert_ok!(Contracts::put_code(Origin::signed(OPERATOR_A), wasm));
+    assert_ok!(Contracts::instantiate_with_code(
+        Origin::signed(OPERATOR_A),
+        subsistence * 100,
+        GAS_LIMIT,
+        wasm,
+        vec![],
+        vec![]
+    ));
 
     let _ = Balances::deposit_creating(&OPERATOR_B, 1_000_000);
-    assert_ok!(Contracts::put_code(Origin::signed(OPERATOR_B), wasm_b));
+    assert_ok!(Contracts::instantiate_with_code(
+        Origin::signed(OPERATOR_B),
+        subsistence * 100,
+        GAS_LIMIT,
+        wasm_b,
+        vec![],
+        vec![]
+    ));
 
     let test_params = parameters::StakingParameters {
         can_be_nominated: true,
@@ -387,6 +381,7 @@ pub fn valid_instatiate() {
         Gas::max_value(),
         code_hash.into(),
         vec![],
+        vec![],
         test_params.clone(),
     );
     let _ = Operator::instantiate(
@@ -394,6 +389,7 @@ pub fn valid_instatiate() {
         100,
         Gas::max_value(),
         code_hash_b.into(),
+        vec![],
         vec![],
         test_params.clone(),
     );
@@ -474,8 +470,8 @@ pub fn advance_session() {
 }
 
 pub fn advance_era() {
-    let current_era = PlasmRewards::current_era().unwrap();
-    while current_era == PlasmRewards::current_era().unwrap() {
+    let current_era = PlasmRewards::current_era().unwrap_or(Zero::zero());
+    while current_era == PlasmRewards::current_era().unwrap_or(Zero::zero()) {
         advance_session();
     }
 }

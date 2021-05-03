@@ -29,7 +29,7 @@ fn bond_scenario_test() {
                 total: 1000,
                 active: 1000,
                 unlocking: vec![],
-                last_reward: Some(0),
+                last_reward: None,
             })
         );
         assert_eq!(DappsStaking::ledger(ALICE_STASH), None);
@@ -91,25 +91,25 @@ fn success_first_bond(
 ) {
     // bond ALICE -> BOB
     assert_ok!(DappsStaking::bond(
-        Origin::signed(stash),
-        ctrl,
+        Origin::signed(stash.clone()),
+        ctrl.clone(),
         balance,
-        dest,
+        dest.clone(),
     ));
-    assert_eq!(DappsStaking::bonded(stash), Some(ctrl));
-    assert_eq!(DappsStaking::payee(stash), dest);
+    assert_eq!(DappsStaking::bonded(stash.clone()), Some(ctrl.clone()));
+    assert_eq!(DappsStaking::payee(stash.clone()), dest.clone());
     assert_eq!(
-        DappsStaking::ledger(ctrl),
+        DappsStaking::ledger(ctrl.clone()),
         Some(StakingLedger {
-            stash: stash,
+            stash: stash.clone(),
             total: balance,
             active: balance,
             unlocking: vec![],
-            last_reward: Some(0),
+            last_reward: None,
         })
     );
     assert_eq!(
-        Balances::locks(stash),
+        Balances::locks(stash.clone()),
         vec![BalanceLock {
             id: STAKING_ID,
             amount: balance,
@@ -134,7 +134,7 @@ fn bond_extra_scenario_test() {
                 total: 2000,
                 active: 2000,
                 unlocking: vec![],
-                last_reward: Some(0),
+                last_reward: None,
             })
         );
         assert_eq!(
@@ -179,7 +179,7 @@ fn unbond_scenario_test() {
                     value: 300,
                     era: 3, // current_era(0) + bonding_duration(3)
                 }],
-                last_reward: Some(0),
+                last_reward: None,
             })
         );
         assert_eq!(
@@ -210,7 +210,7 @@ fn unbond_scenario_test() {
                         era: 4, // current_era(1) + bonding_duration(3)
                     }
                 ],
-                last_reward: Some(0),
+                last_reward: None,
             })
         );
         assert_eq!(
@@ -225,14 +225,14 @@ fn unbond_scenario_test() {
 }
 
 fn success_unbond(ctrl: AccountId, balance: Balance) {
-    let now_ledger = DappsStaking::ledger(ctrl).unwrap();
+    let now_ledger = DappsStaking::ledger(ctrl.clone()).unwrap();
     let now_unlock_chunk = now_ledger.unlocking;
     let now_len = now_unlock_chunk.len();
-    let current_era = PlasmRewards::current_era().unwrap();
+    let current_era = PlasmRewards::current_era().unwrap_or(Zero::zero());
 
-    assert_ok!(DappsStaking::unbond(Origin::signed(ctrl), balance));
+    assert_ok!(DappsStaking::unbond(Origin::signed(ctrl.clone()), balance));
 
-    let after_ledger = DappsStaking::ledger(ctrl).unwrap();
+    let after_ledger = DappsStaking::ledger(ctrl.clone()).unwrap();
     let after_unlock_chunks = after_ledger.unlocking;
     assert_eq!(now_unlock_chunk, after_unlock_chunks.split_at(now_len).0);
     assert_eq!(
@@ -289,7 +289,7 @@ fn withdraw_unbonded_scenario_test() {
                     UnlockChunk { value: 300, era: 3 },
                     UnlockChunk { value: 700, era: 4 },
                 ],
-                last_reward: Some(0),
+                last_reward: None,
             })
         );
         assert_eq!(
@@ -312,7 +312,7 @@ fn withdraw_unbonded_scenario_test() {
                 total: 700,
                 active: 0,
                 unlocking: vec![UnlockChunk { value: 700, era: 4 },],
-                last_reward: Some(0),
+                last_reward: None,
             })
         );
         assert_eq!(
@@ -367,10 +367,10 @@ fn nominate_contracts_scenario_test() {
 
 fn success_nominate_contracts(ctrl: AccountId, targets: Vec<(AccountId, Balance)>) {
     assert_ok!(DappsStaking::nominate_contracts(
-        Origin::signed(ctrl),
+        Origin::signed(ctrl.clone()),
         targets.clone()
     ));
-    let stash = DappsStaking::ledger(&ctrl).unwrap().stash;
+    let stash = DappsStaking::ledger(ctrl.clone()).unwrap().stash;
     let current_era = PlasmRewards::current_era().unwrap();
     assert_eq!(
         DappsStaking::dapps_nominations(stash),
@@ -478,7 +478,7 @@ fn set_controller_scenario_test() {
                 total: 1000,
                 active: 1000,
                 unlocking: vec![],
-                last_reward: Some(0),
+                last_reward: None,
             })
         );
         assert_eq!(DappsStaking::ledger(ALICE_CTRL), None);
@@ -818,7 +818,7 @@ fn vote_contracts_test() {
 #[test]
 fn is_rewardable_test() {
     new_test_ext().execute_with(|| {
-        let current_era = PlasmRewards::current_era().unwrap();
+        let current_era = PlasmRewards::current_era().unwrap_or(Zero::zero());
 
         ErasVotes::<Test>::insert(
             current_era + 1,
@@ -859,7 +859,7 @@ fn is_rewardable_test() {
 #[test]
 fn is_locked_test() {
     new_test_ext().execute_with(|| {
-        let current_era = PlasmRewards::current_era().unwrap();
+        let current_era = PlasmRewards::current_era().unwrap_or(Zero::zero());
 
         ErasVotes::<Test>::insert(
             current_era + 1,
@@ -915,7 +915,7 @@ fn is_locked_test() {
 #[test]
 fn is_slashable_test() {
     new_test_ext().execute_with(|| {
-        let current_era = PlasmRewards::current_era().unwrap();
+        let current_era = PlasmRewards::current_era().unwrap_or(Zero::zero());
 
         ErasVotes::<Test>::insert(
             current_era + 1,
