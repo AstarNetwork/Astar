@@ -7,7 +7,7 @@
 use codec::{Decode, Encode};
 use frame_support::{
     construct_runtime, parameter_types,
-	traits::{Randomness, IsInVec, All, Get},
+    traits::{Randomness, IsInVec, All, Get},
     weights::{
         constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_PER_SECOND},
         DispatchClass, IdentityFee, Weight,
@@ -86,8 +86,8 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     // and set impl_version to equal spec_version. If only runtime
     // implementation changes and behavior does not, then leave spec_version as
     // is and increment impl_version.
-    spec_version: 8,
-    impl_version: 8,
+    spec_version: 9,
+    impl_version: 9,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 1,
 };
@@ -648,7 +648,9 @@ impl_runtime_apis! {
         }
     }
 
-    impl pallet_contracts_rpc_runtime_api::ContractsApi<Block, AccountId, Balance, BlockNumber> for Runtime {
+    impl pallet_contracts_rpc_runtime_api::ContractsApi<
+        Block, AccountId, Balance, BlockNumber, Hash,
+    > for Runtime {
         fn call(
             origin: AccountId,
             dest: AccountId,
@@ -657,6 +659,18 @@ impl_runtime_apis! {
             input_data: Vec<u8>,
         ) -> pallet_contracts_primitives::ContractExecResult {
             Contracts::bare_call(origin, dest, value, gas_limit, input_data)
+        }
+
+        fn instantiate(
+            origin: AccountId,
+            endowment: Balance,
+            gas_limit: u64,
+            code: pallet_contracts_primitives::Code<Hash>,
+            data: Vec<u8>,
+            salt: Vec<u8>,
+        ) -> pallet_contracts_primitives::ContractInstantiateResult<AccountId, BlockNumber>
+        {
+            Contracts::bare_instantiate(origin, endowment, gas_limit, code, data, salt, true)
         }
 
         fn get_storage(

@@ -24,7 +24,7 @@ sc-consensus-epochs = { git = "https://github.com/paritytech/substrate", branch 
 sc-network = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }
 fp-rpc = { path = "../../../vendor/frontier/primitives/rpc" }
 fc-db = { path = "../../../vendor/frontier/client/db" }
-fc-rpc = { path = "../../../vendor/frontier/client/rpc" }
+fc-rpc = { path = "../../../vendor/frontier/client/rpc", features = ["rpc_binary_search_estimate"] }
 fc-rpc-core = { path = "../../../vendor/frontier/client/rpc-core" }
 pallet-ethereum = { path = "../../../vendor/frontier/frame/ethereum" }
 pallet-contracts-rpc = { git = "https://github.com/paritytech/substrate", branch = "rococo-v1" }

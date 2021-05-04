@@ -163,14 +163,6 @@ impl<T: Config> ProvideInherent for Module<T> {
     type Error = InherentError;
     const INHERENT_IDENTIFIER: InherentIdentifier = INHERENT_IDENTIFIER;
 
-    fn is_inherent_required(_: &InherentData) -> Result<Option<Self::Error>, Self::Error> {
-        // Return Ok(Some(_)) unconditionally because this inherent is required in every block
-        // If it is not found, throw an AuthorInherentRequired error.
-        Ok(Some(InherentError::Other(
-            sp_runtime::RuntimeString::Borrowed("AuthorInherentRequired"),
-        )))
-    }
-
     fn create_inherent(data: &InherentData) -> Option<Self::Call> {
         // Grab the Vec<u8> labelled with "author__" from the map of all inherent data
         let author_raw = data
@@ -189,5 +181,9 @@ impl<T: Config> ProvideInherent for Module<T> {
 
     fn check_inherent(call: &Self::Call, _data: &InherentData) -> Result<(), Self::Error> {
         Ok(())
+    }
+
+    fn is_inherent(call: &Self::Call) -> bool {
+        matches!(call, Call::set_author(_))
     }
 }
