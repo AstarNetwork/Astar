@@ -28,6 +28,7 @@ sp-transaction-pool = { version = "3.0.0", default-features = false }
 sp-std = { version = "3.0.0", default-features = false }
 sp-version = { version = "3.0.0", default-features = false }
 sp-session = { version = "3.0.0", default-features = false }
+sp-staking = { version = "3.0.0", default-features = false }
 
 # frame dependencies
 pallet-plasm-operator = { path = "../../../frame/plasm-operator", default-features = false }
@@ -52,6 +53,7 @@ pallet-nicks = { version = "3.0.0", default-features = false }
 pallet-randomness-collective-flip = { version = "3.0.0", default-features = false }
 pallet-scheduler = { version = "3.0.0", default-features = false }
 pallet-session = { version = "3.0.0", default-features = false, features = ["historical"] }
+pallet-staking = { version = "3.0.0", default-features = false }
 pallet-sudo = { version = "3.0.0", default-features = false }
 pallet-offences = { version = "3.0.0", default-features = false }
 frame-support = { version = "3.0.0", default-features = false }
@@ -83,6 +85,7 @@ std = [
     "sp-runtime/std",
     "sp-runtime-interface/std",
     "sp-session/std",
+    "sp-staking/std",
     "sp-std/std",
     "sp-version/std",
     "sp-transaction-pool/std",
@@ -114,6 +117,7 @@ std = [
     "pallet-randomness-collective-flip/std",
     "pallet-scheduler/std",
     "pallet-session/std",
+    "pallet-staking/std",
     "pallet-plasm-operator/std",
     "pallet-ethereum/std",
     "pallet-sudo/std",
