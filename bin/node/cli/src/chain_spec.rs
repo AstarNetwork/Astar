@@ -7,7 +7,7 @@ use plasm_runtime::Block;
 use plasm_runtime::{
     BabeConfig, BalancesConfig, ContractsConfig, EVMConfig, EthereumConfig, GenesisConfig,
     GrandpaConfig, ImOnlineConfig, IndicesConfig, StakingConfig, StakerStatus,
-    SessionConfig, SessionKeys, SudoConfig, SystemConfig, wasm_binary_unwrap,
+    SessionConfig, SessionKeys, SudoConfig, SystemConfig, WASM_BINARY,
 };
 use sc_chain_spec::ChainSpecExtension;
 use sc_service::ChainType;
@@ -130,7 +130,7 @@ fn make_genesis(
 ) -> GenesisConfig {
     GenesisConfig {
         frame_system: Some(SystemConfig {
-            code: wasm_binary_unwrap.to_vec(),
+            code: WASM_BINARY.to_vec(),
             changes_trie_config: Default::default(),
         }),
         pallet_balances: Some(BalancesConfig { balances }),
@@ -8965,8 +8965,8 @@ pub fn plasm_config() -> ChainSpec {
 fn development_config_genesis() -> GenesisConfig {
     testnet_genesis(
         vec![
-            get_account_id_from_seed::<sr25519::Public>("Alice"),
-            get_account_id_from_seed::<sr25519::Public>("Bob"),
+            (get_account_id_from_seed::<sr25519::Public>("Alice"),
+            get_account_id_from_seed::<sr25519::Public>("Bob")),
         ],
         vec![
             get_authority_keys_from_seed("Alice"),
@@ -8995,12 +8995,12 @@ pub fn development_config() -> ChainSpec {
 fn local_testnet_genesis() -> GenesisConfig {
     testnet_genesis(
         vec![
-            get_account_id_from_seed::<sr25519::Public>("Alice"),
-            get_account_id_from_seed::<sr25519::Public>("Bob"),
+            (get_account_id_from_seed::<sr25519::Public>("Alice"),
+            get_account_id_from_seed::<sr25519::Public>("Alice//stash") ),
         ],
         vec![
             get_authority_keys_from_seed("Alice"),
-            get_authority_keys_from_seed("Bob"),
+            get_authority_keys_from_seed("Alice//stash"),
         ],
         None,
         get_account_id_from_seed::<sr25519::Public>("Alice"),

@@ -63,19 +63,20 @@ use constants::{currency::*, time::*};
 mod precompiles;
 
 // Make the WASM binary available.
-#[cfg(all(feature = "std", feature = "include-wasm"))]
+#[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
-/// Wasm binary unwrapped. If built with `SKIP_WASM_BUILD`, the function panics.
-pub fn wasm_binary_unwrap() -> &'static [u8] {
-	WASM_BINARY.expect("Development wasm binary is not available. This means the client is \
-						built with `SKIP_WASM_BUILD` flag and it is only usable for \
-						production chains. Please rebuild with the flag disabled.")
-}
+// /// Wasm binary unwrapped. If built with `SKIP_WASM_BUILD`, the function panics.
+// #[cfg(feature = "std")]
+// pub fn wasm_binary_unwrap() -> &'static [u8] {
+// 	WASM_BINARY.expect("Development wasm binary is not available. This means the client is \
+// 						built with `SKIP_WASM_BUILD` flag and it is only usable for \
+// 						production chains. Please rebuild with the flag disabled.")
+// }
 
 /// Runtime version.
 pub const VERSION: RuntimeVersion = RuntimeVersion {
-    spec_name: create_runtime_str!("dusty5_pos"),
+    spec_name: create_runtime_str!("dusty5"),
     impl_name: create_runtime_str!("staketechnologies-plasm"),
     authoring_version: 4,
     // Per convention: if the runtime behavior changes, increment spec_version
