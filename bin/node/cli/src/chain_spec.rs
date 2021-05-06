@@ -187,7 +187,7 @@ fn make_genesis(
 
 /// Dusty testnet file config.
 pub fn dusty_config() -> ChainSpec {
-    ChainSpec::from_json_bytes(&include_bytes!("../res/dusty.json")[..]).unwrap()
+    ChainSpec::from_json_bytes(&include_bytes!("../res/dusty.raw.json")[..]).unwrap()
 }
 
 /*
