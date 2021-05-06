@@ -9196,7 +9196,7 @@ const DUSTY_PROTOCOL_ID: &amp;str = &quot;pld&quot;;
 
 <span class="doccomment">/// Dusty testnet file config.</span>
 <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">dusty_config</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">ChainSpec</span> {
-    <span class="ident">ChainSpec</span>::<span class="ident">from_json_bytes</span>(<span class="kw-2">&amp;</span><span class="macro">include_bytes</span><span class="macro">!</span>(<span class="string">&quot;../res/dusty.json&quot;</span>)[..]).<span class="ident">unwrap</span>()
+    <span class="ident">ChainSpec</span>::<span class="ident">from_json_bytes</span>(<span class="kw-2">&amp;</span><span class="macro">include_bytes</span><span class="macro">!</span>(<span class="string">&quot;../res/dusty.raw.json&quot;</span>)[..]).<span class="ident">unwrap</span>()
 }
 
 <span class="comment">/*
