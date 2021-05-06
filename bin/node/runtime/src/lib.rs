@@ -73,8 +73,8 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     // and set impl_version to equal spec_version. If only runtime
     // implementation changes and behavior does not, then leave spec_version as
     // is and increment impl_version.
-    spec_version: 2,
-    impl_version: 2,
+    spec_version: 3,
+    impl_version: 3,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 1,
 };
@@ -356,7 +356,7 @@ parameter_types! {
             <Runtime as pallet_contracts::Config>::WeightInfo::on_initialize_per_queue_item(1) -
             <Runtime as pallet_contracts::Config>::WeightInfo::on_initialize_per_queue_item(0)
         )) / 5) as u32;
-    pub MaxCodeSize: u32 = 128 * 1024;
+    pub MaxCodeSize: u32 = 512 * 1024;
 }
 
 impl pallet_contracts::Config for Runtime {
