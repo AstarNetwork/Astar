@@ -1,13 +1,14 @@
 //! Chain specification.
 
+use frame_support::debug;
 use pallet_im_online::sr25519::AuthorityId as ImOnlineId;
 use plasm_primitives::{AccountId, Balance, Signature};
 use plasm_runtime::constants::currency::PLM;
 use plasm_runtime::Block;
 use plasm_runtime::{
     BabeConfig, BalancesConfig, ContractsConfig, EVMConfig, EthereumConfig, GenesisConfig,
-    GrandpaConfig, ImOnlineConfig, IndicesConfig, StakingConfig, StakerStatus,
-    SessionConfig, SessionKeys, SudoConfig, SystemConfig, WASM_BINARY,
+    GrandpaConfig, ImOnlineConfig, IndicesConfig, SessionConfig, SessionKeys, StakerStatus,
+    StakingConfig, SudoConfig, SystemConfig, WASM_BINARY,
 };
 use sc_chain_spec::ChainSpecExtension;
 use sc_service::ChainType;
@@ -15,14 +16,15 @@ use serde::{Deserialize, Serialize};
 use sp_consensus_babe::AuthorityId as BabeId;
 use sp_core::{sr25519, Pair, Public, H160, U256};
 use sp_finality_grandpa::AuthorityId as GrandpaId;
-use sp_runtime::{Perbill, 
-    traits::{IdentifyAccount, Verify}
+use sp_runtime::{
+    traits::{IdentifyAccount, Verify},
+    Perbill,
 };
+
 type AccountPublic = <Signature as Verify>::Signer;
 
 const STASH: Balance = 1_000_000 * PLM;
 
-use hex_literal::hex;
 /*
 use plasm_runtime::constants::currency::*;
 use sp_core::crypto::{Ss58Codec, UncheckedInto};
@@ -95,17 +97,21 @@ fn session_keys(babe: BabeId, grandpa: GrandpaId, im_online: ImOnlineId) -> Sess
 }
 
 fn testnet_genesis(
-	initial_authorities: Vec<(AccountId, AccountId)>,
+    initial_authorities: Vec<(AccountId, AccountId)>,
     keys: Vec<(AccountId, BabeId, GrandpaId, ImOnlineId)>,
     endowed_accounts: Option<Vec<AccountId>>,
     sudo_key: AccountId,
 ) -> GenesisConfig {
+    debug::RuntimeLogger::init();
+    debug::info!("############# HI Mario, testnet_genesis");
     const ENDOWMENT: Balance = 1_000_000_000 * PLM;
     let endowed_accounts: Vec<(AccountId, Balance)> = endowed_accounts
         .unwrap_or_else(|| {
             vec![
                 get_account_id_from_seed::<sr25519::Public>("Alice"),
+                get_account_id_from_seed::<sr25519::Public>("Alice//stash"),
                 get_account_id_from_seed::<sr25519::Public>("Bob"),
+                get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
                 get_account_id_from_seed::<sr25519::Public>("Charlie"),
                 get_account_id_from_seed::<sr25519::Public>("Dave"),
                 get_account_id_from_seed::<sr25519::Public>("Eve"),
@@ -116,7 +122,13 @@ fn testnet_genesis(
         .cloned()
         .map(|acc| (acc, ENDOWMENT))
         .collect();
-
+    debug::RuntimeLogger::init();
+    debug::info!("auth len{:?}", initial_authorities.len());
+    // let pero: Vec<(AccountId, AccountId, _, StakerStatus<AccountId>)> = initial_authorities
+    //     .iter()
+    //     .map(|x| (x.0.clone(), x.1.clone(), STASH, StakerStatus::Validator))
+    //     .collect();
+    // debug::info!("auth {:?}", pero);
     make_genesis(initial_authorities, keys, endowed_accounts, sudo_key, true)
 }
 
@@ -153,16 +165,17 @@ fn make_genesis(
                 })
                 .collect::<Vec<_>>(),
         }),
-		pallet_staking: Some(StakingConfig {
-			validator_count: initial_authorities.len() as u32,
-			minimum_validator_count: initial_authorities.len() as u32,
-			stakers: initial_authorities.iter().map(|x| {
-				(x.0.clone(), x.1.clone(), STASH, StakerStatus::Validator)
-			}).collect(),
-			invulnerables: initial_authorities.iter().map(|x| x.0.clone()).collect(),
-			slash_reward_fraction: Perbill::from_percent(10),
-			.. Default::default()
-		}),
+        pallet_staking: Some(StakingConfig {
+            validator_count: initial_authorities.len() as u32,
+            minimum_validator_count: initial_authorities.len() as u32,
+            stakers: initial_authorities
+                .iter()
+                .map(|x| (x.0.clone(), x.1.clone(), STASH, StakerStatus::Validator))
+                .collect(),
+            invulnerables: initial_authorities.iter().map(|x| x.0.clone()).collect(),
+            slash_reward_fraction: Perbill::from_percent(10),
+            ..Default::default()
+        }),
         pallet_babe: Some(BabeConfig {
             authorities: vec![],
         }),
@@ -8963,11 +8976,13 @@ pub fn plasm_config() -> ChainSpec {
 }
 
 fn development_config_genesis() -> GenesisConfig {
+    debug::info!("############# HI Mario, development_config_genesis");
+
     testnet_genesis(
-        vec![
-            (get_account_id_from_seed::<sr25519::Public>("Alice"),
-            get_account_id_from_seed::<sr25519::Public>("Bob")),
-        ],
+        vec![(
+            get_account_id_from_seed::<sr25519::Public>("Alice"),
+            get_account_id_from_seed::<sr25519::Public>("Bob"),
+        )],
         vec![
             get_authority_keys_from_seed("Alice"),
             get_authority_keys_from_seed("Bob"),
@@ -8993,14 +9008,22 @@ pub fn development_config() -> ChainSpec {
 }
 
 fn local_testnet_genesis() -> GenesisConfig {
+    debug::RuntimeLogger::init();
+    debug::info!("############# HI Mario, local_testnet_genesis");
     testnet_genesis(
         vec![
-            (get_account_id_from_seed::<sr25519::Public>("Alice"),
-            get_account_id_from_seed::<sr25519::Public>("Alice//stash") ),
+            (
+                get_account_id_from_seed::<sr25519::Public>("Alice"),
+                get_account_id_from_seed::<sr25519::Public>("Alice//stash"),
+            ),
+            (
+                get_account_id_from_seed::<sr25519::Public>("Bob"),
+                get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
+            ),
         ],
         vec![
             get_authority_keys_from_seed("Alice"),
-            get_authority_keys_from_seed("Alice//stash"),
+            get_authority_keys_from_seed("Bob"),
         ],
         None,
         get_account_id_from_seed::<sr25519::Public>("Alice"),
