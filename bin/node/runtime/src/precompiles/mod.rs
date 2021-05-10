@@ -11,13 +11,16 @@ use frame_support::dispatch::{Dispatchable, GetDispatchInfo, PostDispatchInfo};
 use sp_core::H160;
 use sp_std::{marker::PhantomData, vec::Vec};
 
+mod nicks;
+use nicks::Nicks;
+
 #[derive(Debug, Clone, Copy)]
 pub struct PlasmPrecompiles<R>(PhantomData<R>);
 
 impl<R> PrecompileSet for PlasmPrecompiles<R>
 where
-    R: pallet_evm::Config,
-    R::Call: Dispatchable<PostInfo = PostDispatchInfo> + GetDispatchInfo + Decode,
+    R: pallet_evm::Config + pallet_nicks::Config,
+    R::Call: Dispatchable<PostInfo = PostDispatchInfo> + GetDispatchInfo + Decode + From<pallet_nicks::Call<R>>,
 	<R::Call as Dispatchable>::Origin: From<Option<R::AccountId>>,
 {
     fn execute(
@@ -39,6 +42,7 @@ where
             // Non Ethereum precompiles
             a if a == hash(1024) => Some(Dispatch::<R>::execute(input, target_gas, context)),
             // Plasm precompiles
+            a if a == hash(4096) => Some(Nicks::<R>::execute(input, target_gas, context)),
             _ => None,
         }
     }
