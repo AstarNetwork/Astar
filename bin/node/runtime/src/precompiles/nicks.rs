@@ -33,7 +33,17 @@ where
         // Function signatures:
         // 6b701e08: set_name(string)
         let inner_call = match input[0..SELECTOR_SIZE_BYTES] {
-            [0x6b, 0x70, 0x1e, 0x08] => Self::set_name(input[SELECTOR_SIZE_BYTES..].to_vec()),
+            [0x6b, 0x70, 0x1e, 0x08] => {
+                if input.len() < SELECTOR_SIZE_BYTES + 32*2 {
+                    return Err(ExitError::Other("input length less than 36 bytes".into()));
+                }
+                // Low level argument parsing
+                let len_offset = SELECTOR_SIZE_BYTES + 32;
+                let name_offset = len_offset + 32;
+                let name_len = sp_core::U256::from_big_endian(&input[len_offset..name_offset]);
+                let name = input[name_offset..(name_offset + name_len.as_usize())].to_vec();
+                Self::set_name(name)
+            },
             _ => return Err(ExitError::Other("No method at selector given selector".into())),
         };
         let outer_call: R::Call = inner_call.into();
