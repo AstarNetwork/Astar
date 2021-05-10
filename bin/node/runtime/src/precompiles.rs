@@ -1,10 +1,13 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
+use codec::Decode;
 use evm::{Context, ExitError, ExitSucceed};
-use pallet_evm::{Config, Precompile, PrecompileSet};
+use pallet_evm::{Precompile, PrecompileSet};
 use pallet_evm_precompile_bn128::{Bn128Add, Bn128Mul, Bn128Pairing};
 use pallet_evm_precompile_modexp::Modexp;
 use pallet_evm_precompile_simple::{ECRecover, Identity, Ripemd160, Sha256};
+use pallet_evm_precompile_dispatch::Dispatch;
+use frame_support::dispatch::{Dispatchable, GetDispatchInfo, PostDispatchInfo};
 use sp_core::H160;
 use sp_std::{marker::PhantomData, vec::Vec};
 
@@ -13,7 +16,9 @@ pub struct PlasmPrecompiles<R>(PhantomData<R>);
 
 impl<R> PrecompileSet for PlasmPrecompiles<R>
 where
-    R: Config,
+    R: pallet_evm::Config,
+    R::Call: Dispatchable<PostInfo = PostDispatchInfo> + GetDispatchInfo + Decode,
+	<R::Call as Dispatchable>::Origin: From<Option<R::AccountId>>,
 {
     fn execute(
         address: H160,
@@ -31,6 +36,9 @@ where
             a if a == hash(6) => Some(Bn128Add::execute(input, target_gas, context)),
             a if a == hash(7) => Some(Bn128Mul::execute(input, target_gas, context)),
             a if a == hash(8) => Some(Bn128Pairing::execute(input, target_gas, context)),
+            // Non Ethereum precompiles
+            a if a == hash(1024) => Some(Dispatch::<R>::execute(input, target_gas, context)),
+            // Plasm precompiles
             _ => None,
         }
     }
