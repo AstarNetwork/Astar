@@ -3,7 +3,6 @@ use crate::service::new_partial;
 use crate::{chain_spec, service, Cli, Subcommand};
 use sc_cli::{ChainSpec, Role, RuntimeVersion, SubstrateCli};
 use sc_service::PartialComponents;
-use frame_support::debug;
 
 
 impl SubstrateCli for Cli {
@@ -32,7 +31,6 @@ impl SubstrateCli for Cli {
     }
 
     fn load_spec(&self, id: &str) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
-        debug::info!("############# HI Mario: Load spec {:?}", id);
         Ok(match id {
             "dev" => Box::new(chain_spec::development_config()),
             "local" => Box::new(chain_spec::local_testnet_config()),

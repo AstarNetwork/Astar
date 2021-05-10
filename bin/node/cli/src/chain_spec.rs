@@ -1,6 +1,5 @@
 //! Chain specification.
 
-use frame_support::debug;
 use pallet_im_online::sr25519::AuthorityId as ImOnlineId;
 use plasm_primitives::{AccountId, Balance, Signature};
 use plasm_runtime::constants::currency::PLM;
@@ -102,9 +101,7 @@ fn testnet_genesis(
     endowed_accounts: Option<Vec<AccountId>>,
     sudo_key: AccountId,
 ) -> GenesisConfig {
-    debug::RuntimeLogger::init();
-    debug::info!("############# HI Mario, testnet_genesis");
-    const ENDOWMENT: Balance = 1_000_000_000 * PLM;
+    const ENDOWMENT: Balance = 5_000_000 * PLM;
     let endowed_accounts: Vec<(AccountId, Balance)> = endowed_accounts
         .unwrap_or_else(|| {
             vec![
@@ -122,13 +119,6 @@ fn testnet_genesis(
         .cloned()
         .map(|acc| (acc, ENDOWMENT))
         .collect();
-    debug::RuntimeLogger::init();
-    debug::info!("auth len{:?}", initial_authorities.len());
-    // let pero: Vec<(AccountId, AccountId, _, StakerStatus<AccountId>)> = initial_authorities
-    //     .iter()
-    //     .map(|x| (x.0.clone(), x.1.clone(), STASH, StakerStatus::Validator))
-    //     .collect();
-    // debug::info!("auth {:?}", pero);
     make_genesis(initial_authorities, keys, endowed_accounts, sudo_key, true)
 }
 
@@ -8976,7 +8966,6 @@ pub fn plasm_config() -> ChainSpec {
 }
 
 fn development_config_genesis() -> GenesisConfig {
-    debug::info!("############# HI Mario, development_config_genesis");
 
     testnet_genesis(
         vec![(
@@ -9008,8 +8997,7 @@ pub fn development_config() -> ChainSpec {
 }
 
 fn local_testnet_genesis() -> GenesisConfig {
-    debug::RuntimeLogger::init();
-    debug::info!("############# HI Mario, local_testnet_genesis");
+
     testnet_genesis(
         vec![
             (
