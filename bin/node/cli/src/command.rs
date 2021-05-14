@@ -4,7 +4,6 @@ use crate::{chain_spec, service, Cli, Subcommand};
 use sc_cli::{ChainSpec, Role, RuntimeVersion, SubstrateCli};
 use sc_service::PartialComponents;
 
-
 impl SubstrateCli for Cli {
     fn impl_name() -> String {
         "Plasm Network".into()
