@@ -140,3 +140,8 @@ Temporary Items
 
 # Testnet keys
 .keys
+
+# VScode
+.vscode/
+*.code-workspace
+

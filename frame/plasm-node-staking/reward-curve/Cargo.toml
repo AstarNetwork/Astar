@@ -21,4 +21,4 @@ proc-macro2 = "1.0.6"
 proc-macro-crate = "0.1.4"
 
 [dev-dependencies]
-sp-runtime = { version = "3.0.0", path = "../../../primitives/runtime" }
+sp-runtime = { version = "3.0.0" }
