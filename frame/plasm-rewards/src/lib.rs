@@ -21,8 +21,8 @@ use frame_support::{
     StorageMap, StorageValue,
 };
 use frame_system::ensure_root;
+pub use pallet_plasm_node_staking::Forcing;
 use pallet_session::SessionManager;
-pub use pallet_staking::Forcing;
 use sp_runtime::{
     traits::{SaturatedConversion, Zero},
     Perbill, RuntimeDebug,

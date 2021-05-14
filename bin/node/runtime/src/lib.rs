@@ -13,8 +13,9 @@ use frame_support::{
         DispatchClass, IdentityFee, Weight,
     },
 };
-use frame_system::{limits::{BlockLength, BlockWeights},
-    EnsureRoot
+use frame_system::{
+    limits::{BlockLength, BlockWeights},
+    EnsureRoot,
 };
 use pallet_contracts::weights::WeightInfo;
 use pallet_evm::{
@@ -24,7 +25,7 @@ use pallet_evm::{
 use pallet_grandpa::fg_primitives;
 use pallet_grandpa::{AuthorityId as GrandpaId, AuthorityList as GrandpaAuthorityList};
 use pallet_im_online::sr25519::AuthorityId as ImOnlineId;
-use pallet_session::{historical as pallet_session_historical};
+use pallet_session::historical as pallet_session_historical;
 use pallet_transaction_payment::{
     CurrencyAdapter, FeeDetails, Multiplier, RuntimeDispatchInfo, TargetedFeeAdjustment,
 };
@@ -42,8 +43,8 @@ use sp_runtime::transaction_validity::{
     TransactionPriority, TransactionSource, TransactionValidity,
 };
 use sp_runtime::{
-    create_runtime_str, generic, impl_opaque_keys, ApplyExtrinsicResult, FixedPointNumber, Perbill,
-    Perquintill, RuntimeAppPublic, curve::PiecewiseLinear,
+    create_runtime_str, curve::PiecewiseLinear, generic, impl_opaque_keys, ApplyExtrinsicResult,
+    FixedPointNumber, Perbill, Perquintill, RuntimeAppPublic,
 };
 use sp_std::convert::TryFrom;
 use sp_std::prelude::*;
@@ -52,9 +53,9 @@ use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
 // pub use pallet_balances::Call as BalancesCall;
 // pub use pallet_timestamp::Call as TimestampCall;
+pub use pallet_plasm_node_staking::StakerStatus;
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
-pub use pallet_plasm_node_staking::StakerStatus;
 
 /// Constant values used within the runtime.
 pub mod constants;
@@ -276,26 +277,26 @@ impl pallet_session::Config for Runtime {
 }
 
 impl pallet_session::historical::Config for Runtime {
-	type FullIdentification = pallet_plasm_node_staking::Exposure<AccountId, Balance>;
-	type FullIdentificationOf = pallet_plasm_node_staking::ExposureOf<Runtime>;
+    type FullIdentification = pallet_plasm_node_staking::Exposure<AccountId, Balance>;
+    type FullIdentificationOf = pallet_plasm_node_staking::ExposureOf<Runtime>;
 }
 
 const THREE_PERCENT_INFLATION: Perbill = Perbill::from_parts(29_559_999);
 const REWARD_CURVE: PiecewiseLinear<'static> = PiecewiseLinear {
-	points: &[(Perbill::from_percent(0), THREE_PERCENT_INFLATION)],
-	maximum: THREE_PERCENT_INFLATION,
+    points: &[(Perbill::from_percent(0), THREE_PERCENT_INFLATION)],
+    maximum: THREE_PERCENT_INFLATION,
 };
 
 parameter_types! {
-	pub const SessionsPerEra: sp_staking::SessionIndex = 4; // 1 day
-	pub const BondingDuration: pallet_plasm_node_staking::EraIndex = 7; // 7 days
-	pub const SlashDeferDuration: pallet_plasm_node_staking::EraIndex = 6; // 6 days, less than bonding duration
-	pub const RewardCurve: &'static PiecewiseLinear<'static> = &REWARD_CURVE;
-	pub const MaxNominatorRewardedPerValidator: u32 = 64;
+    pub const SessionsPerEra: sp_staking::SessionIndex = 4; // 1 day
+    pub const BondingDuration: pallet_plasm_node_staking::EraIndex = 7; // 7 days
+    pub const SlashDeferDuration: pallet_plasm_node_staking::EraIndex = 6; // 6 days, less than bonding duration
+    pub const RewardCurve: &'static PiecewiseLinear<'static> = &REWARD_CURVE;
+    pub const MaxNominatorRewardedPerValidator: u32 = 64;
     pub const ElectionLookahead: BlockNumber = EPOCH_DURATION_IN_BLOCKS / 4;
-	pub const MaxIterations: u32 = 10;
-	// 0.05%. The higher the value, the more strict solution acceptance becomes.
-	pub MinSolutionScoreBump: Perbill = Perbill::from_rational_approximation(5u32, 10_000);
+    pub const MaxIterations: u32 = 10;
+    // 0.05%. The higher the value, the more strict solution acceptance becomes.
+    pub MinSolutionScoreBump: Perbill = Perbill::from_rational_approximation(5u32, 10_000);
 }
 
 impl pallet_plasm_node_staking::Config for Runtime {
@@ -309,7 +310,7 @@ impl pallet_plasm_node_staking::Config for Runtime {
     type SessionsPerEra = SessionsPerEra;
     type BondingDuration = BondingDuration;
     type SlashDeferDuration = SlashDeferDuration;
-    type SlashCancelOrigin = EnsureRoot<AccountId>;    
+    type SlashCancelOrigin = EnsureRoot<AccountId>;
     type SessionInterface = Self;
     type RewardCurve = RewardCurve;
     type NextNewSession = Session;
@@ -468,7 +469,7 @@ parameter_types! {
     pub const SessionDuration: BlockNumber = EPOCH_DURATION_IN_SLOTS as _;
     pub const ImOnlineUnsignedPriority: TransactionPriority = TransactionPriority::max_value();
     /// We prioritize im-online heartbeats over election solution submission.
-	pub const StakingUnsignedPriority: TransactionPriority = TransactionPriority::max_value() / 2;
+    pub const StakingUnsignedPriority: TransactionPriority = TransactionPriority::max_value() / 2;
 }
 
 impl pallet_im_online::Config for Runtime {

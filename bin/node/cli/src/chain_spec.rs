@@ -8966,7 +8966,6 @@ pub fn plasm_config() -> ChainSpec {
 }
 
 fn development_config_genesis() -> GenesisConfig {
-
     testnet_genesis(
         vec![(
             get_account_id_from_seed::<sr25519::Public>("Alice"),
@@ -8997,7 +8996,6 @@ pub fn development_config() -> ChainSpec {
 }
 
 fn local_testnet_genesis() -> GenesisConfig {
-
     testnet_genesis(
         vec![
             (
