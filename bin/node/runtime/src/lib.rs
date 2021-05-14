@@ -54,7 +54,7 @@ use sp_version::RuntimeVersion;
 // pub use pallet_timestamp::Call as TimestampCall;
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
-pub use pallet_staking::StakerStatus;
+pub use pallet_plasm_node_staking::StakerStatus;
 
 /// Constant values used within the runtime.
 pub mod constants;
@@ -276,8 +276,8 @@ impl pallet_session::Config for Runtime {
 }
 
 impl pallet_session::historical::Config for Runtime {
-	type FullIdentification = pallet_staking::Exposure<AccountId, Balance>;
-	type FullIdentificationOf = pallet_staking::ExposureOf<Runtime>;
+	type FullIdentification = pallet_plasm_node_staking::Exposure<AccountId, Balance>;
+	type FullIdentificationOf = pallet_plasm_node_staking::ExposureOf<Runtime>;
 }
 
 const THREE_PERCENT_INFLATION: Perbill = Perbill::from_parts(29_559_999);
@@ -288,8 +288,8 @@ const REWARD_CURVE: PiecewiseLinear<'static> = PiecewiseLinear {
 
 parameter_types! {
 	pub const SessionsPerEra: sp_staking::SessionIndex = 4; // 1 day
-	pub const BondingDuration: pallet_staking::EraIndex = 7; // 7 days
-	pub const SlashDeferDuration: pallet_staking::EraIndex = 6; // 6 days, less than bonding duration
+	pub const BondingDuration: pallet_plasm_node_staking::EraIndex = 7; // 7 days
+	pub const SlashDeferDuration: pallet_plasm_node_staking::EraIndex = 6; // 6 days, less than bonding duration
 	pub const RewardCurve: &'static PiecewiseLinear<'static> = &REWARD_CURVE;
 	pub const MaxNominatorRewardedPerValidator: u32 = 64;
     pub const ElectionLookahead: BlockNumber = EPOCH_DURATION_IN_BLOCKS / 4;
@@ -298,7 +298,7 @@ parameter_types! {
 	pub MinSolutionScoreBump: Perbill = Perbill::from_rational_approximation(5u32, 10_000);
 }
 
-impl pallet_staking::Config for Runtime {
+impl pallet_plasm_node_staking::Config for Runtime {
     type Currency = Balances;
     type UnixTime = Timestamp;
     type CurrencyToVote = U128CurrencyToVote;
@@ -767,7 +767,7 @@ construct_runtime!(
         //PlasmValidator: pallet_plasm_validator::{Module, Call, Storage, Event<T>, Config<T>},
         // PlasmRewards: pallet_plasm_rewards::{Module, Call, Storage, Event<T>, Config},
         Session: pallet_session::{Module, Call, Storage, Event, Config<T>},
-        Staking: pallet_staking::{Module, Call, Storage, Event<T>, Config<T>},
+        Staking: pallet_plasm_node_staking::{Module, Call, Storage, Event<T>, Config<T>},
         Historical: pallet_session_historical::{Module},
         Babe: pallet_babe::{Module, Call, Storage, Config, Inherent, ValidateUnsigned},
         Grandpa: pallet_grandpa::{Module, Call, Storage, Config, Event, ValidateUnsigned},

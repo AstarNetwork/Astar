@@ -155,7 +155,7 @@ fn make_genesis(
                 })
                 .collect::<Vec<_>>(),
         }),
-        pallet_staking: Some(StakingConfig {
+        pallet_plasm_node_staking: Some(StakingConfig {
             validator_count: initial_authorities.len() as u32 + 2,
             minimum_validator_count: initial_authorities.len() as u32,
             stakers: initial_authorities

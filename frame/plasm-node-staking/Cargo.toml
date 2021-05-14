@@ -1,13 +1,12 @@
 [package]
-name = "pallet-staking"
-version = "3.0.0"
-authors = ["Parity Technologies <admin@parity.io>"]
+name = "pallet-plasm-node-staking"
+version = "1.10.0"
+authors = ["Stake Technologies <devops@stake.co.jp>"]
 edition = "2018"
 license = "Apache-2.0"
-homepage = "https://substrate.dev"
-repository = "https://github.com/paritytech/substrate/"
-description = "FRAME pallet staking"
-readme = "README.md"
+homepage = "https://docs.plasmnet.io/"
+repository = "https://github.com/staketechnologies/Plasm/"
+description = "FRAME pallet for node staking, based on Substrate pallet-staking 3.0.0"
 
 [package.metadata.docs.rs]
 targets = ["x86_64-unknown-linux-gnu"]
@@ -16,30 +15,30 @@ targets = ["x86_64-unknown-linux-gnu"]
 static_assertions = "1.1.0"
 serde = { version = "1.0.101", optional = true }
 codec = { package = "parity-scale-codec", version = "2.0.0", default-features = false, features = ["derive"] }
-sp-std = { version = "3.0.0", default-features = false, path = "../../primitives/std" }
-sp-npos-elections = { version = "3.0.0", default-features = false, path = "../../primitives/npos-elections" }
-sp-io ={ version = "3.0.0", default-features = false, path = "../../primitives/io" }
-sp-runtime = { version = "3.0.0", default-features = false, path = "../../primitives/runtime" }
-sp-staking = { version = "3.0.0", default-features = false, path = "../../primitives/staking" }
-frame-support = { version = "3.0.0", default-features = false, path = "../support" }
-frame-system = { version = "3.0.0", default-features = false, path = "../system" }
-pallet-session = { version = "3.0.0", default-features = false, features = ["historical"], path = "../session" }
-pallet-authorship = { version = "3.0.0", default-features = false, path = "../authorship" }
-sp-application-crypto = { version = "3.0.0", default-features = false, path = "../../primitives/application-crypto" }
+sp-std = { version = "3.0.0", default-features = false }
+sp-npos-elections = { version = "3.0.0", default-features = false }
+sp-io ={ version = "3.0.0", default-features = false }
+sp-runtime = { version = "3.0.0", default-features = false }
+sp-staking = { version = "3.0.0", default-features = false }
+frame-support = { version = "3.0.0", default-features = false }
+frame-system = { version = "3.0.0", default-features = false }
+pallet-session = { version = "3.0.0", default-features = false, features = ["historical"] }
+pallet-authorship = { version = "3.0.0", default-features = false }
+sp-application-crypto = { version = "3.0.0", default-features = false }
 
 # Optional imports for benchmarking
-frame-benchmarking = { version = "3.0.0", default-features = false, path = "../benchmarking", optional = true }
+frame-benchmarking = { version = "3.0.0", default-features = false, optional = true }
 rand_chacha = { version = "0.2", default-features = false, optional = true }
 
 [dev-dependencies]
-sp-core = { version = "3.0.0", path = "../../primitives/core" }
-sp-storage = { version = "3.0.0", path = "../../primitives/storage" }
-sp-tracing = { version = "3.0.0", path = "../../primitives/tracing" }
-pallet-balances = { version = "3.0.0", path = "../balances" }
-pallet-timestamp = { version = "3.0.0", path = "../timestamp" }
-pallet-staking-reward-curve = { version = "3.0.0",  path = "../staking/reward-curve" }
-substrate-test-utils = { version = "3.0.0", path = "../../test-utils" }
-frame-benchmarking = { version = "3.0.0", path = "../benchmarking" }
+sp-core = { version = "3.0.0" }
+sp-storage = { version = "3.0.0" }
+sp-tracing = { version = "3.0.0" }
+pallet-balances = { version = "3.0.0" }
+pallet-timestamp = { version = "3.0.0" }
+pallet-staking-reward-curve = { version = "3.0.0",  path = "../plasm-node-staking/reward-curve" }
+substrate-test-utils = { version = "3.0.0" }
+frame-benchmarking = { version = "3.0.0" }
 rand_chacha = { version = "0.2" }
 parking_lot = "0.11.1"
 hex = "0.4"
