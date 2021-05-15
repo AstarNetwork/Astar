@@ -6,6 +6,7 @@
 
 use frame_support::{
     construct_runtime, parameter_types, match_type,
+    traits::Filter,
     weights::{
         constants::{BlockExecutionWeight, ExtrinsicBaseWeight, WEIGHT_PER_SECOND},
         DispatchClass, IdentityFee, Weight,
@@ -114,6 +115,18 @@ parameter_types! {
     pub SS58Prefix: u8 = 5;
 }
 
+pub struct BaseFilter;
+impl Filter<Call> for BaseFilter {
+    fn filter(call: &Call) -> bool {
+        match call {
+            // These modules are not allowed to be called by transactions:
+            Call::Balances(_) => false,
+            // Other modules should works:
+            _ => true,
+        }
+    }
+}
+
 impl frame_system::Config for Runtime {
     /// The identifier used to distinguish between accounts.
     type AccountId = AccountId;
@@ -145,7 +158,7 @@ impl frame_system::Config for Runtime {
     type OnNewAccount = ();
     type OnKilledAccount = ();
     type DbWeight = ();
-    type BaseCallFilter = ();
+    type BaseCallFilter = BaseFilter;
     type SystemWeightInfo = ();
     type BlockWeights = RuntimeBlockWeights;
     type BlockLength = RuntimeBlockLength;
@@ -233,6 +246,18 @@ impl pallet_balances::Config for Runtime {
 }
 
 parameter_types! {
+    pub const MinVestedTransfer: Balance = 1 * SDN;
+}
+
+impl pallet_vesting::Config for Runtime {
+    type Event = Event;
+    type Currency = Balances;
+    type BlockNumberToBalance = ConvertInto;
+    type MinVestedTransfer = MinVestedTransfer;
+    type WeightInfo = ();
+}
+
+parameter_types! {
     pub const TransactionByteFee: Balance = 10 * MILLISDN;
     pub const TargetBlockFullness: Perquintill = Perquintill::from_percent(25);
     pub AdjustmentVariable: Multiplier = Multiplier::saturating_from_rational(1, 100_000);
@@ -266,6 +291,7 @@ construct_runtime!(
         ParachainInfo: parachain_info::{Pallet, Storage, Config} = 21,
 
         Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>} = 30,
+        Vesting: pallet_vesting::{Pallet, Call, Storage, Config<T>, Event<T>} = 31,
 
         CumulusXcm: cumulus_pallet_xcm::{Pallet, Call, Event<T>, Origin} = 50,
     }
