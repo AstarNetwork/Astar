@@ -5,7 +5,7 @@
 #![recursion_limit = "256"]
 
 use frame_support::{
-    construct_runtime, parameter_types, match_type,
+    construct_runtime, match_type, parameter_types,
     traits::Filter,
     weights::{
         constants::{BlockExecutionWeight, ExtrinsicBaseWeight, WEIGHT_PER_SECOND},
@@ -20,10 +20,10 @@ use sp_api::impl_runtime_apis;
 use sp_core::OpaqueMetadata;
 use sp_inherents::{CheckInherentsResult, InherentData};
 use sp_runtime::{
-    traits::{BlakeTwo256, Block as BlockT, AccountIdLookup},
+    create_runtime_str, generic,
+    traits::{AccountIdLookup, BlakeTwo256, Block as BlockT, ConvertInto},
     transaction_validity::{TransactionSource, TransactionValidity},
-    create_runtime_str, generic, ApplyExtrinsicResult, FixedPointNumber,
-    Perbill, Perquintill,
+    ApplyExtrinsicResult, FixedPointNumber, Perbill, Perquintill,
 };
 use sp_std::prelude::*;
 #[cfg(any(feature = "std", test))]
@@ -33,8 +33,8 @@ use sp_version::RuntimeVersion;
 // XCM support
 use xcm::v0::{Junction::*, MultiLocation, MultiLocation::*};
 use xcm_builder::{
-	LocationInverter, ParentIsDefault, FixedWeightBounds, AllowUnpaidExecutionFrom,
-	ParentAsSuperuser, SovereignSignedViaLocation,
+    AllowUnpaidExecutionFrom, FixedWeightBounds, LocationInverter, ParentAsSuperuser,
+    ParentIsDefault, SovereignSignedViaLocation,
 };
 use xcm_executor::{Config, XcmExecutor};
 
@@ -213,16 +213,16 @@ parameter_types! {
 pub struct XcmConfig;
 impl Config for XcmConfig {
     type Call = Call;
-    type XcmSender = ();    // sending XCM not supported
-    type AssetTransactor = ();    // balances not supported
+    type XcmSender = (); // sending XCM not supported
+    type AssetTransactor = (); // balances not supported
     type OriginConverter = XcmOriginToTransactDispatchOrigin;
-    type IsReserve = ();    // balances not supported
-    type IsTeleporter = ();    // balances not supported
+    type IsReserve = (); // balances not supported
+    type IsTeleporter = (); // balances not supported
     type LocationInverter = LocationInverter<Ancestry>;
     type Barrier = AllowUnpaidExecutionFrom<JustTheParent>;
-    type Weigher = FixedWeightBounds<UnitWeightCost, Call>;    // balances not supported
-    type Trader = ();    // balances not supported
-    type ResponseHandler = ();    // Don't handle responses for now.
+    type Weigher = FixedWeightBounds<UnitWeightCost, Call>; // balances not supported
+    type Trader = (); // balances not supported
+    type ResponseHandler = (); // Don't handle responses for now.
 }
 
 impl cumulus_pallet_xcm::Config for Runtime {
@@ -231,7 +231,7 @@ impl cumulus_pallet_xcm::Config for Runtime {
 }
 
 parameter_types! {
-    pub const ExistentialDeposit: Balance = 1 * MILLISDN;
+    pub const ExistentialDeposit: Balance = 1_000_000;
     pub const MaxLocks: u32 = 50;
 }
 

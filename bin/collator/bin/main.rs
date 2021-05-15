@@ -1,4 +1,4 @@
-//! Plasm Parachain Collator. 
+//! Plasm Parachain Collator.
 
 #![warn(missing_docs)]
 

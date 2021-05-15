@@ -1,13 +1,13 @@
 //! Chain specifications.
 
 use cumulus_primitives_core::ParaId;
-use shiden_runtime::{
-    AccountId, Balance, Signature, SDN,
-    wasm_binary_unwrap, BalancesConfig, GenesisConfig, ParachainInfoConfig, SudoConfig, SystemConfig,
-};
 use sc_chain_spec::ChainSpecExtension;
 use sc_service::ChainType;
 use serde::{Deserialize, Serialize};
+use shiden_runtime::{
+    wasm_binary_unwrap, AccountId, Balance, BalancesConfig, GenesisConfig, ParachainInfoConfig,
+    Signature, SudoConfig, SystemConfig, VestingConfig, SDN,
+};
 use sp_core::{sr25519, Pair, Public};
 
 use sp_runtime::traits::{IdentifyAccount, Verify};
@@ -152,8 +152,9 @@ fn make_genesis(
             code: wasm_binary_unwrap().to_vec(),
             changes_trie_config: Default::default(),
         },
-        pallet_balances: BalancesConfig { balances },
         pallet_sudo: SudoConfig { key: root_key },
         parachain_info: ParachainInfoConfig { parachain_id },
+        pallet_balances: BalancesConfig { balances },
+        pallet_vesting: VestingConfig { vesting: vec![] },
     }
 }

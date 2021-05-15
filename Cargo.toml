@@ -1,7 +1,7 @@
 [workspace]
 members = [
     "bin/collator",
-    "bin/collator/shiden-runtime",
+    "runtime/shiden-runtime",
 ]
 
 exclude = [

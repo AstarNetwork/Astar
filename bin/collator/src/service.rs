@@ -1,15 +1,15 @@
 use cumulus_client_consensus_relay_chain::{
     build_relay_chain_consensus, BuildRelayChainConsensusParams,
 };
-use cumulus_primitives_parachain_inherent::ParachainInherentData;
 use cumulus_client_network::build_block_announce_validator;
 use cumulus_client_service::{
     prepare_node_config, start_collator, start_full_node, StartCollatorParams, StartFullNodeParams,
 };
-use shiden_runtime::RuntimeApi;
+use cumulus_primitives_parachain_inherent::ParachainInherentData;
 use polkadot_primitives::v0::CollatorPair;
 use sc_service::{Configuration, PartialComponents, Role, TFullBackend, TFullClient, TaskManager};
 use sc_telemetry::{Telemetry, TelemetryWorker, TelemetryWorkerHandle};
+use shiden_runtime::RuntimeApi;
 use std::sync::Arc;
 
 type BlockNumber = u32;
@@ -58,15 +58,12 @@ pub fn new_partial(
         )?;
     let client = Arc::new(client);
 
-    let telemetry_worker_handle = telemetry
-        .as_ref()
-        .map(|(worker, _)| worker.handle());
+    let telemetry_worker_handle = telemetry.as_ref().map(|(worker, _)| worker.handle());
 
-    let telemetry = telemetry
-        .map(|(worker, telemetry)| {
-            task_manager.spawn_handle().spawn("telemetry", worker.run());
-            telemetry
-        });
+    let telemetry = telemetry.map(|(worker, telemetry)| {
+        task_manager.spawn_handle().spawn("telemetry", worker.run());
+        telemetry
+    });
 
     let registry = config.prometheus_registry();
 
@@ -112,11 +109,11 @@ pub async fn start_node<RB>(
     rpc_ext_builder: RB,
 ) -> sc_service::error::Result<(TaskManager, Arc<TFullClient<Block, RuntimeApi, Executor>>)>
 where
-	RB: Fn(
-			Arc<TFullClient<Block, RuntimeApi, Executor>>,
-		) -> jsonrpc_core::IoHandler<sc_rpc::Metadata>
-		+ Send
-		+ 'static,
+    RB: Fn(
+            Arc<TFullClient<Block, RuntimeApi, Executor>>,
+        ) -> jsonrpc_core::IoHandler<sc_rpc::Metadata>
+        + Send
+        + 'static,
 {
     if matches!(parachain_config.role, Role::Light) {
         return Err("Light client not supported!".into());
@@ -127,16 +124,15 @@ where
     let params = new_partial(&parachain_config)?;
     let (mut telemetry, telemetry_worker_handle) = params.other;
 
-    let relay_chain_full_node =
-        cumulus_client_service::build_polkadot_full_node(
-            polkadot_config,
-            collator_key.clone(),
-            telemetry_worker_handle,
-        )
-            .map_err(|e| match e {
-                polkadot_service::Error::Sub(x) => x,
-                s => format!("{}", s).into(),
-            })?;
+    let relay_chain_full_node = cumulus_client_service::build_polkadot_full_node(
+        polkadot_config,
+        collator_key.clone(),
+        telemetry_worker_handle,
+    )
+    .map_err(|e| match e {
+        polkadot_service::Error::Sub(x) => x,
+        s => format!("{}", s).into(),
+    })?;
 
     let client = params.client.clone();
     let backend = params.backend.clone();

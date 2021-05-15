@@ -53,7 +53,7 @@ sc-consensus-babe = { git = "https://github.com/paritytech/substrate", branch = 
 jsonrpc-core = "15.1.0"
 
 # plasm-specific dependencies
-shiden-runtime = { path = "./shiden-runtime" }
+shiden-runtime = { path = "../../runtime/shiden-runtime" }
 
 # frame dependencies
 frame-system = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.1" }

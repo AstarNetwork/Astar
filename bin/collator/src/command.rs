@@ -1,7 +1,7 @@
 use crate::{
     chain_spec,
-    service::Block,
     cli::{Cli, RelayChainCli, Subcommand},
+    service::Block,
 };
 use codec::Encode;
 use cumulus_client_service::genesis::generate_genesis_block;
@@ -177,7 +177,7 @@ pub fn run() -> Result<()> {
         }
         Some(Subcommand::PurgeChain(cmd)) => {
             let runner = cli.create_runner(cmd)?;
-            runner.sync_run(|config| { 
+            runner.sync_run(|config| {
                 let polkadot_cli = RelayChainCli::new(
                     &config,
                     [RelayChainCli::executable_name().to_string()]
@@ -258,61 +258,54 @@ pub fn run() -> Result<()> {
         None => {
             let runner = cli.create_runner(&*cli.run)?;
 
-            runner
-                .run_node_until_exit(|config| async move {
-                    // TODO
-                    let key = sp_core::Pair::generate().0;
+            runner.run_node_until_exit(|config| async move {
+                // TODO
+                let key = sp_core::Pair::generate().0;
 
-                    let polkadot_cli = RelayChainCli::new(
-                        &config,
-                        [RelayChainCli::executable_name().to_string()]
-                            .iter()
-                            .chain(cli.relaychain_args.iter()),
-                    );
+                let polkadot_cli = RelayChainCli::new(
+                    &config,
+                    [RelayChainCli::executable_name().to_string()]
+                        .iter()
+                        .chain(cli.relaychain_args.iter()),
+                );
 
-                    let id = ParaId::from(cli.run.parachain_id);
+                let id = ParaId::from(cli.run.parachain_id);
 
-                    let parachain_account =
-                        AccountIdConversion::<polkadot_primitives::v0::AccountId>::into_account(
-                            &id,
-                        );
+                let parachain_account =
+                    AccountIdConversion::<polkadot_primitives::v0::AccountId>::into_account(&id);
 
-                    let block: Block = generate_genesis_block(&config.chain_spec)
-                        .map_err(|e| format!("{:?}", e))?;
-                    let genesis_state =
-                        format!("0x{:?}", HexDisplay::from(&block.header().encode()));
+                let block: Block =
+                    generate_genesis_block(&config.chain_spec).map_err(|e| format!("{:?}", e))?;
+                let genesis_state = format!("0x{:?}", HexDisplay::from(&block.header().encode()));
 
-                    let task_executor = config.task_executor.clone();
-                    let polkadot_config = SubstrateCli::create_configuration(
-                        &polkadot_cli,
-                        &polkadot_cli,
-                        task_executor,
-                    )
-                    .map_err(|err| format!("Relay chain argument error: {}", err))?;
+                let task_executor = config.task_executor.clone();
+                let polkadot_config =
+                    SubstrateCli::create_configuration(&polkadot_cli, &polkadot_cli, task_executor)
+                        .map_err(|err| format!("Relay chain argument error: {}", err))?;
 
-                    info!("Parachain id: {:?}", id);
-                    info!("Parachain Account: {}", parachain_account);
-                    info!("Parachain genesis state: {}", genesis_state);
-                    info!(
-                        "Is collating: {}",
-                        if config.role.is_authority() {
-                            "yes"
-                        } else {
-                            "no"
-                        }
-                    );
+                info!("Parachain id: {:?}", id);
+                info!("Parachain Account: {}", parachain_account);
+                info!("Parachain genesis state: {}", genesis_state);
+                info!(
+                    "Is collating: {}",
+                    if config.role.is_authority() {
+                        "yes"
+                    } else {
+                        "no"
+                    }
+                );
 
-                    crate::service::start_node(
-                        config,
-                        key,
-                        polkadot_config,
-                        id,
-                        Box::new(move |_| Default::default()),
-                    )
-                        .await
-                        .map(|r| r.0)
-                        .map_err(Into::into)
-                })
+                crate::service::start_node(
+                    config,
+                    key,
+                    polkadot_config,
+                    id,
+                    Box::new(move |_| Default::default()),
+                )
+                .await
+                .map(|r| r.0)
+                .map_err(Into::into)
+            })
         }
     }
 }
