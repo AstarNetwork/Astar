@@ -36,7 +36,7 @@ sp-storage = { version = "3.0.0" }
 sp-tracing = { version = "3.0.0" }
 pallet-balances = { version = "3.0.0" }
 pallet-timestamp = { version = "3.0.0" }
-pallet-staking-reward-curve = { version = "3.0.0",  path = "../plasm-node-staking/reward-curve" }
+pallet-staking-reward-curve = { version = "3.0.0",  path = "./reward-curve" }
 substrate-test-utils = { version = "3.0.0" }
 frame-benchmarking = { version = "3.0.0" }
 rand_chacha = { version = "0.2" }

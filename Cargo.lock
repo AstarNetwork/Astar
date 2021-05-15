@@ -4197,6 +4197,36 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-plasm-node-staking"
+version = "1.10.0"
+dependencies = [
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "hex",
+ "pallet-authorship",
+ "pallet-balances",
+ "pallet-session",
+ "pallet-staking-reward-curve",
+ "pallet-timestamp",
+ "parity-scale-codec",
+ "parking_lot 0.11.1",
+ "rand_chacha 0.2.2",
+ "serde",
+ "sp-application-crypto",
+ "sp-core",
+ "sp-io",
+ "sp-npos-elections",
+ "sp-runtime",
+ "sp-staking",
+ "sp-std",
+ "sp-storage",
+ "sp-tracing",
+ "static_assertions",
+ "substrate-test-utils",
+]
+
+[[package]]
 name = "pallet-plasm-operator"
 version = "1.10.0"
 dependencies = [
@@ -4225,9 +4255,9 @@ dependencies = [
  "hex-literal",
  "num-traits",
  "pallet-balances",
+ "pallet-plasm-node-staking",
  "pallet-randomness-collective-flip",
  "pallet-session",
- "pallet-staking",
  "pallet-timestamp",
  "parity-scale-codec",
  "serde",
@@ -4322,24 +4352,14 @@ dependencies = [
 ]
 
 [[package]]
-name = "pallet-staking"
+name = "pallet-staking-reward-curve"
 version = "3.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c95853affe89b7b755b2e7d1fcf7f8804b074dea53d98703f9b8b6ebf28dfb32"
 dependencies = [
- "frame-support",
- "frame-system",
- "pallet-authorship",
- "pallet-session",
- "parity-scale-codec",
- "serde",
- "sp-application-crypto",
- "sp-io",
- "sp-npos-elections",
+ "proc-macro-crate",
+ "proc-macro2",
+ "quote",
  "sp-runtime",
- "sp-staking",
- "sp-std",
- "static_assertions",
+ "syn",
 ]
 
 [[package]]
@@ -4822,6 +4842,7 @@ dependencies = [
  "fc-consensus",
  "fc-rpc-core",
  "fp-consensus",
+ "frame-support",
  "frame-system",
  "futures 0.3.13",
  "hex",
@@ -4935,9 +4956,8 @@ dependencies = [
  "pallet-indices",
  "pallet-nicks",
  "pallet-offences",
+ "pallet-plasm-node-staking",
  "pallet-plasm-operator",
- "pallet-plasm-rewards",
- "pallet-plasm-validator",
  "pallet-randomness-collective-flip",
  "pallet-scheduler",
  "pallet-session",
@@ -4959,6 +4979,7 @@ dependencies = [
  "sp-runtime",
  "sp-runtime-interface",
  "sp-session",
+ "sp-staking",
  "sp-std",
  "sp-transaction-pool",
  "sp-version",
@@ -7851,10 +7872,32 @@ dependencies = [
 ]
 
 [[package]]
-name = "substrate-wasm-builder-runner"
-version = "1.0.6"
+name = "substrate-test-utils"
+version = "3.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d2a965994514ab35d3893e9260245f2947fd1981cdd4fffd2c6e6d1a9ce02e6a"
+checksum = "6f46809281d923956cdfdb2f95e07fa2437884f2a18096c4371a3fa48f8d082a"
+dependencies = [
+ "futures 0.3.13",
+ "substrate-test-utils-derive",
+ "tokio 0.2.25",
+]
+
+[[package]]
+name = "substrate-test-utils-derive"
+version = "0.9.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "988016ca49cfc763fecf97dfa9dee7dbbff1a2145b003d07681278dddefd1a0e"
+dependencies = [
+ "proc-macro-crate",
+ "quote",
+ "syn",
+]
+
+[[package]]
+name = "substrate-wasm-builder-runner"
+version = "2.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "54cab12167e32b38a62c5ea5825aa0874cde315f907a46aad2b05aa8ef3d862f"
 
 [[package]]
 name = "subtle"
@@ -8075,6 +8118,7 @@ dependencies = [
  "pin-project-lite 0.1.12",
  "signal-hook-registry",
  "slab",
+ "tokio-macros",
  "winapi 0.3.9",
 ]
 
@@ -8140,6 +8184,17 @@ dependencies = [
  "bytes 0.4.12",
  "futures 0.1.31",
  "log",
+]
+
+[[package]]
+name = "tokio-macros"
+version = "0.2.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e44da00bfc73a25f814cd8d7e57a68a5c31b74b3152a0a1d1f590c97ed06265a"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
 ]
 
 [[package]]

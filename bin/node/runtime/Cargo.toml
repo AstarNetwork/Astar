@@ -35,8 +35,8 @@ pallet-plasm-operator = { path = "../../../frame/plasm-operator", default-featur
 #pallet-operator-trading = { path = "../../../frame/trading", default-features = false }
 #pallet-dapps-staking = { path = "../../../frame/dapps-staking", default-features = false }
 pallet-plasm-node-staking = { path = "../../../frame/plasm-node-staking", default-features = false }
-pallet-plasm-rewards = { path = "../../../frame/plasm-rewards", default-features = false }
-pallet-plasm-validator = { path = "../../../frame/plasm-validator", default-features = false }
+#pallet-plasm-rewards = { path = "../../../frame/plasm-rewards", default-features = false }
+#pallet-plasm-validator = { path = "../../../frame/plasm-validator", default-features = false }
 pallet-custom-signatures = { path = "../../../frame/custom-signatures", default-features = false }
 #pallet-ovm = { path = "../../../frame/ovm", default-features = false }
 #pallet-plasma = { path = "../../../frame/plasma", default-features = false }
@@ -111,8 +111,8 @@ std = [
     "pallet-im-online/std",
     "pallet-nicks/std",
     "pallet-custom-signatures/std",
-    "pallet-plasm-rewards/std",
-    "pallet-plasm-validator/std",
+#    "pallet-plasm-rewards/std",
+#    "pallet-plasm-validator/std",
     "pallet-plasm-node-staking/std",
 #    "pallet-plasma/std",
     "pallet-randomness-collective-flip/std",
