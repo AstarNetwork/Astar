@@ -1,7 +1,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use frame_support::{decl_event, decl_module, decl_storage, Parameter};
-use frame_system::ensure_signed;
+use frame_system::{ensure_signed};
 use pallet_contracts::{BalanceOf, CodeHash, ContractAddressFor, Gas};
 use sp_core::crypto::UncheckedFrom;
 use sp_runtime::{
@@ -118,9 +118,6 @@ decl_module! {
             parameters.verify()?;
 
             let contract = T::DetermineContractAddress::contract_address_for(&code_hash, &data, &operator);
-            pallet_contracts::Call::<T>::instantiate(endowment, gas_limit, code_hash, data, salt);
-                // .dispatch_bypass_filter(RawOrigin::Signed(operator.clone()).into())
-                // .map_err(|e| e.error)?;
 
             // add operator to contracts
             <OperatorHasContracts<T>>::mutate(&operator, |tree| (*tree).push(contract.clone()));

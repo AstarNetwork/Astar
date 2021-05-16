@@ -29,7 +29,7 @@ fn bond_scenario_test() {
                 total: 1000,
                 active: 1000,
                 unlocking: vec![],
-                last_reward: None,
+                last_reward: Zero::zero(),
             })
         );
         assert_eq!(DappsStaking::ledger(ALICE_STASH), None);
@@ -105,7 +105,7 @@ fn success_first_bond(
             total: balance,
             active: balance,
             unlocking: vec![],
-            last_reward: None,
+            last_reward: Zero::zero(),
         })
     );
     assert_eq!(
@@ -134,7 +134,7 @@ fn bond_extra_scenario_test() {
                 total: 2000,
                 active: 2000,
                 unlocking: vec![],
-                last_reward: None,
+                last_reward: Zero::zero(),
             })
         );
         assert_eq!(
@@ -179,7 +179,7 @@ fn unbond_scenario_test() {
                     value: 300,
                     era: 3, // current_era(0) + bonding_duration(3)
                 }],
-                last_reward: None,
+                last_reward: Zero::zero(),
             })
         );
         assert_eq!(
@@ -210,7 +210,7 @@ fn unbond_scenario_test() {
                         era: 4, // current_era(1) + bonding_duration(3)
                     }
                 ],
-                last_reward: None,
+                last_reward: Zero::zero(),
             })
         );
         assert_eq!(
@@ -289,7 +289,7 @@ fn withdraw_unbonded_scenario_test() {
                     UnlockChunk { value: 300, era: 3 },
                     UnlockChunk { value: 700, era: 4 },
                 ],
-                last_reward: None,
+                last_reward: Zero::zero(),
             })
         );
         assert_eq!(
@@ -312,7 +312,7 @@ fn withdraw_unbonded_scenario_test() {
                 total: 700,
                 active: 0,
                 unlocking: vec![UnlockChunk { value: 700, era: 4 },],
-                last_reward: None,
+                last_reward: Zero::zero(),
             })
         );
         assert_eq!(
@@ -348,16 +348,18 @@ fn withdraw_unbonded_failed_test() {
 #[test]
 fn nominate_contracts_scenario_test() {
     new_test_ext().execute_with(|| {
+        let (_, code_hash) = compile_module::<Test>(CODE_RETURN_FROM_START_FN).unwrap();
+        let addr_a = Contracts::contract_address(&OPERATOR_A, &code_hash, &[]);
         valid_instatiate();
         success_first_bond(BOB_STASH, BOB_CTRL, 1000, RewardDestination::Stash);
         assert_ok!(DappsStaking::nominate_contracts(
             Origin::signed(BOB_CTRL),
-            vec![(OPERATED_CONTRACT_A, 1000)]
+            vec![(addr_a.clone(), 1000)]
         ));
         assert_eq!(
             DappsStaking::dapps_nominations(BOB_STASH),
             Some(Nominations {
-                targets: vec![(OPERATED_CONTRACT_A, 1000)],
+                targets: vec![(addr_a.clone(), 1000)],
                 submitted_in: 0,
                 suppressed: false,
             })
@@ -371,7 +373,7 @@ fn success_nominate_contracts(ctrl: AccountId, targets: Vec<(AccountId, Balance)
         targets.clone()
     ));
     let stash = DappsStaking::ledger(ctrl.clone()).unwrap().stash;
-    let current_era = PlasmRewards::current_era().unwrap();
+    let current_era = PlasmRewards::current_era().unwrap_or(Zero::zero());
     assert_eq!(
         DappsStaking::dapps_nominations(stash),
         Some(Nominations {
@@ -385,12 +387,14 @@ fn success_nominate_contracts(ctrl: AccountId, targets: Vec<(AccountId, Balance)
 #[test]
 fn nominate_contracts_failed_test() {
     new_test_ext().execute_with(|| {
+        let (_, code_hash) = compile_module::<Test>(CODE_RETURN_FROM_START_FN).unwrap();
+        let addr_a = Contracts::contract_address(&OPERATOR_A, &code_hash, &[]);
         valid_instatiate();
         success_first_bond(BOB_STASH, BOB_CTRL, 1000, RewardDestination::Stash);
         assert_noop!(
             DappsStaking::nominate_contracts(
                 Origin::signed(BOB_STASH),
-                vec![(OPERATED_CONTRACT_A, 1_000)]
+                vec![(addr_a.clone(), 1_000)]
             ),
             Error::<Test>::NotController,
         );
@@ -405,7 +409,7 @@ fn nominate_contracts_failed_test() {
         assert_noop!(
             DappsStaking::nominate_contracts(
                 Origin::signed(BOB_CTRL),
-                vec![(OPERATED_CONTRACT_A, 5_000)]
+                vec![(addr_a.clone(), 5_000)]
             ),
             Error::<Test>::NotEnoughStaking,
         );
@@ -415,9 +419,11 @@ fn nominate_contracts_failed_test() {
 #[test]
 fn chill_scenario_test() {
     new_test_ext().execute_with(|| {
+        let (_, code_hash) = compile_module::<Test>(CODE_RETURN_FROM_START_FN).unwrap();
+        let addr_a = Contracts::contract_address(&OPERATOR_A, &code_hash, &[]);
         valid_instatiate();
         success_first_bond(BOB_STASH, BOB_CTRL, 1000, RewardDestination::Stash);
-        success_nominate_contracts(BOB_CTRL, vec![(OPERATED_CONTRACT_A, 1000)]);
+        success_nominate_contracts(BOB_CTRL, vec![(addr_a, 1000)]);
         assert_ok!(DappsStaking::chill(Origin::signed(BOB_CTRL)));
         assert_eq!(DappsStaking::dapps_nominations(BOB_STASH), None);
     })
@@ -426,9 +432,11 @@ fn chill_scenario_test() {
 #[test]
 fn chill_failed_test() {
     new_test_ext().execute_with(|| {
+        let (_, code_hash) = compile_module::<Test>(CODE_RETURN_FROM_START_FN).unwrap();
+        let addr_a = Contracts::contract_address(&OPERATOR_A, &code_hash, &[]);
         valid_instatiate();
         success_first_bond(BOB_STASH, BOB_CTRL, 1000, RewardDestination::Stash);
-        success_nominate_contracts(BOB_CTRL, vec![(OPERATED_CONTRACT_A, 1000)]);
+        success_nominate_contracts(BOB_CTRL, vec![(addr_a, 1000)]);
         assert_noop!(
             DappsStaking::chill(Origin::signed(BOB_STASH)),
             Error::<Test>::NotController,
@@ -478,7 +486,7 @@ fn set_controller_scenario_test() {
                 total: 1000,
                 active: 1000,
                 unlocking: vec![],
-                last_reward: None,
+                last_reward: Zero::zero(),
             })
         );
         assert_eq!(DappsStaking::ledger(ALICE_CTRL), None);
@@ -506,10 +514,16 @@ const SIX_HOURS: u64 = 6 * 60 * 60 * 1000;
 #[test]
 fn reward_to_operators_test() {
     new_test_ext().execute_with(|| {
+        let (_, code_hash) = compile_module::<Test>(CODE_RETURN_FROM_START_FN).unwrap();
+        let addr_a = Contracts::contract_address(&OPERATOR_A, &code_hash, &[]);
+        let addr_b = Contracts::contract_address(&OPERATOR_B, &code_hash, &[]);
+
+        advance_session();
         valid_instatiate();
+
         assert_ok!(Operator::change_operator(
             Origin::signed(OPERATOR_A),
-            vec![OPERATED_CONTRACT_A],
+            vec![addr_a.clone()],
             ALICE_STASH
         ));
         success_first_bond(BOB_STASH, BOB_CTRL, 1_000, RewardDestination::Stash);
@@ -519,11 +533,11 @@ fn reward_to_operators_test() {
             1_000,
             RewardDestination::Controller,
         );
-        success_nominate_contracts(BOB_CTRL, vec![(OPERATED_CONTRACT_A, 1_000)]);
-        success_nominate_contracts(ALICE_CTRL, vec![(OPERATED_CONTRACT_A, 1_000)]);
-        success_nominate_contracts(ALICE_CTRL, vec![(OPERATED_CONTRACT_B, 1_000)]);
+        success_nominate_contracts(BOB_CTRL, vec![(addr_a.clone(), 1_000)]);
+        success_nominate_contracts(ALICE_CTRL, vec![(addr_a.clone(), 1_000)]);
+        success_nominate_contracts(ALICE_CTRL, vec![(addr_b.clone(), 1_000)]);
 
-        let current_era = PlasmRewards::current_era().unwrap();
+        let current_era = PlasmRewards::current_era().unwrap_or(Zero::zero());
         assert_eq!(DappsStaking::eras_total_stake(current_era), 0);
         assert_eq!(DappsStaking::eras_total_stake(current_era + 1), 3_000);
 
@@ -542,24 +556,16 @@ fn reward_to_operators_test() {
         let current_era = PlasmRewards::current_era().unwrap();
         ErasVotes::<Test>::insert(
             current_era - 1,
-            OPERATED_CONTRACT_A,
+            addr_a.clone(),
             VoteCounts { bad: 3, good: 12 },
         );
-        ErasVotes::<Test>::insert(
-            current_era,
-            OPERATED_CONTRACT_A,
-            VoteCounts { bad: 3, good: 12 },
-        );
+        ErasVotes::<Test>::insert(current_era, addr_a.clone(), VoteCounts { bad: 3, good: 12 });
         ErasVotes::<Test>::insert(
             current_era - 1,
-            OPERATED_CONTRACT_B,
+            addr_b.clone(),
             VoteCounts { bad: 3, good: 12 },
         );
-        ErasVotes::<Test>::insert(
-            current_era,
-            OPERATED_CONTRACT_B,
-            VoteCounts { bad: 3, good: 12 },
-        );
+        ErasVotes::<Test>::insert(current_era, addr_b.clone(), VoteCounts { bad: 3, good: 12 });
         let positive_imbalance = DappsStaking::reward_nominator(&current_era, b, &BOB_STASH);
         assert_eq!(Balances::free_balance(&BOB_STASH), 2_000 + 274); // +nomiante reward
         assert_eq!(Balances::free_balance(&BOB_CTRL), 20 + 0); // +0
@@ -581,11 +587,16 @@ fn reward_to_operators_test() {
 #[test]
 fn new_session_scenario_test() {
     new_test_ext().execute_with(|| {
+        let (_, code_hash) = compile_module::<Test>(CODE_RETURN_FROM_START_FN).unwrap();
+        let addr_a = Contracts::contract_address(&OPERATOR_A, &code_hash, &[]);
+        let addr_b = Contracts::contract_address(&OPERATOR_B, &code_hash, &[]);
+
         advance_session();
         valid_instatiate();
+
         assert_ok!(Operator::change_operator(
             Origin::signed(OPERATOR_A),
-            vec![OPERATED_CONTRACT_A],
+            vec![addr_a.clone()],
             ALICE_STASH
         ));
         success_first_bond(BOB_STASH, BOB_CTRL, 1_000, RewardDestination::Stash);
@@ -595,9 +606,9 @@ fn new_session_scenario_test() {
             1_000,
             RewardDestination::Controller,
         );
-        success_nominate_contracts(BOB_CTRL, vec![(OPERATED_CONTRACT_A, 1_000)]);
-        success_nominate_contracts(ALICE_CTRL, vec![(OPERATED_CONTRACT_A, 1_000)]);
-        success_nominate_contracts(ALICE_CTRL, vec![(OPERATED_CONTRACT_B, 1_000)]);
+        success_nominate_contracts(BOB_CTRL, vec![(addr_a.clone(), 1_000)]);
+        success_nominate_contracts(ALICE_CTRL, vec![(addr_a.clone(), 1_000)]);
+        success_nominate_contracts(ALICE_CTRL, vec![(addr_b.clone(), 1_000)]);
 
         let current_era = PlasmRewards::current_era().unwrap();
         assert_eq!(DappsStaking::eras_total_stake(current_era), 0);
@@ -619,26 +630,10 @@ fn new_session_scenario_test() {
         DappsStaking::on_finalize(0);
         advance_session();
 
-        ErasVotes::<Test>::insert(
-            target_era - 1,
-            OPERATED_CONTRACT_A,
-            VoteCounts { bad: 3, good: 12 },
-        );
-        ErasVotes::<Test>::insert(
-            target_era,
-            OPERATED_CONTRACT_A,
-            VoteCounts { bad: 3, good: 12 },
-        );
-        ErasVotes::<Test>::insert(
-            target_era - 1,
-            OPERATED_CONTRACT_B,
-            VoteCounts { bad: 3, good: 12 },
-        );
-        ErasVotes::<Test>::insert(
-            target_era,
-            OPERATED_CONTRACT_B,
-            VoteCounts { bad: 3, good: 12 },
-        );
+        ErasVotes::<Test>::insert(target_era - 1, &addr_a, VoteCounts { bad: 3, good: 12 });
+        ErasVotes::<Test>::insert(target_era, &addr_a, VoteCounts { bad: 3, good: 12 });
+        ErasVotes::<Test>::insert(target_era - 1, &addr_b, VoteCounts { bad: 3, good: 12 });
+        ErasVotes::<Test>::insert(target_era, &addr_b, VoteCounts { bad: 3, good: 12 });
 
         assert_ok!(DappsStaking::claim_for_nominator(
             Origin::signed(BOB_STASH),
@@ -666,11 +661,16 @@ fn new_session_scenario_test() {
 #[test]
 fn ignore_nomination_test() {
     new_test_ext().execute_with(|| {
+        let (_, code_hash) = compile_module::<Test>(CODE_RETURN_FROM_START_FN).unwrap();
+        let addr_a = Contracts::contract_address(&OPERATOR_A, &code_hash, &[]);
+        let addr_b = Contracts::contract_address(&OPERATOR_B, &code_hash, &[]);
+
         advance_session();
         valid_instatiate();
+
         assert_ok!(Operator::change_operator(
             Origin::signed(OPERATOR_A),
-            vec![OPERATED_CONTRACT_A],
+            vec![addr_a.clone()],
             ALICE_STASH
         ));
         success_first_bond(BOB_STASH, BOB_CTRL, 1_000, RewardDestination::Stash);
@@ -680,9 +680,9 @@ fn ignore_nomination_test() {
             1_000,
             RewardDestination::Controller,
         );
-        success_nominate_contracts(BOB_CTRL, vec![(OPERATED_CONTRACT_A, 1_000)]);
-        success_nominate_contracts(ALICE_CTRL, vec![(OPERATED_CONTRACT_A, 1_000)]);
-        success_nominate_contracts(ALICE_CTRL, vec![(OPERATED_CONTRACT_B, 1)]);
+        success_nominate_contracts(BOB_CTRL, vec![(addr_a.clone(), 1_000)]);
+        success_nominate_contracts(ALICE_CTRL, vec![(addr_a.clone(), 1_000)]);
+        success_nominate_contracts(ALICE_CTRL, vec![(addr_b.clone(), 1)]);
 
         let current_era = PlasmRewards::current_era().unwrap();
         assert_eq!(DappsStaking::eras_total_stake(current_era), 0);
@@ -704,26 +704,10 @@ fn ignore_nomination_test() {
         DappsStaking::on_finalize(0);
         advance_session();
 
-        ErasVotes::<Test>::insert(
-            target_era - 1,
-            OPERATED_CONTRACT_A,
-            VoteCounts { bad: 3, good: 12 },
-        );
-        ErasVotes::<Test>::insert(
-            target_era,
-            OPERATED_CONTRACT_A,
-            VoteCounts { bad: 3, good: 12 },
-        );
-        ErasVotes::<Test>::insert(
-            target_era - 1,
-            OPERATED_CONTRACT_B,
-            VoteCounts { bad: 3, good: 12 },
-        );
-        ErasVotes::<Test>::insert(
-            target_era,
-            OPERATED_CONTRACT_B,
-            VoteCounts { bad: 3, good: 12 },
-        );
+        ErasVotes::<Test>::insert(target_era - 1, &addr_a, VoteCounts { bad: 3, good: 12 });
+        ErasVotes::<Test>::insert(target_era, &addr_a, VoteCounts { bad: 3, good: 12 });
+        ErasVotes::<Test>::insert(target_era - 1, &addr_b, VoteCounts { bad: 3, good: 12 });
+        ErasVotes::<Test>::insert(target_era, &addr_b, VoteCounts { bad: 3, good: 12 });
 
         assert_ok!(DappsStaking::claim_for_nominator(
             Origin::signed(BOB_STASH),
@@ -751,65 +735,66 @@ fn ignore_nomination_test() {
 #[test]
 fn vote_contracts_test() {
     new_test_ext().execute_with(|| {
+        let (_, code_hash) = compile_module::<Test>(CODE_RETURN_FROM_START_FN).unwrap();
+        let addr_a = Contracts::contract_address(&OPERATOR_A, &code_hash, &[]);
+        let addr_b = Contracts::contract_address(&OPERATOR_B, &code_hash, &[]);
+
         advance_session();
         valid_instatiate();
+
         let current_era = PlasmRewards::current_era().unwrap();
 
         assert_ok!(DappsStaking::vote_contracts(
             Origin::signed(ALICE_CTRL),
-            vec![(OPERATED_CONTRACT_A, Vote::Good)]
+            vec![(addr_a.clone(), Vote::Good)]
         ));
         assert_eq!(
-            DappsStaking::accounts_vote(ALICE_CTRL, OPERATED_CONTRACT_A),
+            DappsStaking::accounts_vote(ALICE_CTRL, &addr_a),
             VoteCounts { bad: 0, good: 1 }
         );
         assert_eq!(
-            DappsStaking::eras_votes(current_era + 1, OPERATED_CONTRACT_A),
+            DappsStaking::eras_votes(current_era + 1, &addr_a),
             VoteCounts { bad: 0, good: 1 }
         );
 
         assert_ok!(DappsStaking::vote_contracts(
             Origin::signed(ALICE_CTRL),
-            vec![(OPERATED_CONTRACT_A, Vote::Bad)]
+            vec![(addr_a.clone(), Vote::Bad)]
         ));
         assert_eq!(
-            DappsStaking::accounts_vote(ALICE_CTRL, OPERATED_CONTRACT_A),
+            DappsStaking::accounts_vote(ALICE_CTRL, &addr_a),
             VoteCounts { bad: 1, good: 0 }
         );
         assert_eq!(
-            DappsStaking::eras_votes(current_era + 1, OPERATED_CONTRACT_A),
+            DappsStaking::eras_votes(current_era + 1, &addr_a),
             VoteCounts { bad: 1, good: 0 }
         );
 
         assert_ok!(DappsStaking::vote_contracts(
             Origin::signed(BOB_CTRL),
-            vec![(OPERATED_CONTRACT_A, Vote::Good)]
+            vec![(addr_a.clone(), Vote::Good)]
         ));
         assert_eq!(
-            DappsStaking::accounts_vote(BOB_CTRL, OPERATED_CONTRACT_A),
+            DappsStaking::accounts_vote(BOB_CTRL, &addr_a),
             VoteCounts { bad: 0, good: 1 }
         );
         assert_eq!(
-            DappsStaking::eras_votes(current_era + 1, OPERATED_CONTRACT_A),
+            DappsStaking::eras_votes(current_era + 1, &addr_a),
             VoteCounts { bad: 1, good: 1 }
         );
 
         assert_eq!(
-            DappsStaking::has_votes_requirement(&OPERATED_CONTRACT_A, &(current_era + 1)),
+            DappsStaking::has_votes_requirement(&addr_a, &(current_era + 1)),
             false
         );
         assert_eq!(
-            DappsStaking::has_votes_requirement(&OPERATED_CONTRACT_B, &(current_era + 1)),
+            DappsStaking::has_votes_requirement(&addr_b, &(current_era + 1)),
             false
         );
 
-        ErasVotes::<Test>::insert(
-            current_era + 1,
-            OPERATED_CONTRACT_A,
-            VoteCounts { bad: 3, good: 12 },
-        );
+        ErasVotes::<Test>::insert(current_era + 1, &addr_a, VoteCounts { bad: 3, good: 12 });
         assert_eq!(
-            DappsStaking::has_votes_requirement(&OPERATED_CONTRACT_A, &(current_era + 1)),
+            DappsStaking::has_votes_requirement(&addr_a, &(current_era + 1)),
             true
         );
     })
@@ -818,39 +803,30 @@ fn vote_contracts_test() {
 #[test]
 fn is_rewardable_test() {
     new_test_ext().execute_with(|| {
+        let (_, code_hash) = compile_module::<Test>(CODE_RETURN_FROM_START_FN).unwrap();
+        let addr_a = Contracts::contract_address(&OPERATOR_A, &code_hash, &[]);
         let current_era = PlasmRewards::current_era().unwrap_or(Zero::zero());
 
-        ErasVotes::<Test>::insert(
-            current_era + 1,
-            OPERATED_CONTRACT_A,
-            VoteCounts { bad: 3, good: 12 },
-        );
+        ErasVotes::<Test>::insert(current_era + 1, &addr_a, VoteCounts { bad: 3, good: 12 });
 
+        assert_eq!(DappsStaking::is_rewardable(&addr_a, &current_era), false);
         assert_eq!(
-            DappsStaking::is_rewardable(&OPERATED_CONTRACT_A, &current_era),
+            DappsStaking::is_rewardable(&addr_a, &(current_era + 1)),
             false
         );
         assert_eq!(
-            DappsStaking::is_rewardable(&OPERATED_CONTRACT_A, &(current_era + 1)),
-            false
-        );
-        assert_eq!(
-            DappsStaking::is_rewardable(&OPERATED_CONTRACT_A, &(current_era + 2)),
+            DappsStaking::is_rewardable(&addr_a, &(current_era + 2)),
             false
         );
 
-        ErasVotes::<Test>::insert(
-            current_era + 2,
-            OPERATED_CONTRACT_A,
-            VoteCounts { bad: 3, good: 12 },
-        );
+        ErasVotes::<Test>::insert(current_era + 2, &addr_a, VoteCounts { bad: 3, good: 12 });
 
         assert_eq!(
-            DappsStaking::is_rewardable(&OPERATED_CONTRACT_A, &(current_era + 1)),
+            DappsStaking::is_rewardable(&addr_a, &(current_era + 1)),
             false
         );
         assert_eq!(
-            DappsStaking::is_rewardable(&OPERATED_CONTRACT_A, &(current_era + 2)),
+            DappsStaking::is_rewardable(&addr_a, &(current_era + 2)),
             true
         );
     })
@@ -859,115 +835,67 @@ fn is_rewardable_test() {
 #[test]
 fn is_locked_test() {
     new_test_ext().execute_with(|| {
+        let (_, code_hash) = compile_module::<Test>(CODE_RETURN_FROM_START_FN).unwrap();
+        let addr_a = Contracts::contract_address(&OPERATOR_A, &code_hash, &[]);
         let current_era = PlasmRewards::current_era().unwrap_or(Zero::zero());
 
-        ErasVotes::<Test>::insert(
-            current_era + 1,
-            OPERATED_CONTRACT_A,
-            VoteCounts { bad: 3, good: 12 },
-        );
+        ErasVotes::<Test>::insert(current_era + 1, &addr_a, VoteCounts { bad: 3, good: 12 });
 
-        assert_eq!(
-            DappsStaking::is_locked(&OPERATED_CONTRACT_A, &current_era),
-            false
-        );
-        assert_eq!(
-            DappsStaking::is_locked(&OPERATED_CONTRACT_A, &(current_era + 1)),
-            false
-        );
-        assert_eq!(
-            DappsStaking::is_locked(&OPERATED_CONTRACT_A, &(current_era + 2)),
-            false
-        );
+        assert_eq!(DappsStaking::is_locked(&addr_a, &current_era), false);
+        assert_eq!(DappsStaking::is_locked(&addr_a, &(current_era + 1)), false);
+        assert_eq!(DappsStaking::is_locked(&addr_a, &(current_era + 2)), false);
 
-        ErasVotes::<Test>::insert(
-            current_era + 2,
-            OPERATED_CONTRACT_A,
-            VoteCounts { bad: 3, good: 12 },
-        );
+        ErasVotes::<Test>::insert(current_era + 2, &addr_a, VoteCounts { bad: 3, good: 12 });
 
-        assert_eq!(
-            DappsStaking::is_locked(&OPERATED_CONTRACT_A, &(current_era + 1)),
-            false
-        );
-        assert_eq!(
-            DappsStaking::is_locked(&OPERATED_CONTRACT_A, &(current_era + 2)),
-            false
-        );
+        assert_eq!(DappsStaking::is_locked(&addr_a, &(current_era + 1)), false);
+        assert_eq!(DappsStaking::is_locked(&addr_a, &(current_era + 2)), false);
 
-        ErasVotes::<Test>::insert(
-            current_era + 1,
-            OPERATED_CONTRACT_A,
-            VoteCounts { bad: 5, good: 9 },
-        );
+        ErasVotes::<Test>::insert(current_era + 1, &addr_a, VoteCounts { bad: 5, good: 9 });
 
-        assert_eq!(
-            DappsStaking::is_locked(&OPERATED_CONTRACT_A, &(current_era + 1)),
-            false
-        );
-        assert_eq!(
-            DappsStaking::is_locked(&OPERATED_CONTRACT_A, &(current_era + 2)),
-            true
-        );
+        assert_eq!(DappsStaking::is_locked(&addr_a, &(current_era + 1)), false);
+        assert_eq!(DappsStaking::is_locked(&addr_a, &(current_era + 2)), true);
     })
 }
 
 #[test]
 fn is_slashable_test() {
     new_test_ext().execute_with(|| {
+        let (_, code_hash) = compile_module::<Test>(CODE_RETURN_FROM_START_FN).unwrap();
+        let addr_a = Contracts::contract_address(&OPERATOR_A, &code_hash, &[]);
         let current_era = PlasmRewards::current_era().unwrap_or(Zero::zero());
 
-        ErasVotes::<Test>::insert(
-            current_era + 1,
-            OPERATED_CONTRACT_A,
-            VoteCounts { bad: 3, good: 12 },
-        );
+        ErasVotes::<Test>::insert(current_era + 1, &addr_a, VoteCounts { bad: 3, good: 12 });
 
+        assert_eq!(DappsStaking::is_slashable(&addr_a, &current_era), false);
         assert_eq!(
-            DappsStaking::is_slashable(&OPERATED_CONTRACT_A, &current_era),
+            DappsStaking::is_slashable(&addr_a, &(current_era + 1)),
             false
         );
         assert_eq!(
-            DappsStaking::is_slashable(&OPERATED_CONTRACT_A, &(current_era + 1)),
-            false
-        );
-        assert_eq!(
-            DappsStaking::is_slashable(&OPERATED_CONTRACT_A, &(current_era + 2)),
+            DappsStaking::is_slashable(&addr_a, &(current_era + 2)),
             false
         );
 
-        ErasVotes::<Test>::insert(
-            current_era + 2,
-            OPERATED_CONTRACT_A,
-            VoteCounts { bad: 3, good: 12 },
-        );
+        ErasVotes::<Test>::insert(current_era + 2, &addr_a, VoteCounts { bad: 3, good: 12 });
 
         assert_eq!(
-            DappsStaking::is_slashable(&OPERATED_CONTRACT_A, &(current_era + 1)),
+            DappsStaking::is_slashable(&addr_a, &(current_era + 1)),
             false
         );
         assert_eq!(
-            DappsStaking::is_slashable(&OPERATED_CONTRACT_A, &(current_era + 2)),
+            DappsStaking::is_slashable(&addr_a, &(current_era + 2)),
             false
         );
 
-        ErasVotes::<Test>::insert(
-            current_era + 1,
-            OPERATED_CONTRACT_A,
-            VoteCounts { bad: 10, good: 9 },
-        );
-        ErasVotes::<Test>::insert(
-            current_era + 2,
-            OPERATED_CONTRACT_A,
-            VoteCounts { bad: 10, good: 9 },
-        );
+        ErasVotes::<Test>::insert(current_era + 1, &addr_a, VoteCounts { bad: 10, good: 9 });
+        ErasVotes::<Test>::insert(current_era + 2, &addr_a, VoteCounts { bad: 10, good: 9 });
 
         assert_eq!(
-            DappsStaking::is_slashable(&OPERATED_CONTRACT_A, &(current_era + 1)),
+            DappsStaking::is_slashable(&addr_a, &(current_era + 1)),
             false
         );
         assert_eq!(
-            DappsStaking::is_slashable(&OPERATED_CONTRACT_A, &(current_era + 2)),
+            DappsStaking::is_slashable(&addr_a, &(current_era + 2)),
             true
         );
     })

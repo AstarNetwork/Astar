@@ -108,7 +108,7 @@ pub struct StakingLedger<AccountId, Balance: HasCompact> {
     /// of the stash (assuming it doesn't get slashed first).
     pub unlocking: Vec<UnlockChunk<Balance>>,
     /// The latest and highest era which the staker has claimed reward for.
-    pub last_reward: Option<EraIndex>,
+    pub last_reward: EraIndex,
 }
 
 impl<AccountId, Balance: HasCompact + Copy + Saturating + Ord + Zero>
@@ -474,7 +474,7 @@ decl_module! {
                 total: value,
                 active: value,
                 unlocking: vec![],
-                last_reward: T::EraFinder::current()
+                last_reward: T::EraFinder::current().unwrap_or(Zero::zero())
             };
             Self::update_ledger(&controller, &item);
         }

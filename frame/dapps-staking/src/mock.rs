@@ -30,8 +30,6 @@ pub const VALIDATOR_A: AccountId = AccountId32::new([5u8; 32]);
 pub const VALIDATOR_B: AccountId = AccountId32::new([6u8; 32]);
 pub const OPERATOR_A: AccountId = AccountId32::new([9u8; 32]);
 pub const OPERATOR_B: AccountId = AccountId32::new([10u8; 32]);
-pub const OPERATED_CONTRACT_A: AccountId = AccountId32::new([19u8; 32]);
-pub const OPERATED_CONTRACT_B: AccountId = AccountId32::new([20u8; 32]);
 pub const BOB_CONTRACT: AccountId = AccountId32::new([12u8; 32]);
 
 use crate as dapps_staking;
@@ -199,8 +197,8 @@ impl pallet_transaction_payment::Config for Test {
 
 pub struct DummyContractAddressFor;
 impl pallet_contracts::ContractAddressFor<H256, AccountId> for DummyContractAddressFor {
-    fn contract_address_for(_code_hash: &H256, _data: &[u8], origin: &AccountId) -> AccountId {
-        origin.clone()
+    fn contract_address_for(code_hash: &H256, _data: &[u8], origin: &AccountId) -> AccountId {
+        Contracts::contract_address(&origin, &code_hash, &[])
     }
 }
 
@@ -307,31 +305,22 @@ where
 
 pub const CODE_RETURN_FROM_START_FN: &str = r#"
 (module
-    (import "env" "ext_return" (func $ext_return (param i32 i32)))
-    (import "env" "ext_deposit_event" (func $ext_deposit_event (param i32 i32 i32 i32)))
-    (import "env" "memory" (memory 1 1))
-
-    (start $start)
-    (func $start
-        (call $ext_deposit_event
-            (i32.const 0) ;; The topics buffer
-            (i32.const 0) ;; The topics buffer's length
-            (i32.const 8) ;; The data buffer
-            (i32.const 4) ;; The data buffer's length
-        )
-        (call $ext_return
-            (i32.const 8)
-            (i32.const 4)
-        )
-        (unreachable)
-    )
-
-    (func (export "call")
-        (unreachable)
-    )
-    (func (export "deploy"))
-
-    (data (i32.const 8) "\01\02\03\04")
+	(import "seal0" "seal_return" (func $seal_return (param i32 i32 i32)))
+	(import "env" "memory" (memory 1 1))
+	(start $start)
+	(func $start
+		(call $seal_return
+			(i32.const 0)
+			(i32.const 8)
+			(i32.const 4)
+		)
+		(unreachable)
+	)
+	(func (export "call")
+		(unreachable)
+	)
+	(func (export "deploy"))
+	(data (i32.const 8) "\01\02\03\04")
 )
 "#;
 
@@ -394,61 +383,56 @@ pub fn valid_instatiate() {
         test_params.clone(),
     );
 
+    let addr_a = Contracts::contract_address(&OPERATOR_A, &code_hash, &[]);
+    let addr_b = Contracts::contract_address(&OPERATOR_B, &code_hash, &[]);
+
     // checks deployed contract
     assert!(pallet_contracts::ContractInfoOf::<Test>::contains_key(
-        OPERATED_CONTRACT_A
+        &addr_a
     ));
     assert!(pallet_contracts::ContractInfoOf::<Test>::contains_key(
-        OPERATED_CONTRACT_B
+        &addr_b
     ));
 
     // checks mapping operator and contract
-    // OPERATOR_A operates a only OPERATED_CONTRACT_A contract.
+    // OPERATOR_A operates a only addr_a contract.
     assert!(pallet_contract_operator::OperatorHasContracts::<Test>::contains_key(OPERATOR_A));
     let tree = pallet_contract_operator::OperatorHasContracts::<Test>::get(&OPERATOR_A);
     assert_eq!(tree.len(), 1);
-    assert!(tree.contains(&OPERATED_CONTRACT_A));
+    assert!(tree.contains(&addr_a));
 
     // checks mapping operator and contract
-    // OPERATOR_B operates a only OPERATED_CONTRACT_B contract.
+    // OPERATOR_B operates a only addr_b contract.
     assert!(pallet_contract_operator::OperatorHasContracts::<Test>::contains_key(OPERATOR_B));
     let tree = pallet_contract_operator::OperatorHasContracts::<Test>::get(&OPERATOR_B);
     assert_eq!(tree.len(), 1);
-    assert!(tree.contains(&OPERATED_CONTRACT_B));
+    assert!(tree.contains(&addr_b));
 
-    // OPERATED_CONTRACT_A contract is operated by OPERATOR_A.
-    assert!(
-        pallet_contract_operator::ContractHasOperator::<Test>::contains_key(OPERATED_CONTRACT_A)
-    );
+    // addr_a contract is operated by OPERATOR_A.
+    assert!(pallet_contract_operator::ContractHasOperator::<Test>::contains_key(&addr_a));
     assert_eq!(
-        pallet_contract_operator::ContractHasOperator::<Test>::get(&OPERATED_CONTRACT_A),
+        pallet_contract_operator::ContractHasOperator::<Test>::get(&addr_a),
         Some(OPERATOR_A)
     );
 
-    // OPERATED_CONTRACT_B contract is operated by OPERATOR_B.
-    assert!(
-        pallet_contract_operator::ContractHasOperator::<Test>::contains_key(OPERATED_CONTRACT_B)
-    );
+    // addr_b contract is operated by OPERATOR_B.
+    assert!(pallet_contract_operator::ContractHasOperator::<Test>::contains_key(&addr_b));
     assert_eq!(
-        pallet_contract_operator::ContractHasOperator::<Test>::get(&OPERATED_CONTRACT_B),
+        pallet_contract_operator::ContractHasOperator::<Test>::get(&addr_b),
         Some(OPERATOR_B)
     );
 
-    // OPERATED_CONTRACT's contract Parameters is same test_params.
-    assert!(
-        pallet_contract_operator::ContractParameters::<Test>::contains_key(OPERATED_CONTRACT_A)
-    );
+    // addr_a contract Parameters is same test_params.
+    assert!(pallet_contract_operator::ContractParameters::<Test>::contains_key(&addr_a));
     assert_eq!(
-        pallet_contract_operator::ContractParameters::<Test>::get(&OPERATED_CONTRACT_A),
+        pallet_contract_operator::ContractParameters::<Test>::get(&addr_a),
         Some(test_params.clone())
     );
 
-    // OPERATED_CONTRACT_B's contract Parameters is same test_params.
-    assert!(
-        pallet_contract_operator::ContractParameters::<Test>::contains_key(OPERATED_CONTRACT_B)
-    );
+    // addr_b contract Parameters is same test_params.
+    assert!(pallet_contract_operator::ContractParameters::<Test>::contains_key(&addr_b));
     assert_eq!(
-        pallet_contract_operator::ContractParameters::<Test>::get(&OPERATED_CONTRACT_B),
+        pallet_contract_operator::ContractParameters::<Test>::get(&addr_b),
         Some(test_params)
     );
 }
