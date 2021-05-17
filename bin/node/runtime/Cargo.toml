@@ -31,6 +31,9 @@ sp-session = { version = "3.0.0", default-features = false }
 
 # frame dependencies
 pallet-plasm-operator = { path = "../../../frame/plasm-operator", default-features = false }
+pallet-contract-operator = { path = "../../../frame/operator", default-features = false }
+#pallet-operator-trading = { path = "../../../frame/trading", default-features = false }
+pallet-dapps-staking = { path = "../../../frame/dapps-staking", default-features = false }
 pallet-plasm-rewards = { path = "../../../frame/plasm-rewards", default-features = false }
 pallet-plasm-validator = { path = "../../../frame/plasm-validator", default-features = false }
 pallet-custom-signatures = { path = "../../../frame/custom-signatures", default-features = false }
@@ -43,9 +46,9 @@ frame-executive = { version = "3.0.0", default-features = false }
 pallet-authorship = { version = "3.0.0", default-features = false }
 pallet-babe = { version = "3.0.0", default-features = false }
 pallet-balances = { version = "3.0.0", default-features = false }
-pallet-contracts = { version = "3.0.0", default-features = false }
-pallet-contracts-primitives = { version = "3.0.0", default-features = false }
-pallet-contracts-rpc-runtime-api = { version = "3.0.0", default-features = false }
+pallet-contracts = { path = "../../../frame/contracts", default-features = false }
+pallet-contracts-primitives = { path = "../../../frame/contracts/common", default-features = false }
+pallet-contracts-rpc-runtime-api = { path = "../../../frame/contracts/rpc/runtime-api", default-features = false }
 pallet-grandpa = { version = "3.0.0", default-features = false }
 pallet-indices = { version = "3.0.0", default-features = false }
 pallet-im-online = { version = "3.0.0", default-features = false }
