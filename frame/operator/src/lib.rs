@@ -1,7 +1,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use frame_support::{decl_event, decl_module, decl_storage, Parameter};
-use frame_system::{ensure_signed};
+use frame_system::ensure_signed;
 use pallet_contracts::{BalanceOf, CodeHash, ContractAddressFor, Gas};
 use sp_core::crypto::UncheckedFrom;
 use sp_runtime::{
