@@ -6,11 +6,12 @@
 
 use frame_support::{
     construct_runtime, match_type, parameter_types,
-    traits::Filter,
+    traits::{Get, Filter},
     weights::{
         constants::{BlockExecutionWeight, ExtrinsicBaseWeight, WEIGHT_PER_SECOND},
         DispatchClass, IdentityFee, Weight,
     },
+    PalletId,
 };
 use frame_system::limits::{BlockLength, BlockWeights};
 use pallet_transaction_payment::{
@@ -29,14 +30,26 @@ use sp_std::prelude::*;
 #[cfg(any(feature = "std", test))]
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
+use sp_std::{
+    prelude::Vec, vec,
+    marker::PhantomData
+};
 
 // XCM support
-use xcm::v0::{Junction::*, MultiLocation, MultiLocation::*};
+//---XCM imports--------------------------------start
+use polkadot_parachain::primitives::Sibling;
+use xcm::v0::{Junction::*, MultiLocation, MultiLocation::*, NetworkId, Xcm};
 use xcm_builder::{
-    AllowUnpaidExecutionFrom, FixedWeightBounds, LocationInverter, ParentAsSuperuser,
-    ParentIsDefault, SovereignSignedViaLocation,
+    AccountId32Aliases, AllowUnpaidExecutionFrom, FixedWeightBounds, LocationInverter,
+    ParentAsSuperuser, ParentIsDefault, RelayChainAsNative, SiblingParachainAsNative,
+    SiblingParachainConvertsVia, SignedAccountId32AsNative,
+    SovereignSignedViaLocation, UsingComponents,
 };
-use xcm_executor::{Config, XcmExecutor};
+use xcm_executor::{traits::ShouldExecute, Config, XcmExecutor};
+//---XCM imports--------------------------------end
+
+mod zenlink;
+use zenlink::*;
 
 pub use pallet_balances::Call as BalancesCall;
 #[cfg(any(feature = "std", test))]
@@ -166,27 +179,45 @@ impl frame_system::Config for Runtime {
     type OnSetCode = cumulus_pallet_parachain_system::ParachainSetCode<Self>;
 }
 
+//-------------XCM-HELPER--------------------start
 parameter_types! {
     // We do anything the parent chain tells us in this runtime.
     pub const ReservedDmpWeight: Weight = MAXIMUM_BLOCK_WEIGHT / 2;
+    // We do anything the para chain tells us in this runtime.
+    pub const ReservedXcmpWeight: Weight = MAXIMUM_BLOCK_WEIGHT / 4;
 }
 
 impl cumulus_pallet_parachain_system::Config for Runtime {
     type Event = Event;
     type OnValidationData = ();
     type SelfParaId = parachain_info::Pallet<Runtime>;
-    type OutboundXcmpMessageSource = ();
+    type OutboundXcmpMessageSource = XcmpQueue;
     type DmpMessageHandler = cumulus_pallet_xcm::UnlimitedDmpExecution<Runtime>;
     type ReservedDmpWeight = ReservedDmpWeight;
-    type XcmpMessageHandler = ();
-    type ReservedXcmpWeight = ();
+    type XcmpMessageHandler = XcmpQueue;
+    type ReservedXcmpWeight = ReservedXcmpWeight;
 }
 
 impl parachain_info::Config for Runtime {}
 
 parameter_types! {
+    pub const KsmLocation: MultiLocation = X1(Parent);
+    pub const KusamaNetwork: NetworkId = NetworkId::Kusama;
+    pub RelayChainOrigin: Origin = cumulus_pallet_xcm::Origin::Relay.into();
     pub Ancestry: MultiLocation = Parachain(ParachainInfo::parachain_id().into()).into();
 }
+
+/// Type for specifying how a `MultiLocation` can be converted into an `AccountId`. This is used
+/// when determining ownership of accounts for asset transacting and when attempting to use XCM
+/// `Transact` in order to determine the dispatch Origin.
+pub type LocationToAccountId = (
+    // The parent (Relay-chain) origin converts to the default `AccountId`.
+    ParentIsDefault<AccountId>,
+    // Sibling parachain origins convert to AccountId via the `ParaId::into`.
+    SiblingParachainConvertsVia<Sibling, AccountId>,
+    // Straight up local `AccountId32` origins just alias directly to `AccountId`.
+    AccountId32Aliases<KusamaNetwork, AccountId>,
+);
 
 /// This is the type we use to convert an (incoming) XCM origin into a local `Origin` instance,
 /// ready for dispatching a transaction with Xcm's `Transact`. There is an `OriginKind` which can
@@ -199,6 +230,15 @@ pub type XcmOriginToTransactDispatchOrigin = (
     // Superuser converter for the Relay-chain (Parent) location. This will allow it to issue a
     // transaction from the Root origin.
     ParentAsSuperuser<Origin>,
+    // Native converter for Relay-chain (Parent) location; will converts to a `Relay` origin when
+    // recognised.
+    RelayChainAsNative<RelayChainOrigin, Origin>,
+    // Native converter for sibling Parachains; will convert to a `SiblingPara` origin when
+    // recognised.
+    SiblingParachainAsNative<cumulus_pallet_xcm::Origin, Origin>,
+    // Native signed account converter; this just converts an `AccountId32` origin into a normal
+    // `Origin::Signed` origin of the same 32-byte value.
+    SignedAccountId32AsNative<KusamaNetwork, Origin>,
 );
 
 match_type! {
@@ -208,20 +248,42 @@ match_type! {
 parameter_types! {
     // One XCM operation is 1_000_000 weight - almost certainly a conservative estimate.
     pub UnitWeightCost: Weight = 1_000_000;
+    // One SDN buys 1 second of weight.
+    pub const WeightPrice: (MultiLocation, u128) = (X1(Parent), SDN);
 }
+
+pub type Barrier = (
+    AllowUnpaidExecutionFrom<JustTheParent>,
+    ZenlinkAllowUnpaid<ZenlinkRegistedParaChains>,
+);
+
+pub type Transactors = TransactorAdaptor<
+    ZenlinkMultiAssets<ZenlinkProtocol, Balances>,
+    LocationToAccountId,
+    AccountId,
+>;
+
+/// The means for routing XCM messages which are not for local execution into the right message
+/// queues.
+pub type XcmRouter = (
+    // Two routers - use UMP to communicate with the relay chain:
+    cumulus_primitives_utility::ParentAsUmp<ParachainSystem>,
+    // ..and XCMP to communicate with the sibling chains.
+    XcmpQueue,
+);
 
 pub struct XcmConfig;
 impl Config for XcmConfig {
     type Call = Call;
-    type XcmSender = (); // sending XCM not supported
-    type AssetTransactor = (); // balances not supported
+    type XcmSender = XcmRouter;
+    type AssetTransactor = Transactors;
     type OriginConverter = XcmOriginToTransactDispatchOrigin;
-    type IsReserve = (); // balances not supported
+    type IsReserve = TrustedParas<ZenlinkRegistedParaChains>;
     type IsTeleporter = (); // balances not supported
     type LocationInverter = LocationInverter<Ancestry>;
-    type Barrier = AllowUnpaidExecutionFrom<JustTheParent>;
-    type Weigher = FixedWeightBounds<UnitWeightCost, Call>; // balances not supported
-    type Trader = (); // balances not supported
+    type Barrier = Barrier;
+    type Weigher = FixedWeightBounds<UnitWeightCost, Call>;
+    type Trader = UsingComponents<IdentityFee<Balance>, KsmLocation, AccountId, Balances, ()>;
     type ResponseHandler = (); // Don't handle responses for now.
 }
 
@@ -229,6 +291,13 @@ impl cumulus_pallet_xcm::Config for Runtime {
     type Event = Event;
     type XcmExecutor = XcmExecutor<XcmConfig>;
 }
+
+impl cumulus_pallet_xcmp_queue::Config for Runtime {
+    type Event = Event;
+    type XcmExecutor = XcmExecutor<XcmConfig>;
+    type ChannelInfo = ParachainSystem;
+}
+//-------------XCM-HELPER--------------------end
 
 parameter_types! {
     pub const ExistentialDeposit: Balance = 1_000_000;
@@ -293,7 +362,11 @@ construct_runtime!(
         Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>} = 30,
         Vesting: pallet_vesting::{Pallet, Call, Storage, Config<T>, Event<T>} = 31,
 
+        // XCM helpers.
         CumulusXcm: cumulus_pallet_xcm::{Pallet, Call, Event<T>, Origin} = 50,
+        XcmpQueue: cumulus_pallet_xcmp_queue::{Pallet, Call, Storage, Event<T>} = 51,
+
+        ZenlinkProtocol: zenlink_protocol::{Pallet, Call, Storage, Event<T>} = 80
     }
 );
 
@@ -430,6 +503,74 @@ impl_runtime_apis! {
     impl cumulus_primitives_core::CollectCollationInfo<Block> for Runtime {
         fn collect_collation_info() -> cumulus_primitives_core::CollationInfo {
             ParachainSystem::collect_collation_info()
+        }
+    }
+
+    impl zenlink_protocol_runtime_api::ZenlinkProtocolApi<Block, AccountId> for Runtime {
+        fn get_assets() -> Vec<AssetId> {
+            ZenlinkProtocol::get_assets()
+        }
+
+        fn get_balance(
+            asset_id: AssetId,
+            owner: AccountId
+        ) -> AssetBalance {
+            <Runtime as zenlink_protocol::Config>::MultiAssetsHandler::balance_of(asset_id, &owner)
+        }
+
+        fn get_sovereigns_info(
+            asset_id: AssetId
+        ) -> Vec<(u32, AccountId, AssetBalance)> {
+            ZenlinkProtocol::get_sovereigns_info(&asset_id)
+        }
+
+        fn get_all_pairs() -> Vec<PairInfo<AccountId, AssetBalance>> {
+            ZenlinkProtocol::get_all_pairs()
+        }
+
+        fn get_owner_pairs(
+            owner: AccountId
+        ) -> Vec<PairInfo<AccountId, AssetBalance>> {
+            ZenlinkProtocol::get_owner_pairs(&owner)
+        }
+
+        fn get_pair_by_asset_id(
+            asset_0: AssetId,
+            asset_1: AssetId
+        ) -> Option<PairInfo<AccountId, AssetBalance>> {
+            ZenlinkProtocol::get_pair_by_asset_id(asset_0, asset_1)
+        }
+
+        fn get_amount_in_price(
+            supply: AssetBalance,
+            path: Vec<AssetId>
+        ) -> AssetBalance {
+            ZenlinkProtocol::desired_in_amount(supply, path)
+        }
+
+        fn get_amount_out_price(
+            supply: AssetBalance,
+            path: Vec<AssetId>
+        ) -> AssetBalance {
+            ZenlinkProtocol::supply_out_amount(supply, path)
+        }
+
+        fn get_estimate_lptoken(
+            token_0: AssetId,
+            token_1: AssetId,
+            amount_0_desired: AssetBalance,
+            amount_1_desired: AssetBalance,
+            amount_0_min: AssetBalance,
+            amount_1_min: AssetBalance,
+        ) -> AssetBalance{
+            ZenlinkProtocol::get_estimate_lptoken(
+                token_0,
+                token_1,
+                amount_0_desired,
+                amount_1_desired,
+                amount_0_min,
+                amount_1_min
+            )
         }
     }
 }

@@ -1451,6 +1451,24 @@ dependencies = [
 ]
 
 [[package]]
+name = "cumulus-pallet-xcmp-queue"
+version = "0.1.0"
+source = "git+https://github.com/paritytech/cumulus?branch=polkadot-v0.9.1#4b2c51514cd5f34a5aa0404d4a2eac86f88203f8"
+dependencies = [
+ "cumulus-primitives-core",
+ "frame-support",
+ "frame-system",
+ "log",
+ "parity-scale-codec",
+ "rand 0.8.3",
+ "rand_chacha 0.3.0",
+ "sp-runtime",
+ "sp-std",
+ "xcm",
+ "xcm-executor",
+]
+
+[[package]]
 name = "cumulus-primitives-core"
 version = "0.1.0"
 source = "git+https://github.com/paritytech/cumulus?branch=polkadot-v0.9.1#4b2c51514cd5f34a5aa0404d4a2eac86f88203f8"
@@ -8492,6 +8510,7 @@ version = "2.0.0"
 dependencies = [
  "cumulus-pallet-parachain-system",
  "cumulus-pallet-xcm",
+ "cumulus-pallet-xcmp-queue",
  "cumulus-primitives-core",
  "cumulus-primitives-utility",
  "frame-executive",
@@ -8523,6 +8542,8 @@ dependencies = [
  "xcm",
  "xcm-builder",
  "xcm-executor",
+ "zenlink-protocol",
+ "zenlink-protocol-runtime-api",
 ]
 
 [[package]]
@@ -11053,6 +11074,35 @@ dependencies = [
  "parking_lot 0.11.1",
  "rand 0.8.3",
  "static_assertions",
+]
+
+[[package]]
+name = "zenlink-protocol"
+version = "0.4.1"
+dependencies = [
+ "cumulus-primitives-core",
+ "frame-support",
+ "frame-system",
+ "log",
+ "pallet-balances",
+ "parity-scale-codec",
+ "serde",
+ "sp-arithmetic",
+ "sp-core",
+ "sp-runtime",
+ "sp-std",
+ "xcm",
+ "xcm-executor",
+]
+
+[[package]]
+name = "zenlink-protocol-runtime-api"
+version = "0.4.1"
+dependencies = [
+ "parity-scale-codec",
+ "sp-api",
+ "sp-std",
+ "zenlink-protocol",
 ]
 
 [[package]]

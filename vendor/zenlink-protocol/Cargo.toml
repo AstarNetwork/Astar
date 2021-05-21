@@ -1,0 +1,54 @@
+[package]
+name = "zenlink-protocol"
+version = "0.4.1"
+authors = ["Zenlink Developers"]
+edition = "2018"
+license = "GPL-3.0-only"
+
+[package.metadata.docs.rs]
+targets = ['x86_64-unknown-linux-gnu']
+
+[dependencies]
+log = { version = "0.4.14", default-features = false }
+serde = { version = "1.0.119", optional = true }
+# alias "parity-scale-code" to "codec"
+codec = { package = "parity-scale-codec", version = "2.0.0", default-features = false }
+# Substrate
+sp-core = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.1" }
+frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.1" }
+frame-system = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.1" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.1" }
+sp-std = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.1", default-features = false }
+sp-arithmetic = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.1", default-features = false }
+pallet-balances = { git = 'https://github.com/paritytech/substrate', default-features = false, branch = 'polkadot-v0.9.1' }
+
+# Polkadot
+xcm = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.1", default-features = false }
+xcm-executor = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.1", default-features = false }
+
+# Cumulus
+cumulus-primitives-core = { git = "https://github.com/paritytech/cumulus", default-features = false, branch = "polkadot-v0.9.1" }
+
+[dev-dependencies]
+sp-core = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.1" }
+sp-io = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.1" }
+
+
+[features]
+default = ["std"]
+std = [
+    "log/std",
+    "serde",
+    "codec/std",
+    "sp-core/std",
+    "frame-support/std",
+    "frame-system/std",
+    "sp-runtime/std",
+    "sp-std/std",
+    "sp-arithmetic/std",
+    "pallet-balances/std",
+
+    "xcm/std",
+    "xcm-executor/std",
+    "cumulus-primitives-core/std"
+]
