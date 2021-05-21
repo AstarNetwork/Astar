@@ -25,6 +25,8 @@ frame-system = { version = "3.0.0", default-features = false }
 pallet-session = { version = "3.0.0", default-features = false, features = ["historical"] }
 pallet-authorship = { version = "3.0.0", default-features = false }
 sp-application-crypto = { version = "3.0.0", default-features = false }
+pallet-plasm-staking-rewards = { version = "1.10.0",  path = "../plasm-staking-rewards", default_features = false }
+plasm-primitives = { path = "../../bin/node/primitives", default-features = false }
 
 # Optional imports for benchmarking
 frame-benchmarking = { version = "3.0.0", default-features = false, optional = true }
@@ -36,7 +38,6 @@ sp-storage = { version = "3.0.0" }
 sp-tracing = { version = "3.0.0" }
 pallet-balances = { version = "3.0.0" }
 pallet-timestamp = { version = "3.0.0" }
-pallet-staking-reward-curve = { version = "3.0.0",  path = "./reward-curve" }
 substrate-test-utils = { version = "3.0.0" }
 frame-benchmarking = { version = "3.0.0" }
 rand_chacha = { version = "0.2" }
@@ -58,6 +59,7 @@ std = [
 	"frame-system/std",
 	"pallet-authorship/std",
 	"sp-application-crypto/std",
+	"plasm-primitives/std",
 ]
 runtime-benchmarks = [
 	"frame-benchmarking",

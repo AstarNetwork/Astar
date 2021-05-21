@@ -43,7 +43,7 @@ use sp_runtime::transaction_validity::{
     TransactionPriority, TransactionSource, TransactionValidity,
 };
 use sp_runtime::{
-    create_runtime_str, curve::PiecewiseLinear, generic, impl_opaque_keys, ApplyExtrinsicResult,
+    create_runtime_str, generic, impl_opaque_keys, ApplyExtrinsicResult,
     FixedPointNumber, Perbill, Perquintill, RuntimeAppPublic,
 };
 use sp_std::convert::TryFrom;
@@ -266,7 +266,7 @@ parameter_types! {
 }
 
 impl pallet_session::Config for Runtime {
-    type SessionManager = pallet_session::historical::NoteHistoricalRoot<Self, Staking>;
+    type SessionManager = StakingRewards;
     type SessionHandler = <SessionKeys as OpaqueKeys>::KeyTypeIdProviders;
     type ShouldEndSession = Babe;
     type NextSessionRotation = Babe;
@@ -283,47 +283,53 @@ impl pallet_session::historical::Config for Runtime {
     type FullIdentificationOf = pallet_plasm_node_staking::ExposureOf<Runtime>;
 }
 
-const THREE_PERCENT_INFLATION: Perbill = Perbill::from_parts(29_559_999);
-const REWARD_CURVE: PiecewiseLinear<'static> = PiecewiseLinear {
-    points: &[(Perbill::from_percent(0), THREE_PERCENT_INFLATION)],
-    maximum: THREE_PERCENT_INFLATION,
-};
+impl pallet_plasm_staking_rewards::Config for Runtime {
+    type Currency = Balances;
+    type UnixTime = Timestamp;
+    type SessionsPerEra = SessionsPerEra;
+    type Event = Event;
+}
 
 parameter_types! {
-    pub const SessionsPerEra: sp_staking::SessionIndex = 4; // 1 day
-    pub const BondingDuration: pallet_plasm_node_staking::EraIndex = 7; // 7 days
-    pub const SlashDeferDuration: pallet_plasm_node_staking::EraIndex = 6; // 6 days, less than bonding duration
-    pub const RewardCurve: &'static PiecewiseLinear<'static> = &REWARD_CURVE;
-    pub const MaxNominatorRewardedPerValidator: u32 = 64;
-    pub const ElectionLookahead: BlockNumber = EPOCH_DURATION_IN_BLOCKS / 4;
-    pub const MaxIterations: u32 = 10;
-    // 0.05%. The higher the value, the more strict solution acceptance becomes.
-    pub MinSolutionScoreBump: Perbill = Perbill::from_rational_approximation(5u32, 10_000);
+    pub const SessionsPerEra: sp_staking::SessionIndex = 6;
+    pub const BondingDuration: pallet_plasm_node_staking::EraIndex = 24 * 28;
+    pub const SlashDeferDuration: pallet_plasm_node_staking::EraIndex = 24 * 7; // 1/4 the bonding duration.
+    pub const StakingUnsignedPriority: u64 = 1 << 20;
+	pub const MaxNominatorRewardedPerValidator: u32 = 256;
+	pub const ElectionLookahead: BlockNumber = EPOCH_DURATION_IN_BLOCKS / 4;
+	pub const MaxIterations: u32 = 10;
+	// 0.05%. The higher the value, the more strict solution acceptance becomes.
+	pub MinSolutionScoreBump: Perbill = Perbill::from_rational_approximation(5u32, 10_000);
+    pub OffchainSolutionWeightLimit: Weight = RuntimeBlockWeights::get()
+		.get(DispatchClass::Normal)
+		.max_extrinsic.expect("Normal extrinsics have a weight limit configured; qed")
+		.saturating_sub(BlockExecutionWeight::get());
 }
 
 impl pallet_plasm_node_staking::Config for Runtime {
     type Currency = Balances;
     type UnixTime = Timestamp;
     type CurrencyToVote = U128CurrencyToVote;
-    type RewardRemainder = ();
+    type RewardRemainder = (); //TODO Treasury
     type Event = Event;
-    type Slash = ();
-    type Reward = (); // rewards are minted from the void
+    type Slash = (); // send the slashed funds to the treasury. TODO Treasury
+	type Reward = (); // rewards are minted from the void
     type SessionsPerEra = SessionsPerEra;
     type BondingDuration = BondingDuration;
     type SlashDeferDuration = SlashDeferDuration;
-    type SlashCancelOrigin = EnsureRoot<AccountId>;
-    type SessionInterface = Self;
-    type RewardCurve = RewardCurve;
+	/// A super-majority of the council can cancel the slash.
+    type ForSecurityEraReward = StakingRewards;
+    type OffchainSolutionWeightLimit = OffchainSolutionWeightLimit;
+	type SlashCancelOrigin = EnsureRoot<AccountId>;
     type NextNewSession = Session;
-    type ElectionLookahead = ElectionLookahead;
-    type Call = Call;
-    type MaxIterations = MaxIterations;
-    type MinSolutionScoreBump = MinSolutionScoreBump;
-    type MaxNominatorRewardedPerValidator = MaxNominatorRewardedPerValidator;
-    type UnsignedPriority = StakingUnsignedPriority;
-    type WeightInfo = ();
-    type OffchainSolutionWeightLimit = ();
+	type ElectionLookahead = ElectionLookahead;
+	type Call = Call;
+	type MaxIterations = MaxIterations;
+	type MinSolutionScoreBump = MinSolutionScoreBump;
+	type MaxNominatorRewardedPerValidator = MaxNominatorRewardedPerValidator;
+	type UnsignedPriority = StakingUnsignedPriority;
+	type WeightInfo = pallet_plasm_node_staking::weights::SubstrateWeight<Runtime>;
+    type SessionInterface = Self;
 }
 
 parameter_types! {
@@ -342,35 +348,6 @@ impl pallet_scheduler::Config for Runtime {
     type MaxScheduledPerBlock = MaxScheduledPerBlock;
     type WeightInfo = ();
 }
-
-// parameter_types! {
-//     pub const SessionsPerEra: pallet_plasm_rewards::SessionIndex = 6;
-//     pub const BondingDuration: pallet_plasm_rewards::EraIndex = 24 * 28;
-// }
-
-// impl pallet_plasm_rewards::Config for Runtime {
-//     type Currency = Balances;
-//     type Time = Timestamp;
-//     type SessionsPerEra = SessionsPerEra;
-//     type BondingDuration = BondingDuration;
-//     type ComputeEraForDapps = pallet_plasm_rewards::DefaultForDappsStaking<Runtime>;
-//     type ComputeEraForSecurity = PlasmValidator;
-//     type ComputeTotalPayout = pallet_plasm_rewards::inflation::CommunityRewards<u32>;
-//     type MaybeValidators = PlasmValidator;
-//     type Event = Event;
-// }
-
-// impl pallet_plasm_validator::Config for Runtime {
-//     type Currency = Balances;
-//     type Time = Timestamp;
-//     type RewardRemainder = (); // Reward remainder is burned.
-//     type Reward = (); // Reward is minted.
-//     type EraFinder = PlasmRewards;
-//     type ForSecurityEraReward = PlasmRewards;
-//     type ComputeEraParam = u32;
-//     type ComputeEra = PlasmValidator;
-//     type Event = Event;
-// }
 
 /*
 impl pallet_dapps_staking::Config for Runtime {
@@ -436,25 +413,10 @@ impl pallet_contracts::Config for Runtime {
     type MaxCodeSize = MaxCodeSize;
 }
 
-// impl pallet_contract_operator::Config for Runtime {
-//     //type Parameters = pallet_dapps_staking::parameters::StakingParameters; TODO after pallet_dapps_staking update to sub3.0
-//     type Parameters = None;
-//     type Event = Event;
-// }
-
 impl pallet_plasm_operator::Config for Runtime {
-    //type Parameters = pallet_dapps_staking::parameters::StakingParameters; TODO after pallet_dapps_staking update to sub3.0
     type Event = Event;
 }
 
-/*
-impl pallet_operator_trading::Config for Runtime {
-    type Currency = Balances;
-    type OperatorFinder = Operator;
-    type TransferOperator = Operator;
-    type Event = Event;
-}
-*/
 
 impl pallet_utility::Config for Runtime {
     type Event = Event;
@@ -470,8 +432,6 @@ impl pallet_sudo::Config for Runtime {
 parameter_types! {
     pub const SessionDuration: BlockNumber = EPOCH_DURATION_IN_SLOTS as _;
     pub const ImOnlineUnsignedPriority: TransactionPriority = TransactionPriority::max_value();
-    /// We prioritize im-online heartbeats over election solution submission.
-    pub const StakingUnsignedPriority: TransactionPriority = TransactionPriority::max_value() / 2;
 }
 
 impl pallet_im_online::Config for Runtime {
@@ -763,7 +723,7 @@ construct_runtime!(
         Contracts: pallet_contracts::{Module, Call, Storage, Event<T>, Config<T>},
         //DappsStaking: pallet_dapps_staking::{Module, Call, Storage, Event<T>},
         //PlasmValidator: pallet_plasm_validator::{Module, Call, Storage, Event<T>, Config<T>},
-        // PlasmRewards: pallet_plasm_rewards::{Module, Call, Storage, Event<T>, Config},
+        StakingRewards: pallet_plasm_staking_rewards::{Module, Call, Storage, Event<T>, Config},
         Session: pallet_session::{Module, Call, Storage, Event, Config<T>},
         Staking: pallet_plasm_node_staking::{Module, Call, Storage, Event<T>, Config<T>},
         Historical: pallet_session_historical::{Module},

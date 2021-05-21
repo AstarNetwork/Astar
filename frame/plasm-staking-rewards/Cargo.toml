@@ -1,6 +1,6 @@
 [package]
-name = "pallet-plasm-rewards"
-version = "1.9.0"
+name = "pallet-plasm-staking-rewards"
+version = "1.10.0"
 authors = ["Stake Technologies <devops@stake.co.jp>"]
 edition = "2018"
 license = "Apache-2.0"
@@ -19,8 +19,8 @@ sp-std = { version = "3.0.0", default_features = false }
 frame-support = { version = "3.0.0", default_features = false }
 pallet-session = { version = "3.0.0", default-features = false }
 frame-system = { version = "3.0.0", default_features = false }
-pallet-plasm-node-staking = { path = "../plasm-node-staking", default-features = false }
 sp-staking = { version = "3.0.0", default_features = false }
+plasm-primitives = { path = "../../bin/node/primitives", default-features = false }
 
 [dev-dependencies]
 hex-literal = "0.2.1"
@@ -42,6 +42,9 @@ std = [
     "frame-support/std",
     "pallet-session/std",
     "frame-system/std",
-    "pallet-plasm-node-staking/std",
     "sp-staking/std",
+    "pallet-balances/std",
+    "pallet-timestamp/std",
+    "pallet-randomness-collective-flip/std",
+    "plasm-primitives/std",
 ]

@@ -1,10 +1,11 @@
 [package]
 name = "plasm-primitives"
-version = "1.9.3"
+version = "1.10.0"
 authors = ["Stake Technologies <devops@stake.co.jp>"]
 edition = "2018"
 
 [dependencies]
+serde = { version = "1.0.101", optional = true }
 codec = { package = "parity-scale-codec", version = "2.0", default-features = false }
 sp-core = { version = "3.0.0", default-features = false }
 sp-runtime = { version = "3.0.0", default-features = false }
@@ -14,9 +15,11 @@ frame-system = { version = "3.0.0", default-features = false }
 [features]
 default = ["std"]
 std = [
+    "serde",
     "codec/std",
     "sp-core/std",
     "sp-runtime/std",
     "sp-application-crypto/std",
     "frame-system/std",
+    
 ]

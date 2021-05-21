@@ -16,13 +16,13 @@
 use codec::{Decode, Encode};
 use frame_support::{
     decl_error, decl_event, decl_module, decl_storage,
-    traits::{Currency, Get, LockableCurrency, Time},
+    traits::{Currency, Get, LockableCurrency, UnixTime},
     weights::Weight,
     StorageMap, StorageValue,
 };
 use frame_system::ensure_root;
-pub use pallet_plasm_node_staking::Forcing;
 use pallet_session::SessionManager;
+pub use plasm_primitives::Forcing;
 use sp_runtime::{
     traits::{SaturatedConversion, Zero},
     Perbill, RuntimeDebug,
@@ -42,7 +42,6 @@ pub use sp_staking::SessionIndex;
 pub type EraIndex = u32;
 pub type BalanceOf<T> =
     <<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
-pub type MomentOf<T> = <<T as Config>::Time as Time>::Moment;
 
 // A value placed in storage that represents the current version of the Staking storage.
 // This value is used by the `on_runtime_upgrade` logic to determine whether we run
@@ -59,15 +58,15 @@ impl Default for Releases {
 }
 
 /// Information regarding the active era (era in used in session).
-#[derive(Encode, Decode, RuntimeDebug, PartialEq, Eq)]
-pub struct ActiveEraInfo<Moment> {
+#[derive(Encode, Decode, RuntimeDebug, PartialEq, Eq, Clone)]
+pub struct ActiveEraInfo {
     /// Index of era.
     pub index: EraIndex,
     /// Moment of start
     ///
     /// Start can be none if start hasn't been set for the era yet,
     /// Start is set on the first on_finalize of the era to guarantee usage of `Time`.
-    pub start: Option<Moment>,
+    pub start: Option<u64>,
 }
 
 pub trait Config: pallet_session::Config {
@@ -75,35 +74,17 @@ pub trait Config: pallet_session::Config {
     type Currency: LockableCurrency<Self::AccountId, Moment = Self::BlockNumber>;
 
     /// Time used for computing era duration.
-    type Time: Time;
+    type UnixTime: UnixTime;
 
     /// Number of sessions per era.
     type SessionsPerEra: Get<SessionIndex>;
-
-    /// Number of eras that staked funds must remain bonded for.
-    type BondingDuration: Get<EraIndex>;
-
-    /// Get the amount of staking for dapps per era.
-    type ComputeEraForDapps: ComputeEraWithParam<EraIndex>;
-
-    /// Get the amount of staking for security per era.
-    type ComputeEraForSecurity: ComputeEraWithParam<EraIndex>;
-
-    /// How to compute total issue PLM for rewards.
-    type ComputeTotalPayout: ComputeTotalPayout<
-        <Self::ComputeEraForSecurity as ComputeEraWithParam<EraIndex>>::Param,
-        <Self::ComputeEraForDapps as ComputeEraWithParam<EraIndex>>::Param,
-    >;
-
-    /// Maybe next validators.
-    type MaybeValidators: traits::MaybeValidators<EraIndex, Self::AccountId>;
 
     /// The overarching event type.
     type Event: From<Event<Self>> + Into<<Self as frame_system::Config>::Event>;
 }
 
 decl_storage! {
-    trait Store for Module<T: Config> as DappsStaking {
+    trait Store for Module<T: Config> as PlasmRewards {
         /// This is the compensation paid for the dapps operator of the Plasm Network.
         /// This is stored on a per-era basis.
         pub ForDappsEraReward get(fn for_dapps_era_reward): map hasher(twox_64_concat) EraIndex => Option<BalanceOf<T>>;
@@ -111,6 +92,9 @@ decl_storage! {
         /// This is the compensation paid for the security of the Plasm Network.
         /// This is stored on a per-era basis.
         pub ForSecurityEraReward get(fn for_security_era_reward): map hasher(twox_64_concat) EraIndex => Option<BalanceOf<T>>;
+
+        /// The ideal number of staking participants.
+		pub ValidatorCount get(fn validator_count) config(): u32;
 
         /// Number of era to keep in history.
         ///
@@ -140,7 +124,7 @@ decl_storage! {
         ///
         /// The active era is the era currently rewarded.
         /// Validator set of this era must be equal to `SessionInterface::validators`.
-        pub ActiveEra get(fn active_era): Option<ActiveEraInfo<MomentOf<T>>>;
+        pub ActiveEra get(fn active_era): Option<ActiveEraInfo>;
 
         /// The session index at which the era start for the last `HISTORY_DEPTH` eras
         pub ErasStartSessionIndex get(fn eras_start_session_index):
@@ -194,12 +178,15 @@ decl_module! {
         /// On finalize is called at after rotate session.
         fn on_finalize() {
             // Set the start of the first era.
-            if let Some(mut active_era) = Self::active_era() {
-                if active_era.start.is_none() {
-                    active_era.start = Some(T::Time::now());
-                    <ActiveEra<T>>::put(active_era);
-                }
-            }
+			if let Some(mut active_era) = Self::active_era() {
+                // if the era is untreated
+				if active_era.start.is_none() {
+					let now_as_millis_u64 = T::UnixTime::now().as_millis().saturated_into::<u64>();
+					active_era.start = Some(now_as_millis_u64);
+                    Self::end_era(active_era.clone());
+					ActiveEra::put(active_era);
+				}
+			}
         }
 
         // ----- Root calls.
@@ -323,7 +310,7 @@ impl<T: Config> Module<T> {
                 Self::eras_start_session_index(active_era.index + 1)
             {
                 if next_active_era_start_session_index == session_index + 1 {
-                    Self::end_era(active_era, session_index);
+                    Self::end_era(active_era);
                 }
             }
         }
@@ -332,62 +319,36 @@ impl<T: Config> Module<T> {
     /// * Increment `active_era.index`,
     /// * reset `active_era.start`,
     /// * update `BondedEras` and apply slashes.
-    fn start_era(start_session: SessionIndex) {
-        let active_era = <ActiveEra<T>>::mutate(|active_era| {
-            let new_index = active_era.as_ref().map(|info| info.index + 1).unwrap_or(0);
-            *active_era = Some(ActiveEraInfo {
-                index: new_index,
-                // Set new active era start in next `on_finalize`. To guarantee usage of `Time`
-                start: None,
-            });
-            new_index
-        });
-
-        // let bonding_duration = T::BondingDuration::get();
-
-        BondedEras::mutate(|bonded| {
-            bonded.push((active_era, start_session));
-
-            // if active_era > bonding_duration {
-            //     let first_kept = active_era - bonding_duration;
-            //
-            //     // prune out everything that's from before the first-kept index.
-            //     let n_to_prune = bonded.iter()
-            //         .take_while(|&&(era_idx, _)| era_idx < first_kept)
-            //         .count();
-            //
-            //     // kill slashing metadata.
-            //     for (pruned_era, _) in bonded.drain(..n_to_prune) {
-            //         slashing::clear_era_metadata::<T>(pruned_era);
-            //     }
-            //
-            //     if let Some(&(_, first_session)) = bonded.first() {
-            //         T::SessionInterface::prune_historical_up_to(first_session);
-            //     }
-            // }
-        });
+    fn start_era(_start_session: SessionIndex) {
+        let _active_era = ActiveEra::mutate(|active_era| {
+			let new_index = active_era.as_ref().map(|info| info.index + 1).unwrap_or(0);
+			*active_era = Some(ActiveEraInfo {
+				index: new_index,
+				// Set new active era start in next `on_finalize`. To guarantee usage of `Time`
+				start: None,
+			});
+			new_index
+		});
     }
 
     /// Compute payout for era.
-    fn end_era(active_era: ActiveEraInfo<MomentOf<T>>, _session_index: SessionIndex) {
+    fn end_era(active_era: ActiveEraInfo) {
         // Note: active_era_start can be None if end era is called during genesis config.
         if let Some(active_era_start) = active_era.start {
             // The set of total amount of staking.
-            let now = T::Time::now();
-            let era_duration = now - active_era_start;
+			let now_as_millis_u64 = T::UnixTime::now().as_millis().saturated_into::<u64>();
 
-            if !era_duration.is_zero() {
+			let era_duration = now_as_millis_u64 - active_era_start;
+            let for_security = Self::validator_count();
+
+            if era_duration != 0 {
                 let total_payout = T::Currency::total_issuance();
-                let for_dapps = T::ComputeEraForDapps::compute(&active_era.index);
-                let for_security = T::ComputeEraForSecurity::compute(&active_era.index);
-
-                let (for_security_reward, for_dapps_rewards) = T::ComputeTotalPayout::compute(
+                let (for_security_reward, for_dapps_rewards) = inflation::compute_total_rewards::<T>(
                     total_payout,
                     era_duration.saturated_into::<u64>(),
                     for_security,
-                    for_dapps,
+                    0u32,
                 );
-
                 <ForSecurityEraReward<T>>::insert(active_era.index, for_security_reward);
                 <ForDappsEraReward<T>>::insert(active_era.index, for_dapps_rewards);
             }
@@ -405,9 +366,7 @@ impl<T: Config> Module<T> {
         if let Some(old_era) = current_era.checked_sub(Self::history_depth() + 1) {
             Self::clear_era_information(old_era);
         }
-
-        // Return maybe validators.
-        T::MaybeValidators::compute(current_era)
+        None
     }
 
     /// Clear all era information for given era.
@@ -436,11 +395,11 @@ impl<T: Config> SessionManager<T::AccountId> for Module<T> {
 }
 
 /// In this implementation using validator and dapps rewards module.
-impl<T: Config> EraFinder<EraIndex, SessionIndex, MomentOf<T>> for Module<T> {
+impl<T: Config> EraFinder<EraIndex, SessionIndex> for Module<T> {
     fn current() -> Option<EraIndex> {
         Self::current_era()
     }
-    fn active() -> Option<ActiveEraInfo<MomentOf<T>>> {
+    fn active() -> Option<ActiveEraInfo> {
         Self::active_era()
     }
     fn start_session_index(era: &EraIndex) -> Option<SessionIndex> {
@@ -452,6 +411,10 @@ impl<T: Config> EraFinder<EraIndex, SessionIndex, MomentOf<T>> for Module<T> {
 impl<T: Config> ForSecurityEraRewardFinder<BalanceOf<T>> for Module<T> {
     fn get(era: &EraIndex) -> Option<BalanceOf<T>> {
         Self::for_security_era_reward(&era)
+    }
+
+    fn validator_count() -> u32 {
+        Self::validator_count()
     }
 }
 

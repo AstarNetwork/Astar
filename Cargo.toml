@@ -5,9 +5,8 @@ members = [
     "bin/node/rpc",
     "bin/node/runtime",
     "bin/node/primitives",
-    "frame/plasm-rewards",
+    "frame/plasm-staking-rewards",
     "frame/plasm-support",
-    "frame/plasm-validator",
     "frame/plasm-operator",
     "frame/custom-signatures",
 ]

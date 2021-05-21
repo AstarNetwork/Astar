@@ -7,7 +7,7 @@ use plasm_runtime::Block;
 use plasm_runtime::{
     BabeConfig, BalancesConfig, ContractsConfig, EVMConfig, EthereumConfig, GenesisConfig,
     GrandpaConfig, ImOnlineConfig, IndicesConfig, SessionConfig, SessionKeys, StakerStatus,
-    StakingConfig, SudoConfig, SystemConfig, WASM_BINARY,
+    StakingConfig, SudoConfig, SystemConfig, WASM_BINARY, StakingRewardsConfig,
 };
 use sc_chain_spec::ChainSpecExtension;
 use sc_service::ChainType;
@@ -137,9 +137,9 @@ fn make_genesis(
         }),
         pallet_balances: Some(BalancesConfig { balances }),
         pallet_indices: Some(IndicesConfig { indices: vec![] }),
-        // pallet_plasm_rewards: Some(PlasmRewardsConfig {
-        //     ..Default::default()
-        // }),
+        pallet_plasm_staking_rewards: Some(StakingRewardsConfig {
+            ..Default::default()
+        }),
         // pallet_plasm_validator: Some(PlasmValidatorConfig {
         //     validators: initial_authorities,
         // }),
@@ -156,7 +156,6 @@ fn make_genesis(
                 .collect::<Vec<_>>(),
         }),
         pallet_plasm_node_staking: Some(StakingConfig {
-            validator_count: initial_authorities.len() as u32 + 2,
             minimum_validator_count: initial_authorities.len() as u32,
             stakers: initial_authorities
                 .iter()

@@ -8,6 +8,10 @@ use sp_runtime::{
     traits::{BlakeTwo256, IdentifyAccount, Verify},
     MultiSignature, OpaqueExtrinsic,
 };
+use codec::{Encode, Decode};
+use sp_runtime::{RuntimeDebug};
+#[cfg(feature = "std")]
+use sp_runtime::{Serialize, Deserialize};
 
 /// An index to a block.
 pub type BlockNumber = u32;
@@ -77,4 +81,21 @@ pub mod report {
         type GenericSignature = sp_core::sr25519::Signature;
         type GenericPublic = sp_core::sr25519::Public;
     }
+}
+
+/// Mode of era-forcing.
+#[derive(Copy, Clone, PartialEq, Eq, Encode, Decode, RuntimeDebug)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+pub enum Forcing {
+	/// Not forcing anything - just let whatever happen.
+	NotForcing,
+	/// Force a new era, then reset to `NotForcing` as soon as it is done.
+	ForceNew,
+	/// Avoid a new era indefinitely.
+	ForceNone,
+	/// Force a new era at the end of all sessions indefinitely.
+	ForceAlways,
+}
+impl Default for Forcing {
+	fn default() -> Self { Forcing::NotForcing }
 }

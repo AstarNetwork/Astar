@@ -279,7 +279,9 @@ pub mod benchmarking;
 
 pub mod slashing;
 pub mod offchain_election;
-pub mod inflation;
+use pallet_plasm_staking_rewards::ForSecurityEraRewardFinder;
+pub use plasm_primitives::Forcing;
+
 pub mod weights;
 
 use sp_std::{
@@ -306,7 +308,6 @@ use frame_support::{
 use pallet_session::historical;
 use sp_runtime::{
 	Percent, Perbill, PerU16, RuntimeDebug, DispatchError,
-	curve::PiecewiseLinear,
 	traits::{
 		Convert, Zero, StaticLookup, CheckedSub, Saturating, SaturatedConversion,
 		AtLeast32BitUnsigned, Dispatchable,
@@ -777,6 +778,12 @@ impl<T: Config> SessionInterface<<T as frame_system::Config>::AccountId> for T w
 }
 
 pub trait Config: frame_system::Config + SendTransactionTypes<Call<Self>> {
+
+    /// The total validator era payout for the last `HISTORY_DEPTH` eras.
+	///
+	/// Eras that haven't finished yet or has been removed doesn't have reward.
+	type ForSecurityEraReward: ForSecurityEraRewardFinder<BalanceOf<Self>>;
+
 	/// The staking balance.
 	type Currency: LockableCurrency<Self::AccountId, Moment=Self::BlockNumber>;
 
@@ -824,10 +831,6 @@ pub trait Config: frame_system::Config + SendTransactionTypes<Call<Self>> {
 	/// Interface for interacting with a session module.
 	type SessionInterface: self::SessionInterface<Self::AccountId>;
 
-	/// The NPoS reward curve used to define yearly inflation.
-	/// See [Era payout](./index.html#era-payout).
-	type RewardCurve: Get<&'static PiecewiseLinear<'static>>;
-
 	/// Something that can estimate the next session change, accurately or as a best effort guess.
 	type NextNewSession: EstimateNextNewSession<Self::BlockNumber>;
 
@@ -874,24 +877,6 @@ pub trait Config: frame_system::Config + SendTransactionTypes<Call<Self>> {
 	type WeightInfo: WeightInfo;
 }
 
-/// Mode of era-forcing.
-#[derive(Copy, Clone, PartialEq, Eq, Encode, Decode, RuntimeDebug)]
-#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
-pub enum Forcing {
-	/// Not forcing anything - just let whatever happen.
-	NotForcing,
-	/// Force a new era, then reset to `NotForcing` as soon as it is done.
-	ForceNew,
-	/// Avoid a new era indefinitely.
-	ForceNone,
-	/// Force a new era at the end of all sessions indefinitely.
-	ForceAlways,
-}
-
-impl Default for Forcing {
-	fn default() -> Self { Forcing::NotForcing }
-}
-
 // A value placed in storage that represents the current version of the Staking storage. This value
 // is used by the `on_runtime_upgrade` logic to determine whether we run storage migration logic.
 // This should match directly with the semantic versions of the Rust crate.
@@ -920,9 +905,6 @@ decl_storage! {
 		/// always be in history. I.e. `active_era > current_era - history_depth` must be
 		/// guaranteed.
 		HistoryDepth get(fn history_depth) config(): u32 = 84;
-
-		/// The ideal number of staking participants.
-		pub ValidatorCount get(fn validator_count) config(): u32;
 
 		/// Minimum number of staking participants before emergency conditions are imposed.
 		pub MinimumValidatorCount get(fn minimum_validator_count) config(): u32;
@@ -1835,7 +1817,7 @@ decl_module! {
 		#[weight = T::WeightInfo::set_validator_count()]
 		fn set_validator_count(origin, #[compact] new: u32) {
 			ensure_root(origin)?;
-			ValidatorCount::put(new);
+			pallet_plasm_staking_rewards::ValidatorCount::put(new);		
 		}
 
 		/// Increments the ideal number of validators.
@@ -1848,7 +1830,7 @@ decl_module! {
 		#[weight = T::WeightInfo::set_validator_count()]
 		fn increase_validator_count(origin, #[compact] additional: u32) {
 			ensure_root(origin)?;
-			ValidatorCount::mutate(|n| *n += additional);
+			pallet_plasm_staking_rewards::ValidatorCount::mutate(|n| *n += additional);
 		}
 
 		/// Scale up the ideal number of validators by a factor.
@@ -1861,7 +1843,7 @@ decl_module! {
 		#[weight = T::WeightInfo::set_validator_count()]
 		fn scale_validator_count(origin, factor: Percent) {
 			ensure_root(origin)?;
-			ValidatorCount::mutate(|n| *n += factor * *n);
+			pallet_plasm_staking_rewards::ValidatorCount::mutate(|n| *n += factor * *n);
 		}
 
 		/// Force there to be no new eras indefinitely.
@@ -2342,7 +2324,7 @@ impl<T: Config> Module<T> {
 
 		// Note: if era has no reward to be claimed, era may be future. better not to update
 		// `ledger.claimed_rewards` in this case.
-		let era_payout = <ErasValidatorReward<T>>::get(&era)
+		let era_payout = T::ForSecurityEraReward::get(&era)
 			.ok_or_else(|| Error::<T>::InvalidEraToReward)?;
 
 		let controller = Self::bonded(&validator_stash).ok_or(Error::<T>::NotStash)?;
@@ -2583,7 +2565,7 @@ impl<T: Config> Module<T> {
 
 		// check the winner length only here and when we know the length of the snapshot validators
 		// length.
-		let desired_winners = Self::validator_count().min(snapshot_validators_length);
+		let desired_winners = T::ForSecurityEraReward::validator_count().min(snapshot_validators_length);
 		ensure!(winners.len() as u32 == desired_winners, Error::<T>::OffchainElectionBogusWinnerCount);
 
 		let snapshot_nominators_len = <SnapshotNominators<T>>::decode_len()
@@ -2795,27 +2777,8 @@ impl<T: Config> Module<T> {
 	}
 
 	/// Compute payout for era.
-	fn end_era(active_era: ActiveEraInfo, _session_index: SessionIndex) {
-		// Note: active_era_start can be None if end era is called during genesis config.
-		if let Some(active_era_start) = active_era.start {
-			let now_as_millis_u64 = T::UnixTime::now().as_millis().saturated_into::<u64>();
-
-			let era_duration = now_as_millis_u64 - active_era_start;
-			let (validator_payout, max_payout) = inflation::compute_total_payout(
-				&T::RewardCurve::get(),
-				Self::eras_total_stake(&active_era.index),
-				T::Currency::total_issuance(),
-				// Duration of era; more than u64::MAX is rewarded as u64::MAX.
-				era_duration.saturated_into::<u64>(),
-			);
-			let rest = max_payout.saturating_sub(validator_payout);
-
-			Self::deposit_event(RawEvent::EraPayout(active_era.index, validator_payout, rest));
-
-			// Set ending era reward.
-			<ErasValidatorReward<T>>::insert(&active_era.index, validator_payout);
-			T::RewardRemainder::on_unbalanced(T::Currency::issue(rest));
-		}
+	fn end_era(_active_era: ActiveEraInfo, _session_index: SessionIndex) {
+		// this function is handled within pallet_plasm_reward
 	}
 
 	/// Plan a new era. Return the potential new staking set.
@@ -3031,7 +2994,7 @@ impl<T: Config> Module<T> {
 			None
 		} else {
 			seq_phragmen::<_, Accuracy>(
-				Self::validator_count() as usize,
+		T::ForSecurityEraReward::validator_count() as usize,
 				all_validators,
 				all_nominators,
 				Some((iterations, 0)), // exactly run `iterations` rounds.
