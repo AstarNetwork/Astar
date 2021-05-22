@@ -74,6 +74,9 @@ polkadot-parachain = { git = "https://github.com/paritytech/polkadot", branch = 
 polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.1" }
 polkadot-cli = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.1", optional = true }
 
+# Zenlink
+zenlink-protocol-rpc = { path = "../../vendor/zenlink-protocol/rpc" }
+
 [build-dependencies]
 sc-cli = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.1", optional = true }
 sc-service = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.1", optional = true }

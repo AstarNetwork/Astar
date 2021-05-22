@@ -5576,6 +5576,7 @@ dependencies = [
  "structopt",
  "substrate-build-script-utils",
  "vergen",
+ "zenlink-protocol-rpc",
 ]
 
 [[package]]
@@ -11093,6 +11094,22 @@ dependencies = [
  "sp-std",
  "xcm",
  "xcm-executor",
+]
+
+[[package]]
+name = "zenlink-protocol-rpc"
+version = "0.4.1"
+dependencies = [
+ "jsonrpc-core",
+ "jsonrpc-core-client",
+ "jsonrpc-derive",
+ "parity-scale-codec",
+ "sp-api",
+ "sp-blockchain",
+ "sp-rpc",
+ "sp-runtime",
+ "zenlink-protocol",
+ "zenlink-protocol-runtime-api",
 ]
 
 [[package]]

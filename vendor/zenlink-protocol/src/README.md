@@ -1,4 +1,4 @@
-## Zenlink Protocol v0.4.0 Overview
+## Zenlink Protocol v0.4.1 Overview
 ![zenlink protocol](./docs/zenlink-protocol-v0.4.0.png)
 
 `Zenlink Protocol` mainly consists of two parts: assets and asset operations, 
@@ -6,10 +6,10 @@ namely `Zenlink Assets` and `Zenlink Actions`.
 Through the `UAI`(unified asset identifier) and `MultiAssetsHandler` interfaces, 
 `Zenlink` can perform `Swap` and `Transfer By XCM` any asset on the chain.
 
-## Zenlink Protocol v0.4.0 Features
+## Zenlink Protocol v0.4.1 Features
 - Based on the `newest` XCM design
 - Based on `FRAMEv2`
-- Swap exchange fee `configurable`
+- Swap exchange fee rate `configurable`
 - `Compatible` Polkadot XCMP cross-chain asset processing
 - Zenlink Protocol registration whitelist-XCM `trust collection management`
 - Through Transfer-By-XCM, `assets can flow freely` between parachains

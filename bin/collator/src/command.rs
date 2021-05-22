@@ -300,7 +300,14 @@ pub fn run() -> Result<()> {
                     key,
                     polkadot_config,
                     id,
-                    Box::new(move |_| Default::default()),
+                    |client| {
+                        use zenlink_protocol_rpc::{ZenlinkProtocol, ZenlinkProtocolApi};
+
+                        let mut io = jsonrpc_core::IoHandler::default();
+                        io.extend_with(ZenlinkProtocolApi::to_delegate(ZenlinkProtocol::new(client.clone())));
+
+                        io
+                    },
                 )
                 .await
                 .map(|r| r.0)
