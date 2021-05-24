@@ -255,9 +255,10 @@ impl pallet_authorship::Config for Runtime {
 
 impl_opaque_keys! {
     pub struct SessionKeys {
-        pub babe: Babe,
         pub grandpa: Grandpa,
+        pub babe: Babe,
         pub im_online: ImOnline,
+        pub authority_discovery: AuthorityDiscovery,
     }
 }
 
@@ -364,6 +365,7 @@ impl pallet_dapps_staking::Config for Runtime {
     type Event = Event;
 }
 */
+impl pallet_authority_discovery::Config for Runtime {}
 
 parameter_types! {
     pub const TombstoneDeposit: Balance = deposit(
@@ -722,7 +724,6 @@ construct_runtime!(
         Balances: pallet_balances::{Module, Call, Storage, Event<T>, Config<T>},
         Contracts: pallet_contracts::{Module, Call, Storage, Event<T>, Config<T>},
         //DappsStaking: pallet_dapps_staking::{Module, Call, Storage, Event<T>},
-        //PlasmValidator: pallet_plasm_validator::{Module, Call, Storage, Event<T>, Config<T>},
         StakingRewards: pallet_plasm_staking_rewards::{Module, Call, Storage, Event<T>, Config},
         Session: pallet_session::{Module, Call, Storage, Event, Config<T>},
         Staking: pallet_plasm_node_staking::{Module, Call, Storage, Event<T>, Config<T>},
@@ -741,6 +742,7 @@ construct_runtime!(
         Ethereum: pallet_ethereum::{Module, Call, Storage, Event, Config, ValidateUnsigned},
         EVM: pallet_evm::{Module, Call, Storage, Config, Event<T>},
         EthCall: pallet_custom_signatures::{Module, Call, Event<T>, ValidateUnsigned},
+		AuthorityDiscovery: pallet_authority_discovery::{Module, Call, Config},
     }
 );
 

@@ -7,7 +7,7 @@ use plasm_runtime::Block;
 use plasm_runtime::{
     BabeConfig, BalancesConfig, ContractsConfig, EVMConfig, EthereumConfig, GenesisConfig,
     GrandpaConfig, ImOnlineConfig, IndicesConfig, SessionConfig, SessionKeys, StakerStatus,
-    StakingConfig, SudoConfig, SystemConfig, WASM_BINARY, StakingRewardsConfig,
+    StakingConfig, SudoConfig, SystemConfig, WASM_BINARY, StakingRewardsConfig, AuthorityDiscoveryConfig,
 };
 use sc_chain_spec::ChainSpecExtension;
 use sc_service::ChainType;
@@ -15,6 +15,7 @@ use serde::{Deserialize, Serialize};
 use sp_consensus_babe::AuthorityId as BabeId;
 use sp_core::{sr25519, Pair, Public, H160, U256};
 use sp_finality_grandpa::AuthorityId as GrandpaId;
+use sp_authority_discovery::AuthorityId as AuthorityDiscoveryId;
 use sp_runtime::{
     traits::{IdentifyAccount, Verify},
     Perbill,
@@ -78,15 +79,36 @@ where
 }
 
 /// Helper function to generate controller and session key from seed
-pub fn get_authority_keys_from_seed(seed: &str) -> (AccountId, BabeId, GrandpaId, ImOnlineId) {
-    (
-        get_account_id_from_seed::<sr25519::Public>(seed),
-        get_from_seed::<BabeId>(seed),
-        get_from_seed::<GrandpaId>(seed),
-        get_from_seed::<ImOnlineId>(seed),
-    )
-}
+// pub fn get_authority_keys_from_seed(seed: &str) -> (AccountId, BabeId, GrandpaId, ImOnlineId) {
+//     (
+//         get_account_id_from_seed::<sr25519::Public>(seed),
+//         get_from_seed::<BabeId>(seed),
+//         get_from_seed::<GrandpaId>(seed),
+//         get_from_seed::<ImOnlineId>(seed),
+//     )
+// }
 
+/// Helper function to generate controller and session key from seed
+pub fn get_pos_keys_from_seed(
+	seed: &str,
+) -> (
+	AccountId,
+	AccountId,
+	GrandpaId,
+	BabeId,
+	ImOnlineId,
+	AuthorityDiscoveryId,
+) {
+	(
+		get_account_id_from_seed::<sr25519::Public>(&format!("{}//stash", seed)),
+		get_account_id_from_seed::<sr25519::Public>(seed),
+		get_from_seed::<GrandpaId>(seed),
+		get_from_seed::<BabeId>(seed),
+		get_from_seed::<ImOnlineId>(seed),
+		get_from_seed::<AuthorityDiscoveryId>(seed),
+	)
+}
+/*
 fn session_keys(babe: BabeId, grandpa: GrandpaId, im_online: ImOnlineId) -> SessionKeys {
     SessionKeys {
         babe,
@@ -94,10 +116,30 @@ fn session_keys(babe: BabeId, grandpa: GrandpaId, im_online: ImOnlineId) -> Sess
         im_online,
     }
 }
+*/
+fn session_keys_pos(
+	grandpa: GrandpaId,
+	babe: BabeId,
+	im_online: ImOnlineId,
+	authority_discovery: AuthorityDiscoveryId,
+) -> SessionKeys {
+	SessionKeys {
+		grandpa,
+		babe,
+		im_online,
+		authority_discovery,
+	}
+}
 
 fn testnet_genesis(
-    initial_authorities: Vec<(AccountId, AccountId)>,
-    keys: Vec<(AccountId, BabeId, GrandpaId, ImOnlineId)>,
+    initial_authorities: Vec<(
+		AccountId,
+		AccountId,
+		GrandpaId,
+		BabeId,
+		ImOnlineId,
+		AuthorityDiscoveryId,
+	)>,
     endowed_accounts: Option<Vec<AccountId>>,
     sudo_key: AccountId,
 ) -> GenesisConfig {
@@ -119,13 +161,20 @@ fn testnet_genesis(
         .cloned()
         .map(|acc| (acc, ENDOWMENT))
         .collect();
-    make_genesis(initial_authorities, keys, endowed_accounts, sudo_key, true)
+    
+        make_genesis(initial_authorities, endowed_accounts, sudo_key, true)
 }
 
 /// Helper function to create GenesisConfig
 fn make_genesis(
-    initial_authorities: Vec<(AccountId, AccountId)>,
-    keys: Vec<(AccountId, BabeId, GrandpaId, ImOnlineId)>,
+    initial_authorities: Vec<(
+		AccountId,
+		AccountId,
+		GrandpaId,
+		BabeId,
+		ImOnlineId,
+		AuthorityDiscoveryId,
+	)>,
     balances: Vec<(AccountId, Balance)>,
     root_key: AccountId,
     enable_println: bool,
@@ -137,23 +186,21 @@ fn make_genesis(
         }),
         pallet_balances: Some(BalancesConfig { balances }),
         pallet_indices: Some(IndicesConfig { indices: vec![] }),
-        pallet_plasm_staking_rewards: Some(StakingRewardsConfig {
-            ..Default::default()
-        }),
-        // pallet_plasm_validator: Some(PlasmValidatorConfig {
-        //     validators: initial_authorities,
-        // }),
         pallet_session: Some(SessionConfig {
-            keys: keys
+            keys: initial_authorities
                 .iter()
                 .map(|x| {
                     (
                         x.0.clone(),
                         x.0.clone(),
-                        session_keys(x.1.clone(), x.2.clone(), x.3.clone()),
+						session_keys_pos(x.2.clone(), x.3.clone(), x.4.clone(), x.5.clone()),
                     )
                 })
                 .collect::<Vec<_>>(),
+        }),
+        pallet_plasm_staking_rewards: Some(StakingRewardsConfig {
+            validator_count: initial_authorities.len() as u32 + 2,
+            ..Default::default()
         }),
         pallet_plasm_node_staking: Some(StakingConfig {
             minimum_validator_count: initial_authorities.len() as u32,
@@ -171,6 +218,9 @@ fn make_genesis(
         pallet_grandpa: Some(GrandpaConfig {
             authorities: vec![],
         }),
+        pallet_authority_discovery: Some(AuthorityDiscoveryConfig {
+			keys: vec![],
+		}),
         pallet_im_online: Some(ImOnlineConfig { keys: vec![] }),
         pallet_contracts: Some(ContractsConfig {
             current_schedule: pallet_contracts::Schedule {
@@ -8966,14 +9016,15 @@ pub fn plasm_config() -> ChainSpec {
 
 fn development_config_genesis() -> GenesisConfig {
     testnet_genesis(
-        vec![(
-            get_account_id_from_seed::<sr25519::Public>("Alice"),
-            get_account_id_from_seed::<sr25519::Public>("Bob"),
-        )],
-        vec![
-            get_authority_keys_from_seed("Alice"),
-            get_authority_keys_from_seed("Bob"),
-        ],
+        vec![get_pos_keys_from_seed("Alice")],
+        // vec![(
+        //     get_account_id_from_seed::<sr25519::Public>("Alice"),
+        //     get_account_id_from_seed::<sr25519::Public>("Bob"),
+        // )],
+        // vec![
+        //     get_authority_keys_from_seed("Alice"),
+        //     get_authority_keys_from_seed("Bob"),
+        // ],
         None,
         get_account_id_from_seed::<sr25519::Public>("Alice"),
     )
@@ -8997,19 +9048,9 @@ pub fn development_config() -> ChainSpec {
 fn local_testnet_genesis() -> GenesisConfig {
     testnet_genesis(
         vec![
-            (
-                get_account_id_from_seed::<sr25519::Public>("Alice"),
-                get_account_id_from_seed::<sr25519::Public>("Alice//stash"),
-            ),
-            (
-                get_account_id_from_seed::<sr25519::Public>("Bob"),
-                get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
-            ),
-        ],
-        vec![
-            get_authority_keys_from_seed("Alice"),
-            get_authority_keys_from_seed("Bob"),
-        ],
+            get_pos_keys_from_seed("Alice"),
+            get_pos_keys_from_seed("Bob")
+		],
         None,
         get_account_id_from_seed::<sr25519::Public>("Alice"),
     )

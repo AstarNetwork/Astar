@@ -32,8 +32,6 @@ sp-staking = { version = "3.0.0", default-features = false }
 
 # frame dependencies
 pallet-plasm-operator = { path = "../../../frame/plasm-operator", default-features = false }
-pallet-plasm-node-staking = { path = "../../../frame/plasm-node-staking", default-features = false }
-pallet-plasm-staking-rewards = { path = "../../../frame/plasm-staking-rewards", default-features = false }
 pallet-custom-signatures = { path = "../../../frame/custom-signatures", default-features = false }
 pallet-evm = { path = "../../../vendor/frontier/frame/evm", default-features = false }
 pallet-evm-precompile-bn128 = { path = "../../../vendor/frontier/frame/evm/precompile/bn128", default-features = false }
@@ -64,6 +62,11 @@ pallet-transaction-payment-rpc-runtime-api = { version = "3.0.0", default-featur
 pallet-utility = { version = "3.0.0", default-features = false }
 fp-rpc = { path = "../../../vendor/frontier/primitives/rpc", default-features = false }
 pallet-ethereum = { path = "../../../vendor/frontier/frame/ethereum", default-features = false }
+
+# Staking dependencies
+pallet-authority-discovery = {default-features = false, version = '3.0.0'}
+pallet-plasm-node-staking = { path = "../../../frame/plasm-node-staking", default-features = false }
+pallet-plasm-staking-rewards = { path = "../../../frame/plasm-staking-rewards", default-features = false }
 
 [build-dependencies]
 wasm-builder-runner = { version = "2.0.0", package = "substrate-wasm-builder-runner"}
@@ -113,6 +116,7 @@ std = [
     "pallet-custom-signatures/std",
     "pallet-plasm-staking-rewards/std",
     "pallet-plasm-node-staking/std",
+    "pallet-authority-discovery/std",
     "pallet-randomness-collective-flip/std",
     "pallet-scheduler/std",
     "pallet-session/std",

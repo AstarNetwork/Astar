@@ -45,6 +45,7 @@ sc-consensus-babe = "0.9.0"
 fc-consensus = { path = "../../../vendor/frontier/client/consensus" }
 fp-consensus = { path = "../../../vendor/frontier/primitives/consensus" }
 fc-rpc-core= { path = "../../../vendor/frontier/client/rpc-core" }
+sp-authority-discovery = "3.0.0"
 
 # plasm-specific dependencies
 plasm-primitives = { path = "../primitives" }
