@@ -135,7 +135,7 @@ fn reward_to_validator_test() {
 
         let pre_total_issuarance = Balances::total_issuance();
 
-        let (a, _) = <mock::Test as pallet_plasm_rewards::Trait>::ComputeTotalPayout::compute(
+        let (a, _) = <mock::Runtime as pallet_plasm_rewards::Config>::ComputeTotalPayout::compute(
             pre_total_issuarance,
             SIX_HOURS,
             0,

@@ -1,6 +1,6 @@
 [package]
 name = "plasm-runtime"
-version = "1.7.0"
+version = "1.9.3"
 authors = ["Stake Technologies <devops@stake.co.jp>"]
 edition = "2018"
 build = "build.rs"
@@ -8,60 +8,60 @@ build = "build.rs"
 [dependencies]
 # third-party dependencies
 serde = { version = "1.0.106", optional = true }
-codec = { package = "parity-scale-codec", version = "1.3.5", default-features = false, features = ["derive"] }
+codec = { package = "parity-scale-codec", version = "2.0", default-features = false, features = ["derive"] }
 lazy_static = { version = "1.4", optional = true }
 hex-literal = { version = "0.2", optional = true }
+evm = { version = "0.26.0", default-features = false }
 
 # primitives
 plasm-primitives = { path = "../primitives", default-features = false }
-sp-core = { version = "2.0.0", default-features = false }
-sp-io = { version = "2.0.0", default-features = false }
-sp-runtime = { version = "2.0.0", default-features = false }
-sp-runtime-interface = { version = "2.0.0", default-features = false }
-sp-consensus-babe = { version = "0.8.0", default-features = false }
-sp-offchain = { version = "2.0.0", default-features = false }
-sp-api = { version = "2.0.0", default-features = false }
-sp-inherents = { version = "2.0.0", default-features = false }
-sp-block-builder = { version = "2.0.0", default-features = false }
-sp-transaction-pool = { version = "2.0.0", default-features = false }
-sp-std = { version = "2.0.0", default-features = false }
-sp-version = { version = "2.0.0", default-features = false }
-sp-session = { version = "2.0.0", default-features = false }
+sp-core = { version = "3.0.0", default-features = false }
+sp-io = { version = "3.0.0", default-features = false }
+sp-runtime = { version = "3.0.0", default-features = false }
+sp-runtime-interface = { version = "3.0.0", default-features = false }
+sp-consensus-babe = { version = "0.9.0", default-features = false }
+sp-offchain = { version = "3.0.0", default-features = false }
+sp-api = { version = "3.0.0", default-features = false }
+sp-inherents = { version = "3.0.0", default-features = false }
+sp-block-builder = { version = "3.0.0", default-features = false }
+sp-transaction-pool = { version = "3.0.0", default-features = false }
+sp-std = { version = "3.0.0", default-features = false }
+sp-version = { version = "3.0.0", default-features = false }
+sp-session = { version = "3.0.0", default-features = false }
 
 # frame dependencies
-pallet-contract-operator = { path = "../../../frame/operator", default-features = false }
-pallet-operator-trading = { path = "../../../frame/trading", default-features = false }
-pallet-dapps-staking = { path = "../../../frame/dapps-staking", default-features = false }
+pallet-plasm-operator = { path = "../../../frame/plasm-operator", default-features = false }
 pallet-plasm-rewards = { path = "../../../frame/plasm-rewards", default-features = false }
 pallet-plasm-validator = { path = "../../../frame/plasm-validator", default-features = false }
-pallet-plasm-lockdrop = { path = "../../../frame/plasm-lockdrop", default-features = false }
 pallet-custom-signatures = { path = "../../../frame/custom-signatures", default-features = false }
-pallet-ovm = { path = "../../../frame/ovm", default-features = false }
-pallet-plasma = { path = "../../../frame/plasma", default-features = false }
 pallet-evm = { path = "../../../vendor/frontier/frame/evm", default-features = false }
-frame-executive = { version = "2.0.0", default-features = false }
-pallet-authorship = { version = "2.0.0", default-features = false }
-pallet-babe = { version = "2.0.0", default-features = false }
-pallet-balances = { version = "2.0.0", default-features = false }
-pallet-contracts = { version = "2.0.0", default-features = false }
-pallet-contracts-primitives = { version = "2.0.0", default-features = false }
-pallet-contracts-rpc-runtime-api = { version = "0.8.0", default-features = false }
-pallet-finality-tracker = { version = "2.0.0", default-features = false }
-pallet-grandpa = { version = "2.0.0", default-features = false }
-pallet-indices = { version = "2.0.0", default-features = false }
-pallet-nicks = { version = "2.0.0", default-features = false }
-pallet-randomness-collective-flip = { version = "2.0.0", default-features = false }
-pallet-scheduler = { version = "2.0.0", default-features = false }
-pallet-session = { version = "2.0.0", default-features = false, features = ["historical"] }
-pallet-sudo = { version = "2.0.0", default-features = false }
-frame-support = { version = "2.0.0", default-features = false }
-frame-system = { version = "2.0.0", default-features = false }
-frame-system-rpc-runtime-api = { version = "2.0.0", default-features = false }
-pallet-timestamp = { version = "2.0.0", default-features = false }
-pallet-transaction-payment = { version = "2.0.0", default-features = false }
-pallet-transaction-payment-rpc-runtime-api = { version = "2.0.0", default-features = false }
-pallet-utility = { version = "2.0.0", default-features = false }
-frontier-rpc-primitives = { path = "../../../vendor/frontier/rpc/primitives", default-features = false }
+pallet-evm-precompile-bn128 = { path = "../../../vendor/frontier/frame/evm/precompile/bn128", default-features = false }
+pallet-evm-precompile-simple = { path = "../../../vendor/frontier/frame/evm/precompile/simple", default-features = false }
+pallet-evm-precompile-modexp = { path = "../../../vendor/frontier/frame/evm/precompile/modexp", default-features = false }
+frame-executive = { version = "3.0.0", default-features = false }
+pallet-authorship = { version = "3.0.0", default-features = false }
+pallet-babe = { version = "3.0.0", default-features = false }
+pallet-balances = { version = "3.0.0", default-features = false }
+pallet-contracts = { version = "3.0.0", default-features = false }
+pallet-contracts-primitives = { version = "3.0.0", default-features = false }
+pallet-contracts-rpc-runtime-api = { version = "3.0.0", default-features = false }
+pallet-grandpa = { version = "3.0.0", default-features = false }
+pallet-indices = { version = "3.0.0", default-features = false }
+pallet-im-online = { version = "3.0.0", default-features = false }
+pallet-nicks = { version = "3.0.0", default-features = false }
+pallet-randomness-collective-flip = { version = "3.0.0", default-features = false }
+pallet-scheduler = { version = "3.0.0", default-features = false }
+pallet-session = { version = "3.0.0", default-features = false, features = ["historical"] }
+pallet-sudo = { version = "3.0.0", default-features = false }
+pallet-offences = { version = "3.0.0", default-features = false }
+frame-support = { version = "3.0.0", default-features = false }
+frame-system = { version = "3.0.0", default-features = false }
+frame-system-rpc-runtime-api = { version = "3.0.0", default-features = false }
+pallet-timestamp = { version = "3.0.0", default-features = false }
+pallet-transaction-payment = { version = "3.0.0", default-features = false }
+pallet-transaction-payment-rpc-runtime-api = { version = "3.0.0", default-features = false }
+pallet-utility = { version = "3.0.0", default-features = false }
+fp-rpc = { path = "../../../vendor/frontier/primitives/rpc", default-features = false }
 pallet-ethereum = { path = "../../../vendor/frontier/frame/ethereum", default-features = false }
 
 [build-dependencies]
@@ -74,24 +74,26 @@ std = [
     "codec/std",
     "lazy_static",
     "hex-literal",
-    "sp-std/std",
+    "evm/std",
     "sp-api/std",
+    "sp-block-builder/std",
     "sp-core/std",
     "sp-io/std",
     "sp-consensus-babe/std",
     "sp-runtime/std",
     "sp-runtime-interface/std",
     "sp-session/std",
+    "sp-std/std",
     "sp-version/std",
-    "sp-block-builder/std",
     "sp-transaction-pool/std",
     "sp-inherents/std",
+    "sp-offchain/std",
     "plasm-primitives/std",
     "frame-support/std",
     "frame-executive/std",
     "frame-system/std",
     "frame-system-rpc-runtime-api/std",
-    "frontier-rpc-primitives/std",
+    "fp-rpc/std",
     "pallet-authorship/std",
     "pallet-babe/std",
     "pallet-balances/std",
@@ -99,27 +101,25 @@ std = [
     "pallet-contracts-primitives/std",
     "pallet-contracts-rpc-runtime-api/std",
     "pallet-evm/std",
-    "pallet-finality-tracker/std",
+    "pallet-evm-precompile-bn128/std",
+    "pallet-evm-precompile-simple/std",
+    "pallet-evm-precompile-modexp/std",
     "pallet-grandpa/std",
     "pallet-indices/std",
+    "pallet-im-online/std",
     "pallet-nicks/std",
-    "sp-offchain/std",
     "pallet-custom-signatures/std",
     "pallet-plasm-rewards/std",
     "pallet-plasm-validator/std",
-    "pallet-plasm-lockdrop/std",
-    "pallet-plasma/std",
     "pallet-randomness-collective-flip/std",
     "pallet-scheduler/std",
     "pallet-session/std",
-    "pallet-contract-operator/std",
-    "pallet-operator-trading/std",
-    "pallet-dapps-staking/std",
+    "pallet-plasm-operator/std",
     "pallet-ethereum/std",
     "pallet-sudo/std",
     "pallet-timestamp/std",
     "pallet-transaction-payment/std",
     "pallet-transaction-payment-rpc-runtime-api/std",
     "pallet-utility/std",
-    "pallet-ovm/std",
+    "pallet-offences/std",
 ]

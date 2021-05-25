@@ -2,7 +2,7 @@
 //!
 //! The Plasm rewards module provides functionality for handling whole rewards and era.
 //!
-//! - [`plasm_rewards::Trait`](./trait.Trait.html)
+//! - [`plasm_rewards::Config`](./trait.Config.html)
 //! - [`Call`](./enum.Call.html)
 //! - [`Module`](./struct.Module.html)
 //!
@@ -41,8 +41,8 @@ pub use sp_staking::SessionIndex;
 
 pub type EraIndex = u32;
 pub type BalanceOf<T> =
-    <<T as Trait>::Currency as Currency<<T as frame_system::Trait>::AccountId>>::Balance;
-pub type MomentOf<T> = <<T as Trait>::Time as Time>::Moment;
+    <<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
+pub type MomentOf<T> = <<T as Config>::Time as Time>::Moment;
 
 // A value placed in storage that represents the current version of the Staking storage.
 // This value is used by the `on_runtime_upgrade` logic to determine whether we run
@@ -70,7 +70,7 @@ pub struct ActiveEraInfo<Moment> {
     pub start: Option<Moment>,
 }
 
-pub trait Trait: pallet_session::Trait {
+pub trait Config: pallet_session::Config {
     /// The staking balance.
     type Currency: LockableCurrency<Self::AccountId, Moment = Self::BlockNumber>;
 
@@ -99,11 +99,11 @@ pub trait Trait: pallet_session::Trait {
     type MaybeValidators: traits::MaybeValidators<EraIndex, Self::AccountId>;
 
     /// The overarching event type.
-    type Event: From<Event<Self>> + Into<<Self as frame_system::Trait>::Event>;
+    type Event: From<Event<Self>> + Into<<Self as frame_system::Config>::Event>;
 }
 
 decl_storage! {
-    trait Store for Module<T: Trait> as DappsStaking {
+    trait Store for Module<T: Config> as DappsStaking {
         /// This is the compensation paid for the dapps operator of the Plasm Network.
         /// This is stored on a per-era basis.
         pub ForDappsEraReward get(fn for_dapps_era_reward): map hasher(twox_64_concat) EraIndex => Option<BalanceOf<T>>;
@@ -169,7 +169,7 @@ decl_event!(
 
 decl_error! {
     /// Error for the staking module.
-    pub enum Error for Module<T: Trait> {
+    pub enum Error for Module<T: Config> {
         /// Duplicate index.
         DuplicateIndex,
         /// Invalid era to reward.
@@ -178,7 +178,7 @@ decl_error! {
 }
 
 decl_module! {
-    pub struct Module<T: Trait> for enum Call where origin: T::Origin {
+    pub struct Module<T: Config> for enum Call where origin: T::Origin {
         /// Number of sessions per era.
         const SessionsPerEra: SessionIndex = T::SessionsPerEra::get();
 
@@ -257,7 +257,7 @@ decl_module! {
     }
 }
 
-fn migrate<T: Trait>() {
+fn migrate<T: Config>() {
     // TODO: When runtime upgrade, migrate stroage.
     // if let Some(current_era) = CurrentEra::get() {
     //     let history_depth = HistoryDepth::get();
@@ -267,7 +267,7 @@ fn migrate<T: Trait>() {
     // }
 }
 
-impl<T: Trait> Module<T> {
+impl<T: Config> Module<T> {
     // MUTABLES (DANGEROUS)
 
     /// Plan a new session potentially trigger a new era.
@@ -423,7 +423,7 @@ impl<T: Trait> Module<T> {
 ///
 /// Once the first new_session is planned, all session must start and then end in order, though
 /// some session can lag in between the newest session planned and the latest session started.
-impl<T: Trait> SessionManager<T::AccountId> for Module<T> {
+impl<T: Config> SessionManager<T::AccountId> for Module<T> {
     fn new_session(new_index: SessionIndex) -> Option<Vec<T::AccountId>> {
         Self::new_session(new_index)
     }
@@ -436,7 +436,7 @@ impl<T: Trait> SessionManager<T::AccountId> for Module<T> {
 }
 
 /// In this implementation using validator and dapps rewards module.
-impl<T: Trait> EraFinder<EraIndex, SessionIndex, MomentOf<T>> for Module<T> {
+impl<T: Config> EraFinder<EraIndex, SessionIndex, MomentOf<T>> for Module<T> {
     fn current() -> Option<EraIndex> {
         Self::current_era()
     }
@@ -449,21 +449,21 @@ impl<T: Trait> EraFinder<EraIndex, SessionIndex, MomentOf<T>> for Module<T> {
 }
 
 /// Get the security rewards for validator module.
-impl<T: Trait> ForSecurityEraRewardFinder<BalanceOf<T>> for Module<T> {
+impl<T: Config> ForSecurityEraRewardFinder<BalanceOf<T>> for Module<T> {
     fn get(era: &EraIndex) -> Option<BalanceOf<T>> {
         Self::for_security_era_reward(&era)
     }
 }
 
 /// Get the dapps rewards for dapps staking module.
-impl<T: Trait> ForDappsEraRewardFinder<BalanceOf<T>> for Module<T> {
+impl<T: Config> ForDappsEraRewardFinder<BalanceOf<T>> for Module<T> {
     fn get(era: &EraIndex) -> Option<BalanceOf<T>> {
         Self::for_dapps_era_reward(&era)
     }
 }
 
 /// Get the history depth
-impl<T: Trait> HistoryDepthFinder for Module<T> {
+impl<T: Config> HistoryDepthFinder for Module<T> {
     fn get() -> u32 {
         Self::history_depth()
     }

@@ -7,7 +7,7 @@ pub trait ComputeEraOnModule<Param> {
 }
 
 /// This is first validator rewards algorithm.
-impl<T: Trait> ComputeEraOnModule<u32> for Module<T> {
+impl<T: Config> ComputeEraOnModule<u32> for Module<T> {
     fn compute(era: &EraIndex) -> u32 {
         match <ElectedValidators<T>>::get(era) {
             Some(validators) => validators.len() as u32,
