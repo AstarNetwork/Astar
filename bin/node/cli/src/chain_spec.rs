@@ -203,6 +203,7 @@ fn make_genesis(
             ..Default::default()
         }),
         pallet_plasm_node_staking: Some(StakingConfig {
+            validator_count: initial_authorities.len() as u32 + 2,
             minimum_validator_count: initial_authorities.len() as u32,
             stakers: initial_authorities
                 .iter()
@@ -9017,14 +9018,6 @@ pub fn plasm_config() -> ChainSpec {
 fn development_config_genesis() -> GenesisConfig {
     testnet_genesis(
         vec![get_pos_keys_from_seed("Alice")],
-        // vec![(
-        //     get_account_id_from_seed::<sr25519::Public>("Alice"),
-        //     get_account_id_from_seed::<sr25519::Public>("Bob"),
-        // )],
-        // vec![
-        //     get_authority_keys_from_seed("Alice"),
-        //     get_authority_keys_from_seed("Bob"),
-        // ],
         None,
         get_account_id_from_seed::<sr25519::Public>("Alice"),
     )
