@@ -61,6 +61,7 @@ pallet-timestamp = { version = "3.0.0", default-features = false }
 pallet-transaction-payment = { version = "3.0.0", default-features = false }
 pallet-transaction-payment-rpc-runtime-api = { version = "3.0.0", default-features = false }
 pallet-utility = { version = "3.0.0", default-features = false }
+pallet-vesting = { version = "3.0.0", default-features = false }
 fp-rpc = { path = "../../../vendor/frontier/primitives/rpc", default-features = false }
 pallet-ethereum = { path = "../../../vendor/frontier/frame/ethereum", default-features = false }
 
@@ -122,4 +123,5 @@ std = [
     "pallet-transaction-payment-rpc-runtime-api/std",
     "pallet-utility/std",
     "pallet-offences/std",
+    "pallet-vesting/std",
 ]

@@ -402,6 +402,18 @@ impl pallet_operator_trading::Config for Runtime {
 }
 */
 
+parameter_types! {
+    pub const MinVestedTransfer: Balance = 1 * MILLIPLM;
+}
+
+impl pallet_vesting::Config for Runtime {
+    type Event = Event;
+    type Currency = Balances;
+    type BlockNumberToBalance = ConvertInto;
+    type MinVestedTransfer = MinVestedTransfer;
+    type WeightInfo = pallet_vesting::weights::SubstrateWeight<Runtime>;
+}
+
 impl pallet_utility::Config for Runtime {
     type Event = Event;
     type Call = Call;
@@ -697,6 +709,7 @@ construct_runtime!(
         UncheckedExtrinsic = UncheckedExtrinsic
     {
         System: frame_system::{Module, Call, Storage, Config, Event<T>},
+        Vesting: pallet_vesting::{Module, Call, Storage, Event<T>, Config<T>},
         Utility: pallet_utility::{Module, Call, Event},
         Timestamp: pallet_timestamp::{Module, Call, Storage, Inherent},
         Authorship: pallet_authorship::{Module, Call, Storage, Inherent},
