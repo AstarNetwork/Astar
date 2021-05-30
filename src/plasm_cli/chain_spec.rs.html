@@ -9006,6 +9006,7 @@
 <span id="9003">9003</span>
 <span id="9004">9004</span>
 <span id="9005">9005</span>
+<span id="9006">9006</span>
 </pre><div class="example-wrap"><pre class="rust ">
 <span class="doccomment">//! Chain specification.</span>
 
@@ -9016,7 +9017,7 @@
 <span class="kw">use</span> <span class="ident">plasm_runtime</span>::{
     <span class="ident">BabeConfig</span>, <span class="ident">BalancesConfig</span>, <span class="ident">ContractsConfig</span>, <span class="ident">EVMConfig</span>, <span class="ident">EthereumConfig</span>, <span class="ident">GenesisConfig</span>,
     <span class="ident">GrandpaConfig</span>, <span class="ident">ImOnlineConfig</span>, <span class="ident">IndicesConfig</span>, <span class="ident">PlasmRewardsConfig</span>, <span class="ident">PlasmValidatorConfig</span>,
-    <span class="ident">SessionConfig</span>, <span class="ident">SessionKeys</span>, <span class="ident">SudoConfig</span>, <span class="ident">SystemConfig</span>, <span class="ident">WASM_BINARY</span>,
+    <span class="ident">SessionConfig</span>, <span class="ident">SessionKeys</span>, <span class="ident">SudoConfig</span>, <span class="ident">SystemConfig</span>, <span class="ident">VestingConfig</span>, <span class="ident">WASM_BINARY</span>,
 };
 <span class="kw">use</span> <span class="ident">sc_chain_spec</span>::<span class="ident">ChainSpecExtension</span>;
 <span class="kw">use</span> <span class="ident">sc_service</span>::<span class="ident">ChainType</span>;
@@ -9141,6 +9142,7 @@ const DUSTY_PROTOCOL_ID: &amp;str = &quot;pld&quot;;
             <span class="ident">changes_trie_config</span>: <span class="ident">Default</span>::<span class="ident">default</span>(),
         }),
         <span class="ident">pallet_balances</span>: <span class="prelude-val">Some</span>(<span class="ident">BalancesConfig</span> { <span class="ident">balances</span> }),
+        <span class="ident">pallet_vesting</span>: <span class="prelude-val">Some</span>(<span class="ident">VestingConfig</span> { <span class="ident">vesting</span>: <span class="macro">vec</span><span class="macro">!</span>[] }),
         <span class="ident">pallet_indices</span>: <span class="prelude-val">Some</span>(<span class="ident">IndicesConfig</span> { <span class="ident">indices</span>: <span class="macro">vec</span><span class="macro">!</span>[] }),
         <span class="ident">pallet_plasm_rewards</span>: <span class="prelude-val">Some</span>(<span class="ident">PlasmRewardsConfig</span> {
             ..<span class="ident">Default</span>::<span class="ident">default</span>()
