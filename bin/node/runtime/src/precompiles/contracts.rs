@@ -1,22 +1,31 @@
 use evm::{Context, ExitError, ExitSucceed};
 use frame_support::dispatch::{Dispatchable, GetDispatchInfo, PostDispatchInfo};
 use pallet_evm::{AddressMapping, GasWeightMapping, Precompile};
+use sp_core::crypto::UncheckedFrom;
+use sp_runtime::traits::StaticLookup;
 use sp_std::{marker::PhantomData, vec::Vec};
 
-pub struct Nicks<R>(PhantomData<R>);
+pub struct Contracts<R>(PhantomData<R>);
 
-impl<R: pallet_nicks::Config> Nicks<R> {
-    fn set_name(name: Vec<u8>) -> pallet_nicks::Call<R> {
-        pallet_nicks::Call::<R>::set_name(name)
+impl<R: pallet_contracts::Config> Contracts<R>
+where
+    R::AccountId: AsRef<[u8]> + UncheckedFrom<R::Hash>,
+{
+    fn call(dest: R::AccountId, param: Vec<u8>) -> pallet_contracts::Call<R> {
+        let source = R::Lookup::unlookup(dest);
+        pallet_contracts::Call::<R>::call(source, Default::default(), 1_000_000_000, param)
     }
 }
 
-impl<R> Precompile for Nicks<R>
+impl<R> Precompile for Contracts<R>
 where
-    R: pallet_evm::Config + pallet_nicks::Config,
-    R::Call:
-        From<pallet_nicks::Call<R>> + Dispatchable<PostInfo = PostDispatchInfo> + GetDispatchInfo,
+    R: pallet_evm::Config + pallet_contracts::Config,
+    R::Call: From<pallet_contracts::Call<R>>
+        + Dispatchable<PostInfo = PostDispatchInfo>
+        + GetDispatchInfo,
     <R::Call as Dispatchable>::Origin: From<Option<R::AccountId>>,
+    R::AccountId: AsRef<[u8]> + UncheckedFrom<R::Hash>,
+    R::Hash: From<sp_core::H256>,
 {
     fn execute(
         input: &[u8],
@@ -29,20 +38,23 @@ where
             return Err(ExitError::Other("input length less than 4 bytes".into()));
         }
 
-        // ======= Nicks.sol:Nicks =======
-        // Function signatures:
-        // 6b701e08: set_name(string)
+        // ======= Contracts.sol:Contracts =======
+        //    Function signatures:
+        //    d22be3ba: call(bytes32,string)
         let inner_call = match input[0..SELECTOR_SIZE_BYTES] {
-            [0x6b, 0x70, 0x1e, 0x08] => {
-                if input.len() < SELECTOR_SIZE_BYTES + 32 * 2 {
+            [0xd2, 0x2b, 0xe3, 0xba] => {
+                if input.len() < SELECTOR_SIZE_BYTES + 32 * 3 {
                     return Err(ExitError::Other("input length less than 36 bytes".into()));
                 }
                 // Low level argument parsing
-                let len_offset = SELECTOR_SIZE_BYTES + 32;
-                let name_offset = len_offset + 32;
-                let name_len = sp_core::U256::from_big_endian(&input[len_offset..name_offset]);
-                let name = input[name_offset..(name_offset + name_len.as_usize())].to_vec();
-                Self::set_name(name)
+                let dest = sp_core::H256::from_slice(
+                    &input[SELECTOR_SIZE_BYTES..(SELECTOR_SIZE_BYTES + 32)],
+                );
+                let len_offset = SELECTOR_SIZE_BYTES + 32 * 2;
+                let param_offset = len_offset + 32;
+                let param_len = sp_core::U256::from_big_endian(&input[len_offset..param_offset]);
+                let param = input[param_offset..(param_offset + param_len.as_usize())].to_vec();
+                Self::call(R::AccountId::unchecked_from(dest.into()), param)
             }
             _ => {
                 return Err(ExitError::Other(
