@@ -292,9 +292,9 @@ impl pallet_plasm_staking_rewards::Config for Runtime {
 }
 
 parameter_types! {
-    pub const SessionsPerEra: sp_staking::SessionIndex = 6;
-    pub const BondingDuration: pallet_plasm_node_staking::EraIndex = 24 * 28;
-    pub const SlashDeferDuration: pallet_plasm_node_staking::EraIndex = 24 * 7; // 1/4 the bonding duration.
+    pub const SessionsPerEra: sp_staking::SessionIndex = 4;
+    pub const BondingDuration: pallet_plasm_node_staking::EraIndex = 7;
+    pub const SlashDeferDuration: pallet_plasm_node_staking::EraIndex = 6; // 1/4 the bonding duration.
     pub const StakingUnsignedPriority: u64 = 1 << 20;
 	pub const MaxNominatorRewardedPerValidator: u32 = 256;
 	pub const ElectionLookahead: BlockNumber = EPOCH_DURATION_IN_BLOCKS / 4;
@@ -724,7 +724,7 @@ construct_runtime!(
         Balances: pallet_balances::{Module, Call, Storage, Event<T>, Config<T>},
         Contracts: pallet_contracts::{Module, Call, Storage, Event<T>, Config<T>},
         //DappsStaking: pallet_dapps_staking::{Module, Call, Storage, Event<T>},
-        StakingRewards: pallet_plasm_staking_rewards::{Module, Call, Storage, Event<T>, Config},
+        StakingRewards: pallet_plasm_staking_rewards::{Module, Call, Storage, Event<T>, Config<T>},
         Session: pallet_session::{Module, Call, Storage, Event, Config<T>},
         Staking: pallet_plasm_node_staking::{Module, Call, Storage, Event<T>, Config<T>},
         Historical: pallet_session_historical::{Module},

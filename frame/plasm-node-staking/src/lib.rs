@@ -1821,7 +1821,7 @@ decl_module! {
 		fn set_validator_count(origin, #[compact] new: u32) {
 			ensure_root(origin)?;
 			ValidatorCount::put(new);
-			pallet_plasm_staking_rewards::ValidatorCount::put(new);		
+			T::ForSecurityEraReward::set_validator_count(new);		
 		}
 
 		/// Increments the ideal number of validators.
@@ -1835,7 +1835,7 @@ decl_module! {
 		fn increase_validator_count(origin, #[compact] additional: u32) {
 			ensure_root(origin)?;
 			ValidatorCount::mutate(|n| *n += additional);
-			pallet_plasm_staking_rewards::ValidatorCount::mutate(|n| *n += additional);
+			T::ForSecurityEraReward::increase_validator_count(additional);
 		}
 
 		/// Scale up the ideal number of validators by a factor.
@@ -1849,7 +1849,7 @@ decl_module! {
 		fn scale_validator_count(origin, factor: Percent) {
 			ensure_root(origin)?;
 			ValidatorCount::mutate(|n| *n += factor * *n);
-			pallet_plasm_staking_rewards::ValidatorCount::mutate(|n| *n += factor * *n);
+			T::ForSecurityEraReward::scale_validator_count(factor);
 		}
 
 		/// Force there to be no new eras indefinitely.

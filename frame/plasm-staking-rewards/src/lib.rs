@@ -13,40 +13,39 @@
 //! It also allocates rewards to each module according to the [Plasm Token Ecosystem inflation model](https://docs.plasmnet.io/learn/token-economy#inflation-model).
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use codec::{Decode, Encode};
-use frame_support::{
-    decl_error, decl_event, decl_module, decl_storage,
-    traits::{Currency, Get, LockableCurrency, UnixTime},
-    weights::Weight,
-    StorageMap, StorageValue,
-};
-use frame_system::ensure_root;
-use pallet_session::SessionManager;
-pub use plasm_primitives::Forcing;
-use sp_runtime::{
-    traits::{SaturatedConversion, Zero},
-    Perbill, RuntimeDebug,
-};
-use sp_std::{prelude::*, vec::Vec};
-
-pub mod inflation;
 #[cfg(test)]
-mod mock;
+pub mod mock;
+
 pub mod traits;
-pub use traits::*;
-#[cfg(test)]
-mod tests;
 
-pub use sp_staking::SessionIndex;
+use sp_std::prelude::*;
+use pallet_session::SessionManager;
+pub use crate::traits::{EraFinder, ForSecurityEraRewardFinder, ForDappsEraRewardFinder, HistoryDepthFinder};
+use sp_runtime::Percent;
+pub use pallet::*;
 
-pub type EraIndex = u32;
-pub type BalanceOf<T> =
-    <<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
+#[frame_support::pallet]
+pub mod pallet {
+    use frame_support::pallet_prelude::*; // Import various types used in the pallet definition
+    use frame_system::pallet_prelude::*; // Import some system helper types.
+    pub use sp_staking::SessionIndex;
+    pub type EraIndex = u32;
+    use sp_runtime::{
+        traits::{SaturatedConversion, Zero},
+        Perbill, 
+    };
+    pub use plasm_primitives::Forcing;
+    pub use frame_support::{traits::{UnixTime, Currency, LockableCurrency} };
+    pub type BalanceOf<T> =
+        <<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
+    use codec::{Decode, Encode};
+    use sp_std::{prelude::*, vec::Vec};
 
 // A value placed in storage that represents the current version of the Staking storage.
 // This value is used by the `on_runtime_upgrade` logic to determine whether we run
 // storage migration logic. This should match directly with the semantic versions of the Rust crate.
-#[derive(Encode, Decode, Clone, Copy, PartialEq, Eq, RuntimeDebug)]
+#[cfg_attr(feature = "std", derive(Debug, Eq))]
+#[derive(Clone, Encode, Decode, PartialEq)]
 pub enum Releases {
     V1_0_0,
 }
@@ -58,7 +57,8 @@ impl Default for Releases {
 }
 
 /// Information regarding the active era (era in used in session).
-#[derive(Encode, Decode, RuntimeDebug, PartialEq, Eq, Clone)]
+#[cfg_attr(feature = "std", derive(Debug, Eq))]
+#[derive(Clone, Encode, Decode, PartialEq)]
 pub struct ActiveEraInfo {
     /// Index of era.
     pub index: EraIndex,
@@ -69,7 +69,8 @@ pub struct ActiveEraInfo {
     pub start: Option<u64>,
 }
 
-pub trait Config: pallet_session::Config {
+#[pallet::config]
+pub trait Config: pallet_session::Config + frame_system::Config{
     /// The staking balance.
     type Currency: LockableCurrency<Self::AccountId, Moment = Self::BlockNumber>;
 
@@ -80,22 +81,34 @@ pub trait Config: pallet_session::Config {
     type SessionsPerEra: Get<SessionIndex>;
 
     /// The overarching event type.
-    type Event: From<Event<Self>> + Into<<Self as frame_system::Config>::Event>;
+    type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
 }
 
-decl_storage! {
-    trait Store for Module<T: Config> as PlasmRewards {
+#[pallet::pallet]
+#[pallet::generate_store(trait Store)]
+pub struct Pallet<T>(_);
+
         /// This is the compensation paid for the dapps operator of the Plasm Network.
         /// This is stored on a per-era basis.
-        pub ForDappsEraReward get(fn for_dapps_era_reward): map hasher(twox_64_concat) EraIndex => Option<BalanceOf<T>>;
+        /// A mapping from operators to operated contract
+        #[pallet::storage]
+        #[pallet::getter(fn for_dapps_era_reward)]
+        pub(super) type ForDappsEraReward<T:Config> =
+            StorageMap<_, Blake2_128Concat, EraIndex, Option<BalanceOf<T>>, ValueQuery >;
 
         /// This is the compensation paid for the security of the Plasm Network.
         /// This is stored on a per-era basis.
-        pub ForSecurityEraReward get(fn for_security_era_reward): map hasher(twox_64_concat) EraIndex => Option<BalanceOf<T>>;
+        #[pallet::storage]
+        #[pallet::getter(fn for_security_era_reward)]
+        pub(super) type ForSecurityEraReward<T:Config> =
+            StorageMap<_, Blake2_128Concat, EraIndex, Option<BalanceOf<T>>, ValueQuery >;
 
         /// The ideal number of staking participants.
-		pub ValidatorCount get(fn validator_count) config(): u32;
-
+        #[pallet::storage]
+        #[pallet::getter(fn validator_count)]
+		pub(super) type ValidatorCount<T> =
+            StorageValue<_, u32, ValueQuery>;
+        
         /// Number of era to keep in history.
         ///
         /// Information is kept for eras in `[current_era - history_depth; current_era]`
@@ -106,77 +119,87 @@ decl_storage! {
         ///
         /// 24 * 28 = 672 eras is roughly 28 days on current Plasm Network.
         /// That seems like a reasonable length of time for users to claim a payout
-        pub HistoryDepth get(fn history_depth) config(): u32 = 672;
+        #[pallet::storage]
+        #[pallet::getter(fn history_depth)]
+        pub(super) type HistoryDepth<T> =
+            StorageValue<_, u32, ValueQuery>;
 
         /// A mapping from still-bonded eras to the first session index of that era.
         ///
         /// Must contains information for eras for the range:
         /// `[active_era - bounding_duration; active_era]`
-        pub BondedEras: Vec<(EraIndex, SessionIndex)>;
+        #[pallet::storage]
+        #[pallet::getter(fn get_bonded_eras)]
+        pub(super) type BondedEras<T> =
+            StorageValue<_, Vec<(EraIndex, SessionIndex)>, ValueQuery >;
 
         /// The current era index.
         ///
         /// This is the latest planned era, depending on how session module queues the validator
         /// set, it might be active or not.
-        pub CurrentEra get(fn current_era): Option<EraIndex>;
+        #[pallet::storage]
+        #[pallet::getter(fn current_era)]
+        pub(super) type CurrentEra<T> =
+            StorageValue<_, Option<EraIndex>, ValueQuery>;
 
         /// The active era information, it holds index and start.
         ///
         /// The active era is the era currently rewarded.
         /// Validator set of this era must be equal to `SessionInterface::validators`.
-        pub ActiveEra get(fn active_era): Option<ActiveEraInfo>;
+        #[pallet::storage]
+        #[pallet::getter(fn active_era)]
+        pub(super) type ActiveEra<T> =
+            StorageValue<_, Option<ActiveEraInfo>, ValueQuery>;
 
         /// The session index at which the era start for the last `HISTORY_DEPTH` eras
-        pub ErasStartSessionIndex get(fn eras_start_session_index):
-            map hasher(twox_64_concat) EraIndex => Option<SessionIndex>;
+        #[pallet::storage]
+        #[pallet::getter(fn eras_start_session_index)]
+        pub(super) type ErasStartSessionIndex<T> =
+            StorageMap<_, Blake2_128Concat, EraIndex, Option<SessionIndex>, ValueQuery >;
 
         /// True if the next session change will be a new era regardless of index.
-        pub ForceEra get(fn force_era) config(): Forcing;
+        #[pallet::storage]
+        #[pallet::getter(fn force_era)]
+        pub(super) type ForceEra<T> =
+            StorageValue<_, Forcing, ValueQuery>;
 
         /// Storage version of the pallet.
         ///
         /// This is set to v1.0.0 for new networks.
-        StorageVersion build(|_: &GenesisConfig| Releases::V1_0_0): Releases;
-    }
-}
+        #[pallet::storage]
+        #[pallet::getter(fn get_storage_version)]
+        pub(super) type StorageVersion<T> =
+            StorageValue<_, Releases, ValueQuery>;
 
-decl_event!(
-    pub enum Event<T>
-    where
-        Balance = BalanceOf<T>,
-    {
+
+#[pallet::event]
+#[pallet::generate_deposit(pub(super) fn deposit_event)]
+pub enum Event<T: Config> {
         /// The whole reward issued in that Era.
         /// (era_index: EraIndex, reward: Balance)
-        WholeEraReward(EraIndex, Balance),
+        WholeEraReward(EraIndex, BalanceOf<T>),
     }
-);
 
-decl_error! {
-    /// Error for the staking module.
-    pub enum Error for Module<T: Config> {
+
+/// Error for the staking module.
+#[pallet::error]
+pub enum Error<T> {
         /// Duplicate index.
         DuplicateIndex,
         /// Invalid era to reward.
         InvalidEraToReward,
-    }
 }
 
-decl_module! {
-    pub struct Module<T: Config> for enum Call where origin: T::Origin {
-        /// Number of sessions per era.
-        const SessionsPerEra: SessionIndex = T::SessionsPerEra::get();
-
-        type Error = Error<T>;
-
-        fn deposit_event() = default;
+#[pallet::hooks]
+    impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
 
         fn on_runtime_upgrade() -> Weight {
-            migrate::<T>();
+            Self::migrate();
             50_000
         }
 
         /// On finalize is called at after rotate session.
-        fn on_finalize() {
+        fn on_finalize(_n: BlockNumberFor<T>) {
             // Set the start of the first era.
 			if let Some(mut active_era) = Self::active_era() {
                 // if the era is untreated
@@ -184,21 +207,25 @@ decl_module! {
 					let now_as_millis_u64 = T::UnixTime::now().as_millis().saturated_into::<u64>();
 					active_era.start = Some(now_as_millis_u64);
                     Self::end_era(active_era.clone());
-					ActiveEra::put(active_era);
+					ActiveEra::<T>::put(Some(active_era));
 				}
 			}
         }
+    }
 
+    #[pallet::call]
+    impl<T: Config> Pallet<T> {
         // ----- Root calls.
         /// Force there to be no new eras indefinitely.
         ///
         /// # <weight>
         /// - No arguments.
         /// # </weight>
-        #[weight = 5_000]
-        fn force_no_eras(origin) {
+        #[pallet::weight(5_000)]
+        fn force_no_eras(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
             ensure_root(origin)?;
-            ForceEra::put(Forcing::ForceNone);
+            ForceEra::<T>::put(Forcing::ForceNone);
+            Ok(().into())
         }
 
         /// Force there to be a new era at the end of the next session. After this, it will be
@@ -207,10 +234,11 @@ decl_module! {
         /// # <weight>
         /// - No arguments.
         /// # </weight>
-        #[weight = 5_000]
-        fn force_new_era(origin) {
+        #[pallet::weight(5_000)]
+        fn force_new_era(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
             ensure_root(origin)?;
-            ForceEra::put(Forcing::ForceNew);
+            ForceEra::<T>::put(Forcing::ForceNew);
+            Ok(().into())
         }
 
         /// Force there to be a new era at the end of sessions indefinitely.
@@ -218,20 +246,21 @@ decl_module! {
         /// # <weight>
         /// - One storage write
         /// # </weight>
-        #[weight = 5_000]
-        fn force_new_era_always(origin) {
+        #[pallet::weight(5_000)]
+        fn force_new_era_always(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
             ensure_root(origin)?;
-            ForceEra::put(Forcing::ForceAlways);
+            ForceEra::<T>::put(Forcing::ForceAlways);
+            Ok(().into())
         }
 
         /// Set history_depth value.
         ///
         /// Origin must be root.
-        #[weight = 500_000]
-        fn set_history_depth(origin, #[compact] new_history_depth: EraIndex) {
+        #[pallet::weight(5_000)]
+        fn set_history_depth(origin: OriginFor<T>, new_history_depth: EraIndex) -> DispatchResultWithPostInfo {
             ensure_root(origin)?;
             if let Some(current_era) = Self::current_era() {
-                HistoryDepth::mutate(|history_depth| {
+                HistoryDepth::<T>::mutate(|history_depth| {
                     let last_kept = current_era.checked_sub(*history_depth).unwrap_or(0);
                     let new_last_kept = current_era.checked_sub(new_history_depth).unwrap_or(0);
                     for era_index in last_kept..new_last_kept {
@@ -240,11 +269,40 @@ decl_module! {
                     *history_depth = new_history_depth
                 })
             }
+            Ok(().into())
         }
     }
-}
 
-fn migrate<T: Config>() {
+    #[pallet::genesis_config]
+	pub struct GenesisConfig<T: Config> {
+        pub validator_count: u32,
+        pub _phantom: PhantomData<T>,
+    }
+
+	#[cfg(feature = "std")]
+	impl<T: Config> Default for GenesisConfig<T> {
+		fn default() -> Self {
+			GenesisConfig {
+                validator_count: 0u32,
+                _phantom: PhantomData::<T>,
+            }
+		}
+	}
+
+	#[pallet::genesis_build]
+	impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
+		fn build(&self) {
+            StorageVersion::<T>::put(Releases::V1_0_0);
+			ValidatorCount::<T>::put(self.validator_count);
+            HistoryDepth::<T>::put(672u32); // 24 * 28 = 672 eras is roughly 28 days
+		}
+	}
+
+
+impl<T: Config> Pallet<T> {
+    // MUTABLES (DANGEROUS)
+
+fn migrate() {
     // TODO: When runtime upgrade, migrate stroage.
     // if let Some(current_era) = CurrentEra::get() {
     //     let history_depth = HistoryDepth::get();
@@ -253,12 +311,9 @@ fn migrate<T: Config>() {
     //     }
     // }
 }
-
-impl<T: Config> Module<T> {
-    // MUTABLES (DANGEROUS)
-
     /// Plan a new session potentially trigger a new era.
-    fn new_session(session_index: SessionIndex) -> Option<Vec<T::AccountId>> {
+    pub fn plasm_new_session(session_index: SessionIndex) -> Option<Vec<T::AccountId>> {
+
         if let Some(current_era) = Self::current_era() {
             // Initial era has been set.
 
@@ -272,8 +327,8 @@ impl<T: Config> Module<T> {
                 .checked_sub(current_era_start_session_index)
                 .unwrap_or(0); // Must never happen.
 
-            match ForceEra::get() {
-                Forcing::ForceNew => ForceEra::kill(),
+            match ForceEra::<T>::get() {
+                Forcing::ForceNew => ForceEra::<T>::kill(),
                 Forcing::ForceAlways => (),
                 Forcing::NotForcing if era_length >= T::SessionsPerEra::get() => (),
                 _ => return None,
@@ -287,7 +342,7 @@ impl<T: Config> Module<T> {
     }
 
     /// Start a session potentially starting an era.
-    fn start_session(start_session: SessionIndex) {
+    pub fn plasm_start_session(start_session: sp_staking::SessionIndex) {
         let next_active_era = Self::active_era().map(|e| e.index + 1).unwrap_or(0);
         if let Some(next_active_era_start_session_index) =
             Self::eras_start_session_index(next_active_era)
@@ -304,7 +359,7 @@ impl<T: Config> Module<T> {
     }
 
     /// End a session potentially ending an era.
-    fn end_session(session_index: SessionIndex) {
+    pub fn plasm_end_session(session_index: sp_staking::SessionIndex) {
         if let Some(active_era) = Self::active_era() {
             if let Some(next_active_era_start_session_index) =
                 Self::eras_start_session_index(active_era.index + 1)
@@ -319,8 +374,8 @@ impl<T: Config> Module<T> {
     /// * Increment `active_era.index`,
     /// * reset `active_era.start`,
     /// * update `BondedEras` and apply slashes.
-    fn start_era(_start_session: SessionIndex) {
-        let _active_era = ActiveEra::mutate(|active_era| {
+    pub fn start_era(_start_session: sp_staking::SessionIndex) {
+        let _active_era = ActiveEra::<T>::mutate(|active_era| {
 			let new_index = active_era.as_ref().map(|info| info.index + 1).unwrap_or(0);
 			*active_era = Some(ActiveEraInfo {
 				index: new_index,
@@ -332,7 +387,7 @@ impl<T: Config> Module<T> {
     }
 
     /// Compute payout for era.
-    fn end_era(active_era: ActiveEraInfo) {
+    pub fn end_era(active_era: ActiveEraInfo) {
         // Note: active_era_start can be None if end era is called during genesis config.
         if let Some(active_era_start) = active_era.start {
             // The set of total amount of staking.
@@ -343,24 +398,25 @@ impl<T: Config> Module<T> {
 
             if era_duration != 0 {
                 let total_payout = T::Currency::total_issuance();
-                let (for_security_reward, for_dapps_rewards) = inflation::compute_total_rewards::<T>(
+                let (for_security_reward, for_dapps_rewards) = Self::compute_total_rewards(
                     total_payout,
                     era_duration.saturated_into::<u64>(),
                     for_security,
                     0u32,
                 );
-                <ForSecurityEraReward<T>>::insert(active_era.index, for_security_reward);
-                <ForDappsEraReward<T>>::insert(active_era.index, for_dapps_rewards);
+                <ForSecurityEraReward<T>>::insert(active_era.index, Some(for_security_reward));
+                <ForDappsEraReward<T>>::insert(active_era.index, Some(for_dapps_rewards));
+                Self::deposit_event(Event::WholeEraReward(active_era.index, total_payout));
             }
         }
     }
 
     /// Plan a new era. Return the potential new staking set.
-    fn new_era(start_session_index: SessionIndex) -> Option<Vec<T::AccountId>> {
+    pub fn new_era(start_session_index: sp_staking::SessionIndex) -> Option<Vec<T::AccountId>> {
         // Increment or set current era.
-        let current_era = CurrentEra::get().map(|s| s + 1).unwrap_or(0);
-        CurrentEra::put(current_era.clone());
-        ErasStartSessionIndex::insert(&current_era, &start_session_index);
+        let current_era = CurrentEra::<T>::get().map(|s| s + 1).unwrap_or(0);
+        CurrentEra::<T>::put(Some(current_era.clone()));
+        ErasStartSessionIndex::<T>::insert(&current_era, Some(&start_session_index));
 
         // Clean old era information.
         if let Some(old_era) = current_era.checked_sub(Self::history_depth() + 1) {
@@ -370,11 +426,53 @@ impl<T: Config> Module<T> {
     }
 
     /// Clear all era information for given era.
-    fn clear_era_information(era_index: EraIndex) {
-        ErasStartSessionIndex::remove(era_index);
+    pub fn clear_era_information(era_index: EraIndex) {
+        ErasStartSessionIndex::<T>::remove(era_index);
         <ForDappsEraReward<T>>::remove(era_index);
         <ForSecurityEraReward<T>>::remove(era_index);
     }
+
+    pub fn compute_total_rewards(
+        total_tokens: BalanceOf<T>,
+        era_duration: u64,
+        number_of_validator: u32,
+        _dapps_staking: u32,
+    ) -> (BalanceOf<T>, BalanceOf<T>)
+    {
+        const TARGETS_NUMBER: u128 = 100;
+        const MILLISECONDS_PER_YEAR: u128 = 1000 * 3600 * 24 * 36525 / 100;
+        // I_0 = 2.5%.
+        const I_0_DENOMINATOR: u128 = 25;
+        const I_0_NUMERATOR: u128 = 1000;
+        let number_of_validator_clone: u128 = number_of_validator.clone().into();
+        let era_duration_clone: u128 = era_duration.clone().into();
+        let number_of_validator: u128 = number_of_validator.into();
+        let portion = if TARGETS_NUMBER < number_of_validator_clone {
+            // TotalForSecurityRewards
+            // = TotalAmountOfIssue * I_0% * (EraDuration / 1year)
+
+            // denominator: I_0_DENOMINATOR * EraDuration
+            // numerator: 1year * I_0_NUMERATOR
+            Perbill::from_rational_approximation(
+                I_0_DENOMINATOR * era_duration_clone,
+                MILLISECONDS_PER_YEAR * I_0_NUMERATOR,
+            )
+        } else {
+            // TotalForSecurityRewards
+            // = TotalAmountOfIssue * I_0% * (NumberOfValidators/TargetsNumber) * (EraDuration/1year)
+
+            // denominator: I_0_DENOMINATOR * NumberOfValidators * EraDuration
+            // numerator: 1year * I_0_NUMERATOR * TargetsNumber
+            Perbill::from_rational_approximation(
+                I_0_DENOMINATOR * number_of_validator * era_duration_clone,
+                MILLISECONDS_PER_YEAR * I_0_NUMERATOR * TARGETS_NUMBER,
+            )
+        };
+        let payout = portion * total_tokens;
+        (payout, BalanceOf::<T>::zero())
+    }
+
+}
 }
 
 /// In this implementation `new_session(session)` must be called before `end_session(session-1)`
@@ -382,20 +480,20 @@ impl<T: Config> Module<T> {
 ///
 /// Once the first new_session is planned, all session must start and then end in order, though
 /// some session can lag in between the newest session planned and the latest session started.
-impl<T: Config> SessionManager<T::AccountId> for Module<T> {
+impl<T: Config + pallet::Config> SessionManager<T::AccountId> for Pallet<T> {
     fn new_session(new_index: SessionIndex) -> Option<Vec<T::AccountId>> {
-        Self::new_session(new_index)
+        Self::plasm_new_session(new_index)
     }
     fn start_session(start_index: SessionIndex) {
-        Self::start_session(start_index)
+        Self::plasm_start_session(start_index)
     }
     fn end_session(end_index: SessionIndex) {
-        Self::end_session(end_index)
+        Self::plasm_end_session(end_index)
     }
 }
 
 /// In this implementation using validator and dapps rewards module.
-impl<T: Config> EraFinder<EraIndex, SessionIndex> for Module<T> {
+impl<T: Config + pallet::Config> EraFinder<EraIndex, SessionIndex> for Pallet<T> {
     fn current() -> Option<EraIndex> {
         Self::current_era()
     }
@@ -408,7 +506,7 @@ impl<T: Config> EraFinder<EraIndex, SessionIndex> for Module<T> {
 }
 
 /// Get the security rewards for validator module.
-impl<T: Config> ForSecurityEraRewardFinder<BalanceOf<T>> for Module<T> {
+impl<T: Config + pallet::Config> ForSecurityEraRewardFinder<BalanceOf<T>> for Pallet<T> {
     fn get(era: &EraIndex) -> Option<BalanceOf<T>> {
         Self::for_security_era_reward(&era)
     }
@@ -416,17 +514,30 @@ impl<T: Config> ForSecurityEraRewardFinder<BalanceOf<T>> for Module<T> {
     fn validator_count() -> u32 {
         Self::validator_count()
     }
+
+    fn set_validator_count(new: u32){
+        ValidatorCount::<T>::put(new);
+    }
+
+    fn increase_validator_count(additional: u32) {
+        ValidatorCount::<T>::mutate(|n| *n += additional);
+    }
+
+    fn scale_validator_count(factor: Percent) {
+        ValidatorCount::<T>::mutate(|n| *n += factor * *n);
+    }
+
 }
 
 /// Get the dapps rewards for dapps staking module.
-impl<T: Config> ForDappsEraRewardFinder<BalanceOf<T>> for Module<T> {
+impl<T: Config + pallet::Config> ForDappsEraRewardFinder<BalanceOf<T>> for Pallet<T> {
     fn get(era: &EraIndex) -> Option<BalanceOf<T>> {
         Self::for_dapps_era_reward(&era)
     }
 }
 
 /// Get the history depth
-impl<T: Config> HistoryDepthFinder for Module<T> {
+impl<T: Config + pallet::Config> HistoryDepthFinder for Pallet<T> {
     fn get() -> u32 {
         Self::history_depth()
     }

@@ -23,6 +23,12 @@ pub trait ForSecurityEraRewardFinder<Balance> {
     fn get(era: &EraIndex) -> Option<Balance>;
 
     fn validator_count() -> u32;
+
+    fn set_validator_count(new: u32);
+
+    fn increase_validator_count(new: u32);
+
+    fn scale_validator_count(factor: Percent);
 }
 
 /// Get the dapps rewards for dapps staking module.
