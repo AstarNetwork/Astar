@@ -13,7 +13,13 @@ where
 {
     fn call(dest: R::AccountId, param: Vec<u8>) -> pallet_contracts::Call<R> {
         let source = R::Lookup::unlookup(dest);
-        pallet_contracts::Call::<R>::call(source, Default::default(), 1_000_000_000, param)
+        // TODO: get gas limit from caller
+        pallet_contracts::Call::<R>::call(
+            source,
+            Default::default(),
+            1_000_000_000, // gas
+            param,
+        )
     }
 }
 
@@ -40,21 +46,21 @@ where
 
         // ======= Contracts.sol:Contracts =======
         //    Function signatures:
-        //    d22be3ba: call(bytes32,string)
+        //    3ae7af08: call(bytes32,bytes)
         let inner_call = match input[0..SELECTOR_SIZE_BYTES] {
-            [0xd2, 0x2b, 0xe3, 0xba] => {
+            [0x3a, 0xe7, 0xaf, 0x08] => {
                 if input.len() < SELECTOR_SIZE_BYTES + 32 * 3 {
                     return Err(ExitError::Other("input length less than 36 bytes".into()));
                 }
                 // Low level argument parsing
-                let dest = sp_core::H256::from_slice(
+                let dest: R::Hash = sp_core::H256::from_slice(
                     &input[SELECTOR_SIZE_BYTES..(SELECTOR_SIZE_BYTES + 32)],
-                );
+                ).into();
                 let len_offset = SELECTOR_SIZE_BYTES + 32 * 2;
                 let param_offset = len_offset + 32;
                 let param_len = sp_core::U256::from_big_endian(&input[len_offset..param_offset]);
                 let param = input[param_offset..(param_offset + param_len.as_usize())].to_vec();
-                Self::call(R::AccountId::unchecked_from(dest.into()), param)
+                Self::call(R::AccountId::unchecked_from(dest), param)
             }
             _ => {
                 return Err(ExitError::Other(
@@ -65,20 +71,26 @@ where
         let outer_call: R::Call = inner_call.into();
         let info = outer_call.get_dispatch_info();
 
+        /* XXX: temprorary disable gas accounting, 1B weight is so huge for EVM gas limit
+         * TODO: EVM -> WASM gas scaling
         if let Some(gas_limit) = target_gas {
             let required_gas = R::GasWeightMapping::weight_to_gas(info.weight);
             if required_gas > gas_limit {
                 return Err(ExitError::OutOfGas);
             }
         }
+        */
 
         let origin = R::AddressMapping::into_account_id(context.caller);
         let post_info = outer_call
             .dispatch(Some(origin).into())
             .map_err(|_| ExitError::Other("Method call via EVM failed".into()))?;
 
+        /* TODO: correct gas usage
         let gas_used =
             R::GasWeightMapping::weight_to_gas(post_info.actual_weight.unwrap_or(info.weight));
+        */
+        let gas_used = 1_000_000;
         Ok((ExitSucceed::Stopped, Default::default(), gas_used))
     }
 }
