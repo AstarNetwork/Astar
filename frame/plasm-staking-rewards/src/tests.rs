@@ -27,7 +27,7 @@ fn normal_incremental_era() {
         assert_eq!(PlasmRewards::current_era().unwrap(), 0);
         assert_eq!(
             PlasmRewards::active_era().unwrap(),
-            ActiveEraInfo::<u64> {
+            ActiveEraInfo {
                 index: 0,
                 start: None,
             }
@@ -44,7 +44,7 @@ fn normal_incremental_era() {
         assert_eq!(PlasmRewards::current_era().unwrap(), 0);
         assert_eq!(
             PlasmRewards::active_era().unwrap(),
-            ActiveEraInfo::<u64> {
+            ActiveEraInfo {
                 index: 0,
                 start: Some(PER_SESSION),
             }
@@ -65,7 +65,7 @@ fn normal_incremental_era() {
             }
             assert_eq!(
                 PlasmRewards::active_era().unwrap(),
-                ActiveEraInfo::<u64> {
+                ActiveEraInfo {
                     index: 0,
                     start: Some(PER_SESSION),
                 }
@@ -87,7 +87,7 @@ fn normal_incremental_era() {
             }
             assert_eq!(
                 PlasmRewards::active_era().unwrap(),
-                ActiveEraInfo::<u64> {
+                ActiveEraInfo {
                     index: 1,
                     start: Some(10 * PER_SESSION),
                 }
@@ -109,7 +109,7 @@ fn normal_incremental_era() {
             }
             assert_eq!(
                 PlasmRewards::active_era().unwrap(),
-                ActiveEraInfo::<u64> {
+                ActiveEraInfo {
                     index: 2,
                     start: Some(20 * PER_SESSION),
                 }
@@ -138,7 +138,7 @@ fn force_new_era_incremental_era() {
         assert_eq!(PlasmRewards::current_era().unwrap(), 1);
         assert_eq!(
             PlasmRewards::active_era().unwrap(),
-            ActiveEraInfo::<u64> {
+            ActiveEraInfo {
                 index: 0,
                 start: Some(PER_SESSION),
             }
@@ -159,7 +159,7 @@ fn force_new_era_incremental_era() {
             }
             assert_eq!(
                 PlasmRewards::active_era().unwrap(),
-                ActiveEraInfo::<u64> {
+                ActiveEraInfo {
                     index: 1,
                     start: Some(2 * PER_SESSION),
                 }
@@ -176,7 +176,7 @@ fn force_new_era_incremental_era() {
         assert_eq!(PlasmRewards::current_era().unwrap(), 2);
         assert_eq!(
             PlasmRewards::active_era().unwrap(),
-            ActiveEraInfo::<u64> {
+            ActiveEraInfo {
                 index: 2,
                 start: Some(12 * PER_SESSION),
             }
@@ -205,7 +205,7 @@ fn force_new_era_always_incremental_era() {
             assert_eq!(PlasmRewards::current_era().unwrap(), i);
             assert_eq!(
                 PlasmRewards::active_era().unwrap(),
-                ActiveEraInfo::<u64> {
+                ActiveEraInfo {
                     index: i - 1,
                     start: Some(i as u64 * PER_SESSION),
                 }

@@ -25,6 +25,7 @@ frame-system = { version = "3.0.0", default-features = false }
 pallet-session = { version = "3.0.0", default-features = false, features = ["historical"] }
 pallet-authorship = { version = "3.0.0", default-features = false }
 sp-application-crypto = { version = "3.0.0", default-features = false }
+pallet-staking-reward-curve = { version = "3.0.0", default_features = false }
 pallet-plasm-staking-rewards = { version = "1.10.0",  path = "../plasm-staking-rewards", default_features = false }
 plasm-primitives = { path = "../../bin/node/primitives", default-features = false }
 

@@ -279,6 +279,7 @@ pub mod benchmarking;
 
 pub mod slashing;
 pub mod offchain_election;
+pub mod inflation;
 use pallet_plasm_staking_rewards::ForSecurityEraRewardFinder;
 pub use plasm_primitives::Forcing;
 
@@ -308,6 +309,7 @@ use frame_support::{
 use pallet_session::historical;
 use sp_runtime::{
 	Percent, Perbill, PerU16, RuntimeDebug, DispatchError,
+	curve::PiecewiseLinear,
 	traits::{
 		Convert, Zero, StaticLookup, CheckedSub, Saturating, SaturatedConversion,
 		AtLeast32BitUnsigned, Dispatchable,
@@ -830,6 +832,10 @@ pub trait Config: frame_system::Config + SendTransactionTypes<Call<Self>> {
 
 	/// Interface for interacting with a session module.
 	type SessionInterface: self::SessionInterface<Self::AccountId>;
+
+	/// The NPoS reward curve used to define yearly inflation.
+	/// See [Era payout](./index.html#era-payout).
+	type RewardCurve: Get<&'static PiecewiseLinear<'static>>;
 
 	/// Something that can estimate the next session change, accurately or as a best effort guess.
 	type NextNewSession: EstimateNextNewSession<Self::BlockNumber>;

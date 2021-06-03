@@ -28,6 +28,11 @@ sp-core = "3.0.0"
 pallet-balances = "3.0.0"
 pallet-timestamp = "3.0.0"
 pallet-randomness-collective-flip = "3.0.0"
+sp-finality-grandpa = "3.0.0"
+pallet-im-online = "3.0.0"
+sp-authority-discovery = "3.0.0"
+sp-consensus-babe = "0.9.0"
+plasm-runtime = {path = "../../bin/node/runtime" }
 
 [features]
 default = ["std"]

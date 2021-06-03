@@ -43,7 +43,7 @@ use sp_runtime::transaction_validity::{
     TransactionPriority, TransactionSource, TransactionValidity,
 };
 use sp_runtime::{
-    create_runtime_str, generic, impl_opaque_keys, ApplyExtrinsicResult,
+    create_runtime_str, curve::PiecewiseLinear, generic, impl_opaque_keys, ApplyExtrinsicResult,
     FixedPointNumber, Perbill, Perquintill, RuntimeAppPublic,
 };
 use sp_std::convert::TryFrom;
@@ -291,10 +291,17 @@ impl pallet_plasm_staking_rewards::Config for Runtime {
     type Event = Event;
 }
 
+const THREE_PERCENT_INFLATION: Perbill = Perbill::from_parts(29_559_999);
+const REWARD_CURVE: PiecewiseLinear<'static> = PiecewiseLinear {
+    points: &[(Perbill::from_percent(0), THREE_PERCENT_INFLATION)],
+    maximum: THREE_PERCENT_INFLATION,
+};
+
 parameter_types! {
     pub const SessionsPerEra: sp_staking::SessionIndex = 4;
     pub const BondingDuration: pallet_plasm_node_staking::EraIndex = 7;
     pub const SlashDeferDuration: pallet_plasm_node_staking::EraIndex = 6; // 1/4 the bonding duration.
+    pub const RewardCurve: &'static PiecewiseLinear<'static> = &REWARD_CURVE;
     pub const StakingUnsignedPriority: u64 = 1 << 20;
 	pub const MaxNominatorRewardedPerValidator: u32 = 256;
 	pub const ElectionLookahead: BlockNumber = EPOCH_DURATION_IN_BLOCKS / 4;
@@ -331,6 +338,7 @@ impl pallet_plasm_node_staking::Config for Runtime {
 	type UnsignedPriority = StakingUnsignedPriority;
 	type WeightInfo = pallet_plasm_node_staking::weights::SubstrateWeight<Runtime>;
     type SessionInterface = Self;
+    type RewardCurve = RewardCurve;
 }
 
 parameter_types! {

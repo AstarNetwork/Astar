@@ -102,6 +102,7 @@ frame_support::construct_runtime!(
 		Balances: pallet_balances::{Module, Call, Storage, Config<T>, Event<T>},
 		Staking: staking::{Module, Call, Config<T>, Storage, Event<T>, ValidateUnsigned},
 		Session: pallet_session::{Module, Call, Storage, Event, Config<T>},
+		StakingRewards: pallet_plasm_staking_rewards::{Module, Call, Storage, Event<T>, Config<T>},
 	}
 );
 
@@ -239,6 +240,13 @@ impl OnUnbalanced<NegativeImbalanceOf<Test>> for RewardRemainderMock {
 	}
 }
 
+impl pallet_plasm_staking_rewards::Config for Test {
+    type Currency = Balances;
+    type UnixTime = Timestamp;
+    type SessionsPerEra = SessionsPerEra;
+    type Event = Event;
+}
+
 impl Config for Test {
 	type Currency = Balances;
 	type UnixTime = Timestamp;
@@ -262,6 +270,7 @@ impl Config for Test {
 	type UnsignedPriority = UnsignedPriority;
 	type OffchainSolutionWeightLimit = OffchainSolutionWeightLimit;
 	type WeightInfo = ();
+	type ForSecurityEraReward = StakingRewards;
 }
 
 impl<LocalCall> frame_system::offchain::SendTransactionTypes<LocalCall> for Test

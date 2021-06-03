@@ -222,7 +222,7 @@ pub enum Error<T> {
         /// - No arguments.
         /// # </weight>
         #[pallet::weight(5_000)]
-        fn force_no_eras(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
+        pub fn force_no_eras(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
             ensure_root(origin)?;
             ForceEra::<T>::put(Forcing::ForceNone);
             Ok(().into())
@@ -235,7 +235,7 @@ pub enum Error<T> {
         /// - No arguments.
         /// # </weight>
         #[pallet::weight(5_000)]
-        fn force_new_era(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
+        pub fn force_new_era(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
             ensure_root(origin)?;
             ForceEra::<T>::put(Forcing::ForceNew);
             Ok(().into())
@@ -247,7 +247,7 @@ pub enum Error<T> {
         /// - One storage write
         /// # </weight>
         #[pallet::weight(5_000)]
-        fn force_new_era_always(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
+        pub fn force_new_era_always(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
             ensure_root(origin)?;
             ForceEra::<T>::put(Forcing::ForceAlways);
             Ok(().into())
