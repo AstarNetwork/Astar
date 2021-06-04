@@ -16,7 +16,7 @@ const BTC_ASSET_ID: AssetId = AssetId { chain_id: 300, asset_type: RESERVED, ass
 
 const ETH_ASSET_ID: AssetId = AssetId { chain_id: 400, asset_type: NATIVE, asset_index: 0 };
 
-const PAIR_DOT_BTC: u128 = 15878880878592593010205858754413;
+const PAIR_DOT_BTC: u128 = 64962681870856338328114322245433978733;
 
 const ALICE: u128 = 1;
 const BOB: u128 = 2;

@@ -17,14 +17,27 @@ mod tests;
 
 impl<T: Config> Pallet<T> {
     /// The account ID of a pair account
-    pub(crate) fn pair_account_id(asset_0: AssetId, asset_1: AssetId) -> T::AccountId {
+    /// only use two byte prefix to support 16 byte account id (used by test)
+    /// "modl" ++ "/zenlink" is 12 bytes, and 4 bytes remaining for hash of AssetId pair.
+    /// for AccountId32, 20 bytes remaining for hash of AssetId pair.
+    pub fn pair_account_id(asset_0: AssetId, asset_1: AssetId) -> T::AccountId {
         let (asset_0, asset_1) = Self::sort_asset_id(asset_0, asset_1);
+        let pair_hash: T::Hash = T::Hashing::hash_of(&(asset_0, asset_1));
 
-        T::PalletId::get().into_sub_account((asset_0, asset_1))
+        T::PalletId::get().into_sub_account(pair_hash.as_ref())
+    }
+
+    /// Sorted the foreign id of assets pair
+    pub fn sort_asset_id(asset_0: AssetId, asset_1: AssetId) -> (AssetId, AssetId) {
+        if asset_0 < asset_1 {
+            (asset_0, asset_1)
+        } else {
+            (asset_1, asset_0)
+        }
     }
 
     /// The account ID of a pair account from storage
-    pub(crate) fn get_pair_account_id(asset_0: AssetId, asset_1: AssetId) -> Option<T::AccountId> {
+    pub fn get_pair_account_id(asset_0: AssetId, asset_1: AssetId) -> Option<T::AccountId> {
         let (asset_0, asset_1) = Self::sort_asset_id(asset_0, asset_1);
 
         Self::lp_metadata((asset_0, asset_1)).map(|(pair_account, _)| pair_account)
@@ -43,15 +56,6 @@ impl<T: Config> Pallet<T> {
             None
         } else {
             Some(pairs[index])
-        }
-    }
-
-    /// Sorted the foreign id of assets pair
-    pub(crate) fn sort_asset_id(asset_0: AssetId, asset_1: AssetId) -> (AssetId, AssetId) {
-        if asset_0 < asset_1 {
-            (asset_0, asset_1)
-        } else {
-            (asset_1, asset_0)
         }
     }
 
@@ -358,7 +362,7 @@ impl<T: Config> Pallet<T> {
             .unwrap_or_else(Zero::zero)
     }
 
-    pub(crate) fn get_amount_in_by_path(
+    pub fn get_amount_in_by_path(
         amount_out: AssetBalance,
         path: &[AssetId],
     ) -> Result<Vec<AssetBalance>, DispatchError> {
@@ -386,7 +390,7 @@ impl<T: Config> Pallet<T> {
         Ok(out_vec)
     }
 
-    pub(crate) fn get_amount_out_by_path(
+    pub fn get_amount_out_by_path(
         amount_in: AssetBalance,
         path: &[AssetId],
     ) -> Result<Vec<AssetBalance>, DispatchError> {

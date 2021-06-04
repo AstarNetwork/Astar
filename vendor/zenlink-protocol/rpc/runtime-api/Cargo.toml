@@ -1,6 +1,6 @@
 [package]
 name = "zenlink-protocol-runtime-api"
-version = "0.4.1"
+version = "0.4.2"
 authors = ["Zenlink Developers"]
 edition = "2018"
 license = "GPL-3.0-only"
@@ -9,8 +9,8 @@ license = "GPL-3.0-only"
 # alias "parity-scale-code" to "codec"
 codec = { package = "parity-scale-codec", version = "2.0.0", default-features = false }
 
-sp-api = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.1" }
-sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.1" }
+sp-api = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.3" }
+sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.3" }
 
 zenlink-protocol = { path = '../..', default-features = false }
 

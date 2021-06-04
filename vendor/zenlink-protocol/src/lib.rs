@@ -21,7 +21,7 @@ use frame_support::{
 };
 use sp_core::U256;
 use sp_runtime::traits::{
-    AccountIdConversion, IntegerSquareRoot, One, StaticLookup, UniqueSaturatedInto, Zero,
+    AccountIdConversion, Hash, IntegerSquareRoot, One, StaticLookup, UniqueSaturatedInto, Zero,
 };
 use sp_std::{convert::TryInto, marker::PhantomData, prelude::*};
 
@@ -86,7 +86,7 @@ pub mod pallet {
         /// The set of parachains which the xcm can reach.
         type TargetChains: Get<Vec<(MultiLocation, u128)>>;
         /// This parachain id.
-        type SelfParaId: Get<ParaId>;
+        type SelfParaId: Get<u32>;
         /// Something to execute an XCM message.
         type XcmExecutor: ExecuteXcm<Self::Call>;
         /// AccountId to be used in XCM as a corresponding AccountId32
@@ -270,7 +270,7 @@ pub mod pallet {
             let balance = T::MultiAssetsHandler::balance_of(asset_id, &who);
             let checked = Self::check_existential_deposit(asset_id, amount);
             ensure!(asset_id.is_support(), Error::<T>::UnsupportedAssetType);
-            ensure!(para_id != T::SelfParaId::get(), Error::<T>::DeniedTransferToSelf);
+            ensure!(para_id != T::SelfParaId::get().into(), Error::<T>::DeniedTransferToSelf);
             ensure!(checked.is_some(), Error::<T>::TargetChainNotRegistered);
             ensure!(Some(true) == checked, Error::<T>::NativeBalanceTooLow);
             ensure!(balance >= amount, Error::<T>::InsufficientAssetBalance);

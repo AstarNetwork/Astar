@@ -30,7 +30,7 @@ impl<T: Config> Pallet<T> {
 
         for (i, _) in Self::lp_pairs().iter().enumerate() {
             all_assets.push(AssetId {
-                chain_id: T::SelfParaId::get().into(),
+                chain_id: T::SelfParaId::get(),
                 asset_type: LIQUIDITY,
                 asset_index: i as u32,
             })
@@ -40,7 +40,7 @@ impl<T: Config> Pallet<T> {
     }
 
     pub fn get_all_pairs() -> Vec<PairInfo<T::AccountId, AssetBalance>> {
-        let chain_id = T::SelfParaId::get().into();
+        let chain_id = T::SelfParaId::get();
         Self::lp_pairs()
             .iter()
             .enumerate()
@@ -67,7 +67,7 @@ impl<T: Config> Pallet<T> {
         asset_1: AssetId,
     ) -> Option<PairInfo<T::AccountId, AssetBalance>> {
         let sorted_pair = Self::sort_asset_id(asset_0, asset_1);
-        let chain_id = T::SelfParaId::get().into();
+        let chain_id = T::SelfParaId::get();
 
         if let Some(index) = Self::lp_pairs().iter().position(|pair| *pair == sorted_pair) {
             let lp_id = AssetId { chain_id, asset_type: LIQUIDITY, asset_index: index as u32 };

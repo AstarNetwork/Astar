@@ -2,8 +2,9 @@ use shiden_runtime::{AccountId, Balance};
 use sp_core::crypto::Ss58Codec;
 
 lazy_static::lazy_static! {
-    /// SHIDEN GENESIS TOKEN HODERS (snapshot of Plasm Mainnet at 3082400 block)
+    /// SHIDEN GENESIS TOKEN HODERS
     pub static ref SHIDEN_HOLDERS: Vec<(AccountId, Balance)> = vec![
+        // Balance snapshot of Plasm Mainnet at 3000000 block
         (AccountId::from_ss58check("b14B1JxFzJjbRvYU6S6T4qQ3ofggQM1nBdiu43x5uSA1hKn").unwrap(), 100000000000000000000),
         (AccountId::from_ss58check("bQxDd9NJdcj2DRnLizR58pZCuYbJaxYu9Xnme4J9SLP8w99").unwrap(), 60400000000000000000),
         (AccountId::from_ss58check("aR29XZi41y4dCusH8FrDk7QMnrz4pvusvSmZLLHD3WJdak4").unwrap(), 34000000000000000000),
@@ -2743,7 +2744,6 @@ lazy_static::lazy_static! {
         (AccountId::from_ss58check("W8HN7RQtfLDg8QbzwZDTCsBk5k6ziEJQWS5UN1Xne41UgV5").unwrap(), 1107200000000000000000),
         (AccountId::from_ss58check("Z1CfCLs3atUNn7iG5n869SqHBrAj4KKY45zSVmWedxjjp34").unwrap(), 543032000000000000000),
         (AccountId::from_ss58check("YdJuaBCijVYV477ow33bdFnT5uBFHphgmk3QrJUp76PhnBA").unwrap(), 567000000000000000000),
-        (AccountId::from_ss58check("X7ugWFHPBbK66qgmqd9XD311Kc6tic4vK8mGn4cL9qDS7wc").unwrap(), 189293009507237659801672),
         (AccountId::from_ss58check("acMjo61ig7BzykuzFCMYdGZG7s8mxBe8UKN4R9AWwbctSMu").unwrap(), 1116000000000000000),
         (AccountId::from_ss58check("bPBwQXhaQEyJUdvxMCtPdZHJW6ksby7HMzZGxKC1XK6wzsV").unwrap(), 225288000000000000000),
         (AccountId::from_ss58check("ZLnPfNBdzMDrdCuG9EdJeXydkg8gUWM8R15tpUR815ybGok").unwrap(), 5225999999000000000000),
@@ -7598,5 +7598,26 @@ lazy_static::lazy_static! {
         (AccountId::from_ss58check("ZtpLoCTzqBcYV1BfYn6iKTficquk4R6PJTkei2vx1fCJfAP").unwrap(), 505377993000000000000),
         (AccountId::from_ss58check("aFDx1xxsYJUh3dwhQ9mfZmSCieWnihP3nApFR1PETicFCay").unwrap(), 34417998000000000000),
         (AccountId::from_ss58check("X7ugWFHPBbK66qgmqd9XD311Kc6tic4vK8mGn4cL9qDS7wc").unwrap(), 99010000000000000000),
+        //##
+        //# Plasm Network service accounts
+        //##
+        // Kusama Auction #1
+        (AccountId::from_ss58check("5Gen5NCGhFQSWbmSCKCBHAZNkxBXMr2jVDcC7MkhnvfEgPWg").unwrap(), 14045417260000000000000000),
+        // Kusama Auction #2
+        (AccountId::from_ss58check("5EUpwsDfv5boEWDEVnB5iMYFKUY8aqQMn78k13KCrPWHWVBR").unwrap(), 1404541730000000000000000),
+        // Kusama Auction #3
+        (AccountId::from_ss58check("5DfRdRqEGx3HQPLsw1o9gtAp7nphmYNVnTR8Wtzan7wEufJo").unwrap(), 5618166900000000000000000),
+        // Parachain Reserve
+        (AccountId::from_ss58check("5DaNrRf2NcNbHgSgdRBUXWu4gA6n24kGrJWMZADxvhcd69Ja").unwrap(), 3511354320000000000000000),
+        // Protocol Development
+        (AccountId::from_ss58check("5CmA2xgk8hACr6zjPg33QZxH2Rd3ioLJSvDz4Ta8mHCd7iSv").unwrap(), 7022708630000000000000000),
+        // On-Chain DAO
+        (AccountId::from_ss58check("5FjHFeQ62Eev48tn8hLsnHEGVqtjCv12PtcbQ65AHWznRXFn").unwrap(), 2809083450000000000000000),
+        // Marketing
+        (AccountId::from_ss58check("5CrbCfK2iyYfpxEFLZpGr2Yen7JvzpZgkNgxd5nh4B1FZoay").unwrap(), 3511354320000000000000000),
+        // Institutional Investor
+        (AccountId::from_ss58check("5EUPhTtX39EB2KksyAL8qh1J1qSJj4coSKUA7dBFK8dkXWHD").unwrap(), 7724979490000000000000000),
+        // Team
+        (AccountId::from_ss58check("5DJ8LnALdeJqABW6itJZNivtxxXr4Gcpmn2vEKt3iYwWyUuL").unwrap(), 3511354320000000000000000),
     ];
 }

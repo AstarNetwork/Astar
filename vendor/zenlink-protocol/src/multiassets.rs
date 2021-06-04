@@ -47,7 +47,7 @@ where
     Other: OtherAssetHandler<T::AccountId>,
 {
     fn balance_of(asset_id: AssetId, who: &<T as frame_system::Config>::AccountId) -> AssetBalance {
-        let self_chain_id: u32 = T::SelfParaId::get().into();
+        let self_chain_id: u32 = T::SelfParaId::get();
         match asset_id.asset_type {
             NATIVE if asset_id.is_native(self_chain_id) => {
                 NativeCurrency::free_balance(who).saturated_into::<AssetBalance>()
@@ -67,9 +67,9 @@ where
     }
 
     fn total_supply(asset_id: AssetId) -> AssetBalance {
-        let self_chain_id: u32 = T::SelfParaId::get().into();
+        let self_chain_id: u32 = T::SelfParaId::get();
         match asset_id.asset_type {
-            NATIVE if asset_id.is_native(T::SelfParaId::get().into()) => {
+            NATIVE if asset_id.is_native(T::SelfParaId::get()) => {
                 NativeCurrency::total_issuance().saturated_into::<AssetBalance>()
             }
             LIQUIDITY if asset_id.chain_id == self_chain_id => {
@@ -83,15 +83,15 @@ where
     }
 
     fn is_exists(asset_id: AssetId) -> bool {
-        let self_chain_id: u32 = T::SelfParaId::get().into();
+        let self_chain_id: u32 = T::SelfParaId::get();
         match asset_id.asset_type {
             NATIVE if asset_id.chain_id == self_chain_id => {
-                asset_id.is_native(T::SelfParaId::get().into())
+                asset_id.is_native(T::SelfParaId::get())
             }
             LIQUIDITY if asset_id.chain_id == self_chain_id => Pallet::<T>::lp_is_exists(asset_id),
             LOCAL if asset_id.chain_id == self_chain_id => Local::local_is_exists(asset_id),
             RESERVED if asset_id.chain_id == self_chain_id => Other::other_is_exists(asset_id),
-            _ if asset_id.is_foreign(T::SelfParaId::get().into()) => {
+            _ if asset_id.is_foreign(T::SelfParaId::get()) => {
                 Pallet::<T>::foreign_is_exists(asset_id)
             }
             _ => Default::default(),
@@ -104,9 +104,9 @@ where
         target: &<T as frame_system::Config>::AccountId,
         amount: AssetBalance,
     ) -> DispatchResult {
-        let self_chain_id: u32 = T::SelfParaId::get().into();
+        let self_chain_id: u32 = T::SelfParaId::get();
         match asset_id.asset_type {
-            NATIVE if asset_id.is_native(T::SelfParaId::get().into()) => {
+            NATIVE if asset_id.is_native(T::SelfParaId::get()) => {
                 let balance_amount = amount
                     .try_into()
                     .map_err(|_| DispatchError::Other("AmountToBalanceConversionFailed"))?;
@@ -122,7 +122,7 @@ where
             RESERVED if asset_id.chain_id == self_chain_id => {
                 Other::other_transfer(asset_id, origin, target, amount)
             }
-            _ if asset_id.is_foreign(T::SelfParaId::get().into()) => {
+            _ if asset_id.is_foreign(T::SelfParaId::get()) => {
                 Pallet::<T>::foreign_transfer(asset_id, origin, target, amount)
             }
             _ => Err(Error::<T>::UnsupportedAssetType.into()),
@@ -134,9 +134,9 @@ where
         target: &<T as frame_system::Config>::AccountId,
         amount: AssetBalance,
     ) -> Result<AssetBalance, DispatchError> {
-        let self_chain_id: u32 = T::SelfParaId::get().into();
+        let self_chain_id: u32 = T::SelfParaId::get();
         match asset_id.asset_type {
-            NATIVE if asset_id.is_native(T::SelfParaId::get().into()) => {
+            NATIVE if asset_id.is_native(T::SelfParaId::get()) => {
                 let balance_amount = amount
                     .try_into()
                     .map_err(|_| DispatchError::Other("AmountToBalanceConversionFailed"))?;
@@ -154,7 +154,7 @@ where
             RESERVED if asset_id.chain_id == self_chain_id => {
                 Other::other_deposit(asset_id, target, amount)
             }
-            _ if asset_id.is_foreign(T::SelfParaId::get().into()) => {
+            _ if asset_id.is_foreign(T::SelfParaId::get()) => {
                 Pallet::<T>::foreign_mint(asset_id, target, amount).map(|_| amount)
             }
             _ => Err(Error::<T>::UnsupportedAssetType.into()),
@@ -166,7 +166,7 @@ where
         origin: &<T as frame_system::Config>::AccountId,
         amount: AssetBalance,
     ) -> Result<AssetBalance, DispatchError> {
-        let self_chain_id: u32 = T::SelfParaId::get().into();
+        let self_chain_id: u32 = T::SelfParaId::get();
         match asset_id.asset_type {
             NATIVE if asset_id.is_native(self_chain_id) => {
                 let balance_amount = amount
@@ -191,7 +191,7 @@ where
             RESERVED if asset_id.chain_id == self_chain_id => {
                 Other::other_withdraw(asset_id, origin, amount)
             }
-            _ if asset_id.is_foreign(T::SelfParaId::get().into()) => {
+            _ if asset_id.is_foreign(T::SelfParaId::get()) => {
                 Pallet::<T>::foreign_burn(asset_id, origin, amount).map(|_| amount)
             }
             _ => Err(Error::<T>::UnsupportedAssetType.into()),

@@ -80,7 +80,7 @@ impl<T: Config> Pallet<T> {
             Junction::GeneralIndex { id: asset_id.asset_index as u128 },
         );
 
-        let seld_chain_id: u32 = T::SelfParaId::get().into();
+        let seld_chain_id: u32 = T::SelfParaId::get();
         if asset_id.chain_id == seld_chain_id {
             Ok(Self::make_xcm_lateral_transfer_native(asset_location, para_id, recipient, amount))
         } else {

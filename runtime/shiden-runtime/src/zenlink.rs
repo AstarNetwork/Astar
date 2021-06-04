@@ -16,6 +16,7 @@ use super::{
 parameter_types! {
     pub const ZenlinkPalletId: PalletId = PalletId(*b"/zenlink");
     pub const GetExchangeFee: (u32, u32) = (3, 1000);   // 0.3%
+    pub SelfParaId: u32 = ParachainInfo::get().into();
 
     // xcm
     pub const AnyNetwork: NetworkId = NetworkId::Any;
@@ -81,7 +82,7 @@ impl zenlink_protocol::Config for Runtime {
     type GetExchangeFee = GetExchangeFee;
     type MultiAssetsHandler = MultiAssets;
     type PalletId = ZenlinkPalletId;
-    type SelfParaId = ParachainInfo;
+    type SelfParaId = SelfParaId;
 
     type TargetChains = ZenlinkRegistedParaChains;
     type XcmExecutor = XcmExecutor<XcmConfig>;

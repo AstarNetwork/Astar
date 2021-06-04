@@ -1,4 +1,4 @@
-# zenlink-protocol-rpc(v0.4.1)
+# zenlink-protocol-rpc(v0.4.0)
 
 #### 1. introduction
 
@@ -530,8 +530,8 @@
   },
   "AssetBalance": "u128",
   "PairInfo": {
-    "token_0": "AssetId",
-    "token_1": "AssetId",
+    "asset_0": "AssetId",
+    "asset_1": "AssetId",
     "account": "AccountId",
     "total_liquidity": "AssetBalance",
     "holding_liquidity": "AssetBalance",

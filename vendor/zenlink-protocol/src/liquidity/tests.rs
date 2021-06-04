@@ -19,14 +19,14 @@ const PAIR_DOT_BTC: (AssetId, AssetId) = (
     AssetId { chain_id: 200, asset_type: LOCAL, asset_index: 2 },
     AssetId { chain_id: 300, asset_type: RESERVED, asset_index: 3 },
 );
-const PAIR_DOT_BTC_ACCOUNT: u128 = 15878880878592593010205858754413;
+const PAIR_DOT_BTC_ACCOUNT: u128 = 64962681870856338328114322245433978733;
 const LOCAL_LP_DOT_BTC: AssetId = AssetId { chain_id: 0, asset_type: LIQUIDITY, asset_index: 0 };
 
 const PAIR_BTC_ETH: (AssetId, AssetId) = (
     AssetId { chain_id: 300, asset_type: RESERVED, asset_index: 3 },
     AssetId { chain_id: 400, asset_type: NATIVE, asset_index: 0 },
 );
-const PAIR_BTC_ETH_ACCOUNT: u128 = 23801697130019026769560253788013;
+const PAIR_BTC_ETH_ACCOUNT: u128 = 290936349497416120426004117727903772525;
 const LOCAL_LP_BTC_ETH: AssetId = AssetId { chain_id: 0, asset_type: LIQUIDITY, asset_index: 1 };
 
 #[test]
