@@ -19,6 +19,7 @@ pub type AccountId = u64;
 pub type Balance = u64;
 type Block = frame_system::mocking::MockBlock<Test>;
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
+use frame_support::dispatch::{DispatchError};
 
 pub const ALICE_STASH: u64 = 1;
 
@@ -155,7 +156,10 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
         .unwrap();
 
     let _ = pallet_balances::GenesisConfig::<Test> {
-        balances: vec![(ALICE_STASH, 1_000_000_000_000_000_000)],
+        balances: vec![
+            (1, 1_000_000_000_000_000_000),
+            (2, 1_000_000_000_000_000_000),
+        ],
     }
     .assimilate_storage(&mut storage);
 
@@ -182,15 +186,23 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 #[test]
 fn root_calls_fails_for_user() {
     new_test_ext().execute_with(|| {
-        //let res = PlasmRewards::force_no_eras(Origin::signed(0));
-        print!("Hi Mario");
-        // assert_eq!(res, Err(DispatchErrorWithPostInfo::BadOrigin));
+        let res = PlasmRewards::force_no_eras(Origin::signed(0));
+        assert_eq!(
+            res.or_else(|i| Err(i.error)),
+            Err(DispatchError::BadOrigin)
+        );
 
-        // let res = PlasmRewards::force_new_era(Origin::signed(0));
-        // assert_eq!(res, Err(DispatchErrorWithPostInfo::BadOrigin));
-
-        // let res = PlasmRewards::force_new_era_always(Origin::signed(0));
-        // assert_eq!(res, Err(DispatchErrorWithPostInfo::BadOrigin));
+        let res = PlasmRewards::force_new_era(Origin::signed(0));
+        assert_eq!(
+            res.or_else(|i| Err(i.error)),
+            Err(DispatchError::BadOrigin)
+        );
+        
+        let res = PlasmRewards::force_new_era_always(Origin::signed(0));
+        assert_eq!(
+            res.or_else(|i| Err(i.error)),
+            Err(DispatchError::BadOrigin)
+        );   
     })
 }
 
