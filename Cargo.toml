@@ -12,6 +12,7 @@ members = [
     "frame/custom-signatures",
     "frame/ovm",
     "frame/ovm/rpc/runtime-api",
+    "frame/plasma",
 ]
 
 exclude = [
