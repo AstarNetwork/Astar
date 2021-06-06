@@ -10,7 +10,7 @@ pub mod pallet {
     use frame_support::pallet_prelude::*; // Import various types used in the pallet definition
     use frame_system::pallet_prelude::*; // Import some system helper types.
 
-    /// Multi-VM pointer to smart contract instance.
+    /// X-VM pointer to smart contract instance.
     #[cfg_attr(feature = "std", derive(Debug, Eq))]
     #[derive(Clone, Encode, Decode, PartialEq)]
     pub enum SmartContract<AccountId> {
@@ -67,7 +67,7 @@ pub mod pallet {
     #[pallet::call]
     impl<T: Config> Pallet<T> {
         /// Sets the owner for the given smart contract.
-        /// TODO: weitht
+        /// TODO: weight
         #[pallet::weight(1)]
         pub fn claim_contract(
             origin: OriginFor<T>,

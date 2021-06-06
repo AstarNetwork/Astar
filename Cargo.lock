@@ -4235,6 +4235,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-evm-precompile-dispatch"
+version = "3.0.0"
+dependencies = [
+ "evm",
+ "fp-evm",
+ "frame-support",
+ "pallet-evm",
+ "parity-scale-codec",
+ "sp-core",
+ "sp-io",
+]
+
+[[package]]
 name = "pallet-evm-precompile-modexp"
 version = "3.0.0"
 dependencies = [
@@ -5076,6 +5089,7 @@ dependencies = [
  "pallet-ethereum",
  "pallet-evm",
  "pallet-evm-precompile-bn128",
+ "pallet-evm-precompile-dispatch",
  "pallet-evm-precompile-modexp",
  "pallet-evm-precompile-simple",
  "pallet-grandpa",
