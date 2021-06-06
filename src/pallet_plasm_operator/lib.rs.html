@@ -123,7 +123,7 @@
     <span class="kw">use</span> <span class="ident">frame_support</span>::<span class="ident">pallet_prelude</span>::<span class="kw-2">*</span>; <span class="comment">// Import various types used in the pallet definition</span>
     <span class="kw">use</span> <span class="ident">frame_system</span>::<span class="ident">pallet_prelude</span>::<span class="kw-2">*</span>; <span class="comment">// Import some system helper types.</span>
 
-    <span class="doccomment">/// Multi-VM pointer to smart contract instance.</span>
+    <span class="doccomment">/// X-VM pointer to smart contract instance.</span>
     <span class="attribute">#[<span class="ident">cfg_attr</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>, <span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Eq</span>))]</span>
     <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Clone</span>, <span class="ident">Encode</span>, <span class="ident">Decode</span>, <span class="ident">PartialEq</span>)]</span>
     <span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">SmartContract</span><span class="op">&lt;</span><span class="ident">AccountId</span><span class="op">&gt;</span> {
@@ -180,7 +180,7 @@
     <span class="attribute">#[<span class="ident">pallet</span>::<span class="ident">call</span>]</span>
     <span class="kw">impl</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">Config</span><span class="op">&gt;</span> <span class="ident">Pallet</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
         <span class="doccomment">/// Sets the owner for the given smart contract.</span>
-        <span class="doccomment">/// TODO: weitht</span>
+        <span class="doccomment">/// TODO: weight</span>
         <span class="attribute">#[<span class="ident">pallet</span>::<span class="ident">weight</span>(<span class="number">1</span>)]</span>
         <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">claim_contract</span>(
             <span class="ident">origin</span>: <span class="ident">OriginFor</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>,
