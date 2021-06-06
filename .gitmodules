@@ -1,3 +1,6 @@
 [submodule "vendor/frontier"]
 	path = vendor/frontier
 	url = https://github.com/PlasmNetwork/frontier.git
+[submodule "vendor/ovmi"]
+	path = vendor/ovmi
+	url = https://github.com/PlasmNetwork/ovmi.git
