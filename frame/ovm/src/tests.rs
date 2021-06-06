@@ -2,7 +2,7 @@
 
 #![cfg(test)]
 
-use super::{RawEvent};
+use super::RawEvent;
 use crate::mock::*;
 use frame_support::assert_ok;
 use frame_system::{EventRecord, Phase};

@@ -13,7 +13,7 @@ pub const EXIT_SPENT_CHALLENGE: &'static [u8] = b"EXIT_SPENT_CHALLENGE";
 pub const EXIT_CHECKPOINT_CHALLENGE: &'static [u8] = b"EXIT_CHECKPOINT_CHALLENGE";
 
 // Dispute Helper methods.
-impl<T: Trait> Module<T> {
+impl<T: Config> Module<T> {
     pub fn create_property(su_bytes: &Vec<u8>, kind: &'static [u8]) -> PropertyOf<T> {
         let mut inputs = vec![kind.to_vec(), su_bytes.clone()];
         PropertyOf::<T> {
@@ -24,7 +24,7 @@ impl<T: Trait> Module<T> {
 }
 
 // CheckpointDispute methods.
-impl<T: Trait> Module<T> {
+impl<T: Config> Module<T> {
     /// challenge checkpiont
     /// _inputs: [encode(stateUpdate)] challenged state update
     /// _challengeInputs: [encode(stateUpdate)] challenging state update

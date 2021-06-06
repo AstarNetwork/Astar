@@ -6,7 +6,7 @@ use super::*;
 use frame_support::dispatch::{DispatchError, DispatchResult};
 
 // ExitDispute.sol
-impl<T: Trait> Module<T> {
+impl<T: Config> Module<T> {
     /// Claim Exit at StateUpdate
     /// There're two kind of exit claims. ExitStateUpdate and ExitCheckpoint.
     /// The former needs inclusion proof of stateUpdate. The latter don't need
@@ -207,7 +207,7 @@ impl<T: Trait> Module<T> {
 }
 
 // SpentChallengeValidator.sol
-impl<T: Trait> Module<T> {
+impl<T: Config> Module<T> {
     fn validate_spent_challeng(
         inputs: &Vec<Vec<u8>>,
         challenge_inputs: &Vec<Vec<u8>>,

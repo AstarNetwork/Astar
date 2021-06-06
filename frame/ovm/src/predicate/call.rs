@@ -5,7 +5,7 @@
 
 use crate::predicate::*;
 use crate::traits::{Ext, NewCallContext};
-use crate::{AccountIdOf, Decision, PropertyOf, Config};
+use crate::{AccountIdOf, Config, Decision, PropertyOf};
 
 pub struct CallContext<T: Config> {
     ctx: Rc<ExecutionContext<T>>,

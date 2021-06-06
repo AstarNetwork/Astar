@@ -10,7 +10,7 @@ use frame_system::Origin;
 ///  _propertyInputs: [encode(stateUpdate)]
 ///  _witness: [encode(inclusionProof)]
 ///  NOTE: might be possible to define concrete argument type but bytes[]
-impl<T: Trait> Module<T> {
+impl<T: Config> Module<T> {
     fn bare_checkpoint_claim(
         plapps_id: &T::AccountId,
         inputs: Vec<Vec<u8>>,

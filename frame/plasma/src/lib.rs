@@ -29,7 +29,6 @@ use frame_support::{
     StorageDoubleMap, StorageMap,
 };
 use frame_system::{self as system, ensure_signed};
-use pallet_contracts::Gas;
 use sp_core::crypto::UncheckedFrom;
 use sp_runtime::{
     traits::{Bounded, Hash, One, SaturatedConversion, Saturating, Zero},
@@ -39,11 +38,7 @@ use sp_std::{marker::PhantomData, prelude::*, vec::Vec};
 
 pub use pallet_ovm::{Decision, Property, PropertyOf};
 
-mod checkpoint;
 mod deserializer;
-mod exit;
-mod helper;
-
 #[cfg(test)]
 mod mock;
 #[cfg(test)]
@@ -64,16 +59,6 @@ pub struct StateUpdate<AccountId, Balance, BlockNumber> {
     range: Range<Balance>,
     block_number: BlockNumber,
     state_object: Property<AccountId>,
-}
-
-#[derive(Encode, Decode, Clone, Default, RuntimeDebug, PartialEq, Eq)]
-pub struct Transaction<AccountId, Balance, BlockNumber, Hash> {
-    deposit_contract_address: AccountId,
-    range: Range<Balance>,
-    max_block_number: BlockNumber,
-    next_state_object: Property<AccountId>,
-    chunk_id: Hash,
-    from: AccountId,
 }
 
 #[derive(Encode, Decode, Clone, Default, RuntimeDebug, PartialEq, Eq)]
@@ -126,46 +111,31 @@ pub struct ExitDeposit<AccountId, Balance, BlockNumber> {
 }
 
 pub type BalanceOf<T> =
-    <<T as Trait>::Currency as Currency<<T as frame_system::Trait>::AccountId>>::Balance;
-pub type CheckpointOf<T> = Checkpoint<<T as frame_system::Trait>::AccountId>;
-pub type ExitDepositOf<T> = ExitDeposit<
-    <T as frame_system::Trait>::AccountId,
-    BalanceOf<T>,
-    <T as frame_system::Trait>::BlockNumber,
->;
+    <<T as Config>::Currency as Currency<<T as system::Config>::AccountId>>::Balance;
+pub type CheckpointOf<T> = Checkpoint<<T as system::Config>::AccountId>;
+pub type ExitDepositOf<T> =
+    ExitDeposit<<T as system::Config>::AccountId, BalanceOf<T>, <T as system::Config>::BlockNumber>;
 pub type RangeOf<T> = Range<BalanceOf<T>>;
 pub type ExitOf<T> = Exit<
-    <T as frame_system::Trait>::AccountId,
-    <T as frame_system::Trait>::BlockNumber,
+    <T as system::Config>::AccountId,
+    <T as system::Config>::BlockNumber,
     BalanceOf<T>,
-    <T as frame_system::Trait>::Hash,
+    <T as system::Config>::Hash,
 >;
-pub type StateUpdateOf<T> = StateUpdate<
-    <T as frame_system::Trait>::AccountId,
-    BalanceOf<T>,
-    <T as frame_system::Trait>::BlockNumber,
->;
-pub type TransactionOf<T> = Transaction<
-    <T as frame_system::Trait>::AccountId,
-    BalanceOf<T>,
-    <T as frame_system::Trait>::BlockNumber,
-    <T as frame_system::Trait>::Hash,
->;
-pub type InclusionProofOf<T> = InclusionProof<
-    <T as frame_system::Trait>::AccountId,
-    BalanceOf<T>,
-    <T as frame_system::Trait>::Hash,
->;
+pub type StateUpdateOf<T> =
+    StateUpdate<<T as system::Config>::AccountId, BalanceOf<T>, <T as system::Config>::BlockNumber>;
+pub type InclusionProofOf<T> =
+    InclusionProof<<T as system::Config>::AccountId, BalanceOf<T>, <T as system::Config>::Hash>;
 pub type IntervalInclusionProofOf<T> =
-    IntervalInclusionProof<BalanceOf<T>, <T as frame_system::Trait>::Hash>;
-pub type IntervalTreeNodeOf<T> = IntervalTreeNode<BalanceOf<T>, <T as frame_system::Trait>::Hash>;
+    IntervalInclusionProof<BalanceOf<T>, <T as system::Config>::Hash>;
+pub type IntervalTreeNodeOf<T> = IntervalTreeNode<BalanceOf<T>, <T as system::Config>::Hash>;
 pub type AddressInclusionProofOf<T> = AddressInclusionProof<
-    <T as frame_system::Trait>::AccountId,
+    <T as system::Config>::AccountId,
     BalanceOf<T>,
-    <T as frame_system::Trait>::Hash,
+    <T as system::Config>::Hash,
 >;
 pub type AddressTreeNodeOf<T> =
-    AddressTreeNode<<T as frame_system::Trait>::AccountId, <T as frame_system::Trait>::Hash>;
+    AddressTreeNode<<T as system::Config>::AccountId, <T as system::Config>::Hash>;
 pub trait PlappsAddressFor<Hash, AccountId> {
     fn plapps_address_for(hash: &Hash, origin: &AccountId) -> AccountId;
 }
@@ -183,8 +153,8 @@ pub trait PlappsAddressFor<Hash, AccountId> {
 ///     blake2_256(&exit_predicate),
 ///     blake2_256(&exit_deposit_predicate),
 // ));```
-pub struct SimpleAddressDeterminer<T: Trait>(PhantomData<T>);
-impl<T: Trait> PlappsAddressFor<T::Hash, T::AccountId> for SimpleAddressDeterminer<T>
+pub struct SimpleAddressDeterminer<T: Config>(PhantomData<T>);
+impl<T: Config> PlappsAddressFor<T::Hash, T::AccountId> for SimpleAddressDeterminer<T>
 where
     T::AccountId: UncheckedFrom<T::Hash> + AsRef<[u8]>,
 {
@@ -197,7 +167,7 @@ where
     }
 }
 
-pub trait Trait: pallet_ovm::Trait + pallet_contracts::Trait {
+pub trait Config: pallet_ovm::Config + pallet_contracts::Config {
     /// Plasma Range's currency.
     type Currency: Currency<Self::AccountId>;
 
@@ -211,11 +181,11 @@ pub trait Trait: pallet_ovm::Trait + pallet_contracts::Trait {
     type PlasmaHashing: Hash<Output = Self::Hash>;
 
     /// The overarching event type.
-    type Event: From<Event<Self>> + Into<<Self as system::Trait>::Event>;
+    type Event: From<Event<Self>> + Into<<Self as system::Config>::Event>;
 }
 
 decl_storage! {
-    trait Store for Module<T: Trait> as Plasma {
+    trait Store for Module<T: Config> as Plasma {
         // Commitment storage: Plapps address => Commitment Child Storage. ====
 
         /// Single aggregator address: AggregatorId
@@ -251,60 +221,48 @@ decl_storage! {
 decl_event!(
     pub enum Event<T>
     where
-        AccountId = <T as system::Trait>::AccountId,
-        Hash = <T as system::Trait>::Hash,
-        BlockNumber = <T as system::Trait>::BlockNumber,
-        StateUpdate = StateUpdateOf<T>,
-        InclusionProof = InclusionProofOf<T>,
+        AccountId = <T as system::Config>::AccountId,
+        Hash = <T as system::Config>::Hash,
+        BlockNumber = <T as system::Config>::BlockNumber,
+        Range = RangeOf<T>,
+        Checkpoint = CheckpointOf<T>,
     {
         /// Deplpoyed Plapps. (creator: AccountId, plapps_id: AccountId)
         Deploy(AccountId, AccountId),
         /// Event definitions (AccountID: PlappsAddress, BlockNumber, Hash: root)
         BlockSubmitted(AccountId, BlockNumber, Hash),
-        /// Event definitions (plapps_id: AccountId, state_update: StateUpdate, inclusion_proof: InclusionProof)
-        CheckpointClaimed(AccountId, StateUpdate, InclusionProof),
-        /// Event definitions (state_update: StateUpdate, challenging_state_update: StateUpdate, inclusion_proof: InclusionProof)
-        CheckpointChallenged(StateUpdate, StateUpdate, InclusionProof),
-        /// Event definitions (state_update: StateUpdate, challenging_state_update: StateUpdate)
-        ChallengeRemoved(StateUpdate, StateUpdate),
-        /// Event definitions (state_update: StateUpdate)
-        CheckpointSettled(StateUpdate),
-        /// Event definitions (state_update: stateUpdate)
-        ExitClaimed(StateUpdate),
-        /// Event definitions (state_update: stateUpdate)
-        ExitSpentChallenged(StateUpdate),
-        /// Event definitions (state_update: stateUpdate, challenging_state_update: StateUpdate)
-        ExitCheckpointChallenged(StateUpdate, StateUpdate),
-        /// Event definitions (state_update: stateUpdate, challenging_state_update: StateUpdate)
-        ExitChallengeRemoved(StateUpdate, StateUpdate),
-        /// Event definitions (state_update: stateUpdate, decision: bool)
-        ExitSettled(StateUpdate, bool),
+        /// (AccountID: PlappsAddress, checkpointId: Hash, checkpoint: Checkpoint);
+        CheckpointFinalized(AccountId, Hash, Checkpoint),
+        /// (AccountID: PlappsAddress, exit_id: Hash)
+        ExitFinalized(AccountId, Hash),
+        /// (AccountID: PlappsAddress, new_range: Range)
+        DepositedRangeExtended(AccountId, Range),
+        /// (AccountID: PlappsAddress, removed_range: Range)
+        DepositedRangeRemoved(AccountId, Range),
     }
 );
 
 decl_module! {
-    pub struct Module<T: Trait> for enum Call where origin: T::Origin {
+    pub struct Module<T: Config> for enum Call where origin: T::Origin {
         fn deposit_event() = default;
 
-        const MaximumTokenAddress: <T as system::Trait>::AccountId = T::MaximumTokenAddress::get();
+        const MaximumTokenAddress: <T as system::Config>::AccountId = T::MaximumTokenAddress::get();
 
         fn on_runtime_upgrade() -> Weight {
             migrate::<T>();
-            T::MaximumBlockWeight::get()
+            0
         }
 
         /// Commitment constructor + Deposit constructor
         /// TODO: weight
-        /// TODO: AggregatorId が牽引する。
-        /// TODO: あとからadd_erc20_id() で関連する erc20 を追加.
         #[weight = 100_000]
         fn deploy(
             origin,
             aggregator_id: T::AccountId,
             erc20: T::AccountId,
-            // state_update_predicate: T::AccountId,
-            // exit_predicate: T::AccountId,
-            // exit_deposit_predicate: T::AccountId,
+            state_update_predicate: T::AccountId,
+            exit_predicate: T::AccountId,
+            exit_deposit_predicate: T::AccountId,
         ) {
             let sender = ensure_signed(origin)?;
             let plapps_hash = Self::generate_plapps_hash(
@@ -349,7 +307,7 @@ decl_module! {
         /// TODO: weight
         #[weight = 100_000]
         fn deposit(origin, plapps_id: T::AccountId,
-            amount: BalanceOf<T>, initial_state: PropertyOf<T>, gas_limit: Gas) {
+            amount: BalanceOf<T>, initial_state: PropertyOf<T>, gas_limit: Weight) {
             let _ = ensure_signed(origin)?;
             let total_deposited = Self::total_deposited(&plapps_id);
             ensure!(
@@ -405,22 +363,6 @@ decl_module! {
                 &deposited_range_id,
             )?;
         }
-
-        // TODO: ------- CheckpointDispute parts -------
-        /// claim checkpoint
-        ///  _propertyInputs: [encode(stateUpdate)]
-        ///  _witness: [encode(inclusionProof)]
-        ///  NOTE: might be possible to define concrete argument type but bytes[]
-        #[weight = 100_000]
-        fn checkpoint_claim(origin, plapps_id: T::AccountId, inputs: Vec<Vec<u8>>, witness: Vec<Vec<u8>>) {
-             ensure_signed(origin)?;
-            // validate inputs
-            Self::bare_checkpoint_claim(&plapps_id, &inputs, &witness)
-        }
-
-
-
-        // ------- ExitDispute parts -------
 
         /// finalizeCheckpoint
         /// - @param _checkpointProperty A property which is instance of checkpoint predicate
@@ -487,7 +429,7 @@ decl_module! {
 
 decl_error! {
     /// Error for the staking module.
-    pub enum Error for Module<T: Trait> {
+    pub enum Error for Module<T: Config> {
         /// Sender isn't valid aggregator.
         IsNotAggregator,
         /// blkNumber should be next block.
@@ -526,18 +468,10 @@ decl_error! {
         RangeMustBeSubrangeOfCheckpoint,
         /// StateUpdate.depositContractAddress must be this contract address
         DepositContractAddressMustBePlappsId,
-        /// inputs length does not match. expected 1
-        InputLengthDoesNotMatch,
-        /// witness length does not match. expected 1
-        WitnessLengthDoesNotMatch,
-        /// Decode error.
-        DecodeError,
-        /// Inclusion verification failed
-        InclusionVerificationFailed,
     }
 }
 
-fn migrate<T: Trait>() {
+fn migrate<T: Config>() {
     // TODO: When runtime upgrade, migrate stroage.
     // if let Some(current_era) = CurrentEra::get() {
     //     let history_depth = HistoryDepth::get();
@@ -548,9 +482,9 @@ fn migrate<T: Trait>() {
 }
 
 /// Public callable Plasma commitment module methods.
-impl<T: Trait> Module<T> {
+impl<T: Config> Module<T> {
     // Plasma Commitment parts ====
-    pub fn retrieve(plapps_id: &T::AccountId, block_number: T::BlockNumber) -> T::Hash {
+    pub fn retrieve(plapps_id: T::AccountId, block_number: T::BlockNumber) -> T::Hash {
         <Blocks<T>>::get(&plapps_id, &block_number)
     }
 
@@ -563,27 +497,27 @@ impl<T: Trait> Module<T> {
     /// - @param inclusion_proof The proof data to verify inclusion
     /// - @param block_number block number where the Merkle root is stored
     pub fn verify_inclusion(
-        plapps_id: &T::AccountId,
-        leaf: &T::Hash,
-        token_address: &T::AccountId,
-        range: &RangeOf<T>,
-        inclusion_proof: &InclusionProofOf<T>,
-        block_number: &T::BlockNumber,
+        plapps_id: T::AccountId,
+        leaf: T::Hash,
+        token_address: T::AccountId,
+        range: RangeOf<T>,
+        inclusion_proof: InclusionProofOf<T>,
+        block_number: T::BlockNumber,
     ) -> DispatchResultT<bool> {
-        let root = <Blocks<T>>::get(plapps_id, block_number);
-        Self::verify_inclusion_with_root(leaf, token_address, range, inclusion_proof, &root)
+        let root = <Blocks<T>>::get(&plapps_id, &block_number);
+        Self::verify_inclusion_with_root(leaf, token_address, range, inclusion_proof, root)
     }
 
     pub fn verify_inclusion_with_root(
-        leaf: &T::Hash,
-        token_address: &T::AccountId,
-        range: &RangeOf<T>,
-        inclusion_proof: &InclusionProofOf<T>,
-        root: &T::Hash,
+        leaf: T::Hash,
+        token_address: T::AccountId,
+        range: RangeOf<T>,
+        inclusion_proof: InclusionProofOf<T>,
+        root: T::Hash,
     ) -> DispatchResultT<bool> {
         // Calcurate the root of interval tree
         let (computed_root, implicit_end) = Self::compute_interval_tree_root(
-            leaf,
+            &leaf,
             &inclusion_proof.interval_inclusion_proof.leaf_index,
             &inclusion_proof.interval_inclusion_proof.leaf_position,
             &inclusion_proof.interval_inclusion_proof.siblings,
@@ -607,12 +541,12 @@ impl<T: Trait> Module<T> {
             token_address <= implicit_address,
             Error::<T>::AddressMustNotExceedTheImplicitAddress,
         );
-        Ok(computed_root == root)
+        return Ok(computed_root == root);
     }
 }
 
 /// Private(Helper) Plasma commitment module methods.
-impl<T: Trait> Module<T> {
+impl<T: Config> Module<T> {
     // Plasma Commitment Parts
     fn ensure_aggregator(sender: &T::AccountId, plapps_id: &T::AccountId) -> DispatchResult {
         ensure!(
@@ -733,7 +667,7 @@ impl<T: Trait> Module<T> {
 }
 
 /// Public callable Plasma deposit module methods.
-impl<T: Trait> Module<T> {
+impl<T: Config> Module<T> {
     pub fn bare_extend_deposited_ranges(plapps_id: &T::AccountId, amount: BalanceOf<T>) {
         let total_deposited = Self::total_deposited(plapps_id);
         let old_range = Self::deposited_ranges(plapps_id, &total_deposited);
@@ -902,7 +836,7 @@ impl<T: Trait> Module<T> {
 }
 
 /// Priavte(Helper) callable Plasma deposit module methods.
-impl<T: Trait> Module<T> {
+impl<T: Config> Module<T> {
     fn get_parent_of_address_tree_node(
         left: &T::Hash,
         left_address: &T::AccountId,
@@ -917,26 +851,30 @@ impl<T: Trait> Module<T> {
     }
 
     fn get_checkpoint_id(checkpoint: &CheckpointOf<T>) -> T::Hash {
-        <T as system::Trait>::Hashing::hash_of(checkpoint)
+        <T as system::Config>::Hashing::hash_of(checkpoint)
     }
 
     fn get_exit_id(exit: &PropertyOf<T>) -> T::Hash {
-        <T as system::Trait>::Hashing::hash_of(exit)
+        <T as system::Config>::Hashing::hash_of(exit)
+    }
+
+    fn is_subrange(subrange: &RangeOf<T>, surrounding_range: &RangeOf<T>) -> bool {
+        subrange.start >= surrounding_range.start && subrange.end <= surrounding_range.end
     }
 
     fn generate_plapps_hash(
-        _aggregator_id: &T::AccountId,
-        _erc20: &T::AccountId,
-        _state_update_predicate: &T::AccountId,
-        _exit_predicate: &T::AccountId,
-        _exit_deposit_predicate: &T::AccountId,
+        aggregator_id: &T::AccountId,
+        erc20: &T::AccountId,
+        state_update_predicate: &T::AccountId,
+        exit_predicate: &T::AccountId,
+        exit_deposit_predicate: &T::AccountId,
     ) -> T::Hash {
         T::Hashing::hash_of(&(
-            T::Hashing::hash_of(&_aggregator_id),
-            T::Hashing::hash_of(&_erc20),
-            T::Hashing::hash_of(&_state_update_predicate),
-            T::Hashing::hash_of(&_exit_predicate),
-            T::Hashing::hash_of(&_exit_deposit_predicate),
+            T::Hashing::hash_of(&aggregator_id),
+            T::Hashing::hash_of(&erc20),
+            T::Hashing::hash_of(&state_update_predicate),
+            T::Hashing::hash_of(&exit_predicate),
+            T::Hashing::hash_of(&exit_deposit_predicate),
         ))
     }
 }
