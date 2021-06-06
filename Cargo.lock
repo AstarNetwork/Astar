@@ -5092,7 +5092,7 @@ dependencies = [
 
 [[package]]
 name = "plasm-runtime"
-version = "1.9.3"
+version = "1.10.0"
 dependencies = [
  "evm",
  "fp-rpc",
@@ -5119,9 +5119,11 @@ dependencies = [
  "pallet-indices",
  "pallet-nicks",
  "pallet-offences",
+ "pallet-ovm",
  "pallet-plasm-operator",
  "pallet-plasm-rewards",
  "pallet-plasm-validator",
+ "pallet-plasma",
  "pallet-randomness-collective-flip",
  "pallet-scheduler",
  "pallet-session",
