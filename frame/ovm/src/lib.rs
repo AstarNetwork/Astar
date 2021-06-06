@@ -27,7 +27,7 @@ use frame_support::{
 use frame_system::{self as system, ensure_signed};
 
 use ovmi::executor::ExecError;
-pub type ExecResult<T> = Result<Vec<u8>, ExecError<<T as frame_system::Trait>::AccountId>>;
+pub type ExecResult<T> = Result<Vec<u8>, ExecError<<T as system::Config>::AccountId>>;
 
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
@@ -86,13 +86,13 @@ pub enum Decision {
 #[derive(Encode, Decode, RuntimeDebug, PartialEq, Eq)]
 pub struct ChallengeGame<Hash, BlockNumber> {
     /// Property of challenging targets.
-    pub property_hash: Hash,
+    property_hash: Hash,
     /// challenges inputs
-    pub challenges: Vec<Hash>,
+    challenges: Vec<Hash>,
     /// the result of this challenge.
-    pub decision: Decision,
+    decision: Decision,
     /// the block number when this was issued.
-    pub created_block: BlockNumber,
+    created_block: BlockNumber,
 }
 
 /// Definition of the cost schedule and other parameterizations for optimistic virtual machine.
@@ -124,14 +124,14 @@ impl Default for Schedule {
 ///
 /// We assume that these values can't be changed in the
 /// course of transaction execution.
-pub struct Config {
+pub struct OvmConfig {
     pub schedule: Schedule,
     pub max_depth: u32, // about down 30.
 }
 
-impl Config {
-    fn preload<T: Trait>() -> Config {
-        Config {
+impl OvmConfig {
+    fn preload<T: Config>() -> OvmConfig {
+        OvmConfig {
             schedule: <Module<T>>::current_schedule(),
             max_depth: T::MaxDepth::get(),
         }
@@ -155,8 +155,8 @@ pub struct AtomicPredicateIdConfig<AccountId, Hash> {
     pub secp256k1: Hash,
 }
 
-pub struct SimpleAddressDeterminer<T: Trait>(PhantomData<T>);
-impl<T: Trait> PredicateAddressFor<T::Hash, T::AccountId> for SimpleAddressDeterminer<T>
+pub struct SimpleAddressDeterminer<T: Config>(PhantomData<T>);
+impl<T: Config> PredicateAddressFor<T::Hash, T::AccountId> for SimpleAddressDeterminer<T>
 where
     T::AccountId: UncheckedFrom<T::Hash> + AsRef<[u8]>,
 {
@@ -176,14 +176,14 @@ where
     }
 }
 
-type PredicateHash<T> = <T as system::Trait>::Hash;
+type PredicateHash<T> = <T as system::Config>::Hash;
 type ChallengeGameOf<T> =
-    ChallengeGame<<T as system::Trait>::Hash, <T as system::Trait>::BlockNumber>;
-pub type PropertyOf<T> = Property<<T as system::Trait>::AccountId>;
-type AccountIdOf<T> = <T as frame_system::Trait>::AccountId;
-type PredicateContractOf<T> = PredicateContract<<T as frame_system::Trait>::Hash>;
+    ChallengeGame<<T as system::Config>::Hash, <T as system::Config>::BlockNumber>;
+pub type PropertyOf<T> = Property<<T as system::Config>::AccountId>;
+type AccountIdOf<T> = <T as system::Config>::AccountId;
+type PredicateContractOf<T> = PredicateContract<<T as system::Config>::Hash>;
 
-pub trait Trait: system::Trait {
+pub trait Config: system::Config {
     /// The maximum nesting level of a call/instantiate stack.
     type MaxDepth: Get<u32>;
 
@@ -203,11 +203,11 @@ pub trait Trait: system::Trait {
     type AtomicPredicateIdConfig: Get<AtomicPredicateIdConfig<Self::AccountId, Self::Hash>>;
 
     /// The overarching event type.
-    type Event: From<Event<Self>> + Into<<Self as system::Trait>::Event>;
+    type Event: From<Event<Self>> + Into<<Self as system::Config>::Event>;
 }
 
 decl_storage! {
-    trait Store for Module<T: Trait> as Ovm {
+    trait Store for Module<T: Config> as Ovm {
         /// Current cost schedule for contracts.
         pub CurrentSchedule get(fn current_schedule) config(): Schedule = Schedule::default();
 
@@ -230,10 +230,10 @@ decl_storage! {
 decl_event!(
     pub enum Event<T>
     where
-        AccountId = <T as system::Trait>::AccountId,
+        AccountId = <T as system::Config>::AccountId,
         Property = PropertyOf<T>,
-        Hash = <T as system::Trait>::Hash,
-        BlockNumber = <T as system::Trait>::BlockNumber,
+        Hash = <T as system::Config>::Hash,
+        BlockNumber = <T as system::Config>::BlockNumber,
     {
         /// (predicate_address: AccountId);
         PutPredicate(Hash),
@@ -252,7 +252,7 @@ decl_event!(
 
 decl_error! {
     /// Error for the staking module.
-    pub enum Error for Module<T: Trait> {
+    pub enum Error for Module<T: Config> {
         /// Does not exist game
         DoesNotExistGame,
         /// setPredicateDecision must be called from predicate
@@ -279,10 +279,10 @@ decl_error! {
 }
 
 decl_module! {
-    pub struct Module<T: Trait> for enum Call where origin: T::Origin {
+    pub struct Module<T: Config> for enum Call where origin: T::Origin {
         /// During the dispute period defined here, the user can challenge.
         /// If nothing is found, the state is determined after the dispute period.
-        const DisputePeriod: <T as system::Trait>::BlockNumber = T::DisputePeriod::get();
+        const DisputePeriod: <T as system::Config>::BlockNumber = T::DisputePeriod::get();
 
         type Error = Error<T>;
 
@@ -291,7 +291,7 @@ decl_module! {
         fn on_runtime_upgrade() -> Weight {
             migrate::<T>();
             // TODO: weight
-            T::MaximumBlockWeight::get()
+            0
         }
 
         /// Stores the given binary Wasm code into the chain's storage and returns its `codehash`.
@@ -505,7 +505,7 @@ decl_module! {
     }
 }
 
-fn migrate<T: Trait>() {
+fn migrate<T: Config>() {
     // TODO: When runtime upgrade, migrate stroage.
     // if let Some(current_era) = CurrentEra::get() {
     //     let history_depth = HistoryDepth::get();
@@ -514,7 +514,7 @@ fn migrate<T: Trait>() {
     //     }
 }
 
-impl<T: Trait> Module<T> {
+impl<T: Config> Module<T> {
     fn calc_code_put_costs(code: &Vec<u8>) -> Weight {
         <Module<T>>::current_schedule()
             .put_code_per_byte_cost
@@ -538,7 +538,7 @@ impl<T: Trait> Module<T> {
         origin: T::AccountId,
         func: impl FnOnce(&mut ExecutionContext<T>) -> ExecResult<T>,
     ) -> ExecResult<T> {
-        let cfg = Rc::new(Config::preload::<T>());
+        let cfg = Rc::new(OvmConfig::preload::<T>());
         let schedule = Rc::new(cfg.schedule.clone());
         let vm = Rc::new(PredicateOvm::new(Rc::clone(&schedule)));
         let loader = Rc::new(PredicateLoader::new(Rc::clone(&schedule)));
@@ -590,14 +590,14 @@ impl<T: Trait> Module<T> {
     /// check if game of given id is already started.
     pub fn started(id: &T::Hash) -> bool {
         if let Some(game) = Self::games(id) {
-            game.created_block != <T as system::Trait>::BlockNumber::zero()
+            game.created_block != <T as system::Config>::BlockNumber::zero()
         } else {
             false
         }
     }
 
     // ======= helper =======
-    pub fn block_number() -> <T as system::Trait>::BlockNumber {
+    pub fn block_number() -> <T as system::Config>::BlockNumber {
         <system::Module<T>>::block_number()
     }
 

@@ -4355,6 +4355,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-ovm-rpc-runtime-api"
+version = "0.1.0"
+dependencies = [
+ "parity-scale-codec",
+ "sp-api",
+ "sp-std",
+]
+
+[[package]]
 name = "pallet-plasm-operator"
 version = "1.10.0"
 dependencies = [
