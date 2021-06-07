@@ -10,6 +10,10 @@ members = [
     "frame/plasm-validator",
     "frame/plasm-operator",
     "frame/custom-signatures",
+    "frame/ovm",
+    "frame/ovm/rpc/runtime-api",
+    "frame/plasma",
+    "frame/plasma/rpc/runtime-api",
 ]
 
 exclude = [

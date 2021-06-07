@@ -4012,6 +4012,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "77af24da69f9d9341038eba93a073b1fdaaa1b788221b00a69bce9e762cb32de"
 
 [[package]]
+name = "ovmi"
+version = "0.1.0"
+dependencies = [
+ "hash-db",
+ "parity-scale-codec",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "owning_ref"
 version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4359,6 +4369,34 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-ovm"
+version = "1.7.0"
+dependencies = [
+ "frame-support",
+ "frame-system",
+ "hex-literal",
+ "lazy_static",
+ "ovmi",
+ "pallet-balances",
+ "parity-scale-codec",
+ "serde",
+ "sp-arithmetic",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
+name = "pallet-ovm-rpc-runtime-api"
+version = "0.1.0"
+dependencies = [
+ "parity-scale-codec",
+ "sp-api",
+ "sp-std",
+]
+
+[[package]]
 name = "pallet-plasm-operator"
 version = "1.10.0"
 dependencies = [
@@ -4429,6 +4467,39 @@ dependencies = [
  "sp-io",
  "sp-runtime",
  "sp-staking",
+ "sp-std",
+]
+
+[[package]]
+name = "pallet-plasma"
+version = "1.7.0"
+dependencies = [
+ "frame-support",
+ "frame-system",
+ "hex-literal",
+ "lazy_static",
+ "ovmi",
+ "pallet-balances",
+ "pallet-contracts",
+ "pallet-ovm",
+ "pallet-randomness-collective-flip",
+ "pallet-timestamp",
+ "pallet-transaction-payment",
+ "parity-scale-codec",
+ "serde",
+ "sp-arithmetic",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
+name = "pallet-plasma-rpc-runtime-api"
+version = "0.1.0"
+dependencies = [
+ "parity-scale-codec",
+ "sp-api",
  "sp-std",
 ]
 
@@ -5069,7 +5140,7 @@ dependencies = [
 
 [[package]]
 name = "plasm-runtime"
-version = "1.9.3"
+version = "1.10.0"
 dependencies = [
  "evm",
  "fp-rpc",
@@ -5097,9 +5168,11 @@ dependencies = [
  "pallet-indices",
  "pallet-nicks",
  "pallet-offences",
+ "pallet-ovm",
  "pallet-plasm-operator",
  "pallet-plasm-rewards",
  "pallet-plasm-validator",
+ "pallet-plasma",
  "pallet-randomness-collective-flip",
  "pallet-scheduler",
  "pallet-session",

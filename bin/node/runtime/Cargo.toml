@@ -1,6 +1,6 @@
 [package]
 name = "plasm-runtime"
-version = "1.9.3"
+version = "1.10.0"
 authors = ["Stake Technologies <devops@stake.co.jp>"]
 edition = "2018"
 build = "build.rs"
@@ -33,6 +33,8 @@ sp-session = { version = "3.0.0", default-features = false }
 pallet-plasm-operator = { path = "../../../frame/plasm-operator", default-features = false }
 pallet-plasm-rewards = { path = "../../../frame/plasm-rewards", default-features = false }
 pallet-plasm-validator = { path = "../../../frame/plasm-validator", default-features = false }
+pallet-ovm = { path = "../../../frame/ovm", default-features = false }
+pallet-plasma = { path = "../../../frame/plasma", default-features = false }
 pallet-custom-signatures = { path = "../../../frame/custom-signatures", default-features = false }
 pallet-evm = { path = "../../../vendor/frontier/frame/evm", default-features = false }
 pallet-evm-precompile-bn128 = { path = "../../../vendor/frontier/frame/evm/precompile/bn128", default-features = false }
@@ -125,5 +127,7 @@ std = [
     "pallet-transaction-payment-rpc-runtime-api/std",
     "pallet-utility/std",
     "pallet-offences/std",
+    "pallet-ovm/std",
+    "pallet-plasma/std",
     "pallet-vesting/std",
 ]
