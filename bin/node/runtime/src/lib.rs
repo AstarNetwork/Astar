@@ -454,6 +454,9 @@ impl pallet_plasma::Config for Runtime {
     type MaximumTokenAddress = MaximumTokenAddress;
     type PlasmaHashing = Keccak256;
     type Event = Event;
+}
+
+parameter_types! {
     pub const MinVestedTransfer: Balance = 1 * MILLIPLM;
 }
 
