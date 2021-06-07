@@ -57,8 +57,8 @@ impl Default for Releases {
 }
 
 /// Information regarding the active era (era in used in session).
-#[cfg_attr(feature = "std", derive(Debug, Eq))]
-#[derive(Clone, Encode, Decode, PartialEq)]
+#[cfg_attr(feature = "std", derive(Eq))]
+#[derive(Clone, Encode, Decode, PartialEq, RuntimeDebug)]
 pub struct ActiveEraInfo {
     /// Index of era.
     pub index: EraIndex,
@@ -202,12 +202,14 @@ pub enum Error<T> {
         fn on_finalize(_n: BlockNumberFor<T>) {
             // Set the start of the first era.
 			if let Some(mut active_era) = Self::active_era() {
+                debug::info!("on_finalized, {:?}", active_era);
                 // if the era is untreated
 				if active_era.start.is_none() {
 					let now_as_millis_u64 = T::UnixTime::now().as_millis().saturated_into::<u64>();
 					active_era.start = Some(now_as_millis_u64);
                     Self::end_era(active_era.clone());
-					ActiveEra::<T>::put(Some(active_era));
+					ActiveEra::<T>::put(Some(&active_era));
+                    debug::info!("on_finalized, start=None {:?}", active_era);
 				}
 			}
         }
@@ -316,6 +318,7 @@ fn migrate() {
 
         if let Some(current_era) = Self::current_era() {
             // Initial era has been set.
+            debug::info!("plasm_new_session current_era={:?}", current_era);
 
             let current_era_start_session_index = Self::eras_start_session_index(current_era)
                 .unwrap_or_else(|| {
@@ -343,6 +346,7 @@ fn migrate() {
 
     /// Start a session potentially starting an era.
     pub fn plasm_start_session(start_session: sp_staking::SessionIndex) {
+        debug::info!("plasm_start_session start_session={:?}", start_session);
         let next_active_era = Self::active_era().map(|e| e.index + 1).unwrap_or(0);
         if let Some(next_active_era_start_session_index) =
             Self::eras_start_session_index(next_active_era)
@@ -357,31 +361,35 @@ fn migrate() {
             }
         }
     }
-
+    
     /// End a session potentially ending an era.
     pub fn plasm_end_session(session_index: sp_staking::SessionIndex) {
         if let Some(active_era) = Self::active_era() {
+            debug::info!("plasm_end_session session_index={:?}, {:?}", session_index, active_era);
             if let Some(next_active_era_start_session_index) =
                 Self::eras_start_session_index(active_era.index + 1)
             {
+                debug::info!("plasm_end_session session_index={:?}, next={:?}", session_index, next_active_era_start_session_index);
                 if next_active_era_start_session_index == session_index + 1 {
                     Self::end_era(active_era);
                 }
             }
         }
     }
-
+    
     /// * Increment `active_era.index`,
     /// * reset `active_era.start`,
     /// * update `BondedEras` and apply slashes.
     pub fn start_era(_start_session: sp_staking::SessionIndex) {
+        debug::info!("start_era _start_session={:?}", _start_session);
         let _active_era = ActiveEra::<T>::mutate(|active_era| {
-			let new_index = active_era.as_ref().map(|info| info.index + 1).unwrap_or(0);
+            let new_index = active_era.as_ref().map(|info| info.index + 1).unwrap_or(0);
 			*active_era = Some(ActiveEraInfo {
-				index: new_index,
+                index: new_index,
 				// Set new active era start in next `on_finalize`. To guarantee usage of `Time`
 				start: None,
 			});
+            debug::info!("start_era {:?}", active_era);
 			new_index
 		});
     }
@@ -389,14 +397,17 @@ fn migrate() {
     /// Compute payout for era.
     pub fn end_era(active_era: ActiveEraInfo) {
         // Note: active_era_start can be None if end era is called during genesis config.
+        debug::info!("end_era {:?}", active_era);
         if let Some(active_era_start) = active_era.start {
+            debug::info!("end_era start {:?}", active_era.start);
             // The set of total amount of staking.
 			let now_as_millis_u64 = T::UnixTime::now().as_millis().saturated_into::<u64>();
-
+            
 			let era_duration = now_as_millis_u64 - active_era_start;
             let for_security = Self::validator_count();
-
+            
             if era_duration != 0 {
+                debug::info!("end_era era_duration {:?}", era_duration);
                 let total_payout = T::Currency::total_issuance();
                 let (for_security_reward, for_dapps_rewards) = Self::compute_total_rewards(
                     total_payout,
@@ -415,6 +426,7 @@ fn migrate() {
     pub fn new_era(start_session_index: sp_staking::SessionIndex) -> Option<Vec<T::AccountId>> {
         // Increment or set current era.
         let current_era = CurrentEra::<T>::get().map(|s| s + 1).unwrap_or(0);
+        debug::info!("💸 new_era current_era={:?}, start_session_index={:?}", current_era, start_session_index);
         CurrentEra::<T>::put(Some(current_era.clone()));
         ErasStartSessionIndex::<T>::insert(&current_era, Some(&start_session_index));
 
@@ -447,6 +459,8 @@ fn migrate() {
         let number_of_validator_clone: u128 = number_of_validator.clone().into();
         let era_duration_clone: u128 = era_duration.clone().into();
         let number_of_validator: u128 = number_of_validator.into();
+        debug::info!("💸 compute_total_rewards era_duration={:?}", era_duration);
+
         let portion = if TARGETS_NUMBER < number_of_validator_clone {
             // TotalForSecurityRewards
             // = TotalAmountOfIssue * I_0% * (EraDuration / 1year)

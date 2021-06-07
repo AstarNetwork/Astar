@@ -19,7 +19,6 @@ pub type AccountId = u64;
 pub type Balance = u64;
 type Block = frame_system::mocking::MockBlock<Test>;
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
-use frame_support::dispatch::{DispatchError};
 
 pub const ALICE_STASH: u64 = 1;
 
@@ -159,11 +158,13 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
         balances: vec![
             (1, 1_000_000_000_000_000_000),
             (2, 1_000_000_000_000_000_000),
+            (3, 1_000_000_000_000_000_000),
+            (100, 1_000_000_000_000_000_000),
         ],
     }
     .assimilate_storage(&mut storage);
 
-    let validators = vec![1, 2];
+    let validators = vec![1, 2, 3, 100];
 
     let _ = GenesisConfig {
         ..Default::default()
@@ -183,26 +184,133 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
     ext}
 
 
-#[test]
-fn root_calls_fails_for_user() {
-    new_test_ext().execute_with(|| {
-        let res = PlasmRewards::force_no_eras(Origin::signed(0));
-        assert_eq!(
-            res.or_else(|i| Err(i.error)),
-            Err(DispatchError::BadOrigin)
-        );
+// #[test]
+// fn root_calls_fails_for_user() {
+//     new_test_ext().execute_with(|| {
+//         let res = PlasmRewards::force_no_eras(Origin::signed(0));
+//         assert_eq!(
+//             res.or_else(|i| Err(i.error)),
+//             Err(DispatchError::BadOrigin)
+//         );
 
-        let res = PlasmRewards::force_new_era(Origin::signed(0));
-        assert_eq!(
-            res.or_else(|i| Err(i.error)),
-            Err(DispatchError::BadOrigin)
-        );
+//         let res = PlasmRewards::force_new_era(Origin::signed(0));
+//         assert_eq!(
+//             res.or_else(|i| Err(i.error)),
+//             Err(DispatchError::BadOrigin)
+//         );
         
-        let res = PlasmRewards::force_new_era_always(Origin::signed(0));
+//         let res = PlasmRewards::force_new_era_always(Origin::signed(0));
+//         assert_eq!(
+//             res.or_else(|i| Err(i.error)),
+//             Err(DispatchError::BadOrigin)
+//         );   
+//     })
+// }
+
+#[test]
+fn normal_incremental_era() {
+    new_test_ext().execute_with(|| {
+        assert_eq!(System::block_number(), 1);
+        assert_eq!(PlasmRewards::current_era().unwrap(), 0);
         assert_eq!(
-            res.or_else(|i| Err(i.error)),
-            Err(DispatchError::BadOrigin)
-        );   
+            PlasmRewards::active_era().unwrap(),
+            ActiveEraInfo {
+                index: 0,
+                start: None,
+            }
+        );
+        assert_eq!(PlasmRewards::force_era(), Forcing::NotForcing);
+        assert_eq!(PlasmRewards::eras_start_session_index(0).unwrap(), 0);
+        assert_eq!(PlasmRewards::for_dapps_era_reward(0), None);
+        assert_eq!(PlasmRewards::for_security_era_reward(0), None);
+        assert_eq!(Session::validators(), vec![1, 2, 3, 100]);
+        assert_eq!(Session::current_index(), 0);
+        
+        advance_session();
+
+        assert_eq!(PlasmRewards::current_era().unwrap(), 0);
+        assert_eq!(
+            PlasmRewards::active_era().unwrap(),
+            ActiveEraInfo {
+                index: 0,
+                start: Some(PER_SESSION),
+            }
+        );
+        assert_eq!(PlasmRewards::force_era(), Forcing::NotForcing);
+        assert_eq!(PlasmRewards::eras_start_session_index(0).unwrap(), 0);
+        assert_eq!(PlasmRewards::for_dapps_era_reward(0), None);
+        assert_eq!(PlasmRewards::for_security_era_reward(0), None);
+        assert_eq!(Session::validators(), vec![1, 2, 3, 100]);
+        assert_eq!(Session::current_index(), 1);
+
+        // 2~9-th session
+        for i in 2..10 {
+            advance_session();
+            match i {
+                9 => assert_eq!(PlasmRewards::current_era().unwrap(), 1),
+                _ => assert_eq!(PlasmRewards::current_era().unwrap(), 0),
+            }
+            assert_eq!(
+                PlasmRewards::active_era().unwrap(),
+                ActiveEraInfo {
+                    index: 0,
+                    start: Some(PER_SESSION),
+                }
+            );
+            assert_eq!(PlasmRewards::force_era(), Forcing::NotForcing);
+            assert_eq!(PlasmRewards::for_dapps_era_reward(0), None);
+            assert_eq!(PlasmRewards::for_security_era_reward(0), None);
+            assert_eq!(Session::validators(), vec![1, 2, 3, 100]);
+            assert_eq!(Session::current_index(), i);
+        }
+        
+        // 10~19-th session
+        assert_eq!(PlasmRewards::eras_start_session_index(1).unwrap(), 10);
+        for i in 10..20 {
+            advance_session();
+            match i {
+                19 => assert_eq!(PlasmRewards::current_era().unwrap(), 2),
+                _ => assert_eq!(PlasmRewards::current_era().unwrap(), 1),
+            }
+            assert_eq!(
+                PlasmRewards::active_era().unwrap(),
+                ActiveEraInfo {
+                    index: 1,
+                    start: Some(10 * PER_SESSION),
+                }
+            );
+            assert_eq!(PlasmRewards::force_era(), Forcing::NotForcing);
+            assert_eq!(PlasmRewards::eras_start_session_index(1).unwrap(), 10);
+            assert_eq!(PlasmRewards::for_security_era_reward(0).unwrap(), 0);
+            assert_eq!(PlasmRewards::for_dapps_era_reward(0).unwrap(), 0);
+            assert_eq!(Session::current_index(), i);
+            assert_eq!(Session::validators(), vec![1, 2, 3, 101]);
+        }
+
+        // 20~29-th session
+        for i in 20..30 {
+            advance_session();
+            match i {
+                29 => assert_eq!(PlasmRewards::current_era().unwrap(), 3),
+                _ => assert_eq!(PlasmRewards::current_era().unwrap(), 2),
+            }
+            assert_eq!(
+                PlasmRewards::active_era().unwrap(),
+                ActiveEraInfo {
+                    index: 2,
+                    start: Some(20 * PER_SESSION),
+                }
+            );
+            assert_eq!(PlasmRewards::force_era(), Forcing::NotForcing);
+            assert_eq!(PlasmRewards::eras_start_session_index(2).unwrap(), 20);
+            assert_eq!(
+                PlasmRewards::for_security_era_reward(1).unwrap(),
+                3168333332066
+            );
+            assert_eq!(PlasmRewards::for_dapps_era_reward(1).unwrap(), 633666667934);
+            assert_eq!(Session::current_index(), i);
+            assert_eq!(Session::validators(), vec![1, 2, 3, 102]);
+        }
     })
 }
 
@@ -217,8 +325,9 @@ pub fn advance_session() {
     // on initialize
     Timestamp::set_timestamp(now_time + PER_SESSION);
     Session::rotate_session();
-    assert_eq!(Session::current_index(), (next / Period::get()) as u32);
-
+    eprintln!("Period={:?}", Period::get());
+    assert_eq!(Session::current_index(), ((next - 1) / Period::get()) as u32);
     // on finalize
     PlasmRewards::on_finalize(next);
+    eprintln!("Advanced to block_num={:?}, session={:?}, {:?}",next , Session::current_index(), PlasmRewards::active_era().unwrap());
 }
