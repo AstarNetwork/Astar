@@ -1,21 +1,14 @@
 [workspace]
 members = [
+    "bin/node",
     "bin/node/cli",
     "bin/node/rpc",
     "bin/node/runtime",
     "bin/node/primitives",
-    "frame/operator",
-    "frame/trading",
-    "frame/dapps-staking",
-    "frame/plasm-rewards",
-    "frame/plasm-lockdrop",
-    "frame/plasm-validator",
-    "frame/ovm",
-    "frame/ovm/rpc/runtime-api",
-    "frame/plasma",
-    "frame/plasma/rpc/runtime-api",
-    "ovmi/lib",
-    "ovmi/cli",
+    "frame/plasm-staking-rewards",
+    "frame/plasm-support",
+    "frame/plasm-operator",
+    "frame/custom-signatures",
 ]
 
 exclude = [
@@ -26,3 +19,11 @@ exclude = [
 [profile.release]
 # Plasm runtime requires unwinding.
 panic = "unwind"
+
+[patch.'https://github.com/paritytech/substrate']
+sc-network = "0.9.0"
+sc-finality-grandpa = "0.9.0"
+sp-runtime = "3.0.0"
+sp-blockchain = "3.0.0"
+sc-client-api = "3.0.0"
+sc-service = "0.9.0"

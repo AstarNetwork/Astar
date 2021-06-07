@@ -24,15 +24,15 @@ RUN apt-get update && \
 
 # add plasm-node binary to docker image
 WORKDIR /opt
-COPY ./target-debian/release/plasm-node /opt/plasm-node
+COPY ./target-debian/release/plasm /opt/plasm
 
 USER plasm
 
 # check if executable works in this container
-RUN /opt/plasm-node --version
+RUN /opt/plasm --version
 
 VOLUME ["/data"]
 
 EXPOSE 30333 9933 9944
 
-ENTRYPOINT ["/opt/plasm-node"]
+ENTRYPOINT ["/opt/plasm"]

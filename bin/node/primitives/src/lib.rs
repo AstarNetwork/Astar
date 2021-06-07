@@ -3,11 +3,16 @@
 #![warn(missing_docs)]
 #![cfg_attr(not(feature = "std"), no_std)]
 
+mod traits;
 use sp_runtime::{
     generic,
     traits::{BlakeTwo256, IdentifyAccount, Verify},
     MultiSignature, OpaqueExtrinsic,
 };
+use codec::{Encode, Decode};
+use sp_runtime::{RuntimeDebug};
+#[cfg(feature = "std")]
+use sp_runtime::{Serialize, Deserialize};
 
 /// An index to a block.
 pub type BlockNumber = u32;
@@ -47,6 +52,8 @@ pub type Header = generic::Header<BlockNumber, BlakeTwo256>;
 pub type Block = generic::Block<Header, OpaqueExtrinsic>;
 /// Block ID.
 pub type BlockId = generic::BlockId<Block>;
+// Era Index.
+pub type EraIndex = u32;
 
 /// App-specific crypto used for reporting equivocation/misbehavior in BABE and
 /// GRANDPA. Any rewards for misbehavior reporting will be paid out to this
@@ -78,3 +85,35 @@ pub mod report {
         type GenericPublic = sp_core::sr25519::Public;
     }
 }
+
+/// Mode of era-forcing.
+#[derive(Copy, Clone, PartialEq, Eq, Encode, Decode, RuntimeDebug)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+pub enum Forcing {
+	/// Not forcing anything - just let whatever happen.
+	NotForcing,
+	/// Force a new era, then reset to `NotForcing` as soon as it is done.
+	ForceNew,
+	/// Avoid a new era indefinitely.
+	ForceNone,
+	/// Force a new era at the end of all sessions indefinitely.
+	ForceAlways,
+}
+impl Default for Forcing {
+	fn default() -> Self { Forcing::NotForcing }
+}
+
+use sp_runtime::Percent;
+/// Information regarding the active era (era in used in session).
+#[cfg_attr(feature = "std", derive(Debug, Eq))]
+#[derive(Clone, Encode, Decode, PartialEq)]
+pub struct ActiveEraInfo {
+    /// Index of era.
+    pub index: EraIndex,
+    /// Moment of start
+    ///
+    /// Start can be none if start hasn't been set for the era yet,
+    /// Start is set on the first on_finalize of the era to guarantee usage of `Time`.
+    pub start: Option<u64>,
+}
+
