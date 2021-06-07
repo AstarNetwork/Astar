@@ -280,7 +280,7 @@ pub mod benchmarking;
 pub mod slashing;
 pub mod offchain_election;
 pub mod inflation;
-use plasm_primitives::ForSecurityEraRewardFinder;
+use plasm_primitives::traits::ForSecurityEraRewardFinder;
 pub use plasm_primitives::Forcing;
 
 pub mod weights;

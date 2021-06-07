@@ -1,4 +1,4 @@
-
+use crate::*;
 /// Get the era for validator and dapps staking module.
 pub trait EraFinder<EraIndex, SessionIndex> {
     /// The current era index.

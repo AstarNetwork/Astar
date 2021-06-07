@@ -20,10 +20,11 @@ pub mod traits;
 
 use sp_std::prelude::*;
 use pallet_session::SessionManager;
-pub use crate::traits::{EraFinder, ForSecurityEraRewardFinder, ForDappsEraRewardFinder, HistoryDepthFinder};
+pub use crate::traits::{EraFinder, ForDappsEraRewardFinder, HistoryDepthFinder};
 use sp_runtime::Percent;
 pub use pallet::*;
 use pallet_plasm_node_staking as staking;
+use plasm_primitives::traits::ForSecurityEraRewardFinder;
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -510,7 +511,7 @@ impl<T: Config + pallet::Config> EraFinder<EraIndex, SessionIndex> for Pallet<T>
 }
 
 /// Get the security rewards for validator module.
-impl<T: Config + pallet::Config> plasm_primitives::ForSecurityEraRewardFinder<BalanceOf<T>> for Pallet<T> {
+impl<T: Config + pallet::Config> ForSecurityEraRewardFinder<BalanceOf<T>> for Pallet<T> {
     fn get(era: &EraIndex) -> Option<BalanceOf<T>> {
         Self::for_security_era_reward(&era)
     }

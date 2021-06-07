@@ -3,11 +3,11 @@
 #![warn(missing_docs)]
 #![cfg_attr(not(feature = "std"), no_std)]
 
-mod traits;
+pub mod traits;
 use sp_runtime::{
     generic,
     traits::{BlakeTwo256, IdentifyAccount, Verify},
-    MultiSignature, OpaqueExtrinsic,
+    MultiSignature, OpaqueExtrinsic, Percent
 };
 use codec::{Encode, Decode};
 use sp_runtime::{RuntimeDebug};
@@ -103,7 +103,6 @@ impl Default for Forcing {
 	fn default() -> Self { Forcing::NotForcing }
 }
 
-use sp_runtime::Percent;
 /// Information regarding the active era (era in used in session).
 #[cfg_attr(feature = "std", derive(Debug, Eq))]
 #[derive(Clone, Encode, Decode, PartialEq)]
