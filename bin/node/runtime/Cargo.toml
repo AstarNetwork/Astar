@@ -40,6 +40,7 @@ pallet-evm = { path = "../../../vendor/frontier/frame/evm", default-features = f
 pallet-evm-precompile-bn128 = { path = "../../../vendor/frontier/frame/evm/precompile/bn128", default-features = false }
 pallet-evm-precompile-simple = { path = "../../../vendor/frontier/frame/evm/precompile/simple", default-features = false }
 pallet-evm-precompile-modexp = { path = "../../../vendor/frontier/frame/evm/precompile/modexp", default-features = false }
+pallet-evm-precompile-dispatch = { path = "../../../vendor/frontier/frame/evm/precompile/dispatch", default-features = false }
 frame-executive = { version = "3.0.0", default-features = false }
 pallet-authorship = { version = "3.0.0", default-features = false }
 pallet-babe = { version = "3.0.0", default-features = false }
@@ -63,6 +64,7 @@ pallet-timestamp = { version = "3.0.0", default-features = false }
 pallet-transaction-payment = { version = "3.0.0", default-features = false }
 pallet-transaction-payment-rpc-runtime-api = { version = "3.0.0", default-features = false }
 pallet-utility = { version = "3.0.0", default-features = false }
+pallet-vesting = { version = "3.0.0", default-features = false }
 fp-rpc = { path = "../../../vendor/frontier/primitives/rpc", default-features = false }
 pallet-ethereum = { path = "../../../vendor/frontier/frame/ethereum", default-features = false }
 
@@ -106,6 +108,7 @@ std = [
     "pallet-evm-precompile-bn128/std",
     "pallet-evm-precompile-simple/std",
     "pallet-evm-precompile-modexp/std",
+    "pallet-evm-precompile-dispatch/std",
     "pallet-grandpa/std",
     "pallet-indices/std",
     "pallet-im-online/std",
@@ -126,4 +129,5 @@ std = [
     "pallet-offences/std",
     "pallet-ovm/std",
     "pallet-plasma/std",
+    "pallet-vesting/std",
 ]

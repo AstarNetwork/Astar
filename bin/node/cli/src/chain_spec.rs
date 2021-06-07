@@ -7,7 +7,7 @@ use plasm_runtime::Block;
 use plasm_runtime::{
     BabeConfig, BalancesConfig, ContractsConfig, EVMConfig, EthereumConfig, GenesisConfig,
     GrandpaConfig, ImOnlineConfig, IndicesConfig, PlasmRewardsConfig, PlasmValidatorConfig,
-    SessionConfig, SessionKeys, SudoConfig, SystemConfig, WASM_BINARY,
+    SessionConfig, SessionKeys, SudoConfig, SystemConfig, VestingConfig, WASM_BINARY,
 };
 use sc_chain_spec::ChainSpecExtension;
 use sc_service::ChainType;
@@ -132,6 +132,7 @@ fn make_genesis(
             changes_trie_config: Default::default(),
         }),
         pallet_balances: Some(BalancesConfig { balances }),
+        pallet_vesting: Some(VestingConfig { vesting: vec![] }),
         pallet_indices: Some(IndicesConfig { indices: vec![] }),
         pallet_plasm_rewards: Some(PlasmRewardsConfig {
             ..Default::default()
