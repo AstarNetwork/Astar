@@ -20,7 +20,7 @@ pub use sp_core::{
 };
 pub use sp_runtime::{
     testing::{Header, UintAuthorityId},
-    traits::{BlakeTwo256, Hash, IdentifyAccount, IdentityLookup},
+    traits::{BlakeTwo256, Hash, IdentifyAccount, IdentityLookup, Keccak256},
     Perbill,
 };
 
@@ -238,7 +238,7 @@ impl pallet_ovm::Config for Test {
     type MaxDepth = MaxDepth;
     type DisputePeriod = DisputePeriod;
     type DeterminePredicateAddress = ovm::SimpleAddressDeterminer<Test>;
-    type HashingL2 = BlakeTwo256;
+    type HashingL2 = Keccak256;
     type ExternalCall = ovm::predicate::CallContext<Test>;
     type AtomicPredicateIdConfig = MockAtomicPredicateIdConfigGetter;
     type Event = Event;
@@ -258,8 +258,7 @@ impl Config for Test {
     type Currency = Balances;
     type DeterminePlappsAddress = SimpleAddressDeterminer<Test>;
     type MaximumTokenAddress = MaximumTokenAddress;
-    // TODO: should be Keccak;
-    type PlasmaHashing = BlakeTwo256;
+    type PlasmaHashing = Keccak256;
     type Event = Event;
 }
 

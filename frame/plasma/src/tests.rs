@@ -255,8 +255,7 @@ fn verify_inclusion_test() {
             valid_inclusion_proof,
             block_number,
         );
-        // TODO: shuld be passed true.
-        assert_eq!(result, Ok(false));
+        assert_eq!(result, Ok(true));
     })
 }
 
