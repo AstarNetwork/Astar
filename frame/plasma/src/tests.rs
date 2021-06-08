@@ -182,7 +182,7 @@ fn verify_inclusion_test() {
      * 0  1 2  3 1-0 1-1
      */
     new_test_ext().execute_with(|| {
-        let token_address: AccountId = AccountId::new(&hex![
+        let token_address: AccountId = AccountId::new(hex![
             "0000000000000000000000000000000000000000000000000000000000000000"
         ]);
         let leaf_0: IntervalTreeNodeOf<Test> = IntervalTreeNodeOf::<Test> {
@@ -210,29 +210,37 @@ fn verify_inclusion_test() {
 
         let level_1 = vec![
             compute_parent(&leaf_0, &leaf_1),
-            compute_parent(&leaf_2, leaf_3),
+            compute_parent(&leaf_2, &leaf_3),
         ];
-        let level_2 = compute_parent(level_1[0], level_1[1]);
-        let expected_root = compute_parent(level_2).data;
+        let level_2 = compute_parent(&level_1[0], &level_1[1]);
+        let expected_root = level_2.data;
+        println!(
+            "expected level0: [{:?}, {:?}, {:?}, {:?}]",
+            leaf_0, leaf_1, leaf_2, leaf_3
+        );
         println!("expected level1: {:?}", level_1);
         println!("expected level2: {:?}", level_2);
         println!("expected root hash: {:?}", expected_root);
 
         let block_number: BlockNumber = 1;
         let root: H256 = H256::from(hex![
-            "2a282a20548d971e6f006c4d559a699a04b6c4fc40425f55b48c282cd42fe8b3"
+            "81b72772d1c85121dbedfb08fb8785ddd460c346b4d6225d3ede8fc00d0c487b"
         ]);
+
+        // valid inclusion proof by leaf 0
+        //                                    address_root          :(v address_inclusion_proof)
+        //                                   /            \
+        //                     interval_root              *[]*
+        //                     /            \                       :(v interval_inclusion_proof)
+        //        interval_node(0+1)        *interval_node(2+3)*
+        //        /             \           /               \
+        //  (leaf0)          *leaf1*   laef2                leaf3
         let valid_inclusion_proof: InclusionProof<AccountId, Balance, H256> =
             InclusionProof::<AccountId, Balance, H256> {
                 address_inclusion_proof: AddressInclusionProof {
                     leaf_position: 0,
-                    leaf_index: AccountId::default(),
-                    siblings: vec![AddressTreeNode {
-                        token_address: token_address.clone(),
-                        data: H256::from(hex![
-                            "dd779be20b84ced84b7cbbdc8dc98d901ecd198642313d35d32775d75d916d3a"
-                        ]),
-                    }],
+                    leaf_index: token_address.clone(),
+                    siblings: vec![],
                 },
                 interval_inclusion_proof: IntervalInclusionProof {
                     leaf_position: 0,
@@ -247,7 +255,7 @@ fn verify_inclusion_test() {
                         IntervalTreeNode {
                             start: 5000,
                             data: H256::from(hex![
-                                "979355d8d7916979442ffd9e03bd5e6a7be3dea7b69098a2ea769fa4591318cc"
+                                "7d69a61d7938bb29cd1e9658c46c0a5191b2e11c1a581d61f56ae8393533a9f5"
                             ]),
                         },
                     ],
@@ -278,7 +286,7 @@ fn verify_inclusion_test() {
         // suceed to verify inclusion of the most left leaf
         let result = Plasma::verify_inclusion(
             plapps_id,
-            leaf_0.clone(),
+            leaf_0.data.clone(),
             token_address,
             Range::<Balance> { start: 0, end: 5 },
             valid_inclusion_proof,

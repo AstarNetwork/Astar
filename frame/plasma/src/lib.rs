@@ -522,17 +522,6 @@ impl<T: Config> Module<T> {
             &inclusion_proof.interval_inclusion_proof.leaf_position,
             &inclusion_proof.interval_inclusion_proof.siblings,
         )?;
-        println!(
-            "verify_inclusion_with_root 0: {:?}, {:?}",
-            computed_root, implicit_end
-        );
-        println!(
-            "verify_inclusion_with_root 1: {:?} >= {:?} && {:?} <= {:?}",
-            range.start,
-            inclusion_proof.interval_inclusion_proof.leaf_index,
-            range.end,
-            implicit_end
-        );
 
         ensure!(
             range.start >= inclusion_proof.interval_inclusion_proof.leaf_index
@@ -548,23 +537,9 @@ impl<T: Config> Module<T> {
             &inclusion_proof.address_inclusion_proof.siblings,
         )?;
 
-        println!(
-            "verify_inclusion_with_root 2: {:?}, {:?}",
-            computed_root, implicit_address
-        );
-        println!(
-            "verify_inclusion_with_root 3: {:?} <= {:?}",
-            token_address, implicit_address
-        );
-
         ensure!(
             token_address <= implicit_address,
             Error::<T>::AddressMustNotExceedTheImplicitAddress,
-        );
-
-        println!(
-            "verify_inclusion_with_root 4: {:?} == {:?}",
-            computed_root, root
         );
         return Ok(computed_root == root);
     }
@@ -682,6 +657,7 @@ impl<T: Config> Module<T> {
             right_start >= left_start,
             Error::<T>::LeftMustBeLessThanRight,
         );
+        // tuple's encode means concat each encoded data.
         return Ok(T::PlasmaHashing::hash_of(&(
             left,
             left_start,

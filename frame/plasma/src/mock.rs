@@ -287,7 +287,7 @@ pub fn compute_parent(
 ) -> IntervalTreeNodeOf<Test> {
     IntervalTreeNodeOf::<Test> {
         start: b.start.clone(),
-        data: Test::PlasmaHashing::hash_of(&a.encode().concat(b.encode())),
+        data: <Test as Config>::PlasmaHashing::hash_of(&(&(&a.data, &a.start, &b.data, &b.start))),
     }
 }
 
