@@ -20,7 +20,7 @@ pub use sp_core::{
 };
 pub use sp_runtime::{
     testing::{Header, UintAuthorityId},
-    traits::{BlakeTwo256, Hash, IdentifyAccount, IdentityLookup},
+    traits::{BlakeTwo256, Hash, IdentifyAccount, IdentityLookup, Keccak256},
     Perbill,
 };
 
@@ -42,22 +42,6 @@ lazy_static::lazy_static! {
         "0000000000000000000000000000000000000000000000000000000000009553"
     ]);
 }
-
-frame_support::construct_runtime!(
-    pub enum Test where
-        Block = Block,
-        NodeBlock = Block,
-        UncheckedExtrinsic = UncheckedExtrinsic,
-    {
-        System: system::{Module, Call, Config, Storage, Event<T>},
-        Balances: pallet_balances::{Module, Call, Storage, Config<T>, Event<T>},
-        Timestamp: pallet_timestamp::{Module, Storage},
-        Contracts: pallet_contracts::{Module, Call, Storage, Event<T>, Config<T>},
-        RandomnessCollectiveFlip: pallet_randomness_collective_flip::{Module, Call, Storage},
-        Ovm: pallet_ovm::{Module, Call, Storage, Config, Event<T>},
-        Plasma: pallet_plasma::{Module, Call, Storage, Event<T>},
-    }
-);
 
 pub fn new_test_ext() -> sp_io::TestExternalities {
     let mut storage = frame_system::GenesisConfig::default()
@@ -238,7 +222,7 @@ impl pallet_ovm::Config for Test {
     type MaxDepth = MaxDepth;
     type DisputePeriod = DisputePeriod;
     type DeterminePredicateAddress = ovm::SimpleAddressDeterminer<Test>;
-    type HashingL2 = BlakeTwo256;
+    type HashingL2 = Keccak256;
     type ExternalCall = ovm::predicate::CallContext<Test>;
     type AtomicPredicateIdConfig = MockAtomicPredicateIdConfigGetter;
     type Event = Event;
@@ -258,8 +242,7 @@ impl Config for Test {
     type Currency = Balances;
     type DeterminePlappsAddress = SimpleAddressDeterminer<Test>;
     type MaximumTokenAddress = MaximumTokenAddress;
-    // TODO: should be Keccak;
-    type PlasmaHashing = BlakeTwo256;
+    type PlasmaHashing = Keccak256;
     type Event = Event;
 }
 
@@ -296,3 +279,30 @@ pub fn to_account(full_public: &[u8]) -> AccountId {
     let public = sp_core::ecdsa::Public::from_full(full_public).unwrap();
     sp_runtime::MultiSigner::from(public).into_account()
 }
+
+/// For merkle Tree simulator
+pub fn compute_parent(
+    a: &IntervalTreeNodeOf<Test>,
+    b: &IntervalTreeNodeOf<Test>,
+) -> IntervalTreeNodeOf<Test> {
+    IntervalTreeNodeOf::<Test> {
+        start: b.start.clone(),
+        data: <Test as Config>::PlasmaHashing::hash_of(&(&(&a.data, &a.start, &b.data, &b.start))),
+    }
+}
+
+frame_support::construct_runtime!(
+    pub enum Test where
+        Block = Block,
+        NodeBlock = Block,
+        UncheckedExtrinsic = UncheckedExtrinsic,
+    {
+        System: system::{Module, Call, Config, Storage, Event<T>},
+        Balances: pallet_balances::{Module, Call, Storage, Config<T>, Event<T>},
+        Timestamp: pallet_timestamp::{Module, Storage},
+        Contracts: pallet_contracts::{Module, Call, Storage, Event<T>, Config<T>},
+        RandomnessCollectiveFlip: pallet_randomness_collective_flip::{Module, Call, Storage},
+        Ovm: pallet_ovm::{Module, Call, Storage, Config, Event<T>},
+        Plasma: pallet_plasma::{Module, Call, Storage, Event<T>},
+    }
+);

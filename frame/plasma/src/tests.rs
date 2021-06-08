@@ -4,8 +4,8 @@
 
 use super::{
     AddressInclusionProof, AddressTreeNode, BalanceOf, Checkpoint, Config, InclusionProof,
-    IntervalInclusionProof, IntervalTreeNode, PlappsAddressFor, PropertyOf, Range, RangeOf,
-    RawEvent, Weight,
+    IntervalInclusionProof, IntervalTreeNode, IntervalTreeNodeOf, PlappsAddressFor, PropertyOf,
+    Range, RangeOf, RawEvent, Weight,
 };
 use crate::mock::*;
 use codec::Encode;
@@ -182,28 +182,65 @@ fn verify_inclusion_test() {
      * 0  1 2  3 1-0 1-1
      */
     new_test_ext().execute_with(|| {
-        let token_address: AccountId = to_account_from_seed(&hex![
-            "9000000000000000000000000000000000000000000000000000000000000003"
+        let token_address: AccountId = AccountId::new(hex![
+            "0000000000000000000000000000000000000000000000000000000000000000"
         ]);
-        let leaf_0: H256 = BlakeTwo256::hash("leaf0".as_bytes());
-        let _leaf_1: H256 = BlakeTwo256::hash("leaf1".as_bytes());
-        let _leaf_2: H256 = BlakeTwo256::hash("leaf2".as_bytes());
-        let _leaf_3: H256 = BlakeTwo256::hash("leaf3".as_bytes());
+        let leaf_0: IntervalTreeNodeOf<Test> = IntervalTreeNodeOf::<Test> {
+            start: 0,
+            data: Keccak256::hash("leaf0".as_bytes()),
+        };
+        let leaf_1: IntervalTreeNodeOf<Test> = IntervalTreeNodeOf::<Test> {
+            start: 7,
+            data: Keccak256::hash("leaf1".as_bytes()),
+        };
+        let leaf_2: IntervalTreeNodeOf<Test> = IntervalTreeNodeOf::<Test> {
+            start: 15,
+            data: Keccak256::hash("leaf2".as_bytes()),
+        };
+        let leaf_3: IntervalTreeNodeOf<Test> = IntervalTreeNodeOf::<Test> {
+            start: 5000,
+            data: Keccak256::hash("leaf3".as_bytes()),
+        };
+
+        // interval tree root:
+        // level0: [leaf_0, leaf_1, leaf_2, leaf_3];
+        // level1: [compute_parent(leaf_0, leaf_1), compute_parent(leaf_2, leaf_3) ];
+        // level2: [compute_parent(compute_parent(leaf_0, leaf_1), compute_parent(leaf_2, leaf_3))]
+        // root = leve2[0].data
+
+        let level_1 = vec![
+            compute_parent(&leaf_0, &leaf_1),
+            compute_parent(&leaf_2, &leaf_3),
+        ];
+        let level_2 = compute_parent(&level_1[0], &level_1[1]);
+        let expected_root = level_2.data;
+        println!(
+            "expected level0: [{:?}, {:?}, {:?}, {:?}]",
+            leaf_0, leaf_1, leaf_2, leaf_3
+        );
+        println!("expected level1: {:?}", level_1);
+        println!("expected level2: {:?}", level_2);
+        println!("expected root hash: {:?}", expected_root);
+
         let block_number: BlockNumber = 1;
         let root: H256 = H256::from(hex![
-            "1aa3429d5aa7bf693f3879fdfe0f1a979a4b49eaeca9638fea07ad7ee5f0b64f"
+            "81b72772d1c85121dbedfb08fb8785ddd460c346b4d6225d3ede8fc00d0c487b"
         ]);
+
+        // valid inclusion proof by leaf 0
+        //                                    address_root          :(v address_inclusion_proof)
+        //                                   /            \
+        //                     interval_root              *[]*
+        //                     /            \                       :(v interval_inclusion_proof)
+        //        interval_node(0+1)        *interval_node(2+3)*
+        //        /             \           /               \
+        //  (leaf0)          *leaf1*   laef2                leaf3
         let valid_inclusion_proof: InclusionProof<AccountId, Balance, H256> =
             InclusionProof::<AccountId, Balance, H256> {
                 address_inclusion_proof: AddressInclusionProof {
                     leaf_position: 0,
-                    leaf_index: AccountId::default(),
-                    siblings: vec![AddressTreeNode {
-                        token_address: token_address.clone(),
-                        data: H256::from(hex![
-                            "dd779be20b84ced84b7cbbdc8dc98d901ecd198642313d35d32775d75d916d3a"
-                        ]),
-                    }],
+                    leaf_index: token_address.clone(),
+                    siblings: vec![],
                 },
                 interval_inclusion_proof: IntervalInclusionProof {
                     leaf_position: 0,
@@ -218,7 +255,7 @@ fn verify_inclusion_test() {
                         IntervalTreeNode {
                             start: 5000,
                             data: H256::from(hex![
-                                "ef583c07cae62e3a002a9ad558064ae80db17162801132f9327e8bb6da16ea8a"
+                                "7d69a61d7938bb29cd1e9658c46c0a5191b2e11c1a581d61f56ae8393533a9f5"
                             ]),
                         },
                     ],
@@ -249,14 +286,13 @@ fn verify_inclusion_test() {
         // suceed to verify inclusion of the most left leaf
         let result = Plasma::verify_inclusion(
             plapps_id,
-            leaf_0.clone(),
+            leaf_0.data.clone(),
             token_address,
             Range::<Balance> { start: 0, end: 5 },
             valid_inclusion_proof,
             block_number,
         );
-        // TODO: shuld be passed true.
-        assert_eq!(result, Ok(false));
+        assert_eq!(result, Ok(true));
     })
 }
 

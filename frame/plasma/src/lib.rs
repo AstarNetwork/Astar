@@ -657,6 +657,7 @@ impl<T: Config> Module<T> {
             right_start >= left_start,
             Error::<T>::LeftMustBeLessThanRight,
         );
+        // tuple's encode means concat each encoded data.
         return Ok(T::PlasmaHashing::hash_of(&(
             left,
             left_start,
