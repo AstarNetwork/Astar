@@ -81,7 +81,7 @@ pub fn get_chain_spec(id: ParaId) -> ChainSpec {
 }
 
 fn shiden_chain_spec() -> ChainSpec {
-    ChainSpec::from_json_bytes(&include_bytes!("../res/shiden.raw.json")[..]).unwrap()
+    ChainSpec::from_json_bytes(&include_bytes!("../res/shiden.json")[..]).unwrap()
 }
 
 /*
