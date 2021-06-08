@@ -4,7 +4,7 @@
 
 use super::{
     AddressInclusionProof, AddressTreeNode, BalanceOf, Checkpoint, Config, InclusionProof,
-    IntervalInclusionProof, IntervalTreeNode, PlappsAddressFor, PropertyOf, Range, RangeOf,
+    IntervalInclusionProof, IntervalTreeNode, IntervalTreeNodeOf, PlappsAddressFor, PropertyOf, Range, RangeOf,
     RawEvent, Weight,
 };
 use crate::mock::*;
@@ -182,16 +182,45 @@ fn verify_inclusion_test() {
      * 0  1 2  3 1-0 1-1
      */
     new_test_ext().execute_with(|| {
-        let token_address: AccountId = to_account_from_seed(&hex![
-            "9000000000000000000000000000000000000000000000000000000000000003"
+        let token_address: AccountId = AccountId::new(&hex![
+            "0000000000000000000000000000000000000000000000000000000000000000"
         ]);
-        let leaf_0: H256 = BlakeTwo256::hash("leaf0".as_bytes());
-        let _leaf_1: H256 = BlakeTwo256::hash("leaf1".as_bytes());
-        let _leaf_2: H256 = BlakeTwo256::hash("leaf2".as_bytes());
-        let _leaf_3: H256 = BlakeTwo256::hash("leaf3".as_bytes());
+        let leaf_0: IntervalTreeNodeOf<Test> = IntervalTreeNodeOf::<Test> {
+            start: 0,
+            data: Keccak256::hash("leaf0".as_bytes()),
+        };
+        let leaf_1: IntervalTreeNodeOf<Test> = IntervalTreeNodeOf::<Test> {
+            start: 7,
+            data: Keccak256::hash("leaf1".as_bytes()),
+        };
+        let leaf_2: IntervalTreeNodeOf<Test> = IntervalTreeNodeOf::<Test> {
+            start: 15,
+            data: Keccak256::hash("leaf2".as_bytes()),
+        };
+        let leaf_3: IntervalTreeNodeOf<Test> = IntervalTreeNodeOf::<Test> {
+            start: 5000,
+            data: Keccak256::hash("leaf3".as_bytes()),
+        };
+
+        // interval tree root:
+        // level0: [leaf_0, leaf_1, leaf_2, leaf_3];
+        // level1: [compute_parent(leaf_0, leaf_1), compute_parent(leaf_2, leaf_3) ];
+        // level2: [compute_parent(compute_parent(leaf_0, leaf_1), compute_parent(leaf_2, leaf_3))]
+        // root = leve2[0].data
+
+        let level_1 = vec![
+            compute_parent(&leaf_0, &leaf_1),
+            compute_parent(&leaf_2, leaf_3),
+        ];
+        let level_2 = compute_parent(level_1[0], level_1[1]);
+        let expected_root = compute_parent(level_2).data;
+        println!("expected level1: {:?}", level_1);
+        println!("expected level2: {:?}", level_2);
+        println!("expected root hash: {:?}", expected_root);
+
         let block_number: BlockNumber = 1;
         let root: H256 = H256::from(hex![
-            "1aa3429d5aa7bf693f3879fdfe0f1a979a4b49eaeca9638fea07ad7ee5f0b64f"
+            "2a282a20548d971e6f006c4d559a699a04b6c4fc40425f55b48c282cd42fe8b3"
         ]);
         let valid_inclusion_proof: InclusionProof<AccountId, Balance, H256> =
             InclusionProof::<AccountId, Balance, H256> {
@@ -218,7 +247,7 @@ fn verify_inclusion_test() {
                         IntervalTreeNode {
                             start: 5000,
                             data: H256::from(hex![
-                                "ef583c07cae62e3a002a9ad558064ae80db17162801132f9327e8bb6da16ea8a"
+                                "979355d8d7916979442ffd9e03bd5e6a7be3dea7b69098a2ea769fa4591318cc"
                             ]),
                         },
                     ],

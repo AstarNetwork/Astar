@@ -43,22 +43,6 @@ lazy_static::lazy_static! {
     ]);
 }
 
-frame_support::construct_runtime!(
-    pub enum Test where
-        Block = Block,
-        NodeBlock = Block,
-        UncheckedExtrinsic = UncheckedExtrinsic,
-    {
-        System: system::{Module, Call, Config, Storage, Event<T>},
-        Balances: pallet_balances::{Module, Call, Storage, Config<T>, Event<T>},
-        Timestamp: pallet_timestamp::{Module, Storage},
-        Contracts: pallet_contracts::{Module, Call, Storage, Event<T>, Config<T>},
-        RandomnessCollectiveFlip: pallet_randomness_collective_flip::{Module, Call, Storage},
-        Ovm: pallet_ovm::{Module, Call, Storage, Config, Event<T>},
-        Plasma: pallet_plasma::{Module, Call, Storage, Event<T>},
-    }
-);
-
 pub fn new_test_ext() -> sp_io::TestExternalities {
     let mut storage = frame_system::GenesisConfig::default()
         .build_storage::<Test>()
@@ -295,3 +279,30 @@ pub fn to_account(full_public: &[u8]) -> AccountId {
     let public = sp_core::ecdsa::Public::from_full(full_public).unwrap();
     sp_runtime::MultiSigner::from(public).into_account()
 }
+
+/// For merkle Tree simulator
+pub fn compute_parent(
+    a: &IntervalTreeNodeOf<Test>,
+    b: &IntervalTreeNodeOf<Test>,
+) -> IntervalTreeNodeOf<Test> {
+    IntervalTreeNodeOf::<Test> {
+        start: b.start.clone(),
+        data: Test::PlasmaHashing::hash_of(&a.encode().concat(b.encode())),
+    }
+}
+
+frame_support::construct_runtime!(
+    pub enum Test where
+        Block = Block,
+        NodeBlock = Block,
+        UncheckedExtrinsic = UncheckedExtrinsic,
+    {
+        System: system::{Module, Call, Config, Storage, Event<T>},
+        Balances: pallet_balances::{Module, Call, Storage, Config<T>, Event<T>},
+        Timestamp: pallet_timestamp::{Module, Storage},
+        Contracts: pallet_contracts::{Module, Call, Storage, Event<T>, Config<T>},
+        RandomnessCollectiveFlip: pallet_randomness_collective_flip::{Module, Call, Storage},
+        Ovm: pallet_ovm::{Module, Call, Storage, Config, Event<T>},
+        Plasma: pallet_plasma::{Module, Call, Storage, Event<T>},
+    }
+);
