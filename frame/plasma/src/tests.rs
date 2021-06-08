@@ -4,8 +4,8 @@
 
 use super::{
     AddressInclusionProof, AddressTreeNode, BalanceOf, Checkpoint, Config, InclusionProof,
-    IntervalInclusionProof, IntervalTreeNode, IntervalTreeNodeOf, PlappsAddressFor, PropertyOf, Range, RangeOf,
-    RawEvent, Weight,
+    IntervalInclusionProof, IntervalTreeNode, IntervalTreeNodeOf, PlappsAddressFor, PropertyOf,
+    Range, RangeOf, RawEvent, Weight,
 };
 use crate::mock::*;
 use codec::Encode;
