@@ -416,6 +416,7 @@ decl_module! {
                 Error::<T>::OriginMustBeOwner,
             );
             // TODO: finalize_exit payout -> owner[state_update.state_objects.inputs[0]] (amount[state_update.range]) at payout.
+            // Acttualy, transfer(plapps_id -> owner, amount);
             // let _ = contracts::bare_call(
             //     plapps_id,
             //     Self::payout(&plapps_id),
