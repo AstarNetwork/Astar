@@ -291,7 +291,7 @@ impl pallet_scheduler::Config for Runtime {
 }
 
 pallet_staking_reward_curve::build! {
-    const REWARD_CURVE: PiecewiseLinear<'static> = curve!(
+    const VALIDATOR_REWARD_CURVE: PiecewiseLinear<'static> = curve!(
         min_inflation: 0_012_500,
         max_inflation: 0_050_000,
         ideal_stake: 0_250_000,
@@ -302,10 +302,10 @@ pallet_staking_reward_curve::build! {
 }
 
 parameter_types! {
-    pub const SessionsPerEra: pallet_plasm_rewards::SessionIndex = 4;
-    pub const BondingDuration: pallet_plasm_rewards::EraIndex = 7;
+    pub const SessionsPerEra: sp_staking::SessionIndex = 4;
+    pub const BondingDuration: pallet_staking::EraIndex = 7;
     pub const SlashDeferDuration: pallet_staking::EraIndex = 6; // 6 days, less than bonding duration
-	pub const RewardCurve: &'static PiecewiseLinear<'static> = &REWARD_CURVE;
+	pub const RewardCurve: &'static PiecewiseLinear<'static> = &VALIDATOR_REWARD_CURVE;
 	pub const MaxNominatorRewardedPerValidator: u32 = 64;
 	pub const ElectionLookahead: BlockNumber = 0;
 	pub const MaxIterations: u32 = 10;
