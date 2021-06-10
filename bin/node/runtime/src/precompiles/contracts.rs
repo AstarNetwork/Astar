@@ -55,7 +55,8 @@ where
                 // Low level argument parsing
                 let dest: R::Hash = sp_core::H256::from_slice(
                     &input[SELECTOR_SIZE_BYTES..(SELECTOR_SIZE_BYTES + 32)],
-                ).into();
+                )
+                .into();
                 let len_offset = SELECTOR_SIZE_BYTES + 32 * 2;
                 let param_offset = len_offset + 32;
                 let param_len = sp_core::U256::from_big_endian(&input[len_offset..param_offset]);

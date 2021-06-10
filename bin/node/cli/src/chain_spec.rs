@@ -6,8 +6,8 @@ use plasm_runtime::constants::currency::PLM;
 use plasm_runtime::Block;
 use plasm_runtime::{
     BabeConfig, BalancesConfig, ContractsConfig, EVMConfig, EthereumConfig, GenesisConfig,
-    GrandpaConfig, ImOnlineConfig, IndicesConfig, SessionConfig, SessionKeys, 
-    StakingConfig, StakerStatus, SudoConfig, SystemConfig, VestingConfig, WASM_BINARY,
+    GrandpaConfig, ImOnlineConfig, IndicesConfig, SessionConfig, SessionKeys, StakerStatus,
+    StakingConfig, SudoConfig, SystemConfig, VestingConfig, WASM_BINARY,
 };
 use sc_chain_spec::ChainSpecExtension;
 use sc_service::ChainType;
