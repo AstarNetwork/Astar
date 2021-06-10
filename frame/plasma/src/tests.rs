@@ -3,9 +3,8 @@
 #![cfg(test)]
 
 use super::{
-    AddressInclusionProof, AddressTreeNode, BalanceOf, Checkpoint, Config, InclusionProof,
-    IntervalInclusionProof, IntervalTreeNode, IntervalTreeNodeOf, PlappsAddressFor, PropertyOf,
-    Range, RangeOf, RawEvent, Weight,
+    AddressInclusionProof, BalanceOf, Checkpoint, Config, InclusionProof, IntervalInclusionProof,
+    IntervalTreeNode, IntervalTreeNodeOf, PlappsAddressFor, PropertyOf, Range, RangeOf, RawEvent,
 };
 use crate::mock::*;
 use codec::Encode;
@@ -319,7 +318,6 @@ fn success_deposit(
     plapps_id: AccountId,
     amount: BalanceOf<Test>,
     initial_state: PropertyOf<Test>,
-    gas_limit: Weight,
 ) {
     let total_deposited = Plasma::total_deposited(&plapps_id);
     let deposit_range = RangeOf::<Test> {
@@ -344,9 +342,8 @@ fn success_deposit(
     assert_ok!(Plasma::deposit(
         Origin::signed(sender.clone().clone()),
         plapps_id.clone(),
-        amount,
+        amount.clone(),
         initial_state.clone(),
-        gas_limit,
     ));
 
     assert_eq!(
@@ -360,6 +357,28 @@ fn success_deposit(
     assert_eq!(
         System::events(),
         vec![
+            EventRecord {
+                phase: Phase::ApplyExtrinsic(0),
+                event: Event::system(frame_system::Event::NewAccount(plapps_id.clone(),)),
+                topics: vec![],
+            },
+            EventRecord {
+                phase: Phase::ApplyExtrinsic(0),
+                event: Event::pallet_balances(pallet_balances::Event::Endowed(
+                    plapps_id.clone(),
+                    amount,
+                )),
+                topics: vec![],
+            },
+            EventRecord {
+                phase: Phase::ApplyExtrinsic(0),
+                event: Event::pallet_balances(pallet_balances::Event::Transfer(
+                    sender,
+                    plapps_id.clone(),
+                    amount,
+                )),
+                topics: vec![],
+            },
             EventRecord {
                 phase: Phase::ApplyExtrinsic(0),
                 event: Event::pallet_plasma(RawEvent::DepositedRangeExtended(
@@ -452,8 +471,8 @@ fn scenario_test() {
                 predicate_address: (*STATE_UPDATE_ID).clone(),
                 inputs: vec![hex!["01"].to_vec()],
             },
-            1000000,
         );
+        println!("success deposit: 0");
 
         advance_block();
         success_deposit(
@@ -464,8 +483,8 @@ fn scenario_test() {
                 predicate_address: (*STATE_UPDATE_ID).clone(),
                 inputs: vec![hex!["01"].to_vec()],
             },
-            1000000,
         );
+        println!("success deposit: 1");
 
         advance_block();
         success_deposit(
@@ -476,8 +495,8 @@ fn scenario_test() {
                 predicate_address: (*STATE_UPDATE_ID).clone(),
                 inputs: vec![hex!["01"].to_vec()],
             },
-            1000000,
         );
+        println!("success deposit: 2");
 
         advance_block();
         success_extend_deposited_ranges((*ALICE_STASH).clone(), plapps_id.clone(), 100);
