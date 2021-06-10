@@ -391,11 +391,7 @@ fn success_deposit(
 fn success_extend_deposited_ranges(sender: AccountId, plapps_id: AccountId, amount: Balance) {
     let total_deposited = Plasma::total_deposited(&plapps_id);
     let new_range = simulation_extend_ranges(&plapps_id, &amount);
-    assert_ok!(Plasma::extend_deposited_ranges(
-        Origin::signed(sender.clone()),
-        plapps_id.clone(),
-        amount
-    ));
+    Plasma::bare_extend_deposited_ranges(&plapps_id, amount);
     assert_eq!(
         Plasma::deposited_ranges(plapps_id.clone(), new_range.end),
         new_range,
@@ -420,12 +416,7 @@ fn success_remove_deposited_range(
     range: RangeOf<Test>,
     deposited_range_id: Balance,
 ) {
-    assert_ok!(Plasma::remove_deposited_range(
-        Origin::signed(sender.clone()),
-        plapps_id.clone(),
-        range.clone(),
-        deposited_range_id
-    ));
+    Plasma::bare_remove_deposited_range(&plapps_id, &range, &deposited_range_id);
     assert_eq!(
         System::events(),
         vec![EventRecord {
@@ -510,4 +501,15 @@ fn scenario_test() {
             220,
         );
     });
+}
+
+#[test]
+fn scenario_with_ovm_test() {
+
+    // 1. ovm::put_code.
+    // 2. ovm::instantiate.
+    // 3. plasma::deploy.
+    // 4. plasma::submit_root
+    // 5. plasma::deposit
+    // 6.
 }

@@ -342,24 +342,6 @@ decl_module! {
             Self::deposit_event(RawEvent::CheckpointFinalized(plapps_id, checkpoint_id, checkpoint));
         }
 
-        /// TODO: weight, not external
-        #[weight = 100_000]
-        fn extend_deposited_ranges(origin, plapps_id: T::AccountId, amount: BalanceOf<T>) {
-            ensure_signed(origin)?;
-            Self::bare_extend_deposited_ranges(&plapps_id, amount);
-        }
-
-        /// TODO: weight, not external
-        #[weight = 100_000]
-        fn remove_deposited_range(origin, plapps_id: T::AccountId,
-            range: RangeOf<T>, deposited_range_id: BalanceOf<T>) {
-            ensure_signed(origin)?;
-            Self::bare_remove_deposited_range(
-                &plapps_id,
-                &range,
-                &deposited_range_id,
-            )?;
-        }
 
         /// finalizeCheckpoint
         /// - @param _checkpointProperty A property which is instance of checkpoint predicate
@@ -773,7 +755,7 @@ impl<T: Config> Module<T> {
         );
 
         // Remove the deposited range
-        Self::bare_remove_deposited_range(plapps_id, &state_update.range, deposited_range_id)?;
+        Self::bare_remove_deposited_range(plapps_id, &state_update.range, &deposited_range_id)?;
         // Transfer tokens to its predicate
         let amount = state_update.range.end - state_update.range.start;
 
