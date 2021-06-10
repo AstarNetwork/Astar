@@ -3,9 +3,8 @@
 #![cfg(test)]
 
 use super::{
-    AddressInclusionProof, AddressTreeNode, BalanceOf, Checkpoint, Config, InclusionProof,
-    IntervalInclusionProof, IntervalTreeNode, IntervalTreeNodeOf, PlappsAddressFor, PropertyOf,
-    Range, RangeOf, RawEvent, Weight,
+    AddressInclusionProof, BalanceOf, Checkpoint, Config, InclusionProof, IntervalInclusionProof,
+    IntervalTreeNode, IntervalTreeNodeOf, PlappsAddressFor, PropertyOf, Range, RangeOf, RawEvent,
 };
 use crate::mock::*;
 use codec::Encode;
@@ -319,7 +318,6 @@ fn success_deposit(
     plapps_id: AccountId,
     amount: BalanceOf<Test>,
     initial_state: PropertyOf<Test>,
-    gas_limit: Weight,
 ) {
     let total_deposited = Plasma::total_deposited(&plapps_id);
     let deposit_range = RangeOf::<Test> {
@@ -344,9 +342,8 @@ fn success_deposit(
     assert_ok!(Plasma::deposit(
         Origin::signed(sender.clone().clone()),
         plapps_id.clone(),
-        amount,
+        amount.clone(),
         initial_state.clone(),
-        gas_limit,
     ));
 
     assert_eq!(
@@ -357,9 +354,17 @@ fn success_deposit(
         Plasma::total_deposited(&plapps_id),
         total_deposited + amount
     );
-    assert_eq!(
-        System::events(),
+    assert!(System::events().ends_with(
         vec![
+            EventRecord {
+                phase: Phase::ApplyExtrinsic(0),
+                event: Event::pallet_balances(pallet_balances::Event::Transfer(
+                    sender,
+                    plapps_id.clone(),
+                    amount,
+                )),
+                topics: vec![],
+            },
             EventRecord {
                 phase: Phase::ApplyExtrinsic(0),
                 event: Event::pallet_plasma(RawEvent::DepositedRangeExtended(
@@ -378,18 +383,15 @@ fn success_deposit(
                 topics: vec![],
             }
         ]
-    );
+        .as_slice()
+    ));
     assert_eq!(Plasma::checkpoints(plapps_id.clone(), &checkpoint_id), true);
 }
 
 fn success_extend_deposited_ranges(sender: AccountId, plapps_id: AccountId, amount: Balance) {
     let total_deposited = Plasma::total_deposited(&plapps_id);
     let new_range = simulation_extend_ranges(&plapps_id, &amount);
-    assert_ok!(Plasma::extend_deposited_ranges(
-        Origin::signed(sender.clone()),
-        plapps_id.clone(),
-        amount
-    ));
+    Plasma::bare_extend_deposited_ranges(&plapps_id, amount);
     assert_eq!(
         Plasma::deposited_ranges(plapps_id.clone(), new_range.end),
         new_range,
@@ -414,12 +416,7 @@ fn success_remove_deposited_range(
     range: RangeOf<Test>,
     deposited_range_id: Balance,
 ) {
-    assert_ok!(Plasma::remove_deposited_range(
-        Origin::signed(sender.clone()),
-        plapps_id.clone(),
-        range.clone(),
-        deposited_range_id
-    ));
+    Plasma::bare_remove_deposited_range(&plapps_id, &range, &deposited_range_id);
     assert_eq!(
         System::events(),
         vec![EventRecord {
@@ -452,8 +449,8 @@ fn scenario_test() {
                 predicate_address: (*STATE_UPDATE_ID).clone(),
                 inputs: vec![hex!["01"].to_vec()],
             },
-            1000000,
         );
+        println!("success deposit: 0");
 
         advance_block();
         success_deposit(
@@ -464,8 +461,8 @@ fn scenario_test() {
                 predicate_address: (*STATE_UPDATE_ID).clone(),
                 inputs: vec![hex!["01"].to_vec()],
             },
-            1000000,
         );
+        println!("success deposit: 1");
 
         advance_block();
         success_deposit(
@@ -476,8 +473,8 @@ fn scenario_test() {
                 predicate_address: (*STATE_UPDATE_ID).clone(),
                 inputs: vec![hex!["01"].to_vec()],
             },
-            1000000,
         );
+        println!("success deposit: 2");
 
         advance_block();
         success_extend_deposited_ranges((*ALICE_STASH).clone(), plapps_id.clone(), 100);
@@ -504,4 +501,15 @@ fn scenario_test() {
             220,
         );
     });
+}
+
+#[test]
+fn scenario_with_ovm_test() {
+
+    // 1. ovm::put_code.
+    // 2. ovm::instantiate.
+    // 3. plasma::deploy.
+    // 4. plasma::submit_root
+    // 5. plasma::deposit
+    // 6.
 }

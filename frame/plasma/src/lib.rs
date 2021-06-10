@@ -39,12 +39,14 @@ use sp_std::{marker::PhantomData, prelude::*, vec::Vec};
 pub use pallet_ovm::{Decision, Property, PropertyOf};
 
 mod deserializer;
+mod erc20;
 #[cfg(test)]
 mod mock;
 #[cfg(test)]
 mod tests;
 
 pub use deserializer::Deserializer;
+pub use erc20::{ERC20Trait, PseudoERC20};
 pub type DispatchResultT<T> = Result<T, DispatchError>;
 
 #[derive(Encode, Decode, Clone, Default, RuntimeDebug, PartialEq, Eq)]
@@ -307,21 +309,16 @@ decl_module! {
         /// TODO: weight
         #[weight = 100_000]
         fn deposit(origin, plapps_id: T::AccountId,
-            amount: BalanceOf<T>, initial_state: PropertyOf<T>, gas_limit: Weight) {
-            let _ = ensure_signed(origin)?;
+            amount: BalanceOf<T>, initial_state: PropertyOf<T>) {
+            let origin = ensure_signed(origin)?;
             let total_deposited = Self::total_deposited(&plapps_id);
             ensure!(
                 total_deposited < BalanceOf::<T>::max_value().saturating_sub(amount),
                 Error::<T>::TotalDepositedExceedMaxBalance,
             );
-            // TODO: transfer_from origin -> plapps_id (amount) at balances.
-            // let _ = contracts::bare_call(
-            //     origin,
-            //     Self::balances(&plapps_id),fAccountID
-            //     BalanceOf<T>::zero(),
-            //     gas_limit,
-            //     "transfer_from(origin, plapps_id, amount)",
-            // )?;
+            // transfer_from origin -> plapps_id (amount) at balances.
+            let erc20 = PseudoERC20::<T>::new(origin);
+            erc20.transfer(&plapps_id, amount)?;
 
             let deposit_range = RangeOf::<T> {
                 start: total_deposited,
@@ -345,31 +342,13 @@ decl_module! {
             Self::deposit_event(RawEvent::CheckpointFinalized(plapps_id, checkpoint_id, checkpoint));
         }
 
-        /// TODO: weight, not external
-        #[weight = 100_000]
-        fn extend_deposited_ranges(origin, plapps_id: T::AccountId, amount: BalanceOf<T>) {
-            ensure_signed(origin)?;
-            Self::bare_extend_deposited_ranges(&plapps_id, amount);
-        }
-
-        /// TODO: weight, not external
-        #[weight = 100_000]
-        fn remove_deposited_range(origin, plapps_id: T::AccountId,
-            range: RangeOf<T>, deposited_range_id: BalanceOf<T>) {
-            ensure_signed(origin)?;
-            Self::bare_remove_deposited_range(
-                &plapps_id,
-                &range,
-                &deposited_range_id,
-            )?;
-        }
 
         /// finalizeCheckpoint
         /// - @param _checkpointProperty A property which is instance of checkpoint predicate
         /// its first input is range to create checkpoint and second input is property for stateObject.
         /// TODO: weight
         #[weight = 100_000]
-        fn finalize_checkpoint(origin, plapps_id: T::AccountId,
+        fn finalize_checkpoint(_origin, plapps_id: T::AccountId,
             checkpoint_property: PropertyOf<T>) {
             ensure!(
                 <pallet_ovm::Module<T>>::is_decided(&checkpoint_property) != Decision::True,
@@ -410,19 +389,16 @@ decl_module! {
             )?;
             let owner: T::AccountId = Decode::decode(&mut &state_update.state_object.inputs[0][..])
                 .map_err(|_| Error::<T>::MustBeDecodable)?;
-            let _amount = state_update.range.end - state_update.range.start;
+            let amount = state_update.range.end - state_update.range.start;
             ensure!(
                 origin == owner,
                 Error::<T>::OriginMustBeOwner,
             );
-            // TODO: finalize_exit payout -> owner[state_update.state_objects.inputs[0]] (amount[state_update.range]) at payout.
-            // let _ = contracts::bare_call(
-            //     plapps_id,
-            //     Self::payout(&plapps_id),
-            //     BalanceOf<T>::zero(),
-            //     gas_limit,
-            //     "finalize_exit(state_update)",
-            // )?;
+            // finalize_exit payout -> owner[state_update.state_objects.inputs[0]] (amount[state_update.range]) at payout.
+            // Payout means transfer(plapps_id -> owner, amount), acttualy;
+            let payout = Self::payout(plapps_id);
+            let erc20 = PseudoERC20::<T>::new(payout);
+            erc20.transfer(&owner, amount)?;
         }
     }
 }
@@ -765,7 +741,7 @@ impl<T: Config> Module<T> {
         let state_update = Self::verify_exit_property(plapps_id, exit_property)?;
         let exit_id = Self::get_exit_id(exit_property);
         // get payout contract address
-        let _payout = Self::payout(plapps_id);
+        let payout = Self::payout(plapps_id);
 
         // Check that we are authorized to finalize this exit
         ensure!(
@@ -779,18 +755,13 @@ impl<T: Config> Module<T> {
         );
 
         // Remove the deposited range
-        Self::bare_remove_deposited_range(plapps_id, &state_update.range, deposited_range_id)?;
+        Self::bare_remove_deposited_range(plapps_id, &state_update.range, &deposited_range_id)?;
         // Transfer tokens to its predicate
-        let _amount = state_update.range.end - state_update.range.start;
+        let amount = state_update.range.end - state_update.range.start;
 
-        // TODO: transfer plapps_id -> payout (amount) at balances.
-        // let _ = contracts::bare_call(
-        //     origin,
-        //     Self::balances(&plapps_id),
-        //     BalanceOf<T>::zero(),
-        //     gas_limit,
-        //     "transfer(payout, amount)",
-        // )?;
+        // ERC20 transfer: transfer plapps_id -> payout (amount) at balances.
+        let erc20 = PseudoERC20::<T>::new(plapps_id.clone());
+        erc20.transfer(&payout, amount)?;
         Self::deposit_event(RawEvent::ExitFinalized(plapps_id.clone(), exit_id));
         Ok(state_update)
     }

@@ -399,7 +399,7 @@ decl_module! {
         ///
         /// TODO: weight
         #[weight = 100_000]
-        pub fn remove_challenge(origin, property: PropertyOf<T>, challenge_property: PropertyOf<T>) {
+        pub fn remove_challenge(origin, property: PropertyOf<T>) {
             let origin = ensure_signed(origin)?;
             Self::only_from_dispute_contract(&origin, &property)?;
 
