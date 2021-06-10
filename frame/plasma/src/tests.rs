@@ -354,22 +354,8 @@ fn success_deposit(
         Plasma::total_deposited(&plapps_id),
         total_deposited + amount
     );
-    assert_eq!(
-        System::events(),
+    assert!(System::events().ends_with(
         vec![
-            EventRecord {
-                phase: Phase::ApplyExtrinsic(0),
-                event: Event::system(frame_system::Event::NewAccount(plapps_id.clone(),)),
-                topics: vec![],
-            },
-            EventRecord {
-                phase: Phase::ApplyExtrinsic(0),
-                event: Event::pallet_balances(pallet_balances::Event::Endowed(
-                    plapps_id.clone(),
-                    amount,
-                )),
-                topics: vec![],
-            },
             EventRecord {
                 phase: Phase::ApplyExtrinsic(0),
                 event: Event::pallet_balances(pallet_balances::Event::Transfer(
@@ -397,7 +383,8 @@ fn success_deposit(
                 topics: vec![],
             }
         ]
-    );
+        .as_slice()
+    ));
     assert_eq!(Plasma::checkpoints(plapps_id.clone(), &checkpoint_id), true);
 }
 

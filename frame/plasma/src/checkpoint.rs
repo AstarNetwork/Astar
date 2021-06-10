@@ -112,7 +112,7 @@ impl<T: Config> Module<T> {
             Self::validate_challenge_removal(&inputs, &challenge_inputs, &witness);
 
         pallet_ovm::Call::<T>::set_game_result(challenge_property.clone(), false)?;
-        pallet_ovm::Call::<T>::remove_challenge(property, challenge_property)?;
+        pallet_ovm::Call::<T>::remove_challenge(property)?;
 
         Self::deposit_event(RawEvent::ChallengeRemoved(
             state_update,

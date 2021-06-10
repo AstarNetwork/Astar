@@ -49,7 +49,11 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
         .unwrap();
 
     let _ = pallet_balances::GenesisConfig::<Test> {
-        balances: vec![((*ALICE_STASH).clone(), 1_000_000_000_000_000_000)],
+        balances: vec![
+            ((*ALICE_STASH).clone(), 1_000_000_000_000_000_000),
+            ((*BOB_STASH).clone(), 5_000_000_000_000_000_000),
+            ((*CHARLIE_STASH).clone(), 10_000_000_000_000_000_000),
+        ],
     }
     .assimilate_storage(&mut storage);
 
