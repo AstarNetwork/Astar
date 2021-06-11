@@ -36,10 +36,13 @@ use sp_runtime::{
 };
 use sp_std::{marker::PhantomData, prelude::*, vec::Vec};
 
-pub use pallet_ovm::{Decision, Property, PropertyOf};
+pub use pallet_ovm::{Decision, ExecError, Property, PropertyOf};
 
+// mod checkpoint;
 mod deserializer;
 mod erc20;
+mod exit;
+mod helper;
 #[cfg(test)]
 mod mock;
 #[cfg(test)]
@@ -61,6 +64,16 @@ pub struct StateUpdate<AccountId, Balance, BlockNumber> {
     range: Range<Balance>,
     block_number: BlockNumber,
     state_object: Property<AccountId>,
+}
+
+#[derive(Encode, Decode, Clone, Default, RuntimeDebug, PartialEq, Eq)]
+pub struct Transaction<AccountId, Balance, BlockNumber, Hash> {
+    deposit_contract_address: AccountId,
+    range: Range<Balance>,
+    max_block_number: BlockNumber,
+    next_state_object: Property<AccountId>,
+    chunk_id: Hash,
+    from: AccountId,
 }
 
 #[derive(Encode, Decode, Clone, Default, RuntimeDebug, PartialEq, Eq)]
@@ -126,6 +139,12 @@ pub type ExitOf<T> = Exit<
 >;
 pub type StateUpdateOf<T> =
     StateUpdate<<T as system::Config>::AccountId, BalanceOf<T>, <T as system::Config>::BlockNumber>;
+pub type TransactionOf<T> = Transaction<
+    <T as frame_system::Config>::AccountId,
+    BalanceOf<T>,
+    <T as frame_system::Config>::BlockNumber,
+    <T as frame_system::Config>::Hash,
+>;
 pub type InclusionProofOf<T> =
     InclusionProof<<T as system::Config>::AccountId, BalanceOf<T>, <T as system::Config>::Hash>;
 pub type IntervalInclusionProofOf<T> =
@@ -228,6 +247,8 @@ decl_event!(
         BlockNumber = <T as system::Config>::BlockNumber,
         Range = RangeOf<T>,
         Checkpoint = CheckpointOf<T>,
+        StateUpdate = StateUpdateOf<T>,
+        InclusionProof = InclusionProofOf<T>,
     {
         /// Deplpoyed Plapps. (creator: AccountId, plapps_id: AccountId)
         Deploy(AccountId, AccountId),
@@ -237,6 +258,24 @@ decl_event!(
         CheckpointFinalized(AccountId, Hash, Checkpoint),
         /// (AccountID: PlappsAddress, exit_id: Hash)
         ExitFinalized(AccountId, Hash),
+        /// Event definitions (plapps_id: AccountId, state_update: StateUpdate, inclusion_proof: InclusionProof)
+        CheckpointClaimed(AccountId, StateUpdate, InclusionProof),
+        /// Event definitions (state_update: StateUpdate, challenging_state_update: StateUpdate, inclusion_proof: InclusionProof)
+        CheckpointChallenged(StateUpdate, StateUpdate, InclusionProof),
+        /// Event definitions (state_update: StateUpdate, challenging_state_update: StateUpdate)
+        ChallengeRemoved(StateUpdate, StateUpdate),
+        /// Event definitions (state_update: StateUpdate)
+        CheckpointSettled(StateUpdate),
+        /// Event definitions (state_update: stateUpdate)
+        ExitClaimed(StateUpdate),
+        /// Event definitions (state_update: stateUpdate)
+        ExitSpentChallenged(StateUpdate),
+        /// Event definitions (state_update: stateUpdate, challenging_state_update: StateUpdate)
+        ExitCheckpointChallenged(StateUpdate, StateUpdate),
+        /// Event definitions (state_update: stateUpdate, challenging_state_update: StateUpdate)
+        ExitChallengeRemoved(StateUpdate, StateUpdate),
+        /// Event definitions (state_update: stateUpdate, decision: bool)
+        ExitSettled(StateUpdate, bool),
         /// (AccountID: PlappsAddress, new_range: Range)
         DepositedRangeExtended(AccountId, Range),
         /// (AccountID: PlappsAddress, removed_range: Range)
@@ -444,6 +483,10 @@ decl_error! {
         RangeMustBeSubrangeOfCheckpoint,
         /// StateUpdate.depositContractAddress must be this contract address
         DepositContractAddressMustBePlappsId,
+        /// ExecError
+        PredicateExecError,
+        /// NotFoundGame
+        NotFoundGame,
     }
 }
 
@@ -460,8 +503,8 @@ fn migrate<T: Config>() {
 /// Public callable Plasma commitment module methods.
 impl<T: Config> Module<T> {
     // Plasma Commitment parts ====
-    pub fn retrieve(plapps_id: T::AccountId, block_number: T::BlockNumber) -> T::Hash {
-        <Blocks<T>>::get(&plapps_id, &block_number)
+    pub fn retrieve(plapps_id: &T::AccountId, block_number: &T::BlockNumber) -> T::Hash {
+        <Blocks<T>>::get(plapps_id, block_number)
     }
 
     /// verifyInclusion method verifies inclusion of message in Double Layer Tree.
@@ -473,27 +516,27 @@ impl<T: Config> Module<T> {
     /// - @param inclusion_proof The proof data to verify inclusion
     /// - @param block_number block number where the Merkle root is stored
     pub fn verify_inclusion(
-        plapps_id: T::AccountId,
-        leaf: T::Hash,
-        token_address: T::AccountId,
-        range: RangeOf<T>,
-        inclusion_proof: InclusionProofOf<T>,
-        block_number: T::BlockNumber,
+        plapps_id: &T::AccountId,
+        leaf: &T::Hash,
+        token_address: &T::AccountId,
+        range: &RangeOf<T>,
+        inclusion_proof: &InclusionProofOf<T>,
+        block_number: &T::BlockNumber,
     ) -> DispatchResultT<bool> {
-        let root = <Blocks<T>>::get(&plapps_id, &block_number);
-        Self::verify_inclusion_with_root(leaf, token_address, range, inclusion_proof, root)
+        let root = <Blocks<T>>::get(plapps_id, block_number);
+        Self::verify_inclusion_with_root(leaf, token_address, range, inclusion_proof, &root)
     }
 
     pub fn verify_inclusion_with_root(
-        leaf: T::Hash,
-        token_address: T::AccountId,
-        range: RangeOf<T>,
-        inclusion_proof: InclusionProofOf<T>,
-        root: T::Hash,
+        leaf: &T::Hash,
+        token_address: &T::AccountId,
+        range: &RangeOf<T>,
+        inclusion_proof: &InclusionProofOf<T>,
+        root: &T::Hash,
     ) -> DispatchResultT<bool> {
         // Calcurate the root of interval tree
         let (computed_root, implicit_end) = Self::compute_interval_tree_root(
-            &leaf,
+            leaf,
             &inclusion_proof.interval_inclusion_proof.leaf_index,
             &inclusion_proof.interval_inclusion_proof.leaf_position,
             &inclusion_proof.interval_inclusion_proof.siblings,
@@ -508,16 +551,16 @@ impl<T: Config> Module<T> {
         // Calcurate the root of address tree
         let (computed_root, implicit_address) = Self::compute_address_tree_root(
             &computed_root,
-            &token_address,
+            token_address,
             &inclusion_proof.address_inclusion_proof.leaf_position,
             &inclusion_proof.address_inclusion_proof.siblings,
         )?;
 
         ensure!(
-            token_address <= implicit_address,
+            token_address <= &implicit_address,
             Error::<T>::AddressMustNotExceedTheImplicitAddress,
         );
-        return Ok(computed_root == root);
+        return Ok(&computed_root == root);
     }
 }
 

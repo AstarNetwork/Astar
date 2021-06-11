@@ -26,7 +26,7 @@ use frame_support::{
 };
 use frame_system::{self as system, ensure_signed};
 
-use ovmi::executor::ExecError;
+pub use ovmi::executor::ExecError;
 pub type ExecResult<T> = Result<Vec<u8>, ExecError<<T as system::Config>::AccountId>>;
 
 #[cfg(feature = "std")]
@@ -86,13 +86,13 @@ pub enum Decision {
 #[derive(Encode, Decode, RuntimeDebug, PartialEq, Eq)]
 pub struct ChallengeGame<Hash, BlockNumber> {
     /// Property of challenging targets.
-    property_hash: Hash,
+    pub property_hash: Hash,
     /// challenges inputs
-    challenges: Vec<Hash>,
+    pub challenges: Vec<Hash>,
     /// the result of this challenge.
-    decision: Decision,
+    pub decision: Decision,
     /// the block number when this was issued.
-    created_block: BlockNumber,
+    pub created_block: BlockNumber,
 }
 
 /// Definition of the cost schedule and other parameterizations for optimistic virtual machine.
