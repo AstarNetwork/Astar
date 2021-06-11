@@ -53,6 +53,7 @@ pallet-scheduler = { version = "3.0.0", default-features = false }
 pallet-session = { version = "3.0.0", default-features = false, features = ["historical"] }
 pallet-staking = { version = "3.0.0", default-features = false }
 pallet-staking-reward-curve = { version = "3.0.0", default-features = false }
+pallet-authority-discovery = {default-features = false, version = '3.0.0'}
 pallet-sudo = { version = "3.0.0", default-features = false }
 pallet-offences = { version = "3.0.0", default-features = false }
 frame-support = { version = "3.0.0", default-features = false }
@@ -124,4 +125,6 @@ std = [
     "pallet-utility/std",
     "pallet-offences/std",
     "pallet-vesting/std",
+    "pallet-authority-discovery/std",
+    "pallet-staking/std",
 ]

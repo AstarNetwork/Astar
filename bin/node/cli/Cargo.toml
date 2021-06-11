@@ -24,6 +24,7 @@ sp-consensus = "0.9.0"
 sp-consensus-babe = "0.9.0"
 sp-finality-grandpa = "3.0.0"
 sp-transaction-pool = "3.0.0"
+sp-authority-discovery = "3.0.0"
 
 # client dependencies
 sc-client-api = "3.0.0"
