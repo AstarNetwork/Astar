@@ -6,7 +6,7 @@
 
 use frame_support::{
     construct_runtime, match_type, parameter_types,
-    traits::Filter,
+    traits::{Filter, U128CurrencyToVote},
     weights::{
         constants::{BlockExecutionWeight, ExtrinsicBaseWeight, WEIGHT_PER_SECOND},
         DispatchClass, IdentityFee, Weight,
@@ -20,9 +20,11 @@ use sp_api::impl_runtime_apis;
 use sp_core::OpaqueMetadata;
 use sp_inherents::{CheckInherentsResult, InherentData};
 use sp_runtime::{
-    create_runtime_str, generic, impl_opaque_keys,
-    traits::{AccountIdLookup, BlakeTwo256, Block as BlockT, ConvertInto},
-    transaction_validity::{TransactionSource, TransactionValidity},
+    create_runtime_str,
+    curve::PiecewiseLinear,
+    generic, impl_opaque_keys,
+    traits::{AccountIdLookup, BlakeTwo256, Block as BlockT, ConvertInto, OpaqueKeys, Verify},
+    transaction_validity::{TransactionPriority, TransactionSource, TransactionValidity},
     ApplyExtrinsicResult, FixedPointNumber, Perbill, Perquintill,
 };
 use sp_std::prelude::*;
@@ -39,6 +41,7 @@ use xcm_builder::{
 use xcm_executor::{Config, XcmExecutor};
 
 pub use pallet_balances::Call as BalancesCall;
+pub use pallet_staking::StakerStatus;
 pub use pallet_timestamp::Call as TimestampCall;
 pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 #[cfg(any(feature = "std", test))]
@@ -47,6 +50,10 @@ pub use sp_runtime::BuildStorage;
 /// Constant values used within the runtime.
 pub const MILLISDN: Balance = 1_000_000_000_000_000;
 pub const SDN: Balance = 1_000 * MILLISDN;
+pub const MILLISECS_PER_BLOCK: Moment = 12000;
+pub const SECS_PER_BLOCK: Moment = MILLISECS_PER_BLOCK / 1000;
+pub const MINUTES: BlockNumber = 60 / (SECS_PER_BLOCK as BlockNumber);
+pub const EPOCH_DURATION_IN_BLOCKS: BlockNumber = 10 * MINUTES;
 
 // Make the WASM binary available.
 #[cfg(feature = "std")]
@@ -72,9 +79,6 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 1,
 };
-
-/// Standard block duration for parachain is 12 secs.
-pub const MILLISECS_PER_BLOCK: u64 = 12000;
 
 /// Native version.
 #[cfg(any(feature = "std", test))]
@@ -212,6 +216,124 @@ impl parachain_info::Config for Runtime {}
 impl cumulus_pallet_aura_ext::Config for Runtime {}
 
 parameter_types! {
+    pub const DisabledValidatorsThreshold: Perbill = Perbill::from_percent(17);
+    pub const SessionPeriod: BlockNumber = 10;
+    pub const SessionOffset: BlockNumber = 10;
+}
+
+impl pallet_session::Config for Runtime {
+    type Event = Event;
+    type ValidatorId = <Self as frame_system::Config>::AccountId;
+    type ValidatorIdOf = pallet_staking::StashOf<Self>;
+    type ShouldEndSession = pallet_session::PeriodicSessions<SessionPeriod, SessionOffset>;
+    type NextSessionRotation = pallet_session::PeriodicSessions<SessionPeriod, SessionOffset>;
+    type SessionManager = pallet_session::historical::NoteHistoricalRoot<Self, Staking>;
+    type SessionHandler = <SessionKeys as OpaqueKeys>::KeyTypeIdProviders;
+    type Keys = SessionKeys;
+    type DisabledValidatorsThreshold = DisabledValidatorsThreshold;
+    type WeightInfo = pallet_session::weights::SubstrateWeight<Runtime>;
+}
+
+impl pallet_session::historical::Config for Runtime {
+    type FullIdentification = pallet_staking::Exposure<AccountId, Balance>;
+    type FullIdentificationOf = pallet_staking::ExposureOf<Runtime>;
+}
+
+pallet_staking_reward_curve::build! {
+    const REWARD_CURVE: PiecewiseLinear<'static> = curve!(
+        min_inflation: 0_025_000,
+        max_inflation: 0_100_000,
+        ideal_stake: 0_500_000,
+        falloff: 0_050_000,
+        max_piece_count: 40,
+        test_precision: 0_005_000,
+    );
+}
+
+parameter_types! {
+    pub const SessionsPerEra: sp_staking::SessionIndex = 6;
+    pub const BondingDuration: pallet_staking::EraIndex = 24 * 28;
+    pub const SlashDeferDuration: pallet_staking::EraIndex = 24 * 7; // 1/4 the bonding duration.
+    pub const RewardCurve: &'static PiecewiseLinear<'static> = &REWARD_CURVE;
+    pub const MaxNominatorRewardedPerValidator: u32 = 256;
+    pub OffchainRepeat: BlockNumber = 5;
+}
+
+impl pallet_staking::Config for Runtime {
+    const MAX_NOMINATIONS: u32 = MAX_NOMINATIONS;
+    type Currency = Balances;
+    type UnixTime = Timestamp;
+    type CurrencyToVote = U128CurrencyToVote;
+    type RewardRemainder = ();
+    type Event = Event;
+    type Slash = (); // send the slashed funds to the treasury.
+    type Reward = (); // rewards are minted from the void
+    type SessionsPerEra = SessionsPerEra;
+    type BondingDuration = BondingDuration;
+    type SlashDeferDuration = SlashDeferDuration;
+    /// A super-majority of the council can cancel the slash.                                                             
+    type SlashCancelOrigin = frame_system::EnsureRoot<AccountId>;
+    type SessionInterface = Self;
+    type EraPayout = pallet_staking::ConvertCurve<RewardCurve>;
+    type NextNewSession = Session;
+    type MaxNominatorRewardedPerValidator = MaxNominatorRewardedPerValidator;
+    type ElectionProvider = ElectionProviderMultiPhase;
+    type WeightInfo = pallet_staking::weights::SubstrateWeight<Runtime>;
+}
+
+parameter_types! {
+    // phase durations. 1/4 of the last session for each.
+    pub const SignedPhase: u32 = EPOCH_DURATION_IN_BLOCKS / 4;
+    pub const UnsignedPhase: u32 = EPOCH_DURATION_IN_BLOCKS / 4;
+    // fallback: no need to do on-chain phragmen initially.
+    pub const Fallback: pallet_election_provider_multi_phase::FallbackStrategy =
+        pallet_election_provider_multi_phase::FallbackStrategy::OnChain;
+    pub SolutionImprovementThreshold: Perbill = Perbill::from_rational(1u32, 10_000);
+    // miner configs
+    pub const MultiPhaseUnsignedPriority: TransactionPriority = StakingUnsignedPriority::get() - 1u64;
+    pub const MinerMaxIterations: u32 = 10;
+    pub MinerMaxWeight: Weight = RuntimeBlockWeights::get()
+        .get(DispatchClass::Normal)
+        .max_extrinsic.expect("Normal extrinsics have a weight limit configured; qed")
+        .saturating_sub(BlockExecutionWeight::get());
+    // Solution can occupy 90% of normal block size
+    pub MinerMaxLength: u32 = Perbill::from_rational(9u32, 10) *
+        * RuntimeBlockLength::get().max.get(DispatchClass::Normal);
+}
+
+sp_npos_elections::generate_solution_type!(
+    #[compact]
+    pub struct NposCompactSolution16::<
+        VoterIndex = u32,
+        TargetIndex = u16,
+        Accuracy = sp_runtime::PerU16,
+    >(16)
+);
+
+pub const MAX_NOMINATIONS: u32 =
+    <NposCompactSolution16 as sp_npos_elections::CompactSolution>::LIMIT as u32;
+
+impl pallet_election_provider_multi_phase::Config for Runtime {
+    type Event = Event;
+    type Currency = Balances;
+    type SignedPhase = SignedPhase;
+    type UnsignedPhase = UnsignedPhase;
+    type SolutionImprovementThreshold = SolutionImprovementThreshold;
+    type OffchainRepeat = OffchainRepeat;
+    type MinerMaxIterations = MinerMaxIterations;
+    type MinerMaxWeight = MinerMaxWeight;
+    type MinerMaxLength = MinerMaxLength;
+    type MinerTxPriority = MultiPhaseUnsignedPriority;
+    type DataProvider = Staking;
+    type OnChainAccuracy = Perbill;
+    type CompactSolution = NposCompactSolution16;
+    type Fallback = Fallback;
+    type WeightInfo = pallet_election_provider_multi_phase::weights::SubstrateWeight<Runtime>;
+    type ForceOrigin = frame_system::EnsureRoot<AccountId>;
+    type BenchmarkingConfig = ();
+}
+
+parameter_types! {
     pub Ancestry: MultiLocation = Parachain(ParachainInfo::parachain_id().into()).into();
 }
 
@@ -308,6 +430,18 @@ impl pallet_sudo::Config for Runtime {
     type Call = Call;
 }
 
+parameter_types! {
+    pub const StakingUnsignedPriority: TransactionPriority = TransactionPriority::max_value() / 2;
+}
+
+impl<C> frame_system::offchain::SendTransactionTypes<C> for Runtime
+where
+    Call: From<C>,
+{
+    type Extrinsic = UncheckedExtrinsic;
+    type OverarchingCall = Call;
+}
+
 construct_runtime!(
     pub enum Runtime where
         Block = Block,
@@ -325,8 +459,11 @@ construct_runtime!(
         Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>} = 30,
         Vesting: pallet_vesting::{Pallet, Call, Storage, Config<T>, Event<T>} = 31,
 
-        Aura: pallet_aura::{Pallet, Config<T>},
-        AuraExt: cumulus_pallet_aura_ext::{Pallet, Config},
+        Aura: pallet_aura::{Pallet, Config<T>} = 40,
+        AuraExt: cumulus_pallet_aura_ext::{Pallet, Config} = 41,
+        Session: pallet_session::{Pallet, Call, Storage, Event, Config<T>} = 42,
+        Staking: pallet_staking::{Pallet, Call, Config<T>, Storage, Event<T>} = 43,
+        ElectionProviderMultiPhase: pallet_election_provider_multi_phase::{Pallet, Call, Storage, Event<T>, ValidateUnsigned} = 44,
 
         CumulusXcm: cumulus_pallet_xcm::{Pallet, Call, Event<T>, Origin} = 50,
     }
@@ -338,9 +475,12 @@ pub type Balance = u128;
 pub type Signature = sp_runtime::MultiSignature;
 /// Some way of identifying an account on the chain. We intentionally make it equivalent
 /// to the public key of our transaction signing scheme.
-pub type AccountId = <<Signature as sp_runtime::traits::Verify>::Signer as sp_runtime::traits::IdentifyAccount>::AccountId;
+pub type AccountId =
+    <<Signature as Verify>::Signer as sp_runtime::traits::IdentifyAccount>::AccountId;
 /// Index of a transaction in the chain.
 pub type Index = u32;
+/// Type used for expressing timestamp.
+pub type Moment = u64;
 /// A hash of some data used by the chain.
 pub type Hash = sp_core::H256;
 /// An index to a block.

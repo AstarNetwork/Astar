@@ -1,15 +1,13 @@
-use cumulus_client_consensus_relay_chain::{
-    build_relay_chain_consensus, BuildRelayChainConsensusParams,
-};
+use cumulus_client_consensus_aura::SlotProportion;
 use cumulus_client_network::build_block_announce_validator;
 use cumulus_client_service::{
     prepare_node_config, start_collator, start_full_node, StartCollatorParams, StartFullNodeParams,
 };
-use cumulus_primitives_parachain_inherent::ParachainInherentData;
-use polkadot_primitives::v0::CollatorPair;
+use sc_client_api::call_executor::ExecutorProvider;
 use sc_service::{Configuration, PartialComponents, Role, TFullBackend, TFullClient, TaskManager};
 use sc_telemetry::{Telemetry, TelemetryWorker, TelemetryWorkerHandle};
 use shiden_runtime::RuntimeApi;
+use sp_consensus::SlotData;
 use std::sync::Arc;
 
 type BlockNumber = u32;
@@ -65,8 +63,6 @@ pub fn new_partial(
         telemetry
     });
 
-    let registry = config.prometheus_registry();
-
     let transaction_pool = sc_transaction_pool::BasicPool::new_full(
         config.transaction_pool.clone(),
         config.role.is_authority().into(),
@@ -101,9 +97,8 @@ pub fn new_partial(
         registry: config.prometheus_registry().clone(),
         can_author_with: sp_consensus::CanAuthorWithNativeVersion::new(client.executor().clone()),
         spawner: &task_manager.spawn_essential_handle(),
-        telemetry,
-    })
-    .map_err(Into::into)?;
+        telemetry: telemetry.as_ref().map(|telemetry| telemetry.handle()),
+    })?;
 
     let params = PartialComponents {
         backend,
@@ -125,7 +120,6 @@ pub fn new_partial(
 #[sc_tracing::logging::prefix_logs_with("Parachain")]
 pub async fn start_node<RB>(
     parachain_config: Configuration,
-    collator_key: CollatorPair,
     polkadot_config: Configuration,
     id: polkadot_primitives::v0::Id,
     rpc_ext_builder: RB,
@@ -146,15 +140,12 @@ where
     let params = new_partial(&parachain_config)?;
     let (mut telemetry, telemetry_worker_handle) = params.other;
 
-    let relay_chain_full_node = cumulus_client_service::build_polkadot_full_node(
-        polkadot_config,
-        collator_key.clone(),
-        telemetry_worker_handle,
-    )
-    .map_err(|e| match e {
-        polkadot_service::Error::Sub(x) => x,
-        s => format!("{}", s).into(),
-    })?;
+    let relay_chain_full_node =
+        cumulus_client_service::build_polkadot_full_node(polkadot_config, telemetry_worker_handle)
+            .map_err(|e| match e {
+                polkadot_service::Error::Sub(x) => x,
+                s => format!("{}", s).into(),
+            })?;
 
     let client = params.client.clone();
     let backend = params.backend.clone();
@@ -166,11 +157,12 @@ where
     );
 
     let validator = parachain_config.role.is_authority();
+    let force_authoring = parachain_config.force_authoring;
     let prometheus_registry = parachain_config.prometheus_registry().cloned();
     let transaction_pool = params.transaction_pool.clone();
     let mut task_manager = params.task_manager;
     let import_queue = cumulus_client_service::SharedImportQueue::new(params.import_queue);
-    let (network, network_status_sinks, system_rpc_tx, start_network) =
+    let (network, system_rpc_tx, start_network) =
         sc_service::build_network(sc_service::BuildNetworkParams {
             config: &parachain_config,
             client: client.clone(),
@@ -195,7 +187,6 @@ where
         keystore: params.keystore_container.sync_keystore(),
         backend: backend.clone(),
         network: network.clone(),
-        network_status_sinks,
         system_rpc_tx,
         telemetry: telemetry.as_mut(),
     })?;
@@ -216,19 +207,22 @@ where
         let relay_chain_backend = relay_chain_full_node.backend.clone();
         let relay_chain_client = relay_chain_full_node.client.clone();
 
+        let keystore = params.keystore_container.sync_keystore();
+        let sync_oracle = network.clone();
         let slot_duration = cumulus_client_consensus_aura::slot_duration(&*client)?;
         let parachain_consensus = cumulus_client_consensus_aura::build_aura_consensus::<
-                sp_consensus_aura::sr25519::AuthorityPair,
-                _,
-                _,
-                _,
-                _,
-                _,
-                _,
-                _,
-                _,
-                _,
-            >(BuildAuraConsensusParams {
+            sp_consensus_aura::sr25519::AuthorityPair,
+            _,
+            _,
+            _,
+            _,
+            _,
+            _,
+            _,
+            _,
+            _,
+        >(
+            cumulus_client_consensus_aura::BuildAuraConsensusParams {
                 proposer_factory,
                 create_inherent_data_providers: move |_, (relay_parent, validation_data)| {
                     let parachain_inherent =
@@ -257,8 +251,8 @@ where
                     }
                 },
                 block_import: client.clone(),
-                relay_chain_client: relay_chain_node.client.clone(),
-                relay_chain_backend: relay_chain_node.backend.clone(),
+                relay_chain_client: relay_chain_full_node.client.clone(),
+                relay_chain_backend: relay_chain_full_node.backend.clone(),
                 para_client: client.clone(),
                 backoff_authoring_blocks: Option::<()>::None,
                 sync_oracle,
@@ -267,8 +261,9 @@ where
                 slot_duration,
                 // We got around 500ms for proposing
                 block_proposal_slot_portion: SlotProportion::new(1f32 / 24f32),
-                telemetry,
-            }))?;
+                telemetry: telemetry.as_ref().map(|telemetry| telemetry.handle()),
+            },
+        );
 
         let spawner = task_manager.spawn_handle();
         let params = StartCollatorParams {
@@ -277,7 +272,6 @@ where
             announce_block,
             client: client.clone(),
             task_manager: &mut task_manager,
-            collator_key,
             relay_chain_full_node,
             spawner,
             parachain_consensus,

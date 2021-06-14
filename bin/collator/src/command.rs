@@ -259,9 +259,6 @@ pub fn run() -> Result<()> {
             let runner = cli.create_runner(&*cli.run)?;
 
             runner.run_node_until_exit(|config| async move {
-                // TODO
-                let key = sp_core::Pair::generate().0;
-
                 let polkadot_cli = RelayChainCli::new(
                     &config,
                     [RelayChainCli::executable_name().to_string()]
@@ -297,7 +294,6 @@ pub fn run() -> Result<()> {
 
                 crate::service::start_node(
                     config,
-                    key,
                     polkadot_config,
                     id,
                     Box::new(move |_| Default::default()),

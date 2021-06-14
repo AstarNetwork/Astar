@@ -5,12 +5,16 @@ use sc_chain_spec::ChainSpecExtension;
 use sc_service::ChainType;
 use serde::{Deserialize, Serialize};
 use shiden_runtime::{
-    wasm_binary_unwrap, AccountId, Balance, BalancesConfig, GenesisConfig, ParachainInfoConfig,
-    Signature, SudoConfig, SystemConfig, VestingConfig, SDN,
+    wasm_binary_unwrap, AccountId, AuraId, Balance, BalancesConfig, GenesisConfig,
+    ParachainInfoConfig, SessionConfig, SessionKeys, Signature, StakerStatus, StakingConfig,
+    SudoConfig, SystemConfig, VestingConfig, SDN,
 };
 use sp_core::{sr25519, Pair, Public};
 
-use sp_runtime::traits::{IdentifyAccount, Verify};
+use sp_runtime::{
+    traits::{IdentifyAccount, Verify},
+    Perbill,
+};
 
 type AccountPublic = <Signature as Verify>::Signer;
 
@@ -50,6 +54,15 @@ where
     AccountPublic: From<<TPublic::Pair as Pair>::Public>,
 {
     AccountPublic::from(get_from_seed::<TPublic>(seed)).into_account()
+}
+
+/// Helper function to generate stash, controller and session key from seed
+pub fn authority_keys_from_seed(seed: &str) -> (AccountId, AccountId, AuraId) {
+    (
+        get_account_id_from_seed::<sr25519::Public>(&format!("{}//stash", seed)),
+        get_account_id_from_seed::<sr25519::Public>(seed),
+        get_from_seed::<AuraId>(seed),
+    )
 }
 
 /// Gen chain specification for given parachain id
@@ -141,12 +154,31 @@ fn testnet_genesis(
     make_genesis(endowed_accounts, sudo_key, para_id)
 }
 
+fn session_keys(aura: AuraId) -> SessionKeys {
+    SessionKeys { aura }
+}
+
 /// Helper function to create GenesisConfig
 fn make_genesis(
     balances: Vec<(AccountId, Balance)>,
     root_key: AccountId,
     parachain_id: ParaId,
 ) -> GenesisConfig {
+    let authorities = vec![
+        authority_keys_from_seed("Alice"),
+        authority_keys_from_seed("Bob"),
+    ];
+    let stakers = authorities
+        .iter()
+        .map(|x| {
+            (
+                x.0.clone(),
+                x.1.clone(),
+                1_000 * SDN,
+                StakerStatus::Validator,
+            )
+        })
+        .collect::<Vec<_>>();
     GenesisConfig {
         frame_system: SystemConfig {
             code: wasm_binary_unwrap().to_vec(),
@@ -156,5 +188,21 @@ fn make_genesis(
         parachain_info: ParachainInfoConfig { parachain_id },
         pallet_balances: BalancesConfig { balances },
         pallet_vesting: VestingConfig { vesting: vec![] },
+        pallet_aura: Default::default(),
+        pallet_session: SessionConfig {
+            keys: authorities
+                .iter()
+                .map(|x| (x.0.clone(), x.0.clone(), session_keys(x.2.clone())))
+                .collect::<Vec<_>>(),
+        },
+        pallet_staking: StakingConfig {
+            validator_count: authorities.len() as u32,
+            minimum_validator_count: authorities.len() as u32,
+            invulnerables: authorities.iter().map(|x| x.0.clone()).collect(),
+            slash_reward_fraction: Perbill::from_percent(10),
+            stakers,
+            ..Default::default()
+        },
+        cumulus_pallet_aura_ext: Default::default(),
     }
 }

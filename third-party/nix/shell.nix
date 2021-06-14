@@ -15,6 +15,6 @@ stdenv.mkDerivation {
   ] ++ stdenv.lib.optionals stdenv.isDarwin [
     darwin.apple_sdk.frameworks.Security
   ];
-  LIBCLANG_PATH = "${libclang}/lib";
+  LIBCLANG_PATH = "${clang-unwrapped.lib}/lib";
   PROTOC = "${protobuf}/bin/protoc";
 }
