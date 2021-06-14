@@ -77,8 +77,8 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     // and set impl_version to equal spec_version. If only runtime
     // implementation changes and behavior does not, then leave spec_version as
     // is and increment impl_version.
-    spec_version: 3,
-    impl_version: 3,
+    spec_version: 5,
+    impl_version: 5,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 1,
 };
@@ -248,10 +248,9 @@ impl pallet_authorship::Config for Runtime {
 
 impl_opaque_keys! {
     pub struct SessionKeys {
-        pub grandpa: Grandpa,
         pub babe: Babe,
+        pub grandpa: Grandpa,
         pub im_online: ImOnline,
-        pub authority_discovery: AuthorityDiscovery,
     }
 }
 
@@ -323,19 +322,15 @@ parameter_types! {
     pub const MaxIterations: u32 = 10;
     // 0.05%. The higher the value, the more strict solution acceptance becomes.
     pub MinSolutionScoreBump: Perbill = Perbill::from_rational_approximation(5u32, 10_000);
-    pub OffchainSolutionWeightLimit: Weight = RuntimeBlockWeights::get()
-    .get(DispatchClass::Normal)
-    .max_extrinsic.expect("Normal extrinsics have a weight limit configured; qed")
-    .saturating_sub(BlockExecutionWeight::get());
 }
 
 impl pallet_staking::Config for Runtime {
     type Currency = Balances;
     type UnixTime = Timestamp;
     type CurrencyToVote = U128CurrencyToVote;
-    type RewardRemainder = (); //TODO Treasury
+    type RewardRemainder = ();
     type Event = Event;
-    type Slash = (); // send the slashed funds to the treasury. TODO Treasury
+    type Slash = ();
     type Reward = (); // rewards are minted from the void
     type SessionsPerEra = SessionsPerEra;
     type BondingDuration = BondingDuration;
@@ -353,7 +348,6 @@ impl pallet_staking::Config for Runtime {
     type WeightInfo = ();
     type OffchainSolutionWeightLimit = ();
 }
-impl pallet_authority_discovery::Config for Runtime {}
 
 parameter_types! {
     pub const TombstoneDeposit: Balance = deposit(
@@ -735,7 +729,6 @@ construct_runtime!(
         Ethereum: pallet_ethereum::{Module, Call, Storage, Event, Config, ValidateUnsigned},
         EVM: pallet_evm::{Module, Call, Storage, Config, Event<T>},
         EthCall: pallet_custom_signatures::{Module, Call, Event<T>, ValidateUnsigned},
-        AuthorityDiscovery: pallet_authority_discovery::{Module, Call, Config},
     }
 );
 
