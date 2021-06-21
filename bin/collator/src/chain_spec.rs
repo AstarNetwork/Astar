@@ -185,15 +185,15 @@ fn make_genesis(
         })
         .collect::<Vec<_>>();
     GenesisConfig {
-        frame_system: SystemConfig {
+        system: SystemConfig {
             code: wasm_binary_unwrap().to_vec(),
             changes_trie_config: Default::default(),
         },
-        pallet_sudo: SudoConfig { key: root_key },
+        sudo: SudoConfig { key: root_key },
         parachain_info: ParachainInfoConfig { parachain_id },
-        pallet_balances: BalancesConfig { balances },
-        pallet_vesting: VestingConfig { vesting: vec![] },
-        pallet_session: SessionConfig {
+        balances: BalancesConfig { balances },
+        vesting: VestingConfig { vesting: vec![] },
+        session: SessionConfig {
             keys: authorities
                 .iter()
                 .map(|x| {
@@ -205,7 +205,7 @@ fn make_genesis(
                 })
                 .collect::<Vec<_>>(),
         },
-        pallet_staking: StakingConfig {
+        staking: StakingConfig {
             validator_count: authorities.len() as u32,
             minimum_validator_count: authorities.len() as u32,
             invulnerables: authorities.iter().map(|x| x.0.clone()).collect(),
@@ -213,10 +213,10 @@ fn make_genesis(
             stakers,
             ..Default::default()
         },
-        pallet_aura: AuraConfig {
+        aura: AuraConfig {
             authorities: vec![],
         },
-        pallet_im_online: ImOnlineConfig { keys: vec![] },
-        cumulus_pallet_aura_ext: Default::default(),
+        im_online: ImOnlineConfig { keys: vec![] },
+        aura_ext: Default::default(),
     }
 }
