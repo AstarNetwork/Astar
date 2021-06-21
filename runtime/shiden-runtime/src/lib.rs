@@ -4,6 +4,7 @@
 // `construct_runtime!` does a lot of recursion and requires us to increase the limit to 256.
 #![recursion_limit = "256"]
 
+use frame_election_provider_support::onchain::OnChainSequentialPhragmen;
 use frame_support::{
     construct_runtime, match_type, parameter_types,
     traits::{Filter, U128CurrencyToVote},
@@ -13,7 +14,6 @@ use frame_support::{
     },
 };
 use frame_system::limits::{BlockLength, BlockWeights};
-use frame_election_provider_support::onchain::OnChainSequentialPhragmen;
 use pallet_session::historical as pallet_session_historical;
 use pallet_transaction_payment::{
     FeeDetails, Multiplier, RuntimeDispatchInfo, TargetedFeeAdjustment,
@@ -309,7 +309,7 @@ impl pallet_staking::Config for Runtime {
     type NextNewSession = Session;
     type MaxNominatorRewardedPerValidator = MaxNominatorRewardedPerValidator;
     type ElectionProvider = ElectionProviderMultiPhase;
-    type GenesisElectionProvider = 
+    type GenesisElectionProvider =
         OnChainSequentialPhragmen<pallet_election_provider_multi_phase::OnChainConfig<Self>>;
     type WeightInfo = pallet_staking::weights::SubstrateWeight<Runtime>;
 }
