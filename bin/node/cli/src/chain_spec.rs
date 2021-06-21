@@ -139,12 +139,6 @@ fn make_genesis(
         pallet_balances: Some(BalancesConfig { balances }),
         pallet_vesting: Some(VestingConfig { vesting: vec![] }),
         pallet_indices: Some(IndicesConfig { indices: vec![] }),
-        // pallet_plasm_rewards: Some(PlasmRewardsConfig {
-        //     ..Default::default()
-        // }),
-        // pallet_plasm_validator: Some(PlasmValidatorConfig {
-        //     validators: initial_authorities,
-        // }),
         pallet_session: Some(SessionConfig {
             keys: keys
                 .iter()
