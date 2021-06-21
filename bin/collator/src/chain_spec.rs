@@ -5,9 +5,9 @@ use sc_chain_spec::ChainSpecExtension;
 use sc_service::ChainType;
 use serde::{Deserialize, Serialize};
 use shiden_runtime::{
-    wasm_binary_unwrap, AccountId, AuraId, Balance, BalancesConfig, GenesisConfig,
-    ParachainInfoConfig, SessionConfig, SessionKeys, Signature, StakerStatus, StakingConfig,
-    SudoConfig, SystemConfig, VestingConfig, SDN,
+    wasm_binary_unwrap, AccountId, AuraConfig, AuraId, Balance, BalancesConfig, GenesisConfig,
+    ImOnlineConfig, ImOnlineId, ParachainInfoConfig, SessionConfig, SessionKeys, Signature,
+    StakerStatus, StakingConfig, SudoConfig, SystemConfig, VestingConfig, SDN,
 };
 use sp_core::{sr25519, Pair, Public};
 
@@ -57,19 +57,22 @@ where
 }
 
 /// Helper function to generate stash, controller and session key from seed
-pub fn authority_keys_from_seed(seed: &str) -> (AccountId, AccountId, AuraId) {
+pub fn authority_keys_from_seed(seed: &str) -> (AccountId, AccountId, AuraId, ImOnlineId) {
     (
         get_account_id_from_seed::<sr25519::Public>(&format!("{}//stash", seed)),
         get_account_id_from_seed::<sr25519::Public>(seed),
         get_from_seed::<AuraId>(seed),
+        get_from_seed::<ImOnlineId>(seed),
     )
 }
 
 /// Gen chain specification for given parachain id
 pub fn get_chain_spec(id: ParaId) -> ChainSpec {
+    /*
     if id == ParaId::from(2007) {
         return shiden_chain_spec();
     }
+    */
 
     ChainSpec::from_genesis(
         "Local Testnet",
@@ -139,7 +142,9 @@ fn testnet_genesis(
         .unwrap_or_else(|| {
             vec![
                 get_account_id_from_seed::<sr25519::Public>("Alice"),
+                get_account_id_from_seed::<sr25519::Public>("Alice//stash"),
                 get_account_id_from_seed::<sr25519::Public>("Bob"),
+                get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
                 get_account_id_from_seed::<sr25519::Public>("Charlie"),
                 get_account_id_from_seed::<sr25519::Public>("Dave"),
                 get_account_id_from_seed::<sr25519::Public>("Eve"),
@@ -154,8 +159,8 @@ fn testnet_genesis(
     make_genesis(endowed_accounts, sudo_key, para_id)
 }
 
-fn session_keys(aura: AuraId) -> SessionKeys {
-    SessionKeys { aura }
+fn session_keys(aura: AuraId, im_online: ImOnlineId) -> SessionKeys {
+    SessionKeys { aura, im_online }
 }
 
 /// Helper function to create GenesisConfig
@@ -188,11 +193,16 @@ fn make_genesis(
         parachain_info: ParachainInfoConfig { parachain_id },
         pallet_balances: BalancesConfig { balances },
         pallet_vesting: VestingConfig { vesting: vec![] },
-        pallet_aura: Default::default(),
         pallet_session: SessionConfig {
             keys: authorities
                 .iter()
-                .map(|x| (x.0.clone(), x.0.clone(), session_keys(x.2.clone())))
+                .map(|x| {
+                    (
+                        x.0.clone(),
+                        x.0.clone(),
+                        session_keys(x.2.clone(), x.3.clone()),
+                    )
+                })
                 .collect::<Vec<_>>(),
         },
         pallet_staking: StakingConfig {
@@ -203,6 +213,10 @@ fn make_genesis(
             stakers,
             ..Default::default()
         },
+        pallet_aura: AuraConfig {
+            authorities: vec![],
+        },
+        pallet_im_online: ImOnlineConfig { keys: vec![] },
         cumulus_pallet_aura_ext: Default::default(),
     }
 }
