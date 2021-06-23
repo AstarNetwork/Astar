@@ -20,6 +20,7 @@ sp-io = { version = "3.0.0", default-features = false }
 sp-runtime = { version = "3.0.0", default-features = false }
 sp-runtime-interface = { version = "3.0.0", default-features = false }
 sp-consensus-babe = { version = "0.9.0", default-features = false }
+sp-consensus-aura = { version = "0.9.0", default-features = false }
 sp-offchain = { version = "3.0.0", default-features = false }
 sp-api = { version = "3.0.0", default-features = false }
 sp-inherents = { version = "3.0.0", default-features = false }
@@ -28,6 +29,11 @@ sp-transaction-pool = { version = "3.0.0", default-features = false }
 sp-std = { version = "3.0.0", default-features = false }
 sp-version = { version = "3.0.0", default-features = false }
 sp-session = { version = "3.0.0", default-features = false }
+sc-client-api = { version = "3.0.0", default-features = false }
+sc-finality-grandpa = { version = "0.9.0", default-features = false }
+sc-network = { version = "0.9.0", default-features = false }
+sc-service = { version = "0.9.0", default-features = false }
+sp-blockchain = { version = "3.0.0", default-features = false }
 
 # frame dependencies
 pallet-plasm-operator = { path = "../../../frame/plasm-operator", default-features = false }
@@ -65,6 +71,8 @@ pallet-utility = { version = "3.0.0", default-features = false }
 pallet-vesting = { version = "3.0.0", default-features = false }
 fp-rpc = { path = "../../../vendor/frontier/primitives/rpc", default-features = false }
 pallet-ethereum = { path = "../../../vendor/frontier/frame/ethereum", default-features = false }
+pallet-node-authorization = { version = "3.0.0", default-features = false }
+pallet-aura = { version = "3.0.0", default-features = false }
 
 [build-dependencies]
 wasm-builder-runner = { package = "substrate-wasm-builder-runner", version = "1.0.5" }
@@ -82,6 +90,7 @@ std = [
     "sp-core/std",
     "sp-io/std",
     "sp-consensus-babe/std",
+    "sp-consensus-aura/std",
     "sp-runtime/std",
     "sp-runtime-interface/std",
     "sp-session/std",
@@ -126,4 +135,6 @@ std = [
     "pallet-utility/std",
     "pallet-offences/std",
     "pallet-vesting/std",
+    "pallet-node-authorization/std",
+    "pallet-aura/std",
 ]
