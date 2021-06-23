@@ -31,7 +31,7 @@ const STAGING_TELEMETRY_URL: &str = "wss://telemetry.polkadot.io/submit/";
 const PLASM_PROPERTIES: &str = r#"
         {
             "ss58Format": 5,
-            "tokenDecimals": 15,
+            "tokenDecimals": 18,
             "tokenSymbol": "PLM"
         }"#;
 const PLASM_PROTOCOL_ID: &str = "plm";
@@ -39,7 +39,7 @@ const PLASM_PROTOCOL_ID: &str = "plm";
 const DUSTY_PROPERTIES: &str = r#"
         {
             "ss58Format": 5,
-            "tokenDecimals": 15,
+            "tokenDecimals": 18,
             "tokenSymbol": "PLD"
         }"#;
 const DUSTY_PROTOCOL_ID: &str = "pld";
@@ -198,7 +198,7 @@ fn make_genesis(
 
 /// Dusty testnet file config.
 pub fn dusty_config() -> ChainSpec {
-    ChainSpec::from_json_bytes(&include_bytes!("../res/dusty.raw.json")[..]).unwrap()
+    ChainSpec::from_json_bytes(&include_bytes!("../res/dusty5.json")[..]).unwrap()
 }
 
 /*
@@ -222,11 +222,16 @@ pub fn dusty_config() -> ChainSpec {
 
 fn dusty_genesis() -> GenesisConfig {
     let authorities = vec![
-        hex!["16eb796bee0c857db3d646ee7070252707aec0c7d82b2eda856632f6a2306a58"].into(),
-        hex!["48cdc7ef880c80e8475170f206381d2cb13a87c209452fc6d8a1e14186d61b28"].into(),
-        hex!["38cdc7ef880c80e8475170f206381d2cb13a87c209452fc6d8a1e14186d61b28"].into(),
-        hex!["28cdc7ef880c80e8475170f206381d2cb13a87c209452fc6d8a1e14186d61b28"].into(),
-        hex!["18cdc7ef880c80e8475170f206381d2cb13a87c209452fc6d8a1e14186d61b28"].into(),
+        (hex!["16eb796bee0c857db3d646ee7070252707aec0c7d82b2eda856632f6a2306a58"].into(),
+        hex!["16eb796bee0c857db3d646ee7070252707aec0c7d82b2eda856632f6a2306a58"].into()),
+        (hex!["48cdc7ef880c80e8475170f206381d2cb13a87c209452fc6d8a1e14186d61b28"].into(),
+        hex!["48cdc7ef880c80e8475170f206381d2cb13a87c209452fc6d8a1e14186d61b28"].into()),
+        (hex!["38cdc7ef880c80e8475170f206381d2cb13a87c209452fc6d8a1e14186d61b28"].into(),
+        hex!["38cdc7ef880c80e8475170f206381d2cb13a87c209452fc6d8a1e14186d61b28"].into()),
+        (hex!["28cdc7ef880c80e8475170f206381d2cb13a87c209452fc6d8a1e14186d61b28"].into(),
+        hex!["28cdc7ef880c80e8475170f206381d2cb13a87c209452fc6d8a1e14186d61b28"].into()),
+        (hex!["18cdc7ef880c80e8475170f206381d2cb13a87c209452fc6d8a1e14186d61b28"].into(),
+        hex!["18cdc7ef880c80e8475170f206381d2cb13a87c209452fc6d8a1e14186d61b28"].into()),
     ];
 
     let keys = vec![
