@@ -54,9 +54,6 @@ pub use pallet_timestamp::Call as TimestampCall;
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
 
-/// Deprecated but used runtime interfaces.
-pub mod legacy;
-
 /// Constant values used within the runtime.
 pub mod constants;
 use constants::{currency::*, time::*};
