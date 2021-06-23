@@ -49,10 +49,13 @@ use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
 
 pub use pallet_balances::Call as BalancesCall;
-
+pub use pallet_contracts::Gas;
 pub use pallet_timestamp::Call as TimestampCall;
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
+
+/// Deprecated but used runtime interfaces.
+pub mod legacy;
 
 /// Constant values used within the runtime.
 pub mod constants;
@@ -98,7 +101,7 @@ parameter_types! {
     pub const Version: RuntimeVersion = VERSION;
 }
 
-impl frame_system::Config for Runtime {
+impl frame_system::Trait for Runtime {
     type BaseCallFilter = ();
     type Origin = Origin;
     type Call = Call;
@@ -127,10 +130,37 @@ impl frame_system::Config for Runtime {
 }
 
 parameter_types! {
+    pub const EpochDuration: u64 = EPOCH_DURATION_IN_BLOCKS as u64;
+    pub const ExpectedBlockTime: Moment = MILLISECS_PER_BLOCK;
+}
+
+impl pallet_babe::Trait for Runtime {
+    type EpochDuration = EpochDuration;
+    type ExpectedBlockTime = ExpectedBlockTime;
+    type EpochChangeTrigger = pallet_babe::ExternalTrigger;
+
+    type KeyOwnerProofSystem = Historical;
+
+    type KeyOwnerProof = <Self::KeyOwnerProofSystem as KeyOwnerProofSystem<(
+        KeyTypeId,
+        pallet_babe::AuthorityId,
+    )>>::Proof;
+
+    type KeyOwnerIdentification = <Self::KeyOwnerProofSystem as KeyOwnerProofSystem<(
+        KeyTypeId,
+        pallet_babe::AuthorityId,
+    )>>::IdentificationTuple;
+
+    type HandleEquivocation = pallet_babe::EquivocationHandler<Self::KeyOwnerIdentification, ()>;
+
+    type WeightInfo = ();
+}
+
+parameter_types! {
     pub const IndexDeposit: Balance = 1 * TDAT;
 }
 
-impl pallet_indices::Config for Runtime {
+impl pallet_indices::Trait for Runtime {
     type AccountIndex = AccountIndex;
     type Event = Event;
     type Currency = Balances;
@@ -143,7 +173,7 @@ parameter_types! {
     pub const MaxLocks: u32 = 50;
 }
 
-impl pallet_balances::Config for Runtime {
+impl pallet_balances::Trait for Runtime {
     type Balance = Balance;
     type DustRemoval = ();
     type Event = Event;
@@ -160,7 +190,7 @@ parameter_types! {
     pub MinimumMultiplier: Multiplier = Multiplier::saturating_from_rational(1, 1_000_000_000u128);
 }
 
-impl pallet_transaction_payment::Config for Runtime {
+impl pallet_transaction_payment::Trait for Runtime {
     type Currency = Balances;
     type OnTransactionPayment = ();
     type TransactionByteFee = TransactionByteFee;
@@ -173,7 +203,7 @@ parameter_types! {
     pub const MinimumPeriod: Moment = SLOT_DURATION / 2;
 }
 
-impl pallet_timestamp::Config for Runtime {
+impl pallet_timestamp::Trait for Runtime {
     type Moment = Moment;
     type OnTimestampSet = Aura;
     type MinimumPeriod = MinimumPeriod;
@@ -184,8 +214,8 @@ parameter_types! {
     pub const UncleGenerations: BlockNumber = 5;
 }
 
-impl pallet_authorship::Config for Runtime {
-    type FindAuthor = pallet_session::FindAccountFromAuthorIndex<Self, Aura>;
+impl pallet_authorship::Trait for Runtime {
+    type FindAuthor = pallet_session::FindAccountFromAuthorIndex<Self, AuraId>;
     type UncleGenerations = UncleGenerations;
     type FilterUncle = ();
     type EventHandler = ();
@@ -193,12 +223,12 @@ impl pallet_authorship::Config for Runtime {
 
 impl_opaque_keys! {
     pub struct SessionKeys {
-        pub aura: Aura,
+        pub aura: AuraId,
         pub grandpa: Grandpa,
     }
 }
 
-impl pallet_session::Config for Runtime {
+impl pallet_session::Trait for Runtime {
     type SessionManager = PlasmRewards;
     type SessionHandler = <SessionKeys as OpaqueKeys>::KeyTypeIdProviders;
     type ShouldEndSession = Aura;
@@ -211,7 +241,7 @@ impl pallet_session::Config for Runtime {
     type WeightInfo = ();
 }
 
-impl pallet_session::historical::Config for Runtime {
+impl pallet_session::historical::Trait for Runtime {
     type FullIdentification = ();
     type FullIdentificationOf = ();
 }
@@ -242,7 +272,7 @@ parameter_types! {
     pub const MaxScheduledPerBlock: u32 = 50;
 }
 
-impl pallet_scheduler::Config for Runtime {
+impl pallet_scheduler::Trait for Runtime {
     type Event = Event;
     type Origin = Origin;
     type PalletsOrigin = OriginCaller;
@@ -254,13 +284,56 @@ impl pallet_scheduler::Config for Runtime {
 }
 
 parameter_types! {
+    pub const SessionsPerEra: pallet_plasm_rewards::SessionIndex = 6;
+    pub const BondingDuration: pallet_plasm_rewards::EraIndex = 24 * 28;
+}
+
+impl pallet_plasm_rewards::Trait for Runtime {
+    type Currency = Balances;
+    type Time = Timestamp;
+    type SessionsPerEra = SessionsPerEra;
+    type BondingDuration = BondingDuration;
+    type ComputeEraForDapps = pallet_plasm_rewards::DefaultForDappsStaking<Runtime>;
+    type ComputeEraForSecurity = PlasmValidator;
+    type ComputeTotalPayout = pallet_plasm_rewards::inflation::CommunityRewards<u32>;
+    type MaybeValidators = PlasmValidator;
+    type Event = Event;
+}
+
+impl pallet_plasm_validator::Trait for Runtime {
+    type Currency = Balances;
+    type Time = Timestamp;
+    type RewardRemainder = (); // Reward remainder is burned.
+    type Reward = (); // Reward is minted.
+    type EraFinder = PlasmRewards;
+    type ForSecurityEraReward = PlasmRewards;
+    type ComputeEraParam = u32;
+    type ComputeEra = PlasmValidator;
+    type Event = Event;
+}
+
+impl pallet_dapps_staking::Trait for Runtime {
+    type Currency = Balances;
+    type BondingDuration = BondingDuration;
+    type ContractFinder = Operator;
+    type RewardRemainder = (); // Reward remainder is burned.
+    type Reward = (); // Reward is minted.
+    type Time = Timestamp;
+    type ComputeRewardsForDapps = pallet_dapps_staking::rewards::VoidableRewardsForDapps;
+    type EraFinder = PlasmRewards;
+    type ForDappsEraReward = PlasmRewards;
+    type HistoryDepthFinder = PlasmRewards;
+    type Event = Event;
+}
+
+parameter_types! {
     pub const TombstoneDeposit: Balance = 1 * TDAT;
     pub const RentByteFee: Balance = 1 * TDAT;
     pub const RentDepositOffset: Balance = 1000 * TDAT;
     pub const SurchargeReward: Balance = 150 * TDAT;
 }
 
-impl pallet_contracts::Config for Runtime {
+impl pallet_contracts::Trait for Runtime {
     type Time = Timestamp;
     type Randomness = RandomnessCollectiveFlip;
     type Currency = Balances;
@@ -279,18 +352,30 @@ impl pallet_contracts::Config for Runtime {
     type WeightPrice = pallet_transaction_payment::Module<Self>;
 }
 
-impl pallet_utility::Config for Runtime {
+impl pallet_contract_operator::Trait for Runtime {
+    type Parameters = pallet_dapps_staking::parameters::StakingParameters;
+    type Event = Event;
+}
+
+impl pallet_operator_trading::Trait for Runtime {
+    type Currency = Balances;
+    type OperatorFinder = Operator;
+    type TransferOperator = Operator;
+    type Event = Event;
+}
+
+impl pallet_utility::Trait for Runtime {
     type Event = Event;
     type Call = Call;
     type WeightInfo = ();
 }
 
-impl pallet_sudo::Config for Runtime {
+impl pallet_sudo::Trait for Runtime {
     type Event = Event;
     type Call = Call;
 }
 
-impl pallet_grandpa::Config for Runtime {
+impl pallet_grandpa::Trait for Runtime {
     type Event = Event;
     type Call = Call;
 
@@ -314,7 +399,7 @@ parameter_types! {
     pub const ReportLatency: BlockNumber = 1000;
 }
 
-impl pallet_finality_tracker::Config for Runtime {
+impl pallet_finality_tracker::Trait for Runtime {
     type OnFinalizationStalled = Grandpa;
     type WindowSize = WindowSize;
     type ReportLatency = ReportLatency;
@@ -325,7 +410,7 @@ parameter_types! {
     pub const LockdropUnsignedPriority: TransactionPriority = TransactionPriority::max_value();
 }
 
-impl pallet_plasm_lockdrop::Config for Runtime {
+impl pallet_plasm_lockdrop::Trait for Runtime {
     type Currency = Balances;
     type DurationBonus = pallet_plasm_lockdrop::DustyDurationBonus;
     type MedianFilterExpire = MedianFilterExpire;
@@ -344,7 +429,7 @@ parameter_types! {
     pub const EcdsaUnsignedPriority: TransactionPriority = TransactionPriority::max_value() / 2;
 }
 
-impl pallet_custom_signatures::Config for Runtime {
+impl pallet_custom_signatures::Trait for Runtime {
     type Event = Event;
     type Call = Call;
     type Signature = pallet_custom_signatures::ethereum::EthereumSignature;
@@ -437,7 +522,7 @@ impl Get<pallet_ovm::AtomicPredicateIdConfig<AccountId, Hash>> for GetAtomicPred
     }
 }
 
-impl pallet_ovm::Config for Runtime {
+impl pallet_ovm::Trait for Runtime {
     type MaxDepth = MaxDepth;
     type DisputePeriod = DisputePeriod;
     type DeterminePredicateAddress = pallet_ovm::SimpleAddressDeterminer<Runtime>;
@@ -454,7 +539,7 @@ impl Get<AccountId> for MaximumTokenAddress {
     }
 }
 
-impl pallet_plasma::Config for Runtime {
+impl pallet_plasma::Trait for Runtime {
     type Currency = Balances;
     type DeterminePlappsAddress = pallet_plasma::SimpleAddressDeterminer<Runtime>;
     type MaximumTokenAddress = MaximumTokenAddress;
@@ -468,7 +553,7 @@ parameter_types! {
     pub const MaxNickLength: usize = 32;
 }
 
-impl pallet_nicks::Config for Runtime {
+impl pallet_nicks::Trait for Runtime {
     type Event = Event;
     type Currency = Balances;
     type ReservationFee = NickReservationFee;
@@ -490,7 +575,7 @@ parameter_types! {
     pub const ChainId: u64 = 0x50;
 }
 
-impl pallet_evm::Config for Runtime {
+impl pallet_evm::Trait for Runtime {
     type FeeCalculator = FixedGasPrice;
     type CallOrigin = EnsureAddressRoot<Self::AccountId>;
     type WithdrawOrigin = EnsureAddressTruncated;
@@ -547,7 +632,7 @@ impl<F: FindAuthor<u32>> FindAuthor<H160> for EthereumFindAuthor<F> {
     }
 }
 
-impl pallet_ethereum::Config for Runtime {
+impl pallet_ethereum::Trait for Runtime {
     type Event = Event;
     type FindAuthor = EthereumFindAuthor<Aura>;
 }
@@ -726,6 +811,50 @@ impl_runtime_apis! {
         }
     }
 
+    impl sp_consensus_babe::BabeApi<Block> for Runtime {
+        fn configuration() -> sp_consensus_babe::BabeGenesisConfiguration {
+            // The choice of `c` parameter (where `1 - c` represents the
+            // probability of a slot being empty), is done in accordance to the
+            // slot duration and expected target block time, for safely
+            // resisting network delays of maximum two seconds.
+            // <https://research.web3.foundation/en/latest/polkadot/BABE/Babe/#6-practical-results>
+            sp_consensus_babe::BabeGenesisConfiguration {
+                slot_duration: Babe::slot_duration(),
+                epoch_length: EpochDuration::get(),
+                c: PRIMARY_PROBABILITY,
+                genesis_authorities: Babe::authorities(),
+                randomness: Babe::randomness(),
+                allowed_slots: sp_consensus_babe::AllowedSlots::PrimaryAndSecondaryPlainSlots,
+            }
+        }
+
+        fn current_epoch_start() -> sp_consensus_babe::SlotNumber {
+            Babe::current_epoch_start()
+        }
+
+        fn generate_key_ownership_proof(
+            _slot_number: sp_consensus_babe::SlotNumber,
+            authority_id: sp_consensus_babe::AuthorityId,
+        ) -> Option<sp_consensus_babe::OpaqueKeyOwnershipProof> {
+            use codec::Encode;
+
+            Historical::prove((sp_consensus_babe::KEY_TYPE, authority_id))
+                .map(|p| p.encode())
+                .map(sp_consensus_babe::OpaqueKeyOwnershipProof::new)
+        }
+
+        fn submit_report_equivocation_unsigned_extrinsic(
+            equivocation_proof: sp_consensus_babe::EquivocationProof<<Block as BlockT>::Header>,
+            key_owner_proof: sp_consensus_babe::OpaqueKeyOwnershipProof,
+        ) -> Option<()> {
+            let key_owner_proof = key_owner_proof.decode()?;
+
+            Babe::submit_unsigned_equivocation_report(
+                equivocation_proof,
+                key_owner_proof,
+            )
+        }
+    }
 
     impl frame_system_rpc_runtime_api::AccountNonceApi<Block, AccountId, Index> for Runtime {
         fn account_nonce(account: AccountId) -> Index {
