@@ -13,6 +13,8 @@ lazy_static = { version = "1.4", optional = true }
 hex-literal = { version = "0.2", optional = true }
 evm = { version = "0.26.0", default-features = false }
 getrandom = { version = "0.2", features = ["js"] }
+imp = "0.1.0"
+
 # primitives
 plasm-primitives = { path = "../primitives", default-features = false }
 sp-core = { version = "3.0.0", default-features = false }
