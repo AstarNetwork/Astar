@@ -7619,5 +7619,12 @@ lazy_static::lazy_static! {
         (AccountId::from_ss58check("5EUPhTtX39EB2KksyAL8qh1J1qSJj4coSKUA7dBFK8dkXWHD").unwrap(), 7724979490000000000000000),
         // Team
         (AccountId::from_ss58check("5DJ8LnALdeJqABW6itJZNivtxxXr4Gcpmn2vEKt3iYwWyUuL").unwrap(), 3511354320000000000000000),
+        //##
+        //# Testnet service accounts
+        //##
+        // Team, Maario stash
+        (AccountId::from_ss58check("5F1NmcTCw1RATjuPP11N8EMmHKNF8f7xGjCJJdi3fWfnztWH").unwrap(), 4200000000000000000000000),
+        // Team, Maario ctrl
+        (AccountId::from_ss58check("5CUQaSEWVkrhc4BvXVtE2uEG6Kr6Q5ZMdrVmFcZ1Lesvrwge").unwrap(), 1300000000000000000000000),
     ];
 }

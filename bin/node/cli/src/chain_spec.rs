@@ -22,12 +22,11 @@ use sp_runtime::{
 type AccountPublic = <Signature as Verify>::Signer;
 const STASH: Balance = 1_000_000 * PLM;
 
-/*
 use hex_literal::hex;
-use plasm_runtime::constants::currency::*;
-use sp_core::crypto::{Ss58Codec, UncheckedInto};
+// use plasm_runtime::constants::currency::*;
 const STAGING_TELEMETRY_URL: &str = "wss://telemetry.polkadot.io/submit/";
 
+/*
 const PLASM_PROPERTIES: &str = r#"
         {
             "ss58Format": 5,
@@ -35,7 +34,7 @@ const PLASM_PROPERTIES: &str = r#"
             "tokenSymbol": "PLM"
         }"#;
 const PLASM_PROTOCOL_ID: &str = "plm";
-
+*/
 const DUSTY_PROPERTIES: &str = r#"
         {
             "ss58Format": 5,
@@ -43,7 +42,7 @@ const DUSTY_PROPERTIES: &str = r#"
             "tokenSymbol": "PLD"
         }"#;
 const DUSTY_PROTOCOL_ID: &str = "pld";
-*/
+
 
 /// Node `ChainSpec` extensions.
 ///
@@ -136,9 +135,22 @@ fn make_genesis(
             code: WASM_BINARY.to_vec(),
             changes_trie_config: Default::default(),
         }),
-        pallet_balances: Some(BalancesConfig { balances }),
-        pallet_vesting: Some(VestingConfig { vesting: vec![] }),
+        pallet_babe: Some(BabeConfig {
+            authorities: vec![],
+        }),
         pallet_indices: Some(IndicesConfig { indices: vec![] }),
+        pallet_balances: Some(BalancesConfig { balances }),
+        pallet_staking: Some(StakingConfig {
+            validator_count: initial_authorities.len() as u32,
+            minimum_validator_count: initial_authorities.len() as u32,
+            stakers: initial_authorities
+            .iter()
+            .map(|x| (x.0.clone(), x.1.clone(), STASH, StakerStatus::Validator))
+            .collect(),
+            invulnerables: initial_authorities.iter().map(|x| x.0.clone()).collect(),
+            slash_reward_fraction: Perbill::from_percent(10),
+            ..Default::default()
+        }),
         pallet_session: Some(SessionConfig {
             keys: keys
                 .iter()
@@ -151,30 +163,18 @@ fn make_genesis(
                 })
                 .collect::<Vec<_>>(),
         }),
-        pallet_staking: Some(StakingConfig {
-            validator_count: initial_authorities.len() as u32,
-            minimum_validator_count: initial_authorities.len() as u32,
-            stakers: initial_authorities
-                .iter()
-                .map(|x| (x.0.clone(), x.1.clone(), STASH, StakerStatus::Validator))
-                .collect(),
-            invulnerables: initial_authorities.iter().map(|x| x.0.clone()).collect(),
-            slash_reward_fraction: Perbill::from_percent(10),
-            ..Default::default()
-        }),
-        pallet_babe: Some(BabeConfig {
-            authorities: vec![],
-        }),
         pallet_grandpa: Some(GrandpaConfig {
             authorities: vec![],
         }),
-        pallet_im_online: Some(ImOnlineConfig { keys: vec![] }),
         pallet_contracts: Some(ContractsConfig {
             current_schedule: pallet_contracts::Schedule {
                 enable_println, // this should only be enabled on development chains
                 ..Default::default()
             },
         }),
+        pallet_sudo: Some(SudoConfig { key: root_key }),
+        pallet_im_online: Some(ImOnlineConfig { keys: vec![] }),
+        pallet_vesting: Some(VestingConfig { vesting: vec![] }),
         pallet_evm: Some(EVMConfig {
             accounts: vec![(
                 H160::from(hex_literal::hex![
@@ -192,21 +192,21 @@ fn make_genesis(
             .collect(),
         }),
         pallet_ethereum: Some(EthereumConfig {}),
-        pallet_sudo: Some(SudoConfig { key: root_key }),
     }
 }
 
 /// Dusty testnet file config.
-pub fn dusty_config() -> ChainSpec {
-    ChainSpec::from_json_bytes(&include_bytes!("../res/dusty5.json")[..]).unwrap()
-}
+// pub fn dusty_config() -> ChainSpec {
+//     ChainSpec::from_json_bytes(&include_bytes!("../res/dusty5.json")[..]).unwrap()
+// }
 
-/*
+
+use sp_core::crypto::{Ss58Codec, UncheckedInto};
 /// Dusty native config.
 pub fn dusty_config() -> ChainSpec {
     ChainSpec::from_genesis(
         "Dusty",
-        "dusty4",
+        "dusty5",
         ChainType::Live,
         dusty_genesis,
         vec![],
@@ -222,16 +222,20 @@ pub fn dusty_config() -> ChainSpec {
 
 fn dusty_genesis() -> GenesisConfig {
     let authorities = vec![
-        (hex!["16eb796bee0c857db3d646ee7070252707aec0c7d82b2eda856632f6a2306a58"].into(),
-        hex!["16eb796bee0c857db3d646ee7070252707aec0c7d82b2eda856632f6a2306a58"].into()),
-        (hex!["48cdc7ef880c80e8475170f206381d2cb13a87c209452fc6d8a1e14186d61b28"].into(),
-        hex!["48cdc7ef880c80e8475170f206381d2cb13a87c209452fc6d8a1e14186d61b28"].into()),
-        (hex!["38cdc7ef880c80e8475170f206381d2cb13a87c209452fc6d8a1e14186d61b28"].into(),
-        hex!["38cdc7ef880c80e8475170f206381d2cb13a87c209452fc6d8a1e14186d61b28"].into()),
-        (hex!["28cdc7ef880c80e8475170f206381d2cb13a87c209452fc6d8a1e14186d61b28"].into(),
-        hex!["28cdc7ef880c80e8475170f206381d2cb13a87c209452fc6d8a1e14186d61b28"].into()),
-        (hex!["18cdc7ef880c80e8475170f206381d2cb13a87c209452fc6d8a1e14186d61b28"].into(),
-        hex!["18cdc7ef880c80e8475170f206381d2cb13a87c209452fc6d8a1e14186d61b28"].into()),
+        // (hex!["16eb796bee0c857db3d646ee7070252707aec0c7d82b2eda856632f6a2306a58"].into(),
+        // hex!["16eb796bee0c857db3d646ee7070252707aec0c7d82b2eda856632f6a2306a58"].into()),
+        // (hex!["48cdc7ef880c80e8475170f206381d2cb13a87c209452fc6d8a1e14186d61b28"].into(),
+        // hex!["48cdc7ef880c80e8475170f206381d2cb13a87c209452fc6d8a1e14186d61b28"].into()),
+        // (hex!["38cdc7ef880c80e8475170f206381d2cb13a87c209452fc6d8a1e14186d61b28"].into(),
+        // hex!["38cdc7ef880c80e8475170f206381d2cb13a87c209452fc6d8a1e14186d61b28"].into()),
+        // (hex!["28cdc7ef880c80e8475170f206381d2cb13a87c209452fc6d8a1e14186d61b28"].into(),
+        // hex!["28cdc7ef880c80e8475170f206381d2cb13a87c209452fc6d8a1e14186d61b28"].into()),
+        // (hex!["18cdc7ef880c80e8475170f206381d2cb13a87c209452fc6d8a1e14186d61b28"].into(),
+        // hex!["18cdc7ef880c80e8475170f206381d2cb13a87c209452fc6d8a1e14186d61b28"].into()),
+        
+        // Mario stash + ctrl
+        (hex!["822ab6012db8a9d8e9afe6b9d33bda1d375b644be3f4b945cab53f934ea5df3a"].into(),
+        hex!["1213b86f907bc0e5a787e704a830f809aa6fe912580206c298495406599be874"].into()),
     ];
 
     let keys = vec![
@@ -2715,7 +2719,7 @@ fn dusty_genesis() -> GenesisConfig {
         ),
     ];
 
-    let balances = vec![
+/*  let balances = vec![
         (
             AccountId::from_ss58check("XGAHq9cLw8fiSYsEEBA45uUDT72ULqN8QtU1GbF1vxdRgCM").unwrap(),
             66249999212449494,
@@ -8936,7 +8940,7 @@ fn dusty_genesis() -> GenesisConfig {
             AccountId::from_ss58check("XNd4unZcCLWq9nY8j73BiFPFBbnmn99QFoFekMf1gbNQ2qd").unwrap(),
             6999999740783836,
         ),
-    ];
+    ]; */
 
     // akru
     let root_key = hex!["16eb796bee0c857db3d646ee7070252707aec0c7d82b2eda856632f6a2306a58"];
@@ -8954,12 +8958,12 @@ fn dusty_genesis() -> GenesisConfig {
                 )
             })
             .collect(),
-        balances,
+        crate::balances::DUSTY_HOLDERS.clone(),
         root_key.into(),
         false,
     )
 }
-*/
+
 
 /// Plasm mainnet file config.
 pub fn plasm_config() -> ChainSpec {
