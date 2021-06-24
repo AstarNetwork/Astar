@@ -81,7 +81,7 @@ Install the Plasm node from git source:
 
     cargo +nightly install --locked --force --git https://github.com/staketechnologies/Plasm --tag v1.9.0-dusty plasm
 
- cargo +nightly install --force --git https://github.com/Consulteum/Plasm --tag v1.0.1-swa plasm
+ cargo +nightly install --force --git https://github.com/Consulteum/Plasm --tag v1.0.3-swa plasm
 
     include the tag above to specify the version you want. checkout the tags on this repo to find the version you want.
 

@@ -2114,8 +2114,10 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7fcd999463524c52659517fe2cea98493cfe485d10565e7b0fb07dbba7ad2753"
 dependencies = [
  "cfg-if 1.0.0",
+ "js-sys",
  "libc",
  "wasi 0.10.0+wasi-snapshot-preview1",
+ "wasm-bindgen",
 ]
 
 [[package]]
@@ -2513,6 +2515,16 @@ dependencies = [
  "libc",
  "log",
  "winapi 0.3.9",
+]
+
+[[package]]
+name = "imp"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "015f618e11715d4c739509a030fdac9278f2b036a74ca008889e95a9e186cc0e"
+dependencies = [
+ "arrayref",
+ "sha2 0.8.2",
 ]
 
 [[package]]
@@ -5116,7 +5128,9 @@ dependencies = [
  "frame-support",
  "frame-system",
  "frame-system-rpc-runtime-api",
+ "getrandom 0.2.3",
  "hex-literal",
+ "imp",
  "lazy_static",
  "pallet-aura",
  "pallet-authorship",
