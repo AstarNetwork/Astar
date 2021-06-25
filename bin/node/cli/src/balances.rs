@@ -5,7 +5,7 @@ lazy_static::lazy_static! {
     /// DUSTY v5 GENESIS TOKEN HOLDERS
     pub static ref DUSTY_HOLDERS: Vec<(AccountId, Balance)> = vec![
         // Balance snapshot of Astar (fka: Plasm) Mainnet at 3000000 block
-        (AccountId::from_ss58check("b14B1JxFzJjbRvYU6S6T4qQ3ofggQM1nBdiu43x5uSA1hKn").unwrap(), 100000000000000000000),
+/*      (AccountId::from_ss58check("b14B1JxFzJjbRvYU6S6T4qQ3ofggQM1nBdiu43x5uSA1hKn").unwrap(), 100000000000000000000),
         (AccountId::from_ss58check("bQxDd9NJdcj2DRnLizR58pZCuYbJaxYu9Xnme4J9SLP8w99").unwrap(), 60400000000000000000),
         (AccountId::from_ss58check("aR29XZi41y4dCusH8FrDk7QMnrz4pvusvSmZLLHD3WJdak4").unwrap(), 34000000000000000000),
         (AccountId::from_ss58check("Xz5iREdWPpPGFeZpyFKDH5Te2Y135w3neiB7DUtRDgTu3MM").unwrap(), 252800000000000000000),
@@ -7597,7 +7597,8 @@ lazy_static::lazy_static! {
         (AccountId::from_ss58check("XG45DPFcuXQJhT8C1meoLjuecsXq1rmw6Dgw18rnrEE5HzL").unwrap(), 32899999000000000000),
         (AccountId::from_ss58check("ZtpLoCTzqBcYV1BfYn6iKTficquk4R6PJTkei2vx1fCJfAP").unwrap(), 505377993000000000000),
         (AccountId::from_ss58check("aFDx1xxsYJUh3dwhQ9mfZmSCieWnihP3nApFR1PETicFCay").unwrap(), 34417998000000000000),
-        (AccountId::from_ss58check("X7ugWFHPBbK66qgmqd9XD311Kc6tic4vK8mGn4cL9qDS7wc").unwrap(), 99010000000000000000),
+        (AccountId::from_ss 58check("X7ugWFHPBbK66qgmqd9XD311Kc6tic4vK8mGn4cL9qDS7wc").unwrap(), 99010000000000000000),
+        */
         //##
         //# Plasm Network service accounts
         //##
@@ -7623,8 +7624,12 @@ lazy_static::lazy_static! {
         //# Testnet service accounts
         //##
         // Team, Maario stash
-        (AccountId::from_ss58check("5F1NmcTCw1RATjuPP11N8EMmHKNF8f7xGjCJJdi3fWfnztWH").unwrap(), 4200000000000000000000000),
+        (AccountId::from_ss58check("Wb3mqhmWzR4JbCxZqTHUrnc6uRrT98nnwkvnHx8feCKcKkN").unwrap(), 4200000000000000000000000),
         // Team, Maario ctrl
-        (AccountId::from_ss58check("5CUQaSEWVkrhc4BvXVtE2uEG6Kr6Q5ZMdrVmFcZ1Lesvrwge").unwrap(), 1300000000000000000000000),
+        (AccountId::from_ss58check("ZXezAdYbUrpXhhHuQvjnxR182aKv7fG6vTUbqtbewaerbQ4").unwrap(), 1300000000000000000000000),
+        // Team, Maario2 stash
+        (AccountId::from_ss58check("5GxQbApcLQuDYDYNhbiv2t6tmyoPTELbwf1ZsHBv9bVYUsXi").unwrap(), 2200000000000000000000000),
+        // Team, Maario2 ctrl
+        (AccountId::from_ss58check("5FThDusmRcd4enuaBJrCx9QsMccFEkkEUBENdM4xygPPVyrn").unwrap(), 1400000000000000000000000),
     ];
 }
