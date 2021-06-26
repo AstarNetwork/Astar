@@ -405,6 +405,17 @@ decl_module! {
             Self::deposit_event(RawEvent::CheckpointFinalized(plapps_id, checkpoint_id, checkpoint));
         }
 
+
+        // ------- ExitDispute parts -------
+        #[weight = 100_000]
+        fn exit_clam(
+            _origin, plapps_id: T::AccountId, state_update: StateUpdateOf<T>, checkpoint: Option<StateUpdateOf<T>>, witness: Option<InclusionProofOf<T>>
+        ) {
+            Self::bare_exit_claim(&plapps_id, &state_update, &checkpoint, &witness)?;
+            Self::deposit_event(RawEvent::ExitClaimed(state_update));
+        }
+
+
         /// finalizeExit
         /// - @param _exitProperty A property which is instance of exit predicate and its inputs are range and StateUpdate that exiting account wants to withdraw.
         /// _exitProperty can be a property of ether ExitPredicate or ExitDepositPredicate.

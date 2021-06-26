@@ -20,30 +20,19 @@ impl<T: Config> Module<T> {
     /// witness: [encode(inclusionProof)]
     pub fn bare_exit_claim(
         plapps_id: &T::AccountId,
-        inputs: &Vec<Vec<u8>>,
-        witness: &Vec<Vec<u8>>,
+        state_update: &StateUpdateOf<T>,
+        checkpoint: &Option<StateUpdateOf<T>>,
+        witness: &Option<InclusionProofOf<T>>,
     ) -> DispatchResult {
-        // validate inputs
-        ensure!(
-            inputs.len() >= 1,
-            "inputs length does not match. at least 1"
-        );
-        let state_update: StateUpdateOf<T> =
-            Decode::decode(&mut &inputs[0][..]).map_err(|_| Error::<T>::MustBeDecodable)?;
-
-        if witness.len() == 0 && inputs.len() == 2 {
+        if let Some(checkpoint) = checkpoint {
             // ExitCheckpoint
             // check if checkpoint is stored in depositContract
-            let checkpoint: StateUpdateOf<T> =
-                Decode::decode(&mut &inputs[1][..]).map_err(|_| Error::<T>::MustBeDecodable)?;
             ensure!(
-                Self::checkpoint_exitable(plapps_id, &state_update, &checkpoint)?,
+                Self::checkpoint_exitable(plapps_id, state_update, checkpoint)?,
                 "Checkpoint must be exitable for stateUpdate"
             );
-        } else {
+        } else if let Some(inclusion_proof) = witness {
             // ExitStateUpdate
-            let inclusion_proof: InclusionProofOf<T> =
-                Decode::decode(&mut &witness[0][..]).map_err(|_| Error::<T>::MustBeDecodable)?;
             let root = Self::retrieve(plapps_id, &state_update.block_number);
 
             ensure!(
@@ -51,7 +40,7 @@ impl<T: Config> Module<T> {
                     &T::Hashing::hash_of(&state_update.state_object),
                     &state_update.deposit_contract_address,
                     &state_update.range,
-                    &inclusion_proof,
+                    inclusion_proof,
                     &root
                 )?,
                 "Inclusion verification failed"
@@ -59,12 +48,11 @@ impl<T: Config> Module<T> {
         }
         // claim property to DisputeManager
         let exit_predicate = Self::exit_predicate(plapps_id);
+
         let property: PropertyOf<T> =
-            Self::create_property(exit_predicate.clone(), &inputs[0], EXIT_CLAIM);
+            Self::create_property(exit_predicate.clone(), &state_update.encode(), EXIT_CLAIM);
         // origin == property.predicate_address
         pallet_ovm::Call::<T>::claim(property);
-
-        Self::deposit_event(RawEvent::ExitClaimed(state_update));
         Ok(())
     }
 
