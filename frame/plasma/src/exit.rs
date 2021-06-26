@@ -69,30 +69,24 @@ impl<T: Config> Module<T> {
     /// witness: []
     pub fn bare_exit_challenge(
         plapps_id: &T::AccountId,
-        inputs: &Vec<Vec<u8>>,
+        state_update: &StateUpdateOf<T>,
         challenge_inputs: &Vec<Vec<u8>>,
-        witness: &Vec<Vec<u8>>,
+        witness: &InclusionProofOf<T>,
     ) -> DispatchResult {
-        ensure!(
-            inputs.len() == 1,
-            "inputs length does not match. expected 1"
-        );
-        ensure!(
-            witness.len() == 1,
-            "witness length does not match. expected 1"
-        );
         ensure!(
             challenge_inputs.len() == 2,
             "challenge inputs length does not match. expected 2"
         );
-        let state_update: StateUpdateOf<T> =
-            Decode::decode(&mut &inputs[0][..]).map_err(|_| Error::<T>::MustBeDecodable)?;
         let challenge_property = if T::Hashing::hash_of(&challenge_inputs[0])
             == T::Hashing::hash(EXIT_SPENT_CHALLENGE)
         {
             let spent_challenge_inputs = vec![challenge_inputs[1].clone()];
-            Self::validate_spent_challenge(plapps_id, inputs, &spent_challenge_inputs, witness)?;
-            Self::deposit_event(RawEvent::ExitSpentChallenged(state_update));
+            Self::validate_spent_challenge(
+                plapps_id,
+                state_update,
+                &spent_challenge_inputs,
+                witness,
+            )?;
 
             let exit_predicate = Self::exit_predicate(plapps_id);
             Ok(Self::create_property(
@@ -104,20 +98,15 @@ impl<T: Config> Module<T> {
             == T::Hashing::hash(EXIT_CHECKPOINT_CHALLENGE)
         {
             let invalid_history_challenge_inputs = vec![challenge_inputs[1].clone()];
-            Self::validate_checkpoint_challenge(
-                plapps_id,
-                inputs.clone(),
-                invalid_history_challenge_inputs.clone(),
-                witness.clone(),
-            )?;
             let challenge_state_update: StateUpdateOf<T> =
                 Decode::decode(&mut &invalid_history_challenge_inputs[0][..])
                     .map_err(|_| Error::<T>::MustBeDecodable)?;
-            Self::deposit_event(RawEvent::ExitCheckpointChallenged(
-                state_update,
+            Self::validate_checkpoint_challenge(
+                plapps_id,
+                state_update.clone(),
                 challenge_state_update,
-            ));
-
+                witness.clone(),
+            )?;
             let exit_predicate = Self::exit_predicate(plapps_id);
             Ok(Self::create_property(
                 exit_predicate,
@@ -130,7 +119,7 @@ impl<T: Config> Module<T> {
 
         let exit_predicate = Self::exit_predicate(plapps_id);
         let claimed_property =
-            Self::create_property(exit_predicate.clone(), &inputs[0], EXIT_CLAIM);
+            Self::create_property(exit_predicate.clone(), &state_update.encode(), EXIT_CLAIM);
         ensure!(
             pallet_ovm::Module::<T>::started(&pallet_ovm::Module::<T>::get_property_id(
                 &claimed_property
@@ -141,7 +130,7 @@ impl<T: Config> Module<T> {
         // TODO: bare_challenge
         pallet_ovm::Module::<T>::bare_challenge(
             exit_predicate.clone(),
-            Self::create_property(exit_predicate, &inputs[0], EXIT_CLAIM),
+            Self::create_property(exit_predicate, &state_update.encode(), EXIT_CLAIM),
             challenge_property,
         )
     }
@@ -152,25 +141,20 @@ impl<T: Config> Module<T> {
         _challenge_inputs: Vec<Vec<u8>>,
         _witness: Vec<Vec<u8>>,
     ) -> DispatchResult {
+        // removeChallenge for checkpoint challenge.
         Ok(())
     }
 
     /// prove exit is coin which hasn't been spent.
     /// check checkpoint
-    pub fn bare_exit_settle(plapps_id: &T::AccountId, inputs: Vec<Vec<u8>>) -> DispatchResult {
-        ensure!(
-            inputs.len() == 1,
-            "inputs length does not match. expected 1"
-        );
-
+    pub fn bare_exit_settle(
+        plapps_id: &T::AccountId,
+        state_update: &StateUpdateOf<T>,
+    ) -> DispatchResult {
         let exit_predicate = Self::exit_predicate(plapps_id);
-        let property = Self::create_property(exit_predicate.clone(), &inputs[0], EXIT_CLAIM);
+        let property =
+            Self::create_property(exit_predicate.clone(), &state_update.encode(), EXIT_CLAIM);
         pallet_ovm::Module::<T>::bare_settle_game(exit_predicate, property)?;
-
-        let state_update: StateUpdateOf<T> =
-            Decode::decode(&mut &inputs[0][..]).map_err(|_| Error::<T>::MustBeDecodable)?;
-
-        Self::deposit_event(RawEvent::ExitSettled(state_update, true));
         Ok(())
     }
 
@@ -178,7 +162,7 @@ impl<T: Config> Module<T> {
         T::Hashing::hash_of(su)
     }
 
-    fn get_claim_decision(
+    pub fn get_claim_decision(
         predicate_address: T::AccountId,
         su: &StateUpdateOf<T>,
     ) -> DispatchResultT<Decision> {
@@ -191,7 +175,7 @@ impl<T: Config> Module<T> {
     }
 
     /// If the exit can be withdrawable, isCompletable returns true.
-    fn is_completable(plapps_id: &T::AccountId, su: &StateUpdateOf<T>) -> bool {
+    pub fn is_completable(plapps_id: &T::AccountId, su: &StateUpdateOf<T>) -> bool {
         let su_bytes = su.encode();
         let exit_predicate = Self::exit_predicate(plapps_id);
         let exit_property = Self::create_property(exit_predicate, &su_bytes, EXIT_CLAIM);
@@ -226,12 +210,10 @@ impl<T: Config> Module<T> {
 impl<T: Config> Module<T> {
     fn validate_spent_challenge(
         plapps_id: &T::AccountId,
-        inputs: &Vec<Vec<u8>>,
+        state_update: &StateUpdateOf<T>,
         challenge_inputs: &Vec<Vec<u8>>,
-        witness: &Vec<Vec<u8>>,
+        witness: &InclusionProofOf<T>,
     ) -> DispatchResult {
-        let state_update: StateUpdateOf<T> =
-            Decode::decode(&mut &inputs[0][..]).map_err(|_| Error::<T>::MustBeDecodable)?;
         let transaction: TransactionOf<T> = Decode::decode(&mut &challenge_inputs[0][..])
             .map_err(|_| Error::<T>::MustBeDecodable)?;
         ensure!(
@@ -255,11 +237,11 @@ impl<T: Config> Module<T> {
         ];
 
         let predicate_decide_inputs =
-            Self::make_compiled_predicate_decide_inputs(new_inputs, witness.clone());
+            Self::make_compiled_predicate_decide_inputs(new_inputs, vec![witness.encode()]);
 
         let result_bytes = pallet_ovm::Module::<T>::bare_call(
             plapps_id.clone(),
-            state_update.state_object.predicate_address,
+            state_update.state_object.predicate_address.clone(),
             predicate_decide_inputs,
         )
         .map_err(|_| Error::<T>::PredicateExecError)?;

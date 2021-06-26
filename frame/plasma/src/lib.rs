@@ -415,6 +415,48 @@ decl_module! {
             Self::deposit_event(RawEvent::ExitClaimed(state_update));
         }
 
+        #[weight = 100_000]
+        fn exit_spent_challenge(
+            _origin,
+            plapps_id: T::AccountId,
+            state_update: StateUpdateOf<T>,
+            transaction: TransactionOf<T>,
+            witness: InclusionProofOf<T>,
+        ) {
+            Self::bare_exit_challenge(&plapps_id,
+                &state_update,
+                &vec![T::Hashing::hash(exit::EXIT_SPENT_CHALLENGE).encode(),transaction.encode()],
+                 &witness)?;
+            Self::deposit_event(RawEvent::ExitSpentChallenged(state_update));
+        }
+
+        #[weight = 100_000]
+        fn exit_checkpoint_challenge(
+            _origin,
+            plapps_id: T::AccountId,
+            state_update: StateUpdateOf<T>,
+            checkpoint: StateUpdateOf<T>,
+            witness: InclusionProofOf<T>,
+        ) {
+            Self::bare_exit_challenge(&plapps_id,
+                &state_update,
+                &vec![T::Hashing::hash(exit::EXIT_CHECKPOINT_CHALLENGE).encode(), checkpoint.encode()],
+                &witness)?;
+            Self::deposit_event(RawEvent::ExitCheckpointChallenged(
+                state_update,
+                checkpoint,
+            ));
+        }
+
+
+        #[weight = 100_000]
+        fn exit_settle(
+            _orign, plapps_id: T::AccountId, state_update: StateUpdateOf<T>
+        ) {
+            Self::bare_exit_settle(&plapps_id, &state_update)?;
+            Self::deposit_event(RawEvent::ExitSettled(state_update, true));
+        }
+
 
         /// finalizeExit
         /// - @param _exitProperty A property which is instance of exit predicate and its inputs are range and StateUpdate that exiting account wants to withdraw.

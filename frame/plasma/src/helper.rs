@@ -29,19 +29,10 @@ impl<T: Config> Module<T> {
     /// _witness: [encode(inclusionProof)] inclusionProof of challenging state update
     pub fn validate_checkpoint_challenge(
         plapps_id: &T::AccountId,
-        inputs: Vec<Vec<u8>>,
-        challenge_inputs: Vec<Vec<u8>>,
-        witness: Vec<Vec<u8>>,
+        state_update: StateUpdateOf<T>,
+        challenge_state_update: StateUpdateOf<T>,
+        inclusion_proof: InclusionProofOf<T>,
     ) -> DispatchResultT<(StateUpdateOf<T>, StateUpdateOf<T>, InclusionProofOf<T>)> {
-        let state_update: StateUpdateOf<T> =
-            Decode::decode(&mut &inputs[0][..]).map_err(|_| Error::<T>::MustBeDecodable)?;
-        let challenge_state_update: StateUpdateOf<T> =
-            Decode::decode(&mut &challenge_inputs[0][..])
-                .map_err(|_| Error::<T>::MustBeDecodable)?;
-
-        let inclusion_proof: InclusionProofOf<T> =
-            Decode::decode(&mut &witness[0][..]).map_err(|_| Error::<T>::MustBeDecodable)?;
-
         ensure!(
             state_update.deposit_contract_address
                 == challenge_state_update.deposit_contract_address,
