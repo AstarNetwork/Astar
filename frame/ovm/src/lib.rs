@@ -534,6 +534,67 @@ impl<T: Config> Module<T> {
         Self::execute_ovm(origin, |ctx| ctx.call(dest, input_data))
     }
 
+    pub fn bare_challenge(
+        origin: T::AccountId,
+        property: PropertyOf<T>,
+        challenge_property: PropertyOf<T>,
+    ) -> DispatchResult {
+        Self::only_from_dispute_contract(&origin, &property)?;
+
+        // validation
+        let id = Self::get_property_id(&property);
+        ensure!(Self::started(&id), Error::<T>::PropertyIsNotClaimed,);
+
+        let challenging_game_id = Self::get_property_id(&challenge_property);
+        ensure!(
+            Self::started(&challenging_game_id),
+            Error::<T>::ChallengeIsAlreadyStarted,
+        );
+
+        // start challenging game
+        let challenge_game = Self::create_game(challenging_game_id);
+        <Games<T>>::insert(challenging_game_id, challenge_game);
+
+        // add challenge to challenged game's challenge list
+        let mut game = Self::games(&id).ok_or(Error::<T>::DoesNotExistGame)?;
+        game.challenges.push(challenging_game_id);
+        <Games<T>>::insert(id, game);
+        Self::deposit_event(RawEvent::PropertyChallenged(id, challenging_game_id));
+        Ok(())
+    }
+
+    pub fn bare_settle_game(origin: T::AccountId, property: PropertyOf<T>) -> DispatchResult {
+        Self::only_from_dispute_contract(&origin, &property)?;
+
+        let id = Self::get_property_id(&property);
+        ensure!(Self::started(&id), Error::<T>::PropertyIsNotClaimed,);
+
+        let mut game = Self::games(&id).ok_or(Error::<T>::DoesNotExistGame)?;
+        ensure!(
+            game.created_block < Self::block_number() - T::DisputePeriod::get(),
+            Error::<T>::DisputePeriodHasNotBeenPassed,
+        );
+
+        for challenge in game.challenges.iter() {
+            let decision = Self::get_game(challenge)
+                .ok_or(Error::<T>::DoesNotExistGame)?
+                .decision;
+            if decision == Decision::True {
+                game.decision = Decision::False;
+                Self::deposit_event(RawEvent::PropertyDecided(id, false));
+                return Ok(());
+            }
+            ensure!(
+                decision == Decision::Undecided,
+                Error::<T>::UndecidedChallengeExists,
+            );
+        }
+        game.decision = Decision::True;
+        <Games<T>>::insert(id, game);
+        Self::deposit_event(RawEvent::PropertyDecided(id, true));
+        Ok(())
+    }
+
     fn execute_ovm(
         origin: T::AccountId,
         func: impl FnOnce(&mut ExecutionContext<T>) -> ExecResult<T>,

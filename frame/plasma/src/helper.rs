@@ -13,7 +13,7 @@ impl<T: Config> Module<T> {
         su_bytes: &Vec<u8>,
         kind: &'static [u8],
     ) -> PropertyOf<T> {
-        let mut inputs = vec![kind.to_vec(), su_bytes.clone()];
+        let inputs = vec![kind.to_vec(), su_bytes.clone()];
         PropertyOf::<T> {
             predicate_address,
             inputs,

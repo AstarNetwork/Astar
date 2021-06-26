@@ -3,10 +3,7 @@
 //! - SpentChallengeValidator.sol
 
 use super::*;
-use frame_support::{
-    dispatch::{DispatchError, DispatchResult},
-    traits::OriginTrait,
-};
+use frame_support::dispatch::{DispatchError, DispatchResult};
 
 // Dispute Kinds.
 pub const EXIT_CLAIM: &'static [u8] = b"EXIT_CLAIM";
@@ -105,7 +102,7 @@ impl<T: Config> Module<T> {
         let challenge_property = if T::Hashing::hash_of(&challenge_inputs[0])
             == T::Hashing::hash(EXIT_SPENT_CHALLENGE)
         {
-            let spent_challenge_inputs = vec![challenge_inputs[1]];
+            let spent_challenge_inputs = vec![challenge_inputs[1].clone()];
             Self::validate_spent_challenge(plapps_id, inputs, &spent_challenge_inputs, witness)?;
             Self::deposit_event(RawEvent::ExitSpentChallenged(state_update));
 
@@ -114,15 +111,15 @@ impl<T: Config> Module<T> {
                 exit_predicate,
                 &challenge_inputs[0],
                 EXIT_SPENT_CHALLENGE,
-            ))
+            )) as DispatchResultT<PropertyOf<T>>
         } else if T::Hashing::hash_of(&challenge_inputs[0])
             == T::Hashing::hash(EXIT_CHECKPOINT_CHALLENGE)
         {
-            let invalid_history_challenge_inputs = vec![challenge_inputs[1]];
+            let invalid_history_challenge_inputs = vec![challenge_inputs[1].clone()];
             Self::validate_checkpoint_challenge(
                 plapps_id,
                 inputs.clone(),
-                invalid_history_challenge_inputs,
+                invalid_history_challenge_inputs.clone(),
                 witness.clone(),
             )?;
             let challenge_state_update: StateUpdateOf<T> =
@@ -138,7 +135,7 @@ impl<T: Config> Module<T> {
                 exit_predicate,
                 &invalid_history_challenge_inputs[0],
                 EXIT_CHECKPOINT_CHALLENGE,
-            ))
+            )) as DispatchResultT<PropertyOf<T>>
         } else {
             return Err(DispatchError::Other("illegal challenge type"));
         }?;
@@ -154,18 +151,18 @@ impl<T: Config> Module<T> {
         );
 
         // TODO: bare_challenge
-        pallet_ovm::Module::<T>::challenge(
-            T::Origin::signed(exit_predicate.clone()),
+        pallet_ovm::Module::<T>::bare_challenge(
+            exit_predicate.clone(),
             Self::create_property(exit_predicate, &inputs[0], EXIT_CLAIM),
             challenge_property,
         )
     }
 
     pub fn bare_exit_remove_challenge(
-        plapps_id: &T::AccountId,
-        inputs: Vec<Vec<u8>>,
-        challenge_inputs: Vec<Vec<u8>>,
-        witness: Vec<Vec<u8>>,
+        _plapps_id: &T::AccountId,
+        _inputs: Vec<Vec<u8>>,
+        _challenge_inputs: Vec<Vec<u8>>,
+        _witness: Vec<Vec<u8>>,
     ) -> DispatchResult {
         Ok(())
     }
@@ -180,9 +177,7 @@ impl<T: Config> Module<T> {
 
         let exit_predicate = Self::exit_predicate(plapps_id);
         let property = Self::create_property(exit_predicate.clone(), &inputs[0], EXIT_CLAIM);
-        // TODO: bare_settle_game
-        let decision =
-            pallet_ovm::Module::<T>::settle_game(T::Origin::signed(exit_predicate), property)?;
+        pallet_ovm::Module::<T>::bare_settle_game(exit_predicate, property)?;
 
         let state_update: StateUpdateOf<T> =
             Decode::decode(&mut &inputs[0][..]).map_err(|_| Error::<T>::MustBeDecodable)?;
