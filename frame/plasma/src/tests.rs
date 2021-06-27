@@ -284,12 +284,12 @@ fn verify_inclusion_test() {
 
         // suceed to verify inclusion of the most left leaf
         let result = Plasma::verify_inclusion(
-            plapps_id,
-            leaf_0.data.clone(),
-            token_address,
-            Range::<Balance> { start: 0, end: 5 },
-            valid_inclusion_proof,
-            block_number,
+            &plapps_id,
+            &leaf_0.data,
+            &token_address,
+            &Range::<Balance> { start: 0, end: 5 },
+            &valid_inclusion_proof,
+            &block_number,
         );
         assert_eq!(result, Ok(true));
     })
