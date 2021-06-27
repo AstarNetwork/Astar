@@ -2,6 +2,8 @@
 
 #![cfg(test)]
 
+use std::collections::BTreeMap;
+
 use super::{
     AddressInclusionProof, BalanceOf, Checkpoint, Config, InclusionProof, IntervalInclusionProof,
     IntervalTreeNode, IntervalTreeNodeOf, PlappsAddressFor, PropertyOf, Range, RangeOf, RawEvent,
@@ -11,6 +13,8 @@ use codec::Encode;
 use frame_support::assert_ok;
 use frame_system::{EventRecord, Phase};
 use hex_literal::hex;
+use ovmi::prepare::{compile_from_json, load_predicate_json};
+use pallet_ovm::traits::PredicateAddressFor;
 use sp_runtime::traits::Zero;
 
 lazy_static::lazy_static! {
@@ -503,13 +507,131 @@ fn scenario_test() {
     });
 }
 
-#[test]
-fn scenario_with_ovm_test() {
+fn make_ownership_predicate() -> (Vec<u8>, H256) {
+    let ownership_predicate_str = load_predicate_json("ownership.json");
+    let compiled_predicate = compile_from_json(ownership_predicate_str.as_str()).unwrap();
+    compile_predicate::<Test>(&compiled_predicate)
+}
 
-    // 1. ovm::put_code.
-    // 2. ovm::instantiate.
-    // 3. plasma::deploy.
-    // 4. plasma::submit_root
-    // 5. plasma::deposit
-    // 6.
+fn success_put_code(predicate: Vec<u8>) {
+    assert_ok!(Ovm::put_code(
+        Origin::signed((*ALICE_STASH).clone()),
+        predicate,
+    ));
+}
+
+fn success_instantiate(predicate_hash: H256) {
+    // inputs: AccountId, BtreeMap<H256, AccountId>, BtreeMap<H256, AccountId>
+    let inputs = (
+        *NONE_ADDRESS,
+        BTreeMap::<H256, AccountId>::new(),
+        BTreeMap::<H256, AccountId>::new(),
+    )
+        .encode();
+    assert_ok!(Ovm::instantiate(
+        Origin::signed((*ALICE_STASH).clone()),
+        predicate_hash,
+        inputs.clone(),
+    ));
+
+    let predicate_address = ovm::SimpleAddressDeterminer::<Test>::predicate_address_for(
+        &predicate_hash,
+        &inputs,
+        &ALICE_STASH,
+    );
+    let predicate_contract =
+        Ovm::predicates(&predicate_address).expect("Must be stored predicate address.");
+    assert_eq!(predicate_hash, predicate_contract.predicate_hash);
+    assert_eq!(inputs, predicate_contract.inputs);
+}
+
+#[test]
+fn scenario_with_ovm_success_test() {
+    let (predicate, predicate_hash) = make_ownership_predicate();
+    new_test_ext().execute_with(|| {
+        advance_block();
+        // 1. ovm::put_code.
+        success_put_code(predicate);
+
+        // 2. ovm::instantiate.
+        success_instantiate(predicate_hash);
+
+        // 3. plasma::deploy.
+
+        // 4. plasma::submit_root
+
+        // 5. Parent: Alice -> Child: Alice
+        // plasma::deposit
+
+        // 6. plasma::submit_root
+
+        // 7. Child: Alice -> Bob
+        // plsma::submit_root(...)
+        // the root hash included state_object(Ownership(..))
+
+        // 8. Child: Bob -> Parent: Bob
+        // 8-1. plasma::exit_claim
+        // 8-2. exit_settle
+        // 8-3. finalize_exit
+
+        // 9. balance check Bob
+    });
+}
+
+#[test]
+fn scenario_with_ovm_challenge_test() {
+    new_test_ext().execute_with(|| {
+        advance_block();
+        // 1. ovm::put_code.
+
+        // 2. ovm::instantiate.
+
+        // 3. plasma::deploy.
+
+        // 4. plasma::submit_root(1)
+
+        // 5. Parent: Alice -> Child: Alice
+        // plasma::deposit
+
+        // 6. plasma::submit_root(2)
+
+        // 7. Child: Alice -> Bob
+        // plsma::submit_root(...)
+        // the root hash included state_object(Ownership(..))
+
+        // 8. Child: Alice -> Parent: Alice
+        // 8-1. plasma::exit_claim with block 1.
+        // 8-2. exit_challenge
+        // 8-3. exit_settle
+        // -> failed
+    });
+}
+
+#[test]
+fn scenario_with_ovm_operator_failed_test() {
+    new_test_ext().execute_with(|| {
+        advance_block();
+        // 1. ovm::put_code.
+
+        // 2. ovm::instantiate.
+
+        // 3. plasma::deploy.
+
+        // 4. plasma::submit_root(1)
+
+        // 5. Parent: Alice -> Child: Alice
+        // plasma::deposit
+
+        // 6. plasma::submit_root(2)
+
+        // 7. Child: Alice -> Bob (False)
+        // plsma::submit_root(...)
+        // the root hash included state_object(Ownership(..))
+
+        // 8. Child: Bob -> Parent: ABob
+        // 8-1. plasma::exit_claim.
+        // 8-2. exit_challenge (EXIT_CHECKPOINT_CHALLENGE)
+        // 8-3. exit_settle
+        // -> failed
+    });
 }

@@ -10,6 +10,7 @@ pub use frame_support::{
     weights::{WeightToFeeCoefficients, WeightToFeePolynomial},
 };
 pub use hex_literal::hex;
+use ovmi::CompiledPredicate;
 pub use pallet_balances as balances;
 pub use pallet_contracts::{self as contracts, weights::WeightInfo, TrieId};
 pub use pallet_ovm::{self as ovm, AtomicPredicateIdConfig};
@@ -200,6 +201,10 @@ lazy_static::lazy_static! {
     pub static ref SECP_256_K1: H256 = H256::from(&hex![
         "d4fa99b1e08c4e5e6deb461846aa629344d95ff03ed04754c2053d54c756f439"
     ]);
+    pub static ref NONE_ADDRESS: H256 = H256::from(&hex![
+        "0000000000000000000000000000000000000000000000000000000000000000"
+    ]);
+
 }
 
 pub struct MockAtomicPredicateIdConfigGetter;
@@ -265,14 +270,16 @@ pub fn advance_block() {
 }
 
 /// Generate compiled predicate binary and code hash from predicate source.
-pub fn compile_predicate<T>(predicate_module: &str) -> (Vec<u8>, <T::Hashing as Hash>::Output)
+pub fn compile_predicate<T>(
+    compiled_predicate: &CompiledPredicate,
+) -> (Vec<u8>, <T::Hashing as Hash>::Output)
 where
     T: frame_system::Config,
 {
     // TODO actually predicate to compiled predicate.
-    let compiled_predicate = predicate_module.as_bytes().to_vec();
+    let ret_compiled_predicate = compiled_predicate.encode();
     let code_hash = T::Hashing::hash_of(&compiled_predicate);
-    (compiled_predicate.to_vec(), code_hash)
+    (ret_compiled_predicate, code_hash)
 }
 
 pub fn to_account_from_seed(seed: &[u8; 32]) -> AccountId {
