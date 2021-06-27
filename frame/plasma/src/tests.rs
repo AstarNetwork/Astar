@@ -520,7 +520,7 @@ fn success_put_code(predicate: Vec<u8>) {
     ));
 }
 
-fn success_instantiate(predicate_hash: H256) {
+fn success_instantiate(predicate_hash: H256) -> AccountId {
     // inputs: AccountId, BtreeMap<H256, AccountId>, BtreeMap<H256, AccountId>
     let inputs = (
         *NONE_ADDRESS,
@@ -543,6 +543,7 @@ fn success_instantiate(predicate_hash: H256) {
         Ovm::predicates(&predicate_address).expect("Must be stored predicate address.");
     assert_eq!(predicate_hash, predicate_contract.predicate_hash);
     assert_eq!(inputs, predicate_contract.inputs);
+    predicate_address
 }
 
 #[test]
@@ -554,16 +555,54 @@ fn scenario_with_ovm_success_test() {
         success_put_code(predicate);
 
         // 2. ovm::instantiate.
-        success_instantiate(predicate_hash);
+        advance_block();
+        let predicate_address = success_instantiate(predicate_hash);
 
-        // 3. plasma::deploy.
+        // 3. plasma::deploy
+        advance_block();
+        let plapps_id = success_deploy(
+            (*ALICE_STASH).clone(),
+            (*AGGREGATOR_ID).clone(),
+            (*ERC20_ID).clone(),
+            (*STATE_UPDATE_ID).clone(),
+            (*EXIT_ID).clone(),
+            (*EXIT_DEPOSIT_ID).clone(),
+        );
 
         // 4. plasma::submit_root
+        let block_number: BlockNumber = 1;
+        let root = H256::default();
+        advance_block();
+        success_submit_root(
+            (*AGGREGATOR_ID).clone(),
+            plapps_id.clone(),
+            block_number,
+            root,
+        );
 
         // 5. Parent: Alice -> Child: Alice
         // plasma::deposit
+        advance_block();
+        success_deposit(
+            (*ALICE_STASH).clone(),
+            plapps_id.clone(),
+            10,
+            PropertyOf::<Test> {
+                predicate_address: (*STATE_UPDATE_ID).clone(),
+                inputs: vec![hex!["01"].to_vec()], // TODO: ???
+            },
+        );
 
         // 6. plasma::submit_root
+        let block_number: BlockNumber = 2;
+        let root = H256::default();
+        advance_block();
+        success_submit_root(
+            (*AGGREGATOR_ID).clone(),
+            plapps_id.clone(),
+            block_number,
+            root, // root-hash
+        );
 
         // 7. Child: Alice -> Bob
         // plsma::submit_root(...)
