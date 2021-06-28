@@ -6,6 +6,10 @@ use super::*;
 use frame_support::dispatch::DispatchResult;
 use frame_system::Origin;
 
+// Dispute Kinds.
+pub const CHECKPOINT_CLAIM: &'static [u8] = b"CHECKPOINT_CLAIM";
+pub const CHECKPOINT_CHALLENGE: &'static [u8] = b"CHECKPOINT_CHALLENGE";
+
 /// claim checkpoint
 ///  _propertyInputs: [encode(stateUpdate)]
 ///  _witness: [encode(inclusionProof)]

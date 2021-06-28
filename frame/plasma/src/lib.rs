@@ -36,10 +36,13 @@ use sp_runtime::{
 };
 use sp_std::{marker::PhantomData, prelude::*, vec::Vec};
 
-pub use pallet_ovm::{Decision, Property, PropertyOf};
+pub use pallet_ovm::{Decision, ExecError, Property, PropertyOf};
 
+// mod checkpoint;
 mod deserializer;
 mod erc20;
+mod exit;
+mod helper;
 #[cfg(test)]
 mod mock;
 #[cfg(test)]
@@ -61,6 +64,16 @@ pub struct StateUpdate<AccountId, Balance, BlockNumber> {
     range: Range<Balance>,
     block_number: BlockNumber,
     state_object: Property<AccountId>,
+}
+
+#[derive(Encode, Decode, Clone, Default, RuntimeDebug, PartialEq, Eq)]
+pub struct Transaction<AccountId, Balance, BlockNumber, Hash> {
+    deposit_contract_address: AccountId,
+    range: Range<Balance>,
+    max_block_number: BlockNumber,
+    next_state_object: Property<AccountId>,
+    chunk_id: Hash,
+    from: AccountId,
 }
 
 #[derive(Encode, Decode, Clone, Default, RuntimeDebug, PartialEq, Eq)]
@@ -126,6 +139,12 @@ pub type ExitOf<T> = Exit<
 >;
 pub type StateUpdateOf<T> =
     StateUpdate<<T as system::Config>::AccountId, BalanceOf<T>, <T as system::Config>::BlockNumber>;
+pub type TransactionOf<T> = Transaction<
+    <T as frame_system::Config>::AccountId,
+    BalanceOf<T>,
+    <T as frame_system::Config>::BlockNumber,
+    <T as frame_system::Config>::Hash,
+>;
 pub type InclusionProofOf<T> =
     InclusionProof<<T as system::Config>::AccountId, BalanceOf<T>, <T as system::Config>::Hash>;
 pub type IntervalInclusionProofOf<T> =
@@ -198,10 +217,7 @@ decl_storage! {
         Blocks get(fn blocks): double_map hasher(twox_64_concat) T::AccountId, hasher(blake2_128_concat) T::BlockNumber => T::Hash;
 
 
-        // Deposit storage: Plapps address => Deposit Child Storage. ====
-        /// mapping from Plapps address to ERC20 based contract address.
-        ERC20 get(fn erc20): map hasher(twox_64_concat) T::AccountId => T::AccountId;
-        /// mapping from Plapps address to StateUpdate predicate address.
+        // Deposit storage: Plapps address => Deposit Child Storage. ====        /// mapping from Plapps address to StateUpdate predicate address.
         StateUpdatePredicate get(fn state_update_predicate): map hasher(twox_64_concat) T::AccountId => T::AccountId;
         /// mapping from Plapps address to Exit predicate address.
         ExitPredicate get(fn exit_predicate): map hasher(twox_64_concat) T::AccountId => T::AccountId;
@@ -228,6 +244,8 @@ decl_event!(
         BlockNumber = <T as system::Config>::BlockNumber,
         Range = RangeOf<T>,
         Checkpoint = CheckpointOf<T>,
+        StateUpdate = StateUpdateOf<T>,
+        InclusionProof = InclusionProofOf<T>,
     {
         /// Deplpoyed Plapps. (creator: AccountId, plapps_id: AccountId)
         Deploy(AccountId, AccountId),
@@ -237,6 +255,24 @@ decl_event!(
         CheckpointFinalized(AccountId, Hash, Checkpoint),
         /// (AccountID: PlappsAddress, exit_id: Hash)
         ExitFinalized(AccountId, Hash),
+        /// Event definitions (plapps_id: AccountId, state_update: StateUpdate, inclusion_proof: InclusionProof)
+        CheckpointClaimed(AccountId, StateUpdate, InclusionProof),
+        /// Event definitions (state_update: StateUpdate, challenging_state_update: StateUpdate, inclusion_proof: InclusionProof)
+        CheckpointChallenged(StateUpdate, StateUpdate, InclusionProof),
+        /// Event definitions (state_update: StateUpdate, challenging_state_update: StateUpdate)
+        ChallengeRemoved(StateUpdate, StateUpdate),
+        /// Event definitions (state_update: StateUpdate)
+        CheckpointSettled(StateUpdate),
+        /// Event definitions (state_update: stateUpdate)
+        ExitClaimed(StateUpdate),
+        /// Event definitions (state_update: stateUpdate)
+        ExitSpentChallenged(StateUpdate),
+        /// Event definitions (state_update: stateUpdate, challenging_state_update: StateUpdate)
+        ExitCheckpointChallenged(StateUpdate, StateUpdate),
+        /// Event definitions (state_update: stateUpdate, challenging_state_update: StateUpdate)
+        ExitChallengeRemoved(StateUpdate, StateUpdate),
+        /// Event definitions (state_update: stateUpdate, decision: bool)
+        ExitSettled(StateUpdate, bool),
         /// (AccountID: PlappsAddress, new_range: Range)
         DepositedRangeExtended(AccountId, Range),
         /// (AccountID: PlappsAddress, removed_range: Range)
@@ -261,7 +297,6 @@ decl_module! {
         fn deploy(
             origin,
             aggregator_id: T::AccountId,
-            erc20: T::AccountId,
             state_update_predicate: T::AccountId,
             exit_predicate: T::AccountId,
             exit_deposit_predicate: T::AccountId,
@@ -269,14 +304,12 @@ decl_module! {
             let sender = ensure_signed(origin)?;
             let plapps_hash = Self::generate_plapps_hash(
                 &aggregator_id,
-                &erc20,
                 &state_update_predicate,
                 &exit_predicate,
                 &exit_deposit_predicate,
             );
             let plapps_id = T::DeterminePlappsAddress::plapps_address_for(&plapps_hash, &sender);
             <AggregatorAddress<T>>::insert(&plapps_id, aggregator_id);
-            <ERC20<T>>::insert(&plapps_id, erc20);
             <StateUpdatePredicate<T>>::insert(&plapps_id, state_update_predicate);
             <ExitPredicate<T>>::insert(&plapps_id, exit_predicate);
             <ExitDepositPredicate<T>>::insert(&plapps_id, exit_deposit_predicate);
@@ -366,6 +399,59 @@ decl_module! {
             Self::deposit_event(RawEvent::CheckpointFinalized(plapps_id, checkpoint_id, checkpoint));
         }
 
+
+        // ------- ExitDispute parts -------
+        #[weight = 100_000]
+        fn exit_claim(
+            _origin, plapps_id: T::AccountId, state_update: StateUpdateOf<T>, checkpoint: Option<StateUpdateOf<T>>, witness: Option<InclusionProofOf<T>>
+        ) {
+            Self::bare_exit_claim(&plapps_id, &state_update, &checkpoint, &witness)?;
+            Self::deposit_event(RawEvent::ExitClaimed(state_update));
+        }
+
+        #[weight = 100_000]
+        fn exit_spent_challenge(
+            _origin,
+            plapps_id: T::AccountId,
+            state_update: StateUpdateOf<T>,
+            transaction: TransactionOf<T>,
+            witness: InclusionProofOf<T>,
+        ) {
+            Self::bare_exit_challenge(&plapps_id,
+                &state_update,
+                &vec![T::Hashing::hash(exit::EXIT_SPENT_CHALLENGE).encode(),transaction.encode()],
+                 &witness)?;
+            Self::deposit_event(RawEvent::ExitSpentChallenged(state_update));
+        }
+
+        #[weight = 100_000]
+        fn exit_checkpoint_challenge(
+            _origin,
+            plapps_id: T::AccountId,
+            state_update: StateUpdateOf<T>,
+            checkpoint: StateUpdateOf<T>,
+            witness: InclusionProofOf<T>,
+        ) {
+            Self::bare_exit_challenge(&plapps_id,
+                &state_update,
+                &vec![T::Hashing::hash(exit::EXIT_CHECKPOINT_CHALLENGE).encode(), checkpoint.encode()],
+                &witness)?;
+            Self::deposit_event(RawEvent::ExitCheckpointChallenged(
+                state_update,
+                checkpoint,
+            ));
+        }
+
+
+        #[weight = 100_000]
+        fn exit_settle(
+            _orign, plapps_id: T::AccountId, state_update: StateUpdateOf<T>
+        ) {
+            Self::bare_exit_settle(&plapps_id, &state_update)?;
+            Self::deposit_event(RawEvent::ExitSettled(state_update, true));
+        }
+
+
         /// finalizeExit
         /// - @param _exitProperty A property which is instance of exit predicate and its inputs are range and StateUpdate that exiting account wants to withdraw.
         /// _exitProperty can be a property of ether ExitPredicate or ExitDepositPredicate.
@@ -444,6 +530,10 @@ decl_error! {
         RangeMustBeSubrangeOfCheckpoint,
         /// StateUpdate.depositContractAddress must be this contract address
         DepositContractAddressMustBePlappsId,
+        /// ExecError
+        PredicateExecError,
+        /// NotFoundGame
+        NotFoundGame,
     }
 }
 
@@ -460,8 +550,8 @@ fn migrate<T: Config>() {
 /// Public callable Plasma commitment module methods.
 impl<T: Config> Module<T> {
     // Plasma Commitment parts ====
-    pub fn retrieve(plapps_id: T::AccountId, block_number: T::BlockNumber) -> T::Hash {
-        <Blocks<T>>::get(&plapps_id, &block_number)
+    pub fn retrieve(plapps_id: &T::AccountId, block_number: &T::BlockNumber) -> T::Hash {
+        <Blocks<T>>::get(plapps_id, block_number)
     }
 
     /// verifyInclusion method verifies inclusion of message in Double Layer Tree.
@@ -473,27 +563,27 @@ impl<T: Config> Module<T> {
     /// - @param inclusion_proof The proof data to verify inclusion
     /// - @param block_number block number where the Merkle root is stored
     pub fn verify_inclusion(
-        plapps_id: T::AccountId,
-        leaf: T::Hash,
-        token_address: T::AccountId,
-        range: RangeOf<T>,
-        inclusion_proof: InclusionProofOf<T>,
-        block_number: T::BlockNumber,
+        plapps_id: &T::AccountId,
+        leaf: &T::Hash,
+        token_address: &T::AccountId,
+        range: &RangeOf<T>,
+        inclusion_proof: &InclusionProofOf<T>,
+        block_number: &T::BlockNumber,
     ) -> DispatchResultT<bool> {
-        let root = <Blocks<T>>::get(&plapps_id, &block_number);
-        Self::verify_inclusion_with_root(leaf, token_address, range, inclusion_proof, root)
+        let root = <Blocks<T>>::get(plapps_id, block_number);
+        Self::verify_inclusion_with_root(leaf, token_address, range, inclusion_proof, &root)
     }
 
     pub fn verify_inclusion_with_root(
-        leaf: T::Hash,
-        token_address: T::AccountId,
-        range: RangeOf<T>,
-        inclusion_proof: InclusionProofOf<T>,
-        root: T::Hash,
+        leaf: &T::Hash,
+        token_address: &T::AccountId,
+        range: &RangeOf<T>,
+        inclusion_proof: &InclusionProofOf<T>,
+        root: &T::Hash,
     ) -> DispatchResultT<bool> {
         // Calcurate the root of interval tree
         let (computed_root, implicit_end) = Self::compute_interval_tree_root(
-            &leaf,
+            leaf,
             &inclusion_proof.interval_inclusion_proof.leaf_index,
             &inclusion_proof.interval_inclusion_proof.leaf_position,
             &inclusion_proof.interval_inclusion_proof.siblings,
@@ -508,16 +598,16 @@ impl<T: Config> Module<T> {
         // Calcurate the root of address tree
         let (computed_root, implicit_address) = Self::compute_address_tree_root(
             &computed_root,
-            &token_address,
+            token_address,
             &inclusion_proof.address_inclusion_proof.leaf_position,
             &inclusion_proof.address_inclusion_proof.siblings,
         )?;
 
         ensure!(
-            token_address <= implicit_address,
+            token_address <= &implicit_address,
             Error::<T>::AddressMustNotExceedTheImplicitAddress,
         );
-        return Ok(computed_root == root);
+        return Ok(&computed_root == root);
     }
 }
 
@@ -836,14 +926,12 @@ impl<T: Config> Module<T> {
 
     fn generate_plapps_hash(
         aggregator_id: &T::AccountId,
-        erc20: &T::AccountId,
         state_update_predicate: &T::AccountId,
         exit_predicate: &T::AccountId,
         exit_deposit_predicate: &T::AccountId,
     ) -> T::Hash {
         T::Hashing::hash_of(&(
             T::Hashing::hash_of(&aggregator_id),
-            T::Hashing::hash_of(&erc20),
             T::Hashing::hash_of(&state_update_predicate),
             T::Hashing::hash_of(&exit_predicate),
             T::Hashing::hash_of(&exit_deposit_predicate),

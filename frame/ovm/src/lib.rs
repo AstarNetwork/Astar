@@ -26,7 +26,7 @@ use frame_support::{
 };
 use frame_system::{self as system, ensure_signed};
 
-use ovmi::executor::ExecError;
+pub use ovmi::executor::ExecError;
 pub type ExecResult<T> = Result<Vec<u8>, ExecError<<T as system::Config>::AccountId>>;
 
 #[cfg(feature = "std")]
@@ -86,13 +86,13 @@ pub enum Decision {
 #[derive(Encode, Decode, RuntimeDebug, PartialEq, Eq)]
 pub struct ChallengeGame<Hash, BlockNumber> {
     /// Property of challenging targets.
-    property_hash: Hash,
+    pub property_hash: Hash,
     /// challenges inputs
-    challenges: Vec<Hash>,
+    pub challenges: Vec<Hash>,
     /// the result of this challenge.
-    decision: Decision,
+    pub decision: Decision,
     /// the block number when this was issued.
-    created_block: BlockNumber,
+    pub created_block: BlockNumber,
 }
 
 /// Definition of the cost schedule and other parameterizations for optimistic virtual machine.
@@ -532,6 +532,67 @@ impl<T: Config> Module<T> {
         input_data: Vec<u8>,
     ) -> ExecResult<T> {
         Self::execute_ovm(origin, |ctx| ctx.call(dest, input_data))
+    }
+
+    pub fn bare_challenge(
+        origin: T::AccountId,
+        property: PropertyOf<T>,
+        challenge_property: PropertyOf<T>,
+    ) -> DispatchResult {
+        Self::only_from_dispute_contract(&origin, &property)?;
+
+        // validation
+        let id = Self::get_property_id(&property);
+        ensure!(Self::started(&id), Error::<T>::PropertyIsNotClaimed,);
+
+        let challenging_game_id = Self::get_property_id(&challenge_property);
+        ensure!(
+            Self::started(&challenging_game_id),
+            Error::<T>::ChallengeIsAlreadyStarted,
+        );
+
+        // start challenging game
+        let challenge_game = Self::create_game(challenging_game_id);
+        <Games<T>>::insert(challenging_game_id, challenge_game);
+
+        // add challenge to challenged game's challenge list
+        let mut game = Self::games(&id).ok_or(Error::<T>::DoesNotExistGame)?;
+        game.challenges.push(challenging_game_id);
+        <Games<T>>::insert(id, game);
+        Self::deposit_event(RawEvent::PropertyChallenged(id, challenging_game_id));
+        Ok(())
+    }
+
+    pub fn bare_settle_game(origin: T::AccountId, property: PropertyOf<T>) -> DispatchResult {
+        Self::only_from_dispute_contract(&origin, &property)?;
+
+        let id = Self::get_property_id(&property);
+        ensure!(Self::started(&id), Error::<T>::PropertyIsNotClaimed,);
+
+        let mut game = Self::games(&id).ok_or(Error::<T>::DoesNotExistGame)?;
+        ensure!(
+            game.created_block < Self::block_number() - T::DisputePeriod::get(),
+            Error::<T>::DisputePeriodHasNotBeenPassed,
+        );
+
+        for challenge in game.challenges.iter() {
+            let decision = Self::get_game(challenge)
+                .ok_or(Error::<T>::DoesNotExistGame)?
+                .decision;
+            if decision == Decision::True {
+                game.decision = Decision::False;
+                Self::deposit_event(RawEvent::PropertyDecided(id, false));
+                return Ok(());
+            }
+            ensure!(
+                decision == Decision::Undecided,
+                Error::<T>::UndecidedChallengeExists,
+            );
+        }
+        game.decision = Decision::True;
+        <Games<T>>::insert(id, game);
+        Self::deposit_event(RawEvent::PropertyDecided(id, true));
+        Ok(())
     }
 
     fn execute_ovm(
