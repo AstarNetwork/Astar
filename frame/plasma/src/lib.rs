@@ -217,10 +217,7 @@ decl_storage! {
         Blocks get(fn blocks): double_map hasher(twox_64_concat) T::AccountId, hasher(blake2_128_concat) T::BlockNumber => T::Hash;
 
 
-        // Deposit storage: Plapps address => Deposit Child Storage. ====
-        /// mapping from Plapps address to ERC20 based contract address.
-        ERC20 get(fn erc20): map hasher(twox_64_concat) T::AccountId => T::AccountId;
-        /// mapping from Plapps address to StateUpdate predicate address.
+        // Deposit storage: Plapps address => Deposit Child Storage. ====        /// mapping from Plapps address to StateUpdate predicate address.
         StateUpdatePredicate get(fn state_update_predicate): map hasher(twox_64_concat) T::AccountId => T::AccountId;
         /// mapping from Plapps address to Exit predicate address.
         ExitPredicate get(fn exit_predicate): map hasher(twox_64_concat) T::AccountId => T::AccountId;
@@ -300,7 +297,6 @@ decl_module! {
         fn deploy(
             origin,
             aggregator_id: T::AccountId,
-            erc20: T::AccountId,
             state_update_predicate: T::AccountId,
             exit_predicate: T::AccountId,
             exit_deposit_predicate: T::AccountId,
@@ -308,14 +304,12 @@ decl_module! {
             let sender = ensure_signed(origin)?;
             let plapps_hash = Self::generate_plapps_hash(
                 &aggregator_id,
-                &erc20,
                 &state_update_predicate,
                 &exit_predicate,
                 &exit_deposit_predicate,
             );
             let plapps_id = T::DeterminePlappsAddress::plapps_address_for(&plapps_hash, &sender);
             <AggregatorAddress<T>>::insert(&plapps_id, aggregator_id);
-            <ERC20<T>>::insert(&plapps_id, erc20);
             <StateUpdatePredicate<T>>::insert(&plapps_id, state_update_predicate);
             <ExitPredicate<T>>::insert(&plapps_id, exit_predicate);
             <ExitDepositPredicate<T>>::insert(&plapps_id, exit_deposit_predicate);
@@ -408,7 +402,7 @@ decl_module! {
 
         // ------- ExitDispute parts -------
         #[weight = 100_000]
-        fn exit_clam(
+        fn exit_claim(
             _origin, plapps_id: T::AccountId, state_update: StateUpdateOf<T>, checkpoint: Option<StateUpdateOf<T>>, witness: Option<InclusionProofOf<T>>
         ) {
             Self::bare_exit_claim(&plapps_id, &state_update, &checkpoint, &witness)?;
@@ -932,14 +926,12 @@ impl<T: Config> Module<T> {
 
     fn generate_plapps_hash(
         aggregator_id: &T::AccountId,
-        erc20: &T::AccountId,
         state_update_predicate: &T::AccountId,
         exit_predicate: &T::AccountId,
         exit_deposit_predicate: &T::AccountId,
     ) -> T::Hash {
         T::Hashing::hash_of(&(
             T::Hashing::hash_of(&aggregator_id),
-            T::Hashing::hash_of(&erc20),
             T::Hashing::hash_of(&state_update_predicate),
             T::Hashing::hash_of(&exit_predicate),
             T::Hashing::hash_of(&exit_deposit_predicate),

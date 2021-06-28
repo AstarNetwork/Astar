@@ -7,10 +7,11 @@ use std::collections::BTreeMap;
 use super::{
     AddressInclusionProof, BalanceOf, Checkpoint, Config, InclusionProof, IntervalInclusionProof,
     IntervalTreeNode, IntervalTreeNodeOf, PlappsAddressFor, PropertyOf, Range, RangeOf, RawEvent,
+    StateUpdateOf, TransactionOf,
 };
 use crate::mock::*;
 use codec::Encode;
-use frame_support::assert_ok;
+use frame_support::{assert_err, assert_ok};
 use frame_system::{EventRecord, Phase};
 use hex_literal::hex;
 use ovmi::prepare::{compile_from_json, load_predicate_json};
@@ -39,7 +40,6 @@ lazy_static::lazy_static! {
 fn success_deploy(
     sender: AccountId,
     aggregator_id: AccountId,
-    erc20: AccountId,
     state_update_predicate: AccountId,
     exit_predicate: AccountId,
     exit_deposit_predicate: AccountId,
@@ -47,7 +47,6 @@ fn success_deploy(
     assert_ok!(Plasma::deploy(
         Origin::signed(sender.clone()),
         aggregator_id.clone(),
-        erc20.clone(),
         state_update_predicate.clone(),
         exit_predicate.clone(),
         exit_deposit_predicate.clone()
@@ -56,7 +55,6 @@ fn success_deploy(
     let plapps_id = <Test as Config>::DeterminePlappsAddress::plapps_address_for(
         &super::Module::<Test>::generate_plapps_hash(
             &aggregator_id,
-            &erc20,
             &state_update_predicate,
             &exit_predicate,
             &exit_deposit_predicate,
@@ -66,7 +64,6 @@ fn success_deploy(
 
     // check initail config ids
     assert_eq!(Plasma::aggregator_address(&plapps_id), aggregator_id);
-    assert_eq!(Plasma::erc20(&plapps_id), erc20);
     assert_eq!(
         Plasma::state_update_predicate(&plapps_id),
         state_update_predicate
@@ -94,7 +91,6 @@ fn deploy_sucess() {
         success_deploy(
             (*ALICE_STASH).clone(),
             (*AGGREGATOR_ID).clone(),
-            (*ERC20_ID).clone(),
             (*STATE_UPDATE_ID).clone(),
             (*EXIT_ID).clone(),
             (*EXIT_DEPOSIT_ID).clone(),
@@ -141,7 +137,6 @@ fn submit_root_success() {
         let plapps_id = success_deploy(
             (*ALICE_STASH).clone(),
             (*AGGREGATOR_ID).clone(),
-            (*ERC20_ID).clone(),
             (*STATE_UPDATE_ID).clone(),
             (*EXIT_ID).clone(),
             (*EXIT_DEPOSIT_ID).clone(),
@@ -271,7 +266,6 @@ fn verify_inclusion_test() {
         let plapps_id = success_deploy(
             (*ALICE_STASH).clone(),
             (*AGGREGATOR_ID).clone(),
-            (*ERC20_ID).clone(),
             (*STATE_UPDATE_ID).clone(),
             (*EXIT_ID).clone(),
             (*EXIT_DEPOSIT_ID).clone(),
@@ -438,7 +432,6 @@ fn scenario_test() {
         let plapps_id = success_deploy(
             (*ALICE_STASH).clone(),
             (*AGGREGATOR_ID).clone(),
-            (*ERC20_ID).clone(),
             (*STATE_UPDATE_ID).clone(),
             (*EXIT_ID).clone(),
             (*EXIT_DEPOSIT_ID).clone(),
@@ -548,22 +541,34 @@ fn success_instantiate(predicate_hash: H256) -> AccountId {
 
 #[test]
 fn scenario_with_ovm_success_test() {
-    let (predicate, predicate_hash) = make_ownership_predicate();
+    let (ownership_predicate, ownership_hash) = make_ownership_predicate();
+    let (state_update_predicate, state_update_hash) = make_ownership_predicate(); // TODO
+    let (exit_deposit_predicate, exit_deposit_hash) = make_ownership_predicate(); // TODO
+    let (exit_predicate, exit_hash) = make_ownership_predicate(); // TODO
     new_test_ext().execute_with(|| {
         advance_block();
         // 1. ovm::put_code.
-        success_put_code(predicate);
+        // 1-1. ownership predicate
+        success_put_code(ownership_predicate);
+        // 1-2. state_update predicate
+        success_put_code(state_update_predicate);
+        // 1-3. exit predicate
+        success_put_code(exit_predicate);
+        // 1-4. exit_deposit predicate
+        success_put_code(exit_deposit_predicate);
 
         // 2. ovm::instantiate.
         advance_block();
-        let predicate_address = success_instantiate(predicate_hash);
+        let ownership_address = success_instantiate(ownership_hash);
+        let _state_update_predicate = success_instantiate(state_update_hash);
+        let _exit_predicate = success_instantiate(exit_hash);
+        let _exit_deposit_predicate = success_instantiate(exit_deposit_hash);
 
         // 3. plasma::deploy
         advance_block();
         let plapps_id = success_deploy(
             (*ALICE_STASH).clone(),
             (*AGGREGATOR_ID).clone(),
-            (*ERC20_ID).clone(),
             (*STATE_UPDATE_ID).clone(),
             (*EXIT_ID).clone(),
             (*EXIT_DEPOSIT_ID).clone(),
@@ -593,27 +598,54 @@ fn scenario_with_ovm_success_test() {
             },
         );
 
-        // 6. plasma::submit_root
+        // 6. Child: Alice -> Bob
+        // plsma::submit_root(...)
+        // the root hash included state_object(Ownership(..))
         let block_number: BlockNumber = 2;
-        let root = H256::default();
+        let tx = TransactionOf::<Test> {
+            deposit_contract_address: plapps_id.clone(),
+            range: RangeOf::<Test> { start: 0, end: 100 },
+            max_block_number: 1,
+            next_state_object: PropertyOf::<Test> {
+                predicate_address: ownership_address.clone(),
+                inputs: vec![],
+            },
+            chunk_id: H256::default(),
+            from: (*ALICE_STASH).clone(),
+        };
+        let root = Keccak256::hash_of(&IntervalTreeNodeOf::<Test> {
+            start: 0,
+            data: Keccak256::hash_of(&tx.encode()),
+        });
         advance_block();
         success_submit_root(
             (*AGGREGATOR_ID).clone(),
             plapps_id.clone(),
             block_number,
-            root, // root-hash
+            root,
         );
 
-        // 7. Child: Alice -> Bob
-        // plsma::submit_root(...)
-        // the root hash included state_object(Ownership(..))
+        // 7. Child: Bob -> Parent: Bob
+        // 7-1. plasma::exit_claim
+        let _ = Plasma::exit_claim(
+            Origin::signed((*BOB_STASH).clone()),
+            plapps_id.clone(),
+            StateUpdateOf::<Test> {
+                deposit_contract_address: plapps_id,
+                range: RangeOf::<Test> { start: 0, end: 100 },
+                block_number,
+                state_object: PropertyOf::<Test> {
+                    predicate_address: ownership_address.clone(),
+                    inputs: vec![],
+                },
+            },
+            None,
+            None,
+        );
+        // 7-2. exit_settle
+        // 7-3. finalize_exit
 
-        // 8. Child: Bob -> Parent: Bob
-        // 8-1. plasma::exit_claim
-        // 8-2. exit_settle
-        // 8-3. finalize_exit
-
-        // 9. balance check Bob
+        // 8. balance check Bob
     });
 }
 
