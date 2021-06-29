@@ -237,36 +237,66 @@ fn dusty_genesis() -> GenesisConfig {
         // 5GxQbApcLQuDYDYNhbiv2t6tmyoPTELbwf1ZsHBv9bVYUsXi
         (hex!["963d361a290e31eb661d886a81e9cb794e4dbb0c81cf37723be3c1f1aecba14f"].into(),
         hex!["d85f9175c7ed2cb6e8b1f7eb907c8505856f2fd23f68ca316173ca0a01dd2532"].into()),
+
+        // Alice ctrl + stash
+
+        (hex!["d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d"].into(),
+        hex!["be5ddb1579b72e84524fc29e78609e3caf42e85aa118ebfe0b0ad404b5bdd25f"].into()),
+
+        // Bob ctrl + stash
+        (hex!["8eaf04151687736326c9fea17e25fc5287613693c912909cb226aa4794f26a48"].into(),
+        hex!["fe65717dad0447d715f660a0a58411de509b42e6efb8375f562f58a554d5860e"].into()),
     ];
 
     let keys = vec![
         (
             AccountId::from_ss58check("5Ff4YsfTpFDiJsfTR7UcmJFj2ysCwtxX5ixLN8gjnaahGbhG").unwrap(),
-            hex!["46ebddef8cd9bb167dc30878d7113b7e168e6f0646beffd77d69d39bad76b47a"]
+            hex!["60fdfc12ccdbb9c210a5d407b3173286b1b63b6c20e9f13a5ab9af05b3d57328"]
                 .unchecked_into(),
-            hex!["345071da55e5dccefaaa440339415ef9f2663338a38f7da0df21be5ab4e055ef"]
+            hex!["3d8720e90ff3070bc6348c920aefa5dc43ddea586dad3177eda55eefc10c18d1"]
                 .unchecked_into(),
-            // hex!["46ebddef8cd9bb167dc30878d7113b7e168e6f0646beffd77d69d39bad76b47a"]
-            //     .unchecked_into(),
+            hex!["8a4cc6c3f5dc02d4feef3e1cefdbab4949ede11ae29f3004e61609c59b4a913d"]
+                .unchecked_into(),
+        ),
+        (
+            AccountId::from_ss58check("5FThDusmRcd4enuaBJrCx9QsMccFEkkEUBENdM4xygPPVyrn").unwrap(),
+            hex!["9cea8045d7d396a5eec75b8b4a4dc25d19e27ad792394da06bf1f2c86e11f10b"]
+                .unchecked_into(),
+            hex!["05a5d360b358379e1c1da7924aec3d8f74b0c0e21b4ababfc6403644458de09e"]
+                .unchecked_into(),
+            hex!["c64f79f573dc66e887782751c151f2648497ae03c22244d34051d19c227d3433"]
+                .unchecked_into(),
+        ),
+        // Alice
+        (
+            AccountId::from_ss58check("5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY").unwrap(),
+            hex!["d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d"]
+                .unchecked_into(),
+            hex!["88dc3417d5058ec4b4503e0c12ea1a0a89be200fe98922423d4334014fa6b0ee"]
+                .unchecked_into(),
+            hex!["d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d"]
+                .unchecked_into(),
+        ),
+        // Bob
+        (
+            AccountId::from_ss58check("5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty").unwrap(),
+            hex!["8eaf04151687736326c9fea17e25fc5287613693c912909cb226aa4794f26a48"]
+                .unchecked_into(),
+            hex!["d17c2d7823ebf260fd138f2d7e27d114c0145d968b5ff5006125f2414fadae69"]
+                .unchecked_into(),
+            hex!["8eaf04151687736326c9fea17e25fc5287613693c912909cb226aa4794f26a48"]
+                .unchecked_into(),
         ),
     ];
 
     // akru
-    let root_key = hex!["16eb796bee0c857db3d646ee7070252707aec0c7d82b2eda856632f6a2306a58"];
+    let root_key = hex!["9ee8b420d6705162524d290b0134faab7f38ab6dc57f0c6d538c644e8f693366"];
+    // mario
+    //let root_key = hex!["16eb796bee0c857db3d646ee7070252707aec0c7d82b2eda856632f6a2306a58"];
 
     make_genesis(
         authorities,
-        keys.iter()
-            .cloned()
-            .map(|(a, b, c)| {
-                (
-                    a.clone(),
-                    b,
-                    c,
-                    get_from_seed::<ImOnlineId>(a.to_string().as_str()),
-                )
-            })
-            .collect(),
+        keys,
         crate::balances::DUSTY_HOLDERS.clone(),
         root_key.into(),
         false,

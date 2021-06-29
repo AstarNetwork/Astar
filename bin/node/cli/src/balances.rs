@@ -7633,5 +7633,14 @@ lazy_static::lazy_static! {
         (AccountId::from_ss58check("5GxQbApcLQuDYDYNhbiv2t6tmyoPTELbwf1ZsHBv9bVYUsXi").unwrap(), 2200000000000000000000000),
         // Team, Maario2 ctrl
         (AccountId::from_ss58check("5FThDusmRcd4enuaBJrCx9QsMccFEkkEUBENdM4xygPPVyrn").unwrap(), 1400000000000000000000000),
+
+        // Alice
+        (AccountId::from_ss58check("5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY").unwrap(), 40000000000000000000000000),
+        // Alice stash
+        (AccountId::from_ss58check("5GNJqTPyNqANBkUVMN1LPPrxXnFouWXoe2wNSmmEoLctxiZY").unwrap(), 50000000000000000000000000),
+        // Bob
+        (AccountId::from_ss58check("5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty").unwrap(), 40000000000000000000000000),
+        // Bob stash
+        (AccountId::from_ss58check("5HpG9w8EBLe5XCrbczpwq5TSXvedjrBGCwqxK1iQ7qUsSWFc").unwrap(), 50000000000000000000000000),
     ];
 }
