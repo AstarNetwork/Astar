@@ -45,4 +45,4 @@ Cargo.lock
 ### Others ###
 plasm_builder
 target-debian/release/*
-!target-debian/release/plasm-node
+!target-debian/release/plasm
