@@ -68,11 +68,9 @@ pub fn authority_keys_from_seed(seed: &str) -> (AccountId, AccountId, AuraId, Im
 
 /// Gen chain specification for given parachain id
 pub fn get_chain_spec(id: ParaId) -> ChainSpec {
-    /*
     if id == ParaId::from(2007) {
         return shiden_chain_spec();
     }
-    */
 
     ChainSpec::from_genesis(
         "Local Testnet",
@@ -165,25 +163,40 @@ fn session_keys(aura: AuraId, im_online: ImOnlineId) -> SessionKeys {
 
 /// Helper function to create GenesisConfig
 fn make_genesis(
-    balances: Vec<(AccountId, Balance)>,
+    mut balances: Vec<(AccountId, Balance)>,
     root_key: AccountId,
     parachain_id: ParaId,
 ) -> GenesisConfig {
+    use sp_core::crypto::Ss58Codec;
     let authorities = vec![
-        authority_keys_from_seed("Alice"),
-        authority_keys_from_seed("Bob"),
+        (
+            AccountId::from_ss58check("5HbAP8GczDDfGL6K2BvbsDyCyL3qY2GSRrJAPNXSUnd95mRM").unwrap(),
+            get_from_seed::<AuraId>("Alice"),
+            get_from_seed::<ImOnlineId>("Alice"),
+        ),
+        (
+            AccountId::from_ss58check("5Fhdbkg89StmVoMNrbukWpcD7ZgLc9gBYNyPBDi3zokPWC48").unwrap(),
+            get_from_seed::<AuraId>("Bob"),
+            get_from_seed::<ImOnlineId>("Bob"),
+        ),
     ];
     let stakers = authorities
         .iter()
         .map(|x| {
             (
                 x.0.clone(),
-                x.1.clone(),
+                x.0.clone(),
                 1_000 * SDN,
                 StakerStatus::Validator,
             )
         })
         .collect::<Vec<_>>();
+    balances.extend(
+        authorities
+            .iter()
+            .map(|x| (x.0.clone(), 1_000 * SDN))
+            .collect::<Vec<_>>(),
+    );
     GenesisConfig {
         system: SystemConfig {
             code: wasm_binary_unwrap().to_vec(),
@@ -200,7 +213,7 @@ fn make_genesis(
                     (
                         x.0.clone(),
                         x.0.clone(),
-                        session_keys(x.2.clone(), x.3.clone()),
+                        session_keys(x.1.clone(), x.2.clone()),
                     )
                 })
                 .collect::<Vec<_>>(),

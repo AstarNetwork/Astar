@@ -141,7 +141,6 @@ impl Filter<Call> for BaseFilter {
     fn filter(call: &Call) -> bool {
         match call {
             // These modules are not allowed to be called by transactions:
-            Call::Balances(_) => false,
             // Other modules should works:
             _ => true,
         }

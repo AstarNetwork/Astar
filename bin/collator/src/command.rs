@@ -26,6 +26,10 @@ fn load_spec(
 ) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
     match id {
         "" => Ok(Box::new(chain_spec::get_chain_spec(para_id))),
+        "shibuya" => Ok(Box::new(
+            chain_spec::ChainSpec::from_json_bytes(&include_bytes!("../res/shibuya.json")[..])
+                .unwrap(),
+        )),
         path => Ok(Box::new(chain_spec::ChainSpec::from_json_file(
             path.into(),
         )?)),
@@ -102,8 +106,17 @@ impl SubstrateCli for RelayChainCli {
     }
 
     fn load_spec(&self, id: &str) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
-        polkadot_cli::Cli::from_iter([RelayChainCli::executable_name().to_string()].iter())
-            .load_spec(id)
+        if id == "tokyo" {
+            Ok(Box::new(
+                polkadot_service::RococoChainSpec::from_json_bytes(
+                    &include_bytes!("../res/tokyo.json")[..],
+                )
+                .unwrap(),
+            ))
+        } else {
+            polkadot_cli::Cli::from_iter([RelayChainCli::executable_name().to_string()].iter())
+                .load_spec(id)
+        }
     }
 
     fn native_runtime_version(chain_spec: &Box<dyn ChainSpec>) -> &'static RuntimeVersion {
