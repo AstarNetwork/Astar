@@ -34,7 +34,7 @@ jobs:
       - name: Docker build and push
         run: |
           TAG=${{ steps.get_version.outputs.tag }}
-          if [ `echo $TAG | grep 'refs'` ]; then TAG=${GITHUB_REF}; fi
+          if [ `echo $TAG | grep 'refs'` ]; then TAG=plasma; fi
           echo ${{ steps.get_version.outputs.tag }}
           echo $TAG
           cd third-party/docker
