@@ -231,15 +231,8 @@ fn dusty_genesis() -> GenesisConfig {
         // 5CiTLYjgjkmx5mB85Y1ATCdL1rijUvS3mkFnYakGoHCN2R91
         (hex!["9ee8b420d6705162524d290b0134faab7f38ab6dc57f0c6d538c644e8f693366"].into(),
         hex!["1cca72ef6e569fc7491b6d116fe9414325c52b9ea34f1652a405e10bf020294f"].into()),
-        
-        // Mario2 ctrl + stash
-        // 5FThDusmRcd4enuaBJrCx9QsMccFEkkEUBENdM4xygPPVyrn
-        // 5GxQbApcLQuDYDYNhbiv2t6tmyoPTELbwf1ZsHBv9bVYUsXi
-        (hex!["963d361a290e31eb661d886a81e9cb794e4dbb0c81cf37723be3c1f1aecba14f"].into(),
-        hex!["d85f9175c7ed2cb6e8b1f7eb907c8505856f2fd23f68ca316173ca0a01dd2532"].into()),
 
         // Alice ctrl + stash
-
         (hex!["d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d"].into(),
         hex!["be5ddb1579b72e84524fc29e78609e3caf42e85aa118ebfe0b0ad404b5bdd25f"].into()),
 
@@ -249,6 +242,7 @@ fn dusty_genesis() -> GenesisConfig {
     ];
 
     let keys = vec![
+        // Mario
         (
             AccountId::from_ss58check("5Ff4YsfTpFDiJsfTR7UcmJFj2ysCwtxX5ixLN8gjnaahGbhG").unwrap(),
             hex!["60fdfc12ccdbb9c210a5d407b3173286b1b63b6c20e9f13a5ab9af05b3d57328"]
@@ -256,15 +250,6 @@ fn dusty_genesis() -> GenesisConfig {
             hex!["3d8720e90ff3070bc6348c920aefa5dc43ddea586dad3177eda55eefc10c18d1"]
                 .unchecked_into(),
             hex!["8a4cc6c3f5dc02d4feef3e1cefdbab4949ede11ae29f3004e61609c59b4a913d"]
-                .unchecked_into(),
-        ),
-        (
-            AccountId::from_ss58check("5FThDusmRcd4enuaBJrCx9QsMccFEkkEUBENdM4xygPPVyrn").unwrap(),
-            hex!["9cea8045d7d396a5eec75b8b4a4dc25d19e27ad792394da06bf1f2c86e11f10b"]
-                .unchecked_into(),
-            hex!["05a5d360b358379e1c1da7924aec3d8f74b0c0e21b4ababfc6403644458de09e"]
-                .unchecked_into(),
-            hex!["c64f79f573dc66e887782751c151f2648497ae03c22244d34051d19c227d3433"]
                 .unchecked_into(),
         ),
         // Alice
@@ -289,10 +274,8 @@ fn dusty_genesis() -> GenesisConfig {
         ),
     ];
 
-    // akru
-    let root_key = hex!["9ee8b420d6705162524d290b0134faab7f38ab6dc57f0c6d538c644e8f693366"];
-    // mario
-    //let root_key = hex!["16eb796bee0c857db3d646ee7070252707aec0c7d82b2eda856632f6a2306a58"];
+    //akru
+    let root_key = hex!["16eb796bee0c857db3d646ee7070252707aec0c7d82b2eda856632f6a2306a58"];
 
     make_genesis(
         authorities,
