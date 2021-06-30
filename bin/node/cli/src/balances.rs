@@ -7625,6 +7625,8 @@ lazy_static::lazy_static! {
         //##
         // Team, Akru
         (AccountId::from_ss58check("5Cakru1BpXPiezeD2LRZh3pJamHcbX9yZ13KLBxuqdTpgnYF").unwrap(), 5000000000000000000000000),
+        // Team Mario
+        (AccountId::from_ss58check("5HmarioAQ73b5FgwqMGtoW1HHGdEvUaGhz4uEhxYdnx3xyy5").unwrap(), 5000000000000000000000000),
         // Team, Maario stash
         (AccountId::from_ss58check("Wb3mqhmWzR4JbCxZqTHUrnc6uRrT98nnwkvnHx8feCKcKkN").unwrap(), 4200000000000000000000000),
         // Team, Maario ctrl

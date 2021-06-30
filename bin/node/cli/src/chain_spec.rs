@@ -24,7 +24,6 @@ const STASH: Balance = 1_000_000 * PLM;
 
 /*
 use hex_literal::hex;
-// use plasm_runtime::constants::currency::*;
 const STAGING_TELEMETRY_URL: &str = "wss://telemetry.polkadot.io/submit/";
 
 const PLASM_PROPERTIES: &str = r#"
@@ -222,23 +221,23 @@ pub fn dusty_config() -> ChainSpec {
 
 fn dusty_genesis() -> GenesisConfig {
     let authorities = vec![
-        // akru ctrl + stash
+        // akru stash + ctrl
         (hex!["16eb796bee0c857db3d646ee7070252707aec0c7d82b2eda856632f6a2306a58"].into(),
         hex!["16eb796bee0c857db3d646ee7070252707aec0c7d82b2eda856632f6a2306a58"].into()),
         
-        // Mario ctrl + stash
+        // Mario stash + ctrl
         // 5Ff4YsfTpFDiJsfTR7UcmJFj2ysCwtxX5ixLN8gjnaahGbhG
         // 5CiTLYjgjkmx5mB85Y1ATCdL1rijUvS3mkFnYakGoHCN2R91
-        (hex!["9ee8b420d6705162524d290b0134faab7f38ab6dc57f0c6d538c644e8f693366"].into(),
-        hex!["1cca72ef6e569fc7491b6d116fe9414325c52b9ea34f1652a405e10bf020294f"].into()),
+        (hex!["1cca72ef6e569fc7491b6d116fe9414325c52b9ea34f1652a405e10bf020294f"].into(),
+        hex!["9ee8b420d6705162524d290b0134faab7f38ab6dc57f0c6d538c644e8f693366"].into()),
 
-        // Alice ctrl + stash
-        (hex!["d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d"].into(),
-        hex!["be5ddb1579b72e84524fc29e78609e3caf42e85aa118ebfe0b0ad404b5bdd25f"].into()),
+        // Alice stash + ctrl
+        (hex!["be5ddb1579b72e84524fc29e78609e3caf42e85aa118ebfe0b0ad404b5bdd25f"].into(),
+        hex!["d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d"].into()),
 
-        // Bob ctrl + stash
-        (hex!["8eaf04151687736326c9fea17e25fc5287613693c912909cb226aa4794f26a48"].into(),
-        hex!["fe65717dad0447d715f660a0a58411de509b42e6efb8375f562f58a554d5860e"].into()),
+        // Bob stash + ctrl
+        (hex!["fe65717dad0447d715f660a0a58411de509b42e6efb8375f562f58a554d5860e"].into(),
+        hex!["8eaf04151687736326c9fea17e25fc5287613693c912909cb226aa4794f26a48"].into()),
     ];
 
     let keys = vec![
@@ -275,7 +274,10 @@ fn dusty_genesis() -> GenesisConfig {
     ];
 
     //akru
-    let root_key = hex!["16eb796bee0c857db3d646ee7070252707aec0c7d82b2eda856632f6a2306a58"];
+    //let root_key = hex!["16eb796bee0c857db3d646ee7070252707aec0c7d82b2eda856632f6a2306a58"];
+
+    //mario 5HmarioAQ73b5FgwqMGtoW1HHGdEvUaGhz4uEhxYdnx3xyy5
+    let root_key = hex!["fc5aaaf500e06e0eb4839233eb2d1bff7eda77c059ca454075cec9f1542d4e00"];
 
     make_genesis(
         authorities,
