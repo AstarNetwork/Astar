@@ -81,7 +81,7 @@ pub fn get_chain_spec(id: ParaId) -> ChainSpec {
 }
 
 fn shiden_chain_spec() -> ChainSpec {
-    ChainSpec::from_json_bytes(&include_bytes!("../res/shiden.json")[..]).unwrap()
+    ChainSpec::from_json_bytes(&include_bytes!("../res/shiden.raw.json")[..]).unwrap()
 }
 
 /*
@@ -148,13 +148,13 @@ fn make_genesis(
     parachain_id: ParaId,
 ) -> GenesisConfig {
     GenesisConfig {
-        frame_system: SystemConfig {
+        system: SystemConfig {
             code: wasm_binary_unwrap().to_vec(),
             changes_trie_config: Default::default(),
         },
-        pallet_sudo: SudoConfig { key: root_key },
+        sudo: SudoConfig { key: root_key },
         parachain_info: ParachainInfoConfig { parachain_id },
-        pallet_balances: BalancesConfig { balances },
-        pallet_vesting: VestingConfig { vesting: vec![] },
+        balances: BalancesConfig { balances },
+        vesting: VestingConfig { vesting: vec![] },
     }
 }
