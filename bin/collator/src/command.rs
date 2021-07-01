@@ -26,10 +26,6 @@ fn load_spec(
 ) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
     match id {
         "" => Ok(Box::new(chain_spec::get_chain_spec(para_id))),
-        "shibuya" => Ok(Box::new(
-            chain_spec::ChainSpec::from_json_bytes(&include_bytes!("../res/shibuya.json")[..])
-                .unwrap(),
-        )),
         path => Ok(Box::new(chain_spec::ChainSpec::from_json_file(
             path.into(),
         )?)),

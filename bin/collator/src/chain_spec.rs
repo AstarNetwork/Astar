@@ -69,7 +69,7 @@ pub fn authority_keys_from_seed(seed: &str) -> (AccountId, AccountId, AuraId, Im
 /// Gen chain specification for given parachain id
 pub fn get_chain_spec(id: ParaId) -> ChainSpec {
     if id == ParaId::from(2007) {
-        return shiden_chain_spec();
+        return shibuya_chain_spec();
     }
 
     ChainSpec::from_genesis(
@@ -94,8 +94,8 @@ pub fn get_chain_spec(id: ParaId) -> ChainSpec {
     )
 }
 
-fn shiden_chain_spec() -> ChainSpec {
-    ChainSpec::from_json_bytes(&include_bytes!("../res/shiden.json")[..]).unwrap()
+fn shibuya_chain_spec() -> ChainSpec {
+    ChainSpec::from_json_bytes(&include_bytes!("../res/shibuya.json")[..]).unwrap()
 }
 
 /*
