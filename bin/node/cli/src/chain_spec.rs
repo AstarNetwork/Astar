@@ -20,12 +20,13 @@ use sp_runtime::{
     Perbill,
 };
 type AccountPublic = <Signature as Verify>::Signer;
-const STASH: Balance = 1_000_000 * PLM;
-
-use hex_literal::hex;
-const STAGING_TELEMETRY_URL: &str = "wss://telemetry.polkadot.io/submit/";
+const STASH: Balance = 400_000 * PLM;
 
 /*
+use hex_literal::hex;
+const STAGING_TELEMETRY_URL: &str = "wss://telemetry.polkadot.io/submit/";
+use sp_core::crypto::UncheckedInto;
+
 const PLASM_PROPERTIES: &str = r#"
         {
             "ss58Format": 5,
@@ -33,7 +34,6 @@ const PLASM_PROPERTIES: &str = r#"
             "tokenSymbol": "PLM"
         }"#;
 const PLASM_PROTOCOL_ID: &str = "plm";
-*/
 const DUSTY_PROPERTIES: &str = r#"
 {
     "ss58Format": 5,
@@ -41,6 +41,7 @@ const DUSTY_PROPERTIES: &str = r#"
     "tokenSymbol": "PLD"
 }"#;
 const DUSTY_PROTOCOL_ID: &str = "pld";
+*/
 
 
 /// Node `ChainSpec` extensions.
@@ -75,13 +76,20 @@ where
 }
 
 /// Helper function to generate controller and session key from seed
-pub fn get_authority_keys_from_seed(seed: &str) -> (AccountId, BabeId, GrandpaId, ImOnlineId) {
-    (
-        get_account_id_from_seed::<sr25519::Public>(seed),
-        get_from_seed::<BabeId>(seed),
-        get_from_seed::<GrandpaId>(seed),
-        get_from_seed::<ImOnlineId>(seed),
-    )
+pub fn get_authority_keys_from_seed(seed: &str) -> (
+	AccountId,
+	AccountId,
+	BabeId,
+	GrandpaId,
+	ImOnlineId,
+) {
+	(
+		get_account_id_from_seed::<sr25519::Public>(&format!("{}//stash", seed)),
+		get_account_id_from_seed::<sr25519::Public>(seed),
+		get_from_seed::<BabeId>(seed),
+		get_from_seed::<GrandpaId>(seed),
+		get_from_seed::<ImOnlineId>(seed),
+	)
 }
 
 fn session_keys(babe: BabeId, grandpa: GrandpaId, im_online: ImOnlineId) -> SessionKeys {
@@ -93,8 +101,14 @@ fn session_keys(babe: BabeId, grandpa: GrandpaId, im_online: ImOnlineId) -> Sess
 }
 
 fn testnet_genesis(
-    initial_authorities: Vec<(AccountId, AccountId)>,
-    keys: Vec<(AccountId, BabeId, GrandpaId, ImOnlineId)>,
+    initial_authorities: Vec<(
+		AccountId, // stash
+		AccountId, // ctrl
+		BabeId,
+		GrandpaId,
+		ImOnlineId,
+	)>,
+    // keys: Vec<(AccountId, BabeId, GrandpaId, ImOnlineId)>,
     endowed_accounts: Option<Vec<AccountId>>,
     sudo_key: AccountId,
 ) -> GenesisConfig {
@@ -117,13 +131,19 @@ fn testnet_genesis(
         .cloned()
         .map(|acc| (acc, ENDOWMENT))
         .collect();
-    make_genesis(initial_authorities, keys, endowed_accounts, sudo_key, true)
+    make_genesis(initial_authorities, endowed_accounts, sudo_key, true)
 }
 
 /// Helper function to create GenesisConfig
 fn make_genesis(
-    initial_authorities: Vec<(AccountId, AccountId)>,
-    keys: Vec<(AccountId, BabeId, GrandpaId, ImOnlineId)>,
+    initial_authorities: Vec<(
+		AccountId, // stash
+		AccountId, // ctrl
+		BabeId,
+		GrandpaId,
+		ImOnlineId,
+	)>,
+    // keys: Vec<(AccountId, BabeId, GrandpaId, ImOnlineId)>,
     balances: Vec<(AccountId, Balance)>,
     root_key: AccountId,
     enable_println: bool,
@@ -139,8 +159,8 @@ fn make_genesis(
         pallet_indices: Some(IndicesConfig { indices: vec![] }),
         pallet_balances: Some(BalancesConfig { balances }),
         pallet_staking: Some(StakingConfig {
-            validator_count: initial_authorities.len() as u32,
-            minimum_validator_count: 3, //initial_authorities.len() as u32,
+            validator_count: 2, //initial_authorities.len() as u32,
+            minimum_validator_count: 2, //initial_authorities.len() as u32,
             stakers: initial_authorities
             .iter()
             .map(|x| (x.0.clone(), x.1.clone(), STASH, StakerStatus::Validator))
@@ -150,13 +170,13 @@ fn make_genesis(
             ..Default::default()
         }),
         pallet_session: Some(SessionConfig {
-            keys: keys
+            keys: initial_authorities
                 .iter()
                 .map(|x| {
                     (
+                        x.1.clone(),
                         x.0.clone(),
-                        x.0.clone(),
-                        session_keys(x.1.clone(), x.2.clone(), x.3.clone()),
+                        session_keys(x.2.clone(), x.3.clone(), x.4.clone()),
                     )
                 })
                 .collect::<Vec<_>>(),
@@ -194,12 +214,11 @@ fn make_genesis(
 }
 
 /// Dusty testnet file config.
-// pub fn dusty_config() -> ChainSpec {
-//     ChainSpec::from_json_bytes(&include_bytes!("../res/dusty5.json")[..]).unwrap()
-// }
+pub fn dusty_config() -> ChainSpec {
+    ChainSpec::from_json_bytes(&include_bytes!("../res/dusty5.json")[..]).unwrap()
+}
 
-
-use sp_core::crypto::{Ss58Codec, UncheckedInto};
+/*
 /// Dusty native config.
 pub fn dusty_config() -> ChainSpec {
     ChainSpec::from_genesis(
@@ -223,26 +242,9 @@ fn dusty_genesis() -> GenesisConfig {
         // Alice stash + ctrl
         // stash 5GNJqTPyNqANBkUVMN1LPPrxXnFouWXoe2wNSmmEoLctxiZY
         // ctrl 5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY
-        (hex!["be5ddb1579b72e84524fc29e78609e3caf42e85aa118ebfe0b0ad404b5bdd25f"].into(),
-        hex!["d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d"].into()),
-        
-        // Bob stash + ctrl
-        // stash 5HpG9w8EBLe5XCrbczpwq5TSXvedjrBGCwqxK1iQ7qUsSWFc
-        // ctrl 5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty
-        (hex!["fe65717dad0447d715f660a0a58411de509b42e6efb8375f562f58a554d5860e"].into(),
-        hex!["8eaf04151687736326c9fea17e25fc5287613693c912909cb226aa4794f26a48"].into()),
-
-        // Mario stash + ctrl
-        // stash 5CiTLYjgjkmx5mB85Y1ATCdL1rijUvS3mkFnYakGoHCN2R91
-        // ctrl 5Ff4YsfTpFDiJsfTR7UcmJFj2ysCwtxX5ixLN8gjnaahGbhG
-        (hex!["1cca72ef6e569fc7491b6d116fe9414325c52b9ea34f1652a405e10bf020294f"].into(),
-        hex!["9ee8b420d6705162524d290b0134faab7f38ab6dc57f0c6d538c644e8f693366"].into()),
-        ];
-
-    let keys = vec![
-        // Alice
         (
-            AccountId::from_ss58check("5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY").unwrap(),
+            hex!["be5ddb1579b72e84524fc29e78609e3caf42e85aa118ebfe0b0ad404b5bdd25f"].into(),
+            hex!["d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d"].into(),
             hex!["d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d"]
                 .unchecked_into(),
             hex!["88dc3417d5058ec4b4503e0c12ea1a0a89be200fe98922423d4334014fa6b0ee"]
@@ -250,9 +252,13 @@ fn dusty_genesis() -> GenesisConfig {
             hex!["d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d"]
                 .unchecked_into(),
         ),
-        // Bob
+        
+        // Bob stash + ctrl
+        // stash 5HpG9w8EBLe5XCrbczpwq5TSXvedjrBGCwqxK1iQ7qUsSWFc
+        // ctrl 5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty
         (
-            AccountId::from_ss58check("5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty").unwrap(),
+            hex!["fe65717dad0447d715f660a0a58411de509b42e6efb8375f562f58a554d5860e"].into(),
+            hex!["8eaf04151687736326c9fea17e25fc5287613693c912909cb226aa4794f26a48"].into(),
             hex!["8eaf04151687736326c9fea17e25fc5287613693c912909cb226aa4794f26a48"]
                 .unchecked_into(),
             hex!["d17c2d7823ebf260fd138f2d7e27d114c0145d968b5ff5006125f2414fadae69"]
@@ -260,33 +266,48 @@ fn dusty_genesis() -> GenesisConfig {
             hex!["8eaf04151687736326c9fea17e25fc5287613693c912909cb226aa4794f26a48"]
                 .unchecked_into(),
         ),
-        // Mario
-        (
-            AccountId::from_ss58check("5Ff4YsfTpFDiJsfTR7UcmJFj2ysCwtxX5ixLN8gjnaahGbhG").unwrap(),
-            hex!["60fdfc12ccdbb9c210a5d407b3173286b1b63b6c20e9f13a5ab9af05b3d57328"]
-                .unchecked_into(),
-            hex!["3d8720e90ff3070bc6348c920aefa5dc43ddea586dad3177eda55eefc10c18d1"]
-                .unchecked_into(),
-            hex!["8a4cc6c3f5dc02d4feef3e1cefdbab4949ede11ae29f3004e61609c59b4a913d"]
-                .unchecked_into(),
-        ),
+
+        // bootnode1 stash + ctrl
+        // stash 5CiTLYjgjkmx5mB85Y1ATCdL1rijUvS3mkFnYakGoHCN2R91
+        // ctrl 5Ff4YsfTpFDiJsfTR7UcmJFj2ysCwtxX5ixLN8gjnaahGbhG
+        // (
+        //     hex!["1cca72ef6e569fc7491b6d116fe9414325c52b9ea34f1652a405e10bf020294f"].into(),
+        //     hex!["9ee8b420d6705162524d290b0134faab7f38ab6dc57f0c6d538c644e8f693366"].into(),
+        //     hex!["60fdfc12ccdbb9c210a5d407b3173286b1b63b6c20e9f13a5ab9af05b3d57328"]
+        //         .unchecked_into(),
+        //     hex!["3d8720e90ff3070bc6348c920aefa5dc43ddea586dad3177eda55eefc10c18d1"]
+        //         .unchecked_into(),
+        //     hex!["8a4cc6c3f5dc02d4feef3e1cefdbab4949ede11ae29f3004e61609c59b4a913d"]
+        //         .unchecked_into(),
+        // ),
+
+        // bootnode2 stash + ctrl
+        // 5FThDusmRcd4enuaBJrCx9QsMccFEkkEUBENdM4xygPPVyrn
+        // 5GxQbApcLQuDYDYNhbiv2t6tmyoPTELbwf1ZsHBv9bVYUsXi
+        // (
+        //     hex!["963d361a290e31eb661d886a81e9cb794e4dbb0c81cf37723be3c1f1aecba14f"].into(),
+        //     hex!["d85f9175c7ed2cb6e8b1f7eb907c8505856f2fd23f68ca316173ca0a01dd2532"].into(),
+        //     hex!["9cea8045d7d396a5eec75b8b4a4dc25d19e27ad792394da06bf1f2c86e11f10b"]
+        //         .unchecked_into(),
+        //     hex!["05a5d360b358379e1c1da7924aec3d8f74b0c0e21b4ababfc6403644458de09e"]
+        //         .unchecked_into(),
+        //     hex!["c64f79f573dc66e887782751c151f2648497ae03c22244d34051d19c227d3433"]
+        //         .unchecked_into(),
+        // ),
+
     ];
 
-    //akru
-    //let root_key = hex!["16eb796bee0c857db3d646ee7070252707aec0c7d82b2eda856632f6a2306a58"];
-
-    //mario 5HmarioAQ73b5FgwqMGtoW1HHGdEvUaGhz4uEhxYdnx3xyy5
-    let root_key = hex!["fc5aaaf500e06e0eb4839233eb2d1bff7eda77c059ca454075cec9f1542d4e00"];
+    // Astar testnet root 5GrootH4UVFfSXJKLf5Rt1PtZ9HFBxGsUqnx7em9saHymCLY
+    let root_key = hex!["d41a42362ef23d940e69e76636c9e32a1899812d20fae8d209e335dff1142639"];
 
     make_genesis(
         authorities,
-        keys,
         crate::balances::DUSTY_HOLDERS.clone(),
         root_key.into(),
         false,
     )
 }
-
+*/
 
 /// Plasm mainnet file config.
 pub fn plasm_config() -> ChainSpec {
@@ -295,10 +316,6 @@ pub fn plasm_config() -> ChainSpec {
 
 fn development_config_genesis() -> GenesisConfig {
     testnet_genesis(
-        vec![(
-            get_account_id_from_seed::<sr25519::Public>("Alice"),
-            get_account_id_from_seed::<sr25519::Public>("Bob"),
-        )],
         vec![
             get_authority_keys_from_seed("Alice"),
             get_authority_keys_from_seed("Bob"),
@@ -325,16 +342,6 @@ pub fn development_config() -> ChainSpec {
 
 fn local_testnet_genesis() -> GenesisConfig {
     testnet_genesis(
-        vec![
-            (
-                get_account_id_from_seed::<sr25519::Public>("Alice//stash"),
-                get_account_id_from_seed::<sr25519::Public>("Alice"),
-            ),
-            (
-                get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
-                get_account_id_from_seed::<sr25519::Public>("Bob"),
-            ),
-        ],
         vec![
             get_authority_keys_from_seed("Alice"),
             get_authority_keys_from_seed("Bob"),

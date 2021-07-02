@@ -7625,16 +7625,16 @@ lazy_static::lazy_static! {
         //##
         // Team, Akru
         (AccountId::from_ss58check("5Cakru1BpXPiezeD2LRZh3pJamHcbX9yZ13KLBxuqdTpgnYF").unwrap(), 5000000000000000000000000),
-        // Team Mario
-        (AccountId::from_ss58check("5HmarioAQ73b5FgwqMGtoW1HHGdEvUaGhz4uEhxYdnx3xyy5").unwrap(), 5000000000000000000000000),
-        // Team, Maario stash
-        (AccountId::from_ss58check("Wb3mqhmWzR4JbCxZqTHUrnc6uRrT98nnwkvnHx8feCKcKkN").unwrap(), 4200000000000000000000000),
-        // Team, Maario ctrl
-        (AccountId::from_ss58check("ZXezAdYbUrpXhhHuQvjnxR182aKv7fG6vTUbqtbewaerbQ4").unwrap(), 1300000000000000000000000),
-        // Team, Maario2 stash
-        (AccountId::from_ss58check("5GxQbApcLQuDYDYNhbiv2t6tmyoPTELbwf1ZsHBv9bVYUsXi").unwrap(), 2200000000000000000000000),
-        // Team, Maario2 ctrl
-        (AccountId::from_ss58check("5FThDusmRcd4enuaBJrCx9QsMccFEkkEUBENdM4xygPPVyrn").unwrap(), 1400000000000000000000000),
+        // Team Astar root
+        (AccountId::from_ss58check("5GrootH4UVFfSXJKLf5Rt1PtZ9HFBxGsUqnx7em9saHymCLY").unwrap(), 5000000000000000000000000),
+        // Team, bootnode1 stash
+        (AccountId::from_ss58check("5CiTLYjgjkmx5mB85Y1ATCdL1rijUvS3mkFnYakGoHCN2R91").unwrap(), 4100000000000000000000000),
+        // Team, bootnode1 ctrl
+        (AccountId::from_ss58check("5Ff4YsfTpFDiJsfTR7UcmJFj2ysCwtxX5ixLN8gjnaahGbhG").unwrap(), 2100000000000000000000000),
+        // Team, bootnode2 stash
+        (AccountId::from_ss58check("5GxQbApcLQuDYDYNhbiv2t6tmyoPTELbwf1ZsHBv9bVYUsXi").unwrap(), 4200000000000000000000000),
+        // Team, bootnode2 ctrl
+        (AccountId::from_ss58check("5FThDusmRcd4enuaBJrCx9QsMccFEkkEUBENdM4xygPPVyrn").unwrap(), 2200000000000000000000000),
 
         // Alice
         (AccountId::from_ss58check("5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY").unwrap(), 40000000000000000000000000),
