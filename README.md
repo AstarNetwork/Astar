@@ -75,9 +75,11 @@ Install additional build tools:
 
     cargo +nightly install --git https://github.com/alexcrichton/wasm-gc
 
-Install the Plasm node from git source:
-
-    cargo +nightly install --locked --force --git https://github.com/PlasmNetwork/Plasm --tag v1.8.0-dusty plasm
+Install the Astar node from git source:
+```
+    cargo +nightly install --locked --force --git https://github.com/PlasmNetwork/Plasm --tag v1.9.0-dusty plasm
+    # include the tag above to specify the version you want. Refer to the tags on this repo
+```
 
 Run node on [Dusty Network](https://telemetry.polkadot.io/#list/Dusty):
 
