@@ -5425,7 +5425,7 @@ checksum = "3831453b3449ceb48b6d9c7ad7c96d5ea673e9b470a1dc578c2ce6521230884c"
 
 [[package]]
 name = "plasm-collator"
-version = "2.0.0"
+version = "2.1.0"
 dependencies = [
  "cumulus-client-cli",
  "cumulus-client-consensus-relay-chain",
@@ -8394,7 +8394,7 @@ dependencies = [
 
 [[package]]
 name = "shiden-runtime"
-version = "2.0.0"
+version = "2.1.0"
 dependencies = [
  "cumulus-pallet-parachain-system",
  "cumulus-pallet-xcm",
