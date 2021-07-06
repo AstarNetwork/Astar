@@ -25,17 +25,21 @@ jobs:
       - name: Build optimized binary
         run: cargo build --release --verbose --target-dir third-party/docker/target-debian
       - name: Get the version
-        id: get_version
+        id: get_tag_version
         run: echo ::set-output name=tag::${GITHUB_REF#refs/tags/v}
+      - name: Get the branch version
+        id: get_branch_version
+        run: echo ::set-output name=branch::${GITHUB_REF#refs/heads/}
       - uses: azure/docker-login@v1
         with:
           username: ${{ secrets.REGISTRY_USERNAME }}
           password: ${{ secrets.REGISTRY_PASSWORD }}
       - name: Docker build and push
         run: |
-          TAG=${{ steps.get_version.outputs.tag }}
-          if [ `echo $TAG | grep 'refs'` ]; then TAG=plasma; fi
-          echo ${{ steps.get_version.outputs.tag }}
+          TAG=${{ steps.get_tag_version.outputs.tag }}
+          if [ `echo $TAG | grep 'refs'` ]; then TAG=${{ steps.get_branch_version.outputs.branch }}; fi
+          echo ${{ steps.get_tag_version.outputs.tag }}
+          echo $${{ steps.get_branch_version.outputs.branch }}
           echo $TAG
           cd third-party/docker
           docker build . -t staketechnologies/plasm-node:$TAG

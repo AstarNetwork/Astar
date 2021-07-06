@@ -3,38 +3,45 @@ FROM debian:buster-slim
 # metadata
 ARG VCS_REF
 ARG BUILD_DATE
+ARG IMAGE_NAME
 
-LABEL maintainer="takumi@stake.co.jp"
+LABEL io.plasm.image.authors="takumi@stake.co.jp" \
+	io.plasm.image.vendor="Stake Technologies" \
+	io.plasm.image.title="${IMAGE_NAME}" \
+	io.plasm.image.description="plasm: a platform for web3" \
+	io.plasm.image.source="https://github.com/PlasmNetwork/Plasm/blob/${VCS_REF}/third-parity/docker/Dockerfile" \
+	io.plasm.image.revision="${VCS_REF}" \
+	io.plasm.image.created="${BUILD_DATE}" \
+	io.plasm.image.documentation="https://github.com/PlasmNetwork/plasm/"
+
 # show backtraces
 ENV RUST_BACKTRACE 1
 
 # install tools and dependencies
 RUN apt-get update && \
-	DEBIAN_FRONTEND=noninteractive apt-get upgrade -y && \
 	DEBIAN_FRONTEND=noninteractive apt-get install -y \
 	libssl1.1 \
 	ca-certificates \
-	build-essential \
 	curl && \
 	# apt cleanup
 	apt-get autoremove -y && \
 	apt-get clean && \
 	find /var/lib/apt/lists/ -type f -not -name lock -delete; \
-	# add user
-	useradd -m -u 1000 -U -s /bin/sh -d /plasm plasm
+	# add user and link ~/.local/share/plasm to /data
+	useradd -m -u 1000 -U -s /bin/sh -d /plasm plasm && \
+	mkdir -p /data /plasm/.local/share && \
+	chown -R plasm:plasm /data && \
+	ln -s /data /plasm/.local/share/plasm
 
-# add plasm-node binary to docker image
-WORKDIR /opt
-COPY ./target-debian/release/plasm /opt/plasm
+# add plasm binary to docker image
+COPY ./target-debian/release/plasm /usr/local/bin
 
 USER plasm
 
-RUN gcc --version
 # check if executable works in this container
-RUN /opt/plasm --version
-
-VOLUME ["/data"]
+RUN /usr/local/bin/plasm --version
 
 EXPOSE 30333 9933 9944
+VOLUME ["/plasm"]
 
-ENTRYPOINT ["/opt/plasm"]
+ENTRYPOINT ["/usr/local/bin/plasm"]
