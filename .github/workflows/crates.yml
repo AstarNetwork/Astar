@@ -13,7 +13,7 @@ jobs:
           rust-version: 'nightly-2021-06-03'
           targets: 'wasm32-unknown-unknown'
       - name: Checkout the source code
-        uses: actions/checkout@master
+        uses: actions/checkout@v2
         with:
           submodules: true
       - name: Check targets are installed correctly

@@ -15,7 +15,7 @@ jobs:
         targets: 'wasm32-unknown-unknown'
 
     - name: Checkout the source code
-      uses: actions/checkout@master
+      uses: actions/checkout@v2
       with:
         submodules: true
 
@@ -28,7 +28,7 @@ jobs:
     - name: Build optimized binary
       run: cargo build --release
 
-    - uses: actions/upload-artifact@master
+    - uses: actions/upload-artifact@v2
       with:
         name: plasm-${{ matrix.os }}
         path: target/release/plasm-collator
