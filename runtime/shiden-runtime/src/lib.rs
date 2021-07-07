@@ -445,6 +445,12 @@ impl pallet_vesting::Config for Runtime {
     type WeightInfo = ();
 }
 
+impl pallet_utility::Config for Runtime {
+    type Event = Event;
+    type Call = Call;
+    type WeightInfo = ();
+}
+
 parameter_types! {
     pub const TransactionByteFee: Balance = 10 * MILLISDN;
     pub const TargetBlockFullness: Perquintill = Perquintill::from_percent(25);
@@ -494,6 +500,7 @@ construct_runtime!(
 
         Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>} = 30,
         Vesting: pallet_vesting::{Pallet, Call, Storage, Config<T>, Event<T>} = 31,
+        Utility: pallet_utility::{Pallet, Call, Event} = 32,
 
         Session: pallet_session::{Pallet, Call, Storage, Event, Config<T>} = 40,
         Staking: pallet_staking::{Pallet, Call, Config<T>, Storage, Event<T>} = 41,

@@ -8526,6 +8526,7 @@ dependencies = [
  "pallet-timestamp",
  "pallet-transaction-payment",
  "pallet-transaction-payment-rpc-runtime-api",
+ "pallet-utility",
  "pallet-vesting",
  "parachain-info",
  "parity-scale-codec",
