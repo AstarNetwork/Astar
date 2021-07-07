@@ -43,7 +43,6 @@ const DUSTY_PROPERTIES: &str = r#"
 const DUSTY_PROTOCOL_ID: &str = "pld";
 */
 
-
 /// Node `ChainSpec` extensions.
 ///
 /// Additional parameters for some Substrate core modules,
@@ -76,20 +75,16 @@ where
 }
 
 /// Helper function to generate controller and session key from seed
-pub fn get_authority_keys_from_seed(seed: &str) -> (
-	AccountId,
-	AccountId,
-	BabeId,
-	GrandpaId,
-	ImOnlineId,
-) {
-	(
-		get_account_id_from_seed::<sr25519::Public>(&format!("{}//stash", seed)),
-		get_account_id_from_seed::<sr25519::Public>(seed),
-		get_from_seed::<BabeId>(seed),
-		get_from_seed::<GrandpaId>(seed),
-		get_from_seed::<ImOnlineId>(seed),
-	)
+pub fn get_authority_keys_from_seed(
+    seed: &str,
+) -> (AccountId, AccountId, BabeId, GrandpaId, ImOnlineId) {
+    (
+        get_account_id_from_seed::<sr25519::Public>(&format!("{}//stash", seed)),
+        get_account_id_from_seed::<sr25519::Public>(seed),
+        get_from_seed::<BabeId>(seed),
+        get_from_seed::<GrandpaId>(seed),
+        get_from_seed::<ImOnlineId>(seed),
+    )
 }
 
 fn session_keys(babe: BabeId, grandpa: GrandpaId, im_online: ImOnlineId) -> SessionKeys {
@@ -102,12 +97,12 @@ fn session_keys(babe: BabeId, grandpa: GrandpaId, im_online: ImOnlineId) -> Sess
 
 fn testnet_genesis(
     initial_authorities: Vec<(
-		AccountId, // stash
-		AccountId, // ctrl
-		BabeId,
-		GrandpaId,
-		ImOnlineId,
-	)>,
+        AccountId, // stash
+        AccountId, // ctrl
+        BabeId,
+        GrandpaId,
+        ImOnlineId,
+    )>,
     // keys: Vec<(AccountId, BabeId, GrandpaId, ImOnlineId)>,
     endowed_accounts: Option<Vec<AccountId>>,
     sudo_key: AccountId,
@@ -137,12 +132,12 @@ fn testnet_genesis(
 /// Helper function to create GenesisConfig
 fn make_genesis(
     initial_authorities: Vec<(
-		AccountId, // stash
-		AccountId, // ctrl
-		BabeId,
-		GrandpaId,
-		ImOnlineId,
-	)>,
+        AccountId, // stash
+        AccountId, // ctrl
+        BabeId,
+        GrandpaId,
+        ImOnlineId,
+    )>,
     // keys: Vec<(AccountId, BabeId, GrandpaId, ImOnlineId)>,
     balances: Vec<(AccountId, Balance)>,
     root_key: AccountId,
@@ -159,12 +154,12 @@ fn make_genesis(
         pallet_indices: Some(IndicesConfig { indices: vec![] }),
         pallet_balances: Some(BalancesConfig { balances }),
         pallet_staking: Some(StakingConfig {
-            validator_count: 2, //initial_authorities.len() as u32,
+            validator_count: 2,         //initial_authorities.len() as u32,
             minimum_validator_count: 2, //initial_authorities.len() as u32,
             stakers: initial_authorities
-            .iter()
-            .map(|x| (x.0.clone(), x.1.clone(), STASH, StakerStatus::Validator))
-            .collect(),
+                .iter()
+                .map(|x| (x.0.clone(), x.1.clone(), STASH, StakerStatus::Validator))
+                .collect(),
             invulnerables: initial_authorities.iter().map(|x| x.0.clone()).collect(),
             slash_reward_fraction: Perbill::from_percent(10),
             ..Default::default()
@@ -252,7 +247,7 @@ fn dusty_genesis() -> GenesisConfig {
             hex!["d43593c715fdd31c61141abd04a99fd6822c8558854ccde39a5684e7a56da27d"]
                 .unchecked_into(),
         ),
-        
+
         // Bob stash + ctrl
         // stash 5HpG9w8EBLe5XCrbczpwq5TSXvedjrBGCwqxK1iQ7qUsSWFc
         // ctrl 5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty
