@@ -500,7 +500,7 @@ construct_runtime!(
 
         Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>} = 30,
         Vesting: pallet_vesting::{Pallet, Call, Storage, Config<T>, Event<T>} = 31,
-        Utility: pallet_utility::{Module, Call, Event} = 32,
+        Utility: pallet_utility::{Pallet, Call, Event} = 32,
 
         Session: pallet_session::{Pallet, Call, Storage, Event, Config<T>} = 40,
         Staking: pallet_staking::{Pallet, Call, Config<T>, Storage, Event<T>} = 41,
