@@ -40,6 +40,7 @@ jobs:
           if [ `echo $TAG | grep 'refs'` ]; then TAG=${{ steps.get_branch_version.outputs.branch }}; fi
           echo ${{ steps.get_tag_version.outputs.tag }}
           echo $${{ steps.get_branch_version.outputs.branch }}
+          TAG=${TAG//\//-}
           echo $TAG
           cd third-party/docker
           docker build . -t staketechnologies/plasm-node:$TAG
