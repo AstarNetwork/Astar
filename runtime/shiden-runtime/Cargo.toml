@@ -38,6 +38,7 @@ pallet-im-online = { git = "https://github.com/paritytech/substrate", branch = "
 pallet-offences = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.6", default-features = false }
 pallet-timestamp = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.6", default-features = false }
 pallet-vesting = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.6", default-features = false }
+pallet-utility = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.6", default-features = false }
 pallet-session = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.6", default-features = false, features = ["historical"] }
 pallet-staking = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.6", default-features = false }
 pallet-staking-reward-curve = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.6" }
@@ -95,6 +96,7 @@ std = [
     "frame-election-provider-support/std",
     "pallet-election-provider-multi-phase/std",
     "pallet-vesting/std",
+    "pallet-utility/std",
     "sp-offchain/std",
     "sp-session/std",
     "sp-staking/std",
