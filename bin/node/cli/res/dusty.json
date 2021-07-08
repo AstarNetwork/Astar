@@ -1,6 +1,6 @@
 {
   "name": "Dusty",
-  "id": "dusty4",
+  "id": "dusty5",
   "chainType": "Live",
   "bootNodes": [
     "/ip4/18.182.12.240/tcp/30333/p2p/12D3KooWC6cGLs24bkRRJ1KfwbQ8ThYSndm92wfNvzr1ffYMpSHu",
@@ -6379,19 +6379,19 @@
           }
         }
       },
-      "palletPlasmValidator": {
-        "validators": [
-          "5Cakru1BpXPiezeD2LRZh3pJamHcbX9yZ13KLBxuqdTpgnYF",
-          "5DiASACHKKNVLWgJE4M6aubdGr6EUddnRmx17S15SrhdiioQ",
-          "5DMBfirCEJKKTCLhvGvA8ATQrkhxuor13Lnk8pu7yobrT7TP",
-          "5CzCuHW79HG9Zt17cVVDfRKCSfKhLz4DeudVADoAWkW5BhPn",
-          "5CdE8rA24GCygZfXJi4HCgAz2ZwRnAGSGUUEBchD3hQHuveM"
-        ]
-      },
-      "palletPlasmRewards": {
-        "historyDepth": 672,
-        "forceEra": "NotForcing"
-      },
+      // "palletPlasmValidator": {
+      //   "validators": [
+      //     "5Cakru1BpXPiezeD2LRZh3pJamHcbX9yZ13KLBxuqdTpgnYF",
+      //     "5DiASACHKKNVLWgJE4M6aubdGr6EUddnRmx17S15SrhdiioQ",
+      //     "5DMBfirCEJKKTCLhvGvA8ATQrkhxuor13Lnk8pu7yobrT7TP",
+      //     "5CzCuHW79HG9Zt17cVVDfRKCSfKhLz4DeudVADoAWkW5BhPn",
+      //     "5CdE8rA24GCygZfXJi4HCgAz2ZwRnAGSGUUEBchD3hQHuveM"
+      //   ]
+      // },
+      // "palletPlasmRewards": {
+      //   "historyDepth": 672,
+      //   "forceEra": "NotForcing"
+      // },
       "palletSession": {
         "keys": [
           [

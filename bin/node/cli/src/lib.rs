@@ -4,6 +4,7 @@
 #![warn(unused_extern_crates)]
 
 /// Plasm chain specification.
+mod balances;
 pub mod chain_spec;
 
 #[macro_use]

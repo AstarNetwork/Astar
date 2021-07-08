@@ -3,7 +3,7 @@
 pub mod currency {
     use plasm_primitives::Balance;
 
-    pub const MILLIPLM: Balance = 1_000_000_000_000;
+    pub const MILLIPLM: Balance = 1_000_000_000_000_000;
     pub const PLM: Balance = 1_000 * MILLIPLM;
 
     pub const fn deposit(items: u32, bytes: u32) -> Balance {

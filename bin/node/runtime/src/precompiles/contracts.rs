@@ -1,6 +1,6 @@
 use evm::{Context, ExitError, ExitSucceed};
 use frame_support::dispatch::{Dispatchable, GetDispatchInfo, PostDispatchInfo};
-use pallet_evm::{AddressMapping, GasWeightMapping, Precompile};
+use pallet_evm::{AddressMapping, Precompile};
 use sp_core::crypto::UncheckedFrom;
 use sp_runtime::traits::StaticLookup;
 use sp_std::{marker::PhantomData, vec::Vec};
@@ -35,7 +35,7 @@ where
 {
     fn execute(
         input: &[u8],
-        target_gas: Option<u64>,
+        _target_gas: Option<u64>,
         context: &Context,
     ) -> Result<(ExitSucceed, Vec<u8>, u64), ExitError> {
         const SELECTOR_SIZE_BYTES: usize = 4;
@@ -55,7 +55,8 @@ where
                 // Low level argument parsing
                 let dest: R::Hash = sp_core::H256::from_slice(
                     &input[SELECTOR_SIZE_BYTES..(SELECTOR_SIZE_BYTES + 32)],
-                ).into();
+                )
+                .into();
                 let len_offset = SELECTOR_SIZE_BYTES + 32 * 2;
                 let param_offset = len_offset + 32;
                 let param_len = sp_core::U256::from_big_endian(&input[len_offset..param_offset]);
@@ -69,7 +70,7 @@ where
             }
         };
         let outer_call: R::Call = inner_call.into();
-        let info = outer_call.get_dispatch_info();
+        let _info = outer_call.get_dispatch_info();
 
         /* XXX: temprorary disable gas accounting, 1B weight is so huge for EVM gas limit
          * TODO: EVM -> WASM gas scaling
@@ -82,7 +83,7 @@ where
         */
 
         let origin = R::AddressMapping::into_account_id(context.caller);
-        let post_info = outer_call
+        let _post_info = outer_call
             .dispatch(Some(origin).into())
             .map_err(|_| ExitError::Other("Method call via EVM failed".into()))?;
 
