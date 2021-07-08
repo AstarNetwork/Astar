@@ -99,7 +99,7 @@ const AVERAGE_ON_INITIALIZE_RATIO: Perbill = Perbill::from_percent(10);
 /// by  Operational  extrinsics.
 const NORMAL_DISPATCH_RATIO: Perbill = Perbill::from_percent(75);
 /// We allow for 2 seconds of compute with a 6 second average block time.
-const MAXIMUM_BLOCK_WEIGHT: Weight = 2 * WEIGHT_PER_SECOND;
+const MAXIMUM_BLOCK_WEIGHT: Weight = WEIGHT_PER_SECOND / 2;
 
 parameter_types! {
     pub const BlockHashCount: BlockNumber = 2400;
@@ -615,8 +615,8 @@ impl pallet_nicks::Config for Runtime {
 /// Current approximation of the gas/s consumption considering
 /// EVM execution over compiled WASM (on 4.4Ghz CPU).
 /// Given the 500ms Weight, from which 75% only are used for transactions,
-/// the total EVM execution gas limit is: GAS_PER_SECOND * 0.500 * 0.75 => 6_000_000.
-pub const GAS_PER_SECOND: u64 = 16_000_000;
+/// the total EVM execution gas limit is: GAS_PER_SECOND * 0.500 * 0.75 => 40_000_000.
+pub const GAS_PER_SECOND: u64 = 40_000_000;
 
 /// Approximate ratio of the amount of Weight per Gas.
 /// u64 works for approximations because Weight is a very small unit compared to gas.
@@ -636,8 +636,15 @@ parameter_types! {
     pub const ChainId: u64 = 0x50;
 }
 
+pub struct FixedGasPrice;
+impl FeeCalculator for FixedGasPrice {
+	fn min_gas_price() -> U256 {
+		(1 * MILLIPLM / 1000_000).into()
+	}
+}
+
 impl pallet_evm::Config for Runtime {
-    type FeeCalculator = ();
+    type FeeCalculator = FixedGasPrice;
     type GasWeightMapping = GasWeightMapping;
     type CallOrigin = EnsureAddressRoot<Self::AccountId>;
     type WithdrawOrigin = EnsureAddressTruncated;
@@ -689,7 +696,7 @@ impl<F: FindAuthor<u32>> FindAuthor<H160> for EthereumFindAuthor<F> {
 }
 
 parameter_types! {
-    pub BlockGasLimit: U256 = U256::from(9_000_000);
+    pub BlockGasLimit: U256 = U256::from(NORMAL_DISPATCH_RATIO * MAXIMUM_BLOCK_WEIGHT / WEIGHT_PER_GAS);
 }
 
 impl pallet_ethereum::Config for Runtime {
