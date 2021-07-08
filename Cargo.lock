@@ -4996,6 +4996,7 @@ dependencies = [
  "futures 0.3.14",
  "hex",
  "hex-literal",
+ "lazy_static",
  "pallet-contracts",
  "pallet-evm",
  "pallet-im-online",

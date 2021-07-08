@@ -20,7 +20,7 @@ use sp_runtime::{
     Perbill,
 };
 type AccountPublic = <Signature as Verify>::Signer;
-const STASH: Balance = 400_000 * PLM;
+const STASH: Balance = 10_000 * PLM;
 
 /*
 use hex_literal::hex;
@@ -138,7 +138,6 @@ fn make_genesis(
         GrandpaId,
         ImOnlineId,
     )>,
-    // keys: Vec<(AccountId, BabeId, GrandpaId, ImOnlineId)>,
     balances: Vec<(AccountId, Balance)>,
     root_key: AccountId,
     enable_println: bool,
@@ -154,8 +153,8 @@ fn make_genesis(
         pallet_indices: Some(IndicesConfig { indices: vec![] }),
         pallet_balances: Some(BalancesConfig { balances }),
         pallet_staking: Some(StakingConfig {
-            validator_count: 2,         //initial_authorities.len() as u32,
-            minimum_validator_count: 2, //initial_authorities.len() as u32,
+            validator_count: 2,
+            minimum_validator_count: 2,
             stakers: initial_authorities
                 .iter()
                 .map(|x| (x.0.clone(), x.1.clone(), STASH, StakerStatus::Validator))
@@ -210,7 +209,7 @@ fn make_genesis(
 
 /// Dusty testnet file config.
 pub fn dusty_config() -> ChainSpec {
-    ChainSpec::from_json_bytes(&include_bytes!("../res/dusty5.json")[..]).unwrap()
+    ChainSpec::from_json_bytes(&include_bytes!("../res/dusty.json")[..]).unwrap()
 }
 
 /*
@@ -261,35 +260,6 @@ fn dusty_genesis() -> GenesisConfig {
             hex!["8eaf04151687736326c9fea17e25fc5287613693c912909cb226aa4794f26a48"]
                 .unchecked_into(),
         ),
-
-        // bootnode1 stash + ctrl
-        // stash 5CiTLYjgjkmx5mB85Y1ATCdL1rijUvS3mkFnYakGoHCN2R91
-        // ctrl 5Ff4YsfTpFDiJsfTR7UcmJFj2ysCwtxX5ixLN8gjnaahGbhG
-        // (
-        //     hex!["1cca72ef6e569fc7491b6d116fe9414325c52b9ea34f1652a405e10bf020294f"].into(),
-        //     hex!["9ee8b420d6705162524d290b0134faab7f38ab6dc57f0c6d538c644e8f693366"].into(),
-        //     hex!["60fdfc12ccdbb9c210a5d407b3173286b1b63b6c20e9f13a5ab9af05b3d57328"]
-        //         .unchecked_into(),
-        //     hex!["3d8720e90ff3070bc6348c920aefa5dc43ddea586dad3177eda55eefc10c18d1"]
-        //         .unchecked_into(),
-        //     hex!["8a4cc6c3f5dc02d4feef3e1cefdbab4949ede11ae29f3004e61609c59b4a913d"]
-        //         .unchecked_into(),
-        // ),
-
-        // bootnode2 stash + ctrl
-        // 5FThDusmRcd4enuaBJrCx9QsMccFEkkEUBENdM4xygPPVyrn
-        // 5GxQbApcLQuDYDYNhbiv2t6tmyoPTELbwf1ZsHBv9bVYUsXi
-        // (
-        //     hex!["963d361a290e31eb661d886a81e9cb794e4dbb0c81cf37723be3c1f1aecba14f"].into(),
-        //     hex!["d85f9175c7ed2cb6e8b1f7eb907c8505856f2fd23f68ca316173ca0a01dd2532"].into(),
-        //     hex!["9cea8045d7d396a5eec75b8b4a4dc25d19e27ad792394da06bf1f2c86e11f10b"]
-        //         .unchecked_into(),
-        //     hex!["05a5d360b358379e1c1da7924aec3d8f74b0c0e21b4ababfc6403644458de09e"]
-        //         .unchecked_into(),
-        //     hex!["c64f79f573dc66e887782751c151f2648497ae03c22244d34051d19c227d3433"]
-        //         .unchecked_into(),
-        // ),
-
     ];
 
     // Astar testnet root 5GrootH4UVFfSXJKLf5Rt1PtZ9HFBxGsUqnx7em9saHymCLY
