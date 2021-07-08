@@ -638,9 +638,9 @@ parameter_types! {
 
 pub struct FixedGasPrice;
 impl FeeCalculator for FixedGasPrice {
-	fn min_gas_price() -> U256 {
-		(1 * MILLIPLM / 1000_000).into()
-	}
+    fn min_gas_price() -> U256 {
+        (1 * MILLIPLM / 1000_000).into()
+    }
 }
 
 impl pallet_evm::Config for Runtime {
