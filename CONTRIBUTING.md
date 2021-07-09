@@ -49,6 +49,12 @@ All branch names should adhere to the following rules:
 
 Every major features made for the `development` branch must go through at least one week of internal testing before it is released and deployed.
 
+Due to the different base runtime version for each chain, we need to maintain Astar Ecosystem in separate branches.
+We will be improving this project structure in the near future, but to maintain network stability, major runtime upgrades will follow this process:
+
+- `development/dusty` → `production/astar` (independent blockchain network planed to be a Parachain of Polkadot network)
+- `development/shibuya` → `production/shiden` (Parachain of Kusama and focused on cutting edge XCMP development)
+
 ### Contributor Licenses
 
 By contributing, you agree that your contributions will be licensed under the [GNU General Public License v3.0](https://github.com/PlasmNetwork/Plasm/blob/development/dusty/LICENSE) as is with the Astar source code. If you have any concerns regarding this matter, please contact the maintainer.
