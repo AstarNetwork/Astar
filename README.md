@@ -4,7 +4,7 @@
 
 [![CI](https://github.com/PlasmNetwork/Plasm/workflows/Integration/badge.svg)](https://github.com/PlasmNetwork/Astar/actions)
 
-Astar Network is the leading dApps hub on Polkadot Network that support EVM smart contracts and cutting edge layer 2 solutions like ZK Rollups.
+Astar Network is a dApps hub on Polkadot with unique features like dApps Staking, supporting mulit-virtual machine (EVM & WAsM), and offers layer2 solutions from day 1. Shiden Network is our sister network on Kusama.
 
 ## Documentation
 
