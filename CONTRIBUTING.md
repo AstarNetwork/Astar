@@ -55,6 +55,10 @@ We will be improving this project structure in the near future, but to maintain 
 - `development/dusty` → `production/astar` (independent blockchain network planed to be a Parachain of Polkadot network)
 - `development/shibuya` → `production/shiden` (Parachain of Kusama and focused on cutting edge XCMP development)
 
+In the future, we will merge Dusty Network and Shibuya Network into a single Parachain so that the release flow will be as the following:
+
+`development/unnamed-testnet` → `production/shiden` → `production/astar`
+
 ### Contributor Licenses
 
 By contributing, you agree that your contributions will be licensed under the [GNU General Public License v3.0](https://github.com/PlasmNetwork/Plasm/blob/development/dusty/LICENSE) as is with the Astar source code. If you have any concerns regarding this matter, please contact the maintainer.

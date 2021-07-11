@@ -101,13 +101,6 @@ Run on your Nix shell:
     git clone https://github.com/PlasmNetwork/Plasm && cd Plasm
     nix-shell nix/shell.nix --run "cargo run --release"
 
-Astar Validator Program
-=======================
-
-Currently, we have 2 networks, [Dusty Network](https://telemetry.polkadot.io/#list/Dusty) and [Astar Network](https://telemetry.polkadot.io/#list/Plasm). Dusty is our live test network that contains the latest features for Astar Network.
-
-If you would like to be the validator, please check out [our tutorial](https://docs.plasmnet.io/build/validator-guide) and join [Discord tech channel](https://discord.gg/wUcQt3R)
-
 Examples
 ========
 
@@ -116,6 +109,24 @@ You can see our demo and presentation:
 * [Version2](https://youtu.be/5MoO3Epgvv0): 2019/05/22 UI Demo No explanations yet.
 * [Subzero Summit](https://www.youtube.com/watch?v=OyKvA_vx1z0): 2020/04 Presentation at Subzero Summit
 * [DOT CON][https://www.youtube.com/watch?v=og0yUFdYyLY]: 2019/10 Presentation at DOT CON
+
+Contributing to Astar
+=======================
+
+Currently, we have 2 production networks:
+
+- [Astar Network](https://astar.network/): formerly known as Plasm Network, and our future Parachain on Polkadot Network
+- [Shiden Network](https://shiden.astar.network/): Parachain of Kusama Network and our canary release for Astar Network
+
+And 2 test networks:
+
+- [Dusty Network](https://github.com/PlasmNetwork/Astar/tree/development/dusty): an independent test network with the latest cutting edge features before it is introduced to Astar Network
+- [Shibuya Network](https://github.com/PlasmNetwork/Astar/tree/development/shibuya): a Parachain test network with the latest cutting edge features related to XMCP, collators, and other cross chain operations that is planned to be rolled out to Shiden Network
+
+In the future we will gradually change this structure to have a single test network.
+For details, please read the [Contribution Guidelines](./CONTRIBUTING.md).
+
+If you would like to be the validator, please check out [our tutorial](https://docs.plasmnet.io/build/validator-guide) and join [Discord tech channel](https://discord.gg/wUcQt3R)
 
 Contacts
 --------
