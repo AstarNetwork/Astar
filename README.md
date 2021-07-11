@@ -1,10 +1,10 @@
 # Astar Network
 
-![plasm-web3](https://user-images.githubusercontent.com/6259384/72399615-0e1cbb80-378a-11ea-91af-c1dbdde345f5.png)
+![astar-cover](https://user-images.githubusercontent.com/40356749/125183345-edbaa980-e226-11eb-92e2-7b666ed56515.png)
 
-[![CI](https://github.com/PlasmNetwork/Plasm/workflows/Integration/badge.svg)](https://github.com/PlasmNetwork/Plasm/actions)
+[![CI](https://github.com/PlasmNetwork/Plasm/workflows/Integration/badge.svg)](https://github.com/PlasmNetwork/Astar/actions)
 
-Astar Network is the leading dApps hub on Polkadot Network that support EVM smart contracts and cutting edge layer 2 solutions like ZK Rollups. Shiden Network is a canary network of Astar Network and a Parachain of Kusama Network.
+Astar Network is the leading dApps hub on Polkadot Network that support EVM smart contracts and cutting edge layer 2 solutions like ZK Rollups.
 
 ## Documentation
 
@@ -25,17 +25,17 @@ Astar Network is the leading dApps hub on Polkadot Network that support EVM smar
 
 ## Table of Contents
 
-* [Introduction](https://github.com/PlasmNetwork/Plasm/tree/development/dusty#introduction)
-* [Install Astar](https://github.com/PlasmNetwork/Plasm/tree/development/dusty#install-plasm)
-* [Plasm Validator Program](https://github.com/PlasmNetwork/Plasm/tree/development/dusty#plasm-validator-program)
-* [Examples](https://github.com/PlasmNetwork/Plasm/tree/development/dusty#examples)
+* [Introduction](https://github.com/PlasmNetwork/Astar/tree/development/dusty#introduction)
+* [Install Astar](https://github.com/PlasmNetwork/Astar/tree/development/dusty#install-plasm)
+* [Plasm Validator Program](https://github.com/PlasmNetwork/Astar/tree/development/dusty#plasm-validator-program)
+* [Examples](https://github.com/PlasmNetwork/Astar/tree/development/dusty#examples)
 
 Introduction
 ============
 
 Astar Network is a scalable and interoperable infrastructure for Web3.0. Since Astar Network is built with [Parity’s Substrate framework](https://www.substrate.io/), it can be a future [Polkadot](https://polkadot.network/) Parachain that also acts as a scalable smart contract platform. The Polkadot Relaychain, by design, does not support smart contracts. This allows Astar the opportunity to fill in this gap. Scalability is obviously one of the most crucial demands DApp developers have. Ideally, the developers can build whatever applications on Astar Network without having to consider its scalability. In addition to that, Astar Network is a multi virtual machines platfrom. Astar supports both Ethereum Virtual Machine and WebAssembly. All devs of Astar Network can deploy Solidity smart contracts by using existing Ethereum tools such as Metamask and Remix.
 
-Based on the above, Plasm has some features.
+Based on the above, Astar has some features.
 - **[Optimistic Virtual Machine](https://docs.plasmnet.io/learn/optimistic-virtual-machine)**
 - **[ZK Rollups](https://github.com/PlasmNetwork/ZKRollups)**
 - **[DApps Staking](https://docs.plasmnet.io/learn/dapps-reward)**
@@ -48,8 +48,8 @@ Once Polkadot is launched, we will connect our root chain to Polkadot, and we ai
 Install Astar
 =============
 
-* Astar node binaries [releases](https://github.com/PlasmNetwork/Plasm/releases).
-* Node [custom types](https://github.com/PlasmNetwork/Plasm/tree/master/bin/node/cli/res/custom_types.json).
+* Astar node binaries [releases](https://github.com/PlasmNetwork/Astar/releases).
+* Node [custom types](https://github.com/PlasmNetwork/Astar/tree/master/bin/node/cli/res/custom_types.json).
 
 > Latest version you can try to build from source.
 
@@ -77,7 +77,7 @@ Install additional build tools:
 
 Install the Astar node from git source:
 ```
-    cargo +nightly install --locked --force --git https://github.com/PlasmNetwork/Plasm --tag v1.9.0-dusty plasm
+    cargo +nightly install --locked --force --git https://github.com/PlasmNetwork/Astar --tag v1.9.0-dusty plasm
     # include the tag above to specify the version you want. Refer to the tags on this repo
 ```
 
@@ -127,8 +127,8 @@ Contacts
 * [Aleksandr Krupenkin](https://github.com/akru)
 * [Sota Watanabe](https://twitter.com/WatanabeSota)
 * [Hyungsuk Kang](https://twitter.com/hskang0525)
-* [Hoon Kim](https://twitter.com/hoonsubin)
+* [Hoon Kim](https://github.com/hoonsubin)
 
 * * *
 
-Astar  is licensed under the GPLv3.0 by Stake Technologies Inc.
+Astar is licensed under the GPLv3.0 by Stake Technologies Inc.
