@@ -4292,6 +4292,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-identity"
+version = "3.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6bbbf9b67df31ea9fc579ec166aab6da9acabac2f5caf0d954cfb24821466420"
+dependencies = [
+ "enumflags2",
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "parity-scale-codec",
+ "serde",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
 name = "pallet-im-online"
 version = "3.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5084,6 +5101,7 @@ dependencies = [
  "pallet-evm-precompile-modexp",
  "pallet-evm-precompile-simple",
  "pallet-grandpa",
+ "pallet-identity",
  "pallet-im-online",
  "pallet-indices",
  "pallet-nicks",
