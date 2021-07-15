@@ -47,6 +47,7 @@ pallet-contracts-rpc-runtime-api = { version = "3.0.0", default-features = false
 pallet-grandpa = { version = "3.0.0", default-features = false }
 pallet-indices = { version = "3.0.0", default-features = false }
 pallet-im-online = { version = "3.0.0", default-features = false }
+pallet-identity = { version = "3.0.0", default-features = false }
 pallet-nicks = { version = "3.0.0", default-features = false }
 pallet-randomness-collective-flip = { version = "3.0.0", default-features = false }
 pallet-scheduler = { version = "3.0.0", default-features = false }
@@ -100,6 +101,7 @@ std = [
     "pallet-authorship/std",
     "pallet-babe/std",
     "pallet-balances/std",
+    "pallet-identity/std",
     "pallet-contracts/std",
     "pallet-contracts-primitives/std",
     "pallet-contracts-rpc-runtime-api/std",

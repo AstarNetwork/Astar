@@ -77,7 +77,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     // and set impl_version to equal spec_version. If only runtime
     // implementation changes and behavior does not, then leave spec_version as
     // is and increment impl_version.
-    spec_version: 1,
+    spec_version: 2,
     impl_version: 1,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 1,
@@ -706,6 +706,30 @@ impl pallet_ethereum::Config for Runtime {
     type BlockGasLimit = BlockGasLimit;
 }
 
+parameter_types! {
+    pub const BasicDeposit: Balance = 10 * PLM;       // 258 bytes on-chain
+    pub const FieldDeposit: Balance = 25 * MILLIPLM;  // 66 bytes on-chain
+    pub const SubAccountDeposit: Balance = 2 * PLM;   // 53 bytes on-chain
+    pub const MaxSubAccounts: u32 = 100;
+    pub const MaxAdditionalFields: u32 = 100;
+    pub const MaxRegistrars: u32 = 20;
+}
+
+impl pallet_identity::Config for Runtime {
+    type Event = Event;
+    type Currency = Balances;
+    type BasicDeposit = BasicDeposit;
+    type FieldDeposit = FieldDeposit;
+    type SubAccountDeposit = SubAccountDeposit;
+    type MaxSubAccounts = MaxSubAccounts;
+    type MaxAdditionalFields = MaxAdditionalFields;
+    type MaxRegistrars = MaxRegistrars;
+    type Slashed = ();
+    type ForceOrigin = frame_system::EnsureRoot<<Self as frame_system::Config>::AccountId>;
+    type RegistrarOrigin = frame_system::EnsureRoot<<Self as frame_system::Config>::AccountId>;
+    type WeightInfo = ();
+}
+
 construct_runtime!(
     pub enum Runtime where
         Block = Block,
@@ -719,6 +743,7 @@ construct_runtime!(
         Authorship: pallet_authorship::{Module, Call, Storage, Inherent},
         Indices: pallet_indices::{Module, Call, Storage, Event<T>, Config<T>},
         Balances: pallet_balances::{Module, Call, Storage, Event<T>, Config<T>},
+        Identity: pallet_identity::{Module, Call, Storage, Event<T>},
         TransactionPayment: pallet_transaction_payment::{Module, Storage},
         Staking: pallet_staking::{Module, Call, Storage, Event<T>, Config<T>},
         Session: pallet_session::{Module, Call, Storage, Event, Config<T>},
