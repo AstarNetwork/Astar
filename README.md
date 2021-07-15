@@ -1,4 +1,4 @@
-# Astar Network &middot; [![GitHub license](https://img.shields.io/badge/license-GPLv3-blue)](#LICENSE) [![CI Status](https://github.com/PlasmNetwork/Plasm/workflows/Integration/badge.svg)](https://github.com/PlasmNetwork/Plasm/actions) 
+# Astar Network &middot; [![GitHub license](https://img.shields.io/badge/license-GPLv3-blue)](#LICENSE) [![CI Status](https://github.com/PlasmNetwork/Astar/workflows/Integration/badge.svg)](https://github.com/PlasmNetwork/Astar/actions) 
 
 <p align="center">
   <img src="https://user-images.githubusercontent.com/40356749/125183345-edbaa980-e226-11eb-92e2-7b666ed56515.png">
@@ -27,7 +27,7 @@ And 2 test networks:
 In the future we will gradually change this structure to have a single test network.
 For details, please read the [Contribution Guidelines](./CONTRIBUTING.md).
 
-If you would like to be the validator, please check out [our tutorial](https://docs.plasmnet.io/build/validator-guide) and join [Discord tech channel](https://discord.gg/wUcQt3R).
+If you would like to be the validator, please check out [our tutorial](https://docs.astar.network/build/validator-guide) and join [Discord tech channel](https://discord.gg/wUcQt3R).
 
 ## LICENSE
 
