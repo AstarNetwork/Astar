@@ -4157,7 +4157,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-custom-signatures"
-version = "1.9.0"
+version = "2.0.0"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -4407,28 +4407,6 @@ version = "1.9.0"
 dependencies = [
  "frame-support",
  "sp-runtime",
- "sp-std",
-]
-
-[[package]]
-name = "pallet-plasm-validator"
-version = "1.9.0"
-dependencies = [
- "frame-support",
- "frame-system",
- "hex-literal",
- "pallet-balances",
- "pallet-plasm-rewards",
- "pallet-randomness-collective-flip",
- "pallet-session",
- "pallet-timestamp",
- "parity-scale-codec",
- "serde",
- "sp-arithmetic",
- "sp-core",
- "sp-io",
- "sp-runtime",
- "sp-staking",
  "sp-std",
 ]
 
