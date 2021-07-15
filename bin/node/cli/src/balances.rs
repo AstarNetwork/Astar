@@ -7597,7 +7597,7 @@ lazy_static::lazy_static! {
         (AccountId::from_ss58check("ZtpLoCTzqBcYV1BfYn6iKTficquk4R6PJTkei2vx1fCJfAP").unwrap(), 505377993000000000000),
         (AccountId::from_ss58check("aFDx1xxsYJUh3dwhQ9mfZmSCieWnihP3nApFR1PETicFCay").unwrap(), 34417998000000000000),
         (AccountId::from_ss58check("X7ugWFHPBbK66qgmqd9XD311Kc6tic4vK8mGn4cL9qDS7wc").unwrap(), 99010000000000000000),
-        
+
         //##
         //# Plasm Network service accounts
         //##

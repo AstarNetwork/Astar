@@ -7,7 +7,6 @@ members = [
     "bin/node/primitives",
     "frame/plasm-rewards",
     "frame/plasm-support",
-    "frame/plasm-validator",
     "frame/plasm-operator",
     "frame/custom-signatures",
 ]
