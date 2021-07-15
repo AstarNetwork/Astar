@@ -28,6 +28,7 @@ sp-version = { git = "https://github.com/paritytech/substrate", branch = "polkad
 # frame dependencies
 frame-executive = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.8", default-features = false }
 pallet-balances = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.8", default-features = false }
+pallet-identity = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.8", default-features = false }
 pallet-utility = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.8", default-features = false }
 pallet-vesting = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.8", default-features = false }
 pallet-sudo = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.8", default-features = false }
@@ -73,6 +74,7 @@ std = [
     "frame-system/std",
     "frame-system-rpc-runtime-api/std",
     "pallet-balances/std",
+    "pallet-identity/std",
     "pallet-utility/std",
     "pallet-vesting/std",
     "sp-offchain/std",
