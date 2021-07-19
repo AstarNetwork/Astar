@@ -9,5 +9,5 @@ exclude = [
 ]
 
 [profile.release]
-# Plasm runtime requires unwinding.
+# Astar runtime requires unwinding.
 panic = "unwind"

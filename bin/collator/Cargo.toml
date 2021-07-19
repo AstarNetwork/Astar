@@ -1,16 +1,15 @@
 [package]
-name = "plasm-collator"
-version = "2.1.0"
+name = "astar-collator"
+version = "2.2.0"
 authors = ["Stake Technologies <devops@stake.co.jp>"]
-description = "Plasm node implementation in Rust."
+description = "Astar collator implementation in Rust."
 build = "build.rs"
 edition = "2018"
-default-run = "plasm-collator"
+default-run = "astar-collator"
 
 [[bin]]
-name = "plasm-collator"
+name = "astar-collator"
 path = "bin/main.rs"
-required-features = ["cli"]
 
 [lib]
 crate-type = ["cdylib", "rlib"]
@@ -52,7 +51,7 @@ sc-consensus-babe = { git = "https://github.com/paritytech/substrate", branch = 
 # RPC related dependencies
 jsonrpc-core = "15.1.0"
 
-# plasm-specific dependencies
+# astar-specific dependencies
 shiden-runtime = { path = "../../runtime/shiden" }
 
 # frame dependencies
@@ -85,8 +84,7 @@ structopt = { version = "0.3.8", optional = true }
 vergen = { version = "3.0.4", optional = true }
 
 [features]
-default = ["cli"]
-cli = [
+default = [
     "sc-cli",
     "polkadot-cli",
     "sc-service",

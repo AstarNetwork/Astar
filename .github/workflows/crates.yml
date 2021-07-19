@@ -10,7 +10,7 @@ jobs:
     steps:
       - uses: hecrj/setup-rust-action@v1
         with:
-          rust-version: 'nightly-2020-08-20'
+          rust-version: 'nightly-2021-06-29'
           targets: 'wasm32-unknown-unknown'
       - name: Checkout the source code
         uses: actions/checkout@master
@@ -18,14 +18,12 @@ jobs:
           submodules: true
       - name: Check targets are installed correctly
         run: rustup target list --installed
-      - name: Install build tools
-        run: cargo install --git https://github.com/alexcrichton/wasm-gc --force
       - name: Build doc
         run: cargo doc --all --all-features --no-deps
       - name: Push index.html
-        run: echo "<meta http-equiv=\"refresh\" content=\"0; URL='./plasm_cli/index.html'\" />" > ./target/doc/index.html
+        run: echo "<meta http-equiv=\"refresh\" content=\"0; URL='./astar_collator/index.html'\" />" > ./target/doc/index.html
       - name: Push CNAME
-        run: echo "crates.plasmnet.io" > ./target/doc/CNAME
+        run: echo "crates.astar.network" > ./target/doc/CNAME
       - name: Deploy
         uses: peaceiris/actions-gh-pages@v3
         with:

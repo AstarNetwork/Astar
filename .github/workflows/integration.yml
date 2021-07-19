@@ -7,15 +7,11 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, macOS-latest, windows-latest]
+        os: [ubuntu-latest, macOS-latest]
     steps:
-    - name: Install LLVM (windows only)
-      if: runner.os == 'Windows'
-      run: choco install llvm
-
     - uses: hecrj/setup-rust-action@v1
       with:
-        rust-version: 'nightly-2020-08-20'
+        rust-version: 'nightly-2021-06-29'
         targets: 'wasm32-unknown-unknown'
 
     - name: Checkout the source code
@@ -26,38 +22,16 @@ jobs:
     - name: Check targets are installed correctly
       run: rustup target list --installed
 
-    - name: Install build tools
-      run: cargo install --git https://github.com/alexcrichton/wasm-gc --force
-
     - name: Run all tests
       run: cargo test --all
 
     - name: Build optimized binary
       run: cargo build --release --verbose
 
-    - name: Upload binary archive into IPFS
-      if: runner.os != 'Windows'
-      run: |
-        cd target/release
-        tar cfJ plasm-node-${{ matrix.os }}-x86_64.tar.xz plasm-node
-        curl "https://ipfs.infura.io:5001/api/v0/add" -F file=@plasm-node-${{ matrix.os }}-x86_64.tar.xz
     - uses: actions/upload-artifact@master
-      if: runner.os != 'Windows'
       with:
-        name: plasm-node-${{ matrix.os }}-x86_64.tar.xz
-        path: target/release/plasm-node-${{ matrix.os }}-x86_64.tar.xz
-
-    - name: Upload binary archive into IPFS (windows only)
-      if: runner.os == 'Windows'
-      run: |
-        cd target/release
-        tar czf plasm-node-${{ matrix.os }}-x86_64.tar.gz plasm-node.exe
-        curl "https://ipfs.infura.io:5001/api/v0/add" -F file=@plasm-node-${{ matrix.os }}-x86_64.tar.gz
-    - uses: actions/upload-artifact@master
-      if: runner.os == 'Windows'
-      with:
-        name: plasm-node-${{ matrix.os }}-x86_64.tar.gz
-        path: target/release/plasm-node-${{ matrix.os }}-x86_64.tar.gz
+        name: astar-${{ matrix.os }}-x86_64
+        path: target/release/astar-collator
 
   nix:
     runs-on: ubuntu-latest

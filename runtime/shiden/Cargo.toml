@@ -1,6 +1,6 @@
 [package]
 name = "shiden-runtime"
-version = "2.1.0"
+version = "2.2.0"
 authors = ["Stake Technologies <devops@stake.co.jp>"]
 edition = "2018"
 build = "build.rs"
@@ -9,6 +9,7 @@ build = "build.rs"
 # third-party dependencies
 serde = { version = "1.0.106", optional = true }
 codec = { package = "parity-scale-codec", version = "2.0", default-features = false, features = ["derive"] }
+smallvec = "1.6.1"
 
 # primitives
 sp-api = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.7", default-features = false }
@@ -27,6 +28,8 @@ sp-version = { git = "https://github.com/paritytech/substrate", branch = "polkad
 # frame dependencies
 frame-executive = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.7", default-features = false }
 pallet-balances = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.7", default-features = false }
+pallet-identity = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.7", default-features = false }
+pallet-utility = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.7", default-features = false }
 pallet-vesting = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.7", default-features = false }
 pallet-sudo = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.7", default-features = false }
 frame-support = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.7", default-features = false }
@@ -71,6 +74,8 @@ std = [
     "frame-system/std",
     "frame-system-rpc-runtime-api/std",
     "pallet-balances/std",
+    "pallet-identity/std",
+    "pallet-utility/std",
     "pallet-vesting/std",
     "sp-offchain/std",
     "sp-session/std",
