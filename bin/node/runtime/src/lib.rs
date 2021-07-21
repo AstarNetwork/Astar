@@ -13,10 +13,8 @@ use frame_support::{
         DispatchClass, IdentityFee, Weight,
     },
 };
-use frame_system::{
-    limits::{BlockLength, BlockWeights},
-    EnsureRoot,
-};
+use frame_system::EnsureRoot;
+use frame_system::limits::{BlockLength, BlockWeights};
 use pallet_contracts::weights::WeightInfo;
 use pallet_evm::{
     Account as EVMAccount, EnsureAddressRoot, EnsureAddressTruncated, FeeCalculator,
@@ -43,17 +41,19 @@ use sp_runtime::transaction_validity::{
     TransactionPriority, TransactionSource, TransactionValidity,
 };
 use sp_runtime::{
-    create_runtime_str, curve::PiecewiseLinear, generic, impl_opaque_keys, ApplyExtrinsicResult,
-    FixedPointNumber, Perbill, Perquintill, RuntimeAppPublic,
+    create_runtime_str, generic, impl_opaque_keys, ApplyExtrinsicResult, FixedPointNumber, Perbill,
+    Perquintill, RuntimeAppPublic,
 };
+use sp_runtime::curve::PiecewiseLinear;
+use sp_staking;
 use sp_std::convert::TryFrom;
 use sp_std::prelude::*;
 #[cfg(any(feature = "std", test))]
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
 
-pub use pallet_balances::Call as BalancesCall;
 pub use pallet_staking::StakerStatus;
+pub use pallet_balances::Call as BalancesCall;
 pub use pallet_timestamp::Call as TimestampCall;
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
@@ -78,7 +78,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     // implementation changes and behavior does not, then leave spec_version as
     // is and increment impl_version.
     spec_version: 2,
-    impl_version: 1,
+    impl_version: 2,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 1,
 };
@@ -99,7 +99,7 @@ const AVERAGE_ON_INITIALIZE_RATIO: Perbill = Perbill::from_percent(10);
 /// by  Operational  extrinsics.
 const NORMAL_DISPATCH_RATIO: Perbill = Perbill::from_percent(75);
 /// We allow for 2 seconds of compute with a 6 second average block time.
-const MAXIMUM_BLOCK_WEIGHT: Weight = WEIGHT_PER_SECOND / 2;
+const MAXIMUM_BLOCK_WEIGHT: Weight = 2 * WEIGHT_PER_SECOND;
 
 parameter_types! {
     pub const BlockHashCount: BlockNumber = 2400;
@@ -195,7 +195,7 @@ impl pallet_indices::Config for Runtime {
 }
 
 parameter_types! {
-    pub const ExistentialDeposit: Balance = 1_000_000;
+    pub const ExistentialDeposit: Balance = 1 * MILLIPLM;
     pub const MaxLocks: u32 = 50;
 }
 
@@ -254,62 +254,15 @@ impl_opaque_keys! {
     }
 }
 
-parameter_types! {
-    pub const DisabledValidatorsThreshold: Perbill = Perbill::from_percent(17);
-}
-
-impl pallet_session::Config for Runtime {
-    type SessionManager = pallet_session::historical::NoteHistoricalRoot<Self, Staking>;
-    type SessionHandler = <SessionKeys as OpaqueKeys>::KeyTypeIdProviders;
-    type ShouldEndSession = Babe;
-    type NextSessionRotation = Babe;
-    type Event = Event;
-    type Keys = SessionKeys;
-    type ValidatorId = <Self as frame_system::Config>::AccountId;
-    type ValidatorIdOf = ConvertInto;
-    type DisabledValidatorsThreshold = DisabledValidatorsThreshold;
-    type WeightInfo = ();
-}
-
-impl pallet_session::historical::Config for Runtime {
-    type FullIdentification = pallet_staking::Exposure<AccountId, Balance>;
-    type FullIdentificationOf = pallet_staking::ExposureOf<Runtime>;
-}
-
-parameter_types! {
-    pub MaximumSchedulerWeight: Weight = Perbill::from_percent(80) *
-        RuntimeBlockWeights::get().max_block;
-    pub const MaxScheduledPerBlock: u32 = 50;
-}
-
-impl pallet_scheduler::Config for Runtime {
-    type Event = Event;
-    type Origin = Origin;
-    type PalletsOrigin = OriginCaller;
-    type Call = Call;
-    type MaximumWeight = MaximumSchedulerWeight;
-    type ScheduleOrigin = frame_system::EnsureRoot<AccountId>;
-    type MaxScheduledPerBlock = MaxScheduledPerBlock;
-    type WeightInfo = ();
-}
-
 pallet_staking_reward_curve::build! {
     const VALIDATOR_REWARD_CURVE: PiecewiseLinear<'static> = curve!(
-        min_inflation: 0_010_000,
-        max_inflation: 0_020_000,
-        ideal_stake: 0_150_000,
-        falloff: 0_020_000,
-        max_piece_count: 100,
-        test_precision: 0_005_500,
+        min_inflation: 0_025_000,
+        max_inflation: 0_100_000,
+        ideal_stake: 0_500_000,
+        falloff: 0_050_000,
+        max_piece_count: 40,
+        test_precision: 0_005_000,
     );
-    // const DAPPS_REWARD_CURVE: PiecewiseLinear<'static> = curve!(
-    //     min_inflation: 0_010_000,
-    //     max_inflation: 0_020_000,
-    //     ideal_stake: 0_350_000,
-    //     falloff: 0_020_000,
-    //     max_piece_count: 40,
-    //     test_precision: 0_005_000,
-    // );
 }
 
 parameter_types! {
@@ -322,6 +275,7 @@ parameter_types! {
     pub const MaxIterations: u32 = 10;
     // 0.05%. The higher the value, the more strict solution acceptance becomes.
     pub MinSolutionScoreBump: Perbill = Perbill::from_rational_approximation(5u32, 10_000);
+    pub const StakingUnsignedPriority: TransactionPriority = TransactionPriority::max_value() / 2;
 }
 
 impl pallet_staking::Config for Runtime {
@@ -348,6 +302,92 @@ impl pallet_staking::Config for Runtime {
     type WeightInfo = ();
     type OffchainSolutionWeightLimit = ();
 }
+
+parameter_types! {
+    pub const DisabledValidatorsThreshold: Perbill = Perbill::from_percent(17);
+}
+
+impl pallet_session::Config for Runtime {
+    type Event = Event;
+    type ValidatorId = <Self as frame_system::Config>::AccountId;
+    type ValidatorIdOf = pallet_staking::StashOf<Self>;
+    type ShouldEndSession = Babe;
+    type NextSessionRotation = Babe;
+    type SessionManager = pallet_session::historical::NoteHistoricalRoot<Self, Staking>;
+    type SessionHandler = <SessionKeys as OpaqueKeys>::KeyTypeIdProviders;
+    type Keys = SessionKeys;
+    type DisabledValidatorsThreshold = DisabledValidatorsThreshold;
+    type WeightInfo = pallet_session::weights::SubstrateWeight<Runtime>;
+}
+
+impl pallet_session::historical::Config for Runtime {
+    type FullIdentification = pallet_staking::Exposure<AccountId, Balance>;
+    type FullIdentificationOf = pallet_staking::ExposureOf<Runtime>;
+}
+
+impl pallet_authority_discovery::Config for Runtime {}
+
+parameter_types! {
+    pub MaximumSchedulerWeight: Weight = Perbill::from_percent(80) *
+        RuntimeBlockWeights::get().max_block;
+    pub const MaxScheduledPerBlock: u32 = 50;
+}
+
+impl pallet_scheduler::Config for Runtime {
+    type Event = Event;
+    type Origin = Origin;
+    type PalletsOrigin = OriginCaller;
+    type Call = Call;
+    type MaximumWeight = MaximumSchedulerWeight;
+    type ScheduleOrigin = frame_system::EnsureRoot<AccountId>;
+    type MaxScheduledPerBlock = MaxScheduledPerBlock;
+    type WeightInfo = ();
+}
+/*
+parameter_types! {
+    pub const SessionsPerEra: pallet_plasm_rewards::SessionIndex = 6;
+    pub const BondingDuration: pallet_plasm_rewards::EraIndex = 24 * 28;
+}
+
+impl pallet_plasm_rewards::Config for Runtime {
+    type Currency = Balances;
+    type Time = Timestamp;
+    type SessionsPerEra = SessionsPerEra;
+    type BondingDuration = BondingDuration;
+    type ComputeEraForDapps = pallet_plasm_rewards::DefaultForDappsStaking<Runtime>;
+    type ComputeEraForSecurity = PlasmValidator;
+    type ComputeTotalPayout = pallet_plasm_rewards::inflation::CommunityRewards<u32>;
+    type MaybeValidators = PlasmValidator;
+    type Event = Event;
+}
+
+impl pallet_plasm_validator::Config for Runtime {
+    type Currency = Balances;
+    type Time = Timestamp;
+    type RewardRemainder = (); // Reward remainder is burned.
+    type Reward = (); // Reward is minted.
+    type EraFinder = PlasmRewards;
+    type ForSecurityEraReward = PlasmRewards;
+    type ComputeEraParam = u32;
+    type ComputeEra = PlasmValidator;
+    type Event = Event;
+}
+*/
+/*
+impl pallet_dapps_staking::Config for Runtime {
+    type Currency = Balances;
+    type BondingDuration = BondingDuration;
+    type ContractFinder = Operator;
+    type RewardRemainder = (); // Reward remainder is burned.
+    type Reward = (); // Reward is minted.
+    type Time = Timestamp;
+    type ComputeRewardsForDapps = pallet_dapps_staking::rewards::VoidableRewardsForDapps;
+    type EraFinder = PlasmRewards;
+    type ForDappsEraReward = PlasmRewards;
+    type HistoryDepthFinder = PlasmRewards;
+    type Event = Event;
+}
+*/
 
 parameter_types! {
     pub const TombstoneDeposit: Balance = deposit(
@@ -397,6 +437,26 @@ impl pallet_contracts::Config for Runtime {
     type MaxCodeSize = MaxCodeSize;
 }
 
+// impl pallet_contract_operator::Config for Runtime {
+//     //type Parameters = pallet_dapps_staking::parameters::StakingParameters; TODO after pallet_dapps_staking update to sub3.0
+//     type Parameters = None;
+//     type Event = Event;
+// }
+/*
+impl pallet_plasm_operator::Config for Runtime {
+    //type Parameters = pallet_dapps_staking::parameters::StakingParameters; TODO after pallet_dapps_staking update to sub3.0
+    type Event = Event;
+}
+*/
+/*
+impl pallet_operator_trading::Config for Runtime {
+    type Currency = Balances;
+    type OperatorFinder = Operator;
+    type TransferOperator = Operator;
+    type Event = Event;
+}
+*/
+
 parameter_types! {
     pub const MinVestedTransfer: Balance = 1 * MILLIPLM;
 }
@@ -423,8 +483,6 @@ impl pallet_sudo::Config for Runtime {
 parameter_types! {
     pub const SessionDuration: BlockNumber = EPOCH_DURATION_IN_SLOTS as _;
     pub const ImOnlineUnsignedPriority: TransactionPriority = TransactionPriority::max_value();
-     /// We prioritize im-online heartbeats over election solution submission.
-    pub const StakingUnsignedPriority: TransactionPriority = TransactionPriority::max_value() / 2;
 }
 
 impl pallet_im_online::Config for Runtime {
@@ -615,8 +673,8 @@ impl pallet_nicks::Config for Runtime {
 /// Current approximation of the gas/s consumption considering
 /// EVM execution over compiled WASM (on 4.4Ghz CPU).
 /// Given the 500ms Weight, from which 75% only are used for transactions,
-/// the total EVM execution gas limit is: GAS_PER_SECOND * 0.500 * 0.75 => 40_000_000.
-pub const GAS_PER_SECOND: u64 = 40_000_000;
+/// the total EVM execution gas limit is: GAS_PER_SECOND * 0.500 * 0.75 => 6_000_000.
+pub const GAS_PER_SECOND: u64 = 16_000_000;
 
 /// Approximate ratio of the amount of Weight per Gas.
 /// u64 works for approximations because Weight is a very small unit compared to gas.
@@ -636,15 +694,8 @@ parameter_types! {
     pub const ChainId: u64 = 0x50;
 }
 
-pub struct FixedGasPrice;
-impl FeeCalculator for FixedGasPrice {
-    fn min_gas_price() -> U256 {
-        (1 * MILLIPLM / 1000_000).into()
-    }
-}
-
 impl pallet_evm::Config for Runtime {
-    type FeeCalculator = FixedGasPrice;
+    type FeeCalculator = ();
     type GasWeightMapping = GasWeightMapping;
     type CallOrigin = EnsureAddressRoot<Self::AccountId>;
     type WithdrawOrigin = EnsureAddressTruncated;
@@ -696,7 +747,7 @@ impl<F: FindAuthor<u32>> FindAuthor<H160> for EthereumFindAuthor<F> {
 }
 
 parameter_types! {
-    pub BlockGasLimit: U256 = U256::from(NORMAL_DISPATCH_RATIO * MAXIMUM_BLOCK_WEIGHT / WEIGHT_PER_GAS);
+    pub BlockGasLimit: U256 = U256::from(9_000_000);
 }
 
 impl pallet_ethereum::Config for Runtime {
@@ -737,26 +788,34 @@ construct_runtime!(
         UncheckedExtrinsic = UncheckedExtrinsic
     {
         System: frame_system::{Module, Call, Storage, Config, Event<T>},
+        Vesting: pallet_vesting::{Module, Call, Storage, Event<T>, Config<T>},
         Utility: pallet_utility::{Module, Call, Event},
-        Babe: pallet_babe::{Module, Call, Storage, Config, Inherent, ValidateUnsigned},
         Timestamp: pallet_timestamp::{Module, Call, Storage, Inherent},
         Authorship: pallet_authorship::{Module, Call, Storage, Inherent},
+        TransactionPayment: pallet_transaction_payment::{Module, Storage},
+        Scheduler: pallet_scheduler::{Module, Call, Storage, Event<T>},
         Indices: pallet_indices::{Module, Call, Storage, Event<T>, Config<T>},
         Balances: pallet_balances::{Module, Call, Storage, Event<T>, Config<T>},
-        Identity: pallet_identity::{Module, Call, Storage, Event<T>},
-        TransactionPayment: pallet_transaction_payment::{Module, Storage},
-        Staking: pallet_staking::{Module, Call, Storage, Event<T>, Config<T>},
-        Session: pallet_session::{Module, Call, Storage, Event, Config<T>},
-        Grandpa: pallet_grandpa::{Module, Call, Storage, Config, Event, ValidateUnsigned},
         Contracts: pallet_contracts::{Module, Call, Storage, Event<T>, Config<T>},
-        Sudo: pallet_sudo::{Module, Call, Storage, Event<T>, Config<T>},
+        //DappsStaking: pallet_dapps_staking::{Module, Call, Storage, Event<T>},
+        //PlasmValidator: pallet_plasm_validator::{Module, Call, Storage, Event<T>, Config<T>},
+        //PlasmRewards: pallet_plasm_rewards::{Module, Call, Storage, Event<T>, Config},
+        Session: pallet_session::{Module, Call, Storage, Event, Config<T>},
+        Staking: pallet_staking::{Module, Call, Config<T>, Storage, Event<T>},
+        AuthorityDiscovery: pallet_authority_discovery::{Module, Call},
+        Historical: pallet_session_historical::{Module},
+        Babe: pallet_babe::{Module, Call, Storage, Config, Inherent, ValidateUnsigned},
+        Grandpa: pallet_grandpa::{Module, Call, Storage, Config, Event, ValidateUnsigned},
         ImOnline: pallet_im_online::{Module, Call, Storage, Event<T>, ValidateUnsigned, Config<T>},
         Offences: pallet_offences::{Module, Call, Storage, Event},
-        Historical: pallet_session_historical::{Module},
+        //Operator: pallet_plasm_operator::{Module, Call, Storage, Event<T>},
+        //Trading: pallet_operator_trading::{Module, Call, Storage, Event<T>},
         RandomnessCollectiveFlip: pallet_randomness_collective_flip::{Module, Call, Storage},
-        Vesting: pallet_vesting::{Module, Call, Storage, Event<T>, Config<T>},
-        Scheduler: pallet_scheduler::{Module, Call, Storage, Event<T>},
+        Sudo: pallet_sudo::{Module, Call, Storage, Event<T>, Config<T>},
+        //OVM: pallet_ovm::{Module, Call, Storage, Event<T>},
+        //Plasma: pallet_plasma::{Module, Call, Storage, Event<T>},
         Nicks: pallet_nicks::{Module, Call, Storage, Event<T>},
+        Identity: pallet_identity::{Module, Call, Storage, Event<T>},
         Ethereum: pallet_ethereum::{Module, Call, Storage, Event, Config, ValidateUnsigned},
         EVM: pallet_evm::{Module, Call, Storage, Config, Event<T>},
         EthCall: pallet_custom_signatures::{Module, Call, Event<T>, ValidateUnsigned},

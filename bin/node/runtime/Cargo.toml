@@ -39,6 +39,7 @@ pallet-evm-precompile-modexp = { path = "../../../vendor/frontier/frame/evm/prec
 pallet-evm-precompile-dispatch = { path = "../../../vendor/frontier/frame/evm/precompile/dispatch", default-features = false }
 frame-executive = { version = "3.0.0", default-features = false }
 pallet-authorship = { version = "3.0.0", default-features = false }
+pallet-authority-discovery = { version = "3.0.0", default-features = false }
 pallet-babe = { version = "3.0.0", default-features = false }
 pallet-balances = { version = "3.0.0", default-features = false }
 pallet-contracts = { version = "3.0.0", default-features = false }
@@ -99,6 +100,7 @@ std = [
     "frame-system-rpc-runtime-api/std",
     "fp-rpc/std",
     "pallet-authorship/std",
+    "pallet-authority-discovery/std",
     "pallet-babe/std",
     "pallet-balances/std",
     "pallet-identity/std",
