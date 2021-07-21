@@ -44,6 +44,9 @@ pub use pallet_balances::Call as BalancesCall;
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
 
+// Kylin module support
+pub use kylin_oracle;
+
 /// Constant values used within the runtime.
 pub const MILLISDN: Balance = 1_000_000_000_000_000;
 pub const SDN: Balance = 1_000 * MILLISDN;
@@ -65,8 +68,8 @@ pub fn wasm_binary_unwrap() -> &'static [u8] {
 /// Runtime version.
 #[sp_version::runtime_version]
 pub const VERSION: RuntimeVersion = RuntimeVersion {
-    spec_name: create_runtime_str!("shiden"),
-    impl_name: create_runtime_str!("shiden"),
+    spec_name: create_runtime_str!("shidenK"),
+    impl_name: create_runtime_str!("shidenK"),
     authoring_version: 1,
     spec_version: 3,
     impl_version: 0,
@@ -339,6 +342,21 @@ impl pallet_sudo::Config for Runtime {
     type Call = Call;
 }
 
+
+parameter_types! {
+    pub const GracePeriod: u64 = 5;
+    pub const UnsignedInterval: u64 = 128;
+    pub const UnsignedPriority: u64 = 1 << 20;
+}
+
+impl kylin_oracle::Trait for Runtime {
+    type Event = Event;
+    type AuthorityId = kylin_oracle::crypto::TestAuthId;
+    type Call = Call;
+    type GracePeriod = GracePeriod;
+    type UnsignedInterval = UnsignedInterval;
+    type UnsignedPriority = UnsignedPriority;
+
 construct_runtime!(
     pub enum Runtime where
         Block = Block,
@@ -357,6 +375,8 @@ construct_runtime!(
         Vesting: pallet_vesting::{Pallet, Call, Storage, Config<T>, Event<T>} = 32,
 
         CumulusXcm: cumulus_pallet_xcm::{Pallet, Call, Event<T>, Origin} = 50,
+        
+        KylinOracleModule: kylin_oracle::{Module, Call, Storage, Event<T>} = 80,
 
         Sudo: pallet_sudo::{Pallet, Call, Storage, Event<T>, Config<T>} = 99,
     }

@@ -51,6 +51,9 @@ xcm-executor = { git = "https://github.com/paritytech/polkadot", default-feature
 xcm-builder = { git = "https://github.com/paritytech/polkadot", default-features = false , branch = "release-v0.9.7" }
 xcm = { git = "https://github.com/paritytech/polkadot", default-features = false , branch = "release-v0.9.7" }
 
+# external modules
+kylin-oracle = { path = '../../kylin/kylin-oracle', default-features = false, version = '3.0.0' }
+
 [build-dependencies]
 substrate-wasm-builder = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.7" }
 
