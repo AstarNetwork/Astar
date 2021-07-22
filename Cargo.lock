@@ -1531,6 +1531,24 @@ dependencies = [
 ]
 
 [[package]]
+name = "cumulus-pallet-xcmp-queue"
+version = "0.1.0"
+source = "git+https://github.com/paritytech/cumulus?branch=polkadot-v0.9.7#c5c3abf7eb9d4fdfb588d6560efaa8dca66a8dbc"
+dependencies = [
+ "cumulus-primitives-core",
+ "frame-support",
+ "frame-system",
+ "log",
+ "parity-scale-codec",
+ "rand 0.8.4",
+ "rand_chacha 0.3.1",
+ "sp-runtime",
+ "sp-std",
+ "xcm",
+ "xcm-executor",
+]
+
+[[package]]
 name = "cumulus-primitives-core"
 version = "0.1.0"
 source = "git+https://github.com/paritytech/cumulus?branch=polkadot-v0.9.7#c5c3abf7eb9d4fdfb588d6560efaa8dca66a8dbc"
@@ -3364,6 +3382,7 @@ dependencies = [
 [[package]]
 name = "kylin-oracle"
 version = "3.0.0"
+source = "git+https://github.com/Kylin-Network/kylin-node?branch=polkadot-v0.9.7#8a0ddac36134fc4781e230f59a23232283777ea7"
 dependencies = [
  "cumulus-pallet-xcm",
  "cumulus-primitives-core",
@@ -3371,7 +3390,6 @@ dependencies = [
  "frame-support",
  "frame-system",
  "parity-scale-codec",
- "serde",
  "sp-core",
  "sp-io",
  "sp-runtime",
@@ -8425,6 +8443,7 @@ version = "2.2.0"
 dependencies = [
  "cumulus-pallet-parachain-system",
  "cumulus-pallet-xcm",
+ "cumulus-pallet-xcmp-queue",
  "cumulus-primitives-core",
  "cumulus-primitives-utility",
  "frame-executive",
@@ -8435,6 +8454,7 @@ dependencies = [
  "pallet-balances",
  "pallet-identity",
  "pallet-sudo",
+ "pallet-timestamp",
  "pallet-transaction-payment",
  "pallet-transaction-payment-rpc-runtime-api",
  "pallet-utility",
