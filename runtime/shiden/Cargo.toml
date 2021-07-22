@@ -11,6 +11,9 @@ serde = { version = "1.0.106", optional = true }
 codec = { package = "parity-scale-codec", version = "2.0", default-features = false, features = ["derive"] }
 smallvec = "1.6.1"
 
+#kylin oracle
+kylin-oracle = { package = 'kylin-oracle', git = 'https://github.com/Kylin-Network/kylin-node',branch = 'polkadot-v0.9.7', default-features = false }
+
 # primitives
 sp-api = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.7", default-features = false }
 sp-core = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.7", default-features = false }
@@ -32,6 +35,7 @@ pallet-identity = { git = "https://github.com/paritytech/substrate", branch = "p
 pallet-utility = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.7", default-features = false }
 pallet-vesting = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.7", default-features = false }
 pallet-sudo = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.7", default-features = false }
+pallet-timestamp = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.7', default-features = false }
 frame-support = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.7", default-features = false }
 frame-system = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.7", default-features = false }
 frame-system-rpc-runtime-api = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.7", default-features = false }
@@ -43,6 +47,7 @@ cumulus-primitives-core = { git = "https://github.com/paritytech/cumulus", branc
 cumulus-primitives-utility = { git = "https://github.com/paritytech/cumulus", branch = "polkadot-v0.9.7", default-features = false }
 cumulus-pallet-parachain-system = { git = "https://github.com/paritytech/cumulus", branch = "polkadot-v0.9.7", default-features = false }
 cumulus-pallet-xcm = { git = "https://github.com/paritytech/cumulus", branch = "polkadot-v0.9.7", default-features = false }
+cumulus-pallet-xcmp-queue = { git = 'https://github.com/paritytech/cumulus', branch = 'polkadot-v0.9.7', default-features = false }
 parachain-info = { git = "https://github.com/paritytech/cumulus", branch = "polkadot-v0.9.7", default-features = false }
 
 # polkadot dependencies
@@ -50,9 +55,6 @@ polkadot-parachain = { git = "https://github.com/paritytech/polkadot", default-f
 xcm-executor = { git = "https://github.com/paritytech/polkadot", default-features = false , branch = "release-v0.9.7" }
 xcm-builder = { git = "https://github.com/paritytech/polkadot", default-features = false , branch = "release-v0.9.7" }
 xcm = { git = "https://github.com/paritytech/polkadot", default-features = false , branch = "release-v0.9.7" }
-
-# external modules
-kylin-oracle = { path = '../../kylin/kylin-oracle', default-features = false, version = '3.0.0' }
 
 [build-dependencies]
 substrate-wasm-builder = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.7" }
@@ -94,4 +96,6 @@ std = [
     "cumulus-primitives-utility/std",
     "cumulus-pallet-parachain-system/std",
     "cumulus-pallet-xcm/std",
+    'cumulus-pallet-xcmp-queue/std',
+    "kylin-oracle/std",
 ]
