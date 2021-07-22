@@ -187,7 +187,7 @@ checksum = "9b34d609dfbaf33d6889b2b7106d3ca345eacad44200913df5ba02bfd31d2ba9"
 
 [[package]]
 name = "astar-collator"
-version = "2.2.0"
+version = "2.2.1"
 dependencies = [
  "cumulus-client-cli",
  "cumulus-client-consensus-relay-chain",
@@ -8425,7 +8425,7 @@ dependencies = [
 
 [[package]]
 name = "shiden-runtime"
-version = "2.2.0"
+version = "2.2.1"
 dependencies = [
  "cumulus-pallet-parachain-system",
  "cumulus-pallet-xcm",
