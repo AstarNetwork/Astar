@@ -84,9 +84,8 @@ fn shiden_chain_spec() -> ChainSpec {
     ChainSpec::from_json_bytes(&include_bytes!("../res/shiden.raw.json")[..]).unwrap()
 }
 
-
-
-fn staging_spec(para_id: ParaId) -> ChainSpec {
+/// Generate chain specification for given parachain id
+pub fn chachacha_spec(para_id: ParaId) -> ChainSpec {
     use sp_core::crypto::Ss58Codec;
 
     let sudo_key =
