@@ -5,7 +5,7 @@
 #![recursion_limit = "256"]
 
 use frame_support::{
-    construct_runtime, match_type, parameter_types,
+    construct_runtime, match_type,  log, parameter_types,
     traits::Filter,
     weights::{
         constants::{BlockExecutionWeight, ExtrinsicBaseWeight, WEIGHT_PER_SECOND},
@@ -22,7 +22,7 @@ use sp_core::OpaqueMetadata;
 use sp_inherents::{CheckInherentsResult, InherentData};
 use sp_runtime::{
     create_runtime_str, generic,
-    traits::{AccountIdLookup, BlakeTwo256, Block as BlockT, ConvertInto},
+    traits::{AccountIdLookup,Extrinsic as ExtrinsicT, BlakeTwo256, Block as BlockT, ConvertInto, Verify},
     transaction_validity::{TransactionSource, TransactionValidity},
     ApplyExtrinsicResult, FixedPointNumber, Perbill, Perquintill,
 };
@@ -39,6 +39,7 @@ use xcm_builder::{
     ParentIsDefault, SovereignSignedViaLocation,
 };
 use xcm_executor::{Config, XcmExecutor};
+use crate::sp_api_hidden_includes_IMPL_RUNTIME_APIS::sp_api::Encode;
 
 pub use pallet_balances::Call as BalancesCall;
 #[cfg(any(feature = "std", test))]
@@ -94,6 +95,9 @@ const AVERAGE_ON_INITIALIZE_RATIO: Perbill = Perbill::from_percent(10);
 const NORMAL_DISPATCH_RATIO: Perbill = Perbill::from_percent(75);
 /// We allow for 0.5 seconds of compute with a 6 second average block time.
 const MAXIMUM_BLOCK_WEIGHT: Weight = WEIGHT_PER_SECOND / 2;
+
+pub const MILLISECS_PER_BLOCK: u64 = 6000;
+pub const SLOT_DURATION: u64 = MILLISECS_PER_BLOCK;
 
 parameter_types! {
     pub const BlockHashCount: BlockNumber = 2400;
@@ -266,6 +270,26 @@ impl cumulus_pallet_xcm::Config for Runtime {
     type XcmExecutor = XcmExecutor<XcmConfig>;
 }
 
+
+/// The means for routing XCM messages which are not for local execution into the right message
+/// queues.
+pub type XcmRouter = (
+    // Two routers - use UMP to communicate with the relay chain:
+    cumulus_primitives_utility::ParentAsUmp<ParachainSystem>,
+    // ..and XCMP to communicate with the sibling chains.
+    XcmpQueue,
+);
+
+parameter_types! {
+	pub const MaxDownwardMessageWeight: Weight = MAXIMUM_BLOCK_WEIGHT / 10;
+    pub const GracePeriod: u32 = 5;
+    pub const UnsignedInterval: u64 = 128;
+    pub const UnsignedPriority: u64 = 1 << 20;
+}
+
+
+
+
 parameter_types! {
     pub const ExistentialDeposit: Balance = 1_000_000;
     pub const MaxLocks: u32 = 50;
@@ -302,6 +326,7 @@ parameter_types! {
     pub AdjustmentVariable: Multiplier = Multiplier::saturating_from_rational(1, 100_000);
     pub MinimumMultiplier: Multiplier = Multiplier::saturating_from_rational(1, 1_000_000_000u128);
 }
+
 
 /// Handles converting a weight scalar to a fee value, based on the scale and granularity of the
 /// node's balance type.
@@ -343,19 +368,91 @@ impl pallet_sudo::Config for Runtime {
 }
 
 
-parameter_types! {
-    pub const GracePeriod: u64 = 5;
-    pub const UnsignedInterval: u64 = 128;
-    pub const UnsignedPriority: u64 = 1 << 20;
-}
 
-impl kylin_oracle::Trait for Runtime {
+impl kylin_oracle::Config for Runtime {
     type Event = Event;
     type AuthorityId = kylin_oracle::crypto::TestAuthId;
     type Call = Call;
-    type GracePeriod = GracePeriod;
-    type UnsignedInterval = UnsignedInterval;
+    type Origin = Origin;
+    type XcmSender = XcmRouter;
     type UnsignedPriority = UnsignedPriority;
+    type UnixTime = Timestamp;
+}
+
+impl<LocalCall> frame_system::offchain::CreateSignedTransaction<LocalCall> for Runtime where
+    Call: From<LocalCall>,
+{
+    fn create_transaction<C: frame_system::offchain::AppCrypto<Self::Public, Self::Signature>>(
+        call: Call,
+        public: <Signature as Verify>::Signer,
+        account: AccountId,
+        nonce: <Runtime as frame_system::Config>::Index,
+    ) -> Option<(Call, <UncheckedExtrinsic as ExtrinsicT>::SignaturePayload)> {
+        use sp_runtime::traits::StaticLookup;
+        // take the biggest period possible.
+        let period = BlockHashCount::get()
+            .checked_next_power_of_two()
+            .map(|c| c / 2)
+            .unwrap_or(2) as u64;
+
+        let current_block = System::block_number()
+            // The `System::block_number` is initialized with `n+1`,
+            // so the actual block number is `n`.
+            .saturating_sub(1);
+        let tip = 0;
+        let extra: SignedExtra = (
+            frame_system::CheckSpecVersion::<Runtime>::new(),
+            frame_system::CheckTxVersion::<Runtime>::new(),
+            frame_system::CheckGenesis::<Runtime>::new(),
+            frame_system::CheckMortality::<Runtime>::from(generic::Era::mortal(period, current_block.into())),
+            frame_system::CheckNonce::<Runtime>::from(nonce),
+            frame_system::CheckWeight::<Runtime>::new(),
+            pallet_transaction_payment::ChargeTransactionPayment::<Runtime>::from(tip),
+        );
+        let raw_payload = SignedPayload::new(call, extra).map_err(|e| {
+            log::warn!("Unable to create signed payload: {:?}", e);
+        }).ok()?;
+        let signature = raw_payload.using_encoded(|payload| {
+            C::sign(payload, public)
+        })?;
+        let (call, extra, _) = raw_payload.deconstruct();
+        let address = <Runtime as frame_system::Config>::Lookup::unlookup(account);
+        Some((call, (address, signature, extra)))
+    }
+}
+
+
+impl cumulus_pallet_xcmp_queue::Config for Runtime {
+    type Event = Event;
+    type XcmExecutor = XcmExecutor<XcmConfig>;
+    type ChannelInfo = ParachainSystem;
+}
+
+parameter_types! {
+    pub const MinimumPeriod: u64 = SLOT_DURATION / 2;
+}
+
+impl pallet_timestamp::Config for Runtime {
+    /// A timestamp: milliseconds since the unix epoch.
+    type Moment = u64;
+    type OnTimestampSet = ();
+    type MinimumPeriod = MinimumPeriod;
+    type WeightInfo = ();
+}
+
+impl frame_system::offchain::SigningTypes for Runtime {
+    type Public = <Signature as sp_runtime::traits::Verify>::Signer;
+    type Signature = Signature;
+}
+
+impl<C> frame_system::offchain::SendTransactionTypes<C> for Runtime
+    where
+        Call: From<C>,
+{
+    type OverarchingCall = Call;
+    type Extrinsic = UncheckedExtrinsic;
+}
+
 
 construct_runtime!(
     pub enum Runtime where
@@ -364,8 +461,10 @@ construct_runtime!(
         UncheckedExtrinsic = UncheckedExtrinsic
     {
         System: frame_system::{Pallet, Call, Storage, Config, Event<T>} = 10,
+        
         Utility: pallet_utility::{Pallet, Call, Event} = 11,
         Identity: pallet_identity::{Pallet, Call, Storage, Event<T>} = 12,
+        Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent} =13,
 
         ParachainSystem: cumulus_pallet_parachain_system::{Pallet, Call, Storage, Inherent, Event<T>} = 20,
         ParachainInfo: parachain_info::{Pallet, Storage, Config} = 21,
@@ -375,10 +474,13 @@ construct_runtime!(
         Vesting: pallet_vesting::{Pallet, Call, Storage, Config<T>, Event<T>} = 32,
 
         CumulusXcm: cumulus_pallet_xcm::{Pallet, Call, Event<T>, Origin} = 50,
-        
-        KylinOracleModule: kylin_oracle::{Module, Call, Storage, Event<T>} = 80,
+        // XCM helpers.
+		XcmpQueue: cumulus_pallet_xcmp_queue::{Pallet, Call, Storage, Event<T>} = 51,
+        // Kylin Pallets
+        KylinOraclePallet: kylin_oracle::{Pallet, Call, Storage, Event<T>, ValidateUnsigned} = 52,
 
         Sudo: pallet_sudo::{Pallet, Call, Storage, Event<T>, Config<T>} = 99,
+
     }
 );
 
