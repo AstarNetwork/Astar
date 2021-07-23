@@ -1431,7 +1431,6 @@ lazy_static::lazy_static! {
         (AccountId::from_ss58check("YuJsoxFkDy5d94XngApsG5VHEgz5aGvbnmhbK1ar8Ddxsxm").unwrap(), 952560000000000000000),
         (AccountId::from_ss58check("a3ydfHGHzykg8z39z3KFmj9eXto1UfMHmiXyZMBCqZH82T4").unwrap(), 92565000000000000000),
         (AccountId::from_ss58check("WzexzYdsuLFjRVfG32eRc8PtNakR1doKm5oVWRXuRmsEYie").unwrap(), 341000000000000000000),
-        (AccountId::from_ss58check("YvWEPYi6BRqpLeKQRQP1XZoWc6JM3LoZDCXgMNgtswXULvb").unwrap(), 1081598999000000000000),
         (AccountId::from_ss58check("ZkVQvPC5HoSKkmgYq148SxdC7szdDeoavCSEPZKj9WBN12G").unwrap(), 479257994000000000000),
         (AccountId::from_ss58check("aFX7RwpZcwvTRWxq5Pq6SVmTasaDfoWL6PjavcVKGwfYk9H").unwrap(), 10000000000000000),
         (AccountId::from_ss58check("ZAvin9PwDdqhsxEZsn32AErHvYhAj4tPunoifLzFxRuosxH").unwrap(), 2458832092256712382736),
@@ -7625,6 +7624,8 @@ lazy_static::lazy_static! {
         //##
         // Team, Akru
         (AccountId::from_ss58check("5Cakru1BpXPiezeD2LRZh3pJamHcbX9yZ13KLBxuqdTpgnYF").unwrap(), 1000000000000000000000000),
+        // Team Maarten
+        (AccountId::from_ss58check("5F3uo6adJwnjbWcUv7xFysQXRZPBNpe4Y1hPSeAq2WwZt8cG").unwrap(), 360000000000000000000000),
         // Team Astar root
         (AccountId::from_ss58check("5GrootH4UVFfSXJKLf5Rt1PtZ9HFBxGsUqnx7em9saHymCLY").unwrap(), 1711354320495992010316992),
         // Team, bootnode1 stash
@@ -7637,12 +7638,12 @@ lazy_static::lazy_static! {
         (AccountId::from_ss58check("5FThDusmRcd4enuaBJrCx9QsMccFEkkEUBENdM4xygPPVyrn").unwrap(), 100000000000000000000000),
 
         // Alice
-        (AccountId::from_ss58check("5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY").unwrap(), 100000000000000000000000),
+        (AccountId::from_ss58check("5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY").unwrap(), 10000000000000000000000),
         // Alice stash
-        (AccountId::from_ss58check("5GNJqTPyNqANBkUVMN1LPPrxXnFouWXoe2wNSmmEoLctxiZY").unwrap(), 100000000000000000000000),
+        (AccountId::from_ss58check("5GNJqTPyNqANBkUVMN1LPPrxXnFouWXoe2wNSmmEoLctxiZY").unwrap(), 10000000000000000000000),
         // Bob
-        (AccountId::from_ss58check("5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty").unwrap(), 100000000000000000000000),
+        (AccountId::from_ss58check("5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty").unwrap(), 10000000000000000000000),
         // Bob stash
-        (AccountId::from_ss58check("5HpG9w8EBLe5XCrbczpwq5TSXvedjrBGCwqxK1iQ7qUsSWFc").unwrap(), 100000000000000000000000),
+        (AccountId::from_ss58check("5HpG9w8EBLe5XCrbczpwq5TSXvedjrBGCwqxK1iQ7qUsSWFc").unwrap(), 10000000000000000000000),
     ];
 }
