@@ -84,13 +84,13 @@ fn shiden_chain_spec() -> ChainSpec {
     ChainSpec::from_json_bytes(&include_bytes!("../res/shiden.raw.json")[..]).unwrap()
 }
 
-/*
-fn shiden_chain_spec() -> ChainSpec {
+
+
+fn staging_spec(para_id: ParaId) -> ChainSpec {
     use sp_core::crypto::Ss58Codec;
 
-    let para_id: u32 = 2007;
     let sudo_key =
-        AccountId::from_ss58check("5CV5sQQn1NQmjRinJZrKRHXGSv8HEtPQ7JzY3PzdfGkE27vk").unwrap();
+        AccountId::from_ss58check("5GrootH4UVFfSXJKLf5Rt1PtZ9HFBxGsUqnx7em9saHymCLY").unwrap();
 
     ChainSpec::from_genesis(
         "Shiden Shell",
@@ -105,15 +105,12 @@ fn shiden_chain_spec() -> ChainSpec {
         },
         vec![],
         None,
+        Some("Shiden"),
         None,
-        None,
-        Extensions {
-            relay_chain: "kusama".into(),
-            para_id,
-        },
+        Default::default(),
     )
 }
-*/
+
 
 fn testnet_genesis(
     sudo_key: AccountId,
