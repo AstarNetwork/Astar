@@ -7618,6 +7618,14 @@ lazy_static::lazy_static! {
         // Institutional Investor
         (AccountId::from_ss58check("5EUPhTtX39EB2KksyAL8qh1J1qSJj4coSKUA7dBFK8dkXWHD").unwrap(), 7724979490000000000000000),
         // Team
-        (AccountId::from_ss58check("5DJ8LnALdeJqABW6itJZNivtxxXr4Gcpmn2vEKt3iYwWyUuL").unwrap(), 3511354320000000000000000),
+        (AccountId::from_ss58check("5DJ8LnALdeJqABW6itJZNivtxxXr4Gcpmn2vEKt3iYwWyUuL").unwrap(), 511354320000000000000000),
+
+        //##
+        //# ChaChaCha accounts
+        //##
+        (AccountId::from_ss58check("5Ff4YsfTpFDiJsfTR7UcmJFj2ysCwtxX5ixLN8gjnaahGbhG").unwrap(), 1000000000000000000000000),
+        (AccountId::from_ss58check("5CiTLYjgjkmx5mB85Y1ATCdL1rijUvS3mkFnYakGoHCN2R91").unwrap(), 1000000000000000000000000),
+        (AccountId::from_ss58check("5GrootH4UVFfSXJKLf5Rt1PtZ9HFBxGsUqnx7em9saHymCLY").unwrap(), 1000000000000000000000000),
+        
     ];
 }

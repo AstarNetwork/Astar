@@ -197,6 +197,7 @@ dependencies = [
  "cumulus-primitives-parachain-inherent",
  "frame-system",
  "hex",
+ "hex-literal 0.2.1",
  "jsonrpc-core",
  "lazy_static",
  "log",
@@ -214,6 +215,7 @@ dependencies = [
  "sc-consensus",
  "sc-consensus-babe",
  "sc-executor",
+ "sc-finality-grandpa",
  "sc-network",
  "sc-offchain",
  "sc-rpc",
@@ -1483,6 +1485,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "cumulus-pallet-aura-ext"
+version = "0.1.0"
+source = "git+https://github.com/paritytech/cumulus?branch=master#3883f733916529647fed9d3b629f4219a0e784bc"
+dependencies = [
+ "frame-executive",
+ "frame-support",
+ "frame-system",
+ "pallet-aura",
+ "parity-scale-codec",
+ "serde",
+ "sp-application-crypto",
+ "sp-consensus-aura",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
 name = "cumulus-pallet-parachain-system"
 version = "0.1.0"
 source = "git+https://github.com/paritytech/cumulus?branch=master#3883f733916529647fed9d3b629f4219a0e784bc"
@@ -2708,9 +2727,28 @@ checksum = "7f24254aa9a54b5c858eaee2f5bccdb46aaf0e486a595ed5fd8f86ba55232a70"
 
 [[package]]
 name = "hex-literal"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "961de220ec9a91af2e1e5bd80d02109155695e516771762381ef8581317066e0"
+dependencies = [
+ "hex-literal-impl",
+ "proc-macro-hack",
+]
+
+[[package]]
+name = "hex-literal"
 version = "0.3.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "21e4590e13640f19f249fe3e4eca5113bc4289f2497710378190e7f4bd96f45b"
+
+[[package]]
+name = "hex-literal-impl"
+version = "0.2.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "853f769599eb31de176303197b7ba4973299c38c7a7604a6bc88c3eef05b9b46"
+dependencies = [
+ "proc-macro-hack",
+]
 
 [[package]]
 name = "hex_fmt"
@@ -4578,6 +4616,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-aura"
+version = "4.0.0-dev"
+source = "git+https://github.com/paritytech/substrate?branch=master#8bbad73f5462028f82b5d72311a5743781230ce3"
+dependencies = [
+ "frame-support",
+ "frame-system",
+ "pallet-session",
+ "pallet-timestamp",
+ "parity-scale-codec",
+ "sp-application-crypto",
+ "sp-consensus-aura",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
 name = "pallet-authority-discovery"
 version = "4.0.0-dev"
 source = "git+https://github.com/paritytech/substrate?branch=master#8bbad73f5462028f82b5d72311a5743781230ce3"
@@ -6231,7 +6285,7 @@ source = "git+https://github.com/paritytech/polkadot?branch=master#5dac532349e76
 dependencies = [
  "bitvec",
  "frame-system",
- "hex-literal",
+ "hex-literal 0.3.3",
  "parity-scale-codec",
  "parity-util-mem",
  "polkadot-core-primitives",
@@ -6446,7 +6500,7 @@ dependencies = [
  "beefy-primitives",
  "frame-system-rpc-runtime-api",
  "futures 0.3.15",
- "hex-literal",
+ "hex-literal 0.3.3",
  "kvdb",
  "kvdb-rocksdb",
  "pallet-babe",
@@ -8581,6 +8635,7 @@ dependencies = [
 name = "shiden-runtime"
 version = "2.2.0"
 dependencies = [
+ "cumulus-pallet-aura-ext",
  "cumulus-pallet-parachain-system",
  "cumulus-pallet-xcm",
  "cumulus-pallet-xcmp-queue",
@@ -8591,6 +8646,7 @@ dependencies = [
  "frame-system",
  "frame-system-rpc-runtime-api",
  "kylin-oracle",
+ "pallet-aura",
  "pallet-balances",
  "pallet-identity",
  "pallet-sudo",
@@ -8606,6 +8662,7 @@ dependencies = [
  "smallvec 1.6.1",
  "sp-api",
  "sp-block-builder",
+ "sp-consensus-aura",
  "sp-core",
  "sp-inherents",
  "sp-io",
@@ -8920,6 +8977,23 @@ dependencies = [
  "substrate-prometheus-endpoint",
  "thiserror",
  "wasm-timer",
+]
+
+[[package]]
+name = "sp-consensus-aura"
+version = "0.10.0-dev"
+source = "git+https://github.com/paritytech/substrate?branch=master#8bbad73f5462028f82b5d72311a5743781230ce3"
+dependencies = [
+ "async-trait",
+ "parity-scale-codec",
+ "sp-api",
+ "sp-application-crypto",
+ "sp-consensus",
+ "sp-consensus-slots",
+ "sp-inherents",
+ "sp-runtime",
+ "sp-std",
+ "sp-timestamp",
 ]
 
 [[package]]

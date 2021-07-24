@@ -22,6 +22,7 @@ structopt = { version = "0.3.8", optional = true }
 lazy_static = "1.4"
 log = "0.4.8"
 hex = "0.4"
+hex-literal = "0.2.1"
 
 # primitives
 sp-core = { git = "https://github.com/paritytech/substrate", branch = "master" }
@@ -47,6 +48,7 @@ sc-service = { git = "https://github.com/paritytech/substrate", branch = "master
 sc-telemetry = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-tracing = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-consensus-babe = { git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-finality-grandpa = { git = "https://github.com/paritytech/substrate", branch = "master" }
 
 # RPC related dependencies
 jsonrpc-core = "15.1.0"
