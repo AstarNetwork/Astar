@@ -21,7 +21,7 @@ use sp_api::impl_runtime_apis;
 use sp_core::OpaqueMetadata;
 use sp_inherents::{CheckInherentsResult, InherentData};
 use sp_runtime::{
-    create_runtime_str, generic, impl_opaque_keys,
+    create_runtime_str, generic,
     traits::{AccountIdLookup,Extrinsic as ExtrinsicT, BlakeTwo256, Block as BlockT, ConvertInto, Verify},
     transaction_validity::{TransactionSource, TransactionValidity},
     ApplyExtrinsicResult, FixedPointNumber, Perbill, Perquintill,
@@ -47,7 +47,6 @@ pub use sp_runtime::BuildStorage;
 
 // Kylin module support
 pub use kylin_oracle;
-pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 
 /// Constant values used within the runtime.
 pub const MILLISDN: Balance = 1_000_000_000_000_000;
@@ -454,21 +453,6 @@ impl<C> frame_system::offchain::SendTransactionTypes<C> for Runtime
     type Extrinsic = UncheckedExtrinsic;
 }
 
-impl_opaque_keys! {
-	pub struct SessionKeys {
-		pub aura: Aura,
-	}
-}
-
-impl pallet_aura::Config for Runtime {
-    type AuthorityId = AuraId;
-}
-
-impl cumulus_pallet_aura_ext::Config for Runtime {}
-
-
-
-
 
 construct_runtime!(
     pub enum Runtime where
@@ -488,9 +472,6 @@ construct_runtime!(
         TransactionPayment: pallet_transaction_payment::{Pallet, Storage} = 30,
         Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>} = 31,
         Vesting: pallet_vesting::{Pallet, Call, Storage, Config<T>, Event<T>} = 32,
-
-        Aura: pallet_aura::{Pallet, Config<T>},
-		AuraExt: cumulus_pallet_aura_ext::{Pallet, Config},
 
         CumulusXcm: cumulus_pallet_xcm::{Pallet, Call, Event<T>, Origin} = 50,
         // XCM helpers.
@@ -639,16 +620,6 @@ impl_runtime_apis! {
             ParachainSystem::collect_collation_info()
         }
     }
-
-    impl sp_consensus_aura::AuraApi<Block, AuraId> for Runtime {
-        fn slot_duration() -> sp_consensus_aura::SlotDuration {
-            sp_consensus_aura::SlotDuration::from_millis(Aura::slot_duration())
-        }
-    
-        fn authorities() -> Vec<AuraId> {
-            Aura::authorities()
-        }
-    }
 }
 
 struct CheckInherents;
@@ -663,6 +634,6 @@ impl cumulus_pallet_parachain_system::CheckInherents<Block> for CheckInherents {
 
 cumulus_pallet_parachain_system::register_validate_block! {
     Runtime = Runtime,
-    BlockExecutor = cumulus_pallet_aura_ext::BlockExecutor::<Runtime, Executive>,
+    BlockExecutor = Executive,
     CheckInherents = CheckInherents,
 }

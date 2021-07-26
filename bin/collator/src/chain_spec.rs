@@ -6,12 +6,11 @@ use sc_service::ChainType;
 use serde::{Deserialize, Serialize};
 use shiden_runtime::{
     wasm_binary_unwrap, AccountId, Balance, BalancesConfig, GenesisConfig, ParachainInfoConfig,
-    Signature, SudoConfig, SystemConfig, VestingConfig, SDN, AuraId,
+    Signature, SudoConfig, SystemConfig, VestingConfig, SDN,
 };
-use sp_core::{sr25519, Pair, Public, crypto::UncheckedInto};
+use sp_core::{sr25519, Pair, Public};
 
 use sp_runtime::traits::{IdentifyAccount, Verify};
-use hex_literal::hex;
 
 type AccountPublic = <Signature as Verify>::Signer;
 
@@ -98,14 +97,6 @@ pub fn chachacha_spec(para_id: ParaId) -> ChainSpec {
         ChainType::Live,
         move || {
             make_genesis(
-                vec![
-					hex!["9ee8b420d6705162524d290b0134faab7f38ab6dc57f0c6d538c644e8f693366"]
-						.unchecked_into(),
-					hex!["963d361a290e31eb661d886a81e9cb794e4dbb0c81cf37723be3c1f1aecba14f"]
-						.unchecked_into(),
-					get_from_seed::<AuraId>("Alice"),
-					get_from_seed::<AuraId>("Bob"),
-				],
                 crate::balances::SHIDEN_HOLDERS.clone(),
                 sudo_key.clone(),
                 para_id.into(),
@@ -143,17 +134,11 @@ fn testnet_genesis(
         .map(|acc| (acc, ENDOWMENT))
         .collect();
 
-    make_genesis(
-        vec![
-            get_from_seed::<AuraId>("Alice"),
-            get_from_seed::<AuraId>("Bob"),
-        ], 
-        endowed_accounts, sudo_key, para_id)
+    make_genesis(endowed_accounts, sudo_key, para_id)
 }
 
 /// Helper function to create GenesisConfig
 fn make_genesis(
-    initial_authorities: Vec<AuraId>,
     balances: Vec<(AccountId, Balance)>,
     root_key: AccountId,
     parachain_id: ParaId,
@@ -165,10 +150,6 @@ fn make_genesis(
         },
         sudo: SudoConfig { key: root_key },
         parachain_info: ParachainInfoConfig { parachain_id },
-        aura: shiden_runtime::AuraConfig {
-			authorities: initial_authorities,
-		},
-		aura_ext: Default::default(),
         balances: BalancesConfig { balances },
         vesting: VestingConfig { vesting: vec![] },
     }
