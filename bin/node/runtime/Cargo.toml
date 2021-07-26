@@ -12,6 +12,7 @@ codec = { package = "parity-scale-codec", version = "2.0", default-features = fa
 lazy_static = { version = "1.4", optional = true }
 hex-literal = { version = "0.2", optional = true }
 evm = { version = "0.26.0", default-features = false }
+smallvec = "1.6.1"
 
 # primitives
 plasm-primitives = { path = "../primitives", default-features = false }
