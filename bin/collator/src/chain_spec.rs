@@ -9,7 +9,7 @@ use shiden_runtime::{
     Signature, SudoConfig, SystemConfig, VestingConfig, SDN,
 };
 use hex_literal::hex;
-use sp_core::{sr25519, Pair, Public};
+use sp_core::{crypto::UncheckedInto,sr25519, Pair, Public};
 use sp_core::crypto::Ss58Codec;
 use sp_runtime::traits::{IdentifyAccount, Verify};
 
