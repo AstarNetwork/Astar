@@ -5,11 +5,12 @@ use sc_chain_spec::ChainSpecExtension;
 use sc_service::ChainType;
 use serde::{Deserialize, Serialize};
 use shiden_runtime::{
-    wasm_binary_unwrap, AccountId, Balance, BalancesConfig, GenesisConfig, ParachainInfoConfig,
+    wasm_binary_unwrap, AccountId, AuraId,AuraConfig,Balance, BalancesConfig, GenesisConfig, ParachainInfoConfig,
     Signature, SudoConfig, SystemConfig, VestingConfig, SDN,
 };
+use hex_literal::hex;
 use sp_core::{sr25519, Pair, Public};
-
+use sp_core::crypto::Ss58Codec;
 use sp_runtime::traits::{IdentifyAccount, Verify};
 
 type AccountPublic = <Signature as Verify>::Signer;
@@ -84,13 +85,13 @@ fn shiden_chain_spec() -> ChainSpec {
     ChainSpec::from_json_bytes(&include_bytes!("../res/shiden.raw.json")[..]).unwrap()
 }
 
-/*
-fn shiden_chain_spec() -> ChainSpec {
-    use sp_core::crypto::Ss58Codec;
 
-    let para_id: u32 = 2007;
+
+pub fn staging_spec(para_id: ParaId) -> ChainSpec {
+
+
     let sudo_key =
-        AccountId::from_ss58check("5CV5sQQn1NQmjRinJZrKRHXGSv8HEtPQ7JzY3PzdfGkE27vk").unwrap();
+        AccountId::from_ss58check("5GrootH4UVFfSXJKLf5Rt1PtZ9HFBxGsUqnx7em9saHymCLY").unwrap();
 
     ChainSpec::from_genesis(
         "Shiden Shell",
@@ -105,15 +106,75 @@ fn shiden_chain_spec() -> ChainSpec {
         },
         vec![],
         None,
+        Some("Shiden"),
         None,
-        None,
-        Extensions {
-            relay_chain: "kusama".into(),
-            para_id,
-        },
+        Default::default(),
     )
 }
-*/
+
+
+
+pub fn staging_network(id: ParaId) -> ChainSpec {
+
+    let sudo_key =
+    AccountId::from_ss58check("5GrootH4UVFfSXJKLf5Rt1PtZ9HFBxGsUqnx7em9saHymCLY").unwrap();
+
+	ChainSpec::from_genesis(
+        "Shiden Shell",
+        "shiden",
+		ChainType::Live,
+		move || {
+			testnet_genesis_new(
+				sudo_key.clone(),
+				vec![
+                    hex!["7c11cea2901e72fe525d7335e99d48bdf8dea2a983ac92fa3ab20508a438af73"]
+                    .unchecked_into(),
+                    hex!["287f278af79ef7f1b2a2b3d5a7c76a047e248232d13f0a5ec744789a96dc824d"]
+                    .unchecked_into(),
+					get_from_seed::<AuraId>("Alice"),
+					get_from_seed::<AuraId>("Bob"),
+					
+				],
+
+                crate::balances::SHIDEN_HOLDERS.clone(),
+
+				id,
+			)
+		},
+		Vec::new(),
+		None,
+		Some("Shiden"),
+		None,
+		Default::default()
+	)
+}
+
+
+
+fn testnet_genesis_new(
+	root_key: AccountId,
+	initial_authorities: Vec<AuraId>,
+	balances: Vec<(AccountId, Balance)>,
+	id: ParaId,
+) -> GenesisConfig {
+	GenesisConfig {
+		system: SystemConfig {
+			code: wasm_binary_unwrap().to_vec(),
+			changes_trie_config: Default::default(),
+		},
+		balances: BalancesConfig { balances },
+		sudo: SudoConfig { key: root_key },
+		parachain_info: ParachainInfoConfig { parachain_id: id },
+		aura: AuraConfig {
+			authorities: initial_authorities,
+		},
+		aura_ext: Default::default(),
+		parachain_system: Default::default(),
+        vesting: VestingConfig { vesting: vec![] },
+	}
+}
+
+
 
 fn testnet_genesis(
     sudo_key: AccountId,
@@ -141,7 +202,7 @@ fn testnet_genesis(
     make_genesis(endowed_accounts, sudo_key, para_id)
 }
 
-/// Helper function to create GenesisConfig
+
 fn make_genesis(
     balances: Vec<(AccountId, Balance)>,
     root_key: AccountId,
@@ -154,7 +215,20 @@ fn make_genesis(
         },
         sudo: SudoConfig { key: root_key },
         parachain_info: ParachainInfoConfig { parachain_id },
+        parachain_system: Default::default(),
         balances: BalancesConfig { balances },
         vesting: VestingConfig { vesting: vec![] },
+        aura: AuraConfig {
+			authorities: vec![
+                get_from_seed::<AuraId>("Alice"),
+                get_from_seed::<AuraId>("Bob"),
+                get_from_seed::<AuraId>("Charlie"),
+                get_from_seed::<AuraId>("Dave"),
+                get_from_seed::<AuraId>("Eve"),
+                get_from_seed::<AuraId>("Ferdie"),
+            ],
+		},
+		aura_ext: Default::default(),
     }
 }
+
