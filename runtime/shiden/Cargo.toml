@@ -12,11 +12,12 @@ codec = { package = "parity-scale-codec", version = "2.0", default-features = fa
 smallvec = "1.6.1"
 
 #kylin oracle
-kylin-oracle = { package = 'kylin-oracle', git = 'https://github.com/Kylin-Network/kylin-node', branch = "main", default-features = false }
+kylin-oracle = { package = 'kylin-oracle', git = 'https://github.com/Kylin-Network/kylin-node', branch = 'main', default-features = false }
 
 # primitives
 sp-api = { git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
 sp-core = { git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
+sp-consensus-aura = { git = 'https://github.com/paritytech/substrate', branch = 'master', default-features = false }
 sp-io = { git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
 sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
 sp-runtime-interface = { git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
@@ -30,12 +31,13 @@ sp-version = { git = "https://github.com/paritytech/substrate", branch = "master
 
 # frame dependencies
 frame-executive = { git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
+pallet-aura = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "master" }
 pallet-balances = { git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
 pallet-identity = { git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
 pallet-utility = { git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
 pallet-vesting = { git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
 pallet-sudo = { git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
-pallet-timestamp = { git = 'https://github.com/paritytech/substrate', branch = "master", default-features = false }
+pallet-timestamp = { git = 'https://github.com/paritytech/substrate', branch = 'master', default-features = false }
 frame-support = { git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
 frame-system = { git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
 frame-system-rpc-runtime-api = { git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
@@ -43,11 +45,12 @@ pallet-transaction-payment = { git = "https://github.com/paritytech/substrate", 
 pallet-transaction-payment-rpc-runtime-api = { git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
 
 # cumulus dependencies
+cumulus-pallet-aura-ext = { git = 'https://github.com/paritytech/cumulus', branch = 'master', default-features = false }
 cumulus-primitives-core = { git = "https://github.com/paritytech/cumulus", branch = "master", default-features = false }
 cumulus-primitives-utility = { git = "https://github.com/paritytech/cumulus", branch = "master", default-features = false }
 cumulus-pallet-parachain-system = { git = "https://github.com/paritytech/cumulus", branch = "master", default-features = false }
 cumulus-pallet-xcm = { git = "https://github.com/paritytech/cumulus", branch = "master", default-features = false }
-cumulus-pallet-xcmp-queue = { git = 'https://github.com/paritytech/cumulus', branch = "master", default-features = false }
+cumulus-pallet-xcmp-queue = { git = 'https://github.com/paritytech/cumulus', branch = 'master', default-features = false }
 parachain-info = { git = "https://github.com/paritytech/cumulus", branch = "master", default-features = false }
 
 # polkadot dependencies
@@ -67,6 +70,7 @@ std = [
     "sp-std/std",
     "sp-api/std",
     "sp-core/std",
+    'sp-consensus-aura/std',
     "sp-io/std",
     "sp-runtime/std",
     "sp-runtime-interface/std",
@@ -78,6 +82,7 @@ std = [
     "frame-executive/std",
     "frame-system/std",
     "frame-system-rpc-runtime-api/std",
+    "pallet-aura/std",
     "pallet-balances/std",
     "pallet-identity/std",
     "pallet-utility/std",
@@ -91,6 +96,7 @@ std = [
     "xcm-builder/std",
     "xcm-executor/std",
     "parachain-info/std",
+    'cumulus-pallet-aura-ext/std',
     "polkadot-parachain/std",
     "cumulus-primitives-core/std",
     "cumulus-primitives-utility/std",
