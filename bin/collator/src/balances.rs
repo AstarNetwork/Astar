@@ -7606,7 +7606,7 @@ lazy_static::lazy_static! {
         // Kusama Auction #2
         (AccountId::from_ss58check("5EUpwsDfv5boEWDEVnB5iMYFKUY8aqQMn78k13KCrPWHWVBR").unwrap(), 1404541730000000000000000),
         // Kusama Auction #3
-        (AccountId::from_ss58check("5DfRdRqEGx3HQPLsw1o9gtAp7nphmYNVnTR8Wtzan7wEufJo").unwrap(), 5618166900000000000000000),
+        (AccountId::from_ss58check("5DfRdRqEGx3HQPLsw1o9gtAp7nphmYNVnTR8Wtzan7wEufJo").unwrap(), 1618166900000000000000000),
         // Parachain Reserve
         (AccountId::from_ss58check("5DaNrRf2NcNbHgSgdRBUXWu4gA6n24kGrJWMZADxvhcd69Ja").unwrap(), 3511354320000000000000000),
         // Protocol Development
@@ -7618,6 +7618,15 @@ lazy_static::lazy_static! {
         // Institutional Investor
         (AccountId::from_ss58check("5EUPhTtX39EB2KksyAL8qh1J1qSJj4coSKUA7dBFK8dkXWHD").unwrap(), 7724979490000000000000000),
         // Team
-        (AccountId::from_ss58check("5DJ8LnALdeJqABW6itJZNivtxxXr4Gcpmn2vEKt3iYwWyUuL").unwrap(), 3511354320000000000000000),
+        (AccountId::from_ss58check("5GrootH4UVFfSXJKLf5Rt1PtZ9HFBxGsUqnx7em9saHymCLY").unwrap(), 3511354320000000000000000),
+
+        // Team, bootnode1 stash
+        (AccountId::from_ss58check("5CiTLYjgjkmx5mB85Y1ATCdL1rijUvS3mkFnYakGoHCN2R91").unwrap(), 1000000000000000000000000),
+        // Team, bootnode1 ctrl
+        (AccountId::from_ss58check("5Ff4YsfTpFDiJsfTR7UcmJFj2ysCwtxX5ixLN8gjnaahGbhG").unwrap(), 1000000000000000000000000),
+        // Team, bootnode2 stash
+        (AccountId::from_ss58check("5GxQbApcLQuDYDYNhbiv2t6tmyoPTELbwf1ZsHBv9bVYUsXi").unwrap(), 1000000000000000000000000),
+        // Team, bootnode2 ctrl
+        (AccountId::from_ss58check("5FThDusmRcd4enuaBJrCx9QsMccFEkkEUBENdM4xygPPVyrn").unwrap(), 1000000000000000000000000),
     ];
 }

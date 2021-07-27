@@ -127,9 +127,9 @@ pub fn staging_network(id: ParaId) -> ChainSpec {
 			testnet_genesis_new(
 				sudo_key.clone(),
 				vec![
-                    hex!["7c11cea2901e72fe525d7335e99d48bdf8dea2a983ac92fa3ab20508a438af73"]
+                    hex!["9ee8b420d6705162524d290b0134faab7f38ab6dc57f0c6d538c644e8f693366"]
                     .unchecked_into(),
-                    hex!["287f278af79ef7f1b2a2b3d5a7c76a047e248232d13f0a5ec744789a96dc824d"]
+                    hex!["963d361a290e31eb661d886a81e9cb794e4dbb0c81cf37723be3c1f1aecba14f"]
                     .unchecked_into(),
 					get_from_seed::<AuraId>("Alice"),
 					get_from_seed::<AuraId>("Bob"),
