@@ -5,8 +5,9 @@
 #![recursion_limit = "256"]
 
 use frame_support::{
+    ensure,
     construct_runtime, match_type,  log, parameter_types,
-    traits::Filter,
+    traits::{Contains,Filter, All},
     weights::{
         constants::{BlockExecutionWeight, ExtrinsicBaseWeight, WEIGHT_PER_SECOND},
         DispatchClass, Weight, WeightToFeeCoefficient, WeightToFeeCoefficients,
@@ -21,12 +22,12 @@ use sp_api::impl_runtime_apis;
 use sp_core::OpaqueMetadata;
 use sp_inherents::{CheckInherentsResult, InherentData};
 use sp_runtime::{
-    create_runtime_str, generic,
+    create_runtime_str, generic,impl_opaque_keys,
     traits::{AccountIdLookup,Extrinsic as ExtrinsicT, BlakeTwo256, Block as BlockT, ConvertInto, Verify},
     transaction_validity::{TransactionSource, TransactionValidity},
     ApplyExtrinsicResult, FixedPointNumber, Perbill, Perquintill,
 };
-use sp_std::prelude::*;
+use sp_std::{marker::PhantomData, prelude::*};
 
 #[cfg(any(feature = "std", test))]
 use sp_version::NativeVersion;
@@ -36,10 +37,13 @@ use sp_version::RuntimeVersion;
 use xcm::v0::{Junction::*, MultiLocation, MultiLocation::*};
 use xcm_builder::{
     AllowUnpaidExecutionFrom, FixedWeightBounds, LocationInverter, ParentAsSuperuser,
-    ParentIsDefault, SovereignSignedViaLocation,
+    ParentIsDefault, SovereignSignedViaLocation,TakeWeightCredit
 };
-use xcm_executor::{Config, XcmExecutor};
+use xcm_executor::{Config,traits::ShouldExecute, XcmExecutor};
+use xcm::v0::Xcm;
 use crate::sp_api_hidden_includes_IMPL_RUNTIME_APIS::sp_api::Encode;
+
+pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 
 pub use pallet_balances::Call as BalancesCall;
 #[cfg(any(feature = "std", test))]
@@ -64,6 +68,12 @@ pub fn wasm_binary_unwrap() -> &'static [u8] {
                         built with `BUILD_DUMMY_WASM_BINARY` flag and it is only usable for \
                         production chains. Please rebuild with the flag disabled.",
     )
+}
+
+impl_opaque_keys! {
+	pub struct SessionKeys {
+		pub aura: Aura,
+	}
 }
 
 /// Runtime version.
@@ -98,6 +108,15 @@ const MAXIMUM_BLOCK_WEIGHT: Weight = WEIGHT_PER_SECOND / 2;
 
 pub const MILLISECS_PER_BLOCK: u64 = 6000;
 pub const SLOT_DURATION: u64 = MILLISECS_PER_BLOCK;
+
+impl pallet_aura::Config for Runtime {
+    type AuthorityId = AuraId;
+}
+
+impl cumulus_pallet_aura_ext::Config for Runtime {}
+
+
+
 
 parameter_types! {
     pub const BlockHashCount: BlockNumber = 2400;
@@ -249,6 +268,28 @@ parameter_types! {
     // One XCM operation is 1_000_000 weight - almost certainly a conservative estimate.
     pub UnitWeightCost: Weight = 1_000_000;
 }
+
+pub type Barrier = (
+    TakeWeightCredit,
+    AllowAnyPaidExecutionFrom<All<MultiLocation>>,
+    // AllowUnpaidExecutionFrom<IsInVec<AllowUnpaidFrom>>,	// <- Parent gets free execution
+);
+
+
+pub struct AllowAnyPaidExecutionFrom<T>(PhantomData<T>);
+impl<T: Contains<MultiLocation>> ShouldExecute for AllowAnyPaidExecutionFrom<T> {
+	fn should_execute<Call>(
+		origin: &MultiLocation,
+		_top_level: bool,
+		_message: &Xcm<Call>,
+		_shallow_weight: Weight,
+		_weight_credit: &mut Weight,
+	) -> Result<(), ()> {
+		ensure!(T::contains(origin), ());
+		Ok(())
+	}
+}
+
 
 pub struct XcmConfig;
 impl Config for XcmConfig {
@@ -465,8 +506,7 @@ construct_runtime!(
         Utility: pallet_utility::{Pallet, Call, Event} = 11,
         Identity: pallet_identity::{Pallet, Call, Storage, Event<T>} = 12,
         Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent} =13,
-
-        ParachainSystem: cumulus_pallet_parachain_system::{Pallet, Call, Storage, Inherent, Event<T>} = 20,
+		ParachainSystem: cumulus_pallet_parachain_system::{Pallet, Call, Config, Storage, Inherent, Event<T>, ValidateUnsigned} = 20,
         ParachainInfo: parachain_info::{Pallet, Storage, Config} = 21,
 
         TransactionPayment: pallet_transaction_payment::{Pallet, Storage} = 30,
@@ -478,6 +518,9 @@ construct_runtime!(
 		XcmpQueue: cumulus_pallet_xcmp_queue::{Pallet, Call, Storage, Event<T>} = 51,
         // Kylin Pallets
         KylinOraclePallet: kylin_oracle::{Pallet, Call, Storage, Event<T>, ValidateUnsigned} = 52,
+
+        Aura: pallet_aura::{Pallet, Config<T>},
+		AuraExt: cumulus_pallet_aura_ext::{Pallet, Config},
 
         Sudo: pallet_sudo::{Pallet, Call, Storage, Event<T>, Config<T>} = 99,
 
@@ -533,19 +576,19 @@ pub type Executive = frame_executive::Executive<
 >;
 
 impl_runtime_apis! {
-    impl sp_api::Core<Block> for Runtime {
-        fn version() -> RuntimeVersion {
-            VERSION
-        }
+	impl sp_api::Core<Block> for Runtime {
+		fn version() -> RuntimeVersion {
+			VERSION
+		}
 
-        fn execute_block(block: Block) {
-            Executive::execute_block(block)
-        }
+		fn execute_block(block: Block) {
+			Executive::execute_block(block);
+		}
 
-        fn initialize_block(header: &<Block as BlockT>::Header) {
-            Executive::initialize_block(header)
-        }
-    }
+		fn initialize_block(header: &<Block as BlockT>::Header) {
+			Executive::initialize_block(header)
+		}
+	}
 
     impl sp_api::Metadata<Block> for Runtime {
         fn metadata() -> OpaqueMetadata {
@@ -571,15 +614,17 @@ impl_runtime_apis! {
         }
     }
 
-    impl sp_transaction_pool::runtime_api::TaggedTransactionQueue<Block> for Runtime {
-        fn validate_transaction(
-            source: TransactionSource,
-            tx: <Block as BlockT>::Extrinsic,
-            block_hash: <Block as BlockT>::Hash,
-        ) -> TransactionValidity {
-            Executive::validate_transaction(source, tx, block_hash)
-        }
-    }
+
+	impl sp_transaction_pool::runtime_api::TaggedTransactionQueue<Block> for Runtime {
+		fn validate_transaction(
+			source: TransactionSource,
+			tx: <Block as BlockT>::Extrinsic,
+			block_hash: <Block as BlockT>::Hash,
+		) -> TransactionValidity {
+			Executive::validate_transaction(source, tx, block_hash)
+		}
+	}
+
 
     impl sp_offchain::OffchainWorkerApi<Block> for Runtime {
         fn offchain_worker(header: &<Block as BlockT>::Header) {
@@ -615,6 +660,16 @@ impl_runtime_apis! {
         }
     }
 
+    impl sp_consensus_aura::AuraApi<Block, AuraId> for Runtime {
+        fn slot_duration() -> sp_consensus_aura::SlotDuration {
+            sp_consensus_aura::SlotDuration::from_millis(Aura::slot_duration())
+        }
+    
+        fn authorities() -> Vec<AuraId> {
+            Aura::authorities()
+        }
+    }
+
     impl cumulus_primitives_core::CollectCollationInfo<Block> for Runtime {
         fn collect_collation_info() -> cumulus_primitives_core::CollationInfo {
             ParachainSystem::collect_collation_info()
@@ -634,6 +689,6 @@ impl cumulus_pallet_parachain_system::CheckInherents<Block> for CheckInherents {
 
 cumulus_pallet_parachain_system::register_validate_block! {
     Runtime = Runtime,
-    BlockExecutor = Executive,
+	BlockExecutor = cumulus_pallet_aura_ext::BlockExecutor::<Runtime, Executive>,
     CheckInherents = CheckInherents,
 }
