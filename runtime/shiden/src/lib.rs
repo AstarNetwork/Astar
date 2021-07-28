@@ -34,13 +34,13 @@ use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
 
 // XCM support
-use xcm::v0::{Junction::*, MultiLocation, MultiLocation::*};
+use xcm::v0::{MultiAsset, Junction::*, MultiLocation, MultiLocation::*, Xcm};
 use xcm_builder::{
     AllowUnpaidExecutionFrom, FixedWeightBounds, LocationInverter, ParentAsSuperuser,
-    ParentIsDefault, SovereignSignedViaLocation,TakeWeightCredit
+    ParentIsDefault, SovereignSignedViaLocation,TakeWeightCredit, EnsureXcmOrigin
 };
 use xcm_executor::{Config,traits::ShouldExecute, XcmExecutor};
-use xcm::v0::Xcm;
+
 use crate::sp_api_hidden_includes_IMPL_RUNTIME_APIS::sp_api::Encode;
 
 pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
@@ -312,15 +312,6 @@ impl cumulus_pallet_xcm::Config for Runtime {
 }
 
 
-/// The means for routing XCM messages which are not for local execution into the right message
-/// queues.
-pub type XcmRouter = (
-    // Two routers - use UMP to communicate with the relay chain:
-    cumulus_primitives_utility::ParentAsUmp<ParachainSystem>,
-    // ..and XCMP to communicate with the sibling chains.
-    XcmpQueue,
-);
-
 parameter_types! {
 	pub const MaxDownwardMessageWeight: Weight = MAXIMUM_BLOCK_WEIGHT / 10;
     pub const GracePeriod: u32 = 5;
@@ -462,6 +453,29 @@ impl<LocalCall> frame_system::offchain::CreateSignedTransaction<LocalCall> for R
     }
 }
 
+/// No local origins on this chain are allowed to dispatch XCM sends/executions.
+pub type LocalOriginToLocation = ();
+
+/// The means for routing XCM messages which are not for local execution into the right message
+/// queues.
+pub type XcmRouter = (
+    // Two routers - use UMP to communicate with the relay chain:
+    cumulus_primitives_utility::ParentAsUmp<ParachainSystem>,
+    // ..and XCMP to communicate with the sibling chains.
+    XcmpQueue,
+);
+
+impl pallet_xcm::Config for Runtime {
+    type Event = Event;
+    type SendXcmOrigin = EnsureXcmOrigin<Origin, LocalOriginToLocation>;
+    type XcmRouter = XcmRouter;
+    type ExecuteXcmOrigin = EnsureXcmOrigin<Origin, LocalOriginToLocation>;
+    type XcmExecuteFilter = All<(MultiLocation, Xcm<Call>)>;
+    type XcmExecutor = XcmExecutor<XcmConfig>;
+    type XcmTeleportFilter = All<(MultiLocation, Vec<MultiAsset>)>;
+    type XcmReserveTransferFilter = ();
+    type Weigher = FixedWeightBounds<UnitWeightCost, Call>;
+}
 
 impl cumulus_pallet_xcmp_queue::Config for Runtime {
     type Event = Event;
@@ -518,9 +532,11 @@ construct_runtime!(
 		XcmpQueue: cumulus_pallet_xcmp_queue::{Pallet, Call, Storage, Event<T>} = 51,
         // Kylin Pallets
         KylinOraclePallet: kylin_oracle::{Pallet, Call, Storage, Event<T>, ValidateUnsigned} = 52,
+        XcmPallet: pallet_xcm::{Pallet, Call, Storage, Event<T>, Origin} = 53,
 
         Aura: pallet_aura::{Pallet, Config<T>},
 		AuraExt: cumulus_pallet_aura_ext::{Pallet, Config},
+
 
         Sudo: pallet_sudo::{Pallet, Call, Storage, Event<T>, Config<T>} = 99,
 
