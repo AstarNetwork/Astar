@@ -3564,7 +3564,7 @@ dependencies = [
 [[package]]
 name = "kylin-oracle"
 version = "3.0.0"
-source = "git+https://github.com/Kylin-Network/kylin-node?branch=main#01243286bd8eaa561c2b4a22dc9dd6fb19239438"
+source = "git+https://github.com/Kylin-Network/kylin-node?branch=main#fc8db2840c5821fdb0f3e1ad30d01125b6f12fc7"
 dependencies = [
  "cumulus-pallet-xcm",
  "cumulus-primitives-core",
