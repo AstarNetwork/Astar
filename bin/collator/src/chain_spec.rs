@@ -114,10 +114,43 @@ pub fn staging_spec(para_id: ParaId) -> ChainSpec {
 
 
 
-pub fn staging_network(id: ParaId) -> ChainSpec {
+pub fn local_network(id: ParaId) -> ChainSpec {
 
     let sudo_key =
     AccountId::from_ss58check("5GrootH4UVFfSXJKLf5Rt1PtZ9HFBxGsUqnx7em9saHymCLY").unwrap();
+
+	ChainSpec::from_genesis(
+        "Shiden Shell",
+        "shiden",
+		ChainType::Development,
+		move || {
+			testnet_genesis_new(
+				sudo_key.clone(),
+				vec![
+					get_from_seed::<AuraId>("Alice"),
+					get_from_seed::<AuraId>("Bob"),
+				],
+
+                crate::balances::SHIDEN_HOLDERS.clone(),
+
+				id,
+			)
+		},
+		Vec::new(),
+		None,
+		Some("Shiden"),
+		None,
+		Default::default()
+	)
+}
+
+
+
+
+pub fn staging_network(id: ParaId) -> ChainSpec {
+
+    let sudo_key =
+    AccountId::from_ss58check("5Gn1igfpf4hP7iG1Gsm1AbwPBCpR8BmHK4b6i2VrGHQS1kAJ").unwrap();
 
 	ChainSpec::from_genesis(
         "Shiden Shell",

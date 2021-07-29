@@ -22,7 +22,7 @@ fn load_spec(
 	para_id: ParaId,
 ) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
 	Ok(match id {
-        "" => Box::new(chain_spec::get_chain_spec(para_id)),
+        "" => Box::new(chain_spec::local_network(para_id)),
         "shiden-chachacha"=> Box::new(chain_spec::staging_network(para_id)),
 
         path => Box::new(chain_spec::ChainSpec::from_json_file(
