@@ -5,6 +5,7 @@ lazy_static::lazy_static! {
     /// SHIDEN GENESIS TOKEN HODERS
     pub static ref SHIDEN_HOLDERS: Vec<(AccountId, Balance)> = vec![
         // Balance snapshot of Plasm Mainnet at 3000000 block
+        (AccountId::from_ss58check("5Gn1igfpf4hP7iG1Gsm1AbwPBCpR8BmHK4b6i2VrGHQS1kAJ").unwrap(), 100000000000000000000),
         (AccountId::from_ss58check("b14B1JxFzJjbRvYU6S6T4qQ3ofggQM1nBdiu43x5uSA1hKn").unwrap(), 100000000000000000000),
         (AccountId::from_ss58check("bQxDd9NJdcj2DRnLizR58pZCuYbJaxYu9Xnme4J9SLP8w99").unwrap(), 60400000000000000000),
         (AccountId::from_ss58check("aR29XZi41y4dCusH8FrDk7QMnrz4pvusvSmZLLHD3WJdak4").unwrap(), 34000000000000000000),

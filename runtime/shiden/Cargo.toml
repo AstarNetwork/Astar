@@ -49,6 +49,7 @@ cumulus-pallet-aura-ext = { git = 'https://github.com/paritytech/cumulus', branc
 cumulus-primitives-core = { git = "https://github.com/paritytech/cumulus", branch = "master", default-features = false }
 cumulus-primitives-utility = { git = "https://github.com/paritytech/cumulus", branch = "master", default-features = false }
 cumulus-pallet-parachain-system = { git = "https://github.com/paritytech/cumulus", branch = "master", default-features = false }
+cumulus-pallet-dmp-queue  = { git = 'https://github.com/paritytech/cumulus', branch = 'master', default-features = false }
 cumulus-pallet-xcm = { git = "https://github.com/paritytech/cumulus", branch = "master", default-features = false }
 cumulus-pallet-xcmp-queue = { git = 'https://github.com/paritytech/cumulus', branch = 'master', default-features = false }
 parachain-info = { git = "https://github.com/paritytech/cumulus", branch = "master", default-features = false }
@@ -104,5 +105,6 @@ std = [
     "cumulus-pallet-parachain-system/std",
     "cumulus-pallet-xcm/std",
     'cumulus-pallet-xcmp-queue/std',
+    'cumulus-pallet-dmp-queue/std',
     "kylin-oracle/std",
 ]
