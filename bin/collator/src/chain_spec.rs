@@ -150,7 +150,7 @@ pub fn local_network(id: ParaId) -> ChainSpec {
 pub fn staging_network(id: ParaId) -> ChainSpec {
 
     let sudo_key =
-    AccountId::from_ss58check("5Gn1igfpf4hP7iG1Gsm1AbwPBCpR8BmHK4b6i2VrGHQS1kAJ").unwrap();
+    AccountId::from_ss58check("5GrootH4UVFfSXJKLf5Rt1PtZ9HFBxGsUqnx7em9saHymCLY").unwrap();
 
 	ChainSpec::from_genesis(
         "Shiden Shell",
