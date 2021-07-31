@@ -1,5 +1,5 @@
 [Unit]
-Description=Plasm validator service
+Description=Astar node service
 After=network-online.target
 Wants=network-online.target
 
@@ -8,7 +8,8 @@ Type=simple
 RemainAfterExit=no
 Restart=on-failure
 RestartSec=5s
-ExecStart=/usr/local/bin/plasm-node --name plasm-validator --validator
+User=astar
+ExecStart=/usr/local/bin/astar-collator
 
 [Install]
 WantedBy=multi-user.target

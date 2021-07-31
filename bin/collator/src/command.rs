@@ -85,7 +85,7 @@ impl SubstrateCli for RelayChainCli {
         "Shiden parachain collator\n\nThe command-line arguments provided first will be \
         passed to the parachain node, while the arguments provided after -- will be passed \
         to the relaychain node.\n\n\
-        plasm-collator [parachain-args] -- [relaychain-args]"
+        astar-collator [parachain-args] -- [relaychain-args]"
             .into()
     }
 
@@ -94,7 +94,7 @@ impl SubstrateCli for RelayChainCli {
     }
 
     fn support_url() -> String {
-        "https://github.com/staketechnologies/Plasm/issues/new".into()
+        "https://github.com/AstarNetwork/Astar/issues/new".into()
     }
 
     fn copyright_start_year() -> i32 {

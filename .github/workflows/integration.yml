@@ -11,7 +11,7 @@ jobs:
     steps:
     - uses: hecrj/setup-rust-action@v1
       with:
-        rust-version: 'nightly-2021-06-03'
+        rust-version: 'nightly-2021-06-29'
         targets: 'wasm32-unknown-unknown'
 
     - name: Checkout the source code
@@ -26,12 +26,21 @@ jobs:
       run: cargo test --all
 
     - name: Build optimized binary
+<<<<<<< HEAD
       run: cargo build --release
 
     - uses: actions/upload-artifact@master
       with:
         name: plasm-${{ matrix.os }}
         path: target/release/plasm-collator
+=======
+      run: cargo build --release --verbose
+
+    - uses: actions/upload-artifact@master
+      with:
+        name: astar-${{ matrix.os }}-x86_64
+        path: target/release/astar-collator
+>>>>>>> production/shiden
 
   nix:
     runs-on: ubuntu-latest
