@@ -68,7 +68,7 @@ impl SubstrateCli for Cli {
     }
 
     fn native_runtime_version(_: &Box<dyn ChainSpec>) -> &'static RuntimeVersion {
-        &shiden_runtime::VERSION
+        &shibuya_runtime::VERSION
     }
 }
 

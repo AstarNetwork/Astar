@@ -77,10 +77,10 @@ pub fn wasm_binary_unwrap() -> &'static [u8] {
 /// Runtime version.
 #[sp_version::runtime_version]
 pub const VERSION: RuntimeVersion = RuntimeVersion {
-    spec_name: create_runtime_str!("shiden"),
-    impl_name: create_runtime_str!("shiden"),
+    spec_name: create_runtime_str!("shibuya"),
+    impl_name: create_runtime_str!("shiduya"),
     authoring_version: 1,
-    spec_version: 4,
+    spec_version: 1,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 1,
@@ -350,6 +350,11 @@ parameter_types! {
     // phase durations. 1/4 of the last session for each.
     pub const SignedPhase: u32 = EPOCH_DURATION_IN_BLOCKS / 4;
     pub const UnsignedPhase: u32 = EPOCH_DURATION_IN_BLOCKS / 4;
+    // signed config
+    pub const SignedMaxSubmissions: u32 = 10;
+    pub const SignedRewardBase: Balance = 1 * SDN;
+    pub const SignedDepositBase: Balance = 1 * SDN;
+    pub const SignedDepositByte: Balance = 1 * MILLISDN;
     // fallback: no need to do on-chain phragmen initially.
     pub const Fallback: pallet_election_provider_multi_phase::FallbackStrategy =
         pallet_election_provider_multi_phase::FallbackStrategy::OnChain;
@@ -389,6 +394,14 @@ impl pallet_election_provider_multi_phase::Config for Runtime {
     type MinerMaxWeight = MinerMaxWeight;
     type MinerMaxLength = MinerMaxLength;
     type MinerTxPriority = MultiPhaseUnsignedPriority;
+    type SignedMaxSubmissions = SignedMaxSubmissions;
+    type SignedRewardBase = SignedRewardBase;
+    type SignedDepositBase = SignedDepositBase;
+    type SignedDepositByte = SignedDepositByte;
+    type SignedDepositWeight = ();
+    type SignedMaxWeight = MinerMaxWeight;
+    type SlashHandler = (); // burn slashes
+    type RewardHandler = (); // nothing to do upon rewards
     type DataProvider = Staking;
     type OnChainAccuracy = Perbill;
     type CompactSolution = NposCompactSolution16;
@@ -478,12 +491,6 @@ impl pallet_vesting::Config for Runtime {
     type WeightInfo = ();
 }
 
-impl pallet_utility::Config for Runtime {
-    type Event = Event;
-    type Call = Call;
-    type WeightInfo = ();
-}
-
 parameter_types! {
     pub const TransactionByteFee: Balance = MILLISDN / 100;
     pub const TargetBlockFullness: Perquintill = Perquintill::from_percent(25);
@@ -560,7 +567,6 @@ construct_runtime!(
 
         Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>} = 30,
         Vesting: pallet_vesting::{Pallet, Call, Storage, Config<T>, Event<T>} = 31,
-        Utility: pallet_utility::{Pallet, Call, Event} = 32,
 
         Session: pallet_session::{Pallet, Call, Storage, Event, Config<T>} = 40,
         Staking: pallet_staking::{Pallet, Call, Config<T>, Storage, Event<T>} = 41,
@@ -569,7 +575,7 @@ construct_runtime!(
         AuraExt: cumulus_pallet_aura_ext::{Pallet, Config} = 44,
         Authorship: pallet_authorship::{Pallet, Call, Storage, Inherent} = 45,
         ImOnline: pallet_im_online::{Pallet, Call, Storage, Event<T>, ValidateUnsigned, Config<T>} = 46,
-        Offences: pallet_offences::{Pallet, Call, Storage, Event} = 47,
+        Offences: pallet_offences::{Pallet, Storage, Event} = 47,
         Historical: pallet_session_historical::{Pallet} = 48,
 
         CumulusXcm: cumulus_pallet_xcm::{Pallet, Call, Event<T>, Origin} = 50,

@@ -1,6 +1,6 @@
 [package]
-name = "shiden-runtime"
-version = "2.2.1"
+name = "shibuya-runtime"
+version = "2.2.0"
 authors = ["Stake Technologies <devops@stake.co.jp>"]
 edition = "2018"
 build = "build.rs"
@@ -41,6 +41,7 @@ pallet-utility = { git = "https://github.com/paritytech/substrate", branch = "po
 pallet-vesting = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.8", default-features = false }
 pallet-session = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.8", default-features = false }
 pallet-staking = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.8", default-features = false }
+pallet-staking-reward-curve = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.8", default-features = false }
 pallet-sudo = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.8", default-features = false }
 pallet-timestamp = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.8", default-features = false }
 frame-support = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.8", default-features = false }

@@ -199,7 +199,7 @@ name = "astar-collator"
 version = "2.2.1"
 dependencies = [
  "cumulus-client-cli",
- "cumulus-client-consensus-relay-chain",
+ "cumulus-client-consensus-aura",
  "cumulus-client-network",
  "cumulus-client-service",
  "cumulus-primitives-core",
@@ -231,8 +231,9 @@ dependencies = [
  "sc-tracing",
  "sc-transaction-pool",
  "serde",
- "shiden-runtime",
+ "shibuya-runtime",
  "sp-consensus",
+ "sp-consensus-aura",
  "sp-core",
  "sp-inherents",
  "sp-runtime",
@@ -1361,6 +1362,36 @@ dependencies = [
 ]
 
 [[package]]
+name = "cumulus-client-consensus-aura"
+version = "0.1.0"
+source = "git+https://github.com/paritytech/cumulus?branch=polkadot-v0.9.8#ed6ba5dfb2c112c29505e856e8971da3420ce6d0"
+dependencies = [
+ "async-trait",
+ "cumulus-client-consensus-common",
+ "cumulus-primitives-core",
+ "futures 0.3.16",
+ "parity-scale-codec",
+ "parking_lot 0.10.2",
+ "polkadot-client",
+ "sc-client-api",
+ "sc-consensus-aura",
+ "sc-consensus-slots",
+ "sc-telemetry",
+ "sp-api",
+ "sp-application-crypto",
+ "sp-block-builder",
+ "sp-blockchain",
+ "sp-consensus",
+ "sp-consensus-aura",
+ "sp-core",
+ "sp-inherents",
+ "sp-keystore",
+ "sp-runtime",
+ "substrate-prometheus-endpoint",
+ "tracing",
+]
+
+[[package]]
 name = "cumulus-client-consensus-common"
 version = "0.1.0"
 source = "git+https://github.com/paritytech/cumulus?branch=polkadot-v0.9.8#ed6ba5dfb2c112c29505e856e8971da3420ce6d0"
@@ -1380,30 +1411,6 @@ dependencies = [
  "sp-inherents",
  "sp-runtime",
  "sp-trie",
- "substrate-prometheus-endpoint",
- "tracing",
-]
-
-[[package]]
-name = "cumulus-client-consensus-relay-chain"
-version = "0.1.0"
-source = "git+https://github.com/paritytech/cumulus?branch=polkadot-v0.9.8#ed6ba5dfb2c112c29505e856e8971da3420ce6d0"
-dependencies = [
- "async-trait",
- "cumulus-client-consensus-common",
- "cumulus-primitives-core",
- "futures 0.3.16",
- "parity-scale-codec",
- "parking_lot 0.10.2",
- "polkadot-client",
- "sc-client-api",
- "sp-api",
- "sp-block-builder",
- "sp-blockchain",
- "sp-consensus",
- "sp-core",
- "sp-inherents",
- "sp-runtime",
  "substrate-prometheus-endpoint",
  "tracing",
 ]
@@ -7449,6 +7456,37 @@ dependencies = [
 ]
 
 [[package]]
+name = "sc-consensus-aura"
+version = "0.9.0"
+source = "git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.8#74101dc21cfffb4c2d014fcc28edc166d5ca1b16"
+dependencies = [
+ "async-trait",
+ "derive_more",
+ "futures 0.3.16",
+ "futures-timer 3.0.2",
+ "log",
+ "parity-scale-codec",
+ "sc-block-builder",
+ "sc-client-api",
+ "sc-consensus-slots",
+ "sc-telemetry",
+ "sp-api",
+ "sp-application-crypto",
+ "sp-block-builder",
+ "sp-blockchain",
+ "sp-consensus",
+ "sp-consensus-aura",
+ "sp-consensus-slots",
+ "sp-core",
+ "sp-inherents",
+ "sp-io",
+ "sp-keystore",
+ "sp-runtime",
+ "sp-version",
+ "substrate-prometheus-endpoint",
+]
+
+[[package]]
 name = "sc-consensus-babe"
 version = "0.9.0"
 source = "git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.8#74101dc21cfffb4c2d014fcc28edc166d5ca1b16"
@@ -8509,8 +8547,8 @@ dependencies = [
 ]
 
 [[package]]
-name = "shiden-runtime"
-version = "2.2.1"
+name = "shibuya-runtime"
+version = "2.2.0"
 dependencies = [
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-parachain-system",
@@ -8532,6 +8570,7 @@ dependencies = [
  "pallet-offences",
  "pallet-session",
  "pallet-staking",
+ "pallet-staking-reward-curve",
  "pallet-sudo",
  "pallet-timestamp",
  "pallet-transaction-payment",

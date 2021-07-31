@@ -1,4 +1,4 @@
-use shiden_runtime::{AccountId, Balance};
+use shibuya_runtime::{AccountId, Balance};
 use sp_core::crypto::Ss58Codec;
 
 lazy_static::lazy_static! {
