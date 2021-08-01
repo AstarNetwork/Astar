@@ -11,7 +11,7 @@ use frame_support::{
     weights::{
         constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_PER_SECOND},
         DispatchClass, Weight, WeightToFeeCoefficient, WeightToFeeCoefficients,
-        WeightToFeePolynomial
+        WeightToFeePolynomial,
     },
 };
 use frame_system::{
@@ -666,7 +666,7 @@ parameter_types! {
 pub struct FixedGasPrice;
 impl FeeCalculator for FixedGasPrice {
     fn min_gas_price() -> U256 {
-        (1000_000).into() // 1 Nano 
+        (1000_000).into() // 1 Nano
     }
 }
 
