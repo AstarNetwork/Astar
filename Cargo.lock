@@ -4396,38 +4396,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "pallet-plasm-rewards"
-version = "1.9.0"
-dependencies = [
- "frame-support",
- "frame-system",
- "hex-literal",
- "num-traits",
- "pallet-balances",
- "pallet-randomness-collective-flip",
- "pallet-session",
- "pallet-staking",
- "pallet-timestamp",
- "parity-scale-codec",
- "serde",
- "sp-arithmetic",
- "sp-core",
- "sp-io",
- "sp-runtime",
- "sp-staking",
- "sp-std",
-]
-
-[[package]]
-name = "pallet-plasm-support"
-version = "1.9.0"
-dependencies = [
- "frame-support",
- "sp-runtime",
- "sp-std",
-]
-
-[[package]]
 name = "pallet-randomness-collective-flip"
 version = "3.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5120,6 +5088,7 @@ dependencies = [
  "parity-scale-codec",
  "plasm-primitives",
  "serde",
+ "smallvec 1.6.1",
  "sp-api",
  "sp-block-builder",
  "sp-consensus-babe",

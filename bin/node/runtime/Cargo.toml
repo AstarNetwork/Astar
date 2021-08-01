@@ -127,4 +127,5 @@ std = [
     "pallet-utility/std",
     "pallet-offences/std",
     "pallet-vesting/std",
+    "pallet-staking/std"
 ]
