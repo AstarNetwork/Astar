@@ -6,7 +6,7 @@ use cumulus_client_service::{
 use sc_client_api::call_executor::ExecutorProvider;
 use sc_service::{Configuration, PartialComponents, Role, TFullBackend, TFullClient, TaskManager};
 use sc_telemetry::{Telemetry, TelemetryWorker, TelemetryWorkerHandle};
-use shiden_runtime::RuntimeApi;
+use shibuya_runtime::RuntimeApi;
 use sp_consensus::SlotData;
 use std::sync::Arc;
 
@@ -17,8 +17,8 @@ pub type Block = sp_runtime::generic::Block<Header, sp_runtime::OpaqueExtrinsic>
 // Native executor instance.
 sc_executor::native_executor_instance!(
     pub Executor,
-    shiden_runtime::api::dispatch,
-    shiden_runtime::native_version,
+    shibuya_runtime::api::dispatch,
+    shibuya_runtime::native_version,
 );
 
 /// Starts a `ServiceBuilder` for a full service.
@@ -261,6 +261,7 @@ where
                 slot_duration,
                 // We got around 500ms for proposing
                 block_proposal_slot_portion: SlotProportion::new(1f32 / 24f32),
+                max_block_proposal_slot_portion: None,
                 telemetry: telemetry.as_ref().map(|telemetry| telemetry.handle()),
             },
         );

@@ -1,7 +1,7 @@
-//! Plasm Parachain Collator.
+//! Astar collator binary.
 
 #![warn(missing_docs)]
 
 fn main() -> Result<(), sc_cli::Error> {
-    plasm_collator::run()
+    astar_collator::run()
 }

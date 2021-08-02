@@ -4,7 +4,7 @@ use cumulus_primitives_core::ParaId;
 use sc_chain_spec::ChainSpecExtension;
 use sc_service::ChainType;
 use serde::{Deserialize, Serialize};
-use shiden_runtime::{
+use shibuya_runtime::{
     wasm_binary_unwrap, AccountId, AuraConfig, AuraId, Balance, BalancesConfig, GenesisConfig,
     ImOnlineConfig, ImOnlineId, ParachainInfoConfig, SessionConfig, SessionKeys, Signature,
     StakerStatus, StakingConfig, SudoConfig, SystemConfig, VestingConfig, SDN,
