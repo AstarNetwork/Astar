@@ -76,8 +76,8 @@ pub struct ExportGenesisStateCommand {
 
     /// Id of the parachain this state is for.
     ///
-    /// Default: 2007 (shiden)
-    #[structopt(long, default_value = "2007")]
+    /// Default: 1000 (shibuya)
+    #[structopt(long, default_value = "1000")]
     pub parachain_id: u32,
 
     /// The name of the chain for that the genesis state should be exported.
@@ -110,8 +110,8 @@ pub struct RunCmd {
 
     /// Id of the parachain this collator collates for.
     ///
-    /// Default: 2007 (shiden)
-    #[structopt(long, default_value = "2007")]
+    /// Default: 1000 (shibuya)
+    #[structopt(long, default_value = "1000")]
     pub parachain_id: u32,
 }
 
