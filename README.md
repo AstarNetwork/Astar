@@ -99,7 +99,7 @@ Install Nix package manager:
 Run on your Nix shell:
 
     git clone https://github.com/PlasmNetwork/Plasm && cd Plasm
-    nix-shell nix/shell.nix --run "cargo run --release"
+    nix-shell -I nixpkgs=channel:nixos-21.05 third-party/nix/shell.nix --run "cargo run --release"
 
 Examples
 ========
