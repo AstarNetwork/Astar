@@ -4592,9 +4592,9 @@ dependencies = [
 
 [[package]]
 name = "parity-db"
-version = "0.2.3"
+version = "0.2.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "495197c078e54b8735181aa35c00a327f7f3a3cc00a1ee8c95926dd010f0ec6b"
+checksum = "2e337f62db341435f0da05b8f6b97e984ef4ea5800510cd07c2d624688c40b47"
 dependencies = [
  "blake2-rfc",
  "crc32fast",
@@ -4942,7 +4942,7 @@ checksum = "3831453b3449ceb48b6d9c7ad7c96d5ea673e9b470a1dc578c2ce6521230884c"
 
 [[package]]
 name = "plasm"
-version = "1.9.3"
+version = "1.10.0"
 dependencies = [
  "parity-util-mem",
  "plasm-cli",
@@ -4950,7 +4950,7 @@ dependencies = [
 
 [[package]]
 name = "plasm-cli"
-version = "1.9.3"
+version = "1.10.0"
 dependencies = [
  "fc-consensus",
  "fc-rpc-core",
@@ -5001,7 +5001,7 @@ dependencies = [
 
 [[package]]
 name = "plasm-primitives"
-version = "1.9.3"
+version = "1.10.0"
 dependencies = [
  "frame-system",
  "parity-scale-codec",
@@ -5012,7 +5012,7 @@ dependencies = [
 
 [[package]]
 name = "plasm-rpc"
-version = "1.9.3"
+version = "1.10.0"
 dependencies = [
  "fc-rpc",
  "fc-rpc-core",
@@ -5045,7 +5045,7 @@ dependencies = [
 
 [[package]]
 name = "plasm-runtime"
-version = "1.9.3"
+version = "1.10.0"
 dependencies = [
  "evm",
  "fp-rpc",
