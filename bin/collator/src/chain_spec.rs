@@ -6,7 +6,7 @@ use sc_service::ChainType;
 use serde::{Deserialize, Serialize};
 use shiden_runtime::{
     wasm_binary_unwrap, AccountId, Balance, BalancesConfig, GenesisConfig, ParachainInfoConfig,
-    Signature, SudoConfig, SystemConfig, VestingConfig, SDN,
+    Signature, SudoConfig, SystemConfig, VestingConfig, SDN, ZenlinkProtocolConfig,
 };
 use sp_core::{sr25519, Pair, Public};
 
@@ -156,5 +156,8 @@ fn make_genesis(
         parachain_info: ParachainInfoConfig { parachain_id },
         balances: BalancesConfig { balances },
         vesting: VestingConfig { vesting: vec![] },
+        zenlink_protocol: ZenlinkProtocolConfig {
+            ..Default::default()
+        },
     }
 }

@@ -300,7 +300,17 @@ pub fn run() -> Result<()> {
                     key,
                     polkadot_config,
                     id,
-                    Box::new(move |_| Default::default()),
+                    |client| {
+                        let mut io = jsonrpc_core::IoHandler::default();
+
+                        use pallet_transaction_payment_rpc::{TransactionPayment, TransactionPaymentApi};
+                        use zenlink_protocol_rpc::{ZenlinkProtocol, ZenlinkProtocolApi};
+
+                        io.extend_with(ZenlinkProtocolApi::to_delegate(ZenlinkProtocol::new(client.clone())));
+                        io.extend_with(TransactionPaymentApi::to_delegate(TransactionPayment::new(client)));
+
+                        io
+                    },
                 )
                 .await
                 .map(|r| r.0)

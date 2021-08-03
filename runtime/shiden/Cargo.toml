@@ -51,6 +51,13 @@ xcm-executor = { git = "https://github.com/paritytech/polkadot", default-feature
 xcm-builder = { git = "https://github.com/paritytech/polkadot", default-features = false , branch = "release-v0.9.8" }
 xcm = { git = "https://github.com/paritytech/polkadot", default-features = false , branch = "release-v0.9.8" }
 
+# zenlink protocol
+zenlink-protocol = { path = '../../vendor/zenlink-protocol', default-features = false }
+zenlink-protocol-runtime-api = { path = "../../vendor/zenlink-protocol/rpc/runtime-api", default-features = false }
+
+pallet-xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "release-v0.9.8" }
+cumulus-pallet-xcmp-queue = { git = 'https://github.com/paritytech/cumulus',  default-features = false, branch = 'polkadot-v0.9.8' }
+
 [build-dependencies]
 substrate-wasm-builder = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.8" }
 
@@ -91,4 +98,8 @@ std = [
     "cumulus-primitives-utility/std",
     "cumulus-pallet-parachain-system/std",
     "cumulus-pallet-xcm/std",
+    "zenlink-protocol/std",
+    "zenlink-protocol-runtime-api/std",
+    "pallet-xcm/std",
+    "cumulus-pallet-xcmp-queue/std",
 ]
