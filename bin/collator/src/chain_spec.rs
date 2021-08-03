@@ -68,7 +68,7 @@ pub fn authority_keys_from_seed(seed: &str) -> (AccountId, AccountId, AuraId, Im
 
 /// Gen chain specification for given parachain id
 pub fn get_chain_spec(id: ParaId) -> ChainSpec {
-    if id == ParaId::from(2007) {
+    if id == ParaId::from(1000) {
         return shibuya_chain_spec();
     }
 
@@ -99,16 +99,16 @@ fn shibuya_chain_spec() -> ChainSpec {
 }
 
 /*
-fn shiden_chain_spec() -> ChainSpec {
+fn shibuya_chain_spec() -> ChainSpec {
     use sp_core::crypto::Ss58Codec;
 
-    let para_id: u32 = 2007;
+    let para_id: u32 = 1000;
     let sudo_key =
-        AccountId::from_ss58check("5CV5sQQn1NQmjRinJZrKRHXGSv8HEtPQ7JzY3PzdfGkE27vk").unwrap();
+        AccountId::from_ss58check("5HbAP8GczDDfGL6K2BvbsDyCyL3qY2GSRrJAPNXSUnd95mRM").unwrap();
 
     ChainSpec::from_genesis(
-        "Shiden Shell",
-        "shiden",
+        "Shibuya Testnet",
+        "shibuya",
         ChainType::Live,
         move || {
             make_genesis(
@@ -122,7 +122,7 @@ fn shiden_chain_spec() -> ChainSpec {
         None,
         None,
         Extensions {
-            relay_chain: "kusama".into(),
+            relay_chain: "tokyo".into(),
             para_id,
         },
     )
