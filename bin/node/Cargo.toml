@@ -6,7 +6,7 @@ description = "Astar node implementation in Rust."
 edition = "2018"
 
 [[bin]]
-name = "astar"
+name = "plasm"
 path = "src/main.rs"
 
 [dependencies]

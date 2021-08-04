@@ -8,18 +8,17 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        chain: ["astar"]
+        chain: ["plasm"]
     steps:
       - uses: actions/checkout@v2
         with:
           fetch-depth: 0
-          submodules: true
 
       - name: Srtool build
         id: srtool_build
         uses: chevdor/srtool-actions@v0.3.0
         with:
-          chain: plasm
+          chain: ${{ matrix.chain }}
           runtime_dir: bin/node/runtime/
 
       - name: Summary
