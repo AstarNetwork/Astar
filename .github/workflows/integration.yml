@@ -30,8 +30,9 @@ jobs:
 
     - uses: actions/upload-artifact@v2
       with:
-        name: plasm-${{ matrix.os }}
-        path: target/release/plasm-collator
+        name: astar-${{ matrix.os }}
+        path: target/release/astar
+        if-no-files-found: error
 
   nix:
     runs-on: ubuntu-latest

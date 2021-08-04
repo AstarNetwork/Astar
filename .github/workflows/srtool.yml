@@ -18,7 +18,7 @@ jobs:
         id: srtool_build
         uses: chevdor/srtool-actions@v0.3.0
         with:
-          chain: ${{ matrix.chain }}
+          chain: plasm
           runtime_dir: bin/node/runtime/
 
       - name: Summary
