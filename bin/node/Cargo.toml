@@ -1,8 +1,8 @@
 [package]
 name = "plasm"
-version = "1.9.3"
+version = "1.10.0"
 authors = ["Stake Technologies <devops@stake.co.jp>"]
-description = "Plasm node implementation in Rust."
+description = "Astar node implementation in Rust."
 edition = "2018"
 
 [[bin]]

@@ -4370,7 +4370,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-custom-signatures"
-version = "1.9.0"
+version = "2.0.0"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -4534,6 +4534,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-identity"
+version = "3.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6bbbf9b67df31ea9fc579ec166aab6da9acabac2f5caf0d954cfb24821466420"
+dependencies = [
+ "enumflags2",
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "parity-scale-codec 2.2.0",
+ "serde",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
 name = "pallet-im-online"
 version = "3.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4644,37 +4661,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "pallet-plasm-support"
-version = "1.9.0"
-dependencies = [
- "frame-support",
- "sp-runtime",
- "sp-std",
-]
-
-[[package]]
-name = "pallet-plasm-validator"
-version = "1.9.0"
-dependencies = [
- "frame-support",
- "frame-system",
- "hex-literal 0.2.1",
- "pallet-balances",
- "pallet-plasm-rewards",
- "pallet-randomness-collective-flip",
- "pallet-session",
- "pallet-timestamp",
- "parity-scale-codec 2.2.0",
- "serde",
- "sp-arithmetic",
- "sp-core",
- "sp-io",
- "sp-runtime",
- "sp-staking",
- "sp-std",
-]
-
-[[package]]
 name = "pallet-randomness-collective-flip"
 version = "3.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4744,6 +4730,18 @@ dependencies = [
  "sp-staking",
  "sp-std",
  "static_assertions",
+]
+
+[[package]]
+name = "pallet-staking-reward-curve"
+version = "3.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7cb16d9e2597ce7cfc786b0ebf09cd5e6375fc65df6f38cd7e67797ec7bda990"
+dependencies = [
+ "proc-macro-crate 0.1.5",
+ "proc-macro2 1.0.28",
+ "quote 1.0.9",
+ "syn 1.0.74",
 ]
 
 [[package]]
@@ -5222,7 +5220,7 @@ checksum = "3831453b3449ceb48b6d9c7ad7c96d5ea673e9b470a1dc578c2ce6521230884c"
 
 [[package]]
 name = "plasm"
-version = "1.9.3"
+version = "1.10.0"
 dependencies = [
  "parity-util-mem",
  "plasm-cli",
@@ -5230,7 +5228,7 @@ dependencies = [
 
 [[package]]
 name = "plasm-cli"
-version = "1.9.3"
+version = "1.10.0"
 dependencies = [
  "fc-consensus",
  "fc-rpc-core",
@@ -5239,6 +5237,7 @@ dependencies = [
  "futures 0.3.16",
  "hex",
  "hex-literal 0.2.1",
+ "lazy_static",
  "pallet-contracts 2.0.1",
  "pallet-evm",
  "pallet-im-online",
@@ -5280,7 +5279,7 @@ dependencies = [
 
 [[package]]
 name = "plasm-primitives"
-version = "1.9.3"
+version = "1.10.0"
 dependencies = [
  "frame-system",
  "parity-scale-codec 2.2.0",
@@ -5291,7 +5290,7 @@ dependencies = [
 
 [[package]]
 name = "plasm-rpc"
-version = "1.9.3"
+version = "1.10.0"
 dependencies = [
  "fc-rpc",
  "fc-rpc-core",
@@ -5324,7 +5323,7 @@ dependencies = [
 
 [[package]]
 name = "plasm-runtime"
-version = "1.9.3"
+version = "1.10.0"
 dependencies = [
  "evm 0.26.0",
  "fp-rpc",
@@ -5350,16 +5349,18 @@ dependencies = [
  "pallet-evm-precompile-modexp",
  "pallet-evm-precompile-simple",
  "pallet-grandpa",
+ "pallet-identity",
  "pallet-im-online",
  "pallet-indices",
  "pallet-nicks",
  "pallet-offences",
  "pallet-plasm-operator",
  "pallet-plasm-rewards",
- "pallet-plasm-validator",
  "pallet-randomness-collective-flip",
  "pallet-scheduler",
  "pallet-session",
+ "pallet-staking",
+ "pallet-staking-reward-curve",
  "pallet-sudo",
  "pallet-timestamp",
  "pallet-transaction-payment",
@@ -5369,6 +5370,7 @@ dependencies = [
  "parity-scale-codec 2.2.0",
  "plasm-primitives",
  "serde",
+ "smallvec 1.6.1",
  "sp-api",
  "sp-block-builder",
  "sp-consensus-babe",
@@ -5379,6 +5381,7 @@ dependencies = [
  "sp-runtime",
  "sp-runtime-interface",
  "sp-session",
+ "sp-staking",
  "sp-std",
  "sp-transaction-pool",
  "sp-version",

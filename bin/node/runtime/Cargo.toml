@@ -1,6 +1,6 @@
 [package]
 name = "plasm-runtime"
-version = "1.9.3"
+version = "1.10.0"
 authors = ["Stake Technologies <devops@stake.co.jp>"]
 edition = "2018"
 build = "build.rs"
@@ -12,6 +12,7 @@ codec = { package = "parity-scale-codec", version = "2.0", default-features = fa
 lazy_static = { version = "1.4", optional = true }
 hex-literal = { version = "0.2", optional = true }
 evm = { version = "0.26.0", default-features = false }
+smallvec = "1.6.1"
 
 # primitives
 plasm-primitives = { path = "../primitives", default-features = false }
@@ -28,6 +29,7 @@ sp-transaction-pool = { version = "3.0.0", default-features = false }
 sp-std = { version = "3.0.0", default-features = false }
 sp-version = { version = "3.0.0", default-features = false }
 sp-session = { version = "3.0.0", default-features = false }
+sp-staking = { version = "3.0.0", default-features = false }
 
 # frame dependencies
 pallet-plasm-operator = { path = "../../../frame/plasm-operator", default-features = false }
@@ -35,7 +37,7 @@ pallet-contract-operator = { path = "../../../frame/operator", default-features 
 #pallet-operator-trading = { path = "../../../frame/trading", default-features = false }
 pallet-dapps-staking = { path = "../../../frame/dapps-staking", default-features = false }
 pallet-plasm-rewards = { path = "../../../frame/plasm-rewards", default-features = false }
-pallet-plasm-validator = { path = "../../../frame/plasm-validator", default-features = false }
+# pallet-plasm-validator = { path = "../../../frame/plasm-validator", default-features = false }
 pallet-custom-signatures = { path = "../../../frame/custom-signatures", default-features = false }
 pallet-evm = { path = "../../../vendor/frontier/frame/evm", default-features = false }
 pallet-evm-precompile-bn128 = { path = "../../../vendor/frontier/frame/evm/precompile/bn128", default-features = false }
@@ -52,10 +54,13 @@ pallet-contracts-rpc-runtime-api = { path = "../../../frame/contracts/rpc/runtim
 pallet-grandpa = { version = "3.0.0", default-features = false }
 pallet-indices = { version = "3.0.0", default-features = false }
 pallet-im-online = { version = "3.0.0", default-features = false }
+pallet-identity = { version = "3.0.0", default-features = false }
 pallet-nicks = { version = "3.0.0", default-features = false }
 pallet-randomness-collective-flip = { version = "3.0.0", default-features = false }
 pallet-scheduler = { version = "3.0.0", default-features = false }
 pallet-session = { version = "3.0.0", default-features = false, features = ["historical"] }
+pallet-staking = { version = "3.0.0", default-features = false }
+pallet-staking-reward-curve = { version = "3.0.0", default-features = false }
 pallet-sudo = { version = "3.0.0", default-features = false }
 pallet-offences = { version = "3.0.0", default-features = false }
 frame-support = { version = "3.0.0", default-features = false }
@@ -88,6 +93,7 @@ std = [
     "sp-runtime/std",
     "sp-runtime-interface/std",
     "sp-session/std",
+    "sp-staking/std",
     "sp-std/std",
     "sp-version/std",
     "sp-transaction-pool/std",
@@ -102,6 +108,7 @@ std = [
     "pallet-authorship/std",
     "pallet-babe/std",
     "pallet-balances/std",
+    "pallet-identity/std",
     "pallet-contracts/std",
     "pallet-contracts-primitives/std",
     "pallet-contracts-rpc-runtime-api/std",
@@ -115,12 +122,9 @@ std = [
     "pallet-im-online/std",
     "pallet-nicks/std",
     "pallet-custom-signatures/std",
-    "pallet-plasm-rewards/std",
-    "pallet-plasm-validator/std",
     "pallet-randomness-collective-flip/std",
     "pallet-scheduler/std",
     "pallet-session/std",
-    "pallet-plasm-operator/std",
     "pallet-ethereum/std",
     "pallet-sudo/std",
     "pallet-timestamp/std",
@@ -129,4 +133,5 @@ std = [
     "pallet-utility/std",
     "pallet-offences/std",
     "pallet-vesting/std",
+    "pallet-staking/std"
 ]

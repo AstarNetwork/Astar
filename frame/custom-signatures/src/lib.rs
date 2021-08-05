@@ -69,7 +69,10 @@ decl_module! {
 
         fn deposit_event() = default;
 
-        #[weight = (call.get_dispatch_info().weight + 10_000, call.get_dispatch_info().class)]
+        #[weight = {
+            let dispatch_info = call.get_dispatch_info();
+            (dispatch_info.weight + 10_000, dispatch_info.class)
+        }]
         fn call(
             origin,
             call: Box<<T as Config>::Call>,
