@@ -24,14 +24,14 @@ RUN useradd -m -u 1000 -U -s /bin/sh -d /astar astar && \
 
 ARG PROFILE=release
 # add binary to docker image
-COPY ./astar /usr/local/bin
+COPY ./plasm /usr/local/bin
 
 USER astar 
 
 # check if executable works in this container
-RUN ["astar", "--version"]
+RUN ["plasm", "--version"]
 
 EXPOSE 30333 30334 9933 9944
 VOLUME ["/data"]
 
-CMD ["/usr/local/bin/astar","-d","/data/dusty"]
+CMD ["/usr/local/bin/plasm","-d","/data"]
