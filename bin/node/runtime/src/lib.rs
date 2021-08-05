@@ -359,25 +359,22 @@ impl pallet_staking::Config for Runtime {
     type Event = Event;
 }
 
-impl pallet_dapps_staking::Config for Runtime {
+impl pallet_plasm_rewards::Config for Runtime {
     type Currency = Balances;
-    type Slash = ();
-    type Reward = (); // rewards are minted from the void
+    type Time = Timestamp;
     type SessionsPerEra = SessionsPerEra;
     type BondingDuration = BondingDuration;
-    type SlashDeferDuration = SlashDeferDuration;
-    type SlashCancelOrigin = EnsureRoot<AccountId>;
-    type SessionInterface = Self;
-    type RewardCurve = RewardCurve;
-    type NextNewSession = Session;
-    type ElectionLookahead = ElectionLookahead;
-    type Call = Call;
-    type MaxIterations = MaxIterations;
-    type MinSolutionScoreBump = MinSolutionScoreBump;
-    type MaxNominatorRewardedPerValidator = MaxNominatorRewardedPerValidator;
-    type UnsignedPriority = StakingUnsignedPriority;
-    type WeightInfo = ();
-    type OffchainSolutionWeightLimit = ();
+    type ComputeEraForDapps = pallet_plasm_rewards::DefaultForDappsStaking<Runtime>;
+    type ComputeEraForSecurity = ();
+    type ComputeTotalPayout = pallet_plasm_rewards::inflation::CommunityRewards<u32>;
+    type MaybeValidators = ();
+    type Event = Event;
+}
+
+impl pallet_dapps_staking::Config for Runtime {
+    type Currency = Balances;
+    type Reward = (); // rewards are minted from the void
+    type BondingDuration = BondingDuration;
 }
 
 parameter_types! {
@@ -428,15 +425,7 @@ impl pallet_contracts::Config for Runtime {
     type DetermineContractAddress = pallet_contracts::SimpleAddressDeterminer<Runtime>;
 }
 
-// impl pallet_contract_operator::Config for Runtime {
-//     //type Parameters = pallet_dapps_staking::parameters::StakingParameters; TODO after pallet_dapps_staking update to sub3.0
-//     type Parameters = None;
-//     type Event = Event;
-// }
-
-impl pallet_plasm_operator::Config for Runtime {
-    //type Parameters = pallet_dapps_staking::parameters::StakingParameters; TODO after pallet_dapps_staking update to sub3.0
-    type Parameters = pallet_dapps_staking::parameters::StakingParameters;
+impl pallet_contract_operator::Config for Runtime {
     type Event = Event;
 }
 
@@ -797,18 +786,16 @@ construct_runtime!(
         Balances: pallet_balances::{Module, Call, Storage, Event<T>, Config<T>},
         Contracts: pallet_contracts::{Module, Call, Storage, Event<T>, Config<T>},
         DappsStaking: pallet_dapps_staking::{Module, Call, Storage, Event<T>},
-        PlasmValidator: pallet_plasm_validator::{Module, Call, Storage, Event<T>, Config<T>},
         PlasmRewards: pallet_plasm_rewards::{Module, Call, Storage, Event<T>, Config},
         Identity: pallet_identity::{Module, Call, Storage, Event<T>},
         TransactionPayment: pallet_transaction_payment::{Module, Storage},
         Staking: pallet_staking::{Module, Call, Storage, Event<T>, Config<T>},
         Session: pallet_session::{Module, Call, Storage, Event, Config<T>},
         Grandpa: pallet_grandpa::{Module, Call, Storage, Config, Event, ValidateUnsigned},
-        Contracts: pallet_contracts::{Module, Call, Storage, Event<T>, Config<T>},
         Sudo: pallet_sudo::{Module, Call, Storage, Event<T>, Config<T>},
         ImOnline: pallet_im_online::{Module, Call, Storage, Event<T>, ValidateUnsigned, Config<T>},
         Offences: pallet_offences::{Module, Call, Storage, Event},
-        Operator: pallet_plasm_operator::{Module, Call, Storage, Event<T>},
+        Operator: pallet_contract_operator::{Module, Call, Storage, Event<T>},
         //Trading: pallet_operator_trading::{Module, Call, Storage, Event<T>},
         Historical: pallet_session_historical::{Module},
         RandomnessCollectiveFlip: pallet_randomness_collective_flip::{Module, Call, Storage},
