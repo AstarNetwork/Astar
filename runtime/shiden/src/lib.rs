@@ -12,6 +12,7 @@ use frame_support::{
         DispatchClass, Weight, WeightToFeeCoefficient, WeightToFeeCoefficients,
         WeightToFeePolynomial,
     },
+    PalletId,
 };
 use frame_system::limits::{BlockLength, BlockWeights};
 use pallet_transaction_payment::{
@@ -21,8 +22,8 @@ use sp_api::impl_runtime_apis;
 use sp_core::OpaqueMetadata;
 use sp_inherents::{CheckInherentsResult, InherentData};
 use sp_runtime::{
-    create_runtime_str, generic,
-    traits::{AccountIdLookup, BlakeTwo256, Block as BlockT, ConvertInto},
+    create_runtime_str, generic, impl_opaque_keys,
+    traits::{AccountIdLookup, BlakeTwo256, Block as BlockT, ConvertInto, OpaqueKeys},
     transaction_validity::{TransactionSource, TransactionValidity},
     ApplyExtrinsicResult, FixedPointNumber, Perbill, Perquintill,
 };
@@ -41,12 +42,19 @@ use xcm_builder::{
 use xcm_executor::{Config, XcmExecutor};
 
 pub use pallet_balances::Call as BalancesCall;
+pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
 
 /// Constant values used within the runtime.
 pub const MILLISDN: Balance = 1_000_000_000_000_000;
 pub const SDN: Balance = 1_000 * MILLISDN;
+/// Change this to adjust the block time.
+pub const MILLISECS_PER_BLOCK: u64 = 12000;
+// Time is measured by number of blocks.
+pub const MINUTES: BlockNumber = 60_000 / (MILLISECS_PER_BLOCK as BlockNumber);
+pub const HOURS: BlockNumber = MINUTES * 60;
+pub const DAYS: BlockNumber = HOURS * 24;
 
 // Make the WASM binary available.
 #[cfg(feature = "std")]
@@ -68,7 +76,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("shiden"),
     impl_name: create_runtime_str!("shiden"),
     authoring_version: 1,
-    spec_version: 4,
+    spec_version: 5,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 1,
@@ -80,6 +88,14 @@ pub fn native_version() -> NativeVersion {
     NativeVersion {
         runtime_version: VERSION,
         can_author_with: Default::default(),
+    }
+}
+
+pub type SessionHandlers = ();
+
+impl_opaque_keys! {
+    pub struct SessionKeys {
+        pub aura: Aura,
     }
 }
 
@@ -170,6 +186,18 @@ impl frame_system::Config for Runtime {
 }
 
 parameter_types! {
+    pub const MinimumPeriod: u64 = MILLISECS_PER_BLOCK / 2;
+}
+
+impl pallet_timestamp::Config for Runtime {
+    /// A timestamp: milliseconds since the unix epoch.
+    type Moment = u64;
+    type OnTimestampSet = ();
+    type MinimumPeriod = MinimumPeriod;
+    type WeightInfo = ();
+}
+
+parameter_types! {
     pub const BasicDeposit: Balance = 10 * SDN;       // 258 bytes on-chain
     pub const FieldDeposit: Balance = 25 * MILLISDN;  // 66 bytes on-chain
     pub const SubAccountDeposit: Balance = 2 * SDN;   // 53 bytes on-chain
@@ -216,6 +244,66 @@ impl cumulus_pallet_parachain_system::Config for Runtime {
 }
 
 impl parachain_info::Config for Runtime {}
+
+impl pallet_aura::Config for Runtime {
+    type AuthorityId = AuraId;
+}
+
+impl cumulus_pallet_aura_ext::Config for Runtime {}
+
+parameter_types! {
+    pub const UncleGenerations: BlockNumber = 5;
+}
+
+impl pallet_authorship::Config for Runtime {
+    type FindAuthor = pallet_session::FindAccountFromAuthorIndex<Self, Aura>;
+    type UncleGenerations = UncleGenerations;
+    type FilterUncle = ();
+    type EventHandler = (CollatorSelection,);
+}
+
+parameter_types! {
+    pub const DisabledValidatorsThreshold: Perbill = Perbill::from_percent(33);
+    pub const SessionPeriod: BlockNumber = 1 * HOURS;
+    pub const SessionOffset: BlockNumber = 0;
+}
+
+impl pallet_session::Config for Runtime {
+    type Event = Event;
+    type ValidatorId = <Self as frame_system::Config>::AccountId;
+    type ValidatorIdOf = pallet_collator_selection::IdentityCollator;
+    type ShouldEndSession = pallet_session::PeriodicSessions<SessionPeriod, SessionOffset>;
+    type NextSessionRotation = pallet_session::PeriodicSessions<SessionPeriod, SessionOffset>;
+    type SessionManager = CollatorSelection;
+    type SessionHandler = <SessionKeys as OpaqueKeys>::KeyTypeIdProviders;
+    type Keys = SessionKeys;
+    type DisabledValidatorsThreshold = DisabledValidatorsThreshold;
+    type WeightInfo = pallet_session::weights::SubstrateWeight<Runtime>;
+}
+
+parameter_types! {
+    pub const PotId: PalletId = PalletId(*b"PotStake");
+    pub const MaxCandidates: u32 = 200;
+    pub const MinCandidates: u32 = 5;
+    pub const SessionLength: BlockNumber = 1 * HOURS;
+    pub const MaxInvulnerables: u32 = 100;
+}
+
+impl pallet_collator_selection::Config for Runtime {
+    type Event = Event;
+    type Currency = Balances;
+    type UpdateOrigin = frame_system::EnsureRoot<AccountId>;
+    type PotId = PotId;
+    type MaxCandidates = MaxCandidates;
+    type MinCandidates = MinCandidates;
+    type MaxInvulnerables = MaxInvulnerables;
+    // should be a multiple of session or things will get inconsistent
+    type KickThreshold = SessionPeriod;
+    type ValidatorId = <Self as frame_system::Config>::AccountId;
+    type ValidatorIdOf = pallet_collator_selection::IdentityCollator;
+    type ValidatorRegistration = Session;
+    type WeightInfo = ();
+}
 
 parameter_types! {
     pub Ancestry: MultiLocation = Parachain(ParachainInfo::parachain_id().into()).into();
@@ -348,6 +436,7 @@ construct_runtime!(
         System: frame_system::{Pallet, Call, Storage, Config, Event<T>} = 10,
         Utility: pallet_utility::{Pallet, Call, Event} = 11,
         Identity: pallet_identity::{Pallet, Call, Storage, Event<T>} = 12,
+        Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent} = 13,
 
         ParachainSystem: cumulus_pallet_parachain_system::{Pallet, Call, Storage, Inherent, Event<T>} = 20,
         ParachainInfo: parachain_info::{Pallet, Storage, Config} = 21,
@@ -355,6 +444,12 @@ construct_runtime!(
         TransactionPayment: pallet_transaction_payment::{Pallet, Storage} = 30,
         Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>} = 31,
         Vesting: pallet_vesting::{Pallet, Call, Storage, Config<T>, Event<T>} = 32,
+
+        Authorship: pallet_authorship::{Pallet, Call, Storage, Inherent} = 40,
+        CollatorSelection: pallet_collator_selection::{Pallet, Call, Storage, Event<T>, Config<T>} = 41,
+        Session: pallet_session::{Pallet, Call, Storage, Event, Config<T>} = 42,
+        Aura: pallet_aura::{Pallet, Config<T>} = 43,
+        AuraExt: cumulus_pallet_aura_ext::{Pallet, Config} = 44,
 
         CumulusXcm: cumulus_pallet_xcm::{Pallet, Call, Event<T>, Origin} = 50,
 
@@ -501,17 +596,28 @@ impl_runtime_apis! {
 }
 
 struct CheckInherents;
+
 impl cumulus_pallet_parachain_system::CheckInherents<Block> for CheckInherents {
     fn check_inherents(
-        _: &Block,
-        _: &cumulus_pallet_parachain_system::RelayChainStateProof,
+        block: &Block,
+        relay_state_proof: &cumulus_pallet_parachain_system::RelayChainStateProof,
     ) -> sp_inherents::CheckInherentsResult {
-        sp_inherents::CheckInherentsResult::new()
+        let relay_chain_slot = relay_state_proof
+            .read_slot()
+            .expect("Could not read the relay chain slot from the proof");
+        let inherent_data =
+            cumulus_primitives_timestamp::InherentDataProvider::from_relay_chain_slot_and_duration(
+                relay_chain_slot,
+                sp_std::time::Duration::from_secs(6),
+            )
+            .create_inherent_data()
+            .expect("Could not create the timestamp inherent data");
+        inherent_data.check_extrinsics(&block)
     }
 }
 
 cumulus_pallet_parachain_system::register_validate_block! {
     Runtime = Runtime,
-    BlockExecutor = Executive,
+    BlockExecutor = cumulus_pallet_aura_ext::BlockExecutor::<Runtime, Executive>,
     CheckInherents = CheckInherents,
 }
