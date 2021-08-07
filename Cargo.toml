@@ -2,10 +2,7 @@
 members = [
     "bin/collator",
     "runtime/shiden",
-]
-
-exclude = [
-    "vendor",
+    "frame/block-reward",
 ]
 
 [profile.release]
