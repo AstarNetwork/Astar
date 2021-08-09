@@ -36,7 +36,7 @@ pallet-contract-operator = { path = "../../../frame/operator", default-features 
 #pallet-operator-trading = { path = "../../../frame/trading", default-features = false }
 pallet-dapps-staking = { path = "../../../frame/dapps-staking", default-features = false }
 pallet-plasm-rewards = { path = "../../../frame/plasm-rewards", default-features = false }
-# pallet-plasm-validator = { path = "../../../frame/plasm-validator", default-features = false }
+pallet-plasm-validator = { path = "../../../frame/plasm-validator", default-features = false }
 pallet-custom-signatures = { path = "../../../frame/custom-signatures", default-features = false }
 pallet-evm = { path = "../../../vendor/frontier/frame/evm", default-features = false }
 pallet-evm-precompile-bn128 = { path = "../../../vendor/frontier/frame/evm/precompile/bn128", default-features = false }

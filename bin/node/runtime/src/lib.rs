@@ -357,6 +357,23 @@ impl pallet_staking::Config for Runtime {
     type CurrencyToVote = U128CurrencyToVote;
     type RewardRemainder = ();
     type Event = Event;
+    type Slash = ();
+    type Reward = (); // rewards are minted from the void
+    type SessionsPerEra = SessionsPerEra;
+    type BondingDuration = BondingDuration;
+    type SlashDeferDuration = SlashDeferDuration;
+    type SlashCancelOrigin = EnsureRoot<AccountId>;
+    type SessionInterface = Self;
+    type RewardCurve = RewardCurve;
+    type NextNewSession = Session;
+    type ElectionLookahead = ElectionLookahead;
+    type Call = Call;
+    type MaxIterations = MaxIterations;
+    type MinSolutionScoreBump = MinSolutionScoreBump;
+    type MaxNominatorRewardedPerValidator = MaxNominatorRewardedPerValidator;
+    type UnsignedPriority = StakingUnsignedPriority;
+    type WeightInfo = ();
+    type OffchainSolutionWeightLimit = ();
 }
 
 impl pallet_plasm_rewards::Config for Runtime {
@@ -365,9 +382,21 @@ impl pallet_plasm_rewards::Config for Runtime {
     type SessionsPerEra = SessionsPerEra;
     type BondingDuration = BondingDuration;
     type ComputeEraForDapps = pallet_plasm_rewards::DefaultForDappsStaking<Runtime>;
-    type ComputeEraForSecurity = ();
+    type ComputeEraForSecurity = PlasmValidator;
     type ComputeTotalPayout = pallet_plasm_rewards::inflation::CommunityRewards<u32>;
-    type MaybeValidators = ();
+    type MaybeValidators = PlasmValidator;
+    type Event = Event;
+}
+
+impl pallet_plasm_validator::Config for Runtime {
+    type Currency = Balances;
+    type Time = Timestamp;
+    type RewardRemainder = (); // Reward remainder is burned.
+    type Reward = (); // Reward is minted.
+    type EraFinder = PlasmRewards;
+    type ForSecurityEraReward = PlasmRewards;
+    type ComputeEraParam = u32;
+    type ComputeEra = PlasmValidator;
     type Event = Event;
 }
 
@@ -375,6 +404,14 @@ impl pallet_dapps_staking::Config for Runtime {
     type Currency = Balances;
     type Reward = (); // rewards are minted from the void
     type BondingDuration = BondingDuration;
+    type ContractFinder = Operator;
+    type RewardRemainder = (); // Reward remainder is burned.
+    type Time = Timestamp;
+    type ComputeRewardsForDapps = pallet_dapps_staking::rewards::VoidableRewardsForDapps;
+    type EraFinder = PlasmRewards;
+    type ForDappsEraReward = PlasmRewards;
+    type HistoryDepthFinder = PlasmRewards;
+    type Event = Event;
 }
 
 parameter_types! {
@@ -425,9 +462,9 @@ impl pallet_contracts::Config for Runtime {
     type DetermineContractAddress = pallet_contracts::SimpleAddressDeterminer<Runtime>;
 }
 
-impl pallet_contract_operator::Config for Runtime {
-    type Event = Event;
-}
+// impl pallet_contract_operator::Config for Runtime {
+//     type Event = Event;
+// }
 
 /*
 impl pallet_operator_trading::Config for Runtime {
@@ -786,6 +823,7 @@ construct_runtime!(
         Balances: pallet_balances::{Module, Call, Storage, Event<T>, Config<T>},
         Contracts: pallet_contracts::{Module, Call, Storage, Event<T>, Config<T>},
         DappsStaking: pallet_dapps_staking::{Module, Call, Storage, Event<T>},
+        PlasmValidator: pallet_plasm_validator::{Module, Call, Storage, Event<T>, Config<T>},
         PlasmRewards: pallet_plasm_rewards::{Module, Call, Storage, Event<T>, Config},
         Identity: pallet_identity::{Module, Call, Storage, Event<T>},
         TransactionPayment: pallet_transaction_payment::{Module, Storage},
@@ -795,7 +833,7 @@ construct_runtime!(
         Sudo: pallet_sudo::{Module, Call, Storage, Event<T>, Config<T>},
         ImOnline: pallet_im_online::{Module, Call, Storage, Event<T>, ValidateUnsigned, Config<T>},
         Offences: pallet_offences::{Module, Call, Storage, Event},
-        Operator: pallet_contract_operator::{Module, Call, Storage, Event<T>},
+        // Operator: pallet_contract_operator::{Module, Call, Storage, Event<T>},
         //Trading: pallet_operator_trading::{Module, Call, Storage, Event<T>},
         Historical: pallet_session_historical::{Module},
         RandomnessCollectiveFlip: pallet_randomness_collective_flip::{Module, Call, Storage},
