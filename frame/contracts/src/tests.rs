@@ -24,8 +24,8 @@ use crate::{
     gas::Gas,
     storage::Storage,
     wasm::PrefabWasmModule,
-    BalanceOf, Config, ContractInfo, ContractInfoOf, Error, Module,
-    RawAliveContractInfo, RawEvent, RuntimeReturnCode, Schedule,
+    BalanceOf, Config, ContractInfo, ContractInfoOf, Error, Module, RawAliveContractInfo, RawEvent,
+    RuntimeReturnCode, Schedule,
 };
 use assert_matches::assert_matches;
 use codec::Encode;
