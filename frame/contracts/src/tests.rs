@@ -24,7 +24,7 @@ use crate::{
     gas::Gas,
     storage::Storage,
     wasm::PrefabWasmModule,
-    BalanceOf, Config, ContractAddressFor, ContractInfo, ContractInfoOf, Error, Module,
+    BalanceOf, Config, ContractInfo, ContractInfoOf, Error, Module,
     RawAliveContractInfo, RawEvent, RuntimeReturnCode, Schedule,
 };
 use assert_matches::assert_matches;
@@ -53,9 +53,9 @@ type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
 
 pub struct DummyContractAddressFor;
-impl ContractAddressFor<H256, u64> for DummyContractAddressFor {
-    fn contract_address_for(_code_hash: &H256, _data: &[u8], origin: &u64) -> u64 {
-        *origin + 1
+impl pallet_contracts::ContractAddressFor<H256, AccountId32> for DummyContractAddressFor {
+    fn contract_address_for(code_hash: &H256, _data: &[u8], origin: &AccountId32) -> AccountId32 {
+        Contracts::contract_address(&origin, &code_hash, &[])
     }
 }
 
@@ -1896,7 +1896,7 @@ fn self_destruct_works() {
                         event: Event::pallet_balances(pallet_balances::Event::Transfer(
                             addr.clone(),
                             DJANGO,
-                            93_654
+                            93_582
                         )),
                         topics: vec![],
                     },
@@ -1918,7 +1918,7 @@ fn self_destruct_works() {
 
             // check that the beneficiary (django) got remaining balance
             // some rent was deducted before termination
-            assert_eq!(Balances::free_balance(DJANGO), 1_093_654);
+            assert_eq!(Balances::free_balance(DJANGO), 1_093_582);
         });
 }
 
