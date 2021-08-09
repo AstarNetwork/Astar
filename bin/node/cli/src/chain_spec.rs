@@ -6,8 +6,9 @@ use plasm_runtime::constants::currency::PLM;
 use plasm_runtime::Block;
 use plasm_runtime::{
     BabeConfig, BalancesConfig, ContractsConfig, EVMConfig, EthereumConfig, GenesisConfig,
-    GrandpaConfig, ImOnlineConfig, IndicesConfig, SessionConfig, SessionKeys, StakerStatus,
-    StakingConfig, SudoConfig, SystemConfig, VestingConfig, WASM_BINARY, PlasmRewardsConfig, PlasmValidatorConfig
+    GrandpaConfig, ImOnlineConfig, IndicesConfig, PlasmRewardsConfig, PlasmValidatorConfig,
+    SessionConfig, SessionKeys, StakerStatus, StakingConfig, SudoConfig, SystemConfig,
+    VestingConfig, WASM_BINARY,
 };
 use sc_chain_spec::ChainSpecExtension;
 use sc_service::ChainType;
@@ -207,9 +208,7 @@ fn make_genesis(
         pallet_plasm_rewards: Some(PlasmRewardsConfig {
             ..Default::default()
         }),
-        pallet_plasm_validator: Some(PlasmValidatorConfig {
-            validators: vec![]
-        }),
+        pallet_plasm_validator: Some(PlasmValidatorConfig { validators: vec![] }),
     }
 }
 
