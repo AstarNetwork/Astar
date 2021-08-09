@@ -404,7 +404,7 @@ impl pallet_dapps_staking::Config for Runtime {
     type Currency = Balances;
     type Reward = (); // rewards are minted from the void
     type BondingDuration = BondingDuration;
-    type ContractFinder = Operator;
+    type ContractFinder = DappsStaking;
     type RewardRemainder = (); // Reward remainder is burned.
     type Time = Timestamp;
     type ComputeRewardsForDapps = pallet_dapps_staking::rewards::VoidableRewardsForDapps;
@@ -412,6 +412,8 @@ impl pallet_dapps_staking::Config for Runtime {
     type ForDappsEraReward = PlasmRewards;
     type HistoryDepthFinder = PlasmRewards;
     type Event = Event;
+    type Parameters = pallet_dapps_staking::parameters::StakingParameters;
+    type DetermineContractAddress = pallet_contracts::SimpleAddressDeterminer<Runtime>;
 }
 
 parameter_types! {

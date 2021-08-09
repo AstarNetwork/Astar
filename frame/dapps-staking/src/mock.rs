@@ -48,7 +48,6 @@ frame_support::construct_runtime!(
         Balances: pallet_balances::{Module, Call, Storage, Event<T>, Config<T>},
         Timestamp: pallet_timestamp::{Module, Call, Storage, Inherent},
         Contracts: pallet_contracts::{Module, Call, Storage, Event<T>, Config<T>},
-        Operator: pallet_contract_operator::{Module, Call, Storage, Event<T>},
         PlasmRewards: pallet_plasm_rewards::{Module, Call, Storage, Config, Event<T>},
         DappsStaking: dapps_staking::{Module, Call, Storage, Event<T>},
     }
@@ -244,11 +243,6 @@ impl pallet_contracts::Config for Test {
     type DeletionWeightLimit = DeletionWeightLimit;
 }
 
-impl pallet_contract_operator::Config for Test {
-    type Parameters = parameters::StakingParameters;
-    type Event = ();
-}
-
 pub struct DummyMaybeValidators;
 impl MaybeValidators<EraIndex, AccountId> for DummyMaybeValidators {
     fn compute(_current_era: EraIndex) -> Option<Vec<AccountId>> {
@@ -280,7 +274,7 @@ impl pallet_plasm_rewards::Config for Test {
 impl Config for Test {
     type Currency = Balances;
     type BondingDuration = BondingDuration;
-    type ContractFinder = Operator;
+    type ContractFinder = DappsStaking;
     type RewardRemainder = (); // Reward remainder is burned.
     type Reward = (); // Reward is minted.
     type Time = Timestamp;
@@ -289,6 +283,8 @@ impl Config for Test {
     type ForDappsEraReward = PlasmRewards;
     type HistoryDepthFinder = PlasmRewards;
     type Event = ();
+    type DetermineContractAddress = DummyContractAddressFor;
+    type Parameters = parameters::StakingParameters;
 }
 
 /// Generate Wasm binary and code hash from wabt source.
@@ -364,7 +360,7 @@ pub fn valid_instatiate() {
 
     // instantiate
     // Check at the end to get hash on error easily
-    let _ = Operator::instantiate(
+    let _ = DappsStaking::instantiate(
         Origin::signed(OPERATOR_A),
         100,
         Gas::max_value(),
@@ -373,7 +369,7 @@ pub fn valid_instatiate() {
         vec![],
         test_params.clone(),
     );
-    let _ = Operator::instantiate(
+    let _ = DappsStaking::instantiate(
         Origin::signed(OPERATOR_B),
         100,
         Gas::max_value(),
@@ -396,43 +392,55 @@ pub fn valid_instatiate() {
 
     // checks mapping operator and contract
     // OPERATOR_A operates a only addr_a contract.
-    assert!(pallet_contract_operator::OperatorHasContracts::<Test>::contains_key(OPERATOR_A));
-    let tree = pallet_contract_operator::OperatorHasContracts::<Test>::get(&OPERATOR_A);
+    assert!(dapps_staking::OperatorHasContracts::<Test>::contains_key(
+        OPERATOR_A
+    ));
+    let tree = dapps_staking::OperatorHasContracts::<Test>::get(&OPERATOR_A);
     assert_eq!(tree.len(), 1);
     assert!(tree.contains(&addr_a));
 
     // checks mapping operator and contract
     // OPERATOR_B operates a only addr_b contract.
-    assert!(pallet_contract_operator::OperatorHasContracts::<Test>::contains_key(OPERATOR_B));
-    let tree = pallet_contract_operator::OperatorHasContracts::<Test>::get(&OPERATOR_B);
+    assert!(dapps_staking::OperatorHasContracts::<Test>::contains_key(
+        OPERATOR_B
+    ));
+    let tree = dapps_staking::OperatorHasContracts::<Test>::get(&OPERATOR_B);
     assert_eq!(tree.len(), 1);
     assert!(tree.contains(&addr_b));
 
     // addr_a contract is operated by OPERATOR_A.
-    assert!(pallet_contract_operator::ContractHasOperator::<Test>::contains_key(&addr_a));
+    assert!(dapps_staking::ContractHasOperator::<Test>::contains_key(
+        &addr_a
+    ));
     assert_eq!(
-        pallet_contract_operator::ContractHasOperator::<Test>::get(&addr_a),
+        dapps_staking::ContractHasOperator::<Test>::get(&addr_a),
         Some(OPERATOR_A)
     );
 
     // addr_b contract is operated by OPERATOR_B.
-    assert!(pallet_contract_operator::ContractHasOperator::<Test>::contains_key(&addr_b));
+    assert!(dapps_staking::ContractHasOperator::<Test>::contains_key(
+        &addr_b
+    ));
     assert_eq!(
-        pallet_contract_operator::ContractHasOperator::<Test>::get(&addr_b),
+        dapps_staking::ContractHasOperator::<Test>::get(&addr_b),
         Some(OPERATOR_B)
     );
 
     // addr_a contract Parameters is same test_params.
-    assert!(pallet_contract_operator::ContractParameters::<Test>::contains_key(&addr_a));
+    assert!(dapps_staking::ContractParameters::<Test>::contains_key(
+        &addr_a
+    ));
     assert_eq!(
-        pallet_contract_operator::ContractParameters::<Test>::get(&addr_a),
+        dapps_staking::ContractParameters::<Test>::get(&addr_a),
         Some(test_params.clone())
     );
 
     // addr_b contract Parameters is same test_params.
-    assert!(pallet_contract_operator::ContractParameters::<Test>::contains_key(&addr_b));
+    assert!(dapps_staking::ContractParameters::<Test>::contains_key(
+        &addr_b
+    ));
     assert_eq!(
-        pallet_contract_operator::ContractParameters::<Test>::get(&addr_b),
+        dapps_staking::ContractParameters::<Test>::get(&addr_b),
         Some(test_params)
     );
 }

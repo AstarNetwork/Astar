@@ -4154,28 +4154,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "pallet-contract-operator"
-version = "1.10.0"
-dependencies = [
- "derive_more 0.14.1",
- "frame-support",
- "frame-system",
- "hex-literal 0.2.1",
- "pallet-balances",
- "pallet-contracts 2.0.1",
- "pallet-randomness-collective-flip",
- "pallet-timestamp",
- "pallet-transaction-payment",
- "parity-scale-codec",
- "serde",
- "sp-core",
- "sp-io",
- "sp-runtime",
- "sp-std",
- "wabt",
-]
-
-[[package]]
 name = "pallet-contracts"
 version = "2.0.1"
 dependencies = [
@@ -4328,7 +4306,6 @@ dependencies = [
  "hex-literal 0.2.1",
  "num-traits",
  "pallet-balances",
- "pallet-contract-operator",
  "pallet-contracts 2.0.1",
  "pallet-plasm-rewards",
  "pallet-randomness-collective-flip",
@@ -5278,7 +5255,6 @@ dependencies = [
  "pallet-authorship",
  "pallet-babe",
  "pallet-balances",
- "pallet-contract-operator",
  "pallet-contracts 2.0.1",
  "pallet-contracts-primitives 2.0.1",
  "pallet-contracts-rpc-runtime-api",

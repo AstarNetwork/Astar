@@ -4,7 +4,6 @@
 //!
 //! Used Perbil other parameters.
 use codec::{Decode, Encode};
-use pallet_contract_operator::parameters::Verifiable;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
 use sp_runtime::{DispatchError, Perbill};
@@ -18,6 +17,10 @@ pub struct StakingParameters {
     pub option_expired: u128,
     /// For calculating option, **p**.
     pub option_p: u32,
+}
+
+pub trait Verifiable {
+    fn verify(&self) -> Result<(), DispatchError>;
 }
 
 impl Verifiable for StakingParameters {

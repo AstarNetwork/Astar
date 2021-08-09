@@ -13,10 +13,10 @@ use frame_support::{
         WithdrawReasons,
     },
     weights::Weight,
-    IterableStorageDoubleMap, StorageMap, StorageValue,
+    IterableStorageDoubleMap, Parameter, StorageMap, StorageValue,
 };
 use frame_system::{self as system, ensure_signed};
-use pallet_contract_operator::ContractFinder;
+use pallet_contracts::{CodeHash, ContractAddressFor, Gas};
 use pallet_plasm_rewards::{
     traits::{ComputeEraWithParam, EraFinder, ForDappsEraRewardFinder, HistoryDepthFinder},
     EraIndex, Releases,
@@ -24,8 +24,11 @@ use pallet_plasm_rewards::{
 pub use pallet_staking::{Forcing, RewardDestination};
 use sp_core::crypto::UncheckedFrom;
 use sp_runtime::{
-    traits::{AtLeast32BitUnsigned, CheckedSub, Saturating, StaticLookup, Zero},
-    Perbill, RuntimeDebug,
+    traits::{
+        AtLeast32BitUnsigned, CheckedSub, MaybeDisplay, MaybeSerialize, Member, Saturating,
+        StaticLookup, Zero,
+    },
+    DispatchError, Perbill, RuntimeDebug,
 };
 use sp_std::{collections::btree_map::BTreeMap, prelude::*, result, vec::Vec};
 
@@ -38,6 +41,7 @@ pub mod rewards;
 mod tests;
 
 pub use parameters::StakingParameters;
+pub use parameters::Verifiable;
 pub use rewards::ComputeRewardsForDapps;
 pub use sp_staking::SessionIndex;
 
@@ -202,6 +206,107 @@ pub struct VoteCounts {
     good: u32,
 }
 
+pub trait ContractFinder<AccountId, Parameter> {
+    fn is_exists_contract(contract_id: &AccountId) -> bool;
+    fn operator(contract_id: &AccountId) -> Option<AccountId>;
+    fn parameters(contract_id: &AccountId) -> Option<Parameter>;
+}
+
+impl<T: Config> ContractFinder<T::AccountId, T::Parameters> for Module<T>
+where
+    T::AccountId: UncheckedFrom<T::Hash> + AsRef<[u8]>,
+{
+    fn is_exists_contract(contract_id: &T::AccountId) -> bool {
+        <ContractHasOperator<T>>::contains_key(contract_id)
+    }
+    fn operator(contract_id: &T::AccountId) -> Option<T::AccountId> {
+        <ContractHasOperator<T>>::get(contract_id)
+    }
+    fn parameters(contract_id: &T::AccountId) -> Option<T::Parameters> {
+        <ContractParameters<T>>::get(contract_id)
+    }
+}
+
+pub trait OperatorFinder<AccountId: Parameter> {
+    fn contracts(operator_id: &AccountId) -> Vec<AccountId>;
+}
+
+impl<T: Config> OperatorFinder<T::AccountId> for Module<T>
+where
+    T::AccountId: UncheckedFrom<T::Hash> + AsRef<[u8]>,
+{
+    fn contracts(operator_id: &T::AccountId) -> Vec<T::AccountId> {
+        <OperatorHasContracts<T>>::get(operator_id)
+    }
+}
+
+pub trait TransferOperator<AccountId: Parameter>: OperatorFinder<AccountId> {
+    /// Changes an operator for identified contracts with verify.
+    fn transfer_operator(
+        current_operator: AccountId,
+        contracts: Vec<AccountId>,
+        new_operator: AccountId,
+    ) -> Result<(), DispatchError> {
+        Self::verify_transfer_operator(&current_operator, &contracts)?;
+        Self::force_transfer_operator(current_operator, contracts, new_operator);
+        Ok(())
+    }
+
+    fn verify_transfer_operator(
+        current_operator: &AccountId,
+        contracts: &Vec<AccountId>,
+    ) -> Result<(), DispatchError> {
+        let operate_contracts = Self::contracts(current_operator);
+
+        // check the actually operate the contract.
+        if !contracts.iter().all(|c| operate_contracts.contains(c)) {
+            Err(DispatchError::Other(
+                "The sender don't operate the contracts address.",
+            ))?
+        }
+        Ok(())
+    }
+
+    /// Force Changes an operator for identified contracts without verify.
+    fn force_transfer_operator(
+        current_operator: AccountId,
+        contracts: Vec<AccountId>,
+        new_operator: AccountId,
+    );
+}
+
+impl<T: Config> TransferOperator<T::AccountId> for Module<T>
+where
+    T::AccountId: UncheckedFrom<T::Hash> + AsRef<[u8]>,
+{
+    /// Force Changes an operator for identified contracts without verify.
+    fn force_transfer_operator(
+        current_operator: T::AccountId,
+        contracts: Vec<T::AccountId>,
+        new_operator: T::AccountId,
+    ) {
+        // remove origin operator to contracts
+        <OperatorHasContracts<T>>::mutate(&current_operator, |tree| {
+            *tree = tree
+                .iter()
+                .filter(|&x| !contracts.contains(x))
+                .cloned()
+                .collect()
+        });
+
+        // add new_operator to contracts
+        <OperatorHasContracts<T>>::mutate(&new_operator, |tree| {
+            for c in contracts.iter() {
+                (*tree).push(c.clone());
+            }
+        });
+        for c in contracts.iter() {
+            // add contract to new_operator
+            <ContractHasOperator<T>>::insert(&c, new_operator.clone());
+        }
+    }
+}
+
 pub trait Config: pallet_session::Config {
     /// The staking balance.
     type Currency: LockableCurrency<Self::AccountId, Moment = Self::BlockNumber>;
@@ -247,6 +352,17 @@ pub trait Config: pallet_session::Config {
 
     /// The overarching event type.
     type Event: From<Event<Self>> + Into<<Self as system::Config>::Event>;
+
+    type Parameters: Parameter
+        + Member
+        + MaybeSerialize
+        + MaybeDisplay
+        + Default
+        + sp_std::hash::Hash
+        + parameters::Verifiable;
+
+    /// A function type to get the contract address given the instantiator.
+    type DetermineContractAddress: ContractAddressFor<CodeHash<Self>, Self::AccountId>;
 }
 
 decl_storage! {
@@ -332,6 +448,18 @@ decl_storage! {
         ///
         /// This is set to v1.0.0 for new networks.
         StorageVersion build(|_: &GenesisConfig| Releases::V1_0_0): Releases;
+
+        /// A mapping from operators to operated contracts by them.
+        pub OperatorHasContracts get(fn operator_has_contracts): map hasher(blake2_128_concat)
+            T::AccountId => Vec<T::AccountId>;
+
+        /// A mapping from operated contract by operator to it.
+        pub ContractHasOperator get(fn contract_has_operator): map hasher(blake2_128_concat)
+            T::AccountId => Option<T::AccountId>;
+
+        /// A mapping from contract to it's parameters.
+        pub ContractParameters get(fn contract_parameters): map hasher(blake2_128_concat)
+            T::AccountId => Option<T::Parameters>;
     }
 }
 
@@ -340,6 +468,7 @@ decl_event!(
     where
         AccountId = <T as system::Config>::AccountId,
         Balance = BalanceOf<T>,
+        // Parameters = <T as Config>::Parameters,
     {
         /// The amount of minted rewards. (for dapps with nominators)
         Reward(Balance, Balance),
@@ -357,6 +486,12 @@ decl_event!(
         TotalDappsRewards(EraIndex, Balance),
         /// Nominate of stash address.
         Nominate(AccountId),
+        // /// When operator changed,
+        // /// it is issued that 1-st Operator AccountId and 2-nd Contract AccountId.
+        // SetOperator(AccountId, AccountId),
+        // /// When contract's parameters changed,
+        // /// it is issued that 1-st Contract AccountId and 2-nd the contract's new parameters.
+        // SetParameters(AccountId, Parameters),
     }
 );
 
@@ -905,6 +1040,66 @@ decl_module! {
             let actual_rewarded = Self::reward_operator(&era, rewards, &operator);
             // deposit event to total validator rewards
             Self::deposit_event(RawEvent::TotalDappsRewards(era, actual_rewarded));
+        }
+
+        /// Deploys a contact and insert relation of a contract and an operator to mapping.
+        #[weight = *gas_limit]
+        pub fn instantiate(
+            origin,
+            #[compact] endowment: BalanceOf<T>,
+            #[compact] gas_limit: Gas,
+            code_hash: CodeHash<T>,
+            data: Vec<u8>,
+            salt: Vec<u8>,
+            parameters: T::Parameters,
+        ) {
+            let operator = ensure_signed(origin)?;
+
+            // verify parameters.
+            parameters.verify()?;
+
+            let contract = T::DetermineContractAddress::contract_address_for(&code_hash, &data, &operator);
+
+            // add operator to contracts
+            <OperatorHasContracts<T>>::mutate(&operator, |tree| (*tree).push(contract.clone()));
+            // add contract to operator
+            <ContractHasOperator<T>>::insert(&contract, operator.clone());
+            // add contract to parameters
+            <ContractParameters<T>>::insert(&contract, parameters);
+        }
+
+        /// Updates parameters for an identified contact.
+        #[weight = 50_000]
+        pub fn update_parameters(
+            origin,
+            contract: T::AccountId,
+            parameters: T::Parameters,
+        ) {
+            let operator = ensure_signed(origin)?;
+
+            // verify parameters
+            parameters.verify()?;
+
+            let contracts = <OperatorHasContracts<T>>::get(&operator);
+
+            // check the actually operate the contract.
+            if !contracts.contains(&contract) {
+                Err("The sender don't operate the contract address.")?
+            }
+
+            // update parameters
+            <ContractParameters<T>>::insert(&contract, parameters.clone());
+        }
+
+        /// Changes an operator for identified contracts.
+        #[weight = 100_000]
+        pub fn change_operator(
+            origin,
+            contracts: Vec<T::AccountId>,
+            new_operator: T::AccountId,
+        ) {
+            let operator = ensure_signed(origin)?;
+            Self::transfer_operator(operator, contracts, new_operator)?;
         }
     }
 }

@@ -25,7 +25,6 @@ frame-system = { version = "3.0.0", default_features = false }
 pallet-contracts = { path = "../contracts", default_features = false }
 pallet-staking = { version = "3.0.0", default_features = false }
 sp-staking = { version = "3.0.0", default_features = false }
-pallet-contract-operator = { path = "../operator", default_features = false }
 pallet-plasm-rewards = { path = "../plasm-rewards", default_features = false }
 
 [dev-dependencies]
@@ -53,7 +52,6 @@ std = [
     "pallet-timestamp/std",
     "pallet-contracts/std",
     "pallet-staking/std",
-    "pallet-contract-operator/std",
     "pallet-plasm-rewards/std",
     "sp-staking/std",
 ]

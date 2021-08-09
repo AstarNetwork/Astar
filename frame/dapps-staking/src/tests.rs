@@ -521,7 +521,7 @@ fn reward_to_operators_test() {
         advance_session();
         valid_instatiate();
 
-        assert_ok!(Operator::change_operator(
+        assert_ok!(DappsStaking::change_operator(
             Origin::signed(OPERATOR_A),
             vec![addr_a.clone()],
             ALICE_STASH
@@ -594,7 +594,7 @@ fn new_session_scenario_test() {
         advance_session();
         valid_instatiate();
 
-        assert_ok!(Operator::change_operator(
+        assert_ok!(DappsStaking::change_operator(
             Origin::signed(OPERATOR_A),
             vec![addr_a.clone()],
             ALICE_STASH
@@ -668,7 +668,7 @@ fn ignore_nomination_test() {
         advance_session();
         valid_instatiate();
 
-        assert_ok!(Operator::change_operator(
+        assert_ok!(DappsStaking::change_operator(
             Origin::signed(OPERATOR_A),
             vec![addr_a.clone()],
             ALICE_STASH
