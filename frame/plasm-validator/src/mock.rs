@@ -1,185 +1,218 @@
-//! # Plasm Staking Module
-//!
-//! The Plasm staking module manages era, total amounts of rewards and how to distribute.
-#![cfg_attr(not(feature = "std"), no_std)]
+//! Runtime utilities
 
-use frame_support::{
-    decl_event, decl_module, decl_storage,
-    traits::{Currency, Imbalance, LockableCurrency, OnUnbalanced, Time},
-    StorageMap, StorageValue,
-};
-use frame_system::{self as system, ensure_root};
-use pallet_plasm_rewards::{
-    traits::{ComputeEraWithParam, EraFinder, ForSecurityEraRewardFinder, MaybeValidators},
-    EraIndex,
-};
+#![cfg(test)]
+
+use super::*;
+use crate as plasm_validator;
+use frame_support::{parameter_types, traits::OnFinalize};
+use pallet_plasm_rewards::inflation::SimpleComputeTotalPayout;
+use sp_core::{crypto::key_types, H256};
 use sp_runtime::{
-    traits::{Saturating, Zero},
-    Perbill,
+    testing::{Header, UintAuthorityId},
+    traits::{BlakeTwo256, ConvertInto, IdentityLookup, OpaqueKeys},
+    KeyTypeId,
 };
-pub use sp_staking::SessionIndex;
-use sp_std::{prelude::*, vec::Vec};
 
-#[cfg(test)]
-mod mock;
-#[cfg(test)]
-mod tests;
+pub type BlockNumber = u64;
+pub type AccountId = u64;
+pub type Balance = u64;
 
-mod compute_era;
-pub use compute_era::*;
+pub const VALIDATOR_A: u64 = 1;
+pub const VALIDATOR_B: u64 = 2;
+pub const VALIDATOR_C: u64 = 3;
+pub const VALIDATOR_D: u64 = 4;
+pub const VALIDATOR_E: u64 = 5;
 
-pub type BalanceOf<T> =
-    <<T as Config>::Currency as Currency<<T as system::Config>::AccountId>>::Balance;
-pub type MomentOf<T> = <<T as Config>::Time as Time>::Moment;
+type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Runtime>;
+type Block = frame_system::mocking::MockBlock<Runtime>;
 
-type PositiveImbalanceOf<T> =
-    <<T as Config>::Currency as Currency<<T as system::Config>::AccountId>>::PositiveImbalance;
-type NegativeImbalanceOf<T> =
-    <<T as Config>::Currency as Currency<<T as system::Config>::AccountId>>::NegativeImbalance;
+pub fn new_test_ext() -> sp_io::TestExternalities {
+    let mut storage = frame_system::GenesisConfig::default()
+        .build_storage::<Runtime>()
+        .unwrap();
 
-pub trait Config: system::Config {
-    /// The staking balance.
-    type Currency: LockableCurrency<Self::AccountId, Moment = Self::BlockNumber>;
-
-    /// Time used for computing era duration.
-    type Time: Time;
-
-    /// Tokens have been minted and are unused for validator-reward. Maybe, dapps-staking uses ().
-    type RewardRemainder: OnUnbalanced<NegativeImbalanceOf<Self>>;
-
-    /// Handler for the unbalanced increment when rewarding a staker. Maybe, dapps-staking uses ().
-    type Reward: OnUnbalanced<PositiveImbalanceOf<Self>>;
-
-    /// The information of era.
-    type EraFinder: EraFinder<EraIndex, SessionIndex, MomentOf<Self>>;
-
-    /// The rewards for validators.
-    type ForSecurityEraReward: ForSecurityEraRewardFinder<BalanceOf<Self>>;
-
-    /// The return type of ComputeEraWithParam.
-    type ComputeEraParam;
-
-    /// Acutually computing of ComputeEraWithParam.
-    type ComputeEra: ComputeEraOnModule<Self::ComputeEraParam>;
-
-    /// The overarching event type.
-    type Event: From<Event<Self>> + Into<<Self as system::Config>::Event>;
-}
-
-decl_storage! {
-    trait Store for Module<T: Config> as DappsStaking {
-        /// The already untreated era is EraIndex.
-        pub UntreatedEra get(fn untreated_era): EraIndex;
-
-        /// The currently elected validator set keyed by stash account ID.
-        pub ElectedValidators get(fn elected_validators):
-            map hasher(twox_64_concat) EraIndex => Option<Vec<T::AccountId>>;
-
-        /// Set of next era accounts that can validate blocks.
-        pub Validators get(fn validators) config(): Vec<T::AccountId>;
+    let _ = pallet_balances::GenesisConfig::<Runtime> {
+        balances: vec![
+            (VALIDATOR_A, 1_000_000_000_000_000_000),
+            (VALIDATOR_B, 1_000_000_000_000_000_000),
+            (VALIDATOR_C, 1_000_000_000_000_000_000),
+            (VALIDATOR_D, 1_000_000_000_000_000_000),
+        ],
     }
-}
+    .assimilate_storage(&mut storage);
 
-decl_module! {
-    pub struct Module<T: Config> for enum Call where origin: T::Origin {
-        fn deposit_event() = default;
+    let validators = vec![VALIDATOR_A, VALIDATOR_B, VALIDATOR_C, VALIDATOR_D];
 
-        fn on_finalize() {
-            if let Some(active_era) = T::EraFinder::active() {
-                let mut untreated_era = Self::untreated_era();
-
-                while active_era.index > untreated_era {
-                    let rewards = match T::ForSecurityEraReward::get(&untreated_era) {
-                        Some(rewards) => rewards,
-                        None => {
-                            frame_support::print("Error: start_session_index must be set for current_era");
-                            return;
-                        }
-                    };
-                    let actual_rewarded = Self::reward_to_validators(&untreated_era, &rewards);
-
-                    // deposit event to total validator rewards
-                    Self::deposit_event(RawEvent::TotalValidatorRewards(untreated_era, actual_rewarded));
-
-                    untreated_era+=1;
-                }
-                UntreatedEra::put(untreated_era);
-            }
-        }
-
-        // ----- Root calls.
-        /// Manually set new validators.
-        ///
-        /// # <weight>
-        /// - One storage write
-        /// # </weight>
-        /// TODO: weight
-        #[weight = 50_000]
-        fn set_validators(origin, new_validators: Vec<T::AccountId>) {
-            ensure_root(origin)?;
-            <Validators<T>>::put(&new_validators);
-            Self::deposit_event(RawEvent::NewValidators(new_validators));
-        }
+    let _ = pallet_plasm_rewards::GenesisConfig {
+        ..Default::default()
     }
+    .assimilate_storage(&mut storage);
+
+    let _ = plasm_validator::GenesisConfig::<Runtime> {
+        validators: validators.clone(),
+    }
+    .assimilate_storage(&mut storage);
+
+    let _ = pallet_session::GenesisConfig::<Runtime> {
+        keys: validators
+            .iter()
+            .map(|x| (*x, *x, UintAuthorityId(*x)))
+            .collect(),
+    }
+    .assimilate_storage(&mut storage);
+
+    storage.into()
 }
 
-decl_event!(
-    pub enum Event<T>
-    where
-        AccountId = <T as system::Config>::AccountId,
-        Balance = BalanceOf<T>,
+frame_support::construct_runtime!(
+    pub enum Runtime where
+        Block = Block,
+        NodeBlock = Block,
+        UncheckedExtrinsic = UncheckedExtrinsic,
     {
-        /// Validator set changed.
-        NewValidators(Vec<AccountId>),
-        /// The amount of minted rewards for validators.
-        ValidatorReward(EraIndex, AccountId, Balance),
-        /// The total amount of minted rewards for validators.
-        TotalValidatorRewards(EraIndex, Balance),
+        System: frame_system::{Module, Call, Config, Storage, Event<T>},
+        Timestamp: pallet_timestamp::{Module, Storage},
+        Session: pallet_session::{Module, Call, Storage, Event},
+        Balances: pallet_balances::{Module, Call, Storage, Config<T>, Event<T>},
+        PlasmRewards: pallet_plasm_rewards::{Module, Call, Storage, Config, Event<T>},
+        PlasmValidator: plasm_validator::{Module, Call, Storage, Config<T>, Event<T>},
     }
 );
 
-impl<T: Config> Module<T> {
-    pub fn reward_to_validators(era: &EraIndex, max_payout: &BalanceOf<T>) -> BalanceOf<T> {
-        if let Some(validators) = Self::elected_validators(era) {
-            let validator_len: u64 = validators.len() as u64;
-            let mut total_imbalance = <PositiveImbalanceOf<T>>::zero();
-            for v in validators.iter() {
-                let reward =
-                    Perbill::from_rational_approximation(1, validator_len) * max_payout.clone();
-                total_imbalance.subsume(Self::reward_validator(v, reward));
-            }
-            let total_payout = total_imbalance.peek();
-
-            let rest = max_payout.saturating_sub(total_payout.clone());
-
-            T::Reward::on_unbalanced(total_imbalance);
-            T::RewardRemainder::on_unbalanced(T::Currency::issue(rest));
-            total_payout
-        } else {
-            BalanceOf::<T>::zero()
-        }
-    }
-
-    fn reward_validator(stash: &T::AccountId, reward: BalanceOf<T>) -> PositiveImbalanceOf<T> {
-        T::Currency::deposit_into_existing(&stash, reward)
-            .unwrap_or(PositiveImbalanceOf::<T>::zero())
-    }
+parameter_types! {
+    pub const BlockHashCount: u64 = 250;
 }
 
-/// Returns the next validator candidate for calling by plasm-rewards when new era.
-impl<T: Config> MaybeValidators<EraIndex, T::AccountId> for Module<T> {
-    fn compute(current_era: EraIndex) -> Option<Vec<T::AccountId>> {
-        // Apply new validator set
-        <ElectedValidators<T>>::insert(&current_era, <Validators<T>>::get());
-        Some(Self::validators())
-    }
+impl frame_system::Config for Runtime {
+    type Origin = Origin;
+    type BaseCallFilter = ();
+    type Index = u64;
+    type BlockNumber = BlockNumber;
+    type Call = Call;
+    type Hash = H256;
+    type Hashing = BlakeTwo256;
+    type AccountId = AccountId;
+    type Lookup = IdentityLookup<Self::AccountId>;
+    type Header = Header;
+    type Event = Event;
+    type BlockHashCount = BlockHashCount;
+    type Version = ();
+    type PalletInfo = PalletInfo;
+    type AccountData = pallet_balances::AccountData<u64>;
+    type OnNewAccount = ();
+    type OnKilledAccount = ();
+    type DbWeight = ();
+    type SystemWeightInfo = ();
+    type BlockWeights = ();
+    type BlockLength = ();
+    type SS58Prefix = ();
 }
 
-/// Get the amount of staking per Era in a module in the Plasm Network
-/// for callinng by plasm-rewards when end era.
-impl<T: Config> ComputeEraWithParam<EraIndex> for Module<T> {
-    type Param = T::ComputeEraParam;
-    fn compute(era: &EraIndex) -> T::ComputeEraParam {
-        T::ComputeEra::compute(era)
+parameter_types! {
+    pub const MinimumPeriod: u64 = 1;
+}
+impl pallet_timestamp::Config for Runtime {
+    type Moment = u64;
+    type OnTimestampSet = ();
+    type MinimumPeriod = MinimumPeriod;
+    type WeightInfo = ();
+}
+
+parameter_types! {
+    pub const Period: u64 = 1;
+    pub const Offset: u64 = 0;
+}
+
+pub struct TestSessionHandler;
+impl pallet_session::SessionHandler<u64> for TestSessionHandler {
+    const KEY_TYPE_IDS: &'static [KeyTypeId] = &[key_types::DUMMY];
+    fn on_genesis_session<T: OpaqueKeys>(_validators: &[(u64, T)]) {}
+    fn on_new_session<T: OpaqueKeys>(
+        _changed: bool,
+        _validators: &[(u64, T)],
+        _queued_validators: &[(u64, T)],
+    ) {
+    }
+    fn on_disabled(_validator_index: usize) {}
+    fn on_before_session_ending() {}
+}
+
+impl pallet_session::Config for Runtime {
+    type ShouldEndSession = pallet_session::PeriodicSessions<Period, Offset>;
+    type NextSessionRotation = pallet_session::PeriodicSessions<Period, Offset>;
+    type SessionManager = PlasmRewards;
+    type SessionHandler = TestSessionHandler;
+    type ValidatorId = u64;
+    type ValidatorIdOf = ConvertInto;
+    type Keys = UintAuthorityId;
+    type Event = Event;
+    type DisabledValidatorsThreshold = ();
+    type WeightInfo = ();
+}
+
+parameter_types! {
+    pub const ExistentialDeposit: Balance = 1_000_000_000_000;
+}
+
+impl pallet_balances::Config for Runtime {
+    type Balance = Balance;
+    type Event = Event;
+    type DustRemoval = ();
+    type ExistentialDeposit = ExistentialDeposit;
+    type AccountStore = frame_system::Module<Runtime>;
+    type WeightInfo = ();
+    type MaxLocks = ();
+}
+
+parameter_types! {
+    pub const SessionsPerEra: sp_staking::SessionIndex = 10;
+    pub const BondingDuration: EraIndex = 3;
+}
+
+impl pallet_plasm_rewards::Config for Runtime {
+    type Currency = Balances;
+    type Time = Timestamp;
+    type SessionsPerEra = SessionsPerEra;
+    type BondingDuration = BondingDuration;
+    type ComputeEraForDapps = PlasmValidator;
+    type ComputeEraForSecurity = PlasmValidator;
+    type ComputeTotalPayout = SimpleComputeTotalPayout;
+    type MaybeValidators = PlasmValidator;
+    type Event = Event;
+}
+
+impl Config for Runtime {
+    type Currency = Balances;
+    type Time = Timestamp;
+    type RewardRemainder = (); // Reward remainder is burned.
+    type Reward = (); // Reward is minted.
+    type EraFinder = PlasmRewards;
+    type ForSecurityEraReward = PlasmRewards;
+    type ComputeEraParam = u32;
+    type ComputeEra = PlasmValidator;
+    type Event = Event;
+}
+
+pub const PER_SESSION: u64 = 60 * 1000;
+
+pub fn advance_session() {
+    let next = System::block_number() + 1;
+    // increase block numebr
+    System::set_block_number(next);
+    // increase timestamp + 10
+    let now_time = Timestamp::get();
+    // on initialize
+    Timestamp::set_timestamp(now_time + PER_SESSION);
+    Session::rotate_session();
+    assert_eq!(Session::current_index(), (next / Period::get()) as u32);
+
+    // on finalize
+    PlasmRewards::on_finalize(next);
+}
+
+pub fn advance_era() {
+    let current_era = PlasmRewards::current_era().unwrap();
+    while current_era == PlasmRewards::current_era().unwrap() {
+        advance_session();
     }
 }
