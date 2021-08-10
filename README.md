@@ -1,145 +1,98 @@
-# Astar Network
-
 ![astar-cover](https://user-images.githubusercontent.com/40356749/125183345-edbaa980-e226-11eb-92e2-7b666ed56515.png)
 
-[![CI](https://github.com/PlasmNetwork/Plasm/workflows/Integration/badge.svg)](https://github.com/PlasmNetwork/Astar/actions)
+<div align="center">
 
-Astar Network is a dApps hub on Polkadot with unique features like dApps Staking, supporting mulit-virtual machine (EVM & WAsM), and offers layer2 solutions from day 1. Shiden Network is our sister network on Kusama.
+[![Integration Action](https://github.com/PlasmNetwork/Plasm/workflows/Integration/badge.svg)](https://github.com/PlasmNetwork/Astar/actions)
+[![GitHub tag (latest by date)](https://img.shields.io/github/v/tag/PlasmNetwork/Astar)](https://github.com/PlasmNetwork/Astar/tags)
+[![Substrate version](https://img.shields.io/badge/Substrate-3.0.0-brightgreen?logo=Parity%20Substrate)](https://substrate.dev/)
+[![License](https://img.shields.io/github/license/PlasmNetwork/Astar?color=green)](https://github.com/PlasmNetwork/Astar/blob/development/dusty/LICENSE)
+ <br />
+[![Twitter URL](https://img.shields.io/twitter/follow/Plasm_Network?style=social)](https://twitter.com/Plasm_Network)
+[![YouTube](https://img.shields.io/youtube/channel/subscribers/UC36JgEF6gqatVSK9xlzzrvQ?style=social)](https://www.youtube.com/channel/UC36JgEF6gqatVSK9xlzzrvQ)
+[![Docker](https://img.shields.io/docker/pulls/staketechnologies/astar-collator?logo=docker)](https://hub.docker.com/r/staketechnologies/astar-collator)
+[![Discord](https://img.shields.io/badge/Discord-gray?logo=discord)](https://discord.gg/Z3nC9U4)
+[![Telegram](https://img.shields.io/badge/Telegram-gray?logo=telegram)](https://t.me/PlasmOfficial)
+[![Medium](https://img.shields.io/badge/Medium-gray?logo=medium)](https://medium.com/astar-network)
 
-## Documentation
+</div>
 
-* [Documentation](https://docs.plasmnet.io/)
-* [Slide Deck](https://drive.google.com/file/d/1qnx2XZTtU0qCwxBX--FUHCdBmOK7ZIF3/view?usp=sharing)
+Astar Network is an interoperable blockchain based the Substrate framework and the hub for dApps within the Polkadot Ecosystem.
+With Astar Network and Shiden Network, people can stake their tokens to a Smart Contract for rewarding projects that provide value to the network.
 
-## Whitepaper
+For contributing to this project, please read our [Contribution Guideline](./CONTRIBUTING.md).
 
+## Building From Source
+
+> This section assumes that the developer is running on either macOS or Debian-variant operating system. For Windows, although there are ways to run it, we recommend using [WSL](https://docs.microsoft.com/en-us/windows/wsl/install-win10) or from a virtual machine for stability.
+
+Execute the following command from your terminal to set up the development environment and build the node runtime.
+
+```bash
+# install Substrate development environment via the automatic script
+$ curl https://getsubstrate.io -sSf | bash -s -- --fast
+
+# clone the Git repository
+$ git clone --recurse-submodules https://github.com/PlasmNetwork/Astar.git
+
+# change current working directory
+$ cd Astar
+
+# compile the node
+# note: you may encounter some errors if `wasm32-unknown-unknown` is not installed, or if the toolchain channel is outdated
+$ cargo build --release
+
+# run a temporary developer node locally
+# `plasm --help` for more commands
+$ ./target/release/plasm --dev --tmp
+```
+
+### Building with Nix
+
+```bash
+# install Nix package manager:
+$ curl https://nixos.org/nix/install | sh
+
+# run from root of the project folder (`Astar/` folder)
+$ nix-shell -I nixpkgs=channel:nixos-21.05 third-party/nix/shell.nix --run "cargo run --release"
+```
+
+## Running a Validator Node
+
+To set a validator node, you must have a fully synced node with the proper arguments, which can be done with the following command.
+
+```bash
+# start a Dusty validator node with
+$ ./target/release/plasm \
+  --base-path <path to save blocks> \
+  --chain dusty \
+  --name <node display name> \
+  --port 30333 \
+  --ws-port 9944 \
+  --rpc-port 9933 \
+  --telemetry-url 'wss://telemetry.polkadot.io/submit/ 0' \
+  --rpc-cors all \
+  --validator
+```
+
+If the node was properly set, you should be able to check your node with the value passed on the `--name` parameter in the [Telemetry](https://telemetry.polkadot.io/#list/Dusty).
+
+Now, you can obtain the node's session key by sending an RPC to the node.
+
+```bash
+# send `rotate_keys` request
+$ curl -H 'Content-Type: application/json' --data '{ "jsonrpc":"2.0", "method":"author_rotateKeys", "id":1 }' localhost:9933
+
+# should return a long string of hex, which is your session key
+{"jsonrpc":"2.0","result":"<session key in hex>","id":1}
+```
+
+// todo: add a short guide for registering the validator node, creating controller/stash accounts, and Staking/Nominating
+
+## Further Reading
+
+* [Official Documentation](https://docs.astar.network/)
 * [Whitepaper](https://github.com/PlasmNetwork/plasmdocs/blob/master/wp/en.pdf)
 * [Whitepaper(JP)](https://github.com/PlasmNetwork/plasmdocs/blob/master/wp/jp.pdf)
-
-## Community
-
-* Common group: [Telegram](https://t.me/PlasmOfficial)
-* Technical group: [Discord](https://discord.gg/Z3nC9U4)
-* Subscribe on [Astar Network Twitter](https://twitter.com/Plasm_Network)
-* Subscrive on [Shiden Network Twitter](https://twitter.com/ShidenNetwork)
-
-## Table of Contents
-
-* [Introduction](https://github.com/PlasmNetwork/Astar/tree/development/dusty#introduction)
-* [Install Astar](https://github.com/PlasmNetwork/Astar/tree/development/dusty#install-plasm)
-* [Plasm Validator Program](https://github.com/PlasmNetwork/Astar/tree/development/dusty#plasm-validator-program)
-* [Examples](https://github.com/PlasmNetwork/Astar/tree/development/dusty#examples)
-
-Introduction
-============
-
-Astar Network is a scalable and interoperable infrastructure for Web3.0. Since Astar Network is built with [Parity’s Substrate framework](https://www.substrate.io/), it can be a future [Polkadot](https://polkadot.network/) Parachain that also acts as a scalable smart contract platform. The Polkadot Relaychain, by design, does not support smart contracts. This allows Astar the opportunity to fill in this gap. Scalability is obviously one of the most crucial demands DApp developers have. Ideally, the developers can build whatever applications on Astar Network without having to consider its scalability. In addition to that, Astar Network is a multi virtual machines platfrom. Astar supports both Ethereum Virtual Machine and WebAssembly. All devs of Astar Network can deploy Solidity smart contracts by using existing Ethereum tools such as Metamask and Remix.
-
-Based on the above, Astar has some features.
-- **[Optimistic Virtual Machine](https://docs.plasmnet.io/learn/optimistic-virtual-machine)**
-- **[ZK Rollups](https://github.com/PlasmNetwork/ZKRollups)**
-- **[DApps Staking](https://docs.plasmnet.io/learn/dapps-reward)**
-- **[Operator Trading](https://docs.plasmnet.io/learn/operator-trading)**
-- **[Lockdrop](https://docs.plasmnet.io/learn/lockdrop)**
-
-Once Polkadot is launched, we will connect our root chain to Polkadot, and we aim to be one of the parachains.
-<img width="888" alt="Screen Shot 2021-02-01 at 14 15 29" src="https://user-images.githubusercontent.com/29359048/106417721-0b296180-6498-11eb-8a0a-a10a8e387433.png">
-
-Install Astar
-=============
-
-* Astar node binaries [releases](https://github.com/PlasmNetwork/Astar/releases).
-* Node [custom types](https://github.com/PlasmNetwork/Astar/tree/master/bin/node/cli/res/custom_types.json).
-
-> Latest version you can try to build from source.
-
-Building from source
---------------------
-
-Ensure you have Rust and the support software:
-
-    curl https://sh.rustup.rs -sSf | sh
-    # on Windows download and run rustup-init.exe
-    # from https://rustup.rs instead
-
-    rustup update nightly
-    rustup target add wasm32-unknown-unknown --toolchain nightly
-
-You will also need to install the following dependencies:
-
-* Linux: `sudo apt install cmake git clang libclang-dev build-essential`
-* Mac: `brew install cmake git llvm`
-* Windows: Download and install the Pre Build Windows binaries of LLVM from http://releases.llvm.org/download.html
-
-Install additional build tools:
-
-    cargo +nightly install --git https://github.com/alexcrichton/wasm-gc
-
-Install the Astar node from git source:
-```
-    cargo +nightly install --locked --force --git https://github.com/PlasmNetwork/Astar --tag v1.9.0-dusty plasm
-    # include the tag above to specify the version you want. Refer to the tags on this repo
-```
-
-Run node on [Dusty Network](https://telemetry.polkadot.io/#list/Dusty):
-
-    plasm
-
-Or run on your local development network:
-
-    plasm --dev
-
-Building with Nix
------------------
-
-Install Nix package manager:
-
-    curl https://nixos.org/nix/install | sh
-
-Run on your Nix shell:
-
-    git clone https://github.com/PlasmNetwork/Plasm && cd Plasm
-    nix-shell -I nixpkgs=channel:nixos-21.05 third-party/nix/shell.nix --run "cargo run --release"
-
-Examples
-========
-
-You can see our demo and presentation:
-* [Version1](https://www.youtube.com/watch?v=T70iEgyuXbw&feature=youtu.be): 2019/04/25 CLI Demo
-* [Version2](https://youtu.be/5MoO3Epgvv0): 2019/05/22 UI Demo No explanations yet.
-* [Subzero Summit](https://www.youtube.com/watch?v=OyKvA_vx1z0): 2020/04 Presentation at Subzero Summit
-* [DOT CON][https://www.youtube.com/watch?v=og0yUFdYyLY]: 2019/10 Presentation at DOT CON
-
-Contributing to Astar
-=======================
-
-Currently, we have 2 production networks:
-
-- [Astar Network](https://astar.network/): formerly known as Plasm Network, and our future Parachain on Polkadot Network
-- [Shiden Network](https://shiden.astar.network/): Parachain of Kusama Network and our canary release for Astar Network
-
-And 2 test networks:
-
-- [Dusty Network](https://github.com/PlasmNetwork/Astar/tree/development/dusty): an independent test network with the latest cutting edge features before it is introduced to Astar Network
-- [Shibuya Network](https://github.com/PlasmNetwork/Astar/tree/development/shibuya): a Parachain test network with the latest cutting edge features related to XMCP, collators, and other cross chain operations that is planned to be rolled out to Shiden Network
-
-In the future we will gradually change this structure to have a single test network.
-For details, please read the [Contribution Guidelines](./CONTRIBUTING.md).
-
-If you would like to be the validator, please check out [our tutorial](https://docs.plasmnet.io/build/validator-guide) and join [Discord tech channel](https://discord.gg/wUcQt3R)
-
-Contacts
---------
-
-**Maintainers**
-
-* [Public_Sate](https://twitter.com/public_sate)
-* [Task Ohmori](https://twitter.com/taskooh?lang=en)
-* [Aleksandr Krupenkin](https://github.com/akru)
-* [Sota Watanabe](https://twitter.com/WatanabeSota)
-* [Hyungsuk Kang](https://twitter.com/hskang0525)
-* [Hoon Kim](https://github.com/hoonsubin)
-
-* * *
-
-Astar is licensed under the GPLv3.0 by Stake Technologies Inc.
+* [Subtrate Developer Hub](https://substrate.dev/docs/en/)
+* [Substrate Glossary](https://substrate.dev/docs/en/knowledgebase/getting-started/glossary)
+* [Substrate Client Library Documentation](https://polkadot.js.org/docs/)
