@@ -1,4 +1,4 @@
-on: [push]
+on: [push, pull_request]
 
 name: Integration
 
@@ -75,9 +75,6 @@ jobs:
       uses: actions/checkout@v2
       with:
         submodules: true
-
-    - name: Check targets are installed correctly
-      run: rustup target list --installed
 
     - name: Build optimized binary
       run: |

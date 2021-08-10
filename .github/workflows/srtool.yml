@@ -1,7 +1,7 @@
-name: Srtool build
-
 on:
-  push: []
+  push
+
+name: Srtool build
 
 jobs:
   srtool:
@@ -12,7 +12,6 @@ jobs:
     steps:
       - uses: actions/checkout@v2
         with:
-          fetch-depth: 0
           submodules: true
 
       - name: Srtool build
@@ -20,7 +19,7 @@ jobs:
         uses: chevdor/srtool-actions@v0.3.0
         with:
           chain: ${{ matrix.chain }}
-          runtime_dir: bin/node/runtime/
+          runtime_dir: bin/node/runtime
 
       - name: Summary
         run: |
