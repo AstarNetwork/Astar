@@ -6,7 +6,7 @@
 
 use frame_support::{
     construct_runtime, match_type, parameter_types,
-    traits::Filter,
+    traits::{Currency, OnUnbalanced, Filter, Imbalance},
     weights::{
         constants::{BlockExecutionWeight, ExtrinsicBaseWeight, WEIGHT_PER_SECOND},
         DispatchClass, Weight, WeightToFeeCoefficient, WeightToFeeCoefficients,
@@ -23,7 +23,7 @@ use sp_core::OpaqueMetadata;
 use sp_inherents::{CheckInherentsResult, InherentData};
 use sp_runtime::{
     create_runtime_str, generic, impl_opaque_keys,
-    traits::{AccountIdLookup, BlakeTwo256, Block as BlockT, ConvertInto, OpaqueKeys},
+    traits::{AccountIdLookup, BlakeTwo256, Block as BlockT, ConvertInto, OpaqueKeys, AccountIdConversion},
     transaction_validity::{TransactionSource, TransactionValidity},
     ApplyExtrinsicResult, FixedPointNumber, Perbill, Perquintill,
 };
@@ -140,6 +140,8 @@ impl Filter<Call> for BaseFilter {
         match call {
             // These modules are not allowed to be called by transactions:
             Call::Balances(_) => false,
+            //
+            Call::CollatorSelection(pallet_collator_selection::Call::leave_intent(..)) => false,
             // Other modules should works:
             _ => true,
         }
@@ -192,7 +194,7 @@ parameter_types! {
 impl pallet_timestamp::Config for Runtime {
     /// A timestamp: milliseconds since the unix epoch.
     type Moment = u64;
-    type OnTimestampSet = ();
+    type OnTimestampSet = BlockReward;
     type MinimumPeriod = MinimumPeriod;
     type WeightInfo = ();
 }
@@ -264,7 +266,7 @@ impl pallet_authorship::Config for Runtime {
 
 parameter_types! {
     pub const DisabledValidatorsThreshold: Perbill = Perbill::from_percent(33);
-    pub const SessionPeriod: BlockNumber = 1 * HOURS;
+    pub const SessionPeriod: BlockNumber = 7 * DAYS;
     pub const SessionOffset: BlockNumber = 0;
 }
 
@@ -285,8 +287,7 @@ parameter_types! {
     pub const PotId: PalletId = PalletId(*b"PotStake");
     pub const MaxCandidates: u32 = 200;
     pub const MinCandidates: u32 = 5;
-    pub const SessionLength: BlockNumber = 1 * HOURS;
-    pub const MaxInvulnerables: u32 = 100;
+    pub const MaxInvulnerables: u32 = 20;
 }
 
 impl pallet_collator_selection::Config for Runtime {
@@ -303,6 +304,36 @@ impl pallet_collator_selection::Config for Runtime {
     type ValidatorIdOf = pallet_collator_selection::IdentityCollator;
     type ValidatorRegistration = Session;
     type WeightInfo = ();
+}
+
+
+parameter_types! {
+	pub const TreasuryPalletId: PalletId = PalletId(*b"py/trsry");
+	pub const DappsStakingPalletId: PalletId = PalletId(*b"py/dpsst");
+}
+
+type NegativeImbalance = <Balances as Currency<AccountId>>::NegativeImbalance;
+
+pub struct OnBlockReward;
+impl OnUnbalanced<NegativeImbalance> for OnBlockReward {
+    fn on_nonzero_unbalanced(amount: NegativeImbalance) {
+        let (dapps, maintain) = amount.ration(50, 50);
+        Balances::resolve_creating(&DappsStakingPalletId::get().into_account(), dapps);
+
+        let (treasury, collators) = maintain.ration(40, 10);
+        Balances::resolve_creating(&TreasuryPalletId::get().into_account(), treasury);
+        Balances::resolve_creating(&PotId::get().into_account(), collators);
+    }
+}
+
+parameter_types! {
+    pub const RewardAmount: Balance = 2_664 * MILLISDN;
+}
+
+impl pallet_block_reward::Config for Runtime {
+    type Currency = Balances;
+    type OnBlockReward = OnBlockReward;
+    type RewardAmount = RewardAmount;
 }
 
 parameter_types! {
@@ -444,6 +475,7 @@ construct_runtime!(
         TransactionPayment: pallet_transaction_payment::{Pallet, Storage} = 30,
         Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>} = 31,
         Vesting: pallet_vesting::{Pallet, Call, Storage, Config<T>, Event<T>} = 32,
+        BlockReward: pallet_block_reward::{Pallet} = 33,
 
         Authorship: pallet_authorship::{Pallet, Call, Storage, Inherent} = 40,
         CollatorSelection: pallet_collator_selection::{Pallet, Call, Storage, Event<T>, Config<T>} = 41,
@@ -579,12 +611,14 @@ impl_runtime_apis! {
     }
 
     impl sp_session::SessionKeys<Block> for Runtime {
-        fn generate_session_keys(_: Option<Vec<u8>>) -> Vec<u8> {
-            Vec::new()
+        fn generate_session_keys(seed: Option<Vec<u8>>) -> Vec<u8> {
+            SessionKeys::generate(seed)
         }
 
-        fn decode_session_keys(_: Vec<u8>) -> Option<Vec<(Vec<u8>, sp_core::crypto::KeyTypeId)>> {
-            Some(Vec::new())
+        fn decode_session_keys(
+            encoded: Vec<u8>,
+        ) -> Option<Vec<(Vec<u8>, sp_core::crypto::KeyTypeId)>> {
+            SessionKeys::decode_into_raw_public_keys(&encoded)
         }
     }
 
