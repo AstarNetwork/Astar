@@ -1,5 +1,5 @@
 [package]
-name = "plasm-runtime"
+name = "astar-runtime"
 version = "1.10.0"
 authors = ["Stake Technologies <devops@stake.co.jp>"]
 edition = "2018"
@@ -15,7 +15,7 @@ evm = { version = "0.26.0", default-features = false }
 smallvec = "1.6.1"
 
 # primitives
-plasm-primitives = { path = "../primitives", default-features = false }
+plasm-primitives = { path = "../../bin/node/primitives", default-features = false }
 sp-core = { version = "3.0.0", default-features = false }
 sp-io = { version = "3.0.0", default-features = false }
 sp-runtime = { version = "3.0.0", default-features = false }
@@ -32,12 +32,12 @@ sp-session = { version = "3.0.0", default-features = false }
 sp-staking = { version = "3.0.0", default-features = false }
 
 # frame dependencies
-pallet-custom-signatures = { path = "../../../frame/custom-signatures", default-features = false }
-pallet-evm = { path = "../../../vendor/frontier/frame/evm", default-features = false }
-pallet-evm-precompile-bn128 = { path = "../../../vendor/frontier/frame/evm/precompile/bn128", default-features = false }
-pallet-evm-precompile-simple = { path = "../../../vendor/frontier/frame/evm/precompile/simple", default-features = false }
-pallet-evm-precompile-modexp = { path = "../../../vendor/frontier/frame/evm/precompile/modexp", default-features = false }
-pallet-evm-precompile-dispatch = { path = "../../../vendor/frontier/frame/evm/precompile/dispatch", default-features = false }
+pallet-custom-signatures = { path = "../../frame/custom-signatures", default-features = false }
+pallet-evm = { path = "../../vendor/frontier/frame/evm", default-features = false }
+pallet-evm-precompile-bn128 = { path = "../../vendor/frontier/frame/evm/precompile/bn128", default-features = false }
+pallet-evm-precompile-simple = { path = "../../vendor/frontier/frame/evm/precompile/simple", default-features = false }
+pallet-evm-precompile-modexp = { path = "../../vendor/frontier/frame/evm/precompile/modexp", default-features = false }
+pallet-evm-precompile-dispatch = { path = "../../vendor/frontier/frame/evm/precompile/dispatch", default-features = false }
 frame-executive = { version = "3.0.0", default-features = false }
 pallet-authorship = { version = "3.0.0", default-features = false }
 pallet-babe = { version = "3.0.0", default-features = false }
@@ -65,8 +65,8 @@ pallet-transaction-payment = { version = "3.0.0", default-features = false }
 pallet-transaction-payment-rpc-runtime-api = { version = "3.0.0", default-features = false }
 pallet-utility = { version = "3.0.0", default-features = false }
 pallet-vesting = { version = "3.0.0", default-features = false }
-fp-rpc = { path = "../../../vendor/frontier/primitives/rpc", default-features = false }
-pallet-ethereum = { path = "../../../vendor/frontier/frame/ethereum", default-features = false }
+fp-rpc = { path = "../../vendor/frontier/primitives/rpc", default-features = false }
+pallet-ethereum = { path = "../../vendor/frontier/frame/ethereum", default-features = false }
 
 [build-dependencies]
 wasm-builder-runner = { package = "substrate-wasm-builder-runner", version = "1.0.5" }

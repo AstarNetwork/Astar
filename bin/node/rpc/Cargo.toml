@@ -5,7 +5,7 @@ authors = ["Stake Technologies <devops@stake.co.jp>"]
 edition = "2018"
 
 [dependencies]
-plasm-runtime = { path = "../runtime" }
+astar-runtime = { path = "../../../runtime/astar" }
 plasm-primitives = { path = "../primitives" }
 fc-rpc = { path = "../../../vendor/frontier/client/rpc", features = ["rpc_binary_search_estimate"] }
 fc-rpc-core = { path = "../../../vendor/frontier/client/rpc-core" }

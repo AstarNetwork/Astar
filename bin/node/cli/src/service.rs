@@ -3,7 +3,7 @@
 use fc_consensus::FrontierBlockImport;
 use fc_rpc_core::types::{FilterPool, PendingTransactions};
 use plasm_primitives::Block;
-use plasm_runtime::RuntimeApi;
+use astar_runtime::RuntimeApi;
 use sc_client_api::{BlockchainEvents, ExecutorProvider, RemoteBackend};
 use sc_finality_grandpa::{self as grandpa, FinalityProofProvider as GrandpaFinalityProofProvider};
 use sc_network::NetworkService;
@@ -17,8 +17,8 @@ use std::{
 
 sc_executor::native_executor_instance!(
     pub Executor,
-    plasm_runtime::api::dispatch,
-    plasm_runtime::native_version,
+    astar_runtime::api::dispatch,
+    astar_runtime::native_version,
 );
 
 type FullClient = sc_service::TFullClient<Block, RuntimeApi, Executor>;

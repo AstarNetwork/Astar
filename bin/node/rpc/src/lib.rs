@@ -193,7 +193,7 @@ where
     io.extend_with(EthApiServer::to_delegate(EthApi::new(
         client.clone(),
         pool.clone(),
-        plasm_runtime::TransactionConverter,
+        astar_runtime::TransactionConverter,
         network.clone(),
         pending_transactions.clone(),
         Default::default(),

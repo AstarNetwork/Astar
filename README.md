@@ -2,13 +2,13 @@
 
 ![astar-cover](https://user-images.githubusercontent.com/40356749/125183345-edbaa980-e226-11eb-92e2-7b666ed56515.png)
 
-[![CI](https://github.com/PlasmNetwork/Plasm/workflows/Integration/badge.svg)](https://github.com/PlasmNetwork/Astar/actions)
+[![CI](https://github.com/PlasmNetwork/Astar/workflows/Integration/badge.svg)](https://github.com/PlasmNetwork/Astar/actions)
 
 Astar Network is a dApps hub on Polkadot with unique features like dApps Staking, supporting mulit-virtual machine (EVM & WAsM), and offers layer2 solutions from day 1. Shiden Network is our sister network on Kusama.
 
 ## Documentation
 
-* [Documentation](https://docs.plasmnet.io/)
+* [Documentation](https://docs.astar.network/)
 * [Slide Deck](https://drive.google.com/file/d/1qnx2XZTtU0qCwxBX--FUHCdBmOK7ZIF3/view?usp=sharing)
 
 ## Whitepaper
@@ -36,11 +36,11 @@ Introduction
 Astar Network is a scalable and interoperable infrastructure for Web3.0. Since Astar Network is built with [Parity’s Substrate framework](https://www.substrate.io/), it can be a future [Polkadot](https://polkadot.network/) Parachain that also acts as a scalable smart contract platform. The Polkadot Relaychain, by design, does not support smart contracts. This allows Astar the opportunity to fill in this gap. Scalability is obviously one of the most crucial demands DApp developers have. Ideally, the developers can build whatever applications on Astar Network without having to consider its scalability. In addition to that, Astar Network is a multi virtual machines platfrom. Astar supports both Ethereum Virtual Machine and WebAssembly. All devs of Astar Network can deploy Solidity smart contracts by using existing Ethereum tools such as Metamask and Remix.
 
 Based on the above, Astar has some features.
-- **[Optimistic Virtual Machine](https://docs.plasmnet.io/learn/optimistic-virtual-machine)**
+- **[Optimistic Virtual Machine](https://docs.astar.network/learn/layer2/optimistic-virtual-machine)**
 - **[ZK Rollups](https://github.com/PlasmNetwork/ZKRollups)**
-- **[DApps Staking](https://docs.plasmnet.io/learn/dapps-reward)**
-- **[Operator Trading](https://docs.plasmnet.io/learn/operator-trading)**
-- **[Lockdrop](https://docs.plasmnet.io/learn/lockdrop)**
+- **[DApps Staking](https://docs.astar.network/learn/core-features#dapps-rewards)**
+- **[Operator Trading](https://docs.astar.network/learn/core-features/operator-trading)**
+- **[Lockdrop](https://docs.astar.network/learn/token-economics/lockdrop#lockdrop-overview)**
 
 Once Polkadot is launched, we will connect our root chain to Polkadot, and we aim to be one of the parachains.
 <img width="888" alt="Screen Shot 2021-02-01 at 14 15 29" src="https://user-images.githubusercontent.com/29359048/106417721-0b296180-6498-11eb-8a0a-a10a8e387433.png">
@@ -77,17 +77,17 @@ Install additional build tools:
 
 Install the Astar node from git source:
 ```
-    cargo +nightly install --locked --force --git https://github.com/PlasmNetwork/Astar --tag v1.9.0-dusty plasm
+    cargo +nightly install --locked --force --git https://github.com/PlasmNetwork/Astar --tag v1.9.0-dusty astar
     # include the tag above to specify the version you want. Refer to the tags on this repo
 ```
 
 Run node on [Dusty Network](https://telemetry.polkadot.io/#list/Dusty):
 
-    plasm
+    astar
 
 Or run on your local development network:
 
-    plasm --dev
+    astar --dev
 
 Building with Nix
 -----------------
@@ -98,7 +98,7 @@ Install Nix package manager:
 
 Run on your Nix shell:
 
-    git clone https://github.com/PlasmNetwork/Plasm && cd Plasm
+    git clone https://github.com/PlasmNetwork/Astar && cd Astar
     nix-shell -I nixpkgs=channel:nixos-21.05 third-party/nix/shell.nix --run "cargo run --release"
 
 Examples
@@ -126,7 +126,7 @@ And 2 test networks:
 In the future we will gradually change this structure to have a single test network.
 For details, please read the [Contribution Guidelines](./CONTRIBUTING.md).
 
-If you would like to be the validator, please check out [our tutorial](https://docs.plasmnet.io/build/validator-guide) and join [Discord tech channel](https://discord.gg/wUcQt3R)
+If you would like to be the validator, please check out [our tutorial](https://docs.astar.network/build/validator-guide) and join [Discord tech channel](https://discord.gg/wUcQt3R)
 
 Contacts
 --------

@@ -50,7 +50,7 @@ fc-rpc-core= { path = "../../../vendor/frontier/client/rpc-core" }
 
 # plasm-specific dependencies
 plasm-primitives = { path = "../primitives" }
-plasm-runtime = { path = "../runtime" }
+astar-runtime = { path = "../../../runtime/astar" }
 plasm-rpc = { path = "../rpc" }
 
 # frame dependencies

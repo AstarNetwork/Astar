@@ -3,7 +3,7 @@ members = [
     "bin/node",
     "bin/node/cli",
     "bin/node/rpc",
-    "bin/node/runtime",
+    "runtime/astar",
     "bin/node/primitives",
     "frame/plasm-operator",
     "frame/custom-signatures",

@@ -2,9 +2,9 @@
 
 use pallet_im_online::sr25519::AuthorityId as ImOnlineId;
 use plasm_primitives::{AccountId, Balance, Signature};
-use plasm_runtime::constants::currency::PLM;
-use plasm_runtime::Block;
-use plasm_runtime::{
+use astar_runtime::constants::currency::PLM;
+use astar_runtime::Block;
+use astar_runtime::{
     BabeConfig, BalancesConfig, ContractsConfig, EVMConfig, EthereumConfig, GenesisConfig,
     GrandpaConfig, ImOnlineConfig, IndicesConfig, SessionConfig, SessionKeys, StakerStatus,
     StakingConfig, SudoConfig, SystemConfig, VestingConfig, WASM_BINARY,
