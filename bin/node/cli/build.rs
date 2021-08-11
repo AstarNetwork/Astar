@@ -46,6 +46,6 @@ mod cli {
 
         fs::create_dir(&path).ok();
 
-        Cli::clap().gen_completions("plasm-node", *shell, &path);
+        Cli::clap().gen_completions("astar-node", *shell, &path);
     }
 }

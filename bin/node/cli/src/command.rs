@@ -6,7 +6,7 @@ use sc_service::PartialComponents;
 
 impl SubstrateCli for Cli {
     fn impl_name() -> String {
-        "Plasm Network".into()
+        "Astar Network".into()
     }
 
     fn impl_version() -> String {
@@ -22,7 +22,7 @@ impl SubstrateCli for Cli {
     }
 
     fn support_url() -> String {
-        "https://github.com/PlasmNetwork/Plasm/issues/new".into()
+        "https://github.com/PlasmNetwork/Astar/issues/new".into()
     }
 
     fn copyright_start_year() -> i32 {
@@ -34,7 +34,7 @@ impl SubstrateCli for Cli {
             "dev" => Box::new(chain_spec::development_config()),
             "local" => Box::new(chain_spec::local_testnet_config()),
             "" | "dusty" => Box::new(chain_spec::dusty_config()),
-            "plasm" => Box::new(chain_spec::plasm_config()),
+            "astar" => Box::new(chain_spec::astar_config()),
             path => Box::new(chain_spec::ChainSpec::from_json_file(
                 std::path::PathBuf::from(path),
             )?),

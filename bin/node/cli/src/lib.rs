@@ -1,9 +1,9 @@
-//! Plasm CLI library.
+//! Astar CLI library.
 
 #![warn(missing_docs)]
 #![warn(unused_extern_crates)]
 
-/// Plasm chain specification.
+/// Astar chain specification.
 mod balances;
 pub mod chain_spec;
 

@@ -1,11 +1,11 @@
 [package]
-name = "pallet-plasm-operator"
+name = "pallet-astar-operator"
 version = "1.10.0"
 authors = ["Stake Technologies <devops@stake.co.jp>"]
 edition = "2018"
 license = "Apache-2.0"
-homepage = "https://docs.plasmnet.io/"
-repository = "https://github.com/staketechnologies/Plasm/"
+homepage = "https://docs.astar.network/"
+repository = "https://github.com/staketechnologies/Astar/"
 description = "FRAME pallet to manage operator developing smart contracts"
 
 [dependencies]

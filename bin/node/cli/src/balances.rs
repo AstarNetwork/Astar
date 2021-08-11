@@ -1,4 +1,4 @@
-use plasm_primitives::{AccountId, Balance};
+use astar_primitives::{AccountId, Balance};
 use sp_core::crypto::Ss58Codec;
 
 lazy_static::lazy_static! {
@@ -7598,7 +7598,7 @@ lazy_static::lazy_static! {
         (AccountId::from_ss58check("X7ugWFHPBbK66qgmqd9XD311Kc6tic4vK8mGn4cL9qDS7wc").unwrap(), 99010000000000000000),
 
         //##
-        //# Plasm Network service accounts
+        //# Astar Network service accounts
         //##
         // Kusama Auction #1
         (AccountId::from_ss58check("5Gen5NCGhFQSWbmSCKCBHAZNkxBXMr2jVDcC7MkhnvfEgPWg").unwrap(), 14045417260000000000000000),

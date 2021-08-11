@@ -15,7 +15,7 @@ evm = { version = "0.26.0", default-features = false }
 smallvec = "1.6.1"
 
 # primitives
-plasm-primitives = { path = "../../bin/node/primitives", default-features = false }
+astar-primitives = { path = "../../bin/node/primitives", default-features = false }
 sp-core = { version = "3.0.0", default-features = false }
 sp-io = { version = "3.0.0", default-features = false }
 sp-runtime = { version = "3.0.0", default-features = false }
@@ -93,7 +93,7 @@ std = [
     "sp-transaction-pool/std",
     "sp-inherents/std",
     "sp-offchain/std",
-    "plasm-primitives/std",
+    "astar-primitives/std",
     "frame-support/std",
     "frame-executive/std",
     "frame-system/std",

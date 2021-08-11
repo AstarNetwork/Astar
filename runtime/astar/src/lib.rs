@@ -4,6 +4,9 @@
 // `construct_runtime!` does a lot of recursion and requires us to increase the limit to 256.
 #![recursion_limit = "256"]
 
+use astar_primitives::{
+    AccountId, AccountIndex, Balance, BlockNumber, Hash, Index, Moment, Signature,
+};
 use codec::{Decode, Encode};
 use frame_support::{
     construct_runtime, debug, parameter_types,
@@ -29,9 +32,6 @@ use pallet_im_online::sr25519::AuthorityId as ImOnlineId;
 use pallet_session::historical as pallet_session_historical;
 use pallet_transaction_payment::{
     CurrencyAdapter, FeeDetails, Multiplier, RuntimeDispatchInfo, TargetedFeeAdjustment,
-};
-use plasm_primitives::{
-    AccountId, AccountIndex, Balance, BlockNumber, Hash, Index, Moment, Signature,
 };
 use sp_api::impl_runtime_apis;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata, H160, H256, U256};
@@ -679,7 +679,7 @@ impl pallet_evm::Config for Runtime {
     type Currency = Balances;
     type Event = Event;
     type Runner = pallet_evm::runner::stack::Runner<Self>;
-    type Precompiles = precompiles::PlasmPrecompiles<Self>;
+    type Precompiles = precompiles::AstarPrecompiles<Self>;
     type ChainId = ChainId;
 }
 
@@ -760,7 +760,7 @@ impl pallet_identity::Config for Runtime {
 construct_runtime!(
     pub enum Runtime where
         Block = Block,
-        NodeBlock = plasm_primitives::Block,
+        NodeBlock = astar_primitives::Block,
         UncheckedExtrinsic = UncheckedExtrinsic
     {
         System: frame_system::{Module, Call, Storage, Config, Event<T>},

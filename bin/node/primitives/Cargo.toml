@@ -1,5 +1,5 @@
 [package]
-name = "plasm-primitives"
+name = "astar-primitives"
 version = "1.10.0"
 authors = ["Stake Technologies <devops@stake.co.jp>"]
 edition = "2018"

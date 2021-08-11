@@ -1,7 +1,6 @@
 //! Chain specification.
 
-use pallet_im_online::sr25519::AuthorityId as ImOnlineId;
-use plasm_primitives::{AccountId, Balance, Signature};
+use astar_primitives::{AccountId, Balance, Signature};
 use astar_runtime::constants::currency::PLM;
 use astar_runtime::Block;
 use astar_runtime::{
@@ -9,6 +8,7 @@ use astar_runtime::{
     GrandpaConfig, ImOnlineConfig, IndicesConfig, SessionConfig, SessionKeys, StakerStatus,
     StakingConfig, SudoConfig, SystemConfig, VestingConfig, WASM_BINARY,
 };
+use pallet_im_online::sr25519::AuthorityId as ImOnlineId;
 use sc_chain_spec::ChainSpecExtension;
 use sc_service::ChainType;
 use serde::{Deserialize, Serialize};
@@ -274,9 +274,9 @@ fn dusty_genesis() -> GenesisConfig {
 }
 */
 
-/// Plasm mainnet file config.
-pub fn plasm_config() -> ChainSpec {
-    ChainSpec::from_json_bytes(&include_bytes!("../res/plasm.json")[..]).unwrap()
+/// Astar mainnet file config.
+pub fn astar_config() -> ChainSpec {
+    ChainSpec::from_json_bytes(&include_bytes!("../res/astar.json")[..]).unwrap()
 }
 
 fn development_config_genesis() -> GenesisConfig {

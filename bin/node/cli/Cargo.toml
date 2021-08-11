@@ -1,5 +1,5 @@
 [package]
-name = "plasm-cli"
+name = "astar-cli"
 version = "1.10.0"
 authors = ["Stake Technologies <devops@stake.co.jp>"]
 description = "Astar node console line interfaces."
@@ -48,10 +48,10 @@ fc-consensus = { path = "../../../vendor/frontier/client/consensus" }
 fp-consensus = { path = "../../../vendor/frontier/primitives/consensus" }
 fc-rpc-core= { path = "../../../vendor/frontier/client/rpc-core" }
 
-# plasm-specific dependencies
-plasm-primitives = { path = "../primitives" }
+# astar-specific dependencies
+astar-primitives = { path = "../primitives" }
 astar-runtime = { path = "../../../runtime/astar" }
-plasm-rpc = { path = "../rpc" }
+astar-rpc = { path = "../rpc" }
 
 # frame dependencies
 frame-system = "3.0.0"

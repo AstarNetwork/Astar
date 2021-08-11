@@ -1,9 +1,9 @@
 //! Service implementation. Specialized wrapper over substrate service.
 
+use astar_primitives::Block;
+use astar_runtime::RuntimeApi;
 use fc_consensus::FrontierBlockImport;
 use fc_rpc_core::types::{FilterPool, PendingTransactions};
-use plasm_primitives::Block;
-use astar_runtime::RuntimeApi;
 use sc_client_api::{BlockchainEvents, ExecutorProvider, RemoteBackend};
 use sc_finality_grandpa::{self as grandpa, FinalityProofProvider as GrandpaFinalityProofProvider};
 use sc_network::NetworkService;
@@ -201,7 +201,7 @@ pub fn new_full_base(
         let filter_pool = filter_pool.clone();
 
         move |deny_unsafe, subscription_executor: sc_rpc::SubscriptionTaskExecutor| {
-            let deps = plasm_rpc::FullDeps {
+            let deps = astar_rpc::FullDeps {
                 client: client.clone(),
                 pool: pool.clone(),
                 select_chain: select_chain.clone(),
@@ -210,12 +210,12 @@ pub fn new_full_base(
                 network: network.clone(),
                 pending_transactions: pending.clone(),
                 filter_pool: filter_pool.clone(),
-                babe: plasm_rpc::BabeDeps {
+                babe: astar_rpc::BabeDeps {
                     babe_config: babe_config.clone(),
                     shared_epoch_changes: shared_epoch_changes.clone(),
                     keystore: keystore.clone(),
                 },
-                grandpa: plasm_rpc::GrandpaDeps {
+                grandpa: astar_rpc::GrandpaDeps {
                     shared_voter_state: shared_voter_state.clone(),
                     shared_authority_set: shared_authority_set.clone(),
                     justification_stream: justification_stream.clone(),
@@ -224,7 +224,7 @@ pub fn new_full_base(
                 },
             };
 
-            plasm_rpc::create_full(deps, subscription_executor)
+            astar_rpc::create_full(deps, subscription_executor)
         }
     };
 
@@ -480,14 +480,14 @@ pub fn new_light_base(
         );
     }
 
-    let light_deps = plasm_rpc::LightDeps {
+    let light_deps = astar_rpc::LightDeps {
         remote_blockchain: backend.remote_blockchain(),
         fetcher: on_demand.clone(),
         client: client.clone(),
         pool: transaction_pool.clone(),
     };
 
-    let rpc_extensions = plasm_rpc::create_light(light_deps);
+    let rpc_extensions = astar_rpc::create_light(light_deps);
 
     let (rpc_handlers, _telemetry_connection_notifier) =
         sc_service::spawn_tasks(sc_service::SpawnTasksParams {

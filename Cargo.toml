@@ -5,7 +5,7 @@ members = [
     "bin/node/rpc",
     "runtime/astar",
     "bin/node/primitives",
-    "frame/plasm-operator",
+    "frame/astar-operator",
     "frame/custom-signatures",
 ]
 
@@ -15,7 +15,7 @@ exclude = [
 ]
 
 [profile.release]
-# Plasm runtime requires unwinding.
+# Astar runtime requires unwinding.
 panic = "unwind"
 
 [patch.'https://github.com/paritytech/substrate']

@@ -1,12 +1,12 @@
 [package]
-name = "plasm-rpc"
+name = "astar-rpc"
 version = "1.10.0"
 authors = ["Stake Technologies <devops@stake.co.jp>"]
 edition = "2018"
 
 [dependencies]
 astar-runtime = { path = "../../../runtime/astar" }
-plasm-primitives = { path = "../primitives" }
+astar-primitives = { path = "../primitives" }
 fc-rpc = { path = "../../../vendor/frontier/client/rpc", features = ["rpc_binary_search_estimate"] }
 fc-rpc-core = { path = "../../../vendor/frontier/client/rpc-core" }
 fp-rpc = { path = "../../../vendor/frontier/primitives/rpc" }

@@ -1,7 +1,7 @@
 //! A set of constant values used in substrate runtime.
 /// Money matters.
 pub mod currency {
-    use plasm_primitives::Balance;
+    use astar_primitives::Balance;
 
     pub const MILLIPLM: Balance = 1_000_000_000_000_000;
     pub const PLM: Balance = 1_000 * MILLIPLM;
@@ -14,7 +14,7 @@ pub mod currency {
     use hex_literal::hex;
 
     #[cfg(feature = "std")]
-    fn to_account(full_public: &[u8]) -> plasm_primitives::AccountId {
+    fn to_account(full_public: &[u8]) -> astar_primitives::AccountId {
         use sp_runtime::{traits::IdentifyAccount, MultiSigner};
         let public = sp_core::ecdsa::Public::from_full(full_public).unwrap();
         MultiSigner::from(public).into_account()
@@ -23,7 +23,7 @@ pub mod currency {
     #[cfg(feature = "std")]
     lazy_static::lazy_static! {
         /// PLASM GENESIS TOKEN HODERS
-        pub static ref HOLDERS: Vec<(plasm_primitives::AccountId, Balance)> = sp_std::vec![
+        pub static ref HOLDERS: Vec<(astar_primitives::AccountId, Balance)> = sp_std::vec![
             // Stake Technologies & affilation participants
             (hex!["2424a6cab9711ae2f8572a221c52308842639344887175d1f08e66e71b003d6e"].into(), 71020337610241566546887)
             // Direct Lockdrop participants
@@ -295,7 +295,7 @@ pub mod currency {
 
 /// Time.
 pub mod time {
-    use plasm_primitives::{BlockNumber, Moment};
+    use astar_primitives::{BlockNumber, Moment};
 
     /// Since BABE is probabilistic this is the average expected block time that
     /// we are targetting. Blocks will be produced at a minimum duration defined

@@ -17,7 +17,7 @@ The Astar Network project uses GitHub as the main source control hosting service
 Contributions within GitHub can take on the following forms:
 
 - **Bug Report**: If you find any bugs or unexpected behaviors using the Astar node, please open an issue that describes the issue and other information that the developer may need when investigating.
-- **User Questions**: Posting your question that is not addressed on our [official docs](https://docs.astar.network), [Substrate docs](https://substrate.dev/docs/en/), or through other issue tickets helps us improve our wiki and keep the community informed. For any inquiries related to the usage/development of the code, please open an issue on our repository.
+- **User Questions**: Posting your question that is not addressed on our [official docs](https://docs.astar.network/), [Substrate docs](https://substrate.dev/docs/en/), or through other issue tickets helps us improve our wiki and keep the community informed. For any inquiries related to the usage/development of the code, please open an issue on our repository.
 - **Feature Request**: If you have any suggestions or requests for a feature that can be made within a *relatively short development time*, feel free to open an issue that describes the 'what,' 'why,' 'how,' of the feature.
 
 ### Code Changes (Pull Request)

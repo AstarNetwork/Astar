@@ -1,6 +1,6 @@
 {
-  "name": "Plasm",
-  "id": "plasm",
+  "name": "Astar",
+  "id": "astar",
   "chainType": "Live",
   "bootNodes": [
     "/ip4/95.217.129.149/tcp/30333/p2p/12D3KooWMWk8YeBLsPYX2WKdyCc9ZXGqyDrKTJcjvqYqcSfZbVP2",

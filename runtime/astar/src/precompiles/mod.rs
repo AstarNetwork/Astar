@@ -18,9 +18,9 @@ mod contracts;
 use contracts::Contracts;
 
 #[derive(Debug, Clone, Copy)]
-pub struct PlasmPrecompiles<R>(PhantomData<R>);
+pub struct AstarPrecompiles<R>(PhantomData<R>);
 
-impl<R> PrecompileSet for PlasmPrecompiles<R>
+impl<R> PrecompileSet for AstarPrecompiles<R>
 where
     R: pallet_evm::Config + pallet_nicks::Config + pallet_contracts::Config,
     R::Call: Dispatchable<PostInfo = PostDispatchInfo>
@@ -50,7 +50,7 @@ where
             a if a == hash(8) => Some(Bn128Pairing::execute(input, target_gas, context)),
             // Non Ethereum precompiles
             a if a == hash(1024) => Some(Dispatch::<R>::execute(input, target_gas, context)),
-            // Plasm precompiles
+            // Astar precompiles
             a if a == hash(4096) => Some(Contracts::<R>::execute(input, target_gas, context)),
             a if a == hash(4097) => Some(Nicks::<R>::execute(input, target_gas, context)),
             _ => None,

@@ -15,9 +15,9 @@
 
 use std::sync::Arc;
 
+use astar_primitives::{AccountId, Balance, Block, BlockNumber, Hash, Index};
 use fc_rpc_core::types::{FilterPool, PendingTransactions};
 use jsonrpc_pubsub::manager::SubscriptionManager;
-use plasm_primitives::{AccountId, Balance, Block, BlockNumber, Hash, Index};
 use sc_client_api::{
     backend::{AuxStore, StateBackend, StorageProvider},
     client::BlockchainEvents,

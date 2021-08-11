@@ -1,14 +1,14 @@
 [package]
-name = "plasm"
+name = "astar"
 version = "1.10.0"
 authors = ["Stake Technologies <devops@stake.co.jp>"]
 description = "Astar node implementation in Rust."
 edition = "2018"
 
 [[bin]]
-name = "plasm"
+name = "astar"
 path = "src/main.rs"
 
 [dependencies]
 parity-util-mem = { version = "0.9.0", default-features = false, features = ["jemalloc-global"] }
-plasm-cli = { path = "cli" }
+astar-cli = { path = "cli" }
