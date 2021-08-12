@@ -1,7 +1,7 @@
 use crate::{
     chain_spec,
     cli::{Cli, RelayChainCli, Subcommand},
-    service::Block,
+    service::{self, shiden, Block},
 };
 use codec::Encode;
 use cumulus_client_service::genesis::generate_genesis_block;
@@ -137,7 +137,10 @@ pub fn run() -> Result<()> {
                     task_manager,
                     import_queue,
                     ..
-                } = crate::service::new_partial(&config)?;
+                } = service::new_partial::<shiden::RuntimeApi, shiden::Executor, _>(
+                    &config,
+                    service::build_import_queue,
+                )?;
                 Ok((cmd.run(client, import_queue), task_manager))
             })
         }
@@ -148,7 +151,10 @@ pub fn run() -> Result<()> {
                     client,
                     task_manager,
                     ..
-                } = crate::service::new_partial(&config)?;
+                } = service::new_partial::<shiden::RuntimeApi, shiden::Executor, _>(
+                    &config,
+                    service::build_import_queue,
+                )?;
                 Ok((cmd.run(client, config.database), task_manager))
             })
         }
@@ -159,7 +165,10 @@ pub fn run() -> Result<()> {
                     client,
                     task_manager,
                     ..
-                } = crate::service::new_partial(&config)?;
+                } = service::new_partial::<shiden::RuntimeApi, shiden::Executor, _>(
+                    &config,
+                    service::build_import_queue,
+                )?;
                 Ok((cmd.run(client, config.chain_spec), task_manager))
             })
         }
@@ -171,7 +180,10 @@ pub fn run() -> Result<()> {
                     task_manager,
                     import_queue,
                     ..
-                } = crate::service::new_partial(&config)?;
+                } = service::new_partial::<shiden::RuntimeApi, shiden::Executor, _>(
+                    &config,
+                    service::build_import_queue,
+                )?;
                 Ok((cmd.run(client, import_queue), task_manager))
             })
         }
@@ -202,7 +214,10 @@ pub fn run() -> Result<()> {
                     task_manager,
                     backend,
                     ..
-                } = crate::service::new_partial(&config)?;
+                } = service::new_partial::<shiden::RuntimeApi, shiden::Executor, _>(
+                    &config,
+                    service::build_import_queue,
+                )?;
                 Ok((cmd.run(client, backend), task_manager))
             })
         }
@@ -259,9 +274,6 @@ pub fn run() -> Result<()> {
             let runner = cli.create_runner(&*cli.run)?;
 
             runner.run_node_until_exit(|config| async move {
-                // TODO
-                let key = sp_core::Pair::generate().0;
-
                 let polkadot_cli = RelayChainCli::new(
                     &config,
                     [RelayChainCli::executable_name().to_string()]
@@ -295,16 +307,10 @@ pub fn run() -> Result<()> {
                     }
                 );
 
-                crate::service::start_node(
-                    config,
-                    key,
-                    polkadot_config,
-                    id,
-                    Box::new(move |_| Default::default()),
-                )
-                .await
-                .map(|r| r.0)
-                .map_err(Into::into)
+                service::start_shiden_node(config, polkadot_config, id)
+                    .await
+                    .map(|r| r.0)
+                    .map_err(Into::into)
             })
         }
     }

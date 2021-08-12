@@ -13,5 +13,7 @@ mod service;
 mod cli;
 mod command;
 
+mod aura_upgrade;
+
 pub use cli::*;
 pub use command::*;

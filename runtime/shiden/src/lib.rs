@@ -6,7 +6,7 @@
 
 use frame_support::{
     construct_runtime, match_type, parameter_types,
-    traits::{Currency, OnUnbalanced, Filter, Imbalance},
+    traits::{Currency, Filter, Imbalance, OnUnbalanced},
     weights::{
         constants::{BlockExecutionWeight, ExtrinsicBaseWeight, WEIGHT_PER_SECOND},
         DispatchClass, Weight, WeightToFeeCoefficient, WeightToFeeCoefficients,
@@ -23,7 +23,9 @@ use sp_core::OpaqueMetadata;
 use sp_inherents::{CheckInherentsResult, InherentData};
 use sp_runtime::{
     create_runtime_str, generic, impl_opaque_keys,
-    traits::{AccountIdLookup, BlakeTwo256, Block as BlockT, ConvertInto, OpaqueKeys, AccountIdConversion},
+    traits::{
+        AccountIdConversion, AccountIdLookup, BlakeTwo256, Block as BlockT, ConvertInto, OpaqueKeys,
+    },
     transaction_validity::{TransactionSource, TransactionValidity},
     ApplyExtrinsicResult, FixedPointNumber, Perbill, Perquintill,
 };
@@ -306,10 +308,9 @@ impl pallet_collator_selection::Config for Runtime {
     type WeightInfo = ();
 }
 
-
 parameter_types! {
-	pub const TreasuryPalletId: PalletId = PalletId(*b"py/trsry");
-	pub const DappsStakingPalletId: PalletId = PalletId(*b"py/dpsst");
+    pub const TreasuryPalletId: PalletId = PalletId(*b"py/trsry");
+    pub const DappsStakingPalletId: PalletId = PalletId(*b"py/dpsst");
 }
 
 type NegativeImbalance = <Balances as Currency<AccountId>>::NegativeImbalance;
@@ -555,6 +556,16 @@ impl_runtime_apis! {
     impl sp_api::Metadata<Block> for Runtime {
         fn metadata() -> OpaqueMetadata {
             Runtime::metadata().into()
+        }
+    }
+
+    impl sp_consensus_aura::AuraApi<Block, AuraId> for Runtime {
+        fn slot_duration() -> sp_consensus_aura::SlotDuration {
+            sp_consensus_aura::SlotDuration::from_millis(Aura::slot_duration())
+        }
+
+        fn authorities() -> Vec<AuraId> {
+            Aura::authorities()
         }
     }
 

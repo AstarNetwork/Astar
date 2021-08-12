@@ -5,7 +5,8 @@ use sc_chain_spec::ChainSpecExtension;
 use sc_service::ChainType;
 use serde::{Deserialize, Serialize};
 use shiden_runtime::{
-    wasm_binary_unwrap, AccountId, Balance, BalancesConfig, GenesisConfig, ParachainInfoConfig,
+    wasm_binary_unwrap, AccountId, AuraConfig, AuraId, Balance, BalancesConfig,
+    CollatorSelectionConfig, GenesisConfig, ParachainInfoConfig, SessionConfig, SessionKeys,
     Signature, SudoConfig, SystemConfig, VestingConfig, SDN,
 };
 use sp_core::{sr25519, Pair, Public};
@@ -50,6 +51,10 @@ where
     AccountPublic: From<<TPublic::Pair as Pair>::Public>,
 {
     AccountPublic::from(get_from_seed::<TPublic>(seed)).into_account()
+}
+
+fn session_keys(aura: AuraId) -> SessionKeys {
+    SessionKeys { aura }
 }
 
 /// Gen chain specification for given parachain id
@@ -147,6 +152,17 @@ fn make_genesis(
     root_key: AccountId,
     parachain_id: ParaId,
 ) -> GenesisConfig {
+    use sp_core::crypto::Ss58Codec;
+    let authorities = vec![
+        (
+            AccountId::from_ss58check("5HbAP8GczDDfGL6K2BvbsDyCyL3qY2GSRrJAPNXSUnd95mRM").unwrap(),
+            get_from_seed::<AuraId>("Alice"),
+        ),
+        (
+            AccountId::from_ss58check("5Fhdbkg89StmVoMNrbukWpcD7ZgLc9gBYNyPBDi3zokPWC48").unwrap(),
+            get_from_seed::<AuraId>("Bob"),
+        ),
+    ];
     GenesisConfig {
         system: SystemConfig {
             code: wasm_binary_unwrap().to_vec(),
@@ -156,5 +172,20 @@ fn make_genesis(
         parachain_info: ParachainInfoConfig { parachain_id },
         balances: BalancesConfig { balances },
         vesting: VestingConfig { vesting: vec![] },
+        session: SessionConfig {
+            keys: authorities
+                .iter()
+                .map(|x| (x.0.clone(), x.0.clone(), session_keys(x.1.clone())))
+                .collect::<Vec<_>>(),
+        },
+        aura: AuraConfig {
+            authorities: vec![],
+        },
+        aura_ext: Default::default(),
+        collator_selection: CollatorSelectionConfig {
+            desired_candidates: 200,
+            candidacy_bond: 32_000 * SDN,
+            invulnerables: vec![],
+        },
     }
 }

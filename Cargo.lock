@@ -196,15 +196,19 @@ checksum = "9b34d609dfbaf33d6889b2b7106d3ca345eacad44200913df5ba02bfd31d2ba9"
 
 [[package]]
 name = "astar-collator"
-version = "2.2.1"
+version = "2.3.0"
 dependencies = [
+ "async-trait",
  "cumulus-client-cli",
+ "cumulus-client-consensus-aura",
+ "cumulus-client-consensus-common",
  "cumulus-client-consensus-relay-chain",
  "cumulus-client-network",
  "cumulus-client-service",
  "cumulus-primitives-core",
  "cumulus-primitives-parachain-inherent",
  "frame-system",
+ "futures 0.3.16",
  "hex",
  "jsonrpc-core",
  "lazy_static",
@@ -232,15 +236,22 @@ dependencies = [
  "sc-transaction-pool",
  "serde",
  "shiden-runtime",
+ "sp-api",
+ "sp-block-builder",
  "sp-consensus",
+ "sp-consensus-aura",
  "sp-core",
  "sp-inherents",
+ "sp-keystore",
+ "sp-offchain",
  "sp-runtime",
+ "sp-session",
  "sp-timestamp",
  "sp-transaction-pool",
  "sp-trie",
  "structopt",
  "substrate-build-script-utils",
+ "substrate-prometheus-endpoint",
  "vergen",
 ]
 
@@ -1357,6 +1368,36 @@ dependencies = [
  "sp-core",
  "sp-io",
  "sp-runtime",
+ "tracing",
+]
+
+[[package]]
+name = "cumulus-client-consensus-aura"
+version = "0.1.0"
+source = "git+https://github.com/paritytech/cumulus?branch=polkadot-v0.9.8#ed6ba5dfb2c112c29505e856e8971da3420ce6d0"
+dependencies = [
+ "async-trait",
+ "cumulus-client-consensus-common",
+ "cumulus-primitives-core",
+ "futures 0.3.16",
+ "parity-scale-codec",
+ "parking_lot 0.10.2",
+ "polkadot-client",
+ "sc-client-api",
+ "sc-consensus-aura",
+ "sc-consensus-slots",
+ "sc-telemetry",
+ "sp-api",
+ "sp-application-crypto",
+ "sp-block-builder",
+ "sp-blockchain",
+ "sp-consensus",
+ "sp-consensus-aura",
+ "sp-core",
+ "sp-inherents",
+ "sp-keystore",
+ "sp-runtime",
+ "substrate-prometheus-endpoint",
  "tracing",
 ]
 
@@ -7473,6 +7514,37 @@ dependencies = [
  "sp-blockchain",
  "sp-consensus",
  "sp-runtime",
+]
+
+[[package]]
+name = "sc-consensus-aura"
+version = "0.9.0"
+source = "git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.8#74101dc21cfffb4c2d014fcc28edc166d5ca1b16"
+dependencies = [
+ "async-trait",
+ "derive_more",
+ "futures 0.3.16",
+ "futures-timer 3.0.2",
+ "log",
+ "parity-scale-codec",
+ "sc-block-builder",
+ "sc-client-api",
+ "sc-consensus-slots",
+ "sc-telemetry",
+ "sp-api",
+ "sp-application-crypto",
+ "sp-block-builder",
+ "sp-blockchain",
+ "sp-consensus",
+ "sp-consensus-aura",
+ "sp-consensus-slots",
+ "sp-core",
+ "sp-inherents",
+ "sp-io",
+ "sp-keystore",
+ "sp-runtime",
+ "sp-version",
+ "substrate-prometheus-endpoint",
 ]
 
 [[package]]
