@@ -1,0 +1,53 @@
+on:
+  push:
+    branches: # this action is currently only meant for Dusty
+      - 'development/dusty'
+
+name: Push to Docker Hub
+
+jobs:
+  docker-push:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: hecrj/setup-rust-action@v1
+      with:
+        rust-version: 'nightly-2021-08-02'
+        targets: 'wasm32-unknown-unknown'
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v1
+
+    - name: Login to DockerHub
+      uses: docker/login-action@v1
+      with:
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
+
+    - name: Docker meta
+      id: docker_meta
+      uses: crazy-max/ghaction-docker-meta@v1
+      with:
+        images: staketechnologies/dusty-node
+        tag-custom: dusty
+        tag-sha: true # add git short SHA as Docker tag
+
+    - name: Checkout the source code
+      uses: actions/checkout@v2
+      with:
+        submodules: true
+
+    - name: Check targets are installed correctly
+      run: rustup target list --installed
+
+    - name: Build optimized binary
+      run: |
+        cargo build --locked --release
+        cp target/release/plasm third-party/docker
+    - name: Build & Push docker image
+      uses: docker/build-push-action@v2
+      with:
+        context: third-party/docker
+        platforms: linux/amd64
+        labels: ${{ steps.docker_meta.outputs.labels }}
+        tags: ${{ steps.docker_meta.outputs.tags }}
+        push: true

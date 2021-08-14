@@ -1,7 +1,8 @@
-name: fmt
-on: [push]
+name: Code Style Check
+on: [pull_request]
+
 jobs:
-  build:
+  fmt-check:
     runs-on: ubuntu-latest
     steps:
       - uses: hecrj/setup-rust-action@v1
