@@ -79,7 +79,7 @@ pub fn get_chain_spec(id: ParaId) -> ChainSpec {
         None,
         None,
         Extensions {
-            relay_chain: "westend-dev".into(),
+            relay_chain: "westend".into(),
             para_id: id.into(),
         },
     )
@@ -185,7 +185,7 @@ fn make_genesis(
         collator_selection: CollatorSelectionConfig {
             desired_candidates: 200,
             candidacy_bond: 32_000 * SDN,
-            invulnerables: vec![],
+            invulnerables: authorities.iter().map(|x| x.0.clone()).collect::<Vec<_>>(),
         },
     }
 }

@@ -10,6 +10,7 @@ build = "build.rs"
 serde = { version = "1.0.106", optional = true }
 codec = { package = "parity-scale-codec", version = "2.0", default-features = false, features = ["derive"] }
 smallvec = "1.6.1"
+hex-literal = "0.3"
 
 # primitives
 sp-api = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.8", default-features = false }
@@ -32,7 +33,7 @@ pallet-authorship = { git = "https://github.com/paritytech/substrate", branch = 
 pallet-aura = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.8", default-features = false }
 pallet-balances = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.8", default-features = false }
 pallet-identity = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.8", default-features = false }
-pallet-session = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.8", default-features = false, features = ["historical"] }
+pallet-session = { path = "../../frame/session", default-features = false }
 pallet-utility = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.8", default-features = false }
 pallet-timestamp = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.8", default-features = false }
 pallet-vesting = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.8", default-features = false }
@@ -51,10 +52,11 @@ cumulus-pallet-parachain-system = { git = "https://github.com/paritytech/cumulus
 cumulus-pallet-xcm = { git = "https://github.com/paritytech/cumulus", branch = "polkadot-v0.9.8", default-features = false }
 cumulus-pallet-aura-ext = { git = "https://github.com/paritytech/cumulus", branch = "polkadot-v0.9.8", default-features = false }
 parachain-info = { git = "https://github.com/paritytech/cumulus", branch = "polkadot-v0.9.8", default-features = false }
-pallet-collator-selection = { git = "https://github.com/paritytech/cumulus", branch = "polkadot-v0.9.8", default-features = false }
+pallet-collator-selection = { path = "../../frame/collator-selection", default-features = false }
 
 # polkadot dependencies
 polkadot-parachain = { git = "https://github.com/paritytech/polkadot", default-features = false , branch = "release-v0.9.8" }
+polkadot-runtime-common = { git = "https://github.com/paritytech/polkadot", default-features = false , branch = "release-v0.9.8" }
 xcm-executor = { git = "https://github.com/paritytech/polkadot", default-features = false , branch = "release-v0.9.8" }
 xcm-builder = { git = "https://github.com/paritytech/polkadot", default-features = false , branch = "release-v0.9.8" }
 xcm = { git = "https://github.com/paritytech/polkadot", default-features = false , branch = "release-v0.9.8" }
@@ -103,6 +105,7 @@ std = [
     "xcm-executor/std",
     "parachain-info/std",
     "polkadot-parachain/std",
+    "polkadot-runtime-common/std",
     "cumulus-primitives-core/std",
     "cumulus-primitives-utility/std",
     "cumulus-primitives-timestamp/std",

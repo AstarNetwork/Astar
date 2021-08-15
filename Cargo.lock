@@ -4608,7 +4608,7 @@ source = "git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.8#741
 dependencies = [
  "frame-support",
  "frame-system",
- "pallet-session",
+ "pallet-session 3.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.8)",
  "pallet-timestamp",
  "parity-scale-codec",
  "sp-application-crypto",
@@ -4624,7 +4624,7 @@ source = "git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.8#741
 dependencies = [
  "frame-support",
  "frame-system",
- "pallet-session",
+ "pallet-session 3.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.8)",
  "parity-scale-codec",
  "sp-application-crypto",
  "sp-authority-discovery",
@@ -4656,7 +4656,7 @@ dependencies = [
  "frame-system",
  "log",
  "pallet-authorship",
- "pallet-session",
+ "pallet-session 3.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.8)",
  "pallet-timestamp",
  "parity-scale-codec",
  "sp-application-crypto",
@@ -4692,7 +4692,7 @@ dependencies = [
  "beefy-primitives",
  "frame-support",
  "frame-system",
- "pallet-session",
+ "pallet-session 3.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.8)",
  "parity-scale-codec",
  "serde",
  "sp-runtime",
@@ -4724,19 +4724,25 @@ dependencies = [
 [[package]]
 name = "pallet-collator-selection"
 version = "3.0.0"
-source = "git+https://github.com/paritytech/cumulus?branch=polkadot-v0.9.8#ed6ba5dfb2c112c29505e856e8971da3420ce6d0"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
  "frame-system",
  "log",
+ "pallet-aura",
  "pallet-authorship",
- "pallet-session",
+ "pallet-balances",
+ "pallet-session 3.0.0",
+ "pallet-timestamp",
  "parity-scale-codec",
  "serde",
+ "sp-consensus-aura",
+ "sp-core",
+ "sp-io",
  "sp-runtime",
  "sp-staking",
  "sp-std",
+ "sp-tracing",
 ]
 
 [[package]]
@@ -4814,7 +4820,7 @@ dependencies = [
  "frame-system",
  "log",
  "pallet-authorship",
- "pallet-session",
+ "pallet-session 3.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.8)",
  "parity-scale-codec",
  "sp-application-crypto",
  "sp-core",
@@ -5016,6 +5022,27 @@ dependencies = [
 [[package]]
 name = "pallet-session"
 version = "3.0.0"
+dependencies = [
+ "frame-support",
+ "frame-system",
+ "impl-trait-for-tuples",
+ "lazy_static",
+ "pallet-timestamp",
+ "parity-scale-codec",
+ "serde",
+ "sp-application-crypto",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-session",
+ "sp-staking",
+ "sp-std",
+ "sp-trie",
+]
+
+[[package]]
+name = "pallet-session"
+version = "3.0.0"
 source = "git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.8#74101dc21cfffb4c2d014fcc28edc166d5ca1b16"
 dependencies = [
  "frame-support",
@@ -5043,7 +5070,7 @@ dependencies = [
  "frame-system",
  "log",
  "pallet-authorship",
- "pallet-session",
+ "pallet-session 3.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.8)",
  "parity-scale-codec",
  "paste",
  "serde",
@@ -6293,7 +6320,7 @@ dependencies = [
  "pallet-offences",
  "pallet-proxy",
  "pallet-scheduler",
- "pallet-session",
+ "pallet-session 3.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.8)",
  "pallet-staking",
  "pallet-staking-reward-curve",
  "pallet-timestamp",
@@ -6347,7 +6374,7 @@ dependencies = [
  "pallet-election-provider-multi-phase",
  "pallet-mmr",
  "pallet-offences",
- "pallet-session",
+ "pallet-session 3.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.8)",
  "pallet-staking",
  "pallet-timestamp",
  "pallet-transaction-payment",
@@ -6386,7 +6413,7 @@ dependencies = [
  "pallet-authorship",
  "pallet-balances",
  "pallet-offences",
- "pallet-session",
+ "pallet-session 3.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.8)",
  "pallet-staking",
  "pallet-timestamp",
  "pallet-vesting",
@@ -8621,13 +8648,14 @@ dependencies = [
  "frame-support",
  "frame-system",
  "frame-system-rpc-runtime-api",
+ "hex-literal",
  "pallet-aura",
  "pallet-authorship",
  "pallet-balances",
  "pallet-block-reward",
  "pallet-collator-selection",
  "pallet-identity",
- "pallet-session",
+ "pallet-session 3.0.0",
  "pallet-sudo",
  "pallet-timestamp",
  "pallet-transaction-payment",
@@ -8637,6 +8665,7 @@ dependencies = [
  "parachain-info",
  "parity-scale-codec",
  "polkadot-parachain",
+ "polkadot-runtime-common",
  "serde",
  "smallvec 1.6.1",
  "sp-api",

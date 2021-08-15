@@ -18,6 +18,7 @@ use frame_system::limits::{BlockLength, BlockWeights};
 use pallet_transaction_payment::{
     FeeDetails, Multiplier, RuntimeDispatchInfo, TargetedFeeAdjustment,
 };
+use polkadot_runtime_common::{BlockHashCount, RocksDbWeight};
 use sp_api::impl_runtime_apis;
 use sp_core::OpaqueMetadata;
 use sp_inherents::{CheckInherentsResult, InherentData};
@@ -78,7 +79,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("shiden"),
     impl_name: create_runtime_str!("shiden"),
     authoring_version: 1,
-    spec_version: 5,
+    spec_version: 6,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 1,
@@ -111,7 +112,6 @@ const NORMAL_DISPATCH_RATIO: Perbill = Perbill::from_percent(75);
 const MAXIMUM_BLOCK_WEIGHT: Weight = WEIGHT_PER_SECOND / 2;
 
 parameter_types! {
-    pub const BlockHashCount: BlockNumber = 2400;
     pub const Version: RuntimeVersion = VERSION;
     pub RuntimeBlockLength: BlockLength =
         BlockLength::max_with_normal_ratio(5 * 1024 * 1024, NORMAL_DISPATCH_RATIO);
@@ -180,7 +180,7 @@ impl frame_system::Config for Runtime {
     type AccountData = pallet_balances::AccountData<Balance>;
     type OnNewAccount = ();
     type OnKilledAccount = ();
-    type DbWeight = ();
+    type DbWeight = RocksDbWeight;
     type BaseCallFilter = BaseFilter;
     type SystemWeightInfo = ();
     type BlockWeights = RuntimeBlockWeights;
@@ -256,7 +256,7 @@ impl pallet_aura::Config for Runtime {
 impl cumulus_pallet_aura_ext::Config for Runtime {}
 
 parameter_types! {
-    pub const UncleGenerations: BlockNumber = 5;
+    pub const UncleGenerations: BlockNumber = 0;
 }
 
 impl pallet_authorship::Config for Runtime {
@@ -536,7 +536,58 @@ pub type Executive = frame_executive::Executive<
     frame_system::ChainContext<Runtime>,
     Runtime,
     AllPallets,
+    AuraMigration,
 >;
+
+pub struct AuraMigration;
+impl frame_support::traits::OnRuntimeUpgrade for AuraMigration {
+    fn on_runtime_upgrade() -> Weight {
+        use hex_literal::hex;
+        use sp_core::crypto::UncheckedInto;
+
+        // Invulnerable collators
+        let keys: Vec<(AccountId, SessionKeys)> = vec![
+            (
+                AccountId::new(hex![
+                    "eac0397ab838d16d3e862c0149935da1e78af659f8ee60d7be01bfe63021a904"
+                ]),
+                SessionKeys {
+                    aura: hex!["6ee3d55e57ff391b3ffd5d5f7f344b4aabe20c56dfe593a3f325ff8bac11e805"]
+                        .unchecked_into(),
+                },
+            ),
+            (
+                AccountId::new(hex![
+                    "e8c07490cccb09667a21bfaa17a70a7c79fcce6f8f88ea43ef5812f9af47b420"
+                ]),
+                SessionKeys {
+                    aura: hex!["d6f6c836f07d2bc28d7495e3e393bbcb3333ca86e7f50cd3b16d8efb1cdd2d76"]
+                        .unchecked_into(),
+                },
+            ),
+        ];
+
+        // Initialize collator selection
+        assert!(CollatorSelection::set_invulnerables(
+            Origin::root(),
+            keys.iter().map(|x| x.0.clone()).collect(),
+        )
+        .is_ok());
+        assert!(CollatorSelection::set_desired_candidates(Origin::root(), 200,).is_ok());
+        assert!(CollatorSelection::set_candidacy_bond(Origin::root(), 32_000 * SDN,).is_ok());
+
+        // Initialize session
+        pallet_session::Module::<Runtime>::genesis_init_keys(
+            &keys
+                .iter()
+                .map(|x| (x.0.clone(), x.0.clone(), x.1.clone()))
+                .collect(),
+        );
+
+        // Return
+        <Runtime as frame_system::Config>::DbWeight::get().writes(10)
+    }
+}
 
 impl_runtime_apis! {
     impl sp_api::Core<Block> for Runtime {
