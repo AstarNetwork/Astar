@@ -7,7 +7,7 @@
 [![Substrate version](https://img.shields.io/badge/Substrate-3.0.0-brightgreen?logo=Parity%20Substrate)](https://substrate.dev/)
 [![License](https://img.shields.io/github/license/PlasmNetwork/Astar?color=green)](https://github.com/PlasmNetwork/Astar/blob/development/dusty/LICENSE)
  <br />
-[![Twitter URL](https://img.shields.io/twitter/follow/Plasm_Network?style=social)](https://twitter.com/Plasm_Network)
+[![Twitter URL](https://img.shields.io/twitter/follow/AstarNetwork?style=social)](https://twitter.com/AstarNetwork)
 [![Twitter URL](https://img.shields.io/twitter/follow/ShidenNetwork?style=social)](https://twitter.com/ShidenNetwork)
 [![YouTube](https://img.shields.io/youtube/channel/subscribers/UC36JgEF6gqatVSK9xlzzrvQ?style=social)](https://www.youtube.com/channel/UC36JgEF6gqatVSK9xlzzrvQ)
 [![Docker](https://img.shields.io/docker/pulls/staketechnologies/dusty-node?logo=docker)](https://hub.docker.com/r/staketechnologies/dusty-node)
