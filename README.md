@@ -54,7 +54,7 @@ $ ./target/release/plasm --dev --tmp
 $ curl https://nixos.org/nix/install | sh
 
 # run from root of the project folder (`Astar/` folder)
-$ nix-shell -I nixpkgs=channel:nixos-21.05 third-party/nix/shell.nix --run "cargo run --release"
+$ nix-shell -I nixpkgs=channel:nixos-21.05 third-party/nix/shell.nix --run "cargo build --release"
 ```
 
 ## Running a Validator Node
