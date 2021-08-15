@@ -8,8 +8,9 @@
 [![License](https://img.shields.io/github/license/PlasmNetwork/Astar?color=green)](https://github.com/PlasmNetwork/Astar/blob/development/dusty/LICENSE)
  <br />
 [![Twitter URL](https://img.shields.io/twitter/follow/Plasm_Network?style=social)](https://twitter.com/Plasm_Network)
+[![Twitter URL](https://img.shields.io/twitter/follow/ShidenNetwork?style=social)](https://twitter.com/ShidenNetwork)
 [![YouTube](https://img.shields.io/youtube/channel/subscribers/UC36JgEF6gqatVSK9xlzzrvQ?style=social)](https://www.youtube.com/channel/UC36JgEF6gqatVSK9xlzzrvQ)
-[![Docker](https://img.shields.io/docker/pulls/staketechnologies/astar-collator?logo=docker)](https://hub.docker.com/r/staketechnologies/astar-collator)
+[![Docker](https://img.shields.io/docker/pulls/staketechnologies/dusty-node?logo=docker)](https://hub.docker.com/r/staketechnologies/dusty-node)
 [![Discord](https://img.shields.io/badge/Discord-gray?logo=discord)](https://discord.gg/Z3nC9U4)
 [![Telegram](https://img.shields.io/badge/Telegram-gray?logo=telegram)](https://t.me/PlasmOfficial)
 [![Medium](https://img.shields.io/badge/Medium-gray?logo=medium)](https://medium.com/astar-network)
@@ -86,7 +87,8 @@ $ curl -H 'Content-Type: application/json' --data '{ "jsonrpc":"2.0", "method":"
 {"jsonrpc":"2.0","result":"<session key in hex>","id":1}
 ```
 
-// todo: add a short guide for registering the validator node, creating controller/stash accounts, and Staking/Nominating
+After this step, you should have a validator node online with a session key for your node.
+For key management and validator rewards, consult our [validator guide online](https://docs.astar.network/build/validator-guide/configure-node).
 
 ## Further Reading
 
