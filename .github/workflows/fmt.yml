@@ -1,12 +1,13 @@
-name: fmt
-on: [push]
+name: Code Style Check
+on: [pull_request]
+
 jobs:
-  build:
+  fmt-check:
     runs-on: ubuntu-latest
     steps:
       - uses: hecrj/setup-rust-action@v1
       - name: Checkout the source code
-        uses: actions/checkout@master
+        uses: actions/checkout@v2
       - name: Check targets are installed correctly
         run: rustup target list --installed
       - name: Check fmt

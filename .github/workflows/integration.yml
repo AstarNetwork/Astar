@@ -8,10 +8,11 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, macOS-latest]
+
     steps:
     - uses: hecrj/setup-rust-action@v1
       with:
-        rust-version: 'nightly-2021-06-03'
+        rust-version: 'nightly-2021-08-02'
         targets: 'wasm32-unknown-unknown'
 
     - name: Checkout the source code
@@ -26,12 +27,12 @@ jobs:
       run: cargo test --all
 
     - name: Build optimized binary
-      run: cargo build --release
+      run: cargo build --release --verbose
 
     - uses: actions/upload-artifact@v2
       with:
-        name: plasm-${{ matrix.os }}
-        path: target/release/plasm-collator
+        name: astar-${{ matrix.os }}-x86_64
+        path: target/release/plasm # todo: update the binary name to `dusty-node`
 
   nix:
     runs-on: ubuntu-latest
