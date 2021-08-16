@@ -1,8 +1,11 @@
 {
-  "name": "Shiden Shell",
+  "name": "Shiden",
   "id": "shiden",
   "chainType": "Live",
-  "bootNodes": [],
+  "bootNodes": [
+    "/ip4/54.238.76.198/tcp/30333/p2p/12D3KooWHjaW6mwpsDhdDv9CFmWSfgiT13kjDcpsUsTQGDVCyxV6",
+    "/ip4/52.69.166.77/tcp/30333/p2p/12D3KooWEQ4CW9Mbc2zdNrEbRm8epJC2Vj9FWrTob3TB76QLikvo"
+  ],
   "telemetryEndpoints": null,
   "protocolId": "shiden",
   "properties": {

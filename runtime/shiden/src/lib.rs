@@ -481,8 +481,8 @@ construct_runtime!(
         Authorship: pallet_authorship::{Pallet, Call, Storage, Inherent} = 40,
         CollatorSelection: pallet_collator_selection::{Pallet, Call, Storage, Event<T>, Config<T>} = 41,
         Session: pallet_session::{Pallet, Call, Storage, Event, Config<T>} = 42,
-        Aura: pallet_aura::{Pallet, Config<T>} = 43,
-        AuraExt: cumulus_pallet_aura_ext::{Pallet, Config} = 44,
+        Aura: pallet_aura::{Pallet, Storage, Config<T>} = 43,
+        AuraExt: cumulus_pallet_aura_ext::{Pallet, Storage, Config} = 44,
 
         CumulusXcm: cumulus_pallet_xcm::{Pallet, Call, Event<T>, Origin} = 50,
 
