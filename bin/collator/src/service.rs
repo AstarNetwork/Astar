@@ -25,10 +25,8 @@ pub use crate::aura_upgrade::*;
 
 /// Shiden network runtime executor.
 pub mod shiden {
-    /// Runtime API.
     pub use shiden_runtime::RuntimeApi;
 
-    /// Native executor instance.
     sc_executor::native_executor_instance!(
         pub Executor,
         shiden_runtime::api::dispatch,
