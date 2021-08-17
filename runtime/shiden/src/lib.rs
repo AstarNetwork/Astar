@@ -78,7 +78,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("shiden"),
     impl_name: create_runtime_str!("shiden"),
     authoring_version: 1,
-    spec_version: 5,
+    spec_version: 6,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 1,
@@ -92,8 +92,6 @@ pub fn native_version() -> NativeVersion {
         can_author_with: Default::default(),
     }
 }
-
-pub type SessionHandlers = ();
 
 impl_opaque_keys! {
     pub struct SessionKeys {
@@ -142,7 +140,7 @@ impl Filter<Call> for BaseFilter {
         match call {
             // These modules are not allowed to be called by transactions:
             Call::Balances(_) => false,
-            //
+            // To leave collator just shutdown it, next session funds will be released
             Call::CollatorSelection(pallet_collator_selection::Call::leave_intent(..)) => false,
             // Other modules should works:
             _ => true,
@@ -268,7 +266,7 @@ impl pallet_authorship::Config for Runtime {
 
 parameter_types! {
     pub const DisabledValidatorsThreshold: Perbill = Perbill::from_percent(33);
-    pub const SessionPeriod: BlockNumber = 7 * DAYS;
+    pub const SessionPeriod: BlockNumber = 1 * HOURS;
     pub const SessionOffset: BlockNumber = 0;
 }
 
