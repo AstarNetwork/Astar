@@ -2,15 +2,15 @@
 
 <div align="center">
 
-[![Integration Action](https://github.com/PlasmNetwork/Plasm/workflows/Integration/badge.svg)](https://github.com/PlasmNetwork/Astar/actions)
+[![Integration Action](https://github.com/PlasmNetwork/Astar/workflows/Integration/badge.svg)](https://github.com/PlasmNetwork/Astar/actions)
 [![GitHub tag (latest by date)](https://img.shields.io/github/v/tag/PlasmNetwork/Astar)](https://github.com/PlasmNetwork/Astar/tags)
 [![Substrate version](https://img.shields.io/badge/Substrate-3.0.0-brightgreen?logo=Parity%20Substrate)](https://substrate.dev/)
-[![License](https://img.shields.io/github/license/PlasmNetwork/Astar?color=green)](https://github.com/PlasmNetwork/Astar/blob/development/dusty/LICENSE)
+[![License](https://img.shields.io/github/license/PlasmNetwork/Astar?color=green)](https://github.com/PlasmNetwork/Astar/blob/production/shiden/LICENSE)
  <br />
 [![Twitter URL](https://img.shields.io/twitter/follow/AstarNetwork?style=social)](https://twitter.com/AstarNetwork)
 [![Twitter URL](https://img.shields.io/twitter/follow/ShidenNetwork?style=social)](https://twitter.com/ShidenNetwork)
 [![YouTube](https://img.shields.io/youtube/channel/subscribers/UC36JgEF6gqatVSK9xlzzrvQ?style=social)](https://www.youtube.com/channel/UC36JgEF6gqatVSK9xlzzrvQ)
-[![Docker](https://img.shields.io/docker/pulls/staketechnologies/dusty-node?logo=docker)](https://hub.docker.com/r/staketechnologies/dusty-node)
+[![Docker](https://img.shields.io/docker/pulls/staketechnologies/astar-collator?logo=docker)](https://hub.docker.com/r/staketechnologies/astar-collator)
 [![Discord](https://img.shields.io/badge/Discord-gray?logo=discord)](https://discord.gg/Z3nC9U4)
 [![Telegram](https://img.shields.io/badge/Telegram-gray?logo=telegram)](https://t.me/PlasmOfficial)
 [![Medium](https://img.shields.io/badge/Medium-gray?logo=medium)](https://medium.com/astar-network)
@@ -42,9 +42,8 @@ $ cd Astar
 # note: you may encounter some errors if `wasm32-unknown-unknown` is not installed, or if the toolchain channel is outdated
 $ cargo build --release
 
-# run a temporary developer node locally
-# `astar-collator --help` for more commands
-$ ./target/release/astar-collator --dev --tmp
+# show list of available commands
+$ ./target/release/astar-collator --help
 ```
 
 ### Building with Nix
