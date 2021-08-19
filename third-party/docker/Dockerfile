@@ -1,38 +1,37 @@
-FROM debian:stretch-slim
+FROM ubuntu:20.04 as builder
 
 # metadata
 ARG VCS_REF
 ARG BUILD_DATE
 
-LABEL maintainer="takumi@stake.co.jp"
+LABEL io.parity.image.authors="devops@stake.co.jp" \
+	io.parity.image.vendor="Stake Technologies" \
+	io.parity.image.title="PlasmNetwork/Astar" \
+	io.parity.image.description="Astar: " \
+	io.parity.image.source="https://github.com/PlasmNetwork/Astar/blob/${VCS_REF}/third-party/docker/Dockerfile" \
+	io.parity.image.revision="${VCS_REF}" \
+	io.parity.image.created="${BUILD_DATE}" \
+	io.parity.image.documentation="https://docs.astar.network"
+
 # show backtraces
 ENV RUST_BACKTRACE 1
 
-# install tools and dependencies
-RUN apt-get update && \
-	DEBIAN_FRONTEND=noninteractive apt-get upgrade -y && \
-	DEBIAN_FRONTEND=noninteractive apt-get install -y \
-		libssl1.1 \
-		ca-certificates \
-		curl && \
-# apt cleanup
-	apt-get autoremove -y && \
-	apt-get clean && \
-	find /var/lib/apt/lists/ -type f -not -name lock -delete; \
 # add user
-	useradd -m -u 1000 -U -s /bin/sh -d /plasm plasm
+RUN useradd -m -u 1000 -U -s /bin/sh -d /astar astar && \
+   	mkdir /data && \
+    	chown -R astar:astar /data && \
+    	rm -rf /usr/bin /usr/sbin
 
-# add plasm-node binary to docker image
-WORKDIR /opt
-COPY ./target-debian/release/plasm-node /opt/plasm-node
+ARG PROFILE=release
+# add binary to docker image
+COPY ./astar-collator /usr/local/bin
 
-USER plasm
+USER astar 
 
 # check if executable works in this container
-RUN /opt/plasm-node --version
+RUN ["astar-collator", "--version"]
 
+EXPOSE 30333 30334 9933 9944
 VOLUME ["/data"]
 
-EXPOSE 30333 9933 9944
-
-ENTRYPOINT ["/opt/plasm-node"]
+CMD ["/usr/local/bin/astar-collator","-d","/data"]
