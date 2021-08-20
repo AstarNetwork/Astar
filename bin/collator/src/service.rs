@@ -389,7 +389,17 @@ pub async fn start_shiden_node(
         parachain_config,
         polkadot_config,
         id,
-        |_| Default::default(),
+        |client| {
+            let mut io = jsonrpc_core::IoHandler::default();
+
+            use pallet_transaction_payment_rpc::{TransactionPayment, TransactionPaymentApi};
+            use zenlink_protocol_rpc::{ZenlinkProtocol, ZenlinkProtocolApi};
+
+            io.extend_with(ZenlinkProtocolApi::to_delegate(ZenlinkProtocol::new(client.clone())));
+            io.extend_with(TransactionPaymentApi::to_delegate(TransactionPayment::new(client)));
+
+            io
+        },
         build_import_queue,
         |client,
          prometheus_registry,

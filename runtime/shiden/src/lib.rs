@@ -37,7 +37,7 @@ use sp_version::RuntimeVersion;
 
 // XCM support
 use frame_support::{
-    traits::{All, Get}, PalletId
+    traits::{All, Get}
 };
 use sp_std::{vec, marker::PhantomData};
 use pallet_xcm::XcmPassthrough;

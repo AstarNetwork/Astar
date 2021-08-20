@@ -189,5 +189,6 @@ fn make_genesis(
         },
         zenlink_protocol: ZenlinkProtocolConfig {
             ..Default::default()
+        },
     }
 }

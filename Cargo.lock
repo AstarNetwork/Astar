@@ -11215,6 +11215,7 @@ dependencies = [
  "serde",
  "sp-arithmetic",
  "sp-core",
+ "sp-io",
  "sp-runtime",
  "sp-std",
  "xcm",
@@ -11229,6 +11230,7 @@ dependencies = [
  "jsonrpc-core-client",
  "jsonrpc-derive",
  "parity-scale-codec",
+ "serde",
  "sp-api",
  "sp-blockchain",
  "sp-rpc",
@@ -11242,6 +11244,7 @@ name = "zenlink-protocol-runtime-api"
 version = "0.4.4"
 dependencies = [
  "parity-scale-codec",
+ "serde_json",
  "sp-api",
  "sp-std",
  "zenlink-protocol",
