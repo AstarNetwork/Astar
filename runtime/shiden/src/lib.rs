@@ -6,7 +6,7 @@
 
 use frame_support::{
     construct_runtime, match_type, parameter_types,
-    traits::{Currency, Filter, Imbalance, OnUnbalanced},
+    traits::{Contains, Currency, Imbalance, OnUnbalanced},
     weights::{
         constants::{BlockExecutionWeight, ExtrinsicBaseWeight, WEIGHT_PER_SECOND},
         DispatchClass, Weight, WeightToFeeCoefficient, WeightToFeeCoefficients,
@@ -18,15 +18,17 @@ use frame_system::limits::{BlockLength, BlockWeights};
 use pallet_transaction_payment::{
     FeeDetails, Multiplier, RuntimeDispatchInfo, TargetedFeeAdjustment,
 };
+use polkadot_runtime_common::{BlockHashCount, RocksDbWeight};
 use sp_api::impl_runtime_apis;
 use sp_core::OpaqueMetadata;
 use sp_inherents::{CheckInherentsResult, InherentData};
 use sp_runtime::{
     create_runtime_str, generic, impl_opaque_keys,
     traits::{
-        AccountIdConversion, AccountIdLookup, BlakeTwo256, Block as BlockT, ConvertInto, OpaqueKeys,
+        AccountIdConversion, AccountIdLookup, BlakeTwo256, Block as BlockT, ConvertInto,
+        OpaqueKeys, Verify,
     },
-    transaction_validity::{TransactionSource, TransactionValidity},
+    transaction_validity::{TransactionPriority, TransactionSource, TransactionValidity},
     ApplyExtrinsicResult, FixedPointNumber, Perbill, Perquintill,
 };
 use sp_std::prelude::*;
@@ -51,6 +53,12 @@ pub use sp_runtime::BuildStorage;
 /// Constant values used within the runtime.
 pub const MILLISDN: Balance = 1_000_000_000_000_000;
 pub const SDN: Balance = 1_000 * MILLISDN;
+
+/// Charge fee for stored bytes and items.
+pub const fn deposit(items: u32, bytes: u32) -> Balance {
+    (items as Balance + bytes as Balance) * MILLISDN / 1_000_000
+}
+
 /// Change this to adjust the block time.
 pub const MILLISECS_PER_BLOCK: u64 = 12000;
 // Time is measured by number of blocks.
@@ -78,7 +86,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("shiden"),
     impl_name: create_runtime_str!("shiden"),
     authoring_version: 1,
-    spec_version: 6,
+    spec_version: 7,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 1,
@@ -109,7 +117,6 @@ const NORMAL_DISPATCH_RATIO: Perbill = Perbill::from_percent(75);
 const MAXIMUM_BLOCK_WEIGHT: Weight = WEIGHT_PER_SECOND / 2;
 
 parameter_types! {
-    pub const BlockHashCount: BlockNumber = 2400;
     pub const Version: RuntimeVersion = VERSION;
     pub RuntimeBlockLength: BlockLength =
         BlockLength::max_with_normal_ratio(5 * 1024 * 1024, NORMAL_DISPATCH_RATIO);
@@ -135,8 +142,8 @@ parameter_types! {
 }
 
 pub struct BaseFilter;
-impl Filter<Call> for BaseFilter {
-    fn filter(call: &Call) -> bool {
+impl Contains<Call> for BaseFilter {
+    fn contains(call: &Call) -> bool {
         match call {
             // These modules are not allowed to be called by transactions:
             Call::Balances(_) => false,
@@ -178,7 +185,7 @@ impl frame_system::Config for Runtime {
     type AccountData = pallet_balances::AccountData<Balance>;
     type OnNewAccount = ();
     type OnKilledAccount = ();
-    type DbWeight = ();
+    type DbWeight = RocksDbWeight;
     type BaseCallFilter = BaseFilter;
     type SystemWeightInfo = ();
     type BlockWeights = RuntimeBlockWeights;
@@ -223,6 +230,36 @@ impl pallet_identity::Config for Runtime {
     type WeightInfo = ();
 }
 
+parameter_types! {
+    // One storage item; key size is 32; value is size 4+4+16+32 bytes = 56 bytes.
+    pub const DepositBase: Balance = deposit(1, 88);
+    // Additional storage item size of 32 bytes.
+    pub const DepositFactor: Balance = deposit(0, 32);
+    pub const MaxSignatories: u16 = 100;
+}
+
+impl pallet_multisig::Config for Runtime {
+    type Event = Event;
+    type Call = Call;
+    type Currency = Balances;
+    type DepositBase = DepositBase;
+    type DepositFactor = DepositFactor;
+    type MaxSignatories = MaxSignatories;
+    type WeightInfo = ();
+}
+
+parameter_types! {
+    pub const EcdsaUnsignedPriority: TransactionPriority = TransactionPriority::max_value() / 2;
+}
+
+impl pallet_custom_signatures::Config for Runtime {
+    type Event = Event;
+    type Call = Call;
+    type Signature = pallet_custom_signatures::ethereum::EthereumSignature;
+    type Signer = <Signature as Verify>::Signer;
+    type UnsignedPriority = EcdsaUnsignedPriority;
+}
+
 impl pallet_utility::Config for Runtime {
     type Event = Event;
     type Call = Call;
@@ -249,6 +286,7 @@ impl parachain_info::Config for Runtime {}
 
 impl pallet_aura::Config for Runtime {
     type AuthorityId = AuraId;
+    type DisabledValidators = ();
 }
 
 impl cumulus_pallet_aura_ext::Config for Runtime {}
@@ -467,6 +505,8 @@ construct_runtime!(
         Utility: pallet_utility::{Pallet, Call, Event} = 11,
         Identity: pallet_identity::{Pallet, Call, Storage, Event<T>} = 12,
         Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent} = 13,
+        Multisig: pallet_multisig::{Pallet, Call, Storage, Event<T>} = 14,
+        EthCall: pallet_custom_signatures::{Pallet, Call, Event<T>, ValidateUnsigned} = 15,
 
         ParachainSystem: cumulus_pallet_parachain_system::{Pallet, Call, Storage, Inherent, Event<T>} = 20,
         ParachainInfo: parachain_info::{Pallet, Storage, Config} = 21,

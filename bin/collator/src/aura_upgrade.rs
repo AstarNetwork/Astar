@@ -3,19 +3,14 @@
 use cumulus_client_consensus_common::{ParachainCandidate, ParachainConsensus};
 use cumulus_primitives_core::relay_chain::v1::{Hash as PHash, PersistedValidationData};
 use futures::lock::Mutex;
+use sc_consensus::{import_queue::Verifier as VerifierT, BlockImportParams};
 use sp_api::ApiExt;
-use sp_consensus::{
-    import_queue::{CacheKeyId, Verifier as VerifierT},
-    BlockImportParams, BlockOrigin,
-};
+use sp_consensus::CacheKeyId;
 use sp_consensus_aura::{sr25519::AuthorityId as AuraId, AuraApi};
 use sp_runtime::{generic::BlockId, traits::Header as HeaderT};
 use std::sync::Arc;
 
-type BlockNumber = u32;
-type Header = sp_runtime::generic::Header<BlockNumber, sp_runtime::traits::BlakeTwo256>;
-pub type Block = sp_runtime::generic::Block<Header, sp_runtime::OpaqueExtrinsic>;
-pub type Hash = sp_core::H256;
+use crate::primitives::*;
 
 pub enum BuildOnAccess<R> {
     Uninitialized(Option<Box<dyn FnOnce() -> R + Send + Sync>>),
@@ -100,10 +95,7 @@ where
 {
     async fn verify(
         &mut self,
-        origin: BlockOrigin,
-        header: Header,
-        justifications: Option<sp_runtime::Justifications>,
-        body: Option<Vec<<Block as sp_runtime::traits::Block>::Extrinsic>>,
+        block_import: BlockImportParams<Block, ()>,
     ) -> Result<
         (
             BlockImportParams<Block, ()>,
@@ -111,7 +103,7 @@ where
         ),
         String,
     > {
-        let block_id = BlockId::hash(*header.parent_hash());
+        let block_id = BlockId::hash(*block_import.header.parent_hash());
 
         if self
             .client
@@ -119,14 +111,9 @@ where
             .has_api::<dyn AuraApi<Block, AuraId>>(&block_id)
             .unwrap_or(false)
         {
-            self.aura_verifier
-                .get_mut()
-                .verify(origin, header, justifications, body)
-                .await
+            self.aura_verifier.get_mut().verify(block_import).await
         } else {
-            self.relay_chain_verifier
-                .verify(origin, header, justifications, body)
-                .await
+            self.relay_chain_verifier.verify(block_import).await
         }
     }
 }

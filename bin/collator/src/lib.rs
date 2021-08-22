@@ -14,6 +14,8 @@ mod cli;
 mod command;
 
 mod aura_upgrade;
+mod primitives;
+mod rpc;
 
 pub use cli::*;
 pub use command::*;

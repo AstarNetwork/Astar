@@ -10,18 +10,20 @@ use cumulus_client_service::{
 use cumulus_primitives_core::ParaId;
 use futures::lock::Mutex;
 use sc_client_api::ExecutorProvider;
+use sc_consensus::import_queue::BasicQueue;
 use sc_network::NetworkService;
 use sc_service::{Configuration, PartialComponents, Role, TFullBackend, TFullClient, TaskManager};
 use sc_telemetry::{Telemetry, TelemetryHandle, TelemetryWorker, TelemetryWorkerHandle};
 use sp_api::ConstructRuntimeApi;
-use sp_consensus::{import_queue::BasicQueue, SlotData};
+use sp_consensus::SlotData;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 use sp_keystore::SyncCryptoStorePtr;
 use sp_runtime::traits::BlakeTwo256;
 use std::sync::Arc;
 use substrate_prometheus_endpoint::Registry;
 
-pub use crate::aura_upgrade::*;
+use crate::aura_upgrade::*;
+use crate::primitives::*;
 
 /// Shiden network runtime executor.
 pub mod shiden {
@@ -46,7 +48,7 @@ pub fn new_partial<RuntimeApi, Executor, BIQ>(
         TFullClient<Block, RuntimeApi, Executor>,
         TFullBackend<Block>,
         (),
-        sp_consensus::DefaultImportQueue<Block, TFullClient<Block, RuntimeApi, Executor>>,
+        sc_consensus::DefaultImportQueue<Block, TFullClient<Block, RuntimeApi, Executor>>,
         sc_transaction_pool::FullPool<Block, TFullClient<Block, RuntimeApi, Executor>>,
         (Option<Telemetry>, Option<TelemetryWorkerHandle>),
     >,
@@ -73,7 +75,7 @@ where
         Option<TelemetryHandle>,
         &TaskManager,
     ) -> Result<
-        sp_consensus::DefaultImportQueue<Block, TFullClient<Block, RuntimeApi, Executor>>,
+        sc_consensus::DefaultImportQueue<Block, TFullClient<Block, RuntimeApi, Executor>>,
         sc_service::Error,
     >,
 {
@@ -135,11 +137,10 @@ where
 ///
 /// This is the actual implementation that is abstract over the executor and the runtime api.
 #[sc_tracing::logging::prefix_logs_with("Parachain")]
-async fn start_node_impl<RuntimeApi, Executor, RB, BIQ, BIC>(
+async fn start_node_impl<RuntimeApi, Executor, BIQ, BIC>(
     parachain_config: Configuration,
     polkadot_config: Configuration,
     id: ParaId,
-    rpc_ext_builder: RB,
     build_import_queue: BIQ,
     build_consensus: BIC,
 ) -> sc_service::error::Result<(TaskManager, Arc<TFullClient<Block, RuntimeApi, Executor>>)>
@@ -156,21 +157,18 @@ where
             StateBackend = sc_client_api::StateBackendFor<TFullBackend<Block>, Block>,
         > + sp_offchain::OffchainWorkerApi<Block>
         + sp_block_builder::BlockBuilder<Block>
+        + frame_rpc_system::AccountNonceApi<Block, AccountId, Nonce>
+        + pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>
         + cumulus_primitives_core::CollectCollationInfo<Block>,
     sc_client_api::StateBackendFor<TFullBackend<Block>, Block>: sp_api::StateBackend<BlakeTwo256>,
     Executor: sc_executor::NativeExecutionDispatch + 'static,
-    RB: Fn(
-            Arc<TFullClient<Block, RuntimeApi, Executor>>,
-        ) -> jsonrpc_core::IoHandler<sc_rpc::Metadata>
-        + Send
-        + 'static,
     BIQ: FnOnce(
         Arc<TFullClient<Block, RuntimeApi, Executor>>,
         &Configuration,
         Option<TelemetryHandle>,
         &TaskManager,
     ) -> Result<
-        sp_consensus::DefaultImportQueue<Block, TFullClient<Block, RuntimeApi, Executor>>,
+        sc_consensus::DefaultImportQueue<Block, TFullClient<Block, RuntimeApi, Executor>>,
         sc_service::Error,
     >,
     BIC: FnOnce(
@@ -225,10 +223,23 @@ where
             import_queue: import_queue.clone(),
             on_demand: None,
             block_announce_validator_builder: Some(Box::new(|_| block_announce_validator)),
+            warp_sync: None,
         })?;
 
-    let rpc_client = client.clone();
-    let rpc_extensions_builder = Box::new(move |_, _| rpc_ext_builder(rpc_client.clone()));
+    let rpc_extensions_builder = {
+        let client = client.clone();
+        let transaction_pool = transaction_pool.clone();
+
+        Box::new(move |deny_unsafe, _| {
+            let deps = crate::rpc::FullDeps {
+                client: client.clone(),
+                pool: transaction_pool.clone(),
+                deny_unsafe,
+            };
+
+            Ok(crate::rpc::create_full(deps))
+        })
+    };
 
     sc_service::spawn_tasks(sc_service::SpawnTasksParams {
         on_demand: None,
@@ -302,7 +313,7 @@ pub fn build_import_queue<RuntimeApi, Executor>(
     telemetry_handle: Option<TelemetryHandle>,
     task_manager: &TaskManager,
 ) -> Result<
-    sp_consensus::DefaultImportQueue<Block, TFullClient<Block, RuntimeApi, Executor>>,
+    sc_consensus::DefaultImportQueue<Block, TFullClient<Block, RuntimeApi, Executor>>,
     sc_service::Error,
 >
 where
@@ -385,11 +396,10 @@ pub async fn start_shiden_node(
     TaskManager,
     Arc<TFullClient<Block, shiden::RuntimeApi, shiden::Executor>>,
 )> {
-    start_node_impl::<shiden::RuntimeApi, shiden::Executor, _, _, _>(
+    start_node_impl::<shiden::RuntimeApi, shiden::Executor, _, _>(
         parachain_config,
         polkadot_config,
         id,
-        |_| Default::default(),
         build_import_queue,
         |client,
          prometheus_registry,
