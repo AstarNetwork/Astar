@@ -4,6 +4,7 @@ members = [
     "runtime/shiden",
     "frame/block-reward",
     "frame/custom-signatures",
+    "frame/dapps-staking",
 ]
 
 [profile.release]
