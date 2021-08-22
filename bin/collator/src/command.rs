@@ -1,7 +1,8 @@
 use crate::{
     chain_spec,
     cli::{Cli, RelayChainCli, Subcommand},
-    service::{self, shiden, Block},
+    primitives::Block,
+    service::{self, shiden},
 };
 use codec::Encode;
 use cumulus_client_service::genesis::generate_genesis_block;
