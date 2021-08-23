@@ -67,6 +67,7 @@ pallet-utility = { version = "3.0.0", default-features = false }
 pallet-vesting = { version = "3.0.0", default-features = false }
 fp-rpc = { path = "../../../vendor/frontier/primitives/rpc", default-features = false }
 pallet-ethereum = { path = "../../../vendor/frontier/frame/ethereum", default-features = false }
+faucet-pallet = { path = '../../../vendor/faucet_pallet', default-features = false, version="2.0.0" }
 
 [build-dependencies]
 wasm-builder-runner = { package = "substrate-wasm-builder-runner", version = "1.0.5" }
@@ -127,5 +128,6 @@ std = [
     "pallet-utility/std",
     "pallet-offences/std",
     "pallet-vesting/std",
-    "pallet-staking/std"
+    "pallet-staking/std",
+    "faucet-pallet/std"
 ]

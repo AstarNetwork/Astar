@@ -65,6 +65,9 @@ use constants::{currency::*, time::*};
 
 mod precompiles;
 
+/// Faucet pallet
+pub use faucet_pallet as pallet_faucet;
+
 // Make the WASM binary available.
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
@@ -757,6 +760,13 @@ impl pallet_identity::Config for Runtime {
     type WeightInfo = ();
 }
 
+impl pallet_faucet::Config for Runtime {
+    type AuthorityId = faucet_pallet::crypto::TestAuthId;
+    type Call = Call;
+    type Event = Event;
+    type Currency = Balances;
+}
+
 construct_runtime!(
     pub enum Runtime where
         Block = Block,
@@ -787,6 +797,7 @@ construct_runtime!(
         Ethereum: pallet_ethereum::{Module, Call, Storage, Event, Config, ValidateUnsigned},
         EVM: pallet_evm::{Module, Call, Storage, Config, Event<T>},
         EthCall: pallet_custom_signatures::{Module, Call, Event<T>, ValidateUnsigned},
+        Faucet: pallet_faucet::{Module, Call, Storage, Event<T>},
     }
 );
 
