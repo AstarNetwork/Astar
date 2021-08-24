@@ -23,10 +23,10 @@ jobs:
 
       - name: Summary
         run: |
-          echo '${{ steps.srtool_build.outputs.json }}' | tee ${{ matrix.chain }}-srtool-digest.json
+          echo '${{ steps.srtool_build.outputs.json }}' | jq > ${{ matrix.chain }}-srtool-digest.json
+          cat ${{ matrix.chain }}-srtool-digest.json
           echo "Compact Runtime: ${{ steps.srtool_build.outputs.wasm }}"
-          echo "Compressed Runtime: ${{ steps.srtool_build.outputs.wasm_compressed }}"
-
+          
       # it takes a while to build the runtime, so let's save the artifact as soon as we have it
       - name: Archive Artifacts for ${{ matrix.chain }}
         uses: actions/upload-artifact@v2
@@ -34,7 +34,6 @@ jobs:
           name: ${{ matrix.chain }}-runtime
           path: |
             ${{ steps.srtool_build.outputs.wasm }}
-                        ${{ steps.srtool_build.outputs.wasm_compressed }}
             ${{ matrix.chain }}-srtool-digest.json
 
       # We now get extra information thanks to subwasm
@@ -48,9 +47,7 @@ jobs:
         shell: bash
         run: |
           subwasm info ${{ steps.srtool_build.outputs.wasm }}
-          subwasm info ${{ steps.srtool_build.outputs.wasm_compressed }}
           subwasm --json info ${{ steps.srtool_build.outputs.wasm }} > ${{ matrix.chain }}-info.json
-          subwasm --json info ${{ steps.srtool_build.outputs.wasm_compressed }} > ${{ matrix.chain }}-compressed-info.json
 
       - name: Extract the metadata
         shell: bash
@@ -72,6 +69,5 @@ jobs:
           name: ${{ matrix.chain }}-runtime
           path: |
             ${{ matrix.chain }}-info.json
-            ${{ matrix.chain }}-compressed-info.json
             ${{ matrix.chain }}-metadata.json
             ${{ matrix.chain }}-diff.txt
