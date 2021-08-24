@@ -1,7 +1,9 @@
 name: Srtool build
 
 on:
-  push: []
+push: 
+  branches: 
+    - 'development/dusty'
 
 jobs:
   srtool:
