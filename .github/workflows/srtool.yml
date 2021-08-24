@@ -1,9 +1,9 @@
 name: Srtool build
 
 on:
-push: 
-  branches: 
-    - 'development/dusty'
+  push:
+    branches:
+      - 'development/dusty'
 
 jobs:
   srtool:
@@ -28,7 +28,7 @@ jobs:
           echo '${{ steps.srtool_build.outputs.json }}' | jq > ${{ matrix.chain }}-srtool-digest.json
           cat ${{ matrix.chain }}-srtool-digest.json
           echo "Compact Runtime: ${{ steps.srtool_build.outputs.wasm }}"
-          
+
       # it takes a while to build the runtime, so let's save the artifact as soon as we have it
       - name: Archive Artifacts for ${{ matrix.chain }}
         uses: actions/upload-artifact@v2
