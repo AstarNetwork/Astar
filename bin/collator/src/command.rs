@@ -57,7 +57,7 @@ impl SubstrateCli for Cli {
     }
 
     fn support_url() -> String {
-        "https://github.com/staketechnologies/Plasm/issues/new".into()
+        "https://github.com/PlasmNetwork/Astar/issues/new".into()
     }
 
     fn copyright_start_year() -> i32 {
