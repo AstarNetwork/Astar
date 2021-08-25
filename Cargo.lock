@@ -4376,26 +4376,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "pallet-plasm-operator"
-version = "1.10.0"
-dependencies = [
- "frame-support",
- "frame-system",
- "pallet-balances",
- "pallet-contracts",
- "pallet-evm",
- "pallet-randomness-collective-flip",
- "pallet-timestamp",
- "parity-scale-codec",
- "serde",
- "sp-core",
- "sp-io",
- "sp-runtime",
- "sp-std",
- "wat",
-]
-
-[[package]]
 name = "pallet-randomness-collective-flip"
 version = "3.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
