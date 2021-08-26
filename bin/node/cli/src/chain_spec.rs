@@ -204,6 +204,8 @@ fn make_genesis(
             .collect(),
         }),
         pallet_ethereum: Some(EthereumConfig {}),
+        pallet_treasury: Default::default(),
+
     }
 }
 

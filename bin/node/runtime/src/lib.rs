@@ -45,7 +45,7 @@ use sp_runtime::transaction_validity::{
 };
 use sp_runtime::{
     create_runtime_str, curve::PiecewiseLinear, generic, impl_opaque_keys, ApplyExtrinsicResult,
-    FixedPointNumber, Perbill, Perquintill, RuntimeAppPublic,
+    FixedPointNumber, Perbill, Permill, Perquintill, RuntimeAppPublic, ModuleId,
 };
 use sp_std::convert::TryFrom;
 use sp_std::prelude::*;
@@ -355,9 +355,9 @@ impl pallet_staking::Config for Runtime {
     type Currency = Balances;
     type UnixTime = Timestamp;
     type CurrencyToVote = U128CurrencyToVote;
-    type RewardRemainder = ();
+    type RewardRemainder = Treasury;
     type Event = Event;
-    type Slash = ();
+    type Slash = Treasury;
     type Reward = (); // rewards are minted from the void
     type SessionsPerEra = SessionsPerEra;
     type BondingDuration = BondingDuration;
@@ -372,7 +372,7 @@ impl pallet_staking::Config for Runtime {
     type MinSolutionScoreBump = MinSolutionScoreBump;
     type MaxNominatorRewardedPerValidator = MaxNominatorRewardedPerValidator;
     type UnsignedPriority = StakingUnsignedPriority;
-    type WeightInfo = ();
+    type WeightInfo = pallet_staking::weights::SubstrateWeight<Runtime>;
     type OffchainSolutionWeightLimit = ();
 }
 
@@ -751,10 +751,34 @@ impl pallet_identity::Config for Runtime {
     type MaxSubAccounts = MaxSubAccounts;
     type MaxAdditionalFields = MaxAdditionalFields;
     type MaxRegistrars = MaxRegistrars;
-    type Slashed = ();
+    type Slashed = Treasury; // send the slashed funds to the treasury.
     type ForceOrigin = frame_system::EnsureRoot<<Self as frame_system::Config>::AccountId>;
     type RegistrarOrigin = frame_system::EnsureRoot<<Self as frame_system::Config>::AccountId>;
     type WeightInfo = ();
+}
+
+parameter_types! {
+    pub const TreasuryModuleId: ModuleId = ModuleId(*b"py/trsry");
+	pub const ProposalBond: Permill = Permill::from_percent(5);
+	pub const ProposalBondMinimum: Balance = 1 * PLM;
+	pub SpendPeriod: BlockNumber = 1 * DAYS;
+	pub const Burn: Permill = Permill::from_percent(50);
+}
+
+impl pallet_treasury::Config for Runtime {
+    type ModuleId = TreasuryModuleId;
+	type Currency = Balances;
+	type ApproveOrigin = EnsureRoot<AccountId>;
+	type RejectOrigin = EnsureRoot<AccountId>;
+	type Event = Event;
+	type OnSlash = ();
+	type ProposalBond = ProposalBond;
+	type ProposalBondMinimum = ProposalBondMinimum;
+	type SpendPeriod = SpendPeriod;
+	type Burn = Burn;
+	type BurnDestination = ();
+	type SpendFunds = ();
+	type WeightInfo = pallet_treasury::weights::SubstrateWeight<Runtime>;
 }
 
 construct_runtime!(
@@ -775,6 +799,7 @@ construct_runtime!(
         Staking: pallet_staking::{Module, Call, Storage, Event<T>, Config<T>},
         Session: pallet_session::{Module, Call, Storage, Event, Config<T>},
         Grandpa: pallet_grandpa::{Module, Call, Storage, Config, Event, ValidateUnsigned},
+        Treasury: pallet_treasury::{Module, Call, Storage, Config, Event<T>},
         Contracts: pallet_contracts::{Module, Call, Storage, Event<T>, Config<T>},
         Sudo: pallet_sudo::{Module, Call, Storage, Event<T>, Config<T>},
         ImOnline: pallet_im_online::{Module, Call, Storage, Event<T>, ValidateUnsigned, Config<T>},
