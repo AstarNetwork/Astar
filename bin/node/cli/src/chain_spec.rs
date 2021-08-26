@@ -205,7 +205,6 @@ fn make_genesis(
         }),
         pallet_ethereum: Some(EthereumConfig {}),
         pallet_treasury: Default::default(),
-
     }
 }
 

@@ -45,7 +45,7 @@ use sp_runtime::transaction_validity::{
 };
 use sp_runtime::{
     create_runtime_str, curve::PiecewiseLinear, generic, impl_opaque_keys, ApplyExtrinsicResult,
-    FixedPointNumber, Perbill, Permill, Perquintill, RuntimeAppPublic, ModuleId,
+    FixedPointNumber, ModuleId, Perbill, Permill, Perquintill, RuntimeAppPublic,
 };
 use sp_std::convert::TryFrom;
 use sp_std::prelude::*;
@@ -759,26 +759,26 @@ impl pallet_identity::Config for Runtime {
 
 parameter_types! {
     pub const TreasuryModuleId: ModuleId = ModuleId(*b"py/trsry");
-	pub const ProposalBond: Permill = Permill::from_percent(5);
-	pub const ProposalBondMinimum: Balance = 1 * PLM;
-	pub SpendPeriod: BlockNumber = 1 * DAYS;
-	pub const Burn: Permill = Permill::from_percent(50);
+    pub const ProposalBond: Permill = Permill::from_percent(5);
+    pub const ProposalBondMinimum: Balance = 1 * PLM;
+    pub SpendPeriod: BlockNumber = 1 * DAYS;
+    pub const Burn: Permill = Permill::from_percent(50);
 }
 
 impl pallet_treasury::Config for Runtime {
     type ModuleId = TreasuryModuleId;
-	type Currency = Balances;
-	type ApproveOrigin = EnsureRoot<AccountId>;
-	type RejectOrigin = EnsureRoot<AccountId>;
-	type Event = Event;
-	type OnSlash = ();
-	type ProposalBond = ProposalBond;
-	type ProposalBondMinimum = ProposalBondMinimum;
-	type SpendPeriod = SpendPeriod;
-	type Burn = Burn;
-	type BurnDestination = ();
-	type SpendFunds = ();
-	type WeightInfo = pallet_treasury::weights::SubstrateWeight<Runtime>;
+    type Currency = Balances;
+    type ApproveOrigin = EnsureRoot<AccountId>;
+    type RejectOrigin = EnsureRoot<AccountId>;
+    type Event = Event;
+    type OnSlash = ();
+    type ProposalBond = ProposalBond;
+    type ProposalBondMinimum = ProposalBondMinimum;
+    type SpendPeriod = SpendPeriod;
+    type Burn = Burn;
+    type BurnDestination = ();
+    type SpendFunds = ();
+    type WeightInfo = pallet_treasury::weights::SubstrateWeight<Runtime>;
 }
 
 construct_runtime!(
