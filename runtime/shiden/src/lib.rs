@@ -86,7 +86,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("shiden"),
     impl_name: create_runtime_str!("shiden"),
     authoring_version: 1,
-    spec_version: 7,
+    spec_version: 8,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 1,
@@ -146,7 +146,6 @@ impl Contains<Call> for BaseFilter {
     fn contains(call: &Call) -> bool {
         match call {
             // These modules are not allowed to be called by transactions:
-            Call::Balances(_) => false,
             // To leave collator just shutdown it, next session funds will be released
             Call::CollatorSelection(pallet_collator_selection::Call::leave_intent(..)) => false,
             // Other modules should works:
