@@ -306,11 +306,14 @@ pub mod pallet {
             Ok(())
         }
 
-        /// Declare the desire to nominate `targets` for the origin controller.
+        /// Declare the desire to stake(nominate) `targets` for the origin contracts.
         ///
         /// Effects will be felt at the beginning of the next era.
         ///
         /// The dispatch origin for this call must be _Signed_ by the controller, not the stash.
+        ///
+        /// It will automatically be diversified into `targets` based on the amount bound.
+        /// For example, if you stake 4 contracts while bonding 100 SDNs, he stakes 25 SDNs for each contract.
         ///
         /// # <weight>
         /// - The transaction's complexity is proportional to the size of `targets`,
@@ -319,7 +322,7 @@ pub mod pallet {
         #[pallet::weight(T::WeightInfo::stake_contracts(targets.len() as u32))]
         pub fn stake_contracts(
             origin: OriginFor<T>,
-            targets: Vec<(<T::Lookup as StaticLookup>::Source, BalanceOf<T>)>,
+            targets: Vec<<T::Lookup as StaticLookup>::Source>,
         ) -> DispatchResult {
             // TODO: impls
             Ok(())
@@ -327,8 +330,12 @@ pub mod pallet {
 
         /// vote some contracts with Bad/Good.
         /// If you have already voted for a contract on your account, your vote for that contract will be overridden.
-        /// If you didn't stake any contract, you can not vote.
-        /// Voting power equal to amount of staking.
+        /// If you didn't bond, you can not vote.
+        /// The voting power equal to amount of bonded.
+        ///
+        /// Effects will be felt at the beginning of the next era.
+        ///
+        /// The dispatch origin for this call must be _Signed_ by the controller, not the stash.
         ///
         /// # <weight>
         #[pallet::weight(T::WeightInfo::vote_contracts(targets.len() as u32))]
@@ -340,7 +347,7 @@ pub mod pallet {
             Ok(())
         }
 
-        /// Declare no desire to either validate or nominate.
+        /// Declare no desire to either staking.
         ///
         /// Effects will be felt at the beginning of the next era.
         ///
@@ -397,14 +404,14 @@ pub mod pallet {
             Ok(())
         }
 
-        /// rewards are claimed by the staker.
+        /// rewards are claimed by the staker on contract_id.
         ///
         /// era must be in the range `[current_era - history_depth; active_era)`.
         ///
-        /// The dispatch origin for this call must be _Signed_ by the stash, not the controller.
+        /// Any user can call this function.
         #[pallet::weight(T::WeightInfo::payout_stakers_alive_staked(T::MaxStakings::get()))]
         pub fn payout_stakers(
-            origin: OriginFor<T>,
+            _origin: OriginFor<T>,
             contract_id: T::AccountId,
             era: EraIndex,
         ) -> DispatchResult {
@@ -412,11 +419,11 @@ pub mod pallet {
             Ok(())
         }
 
-        /// rewards are claimed by the operator.
+        /// rewards are claimed by the contract.
         ///
         /// era must be in the range [current_era - history_depth; active_era).
         ///
-        /// The dispatch origin for this call must be _Signed_ by the stash, not the controller
+        /// Any user can call this function.
         /// TODO: weight
         #[pallet::weight(T::WeightInfo::payout_stakers_alive_staked(T::MaxStakings::get()))]
         pub fn payout_contract(
