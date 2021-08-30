@@ -1,6 +1,6 @@
-//! # Plasm Staking Module
+//! # dApps Staking Module
 //!
-//! The Plasm staking module manages era, total amounts of rewards and how to distribute.
+//! The dApps staking module manages era, total amounts of rewards and how to distribute.
 #![recursion_limit = "128"]
 #![cfg_attr(not(feature = "std"), no_std)]
 

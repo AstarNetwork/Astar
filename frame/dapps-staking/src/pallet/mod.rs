@@ -14,7 +14,6 @@ use sp_runtime::{
     traits::{CheckedSub, SaturatedConversion, StaticLookup, Zero},
     DispatchError, Perbill, Percent,
 };
-use sp_staking::SessionIndex;
 use sp_std::{convert::From, prelude::*, result};
 
 mod impls;
@@ -51,9 +50,9 @@ pub mod pallet {
         /// Handler for the unbalanced increment when rewarding a staker. Maybe, dapps-staking uses ().
         type Reward: OnUnbalanced<PositiveImbalanceOf<Self>>;
 
-        /// Number of sessions per era.
+        /// Number of blocks per era.
         #[pallet::constant]
-        type SessionsPerEra: Get<SessionIndex>;
+        type BlockPerEra: Get<BlockNumberFor<Self>>;
 
         /// Number of eras that staked funds must remain bonded for.
         #[pallet::constant]
@@ -431,6 +430,26 @@ pub mod pallet {
             contract_id: T::AccountId,
             era: EraIndex,
         ) -> DispatchResult {
+            // TODO: impls
+            Ok(())
+        }
+
+        /// register contract
+        /// TODO: weight
+        #[pallet::weight(T::WeightInfo::payout_stakers_alive_staked(T::MaxStakings::get()))]
+        pub fn register(origin: OriginFor<T>, contract_id: T::AccountId) -> DispatchResult {
+            // TODO: impls
+            Ok(())
+        }
+
+        /// set deposit amount for registering contract.
+        /// TODO: weight
+        #[pallet::weight(T::WeightInfo::payout_stakers_alive_staked(T::MaxStakings::get()))]
+        pub fn set_register_deposit(
+            origin: OriginFor<T>,
+            #[pallet::compact] deposit_amount: BalanceOf<T>,
+        ) -> DispatchResult {
+            ensure_root(origin)?;
             // TODO: impls
             Ok(())
         }
