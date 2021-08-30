@@ -434,7 +434,11 @@ pub mod pallet {
             Ok(())
         }
 
-        /// register contract
+        /// register contract into staking targets.
+        /// contract_id should be ink! or evm contract.
+        ///
+        /// Any user can call this function.
+        /// However, caller have to have deposit amount.
         /// TODO: weight
         #[pallet::weight(T::WeightInfo::payout_stakers_alive_staked(T::MaxStakings::get()))]
         pub fn register(origin: OriginFor<T>, contract_id: T::AccountId) -> DispatchResult {
@@ -443,6 +447,9 @@ pub mod pallet {
         }
 
         /// set deposit amount for registering contract.
+        ///
+        /// The dispatch origin for this call must be _Signed_ by the root.
+        ///
         /// TODO: weight
         #[pallet::weight(T::WeightInfo::payout_stakers_alive_staked(T::MaxStakings::get()))]
         pub fn set_register_deposit(
