@@ -542,7 +542,7 @@ pub mod pallet {
             Ok(())
         }
 
-        /// Force there to be a new era at the end of sessions indefinitely.
+        /// Force there to be a new era at the end of blocks indefinitely.
         ///
         /// The dispatch origin must be Root.
         ///
