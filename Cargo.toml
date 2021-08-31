@@ -7,6 +7,7 @@ members = [
     "frame/block-reward",
     "frame/custom-signatures",
     "precompiles/staking",
+    "frame/dapps-staking",
 ]
 
 [profile.release]
