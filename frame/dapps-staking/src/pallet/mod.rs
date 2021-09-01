@@ -2,12 +2,13 @@
 
 use super::*;
 use frame_support::{
-    pallet_prelude::*, ensure,
+    dispatch::{DispatchError, DispatchResult},
+    ensure,
+    pallet_prelude::*,
     traits::{
         Currency, CurrencyToVote, EnsureOrigin, EstimateNextNewSession, Get, LockIdentifier,
         LockableCurrency, OnUnbalanced, UnixTime, WithdrawReasons,
     },
-    dispatch::{DispatchError, DispatchResult},
     weights::Weight,
 };
 use frame_system::{ensure_root, ensure_signed, offchain::SendTransactionTypes, pallet_prelude::*};
@@ -87,7 +88,7 @@ pub mod pallet {
     /// Map from all (unlocked) "controller" accounts to the info regarding the staking.
     #[pallet::storage]
     #[pallet::getter(fn ledger)]
-    pub(crate) type  Ledger<T: Config> =
+    pub(crate) type Ledger<T: Config> =
         StorageMap<_, Blake2_128Concat, T::AccountId, StakingLedger<T::AccountId, BalanceOf<T>>>;
 
     /// Where the reward payment should be made. Keyed by stash.
@@ -239,16 +240,24 @@ pub mod pallet {
             #[pallet::compact] value: BalanceOf<T>,
             payee: RewardDestination<T::AccountId>,
         ) -> DispatchResultWithPostInfo {
-
             let stash = ensure_signed(origin)?;
-            ensure!(!Bonded::<T>::contains_key(&stash), Error::<T>::AlreadyBonded);
+            ensure!(
+                !Bonded::<T>::contains_key(&stash),
+                Error::<T>::AlreadyBonded
+            );
 
             let controller = T::Lookup::lookup(controller)?;
-            ensure!(!Ledger::<T>::contains_key(&controller), Error::<T>::AlreadyPaired);
+            ensure!(
+                !Ledger::<T>::contains_key(&controller),
+                Error::<T>::AlreadyPaired
+            );
 
             // reject a bond which is considered to be dust
-            ensure!(value >= T::Currency::minimum_balance(), Error::<T>::InsufficientValue);
-            
+            ensure!(
+                value >= T::Currency::minimum_balance(),
+                Error::<T>::InsufficientValue
+            );
+
             let stash_balance = T::Currency::free_balance(&stash);
             ensure!(!stash_balance.is_zero(), Error::<T>::InsufficientValue);
 
@@ -263,7 +272,7 @@ pub mod pallet {
                 total: value,
                 active: value,
                 unlocking: vec![],
-                last_reward: 0 // T::EraFinder::current() TODO
+                last_reward: 0, // T::EraFinder::current() TODO
             };
             Self::update_ledger(&controller, &ledger);
 
@@ -289,10 +298,9 @@ pub mod pallet {
             origin: OriginFor<T>,
             #[pallet::compact] max_additional: BalanceOf<T>,
         ) -> DispatchResultWithPostInfo {
-
             let stash = ensure_signed(origin)?;
             ensure!(Bonded::<T>::contains_key(&stash), Error::<T>::NotStash);
-            
+
             let controller = Self::bonded(&stash).ok_or(Error::<T>::NotStash)?;
             let mut ledger = Self::ledger(&controller).ok_or(Error::<T>::NotController)?;
 
@@ -460,11 +468,13 @@ pub mod pallet {
             origin: OriginFor<T>,
             controller: <T::Lookup as StaticLookup>::Source,
         ) -> DispatchResultWithPostInfo {
-
             let stash = ensure_signed(origin)?;
             let old_controller = Self::bonded(&stash).ok_or(Error::<T>::NotStash)?;
             let controller = T::Lookup::lookup(controller)?;
-            ensure!(!Ledger::<T>::contains_key(&controller), Error::<T>::AlreadyPaired);
+            ensure!(
+                !Ledger::<T>::contains_key(&controller),
+                Error::<T>::AlreadyPaired
+            );
             ensure!(controller != old_controller, Error::<T>::AlreadyPaired);
 
             // change controller for given stash
@@ -474,7 +484,7 @@ pub mod pallet {
             if let Some(ledger) = <Ledger<T>>::take(&old_controller) {
                 Ledger::<T>::insert(&controller, ledger);
             }
-            
+
             Ok(().into())
         }
 
@@ -647,7 +657,6 @@ pub mod pallet {
     }
 
     impl<T: Config> Pallet<T> {
-
         /// Update the ledger for a controller. This will also update the stash lock.
         /// This lock will lock the entire funds except paying for further transactions.
         fn update_ledger(
