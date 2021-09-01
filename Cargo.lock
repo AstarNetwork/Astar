@@ -190,7 +190,7 @@ checksum = "9b34d609dfbaf33d6889b2b7106d3ca345eacad44200913df5ba02bfd31d2ba9"
 
 [[package]]
 name = "astar-collator"
-version = "2.4.1"
+version = "2.4.2"
 dependencies = [
  "async-trait",
  "cumulus-client-cli",
@@ -8831,7 +8831,7 @@ dependencies = [
 
 [[package]]
 name = "shiden-runtime"
-version = "2.4.1"
+version = "2.4.2"
 dependencies = [
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-parachain-system",
