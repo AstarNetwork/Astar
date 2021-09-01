@@ -2,17 +2,18 @@
 
 use super::*;
 use frame_support::{
-    pallet_prelude::*,
+    pallet_prelude::*, ensure,
     traits::{
         Currency, CurrencyToVote, EnsureOrigin, EstimateNextNewSession, Get, LockIdentifier,
-        LockableCurrency, OnUnbalanced, UnixTime,
+        LockableCurrency, OnUnbalanced, UnixTime, WithdrawReasons,
     },
+    dispatch::{DispatchError, DispatchResult},
     weights::Weight,
 };
 use frame_system::{ensure_root, ensure_signed, offchain::SendTransactionTypes, pallet_prelude::*};
 use sp_runtime::{
     traits::{CheckedSub, SaturatedConversion, StaticLookup, Zero},
-    DispatchError, Perbill, Percent,
+    Perbill, Percent,
 };
 use sp_std::{convert::From, prelude::*, result};
 
@@ -77,6 +78,23 @@ pub mod pallet {
     pub(crate) fn HistoryDepthOnEmpty() -> u32 {
         84u32
     }
+
+    /// Map from all locked "stash" accounts to the controller account.
+    #[pallet::storage]
+    #[pallet::getter(fn bonded)]
+    pub(crate) type Bonded<T: Config> = StorageMap<_, Twox64Concat, T::AccountId, T::AccountId>;
+
+    /// Map from all (unlocked) "controller" accounts to the info regarding the staking.
+    #[pallet::storage]
+    #[pallet::getter(fn ledger)]
+    pub(crate) type  Ledger<T: Config> =
+        StorageMap<_, Blake2_128Concat, T::AccountId, StakingLedger<T::AccountId, BalanceOf<T>>>;
+
+    /// Where the reward payment should be made. Keyed by stash.
+    #[pallet::storage]
+    #[pallet::getter(fn payee)]
+    pub(crate) type Payee<T: Config> =
+        StorageMap<_, Twox64Concat, T::AccountId, RewardDestination<T::AccountId>>;
 
     /// Number of eras to keep in history.
     ///
@@ -220,9 +238,36 @@ pub mod pallet {
             controller: <T::Lookup as StaticLookup>::Source,
             #[pallet::compact] value: BalanceOf<T>,
             payee: RewardDestination<T::AccountId>,
-        ) -> DispatchResult {
-            // TODO: impls
-            Ok(())
+        ) -> DispatchResultWithPostInfo {
+
+            let stash = ensure_signed(origin)?;
+            ensure!(!Bonded::<T>::contains_key(&stash), Error::<T>::AlreadyBonded);
+
+            let controller = T::Lookup::lookup(controller)?;
+            ensure!(!Ledger::<T>::contains_key(&controller), Error::<T>::AlreadyPaired);
+
+            // reject a bond which is considered to be dust
+            ensure!(value >= T::Currency::minimum_balance(), Error::<T>::InsufficientValue);
+            
+            let stash_balance = T::Currency::free_balance(&stash);
+            ensure!(!stash_balance.is_zero(), Error::<T>::InsufficientValue);
+
+            Bonded::<T>::insert(&stash, &controller);
+            Payee::<T>::insert(&stash, payee);
+
+            Self::deposit_event(Event::Bonded(stash.clone(), stash_balance.clone()));
+
+            let value = value.min(stash_balance);
+            let ledger = StakingLedger {
+                stash,
+                total: value,
+                active: value,
+                unlocking: vec![],
+                last_reward: 0 // T::EraFinder::current() TODO
+            };
+            Self::update_ledger(&controller, &ledger);
+
+            Ok(().into())
         }
 
         /// Add some extra amount that have appeared in the stash `free_balance` into the balance up
@@ -243,9 +288,25 @@ pub mod pallet {
         pub fn bond_extra(
             origin: OriginFor<T>,
             #[pallet::compact] max_additional: BalanceOf<T>,
-        ) -> DispatchResult {
-            // TODO: impls
-            Ok(())
+        ) -> DispatchResultWithPostInfo {
+
+            let stash = ensure_signed(origin)?;
+            ensure!(Bonded::<T>::contains_key(&stash), Error::<T>::NotStash);
+            
+            let controller = Self::bonded(&stash).ok_or(Error::<T>::NotStash)?;
+            let mut ledger = Self::ledger(&controller).ok_or(Error::<T>::NotController)?;
+
+            let stash_balance = T::Currency::free_balance(&stash);
+
+            if let Some(extra) = stash_balance.checked_sub(&ledger.total) {
+                let extra = extra.min(max_additional);
+                ledger.total += extra;
+                ledger.active += extra;
+                Self::deposit_event(Event::Bonded(stash, extra));
+                Self::update_ledger(&controller, &ledger);
+            }
+
+            Ok(().into())
         }
 
         /// Schedule a portion of the stash to be unlocked ready for transfer out after the bond
@@ -398,9 +459,23 @@ pub mod pallet {
         pub fn set_controller(
             origin: OriginFor<T>,
             controller: <T::Lookup as StaticLookup>::Source,
-        ) -> DispatchResult {
-            // TODO: impls
-            Ok(())
+        ) -> DispatchResultWithPostInfo {
+
+            let stash = ensure_signed(origin)?;
+            let old_controller = Self::bonded(&stash).ok_or(Error::<T>::NotStash)?;
+            let controller = T::Lookup::lookup(controller)?;
+            ensure!(!Ledger::<T>::contains_key(&controller), Error::<T>::AlreadyPaired);
+            ensure!(controller != old_controller, Error::<T>::AlreadyPaired);
+
+            // change controller for given stash
+            <Bonded<T>>::insert(&stash, &controller);
+
+            //create new Ledger from existing. Use new controler as the key
+            if let Some(ledger) = <Ledger<T>>::take(&old_controller) {
+                Ledger::<T>::insert(&controller, ledger);
+            }
+            
+            Ok(().into())
         }
 
         /// rewards are claimed by the staker on contract_id.
@@ -568,6 +643,24 @@ pub mod pallet {
             ensure_root(origin)?;
             ForceEra::<T>::put(Forcing::ForceAlways);
             Ok(())
+        }
+    }
+
+    impl<T: Config> Pallet<T> {
+
+        /// Update the ledger for a controller. This will also update the stash lock.
+        /// This lock will lock the entire funds except paying for further transactions.
+        fn update_ledger(
+            controller: &T::AccountId,
+            ledger: &StakingLedger<T::AccountId, BalanceOf<T>>,
+        ) {
+            T::Currency::set_lock(
+                STAKING_ID,
+                &ledger.stash,
+                ledger.total,
+                WithdrawReasons::all(),
+            );
+            <Ledger<T>>::insert(controller, ledger);
         }
     }
 }
