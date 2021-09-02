@@ -19,6 +19,16 @@ use sp_std::marker::PhantomData;
 #[derive(Debug, Clone, Copy)]
 pub struct ShidenNetworkPrecompiles<R>(PhantomData<R>);
 
+impl<R> ShidenNetworkPrecompiles<R> {
+    /// Return all addresses that contain precompiles. This can be used to populate dummy code
+    /// under the precompile.
+    pub fn used_addresses<AccountId: From<H160>>() -> impl Iterator<Item = AccountId> {
+        sp_std::vec![1, 2, 3, 4, 5, 6, 7, 8, 1024, 1025, 1026]
+            .into_iter()
+            .map(|x| hash(x).into())
+    }
+}
+
 /// The following distribution has been decided for the precompiles
 /// 0-1023: Ethereum Mainnet Precompiles
 /// 1024-2047 Precompiles that are not in Ethereum Mainnet

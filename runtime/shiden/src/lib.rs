@@ -51,8 +51,8 @@ pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
 
-pub mod precompiles;
-use precompiles::ShidenNetworkPrecompiles;
+mod precompiles;
+pub use precompiles::ShidenNetworkPrecompiles;
 
 /// Constant values used within the runtime.
 pub const MILLISDN: Balance = 1_000_000_000_000_000;
