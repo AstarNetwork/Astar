@@ -3,7 +3,7 @@ use codec::Encode;
 use custom_signatures::*;
 use frame_support::{assert_err, assert_ok, parameter_types};
 use hex_literal::hex;
-use sp_core::{crypto::Ss58Codec, ecdsa, Pair};
+use sp_core::{ecdsa, Pair};
 use sp_io::hashing::keccak_256;
 use sp_keyring::AccountKeyring as Keyring;
 use sp_runtime::{
@@ -42,7 +42,7 @@ parameter_types! {
 impl frame_system::Config for Runtime {
     type Origin = Origin;
     type BaseCallFilter = ();
-    type Index = u64;
+    type Index = u32;
     type BlockNumber = BlockNumber;
     type Call = Call;
     type Hash = H256;
@@ -83,6 +83,8 @@ impl pallet_balances::Config for Runtime {
 
 parameter_types! {
     pub const Priority: TransactionPriority = TransactionPriority::max_value();
+    pub const CallFee: Balance = 42;
+    pub const CallMagicNumber: u16 = 0xff50;
 }
 
 impl Config for Runtime {
@@ -90,6 +92,10 @@ impl Config for Runtime {
     type Call = Call;
     type Signature = ethereum::EthereumSignature;
     type Signer = <Signature as Verify>::Signer;
+    type CallMagicNumber = CallMagicNumber;
+    type Currency = Balances;
+    type CallFee = CallFee;
+    type OnChargeTransaction = ();
     type UnsignedPriority = Priority;
 }
 
@@ -101,7 +107,7 @@ fn new_test_ext() -> sp_io::TestExternalities {
     let pair = ecdsa::Pair::from_seed(&ECDSA_SEED);
     let account = MultiSigner::from(pair.public()).into_account();
     let _ = pallet_balances::GenesisConfig::<Runtime> {
-        balances: vec![(account, 1_000_000_000_000_000_000)],
+        balances: vec![(account, 1_000_000_000)],
     }
     .assimilate_storage(&mut storage);
     storage.into()
@@ -132,10 +138,12 @@ fn invalid_signature() {
     let alice: <Runtime as frame_system::Config>::AccountId = Keyring::Alice.into();
     let call = pallet_balances::Call::<Runtime>::transfer(alice.clone(), 1_000).into();
     let signature = Vec::from(&hex!["dd0992d40e5cdf99db76bed162808508ac65acd7ae2fdc8573594f03ed9c939773e813181788fc02c3c68f3fdc592759b35f6354484343e18cb5317d34dab6c61b"][..]);
-    assert_err!(
-        CustomSignatures::call(Origin::none(), Box::new(call), bob, signature),
-        Error::<Runtime>::InvalidSignature,
-    );
+    new_test_ext().execute_with(|| {
+        assert_err!(
+            CustomSignatures::call(Origin::none(), Box::new(call), bob, signature, 0),
+            Error::<Runtime>::InvalidSignature,
+        );
+    });
 }
 
 #[test]
@@ -148,20 +156,54 @@ fn balance_transfer() {
         assert_eq!(System::account(alice.clone()).data.free, 0);
 
         let call: Call = pallet_balances::Call::<Runtime>::transfer(alice.clone(), 1_000).into();
-        let signature = eth_sign(&ECDSA_SEED, call.encode().as_ref()).into();
+        let payload = (0xff50u16, 0u32, call.clone());
+        let signature = eth_sign(&ECDSA_SEED, payload.encode().as_ref()).into();
 
+        assert_eq!(System::account(account.clone()).nonce, 0);
         assert_ok!(CustomSignatures::call(
             Origin::none(),
-            Box::new(call),
-            account,
-            signature
+            Box::new(call.clone()),
+            account.clone(),
+            signature,
+            0,
         ));
-        assert_eq!(System::account(alice).data.free, 1_000);
+        assert_eq!(System::account(alice.clone()).data.free, 1_000);
+        assert_eq!(System::account(account.clone()).nonce, 1);
+        assert_eq!(System::account(account.clone()).data.free, 999_998_958);
+
+        let signature = eth_sign(&ECDSA_SEED, payload.encode().as_ref()).into();
+        assert_err!(
+            CustomSignatures::call(
+                Origin::none(),
+                Box::new(call.clone()),
+                account.clone(),
+                signature,
+                0,
+            ),
+            Error::<Runtime>::BadNonce,
+        );
+
+        let payload = (0xff50u16, 1u32, call.clone());
+        let signature = eth_sign(&ECDSA_SEED, payload.encode().as_ref()).into();
+        assert_eq!(System::account(account.clone()).nonce, 1);
+        assert_ok!(CustomSignatures::call(
+            Origin::none(),
+            Box::new(call.clone()),
+            account.clone(),
+            signature,
+            1,
+        ));
+        assert_eq!(System::account(alice).data.free, 2_000);
+        assert_eq!(System::account(account.clone()).nonce, 2);
+        assert_eq!(System::account(account.clone()).data.free, 999_997_916);
     })
 }
 
+/* TODO: enable it when UI fixtures will be ready
 #[test]
 fn call_fixtures() {
+    use sp_core::crypto::Ss58Codec;
+
     let seed = hex!["7e9c7ad85df5cdc88659f53e06fb2eb9bab3ebc59083a3190eaf2c730332529c"];
     let pair = ecdsa::Pair::from_seed(&seed);
     assert_eq!(
@@ -180,5 +222,7 @@ fn call_fixtures() {
     );
 
     let signature = hex!["96cd8087ef720b0ec10d96996a8bbb45005ba3320d1dde38450a56f77dfd149720cc2e6dcc8f09963aad4cdf5ec15e103ce56d0f4c7a753840217ef1787467a01c"];
-    assert_eq!(eth_sign(&seed, call.encode().as_ref()), signature)
+    let payload = (0xff50u16, 0u32, call.clone());
+    assert_eq!(eth_sign(&seed, payload.encode().as_ref()), signature)
 }
+*/
