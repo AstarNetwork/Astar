@@ -354,15 +354,26 @@ parameter_types! {
 
 type NegativeImbalance = <Balances as Currency<AccountId>>::NegativeImbalance;
 
+pub struct ToStakingPot;
+impl OnUnbalanced<NegativeImbalance> for ToStakingPot {
+    fn on_nonzero_unbalanced(amount: NegativeImbalance) {
+        let staking_pot = PotId::get().into_account();
+        Balances::resolve_creating(&staking_pot, amount);
+    }
+}
+
 pub struct OnBlockReward;
 impl OnUnbalanced<NegativeImbalance> for OnBlockReward {
     fn on_nonzero_unbalanced(amount: NegativeImbalance) {
         let (dapps, maintain) = amount.ration(50, 50);
+        // dapp staking block reward
         Balances::resolve_creating(&DappsStakingPalletId::get().into_account(), dapps);
 
         let (treasury, collators) = maintain.ration(40, 10);
+        // treasury slice of block reward
         Balances::resolve_creating(&TreasuryPalletId::get().into_account(), treasury);
-        Balances::resolve_creating(&PotId::get().into_account(), collators);
+        // collators block reward
+        ToStakingPot::on_unbalanced(collators);
     }
 }
 
@@ -485,8 +496,21 @@ impl WeightToFeePolynomial for WeightToFee {
     }
 }
 
+pub struct DealWithFees;
+impl OnUnbalanced<NegativeImbalance> for DealWithFees {
+    fn on_unbalanceds<B>(mut fees_then_tips: impl Iterator<Item = NegativeImbalance>) {
+        if let Some(mut fees) = fees_then_tips.next() {
+            if let Some(tips) = fees_then_tips.next() {
+                tips.merge_into(&mut fees);
+            }
+            // pay fees to collators
+            <ToStakingPot as OnUnbalanced<_>>::on_unbalanced(fees);
+        }
+    }
+}
+
 impl pallet_transaction_payment::Config for Runtime {
-    type OnChargeTransaction = pallet_transaction_payment::CurrencyAdapter<Balances, ()>;
+    type OnChargeTransaction = pallet_transaction_payment::CurrencyAdapter<Balances, DealWithFees>;
     type TransactionByteFee = TransactionByteFee;
     type WeightToFee = WeightToFee;
     type FeeMultiplierUpdate =
