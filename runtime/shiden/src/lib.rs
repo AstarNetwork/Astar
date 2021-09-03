@@ -90,7 +90,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("shiden"),
     impl_name: create_runtime_str!("shiden"),
     authoring_version: 1,
-    spec_version: 10,
+    spec_version: 11,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 1,
@@ -255,6 +255,7 @@ parameter_types! {
     pub const EcdsaUnsignedPriority: TransactionPriority = TransactionPriority::max_value() / 2;
 }
 
+/*
 impl pallet_custom_signatures::Config for Runtime {
     type Event = Event;
     type Call = Call;
@@ -262,6 +263,7 @@ impl pallet_custom_signatures::Config for Runtime {
     type Signer = <Signature as Verify>::Signer;
     type UnsignedPriority = EcdsaUnsignedPriority;
 }
+*/
 
 impl pallet_utility::Config for Runtime {
     type Event = Event;
@@ -637,7 +639,7 @@ construct_runtime!(
         Identity: pallet_identity::{Pallet, Call, Storage, Event<T>} = 12,
         Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent} = 13,
         Multisig: pallet_multisig::{Pallet, Call, Storage, Event<T>} = 14,
-        EthCall: pallet_custom_signatures::{Pallet, Call, Event<T>, ValidateUnsigned} = 15,
+        //EthCall: pallet_custom_signatures::{Pallet, Call, Event<T>, ValidateUnsigned} = 15,
 
         ParachainSystem: cumulus_pallet_parachain_system::{Pallet, Call, Storage, Inherent, Event<T>} = 20,
         ParachainInfo: parachain_info::{Pallet, Storage, Config} = 21,
