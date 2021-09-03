@@ -279,3 +279,13 @@ where
         true
     }
 }
+
+pub trait EraFinder<EraIndex> {
+    fn current() -> Option<EraIndex>;
+}
+
+impl<T: Config> EraFinder<EraIndex> for Pallet<T> {
+    fn current() -> Option<EraIndex> {
+        Some(5 as EraIndex)
+    }
+}
