@@ -4835,7 +4835,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-custom-signatures"
-version = "3.0.0"
+version = "4.0.0"
 dependencies = [
  "frame-support",
  "frame-system",

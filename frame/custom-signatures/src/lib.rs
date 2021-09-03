@@ -12,7 +12,10 @@ mod tests;
 pub mod pallet {
     use frame_support::{
         pallet_prelude::*,
-        traits::{Get, UnfilteredDispatchable},
+        traits::{
+            Currency, ExistenceRequirement, Get, OnUnbalanced, UnfilteredDispatchable,
+            WithdrawReasons,
+        },
         weights::GetDispatchInfo,
     };
     use frame_system::{ensure_none, pallet_prelude::*};
@@ -21,6 +24,10 @@ pub mod pallet {
 
     #[pallet::pallet]
     pub struct Pallet<T>(_);
+
+    /// The balance type of this pallet.
+    pub type BalanceOf<T> =
+        <<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
 
     #[pallet::config]
     pub trait Config: frame_system::Config {
@@ -36,6 +43,22 @@ pub mod pallet {
         /// User defined signer type.
         type Signer: IdentifyAccount<AccountId = Self::AccountId>;
 
+        /// The currency trait.
+        type Currency: Currency<Self::AccountId>;
+
+        /// The call fee destination.
+        type OnChargeTransaction: OnUnbalanced<
+            <Self::Currency as Currency<Self::AccountId>>::NegativeImbalance,
+        >;
+
+        /// The call processing fee amount.
+        #[pallet::constant]
+        type CallFee: Get<BalanceOf<Self>>;
+
+        /// The call magic number.
+        #[pallet::constant]
+        type CallMagicNumber: Get<u16>;
+
         /// A configuration for base priority of unsigned transactions.
         ///
         /// This is exposed so that it can be tuned for particular runtime, when
@@ -49,6 +72,8 @@ pub mod pallet {
         DecodeFailure,
         /// Signature and account mismatched.
         InvalidSignature,
+        /// Bad nonce parameter.
+        BadNonce,
     }
 
     #[pallet::event]
@@ -74,21 +99,57 @@ pub mod pallet {
         pub fn call(
             origin: OriginFor<T>,
             call: Box<<T as Config>::Call>,
-            account: T::AccountId,
+            signer: T::AccountId,
             signature: Vec<u8>,
+            #[pallet::compact] nonce: T::Index,
         ) -> DispatchResultWithPostInfo {
             ensure_none(origin)?;
 
+            // Ensure that transaction isn't stale
+            ensure!(
+                nonce == frame_system::Pallet::<T>::account_nonce(signer.clone()),
+                Error::<T>::BadNonce,
+            );
+            frame_system::Pallet::<T>::inc_account_nonce(signer.clone());
+
             let signature = <T as Config>::Signature::try_from(signature)
                 .map_err(|_| Error::<T>::DecodeFailure)?;
-            if signature.verify(&call.encode()[..], &account) {
-                let new_origin = frame_system::RawOrigin::Signed(account.clone()).into();
-                let res = call.dispatch_bypass_filter(new_origin).map(|_| ());
-                Self::deposit_event(Event::Executed(account, res.map_err(|e| e.error)));
-                Ok(Pays::No.into())
-            } else {
-                Err(Error::<T>::InvalidSignature)?
-            }
+
+            // Ensure that transaction signature is valid
+            ensure!(
+                Self::valid_signature(&call, &signer, &signature, &nonce),
+                Error::<T>::InvalidSignature
+            );
+
+            // Processing fee
+            let tx_fee = T::Currency::withdraw(
+                &signer,
+                T::CallFee::get(),
+                WithdrawReasons::FEE,
+                ExistenceRequirement::AllowDeath,
+            )?;
+            T::OnChargeTransaction::on_unbalanced(tx_fee);
+
+            // Dispatch call
+            let new_origin = frame_system::RawOrigin::Signed(signer.clone()).into();
+            let res = call.dispatch_bypass_filter(new_origin).map(|_| ());
+            Self::deposit_event(Event::Executed(signer, res.map_err(|e| e.error)));
+
+            // Fee already charged
+            Ok(Pays::No.into())
+        }
+    }
+
+    impl<T: Config> Pallet<T> {
+        /// Verify custom signature and returns `true` if correct.
+        pub fn valid_signature(
+            call: &Box<<T as Config>::Call>,
+            signer: &T::AccountId,
+            signature: &T::Signature,
+            nonce: &T::Index,
+        ) -> bool {
+            let payload = (T::CallMagicNumber::get(), nonce.clone(), call.clone());
+            signature.verify(&payload.encode()[..], signer)
         }
     }
 
@@ -99,23 +160,34 @@ pub mod pallet {
         type Call = Call<T>;
 
         fn validate_unsigned(_source: TransactionSource, call: &Self::Call) -> TransactionValidity {
-            if let Call::call(call, signer, signature) = call {
-                if let Ok(signature) = <T as Config>::Signature::try_from(signature.clone()) {
-                    if signature.verify(&call.encode()[..], &signer) {
-                        return ValidTransaction::with_tag_prefix("CustomSignatures")
-                            .priority(T::UnsignedPriority::get())
-                            .and_provides((call, signer))
-                            .longevity(64_u64)
-                            .propagate(true)
-                            .build();
-                    } else {
-                        InvalidTransaction::BadProof.into()
-                    }
+            // Call decomposition (we have only one possible value here)
+            let (call, signer, signature, nonce) = match call {
+                Call::call(a, b, c, d) => (a, b, c, d),
+                _ => return InvalidTransaction::Call.into(),
+            };
+
+            // Check that tx isn't stale
+            if *nonce != frame_system::Pallet::<T>::account_nonce(signer.clone()) {
+                return InvalidTransaction::Stale.into();
+            }
+
+            // Check signature encoding
+            if let Ok(signature) = <T as Config>::Signature::try_from(signature.clone()) {
+                // Verify signature
+                if Self::valid_signature(call, signer, &signature, nonce) {
+                    ValidTransaction::with_tag_prefix("CustomSignatures")
+                        .priority(T::UnsignedPriority::get())
+                        .and_provides((call, signer, nonce))
+                        .longevity(64_u64)
+                        .propagate(true)
+                        .build()
                 } else {
-                    InvalidTransaction::Custom(SIGNATURE_DECODE_FAILURE).into()
+                    // Signature mismatched to given signer
+                    InvalidTransaction::BadProof.into()
                 }
             } else {
-                InvalidTransaction::Call.into()
+                // Signature encoding broken
+                InvalidTransaction::Custom(SIGNATURE_DECODE_FAILURE).into()
             }
         }
     }
