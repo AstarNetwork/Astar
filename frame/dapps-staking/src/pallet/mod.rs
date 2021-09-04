@@ -44,7 +44,7 @@ pub mod pallet {
         type ContractFinder: ContractFinder<Self::AccountId>;
 
         // The current Staking Era
-        type EraFinder: EraFinder<EraIndex>;
+        type EraFinder: EraFinder;
 
         /// Tokens have been minted and are unused for validator-reward. Maybe, dapps-staking uses ().
         type RewardRemainder: OnUnbalanced<NegativeImbalanceOf<Self>>;
@@ -133,6 +133,23 @@ pub mod pallet {
     #[pallet::storage]
     #[pallet::getter(fn force_era)]
     pub type ForceEra<T> = StorageValue<_, Forcing, ValueQuery>;
+
+    // Declare the genesis config (optional).
+    //
+    // The macro accepts either a struct or an enum; it checks that generics are consistent.
+    //
+    // Type must implement the `Default` trait.
+    #[pallet::genesis_config]
+    #[derive(Default)]
+    pub struct GenesisConfig {
+        _myfield: u32,
+    }
+
+    // Declare genesis builder. (This is need only if GenesisConfig is declared)
+    #[pallet::genesis_build]
+    impl<T: Config> GenesisBuild<T> for GenesisConfig {
+        fn build(&self) {}
+    }
 
     #[pallet::event]
     #[pallet::generate_deposit(pub(crate) fn deposit_event)]
@@ -273,7 +290,7 @@ pub mod pallet {
                 last_reward: T::EraFinder::current().unwrap_or(Zero::zero()),
             };
             Self::update_ledger(&controller, &ledger);
-            Self::deposit_event(Event::<T>::Bonded(stash, free_stash));
+            Self::deposit_event(Event::<T>::Bonded(stash, value));
 
             Ok(().into())
         }

@@ -1,6 +1,6 @@
 use crate::{
-    self as pallet_dapps_staking, Config, ContractFinder, EraPayout, NegativeImbalanceOf,
-    PositiveImbalanceOf,
+    self as pallet_dapps_staking, pallet::pallet::Config, ContractFinder, EraFinder, EraPayout,
+    NegativeImbalanceOf, PositiveImbalanceOf,
 };
 
 use frame_support::{
@@ -33,7 +33,7 @@ construct_runtime!(
         System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
         Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>}, // TODO: should this be mocked 'properly'? This doesn't seem like I should be doing it.
         Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent}, // TODO: should I do it like this or create a special mock?
-        DappStaking: pallet_dapps_staking::{Pallet, Call, Storage, Event<T>},
+        DappsStaking: pallet_dapps_staking::{Pallet, Call, Config, Storage, Event<T>},
     }
 );
 
@@ -125,6 +125,15 @@ impl ContractFinder<AccountId> for ContractFinderMock {
     }
 }
 
+/// Mocked implementation for EraFinder
+pub struct EraFinderMock;
+
+impl EraFinder for EraFinderMock {
+    fn current() -> Option<EraIndex> {
+        Some(5 as EraIndex)
+    }
+}
+
 /// Mocked implementation for RewardRemainder. Might need to be changed later when used.
 pub struct RewardRemainderMock;
 
@@ -142,6 +151,7 @@ impl pallet_dapps_staking::Config for TestRuntime {
     type BlockPerEra = BlockPerEra;
     type BondingDuration = BondingDuration;
     type EraPayout = EraPayoutMock;
+    type EraFinder = EraFinderMock;
     type ContractFinder = ContractFinderMock;
     type WeightInfo = ();
     type UnixTime = Timestamp; // TODO see of this can be maybe simplified
@@ -172,18 +182,4 @@ impl ExternalityBuilder {
         ext.execute_with(|| System::set_block_number(1));
         ext
     }
-}
-
-pub(crate) fn get_dapp_staking_events() -> Vec<pallet_dapps_staking::Event<TestRuntime>> {
-    System::events()
-        .into_iter()
-        .map(|dapp_event| dapp_event.event)
-        .filter_map(|e| {
-            if let Event::DappStaking(inner) = e {
-                Some(inner)
-            } else {
-                None
-            }
-        })
-        .collect()
 }

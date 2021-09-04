@@ -282,11 +282,11 @@ where
     }
 }
 
-pub trait EraFinder<EraIndex> {
+pub trait EraFinder {
     fn current() -> Option<EraIndex>;
 }
 
-impl<T: Config> EraFinder<EraIndex> for Pallet<T> {
+impl<T: Config> EraFinder for Pallet<T> {
     fn current() -> Option<EraIndex> {
         Some(5 as EraIndex)
     }
