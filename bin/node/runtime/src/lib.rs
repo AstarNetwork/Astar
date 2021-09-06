@@ -757,6 +757,19 @@ impl pallet_identity::Config for Runtime {
     type WeightInfo = ();
 }
 
+parameter_types! {
+	pub const BridgeChainId: u8 = 80;
+	pub const ProposalLifetime: BlockNumber = 1000;
+}
+
+impl pallet_dusty_chainbridge::Config for Runtime {
+	type Event = Event;
+	type AdminOrigin = frame_system::EnsureRoot<Self::AccountId>;
+	type Proposal = Call;
+	type ChainId = BridgeChainId;
+	type ProposalLifetime = ProposalLifetime;
+}
+
 construct_runtime!(
     pub enum Runtime where
         Block = Block,
@@ -787,6 +800,7 @@ construct_runtime!(
         Ethereum: pallet_ethereum::{Module, Call, Storage, Event, Config, ValidateUnsigned},
         EVM: pallet_evm::{Module, Call, Storage, Config, Event<T>},
         EthCall: pallet_custom_signatures::{Module, Call, Event<T>, ValidateUnsigned},
+		ChainBridge: pallet_dusty_chainbridge::{Module, Call, Storage, Event<T>},
     }
 );
 
