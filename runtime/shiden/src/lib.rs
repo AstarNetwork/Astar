@@ -26,8 +26,7 @@ use sp_inherents::{CheckInherentsResult, InherentData};
 use sp_runtime::{
     create_runtime_str, generic, impl_opaque_keys,
     traits::{
-        AccountIdConversion, AccountIdLookup, BlakeTwo256, Block as BlockT, ConvertInto,
-        OpaqueKeys, Verify,
+        AccountIdConversion, AccountIdLookup, BlakeTwo256, Block as BlockT, ConvertInto, OpaqueKeys,
     },
     transaction_validity::{TransactionPriority, TransactionSource, TransactionValidity},
     ApplyExtrinsicResult, FixedPointNumber, Perbill, Perquintill,
@@ -567,7 +566,10 @@ impl<F: FindAuthor<u32>> FindAuthor<H160> for FindAuthorTruncated<F> {
 }
 
 parameter_types! {
-    /// Ethereum-compatible chain_id for Shiden: 336 in decimal
+    /// Ethereum-compatible chain_id:
+    /// * Dusty:   80
+    /// * Shibuya: 81
+    /// * Shiden: 336
     pub ChainId: u64 = 0x150;
     /// EVM gas limit
     pub BlockGasLimit: U256 = U256::from(

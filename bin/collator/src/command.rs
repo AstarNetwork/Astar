@@ -2,7 +2,7 @@ use crate::{
     chain_spec,
     cli::{Cli, RelayChainCli, Subcommand},
     primitives::Block,
-    service::{self, shiden},
+    service::{self, shibuya, shiden},
 };
 use codec::Encode;
 use cumulus_client_service::genesis::generate_genesis_block;
@@ -21,16 +21,52 @@ use sp_core::hexdisplay::HexDisplay;
 use sp_runtime::traits::Block as BlockT;
 use std::{io::Write, net::SocketAddr};
 
+trait IdentifyChain {
+    fn is_shiden(&self) -> bool;
+    fn is_shibuya(&self) -> bool;
+}
+
+impl IdentifyChain for dyn sc_service::ChainSpec {
+    fn is_shiden(&self) -> bool {
+        self.id().starts_with("shiden")
+    }
+    fn is_shibuya(&self) -> bool {
+        self.id().starts_with("shibuya")
+    }
+}
+
+impl<T: sc_service::ChainSpec + 'static> IdentifyChain for T {
+    fn is_shiden(&self) -> bool {
+        <dyn sc_service::ChainSpec>::is_shiden(self)
+    }
+    fn is_shibuya(&self) -> bool {
+        <dyn sc_service::ChainSpec>::is_shibuya(self)
+    }
+}
+
 fn load_spec(
     id: &str,
-    para_id: ParaId,
+    _para_id: u32,
 ) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
-    match id {
-        "" => Ok(Box::new(chain_spec::get_chain_spec(para_id))),
-        path => Ok(Box::new(chain_spec::ChainSpec::from_json_file(
-            path.into(),
-        )?)),
-    }
+    Ok(match id {
+        "" | "shiden" => Box::new(chain_spec::ShidenChainSpec::from_json_bytes(
+            &include_bytes!("../res/shiden.raw.json")[..],
+        )?),
+        /*
+        "shibuya" => Box::new(chain_spec::get_chain_spec(para_id)),
+        */
+        "shibuya" => Box::new(chain_spec::ShidenChainSpec::from_json_bytes(
+            &include_bytes!("../res/shibuya.raw.json")[..],
+        )?),
+        path => {
+            let chain_spec = chain_spec::ShibuyaChainSpec::from_json_file(path.into())?;
+            if chain_spec.is_shiden() {
+                Box::new(chain_spec::ShidenChainSpec::from_json_file(path.into())?)
+            } else {
+                Box::new(chain_spec)
+            }
+        }
+    })
 }
 
 impl SubstrateCli for Cli {
@@ -65,11 +101,15 @@ impl SubstrateCli for Cli {
     }
 
     fn load_spec(&self, id: &str) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
-        load_spec(id, self.run.parachain_id.into())
+        load_spec(id, self.run.parachain_id)
     }
 
-    fn native_runtime_version(_: &Box<dyn ChainSpec>) -> &'static RuntimeVersion {
-        &shiden_runtime::VERSION
+    fn native_runtime_version(chain_spec: &Box<dyn ChainSpec>) -> &'static RuntimeVersion {
+        if chain_spec.is_shiden() {
+            &shiden_runtime::VERSION
+        } else {
+            &shibuya_runtime::VERSION
+        }
     }
 }
 
@@ -103,8 +143,17 @@ impl SubstrateCli for RelayChainCli {
     }
 
     fn load_spec(&self, id: &str) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
-        polkadot_cli::Cli::from_iter([RelayChainCli::executable_name().to_string()].iter())
-            .load_spec(id)
+        if id == "tokyo" {
+            Ok(Box::new(
+                polkadot_service::RococoChainSpec::from_json_bytes(
+                    &include_bytes!("../res/tokyo.raw.json")[..],
+                )
+                .unwrap(),
+            ))
+        } else {
+            polkadot_cli::Cli::from_iter([RelayChainCli::executable_name().to_string()].iter())
+                .load_spec(id)
+        }
     }
 
     fn native_runtime_version(chain_spec: &Box<dyn ChainSpec>) -> &'static RuntimeVersion {
@@ -132,61 +181,119 @@ pub fn run() -> Result<()> {
         }
         Some(Subcommand::CheckBlock(cmd)) => {
             let runner = cli.create_runner(cmd)?;
-            runner.async_run(|config| {
-                let PartialComponents {
-                    client,
-                    task_manager,
-                    import_queue,
-                    ..
-                } = service::new_partial::<shiden::RuntimeApi, shiden::Executor, _>(
-                    &config,
-                    service::build_import_queue,
-                )?;
-                Ok((cmd.run(client, import_queue), task_manager))
-            })
+            if runner.config().chain_spec.is_shiden() {
+                runner.async_run(|config| {
+                    let PartialComponents {
+                        client,
+                        task_manager,
+                        import_queue,
+                        ..
+                    } = service::new_partial::<shiden::RuntimeApi, shiden::Executor, _>(
+                        &config,
+                        service::build_import_queue,
+                    )?;
+                    Ok((cmd.run(client, import_queue), task_manager))
+                })
+            } else {
+                runner.async_run(|config| {
+                    let PartialComponents {
+                        client,
+                        task_manager,
+                        import_queue,
+                        ..
+                    } = service::new_partial::<shibuya::RuntimeApi, shibuya::Executor, _>(
+                        &config,
+                        service::build_import_queue,
+                    )?;
+                    Ok((cmd.run(client, import_queue), task_manager))
+                })
+            }
         }
         Some(Subcommand::ExportBlocks(cmd)) => {
             let runner = cli.create_runner(cmd)?;
-            runner.async_run(|config| {
-                let PartialComponents {
-                    client,
-                    task_manager,
-                    ..
-                } = service::new_partial::<shiden::RuntimeApi, shiden::Executor, _>(
-                    &config,
-                    service::build_import_queue,
-                )?;
-                Ok((cmd.run(client, config.database), task_manager))
-            })
+            if runner.config().chain_spec.is_shiden() {
+                runner.async_run(|config| {
+                    let PartialComponents {
+                        client,
+                        task_manager,
+                        ..
+                    } = service::new_partial::<shiden::RuntimeApi, shiden::Executor, _>(
+                        &config,
+                        service::build_import_queue,
+                    )?;
+                    Ok((cmd.run(client, config.database), task_manager))
+                })
+            } else {
+                runner.async_run(|config| {
+                    let PartialComponents {
+                        client,
+                        task_manager,
+                        ..
+                    } = service::new_partial::<shibuya::RuntimeApi, shibuya::Executor, _>(
+                        &config,
+                        service::build_import_queue,
+                    )?;
+                    Ok((cmd.run(client, config.database), task_manager))
+                })
+            }
         }
         Some(Subcommand::ExportState(cmd)) => {
             let runner = cli.create_runner(cmd)?;
-            runner.async_run(|config| {
-                let PartialComponents {
-                    client,
-                    task_manager,
-                    ..
-                } = service::new_partial::<shiden::RuntimeApi, shiden::Executor, _>(
-                    &config,
-                    service::build_import_queue,
-                )?;
-                Ok((cmd.run(client, config.chain_spec), task_manager))
-            })
+            if runner.config().chain_spec.is_shiden() {
+                runner.async_run(|config| {
+                    let PartialComponents {
+                        client,
+                        task_manager,
+                        ..
+                    } = service::new_partial::<shiden::RuntimeApi, shiden::Executor, _>(
+                        &config,
+                        service::build_import_queue,
+                    )?;
+                    Ok((cmd.run(client, config.chain_spec), task_manager))
+                })
+            } else {
+                runner.async_run(|config| {
+                    let PartialComponents {
+                        client,
+                        task_manager,
+                        ..
+                    } = service::new_partial::<shibuya::RuntimeApi, shibuya::Executor, _>(
+                        &config,
+                        service::build_import_queue,
+                    )?;
+                    Ok((cmd.run(client, config.chain_spec), task_manager))
+                })
+            }
         }
         Some(Subcommand::ImportBlocks(cmd)) => {
             let runner = cli.create_runner(cmd)?;
-            runner.async_run(|config| {
-                let PartialComponents {
-                    client,
-                    task_manager,
-                    import_queue,
-                    ..
-                } = service::new_partial::<shiden::RuntimeApi, shiden::Executor, _>(
-                    &config,
-                    service::build_import_queue,
-                )?;
-                Ok((cmd.run(client, import_queue), task_manager))
-            })
+            if runner.config().chain_spec.is_shiden() {
+                runner.async_run(|config| {
+                    let PartialComponents {
+                        client,
+                        task_manager,
+                        import_queue,
+                        ..
+                    } = service::new_partial::<shiden::RuntimeApi, shiden::Executor, _>(
+                        &config,
+                        service::build_import_queue,
+                    )?;
+                    Ok((cmd.run(client, import_queue), task_manager))
+                })
+            } else {
+                runner.async_run(|config| {
+                    let PartialComponents {
+                        client,
+                        task_manager,
+                        import_queue,
+                        ..
+                    } = service::new_partial::<shibuya::RuntimeApi, shibuya::Executor, _>(
+                        &config,
+                        service::build_import_queue,
+                    )?;
+                    Ok((cmd.run(client, import_queue), task_manager))
+                })
+            }
         }
         Some(Subcommand::PurgeChain(cmd)) => {
             let runner = cli.create_runner(cmd)?;
@@ -209,18 +316,33 @@ pub fn run() -> Result<()> {
         }
         Some(Subcommand::Revert(cmd)) => {
             let runner = cli.create_runner(cmd)?;
-            runner.async_run(|config| {
-                let PartialComponents {
-                    client,
-                    task_manager,
-                    backend,
-                    ..
-                } = service::new_partial::<shiden::RuntimeApi, shiden::Executor, _>(
-                    &config,
-                    service::build_import_queue,
-                )?;
-                Ok((cmd.run(client, backend), task_manager))
-            })
+            if runner.config().chain_spec.is_shiden() {
+                runner.async_run(|config| {
+                    let PartialComponents {
+                        client,
+                        task_manager,
+                        backend,
+                        ..
+                    } = service::new_partial::<shiden::RuntimeApi, shiden::Executor, _>(
+                        &config,
+                        service::build_import_queue,
+                    )?;
+                    Ok((cmd.run(client, backend), task_manager))
+                })
+            } else {
+                runner.async_run(|config| {
+                    let PartialComponents {
+                        client,
+                        task_manager,
+                        backend,
+                        ..
+                    } = service::new_partial::<shibuya::RuntimeApi, shibuya::Executor, _>(
+                        &config,
+                        service::build_import_queue,
+                    )?;
+                    Ok((cmd.run(client, backend), task_manager))
+                })
+            }
         }
         Some(Subcommand::ExportGenesisState(params)) => {
             let mut builder = sc_cli::LoggerBuilder::new("");
@@ -308,10 +430,17 @@ pub fn run() -> Result<()> {
                     }
                 );
 
-                service::start_shiden_node(config, polkadot_config, id)
-                    .await
-                    .map(|r| r.0)
-                    .map_err(Into::into)
+                if config.chain_spec.is_shiden() {
+                    service::start_shiden_node(config, polkadot_config, id)
+                        .await
+                        .map(|r| r.0)
+                        .map_err(Into::into)
+                } else {
+                    service::start_shibuya_node(config, polkadot_config, id)
+                        .await
+                        .map(|r| r.0)
+                        .map_err(Into::into)
+                }
             })
         }
     }

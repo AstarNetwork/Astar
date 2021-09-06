@@ -75,6 +75,7 @@ pallet-ethereum = { git = "https://github.com/PlasmNetwork/frontier", branch = "
 
 # astar-specific dependencies
 shiden-runtime = { path = "../../runtime/shiden" }
+shibuya-runtime = { path = "../../runtime/shibuya" }
 
 # frame dependencies
 frame-system = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.9" }
