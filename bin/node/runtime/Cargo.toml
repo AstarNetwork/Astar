@@ -38,7 +38,6 @@ pallet-evm-precompile-bn128 = { path = "../../../vendor/frontier/frame/evm/preco
 pallet-evm-precompile-simple = { path = "../../../vendor/frontier/frame/evm/precompile/simple", default-features = false }
 pallet-evm-precompile-modexp = { path = "../../../vendor/frontier/frame/evm/precompile/modexp", default-features = false }
 pallet-evm-precompile-dispatch = { path = "../../../vendor/frontier/frame/evm/precompile/dispatch", default-features = false }
-# pallet-dusty-chainbridge = { path = '../../../frame/chainbridge', default_features = false }
 pallet-dusty-chainbridge = { package = "chainbridge",git = "https://github.com/ChainSafe/chainbridge-substrate", default-features = false }
 frame-executive = { version = "3.0.0", default-features = false }
 pallet-authorship = { version = "3.0.0", default-features = false }
@@ -130,5 +129,5 @@ std = [
     "pallet-offences/std",
     "pallet-vesting/std",
     "pallet-staking/std",
-	'pallet-dusty-chainbridge/std',
+	"pallet-dusty-chainbridge/std",
 ]

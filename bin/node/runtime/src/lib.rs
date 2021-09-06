@@ -800,7 +800,7 @@ construct_runtime!(
         Ethereum: pallet_ethereum::{Module, Call, Storage, Event, Config, ValidateUnsigned},
         EVM: pallet_evm::{Module, Call, Storage, Config, Event<T>},
         EthCall: pallet_custom_signatures::{Module, Call, Event<T>, ValidateUnsigned},
-		ChainBridge: pallet_dusty_chainbridge::{Module, Call, Storage, Event<T>},
+        ChainBridge: pallet_dusty_chainbridge::{Module, Call, Storage, Event<T>},
     }
 );
 
