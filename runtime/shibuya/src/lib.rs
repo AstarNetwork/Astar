@@ -90,7 +90,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("shibuya"),
     impl_name: create_runtime_str!("shibuya"),
     authoring_version: 1,
-    spec_version: 1,
+    spec_version: 2,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 1,
@@ -253,6 +253,8 @@ impl pallet_multisig::Config for Runtime {
 
 parameter_types! {
     pub const EcdsaUnsignedPriority: TransactionPriority = TransactionPriority::max_value() / 2;
+    pub const CallFee: Balance = SDN / 10;
+    pub const CallMagicNumber: u16 = 0xff51;
 }
 
 impl pallet_custom_signatures::Config for Runtime {
@@ -260,6 +262,10 @@ impl pallet_custom_signatures::Config for Runtime {
     type Call = Call;
     type Signature = pallet_custom_signatures::ethereum::EthereumSignature;
     type Signer = <Signature as Verify>::Signer;
+    type CallMagicNumber = CallMagicNumber;
+    type Currency = Balances;
+    type CallFee = CallFee;
+    type OnChargeTransaction = ();
     type UnsignedPriority = EcdsaUnsignedPriority;
 }
 
@@ -588,7 +594,7 @@ impl pallet_evm::Config for Runtime {
     type Runner = pallet_evm::runner::stack::Runner<Self>;
     type Precompiles = ShibuyaNetworkPrecompiles<Self>;
     type ChainId = ChainId;
-    type OnChargeTransaction = ();
+    type OnChargeTransaction = pallet_evm::EVMCurrencyAdapter<Balances, DealWithFees>;
     type BlockGasLimit = BlockGasLimit;
     type FindAuthor = FindAuthorTruncated<Aura>;
 }
