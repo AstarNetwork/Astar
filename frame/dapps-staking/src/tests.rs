@@ -199,7 +199,6 @@ fn set_controller_is_ok() {
             50,
             crate::RewardDestination::Staked
         ));
-
         // set a new controller, different from the old one
         let new_controller1_id = 30u64;
         assert_ok!(DappsStaking::set_controller(
@@ -234,6 +233,79 @@ fn set_controller_is_not_ok() {
         assert_noop!(
             DappsStaking::set_controller(stash1_id.clone(), controller1_id),
             crate::pallet::pallet::Error::<TestRuntime>::AlreadyPaired
+        );
+    })
+}
+
+#[test]
+fn unbond_is_ok() {
+    ExternalityBuilder::build().execute_with(|| {
+        // prepare stash-controller pair with some bonded funds
+        let stash_id = 1;
+        let controller_id = 100;
+        let bond_amount = 50 + EXISTENTIAL_DEPOSIT;
+        assert_ok!(DappsStaking::bond(
+            Origin::signed(stash_id),
+            controller_id,
+            bond_amount,
+            crate::RewardDestination::Staked
+        ));
+
+        // unbond a valid amout
+        assert_ok!(DappsStaking::unbond(Origin::signed(controller_id), 50));
+        System::assert_last_event(mock::Event::DappsStaking(crate::Event::Unbonded(
+            stash_id, 50,
+        )));
+
+        // unbond 1 value and expect to unbond everything remaining since we come under the existintial limit
+        assert_ok!(DappsStaking::unbond(Origin::signed(controller_id), 1));
+        System::assert_last_event(mock::Event::DappsStaking(crate::Event::Unbonded(
+            stash_id,
+            EXISTENTIAL_DEPOSIT,
+        )));
+
+        // at this point there's nothing more to unbond but we can still call unbond
+        // TODO: should this raise an error if nothing is bonded?
+    })
+}
+
+#[test]
+fn unbond_is_not_ok() {
+    ExternalityBuilder::build().execute_with(|| {
+        let controller_id = 10;
+
+        // try to unbond using non-existing controller, expect error NotController
+        assert_noop!(
+            DappsStaking::unbond(Origin::signed(controller_id), 100),
+            crate::pallet::pallet::Error::<TestRuntime>::NotController
+        );
+
+        // bond using controller id as stash id in order to verify that it's still not possible to unbond using controller id
+        let another_controller_id = 100u64;
+        assert_ok!(DappsStaking::bond(
+            Origin::signed(controller_id),
+            another_controller_id,
+            100,
+            crate::RewardDestination::Staked
+        ));
+
+        // try to unbond using stash id, expect error NotController
+        assert_noop!(
+            DappsStaking::unbond(Origin::signed(controller_id), 100),
+            crate::pallet::pallet::Error::<TestRuntime>::NotController
+        );
+
+        // TODO: should this be a configurable constant instead? Or is it practice to hardcode constants like this sometimes?
+        // remove values up to MAX_UNLOCKING_CHUNKS and expect everything to work
+        for chunk in 1..=MAX_UNLOCKING_CHUNKS {
+            assert_ok!(DappsStaking::unbond(
+                Origin::signed(another_controller_id),
+                1
+            ));
+        }
+        assert_noop!(
+            DappsStaking::unbond(Origin::signed(another_controller_id), 1),
+            crate::pallet::pallet::Error::<TestRuntime>::NoMoreChunks
         );
     })
 }

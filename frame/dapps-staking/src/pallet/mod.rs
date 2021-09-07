@@ -377,11 +377,11 @@ pub mod pallet {
                     value += ledger.active;
                     ledger.active = Zero::zero();
                 }
-                Self::deposit_event(Event::<T>::Unbonded(ledger.stash.clone(), value));
                 let era =
                     T::EraFinder::current().unwrap_or(Zero::zero()) + T::BondingDuration::get();
                 ledger.unlocking.push(UnlockChunk { value, era });
                 Self::update_ledger(&controller, &ledger);
+                Self::deposit_event(Event::<T>::Unbonded(ledger.stash.clone(), value));
             }
             Ok(().into())
         }

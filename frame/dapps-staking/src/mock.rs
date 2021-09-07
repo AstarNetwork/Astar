@@ -175,6 +175,7 @@ impl ExternalityBuilder {
                 (2, 800),
                 (3, 650),
                 (4, 490),
+                (10, 300),
                 (540, EXISTENTIAL_DEPOSIT),
                 (1337, 1_000_000_000_000),
             ],
