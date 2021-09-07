@@ -24,6 +24,8 @@ pub(crate) type EraIndex = u32;
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<TestRuntime>;
 type Block = frame_system::mocking::MockBlock<TestRuntime>;
 
+pub(crate) const EXISTENTIAL_DEPOSIT: Balance = 2;
+
 construct_runtime!(
     pub enum TestRuntime where
         Block = Block,
@@ -71,7 +73,7 @@ impl frame_system::Config for TestRuntime {
 
 parameter_types! {
     pub const MaxLocks: u32 = 4;
-    pub const ExistentialDeposit: Balance = 1;
+    pub const ExistentialDeposit: Balance = EXISTENTIAL_DEPOSIT;
 }
 
 impl pallet_balances::Config for TestRuntime {
@@ -173,6 +175,7 @@ impl ExternalityBuilder {
                 (2, 800),
                 (3, 650),
                 (4, 490),
+                (540, EXISTENTIAL_DEPOSIT),
                 (1337, 1_000_000_000_000),
             ],
         }

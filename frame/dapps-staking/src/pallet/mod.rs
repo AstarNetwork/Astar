@@ -325,8 +325,8 @@ pub mod pallet {
                 let extra = extra.min(max_additional);
                 ledger.total += extra;
                 ledger.active += extra;
-                Self::deposit_event(Event::<T>::Bonded(stash, extra));
                 Self::update_ledger(&controller, &ledger);
+                Self::deposit_event(Event::<T>::Bonded(stash, extra));
             }
 
             Ok(().into())
@@ -497,6 +497,7 @@ pub mod pallet {
         ///
         /// # <weight>
         /// - Independent of the arguments. Insignificant complexity.
+        /// - Contains one read
         /// - Contains one read.
         /// - Writes are limited to the `origin` account key.
         /// # </weight>
