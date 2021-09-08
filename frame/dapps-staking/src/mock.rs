@@ -1,5 +1,5 @@
 use crate::{
-    self as pallet_dapps_staking, pallet::pallet::Config, ContractFinder, EraFinder, EraPayout,
+    self as pallet_dapps_staking, pallet::pallet::Config, ContractFinder, EraPayout,
     NegativeImbalanceOf, PositiveImbalanceOf,
 };
 
@@ -15,7 +15,6 @@ use sp_runtime::{
     traits::{BlakeTwo256, IdentityLookup},
 };
 
-/// The AccountId alias in this test module.
 pub(crate) type AccountId = u64;
 pub(crate) type BlockNumber = u64;
 pub(crate) type Balance = u128;
@@ -25,6 +24,7 @@ type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<TestRunt
 type Block = frame_system::mocking::MockBlock<TestRuntime>;
 
 pub(crate) const EXISTENTIAL_DEPOSIT: Balance = 2;
+pub(crate) const BONDING_DURATION: EraIndex = 5;
 
 construct_runtime!(
     pub enum TestRuntime where
@@ -100,9 +100,9 @@ impl pallet_timestamp::Config for TestRuntime {
 }
 
 parameter_types! {
-    pub const MaxStakings: u32 = 32; // TODO: should this be renamed/changed? I haven't see const declared under config yet.
-    pub const BlockPerEra: BlockNumber = 100; // TODO: check this number later
-    pub const BondingDuration: EraIndex = 5;
+    pub const MaxStakings: u32 = 32;
+    pub const BlockPerEra: BlockNumber = 100;
+    pub const BondingDuration: EraIndex = BONDING_DURATION;
 }
 
 /// Mocked implementation for EraPayout. Might need to be changed later when used.
@@ -127,15 +127,6 @@ impl ContractFinder<AccountId> for ContractFinderMock {
     }
 }
 
-/// Mocked implementation for EraFinder
-pub struct EraFinderMock;
-
-impl EraFinder for EraFinderMock {
-    fn current() -> Option<EraIndex> {
-        Some(5 as EraIndex)
-    }
-}
-
 /// Mocked implementation for RewardRemainder. Might need to be changed later when used.
 pub struct RewardRemainderMock;
 
@@ -153,7 +144,6 @@ impl pallet_dapps_staking::Config for TestRuntime {
     type BlockPerEra = BlockPerEra;
     type BondingDuration = BondingDuration;
     type EraPayout = EraPayoutMock;
-    type EraFinder = EraFinderMock;
     type ContractFinder = ContractFinderMock;
     type WeightInfo = ();
     type UnixTime = Timestamp; // TODO see of this can be maybe simplified
@@ -165,7 +155,7 @@ pub struct ExternalityBuilder;
 
 impl ExternalityBuilder {
     pub fn build() -> TestExternalities {
-        let mut storage = frame_system::GenesisConfig::default() // TODO: add some balance to accounts
+        let mut storage = frame_system::GenesisConfig::default()
             .build_storage::<TestRuntime>()
             .unwrap();
 

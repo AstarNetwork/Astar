@@ -43,9 +43,6 @@ pub mod pallet {
         // The check valid operated contracts.
         type ContractFinder: ContractFinder<Self::AccountId>;
 
-        // The current Staking Era
-        type EraFinder: EraFinder;
-
         /// Tokens have been minted and are unused for validator-reward. Maybe, dapps-staking uses ().
         type RewardRemainder: OnUnbalanced<NegativeImbalanceOf<Self>>;
 
@@ -287,7 +284,7 @@ pub mod pallet {
                 total: value,
                 active: value,
                 unlocking: vec![],
-                last_reward: T::EraFinder::current().unwrap_or(Zero::zero()),
+                last_reward: Self::current_era().unwrap_or(Zero::zero()),
             };
             Self::update_ledger(&controller, &ledger);
             Self::deposit_event(Event::<T>::Bonded(stash, value));
@@ -377,8 +374,7 @@ pub mod pallet {
                     value += ledger.active;
                     ledger.active = Zero::zero();
                 }
-                let era =
-                    T::EraFinder::current().unwrap_or(Zero::zero()) + T::BondingDuration::get();
+                let era = Self::current_era().unwrap_or(Zero::zero()) + T::BondingDuration::get();
                 ledger.unlocking.push(UnlockChunk { value, era });
                 Self::update_ledger(&controller, &ledger);
                 Self::deposit_event(Event::<T>::Unbonded(ledger.stash.clone(), value));
@@ -410,20 +406,10 @@ pub mod pallet {
             let mut ledger = Self::ledger(&controller).ok_or(Error::<T>::NotController)?;
             let (stash, old_total) = (ledger.stash.clone(), ledger.total);
 
-            // if let Some(current_era) = T::EraFinder::current() {
-            //     let amount_locked = match Self::dapps_nominations(&stash) {
-            //         Some(n) => n
-            //             .targets
-            //             .iter()
-            //             .filter(|(contract, _)| Self::is_locked(contract, &current_era))
-            //             .fold(BalanceOf::<T>::zero(), |sum, (_, value)| {
-            //                 sum.saturating_add(*value)
-            //             }),
-            //         None => BalanceOf::<T>::zero(),
-            //     };
+            let current_era = Self::current_era().unwrap_or(Zero::zero());
+            ledger = ledger.consolidate_unlocked(current_era);
 
-            //     ledger = ledger.consolidate_unlocked(current_era, amount_locked)
-            // }
+            let withdrawn_value = old_total.saturating_sub(ledger.total);
 
             if ledger.unlocking.is_empty() && ledger.active.is_zero() {
                 // This account must have called `unbond()` with some value that caused the active
@@ -432,17 +418,13 @@ pub mod pallet {
                 Self::kill_stash(&stash)?;
                 // remove the lock.
                 T::Currency::remove_lock(STAKING_ID, &stash);
-            } else {
-                // This was the consequence of a partial unbond. just update the ledger and move on.
+            } else if !withdrawn_value.is_zero() {
+                // Partial unbond, update ledger and move on.
                 Self::update_ledger(&controller, &ledger);
             }
 
-            // `old_total` should never be less than the new total because
-            // `consolidate_unlocked` strictly subtracts balance.
-            if ledger.total < old_total {
-                // Already checked that this won't overflow by entry condition.
-                let value = old_total - ledger.total;
-                Self::deposit_event(Event::<T>::Withdrawn(stash, value));
+            if !withdrawn_value.is_zero() {
+                Self::deposit_event(Event::<T>::Withdrawn(stash, withdrawn_value));
             }
 
             Ok(().into())

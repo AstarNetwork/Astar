@@ -1,6 +1,8 @@
 use super::{Event, *};
-use frame_support::{assert_err, assert_noop, assert_ok};
+use frame_support::{assert_err, assert_noop, assert_ok, assert_storage_noop};
 use mock::{Balances, *};
+
+// TODO: Split chunky unit tests into more simple ones. It should be clear from the TC name what is being tested.
 
 #[test]
 fn bonding_is_ok() {
@@ -307,5 +309,95 @@ fn unbond_is_not_ok() {
             DappsStaking::unbond(Origin::signed(another_controller_id), 1),
             crate::pallet::pallet::Error::<TestRuntime>::NoMoreChunks
         );
+    })
+}
+
+#[test]
+fn withdraw_unbonded_is_ok() {
+    ExternalityBuilder::build().execute_with(|| {
+        let stash_id = 1;
+        let controller_id = 10;
+        let bond_amount: Balance = 100;
+
+        // create a bond
+        assert_ok!(DappsStaking::bond(
+            Origin::signed(stash_id),
+            controller_id,
+            bond_amount,
+            crate::RewardDestination::Staked
+        ));
+
+        // unbond some amount, the remainder bond should remain above existential deposit
+        let first_unbond_amount = (bond_amount - 2 * EXISTENTIAL_DEPOSIT) / 2;
+        assert_ok!(DappsStaking::unbond(
+            Origin::signed(controller_id),
+            first_unbond_amount
+        ));
+        // repeat the unbond twice with the same amount so we get two chunks
+        assert_ok!(DappsStaking::unbond(
+            Origin::signed(controller_id),
+            first_unbond_amount
+        ));
+
+        // verify that withdraw works even if no chunks are available (era has not advanced enough)
+        let current_era = <CurrentEra<TestRuntime>>::get().unwrap_or(Zero::zero());
+        <CurrentEra<TestRuntime>>::put(current_era + BONDING_DURATION - 1);
+        assert_storage_noop!(DappsStaking::withdraw_unbonded(Origin::signed(
+            controller_id
+        )));
+        // no withdraw event should have happened, the old unbond event should still be the last
+        System::assert_last_event(mock::Event::DappsStaking(crate::Event::Unbonded(
+            stash_id,
+            first_unbond_amount,
+        )));
+
+        // advance the era by 1 so we satisfy the bonding duration for chunks
+        let current_era = <CurrentEra<TestRuntime>>::get().unwrap();
+        <CurrentEra<TestRuntime>>::put(current_era + 1);
+
+        // verify that we withdraw both chunks that were unbonded
+        assert_ok!(DappsStaking::withdraw_unbonded(Origin::signed(
+            controller_id
+        )));
+        System::assert_last_event(mock::Event::DappsStaking(crate::Event::Withdrawn(
+            stash_id,
+            2 * first_unbond_amount,
+        )));
+
+        // At this point, we have bonded 2 * EXISTENTIAL_DEPOSIT
+        // Unbond just enough to go below existential deposit and verify that entire bond is released
+        // assert_ok!(
+        //     DappsStaking::unbond(
+        //         Origin::signed(controller_id),
+        //         EXISTENTIAL_DEPOSIT + 1
+        //     )
+        // );
+        // assert_ok!(
+        //     DappsStaking::withdraw_unbonded(
+        //         Origin::signed(controller_id)
+        //     )
+        // );
+        // System::assert_last_event(mock::Event::DappsStaking(crate::Event::Withdrawn(
+        //     stash_id,
+        //     2 * EXISTENTIAL_DEPOSIT,
+        // )));
+
+        // TODO: What about this scenario? It will fail since BondingDuration needs to pass AFTER unbond was called.
+        // So if BONDING_DURATION is e.g. 5, we bonded our funds at era 0 and we unbond them at era 100, we won't be able to withdraw them by era 105.
+        // Is this by design? Or is it a flaw that needs to be fixed?
+    })
+}
+
+#[test]
+fn withdraw_unbonded_is_not_ok() {
+    ExternalityBuilder::build().execute_with(|| {
+        let controller_id = 10;
+
+        assert_noop!(
+            DappsStaking::withdraw_unbonded(Origin::signed(controller_id)),
+            crate::pallet::pallet::Error::<TestRuntime>::NotController
+        );
+
+        // TODO: should we raise some error in case noop was performed due to not having anything to withdraw?
     })
 }

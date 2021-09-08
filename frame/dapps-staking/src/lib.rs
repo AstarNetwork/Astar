@@ -182,9 +182,9 @@ impl<AccountId, Balance: HasCompact + Copy + Saturating + Ord + Zero>
 {
     /// Remove entries from `unlocking` that are sufficiently old and reduce the
     /// total by the sum of their balances.
-    fn consolidate_unlocked(self, current_era: EraIndex, amount_locked: Balance) -> Self {
+    fn consolidate_unlocked(self, current_era: EraIndex) -> Self {
         let mut total = self.total;
-        let mut unlocking: Vec<UnlockChunk<Balance>> = self
+        let unlocking: Vec<UnlockChunk<Balance>> = self
             .unlocking
             .into_iter()
             .filter(|chunk| {
@@ -196,13 +196,7 @@ impl<AccountId, Balance: HasCompact + Copy + Saturating + Ord + Zero>
                 }
             })
             .collect();
-        if amount_locked > Zero::zero() {
-            total = total.saturating_add(amount_locked);
-            unlocking.push(UnlockChunk {
-                value: amount_locked,
-                era: current_era,
-            });
-        }
+
         Self {
             total,
             active: self.active,
@@ -279,15 +273,5 @@ where
     fn is_exists_contract(contract_id: &T::AccountId) -> bool {
         // <ContractHasOperator<T>>::contains_key(contract_id)
         true
-    }
-}
-
-pub trait EraFinder {
-    fn current() -> Option<EraIndex>;
-}
-
-impl<T: Config> EraFinder for Pallet<T> {
-    fn current() -> Option<EraIndex> {
-        Some(5 as EraIndex)
     }
 }
