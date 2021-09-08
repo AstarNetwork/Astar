@@ -18,19 +18,19 @@ use sp_runtime::{
 };
 use sp_std::{convert::From, prelude::*, result};
 
-mod impls;
-pub use impls::*;
-
 const STAKING_ID: LockIdentifier = *b"dapstake";
 
 #[frame_support::pallet]
 pub mod pallet {
     use super::*;
 
+    /// The balance type of this pallet.
+    pub type BalanceOf<T> =
+        <<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
+
     #[pallet::pallet]
     #[pallet::generate_store(pub(crate) trait Store)]
-
-    pub struct Pallet<T>(_);
+    pub struct Pallet<T>(PhantomData<T>);
 
     #[pallet::config]
     pub trait Config: frame_system::Config {
@@ -59,6 +59,10 @@ pub mod pallet {
         /// Number of eras that staked funds must remain bonded for.
         #[pallet::constant]
         type BondingDuration: Get<EraIndex>;
+
+        /// Minimum bonded deposit for new contract registration.
+        #[pallet::constant]
+        type RegisterDeposit: Get<BalanceOf<Self>>;
 
         /// The payout for validators and the system for the current era.
         /// See [Era payout](./index.html#era-payout).
@@ -134,6 +138,12 @@ pub mod pallet {
     #[pallet::getter(fn force_era)]
     pub type ForceEra<T> = StorageValue<_, Forcing, ValueQuery>;
 
+    /// Mode of era forcing.
+    #[pallet::storage]
+    #[pallet::getter(fn registered_dapps)]
+    pub(crate) type RegisteredDapps<T: Config> =
+        StorageMap<_, Twox64Concat, T::AccountId, T::AccountId>;
+
     // Declare the genesis config (optional).
     //
     // The macro accepts either a struct or an enum; it checks that generics are consistent.
@@ -171,6 +181,8 @@ pub mod pallet {
         TotalDappsRewards(EraIndex, BalanceOf<T>),
         /// Stake of stash address.
         Stake(T::AccountId),
+        /// New contract added for staking, with deposit value
+        NewContract(T::AccountId, BalanceOf<T>),
     }
 
     #[pallet::error]
@@ -209,6 +221,12 @@ pub mod pallet {
         NotOperatedContracts,
         /// The nominations amount more than active staking amount.
         NotEnoughStaking,
+        /// The contract is already registered by other account
+        AlreadyRegisteredContract,
+        /// User attempts to register with address which is not contract
+        AddressIsNotContract,
+        /// Missing deposit for the contract registration
+        MissingDeposit,
     }
 
     #[pallet::hooks]
@@ -374,6 +392,7 @@ pub mod pallet {
                 ledger.active -= value;
                 // Avoid there being a dust balance left in the staking system.
                 if ledger.active < T::Currency::minimum_balance() {
+                    // add dust to the unbonding value
                     value += ledger.active;
                     ledger.active = Zero::zero();
                 }
@@ -497,7 +516,6 @@ pub mod pallet {
         ///
         /// # <weight>
         /// - Independent of the arguments. Insignificant complexity.
-        /// - Contains one read
         /// - Contains one read.
         /// - Writes are limited to the `origin` account key.
         /// # </weight>
@@ -550,10 +568,8 @@ pub mod pallet {
                 !Ledger::<T>::contains_key(&controller),
                 Error::<T>::AlreadyPaired
             );
-            ensure!(controller != old_controller, Error::<T>::AlreadyPaired);
-
             // change controller for given stash
-            <Bonded<T>>::insert(&stash, &controller);
+            Bonded::<T>::insert(&stash, &controller);
 
             //create new Ledger from existing. Use new controler as the key
             if let Some(ledger) = <Ledger<T>>::take(&old_controller) {
@@ -601,9 +617,29 @@ pub mod pallet {
         /// However, caller have to have deposit amount.
         /// TODO: weight
         #[pallet::weight(T::WeightInfo::payout_stakers_alive_staked(T::MaxStakings::get()))]
-        pub fn register(origin: OriginFor<T>, contract_id: T::AccountId) -> DispatchResult {
-            // TODO: impls
-            Ok(())
+        pub fn register(
+            origin: OriginFor<T>,
+            contract_id: T::AccountId,
+        ) -> DispatchResultWithPostInfo {
+            let operator = ensure_signed(origin)?;
+            let mut ledger = Self::ledger(&operator).ok_or(Error::<T>::NotController)?;
+            ensure!(
+                !RegisteredDapps::<T>::contains_key(&operator),
+                Error::<T>::AlreadyRegisteredContract
+            );
+            ensure!(
+                Self::is_contract(contract_id.clone()),
+                Error::<T>::AddressIsNotContract
+            );
+            ensure!(
+                ledger.total >= T::RegisterDeposit::get(),
+                Error::<T>::MissingDeposit
+            );
+
+            RegisteredDapps::<T>::insert(&operator, contract_id.clone());
+            Self::deposit_event(Event::<T>::NewContract(contract_id, ledger.total));
+
+            Ok(().into())
         }
 
         /// set deposit amount for registering contract.
@@ -615,10 +651,12 @@ pub mod pallet {
         pub fn set_register_deposit(
             origin: OriginFor<T>,
             #[pallet::compact] deposit_amount: BalanceOf<T>,
-        ) -> DispatchResult {
+        ) -> DispatchResultWithPostInfo {
             ensure_root(origin)?;
-            // TODO: impls
-            Ok(())
+            // if let Some(_deposit) = RegisterDeposit::<T>::take() {
+            //     RegisterDeposit::<T>::set(Some(deposit_amount));
+            // }
+            Ok(().into())
         }
 
         /// Set `HistorcargoyDepth` value. This function will delete any history information
@@ -765,6 +803,12 @@ pub mod pallet {
 
             //system::Module::<T>::dec_consumers(stash);
             Ok(())
+        }
+
+        /// TODO introduce pallet-plasm-operator which abstracts evm and ink as SmartContract
+        ///
+        fn is_contract(address: T::AccountId) -> bool {
+            true
         }
     }
 }

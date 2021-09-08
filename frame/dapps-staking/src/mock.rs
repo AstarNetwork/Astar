@@ -145,7 +145,9 @@ impl OnUnbalanced<NegativeImbalanceOf<TestRuntime>> for RewardRemainderMock {}
 pub struct RewardMock;
 
 impl OnUnbalanced<PositiveImbalanceOf<TestRuntime>> for RewardMock {}
-
+parameter_types! {
+    pub const RegisterDeposit: u32 = 100;
+}
 impl pallet_dapps_staking::Config for TestRuntime {
     type Event = Event;
     type Currency = Balances;
@@ -154,6 +156,7 @@ impl pallet_dapps_staking::Config for TestRuntime {
     type BondingDuration = BondingDuration;
     type EraPayout = EraPayoutMock;
     type EraFinder = EraFinderMock;
+    type RegisterDeposit = RegisterDeposit;
     type ContractFinder = ContractFinderMock;
     type WeightInfo = ();
     type UnixTime = Timestamp; // TODO see of this can be maybe simplified
