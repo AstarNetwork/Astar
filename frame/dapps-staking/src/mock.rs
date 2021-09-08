@@ -1,5 +1,5 @@
 use crate::{
-    self as pallet_dapps_staking, pallet::pallet::Config, ContractFinder, EraPayout,
+    self as pallet_dapps_staking, pallet::pallet::Config, EraPayout,
     NegativeImbalanceOf, PositiveImbalanceOf,
 };
 
@@ -136,7 +136,9 @@ impl OnUnbalanced<NegativeImbalanceOf<TestRuntime>> for RewardRemainderMock {}
 pub struct RewardMock;
 
 impl OnUnbalanced<PositiveImbalanceOf<TestRuntime>> for RewardMock {}
-
+parameter_types! {
+    pub const RegisterDeposit: u32 = 100;
+}
 impl pallet_dapps_staking::Config for TestRuntime {
     type Event = Event;
     type Currency = Balances;
@@ -144,6 +146,7 @@ impl pallet_dapps_staking::Config for TestRuntime {
     type BlockPerEra = BlockPerEra;
     type UnbondingDuration = UnbondingDuration;
     type EraPayout = EraPayoutMock;
+    type RegisterDeposit = RegisterDeposit;
     type ContractFinder = ContractFinderMock;
     type WeightInfo = ();
     type UnixTime = Timestamp; // TODO see of this can be maybe simplified
