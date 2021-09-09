@@ -1,6 +1,6 @@
 use crate::{
-    self as pallet_dapps_staking, pallet::pallet::Config, EraPayout,
-    NegativeImbalanceOf, PositiveImbalanceOf,
+    self as pallet_dapps_staking, pallet::pallet::Config, EraPayout, NegativeImbalanceOf,
+    PositiveImbalanceOf,
 };
 
 use frame_support::{
