@@ -139,7 +139,7 @@ pub mod pallet {
     #[pallet::storage]
     #[pallet::getter(fn registered_dapps)]
     pub(crate) type RegisteredDapps<T: Config> =
-        StorageMap<_, Twox64Concat, T::AccountId, T::AccountId>;
+        StorageMap<_, Twox64Concat, T::AccountId, SmartContract<T::AccountId>>;
 
     // Declare the genesis config (optional).
     //
@@ -182,7 +182,7 @@ pub mod pallet {
         /// Stake of stash address.
         Stake(T::AccountId),
         /// New contract added for staking, with deposit value
-        NewContract(T::AccountId, BalanceOf<T>),
+        NewContract(SmartContract<T::AccountId>, BalanceOf<T>),
     }
 
     #[pallet::error]
@@ -609,7 +609,7 @@ pub mod pallet {
         #[pallet::weight(T::WeightInfo::payout_stakers_alive_staked(T::MaxStakings::get()))]
         pub fn register(
             origin: OriginFor<T>,
-            contract_id: T::AccountId,
+            contract_id: SmartContract<T::AccountId>,
         ) -> DispatchResultWithPostInfo {
             let operator = ensure_signed(origin)?;
             let mut ledger = Self::ledger(&operator).ok_or(Error::<T>::NotController)?;
@@ -618,7 +618,7 @@ pub mod pallet {
                 Error::<T>::AlreadyRegisteredContract
             );
             ensure!(
-                Self::is_contract(contract_id.clone()),
+                Self::is_contract(&contract_id),
                 Error::<T>::AddressIsNotContract
             );
             ensure!(
@@ -795,10 +795,18 @@ pub mod pallet {
             Ok(())
         }
 
-        /// TODO introduce pallet-plasm-operator which abstracts evm and ink as SmartContract
-        ///
-        fn is_contract(address: T::AccountId) -> bool {
-            true
+        /// Checks if there is a valid smart contract for the provided address
+        fn is_contract(address: &SmartContract<T::AccountId>) -> bool {
+            match address {
+                SmartContract::Wasm(account) => {
+                //     <pallet_contracts::ContractInfoOf<T>>::get(&account).is_some()
+                false
+                }
+                SmartContract::Evm(account) => {
+                // pallet_evm::Module::<T>::account_codes(&account).len() > 0 TODO remove comment after EVM mege
+                true
+                }
+            }
         }
     }
 }

@@ -1,6 +1,8 @@
 use super::{Event, *};
 use frame_support::{assert_err, assert_noop, assert_ok, assert_storage_noop};
 use mock::{Balances, *};
+use sp_core::{H160};
+use std::str::FromStr;
 
 // TODO: Add checks that verify content of the storage!
 
@@ -442,7 +444,7 @@ fn register_is_ok() {
         let stash_id = 1;
         let controller_id = 100;
         let bond_amount = 200 + EXISTENTIAL_DEPOSIT;
-        let contract_id = 7;
+        let ok_contract = SmartContract::Evm(H160::from_str("1000000000000000000000000000000000000007").unwrap());
 
         assert_ok!(DappsStaking::bond(
             Origin::signed(stash_id),
@@ -453,11 +455,11 @@ fn register_is_ok() {
 
         assert_ok!(DappsStaking::register(
             Origin::signed(controller_id),
-            contract_id
+            ok_contract.clone()
         ));
 
         System::assert_last_event(mock::Event::DappsStaking(crate::Event::NewContract(
-            contract_id,
+            ok_contract,
             bond_amount,
         )));
     })
@@ -472,6 +474,8 @@ fn register_low_deposit() {
         let bond_amount = 10;
         let bond_more = 200;
         let contract_id = 7;
+        // let bad_contract = SmartContract::Evm(Default::default());
+        let ok_contract = SmartContract::Evm(H160::from_str("1000000000000000000000000000000000000007").unwrap());
 
         assert_ok!(DappsStaking::bond(
             Origin::signed(stash_id),
@@ -480,7 +484,7 @@ fn register_low_deposit() {
             crate::RewardDestination::Staked
         ));
         assert_noop!(
-            DappsStaking::register(Origin::signed(controller_id), contract_id),
+            DappsStaking::register(Origin::signed(controller_id), ok_contract.clone()),
             crate::pallet::pallet::Error::<TestRuntime>::MissingDeposit
         );
 
@@ -496,10 +500,10 @@ fn register_low_deposit() {
         // now register() should pass
         assert_ok!(DappsStaking::register(
             Origin::signed(controller_id),
-            contract_id
+            ok_contract.clone()
         ));
         System::assert_last_event(mock::Event::DappsStaking(crate::Event::NewContract(
-            contract_id,
+            ok_contract,
             bond_amount + bond_more,
         )));
     })
@@ -512,10 +516,10 @@ fn register_missing_bonding_befor_register() {
         let stash_id = 1;
         let controller_id = 100;
         let bond_amount = 10;
-        let contract_id = 7;
+        let ok_contract = SmartContract::Evm(H160::from_str("1000000000000000000000000000000000000001").unwrap());
 
         assert_noop!(
-            DappsStaking::register(Origin::signed(controller_id), contract_id),
+            DappsStaking::register(Origin::signed(controller_id), ok_contract),
             crate::pallet::pallet::Error::<TestRuntime>::NotController
         );
     })
