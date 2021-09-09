@@ -157,6 +157,15 @@ pub struct UnlockChunk<Balance: HasCompact> {
     era: EraIndex,
 }
 
+/// Multi-VM pointer to smart contract instance.
+//#[cfg_attr(feature = "std", derive(Debug, Eq))]
+#[derive(PartialEq, Eq, Copy, Clone, Encode, Decode, RuntimeDebug)]
+pub enum SmartContract<AccountId> {
+    /// Wasm smart contract instance.
+    Wasm(AccountId),
+    /// EVM smart contract instance.
+    Evm(sp_core::H160),
+}
 /// The ledger of a (bonded) stash.
 #[derive(PartialEq, Eq, Clone, Encode, Decode, RuntimeDebug)]
 pub struct StakingLedger<AccountId, Balance: HasCompact> {

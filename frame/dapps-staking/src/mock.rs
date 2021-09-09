@@ -8,7 +8,7 @@ use frame_support::{
     storage::{StorageDoubleMap, StorageMap},
     traits::OnUnbalanced,
 };
-use sp_core::H256;
+use sp_core::{H160, H256};
 use sp_io::TestExternalities;
 use sp_runtime::{
     testing::Header,
