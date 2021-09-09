@@ -1,3 +1,5 @@
+#![allow(unused)] // TODO: remove this later
+
 //! # dApps Staking Module
 //!
 //! The dApps staking module manages era, total amounts of rewards and how to distribute.
@@ -17,10 +19,10 @@ use sp_std::{collections::btree_map::BTreeMap, prelude::*, vec::Vec};
 pub mod pallet;
 pub mod weights;
 
-// #[cfg(test)]
-// mod mock;
-// #[cfg(test)]
-// mod tests;
+#[cfg(test)]
+mod mock;
+#[cfg(test)]
+mod tests;
 
 pub use pallet::{pallet::*, *};
 pub use sp_staking::SessionIndex;
@@ -29,9 +31,9 @@ pub use weights::WeightInfo;
 pub type BalanceOf<T> =
     <<T as Config>::Currency as Currency<<T as system::Config>::AccountId>>::Balance;
 
-type PositiveImbalanceOf<T> =
+pub(crate) type PositiveImbalanceOf<T> =
     <<T as Config>::Currency as Currency<<T as system::Config>::AccountId>>::PositiveImbalance;
-type NegativeImbalanceOf<T> =
+pub(crate) type NegativeImbalanceOf<T> =
     <<T as Config>::Currency as Currency<<T as system::Config>::AccountId>>::NegativeImbalance;
 
 /// Counter for the number of eras that have passed.
@@ -180,9 +182,9 @@ impl<AccountId, Balance: HasCompact + Copy + Saturating + Ord + Zero>
 {
     /// Remove entries from `unlocking` that are sufficiently old and reduce the
     /// total by the sum of their balances.
-    fn consolidate_unlocked(self, current_era: EraIndex, amount_locked: Balance) -> Self {
+    fn consolidate_unlocked(self, current_era: EraIndex) -> Self {
         let mut total = self.total;
-        let mut unlocking: Vec<UnlockChunk<Balance>> = self
+        let unlocking: Vec<UnlockChunk<Balance>> = self
             .unlocking
             .into_iter()
             .filter(|chunk| {
@@ -194,13 +196,7 @@ impl<AccountId, Balance: HasCompact + Copy + Saturating + Ord + Zero>
                 }
             })
             .collect();
-        if amount_locked > Zero::zero() {
-            total = total.saturating_add(amount_locked);
-            unlocking.push(UnlockChunk {
-                value: amount_locked,
-                era: current_era,
-            });
-        }
+
         Self {
             total,
             active: self.active,
