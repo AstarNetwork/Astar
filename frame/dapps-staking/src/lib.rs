@@ -261,17 +261,3 @@ pub struct VoteCounts {
     bad: u32,
     good: u32,
 }
-
-pub trait ContractFinder<AccountId> {
-    fn is_exists_contract(contract_id: &AccountId) -> bool;
-}
-
-impl<T: Config> ContractFinder<T::AccountId> for Pallet<T>
-where
-    T::AccountId: UncheckedFrom<T::Hash> + AsRef<[u8]>,
-{
-    fn is_exists_contract(contract_id: &T::AccountId) -> bool {
-        // <ContractHasOperator<T>>::contains_key(contract_id)
-        true
-    }
-}

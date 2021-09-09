@@ -40,9 +40,6 @@ pub mod pallet {
         /// Time used for computing era duration.
         type UnixTime: UnixTime;
 
-        // The check valid operated contracts.
-        type ContractFinder: ContractFinder<Self::AccountId>;
-
         /// Tokens have been minted and are unused for validator-reward. Maybe, dapps-staking uses ().
         type RewardRemainder: OnUnbalanced<NegativeImbalanceOf<Self>>;
 
