@@ -393,8 +393,7 @@ pub mod pallet {
                     value += ledger.active;
                     ledger.active = Zero::zero();
                 }
-                let era =
-                    Self::current_era().unwrap_or(Zero::zero()) + T::BondingDuration::get();
+                let era = Self::current_era().unwrap_or(Zero::zero()) + T::UnbondingDuration::get();
                 ledger.unlocking.push(UnlockChunk { value, era });
                 Self::update_ledger(&controller, &ledger);
                 Self::deposit_event(Event::<T>::Unbonded(ledger.stash.clone(), value));
@@ -797,12 +796,12 @@ pub mod pallet {
         fn is_contract(address: &SmartContract<T::AccountId>) -> bool {
             match address {
                 SmartContract::Wasm(account) => {
-                //     <pallet_contracts::ContractInfoOf<T>>::get(&account).is_some()
-                false
+                    //     <pallet_contracts::ContractInfoOf<T>>::get(&account).is_some()
+                    false
                 }
                 SmartContract::Evm(account) => {
-                // pallet_evm::Module::<T>::account_codes(&account).len() > 0 TODO remove comment after EVM mege
-                true
+                    // pallet_evm::Module::<T>::account_codes(&account).len() > 0 TODO remove comment after EVM mege
+                    true
                 }
             }
         }
