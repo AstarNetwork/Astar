@@ -117,17 +117,6 @@ impl<Balance: Default> EraPayout<Balance> for EraPayoutMock {
         (Default::default(), Default::default())
     }
 }
-
-/// Mocked implementation for ContractFinder. Might need to be changed later when used.
-pub struct ContractFinderMock;
-
-impl ContractFinder<AccountId> for ContractFinderMock {
-    fn is_exists_contract(contract_id: &AccountId) -> bool {
-        true
-    }
-}
-
-/// Mocked implementation for RewardRemainder. Might need to be changed later when used.
 pub struct RewardRemainderMock;
 
 impl OnUnbalanced<NegativeImbalanceOf<TestRuntime>> for RewardRemainderMock {}
@@ -147,7 +136,6 @@ impl pallet_dapps_staking::Config for TestRuntime {
     type UnbondingDuration = UnbondingDuration;
     type EraPayout = EraPayoutMock;
     type RegisterDeposit = RegisterDeposit;
-    type ContractFinder = ContractFinderMock;
     type WeightInfo = ();
     type UnixTime = Timestamp; // TODO see of this can be maybe simplified
     type RewardRemainder = RewardRemainderMock;

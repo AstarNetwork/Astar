@@ -158,7 +158,6 @@ pub struct UnlockChunk<Balance: HasCompact> {
 }
 
 /// Multi-VM pointer to smart contract instance.
-//#[cfg_attr(feature = "std", derive(Debug, Eq))]
 #[derive(PartialEq, Eq, Copy, Clone, Encode, Decode, RuntimeDebug)]
 pub enum SmartContract<AccountId> {
     /// Wasm smart contract instance.
@@ -271,6 +270,7 @@ pub struct VoteCounts {
     good: u32,
 }
 
+<<<<<<< HEAD
 pub trait ContractFinder<AccountId> {
     fn is_exists_contract(contract_id: &AccountId) -> bool;
 }
@@ -282,5 +282,14 @@ where
     fn is_exists_contract(contract_id: &T::AccountId) -> bool {
         // <ContractHasOperator<T>>::contains_key(contract_id)
         true
+=======
+pub trait EraFinder {
+    fn current() -> Option<EraIndex>;
+}
+
+impl<T: Config> EraFinder for Pallet<T> {
+    fn current() -> Option<EraIndex> {
+        Some(5 as EraIndex)
+>>>>>>> b107132e (removed ContractFinder trait)
     }
 }
