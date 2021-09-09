@@ -1,6 +1,6 @@
 use crate::{
-    self as pallet_dapps_staking, pallet::pallet::Config, EraPayout, NegativeImbalanceOf,
-    PositiveImbalanceOf,
+    self as pallet_dapps_staking, pallet::pallet::Config, EraPayout,
+    NegativeImbalanceOf, PositiveImbalanceOf,
 };
 
 use frame_support::{
@@ -117,6 +117,9 @@ impl<Balance: Default> EraPayout<Balance> for EraPayoutMock {
         (Default::default(), Default::default())
     }
 }
+
+/// Mocked implementation for RewardRemainder. Might need to be changed later when used.
+
 pub struct RewardRemainderMock;
 
 impl OnUnbalanced<NegativeImbalanceOf<TestRuntime>> for RewardRemainderMock {}

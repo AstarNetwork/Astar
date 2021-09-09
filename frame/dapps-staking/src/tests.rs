@@ -6,6 +6,8 @@ use std::str::FromStr;
 
 // TODO: Add checks that verify content of the storage!
 
+// TODO: Add checks that verify content of the storage!
+
 #[test]
 fn bonding_less_than_stash_amount_is_ok() {
     ExternalityBuilder::build().execute_with(|| {
