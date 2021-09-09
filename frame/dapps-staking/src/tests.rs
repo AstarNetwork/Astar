@@ -1,6 +1,10 @@
 use super::{Event, *};
 use frame_support::{assert_err, assert_noop, assert_ok, assert_storage_noop};
 use mock::{Balances, *};
+use sp_core::H160;
+use std::str::FromStr;
+
+// TODO: Add checks that verify content of the storage!
 
 // TODO: Add checks that verify content of the storage!
 
@@ -430,6 +434,97 @@ fn withdraw_unbonded_is_not_ok() {
 
         assert_noop!(
             DappsStaking::withdraw_unbonded(Origin::signed(controller_id)),
+            crate::pallet::pallet::Error::<TestRuntime>::NotController
+        );
+    })
+}
+
+#[test]
+fn register_is_ok() {
+    ExternalityBuilder::build().execute_with(|| {
+        // prepare stash-controller pair with some bonded funds
+        let stash_id = 1;
+        let controller_id = 100;
+        let bond_amount = 200 + EXISTENTIAL_DEPOSIT;
+        let ok_contract =
+            SmartContract::Evm(H160::from_str("1000000000000000000000000000000000000007").unwrap());
+
+        assert_ok!(DappsStaking::bond(
+            Origin::signed(stash_id),
+            controller_id,
+            bond_amount,
+            crate::RewardDestination::Staked
+        ));
+
+        assert_ok!(DappsStaking::register(
+            Origin::signed(controller_id),
+            ok_contract.clone()
+        ));
+
+        System::assert_last_event(mock::Event::DappsStaking(crate::Event::NewContract(
+            ok_contract,
+            bond_amount,
+        )));
+    })
+}
+
+#[test]
+fn register_low_deposit() {
+    ExternalityBuilder::build().execute_with(|| {
+        // prepare stash-controller pair with some bonded funds
+        let stash_id = 1;
+        let controller_id = 100;
+        let bond_amount = 10;
+        let bond_more = 200;
+        let contract_id = 7;
+        // let bad_contract = SmartContract::Evm(Default::default());
+        let ok_contract =
+            SmartContract::Evm(H160::from_str("1000000000000000000000000000000000000007").unwrap());
+
+        assert_ok!(DappsStaking::bond(
+            Origin::signed(stash_id),
+            controller_id,
+            bond_amount,
+            crate::RewardDestination::Staked
+        ));
+        assert_noop!(
+            DappsStaking::register(Origin::signed(controller_id), ok_contract.clone()),
+            crate::pallet::pallet::Error::<TestRuntime>::MissingDeposit
+        );
+
+        // Bond more funds to increase Register deposit
+        assert_ok!(DappsStaking::bond_extra(
+            Origin::signed(stash_id),
+            bond_more
+        ));
+        System::assert_last_event(mock::Event::DappsStaking(crate::Event::Bonded(
+            stash_id, bond_more,
+        )));
+
+        // now register() should pass
+        assert_ok!(DappsStaking::register(
+            Origin::signed(controller_id),
+            ok_contract.clone()
+        ));
+        System::assert_last_event(mock::Event::DappsStaking(crate::Event::NewContract(
+            ok_contract,
+            bond_amount + bond_more,
+        )));
+    })
+}
+
+#[test]
+fn register_missing_bonding_before_register() {
+    ExternalityBuilder::build().execute_with(|| {
+        // prepare stash-controller pair with some bonded funds
+        let stash_id = 1;
+        let controller_id = 100;
+        let bond_amount = 10;
+        let ok_contract =
+            SmartContract::Evm(H160::from_str("1000000000000000000000000000000000000001").unwrap());
+
+        assert_noop!(
+            DappsStaking::register(Origin::signed(controller_id), ok_contract),
             crate::pallet::pallet::Error::<TestRuntime>::NotController
         );
     })

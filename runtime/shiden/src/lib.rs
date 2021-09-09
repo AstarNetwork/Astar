@@ -45,7 +45,7 @@ use xcm_builder::{
 };
 use xcm_executor::{Config, XcmExecutor};
 
-pub use pallet_balances::Call as BalancesCall;
+// pub use pallet_balances::Call as BalancesCall;
 pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
@@ -535,6 +535,7 @@ construct_runtime!(
         Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>} = 31,
         Vesting: pallet_vesting::{Pallet, Call, Storage, Config<T>, Event<T>} = 32,
         BlockReward: pallet_block_reward::{Pallet} = 33,
+        DappsStaking: pallet_dapps_staking::{Pallet, Call, Storage, Event<T>} = 34,
 
         Authorship: pallet_authorship::{Pallet, Call, Storage, Inherent} = 40,
         CollatorSelection: pallet_collator_selection::{Pallet, Call, Storage, Event<T>, Config<T>} = 41,
