@@ -1,5 +1,5 @@
 use crate::{
-    self as pallet_dapps_staking, pallet::pallet::Config, ContractFinder, EraFinder, EraPayout,
+    self as pallet_dapps_staking, pallet::pallet::Config, EraFinder, EraPayout,
     NegativeImbalanceOf, PositiveImbalanceOf,
 };
 
@@ -118,15 +118,6 @@ impl<Balance: Default> EraPayout<Balance> for EraPayoutMock {
     }
 }
 
-/// Mocked implementation for ContractFinder. Might need to be changed later when used.
-pub struct ContractFinderMock;
-
-impl ContractFinder<AccountId> for ContractFinderMock {
-    fn is_exists_contract(contract_id: &AccountId) -> bool {
-        true
-    }
-}
-
 /// Mocked implementation for EraFinder
 pub struct EraFinderMock;
 
@@ -157,7 +148,6 @@ impl pallet_dapps_staking::Config for TestRuntime {
     type EraPayout = EraPayoutMock;
     type EraFinder = EraFinderMock;
     type RegisterDeposit = RegisterDeposit;
-    type ContractFinder = ContractFinderMock;
     type WeightInfo = ();
     type UnixTime = Timestamp; // TODO see of this can be maybe simplified
     type RewardRemainder = RewardRemainderMock;
