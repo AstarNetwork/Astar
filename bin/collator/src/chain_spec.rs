@@ -4,10 +4,11 @@ use cumulus_primitives_core::ParaId;
 use sc_chain_spec::ChainSpecExtension;
 use sc_service::ChainType;
 use serde::{Deserialize, Serialize};
-use shiden_runtime::{
+use shibuya_runtime::{
     wasm_binary_unwrap, AccountId, AuraConfig, AuraId, Balance, BalancesConfig,
-    CollatorSelectionConfig, GenesisConfig, ParachainInfoConfig, SessionConfig, SessionKeys,
-    Signature, SudoConfig, SystemConfig, VestingConfig, SDN,
+    CollatorSelectionConfig, EVMConfig, GenesisConfig, ParachainInfoConfig, SessionConfig,
+    SessionKeys, ShibuyaNetworkPrecompiles, Signature, SudoConfig, SystemConfig, VestingConfig,
+    SDN,
 };
 use sp_core::{sr25519, Pair, Public};
 
@@ -35,8 +36,11 @@ impl Extensions {
     }
 }
 
-/// Specialized `ChainSpec`.
-pub type ChainSpec = sc_service::GenericChainSpec<GenesisConfig, Extensions>;
+/// Specialized `ChainSpec` for Shiden Network.
+pub type ShidenChainSpec = sc_service::GenericChainSpec<shiden_runtime::GenesisConfig, Extensions>;
+
+/// Specialized `ChainSpec` for Shibuya testnet.
+pub type ShibuyaChainSpec = sc_service::GenericChainSpec<GenesisConfig, Extensions>;
 
 /// Helper function to generate a crypto pair from seed
 pub fn get_from_seed<TPublic: Public>(seed: &str) -> <TPublic::Pair as Pair>::Public {
@@ -57,49 +61,14 @@ fn session_keys(aura: AuraId) -> SessionKeys {
     SessionKeys { aura }
 }
 
-/// Gen chain specification for given parachain id
-pub fn get_chain_spec(id: ParaId) -> ChainSpec {
-    if id == ParaId::from(2007) {
-        return shiden_chain_spec();
-    }
+/// Gen Shibuya chain specification for given parachain id.
+pub fn get_chain_spec(para_id: u32) -> ShibuyaChainSpec {
+    // Alice as default
+    let sudo_key = get_account_id_from_seed::<sr25519::Public>("Alice");
 
-    ChainSpec::from_genesis(
-        "Local Testnet",
-        "local_testnet",
-        ChainType::Local,
-        move || {
-            testnet_genesis(
-                get_account_id_from_seed::<sr25519::Public>("Alice"),
-                None,
-                id,
-            )
-        },
-        vec![],
-        None,
-        None,
-        None,
-        Extensions {
-            relay_chain: "westend-dev".into(),
-            para_id: id.into(),
-        },
-    )
-}
-
-fn shiden_chain_spec() -> ChainSpec {
-    ChainSpec::from_json_bytes(&include_bytes!("../res/shiden.raw.json")[..]).unwrap()
-}
-
-/*
-fn shiden_chain_spec() -> ChainSpec {
-    use sp_core::crypto::Ss58Codec;
-
-    let para_id: u32 = 2007;
-    let sudo_key =
-        AccountId::from_ss58check("5CV5sQQn1NQmjRinJZrKRHXGSv8HEtPQ7JzY3PzdfGkE27vk").unwrap();
-
-    ChainSpec::from_genesis(
-        "Shiden Shell",
-        "shiden",
+    ShibuyaChainSpec::from_genesis(
+        "Shibuya Testnet",
+        "shibuya",
         ChainType::Live,
         move || {
             make_genesis(
@@ -113,40 +82,13 @@ fn shiden_chain_spec() -> ChainSpec {
         None,
         None,
         Extensions {
-            relay_chain: "kusama".into(),
+            relay_chain: "tokyo".into(),
             para_id,
         },
     )
 }
-*/
 
-fn testnet_genesis(
-    sudo_key: AccountId,
-    endowed_accounts: Option<Vec<AccountId>>,
-    para_id: ParaId,
-) -> GenesisConfig {
-    const ENDOWMENT: Balance = 1_000_000_000 * SDN;
-
-    let endowed_accounts: Vec<(AccountId, Balance)> = endowed_accounts
-        .unwrap_or_else(|| {
-            vec![
-                get_account_id_from_seed::<sr25519::Public>("Alice"),
-                get_account_id_from_seed::<sr25519::Public>("Bob"),
-                get_account_id_from_seed::<sr25519::Public>("Charlie"),
-                get_account_id_from_seed::<sr25519::Public>("Dave"),
-                get_account_id_from_seed::<sr25519::Public>("Eve"),
-                get_account_id_from_seed::<sr25519::Public>("Ferdie"),
-            ]
-        })
-        .iter()
-        .cloned()
-        .map(|acc| (acc, ENDOWMENT))
-        .collect();
-
-    make_genesis(endowed_accounts, sudo_key, para_id)
-}
-
-/// Helper function to create GenesisConfig
+/// Helper function to create GenesisConfig.
 fn make_genesis(
     balances: Vec<(AccountId, Balance)>,
     root_key: AccountId,
@@ -163,6 +105,13 @@ fn make_genesis(
             get_from_seed::<AuraId>("Bob"),
         ),
     ];
+
+    // This is supposed the be the simplest bytecode to revert without returning any data.
+    // We will pre-deploy it under all of our precompiles to ensure they can be called from
+    // within contracts.
+    // (PUSH1 0x00 PUSH1 0x00 REVERT)
+    let revert_bytecode = vec![0x60, 0x00, 0x60, 0x00, 0xFD];
+
     GenesisConfig {
         system: SystemConfig {
             code: wasm_binary_unwrap().to_vec(),
@@ -187,5 +136,23 @@ fn make_genesis(
             candidacy_bond: 32_000 * SDN,
             invulnerables: vec![],
         },
+        evm: EVMConfig {
+            // We need _some_ code inserted at the precompile address so that
+            // the evm will actually call the address.
+            accounts: ShibuyaNetworkPrecompiles::<()>::used_addresses()
+                .map(|addr| {
+                    (
+                        addr,
+                        pallet_evm::GenesisAccount {
+                            nonce: Default::default(),
+                            balance: Default::default(),
+                            storage: Default::default(),
+                            code: revert_bytecode.clone(),
+                        },
+                    )
+                })
+                .collect(),
+        },
+        ethereum: Default::default(),
     }
 }
