@@ -212,6 +212,11 @@ pub fn dusty_config() -> ChainSpec {
     ChainSpec::from_json_bytes(&include_bytes!("../res/dusty.raw.json")[..]).unwrap()
 }
 
+/// Dusty testnet file config.
+pub fn dusty5_config() -> ChainSpec {
+    ChainSpec::from_json_bytes(&include_bytes!("../res/dusty5.raw.json")[..]).unwrap()
+}
+
 /*
 /// Dusty native config.
 pub fn dusty_config() -> ChainSpec {
