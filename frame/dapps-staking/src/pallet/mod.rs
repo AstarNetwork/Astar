@@ -53,9 +53,9 @@ pub mod pallet {
         #[pallet::constant]
         type BlockPerEra: Get<BlockNumberFor<Self>>;
 
-        /// Number of eras that staked funds must remain bonded for.
+        /// Number of eras that staked funds must remain bonded for after calling unbond.
         #[pallet::constant]
-        type BondingDuration: Get<EraIndex>;
+        type UnbondingDuration: Get<EraIndex>;
 
         /// The payout for validators and the system for the current era.
         /// See [Era payout](./index.html#era-payout).
@@ -159,6 +159,9 @@ pub mod pallet {
         /// NOTE: This event is only emitted when funds are bonded via a dispatchable. Notably,
         /// it will not be emitted for staking rewards when they are added to stake.
         Bonded(T::AccountId, BalanceOf<T>),
+        /// A stash account has changed paired controller account
+        /// (stash Id, controller Id)
+        ControllerChanged(T::AccountId, T::AccountId),
         /// An account has unbonded this amount.
         Unbonded(T::AccountId, BalanceOf<T>),
         /// An account has called `withdraw_unbonded` and removed unbonding chunks worth `Balance`
@@ -374,11 +377,15 @@ pub mod pallet {
                     value += ledger.active;
                     ledger.active = Zero::zero();
                 }
-                let era = Self::current_era().unwrap_or(Zero::zero()) + T::BondingDuration::get();
+                let era = Self::current_era().unwrap_or(Zero::zero()) + T::UnbondingDuration::get();
                 ledger.unlocking.push(UnlockChunk { value, era });
                 Self::update_ledger(&controller, &ledger);
                 Self::deposit_event(Event::<T>::Unbonded(ledger.stash.clone(), value));
+            } else {
+                // just deposit event with zero
+                Self::deposit_event(Event::<T>::Unbonded(ledger.stash.clone(), Zero::zero()));
             }
+
             Ok(().into())
         }
 
@@ -541,6 +548,7 @@ pub mod pallet {
             if let Some(ledger) = <Ledger<T>>::take(&old_controller) {
                 Ledger::<T>::insert(&controller, ledger);
             }
+            Self::deposit_event(Event::<T>::ControllerChanged(stash, controller));
 
             Ok(().into())
         }

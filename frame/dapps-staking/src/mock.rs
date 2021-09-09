@@ -24,7 +24,7 @@ type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<TestRunt
 type Block = frame_system::mocking::MockBlock<TestRuntime>;
 
 pub(crate) const EXISTENTIAL_DEPOSIT: Balance = 2;
-pub(crate) const BONDING_DURATION: EraIndex = 5;
+pub(crate) const UNBONDING_DURATION: EraIndex = 5;
 
 construct_runtime!(
     pub enum TestRuntime where
@@ -102,7 +102,7 @@ impl pallet_timestamp::Config for TestRuntime {
 parameter_types! {
     pub const MaxStakings: u32 = 32;
     pub const BlockPerEra: BlockNumber = 100;
-    pub const BondingDuration: EraIndex = BONDING_DURATION;
+    pub const UnbondingDuration: EraIndex = UNBONDING_DURATION;
 }
 
 /// Mocked implementation for EraPayout. Might need to be changed later when used.
@@ -142,7 +142,7 @@ impl pallet_dapps_staking::Config for TestRuntime {
     type Currency = Balances;
     type MaxStakings = MaxStakings;
     type BlockPerEra = BlockPerEra;
-    type BondingDuration = BondingDuration;
+    type UnbondingDuration = UnbondingDuration;
     type EraPayout = EraPayoutMock;
     type ContractFinder = ContractFinderMock;
     type WeightInfo = ();
