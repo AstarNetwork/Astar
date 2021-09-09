@@ -45,7 +45,7 @@ use xcm_builder::{
 };
 use xcm_executor::{Config, XcmExecutor};
 
-pub use pallet_balances::Call as BalancesCall;
+// pub use pallet_balances::Call as BalancesCall;
 pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
@@ -257,6 +257,27 @@ impl pallet_custom_signatures::Config for Runtime {
     type Signature = pallet_custom_signatures::ethereum::EthereumSignature;
     type Signer = <Signature as Verify>::Signer;
     type UnsignedPriority = EcdsaUnsignedPriority;
+}
+
+parameter_types! {
+    pub const BondingDuration: pallet_dapps_staking::EraIndex = 2;
+    pub const BlockPerEra: BlockNumber = 60;
+    pub const MaxStakings: u32 = 5;
+    pub const RegisterDeposit: Balance = 100;
+}
+
+impl pallet_dapps_staking::Config for Runtime {
+    type Currency = Balances;
+    type UnixTime = Timestamp;
+    type RewardRemainder = (); // Reward remainder is burned.
+    type Reward = ();
+    type BlockPerEra = BlockPerEra;
+    type BondingDuration = BondingDuration;
+    type RegisterDeposit = RegisterDeposit;
+    type EraPayout = ();
+    type MaxStakings = MaxStakings;
+    type Event = Event;
+    type WeightInfo = (); // TODO
 }
 
 impl pallet_utility::Config for Runtime {
@@ -514,6 +535,7 @@ construct_runtime!(
         Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>} = 31,
         Vesting: pallet_vesting::{Pallet, Call, Storage, Config<T>, Event<T>} = 32,
         BlockReward: pallet_block_reward::{Pallet} = 33,
+        DappsStaking: pallet_dapps_staking::{Pallet, Call, Storage, Event<T>} = 34,
 
         Authorship: pallet_authorship::{Pallet, Call, Storage, Inherent} = 40,
         CollatorSelection: pallet_collator_selection::{Pallet, Call, Storage, Event<T>, Config<T>} = 41,

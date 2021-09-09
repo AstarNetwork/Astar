@@ -8869,6 +8869,7 @@ dependencies = [
  "pallet-block-reward",
  "pallet-collator-selection",
  "pallet-custom-signatures",
+ "pallet-dapps-staking",
  "pallet-identity",
  "pallet-multisig",
  "pallet-session",

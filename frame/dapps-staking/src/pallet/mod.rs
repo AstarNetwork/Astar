@@ -40,9 +40,6 @@ pub mod pallet {
         /// Time used for computing era duration.
         type UnixTime: UnixTime;
 
-        // The current Staking Era
-        type EraFinder: EraFinder;
-
         /// Tokens have been minted and are unused for validator-reward. Maybe, dapps-staking uses ().
         type RewardRemainder: OnUnbalanced<NegativeImbalanceOf<Self>>;
 
@@ -396,7 +393,8 @@ pub mod pallet {
                     value += ledger.active;
                     ledger.active = Zero::zero();
                 }
-                let era = Self::current_era().unwrap_or(Zero::zero()) + T::UnbondingDuration::get();
+                let era =
+                    Self::current_era().unwrap_or(Zero::zero()) + T::BondingDuration::get();
                 ledger.unlocking.push(UnlockChunk { value, era });
                 Self::update_ledger(&controller, &ledger);
                 Self::deposit_event(Event::<T>::Unbonded(ledger.stash.clone(), value));
