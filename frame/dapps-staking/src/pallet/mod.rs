@@ -34,9 +34,6 @@ pub mod pallet {
 
     #[pallet::config]
     pub trait Config: frame_system::Config {
-        /// Maximum number of stakings per staker for dapps.
-        const MAX_STAKINGS: u32;
-
         /// The staking balance.
         type Currency: LockableCurrency<Self::AccountId, Moment = Self::BlockNumber>;
 
@@ -56,9 +53,9 @@ pub mod pallet {
         #[pallet::constant]
         type BlockPerEra: Get<BlockNumberFor<Self>>;
 
-        /// Number of eras that staked funds must remain bonded for.
+        /// Number of eras that staked funds must remain bonded for after calling unbond.
         #[pallet::constant]
-        type BondingDuration: Get<EraIndex>;
+        type UnbondingDuration: Get<EraIndex>;
 
         /// The payout for validators and the system for the current era.
         /// See [Era payout](./index.html#era-payout).
@@ -134,6 +131,23 @@ pub mod pallet {
     #[pallet::getter(fn force_era)]
     pub type ForceEra<T> = StorageValue<_, Forcing, ValueQuery>;
 
+    // Declare the genesis config (optional).
+    //
+    // The macro accepts either a struct or an enum; it checks that generics are consistent.
+    //
+    // Type must implement the `Default` trait.
+    #[pallet::genesis_config]
+    #[derive(Default)]
+    pub struct GenesisConfig {
+        _myfield: u32,
+    }
+
+    // Declare genesis builder. (This is need only if GenesisConfig is declared)
+    #[pallet::genesis_build]
+    impl<T: Config> GenesisBuild<T> for GenesisConfig {
+        fn build(&self) {}
+    }
+
     #[pallet::event]
     #[pallet::generate_deposit(pub(crate) fn deposit_event)]
     #[pallet::metadata(T::AccountId = "AccountId", BalanceOf<T> = "Balance")]
@@ -145,6 +159,9 @@ pub mod pallet {
         /// NOTE: This event is only emitted when funds are bonded via a dispatchable. Notably,
         /// it will not be emitted for staking rewards when they are added to stake.
         Bonded(T::AccountId, BalanceOf<T>),
+        /// A stash account has changed paired controller account
+        /// (stash Id, controller Id)
+        ControllerChanged(T::AccountId, T::AccountId),
         /// An account has unbonded this amount.
         Unbonded(T::AccountId, BalanceOf<T>),
         /// An account has called `withdraw_unbonded` and removed unbonding chunks worth `Balance`
@@ -258,23 +275,22 @@ pub mod pallet {
                 Error::<T>::InsufficientValue
             );
 
-            let stash_balance = T::Currency::free_balance(&stash);
-            ensure!(!stash_balance.is_zero(), Error::<T>::InsufficientValue);
+            let free_stash = T::Currency::free_balance(&stash);
+            ensure!(!free_stash.is_zero(), Error::<T>::InsufficientValue);
 
             Bonded::<T>::insert(&stash, &controller);
             Payee::<T>::insert(&stash, payee);
 
-            Self::deposit_event(Event::Bonded(stash.clone(), stash_balance.clone()));
-
-            let value = value.min(stash_balance);
+            let value = value.min(free_stash);
             let ledger = StakingLedger {
-                stash,
+                stash: stash.clone(),
                 total: value,
                 active: value,
                 unlocking: vec![],
-                last_reward: 0, // T::EraFinder::current() TODO
+                last_reward: Self::current_era().unwrap_or(Zero::zero()),
             };
             Self::update_ledger(&controller, &ledger);
+            Self::deposit_event(Event::<T>::Bonded(stash, value));
 
             Ok(().into())
         }
@@ -299,19 +315,18 @@ pub mod pallet {
             #[pallet::compact] max_additional: BalanceOf<T>,
         ) -> DispatchResultWithPostInfo {
             let stash = ensure_signed(origin)?;
-            ensure!(Bonded::<T>::contains_key(&stash), Error::<T>::NotStash);
 
             let controller = Self::bonded(&stash).ok_or(Error::<T>::NotStash)?;
             let mut ledger = Self::ledger(&controller).ok_or(Error::<T>::NotController)?;
 
-            let stash_balance = T::Currency::free_balance(&stash);
+            let free_stash = T::Currency::free_balance(&stash);
 
-            if let Some(extra) = stash_balance.checked_sub(&ledger.total) {
+            if let Some(extra) = free_stash.checked_sub(&ledger.total) {
                 let extra = extra.min(max_additional);
                 ledger.total += extra;
                 ledger.active += extra;
-                Self::deposit_event(Event::Bonded(stash, extra));
                 Self::update_ledger(&controller, &ledger);
+                Self::deposit_event(Event::<T>::Bonded(stash, extra));
             }
 
             Ok(().into())
@@ -345,9 +360,33 @@ pub mod pallet {
         pub fn unbond(
             origin: OriginFor<T>,
             #[pallet::compact] value: BalanceOf<T>,
-        ) -> DispatchResult {
-            // TODO: impls
-            Ok(())
+        ) -> DispatchResultWithPostInfo {
+            let controller = ensure_signed(origin)?;
+            let mut ledger = Self::ledger(&controller).ok_or(Error::<T>::NotController)?;
+            ensure!(
+                ledger.unlocking.len() < MAX_UNLOCKING_CHUNKS,
+                Error::<T>::NoMoreChunks
+            );
+
+            let mut value = value.min(ledger.active);
+
+            if !value.is_zero() {
+                ledger.active -= value;
+                // Avoid there being a dust balance left in the staking system.
+                if ledger.active < T::Currency::minimum_balance() {
+                    value += ledger.active;
+                    ledger.active = Zero::zero();
+                }
+                let era = Self::current_era().unwrap_or(Zero::zero()) + T::UnbondingDuration::get();
+                ledger.unlocking.push(UnlockChunk { value, era });
+                Self::update_ledger(&controller, &ledger);
+                Self::deposit_event(Event::<T>::Unbonded(ledger.stash.clone(), value));
+            } else {
+                // just deposit event with zero
+                Self::deposit_event(Event::<T>::Unbonded(ledger.stash.clone(), Zero::zero()));
+            }
+
+            Ok(().into())
         }
 
         /// Remove any unlocked chunks from the `unlocking` queue from our management.
@@ -369,9 +408,33 @@ pub mod pallet {
         /// - Writes are limited to the `origin` account key.
         /// # </weight>
         #[pallet::weight(T::WeightInfo::withdraw_unbonded())]
-        pub fn withdraw_unbonded(origin: OriginFor<T>) -> DispatchResult {
-            // TODO: impls
-            Ok(())
+        pub fn withdraw_unbonded(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
+            let controller = ensure_signed(origin)?;
+            let mut ledger = Self::ledger(&controller).ok_or(Error::<T>::NotController)?;
+            let (stash, old_total) = (ledger.stash.clone(), ledger.total);
+
+            let current_era = Self::current_era().unwrap_or(Zero::zero());
+            ledger = ledger.consolidate_unlocked(current_era);
+
+            let withdrawn_value = old_total.saturating_sub(ledger.total);
+
+            if ledger.unlocking.is_empty() && ledger.active.is_zero() {
+                // This account must have called `unbond()` with some value that caused the active
+                // portion to fall below existential deposit + will have no more unlocking chunks
+                // left. We can now safely remove all staking-related information.
+                Self::kill_stash(&stash)?;
+                // remove the lock.
+                T::Currency::remove_lock(STAKING_ID, &stash);
+            } else if !withdrawn_value.is_zero() {
+                // Partial unbond, update ledger and move on.
+                Self::update_ledger(&controller, &ledger);
+            }
+
+            if !withdrawn_value.is_zero() {
+                Self::deposit_event(Event::<T>::Withdrawn(stash, withdrawn_value));
+            }
+
+            Ok(().into())
         }
 
         /// Declare the desire to stake(nominate) `targets` for the origin contracts.
@@ -423,6 +486,7 @@ pub mod pallet {
         ///
         /// # <weight>
         /// - Independent of the arguments. Insignificant complexity.
+        /// - Contains one read
         /// - Contains one read.
         /// - Writes are limited to the `origin` account key.
         /// # </weight>
@@ -484,6 +548,7 @@ pub mod pallet {
             if let Some(ledger) = <Ledger<T>>::take(&old_controller) {
                 Ledger::<T>::insert(&controller, ledger);
             }
+            Self::deposit_event(Event::<T>::ControllerChanged(stash, controller));
 
             Ok(().into())
         }
@@ -670,6 +735,26 @@ pub mod pallet {
                 WithdrawReasons::all(),
             );
             <Ledger<T>>::insert(controller, ledger);
+        }
+
+        /// Remove all associated data of a stash account from the staking system.
+        ///
+        /// Assumes storage is upgraded before calling.
+        ///
+        /// This is called :
+        /// - Immediately when an account's balance falls below existential deposit.
+        /// - after a `withdraw_unbond()` call that frees all of a stash's bonded balance.
+        fn kill_stash(stash: &T::AccountId) -> DispatchResult {
+            let controller = Bonded::<T>::take(stash).ok_or(Error::<T>::NotStash)?;
+            <Ledger<T>>::remove(&controller);
+
+            <Payee<T>>::remove(stash);
+            // if let Some(nominations) = Self::dapps_nominations(stash) {
+            //     Self::remove_nominations(stash, nominations);
+            // }
+
+            //system::Module::<T>::dec_consumers(stash);
+            Ok(())
         }
     }
 }
