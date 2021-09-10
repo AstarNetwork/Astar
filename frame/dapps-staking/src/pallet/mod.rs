@@ -231,7 +231,7 @@ pub mod pallet {
         /// Missing deposit for the contract registration
         InsufficientDeposit,
         /// This account was already used to register contract
-        AlreadyUsedDeveloperAccount
+        AlreadyUsedDeveloperAccount,
     }
 
     #[pallet::hooks]

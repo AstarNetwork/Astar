@@ -458,7 +458,7 @@ fn register_is_ok() {
     })
 }
 
-fn register(stash: u64, controller: u64, bond_amount: u128, contract: SmartContract<AccountId>){
+fn register(stash: u64, controller: u64, bond_amount: u128, contract: SmartContract<AccountId>) {
     assert_ok!(DappsStaking::bond(
         Origin::signed(stash),
         controller,
@@ -492,15 +492,11 @@ fn register_twice_same_account() {
         )));
 
         // now register different contract with same account
-        
+
         assert_noop!(
-            DappsStaking::register(
-                Origin::signed(controller1),
-                contract2
-            ),
+            DappsStaking::register(Origin::signed(controller1), contract2),
             crate::pallet::pallet::Error::<TestRuntime>::AlreadyUsedDeveloperAccount
         );
-
     })
 }
 
@@ -515,7 +511,6 @@ fn register_same_contract_twice() {
         let bond_amount = REGISTER_DEPOSIT + EXISTENTIAL_DEPOSIT;
         let contract =
             SmartContract::Evm(H160::from_str("1000000000000000000000000000000000000007").unwrap());
-        
 
         register(stash1, controller1, bond_amount, contract);
 
@@ -532,13 +527,9 @@ fn register_same_contract_twice() {
             crate::RewardDestination::Staked
         ));
         assert_noop!(
-            DappsStaking::register(
-                Origin::signed(controller2),
-                contract
-            ),
+            DappsStaking::register(Origin::signed(controller2), contract),
             crate::pallet::pallet::Error::<TestRuntime>::AlreadyRegisteredContract
         );
-
     })
 }
 #[test]
