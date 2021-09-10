@@ -24,6 +24,7 @@ type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<TestRunt
 type Block = frame_system::mocking::MockBlock<TestRuntime>;
 
 pub(crate) const EXISTENTIAL_DEPOSIT: Balance = 2;
+pub(crate) const REGISTER_DEPOSIT: Balance = 200;
 pub(crate) const UNBONDING_DURATION: EraIndex = 5;
 
 construct_runtime!(

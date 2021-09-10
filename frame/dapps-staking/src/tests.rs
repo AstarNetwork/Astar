@@ -445,21 +445,11 @@ fn register_is_ok() {
         // prepare stash-controller pair with some bonded funds
         let stash_id = 1;
         let controller_id = 100;
-        let bond_amount = 200 + EXISTENTIAL_DEPOSIT;
+        let bond_amount = REGISTER_DEPOSIT + EXISTENTIAL_DEPOSIT;
         let ok_contract =
             SmartContract::Evm(H160::from_str("1000000000000000000000000000000000000007").unwrap());
 
-        assert_ok!(DappsStaking::bond(
-            Origin::signed(stash_id),
-            controller_id,
-            bond_amount,
-            crate::RewardDestination::Staked
-        ));
-
-        assert_ok!(DappsStaking::register(
-            Origin::signed(controller_id),
-            ok_contract.clone()
-        ));
+        register(stash_id, controller_id, bond_amount, ok_contract);
 
         System::assert_last_event(mock::Event::DappsStaking(crate::Event::NewContract(
             ok_contract,
@@ -468,6 +458,89 @@ fn register_is_ok() {
     })
 }
 
+fn register(stash: u64, controller: u64, bond_amount: u128, contract: SmartContract<AccountId>){
+    assert_ok!(DappsStaking::bond(
+        Origin::signed(stash),
+        controller,
+        bond_amount,
+        crate::RewardDestination::Staked
+    ));
+
+    assert_ok!(DappsStaking::register(
+        Origin::signed(controller),
+        contract.clone()
+    ));
+}
+
+#[test]
+fn register_twice_same_account() {
+    ExternalityBuilder::build().execute_with(|| {
+        // prepare stash-controller pair with some bonded funds
+        let stash1 = 1;
+        let controller1 = 100;
+        let bond_amount = REGISTER_DEPOSIT + EXISTENTIAL_DEPOSIT;
+        let contract1 =
+            SmartContract::Evm(H160::from_str("1000000000000000000000000000000000000007").unwrap());
+        let contract2 =
+            SmartContract::Evm(H160::from_str("1000000000000000000000000000000000000008").unwrap());
+
+        register(stash1, controller1, bond_amount, contract1);
+
+        System::assert_last_event(mock::Event::DappsStaking(crate::Event::NewContract(
+            contract1,
+            bond_amount,
+        )));
+
+        // now register different contract with same account
+        
+        assert_noop!(
+            DappsStaking::register(
+                Origin::signed(controller1),
+                contract2
+            ),
+            crate::pallet::pallet::Error::<TestRuntime>::AlreadyUsedDeveloperAccount
+        );
+
+    })
+}
+
+#[test]
+fn register_same_contract_twice() {
+    ExternalityBuilder::build().execute_with(|| {
+        // prepare stash-controller pair with some bonded funds
+        let stash1 = 1;
+        let controller1 = 100;
+        let stash2 = 2;
+        let controller2 = 200;
+        let bond_amount = REGISTER_DEPOSIT + EXISTENTIAL_DEPOSIT;
+        let contract =
+            SmartContract::Evm(H160::from_str("1000000000000000000000000000000000000007").unwrap());
+        
+
+        register(stash1, controller1, bond_amount, contract);
+
+        System::assert_last_event(mock::Event::DappsStaking(crate::Event::NewContract(
+            contract,
+            bond_amount,
+        )));
+
+        // now register same contract by different developer
+        assert_ok!(DappsStaking::bond(
+            Origin::signed(stash2),
+            controller2,
+            bond_amount,
+            crate::RewardDestination::Staked
+        ));
+        assert_noop!(
+            DappsStaking::register(
+                Origin::signed(controller2),
+                contract
+            ),
+            crate::pallet::pallet::Error::<TestRuntime>::AlreadyRegisteredContract
+        );
+
+    })
+}
 #[test]
 fn register_low_deposit() {
     ExternalityBuilder::build().execute_with(|| {
@@ -475,7 +548,7 @@ fn register_low_deposit() {
         let stash_id = 1;
         let controller_id = 100;
         let bond_amount = 10;
-        let bond_more = 200;
+        let bond_more = REGISTER_DEPOSIT;
         let contract_id = 7;
         // let bad_contract = SmartContract::Evm(Default::default());
         let ok_contract =
@@ -489,7 +562,7 @@ fn register_low_deposit() {
         ));
         assert_noop!(
             DappsStaking::register(Origin::signed(controller_id), ok_contract.clone()),
-            crate::pallet::pallet::Error::<TestRuntime>::MissingDeposit
+            crate::pallet::pallet::Error::<TestRuntime>::InsufficientDeposit
         );
 
         // Bond more funds to increase Register deposit

@@ -132,11 +132,17 @@ pub mod pallet {
     #[pallet::getter(fn force_era)]
     pub type ForceEra<T> = StorageValue<_, Forcing, ValueQuery>;
 
-    /// Mode of era forcing.
+    /// Registered developer accounts points to coresponding contract
     #[pallet::storage]
-    #[pallet::getter(fn registered_dapps)]
-    pub(crate) type RegisteredDapps<T: Config> =
+    #[pallet::getter(fn registered_contract)]
+    pub(crate) type RegisteredDevelopers<T: Config> =
         StorageMap<_, Twox64Concat, T::AccountId, SmartContract<T::AccountId>>;
+
+    /// Registered dapp points to the developer who registered it
+    #[pallet::storage]
+    #[pallet::getter(fn registered_developer)]
+    pub(crate) type RegisteredDapps<T: Config> =
+        StorageMap<_, Twox64Concat, SmartContract<T::AccountId>, T::AccountId>;
 
     // Declare the genesis config (optional).
     //
@@ -223,7 +229,9 @@ pub mod pallet {
         /// User attempts to register with address which is not contract
         AddressIsNotContract,
         /// Missing deposit for the contract registration
-        MissingDeposit,
+        InsufficientDeposit,
+        /// This account was already used to register contract
+        AlreadyUsedDeveloperAccount
     }
 
     #[pallet::hooks]
@@ -608,10 +616,15 @@ pub mod pallet {
             origin: OriginFor<T>,
             contract_id: SmartContract<T::AccountId>,
         ) -> DispatchResultWithPostInfo {
-            let operator = ensure_signed(origin)?;
-            let mut ledger = Self::ledger(&operator).ok_or(Error::<T>::NotController)?;
+            let developer = ensure_signed(origin)?;
+            let mut ledger = Self::ledger(&developer).ok_or(Error::<T>::NotController)?;
+
             ensure!(
-                !RegisteredDapps::<T>::contains_key(&operator),
+                !RegisteredDevelopers::<T>::contains_key(&developer),
+                Error::<T>::AlreadyUsedDeveloperAccount
+            );
+            ensure!(
+                !RegisteredDapps::<T>::contains_key(&contract_id),
                 Error::<T>::AlreadyRegisteredContract
             );
             ensure!(
@@ -620,10 +633,11 @@ pub mod pallet {
             );
             ensure!(
                 ledger.total >= T::RegisterDeposit::get(),
-                Error::<T>::MissingDeposit
+                Error::<T>::InsufficientDeposit
             );
 
-            RegisteredDapps::<T>::insert(&operator, contract_id.clone());
+            RegisteredDapps::<T>::insert(contract_id.clone(), developer.clone());
+            RegisteredDevelopers::<T>::insert(developer, contract_id.clone());
             Self::deposit_event(Event::<T>::NewContract(contract_id, ledger.total));
 
             Ok(().into())
