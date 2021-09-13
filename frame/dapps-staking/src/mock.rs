@@ -120,7 +120,6 @@ impl<Balance: Default> EraPayout<Balance> for EraPayoutMock {
     }
 }
 
-
 pub struct RewardRemainderMock;
 
 impl OnUnbalanced<NegativeImbalanceOf<TestRuntime>> for RewardRemainderMock {}

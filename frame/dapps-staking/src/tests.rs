@@ -591,4 +591,3 @@ fn register_missing_bonding_before_register() {
         );
     })
 }
-
