@@ -9692,6 +9692,7 @@ dependencies = [
  "pallet-evm-precompile-modexp",
  "pallet-evm-precompile-sha3fips",
  "pallet-evm-precompile-simple",
+ "pallet-dapps-staking",
  "pallet-identity",
  "pallet-multisig",
  "pallet-session",
