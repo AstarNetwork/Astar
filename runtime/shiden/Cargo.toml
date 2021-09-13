@@ -63,6 +63,7 @@ xcm = { git = "https://github.com/paritytech/polkadot", default-features = false
 
 pallet-block-reward = { path = "../../frame/block-reward", default-features = false }
 pallet-custom-signatures = { path = "../../frame/custom-signatures", default-features = false }
+pallet-dapps-staking = { path = "../../frame/dapps-staking", default-features = false }
 
 [build-dependencies]
 substrate-wasm-builder = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.9" }
@@ -92,6 +93,7 @@ std = [
     "pallet-balances/std",
     "pallet-block-reward/std",
     "pallet-custom-signatures/std",
+    "pallet-dapps-staking/std",
     "pallet-identity/std",
     "pallet-multisig/std",
     "pallet-session/std",

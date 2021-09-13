@@ -157,6 +157,14 @@ pub struct UnlockChunk<Balance: HasCompact> {
     era: EraIndex,
 }
 
+/// Multi-VM pointer to smart contract instance.
+#[derive(PartialEq, Eq, Copy, Clone, Encode, Decode, RuntimeDebug)]
+pub enum SmartContract<AccountId> {
+    /// Wasm smart contract instance.
+    Wasm(AccountId),
+    /// EVM smart contract instance.
+    Evm(sp_core::H160),
+}
 /// The ledger of a (bonded) stash.
 #[derive(PartialEq, Eq, Clone, Encode, Decode, RuntimeDebug)]
 pub struct StakingLedger<AccountId, Balance: HasCompact> {
@@ -260,18 +268,4 @@ pub enum Vote {
 pub struct VoteCounts {
     bad: u32,
     good: u32,
-}
-
-pub trait ContractFinder<AccountId> {
-    fn is_exists_contract(contract_id: &AccountId) -> bool;
-}
-
-impl<T: Config> ContractFinder<T::AccountId> for Pallet<T>
-where
-    T::AccountId: UncheckedFrom<T::Hash> + AsRef<[u8]>,
-{
-    fn is_exists_contract(contract_id: &T::AccountId) -> bool {
-        // <ContractHasOperator<T>>::contains_key(contract_id)
-        true
-    }
 }
