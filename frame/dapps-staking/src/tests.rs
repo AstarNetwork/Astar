@@ -6,7 +6,6 @@ use std::str::FromStr;
 
 // TODO: Add checks that verify content of the storage!
 
-
 fn register(stash: u64, controller: u64, bond_amount: u128, contract: SmartContract<AccountId>) {
     assert_ok!(DappsStaking::bond(
         Origin::signed(stash),
