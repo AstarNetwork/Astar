@@ -9,6 +9,7 @@ use frame_support::{
     traits::OnUnbalanced,
 };
 use sp_core::{H160, H256};
+
 use sp_io::TestExternalities;
 use sp_runtime::{
     testing::Header,
@@ -119,7 +120,6 @@ impl<Balance: Default> EraPayout<Balance> for EraPayoutMock {
     }
 }
 
-/// Mocked implementation for RewardRemainder. Might need to be changed later when used.
 
 pub struct RewardRemainderMock;
 
@@ -129,9 +129,11 @@ impl OnUnbalanced<NegativeImbalanceOf<TestRuntime>> for RewardRemainderMock {}
 pub struct RewardMock;
 
 impl OnUnbalanced<PositiveImbalanceOf<TestRuntime>> for RewardMock {}
+
 parameter_types! {
     pub const RegisterDeposit: u32 = 100;
 }
+
 impl pallet_dapps_staking::Config for TestRuntime {
     type Event = Event;
     type Currency = Balances;

@@ -510,6 +510,7 @@ pub mod pallet {
         ///
         /// # <weight>
         /// - Independent of the arguments. Insignificant complexity.
+        /// - Contains one read
         /// - Contains one read.
         /// - Writes are limited to the `origin` account key.
         /// # </weight>
