@@ -1,12 +1,25 @@
 use super::{Event, *};
-use frame_support::{assert_err, assert_noop, assert_ok, assert_storage_noop};
+use frame_support::{assert_err, assert_noop, assert_ok, assert_storage_noop, traits::Hooks};
 use mock::{Balances, *};
 use sp_core::H160;
 use std::str::FromStr;
 
 // TODO: Add checks that verify content of the storage!
 
-// TODO: Add checks that verify content of the storage!
+
+fn register(stash: u64, controller: u64, bond_amount: u128, contract: SmartContract<AccountId>) {
+    assert_ok!(DappsStaking::bond(
+        Origin::signed(stash),
+        controller,
+        bond_amount,
+        crate::RewardDestination::Staked
+    ));
+
+    assert_ok!(DappsStaking::register(
+        Origin::signed(controller),
+        contract.clone()
+    ));
+}
 
 #[test]
 fn bonding_less_than_stash_amount_is_ok() {
@@ -456,20 +469,6 @@ fn register_is_ok() {
             bond_amount,
         )));
     })
-}
-
-fn register(stash: u64, controller: u64, bond_amount: u128, contract: SmartContract<AccountId>) {
-    assert_ok!(DappsStaking::bond(
-        Origin::signed(stash),
-        controller,
-        bond_amount,
-        crate::RewardDestination::Staked
-    ));
-
-    assert_ok!(DappsStaking::register(
-        Origin::signed(controller),
-        contract.clone()
-    ));
 }
 
 #[test]
