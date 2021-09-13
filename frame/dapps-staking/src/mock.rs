@@ -1,6 +1,6 @@
 use crate::{
-    self as pallet_dapps_staking, pallet::pallet::Config, ContractFinder, EraPayout,
-    NegativeImbalanceOf, PositiveImbalanceOf,
+    self as pallet_dapps_staking, pallet::pallet::Config, EraPayout, NegativeImbalanceOf,
+    PositiveImbalanceOf,
 };
 
 use frame_support::{
@@ -8,7 +8,8 @@ use frame_support::{
     storage::{StorageDoubleMap, StorageMap},
     traits::OnUnbalanced,
 };
-use sp_core::H256;
+use sp_core::{H160, H256};
+
 use sp_io::TestExternalities;
 use sp_runtime::{
     testing::Header,
@@ -24,6 +25,7 @@ type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<TestRunt
 type Block = frame_system::mocking::MockBlock<TestRuntime>;
 
 pub(crate) const EXISTENTIAL_DEPOSIT: Balance = 2;
+pub(crate) const REGISTER_DEPOSIT: Balance = 200;
 pub(crate) const UNBONDING_DURATION: EraIndex = 5;
 
 construct_runtime!(
@@ -118,16 +120,6 @@ impl<Balance: Default> EraPayout<Balance> for EraPayoutMock {
     }
 }
 
-/// Mocked implementation for ContractFinder. Might need to be changed later when used.
-pub struct ContractFinderMock;
-
-impl ContractFinder<AccountId> for ContractFinderMock {
-    fn is_exists_contract(contract_id: &AccountId) -> bool {
-        true
-    }
-}
-
-/// Mocked implementation for RewardRemainder. Might need to be changed later when used.
 pub struct RewardRemainderMock;
 
 impl OnUnbalanced<NegativeImbalanceOf<TestRuntime>> for RewardRemainderMock {}
@@ -137,6 +129,10 @@ pub struct RewardMock;
 
 impl OnUnbalanced<PositiveImbalanceOf<TestRuntime>> for RewardMock {}
 
+parameter_types! {
+    pub const RegisterDeposit: u32 = 100;
+}
+
 impl pallet_dapps_staking::Config for TestRuntime {
     type Event = Event;
     type Currency = Balances;
@@ -144,7 +140,7 @@ impl pallet_dapps_staking::Config for TestRuntime {
     type BlockPerEra = BlockPerEra;
     type UnbondingDuration = UnbondingDuration;
     type EraPayout = EraPayoutMock;
-    type ContractFinder = ContractFinderMock;
+    type RegisterDeposit = RegisterDeposit;
     type WeightInfo = ();
     type UnixTime = Timestamp; // TODO see of this can be maybe simplified
     type RewardRemainder = RewardRemainderMock;

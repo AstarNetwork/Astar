@@ -9685,6 +9685,7 @@ dependencies = [
  "pallet-block-reward",
  "pallet-collator-selection",
  "pallet-custom-signatures",
+ "pallet-dapps-staking",
  "pallet-ethereum",
  "pallet-evm",
  "pallet-evm-precompile-bn128",
