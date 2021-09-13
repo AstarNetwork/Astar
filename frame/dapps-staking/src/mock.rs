@@ -131,13 +131,13 @@ impl OnUnbalanced<PositiveImbalanceOf<TestRuntime>> for RewardMock {}
 
 parameter_types! {
     pub const RegisterDeposit: u32 = 100;
+    pub const MockBlockPerEra: BlockNumber = 10;
 }
-
 impl pallet_dapps_staking::Config for TestRuntime {
     type Event = Event;
     type Currency = Balances;
     type MaxStakings = MaxStakings;
-    type BlockPerEra = BlockPerEra;
+    type BlockPerEra = MockBlockPerEra;
     type UnbondingDuration = UnbondingDuration;
     type EraPayout = EraPayoutMock;
     type RegisterDeposit = RegisterDeposit;

@@ -591,3 +591,56 @@ fn register_missing_bonding_before_register() {
         );
     })
 }
+
+#[test]
+fn new_era_is_ok() {
+    ExternalityBuilder::build().execute_with(|| {
+        let block_number = BlockPerEra::get() - 1;
+        const CURRENT_ERA: crate::EraIndex = 3;
+
+        // set initial era index
+        <CurrentEra<TestRuntime>>::put(CURRENT_ERA);
+
+        // increment the block, but it is still not last block in the era
+        // and the CurrentEra should not change
+        crate::pallet::pallet::Pallet::<TestRuntime>::on_initialize(block_number);
+        let mut current = mock::DappsStaking::current_era();
+        assert_eq!(CURRENT_ERA, current.unwrap_or(Zero::zero()));
+
+        // increment the block, this time it should be last block in the era
+        // and CurrentEra should be incremented
+        crate::pallet::pallet::Pallet::<TestRuntime>::on_initialize(block_number + 1);
+        current = mock::DappsStaking::current_era();
+        assert_eq!(CURRENT_ERA + 1, current.unwrap_or(Zero::zero()));
+        System::assert_last_event(mock::Event::DappsStaking(crate::Event::NewDappStakingEra(
+            CURRENT_ERA + 1,
+        )));
+    })
+}
+
+#[test]
+fn new_era_forcing() {
+    ExternalityBuilder::build().execute_with(|| {
+        let block_number = BlockPerEra::get() / 2;
+        const CURRENT_ERA: crate::EraIndex = 3;
+
+        // set initial era index
+        <CurrentEra<TestRuntime>>::put(CURRENT_ERA);
+
+        // call on_initilize. It is not last block in the era, but it should increment the era
+        <ForceEra<TestRuntime>>::put(Forcing::ForceNew);
+        crate::pallet::pallet::Pallet::<TestRuntime>::on_initialize(block_number);
+
+        // check that era is incremented
+        let current = mock::DappsStaking::current_era();
+        assert_eq!(CURRENT_ERA + 1, current.unwrap_or(Zero::zero()));
+
+        // check that forcing is cleared
+        assert_eq!(mock::DappsStaking::force_era(), Forcing::ForceNone);
+
+        // check the event for the new era
+        System::assert_last_event(mock::Event::DappsStaking(crate::Event::NewDappStakingEra(
+            CURRENT_ERA + 1,
+        )));
+    })
+}
