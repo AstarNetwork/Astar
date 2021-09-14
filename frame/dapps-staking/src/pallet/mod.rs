@@ -305,6 +305,62 @@ pub mod pallet {
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {
+
+
+        /// TODO: documentation
+        #[pallet::weight(1_000_000)] // TODO: fix this later, maybe I can combine the existing methods
+        pub fn bond_and_stake(
+            origin: OriginFor<T>,
+            #[pallet::compact] value: BalanceOf<T>,
+            payee: RewardDestination<T::AccountId>,
+            contract_id: SmartContract<T::AccountId>,
+        ) -> DispatchResultWithPostInfo {
+            let staker = ensure_signed(origin)?;
+            ensure!(Self::is_contract(&contract_id), Error::<T>::AddressIsNotContract); // TODO: remove this? Seems redundant.
+            ensure!(RegisteredDapps::<T>::contains_key(&contract_id), Error::<T>::NotOperatedContracts);
+
+            // Get the staking ledger or create an entry if it doesn't exist.
+            let mut ledger = if let Some(ledger) = Self::ledger(&staker) {
+                ledger
+            } else {
+                // minimum balance must be satisfied, we cannot accept dust.
+                ensure!(value >= T::Currency::minimum_balance(), Error::<T>::InsufficientValue);
+                StakingLedger {
+                    stash: staker.clone(),
+                    total: Zero::zero(),
+                    active: Zero::zero(),
+                    unlocking: vec![],
+                    last_reward: Zero::zero(),
+                    // payee, TODO: uncomment this
+                }
+            };
+
+            // 3. Ensure that staker has enough balance to bond & stake.
+            let free_stash = T::Currency::free_balance(&staker);
+            let bonded_value = value.min(free_stash);
+            ensure!(!bonded_value.is_zero(), Error::<T>::InsufficientValue); // TODO: change the error?
+
+            // update the ledger value by adding the newly bonded funds
+            ledger.total += bonded_value;
+            ledger.active += bonded_value;
+
+            // TODO: payee can be included into staking ledger
+            Payee::<T>::insert(&staker, payee);
+
+            Self::update_ledger(&staker, &ledger); // TODO: should I even do this at this point? Verify first, write later.
+
+            // Self::deposit_event(Event::<T>::Bonded(stash, bonded_value)); // TODO: keep this event? Or introduce some BondAndStaked event?
+
+            // if staker not already staking this contract {
+            //      ensure number of stakers won't exceed max amount of stakings per contract
+            // }
+
+            // 1. TODO: add a map that will keep track of number of stakers per contract
+
+            Ok(().into())
+        }
+
+
         /// Take the origin account as a stash and lock up `value` of its balance. `controller` will
         /// be the account that controls it.
         ///
@@ -525,9 +581,19 @@ pub mod pallet {
         pub fn stake_contracts(
             origin: OriginFor<T>,
             targets: Vec<<T::Lookup as StaticLookup>::Source>,
-        ) -> DispatchResult {
+        ) -> DispatchResultWithPostInfo {
+            let controller = ensure_signed(origin)?;
+            let ledger = Self::ledger(&controller).ok_or(Error::<T>::NotController)?;
+
+            // verify that all vector values are valid contracts: TODO
+
+            // verify that this will not exceed max number of allowed stakings per contract
+
+
+            let active_funds = ledger.active.clone();
+
             // TODO: impls
-            Ok(())
+            Ok(().into())
         }
 
         /// vote some contracts with Bad/Good.
@@ -823,6 +889,7 @@ pub mod pallet {
     }
 
     impl<T: Config> Pallet<T> {
+
         /// Update the ledger for a controller. This will also update the stash lock.
         /// This lock will lock the entire funds except paying for further transactions.
         fn update_ledger(
