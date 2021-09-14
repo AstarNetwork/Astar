@@ -90,7 +90,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("shibuya"),
     impl_name: create_runtime_str!("shibuya"),
     authoring_version: 1,
-    spec_version: 2,
+    spec_version: 4,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 1,
@@ -594,7 +594,7 @@ impl pallet_evm::Config for Runtime {
     type Runner = pallet_evm::runner::stack::Runner<Self>;
     type Precompiles = ShibuyaNetworkPrecompiles<Self>;
     type ChainId = ChainId;
-    type OnChargeTransaction = pallet_evm::EVMCurrencyAdapter<Balances, DealWithFees>;
+    type OnChargeTransaction = pallet_evm::EVMCurrencyAdapter<Balances, ToStakingPot>;
     type BlockGasLimit = BlockGasLimit;
     type FindAuthor = FindAuthorTruncated<Aura>;
 }
