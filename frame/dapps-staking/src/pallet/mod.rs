@@ -246,7 +246,7 @@ pub mod pallet {
             // just return the weight of the on_finalize.
             let force_new_era = Self::force_era().eq(&Forcing::ForceNew);
             if (now % T::BlockPerEra::get()).is_zero() || force_new_era {
-                Self::distribute_era_rewards();
+                Self::reward_balance_snapshoot();
                 let next_era = Self::current_era().unwrap_or(Zero::zero()) + 1;
                 CurrentEra::<T>::put(next_era);
                 if force_new_era {
@@ -838,10 +838,10 @@ pub mod pallet {
             }
         }
 
-        /// Distribute era's rewards to all registered contracts
-        /// The block rewards are accumulated on the pallets's account during an era
+        /// The block rewards are accumulated on the pallets's account during an era.
+        /// This function takes a snapshot of the pallet's balance and stores it for future distribution
         ///
         /// This is called at the end of each Era
-        fn distribute_era_rewards() {}
+        fn reward_balance_snapshoot() {}
     }
 }
