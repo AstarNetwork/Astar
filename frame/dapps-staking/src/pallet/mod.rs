@@ -127,10 +127,14 @@ pub mod pallet {
     #[pallet::getter(fn active_era)]
     pub type ActiveEra<T> = StorageValue<_, ActiveEraInfo>;
 
+    #[pallet::type_value]
+    pub fn ForceEraOnEmpty() -> Forcing {
+        Forcing::ForceNone
+    }
     /// Mode of era forcing.
     #[pallet::storage]
     #[pallet::getter(fn force_era)]
-    pub type ForceEra<T> = StorageValue<_, Forcing, ValueQuery>;
+    pub type ForceEra<T> = StorageValue<_, Forcing, ValueQuery, ForceEraOnEmpty>;
 
     /// Registered developer accounts points to coresponding contract
     #[pallet::storage]
@@ -186,6 +190,8 @@ pub mod pallet {
         Stake(T::AccountId),
         /// New contract added for staking, with deposit value
         NewContract(SmartContract<T::AccountId>, BalanceOf<T>),
+        /// New dapps staking era. Distribute era rewards to contracts
+        NewDappStakingEra(EraIndex),
     }
 
     #[pallet::error]
@@ -236,8 +242,19 @@ pub mod pallet {
 
     #[pallet::hooks]
     impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
-        fn on_initialize(_now: BlockNumberFor<T>) -> Weight {
+        fn on_initialize(now: BlockNumberFor<T>) -> Weight {
             // just return the weight of the on_finalize.
+            let force_new_era = Self::force_era().eq(&Forcing::ForceNew);
+            if (now % T::BlockPerEra::get()).is_zero() || force_new_era {
+                Self::reward_balance_snapshoot();
+                let next_era = Self::current_era().unwrap_or(Zero::zero()) + 1;
+                CurrentEra::<T>::put(next_era);
+                if force_new_era {
+                    ForceEra::<T>::put(Forcing::ForceNone);
+                }
+                Self::deposit_event(Event::<T>::NewDappStakingEra(next_era));
+            }
+
             T::DbWeight::get().reads(1)
         }
 
@@ -820,5 +837,11 @@ pub mod pallet {
                 }
             }
         }
+
+        /// The block rewards are accumulated on the pallets's account during an era.
+        /// This function takes a snapshot of the pallet's balance and stores it for future distribution
+        ///
+        /// This is called at the end of each Era
+        fn reward_balance_snapshoot() {}
     }
 }
