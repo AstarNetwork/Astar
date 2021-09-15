@@ -219,7 +219,7 @@ pub mod pallet {
         /// Stake of stash address.
         Stake(T::AccountId),
         /// New contract added for staking, with deposit value
-        NewContract(SmartContract<T::AccountId>, BalanceOf<T>),
+        NewContract(T::AccountId, SmartContract<T::AccountId>),
         /// New dapps staking era. Distribute era rewards to contracts
         NewDappStakingEra(EraIndex),
     }
@@ -658,14 +658,13 @@ pub mod pallet {
         ///
         /// Any user can call this function.
         /// However, caller have to have deposit amount.
-        /// TODO: weight
+        /// TODO: weight, and add registrationFee
         #[pallet::weight(T::WeightInfo::payout_stakers_alive_staked(T::MaxStakings::get()))]
         pub fn register(
             origin: OriginFor<T>,
             contract_id: SmartContract<T::AccountId>,
         ) -> DispatchResultWithPostInfo {
             let developer = ensure_signed(origin)?;
-            let mut ledger = Self::ledger(&developer).ok_or(Error::<T>::NotController)?;
 
             ensure!(
                 !RegisteredDevelopers::<T>::contains_key(&developer),
@@ -679,14 +678,19 @@ pub mod pallet {
                 Self::is_contract(&contract_id),
                 Error::<T>::AddressIsNotContract
             );
-            ensure!(
-                ledger.total >= T::RegisterDeposit::get(),
-                Error::<T>::InsufficientDeposit
-            );
 
             RegisteredDapps::<T>::insert(contract_id.clone(), developer.clone());
-            RegisteredDevelopers::<T>::insert(developer, contract_id.clone());
-            Self::deposit_event(Event::<T>::NewContract(contract_id, ledger.total));
+            RegisteredDevelopers::<T>::insert(&developer, contract_id.clone());
+
+            // create new ContractEraStake item
+            let era_staking_points = EraStakingPoints {
+                total: <BalanceOf<T>>::default(),
+                stakers: BTreeMap::new(),
+            };
+            let current = Self::current_era().unwrap_or(Zero::zero());
+            ContractEraStake::<T>::insert(&contract_id, &current, era_staking_points);
+
+            Self::deposit_event(Event::<T>::NewContract(developer, contract_id));
 
             Ok(().into())
         }
