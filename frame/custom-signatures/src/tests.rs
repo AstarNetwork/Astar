@@ -116,19 +116,21 @@ fn new_test_ext() -> sp_io::TestExternalities {
 /// Simple `eth_sign` implementation, should be equal to exported by RPC
 fn eth_sign(seed: &[u8; 32], data: &[u8]) -> Vec<u8> {
     let call_msg = ethereum::signable_message(data);
-    let ecdsa_msg = secp256k1::Message::parse(&keccak_256(&call_msg));
-    let secret = secp256k1::SecretKey::parse(&seed).expect("valid seed");
-    let mut ecdsa: ecdsa::Signature = secp256k1::sign(&ecdsa_msg, &secret).into();
+    let ecdsa_msg = libsecp256k1::Message::parse(&keccak_256(&call_msg));
+    let secret = libsecp256k1::SecretKey::parse(&seed).expect("valid seed");
+    let (signature, recovery_id) = libsecp256k1::sign(&ecdsa_msg, &secret);
+    let mut out = Vec::new();
+    out.extend_from_slice(&signature.serialize()[..]);
     // Fix recovery ID: Ethereum uses 27/28 notation
-    ecdsa.as_mut()[64] += 27;
-    Vec::from(ecdsa.as_ref() as &[u8])
+    out.push(recovery_id.serialize() + 27);
+    out
 }
 
 #[test]
 fn eth_sign_works() {
-    let seed = hex!["7e9c7ad85df5cdc88659f53e06fb2eb9bab3ebc59083a3190eaf2c730332529c"];
-    let text = b"Hello Plasm";
-    let signature = hex!["79eec99d7f5b321c1b75d2fc044b555f9afdbc4f9b43a011085f575b216f85c452a04373d487671852dca4be4fe5fd90836560afe709d1dab45ab18bc936c2111c"];
+    let seed = hex!["ac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"];
+    let text = b"Hello Astar";
+    let signature = hex!["0cc6d5de6db06727fe43a260e7c9a417be3daab9b0e4e65e276f543e5c2f3de67e9e26d903d5301181e13033f61692db2dca67c1f8992b62476eaf8cb3a597101c"];
     assert_eq!(eth_sign(&seed, &text[..]), signature);
 }
 
@@ -199,18 +201,17 @@ fn balance_transfer() {
     })
 }
 
-/* TODO: enable it when UI fixtures will be ready
 #[test]
 fn call_fixtures() {
     use sp_core::crypto::Ss58Codec;
 
-    let seed = hex!["7e9c7ad85df5cdc88659f53e06fb2eb9bab3ebc59083a3190eaf2c730332529c"];
+    let seed = hex!["ac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"];
     let pair = ecdsa::Pair::from_seed(&seed);
     assert_eq!(
         MultiSigner::from(pair.public())
             .into_account()
             .to_ss58check(),
-        "5Geeci7qCoYHyg9z2AwfpiT4CDryvxYyD7SAUdfNBz9CyDSb",
+        "5EGynCAEvv8NLeHx8vDMvb8hTcEcMYUMWCDQEEncNEfNWB2W",
     );
 
     let dest =
@@ -221,8 +222,14 @@ fn call_fixtures() {
         hex!["0000c4305fb88b6ccb43d6552dc11d18e7b0ee3185247adcc6e885eb284adf6c563da10f"],
     );
 
-    let signature = hex!["96cd8087ef720b0ec10d96996a8bbb45005ba3320d1dde38450a56f77dfd149720cc2e6dcc8f09963aad4cdf5ec15e103ce56d0f4c7a753840217ef1787467a01c"];
     let payload = (0xff50u16, 0u32, call.clone());
+    assert_eq!(
+        payload.encode(),
+        hex![
+            "50ff000000000000c4305fb88b6ccb43d6552dc11d18e7b0ee3185247adcc6e885eb284adf6c563da10f"
+        ],
+    );
+
+    let signature = hex!["6ecb474240df46ee5cde8f51cf5ccf4c75d15ac3c1772aea6c8189604263c98b16350883438c4eaa447ebcb6889d516f70351fd704bb3521072cd2fccc7c99dc1c"];
     assert_eq!(eth_sign(&seed, payload.encode().as_ref()), signature)
 }
-*/
