@@ -422,6 +422,18 @@ pub mod pallet {
                 ContractLastClaimed::<T>::insert(contract_id.clone(), current_era);
             }
 
+            // Check if we need to update era in which contract was last changed. Can avoid one write.
+            let contract_last_staked_change_needed =
+                if let Some(previous_era) = era_when_contract_last_staked {
+                    // if values aren't different, no reason to do another write
+                    previous_era != current_era
+                } else {
+                    true
+                };
+            if contract_last_staked_change_needed {
+                ContractLastStaked::<T>::insert(&contract_id, current_era);
+            }
+
             Self::deposit_event(Event::<T>::BondAndStake(staker, contract_id, bonded_value));
 
             Ok(().into())

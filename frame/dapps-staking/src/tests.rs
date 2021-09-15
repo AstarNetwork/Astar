@@ -38,19 +38,121 @@ fn bonding_less_than_stash_amount_is_ok() {
 fn bond_and_stake_is_ok() {
     ExternalityBuilder::build().execute_with(|| {
         let staker_id = 1;
-        let stake_value = 100;
+        let first_stake_value = 100;
         let contract_id =
             SmartContract::Evm(H160::from_str("1000000000000000000000000000000000000007").unwrap());
+        let payee = crate::RewardDestination::Staked;
+        let current_era = 50;
+        CurrentEra::<TestRuntime>::put(current_era);
 
         // TODO: change this later?
-        RegisteredDapps::<TestRuntime>::insert(contract_id.clone(), staker_id);
+        RegisteredDapps::<TestRuntime>::insert(&contract_id, staker_id);
 
+        // initially, storage values should be None
+        assert!(!ContractLastClaimed::<TestRuntime>::get(&contract_id).is_some());
+        assert!(!ContractLastStaked::<TestRuntime>::get(&contract_id).is_some());
+        assert!(!ContractEraStake::<TestRuntime>::get(&contract_id, current_era).is_some());
+
+        ///////////////////////////////////////////////////////////
+        ////////////  FIRST BOND AND STAKE
+        ///////////////////////////////////////////////////////////
+        // Bond and stake on a single contract and ensure it went ok.
         assert_ok!(DappsStaking::bond_and_stake(
             Origin::signed(staker_id),
             contract_id.clone(),
-            stake_value,
-            crate::RewardDestination::Staked
+            first_stake_value,
+            payee.clone(),
         ));
+        System::assert_last_event(mock::Event::DappsStaking(crate::Event::BondAndStake(
+            staker_id,
+            contract_id.clone(),
+            first_stake_value,
+        )));
+
+        // Verify storage values to see if contract was successfully bonded and staked.
+        assert_eq!(payee, Payee::<TestRuntime>::get(staker_id).unwrap());
+        let ledger = Ledger::<TestRuntime>::get(staker_id).unwrap();
+        assert_eq!(ledger.total, first_stake_value);
+        assert_eq!(ledger.active, first_stake_value);
+        assert!(ledger.unlocking.is_empty());
+
+        let era_staking_points =
+            ContractEraStake::<TestRuntime>::get(&contract_id, current_era).unwrap();
+        assert_eq!(first_stake_value, era_staking_points.total);
+        assert_eq!(1, era_staking_points.stakers.len());
+        assert_eq!(
+            first_stake_value,
+            *era_staking_points.stakers.get(&staker_id).unwrap()
+        );
+
+        assert_eq!(
+            first_stake_value,
+            PalletEraRewards::<TestRuntime>::get(current_era).unwrap()
+        );
+
+        // Since this was first stake on contract, last claimed should be set to the current era
+        assert_eq!(
+            current_era,
+            ContractLastClaimed::<TestRuntime>::get(&contract_id).unwrap()
+        );
+        assert_eq!(
+            current_era,
+            ContractLastStaked::<TestRuntime>::get(&contract_id).unwrap()
+        );
+
+        // Prepare new values and advance era.
+        let second_stake_value = 300;
+        let total_stake_value = first_stake_value + second_stake_value;
+        let old_era = current_era;
+        let current_era = old_era + 10;
+        CurrentEra::<TestRuntime>::put(current_era);
+
+        ///////////////////////////////////////////////////////////
+        ////////////  SECOND BOND AND STAKE
+        ///////////////////////////////////////////////////////////
+        // Stake and bond again on the same contract but using a different amount.
+        assert_ok!(DappsStaking::bond_and_stake(
+            Origin::signed(staker_id),
+            contract_id.clone(),
+            second_stake_value,
+            payee.clone(),
+        ));
+        System::assert_last_event(mock::Event::DappsStaking(crate::Event::BondAndStake(
+            staker_id,
+            contract_id.clone(),
+            second_stake_value,
+        )));
+
+        // Verify that storage values are as expected.
+        let ledger = Ledger::<TestRuntime>::get(staker_id).unwrap();
+        assert_eq!(ledger.total, total_stake_value);
+        assert_eq!(ledger.active, total_stake_value);
+
+        let era_staking_points =
+            ContractEraStake::<TestRuntime>::get(&contract_id, current_era).unwrap();
+        assert_eq!(total_stake_value, era_staking_points.total);
+        assert_eq!(1, era_staking_points.stakers.len());
+        assert_eq!(
+            total_stake_value,
+            *era_staking_points.stakers.get(&staker_id).unwrap()
+        );
+
+        assert_eq!(
+            second_stake_value,
+            PalletEraRewards::<TestRuntime>::get(current_era).unwrap()
+        );
+
+        // Contract was staked second time without being claimed, value shouldn't be changed
+        assert_eq!(
+            old_era,
+            ContractLastClaimed::<TestRuntime>::get(contract_id.clone()).unwrap()
+        );
+        assert_eq!(
+            current_era,
+            ContractLastStaked::<TestRuntime>::get(contract_id.clone()).unwrap()
+        );
+
+        // assert locked balance?
     })
 }
 
