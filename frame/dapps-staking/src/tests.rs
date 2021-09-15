@@ -504,8 +504,8 @@ fn register_same_contract_twice_nok() {
             DappsStaking::register(Origin::signed(developer2), contract),
             crate::pallet::pallet::Error::<TestRuntime>::AlreadyRegisteredContract
         );
-        assert_eq!(mock::DappsStaking::contract_last_claimed(contract), Some(0));
-        assert_eq!(mock::DappsStaking::contract_last_staked(contract), Some(0));
+        assert_eq!(mock::DappsStaking::contract_last_claimed(contract), None);
+        assert_eq!(mock::DappsStaking::contract_last_staked(contract), None);
     })
 }
 

@@ -690,9 +690,6 @@ pub mod pallet {
             let current = Self::current_era().unwrap_or(Zero::zero());
             ContractEraStake::<T>::insert(&contract_id, &current, era_staking_points);
 
-            // create new ContractLastClaimed and ContractLastStaked
-            ContractLastClaimed::<T>::insert(&contract_id, 0);
-            ContractLastStaked::<T>::insert(&contract_id, 0);
             Self::deposit_event(Event::<T>::NewContract(developer, contract_id));
 
             Ok(().into())
