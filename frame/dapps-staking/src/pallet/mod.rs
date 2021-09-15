@@ -147,7 +147,8 @@ pub mod pallet {
     #[pallet::getter(fn registered_developer)]
     pub(crate) type RegisteredDapps<T: Config> =
         StorageMap<_, Twox64Concat, SmartContract<T::AccountId>, T::AccountId>;
-    ///
+
+    /// Total block rewards for the pallet per era
     #[pallet::storage]
     #[pallet::getter(fn get_era_total)]
     pub(crate) type PalletEraRewards<T: Config> =
