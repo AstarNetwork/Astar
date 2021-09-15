@@ -135,15 +135,15 @@ pub struct Nominations<AccountId, Balance> {
     pub suppressed: bool,
 }
 
-/// Reward points of an era. Used to split era total payout between dapps rewards.
-///
-/// This points will be used to reward contracts operators and their respective nominators.
+/// Used to split total EraPayout among contracts.
+/// Each tuple (contract, era) has this structure.
+/// This will be used to reward contracts developer and his stakers.
 #[derive(PartialEq, Encode, Decode, Default, RuntimeDebug)]
 pub struct EraStakingPoints<AccountId: Ord, Balance: HasCompact> {
-    /// Total number of staking. Equals the sum of staking points for each contracts.
+    /// Total staked amount.
     total: Balance,
-    /// The balance of stakinng earned by a given contracts.
-    individual: BTreeMap<AccountId, Balance>,
+    /// The map of stakers and the amount they staked.
+    stakers: BTreeMap<AccountId, Balance>,
 }
 
 /// Just a Balance/BlockNumber tuple to encode when a chunk of funds will be unlocked.

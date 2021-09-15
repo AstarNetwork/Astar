@@ -148,6 +148,36 @@ pub mod pallet {
     pub(crate) type RegisteredDapps<T: Config> =
         StorageMap<_, Twox64Concat, SmartContract<T::AccountId>, T::AccountId>;
 
+    /// Total block rewards for the pallet per era
+    #[pallet::storage]
+    #[pallet::getter(fn get_era_total)]
+    pub(crate) type PalletEraRewards<T: Config> =
+        StorageMap<_, Twox64Concat, EraIndex, BalanceOf<T>>;
+
+    /// Stores amount staked and stakers for a contract per era
+    #[pallet::storage]
+    #[pallet::getter(fn contract_era_stake)]
+    pub(crate) type ContractEraStake<T: Config> = StorageDoubleMap<
+        _,
+        Twox64Concat,
+        SmartContract<T::AccountId>,
+        Twox64Concat,
+        EraIndex,
+        EraStakingPoints<T::AccountId, BalanceOf<T>>,
+    >;
+
+    /// Marks an Era when a contract is last claimed
+    #[pallet::storage]
+    #[pallet::getter(fn contract_last_claimed)]
+    pub(crate) type ContractLastClaimed<T: Config> =
+        StorageMap<_, Twox64Concat, SmartContract<T::AccountId>, EraIndex>;
+
+    /// Marks an Era when a contract is last (un)staked
+    #[pallet::storage]
+    #[pallet::getter(fn contract_last_staked)]
+    pub(crate) type ContractLastStaked<T: Config> =
+        StorageMap<_, Twox64Concat, SmartContract<T::AccountId>, EraIndex>;
+
     // Declare the genesis config (optional).
     //
     // The macro accepts either a struct or an enum; it checks that generics are consistent.
