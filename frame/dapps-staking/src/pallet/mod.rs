@@ -152,7 +152,7 @@ pub mod pallet {
     #[pallet::storage]
     #[pallet::getter(fn get_era_total)]
     pub(crate) type PalletEraRewards<T: Config> =
-        StorageMap<_, Twox64Concat, EraIndex, BalanceOf<T>>;
+        StorageMap<_, Twox64Concat, EraIndex, EraReward<BalanceOf<T>>>;
 
     /// Stores amount staked and stakers for a contract per era
     #[pallet::storage]
@@ -411,9 +411,11 @@ pub mod pallet {
             );
 
             // Update total staked value in era
-            let new_total_staked_in_era =
-                Self::get_era_total(current_era).unwrap_or(Zero::zero()) + bonded_value;
-            PalletEraRewards::<T>::insert(current_era, new_total_staked_in_era);
+            let mut era_reward = Self::get_era_total(current_era).unwrap_or(Default::default());
+            era_reward.staked += bonded_value;
+            // let new_total_staked_in_era =
+            //     Self::get_era_total(current_era).unwrap_or(Default::default()).staked + bonded_value;
+            PalletEraRewards::<T>::insert(current_era, era_reward);
 
             // If contract wasn't claimed nor staked yet, insert current era as last claimed era.
             // When calculating reward, this will provide correct information to the algorithm since nothing exists

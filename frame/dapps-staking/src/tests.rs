@@ -87,7 +87,9 @@ fn bond_and_stake_is_ok() {
 
         assert_eq!(
             first_stake_value,
-            PalletEraRewards::<TestRuntime>::get(current_era).unwrap()
+            PalletEraRewards::<TestRuntime>::get(current_era)
+                .unwrap()
+                .staked
         );
 
         // Since this was first stake on contract, last claimed should be set to the current era
@@ -139,7 +141,9 @@ fn bond_and_stake_is_ok() {
 
         assert_eq!(
             second_stake_value,
-            PalletEraRewards::<TestRuntime>::get(current_era).unwrap()
+            PalletEraRewards::<TestRuntime>::get(current_era)
+                .unwrap()
+                .staked
         );
 
         // Contract was staked second time without being claimed, value shouldn't be changed
