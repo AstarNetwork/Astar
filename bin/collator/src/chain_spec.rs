@@ -156,3 +156,76 @@ fn make_genesis(
         ethereum: Default::default(),
     }
 }
+
+/// Development config
+pub fn development_config() -> ShibuyaChainSpec {
+    ShibuyaChainSpec::from_genesis(
+        "Shibuya Development",
+        "dev",
+        ChainType::Development,
+        development_config_genesis,
+        vec![],
+        None,
+        None,
+        None,
+        Default::default(),
+    )
+}
+
+fn development_config_genesis() -> GenesisConfig {
+    const ENDOWMENT: Balance = 5_000_000 * SDN;
+    let balances: Vec<(AccountId, Balance)> = {
+        vec![
+            get_account_id_from_seed::<sr25519::Public>("Alice"),
+            get_account_id_from_seed::<sr25519::Public>("Alice//stash"),
+            get_account_id_from_seed::<sr25519::Public>("Bob"),
+            get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
+            get_account_id_from_seed::<sr25519::Public>("Charlie"),
+            get_account_id_from_seed::<sr25519::Public>("Dave"),
+            get_account_id_from_seed::<sr25519::Public>("Eve"),
+            get_account_id_from_seed::<sr25519::Public>("Ferdie"),
+        ]
+        .iter()
+        .cloned()
+        .map(|acc| (acc, ENDOWMENT))
+        .collect()
+    };
+    let sudo_key = get_account_id_from_seed::<sr25519::Public>("Alice");
+    let para_id = 1000;
+
+    make_genesis(balances, sudo_key, para_id.into())
+}
+
+// fn testnet_genesis(
+//     initial_authorities: Vec<(
+//         AccountId, // stash
+//         AccountId, // ctrl
+//         BabeId,
+//         GrandpaId,
+//         ImOnlineId,
+//     )>,
+//     // keys: Vec<(AccountId, BabeId, GrandpaId, ImOnlineId)>,
+//     endowed_accounts: Option<Vec<AccountId>>,
+//     sudo_key: AccountId,
+// ) -> GenesisConfig {
+//     const ENDOWMENT: Balance = 5_000_000 * SDN;
+
+//     let endowed_accounts: Vec<(AccountId, Balance)> = endowed_accounts
+//         .unwrap_or_else(|| {
+//             vec![
+//                 get_account_id_from_seed::<sr25519::Public>("Alice"),
+//                 get_account_id_from_seed::<sr25519::Public>("Alice//stash"),
+//                 get_account_id_from_seed::<sr25519::Public>("Bob"),
+//                 get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
+//                 get_account_id_from_seed::<sr25519::Public>("Charlie"),
+//                 get_account_id_from_seed::<sr25519::Public>("Dave"),
+//                 get_account_id_from_seed::<sr25519::Public>("Eve"),
+//                 get_account_id_from_seed::<sr25519::Public>("Ferdie"),
+//             ]
+//         })
+//         .iter()
+//         .cloned()
+//         .map(|acc| (acc, ENDOWMENT))
+//         .collect();
+//     make_genesis(endowed_accounts, sudo_key, true)
+// }

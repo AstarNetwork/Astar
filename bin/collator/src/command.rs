@@ -55,6 +55,7 @@ fn load_spec(
         /*
         "shibuya" => Box::new(chain_spec::get_chain_spec(para_id)),
         */
+        "dev" => Box::new(chain_spec::development_config()),
         "shibuya" => Box::new(chain_spec::ShidenChainSpec::from_json_bytes(
             &include_bytes!("../res/shibuya.raw.json")[..],
         )?),
