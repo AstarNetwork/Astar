@@ -218,6 +218,8 @@ pub mod pallet {
         TotalDappsRewards(EraIndex, BalanceOf<T>),
         /// Stake of stash address.
         Stake(T::AccountId),
+        /// Account has bonded and staked funds on a smart contract.
+        BondAndStake(T::AccountId, SmartContract<T::AccountId>, BalanceOf<T>),
         /// New contract added for staking, with deposit value
         NewContract(T::AccountId, SmartContract<T::AccountId>),
         /// New dapps staking era. Distribute era rewards to contracts
@@ -241,7 +243,9 @@ pub mod pallet {
         /// Slash record index out of bounds.
         InvalidSlashIndex,
         /// Can not bond with value less than minimum balance.
-        InsufficientValue,
+        InsufficientBondValue,
+        /// Cannot stake with value less than minumum stake value
+        StakingWithNoValue,
         /// Can not schedule more unlock chunks.
         NoMoreChunks,
         /// Can not rebond without unlocking chunks.
@@ -250,20 +254,20 @@ pub mod pallet {
         FundedTarget,
         /// Invalid era to reward.
         InvalidEraToReward,
-        /// Invalid number of nominations.
-        InvalidNumberOfNominations,
+        /// Number of nominations exceeded.
+        MaxNumberOfNominations,
         /// Items are not sorted and unique.
         NotSortedAndUnique,
         /// Targets must be latest 1.
         EmptyNominateTargets,
         /// Targets must be operated contracts
-        NotOperatedContracts,
+        NotOperatedContract,
         /// The nominations amount more than active staking amount.
         NotEnoughStaking,
         /// The contract is already registered by other account
         AlreadyRegisteredContract,
         /// User attempts to register with address which is not contract
-        AddressIsNotContract,
+        ContractIsNotValid,
         /// Missing deposit for the contract registration
         InsufficientDeposit,
         /// This account was already used to register contract
@@ -305,24 +309,34 @@ pub mod pallet {
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {
-        /// TODO: documentation
+        /// Lock up and stake balance of the origin account.
+        ///
+        /// `value` must be more than the `minimum_balance` specified by `T::Currency`
+        /// unless account already has bonded value equal or more than 'minimum_balance'.
+        ///
+        /// The dispatch origin for this call must be _Signed_ by the stash account. // TODO: rephrase this?
+        ///
+        /// Effects of staking will be felt at the beginning of the next era.
+        ///
+        /// TODO: Weight!
         #[pallet::weight(1_000_000)] // TODO: fix this later. Probably a new calculation will be required since logic was changed significantly.
         pub fn bond_and_stake(
             origin: OriginFor<T>,
+            contract_id: SmartContract<T::AccountId>,
             #[pallet::compact] value: BalanceOf<T>,
             payee: RewardDestination<T::AccountId>,
-            contract_id: SmartContract<T::AccountId>,
         ) -> DispatchResultWithPostInfo {
             let staker = ensure_signed(origin)?;
             ensure!(
-                Self::is_contract(&contract_id),
-                Error::<T>::AddressIsNotContract
-            ); // TODO: remove this? Seems redundant.
+                Self::is_contract_valid(&contract_id),
+                Error::<T>::ContractIsNotValid
+            );
             ensure!(
                 RegisteredDapps::<T>::contains_key(&contract_id),
-                Error::<T>::NotOperatedContracts
+                Error::<T>::NotOperatedContract
             );
 
+            // TODO: maybe this can be solved using on_empty method when declaring map storage?
             // Get the staking ledger or create an entry if it doesn't exist.
             let mut ledger = if let Some(ledger) = Self::ledger(&staker) {
                 ledger
@@ -330,7 +344,7 @@ pub mod pallet {
                 // minimum balance must be satisfied
                 ensure!(
                     value >= T::Currency::minimum_balance(),
-                    Error::<T>::InsufficientValue
+                    Error::<T>::InsufficientBondValue
                 );
                 StakingLedger {
                     stash: staker.clone(),
@@ -338,28 +352,25 @@ pub mod pallet {
                     active: Zero::zero(),
                     unlocking: vec![],
                     last_reward: Zero::zero(),
-                    // payee, TODO: uncomment this
                 }
             };
 
-            // 3. Ensure that staker has enough balance to bond & stake.
+            // Ensure that staker has enough balance to bond & stake.
             let free_stash = T::Currency::free_balance(&staker);
             let bonded_value = value.min(free_stash);
-            ensure!(!bonded_value.is_zero(), Error::<T>::InsufficientValue); // TODO: change the error?
+            ensure!(!bonded_value.is_zero(), Error::<T>::StakingWithNoValue);
 
             // update the ledger value by adding the newly bonded funds
             ledger.total += bonded_value;
             ledger.active += bonded_value;
 
-            // Self::deposit_event(Event::<T>::Bonded(stash, bonded_value)); // TODO: keep this event? Or introduce some BondAndStaked event?
-
-            // Get the latest era staking point info or create it if contract hasn't been staked yet.
-            let era_contract_last_staked = Self::contract_last_staked(&contract_id);
+            // Get the latest era staking point info or create it if contract hasn't been staked yet so far.
+            let era_when_contract_last_staked = Self::contract_last_staked(&contract_id);
             let mut latest_era_staking_points =
-                if let Some(last_stake_era) = era_contract_last_staked.clone() {
+                if let Some(last_stake_era) = era_when_contract_last_staked.clone() {
                     Self::contract_era_stake(&contract_id, &last_stake_era).unwrap_or(
                         EraStakingPoints {
-                            total: bonded_value,
+                            total: Zero::zero(),
                             stakers: BTreeMap::<T::AccountId, BalanceOf<T>>::new(),
                         },
                     ) // TODO: this should not be None and should be guaranteed by the check above. But better safe than sorry?
@@ -368,18 +379,17 @@ pub mod pallet {
                         total: Zero::zero(),
                         stakers: BTreeMap::<T::AccountId, BalanceOf<T>>::new(),
                     }
-                    // TODO: I also need to set a flag here so I can update the reward last claimed era value later!
                 };
 
             // Ensure that we can add additional staker for the contract.
             if !latest_era_staking_points.stakers.contains_key(&staker) {
                 ensure!(
-                    latest_era_staking_points.stakers.len() < MAX_NOMINATIONS,
-                    Error::<T>::InvalidNumberOfNominations
+                    latest_era_staking_points.stakers.len() < MAX_NOMINATIONS, // TODO: change this into configurable constant?
+                    Error::<T>::MaxNumberOfNominations
                 );
             }
 
-            // Increment the staked amount. (TODO: do I need checked add?)
+            // Increment the staked amount.
             latest_era_staking_points.total += bonded_value;
             let entry = latest_era_staking_points
                 .stakers
@@ -387,12 +397,11 @@ pub mod pallet {
                 .or_insert(Zero::zero());
             *entry += bonded_value;
 
-            // TODO: payee can be included into staking ledger, remove this later?
             // Update ledger and payee
             Payee::<T>::insert(&staker, payee);
-            Self::update_ledger(&staker, &ledger); // TODO: should I even do this at this point? Verify first, write later.
+            Self::update_ledger(&staker, &ledger);
 
-            let current_era = Self::get_current_era(); // TODO: maybe add an utility method that does this 'unwrap_or'?
+            let current_era = Self::get_current_era();
 
             // Update staked information for contract in current era
             ContractEraStake::<T>::insert(
@@ -409,9 +418,11 @@ pub mod pallet {
             // If contract wasn't claimed nor staked yet, insert current era as last claimed era.
             // When calculating reward, this will provide correct information to the algorithm since nothing exists
             // for this contract prior to the current era.
-            if !era_contract_last_staked.is_some() {
-                ContractLastClaimed::<T>::insert(contract_id, current_era);
+            if !era_when_contract_last_staked.is_some() {
+                ContractLastClaimed::<T>::insert(contract_id.clone(), current_era);
             }
+
+            Self::deposit_event(Event::<T>::BondAndStake(staker, contract_id, bonded_value));
 
             Ok(().into())
         }
@@ -453,11 +464,11 @@ pub mod pallet {
             // reject a bond which is considered to be dust
             ensure!(
                 value >= T::Currency::minimum_balance(),
-                Error::<T>::InsufficientValue
+                Error::<T>::InsufficientBondValue
             );
 
             let free_stash = T::Currency::free_balance(&stash);
-            ensure!(!free_stash.is_zero(), Error::<T>::InsufficientValue);
+            ensure!(!free_stash.is_zero(), Error::<T>::InsufficientBondValue);
 
             Bonded::<T>::insert(&stash, &controller);
             Payee::<T>::insert(&stash, payee);
@@ -582,7 +593,19 @@ pub mod pallet {
         ///
         /// See also [`Call::unbond`].
         ///
+        /// # <weight>        /// Declare the desire to stake(nominate) `targets` for the origin contracts.
+        ///
+        /// Effects will be felt at the beginning of the next era.
+        ///
+        /// The dispatch origin for this call must be _Signed_ by the controller, not the stash.
+        ///
+        /// It will automatically be diversified into `targets` based on the amount bound.
+        /// For example, if you stake 4 contracts while bonding 100 SDNs, he stakes 25 SDNs for each contract.
+        ///
         /// # <weight>
+        /// - The transaction's complexity is proportional to the size of `targets`,
+        /// which is capped at `MAX_STAKINGS`.
+        /// - Both the reads and writes follow a similar pattern.
         /// - Could be dependent on the `origin` argument and how much `unlocking` chunks exist.
         ///  It implies `consolidate_unlocked` which loops over `Ledger.unlocking`, which is
         ///  indirectly user-controlled. See [`unbond`] for more detail.
@@ -795,8 +818,8 @@ pub mod pallet {
                 Error::<T>::AlreadyRegisteredContract
             );
             ensure!(
-                Self::is_contract(&contract_id),
-                Error::<T>::AddressIsNotContract
+                Self::is_contract_valid(&contract_id),
+                Error::<T>::ContractIsNotValid
             );
 
             RegisteredDapps::<T>::insert(contract_id.clone(), developer.clone());
@@ -979,7 +1002,7 @@ pub mod pallet {
         }
 
         /// Checks if there is a valid smart contract for the provided address
-        fn is_contract(address: &SmartContract<T::AccountId>) -> bool {
+        fn is_contract_valid(address: &SmartContract<T::AccountId>) -> bool {
             match address {
                 SmartContract::Wasm(account) => {
                     //     <pallet_contracts::ContractInfoOf<T>>::get(&account).is_some()

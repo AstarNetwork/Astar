@@ -184,8 +184,6 @@ pub struct StakingLedger<AccountId, Balance: HasCompact> {
     pub unlocking: Vec<UnlockChunk<Balance>>,
     /// The latest and highest era which the staker has claimed reward for.
     pub last_reward: EraIndex,
-    // Where the reward payment should be made.
-    // pub payee: RewardDestination<AccountId>, TODO: uncomment
 }
 
 impl<AccountId, Balance: HasCompact + Copy + Saturating + Ord + Zero>

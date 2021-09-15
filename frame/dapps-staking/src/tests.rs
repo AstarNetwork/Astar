@@ -35,6 +35,26 @@ fn bonding_less_than_stash_amount_is_ok() {
 }
 
 #[test]
+fn bond_and_stake_is_ok() {
+    ExternalityBuilder::build().execute_with(|| {
+        let staker_id = 1;
+        let stake_value = 100;
+        let contract_id =
+            SmartContract::Evm(H160::from_str("1000000000000000000000000000000000000007").unwrap());
+
+        // TODO: change this later?
+        RegisteredDapps::<TestRuntime>::insert(contract_id.clone(), staker_id);
+
+        assert_ok!(DappsStaking::bond_and_stake(
+            Origin::signed(staker_id),
+            contract_id.clone(),
+            stake_value,
+            crate::RewardDestination::Staked
+        ));
+    })
+}
+
+#[test]
 fn bonding_existential_deposit_amount_is_ok() {
     ExternalityBuilder::build().execute_with(|| {
         // test that bonding works with amount that is equal to existential deposit
@@ -109,7 +129,7 @@ fn bonding_less_than_exist_deposit_is_not_ok() {
                 EXISTENTIAL_DEPOSIT - 1,
                 crate::RewardDestination::Staked
             ),
-            crate::pallet::pallet::Error::<TestRuntime>::InsufficientValue
+            crate::pallet::pallet::Error::<TestRuntime>::InsufficientBondValue
         );
     })
 }
