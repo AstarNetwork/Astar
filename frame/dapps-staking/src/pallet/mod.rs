@@ -13,6 +13,7 @@ use frame_support::{
 };
 use frame_system::{ensure_root, ensure_signed, offchain::SendTransactionTypes, pallet_prelude::*};
 use sp_runtime::{
+    print,
     traits::{CheckedSub, SaturatedConversion, StaticLookup, Zero},
     Perbill, Percent,
 };
@@ -368,8 +369,8 @@ pub mod pallet {
             let mut latest_era_staking_points = if let Some(last_stake_era) =
                 era_when_contract_last_staked.clone()
             {
-                Self::contract_era_stake(&contract_id, &last_stake_era).unwrap_or_else(|| {
-                        println!("No era staking points struct available even though we have information that contract was staked before. This is a bug!");
+                Self::contract_era_stake(&contract_id, &last_stake_era).unwrap_or_else(|| { // TODO: find out how to print
+                        print("No era staking points struct available even though we have information that contract was staked before. This is a bug!");
                         EraStakingPoints {
                             total: Zero::zero(),
                             stakers: BTreeMap::<T::AccountId, BalanceOf<T>>::new(),
