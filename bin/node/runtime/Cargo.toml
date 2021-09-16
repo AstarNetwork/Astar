@@ -40,6 +40,7 @@ pallet-evm-precompile-modexp = { path = "../../../vendor/frontier/frame/evm/prec
 pallet-evm-precompile-dispatch = { path = "../../../vendor/frontier/frame/evm/precompile/dispatch", default-features = false }
 pallet-dusty-chainbridge = { package = "chainbridge",git = "https://github.com/ChainSafe/chainbridge-substrate", default-features = false }
 frame-executive = { version = "3.0.0", default-features = false }
+pallet-assets = { version = "3.0.0", default-features = false }
 pallet-authorship = { version = "3.0.0", default-features = false }
 pallet-babe = { version = "3.0.0", default-features = false }
 pallet-balances = { version = "3.0.0", default-features = false }
@@ -116,6 +117,7 @@ std = [
     "pallet-indices/std",
     "pallet-im-online/std",
     "pallet-nicks/std",
+    "pallet-assets/std",
     "pallet-custom-signatures/std",
     "pallet-randomness-collective-flip/std",
     "pallet-scheduler/std",

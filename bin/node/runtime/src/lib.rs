@@ -770,6 +770,26 @@ impl pallet_dusty_chainbridge::Config for Runtime {
 	type ProposalLifetime = ProposalLifetime;
 }
 
+parameter_types! {
+	pub const StringLimit: u32 = 50;
+	pub const MetadataDepositBase: Balance = 10 * PLM;
+	pub const MetadataDepositPerByte: Balance = 10 * MILLIPLM;
+}
+
+impl pallet_assets::Config for Runtime {
+	type Event = Event;
+	type Balance = Balance;
+	type AssetId = u32;
+	type Currency = Balances;
+	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
+	type MetadataDepositBase = MetadataDepositBase;
+	type MetadataDepositPerByte = MetadataDepositPerByte;
+	type StringLimit = StringLimit;
+    type AssetDepositBase = ();
+    type AssetDepositPerZombie = ();
+	type WeightInfo = pallet_assets::weights::SubstrateWeight<Runtime>;
+}
+
 construct_runtime!(
     pub enum Runtime where
         Block = Block,
@@ -801,6 +821,7 @@ construct_runtime!(
         EVM: pallet_evm::{Module, Call, Storage, Config, Event<T>},
         EthCall: pallet_custom_signatures::{Module, Call, Event<T>, ValidateUnsigned},
         ChainBridge: pallet_dusty_chainbridge::{Module, Call, Storage, Event<T>},
+		Assets: pallet_assets::{Module, Call, Storage, Event<T>},
     }
 );
 
