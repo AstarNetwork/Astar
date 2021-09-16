@@ -59,9 +59,12 @@ pub mod pallet {
         #[pallet::constant]
         type RegisterDeposit: Get<BalanceOf<Self>>;
 
+        /// Maximum number of unique stakers per contract.
         #[pallet::constant]
         type MaxNumberOfStakersPerContract: Get<u32>;
 
+        /// Minimum amount user must stake on contract.
+        /// User can stake less if they already have the minimum staking amount staked on that particular contract.
         #[pallet::constant]
         type MinimumStakingAmount: Get<BalanceOf<Self>>;
 
@@ -322,7 +325,7 @@ pub mod pallet {
         /// Effects of staking will be felt at the beginning of the next era.
         ///
         /// TODO: Weight!
-        #[pallet::weight(1_000_000)] // TODO: fix this later. Probably a new calculation will be required since logic was changed significantly.
+        #[pallet::weight(10)] // TODO: fix this later. Probably a new calculation will be required since logic was changed significantly.
         pub fn bond_and_stake(
             origin: OriginFor<T>,
             contract_id: SmartContract<T::AccountId>,
@@ -611,19 +614,7 @@ pub mod pallet {
         ///
         /// See also [`Call::unbond`].
         ///
-        /// # <weight>        /// Declare the desire to stake(nominate) `targets` for the origin contracts.
-        ///
-        /// Effects will be felt at the beginning of the next era.
-        ///
-        /// The dispatch origin for this call must be _Signed_ by the controller, not the stash.
-        ///
-        /// It will automatically be diversified into `targets` based on the amount bound.
-        /// For example, if you stake 4 contracts while bonding 100 SDNs, he stakes 25 SDNs for each contract.
-        ///
         /// # <weight>
-        /// - The transaction's complexity is proportional to the size of `targets`,
-        /// which is capped at `MAX_STAKINGS`.
-        /// - Both the reads and writes follow a similar pattern.
         /// - Could be dependent on the `origin` argument and how much `unlocking` chunks exist.
         ///  It implies `consolidate_unlocked` which loops over `Ledger.unlocking`, which is
         ///  indirectly user-controlled. See [`unbond`] for more detail.
@@ -678,16 +669,6 @@ pub mod pallet {
             origin: OriginFor<T>,
             targets: Vec<<T::Lookup as StaticLookup>::Source>,
         ) -> DispatchResultWithPostInfo {
-            let controller = ensure_signed(origin)?;
-            let ledger = Self::ledger(&controller).ok_or(Error::<T>::NotController)?;
-
-            // verify that all vector values are valid contracts: TODO
-
-            // verify that this will not exceed max number of allowed stakings per contract
-
-            let active_funds = ledger.active.clone();
-
-            // TODO: impls
             Ok(().into())
         }
 
