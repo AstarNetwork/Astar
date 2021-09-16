@@ -4,8 +4,6 @@ use mock::{Balances, *};
 use sp_core::H160;
 use std::str::FromStr;
 
-// TODO: Add checks that verify content of the storage!
-
 fn register(developer: u64, contract: SmartContract<AccountId>) {
     assert_ok!(DappsStaking::register(
         Origin::signed(developer),
@@ -156,6 +154,137 @@ fn bond_and_stake_different_eras_is_ok() {
 }
 
 #[test]
+fn bond_and_stake_two_different_contracts_is_ok() {
+    ExternalityBuilder::build().execute_with(|| {
+        let staker_id = 1;
+        let first_stake_value = 100;
+        let second_stake_value = 300;
+        let first_contract_id =
+            SmartContract::Evm(H160::from_str("1000000000000000000000000000000000000007").unwrap());
+        let second_contract_id =
+            SmartContract::Evm(H160::from_str("1000000000000000000000000000000000000008").unwrap());
+        let current_era = 50;
+        CurrentEra::<TestRuntime>::put(current_era);
+
+        // Insert contracts under registered contracts. Don't use the staker Id.
+        RegisteredDapps::<TestRuntime>::insert(&first_contract_id, 5);
+        RegisteredDapps::<TestRuntime>::insert(&second_contract_id, 6);
+
+        // Stake on both contracts.
+        assert_ok!(DappsStaking::bond_and_stake(
+            Origin::signed(staker_id),
+            first_contract_id.clone(),
+            first_stake_value
+        ));
+        assert_ok!(DappsStaking::bond_and_stake(
+            Origin::signed(staker_id),
+            second_contract_id.clone(),
+            second_stake_value
+        ));
+        let total_stake_value = first_stake_value + second_stake_value;
+
+        // Verify ledger to see if funds were successfully bonded
+        let ledger = Ledger::<TestRuntime>::get(staker_id).unwrap();
+        assert_eq!(ledger.total, total_stake_value);
+        assert_eq!(ledger.active, total_stake_value);
+
+        // Verify that era staking points are as expected for both contracts
+        let first_contract_era_staking_points =
+            ContractEraStake::<TestRuntime>::get(&first_contract_id, current_era).unwrap();
+        assert_eq!(first_stake_value, first_contract_era_staking_points.total);
+        assert_eq!(1, first_contract_era_staking_points.stakers.len());
+        assert_eq!(
+            first_stake_value,
+            *first_contract_era_staking_points
+                .stakers
+                .get(&staker_id)
+                .unwrap()
+        );
+
+        let second_contract_era_staking_points =
+            ContractEraStake::<TestRuntime>::get(&second_contract_id, current_era).unwrap();
+        assert_eq!(second_stake_value, second_contract_era_staking_points.total);
+        assert_eq!(1, second_contract_era_staking_points.stakers.len());
+        assert_eq!(
+            second_stake_value,
+            *second_contract_era_staking_points
+                .stakers
+                .get(&staker_id)
+                .unwrap()
+        );
+
+        // Verify that total staked amount in era is as expected
+        assert_eq!(
+            total_stake_value,
+            PalletEraRewards::<TestRuntime>::get(current_era)
+                .unwrap()
+                .staked
+        );
+    })
+}
+
+#[test]
+fn bond_and_stake_two_stakers_one_contract_is_ok() {
+    ExternalityBuilder::build().execute_with(|| {
+        let first_staker_id = 1;
+        let second_staker_id = 2;
+        let first_stake_value = 50;
+        let second_stake_value = 235;
+        let contract_id =
+            SmartContract::Evm(H160::from_str("1000000000000000000000000000000000000007").unwrap());
+        let current_era = 25;
+
+        CurrentEra::<TestRuntime>::put(current_era);
+
+        // Insert a contract under registered contracts.
+        RegisteredDapps::<TestRuntime>::insert(&contract_id, 10);
+
+        // Both stakers stake on the same contract, expect a pass.
+        assert_ok!(DappsStaking::bond_and_stake(
+            Origin::signed(first_staker_id),
+            contract_id.clone(),
+            first_stake_value
+        ));
+        assert_ok!(DappsStaking::bond_and_stake(
+            Origin::signed(second_staker_id),
+            contract_id.clone(),
+            second_stake_value
+        ));
+        let total_stake_value = first_stake_value + second_stake_value;
+
+        // Verify ledgers for both stakers to see if funds were successfully bonded
+        let first_ledger = Ledger::<TestRuntime>::get(first_staker_id).unwrap();
+        assert_eq!(first_ledger.total, first_stake_value);
+        assert_eq!(first_ledger.active, first_stake_value);
+        let second_ledger = Ledger::<TestRuntime>::get(second_staker_id).unwrap();
+        assert_eq!(second_ledger.total, second_stake_value);
+        assert_eq!(second_ledger.active, second_stake_value);
+
+        // Verify that era staking points are as expected for the contract
+        let era_staking_points =
+            ContractEraStake::<TestRuntime>::get(&contract_id, current_era).unwrap();
+        assert_eq!(total_stake_value, era_staking_points.total);
+        assert_eq!(2, era_staking_points.stakers.len());
+        assert_eq!(
+            first_stake_value,
+            *era_staking_points.stakers.get(&first_staker_id).unwrap()
+        );
+        assert_eq!(
+            second_stake_value,
+            *era_staking_points.stakers.get(&second_staker_id).unwrap()
+        );
+
+        // Verify that total staked amount in era is as expected
+        assert_eq!(
+            total_stake_value,
+            PalletEraRewards::<TestRuntime>::get(current_era)
+                .unwrap()
+                .staked
+        );
+    })
+}
+
+#[test]
 fn bond_and_stake_different_value_is_ok() {
     ExternalityBuilder::build().execute_with(|| {
         let staker_id = 1;
@@ -256,6 +385,7 @@ fn bond_and_stake_contract_is_not_ok() {
     })
 }
 
+#[test]
 fn bond_and_stake_insufficient_value() {
     ExternalityBuilder::build().execute_with(|| {
         let staker_id = 1;
@@ -270,9 +400,9 @@ fn bond_and_stake_insufficient_value() {
             DappsStaking::bond_and_stake(
                 Origin::signed(staker_id),
                 contract_id.clone(),
-                EXISTENTIAL_DEPOSIT - 1
+                MINUMUM_STAKING_AMOUNT - 1
             ),
-            crate::pallet::pallet::Error::<TestRuntime>::InsufficientBondValue
+            crate::pallet::pallet::Error::<TestRuntime>::InsufficientStakingValue
         );
 
         // Now bond&stake the entire stash so we lock all the available funds.

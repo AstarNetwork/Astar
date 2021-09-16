@@ -341,11 +341,6 @@ pub mod pallet {
             let mut ledger = if let Some(ledger) = Self::ledger(&staker) {
                 ledger
             } else {
-                // minimum balance must be satisfied
-                ensure!(
-                    value >= T::Currency::minimum_balance(),
-                    Error::<T>::InsufficientBondValue
-                );
                 StakingLedger {
                     stash: staker.clone(),
                     total: Zero::zero(),
@@ -370,20 +365,22 @@ pub mod pallet {
 
             // Get the latest era staking point info or create it if contract hasn't been staked yet so far.
             let era_when_contract_last_staked = Self::contract_last_staked(&contract_id);
-            let mut latest_era_staking_points =
-                if let Some(last_stake_era) = era_when_contract_last_staked.clone() {
-                    Self::contract_era_stake(&contract_id, &last_stake_era).unwrap_or(
+            let mut latest_era_staking_points = if let Some(last_stake_era) =
+                era_when_contract_last_staked.clone()
+            {
+                Self::contract_era_stake(&contract_id, &last_stake_era).unwrap_or_else(|| {
+                        println!("No era staking points struct available even though we have information that contract was staked before. This is a bug!");
                         EraStakingPoints {
                             total: Zero::zero(),
                             stakers: BTreeMap::<T::AccountId, BalanceOf<T>>::new(),
-                        },
-                    ) // TODO: this should not be None and should be guaranteed by the check above. But better safe than sorry?
-                } else {
-                    EraStakingPoints {
-                        total: Zero::zero(),
-                        stakers: BTreeMap::<T::AccountId, BalanceOf<T>>::new(),
-                    }
-                };
+                        }
+                    })
+            } else {
+                EraStakingPoints {
+                    total: Zero::zero(),
+                    stakers: BTreeMap::<T::AccountId, BalanceOf<T>>::new(),
+                }
+            };
 
             // Ensure that we can add additional staker for the contract.
             if !latest_era_staking_points.stakers.contains_key(&staker) {
@@ -402,7 +399,6 @@ pub mod pallet {
                 .or_insert(Zero::zero());
             *entry += bonded_value;
 
-            // TODO: verify that the staked amount isn't below some limit (I also have to introduce this limit)
             ensure!(
                 *entry >= T::MinimumStakingAmount::get(),
                 Error::<T>::InsufficientStakingValue
