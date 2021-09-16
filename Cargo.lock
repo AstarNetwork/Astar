@@ -4386,12 +4386,14 @@ dependencies = [
  "arrayref",
  "base64 0.12.3",
  "digest 0.9.0",
+ "hmac-drbg 0.3.0",
  "libsecp256k1-core",
  "libsecp256k1-gen-ecmult",
  "libsecp256k1-gen-genmult",
  "rand 0.7.3",
  "serde",
  "sha2 0.9.5",
+ "typenum",
 ]
 
 [[package]]
@@ -5268,12 +5270,12 @@ dependencies = [
 
 [[package]]
 name = "pallet-custom-signatures"
-version = "4.0.0"
+version = "4.1.0"
 dependencies = [
  "frame-support",
  "frame-system",
  "hex-literal 0.2.1",
- "libsecp256k1 0.3.5",
+ "libsecp256k1 0.6.0",
  "pallet-balances",
  "parity-scale-codec",
  "serde",

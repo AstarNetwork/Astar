@@ -110,7 +110,6 @@ pub mod pallet {
                 nonce == frame_system::Pallet::<T>::account_nonce(signer.clone()),
                 Error::<T>::BadNonce,
             );
-            frame_system::Pallet::<T>::inc_account_nonce(signer.clone());
 
             let signature = <T as Config>::Signature::try_from(signature)
                 .map_err(|_| Error::<T>::DecodeFailure)?;
@@ -120,6 +119,9 @@ pub mod pallet {
                 Self::valid_signature(&call, &signer, &signature, &nonce),
                 Error::<T>::InvalidSignature
             );
+
+            // Increment account nonce
+            frame_system::Pallet::<T>::inc_account_nonce(signer.clone());
 
             // Processing fee
             let tx_fee = T::Currency::withdraw(
@@ -148,7 +150,7 @@ pub mod pallet {
             signature: &T::Signature,
             nonce: &T::Index,
         ) -> bool {
-            let payload = (T::CallMagicNumber::get(), nonce.clone(), call.clone());
+            let payload = (T::CallMagicNumber::get(), *nonce, call.clone());
             signature.verify(&payload.encode()[..], signer)
         }
     }
