@@ -35,17 +35,16 @@ fn bonding_less_than_stash_amount_is_ok() {
 }
 
 #[test]
-fn bond_and_stake_is_ok() {
+fn bond_and_stake_different_eras_is_ok() {
     ExternalityBuilder::build().execute_with(|| {
         let staker_id = 1;
         let first_stake_value = 100;
         let contract_id =
             SmartContract::Evm(H160::from_str("1000000000000000000000000000000000000007").unwrap());
-        let payee = crate::RewardDestination::Staked;
         let current_era = 50;
         CurrentEra::<TestRuntime>::put(current_era);
 
-        // TODO: change this later?
+        // Insert a contract under registered contracts.
         RegisteredDapps::<TestRuntime>::insert(&contract_id, staker_id);
 
         // initially, storage values should be None
@@ -61,7 +60,6 @@ fn bond_and_stake_is_ok() {
             Origin::signed(staker_id),
             contract_id.clone(),
             first_stake_value,
-            payee.clone(),
         ));
         System::assert_last_event(mock::Event::DappsStaking(crate::Event::BondAndStake(
             staker_id,
@@ -70,7 +68,6 @@ fn bond_and_stake_is_ok() {
         )));
 
         // Verify storage values to see if contract was successfully bonded and staked.
-        assert_eq!(payee, Payee::<TestRuntime>::get(staker_id).unwrap());
         let ledger = Ledger::<TestRuntime>::get(staker_id).unwrap();
         assert_eq!(ledger.total, first_stake_value);
         assert_eq!(ledger.active, first_stake_value);
@@ -117,7 +114,6 @@ fn bond_and_stake_is_ok() {
             Origin::signed(staker_id),
             contract_id.clone(),
             second_stake_value,
-            payee.clone(),
         ));
         System::assert_last_event(mock::Event::DappsStaking(crate::Event::BondAndStake(
             staker_id,
@@ -151,12 +147,172 @@ fn bond_and_stake_is_ok() {
             old_era,
             ContractLastClaimed::<TestRuntime>::get(contract_id.clone()).unwrap()
         );
+        // But the era of last staking should be changed to the current era.
         assert_eq!(
             current_era,
             ContractLastStaked::<TestRuntime>::get(contract_id.clone()).unwrap()
         );
+    })
+}
 
-        // assert locked balance?
+#[test]
+fn bond_and_stake_different_value_is_ok() {
+    ExternalityBuilder::build().execute_with(|| {
+        let staker_id = 1;
+        let contract_id =
+            SmartContract::Evm(H160::from_str("1000000000000000000000000000000000000007").unwrap());
+
+        // Insert a contract under registered contracts.
+        RegisteredDapps::<TestRuntime>::insert(&contract_id, staker_id);
+
+        // Bond&stake almost the entire available balance of the staker.
+        let staker_free_balance = Balances::free_balance(&staker_id);
+        assert_ok!(DappsStaking::bond_and_stake(
+            Origin::signed(staker_id),
+            contract_id.clone(),
+            staker_free_balance - 1
+        ));
+        System::assert_last_event(mock::Event::DappsStaking(crate::Event::BondAndStake(
+            staker_id,
+            contract_id.clone(),
+            staker_free_balance - 1,
+        )));
+
+        // Bond&stake again with less than existential deposit but this time expect a pass
+        // since we're only increasing the already staked amount.
+        assert_ok!(DappsStaking::bond_and_stake(
+            Origin::signed(staker_id),
+            contract_id,
+            1
+        ));
+        System::assert_last_event(mock::Event::DappsStaking(crate::Event::BondAndStake(
+            staker_id,
+            contract_id.clone(),
+            1,
+        )));
+
+        // Bond&stake more than what's available in funds. Verify that only what's available is bonded&staked.
+        let staker_id = 2;
+        let staker_free_balance = Balances::free_balance(&staker_id);
+        assert_ok!(DappsStaking::bond_and_stake(
+            Origin::signed(staker_id),
+            contract_id,
+            staker_free_balance + 1
+        ));
+        System::assert_last_event(mock::Event::DappsStaking(crate::Event::BondAndStake(
+            staker_id,
+            contract_id.clone(),
+            staker_free_balance,
+        )));
+
+        // Bond&stake some amount, a bit less than free balance
+        let staker_id = 3;
+        let staker_free_balance = Balances::free_balance(&staker_id);
+        assert_ok!(DappsStaking::bond_and_stake(
+            Origin::signed(staker_id),
+            contract_id,
+            staker_free_balance - 200
+        ));
+        System::assert_last_event(mock::Event::DappsStaking(crate::Event::BondAndStake(
+            staker_id,
+            contract_id.clone(),
+            staker_free_balance - 200,
+        )));
+        // Try to bond&stake more than we have available (since we already locked most of the free balance).
+        assert_ok!(DappsStaking::bond_and_stake(
+            Origin::signed(staker_id),
+            contract_id,
+            500
+        ));
+        System::assert_last_event(mock::Event::DappsStaking(crate::Event::BondAndStake(
+            staker_id,
+            contract_id.clone(),
+            200,
+        )));
+    })
+}
+
+#[test]
+fn bond_and_stake_contract_is_not_ok() {
+    ExternalityBuilder::build().execute_with(|| {
+        let staker_id = 1;
+        let stake_value = 100;
+
+        // Wasm contracts aren't supported yet. // TODO: Why do we even have them in enum then?
+        let wasm_contract = SmartContract::Wasm(10);
+        assert_noop!(
+            DappsStaking::bond_and_stake(Origin::signed(staker_id), wasm_contract, stake_value),
+            crate::pallet::pallet::Error::<TestRuntime>::ContractIsNotValid
+        );
+
+        // Check a supported bot not registered contract. Expect an error.
+        let evm_contract = SmartContract::<AccountId>::Evm(
+            H160::from_str("1000000000000000000000000000000000000007").unwrap(),
+        );
+        assert_noop!(
+            DappsStaking::bond_and_stake(Origin::signed(staker_id), evm_contract, stake_value),
+            crate::pallet::pallet::Error::<TestRuntime>::NotOperatedContract
+        );
+    })
+}
+
+fn bond_and_stake_insufficient_value() {
+    ExternalityBuilder::build().execute_with(|| {
+        let staker_id = 1;
+        let contract_id =
+            SmartContract::Evm(H160::from_str("1000000000000000000000000000000000000007").unwrap());
+
+        // Insert a contract under registered contracts.
+        RegisteredDapps::<TestRuntime>::insert(&contract_id, staker_id);
+
+        // If user tries to make an initial bond&stake with less than minimum amount, raise an error.
+        assert_noop!(
+            DappsStaking::bond_and_stake(
+                Origin::signed(staker_id),
+                contract_id.clone(),
+                EXISTENTIAL_DEPOSIT - 1
+            ),
+            crate::pallet::pallet::Error::<TestRuntime>::InsufficientBondValue
+        );
+
+        // Now bond&stake the entire stash so we lock all the available funds.
+        let staker_free_balance = Balances::free_balance(&staker_id);
+        assert_ok!(DappsStaking::bond_and_stake(
+            Origin::signed(staker_id),
+            contract_id,
+            staker_free_balance
+        ));
+
+        // Now try to bond&stake some additional funds and expect an error since we cannot bond&stake 0.
+        assert_noop!(
+            DappsStaking::bond_and_stake(Origin::signed(staker_id), contract_id.clone(), 1),
+            crate::pallet::pallet::Error::<TestRuntime>::StakingWithNoValue
+        );
+    })
+}
+
+#[test]
+fn bond_and_stake_too_many_stakers_per_contract() {
+    ExternalityBuilder::build().execute_with(|| {
+        let contract_id =
+            SmartContract::Evm(H160::from_str("1000000000000000000000000000000000000007").unwrap());
+        // Insert a contract under registered contracts.
+        RegisteredDapps::<TestRuntime>::insert(&contract_id, 1);
+
+        // Stake with MAX_NUMBER_OF_STAKERS on the same contract. It must work.
+        for staker_id in 1..=MAX_NUMBER_OF_STAKERS {
+            assert_ok!(DappsStaking::bond_and_stake(
+                Origin::signed(staker_id.into()),
+                contract_id.clone(),
+                100
+            ));
+        }
+
+        // Now try to stake with an additional staker and expect an error.
+        assert_noop!(
+            DappsStaking::bond_and_stake(Origin::signed(5), contract_id.clone(), 100),
+            crate::pallet::pallet::Error::<TestRuntime>::MaxNumberOfStakersExceeded
+        );
     })
 }
 

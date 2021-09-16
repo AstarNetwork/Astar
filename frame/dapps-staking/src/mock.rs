@@ -24,9 +24,11 @@ pub(crate) type EraIndex = u32;
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<TestRuntime>;
 type Block = frame_system::mocking::MockBlock<TestRuntime>;
 
+/// Value shouldn't be less than 2 for testing purposes, otherwise we cannot test certain corner cases.
 pub(crate) const EXISTENTIAL_DEPOSIT: Balance = 2;
 pub(crate) const REGISTER_DEPOSIT: Balance = 200;
 pub(crate) const UNBONDING_DURATION: EraIndex = 5;
+pub(crate) const MAX_NUMBER_OF_STAKERS: u32 = 4;
 
 construct_runtime!(
     pub enum TestRuntime where
@@ -35,8 +37,8 @@ construct_runtime!(
         UncheckedExtrinsic = UncheckedExtrinsic,
     {
         System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
-        Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>}, // TODO: should this be mocked 'properly'? This doesn't seem like I should be doing it.
-        Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent}, // TODO: should I do it like this or create a special mock?
+        Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
+        Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
         DappsStaking: pallet_dapps_staking::{Pallet, Call, Config, Storage, Event<T>},
     }
 );
@@ -132,6 +134,8 @@ impl OnUnbalanced<PositiveImbalanceOf<TestRuntime>> for RewardMock {}
 parameter_types! {
     pub const RegisterDeposit: u32 = 100;
     pub const MockBlockPerEra: BlockNumber = 10;
+    pub const MaxNumberOfStakersPerContract: u32 = MAX_NUMBER_OF_STAKERS;
+    pub const MinimumStakingAmount: Balance = 10;
 }
 impl pallet_dapps_staking::Config for TestRuntime {
     type Event = Event;
@@ -142,9 +146,11 @@ impl pallet_dapps_staking::Config for TestRuntime {
     type EraPayout = EraPayoutMock;
     type RegisterDeposit = RegisterDeposit;
     type WeightInfo = ();
-    type UnixTime = Timestamp; // TODO see of this can be maybe simplified
+    type UnixTime = Timestamp;
     type RewardRemainder = RewardRemainderMock;
     type Reward = RewardMock;
+    type MaxNumberOfStakersPerContract = MaxNumberOfStakersPerContract;
+    type MinimumStakingAmount = MinimumStakingAmount;
 }
 
 pub struct ExternalityBuilder;
@@ -161,6 +167,7 @@ impl ExternalityBuilder {
                 (2, 800),
                 (3, 650),
                 (4, 490),
+                (5, 380),
                 (10, 300),
                 (540, EXISTENTIAL_DEPOSIT),
                 (1337, 1_000_000_000_000),

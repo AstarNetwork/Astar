@@ -39,7 +39,6 @@ pub(crate) type NegativeImbalanceOf<T> =
 /// Counter for the number of eras that have passed.
 pub type EraIndex = u32;
 
-const MAX_NOMINATIONS: usize = 128;
 const MAX_UNLOCKING_CHUNKS: usize = 32;
 const MAX_VOTES: usize = 128;
 const VOTES_REQUIREMENT: u32 = 12;

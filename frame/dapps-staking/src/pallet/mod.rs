@@ -58,6 +58,12 @@ pub mod pallet {
         #[pallet::constant]
         type RegisterDeposit: Get<BalanceOf<Self>>;
 
+        #[pallet::constant]
+        type MaxNumberOfStakersPerContract: Get<u32>;
+
+        #[pallet::constant]
+        type MinimumStakingAmount: Get<BalanceOf<Self>>;
+
         /// The payout for validators and the system for the current era.
         /// See [Era payout](./index.html#era-payout).
         type EraPayout: EraPayout<BalanceOf<Self>>;
@@ -88,12 +94,6 @@ pub mod pallet {
     #[pallet::getter(fn ledger)]
     pub(crate) type Ledger<T: Config> =
         StorageMap<_, Blake2_128Concat, T::AccountId, StakingLedger<T::AccountId, BalanceOf<T>>>;
-
-    /// Where the reward payment should be made. Keyed by stash.
-    #[pallet::storage]
-    #[pallet::getter(fn payee)]
-    pub(crate) type Payee<T: Config> =
-        StorageMap<_, Twox64Concat, T::AccountId, RewardDestination<T::AccountId>>;
 
     /// Number of eras to keep in history.
     ///
@@ -244,8 +244,10 @@ pub mod pallet {
         InvalidSlashIndex,
         /// Can not bond with value less than minimum balance.
         InsufficientBondValue,
-        /// Cannot stake with value less than minumum stake value
+        /// Can not stake with zero value.
         StakingWithNoValue,
+        /// Can not stake with value less than minimum staking value
+        InsufficientStakingValue,
         /// Can not schedule more unlock chunks.
         NoMoreChunks,
         /// Can not rebond without unlocking chunks.
@@ -254,8 +256,8 @@ pub mod pallet {
         FundedTarget,
         /// Invalid era to reward.
         InvalidEraToReward,
-        /// Number of nominations exceeded.
-        MaxNumberOfNominations,
+        /// Number of stakers per contract exceeded.
+        MaxNumberOfStakersExceeded,
         /// Items are not sorted and unique.
         NotSortedAndUnique,
         /// Targets must be latest 1.
@@ -314,7 +316,7 @@ pub mod pallet {
         /// `value` must be more than the `minimum_balance` specified by `T::Currency`
         /// unless account already has bonded value equal or more than 'minimum_balance'.
         ///
-        /// The dispatch origin for this call must be _Signed_ by the stash account. // TODO: rephrase this?
+        /// The dispatch origin for this call must be _Signed_ by the staker's account.
         ///
         /// Effects of staking will be felt at the beginning of the next era.
         ///
@@ -324,7 +326,6 @@ pub mod pallet {
             origin: OriginFor<T>,
             contract_id: SmartContract<T::AccountId>,
             #[pallet::compact] value: BalanceOf<T>,
-            payee: RewardDestination<T::AccountId>,
         ) -> DispatchResultWithPostInfo {
             let staker = ensure_signed(origin)?;
             ensure!(
@@ -336,7 +337,6 @@ pub mod pallet {
                 Error::<T>::NotOperatedContract
             );
 
-            // TODO: maybe this can be solved using on_empty method when declaring map storage?
             // Get the staking ledger or create an entry if it doesn't exist.
             let mut ledger = if let Some(ledger) = Self::ledger(&staker) {
                 ledger
@@ -356,8 +356,12 @@ pub mod pallet {
             };
 
             // Ensure that staker has enough balance to bond & stake.
-            let free_stash = T::Currency::free_balance(&staker);
-            let bonded_value = value.min(free_stash);
+            let free_balance = T::Currency::free_balance(&staker);
+            // Remove already locked funds from the free balance
+            let available_balance = free_balance
+                .checked_sub(&ledger.total)
+                .unwrap_or(Zero::zero());
+            let bonded_value = value.min(available_balance);
             ensure!(!bonded_value.is_zero(), Error::<T>::StakingWithNoValue);
 
             // update the ledger value by adding the newly bonded funds
@@ -384,8 +388,9 @@ pub mod pallet {
             // Ensure that we can add additional staker for the contract.
             if !latest_era_staking_points.stakers.contains_key(&staker) {
                 ensure!(
-                    latest_era_staking_points.stakers.len() < MAX_NOMINATIONS, // TODO: change this into configurable constant?
-                    Error::<T>::MaxNumberOfNominations
+                    latest_era_staking_points.stakers.len()
+                        < T::MaxNumberOfStakersPerContract::get() as usize,
+                    Error::<T>::MaxNumberOfStakersExceeded
                 );
             }
 
@@ -397,8 +402,13 @@ pub mod pallet {
                 .or_insert(Zero::zero());
             *entry += bonded_value;
 
+            // TODO: verify that the staked amount isn't below some limit (I also have to introduce this limit)
+            ensure!(
+                *entry >= T::MinimumStakingAmount::get(),
+                Error::<T>::InsufficientStakingValue
+            );
+
             // Update ledger and payee
-            Payee::<T>::insert(&staker, payee);
             Self::update_ledger(&staker, &ledger);
 
             let current_era = Self::get_current_era();
@@ -413,8 +423,6 @@ pub mod pallet {
             // Update total staked value in era
             let mut era_reward = Self::get_era_total(current_era).unwrap_or(Default::default());
             era_reward.staked += bonded_value;
-            // let new_total_staked_in_era =
-            //     Self::get_era_total(current_era).unwrap_or(Default::default()).staked + bonded_value;
             PalletEraRewards::<T>::insert(current_era, era_reward);
 
             // If contract wasn't claimed nor staked yet, insert current era as last claimed era.
@@ -485,7 +493,6 @@ pub mod pallet {
             ensure!(!free_stash.is_zero(), Error::<T>::InsufficientBondValue);
 
             Bonded::<T>::insert(&stash, &controller);
-            Payee::<T>::insert(&stash, payee);
 
             let value = value.min(free_stash);
             let ledger = StakingLedger {
@@ -1006,7 +1013,6 @@ pub mod pallet {
             let controller = Bonded::<T>::take(stash).ok_or(Error::<T>::NotStash)?;
             <Ledger<T>>::remove(&controller);
 
-            <Payee<T>>::remove(stash);
             // if let Some(nominations) = Self::dapps_nominations(stash) {
             //     Self::remove_nominations(stash, nominations);
             // }
