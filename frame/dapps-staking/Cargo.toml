@@ -1,12 +1,12 @@
 [package]
 name = "pallet-dapps-staking"
-version = "1.10.0"
+version = "0.1.0"
 authors = ["Stake Technologies <devops@stake.co.jp>"]
 edition = "2018"
-license = "Apache-2.0"
 homepage = "https://astar.network/"
-repository = "https://github.com/PlasmNetwork/Astar/"
+repository = "https://github.com/PlasmNetwork/Astar/tree/development/dapp-staking"
 description = "FRAME pallet to staking for dapps"
+license = "PolyForm-Noncommercial-1.0.0"
 
 [dependencies]
 codec = { package = "parity-scale-codec", version = "2.0", features = ["derive"], default-features = false }
