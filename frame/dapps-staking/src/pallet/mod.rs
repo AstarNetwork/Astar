@@ -1061,12 +1061,7 @@ pub mod pallet {
                 Ledger::<T>::remove(&staker);
                 T::Currency::remove_lock(STAKING_ID, &staker);
             } else {
-                T::Currency::set_lock(
-                    STAKING_ID,
-                    &ledger.stash,
-                    ledger.total,
-                    WithdrawReasons::all(),
-                );
+                T::Currency::set_lock(STAKING_ID, &staker, ledger.total, WithdrawReasons::all());
                 Ledger::<T>::insert(staker, ledger);
             }
         }

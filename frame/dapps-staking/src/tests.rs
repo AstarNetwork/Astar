@@ -439,7 +439,7 @@ fn bond_and_stake_too_many_stakers_per_contract() {
 }
 
 #[test]
-fn unbond_and_withdraw_is_ok() {
+fn unbond_and_withdraw_multiple_time_is_ok() {
     ExternalityBuilder::build().execute_with(|| {
         let staker_id = 1;
         let contract_id =
@@ -465,6 +465,7 @@ fn unbond_and_withdraw_is_ok() {
         System::assert_last_event(mock::Event::DappsStaking(
             crate::Event::UnbondUnstakeAndWithdraw(staker_id, contract_id.clone(), unstaked_value),
         ));
+
         let new_staked_value = original_staked_value - unstaked_value;
 
         // Verify that storage values for the current are as expected.
@@ -476,6 +477,10 @@ fn unbond_and_withdraw_is_ok() {
             vec![(staker_id, new_staked_value)],
         );
         verify_pallet_era_rewards(new_era, new_staked_value, Zero::zero());
+        assert_eq!(
+            new_era,
+            ContractLastStaked::<TestRuntime>::get(&contract_id).unwrap()
+        );
 
         // Also verify that the storage values for the old era haven't been changed due to unstaking
         verify_era_staking_points(
@@ -485,6 +490,132 @@ fn unbond_and_withdraw_is_ok() {
             vec![(staker_id, original_staked_value)],
         );
         verify_pallet_era_rewards(old_era, original_staked_value, Zero::zero());
+
+        // Unbond yet again, but don't advance era
+        // Unstake such an amount so there will remain staked funds on the contract
+        let unstaked_value = 50;
+        assert_ok!(DappsStaking::unbond_and_withdraw(
+            Origin::signed(staker_id),
+            contract_id.clone(),
+            unstaked_value
+        ));
+        System::assert_last_event(mock::Event::DappsStaking(
+            crate::Event::UnbondUnstakeAndWithdraw(staker_id, contract_id.clone(), unstaked_value),
+        ));
+
+        let new_staked_value = new_staked_value - unstaked_value;
+
+        // Verify that storage values for the current are have been changed as expected.
+        verify_ledger(staker_id, new_staked_value);
+        verify_era_staking_points(
+            &contract_id,
+            new_staked_value,
+            new_era,
+            vec![(staker_id, new_staked_value)],
+        );
+        verify_pallet_era_rewards(new_era, new_staked_value, Zero::zero());
+        assert_eq!(
+            new_era,
+            ContractLastStaked::<TestRuntime>::get(&contract_id).unwrap()
+        );
+    })
+}
+
+#[test]
+fn unbond_and_withdraw_contract_is_not_ok() {
+    ExternalityBuilder::build().execute_with(|| {
+        let staker_id = 1;
+        let unstake_value = 100;
+
+        // Wasm contracts aren't supported yet.
+        let wasm_contract = SmartContract::Wasm(10);
+        assert_noop!(
+            DappsStaking::unbond_and_withdraw(
+                Origin::signed(staker_id),
+                wasm_contract,
+                unstake_value
+            ),
+            crate::pallet::pallet::Error::<TestRuntime>::ContractIsNotValid
+        );
+
+        // Check a supported bot not registered contract. Expect an error.
+        let evm_contract = SmartContract::<AccountId>::Evm(
+            H160::from_str("1000000000000000000000000000000000000007").unwrap(),
+        );
+        assert_noop!(
+            DappsStaking::bond_and_stake(Origin::signed(staker_id), evm_contract, unstake_value),
+            crate::pallet::pallet::Error::<TestRuntime>::NotOperatedContract
+        );
+    })
+}
+
+#[test]
+fn unbond_and_withdraw_unstake_not_possible() {
+    ExternalityBuilder::build().execute_with(|| {
+        let first_staker_id = 1;
+        let first_contract_id =
+            SmartContract::Evm(H160::from_str("1000000000000000000000000000000000000007").unwrap());
+        let original_staked_value = 100 + MINIMUM_STAKING_AMOUNT;
+
+        // Insert a contract under registered contracts, bond&stake it.
+        RegisteredDapps::<TestRuntime>::insert(&first_contract_id, 1);
+
+        // Try to unstake with 0, expect an error
+        assert_noop!(
+            DappsStaking::unbond_and_withdraw(
+                Origin::signed(first_staker_id),
+                first_contract_id.clone(),
+                Zero::zero()
+            ),
+            Error::<TestRuntime>::UnstakingWithNoValue
+        );
+
+        // Try to unstake contract which hasn't been staked by anyone
+        assert_noop!(
+            DappsStaking::unbond_and_withdraw(
+                Origin::signed(first_staker_id),
+                first_contract_id.clone(),
+                original_staked_value
+            ),
+            Error::<TestRuntime>::NotStakedContract
+        );
+
+        // Now we finally stake the contract
+        bond_and_stake_with_verification(
+            first_staker_id,
+            &first_contract_id,
+            original_staked_value,
+        );
+
+        // Try to unbond and withdraw using a different contract, one that hasn't staked on this one.
+        let second_staker_id = 2;
+        assert_noop!(
+            DappsStaking::unbond_and_withdraw(
+                Origin::signed(second_staker_id),
+                first_contract_id.clone(),
+                original_staked_value
+            ),
+            Error::<TestRuntime>::NotStakedContract
+        );
+
+        // Bond a second contract using the second staker. Ensure that second staker still cannot unbond&withdraw funds from the first contract
+        let second_contract_id =
+            SmartContract::Evm(H160::from_str("1000000000000000000000000000000000000077").unwrap());
+        RegisteredDapps::<TestRuntime>::insert(&second_contract_id, 2);
+        bond_and_stake_with_verification(
+            second_staker_id,
+            &second_contract_id,
+            original_staked_value,
+        );
+
+        assert_noop!(
+            DappsStaking::unbond_and_withdraw(
+                Origin::signed(second_staker_id),
+                first_contract_id.clone(),
+                original_staked_value
+            ),
+            Error::<TestRuntime>::NotStakedContract
+        );
     })
 }
 
