@@ -2,7 +2,7 @@
 
 use super::*;
 use frame_support::{
-    dispatch::{DispatchError, DispatchResult},
+    dispatch::{DispatchError, DispatchErrorWithPostInfo, DispatchResult, PostDispatchInfo},
     ensure,
     pallet_prelude::*,
     traits::{
@@ -17,7 +17,11 @@ use sp_runtime::{
     traits::{CheckedSub, SaturatedConversion, StaticLookup, Zero},
     Perbill, Percent,
 };
-use sp_std::{convert::From, prelude::*, result};
+use sp_std::{
+    convert::{From, TryInto},
+    prelude::*,
+    result,
+};
 
 const STAKING_ID: LockIdentifier = *b"dapstake";
 
@@ -230,6 +234,13 @@ pub mod pallet {
         NewContract(T::AccountId, SmartContract<T::AccountId>),
         /// New dapps staking era. Distribute era rewards to contracts
         NewDappStakingEra(EraIndex),
+        /// The contract's reward have been claimed, by an account, from era until era
+        ContractClaimed(
+            SmartContract<T::AccountId>,
+            T::AccountId,
+            EraIndex,
+            EraIndex,
+        ),
     }
 
     #[pallet::error]
@@ -288,6 +299,10 @@ pub mod pallet {
         AlreadyUsedDeveloperAccount,
         /// Unexpected state error, used to abort transaction
         UnexpectedState,
+        /// Report issue on github if this is ever emitted
+        UnknownStorageValue,
+
+        NothingToClaim,
     }
 
     #[pallet::hooks]
@@ -923,6 +938,89 @@ pub mod pallet {
             Ok(().into())
         }
 
+        /// rewards are claimed by the staker on contract_id.
+        ///
+        /// era must be in the range `[current_era - history_depth; active_era)`.
+        ///
+        /// Any user can call this function.
+        #[pallet::weight(T::WeightInfo::payout_stakers_alive_staked(T::MaxStakings::get()))]
+        pub fn claim(
+            origin: OriginFor<T>,
+            contract_id: SmartContract<T::AccountId>,
+        ) -> DispatchResultWithPostInfo {
+            let claimer = ensure_signed(origin)?;
+            ensure!(
+                Self::is_contract_valid(&contract_id),
+                Error::<T>::ContractIsNotValid
+            );
+            let last_staked =
+                Self::contract_last_staked(&contract_id).ok_or(Error::<T>::NothingToClaim)?;
+            let current_era = Self::current_era().unwrap_or(Zero::zero());
+            // ensure!(last_staked != 0, Error::<T>::NothingToClaim);
+
+            let last_claim_era: EraIndex = Self::contract_last_claimed(&contract_id)
+                .unwrap_or_else(|| -> EraIndex {
+                    // this contract is claimed for the first time
+                    print!(
+                        "this contract is now claimed for the first time: {:?}",
+                        contract_id
+                    );
+                    ContractLastClaimed::<T>::insert(&contract_id, current_era.clone());
+
+                    current_era.clone()
+                });
+            let last_allowed_era = current_era.saturating_sub(Self::history_depth());
+            let start_from_era = last_claim_era.max(last_allowed_era);
+            if (start_from_era > last_claim_era) {
+                // TODO clean_contract_history(contract_id);
+            }
+                                
+            // for the first claimable era start_from_era. This storage item must be in place!
+            let mut contract_stake_prev = Self::contract_era_stake(&contract_id, &start_from_era)
+                .ok_or(Error::<T>::UnknownStorageValue)?;
+
+            // for any era after start_from_era, the ContractEraStake is present only if there
+            // was a change in staking amount. If it is not present we read last recorded ContractEraStake
+            for era in start_from_era..current_era {
+                let total_era = Self::get_era_total(era).unwrap_or(Default::default()); // TODO hanlde zero
+                let contract_stake =
+                    Self::contract_era_stake(&contract_id, era).unwrap_or(contract_stake_prev);
+
+                let unit = Perbill::from_rational(
+                    Self::balance_to_u64(total_era.staked).unwrap_or(1),
+                    Self::balance_to_u64(total_era.rewards).unwrap_or(1),
+                );
+                let contract_era_reward =
+                    unit * Self::balance_to_u64(contract_stake.total).unwrap_or(1);
+                let staker_reward = Perbill::from_percent(20) * contract_era_reward;  //TODO use constant
+                let developer_reward = Perbill::from_percent(20) * contract_era_reward; //TODO use constant
+                Self::payout_stakers2(&contract_id, &era, &contract_stake, staker_reward);
+                Self::payout_developer(&contract_id, &era, &contract_stake, staker_reward);
+                                                                                        
+                print!(
+                    "total and contract reward for era ({:?})-> {:?}, {:?}\n",
+                    era, total_era.rewards, contract_era_reward
+                );
+                contract_stake_prev = contract_stake;
+            }
+
+            // move contract pointers to current era
+            ContractLastClaimed::<T>::insert(&contract_id, current_era);
+            ContractLastStaked::<T>::insert(&contract_id, current_era);
+
+            // move contract era stake data to current era
+            ContractEraStake::<T>::insert(&contract_id, current_era, contract_stake_prev);
+
+            Self::deposit_event(Event::<T>::ContractClaimed(
+                contract_id,
+                claimer,
+                start_from_era,
+                current_era,
+            ));
+
+            Ok(().into())
+        }
+
         /// set deposit amount for registering contract.
         ///
         /// The dispatch origin for this call must be _Signed_ by the root.
@@ -1100,6 +1198,27 @@ pub mod pallet {
             }
         }
 
+        /// Payout all stakers for this era
+        fn payout_stakers2(
+            contract: &SmartContract<T::AccountId>,
+            era: &EraIndex,
+            points: &EraStakingPoints<T::AccountId, BalanceOf<T>>,
+            reward_per_contract: u64,
+        ) -> Result<(), ()> {
+            Ok(())
+        }
+
+        /// Payout contract developer for this era
+        fn payout_developer(
+            contract: &SmartContract<T::AccountId>,
+            era: &EraIndex,
+            points: &EraStakingPoints<T::AccountId, BalanceOf<T>>,
+            reward_per_contract: u64,
+        ) -> Result<(), ()> {
+            Ok(())
+
+        }
+
         /// Getter for the current era which also takes care of returning zero if no era was set yet.
         fn get_current_era() -> EraIndex {
             Self::current_era().unwrap_or(Zero::zero())
@@ -1110,5 +1229,10 @@ pub mod pallet {
         ///
         /// This is called at the end of each Era
         fn reward_balance_snapshoot() {}
+
+        /// type convertor for balance
+        pub fn balance_to_u64(input: BalanceOf<T>) -> Option<u64> {
+            TryInto::<u64>::try_into(input).ok()
+        }
     }
 }
