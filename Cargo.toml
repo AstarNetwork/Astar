@@ -13,3 +13,12 @@ members = [
 [profile.release]
 # Astar runtime requires unwinding.
 panic = "unwind"
+
+[package]
+name = "dApp staking"
+authors = ["Stake Technologies"]
+edition = "2021"
+description = "dApp staking library"
+repository = "https://github.com/PlasmNetwork/Astar/tree/development/dapp-staking"
+license = "PolyForm-Noncommercial-1.0.0	"
+readme = "cargo-readme" 
