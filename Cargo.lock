@@ -5415,7 +5415,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-dapps-staking"
-version = "1.10.0"
+version = "0.1.0"
 dependencies = [
  "frame-support",
  "frame-system",
