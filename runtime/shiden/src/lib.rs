@@ -89,7 +89,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("shiden"),
     impl_name: create_runtime_str!("shiden"),
     authoring_version: 1,
-    spec_version: 14,
+    spec_version: 15,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 1,
@@ -252,17 +252,21 @@ impl pallet_multisig::Config for Runtime {
 
 parameter_types! {
     pub const EcdsaUnsignedPriority: TransactionPriority = TransactionPriority::max_value() / 2;
+    pub const CallFee: Balance = SDN / 10;
+    pub const CallMagicNumber: u16 = 0x0150;
 }
 
-/*
 impl pallet_custom_signatures::Config for Runtime {
     type Event = Event;
     type Call = Call;
     type Signature = pallet_custom_signatures::ethereum::EthereumSignature;
     type Signer = <Signature as Verify>::Signer;
+    type CallMagicNumber = CallMagicNumber;
+    type Currency = Balances;
+    type CallFee = CallFee;
+    type OnChargeTransaction = ToStakingPot;
     type UnsignedPriority = EcdsaUnsignedPriority;
 }
-*/
 
 impl pallet_utility::Config for Runtime {
     type Event = Event;
@@ -582,7 +586,7 @@ impl pallet_evm::Config for Runtime {
     type GasWeightMapping = ShidenGasWeightMapping;
     type BlockHashMapping = pallet_ethereum::EthereumBlockHashMapping<Runtime>;
     type CallOrigin = pallet_evm::EnsureAddressRoot<AccountId>;
-    type WithdrawOrigin = pallet_evm::EnsureAddressNever<AccountId>;
+    type WithdrawOrigin = pallet_evm::EnsureAddressTruncated;
     type AddressMapping = pallet_evm::HashedAddressMapping<BlakeTwo256>;
     type Currency = Balances;
     type Event = Event;
