@@ -278,6 +278,8 @@ pub mod pallet {
         InsufficientDeposit,
         /// This account was already used to register contract
         AlreadyUsedDeveloperAccount,
+        /// Unexpected state error, used to abort transaction
+        UnexpectedState,
     }
 
     #[pallet::hooks]
@@ -357,9 +359,7 @@ pub mod pallet {
             // Ensure that staker has enough balance to bond & stake.
             let free_balance = T::Currency::free_balance(&staker);
             // Remove already locked funds from the free balance
-            let available_balance = free_balance
-                .checked_sub(&ledger.total)
-                .unwrap_or(Zero::zero());
+            let available_balance = free_balance.saturating_sub(ledger.total);
             let bonded_value = value.min(available_balance);
             ensure!(!bonded_value.is_zero(), Error::<T>::StakingWithNoValue);
 
@@ -369,22 +369,17 @@ pub mod pallet {
 
             // Get the latest era staking point info or create it if contract hasn't been staked yet so far.
             let era_when_contract_last_staked = Self::contract_last_staked(&contract_id);
-            let mut latest_era_staking_points = if let Some(last_stake_era) =
-                era_when_contract_last_staked.clone()
-            {
-                Self::contract_era_stake(&contract_id, &last_stake_era).unwrap_or_else(|| { // TODO: find out how to print
-                        print("No era staking points struct available even though we have information that contract was staked before. This is a bug!");
-                        EraStakingPoints {
-                            total: Zero::zero(),
-                            stakers: BTreeMap::<T::AccountId, BalanceOf<T>>::new(),
-                        }
-                    })
-            } else {
-                EraStakingPoints {
-                    total: Zero::zero(),
-                    stakers: BTreeMap::<T::AccountId, BalanceOf<T>>::new(),
-                }
-            };
+            let mut latest_era_staking_points =
+                if let Some(last_stake_era) = era_when_contract_last_staked.clone() {
+                    // No era staking points struct available even though we have information that contract was staked before. This is a bug!
+                    Self::contract_era_stake(&contract_id, &last_stake_era)
+                        .ok_or(Error::<T>::UnexpectedState)?
+                } else {
+                    EraStakingPoints {
+                        total: Zero::zero(),
+                        stakers: BTreeMap::<T::AccountId, BalanceOf<T>>::new(),
+                    }
+                };
 
             // Ensure that we can add additional staker for the contract.
             if !latest_era_staking_points.stakers.contains_key(&staker) {
