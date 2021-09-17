@@ -39,7 +39,6 @@ pub(crate) type NegativeImbalanceOf<T> =
 /// Counter for the number of eras that have passed.
 pub type EraIndex = u32;
 
-const MAX_NOMINATIONS: usize = 128;
 const MAX_UNLOCKING_CHUNKS: usize = 32;
 const MAX_VOTES: usize = 128;
 const VOTES_REQUIREMENT: u32 = 12;
@@ -122,6 +121,15 @@ impl Default for Forcing {
     }
 }
 
+/// A record for total rewards and total amount staked for an era
+#[derive(PartialEq, Eq, Clone, Default, Encode, Decode, RuntimeDebug)]
+pub struct EraReward<Balance> {
+    /// Total amount of rewards for an era
+    rewards: Balance,
+    /// Total staked amount for an era
+    staked: Balance,
+}
+
 /// A record of the nominations made by a specific account.
 #[derive(PartialEq, Eq, Clone, Encode, Decode, RuntimeDebug)]
 pub struct Nominations<AccountId, Balance> {
@@ -165,6 +173,7 @@ pub enum SmartContract<AccountId> {
     /// EVM smart contract instance.
     Evm(sp_core::H160),
 }
+
 /// The ledger of a (bonded) stash.
 #[derive(PartialEq, Eq, Clone, Encode, Decode, RuntimeDebug)]
 pub struct StakingLedger<AccountId, Balance: HasCompact> {
