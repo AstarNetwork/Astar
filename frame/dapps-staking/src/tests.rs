@@ -1253,9 +1253,20 @@ fn claim_is_ok() {
         let claim_era = DappsStaking::current_era().unwrap_or(Zero::zero());
         claim(claimer, contract, start_era, claim_era);
 
-        assert_eq!(mock::DappsStaking::contract_last_claimed(contract).unwrap_or(Zero::zero()), claim_era);
-        assert_eq!(mock::DappsStaking::contract_last_staked(contract).unwrap_or(Zero::zero()), claim_era);
-        assert_ok!( (mock::DappsStaking::contract_era_stake(contract, claim_era)).is_some().then(|| ()).ok_or("error") );
+        assert_eq!(
+            mock::DappsStaking::contract_last_claimed(contract).unwrap_or(Zero::zero()),
+            claim_era
+        );
+        assert_eq!(
+            mock::DappsStaking::contract_last_staked(contract).unwrap_or(Zero::zero()),
+            claim_era
+        );
+        assert_ok!(
+            (mock::DappsStaking::contract_era_stake(contract, claim_era))
+                .is_some()
+                .then(|| ())
+                .ok_or("error")
+        );
     })
 }
 
@@ -1263,28 +1274,32 @@ fn claim_is_ok() {
 fn advance_era_and_reward(for_era: EraIndex, rewards: BalanceOf<TestRuntime>) {
     // TODO advance era by incrementing block production, needed for block rewards
     let current: EraIndex = mock::DappsStaking::current_era().unwrap_or(Zero::zero());
-    
-    let era_reward = EraReward{
-        rewards,
-        staked: 0
-    };
+
+    let era_reward = EraReward { rewards, staked: 0 };
     for era in 1..for_era {
         <PalletEraRewards<TestRuntime>>::insert(current + era, era_reward.clone());
     }
     <CurrentEra<TestRuntime>>::put(&current + for_era);
 }
 
-
-fn claim(claimer: AccountId, contract: SmartContract<mock::AccountId>, start_era: EraIndex, claim_era: EraIndex) {
+fn claim(
+    claimer: AccountId,
+    contract: SmartContract<mock::AccountId>,
+    start_era: EraIndex,
+    claim_era: EraIndex,
+) {
     assert_ok!(DappsStaking::claim(Origin::signed(claimer), contract));
     // check the event for claim
     System::assert_last_event(mock::Event::DappsStaking(crate::Event::ContractClaimed(
-        contract, claimer, start_era, claim_era
+        contract, claimer, start_era, claim_era,
     )));
 }
 
-fn bond_and_stake(staker_id: AccountId, contract: SmartContract<mock::AccountId>, value: BalanceOf<TestRuntime>){
-
+fn bond_and_stake(
+    staker_id: AccountId,
+    contract: SmartContract<mock::AccountId>,
+    value: BalanceOf<TestRuntime>,
+) {
     assert_ok!(DappsStaking::bond_and_stake(
         Origin::signed(staker_id),
         contract.clone(),

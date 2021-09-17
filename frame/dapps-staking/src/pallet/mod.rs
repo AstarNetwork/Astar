@@ -974,7 +974,7 @@ pub mod pallet {
             if (start_from_era > last_claim_era) {
                 // TODO clean_contract_history(contract_id);
             }
-                                
+
             // for the first claimable era start_from_era. This storage item must be in place!
             let mut contract_stake_prev = Self::contract_era_stake(&contract_id, &start_from_era)
                 .ok_or(Error::<T>::UnknownStorageValue)?;
@@ -992,11 +992,11 @@ pub mod pallet {
                 );
                 let contract_era_reward =
                     unit * Self::balance_to_u64(contract_stake.total).unwrap_or(1);
-                let staker_reward = Perbill::from_percent(20) * contract_era_reward;  //TODO use constant
+                let staker_reward = Perbill::from_percent(20) * contract_era_reward; //TODO use constant
                 let developer_reward = Perbill::from_percent(20) * contract_era_reward; //TODO use constant
                 Self::payout_stakers2(&contract_id, &era, &contract_stake, staker_reward);
                 Self::payout_developer(&contract_id, &era, &contract_stake, staker_reward);
-                                                                                        
+
                 print!(
                     "total and contract reward for era ({:?})-> {:?}, {:?}\n",
                     era, total_era.rewards, contract_era_reward
@@ -1216,7 +1216,6 @@ pub mod pallet {
             reward_per_contract: u64,
         ) -> Result<(), ()> {
             Ok(())
-
         }
 
         /// Getter for the current era which also takes care of returning zero if no era was set yet.
