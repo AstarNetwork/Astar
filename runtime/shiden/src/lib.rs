@@ -264,6 +264,8 @@ parameter_types! {
     pub const BlockPerEra: BlockNumber = 60;
     pub const MaxStakings: u32 = 5;
     pub const RegisterDeposit: Balance = 100;
+    pub const MaxNumberOfStakersPerContract: u32 = 128;
+    pub const MinimumStakingAmount: Balance = 10;
 }
 
 impl pallet_dapps_staking::Config for Runtime {
@@ -278,6 +280,8 @@ impl pallet_dapps_staking::Config for Runtime {
     type MaxStakings = MaxStakings;
     type Event = Event;
     type WeightInfo = (); // TODO
+    type MaxNumberOfStakersPerContract = MaxNumberOfStakersPerContract;
+    type MinimumStakingAmount = MinimumStakingAmount;
 }
 
 impl pallet_utility::Config for Runtime {
