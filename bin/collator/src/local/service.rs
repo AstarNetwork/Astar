@@ -263,11 +263,9 @@ pub fn start_node(config: Configuration) -> Result<TaskManager, ServiceError> {
 
             let mut io = crate::rpc::create_full(deps, subscription);
             // Local node support WASM contracts
-            io.extend_with(
-                pallet_contracts_rpc::ContractsApi::to_delegate(
-                    pallet_contracts_rpc::Contracts::new(client.clone())
-                )
-            );
+            io.extend_with(pallet_contracts_rpc::ContractsApi::to_delegate(
+                pallet_contracts_rpc::Contracts::new(client.clone()),
+            ));
             Ok(io)
         })
     };
