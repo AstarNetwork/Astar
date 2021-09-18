@@ -252,6 +252,8 @@ pub mod pallet {
         InvalidSlashIndex,
         /// Can not bond with value less than minimum balance.
         InsufficientBondValue,
+        /// Staking on contract deployed by the same account
+        StakingOnOwnedContract,
         /// Can not stake with zero value.
         StakingWithNoValue,
         /// Can not stake with value less than minimum staking value
@@ -349,6 +351,10 @@ pub mod pallet {
             ensure!(
                 RegisteredDapps::<T>::contains_key(&contract_id),
                 Error::<T>::NotOperatedContract
+            );
+            ensure!(
+                !Self::is_contract_registered_by_account(&staker, &contract_id),
+                Error::<T>::StakingOnOwnedContract
             );
 
             // Get the staking ledger or create an entry if it doesn't exist.
@@ -503,7 +509,7 @@ pub mod pallet {
                     .stakers
                     .insert(staker.clone(), remaining_staked_value);
             }
-            let value_to_unstake = value_to_unstake;
+            let value_to_unstake = value_to_unstake; // make it immutable
             era_staking_points.total = era_staking_points.total.saturating_sub(value_to_unstake);
 
             // Get the staking ledger and update it
@@ -521,7 +527,7 @@ pub mod pallet {
             let mut era_reward = if let Some(era_reward) = Self::get_era_total(current_era) {
                 era_reward
             } else {
-                // If there was no stake/unstake operation in current era, fetch if the last era there was.
+                // If there was no stake/unstake operation in current era, fetch if in the last era there was.
                 Self::get_era_total(era_when_contract_last_staked)
                     .ok_or(Error::<T>::UnexpectedState)?
             };
@@ -909,13 +915,13 @@ pub mod pallet {
             RegisteredDapps::<T>::insert(contract_id.clone(), developer.clone());
             RegisteredDevelopers::<T>::insert(&developer, contract_id.clone());
 
-            // create new ContractEraStake item
-            let era_staking_points = EraStakingPoints {
-                total: <BalanceOf<T>>::default(),
-                stakers: BTreeMap::new(),
-            };
-            let current = Self::current_era().unwrap_or(Zero::zero());
-            ContractEraStake::<T>::insert(&contract_id, &current, era_staking_points);
+            // create new ContractEraStake item // TODO: Why is this needed here? Contract wasn't staked, it was only registered.
+            // let era_staking_points = EraStakingPoints {
+            //     total: <BalanceOf<T>>::default(),
+            //     stakers: BTreeMap::new(),
+            // };
+            // let current = Self::current_era().unwrap_or(Zero::zero());
+            // ContractEraStake::<T>::insert(&contract_id, &current, era_staking_points);
 
             Self::deposit_event(Event::<T>::NewContract(developer, contract_id));
 
@@ -1064,6 +1070,18 @@ pub mod pallet {
                 T::Currency::set_lock(STAKING_ID, &staker, ledger.total, WithdrawReasons::all());
                 Ledger::<T>::insert(staker, ledger);
             }
+        }
+
+        /// Used to check whether the contract was registered by the given account.
+        ///
+        /// true if registered, false otherwise
+        fn is_contract_registered_by_account(
+            account_id: &T::AccountId,
+            contract_id: &SmartContract<T::AccountId>,
+        ) -> bool {
+            Self::registered_contract(account_id)
+                .map(|c| if c == *contract_id { Some(()) } else { None })
+                .is_some()
         }
 
         /// Remove all associated data of a stash account from the staking system.
