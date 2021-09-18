@@ -26,7 +26,8 @@ use sp_inherents::{CheckInherentsResult, InherentData};
 use sp_runtime::{
     create_runtime_str, generic, impl_opaque_keys,
     traits::{
-        AccountIdConversion, AccountIdLookup, BlakeTwo256, Block as BlockT, ConvertInto, OpaqueKeys,
+        AccountIdConversion, AccountIdLookup, BlakeTwo256, Block as BlockT, ConvertInto,
+        OpaqueKeys, Verify,
     },
     transaction_validity::{TransactionPriority, TransactionSource, TransactionValidity},
     ApplyExtrinsicResult, FixedPointNumber, Perbill, Perquintill,
@@ -664,7 +665,7 @@ construct_runtime!(
 
         EVM: pallet_evm::{Pallet, Config, Call, Storage, Event<T>} = 60,
         Ethereum: pallet_ethereum::{Pallet, Call, Storage, Event, Config, ValidateUnsigned} = 61,
-        //EthCall: pallet_custom_signatures::{Pallet, Call, Event<T>, ValidateUnsigned} = 62,
+        EthCall: pallet_custom_signatures::{Pallet, Call, Event<T>, ValidateUnsigned} = 62,
 
         Sudo: pallet_sudo::{Pallet, Call, Storage, Event<T>, Config<T>} = 99,
     }
