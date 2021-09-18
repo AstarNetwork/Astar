@@ -1,8 +1,12 @@
+//! Astar collator CLI handlers.
 use crate::{
-    chain_spec,
     cli::{Cli, RelayChainCli, Subcommand},
+    local::{self, development_config},
+    parachain::{
+        self, shibuya, shiden, start_shibuya_node, start_shiden_node, ShibuyaChainSpec,
+        ShidenChainSpec,
+    },
     primitives::Block,
-    service::{self, shibuya, shiden},
 };
 use codec::Encode;
 use cumulus_client_service::genesis::generate_genesis_block;
@@ -22,11 +26,15 @@ use sp_runtime::traits::Block as BlockT;
 use std::{io::Write, net::SocketAddr};
 
 trait IdentifyChain {
+    fn is_dev(&self) -> bool;
     fn is_shiden(&self) -> bool;
     fn is_shibuya(&self) -> bool;
 }
 
 impl IdentifyChain for dyn sc_service::ChainSpec {
+    fn is_dev(&self) -> bool {
+        self.id().starts_with("dev")
+    }
     fn is_shiden(&self) -> bool {
         self.id().starts_with("shiden")
     }
@@ -36,6 +44,9 @@ impl IdentifyChain for dyn sc_service::ChainSpec {
 }
 
 impl<T: sc_service::ChainSpec + 'static> IdentifyChain for T {
+    fn is_dev(&self) -> bool {
+        <dyn sc_service::ChainSpec>::is_dev(self)
+    }
     fn is_shiden(&self) -> bool {
         <dyn sc_service::ChainSpec>::is_shiden(self)
     }
@@ -49,19 +60,20 @@ fn load_spec(
     _para_id: u32,
 ) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
     Ok(match id {
-        "" | "shiden" => Box::new(chain_spec::ShidenChainSpec::from_json_bytes(
+        "dev" => Box::new(development_config()),
+        "" | "shiden" => Box::new(ShidenChainSpec::from_json_bytes(
             &include_bytes!("../res/shiden.raw.json")[..],
         )?),
         /*
-        "shibuya" => Box::new(chain_spec::get_chain_spec(para_id)),
+        "shibuya" => Box::new(get_chain_spec(para_id)),
         */
-        "shibuya" => Box::new(chain_spec::ShidenChainSpec::from_json_bytes(
+        "shibuya" => Box::new(ShidenChainSpec::from_json_bytes(
             &include_bytes!("../res/shibuya.raw.json")[..],
         )?),
         path => {
-            let chain_spec = chain_spec::ShibuyaChainSpec::from_json_file(path.into())?;
+            let chain_spec = ShibuyaChainSpec::from_json_file(path.into())?;
             if chain_spec.is_shiden() {
-                Box::new(chain_spec::ShidenChainSpec::from_json_file(path.into())?)
+                Box::new(ShidenChainSpec::from_json_file(path.into())?)
             } else {
                 Box::new(chain_spec)
             }
@@ -105,7 +117,9 @@ impl SubstrateCli for Cli {
     }
 
     fn native_runtime_version(chain_spec: &Box<dyn ChainSpec>) -> &'static RuntimeVersion {
-        if chain_spec.is_shiden() {
+        if chain_spec.is_dev() {
+            &local_runtime::VERSION
+        } else if chain_spec.is_shiden() {
             &shiden_runtime::VERSION
         } else {
             &shibuya_runtime::VERSION
@@ -188,9 +202,9 @@ pub fn run() -> Result<()> {
                         task_manager,
                         import_queue,
                         ..
-                    } = service::new_partial::<shiden::RuntimeApi, shiden::Executor, _>(
+                    } = parachain::new_partial::<shiden::RuntimeApi, shiden::Executor, _>(
                         &config,
-                        service::build_import_queue,
+                        parachain::build_import_queue,
                     )?;
                     Ok((cmd.run(client, import_queue), task_manager))
                 })
@@ -201,9 +215,9 @@ pub fn run() -> Result<()> {
                         task_manager,
                         import_queue,
                         ..
-                    } = service::new_partial::<shibuya::RuntimeApi, shibuya::Executor, _>(
+                    } = parachain::new_partial::<shibuya::RuntimeApi, shibuya::Executor, _>(
                         &config,
-                        service::build_import_queue,
+                        parachain::build_import_queue,
                     )?;
                     Ok((cmd.run(client, import_queue), task_manager))
                 })
@@ -217,9 +231,9 @@ pub fn run() -> Result<()> {
                         client,
                         task_manager,
                         ..
-                    } = service::new_partial::<shiden::RuntimeApi, shiden::Executor, _>(
+                    } = parachain::new_partial::<shiden::RuntimeApi, shiden::Executor, _>(
                         &config,
-                        service::build_import_queue,
+                        parachain::build_import_queue,
                     )?;
                     Ok((cmd.run(client, config.database), task_manager))
                 })
@@ -229,9 +243,9 @@ pub fn run() -> Result<()> {
                         client,
                         task_manager,
                         ..
-                    } = service::new_partial::<shibuya::RuntimeApi, shibuya::Executor, _>(
+                    } = parachain::new_partial::<shibuya::RuntimeApi, shibuya::Executor, _>(
                         &config,
-                        service::build_import_queue,
+                        parachain::build_import_queue,
                     )?;
                     Ok((cmd.run(client, config.database), task_manager))
                 })
@@ -245,9 +259,9 @@ pub fn run() -> Result<()> {
                         client,
                         task_manager,
                         ..
-                    } = service::new_partial::<shiden::RuntimeApi, shiden::Executor, _>(
+                    } = parachain::new_partial::<shiden::RuntimeApi, shiden::Executor, _>(
                         &config,
-                        service::build_import_queue,
+                        parachain::build_import_queue,
                     )?;
                     Ok((cmd.run(client, config.chain_spec), task_manager))
                 })
@@ -257,9 +271,9 @@ pub fn run() -> Result<()> {
                         client,
                         task_manager,
                         ..
-                    } = service::new_partial::<shibuya::RuntimeApi, shibuya::Executor, _>(
+                    } = parachain::new_partial::<shibuya::RuntimeApi, shibuya::Executor, _>(
                         &config,
-                        service::build_import_queue,
+                        parachain::build_import_queue,
                     )?;
                     Ok((cmd.run(client, config.chain_spec), task_manager))
                 })
@@ -274,9 +288,9 @@ pub fn run() -> Result<()> {
                         task_manager,
                         import_queue,
                         ..
-                    } = service::new_partial::<shiden::RuntimeApi, shiden::Executor, _>(
+                    } = parachain::new_partial::<shiden::RuntimeApi, shiden::Executor, _>(
                         &config,
-                        service::build_import_queue,
+                        parachain::build_import_queue,
                     )?;
                     Ok((cmd.run(client, import_queue), task_manager))
                 })
@@ -287,9 +301,9 @@ pub fn run() -> Result<()> {
                         task_manager,
                         import_queue,
                         ..
-                    } = service::new_partial::<shibuya::RuntimeApi, shibuya::Executor, _>(
+                    } = parachain::new_partial::<shibuya::RuntimeApi, shibuya::Executor, _>(
                         &config,
-                        service::build_import_queue,
+                        parachain::build_import_queue,
                     )?;
                     Ok((cmd.run(client, import_queue), task_manager))
                 })
@@ -323,9 +337,9 @@ pub fn run() -> Result<()> {
                         task_manager,
                         backend,
                         ..
-                    } = service::new_partial::<shiden::RuntimeApi, shiden::Executor, _>(
+                    } = parachain::new_partial::<shiden::RuntimeApi, shiden::Executor, _>(
                         &config,
-                        service::build_import_queue,
+                        parachain::build_import_queue,
                     )?;
                     Ok((cmd.run(client, backend), task_manager))
                 })
@@ -336,9 +350,9 @@ pub fn run() -> Result<()> {
                         task_manager,
                         backend,
                         ..
-                    } = service::new_partial::<shibuya::RuntimeApi, shibuya::Executor, _>(
+                    } = parachain::new_partial::<shibuya::RuntimeApi, shibuya::Executor, _>(
                         &config,
-                        service::build_import_queue,
+                        parachain::build_import_queue,
                     )?;
                     Ok((cmd.run(client, backend), task_manager))
                 })
@@ -397,6 +411,10 @@ pub fn run() -> Result<()> {
             let runner = cli.create_runner(&*cli.run)?;
 
             runner.run_node_until_exit(|config| async move {
+                if config.chain_spec.is_dev() {
+                    return local::start_node(config).map_err(Into::into);
+                }
+
                 let polkadot_cli = RelayChainCli::new(
                     &config,
                     [RelayChainCli::executable_name().to_string()]
@@ -431,12 +449,12 @@ pub fn run() -> Result<()> {
                 );
 
                 if config.chain_spec.is_shiden() {
-                    service::start_shiden_node(config, polkadot_config, id)
+                    start_shiden_node(config, polkadot_config, id)
                         .await
                         .map(|r| r.0)
                         .map_err(Into::into)
                 } else {
-                    service::start_shibuya_node(config, polkadot_config, id)
+                    start_shibuya_node(config, polkadot_config, id)
                         .await
                         .map(|r| r.0)
                         .map_err(Into::into)

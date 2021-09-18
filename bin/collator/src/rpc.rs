@@ -1,4 +1,4 @@
-//! Parachain-specific RPCs implementation.
+//! Astar RPCs implementation.
 
 use fc_rpc::{
     EthApi, EthApiServer, EthFilterApi, EthFilterApiServer, EthPubSubApi, EthPubSubApiServer,
@@ -24,6 +24,30 @@ use std::collections::BTreeMap;
 use std::sync::Arc;
 
 use crate::primitives::*;
+
+// TODO This is copied from frontier. It should be imported instead after
+// https://github.com/paritytech/frontier/issues/333 is solved
+pub fn open_frontier_backend(
+    config: &sc_service::Configuration,
+) -> Result<Arc<fc_db::Backend<Block>>, String> {
+    let config_dir = config
+        .base_path
+        .as_ref()
+        .map(|base_path| base_path.config_dir(config.chain_spec.id()))
+        .unwrap_or_else(|| {
+            sc_service::BasePath::from_project("", "", "astar").config_dir(config.chain_spec.id())
+        });
+    let path = config_dir.join("frontier").join("db");
+
+    Ok(Arc::new(fc_db::Backend::<Block>::new(
+        &fc_db::DatabaseSettings {
+            source: fc_db::DatabaseSettingsSrc::RocksDb {
+                path,
+                cache_size: 0,
+            },
+        },
+    )?))
+}
 
 /// Full client dependencies
 pub struct FullDeps<C, P> {
