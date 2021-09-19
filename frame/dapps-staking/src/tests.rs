@@ -1287,6 +1287,10 @@ fn claim_with_more_staking_ok() {
     })
 }
 
+//
+// HELPER FUNCTIONS
+//
+
 // helper fn to make  register() one liner for readability
 fn register(developer: u64, contract: SmartContract<AccountId>) {
     assert_ok!(DappsStaking::register(

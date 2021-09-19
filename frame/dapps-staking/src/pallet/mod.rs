@@ -982,7 +982,7 @@ pub mod pallet {
             // for any era after start_from_era, the ContractEraStake is present only if there
             // was a change in staking amount. If it is not present we read last recorded ContractEraStake
             for era in start_from_era..current_era {
-                let total_era = Self::get_era_total(era).unwrap_or(Default::default()); // TODO hanlde zero
+                let total_era = Self::get_era_total(era).ok_or(Error::<T>::NothingToClaim)?;
                 let contract_stake =
                     Self::contract_era_stake(&contract_id, era).unwrap_or(contract_stake_prev);
 
@@ -1207,8 +1207,17 @@ pub mod pallet {
             contract: &SmartContract<T::AccountId>,
             era: &EraIndex,
             points: &EraStakingPoints<T::AccountId, BalanceOf<T>>,
-            reward_per_contract: u64,
+            reward_for_contract: u64,
         ) -> Result<(), ()> {
+            let staker_unit = Perbill::from_rational(
+                Self::balance_to_u64(points.total).unwrap_or(reward_for_contract),
+                reward_for_contract,
+            );
+            points.stakers.iter().map(|(s, b)| {
+                // let staker_reward: BalanceOf<T> = staker_unit * Self::balance_to_u64(*b).unwrap_or(0);
+                // TODO update ledger
+                // *b = b.saturating_add(staker_reward); // TODO this does not make sense here since we delete this record after return
+            });
             Ok(())
         }
 
