@@ -1259,6 +1259,34 @@ fn claim_is_ok() {
     })
 }
 
+#[test]
+fn claim_with_more_staking_ok() {
+    ExternalityBuilder::build().execute_with(|| {
+        let developer1 = 1;
+        let claimer = 2;
+        const ERA_REWARD: Balance = 1000;
+        const STAKE_AMOUNT: Balance = 100;
+        let contract =
+            SmartContract::Evm(H160::from_str("1000000000000000000000000000000000000007").unwrap());
+        const FROM_ERA: EraIndex = 1;
+        const SKIP_ERA: EraIndex = 3;
+
+        advance_era_and_reward(FROM_ERA, ERA_REWARD);
+        let start_era = DappsStaking::current_era().unwrap_or(Zero::zero());
+        register(developer1, contract.clone());
+        bond_and_stake(claimer, contract, STAKE_AMOUNT);
+        advance_era_and_reward(SKIP_ERA, ERA_REWARD);
+        bond_and_stake(claimer, contract, STAKE_AMOUNT);
+        advance_era_and_reward(1, ERA_REWARD);
+        bond_and_stake(claimer, contract, STAKE_AMOUNT);
+        advance_era_and_reward(SKIP_ERA, ERA_REWARD);
+        let claim_era: EraIndex = DappsStaking::current_era().unwrap_or(Zero::zero());
+        claim(claimer, contract, start_era, claim_era.clone());
+
+        cleared_contract_history(contract, FROM_ERA, claim_era);
+    })
+}
+
 // helper fn to make  register() one liner for readability
 fn register(developer: u64, contract: SmartContract<AccountId>) {
     assert_ok!(DappsStaking::register(
