@@ -1244,33 +1244,29 @@ fn claim_is_ok() {
         const STAKE_AMOUNT: Balance = 100;
         let contract =
             SmartContract::Evm(H160::from_str("1000000000000000000000000000000000000007").unwrap());
+        const FROM_ERA: EraIndex = 1;
+        const SKIP_ERA: EraIndex = 3;
 
-        advance_era_and_reward(1, ERA_REWARD);
+        advance_era_and_reward(FROM_ERA, ERA_REWARD);
         let start_era = DappsStaking::current_era().unwrap_or(Zero::zero());
         register(developer1, contract.clone());
         bond_and_stake(claimer, contract, STAKE_AMOUNT);
-        advance_era_and_reward(2, ERA_REWARD);
-        let claim_era = DappsStaking::current_era().unwrap_or(Zero::zero());
-        claim(claimer, contract, start_era, claim_era);
+        advance_era_and_reward(SKIP_ERA, ERA_REWARD);
+        let claim_era: EraIndex = DappsStaking::current_era().unwrap_or(Zero::zero());
+        claim(claimer, contract, start_era, claim_era.clone());
 
-        assert_eq!(
-            mock::DappsStaking::contract_last_claimed(contract).unwrap_or(Zero::zero()),
-            claim_era
-        );
-        assert_eq!(
-            mock::DappsStaking::contract_last_staked(contract).unwrap_or(Zero::zero()),
-            claim_era
-        );
-        assert_ok!(
-            (mock::DappsStaking::contract_era_stake(contract, claim_era))
-                .is_some()
-                .then(|| ())
-                .ok_or("error")
-        );
+        cleared_contract_history(contract, FROM_ERA, claim_era);
     })
 }
 
-// increment current era for for_era eras
+// helper fn to make  register() one liner for readability
+fn register(developer: u64, contract: SmartContract<AccountId>) {
+    assert_ok!(DappsStaking::register(
+        Origin::signed(developer),
+        contract.clone()
+    ));
+}
+// helper fn to skip "for_era" eras, but reward each era
 fn advance_era_and_reward(for_era: EraIndex, rewards: BalanceOf<TestRuntime>) {
     // TODO advance era by incrementing block production, needed for block rewards
     let current: EraIndex = mock::DappsStaking::current_era().unwrap_or(Zero::zero());
@@ -1282,6 +1278,40 @@ fn advance_era_and_reward(for_era: EraIndex, rewards: BalanceOf<TestRuntime>) {
     <CurrentEra<TestRuntime>>::put(&current + for_era);
 }
 
+// helper fn to check updated storage items after claim is called
+fn cleared_contract_history(
+    contract: SmartContract<mock::AccountId>,
+    from_era: EraIndex,
+    to_era: EraIndex,
+) {
+    // check claim pointer moved
+    assert_eq!(
+        mock::DappsStaking::contract_last_claimed(&contract).unwrap_or(Zero::zero()),
+        to_era
+    );
+
+    // check last staked pointer moved
+    assert_eq!(
+        mock::DappsStaking::contract_last_staked(&contract).unwrap_or(Zero::zero()),
+        to_era
+    );
+
+    // check new contractEraStaked
+    assert_ok!((mock::DappsStaking::contract_era_stake(contract, to_era))
+        .is_some()
+        .then(|| ())
+        .ok_or("contract_era_stake not created"));
+
+    // check history storage is cleared
+    for era in from_era..to_era {
+        assert_ok!((mock::DappsStaking::contract_era_stake(contract, era))
+            .is_none()
+            .then(|| ())
+            .ok_or("contract_era_stake not cleared"));
+    }
+}
+
+// helper fn to make claim() one liner for readability
 fn claim(
     claimer: AccountId,
     contract: SmartContract<mock::AccountId>,
@@ -1295,6 +1325,7 @@ fn claim(
     )));
 }
 
+// helper fn to make bond_and_stake() one liner for readability
 fn bond_and_stake(
     staker_id: AccountId,
     contract: SmartContract<mock::AccountId>,

@@ -1004,11 +1004,15 @@ pub mod pallet {
                 contract_stake_prev = contract_stake;
             }
 
+            // Remove all previous records of staking for this contract,
+            // they have already been processed and won't be needed anymore.
+            ContractEraStake::<T>::remove_prefix(&contract_id, None);
+
             // move contract pointers to current era
             ContractLastClaimed::<T>::insert(&contract_id, current_era);
             ContractLastStaked::<T>::insert(&contract_id, current_era);
 
-            // move contract era stake data to current era
+            // create contract era stake data in current era for further staking and claiming
             ContractEraStake::<T>::insert(&contract_id, current_era, contract_stake_prev);
 
             Self::deposit_event(Event::<T>::ContractClaimed(
