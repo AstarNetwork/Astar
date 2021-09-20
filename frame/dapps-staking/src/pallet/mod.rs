@@ -224,6 +224,8 @@ pub mod pallet {
         Stake(T::AccountId),
         /// Account has bonded and staked funds on a smart contract.
         BondAndStake(T::AccountId, SmartContract<T::AccountId>, BalanceOf<T>),
+        /// Account has unbonded, unstaked and withdrawn funds.
+        UnbondUnstakeAndWithdraw(T::AccountId, SmartContract<T::AccountId>, BalanceOf<T>),
         /// New contract added for staking, with deposit value
         NewContract(T::AccountId, SmartContract<T::AccountId>),
         /// New dapps staking era. Distribute era rewards to contracts
@@ -236,6 +238,8 @@ pub mod pallet {
         NotController,
         /// Not a stash account.
         NotStash,
+        /// Account is not an active staker
+        NotStaker,
         /// Stash is already bonded.
         AlreadyBonded,
         /// Controller is already paired.
@@ -268,6 +272,10 @@ pub mod pallet {
         EmptyNominateTargets,
         /// Targets must be operated contracts
         NotOperatedContract,
+        /// Contract isn't staked.
+        NotStakedContract,
+        /// Unstaking a contract with zero value
+        UnstakingWithNoValue,
         /// The nominations amount more than active staking amount.
         NotEnoughStaking,
         /// The contract is already registered by other account
@@ -415,8 +423,15 @@ pub mod pallet {
                 latest_era_staking_points,
             );
 
-            // Update total staked value in era
-            let mut era_reward = Self::get_era_total(current_era).unwrap_or(Default::default());
+            // Update total staked value in era. There are 3 possible scenarios here.
+            let mut era_reward = if let Some(era_rewards) = Self::get_era_total(current_era) {
+                era_rewards
+            } else if era_when_contract_last_staked.is_some() {
+                Self::get_era_total(era_when_contract_last_staked.unwrap())
+                    .ok_or(Error::<T>::UnexpectedState)?
+            } else {
+                Default::default()
+            };
             era_reward.staked += bonded_value;
             PalletEraRewards::<T>::insert(current_era, era_reward);
 
@@ -440,6 +455,98 @@ pub mod pallet {
             }
 
             Self::deposit_event(Event::<T>::BondAndStake(staker, contract_id, bonded_value));
+
+            Ok(().into())
+        }
+
+        /// Unbond, unstake and withdraw balance from the contract.
+        ///
+        /// Value will be unlocked for the user.
+        ///
+        /// In case remaining staked balance on contract is below minimum staking amount,
+        /// entire stake for that contract will be unstaked.
+        ///
+        /// # <weight>
+        /// TODO!
+        /// </weight>
+        #[pallet::weight(10)]
+        pub fn unbond_unstake_and_withdraw(
+            origin: OriginFor<T>,
+            contract_id: SmartContract<T::AccountId>,
+            #[pallet::compact] value: BalanceOf<T>,
+        ) -> DispatchResultWithPostInfo {
+            let staker = ensure_signed(origin)?;
+            ensure!(
+                Self::is_contract_valid(&contract_id),
+                Error::<T>::ContractIsNotValid
+            );
+            ensure!(
+                RegisteredDapps::<T>::contains_key(&contract_id),
+                Error::<T>::NotOperatedContract
+            );
+            ensure!(value > Zero::zero(), Error::<T>::UnstakingWithNoValue);
+
+            // Get the latest era staking points for the contract.
+            let era_when_contract_last_staked =
+                Self::contract_last_staked(&contract_id).ok_or(Error::<T>::NotStakedContract)?;
+            let mut era_staking_points = Self::contract_era_stake(&contract_id, &era_when_contract_last_staked).ok_or_else(|| {
+                print("No era staking points for contract even though information exists that it was staked. This is a bug!");
+                Error::<T>::UnexpectedState
+            })?;
+
+            // Ensure that the staker actually has this contract staked.
+            let staked_value = *era_staking_points
+                .stakers
+                .get(&staker)
+                .ok_or(Error::<T>::NotStakedContract)?;
+
+            // Calculate the value which will be unstaked.
+            let mut value_to_unstake = value.min(staked_value);
+            let remaining_staked_value = staked_value.saturating_sub(value_to_unstake);
+            if remaining_staked_value < T::MinimumStakingAmount::get() {
+                // if staked value would fall below threshold, unstake everything
+                era_staking_points.stakers.remove(&staker);
+                value_to_unstake = staked_value;
+            } else {
+                era_staking_points
+                    .stakers
+                    .insert(staker.clone(), remaining_staked_value);
+            }
+            let value_to_unstake = value_to_unstake; // make it immutable
+            era_staking_points.total = era_staking_points.total.saturating_sub(value_to_unstake);
+
+            // Get the staking ledger and update it
+            let mut ledger = Self::ledger(&staker).ok_or(Error::<T>::UnexpectedState)?;
+            ledger.total = ledger.total.saturating_sub(value_to_unstake);
+            ledger.active = ledger.active.saturating_sub(value_to_unstake);
+            Self::update_ledger(&staker, &ledger);
+
+            let current_era = Self::get_current_era();
+
+            // Update the era staking points
+            ContractEraStake::<T>::insert(contract_id.clone(), current_era, era_staking_points);
+
+            // Update total staked value in era.
+            let mut era_reward = if let Some(era_reward) = Self::get_era_total(current_era) {
+                era_reward
+            } else {
+                // If there was no stake/unstake operation in current era, fetch if in the last era there was.
+                Self::get_era_total(era_when_contract_last_staked)
+                    .ok_or(Error::<T>::UnexpectedState)?
+            };
+            era_reward.staked = era_reward.staked.saturating_sub(value_to_unstake);
+            PalletEraRewards::<T>::insert(current_era, era_reward);
+
+            // Check if we need to update era in which contract was last changed. Can avoid one write.
+            if era_when_contract_last_staked != current_era {
+                ContractLastStaked::<T>::insert(&contract_id, current_era);
+            }
+
+            Self::deposit_event(Event::<T>::UnbondUnstakeAndWithdraw(
+                staker,
+                contract_id,
+                value_to_unstake,
+            ));
 
             Ok(().into())
         }
@@ -627,15 +734,7 @@ pub mod pallet {
 
             let withdrawn_value = old_total.saturating_sub(ledger.total);
 
-            if ledger.unlocking.is_empty() && ledger.active.is_zero() {
-                // This account must have called `unbond()` with some value that caused the active
-                // portion to fall below existential deposit + will have no more unlocking chunks
-                // left. We can now safely remove all staking-related information.
-                Self::kill_stash(&stash)?;
-                // remove the lock.
-                T::Currency::remove_lock(STAKING_ID, &stash);
-            } else if !withdrawn_value.is_zero() {
-                // Partial unbond, update ledger and move on.
+            if !withdrawn_value.is_zero() {
                 Self::update_ledger(&controller, &ledger);
             }
 
@@ -819,14 +918,6 @@ pub mod pallet {
             RegisteredDapps::<T>::insert(contract_id.clone(), developer.clone());
             RegisteredDevelopers::<T>::insert(&developer, contract_id.clone());
 
-            // create new ContractEraStake item
-            let era_staking_points = EraStakingPoints {
-                total: <BalanceOf<T>>::default(),
-                stakers: BTreeMap::new(),
-            };
-            let current = Self::current_era().unwrap_or(Zero::zero());
-            ContractEraStake::<T>::insert(&contract_id, &current, era_staking_points);
-
             Self::deposit_event(Event::<T>::NewContract(developer, contract_id));
 
             Ok(().into())
@@ -960,19 +1051,20 @@ pub mod pallet {
     }
 
     impl<T: Config> Pallet<T> {
-        /// Update the ledger for a controller. This will also update the stash lock.
+        /// Update the ledger for a staker. This will also update the stash lock.
         /// This lock will lock the entire funds except paying for further transactions.
         fn update_ledger(
-            controller: &T::AccountId,
+            staker: &T::AccountId,
             ledger: &StakingLedger<T::AccountId, BalanceOf<T>>,
         ) {
-            T::Currency::set_lock(
-                STAKING_ID,
-                &ledger.stash,
-                ledger.total,
-                WithdrawReasons::all(),
-            );
-            <Ledger<T>>::insert(controller, ledger);
+            if ledger.unlocking.is_empty() && ledger.active.is_zero() {
+                Self::kill_stash(&staker); // TODO: remove this
+                Ledger::<T>::remove(&staker);
+                T::Currency::remove_lock(STAKING_ID, &staker);
+            } else {
+                T::Currency::set_lock(STAKING_ID, &staker, ledger.total, WithdrawReasons::all());
+                Ledger::<T>::insert(staker, ledger);
+            }
         }
 
         /// Remove all associated data of a stash account from the staking system.
