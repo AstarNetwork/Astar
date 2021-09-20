@@ -36,6 +36,9 @@ pub fn authority_keys_from_seed(s: &str) -> (AuraId, GrandpaId) {
 
 /// Development config (single validator Alice)
 pub fn development_config() -> ChainSpec {
+    let mut properties = serde_json::map::Map::new();
+    properties.insert("tokenSymbol".into(), "ASTL".into());
+    properties.insert("tokenDecimals".into(), 18.into());
     ChainSpec::from_genesis(
         "Development",
         "dev",
@@ -53,7 +56,7 @@ pub fn development_config() -> ChainSpec {
         vec![],
         None,
         None,
-        None,
+        Some(properties),
         None,
     )
 }
@@ -108,5 +111,16 @@ fn testnet_genesis(
         },
         ethereum: Default::default(),
         sudo: SudoConfig { key: root_key },
+    }
+}
+
+#[cfg(test)]
+pub(crate) mod tests {
+    use super::*;
+    use sp_runtime::BuildStorage;
+
+    #[test]
+    fn test_create_development_chain_spec() {
+        development_config().build_storage().unwrap();
     }
 }

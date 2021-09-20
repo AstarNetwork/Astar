@@ -245,6 +245,7 @@ dependencies = [
  "sc-transaction-pool",
  "sc-transaction-pool-api",
  "serde",
+ "serde_json",
  "shibuya-runtime",
  "shiden-runtime",
  "sp-api",
