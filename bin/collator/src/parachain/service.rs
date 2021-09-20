@@ -1,3 +1,4 @@
+//! Parachain Service and ServiceFactory implementation.
 use cumulus_client_consensus_aura::{
     build_aura_consensus, BuildAuraConsensusParams, SlotProportion,
 };
@@ -28,7 +29,7 @@ use std::{
 };
 use substrate_prometheus_endpoint::Registry;
 
-use crate::aura_upgrade::*;
+use super::shell_upgrade::*;
 use crate::primitives::*;
 
 /// Shiden network runtime executor.
@@ -51,29 +52,6 @@ pub mod shibuya {
         shibuya_runtime::api::dispatch,
         shibuya_runtime::native_version,
     );
-}
-
-// TODO This is copied from frontier. It should be imported instead after
-// https://github.com/paritytech/frontier/issues/333 is solved
-fn open_frontier_backend(config: &Configuration) -> Result<Arc<fc_db::Backend<Block>>, String> {
-    let config_dir = config
-        .base_path
-        .as_ref()
-        .map(|base_path| base_path.config_dir(config.chain_spec.id()))
-        .unwrap_or_else(|| {
-            sc_service::BasePath::from_project("", "", "moonbeam")
-                .config_dir(config.chain_spec.id())
-        });
-    let path = config_dir.join("frontier").join("db");
-
-    Ok(Arc::new(fc_db::Backend::<Block>::new(
-        &fc_db::DatabaseSettings {
-            source: fc_db::DatabaseSettingsSrc::RocksDb {
-                path,
-                cache_size: 0,
-            },
-        },
-    )?))
 }
 
 /// Starts a `ServiceBuilder` for a full service.
@@ -162,7 +140,7 @@ where
         client.clone(),
     );
 
-    let frontier_backend = open_frontier_backend(config)?;
+    let frontier_backend = crate::rpc::open_frontier_backend(config)?;
     let frontier_block_import =
         FrontierBlockImport::new(client.clone(), client.clone(), frontier_backend.clone());
 

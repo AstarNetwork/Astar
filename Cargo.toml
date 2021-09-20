@@ -1,6 +1,7 @@
 [workspace]
 members = [
     "bin/collator",
+    "runtime/local",
     "runtime/shiden",
     "runtime/shibuya",
     "frame/block-reward",
