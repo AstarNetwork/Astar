@@ -29,7 +29,8 @@ pub(crate) const EXISTENTIAL_DEPOSIT: Balance = 2;
 pub(crate) const REGISTER_DEPOSIT: Balance = 200;
 pub(crate) const UNBONDING_DURATION: EraIndex = 5;
 pub(crate) const MAX_NUMBER_OF_STAKERS: u32 = 4;
-pub(crate) const MINUMUM_STAKING_AMOUNT: Balance = 10;
+/// Value shouldn't be less than 2 for testing purposes, otherwise we cannot test certain corner cases.
+pub(crate) const MINIMUM_STAKING_AMOUNT: Balance = 10;
 
 construct_runtime!(
     pub enum TestRuntime where
@@ -136,7 +137,7 @@ parameter_types! {
     pub const RegisterDeposit: u32 = 100;
     pub const MockBlockPerEra: BlockNumber = 10;
     pub const MaxNumberOfStakersPerContract: u32 = MAX_NUMBER_OF_STAKERS;
-    pub const MinimumStakingAmount: Balance = MINUMUM_STAKING_AMOUNT;
+    pub const MinimumStakingAmount: Balance = MINIMUM_STAKING_AMOUNT;
 }
 impl pallet_dapps_staking::Config for TestRuntime {
     type Event = Event;
