@@ -137,7 +137,8 @@ parameter_types! {
     pub const RegisterDeposit: u32 = 100;
     pub const MockBlockPerEra: BlockNumber = 10;
     pub const MaxNumberOfStakersPerContract: u32 = MAX_NUMBER_OF_STAKERS;
-    pub const MinimumStakingAmount: Balance = MINIMUM_STAKING_AMOUNT;
+    pub const MinimumStakingAmount: Balance = MINUMUM_STAKING_AMOUNT;
+    pub const DeveloperRewardPercentage: u8 = 80;
 }
 impl pallet_dapps_staking::Config for TestRuntime {
     type Event = Event;
@@ -147,6 +148,7 @@ impl pallet_dapps_staking::Config for TestRuntime {
     type UnbondingDuration = UnbondingDuration;
     type EraPayout = EraPayoutMock;
     type RegisterDeposit = RegisterDeposit;
+    type DeveloperRewardPercentage = DeveloperRewardPercentage;
     type WeightInfo = ();
     type UnixTime = Timestamp;
     type RewardRemainder = RewardRemainderMock;

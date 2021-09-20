@@ -63,6 +63,10 @@ pub mod pallet {
         #[pallet::constant]
         type RegisterDeposit: Get<BalanceOf<Self>>;
 
+        /// Percentage of reward paid to developer.
+        #[pallet::constant]
+        type DeveloperRewardPercentage: Get<u8>;
+
         /// Maximum number of unique stakers per contract.
         #[pallet::constant]
         type MaxNumberOfStakersPerContract: Get<u32>;
@@ -300,9 +304,15 @@ pub mod pallet {
         /// Unexpected state error, used to abort transaction
         UnexpectedState,
         /// Report issue on github if this is ever emitted
-        UnknownStorageValue,
-
+        UnknownStartStakingData,
+        /// Report issue on github if this is ever emitted
+        UnknownEraReward,
+        /// There are no funds to reward the contract. Or already claimed in that era
         NothingToClaim,
+        /// Claiming contract with no developer account
+        ContractNotRegistered,
+        /// Contract already claimed in this era and reward is distributed
+        AlreadyClaimedInThisEra,
     }
 
     #[pallet::hooks]
@@ -949,58 +959,72 @@ pub mod pallet {
             contract_id: SmartContract<T::AccountId>,
         ) -> DispatchResultWithPostInfo {
             let claimer = ensure_signed(origin)?;
+
+            // check if this contract is registered
+            let developer = Self::registered_developer(&contract_id)
+                .ok_or(Error::<T>::ContractNotRegistered)?;
+
+            // double check if this is valid contract address
             ensure!(
                 Self::is_contract_valid(&contract_id),
                 Error::<T>::ContractIsNotValid
             );
+
+            // check if it was ever staked on this contract.
             let last_staked =
                 Self::contract_last_staked(&contract_id).ok_or(Error::<T>::NothingToClaim)?;
+
+            // check if the contract is already claimed in this era
             let current_era = Self::current_era().unwrap_or(Zero::zero());
-            // ensure!(last_staked != 0, Error::<T>::NothingToClaim);
+            let mut last_claim_era: EraIndex =
+                Self::contract_last_claimed(&contract_id).unwrap_or(current_era.clone());
+            ensure!(
+                current_era != last_claim_era,
+                Error::<T>::AlreadyClaimedInThisEra
+            );
 
-            let last_claim_era: EraIndex = Self::contract_last_claimed(&contract_id)
-                .unwrap_or_else(|| -> EraIndex {
-                    // this contract is claimed for the first time
-                    print!(
-                        "this contract is now claimed for the first time: {:?}",
-                        contract_id
-                    );
-                    ContractLastClaimed::<T>::insert(&contract_id, current_era.clone());
+            // is this first time we claim the contract reward?
+            if last_claim_era.is_zero() {
+                last_claim_era = current_era.clone()
+            }
 
-                    current_era.clone()
-                });
+            // oldest era to start with collecting rewards
             let last_allowed_era = current_era.saturating_sub(Self::history_depth());
             let start_from_era = last_claim_era.max(last_allowed_era);
             if (start_from_era > last_claim_era) {
-                // TODO clean_contract_history(contract_id);
+                // TODO collect all unclaimed rewards and send to Treasury pallet
             }
 
-            // for the first claimable era start_from_era. This storage item must be in place!
+            // for the first claimable era "start_from_era", this storage item must be in place!
             let mut contract_stake_prev = Self::contract_era_stake(&contract_id, &start_from_era)
-                .ok_or(Error::<T>::UnknownStorageValue)?;
+                .ok_or(Error::<T>::UnknownStartStakingData)?;
 
             // for any era after start_from_era, the ContractEraStake is present only if there
-            // was a change in staking amount. If it is not present we read last recorded ContractEraStake
+            // was a change in staking amount. If it is not present we process last recorded ContractEraStake
             for era in start_from_era..current_era {
-                let total_era = Self::get_era_total(era).ok_or(Error::<T>::NothingToClaim)?;
+                let total_era = Self::get_era_total(era).ok_or(Error::<T>::UnknownEraReward)?;
                 let contract_stake =
                     Self::contract_era_stake(&contract_id, era).unwrap_or(contract_stake_prev);
 
-                let unit = Perbill::from_rational(
-                    Self::balance_to_u64(total_era.staked).unwrap_or(1),
+                // contract's part in whole era reward
+                let contract_part = Perbill::from_rational(
                     Self::balance_to_u64(total_era.rewards).unwrap_or(1),
+                    Self::balance_to_u64(total_era.staked).unwrap_or(1),
                 );
                 let contract_era_reward =
-                    unit * Self::balance_to_u64(contract_stake.total).unwrap_or(1);
-                let staker_reward = Perbill::from_percent(20) * contract_era_reward; //TODO use constant
-                let developer_reward = Perbill::from_percent(20) * contract_era_reward; //TODO use constant
-                Self::payout_stakers2(&contract_id, &era, &contract_stake, staker_reward);
-                Self::payout_developer(&contract_id, &era, &contract_stake, staker_reward);
+                    contract_part * Self::balance_to_u64(contract_stake.total).unwrap_or(0);
 
-                print!(
-                    "total and contract reward for era ({:?})-> {:?}, {:?}\n",
-                    era, total_era.rewards, contract_era_reward
-                );
+                // divide reward between stakers and the developer of the contract
+                let contract_staker_reward =
+                    (100 - T::DeveloperRewardPercentage::get()) as u64 * contract_era_reward;
+                let contract_developer_reward =
+                    T::DeveloperRewardPercentage::get() as u64 * contract_era_reward;
+
+                // make payout to the stakers and the developer
+                Self::payout_stakers2(&contract_stake, contract_staker_reward);
+                Self::payout_developer(developer.clone(), contract_developer_reward);
+
+                // store current record in case next era has no record of changed stake amount
                 contract_stake_prev = contract_stake;
             }
 
@@ -1204,30 +1228,23 @@ pub mod pallet {
 
         /// Payout all stakers for this era
         fn payout_stakers2(
-            contract: &SmartContract<T::AccountId>,
-            era: &EraIndex,
             points: &EraStakingPoints<T::AccountId, BalanceOf<T>>,
             reward_for_contract: u64,
         ) -> Result<(), ()> {
-            let staker_unit = Perbill::from_rational(
-                Self::balance_to_u64(points.total).unwrap_or(reward_for_contract),
+            let staker_part = Perbill::from_rational(
                 reward_for_contract,
+                Self::balance_to_u64(points.total).unwrap_or(reward_for_contract),
             );
             points.stakers.iter().map(|(s, b)| {
-                // let staker_reward: BalanceOf<T> = staker_unit * Self::balance_to_u64(*b).unwrap_or(0);
-                // TODO update ledger
-                // *b = b.saturating_add(staker_reward); // TODO this does not make sense here since we delete this record after return
+                let staker_reward = staker_part * Self::balance_to_u64(*b).unwrap_or(0);
+                T::Currency::deposit_into_existing(s, staker_reward.saturated_into());
             });
             Ok(())
         }
 
         /// Payout contract developer for this era
-        fn payout_developer(
-            contract: &SmartContract<T::AccountId>,
-            era: &EraIndex,
-            points: &EraStakingPoints<T::AccountId, BalanceOf<T>>,
-            reward_per_contract: u64,
-        ) -> Result<(), ()> {
+        fn payout_developer(developer: T::AccountId, reward_per_developer: u64) -> Result<(), ()> {
+            T::Currency::deposit_into_existing(&developer, reward_per_developer.saturated_into());
             Ok(())
         }
 
