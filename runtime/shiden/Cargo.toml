@@ -7,7 +7,6 @@ build = "build.rs"
 
 [dependencies]
 # third-party dependencies
-serde = { version = "1.0.106", optional = true }
 codec = { package = "parity-scale-codec", version = "2.0", default-features = false, features = ["derive"] }
 evm = { version="0.30.0", default-features=false, features=["with-codec"] }
 smallvec = "1.6.1"
@@ -79,7 +78,6 @@ substrate-wasm-builder = { git = "https://github.com/paritytech/substrate", bran
 [features]
 default = ["std"]
 std = [
-    "serde",
     "codec/std",
     "evm/std",
     "fp-rpc/std",

@@ -4,16 +4,14 @@
 #![warn(unused_extern_crates)]
 
 /// Genesis token distributions.
-mod balances;
-/// Chain specifications.
-pub mod chain_spec;
+pub mod balances;
+/// Development node support.
+pub mod local;
+/// Parachain node support.
+pub mod parachain;
 
-#[macro_use]
-mod service;
 mod cli;
 mod command;
-
-mod aura_upgrade;
 mod primitives;
 mod rpc;
 
