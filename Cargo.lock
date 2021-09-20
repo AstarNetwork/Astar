@@ -5760,6 +5760,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-precompile-staking"
+version = "0.1.0"
+dependencies = [
+ "evm",
+ "frame-support",
+ "frame-system",
+ "pallet-collator-selection",
+ "pallet-evm",
+ "pallet-session",
+ "parity-scale-codec",
+ "sp-core",
+ "sp-std",
+]
+
+[[package]]
 name = "pallet-proxy"
 version = "4.0.0-dev"
 source = "git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.9#91061a7d925b5bc597804293da283477512ba4ff"
@@ -9596,6 +9611,7 @@ dependencies = [
  "pallet-evm-precompile-simple",
  "pallet-identity",
  "pallet-multisig",
+ "pallet-precompile-staking",
  "pallet-session",
  "pallet-sudo",
  "pallet-timestamp",
