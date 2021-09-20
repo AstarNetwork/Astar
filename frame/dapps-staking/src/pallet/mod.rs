@@ -1,6 +1,7 @@
 //! Dapps staking FRAME Pallet.
 
 use super::*;
+use frame_support::debug;
 use frame_support::{
     dispatch::{DispatchError, DispatchErrorWithPostInfo, DispatchResult, PostDispatchInfo},
     ensure,
@@ -65,7 +66,7 @@ pub mod pallet {
 
         /// Percentage of reward paid to developer.
         #[pallet::constant]
-        type DeveloperRewardPercentage: Get<u8>;
+        type DeveloperRewardPercentage: Get<u32>;
 
         /// Maximum number of unique stakers per contract.
         #[pallet::constant]
@@ -1006,19 +1007,22 @@ pub mod pallet {
                 let contract_stake =
                     Self::contract_era_stake(&contract_id, era).unwrap_or(contract_stake_prev);
 
-                // contract's part in whole era reward
+                // this contract's part in whole era reward
                 let contract_part = Perbill::from_rational(
                     Self::balance_to_u64(total_era.rewards).unwrap_or(1),
                     Self::balance_to_u64(total_era.staked).unwrap_or(1),
                 );
+
                 let contract_era_reward =
                     contract_part * Self::balance_to_u64(contract_stake.total).unwrap_or(0);
 
                 // divide reward between stakers and the developer of the contract
                 let contract_staker_reward =
-                    (100 - T::DeveloperRewardPercentage::get()) as u64 * contract_era_reward;
+                    Perbill::from_rational((100 - T::DeveloperRewardPercentage::get()) as u64, 100)
+                        * contract_era_reward;
                 let contract_developer_reward =
-                    T::DeveloperRewardPercentage::get() as u64 * contract_era_reward;
+                    Perbill::from_rational(T::DeveloperRewardPercentage::get() as u64, 100)
+                        * contract_era_reward;
 
                 // make payout to the stakers and the developer
                 Self::payout_stakers2(&contract_stake, contract_staker_reward);
@@ -1235,10 +1239,10 @@ pub mod pallet {
                 reward_for_contract,
                 Self::balance_to_u64(points.total).unwrap_or(reward_for_contract),
             );
-            points.stakers.iter().map(|(s, b)| {
+            for (s, b) in &points.stakers {
                 let staker_reward = staker_part * Self::balance_to_u64(*b).unwrap_or(0);
-                T::Currency::deposit_into_existing(s, staker_reward.saturated_into());
-            });
+                T::Currency::deposit_into_existing(&s, staker_reward.saturated_into());
+            }
             Ok(())
         }
 

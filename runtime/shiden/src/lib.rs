@@ -264,7 +264,7 @@ parameter_types! {
     pub const BlockPerEra: BlockNumber = 60;
     pub const MaxStakings: u32 = 5;
     pub const RegisterDeposit: Balance = 100;
-    pub const DeveloperRewardPercentage: u8 = 80;
+    pub const DeveloperRewardPercentage: u32 = 80;
     pub const MaxNumberOfStakersPerContract: u32 = 128;
     pub const MinimumStakingAmount: Balance = 10;
 }

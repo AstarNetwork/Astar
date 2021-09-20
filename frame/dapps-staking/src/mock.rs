@@ -138,7 +138,7 @@ parameter_types! {
     pub const MockBlockPerEra: BlockNumber = 10;
     pub const MaxNumberOfStakersPerContract: u32 = MAX_NUMBER_OF_STAKERS;
     pub const MinimumStakingAmount: Balance = MINUMUM_STAKING_AMOUNT;
-    pub const DeveloperRewardPercentage: u8 = 80;
+    pub const DeveloperRewardPercentage: u32 = 80;
 }
 impl pallet_dapps_staking::Config for TestRuntime {
     type Event = Event;
@@ -169,7 +169,7 @@ impl ExternalityBuilder {
             balances: vec![
                 (1, 9000),
                 (2, 800),
-                (3, 650),
+                (3, 10000),
                 (4, 490),
                 (5, 380),
                 (10, 300),
