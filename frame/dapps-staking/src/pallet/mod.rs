@@ -23,6 +23,8 @@ const STAKING_ID: LockIdentifier = *b"dapstake";
 
 #[frame_support::pallet]
 pub mod pallet {
+    use std::fmt::Result;
+
     use super::*;
 
     /// The balance type of this pallet.
@@ -984,6 +986,12 @@ pub mod pallet {
             let mut contract_stake_prev = Self::contract_era_stake(&contract_id, &start_from_era)
                 .ok_or(Error::<T>::UnknownStartStakingData)?;
 
+            // initialize rewards for stakers a(nd the developer to 0)
+            let mut rewards_for_era_stakers: Vec<(T::AccountId, BalanceOf<T>)> = Default::default();
+            let mut rewards_for_stakers_total: Vec<Vec<(T::AccountId, BalanceOf<T>)>> =
+                Default::default();
+            let mut reward_for_developer: BalanceOf<T> = Default::default();
+
             // for any era after start_from_era, the ContractEraStake is present only if there
             // was a change in staking amount. If it is not present we process last recorded ContractEraStake
             for era in start_from_era..current_era {
@@ -1004,13 +1012,18 @@ pub mod pallet {
                     Perbill::from_rational(T::DeveloperRewardPercentage::get() as u64, 100)
                         * contract_era_reward;
 
-                // make payout to the stakers and the developer
-                Self::payout_stakers2(&contract_stake, contract_staker_reward);
-                Self::payout_developer(developer.clone(), contract_developer_reward);
+                // accumulate rewards for the stakers and the developer
+                rewards_for_era_stakers =
+                    Self::stakers_era_reward(contract_stake.clone(), contract_staker_reward);
+                rewards_for_stakers_total.push(rewards_for_era_stakers);
+                reward_for_developer += contract_developer_reward;
 
                 // store current record in case next era has no record of changed stake amount
                 contract_stake_prev = contract_stake;
             }
+            // send rewards to developer
+            let staker_reward = Self::payout_stakers2(rewards_for_stakers_total);
+            T::Currency::deposit_into_existing(&developer, reward_for_developer);
 
             // Remove all previous records of staking for this contract,
             // they have already been processed and won't be needed anymore.
@@ -1209,26 +1222,37 @@ pub mod pallet {
             }
         }
 
-        /// Payout all stakers for this era
-        fn payout_stakers2(
-            points: &EraStakingPoints<T::AccountId, BalanceOf<T>>,
+        /// Calculate rewards for all stakers for this era
+        fn stakers_era_reward(
+            points: EraStakingPoints<T::AccountId, BalanceOf<T>>,
             reward_for_contract: BalanceOf<T>,
-        ) -> Result<(), ()> {
+        ) -> Vec<(T::AccountId, BalanceOf<T>)> {
             let staker_part = Perbill::from_rational(reward_for_contract, points.total);
+            let mut res: Vec<(T::AccountId, BalanceOf<T>)> = Vec::new();
+
             for (s, b) in &points.stakers {
                 let staker_reward = staker_part * *b;
-                T::Currency::deposit_into_existing(&s, staker_reward);
+                res.push((s.clone(), staker_reward));
             }
-            Ok(())
+            res
         }
 
-        /// Payout contract developer for this era
-        fn payout_developer(
-            developer: T::AccountId,
-            reward_per_developer: BalanceOf<T>,
-        ) -> Result<(), ()> {
-            T::Currency::deposit_into_existing(&developer, reward_per_developer);
-            Ok(())
+        /// Summarize accumulated rewards and execute payout for stakers
+        fn payout_stakers2(rewards: Vec<Vec<(T::AccountId, BalanceOf<T>)>>) {
+            let mut staker_map: BTreeMap<T::AccountId, BalanceOf<T>> = Default::default();
+
+            // first collect all rewards from different eras
+            for era_rewards in rewards {
+                for (s, b) in era_rewards {
+                    let mut reward = staker_map.entry(s).or_insert(Default::default());
+                    *reward += b;
+                }
+            }
+
+            // payout to staker account
+            for (s, b) in &staker_map {
+                T::Currency::deposit_into_existing(&s, *b);
+            }
         }
 
         /// Getter for the current era which also takes care of returning zero if no era was set yet.
