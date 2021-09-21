@@ -4,7 +4,7 @@ use super::{Event, *};
 use frame_support::{assert_err, assert_noop, assert_ok, assert_storage_noop, traits::Hooks};
 use mock::{Balances, *};
 use sp_core::H160;
-use sp_runtime::{Perbill, SaturatedConversion};
+use sp_runtime::Perbill;
 use sp_std::convert::{From, TryInto};
 use std::str::FromStr;
 use testing_utils::*;
@@ -1297,7 +1297,7 @@ fn claim_is_ok() {
 }
 
 #[test]
-fn claim_one_contract_exists() {
+fn claim_one_contract() {
     ExternalityBuilder::build().execute_with(|| {
         let developer1 = 1;
         let staker1: mock::AccountId = 2;
@@ -1315,7 +1315,6 @@ fn claim_one_contract_exists() {
         let free_staker1 = <mock::TestRuntime as Config>::Currency::free_balance(&staker1);
         let free_staker2 = <mock::TestRuntime as Config>::Currency::free_balance(&staker2);
         let free_developer = <mock::TestRuntime as Config>::Currency::free_balance(&developer1);
-        print!("free_developer {:?}\n", free_developer);
 
         advance_era_and_reward(FROM_ERA, ERA_REWARD, INITIAL_STAKE);
         let start_era = DappsStaking::current_era().unwrap_or(Zero::zero());
@@ -1352,6 +1351,119 @@ fn claim_one_contract_exists() {
     })
 }
 
+#[test]
+fn claim_two_contracts() {
+    ExternalityBuilder::build().execute_with(|| {
+        let developer1 = 1;
+        let developer2 = 10;
+        let staker1: mock::AccountId = 2;
+        let staker2: mock::AccountId = 3; // will stake on 2 contracts
+        let staker3: mock::AccountId = 4;
+        const ERA_REWARD: mock::Balance = 100;
+        const STAKER1_AMOUNT: mock::Balance = 400;
+        const STAKER2_AMOUNT1: mock::Balance = 600;
+        const STAKER2_AMOUNT2: mock::Balance = 100;
+        const STAKER3_AMOUNT: mock::Balance = 400;
+        const CONTRACT1_STAKE: mock::Balance = 1000;
+        const CONTRACT2_STAKE: mock::Balance = 500;
+        const ERA_STAKED1: mock::Balance = 1000; // 400 + 600
+        const ERA_STAKED2: mock::Balance = 1500; // 1000 + 100 + 400
+        const NUM_OF_CONTRACTS: u64 = 2;
+        let contract1 =
+            SmartContract::Evm(H160::from_str("1000000000000000000000000000000000000007").unwrap());
+        let contract2 =
+            SmartContract::Evm(H160::from_str("1000000000000000000000000000000000000008").unwrap());
+        const FROM_ERA: EraIndex = 1;
+        const SKIP_ERA: EraIndex = 3;
+
+        let free_staker1 = <mock::TestRuntime as Config>::Currency::free_balance(&staker1);
+        let free_staker2 = <mock::TestRuntime as Config>::Currency::free_balance(&staker2);
+        let free_staker3 = <mock::TestRuntime as Config>::Currency::free_balance(&staker3);
+        let free_developer1 = <mock::TestRuntime as Config>::Currency::free_balance(&developer1);
+        let free_developer2 = <mock::TestRuntime as Config>::Currency::free_balance(&developer2);
+
+        advance_era_and_reward(FROM_ERA, ERA_REWARD, ERA_STAKED1);
+        let start_era = DappsStaking::current_era().unwrap_or(Zero::zero());
+        register(developer1, contract1.clone());
+        register(developer2, contract2.clone());
+        bond_and_stake(staker1, contract1, STAKER1_AMOUNT);
+        bond_and_stake(staker2, contract1, STAKER2_AMOUNT1);
+        advance_era_and_reward(SKIP_ERA, ERA_REWARD, ERA_STAKED1);
+        bond_and_stake(staker2, contract2, STAKER2_AMOUNT2);
+        bond_and_stake(staker3, contract2, STAKER3_AMOUNT);
+        let num_eras1 = 3; // number of rewarded eras
+        advance_era_and_reward(1, ERA_REWARD, ERA_STAKED2);
+        let claim_era: EraIndex = DappsStaking::current_era().unwrap_or(Zero::zero());
+        claim(staker1, contract1.clone(), start_era, claim_era.clone());
+        cleared_contract_history(contract1, FROM_ERA, claim_era);
+
+        // calculate reward per stakers in contract1
+        let expected_c1_staker1_e1_reward =
+            calc_expected_staker_reward(ERA_REWARD, ERA_STAKED1, CONTRACT1_STAKE, STAKER1_AMOUNT);
+        let expected_c1_staker1_e2_reward =
+            calc_expected_staker_reward(ERA_REWARD, ERA_STAKED2, CONTRACT1_STAKE, STAKER1_AMOUNT);
+        let expected_c1_staker2_e1_reward =
+            calc_expected_staker_reward(ERA_REWARD, ERA_STAKED1, CONTRACT1_STAKE, STAKER2_AMOUNT1);
+        let expected_c1_staker2_e2_reward =
+            calc_expected_staker_reward(ERA_REWARD, ERA_STAKED2, CONTRACT1_STAKE, STAKER2_AMOUNT1);
+        // calculate reward per developer contract 1
+        let expected_c1_dev1_e1_reward =
+            calc_expected_developer_reward(ERA_REWARD, ERA_STAKED1, CONTRACT1_STAKE);
+        let expected_c1_dev1_e2_reward =
+            calc_expected_developer_reward(ERA_REWARD, ERA_STAKED2, CONTRACT1_STAKE);
+
+        assert_eq!(
+            <mock::TestRuntime as Config>::Currency::free_balance(&staker1),
+            free_staker1
+                + num_eras1 * expected_c1_staker1_e1_reward
+                + 1 * expected_c1_staker1_e2_reward
+        );
+
+        // staker2 staked on both contracts. remember reward for contract2
+        let expected_c1_staker2_reward =
+            num_eras1 * expected_c1_staker2_e1_reward + 1 * expected_c1_staker2_e2_reward;
+        assert_eq!(
+            <mock::TestRuntime as Config>::Currency::free_balance(&staker2),
+            free_staker2 + expected_c1_staker2_reward
+        );
+        assert_eq!(
+            <mock::TestRuntime as Config>::Currency::free_balance(&developer1),
+            free_developer1
+                + num_eras1 * expected_c1_dev1_e1_reward as u128
+                + expected_c1_dev1_e2_reward as u128
+        );
+
+        // claim rewards for contract2 one 4 eras later
+        let num_eras2 = 5; // 1 era already passed since staking + another 4 eras
+        advance_era_and_reward(4, ERA_REWARD, ERA_STAKED2);
+        let claim_era: EraIndex = DappsStaking::current_era().unwrap_or(Zero::zero());
+        claim(staker2, contract2.clone(), 4, claim_era.clone());
+
+        // calculate reward per stakers in contract2
+        let expected_c2_staker2_e2_reward =
+            calc_expected_staker_reward(ERA_REWARD, ERA_STAKED2, CONTRACT2_STAKE, STAKER2_AMOUNT2);
+        let expected_c2_staker3_e2_reward =
+            calc_expected_staker_reward(ERA_REWARD, ERA_STAKED2, CONTRACT2_STAKE, STAKER3_AMOUNT);
+        // calculate reward per developer
+        let expected_c2_dev2_e2_reward =
+            calc_expected_developer_reward(ERA_REWARD, ERA_STAKED2, CONTRACT2_STAKE);
+
+        assert_eq!(
+            <mock::TestRuntime as Config>::Currency::free_balance(&staker2)
+                - expected_c1_staker2_reward,
+            free_staker2 + num_eras2 * expected_c2_staker2_e2_reward
+        );
+        assert_eq!(
+            <mock::TestRuntime as Config>::Currency::free_balance(&staker3),
+            free_staker3 + num_eras2 * expected_c2_staker3_e2_reward
+        );
+        assert_eq!(
+            <mock::TestRuntime as Config>::Currency::free_balance(&developer2),
+            free_developer2 + num_eras2 * expected_c2_dev2_e2_reward as u128
+        );
+    })
+}
+
 fn calc_expected_staker_reward(
     era_reward: mock::Balance,
     era_stake: mock::Balance,
@@ -1365,12 +1477,10 @@ fn calc_expected_staker_reward(
     let contract_reward = Perbill::from_rational(era_reward, era_stake) * contract_stake;
     print!("contract_reward {:?}\n", contract_reward);
 
-    let contract_staker_part: u64 =
-        Perbill::from_percent(20) * contract_reward.saturated_into::<u64>();
+    let contract_staker_part = Perbill::from_percent(20) * contract_reward;
     print!("contract_staker_part {:?}\n", contract_staker_part);
     let expected_staker_reward =
-        Perbill::from_rational(contract_staker_part, contract_stake.saturated_into::<u64>())
-            * staker_stake;
+        Perbill::from_rational(contract_staker_part, contract_stake) * staker_stake;
     print!("expected_staker_reward {:?}\n", expected_staker_reward);
 
     expected_staker_reward

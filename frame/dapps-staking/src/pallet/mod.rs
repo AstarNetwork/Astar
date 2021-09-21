@@ -23,8 +23,6 @@ const STAKING_ID: LockIdentifier = *b"dapstake";
 
 #[frame_support::pallet]
 pub mod pallet {
-    use std::fmt::Result;
-
     use super::*;
 
     /// The balance type of this pallet.
@@ -1022,7 +1020,7 @@ pub mod pallet {
                 contract_stake_prev = contract_stake;
             }
             // send rewards to stakers
-            let staker_reward = Self::payout_stakers2(rewards_for_stakers_total);
+            Self::payout_stakers2(rewards_for_stakers_total);
             // send rewards to developer
             T::Currency::deposit_into_existing(&developer, reward_for_developer);
 
