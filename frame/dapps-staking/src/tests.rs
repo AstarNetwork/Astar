@@ -1362,19 +1362,15 @@ fn calc_expected_staker_reward(
         "calc_expected_staker_reward era_reward:{:?} era_stake:{:?} contract_stake:{:?} staker_stake:{:?} \n",
         era_reward, era_stake, contract_stake, staker_stake
     );
-    let contract_reward = Perbill::from_rational(
-        era_reward,
-        era_stake,
-    ) * contract_stake;
+    let contract_reward = Perbill::from_rational(era_reward, era_stake) * contract_stake;
     print!("contract_reward {:?}\n", contract_reward);
 
     let contract_staker_part: u64 =
         Perbill::from_percent(20) * contract_reward.saturated_into::<u64>();
     print!("contract_staker_part {:?}\n", contract_staker_part);
-    let expected_staker_reward = Perbill::from_rational(
-        contract_staker_part,
-        contract_stake.saturated_into::<u64>(),
-    ) * staker_stake;
+    let expected_staker_reward =
+        Perbill::from_rational(contract_staker_part, contract_stake.saturated_into::<u64>())
+            * staker_stake;
     print!("expected_staker_reward {:?}\n", expected_staker_reward);
 
     expected_staker_reward
@@ -1389,10 +1385,7 @@ fn calc_expected_developer_reward(
         "calc_expected_developer_reward era_reward:{:?} era_stake{:?} contract_stake{:?} \n",
         era_reward, era_stake, contract_stake
     );
-    let contract_reward = Perbill::from_rational(
-        era_reward,
-        era_stake,
-    ) * contract_stake;
+    let contract_reward = Perbill::from_rational(era_reward, era_stake) * contract_stake;
     print!("contract_reward {:?}\n", contract_reward);
 
     let expected_developer_reward = Perbill::from_percent(80) * contract_reward;

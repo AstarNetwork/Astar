@@ -1,7 +1,6 @@
 //! Dapps staking FRAME Pallet.
 
 use super::*;
-use frame_support::debug;
 use frame_support::{
     dispatch::{DispatchError, DispatchResult},
     ensure,
@@ -18,11 +17,7 @@ use sp_runtime::{
     traits::{CheckedSub, SaturatedConversion, StaticLookup, Zero},
     Perbill, Percent,
 };
-use sp_std::{
-    convert::{From, TryInto},
-    prelude::*,
-    result,
-};
+use sp_std::{convert::From, prelude::*, result};
 
 const STAKING_ID: LockIdentifier = *b"dapstake";
 
@@ -978,11 +973,6 @@ pub mod pallet {
                 Error::<T>::AlreadyClaimedInThisEra
             );
 
-            // is this first time we claim the contract reward?
-            if last_claim_era.is_zero() {
-                last_claim_era = current_era.clone()
-            }
-
             // oldest era to start with collecting rewards
             let last_allowed_era = current_era.saturating_sub(Self::history_depth());
             let start_from_era = last_claim_era.max(last_allowed_era);
@@ -1002,10 +992,7 @@ pub mod pallet {
                     Self::contract_era_stake(&contract_id, era).unwrap_or(contract_stake_prev);
 
                 // this contract's part in whole era reward
-                let contract_part = Perbill::from_rational(
-                    total_era.rewards,
-                    total_era.staked,
-                );
+                let contract_part = Perbill::from_rational(total_era.rewards, total_era.staked);
 
                 let contract_era_reward = contract_part * contract_stake.total;
 
@@ -1034,7 +1021,6 @@ pub mod pallet {
             // move contract pointers to current era
             ContractLastClaimed::<T>::insert(&contract_id, current_era);
             ContractLastStaked::<T>::insert(&contract_id, current_era);
-
 
             Self::deposit_event(Event::<T>::ContractClaimed(
                 contract_id,
@@ -1228,20 +1214,20 @@ pub mod pallet {
             points: &EraStakingPoints<T::AccountId, BalanceOf<T>>,
             reward_for_contract: BalanceOf<T>,
         ) -> Result<(), ()> {
-            let staker_part = Perbill::from_rational(
-                reward_for_contract,
-                points.total,
-            );
+            let staker_part = Perbill::from_rational(reward_for_contract, points.total);
             for (s, b) in &points.stakers {
-                let staker_reward = staker_part * Self::balance_to_u64(*b).unwrap_or(0);
-                T::Currency::deposit_into_existing(&s, staker_reward.saturated_into());
+                let staker_reward = staker_part * *b;
+                T::Currency::deposit_into_existing(&s, staker_reward);
             }
             Ok(())
         }
 
         /// Payout contract developer for this era
-        fn payout_developer(developer: T::AccountId, reward_per_developer: BalanceOf<T>) -> Result<(), ()> {
-            T::Currency::deposit_into_existing(&developer, reward_per_developer.saturated_into());
+        fn payout_developer(
+            developer: T::AccountId,
+            reward_per_developer: BalanceOf<T>,
+        ) -> Result<(), ()> {
+            T::Currency::deposit_into_existing(&developer, reward_per_developer);
             Ok(())
         }
 
@@ -1255,10 +1241,5 @@ pub mod pallet {
         ///
         /// This is called at the end of each Era
         fn reward_balance_snapshoot() {}
-
-        /// type convertor for balance
-        pub fn balance_to_u64(input: BalanceOf<T>) -> Option<u64> {
-            TryInto::<u64>::try_into(input).ok()
-        }
     }
 }
