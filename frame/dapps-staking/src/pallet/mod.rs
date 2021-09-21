@@ -3,7 +3,7 @@
 use super::*;
 use frame_support::debug;
 use frame_support::{
-    dispatch::{DispatchError, DispatchErrorWithPostInfo, DispatchResult, PostDispatchInfo},
+    dispatch::{DispatchError, DispatchResult},
     ensure,
     pallet_prelude::*,
     traits::{
@@ -239,7 +239,7 @@ pub mod pallet {
         NewContract(T::AccountId, SmartContract<T::AccountId>),
         /// New dapps staking era. Distribute era rewards to contracts
         NewDappStakingEra(EraIndex),
-        /// The contract's reward have been claimed, by an account, from era until era
+        /// The contract's reward have been claimed, by an account, from era, until era
         ContractClaimed(
             SmartContract<T::AccountId>,
             T::AccountId,
@@ -949,10 +949,10 @@ pub mod pallet {
             Ok(().into())
         }
 
-        /// rewards are claimed by the staker on contract_id.
-        ///
-        /// era must be in the range `[current_era - history_depth; active_era)`.
-        ///
+        /// claim the rewards earned by contract_id.
+        /// All stakers and developer for this contract will be paid out with single call.
+        /// claim is valid for all unclaimed eras but not longer than history_depth().
+        /// Any reward older than history_depth() will go to Treasury.
         /// Any user can call this function.
         #[pallet::weight(T::WeightInfo::payout_stakers_alive_staked(T::MaxStakings::get()))]
         pub fn claim(
@@ -965,19 +965,13 @@ pub mod pallet {
             let developer = Self::registered_developer(&contract_id)
                 .ok_or(Error::<T>::ContractNotRegistered)?;
 
-            // double check if this is valid contract address
-            ensure!(
-                Self::is_contract_valid(&contract_id),
-                Error::<T>::ContractIsNotValid
-            );
-
             // check if it was ever staked on this contract.
             let last_staked =
                 Self::contract_last_staked(&contract_id).ok_or(Error::<T>::NothingToClaim)?;
 
             // check if the contract is already claimed in this era
             let current_era = Self::current_era().unwrap_or(Zero::zero());
-            let mut last_claim_era: EraIndex =
+            let mut last_claim_era =
                 Self::contract_last_claimed(&contract_id).unwrap_or(current_era.clone());
             ensure!(
                 current_era != last_claim_era,
@@ -1009,12 +1003,11 @@ pub mod pallet {
 
                 // this contract's part in whole era reward
                 let contract_part = Perbill::from_rational(
-                    Self::balance_to_u64(total_era.rewards).unwrap_or(1),
-                    Self::balance_to_u64(total_era.staked).unwrap_or(1),
+                    total_era.rewards,
+                    total_era.staked,
                 );
 
-                let contract_era_reward =
-                    contract_part * Self::balance_to_u64(contract_stake.total).unwrap_or(0);
+                let contract_era_reward = contract_part * contract_stake.total;
 
                 // divide reward between stakers and the developer of the contract
                 let contract_staker_reward =
@@ -1035,13 +1028,13 @@ pub mod pallet {
             // Remove all previous records of staking for this contract,
             // they have already been processed and won't be needed anymore.
             ContractEraStake::<T>::remove_prefix(&contract_id, None);
+            // create contract era stake data in current era for further staking and claiming
+            ContractEraStake::<T>::insert(&contract_id, current_era, contract_stake_prev);
 
             // move contract pointers to current era
             ContractLastClaimed::<T>::insert(&contract_id, current_era);
             ContractLastStaked::<T>::insert(&contract_id, current_era);
 
-            // create contract era stake data in current era for further staking and claiming
-            ContractEraStake::<T>::insert(&contract_id, current_era, contract_stake_prev);
 
             Self::deposit_event(Event::<T>::ContractClaimed(
                 contract_id,
@@ -1233,11 +1226,11 @@ pub mod pallet {
         /// Payout all stakers for this era
         fn payout_stakers2(
             points: &EraStakingPoints<T::AccountId, BalanceOf<T>>,
-            reward_for_contract: u64,
+            reward_for_contract: BalanceOf<T>,
         ) -> Result<(), ()> {
             let staker_part = Perbill::from_rational(
                 reward_for_contract,
-                Self::balance_to_u64(points.total).unwrap_or(reward_for_contract),
+                points.total,
             );
             for (s, b) in &points.stakers {
                 let staker_reward = staker_part * Self::balance_to_u64(*b).unwrap_or(0);
@@ -1247,7 +1240,7 @@ pub mod pallet {
         }
 
         /// Payout contract developer for this era
-        fn payout_developer(developer: T::AccountId, reward_per_developer: u64) -> Result<(), ()> {
+        fn payout_developer(developer: T::AccountId, reward_per_developer: BalanceOf<T>) -> Result<(), ()> {
             T::Currency::deposit_into_existing(&developer, reward_per_developer.saturated_into());
             Ok(())
         }

@@ -4,7 +4,7 @@ use super::{Event, *};
 use frame_support::{assert_err, assert_noop, assert_ok, assert_storage_noop, traits::Hooks};
 use mock::{Balances, *};
 use sp_core::H160;
-use sp_runtime::Perbill;
+use sp_runtime::{Perbill, SaturatedConversion};
 use sp_std::convert::{From, TryInto};
 use std::str::FromStr;
 use testing_utils::*;
@@ -1302,9 +1302,9 @@ fn claim_one_contract_exists() {
         let developer1 = 1;
         let staker1: mock::AccountId = 2;
         let staker2: mock::AccountId = 3;
-        const ERA_REWARD: mock::Balance = 100;
-        const STAKE_AMOUNT1: mock::Balance = 100;
-        const STAKE_AMOUNT2: mock::Balance = 900;
+        const ERA_REWARD: mock::Balance = 10000;
+        const STAKE_AMOUNT1: mock::Balance = 400;
+        const STAKE_AMOUNT2: mock::Balance = 600;
         const INITIAL_STAKE: mock::Balance = 1000;
         const NUM_OF_CONTRACTS: u64 = 1;
         let contract =
@@ -1352,10 +1352,6 @@ fn claim_one_contract_exists() {
     })
 }
 
-pub fn balance_to_u64(input: BalanceOf<TestRuntime>) -> Option<u64> {
-    TryInto::<u64>::try_into(input).ok()
-}
-
 fn calc_expected_staker_reward(
     era_reward: mock::Balance,
     era_stake: mock::Balance,
@@ -1367,17 +1363,17 @@ fn calc_expected_staker_reward(
         era_reward, era_stake, contract_stake, staker_stake
     );
     let contract_reward = Perbill::from_rational(
-        balance_to_u64(era_reward).unwrap_or(0),
-        balance_to_u64(era_stake).unwrap_or(0),
+        era_reward,
+        era_stake,
     ) * contract_stake;
     print!("contract_reward {:?}\n", contract_reward);
 
     let contract_staker_part: u64 =
-        Perbill::from_percent(20) * balance_to_u64(contract_reward).unwrap_or(0);
+        Perbill::from_percent(20) * contract_reward.saturated_into::<u64>();
     print!("contract_staker_part {:?}\n", contract_staker_part);
     let expected_staker_reward = Perbill::from_rational(
         contract_staker_part,
-        balance_to_u64(contract_stake).unwrap_or(0),
+        contract_stake.saturated_into::<u64>(),
     ) * staker_stake;
     print!("expected_staker_reward {:?}\n", expected_staker_reward);
 
@@ -1394,8 +1390,8 @@ fn calc_expected_developer_reward(
         era_reward, era_stake, contract_stake
     );
     let contract_reward = Perbill::from_rational(
-        balance_to_u64(era_reward).unwrap_or(0),
-        balance_to_u64(era_stake).unwrap_or(0),
+        era_reward,
+        era_stake,
     ) * contract_stake;
     print!("contract_reward {:?}\n", contract_reward);
 
