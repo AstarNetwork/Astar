@@ -137,7 +137,7 @@ parameter_types! {
     pub const RegisterDeposit: u32 = 100;
     pub const MockBlockPerEra: BlockNumber = 10;
     pub const MaxNumberOfStakersPerContract: u32 = MAX_NUMBER_OF_STAKERS;
-    pub const MinimumStakingAmount: Balance = MINUMUM_STAKING_AMOUNT;
+    pub const MinimumStakingAmount: Balance = MINIMUM_STAKING_AMOUNT;
     pub const DeveloperRewardPercentage: u32 = 80;
 }
 impl pallet_dapps_staking::Config for TestRuntime {
