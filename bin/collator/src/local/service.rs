@@ -257,6 +257,7 @@ pub fn start_node(config: Configuration) -> Result<TaskManager, ServiceError> {
                 is_authority,
                 deny_unsafe,
                 frontier_backend: frontier_backend.clone(),
+                transaction_converter: local_runtime::TransactionConverter,
                 pending_transactions: pending_transactions.clone(),
                 filter_pool: filter_pool.clone(),
             };
