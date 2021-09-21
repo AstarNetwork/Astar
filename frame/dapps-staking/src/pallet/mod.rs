@@ -986,7 +986,7 @@ pub mod pallet {
             let mut contract_stake_prev = Self::contract_era_stake(&contract_id, &start_from_era)
                 .ok_or(Error::<T>::UnknownStartStakingData)?;
 
-            // initialize rewards for stakers a(nd the developer to 0)
+            // initialize rewards for stakers and the developer
             let mut rewards_for_era_stakers: Vec<(T::AccountId, BalanceOf<T>)> = Default::default();
             let mut rewards_for_stakers_total: Vec<Vec<(T::AccountId, BalanceOf<T>)>> =
                 Default::default();
@@ -1021,8 +1021,9 @@ pub mod pallet {
                 // store current record in case next era has no record of changed stake amount
                 contract_stake_prev = contract_stake;
             }
-            // send rewards to developer
+            // send rewards to stakers
             let staker_reward = Self::payout_stakers2(rewards_for_stakers_total);
+            // send rewards to developer
             T::Currency::deposit_into_existing(&developer, reward_for_developer);
 
             // Remove all previous records of staking for this contract,
