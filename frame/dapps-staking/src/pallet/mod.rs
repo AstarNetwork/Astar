@@ -999,21 +999,22 @@ pub mod pallet {
                 let contract_staking_info = Self::contract_era_stake(&contract_id, era)
                     .unwrap_or(contract_staking_info_prev);
 
-                // this contract's part in whole era reward
-                let contract_part = Perbill::from_rational(
+                // smallest unit of the reward in this era to use in calculation
+                let reward_particle = Perbill::from_rational(
                     reward_and_stake_for_era.rewards,
                     reward_and_stake_for_era.staked,
                 );
 
-                let contract_era_reward = contract_part * contract_staking_info.total;
+                // this contract's total reward in this era
+                let contract_reward_in_era = reward_particle * contract_staking_info.total;
 
                 // divide reward between stakers and the developer of the contract
                 let contract_staker_reward =
                     Perbill::from_rational((100 - T::DeveloperRewardPercentage::get()) as u64, 100)
-                        * contract_era_reward;
+                        * contract_reward_in_era;
                 let contract_developer_reward =
                     Perbill::from_rational(T::DeveloperRewardPercentage::get() as u64, 100)
-                        * contract_era_reward;
+                        * contract_reward_in_era;
 
                 // accumulate rewards for the stakers
                 Self::stakers_era_reward(
