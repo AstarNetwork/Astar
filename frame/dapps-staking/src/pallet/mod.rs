@@ -445,14 +445,15 @@ pub mod pallet {
             );
 
             // Update total staked value in era. There are 3 possible scenarios here.
-            let mut reward_and_stake_for_era = if let Some(reward_and_stake) = Self::era_reward_and_stake(current_era) {
-                reward_and_stake
-            } else if era_when_contract_last_staked.is_some() {
-                Self::era_reward_and_stake(era_when_contract_last_staked.unwrap())
-                    .ok_or(Error::<T>::UnexpectedState)?
-            } else {
-                Default::default()
-            };
+            let mut reward_and_stake_for_era =
+                if let Some(reward_and_stake) = Self::era_reward_and_stake(current_era) {
+                    reward_and_stake
+                } else if era_when_contract_last_staked.is_some() {
+                    Self::era_reward_and_stake(era_when_contract_last_staked.unwrap())
+                        .ok_or(Error::<T>::UnexpectedState)?
+                } else {
+                    Default::default()
+                };
             reward_and_stake_for_era.staked += bonded_value;
             EraRewardsAndStakes::<T>::insert(current_era, reward_and_stake_for_era);
 
@@ -981,24 +982,28 @@ pub mod pallet {
             }
 
             // for the first claimable era "start_from_era", this storage item must be in place!
-            let mut contract_staking_info_prev = Self::contract_era_stake(&contract_id, &start_from_era)
-                .ok_or(Error::<T>::UnknownStartStakingData)?;
+            let mut contract_staking_info_prev =
+                Self::contract_era_stake(&contract_id, &start_from_era)
+                    .ok_or(Error::<T>::UnknownStartStakingData)?;
 
             // initialize rewards for stakers and the developer
-            let mut rewards_for_era_stakers: Vec<(T::AccountId, BalanceOf<T>)> = Default::default();
-            let mut rewards_for_stakers_total: Vec<Vec<(T::AccountId, BalanceOf<T>)>> =
+            let mut rewards_for_stakers_map: BTreeMap<T::AccountId, BalanceOf<T>> =
                 Default::default();
             let mut reward_for_developer: BalanceOf<T> = Default::default();
 
             // for any era after start_from_era, the ContractEraStake is present only if there
             // was a change in staking amount. If it is not present we process last recorded ContractEraStake
             for era in start_from_era..current_era {
-                let reward_and_stake_for_era = Self::era_reward_and_stake(era).ok_or(Error::<T>::UnknownEraReward)?;
-                let contract_staking_info =
-                    Self::contract_era_stake(&contract_id, era).unwrap_or(contract_staking_info_prev);
+                let reward_and_stake_for_era =
+                    Self::era_reward_and_stake(era).ok_or(Error::<T>::UnknownEraReward)?;
+                let contract_staking_info = Self::contract_era_stake(&contract_id, era)
+                    .unwrap_or(contract_staking_info_prev);
 
                 // this contract's part in whole era reward
-                let contract_part = Perbill::from_rational(reward_and_stake_for_era.rewards, reward_and_stake_for_era.staked);
+                let contract_part = Perbill::from_rational(
+                    reward_and_stake_for_era.rewards,
+                    reward_and_stake_for_era.staked,
+                );
 
                 let contract_era_reward = contract_part * contract_staking_info.total;
 
@@ -1010,17 +1015,20 @@ pub mod pallet {
                     Perbill::from_rational(T::DeveloperRewardPercentage::get() as u64, 100)
                         * contract_era_reward;
 
-                // accumulate rewards for the stakers and the developer
-                rewards_for_era_stakers =
-                    Self::stakers_era_reward(contract_staking_info.clone(), contract_staker_reward);
-                rewards_for_stakers_total.push(rewards_for_era_stakers);
+                // accumulate rewards for the stakers
+                Self::stakers_era_reward(
+                    &mut rewards_for_stakers_map,
+                    contract_staking_info.clone(),
+                    contract_staker_reward,
+                );
+                // accumulate rewards for the developer
                 reward_for_developer += contract_developer_reward;
 
                 // store current record in case next era has no record of changed stake amount
                 contract_staking_info_prev = contract_staking_info;
             }
             // send rewards to stakers
-            Self::payout_stakers2(rewards_for_stakers_total);
+            Self::payout_stakers2(&rewards_for_stakers_map);
             // send rewards to developer
             T::Currency::deposit_into_existing(&developer, reward_for_developer);
 
@@ -1223,33 +1231,21 @@ pub mod pallet {
 
         /// Calculate rewards for all stakers for this era
         fn stakers_era_reward(
+            staker_map: &mut BTreeMap<T::AccountId, BalanceOf<T>>,
             points: EraStakingPoints<T::AccountId, BalanceOf<T>>,
             reward_for_contract: BalanceOf<T>,
-        ) -> Vec<(T::AccountId, BalanceOf<T>)> {
+        ) {
             let staker_part = Perbill::from_rational(reward_for_contract, points.total);
-            let mut res: Vec<(T::AccountId, BalanceOf<T>)> = Vec::new();
 
-            for (s, b) in &points.stakers {
-                let staker_reward = staker_part * *b;
-                res.push((s.clone(), staker_reward));
+            for (s, b) in points.stakers {
+                let mut reward = staker_map.entry(s).or_insert(Default::default());
+                *reward += staker_part * b;
             }
-            res
         }
 
-        /// Summarize accumulated rewards and execute payout for stakers
-        fn payout_stakers2(rewards: Vec<Vec<(T::AccountId, BalanceOf<T>)>>) {
-            let mut staker_map: BTreeMap<T::AccountId, BalanceOf<T>> = Default::default();
-
-            // first collect all rewards from different eras
-            for era_rewards in rewards {
-                for (s, b) in era_rewards {
-                    let mut reward = staker_map.entry(s).or_insert(Default::default());
-                    *reward += b;
-                }
-            }
-
-            // payout to staker account
-            for (s, b) in &staker_map {
+        /// Execute payout for stakers
+        fn payout_stakers2(staker_map: &BTreeMap<T::AccountId, BalanceOf<T>>) {
+            for (s, b) in staker_map {
                 T::Currency::deposit_into_existing(&s, *b);
             }
         }

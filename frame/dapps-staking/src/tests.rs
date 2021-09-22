@@ -1,6 +1,6 @@
 use super::{Event, *};
 use frame_support::{assert_err, assert_noop, assert_ok, assert_storage_noop, traits::Hooks};
-use mock::{Balances, *, EraIndex};
+use mock::{Balances, EraIndex, *};
 use sp_core::H160;
 use sp_runtime::Perbill;
 use sp_std::convert::{From, TryInto};
@@ -1312,7 +1312,8 @@ fn claim_one_contract() {
 
         let free_staker_balance1 = <mock::TestRuntime as Config>::Currency::free_balance(&staker1);
         let free_staker_balance2 = <mock::TestRuntime as Config>::Currency::free_balance(&staker2);
-        let free_developer_balance = <mock::TestRuntime as Config>::Currency::free_balance(&developer1);
+        let free_developer_balance =
+            <mock::TestRuntime as Config>::Currency::free_balance(&developer1);
 
         advance_era_and_reward(START_ERA, ERA_REWARD, INITIAL_STAKE);
         let start_era = DappsStaking::current_era().unwrap_or(Zero::zero());
@@ -1377,8 +1378,10 @@ fn claim_two_contracts() {
         let free_staker_balance1 = <mock::TestRuntime as Config>::Currency::free_balance(&staker1);
         let free_staker_balance2 = <mock::TestRuntime as Config>::Currency::free_balance(&staker2);
         let free_staker_balance3 = <mock::TestRuntime as Config>::Currency::free_balance(&staker3);
-        let free_developer_balance1 = <mock::TestRuntime as Config>::Currency::free_balance(&developer1);
-        let free_developer_balance2 = <mock::TestRuntime as Config>::Currency::free_balance(&developer2);
+        let free_developer_balance1 =
+            <mock::TestRuntime as Config>::Currency::free_balance(&developer1);
+        let free_developer_balance2 =
+            <mock::TestRuntime as Config>::Currency::free_balance(&developer2);
 
         advance_era_and_reward(START_ERA, ERA_REWARD, ERA_STAKED1);
         let start_era = DappsStaking::current_era().unwrap_or(Zero::zero());

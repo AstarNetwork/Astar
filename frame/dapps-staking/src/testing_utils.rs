@@ -1,6 +1,6 @@
 use super::{Event, *};
 use frame_support::{assert_err, assert_noop, assert_ok, assert_storage_noop, traits::Hooks};
-use mock::{Balances, *, EraIndex};
+use mock::{Balances, EraIndex, *};
 use sp_core::H160;
 use sp_runtime::Perbill;
 use std::str::FromStr;
@@ -114,7 +114,7 @@ pub(crate) fn cleared_contract_history(
     }
 }
 
-/// Helper fn checks that claim() is exeuted 
+/// Helper fn checks that claim() is exeuted
 pub(crate) fn claim(
     claimer: AccountId,
     contract: SmartContract<mock::AccountId>,
@@ -142,7 +142,8 @@ pub(crate) fn calc_expected_staker_reward(
     let contract_reward = Perbill::from_rational(era_reward, era_stake) * contract_stake;
     print!("contract_reward {:?}\n", contract_reward);
 
-    let contract_staker_part = Perbill::from_percent(100 - DEVELOPER_REWARD_PERCENTAGE) * contract_reward;
+    let contract_staker_part =
+        Perbill::from_percent(100 - DEVELOPER_REWARD_PERCENTAGE) * contract_reward;
     print!("contract_staker_part {:?}\n", contract_staker_part);
     let expected_staker_reward =
         Perbill::from_rational(contract_staker_part, contract_stake) * staker_stake;
@@ -164,9 +165,9 @@ pub(crate) fn calc_expected_developer_reward(
     let contract_reward = Perbill::from_rational(era_reward, era_stake) * contract_stake;
     print!("contract_reward {:?}\n", contract_reward);
 
-    let expected_developer_reward = Perbill::from_percent(DEVELOPER_REWARD_PERCENTAGE) * contract_reward;
+    let expected_developer_reward =
+        Perbill::from_percent(DEVELOPER_REWARD_PERCENTAGE) * contract_reward;
     print!("contract_developer_part {:?}\n", expected_developer_reward);
 
     expected_developer_reward
 }
-
