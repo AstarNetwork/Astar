@@ -31,6 +31,7 @@ pub(crate) const UNBONDING_DURATION: EraIndex = 5;
 pub(crate) const MAX_NUMBER_OF_STAKERS: u32 = 4;
 /// Value shouldn't be less than 2 for testing purposes, otherwise we cannot test certain corner cases.
 pub(crate) const MINIMUM_STAKING_AMOUNT: Balance = 10;
+pub(crate) const DEVELOPER_REWARD_PERCENTAGE: u32 = 80;
 
 construct_runtime!(
     pub enum TestRuntime where
@@ -138,7 +139,7 @@ parameter_types! {
     pub const MockBlockPerEra: BlockNumber = 10;
     pub const MaxNumberOfStakersPerContract: u32 = MAX_NUMBER_OF_STAKERS;
     pub const MinimumStakingAmount: Balance = MINIMUM_STAKING_AMOUNT;
-    pub const DeveloperRewardPercentage: u32 = 80;
+    pub const DeveloperRewardPercentage: u32 = DEVELOPER_REWARD_PERCENTAGE;
 }
 impl pallet_dapps_staking::Config for TestRuntime {
     type Event = Event;

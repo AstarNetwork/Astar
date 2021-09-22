@@ -125,7 +125,7 @@ impl Default for Forcing {
 
 /// A record for total rewards and total amount staked for an era
 #[derive(PartialEq, Eq, Clone, Default, Encode, Decode, RuntimeDebug)]
-pub struct EraReward<Balance> {
+pub struct EraRewardAndStake<Balance> {
     /// Total amount of rewards for an era
     rewards: Balance,
     /// Total staked amount for an era

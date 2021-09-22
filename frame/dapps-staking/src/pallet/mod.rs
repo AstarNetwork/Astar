@@ -158,9 +158,9 @@ pub mod pallet {
 
     /// Total block rewards for the pallet per era
     #[pallet::storage]
-    #[pallet::getter(fn get_era_total)]
-    pub(crate) type PalletEraRewards<T: Config> =
-        StorageMap<_, Twox64Concat, EraIndex, EraReward<BalanceOf<T>>>;
+    #[pallet::getter(fn era_reward_and_stake)]
+    pub(crate) type EraRewardsAndStakes<T: Config> =
+        StorageMap<_, Twox64Concat, EraIndex, EraRewardAndStake<BalanceOf<T>>>;
 
     /// Stores amount staked and stakers for a contract per era
     #[pallet::storage]
@@ -445,16 +445,16 @@ pub mod pallet {
             );
 
             // Update total staked value in era. There are 3 possible scenarios here.
-            let mut era_reward = if let Some(era_rewards) = Self::get_era_total(current_era) {
-                era_rewards
+            let mut reward_and_stake_for_era = if let Some(reward_and_stake) = Self::era_reward_and_stake(current_era) {
+                reward_and_stake
             } else if era_when_contract_last_staked.is_some() {
-                Self::get_era_total(era_when_contract_last_staked.unwrap())
+                Self::era_reward_and_stake(era_when_contract_last_staked.unwrap())
                     .ok_or(Error::<T>::UnexpectedState)?
             } else {
                 Default::default()
             };
-            era_reward.staked += bonded_value;
-            PalletEraRewards::<T>::insert(current_era, era_reward);
+            reward_and_stake_for_era.staked += bonded_value;
+            EraRewardsAndStakes::<T>::insert(current_era, reward_and_stake_for_era);
 
             // If contract wasn't claimed nor staked yet, insert current era as last claimed era.
             // When calculating reward, this will provide correct information to the algorithm since nothing exists
@@ -548,15 +548,15 @@ pub mod pallet {
             ContractEraStake::<T>::insert(contract_id.clone(), current_era, era_staking_points);
 
             // Update total staked value in era.
-            let mut era_reward = if let Some(era_reward) = Self::get_era_total(current_era) {
+            let mut era_reward = if let Some(era_reward) = Self::era_reward_and_stake(current_era) {
                 era_reward
             } else {
                 // If there was no stake/unstake operation in current era, fetch if in the last era there was.
-                Self::get_era_total(era_when_contract_last_staked)
+                Self::era_reward_and_stake(era_when_contract_last_staked)
                     .ok_or(Error::<T>::UnexpectedState)?
             };
             era_reward.staked = era_reward.staked.saturating_sub(value_to_unstake);
-            PalletEraRewards::<T>::insert(current_era, era_reward);
+            EraRewardsAndStakes::<T>::insert(current_era, era_reward);
 
             // Check if we need to update era in which contract was last changed. Can avoid one write.
             if era_when_contract_last_staked != current_era {
@@ -981,7 +981,7 @@ pub mod pallet {
             }
 
             // for the first claimable era "start_from_era", this storage item must be in place!
-            let mut contract_stake_prev = Self::contract_era_stake(&contract_id, &start_from_era)
+            let mut contract_staking_info_prev = Self::contract_era_stake(&contract_id, &start_from_era)
                 .ok_or(Error::<T>::UnknownStartStakingData)?;
 
             // initialize rewards for stakers and the developer
@@ -993,14 +993,14 @@ pub mod pallet {
             // for any era after start_from_era, the ContractEraStake is present only if there
             // was a change in staking amount. If it is not present we process last recorded ContractEraStake
             for era in start_from_era..current_era {
-                let total_era = Self::get_era_total(era).ok_or(Error::<T>::UnknownEraReward)?;
-                let contract_stake =
-                    Self::contract_era_stake(&contract_id, era).unwrap_or(contract_stake_prev);
+                let reward_and_stake_for_era = Self::era_reward_and_stake(era).ok_or(Error::<T>::UnknownEraReward)?;
+                let contract_staking_info =
+                    Self::contract_era_stake(&contract_id, era).unwrap_or(contract_staking_info_prev);
 
                 // this contract's part in whole era reward
-                let contract_part = Perbill::from_rational(total_era.rewards, total_era.staked);
+                let contract_part = Perbill::from_rational(reward_and_stake_for_era.rewards, reward_and_stake_for_era.staked);
 
-                let contract_era_reward = contract_part * contract_stake.total;
+                let contract_era_reward = contract_part * contract_staking_info.total;
 
                 // divide reward between stakers and the developer of the contract
                 let contract_staker_reward =
@@ -1012,12 +1012,12 @@ pub mod pallet {
 
                 // accumulate rewards for the stakers and the developer
                 rewards_for_era_stakers =
-                    Self::stakers_era_reward(contract_stake.clone(), contract_staker_reward);
+                    Self::stakers_era_reward(contract_staking_info.clone(), contract_staker_reward);
                 rewards_for_stakers_total.push(rewards_for_era_stakers);
                 reward_for_developer += contract_developer_reward;
 
                 // store current record in case next era has no record of changed stake amount
-                contract_stake_prev = contract_stake;
+                contract_staking_info_prev = contract_staking_info;
             }
             // send rewards to stakers
             Self::payout_stakers2(rewards_for_stakers_total);
@@ -1028,7 +1028,7 @@ pub mod pallet {
             // they have already been processed and won't be needed anymore.
             ContractEraStake::<T>::remove_prefix(&contract_id, None);
             // create contract era stake data in current era for further staking and claiming
-            ContractEraStake::<T>::insert(&contract_id, current_era, contract_stake_prev);
+            ContractEraStake::<T>::insert(&contract_id, current_era, contract_staking_info_prev);
 
             // move contract pointers to current era
             ContractLastClaimed::<T>::insert(&contract_id, current_era);
