@@ -50,7 +50,7 @@ pub fn open_frontier_backend(
 }
 
 /// Full client dependencies
-pub struct FullDeps<C, P> {
+pub struct FullDeps<C, P, T> {
     /// The client instance to use.
     pub client: Arc<C>,
     /// Transaction pool instance.
@@ -63,6 +63,8 @@ pub struct FullDeps<C, P> {
     pub is_authority: bool,
     /// Frontier Backend.
     pub frontier_backend: Arc<fc_db::Backend<Block>>,
+    /// Ethereum transaction conversion helper.
+    pub transaction_converter: T,
     /// Ethereum pending transactions.
     pub pending_transactions: PendingTransactions,
     /// EthFilterApi pool.
@@ -70,8 +72,8 @@ pub struct FullDeps<C, P> {
 }
 
 /// Instantiate all RPC extensions.
-pub fn create_full<C, P, BE>(
-    deps: FullDeps<C, P>,
+pub fn create_full<C, P, T, BE>(
+    deps: FullDeps<C, P, T>,
     subscription_task_executor: SubscriptionTaskExecutor,
 ) -> jsonrpc_core::IoHandler<sc_rpc::Metadata>
 where
@@ -89,6 +91,7 @@ where
         + fp_rpc::EthereumRuntimeRPCApi<Block>
         + BlockBuilder<Block>,
     P: TransactionPool<Block = Block> + Sync + Send + 'static,
+    T: fp_rpc::ConvertTransaction<sp_runtime::OpaqueExtrinsic> + Sync + Send + 'static,
     BE: Backend<Block> + 'static,
     BE::State: StateBackend<BlakeTwo256>,
     BE::Blockchain: BlockchainBackend<Block>,
@@ -101,6 +104,7 @@ where
         deny_unsafe,
         is_authority,
         frontier_backend,
+        transaction_converter,
         pending_transactions,
         filter_pool,
     } = deps;
@@ -127,7 +131,6 @@ where
         fallback: Box::new(RuntimeApiStorageOverride::new(client.clone())),
     });
 
-    let transaction_converter = shiden_runtime::TransactionConverter;
     let max_past_logs: u32 = 10_000;
     let max_stored_filters: usize = 500;
 

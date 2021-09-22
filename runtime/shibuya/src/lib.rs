@@ -265,7 +265,7 @@ impl pallet_custom_signatures::Config for Runtime {
     type CallMagicNumber = CallMagicNumber;
     type Currency = Balances;
     type CallFee = CallFee;
-    type OnChargeTransaction = ();
+    type OnChargeTransaction = ToStakingPot;
     type UnsignedPriority = EcdsaUnsignedPriority;
 }
 
@@ -587,7 +587,7 @@ impl pallet_evm::Config for Runtime {
     type GasWeightMapping = ShidenGasWeightMapping;
     type BlockHashMapping = pallet_ethereum::EthereumBlockHashMapping<Runtime>;
     type CallOrigin = pallet_evm::EnsureAddressRoot<AccountId>;
-    type WithdrawOrigin = pallet_evm::EnsureAddressNever<AccountId>;
+    type WithdrawOrigin = pallet_evm::EnsureAddressTruncated;
     type AddressMapping = pallet_evm::HashedAddressMapping<BlakeTwo256>;
     type Currency = Balances;
     type Event = Event;
