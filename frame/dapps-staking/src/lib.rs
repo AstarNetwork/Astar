@@ -125,7 +125,7 @@ impl Default for Forcing {
 
 /// A record for total rewards and total amount staked for an era
 #[derive(PartialEq, Eq, Clone, Default, Encode, Decode, RuntimeDebug)]
-pub struct EraReward<Balance> {
+pub struct EraRewardAndStake<Balance> {
     /// Total amount of rewards for an era
     rewards: Balance,
     /// Total staked amount for an era
@@ -148,7 +148,7 @@ pub struct Nominations<AccountId, Balance> {
 /// Used to split total EraPayout among contracts.
 /// Each tuple (contract, era) has this structure.
 /// This will be used to reward contracts developer and his stakers.
-#[derive(PartialEq, Encode, Decode, Default, RuntimeDebug)]
+#[derive(Clone, PartialEq, Encode, Decode, Default, RuntimeDebug)]
 pub struct EraStakingPoints<AccountId: Ord, Balance: HasCompact> {
     /// Total staked amount.
     total: Balance,
