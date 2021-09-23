@@ -371,7 +371,8 @@ impl OnUnbalanced<NegativeImbalance> for ToStakingPot {
 pub struct OnBlockReward;
 impl OnUnbalanced<NegativeImbalance> for OnBlockReward {
     fn on_nonzero_unbalanced(amount: NegativeImbalance) {
-        let (dapps, maintain) = amount.ration(50, 50);
+        let dapps_percentage = DAppsRewardPercentage::get();
+        let (dapps, maintain) = amount.ration(dapps_percentage, 100 - dapps_percentage);
         // dapp staking block reward
         Balances::resolve_creating(&DappsStakingPalletId::get().into_account(), dapps);
 
@@ -385,11 +386,13 @@ impl OnUnbalanced<NegativeImbalance> for OnBlockReward {
 
 parameter_types! {
     pub const RewardAmount: Balance = 2_664 * MILLISDN;
+    pub const DAppsRewardPercentage: u32 = 50;
 }
 
 impl pallet_block_reward::Config for Runtime {
     type Currency = Balances;
     type OnBlockReward = OnBlockReward;
+    type DAppsRewardPercentage = DAppsRewardPercentage;
     type RewardAmount = RewardAmount;
 }
 
