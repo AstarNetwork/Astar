@@ -5516,29 +5516,6 @@ dependencies = [
 name = "pallet-evm"
 version = "6.0.0-dev"
 source = "git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.9#83054f985879de78ab47c8053c4c203a342c48eb"
-name = "pallet-dapps-staking"
-version = "0.1.0"
-dependencies = [
- "frame-support",
- "frame-system",
- "num-traits",
- "pallet-balances",
- "pallet-session",
- "pallet-timestamp",
- "parity-scale-codec",
- "serde",
- "sp-arithmetic",
- "sp-core",
- "sp-io",
- "sp-runtime",
- "sp-staking",
- "sp-std",
-]
-
-[[package]]
-name = "pallet-democracy"
-version = "4.0.0-dev"
-source = "git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.9#91061a7d925b5bc597804293da283477512ba4ff"
 dependencies = [
  "evm",
  "evm-gasometer",
@@ -9709,6 +9686,7 @@ dependencies = [
  "pallet-block-reward",
  "pallet-collator-selection",
  "pallet-custom-signatures",
+ "pallet-dapps-staking",
  "pallet-ethereum",
  "pallet-evm",
  "pallet-evm-precompile-bn128",
@@ -9716,7 +9694,6 @@ dependencies = [
  "pallet-evm-precompile-modexp",
  "pallet-evm-precompile-sha3fips",
  "pallet-evm-precompile-simple",
- "pallet-dapps-staking",
  "pallet-identity",
  "pallet-multisig",
  "pallet-session",
