@@ -1163,7 +1163,7 @@ fn new_era_is_ok() {
 
         let block_number = 4;
         const CURRENT_ERA: EraIndex = 42;
-        const DAPPS_BLOCK_REWARD: Balance = 1_332 * MILLISDN;
+        const DAPPS_BLOCK_REWARD: Balance = 1_332 * MILLIAST;
 
         // set initial era index
         <CurrentEra<TestRuntime>>::put(CURRENT_ERA);
