@@ -1019,7 +1019,7 @@ pub mod pallet {
                 // accumulate rewards for the stakers
                 Self::stakers_era_reward(
                     &mut rewards_for_stakers_map,
-                    contract_staking_info.clone(),
+                    &contract_staking_info,
                     contract_staker_reward,
                 );
                 // accumulate rewards for the developer
@@ -1233,14 +1233,14 @@ pub mod pallet {
         /// Calculate rewards for all stakers for this era
         fn stakers_era_reward(
             staker_map: &mut BTreeMap<T::AccountId, BalanceOf<T>>,
-            points: EraStakingPoints<T::AccountId, BalanceOf<T>>,
+            points: &EraStakingPoints<T::AccountId, BalanceOf<T>>,
             reward_for_contract: BalanceOf<T>,
         ) {
-            let staker_part = Perbill::from_rational(reward_for_contract, points.total);
+            let staker_part = Perbill::from_rational(reward_for_contract, (*points).total);
 
-            for (s, b) in points.stakers {
-                let mut reward = staker_map.entry(s).or_insert(Default::default());
-                *reward += staker_part * b;
+            for (s, b) in &points.stakers {
+                let mut reward = staker_map.entry(s.clone()).or_insert(Default::default());
+                *reward += staker_part * *b;
             }
         }
 
