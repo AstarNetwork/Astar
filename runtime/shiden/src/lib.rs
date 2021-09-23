@@ -264,6 +264,7 @@ parameter_types! {
     pub const BlockPerEra: BlockNumber = 60;
     pub const MaxStakings: u32 = 5;
     pub const RegisterDeposit: Balance = 100;
+    pub const DeveloperRewardPercentage: u32 = 80;
     pub const MaxNumberOfStakersPerContract: u32 = 128;
     pub const MinimumStakingAmount: Balance = 10;
 }
@@ -272,10 +273,12 @@ impl pallet_dapps_staking::Config for Runtime {
     type Currency = Balances;
     type UnixTime = Timestamp;
     type RewardRemainder = (); // Reward remainder is burned.
-    type Reward = ();
+    type RewardAmount = RewardAmount;
+    type DAppsRewardPercentage = DAppsRewardPercentage;
     type BlockPerEra = BlockPerEra;
     type UnbondingDuration = UnbondingDuration;
     type RegisterDeposit = RegisterDeposit;
+    type DeveloperRewardPercentage = DeveloperRewardPercentage;
     type EraPayout = ();
     type MaxStakings = MaxStakings;
     type Event = Event;
@@ -378,7 +381,8 @@ type NegativeImbalance = <Balances as Currency<AccountId>>::NegativeImbalance;
 pub struct OnBlockReward;
 impl OnUnbalanced<NegativeImbalance> for OnBlockReward {
     fn on_nonzero_unbalanced(amount: NegativeImbalance) {
-        let (dapps, maintain) = amount.ration(50, 50);
+        let dapps_ratio = DAppsRewardPercentage::get();
+        let (dapps, maintain) = amount.ration(dapps_ratio, 100 - dapps_ratio);
         Balances::resolve_creating(&DappsStakingPalletId::get().into_account(), dapps);
 
         let (treasury, collators) = maintain.ration(40, 10);
@@ -389,11 +393,13 @@ impl OnUnbalanced<NegativeImbalance> for OnBlockReward {
 
 parameter_types! {
     pub const RewardAmount: Balance = 2_664 * MILLISDN;
+    pub const DAppsRewardPercentage: u32 = 50;
 }
 
 impl pallet_block_reward::Config for Runtime {
     type Currency = Balances;
     type OnBlockReward = OnBlockReward;
+    type DAppsRewardPercentage = DAppsRewardPercentage;
     type RewardAmount = RewardAmount;
 }
 
