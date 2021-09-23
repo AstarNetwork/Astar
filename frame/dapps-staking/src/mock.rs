@@ -36,6 +36,7 @@ pub(crate) const DEVELOPER_REWARD_PERCENTAGE: u32 = 80;
 pub(crate) const MILLISDN: Balance = 1_000_000_000_000_000;
 pub(crate) const BLOCK_REWARD: Balance = 2_664 * MILLIAST;
 
+
 construct_runtime!(
     pub enum TestRuntime where
         Block = Block,
