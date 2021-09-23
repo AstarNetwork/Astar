@@ -44,8 +44,11 @@ pub mod pallet {
         /// Tokens have been minted and are unused for validator-reward. Maybe, dapps-staking uses ().
         type RewardRemainder: OnUnbalanced<NegativeImbalanceOf<Self>>;
 
-        /// Handler for the unbalanced increment when rewarding a staker. Maybe, dapps-staking uses ().
-        type Reward: OnUnbalanced<PositiveImbalanceOf<Self>>;
+        /// Reword amount per block. Will be divided by DAppsRewardPercentage
+        type RewardAmount: Get<BalanceOf<Self>>;
+
+        /// The percentage of the network block reward that goes to this pallet
+        type DAppsRewardPercentage: Get<u32>;
 
         /// Number of blocks per era.
         #[pallet::constant]
@@ -126,6 +129,11 @@ pub mod pallet {
     #[pallet::storage]
     #[pallet::getter(fn current_era)]
     pub type CurrentEra<T> = StorageValue<_, EraIndex>;
+
+    /// Accumulator for block rewards during an era. It is reset at every new era
+    #[pallet::storage]
+    #[pallet::getter(fn block_reward_accumulator)]
+    pub type BlockRewardAccumulator<T> = StorageValue<_, BalanceOf<T>, ValueQuery>;
 
     /// The active era information, it holds index and start.
     ///
@@ -314,18 +322,25 @@ pub mod pallet {
     #[pallet::hooks]
     impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
         fn on_initialize(now: BlockNumberFor<T>) -> Weight {
-            // just return the weight of the on_finalize.
+            // Handle dapps staking era
+            let block_rewards = Self::block_reward_accumulator();
+            BlockRewardAccumulator::<T>::put(block_rewards + T::RewardAmount::get());
             let force_new_era = Self::force_era().eq(&Forcing::ForceNew);
-            if (now % T::BlockPerEra::get()).is_zero() || force_new_era {
-                Self::reward_balance_snapshoot();
-                let next_era = Self::get_current_era() + 1;
+            let blocks_pre_era = T::BlockPerEra::get();
+            if (now % blocks_pre_era).is_zero() || force_new_era {
+                let current_era = Self::get_current_era();
+                Self::reward_balance_snapshoot(current_era);
+                let next_era = current_era + 1;
                 CurrentEra::<T>::put(next_era);
+                let zero_balance: BalanceOf<T> = Default::default();
+                BlockRewardAccumulator::<T>::put(zero_balance);
                 if force_new_era {
                     ForceEra::<T>::put(Forcing::ForceNone);
                 }
                 Self::deposit_event(Event::<T>::NewDappStakingEra(next_era));
             }
 
+            // just return the weight of the on_finalize.
             T::DbWeight::get().reads(1)
         }
 
@@ -1257,9 +1272,20 @@ pub mod pallet {
         }
 
         /// The block rewards are accumulated on the pallets's account during an era.
-        /// This function takes a snapshot of the pallet's balance and stores it for future distribution
+        /// This function takes a snapshot of the pallet's balance accured during current era
+        /// and stores it for future distribution
         ///
         /// This is called at the end of each Era
-        fn reward_balance_snapshoot() {}
+        fn reward_balance_snapshoot(current_era: EraIndex) {
+            let reward = Perbill::from_percent(T::DAppsRewardPercentage::get())
+                * Self::block_reward_accumulator();
+            // copy amount staked from previous era 'reward_and_stake.staked'
+            let mut reward_and_stake =
+                Self::era_reward_and_stake(current_era - 1).unwrap_or(Default::default());
+            // add reward amount to the current (which is just ending) era
+            reward_and_stake.rewards = reward;
+
+            EraRewardsAndStakes::<T>::insert(current_era, reward_and_stake);
+        }
     }
 }

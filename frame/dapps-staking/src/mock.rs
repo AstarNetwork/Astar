@@ -33,6 +33,9 @@ pub(crate) const MAX_NUMBER_OF_STAKERS: u32 = 4;
 pub(crate) const MINIMUM_STAKING_AMOUNT: Balance = 10;
 pub(crate) const DEVELOPER_REWARD_PERCENTAGE: u32 = 80;
 
+pub(crate) const MILLISDN: Balance = 1_000_000_000_000_000;
+pub(crate) const BLOCK_REWARD: Balance = 2_664 * MILLISDN;
+
 construct_runtime!(
     pub enum TestRuntime where
         Block = Block,
@@ -136,10 +139,12 @@ impl OnUnbalanced<PositiveImbalanceOf<TestRuntime>> for RewardMock {}
 
 parameter_types! {
     pub const RegisterDeposit: u32 = 100;
-    pub const MockBlockPerEra: BlockNumber = 10;
+    pub const MockBlockPerEra: BlockNumber = 3;
     pub const MaxNumberOfStakersPerContract: u32 = MAX_NUMBER_OF_STAKERS;
     pub const MinimumStakingAmount: Balance = MINIMUM_STAKING_AMOUNT;
     pub const DeveloperRewardPercentage: u32 = DEVELOPER_REWARD_PERCENTAGE;
+    pub const RewardAmount: Balance = 2_664 * MILLISDN;
+    pub const DAppsRewardPercentage: u32 = 50;
 }
 impl pallet_dapps_staking::Config for TestRuntime {
     type Event = Event;
@@ -153,7 +158,8 @@ impl pallet_dapps_staking::Config for TestRuntime {
     type WeightInfo = ();
     type UnixTime = Timestamp;
     type RewardRemainder = RewardRemainderMock;
-    type Reward = RewardMock;
+    type RewardAmount = RewardAmount;
+    type DAppsRewardPercentage = DAppsRewardPercentage;
     type MaxNumberOfStakersPerContract = MaxNumberOfStakersPerContract;
     type MinimumStakingAmount = MinimumStakingAmount;
 }

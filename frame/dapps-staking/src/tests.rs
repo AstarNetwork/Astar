@@ -1158,8 +1158,12 @@ fn register_same_contract_twice_nok() {
 #[test]
 fn new_era_is_ok() {
     ExternalityBuilder::build().execute_with(|| {
-        let block_number = BlockPerEra::get() - 1;
-        const CURRENT_ERA: crate::EraIndex = 3;
+        // please not that for purposes of this test in mock.rs
+        // pub const MockBlockPerEra: BlockNumber = 3;
+
+        let block_number = 4;
+        const CURRENT_ERA: EraIndex = 42;
+        const DAPPS_BLOCK_REWARD: Balance = 1_332 * MILLISDN;
 
         // set initial era index
         <CurrentEra<TestRuntime>>::put(CURRENT_ERA);
@@ -1170,14 +1174,23 @@ fn new_era_is_ok() {
         let mut current = mock::DappsStaking::current_era().unwrap_or(Zero::zero());
         assert_eq!(CURRENT_ERA, current);
 
-        // increment the block, this time it should be last block in the era
-        // and CurrentEra should be incremented
+        // verify that block reward is added to the block_reward_accumulator
+        let mut block_reward = mock::DappsStaking::block_reward_accumulator();
+        assert_eq!(BLOCK_REWARD, block_reward);
+
+        // increment the 2 more blocks to start the era
+        // CurrentEra should be incremented
+        // block_reward_accumulator should be reset to 0
         crate::pallet::pallet::Pallet::<TestRuntime>::on_initialize(block_number + 1);
+        crate::pallet::pallet::Pallet::<TestRuntime>::on_initialize(block_number + 2);
         current = mock::DappsStaking::current_era().unwrap();
         assert_eq!(CURRENT_ERA + 1, current);
         System::assert_last_event(mock::Event::DappsStaking(crate::Event::NewDappStakingEra(
             CURRENT_ERA + 1,
         )));
+        // verify that block reward is reset to 0
+        block_reward = mock::DappsStaking::block_reward_accumulator();
+        assert_eq!(0, block_reward);
     })
 }
 

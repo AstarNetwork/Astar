@@ -273,7 +273,8 @@ impl pallet_dapps_staking::Config for Runtime {
     type Currency = Balances;
     type UnixTime = Timestamp;
     type RewardRemainder = (); // Reward remainder is burned.
-    type Reward = ();
+    type RewardAmount = RewardAmount;
+    type DAppsRewardPercentage = DAppsRewardPercentage;
     type BlockPerEra = BlockPerEra;
     type UnbondingDuration = UnbondingDuration;
     type RegisterDeposit = RegisterDeposit;
@@ -380,7 +381,8 @@ type NegativeImbalance = <Balances as Currency<AccountId>>::NegativeImbalance;
 pub struct OnBlockReward;
 impl OnUnbalanced<NegativeImbalance> for OnBlockReward {
     fn on_nonzero_unbalanced(amount: NegativeImbalance) {
-        let (dapps, maintain) = amount.ration(50, 50);
+        let dapps_ratio = DAppsRewardPercentage::get();
+        let (dapps, maintain) = amount.ration(dapps_ratio, 100 - dapps_ratio);
         Balances::resolve_creating(&DappsStakingPalletId::get().into_account(), dapps);
 
         let (treasury, collators) = maintain.ration(40, 10);
@@ -391,11 +393,13 @@ impl OnUnbalanced<NegativeImbalance> for OnBlockReward {
 
 parameter_types! {
     pub const RewardAmount: Balance = 2_664 * MILLISDN;
+    pub const DAppsRewardPercentage: u32 = 50;
 }
 
 impl pallet_block_reward::Config for Runtime {
     type Currency = Balances;
     type OnBlockReward = OnBlockReward;
+    type DAppsRewardPercentage = DAppsRewardPercentage;
     type RewardAmount = RewardAmount;
 }
 
