@@ -4483,6 +4483,7 @@ dependencies = [
  "pallet-contracts-primitives",
  "pallet-contracts-rpc-runtime-api",
  "pallet-custom-signatures",
+ "pallet-dapps-staking",
  "pallet-ethereum",
  "pallet-evm",
  "pallet-evm-precompile-bn128",
