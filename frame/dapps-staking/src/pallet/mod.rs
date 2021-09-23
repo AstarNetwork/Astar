@@ -1281,7 +1281,7 @@ pub mod pallet {
                 * Self::block_reward_accumulator();
             // copy amount staked from previous era 'reward_and_stake.staked'
             let mut reward_and_stake =
-                Self::era_reward_and_stake(current_era - 1).unwrap_or(Default::default());
+                Self::era_reward_and_stake(current_era).unwrap_or(Default::default());
             // add reward amount to the current (which is just ending) era
             reward_and_stake.rewards = reward;
 
