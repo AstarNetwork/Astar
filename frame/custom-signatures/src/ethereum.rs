@@ -38,16 +38,12 @@ impl sp_std::convert::TryFrom<Vec<u8>> for EthereumSignature {
 }
 
 /// Constructs the message that Ethereum RPC's `personal_sign` and `eth_sign` would sign.
+///
+/// Note: sign message hash to escape of message length estimation.
 pub fn signable_message(what: &[u8]) -> Vec<u8> {
-    let mut l = what.len();
-    let mut rev = Vec::new();
-    while l > 0 {
-        rev.push(b'0' + (l % 10) as u8);
-        l /= 10;
-    }
-    let mut v = b"\x19Ethereum Signed Message:\n".to_vec();
-    v.extend(rev.into_iter().rev());
-    v.extend_from_slice(what);
+    let hash = keccak_256(what);
+    let mut v = b"\x19Ethereum Signed Message:\n32".to_vec();
+    v.extend_from_slice(&hash[..]);
     v
 }
 
@@ -61,7 +57,7 @@ impl Verify for EthereumSignature {
         mut msg: L,
         account: &<Self::Signer as IdentifyAccount>::AccountId,
     ) -> bool {
-        let msg = keccak_256(&signable_message(&msg.get()));
+        let msg = keccak_256(&signable_message(msg.get()));
         match secp256k1_ecdsa_recover_compressed(&self.0, &msg).ok() {
             Some(public) => {
                 let signer = Self::Signer::from(ecdsa::Public::from_raw(public));
@@ -79,9 +75,9 @@ fn verify_should_works() {
 
     let msg = "test eth signed message";
     let pair = ecdsa::Pair::from_seed(&hex![
-        "7e9c7ad85df5cdc88659f53e06fb2eb9bab3ebc59083a3190eaf2c730332529c"
+        "ac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"
     ]);
     let account = <MultiSignature as Verify>::Signer::from(pair.public()).into_account();
-    let signature = EthereumSignature(hex!["dd0992d40e5cdf99db76bed162808508ac65acd7ae2fdc8573594f03ed9c939773e813181788fc02c3c68f3fdc592759b35f6354484343e18cb5317d34dab6c61b"]);
+    let signature = EthereumSignature(hex!["f5d5cc953828e3fb0d81f3176d88fa5c73d3ad3dc4bc7a8061b03a6db2cd73337778df75a1443e8c642f6ceae0db39b90c321ac270ad7836695cae76f703f3031c"]);
     assert_eq!(signature.verify(msg.as_ref(), &account), true);
 }
