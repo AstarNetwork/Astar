@@ -1163,9 +1163,9 @@ fn new_era_is_ok() {
 
         let block_number = 4;
         const CURRENT_ERA: EraIndex = 42;
-        const DAPPS_BLOCK_REWARD: Balance = 1_332 * MILLIASTL;
+        const DAPPS_BLOCK_REWARD: Balance = 1_332 * MILLIAST;
         const STAKED_AMOUNT: Balance = 100;
-        const EXPECTED_ERA_REWARD: Balance = 3_996 * MILLIASTL;
+        const EXPECTED_ERA_REWARD: Balance = 3_996 * MILLIAST;
         let staker = 2;
         let developer = 3;
         let contract =

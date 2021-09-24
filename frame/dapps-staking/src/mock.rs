@@ -33,8 +33,8 @@ pub(crate) const MAX_NUMBER_OF_STAKERS: u32 = 4;
 pub(crate) const MINIMUM_STAKING_AMOUNT: Balance = 10;
 pub(crate) const DEVELOPER_REWARD_PERCENTAGE: u32 = 80;
 
-pub(crate) const MILLIASTL: Balance = 1_000_000_000_000_000;
-pub(crate) const BLOCK_REWARD: Balance = 2_664 * MILLIASTL;
+pub(crate) const MILLIAST: Balance = 1_000_000_000_000_000;
+pub(crate) const BLOCK_REWARD: Balance = 2_664 * MILLIAST;
 
 construct_runtime!(
     pub enum TestRuntime where
@@ -143,7 +143,7 @@ parameter_types! {
     pub const MaxNumberOfStakersPerContract: u32 = MAX_NUMBER_OF_STAKERS;
     pub const MinimumStakingAmount: Balance = MINIMUM_STAKING_AMOUNT;
     pub const DeveloperRewardPercentage: u32 = DEVELOPER_REWARD_PERCENTAGE;
-    pub const RewardAmount: Balance = 2_664 * MILLIASTL;
+    pub const RewardAmount: Balance = 2_664 * MILLIAST;
     pub const DAppsRewardPercentage: u32 = 50;
 }
 impl pallet_dapps_staking::Config for TestRuntime {
