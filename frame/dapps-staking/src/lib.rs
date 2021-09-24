@@ -83,17 +83,6 @@ pub struct EraStakingPoints<AccountId: Ord, Balance: HasCompact> {
     stakers: BTreeMap<AccountId, Balance>,
 }
 
-/// Just a Balance/BlockNumber tuple to encode when a chunk of funds will be unlocked.
-#[derive(PartialEq, Eq, Clone, Encode, Decode, RuntimeDebug)]
-pub struct UnlockChunk<Balance: HasCompact> {
-    /// Amount of funds to be unlocked.
-    #[codec(compact)]
-    value: Balance,
-    /// Era number at which point it'll be unlocked.
-    #[codec(compact)]
-    era: EraIndex,
-}
-
 /// Multi-VM pointer to smart contract instance.
 #[derive(PartialEq, Eq, Copy, Clone, Encode, Decode, RuntimeDebug)]
 pub enum SmartContract<AccountId> {
@@ -104,8 +93,8 @@ pub enum SmartContract<AccountId> {
 }
 
 /// The ledger of a (bonded) stash.
-#[derive(PartialEq, Eq, Clone, Encode, Decode, RuntimeDebug)]
-pub struct StakingLedger<Balance: HasCompact> {
+#[derive(PartialEq, Eq, Clone, Encode, Decode, Default, RuntimeDebug)]
+pub struct StakingLedger<Balance: HasCompact + Default> {
     /// The total amount of the stash's balance that we are currently accounting for.
     /// It's just `active` plus all the `unlocking` balances.
     #[codec(compact)]

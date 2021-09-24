@@ -4,7 +4,7 @@ use mock::{EraIndex, *};
 use sp_runtime::traits::Zero;
 use sp_runtime::Perbill;
 
-/// Utility method for registering contract to be staked.
+/// Used to register contract for staking and assert success.
 pub(crate) fn register_contract(developer: AccountId, contract: &SmartContract<AccountId>) {
     assert_ok!(DappsStaking::register(
         Origin::signed(developer),
@@ -12,7 +12,7 @@ pub(crate) fn register_contract(developer: AccountId, contract: &SmartContract<A
     ));
 }
 
-/// Helper fn to skip "for_era" eras, and also reward each era
+/// Used to skip "for_era" eras, rewarding each era in the process.
 pub(crate) fn advance_era_and_reward(
     for_era: EraIndex,
     rewards: BalanceOf<TestRuntime>,
@@ -28,7 +28,7 @@ pub(crate) fn advance_era_and_reward(
     <CurrentEra<TestRuntime>>::put(&current + for_era);
 }
 
-/// Utility method for bond_and_stake with success assertion.
+/// Used to perform bond_and_stake with success assertion.
 pub(crate) fn bond_and_stake_with_verification(
     staker_id: AccountId,
     contract_id: &SmartContract<AccountId>,
@@ -41,7 +41,7 @@ pub(crate) fn bond_and_stake_with_verification(
     ));
 }
 
-/// Utility method to verify ledger content.
+/// Used to verify ledger content.
 pub(crate) fn verify_ledger(staker_id: AccountId, staked_value: Balance) {
     // Verify that ledger storage values are as expected.
     let ledger = Ledger::<TestRuntime>::get(staker_id).unwrap();
@@ -49,7 +49,7 @@ pub(crate) fn verify_ledger(staker_id: AccountId, staked_value: Balance) {
     assert_eq!(staked_value, ledger.active);
 }
 
-/// Utility method to verify era staking points content.
+/// Used to verify era staking points content.
 pub(crate) fn verify_era_staking_points(
     contract_id: &SmartContract<AccountId>,
     total_staked_value: Balance,
@@ -69,7 +69,7 @@ pub(crate) fn verify_era_staking_points(
     }
 }
 
-/// Utility method to verify pallet era reward values.
+/// Used to verify pallet era reward values.
 pub(crate) fn verify_pallet_era_rewards(
     era: crate::EraIndex,
     total_staked_value: Balance,
@@ -81,20 +81,19 @@ pub(crate) fn verify_pallet_era_rewards(
     assert_eq!(total_reward_value, era_rewards.rewards);
 }
 
-/// Helper fn verifiers storage items after claim() is called
-/// There should be number of new items generated and cleared historical items
-pub(crate) fn cleared_contract_history(
+/// Used to verify storage content after claim() is successfuly executed.
+pub(crate) fn verify_contract_history_is_cleared(
     contract: SmartContract<mock::AccountId>,
     from_era: EraIndex,
     to_era: EraIndex,
 ) {
-    // check claim pointer moved
+    // check claim era is changed
     assert_eq!(
         mock::DappsStaking::contract_last_claimed(&contract).unwrap_or(Zero::zero()),
         to_era
     );
 
-    // check last staked pointer moved
+    // check last staked era changed
     assert_eq!(
         mock::DappsStaking::contract_last_staked(&contract).unwrap_or(Zero::zero()),
         to_era
@@ -105,14 +104,11 @@ pub(crate) fn cleared_contract_history(
 
     // check history storage is cleared
     for era in from_era..to_era {
-        assert_ok!((mock::DappsStaking::contract_era_stake(contract, era))
-            .is_none()
-            .then(|| ())
-            .ok_or("contract_era_stake not cleared"));
+        assert!(mock::DappsStaking::contract_era_stake(contract, era).is_none());
     }
 }
 
-/// Helper fn checks that claim() is exeuted
+/// Used to perform claim with success assertion
 pub(crate) fn claim(
     claimer: AccountId,
     contract: SmartContract<mock::AccountId>,
@@ -126,46 +122,27 @@ pub(crate) fn claim(
     )));
 }
 
-/// Helper fn to calculate expected reward for the staker
+/// Used to calculate the expected reward for the staker
 pub(crate) fn calc_expected_staker_reward(
     era_reward: mock::Balance,
     era_stake: mock::Balance,
     contract_stake: mock::Balance,
     staker_stake: mock::Balance,
 ) -> mock::Balance {
-    print!(
-        "calc_expected_staker_reward era_reward:{:?} era_stake:{:?} contract_stake:{:?} staker_stake:{:?} \n",
-        era_reward, era_stake, contract_stake, staker_stake
-    );
     let contract_reward = Perbill::from_rational(era_reward, era_stake) * contract_stake;
-    print!("contract_reward {:?}\n", contract_reward);
-
     let contract_staker_part =
         Perbill::from_percent(100 - DEVELOPER_REWARD_PERCENTAGE) * contract_reward;
-    print!("contract_staker_part {:?}\n", contract_staker_part);
-    let expected_staker_reward =
-        Perbill::from_rational(contract_staker_part, contract_stake) * staker_stake;
-    print!("expected_staker_reward {:?}\n", expected_staker_reward);
 
-    expected_staker_reward
+    Perbill::from_rational(contract_staker_part, contract_stake) * staker_stake
 }
 
-/// Helper fn to calculate expected reward for the developer
+/// Used to calculate the expected reward for the developer
 pub(crate) fn calc_expected_developer_reward(
     era_reward: mock::Balance,
     era_stake: mock::Balance,
     contract_stake: mock::Balance,
 ) -> mock::Balance {
-    print!(
-        "calc_expected_developer_reward era_reward:{:?} era_stake{:?} contract_stake{:?} \n",
-        era_reward, era_stake, contract_stake
-    );
     let contract_reward = Perbill::from_rational(era_reward, era_stake) * contract_stake;
-    print!("contract_reward {:?}\n", contract_reward);
 
-    let expected_developer_reward =
-        Perbill::from_percent(DEVELOPER_REWARD_PERCENTAGE) * contract_reward;
-    print!("contract_developer_part {:?}\n", expected_developer_reward);
-
-    expected_developer_reward
+    Perbill::from_percent(DEVELOPER_REWARD_PERCENTAGE) * contract_reward
 }

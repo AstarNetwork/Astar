@@ -307,25 +307,18 @@ pub mod pallet {
             );
 
             // Get the staking ledger or create an entry if it doesn't exist.
-            let mut ledger = if let Some(ledger) = Self::ledger(&staker) {
-                ledger
-            } else {
-                StakingLedger {
-                    total: Zero::zero(),
-                    active: Zero::zero(),
-                }
-            };
+            let mut ledger = Self::ledger(&staker).unwrap_or_default();
 
             // Ensure that staker has enough balance to bond & stake.
             let free_balance = T::Currency::free_balance(&staker);
             // Remove already locked funds from the free balance
             let available_balance = free_balance.saturating_sub(ledger.total);
-            let bonded_value = value.min(available_balance);
-            ensure!(!bonded_value.is_zero(), Error::<T>::StakingWithNoValue);
+            let value_to_stake = value.min(available_balance);
+            ensure!(!value_to_stake.is_zero(), Error::<T>::StakingWithNoValue);
 
             // update the ledger value by adding the newly bonded funds
-            ledger.total += bonded_value;
-            ledger.active += bonded_value;
+            ledger.total += value_to_stake;
+            ledger.active += value_to_stake;
 
             // Get the latest era staking point info or create it if contract hasn't been staked yet so far.
             let era_when_contract_last_staked = Self::contract_last_staked(&contract_id);
@@ -351,12 +344,12 @@ pub mod pallet {
             }
 
             // Increment the staked amount.
-            latest_era_staking_points.total += bonded_value;
+            latest_era_staking_points.total += value_to_stake;
             let entry = latest_era_staking_points
                 .stakers
                 .entry(staker.clone())
                 .or_insert(Zero::zero());
-            *entry += bonded_value;
+            *entry += value_to_stake;
 
             ensure!(
                 *entry >= T::MinimumStakingAmount::get(),
@@ -385,7 +378,7 @@ pub mod pallet {
                 } else {
                     Default::default()
                 };
-            reward_and_stake_for_era.staked += bonded_value;
+            reward_and_stake_for_era.staked += value_to_stake;
             EraRewardsAndStakes::<T>::insert(current_era, reward_and_stake_for_era);
 
             // If contract wasn't claimed nor staked yet, insert current era as last claimed era.
@@ -407,7 +400,11 @@ pub mod pallet {
                 ContractLastStaked::<T>::insert(&contract_id, current_era);
             }
 
-            Self::deposit_event(Event::<T>::BondAndStake(staker, contract_id, bonded_value));
+            Self::deposit_event(Event::<T>::BondAndStake(
+                staker,
+                contract_id,
+                value_to_stake,
+            ));
 
             Ok(().into())
         }
@@ -429,10 +426,6 @@ pub mod pallet {
             #[pallet::compact] value: BalanceOf<T>,
         ) -> DispatchResultWithPostInfo {
             let staker = ensure_signed(origin)?;
-            ensure!(
-                Self::is_contract_valid(&contract_id),
-                Error::<T>::ContractIsNotValid
-            );
             ensure!(
                 RegisteredDapps::<T>::contains_key(&contract_id),
                 Error::<T>::NotOperatedContract
