@@ -1,14 +1,7 @@
-use crate::{
-    self as pallet_dapps_staking, pallet::pallet::Config, EraPayout, NegativeImbalanceOf,
-    PositiveImbalanceOf,
-};
+use crate::{self as pallet_dapps_staking, NegativeImbalanceOf};
 
-use frame_support::{
-    assert_noop, assert_ok, construct_runtime, parameter_types,
-    storage::{StorageDoubleMap, StorageMap},
-    traits::OnUnbalanced,
-};
-use sp_core::{H160, H256};
+use frame_support::{construct_runtime, parameter_types, traits::OnUnbalanced};
+use sp_core::H256;
 
 use sp_io::TestExternalities;
 use sp_runtime::{
@@ -26,7 +19,6 @@ type Block = frame_system::mocking::MockBlock<TestRuntime>;
 
 /// Value shouldn't be less than 2 for testing purposes, otherwise we cannot test certain corner cases.
 pub(crate) const EXISTENTIAL_DEPOSIT: Balance = 2;
-pub(crate) const REGISTER_DEPOSIT: Balance = 200;
 pub(crate) const UNBONDING_DURATION: EraIndex = 5;
 pub(crate) const MAX_NUMBER_OF_STAKERS: u32 = 4;
 /// Value shouldn't be less than 2 for testing purposes, otherwise we cannot test certain corner cases.
@@ -115,27 +107,9 @@ parameter_types! {
     pub const UnbondingDuration: EraIndex = UNBONDING_DURATION;
 }
 
-/// Mocked implementation for EraPayout. Might need to be changed later when used.
-pub struct EraPayoutMock;
-
-impl<Balance: Default> EraPayout<Balance> for EraPayoutMock {
-    fn era_payout(
-        _total_staked: Balance,
-        _total_issuance: Balance,
-        _era_duration_millis: u64,
-    ) -> (Balance, Balance) {
-        (Default::default(), Default::default())
-    }
-}
-
 pub struct RewardRemainderMock;
 
 impl OnUnbalanced<NegativeImbalanceOf<TestRuntime>> for RewardRemainderMock {}
-
-/// Mocked implementation for Reward. Might need to be changed later when used.
-pub struct RewardMock;
-
-impl OnUnbalanced<PositiveImbalanceOf<TestRuntime>> for RewardMock {}
 
 parameter_types! {
     pub const RegisterDeposit: u32 = 100;
@@ -152,7 +126,6 @@ impl pallet_dapps_staking::Config for TestRuntime {
     type MaxStakings = MaxStakings;
     type BlockPerEra = MockBlockPerEra;
     type UnbondingDuration = UnbondingDuration;
-    type EraPayout = EraPayoutMock;
     type RegisterDeposit = RegisterDeposit;
     type DeveloperRewardPercentage = DeveloperRewardPercentage;
     type WeightInfo = ();
@@ -184,7 +157,8 @@ impl ExternalityBuilder {
                 (1337, 1_000_000_000_000),
             ],
         }
-        .assimilate_storage(&mut storage);
+        .assimilate_storage(&mut storage)
+        .ok();
 
         let mut ext = TestExternalities::from(storage);
         ext.execute_with(|| System::set_block_number(1));

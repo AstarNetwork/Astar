@@ -1,9 +1,8 @@
-use super::{Event, *};
-use frame_support::{assert_err, assert_noop, assert_ok, assert_storage_noop, traits::Hooks};
-use mock::{Balances, EraIndex, *};
-use sp_core::H160;
+use super::*;
+use frame_support::assert_ok;
+use mock::{EraIndex, *};
+use sp_runtime::traits::Zero;
 use sp_runtime::Perbill;
-use std::str::FromStr;
 
 /// Utility method for registering contract to be staked.
 pub(crate) fn register_contract(developer: AccountId, contract: &SmartContract<AccountId>) {
