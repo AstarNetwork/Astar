@@ -27,6 +27,7 @@ pub(crate) const DEVELOPER_REWARD_PERCENTAGE: u32 = 80;
 pub(crate) const BLOCKS_PER_ERA: BlockNumber = 3;
 pub(crate) const MILLIAST: Balance = 1_000_000_000_000_000;
 pub(crate) const BLOCK_REWARD: Balance = 2_664 * MILLIAST;
+pub(crate) const DAPPS_REWARD_PERCENTAGE: u32 = 50;
 
 construct_runtime!(
     pub enum TestRuntime where
@@ -108,7 +109,7 @@ parameter_types! {
     pub const MinimumStakingAmount: Balance = MINIMUM_STAKING_AMOUNT;
     pub const DeveloperRewardPercentage: u32 = DEVELOPER_REWARD_PERCENTAGE;
     pub const RewardAmount: Balance = BLOCK_REWARD;
-    pub const DAppsRewardPercentage: u32 = 50;
+    pub const DAppsRewardPercentage: u32 = DAPPS_REWARD_PERCENTAGE;
 }
 impl pallet_dapps_staking::Config for TestRuntime {
     type Event = Event;

@@ -761,9 +761,12 @@ pub mod pallet {
         ///
         /// This is called at the end of each Era
         fn reward_balance_snapshoot(current_era: EraIndex) {
+            let reward = Perbill::from_percent(T::DAppsRewardPercentage::get())
+                * Self::block_reward_accumulator();
+            // copy amount staked from previous era 'reward_and_stake.staked'
             let mut reward_and_stake = Self::era_reward_and_stake(current_era).unwrap_or_default();
             // add reward amount to the current (which is just ending) era
-            reward_and_stake.rewards = Self::block_reward_accumulator();
+            reward_and_stake.rewards = reward;
 
             EraRewardsAndStakes::<T>::insert(current_era, reward_and_stake);
         }

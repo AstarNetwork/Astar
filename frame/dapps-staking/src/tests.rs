@@ -2,7 +2,7 @@ use super::{pallet::pallet::Error, Event, *};
 use frame_support::{assert_noop, assert_ok, traits::Hooks};
 use mock::{Balances, EraIndex, *};
 use sp_core::H160;
-use sp_runtime::traits::Zero;
+use sp_runtime::{traits::Zero, Perbill};
 use testing_utils::*;
 
 #[test]
@@ -744,7 +744,9 @@ fn new_era_is_ok() {
         let block_reward = mock::DappsStaking::block_reward_accumulator();
         assert!(block_reward.is_zero());
 
-        let expected_era_reward = BLOCK_REWARD * BLOCKS_PER_ERA as Balance;
+        let expected_era_reward = Perbill::from_percent(DAPPS_REWARD_PERCENTAGE)
+            * BLOCK_REWARD
+            * BLOCKS_PER_ERA as Balance;
         // verify that .staked is copied and .reward is added
         verify_pallet_era_rewards(starting_era, STAKED_AMOUNT, expected_era_reward);
     })
