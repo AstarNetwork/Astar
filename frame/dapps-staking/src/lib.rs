@@ -7,7 +7,7 @@ use codec::{Decode, Encode, HasCompact};
 use frame_support::traits::Currency;
 use frame_system::{self as system};
 use sp_runtime::RuntimeDebug;
-use sp_std::{collections::btree_map::BTreeMap, prelude::*, vec::Vec};
+use sp_std::{collections::btree_map::BTreeMap, prelude::*};
 
 pub mod pallet;
 pub mod weights;
@@ -25,8 +25,6 @@ pub use weights::WeightInfo;
 
 pub type BalanceOf<T> =
     <<T as Config>::Currency as Currency<<T as system::Config>::AccountId>>::Balance;
-pub(crate) type NegativeImbalanceOf<T> =
-    <<T as Config>::Currency as Currency<<T as system::Config>::AccountId>>::NegativeImbalance;
 
 /// Counter for the number of eras that have passed.
 pub type EraIndex = u32;
@@ -107,9 +105,7 @@ pub enum SmartContract<AccountId> {
 
 /// The ledger of a (bonded) stash.
 #[derive(PartialEq, Eq, Clone, Encode, Decode, RuntimeDebug)]
-pub struct StakingLedger<AccountId, Balance: HasCompact> {
-    /// The stash account whose balance is actually locke,ed and at stake.
-    pub stash: AccountId,
+pub struct StakingLedger<Balance: HasCompact> {
     /// The total amount of the stash's balance that we are currently accounting for.
     /// It's just `active` plus all the `unlocking` balances.
     #[codec(compact)]
@@ -118,9 +114,4 @@ pub struct StakingLedger<AccountId, Balance: HasCompact> {
     /// rounds.
     #[codec(compact)]
     pub active: Balance,
-    /// Any balance that is becoming free, which may eventually be transferred out
-    /// of the stash (assuming it doesn't get slashed first).
-    pub unlocking: Vec<UnlockChunk<Balance>>,
-    /// The latest and highest era which the staker has claimed reward for.
-    pub last_reward: EraIndex,
 }

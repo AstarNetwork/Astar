@@ -1,6 +1,6 @@
-use crate::{self as pallet_dapps_staking, NegativeImbalanceOf};
+use crate::{self as pallet_dapps_staking};
 
-use frame_support::{construct_runtime, parameter_types, traits::OnUnbalanced};
+use frame_support::{construct_runtime, parameter_types};
 use sp_core::H256;
 
 use sp_io::TestExternalities;
@@ -19,7 +19,6 @@ type Block = frame_system::mocking::MockBlock<TestRuntime>;
 
 /// Value shouldn't be less than 2 for testing purposes, otherwise we cannot test certain corner cases.
 pub(crate) const EXISTENTIAL_DEPOSIT: Balance = 2;
-pub(crate) const UNBONDING_DURATION: EraIndex = 5;
 pub(crate) const MAX_NUMBER_OF_STAKERS: u32 = 4;
 /// Value shouldn't be less than 2 for testing purposes, otherwise we cannot test certain corner cases.
 pub(crate) const MINIMUM_STAKING_AMOUNT: Balance = 10;
@@ -102,14 +101,8 @@ impl pallet_timestamp::Config for TestRuntime {
 }
 
 parameter_types! {
-    pub const MaxStakings: u32 = 32;
     pub const BlockPerEra: BlockNumber = 100;
-    pub const UnbondingDuration: EraIndex = UNBONDING_DURATION;
 }
-
-pub struct RewardRemainderMock;
-
-impl OnUnbalanced<NegativeImbalanceOf<TestRuntime>> for RewardRemainderMock {}
 
 parameter_types! {
     pub const RegisterDeposit: u32 = 100;
@@ -123,14 +116,11 @@ parameter_types! {
 impl pallet_dapps_staking::Config for TestRuntime {
     type Event = Event;
     type Currency = Balances;
-    type MaxStakings = MaxStakings;
     type BlockPerEra = MockBlockPerEra;
-    type UnbondingDuration = UnbondingDuration;
     type RegisterDeposit = RegisterDeposit;
     type DeveloperRewardPercentage = DeveloperRewardPercentage;
     type WeightInfo = ();
     type UnixTime = Timestamp;
-    type RewardRemainder = RewardRemainderMock;
     type RewardAmount = RewardAmount;
     type DAppsRewardPercentage = DAppsRewardPercentage;
     type MaxNumberOfStakersPerContract = MaxNumberOfStakersPerContract;

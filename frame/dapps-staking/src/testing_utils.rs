@@ -47,7 +47,6 @@ pub(crate) fn verify_ledger(staker_id: AccountId, staked_value: Balance) {
     let ledger = Ledger::<TestRuntime>::get(staker_id).unwrap();
     assert_eq!(staked_value, ledger.total);
     assert_eq!(staked_value, ledger.active);
-    assert!(ledger.unlocking.is_empty());
 }
 
 /// Utility method to verify era staking points content.

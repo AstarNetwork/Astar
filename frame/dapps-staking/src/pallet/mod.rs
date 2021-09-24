@@ -5,9 +5,7 @@ use frame_support::{
     dispatch::DispatchResult,
     ensure,
     pallet_prelude::*,
-    traits::{
-        Currency, Get, LockIdentifier, LockableCurrency, OnUnbalanced, UnixTime, WithdrawReasons,
-    },
+    traits::{Currency, Get, LockIdentifier, LockableCurrency, UnixTime, WithdrawReasons},
     weights::Weight,
 };
 use frame_system::{ensure_root, ensure_signed, pallet_prelude::*};
@@ -40,9 +38,6 @@ pub mod pallet {
         /// Time used for computing era duration.
         type UnixTime: UnixTime;
 
-        /// Tokens have been minted and are unused for validator-reward. Maybe, dapps-staking uses ().
-        type RewardRemainder: OnUnbalanced<NegativeImbalanceOf<Self>>;
-
         /// Reword amount per block. Will be divided by DAppsRewardPercentage
         type RewardAmount: Get<BalanceOf<Self>>;
 
@@ -53,10 +48,7 @@ pub mod pallet {
         #[pallet::constant]
         type BlockPerEra: Get<BlockNumberFor<Self>>;
 
-        /// Number of eras that staked funds must remain bonded for after calling unbond.
-        #[pallet::constant]
-        type UnbondingDuration: Get<EraIndex>;
-
+        // TODO: this should be used?
         /// Minimum bonded deposit for new contract registration.
         #[pallet::constant]
         type RegisterDeposit: Get<BalanceOf<Self>>;
@@ -74,10 +66,6 @@ pub mod pallet {
         #[pallet::constant]
         type MinimumStakingAmount: Get<BalanceOf<Self>>;
 
-        /// The maximum number of stakers rewarded for each contracts.
-        #[pallet::constant]
-        type MaxStakings: Get<u32>;
-
         /// The overarching event type.
         type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
 
@@ -90,16 +78,11 @@ pub mod pallet {
         84u32
     }
 
-    /// Map from all locked "stash" accounts to the controller account.
-    #[pallet::storage]
-    #[pallet::getter(fn bonded)]
-    pub(crate) type Bonded<T: Config> = StorageMap<_, Twox64Concat, T::AccountId, T::AccountId>;
-
     /// Map from all (unlocked) "controller" accounts to the info regarding the staking.
     #[pallet::storage]
     #[pallet::getter(fn ledger)]
     pub(crate) type Ledger<T: Config> =
-        StorageMap<_, Blake2_128Concat, T::AccountId, StakingLedger<T::AccountId, BalanceOf<T>>>;
+        StorageMap<_, Blake2_128Concat, T::AccountId, StakingLedger<BalanceOf<T>>>;
 
     /// Number of eras to keep in history.
     ///
@@ -111,11 +94,6 @@ pub mod pallet {
     #[pallet::storage]
     #[pallet::getter(fn history_depth)]
     pub(crate) type HistoryDepth<T> = StorageValue<_, u32, ValueQuery, HistoryDepthOnEmpty>;
-
-    /// The already untreated era is EraIndex.
-    #[pallet::storage]
-    #[pallet::getter(fn untreated_era)]
-    pub type UntreatedEra<T> = StorageValue<_, EraIndex, ValueQuery>;
 
     /// The current era index.
     ///
@@ -210,25 +188,6 @@ pub mod pallet {
     #[pallet::generate_deposit(pub(crate) fn deposit_event)]
     #[pallet::metadata(T::AccountId = "AccountId", BalanceOf<T> = "Balance")]
     pub enum Event<T: Config> {
-        /// The amount of minted rewards. (for dapps with nominators)
-        Reward(BalanceOf<T>, BalanceOf<T>),
-        /// An account has bonded this amount.
-        ///
-        /// NOTE: This event is only emitted when funds are bonded via a dispatchable. Notably,
-        /// it will not be emitted for staking rewards when they are added to stake.
-        Bonded(T::AccountId, BalanceOf<T>),
-        /// A stash account has changed paired controller account
-        /// (stash Id, controller Id)
-        ControllerChanged(T::AccountId, T::AccountId),
-        /// An account has unbonded this amount.
-        Unbonded(T::AccountId, BalanceOf<T>),
-        /// An account has called `withdraw_unbonded` and removed unbonding chunks worth `Balance`
-        /// from the unlocking queue.
-        Withdrawn(T::AccountId, BalanceOf<T>),
-        /// The total amount of minted rewards for dapps.
-        TotalDappsRewards(EraIndex, BalanceOf<T>),
-        /// Stake of stash address.
-        Stake(T::AccountId),
         /// Account has bonded and staked funds on a smart contract.
         BondAndStake(T::AccountId, SmartContract<T::AccountId>, BalanceOf<T>),
         /// Account has unbonded, unstaked and withdrawn funds.
@@ -248,59 +207,30 @@ pub mod pallet {
 
     #[pallet::error]
     pub enum Error<T> {
-        /// Not a controller account.
-        NotController,
-        /// Not a stash account.
-        NotStash,
-        /// Account is not an active staker
-        NotStaker,
-        /// Stash is already bonded.
-        AlreadyBonded,
-        /// Controller is already paired.
-        AlreadyPaired,
-        /// Targets cannot be empty.
-        EmptyTargets,
-        /// Duplicate index.
-        DuplicateIndex,
-        /// Slash record index out of bounds.
-        InvalidSlashIndex,
-        /// Can not bond with value less than minimum balance.
-        InsufficientBondValue,
         /// Can not stake with zero value.
         StakingWithNoValue,
         /// Can not stake with value less than minimum staking value
         InsufficientStakingValue,
-        /// Can not schedule more unlock chunks.
-        NoMoreChunks,
-        /// Can not rebond without unlocking chunks.
-        NoUnlockChunk,
-        /// Attempting to target a stash that still has funds.
-        FundedTarget,
-        /// Invalid era to reward.
-        InvalidEraToReward,
         /// Number of stakers per contract exceeded.
         MaxNumberOfStakersExceeded,
-        /// Items are not sorted and unique.
-        NotSortedAndUnique,
-        /// Targets must be latest 1.
-        EmptyNominateTargets,
         /// Targets must be operated contracts
         NotOperatedContract,
         /// Contract isn't staked.
         NotStakedContract,
         /// Unstaking a contract with zero value
         UnstakingWithNoValue,
-        /// The nominations amount more than active staking amount.
-        NotEnoughStaking,
         /// The contract is already registered by other account
         AlreadyRegisteredContract,
         /// User attempts to register with address which is not contract
         ContractIsNotValid,
+        /// Claiming contract with no developer account
+        ContractNotRegistered,
+        // TODO: make use of this?
         /// Missing deposit for the contract registration
         InsufficientDeposit,
         /// This account was already used to register contract
         AlreadyUsedDeveloperAccount,
-        /// Unexpected state error, used to abort transaction
+        /// Unexpected state error, used to abort transaction. Used for situations that 'should never happen'.
         UnexpectedState,
         /// Report issue on github if this is ever emitted
         UnknownStartStakingData,
@@ -308,8 +238,6 @@ pub mod pallet {
         UnknownEraReward,
         /// There are no funds to reward the contract. Or already claimed in that era
         NothingToClaim,
-        /// Claiming contract with no developer account
-        ContractNotRegistered,
         /// Contract already claimed in this era and reward is distributed
         AlreadyClaimedInThisEra,
     }
@@ -366,17 +294,13 @@ pub mod pallet {
         /// Effects of staking will be felt at the beginning of the next era.
         ///
         /// TODO: Weight!
-        #[pallet::weight(10)] // TODO: fix this later. Probably a new calculation will be required since logic was changed significantly.
+        #[pallet::weight(10_000_000)]
         pub fn bond_and_stake(
             origin: OriginFor<T>,
             contract_id: SmartContract<T::AccountId>,
             #[pallet::compact] value: BalanceOf<T>,
         ) -> DispatchResultWithPostInfo {
             let staker = ensure_signed(origin)?;
-            ensure!(
-                Self::is_contract_valid(&contract_id),
-                Error::<T>::ContractIsNotValid
-            );
             ensure!(
                 RegisteredDapps::<T>::contains_key(&contract_id),
                 Error::<T>::NotOperatedContract
@@ -387,11 +311,8 @@ pub mod pallet {
                 ledger
             } else {
                 StakingLedger {
-                    stash: staker.clone(),
                     total: Zero::zero(),
                     active: Zero::zero(),
-                    unlocking: vec![],
-                    last_reward: Zero::zero(),
                 }
             };
 
@@ -796,11 +717,8 @@ pub mod pallet {
     impl<T: Config> Pallet<T> {
         /// Update the ledger for a staker. This will also update the stash lock.
         /// This lock will lock the entire funds except paying for further transactions.
-        fn update_ledger(
-            staker: &T::AccountId,
-            ledger: &StakingLedger<T::AccountId, BalanceOf<T>>,
-        ) {
-            if ledger.unlocking.is_empty() && ledger.active.is_zero() {
+        fn update_ledger(staker: &T::AccountId, ledger: &StakingLedger<BalanceOf<T>>) {
+            if ledger.active.is_zero() {
                 Ledger::<T>::remove(&staker);
                 T::Currency::remove_lock(STAKING_ID, &staker);
             } else {

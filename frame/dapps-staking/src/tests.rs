@@ -280,13 +280,6 @@ fn bond_and_stake_contract_is_not_ok() {
         let staker_id = 1;
         let stake_value = 100;
 
-        // Wasm contracts aren't supported yet. // TODO: Why do we even have them in enum then?
-        let wasm_contract = SmartContract::Wasm(10);
-        assert_noop!(
-            DappsStaking::bond_and_stake(Origin::signed(staker_id), wasm_contract, stake_value),
-            crate::pallet::pallet::Error::<TestRuntime>::ContractIsNotValid
-        );
-
         // Check a supported bot not registered contract. Expect an error.
         let evm_contract = SmartContract::<AccountId>::Evm(
             H160::from_str("1000000000000000000000000000000000000007").unwrap(),
