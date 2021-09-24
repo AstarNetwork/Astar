@@ -1164,6 +1164,12 @@ fn new_era_is_ok() {
         let block_number = 4;
         const CURRENT_ERA: EraIndex = 42;
         const DAPPS_BLOCK_REWARD: Balance = 1_332 * MILLIAST;
+        const STAKED_AMOUNT: Balance = 100;
+        const EXPECTED_ERA_REWARD: Balance = 3_996 * MILLIAST;
+        let staker = 2;
+        let developer = 3;
+        let contract =
+            SmartContract::Evm(H160::from_str("1000000000000000000000000000000000000007").unwrap());
 
         // set initial era index
         <CurrentEra<TestRuntime>>::put(CURRENT_ERA);
@@ -1178,7 +1184,11 @@ fn new_era_is_ok() {
         let mut block_reward = mock::DappsStaking::block_reward_accumulator();
         assert_eq!(BLOCK_REWARD, block_reward);
 
-        // increment the 2 more blocks to start the era
+        // register and bond to verify storage item
+        register_contract(developer, &contract);
+        bond_and_stake_with_verification(staker, &contract, STAKED_AMOUNT);
+
+        // increment 2 more blocks to start the end of the era
         // CurrentEra should be incremented
         // block_reward_accumulator should be reset to 0
         crate::pallet::pallet::Pallet::<TestRuntime>::on_initialize(block_number + 1);
@@ -1188,9 +1198,13 @@ fn new_era_is_ok() {
         System::assert_last_event(mock::Event::DappsStaking(crate::Event::NewDappStakingEra(
             CURRENT_ERA + 1,
         )));
-        // verify that block reward is reset to 0
+
+        // verify that block reward accumulator is reset to 0
         block_reward = mock::DappsStaking::block_reward_accumulator();
         assert_eq!(0, block_reward);
+
+        // verify that .staked is copied and .reward is added
+        verify_pallet_era_rewards(CURRENT_ERA, STAKED_AMOUNT, EXPECTED_ERA_REWARD);
     })
 }
 
