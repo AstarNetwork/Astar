@@ -19,7 +19,7 @@ pub(crate) fn advance_era_and_reward(
     staked: BalanceOf<TestRuntime>,
 ) {
     // TODO advance era by incrementing block production, needed for block rewards
-    let current: EraIndex = mock::DappsStaking::current_era().unwrap_or(Zero::zero());
+    let current: EraIndex = mock::DappsStaking::current_era();
 
     let era_reward = EraRewardAndStake { rewards, staked };
     for era in 0..for_era {

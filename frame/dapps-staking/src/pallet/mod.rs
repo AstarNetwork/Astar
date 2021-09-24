@@ -101,7 +101,7 @@ pub mod pallet {
     /// set, it might be active or not.
     #[pallet::storage]
     #[pallet::getter(fn current_era)]
-    pub type CurrentEra<T> = StorageValue<_, EraIndex>;
+    pub type CurrentEra<T> = StorageValue<_, EraIndex, ValueQuery>;
 
     /// Accumulator for block rewards during an era. It is reset at every new era
     #[pallet::storage]
@@ -251,7 +251,7 @@ pub mod pallet {
             let force_new_era = Self::force_era().eq(&Forcing::ForceNew);
             let blocks_pre_era = T::BlockPerEra::get();
             if (now % blocks_pre_era).is_zero() || force_new_era {
-                let current_era = Self::get_current_era();
+                let current_era = Self::current_era();
                 Self::reward_balance_snapshoot(current_era);
                 let next_era = current_era + 1;
                 CurrentEra::<T>::put(next_era);
@@ -359,7 +359,7 @@ pub mod pallet {
             // Update ledger and payee
             Self::update_ledger(&staker, &ledger);
 
-            let current_era = Self::get_current_era();
+            let current_era = Self::current_era();
 
             // Update staked information for contract in current era
             ContractEraStake::<T>::insert(
@@ -467,7 +467,7 @@ pub mod pallet {
             ledger.active = ledger.active.saturating_sub(value_to_unstake);
             Self::update_ledger(&staker, &ledger);
 
-            let current_era = Self::get_current_era();
+            let current_era = Self::current_era();
 
             // Update the era staking points
             ContractEraStake::<T>::insert(contract_id.clone(), current_era, era_staking_points);
@@ -551,7 +551,7 @@ pub mod pallet {
             Self::contract_last_staked(&contract_id).ok_or(Error::<T>::NothingToClaim)?;
 
             // check if the contract is already claimed in this era
-            let current_era = Self::current_era().unwrap_or(Zero::zero());
+            let current_era = Self::current_era();
             let last_claim_era =
                 Self::contract_last_claimed(&contract_id).unwrap_or(current_era.clone());
             ensure!(
@@ -753,11 +753,6 @@ pub mod pallet {
             for (s, b) in staker_map {
                 T::Currency::deposit_into_existing(&s, *b).ok();
             }
-        }
-
-        /// Getter for the current era which also takes care of returning zero if no era was set yet.
-        fn get_current_era() -> EraIndex {
-            Self::current_era().unwrap_or(Zero::zero())
         }
 
         /// The block rewards are accumulated on the pallets's account during an era.

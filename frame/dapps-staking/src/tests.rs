@@ -718,7 +718,7 @@ fn new_era_is_ok() {
         // increment the block, but it is still not last block in the era
         // and the CurrentEra should not change
         Pallet::<TestRuntime>::on_initialize(block_number);
-        let mut current = mock::DappsStaking::current_era().unwrap_or(Zero::zero());
+        let mut current = mock::DappsStaking::current_era();
         assert_eq!(starting_era, current);
 
         // verify that block reward is added to the block_reward_accumulator
@@ -738,7 +738,7 @@ fn new_era_is_ok() {
         // block_reward_accumulator should be reset to 0
         Pallet::<TestRuntime>::on_initialize(block_number + 1);
         Pallet::<TestRuntime>::on_initialize(block_number + 2);
-        current = mock::DappsStaking::current_era().unwrap();
+        current = mock::DappsStaking::current_era();
         assert_eq!(starting_era + 1, current);
         System::assert_last_event(mock::Event::DappsStaking(Event::NewDappStakingEra(
             starting_era + 1,
@@ -767,7 +767,7 @@ fn new_era_forcing() {
         Pallet::<TestRuntime>::on_initialize(block_number);
 
         // check that era is incremented
-        let current = mock::DappsStaking::current_era().unwrap_or(Zero::zero());
+        let current = mock::DappsStaking::current_era();
         assert_eq!(starting_era + 1, current);
 
         // check that forcing is cleared
@@ -803,7 +803,7 @@ fn claim_nothing_to_claim() {
         const START_ERA: EraIndex = 1;
 
         advance_era_and_reward(START_ERA, ERA_REWARD, 0);
-        DappsStaking::current_era().unwrap_or(Zero::zero());
+        DappsStaking::current_era();
         register_contract(developer1, &contract);
 
         assert_noop!(
@@ -825,13 +825,13 @@ fn claim_twice_in_same_era() {
         const SKIP_ERA: EraIndex = 3;
 
         advance_era_and_reward(START_ERA, ERA_REWARD, 0);
-        let start_era = DappsStaking::current_era().unwrap_or(Zero::zero());
+        let start_era = DappsStaking::current_era();
 
         register_contract(developer, &contract);
         bond_and_stake_with_verification(claimer, &contract, STAKE_AMOUNT);
         advance_era_and_reward(SKIP_ERA, ERA_REWARD, 0);
 
-        let claim_era: EraIndex = DappsStaking::current_era().unwrap();
+        let claim_era: EraIndex = DappsStaking::current_era();
         claim(claimer, contract, start_era, claim_era.clone());
 
         assert_noop!(
@@ -853,11 +853,11 @@ fn claim_is_ok() {
         const SKIP_ERA: EraIndex = 3;
 
         advance_era_and_reward(START_ERA, ERA_REWARD, 0);
-        let start_era = DappsStaking::current_era().unwrap_or(Zero::zero());
+        let start_era = DappsStaking::current_era();
         register_contract(developer, &contract);
         bond_and_stake_with_verification(claimer, &contract, STAKE_AMOUNT);
         advance_era_and_reward(SKIP_ERA, ERA_REWARD, 0);
-        let claim_era: EraIndex = DappsStaking::current_era().unwrap();
+        let claim_era: EraIndex = DappsStaking::current_era();
 
         claim(claimer, contract, start_era, claim_era.clone());
         verify_contract_history_is_cleared(contract, START_ERA, claim_era);
@@ -884,12 +884,12 @@ fn claim_one_contract() {
             <mock::TestRuntime as Config>::Currency::free_balance(&developer);
 
         advance_era_and_reward(START_ERA, ERA_REWARD, INITIAL_STAKE);
-        let start_era = DappsStaking::current_era().unwrap_or(Zero::zero());
+        let start_era = DappsStaking::current_era();
         register_contract(developer, &contract);
         bond_and_stake_with_verification(staker1, &contract, STAKE_AMOUNT1);
         bond_and_stake_with_verification(staker2, &contract, STAKE_AMOUNT2);
         advance_era_and_reward(SKIP_ERA, ERA_REWARD, INITIAL_STAKE);
-        let claim_era: EraIndex = DappsStaking::current_era().unwrap();
+        let claim_era: EraIndex = DappsStaking::current_era();
         claim(staker1, contract, start_era, claim_era.clone());
         verify_contract_history_is_cleared(contract, START_ERA, claim_era);
         let num_eras: u128 = SKIP_ERA as u128; // number of rewarded eras
@@ -950,7 +950,7 @@ fn claim_two_contracts() {
             <mock::TestRuntime as Config>::Currency::free_balance(&developer2);
 
         advance_era_and_reward(START_ERA, ERA_REWARD, ERA_STAKED1);
-        let start_era = DappsStaking::current_era().unwrap_or(Zero::zero());
+        let start_era = DappsStaking::current_era();
 
         // Register contracts, bond&stake them with two stakers on first contract.
         register_contract(developer1, &contract1);
@@ -967,7 +967,7 @@ fn claim_two_contracts() {
         advance_era_and_reward(1, ERA_REWARD, ERA_STAKED2);
 
         // Claim rewards for first contract and verify storage content is as expected.
-        let claim_era: EraIndex = DappsStaking::current_era().unwrap();
+        let claim_era: EraIndex = DappsStaking::current_era();
         claim(staker1, contract1.clone(), start_era, claim_era.clone());
         verify_contract_history_is_cleared(contract1, START_ERA, claim_era);
 
@@ -1011,7 +1011,7 @@ fn claim_two_contracts() {
         // claim rewards for contract2 one 4 eras later
         let num_eras2 = 5; // 1 era already passed since staking + another 4 eras
         advance_era_and_reward(4, ERA_REWARD, ERA_STAKED2);
-        let claim_era: EraIndex = DappsStaking::current_era().unwrap_or(Zero::zero());
+        let claim_era: EraIndex = DappsStaking::current_era();
         claim(staker2, contract2.clone(), 4, claim_era.clone());
 
         // calculate reward per stakers in contract2
