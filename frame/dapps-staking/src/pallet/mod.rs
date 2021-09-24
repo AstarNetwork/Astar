@@ -614,7 +614,7 @@ pub mod pallet {
                 contract_staking_info_prev = contract_staking_info;
             }
             // send rewards to stakers
-            Self::payout_stakers2(&rewards_for_stakers_map);
+            Self::payout_stakers(&rewards_for_stakers_map);
             // send rewards to developer
             T::Currency::deposit_into_existing(&developer, reward_for_developer).ok();
 
@@ -749,7 +749,7 @@ pub mod pallet {
         }
 
         /// Execute payout for stakers
-        fn payout_stakers2(staker_map: &BTreeMap<T::AccountId, BalanceOf<T>>) {
+        fn payout_stakers(staker_map: &BTreeMap<T::AccountId, BalanceOf<T>>) {
             for (s, b) in staker_map {
                 T::Currency::deposit_into_existing(&s, *b).ok();
             }
@@ -761,13 +761,9 @@ pub mod pallet {
         ///
         /// This is called at the end of each Era
         fn reward_balance_snapshoot(current_era: EraIndex) {
-            let reward = Perbill::from_percent(T::DAppsRewardPercentage::get())
-                * Self::block_reward_accumulator();
-            // copy amount staked from previous era 'reward_and_stake.staked'
-            let mut reward_and_stake =
-                Self::era_reward_and_stake(current_era).unwrap_or(Default::default());
+            let mut reward_and_stake = Self::era_reward_and_stake(current_era).unwrap_or_default();
             // add reward amount to the current (which is just ending) era
-            reward_and_stake.rewards = reward;
+            reward_and_stake.rewards = Self::block_reward_accumulator();
 
             EraRewardsAndStakes::<T>::insert(current_era, reward_and_stake);
         }

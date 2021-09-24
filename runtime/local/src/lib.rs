@@ -255,7 +255,8 @@ type NegativeImbalance = <Balances as Currency<AccountId>>::NegativeImbalance;
 pub struct OnBlockReward;
 impl OnUnbalanced<NegativeImbalance> for OnBlockReward {
     fn on_nonzero_unbalanced(amount: NegativeImbalance) {
-        let (dapps, maintain) = amount.ration(50, 50);
+        let dapps_percentage = DAppsRewardPercentage::get();
+        let (dapps, maintain) = amount.ration(dapps_percentage, 100 - dapps_percentage);
         // dapp staking block reward
         Balances::resolve_creating(&DappsStakingPalletId::get().into_account(), dapps);
 

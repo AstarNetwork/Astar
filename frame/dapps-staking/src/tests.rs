@@ -706,19 +706,14 @@ fn register_same_contract_twice_nok() {
 #[test]
 fn new_era_is_ok() {
     ExternalityBuilder::build().execute_with(|| {
-        // please note that for purposes of this we use 3 blocks per era (check mock.rs)
-
-        let block_number = 4;
-        let starting_era = 42;
-        const EXPECTED_ERA_REWARD: Balance = 3_996 * MILLIAST;
-
         // set initial era index
+        let starting_era = 42;
         <CurrentEra<TestRuntime>>::put(starting_era);
 
-        // increment the block, but it is still not last block in the era
-        // and the CurrentEra should not change
-        Pallet::<TestRuntime>::on_initialize(block_number);
-        let mut current = mock::DappsStaking::current_era();
+        // Increment block by setting it to the first block in era value
+        let initial_block_number = BLOCKS_PER_ERA * 42 + 1;
+        Pallet::<TestRuntime>::on_initialize(initial_block_number);
+        let current = mock::DappsStaking::current_era();
         assert_eq!(starting_era, current);
 
         // verify that block reward is added to the block_reward_accumulator
@@ -733,12 +728,13 @@ fn new_era_is_ok() {
         register_contract(developer, &contract);
         bond_and_stake_with_verification(staker, &contract, STAKED_AMOUNT);
 
-        // increment 2 more blocks to start the end of the era
+        // increment (BLOCKS_PER_ERA - 1) more blocks to end the era
         // CurrentEra should be incremented
         // block_reward_accumulator should be reset to 0
-        Pallet::<TestRuntime>::on_initialize(block_number + 1);
-        Pallet::<TestRuntime>::on_initialize(block_number + 2);
-        current = mock::DappsStaking::current_era();
+        for block_increment in 1..=(BLOCKS_PER_ERA - 1) {
+            Pallet::<TestRuntime>::on_initialize(initial_block_number + block_increment);
+        }
+        let current = mock::DappsStaking::current_era();
         assert_eq!(starting_era + 1, current);
         System::assert_last_event(mock::Event::DappsStaking(Event::NewDappStakingEra(
             starting_era + 1,
@@ -748,8 +744,9 @@ fn new_era_is_ok() {
         let block_reward = mock::DappsStaking::block_reward_accumulator();
         assert!(block_reward.is_zero());
 
+        let expected_era_reward = BLOCK_REWARD * BLOCKS_PER_ERA as Balance;
         // verify that .staked is copied and .reward is added
-        verify_pallet_era_rewards(starting_era, STAKED_AMOUNT, EXPECTED_ERA_REWARD);
+        verify_pallet_era_rewards(starting_era, STAKED_AMOUNT, expected_era_reward);
     })
 }
 
