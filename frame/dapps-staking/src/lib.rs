@@ -29,18 +29,6 @@ pub type BalanceOf<T> =
 /// Counter for the number of eras that have passed.
 pub type EraIndex = u32;
 
-/// Information regarding the active era (era in used in session).
-#[derive(Encode, Decode, RuntimeDebug)]
-pub struct ActiveEraInfo {
-    /// Index of era.
-    pub index: EraIndex,
-    /// Moment of start expressed as millisecond from `$UNIX_EPOCH`.
-    ///
-    /// Start can be none if start hasn't been set for the era yet,
-    /// Start is set on the first on_finalize of the era to guarantee usage of `Time`.
-    start: Option<u64>,
-}
-
 /// Mode of era-forcing.
 #[derive(Copy, Clone, PartialEq, Eq, Encode, Decode, RuntimeDebug)]
 #[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
@@ -86,10 +74,10 @@ pub struct EraStakingPoints<AccountId: Ord, Balance: HasCompact> {
 /// Multi-VM pointer to smart contract instance.
 #[derive(PartialEq, Eq, Copy, Clone, Encode, Decode, RuntimeDebug)]
 pub enum SmartContract<AccountId> {
-    /// Wasm smart contract instance.
-    Wasm(AccountId),
     /// EVM smart contract instance.
     Evm(sp_core::H160),
+    /// Wasm smart contract instance.
+    Wasm(AccountId),
 }
 
 /// The ledger of a (bonded) stash.

@@ -289,7 +289,6 @@ parameter_types! {
 
 impl pallet_dapps_staking::Config for Runtime {
     type Currency = Balances;
-    type UnixTime = Timestamp;
     type RewardAmount = RewardAmount;
     type DAppsRewardPercentage = DAppsRewardPercentage;
     type BlockPerEra = BlockPerEra;

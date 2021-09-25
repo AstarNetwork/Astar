@@ -118,7 +118,6 @@ impl pallet_dapps_staking::Config for TestRuntime {
     type RegisterDeposit = RegisterDeposit;
     type DeveloperRewardPercentage = DeveloperRewardPercentage;
     type WeightInfo = ();
-    type UnixTime = Timestamp;
     type RewardAmount = RewardAmount;
     type DAppsRewardPercentage = DAppsRewardPercentage;
     type MaxNumberOfStakersPerContract = MaxNumberOfStakersPerContract;

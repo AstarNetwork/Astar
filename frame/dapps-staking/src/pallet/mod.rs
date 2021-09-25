@@ -5,13 +5,13 @@ use frame_support::{
     dispatch::DispatchResult,
     ensure,
     pallet_prelude::*,
-    traits::{Currency, Get, LockIdentifier, LockableCurrency, UnixTime, WithdrawReasons},
+    traits::{Currency, Get, LockIdentifier, LockableCurrency, WithdrawReasons},
     weights::Weight,
 };
 use frame_system::{ensure_root, ensure_signed, pallet_prelude::*};
 use sp_runtime::{
     print,
-    traits::{SaturatedConversion, Saturating, Zero},
+    traits::{Saturating, Zero},
     Perbill,
 };
 use sp_std::convert::From;
@@ -34,9 +34,6 @@ pub mod pallet {
     pub trait Config: frame_system::Config {
         /// The staking balance.
         type Currency: LockableCurrency<Self::AccountId, Moment = Self::BlockNumber>;
-
-        /// Time used for computing era duration.
-        type UnixTime: UnixTime;
 
         /// Reword amount per block. Will be divided by DAppsRewardPercentage
         type RewardAmount: Get<BalanceOf<Self>>;
@@ -107,14 +104,6 @@ pub mod pallet {
     #[pallet::storage]
     #[pallet::getter(fn block_reward_accumulator)]
     pub type BlockRewardAccumulator<T> = StorageValue<_, BalanceOf<T>, ValueQuery>;
-
-    /// The active era information, it holds index and start.
-    ///
-    /// The active era is the era being currently rewarded. Validator set of this era must be
-    /// equal to [`SessionInterface::validators`].
-    #[pallet::storage]
-    #[pallet::getter(fn active_era)]
-    pub type ActiveEra<T> = StorageValue<_, ActiveEraInfo>;
 
     #[pallet::type_value]
     pub fn ForceEraOnEmpty() -> Forcing {
@@ -266,24 +255,44 @@ pub mod pallet {
             // just return the weight of the on_finalize.
             T::DbWeight::get().reads(1)
         }
-
-        fn on_finalize(_n: BlockNumberFor<T>) {
-            // TODO: era calculation
-            // Set the start of the first era.
-            if let Some(mut active_era) = Self::active_era() {
-                if active_era.start.is_none() {
-                    let now_as_millis_u64 = T::UnixTime::now().as_millis().saturated_into::<u64>();
-                    active_era.start = Some(now_as_millis_u64);
-                    // This write only ever happens once, we don't include it in the weight in general
-                    ActiveEra::<T>::put(active_era);
-                }
-            }
-            // `on_finalize` weight is tracked in `on_initialize`
-        }
     }
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {
+        /// register contract into staking targets.
+        /// contract_id should be ink! or evm contract.
+        ///
+        /// Any user can call this function.
+        /// However, caller have to have deposit amount.
+        /// TODO: weight, and add registrationFee
+        #[pallet::weight(1_000_000_000)]
+        pub fn register(
+            origin: OriginFor<T>,
+            contract_id: SmartContract<T::AccountId>,
+        ) -> DispatchResultWithPostInfo {
+            let developer = ensure_signed(origin)?;
+
+            ensure!(
+                !RegisteredDevelopers::<T>::contains_key(&developer),
+                Error::<T>::AlreadyUsedDeveloperAccount
+            );
+            ensure!(
+                !RegisteredDapps::<T>::contains_key(&contract_id),
+                Error::<T>::AlreadyRegisteredContract
+            );
+            ensure!(
+                Self::is_contract_valid(&contract_id),
+                Error::<T>::ContractIsNotValid
+            );
+
+            RegisteredDapps::<T>::insert(contract_id.clone(), developer.clone());
+            RegisteredDevelopers::<T>::insert(&developer, contract_id.clone());
+
+            Self::deposit_event(Event::<T>::NewContract(developer, contract_id));
+
+            Ok(().into())
+        }
+
         /// Lock up and stake balance of the origin account.
         ///
         /// `value` must be more than the `minimum_balance` specified by `T::Currency`
@@ -419,7 +428,7 @@ pub mod pallet {
         /// # <weight>
         /// TODO!
         /// </weight>
-        #[pallet::weight(10)]
+        #[pallet::weight(10_000_000)]
         pub fn unbond_unstake_and_withdraw(
             origin: OriginFor<T>,
             contract_id: SmartContract<T::AccountId>,
@@ -493,40 +502,6 @@ pub mod pallet {
                 contract_id,
                 value_to_unstake,
             ));
-
-            Ok(().into())
-        }
-
-        /// register contract into staking targets.
-        /// contract_id should be ink! or evm contract.
-        ///
-        /// Any user can call this function.
-        /// However, caller have to have deposit amount.
-        /// TODO: weight, and add registrationFee
-        #[pallet::weight(1_000_000_000)]
-        pub fn register(
-            origin: OriginFor<T>,
-            contract_id: SmartContract<T::AccountId>,
-        ) -> DispatchResultWithPostInfo {
-            let developer = ensure_signed(origin)?;
-
-            ensure!(
-                !RegisteredDevelopers::<T>::contains_key(&developer),
-                Error::<T>::AlreadyUsedDeveloperAccount
-            );
-            ensure!(
-                !RegisteredDapps::<T>::contains_key(&contract_id),
-                Error::<T>::AlreadyRegisteredContract
-            );
-            ensure!(
-                Self::is_contract_valid(&contract_id),
-                Error::<T>::ContractIsNotValid
-            );
-
-            RegisteredDapps::<T>::insert(contract_id.clone(), developer.clone());
-            RegisteredDevelopers::<T>::insert(&developer, contract_id.clone());
-
-            Self::deposit_event(Event::<T>::NewContract(developer, contract_id));
 
             Ok(().into())
         }
