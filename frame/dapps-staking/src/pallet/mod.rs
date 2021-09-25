@@ -239,10 +239,12 @@ pub mod pallet {
             BlockRewardAccumulator::<T>::put(block_rewards + T::RewardAmount::get());
             let force_new_era = Self::force_era().eq(&Forcing::ForceNew);
             let blocks_pre_era = T::BlockPerEra::get();
-            if (now % blocks_pre_era).is_zero() || force_new_era {
-                let current_era = Self::current_era();
-                Self::reward_balance_snapshoot(current_era);
-                let next_era = current_era + 1;
+
+            // Value is compared to 1 since genesis block is ignored
+            if now % blocks_pre_era == BlockNumberFor::<T>::from(1u32) || force_new_era {
+                let previous_era = Self::current_era();
+                Self::reward_balance_snapshoot(previous_era);
+                let next_era = previous_era + 1;
                 CurrentEra::<T>::put(next_era);
                 let zero_balance: BalanceOf<T> = Default::default();
                 BlockRewardAccumulator::<T>::put(zero_balance);
@@ -365,10 +367,16 @@ pub mod pallet {
                 Error::<T>::InsufficientStakingValue
             );
 
+            let current_era = Self::current_era();
+
+            // Update total staked value in era.
+            let mut reward_and_stake_for_era =
+                Self::era_reward_and_stake(current_era).ok_or(Error::<T>::UnexpectedState)?;
+            reward_and_stake_for_era.staked += value_to_stake;
+            EraRewardsAndStakes::<T>::insert(current_era, reward_and_stake_for_era);
+
             // Update ledger and payee
             Self::update_ledger(&staker, &ledger);
-
-            let current_era = Self::current_era();
 
             // Update staked information for contract in current era
             ContractEraStake::<T>::insert(
@@ -376,19 +384,6 @@ pub mod pallet {
                 current_era,
                 latest_era_staking_points,
             );
-
-            // Update total staked value in era. There are 3 possible scenarios here.
-            let mut reward_and_stake_for_era =
-                if let Some(reward_and_stake) = Self::era_reward_and_stake(current_era) {
-                    reward_and_stake
-                } else if era_when_contract_last_staked.is_some() {
-                    Self::era_reward_and_stake(era_when_contract_last_staked.unwrap())
-                        .ok_or(Error::<T>::UnexpectedState)?
-                } else {
-                    Default::default()
-                };
-            reward_and_stake_for_era.staked += value_to_stake;
-            EraRewardsAndStakes::<T>::insert(current_era, reward_and_stake_for_era);
 
             // If contract wasn't claimed nor staked yet, insert current era as last claimed era.
             // When calculating reward, this will provide correct information to the algorithm since nothing exists
@@ -482,15 +477,11 @@ pub mod pallet {
             ContractEraStake::<T>::insert(contract_id.clone(), current_era, era_staking_points);
 
             // Update total staked value in era.
-            let mut era_reward = if let Some(era_reward) = Self::era_reward_and_stake(current_era) {
-                era_reward
-            } else {
-                // If there was no stake/unstake operation in current era, fetch if in the last era there was.
-                Self::era_reward_and_stake(era_when_contract_last_staked)
-                    .ok_or(Error::<T>::UnexpectedState)?
-            };
-            era_reward.staked = era_reward.staked.saturating_sub(value_to_unstake);
-            EraRewardsAndStakes::<T>::insert(current_era, era_reward);
+            let mut era_reward_and_stake =
+                Self::era_reward_and_stake(current_era).ok_or(Error::<T>::UnexpectedState)?;
+            era_reward_and_stake.staked =
+                era_reward_and_stake.staked.saturating_sub(value_to_unstake);
+            EraRewardsAndStakes::<T>::insert(current_era, era_reward_and_stake);
 
             // Check if we need to update era in which contract was last changed. Can avoid one write.
             if era_when_contract_last_staked != current_era {
@@ -734,16 +725,26 @@ pub mod pallet {
         /// This function takes a snapshot of the pallet's balance accured during current era
         /// and stores it for future distribution
         ///
-        /// This is called at the end of each Era
-        fn reward_balance_snapshoot(current_era: EraIndex) {
+        /// This is called just at the beginning of an era.
+        fn reward_balance_snapshoot(ending_era: EraIndex) {
             let reward = Perbill::from_percent(T::DAppsRewardPercentage::get())
                 * Self::block_reward_accumulator();
-            // copy amount staked from previous era 'reward_and_stake.staked'
-            let mut reward_and_stake = Self::era_reward_and_stake(current_era).unwrap_or_default();
-            // add reward amount to the current (which is just ending) era
-            reward_and_stake.rewards = reward;
 
-            EraRewardsAndStakes::<T>::insert(current_era, reward_and_stake);
+            // Get the reward and stake information for previous era
+            let mut reward_and_stake = Self::era_reward_and_stake(ending_era).unwrap_or_default();
+
+            // Prepare info for the next era
+            EraRewardsAndStakes::<T>::insert(
+                ending_era + 1,
+                EraRewardAndStake {
+                    rewards: Zero::zero(),
+                    staked: reward_and_stake.staked.clone(),
+                },
+            );
+
+            // Set the reward for the previous era.
+            reward_and_stake.rewards = reward;
+            EraRewardsAndStakes::<T>::insert(ending_era, reward_and_stake);
         }
     }
 }

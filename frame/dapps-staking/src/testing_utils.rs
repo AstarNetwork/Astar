@@ -69,8 +69,15 @@ pub(crate) fn verify_era_staking_points(
     }
 }
 
-/// Used to verify pallet era reward values.
-pub(crate) fn verify_pallet_era_rewards(
+/// Used to verify pallet era staked value.
+pub(crate) fn verify_pallet_era_staked(era: crate::EraIndex, total_staked_value: Balance) {
+    // Verify that total staked amount in era is as expected
+    let era_rewards = EraRewardsAndStakes::<TestRuntime>::get(era).unwrap();
+    assert_eq!(total_staked_value, era_rewards.staked);
+}
+
+/// Used to verify pallet era staked and reward values.
+pub(crate) fn verify_pallet_era_staked_and_reward(
     era: crate::EraIndex,
     total_staked_value: Balance,
     total_reward_value: Balance,

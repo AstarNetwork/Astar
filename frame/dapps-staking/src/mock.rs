@@ -1,6 +1,9 @@
 use crate::{self as pallet_dapps_staking};
 
-use frame_support::{construct_runtime, parameter_types};
+use frame_support::{
+    construct_runtime, parameter_types,
+    traits::{OnFinalize, OnInitialize},
+};
 use sp_core::H256;
 
 use sp_io::TestExternalities;
@@ -150,5 +153,31 @@ impl ExternalityBuilder {
         let mut ext = TestExternalities::from(storage);
         ext.execute_with(|| System::set_block_number(1));
         ext
+    }
+}
+
+/// Used to run to the specified block number
+pub fn run_to_block(n: u64) {
+    if System::block_number() == 1u64 {
+        DappsStaking::on_initialize(System::block_number());
+    }
+    while System::block_number() < n {
+        DappsStaking::on_finalize(System::block_number());
+        System::set_block_number(System::block_number() + 1);
+        DappsStaking::on_initialize(System::block_number());
+    }
+}
+
+/// Used to run the specified number of blocks
+pub fn run_for_blocks(n: u64) {
+    run_to_block(System::block_number() + n);
+}
+
+/// Advance blocks to the beginning of an era.
+///
+/// Function has no effect if era is already passed.
+pub fn advance_to_era(n: EraIndex) {
+    if n > 0 {
+        run_to_block(BLOCKS_PER_ERA * (n as BlockNumber - 1) + 1);
     }
 }
