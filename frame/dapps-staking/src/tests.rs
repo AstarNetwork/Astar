@@ -8,8 +8,7 @@ use testing_utils::*;
 #[test]
 fn bond_and_stake_different_eras_is_ok() {
     ExternalityBuilder::build().execute_with(|| {
-        // prepare initial era
-        mock::prepare_era_setup();
+        initialize_first_block();
 
         let staker_id = 1;
         let first_stake_value = 100;
@@ -109,8 +108,7 @@ fn bond_and_stake_different_eras_is_ok() {
 #[test]
 fn bond_and_stake_two_different_contracts_is_ok() {
     ExternalityBuilder::build().execute_with(|| {
-        // prepare initial era
-        mock::prepare_era_setup();
+        initialize_first_block();
 
         let staker_id = 1;
         let first_stake_value = 100;
@@ -157,8 +155,7 @@ fn bond_and_stake_two_different_contracts_is_ok() {
 #[test]
 fn bond_and_stake_two_stakers_one_contract_is_ok() {
     ExternalityBuilder::build().execute_with(|| {
-        // prepare initial era
-        mock::prepare_era_setup();
+        initialize_first_block();
 
         let first_staker_id = 1;
         let second_staker_id = 2;
@@ -202,8 +199,7 @@ fn bond_and_stake_two_stakers_one_contract_is_ok() {
 #[test]
 fn bond_and_stake_different_value_is_ok() {
     ExternalityBuilder::build().execute_with(|| {
-        // prepare initial era
-        mock::prepare_era_setup();
+        initialize_first_block();
 
         let staker_id = 1;
         let contract_id = SmartContract::Evm(H160::repeat_byte(0x01));
@@ -279,10 +275,58 @@ fn bond_and_stake_different_value_is_ok() {
 }
 
 #[test]
+fn bond_and_stake_history_depth_has_passed_is_ok() {
+    ExternalityBuilder::build().execute_with(|| {
+        initialize_first_block();
+
+        let developer = 1;
+        let staker_id = 2;
+        let contract_id = SmartContract::Evm(H160::repeat_byte(0x01));
+
+        let start_era = DappsStaking::current_era();
+        register_contract(developer, &contract_id);
+
+        // Do the first bond&stake
+        let first_staking_amount = 200;
+        bond_and_stake_with_verification(staker_id, &contract_id, first_staking_amount);
+
+        // Advance eras beyond history depth
+        let history_depth = HistoryDepth::<TestRuntime>::get();
+        advance_to_era(start_era + history_depth + 1);
+
+        // Bond&stake again
+        let second_staking_amount = 350;
+        bond_and_stake_with_verification(staker_id, &contract_id, second_staking_amount);
+
+        // Verify storage content
+        let total_staked = first_staking_amount + second_staking_amount;
+        let current_era = DappsStaking::current_era();
+
+        // Verify storage values related to the current era
+        verify_ledger(staker_id, total_staked);
+        verify_era_staking_points(
+            &contract_id,
+            total_staked,
+            current_era,
+            vec![(staker_id, total_staked)],
+        );
+        verify_pallet_era_staked(current_era, total_staked);
+
+        // Also ensure that former values still exists even if they're beyond 'history depth'
+        verify_era_staking_points(
+            &contract_id,
+            first_staking_amount,
+            start_era,
+            vec![(staker_id, first_staking_amount)],
+        );
+        verify_pallet_era_staked(start_era, first_staking_amount);
+    })
+}
+
+#[test]
 fn bond_and_stake_contract_is_not_ok() {
     ExternalityBuilder::build().execute_with(|| {
-        // prepare initial era
-        mock::prepare_era_setup();
+        initialize_first_block();
 
         let staker_id = 1;
         let stake_value = 100;
@@ -299,7 +343,7 @@ fn bond_and_stake_contract_is_not_ok() {
 #[test]
 fn bond_and_stake_insufficient_value() {
     ExternalityBuilder::build().execute_with(|| {
-        mock::prepare_era_setup();
+        initialize_first_block();
         let staker_id = 1;
         let contract_id = SmartContract::Evm(H160::repeat_byte(0x01));
 
@@ -335,8 +379,7 @@ fn bond_and_stake_insufficient_value() {
 #[test]
 fn bond_and_stake_too_many_stakers_per_contract() {
     ExternalityBuilder::build().execute_with(|| {
-        // prepare initial era
-        mock::prepare_era_setup();
+        initialize_first_block();
 
         let contract_id = SmartContract::Evm(H160::repeat_byte(0x01));
         // Insert a contract under registered contracts.
@@ -366,8 +409,7 @@ fn bond_and_stake_too_many_stakers_per_contract() {
 #[test]
 fn unbond_unstake_and_withdraw_multiple_time_is_ok() {
     ExternalityBuilder::build().execute_with(|| {
-        // prepare initial era
-        mock::prepare_era_setup();
+        initialize_first_block();
 
         let staker_id = 1;
         let contract_id = SmartContract::Evm(H160::repeat_byte(0x01));
@@ -453,8 +495,7 @@ fn unbond_unstake_and_withdraw_multiple_time_is_ok() {
 #[test]
 fn unbond_unstake_and_withdraw_value_below_staking_threshold() {
     ExternalityBuilder::build().execute_with(|| {
-        // prepare initial era
-        mock::prepare_era_setup();
+        initialize_first_block();
 
         let staker_id = 1;
         let contract_id = SmartContract::Evm(H160::repeat_byte(0x01));
@@ -500,8 +541,7 @@ fn unbond_unstake_and_withdraw_value_below_staking_threshold() {
 #[test]
 fn unbond_unstake_and_withdraw_in_different_eras() {
     ExternalityBuilder::build().execute_with(|| {
-        // prepare initial era
-        mock::prepare_era_setup();
+        initialize_first_block();
 
         let first_staker_id = 1;
         let second_staker_id = 2;
@@ -585,10 +625,108 @@ fn unbond_unstake_and_withdraw_in_different_eras() {
 }
 
 #[test]
+fn unbond_unstake_and_withdraw_history_depth_has_passed_is_ok() {
+    ExternalityBuilder::build().execute_with(|| {
+        initialize_first_block();
+
+        let developer = 1;
+        let staker_id = 2;
+        let contract_id = SmartContract::Evm(H160::repeat_byte(0x01));
+
+        //////////////////////////////////////////////
+        ///// FIRST ERA
+        //////////////////////////////////////////////
+
+        let start_era = DappsStaking::current_era();
+        register_contract(developer, &contract_id);
+
+        // Do the first bond&stake
+        let first_staking_amount = 200;
+        bond_and_stake_with_verification(staker_id, &contract_id, first_staking_amount);
+
+        //////////////////////////////////////////////
+        ///// FIRST ERA ADVANCEMENT
+        //////////////////////////////////////////////
+
+        // Advance eras beyond history depth
+        let history_depth = HistoryDepth::<TestRuntime>::get();
+        advance_to_era(start_era + history_depth + 1);
+
+        let first_unstake_amount = 30;
+        unbond_unstake_and_withdraw_with_verification(
+            staker_id,
+            &contract_id,
+            first_unstake_amount,
+        );
+
+        // Verify storage content
+        let total_staked = first_staking_amount - first_unstake_amount;
+        let current_era = DappsStaking::current_era();
+
+        // Verify storage values related to the current era
+        verify_ledger(staker_id, total_staked);
+        verify_era_staking_points(
+            &contract_id,
+            total_staked,
+            current_era,
+            vec![(staker_id, total_staked)],
+        );
+        verify_pallet_era_staked(current_era, total_staked);
+
+        // Also ensure that former values still exists even if they're beyond 'history depth'
+        verify_era_staking_points(
+            &contract_id,
+            first_staking_amount,
+            start_era,
+            vec![(staker_id, first_staking_amount)],
+        );
+        verify_pallet_era_staked(start_era, first_staking_amount);
+
+        //////////////////////////////////////////////
+        ///// SECOND ERA ADVANCEMENT
+        //////////////////////////////////////////////
+
+        // Advance era again beyond the history depth
+        let former_era = current_era;
+        advance_to_era(former_era + history_depth + 10);
+        let current_era = DappsStaking::current_era();
+
+        let second_unstake_amount = 30;
+        unbond_unstake_and_withdraw_with_verification(
+            staker_id,
+            &contract_id,
+            second_unstake_amount,
+        );
+
+        // Verify storage content
+        let former_total_staked = total_staked;
+        let total_staked = total_staked - second_unstake_amount;
+
+        // Verify storage values related to the current era
+        verify_ledger(staker_id, total_staked);
+        verify_era_staking_points(
+            &contract_id,
+            total_staked,
+            current_era,
+            vec![(staker_id, total_staked)],
+        );
+        verify_pallet_era_staked(current_era, total_staked);
+
+        // Also ensure that former values still exists even if they're beyond 'history depth', again
+        verify_era_staking_points(
+            &contract_id,
+            former_total_staked,
+            former_era,
+            vec![(staker_id, former_total_staked)],
+        );
+        verify_pallet_era_staked(former_era, former_total_staked);
+    })
+}
+
+#[test]
 fn unbond_unstake_and_withdraw_contract_is_not_ok() {
     ExternalityBuilder::build().execute_with(|| {
-        // prepare initial era
-        mock::prepare_era_setup();
+        initialize_first_block();
 
         let staker_id = 1;
         let unstake_value = 100;
@@ -605,8 +743,7 @@ fn unbond_unstake_and_withdraw_contract_is_not_ok() {
 #[test]
 fn unbond_unstake_and_withdraw_unstake_not_possible() {
     ExternalityBuilder::build().execute_with(|| {
-        // prepare initial era
-        mock::prepare_era_setup();
+        initialize_first_block();
 
         let first_staker_id = 1;
         let first_contract_id = SmartContract::Evm(H160::repeat_byte(0x01));
@@ -675,8 +812,7 @@ fn unbond_unstake_and_withdraw_unstake_not_possible() {
 #[test]
 fn register_is_ok() {
     ExternalityBuilder::build().execute_with(|| {
-        // prepare initial era
-        mock::prepare_era_setup();
+        initialize_first_block();
 
         let developer = 1;
         let ok_contract = SmartContract::Evm(H160::repeat_byte(0x01));
@@ -692,8 +828,7 @@ fn register_is_ok() {
 #[test]
 fn register_twice_with_same_account_nok() {
     ExternalityBuilder::build().execute_with(|| {
-        // prepare initial era
-        mock::prepare_era_setup();
+        initialize_first_block();
 
         let developer = 1;
         let contract1 = SmartContract::Evm(H160::repeat_byte(0x01));
@@ -716,8 +851,7 @@ fn register_twice_with_same_account_nok() {
 #[test]
 fn register_same_contract_twice_nok() {
     ExternalityBuilder::build().execute_with(|| {
-        // prepare initial era
-        mock::prepare_era_setup();
+        initialize_first_block();
 
         let developer1 = 1;
         let developer2 = 2;
@@ -815,8 +949,7 @@ fn new_era_forcing() {
 #[test]
 fn claim_contract_not_registered() {
     ExternalityBuilder::build().execute_with(|| {
-        // prepare initial era
-        mock::prepare_era_setup();
+        initialize_first_block();
 
         let claimer = 2;
         let contract = SmartContract::Evm(H160::repeat_byte(0x01));
@@ -831,8 +964,7 @@ fn claim_contract_not_registered() {
 #[test]
 fn claim_nothing_to_claim() {
     ExternalityBuilder::build().execute_with(|| {
-        // prepare initial era
-        mock::prepare_era_setup();
+        initialize_first_block();
 
         let developer1 = 1;
         let claimer = 2;
@@ -850,12 +982,12 @@ fn claim_nothing_to_claim() {
 #[test]
 fn claim_twice_in_same_era() {
     ExternalityBuilder::build().execute_with(|| {
+        initialize_first_block();
+
         let developer = 1;
         let claimer = 2;
         let contract = SmartContract::Evm(H160::repeat_byte(0x01));
 
-        // prepare initial era
-        mock::prepare_era_setup();
         let start_era = DappsStaking::current_era();
 
         register_contract(developer, &contract);
@@ -874,15 +1006,40 @@ fn claim_twice_in_same_era() {
 }
 
 #[test]
+fn claim_after_history_depth_has_passed_is_ok() {
+    ExternalityBuilder::build().execute_with(|| {
+        initialize_first_block();
+
+        let developer = 1;
+        let claimer = 2;
+        let contract = SmartContract::Evm(H160::repeat_byte(0x01));
+
+        let start_era = DappsStaking::current_era();
+        register_contract(developer, &contract);
+        bond_and_stake_with_verification(claimer, &contract, 100);
+
+        let history_depth = HistoryDepth::<TestRuntime>::get();
+
+        advance_to_era(start_era + history_depth + 1);
+
+        let upper_claim_era = DappsStaking::current_era();
+        let lower_claim_era = upper_claim_era - history_depth;
+        claim(claimer, contract, lower_claim_era, upper_claim_era.clone());
+
+        verify_contract_history_is_cleared(contract, start_era, upper_claim_era);
+    })
+}
+
+#[test]
 fn claim_is_ok() {
     ExternalityBuilder::build().execute_with(|| {
+        initialize_first_block();
+
         let developer = 1;
         let claimer = 2;
         let contract = SmartContract::Evm(H160::repeat_byte(0x01));
         const SKIP_ERA: EraIndex = 3;
 
-        // prepare initial era
-        mock::prepare_era_setup();
         let start_era = DappsStaking::current_era();
 
         register_contract(developer, &contract);
@@ -899,6 +1056,8 @@ fn claim_is_ok() {
 #[test]
 fn claim_one_contract_one_staker() {
     ExternalityBuilder::build().execute_with(|| {
+        initialize_first_block();
+
         let developer = 1;
         let staker1 = 2;
 
@@ -911,9 +1070,6 @@ fn claim_one_contract_one_staker() {
         let free_balance_staker1 = <mock::TestRuntime as Config>::Currency::free_balance(&staker1);
         let free_developer_balance =
             <mock::TestRuntime as Config>::Currency::free_balance(&developer);
-
-        // prepare initial era
-        mock::prepare_era_setup();
 
         // Register contracts, bond&stake them with two stakers on the contract.
         let start_era = DappsStaking::current_era();
@@ -954,6 +1110,8 @@ fn claim_one_contract_one_staker() {
 #[test]
 fn claim_one_contract_two_stakers() {
     ExternalityBuilder::build().execute_with(|| {
+        initialize_first_block();
+
         let developer = 1;
         let staker1 = 2;
         let staker2 = 3;
@@ -969,9 +1127,6 @@ fn claim_one_contract_two_stakers() {
         let free_balance_staker2 = <mock::TestRuntime as Config>::Currency::free_balance(&staker2);
         let free_developer_balance =
             <mock::TestRuntime as Config>::Currency::free_balance(&developer);
-
-        // prepare initial era
-        mock::prepare_era_setup();
 
         // Register contracts, bond&stake them with two stakers on the contract.
         let start_era = DappsStaking::current_era();
@@ -1038,6 +1193,8 @@ fn claim_one_contract_two_stakers() {
 #[test]
 fn claim_two_contracts_three_stakers() {
     ExternalityBuilder::build().execute_with(|| {
+        initialize_first_block();
+
         let developer1 = 1;
         let developer2 = 10;
         let staker1: mock::AccountId = 2;
@@ -1063,9 +1220,6 @@ fn claim_two_contracts_three_stakers() {
             <mock::TestRuntime as Config>::Currency::free_balance(&developer1);
         let free_balance_developer2 =
             <mock::TestRuntime as Config>::Currency::free_balance(&developer2);
-
-        // prepare initial era
-        mock::prepare_era_setup();
 
         // Register 2 contracts, bond&stake with two stakers on first contract.
         // era=2

@@ -30,6 +30,19 @@ pub(crate) fn bond_and_stake_with_verification(
     ));
 }
 
+/// Used to perform unbond_unstake_and_withdraw with success assertion.
+pub(crate) fn unbond_unstake_and_withdraw_with_verification(
+    staker_id: AccountId,
+    contract_id: &SmartContract<AccountId>,
+    value: Balance,
+) {
+    assert_ok!(DappsStaking::unbond_unstake_and_withdraw(
+        Origin::signed(staker_id),
+        contract_id.clone(),
+        value,
+    ));
+}
+
 /// Used to verify ledger content.
 pub(crate) fn verify_ledger(staker_id: AccountId, staked_value: Balance) {
     // Verify that ledger storage values are as expected.
@@ -96,7 +109,8 @@ pub(crate) fn verify_contract_history_is_cleared(
     );
 
     // check new ContractEraStaked
-    assert!(mock::DappsStaking::contract_era_stake(contract, to_era).is_some());
+    let era_staking_points = mock::DappsStaking::contract_era_stake(contract, to_era).unwrap();
+    assert_eq!(era_staking_points.former_staked_era, to_era);
 
     // check history storage is cleared
     for era in from_era..to_era {

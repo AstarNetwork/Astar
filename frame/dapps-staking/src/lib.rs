@@ -69,6 +69,9 @@ pub struct EraStakingPoints<AccountId: Ord, Balance: HasCompact> {
     total: Balance,
     /// The map of stakers and the amount they staked.
     stakers: BTreeMap<AccountId, Balance>,
+    /// Era when this contract was staked last time before this one.
+    /// In case only a single staking era exists, it will be set to that one. This indicates the final element in the chain.
+    former_staked_era: EraIndex,
 }
 
 /// Multi-VM pointer to smart contract instance.
