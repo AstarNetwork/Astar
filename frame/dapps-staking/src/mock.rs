@@ -1,14 +1,10 @@
-use crate::{
-    self as pallet_dapps_staking, pallet::pallet::Config, EraPayout, NegativeImbalanceOf,
-    PositiveImbalanceOf,
-};
+use crate::{self as pallet_dapps_staking};
 
 use frame_support::{
-    assert_noop, assert_ok, construct_runtime, parameter_types,
-    storage::{StorageDoubleMap, StorageMap},
-    traits::OnUnbalanced,
+    construct_runtime, parameter_types,
+    traits::{OnFinalize, OnInitialize},
 };
-use sp_core::{H160, H256};
+use sp_core::H256;
 
 use sp_io::TestExternalities;
 use sp_runtime::{
@@ -26,15 +22,15 @@ type Block = frame_system::mocking::MockBlock<TestRuntime>;
 
 /// Value shouldn't be less than 2 for testing purposes, otherwise we cannot test certain corner cases.
 pub(crate) const EXISTENTIAL_DEPOSIT: Balance = 2;
-pub(crate) const REGISTER_DEPOSIT: Balance = 200;
-pub(crate) const UNBONDING_DURATION: EraIndex = 5;
 pub(crate) const MAX_NUMBER_OF_STAKERS: u32 = 4;
 /// Value shouldn't be less than 2 for testing purposes, otherwise we cannot test certain corner cases.
 pub(crate) const MINIMUM_STAKING_AMOUNT: Balance = 10;
 pub(crate) const DEVELOPER_REWARD_PERCENTAGE: u32 = 80;
 
+pub(crate) const BLOCKS_PER_ERA: BlockNumber = 3;
 pub(crate) const MILLIAST: Balance = 1_000_000_000_000_000;
 pub(crate) const BLOCK_REWARD: Balance = 2_664 * MILLIAST;
+pub(crate) const DAPPS_REWARD_PERCENTAGE: u32 = 50;
 
 construct_runtime!(
     pub enum TestRuntime where
@@ -110,54 +106,21 @@ impl pallet_timestamp::Config for TestRuntime {
 }
 
 parameter_types! {
-    pub const MaxStakings: u32 = 32;
-    pub const BlockPerEra: BlockNumber = 100;
-    pub const UnbondingDuration: EraIndex = UNBONDING_DURATION;
-}
-
-/// Mocked implementation for EraPayout. Might need to be changed later when used.
-pub struct EraPayoutMock;
-
-impl<Balance: Default> EraPayout<Balance> for EraPayoutMock {
-    fn era_payout(
-        _total_staked: Balance,
-        _total_issuance: Balance,
-        _era_duration_millis: u64,
-    ) -> (Balance, Balance) {
-        (Default::default(), Default::default())
-    }
-}
-
-pub struct RewardRemainderMock;
-
-impl OnUnbalanced<NegativeImbalanceOf<TestRuntime>> for RewardRemainderMock {}
-
-/// Mocked implementation for Reward. Might need to be changed later when used.
-pub struct RewardMock;
-
-impl OnUnbalanced<PositiveImbalanceOf<TestRuntime>> for RewardMock {}
-
-parameter_types! {
     pub const RegisterDeposit: u32 = 100;
-    pub const MockBlockPerEra: BlockNumber = 3;
+    pub const BlockPerEra: BlockNumber = BLOCKS_PER_ERA;
     pub const MaxNumberOfStakersPerContract: u32 = MAX_NUMBER_OF_STAKERS;
     pub const MinimumStakingAmount: Balance = MINIMUM_STAKING_AMOUNT;
     pub const DeveloperRewardPercentage: u32 = DEVELOPER_REWARD_PERCENTAGE;
-    pub const RewardAmount: Balance = 2_664 * MILLIAST;
-    pub const DAppsRewardPercentage: u32 = 50;
+    pub const RewardAmount: Balance = BLOCK_REWARD;
+    pub const DAppsRewardPercentage: u32 = DAPPS_REWARD_PERCENTAGE;
 }
 impl pallet_dapps_staking::Config for TestRuntime {
     type Event = Event;
     type Currency = Balances;
-    type MaxStakings = MaxStakings;
-    type BlockPerEra = MockBlockPerEra;
-    type UnbondingDuration = UnbondingDuration;
-    type EraPayout = EraPayoutMock;
+    type BlockPerEra = BlockPerEra;
     type RegisterDeposit = RegisterDeposit;
     type DeveloperRewardPercentage = DeveloperRewardPercentage;
     type WeightInfo = ();
-    type UnixTime = Timestamp;
-    type RewardRemainder = RewardRemainderMock;
     type RewardAmount = RewardAmount;
     type DAppsRewardPercentage = DAppsRewardPercentage;
     type MaxNumberOfStakersPerContract = MaxNumberOfStakersPerContract;
@@ -184,10 +147,37 @@ impl ExternalityBuilder {
                 (1337, 1_000_000_000_000),
             ],
         }
-        .assimilate_storage(&mut storage);
+        .assimilate_storage(&mut storage)
+        .ok();
 
         let mut ext = TestExternalities::from(storage);
         ext.execute_with(|| System::set_block_number(1));
         ext
+    }
+}
+
+/// Used to run to the specified block number
+pub fn run_to_block(n: u64) {
+    if System::block_number() == 1u64 {
+        DappsStaking::on_initialize(System::block_number());
+    }
+    while System::block_number() < n {
+        DappsStaking::on_finalize(System::block_number());
+        System::set_block_number(System::block_number() + 1);
+        DappsStaking::on_initialize(System::block_number());
+    }
+}
+
+/// Used to run the specified number of blocks
+pub fn run_for_blocks(n: u64) {
+    run_to_block(System::block_number() + n);
+}
+
+/// Advance blocks to the beginning of an era.
+///
+/// Function has no effect if era is already passed.
+pub fn advance_to_era(n: EraIndex) {
+    if n > 0 {
+        run_to_block(BLOCKS_PER_ERA * (n as BlockNumber - 1) + 1);
     }
 }
