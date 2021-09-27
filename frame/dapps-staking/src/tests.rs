@@ -279,6 +279,54 @@ fn bond_and_stake_different_value_is_ok() {
 }
 
 #[test]
+fn bond_and_stake_history_depth_has_passed_is_ok() {
+    ExternalityBuilder::build().execute_with(|| {
+        run_to_block(2);
+        let developer = 1;
+        let staker_id = 2;
+        let contract_id = SmartContract::Evm(H160::repeat_byte(0x01));
+
+        let start_era = DappsStaking::current_era();
+        register_contract(developer, &contract_id);
+
+        // Do the first bond&stake
+        let first_staking_amount = 200;
+        bond_and_stake_with_verification(staker_id, &contract_id, first_staking_amount);
+
+        // Advance eras beyond history depth
+        let history_depth = HistoryDepth::<TestRuntime>::get();
+        advance_to_era(start_era + history_depth + 1);
+
+        // Bond&stake again
+        let second_staking_amount = 350;
+        bond_and_stake_with_verification(staker_id, &contract_id, second_staking_amount);
+
+        // Verify storage content
+        let total_staked = first_staking_amount + second_staking_amount;
+        let current_era = DappsStaking::current_era();
+
+        // Verify storage values related to the current era
+        verify_ledger(staker_id, total_staked);
+        verify_era_staking_points(
+            &contract_id,
+            total_staked,
+            current_era,
+            vec![(staker_id, total_staked)],
+        );
+        verify_pallet_era_staked(current_era, total_staked);
+
+        // Also ensure that former values still exists even if they're beyond 'history depth'
+        verify_era_staking_points(
+            &contract_id,
+            first_staking_amount,
+            start_era,
+            vec![(staker_id, first_staking_amount)],
+        );
+        verify_pallet_era_staked(start_era, first_staking_amount);
+    })
+}
+
+#[test]
 fn bond_and_stake_contract_is_not_ok() {
     ExternalityBuilder::build().execute_with(|| {
         // prepare initial era
@@ -585,6 +633,104 @@ fn unbond_unstake_and_withdraw_in_different_eras() {
 }
 
 #[test]
+fn unbond_unstake_and_withdraw_history_depth_has_passed_is_ok() {
+    ExternalityBuilder::build().execute_with(|| {
+        run_to_block(2);
+        let developer = 1;
+        let staker_id = 2;
+        let contract_id = SmartContract::Evm(H160::repeat_byte(0x01));
+
+        //////////////////////////////////////////////
+        ///// FIRST ERA
+        //////////////////////////////////////////////
+
+        let start_era = DappsStaking::current_era();
+        register_contract(developer, &contract_id);
+
+        // Do the first bond&stake
+        let first_staking_amount = 200;
+        bond_and_stake_with_verification(staker_id, &contract_id, first_staking_amount);
+
+        //////////////////////////////////////////////
+        ///// FIRST ERA ADVANCEMENT
+        //////////////////////////////////////////////
+
+        // Advance eras beyond history depth
+        let history_depth = HistoryDepth::<TestRuntime>::get();
+        advance_to_era(start_era + history_depth + 1);
+
+        let first_unstake_amount = 30;
+        unbond_unstake_and_withdraw_with_verification(
+            staker_id,
+            &contract_id,
+            first_unstake_amount,
+        );
+
+        // Verify storage content
+        let total_staked = first_staking_amount - first_unstake_amount;
+        let current_era = DappsStaking::current_era();
+
+        // Verify storage values related to the current era
+        verify_ledger(staker_id, total_staked);
+        verify_era_staking_points(
+            &contract_id,
+            total_staked,
+            current_era,
+            vec![(staker_id, total_staked)],
+        );
+        verify_pallet_era_staked(current_era, total_staked);
+
+        // Also ensure that former values still exists even if they're beyond 'history depth'
+        verify_era_staking_points(
+            &contract_id,
+            first_staking_amount,
+            start_era,
+            vec![(staker_id, first_staking_amount)],
+        );
+        verify_pallet_era_staked(start_era, first_staking_amount);
+
+        //////////////////////////////////////////////
+        ///// SECOND ERA ADVANCEMENT
+        //////////////////////////////////////////////
+
+        // Advance era again beyond the history depth
+        let former_era = current_era;
+        advance_to_era(former_era + history_depth + 10);
+        let current_era = DappsStaking::current_era();
+
+        let second_unstake_amount = 30;
+        unbond_unstake_and_withdraw_with_verification(
+            staker_id,
+            &contract_id,
+            second_unstake_amount,
+        );
+
+        // Verify storage content
+        let former_total_staked = total_staked;
+        let total_staked = total_staked - second_unstake_amount;
+
+        // Verify storage values related to the current era
+        verify_ledger(staker_id, total_staked);
+        verify_era_staking_points(
+            &contract_id,
+            total_staked,
+            current_era,
+            vec![(staker_id, total_staked)],
+        );
+        verify_pallet_era_staked(current_era, total_staked);
+
+        // Also ensure that former values still exists even if they're beyond 'history depth', again
+        verify_era_staking_points(
+            &contract_id,
+            former_total_staked,
+            former_era,
+            vec![(staker_id, former_total_staked)],
+        );
+        verify_pallet_era_staked(former_era, former_total_staked);
+    })
+}
+
+#[test]
 fn unbond_unstake_and_withdraw_contract_is_not_ok() {
     ExternalityBuilder::build().execute_with(|| {
         // prepare initial era
@@ -870,6 +1016,30 @@ fn claim_twice_in_same_era() {
             DappsStaking::claim(Origin::signed(claimer), contract),
             Error::<TestRuntime>::AlreadyClaimedInThisEra
         );
+    })
+}
+
+#[test]
+fn claim_after_history_depth_has_passed_is_ok() {
+    ExternalityBuilder::build().execute_with(|| {
+        run_to_block(2);
+        let developer = 1;
+        let claimer = 2;
+        let contract = SmartContract::Evm(H160::repeat_byte(0x01));
+
+        let start_era = DappsStaking::current_era();
+        register_contract(developer, &contract);
+        bond_and_stake_with_verification(claimer, &contract, 100);
+
+        let history_depth = HistoryDepth::<TestRuntime>::get();
+
+        advance_to_era(start_era + history_depth + 1);
+
+        let upper_claim_era = DappsStaking::current_era();
+        let lower_claim_era = upper_claim_era - history_depth;
+        claim(claimer, contract, lower_claim_era, upper_claim_era.clone());
+
+        verify_contract_history_is_cleared(contract, start_era, upper_claim_era);
     })
 }
 
