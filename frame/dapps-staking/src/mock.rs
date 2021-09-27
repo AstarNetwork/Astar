@@ -181,8 +181,11 @@ pub fn advance_to_era(n: EraIndex) {
     }
 }
 
-/// adjust storage
-pub fn prepare_era_setup() {
+/// Initialize first block.
+/// This method should only be called once in a UT otherwise the first block will get initialized multiple times.
+pub fn initialize_first_block() {
+    // This assert prevents method misuse
+    assert_eq!(System::block_number(), 1 as BlockNumber);
     DappsStaking::on_initialize(System::block_number());
-    advance_to_era(2);
+    run_to_block(2);
 }
