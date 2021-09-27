@@ -17,22 +17,6 @@ pub(crate) fn get_total_reward_per_era() -> Balance {
     Perbill::from_percent(DAPPS_REWARD_PERCENTAGE) * BLOCK_REWARD * BLOCKS_PER_ERA as Balance
 }
 
-/// Used to skip "for_era" eras, rewarding each era in the process.
-pub(crate) fn advance_era_and_reward(
-    for_era: EraIndex,
-    rewards: BalanceOf<TestRuntime>,
-    staked: BalanceOf<TestRuntime>,
-) {
-    // TODO advance era by incrementing block production, needed for block rewards
-    let current: EraIndex = mock::DappsStaking::current_era();
-
-    let era_reward = EraRewardAndStake { rewards, staked };
-    for era in 0..for_era {
-        <EraRewardsAndStakes<TestRuntime>>::insert(current + era, era_reward.clone());
-    }
-    <CurrentEra<TestRuntime>>::put(&current + for_era);
-}
-
 /// Used to perform bond_and_stake with success assertion.
 pub(crate) fn bond_and_stake_with_verification(
     staker_id: AccountId,
@@ -141,7 +125,7 @@ pub(crate) fn calc_expected_staker_reward(
     contract_stake: mock::Balance,
     staker_stake: mock::Balance,
 ) -> mock::Balance {
-    let contract_reward = Perbill::from_rational(era_reward, era_stake) * contract_stake;
+    let contract_reward = Perbill::from_rational(contract_stake, era_stake) * era_reward;
     let contract_staker_part =
         Perbill::from_percent(100 - DEVELOPER_REWARD_PERCENTAGE) * contract_reward;
 
@@ -154,7 +138,6 @@ pub(crate) fn calc_expected_developer_reward(
     era_stake: mock::Balance,
     contract_stake: mock::Balance,
 ) -> mock::Balance {
-    let contract_reward = Perbill::from_rational(era_reward, era_stake) * contract_stake;
-
+    let contract_reward = Perbill::from_rational(contract_stake, era_stake) * era_reward;
     Perbill::from_percent(DEVELOPER_REWARD_PERCENTAGE) * contract_reward
 }
