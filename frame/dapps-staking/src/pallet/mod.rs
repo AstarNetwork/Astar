@@ -552,12 +552,12 @@ pub mod pallet {
 
                 // smallest unit of the reward in this era to use in calculation
                 let reward_particle = Perbill::from_rational(
-                    reward_and_stake_for_era.rewards,
+                    contract_staking_info.total,
                     reward_and_stake_for_era.staked,
                 );
 
                 // this contract's total reward in this era
-                let contract_reward_in_era = reward_particle * contract_staking_info.total;
+                let contract_reward_in_era = reward_particle * reward_and_stake_for_era.rewards;
 
                 // divide reward between stakers and the developer of the contract
                 let contract_staker_reward =

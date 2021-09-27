@@ -28,8 +28,10 @@ pub(crate) const MINIMUM_STAKING_AMOUNT: Balance = 10;
 pub(crate) const DEVELOPER_REWARD_PERCENTAGE: u32 = 80;
 
 pub(crate) const BLOCKS_PER_ERA: BlockNumber = 3;
-pub(crate) const MILLIAST: Balance = 1_000_000_000_000_000;
-pub(crate) const BLOCK_REWARD: Balance = 2_664 * MILLIAST;
+
+// ignore MILLIAST for easier test handling.
+// reward for dapps-staking will be BLOCK_REWARD/2 = 1000
+pub(crate) const BLOCK_REWARD: Balance = 2000;
 pub(crate) const DAPPS_REWARD_PERCENTAGE: u32 = 50;
 
 construct_runtime!(
@@ -158,9 +160,6 @@ impl ExternalityBuilder {
 
 /// Used to run to the specified block number
 pub fn run_to_block(n: u64) {
-    if System::block_number() == 1u64 {
-        DappsStaking::on_initialize(System::block_number());
-    }
     while System::block_number() < n {
         DappsStaking::on_finalize(System::block_number());
         System::set_block_number(System::block_number() + 1);
@@ -180,4 +179,10 @@ pub fn advance_to_era(n: EraIndex) {
     if n > 0 {
         run_to_block(BLOCKS_PER_ERA * (n as BlockNumber - 1) + 1);
     }
+}
+
+/// adjust storage
+pub fn prepare_era_setup() {
+    DappsStaking::on_initialize(System::block_number());
+    advance_to_era(2);
 }
