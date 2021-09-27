@@ -602,7 +602,6 @@ pub mod pallet {
                     break;
                 }
 
-
                 contract_staking_info = Self::contract_era_stake(&contract_id, &lower_bound_era)
                     .ok_or(Error::<T>::UnknownStartStakingData)?;
             }
