@@ -591,7 +591,8 @@ pub mod pallet {
                         // This arm refers to situations where dev and staker are 'penalized' since they didn't collect rewards in time.
                         unclaimed_rewards += contract_reward_in_era;
                     }
-                }
+                } // end of one era interval iteration
+
                 upper_bound_era = lower_bound_era;
                 lower_bound_era = contract_staking_info.former_staked_era;
 
@@ -604,6 +605,7 @@ pub mod pallet {
 
                 contract_staking_info = Self::contract_era_stake(&contract_id, &lower_bound_era)
                     .ok_or(Error::<T>::UnknownStartStakingData)?;
+                // continue and process the next era interval
             }
 
             // send rewards to stakers
