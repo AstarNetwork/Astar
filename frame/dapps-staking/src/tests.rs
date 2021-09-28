@@ -911,8 +911,7 @@ fn register_with_pre_aprove_enabled() {
             contract.clone()
         ));
         System::assert_last_event(mock::Event::DappsStaking(Event::NewContract(
-            developer,
-            contract,
+            developer, contract,
         )));
 
         // disable pre_approval and register contract2
@@ -922,10 +921,12 @@ fn register_with_pre_aprove_enabled() {
             Origin::root(),
             false
         ));
-        assert_ok!(DappsStaking::register(Origin::signed(developer2), contract2.clone()));
+        assert_ok!(DappsStaking::register(
+            Origin::signed(developer2),
+            contract2.clone()
+        ));
         System::assert_last_event(mock::Event::DappsStaking(Event::NewContract(
-            developer2,
-            contract2,
+            developer2, contract2,
         )));
     })
 }
