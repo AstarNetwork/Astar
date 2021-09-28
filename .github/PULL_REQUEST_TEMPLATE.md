@@ -16,7 +16,7 @@ Contributors guide: ./.github/CONTRIBUTING.md
 - [ ] all tests passes
 - [ ] tests and/or benchmarks are included
 - [ ] documentation is changed or added
-- [ ] \(option\)
+- [ ] changed API client type definition or chain metadata
 
 <!-- _NOTE: these things are not required to open a PR and can be done afterwards / while the PR is open._ -->
 
