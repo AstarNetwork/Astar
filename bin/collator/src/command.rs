@@ -57,16 +57,14 @@ impl<T: sc_service::ChainSpec + 'static> IdentifyChain for T {
 
 fn load_spec(
     id: &str,
-    _para_id: u32,
+    para_id: u32,
 ) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
     Ok(match id {
         "dev" => Box::new(development_config()),
         "" | "shiden" => Box::new(ShidenChainSpec::from_json_bytes(
             &include_bytes!("../res/shiden.raw.json")[..],
         )?),
-        /*
-        "shibuya" => Box::new(get_chain_spec(para_id)),
-        */
+        "testnet" => Box::new(parachain::get_chain_spec(para_id)),
         "shibuya" => Box::new(ShidenChainSpec::from_json_bytes(
             &include_bytes!("../res/shibuya.raw.json")[..],
         )?),

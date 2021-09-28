@@ -65,18 +65,19 @@ fn session_keys(aura: AuraId) -> SessionKeys {
 pub fn get_chain_spec(para_id: u32) -> ShibuyaChainSpec {
     // Alice as default
     let sudo_key = get_account_id_from_seed::<sr25519::Public>("Alice");
+    let endowned = vec![
+        (
+            get_account_id_from_seed::<sr25519::Public>("Alice"),
+            1 << 70,
+        ),
+        (get_account_id_from_seed::<sr25519::Public>("Bob"), 1 << 70),
+    ];
 
     ShibuyaChainSpec::from_genesis(
         "Shibuya Testnet",
         "shibuya",
         ChainType::Live,
-        move || {
-            make_genesis(
-                crate::balances::SHIDEN_HOLDERS.clone(),
-                sudo_key.clone(),
-                para_id.into(),
-            )
-        },
+        move || make_genesis(endowned.clone(), sudo_key.clone(), para_id.into()),
         vec![],
         None,
         None,
@@ -94,14 +95,13 @@ fn make_genesis(
     root_key: AccountId,
     parachain_id: ParaId,
 ) -> GenesisConfig {
-    use sp_core::crypto::Ss58Codec;
     let authorities = vec![
         (
-            AccountId::from_ss58check("5HbAP8GczDDfGL6K2BvbsDyCyL3qY2GSRrJAPNXSUnd95mRM").unwrap(),
+            get_account_id_from_seed::<sr25519::Public>("Alice"),
             get_from_seed::<AuraId>("Alice"),
         ),
         (
-            AccountId::from_ss58check("5Fhdbkg89StmVoMNrbukWpcD7ZgLc9gBYNyPBDi3zokPWC48").unwrap(),
+            get_account_id_from_seed::<sr25519::Public>("Bob"),
             get_from_seed::<AuraId>("Bob"),
         ),
     ];
@@ -134,7 +134,7 @@ fn make_genesis(
         collator_selection: CollatorSelectionConfig {
             desired_candidates: 200,
             candidacy_bond: 32_000 * SDN,
-            invulnerables: vec![],
+            invulnerables: authorities.iter().map(|x| x.0.clone()).collect::<Vec<_>>(),
         },
         evm: EVMConfig {
             // We need _some_ code inserted at the precompile address so that
