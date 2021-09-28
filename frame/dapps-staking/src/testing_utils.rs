@@ -6,7 +6,7 @@ use sp_runtime::Perbill;
 
 /// Used to register contract for staking and assert success.
 pub(crate) fn register_contract(developer: AccountId, contract: &SmartContract<AccountId>) {
-    assert_ok!(mock::DappsStaking::preaproval_for_new_contact_enabled(
+    assert_ok!(mock::DappsStaking::enable_contract_preapproval(
         Origin::root(),
         false
     ));

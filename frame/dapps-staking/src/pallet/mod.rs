@@ -245,7 +245,7 @@ pub mod pallet {
         /// Contract already claimed in this era and reward is distributed
         AlreadyClaimedInThisEra,
         /// To register a contract, pre-approval is needed for this address
-        RequiredContractPreAproval,
+        RequiredContractPreApproval,
         /// Contract is already part of pre-apprved list of contracts
         AlreadyPreApprovedContract,
     }
@@ -310,7 +310,7 @@ pub mod pallet {
                 Self::pre_approved_contracts()
                     .contains(&contract_id)
                     .then(|| true)
-                    .ok_or(Error::<T>::RequiredContractPreAproval)?;
+                    .ok_or(Error::<T>::RequiredContractPreApproval)?;
             }
             RegisteredDapps::<T>::insert(contract_id.clone(), developer.clone());
             RegisteredDevelopers::<T>::insert(&developer, contract_id.clone());
@@ -320,7 +320,7 @@ pub mod pallet {
             Ok(().into())
         }
 
-        /// add contract address to the preaproved list.
+        /// add contract address to the pre-approved list.
         /// contract_id should be ink! or evm contract.
         ///
         /// Sudo call is required
@@ -335,13 +335,12 @@ pub mod pallet {
                 Error::<T>::AlreadyRegisteredContract
             );
 
-            let mut pre_approved_contracts = Self::pre_approved_contracts();
+            let pre_approved_contracts = Self::pre_approved_contracts();
             ensure!(
                 !pre_approved_contracts.contains(&contract_id),
                 Error::<T>::AlreadyPreApprovedContract
             );
-            pre_approved_contracts.push(contract_id);
-            PreApprovedContracts::<T>::put(pre_approved_contracts);
+            PreApprovedContracts::<T>::append(contract_id);
 
             Ok(().into())
         }
@@ -350,7 +349,7 @@ pub mod pallet {
         ///
         /// Sudo call is required
         #[pallet::weight(1_000_000)]
-        pub fn preaproval_for_new_contact_enabled(
+        pub fn enable_contract_preapproval(
             origin: OriginFor<T>,
             enabled: bool,
         ) -> DispatchResultWithPostInfo {

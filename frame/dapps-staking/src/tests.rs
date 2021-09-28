@@ -874,14 +874,14 @@ fn register_same_contract_twice_nok() {
 }
 
 #[test]
-fn register_with_pre_aprove_enabled() {
+fn register_with_pre_approve_enabled() {
     ExternalityBuilder::build().execute_with(|| {
         initialize_first_block();
         let developer = 1;
         let contract = SmartContract::Evm(H160::repeat_byte(0x01));
 
         // enable pre-approval of the contracts
-        assert_ok!(mock::DappsStaking::preaproval_for_new_contact_enabled(
+        assert_ok!(mock::DappsStaking::enable_contract_preapproval(
             Origin::root(),
             true
         ));
@@ -890,7 +890,7 @@ fn register_with_pre_aprove_enabled() {
         // register new contract without pre-aproval should fail
         assert_noop!(
             DappsStaking::register(Origin::signed(developer), contract.clone()),
-            Error::<TestRuntime>::RequiredContractPreAproval
+            Error::<TestRuntime>::RequiredContractPreApproval
         );
 
         // preapprove contract
@@ -899,13 +899,13 @@ fn register_with_pre_aprove_enabled() {
             contract.clone()
         ));
 
-        // try to preaprove again same contract, should fail
+        // try to pre-approve again same contract, should fail
         assert_noop!(
             mock::DappsStaking::contract_pre_approval(Origin::root(), contract.clone()),
             Error::<TestRuntime>::AlreadyPreApprovedContract
         );
 
-        // register new contract which is pre-aproved
+        // register new contract which is pre-approved
         assert_ok!(DappsStaking::register(
             Origin::signed(developer),
             contract.clone()
@@ -917,7 +917,7 @@ fn register_with_pre_aprove_enabled() {
         // disable pre_approval and register contract2
         let developer2 = 2;
         let contract2 = SmartContract::Evm(H160::repeat_byte(0x02));
-        assert_ok!(mock::DappsStaking::preaproval_for_new_contact_enabled(
+        assert_ok!(mock::DappsStaking::enable_contract_preapproval(
             Origin::root(),
             false
         ));
