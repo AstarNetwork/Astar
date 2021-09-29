@@ -122,11 +122,26 @@ impl pallet_dapps_staking::Config for TestRuntime {
     type BlockPerEra = BlockPerEra;
     type RegisterDeposit = RegisterDeposit;
     type DeveloperRewardPercentage = DeveloperRewardPercentage;
+    type SmartContract = MockSmartContract<AccountId>;
     type WeightInfo = ();
     type RewardAmount = RewardAmount;
     type DAppsRewardPercentage = DAppsRewardPercentage;
     type MaxNumberOfStakersPerContract = MaxNumberOfStakersPerContract;
     type MinimumStakingAmount = MinimumStakingAmount;
+}
+
+pub enum MockSmartContract<AccountId> {
+    Evm(sp_core::H160),
+    Wasm(AccountId),
+}
+
+impl<AccountId> pallet_dapps_staking::IsContract<AccountId> for MockSmartContract<AccountId> {
+    fn is_contract(&self) -> bool {
+        match self {
+            MockSmartContract::Wasm(_account) => false,
+            MockSmartContract::Evm(_account) => true,
+        }
+    }
 }
 
 pub struct ExternalityBuilder;

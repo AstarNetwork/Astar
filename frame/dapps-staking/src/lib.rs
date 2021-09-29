@@ -10,7 +10,9 @@ use sp_runtime::RuntimeDebug;
 use sp_std::{collections::btree_map::BTreeMap, prelude::*};
 
 pub mod pallet;
+pub mod traits;
 pub mod weights;
+pub use traits::*;
 
 #[cfg(test)]
 mod mock;
@@ -72,15 +74,6 @@ pub struct EraStakingPoints<AccountId: Ord, Balance: HasCompact> {
     /// Era when this contract was staked last time before this one.
     /// In case only a single staking era exists, it will be set to that one. This indicates the final element in the chain.
     former_staked_era: EraIndex,
-}
-
-/// Multi-VM pointer to smart contract instance.
-#[derive(PartialEq, Eq, Copy, Clone, Encode, Decode, RuntimeDebug)]
-pub enum SmartContract<AccountId> {
-    /// EVM smart contract instance.
-    Evm(sp_core::H160),
-    /// Wasm smart contract instance.
-    Wasm(AccountId),
 }
 
 /// The ledger of a (bonded) stash.

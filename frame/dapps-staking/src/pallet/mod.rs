@@ -41,6 +41,9 @@ pub mod pallet {
         /// The percentage of the network block reward that goes to this pallet
         type DAppsRewardPercentage: Get<u32>;
 
+        // type used for Accounts on EVM and on Substrate
+        type SmartContract: IsContract<Self::AccountId>;
+
         /// Number of blocks per era.
         #[pallet::constant]
         type BlockPerEra: Get<BlockNumberFor<Self>>;
@@ -302,7 +305,7 @@ pub mod pallet {
                 Error::<T>::AlreadyRegisteredContract
             );
             ensure!(
-                Self::is_contract_valid(&contract_id),
+                SmartContract::is_contract(&contract_id),
                 Error::<T>::ContractIsNotValid
             );
 
@@ -779,20 +782,6 @@ pub mod pallet {
             } else {
                 T::Currency::set_lock(STAKING_ID, &staker, ledger.total, WithdrawReasons::all());
                 Ledger::<T>::insert(staker, ledger);
-            }
-        }
-
-        /// Checks if there is a valid smart contract for the provided address
-        fn is_contract_valid(address: &SmartContract<T::AccountId>) -> bool {
-            match address {
-                SmartContract::Wasm(_account) => {
-                    //     <pallet_contracts::ContractInfoOf<T>>::get(&account).is_some()
-                    false
-                }
-                SmartContract::Evm(_account) => {
-                    // pallet_evm::Module::<T>::account_codes(&account).len() > 0 TODO remove comment after EVM mege
-                    true
-                }
             }
         }
 
