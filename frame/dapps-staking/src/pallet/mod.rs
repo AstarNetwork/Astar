@@ -156,6 +156,21 @@ pub mod pallet {
     pub(crate) type ContractLastStaked<T: Config> =
         StorageMap<_, Twox64Concat, SmartContract<T::AccountId>, EraIndex>;
 
+    #[pallet::type_value]
+    pub(crate) fn PreApprovalOnEmpty() -> bool {
+        false
+    }
+    /// Enable or disable pre-approval list for new contract registration
+    #[pallet::storage]
+    #[pallet::getter(fn pre_approval_is_enabled)]
+    pub(crate) type PreApprovalIsEnabled<T> = StorageValue<_, bool, ValueQuery, PreApprovalOnEmpty>;
+
+    /// List of pre-approved contracts
+    #[pallet::storage]
+    #[pallet::getter(fn pre_approved_contracts)]
+    pub(crate) type PreApprovedContracts<T: Config> =
+        StorageValue<_, Vec<SmartContract<T::AccountId>>, ValueQuery>;
+
     // Declare the genesis config (optional).
     //
     // The macro accepts either a struct or an enum; it checks that generics are consistent.
@@ -229,6 +244,10 @@ pub mod pallet {
         NothingToClaim,
         /// Contract already claimed in this era and reward is distributed
         AlreadyClaimedInThisEra,
+        /// To register a contract, pre-approval is needed for this address
+        RequiredContractPreApproval,
+        /// Contract is already part of pre-apprved list of contracts
+        AlreadyPreApprovedContract,
     }
 
     #[pallet::hooks]
@@ -287,10 +306,55 @@ pub mod pallet {
                 Error::<T>::ContractIsNotValid
             );
 
+            if Self::pre_approval_is_enabled() {
+                Self::pre_approved_contracts()
+                    .contains(&contract_id)
+                    .then(|| true)
+                    .ok_or(Error::<T>::RequiredContractPreApproval)?;
+            }
             RegisteredDapps::<T>::insert(contract_id.clone(), developer.clone());
             RegisteredDevelopers::<T>::insert(&developer, contract_id.clone());
 
             Self::deposit_event(Event::<T>::NewContract(developer, contract_id));
+
+            Ok(().into())
+        }
+
+        /// add contract address to the pre-approved list.
+        /// contract_id should be ink! or evm contract.
+        ///
+        /// Sudo call is required
+        #[pallet::weight(1_000_000)]
+        pub fn contract_pre_approval(
+            origin: OriginFor<T>,
+            contract_id: SmartContract<T::AccountId>,
+        ) -> DispatchResultWithPostInfo {
+            ensure_root(origin)?;
+            ensure!(
+                !RegisteredDapps::<T>::contains_key(&contract_id),
+                Error::<T>::AlreadyRegisteredContract
+            );
+
+            let pre_approved_contracts = Self::pre_approved_contracts();
+            ensure!(
+                !pre_approved_contracts.contains(&contract_id),
+                Error::<T>::AlreadyPreApprovedContract
+            );
+            PreApprovedContracts::<T>::append(contract_id);
+
+            Ok(().into())
+        }
+
+        /// Enable or disable adding new contracts to the pre-approved list
+        ///
+        /// Sudo call is required
+        #[pallet::weight(1_000_000)]
+        pub fn enable_contract_preapproval(
+            origin: OriginFor<T>,
+            enabled: bool,
+        ) -> DispatchResultWithPostInfo {
+            ensure_root(origin)?;
+            PreApprovalIsEnabled::<T>::put(enabled);
 
             Ok(().into())
         }
