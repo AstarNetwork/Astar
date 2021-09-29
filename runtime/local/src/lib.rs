@@ -291,6 +291,7 @@ parameter_types! {
 impl pallet_dapps_staking::Config for Runtime {
     type Currency = Balances;
     type BlockPerEra = BlockPerEra;
+    type SmartContract = SmartContract<AccountId>;
     type RegisterDeposit = RegisterDeposit;
     type DeveloperRewardPercentage = DeveloperRewardPercentage;
     type Event = Event;
@@ -298,6 +299,17 @@ impl pallet_dapps_staking::Config for Runtime {
     type MaxNumberOfStakersPerContract = MaxNumberOfStakersPerContract;
     type MinimumStakingAmount = MinimumStakingAmount;
     type PalletId = DappsStakingPalletId;
+}
+
+impl<AccountId> IsContract<AccountId> for SmartContract<AccountId> {
+    fn is_contract(&self) -> bool {
+        match self {
+            SmartContract::Wasm(_account) => false,
+            SmartContract::Evm(account) => {
+                EVM::account_codes(&account).len() > 0
+            }
+        }
+    }
 }
 
 /// Current approximation of the gas/s consumption considering
