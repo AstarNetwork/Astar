@@ -874,6 +874,64 @@ fn register_same_contract_twice_nok() {
 }
 
 #[test]
+fn register_with_pre_approve_enabled() {
+    ExternalityBuilder::build().execute_with(|| {
+        initialize_first_block();
+        let developer = 1;
+        let contract = SmartContract::Evm(H160::repeat_byte(0x01));
+
+        // enable pre-approval of the contracts
+        assert_ok!(mock::DappsStaking::enable_contract_preapproval(
+            Origin::root(),
+            true
+        ));
+        assert!(mock::DappsStaking::pre_approval_is_enabled());
+
+        // register new contract without pre-aproval should fail
+        assert_noop!(
+            DappsStaking::register(Origin::signed(developer), contract.clone()),
+            Error::<TestRuntime>::RequiredContractPreApproval
+        );
+
+        // preapprove contract
+        assert_ok!(mock::DappsStaking::contract_pre_approval(
+            Origin::root(),
+            contract.clone()
+        ));
+
+        // try to pre-approve again same contract, should fail
+        assert_noop!(
+            mock::DappsStaking::contract_pre_approval(Origin::root(), contract.clone()),
+            Error::<TestRuntime>::AlreadyPreApprovedContract
+        );
+
+        // register new contract which is pre-approved
+        assert_ok!(DappsStaking::register(
+            Origin::signed(developer),
+            contract.clone()
+        ));
+        System::assert_last_event(mock::Event::DappsStaking(Event::NewContract(
+            developer, contract,
+        )));
+
+        // disable pre_approval and register contract2
+        let developer2 = 2;
+        let contract2 = SmartContract::Evm(H160::repeat_byte(0x02));
+        assert_ok!(mock::DappsStaking::enable_contract_preapproval(
+            Origin::root(),
+            false
+        ));
+        assert_ok!(DappsStaking::register(
+            Origin::signed(developer2),
+            contract2.clone()
+        ));
+        System::assert_last_event(mock::Event::DappsStaking(Event::NewContract(
+            developer2, contract2,
+        )));
+    })
+}
+
+#[test]
 fn new_era_is_ok() {
     ExternalityBuilder::build().execute_with(|| {
         // set initial era index
