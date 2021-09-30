@@ -269,27 +269,6 @@ impl pallet_custom_signatures::Config for Runtime {
     type UnsignedPriority = EcdsaUnsignedPriority;
 }
 
-parameter_types! {
-    pub const BlockPerEra: BlockNumber = 60;
-    pub const RegisterDeposit: Balance = 100;
-    pub const DeveloperRewardPercentage: u32 = 80;
-    pub const MaxNumberOfStakersPerContract: u32 = 128;
-    pub const MinimumStakingAmount: Balance = 10;
-}
-
-impl pallet_dapps_staking::Config for Runtime {
-    type Currency = Balances;
-    type RewardAmount = RewardAmount;
-    type DAppsRewardPercentage = DAppsRewardPercentage;
-    type BlockPerEra = BlockPerEra;
-    type RegisterDeposit = RegisterDeposit;
-    type DeveloperRewardPercentage = DeveloperRewardPercentage;
-    type Event = Event;
-    type WeightInfo = (); // TODO
-    type MaxNumberOfStakersPerContract = MaxNumberOfStakersPerContract;
-    type MinimumStakingAmount = MinimumStakingAmount;
-}
-
 impl pallet_utility::Config for Runtime {
     type Event = Event;
     type Call = Call;
@@ -394,6 +373,7 @@ impl OnUnbalanced<NegativeImbalance> for OnBlockReward {
     fn on_nonzero_unbalanced(amount: NegativeImbalance) {
         let dapps_percentage = DAppsRewardPercentage::get();
         let (dapps, maintain) = amount.ration(dapps_percentage, 100 - dapps_percentage);
+        // dapp staking block reward
         Balances::resolve_creating(&DappsStakingPalletId::get().into_account(), dapps);
 
         let (treasury, collators) = maintain.ration(40, 10);
@@ -677,7 +657,6 @@ construct_runtime!(
         Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>} = 31,
         Vesting: pallet_vesting::{Pallet, Call, Storage, Config<T>, Event<T>} = 32,
         BlockReward: pallet_block_reward::{Pallet} = 33,
-        DappsStaking: pallet_dapps_staking::{Pallet, Call, Storage, Event<T>} = 34,
 
         Authorship: pallet_authorship::{Pallet, Call, Storage, Inherent} = 40,
         CollatorSelection: pallet_collator_selection::{Pallet, Call, Storage, Event<T>, Config<T>} = 41,

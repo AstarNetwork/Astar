@@ -35,12 +35,6 @@ pub mod pallet {
         /// The staking balance.
         type Currency: LockableCurrency<Self::AccountId, Moment = Self::BlockNumber>;
 
-        /// Reword amount per block. Will be divided by DAppsRewardPercentage
-        type RewardAmount: Get<BalanceOf<Self>>;
-
-        /// The percentage of the network block reward that goes to this pallet
-        type DAppsRewardPercentage: Get<u32>;
-
         /// Number of blocks per era.
         #[pallet::constant]
         type BlockPerEra: Get<BlockNumberFor<Self>>;
@@ -253,9 +247,6 @@ pub mod pallet {
     #[pallet::hooks]
     impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
         fn on_initialize(now: BlockNumberFor<T>) -> Weight {
-            // Handle dapps staking era
-            let block_rewards = Self::block_reward_accumulator();
-            BlockRewardAccumulator::<T>::put(block_rewards + T::RewardAmount::get());
             let force_new_era = Self::force_era().eq(&Forcing::ForceNew);
             let blocks_pre_era = T::BlockPerEra::get();
 
@@ -770,6 +761,13 @@ pub mod pallet {
     }
 
     impl<T: Config> Pallet<T> {
+        /// Used to inform the dapps staking pallet that block reward was deposited to dapps staking account.
+        pub fn add_block_reward(block_reward: BalanceOf<T>) {
+            BlockRewardAccumulator::<T>::mutate(|accumulated_reward| {
+                *accumulated_reward += block_reward;
+            });
+        }
+
         /// Update the ledger for a staker. This will also update the stash lock.
         /// This lock will lock the entire funds except paying for further transactions.
         fn update_ledger(staker: &T::AccountId, ledger: &StakingLedger<BalanceOf<T>>) {
@@ -823,8 +821,7 @@ pub mod pallet {
         ///
         /// This is called just at the beginning of an era.
         fn reward_balance_snapshoot(ending_era: EraIndex) {
-            let reward = Perbill::from_percent(T::DAppsRewardPercentage::get())
-                * Self::block_reward_accumulator();
+            let reward = Self::block_reward_accumulator();
 
             // Get the reward and stake information for previous era
             let mut reward_and_stake = Self::era_reward_and_stake(ending_era).unwrap_or_default();

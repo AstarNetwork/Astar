@@ -257,8 +257,12 @@ impl OnUnbalanced<NegativeImbalance> for OnBlockReward {
     fn on_nonzero_unbalanced(amount: NegativeImbalance) {
         let dapps_percentage = DAppsRewardPercentage::get();
         let (dapps, maintain) = amount.ration(dapps_percentage, 100 - dapps_percentage);
+
         // dapp staking block reward
+        let dapps_reward_balance = dapps.peek();
         Balances::resolve_creating(&DappsStakingPalletId::get().into_account(), dapps);
+        // Inform dapps staking that reward was deposited
+        DappsStaking::add_block_reward(dapps_reward_balance);
 
         // XXX: skip block author reward, it's local runtime didn't
         let (treasury, _) = maintain.ration(40, 10);
@@ -289,8 +293,6 @@ parameter_types! {
 
 impl pallet_dapps_staking::Config for Runtime {
     type Currency = Balances;
-    type RewardAmount = RewardAmount;
-    type DAppsRewardPercentage = DAppsRewardPercentage;
     type BlockPerEra = BlockPerEra;
     type RegisterDeposit = RegisterDeposit;
     type DeveloperRewardPercentage = DeveloperRewardPercentage;
