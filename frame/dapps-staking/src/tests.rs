@@ -1154,13 +1154,19 @@ fn claim_one_contract_one_staker() {
             calc_expected_developer_reward(total_era_dapps_reward, INITIAL_STAKE, INITIAL_STAKE);
 
         // check balances to see if the rewards are paid out
-        assert_eq!(
-            <mock::TestRuntime as Config>::Currency::free_balance(&staker1),
-            free_balance_staker1 + eras_eligible_for_reward * expected_staker1_reward
+        check_rewards_and_counter(
+            &contract,
+            &staker1,
+            free_balance_staker1,
+            eras_eligible_for_reward as u32,
+            expected_staker1_reward,
         );
-        assert_eq!(
-            <mock::TestRuntime as Config>::Currency::free_balance(&developer),
-            free_developer_balance + eras_eligible_for_reward * expected_developer_reward as u128
+        check_rewards_and_counter(
+            &contract,
+            &developer,
+            free_developer_balance,
+            eras_eligible_for_reward as u32,
+            expected_developer_reward,
         );
     })
 }
@@ -1219,17 +1225,26 @@ fn claim_one_contract_two_stakers() {
 
         // check balances to see if the rewards are paid out
         let eras_eligible_for_reward = (claim_era - start_era) as u128;
-        assert_eq!(
-            <mock::TestRuntime as Config>::Currency::free_balance(&staker1),
-            free_balance_staker1 + eras_eligible_for_reward * expected_staker1_reward
+        check_rewards_and_counter(
+            &contract,
+            &staker1,
+            free_balance_staker1,
+            eras_eligible_for_reward as u32,
+            expected_staker1_reward,
         );
-        assert_eq!(
-            <mock::TestRuntime as Config>::Currency::free_balance(&staker2),
-            free_balance_staker2 + eras_eligible_for_reward * expected_staker2_reward
+        check_rewards_and_counter(
+            &contract,
+            &staker2,
+            free_balance_staker2,
+            eras_eligible_for_reward as u32,
+            expected_staker2_reward,
         );
-        assert_eq!(
-            <mock::TestRuntime as Config>::Currency::free_balance(&developer),
-            free_developer_balance + eras_eligible_for_reward * expected_developer_reward as u128
+        check_rewards_and_counter(
+            &contract,
+            &developer,
+            free_developer_balance,
+            eras_eligible_for_reward as u32,
+            expected_developer_reward,
         );
     })
 }

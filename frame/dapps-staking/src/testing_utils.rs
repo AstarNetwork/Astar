@@ -52,7 +52,6 @@ pub(crate) fn verify_ledger(staker_id: AccountId, staked_value: Balance) {
     // Verify that ledger storage values are as expected.
     let ledger = Ledger::<TestRuntime>::get(staker_id).unwrap();
     assert_eq!(staked_value, ledger.total);
-    assert_eq!(staked_value, ledger.active);
 }
 
 /// Used to verify era staking points content.
@@ -158,4 +157,24 @@ pub(crate) fn calc_expected_developer_reward(
 ) -> mock::Balance {
     let contract_reward = Perbill::from_rational(contract_stake, era_stake) * era_reward;
     Perbill::from_percent(DEVELOPER_REWARD_PERCENTAGE) * contract_reward
+}
+
+/// Check Balance after reward distribution and check reward counter
+pub(crate) fn check_rewards_and_counter(
+    contract: &SmartContract<mock::AccountId>,
+    user: &AccountId,
+    free_balance: mock::Balance,
+    eras: EraIndex,
+    expected_era_reward: mock::Balance,
+) {
+    println!("check_rewards_and_counter {:?}, user={:?}", contract, &user);
+    let total_reward_per_era = expected_era_reward * eras as u128;
+    assert_eq!(
+        <mock::TestRuntime as Config>::Currency::free_balance(user),
+        free_balance + total_reward_per_era
+    );
+    assert_eq!(
+        mock::DappsStaking::reward_counter(contract, user),
+        total_reward_per_era
+    );
 }

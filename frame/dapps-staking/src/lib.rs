@@ -86,12 +86,7 @@ pub enum SmartContract<AccountId> {
 /// The ledger of a (bonded) stash.
 #[derive(PartialEq, Eq, Clone, Encode, Decode, Default, RuntimeDebug)]
 pub struct StakingLedger<Balance: HasCompact + Default> {
-    /// The total amount of the stash's balance that we are currently accounting for.
-    /// It's just `active` plus all the `unlocking` balances.
+    /// The total amount of the staker's balance that we are currently accounting for.
     #[codec(compact)]
     pub total: Balance,
-    /// The total amount of the stash's balance that will be at stake in any forthcoming
-    /// rounds.
-    #[codec(compact)]
-    pub active: Balance,
 }
