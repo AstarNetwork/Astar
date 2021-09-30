@@ -55,7 +55,7 @@ pub mod pallet {
             + ReservableCurrency<Self::AccountId>;
 
         // type used for Accounts on EVM and on Substrate
-        type SmartContract: IsContract<Self::AccountId>;
+        type SmartContract: IsContract;
 
         /// Number of blocks per era.
         #[pallet::constant]
@@ -323,10 +323,7 @@ pub mod pallet {
                 !RegisteredDapps::<T>::contains_key(&contract_id),
                 Error::<T>::AlreadyRegisteredContract
             );
-            ensure!(
-                SmartContract::is_contract(&contract_id),
-                Error::<T>::ContractIsNotValid
-            );
+            ensure!(contract_id.is_contract(), Error::<T>::ContractIsNotValid);
 
             if Self::pre_approval_is_enabled() {
                 Self::pre_approved_contracts()

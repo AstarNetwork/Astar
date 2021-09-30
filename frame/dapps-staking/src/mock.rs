@@ -136,7 +136,7 @@ pub enum MockSmartContract<AccountId> {
     Wasm(AccountId),
 }
 
-impl<AccountId> pallet_dapps_staking::IsContract<AccountId> for MockSmartContract<AccountId> {
+impl<AccountId> pallet_dapps_staking::IsContract for MockSmartContract<AccountId> {
     fn is_contract(&self) -> bool {
         match self {
             MockSmartContract::Wasm(_account) => false,

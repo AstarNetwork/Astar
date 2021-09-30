@@ -9,6 +9,6 @@ pub enum SmartContract<AccountId> {
     Wasm(AccountId),
 }
 
-pub trait IsContract<AccountId> {
+pub trait IsContract {
     fn is_contract(&self) -> bool;
 }

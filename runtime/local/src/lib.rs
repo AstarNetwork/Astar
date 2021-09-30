@@ -301,13 +301,11 @@ impl pallet_dapps_staking::Config for Runtime {
     type PalletId = DappsStakingPalletId;
 }
 
-impl<AccountId> IsContract<AccountId> for SmartContract<AccountId> {
+impl<AccountId> IsContract for SmartContract<AccountId> {
     fn is_contract(&self) -> bool {
         match self {
             SmartContract::Wasm(_account) => false,
-            SmartContract::Evm(account) => {
-                EVM::account_codes(&account).len() > 0
-            }
+            SmartContract::Evm(account) => EVM::account_codes(&account).len() > 0,
         }
     }
 }
