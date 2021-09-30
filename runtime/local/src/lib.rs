@@ -208,7 +208,7 @@ parameter_types! {
 impl pallet_timestamp::Config for Runtime {
     /// A timestamp: milliseconds since the unix epoch.
     type Moment = u64;
-    type OnTimestampSet = Aura;
+    type OnTimestampSet = BlockReward;
     type MinimumPeriod = MinimumPeriod;
     type WeightInfo = ();
 }
@@ -499,6 +499,7 @@ construct_runtime!(
         Grandpa: pallet_grandpa::{Pallet, Call, Storage, Config, Event},
         Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
         DappsStaking: pallet_dapps_staking::{Pallet, Call, Storage, Event<T>},
+        BlockReward: pallet_block_reward::{Pallet},
         TransactionPayment: pallet_transaction_payment::{Pallet, Storage},
         EVM: pallet_evm::{Pallet, Config, Call, Storage, Event<T>},
         Ethereum: pallet_ethereum::{Pallet, Call, Storage, Event, Config, ValidateUnsigned},
