@@ -286,6 +286,7 @@ impl pallet_dapps_staking::Config for Runtime {
     type WeightInfo = (); // TODO
     type MaxNumberOfStakersPerContract = MaxNumberOfStakersPerContract;
     type MinimumStakingAmount = MinimumStakingAmount;
+    type PalletId = DappsStakingPalletId;
 }
 
 impl pallet_utility::Config for Runtime {
@@ -394,10 +395,7 @@ impl OnUnbalanced<NegativeImbalance> for OnBlockReward {
         let (dapps, maintain) = amount.ration(dapps_percentage, 100 - dapps_percentage);
 
         // dapp staking block reward
-        let dapps_reward_balance = dapps.peek();
-        Balances::resolve_creating(&DappsStakingPalletId::get().into_account(), dapps);
-        // Inform dapps staking that reward was deposited
-        DappsStaking::add_block_reward(dapps_reward_balance);
+        DappsStaking::on_unbalanced(dapps);
 
         let (treasury, collators) = maintain.ration(40, 10);
         // treasury slice of block reward

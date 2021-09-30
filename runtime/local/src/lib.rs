@@ -259,10 +259,7 @@ impl OnUnbalanced<NegativeImbalance> for OnBlockReward {
         let (dapps, maintain) = amount.ration(dapps_percentage, 100 - dapps_percentage);
 
         // dapp staking block reward
-        let dapps_reward_balance = dapps.peek();
-        Balances::resolve_creating(&DappsStakingPalletId::get().into_account(), dapps);
-        // Inform dapps staking that reward was deposited
-        DappsStaking::add_block_reward(dapps_reward_balance);
+        DappsStaking::on_unbalanced(dapps);
 
         // XXX: skip block author reward, it's local runtime didn't
         let (treasury, _) = maintain.ration(40, 10);
@@ -300,6 +297,7 @@ impl pallet_dapps_staking::Config for Runtime {
     type WeightInfo = (); // TODO
     type MaxNumberOfStakersPerContract = MaxNumberOfStakersPerContract;
     type MinimumStakingAmount = MinimumStakingAmount;
+    type PalletId = DappsStakingPalletId;
 }
 
 /// Current approximation of the gas/s consumption considering

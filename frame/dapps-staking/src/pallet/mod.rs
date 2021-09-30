@@ -5,13 +5,16 @@ use frame_support::{
     dispatch::DispatchResult,
     ensure,
     pallet_prelude::*,
-    traits::{Currency, Get, LockIdentifier, LockableCurrency, WithdrawReasons},
+    traits::{
+        Currency, Get, Imbalance, LockIdentifier, LockableCurrency, OnUnbalanced, WithdrawReasons,
+    },
     weights::Weight,
+    PalletId,
 };
 use frame_system::{ensure_root, ensure_signed, pallet_prelude::*};
 use sp_runtime::{
     print,
-    traits::{Saturating, Zero},
+    traits::{AccountIdConversion, Saturating, Zero},
     Perbill,
 };
 use sp_std::convert::From;
@@ -29,6 +32,20 @@ pub mod pallet {
     #[pallet::pallet]
     #[pallet::generate_store(pub(crate) trait Store)]
     pub struct Pallet<T>(PhantomData<T>);
+
+    // Negative imbalance type of this pallet.
+    type NegativeImbalanceOf<T> = <<T as Config>::Currency as Currency<
+        <T as frame_system::Config>::AccountId,
+    >>::NegativeImbalance;
+
+    impl<T: Config> OnUnbalanced<NegativeImbalanceOf<T>> for Pallet<T> {
+        fn on_nonzero_unbalanced(block_reward: NegativeImbalanceOf<T>) {
+            BlockRewardAccumulator::<T>::mutate(|accumulated_reward| {
+                *accumulated_reward = accumulated_reward.saturating_add(block_reward.peek());
+            });
+            T::Currency::resolve_creating(&T::PalletId::get().into_account(), block_reward);
+        }
+    }
 
     #[pallet::config]
     pub trait Config: frame_system::Config {
@@ -56,6 +73,10 @@ pub mod pallet {
         /// User can stake less if they already have the minimum staking amount staked on that particular contract.
         #[pallet::constant]
         type MinimumStakingAmount: Get<BalanceOf<Self>>;
+
+        /// Dapps staking pallet Id
+        #[pallet::constant]
+        type PalletId: Get<PalletId>;
 
         /// The overarching event type.
         type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
@@ -761,13 +782,6 @@ pub mod pallet {
     }
 
     impl<T: Config> Pallet<T> {
-        /// Used to inform the dapps staking pallet that block reward was deposited to dapps staking account.
-        pub fn add_block_reward(block_reward: BalanceOf<T>) {
-            BlockRewardAccumulator::<T>::mutate(|accumulated_reward| {
-                *accumulated_reward += block_reward;
-            });
-        }
-
         /// Update the ledger for a staker. This will also update the stash lock.
         /// This lock will lock the entire funds except paying for further transactions.
         fn update_ledger(staker: &T::AccountId, ledger: &StakingLedger<BalanceOf<T>>) {

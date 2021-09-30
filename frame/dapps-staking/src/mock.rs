@@ -2,7 +2,8 @@ use crate::{self as pallet_dapps_staking};
 
 use frame_support::{
     construct_runtime, parameter_types,
-    traits::{OnFinalize, OnInitialize},
+    traits::{Currency, OnFinalize, OnInitialize, OnUnbalanced},
+    PalletId,
 };
 use sp_core::H256;
 
@@ -112,7 +113,9 @@ parameter_types! {
     pub const MaxNumberOfStakersPerContract: u32 = MAX_NUMBER_OF_STAKERS;
     pub const MinimumStakingAmount: Balance = MINIMUM_STAKING_AMOUNT;
     pub const DeveloperRewardPercentage: u32 = DEVELOPER_REWARD_PERCENTAGE;
+    pub const DappsStakingPalletId: PalletId = PalletId(*b"mokdpstk");
 }
+
 impl pallet_dapps_staking::Config for TestRuntime {
     type Event = Event;
     type Currency = Balances;
@@ -122,6 +125,7 @@ impl pallet_dapps_staking::Config for TestRuntime {
     type WeightInfo = ();
     type MaxNumberOfStakersPerContract = MaxNumberOfStakersPerContract;
     type MinimumStakingAmount = MinimumStakingAmount;
+    type PalletId = DappsStakingPalletId;
 }
 
 pub struct ExternalityBuilder;
@@ -159,7 +163,7 @@ pub fn run_to_block(n: u64) {
         DappsStaking::on_finalize(System::block_number());
         System::set_block_number(System::block_number() + 1);
         // This is performed outside of dapps staking but we expect it before on_initialize
-        DappsStaking::add_block_reward(BLOCK_REWARD);
+        DappsStaking::on_unbalanced(Balances::issue(BLOCK_REWARD));
         DappsStaking::on_initialize(System::block_number());
     }
 }
@@ -184,7 +188,7 @@ pub fn initialize_first_block() {
     // This assert prevents method misuse
     assert_eq!(System::block_number(), 1 as BlockNumber);
     // This is performed outside of dapps staking but we expect it before on_initialize
-    DappsStaking::add_block_reward(BLOCK_REWARD);
+    DappsStaking::on_unbalanced(Balances::issue(BLOCK_REWARD));
     DappsStaking::on_initialize(System::block_number());
     run_to_block(2);
 }
