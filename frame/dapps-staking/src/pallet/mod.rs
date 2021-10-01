@@ -412,6 +412,7 @@ pub mod pallet {
                         total: Zero::zero(),
                         stakers: BTreeMap::<T::AccountId, BalanceOf<T>>::new(),
                         former_staked_era: 0 as EraIndex,
+                        paidout_rewards: BalanceOf::<T>::default(),
                     }
                 };
 
@@ -678,14 +679,17 @@ pub mod pallet {
                 // continue and process the next era interval
             }
 
-            // send rewards to stakers and update reward counter
-            Self::payout_stakers(&contract_id, &rewards_for_stakers_map);
+            // send rewards to stakers' accounts and update reward counter individual staker
+            let reward_for_stakers = Self::payout_stakers(&contract_id, &rewards_for_stakers_map);
 
-            // send rewards to developer and update reward counter
+            // send rewards to developer's account and update reward counter for developer's account
             T::Currency::deposit_into_existing(&developer, reward_for_developer).ok();
             IndividualRewardCounter::<T>::mutate(&contract_id, &developer, |balance| {
                 *balance += reward_for_developer
             });
+
+            // updated counter for total rewards paid to the contract
+            contract_staking_info.paidout_rewards += reward_for_stakers + reward_for_developer;
 
             // if !unclaimed_rewards.is_zero() { TODO!
             //     T::Currency::deposit_into_existing(&treasury, unclaimed_rewards).ok();
@@ -825,18 +829,16 @@ pub mod pallet {
         fn payout_stakers(
             contract: &SmartContract<T::AccountId>,
             staker_map: &BTreeMap<T::AccountId, BalanceOf<T>>,
-        ) {
+        ) -> BalanceOf<T> {
+            let mut reward_for_stakers = Zero::zero();
+
             for (s, b) in staker_map {
                 IndividualRewardCounter::<T>::mutate(contract, s, |balance| *balance += *b);
                 T::Currency::deposit_into_existing(&s, *b).ok();
-                println!(
-                    "{:?} s:{:?} b={:?} r={:?}",
-                    contract,
-                    s,
-                    *b,
-                    Self::reward_counter(&contract, s)
-                );
+                reward_for_stakers += *b;
             }
+
+            reward_for_stakers
         }
 
         /// The block rewards are accumulated on the pallets's account during an era.

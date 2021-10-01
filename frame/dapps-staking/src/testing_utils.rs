@@ -178,3 +178,16 @@ pub(crate) fn check_rewards_and_counter(
         total_reward_per_era
     );
 }
+
+pub(crate) fn check_paidout_rewards_for_contract(
+    contract: &SmartContract<mock::AccountId>,
+    expected_contract_reward: mock::Balance,
+) {
+    let era_last_claimed = mock::DappsStaking::contract_last_claimed(contract).unwrap_or(0);
+    let contract_staking_info =
+        mock::DappsStaking::contract_era_stake(contract, era_last_claimed).unwrap_or_default();
+    assert_eq!(
+        contract_staking_info.paidout_rewards,
+        expected_contract_reward
+    )
+}

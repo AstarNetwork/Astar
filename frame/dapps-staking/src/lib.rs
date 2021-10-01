@@ -72,6 +72,7 @@ pub struct EraStakingPoints<AccountId: Ord, Balance: HasCompact> {
     /// Era when this contract was staked last time before this one.
     /// In case only a single staking era exists, it will be set to that one. This indicates the final element in the chain.
     former_staked_era: EraIndex,
+    paidout_rewards: Balance,
 }
 
 /// Multi-VM pointer to smart contract instance.

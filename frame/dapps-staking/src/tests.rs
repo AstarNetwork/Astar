@@ -1168,6 +1168,9 @@ fn claim_one_contract_one_staker() {
             eras_eligible_for_reward as u32,
             expected_developer_reward,
         );
+        let expected_contract_reward =
+            eras_eligible_for_reward * (expected_staker1_reward + expected_developer_reward);
+        check_paidout_rewards_for_contract(&contract, expected_contract_reward);
     })
 }
 
@@ -1246,6 +1249,9 @@ fn claim_one_contract_two_stakers() {
             eras_eligible_for_reward as u32,
             expected_developer_reward,
         );
+        let expected_contract_reward = eras_eligible_for_reward
+            * (expected_staker1_reward + expected_staker2_reward + expected_developer_reward);
+        check_paidout_rewards_for_contract(&contract, expected_contract_reward);
     })
 }
 
@@ -1394,6 +1400,10 @@ fn claim_two_contracts_three_stakers() {
             1 as u32, // use 1 since the multiplication with era is alreday done
             expected_c1_developer1_reward_total,
         );
+        let expected_contract1_reward = expected_c1_staker1_reward_total
+            + expected_c1_staker2_reward_total
+            + expected_c1_developer1_reward_total;
+        check_paidout_rewards_for_contract(&contract1, expected_contract1_reward);
 
         // claim rewards for contract2  4 eras later
         // era=11
@@ -1461,5 +1471,9 @@ fn claim_two_contracts_three_stakers() {
             eras_eligible_for_reward as u32,
             expected_c2_dev2_e2_reward,
         );
+        let expected_contract2_reward = eras_eligible_for_reward
+            * (expected_c2_staker3_e2_reward + expected_c2_dev2_e2_reward)
+            + expected_c2_staker2_reward_total;
+        check_paidout_rewards_for_contract(&contract2, expected_contract2_reward);
     })
 }
