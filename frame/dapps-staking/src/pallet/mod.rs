@@ -55,7 +55,7 @@ pub mod pallet {
             + ReservableCurrency<Self::AccountId>;
 
         // type used for Accounts on EVM and on Substrate
-        type SmartContract: IsContract;
+        type SmartContract: IsContract + Parameter + Member;
 
         /// Number of blocks per era.
         #[pallet::constant]
@@ -130,13 +130,13 @@ pub mod pallet {
     #[pallet::storage]
     #[pallet::getter(fn registered_contract)]
     pub(crate) type RegisteredDevelopers<T: Config> =
-        StorageMap<_, Twox64Concat, T::AccountId, SmartContract<T::AccountId>>;
+        StorageMap<_, Twox64Concat, T::AccountId, T::SmartContract>;
 
     /// Registered dapp points to the developer who registered it
     #[pallet::storage]
     #[pallet::getter(fn registered_developer)]
     pub(crate) type RegisteredDapps<T: Config> =
-        StorageMap<_, Twox64Concat, SmartContract<T::AccountId>, T::AccountId>;
+        StorageMap<_, Twox64Concat, T::SmartContract, T::AccountId>;
 
     /// Total block rewards for the pallet per era
     #[pallet::storage]
@@ -163,7 +163,7 @@ pub mod pallet {
     pub(crate) type ContractEraStake<T: Config> = StorageDoubleMap<
         _,
         Twox64Concat,
-        SmartContract<T::AccountId>,
+        T::SmartContract,
         Twox64Concat,
         EraIndex,
         EraStakingPoints<T::AccountId, BalanceOf<T>>,
@@ -173,13 +173,13 @@ pub mod pallet {
     #[pallet::storage]
     #[pallet::getter(fn contract_last_claimed)]
     pub(crate) type ContractLastClaimed<T: Config> =
-        StorageMap<_, Twox64Concat, SmartContract<T::AccountId>, EraIndex>;
+        StorageMap<_, Twox64Concat, T::SmartContract, EraIndex>;
 
     /// Marks an Era when a contract is last (un)staked
     #[pallet::storage]
     #[pallet::getter(fn contract_last_staked)]
     pub(crate) type ContractLastStaked<T: Config> =
-        StorageMap<_, Twox64Concat, SmartContract<T::AccountId>, EraIndex>;
+        StorageMap<_, Twox64Concat, T::SmartContract, EraIndex>;
 
     #[pallet::type_value]
     pub(crate) fn PreApprovalOnEmpty() -> bool {
@@ -194,7 +194,7 @@ pub mod pallet {
     #[pallet::storage]
     #[pallet::getter(fn pre_approved_contracts)]
     pub(crate) type PreApprovedContracts<T: Config> =
-        StorageValue<_, Vec<SmartContract<T::AccountId>>, ValueQuery>;
+        StorageValue<_, Vec<T::SmartContract>, ValueQuery>;
 
     // Declare the genesis config (optional).
     //
@@ -218,20 +218,15 @@ pub mod pallet {
     #[pallet::metadata(T::AccountId = "AccountId", BalanceOf<T> = "Balance")]
     pub enum Event<T: Config> {
         /// Account has bonded and staked funds on a smart contract.
-        BondAndStake(T::AccountId, SmartContract<T::AccountId>, BalanceOf<T>),
+        BondAndStake(T::AccountId, T::SmartContract, BalanceOf<T>),
         /// Account has unbonded, unstaked and withdrawn funds.
-        UnbondUnstakeAndWithdraw(T::AccountId, SmartContract<T::AccountId>, BalanceOf<T>),
+        UnbondUnstakeAndWithdraw(T::AccountId, T::SmartContract, BalanceOf<T>),
         /// New contract added for staking, with deposit value
-        NewContract(T::AccountId, SmartContract<T::AccountId>),
+        NewContract(T::AccountId, T::SmartContract),
         /// New dapps staking era. Distribute era rewards to contracts
         NewDappStakingEra(EraIndex),
         /// The contract's reward have been claimed, by an account, from era, until era
-        ContractClaimed(
-            SmartContract<T::AccountId>,
-            T::AccountId,
-            EraIndex,
-            EraIndex,
-        ),
+        ContractClaimed(T::SmartContract, T::AccountId, EraIndex, EraIndex),
     }
 
     #[pallet::error]
@@ -311,7 +306,7 @@ pub mod pallet {
         #[pallet::weight(1_000_000_000)]
         pub fn register(
             origin: OriginFor<T>,
-            contract_id: SmartContract<T::AccountId>,
+            contract_id: T::SmartContract,
         ) -> DispatchResultWithPostInfo {
             let developer = ensure_signed(origin)?;
 
@@ -349,7 +344,7 @@ pub mod pallet {
         #[pallet::weight(1_000_000)]
         pub fn contract_pre_approval(
             origin: OriginFor<T>,
-            contract_id: SmartContract<T::AccountId>,
+            contract_id: T::SmartContract,
         ) -> DispatchResultWithPostInfo {
             ensure_root(origin)?;
             ensure!(
@@ -394,7 +389,7 @@ pub mod pallet {
         #[pallet::weight(10_000_000)]
         pub fn bond_and_stake(
             origin: OriginFor<T>,
-            contract_id: SmartContract<T::AccountId>,
+            contract_id: T::SmartContract,
             #[pallet::compact] value: BalanceOf<T>,
         ) -> DispatchResultWithPostInfo {
             let staker = ensure_signed(origin)?;
@@ -518,7 +513,7 @@ pub mod pallet {
         #[pallet::weight(10_000_000)]
         pub fn unbond_unstake_and_withdraw(
             origin: OriginFor<T>,
-            contract_id: SmartContract<T::AccountId>,
+            contract_id: T::SmartContract,
             #[pallet::compact] value: BalanceOf<T>,
         ) -> DispatchResultWithPostInfo {
             let staker = ensure_signed(origin)?;
@@ -599,7 +594,7 @@ pub mod pallet {
         #[pallet::weight(1_000_000)]
         pub fn claim(
             origin: OriginFor<T>,
-            contract_id: SmartContract<T::AccountId>,
+            contract_id: T::SmartContract,
         ) -> DispatchResultWithPostInfo {
             let claimer = ensure_signed(origin)?;
 

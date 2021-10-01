@@ -7,6 +7,7 @@ use frame_support::{
 };
 use sp_core::H256;
 
+use codec::{Decode, Encode};
 use sp_io::TestExternalities;
 use sp_runtime::{
     testing::Header,
@@ -131,6 +132,7 @@ impl pallet_dapps_staking::Config for TestRuntime {
     type PalletId = DappsStakingPalletId;
 }
 
+#[derive(PartialEq, Eq, Copy, Clone, Encode, Decode, Debug)]
 pub enum MockSmartContract<AccountId> {
     Evm(sp_core::H160),
     Wasm(AccountId),
