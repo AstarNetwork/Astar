@@ -829,6 +829,13 @@ pub mod pallet {
             for (s, b) in staker_map {
                 IndividualRewardCounter::<T>::mutate(contract, s, |balance| *balance += *b);
                 T::Currency::deposit_into_existing(&s, *b).ok();
+                println!(
+                    "{:?} s:{:?} b={:?} r={:?}",
+                    contract,
+                    s,
+                    *b,
+                    Self::reward_counter(&contract, s)
+                );
             }
         }
 

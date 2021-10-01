@@ -1362,27 +1362,37 @@ fn claim_two_contracts_three_stakers() {
         let expected_c1_dev1_e2_reward =
             calc_expected_developer_reward(expected_era_reward, ERA_STAKED2, CONTRACT1_STAKE);
 
-        assert_eq!(
-            <mock::TestRuntime as Config>::Currency::free_balance(&staker1),
-            free_balance_staker1
-                + eras_eligible_for_reward1 * expected_c1_staker1_e1_reward
-                + eras_eligible_for_reward2 * expected_c1_staker1_e2_reward
+        let expected_c1_staker1_reward_total = eras_eligible_for_reward1
+            * expected_c1_staker1_e1_reward
+            + eras_eligible_for_reward2 * expected_c1_staker1_e2_reward;
+        check_rewards_and_counter(
+            &contract1,
+            &staker1,
+            free_balance_staker1,
+            1 as u32, // use 1 since the multiplication with era is alreday done
+            expected_c1_staker1_reward_total,
         );
-
         // staker2 staked on both contracts. Memorize this reward for staker2 on contract1
-        let expected_c1_staker2_reward = eras_eligible_for_reward1 * expected_c1_staker2_e1_reward
+        let expected_c1_staker2_reward_total = eras_eligible_for_reward1
+            * expected_c1_staker2_e1_reward
             + eras_eligible_for_reward2 * expected_c1_staker2_e2_reward;
-
-        // check balances to see if the rewards are paid out
-        assert_eq!(
-            <mock::TestRuntime as Config>::Currency::free_balance(&staker2),
-            free_balance_staker2 + expected_c1_staker2_reward
+        check_rewards_and_counter(
+            &contract1,
+            &staker2,
+            free_balance_staker2,
+            1 as u32, // use 1 since the multiplication with era is alreday done
+            expected_c1_staker2_reward_total,
         );
-        assert_eq!(
-            <mock::TestRuntime as Config>::Currency::free_balance(&developer1),
-            free_balance_developer1
-                + eras_eligible_for_reward1 * expected_c1_dev1_e1_reward as u128
-                + eras_eligible_for_reward2 * expected_c1_dev1_e2_reward as u128
+
+        let expected_c1_developer1_reward_total = eras_eligible_for_reward1
+            * expected_c1_dev1_e1_reward
+            + eras_eligible_for_reward2 * expected_c1_dev1_e2_reward;
+        check_rewards_and_counter(
+            &contract1,
+            &developer1,
+            free_balance_developer1,
+            1 as u32, // use 1 since the multiplication with era is alreday done
+            expected_c1_developer1_reward_total,
         );
 
         // claim rewards for contract2  4 eras later
@@ -1419,19 +1429,37 @@ fn claim_two_contracts_three_stakers() {
         let eras_eligible_for_reward = (claim_era - start_staking_era_for_c2) as u128; // all skipped eras plus era when it was last claimed
 
         // check balances to see if the rewards are paid out
+        let expected_c2_staker2_reward_total =
+            eras_eligible_for_reward * expected_c2_staker2_e2_reward;
         assert_eq!(
             <mock::TestRuntime as Config>::Currency::free_balance(&staker2),
             free_balance_staker2
-                + eras_eligible_for_reward * expected_c2_staker2_e2_reward
-                + expected_c1_staker2_reward
+                + expected_c2_staker2_reward_total
+                + expected_c1_staker2_reward_total
         );
+
+        // we do not use check_rewards_and_counter() here since
+        // this counter check is for the contract2 only.
+        // It does not include reward for the contract1
         assert_eq!(
-            <mock::TestRuntime as Config>::Currency::free_balance(&staker3),
-            free_balance_staker3 + eras_eligible_for_reward * expected_c2_staker3_e2_reward
+            mock::DappsStaking::reward_counter(contract2, staker2),
+            expected_c2_staker2_reward_total
         );
-        assert_eq!(
-            <mock::TestRuntime as Config>::Currency::free_balance(&developer2),
-            free_balance_developer2 + eras_eligible_for_reward * expected_c2_dev2_e2_reward as u128
+
+        check_rewards_and_counter(
+            &contract2,
+            &staker3,
+            free_balance_staker3,
+            eras_eligible_for_reward as u32,
+            expected_c2_staker3_e2_reward,
+        );
+
+        check_rewards_and_counter(
+            &contract2,
+            &developer2,
+            free_balance_developer2,
+            eras_eligible_for_reward as u32,
+            expected_c2_dev2_e2_reward,
         );
     })
 }
