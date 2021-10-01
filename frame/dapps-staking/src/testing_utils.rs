@@ -18,7 +18,7 @@ pub(crate) fn register_contract(developer: AccountId, contract: &SmartContract<A
 
 /// Used to get total dapps reward for an era.
 pub(crate) fn get_total_reward_per_era() -> Balance {
-    Perbill::from_percent(DAPPS_REWARD_PERCENTAGE) * BLOCK_REWARD * BLOCKS_PER_ERA as Balance
+    BLOCK_REWARD * BLOCKS_PER_ERA as Balance
 }
 
 /// Used to perform bond_and_stake with success assertion.

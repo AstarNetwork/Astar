@@ -943,8 +943,8 @@ fn new_era_is_ok() {
 
         // Increment block by setting it to the first block in era value
         run_for_blocks(1);
-        let current = mock::DappsStaking::current_era();
-        assert_eq!(starting_era, current);
+        let current_era = mock::DappsStaking::current_era();
+        assert_eq!(starting_era, current_era);
 
         // verify that block reward is added to the block_reward_accumulator
         let block_reward = mock::DappsStaking::block_reward_accumulator();
@@ -964,8 +964,8 @@ fn new_era_is_ok() {
         for _ in 1..=(BLOCKS_PER_ERA - 1) {
             run_for_blocks(1);
         }
-        let current = mock::DappsStaking::current_era();
-        assert_eq!(starting_era + 1, current);
+        let current_era = mock::DappsStaking::current_era();
+        assert_eq!(starting_era + 1, current_era);
         System::assert_last_event(mock::Event::DappsStaking(Event::NewDappStakingEra(
             starting_era + 1,
         )));

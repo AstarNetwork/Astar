@@ -2,7 +2,8 @@ use crate::{self as pallet_dapps_staking};
 
 use frame_support::{
     construct_runtime, parameter_types,
-    traits::{OnFinalize, OnInitialize},
+    traits::{Currency, OnFinalize, OnInitialize, OnUnbalanced},
+    PalletId,
 };
 use sp_core::H256;
 
@@ -31,8 +32,7 @@ pub(crate) const BLOCKS_PER_ERA: BlockNumber = 3;
 
 // ignore MILLIAST for easier test handling.
 // reward for dapps-staking will be BLOCK_REWARD/2 = 1000
-pub(crate) const BLOCK_REWARD: Balance = 2000;
-pub(crate) const DAPPS_REWARD_PERCENTAGE: u32 = 50;
+pub(crate) const BLOCK_REWARD: Balance = 1000;
 
 construct_runtime!(
     pub enum TestRuntime where
@@ -113,9 +113,9 @@ parameter_types! {
     pub const MaxNumberOfStakersPerContract: u32 = MAX_NUMBER_OF_STAKERS;
     pub const MinimumStakingAmount: Balance = MINIMUM_STAKING_AMOUNT;
     pub const DeveloperRewardPercentage: u32 = DEVELOPER_REWARD_PERCENTAGE;
-    pub const RewardAmount: Balance = BLOCK_REWARD;
-    pub const DAppsRewardPercentage: u32 = DAPPS_REWARD_PERCENTAGE;
+    pub const DappsStakingPalletId: PalletId = PalletId(*b"mokdpstk");
 }
+
 impl pallet_dapps_staking::Config for TestRuntime {
     type Event = Event;
     type Currency = Balances;
@@ -123,10 +123,9 @@ impl pallet_dapps_staking::Config for TestRuntime {
     type RegisterDeposit = RegisterDeposit;
     type DeveloperRewardPercentage = DeveloperRewardPercentage;
     type WeightInfo = ();
-    type RewardAmount = RewardAmount;
-    type DAppsRewardPercentage = DAppsRewardPercentage;
     type MaxNumberOfStakersPerContract = MaxNumberOfStakersPerContract;
     type MinimumStakingAmount = MinimumStakingAmount;
+    type PalletId = DappsStakingPalletId;
 }
 
 pub struct ExternalityBuilder;
@@ -163,6 +162,8 @@ pub fn run_to_block(n: u64) {
     while System::block_number() < n {
         DappsStaking::on_finalize(System::block_number());
         System::set_block_number(System::block_number() + 1);
+        // This is performed outside of dapps staking but we expect it before on_initialize
+        DappsStaking::on_unbalanced(Balances::issue(BLOCK_REWARD));
         DappsStaking::on_initialize(System::block_number());
     }
 }
@@ -186,6 +187,8 @@ pub fn advance_to_era(n: EraIndex) {
 pub fn initialize_first_block() {
     // This assert prevents method misuse
     assert_eq!(System::block_number(), 1 as BlockNumber);
+    // This is performed outside of dapps staking but we expect it before on_initialize
+    DappsStaking::on_unbalanced(Balances::issue(BLOCK_REWARD));
     DappsStaking::on_initialize(System::block_number());
     run_to_block(2);
 }

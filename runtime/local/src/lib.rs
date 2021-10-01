@@ -208,7 +208,7 @@ parameter_types! {
 impl pallet_timestamp::Config for Runtime {
     /// A timestamp: milliseconds since the unix epoch.
     type Moment = u64;
-    type OnTimestampSet = Aura;
+    type OnTimestampSet = (Aura, BlockReward);
     type MinimumPeriod = MinimumPeriod;
     type WeightInfo = ();
 }
@@ -257,8 +257,9 @@ impl OnUnbalanced<NegativeImbalance> for OnBlockReward {
     fn on_nonzero_unbalanced(amount: NegativeImbalance) {
         let dapps_percentage = DAppsRewardPercentage::get();
         let (dapps, maintain) = amount.ration(dapps_percentage, 100 - dapps_percentage);
+
         // dapp staking block reward
-        Balances::resolve_creating(&DappsStakingPalletId::get().into_account(), dapps);
+        DappsStaking::on_unbalanced(dapps);
 
         // XXX: skip block author reward, it's local runtime didn't
         let (treasury, _) = maintain.ration(40, 10);
@@ -289,8 +290,6 @@ parameter_types! {
 
 impl pallet_dapps_staking::Config for Runtime {
     type Currency = Balances;
-    type RewardAmount = RewardAmount;
-    type DAppsRewardPercentage = DAppsRewardPercentage;
     type BlockPerEra = BlockPerEra;
     type RegisterDeposit = RegisterDeposit;
     type DeveloperRewardPercentage = DeveloperRewardPercentage;
@@ -298,6 +297,7 @@ impl pallet_dapps_staking::Config for Runtime {
     type WeightInfo = (); // TODO
     type MaxNumberOfStakersPerContract = MaxNumberOfStakersPerContract;
     type MinimumStakingAmount = MinimumStakingAmount;
+    type PalletId = DappsStakingPalletId;
 }
 
 /// Current approximation of the gas/s consumption considering
@@ -497,6 +497,7 @@ construct_runtime!(
         Grandpa: pallet_grandpa::{Pallet, Call, Storage, Config, Event},
         Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
         DappsStaking: pallet_dapps_staking::{Pallet, Call, Storage, Event<T>},
+        BlockReward: pallet_block_reward::{Pallet},
         TransactionPayment: pallet_transaction_payment::{Pallet, Storage},
         EVM: pallet_evm::{Pallet, Config, Call, Storage, Event<T>},
         Ethereum: pallet_ethereum::{Pallet, Call, Storage, Event, Config, ValidateUnsigned},
