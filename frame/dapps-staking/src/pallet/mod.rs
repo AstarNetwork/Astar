@@ -51,7 +51,8 @@ pub mod pallet {
     #[pallet::config]
     pub trait Config: frame_system::Config {
         /// The staking balance.
-        type Currency: LockableCurrency<Self::AccountId, Moment = Self::BlockNumber> + ReservableCurrency<Self::AccountId>;
+        type Currency: LockableCurrency<Self::AccountId, Moment = Self::BlockNumber>
+            + ReservableCurrency<Self::AccountId>;
 
         /// Number of blocks per era.
         #[pallet::constant]
@@ -331,7 +332,7 @@ pub mod pallet {
                     .ok_or(Error::<T>::RequiredContractPreApproval)?;
             }
 
-			T::Currency::reserve(&developer, T::RegisterDeposit::get())?;
+            T::Currency::reserve(&developer, T::RegisterDeposit::get())?;
 
             RegisteredDapps::<T>::insert(contract_id.clone(), developer.clone());
             RegisteredDevelopers::<T>::insert(&developer, contract_id.clone());
