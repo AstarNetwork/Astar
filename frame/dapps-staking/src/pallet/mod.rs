@@ -5,13 +5,16 @@ use frame_support::{
     dispatch::DispatchResult,
     ensure,
     pallet_prelude::*,
-    traits::{Currency, Get, LockIdentifier, LockableCurrency, WithdrawReasons},
+    traits::{
+        Currency, Get, Imbalance, LockIdentifier, LockableCurrency, OnUnbalanced, WithdrawReasons,
+    },
     weights::Weight,
+    PalletId,
 };
 use frame_system::{ensure_root, ensure_signed, pallet_prelude::*};
 use sp_runtime::{
     print,
-    traits::{Saturating, Zero},
+    traits::{AccountIdConversion, Saturating, Zero},
     Perbill,
 };
 use sp_std::convert::From;
@@ -30,16 +33,24 @@ pub mod pallet {
     #[pallet::generate_store(pub(crate) trait Store)]
     pub struct Pallet<T>(PhantomData<T>);
 
+    // Negative imbalance type of this pallet.
+    type NegativeImbalanceOf<T> = <<T as Config>::Currency as Currency<
+        <T as frame_system::Config>::AccountId,
+    >>::NegativeImbalance;
+
+    impl<T: Config> OnUnbalanced<NegativeImbalanceOf<T>> for Pallet<T> {
+        fn on_nonzero_unbalanced(block_reward: NegativeImbalanceOf<T>) {
+            BlockRewardAccumulator::<T>::mutate(|accumulated_reward| {
+                *accumulated_reward = accumulated_reward.saturating_add(block_reward.peek());
+            });
+            T::Currency::resolve_creating(&T::PalletId::get().into_account(), block_reward);
+        }
+    }
+
     #[pallet::config]
     pub trait Config: frame_system::Config {
         /// The staking balance.
         type Currency: LockableCurrency<Self::AccountId, Moment = Self::BlockNumber>;
-
-        /// Reword amount per block. Will be divided by DAppsRewardPercentage
-        type RewardAmount: Get<BalanceOf<Self>>;
-
-        /// The percentage of the network block reward that goes to this pallet
-        type DAppsRewardPercentage: Get<u32>;
 
         /// Number of blocks per era.
         #[pallet::constant]
@@ -62,6 +73,10 @@ pub mod pallet {
         /// User can stake less if they already have the minimum staking amount staked on that particular contract.
         #[pallet::constant]
         type MinimumStakingAmount: Get<BalanceOf<Self>>;
+
+        /// Dapps staking pallet Id
+        #[pallet::constant]
+        type PalletId: Get<PalletId>;
 
         /// The overarching event type.
         type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
@@ -253,9 +268,6 @@ pub mod pallet {
     #[pallet::hooks]
     impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
         fn on_initialize(now: BlockNumberFor<T>) -> Weight {
-            // Handle dapps staking era
-            let block_rewards = Self::block_reward_accumulator();
-            BlockRewardAccumulator::<T>::put(block_rewards + T::RewardAmount::get());
             let force_new_era = Self::force_era().eq(&Forcing::ForceNew);
             let blocks_pre_era = T::BlockPerEra::get();
 
@@ -823,8 +835,7 @@ pub mod pallet {
         ///
         /// This is called just at the beginning of an era.
         fn reward_balance_snapshoot(ending_era: EraIndex) {
-            let reward = Perbill::from_percent(T::DAppsRewardPercentage::get())
-                * Self::block_reward_accumulator();
+            let reward = Self::block_reward_accumulator();
 
             // Get the reward and stake information for previous era
             let mut reward_and_stake = Self::era_reward_and_stake(ending_era).unwrap_or_default();
