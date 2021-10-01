@@ -890,7 +890,7 @@ fn register_with_pre_approve_enabled() {
         // register new contract without pre-aproval should fail
         assert_noop!(
             DappsStaking::register(Origin::signed(developer), contract.clone()),
-            Error::<TestRuntime>::RequiredContractPreApproval
+            Error::<TestRuntime>::RequiredContractPreApproval,
         );
 
         // preapprove contract
