@@ -1154,18 +1154,18 @@ fn claim_one_contract_one_staker() {
             calc_expected_developer_reward(total_era_dapps_reward, INITIAL_STAKE, INITIAL_STAKE);
 
         // check balances to see if the rewards are paid out
-        check_rewards_and_counter(
+        check_rewards_on_balance_and_storage(
             &contract,
             &staker1,
             free_balance_staker1,
-            eras_eligible_for_reward as u32,
+            eras_eligible_for_reward as EraIndex,
             expected_staker1_reward,
         );
-        check_rewards_and_counter(
+        check_rewards_on_balance_and_storage(
             &contract,
             &developer,
             free_developer_balance,
-            eras_eligible_for_reward as u32,
+            eras_eligible_for_reward as EraIndex,
             expected_developer_reward,
         );
         let expected_contract_reward =
@@ -1228,25 +1228,25 @@ fn claim_one_contract_two_stakers() {
 
         // check balances to see if the rewards are paid out
         let eras_eligible_for_reward = (claim_era - start_era) as u128;
-        check_rewards_and_counter(
+        check_rewards_on_balance_and_storage(
             &contract,
             &staker1,
             free_balance_staker1,
-            eras_eligible_for_reward as u32,
+            eras_eligible_for_reward as EraIndex,
             expected_staker1_reward,
         );
-        check_rewards_and_counter(
+        check_rewards_on_balance_and_storage(
             &contract,
             &staker2,
             free_balance_staker2,
-            eras_eligible_for_reward as u32,
+            eras_eligible_for_reward as EraIndex,
             expected_staker2_reward,
         );
-        check_rewards_and_counter(
+        check_rewards_on_balance_and_storage(
             &contract,
             &developer,
             free_developer_balance,
-            eras_eligible_for_reward as u32,
+            eras_eligible_for_reward as EraIndex,
             expected_developer_reward,
         );
         let expected_contract_reward = eras_eligible_for_reward
@@ -1371,33 +1371,33 @@ fn claim_two_contracts_three_stakers() {
         let expected_c1_staker1_reward_total = eras_eligible_for_reward1
             * expected_c1_staker1_e1_reward
             + eras_eligible_for_reward2 * expected_c1_staker1_e2_reward;
-        check_rewards_and_counter(
+        check_rewards_on_balance_and_storage(
             &contract1,
             &staker1,
             free_balance_staker1,
-            1 as u32, // use 1 since the multiplication with era is alreday done
+            1 as EraIndex, // use 1 since the multiplication with era is alreday done
             expected_c1_staker1_reward_total,
         );
         // staker2 staked on both contracts. Memorize this reward for staker2 on contract1
         let expected_c1_staker2_reward_total = eras_eligible_for_reward1
             * expected_c1_staker2_e1_reward
             + eras_eligible_for_reward2 * expected_c1_staker2_e2_reward;
-        check_rewards_and_counter(
+        check_rewards_on_balance_and_storage(
             &contract1,
             &staker2,
             free_balance_staker2,
-            1 as u32, // use 1 since the multiplication with era is alreday done
+            1 as EraIndex, // use 1 since the multiplication with era is alreday done
             expected_c1_staker2_reward_total,
         );
 
         let expected_c1_developer1_reward_total = eras_eligible_for_reward1
             * expected_c1_dev1_e1_reward
             + eras_eligible_for_reward2 * expected_c1_dev1_e2_reward;
-        check_rewards_and_counter(
+        check_rewards_on_balance_and_storage(
             &contract1,
             &developer1,
             free_balance_developer1,
-            1 as u32, // use 1 since the multiplication with era is alreday done
+            1 as EraIndex, // use 1 since the multiplication with era is alreday done
             expected_c1_developer1_reward_total,
         );
         let expected_contract1_reward = expected_c1_staker1_reward_total
@@ -1448,27 +1448,27 @@ fn claim_two_contracts_three_stakers() {
                 + expected_c1_staker2_reward_total
         );
 
-        // we do not use check_rewards_and_counter() here since
+        // we do not use check_rewards_on_balance_and_storage() here since
         // this counter check is for the contract2 only.
         // It does not include reward for the contract1
         assert_eq!(
-            mock::DappsStaking::reward_counter(contract2, staker2),
+            mock::DappsStaking::rewards_claimed(contract2, staker2),
             expected_c2_staker2_reward_total
         );
 
-        check_rewards_and_counter(
+        check_rewards_on_balance_and_storage(
             &contract2,
             &staker3,
             free_balance_staker3,
-            eras_eligible_for_reward as u32,
+            eras_eligible_for_reward as EraIndex,
             expected_c2_staker3_e2_reward,
         );
 
-        check_rewards_and_counter(
+        check_rewards_on_balance_and_storage(
             &contract2,
             &developer2,
             free_balance_developer2,
-            eras_eligible_for_reward as u32,
+            eras_eligible_for_reward as EraIndex,
             expected_c2_dev2_e2_reward,
         );
         let expected_contract2_reward = eras_eligible_for_reward

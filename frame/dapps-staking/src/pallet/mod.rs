@@ -78,8 +78,7 @@ pub mod pallet {
     /// Map from all (unlocked) "controller" accounts to the info regarding the staking.
     #[pallet::storage]
     #[pallet::getter(fn ledger)]
-    pub(crate) type Ledger<T: Config> =
-        StorageMap<_, Blake2_128Concat, T::AccountId, StakingLedger<BalanceOf<T>>>;
+    pub(crate) type Ledger<T: Config> = StorageMap<_, Blake2_128Concat, T::AccountId, BalanceOf<T>>;
 
     /// Number of eras to keep in history.
     ///
@@ -127,8 +126,8 @@ pub mod pallet {
 
     /// Reward counter for individual stakers and the developer
     #[pallet::storage]
-    #[pallet::getter(fn reward_counter)]
-    pub(crate) type IndividualRewardCounter<T: Config> = StorageDoubleMap<
+    #[pallet::getter(fn rewards_claimed)]
+    pub(crate) type RewardsClaimed<T: Config> = StorageDoubleMap<
         _,
         Twox64Concat,
         SmartContract<T::AccountId>,
@@ -393,12 +392,12 @@ pub mod pallet {
             // Ensure that staker has enough balance to bond & stake.
             let free_balance = T::Currency::free_balance(&staker);
             // Remove already locked funds from the free balance
-            let available_balance = free_balance.saturating_sub(ledger.total);
+            let available_balance = free_balance.saturating_sub(ledger);
             let value_to_stake = value.min(available_balance);
             ensure!(!value_to_stake.is_zero(), Error::<T>::StakingWithNoValue);
 
             // update the ledger value by adding the newly bonded funds
-            ledger.total += value_to_stake;
+            ledger += value_to_stake;
 
             // Get the latest era staking point info or create it if contract hasn't been staked yet so far.
             let era_when_contract_last_staked = Self::contract_last_staked(&contract_id);
@@ -412,7 +411,7 @@ pub mod pallet {
                         total: Zero::zero(),
                         stakers: BTreeMap::<T::AccountId, BalanceOf<T>>::new(),
                         former_staked_era: 0 as EraIndex,
-                        paidout_rewards: BalanceOf::<T>::default(),
+                        claimed_rewards: BalanceOf::<T>::default(),
                     }
                 };
 
@@ -534,7 +533,7 @@ pub mod pallet {
                 era_staking_points.stakers.remove(&staker);
                 value_to_unstake = staked_value;
                 // remove reward counter
-                IndividualRewardCounter::<T>::remove(&contract_id, &staker);
+                RewardsClaimed::<T>::remove(&contract_id, &staker);
             } else {
                 era_staking_points
                     .stakers
@@ -546,7 +545,7 @@ pub mod pallet {
 
             // Get the staking ledger and update it
             let mut ledger = Self::ledger(&staker).ok_or(Error::<T>::UnexpectedState)?;
-            ledger.total = ledger.total.saturating_sub(value_to_unstake);
+            ledger = ledger.saturating_sub(value_to_unstake);
             Self::update_ledger(&staker, &ledger);
 
             let current_era = Self::current_era();
@@ -680,16 +679,17 @@ pub mod pallet {
             }
 
             // send rewards to stakers' accounts and update reward counter individual staker
-            let reward_for_stakers = Self::payout_stakers(&contract_id, &rewards_for_stakers_map);
+            let reward_for_stakers =
+                Self::payout_stakers_and_get_total_reward(&contract_id, &rewards_for_stakers_map);
 
             // send rewards to developer's account and update reward counter for developer's account
             T::Currency::deposit_into_existing(&developer, reward_for_developer).ok();
-            IndividualRewardCounter::<T>::mutate(&contract_id, &developer, |balance| {
+            RewardsClaimed::<T>::mutate(&contract_id, &developer, |balance| {
                 *balance += reward_for_developer
             });
 
             // updated counter for total rewards paid to the contract
-            contract_staking_info.paidout_rewards += reward_for_stakers + reward_for_developer;
+            contract_staking_info.claimed_rewards += reward_for_stakers + reward_for_developer;
 
             // if !unclaimed_rewards.is_zero() { TODO!
             //     T::Currency::deposit_into_existing(&treasury, unclaimed_rewards).ok();
@@ -787,12 +787,12 @@ pub mod pallet {
     impl<T: Config> Pallet<T> {
         /// Update the ledger for a staker. This will also update the stash lock.
         /// This lock will lock the entire funds except paying for further transactions.
-        fn update_ledger(staker: &T::AccountId, ledger: &StakingLedger<BalanceOf<T>>) {
-            if ledger.total.is_zero() {
+        fn update_ledger(staker: &T::AccountId, ledger: &BalanceOf<T>) {
+            if ledger.is_zero() {
                 Ledger::<T>::remove(&staker);
                 T::Currency::remove_lock(STAKING_ID, &staker);
             } else {
-                T::Currency::set_lock(STAKING_ID, &staker, ledger.total, WithdrawReasons::all());
+                T::Currency::set_lock(STAKING_ID, &staker, ledger.clone(), WithdrawReasons::all());
                 Ledger::<T>::insert(staker, ledger);
             }
         }
@@ -825,15 +825,16 @@ pub mod pallet {
             }
         }
 
-        /// Execute payout for stakers
-        fn payout_stakers(
+        /// Execute payout for stakers.
+        /// Return total rewards claimed by stakers on this contract.
+        fn payout_stakers_and_get_total_reward(
             contract: &SmartContract<T::AccountId>,
             staker_map: &BTreeMap<T::AccountId, BalanceOf<T>>,
         ) -> BalanceOf<T> {
             let mut reward_for_stakers = Zero::zero();
 
             for (s, b) in staker_map {
-                IndividualRewardCounter::<T>::mutate(contract, s, |balance| *balance += *b);
+                RewardsClaimed::<T>::mutate(contract, s, |balance| *balance += *b);
                 T::Currency::deposit_into_existing(&s, *b).ok();
                 reward_for_stakers += *b;
             }
@@ -842,7 +843,7 @@ pub mod pallet {
         }
 
         /// The block rewards are accumulated on the pallets's account during an era.
-        /// This function takes a snapshot of the pallet's balance accured during current era
+        /// This function takes a snapshot of the pallet's balance accrued during current era
         /// and stores it for future distribution
         ///
         /// This is called just at the beginning of an era.
