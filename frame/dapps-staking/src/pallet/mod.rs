@@ -75,10 +75,10 @@ pub mod pallet {
         84u32
     }
 
-    /// Map from all (unlocked) "controller" accounts to the info regarding the staking.
+    /// Bonded amount for the staker
     #[pallet::storage]
     #[pallet::getter(fn ledger)]
-    pub(crate) type Ledger<T: Config> = StorageMap<_, Blake2_128Concat, T::AccountId, BalanceOf<T>>;
+    pub(crate) type Ledger<T: Config> = StorageMap<_, Twox64Concat, T::AccountId, BalanceOf<T>>;
 
     /// Number of eras to keep in history.
     ///
