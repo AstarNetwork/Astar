@@ -2,6 +2,7 @@
 // `construct_runtime!` does a lot of recursion and requires us to increase the limit to 256.
 #![recursion_limit = "256"]
 
+use codec::{Decode, Encode};
 use frame_support::{
     construct_runtime, parameter_types,
     traits::{Currency, FindAuthor, Imbalance, KeyOwnerProofSystem, Nothing, OnUnbalanced},
@@ -23,7 +24,7 @@ use sp_runtime::{
         NumberFor, Verify,
     },
     transaction_validity::{TransactionPriority, TransactionSource, TransactionValidity},
-    ApplyExtrinsicResult, MultiSignature,
+    ApplyExtrinsicResult, MultiSignature, RuntimeDebug,
 };
 use sp_std::prelude::*;
 #[cfg(feature = "std")]
@@ -302,7 +303,6 @@ impl pallet_dapps_staking::Config for Runtime {
 }
 
 /// Multi-VM pointer to smart contract instance.
-use codec::{Decode, Encode};
 #[derive(PartialEq, Eq, Copy, Clone, Encode, Decode, RuntimeDebug)]
 pub enum SmartContract<AccountId> {
     /// EVM smart contract instance.
@@ -311,7 +311,7 @@ pub enum SmartContract<AccountId> {
     Wasm(AccountId),
 }
 
-impl<AccountId> IsContract for SmartContract<AccountId> {
+impl<AccountId> pallet_dapps_staking::traits::IsContract for SmartContract<AccountId> {
     fn is_contract(&self) -> bool {
         match self {
             SmartContract::Wasm(_account) => false,
@@ -412,8 +412,6 @@ impl fp_rpc::ConvertTransaction<sp_runtime::OpaqueExtrinsic> for TransactionConv
         &self,
         transaction: pallet_ethereum::Transaction,
     ) -> sp_runtime::OpaqueExtrinsic {
-        use codec::{Decode, Encode};
-
         let extrinsic = UncheckedExtrinsic::new_unsigned(
             pallet_ethereum::Call::<Runtime>::transact(transaction).into(),
         );
