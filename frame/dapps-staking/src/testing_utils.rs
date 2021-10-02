@@ -162,7 +162,7 @@ pub(crate) fn calc_expected_developer_reward(
 /// Check staker/dev Balance after reward distribution.
 /// Check that claimed rewards for staker/dev are updated.
 pub(crate) fn check_rewards_on_balance_and_storage(
-    contract: &SmartContract<mock::AccountId>,
+    contract: &MockSmartContract<mock::AccountId>,
     user: &AccountId,
     free_balance: mock::Balance,
     eras: EraIndex,
@@ -181,7 +181,7 @@ pub(crate) fn check_rewards_on_balance_and_storage(
 
 /// Check that claimed rewards on this contract are updated
 pub(crate) fn check_paidout_rewards_for_contract(
-    contract: &SmartContract<mock::AccountId>,
+    contract: &MockSmartContract<mock::AccountId>,
     expected_contract_reward: mock::Balance,
 ) {
     let era_last_claimed = mock::DappsStaking::contract_last_claimed(contract).unwrap_or(0);

@@ -150,7 +150,7 @@ pub mod pallet {
     pub(crate) type RewardsClaimed<T: Config> = StorageDoubleMap<
         _,
         Twox64Concat,
-        SmartContract<T::AccountId>,
+        T::SmartContract,
         Twox64Concat,
         T::AccountId,
         BalanceOf<T>,
@@ -826,7 +826,7 @@ pub mod pallet {
         /// Execute payout for stakers.
         /// Return total rewards claimed by stakers on this contract.
         fn payout_stakers_and_get_total_reward(
-            contract: &SmartContract<T::AccountId>,
+            contract: &T::SmartContract,
             staker_map: &BTreeMap<T::AccountId, BalanceOf<T>>,
         ) -> BalanceOf<T> {
             let mut reward_for_stakers = Zero::zero();
