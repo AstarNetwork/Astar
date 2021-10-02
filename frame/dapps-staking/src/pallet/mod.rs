@@ -6,7 +6,8 @@ use frame_support::{
     ensure,
     pallet_prelude::*,
     traits::{
-        Currency, Get, Imbalance, LockIdentifier, LockableCurrency, OnUnbalanced, WithdrawReasons,
+        Currency, Get, Imbalance, LockIdentifier, LockableCurrency, OnUnbalanced,
+        ReservableCurrency, WithdrawReasons,
     },
     weights::Weight,
     PalletId,
@@ -50,7 +51,8 @@ pub mod pallet {
     #[pallet::config]
     pub trait Config: frame_system::Config {
         /// The staking balance.
-        type Currency: LockableCurrency<Self::AccountId, Moment = Self::BlockNumber>;
+        type Currency: LockableCurrency<Self::AccountId, Moment = Self::BlockNumber>
+            + ReservableCurrency<Self::AccountId>;
 
         /// Number of blocks per era.
         #[pallet::constant]
@@ -329,6 +331,9 @@ pub mod pallet {
                     .then(|| true)
                     .ok_or(Error::<T>::RequiredContractPreApproval)?;
             }
+
+            T::Currency::reserve(&developer, T::RegisterDeposit::get())?;
+
             RegisteredDapps::<T>::insert(contract_id.clone(), developer.clone());
             RegisteredDevelopers::<T>::insert(&developer, contract_id.clone());
 
