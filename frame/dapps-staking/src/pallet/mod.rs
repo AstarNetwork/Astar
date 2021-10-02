@@ -91,7 +91,7 @@ pub mod pallet {
 
     #[pallet::type_value]
     pub(crate) fn HistoryDepthOnEmpty() -> u32 {
-        84u32
+        30u32
     }
 
     /// Bonded amount for the staker
