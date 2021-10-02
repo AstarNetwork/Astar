@@ -61,7 +61,6 @@ pub mod pallet {
         #[pallet::constant]
         type BlockPerEra: Get<BlockNumberFor<Self>>;
 
-        // TODO: this should be used?
         /// Minimum bonded deposit for new contract registration.
         #[pallet::constant]
         type RegisterDeposit: Get<BalanceOf<Self>>;
@@ -249,9 +248,6 @@ pub mod pallet {
         ContractIsNotValid,
         /// Claiming contract with no developer account
         ContractNotRegistered,
-        // TODO: make use of this?
-        /// Missing deposit for the contract registration
-        InsufficientDeposit,
         /// This account was already used to register contract
         AlreadyUsedDeveloperAccount,
         /// Unexpected state error, used to abort transaction. Used for situations that 'should never happen'.
@@ -727,40 +723,11 @@ pub mod pallet {
             Ok(().into())
         }
 
-        // =============== Era ==================
-
-        /// Force there to be no new eras indefinitely.
-        ///
-        /// The dispatch origin must be Root.
-        ///
-        /// # Warning
-        ///
-        /// The election process starts multiple blocks before the end of the era.
-        /// Thus the election process may be ongoing when this is called. In this case the
-        /// election will continue until the next era is triggered.
-        ///
-        /// # <weight>
-        /// - No arguments.
-        /// - Weight: O(1)
-        /// - Write: ForceEra
-        /// # </weight>
-        #[pallet::weight(T::WeightInfo::force_no_eras())]
-        pub fn force_no_eras(origin: OriginFor<T>) -> DispatchResult {
-            ensure_root(origin)?;
-            ForceEra::<T>::put(Forcing::ForceNone);
-            Ok(())
-        }
-
-        /// Force there to be a new era at the end of the next session. After this, it will be
+        /// Force there to be a new era at the end of the next block. After this, it will be
         /// reset to normal (non-forced) behaviour.
         ///
         /// The dispatch origin must be Root.
         ///
-        /// # Warning
-        ///
-        /// The election process starts multiple blocks before the end of the era.
-        /// If this is called just before a new era is triggered, the election process may not
-        /// have enough blocks to get a result.
         ///
         /// # <weight>
         /// - No arguments.
@@ -771,27 +738,6 @@ pub mod pallet {
         pub fn force_new_era(origin: OriginFor<T>) -> DispatchResult {
             ensure_root(origin)?;
             ForceEra::<T>::put(Forcing::ForceNew);
-            Ok(())
-        }
-
-        /// Force there to be a new era at the end of blocks indefinitely.
-        ///
-        /// The dispatch origin must be Root.
-        ///
-        /// # Warning
-        ///
-        /// The election process starts multiple blocks before the end of the era.
-        /// If this is called just before a new era is triggered, the election process may not
-        /// have enough blocks to get a result.
-        ///
-        /// # <weight>
-        /// - Weight: O(1)
-        /// - Write: ForceEra
-        /// # </weight>
-        #[pallet::weight(T::WeightInfo::force_new_era_always())]
-        pub fn force_new_era_always(origin: OriginFor<T>) -> DispatchResult {
-            ensure_root(origin)?;
-            ForceEra::<T>::put(Forcing::ForceAlways);
             Ok(())
         }
     }
