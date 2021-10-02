@@ -72,6 +72,8 @@ pub struct EraStakingPoints<AccountId: Ord, Balance: HasCompact> {
     /// Era when this contract was staked last time before this one.
     /// In case only a single staking era exists, it will be set to that one. This indicates the final element in the chain.
     former_staked_era: EraIndex,
+    /// Accrued and claimed rewards on this contract both for stakers and the developer
+    claimed_rewards: Balance,
 }
 
 /// Multi-VM pointer to smart contract instance.
@@ -81,17 +83,4 @@ pub enum SmartContract<AccountId> {
     Evm(sp_core::H160),
     /// Wasm smart contract instance.
     Wasm(AccountId),
-}
-
-/// The ledger of a (bonded) stash.
-#[derive(PartialEq, Eq, Clone, Encode, Decode, Default, RuntimeDebug)]
-pub struct StakingLedger<Balance: HasCompact + Default> {
-    /// The total amount of the stash's balance that we are currently accounting for.
-    /// It's just `active` plus all the `unlocking` balances.
-    #[codec(compact)]
-    pub total: Balance,
-    /// The total amount of the stash's balance that will be at stake in any forthcoming
-    /// rounds.
-    #[codec(compact)]
-    pub active: Balance,
 }
