@@ -1126,12 +1126,12 @@ fn claim_one_contract_one_staker() {
 
         // Store initial free balaces of the developer and the stakers
         let free_balance_staker1 = <mock::TestRuntime as Config>::Currency::free_balance(&staker1);
-        let free_developer_balance =
-            <mock::TestRuntime as Config>::Currency::free_balance(&developer);
 
         // Register contracts, bond&stake them with two stakers on the contract.
         let start_era = DappsStaking::current_era();
         register_contract(developer, &contract);
+        let free_developer_balance =
+            <mock::TestRuntime as Config>::Currency::free_balance(&developer);
         bond_and_stake_with_verification(staker1, &contract, STAKE_AMOUNT1);
 
         // Advance some eras to be able to claim rewards. Verify storage is consolidated
@@ -1192,12 +1192,12 @@ fn claim_one_contract_two_stakers() {
         // Store initial free balaces of the developer and the stakers
         let free_balance_staker1 = <mock::TestRuntime as Config>::Currency::free_balance(&staker1);
         let free_balance_staker2 = <mock::TestRuntime as Config>::Currency::free_balance(&staker2);
-        let free_developer_balance =
-            <mock::TestRuntime as Config>::Currency::free_balance(&developer);
 
         // Register contracts, bond&stake them with two stakers on the contract.
         let start_era = DappsStaking::current_era();
         register_contract(developer, &contract);
+        let free_developer_balance =
+            <mock::TestRuntime as Config>::Currency::free_balance(&developer);
         bond_and_stake_with_verification(staker1, &contract, STAKE_AMOUNT1);
         bond_and_stake_with_verification(staker2, &contract, STAKE_AMOUNT2);
 
@@ -1295,10 +1295,6 @@ fn claim_two_contracts_three_stakers() {
         let free_balance_staker1 = <mock::TestRuntime as Config>::Currency::free_balance(&staker1);
         let free_balance_staker2 = <mock::TestRuntime as Config>::Currency::free_balance(&staker2);
         let free_balance_staker3 = <mock::TestRuntime as Config>::Currency::free_balance(&staker3);
-        let free_balance_developer1 =
-            <mock::TestRuntime as Config>::Currency::free_balance(&developer1);
-        let free_balance_developer2 =
-            <mock::TestRuntime as Config>::Currency::free_balance(&developer2);
 
         // Register 2 contracts, bond&stake with two stakers on first contract.
         // era=2
@@ -1309,6 +1305,10 @@ fn claim_two_contracts_three_stakers() {
         let start_era = DappsStaking::current_era();
         register_contract(developer1, &contract1);
         register_contract(developer2, &contract2);
+        let free_balance_developer1 =
+            <mock::TestRuntime as Config>::Currency::free_balance(&developer1);
+        let free_balance_developer2 =
+            <mock::TestRuntime as Config>::Currency::free_balance(&developer2);
         bond_and_stake_with_verification(staker1, &contract1, STAKER1_AMOUNT);
         bond_and_stake_with_verification(staker2, &contract1, STAKER2_AMOUNT1);
 

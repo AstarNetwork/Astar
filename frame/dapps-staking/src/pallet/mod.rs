@@ -6,9 +6,9 @@ use frame_support::{
     ensure,
     pallet_prelude::*,
     traits::{
-        Currency, Get, Imbalance, LockIdentifier, LockableCurrency, OnUnbalanced, WithdrawReasons,
+        Currency, Get, Imbalance, LockIdentifier, LockableCurrency, OnUnbalanced,
+        ReservableCurrency, WithdrawReasons,
     },
-    traits::{Currency, Get, LockIdentifier, LockableCurrency, ReservableCurrency, WithdrawReasons},
     weights::Weight,
     PalletId,
 };
