@@ -30,6 +30,8 @@ pub(crate) const DEVELOPER_REWARD_PERCENTAGE: u32 = 80;
 
 pub(crate) const BLOCKS_PER_ERA: BlockNumber = 3;
 
+pub(crate) const REGISTER_DEPOSIT: Balance = 10;
+
 // ignore MILLIAST for easier test handling.
 // reward for dapps-staking will be BLOCK_REWARD/2 = 1000
 pub(crate) const BLOCK_REWARD: Balance = 1000;
@@ -108,7 +110,7 @@ impl pallet_timestamp::Config for TestRuntime {
 }
 
 parameter_types! {
-    pub const RegisterDeposit: u32 = 100;
+    pub const RegisterDeposit: Balance = REGISTER_DEPOSIT;
     pub const BlockPerEra: BlockNumber = BLOCKS_PER_ERA;
     pub const MaxNumberOfStakersPerContract: u32 = MAX_NUMBER_OF_STAKERS;
     pub const MinimumStakingAmount: Balance = MINIMUM_STAKING_AMOUNT;
@@ -143,7 +145,9 @@ impl ExternalityBuilder {
                 (3, 10000),
                 (4, 490),
                 (5, 380),
+                (6, 10),
                 (10, 300),
+                (20, 10),
                 (540, EXISTENTIAL_DEPOSIT),
                 (1337, 1_000_000_000_000),
             ],
