@@ -36,8 +36,7 @@ pub mod pallet {
 
     // Negative imbalance type of this pallet.
     type NegativeImbalanceOf<T> = <<T as Config>::Currency as Currency<
-        <T as frame_system::Config>::AccountId,
-    >>::NegativeImbalance;
+        <T as frame_system::Config>::AccountId,>>::NegativeImbalance;
 
     impl<T: Config> OnUnbalanced<NegativeImbalanceOf<T>> for Pallet<T> {
         fn on_nonzero_unbalanced(block_reward: NegativeImbalanceOf<T>) {
@@ -97,7 +96,7 @@ pub mod pallet {
     /// Bonded amount for the staker
     #[pallet::storage]
     #[pallet::getter(fn ledger)]
-    pub(crate) type Ledger<T: Config> = StorageMap<_, Twox64Concat, T::AccountId, BalanceOf<T>>;
+    pub(crate) type Ledger<T: Config> = StorageMap<_, Blake2_128Concat, T::AccountId, BalanceOf<T>>;
 
     /// Number of eras to keep in history.
     ///
@@ -129,13 +128,13 @@ pub mod pallet {
     #[pallet::storage]
     #[pallet::getter(fn registered_contract)]
     pub(crate) type RegisteredDevelopers<T: Config> =
-        StorageMap<_, Twox64Concat, T::AccountId, T::SmartContract>;
+        StorageMap<_, Blake2_128Concat, T::AccountId, T::SmartContract>;
 
     /// Registered dapp points to the developer who registered it
     #[pallet::storage]
     #[pallet::getter(fn registered_developer)]
     pub(crate) type RegisteredDapps<T: Config> =
-        StorageMap<_, Twox64Concat, T::SmartContract, T::AccountId>;
+        StorageMap<_, Blake2_128Concat, T::SmartContract, T::AccountId>;
 
     /// Total block rewards for the pallet per era and total staked funds
     #[pallet::storage]
@@ -148,7 +147,7 @@ pub mod pallet {
     #[pallet::getter(fn rewards_claimed)]
     pub(crate) type RewardsClaimed<T: Config> = StorageDoubleMap<
         _,
-        Twox64Concat,
+Blake2_128Concat,
         T::SmartContract,
         Twox64Concat,
         T::AccountId,
@@ -161,7 +160,7 @@ pub mod pallet {
     #[pallet::getter(fn contract_era_stake)]
     pub(crate) type ContractEraStake<T: Config> = StorageDoubleMap<
         _,
-        Twox64Concat,
+Blake2_128Concat,
         T::SmartContract,
         Twox64Concat,
         EraIndex,
@@ -178,7 +177,7 @@ pub mod pallet {
     #[pallet::storage]
     #[pallet::getter(fn contract_last_staked)]
     pub(crate) type ContractLastStaked<T: Config> =
-        StorageMap<_, Twox64Concat, T::SmartContract, EraIndex>;
+        StorageMap<_, Blake2_128Concat, T::SmartContract, EraIndex>;
 
     #[pallet::type_value]
     pub(crate) fn PreApprovalOnEmpty() -> bool {
