@@ -90,27 +90,19 @@ pub mod pallet {
         84u32
     }
 
-    /// Map from all (unlocked) "controller" accounts to the info regarding the staking.
+    /// Bonded amount for the staker
     #[pallet::storage]
     #[pallet::getter(fn ledger)]
-    pub(crate) type Ledger<T: Config> =
-        StorageMap<_, Blake2_128Concat, T::AccountId, StakingLedger<BalanceOf<T>>>;
+    pub(crate) type Ledger<T: Config> = StorageMap<_, Twox64Concat, T::AccountId, BalanceOf<T>>;
 
     /// Number of eras to keep in history.
     ///
     /// Information is kept for eras in `[current_era - history_depth; current_era]`.
-    ///
-    /// Must be more than the number of eras delayed by session otherwise. I.e. active era must
-    /// always be in history. I.e. `active_era > current_era - history_depth` must be
-    /// guaranteed.
     #[pallet::storage]
     #[pallet::getter(fn history_depth)]
     pub(crate) type HistoryDepth<T> = StorageValue<_, u32, ValueQuery, HistoryDepthOnEmpty>;
 
     /// The current era index.
-    ///
-    /// This is the latest planned era, depending on how the Session pallet queues the validator
-    /// set, it might be active or not.
     #[pallet::storage]
     #[pallet::getter(fn current_era)]
     pub type CurrentEra<T> = StorageValue<_, EraIndex, ValueQuery>;
@@ -146,6 +138,19 @@ pub mod pallet {
     #[pallet::getter(fn era_reward_and_stake)]
     pub(crate) type EraRewardsAndStakes<T: Config> =
         StorageMap<_, Twox64Concat, EraIndex, EraRewardAndStake<BalanceOf<T>>>;
+
+    /// Reward counter for individual stakers and the developer
+    #[pallet::storage]
+    #[pallet::getter(fn rewards_claimed)]
+    pub(crate) type RewardsClaimed<T: Config> = StorageDoubleMap<
+        _,
+        Twox64Concat,
+        SmartContract<T::AccountId>,
+        Twox64Concat,
+        T::AccountId,
+        BalanceOf<T>,
+        ValueQuery,
+    >;
 
     /// Stores amount staked and stakers for a contract per era
     #[pallet::storage]
@@ -399,13 +404,12 @@ pub mod pallet {
             // Ensure that staker has enough balance to bond & stake.
             let free_balance = T::Currency::free_balance(&staker);
             // Remove already locked funds from the free balance
-            let available_balance = free_balance.saturating_sub(ledger.total);
+            let available_balance = free_balance.saturating_sub(ledger);
             let value_to_stake = value.min(available_balance);
             ensure!(!value_to_stake.is_zero(), Error::<T>::StakingWithNoValue);
 
             // update the ledger value by adding the newly bonded funds
-            ledger.total += value_to_stake;
-            ledger.active += value_to_stake;
+            ledger += value_to_stake;
 
             // Get the latest era staking point info or create it if contract hasn't been staked yet so far.
             let era_when_contract_last_staked = Self::contract_last_staked(&contract_id);
@@ -419,6 +423,7 @@ pub mod pallet {
                         total: Zero::zero(),
                         stakers: BTreeMap::<T::AccountId, BalanceOf<T>>::new(),
                         former_staked_era: 0 as EraIndex,
+                        claimed_rewards: BalanceOf::<T>::default(),
                     }
                 };
 
@@ -539,6 +544,8 @@ pub mod pallet {
                 // if staked value would fall below threshold, unstake everything
                 era_staking_points.stakers.remove(&staker);
                 value_to_unstake = staked_value;
+                // remove reward counter
+                RewardsClaimed::<T>::remove(&contract_id, &staker);
             } else {
                 era_staking_points
                     .stakers
@@ -550,8 +557,7 @@ pub mod pallet {
 
             // Get the staking ledger and update it
             let mut ledger = Self::ledger(&staker).ok_or(Error::<T>::UnexpectedState)?;
-            ledger.total = ledger.total.saturating_sub(value_to_unstake);
-            ledger.active = ledger.active.saturating_sub(value_to_unstake);
+            ledger = ledger.saturating_sub(value_to_unstake);
             Self::update_ledger(&staker, &ledger);
 
             let current_era = Self::current_era();
@@ -684,10 +690,19 @@ pub mod pallet {
                 // continue and process the next era interval
             }
 
-            // send rewards to stakers
-            Self::payout_stakers(&rewards_for_stakers_map);
-            // send rewards to developer
+            // send rewards to stakers' accounts and update reward counter individual staker
+            let reward_for_stakers =
+                Self::payout_stakers_and_get_total_reward(&contract_id, &rewards_for_stakers_map);
+
+            // send rewards to developer's account and update reward counter for developer's account
             T::Currency::deposit_into_existing(&developer, reward_for_developer).ok();
+            RewardsClaimed::<T>::mutate(&contract_id, &developer, |balance| {
+                *balance += reward_for_developer
+            });
+
+            // updated counter for total rewards paid to the contract
+            contract_staking_info.claimed_rewards += reward_for_stakers + reward_for_developer;
+
             // if !unclaimed_rewards.is_zero() { TODO!
             //     T::Currency::deposit_into_existing(&treasury, unclaimed_rewards).ok();
             // }
@@ -784,12 +799,12 @@ pub mod pallet {
     impl<T: Config> Pallet<T> {
         /// Update the ledger for a staker. This will also update the stash lock.
         /// This lock will lock the entire funds except paying for further transactions.
-        fn update_ledger(staker: &T::AccountId, ledger: &StakingLedger<BalanceOf<T>>) {
-            if ledger.active.is_zero() {
+        fn update_ledger(staker: &T::AccountId, ledger: &BalanceOf<T>) {
+            if ledger.is_zero() {
                 Ledger::<T>::remove(&staker);
                 T::Currency::remove_lock(STAKING_ID, &staker);
             } else {
-                T::Currency::set_lock(STAKING_ID, &staker, ledger.total, WithdrawReasons::all());
+                T::Currency::set_lock(STAKING_ID, &staker, ledger.clone(), WithdrawReasons::all());
                 Ledger::<T>::insert(staker, ledger);
             }
         }
@@ -822,15 +837,25 @@ pub mod pallet {
             }
         }
 
-        /// Execute payout for stakers
-        fn payout_stakers(staker_map: &BTreeMap<T::AccountId, BalanceOf<T>>) {
+        /// Execute payout for stakers.
+        /// Return total rewards claimed by stakers on this contract.
+        fn payout_stakers_and_get_total_reward(
+            contract: &SmartContract<T::AccountId>,
+            staker_map: &BTreeMap<T::AccountId, BalanceOf<T>>,
+        ) -> BalanceOf<T> {
+            let mut reward_for_stakers = Zero::zero();
+
             for (s, b) in staker_map {
+                RewardsClaimed::<T>::mutate(contract, s, |balance| *balance += *b);
                 T::Currency::deposit_into_existing(&s, *b).ok();
+                reward_for_stakers += *b;
             }
+
+            reward_for_stakers
         }
 
         /// The block rewards are accumulated on the pallets's account during an era.
-        /// This function takes a snapshot of the pallet's balance accured during current era
+        /// This function takes a snapshot of the pallet's balance accrued during current era
         /// and stores it for future distribution
         ///
         /// This is called just at the beginning of an era.
