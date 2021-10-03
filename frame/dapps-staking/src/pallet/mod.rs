@@ -189,11 +189,11 @@ pub mod pallet {
     #[pallet::getter(fn pre_approval_is_enabled)]
     pub(crate) type PreApprovalIsEnabled<T> = StorageValue<_, bool, ValueQuery, PreApprovalOnEmpty>;
 
-    /// List of pre-approved contracts
+    /// List of pre-approved developers
     #[pallet::storage]
-    #[pallet::getter(fn pre_approved_contracts)]
-    pub(crate) type PreApprovedContracts<T: Config> =
-        StorageValue<_, Vec<T::SmartContract>, ValueQuery>;
+    #[pallet::getter(fn pre_approved_developers)]
+    pub(crate) type PreApprovedDevelopers<T: Config> =
+        StorageValue<_, Vec<T::AccountId>, ValueQuery>;
 
     // Declare the genesis config (optional).
     //
@@ -262,8 +262,8 @@ pub mod pallet {
         AlreadyClaimedInThisEra,
         /// To register a contract, pre-approval is needed for this address
         RequiredContractPreApproval,
-        /// Contract is already part of pre-apprved list of contracts
-        AlreadyPreApprovedContract,
+        /// Developer's account is already part of pre-approved list
+        AlreadyPreApprovedDeveloper,
     }
 
     #[pallet::hooks]
@@ -317,8 +317,8 @@ pub mod pallet {
             ensure!(contract_id.is_contract(), Error::<T>::ContractIsNotValid);
 
             if Self::pre_approval_is_enabled() {
-                Self::pre_approved_contracts()
-                    .contains(&contract_id)
+                Self::pre_approved_developers()
+                    .contains(&developer)
                     .then(|| true)
                     .ok_or(Error::<T>::RequiredContractPreApproval)?;
             }
@@ -338,22 +338,18 @@ pub mod pallet {
         ///
         /// Sudo call is required
         #[pallet::weight(1_000_000)]
-        pub fn contract_pre_approval(
+        pub fn developer_pre_approval(
             origin: OriginFor<T>,
-            contract_id: T::SmartContract,
+            developer: T::AccountId,
         ) -> DispatchResultWithPostInfo {
             ensure_root(origin)?;
-            ensure!(
-                !RegisteredDapps::<T>::contains_key(&contract_id),
-                Error::<T>::AlreadyRegisteredContract
-            );
 
-            let pre_approved_contracts = Self::pre_approved_contracts();
+            let pre_approved_developers = Self::pre_approved_developers();
             ensure!(
-                !pre_approved_contracts.contains(&contract_id),
-                Error::<T>::AlreadyPreApprovedContract
+                !pre_approved_developers.contains(&developer),
+                Error::<T>::AlreadyPreApprovedDeveloper
             );
-            PreApprovedContracts::<T>::append(contract_id);
+            PreApprovedDevelopers::<T>::append(developer);
 
             Ok(().into())
         }
@@ -362,7 +358,7 @@ pub mod pallet {
         ///
         /// Sudo call is required
         #[pallet::weight(1_000_000)]
-        pub fn enable_contract_preapproval(
+        pub fn enable_developer_preapproval(
             origin: OriginFor<T>,
             enabled: bool,
         ) -> DispatchResultWithPostInfo {

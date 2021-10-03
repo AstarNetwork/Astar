@@ -880,32 +880,32 @@ fn register_with_pre_approve_enabled() {
         let developer = 1;
         let contract = MockSmartContract::Evm(H160::repeat_byte(0x01));
 
-        // enable pre-approval of the contracts
-        assert_ok!(mock::DappsStaking::enable_contract_preapproval(
+        // enable pre-approval for the developers
+        assert_ok!(mock::DappsStaking::enable_developer_preapproval(
             Origin::root(),
             true
         ));
         assert!(mock::DappsStaking::pre_approval_is_enabled());
 
-        // register new contract without pre-aproval should fail
+        // register new developer without pre-approval, should fail
         assert_noop!(
             DappsStaking::register(Origin::signed(developer), contract.clone()),
             Error::<TestRuntime>::RequiredContractPreApproval,
         );
 
-        // preapprove contract
-        assert_ok!(mock::DappsStaking::contract_pre_approval(
+        // preapprove developer
+        assert_ok!(mock::DappsStaking::developer_pre_approval(
             Origin::root(),
-            contract.clone()
+            developer.clone()
         ));
 
-        // try to pre-approve again same contract, should fail
+        // try to pre-approve again same developer, should fail
         assert_noop!(
-            mock::DappsStaking::contract_pre_approval(Origin::root(), contract.clone()),
-            Error::<TestRuntime>::AlreadyPreApprovedContract
+            mock::DappsStaking::developer_pre_approval(Origin::root(), developer.clone()),
+            Error::<TestRuntime>::AlreadyPreApprovedDeveloper
         );
 
-        // register new contract which is pre-approved
+        // register new contract by pre-approved developer
         assert_ok!(DappsStaking::register(
             Origin::signed(developer),
             contract.clone()
@@ -917,7 +917,7 @@ fn register_with_pre_approve_enabled() {
         // disable pre_approval and register contract2
         let developer2 = 2;
         let contract2 = MockSmartContract::Evm(H160::repeat_byte(0x02));
-        assert_ok!(mock::DappsStaking::enable_contract_preapproval(
+        assert_ok!(mock::DappsStaking::enable_developer_preapproval(
             Origin::root(),
             false
         ));
