@@ -1,13 +1,14 @@
 # Pallet dapps-staking RPC API
 This document describes the interface for the pallet-dapps-staking.
 
-# Table of Contents
+Table of Contents:
+1. [Terminology](#Terminology)
 1. [Types](#Types)
 1. [Events](#Events)
 1. [Errors](#Errors)
 1. [Calls](#Calls)
 1. [Storage](#Storage)
-1. [Referent implementation](#Referent)
+1. [Referent implementatio](#Referent)
 
 ## Terminology
 ### Actors in dApps Staking
@@ -97,7 +98,7 @@ EraRewardAndStake {
 * `NothingToClaim`, There are no funds to reward the contract. Or already claimed in that era.
 * `AlreadyClaimedInThisEra`, Contract already claimed in this era and reward is distributed.
 * `RequiredContractPreApproval`, To register a contract, pre-approval is needed for this address.
-* `AlreadyPreApprovedContract`, Contract is already part of pre-apprved list of contracts.
+* `AlreadyPreApprovedContract`, Contract is already part of pre-appruved list of contracts.
 
 ---
 ## Calls
@@ -106,10 +107,10 @@ EraRewardAndStake {
 1. Registers contract as a staking target.
 1. The dispatch origin for this call must be _Signed_ by the developers's account.
 3. Prior to registering, a contract needs to be deployed on the network. The contract address where the contract is deployed is used as the argument in this call.
-4. The `dapp-staking` pallet supports both contract types, EVM and Wasm. The Shiden Network supports only EVM at the moment.
+4. The `dapps-staking` pallet supports both contract types, EVM and Wasm. The Shiden Network supports only EVM at the moment.
 5. The type for contract address will be `SmartContract`, which abstracts EVM and Wasm address types.
 6. The Developer who is registering the contract has to reserve `RegisterDeposit`.
-7. There will be a pre-approved list of developers. This preapproval could be enabled or disabled. The pre-approval requires sudo call.
+7. There will be a pre-approved list of developers. This pre-approval could be enabled or disabled. The pre-approval requires sudo call.
 
 Event:
 * `NewContract(developer's account, contract_id)`
@@ -120,6 +121,7 @@ Errors:
 * ContractIsNotValid
 * RequiredContractPreApproval
 
+---
 ### Bonding and Staking Funds
 ```
 pub fn bond_and_stake(
@@ -130,19 +132,21 @@ pub fn bond_and_stake(
 ```
 1. The dispatch origin for this call must be _Signed_ by the staker's account.
 1. Staked funds will be considered for reward after the end of the current era.
-1. The Staker shall use one address for this accion.
-1. This call is used for both inital staking and for possible additional stakings.
+1. The Staker shall use one address for this call.
+1. This call is used for both initial staking and for possible additional stakings.
 1. The Staker shall stake on only one contract per call
 1. The Staker can stake on an unlimited number of contracts but one at the time.
-1. The number of stakers per contract is limited to `MaxStakings`
+1. The number of stakers per contract is limited to `MaxNumberOfStakersPerContract`
 
 
 Events:
-`BondAndStake(
+```
+BondAndStake(
                 staker,
                 contract_id,
                 value_to_stake
-            )`
+            )
+```
             
 Errors:
 * NotOperatedContract
@@ -150,6 +154,7 @@ Errors:
 * MaxNumberOfStakersExceeded
 * InsufficientStakingValue
 
+---
 ### Unbonding, Unstaking and Funds Withdrawal
 ```
 pub fn unbond_unstake_and_withdraw(
@@ -178,6 +183,7 @@ Errors:
 * UnstakingWithNoValue
 * NotStakedContract
 
+---
 ### Claim Rewards
 ```
 pub fn claim(
@@ -210,7 +216,7 @@ Error:
 * `CurrentEra = StorageValue( EraIndex )`: The current era index.
 * `BlockRewardAccumulator = StorageValue( Balance )`: Accumulator for block rewards during an era. It is reset at every new era.
 * `RegisteredDevelopers = StorageMap( key:AccountId, value:SmartContract )`: Registered developer accounts points to coresponding contract.
-* `RegisteredDapps = StorageMap( key:SmartContract, vlaue:AccountId )`: Registered dapp points to the developer who registered it.
+* `RegisteredDapps = StorageMap( key:SmartContract, value:AccountId )`: Registered dapp points to the developer who registered it.
 * `EraRewardsAndStakes = StorageMap( key:EraIndex, value:EraRewardAndStake)`: Total block rewards for the pallet per era and total staked funds.
 * `RewardsClaimed = StorageDoubleMap( key1:SmartContract, key2:AccountId, value:Balance )`: Reward counter for individual stakers and the developer.
 * `ContractEraStake = StorageDoubleMap( key1: SmartContract, key2:EraIndex, value:EraStakingPoints )`: Stores amount staked and stakers for a contract per era.
