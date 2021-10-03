@@ -7,6 +7,7 @@ use frame_support::{
 };
 use sp_core::H256;
 
+use codec::{Decode, Encode};
 use sp_io::TestExternalities;
 use sp_runtime::{
     testing::Header,
@@ -124,10 +125,26 @@ impl pallet_dapps_staking::Config for TestRuntime {
     type BlockPerEra = BlockPerEra;
     type RegisterDeposit = RegisterDeposit;
     type DeveloperRewardPercentage = DeveloperRewardPercentage;
+    type SmartContract = MockSmartContract<AccountId>;
     type WeightInfo = ();
     type MaxNumberOfStakersPerContract = MaxNumberOfStakersPerContract;
     type MinimumStakingAmount = MinimumStakingAmount;
     type PalletId = DappsStakingPalletId;
+}
+
+#[derive(PartialEq, Eq, Copy, Clone, Encode, Decode, Debug)]
+pub enum MockSmartContract<AccountId> {
+    Evm(sp_core::H160),
+    Wasm(AccountId),
+}
+
+impl<AccountId> pallet_dapps_staking::IsContract for MockSmartContract<AccountId> {
+    fn is_contract(&self) -> bool {
+        match self {
+            MockSmartContract::Wasm(_account) => false,
+            MockSmartContract::Evm(_account) => true,
+        }
+    }
 }
 
 pub struct ExternalityBuilder;

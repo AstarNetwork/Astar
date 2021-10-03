@@ -54,11 +54,13 @@ pub mod pallet {
         type Currency: LockableCurrency<Self::AccountId, Moment = Self::BlockNumber>
             + ReservableCurrency<Self::AccountId>;
 
+        // type used for Accounts on EVM and on Substrate
+        type SmartContract: IsContract + Parameter + Member;
+
         /// Number of blocks per era.
         #[pallet::constant]
         type BlockPerEra: Get<BlockNumberFor<Self>>;
 
-        // TODO: this should be used?
         /// Minimum bonded deposit for new contract registration.
         #[pallet::constant]
         type RegisterDeposit: Get<BalanceOf<Self>>;
@@ -89,7 +91,7 @@ pub mod pallet {
 
     #[pallet::type_value]
     pub(crate) fn HistoryDepthOnEmpty() -> u32 {
-        84u32
+        30u32
     }
 
     /// Bonded amount for the staker
@@ -127,15 +129,15 @@ pub mod pallet {
     #[pallet::storage]
     #[pallet::getter(fn registered_contract)]
     pub(crate) type RegisteredDevelopers<T: Config> =
-        StorageMap<_, Twox64Concat, T::AccountId, SmartContract<T::AccountId>>;
+        StorageMap<_, Twox64Concat, T::AccountId, T::SmartContract>;
 
     /// Registered dapp points to the developer who registered it
     #[pallet::storage]
     #[pallet::getter(fn registered_developer)]
     pub(crate) type RegisteredDapps<T: Config> =
-        StorageMap<_, Twox64Concat, SmartContract<T::AccountId>, T::AccountId>;
+        StorageMap<_, Twox64Concat, T::SmartContract, T::AccountId>;
 
-    /// Total block rewards for the pallet per era
+    /// Total block rewards for the pallet per era and total staked funds
     #[pallet::storage]
     #[pallet::getter(fn era_reward_and_stake)]
     pub(crate) type EraRewardsAndStakes<T: Config> =
@@ -147,7 +149,7 @@ pub mod pallet {
     pub(crate) type RewardsClaimed<T: Config> = StorageDoubleMap<
         _,
         Twox64Concat,
-        SmartContract<T::AccountId>,
+        T::SmartContract,
         Twox64Concat,
         T::AccountId,
         BalanceOf<T>,
@@ -160,7 +162,7 @@ pub mod pallet {
     pub(crate) type ContractEraStake<T: Config> = StorageDoubleMap<
         _,
         Twox64Concat,
-        SmartContract<T::AccountId>,
+        T::SmartContract,
         Twox64Concat,
         EraIndex,
         EraStakingPoints<T::AccountId, BalanceOf<T>>,
@@ -170,13 +172,13 @@ pub mod pallet {
     #[pallet::storage]
     #[pallet::getter(fn contract_last_claimed)]
     pub(crate) type ContractLastClaimed<T: Config> =
-        StorageMap<_, Twox64Concat, SmartContract<T::AccountId>, EraIndex>;
+        StorageMap<_, Twox64Concat, T::SmartContract, EraIndex>;
 
     /// Marks an Era when a contract is last (un)staked
     #[pallet::storage]
     #[pallet::getter(fn contract_last_staked)]
     pub(crate) type ContractLastStaked<T: Config> =
-        StorageMap<_, Twox64Concat, SmartContract<T::AccountId>, EraIndex>;
+        StorageMap<_, Twox64Concat, T::SmartContract, EraIndex>;
 
     #[pallet::type_value]
     pub(crate) fn PreApprovalOnEmpty() -> bool {
@@ -191,7 +193,7 @@ pub mod pallet {
     #[pallet::storage]
     #[pallet::getter(fn pre_approved_contracts)]
     pub(crate) type PreApprovedContracts<T: Config> =
-        StorageValue<_, Vec<SmartContract<T::AccountId>>, ValueQuery>;
+        StorageValue<_, Vec<T::SmartContract>, ValueQuery>;
 
     // Declare the genesis config (optional).
     //
@@ -215,20 +217,15 @@ pub mod pallet {
     #[pallet::metadata(T::AccountId = "AccountId", BalanceOf<T> = "Balance")]
     pub enum Event<T: Config> {
         /// Account has bonded and staked funds on a smart contract.
-        BondAndStake(T::AccountId, SmartContract<T::AccountId>, BalanceOf<T>),
+        BondAndStake(T::AccountId, T::SmartContract, BalanceOf<T>),
         /// Account has unbonded, unstaked and withdrawn funds.
-        UnbondUnstakeAndWithdraw(T::AccountId, SmartContract<T::AccountId>, BalanceOf<T>),
-        /// New contract added for staking, with deposit value
-        NewContract(T::AccountId, SmartContract<T::AccountId>),
-        /// New dapps staking era. Distribute era rewards to contracts
+        UnbondUnstakeAndWithdraw(T::AccountId, T::SmartContract, BalanceOf<T>),
+        /// New contract added for staking.
+        NewContract(T::AccountId, T::SmartContract),
+        /// New dapps staking era. Distribute era rewards to contracts.
         NewDappStakingEra(EraIndex),
-        /// The contract's reward have been claimed, by an account, from era, until era
-        ContractClaimed(
-            SmartContract<T::AccountId>,
-            T::AccountId,
-            EraIndex,
-            EraIndex,
-        ),
+        /// The contract's reward have been claimed, by an account, from era, until era.
+        ContractClaimed(T::SmartContract, T::AccountId, EraIndex, EraIndex),
     }
 
     #[pallet::error]
@@ -251,9 +248,6 @@ pub mod pallet {
         ContractIsNotValid,
         /// Claiming contract with no developer account
         ContractNotRegistered,
-        // TODO: make use of this?
-        /// Missing deposit for the contract registration
-        InsufficientDeposit,
         /// This account was already used to register contract
         AlreadyUsedDeveloperAccount,
         /// Unexpected state error, used to abort transaction. Used for situations that 'should never happen'.
@@ -308,7 +302,7 @@ pub mod pallet {
         #[pallet::weight(1_000_000_000)]
         pub fn register(
             origin: OriginFor<T>,
-            contract_id: SmartContract<T::AccountId>,
+            contract_id: T::SmartContract,
         ) -> DispatchResultWithPostInfo {
             let developer = ensure_signed(origin)?;
 
@@ -320,10 +314,7 @@ pub mod pallet {
                 !RegisteredDapps::<T>::contains_key(&contract_id),
                 Error::<T>::AlreadyRegisteredContract
             );
-            ensure!(
-                Self::is_contract_valid(&contract_id),
-                Error::<T>::ContractIsNotValid
-            );
+            ensure!(contract_id.is_contract(), Error::<T>::ContractIsNotValid);
 
             if Self::pre_approval_is_enabled() {
                 Self::pre_approved_contracts()
@@ -349,7 +340,7 @@ pub mod pallet {
         #[pallet::weight(1_000_000)]
         pub fn contract_pre_approval(
             origin: OriginFor<T>,
-            contract_id: SmartContract<T::AccountId>,
+            contract_id: T::SmartContract,
         ) -> DispatchResultWithPostInfo {
             ensure_root(origin)?;
             ensure!(
@@ -394,7 +385,7 @@ pub mod pallet {
         #[pallet::weight(10_000_000)]
         pub fn bond_and_stake(
             origin: OriginFor<T>,
-            contract_id: SmartContract<T::AccountId>,
+            contract_id: T::SmartContract,
             #[pallet::compact] value: BalanceOf<T>,
         ) -> DispatchResultWithPostInfo {
             let staker = ensure_signed(origin)?;
@@ -518,7 +509,7 @@ pub mod pallet {
         #[pallet::weight(10_000_000)]
         pub fn unbond_unstake_and_withdraw(
             origin: OriginFor<T>,
-            contract_id: SmartContract<T::AccountId>,
+            contract_id: T::SmartContract,
             #[pallet::compact] value: BalanceOf<T>,
         ) -> DispatchResultWithPostInfo {
             let staker = ensure_signed(origin)?;
@@ -599,7 +590,7 @@ pub mod pallet {
         #[pallet::weight(1_000_000)]
         pub fn claim(
             origin: OriginFor<T>,
-            contract_id: SmartContract<T::AccountId>,
+            contract_id: T::SmartContract,
         ) -> DispatchResultWithPostInfo {
             let claimer = ensure_signed(origin)?;
 
@@ -732,40 +723,11 @@ pub mod pallet {
             Ok(().into())
         }
 
-        // =============== Era ==================
-
-        /// Force there to be no new eras indefinitely.
-        ///
-        /// The dispatch origin must be Root.
-        ///
-        /// # Warning
-        ///
-        /// The election process starts multiple blocks before the end of the era.
-        /// Thus the election process may be ongoing when this is called. In this case the
-        /// election will continue until the next era is triggered.
-        ///
-        /// # <weight>
-        /// - No arguments.
-        /// - Weight: O(1)
-        /// - Write: ForceEra
-        /// # </weight>
-        #[pallet::weight(T::WeightInfo::force_no_eras())]
-        pub fn force_no_eras(origin: OriginFor<T>) -> DispatchResult {
-            ensure_root(origin)?;
-            ForceEra::<T>::put(Forcing::ForceNone);
-            Ok(())
-        }
-
-        /// Force there to be a new era at the end of the next session. After this, it will be
+        /// Force there to be a new era at the end of the next block. After this, it will be
         /// reset to normal (non-forced) behaviour.
         ///
         /// The dispatch origin must be Root.
         ///
-        /// # Warning
-        ///
-        /// The election process starts multiple blocks before the end of the era.
-        /// If this is called just before a new era is triggered, the election process may not
-        /// have enough blocks to get a result.
         ///
         /// # <weight>
         /// - No arguments.
@@ -776,27 +738,6 @@ pub mod pallet {
         pub fn force_new_era(origin: OriginFor<T>) -> DispatchResult {
             ensure_root(origin)?;
             ForceEra::<T>::put(Forcing::ForceNew);
-            Ok(())
-        }
-
-        /// Force there to be a new era at the end of blocks indefinitely.
-        ///
-        /// The dispatch origin must be Root.
-        ///
-        /// # Warning
-        ///
-        /// The election process starts multiple blocks before the end of the era.
-        /// If this is called just before a new era is triggered, the election process may not
-        /// have enough blocks to get a result.
-        ///
-        /// # <weight>
-        /// - Weight: O(1)
-        /// - Write: ForceEra
-        /// # </weight>
-        #[pallet::weight(T::WeightInfo::force_new_era_always())]
-        pub fn force_new_era_always(origin: OriginFor<T>) -> DispatchResult {
-            ensure_root(origin)?;
-            ForceEra::<T>::put(Forcing::ForceAlways);
             Ok(())
         }
     }
@@ -811,20 +752,6 @@ pub mod pallet {
             } else {
                 T::Currency::set_lock(STAKING_ID, &staker, ledger.clone(), WithdrawReasons::all());
                 Ledger::<T>::insert(staker, ledger);
-            }
-        }
-
-        /// Checks if there is a valid smart contract for the provided address
-        fn is_contract_valid(address: &SmartContract<T::AccountId>) -> bool {
-            match address {
-                SmartContract::Wasm(_account) => {
-                    //     <pallet_contracts::ContractInfoOf<T>>::get(&account).is_some()
-                    false
-                }
-                SmartContract::Evm(_account) => {
-                    // pallet_evm::Module::<T>::account_codes(&account).len() > 0 TODO remove comment after EVM mege
-                    true
-                }
             }
         }
 
@@ -845,7 +772,7 @@ pub mod pallet {
         /// Execute payout for stakers.
         /// Return total rewards claimed by stakers on this contract.
         fn payout_stakers_and_get_total_reward(
-            contract: &SmartContract<T::AccountId>,
+            contract: &T::SmartContract,
             staker_map: &BTreeMap<T::AccountId, BalanceOf<T>>,
         ) -> BalanceOf<T> {
             let mut reward_for_stakers = Zero::zero();
