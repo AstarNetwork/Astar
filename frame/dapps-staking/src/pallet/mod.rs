@@ -137,7 +137,7 @@ pub mod pallet {
     pub(crate) type RegisteredDapps<T: Config> =
         StorageMap<_, Twox64Concat, T::SmartContract, T::AccountId>;
 
-    /// Total block rewards for the pallet per era
+    /// Total block rewards for the pallet per era and total staked funds
     #[pallet::storage]
     #[pallet::getter(fn era_reward_and_stake)]
     pub(crate) type EraRewardsAndStakes<T: Config> =
@@ -220,11 +220,11 @@ pub mod pallet {
         BondAndStake(T::AccountId, T::SmartContract, BalanceOf<T>),
         /// Account has unbonded, unstaked and withdrawn funds.
         UnbondUnstakeAndWithdraw(T::AccountId, T::SmartContract, BalanceOf<T>),
-        /// New contract added for staking, with deposit value
+        /// New contract added for staking.
         NewContract(T::AccountId, T::SmartContract),
-        /// New dapps staking era. Distribute era rewards to contracts
+        /// New dapps staking era. Distribute era rewards to contracts.
         NewDappStakingEra(EraIndex),
-        /// The contract's reward have been claimed, by an account, from era, until era
+        /// The contract's reward have been claimed, by an account, from era, until era.
         ContractClaimed(T::SmartContract, T::AccountId, EraIndex, EraIndex),
     }
 
