@@ -1,6 +1,6 @@
 use super::{pallet::pallet::Error, Event, *};
 use frame_support::{assert_noop, assert_ok};
-use mock::{Balances, EraIndex, *};
+use mock::{Balances, EraIndex, MockSmartContract, *};
 use sp_core::H160;
 use sp_runtime::traits::Zero;
 use testing_utils::*;
@@ -12,7 +12,7 @@ fn bond_and_stake_different_eras_is_ok() {
 
         let staker_id = 1;
         let first_stake_value = 100;
-        let contract_id = SmartContract::Evm(H160::repeat_byte(0x01));
+        let contract_id = MockSmartContract::Evm(H160::repeat_byte(0x01));
 
         let current_era = DappsStaking::current_era();
 
@@ -113,8 +113,8 @@ fn bond_and_stake_two_different_contracts_is_ok() {
         let staker_id = 1;
         let first_stake_value = 100;
         let second_stake_value = 300;
-        let first_contract_id = SmartContract::Evm(H160::repeat_byte(0x01));
-        let second_contract_id = SmartContract::Evm(H160::repeat_byte(0x02));
+        let first_contract_id = MockSmartContract::Evm(H160::repeat_byte(0x01));
+        let second_contract_id = MockSmartContract::Evm(H160::repeat_byte(0x02));
         let current_era = mock::DappsStaking::current_era();
 
         // Insert contracts under registered contracts. Don't use the staker Id.
@@ -161,7 +161,7 @@ fn bond_and_stake_two_stakers_one_contract_is_ok() {
         let second_staker_id = 2;
         let first_stake_value = 50;
         let second_stake_value = 235;
-        let contract_id = SmartContract::Evm(H160::repeat_byte(0x01));
+        let contract_id = MockSmartContract::Evm(H160::repeat_byte(0x01));
         let current_era = mock::DappsStaking::current_era();
 
         // Insert a contract under registered contracts.
@@ -202,7 +202,7 @@ fn bond_and_stake_different_value_is_ok() {
         initialize_first_block();
 
         let staker_id = 1;
-        let contract_id = SmartContract::Evm(H160::repeat_byte(0x01));
+        let contract_id = MockSmartContract::Evm(H160::repeat_byte(0x01));
 
         // Insert a contract under registered contracts.
         register_contract(20, &contract_id);
@@ -281,7 +281,7 @@ fn bond_and_stake_history_depth_has_passed_is_ok() {
 
         let developer = 1;
         let staker_id = 2;
-        let contract_id = SmartContract::Evm(H160::repeat_byte(0x01));
+        let contract_id = MockSmartContract::Evm(H160::repeat_byte(0x01));
 
         let start_era = DappsStaking::current_era();
         register_contract(developer, &contract_id);
@@ -332,7 +332,7 @@ fn bond_and_stake_contract_is_not_ok() {
         let stake_value = 100;
 
         // Check not registered contract. Expect an error.
-        let evm_contract = SmartContract::Evm(H160::repeat_byte(0x01));
+        let evm_contract = MockSmartContract::Evm(H160::repeat_byte(0x01));
         assert_noop!(
             DappsStaking::bond_and_stake(Origin::signed(staker_id), evm_contract, stake_value),
             Error::<TestRuntime>::NotOperatedContract
@@ -345,7 +345,7 @@ fn bond_and_stake_insufficient_value() {
     ExternalityBuilder::build().execute_with(|| {
         initialize_first_block();
         let staker_id = 1;
-        let contract_id = SmartContract::Evm(H160::repeat_byte(0x01));
+        let contract_id = MockSmartContract::Evm(H160::repeat_byte(0x01));
 
         // Insert a contract under registered contracts.
         register_contract(20, &contract_id);
@@ -381,7 +381,7 @@ fn bond_and_stake_too_many_stakers_per_contract() {
     ExternalityBuilder::build().execute_with(|| {
         initialize_first_block();
 
-        let contract_id = SmartContract::Evm(H160::repeat_byte(0x01));
+        let contract_id = MockSmartContract::Evm(H160::repeat_byte(0x01));
         // Insert a contract under registered contracts.
         register_contract(10, &contract_id);
 
@@ -412,7 +412,7 @@ fn unbond_unstake_and_withdraw_multiple_time_is_ok() {
         initialize_first_block();
 
         let staker_id = 1;
-        let contract_id = SmartContract::Evm(H160::repeat_byte(0x01));
+        let contract_id = MockSmartContract::Evm(H160::repeat_byte(0x01));
         let original_staked_value = 300 + MINIMUM_STAKING_AMOUNT;
         let old_era = mock::DappsStaking::current_era();
 
@@ -498,7 +498,7 @@ fn unbond_unstake_and_withdraw_value_below_staking_threshold() {
         initialize_first_block();
 
         let staker_id = 1;
-        let contract_id = SmartContract::Evm(H160::repeat_byte(0x01));
+        let contract_id = MockSmartContract::Evm(H160::repeat_byte(0x01));
         let first_value_to_unstake = 300;
         let staked_value = first_value_to_unstake + MINIMUM_STAKING_AMOUNT;
 
@@ -545,7 +545,7 @@ fn unbond_unstake_and_withdraw_in_different_eras() {
 
         let first_staker_id = 1;
         let second_staker_id = 2;
-        let contract_id = SmartContract::Evm(H160::repeat_byte(0x01));
+        let contract_id = MockSmartContract::Evm(H160::repeat_byte(0x01));
         let staked_value = 500;
 
         // Insert a contract under registered contracts, bond&stake it with two different stakers.
@@ -631,7 +631,7 @@ fn unbond_unstake_and_withdraw_history_depth_has_passed_is_ok() {
 
         let developer = 1;
         let staker_id = 2;
-        let contract_id = SmartContract::Evm(H160::repeat_byte(0x01));
+        let contract_id = MockSmartContract::Evm(H160::repeat_byte(0x01));
 
         //////////////////////////////////////////////
         ///// FIRST ERA
@@ -732,7 +732,7 @@ fn unbond_unstake_and_withdraw_contract_is_not_ok() {
         let unstake_value = 100;
 
         // Contract isn't registered, expect an error.
-        let evm_contract = SmartContract::Evm(H160::repeat_byte(0x01));
+        let evm_contract = MockSmartContract::Evm(H160::repeat_byte(0x01));
         assert_noop!(
             DappsStaking::bond_and_stake(Origin::signed(staker_id), evm_contract, unstake_value),
             Error::<TestRuntime>::NotOperatedContract
@@ -746,7 +746,7 @@ fn unbond_unstake_and_withdraw_unstake_not_possible() {
         initialize_first_block();
 
         let first_staker_id = 1;
-        let first_contract_id = SmartContract::Evm(H160::repeat_byte(0x01));
+        let first_contract_id = MockSmartContract::Evm(H160::repeat_byte(0x01));
         let original_staked_value = 100 + MINIMUM_STAKING_AMOUNT;
 
         // Insert a contract under registered contracts, bond&stake it.
@@ -791,7 +791,7 @@ fn unbond_unstake_and_withdraw_unstake_not_possible() {
         );
 
         // Bond a second contract using the second staker. Ensure that second staker still cannot unbond&withdraw funds from the first contract
-        let second_contract_id = SmartContract::Evm(H160::repeat_byte(0x02));
+        let second_contract_id = MockSmartContract::Evm(H160::repeat_byte(0x02));
         register_contract(20, &second_contract_id);
         bond_and_stake_with_verification(
             second_staker_id,
@@ -815,7 +815,7 @@ fn register_is_ok() {
         initialize_first_block();
 
         let developer = 1;
-        let ok_contract = SmartContract::Evm(H160::repeat_byte(0x01));
+        let ok_contract = MockSmartContract::Evm(H160::repeat_byte(0x01));
 
         register_contract(developer, &ok_contract);
         System::assert_last_event(mock::Event::DappsStaking(Event::NewContract(
@@ -831,8 +831,8 @@ fn register_twice_with_same_account_nok() {
         initialize_first_block();
 
         let developer = 1;
-        let contract1 = SmartContract::Evm(H160::repeat_byte(0x01));
-        let contract2 = SmartContract::Evm(H160::repeat_byte(0x02));
+        let contract1 = MockSmartContract::Evm(H160::repeat_byte(0x01));
+        let contract2 = MockSmartContract::Evm(H160::repeat_byte(0x02));
 
         register_contract(developer, &contract1);
 
@@ -855,7 +855,7 @@ fn register_same_contract_twice_nok() {
 
         let developer1 = 1;
         let developer2 = 2;
-        let contract = SmartContract::Evm(H160::repeat_byte(0x01));
+        let contract = MockSmartContract::Evm(H160::repeat_byte(0x01));
 
         register_contract(developer1, &contract);
 
@@ -878,7 +878,7 @@ fn register_with_pre_approve_enabled() {
     ExternalityBuilder::build().execute_with(|| {
         initialize_first_block();
         let developer = 1;
-        let contract = SmartContract::Evm(H160::repeat_byte(0x01));
+        let contract = MockSmartContract::Evm(H160::repeat_byte(0x01));
 
         // enable pre-approval of the contracts
         assert_ok!(mock::DappsStaking::enable_contract_preapproval(
@@ -916,7 +916,7 @@ fn register_with_pre_approve_enabled() {
 
         // disable pre_approval and register contract2
         let developer2 = 2;
-        let contract2 = SmartContract::Evm(H160::repeat_byte(0x02));
+        let contract2 = MockSmartContract::Evm(H160::repeat_byte(0x02));
         assert_ok!(mock::DappsStaking::enable_contract_preapproval(
             Origin::root(),
             false
@@ -954,7 +954,7 @@ fn new_era_is_ok() {
         let staker = 2;
         let developer = 3;
         const STAKED_AMOUNT: Balance = 100;
-        let contract = SmartContract::Evm(H160::repeat_byte(0x01));
+        let contract = MockSmartContract::Evm(H160::repeat_byte(0x01));
         register_contract(developer, &contract);
         bond_and_stake_with_verification(staker, &contract, STAKED_AMOUNT);
 
@@ -1010,7 +1010,7 @@ fn claim_contract_not_registered() {
         initialize_first_block();
 
         let claimer = 2;
-        let contract = SmartContract::Evm(H160::repeat_byte(0x01));
+        let contract = MockSmartContract::Evm(H160::repeat_byte(0x01));
 
         assert_noop!(
             DappsStaking::claim(Origin::signed(claimer), contract),
@@ -1026,7 +1026,7 @@ fn claim_nothing_to_claim() {
 
         let developer1 = 1;
         let claimer = 2;
-        let contract = SmartContract::Evm(H160::repeat_byte(0x01));
+        let contract = MockSmartContract::Evm(H160::repeat_byte(0x01));
 
         register_contract(developer1, &contract);
 
@@ -1044,7 +1044,7 @@ fn claim_twice_in_same_era() {
 
         let developer = 1;
         let claimer = 2;
-        let contract = SmartContract::Evm(H160::repeat_byte(0x01));
+        let contract = MockSmartContract::Evm(H160::repeat_byte(0x01));
 
         let start_era = DappsStaking::current_era();
 
@@ -1070,7 +1070,7 @@ fn claim_after_history_depth_has_passed_is_ok() {
 
         let developer = 1;
         let claimer = 2;
-        let contract = SmartContract::Evm(H160::repeat_byte(0x01));
+        let contract = MockSmartContract::Evm(H160::repeat_byte(0x01));
 
         let start_era = DappsStaking::current_era();
         register_contract(developer, &contract);
@@ -1095,7 +1095,7 @@ fn claim_is_ok() {
 
         let developer = 1;
         let claimer = 2;
-        let contract = SmartContract::Evm(H160::repeat_byte(0x01));
+        let contract = MockSmartContract::Evm(H160::repeat_byte(0x01));
         const SKIP_ERA: EraIndex = 3;
 
         let start_era = DappsStaking::current_era();
@@ -1121,7 +1121,7 @@ fn claim_one_contract_one_staker() {
 
         const STAKE_AMOUNT1: mock::Balance = 1000;
         const INITIAL_STAKE: mock::Balance = 1000;
-        let contract = SmartContract::Evm(H160::repeat_byte(0x01));
+        let contract = MockSmartContract::Evm(H160::repeat_byte(0x01));
         const SKIP_ERA: EraIndex = 4;
 
         // Store initial free balaces of the developer and the stakers
@@ -1186,7 +1186,7 @@ fn claim_one_contract_two_stakers() {
         const STAKE_AMOUNT1: mock::Balance = 400;
         const STAKE_AMOUNT2: mock::Balance = 600;
         const INITIAL_STAKE: mock::Balance = 1000;
-        let contract = SmartContract::Evm(H160::repeat_byte(0x01));
+        let contract = MockSmartContract::Evm(H160::repeat_byte(0x01));
         const SKIP_ERA: EraIndex = 2;
 
         // Store initial free balaces of the developer and the stakers
@@ -1287,8 +1287,8 @@ fn claim_two_contracts_three_stakers() {
         const CONTRACT2_STAKE: mock::Balance = 500;
         const ERA_STAKED1: mock::Balance = 1000; // 400 + 600
         const ERA_STAKED2: mock::Balance = 1500; // 1000 + 100 + 400
-        let contract1 = SmartContract::Evm(H160::repeat_byte(0x01));
-        let contract2 = SmartContract::Evm(H160::repeat_byte(0x02));
+        let contract1 = MockSmartContract::Evm(H160::repeat_byte(0x01));
+        let contract2 = MockSmartContract::Evm(H160::repeat_byte(0x02));
         const SKIP_ERA: EraIndex = 3;
 
         // Store initial free balaces of developers and stakers

@@ -2,6 +2,7 @@
 // `construct_runtime!` does a lot of recursion and requires us to increase the limit to 256.
 #![recursion_limit = "256"]
 
+use codec::{Decode, Encode};
 use frame_support::{
     construct_runtime, parameter_types,
     traits::{Currency, FindAuthor, Imbalance, KeyOwnerProofSystem, Nothing, OnUnbalanced},
@@ -23,7 +24,7 @@ use sp_runtime::{
         NumberFor, Verify,
     },
     transaction_validity::{TransactionPriority, TransactionSource, TransactionValidity},
-    ApplyExtrinsicResult, MultiSignature,
+    ApplyExtrinsicResult, MultiSignature, RuntimeDebug,
 };
 use sp_std::prelude::*;
 #[cfg(feature = "std")]
@@ -282,7 +283,7 @@ impl pallet_block_reward::Config for Runtime {
 
 parameter_types! {
     pub const BlockPerEra: BlockNumber = 60;
-    pub const RegisterDeposit: Balance = 100;
+    pub const RegisterDeposit: Balance = 100 * AST;
     pub const DeveloperRewardPercentage: u32 = 80;
     pub const MaxNumberOfStakersPerContract: u32 = 128;
     pub const MinimumStakingAmount: Balance = 10;
@@ -291,6 +292,7 @@ parameter_types! {
 impl pallet_dapps_staking::Config for Runtime {
     type Currency = Balances;
     type BlockPerEra = BlockPerEra;
+    type SmartContract = SmartContract<AccountId>;
     type RegisterDeposit = RegisterDeposit;
     type DeveloperRewardPercentage = DeveloperRewardPercentage;
     type Event = Event;
@@ -298,6 +300,24 @@ impl pallet_dapps_staking::Config for Runtime {
     type MaxNumberOfStakersPerContract = MaxNumberOfStakersPerContract;
     type MinimumStakingAmount = MinimumStakingAmount;
     type PalletId = DappsStakingPalletId;
+}
+
+/// Multi-VM pointer to smart contract instance.
+#[derive(PartialEq, Eq, Copy, Clone, Encode, Decode, RuntimeDebug)]
+pub enum SmartContract<AccountId> {
+    /// EVM smart contract instance.
+    Evm(sp_core::H160),
+    /// Wasm smart contract instance.
+    Wasm(AccountId),
+}
+
+impl<AccountId> pallet_dapps_staking::traits::IsContract for SmartContract<AccountId> {
+    fn is_contract(&self) -> bool {
+        match self {
+            SmartContract::Wasm(_account) => false,
+            SmartContract::Evm(account) => EVM::account_codes(&account).len() > 0,
+        }
+    }
 }
 
 /// Current approximation of the gas/s consumption considering
@@ -392,8 +412,6 @@ impl fp_rpc::ConvertTransaction<sp_runtime::OpaqueExtrinsic> for TransactionConv
         &self,
         transaction: pallet_ethereum::Transaction,
     ) -> sp_runtime::OpaqueExtrinsic {
-        use codec::{Decode, Encode};
-
         let extrinsic = UncheckedExtrinsic::new_unsigned(
             pallet_ethereum::Call::<Runtime>::transact(transaction).into(),
         );

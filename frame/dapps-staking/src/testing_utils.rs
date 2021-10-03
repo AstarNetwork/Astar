@@ -5,7 +5,7 @@ use sp_runtime::traits::Zero;
 use sp_runtime::Perbill;
 
 /// Used to register contract for staking and assert success.
-pub(crate) fn register_contract(developer: AccountId, contract: &SmartContract<AccountId>) {
+pub(crate) fn register_contract(developer: AccountId, contract: &MockSmartContract<AccountId>) {
     assert_ok!(mock::DappsStaking::enable_contract_preapproval(
         Origin::root(),
         false
@@ -24,7 +24,7 @@ pub(crate) fn get_total_reward_per_era() -> Balance {
 /// Used to perform bond_and_stake with success assertion.
 pub(crate) fn bond_and_stake_with_verification(
     staker_id: AccountId,
-    contract_id: &SmartContract<AccountId>,
+    contract_id: &MockSmartContract<AccountId>,
     value: Balance,
 ) {
     assert_ok!(DappsStaking::bond_and_stake(
@@ -37,7 +37,7 @@ pub(crate) fn bond_and_stake_with_verification(
 /// Used to perform unbond_unstake_and_withdraw with success assertion.
 pub(crate) fn unbond_unstake_and_withdraw_with_verification(
     staker_id: AccountId,
-    contract_id: &SmartContract<AccountId>,
+    contract_id: &MockSmartContract<AccountId>,
     value: Balance,
 ) {
     assert_ok!(DappsStaking::unbond_unstake_and_withdraw(
@@ -56,7 +56,7 @@ pub(crate) fn verify_ledger(staker_id: AccountId, staked_value: Balance) {
 
 /// Used to verify era staking points content.
 pub(crate) fn verify_era_staking_points(
-    contract_id: &SmartContract<AccountId>,
+    contract_id: &MockSmartContract<AccountId>,
     total_staked_value: Balance,
     era: crate::EraIndex,
     stakers: Vec<(AccountId, Balance)>,
@@ -95,7 +95,7 @@ pub(crate) fn verify_pallet_era_staked_and_reward(
 
 /// Used to verify storage content after claim() is successfuly executed.
 pub(crate) fn verify_contract_history_is_cleared(
-    contract: SmartContract<mock::AccountId>,
+    contract: MockSmartContract<mock::AccountId>,
     from_era: EraIndex,
     to_era: EraIndex,
 ) {
@@ -124,7 +124,7 @@ pub(crate) fn verify_contract_history_is_cleared(
 /// Used to perform claim with success assertion
 pub(crate) fn claim(
     claimer: AccountId,
-    contract: SmartContract<mock::AccountId>,
+    contract: MockSmartContract<mock::AccountId>,
     start_era: EraIndex,
     claim_era: EraIndex,
 ) {
@@ -162,7 +162,7 @@ pub(crate) fn calc_expected_developer_reward(
 /// Check staker/dev Balance after reward distribution.
 /// Check that claimed rewards for staker/dev are updated.
 pub(crate) fn check_rewards_on_balance_and_storage(
-    contract: &SmartContract<mock::AccountId>,
+    contract: &MockSmartContract<mock::AccountId>,
     user: &AccountId,
     free_balance: mock::Balance,
     eras: EraIndex,
@@ -181,7 +181,7 @@ pub(crate) fn check_rewards_on_balance_and_storage(
 
 /// Check that claimed rewards on this contract are updated
 pub(crate) fn check_paidout_rewards_for_contract(
-    contract: &SmartContract<mock::AccountId>,
+    contract: &MockSmartContract<mock::AccountId>,
     expected_contract_reward: mock::Balance,
 ) {
     let era_last_claimed = mock::DappsStaking::contract_last_claimed(contract).unwrap_or(0);
