@@ -1,0 +1,44 @@
+[package]
+name = "pallet-dapps-staking"
+version = "0.1.0"
+authors = ["Stake Technologies <devops@stake.co.jp>"]
+edition = "2018"
+homepage = "https://astar.network/"
+repository = "https://github.com/PlasmNetwork/Astar/tree/development/dapp-staking"
+description = "FRAME pallet to staking for dapps"
+license = "PolyForm-Noncommercial-1.0.0"
+
+[dependencies]
+codec = { package = "parity-scale-codec", version = "2.0", features = ["derive"], default-features = false }
+serde = { version = "1.0.106", features = ["derive"], optional = true }
+num-traits = { version = "0.2", default-features = false }
+sp-core = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.9",  default-features = false }
+sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.9",  default-features = false }
+sp-arithmetic = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.9",  default-features = false }
+sp-io = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.9",  default-features = false }
+sp-std = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.9",  default-features = false }
+pallet-balances = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.9",  default-features = false }
+frame-support = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.9",  default-features = false }
+pallet-session = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.9",  default-features = false }
+pallet-timestamp = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.9",  default-features = false }
+frame-system = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.9",  default-features = false }
+sp-staking = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.9",  default-features = false }
+
+[features]
+default = ["std"]
+std = [
+    "serde",
+    "codec/std",
+    "num-traits/std",
+    "sp-core/std",
+    "sp-runtime/std",
+    "sp-arithmetic/std",
+    "sp-io/std",
+    "sp-std/std",
+    "frame-support/std",
+    "frame-system/std",
+    "pallet-balances/std",
+    "pallet-session/std",
+    "pallet-timestamp/std",
+    "sp-staking/std",
+]

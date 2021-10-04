@@ -4,6 +4,7 @@
 // `construct_runtime!` does a lot of recursion and requires us to increase the limit to 256.
 #![recursion_limit = "256"]
 
+use codec::{Decode, Encode};
 use frame_support::{
     construct_runtime, match_type, parameter_types,
     traits::{Contains, Currency, FindAuthor, Imbalance, OnUnbalanced},
@@ -30,7 +31,7 @@ use sp_runtime::{
         OpaqueKeys, Verify,
     },
     transaction_validity::{TransactionPriority, TransactionSource, TransactionValidity},
-    ApplyExtrinsicResult, FixedPointNumber, Perbill, Perquintill,
+    ApplyExtrinsicResult, FixedPointNumber, Perbill, Perquintill, RuntimeDebug,
 };
 use sp_std::prelude::*;
 
@@ -269,6 +270,45 @@ impl pallet_custom_signatures::Config for Runtime {
     type UnsignedPriority = EcdsaUnsignedPriority;
 }
 
+parameter_types! {
+    pub const BlockPerEra: BlockNumber = 1 * DAYS;
+    pub const RegisterDeposit: Balance = 100 * SDN;
+    pub const DeveloperRewardPercentage: u32 = 80;
+    pub const MaxNumberOfStakersPerContract: u32 = 128;
+    pub const MinimumStakingAmount: Balance = 10;
+}
+
+impl pallet_dapps_staking::Config for Runtime {
+    type Currency = Balances;
+    type BlockPerEra = BlockPerEra;
+    type SmartContract = SmartContract<AccountId>;
+    type RegisterDeposit = RegisterDeposit;
+    type DeveloperRewardPercentage = DeveloperRewardPercentage;
+    type Event = Event;
+    type WeightInfo = (); // TODO
+    type MaxNumberOfStakersPerContract = MaxNumberOfStakersPerContract;
+    type MinimumStakingAmount = MinimumStakingAmount;
+    type PalletId = DappsStakingPalletId;
+}
+
+/// Multi-VM pointer to smart contract instance.
+#[derive(PartialEq, Eq, Copy, Clone, Encode, Decode, RuntimeDebug)]
+pub enum SmartContract<AccountId> {
+    /// EVM smart contract instance.
+    Evm(sp_core::H160),
+    /// Wasm smart contract instance.
+    Wasm(AccountId),
+}
+
+impl<AccountId> pallet_dapps_staking::traits::IsContract for SmartContract<AccountId> {
+    fn is_contract(&self) -> bool {
+        match self {
+            SmartContract::Wasm(_account) => false,
+            SmartContract::Evm(account) => EVM::account_codes(&account).len() > 0,
+        }
+    }
+}
+
 impl pallet_utility::Config for Runtime {
     type Event = Event;
     type Call = Call;
@@ -371,9 +411,11 @@ impl OnUnbalanced<NegativeImbalance> for ToStakingPot {
 pub struct OnBlockReward;
 impl OnUnbalanced<NegativeImbalance> for OnBlockReward {
     fn on_nonzero_unbalanced(amount: NegativeImbalance) {
-        let (dapps, maintain) = amount.ration(50, 50);
+        let dapps_percentage = DAppsRewardPercentage::get();
+        let (dapps, maintain) = amount.ration(dapps_percentage, 100 - dapps_percentage);
+
         // dapp staking block reward
-        Balances::resolve_creating(&DappsStakingPalletId::get().into_account(), dapps);
+        DappsStaking::on_unbalanced(dapps);
 
         let (treasury, collators) = maintain.ration(40, 10);
         // treasury slice of block reward
@@ -385,11 +427,13 @@ impl OnUnbalanced<NegativeImbalance> for OnBlockReward {
 
 parameter_types! {
     pub const RewardAmount: Balance = 2_664 * MILLISDN;
+    pub const DAppsRewardPercentage: u32 = 50;
 }
 
 impl pallet_block_reward::Config for Runtime {
     type Currency = Balances;
     type OnBlockReward = OnBlockReward;
+    type DAppsRewardPercentage = DAppsRewardPercentage;
     type RewardAmount = RewardAmount;
 }
 
@@ -614,8 +658,6 @@ impl fp_rpc::ConvertTransaction<sp_runtime::OpaqueExtrinsic> for TransactionConv
         &self,
         transaction: pallet_ethereum::Transaction,
     ) -> sp_runtime::OpaqueExtrinsic {
-        use codec::{Decode, Encode};
-
         let extrinsic = UncheckedExtrinsic::new_unsigned(
             pallet_ethereum::Call::<Runtime>::transact(transaction).into(),
         );
@@ -655,6 +697,7 @@ construct_runtime!(
         Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>} = 31,
         Vesting: pallet_vesting::{Pallet, Call, Storage, Config<T>, Event<T>} = 32,
         BlockReward: pallet_block_reward::{Pallet} = 33,
+        DappsStaking: pallet_dapps_staking::{Pallet, Call, Storage, Event<T>} = 34,
 
         Authorship: pallet_authorship::{Pallet, Call, Storage, Inherent} = 40,
         CollatorSelection: pallet_collator_selection::{Pallet, Call, Storage, Event<T>, Config<T>} = 41,

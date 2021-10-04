@@ -28,6 +28,7 @@ pallet-sudo = { git = "https://github.com/paritytech/substrate", branch = "polka
 frame-system = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.9", default-features = false }
 pallet-timestamp = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.9", default-features = false }
 pallet-transaction-payment = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.9", default-features = false }
+pallet-vesting = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.9", default-features = false }
 frame-executive = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.9", default-features = false }
 fp-rpc = { git = "https://github.com/PlasmNetwork/frontier", branch = "polkadot-v0.9.9", default-features = false }
 sp-api = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.9", default-features = false }
@@ -48,6 +49,7 @@ pallet-transaction-payment-rpc-runtime-api = { git = "https://github.com/parityt
 
 pallet-block-reward = { path = "../../frame/block-reward", default-features = false }
 pallet-custom-signatures = { path = "../../frame/custom-signatures", default-features = false }
+pallet-dapps-staking = { path = "../../frame/dapps-staking", default-features = false }
 
 [build-dependencies]
 substrate-wasm-builder = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.9", default-features = false }
@@ -69,6 +71,7 @@ std = [
     "pallet-contracts-primitives/std",
     "pallet-contracts-rpc-runtime-api/std",
     "pallet-custom-signatures/std",
+    "pallet-dapps-staking/std",
     "pallet-ethereum/std",
     "pallet-evm/std",
     "pallet-evm-precompile-simple/std",
@@ -82,6 +85,7 @@ std = [
     "pallet-timestamp/std",
     "pallet-transaction-payment-rpc-runtime-api/std",
     "pallet-transaction-payment/std",
+    "pallet-vesting/std",
     "sp-api/std",
     "sp-block-builder/std",
     "sp-consensus-aura/std",

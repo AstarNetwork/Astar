@@ -6,6 +6,7 @@ members = [
     "runtime/shibuya",
     "frame/block-reward",
     "frame/custom-signatures",
+    "frame/dapps-staking",
     "precompiles/staking",
 ]
 

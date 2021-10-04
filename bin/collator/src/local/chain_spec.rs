@@ -3,6 +3,7 @@
 use local_runtime::{
     wasm_binary_unwrap, AccountId, AuraConfig, AuraId, BalancesConfig, EVMConfig, GenesisConfig,
     GrandpaConfig, GrandpaId, LocalNetworkPrecompiles, Signature, SudoConfig, SystemConfig,
+    VestingConfig,
 };
 use sc_service::ChainType;
 use sp_core::{sr25519, Pair, Public};
@@ -83,6 +84,7 @@ fn testnet_genesis(
                 .map(|k| (k, 1 << 70))
                 .collect(),
         },
+        vesting: VestingConfig { vesting: vec![] },
         aura: AuraConfig {
             authorities: initial_authorities.iter().map(|x| (x.0.clone())).collect(),
         },

@@ -4483,6 +4483,7 @@ dependencies = [
  "pallet-contracts-primitives",
  "pallet-contracts-rpc-runtime-api",
  "pallet-custom-signatures",
+ "pallet-dapps-staking",
  "pallet-ethereum",
  "pallet-evm",
  "pallet-evm-precompile-bn128",
@@ -4496,6 +4497,7 @@ dependencies = [
  "pallet-timestamp",
  "pallet-transaction-payment",
  "pallet-transaction-payment-rpc-runtime-api",
+ "pallet-vesting",
  "parity-scale-codec",
  "sp-api",
  "sp-block-builder",
@@ -5410,6 +5412,26 @@ dependencies = [
  "sp-io",
  "sp-keyring",
  "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
+name = "pallet-dapps-staking"
+version = "0.1.0"
+dependencies = [
+ "frame-support",
+ "frame-system",
+ "num-traits",
+ "pallet-balances",
+ "pallet-session",
+ "pallet-timestamp",
+ "parity-scale-codec",
+ "serde",
+ "sp-arithmetic",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-staking",
  "sp-std",
 ]
 
@@ -9602,6 +9624,7 @@ dependencies = [
  "pallet-block-reward",
  "pallet-collator-selection",
  "pallet-custom-signatures",
+ "pallet-dapps-staking",
  "pallet-ethereum",
  "pallet-evm",
  "pallet-evm-precompile-bn128",

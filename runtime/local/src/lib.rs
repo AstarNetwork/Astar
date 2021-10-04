@@ -2,6 +2,7 @@
 // `construct_runtime!` does a lot of recursion and requires us to increase the limit to 256.
 #![recursion_limit = "256"]
 
+use codec::{Decode, Encode};
 use frame_support::{
     construct_runtime, parameter_types,
     traits::{Currency, FindAuthor, Imbalance, KeyOwnerProofSystem, Nothing, OnUnbalanced},
@@ -19,11 +20,11 @@ use sp_core::{crypto::KeyTypeId, OpaqueMetadata, H160, H256, U256};
 use sp_runtime::{
     create_runtime_str, generic, impl_opaque_keys,
     traits::{
-        AccountIdConversion, AccountIdLookup, BlakeTwo256, Block as BlockT, IdentifyAccount,
-        NumberFor, Verify,
+        AccountIdConversion, AccountIdLookup, BlakeTwo256, Block as BlockT, ConvertInto,
+        IdentifyAccount, NumberFor, Verify,
     },
     transaction_validity::{TransactionPriority, TransactionSource, TransactionValidity},
-    ApplyExtrinsicResult, MultiSignature,
+    ApplyExtrinsicResult, MultiSignature, RuntimeDebug,
 };
 use sp_std::prelude::*;
 #[cfg(feature = "std")]
@@ -208,7 +209,7 @@ parameter_types! {
 impl pallet_timestamp::Config for Runtime {
     /// A timestamp: milliseconds since the unix epoch.
     type Moment = u64;
-    type OnTimestampSet = Aura;
+    type OnTimestampSet = (Aura, BlockReward);
     type MinimumPeriod = MinimumPeriod;
     type WeightInfo = ();
 }
@@ -255,9 +256,11 @@ type NegativeImbalance = <Balances as Currency<AccountId>>::NegativeImbalance;
 pub struct OnBlockReward;
 impl OnUnbalanced<NegativeImbalance> for OnBlockReward {
     fn on_nonzero_unbalanced(amount: NegativeImbalance) {
-        let (dapps, maintain) = amount.ration(50, 50);
+        let dapps_percentage = DAppsRewardPercentage::get();
+        let (dapps, maintain) = amount.ration(dapps_percentage, 100 - dapps_percentage);
+
         // dapp staking block reward
-        Balances::resolve_creating(&DappsStakingPalletId::get().into_account(), dapps);
+        DappsStaking::on_unbalanced(dapps);
 
         // XXX: skip block author reward, it's local runtime didn't
         let (treasury, _) = maintain.ration(40, 10);
@@ -268,12 +271,53 @@ impl OnUnbalanced<NegativeImbalance> for OnBlockReward {
 
 parameter_types! {
     pub const RewardAmount: Balance = 2_664 * MILLIAST;
+    pub const DAppsRewardPercentage: u32 = 50;
 }
 
 impl pallet_block_reward::Config for Runtime {
     type Currency = Balances;
     type OnBlockReward = OnBlockReward;
     type RewardAmount = RewardAmount;
+    type DAppsRewardPercentage = DAppsRewardPercentage;
+}
+
+parameter_types! {
+    pub const BlockPerEra: BlockNumber = 60;
+    pub const RegisterDeposit: Balance = 100 * AST;
+    pub const DeveloperRewardPercentage: u32 = 80;
+    pub const MaxNumberOfStakersPerContract: u32 = 128;
+    pub const MinimumStakingAmount: Balance = 10;
+}
+
+impl pallet_dapps_staking::Config for Runtime {
+    type Currency = Balances;
+    type BlockPerEra = BlockPerEra;
+    type SmartContract = SmartContract<AccountId>;
+    type RegisterDeposit = RegisterDeposit;
+    type DeveloperRewardPercentage = DeveloperRewardPercentage;
+    type Event = Event;
+    type WeightInfo = (); // TODO
+    type MaxNumberOfStakersPerContract = MaxNumberOfStakersPerContract;
+    type MinimumStakingAmount = MinimumStakingAmount;
+    type PalletId = DappsStakingPalletId;
+}
+
+/// Multi-VM pointer to smart contract instance.
+#[derive(PartialEq, Eq, Copy, Clone, Encode, Decode, RuntimeDebug)]
+pub enum SmartContract<AccountId> {
+    /// EVM smart contract instance.
+    Evm(sp_core::H160),
+    /// Wasm smart contract instance.
+    Wasm(AccountId),
+}
+
+impl<AccountId> pallet_dapps_staking::traits::IsContract for SmartContract<AccountId> {
+    fn is_contract(&self) -> bool {
+        match self {
+            SmartContract::Wasm(_account) => false,
+            SmartContract::Evm(account) => EVM::account_codes(&account).len() > 0,
+        }
+    }
 }
 
 /// Current approximation of the gas/s consumption considering
@@ -368,8 +412,6 @@ impl fp_rpc::ConvertTransaction<sp_runtime::OpaqueExtrinsic> for TransactionConv
         &self,
         transaction: pallet_ethereum::Transaction,
     ) -> sp_runtime::OpaqueExtrinsic {
-        use codec::{Decode, Encode};
-
         let extrinsic = UncheckedExtrinsic::new_unsigned(
             pallet_ethereum::Call::<Runtime>::transact(transaction).into(),
         );
@@ -425,6 +467,18 @@ parameter_types! {
     pub Schedule: pallet_contracts::Schedule<Runtime> = Default::default();
 }
 
+parameter_types! {
+    pub const MinVestedTransfer: Balance = 1 * AST;
+}
+
+impl pallet_vesting::Config for Runtime {
+    type Event = Event;
+    type Currency = Balances;
+    type BlockNumberToBalance = ConvertInto;
+    type MinVestedTransfer = MinVestedTransfer;
+    type WeightInfo = ();
+}
+
 impl pallet_contracts::Config for Runtime {
     type Time = Timestamp;
     type Randomness = RandomnessCollectiveFlip;
@@ -472,6 +526,9 @@ construct_runtime!(
         Aura: pallet_aura::{Pallet, Config<T>},
         Grandpa: pallet_grandpa::{Pallet, Call, Storage, Config, Event},
         Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
+        Vesting: pallet_vesting::{Pallet, Call, Storage, Config<T>, Event<T>},
+        DappsStaking: pallet_dapps_staking::{Pallet, Call, Storage, Event<T>},
+        BlockReward: pallet_block_reward::{Pallet},
         TransactionPayment: pallet_transaction_payment::{Pallet, Storage},
         EVM: pallet_evm::{Pallet, Config, Call, Storage, Event<T>},
         Ethereum: pallet_ethereum::{Pallet, Call, Storage, Event, Config, ValidateUnsigned},
