@@ -50,7 +50,7 @@ pub(crate) fn unbond_unstake_and_withdraw_with_verification(
 /// Used to verify ledger content.
 pub(crate) fn verify_ledger(staker_id: AccountId, staked_value: Balance) {
     // Verify that ledger storage values are as expected.
-    let ledger = Ledger::<TestRuntime>::get(staker_id).unwrap();
+    let ledger = Ledger::<TestRuntime>::get(staker_id);
     assert_eq!(staked_value, ledger);
 }
 

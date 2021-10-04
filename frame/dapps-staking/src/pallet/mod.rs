@@ -36,7 +36,8 @@ pub mod pallet {
 
     // Negative imbalance type of this pallet.
     type NegativeImbalanceOf<T> = <<T as Config>::Currency as Currency<
-        <T as frame_system::Config>::AccountId,>>::NegativeImbalance;
+        <T as frame_system::Config>::AccountId,
+    >>::NegativeImbalance;
 
     impl<T: Config> OnUnbalanced<NegativeImbalanceOf<T>> for Pallet<T> {
         fn on_nonzero_unbalanced(block_reward: NegativeImbalanceOf<T>) {
@@ -96,7 +97,8 @@ pub mod pallet {
     /// Bonded amount for the staker
     #[pallet::storage]
     #[pallet::getter(fn ledger)]
-    pub(crate) type Ledger<T: Config> = StorageMap<_, Blake2_128Concat, T::AccountId, BalanceOf<T>>;
+    pub(crate) type Ledger<T: Config> =
+        StorageMap<_, Blake2_128Concat, T::AccountId, BalanceOf<T>, ValueQuery>;
 
     /// Number of eras to keep in history.
     ///
@@ -147,7 +149,7 @@ pub mod pallet {
     #[pallet::getter(fn rewards_claimed)]
     pub(crate) type RewardsClaimed<T: Config> = StorageDoubleMap<
         _,
-Blake2_128Concat,
+        Blake2_128Concat,
         T::SmartContract,
         Twox64Concat,
         T::AccountId,
@@ -160,7 +162,7 @@ Blake2_128Concat,
     #[pallet::getter(fn contract_era_stake)]
     pub(crate) type ContractEraStake<T: Config> = StorageDoubleMap<
         _,
-Blake2_128Concat,
+        Blake2_128Concat,
         T::SmartContract,
         Twox64Concat,
         EraIndex,
@@ -221,6 +223,8 @@ Blake2_128Concat,
         UnbondUnstakeAndWithdraw(T::AccountId, T::SmartContract, BalanceOf<T>),
         /// New contract added for staking.
         NewContract(T::AccountId, T::SmartContract),
+        /// Contract removed from dapps staking.
+        ContractRemoved(T::AccountId, T::SmartContract),
         /// New dapps staking era. Distribute era rewards to contracts.
         NewDappStakingEra(EraIndex),
         /// The contract's reward have been claimed, by an account, from era, until era.
@@ -245,10 +249,12 @@ Blake2_128Concat,
         AlreadyRegisteredContract,
         /// User attempts to register with address which is not contract
         ContractIsNotValid,
-        /// Claiming contract with no developer account
+        /// Contract not registered for dapps staking.
         ContractNotRegistered,
         /// This account was already used to register contract
         AlreadyUsedDeveloperAccount,
+        /// Smart contract not owned by the account id.
+        NotOwnedContract,
         /// Unexpected state error, used to abort transaction. Used for situations that 'should never happen'.
         UnexpectedState,
         /// Report issue on github if this is ever emitted
@@ -263,6 +269,8 @@ Blake2_128Concat,
         RequiredContractPreApproval,
         /// Developer's account is already part of pre-approved list
         AlreadyPreApprovedDeveloper,
+        /// Contract rewards haven't been claimed prior to unregistration
+        ContractRewardsNotClaimed,
     }
 
     #[pallet::hooks]
@@ -297,7 +305,7 @@ Blake2_128Concat,
         ///
         /// Any user can call this function.
         /// However, caller have to have deposit amount.
-        /// TODO: weight, and add registrationFee
+        /// TODO: weight
         #[pallet::weight(1_000_000_000)]
         pub fn register(
             origin: OriginFor<T>,
@@ -313,8 +321,8 @@ Blake2_128Concat,
                 !RegisteredDapps::<T>::contains_key(&contract_id),
                 Error::<T>::AlreadyRegisteredContract
             );
-            ensure!(contract_id.is_contract(), Error::<T>::ContractIsNotValid);
 
+            ensure!(contract_id.is_contract(), Error::<T>::ContractIsNotValid);
             if Self::pre_approval_is_enabled() {
                 ensure!(
                     PreApprovedDevelopers::<T>::contains_key(&developer),
@@ -328,6 +336,75 @@ Blake2_128Concat,
             RegisteredDevelopers::<T>::insert(&developer, contract_id.clone());
 
             Self::deposit_event(Event::<T>::NewContract(developer, contract_id));
+
+            Ok(().into())
+        }
+
+        /// Unregister existing contract from dapps staking
+        ///
+        /// This must be called by the developer who registered the contract.
+        ///
+        /// No unclaimed rewards must remain prior to this call (otherwise it will fail).
+        /// Make sure to claim all the contract rewards prior to unregistering it.
+        /// TODO: weight
+        #[pallet::weight(1_000_000_000)]
+        pub fn unregister(
+            origin: OriginFor<T>,
+            contract_id: T::SmartContract,
+        ) -> DispatchResultWithPostInfo {
+            let developer = ensure_signed(origin)?;
+
+            let registered_contract =
+                RegisteredDevelopers::<T>::get(&developer).ok_or(Error::<T>::NotOwnedContract)?;
+
+            // This is a sanity check for the unregistration since it requires the caller
+            // to input the correct contract address.
+            ensure!(
+                registered_contract == contract_id,
+                Error::<T>::NotOwnedContract
+            );
+
+            let current_era = Self::current_era();
+            // in case contract wasn't even bonded yet
+            let last_claim_era =
+                Self::contract_last_claimed(&contract_id).unwrap_or(current_era.clone());
+
+            // Ensure that all contract rewards have been claimed prior to unregistration.
+            ensure!(
+                last_claim_era == current_era,
+                Error::<T>::ContractRewardsNotClaimed
+            );
+
+            // We need to unstake all funds that are currently staked
+            let era_staking_points =
+                ContractEraStake::<T>::take(&contract_id, &current_era).unwrap_or_default();
+            let mut unstake_accumulator = BalanceOf::<T>::zero();
+            for (staker_id, amount) in era_staking_points.stakers.iter() {
+                let mut ledger = Self::ledger(staker_id);
+                ledger = ledger.saturating_sub(*amount);
+                Self::update_ledger(staker_id, &ledger);
+
+                // increment total unstake value accumulator
+                unstake_accumulator += *amount;
+            }
+
+            // Need to update total amount staked
+            let mut reward_and_stake =
+                Self::era_reward_and_stake(&current_era).ok_or(Error::<T>::UnexpectedState)?;
+            reward_and_stake.staked = reward_and_stake.staked.saturating_sub(unstake_accumulator);
+            EraRewardsAndStakes::<T>::insert(&current_era, reward_and_stake);
+
+            // Continue with cleanup
+            T::Currency::unreserve(&developer, T::RegisterDeposit::get());
+            RegisteredDapps::<T>::remove(&contract_id);
+            RegisteredDevelopers::<T>::remove(&developer);
+            ContractLastStaked::<T>::remove(&contract_id);
+            ContractLastClaimed::<T>::remove(&contract_id);
+
+            // TODO: Should this be removed? We lose all the information about the rewards earned by all stakers of this contract.
+            RewardsClaimed::<T>::remove_prefix(&contract_id, None);
+
+            Self::deposit_event(Event::<T>::ContractRemoved(developer, contract_id));
 
             Ok(().into())
         }
@@ -389,7 +466,7 @@ Blake2_128Concat,
             );
 
             // Get the staking ledger or create an entry if it doesn't exist.
-            let mut ledger = Self::ledger(&staker).unwrap_or_default();
+            let mut ledger = Self::ledger(&staker);
 
             // Ensure that staker has enough balance to bond & stake.
             let free_balance = T::Currency::free_balance(&staker);
@@ -546,7 +623,7 @@ Blake2_128Concat,
             era_staking_points.former_staked_era = era_when_contract_last_staked;
 
             // Get the staking ledger and update it
-            let mut ledger = Self::ledger(&staker).ok_or(Error::<T>::UnexpectedState)?;
+            let mut ledger = Self::ledger(&staker);
             ledger = ledger.saturating_sub(value_to_unstake);
             Self::update_ledger(&staker, &ledger);
 
