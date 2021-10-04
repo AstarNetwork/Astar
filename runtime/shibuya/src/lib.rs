@@ -40,7 +40,7 @@ use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
 
 // XCM support
-use xcm::v0::{Junction::*, MultiLocation, MultiLocation::*};
+use xcm::latest::prelude::*;
 use xcm_builder::{
     AllowUnpaidExecutionFrom, FixedWeightBounds, LocationInverter, ParentAsSuperuser,
     ParentIsDefault, SovereignSignedViaLocation,
@@ -91,7 +91,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("shibuya"),
     impl_name: create_runtime_str!("shibuya"),
     authoring_version: 1,
-    spec_version: 6,
+    spec_version: 7,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 1,
@@ -411,8 +411,7 @@ impl OnUnbalanced<NegativeImbalance> for ToStakingPot {
 pub struct OnBlockReward;
 impl OnUnbalanced<NegativeImbalance> for OnBlockReward {
     fn on_nonzero_unbalanced(amount: NegativeImbalance) {
-        let dapps_percentage = DAppsRewardPercentage::get();
-        let (dapps, maintain) = amount.ration(dapps_percentage, 100 - dapps_percentage);
+        let (dapps, maintain) = amount.ration(50, 50);
 
         // dapp staking block reward
         DappsStaking::on_unbalanced(dapps);
@@ -427,13 +426,11 @@ impl OnUnbalanced<NegativeImbalance> for OnBlockReward {
 
 parameter_types! {
     pub const RewardAmount: Balance = 2_664 * MILLISDN;
-    pub const DAppsRewardPercentage: u32 = 50;
 }
 
 impl pallet_block_reward::Config for Runtime {
     type Currency = Balances;
     type OnBlockReward = OnBlockReward;
-    type DAppsRewardPercentage = DAppsRewardPercentage;
     type RewardAmount = RewardAmount;
 }
 
@@ -455,7 +452,7 @@ pub type XcmOriginToTransactDispatchOrigin = (
 );
 
 match_type! {
-    pub type JustTheParent: impl Contains<MultiLocation> = { X1(Parent) };
+    pub type JustTheParent: impl Contains<MultiLocation> = { MultiLocation { parents:1, interior: Here } };
 }
 
 parameter_types! {
@@ -476,6 +473,7 @@ impl Config for XcmConfig {
     type Weigher = FixedWeightBounds<UnitWeightCost, Call>; // balances not supported
     type Trader = (); // balances not supported
     type ResponseHandler = (); // Don't handle responses for now.
+    type SubscriptionService = (); // don't handle subscriptions for now
 }
 
 impl cumulus_pallet_xcm::Config for Runtime {

@@ -52,10 +52,6 @@ pub mod pallet {
         /// The amount of issuance for each block.
         #[pallet::constant]
         type RewardAmount: Get<BalanceOf<Self>>;
-
-        /// The percentage of issueance that goes to pallet-dapps-staking
-        #[pallet::constant]
-        type DAppsRewardPercentage: Get<u32>;
     }
 
     #[pallet::pallet]
