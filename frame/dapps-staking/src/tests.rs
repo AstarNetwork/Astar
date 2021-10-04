@@ -6,6 +6,258 @@ use sp_runtime::traits::Zero;
 use testing_utils::*;
 
 #[test]
+fn register_is_ok() {
+    ExternalityBuilder::build().execute_with(|| {
+        initialize_first_block();
+
+        let developer = 1;
+        let ok_contract = MockSmartContract::Evm(H160::repeat_byte(0x01));
+
+        assert!(<TestRuntime as Config>::Currency::reserved_balance(&developer).is_zero());
+        register_contract(developer, &ok_contract);
+        System::assert_last_event(mock::Event::DappsStaking(Event::NewContract(
+            developer,
+            ok_contract,
+        )));
+
+        assert_eq!(
+            RegisterDeposit::get(),
+            <TestRuntime as Config>::Currency::reserved_balance(&developer)
+        );
+    })
+}
+
+#[test]
+fn register_twice_with_same_account_nok() {
+    ExternalityBuilder::build().execute_with(|| {
+        initialize_first_block();
+
+        let developer = 1;
+        let contract1 = MockSmartContract::Evm(H160::repeat_byte(0x01));
+        let contract2 = MockSmartContract::Evm(H160::repeat_byte(0x02));
+
+        register_contract(developer, &contract1);
+
+        System::assert_last_event(mock::Event::DappsStaking(Event::NewContract(
+            developer, contract1,
+        )));
+
+        // now register different contract with same account
+        assert_noop!(
+            DappsStaking::register(Origin::signed(developer), contract2),
+            Error::<TestRuntime>::AlreadyUsedDeveloperAccount
+        );
+    })
+}
+
+#[test]
+fn register_same_contract_twice_nok() {
+    ExternalityBuilder::build().execute_with(|| {
+        initialize_first_block();
+
+        let developer1 = 1;
+        let developer2 = 2;
+        let contract = MockSmartContract::Evm(H160::repeat_byte(0x01));
+
+        register_contract(developer1, &contract);
+
+        System::assert_last_event(mock::Event::DappsStaking(Event::NewContract(
+            developer1, contract,
+        )));
+
+        // now register same contract by different developer
+        assert_noop!(
+            DappsStaking::register(Origin::signed(developer2), contract),
+            Error::<TestRuntime>::AlreadyRegisteredContract
+        );
+        assert_eq!(mock::DappsStaking::contract_last_claimed(contract), None);
+        assert_eq!(mock::DappsStaking::contract_last_staked(contract), None);
+    })
+}
+
+#[test]
+fn register_with_pre_approve_enabled() {
+    ExternalityBuilder::build().execute_with(|| {
+        initialize_first_block();
+        let developer = 1;
+        let contract = MockSmartContract::Evm(H160::repeat_byte(0x01));
+
+        // enable pre-approval for the developers
+        assert_ok!(mock::DappsStaking::enable_developer_pre_approval(
+            Origin::root(),
+            true
+        ));
+        assert!(mock::DappsStaking::pre_approval_is_enabled());
+
+        // register new developer without pre-approval, should fail
+        assert_noop!(
+            DappsStaking::register(Origin::signed(developer), contract.clone()),
+            Error::<TestRuntime>::RequiredContractPreApproval,
+        );
+
+        // preapprove developer
+        assert_ok!(mock::DappsStaking::developer_pre_approval(
+            Origin::root(),
+            developer.clone()
+        ));
+
+        // try to pre-approve again same developer, should fail
+        assert_noop!(
+            mock::DappsStaking::developer_pre_approval(Origin::root(), developer.clone()),
+            Error::<TestRuntime>::AlreadyPreApprovedDeveloper
+        );
+
+        // register new contract by pre-approved developer
+        assert_ok!(DappsStaking::register(
+            Origin::signed(developer),
+            contract.clone()
+        ));
+        System::assert_last_event(mock::Event::DappsStaking(Event::NewContract(
+            developer, contract,
+        )));
+
+        // disable pre_approval and register contract2
+        let developer2 = 2;
+        let contract2 = MockSmartContract::Evm(H160::repeat_byte(0x02));
+        assert_ok!(mock::DappsStaking::enable_developer_pre_approval(
+            Origin::root(),
+            false
+        ));
+        assert_ok!(DappsStaking::register(
+            Origin::signed(developer2),
+            contract2.clone()
+        ));
+        System::assert_last_event(mock::Event::DappsStaking(Event::NewContract(
+            developer2, contract2,
+        )));
+    })
+}
+
+#[test]
+fn unregister_after_register_is_ok() {
+    ExternalityBuilder::build().execute_with(|| {
+        initialize_first_block();
+
+        let developer = 1;
+        let contract_id = MockSmartContract::Evm(H160::repeat_byte(0x01));
+
+        register_contract(developer, &contract_id);
+
+        // Ensure that contract can be unregistered
+        assert_ok!(DappsStaking::unregister(
+            Origin::signed(developer),
+            contract_id.clone()
+        ));
+        System::assert_last_event(mock::Event::DappsStaking(Event::ContractRemoved(
+            developer,
+            contract_id,
+        )));
+        verify_storage_after_unregister(&developer, &contract_id, DappsStaking::current_era());
+
+        assert!(<TestRuntime as Config>::Currency::reserved_balance(&developer).is_zero());
+    })
+}
+
+#[test]
+fn unregister_with_staked_contracts_is_ok() {
+    ExternalityBuilder::build().execute_with(|| {
+        initialize_first_block();
+
+        let developer = 1;
+        let dummy_developer = 2;
+        let staker_1 = 3;
+        let staker_2 = 4;
+        let staked_value_1 = 150;
+        let staked_value_2 = 330;
+        let contract_id = MockSmartContract::Evm(H160::repeat_byte(0x01));
+        let dummy_contract_id = MockSmartContract::Evm(H160::repeat_byte(0x05));
+
+        // Register both contracts and stake them
+        register_contract(developer, &contract_id);
+        register_contract(dummy_developer, &dummy_contract_id);
+        bond_and_stake_with_verification(staker_1, &contract_id, staked_value_1);
+        bond_and_stake_with_verification(staker_2, &contract_id, staked_value_2);
+        // This contract will just exist so it helps us with testing ledger content
+        bond_and_stake_with_verification(staker_1, &dummy_contract_id, staked_value_1);
+        bond_and_stake_with_verification(staker_2, &dummy_contract_id, staked_value_2);
+
+        // Advance eras. This will accumulate some rewards.
+        advance_to_era(5);
+        let current_era = DappsStaking::current_era();
+
+        // Ensure that era reward&stake are as expected. Later we will verify that this value is reduced.
+        assert_eq!(
+            (staked_value_1 + staked_value_2) * 2,
+            DappsStaking::era_reward_and_stake(&current_era)
+                .unwrap()
+                .staked
+        );
+
+        // Try to unregister and expect an error since we have unclaimed rewards.
+        assert_noop!(
+            DappsStaking::unregister(Origin::signed(developer), contract_id.clone()),
+            Error::<TestRuntime>::ContractRewardsNotClaimed
+        );
+
+        // Claim the rewards and then try to unregister again.
+        assert_ok!(DappsStaking::claim(
+            Origin::signed(developer),
+            contract_id.clone()
+        ));
+
+        // Ensure that contract can be unregistered
+        assert_ok!(DappsStaking::unregister(
+            Origin::signed(developer),
+            contract_id.clone()
+        ));
+        System::assert_last_event(mock::Event::DappsStaking(Event::ContractRemoved(
+            developer,
+            contract_id,
+        )));
+        verify_storage_after_unregister(&developer, &contract_id, current_era);
+
+        // Ensure ledger contains expected stake values. We have a single staked contract remaining.
+        assert_eq!(staked_value_1, DappsStaking::ledger(&staker_1));
+        assert_eq!(staked_value_2, DappsStaking::ledger(&staker_2));
+
+        // Ensure that era reward&stake has been updated
+        assert_eq!(
+            staked_value_1 + staked_value_2,
+            DappsStaking::era_reward_and_stake(&current_era)
+                .unwrap()
+                .staked
+        );
+    })
+}
+
+#[test]
+fn unregister_with_incorrect_contract_is_not_ok() {
+    ExternalityBuilder::build().execute_with(|| {
+        initialize_first_block();
+
+        let developer_1 = 1;
+        let developer_2 = 2;
+        let first_contract_id = MockSmartContract::Evm(H160::repeat_byte(0x01));
+        let second_contract_id = MockSmartContract::Evm(H160::repeat_byte(0x02));
+
+        register_contract(developer_1, &first_contract_id);
+
+        // Try to unregister contract with developer who hasn't registered any contract
+        assert_noop!(
+            DappsStaking::unregister(Origin::signed(developer_2), first_contract_id.clone()),
+            Error::<TestRuntime>::NotOwnedContract
+        );
+
+        // Register second contract with second dev and then try to unregister it using the first developer
+        register_contract(developer_2, &second_contract_id);
+        assert_noop!(
+            DappsStaking::unregister(Origin::signed(developer_1), second_contract_id.clone()),
+            Error::<TestRuntime>::NotOwnedContract
+        );
+    })
+}
+
+#[test]
 fn bond_and_stake_different_eras_is_ok() {
     ExternalityBuilder::build().execute_with(|| {
         initialize_first_block();
@@ -806,128 +1058,6 @@ fn unbond_unstake_and_withdraw_unstake_not_possible() {
             ),
             Error::<TestRuntime>::NotStakedContract
         );
-    })
-}
-
-#[test]
-fn register_is_ok() {
-    ExternalityBuilder::build().execute_with(|| {
-        initialize_first_block();
-
-        let developer = 1;
-        let ok_contract = MockSmartContract::Evm(H160::repeat_byte(0x01));
-
-        register_contract(developer, &ok_contract);
-        System::assert_last_event(mock::Event::DappsStaking(Event::NewContract(
-            developer,
-            ok_contract,
-        )));
-    })
-}
-
-#[test]
-fn register_twice_with_same_account_nok() {
-    ExternalityBuilder::build().execute_with(|| {
-        initialize_first_block();
-
-        let developer = 1;
-        let contract1 = MockSmartContract::Evm(H160::repeat_byte(0x01));
-        let contract2 = MockSmartContract::Evm(H160::repeat_byte(0x02));
-
-        register_contract(developer, &contract1);
-
-        System::assert_last_event(mock::Event::DappsStaking(Event::NewContract(
-            developer, contract1,
-        )));
-
-        // now register different contract with same account
-        assert_noop!(
-            DappsStaking::register(Origin::signed(developer), contract2),
-            Error::<TestRuntime>::AlreadyUsedDeveloperAccount
-        );
-    })
-}
-
-#[test]
-fn register_same_contract_twice_nok() {
-    ExternalityBuilder::build().execute_with(|| {
-        initialize_first_block();
-
-        let developer1 = 1;
-        let developer2 = 2;
-        let contract = MockSmartContract::Evm(H160::repeat_byte(0x01));
-
-        register_contract(developer1, &contract);
-
-        System::assert_last_event(mock::Event::DappsStaking(Event::NewContract(
-            developer1, contract,
-        )));
-
-        // now register same contract by different developer
-        assert_noop!(
-            DappsStaking::register(Origin::signed(developer2), contract),
-            Error::<TestRuntime>::AlreadyRegisteredContract
-        );
-        assert_eq!(mock::DappsStaking::contract_last_claimed(contract), None);
-        assert_eq!(mock::DappsStaking::contract_last_staked(contract), None);
-    })
-}
-
-#[test]
-fn register_with_pre_approve_enabled() {
-    ExternalityBuilder::build().execute_with(|| {
-        initialize_first_block();
-        let developer = 1;
-        let contract = MockSmartContract::Evm(H160::repeat_byte(0x01));
-
-        // enable pre-approval for the developers
-        assert_ok!(mock::DappsStaking::enable_developer_pre_approval(
-            Origin::root(),
-            true
-        ));
-        assert!(mock::DappsStaking::pre_approval_is_enabled());
-
-        // register new developer without pre-approval, should fail
-        assert_noop!(
-            DappsStaking::register(Origin::signed(developer), contract.clone()),
-            Error::<TestRuntime>::RequiredContractPreApproval,
-        );
-
-        // preapprove developer
-        assert_ok!(mock::DappsStaking::developer_pre_approval(
-            Origin::root(),
-            developer.clone()
-        ));
-
-        // try to pre-approve again same developer, should fail
-        assert_noop!(
-            mock::DappsStaking::developer_pre_approval(Origin::root(), developer.clone()),
-            Error::<TestRuntime>::AlreadyPreApprovedDeveloper
-        );
-
-        // register new contract by pre-approved developer
-        assert_ok!(DappsStaking::register(
-            Origin::signed(developer),
-            contract.clone()
-        ));
-        System::assert_last_event(mock::Event::DappsStaking(Event::NewContract(
-            developer, contract,
-        )));
-
-        // disable pre_approval and register contract2
-        let developer2 = 2;
-        let contract2 = MockSmartContract::Evm(H160::repeat_byte(0x02));
-        assert_ok!(mock::DappsStaking::enable_developer_pre_approval(
-            Origin::root(),
-            false
-        ));
-        assert_ok!(DappsStaking::register(
-            Origin::signed(developer2),
-            contract2.clone()
-        ));
-        System::assert_last_event(mock::Event::DappsStaking(Event::NewContract(
-            developer2, contract2,
-        )));
     })
 }
 

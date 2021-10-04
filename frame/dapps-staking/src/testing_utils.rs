@@ -50,7 +50,7 @@ pub(crate) fn unbond_unstake_and_withdraw_with_verification(
 /// Used to verify ledger content.
 pub(crate) fn verify_ledger(staker_id: AccountId, staked_value: Balance) {
     // Verify that ledger storage values are as expected.
-    let ledger = Ledger::<TestRuntime>::get(staker_id).unwrap();
+    let ledger = Ledger::<TestRuntime>::get(staker_id);
     assert_eq!(staked_value, ledger);
 }
 
@@ -95,7 +95,7 @@ pub(crate) fn verify_pallet_era_staked_and_reward(
 
 /// Used to verify storage content after claim() is successfuly executed.
 pub(crate) fn verify_contract_history_is_cleared(
-    contract: MockSmartContract<mock::AccountId>,
+    contract: MockSmartContract<AccountId>,
     from_era: EraIndex,
     to_era: EraIndex,
 ) {
@@ -124,7 +124,7 @@ pub(crate) fn verify_contract_history_is_cleared(
 /// Used to perform claim with success assertion
 pub(crate) fn claim(
     claimer: AccountId,
-    contract: MockSmartContract<mock::AccountId>,
+    contract: MockSmartContract<AccountId>,
     start_era: EraIndex,
     claim_era: EraIndex,
 ) {
@@ -162,7 +162,7 @@ pub(crate) fn calc_expected_developer_reward(
 /// Check staker/dev Balance after reward distribution.
 /// Check that claimed rewards for staker/dev are updated.
 pub(crate) fn check_rewards_on_balance_and_storage(
-    contract: &MockSmartContract<mock::AccountId>,
+    contract: &MockSmartContract<AccountId>,
     user: &AccountId,
     free_balance: mock::Balance,
     eras: EraIndex,
@@ -181,7 +181,7 @@ pub(crate) fn check_rewards_on_balance_and_storage(
 
 /// Check that claimed rewards on this contract are updated
 pub(crate) fn check_paidout_rewards_for_contract(
-    contract: &MockSmartContract<mock::AccountId>,
+    contract: &MockSmartContract<AccountId>,
     expected_contract_reward: mock::Balance,
 ) {
     let era_last_claimed = mock::DappsStaking::contract_last_claimed(contract).unwrap_or(0);
@@ -191,4 +191,29 @@ pub(crate) fn check_paidout_rewards_for_contract(
         contract_staking_info.claimed_rewards,
         expected_contract_reward
     )
+}
+
+/// Used to verify that storage is cleared of all contract related values after unregistration.
+pub(crate) fn verify_storage_after_unregister(
+    developer: &AccountId,
+    contract_id: &MockSmartContract<AccountId>,
+    current_era: EraIndex,
+) {
+    assert!(!ContractEraStake::<TestRuntime>::contains_key(
+        contract_id,
+        &current_era
+    ));
+    assert!(!RegisteredDapps::<TestRuntime>::contains_key(contract_id));
+    assert!(!RegisteredDevelopers::<TestRuntime>::contains_key(
+        developer
+    ));
+    assert!(!ContractLastStaked::<TestRuntime>::contains_key(
+        contract_id
+    ));
+    assert!(!ContractLastClaimed::<TestRuntime>::contains_key(
+        contract_id
+    ));
+    assert!(RewardsClaimed::<TestRuntime>::iter_prefix(&contract_id)
+        .count()
+        .is_zero());
 }
