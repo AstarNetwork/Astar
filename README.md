@@ -1,4 +1,4 @@
-![astar-cover]()
+![astar-cover](https://github.com/SotaWatanabe/Astar/blob/development/dusty/ASTAR.gif)
 
 <div align="center">
 
