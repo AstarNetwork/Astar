@@ -91,7 +91,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("shibuya"),
     impl_name: create_runtime_str!("shibuya"),
     authoring_version: 1,
-    spec_version: 6,
+    spec_version: 7,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 1,
@@ -411,8 +411,7 @@ impl OnUnbalanced<NegativeImbalance> for ToStakingPot {
 pub struct OnBlockReward;
 impl OnUnbalanced<NegativeImbalance> for OnBlockReward {
     fn on_nonzero_unbalanced(amount: NegativeImbalance) {
-        let dapps_percentage = DAppsRewardPercentage::get();
-        let (dapps, maintain) = amount.ration(dapps_percentage, 100 - dapps_percentage);
+        let (dapps, maintain) = amount.ration(50, 50);
 
         // dapp staking block reward
         DappsStaking::on_unbalanced(dapps);
@@ -427,13 +426,11 @@ impl OnUnbalanced<NegativeImbalance> for OnBlockReward {
 
 parameter_types! {
     pub const RewardAmount: Balance = 2_664 * MILLISDN;
-    pub const DAppsRewardPercentage: u32 = 50;
 }
 
 impl pallet_block_reward::Config for Runtime {
     type Currency = Balances;
     type OnBlockReward = OnBlockReward;
-    type DAppsRewardPercentage = DAppsRewardPercentage;
     type RewardAmount = RewardAmount;
 }
 
