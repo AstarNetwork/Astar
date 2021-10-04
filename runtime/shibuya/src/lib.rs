@@ -40,7 +40,7 @@ use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
 
 // XCM support
-use xcm::v0::{Junction::*, MultiLocation, MultiLocation::*};
+use xcm::latest::prelude::*;
 use xcm_builder::{
     AllowUnpaidExecutionFrom, FixedWeightBounds, LocationInverter, ParentAsSuperuser,
     ParentIsDefault, SovereignSignedViaLocation,
@@ -452,7 +452,7 @@ pub type XcmOriginToTransactDispatchOrigin = (
 );
 
 match_type! {
-    pub type JustTheParent: impl Contains<MultiLocation> = { X1(Parent) };
+    pub type JustTheParent: impl Contains<MultiLocation> = { MultiLocation { parents:1, interior: Here } };
 }
 
 parameter_types! {
@@ -473,6 +473,7 @@ impl Config for XcmConfig {
     type Weigher = FixedWeightBounds<UnitWeightCost, Call>; // balances not supported
     type Trader = (); // balances not supported
     type ResponseHandler = (); // Don't handle responses for now.
+    type SubscriptionService = (); // don't handle subscriptions for now
 }
 
 impl cumulus_pallet_xcm::Config for Runtime {
