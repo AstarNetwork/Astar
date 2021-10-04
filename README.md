@@ -1,4 +1,4 @@
-![astar-cover](https://user-images.githubusercontent.com/40356749/125183345-edbaa980-e226-11eb-92e2-7b666ed56515.png)
+![astar-cover]()
 
 <div align="center">
 
