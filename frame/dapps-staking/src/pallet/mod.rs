@@ -193,7 +193,7 @@ pub mod pallet {
     #[pallet::storage]
     #[pallet::getter(fn pre_approved_developers)]
     pub(crate) type PreApprovedDevelopers<T: Config> =
-        StorageValue<_, Vec<T::AccountId>, ValueQuery>;
+        StorageMap<_, Twox64Concat, T::AccountId, (), ValueQuery>;
 
     // Declare the genesis config (optional).
     //
@@ -317,10 +317,10 @@ pub mod pallet {
             ensure!(contract_id.is_contract(), Error::<T>::ContractIsNotValid);
 
             if Self::pre_approval_is_enabled() {
-                Self::pre_approved_developers()
-                    .contains(&developer)
-                    .then(|| true)
-                    .ok_or(Error::<T>::RequiredContractPreApproval)?;
+                ensure!(
+                    PreApprovedDevelopers::<T>::contains_key(&developer),
+                    Error::<T>::RequiredContractPreApproval
+                );
             }
 
             T::Currency::reserve(&developer, T::RegisterDeposit::get())?;
@@ -344,12 +344,11 @@ pub mod pallet {
         ) -> DispatchResultWithPostInfo {
             ensure_root(origin)?;
 
-            let pre_approved_developers = Self::pre_approved_developers();
             ensure!(
-                !pre_approved_developers.contains(&developer),
+                !PreApprovedDevelopers::<T>::contains_key(&developer),
                 Error::<T>::AlreadyPreApprovedDeveloper
             );
-            PreApprovedDevelopers::<T>::append(developer);
+            PreApprovedDevelopers::<T>::insert(developer, ());
 
             Ok(().into())
         }
@@ -358,7 +357,7 @@ pub mod pallet {
         ///
         /// Sudo call is required
         #[pallet::weight(1_000_000)]
-        pub fn enable_developer_preapproval(
+        pub fn enable_developer_pre_approval(
             origin: OriginFor<T>,
             enabled: bool,
         ) -> DispatchResultWithPostInfo {

@@ -881,7 +881,7 @@ fn register_with_pre_approve_enabled() {
         let contract = MockSmartContract::Evm(H160::repeat_byte(0x01));
 
         // enable pre-approval for the developers
-        assert_ok!(mock::DappsStaking::enable_developer_preapproval(
+        assert_ok!(mock::DappsStaking::enable_developer_pre_approval(
             Origin::root(),
             true
         ));
@@ -917,7 +917,7 @@ fn register_with_pre_approve_enabled() {
         // disable pre_approval and register contract2
         let developer2 = 2;
         let contract2 = MockSmartContract::Evm(H160::repeat_byte(0x02));
-        assert_ok!(mock::DappsStaking::enable_developer_preapproval(
+        assert_ok!(mock::DappsStaking::enable_developer_pre_approval(
             Origin::root(),
             false
         ));
