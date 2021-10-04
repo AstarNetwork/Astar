@@ -22,13 +22,13 @@ Table of Contents:
 - `smart contract`: on-chain part of the dApp
 - `contract`: short for smart contract
 - `EVM`: Ethereum Virtual Machine. Solidity Smart contract runs on it.
-- `ink!`: Smart Contract written in Rust, complied as WASM
-- `era`: Period of time. After it's end, rewards can be claimed. It is defined by the number of produced blocks. Duration of an era for this pallet is around 1 day. The exact duration depends on block production duration.
-- `claim`: Claim ownership of the rewards from the contract's reward pool
-- `bond`: Freeze funds to gain rewards
-- `stake`: In this pallet a staker stakes bonded funds on a smart contract 
-- `unstake`: Unfreeze bonded funds and stop gaining rewards
-- `wasm`: Web Assembly
+- `ink!`: Smart Contract written in Rust, compiled to WASM.
+- `era`: Period of time. After it ends, rewards can be claimed. It is defined by the number of produced blocks. Duration of an era for this pallet is around 1 day. The exact duration depends on block production duration.
+- `claim`: Claim ownership of the rewards from the contract's reward pool.
+- `bond`: Freeze funds to gain rewards.
+- `stake`: In this pallet a staker stakes bonded funds on a smart contract .
+- `unstake`: Unfreeze bonded funds and stop gaining rewards.
+- `wasm`: Web Assembly.
 - `contracts's reward pool`: Sum of unclaimed rewards on the contract. Including developer and staker parts.
 
 
@@ -75,6 +75,7 @@ EraRewardAndStake {
 * `BondAndStake(AccountId, SmartContract, Balance):` Account has bonded and staked funds on a smart contract.
 * `UnbondUnstakeAndWithdraw(AccountId, SmartContract, Balance):` Account has unbonded, unstaked and withdrawn funds.
 * `NewContract(AccountId, SmartContract):` New contract added for staking.
+* `ContractRemoved(AccountId, SmartContract):` Contract removed from dapps staking.
 * `NewDappStakingEra(EraIndex):` New dapps staking era. Distribute era rewards to contracts.
 * `ContractClaimed(SmartContract, AccountId, EraIndex, EraIndex):` The contract's reward have been claimed, by an account, from era, until era
 
@@ -85,13 +86,14 @@ EraRewardAndStake {
 * `StakingWithNoValue` Can not stake with zero value.
 * `InsufficientStakingValue`, Can not stake with value less than minimum staking value.
 * `MaxNumberOfStakersExceeded`, Number of stakers per contract exceeded.
-* `NotOperatedContract`, Targets must be operated contracts Number of stakers per contract exceeded.
+* `NotOperatedContract`, Targets must be operated contracts
 * `NotStakedContract`, Contract isn't staked.
 * `UnstakingWithNoValue`, Unstaking a contract with zero value.
 * `AlreadyRegisteredContract`, The contract is already registered by other account.
 * `ContractIsNotValid`, User attempts to register with address which is not contract.
-* `ContractNotRegistered`, Claiming contract with no developer account.
+* `ContractNotRegistered`, Contract not registered for dapps staking.
 * `AlreadyUsedDeveloperAccount`, This account was already used to register contract.
+* `NotOwnedContract`, Contract not owned by the account.
 * `UnexpectedState`, Unexpected state error, used to abort transaction. Used for situations that 'should never happen'. Report issue on github if this is ever emitted.
 * `UnknownStartStakingData`, Report issue on github if this is ever emitted.
 * `UnknownEraReward`, Report issue on github if this is ever emitted.
@@ -99,6 +101,7 @@ EraRewardAndStake {
 * `AlreadyClaimedInThisEra`, Contract already claimed in this era and reward is distributed.
 * `RequiredContractPreApproval`, To register a contract, pre-approval is needed for this address.
 * `AlreadyPreApprovedContract`, Contract is already part of pre-appruved list of contracts.
+* `ContractRewardsNotClaimed`, Attempting to unregister contract which has unclaimed rewards. Claim them first before unregistering.
 
 ---
 ## Calls
@@ -121,6 +124,22 @@ Errors:
 * ContractIsNotValid
 * RequiredContractPreApproval
 
+### Unregister
+`register(origin: OriginFor<T>, contract_id: T::AccountId) -> DispatchResult {}`
+1. Unregisters contract from dapps staking.
+1. The dispatch origin for this call must be _Signed_ by the developers's account.
+3. Prior to unregistering, all rewards for that contract must be claimed.
+4. The`RegisterDeposit` is returned to the developer.
+
+Event:
+* `ContractRemoved(developer's account, contract_id)`
+
+Errors:
+* NotOwnedContract
+* AlreadyUsedDeveloperAccount
+* ContractIsNotValid
+* RequiredContractPreApproval
+
 ---
 ### Bonding and Staking Funds
 ```
@@ -131,12 +150,12 @@ pub fn bond_and_stake(
         ) -> DispatchResultWithPostInfo {}
 ```
 1. The dispatch origin for this call must be _Signed_ by the staker's account.
-1. Staked funds will be considered for reward after the end of the current era.
-1. The Staker shall use one address for this call.
-1. This call is used for both initial staking and for possible additional stakings.
-1. The Staker shall stake on only one contract per call
-1. The Staker can stake on an unlimited number of contracts but one at the time.
-1. The number of stakers per contract is limited to `MaxNumberOfStakersPerContract`
+2. Staked funds will be considered for reward after the end of the current era.
+3. The Staker shall use one address for this call.
+4. This call is used for both initial staking and for possible additional stakings.
+5. The Staker shall stake on only one contract per call
+6. The Staker can stake on an unlimited number of contracts but one at the time.
+7. The number of stakers per contract is limited to `MaxNumberOfStakersPerContract`
 
 
 Events:
