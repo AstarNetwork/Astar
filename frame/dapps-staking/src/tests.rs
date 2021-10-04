@@ -13,11 +13,17 @@ fn register_is_ok() {
         let developer = 1;
         let ok_contract = MockSmartContract::Evm(H160::repeat_byte(0x01));
 
+        assert!(<TestRuntime as Config>::Currency::reserved_balance(&developer).is_zero());
         register_contract(developer, &ok_contract);
         System::assert_last_event(mock::Event::DappsStaking(Event::NewContract(
             developer,
             ok_contract,
         )));
+
+        assert_eq!(
+            RegisterDeposit::get(),
+            <TestRuntime as Config>::Currency::reserved_balance(&developer)
+        );
     })
 }
 
@@ -147,6 +153,8 @@ fn unregister_after_register_is_ok() {
             contract_id,
         )));
         verify_storage_after_unregister(&developer, &contract_id, DappsStaking::current_era());
+
+        assert!(<TestRuntime as Config>::Currency::reserved_balance(&developer).is_zero());
     })
 }
 

@@ -213,6 +213,7 @@ pub(crate) fn verify_storage_after_unregister(
     assert!(!ContractLastClaimed::<TestRuntime>::contains_key(
         contract_id
     ));
-
-    // T::Currency::unreserve(&developer, T::RegisterDeposit::get()); // TODO: verify this somehow?
+    assert!(RewardsClaimed::<TestRuntime>::iter_prefix(&contract_id)
+        .count()
+        .is_zero());
 }

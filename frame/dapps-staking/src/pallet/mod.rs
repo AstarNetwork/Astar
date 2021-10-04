@@ -400,8 +400,6 @@ pub mod pallet {
             RegisteredDevelopers::<T>::remove(&developer);
             ContractLastStaked::<T>::remove(&contract_id);
             ContractLastClaimed::<T>::remove(&contract_id);
-
-            // TODO: Should this be removed? We lose all the information about the rewards earned by all stakers of this contract.
             RewardsClaimed::<T>::remove_prefix(&contract_id, None);
 
             Self::deposit_event(Event::<T>::ContractRemoved(developer, contract_id));
