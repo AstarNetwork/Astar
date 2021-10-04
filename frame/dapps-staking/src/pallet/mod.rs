@@ -365,7 +365,7 @@ pub mod pallet {
             );
 
             let current_era = Self::current_era();
-            // in case contract wasn't even bonded yet
+            // in case contract wasn't staked yet
             let last_claim_era =
                 Self::contract_last_claimed(&contract_id).unwrap_or(current_era.clone());
 
