@@ -151,7 +151,7 @@ pub mod pallet {
         _,
         Blake2_128Concat,
         T::SmartContract,
-        Twox64Concat,
+        Blake2_128Concat,
         T::AccountId,
         BalanceOf<T>,
         ValueQuery,
@@ -173,7 +173,7 @@ pub mod pallet {
     #[pallet::storage]
     #[pallet::getter(fn contract_last_claimed)]
     pub(crate) type ContractLastClaimed<T: Config> =
-        StorageMap<_, Twox64Concat, T::SmartContract, EraIndex>;
+        StorageMap<_, Blake2_128Concat, T::SmartContract, EraIndex>;
 
     /// Marks an Era when a contract is last (un)staked
     #[pallet::storage]
