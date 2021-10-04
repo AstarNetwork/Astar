@@ -8,7 +8,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        chain: ["shiden"]
+        chain: ["shiden", "shibuya"]
     steps:
       - uses: actions/checkout@v2
         with:
