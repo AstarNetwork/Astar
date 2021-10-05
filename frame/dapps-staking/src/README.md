@@ -245,3 +245,25 @@ Error:
 ---
 ## Referent API implementation
 https://github.com/PlasmNetwork/astar-apps
+
+---
+## FAQ
+
+### When does the projects/developers get their rewards? 
+The earned rewards need to be claimed by calling claim() function. Once the claim() function is called all stakers on the contract and the developer of the contract get their rewards. This function can be called from any account. Recommended is that it is called by the projects/developers on a weekly basis.
+
+### What happens if nobody calls claim function for longer than 30 days?
+The un-claimed rewards older than 30 days will be sent to chain's Treasury.
+
+### When developers registar their dApp, which has no contract yet, what kind of address do they need to input?
+There has to be a contract. Registration can’t be done without contract.
+
+### Can projects/developers change contract address once it is registered for dApps staking?
+The contract address can't be changed for the dApps staking. However, if the project needs to deploy new version of the contract, they can still use old (registered) contract address for dApp staking purposes.
+
+### How do projects/developers (who join dApps staking) get their stakers' address and the amount staked?
+```
+era = ContractLastStaked(contract_id)
+ContractEraStake(contract_id, era).stakers 
+```
+This will give the vector of all staker' accounts and how much they have staked.
