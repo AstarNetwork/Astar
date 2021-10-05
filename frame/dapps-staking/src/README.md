@@ -267,3 +267,9 @@ era = ContractLastStaked(contract_id)
 ContractEraStake(contract_id, era).stakers 
 ```
 This will give the vector of all staker' accounts and how much they have staked.
+
+### How many are the maximum numbers of stakers per dapps?(MaxNumberOfStakersPerContract)
+Coming soon..
+
+### When developers registar their dApp, can they registar WASM contract? (If not, can they update it in the future?)
+Coming soon..
