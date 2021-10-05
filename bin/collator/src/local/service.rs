@@ -24,6 +24,7 @@ native_executor_instance!(
     pub Executor,
     local_runtime::api::dispatch,
     local_runtime::native_version,
+    frame_benchmarking::benchmarking::HostFunctions,
 );
 
 type FullClient = sc_service::TFullClient<Block, RuntimeApi, Executor>;

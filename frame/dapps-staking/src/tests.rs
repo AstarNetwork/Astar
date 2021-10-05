@@ -543,7 +543,7 @@ fn bond_and_stake_history_depth_has_passed_is_ok() {
         bond_and_stake_with_verification(staker_id, &contract_id, first_staking_amount);
 
         // Advance eras beyond history depth
-        let history_depth = HistoryDepth::<TestRuntime>::get();
+        let history_depth = HistoryDepth::get();
         advance_to_era(start_era + history_depth + 1);
 
         // Bond&stake again
@@ -901,7 +901,7 @@ fn unbond_unstake_and_withdraw_history_depth_has_passed_is_ok() {
         //////////////////////////////////////////////
 
         // Advance eras beyond history depth
-        let history_depth = HistoryDepth::<TestRuntime>::get();
+        let history_depth = HistoryDepth::get();
         advance_to_era(start_era + history_depth + 1);
 
         let first_unstake_amount = 30;
@@ -1206,7 +1206,7 @@ fn claim_after_history_depth_has_passed_is_ok() {
         register_contract(developer, &contract);
         bond_and_stake_with_verification(claimer, &contract, 100);
 
-        let history_depth = HistoryDepth::<TestRuntime>::get();
+        let history_depth = HistoryDepth::get();
 
         advance_to_era(start_era + history_depth + 1);
 

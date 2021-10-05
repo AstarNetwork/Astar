@@ -61,6 +61,10 @@ pub enum Subcommand {
     /// Export the genesis wasm of the parachain.
     #[structopt(name = "export-genesis-wasm")]
     ExportGenesisWasm(ExportGenesisWasmCommand),
+
+    /// The custom benchmark subcommmand benchmarking runtime pallets.
+    #[structopt(name = "benchmark", about = "Benchmark runtime pallets.")]
+    Benchmark(frame_benchmarking_cli::BenchmarkCmd),
 }
 
 /// Command for exporting the genesis state of the parachain

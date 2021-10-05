@@ -69,6 +69,13 @@ xcm-executor = { git = "https://github.com/paritytech/polkadot", default-feature
 xcm-builder = { git = "https://github.com/paritytech/polkadot", default-features = false , branch = "release-v0.9.10" }
 xcm = { git = "https://github.com/paritytech/polkadot", default-features = false , branch = "release-v0.9.10" }
 
+# benchmarking
+hex-literal = { version = '0.3.1', optional = true }
+frame-benchmarking = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.10", default-features = false, optional = true }
+frame-system-benchmarking = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.10", default-features = false, optional = true }
+pallet-collective = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.10", default-features = false, optional = true }
+
+# Astar pallets
 pallet-block-reward = { path = "../../frame/block-reward", default-features = false }
 pallet-custom-signatures = { path = "../../frame/custom-signatures", default-features = false }
 
@@ -132,4 +139,17 @@ std = [
     "cumulus-pallet-xcm/std",
     "cumulus-pallet-aura-ext/std",
     "pallet-collator-selection/std",
+    "frame-benchmarking/std",
+]
+runtime-benchmarks = [
+    'frame-benchmarking',
+    'frame-support/runtime-benchmarks',
+    'frame-system-benchmarking',
+    'frame-system/runtime-benchmarks',
+    'hex-literal',
+    'sp-runtime/runtime-benchmarks',
+    'pallet-balances/runtime-benchmarks',
+    'pallet-timestamp/runtime-benchmarks',
+    'pallet-collective/runtime-benchmarks',
+    'xcm-builder/runtime-benchmarks',
 ]

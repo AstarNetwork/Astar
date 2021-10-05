@@ -189,6 +189,8 @@ dependencies = [
  "fc-rpc-core",
  "fp-consensus",
  "fp-rpc",
+ "frame-benchmarking",
+ "frame-benchmarking-cli",
  "frame-system",
  "futures 0.3.17",
  "hex",
@@ -2594,6 +2596,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "frame-system-benchmarking"
+version = "4.0.0-dev"
+source = "git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.10#acb44df78015906174daf359b40916b7bef58c57"
+dependencies = [
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "parity-scale-codec",
+ "sp-core",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
 name = "frame-system-rpc-runtime-api"
 version = "4.0.0-dev"
 source = "git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.10#acb44df78015906174daf359b40916b7bef58c57"
@@ -4458,10 +4474,13 @@ version = "2.5.2"
 dependencies = [
  "evm",
  "fp-rpc",
+ "frame-benchmarking",
  "frame-executive",
  "frame-support",
  "frame-system",
+ "frame-system-benchmarking",
  "frame-system-rpc-runtime-api",
+ "hex-literal 0.3.3",
  "pallet-aura",
  "pallet-balances",
  "pallet-block-reward",
@@ -5324,6 +5343,7 @@ name = "pallet-collective"
 version = "4.0.0-dev"
 source = "git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.10#acb44df78015906174daf359b40916b7bef58c57"
 dependencies = [
+ "frame-benchmarking",
  "frame-support",
  "frame-system",
  "log",
@@ -5433,6 +5453,7 @@ dependencies = [
 name = "pallet-dapps-staking"
 version = "1.0.0"
 dependencies = [
+ "frame-benchmarking",
  "frame-support",
  "frame-system",
  "num-traits",
@@ -5930,6 +5951,7 @@ dependencies = [
  "log",
  "parity-scale-codec",
  "sp-inherents",
+ "sp-io",
  "sp-runtime",
  "sp-std",
  "sp-timestamp",
@@ -7534,7 +7556,7 @@ dependencies = [
  "impl-codec",
  "impl-rlp",
  "impl-serde",
- "scale-info 1.0.0",
+ "scale-info 0.10.0",
  "uint",
 ]
 
@@ -9642,15 +9664,19 @@ dependencies = [
  "cumulus-primitives-utility",
  "evm",
  "fp-rpc",
+ "frame-benchmarking",
  "frame-executive",
  "frame-support",
  "frame-system",
+ "frame-system-benchmarking",
  "frame-system-rpc-runtime-api",
+ "hex-literal 0.3.3",
  "pallet-aura",
  "pallet-authorship",
  "pallet-balances",
  "pallet-block-reward",
  "pallet-collator-selection",
+ "pallet-collective",
  "pallet-custom-signatures",
  "pallet-dapps-staking",
  "pallet-ethereum",
@@ -9706,15 +9732,19 @@ dependencies = [
  "cumulus-primitives-utility",
  "evm",
  "fp-rpc",
+ "frame-benchmarking",
  "frame-executive",
  "frame-support",
  "frame-system",
+ "frame-system-benchmarking",
  "frame-system-rpc-runtime-api",
+ "hex-literal 0.3.3",
  "pallet-aura",
  "pallet-authorship",
  "pallet-balances",
  "pallet-block-reward",
  "pallet-collator-selection",
+ "pallet-collective",
  "pallet-custom-signatures",
  "pallet-ethereum",
  "pallet-evm",

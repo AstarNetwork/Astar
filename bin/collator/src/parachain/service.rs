@@ -40,6 +40,7 @@ pub mod shiden {
         pub Executor,
         shiden_runtime::api::dispatch,
         shiden_runtime::native_version,
+        frame_benchmarking::benchmarking::HostFunctions,
     );
 }
 
@@ -51,6 +52,7 @@ pub mod shibuya {
         pub Executor,
         shibuya_runtime::api::dispatch,
         shibuya_runtime::native_version,
+        frame_benchmarking::benchmarking::HostFunctions,
     );
 }
 

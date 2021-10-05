@@ -1,11 +1,11 @@
-use crate::{self as pallet_dapps_staking};
+use crate::{self as pallet_dapps_staking, weights};
 
 use frame_support::{
     construct_runtime, parameter_types,
     traits::{Currency, OnFinalize, OnInitialize, OnUnbalanced},
     PalletId,
 };
-use sp_core::H256;
+use sp_core::{H160, H256};
 
 use codec::{Decode, Encode};
 use sp_io::TestExternalities;
@@ -28,6 +28,7 @@ pub(crate) const MAX_NUMBER_OF_STAKERS: u32 = 4;
 /// Value shouldn't be less than 2 for testing purposes, otherwise we cannot test certain corner cases.
 pub(crate) const MINIMUM_STAKING_AMOUNT: Balance = 10;
 pub(crate) const DEVELOPER_REWARD_PERCENTAGE: u32 = 80;
+pub(crate) const HISTORY_DEPTH: u32 = 30;
 
 pub(crate) const BLOCKS_PER_ERA: BlockNumber = 3;
 
@@ -115,6 +116,7 @@ parameter_types! {
     pub const BlockPerEra: BlockNumber = BLOCKS_PER_ERA;
     pub const MaxNumberOfStakersPerContract: u32 = MAX_NUMBER_OF_STAKERS;
     pub const MinimumStakingAmount: Balance = MINIMUM_STAKING_AMOUNT;
+    pub const HistoryDepth: u32 = HISTORY_DEPTH;
     pub const DeveloperRewardPercentage: u32 = DEVELOPER_REWARD_PERCENTAGE;
     pub const DappsStakingPalletId: PalletId = PalletId(*b"mokdpstk");
     pub const TreasuryPalletId: PalletId = PalletId(*b"moktrsry");
@@ -127,8 +129,9 @@ impl pallet_dapps_staking::Config for TestRuntime {
     type RegisterDeposit = RegisterDeposit;
     type DeveloperRewardPercentage = DeveloperRewardPercentage;
     type SmartContract = MockSmartContract<AccountId>;
-    type WeightInfo = ();
+    type WeightInfo = weights::SubstrateWeight<TestRuntime>;
     type MaxNumberOfStakersPerContract = MaxNumberOfStakersPerContract;
+    type HistoryDepth = HistoryDepth;
     type MinimumStakingAmount = MinimumStakingAmount;
     type PalletId = DappsStakingPalletId;
     type TreasuryPalletId = TreasuryPalletId;
@@ -140,8 +143,14 @@ pub enum MockSmartContract<AccountId> {
     Wasm(AccountId),
 }
 
+impl<AccountId> Default for MockSmartContract<AccountId> {
+    fn default() -> Self {
+        MockSmartContract::Evm(H160::repeat_byte(0x01))
+    }
+}
+
 impl<AccountId> pallet_dapps_staking::IsContract for MockSmartContract<AccountId> {
-    fn is_contract(&self) -> bool {
+    fn is_valid(&self) -> bool {
         match self {
             MockSmartContract::Wasm(_account) => false,
             MockSmartContract::Evm(_account) => true,

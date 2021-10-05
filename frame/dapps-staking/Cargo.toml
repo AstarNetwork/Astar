@@ -24,6 +24,8 @@ pallet-timestamp = { git = "https://github.com/paritytech/substrate", branch = "
 frame-system = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.10",  default-features = false }
 sp-staking = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.10",  default-features = false }
 
+frame-benchmarking = { git = 'https://github.com/paritytech/substrate.git', branch = 'polkadot-v0.9.10', default-features = false, optional = true }
+
 [features]
 default = ["std"]
 std = [
@@ -41,4 +43,10 @@ std = [
     "pallet-session/std",
     "pallet-timestamp/std",
     "sp-staking/std",
+]
+runtime-benchmarks = [
+    "frame-benchmarking",
+    "frame-support/runtime-benchmarks",
+    "frame-system/runtime-benchmarks",
+    "sp-runtime/runtime-benchmarks",
 ]
