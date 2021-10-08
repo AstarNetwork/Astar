@@ -271,7 +271,7 @@ impl pallet_custom_signatures::Config for Runtime {
 }
 
 parameter_types! {
-    pub const BlockPerEra: BlockNumber = 1 * DAYS;
+    pub const BlockPerEra: BlockNumber = 4 * HOURS;
     pub const RegisterDeposit: Balance = 100 * SDN;
     pub const DeveloperRewardPercentage: u32 = 80;
     pub const MaxNumberOfStakersPerContract: u32 = 128;
