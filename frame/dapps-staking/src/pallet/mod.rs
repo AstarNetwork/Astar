@@ -82,6 +82,10 @@ pub mod pallet {
         #[pallet::constant]
         type PalletId: Get<PalletId>;
 
+        /// Treasury pallet Id
+        #[pallet::constant]
+        type TreasuryPalletId: Get<PalletId>;
+
         /// The overarching event type.
         type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
 
@@ -768,9 +772,12 @@ pub mod pallet {
             // updated counter for total rewards paid to the contract
             contract_staking_info.claimed_rewards += reward_for_stakers + reward_for_developer;
 
-            // if !unclaimed_rewards.is_zero() { TODO!
-            //     T::Currency::deposit_into_existing(&treasury, unclaimed_rewards).ok();
-            // }
+            if !unclaimed_rewards.is_zero() {
+                T::Currency::deposit_creating(
+                    &T::TreasuryPalletId::get().into_account(),
+                    unclaimed_rewards,
+                );
+            }
 
             // Remove all previous records of staking for this contract,
             // they have already been processed and won't be needed anymore.

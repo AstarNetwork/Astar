@@ -2,7 +2,7 @@ use super::{pallet::pallet::Error, Event, *};
 use frame_support::{assert_noop, assert_ok};
 use mock::{Balances, EraIndex, MockSmartContract, *};
 use sp_core::H160;
-use sp_runtime::traits::Zero;
+use sp_runtime::traits::{AccountIdConversion, Zero};
 use testing_utils::*;
 
 #[test]
@@ -1215,6 +1215,13 @@ fn claim_after_history_depth_has_passed_is_ok() {
         claim(claimer, contract, lower_claim_era, upper_claim_era.clone());
 
         verify_contract_history_is_cleared(contract, start_era, upper_claim_era);
+
+        // Expect that all rewards from one era are deposited into treasury
+        let treasury_id = <TestRuntime as Config>::TreasuryPalletId::get().into_account();
+        assert_eq!(
+            get_total_reward_per_era(),
+            <TestRuntime as Config>::Currency::free_balance(&treasury_id)
+        );
     })
 }
 
@@ -1238,6 +1245,10 @@ fn claim_is_ok() {
         let claim_era = DappsStaking::current_era();
         claim(claimer, contract, start_era, claim_era.clone());
         verify_contract_history_is_cleared(contract, start_era, claim_era);
+
+        // Nothing should be deposited into treasury as unclaimed reward
+        let treasury_id = <TestRuntime as Config>::TreasuryPalletId::get().into_account();
+        assert!(<TestRuntime as Config>::Currency::free_balance(&treasury_id).is_zero());
     })
 }
 
