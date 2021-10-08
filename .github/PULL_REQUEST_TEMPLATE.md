@@ -1,29 +1,28 @@
-<!--
-Thank you for your pull request. Please provide a description above and review
-the requirements below.
+**Pull Request Summary**
 
-Bug fixes and new features should include tests and possibly benchmarks.
+> Describe what changes this pull request makes to the repository
 
-Contributors guide: ./.github/CONTRIBUTING.md
--->
-
-<!-- _Please make sure to review and check all of these items:_ -->
-
-
-## Checklist
-<!-- Remove items that do not apply. For completed items, change [ ] to [x]. -->
-
-- [ ] all tests passes
+**Check list**
+- [ ] contains breaking changes
+- [ ] adds new feature
+- [ ] modifies existing feature (bug fix or improvements)
+- [ ] relies on other tasks
+- [ ] documentation changes
 - [ ] tests and/or benchmarks are included
-- [ ] documentation is changed or added
 - [ ] changed API client type definition or chain metadata
 
-<!-- _NOTE: these things are not required to open a PR and can be done afterwards / while the PR is open._ -->
+**This pull request makes the following changes:**
 
-## Affected core subsystem(s)
-<!-- Please provide affected other system(s). -->
+**Adds**
+- (ex: Add feature A)
 
-## Description of change
-<!-- Please provide a description of the change here. -->
+**Fixes**
+- (ex: Fix validation function)
 
-* * *
+**Changes**
+- (ex: Change document B)
+
+**To-dos**
+> *Feel free to remove this section if it's not applicable
+
+- [ ] (ex: add user list)
