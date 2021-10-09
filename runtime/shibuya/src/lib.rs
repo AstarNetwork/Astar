@@ -289,6 +289,7 @@ impl pallet_dapps_staking::Config for Runtime {
     type MaxNumberOfStakersPerContract = MaxNumberOfStakersPerContract;
     type MinimumStakingAmount = MinimumStakingAmount;
     type PalletId = DappsStakingPalletId;
+    type TreasuryPalletId = TreasuryPalletId;
 }
 
 /// Multi-VM pointer to smart contract instance.

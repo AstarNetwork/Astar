@@ -117,6 +117,7 @@ parameter_types! {
     pub const MinimumStakingAmount: Balance = MINIMUM_STAKING_AMOUNT;
     pub const DeveloperRewardPercentage: u32 = DEVELOPER_REWARD_PERCENTAGE;
     pub const DappsStakingPalletId: PalletId = PalletId(*b"mokdpstk");
+    pub const TreasuryPalletId: PalletId = PalletId(*b"moktrsry");
 }
 
 impl pallet_dapps_staking::Config for TestRuntime {
@@ -130,6 +131,7 @@ impl pallet_dapps_staking::Config for TestRuntime {
     type MaxNumberOfStakersPerContract = MaxNumberOfStakersPerContract;
     type MinimumStakingAmount = MinimumStakingAmount;
     type PalletId = DappsStakingPalletId;
+    type TreasuryPalletId = TreasuryPalletId;
 }
 
 #[derive(PartialEq, Eq, Copy, Clone, Encode, Decode, Debug)]
