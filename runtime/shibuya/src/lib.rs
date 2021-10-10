@@ -275,7 +275,7 @@ parameter_types! {
     pub const RegisterDeposit: Balance = 100 * SDN;
     pub const DeveloperRewardPercentage: u32 = 80;
     pub const MaxNumberOfStakersPerContract: u32 = 128;
-    pub const MinimumStakingAmount: Balance = 10;
+    pub const MinimumStakingAmount: Balance = 10 * SDN;
 }
 
 impl pallet_dapps_staking::Config for Runtime {
