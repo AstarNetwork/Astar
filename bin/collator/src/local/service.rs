@@ -20,6 +20,14 @@ use std::{
 
 use crate::primitives::*;
 
+#[cfg(not(feature = "frame-benchmarking"))]
+native_executor_instance!(
+    pub Executor,
+    local_runtime::api::dispatch,
+    local_runtime::native_version,
+);
+
+#[cfg(feature = "frame-benchmarking")]
 native_executor_instance!(
     pub Executor,
     local_runtime::api::dispatch,

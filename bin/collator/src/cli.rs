@@ -63,6 +63,7 @@ pub enum Subcommand {
     ExportGenesisWasm(ExportGenesisWasmCommand),
 
     /// The custom benchmark subcommmand benchmarking runtime pallets.
+    #[cfg(feature = "frame-benchmarking")]
     #[structopt(name = "benchmark", about = "Benchmark runtime pallets.")]
     Benchmark(frame_benchmarking_cli::BenchmarkCmd),
 }

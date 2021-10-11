@@ -109,8 +109,8 @@ polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "r
 polkadot-cli = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.10", optional = true }
 
 # benchmark dependencies
-frame-benchmarking = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.10" }
-frame-benchmarking-cli = { git = 'https://github.com/paritytech/substrate', branch = 'polkadot-v0.9.10' }
+frame-benchmarking = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.10", optional = true }
+frame-benchmarking-cli = { git = 'https://github.com/paritytech/substrate', branch = "polkadot-v0.9.10", optional = true }
 
 [build-dependencies]
 sc-cli = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.10", optional = true }
@@ -130,8 +130,9 @@ default = [
 	"vergen",
 ]
 runtime-benchmarks = [
+    "frame-benchmarking",
+    "frame-benchmarking-cli",
     "local-runtime/runtime-benchmarks",
     "shibuya-runtime/runtime-benchmarks",
     "shiden-runtime/runtime-benchmarks",
-
 ]

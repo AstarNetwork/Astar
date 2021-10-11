@@ -946,7 +946,7 @@ impl_runtime_apis! {
         }
     }
 
-    #[cfg(feature = "runtime-benchmarks")]
+    #[cfg(feature = "runtime-benchmakrs")]
     impl frame_benchmarking::Benchmark<Block> for Runtime {
         fn benchmark_metadata(_extra: bool) -> (
             Vec<frame_benchmarking::BenchmarkList>,
