@@ -657,8 +657,8 @@ pub mod pallet {
         /// Any reward older than history_depth() will go to Treasury.
         /// Any user can call this function.
         #[pallet::weight(T::WeightInfo::claim(
-            T::MaxNumberOfStakersPerContract::get(),
-            T::HistoryDepth::get()
+            T::MaxNumberOfStakersPerContract::get() * T::HistoryDepth::get(),
+            Pallet::<T>::get_unclaimed_reward_history_limit()
         ))]
         pub fn claim(
             origin: OriginFor<T>,
@@ -700,6 +700,10 @@ pub mod pallet {
             // [last_staked_era.former_stake_era, last_staked_era>,
             //  ...
 
+            // This will be the oldest era we will look at. Others will just be discarded.
+            let lowest_allowed_era =
+                current_era.saturating_sub(Self::get_unclaimed_reward_history_limit());
+
             let mut number_of_era_staking_points = 1u32;
             let mut lower_bound_era = last_staked_era;
             let mut upper_bound_era = current_era;
@@ -708,7 +712,7 @@ pub mod pallet {
                     .ok_or(Error::<T>::UnknownStartStakingData)?;
             loop {
                 // accumulate rewards for this period
-                for era in lower_bound_era..upper_bound_era {
+                for era in lower_bound_era.max(lowest_allowed_era)..upper_bound_era {
                     let reward_and_stake_for_era =
                         Self::era_reward_and_stake(era).ok_or(Error::<T>::UnknownEraReward)?;
 
@@ -722,13 +726,11 @@ pub mod pallet {
                     // First arm refers to situations where both dev and staker are eligible for rewards
                     if era >= last_allowed_era {
                         // divide reward between stakers and the developer of the contract
-                        let contract_staker_reward = Perbill::from_rational(
-                            (100 - T::DeveloperRewardPercentage::get()) as u64,
-                            100,
-                        ) * contract_reward_in_era;
                         let contract_developer_reward =
                             Perbill::from_rational(T::DeveloperRewardPercentage::get() as u64, 100)
                                 * contract_reward_in_era;
+                        let contract_staker_reward =
+                            contract_reward_in_era - contract_developer_reward;
 
                         // accumulate rewards for the stakers
                         Self::stakers_era_reward(
@@ -748,7 +750,8 @@ pub mod pallet {
                 lower_bound_era = contract_staking_info.former_staked_era;
 
                 // Check if this is the last unprocessed era staking point. If it is, stop.
-                if lower_bound_era == upper_bound_era {
+                // Also check if upper bound is below lowest allowed era and stop if needed.
+                if lower_bound_era == upper_bound_era || upper_bound_era < lowest_allowed_era {
                     // update struct so it reflects that it's the last known staking point value
                     contract_staking_info.former_staked_era = current_era;
                     break;
@@ -830,6 +833,15 @@ pub mod pallet {
     }
 
     impl<T: Config> Pallet<T> {
+        /// Returns the value of history depth but in regards to how deep do we go when
+        /// processing unclaimed rewards.
+        ///
+        /// This value is bound together with history depth (it must be greater or same) so
+        /// we fetch it via a dedicated helper method
+        pub(crate) fn get_unclaimed_reward_history_limit() -> EraIndex {
+            T::HistoryDepth::get() * 2
+        }
+
         /// Update the ledger for a staker. This will also update the stash lock.
         /// This lock will lock the entire funds except paying for further transactions.
         fn update_ledger(staker: &T::AccountId, ledger: &BalanceOf<T>) {
@@ -848,11 +860,12 @@ pub mod pallet {
             points: &EraStakingPoints<T::AccountId, BalanceOf<T>>,
             reward_for_contract: BalanceOf<T>,
         ) {
-            let staker_part = Perbill::from_rational(reward_for_contract, (*points).total);
-
-            for (s, b) in &points.stakers {
-                let reward = staker_map.entry(s.clone()).or_insert(Default::default());
-                *reward += staker_part * *b;
+            for (staker, staked_balance) in &points.stakers {
+                let staker_part = Perbill::from_rational(*staked_balance, (*points).total);
+                let reward = staker_map
+                    .entry(staker.clone())
+                    .or_insert(Default::default());
+                *reward += staker_part * reward_for_contract;
             }
         }
 
