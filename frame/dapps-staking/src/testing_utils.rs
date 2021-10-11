@@ -146,7 +146,7 @@ pub(crate) fn calc_expected_staker_reward(
     let contract_staker_part =
         Perbill::from_percent(100 - DEVELOPER_REWARD_PERCENTAGE) * contract_reward;
 
-    Perbill::from_rational(contract_staker_part, contract_stake) * staker_stake
+    Perbill::from_rational(staker_stake, contract_stake) * contract_staker_part
 }
 
 /// Used to calculate the expected reward for the developer

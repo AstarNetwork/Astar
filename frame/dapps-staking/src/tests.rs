@@ -1618,3 +1618,60 @@ fn claim_two_contracts_three_stakers() {
         check_paidout_rewards_for_contract(&contract2, expected_contract2_reward);
     })
 }
+
+#[test]
+fn claim_reward_higher_than_stake() {
+    ExternalityBuilder::build().execute_with(|| {
+        initialize_first_block();
+
+        let developer = 1;
+        let staker: mock::AccountId = 2;
+        const STAKER_AMOUNT: mock::Balance = 100;
+        const ERA_STAKED: mock::Balance = 100;
+        let contract = MockSmartContract::Evm(H160::repeat_byte(0x01));
+        let free_balance_staker = <mock::TestRuntime as Config>::Currency::free_balance(&staker);
+
+        let start_era = DappsStaking::current_era();
+        println!("start_era {:?}", start_era);
+        register_contract(developer, &contract);
+        let free_balance_developer =
+            <mock::TestRuntime as Config>::Currency::free_balance(&developer);
+        bond_and_stake_with_verification(staker, &contract, STAKER_AMOUNT);
+
+        // Advance era by one, so rewards can be claimed for previous era.
+        advance_to_era(start_era + 1);
+        // Claim rewards for the contract and verify storage content is as expected.
+        let claim_era: EraIndex = DappsStaking::current_era();
+        claim(staker, contract.clone(), start_era, claim_era.clone());
+        verify_contract_history_is_cleared(contract, start_era, claim_era);
+
+        // calculate reward for staker
+        let expected_era_reward = get_total_reward_per_era();
+        let expected_staker_reward = calc_expected_staker_reward(
+            expected_era_reward,
+            ERA_STAKED,
+            STAKER_AMOUNT,
+            STAKER_AMOUNT,
+        );
+
+        // calculate reward for developer
+        let expected_developer_reward =
+            calc_expected_developer_reward(expected_era_reward, ERA_STAKED, STAKER_AMOUNT);
+
+        check_rewards_on_balance_and_storage(
+            &contract,
+            &staker,
+            free_balance_staker,
+            1 as EraIndex, // use 1 since the multiplication with era is alreday done
+            expected_staker_reward,
+        );
+
+        check_rewards_on_balance_and_storage(
+            &contract,
+            &developer,
+            free_balance_developer,
+            1 as EraIndex, // use 1 since the multiplication with era is alreday done
+            expected_developer_reward,
+        );
+    })
+}
