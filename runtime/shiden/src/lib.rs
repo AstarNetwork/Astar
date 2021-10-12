@@ -1017,7 +1017,7 @@ impl_runtime_apis! {
             use frame_support::traits::StorageInfoTrait;
 
             let mut list = Vec::<BenchmarkList>::new();
-            
+
             list_benchmark!(list, extra, pallet_dapps_staking, DappsStaking);
             let list = Vec::<BenchmarkList>::new();
 
