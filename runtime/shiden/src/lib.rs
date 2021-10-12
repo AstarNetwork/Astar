@@ -4,6 +4,7 @@
 // `construct_runtime!` does a lot of recursion and requires us to increase the limit to 256.
 #![recursion_limit = "256"]
 
+use codec::{Decode, Encode};
 use frame_support::{
     construct_runtime, match_type, parameter_types,
     traits::{Contains, Currency, FindAuthor, Imbalance, OnUnbalanced},
@@ -30,7 +31,7 @@ use sp_runtime::{
         OpaqueKeys, Verify,
     },
     transaction_validity::{TransactionPriority, TransactionSource, TransactionValidity},
-    ApplyExtrinsicResult, FixedPointNumber, Perbill, Perquintill,
+    ApplyExtrinsicResult, FixedPointNumber, Perbill, Perquintill, RuntimeDebug
 };
 use sp_std::prelude::*;
 
@@ -52,6 +53,8 @@ pub use sp_runtime::BuildStorage;
 
 mod precompiles;
 pub use precompiles::ShidenNetworkPrecompiles;
+
+mod weights;
 
 /// Constant values used within the runtime.
 pub const MILLISDN: Balance = 1_000_000_000_000_000;
@@ -673,7 +676,6 @@ impl fp_rpc::ConvertTransaction<sp_runtime::OpaqueExtrinsic> for TransactionConv
         &self,
         transaction: pallet_ethereum::Transaction,
     ) -> sp_runtime::OpaqueExtrinsic {
-        use codec::{Decode, Encode};
 
         let extrinsic = UncheckedExtrinsic::new_unsigned(
             pallet_ethereum::Call::<Runtime>::transact(transaction).into(),
