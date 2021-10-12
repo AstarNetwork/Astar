@@ -268,6 +268,65 @@ impl pallet_custom_signatures::Config for Runtime {
     type UnsignedPriority = EcdsaUnsignedPriority;
 }
 
+parameter_types! {
+    pub const BlockPerEra: BlockNumber = 1 * DAYS;
+    pub const RegisterDeposit: Balance = 100 * SDN;
+    pub const DeveloperRewardPercentage: u32 = 80;
+    pub const MaxNumberOfStakersPerContract: u32 = 512;
+    pub const MinimumStakingAmount: Balance = 100 * SDN;
+    pub const HistoryDepth: u32 = 15;
+}
+
+impl pallet_dapps_staking::Config for Runtime {
+    type Currency = Balances;
+    type BlockPerEra = BlockPerEra;
+    type SmartContract = SmartContract<AccountId>;
+    type RegisterDeposit = RegisterDeposit;
+    type DeveloperRewardPercentage = DeveloperRewardPercentage;
+    type Event = Event;
+    type WeightInfo = weights::pallet_dapps_staking::WeightInfo<Runtime>;
+    type MaxNumberOfStakersPerContract = MaxNumberOfStakersPerContract;
+    type MinimumStakingAmount = MinimumStakingAmount;
+    type PalletId = DappsStakingPalletId;
+    type TreasuryPalletId = TreasuryPalletId;
+    type HistoryDepth = HistoryDepth;
+}
+
+/// Multi-VM pointer to smart contract instance.
+#[derive(PartialEq, Eq, Copy, Clone, Encode, Decode, RuntimeDebug)]
+pub enum SmartContract<AccountId> {
+    /// EVM smart contract instance.
+    Evm(sp_core::H160),
+    /// Wasm smart contract instance.
+    Wasm(AccountId),
+}
+
+impl<AccountId> Default for SmartContract<AccountId> {
+    fn default() -> Self {
+        SmartContract::Evm(H160::repeat_byte(0x00))
+    }
+}
+
+#[cfg(not(feature = "runtime-benchmarks"))]
+impl<AccountId> pallet_dapps_staking::traits::IsContract for SmartContract<AccountId> {
+    fn is_valid(&self) -> bool {
+        match self {
+            SmartContract::Wasm(_account) => false,
+            SmartContract::Evm(account) => EVM::account_codes(&account).len() > 0,
+        }
+    }
+}
+
+#[cfg(feature = "runtime-benchmarks")]
+impl<AccountId> pallet_dapps_staking::traits::IsContract for SmartContract<AccountId> {
+    fn is_valid(&self) -> bool {
+        match self {
+            SmartContract::Wasm(_account) => false,
+            SmartContract::Evm(_account) => true,
+        }
+    }
+}
+
 impl pallet_utility::Config for Runtime {
     type Event = Event;
     type Call = Call;
@@ -654,6 +713,7 @@ construct_runtime!(
         Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>} = 31,
         Vesting: pallet_vesting::{Pallet, Call, Storage, Config<T>, Event<T>} = 32,
         BlockReward: pallet_block_reward::{Pallet} = 33,
+        DappsStaking: pallet_dapps_staking::{Pallet, Call, Storage, Event<T>} = 34,
 
         Authorship: pallet_authorship::{Pallet, Call, Storage, Inherent} = 40,
         CollatorSelection: pallet_collator_selection::{Pallet, Call, Storage, Event<T>, Config<T>} = 41,
@@ -956,9 +1016,9 @@ impl_runtime_apis! {
             use frame_benchmarking::{list_benchmark, Benchmarking, BenchmarkList};
             use frame_support::traits::StorageInfoTrait;
 
-            // let mut list = Vec::<BenchmarkList>::new();
-            //
-            // list_benchmark!(list, extra, pallet_dapps_staking, DappsStaking);
+            let mut list = Vec::<BenchmarkList>::new();
+            
+            list_benchmark!(list, extra, pallet_dapps_staking, DappsStaking);
             let list = Vec::<BenchmarkList>::new();
 
             let storage_info = AllPalletsWithSystem::storage_info();
