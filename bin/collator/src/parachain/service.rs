@@ -36,14 +36,14 @@ use crate::primitives::*;
 pub mod shiden {
     pub use shiden_runtime::RuntimeApi;
 
-    #[cfg(not(feature = "frame-benchmarking"))]
+    #[cfg(not(feature = "runtime-benchmarks"))]
     sc_executor::native_executor_instance!(
         pub Executor,
         shiden_runtime::api::dispatch,
         shiden_runtime::native_version,
     );
 
-    #[cfg(feature = "frame-benchmarking")]
+    #[cfg(feature = "runtime-benchmarks")]
     sc_executor::native_executor_instance!(
         pub Executor,
         shiden_runtime::api::dispatch,
@@ -56,14 +56,14 @@ pub mod shiden {
 pub mod shibuya {
     pub use shibuya_runtime::RuntimeApi;
 
-    #[cfg(not(feature = "frame-benchmarking"))]
+    #[cfg(not(feature = "runtime-benchmarks"))]
     sc_executor::native_executor_instance!(
         pub Executor,
         shibuya_runtime::api::dispatch,
         shibuya_runtime::native_version,
     );
 
-    #[cfg(feature = "frame-benchmarking")]
+    #[cfg(feature = "runtime-benchmarks")]
     sc_executor::native_executor_instance!(
         pub Executor,
         shibuya_runtime::api::dispatch,
