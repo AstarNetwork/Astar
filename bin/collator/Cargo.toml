@@ -108,6 +108,10 @@ polkadot-parachain = { git = "https://github.com/paritytech/polkadot", branch = 
 polkadot-service = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.10" }
 polkadot-cli = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.10", optional = true }
 
+# benchmark dependencies
+frame-benchmarking = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.10", optional = true }
+frame-benchmarking-cli = { git = 'https://github.com/paritytech/substrate', branch = "polkadot-v0.9.10", optional = true }
+
 [build-dependencies]
 sc-cli = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.10", optional = true }
 sc-service = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.10", optional = true }
@@ -124,4 +128,11 @@ default = [
     "sc-service/db",
     "structopt",
 	"vergen",
+]
+runtime-benchmarks = [
+    "frame-benchmarking",
+    "frame-benchmarking-cli",
+    "local-runtime/runtime-benchmarks",
+    "shibuya-runtime/runtime-benchmarks",
+    "shiden-runtime/runtime-benchmarks",
 ]

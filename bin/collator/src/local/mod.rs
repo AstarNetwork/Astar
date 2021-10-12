@@ -7,4 +7,4 @@ mod service;
 mod chain_spec;
 
 pub use chain_spec::*;
-pub use service::start_node;
+pub use service::{start_node, Executor};

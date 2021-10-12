@@ -405,6 +405,20 @@ pub fn run() -> Result<()> {
         Some(Subcommand::Sign(cmd)) => cmd.run(),
         Some(Subcommand::Verify(cmd)) => cmd.run(),
         Some(Subcommand::Vanity(cmd)) => cmd.run(),
+        #[cfg(feature = "frame-benchmarking")]
+        Some(Subcommand::Benchmark(cmd)) => {
+            let runner = cli.create_runner(cmd)?;
+            let chain_spec = &runner.config().chain_spec;
+
+            if chain_spec.is_shiden() {
+                runner.sync_run(|config| cmd.run::<shiden_runtime::Block, shiden::Executor>(config))
+            } else if chain_spec.is_shibuya() {
+                runner
+                    .sync_run(|config| cmd.run::<shibuya_runtime::Block, shibuya::Executor>(config))
+            } else {
+                runner.sync_run(|config| cmd.run::<Block, local::Executor>(config))
+            }
+        }
         None => {
             let runner = cli.create_runner(&*cli.run)?;
 

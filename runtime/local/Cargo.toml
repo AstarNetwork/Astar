@@ -51,6 +51,11 @@ pallet-block-reward = { path = "../../frame/block-reward", default-features = fa
 pallet-custom-signatures = { path = "../../frame/custom-signatures", default-features = false }
 pallet-dapps-staking = { path = "../../frame/dapps-staking", default-features = false }
 
+# benchmarking
+hex-literal = { version = '0.3.1', optional = true }
+frame-benchmarking = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.10", default-features = false, optional = true }
+frame-system-benchmarking = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.10", default-features = false, optional = true }
+
 [build-dependencies]
 substrate-wasm-builder = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.10", default-features = false }
 
@@ -97,4 +102,16 @@ std = [
     "sp-std/std",
     "sp-transaction-pool/std",
     "sp-version/std",
+    "frame-benchmarking/std",
+]
+runtime-benchmarks = [
+    'frame-benchmarking',
+    'frame-support/runtime-benchmarks',
+    'frame-system-benchmarking',
+    'frame-system/runtime-benchmarks',
+    'hex-literal',
+    'sp-runtime/runtime-benchmarks',
+    'pallet-dapps-staking/runtime-benchmarks',
+    'pallet-balances/runtime-benchmarks',
+    'pallet-timestamp/runtime-benchmarks',
 ]

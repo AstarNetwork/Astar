@@ -14,6 +14,8 @@ pub mod traits;
 pub mod weights;
 pub use traits::*;
 
+#[cfg(any(feature = "runtime-benchmarks"))]
+pub mod benchmarking;
 #[cfg(test)]
 mod mock;
 #[cfg(test)]

@@ -543,7 +543,7 @@ fn bond_and_stake_history_depth_has_passed_is_ok() {
         bond_and_stake_with_verification(staker_id, &contract_id, first_staking_amount);
 
         // Advance eras beyond history depth
-        let history_depth = HistoryDepth::<TestRuntime>::get();
+        let history_depth = HistoryDepth::get();
         advance_to_era(start_era + history_depth + 1);
 
         // Bond&stake again
@@ -901,7 +901,7 @@ fn unbond_unstake_and_withdraw_history_depth_has_passed_is_ok() {
         //////////////////////////////////////////////
 
         // Advance eras beyond history depth
-        let history_depth = HistoryDepth::<TestRuntime>::get();
+        let history_depth = HistoryDepth::get();
         advance_to_era(start_era + history_depth + 1);
 
         let first_unstake_amount = 30;
@@ -1206,7 +1206,7 @@ fn claim_after_history_depth_has_passed_is_ok() {
         register_contract(developer, &contract);
         bond_and_stake_with_verification(claimer, &contract, 100);
 
-        let history_depth = HistoryDepth::<TestRuntime>::get();
+        let history_depth = HistoryDepth::get();
 
         advance_to_era(start_era + history_depth + 1);
 
@@ -1222,6 +1222,63 @@ fn claim_after_history_depth_has_passed_is_ok() {
             get_total_reward_per_era(),
             <TestRuntime as Config>::Currency::free_balance(&treasury_id)
         );
+    })
+}
+
+#[test]
+fn claim_after_unclaimed_history_depth_has_passed_is_ok() {
+    ExternalityBuilder::build().execute_with(|| {
+        initialize_first_block();
+
+        let developer = 1;
+        let claimer = 2;
+        let treasury_id = <TestRuntime as Config>::TreasuryPalletId::get().into_account();
+        let contract = MockSmartContract::Evm(H160::repeat_byte(0x01));
+
+        let start_era = DappsStaking::current_era();
+        register_contract(developer, &contract);
+        bond_and_stake_with_verification(claimer, &contract, 100);
+
+        // Get and calculate history information
+        let history_depth = HistoryDepth::get();
+        let unclaimed_history_depth = DappsStaking::get_unclaimed_reward_history_limit();
+        let history_delta = unclaimed_history_depth - history_depth;
+
+        // Take snapshot of free balance prior to claim
+        let treasury_starting_balance =
+            <TestRuntime as Config>::Currency::free_balance(&treasury_id);
+        let developer_starting_balance =
+            <TestRuntime as Config>::Currency::free_balance(&developer);
+        let claimer_starting_balance = <TestRuntime as Config>::Currency::free_balance(&claimer);
+
+        // Advance eras so we move past unclaimed history depth. Some rewards must be slashed now.
+        advance_to_era(start_era + unclaimed_history_depth + 1);
+
+        let upper_claim_era = DappsStaking::current_era();
+        let lower_claim_era = upper_claim_era.saturating_sub(history_depth).max(1);
+        claim(claimer, contract, lower_claim_era, upper_claim_era.clone());
+
+        verify_contract_history_is_cleared(contract, start_era, upper_claim_era);
+
+        // Calculate how much was earned by everyone
+        let treasury_earned = <TestRuntime as Config>::Currency::free_balance(&treasury_id)
+            - treasury_starting_balance;
+        let developer_earned = <TestRuntime as Config>::Currency::free_balance(&developer)
+            - developer_starting_balance;
+        let claimer_earned =
+            <TestRuntime as Config>::Currency::free_balance(&claimer) - claimer_starting_balance;
+
+        // Now assert that reward distribution is as expected
+        let reward_per_era = get_total_reward_per_era();
+
+        // Both dev and claimer should have earned the rewards for each of the eras in the 'history depth'
+        assert_eq!(
+            reward_per_era * history_depth as u128,
+            developer_earned + claimer_earned
+        );
+
+        // Past the history depth, we enter 'unclaimed history depth' where we claim rewards for the treasury
+        assert_eq!(reward_per_era * history_delta as u128, treasury_earned);
     })
 }
 
