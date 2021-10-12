@@ -286,7 +286,7 @@ parameter_types! {
     pub const DeveloperRewardPercentage: u32 = 80;
     pub const MaxNumberOfStakersPerContract: u32 = 128;
     pub const MinimumStakingAmount: Balance = 10 * AST;
-    pub const HistoryDepth: u32 = 30;
+    pub const HistoryDepth: u32 = 15;
 }
 
 impl pallet_dapps_staking::Config for Runtime {
