@@ -31,7 +31,7 @@ use sp_runtime::{
         OpaqueKeys, Verify,
     },
     transaction_validity::{TransactionPriority, TransactionSource, TransactionValidity},
-    ApplyExtrinsicResult, FixedPointNumber, Perbill, Perquintill, RuntimeDebug
+    ApplyExtrinsicResult, FixedPointNumber, Perbill, Perquintill, RuntimeDebug,
 };
 use sp_std::prelude::*;
 
@@ -270,7 +270,6 @@ impl pallet_custom_signatures::Config for Runtime {
     type OnChargeTransaction = ToStakingPot;
     type UnsignedPriority = EcdsaUnsignedPriority;
 }
-
 
 parameter_types! {
     pub const BlockPerEra: BlockNumber = 1 * DAYS;
@@ -677,7 +676,6 @@ impl fp_rpc::ConvertTransaction<sp_runtime::OpaqueExtrinsic> for TransactionConv
         &self,
         transaction: pallet_ethereum::Transaction,
     ) -> sp_runtime::OpaqueExtrinsic {
-
         let extrinsic = UncheckedExtrinsic::new_unsigned(
             pallet_ethereum::Call::<Runtime>::transact(transaction).into(),
         );
@@ -716,6 +714,7 @@ construct_runtime!(
         Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>} = 31,
         Vesting: pallet_vesting::{Pallet, Call, Storage, Config<T>, Event<T>} = 32,
         BlockReward: pallet_block_reward::{Pallet} = 33,
+        DappsStaking: pallet_dapps_staking::{Pallet, Call, Storage, Event<T>} = 34,
 
         Authorship: pallet_authorship::{Pallet, Call, Storage, Inherent} = 40,
         CollatorSelection: pallet_collator_selection::{Pallet, Call, Storage, Event<T>, Config<T>} = 41,
@@ -1008,7 +1007,7 @@ impl_runtime_apis! {
         }
     }
 
-    #[cfg(feature = "runtime-benchmakrs")]
+    #[cfg(feature = "runtime-benchmarks")]
     impl frame_benchmarking::Benchmark<Block> for Runtime {
         fn benchmark_metadata(_extra: bool) -> (
             Vec<frame_benchmarking::BenchmarkList>,
@@ -1018,7 +1017,7 @@ impl_runtime_apis! {
             use frame_support::traits::StorageInfoTrait;
 
             let mut list = Vec::<BenchmarkList>::new();
-            
+
             list_benchmark!(list, extra, pallet_dapps_staking, DappsStaking);
             let list = Vec::<BenchmarkList>::new();
 
@@ -1054,6 +1053,7 @@ impl_runtime_apis! {
             add_benchmark!(params, batches, frame_system, SystemBench::<Runtime>);
             add_benchmark!(params, batches, pallet_balances, Balances);
             add_benchmark!(params, batches, pallet_timestamp, Timestamp);
+            add_benchmark!(params, batches, pallet_dapps_staking, DappsStaking);
 
             if batches.is_empty() { return Err("Benchmark not found for this pallet.".into()) }
             Ok(batches)
