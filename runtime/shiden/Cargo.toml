@@ -1,6 +1,6 @@
 [package]
 name = "shiden-runtime"
-version = "2.5.2"
+version = "2.6.0"
 authors = ["Stake Technologies <devops@stake.co.jp>"]
 edition = "2018"
 build = "build.rs"
@@ -78,6 +78,7 @@ pallet-collective = { git = "https://github.com/paritytech/substrate", branch = 
 # Astar pallets
 pallet-block-reward = { path = "../../frame/block-reward", default-features = false }
 pallet-custom-signatures = { path = "../../frame/custom-signatures", default-features = false }
+pallet-precompile-staking = { path = "../../precompiles/staking", default-features = false }
 pallet-dapps-staking = { path = "../../frame/dapps-staking", default-features = false }
 
 [build-dependencies]
@@ -116,6 +117,7 @@ std = [
     "pallet-evm-precompile-dispatch/std",
     "pallet-evm-precompile-modexp/std",
     "pallet-evm-precompile-sha3fips/std",
+    "pallet-precompile-staking/std",
     "pallet-dapps-staking/std",
     "pallet-identity/std",
     "pallet-multisig/std",
