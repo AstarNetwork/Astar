@@ -434,7 +434,7 @@ impl OnUnbalanced<NegativeImbalance> for OnBlockReward {
     fn on_nonzero_unbalanced(amount: NegativeImbalance) {
         let (dapps, maintain) = amount.ration(50, 50);
         // dapp staking block reward
-        Balances::resolve_creating(&DappsStakingPalletId::get().into_account(), dapps);
+        DappsStaking::on_unbalanced(dapps);
 
         let (treasury, collators) = maintain.ration(40, 10);
         // treasury slice of block reward
