@@ -31,6 +31,7 @@ pub(crate) const MINIMUM_STAKING_AMOUNT: Balance = 10;
 pub(crate) const DEVELOPER_REWARD_PERCENTAGE: u32 = 80;
 pub(crate) const HISTORY_DEPTH: u32 = 30;
 
+// Do note that this needs to at least be 3 for tests to be valid. It can be greater but not smaller.
 pub(crate) const BLOCKS_PER_ERA: BlockNumber = 3;
 
 pub(crate) const REGISTER_DEPOSIT: Balance = 10;
