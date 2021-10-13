@@ -4,6 +4,7 @@
 // `construct_runtime!` does a lot of recursion and requires us to increase the limit to 256.
 #![recursion_limit = "256"]
 
+use codec::{Decode, Encode};
 use frame_support::{
     construct_runtime, match_type, parameter_types,
     traits::{Contains, Currency, FindAuthor, Imbalance, OnUnbalanced},
@@ -30,7 +31,7 @@ use sp_runtime::{
         OpaqueKeys, Verify,
     },
     transaction_validity::{TransactionPriority, TransactionSource, TransactionValidity},
-    ApplyExtrinsicResult, FixedPointNumber, Perbill, Perquintill,
+    ApplyExtrinsicResult, FixedPointNumber, Perbill, Perquintill, RuntimeDebug,
 };
 use sp_std::prelude::*;
 
@@ -52,6 +53,8 @@ pub use sp_runtime::BuildStorage;
 
 mod precompiles;
 pub use precompiles::ShidenNetworkPrecompiles;
+
+mod weights;
 
 /// Constant values used within the runtime.
 pub const MILLISDN: Balance = 1_000_000_000_000_000;
@@ -89,7 +92,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("shiden"),
     impl_name: create_runtime_str!("shiden"),
     authoring_version: 1,
-    spec_version: 16,
+    spec_version: 17,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 1,
@@ -266,6 +269,65 @@ impl pallet_custom_signatures::Config for Runtime {
     type CallFee = CallFee;
     type OnChargeTransaction = ToStakingPot;
     type UnsignedPriority = EcdsaUnsignedPriority;
+}
+
+parameter_types! {
+    pub const BlockPerEra: BlockNumber = 1 * DAYS;
+    pub const RegisterDeposit: Balance = 100 * SDN;
+    pub const DeveloperRewardPercentage: u32 = 80;
+    pub const MaxNumberOfStakersPerContract: u32 = 512;
+    pub const MinimumStakingAmount: Balance = 100 * SDN;
+    pub const HistoryDepth: u32 = 15;
+}
+
+impl pallet_dapps_staking::Config for Runtime {
+    type Currency = Balances;
+    type BlockPerEra = BlockPerEra;
+    type SmartContract = SmartContract<AccountId>;
+    type RegisterDeposit = RegisterDeposit;
+    type DeveloperRewardPercentage = DeveloperRewardPercentage;
+    type Event = Event;
+    type WeightInfo = weights::pallet_dapps_staking::WeightInfo<Runtime>;
+    type MaxNumberOfStakersPerContract = MaxNumberOfStakersPerContract;
+    type MinimumStakingAmount = MinimumStakingAmount;
+    type PalletId = DappsStakingPalletId;
+    type TreasuryPalletId = TreasuryPalletId;
+    type HistoryDepth = HistoryDepth;
+}
+
+/// Multi-VM pointer to smart contract instance.
+#[derive(PartialEq, Eq, Copy, Clone, Encode, Decode, RuntimeDebug)]
+pub enum SmartContract<AccountId> {
+    /// EVM smart contract instance.
+    Evm(sp_core::H160),
+    /// Wasm smart contract instance.
+    Wasm(AccountId),
+}
+
+impl<AccountId> Default for SmartContract<AccountId> {
+    fn default() -> Self {
+        SmartContract::Evm(H160::repeat_byte(0x00))
+    }
+}
+
+#[cfg(not(feature = "runtime-benchmarks"))]
+impl<AccountId> pallet_dapps_staking::traits::IsContract for SmartContract<AccountId> {
+    fn is_valid(&self) -> bool {
+        match self {
+            SmartContract::Wasm(_account) => false,
+            SmartContract::Evm(account) => EVM::account_codes(&account).len() > 0,
+        }
+    }
+}
+
+#[cfg(feature = "runtime-benchmarks")]
+impl<AccountId> pallet_dapps_staking::traits::IsContract for SmartContract<AccountId> {
+    fn is_valid(&self) -> bool {
+        match self {
+            SmartContract::Wasm(_account) => false,
+            SmartContract::Evm(_account) => true,
+        }
+    }
 }
 
 impl pallet_utility::Config for Runtime {
@@ -614,8 +676,6 @@ impl fp_rpc::ConvertTransaction<sp_runtime::OpaqueExtrinsic> for TransactionConv
         &self,
         transaction: pallet_ethereum::Transaction,
     ) -> sp_runtime::OpaqueExtrinsic {
-        use codec::{Decode, Encode};
-
         let extrinsic = UncheckedExtrinsic::new_unsigned(
             pallet_ethereum::Call::<Runtime>::transact(transaction).into(),
         );
@@ -654,6 +714,7 @@ construct_runtime!(
         Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>} = 31,
         Vesting: pallet_vesting::{Pallet, Call, Storage, Config<T>, Event<T>} = 32,
         BlockReward: pallet_block_reward::{Pallet} = 33,
+        DappsStaking: pallet_dapps_staking::{Pallet, Call, Storage, Event<T>} = 34,
 
         Authorship: pallet_authorship::{Pallet, Call, Storage, Inherent} = 40,
         CollatorSelection: pallet_collator_selection::{Pallet, Call, Storage, Event<T>, Config<T>} = 41,
@@ -946,19 +1007,18 @@ impl_runtime_apis! {
         }
     }
 
-    #[cfg(feature = "runtime-benchmakrs")]
+    #[cfg(feature = "runtime-benchmarks")]
     impl frame_benchmarking::Benchmark<Block> for Runtime {
         fn benchmark_metadata(_extra: bool) -> (
             Vec<frame_benchmarking::BenchmarkList>,
             Vec<frame_support::traits::StorageInfo>,
         ) {
-            #![allow(unused_imports)] // TODO: remove this when metadata is added
             use frame_benchmarking::{list_benchmark, Benchmarking, BenchmarkList};
             use frame_support::traits::StorageInfoTrait;
 
-            // let mut list = Vec::<BenchmarkList>::new();
-            //
-            // list_benchmark!(list, extra, pallet_dapps_staking, DappsStaking);
+            let mut list = Vec::<BenchmarkList>::new();
+
+            list_benchmark!(list, extra, pallet_dapps_staking, DappsStaking);
             let list = Vec::<BenchmarkList>::new();
 
             let storage_info = AllPalletsWithSystem::storage_info();
@@ -993,6 +1053,7 @@ impl_runtime_apis! {
             add_benchmark!(params, batches, frame_system, SystemBench::<Runtime>);
             add_benchmark!(params, batches, pallet_balances, Balances);
             add_benchmark!(params, batches, pallet_timestamp, Timestamp);
+            add_benchmark!(params, batches, pallet_dapps_staking, DappsStaking);
 
             if batches.is_empty() { return Err("Benchmark not found for this pallet.".into()) }
             Ok(batches)
