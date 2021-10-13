@@ -40,7 +40,7 @@ Table of Contents:
 ```
 SmartContract: {
     _enum: {
-    Evm: 'H160',  
+    Evm: 'H160',
     Wasm: 'AccountId'
     },
 }
@@ -166,7 +166,7 @@ BondAndStake(
                 value_to_stake
             )
 ```
-            
+
 Errors:
 * NotOperatedContract
 * StakingWithNoValue
@@ -196,7 +196,7 @@ Events:
                 contract_id,
                 value_to_unstake
             )`
-            
+
 Errors:
 * NotOperatedContract
 * UnstakingWithNoValue
@@ -210,7 +210,7 @@ pub fn claim(
     contract_id: T::AccountId,
 ) -> DispatchResultWithPostInfo {}
 ```
-1. Any account can initiate this call. 
+1. Any account can initiate this call.
 1. All stakers and the developer of this contract_id will be paid out.
 1. The rewards are paid out, they are transferable and they are NOT automatically re-staked.
 2. if an era for a contract is CurrentEra-ContractLastClaimed >= HistoryDepth, then all unclaimed rewards for that contract shall be sent to Treasury
@@ -249,11 +249,13 @@ https://github.com/PlasmNetwork/astar-apps
 ---
 ## FAQ
 
-### When do the projects/developers get their rewards? 
+### When do the projects/developers get their rewards?
 The earned rewards need to be claimed by calling claim() function. Once the claim() function is called all stakers on the contract and the developer of the contract get their rewards. This function can be called from any account. Recommended is that it is called by the projects/developers on a weekly basis.
 
-### What happens if nobody calls the claim function for longer than 30 days?
-The un-claimed rewards older than 30 days will be sent to the chain's Treasury.
+### What happens if nobody calls the claim function for longer than 'history_depth' days?
+The un-claimed rewards older than 'history_depth' days will be sent to the chain's Treasury.
+At the time of writing, history depth is set to 15 days but this can be changed.
+You can check the source code to be sure.
 
 ### When developers register their dApp, which has no contract yet, what kind of address do they need to input?
 There has to be a contract. Registration can’t be done without the contract.
@@ -264,16 +266,18 @@ The contract address can't be changed for the dApps staking. However, if the pro
 ### How do projects/developers (who joins dApps staking) get their stakers' address and the amount staked?
 ```
 era = ContractLastStaked(contract_id)
-ContractEraStake(contract_id, era).stakers 
+ContractEraStake(contract_id, era).stakers
 ```
 This will give the vector of all staker' accounts and how much they have staked.
 
 ### How many are the maximum numbers of stakers per dapps?(MaxNumberOfStakersPerContract)
-There can be a maximum of 128 stakers per one contract.
+At the time this is written, maximum number of stakers per dapp is 512.
+Note that there is also a minimum staking amount per dapp.
+You can check the source code to be sure.
 
 ### When developers register their dApp, can they registar WASM contract? (If not, can they update it in the future?)
 The developers can register several dApps. But they need to use separate accounts and separate contract addresses.
-The rule is 
+The rule is
 
 ```1 developer <=> 1 contract```
 
