@@ -6,6 +6,7 @@
 - [ ] contains breaking changes
 - [ ] adds new feature
 - [ ] modifies existing feature (bug fix or improvements)
+- [ ] updated spec version
 - [ ] relies on other tasks
 - [ ] documentation changes
 - [ ] tests and/or benchmarks are included
