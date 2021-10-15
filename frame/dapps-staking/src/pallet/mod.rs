@@ -67,7 +67,7 @@ pub mod pallet {
 
         /// Percentage of reward paid to developer.
         #[pallet::constant]
-        type DeveloperRewardPercentage: Get<u32>;
+        type DeveloperRewardPercentage: Get<Perbill>;
 
         /// Maximum number of unique stakers per contract.
         #[pallet::constant]
@@ -225,8 +225,8 @@ pub mod pallet {
         ContractRemoved(T::AccountId, T::SmartContract),
         /// New dapps staking era. Distribute era rewards to contracts.
         NewDappStakingEra(EraIndex),
-        /// The contract's reward have been claimed, by an account, from era, until era.
-        ContractClaimed(T::SmartContract, T::AccountId, EraIndex, EraIndex),
+        /// The contract's reward have been claimed for era.
+        ContractClaimed(T::SmartContract, EraIndex),
     }
 
     #[pallet::error]
@@ -263,6 +263,8 @@ pub mod pallet {
         NothingToClaim,
         /// Contract already claimed in this era and reward is distributed
         AlreadyClaimedInThisEra,
+        /// Era parameter is out of bounds
+        EraOutOfBounds,
         /// To register a contract, pre-approval is needed for this address
         RequiredContractPreApproval,
         /// Developer's account is already part of pre-approved list
@@ -656,161 +658,76 @@ pub mod pallet {
         /// claim is valid for all unclaimed eras but not longer than history_depth().
         /// Any reward older than history_depth() will go to Treasury.
         /// Any user can call this function.
-        #[pallet::weight(T::WeightInfo::claim(
-            T::MaxNumberOfStakersPerContract::get() * T::HistoryDepth::get(),
-            Pallet::<T>::get_unclaimed_reward_history_limit()
-        ))]
+        #[pallet::weight(T::WeightInfo::claim(T::MaxNumberOfStakersPerContract::get()))]
         pub fn claim(
             origin: OriginFor<T>,
             contract_id: T::SmartContract,
+            era: EraIndex,
         ) -> DispatchResultWithPostInfo {
-            let claimer = ensure_signed(origin)?;
+            let _ = ensure_signed(origin)?;
 
             // check if this contract is registered
             let developer = Self::registered_developer(&contract_id)
                 .ok_or(Error::<T>::ContractNotRegistered)?;
 
-            // check if it was ever staked on this contract.
-            let last_staked_era =
-                Self::contract_last_staked(&contract_id).ok_or(Error::<T>::NothingToClaim)?;
-
             // check if the contract is already claimed in this era
             let current_era = Self::current_era();
-            let last_claim_era =
-                Self::contract_last_claimed(&contract_id).unwrap_or(current_era.clone());
+            let era_low_bound = if current_era > T::HistoryDepth::get() {
+                current_era.saturating_sub(T::HistoryDepth::get())
+            } else {
+                Zero::zero()
+            };
+
             ensure!(
-                current_era != last_claim_era,
-                Error::<T>::AlreadyClaimedInThisEra
+                era < current_era && era > era_low_bound,
+                Error::<T>::EraOutOfBounds,
             );
 
-            // oldest era to start with collecting rewards for devs and stakers
-            let last_allowed_era = current_era.saturating_sub(T::HistoryDepth::get());
-
-            // initialize rewards for stakers, developer and unclaimed rewards accumulator
-            let mut rewards_for_stakers_map: BTreeMap<T::AccountId, BalanceOf<T>> =
-                Default::default();
-            let mut reward_for_developer: BalanceOf<T> = Zero::zero();
-            let mut unclaimed_rewards: BalanceOf<T> = Zero::zero();
-
-            // Next we iterate of periods between staking points.
-            // Since each era staking point struct has information about the former era when staking information
-            // was changed, we start from top and move to bottom.
-            // E.g.:
-            // [last_staked_era, current_era>,
-            // [last_staked_era.former_stake_era, last_staked_era>,
-            //  ...
-
-            // This will be the oldest era we will look at. Others will just be discarded.
-            let lowest_allowed_era =
-                current_era.saturating_sub(Self::get_unclaimed_reward_history_limit());
-
-            let mut number_of_era_staking_points = 1u32;
-            let mut lower_bound_era = last_staked_era;
-            let mut upper_bound_era = current_era;
-            let mut contract_staking_info =
-                Self::contract_era_stake(&contract_id, &lower_bound_era)
+            let mut staking_info =
+                Self::contract_era_stake(&contract_id, &era)
                     .ok_or(Error::<T>::UnknownStartStakingData)?;
-            loop {
-                // accumulate rewards for this period
-                for era in lower_bound_era.max(lowest_allowed_era)..upper_bound_era {
-                    let reward_and_stake_for_era =
-                        Self::era_reward_and_stake(era).ok_or(Error::<T>::UnknownEraReward)?;
 
-                    // Calculate the contract reward for this era.
-                    let reward_particle = Perbill::from_rational(
-                        contract_staking_info.total,
-                        reward_and_stake_for_era.staked,
-                    );
-                    let contract_reward_in_era = reward_particle * reward_and_stake_for_era.rewards;
+            ensure!(
+                staking_info.claimed_rewards.is_zero(),
+                Error::<T>::AlreadyClaimedInThisEra,
+            );
 
-                    // First arm refers to situations where both dev and staker are eligible for rewards
-                    if era >= last_allowed_era {
-                        // divide reward between stakers and the developer of the contract
-                        let contract_developer_reward =
-                            Perbill::from_rational(T::DeveloperRewardPercentage::get() as u64, 100)
-                                * contract_reward_in_era;
-                        let contract_staker_reward =
-                            contract_reward_in_era - contract_developer_reward;
+            let reward_and_stake = Self::era_reward_and_stake(era)
+                .ok_or(Error::<T>::UnknownEraReward)?;
 
-                        // accumulate rewards for the stakers
-                        Self::stakers_era_reward(
-                            &mut rewards_for_stakers_map,
-                            &contract_staking_info,
-                            contract_staker_reward,
-                        );
-                        // accumulate rewards for the developer
-                        reward_for_developer += contract_developer_reward;
-                    } else {
-                        // This arm refers to situations where dev and staker are 'penalized' since they didn't collect rewards in time.
-                        unclaimed_rewards += contract_reward_in_era;
-                    }
-                } // end of one era interval iteration
+            // Calculate the contract reward for this era.
+            let reward_ratio = Perbill::from_rational(
+                staking_info.total,
+                reward_and_stake.staked,
+            );
+            let contract_reward = reward_ratio * reward_and_stake.rewards;
 
-                upper_bound_era = lower_bound_era;
-                lower_bound_era = contract_staking_info.former_staked_era;
+            // divide reward between stakers and the developer of the contract
+            let developer_reward = T::DeveloperRewardPercentage::get() * contract_reward;
+            let stakers_total_reward = contract_reward.saturating_sub(developer_reward);
 
-                // Check if this is the last unprocessed era staking point. If it is, stop.
-                // Also check if upper bound is below lowest allowed era and stop if needed.
-                if lower_bound_era == upper_bound_era || upper_bound_era < lowest_allowed_era {
-                    // update struct so it reflects that it's the last known staking point value
-                    contract_staking_info.former_staked_era = current_era;
-                    break;
-                }
+            // Calculate & pay rewards for all stakers
+            for (staker, staked_balance) in &staking_info.stakers {
+                let ratio = Perbill::from_rational(*staked_balance, staking_info.total);
+                let reward = ratio * stakers_total_reward;
 
-                number_of_era_staking_points += 1;
-                contract_staking_info = Self::contract_era_stake(&contract_id, &lower_bound_era)
-                    .ok_or(Error::<T>::UnknownStartStakingData)?;
-                // continue and process the next era interval
+                T::Currency::deposit_creating(&staker, reward)?;
+                RewardsClaimed::<T>::mutate(contract, staker, |balance| *balance += reward);
             }
 
-            // These two values will be used for weight calculation
-            let number_of_payees = rewards_for_stakers_map.len() as u32 + 1;
-            let number_of_era_staking_points = number_of_era_staking_points;
-
-            // send rewards to stakers' accounts and update reward counter individual staker
-            let reward_for_stakers =
-                Self::payout_stakers_and_get_total_reward(&contract_id, &rewards_for_stakers_map);
-
             // send rewards to developer's account and update reward counter for developer's account
-            T::Currency::deposit_into_existing(&developer, reward_for_developer).ok();
+            T::Currency::deposit_creating(&developer, reward_for_developer)?;
             RewardsClaimed::<T>::mutate(&contract_id, &developer, |balance| {
                 *balance += reward_for_developer
             });
 
             // updated counter for total rewards paid to the contract
-            contract_staking_info.claimed_rewards += reward_for_stakers + reward_for_developer;
+            contract_staking_info.claimed_rewards = contract_reward;
+            <ContractEraStake<T>>::insert(era, contract_staking_info);
 
-            if !unclaimed_rewards.is_zero() {
-                T::Currency::deposit_creating(
-                    &T::TreasuryPalletId::get().into_account(),
-                    unclaimed_rewards,
-                );
-            }
+            Self::deposit_event(Event::<T>::ContractClaimed(contract_id, era));
 
-            // Remove all previous records of staking for this contract,
-            // they have already been processed and won't be needed anymore.
-            ContractEraStake::<T>::remove_prefix(&contract_id, None);
-            // create contract era stake data in current era for further staking and claiming
-            ContractEraStake::<T>::insert(&contract_id, current_era, contract_staking_info);
-
-            // move contract pointers to current era
-            ContractLastClaimed::<T>::insert(&contract_id, current_era);
-            ContractLastStaked::<T>::insert(&contract_id, current_era);
-
-            Self::deposit_event(Event::<T>::ContractClaimed(
-                contract_id,
-                claimer,
-                last_claim_era.max(last_allowed_era),
-                current_era,
-            ));
-
-            // TODO: What happens if this value exceeds the original one? And user doesn't have enough to pay?
-            // It's hard to put upper bounds on this calculation since at the moment, claim isn't bounded.
-            Ok(Some(T::WeightInfo::claim(
-                number_of_payees,
-                number_of_era_staking_points,
-            ))
-            .into())
+            Ok(Some(T::WeightInfo::claim(staking_info.stakers.len() + 1)).into())
         }
 
         /// Force there to be a new era at the end of the next block. After this, it will be
@@ -852,38 +769,6 @@ pub mod pallet {
                 T::Currency::set_lock(STAKING_ID, &staker, ledger.clone(), WithdrawReasons::all());
                 Ledger::<T>::insert(staker, ledger);
             }
-        }
-
-        /// Calculate rewards for all stakers for this era
-        fn stakers_era_reward(
-            staker_map: &mut BTreeMap<T::AccountId, BalanceOf<T>>,
-            points: &EraStakingPoints<T::AccountId, BalanceOf<T>>,
-            reward_for_contract: BalanceOf<T>,
-        ) {
-            for (staker, staked_balance) in &points.stakers {
-                let staker_part = Perbill::from_rational(*staked_balance, (*points).total);
-                let reward = staker_map
-                    .entry(staker.clone())
-                    .or_insert(Default::default());
-                *reward += staker_part * reward_for_contract;
-            }
-        }
-
-        /// Execute payout for stakers.
-        /// Return total rewards claimed by stakers on this contract.
-        fn payout_stakers_and_get_total_reward(
-            contract: &T::SmartContract,
-            staker_map: &BTreeMap<T::AccountId, BalanceOf<T>>,
-        ) -> BalanceOf<T> {
-            let mut reward_for_stakers = Zero::zero();
-
-            for (s, b) in staker_map {
-                RewardsClaimed::<T>::mutate(contract, s, |balance| *balance += *b);
-                T::Currency::deposit_into_existing(&s, *b).ok();
-                reward_for_stakers += *b;
-            }
-
-            reward_for_stakers
         }
 
         /// The block rewards are accumulated on the pallets's account during an era.
