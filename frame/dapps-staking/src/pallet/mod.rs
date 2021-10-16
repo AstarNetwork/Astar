@@ -9,7 +9,6 @@ use frame_support::{
         Currency, ExistenceRequirement, Get, Imbalance, LockIdentifier, LockableCurrency,
         OnUnbalanced, ReservableCurrency, WithdrawReasons,
     },
-    transactional,
     weights::Weight,
     PalletId,
 };
@@ -662,7 +661,6 @@ pub mod pallet {
             T::MaxNumberOfStakersPerContract::get() * T::HistoryDepth::get() + 1,
             Pallet::<T>::get_unclaimed_reward_history_limit()
         ))]
-        #[transactional]
         pub fn claim(
             origin: OriginFor<T>,
             contract_id: T::SmartContract,
