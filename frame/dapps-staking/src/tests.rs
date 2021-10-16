@@ -9,6 +9,11 @@ use sp_runtime::traits::{AccountIdConversion, Zero};
 use testing_utils::*;
 
 #[test]
+fn on_runtime_upgrade_is_ok() {
+    ExternalityBuilder::build().execute_with(|| {})
+}
+
+#[test]
 fn on_unbalanced_is_ok() {
     ExternalityBuilder::build().execute_with(|| {
         // At the beginning, both should be 0

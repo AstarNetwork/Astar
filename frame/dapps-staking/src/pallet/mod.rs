@@ -302,6 +302,48 @@ pub mod pallet {
         }
 
         fn on_runtime_upgrade() -> Weight {
+            // let current_era = Self::current_era();
+            let starting_era: EraIndex = 1;
+            // let messed_up_claim_era: EraIndex = 3;
+
+            for contract_id in RegisteredDapps::<T>::iter_keys() {
+                // in case contract wasn't staked yet
+                let last_claim_era = ContractLastClaimed::<T>::get(&contract_id);
+                if last_claim_era.is_none() {
+                    // Contract hasn't been messed up so ignore it
+                    continue;
+                }
+                let last_claim_era = last_claim_era.unwrap();
+
+                // TODO: handle this in a more robust way? Should never happen though.
+                let messed_up_staking_points =
+                    ContractEraStake::<T>::get(&contract_id, &last_claim_era).unwrap();
+                if messed_up_staking_points.former_staked_era != last_claim_era {
+                    // can this even happen???
+                    continue;
+                }
+
+                // Move backwards and restore old era staking points
+                for era in (0..last_claim_era).rev() {
+                    // Clone the messed up staking points
+                    let mut previous_staking_points = messed_up_staking_points.clone();
+                    // Adjust the former staked era. Take into account that min former_staked_era can be 1
+                    previous_staking_points.former_staked_era = era.max(1);
+                    // And update it!
+                    ContractEraStake::<T>::insert(
+                        &contract_id,
+                        &(era + 1),
+                        previous_staking_points.clone(),
+                    );
+                }
+
+                // Set the last claimed era to 1 which means contract wasn't claimed yet.
+                ContractLastClaimed::<T>::insert(&contract_id, starting_era);
+            }
+
+            // TODO: we could also beef up the rewards here since dapps staking pallet account has been filling up for quite some time
+
+            // TODO: change this to something meaningful?
             T::DbWeight::get().reads(1)
         }
     }
