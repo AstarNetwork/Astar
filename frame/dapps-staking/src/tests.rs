@@ -1,9 +1,31 @@
 use super::{pallet::pallet::Error, Event, *};
-use frame_support::{assert_noop, assert_ok};
+use frame_support::{
+    assert_noop, assert_ok,
+    traits::{OnInitialize, OnUnbalanced},
+};
 use mock::{Balances, EraIndex, MockSmartContract, *};
 use sp_core::H160;
 use sp_runtime::traits::{AccountIdConversion, Zero};
 use testing_utils::*;
+
+#[test]
+fn on_unbalanced_is_ok() {
+    ExternalityBuilder::build().execute_with(|| {
+        // At the beginning, both should be 0
+        assert!(BlockRewardAccumulator::<TestRuntime>::get().is_zero());
+        assert!(free_balance_of_dapps_staking_account().is_zero());
+
+        // After handling imbalance, accumulator and account should be updated
+        DappsStaking::on_unbalanced(Balances::issue(BLOCK_REWARD));
+        assert_eq!(BLOCK_REWARD, BlockRewardAccumulator::<TestRuntime>::get());
+        assert_eq!(BLOCK_REWARD, free_balance_of_dapps_staking_account());
+
+        // After triggering a new era, accumulator should be set to 0 but account shouldn't consume any new imbalance
+        DappsStaking::on_initialize(System::block_number());
+        assert!(BlockRewardAccumulator::<TestRuntime>::get().is_zero());
+        assert_eq!(BLOCK_REWARD, free_balance_of_dapps_staking_account());
+    })
+}
 
 #[test]
 fn register_is_ok() {
@@ -1318,7 +1340,6 @@ fn claim_is_ok() {
         advance_to_era(start_era + SKIP_ERA);
 
         let claim_era = DappsStaking::current_era();
-
         let issuance_before_claim = <TestRuntime as Config>::Currency::total_issuance();
 
         claim(claimer, contract, start_era, claim_era.clone());

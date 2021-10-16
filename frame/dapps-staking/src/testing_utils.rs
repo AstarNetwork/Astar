@@ -1,8 +1,15 @@
 use super::*;
 use frame_support::assert_ok;
 use mock::{EraIndex, *};
-use sp_runtime::traits::Zero;
+use sp_runtime::traits::{AccountIdConversion, Zero};
 use sp_runtime::Perbill;
+
+/// Used to fetch the free balance of dapps staking account
+pub(crate) fn free_balance_of_dapps_staking_account() -> Balance {
+    <mock::TestRuntime as Config>::Currency::free_balance(
+        &<TestRuntime as Config>::PalletId::get().into_account(),
+    )
+}
 
 /// Used to register contract for staking and assert success.
 pub(crate) fn register_contract(developer: AccountId, contract: &MockSmartContract<AccountId>) {

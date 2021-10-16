@@ -30,15 +30,14 @@ pub mod pallet {
     /// The balance type of this pallet.
     pub type BalanceOf<T> =
         <<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
-
-    #[pallet::pallet]
-    #[pallet::generate_store(pub(crate) trait Store)]
-    pub struct Pallet<T>(PhantomData<T>);
-
     // Negative imbalance type of this pallet.
     type NegativeImbalanceOf<T> = <<T as Config>::Currency as Currency<
         <T as frame_system::Config>::AccountId,
     >>::NegativeImbalance;
+
+    #[pallet::pallet]
+    #[pallet::generate_store(pub(crate) trait Store)]
+    pub struct Pallet<T>(PhantomData<T>);
 
     impl<T: Config> OnUnbalanced<NegativeImbalanceOf<T>> for Pallet<T> {
         fn on_nonzero_unbalanced(block_reward: NegativeImbalanceOf<T>) {
@@ -276,10 +275,10 @@ pub mod pallet {
     impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
         fn on_initialize(now: BlockNumberFor<T>) -> Weight {
             let force_new_era = Self::force_era().eq(&Forcing::ForceNew);
-            let blocks_pre_era = T::BlockPerEra::get();
+            let blocks_per_era = T::BlockPerEra::get();
 
             // Value is compared to 1 since genesis block is ignored
-            if now % blocks_pre_era == BlockNumberFor::<T>::from(1u32) || force_new_era {
+            if now % blocks_per_era == BlockNumberFor::<T>::from(1u32) || force_new_era {
                 let previous_era = Self::current_era();
                 Self::reward_balance_snapshoot(previous_era);
                 let next_era = previous_era + 1;
@@ -660,7 +659,7 @@ pub mod pallet {
         /// Any reward older than history_depth() will go to Treasury.
         /// Any user can call this function.
         #[pallet::weight(T::WeightInfo::claim(
-            T::MaxNumberOfStakersPerContract::get() * T::HistoryDepth::get(),
+            T::MaxNumberOfStakersPerContract::get() * T::HistoryDepth::get() + 1,
             Pallet::<T>::get_unclaimed_reward_history_limit()
         ))]
         #[transactional]
@@ -694,7 +693,8 @@ pub mod pallet {
             let mut rewards_for_stakers_map: BTreeMap<T::AccountId, BalanceOf<T>> =
                 Default::default();
             let mut reward_for_developer: BalanceOf<T> = Zero::zero();
-            let mut unclaimed_rewards: BalanceOf<T> = Zero::zero();
+            let mut rewards_for_stakers: BalanceOf<T> = Zero::zero();
+            let mut sum_of_all_rewards: BalanceOf<T> = Zero::zero();
 
             // Next we iterate of periods between staking points.
             // Since each era staking point struct has information about the former era when staking information
@@ -727,6 +727,9 @@ pub mod pallet {
                     );
                     let contract_reward_in_era = reward_particle * reward_and_stake_for_era.rewards;
 
+                    // Used to accumulate all rewards for this era
+                    sum_of_all_rewards += contract_reward_in_era;
+
                     // First arm refers to situations where both dev and staker are eligible for rewards
                     if era >= last_allowed_era {
                         // divide reward between stakers and the developer of the contract
@@ -744,9 +747,7 @@ pub mod pallet {
                         );
                         // accumulate rewards for the developer
                         reward_for_developer += contract_developer_reward;
-                    } else {
-                        // This arm refers to situations where dev and staker are 'penalized' since they didn't collect rewards in time.
-                        unclaimed_rewards += contract_reward_in_era;
+                        rewards_for_stakers += contract_staker_reward;
                     }
                 } // end of one era interval iteration
 
@@ -774,35 +775,36 @@ pub mod pallet {
             // This accumulates rewards and is used when paying them out.
             let dapps_staking_account_id = T::PalletId::get().into_account();
 
-            // TODO: How to best handle errors in transfer? Currently I use 'transactional' tag.
-            // Alternative could be to add an additional variable, accumulate rewards and check if this value is transferable from
-            // dapps staking acc Id? This also results in less writes!
-
-            // send rewards to stakers' accounts and update reward counter individual staker
-            let reward_for_stakers = Self::payout_stakers_and_get_total_reward(
+            // Withdraw reward funds from the dapps staking treasury
+            let reward_pool = T::Currency::withdraw(
                 &dapps_staking_account_id,
-                &contract_id,
-                &rewards_for_stakers_map,
-            )?;
-
-            // send rewards to developer's account and update reward counter for developer's account
-            T::Currency::transfer(
-                &dapps_staking_account_id,
-                &developer,
-                reward_for_developer,
+                sum_of_all_rewards,
+                WithdrawReasons::TRANSFER,
                 ExistenceRequirement::AllowDeath,
             )?;
-            RewardsClaimed::<T>::mutate(&contract_id, &developer, |balance| {
-                *balance += reward_for_developer
-            });
+
+            // Split imbalance between developer, stakers and treasuy
+            let (reward_for_developer, reward_pool) = reward_pool.split(reward_for_developer);
+            let (rewards_for_stakers, reward_for_treasury) = reward_pool.split(rewards_for_stakers);
 
             // updated counter for total rewards paid to the contract
-            contract_staking_info.claimed_rewards += reward_for_stakers + reward_for_developer;
+            contract_staking_info.claimed_rewards +=
+                rewards_for_stakers.peek() + reward_for_developer.peek();
 
-            if !unclaimed_rewards.is_zero() {
-                T::Currency::deposit_creating(
+            // Payout stakers
+            Self::payout_stakers(&contract_id, &rewards_for_stakers_map, rewards_for_stakers);
+
+            // send rewards to developer's account and update reward counter for developer's account
+            RewardsClaimed::<T>::mutate(&contract_id, &developer, |balance| {
+                *balance += reward_for_developer.peek()
+            });
+            T::Currency::resolve_creating(&developer, reward_for_developer);
+
+            // In case we have some rewards that weren't claimed in time, we transfer them to treasury.
+            if !reward_for_treasury.peek().is_zero() {
+                T::Currency::resolve_creating(
                     &T::TreasuryPalletId::get().into_account(),
-                    unclaimed_rewards,
+                    reward_for_treasury,
                 );
             }
 
@@ -823,8 +825,6 @@ pub mod pallet {
                 current_era,
             ));
 
-            // TODO: What happens if this value exceeds the original one? And user doesn't have enough to pay?
-            // It's hard to put upper bounds on this calculation since at the moment, claim isn't bounded.
             Ok(Some(T::WeightInfo::claim(
                 number_of_payees,
                 number_of_era_staking_points,
@@ -890,25 +890,19 @@ pub mod pallet {
 
         /// Execute payout for stakers.
         /// Return total rewards claimed by stakers on this contract.
-        fn payout_stakers_and_get_total_reward(
-            dapps_staking_account_id: &T::AccountId,
+        fn payout_stakers(
             contract: &T::SmartContract,
             staker_map: &BTreeMap<T::AccountId, BalanceOf<T>>,
-        ) -> Result<BalanceOf<T>, DispatchError> {
-            let mut reward_for_stakers = Zero::zero();
-
+            staker_reward_pool: NegativeImbalanceOf<T>,
+        ) {
+            let mut remainder_reward = staker_reward_pool;
             for (payee, reward) in staker_map {
-                RewardsClaimed::<T>::mutate(contract, payee, |balance| *balance += *reward);
-                T::Currency::transfer(
-                    dapps_staking_account_id,
-                    payee,
-                    *reward,
-                    ExistenceRequirement::AllowDeath,
-                )?;
-                reward_for_stakers += *reward;
-            }
+                let (reward_imbalance, remainder_temp) = remainder_reward.split(*reward);
+                remainder_reward = remainder_temp;
 
-            Ok(reward_for_stakers)
+                RewardsClaimed::<T>::mutate(contract, payee, |balance| *balance += *reward);
+                T::Currency::resolve_creating(payee, reward_imbalance);
+            }
         }
 
         /// The block rewards are accumulated on the pallets's account during an era.
