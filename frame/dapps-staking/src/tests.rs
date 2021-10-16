@@ -1,7 +1,7 @@
 use super::{pallet::pallet::Error, Event, *};
 use frame_support::{
     assert_noop, assert_ok,
-    traits::{OnInitialize, OnUnbalanced},
+    traits::{OnInitialize, OnRuntimeUpgrade, OnUnbalanced},
 };
 use mock::{Balances, EraIndex, MockSmartContract, *};
 use sp_core::H160;
@@ -10,7 +10,145 @@ use testing_utils::*;
 
 #[test]
 fn on_runtime_upgrade_is_ok() {
-    ExternalityBuilder::build().execute_with(|| {})
+    ExternalityBuilder::build().execute_with(|| {
+        initialize_first_block();
+        assert_eq!(1, DappsStaking::current_era()); //sanity
+
+        // Register contracts
+        let developer_1 = 4;
+        let developer_2 = 5;
+        let good_contract = MockSmartContract::Evm(H160::repeat_byte(0x01));
+        let messed_contract = MockSmartContract::Evm(H160::repeat_byte(0x02));
+        register_contract(developer_1, &good_contract);
+        register_contract(developer_2, &messed_contract);
+
+        // This is era 1. Bond&stake on both contracts
+        assert_eq!(1, DappsStaking::current_era()); // sanity check
+        let staker_1 = 1;
+        let staker_2 = 2;
+        let bad_luck_staker = 6;
+        let stake_value = 100;
+        bond_and_stake_with_verification(staker_1, &good_contract, stake_value);
+        bond_and_stake_with_verification(bad_luck_staker, &messed_contract, stake_value);
+        let last_staked_for_good_contract = DappsStaking::current_era();
+
+        // Advance era by 1, to era 2.
+        advance_to_era(2);
+        // Stake on (soon to be) messed contract.
+        bond_and_stake_with_verification(staker_2, &messed_contract, stake_value);
+        // Unlucky staker unbonds everything and stops using dapps staking
+        unbond_unstake_and_withdraw_with_verification(
+            bad_luck_staker,
+            &messed_contract,
+            stake_value,
+        );
+        let last_staked_for_bad_contract = DappsStaking::current_era();
+
+        // Advance era by 1, to era 3. Dapps staking was supposed to be fixed so someone tries to claim the rewards
+        advance_to_era(3);
+        let current_era = DappsStaking::current_era();
+
+        // MESSING UP STARTED
+        let mut messed_staking_points =
+            ContractEraStake::<TestRuntime>::get(&messed_contract, last_staked_for_bad_contract)
+                .unwrap();
+        assert_eq!(1 as usize, messed_staking_points.stakers.len());
+        assert!(!messed_staking_points.stakers.contains_key(&bad_luck_staker));
+        messed_staking_points.former_staked_era = current_era;
+
+        ContractEraStake::<TestRuntime>::insert(
+            &messed_contract,
+            &current_era,
+            messed_staking_points,
+        );
+        ContractLastStaked::<TestRuntime>::insert(&messed_contract, current_era);
+        ContractLastClaimed::<TestRuntime>::insert(&messed_contract, current_era);
+        let last_staked_for_bad_contract = current_era;
+
+        for era in 1..current_era {
+            ContractEraStake::<TestRuntime>::remove(&messed_contract, &era);
+        }
+        assert!(ContractEraStake::<TestRuntime>::contains_key(
+            &messed_contract,
+            &current_era
+        )); // sanity check
+
+        assert_noop!(
+            DappsStaking::claim(Origin::signed(staker_1), messed_contract.clone()),
+            Error::<TestRuntime>::AlreadyClaimedInThisEra
+        );
+
+        // MESSING UP FINISHED
+
+        // Now we have the messed up situation that's currently present on-chain
+
+        // Use on_runtime_upgrade to fix it!
+        let rewards_before_upgrade = DappsStaking::era_reward_and_stake(1).unwrap().rewards;
+        let _ = DappsStaking::on_runtime_upgrade();
+        let rewards_after_upgrade = DappsStaking::era_reward_and_stake(1).unwrap().rewards;
+        assert!(rewards_before_upgrade < rewards_after_upgrade);
+
+        // FIRST VERIFY GOOD CONTRACT. IT SHOULD BE UNCHANGED!
+        assert_eq!(
+            last_staked_for_good_contract,
+            ContractLastStaked::<TestRuntime>::get(&good_contract).unwrap()
+        );
+        assert_eq!(
+            last_staked_for_good_contract,
+            ContractLastClaimed::<TestRuntime>::get(&good_contract).unwrap()
+        );
+        assert!(!ContractEraStake::<TestRuntime>::contains_key(
+            &good_contract,
+            2
+        ));
+        let good_staking_points = ContractEraStake::<TestRuntime>::get(&good_contract, 1).unwrap();
+        assert_eq!(stake_value, good_staking_points.total);
+
+        // NOW VERIFY THAT MESSED CONTRACT WAS RESTORED
+        assert_eq!(
+            last_staked_for_bad_contract,
+            ContractLastStaked::<TestRuntime>::get(&messed_contract).unwrap()
+        );
+        assert_eq!(
+            1,
+            ContractLastClaimed::<TestRuntime>::get(&messed_contract).unwrap()
+        );
+        for era in 1..=current_era {
+            let staking_point =
+                ContractEraStake::<TestRuntime>::get(&messed_contract, era).unwrap();
+            assert_eq!(1 as usize, staking_point.stakers.len());
+            assert!(staking_point.stakers.contains_key(&staker_2));
+            assert_eq!((era - 1).max(1), staking_point.former_staked_era);
+            assert_eq!(stake_value, staking_point.total);
+        }
+
+        // Get starting balances; balances prior to claim
+        let dev_1_start_balance = Balances::free_balance(&developer_1);
+        let dev_2_start_balance = Balances::free_balance(&developer_2);
+        let staker_1_start_balance = Balances::free_balance(&staker_1);
+        let staker_2_start_balance = Balances::free_balance(&staker_2);
+        let bad_luck_staker_start_balance = Balances::free_balance(&bad_luck_staker);
+
+        // We need to issue some extra funds since we don't know how much was staked for this contract in previous eras.
+        // Luckily, we have surplus funds on-chain since rewards have been minted for quite some time now.
+        // In order to avoid people loosing, we will beef up the rewards (?);
+        Balances::resolve_creating(
+            &<TestRuntime as Config>::PalletId::get().into_account(),
+            Balances::issue(BLOCK_REWARD * 10),
+        );
+
+        claim(developer_1, good_contract.clone(), 1, 3);
+        claim(developer_1, messed_contract.clone(), 1, 3);
+
+        assert!(dev_1_start_balance < Balances::free_balance(&developer_1));
+        assert!(dev_2_start_balance < Balances::free_balance(&developer_2));
+        assert!(staker_1_start_balance < Balances::free_balance(&staker_1));
+        assert!(staker_2_start_balance < Balances::free_balance(&staker_2));
+        assert_eq!(
+            bad_luck_staker_start_balance,
+            Balances::free_balance(&bad_luck_staker)
+        );
+    })
 }
 
 #[test]

@@ -302,26 +302,23 @@ pub mod pallet {
         }
 
         fn on_runtime_upgrade() -> Weight {
-            // let current_era = Self::current_era();
             let starting_era: EraIndex = 1;
-            // let messed_up_claim_era: EraIndex = 3;
 
             for contract_id in RegisteredDapps::<T>::iter_keys() {
                 // in case contract wasn't staked yet
                 let last_claim_era = ContractLastClaimed::<T>::get(&contract_id);
                 if last_claim_era.is_none() {
-                    // Contract hasn't been messed up so ignore it
+                    // Contract hasn't staked on yet
                     continue;
                 }
                 let last_claim_era = last_claim_era.unwrap();
 
-                // TODO: handle this in a more robust way? Should never happen though.
+                // TODO: copy-paste contracts which need to be restored directly into code?
+                // No other way to know which ones we need to restore since they could have been registered at any time.
+                // How to add accounts here? The loop start at line 308 should be replaced by iteration over vec with acc Ids
+
                 let messed_up_staking_points =
                     ContractEraStake::<T>::get(&contract_id, &last_claim_era).unwrap();
-                if messed_up_staking_points.former_staked_era != last_claim_era {
-                    // can this even happen???
-                    continue;
-                }
 
                 // Move backwards and restore old era staking points
                 for era in (0..last_claim_era).rev() {
@@ -342,9 +339,19 @@ pub mod pallet {
             }
 
             // TODO: we could also beef up the rewards here since dapps staking pallet account has been filling up for quite some time
+            let celebration_factor = 2;
+            for era in 1..Self::current_era() {
+                let mut rewards_and_stakes = EraRewardsAndStakes::<T>::get(&era).unwrap();
+                let init_reward = rewards_and_stakes.rewards;
+                for _ in 1..celebration_factor {
+                    // TODO: multiply balance
+                    rewards_and_stakes.rewards += init_reward;
+                }
+                EraRewardsAndStakes::<T>::insert(&era, rewards_and_stakes);
+            }
 
             // TODO: change this to something meaningful?
-            T::DbWeight::get().reads(1)
+            T::DbWeight::get().writes(20)
         }
     }
 
