@@ -284,13 +284,24 @@ pub mod pallet {
                 CurrentEra::<T>::put(next_era);
                 let zero_balance: BalanceOf<T> = Default::default();
                 BlockRewardAccumulator::<T>::put(zero_balance);
+
+                // Clean era rewards and stakes for the non-claimable eras
+                let slashed_era =
+                    previous_era.saturating_sub(Self::get_unclaimed_reward_history_limit());
+                EraRewardsAndStakes::<T>::remove(&slashed_era);
+
                 if force_new_era {
                     ForceEra::<T>::put(Forcing::ForceNone);
                 }
+
                 Self::deposit_event(Event::<T>::NewDappStakingEra(next_era));
             }
 
-            // just return the weight of the on_finalize.
+            // just return the weight of the on_finalize. TODO: fix this too?
+            T::DbWeight::get().reads(1)
+        }
+
+        fn on_runtime_upgrade() -> Weight {
             T::DbWeight::get().reads(1)
         }
     }
@@ -709,9 +720,13 @@ pub mod pallet {
             let mut number_of_era_staking_points = 1u32;
             let mut lower_bound_era = last_staked_era;
             let mut upper_bound_era = current_era;
+            // This will be written back to storage once it's updated
             let mut contract_staking_info =
                 Self::contract_era_stake(&contract_id, &lower_bound_era)
                     .ok_or(Error::<T>::UnknownStartStakingData)?;
+
+            // Just used for value transfer inside the loop
+            let mut temp_contract_staking_info = contract_staking_info.clone();
             loop {
                 // accumulate rewards for this period
                 for era in lower_bound_era.max(lowest_allowed_era)..upper_bound_era {
@@ -720,7 +735,7 @@ pub mod pallet {
 
                     // Calculate the contract reward for this era.
                     let reward_particle = Perbill::from_rational(
-                        contract_staking_info.total,
+                        temp_contract_staking_info.total,
                         reward_and_stake_for_era.staked,
                     );
                     let contract_reward_in_era = reward_particle * reward_and_stake_for_era.rewards;
@@ -740,7 +755,7 @@ pub mod pallet {
                         // accumulate rewards for the stakers
                         Self::stakers_era_reward(
                             &mut rewards_for_stakers_map,
-                            &contract_staking_info,
+                            &temp_contract_staking_info,
                             contract_staker_reward,
                         );
                         // accumulate rewards for the developer
@@ -750,19 +765,21 @@ pub mod pallet {
                 } // end of one era interval iteration
 
                 upper_bound_era = lower_bound_era;
-                lower_bound_era = contract_staking_info.former_staked_era;
+                lower_bound_era = temp_contract_staking_info.former_staked_era;
 
                 // Check if this is the last unprocessed era staking point. If it is, stop.
                 // Also check if upper bound is below lowest allowed era and stop if needed.
                 if lower_bound_era == upper_bound_era || upper_bound_era < lowest_allowed_era {
-                    // update struct so it reflects that it's the last known staking point value
+                    // Update struct so it reflects that it's the last known staking point value.
+                    // Make sure that latest staking points are used since they contain up-to date stakers
                     contract_staking_info.former_staked_era = current_era;
                     break;
                 }
 
                 number_of_era_staking_points += 1;
-                contract_staking_info = Self::contract_era_stake(&contract_id, &lower_bound_era)
-                    .ok_or(Error::<T>::UnknownStartStakingData)?;
+                temp_contract_staking_info =
+                    Self::contract_era_stake(&contract_id, &lower_bound_era)
+                        .ok_or(Error::<T>::UnknownStartStakingData)?;
                 // continue and process the next era interval
             }
 

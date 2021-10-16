@@ -28,6 +28,41 @@ fn on_unbalanced_is_ok() {
 }
 
 #[test]
+fn on_initialize_is_ok() {
+    ExternalityBuilder::build().execute_with(|| {
+        // Before we start, era is zero
+        assert!(DappsStaking::current_era().is_zero());
+
+        // We initialize the first block and advance to second one. New era must be triggered.
+        initialize_first_block();
+        let current_era = DappsStaking::current_era();
+        assert_eq!(1, current_era);
+
+        let unclaimed_era_limit = DappsStaking::get_unclaimed_reward_history_limit();
+
+        // Now advance by unclaimed reward history limit. Ensure that rewards for era 1 still exist.
+        let previous_era = current_era;
+        advance_to_era(previous_era + unclaimed_era_limit);
+        assert!(EraRewardsAndStakes::<TestRuntime>::contains_key(1));
+        let current_era = DappsStaking::current_era();
+
+        // Advance +1 era. Rewards for era 1 should be deleted.
+        advance_to_era(current_era + 1);
+        let current_era = DappsStaking::current_era();
+
+        // Era 1 should have been deleted
+        assert!(!EraRewardsAndStakes::<TestRuntime>::contains_key(1));
+        // All previous eras should still exist
+        for era in 2..current_era {
+            let era_rewards_and_stakes = EraRewardsAndStakes::<TestRuntime>::get(era).unwrap();
+            assert!(era_rewards_and_stakes.rewards > 0);
+        }
+        // Current era rewards should be 0
+        verify_pallet_era_staked_and_reward(current_era, 0, 0);
+    })
+}
+
+#[test]
 fn register_is_ok() {
     ExternalityBuilder::build().execute_with(|| {
         initialize_first_block();
@@ -1352,6 +1387,47 @@ fn claim_is_ok() {
         // Nothing should be deposited into treasury as unclaimed reward
         let treasury_id = <TestRuntime as Config>::TreasuryPalletId::get().into_account();
         assert!(<TestRuntime as Config>::Currency::free_balance(&treasury_id).is_zero());
+    })
+}
+
+#[test]
+fn claim_keeps_latest_set_of_stakers() {
+    ExternalityBuilder::build().execute_with(|| {
+        initialize_first_block();
+
+        let staker_1 = 1;
+        let staker_2 = 2;
+        let developer = 3;
+        let staking_amount = 100;
+
+        let contract = MockSmartContract::Evm(H160::repeat_byte(0x01));
+
+        register_contract(developer, &contract);
+
+        // Bond&stake with the first staker, only he should be among the stakers
+        bond_and_stake_with_verification(staker_1, &contract, staking_amount);
+        let first_stake_era = DappsStaking::current_era();
+
+        // Advance an era and then bond&stake with the second staker and unstake everything by the first staker
+        advance_to_era(first_stake_era + 3);
+        bond_and_stake_with_verification(staker_2, &contract, staking_amount);
+        unbond_unstake_and_withdraw_with_verification(staker_1, &contract, staking_amount);
+        let second_stake_era = DappsStaking::current_era();
+
+        // Advance an era again so we can claim the rewards
+        advance_to_era(second_stake_era + 3);
+        let claim_era = DappsStaking::current_era();
+        claim(
+            staker_1,
+            contract.clone(),
+            first_stake_era,
+            claim_era.clone(),
+        );
+
+        // Now verify that the new era staking points contain only the second staker, not the first.
+        let staking_points = ContractEraStake::<TestRuntime>::get(&contract, claim_era).unwrap();
+        assert_eq!(1 as usize, staking_points.stakers.len());
+        assert!(staking_points.stakers.contains_key(&staker_2));
     })
 }
 
