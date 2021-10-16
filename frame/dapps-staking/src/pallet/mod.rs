@@ -615,14 +615,16 @@ pub mod pallet {
             }
             let value_to_unstake = value_to_unstake; // make it immutable
             era_staking_points.total = era_staking_points.total.saturating_sub(value_to_unstake);
-            era_staking_points.former_staked_era = era_when_contract_last_staked;
+
+            let current_era = Self::current_era();
+            if current_era != era_when_contract_last_staked {
+                era_staking_points.former_staked_era = era_when_contract_last_staked;
+            }
 
             // Get the staking ledger and update it
             let mut ledger = Self::ledger(&staker);
             ledger = ledger.saturating_sub(value_to_unstake);
             Self::update_ledger(&staker, &ledger);
-
-            let current_era = Self::current_era();
 
             // Update the era staking points
             ContractEraStake::<T>::insert(contract_id.clone(), current_era, era_staking_points);

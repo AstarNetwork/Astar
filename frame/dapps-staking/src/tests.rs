@@ -298,6 +298,7 @@ fn bond_and_stake_different_eras_is_ok() {
             first_stake_value,
             current_era,
             vec![(staker_id, first_stake_value)],
+            current_era,
         );
         verify_pallet_era_staked(current_era, first_stake_value);
 
@@ -341,6 +342,7 @@ fn bond_and_stake_different_eras_is_ok() {
             total_stake_value,
             current_era,
             vec![(staker_id, total_stake_value)],
+            old_era,
         );
         verify_pallet_era_staked(current_era, total_stake_value);
 
@@ -393,12 +395,14 @@ fn bond_and_stake_two_different_contracts_is_ok() {
             first_stake_value,
             current_era,
             vec![(staker_id, first_stake_value)],
+            current_era,
         );
         verify_era_staking_points(
             &second_contract_id,
             second_stake_value,
             current_era,
             vec![(staker_id, second_stake_value)],
+            current_era,
         );
         verify_pallet_era_staked(current_era, total_stake_value);
     })
@@ -443,6 +447,7 @@ fn bond_and_stake_two_stakers_one_contract_is_ok() {
                 (first_staker_id, first_stake_value),
                 (second_staker_id, second_stake_value),
             ],
+            current_era,
         );
         verify_pallet_era_staked(current_era, total_stake_value);
     })
@@ -561,6 +566,7 @@ fn bond_and_stake_history_depth_has_passed_is_ok() {
             total_staked,
             current_era,
             vec![(staker_id, total_staked)],
+            start_era,
         );
         verify_pallet_era_staked(current_era, total_staked);
 
@@ -570,6 +576,7 @@ fn bond_and_stake_history_depth_has_passed_is_ok() {
             first_staking_amount,
             start_era,
             vec![(staker_id, first_staking_amount)],
+            start_era,
         );
         verify_pallet_era_staked(start_era, first_staking_amount);
     })
@@ -696,6 +703,7 @@ fn unbond_unstake_and_withdraw_multiple_time_is_ok() {
             new_staked_value,
             new_era,
             vec![(staker_id, new_staked_value)],
+            old_era,
         );
         verify_pallet_era_staked(new_era, new_staked_value);
         assert_eq!(
@@ -709,6 +717,7 @@ fn unbond_unstake_and_withdraw_multiple_time_is_ok() {
             original_staked_value,
             old_era,
             vec![(staker_id, original_staked_value)],
+            old_era,
         );
         verify_pallet_era_staked(old_era, original_staked_value);
 
@@ -735,6 +744,7 @@ fn unbond_unstake_and_withdraw_multiple_time_is_ok() {
             new_staked_value,
             new_era,
             vec![(staker_id, new_staked_value)],
+            old_era,
         );
         verify_pallet_era_staked(new_era, new_staked_value);
         assert_eq!(
@@ -785,7 +795,7 @@ fn unbond_unstake_and_withdraw_value_below_staking_threshold() {
         )));
         assert!(!Ledger::<TestRuntime>::contains_key(staker_id));
 
-        verify_era_staking_points(&contract_id, Zero::zero(), current_era, vec![]);
+        verify_era_staking_points(&contract_id, Zero::zero(), current_era, vec![], current_era);
         verify_pallet_era_staked(current_era, Zero::zero());
     })
 }
@@ -805,6 +815,7 @@ fn unbond_unstake_and_withdraw_in_different_eras() {
         bond_and_stake_with_verification(first_staker_id, &contract_id, staked_value);
         bond_and_stake_with_verification(second_staker_id, &contract_id, staked_value);
         let total_staked_value = 2 * staked_value;
+        let staking_era = DappsStaking::current_era();
 
         // Advance era, unbond&withdraw with first staker, verify that it was successful
         run_to_block(BLOCKS_PER_ERA * 50);
@@ -833,6 +844,7 @@ fn unbond_unstake_and_withdraw_in_different_eras() {
                 (first_staker_id, first_staked_value),
                 (second_staker_id, staked_value),
             ],
+            staking_era,
         );
         verify_pallet_era_staked(current_era, new_total_staked);
         assert_eq!(
@@ -842,6 +854,7 @@ fn unbond_unstake_and_withdraw_in_different_eras() {
 
         // Advance era, unbond with second staker and verify storage values are as expected
         run_to_block(BLOCKS_PER_ERA * 100);
+        let former_unstake_era = current_era;
         let current_era = mock::DappsStaking::current_era();
 
         let second_unstake_value = 333;
@@ -867,6 +880,7 @@ fn unbond_unstake_and_withdraw_in_different_eras() {
                 (first_staker_id, first_staked_value),
                 (second_staker_id, second_staked_value),
             ],
+            former_unstake_era,
         );
         verify_pallet_era_staked(current_era, new_total_staked);
         assert_eq!(
@@ -922,6 +936,7 @@ fn unbond_unstake_and_withdraw_history_depth_has_passed_is_ok() {
             total_staked,
             current_era,
             vec![(staker_id, total_staked)],
+            start_era,
         );
         verify_pallet_era_staked(current_era, total_staked);
 
@@ -931,6 +946,7 @@ fn unbond_unstake_and_withdraw_history_depth_has_passed_is_ok() {
             first_staking_amount,
             start_era,
             vec![(staker_id, first_staking_amount)],
+            start_era,
         );
         verify_pallet_era_staked(start_era, first_staking_amount);
 
@@ -961,6 +977,7 @@ fn unbond_unstake_and_withdraw_history_depth_has_passed_is_ok() {
             total_staked,
             current_era,
             vec![(staker_id, total_staked)],
+            former_era,
         );
         verify_pallet_era_staked(current_era, total_staked);
 
@@ -970,6 +987,7 @@ fn unbond_unstake_and_withdraw_history_depth_has_passed_is_ok() {
             former_total_staked,
             former_era,
             vec![(staker_id, former_total_staked)],
+            start_era,
         );
         verify_pallet_era_staked(former_era, former_total_staked);
     })

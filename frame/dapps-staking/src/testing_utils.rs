@@ -60,11 +60,13 @@ pub(crate) fn verify_era_staking_points(
     total_staked_value: Balance,
     era: crate::EraIndex,
     stakers: Vec<(AccountId, Balance)>,
+    former_staked_era: EraIndex,
 ) {
     // Verify that era staking points are as expected for the contract
     let era_staking_points = ContractEraStake::<TestRuntime>::get(&contract_id, era).unwrap();
     assert_eq!(total_staked_value, era_staking_points.total);
     assert_eq!(stakers.len(), era_staking_points.stakers.len());
+    assert_eq!(former_staked_era, era_staking_points.former_staked_era);
 
     for (staker_id, staked_value) in stakers {
         assert_eq!(
