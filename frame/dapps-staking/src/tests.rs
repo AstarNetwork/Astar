@@ -1318,6 +1318,7 @@ fn claim_one_contract_one_staker() {
         let staker1 = 2;
 
         const STAKE_AMOUNT1: mock::Balance = 1000;
+        const UNSTAKE_AMOUNT: mock::Balance = 100;
         const INITIAL_STAKE: mock::Balance = 1000;
         let contract = MockSmartContract::Evm(H160::repeat_byte(0x01));
         const SKIP_ERA: EraIndex = 4;
@@ -1334,6 +1335,16 @@ fn claim_one_contract_one_staker() {
 
         // Advance some eras to be able to claim rewards. Verify storage is consolidated
         advance_to_era(start_era + SKIP_ERA);
+
+        //verify that unbonding does not break the rewards
+        unbond_unstake_and_withdraw_with_verification(
+            staker1,
+            &contract,
+            UNSTAKE_AMOUNT,
+        );
+        bond_and_stake_with_verification(staker1, &contract, UNSTAKE_AMOUNT);
+
+        // proceed with claim
         let claim_era = DappsStaking::current_era();
         claim(staker1, contract, start_era, claim_era.clone());
         verify_contract_history_is_cleared(contract, start_era, claim_era);
