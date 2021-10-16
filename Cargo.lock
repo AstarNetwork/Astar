@@ -4470,7 +4470,7 @@ dependencies = [
 
 [[package]]
 name = "local-runtime"
-version = "2.6.0"
+version = "2.6.1"
 dependencies = [
  "evm",
  "fp-rpc",
@@ -9654,7 +9654,7 @@ dependencies = [
 
 [[package]]
 name = "shibuya-runtime"
-version = "2.6.0"
+version = "2.6.1"
 dependencies = [
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-parachain-system",
@@ -9722,7 +9722,7 @@ dependencies = [
 
 [[package]]
 name = "shiden-runtime"
-version = "2.6.0"
+version = "2.6.1"
 dependencies = [
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-parachain-system",

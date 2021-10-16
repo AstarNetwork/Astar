@@ -92,7 +92,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("shiden"),
     impl_name: create_runtime_str!("shiden"),
     authoring_version: 1,
-    spec_version: 17,
+    spec_version: 18,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 1,
@@ -277,7 +277,7 @@ parameter_types! {
     pub const DeveloperRewardPercentage: u32 = 80;
     pub const MaxNumberOfStakersPerContract: u32 = 512;
     pub const MinimumStakingAmount: Balance = 100 * SDN;
-    pub const HistoryDepth: u32 = 15;
+    pub const HistoryDepth: u32 = 4;
 }
 
 impl pallet_dapps_staking::Config for Runtime {
