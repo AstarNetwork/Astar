@@ -1318,8 +1318,15 @@ fn claim_is_ok() {
         advance_to_era(start_era + SKIP_ERA);
 
         let claim_era = DappsStaking::current_era();
+
+        let issuance_before_claim = <TestRuntime as Config>::Currency::total_issuance();
+
         claim(claimer, contract, start_era, claim_era.clone());
         verify_contract_history_is_cleared(contract, start_era, claim_era);
+
+        // Claim shouldn't mint new tokens, instead it should just transfer from the dapps staking pallet account
+        let issuance_after_claim = <TestRuntime as Config>::Currency::total_issuance();
+        assert_eq!(issuance_before_claim, issuance_after_claim);
 
         // Nothing should be deposited into treasury as unclaimed reward
         let treasury_id = <TestRuntime as Config>::TreasuryPalletId::get().into_account();

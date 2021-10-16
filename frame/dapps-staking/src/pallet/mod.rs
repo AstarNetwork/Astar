@@ -6,9 +6,10 @@ use frame_support::{
     ensure,
     pallet_prelude::*,
     traits::{
-        Currency, Get, Imbalance, LockIdentifier, LockableCurrency, OnUnbalanced,
-        ReservableCurrency, WithdrawReasons,
+        Currency, ExistenceRequirement, Get, Imbalance, LockIdentifier, LockableCurrency,
+        OnUnbalanced, ReservableCurrency, WithdrawReasons,
     },
+    transactional,
     weights::Weight,
     PalletId,
 };
@@ -662,6 +663,7 @@ pub mod pallet {
             T::MaxNumberOfStakersPerContract::get() * T::HistoryDepth::get(),
             Pallet::<T>::get_unclaimed_reward_history_limit()
         ))]
+        #[transactional]
         pub fn claim(
             origin: OriginFor<T>,
             contract_id: T::SmartContract,
@@ -769,12 +771,27 @@ pub mod pallet {
             let number_of_payees = rewards_for_stakers_map.len() as u32 + 1;
             let number_of_era_staking_points = number_of_era_staking_points;
 
+            // This accumulates rewards and is used when paying them out.
+            let dapps_staking_account_id = T::PalletId::get().into_account();
+
+            // TODO: How to best handle errors in transfer? Currently I use 'transactional' tag.
+            // Alternative could be to add an additional variable, accumulate rewards and check if this value is transferable from
+            // dapps staking acc Id? This also results in less writes!
+
             // send rewards to stakers' accounts and update reward counter individual staker
-            let reward_for_stakers =
-                Self::payout_stakers_and_get_total_reward(&contract_id, &rewards_for_stakers_map);
+            let reward_for_stakers = Self::payout_stakers_and_get_total_reward(
+                &dapps_staking_account_id,
+                &contract_id,
+                &rewards_for_stakers_map,
+            )?;
 
             // send rewards to developer's account and update reward counter for developer's account
-            T::Currency::deposit_into_existing(&developer, reward_for_developer).ok();
+            T::Currency::transfer(
+                &dapps_staking_account_id,
+                &developer,
+                reward_for_developer,
+                ExistenceRequirement::AllowDeath,
+            )?;
             RewardsClaimed::<T>::mutate(&contract_id, &developer, |balance| {
                 *balance += reward_for_developer
             });
@@ -874,18 +891,24 @@ pub mod pallet {
         /// Execute payout for stakers.
         /// Return total rewards claimed by stakers on this contract.
         fn payout_stakers_and_get_total_reward(
+            dapps_staking_account_id: &T::AccountId,
             contract: &T::SmartContract,
             staker_map: &BTreeMap<T::AccountId, BalanceOf<T>>,
-        ) -> BalanceOf<T> {
+        ) -> Result<BalanceOf<T>, DispatchError> {
             let mut reward_for_stakers = Zero::zero();
 
-            for (s, b) in staker_map {
-                RewardsClaimed::<T>::mutate(contract, s, |balance| *balance += *b);
-                T::Currency::deposit_into_existing(&s, *b).ok();
-                reward_for_stakers += *b;
+            for (payee, reward) in staker_map {
+                RewardsClaimed::<T>::mutate(contract, payee, |balance| *balance += *reward);
+                T::Currency::transfer(
+                    dapps_staking_account_id,
+                    payee,
+                    *reward,
+                    ExistenceRequirement::AllowDeath,
+                )?;
+                reward_for_stakers += *reward;
             }
 
-            reward_for_stakers
+            Ok(reward_for_stakers)
         }
 
         /// The block rewards are accumulated on the pallets's account during an era.
