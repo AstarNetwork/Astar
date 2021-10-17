@@ -4,9 +4,9 @@ members = [
     "runtime/local",
     "runtime/shiden",
     "runtime/shibuya",
-    "frame/block-reward",
+    #"frame/block-reward",
     "frame/custom-signatures",
-    "frame/dapps-staking",
+    #"frame/dapps-staking",
     "precompiles/staking",
 ]
 
