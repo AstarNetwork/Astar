@@ -73,9 +73,6 @@ pub struct EraStakingPoints<AccountId: Ord, Balance: HasCompact> {
     total: Balance,
     /// The map of stakers and the amount they staked.
     stakers: BTreeMap<AccountId, Balance>,
-    /// Era when this contract was staked last time before this one.
-    /// In case only a single staking era exists, it will be set to that one. This indicates the final element in the chain.
-    former_staked_era: EraIndex,
     /// Accrued and claimed rewards on this contract both for stakers and the developer
     claimed_rewards: Balance,
 }

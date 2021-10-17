@@ -19,13 +19,10 @@ pub trait WeightInfo {
     fn unregister(n: u32) -> Weight;
     fn enable_developer_pre_approval() -> Weight;
     fn developer_pre_approval() -> Weight;
-    /// n - number of existing stakers on the contract
-    fn bond_and_stake(n: u32) -> Weight;
-    /// n - number of existing stakers on the contract
-    fn unbond_unstake_and_withdraw(n: u32) -> Weight;
+    fn bond_and_stake() -> Weight;
+    fn unbond_unstake_and_withdraw() -> Weight;
     /// n - total number of payees
-    /// m - number of era staking points
-    fn claim(n: u32, m: u32) -> Weight;
+    fn claim(n: u32) -> Weight;
     fn force_new_era() -> Weight;
 }
 
@@ -79,10 +76,10 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: Balances Locks (r:1 w:1)
 	// Storage: DappsStaking ContractLastClaimed (r:0 w:1)
 	// Storage: DappsStaking ContractEraStake (r:0 w:1)
-	fn bond_and_stake(n: u32, ) -> Weight {
+	fn bond_and_stake() -> Weight {
 		(104_490_000 as Weight)
 			// Standard Error: 42_000
-			.saturating_add((828_000 as Weight).saturating_mul(n as Weight))
+			.saturating_add((828_000 as Weight))
 			.saturating_add(T::DbWeight::get().reads(7 as Weight))
 			.saturating_add(T::DbWeight::get().writes(4 as Weight))
 	}
@@ -94,10 +91,10 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: DappsStaking CurrentEra (r:1 w:0)
 	// Storage: DappsStaking EraRewardsAndStakes (r:1 w:1)
 	// Storage: DappsStaking RewardsClaimed (r:0 w:1)
-	fn unbond_unstake_and_withdraw(n: u32, ) -> Weight {
+	fn unbond_unstake_and_withdraw() -> Weight {
 		(120_760_000 as Weight)
 			// Standard Error: 28_000
-			.saturating_add((740_000 as Weight).saturating_mul(n as Weight))
+			.saturating_add((740_000 as Weight))
 			.saturating_add(T::DbWeight::get().reads(7 as Weight))
 			.saturating_add(T::DbWeight::get().writes(6 as Weight))
 	}
@@ -109,15 +106,14 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: DappsStaking ContractEraStake (r:1 w:2)
 	// Storage: DappsStaking EraRewardsAndStakes (r:60 w:0)
 	// Storage: DappsStaking RewardsClaimed (r:2 w:2)
-	fn claim(n: u32, m: u32, ) -> Weight {
+	fn claim(n: u32) -> Weight {
 		(0 as Weight)
 			// Standard Error: 268_000
 			.saturating_add((17_964_000 as Weight).saturating_mul(n as Weight))
 			// Standard Error: 538_000
-			.saturating_add((15_901_000 as Weight).saturating_mul(m as Weight))
+			.saturating_add((15_901_000 as Weight))
 			.saturating_add(T::DbWeight::get().reads(6 as Weight))
 			.saturating_add(T::DbWeight::get().reads((1 as Weight).saturating_mul(n as Weight)))
-			.saturating_add(T::DbWeight::get().reads((1 as Weight).saturating_mul(m as Weight)))
 			.saturating_add(T::DbWeight::get().writes(4 as Weight))
 			.saturating_add(T::DbWeight::get().writes((1 as Weight).saturating_mul(n as Weight)))
 	}
@@ -175,10 +171,10 @@ impl WeightInfo for () {
 	// Storage: Balances Locks (r:1 w:1)
 	// Storage: DappsStaking ContractLastClaimed (r:0 w:1)
 	// Storage: DappsStaking ContractEraStake (r:0 w:1)
-	fn bond_and_stake(n: u32, ) -> Weight {
+	fn bond_and_stake() -> Weight {
 		(104_490_000 as Weight)
 			// Standard Error: 42_000
-			.saturating_add((828_000 as Weight).saturating_mul(n as Weight))
+			.saturating_add((828_000 as Weight))
 			.saturating_add(RocksDbWeight::get().reads(7 as Weight))
 			.saturating_add(RocksDbWeight::get().writes(4 as Weight))
 	}
@@ -190,10 +186,10 @@ impl WeightInfo for () {
 	// Storage: DappsStaking CurrentEra (r:1 w:0)
 	// Storage: DappsStaking EraRewardsAndStakes (r:1 w:1)
 	// Storage: DappsStaking RewardsClaimed (r:0 w:1)
-	fn unbond_unstake_and_withdraw(n: u32, ) -> Weight {
+	fn unbond_unstake_and_withdraw() -> Weight {
 		(120_760_000 as Weight)
 			// Standard Error: 28_000
-			.saturating_add((740_000 as Weight).saturating_mul(n as Weight))
+			.saturating_add((740_000 as Weight))
 			.saturating_add(RocksDbWeight::get().reads(7 as Weight))
 			.saturating_add(RocksDbWeight::get().writes(6 as Weight))
 	}
@@ -205,15 +201,14 @@ impl WeightInfo for () {
 	// Storage: DappsStaking ContractEraStake (r:1 w:2)
 	// Storage: DappsStaking EraRewardsAndStakes (r:60 w:0)
 	// Storage: DappsStaking RewardsClaimed (r:2 w:2)
-	fn claim(n: u32, m: u32, ) -> Weight {
+	fn claim(n: u32) -> Weight {
 		(0 as Weight)
 			// Standard Error: 268_000
 			.saturating_add((17_964_000 as Weight).saturating_mul(n as Weight))
 			// Standard Error: 538_000
-			.saturating_add((15_901_000 as Weight).saturating_mul(m as Weight))
+			.saturating_add((15_901_000 as Weight))
 			.saturating_add(RocksDbWeight::get().reads(6 as Weight))
 			.saturating_add(RocksDbWeight::get().reads((1 as Weight).saturating_mul(n as Weight)))
-			.saturating_add(RocksDbWeight::get().reads((1 as Weight).saturating_mul(m as Weight)))
 			.saturating_add(RocksDbWeight::get().writes(4 as Weight))
 			.saturating_add(RocksDbWeight::get().writes((1 as Weight).saturating_mul(n as Weight)))
 	}
