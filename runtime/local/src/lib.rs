@@ -17,6 +17,7 @@ use frame_support::{
     ConsensusEngineId, PalletId,
 };
 use pallet_contracts::weights::WeightInfo;
+use parity_scale_codec::*;
 use pallet_evm::{FeeCalculator, Runner};
 use pallet_grandpa::{fg_primitives, AuthorityList as GrandpaAuthorityList};
 use sp_api::impl_runtime_apis;
