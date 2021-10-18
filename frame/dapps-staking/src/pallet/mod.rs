@@ -208,8 +208,6 @@ pub mod pallet {
         AlreadyRegisteredContract,
         /// User attempts to register with address which is not contract
         ContractIsNotValid,
-        /// Contract not registered for dapps staking.
-        ContractNotRegistered,
         /// This account was already used to register contract
         AlreadyUsedDeveloperAccount,
         /// Smart contract not owned by the account id.
@@ -412,15 +410,11 @@ pub mod pallet {
             );
 
             // Update total staked value in era.
-            EraRewardsAndStakes::<T>::mutate(
-                &current_era,
-                // XXX: RewardsAndStakes should be set by `on_initialize` for each era
-                |value| {
-                    if let Some(x) = value {
-                        x.staked = x.staked.saturating_add(value_to_stake)
-                    }
-                },
-            );
+            EraRewardsAndStakes::<T>::mutate(&current_era, |value| {
+                if let Some(x) = value {
+                    x.staked = x.staked.saturating_add(value_to_stake)
+                }
+            });
 
             // Update ledger and payee
             Self::update_ledger(&staker, ledger);
@@ -461,15 +455,12 @@ pub mod pallet {
             let current_era = Self::current_era();
             let mut staking_info = Self::staking_info(&contract_id, current_era);
 
-            // Ensure that the staker actually has this contract staked.
             ensure!(
                 staking_info.stakers.contains_key(&staker),
                 Error::<T>::NotStakedContract,
             );
-            // XXX: It's safe becaouse of checking existence above.
             let staked_value = staking_info.stakers[&staker];
 
-            // Ensure that unstaked value isn't overflow.
             ensure!(value <= staked_value, Error::<T>::InsufficientValue);
 
             // Calculate the value which will be unstaked.
@@ -481,24 +472,20 @@ pub mod pallet {
                 staking_info.stakers.insert(staker.clone(), remaining);
                 value
             };
-            staking_info.total = staking_info.total.saturating_sub(value_to_unstake);
 
             // Get the staking ledger and update it
             let ledger = Self::ledger(&staker);
             Self::update_ledger(&staker, ledger.saturating_sub(value_to_unstake));
 
             // Update total staked value in era.
-            EraRewardsAndStakes::<T>::mutate(
-                &current_era,
-                // XXX: RewardsAndStakes should be set by `on_initialize` for each era
-                |value| {
-                    if let Some(x) = value {
-                        x.staked = x.staked.saturating_sub(value_to_unstake)
-                    }
-                },
-            );
+            EraRewardsAndStakes::<T>::mutate(&current_era, |value| {
+                if let Some(x) = value {
+                    x.staked = x.staked.saturating_sub(value_to_unstake)
+                }
+            });
 
             // Update the era staking points
+            staking_info.total = staking_info.total.saturating_sub(value_to_unstake);
             ContractEraStake::<T>::insert(contract_id.clone(), current_era, staking_info);
 
             Self::deposit_event(Event::<T>::UnbondUnstakeAndWithdraw(
@@ -579,7 +566,7 @@ pub mod pallet {
                 T::Currency::resolve_creating(staker, reward);
             }
 
-            let number_of_stakers = staking_info.stakers.len() + 1;
+            let number_of_payees = staking_info.stakers.len() + 1;
 
             // updated counter for total rewards paid to the contract
             staking_info.claimed_rewards = contract_reward;
@@ -591,7 +578,7 @@ pub mod pallet {
                 contract_reward,
             ));
 
-            Ok(Some(T::WeightInfo::claim(number_of_stakers as u32)).into())
+            Ok(Some(T::WeightInfo::claim(number_of_payees as u32)).into())
         }
 
         /// Force there to be a new era at the end of the next block. After this, it will be
@@ -689,7 +676,7 @@ pub mod pallet {
 
         /// This helper returns `EraStakingPoints` for given era if possible or latest stored data
         /// or finally default value if storage have no data for it.
-        fn staking_info(
+        pub(crate) fn staking_info(
             contract_id: &T::SmartContract,
             era: EraIndex,
         ) -> EraStakingPoints<T::AccountId, BalanceOf<T>> {

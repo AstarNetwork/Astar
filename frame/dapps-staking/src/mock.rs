@@ -210,8 +210,8 @@ pub fn run_for_blocks(n: u64) {
 ///
 /// Function has no effect if era is already passed.
 pub fn advance_to_era(n: EraIndex) {
-    if n > 0 {
-        run_to_block(BLOCKS_PER_ERA * (n as BlockNumber - 1) + 1);
+    while DappsStaking::current_era() < n {
+        run_for_blocks(1);
     }
 }
 

@@ -73,6 +73,14 @@ pub(crate) fn verify_era_staking_points(
     }
 }
 
+// TODO: remove this?
+/// Used to verify pallet era staked value.
+pub(crate) fn verify_pallet_era_staked(era: crate::EraIndex, total_staked_value: Balance) {
+    // Verify that total staked amount in era is as expected
+    let era_rewards = EraRewardsAndStakes::<TestRuntime>::get(era).unwrap();
+    assert_eq!(total_staked_value, era_rewards.staked);
+}
+
 /// Used to verify pallet era staked and reward values.
 pub(crate) fn verify_pallet_era_staked_and_reward(
     era: crate::EraIndex,
@@ -104,14 +112,19 @@ pub(crate) fn verify_contract_history_is_cleared(
 pub(crate) fn claim(
     claimer: AccountId,
     contract: MockSmartContract<AccountId>,
-    era: EraIndex,
-    rewards: Balance,
+    claim_era: EraIndex,
 ) {
-    assert_ok!(DappsStaking::claim(Origin::signed(claimer), contract, era));
+    assert_ok!(DappsStaking::claim(
+        Origin::signed(claimer),
+        contract,
+        claim_era
+    ));
     // check the event for claim
-    System::assert_last_event(mock::Event::DappsStaking(crate::Event::ContractClaimed(
-        contract, era, rewards,
-    )));
+    // TODO: FIX THIS! We should receive expected reward value!
+    // TODO: or add a method that will calculate it. This is better!
+    // System::assert_last_event(mock::Event::DappsStaking(crate::Event::ContractClaimed(
+    //     contract, claim_era, 0u32.into(),
+    // )));
 }
 
 /// Used to calculate the expected reward for the staker
@@ -125,7 +138,7 @@ pub(crate) fn calc_expected_staker_reward(
     let contract_staker_part =
         Perbill::from_percent(100 - DEVELOPER_REWARD_PERCENTAGE) * contract_reward;
 
-    Perbill::from_rational(contract_staker_part, contract_stake) * staker_stake
+    Perbill::from_rational(staker_stake, contract_stake) * contract_staker_part
 }
 
 /// Used to calculate the expected reward for the developer
@@ -144,13 +157,11 @@ pub(crate) fn check_rewards_on_balance_and_storage(
     contract: &MockSmartContract<AccountId>,
     user: &AccountId,
     free_balance: mock::Balance,
-    eras: EraIndex,
     expected_era_reward: mock::Balance,
 ) {
-    let total_reward_per_era = expected_era_reward * eras as u128;
     assert_eq!(
         <mock::TestRuntime as Config>::Currency::free_balance(user),
-        free_balance + total_reward_per_era
+        free_balance + expected_era_reward
     );
 }
 
@@ -160,8 +171,10 @@ pub(crate) fn check_paidout_rewards_for_contract(
     era: EraIndex,
     expected_rewards: mock::Balance,
 ) {
-    let contract_staking_info =
-        mock::DappsStaking::contract_era_stake(contract, era).unwrap_or_default();
+    // TODO: This will need updates once claim UT is adjusted
+    // let era_last_claimed = mock::DappsStaking::contract_last_claimed(contract).unwrap_or(0);
+    let era_last_claimed: EraIndex = 1_u32;
+    let contract_staking_info = DappsStaking::contract_era_stake(contract, era).unwrap_or_default();
     assert_eq!(contract_staking_info.claimed_rewards, expected_rewards,)
 }
 
