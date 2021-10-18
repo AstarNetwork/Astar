@@ -277,7 +277,7 @@ parameter_types! {
     pub const DeveloperRewardPercentage: Perbill = Perbill::from_percent(80);
     pub const MaxNumberOfStakersPerContract: u32 = 512;
     pub const MinimumStakingAmount: Balance = 100 * SDN;
-    pub const HistoryDepth: u32 = 15;
+    pub const HistoryDepth: u32 = 14;
     pub const BonusEraDuration: u32 = 10;
 }
 

@@ -1,38 +1,40 @@
 ---
-name: Bug report
-about: Create a report to help us improve
+name: Report a Bug
+about: Report a problem with this project.
 title: ''
-labels: ''
+labels: bug
 assignees: ''
-
 ---
 
-**Describe the bug**
-A clear and concise description of what the bug is.
+**Description**
 
-**To Reproduce**
-Steps to reproduce the behavior:
+> Tell us what happened. In particular, tell us how and why you are using this project, and describe the bug that you encountered. Please note that we are not able to support all conceivable use cases, but the more information you are able to provide the more equipped we will be to help.
+
+**Steps to Reproduce**
+
+> Replace the example steps below with actual steps to reproduce the bug you're reporting.
+
 1. Go to '...'
 2. Click on '....'
 3. Scroll down to '....'
 4. See error
 
-**Expected behavior**
-A clear and concise description of what you expected to happen.
+**Expected vs. Actual Behavior**
 
-**Screenshots**
-If applicable, add screenshots to help explain your problem.
+> What did you expect to happen after you followed the steps you described in the last section? What actually happened?
 
-**Desktop (please complete the following information):**
- - OS: [e.g. iOS]
- - Browser [e.g. chrome, safari]
- - Version [e.g. 22]
+**Environment**
 
-**Smartphone (please complete the following information):**
- - Device: [e.g. iPhone6]
- - OS: [e.g. iOS8.1]
- - Browser [e.g. stock browser, safari]
- - Version [e.g. 22]
+> Describe the environment in which you encountered this bug. Use the list below as a starting point and add additional information if you think it's relevant.
 
-**Additional context**
-Add any other context about the problem here.
+- Operating system:
+- Project version/tag:
+- Rust version (run `rustup show`):
+
+**Logs, Errors or Screenshots**
+
+> Please provide the text of any logs or errors that you experienced; if applicable, provide screenshots to help illustrate the problem.
+
+**Additional Information**
+
+> Please add any other details that you think may help us solve your problem.
