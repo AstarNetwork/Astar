@@ -509,7 +509,7 @@ pub mod pallet {
         /// claim is valid for all unclaimed eras but not longer than history_depth().
         /// Any reward older than history_depth() will go to Treasury.
         /// Any user can call this function.
-        #[pallet::weight(T::WeightInfo::claim(T::MaxNumberOfStakersPerContract::get()))]
+        #[pallet::weight(T::WeightInfo::claim(T::MaxNumberOfStakersPerContract::get() + 1))]
         pub fn claim(
             origin: OriginFor<T>,
             contract_id: T::SmartContract,

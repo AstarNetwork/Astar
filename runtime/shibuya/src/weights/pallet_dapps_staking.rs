@@ -40,7 +40,7 @@ impl<T: frame_system::Config> pallet_dapps_staking::WeightInfo for WeightInfo<T>
 	// Storage: DappsStaking RegisteredDapps (r:1 w:1)
 	// Storage: DappsStaking PreApprovalIsEnabled (r:1 w:0)
 	fn register() -> Weight {
-		(70_991_000 as Weight)
+		(68_977_000 as Weight)
 			.saturating_add(T::DbWeight::get().reads(3 as Weight))
 			.saturating_add(T::DbWeight::get().writes(2 as Weight))
 	}
@@ -53,8 +53,8 @@ impl<T: frame_system::Config> pallet_dapps_staking::WeightInfo for WeightInfo<T>
 	// Storage: Balances Locks (r:25 w:25)
 	fn unregister(n: u32, ) -> Weight {
 		(0 as Weight)
-			// Standard Error: 201_000
-			.saturating_add((47_845_000 as Weight).saturating_mul(n as Weight))
+			// Standard Error: 81_000
+			.saturating_add((43_853_000 as Weight).saturating_mul(n as Weight))
 			.saturating_add(T::DbWeight::get().reads(5 as Weight))
 			.saturating_add(T::DbWeight::get().reads((3 as Weight).saturating_mul(n as Weight)))
 			.saturating_add(T::DbWeight::get().writes(3 as Weight))
@@ -62,12 +62,12 @@ impl<T: frame_system::Config> pallet_dapps_staking::WeightInfo for WeightInfo<T>
 	}
 	// Storage: DappsStaking PreApprovalIsEnabled (r:0 w:1)
 	fn enable_developer_pre_approval() -> Weight {
-		(4_716_000 as Weight)
+		(2_973_000 as Weight)
 			.saturating_add(T::DbWeight::get().writes(1 as Weight))
 	}
 	// Storage: DappsStaking PreApprovedDevelopers (r:1 w:1)
 	fn developer_pre_approval() -> Weight {
-		(9_337_000 as Weight)
+		(9_779_000 as Weight)
 			.saturating_add(T::DbWeight::get().reads(1 as Weight))
 			.saturating_add(T::DbWeight::get().writes(1 as Weight))
 	}
@@ -79,7 +79,7 @@ impl<T: frame_system::Config> pallet_dapps_staking::WeightInfo for WeightInfo<T>
 	// Storage: DappsStaking EraRewardsAndStakes (r:1 w:1)
 	// Storage: Balances Locks (r:1 w:1)
 	fn bond_and_stake() -> Weight {
-		(347_462_000 as Weight)
+		(337_755_000 as Weight)
 			.saturating_add(T::DbWeight::get().reads(7 as Weight))
 			.saturating_add(T::DbWeight::get().writes(4 as Weight))
 	}
@@ -90,7 +90,7 @@ impl<T: frame_system::Config> pallet_dapps_staking::WeightInfo for WeightInfo<T>
 	// Storage: Balances Locks (r:1 w:1)
 	// Storage: DappsStaking EraRewardsAndStakes (r:1 w:1)
 	fn unbond_unstake_and_withdraw() -> Weight {
-		(368_985_000 as Weight)
+		(403_138_000 as Weight)
 			.saturating_add(T::DbWeight::get().reads(8 as Weight))
 			.saturating_add(T::DbWeight::get().writes(4 as Weight))
 	}
@@ -98,16 +98,17 @@ impl<T: frame_system::Config> pallet_dapps_staking::WeightInfo for WeightInfo<T>
 	// Storage: DappsStaking CurrentEra (r:1 w:0)
 	// Storage: DappsStaking ContractEraStake (r:1 w:1)
 	// Storage: DappsStaking EraRewardsAndStakes (r:1 w:0)
+	// Storage: Balances TotalIssuance (r:1 w:1)
 	fn claim(n: u32, ) -> Weight {
-		(67_815_000 as Weight)
-			// Standard Error: 105_000
-			.saturating_add((9_875_000 as Weight).saturating_mul(n as Weight))
-			.saturating_add(T::DbWeight::get().reads(4 as Weight))
-			.saturating_add(T::DbWeight::get().writes(1 as Weight))
+		(84_644_000 as Weight)
+			// Standard Error: 30_000
+			.saturating_add((9_213_000 as Weight).saturating_mul(n as Weight))
+			.saturating_add(T::DbWeight::get().reads(5 as Weight))
+			.saturating_add(T::DbWeight::get().writes(2 as Weight))
 	}
 	// Storage: DappsStaking ForceEra (r:0 w:1)
 	fn force_new_era() -> Weight {
-		(3_310_000 as Weight)
+		(3_132_000 as Weight)
 			.saturating_add(T::DbWeight::get().writes(1 as Weight))
 	}
 }

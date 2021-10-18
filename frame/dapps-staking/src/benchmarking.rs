@@ -6,10 +6,7 @@ use crate::Pallet as DappsStaking;
 use frame_benchmarking::{account, benchmarks, impl_benchmark_test_suite, whitelisted_caller};
 use frame_support::traits::{Get, OnFinalize, OnInitialize, OnUnbalanced};
 use frame_system::{Pallet as System, RawOrigin};
-use sp_runtime::{
-    traits::{Bounded, One},
-    Perbill,
-};
+use sp_runtime::traits::{Bounded, One};
 
 const SEED: u32 = 9000;
 const BLOCK_REWARD: u32 = 1000u32;
@@ -178,8 +175,13 @@ benchmarks! {
 
         advance_to_era::<T>(claim_era + 1u32);
 
+        let reward = DappsStaking::<T>::era_reward_and_stake(&claim_era).unwrap().rewards;
+
         let claimer: T::AccountId = whitelisted_caller();
     }: _(RawOrigin::Signed(claimer.clone()), contract_id.clone(), claim_era)
+    verify {
+        assert_last_event::<T>(Event::<T>::ContractClaimed(contract_id, claim_era, reward).into());
+    }
 
     force_new_era {
     }: _(RawOrigin::Root)
