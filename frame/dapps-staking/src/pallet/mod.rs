@@ -305,8 +305,7 @@ pub mod pallet {
         ///
         /// This must be called by the developer who registered the contract.
         ///
-        /// No unclaimed rewards must remain prior to this call (otherwise it will fail).
-        /// Make sure to claim all the contract rewards prior to unregistering it.
+        /// Warning: After this action contract can not be assigned again.
         #[pallet::weight(T::WeightInfo::unregister(T::MaxNumberOfStakersPerContract::get()))]
         pub fn unregister(
             origin: OriginFor<T>,
@@ -344,11 +343,9 @@ pub mod pallet {
                 },
             );
 
-            // Continue with cleanup
+            // Developer account released but contract can not be released more. 
             T::Currency::unreserve(&developer, T::RegisterDeposit::get());
-            RegisteredDapps::<T>::remove(&contract_id);
             RegisteredDevelopers::<T>::remove(&developer);
-            ContractEraStake::<T>::remove_prefix(&contract_id, None);
 
             Self::deposit_event(Event::<T>::ContractRemoved(developer, contract_id));
 
@@ -372,10 +369,9 @@ pub mod pallet {
             #[pallet::compact] value: BalanceOf<T>,
         ) -> DispatchResultWithPostInfo {
             let staker = ensure_signed(origin)?;
-            ensure!(
-                RegisteredDapps::<T>::contains_key(&contract_id),
-                Error::<T>::NotOperatedContract
-            );
+
+            // Check that contract is ready for staking.
+            ensure!(Self::is_active(&contract_id), Error::<T>::NotOperatedContract);
 
             // Get the staking ledger or create an entry if it doesn't exist.
             let mut ledger = Self::ledger(&staker);
@@ -483,7 +479,7 @@ pub mod pallet {
                 staked_value
             } else {
                 staking_info.stakers.insert(staker.clone(), remaining);
-                staked_value.saturating_sub(remaining)
+                value
             };
             staking_info.total = staking_info.total.saturating_sub(value_to_unstake);
 
@@ -527,17 +523,12 @@ pub mod pallet {
         ) -> DispatchResultWithPostInfo {
             let _ = ensure_signed(origin)?;
 
-            // check if this contract is registered
-            let developer = Self::registered_developer(&contract_id)
-                .ok_or(Error::<T>::ContractNotRegistered)?;
+            let developer = RegisteredDapps::<T>::get(&contract_id)
+                .ok_or(Error::<T>::NotOperatedContract)?;
 
             // check if the contract is already claimed in this era
             let current_era = Self::current_era();
-            let era_low_bound = if current_era > T::HistoryDepth::get() {
-                current_era.saturating_sub(T::HistoryDepth::get())
-            } else {
-                Zero::zero()
-            };
+            let era_low_bound = current_era.saturating_sub(T::HistoryDepth::get());
 
             ensure!(
                 era < current_era && era > era_low_bound,
@@ -545,6 +536,7 @@ pub mod pallet {
             );
 
             let mut staking_info = Self::staking_info(&contract_id, era);
+
             ensure!(
                 staking_info.claimed_rewards.is_zero(),
                 Error::<T>::AlreadyClaimedInThisEra,
@@ -704,19 +696,30 @@ pub mod pallet {
             if let Some(staking_info) = ContractEraStake::<T>::get(contract_id, era) {
                 staking_info
             } else {
+                // Read latest era below requested that have a data
                 let mut storage_eras =
                     ContractEraStake::<T>::iter_key_prefix(&contract_id).collect::<Vec<_>>();
                 // XXX: Storage have no sort guaraties for keys.
                 storage_eras.sort();
-
                 let avail_era = storage_eras
                     .iter()
                     .cloned()
                     .take_while(|k| *k <= era)
-                    .next()
-                    .unwrap_or(Zero::zero());
-                ContractEraStake::<T>::get(contract_id, avail_era).unwrap_or_default()
+                    .last()
+                    .unwrap_or_default();
+                ContractEraStake::<T>::get(contract_id, avail_era)
+                    .unwrap_or_default()
             }
+        }
+
+        /// Check that contract have active developer linkage.
+        fn is_active(contract_id: &T::SmartContract) -> bool {
+            if let Some(developer) = RegisteredDapps::<T>::get(contract_id) {
+                if let Some(r_contract_id) = RegisteredDevelopers::<T>::get(&developer) {
+                    return r_contract_id == *contract_id
+                }
+            }
+            false
         }
     }
 }

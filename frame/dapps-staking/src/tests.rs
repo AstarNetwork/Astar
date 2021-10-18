@@ -905,7 +905,7 @@ fn unbond_unstake_and_withdraw_history_depth_has_passed_is_ok() {
         );
 
         // Verify storage content
-        let total_staked = first_staking_amount - first_unstake_amount;
+        let mut total_staked = first_staking_amount - first_unstake_amount;
         let current_era = DappsStaking::current_era();
 
         // Verify storage values related to the current era
@@ -923,27 +923,12 @@ fn unbond_unstake_and_withdraw_history_depth_has_passed_is_ok() {
             total_staked,
         );
 
-        // Also ensure that former values still exists even if they're beyond 'history depth'
-        verify_era_staking_points(
-            &contract_id,
-            first_staking_amount,
-            start_era,
-            vec![(staker_id, first_staking_amount)],
-        );
-        assert_eq!(
-            EraRewardsAndStakes::<TestRuntime>::get(current_era)
-                .unwrap()
-                .staked,
-            total_staked,
-        );
-
         //////////////////////////////////////////////
         ///// SECOND ERA ADVANCEMENT
         //////////////////////////////////////////////
 
         // Advance era again beyond the history depth
-        let former_era = current_era;
-        advance_to_era(former_era + history_depth + 10);
+        advance_to_era(current_era + history_depth + 10);
         let current_era = DappsStaking::current_era();
 
         let second_unstake_amount = 30;
@@ -954,8 +939,7 @@ fn unbond_unstake_and_withdraw_history_depth_has_passed_is_ok() {
         );
 
         // Verify storage content
-        let former_total_staked = total_staked;
-        let total_staked = total_staked - second_unstake_amount;
+        total_staked -= second_unstake_amount;
 
         // Verify storage values related to the current era
         verify_ledger(staker_id, total_staked);

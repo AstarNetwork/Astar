@@ -175,7 +175,7 @@ pub(crate) fn verify_storage_after_unregister(
         contract_id,
         &current_era
     ));
-    assert!(!RegisteredDapps::<TestRuntime>::contains_key(contract_id));
+    assert!(RegisteredDapps::<TestRuntime>::contains_key(contract_id));
     assert!(!RegisteredDevelopers::<TestRuntime>::contains_key(
         developer
     ));
