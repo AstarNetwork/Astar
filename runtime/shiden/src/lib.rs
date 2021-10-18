@@ -5,6 +5,7 @@
 #![recursion_limit = "256"]
 
 use codec::{Decode, Encode};
+use fp_rpc::TransactionStatus;
 use frame_support::{
     construct_runtime, match_type, parameter_types,
     traits::{Contains, Currency, FindAuthor, Imbalance, OnUnbalanced},
@@ -16,7 +17,8 @@ use frame_support::{
     ConsensusEngineId, PalletId,
 };
 use frame_system::limits::{BlockLength, BlockWeights};
-use pallet_evm::{FeeCalculator, Runner};
+use pallet_evm::{Account as EVMAccount, EnsureAddressTruncated, HashedAddressMapping, Runner};
+use pallet_ethereum::{Call::transact, Transaction as EthereumTransaction};
 use pallet_transaction_payment::{
     FeeDetails, Multiplier, RuntimeDispatchInfo, TargetedFeeAdjustment,
 };
@@ -608,6 +610,7 @@ impl pallet_evm::GasWeightMapping for ShidenGasWeightMapping {
     }
 }
 
+use pallet_evm::FeeCalculator;
 pub struct FixedGasPrice;
 impl FeeCalculator for FixedGasPrice {
     fn min_gas_price() -> U256 {
@@ -645,20 +648,29 @@ parameter_types! {
 }
 
 impl pallet_evm::Config for Runtime {
-    type FeeCalculator = FixedGasPrice;
-    type GasWeightMapping = ShidenGasWeightMapping;
-    type BlockHashMapping = pallet_ethereum::EthereumBlockHashMapping<Runtime>;
-    type CallOrigin = pallet_evm::EnsureAddressRoot<AccountId>;
-    type WithdrawOrigin = pallet_evm::EnsureAddressTruncated;
-    type AddressMapping = pallet_evm::HashedAddressMapping<BlakeTwo256>;
-    type Currency = Balances;
-    type Event = Event;
-    type Runner = pallet_evm::runner::stack::Runner<Self>;
-    type Precompiles = ShidenNetworkPrecompiles<Self>;
-    type ChainId = ChainId;
-    type OnChargeTransaction = pallet_evm::EVMCurrencyAdapter<Balances, ToStakingPot>;
-    type BlockGasLimit = BlockGasLimit;
-    type FindAuthor = FindAuthorTruncated<Aura>;
+	type FeeCalculator = FixedGasPrice;
+	type GasWeightMapping = ShidenGasWeightMapping;
+	type BlockHashMapping = pallet_ethereum::EthereumBlockHashMapping<Self>;
+	type CallOrigin = EnsureAddressTruncated;
+	type WithdrawOrigin = EnsureAddressTruncated;
+	type AddressMapping = HashedAddressMapping<BlakeTwo256>;
+	type Currency = Balances;
+	type Event = Event;
+	type Runner = pallet_evm::runner::stack::Runner<Self>;
+	type Precompiles = (
+		pallet_evm_precompile_simple::ECRecover,
+		pallet_evm_precompile_simple::Sha256,
+		pallet_evm_precompile_simple::Ripemd160,
+		pallet_evm_precompile_simple::Identity,
+		pallet_evm_precompile_modexp::Modexp,
+		pallet_evm_precompile_simple::ECRecoverPublicKey,
+		pallet_evm_precompile_sha3fips::Sha3FIPS256,
+		pallet_evm_precompile_sha3fips::Sha3FIPS512,
+	);
+	type ChainId = ChainId;
+	type BlockGasLimit = BlockGasLimit;
+	type OnChargeTransaction = ();
+	type FindAuthor = FindAuthorTruncated<Aura>;
 }
 
 pub struct TransactionConverter;
@@ -689,6 +701,16 @@ impl pallet_ethereum::Config for Runtime {
     type Event = Event;
     type StateRoot = pallet_ethereum::IntermediateStateRoot;
 }
+
+/*
+frame_support::parameter_types! {
+	pub BoundDivision: U256 = U256::from(1024);
+}
+
+impl pallet_dynamic_fee::Config for Runtime {
+	type MinGasPriceBoundDivisor = BoundDivision;
+}
+*/
 
 impl pallet_sudo::Config for Runtime {
     type Event = Event;
@@ -727,6 +749,7 @@ construct_runtime!(
         EVM: pallet_evm::{Pallet, Config, Call, Storage, Event<T>} = 60,
         Ethereum: pallet_ethereum::{Pallet, Call, Storage, Event, Config, ValidateUnsigned} = 61,
         EthCall: pallet_custom_signatures::{Pallet, Call, Event<T>, ValidateUnsigned} = 62,
+        //DynamicFee: pallet_dynamic_fee::{Pallet, Call, Storage, Config, Inherent} = 63,
 
         Sudo: pallet_sudo::{Pallet, Call, Storage, Event<T>, Config<T>} = 99,
     }
@@ -882,130 +905,123 @@ impl_runtime_apis! {
     }
 
     impl fp_rpc::EthereumRuntimeRPCApi<Block> for Runtime {
-        fn chain_id() -> u64 {
-            ChainId::get()
-        }
+		fn chain_id() -> u64 {
+			<Runtime as pallet_evm::Config>::ChainId::get()
+		}
 
-        fn account_basic(address: H160) -> pallet_evm::Account {
-            EVM::account_basic(&address)
-        }
+		fn account_basic(address: H160) -> EVMAccount {
+			EVM::account_basic(&address)
+		}
 
-        fn gas_price() -> U256 {
-            <Runtime as pallet_evm::Config>::FeeCalculator::min_gas_price()
-        }
+		fn gas_price() -> U256 {
+			<Runtime as pallet_evm::Config>::FeeCalculator::min_gas_price()
+		}
 
-        fn account_code_at(address: H160) -> Vec<u8> {
-            EVM::account_codes(address)
-        }
+		fn account_code_at(address: H160) -> Vec<u8> {
+			EVM::account_codes(address)
+		}
 
-        fn author() -> H160 {
-            <pallet_evm::Pallet<Runtime>>::find_author()
-        }
+		fn author() -> H160 {
+			<pallet_evm::Pallet<Runtime>>::find_author()
+		}
 
-        fn storage_at(address: H160, index: U256) -> H256 {
-            let mut tmp = [0u8; 32];
-            index.to_big_endian(&mut tmp);
-            EVM::account_storages(address, H256::from_slice(&tmp[..]))
-        }
+		fn storage_at(address: H160, index: U256) -> H256 {
+			let mut tmp = [0u8; 32];
+			index.to_big_endian(&mut tmp);
+			EVM::account_storages(address, H256::from_slice(&tmp[..]))
+		}
 
-        fn call(
-            from: H160,
-            to: H160,
-            data: Vec<u8>,
-            value: U256,
-            gas_limit: U256,
-            gas_price: Option<U256>,
-            nonce: Option<U256>,
-            estimate: bool,
-        ) -> Result<pallet_evm::CallInfo, sp_runtime::DispatchError> {
-            let config = if estimate {
-                let mut config = <Runtime as pallet_evm::Config>::config().clone();
-                config.estimate = true;
-                Some(config)
-            } else {
-                None
-            };
+		fn call(
+			from: H160,
+			to: H160,
+			data: Vec<u8>,
+			value: U256,
+			gas_limit: U256,
+			gas_price: Option<U256>,
+			nonce: Option<U256>,
+			estimate: bool,
+		) -> Result<pallet_evm::CallInfo, sp_runtime::DispatchError> {
+			let config = if estimate {
+				let mut config = <Runtime as pallet_evm::Config>::config().clone();
+				config.estimate = true;
+				Some(config)
+			} else {
+				None
+			};
 
-            <Runtime as pallet_evm::Config>::Runner::call(
-                from,
-                to,
-                data,
-                value,
-                gas_limit.low_u64(),
-                gas_price,
-                nonce,
-                config
-                    .as_ref()
-                    .unwrap_or_else(|| <Runtime as pallet_evm::Config>::config()),
-            )
-            .map_err(|err| err.into())
-        }
+			<Runtime as pallet_evm::Config>::Runner::call(
+				from,
+				to,
+				data,
+				value,
+				gas_limit.low_u64(),
+				gas_price,
+				nonce,
+				config.as_ref().unwrap_or(<Runtime as pallet_evm::Config>::config()),
+			).map_err(|err| err.into())
+		}
 
-        fn create(
-            from: H160,
-            data: Vec<u8>,
-            value: U256,
-            gas_limit: U256,
-            gas_price: Option<U256>,
-            nonce: Option<U256>,
-            estimate: bool,
-        ) -> Result<pallet_evm::CreateInfo, sp_runtime::DispatchError> {
-            let config = if estimate {
-                let mut config = <Runtime as pallet_evm::Config>::config().clone();
-                config.estimate = true;
-                Some(config)
-            } else {
-                None
-            };
+		fn create(
+			from: H160,
+			data: Vec<u8>,
+			value: U256,
+			gas_limit: U256,
+			gas_price: Option<U256>,
+			nonce: Option<U256>,
+			estimate: bool,
+		) -> Result<pallet_evm::CreateInfo, sp_runtime::DispatchError> {
+			let config = if estimate {
+				let mut config = <Runtime as pallet_evm::Config>::config().clone();
+				config.estimate = true;
+				Some(config)
+			} else {
+				None
+			};
 
-            #[allow(clippy::or_fun_call)] // suggestion not helpful here
-            <Runtime as pallet_evm::Config>::Runner::create(
-                from,
-                data,
-                value,
-                gas_limit.low_u64(),
-                gas_price,
-                nonce,
-                config
-                    .as_ref()
-                    .unwrap_or(<Runtime as pallet_evm::Config>::config()),
-                )
-                .map_err(|err| err.into())
-        }
+			<Runtime as pallet_evm::Config>::Runner::create(
+				from,
+				data,
+				value,
+				gas_limit.low_u64(),
+				gas_price,
+				nonce,
+				config.as_ref().unwrap_or(<Runtime as pallet_evm::Config>::config()),
+			).map_err(|err| err.into())
+		}
 
-        fn current_transaction_statuses() -> Option<Vec<fp_rpc::TransactionStatus>> {
-            Ethereum::current_transaction_statuses()
-        }
+		fn current_transaction_statuses() -> Option<Vec<TransactionStatus>> {
+			Ethereum::current_transaction_statuses()
+		}
 
-        fn current_block() -> Option<pallet_ethereum::Block> {
-            Ethereum::current_block()
-        }
+		fn current_block() -> Option<pallet_ethereum::Block> {
+			Ethereum::current_block()
+		}
 
-        fn current_receipts() -> Option<Vec<pallet_ethereum::Receipt>> {
-            Ethereum::current_receipts()
-        }
+		fn current_receipts() -> Option<Vec<pallet_ethereum::Receipt>> {
+			Ethereum::current_receipts()
+		}
 
-        fn current_all() -> (
-            Option<pallet_ethereum::Block>,
-            Option<Vec<pallet_ethereum::Receipt>>,
-            Option<Vec<fp_rpc::TransactionStatus>>,
-        ) {
-            (
-                Ethereum::current_block(),
-                Ethereum::current_receipts(),
-                Ethereum::current_transaction_statuses(),
-            )
-        }
+		fn current_all() -> (
+			Option<pallet_ethereum::Block>,
+			Option<Vec<pallet_ethereum::Receipt>>,
+			Option<Vec<TransactionStatus>>
+		) {
+			(
+				Ethereum::current_block(),
+				Ethereum::current_receipts(),
+				Ethereum::current_transaction_statuses()
+			)
+		}
 
-        fn extrinsic_filter(
-            xts: Vec<<Block as BlockT>::Extrinsic>,
-        ) -> Vec<pallet_ethereum::Transaction> {
-            xts.into_iter().filter_map(|xt| match xt.function {
-                Call::Ethereum(pallet_ethereum::Call::transact(t)) => Some(t),
-                _ => None
-            }).collect::<Vec<pallet_ethereum::Transaction>>()
-        }
-    }
+		fn extrinsic_filter(
+			xts: Vec<<Block as BlockT>::Extrinsic>,
+		) -> Vec<EthereumTransaction> {
+			xts.into_iter().filter_map(|xt| match xt.function {
+				Call::Ethereum(transact(t)) => Some(t),
+				_ => None
+			}).collect::<Vec<EthereumTransaction>>()
+		}
+	}
 
     #[cfg(feature = "runtime-benchmarks")]
     impl frame_benchmarking::Benchmark<Block> for Runtime {
