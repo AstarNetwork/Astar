@@ -847,7 +847,6 @@ fn unbond_unstake_and_withdraw_in_different_eras() {
             second_unstake_value,
         )));
 
-
         // Verify that storage values are as expected for both stakers and total staked value
         let new_total_staked = new_total_staked - second_unstake_value;
         let second_staked_value = staked_value - second_unstake_value;
@@ -1127,7 +1126,6 @@ fn new_era_forcing() {
     })
 }
 
-
 #[test]
 fn claim_contract_not_registered() {
     ExternalityBuilder::build().execute_with(|| {
@@ -1269,72 +1267,66 @@ fn claim_is_ok() {
 
         let claim_era = DappsStaking::current_era() - 1;
         claim(claimer, contract, claim_era);
-        // verify_contract_history_is_cleared(contract, start_era, claim_era); TODO
     })
 }
 
-// #[test]
-// fn claim_one_contract_one_staker() {
-//     ExternalityBuilder::build().execute_with(|| {
-//         initialize_first_block();
+#[test]
+fn claim_one_contract_one_staker() {
+    ExternalityBuilder::build().execute_with(|| {
+        initialize_first_block();
 
-//         let developer = 1;
-//         let staker1 = 2;
+        let developer = 1;
+        let staker1 = 2;
 
-//         const STAKE_AMOUNT1: mock::Balance = 1000;
-//         const INITIAL_STAKE: mock::Balance = 1000;
-//         let contract = MockSmartContract::Evm(H160::repeat_byte(0x01));
-//         const SKIP_ERA: EraIndex = 4;
+        let stake_amount_1 = 50;
+        let initial_stake = 50;
+        let contract = MockSmartContract::Evm(H160::repeat_byte(0x01));
 
-//         // Store initial free balaces of the developer and the stakers
-//         let free_balance_staker1 = <mock::TestRuntime as Config>::Currency::free_balance(&staker1);
+        // Store initial free balaces of the developer and the stakers
+        let free_balance_staker1 = <mock::TestRuntime as Config>::Currency::free_balance(&staker1);
 
-//         // Register contracts, bond&stake them with two stakers on the contract.
-//         let start_era = DappsStaking::current_era();
-//         register_contract(developer, &contract);
-//         let free_developer_balance =
-//             <mock::TestRuntime as Config>::Currency::free_balance(&developer);
-//         bond_and_stake_with_verification(staker1, &contract, STAKE_AMOUNT1);
+        // Register contracts, bond&stake them with two stakers on the contract.
+        let start_era = DappsStaking::current_era();
+        register_contract(developer, &contract);
+        let free_developer_balance =
+            <mock::TestRuntime as Config>::Currency::free_balance(&developer);
+        bond_and_stake_with_verification(staker1, &contract, stake_amount_1);
 
-//         // Advance some eras to be able to claim rewards. Verify storage is consolidated
-//         advance_to_era(start_era + SKIP_ERA);
-//         let claim_era = DappsStaking::current_era();
-//         claim(staker1, contract, start_era, claim_era.clone());
-//         verify_contract_history_is_cleared(contract, start_era, claim_era);
-//         let eras_eligible_for_reward = (claim_era - start_era) as u128;
-//         // calculate reward per stakers
-//         let total_era_dapps_reward = get_total_reward_per_era();
-//         let expected_staker1_reward = calc_expected_staker_reward(
-//             total_era_dapps_reward,
-//             INITIAL_STAKE,
-//             INITIAL_STAKE,
-//             STAKE_AMOUNT1,
-//         );
+        // Advance some eras to be able to claim rewards. Verify storage is consolidated
+        advance_to_era(start_era + 1);
+        let claim_era = DappsStaking::current_era() - 1;
+        claim(staker1, contract, claim_era);
+        // calculate reward per stakers
+        let total_era_dapps_reward = get_total_reward_per_era();
+        let expected_staker1_reward = calc_expected_staker_reward(
+            total_era_dapps_reward,
+            initial_stake,
+            initial_stake,
+            stake_amount_1,
+        );
 
-//         // calculate reward per developer
-//         let expected_developer_reward =
-//             calc_expected_developer_reward(total_era_dapps_reward, INITIAL_STAKE, INITIAL_STAKE);
+        // calculate reward per developer
+        let expected_developer_reward =
+            calc_expected_developer_reward(total_era_dapps_reward, initial_stake, initial_stake);
 
-//         // check balances to see if the rewards are paid out
-//         check_rewards_on_balance_and_storage(
-//             &contract,
-//             &staker1,
-//             free_balance_staker1,
-//             eras_eligible_for_reward as EraIndex,
-//             expected_staker1_reward,
-//         );
-//         check_rewards_on_balance_and_storage(
-//             &contract,
-//             &developer,
-//             free_developer_balance,
-//             eras_eligible_for_reward as EraIndex,
-//             expected_developer_reward,
-//         );
-//         let expected_contract_reward =
-//             eras_eligible_for_reward * (expected_staker1_reward + expected_developer_reward);
-//         check_paidout_rewards_for_contract(&contract, expected_contract_reward);
-//     })
-// }
+        // check balances to see if the rewards are paid out
+        check_rewards_on_balance_and_storage(
+            &contract,
+            &staker1,
+            free_balance_staker1,
+            expected_staker1_reward,
+        );
+        check_rewards_on_balance_and_storage(
+            &contract,
+            &developer,
+            free_developer_balance,
+            expected_developer_reward,
+        );
+
+        let expected_contract_reward = expected_staker1_reward + expected_developer_reward;
+        check_paidout_rewards_for_contract(&contract, claim_era, expected_contract_reward);
+    })
+}
 
 // #[test]
 // fn claim_one_contract_two_stakers() {

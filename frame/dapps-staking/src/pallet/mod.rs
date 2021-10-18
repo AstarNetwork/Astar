@@ -576,7 +576,7 @@ pub mod pallet {
                 T::Currency::resolve_creating(staker, reward);
             }
 
-            let number_of_stakers = staking_info.stakers.len() + 1;
+            let number_of_payees = staking_info.stakers.len() + 1;
 
             // updated counter for total rewards paid to the contract
             staking_info.claimed_rewards = contract_reward;
@@ -588,7 +588,7 @@ pub mod pallet {
                 contract_reward,
             ));
 
-            Ok(Some(T::WeightInfo::claim(number_of_stakers as u32)).into())
+            Ok(Some(T::WeightInfo::claim(number_of_payees as u32)).into())
         }
 
         /// Force there to be a new era at the end of the next block. After this, it will be
@@ -693,12 +693,7 @@ pub mod pallet {
             if let Some(staking_info) = ContractEraStake::<T>::get(contract_id, era) {
                 staking_info
             } else {
-                let mut storage_eras =
-                    ContractEraStake::<T>::iter_key_prefix(&contract_id).collect::<Vec<_>>();
-
-                let avail_era = storage_eras
-                    .iter()
-                    .cloned()
+                let avail_era = ContractEraStake::<T>::iter_key_prefix(&contract_id)
                     .filter(|x| *x < era)
                     .max()
                     .unwrap_or(Zero::zero());
