@@ -131,11 +131,10 @@ benchmarks! {
     }
 
     bond_and_stake {
-        let n in 0 .. T::MaxNumberOfStakersPerContract::get();
         initialize::<T>();
 
         let (_, contract_id) = register_contract::<T>()?;
-        prepare_bond_and_stake::<T>(n, &contract_id, SEED)?;
+        prepare_bond_and_stake::<T>(T::MaxNumberOfStakersPerContract::get() - 1, &contract_id, SEED)?;
 
         let staker = whitelisted_caller();
         let _ = T::Currency::make_free_balance_be(&staker, BalanceOf::<T>::max_value());
@@ -147,11 +146,10 @@ benchmarks! {
     }
 
     unbond_unstake_and_withdraw {
-        let n in 0 .. T::MaxNumberOfStakersPerContract::get();
         initialize::<T>();
 
         let (_, contract_id) = register_contract::<T>()?;
-        prepare_bond_and_stake::<T>(n, &contract_id, SEED)?;
+        prepare_bond_and_stake::<T>(T::MaxNumberOfStakersPerContract::get() - 1, &contract_id, SEED)?;
 
         let staker = whitelisted_caller();
         let _ = T::Currency::make_free_balance_be(&staker, BalanceOf::<T>::max_value());
