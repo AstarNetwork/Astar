@@ -33,186 +33,74 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: DappsStaking RegisteredDapps (r:1 w:1)
 	// Storage: DappsStaking PreApprovalIsEnabled (r:1 w:0)
 	fn register() -> Weight {
-		(70_863_000 as Weight)
+		(68_153_000 as Weight)
 			.saturating_add(T::DbWeight::get().reads(3 as Weight))
 			.saturating_add(T::DbWeight::get().writes(2 as Weight))
 	}
 	// Storage: DappsStaking RegisteredDevelopers (r:1 w:1)
 	// Storage: DappsStaking CurrentEra (r:1 w:0)
-	// Storage: DappsStaking ContractLastClaimed (r:1 w:1)
-	// Storage: DappsStaking ContractEraStake (r:1 w:0)
+	// Storage: DappsStaking ContractEraStake (r:3 w:0)
 	// Storage: DappsStaking EraRewardsAndStakes (r:1 w:1)
 	// Storage: System Account (r:1 w:1)
-	// Storage: DappsStaking RegisteredDapps (r:0 w:1)
-	// Storage: DappsStaking ContractLastStaked (r:0 w:1)
-	// Storage: DappsStaking Ledger (r:6 w:6)
-	// Storage: Balances Locks (r:6 w:6)
-	// Storage: DappsStaking RewardsClaimed (r:0 w:6)
+	// Storage: DappsStaking Ledger (r:25 w:25)
+	// Storage: Balances Locks (r:25 w:25)
 	fn unregister(n: u32, ) -> Weight {
-		(164_332_000 as Weight)
-			// Standard Error: 372_000
-			.saturating_add((44_339_000 as Weight).saturating_mul(n as Weight))
-			.saturating_add(T::DbWeight::get().reads(6 as Weight))
+		(0 as Weight)
+			// Standard Error: 171_000
+			.saturating_add((46_867_000 as Weight).saturating_mul(n as Weight))
+			.saturating_add(T::DbWeight::get().reads(5 as Weight))
 			.saturating_add(T::DbWeight::get().reads((3 as Weight).saturating_mul(n as Weight)))
-			.saturating_add(T::DbWeight::get().writes(7 as Weight))
-			.saturating_add(T::DbWeight::get().writes((4 as Weight).saturating_mul(n as Weight)))
+			.saturating_add(T::DbWeight::get().writes(3 as Weight))
+			.saturating_add(T::DbWeight::get().writes((3 as Weight).saturating_mul(n as Weight)))
 	}
 	// Storage: DappsStaking PreApprovalIsEnabled (r:0 w:1)
 	fn enable_developer_pre_approval() -> Weight {
-		(2_962_000 as Weight)
+		(2_956_000 as Weight)
 			.saturating_add(T::DbWeight::get().writes(1 as Weight))
 	}
 	// Storage: DappsStaking PreApprovedDevelopers (r:1 w:1)
 	fn developer_pre_approval() -> Weight {
-		(9_133_000 as Weight)
+		(9_777_000 as Weight)
 			.saturating_add(T::DbWeight::get().reads(1 as Weight))
 			.saturating_add(T::DbWeight::get().writes(1 as Weight))
 	}
 	// Storage: DappsStaking RegisteredDapps (r:1 w:0)
+	// Storage: DappsStaking RegisteredDevelopers (r:1 w:0)
 	// Storage: DappsStaking Ledger (r:1 w:1)
-	// Storage: DappsStaking ContractLastStaked (r:1 w:1)
 	// Storage: DappsStaking CurrentEra (r:1 w:0)
+	// Storage: DappsStaking ContractEraStake (r:1 w:1)
 	// Storage: DappsStaking EraRewardsAndStakes (r:1 w:1)
 	// Storage: Balances Locks (r:1 w:1)
-	// Storage: DappsStaking ContractLastClaimed (r:0 w:1)
-	// Storage: DappsStaking ContractEraStake (r:0 w:1)
 	fn bond_and_stake() -> Weight {
-		(104_490_000 as Weight)
-			// Standard Error: 42_000
-			.saturating_add((828_000 as Weight))
+		(400_183_000 as Weight)
 			.saturating_add(T::DbWeight::get().reads(7 as Weight))
 			.saturating_add(T::DbWeight::get().writes(4 as Weight))
 	}
 	// Storage: DappsStaking RegisteredDapps (r:1 w:0)
-	// Storage: DappsStaking ContractLastStaked (r:1 w:1)
-	// Storage: DappsStaking ContractEraStake (r:1 w:1)
+	// Storage: DappsStaking CurrentEra (r:1 w:0)
+	// Storage: DappsStaking ContractEraStake (r:3 w:1)
 	// Storage: DappsStaking Ledger (r:1 w:1)
 	// Storage: Balances Locks (r:1 w:1)
-	// Storage: DappsStaking CurrentEra (r:1 w:0)
 	// Storage: DappsStaking EraRewardsAndStakes (r:1 w:1)
-	// Storage: DappsStaking RewardsClaimed (r:0 w:1)
 	fn unbond_unstake_and_withdraw() -> Weight {
-		(120_760_000 as Weight)
-			// Standard Error: 28_000
-			.saturating_add((740_000 as Weight))
-			.saturating_add(T::DbWeight::get().reads(7 as Weight))
-			.saturating_add(T::DbWeight::get().writes(6 as Weight))
-	}
-	// Storage: DappsStaking RegisteredDapps (r:1 w:0)
-	// Storage: DappsStaking ContractLastStaked (r:1 w:1)
-	// Storage: DappsStaking CurrentEra (r:1 w:0)
-	// Storage: DappsStaking ContractLastClaimed (r:1 w:1)
-	// Storage: DappsStaking HistoryDepth (r:1 w:0)
-	// Storage: DappsStaking ContractEraStake (r:1 w:2)
-	// Storage: DappsStaking EraRewardsAndStakes (r:60 w:0)
-	// Storage: DappsStaking RewardsClaimed (r:2 w:2)
-	fn claim(n: u32) -> Weight {
-		(0 as Weight)
-			// Standard Error: 268_000
-			.saturating_add((17_964_000 as Weight).saturating_mul(n as Weight))
-			// Standard Error: 538_000
-			.saturating_add((15_901_000 as Weight))
-			.saturating_add(T::DbWeight::get().reads(6 as Weight))
-			.saturating_add(T::DbWeight::get().reads((1 as Weight).saturating_mul(n as Weight)))
+		(398_286_000 as Weight)
+			.saturating_add(T::DbWeight::get().reads(8 as Weight))
 			.saturating_add(T::DbWeight::get().writes(4 as Weight))
-			.saturating_add(T::DbWeight::get().writes((1 as Weight).saturating_mul(n as Weight)))
-	}
-    fn force_new_era() -> Weight {
-        T::DbWeight::get().writes(1 as Weight)
-    }
-}
-
-// For backwards compatibility and tests
-impl WeightInfo for () {
-	// Storage: DappsStaking RegisteredDevelopers (r:1 w:1)
-	// Storage: DappsStaking RegisteredDapps (r:1 w:1)
-	// Storage: DappsStaking PreApprovalIsEnabled (r:1 w:0)
-	fn register() -> Weight {
-		(70_863_000 as Weight)
-			.saturating_add(RocksDbWeight::get().reads(3 as Weight))
-			.saturating_add(RocksDbWeight::get().writes(2 as Weight))
-	}
-	// Storage: DappsStaking RegisteredDevelopers (r:1 w:1)
-	// Storage: DappsStaking CurrentEra (r:1 w:0)
-	// Storage: DappsStaking ContractLastClaimed (r:1 w:1)
-	// Storage: DappsStaking ContractEraStake (r:1 w:0)
-	// Storage: DappsStaking EraRewardsAndStakes (r:1 w:1)
-	// Storage: System Account (r:1 w:1)
-	// Storage: DappsStaking RegisteredDapps (r:0 w:1)
-	// Storage: DappsStaking ContractLastStaked (r:0 w:1)
-	// Storage: DappsStaking Ledger (r:6 w:6)
-	// Storage: Balances Locks (r:6 w:6)
-	// Storage: DappsStaking RewardsClaimed (r:0 w:6)
-	fn unregister(n: u32, ) -> Weight {
-		(164_332_000 as Weight)
-			// Standard Error: 372_000
-			.saturating_add((44_339_000 as Weight).saturating_mul(n as Weight))
-			.saturating_add(RocksDbWeight::get().reads(6 as Weight))
-			.saturating_add(RocksDbWeight::get().reads((3 as Weight).saturating_mul(n as Weight)))
-			.saturating_add(RocksDbWeight::get().writes(7 as Weight))
-			.saturating_add(RocksDbWeight::get().writes((4 as Weight).saturating_mul(n as Weight)))
-	}
-	// Storage: DappsStaking PreApprovalIsEnabled (r:0 w:1)
-	fn enable_developer_pre_approval() -> Weight {
-		(2_962_000 as Weight)
-			.saturating_add(RocksDbWeight::get().writes(1 as Weight))
-	}
-	// Storage: DappsStaking PreApprovedDevelopers (r:1 w:1)
-	fn developer_pre_approval() -> Weight {
-		(9_133_000 as Weight)
-			.saturating_add(RocksDbWeight::get().reads(1 as Weight))
-			.saturating_add(RocksDbWeight::get().writes(1 as Weight))
 	}
 	// Storage: DappsStaking RegisteredDapps (r:1 w:0)
-	// Storage: DappsStaking Ledger (r:1 w:1)
-	// Storage: DappsStaking ContractLastStaked (r:1 w:1)
 	// Storage: DappsStaking CurrentEra (r:1 w:0)
-	// Storage: DappsStaking EraRewardsAndStakes (r:1 w:1)
-	// Storage: Balances Locks (r:1 w:1)
-	// Storage: DappsStaking ContractLastClaimed (r:0 w:1)
-	// Storage: DappsStaking ContractEraStake (r:0 w:1)
-	fn bond_and_stake() -> Weight {
-		(104_490_000 as Weight)
-			// Standard Error: 42_000
-			.saturating_add((828_000 as Weight))
-			.saturating_add(RocksDbWeight::get().reads(7 as Weight))
-			.saturating_add(RocksDbWeight::get().writes(4 as Weight))
-	}
-	// Storage: DappsStaking RegisteredDapps (r:1 w:0)
-	// Storage: DappsStaking ContractLastStaked (r:1 w:1)
 	// Storage: DappsStaking ContractEraStake (r:1 w:1)
-	// Storage: DappsStaking Ledger (r:1 w:1)
-	// Storage: Balances Locks (r:1 w:1)
-	// Storage: DappsStaking CurrentEra (r:1 w:0)
-	// Storage: DappsStaking EraRewardsAndStakes (r:1 w:1)
-	// Storage: DappsStaking RewardsClaimed (r:0 w:1)
-	fn unbond_unstake_and_withdraw() -> Weight {
-		(120_760_000 as Weight)
-			// Standard Error: 28_000
-			.saturating_add((740_000 as Weight))
-			.saturating_add(RocksDbWeight::get().reads(7 as Weight))
-			.saturating_add(RocksDbWeight::get().writes(6 as Weight))
+	// Storage: DappsStaking EraRewardsAndStakes (r:1 w:0)
+	fn claim(n: u32, ) -> Weight {
+		(71_355_000 as Weight)
+			// Standard Error: 118_000
+			.saturating_add((9_134_000 as Weight).saturating_mul(n as Weight))
+			.saturating_add(T::DbWeight::get().reads(4 as Weight))
+			.saturating_add(T::DbWeight::get().writes(1 as Weight))
 	}
-	// Storage: DappsStaking RegisteredDapps (r:1 w:0)
-	// Storage: DappsStaking ContractLastStaked (r:1 w:1)
-	// Storage: DappsStaking CurrentEra (r:1 w:0)
-	// Storage: DappsStaking ContractLastClaimed (r:1 w:1)
-	// Storage: DappsStaking HistoryDepth (r:1 w:0)
-	// Storage: DappsStaking ContractEraStake (r:1 w:2)
-	// Storage: DappsStaking EraRewardsAndStakes (r:60 w:0)
-	// Storage: DappsStaking RewardsClaimed (r:2 w:2)
-	fn claim(n: u32) -> Weight {
-		(0 as Weight)
-			// Standard Error: 268_000
-			.saturating_add((17_964_000 as Weight).saturating_mul(n as Weight))
-			// Standard Error: 538_000
-			.saturating_add((15_901_000 as Weight))
-			.saturating_add(RocksDbWeight::get().reads(6 as Weight))
-			.saturating_add(RocksDbWeight::get().reads((1 as Weight).saturating_mul(n as Weight)))
-			.saturating_add(RocksDbWeight::get().writes(4 as Weight))
-			.saturating_add(RocksDbWeight::get().writes((1 as Weight).saturating_mul(n as Weight)))
+	// Storage: DappsStaking ForceEra (r:0 w:1)
+	fn force_new_era() -> Weight {
+		(3_174_000 as Weight)
+			.saturating_add(T::DbWeight::get().writes(1 as Weight))
 	}
-    fn force_new_era() -> Weight {
-        RocksDbWeight::get().writes(1 as Weight)
-    }
 }

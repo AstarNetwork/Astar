@@ -6,7 +6,10 @@ use crate::Pallet as DappsStaking;
 use frame_benchmarking::{account, benchmarks, impl_benchmark_test_suite, whitelisted_caller};
 use frame_support::traits::{Get, OnFinalize, OnInitialize, OnUnbalanced};
 use frame_system::{Pallet as System, RawOrigin};
-use sp_runtime::traits::{Bounded, One};
+use sp_runtime::{
+    traits::{Bounded, One},
+    Perbill,
+};
 
 const SEED: u32 = 9000;
 const BLOCK_REWARD: u32 = 1000u32;
@@ -170,20 +173,13 @@ benchmarks! {
         let (developer_id, contract_id) = register_contract::<T>()?;
 
         let number_of_stakers = n - 1;
-        let staked_era = DappsStaking::<T>::current_era();
+        let claim_era = DappsStaking::<T>::current_era();
         prepare_bond_and_stake::<T>(number_of_stakers, &contract_id, SEED)?;
 
-        advance_to_era::<T>(staked_era + 1u32);
+        advance_to_era::<T>(claim_era + 1u32);
 
-        let _blocks_per_era = <T as Config>::BlockPerEra::get();
-        let blocks_per_era = 7200_u32;
-
-        let expected_reward = BLOCK_REWARD * blocks_per_era;
         let claimer: T::AccountId = whitelisted_caller();
-    }: _(RawOrigin::Signed(claimer.clone()), contract_id.clone(), staked_era)
-    verify {
-        assert_last_event::<T>(Event::<T>::ContractClaimed(contract_id, staked_era, expected_reward.into()).into());
-    }
+    }: _(RawOrigin::Signed(claimer.clone()), contract_id.clone(), claim_era)
 
     force_new_era {
     }: _(RawOrigin::Root)
