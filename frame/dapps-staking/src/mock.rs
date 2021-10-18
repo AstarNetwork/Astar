@@ -11,7 +11,8 @@ use codec::{Decode, Encode};
 use sp_io::TestExternalities;
 use sp_runtime::{
     testing::Header,
-    traits::{BlakeTwo256, IdentityLookup}, Perbill,
+    traits::{BlakeTwo256, IdentityLookup},
+    Perbill,
 };
 
 pub(crate) type AccountId = u64;

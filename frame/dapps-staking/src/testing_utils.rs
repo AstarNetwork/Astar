@@ -162,10 +162,7 @@ pub(crate) fn check_paidout_rewards_for_contract(
 ) {
     let contract_staking_info =
         mock::DappsStaking::contract_era_stake(contract, era).unwrap_or_default();
-    assert_eq!(
-        contract_staking_info.claimed_rewards,
-        expected_rewards,
-    )
+    assert_eq!(contract_staking_info.claimed_rewards, expected_rewards,)
 }
 
 /// Used to verify that storage is cleared of all contract related values after unregistration.

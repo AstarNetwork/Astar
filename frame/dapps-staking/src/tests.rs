@@ -284,7 +284,9 @@ fn bond_and_stake_different_eras_is_ok() {
             vec![(staker_id, first_stake_value)],
         );
         assert_eq!(
-            EraRewardsAndStakes::<TestRuntime>::get(current_era).unwrap().staked,
+            EraRewardsAndStakes::<TestRuntime>::get(current_era)
+                .unwrap()
+                .staked,
             first_stake_value,
         );
 
@@ -320,7 +322,9 @@ fn bond_and_stake_different_eras_is_ok() {
             vec![(staker_id, total_stake_value)],
         );
         assert_eq!(
-            EraRewardsAndStakes::<TestRuntime>::get(current_era).unwrap().staked,
+            EraRewardsAndStakes::<TestRuntime>::get(current_era)
+                .unwrap()
+                .staked,
             total_stake_value,
         );
     })
@@ -370,7 +374,9 @@ fn bond_and_stake_two_different_contracts_is_ok() {
             vec![(staker_id, second_stake_value)],
         );
         assert_eq!(
-            EraRewardsAndStakes::<TestRuntime>::get(current_era).unwrap().staked,
+            EraRewardsAndStakes::<TestRuntime>::get(current_era)
+                .unwrap()
+                .staked,
             total_stake_value,
         );
     })
@@ -417,7 +423,9 @@ fn bond_and_stake_two_stakers_one_contract_is_ok() {
             ],
         );
         assert_eq!(
-            EraRewardsAndStakes::<TestRuntime>::get(current_era).unwrap().staked,
+            EraRewardsAndStakes::<TestRuntime>::get(current_era)
+                .unwrap()
+                .staked,
             total_stake_value,
         );
     })
@@ -538,7 +546,9 @@ fn bond_and_stake_history_depth_has_passed_is_ok() {
             vec![(staker_id, total_staked)],
         );
         assert_eq!(
-            EraRewardsAndStakes::<TestRuntime>::get(current_era).unwrap().staked,
+            EraRewardsAndStakes::<TestRuntime>::get(current_era)
+                .unwrap()
+                .staked,
             total_staked,
         );
 
@@ -550,7 +560,9 @@ fn bond_and_stake_history_depth_has_passed_is_ok() {
             vec![(staker_id, first_staking_amount)],
         );
         assert_eq!(
-            EraRewardsAndStakes::<TestRuntime>::get(current_era).unwrap().staked,
+            EraRewardsAndStakes::<TestRuntime>::get(current_era)
+                .unwrap()
+                .staked,
             total_staked,
         );
     })
@@ -679,7 +691,9 @@ fn unbond_unstake_and_withdraw_multiple_time_is_ok() {
             vec![(staker_id, new_staked_value)],
         );
         assert_eq!(
-            EraRewardsAndStakes::<TestRuntime>::get(new_era).unwrap().staked,
+            EraRewardsAndStakes::<TestRuntime>::get(new_era)
+                .unwrap()
+                .staked,
             new_staked_value,
         );
 
@@ -708,7 +722,9 @@ fn unbond_unstake_and_withdraw_multiple_time_is_ok() {
             vec![(staker_id, new_staked_value)],
         );
         assert_eq!(
-            EraRewardsAndStakes::<TestRuntime>::get(new_era).unwrap().staked,
+            EraRewardsAndStakes::<TestRuntime>::get(new_era)
+                .unwrap()
+                .staked,
             new_staked_value,
         );
     })
@@ -757,7 +773,9 @@ fn unbond_unstake_and_withdraw_value_below_staking_threshold() {
 
         verify_era_staking_points(&contract_id, Zero::zero(), current_era, vec![]);
         assert_eq!(
-            EraRewardsAndStakes::<TestRuntime>::get(current_era).unwrap().staked,
+            EraRewardsAndStakes::<TestRuntime>::get(current_era)
+                .unwrap()
+                .staked,
             Zero::zero(),
         );
     })
@@ -808,7 +826,9 @@ fn unbond_unstake_and_withdraw_in_different_eras() {
             ],
         );
         assert_eq!(
-            EraRewardsAndStakes::<TestRuntime>::get(current_era).unwrap().staked,
+            EraRewardsAndStakes::<TestRuntime>::get(current_era)
+                .unwrap()
+                .staked,
             new_total_staked,
         );
 
@@ -841,7 +861,9 @@ fn unbond_unstake_and_withdraw_in_different_eras() {
             ],
         );
         assert_eq!(
-            EraRewardsAndStakes::<TestRuntime>::get(current_era).unwrap().staked,
+            EraRewardsAndStakes::<TestRuntime>::get(current_era)
+                .unwrap()
+                .staked,
             new_total_staked,
         );
     })
@@ -895,7 +917,9 @@ fn unbond_unstake_and_withdraw_history_depth_has_passed_is_ok() {
             vec![(staker_id, total_staked)],
         );
         assert_eq!(
-            EraRewardsAndStakes::<TestRuntime>::get(current_era).unwrap().staked,
+            EraRewardsAndStakes::<TestRuntime>::get(current_era)
+                .unwrap()
+                .staked,
             total_staked,
         );
 
@@ -907,7 +931,9 @@ fn unbond_unstake_and_withdraw_history_depth_has_passed_is_ok() {
             vec![(staker_id, first_staking_amount)],
         );
         assert_eq!(
-            EraRewardsAndStakes::<TestRuntime>::get(current_era).unwrap().staked,
+            EraRewardsAndStakes::<TestRuntime>::get(current_era)
+                .unwrap()
+                .staked,
             total_staked,
         );
 
@@ -940,7 +966,9 @@ fn unbond_unstake_and_withdraw_history_depth_has_passed_is_ok() {
             vec![(staker_id, total_staked)],
         );
         assert_eq!(
-            EraRewardsAndStakes::<TestRuntime>::get(current_era).unwrap().staked,
+            EraRewardsAndStakes::<TestRuntime>::get(current_era)
+                .unwrap()
+                .staked,
             total_staked,
         );
     })

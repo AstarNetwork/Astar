@@ -704,10 +704,18 @@ pub mod pallet {
             if let Some(staking_info) = ContractEraStake::<T>::get(contract_id, era) {
                 staking_info
             } else {
-                let max_era = ContractEraStake::<T>::iter_key_prefix(&contract_id)
-                    .max()
+                let mut storage_eras =
+                    ContractEraStake::<T>::iter_key_prefix(&contract_id).collect::<Vec<_>>();
+                // XXX: Storage have no sort guaraties for keys.
+                storage_eras.sort();
+
+                let avail_era = storage_eras
+                    .iter()
+                    .cloned()
+                    .take_while(|k| *k <= era)
+                    .next()
                     .unwrap_or(Zero::zero());
-                ContractEraStake::<T>::get(contract_id, max_era).unwrap_or_default()
+                ContractEraStake::<T>::get(contract_id, avail_era).unwrap_or_default()
             }
         }
     }
