@@ -459,7 +459,6 @@ pub mod pallet {
 
             // Get the latest era staking points for the contract.
             let current_era = Self::current_era();
-            println!("FETCHING STAKING POINT IN UNBOND");
             let mut staking_info = Self::staking_info(&contract_id, current_era);
 
             ensure!(
@@ -492,9 +491,7 @@ pub mod pallet {
             });
 
             // Update the era staking points
-            println!("BEFORE: {:?}", staking_info.total);
             staking_info.total = staking_info.total.saturating_sub(value_to_unstake);
-            println!("AFTER: {:?}", staking_info.total);
             ContractEraStake::<T>::insert(contract_id.clone(), current_era, staking_info);
 
             Self::deposit_event(Event::<T>::UnbondUnstakeAndWithdraw(
@@ -696,25 +693,16 @@ pub mod pallet {
             if let Some(staking_info) = ContractEraStake::<T>::get(contract_id, era) {
                 staking_info
             } else {
-                let max_era = ContractEraStake::<T>::iter_key_prefix(&contract_id)
+                let mut storage_eras =
+                    ContractEraStake::<T>::iter_key_prefix(&contract_id).collect::<Vec<_>>();
+
+                let avail_era = storage_eras
+                    .iter()
+                    .cloned()
+                    .filter(|x| *x < era)
                     .max()
                     .unwrap_or(Zero::zero());
-                ContractEraStake::<T>::get(contract_id, max_era).unwrap_or_default()
-
-                // TODO: fix this
-                // let mut storage_eras =
-                //     ContractEraStake::<T>::iter_key_prefix(&contract_id).collect::<Vec<_>>();
-                // // XXX: Storage have no sort guaraties for keys.
-                // storage_eras.sort();
-
-                // let avail_era = storage_eras
-                //     .iter()
-                //     .cloned()
-                //     .take_while(|k| *k <= era)
-                //     .next()
-                //     .unwrap_or(Zero::zero());
-                // println!("ERA: {:?}", avail_era);
-                // ContractEraStake::<T>::get(contract_id, avail_era).unwrap_or_default()
+                ContractEraStake::<T>::get(contract_id, avail_era).unwrap_or_default()
             }
         }
     }
