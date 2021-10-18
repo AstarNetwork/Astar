@@ -13,9 +13,10 @@ targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
 codec = { package = "parity-scale-codec", version = "2.0.0", default-features = false }
-evm = { version="0.30.0", default-features = false }
+evm = { version="0.31.0", default-features = false }
 sp-std = { git = "https://github.com/PlasmNetwork/substrate", branch = "astar-polkadot-v0.9.10", default-features = false }
 sp-core = { git = "https://github.com/PlasmNetwork/substrate", branch = "astar-polkadot-v0.9.10", default-features = false }
+sc-transaction-pool = {  version = "4.0.0-dev", git = "https://github.com/PlasmNetwork/substrate", branch = "astar-polkadot-v0.9.10", default-features = false }
 frame-support = { git = "https://github.com/PlasmNetwork/substrate", branch = "astar-polkadot-v0.9.10", default-features = false }
 frame-system = { git = "https://github.com/PlasmNetwork/substrate", branch = "astar-polkadot-v0.9.10", default-features = false }
 pallet-evm = { git="https://github.com/PlasmNetwork/frontier", branch = "astar-polkadot-v0.9.10", default-features = false }
