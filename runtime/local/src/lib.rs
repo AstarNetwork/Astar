@@ -283,7 +283,7 @@ impl pallet_block_reward::Config for Runtime {
 parameter_types! {
     pub const BlockPerEra: BlockNumber = 60;
     pub const RegisterDeposit: Balance = 100 * AST;
-    pub const DeveloperRewardPercentage: u32 = 80;
+    pub const DeveloperRewardPercentage: Perbill = Perbill::from_percent(80);
     pub const MaxNumberOfStakersPerContract: u32 = 512;
     pub const MinimumStakingAmount: Balance = 10 * AST;
     pub const HistoryDepth: u32 = 15;

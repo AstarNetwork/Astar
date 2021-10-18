@@ -274,7 +274,7 @@ impl pallet_custom_signatures::Config for Runtime {
 parameter_types! {
     pub const BlockPerEra: BlockNumber = 1 * DAYS;
     pub const RegisterDeposit: Balance = 100 * SDN;
-    pub const DeveloperRewardPercentage: u32 = 80;
+    pub const DeveloperRewardPercentage: Perbill = Perbill::from_percent(80);
     pub const MaxNumberOfStakersPerContract: u32 = 512;
     pub const MinimumStakingAmount: Balance = 100 * SDN;
     pub const HistoryDepth: u32 = 15;
@@ -1009,7 +1009,7 @@ impl_runtime_apis! {
 
     #[cfg(feature = "runtime-benchmarks")]
     impl frame_benchmarking::Benchmark<Block> for Runtime {
-        fn benchmark_metadata(_extra: bool) -> (
+        fn benchmark_metadata(extra: bool) -> (
             Vec<frame_benchmarking::BenchmarkList>,
             Vec<frame_support::traits::StorageInfo>,
         ) {

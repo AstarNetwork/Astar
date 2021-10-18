@@ -525,7 +525,6 @@ pub mod pallet {
                 Error::<T>::EraOutOfBounds,
             );
 
-            println!("Current era: {:?}", current_era);
             let mut staking_info = Self::staking_info(&contract_id, era);
 
             ensure!(

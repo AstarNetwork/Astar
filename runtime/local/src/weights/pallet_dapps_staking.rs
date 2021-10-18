@@ -83,10 +83,9 @@ impl<T: frame_system::Config> pallet_dapps_staking::WeightInfo for WeightInfo<T>
 	// Storage: Balances Locks (r:1 w:1)
 	// Storage: DappsStaking ContractLastClaimed (r:0 w:1)
 	// Storage: DappsStaking ContractEraStake (r:0 w:1)
-	fn bond_and_stake(n: u32, ) -> Weight {
+	fn bond_and_stake() -> Weight {
 		(105_992_000 as Weight)
 			// Standard Error: 18_000
-			.saturating_add((698_000 as Weight).saturating_mul(n as Weight))
 			.saturating_add(T::DbWeight::get().reads(7 as Weight))
 			.saturating_add(T::DbWeight::get().writes(4 as Weight))
 	}
@@ -98,10 +97,9 @@ impl<T: frame_system::Config> pallet_dapps_staking::WeightInfo for WeightInfo<T>
 	// Storage: DappsStaking CurrentEra (r:1 w:0)
 	// Storage: DappsStaking EraRewardsAndStakes (r:1 w:1)
 	// Storage: DappsStaking RewardsClaimed (r:0 w:1)
-	fn unbond_unstake_and_withdraw(n: u32, ) -> Weight {
+	fn unbond_unstake_and_withdraw() -> Weight {
 		(115_838_000 as Weight)
 			// Standard Error: 15_000
-			.saturating_add((677_000 as Weight).saturating_mul(n as Weight))
 			.saturating_add(T::DbWeight::get().reads(7 as Weight))
 			.saturating_add(T::DbWeight::get().writes(6 as Weight))
 	}
@@ -113,15 +111,12 @@ impl<T: frame_system::Config> pallet_dapps_staking::WeightInfo for WeightInfo<T>
 	// Storage: DappsStaking ContractEraStake (r:1 w:2)
 	// Storage: DappsStaking EraRewardsAndStakes (r:60 w:0)
 	// Storage: DappsStaking RewardsClaimed (r:2 w:2)
-	fn claim(n: u32, m: u32, ) -> Weight {
+	fn claim(n: u32) -> Weight {
 		(0 as Weight)
 			// Standard Error: 206_000
 			.saturating_add((17_157_000 as Weight).saturating_mul(n as Weight))
-			// Standard Error: 415_000
-			.saturating_add((14_569_000 as Weight).saturating_mul(m as Weight))
 			.saturating_add(T::DbWeight::get().reads(6 as Weight))
 			.saturating_add(T::DbWeight::get().reads((1 as Weight).saturating_mul(n as Weight)))
-			.saturating_add(T::DbWeight::get().reads((1 as Weight).saturating_mul(m as Weight)))
 			.saturating_add(T::DbWeight::get().writes(4 as Weight))
 			.saturating_add(T::DbWeight::get().writes((1 as Weight).saturating_mul(n as Weight)))
 	}
