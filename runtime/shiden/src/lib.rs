@@ -92,7 +92,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("shiden"),
     impl_name: create_runtime_str!("shiden"),
     authoring_version: 1,
-    spec_version: 17,
+    spec_version: 19,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 1,
@@ -278,6 +278,7 @@ parameter_types! {
     pub const MaxNumberOfStakersPerContract: u32 = 512;
     pub const MinimumStakingAmount: Balance = 100 * SDN;
     pub const HistoryDepth: u32 = 15;
+    pub const BonusEraDuration: u32 = 10;
 }
 
 impl pallet_dapps_staking::Config for Runtime {
@@ -293,6 +294,7 @@ impl pallet_dapps_staking::Config for Runtime {
     type PalletId = DappsStakingPalletId;
     type TreasuryPalletId = TreasuryPalletId;
     type HistoryDepth = HistoryDepth;
+    type BonusEraDuration = BonusEraDuration;
 }
 
 /// Multi-VM pointer to smart contract instance.

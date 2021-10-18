@@ -287,6 +287,7 @@ parameter_types! {
     pub const MaxNumberOfStakersPerContract: u32 = 512;
     pub const MinimumStakingAmount: Balance = 10 * AST;
     pub const HistoryDepth: u32 = 15;
+    pub const BonusEraDuration: u32 = 100;
 }
 
 impl pallet_dapps_staking::Config for Runtime {
@@ -302,6 +303,7 @@ impl pallet_dapps_staking::Config for Runtime {
     type PalletId = DappsStakingPalletId;
     type TreasuryPalletId = TreasuryPalletId;
     type HistoryDepth = HistoryDepth;
+    type BonusEraDuration = BonusEraDuration;
 }
 
 /// Multi-VM pointer to smart contract instance.
