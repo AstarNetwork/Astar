@@ -73,6 +73,8 @@ pub struct EraStakingPoints<AccountId: Ord, Balance: HasCompact> {
     total: Balance,
     /// The map of stakers and the amount they staked.
     stakers: BTreeMap<AccountId, Balance>,
+    // TODO: Get rid of this
+    former_staked_era: EraIndex,
     /// Accrued and claimed rewards on this contract both for stakers and the developer
     claimed_rewards: Balance,
 }

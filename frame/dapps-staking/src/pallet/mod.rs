@@ -416,15 +416,11 @@ pub mod pallet {
             );
 
             // Update total staked value in era.
-            EraRewardsAndStakes::<T>::mutate(
-                &current_era,
-                // XXX: RewardsAndStakes should be set by `on_initialize` for each era
-                |value| {
-                    if let Some(x) = value {
-                        x.staked = x.staked.saturating_add(value_to_stake)
-                    }
-                },
-            );
+            EraRewardsAndStakes::<T>::mutate(&current_era, |value| {
+                if let Some(x) = value {
+                    x.staked = x.staked.saturating_add(value_to_stake)
+                }
+            });
 
             // Update ledger and payee
             Self::update_ledger(&staker, ledger);
@@ -463,17 +459,15 @@ pub mod pallet {
 
             // Get the latest era staking points for the contract.
             let current_era = Self::current_era();
+            println!("FETCHING STAKING POINT IN UNBOND");
             let mut staking_info = Self::staking_info(&contract_id, current_era);
 
-            // Ensure that the staker actually has this contract staked.
             ensure!(
                 staking_info.stakers.contains_key(&staker),
                 Error::<T>::NotStakedContract,
             );
-            // XXX: It's safe becaouse of checking existence above.
             let staked_value = staking_info.stakers[&staker];
 
-            // Ensure that unstaked value isn't overflow.
             ensure!(value <= staked_value, Error::<T>::InsufficientValue);
 
             // Calculate the value which will be unstaked.
@@ -483,26 +477,24 @@ pub mod pallet {
                 staked_value
             } else {
                 staking_info.stakers.insert(staker.clone(), remaining);
-                staked_value.saturating_sub(remaining)
+                value
             };
-            staking_info.total = staking_info.total.saturating_sub(value_to_unstake);
 
             // Get the staking ledger and update it
             let ledger = Self::ledger(&staker);
             Self::update_ledger(&staker, ledger.saturating_sub(value_to_unstake));
 
             // Update total staked value in era.
-            EraRewardsAndStakes::<T>::mutate(
-                &current_era,
-                // XXX: RewardsAndStakes should be set by `on_initialize` for each era
-                |value| {
-                    if let Some(x) = value {
-                        x.staked = x.staked.saturating_sub(value_to_unstake)
-                    }
-                },
-            );
+            EraRewardsAndStakes::<T>::mutate(&current_era, |value| {
+                if let Some(x) = value {
+                    x.staked = x.staked.saturating_sub(value_to_unstake)
+                }
+            });
 
             // Update the era staking points
+            println!("BEFORE: {:?}", staking_info.total);
+            staking_info.total = staking_info.total.saturating_sub(value_to_unstake);
+            println!("AFTER: {:?}", staking_info.total);
             ContractEraStake::<T>::insert(contract_id.clone(), current_era, staking_info);
 
             Self::deposit_event(Event::<T>::UnbondUnstakeAndWithdraw(
@@ -697,25 +689,32 @@ pub mod pallet {
 
         /// This helper returns `EraStakingPoints` for given era if possible or latest stored data
         /// or finally default value if storage have no data for it.
-        fn staking_info(
+        pub(crate) fn staking_info(
             contract_id: &T::SmartContract,
             era: EraIndex,
         ) -> EraStakingPoints<T::AccountId, BalanceOf<T>> {
             if let Some(staking_info) = ContractEraStake::<T>::get(contract_id, era) {
                 staking_info
             } else {
-                let mut storage_eras =
-                    ContractEraStake::<T>::iter_key_prefix(&contract_id).collect::<Vec<_>>();
-                // XXX: Storage have no sort guaraties for keys.
-                storage_eras.sort();
-
-                let avail_era = storage_eras
-                    .iter()
-                    .cloned()
-                    .take_while(|k| *k <= era)
-                    .next()
+                let max_era = ContractEraStake::<T>::iter_key_prefix(&contract_id)
+                    .max()
                     .unwrap_or(Zero::zero());
-                ContractEraStake::<T>::get(contract_id, avail_era).unwrap_or_default()
+                ContractEraStake::<T>::get(contract_id, max_era).unwrap_or_default()
+
+                // TODO: fix this
+                // let mut storage_eras =
+                //     ContractEraStake::<T>::iter_key_prefix(&contract_id).collect::<Vec<_>>();
+                // // XXX: Storage have no sort guaraties for keys.
+                // storage_eras.sort();
+
+                // let avail_era = storage_eras
+                //     .iter()
+                //     .cloned()
+                //     .take_while(|k| *k <= era)
+                //     .next()
+                //     .unwrap_or(Zero::zero());
+                // println!("ERA: {:?}", avail_era);
+                // ContractEraStake::<T>::get(contract_id, avail_era).unwrap_or_default()
             }
         }
     }
