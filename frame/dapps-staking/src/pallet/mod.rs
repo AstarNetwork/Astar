@@ -416,13 +416,12 @@ pub mod pallet {
             );
 
             // Update total staked value in era.
-            let staking_total = staking_info.total;
             EraRewardsAndStakes::<T>::mutate(
                 &current_era,
                 // XXX: RewardsAndStakes should be set by `on_initialize` for each era
                 |value| {
                     if let Some(x) = value {
-                        x.staked = x.staked.saturating_add(staking_total)
+                        x.staked = x.staked.saturating_add(value_to_stake)
                     }
                 },
             );
@@ -467,19 +466,25 @@ pub mod pallet {
             let mut staking_info = Self::staking_info(&contract_id, current_era);
 
             // Ensure that the staker actually has this contract staked.
-            let staked_value = staking_info.stakers.entry(staker.clone()).or_default();
+            ensure!(
+                staking_info.stakers.contains_key(&staker),
+                Error::<T>::NotStakedContract,
+            );
+            // XXX: It's safe becaouse of checking existence above.
+            let staked_value = staking_info.stakers[&staker];
 
-            ensure!(value <= *staked_value, Error::<T>::InsufficientValue,);
+            // Ensure that unstaked value isn't overflow.
+            ensure!(value <= staked_value, Error::<T>::InsufficientValue);
 
             // Calculate the value which will be unstaked.
             let remaining = staked_value.saturating_sub(value);
             let value_to_unstake = if remaining < T::MinimumStakingAmount::get() {
-                *staked_value
+                staking_info.stakers.remove(&staker);
+                staked_value
             } else {
+                staking_info.stakers.insert(staker.clone(), remaining);
                 staked_value.saturating_sub(remaining)
             };
-
-            *staked_value = staked_value.saturating_sub(value_to_unstake);
             staking_info.total = staking_info.total.saturating_sub(value_to_unstake);
 
             // Get the staking ledger and update it
@@ -487,13 +492,12 @@ pub mod pallet {
             Self::update_ledger(&staker, ledger.saturating_sub(value_to_unstake));
 
             // Update total staked value in era.
-            let staking_total = staking_info.total;
             EraRewardsAndStakes::<T>::mutate(
                 &current_era,
                 // XXX: RewardsAndStakes should be set by `on_initialize` for each era
                 |value| {
                     if let Some(x) = value {
-                        x.staked = x.staked.saturating_sub(staking_total)
+                        x.staked = x.staked.saturating_sub(value_to_unstake)
                     }
                 },
             );

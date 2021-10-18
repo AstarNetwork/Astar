@@ -11,7 +11,7 @@ use codec::{Decode, Encode};
 use sp_io::TestExternalities;
 use sp_runtime::{
     testing::Header,
-    traits::{BlakeTwo256, IdentityLookup},
+    traits::{BlakeTwo256, IdentityLookup}, Perbill,
 };
 
 pub(crate) type AccountId = u64;
@@ -47,7 +47,7 @@ construct_runtime!(
         System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
         Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
         Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
-        DappsStaking: pallet_dapps_staking::{Pallet, Call, Config, Storage, Event<T>},
+        DappsStaking: pallet_dapps_staking::{Pallet, Call, Storage, Event<T>},
     }
 );
 
@@ -117,7 +117,7 @@ parameter_types! {
     pub const MaxNumberOfStakersPerContract: u32 = MAX_NUMBER_OF_STAKERS;
     pub const MinimumStakingAmount: Balance = MINIMUM_STAKING_AMOUNT;
     pub const HistoryDepth: u32 = HISTORY_DEPTH;
-    pub const DeveloperRewardPercentage: u32 = DEVELOPER_REWARD_PERCENTAGE;
+    pub const DeveloperRewardPercentage: Perbill = Perbill::from_percent(DEVELOPER_REWARD_PERCENTAGE);
     pub const DappsStakingPalletId: PalletId = PalletId(*b"mokdpstk");
     pub const TreasuryPalletId: PalletId = PalletId(*b"moktrsry");
 }
