@@ -188,8 +188,6 @@ benchmarks! {
 
 }
 
-// TODO: Fix multiplication for claim. I haven't managed to convert BlockNumber to u32 even though it has AtLeast32BitUnsigned trait. Investigate more later!
-
 impl_benchmark_test_suite!(
     DappsStaking,
     crate::tests::new_test_ext(),

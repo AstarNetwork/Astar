@@ -1,9 +1,120 @@
 use super::{pallet::pallet::Error, Event, *};
-use frame_support::{assert_noop, assert_ok};
+use frame_support::{
+    assert_noop, assert_ok,
+    traits::{OnInitialize, OnUnbalanced},
+};
 use mock::{Balances, MockSmartContract, *};
 use sp_core::H160;
 use sp_runtime::traits::Zero;
+
 use testing_utils::*;
+
+#[test]
+fn on_unbalanced_is_ok() {
+    ExternalityBuilder::build().execute_with(|| {
+        // At the beginning, both should be 0
+        assert!(BlockRewardAccumulator::<TestRuntime>::get().is_zero());
+        assert!(free_balance_of_dapps_staking_account().is_zero());
+
+        // After handling imbalance, accumulator and account should be updated
+        DappsStaking::on_unbalanced(Balances::issue(BLOCK_REWARD));
+        assert_eq!(BLOCK_REWARD, BlockRewardAccumulator::<TestRuntime>::get());
+        assert_eq!(BLOCK_REWARD, free_balance_of_dapps_staking_account());
+
+        // After triggering a new era, accumulator should be set to 0 but account shouldn't consume any new imbalance
+        DappsStaking::on_initialize(System::block_number());
+        assert!(BlockRewardAccumulator::<TestRuntime>::get().is_zero());
+        assert_eq!(BLOCK_REWARD, free_balance_of_dapps_staking_account());
+    })
+}
+
+#[test]
+fn on_initialize_is_ok() {
+    ExternalityBuilder::build().execute_with(|| {
+        // Before we start, era is zero
+        assert!(DappsStaking::current_era().is_zero());
+
+        // We initialize the first block and advance to second one. New era must be triggered.
+        initialize_first_block();
+        let current_era = DappsStaking::current_era();
+        assert_eq!(1, current_era);
+
+        // Now advance by history limit. Ensure that rewards for era 1 still exist.
+        let previous_era = current_era;
+        advance_to_era(previous_era + HistoryDepth::get() + 1);
+
+        // Check that all reward&stakes are as expected
+        let current_era = DappsStaking::current_era();
+        for era in 1..current_era {
+            let era_rewards_and_stakes = EraRewardsAndStakes::<TestRuntime>::get(era).unwrap();
+            assert_eq!(get_total_reward_per_era(), era_rewards_and_stakes.rewards);
+        }
+        // Current era rewards should be 0
+        verify_pallet_era_staked_and_reward(current_era, 0, 0);
+    })
+}
+
+#[test]
+fn staking_info_is_ok() {
+    ExternalityBuilder::build().execute_with(|| {
+        initialize_first_block();
+
+        let contract_id = MockSmartContract::Evm(H160::repeat_byte(0x01));
+        register_contract(10, &contract_id);
+
+        let staker_1 = 1;
+        let staker_2 = 2;
+        let staker_3 = 3;
+        let amount = 100;
+
+        // Prepare a little scenario.
+        // staker_1 --> stakes starting era, doesn't unstake
+        // staker_2 --> stakes starting era, unstakes everything before final era
+        // staker_3 --> stakes after starting era, doesn't unstake
+
+        let starting_era = 3;
+        advance_to_era(starting_era);
+        bond_and_stake_with_verification(staker_1, &contract_id, amount);
+        bond_and_stake_with_verification(staker_2, &contract_id, amount);
+
+        let mid_era = 7;
+        advance_to_era(mid_era);
+        unbond_unstake_and_withdraw_with_verification(staker_2, &contract_id, amount);
+        bond_and_stake_with_verification(staker_3, &contract_id, amount);
+
+        let final_era = 12;
+        advance_to_era(final_era);
+
+        // Checks
+
+        // Check first interval
+        for era in starting_era..mid_era {
+            let staking_info = DappsStaking::staking_info(&contract_id, era);
+            assert_eq!(2_usize, staking_info.stakers.len());
+            assert!(staking_info.stakers.contains_key(&staker_1));
+            assert!(staking_info.stakers.contains_key(&staker_1));
+        }
+
+        // Check second interval
+        for era in mid_era..=final_era {
+            let staking_info = DappsStaking::staking_info(&contract_id, era);
+            assert_eq!(2_usize, staking_info.stakers.len());
+            assert!(staking_info.stakers.contains_key(&staker_1));
+            assert!(staking_info.stakers.contains_key(&staker_3));
+        }
+
+        // Check that before starting era nothing exists
+        let staking_info = DappsStaking::staking_info(&contract_id, starting_era - 1);
+        assert!(staking_info.stakers.is_empty());
+
+        // TODO: Do we want such behavior?
+        // Era hasn't happened yet but value is returned as if it has happened
+        let staking_info = DappsStaking::staking_info(&contract_id, final_era + 1);
+        assert_eq!(2_usize, staking_info.stakers.len());
+        assert!(staking_info.stakers.contains_key(&staker_1));
+        assert!(staking_info.stakers.contains_key(&staker_3));
+    })
+}
 
 #[test]
 fn register_is_ok() {
@@ -1220,8 +1331,14 @@ fn claim_is_ok() {
 
         advance_to_era(start_era + 3);
 
+        let issuance_before_claim = <TestRuntime as Config>::Currency::total_issuance();
         let claim_era = DappsStaking::current_era() - 1;
+
         claim(claimer, contract, claim_era);
+
+        // Claim shouldn't mint new tokens, instead it should just transfer from the dapps staking pallet account
+        let issuance_after_claim = <TestRuntime as Config>::Currency::total_issuance();
+        assert_eq!(issuance_before_claim, issuance_after_claim);
     })
 }
 
@@ -1370,8 +1487,8 @@ fn claim_two_contracts_three_stakers_new() {
         let staker_2_amount_2 = 100;
         let staker_3_amount = 400;
 
-        let era_staked_1 = 1000;
-        let era_staked_2 = 1500;
+        let era_staked_1 = staker_1_amount + staker_2_amount_1;
+        let era_staked_2 = era_staked_1 + staker_2_amount_2 + staker_3_amount;
 
         let contract1 = MockSmartContract::Evm(H160::repeat_byte(0x01));
         let contract2 = MockSmartContract::Evm(H160::repeat_byte(0x02));

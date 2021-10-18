@@ -1,11 +1,18 @@
 use super::*;
 use frame_support::assert_ok;
 use mock::{EraIndex, *};
-use sp_runtime::Perbill;
+use sp_runtime::{traits::AccountIdConversion, Perbill};
+
+/// Used to fetch the free balance of dapps staking account
+pub(crate) fn free_balance_of_dapps_staking_account() -> Balance {
+    <mock::TestRuntime as Config>::Currency::free_balance(
+        &<TestRuntime as Config>::PalletId::get().into_account(),
+    )
+}
 
 /// Used to register contract for staking and assert success.
 pub(crate) fn register_contract(developer: AccountId, contract: &MockSmartContract<AccountId>) {
-    assert_ok!(mock::DappsStaking::enable_developer_pre_approval(
+    assert_ok!(DappsStaking::enable_developer_pre_approval(
         Origin::root(),
         false
     ));
@@ -53,7 +60,7 @@ pub(crate) fn verify_ledger(staker_id: AccountId, staked_value: Balance) {
     assert_eq!(staked_value, ledger);
 }
 
-/// Used to verify era staking points content.
+/// Used to verify era staking points content. Note that this requires era staking points for the specified era to exist.
 pub(crate) fn verify_era_staking_points(
     contract_id: &MockSmartContract<AccountId>,
     total_staked_value: Balance,
@@ -73,7 +80,6 @@ pub(crate) fn verify_era_staking_points(
     }
 }
 
-// TODO: remove this and just use this code where method is called?
 /// Used to verify pallet era staked value.
 pub(crate) fn verify_pallet_era_staked(era: crate::EraIndex, total_staked_value: Balance) {
     // Verify that total staked amount in era is as expected
@@ -118,24 +124,24 @@ pub(crate) fn claim(
 
 /// Used to calculate the expected reward for the staker
 pub(crate) fn calc_expected_staker_reward(
-    era_reward: mock::Balance,
-    era_stake: mock::Balance,
-    contract_stake: mock::Balance,
-    staker_stake: mock::Balance,
-) -> mock::Balance {
+    era_reward: Balance,
+    era_stake: Balance,
+    contract_stake: Balance,
+    staker_stake: Balance,
+) -> Balance {
     let contract_reward = Perbill::from_rational(contract_stake, era_stake) * era_reward;
-    let contract_staker_part =
+    let contract_reward_staker_part =
         Perbill::from_percent(100 - DEVELOPER_REWARD_PERCENTAGE) * contract_reward;
 
-    Perbill::from_rational(staker_stake, contract_stake) * contract_staker_part
+    Perbill::from_rational(staker_stake, contract_stake) * contract_reward_staker_part
 }
 
 /// Used to calculate the expected reward for the developer
 pub(crate) fn calc_expected_developer_reward(
-    era_reward: mock::Balance,
-    era_stake: mock::Balance,
-    contract_stake: mock::Balance,
-) -> mock::Balance {
+    era_reward: Balance,
+    era_stake: Balance,
+    contract_stake: Balance,
+) -> Balance {
     let contract_reward = Perbill::from_rational(contract_stake, era_stake) * era_reward;
     Perbill::from_percent(DEVELOPER_REWARD_PERCENTAGE) * contract_reward
 }
@@ -144,8 +150,8 @@ pub(crate) fn calc_expected_developer_reward(
 /// Check that claimed rewards for staker/dev are updated.
 pub(crate) fn check_rewards_on_balance_and_storage(
     user: &AccountId,
-    free_balance: mock::Balance,
-    expected_era_reward: mock::Balance,
+    free_balance: Balance,
+    expected_era_reward: Balance,
 ) {
     assert_eq!(
         <TestRuntime as Config>::Currency::free_balance(user),
