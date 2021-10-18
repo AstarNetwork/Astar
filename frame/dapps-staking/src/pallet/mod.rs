@@ -341,7 +341,7 @@ pub mod pallet {
                 },
             );
 
-            // Developer account released but contract can not be released more. 
+            // Developer account released but contract can not be released more.
             T::Currency::unreserve(&developer, T::RegisterDeposit::get());
             RegisteredDevelopers::<T>::remove(&developer);
 
@@ -369,7 +369,10 @@ pub mod pallet {
             let staker = ensure_signed(origin)?;
 
             // Check that contract is ready for staking.
-            ensure!(Self::is_active(&contract_id), Error::<T>::NotOperatedContract);
+            ensure!(
+                Self::is_active(&contract_id),
+                Error::<T>::NotOperatedContract
+            );
 
             // Get the staking ledger or create an entry if it doesn't exist.
             let mut ledger = Self::ledger(&staker);
@@ -510,8 +513,8 @@ pub mod pallet {
         ) -> DispatchResultWithPostInfo {
             let _ = ensure_signed(origin)?;
 
-            let developer = RegisteredDapps::<T>::get(&contract_id)
-                .ok_or(Error::<T>::NotOperatedContract)?;
+            let developer =
+                RegisteredDapps::<T>::get(&contract_id).ok_or(Error::<T>::NotOperatedContract)?;
 
             // check if the contract is already claimed in this era
             let current_era = Self::current_era();
@@ -694,8 +697,7 @@ pub mod pallet {
                     .take_while(|k| *k <= era)
                     .last()
                     .unwrap_or_default();
-                ContractEraStake::<T>::get(contract_id, avail_era)
-                    .unwrap_or_default()
+                ContractEraStake::<T>::get(contract_id, avail_era).unwrap_or_default()
             }
         }
 
@@ -703,7 +705,7 @@ pub mod pallet {
         fn is_active(contract_id: &T::SmartContract) -> bool {
             if let Some(developer) = RegisteredDapps::<T>::get(contract_id) {
                 if let Some(r_contract_id) = RegisteredDevelopers::<T>::get(&developer) {
-                    return r_contract_id == *contract_id
+                    return r_contract_id == *contract_id;
                 }
             }
             false
