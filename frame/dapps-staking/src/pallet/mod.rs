@@ -525,6 +525,7 @@ pub mod pallet {
                 Error::<T>::EraOutOfBounds,
             );
 
+            println!("Current era: {:?}", current_era);
             let mut staking_info = Self::staking_info(&contract_id, era);
 
             ensure!(
@@ -686,18 +687,16 @@ pub mod pallet {
             if let Some(staking_info) = ContractEraStake::<T>::get(contract_id, era) {
                 staking_info
             } else {
-                // Read latest era below requested that have a data
-                let mut storage_eras =
-                    ContractEraStake::<T>::iter_key_prefix(&contract_id).collect::<Vec<_>>();
-                // XXX: Storage have no sort guaraties for keys.
-                storage_eras.sort();
-                let avail_era = storage_eras
-                    .iter()
-                    .cloned()
-                    .take_while(|k| *k <= era)
-                    .last()
-                    .unwrap_or_default();
-                ContractEraStake::<T>::get(contract_id, avail_era).unwrap_or_default()
+                let avail_era = ContractEraStake::<T>::iter_key_prefix(&contract_id)
+                    .filter(|x| *x <= era)
+                    .max()
+                    .unwrap_or(Zero::zero());
+
+                let mut staking_points =
+                    ContractEraStake::<T>::get(contract_id, avail_era).unwrap_or_default();
+                // Needs to be reset since otherwise it might seem as if rewards were already claimed for this era.
+                staking_points.claimed_rewards = Zero::zero();
+                staking_points
             }
         }
 

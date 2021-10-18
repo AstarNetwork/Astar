@@ -73,7 +73,7 @@ pub(crate) fn verify_era_staking_points(
     }
 }
 
-// TODO: remove this?
+// TODO: remove this and just use this code where method is called?
 /// Used to verify pallet era staked value.
 pub(crate) fn verify_pallet_era_staked(era: crate::EraIndex, total_staked_value: Balance) {
     // Verify that total staked amount in era is as expected
@@ -93,21 +93,6 @@ pub(crate) fn verify_pallet_era_staked_and_reward(
     assert_eq!(total_reward_value, era_rewards.rewards);
 }
 
-/// Used to verify storage content after claim() is successfuly executed.
-pub(crate) fn verify_contract_history_is_cleared(
-    contract: MockSmartContract<AccountId>,
-    from_era: EraIndex,
-    to_era: EraIndex,
-) {
-    // check new ContractEraStaked
-    let era_staking_points = mock::DappsStaking::contract_era_stake(contract, to_era).unwrap();
-
-    // check history storage is cleared
-    for era in from_era..to_era {
-        assert!(mock::DappsStaking::contract_era_stake(contract, era).is_none());
-    }
-}
-
 /// Used to perform claim with success assertion
 pub(crate) fn claim(
     claimer: AccountId,
@@ -119,12 +104,16 @@ pub(crate) fn claim(
         contract,
         claim_era
     ));
-    // check the event for claim
-    // TODO: FIX THIS! We should receive expected reward value!
-    // TODO: or add a method that will calculate it. This is better!
-    // System::assert_last_event(mock::Event::DappsStaking(crate::Event::ContractClaimed(
-    //     contract, claim_era, 0u32.into(),
-    // )));
+
+    let rewards_and_stakes = DappsStaking::era_reward_and_stake(&claim_era).unwrap();
+    let staking_points = DappsStaking::contract_era_stake(&contract, &claim_era).unwrap();
+
+    let reward = Perbill::from_rational(staking_points.total, rewards_and_stakes.staked)
+        * rewards_and_stakes.rewards;
+
+    System::assert_last_event(mock::Event::DappsStaking(crate::Event::ContractClaimed(
+        contract, claim_era, reward,
+    )));
 }
 
 /// Used to calculate the expected reward for the staker
@@ -154,13 +143,12 @@ pub(crate) fn calc_expected_developer_reward(
 /// Check staker/dev Balance after reward distribution.
 /// Check that claimed rewards for staker/dev are updated.
 pub(crate) fn check_rewards_on_balance_and_storage(
-    contract: &MockSmartContract<AccountId>,
     user: &AccountId,
     free_balance: mock::Balance,
     expected_era_reward: mock::Balance,
 ) {
     assert_eq!(
-        <mock::TestRuntime as Config>::Currency::free_balance(user),
+        <TestRuntime as Config>::Currency::free_balance(user),
         free_balance + expected_era_reward
     );
 }
@@ -169,11 +157,8 @@ pub(crate) fn check_rewards_on_balance_and_storage(
 pub(crate) fn check_paidout_rewards_for_contract(
     contract: &MockSmartContract<AccountId>,
     era: EraIndex,
-    expected_rewards: mock::Balance,
+    expected_rewards: Balance,
 ) {
-    // TODO: This will need updates once claim UT is adjusted
-    // let era_last_claimed = mock::DappsStaking::contract_last_claimed(contract).unwrap_or(0);
-    let era_last_claimed: EraIndex = 1_u32;
     let contract_staking_info = DappsStaking::contract_era_stake(contract, era).unwrap_or_default();
     assert_eq!(contract_staking_info.claimed_rewards, expected_rewards,)
 }
