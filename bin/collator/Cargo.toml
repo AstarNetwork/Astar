@@ -111,7 +111,7 @@ polkadot-cli = { git = "https://github.com/paritytech/polkadot", branch = "relea
 
 # benchmark dependencies
 frame-benchmarking = { git = "https://github.com/PlasmNetwork/substrate", branch = "astar-polkadot-v0.9.10", optional = true }
-frame-benchmarking-cli = { git = 'https://github.com/paritytech/substrate', branch = "polkadot-v0.9.10", optional = true }
+frame-benchmarking-cli = { git = "https://github.com/PlasmNetwork/substrate", branch = "astar-polkadot-v0.9.10", optional = true }
 
 [build-dependencies]
 sc-cli = { git = "https://github.com/PlasmNetwork/substrate", branch = "astar-polkadot-v0.9.10", optional = true }
