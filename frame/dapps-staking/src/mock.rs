@@ -121,6 +121,7 @@ parameter_types! {
     pub const DeveloperRewardPercentage: Perbill = Perbill::from_percent(DEVELOPER_REWARD_PERCENTAGE);
     pub const DappsStakingPalletId: PalletId = PalletId(*b"mokdpstk");
     pub const TreasuryPalletId: PalletId = PalletId(*b"moktrsry");
+    pub const BonusEraDuration: u32 = 0;
 }
 
 impl pallet_dapps_staking::Config for TestRuntime {
@@ -133,6 +134,7 @@ impl pallet_dapps_staking::Config for TestRuntime {
     type WeightInfo = weights::SubstrateWeight<TestRuntime>;
     type MaxNumberOfStakersPerContract = MaxNumberOfStakersPerContract;
     type HistoryDepth = HistoryDepth;
+    type BonusEraDuration = BonusEraDuration;
     type MinimumStakingAmount = MinimumStakingAmount;
     type PalletId = DappsStakingPalletId;
     type TreasuryPalletId = TreasuryPalletId;

@@ -83,6 +83,10 @@ pub mod pallet {
         #[pallet::constant]
         type HistoryDepth: Get<u32>;
 
+        /// Number of eras of doubled claim rewards.
+        #[pallet::constant]
+        type BonusEraDuration: Get<u32>;
+
         /// Dapps staking pallet Id
         #[pallet::constant]
         type PalletId: Get<PalletId>;
@@ -537,7 +541,12 @@ pub mod pallet {
 
             // Calculate the contract reward for this era.
             let reward_ratio = Perbill::from_rational(staking_info.total, reward_and_stake.staked);
-            let contract_reward = reward_ratio * reward_and_stake.rewards;
+            let contract_reward = if current_era < T::BonusEraDuration::get() {
+                // Double reward as a bonus.
+                reward_ratio * reward_and_stake.rewards * 2u32.into()
+            } else {
+                reward_ratio * reward_and_stake.rewards
+            };
 
             // Withdraw reward funds from the dapps staking
             let reward_pool = T::Currency::withdraw(
