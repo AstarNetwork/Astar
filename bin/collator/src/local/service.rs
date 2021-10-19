@@ -1,7 +1,7 @@
 //! Local Service and ServiceFactory implementation. Specialized wrapper over substrate service.
 
 use fc_consensus::FrontierBlockImport;
-use fc_rpc_core::types::{FilterPool, PendingTransactions};
+use fc_rpc_core::types::FilterPool;
 use futures::StreamExt;
 use local_runtime::RuntimeApi;
 use sc_client_api::{BlockchainEvents, ExecutorProvider};
@@ -12,11 +12,7 @@ use sc_service::{error::Error as ServiceError, Configuration, TaskManager};
 use sc_telemetry::{Telemetry, TelemetryWorker};
 use sp_consensus::SlotData;
 use sp_consensus_aura::sr25519::AuthorityPair as AuraPair;
-use std::{
-    collections::{BTreeMap, HashMap},
-    sync::Arc,
-    time::Duration,
-};
+use std::{collections::BTreeMap, sync::Arc, time::Duration};
 
 use crate::primitives::*;
 
@@ -197,8 +193,6 @@ pub fn start_node(config: Configuration) -> Result<TaskManager, ServiceError> {
         );
     }
 
-    let pending_transactions: PendingTransactions =
-        Some(Arc::new(std::sync::Mutex::new(HashMap::new())));
     let filter_pool: FilterPool = Arc::new(std::sync::Mutex::new(BTreeMap::new()));
 
     // Frontier offchain DB task. Essential.
@@ -228,18 +222,6 @@ pub fn start_node(config: Configuration) -> Result<TaskManager, ServiceError> {
         ),
     );
 
-    // Frontier pending transactions task. Essential.
-    // Maintenance for the Frontier-specific pending transaction pool.
-    const TRANSACTION_RETAIN_THRESHOLD: u64 = 5;
-    task_manager.spawn_essential_handle().spawn(
-        "frontier-pending-transactions",
-        fc_rpc::EthTask::pending_transaction_task(
-            client.clone(),
-            pending_transactions.clone().expect("unexpected None"),
-            TRANSACTION_RETAIN_THRESHOLD,
-        ),
-    );
-
     task_manager.spawn_essential_handle().spawn(
         "frontier-schema-cache-task",
         fc_rpc::EthTask::ethereum_schema_cache_task(client.clone(), frontier_backend.clone()),
@@ -262,12 +244,12 @@ pub fn start_node(config: Configuration) -> Result<TaskManager, ServiceError> {
             let deps = crate::rpc::FullDeps {
                 client: client.clone(),
                 pool: transaction_pool.clone(),
+                graph: transaction_pool.pool().clone(),
                 network: network.clone(),
                 is_authority,
                 deny_unsafe,
                 frontier_backend: frontier_backend.clone(),
                 transaction_converter: local_runtime::TransactionConverter,
-                pending_transactions: pending_transactions.clone(),
                 filter_pool: filter_pool.clone(),
             };
 
