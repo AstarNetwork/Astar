@@ -171,7 +171,7 @@ checksum = "9b34d609dfbaf33d6889b2b7106d3ca345eacad44200913df5ba02bfd31d2ba9"
 
 [[package]]
 name = "astar-collator"
-version = "2.6.2"
+version = "2.6.3"
 dependencies = [
  "async-trait",
  "cumulus-client-cli",
@@ -804,9 +804,9 @@ checksum = "d9df67f7bf9ef8498769f994239c45613ef0c5899415fb58e9add412d2c1a538"
 
 [[package]]
 name = "byte-slice-cast"
-version = "1.1.0"
+version = "1.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ca0796d76a983651b4a0ddda16203032759f2fd9103d9181f7c65c06ee8872e6"
+checksum = "1d30c751592b77c499e7bce34d99d67c2c11bdc0574e9a488ddade14150a4698"
 
 [[package]]
 name = "byte-tools"
@@ -4473,7 +4473,7 @@ dependencies = [
 
 [[package]]
 name = "local-runtime"
-version = "2.6.2"
+version = "2.6.3"
 dependencies = [
  "evm",
  "fp-rpc",
@@ -9657,7 +9657,7 @@ dependencies = [
 
 [[package]]
 name = "shibuya-runtime"
-version = "2.6.2"
+version = "2.6.3"
 dependencies = [
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-parachain-system",
@@ -9725,7 +9725,7 @@ dependencies = [
 
 [[package]]
 name = "shiden-runtime"
-version = "2.6.2"
+version = "2.6.3"
 dependencies = [
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-parachain-system",

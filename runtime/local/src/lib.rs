@@ -283,10 +283,11 @@ impl pallet_block_reward::Config for Runtime {
 parameter_types! {
     pub const BlockPerEra: BlockNumber = 60;
     pub const RegisterDeposit: Balance = 100 * AST;
-    pub const DeveloperRewardPercentage: u32 = 80;
+    pub const DeveloperRewardPercentage: Perbill = Perbill::from_percent(80);
     pub const MaxNumberOfStakersPerContract: u32 = 512;
     pub const MinimumStakingAmount: Balance = 10 * AST;
-    pub const HistoryDepth: u32 = 4;
+    pub const HistoryDepth: u32 = 14;
+    pub const BonusEraDuration: u32 = 100;
 }
 
 impl pallet_dapps_staking::Config for Runtime {
@@ -302,6 +303,7 @@ impl pallet_dapps_staking::Config for Runtime {
     type PalletId = DappsStakingPalletId;
     type TreasuryPalletId = TreasuryPalletId;
     type HistoryDepth = HistoryDepth;
+    type BonusEraDuration = BonusEraDuration;
 }
 
 /// Multi-VM pointer to smart contract instance.
@@ -932,8 +934,6 @@ impl_runtime_apis! {
             let whitelist: Vec<TrackedStorageKey> = vec![
                 // Block Number
                 hex_literal::hex!("26aa394eea5630e07c48ae0c9558cef702a5c1b19ab7a04f536c519aca4983ac").to_vec().into(),
-                // Total Issuance
-                hex_literal::hex!("c2261276cc9d1f8598ea4b6a74b15c2f57c875e4cff74148e4628f264b974c80").to_vec().into(),
                 // Execution Phase
                 hex_literal::hex!("26aa394eea5630e07c48ae0c9558cef7ff553b5a9862a516939d82b3d3d8661a").to_vec().into(),
                 // Event Count

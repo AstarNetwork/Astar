@@ -1,6 +1,6 @@
 [package]
 name = "shiden-runtime"
-version = "2.6.2"
+version = "2.6.3"
 authors = ["Stake Technologies <devops@stake.co.jp>"]
 edition = "2018"
 build = "build.rs"

@@ -1,10 +1,5 @@
 #![cfg(feature = "runtime-benchmarks")]
 
-// NOTE: in claim() benchmark, number of payees can significantly exceed the max number of stakers.
-// Since 'n' and 'm' aren't independent in this scenario
-// E.g. if we only have 1 staking point, we cannot have more than max_number_of_stakers payees.
-// TODO: maybe add another benchmarking for claim that covers the higher values scenario?
-
 use super::*;
 use crate::Pallet as DappsStaking;
 
@@ -16,13 +11,6 @@ use sp_runtime::traits::{Bounded, One};
 const SEED: u32 = 9000;
 const BLOCK_REWARD: u32 = 1000u32;
 
-// TODO: This needs to be defined in the pallet.
-// Current implementation allows arbitrary amount of staking points to be read from the storage
-// if contract wasn't claimed for a long time. This could cause some very heavy calls.
-// In order to avoid this, we should put a hard limit on how much into the history can we go.
-// This also means that some rewards will just be slashed, they won't be transferred to the treasury.
-const MAX_NUMBER_OF_ERA_STAKING_POINTS: u32 = 60;
-
 /// Used to prepare Dapps staking for testing.
 /// Resets all existing storage ensuring a clean run for the code that follows.
 ///
@@ -33,10 +21,7 @@ fn initialize<T: Config>() {
     RegisteredDevelopers::<T>::remove_all(None);
     RegisteredDapps::<T>::remove_all(None);
     EraRewardsAndStakes::<T>::remove_all(None);
-    RewardsClaimed::<T>::remove_all(None);
     ContractEraStake::<T>::remove_all(None);
-    ContractLastClaimed::<T>::remove_all(None);
-    ContractLastStaked::<T>::remove_all(None);
     CurrentEra::<T>::kill();
     BlockRewardAccumulator::<T>::kill();
     PreApprovalIsEnabled::<T>::kill();
@@ -104,58 +89,6 @@ fn prepare_bond_and_stake<T: Config>(
     Ok(stakers)
 }
 
-/// Used to prepare era staking points for benchmarking claim()
-///
-/// number_of_payees indicates the amount of accounts (developer + stakers) that will get paid after claim() is called.
-/// Note that this number can exceed MAX_AMOUNT_OF_STAKERS since theoretically, each era could have an entirely different set of stakers.
-///
-/// number_of_era_staking_points indicates how many different era_staking_points we have when we call claim. Note that we could have only 1
-/// era_staking_point that happened 30 eras ago but that information would still apply to all the following eras.
-/// Note that we don't take into account situations where two consecutive era_staking_points have a multiple eras in between them. If that
-/// is the case, additional calculation is needed but it doesn't incur any overhead on read/write operations.
-fn prepare_claim<T: Config>(
-    contract_id: &T::SmartContract,
-    number_of_payees: u32,
-    number_of_era_staking_points: u32,
-) -> Result<(), &'static str> {
-    // Developer will always be one of the payees so we need one less staker to fulfill the number_of_payees requirement
-    let number_of_stakers = number_of_payees - 1;
-
-    // Start of with max possible amount of stakers and advance an era
-    let mut stakers_so_far = T::MaxNumberOfStakersPerContract::get().min(number_of_stakers);
-    let mut seed = SEED;
-    let mut stakers = prepare_bond_and_stake::<T>(stakers_so_far, &contract_id, seed)?;
-    advance_to_era::<T>(CurrentEra::<T>::get() + 1u32);
-    // At this point, 'stakers_so_far' rewards can be claimed for different stakers + 1 for the developer
-
-    for _ in 1..number_of_era_staking_points {
-        // Calculate number of remaining payees we need to get into storage but don't exceed max allowed stakers per era.
-        let remaining_payees = number_of_stakers
-            .saturating_sub(stakers_so_far)
-            .min(T::MaxNumberOfStakersPerContract::get());
-
-        // In case we have some remaining payees we need to get into the storage, unbond old ones and add some new ones.
-        if remaining_payees > 0 {
-            for idx in 0..remaining_payees {
-                // Unbond some old stakers. Since era advanced, their rewards will remain.
-                DappsStaking::<T>::unbond_unstake_and_withdraw(
-                    RawOrigin::Signed(stakers[idx as usize].clone()).into(),
-                    contract_id.clone(),
-                    T::MinimumStakingAmount::get(),
-                )?;
-            }
-            // This ensures we don't reuse old account Ids
-            seed += 1;
-            stakers = prepare_bond_and_stake::<T>(remaining_payees, &contract_id, seed)?;
-            stakers_so_far += remaining_payees;
-        }
-
-        advance_to_era::<T>(CurrentEra::<T>::get() + 1u32);
-    }
-
-    Ok(())
-}
-
 benchmarks! {
 
     register {
@@ -176,7 +109,6 @@ benchmarks! {
         for id in 0..n {
             let claimer_id: T::AccountId = account("claimer", id, SEED);
             let balance: BalanceOf<T> = 100000u32.into();
-            RewardsClaimed::<T>::insert(&contract_id, &claimer_id, balance);
         }
 
     }: _(RawOrigin::Signed(developer_id.clone()), contract_id.clone())
@@ -199,11 +131,10 @@ benchmarks! {
     }
 
     bond_and_stake {
-        let n in 0 .. T::MaxNumberOfStakersPerContract::get();
         initialize::<T>();
 
         let (_, contract_id) = register_contract::<T>()?;
-        prepare_bond_and_stake::<T>(n, &contract_id, SEED)?;
+        prepare_bond_and_stake::<T>(T::MaxNumberOfStakersPerContract::get() - 1, &contract_id, SEED)?;
 
         let staker = whitelisted_caller();
         let _ = T::Currency::make_free_balance_be(&staker, BalanceOf::<T>::max_value());
@@ -215,11 +146,10 @@ benchmarks! {
     }
 
     unbond_unstake_and_withdraw {
-        let n in 0 .. T::MaxNumberOfStakersPerContract::get();
         initialize::<T>();
 
         let (_, contract_id) = register_contract::<T>()?;
-        prepare_bond_and_stake::<T>(n, &contract_id, SEED)?;
+        prepare_bond_and_stake::<T>(T::MaxNumberOfStakersPerContract::get() - 1, &contract_id, SEED)?;
 
         let staker = whitelisted_caller();
         let _ = T::Currency::make_free_balance_be(&staker, BalanceOf::<T>::max_value());
@@ -235,18 +165,22 @@ benchmarks! {
 
     claim {
         let n in 2 .. T::MaxNumberOfStakersPerContract::get();
-        let m in 1 .. MAX_NUMBER_OF_ERA_STAKING_POINTS;
 
         initialize::<T>();
         let (developer_id, contract_id) = register_contract::<T>()?;
 
-        prepare_claim::<T>(&contract_id, n, m)?;
-        let current_era = DappsStaking::<T>::current_era();
+        let number_of_stakers = n - 1;
+        let claim_era = DappsStaking::<T>::current_era();
+        prepare_bond_and_stake::<T>(number_of_stakers, &contract_id, SEED)?;
+
+        advance_to_era::<T>(claim_era + 1u32);
+
+        let reward = DappsStaking::<T>::era_reward_and_stake(&claim_era).unwrap().rewards;
 
         let claimer: T::AccountId = whitelisted_caller();
-    }: _(RawOrigin::Signed(claimer.clone()), contract_id.clone())
+    }: _(RawOrigin::Signed(claimer.clone()), contract_id.clone(), claim_era)
     verify {
-        assert_eq!(Some(current_era), ContractLastClaimed::<T>::get(&contract_id));
+        assert_last_event::<T>(Event::<T>::ContractClaimed(contract_id, claim_era, reward).into());
     }
 
     force_new_era {

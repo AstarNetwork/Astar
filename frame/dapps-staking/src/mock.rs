@@ -11,7 +11,8 @@ use codec::{Decode, Encode};
 use sp_io::TestExternalities;
 use sp_runtime::{
     testing::Header,
-    traits::{BlakeTwo256, IdentityLookup},
+    traits::{AccountIdConversion, BlakeTwo256, IdentityLookup},
+    Perbill,
 };
 
 pub(crate) type AccountId = u64;
@@ -47,7 +48,7 @@ construct_runtime!(
         System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
         Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
         Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
-        DappsStaking: pallet_dapps_staking::{Pallet, Call, Config, Storage, Event<T>},
+        DappsStaking: pallet_dapps_staking::{Pallet, Call, Storage, Event<T>},
     }
 );
 
@@ -117,9 +118,10 @@ parameter_types! {
     pub const MaxNumberOfStakersPerContract: u32 = MAX_NUMBER_OF_STAKERS;
     pub const MinimumStakingAmount: Balance = MINIMUM_STAKING_AMOUNT;
     pub const HistoryDepth: u32 = HISTORY_DEPTH;
-    pub const DeveloperRewardPercentage: u32 = DEVELOPER_REWARD_PERCENTAGE;
+    pub const DeveloperRewardPercentage: Perbill = Perbill::from_percent(DEVELOPER_REWARD_PERCENTAGE);
     pub const DappsStakingPalletId: PalletId = PalletId(*b"mokdpstk");
     pub const TreasuryPalletId: PalletId = PalletId(*b"moktrsry");
+    pub const BonusEraDuration: u32 = 3;
 }
 
 impl pallet_dapps_staking::Config for TestRuntime {
@@ -132,6 +134,7 @@ impl pallet_dapps_staking::Config for TestRuntime {
     type WeightInfo = weights::SubstrateWeight<TestRuntime>;
     type MaxNumberOfStakersPerContract = MaxNumberOfStakersPerContract;
     type HistoryDepth = HistoryDepth;
+    type BonusEraDuration = BonusEraDuration;
     type MinimumStakingAmount = MinimumStakingAmount;
     type PalletId = DappsStakingPalletId;
     type TreasuryPalletId = TreasuryPalletId;
@@ -209,8 +212,8 @@ pub fn run_for_blocks(n: u64) {
 ///
 /// Function has no effect if era is already passed.
 pub fn advance_to_era(n: EraIndex) {
-    if n > 0 {
-        run_to_block(BLOCKS_PER_ERA * (n as BlockNumber - 1) + 1);
+    while DappsStaking::current_era() < n {
+        run_for_blocks(1);
     }
 }
 
@@ -219,6 +222,15 @@ pub fn advance_to_era(n: EraIndex) {
 pub fn initialize_first_block() {
     // This assert prevents method misuse
     assert_eq!(System::block_number(), 1 as BlockNumber);
+
+    // We need to beef up the pallet account balance in case of bonus rewards
+    let starting_balance =
+        BLOCK_REWARD * BLOCKS_PER_ERA as Balance * crate::pallet::REWARD_SCALING as Balance;
+    let _ = Balances::deposit_creating(
+        &<TestRuntime as crate::pallet::pallet::Config>::PalletId::get().into_account(),
+        starting_balance,
+    );
+
     // This is performed outside of dapps staking but we expect it before on_initialize
     DappsStaking::on_unbalanced(Balances::issue(BLOCK_REWARD));
     DappsStaking::on_initialize(System::block_number());

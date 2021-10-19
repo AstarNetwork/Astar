@@ -1,12 +1,18 @@
 use super::*;
 use frame_support::assert_ok;
 use mock::{EraIndex, *};
-use sp_runtime::traits::Zero;
-use sp_runtime::Perbill;
+use sp_runtime::{traits::AccountIdConversion, Perbill};
+
+/// Used to fetch the free balance of dapps staking account
+pub(crate) fn free_balance_of_dapps_staking_account() -> Balance {
+    <TestRuntime as Config>::Currency::free_balance(
+        &<TestRuntime as Config>::PalletId::get().into_account(),
+    )
+}
 
 /// Used to register contract for staking and assert success.
 pub(crate) fn register_contract(developer: AccountId, contract: &MockSmartContract<AccountId>) {
-    assert_ok!(mock::DappsStaking::enable_developer_pre_approval(
+    assert_ok!(DappsStaking::enable_developer_pre_approval(
         Origin::root(),
         false
     ));
@@ -54,7 +60,7 @@ pub(crate) fn verify_ledger(staker_id: AccountId, staked_value: Balance) {
     assert_eq!(staked_value, ledger);
 }
 
-/// Used to verify era staking points content.
+/// Used to verify era staking points content. Note that this requires era staking points for the specified era to exist.
 pub(crate) fn verify_era_staking_points(
     contract_id: &MockSmartContract<AccountId>,
     total_staked_value: Balance,
@@ -93,104 +99,88 @@ pub(crate) fn verify_pallet_era_staked_and_reward(
     assert_eq!(total_reward_value, era_rewards.rewards);
 }
 
-/// Used to verify storage content after claim() is successfuly executed.
-pub(crate) fn verify_contract_history_is_cleared(
-    contract: MockSmartContract<AccountId>,
-    from_era: EraIndex,
-    to_era: EraIndex,
-) {
-    // check claim era is changed
-    assert_eq!(
-        mock::DappsStaking::contract_last_claimed(&contract).unwrap_or(Zero::zero()),
-        to_era
-    );
-
-    // check last staked era changed
-    assert_eq!(
-        mock::DappsStaking::contract_last_staked(&contract).unwrap_or(Zero::zero()),
-        to_era
-    );
-
-    // check new ContractEraStaked
-    let era_staking_points = mock::DappsStaking::contract_era_stake(contract, to_era).unwrap();
-    assert_eq!(era_staking_points.former_staked_era, to_era);
-
-    // check history storage is cleared
-    for era in from_era..to_era {
-        assert!(mock::DappsStaking::contract_era_stake(contract, era).is_none());
-    }
-}
-
 /// Used to perform claim with success assertion
-pub(crate) fn claim(
+pub(crate) fn claim_with_verification(
     claimer: AccountId,
     contract: MockSmartContract<AccountId>,
-    start_era: EraIndex,
     claim_era: EraIndex,
 ) {
-    assert_ok!(DappsStaking::claim(Origin::signed(claimer), contract));
-    // check the event for claim
+    assert_ok!(DappsStaking::claim(
+        Origin::signed(claimer),
+        contract,
+        claim_era
+    ));
+
+    let rewards_and_stakes = DappsStaking::era_reward_and_stake(&claim_era).unwrap();
+    let staking_points = DappsStaking::contract_era_stake(&contract, &claim_era).unwrap();
+
+    let reward = Perbill::from_rational(staking_points.total, rewards_and_stakes.staked)
+        * rewards_and_stakes.rewards
+        * reward_scaling_factor(claim_era);
+
     System::assert_last_event(mock::Event::DappsStaking(crate::Event::ContractClaimed(
-        contract, claimer, start_era, claim_era,
+        contract, claim_era, reward,
     )));
+}
+
+// Get reward scaling factor for the given era
+pub(crate) fn reward_scaling_factor(era: EraIndex) -> Balance {
+    if era < BonusEraDuration::get() {
+        pallet::REWARD_SCALING as Balance
+    } else {
+        1 as Balance
+    }
 }
 
 /// Used to calculate the expected reward for the staker
 pub(crate) fn calc_expected_staker_reward(
-    era_reward: mock::Balance,
-    era_stake: mock::Balance,
-    contract_stake: mock::Balance,
-    staker_stake: mock::Balance,
-) -> mock::Balance {
-    let contract_reward = Perbill::from_rational(contract_stake, era_stake) * era_reward;
-    let contract_staker_part =
+    claim_era: EraIndex,
+    contract_stake: Balance,
+    staker_stake: Balance,
+) -> Balance {
+    let rewards_and_stakes = DappsStaking::era_reward_and_stake(&claim_era).unwrap();
+    let contract_reward = Perbill::from_rational(contract_stake, rewards_and_stakes.staked)
+        * rewards_and_stakes.rewards
+        * reward_scaling_factor(claim_era);
+    let contract_reward_staker_part =
         Perbill::from_percent(100 - DEVELOPER_REWARD_PERCENTAGE) * contract_reward;
 
-    Perbill::from_rational(contract_staker_part, contract_stake) * staker_stake
+    Perbill::from_rational(staker_stake, contract_stake) * contract_reward_staker_part
 }
 
 /// Used to calculate the expected reward for the developer
 pub(crate) fn calc_expected_developer_reward(
-    era_reward: mock::Balance,
-    era_stake: mock::Balance,
-    contract_stake: mock::Balance,
-) -> mock::Balance {
-    let contract_reward = Perbill::from_rational(contract_stake, era_stake) * era_reward;
+    claim_era: EraIndex,
+    contract_stake: Balance,
+) -> Balance {
+    let rewards_and_stakes = DappsStaking::era_reward_and_stake(&claim_era).unwrap();
+    let contract_reward = Perbill::from_rational(contract_stake, rewards_and_stakes.staked)
+        * rewards_and_stakes.rewards
+        * reward_scaling_factor(claim_era);
     Perbill::from_percent(DEVELOPER_REWARD_PERCENTAGE) * contract_reward
 }
 
 /// Check staker/dev Balance after reward distribution.
 /// Check that claimed rewards for staker/dev are updated.
 pub(crate) fn check_rewards_on_balance_and_storage(
-    contract: &MockSmartContract<AccountId>,
     user: &AccountId,
-    free_balance: mock::Balance,
-    eras: EraIndex,
-    expected_era_reward: mock::Balance,
+    free_balance: Balance,
+    expected_era_reward: Balance,
 ) {
-    let total_reward_per_era = expected_era_reward * eras as u128;
     assert_eq!(
-        <mock::TestRuntime as Config>::Currency::free_balance(user),
-        free_balance + total_reward_per_era
-    );
-    assert_eq!(
-        mock::DappsStaking::rewards_claimed(contract, user),
-        total_reward_per_era
+        <TestRuntime as Config>::Currency::free_balance(user),
+        free_balance + expected_era_reward
     );
 }
 
 /// Check that claimed rewards on this contract are updated
 pub(crate) fn check_paidout_rewards_for_contract(
     contract: &MockSmartContract<AccountId>,
-    expected_contract_reward: mock::Balance,
+    era: EraIndex,
+    expected_rewards: Balance,
 ) {
-    let era_last_claimed = mock::DappsStaking::contract_last_claimed(contract).unwrap_or(0);
-    let contract_staking_info =
-        mock::DappsStaking::contract_era_stake(contract, era_last_claimed).unwrap_or_default();
-    assert_eq!(
-        contract_staking_info.claimed_rewards,
-        expected_contract_reward
-    )
+    let contract_staking_info = DappsStaking::contract_era_stake(contract, era).unwrap_or_default();
+    assert_eq!(contract_staking_info.claimed_rewards, expected_rewards,)
 }
 
 /// Used to verify that storage is cleared of all contract related values after unregistration.
@@ -203,17 +193,8 @@ pub(crate) fn verify_storage_after_unregister(
         contract_id,
         &current_era
     ));
-    assert!(!RegisteredDapps::<TestRuntime>::contains_key(contract_id));
+    assert!(RegisteredDapps::<TestRuntime>::contains_key(contract_id));
     assert!(!RegisteredDevelopers::<TestRuntime>::contains_key(
         developer
     ));
-    assert!(!ContractLastStaked::<TestRuntime>::contains_key(
-        contract_id
-    ));
-    assert!(!ContractLastClaimed::<TestRuntime>::contains_key(
-        contract_id
-    ));
-    assert!(RewardsClaimed::<TestRuntime>::iter_prefix(&contract_id)
-        .count()
-        .is_zero());
 }
