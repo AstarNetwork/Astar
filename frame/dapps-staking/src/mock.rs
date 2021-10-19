@@ -11,7 +11,7 @@ use codec::{Decode, Encode};
 use sp_io::TestExternalities;
 use sp_runtime::{
     testing::Header,
-    traits::{BlakeTwo256, IdentityLookup},
+    traits::{AccountIdConversion, BlakeTwo256, IdentityLookup},
     Perbill,
 };
 
@@ -121,7 +121,7 @@ parameter_types! {
     pub const DeveloperRewardPercentage: Perbill = Perbill::from_percent(DEVELOPER_REWARD_PERCENTAGE);
     pub const DappsStakingPalletId: PalletId = PalletId(*b"mokdpstk");
     pub const TreasuryPalletId: PalletId = PalletId(*b"moktrsry");
-    pub const BonusEraDuration: u32 = 0;
+    pub const BonusEraDuration: u32 = 3;
 }
 
 impl pallet_dapps_staking::Config for TestRuntime {
@@ -222,6 +222,15 @@ pub fn advance_to_era(n: EraIndex) {
 pub fn initialize_first_block() {
     // This assert prevents method misuse
     assert_eq!(System::block_number(), 1 as BlockNumber);
+
+    // We need to beef up the pallet account balance in case of bonus rewards
+    let starting_balance =
+        BLOCK_REWARD * BLOCKS_PER_ERA as Balance * crate::pallet::REWARD_SCALING as Balance;
+    let _ = Balances::deposit_creating(
+        &<TestRuntime as crate::pallet::pallet::Config>::PalletId::get().into_account(),
+        starting_balance,
+    );
+
     // This is performed outside of dapps staking but we expect it before on_initialize
     DappsStaking::on_unbalanced(Balances::issue(BLOCK_REWARD));
     DappsStaking::on_initialize(System::block_number());

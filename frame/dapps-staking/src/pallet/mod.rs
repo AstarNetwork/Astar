@@ -21,6 +21,8 @@ use sp_std::convert::From;
 
 const STAKING_ID: LockIdentifier = *b"dapstake";
 
+pub(crate) const REWARD_SCALING: u32 = 2;
+
 #[frame_support::pallet]
 pub mod pallet {
     use super::*;
@@ -520,7 +522,6 @@ pub mod pallet {
             let developer =
                 RegisteredDapps::<T>::get(&contract_id).ok_or(Error::<T>::NotOperatedContract)?;
 
-            // check if the contract is already claimed in this era
             let current_era = Self::current_era();
             let era_low_bound = current_era.saturating_sub(T::HistoryDepth::get());
 
@@ -541,9 +542,9 @@ pub mod pallet {
 
             // Calculate the contract reward for this era.
             let reward_ratio = Perbill::from_rational(staking_info.total, reward_and_stake.staked);
-            let contract_reward = if current_era < T::BonusEraDuration::get() {
+            let contract_reward = if era < T::BonusEraDuration::get() {
                 // Double reward as a bonus.
-                reward_ratio * reward_and_stake.rewards * 2u32.into()
+                reward_ratio * reward_and_stake.rewards * REWARD_SCALING.into()
             } else {
                 reward_ratio * reward_and_stake.rewards
             };

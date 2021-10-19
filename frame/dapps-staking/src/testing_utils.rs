@@ -5,7 +5,7 @@ use sp_runtime::{traits::AccountIdConversion, Perbill};
 
 /// Used to fetch the free balance of dapps staking account
 pub(crate) fn free_balance_of_dapps_staking_account() -> Balance {
-    <mock::TestRuntime as Config>::Currency::free_balance(
+    <TestRuntime as Config>::Currency::free_balance(
         &<TestRuntime as Config>::PalletId::get().into_account(),
     )
 }
@@ -100,7 +100,7 @@ pub(crate) fn verify_pallet_era_staked_and_reward(
 }
 
 /// Used to perform claim with success assertion
-pub(crate) fn claim(
+pub(crate) fn claim_with_verification(
     claimer: AccountId,
     contract: MockSmartContract<AccountId>,
     claim_era: EraIndex,
@@ -115,21 +115,33 @@ pub(crate) fn claim(
     let staking_points = DappsStaking::contract_era_stake(&contract, &claim_era).unwrap();
 
     let reward = Perbill::from_rational(staking_points.total, rewards_and_stakes.staked)
-        * rewards_and_stakes.rewards;
+        * rewards_and_stakes.rewards
+        * reward_scaling_factor(claim_era);
 
     System::assert_last_event(mock::Event::DappsStaking(crate::Event::ContractClaimed(
         contract, claim_era, reward,
     )));
 }
 
+// Get reward scaling factor for the given era
+pub(crate) fn reward_scaling_factor(era: EraIndex) -> Balance {
+    if era < BonusEraDuration::get() {
+        pallet::REWARD_SCALING as Balance
+    } else {
+        1 as Balance
+    }
+}
+
 /// Used to calculate the expected reward for the staker
 pub(crate) fn calc_expected_staker_reward(
-    era_reward: Balance,
-    era_stake: Balance,
+    claim_era: EraIndex,
     contract_stake: Balance,
     staker_stake: Balance,
 ) -> Balance {
-    let contract_reward = Perbill::from_rational(contract_stake, era_stake) * era_reward;
+    let rewards_and_stakes = DappsStaking::era_reward_and_stake(&claim_era).unwrap();
+    let contract_reward = Perbill::from_rational(contract_stake, rewards_and_stakes.staked)
+        * rewards_and_stakes.rewards
+        * reward_scaling_factor(claim_era);
     let contract_reward_staker_part =
         Perbill::from_percent(100 - DEVELOPER_REWARD_PERCENTAGE) * contract_reward;
 
@@ -138,11 +150,13 @@ pub(crate) fn calc_expected_staker_reward(
 
 /// Used to calculate the expected reward for the developer
 pub(crate) fn calc_expected_developer_reward(
-    era_reward: Balance,
-    era_stake: Balance,
+    claim_era: EraIndex,
     contract_stake: Balance,
 ) -> Balance {
-    let contract_reward = Perbill::from_rational(contract_stake, era_stake) * era_reward;
+    let rewards_and_stakes = DappsStaking::era_reward_and_stake(&claim_era).unwrap();
+    let contract_reward = Perbill::from_rational(contract_stake, rewards_and_stakes.staked)
+        * rewards_and_stakes.rewards
+        * reward_scaling_factor(claim_era);
     Perbill::from_percent(DEVELOPER_REWARD_PERCENTAGE) * contract_reward
 }
 

@@ -23,7 +23,7 @@ mod testing_utils;
 #[cfg(test)]
 mod tests;
 
-pub use pallet::{pallet::*, *};
+pub use pallet::pallet::*;
 pub use sp_staking::SessionIndex;
 pub use weights::WeightInfo;
 
