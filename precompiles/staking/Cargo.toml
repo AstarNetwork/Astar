@@ -13,14 +13,14 @@ targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
 codec = { package = "parity-scale-codec", version = "2.0.0", default-features = false }
-evm = { version="0.30.0", default-features = false }
-sp-std = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.10", default-features = false }
-sp-core = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.10", default-features = false }
-frame-support = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.10", default-features = false }
-frame-system = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.10", default-features = false }
-pallet-evm = { git="https://github.com/PlasmNetwork/frontier", branch = "polkadot-v0.9.10", default-features = false }
-pallet-session = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.10", default-features = false }
-pallet-collator-selection = { git = "https://github.com/paritytech/cumulus", branch = "polkadot-v0.9.10", default-features = false }
+evm = { version = "0.30.0", default-features = false }
+sp-std = { git = "https://github.com/PlasmNetwork/substrate", branch = "polkadot-v0.9.10", default-features = false }
+sp-core = { git = "https://github.com/PlasmNetwork/substrate", branch = "polkadot-v0.9.10", default-features = false }
+frame-support = { git = "https://github.com/PlasmNetwork/substrate", branch = "polkadot-v0.9.10", default-features = false }
+frame-system = { git = "https://github.com/PlasmNetwork/substrate", branch = "polkadot-v0.9.10", default-features = false }
+pallet-evm = { git = "https://github.com/PlasmNetwork/frontier", branch = "polkadot-v0.9.10", default-features = false }
+pallet-session = { git = "https://github.com/PlasmNetwork/substrate", branch = "polkadot-v0.9.10", default-features = false }
+pallet-collator-selection = { git = "https://github.com/PlasmNetwork/cumulus", branch = "polkadot-v0.9.10", default-features = false }
 
 [features]
 default = ["std"]
