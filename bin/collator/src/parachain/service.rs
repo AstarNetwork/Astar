@@ -10,7 +10,7 @@ use cumulus_client_service::{
 };
 use cumulus_primitives_core::ParaId;
 use fc_consensus::FrontierBlockImport;
-use fc_rpc_core::types::{FilterPool, PendingTransactions};
+use fc_rpc_core::types::FilterPool;
 use futures::{lock::Mutex, StreamExt};
 use sc_client_api::{BlockchainEvents, ExecutorProvider};
 use sc_consensus::import_queue::BasicQueue;
@@ -22,11 +22,7 @@ use sp_consensus::SlotData;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 use sp_keystore::SyncCryptoStorePtr;
 use sp_runtime::traits::BlakeTwo256;
-use std::{
-    collections::{BTreeMap, HashMap},
-    sync::Arc,
-    time::Duration,
-};
+use std::{collections::BTreeMap, sync::Arc, time::Duration};
 use substrate_prometheus_endpoint::Registry;
 
 use super::shell_upgrade::*;
@@ -283,8 +279,6 @@ where
             warp_sync: None,
         })?;
 
-    let pending_transactions: PendingTransactions =
-        Some(Arc::new(std::sync::Mutex::new(HashMap::new())));
     let filter_pool: FilterPool = Arc::new(std::sync::Mutex::new(BTreeMap::new()));
 
     // Frontier offchain DB task. Essential.
@@ -314,18 +308,6 @@ where
         ),
     );
 
-    // Frontier pending transactions task. Essential.
-    // Maintenance for the Frontier-specific pending transaction pool.
-    const TRANSACTION_RETAIN_THRESHOLD: u64 = 5;
-    task_manager.spawn_essential_handle().spawn(
-        "frontier-pending-transactions",
-        fc_rpc::EthTask::pending_transaction_task(
-            client.clone(),
-            pending_transactions.clone().expect("unexpected None"),
-            TRANSACTION_RETAIN_THRESHOLD,
-        ),
-    );
-
     task_manager.spawn_essential_handle().spawn(
         "frontier-schema-cache-task",
         fc_rpc::EthTask::ethereum_schema_cache_task(client.clone(), frontier_backend.clone()),
@@ -340,12 +322,12 @@ where
             let deps = crate::rpc::FullDeps {
                 client: client.clone(),
                 pool: transaction_pool.clone(),
+                graph: transaction_pool.pool().clone(),
                 network: network.clone(),
                 is_authority,
                 deny_unsafe,
                 frontier_backend: frontier_backend.clone(),
                 transaction_converter: shiden_runtime::TransactionConverter,
-                pending_transactions: pending_transactions.clone(),
                 filter_pool: filter_pool.clone(),
             };
 
