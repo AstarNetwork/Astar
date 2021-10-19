@@ -13,11 +13,12 @@ use frame_support::{
     PalletId,
 };
 use frame_system::{ensure_root, ensure_signed, pallet_prelude::*};
+use sp_core::H160;
 use sp_runtime::{
     traits::{AccountIdConversion, Saturating, Zero},
     Perbill,
 };
-use sp_std::convert::From;
+use sp_std::{convert::From, str::FromStr};
 
 const STAKING_ID: LockIdentifier = *b"dapstake";
 
@@ -261,6 +262,54 @@ pub mod pallet {
             }
 
             T::DbWeight::get().writes(5)
+        }
+
+        fn on_runtime_upgrade() -> Weight {
+            // TODO: Limit this only to Shiden!
+
+            // THIS WILL NEED TO BE DOUBLE CHECKED!
+            // vector of tuples (contract_address, starting_era)
+            let dapps_to_restore = vec![
+                // Standard protocol
+                (
+                    H160::from_str("0x4633C1F0F633Cc42FD0Ba394762283606C88ae52"),
+                    2u32,
+                ),
+                // CryptoSpells
+                (
+                    H160::from_str("0x4D4e6e07D480F3AAE931c31430bc61ea7ef29052"),
+                    1u32,
+                ),
+                // My Crypto Heroes
+                (
+                    H160::from_str("0xB715b849Cd7D8794Fe29e3363Efa8c419A68f6aa"),
+                    1u32,
+                ),
+                // Community Rewards Program
+                (
+                    H160::from_str("0xF87C7872Eff6F01de8efCB328471967b19E302a9"),
+                    1u32,
+                ),
+            ];
+
+            for (contract_address, starting_era) in dapps_to_restore.iter() {
+                // Infalible since we ensure this by a manual check! Runtime upgrade should fail if this isn't true. TODO: Check?
+                let contract_id = T::SmartContract::get_evm_contract(contract_address.unwrap());
+
+                let oldest_available_era = ContractEraStake::<T>::iter_key_prefix(&contract_id)
+                    .min()
+                    .unwrap();
+                let mut oldest_staking_points =
+                    ContractEraStake::<T>::get(&contract_id, &oldest_available_era).unwrap();
+                oldest_staking_points._former_staked_era = 0;
+
+                ContractEraStake::<T>::insert(&contract_id, &starting_era, oldest_staking_points);
+            }
+
+            // TODO: should we iterate over all era staking points and set '_former_staked_era' to zero?
+
+            T::DbWeight::get().writes(dapps_to_restore.len() as u64)
+                + T::DbWeight::get().reads(dapps_to_restore.len() as u64)
         }
     }
 

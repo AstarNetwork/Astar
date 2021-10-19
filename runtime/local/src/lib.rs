@@ -329,6 +329,10 @@ impl<AccountId> pallet_dapps_staking::traits::IsContract for SmartContract<Accou
             SmartContract::Evm(account) => EVM::account_codes(&account).len() > 0,
         }
     }
+
+    fn get_evm_contract(contract_address: sp_core::H160) -> Self {
+        SmartContract::Evm(contract_address)
+    }
 }
 
 #[cfg(feature = "runtime-benchmarks")]
@@ -338,6 +342,10 @@ impl<AccountId> pallet_dapps_staking::traits::IsContract for SmartContract<Accou
             SmartContract::Wasm(_account) => false,
             SmartContract::Evm(_account) => true,
         }
+    }
+
+    fn get_evm_contract(contract_address: sp_core::H160) -> Self {
+        SmartContract::Evm(contract_address)
     }
 }
 

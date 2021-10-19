@@ -159,6 +159,10 @@ impl<AccountId> pallet_dapps_staking::IsContract for MockSmartContract<AccountId
             MockSmartContract::Evm(_account) => true,
         }
     }
+
+    fn get_evm_contract(contract_address: sp_core::H160) -> Self {
+        MockSmartContract::Evm(contract_address)
+    }
 }
 
 pub struct ExternalityBuilder;
@@ -177,6 +181,9 @@ impl ExternalityBuilder {
                 (4, 4900),
                 (5, 3800),
                 (6, 10),
+                (7, 1000),
+                (8, 2000),
+                (9, 10000),
                 (10, 300),
                 (20, 10),
                 (540, EXISTENTIAL_DEPOSIT),
