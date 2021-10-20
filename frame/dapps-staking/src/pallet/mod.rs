@@ -193,7 +193,7 @@ pub mod pallet {
         /// The contract's reward have been claimed for era.
         ContractClaimed(T::SmartContract, EraIndex, BalanceOf<T>),
         /// Reward paid to staker.
-        Reward(T::AccountId, BalanceOf<T>),
+        Reward(T::SmartContract, EraIndex, T::AccountId, BalanceOf<T>),
     }
 
     #[pallet::error]
@@ -562,6 +562,8 @@ pub mod pallet {
                 reward_pool.split(T::DeveloperRewardPercentage::get() * contract_reward);
 
             Self::deposit_event(Event::<T>::Reward(
+                contract_id.clone(),
+                era,
                 developer.clone(),
                 developer_reward.peek(),
             ));
@@ -575,7 +577,12 @@ pub mod pallet {
                     stakers_reward.split(ratio * stakers_total_reward);
                 stakers_reward = new_stakers_reward;
 
-                Self::deposit_event(Event::<T>::Reward(staker.clone(), reward.peek()));
+                Self::deposit_event(Event::<T>::Reward(
+                    contract_id.clone(),
+                    era,
+                    staker.clone(),
+                    reward.peek(),
+                ));
                 T::Currency::resolve_creating(staker, reward);
             }
 
