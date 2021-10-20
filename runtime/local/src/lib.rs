@@ -326,7 +326,7 @@ impl<AccountId> pallet_dapps_staking::traits::IsContract for SmartContract<Accou
     fn is_valid(&self) -> bool {
         match self {
             SmartContract::Wasm(_account) => false,
-            SmartContract::Evm(_account) => true,
+            SmartContract::Evm(account) => EVM::account_codes(&account).len() > 0,
         }
     }
 }
