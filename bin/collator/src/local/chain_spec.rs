@@ -51,6 +51,10 @@ pub fn development_config() -> ChainSpec {
                 vec![
                     get_account_id_from_seed::<sr25519::Public>("Alice"),
                     get_account_id_from_seed::<sr25519::Public>("Bob"),
+                    get_account_id_from_seed::<sr25519::Public>("Dave"),
+                    get_account_id_from_seed::<sr25519::Public>("Charlie"),
+                    get_account_id_from_seed::<sr25519::Public>("Eve"),
+                    get_account_id_from_seed::<sr25519::Public>("Ferdie"),
                 ],
             )
         },
@@ -81,7 +85,7 @@ fn testnet_genesis(
             balances: endowed_accounts
                 .iter()
                 .cloned()
-                .map(|k| (k, 1 << 70))
+                .map(|k| (k, 1_000_000_000_000_000_000_000))
                 .collect(),
         },
         vesting: VestingConfig { vesting: vec![] },

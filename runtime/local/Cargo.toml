@@ -28,6 +28,7 @@ pallet-sudo = { git = "https://github.com/PlasmNetwork/substrate", branch = "pol
 frame-system = { git = "https://github.com/PlasmNetwork/substrate", branch = "polkadot-v0.9.10", default-features = false }
 pallet-timestamp = { git = "https://github.com/PlasmNetwork/substrate", branch = "polkadot-v0.9.10", default-features = false }
 pallet-transaction-payment = { git = "https://github.com/PlasmNetwork/substrate", branch = "polkadot-v0.9.10", default-features = false }
+pallet-utility = { git = "https://github.com/PlasmNetwork/substrate", branch = "polkadot-v0.9.10", default-features = false }
 pallet-vesting = { git = "https://github.com/PlasmNetwork/substrate", branch = "polkadot-v0.9.10", default-features = false }
 frame-executive = { git = "https://github.com/PlasmNetwork/substrate", branch = "polkadot-v0.9.10", default-features = false }
 fp-rpc = { git = "https://github.com/PlasmNetwork/frontier", branch = "polkadot-v0.9.10", default-features = false }
@@ -90,6 +91,7 @@ std = [
     "pallet-timestamp/std",
     "pallet-transaction-payment-rpc-runtime-api/std",
     "pallet-transaction-payment/std",
+    "pallet-utility/std",
     "pallet-vesting/std",
     "sp-api/std",
     "sp-block-builder/std",
