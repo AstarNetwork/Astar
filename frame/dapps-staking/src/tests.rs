@@ -131,7 +131,7 @@ fn on_runtime_upgrade_is_ok() {
                     contract_info.contract_id.clone(),
                     contract_info.oldest_available_era - 1
                 ),
-                Error::<TestRuntime>::NothingToClaimInEra
+                Error::<TestRuntime>::NotStaked
             );
         }
 
@@ -472,7 +472,7 @@ fn unregister_after_register_is_ok() {
             developer,
             contract_id,
         )));
-        verify_storage_after_unregister(&developer, &contract_id, DappsStaking::current_era());
+        verify_storage_after_unregister(&developer, &contract_id);
 
         assert!(<TestRuntime as Config>::Currency::reserved_balance(&developer).is_zero());
     })
@@ -514,19 +514,6 @@ fn unregister_with_staked_contracts_is_ok() {
                 .staked
         );
 
-        // TODO: Clean this up if we decide to go forward with no protection for loosing rewards.
-        // Try to unregister and expect an error since we have unclaimed rewards.
-        // assert_noop!(
-        //     DappsStaking::unregister(Origin::signed(developer), contract_id.clone()),
-        //     Error::<TestRuntime>::ContractRewardsNotClaimed
-        // );
-
-        // Claim the rewards and then try to unregister again.
-        // assert_ok!(DappsStaking::claim(
-        //     Origin::signed(developer),
-        //     contract_id.clone()
-        // ));
-
         // Ensure that contract can be unregistered
         assert_ok!(DappsStaking::unregister(
             Origin::signed(developer),
@@ -536,7 +523,7 @@ fn unregister_with_staked_contracts_is_ok() {
             developer,
             contract_id,
         )));
-        verify_storage_after_unregister(&developer, &contract_id, current_era);
+        verify_storage_after_unregister(&developer, &contract_id);
 
         // Ensure ledger contains expected stake values. We have a single staked contract remaining.
         assert_eq!(staked_value_1, DappsStaking::ledger(&staker_1));
@@ -553,7 +540,10 @@ fn unregister_with_staked_contracts_is_ok() {
 }
 
 #[test]
-fn unregister_with_incorrect_contract_is_not_works() {
+fn register_after_unregister_is_ok() {}
+
+#[test]
+fn unregister_with_incorrect_contract_does_not_work() {
     ExternalityBuilder::build().execute_with(|| {
         initialize_first_block();
 
@@ -1472,35 +1462,19 @@ fn claim_invalid_eras() {
             Error::<TestRuntime>::EraOutOfBounds,
         );
 
+        let current_era = DappsStaking::current_era();
         assert_noop!(
-            DappsStaking::claim(
-                Origin::signed(claimer),
-                contract,
-                DappsStaking::current_era()
-            ),
+            DappsStaking::claim(Origin::signed(claimer), contract, current_era,),
             Error::<TestRuntime>::EraOutOfBounds,
+        );
+
+        let non_staked_era = current_era - 1;
+        assert_noop!(
+            DappsStaking::claim(Origin::signed(claimer), contract, non_staked_era,),
+            Error::<TestRuntime>::NotStaked,
         );
     })
 }
-
-// TODO: remove this?
-// #[test]
-// fn claim_nothing_to_claim() {
-//     ExternalityBuilder::build().execute_with(|| {
-//         initialize_first_block();
-
-//         let developer1 = 1;
-//         let claimer = 2;
-//         let contract = MockSmartContract::Evm(H160::repeat_byte(0x01));
-
-//         register_contract(developer1, &contract);
-
-//         assert_noop!(
-//             DappsStaking::claim(Origin::signed(claimer), contract),
-//             Error::<TestRuntime>::NothingToClaim
-//         );
-//     })
-// }
 
 #[test]
 fn claim_twice_in_same_era() {
@@ -1550,6 +1524,36 @@ fn claim_is_ok() {
         // Claim shouldn't mint new tokens, instead it should just transfer from the dapps staking pallet account
         let issuance_after_claim = <TestRuntime as Config>::Currency::total_issuance();
         assert_eq!(issuance_before_claim, issuance_after_claim);
+    })
+}
+
+#[test]
+fn claim_after_unregister_is_ok() {
+    ExternalityBuilder::build().execute_with(|| {
+        initialize_first_block();
+        let developer = 1;
+        let staker = 2;
+        let stake_amount_1 = 100;
+        let contract = MockSmartContract::Evm(H160::repeat_byte(0x01));
+
+        // Register contract, stake it
+        register_contract(developer, &contract);
+        bond_and_stake_with_verification(staker, &contract, stake_amount_1);
+
+        // Advance by some eras
+        advance_to_era(5);
+
+        // Unregister contract, without claiming it!
+        assert_ok!(DappsStaking::unregister(
+            Origin::signed(developer),
+            contract.clone()
+        ));
+
+        // Ensure that contract can still be claimed.
+        let current_era = DappsStaking::current_era();
+        for era in 1..current_era {
+            claim_with_verification(staker, contract.clone(), era);
+        }
     })
 }
 

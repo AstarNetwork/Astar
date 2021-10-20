@@ -187,12 +187,7 @@ pub(crate) fn check_paidout_rewards_for_contract(
 pub(crate) fn verify_storage_after_unregister(
     developer: &AccountId,
     contract_id: &MockSmartContract<AccountId>,
-    current_era: EraIndex,
 ) {
-    assert!(!ContractEraStake::<TestRuntime>::contains_key(
-        contract_id,
-        &current_era
-    ));
     assert!(RegisteredDapps::<TestRuntime>::contains_key(contract_id));
     assert!(!RegisteredDevelopers::<TestRuntime>::contains_key(
         developer
