@@ -329,9 +329,6 @@ fn unregister_with_staked_contracts_is_ok() {
 }
 
 #[test]
-fn register_after_unregister_is_ok() {}
-
-#[test]
 fn unregister_with_incorrect_contract_does_not_work() {
     ExternalityBuilder::build().execute_with(|| {
         initialize_first_block();
