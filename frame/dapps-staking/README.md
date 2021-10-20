@@ -9,6 +9,7 @@ Table of Contents:
 1. [Calls](#Calls)
 1. [Storage](#Storage)
 1. [Referent implementatio](#Referent)
+1. [FAQ](#FAQ)
 
 ## Terminology
 ### Actors in dApps Staking
@@ -55,7 +56,7 @@ SmartContract: {
 EraStakingPoints: {
     total: 'Balance',
     stakers: 'BTreeMap<AccountId, Balance>',
-    formerStakedEra: 'EraIndex',
+    _formerStakedEra: 'EraIndex',
     claimedRewards: 'Balance'
 }
 ```
@@ -77,30 +78,30 @@ EraRewardAndStake {
 * `NewContract(AccountId, SmartContract):` New contract added for staking.
 * `ContractRemoved(AccountId, SmartContract):` Contract removed from dapps staking.
 * `NewDappStakingEra(EraIndex):` New dapps staking era. Distribute era rewards to contracts.
-* `ContractClaimed(SmartContract, AccountId, EraIndex, EraIndex):` The contract's reward have been claimed, by an account, from era, until era
-
+* `ContractClaimed(SmartContract, EraIndex, Balance):` The contract's reward has been claimed for an era
+* `Reward(AccountId, Balance):` Reward paid to staker.
 
 
 ---
 ## Errors
 * `StakingWithNoValue` Can not stake with zero value.
-* `InsufficientStakingValue`, Can not stake with value less than minimum staking value.
+* `InsufficientValue`, Can not stake with value less than minimum staking value.
 * `MaxNumberOfStakersExceeded`, Number of stakers per contract exceeded.
 * `NotOperatedContract`, Targets must be operated contracts
 * `NotStakedContract`, Contract isn't staked.
 * `UnstakingWithNoValue`, Unstaking a contract with zero value.
 * `AlreadyRegisteredContract`, The contract is already registered by other account.
 * `ContractIsNotValid`, User attempts to register with address which is not contract.
-* `ContractNotRegistered`, Contract not registered for dapps staking.
 * `AlreadyUsedDeveloperAccount`, This account was already used to register contract.
 * `NotOwnedContract`, Contract not owned by the account.
 * `UnexpectedState`, Unexpected state error, used to abort transaction. Used for situations that 'should never happen'. Report issue on github if this is ever emitted.
 * `UnknownStartStakingData`, Report issue on github if this is ever emitted.
 * `UnknownEraReward`, Report issue on github if this is ever emitted.
-* `NothingToClaim`, There are no funds to reward the contract. Or already claimed in that era.
+* `NotStaked`, Contract hasn't been staked on in this era.
 * `AlreadyClaimedInThisEra`, Contract already claimed in this era and reward is distributed.
+* `EraOutOfBounds`, Era parameter is out of bounds.
 * `RequiredContractPreApproval`, To register a contract, pre-approval is needed for this address.
-* `AlreadyPreApprovedContract`, Contract is already part of pre-appruved list of contracts.
+* `AlreadyPreApprovedDeveloper`, Developer's account is already part of pre-approved list.
 * `ContractRewardsNotClaimed`, Attempting to unregister contract which has unclaimed rewards. Claim them first before unregistering.
 
 ---
@@ -136,9 +137,7 @@ Event:
 
 Errors:
 * NotOwnedContract
-* AlreadyUsedDeveloperAccount
 * ContractIsNotValid
-* RequiredContractPreApproval
 
 ---
 ### Bonding and Staking Funds
@@ -171,7 +170,7 @@ Errors:
 * NotOperatedContract
 * StakingWithNoValue
 * MaxNumberOfStakersExceeded
-* InsufficientStakingValue
+* InsufficientValue
 
 ---
 ### Unbonding, Unstaking and Funds Withdrawal
@@ -206,41 +205,41 @@ Errors:
 ### Claim Rewards
 ```
 pub fn claim(
-    _origin: OriginFor<T>,
-    contract_id: T::AccountId,
+    origin: OriginFor<T>,
+    contract_id: T::SmartContract,
+    era: EraIndex,
 ) -> DispatchResultWithPostInfo {}
 ```
 1. Any account can initiate this call.
 1. All stakers and the developer of this contract_id will be paid out.
 1. The rewards are paid out, they are transferable and they are NOT automatically re-staked.
-2. if an era for a contract is CurrentEra-ContractLastClaimed >= HistoryDepth, then all unclaimed rewards for that contract shall be sent to Treasury
+1. If an era for a contract is out of bounds `[CurrentEra - HistoryDepth, CurrentEra-1]` then error `EraOutOfBounds` is emitted
+1. The event `Reward` shall be emitted for each staker in this era and for the developer
+1. The event `ContractClaimed` shall be emitted after all stakers and the developer are paid out for this era.
 
 Event:
 `ContractClaimed(
                 contract_id,
                 claimer,
-                start_from_era,
-                current_era,
+                era,
             )`
 
 Error:
-* ContractNotRegistered
 * NothingToClaim
 * AlreadyClaimedInThisEra
+* EraOutOfBounds
+* Reward
+* ContractClaimed
 
 ---
 ## Storage
 * `Ledger = StorageMap( key:AccountId, value:Balance)`: Bonded amount for the staker
-* `HistoryDepth = StorageValue( u32 )`: Number of eras to keep in history.
 * `CurrentEra = StorageValue( EraIndex )`: The current era index.
 * `BlockRewardAccumulator = StorageValue( Balance )`: Accumulator for block rewards during an era. It is reset at every new era.
 * `RegisteredDevelopers = StorageMap( key:AccountId, value:SmartContract )`: Registered developer accounts points to coresponding contract.
 * `RegisteredDapps = StorageMap( key:SmartContract, value:AccountId )`: Registered dapp points to the developer who registered it.
 * `EraRewardsAndStakes = StorageMap( key:EraIndex, value:EraRewardAndStake)`: Total block rewards for the pallet per era and total staked funds.
-* `RewardsClaimed = StorageDoubleMap( key1:SmartContract, key2:AccountId, value:Balance )`: Reward counter for individual stakers and the developer.
 * `ContractEraStake = StorageDoubleMap( key1: SmartContract, key2:EraIndex, value:EraStakingPoints )`: Stores amount staked and stakers for a contract per era.
-* `ContractLastClaimed = StorageMap( key:SmartContract, value:EraIndex )`: Marks an Era when a contract is last claimed.
-* `ContractLastStaked = StorageMap( key:SmartContract, value:EraIndex )`: Marks an Era when a contract is last (un)staked.
 
 ---
 ## Referent API implementation
@@ -250,12 +249,10 @@ https://github.com/PlasmNetwork/astar-apps
 ## FAQ
 
 ### When do the projects/developers get their rewards?
-The earned rewards need to be claimed by calling claim() function. Once the claim() function is called all stakers on the contract and the developer of the contract get their rewards. This function can be called from any account. Recommended is that it is called by the projects/developers on a weekly basis.
+The earned rewards need to be claimed by calling claim() function. Once the claim() function is called all stakers on the contract and the developer of the contract get their rewards. This function can be called from any account. Recommended is that it is called by the projects/developers on a daily or at most weekly basis.
 
 ### What happens if nobody calls the claim function for longer than 'history_depth' days?
-The un-claimed rewards older than 'history_depth' days will be sent to the chain's Treasury.
-At the time of writing, history depth is set to 15 days but this can be changed.
-You can check the source code to be sure.
+The un-claimed rewards older than 'history_depth' days will be burnt.
 
 ### When developers register their dApp, which has no contract yet, what kind of address do they need to input?
 There has to be a contract. Registration can’t be done without the contract.
@@ -265,15 +262,15 @@ The contract address can't be changed for the dApps staking. However, if the pro
 
 ### How do projects/developers (who joins dApps staking) get their stakers' address and the amount staked?
 ```
-era = ContractLastStaked(contract_id)
 ContractEraStake(contract_id, era).stakers
 ```
 This will give the vector of all staker' accounts and how much they have staked.
 
-### How many are the maximum numbers of stakers per dapps?(MaxNumberOfStakersPerContract)
-At the time this is written, maximum number of stakers per dapp is 512.
-Note that there is also a minimum staking amount per dapp.
-You can check the source code to be sure.
+### What is the maximum numbers of stakers per dapps?
+Please check in the source code constant `MaxNumberOfStakersPerContract`.
+
+### What is the minimum numbers of stakers per dapps?
+Please check in the source code constant `MinimumStakingAmount`.
 
 ### When developers register their dApp, can they registar WASM contract? (If not, can they update it in the future?)
 The developers can register several dApps. But they need to use separate accounts and separate contract addresses.
@@ -283,4 +280,4 @@ The rule is
 
 ### Does dApps staking supports Wasm contracts?
 Yes.
-Once the Wasm contracts are enabled on a parachain, Wasm contract could be used for dApps staking
+Once the Wasm contracts are enabled on a parachain, Wasm contract could be used for dApps staking.
