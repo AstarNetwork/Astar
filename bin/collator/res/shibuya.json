@@ -12,7 +12,7 @@
     "tokenDecimals": 18,
     "tokenSymbol": "SBY"
   },
-  "relayChain": "azores",
+  "relayChain": "tokyo",
   "paraId": 1000,
   "consensusEngine": null,
   "codeSubstitutes": {},
