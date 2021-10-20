@@ -225,8 +225,8 @@ pub mod pallet {
         UnknownStartStakingData,
         /// Report issue on github if this is ever emitted
         UnknownEraReward,
-        /// There are no funds to reward the contract. Or already claimed in that era
-        NothingToClaim,
+        /// There are no funds to reward the contract.
+        NothingToClaimInEra,
         /// Contract already claimed in this era and reward is distributed
         AlreadyClaimedInThisEra,
         /// Era parameter is out of bounds
@@ -292,10 +292,12 @@ pub mod pallet {
                 ),
             ];
 
+            // First we restore the former era staking info
             for (contract_address, starting_era) in dapps_to_restore.iter() {
-                // Infalible since we ensure this by a manual check! Runtime upgrade should fail if this isn't true. TODO: Check?
                 let contract_id = T::SmartContract::get_evm_contract(contract_address.unwrap());
 
+                // Infalible since we ensure this by a manual check! Runtime upgrade should fail if this isn't true.
+                // TODO: Check this with Aleks.
                 let oldest_available_era = ContractEraStake::<T>::iter_key_prefix(&contract_id)
                     .min()
                     .unwrap();
@@ -306,10 +308,25 @@ pub mod pallet {
                 ContractEraStake::<T>::insert(&contract_id, &starting_era, oldest_staking_points);
             }
 
+            // Then we update the total staked amount per era info
+            let upper_era_limit = 5;
+            for era in 1..upper_era_limit {
+                let mut total_staked: BalanceOf<T> = Zero::zero();
+                for contract_id in RegisteredDapps::<T>::iter_keys() {
+                    total_staked += Self::staking_info(&contract_id, era).total;
+                }
+
+                EraRewardsAndStakes::<T>::mutate(era, |x| {
+                    if let Some(ref mut reward_and_stake) = x {
+                        reward_and_stake.staked = total_staked;
+                    }
+                });
+            }
+
             // TODO: should we iterate over all era staking points and set '_former_staked_era' to zero?
 
-            T::DbWeight::get().writes(dapps_to_restore.len() as u64)
-                + T::DbWeight::get().reads(dapps_to_restore.len() as u64)
+            let number_of_ops = dapps_to_restore.len() as u64 + upper_era_limit as u64 - 1;
+            T::DbWeight::get().writes(number_of_ops) + T::DbWeight::get().reads(number_of_ops)
         }
     }
 
@@ -584,6 +601,12 @@ pub mod pallet {
             ensure!(
                 staking_info.claimed_rewards.is_zero(),
                 Error::<T>::AlreadyClaimedInThisEra,
+            );
+
+            // TODO: add UT for this
+            ensure!(
+                !staking_info.stakers.is_empty(),
+                Error::<T>::NothingToClaimInEra,
             );
 
             let reward_and_stake =

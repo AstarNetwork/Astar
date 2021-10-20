@@ -16,205 +16,207 @@ fn on_runtime_upgrade_is_ok() {
         initialize_first_block();
         assert_eq!(1, DappsStaking::current_era()); //sanity
 
-        // (contract_id, restore era, oldest available era)
-        let dapps_info = vec![
-            // Standard protocol
-            (
-                MockSmartContract::Evm(
-                    H160::from_str("0x4633C1F0F633Cc42FD0Ba394762283606C88ae52").unwrap(),
-                ),
-                2_u32,
-                4_u32,
-            ),
-            // CryptoSpells
-            (
-                MockSmartContract::Evm(
-                    H160::from_str("0x4D4e6e07D480F3AAE931c31430bc61ea7ef29052").unwrap(),
-                ),
-                1_u32,
-                3_u32,
-            ),
-            // My Crypto Heroes
-            (
-                MockSmartContract::Evm(
-                    H160::from_str("0xB715b849Cd7D8794Fe29e3363Efa8c419A68f6aa").unwrap(),
-                ),
-                1_u32,
-                3_u32,
-            ),
-            // Community Rewards Program
-            (
-                MockSmartContract::Evm(
-                    H160::from_str("0xF87C7872Eff6F01de8efCB328471967b19E302a9").unwrap(),
-                ),
-                1_u32,
-                3_u32,
-            ),
-        ];
-
-        let staking_amount = 100;
-
-        let starting_developer_id = 7;
-        let starting_staker_id = 1;
-
-        let mut developer_id = starting_developer_id;
-        let mut staker_id = starting_staker_id;
-
-        for (contract_id, _, oldest_avail_era) in dapps_info.iter() {
-            register_contract(developer_id, &contract_id);
-            developer_id += 1;
-
-            // Prepare era staking pointss
-            let mut stakers = BTreeMap::new();
-            stakers.insert(staker_id, staking_amount);
-            staker_id += 1;
-
-            let staking_info = EraStakingPoints {
-                total: staking_amount,
-                stakers: stakers,
-                _former_staked_era: 0,
-                claimed_rewards: 0,
-            };
-
-            ContractEraStake::<TestRuntime>::insert(&contract_id, &oldest_avail_era, staking_info);
+        struct ContractInfo {
+            contract_id: MockSmartContract<AccountId>,
+            developer_id: AccountId,
+            staker_id: AccountId,
+            staked_amount: Balance,
+            /// Era up to which contract should be restored
+            restore_era: mock::EraIndex,
+            /// The oldest era for which staking points are available
+            oldest_available_era: mock::EraIndex,
         }
 
+        // Prepare the staked contract information.
+        let dapps_info = vec![
+            // Standard protocol
+            ContractInfo {
+                contract_id: MockSmartContract::Evm(
+                    H160::from_str("0x4633C1F0F633Cc42FD0Ba394762283606C88ae52").unwrap(),
+                ),
+                developer_id: 5,
+                staker_id: 1,
+                staked_amount: 100,
+                restore_era: 2,
+                oldest_available_era: 4,
+            },
+            // CryptoSpells
+            ContractInfo {
+                contract_id: MockSmartContract::Evm(
+                    H160::from_str("0x4D4e6e07D480F3AAE931c31430bc61ea7ef29052").unwrap(),
+                ),
+                developer_id: 6,
+                staker_id: 2,
+                staked_amount: 200,
+                restore_era: 1,
+                oldest_available_era: 3,
+            },
+            // My Crypto Heroes
+            ContractInfo {
+                contract_id: MockSmartContract::Evm(
+                    H160::from_str("0xB715b849Cd7D8794Fe29e3363Efa8c419A68f6aa").unwrap(),
+                ),
+                developer_id: 7,
+                staker_id: 3,
+                staked_amount: 300,
+                restore_era: 1,
+                oldest_available_era: 3,
+            },
+            // Community Rewards Program
+            ContractInfo {
+                contract_id: MockSmartContract::Evm(
+                    H160::from_str("0xF87C7872Eff6F01de8efCB328471967b19E302a9").unwrap(),
+                ),
+                developer_id: 8,
+                staker_id: 4,
+                staked_amount: 400,
+                restore_era: 1,
+                oldest_available_era: 3,
+            },
+        ];
+
+        let unlucky_staker = 1337;
+        let unlucky_stake_amount = 1337;
+        let upper_era_limit = 7;
+
+        // This loop will simulate the on-chain scenario of staking and unstaking.
+        for era in 1..upper_era_limit {
+            advance_to_era(era);
+            // Prepare the state for all contracts.
+            for contract_info in dapps_info.iter() {
+                // Register contract and bond&stake with the unlucky staker
+                if contract_info.restore_era == era {
+                    register_contract(contract_info.developer_id, &contract_info.contract_id);
+                    bond_and_stake_with_verification(
+                        unlucky_staker,
+                        &contract_info.contract_id,
+                        unlucky_stake_amount,
+                    );
+                }
+
+                // Unstake with the unlucky staker if one era has passed. No rewards for him later ;(
+                if contract_info.restore_era + 1 == era {
+                    unbond_unstake_and_withdraw_with_verification(
+                        unlucky_staker,
+                        &contract_info.contract_id,
+                        unlucky_stake_amount,
+                    );
+                }
+
+                // Now bond&stake with the dedicated staker for this contract
+                if contract_info.oldest_available_era == era {
+                    bond_and_stake_with_verification(
+                        contract_info.staker_id,
+                        &contract_info.contract_id,
+                        contract_info.staked_amount,
+                    );
+                }
+            }
+        }
+
+        // This loop will simulate the faulty behavior of claim method.
+        for era in 1..upper_era_limit {
+            for contract_info in dapps_info.iter() {
+                if era < contract_info.oldest_available_era {
+                    ContractEraStake::<TestRuntime>::remove(&contract_info.contract_id, era);
+                }
+            }
+        }
+
+        // Sanity check that it's really not possible to claim
+        for contract_info in dapps_info.iter() {
+            assert_noop!(
+                DappsStaking::claim(
+                    Origin::signed(contract_info.staker_id),
+                    contract_info.contract_id.clone(),
+                    contract_info.oldest_available_era - 1
+                ),
+                Error::<TestRuntime>::NothingToClaimInEra
+            );
+        }
+
+        // Fix the issues caused by faulty claim
         let _ = DappsStaking::on_runtime_upgrade();
 
-        // // Register contracts
-        // let developer_1 = 4;
-        // let developer_2 = 5;
-        // let good_contract = MockSmartContract::Evm(H160::repeat_byte(0x01));
-        // let messed_contract = MockSmartContract::Evm(H160::repeat_byte(0x02));
-        // register_contract(developer_1, &good_contract);
-        // register_contract(developer_2, &messed_contract);
+        // Now verify that staking info for all eras is as expected
+        for contract_info in dapps_info.iter() {
+            // Ensure that staking info was restored for the required era and that the original is unchanged.
+            for era in [
+                contract_info.restore_era,
+                contract_info.oldest_available_era,
+            ]
+            .iter()
+            {
+                let staking_info =
+                    ContractEraStake::<TestRuntime>::get(&contract_info.contract_id, era).unwrap();
+                assert_eq!(1_usize, staking_info.stakers.len());
+                assert!(staking_info.stakers.contains_key(&contract_info.staker_id));
 
-        // // This is era 1. Bond&stake on both contracts
-        // assert_eq!(1, DappsStaking::current_era()); // sanity check
-        // let staker_1 = 1;
-        // let staker_2 = 2;
-        // let bad_luck_staker = 6;
-        // let stake_value = 100;
-        // bond_and_stake_with_verification(staker_1, &good_contract, stake_value);
-        // bond_and_stake_with_verification(bad_luck_staker, &messed_contract, stake_value);
-        // let last_staked_for_good_contract = DappsStaking::current_era();
+                assert_eq!(contract_info.staked_amount, staking_info.total);
+                assert!(staking_info.claimed_rewards.is_zero());
+            }
 
-        // // Advance era by 1, to era 2.
-        // advance_to_era(2);
-        // // Stake on (soon to be) messed contract.
-        // bond_and_stake_with_verification(staker_2, &messed_contract, stake_value);
-        // // Unlucky staker unbonds everything and stops using dapps staking
-        // unbond_unstake_and_withdraw_with_verification(
-        //     bad_luck_staker,
-        //     &messed_contract,
-        //     stake_value,
-        // );
-        // let last_staked_for_bad_contract = DappsStaking::current_era();
+            // Ensure nothing more than what was required was restored.
+            let between_eras = (contract_info.restore_era + 1)..contract_info.oldest_available_era;
+            let before_first = 1..contract_info.restore_era;
+            for era in before_first.chain(between_eras) {
+                assert!(!ContractEraStake::<TestRuntime>::contains_key(
+                    &contract_info.contract_id,
+                    era
+                ));
+            }
+        }
 
-        // // Advance era by 1, to era 3. Dapps staking was supposed to be fixed so someone tries to claim the rewards
-        // advance_to_era(3);
-        // let current_era = DappsStaking::current_era();
+        // Also verify that the era rewards & stakes structs are updated accordingly
+        for era in 1..upper_era_limit {
+            // Calculate the total staked value in this era
+            let mut total_staked = 0;
+            for contract_info in dapps_info.iter() {
+                let staking_info = DappsStaking::staking_info(&contract_info.contract_id, era);
+                total_staked += staking_info.total;
+            }
 
-        // // MESSING UP STARTED
-        // let mut messed_staking_points =
-        //     ContractEraStake::<TestRuntime>::get(&messed_contract, last_staked_for_bad_contract)
-        //         .unwrap();
-        // assert_eq!(1 as usize, messed_staking_points.stakers.len());
-        // assert!(!messed_staking_points.stakers.contains_key(&bad_luck_staker));
-        // messed_staking_points.former_staked_era = current_era;
+            // Verify that the calculated value matches the stored value
+            assert_eq!(
+                total_staked,
+                EraRewardsAndStakes::<TestRuntime>::get(era).unwrap().staked
+            );
+        }
 
-        // ContractEraStake::<TestRuntime>::insert(
-        //     &messed_contract,
-        //     &current_era,
-        //     messed_staking_points,
-        // );
-        // ContractLastStaked::<TestRuntime>::insert(&messed_contract, current_era);
-        // ContractLastClaimed::<TestRuntime>::insert(&messed_contract, current_era);
-        // let last_staked_for_bad_contract = current_era;
+        // Store free balance state BEFORE claim
+        let mut free_balances = BTreeMap::new();
+        let unlucky_staker_init_free_balance = Balances::free_balance(&unlucky_staker);
+        for contract_info in dapps_info.iter() {
+            free_balances.insert(
+                contract_info.staker_id,
+                Balances::free_balance(&contract_info.staker_id),
+            );
+            free_balances.insert(
+                contract_info.developer_id,
+                Balances::free_balance(&contract_info.developer_id),
+            );
+        }
 
-        // for era in 1..current_era {
-        //     ContractEraStake::<TestRuntime>::remove(&messed_contract, &era);
-        // }
-        // assert!(ContractEraStake::<TestRuntime>::contains_key(
-        //     &messed_contract,
-        //     &current_era
-        // )); // sanity check
+        // And finally, claim the rewards for eras that were previously 'deleted'
+        for contract_info in dapps_info.iter() {
+            for era in contract_info.restore_era..=contract_info.oldest_available_era {
+                claim_with_verification(
+                    contract_info.staker_id,
+                    contract_info.contract_id.clone(),
+                    era,
+                );
+            }
+        }
 
-        // assert_noop!(
-        //     DappsStaking::claim(Origin::signed(staker_1), messed_contract.clone()),
-        //     Error::<TestRuntime>::AlreadyClaimedInThisEra
-        // );
-
-        // // MESSING UP FINISHED
-
-        // // Now we have the messed up situation that's currently present on-chain
-
-        // // Use on_runtime_upgrade to fix it!
-        // let rewards_before_upgrade = DappsStaking::era_reward_and_stake(1).unwrap().rewards;
-        // let _ = DappsStaking::on_runtime_upgrade();
-        // let rewards_after_upgrade = DappsStaking::era_reward_and_stake(1).unwrap().rewards;
-        // assert!(rewards_before_upgrade < rewards_after_upgrade);
-
-        // // FIRST VERIFY GOOD CONTRACT. IT SHOULD BE UNCHANGED!
-        // assert_eq!(
-        //     last_staked_for_good_contract,
-        //     ContractLastStaked::<TestRuntime>::get(&good_contract).unwrap()
-        // );
-        // assert_eq!(
-        //     last_staked_for_good_contract,
-        //     ContractLastClaimed::<TestRuntime>::get(&good_contract).unwrap()
-        // );
-        // assert!(!ContractEraStake::<TestRuntime>::contains_key(
-        //     &good_contract,
-        //     2
-        // ));
-        // let good_staking_points = ContractEraStake::<TestRuntime>::get(&good_contract, 1).unwrap();
-        // assert_eq!(stake_value, good_staking_points.total);
-
-        // // NOW VERIFY THAT MESSED CONTRACT WAS RESTORED
-        // assert_eq!(
-        //     last_staked_for_bad_contract,
-        //     ContractLastStaked::<TestRuntime>::get(&messed_contract).unwrap()
-        // );
-        // assert_eq!(
-        //     1,
-        //     ContractLastClaimed::<TestRuntime>::get(&messed_contract).unwrap()
-        // );
-        // for era in 1..=current_era {
-        //     let staking_point =
-        //         ContractEraStake::<TestRuntime>::get(&messed_contract, era).unwrap();
-        //     assert_eq!(1 as usize, staking_point.stakers.len());
-        //     assert!(staking_point.stakers.contains_key(&staker_2));
-        //     assert_eq!((era - 1).max(1), staking_point.former_staked_era);
-        //     assert_eq!(stake_value, staking_point.total);
-        // }
-
-        // // Get starting balances; balances prior to claim
-        // let dev_1_start_balance = Balances::free_balance(&developer_1);
-        // let dev_2_start_balance = Balances::free_balance(&developer_2);
-        // let staker_1_start_balance = Balances::free_balance(&staker_1);
-        // let staker_2_start_balance = Balances::free_balance(&staker_2);
-        // let bad_luck_staker_start_balance = Balances::free_balance(&bad_luck_staker);
-
-        // // We need to issue some extra funds since we don't know how much was staked for this contract in previous eras.
-        // // Luckily, we have surplus funds on-chain since rewards have been minted for quite some time now.
-        // // In order to avoid people loosing, we will beef up the rewards (?);
-        // Balances::resolve_creating(
-        //     &<TestRuntime as Config>::PalletId::get().into_account(),
-        //     Balances::issue(BLOCK_REWARD * 10),
-        // );
-
-        // claim(developer_1, good_contract.clone(), 1, 3);
-        // claim(developer_1, messed_contract.clone(), 1, 3);
-
-        // assert!(dev_1_start_balance < Balances::free_balance(&developer_1));
-        // assert!(dev_2_start_balance < Balances::free_balance(&developer_2));
-        // assert!(staker_1_start_balance < Balances::free_balance(&staker_1));
-        // assert!(staker_2_start_balance < Balances::free_balance(&staker_2));
-        // assert_eq!(
-        //     bad_luck_staker_start_balance,
-        //     Balances::free_balance(&bad_luck_staker)
-        // );
+        // Ensure that dev and stakers got their rewards
+        for (account, initial_free_balance) in free_balances.iter() {
+            assert!(*initial_free_balance < Balances::free_balance(account));
+        }
+        // Ensure that unlucky staker didn't get anything
+        assert_eq!(
+            unlucky_staker_init_free_balance,
+            Balances::free_balance(&unlucky_staker)
+        );
     })
 }
 
