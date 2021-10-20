@@ -341,6 +341,12 @@ impl<AccountId> pallet_dapps_staking::traits::IsContract for SmartContract<Accou
     }
 }
 
+impl pallet_utility::Config for Runtime {
+    type Event = Event;
+    type Call = Call;
+    type WeightInfo = ();
+}
+
 /// Current approximation of the gas/s consumption considering
 /// EVM execution over compiled WASM (on 4.4Ghz CPU).
 /// Given the 500ms Weight, from which 75% only are used for transactions,
@@ -542,6 +548,7 @@ construct_runtime!(
         UncheckedExtrinsic = UncheckedExtrinsic
     {
         System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
+        Utility: pallet_utility::{Pallet, Call, Event},
         Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
         RandomnessCollectiveFlip: pallet_randomness_collective_flip::{Pallet, Storage},
         Aura: pallet_aura::{Pallet, Config<T>},
