@@ -105,22 +105,35 @@ pub(crate) fn claim_with_verification(
     contract: MockSmartContract<AccountId>,
     claim_era: EraIndex,
 ) {
+    // Clear all events so we can check all the emitted events from claim
+    clear_all_events();
+
     assert_ok!(DappsStaking::claim(
         Origin::signed(claimer),
         contract,
         claim_era
     ));
 
+    // Calculated expected reward that will be distributed for the contract.
     let rewards_and_stakes = DappsStaking::era_reward_and_stake(&claim_era).unwrap();
     let staking_points = DappsStaking::contract_era_stake(&contract, &claim_era).unwrap();
-
-    let reward = Perbill::from_rational(staking_points.total, rewards_and_stakes.staked)
+    let calculated_reward = Perbill::from_rational(staking_points.total, rewards_and_stakes.staked)
         * rewards_and_stakes.rewards
         * reward_scaling_factor(claim_era);
 
-    System::assert_last_event(mock::Event::DappsStaking(crate::Event::ContractClaimed(
-        contract, claim_era, reward,
-    )));
+    // Collect all Reward events and sum up all the rewards.
+    let emitted_rewards: Balance = dapps_staking_events()
+        .iter()
+        .filter_map(|e| {
+            if let crate::Event::Reward(_, _, _, single_reward) = e {
+                Some(*single_reward as Balance)
+            } else {
+                None
+            }
+        })
+        .sum();
+
+    assert_eq!(calculated_reward, emitted_rewards);
 }
 
 // Get reward scaling factor for the given era

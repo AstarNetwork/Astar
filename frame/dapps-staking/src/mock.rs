@@ -239,3 +239,23 @@ pub fn initialize_first_block() {
     DappsStaking::on_initialize(System::block_number());
     run_to_block(2);
 }
+
+// Clears all events
+pub fn clear_all_events() {
+    System::reset_events();
+}
+
+// Used to get a vec of all dapps staking events
+pub fn dapps_staking_events() -> Vec<crate::Event<TestRuntime>> {
+    System::events()
+        .into_iter()
+        .map(|r| r.event)
+        .filter_map(|e| {
+            if let Event::DappsStaking(inner) = e {
+                Some(inner)
+            } else {
+                None
+            }
+        })
+        .collect()
+}

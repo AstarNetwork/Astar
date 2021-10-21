@@ -190,10 +190,8 @@ pub mod pallet {
         ContractRemoved(T::AccountId, T::SmartContract),
         /// New dapps staking era. Distribute era rewards to contracts.
         NewDappStakingEra(EraIndex),
-        /// The contract's reward have been claimed for era.
-        ContractClaimed(T::SmartContract, EraIndex, BalanceOf<T>),
-        /// Reward paid to staker.
-        Reward(T::AccountId, BalanceOf<T>),
+        /// Reward paid to staker or developer.
+        Reward(T::AccountId, T::SmartContract, EraIndex, BalanceOf<T>),
     }
 
     #[pallet::error]
@@ -565,6 +563,8 @@ pub mod pallet {
 
             Self::deposit_event(Event::<T>::Reward(
                 developer.clone(),
+                contract_id.clone(),
+                era,
                 developer_reward.peek(),
             ));
             T::Currency::resolve_creating(&developer, developer_reward);
@@ -577,7 +577,12 @@ pub mod pallet {
                     stakers_reward.split(ratio * stakers_total_reward);
                 stakers_reward = new_stakers_reward;
 
-                Self::deposit_event(Event::<T>::Reward(staker.clone(), reward.peek()));
+                Self::deposit_event(Event::<T>::Reward(
+                    staker.clone(),
+                    contract_id.clone(),
+                    era,
+                    reward.peek(),
+                ));
                 T::Currency::resolve_creating(staker, reward);
             }
 
@@ -586,12 +591,6 @@ pub mod pallet {
             // updated counter for total rewards paid to the contract
             staking_info.claimed_rewards = contract_reward;
             <ContractEraStake<T>>::insert(&contract_id, era, staking_info);
-
-            Self::deposit_event(Event::<T>::ContractClaimed(
-                contract_id,
-                era,
-                contract_reward,
-            ));
 
             Ok(Some(T::WeightInfo::claim(number_of_payees as u32)).into())
         }
