@@ -216,10 +216,6 @@ pub mod pallet {
         AlreadyUsedDeveloperAccount,
         /// Smart contract not owned by the account id.
         NotOwnedContract,
-        /// Unexpected state error, used to abort transaction. Used for situations that 'should never happen'.
-        UnexpectedState,
-        /// Report issue on github if this is ever emitted
-        UnknownStartStakingData,
         /// Report issue on github if this is ever emitted
         UnknownEraReward,
         /// Contract hasn't been staked on in this era.
@@ -232,8 +228,6 @@ pub mod pallet {
         RequiredContractPreApproval,
         /// Developer's account is already part of pre-approved list
         AlreadyPreApprovedDeveloper,
-        /// Contract rewards haven't been claimed prior to unregistration
-        ContractRewardsNotClaimed,
     }
 
     #[pallet::hooks]

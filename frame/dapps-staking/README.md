@@ -94,15 +94,12 @@ EraRewardAndStake {
 * `ContractIsNotValid`, User attempts to register with address which is not contract.
 * `AlreadyUsedDeveloperAccount`, This account was already used to register contract.
 * `NotOwnedContract`, Contract not owned by the account.
-* `UnexpectedState`, Unexpected state error, used to abort transaction. Used for situations that 'should never happen'. Report issue on github if this is ever emitted.
-* `UnknownStartStakingData`, Report issue on github if this is ever emitted.
 * `UnknownEraReward`, Report issue on github if this is ever emitted.
 * `NotStaked`, Contract hasn't been staked on in this era.
 * `AlreadyClaimedInThisEra`, Contract already claimed in this era and reward is distributed.
 * `EraOutOfBounds`, Era parameter is out of bounds.
 * `RequiredContractPreApproval`, To register a contract, pre-approval is needed for this address.
 * `AlreadyPreApprovedDeveloper`, Developer's account is already part of pre-approved list.
-* `ContractRewardsNotClaimed`, Attempting to unregister contract which has unclaimed rewards. Claim them first before unregistering.
 
 ---
 ## Calls
