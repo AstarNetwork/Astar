@@ -356,6 +356,41 @@ fn unregister_with_incorrect_contract_does_not_work() {
 }
 
 #[test]
+fn unregister_stake_and_unstake_is_not_ok() {
+    ExternalityBuilder::build().execute_with(|| {
+        initialize_first_block();
+
+        let developer = 1;
+        let staker = 2;
+        let contract_id = MockSmartContract::Evm(H160::repeat_byte(0x01));
+
+        // Register contract, stake it, unstake a bit
+        register_contract(developer, &contract_id);
+        bond_and_stake_with_verification(staker, &contract_id, 100);
+        unbond_unstake_and_withdraw_with_verification(staker, &contract_id, 10);
+
+        // Unregister contract and verify that stake & unstake no longer work
+        assert_ok!(DappsStaking::unregister(
+            Origin::signed(developer),
+            contract_id.clone()
+        ));
+
+        assert_noop!(
+            DappsStaking::bond_and_stake(Origin::signed(staker), contract_id.clone(), 100),
+            Error::<TestRuntime>::NotOperatedContract
+        );
+        assert_noop!(
+            DappsStaking::unbond_unstake_and_withdraw(
+                Origin::signed(staker),
+                contract_id.clone(),
+                100
+            ),
+            Error::<TestRuntime>::NotOperatedContract
+        );
+    })
+}
+
+#[test]
 fn bond_and_stake_different_eras_is_ok() {
     ExternalityBuilder::build().execute_with(|| {
         initialize_first_block();
@@ -1287,6 +1322,29 @@ fn claim_twice_in_same_era() {
 }
 
 #[test]
+fn claim_for_all_valid_history_eras_is_ok() {
+    ExternalityBuilder::build().execute_with(|| {
+        initialize_first_block();
+
+        let developer1 = 1;
+        let claimer = 2;
+        let contract = MockSmartContract::Evm(H160::repeat_byte(0x01));
+
+        register_contract(developer1, &contract);
+        bond_and_stake_with_verification(claimer, &contract, 100);
+
+        // Advance past the history depth
+        advance_to_era(DappsStaking::current_era() + HistoryDepth::get() + 1);
+        let current_era = DappsStaking::current_era();
+
+        // All eras must be claimable
+        for era in (current_era - HistoryDepth::get())..current_era {
+            claim_with_verification(claimer, contract.clone(), era);
+        }
+    })
+}
+
+#[test]
 fn claim_is_ok() {
     ExternalityBuilder::build().execute_with(|| {
         initialize_first_block();
@@ -1334,11 +1392,22 @@ fn claim_after_unregister_is_ok() {
             Origin::signed(developer),
             contract.clone()
         ));
+        let unregistered_era = DappsStaking::current_era();
 
         // Ensure that contract can still be claimed.
         let current_era = DappsStaking::current_era();
         for era in 1..current_era {
             claim_with_verification(staker, contract.clone(), era);
+        }
+
+        // Advance some more eras
+        advance_to_era(unregistered_era + 5);
+        let current_era = DappsStaking::current_era();
+        for era in unregistered_era..current_era {
+            assert_noop!(
+                DappsStaking::claim(Origin::signed(developer), contract.clone(), era),
+                Error::<TestRuntime>::NotStaked,
+            );
         }
     })
 }
