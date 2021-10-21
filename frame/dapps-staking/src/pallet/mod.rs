@@ -345,6 +345,10 @@ pub mod pallet {
                 },
             );
 
+            // Nett to update staking data for next era
+            let empty_staking_info = EraStakingPoints::<T::AccountId, BalanceOf<T>>::default();
+            ContractEraStake::<T>::insert(contract_id.clone(), current_era, empty_staking_info);
+
             // Developer account released but contract can not be released more.
             T::Currency::unreserve(&developer, T::RegisterDeposit::get());
             RegisteredDevelopers::<T>::remove(&developer);

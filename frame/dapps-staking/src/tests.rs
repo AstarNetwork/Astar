@@ -1357,11 +1357,22 @@ fn claim_after_unregister_is_ok() {
             Origin::signed(developer),
             contract.clone()
         ));
+        let unregistered_era = DappsStaking::current_era();
 
         // Ensure that contract can still be claimed.
         let current_era = DappsStaking::current_era();
         for era in 1..current_era {
             claim_with_verification(staker, contract.clone(), era);
+        }
+
+        // Advance some more eras
+        advance_to_era(unregistered_era + 5);
+        let current_era = DappsStaking::current_era();
+        for era in unregistered_era..current_era {
+            assert_noop!(
+                DappsStaking::claim(Origin::signed(developer), contract.clone(), era),
+                Error::<TestRuntime>::NotStaked,
+            );
         }
     })
 }
