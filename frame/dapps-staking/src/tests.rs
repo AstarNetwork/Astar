@@ -1287,6 +1287,29 @@ fn claim_twice_in_same_era() {
 }
 
 #[test]
+fn claim_for_all_valid_history_eras_is_ok() {
+    ExternalityBuilder::build().execute_with(|| {
+        initialize_first_block();
+
+        let developer1 = 1;
+        let claimer = 2;
+        let contract = MockSmartContract::Evm(H160::repeat_byte(0x01));
+
+        register_contract(developer1, &contract);
+        bond_and_stake_with_verification(claimer, &contract, 100);
+
+        // Advance past the history depth
+        advance_to_era(DappsStaking::current_era() + HistoryDepth::get() + 1);
+        let current_era = DappsStaking::current_era();
+
+        // All eras must be claimable
+        for era in (current_era - HistoryDepth::get())..current_era {
+            claim_with_verification(claimer, contract.clone(), era);
+        }
+    })
+}
+
+#[test]
 fn claim_is_ok() {
     ExternalityBuilder::build().execute_with(|| {
         initialize_first_block();

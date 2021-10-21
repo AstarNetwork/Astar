@@ -524,7 +524,7 @@ pub mod pallet {
             let era_low_bound = current_era.saturating_sub(T::HistoryDepth::get());
 
             ensure!(
-                era < current_era && era > era_low_bound,
+                era < current_era && era >= era_low_bound,
                 Error::<T>::EraOutOfBounds,
             );
 
