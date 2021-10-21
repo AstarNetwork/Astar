@@ -4473,7 +4473,7 @@ dependencies = [
 
 [[package]]
 name = "local-runtime"
-version = "2.6.4"
+version = "2.6.5"
 dependencies = [
  "evm",
  "fp-rpc",
@@ -5455,7 +5455,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-dapps-staking"
-version = "1.0.0"
+version = "1.0.1"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -9658,7 +9658,7 @@ dependencies = [
 
 [[package]]
 name = "shibuya-runtime"
-version = "2.6.4"
+version = "2.6.5"
 dependencies = [
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-parachain-system",
@@ -9726,7 +9726,7 @@ dependencies = [
 
 [[package]]
 name = "shiden-runtime"
-version = "2.6.4"
+version = "2.6.5"
 dependencies = [
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-parachain-system",

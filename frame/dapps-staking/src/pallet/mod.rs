@@ -224,8 +224,8 @@ pub mod pallet {
         UnknownStartStakingData,
         /// Report issue on github if this is ever emitted
         UnknownEraReward,
-        /// There are no funds to reward the contract. Or already claimed in that era
-        NothingToClaim,
+        /// Contract hasn't been staked on in this era.
+        NotStaked,
         /// Contract already claimed in this era and reward is distributed
         AlreadyClaimedInThisEra,
         /// Era parameter is out of bounds
@@ -536,6 +536,8 @@ pub mod pallet {
                 staking_info.claimed_rewards.is_zero(),
                 Error::<T>::AlreadyClaimedInThisEra,
             );
+
+            ensure!(!staking_info.stakers.is_empty(), Error::<T>::NotStaked,);
 
             let reward_and_stake =
                 Self::era_reward_and_stake(era).ok_or(Error::<T>::UnknownEraReward)?;
