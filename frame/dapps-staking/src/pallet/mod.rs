@@ -452,7 +452,7 @@ pub mod pallet {
 
             ensure!(value > Zero::zero(), Error::<T>::UnstakingWithNoValue);
             ensure!(
-                RegisteredDapps::<T>::contains_key(&contract_id),
+                Self::is_active(&contract_id),
                 Error::<T>::NotOperatedContract,
             );
 

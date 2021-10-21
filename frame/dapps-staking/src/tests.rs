@@ -356,6 +356,41 @@ fn unregister_with_incorrect_contract_does_not_work() {
 }
 
 #[test]
+fn unregister_stake_and_unstake_is_not_ok() {
+    ExternalityBuilder::build().execute_with(|| {
+        initialize_first_block();
+
+        let developer = 1;
+        let staker = 2;
+        let contract_id = MockSmartContract::Evm(H160::repeat_byte(0x01));
+
+        // Register contract, stake it, unstake a bit
+        register_contract(developer, &contract_id);
+        bond_and_stake_with_verification(staker, &contract_id, 100);
+        unbond_unstake_and_withdraw_with_verification(staker, &contract_id, 10);
+
+        // Unregister contract and verify that stake & unstake no longer work
+        assert_ok!(DappsStaking::unregister(
+            Origin::signed(developer),
+            contract_id.clone()
+        ));
+
+        assert_noop!(
+            DappsStaking::bond_and_stake(Origin::signed(staker), contract_id.clone(), 100),
+            Error::<TestRuntime>::NotOperatedContract
+        );
+        assert_noop!(
+            DappsStaking::unbond_unstake_and_withdraw(
+                Origin::signed(staker),
+                contract_id.clone(),
+                100
+            ),
+            Error::<TestRuntime>::NotOperatedContract
+        );
+    })
+}
+
+#[test]
 fn bond_and_stake_different_eras_is_ok() {
     ExternalityBuilder::build().execute_with(|| {
         initialize_first_block();
