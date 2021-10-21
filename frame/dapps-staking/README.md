@@ -79,7 +79,7 @@ EraRewardAndStake {
 * `ContractRemoved(AccountId, SmartContract):` Contract removed from dapps staking.
 * `NewDappStakingEra(EraIndex):` New dapps staking era. Distribute era rewards to contracts.
 * `ContractClaimed(SmartContract, EraIndex, Balance):` The contract's reward has been claimed for an era
-* `Reward(AccountId, Balance):` Reward paid to staker.
+* `Reward(AccountId, SmartContract, EraIndex, Balance):` Reward paid to staker or developer.
 
 
 ---
