@@ -9658,7 +9658,7 @@ dependencies = [
 
 [[package]]
 name = "shibuya-runtime"
-version = "2.6.7"
+version = "2.6.8"
 dependencies = [
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-parachain-system",

@@ -93,7 +93,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("shibuya"),
     impl_name: create_runtime_str!("shibuya"),
     authoring_version: 1,
-    spec_version: 14,
+    spec_version: 15,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 1,
@@ -276,7 +276,7 @@ parameter_types! {
     pub const BlockPerEra: BlockNumber = 4 * HOURS;
     pub const RegisterDeposit: Balance = 100 * SDN;
     pub const DeveloperRewardPercentage: Perbill = Perbill::from_percent(80);
-    pub const MaxNumberOfStakersPerContract: u32 = 512;
+    pub const MaxNumberOfStakersPerContract: u32 = 2048;
     pub const MinimumStakingAmount: Balance = 5 * SDN;
     pub const HistoryDepth: u32 = 60;
     pub const BonusEraDuration: u32 = 600;
