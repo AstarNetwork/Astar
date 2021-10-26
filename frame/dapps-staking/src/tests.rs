@@ -391,6 +391,22 @@ fn unregister_stake_and_unstake_is_not_ok() {
 }
 
 #[test]
+fn on_initialize_when_dapp_staking_enabled_in_mid_of_an_era_is_ok() {
+    ExternalityBuilder::build().execute_with(|| {
+        // Set a block number in mid of an era
+        System::set_block_number(2);
+
+        // Verify that current era is 0 since dapps staking hasn't been initialized yet
+        assert_eq!(0u32, DappsStaking::current_era());
+
+        // Call on initialize in the mid of an era (according to block number calculation)
+        // but since no era was initialized before, it will trigger a new era init.
+        DappsStaking::on_initialize(System::block_number());
+        assert_eq!(1u32, DappsStaking::current_era());
+    })
+}
+
+#[test]
 fn bond_and_stake_different_eras_is_ok() {
     ExternalityBuilder::build().execute_with(|| {
         initialize_first_block();
