@@ -27,4 +27,7 @@ impl Extensions {
     }
 }
 
-// TODO: add helper methods here. The problem is that they don't have the same type so how to best handle it? Generics? Introduction of a shared type?
+// TODO: add helper methods here?
+// The problem is that they don't have the same type so how to best handle it?
+// Generics seem a bit of an overkill since I need to introduce dependency on signature pallets then to implement the bound?
+// Introduction of a shared type? Could this also be useful for the SmartContract struct which is copy/pasted across different crates?
