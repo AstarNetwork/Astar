@@ -15,10 +15,6 @@ use super::Extensions;
 /// Specialized `ChainSpec` for Shiden Network.
 pub type ShidenChainSpec = sc_service::GenericChainSpec<shiden_runtime::GenesisConfig, Extensions>;
 
-fn session_keys(aura: AuraId) -> shiden_runtime::SessionKeys {
-    shiden_runtime::SessionKeys { aura }
-}
-
 /// Gen Shiden chain specification for given parachain id.
 pub fn get_chain_spec(para_id: u32) -> ShidenChainSpec {
     // Alice as default
@@ -45,6 +41,10 @@ pub fn get_chain_spec(para_id: u32) -> ShidenChainSpec {
             para_id,
         },
     )
+}
+
+fn session_keys(aura: AuraId) -> shiden_runtime::SessionKeys {
+    shiden_runtime::SessionKeys { aura }
 }
 
 /// Helper function to create GenesisConfig.

@@ -17,10 +17,6 @@ use super::Extensions;
 /// Specialized `ChainSpec` for Shibuya testnet.
 pub type ShibuyaChainSpec = sc_service::GenericChainSpec<GenesisConfig, Extensions>;
 
-fn session_keys(aura: AuraId) -> SessionKeys {
-    SessionKeys { aura }
-}
-
 /// Gen Shibuya chain specification for given parachain id.
 pub fn get_chain_spec(para_id: u32) -> ShibuyaChainSpec {
     // Alice as default
@@ -47,6 +43,10 @@ pub fn get_chain_spec(para_id: u32) -> ShibuyaChainSpec {
             para_id,
         },
     )
+}
+
+fn session_keys(aura: AuraId) -> SessionKeys {
+    SessionKeys { aura }
 }
 
 /// Helper function to create Shibuya GenesisConfig.

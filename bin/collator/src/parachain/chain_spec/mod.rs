@@ -4,6 +4,9 @@ use serde::{Deserialize, Serialize};
 pub mod shibuya;
 pub mod shiden;
 
+pub use shibuya::ShibuyaChainSpec;
+pub use shiden::ShidenChainSpec;
+
 /// Node `ChainSpec` extensions.
 ///
 /// Additional parameters for some Substrate core modules,
