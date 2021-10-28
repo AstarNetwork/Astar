@@ -60,7 +60,7 @@ parameter_types! {
 }
 
 impl frame_system::Config for TestRuntime {
-    type BaseCallFilter = ();
+    type BaseCallFilter = frame_support::traits::Everything;
     type BlockWeights = ();
     type BlockLength = ();
     type Origin = Origin;
@@ -141,7 +141,7 @@ impl pallet_dapps_staking::Config for TestRuntime {
     type TreasuryPalletId = TreasuryPalletId;
 }
 
-#[derive(PartialEq, Eq, Copy, Clone, Encode, Decode, Debug)]
+#[derive(PartialEq, Eq, Copy, Clone, Encode, Decode, Debug, scale_info::TypeInfo)]
 pub enum MockSmartContract<AccountId> {
     Evm(sp_core::H160),
     Wasm(AccountId),
