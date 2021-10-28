@@ -6,7 +6,7 @@
 
 use codec::{Decode, Encode};
 use frame_support::{
-    construct_runtime, match_type, parameter_types,
+    construct_runtime, parameter_types,
     traits::{Contains, Currency, FindAuthor, Imbalance, OnUnbalanced},
     weights::{
         constants::{BlockExecutionWeight, ExtrinsicBaseWeight, WEIGHT_PER_SECOND},
@@ -38,14 +38,6 @@ use sp_std::prelude::*;
 #[cfg(any(feature = "std", test))]
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
-
-// XCM support
-use xcm::latest::prelude::*;
-use xcm_builder::{
-    AllowUnpaidExecutionFrom, FixedWeightBounds, LocationInverter, ParentAsSuperuser,
-    ParentIsDefault, SovereignSignedViaLocation,
-};
-use xcm_executor::{Config, XcmExecutor};
 
 pub use pallet_balances::Call as BalancesCall;
 pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
@@ -93,7 +85,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("shibuya"),
     impl_name: create_runtime_str!("shibuya"),
     authoring_version: 1,
-    spec_version: 15,
+    spec_version: 16,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 1,
@@ -154,7 +146,7 @@ impl Contains<Call> for BaseFilter {
         match call {
             // These modules are not allowed to be called by transactions:
             // To leave collator just shutdown it, next session funds will be released
-            Call::CollatorSelection(pallet_collator_selection::Call::leave_intent(..)) => false,
+            Call::CollatorSelection(pallet_collator_selection::Call::leave_intent { .. }) => false,
             // Other modules should works:
             _ => true,
         }
@@ -299,7 +291,7 @@ impl pallet_dapps_staking::Config for Runtime {
 }
 
 /// Multi-VM pointer to smart contract instance.
-#[derive(PartialEq, Eq, Copy, Clone, Encode, Decode, RuntimeDebug)]
+#[derive(PartialEq, Eq, Copy, Clone, Encode, Decode, RuntimeDebug, scale_info::TypeInfo)]
 pub enum SmartContract<AccountId> {
     /// EVM smart contract instance.
     Evm(sp_core::H160),
@@ -349,7 +341,7 @@ impl cumulus_pallet_parachain_system::Config for Runtime {
     type OnValidationData = ();
     type SelfParaId = parachain_info::Pallet<Runtime>;
     type OutboundXcmpMessageSource = ();
-    type DmpMessageHandler = cumulus_pallet_xcm::UnlimitedDmpExecution<Runtime>;
+    type DmpMessageHandler = ();
     type ReservedDmpWeight = ReservedDmpWeight;
     type XcmpMessageHandler = ();
     type ReservedXcmpWeight = ();
@@ -357,9 +349,14 @@ impl cumulus_pallet_parachain_system::Config for Runtime {
 
 impl parachain_info::Config for Runtime {}
 
+parameter_types! {
+    pub const MaxAuthorities: u32 = 250;
+}
+
 impl pallet_aura::Config for Runtime {
     type AuthorityId = AuraId;
     type DisabledValidators = ();
+    type MaxAuthorities = MaxAuthorities;
 }
 
 impl cumulus_pallet_aura_ext::Config for Runtime {}
@@ -459,53 +456,6 @@ impl pallet_block_reward::Config for Runtime {
 }
 
 parameter_types! {
-    pub Ancestry: MultiLocation = Parachain(ParachainInfo::parachain_id().into()).into();
-}
-
-/// This is the type we use to convert an (incoming) XCM origin into a local `Origin` instance,
-/// ready for dispatching a transaction with Xcm's `Transact`. There is an `OriginKind` which can
-/// bias the kind of local `Origin` it will become.
-pub type XcmOriginToTransactDispatchOrigin = (
-    // Sovereign account converter; this attempts to derive an `AccountId` from the origin location
-    // using `LocationToAccountId` and then turn that into the usual `Signed` origin. Useful for
-    // foreign chains who want to have a local sovereign account on this chain which they control.
-    SovereignSignedViaLocation<ParentIsDefault<AccountId>, Origin>,
-    // Superuser converter for the Relay-chain (Parent) location. This will allow it to issue a
-    // transaction from the Root origin.
-    ParentAsSuperuser<Origin>,
-);
-
-match_type! {
-    pub type JustTheParent: impl Contains<MultiLocation> = { MultiLocation { parents:1, interior: Here } };
-}
-
-parameter_types! {
-    // One XCM operation is 1_000_000 weight - almost certainly a conservative estimate.
-    pub UnitWeightCost: Weight = 1_000_000;
-}
-
-pub struct XcmConfig;
-impl Config for XcmConfig {
-    type Call = Call;
-    type XcmSender = (); // sending XCM not supported
-    type AssetTransactor = (); // balances not supported
-    type OriginConverter = XcmOriginToTransactDispatchOrigin;
-    type IsReserve = (); // balances not supported
-    type IsTeleporter = (); // balances not supported
-    type LocationInverter = LocationInverter<Ancestry>;
-    type Barrier = AllowUnpaidExecutionFrom<JustTheParent>;
-    type Weigher = FixedWeightBounds<UnitWeightCost, Call>; // balances not supported
-    type Trader = (); // balances not supported
-    type ResponseHandler = (); // Don't handle responses for now.
-    type SubscriptionService = (); // don't handle subscriptions for now
-}
-
-impl cumulus_pallet_xcm::Config for Runtime {
-    type Event = Event;
-    type XcmExecutor = XcmExecutor<XcmConfig>;
-}
-
-parameter_types! {
     pub const ExistentialDeposit: Balance = 1_000_000;
     pub const MaxLocks: u32 = 50;
     pub const MaxReserves: u32 = 50;
@@ -533,11 +483,15 @@ impl pallet_vesting::Config for Runtime {
     type BlockNumberToBalance = ConvertInto;
     type MinVestedTransfer = MinVestedTransfer;
     type WeightInfo = ();
+    // `VestingInfo` encode length is 36bytes. 28 schedules gets encoded as 1009 bytes, which is the
+    // highest number of schedules that encodes less than 2^10.
+    const MAX_VESTING_SCHEDULES: u32 = 28;
 }
 
 parameter_types! {
     pub const TransactionByteFee: Balance = MILLISDN / 100;
     pub const TargetBlockFullness: Perquintill = Perquintill::from_percent(25);
+    pub const OperationalFeeMultiplier: u8 = 5;
     pub AdjustmentVariable: Multiplier = Multiplier::saturating_from_rational(1, 100_000);
     pub MinimumMultiplier: Multiplier = Multiplier::saturating_from_rational(1, 1_000_000_000u128);
 }
@@ -585,6 +539,7 @@ impl pallet_transaction_payment::Config for Runtime {
     type OnChargeTransaction = pallet_transaction_payment::CurrencyAdapter<Balances, DealWithFees>;
     type TransactionByteFee = TransactionByteFee;
     type WeightToFee = WeightToFee;
+    type OperationalFeeMultiplier = OperationalFeeMultiplier;
     type FeeMultiplierUpdate =
         TargetedFeeAdjustment<Self, TargetBlockFullness, AdjustmentVariable, MinimumMultiplier>;
 }
@@ -670,7 +625,7 @@ pub struct TransactionConverter;
 impl fp_rpc::ConvertTransaction<UncheckedExtrinsic> for TransactionConverter {
     fn convert_transaction(&self, transaction: pallet_ethereum::Transaction) -> UncheckedExtrinsic {
         UncheckedExtrinsic::new_unsigned(
-            pallet_ethereum::Call::<Runtime>::transact(transaction).into(),
+            pallet_ethereum::Call::<Runtime>::transact { transaction }.into(),
         )
     }
 }
@@ -681,7 +636,7 @@ impl fp_rpc::ConvertTransaction<sp_runtime::OpaqueExtrinsic> for TransactionConv
         transaction: pallet_ethereum::Transaction,
     ) -> sp_runtime::OpaqueExtrinsic {
         let extrinsic = UncheckedExtrinsic::new_unsigned(
-            pallet_ethereum::Call::<Runtime>::transact(transaction).into(),
+            pallet_ethereum::Call::<Runtime>::transact { transaction }.into(),
         );
         let encoded = extrinsic.encode();
         sp_runtime::OpaqueExtrinsic::decode(&mut &encoded[..])
@@ -727,10 +682,8 @@ construct_runtime!(
         Aura: pallet_aura::{Pallet, Storage, Config<T>} = 43,
         AuraExt: cumulus_pallet_aura_ext::{Pallet, Storage, Config} = 44,
 
-        CumulusXcm: cumulus_pallet_xcm::{Pallet, Call, Event<T>, Origin} = 50,
-
         EVM: pallet_evm::{Pallet, Config, Call, Storage, Event<T>} = 60,
-        Ethereum: pallet_ethereum::{Pallet, Call, Storage, Event, Config, ValidateUnsigned} = 61,
+        Ethereum: pallet_ethereum::{Pallet, Call, Storage, Event, Origin, Config} = 61,
 
         Sudo: pallet_sudo::{Pallet, Call, Storage, Event<T>, Config<T>} = 99,
     }
@@ -801,7 +754,7 @@ impl_runtime_apis! {
 
     impl sp_api::Metadata<Block> for Runtime {
         fn metadata() -> OpaqueMetadata {
-            Runtime::metadata().into()
+            OpaqueMetadata::new(Runtime::metadata().into())
         }
     }
 
@@ -811,7 +764,7 @@ impl_runtime_apis! {
         }
 
         fn authorities() -> Vec<AuraId> {
-            Aura::authorities()
+            Aura::authorities().into_inner()
         }
     }
 
@@ -1005,7 +958,7 @@ impl_runtime_apis! {
             xts: Vec<<Block as BlockT>::Extrinsic>,
         ) -> Vec<pallet_ethereum::Transaction> {
             xts.into_iter().filter_map(|xt| match xt.function {
-                Call::Ethereum(pallet_ethereum::Call::transact(t)) => Some(t),
+                Call::Ethereum(pallet_ethereum::Call::transact { transaction }) => Some(transaction),
                 _ => None
             }).collect::<Vec<pallet_ethereum::Transaction>>()
         }

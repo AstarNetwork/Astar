@@ -78,7 +78,6 @@ pub mod pallet {
 
     #[pallet::event]
     #[pallet::generate_deposit(pub(super) fn deposit_event)]
-    #[pallet::metadata(T::AccountId = "AccountId")]
     pub enum Event<T: Config> {
         /// A call just executed. \[result\]
         Executed(T::AccountId, DispatchResult),
@@ -164,7 +163,12 @@ pub mod pallet {
         fn validate_unsigned(_source: TransactionSource, call: &Self::Call) -> TransactionValidity {
             // Call decomposition (we have only one possible value here)
             let (call, signer, signature, nonce) = match call {
-                Call::call(a, b, c, d) => (a, b, c, d),
+                Call::call {
+                    call,
+                    signer,
+                    signature,
+                    nonce,
+                } => (call, signer, signature, nonce),
                 _ => return InvalidTransaction::Call.into(),
             };
 

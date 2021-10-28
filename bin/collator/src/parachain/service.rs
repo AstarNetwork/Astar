@@ -14,6 +14,7 @@ use fc_rpc_core::types::FilterPool;
 use futures::{lock::Mutex, StreamExt};
 use sc_client_api::{BlockchainEvents, ExecutorProvider};
 use sc_consensus::import_queue::BasicQueue;
+use sc_executor::NativeElseWasmExecutor;
 use sc_network::NetworkService;
 use sc_service::{Configuration, PartialComponents, Role, TFullBackend, TFullClient, TaskManager};
 use sc_telemetry::{Telemetry, TelemetryHandle, TelemetryWorker, TelemetryWorkerHandle};
@@ -32,40 +33,46 @@ use crate::primitives::*;
 pub mod shiden {
     pub use shiden_runtime::RuntimeApi;
 
-    #[cfg(not(feature = "runtime-benchmarks"))]
-    sc_executor::native_executor_instance!(
-        pub Executor,
-        shiden_runtime::api::dispatch,
-        shiden_runtime::native_version,
-    );
+    /// Shiden runtime executor.
+    pub struct Executor;
+    impl sc_executor::NativeExecutionDispatch for Executor {
+        #[cfg(not(feature = "runtime-benchmarks"))]
+        type ExtendHostFunctions = ();
 
-    #[cfg(feature = "runtime-benchmarks")]
-    sc_executor::native_executor_instance!(
-        pub Executor,
-        shiden_runtime::api::dispatch,
-        shiden_runtime::native_version,
-        frame_benchmarking::benchmarking::HostFunctions,
-    );
+        #[cfg(feature = "runtime-benchmarks")]
+        type ExtendHostFunctions = frame_benchmarking::benchmarking::HostFunctions;
+
+        fn dispatch(method: &str, data: &[u8]) -> Option<Vec<u8>> {
+            shiden_runtime::api::dispatch(method, data)
+        }
+
+        fn native_version() -> sc_executor::NativeVersion {
+            shiden_runtime::native_version()
+        }
+    }
 }
 
 /// Shibuya network runtime executor.
 pub mod shibuya {
     pub use shibuya_runtime::RuntimeApi;
 
-    #[cfg(not(feature = "runtime-benchmarks"))]
-    sc_executor::native_executor_instance!(
-        pub Executor,
-        shibuya_runtime::api::dispatch,
-        shibuya_runtime::native_version,
-    );
+    /// Shibuya runtime executor.
+    pub struct Executor;
+    impl sc_executor::NativeExecutionDispatch for Executor {
+        #[cfg(not(feature = "runtime-benchmarks"))]
+        type ExtendHostFunctions = ();
 
-    #[cfg(feature = "runtime-benchmarks")]
-    sc_executor::native_executor_instance!(
-        pub Executor,
-        shibuya_runtime::api::dispatch,
-        shibuya_runtime::native_version,
-        frame_benchmarking::benchmarking::HostFunctions,
-    );
+        #[cfg(feature = "runtime-benchmarks")]
+        type ExtendHostFunctions = frame_benchmarking::benchmarking::HostFunctions;
+
+        fn dispatch(method: &str, data: &[u8]) -> Option<Vec<u8>> {
+            shibuya_runtime::api::dispatch(method, data)
+        }
+
+        fn native_version() -> sc_executor::NativeVersion {
+            shibuya_runtime::native_version()
+        }
+    }
 }
 
 /// Starts a `ServiceBuilder` for a full service.
@@ -77,11 +84,17 @@ pub fn new_partial<RuntimeApi, Executor, BIQ>(
     build_import_queue: BIQ,
 ) -> Result<
     PartialComponents<
-        TFullClient<Block, RuntimeApi, Executor>,
+        TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>,
         TFullBackend<Block>,
         (),
-        sc_consensus::DefaultImportQueue<Block, TFullClient<Block, RuntimeApi, Executor>>,
-        sc_transaction_pool::FullPool<Block, TFullClient<Block, RuntimeApi, Executor>>,
+        sc_consensus::DefaultImportQueue<
+            Block,
+            TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>,
+        >,
+        sc_transaction_pool::FullPool<
+            Block,
+            TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>,
+        >,
         (
             Option<Telemetry>,
             Option<TelemetryWorkerHandle>,
@@ -91,7 +104,7 @@ pub fn new_partial<RuntimeApi, Executor, BIQ>(
     sc_service::Error,
 >
 where
-    RuntimeApi: ConstructRuntimeApi<Block, TFullClient<Block, RuntimeApi, Executor>>
+    RuntimeApi: ConstructRuntimeApi<Block, TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>
         + Send
         + Sync
         + 'static,
@@ -107,17 +120,20 @@ where
     sc_client_api::StateBackendFor<TFullBackend<Block>, Block>: sp_api::StateBackend<BlakeTwo256>,
     Executor: sc_executor::NativeExecutionDispatch + 'static,
     BIQ: FnOnce(
-        Arc<TFullClient<Block, RuntimeApi, Executor>>,
+        Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>,
         FrontierBlockImport<
             Block,
-            Arc<TFullClient<Block, RuntimeApi, Executor>>,
-            TFullClient<Block, RuntimeApi, Executor>,
+            Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>,
+            TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>,
         >,
         &Configuration,
         Option<TelemetryHandle>,
         &TaskManager,
     ) -> Result<
-        sc_consensus::DefaultImportQueue<Block, TFullClient<Block, RuntimeApi, Executor>>,
+        sc_consensus::DefaultImportQueue<
+            Block,
+            TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>,
+        >,
         sc_service::Error,
     >,
 {
@@ -132,10 +148,17 @@ where
         })
         .transpose()?;
 
+    let executor = sc_executor::NativeElseWasmExecutor::<Executor>::new(
+        config.wasm_method,
+        config.default_heap_pages,
+        config.max_runtime_instances,
+    );
+
     let (client, backend, keystore_container, task_manager) =
-        sc_service::new_full_parts::<Block, RuntimeApi, Executor>(
+        sc_service::new_full_parts::<Block, RuntimeApi, _>(
             &config,
             telemetry.as_ref().map(|(_, telemetry)| telemetry.handle()),
+            executor,
         )?;
     let client = Arc::new(client);
 
@@ -190,9 +213,12 @@ async fn start_node_impl<RuntimeApi, Executor, BIQ, BIC>(
     id: ParaId,
     build_import_queue: BIQ,
     build_consensus: BIC,
-) -> sc_service::error::Result<(TaskManager, Arc<TFullClient<Block, RuntimeApi, Executor>>)>
+) -> sc_service::error::Result<(
+    TaskManager,
+    Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>,
+)>
 where
-    RuntimeApi: ConstructRuntimeApi<Block, TFullClient<Block, RuntimeApi, Executor>>
+    RuntimeApi: ConstructRuntimeApi<Block, TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>
         + Send
         + Sync
         + 'static,
@@ -211,26 +237,34 @@ where
     sc_client_api::StateBackendFor<TFullBackend<Block>, Block>: sp_api::StateBackend<BlakeTwo256>,
     Executor: sc_executor::NativeExecutionDispatch + 'static,
     BIQ: FnOnce(
-        Arc<TFullClient<Block, RuntimeApi, Executor>>,
+        Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>,
         FrontierBlockImport<
             Block,
-            Arc<TFullClient<Block, RuntimeApi, Executor>>,
-            TFullClient<Block, RuntimeApi, Executor>,
+            Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>,
+            TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>,
         >,
         &Configuration,
         Option<TelemetryHandle>,
         &TaskManager,
     ) -> Result<
-        sc_consensus::DefaultImportQueue<Block, TFullClient<Block, RuntimeApi, Executor>>,
+        sc_consensus::DefaultImportQueue<
+            Block,
+            TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>,
+        >,
         sc_service::Error,
     >,
     BIC: FnOnce(
-        Arc<TFullClient<Block, RuntimeApi, Executor>>,
+        Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>,
         Option<&Registry>,
         Option<TelemetryHandle>,
         &TaskManager,
         &polkadot_service::NewFull<polkadot_service::Client>,
-        Arc<sc_transaction_pool::FullPool<Block, TFullClient<Block, RuntimeApi, Executor>>>,
+        Arc<
+            sc_transaction_pool::FullPool<
+                Block,
+                TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>,
+            >,
+        >,
         Arc<NetworkService<Block, Hash>>,
         SyncCryptoStorePtr,
         bool,
@@ -403,21 +437,24 @@ where
 
 /// Build the import queue.
 pub fn build_import_queue<RuntimeApi, Executor>(
-    client: Arc<TFullClient<Block, RuntimeApi, Executor>>,
+    client: Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>,
     block_import: FrontierBlockImport<
         Block,
-        Arc<TFullClient<Block, RuntimeApi, Executor>>,
-        TFullClient<Block, RuntimeApi, Executor>,
+        Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>,
+        TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>,
     >,
     config: &Configuration,
     telemetry_handle: Option<TelemetryHandle>,
     task_manager: &TaskManager,
 ) -> Result<
-    sc_consensus::DefaultImportQueue<Block, TFullClient<Block, RuntimeApi, Executor>>,
+    sc_consensus::DefaultImportQueue<
+        Block,
+        TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>,
+    >,
     sc_service::Error,
 >
 where
-    RuntimeApi: ConstructRuntimeApi<Block, TFullClient<Block, RuntimeApi, Executor>>
+    RuntimeApi: ConstructRuntimeApi<Block, TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>
         + Send
         + Sync
         + 'static,
@@ -495,7 +532,7 @@ pub async fn start_shiden_node(
     id: ParaId,
 ) -> sc_service::error::Result<(
     TaskManager,
-    Arc<TFullClient<Block, shiden::RuntimeApi, shiden::Executor>>,
+    Arc<TFullClient<Block, shiden::RuntimeApi, NativeElseWasmExecutor<shiden::Executor>>>,
 )> {
     start_node_impl::<shiden::RuntimeApi, shiden::Executor, _, _>(
         parachain_config,
@@ -657,7 +694,7 @@ pub async fn start_shibuya_node(
     id: ParaId,
 ) -> sc_service::error::Result<(
     TaskManager,
-    Arc<TFullClient<Block, shibuya::RuntimeApi, shibuya::Executor>>,
+    Arc<TFullClient<Block, shibuya::RuntimeApi, NativeElseWasmExecutor<shibuya::Executor>>>,
 )> {
     start_node_impl::<shibuya::RuntimeApi, shibuya::Executor, _, _>(
         parachain_config,

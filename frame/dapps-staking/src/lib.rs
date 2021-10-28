@@ -6,6 +6,7 @@
 use codec::{Decode, Encode, HasCompact};
 use frame_support::traits::Currency;
 use frame_system::{self as system};
+use scale_info::TypeInfo;
 use sp_runtime::RuntimeDebug;
 use sp_std::{collections::btree_map::BTreeMap, prelude::*};
 
@@ -34,7 +35,7 @@ pub type BalanceOf<T> =
 pub type EraIndex = u32;
 
 /// Mode of era-forcing.
-#[derive(Copy, Clone, PartialEq, Eq, Encode, Decode, RuntimeDebug)]
+#[derive(Copy, Clone, PartialEq, Eq, Encode, Decode, RuntimeDebug, TypeInfo)]
 #[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
 pub enum Forcing {
     /// Not forcing anything - just let whatever happen.
@@ -56,7 +57,7 @@ impl Default for Forcing {
 }
 
 /// A record for total rewards and total amount staked for an era
-#[derive(PartialEq, Eq, Clone, Default, Encode, Decode, RuntimeDebug)]
+#[derive(PartialEq, Eq, Clone, Default, Encode, Decode, RuntimeDebug, TypeInfo)]
 pub struct EraRewardAndStake<Balance> {
     /// Total amount of rewards for an era
     rewards: Balance,
@@ -67,7 +68,7 @@ pub struct EraRewardAndStake<Balance> {
 /// Used to split total EraPayout among contracts.
 /// Each tuple (contract, era) has this structure.
 /// This will be used to reward contracts developer and his stakers.
-#[derive(Clone, PartialEq, Encode, Decode, Default, RuntimeDebug)]
+#[derive(Clone, PartialEq, Encode, Decode, Default, RuntimeDebug, TypeInfo)]
 pub struct EraStakingPoints<AccountId: Ord, Balance: HasCompact> {
     /// Total staked amount.
     total: Balance,

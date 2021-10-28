@@ -18,15 +18,19 @@ where
     fn set_keys(keys: Vec<u8>) -> Result<R::Call, ExitError> {
         let keys = <R as pallet_session::Config>::Keys::decode(&mut &keys[..])
             .map_err(|_| ExitError::Other("Unable to decode session keys".into()))?;
-        Ok(pallet_session::Call::<R>::set_keys(keys, Default::default()).into())
+        Ok(pallet_session::Call::<R>::set_keys {
+            keys,
+            proof: Default::default(),
+        }
+        .into())
     }
 
     fn purge_keys() -> R::Call {
-        pallet_session::Call::<R>::purge_keys().into()
+        pallet_session::Call::<R>::purge_keys {}.into()
     }
 
     fn register_as_candidate() -> R::Call {
-        pallet_collator_selection::Call::<R>::register_as_candidate().into()
+        pallet_collator_selection::Call::<R>::register_as_candidate {}.into()
     }
 }
 

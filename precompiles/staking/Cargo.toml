@@ -1,6 +1,6 @@
 [package]
 name = "pallet-precompile-staking"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["Stake Technologies <devops@stake.co.jp>"]
 edition = "2018"
 license = "Apache-2.0"
@@ -12,15 +12,15 @@ description = "Collator staking EVM precompiles"
 targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
-codec = { package = "parity-scale-codec", version = "2.0.0", default-features = false }
-evm = { version = "0.30.0", default-features = false }
-sp-std = { git = "https://github.com/PlasmNetwork/substrate", branch = "polkadot-v0.9.10", default-features = false }
-sp-core = { git = "https://github.com/PlasmNetwork/substrate", branch = "polkadot-v0.9.10", default-features = false }
-frame-support = { git = "https://github.com/PlasmNetwork/substrate", branch = "polkadot-v0.9.10", default-features = false }
-frame-system = { git = "https://github.com/PlasmNetwork/substrate", branch = "polkadot-v0.9.10", default-features = false }
-pallet-evm = { git = "https://github.com/PlasmNetwork/frontier", branch = "polkadot-v0.9.10", default-features = false }
-pallet-session = { git = "https://github.com/PlasmNetwork/substrate", branch = "polkadot-v0.9.10", default-features = false }
-pallet-collator-selection = { git = "https://github.com/PlasmNetwork/cumulus", branch = "polkadot-v0.9.10", default-features = false }
+codec = { package = "parity-scale-codec", version = "2.2.0", default-features = false }
+evm = { git = "https://github.com/PlasmNetwork/evm", branch = "polkadot-v0.9.11", default-features = false }
+sp-std = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.11", default-features = false }
+sp-core = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.11", default-features = false }
+frame-support = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.11", default-features = false }
+frame-system = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.11", default-features = false }
+pallet-evm = { git = "https://github.com/PlasmNetwork/frontier", branch = "polkadot-v0.9.11", default-features = false }
+pallet-session = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.11", default-features = false }
+pallet-collator-selection = { git = "https://github.com/paritytech/cumulus", branch = "polkadot-v0.9.11", default-features = false }
 
 [features]
 default = ["std"]
