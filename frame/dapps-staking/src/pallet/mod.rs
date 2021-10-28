@@ -178,7 +178,6 @@ pub mod pallet {
 
     #[pallet::event]
     #[pallet::generate_deposit(pub(crate) fn deposit_event)]
-    #[pallet::metadata(T::AccountId = "AccountId", BalanceOf<T> = "Balance")]
     pub enum Event<T: Config> {
         /// Account has bonded and staked funds on a smart contract.
         BondAndStake(T::AccountId, T::SmartContract, BalanceOf<T>),
