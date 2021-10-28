@@ -2166,7 +2166,7 @@ dependencies = [
 [[package]]
 name = "fc-consensus"
 version = "2.0.0-dev"
-source = "git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.11#027e3c22a256e04688fb6d22d73e2fe2052096a1"
+source = "git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.11#6f0d74940a6d07f2a8f61e9edad072931e52b88d"
 dependencies = [
  "async-trait",
  "derive_more",
@@ -2192,7 +2192,7 @@ dependencies = [
 [[package]]
 name = "fc-db"
 version = "2.0.0-dev"
-source = "git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.11#027e3c22a256e04688fb6d22d73e2fe2052096a1"
+source = "git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.11#6f0d74940a6d07f2a8f61e9edad072931e52b88d"
 dependencies = [
  "fp-storage",
  "kvdb",
@@ -2208,7 +2208,7 @@ dependencies = [
 [[package]]
 name = "fc-mapping-sync"
 version = "2.0.0-dev"
-source = "git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.11#027e3c22a256e04688fb6d22d73e2fe2052096a1"
+source = "git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.11#6f0d74940a6d07f2a8f61e9edad072931e52b88d"
 dependencies = [
  "fc-consensus",
  "fc-db",
@@ -2226,9 +2226,9 @@ dependencies = [
 [[package]]
 name = "fc-rpc"
 version = "2.0.0-dev"
-source = "git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.11#027e3c22a256e04688fb6d22d73e2fe2052096a1"
+source = "git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.11#6f0d74940a6d07f2a8f61e9edad072931e52b88d"
 dependencies = [
- "ethereum 0.9.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "ethereum 0.9.0 (git+https://github.com/PlasmNetwork/ethereum?branch=polkadot-v0.9.11)",
  "ethereum-types",
  "evm 0.30.1 (git+https://github.com/PlasmNetwork/evm?branch=polkadot-v0.9.11)",
  "fc-consensus",
@@ -2271,7 +2271,7 @@ dependencies = [
 [[package]]
 name = "fc-rpc-core"
 version = "1.1.0-dev"
-source = "git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.11#027e3c22a256e04688fb6d22d73e2fe2052096a1"
+source = "git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.11#6f0d74940a6d07f2a8f61e9edad072931e52b88d"
 dependencies = [
  "ethereum-types",
  "jsonrpc-core 18.0.0",
@@ -2376,9 +2376,9 @@ dependencies = [
 [[package]]
 name = "fp-consensus"
 version = "2.0.0-dev"
-source = "git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.11#027e3c22a256e04688fb6d22d73e2fe2052096a1"
+source = "git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.11#6f0d74940a6d07f2a8f61e9edad072931e52b88d"
 dependencies = [
- "ethereum 0.9.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "ethereum 0.9.0 (git+https://github.com/PlasmNetwork/ethereum?branch=polkadot-v0.9.11)",
  "parity-scale-codec",
  "rlp",
  "sha3 0.8.2",
@@ -2390,7 +2390,7 @@ dependencies = [
 [[package]]
 name = "fp-evm"
 version = "3.0.0-dev"
-source = "git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.11#027e3c22a256e04688fb6d22d73e2fe2052096a1"
+source = "git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.11#6f0d74940a6d07f2a8f61e9edad072931e52b88d"
 dependencies = [
  "evm 0.30.1 (git+https://github.com/PlasmNetwork/evm?branch=polkadot-v0.9.11)",
  "impl-trait-for-tuples 0.1.3",
@@ -2403,7 +2403,7 @@ dependencies = [
 [[package]]
 name = "fp-rpc"
 version = "3.0.0-dev"
-source = "git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.11#027e3c22a256e04688fb6d22d73e2fe2052096a1"
+source = "git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.11#6f0d74940a6d07f2a8f61e9edad072931e52b88d"
 dependencies = [
  "ethereum 0.9.0 (git+https://github.com/PlasmNetwork/ethereum?branch=polkadot-v0.9.11)",
  "ethereum-types",
@@ -2420,9 +2420,9 @@ dependencies = [
 [[package]]
 name = "fp-self-contained"
 version = "1.0.0-dev"
-source = "git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.11#027e3c22a256e04688fb6d22d73e2fe2052096a1"
+source = "git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.11#6f0d74940a6d07f2a8f61e9edad072931e52b88d"
 dependencies = [
- "ethereum 0.9.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "ethereum 0.9.0 (git+https://github.com/PlasmNetwork/ethereum?branch=polkadot-v0.9.11)",
  "frame-support",
  "parity-scale-codec",
  "parity-util-mem",
@@ -2437,7 +2437,7 @@ dependencies = [
 [[package]]
 name = "fp-storage"
 version = "2.0.0"
-source = "git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.11#027e3c22a256e04688fb6d22d73e2fe2052096a1"
+source = "git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.11#6f0d74940a6d07f2a8f61e9edad072931e52b88d"
 
 [[package]]
 name = "frame-benchmarking"
@@ -5406,7 +5406,7 @@ dependencies = [
 [[package]]
 name = "pallet-ethereum"
 version = "4.0.0-dev"
-source = "git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.11#027e3c22a256e04688fb6d22d73e2fe2052096a1"
+source = "git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.11#6f0d74940a6d07f2a8f61e9edad072931e52b88d"
 dependencies = [
  "ethereum 0.9.0 (git+https://github.com/PlasmNetwork/ethereum?branch=polkadot-v0.9.11)",
  "ethereum-types",
@@ -5435,7 +5435,7 @@ dependencies = [
 [[package]]
 name = "pallet-evm"
 version = "6.0.0-dev"
-source = "git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.11#027e3c22a256e04688fb6d22d73e2fe2052096a1"
+source = "git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.11#6f0d74940a6d07f2a8f61e9edad072931e52b88d"
 dependencies = [
  "evm 0.30.1 (git+https://github.com/PlasmNetwork/evm?branch=polkadot-v0.9.11)",
  "evm-gasometer 0.30.0 (git+https://github.com/PlasmNetwork/evm?branch=polkadot-v0.9.11)",
@@ -5463,7 +5463,7 @@ dependencies = [
 [[package]]
 name = "pallet-evm-precompile-bn128"
 version = "2.0.0-dev"
-source = "git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.11#027e3c22a256e04688fb6d22d73e2fe2052096a1"
+source = "git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.11#6f0d74940a6d07f2a8f61e9edad072931e52b88d"
 dependencies = [
  "fp-evm",
  "sp-core",
@@ -5474,7 +5474,7 @@ dependencies = [
 [[package]]
 name = "pallet-evm-precompile-dispatch"
 version = "2.0.0-dev"
-source = "git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.11#027e3c22a256e04688fb6d22d73e2fe2052096a1"
+source = "git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.11#6f0d74940a6d07f2a8f61e9edad072931e52b88d"
 dependencies = [
  "fp-evm",
  "frame-support",
@@ -5487,7 +5487,7 @@ dependencies = [
 [[package]]
 name = "pallet-evm-precompile-modexp"
 version = "2.0.0-dev"
-source = "git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.11#027e3c22a256e04688fb6d22d73e2fe2052096a1"
+source = "git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.11#6f0d74940a6d07f2a8f61e9edad072931e52b88d"
 dependencies = [
  "fp-evm",
  "num",
@@ -5498,7 +5498,7 @@ dependencies = [
 [[package]]
 name = "pallet-evm-precompile-sha3fips"
 version = "2.0.0-dev"
-source = "git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.11#027e3c22a256e04688fb6d22d73e2fe2052096a1"
+source = "git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.11#6f0d74940a6d07f2a8f61e9edad072931e52b88d"
 dependencies = [
  "fp-evm",
  "sp-core",
@@ -5509,7 +5509,7 @@ dependencies = [
 [[package]]
 name = "pallet-evm-precompile-simple"
 version = "2.0.0-dev"
-source = "git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.11#027e3c22a256e04688fb6d22d73e2fe2052096a1"
+source = "git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.11#6f0d74940a6d07f2a8f61e9edad072931e52b88d"
 dependencies = [
  "fp-evm",
  "ripemd160",
@@ -5708,7 +5708,7 @@ dependencies = [
 name = "pallet-precompile-staking"
 version = "0.1.0"
 dependencies = [
- "evm 0.30.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "evm 0.30.1 (git+https://github.com/PlasmNetwork/evm?branch=polkadot-v0.9.11)",
  "frame-support",
  "frame-system",
  "pallet-collator-selection",
@@ -9334,7 +9334,7 @@ dependencies = [
  "cumulus-primitives-core",
  "cumulus-primitives-timestamp",
  "cumulus-primitives-utility",
- "evm 0.30.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "evm 0.30.1 (git+https://github.com/PlasmNetwork/evm?branch=polkadot-v0.9.11)",
  "fp-rpc",
  "frame-benchmarking",
  "frame-executive",
@@ -9402,7 +9402,7 @@ dependencies = [
  "cumulus-primitives-core",
  "cumulus-primitives-timestamp",
  "cumulus-primitives-utility",
- "evm 0.30.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "evm 0.30.1 (git+https://github.com/PlasmNetwork/evm?branch=polkadot-v0.9.11)",
  "fp-rpc",
  "frame-benchmarking",
  "frame-executive",

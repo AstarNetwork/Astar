@@ -12,8 +12,8 @@ description = "Collator staking EVM precompiles"
 targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
-codec = { package = "parity-scale-codec", version = "2.0.0", default-features = false }
-evm = { version = "0.30.0", default-features = false }
+codec = { package = "parity-scale-codec", version = "2.2.0", default-features = false }
+evm = { git = "https://github.com/PlasmNetwork/evm", branch = "polkadot-v0.9.11", default-features = false }
 sp-std = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.11", default-features = false }
 sp-core = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.11", default-features = false }
 frame-support = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.11", default-features = false }
