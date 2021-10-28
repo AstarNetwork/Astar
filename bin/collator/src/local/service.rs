@@ -6,7 +6,7 @@ use futures::StreamExt;
 use local_runtime::RuntimeApi;
 use sc_client_api::{BlockchainEvents, ExecutorProvider};
 use sc_consensus_aura::{ImportQueueParams, SlotProportion, StartAuraParams};
-use sc_executor::native_executor_instance;
+use sc_executor::NativeElseWasmExecutor;
 use sc_finality_grandpa::SharedVoterState;
 use sc_service::{error::Error as ServiceError, Configuration, TaskManager};
 use sc_telemetry::{Telemetry, TelemetryWorker};
@@ -16,22 +16,26 @@ use std::{collections::BTreeMap, sync::Arc, time::Duration};
 
 use crate::primitives::*;
 
-#[cfg(not(feature = "runtime-benchmarks"))]
-native_executor_instance!(
-    pub Executor,
-    local_runtime::api::dispatch,
-    local_runtime::native_version,
-);
+/// Local runtime native executor.
+pub struct Executor;
 
-#[cfg(feature = "runtime-benchmarks")]
-native_executor_instance!(
-    pub Executor,
-    local_runtime::api::dispatch,
-    local_runtime::native_version,
-    frame_benchmarking::benchmarking::HostFunctions,
-);
+impl sc_executor::NativeExecutionDispatch for Executor {
+    #[cfg(not(feature = "runtime-benchmarks"))]
+    type ExtendHostFunctions = ();
 
-type FullClient = sc_service::TFullClient<Block, RuntimeApi, Executor>;
+    #[cfg(feature = "runtime-benchmarks")]
+    type ExtendHostFunctions = frame_benchmarking::benchmarking::HostFunctions;
+
+    fn dispatch(method: &str, data: &[u8]) -> Option<Vec<u8>> {
+        local_runtime::api::dispatch(method, data)
+    }
+
+    fn native_version() -> sc_executor::NativeVersion {
+        local_runtime::native_version()
+    }
+}
+
+type FullClient = sc_service::TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>;
 type FullBackend = sc_service::TFullBackend<Block>;
 type FullSelectChain = sc_consensus::LongestChain<FullBackend, Block>;
 
@@ -79,10 +83,17 @@ fn new_partial(
         })
         .transpose()?;
 
+    let executor = sc_executor::NativeElseWasmExecutor::<Executor>::new(
+        config.wasm_method,
+        config.default_heap_pages,
+        config.max_runtime_instances,
+    );
+
     let (client, backend, keystore_container, task_manager) =
-        sc_service::new_full_parts::<Block, RuntimeApi, Executor>(
+        sc_service::new_full_parts::<Block, RuntimeApi, _>(
             &config,
             telemetry.as_ref().map(|(_, telemetry)| telemetry.handle()),
+            executor,
         )?;
     let client = Arc::new(client);
 

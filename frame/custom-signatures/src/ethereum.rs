@@ -8,7 +8,7 @@ use sp_runtime::MultiSignature;
 use sp_std::prelude::*;
 
 /// Ethereum-compatible signature type.
-#[derive(Encode, Decode, PartialEq, Eq, Clone)]
+#[derive(Encode, Decode, PartialEq, Eq, Clone, scale_info::TypeInfo)]
 pub struct EthereumSignature(pub [u8; 65]);
 
 impl sp_std::fmt::Debug for EthereumSignature {

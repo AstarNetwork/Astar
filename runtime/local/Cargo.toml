@@ -6,8 +6,9 @@ edition = "2018"
 build = "build.rs"
 
 [dependencies]
-codec = { package = "parity-scale-codec", version = "2.0", default-features = false, features = ["derive"] }
-evm = { version="0.30.0", default-features=false, features=["with-codec"] }
+codec = { package = "parity-scale-codec", version = "2.2.0", default-features = false, features = ["derive"] }
+scale-info = { version = "1.0", default-features = false, features = ["derive"] }
+evm = { git = "https://github.com/PlasmNetwork/evm", branch = "polkadot-v0.9.11", default-features = false, features = ["with-codec"] }
 
 pallet-aura = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.11", default-features = false }
 pallet-balances = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.11", default-features = false }

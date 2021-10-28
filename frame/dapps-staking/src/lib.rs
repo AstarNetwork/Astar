@@ -4,9 +4,9 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use codec::{Decode, Encode, HasCompact};
-use scale_info::TypeInfo;
 use frame_support::traits::Currency;
 use frame_system::{self as system};
+use scale_info::TypeInfo;
 use sp_runtime::RuntimeDebug;
 use sp_std::{collections::btree_map::BTreeMap, prelude::*};
 

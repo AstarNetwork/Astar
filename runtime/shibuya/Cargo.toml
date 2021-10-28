@@ -7,7 +7,8 @@ build = "build.rs"
 
 [dependencies]
 # third-party dependencies
-codec = { package = "parity-scale-codec", version = "2.0", default-features = false, features = ["derive"] }
+codec = { package = "parity-scale-codec", version = "2.2.0", default-features = false, features = ["derive"] }
+scale-info = { version = "1.0", default-features = false, features = ["derive"] }
 evm = { git = "https://github.com/PlasmNetwork/evm", branch = "polkadot-v0.9.11", default-features = false, features = ["with-codec"] }
 smallvec = "1.6.1"
 
@@ -57,7 +58,6 @@ cumulus-primitives-core = { git = "https://github.com/paritytech/cumulus", branc
 cumulus-primitives-utility = { git = "https://github.com/paritytech/cumulus", branch = "polkadot-v0.9.11", default-features = false }
 cumulus-primitives-timestamp = { git = "https://github.com/paritytech/cumulus", branch = "polkadot-v0.9.11", default-features = false }
 cumulus-pallet-parachain-system = { git = "https://github.com/paritytech/cumulus", branch = "polkadot-v0.9.11", default-features = false }
-cumulus-pallet-xcm = { git = "https://github.com/paritytech/cumulus", branch = "polkadot-v0.9.11", default-features = false }
 cumulus-pallet-aura-ext = { git = "https://github.com/paritytech/cumulus", branch = "polkadot-v0.9.11", default-features = false }
 parachain-info = { git = "https://github.com/paritytech/cumulus", branch = "polkadot-v0.9.11", default-features = false }
 pallet-collator-selection = { git = "https://github.com/paritytech/cumulus", branch = "polkadot-v0.9.11", default-features = false }
@@ -65,9 +65,6 @@ pallet-collator-selection = { git = "https://github.com/paritytech/cumulus", bra
 # polkadot dependencies
 polkadot-parachain = { git = "https://github.com/paritytech/polkadot", default-features = false , branch = "release-v0.9.11" }
 polkadot-runtime-common = { git = "https://github.com/paritytech/polkadot", default-features = false , branch = "release-v0.9.11" }
-xcm-executor = { git = "https://github.com/paritytech/polkadot", default-features = false , branch = "release-v0.9.11" }
-xcm-builder = { git = "https://github.com/paritytech/polkadot", default-features = false , branch = "release-v0.9.11" }
-xcm = { git = "https://github.com/paritytech/polkadot", default-features = false , branch = "release-v0.9.11" }
 
 # Astar pallets
 pallet-block-reward = { path = "../../frame/block-reward", default-features = false }
@@ -130,9 +127,6 @@ std = [
     "pallet-sudo/std",
     "pallet-transaction-payment/std",
     "pallet-transaction-payment-rpc-runtime-api/std",
-    "xcm/std",
-    "xcm-builder/std",
-    "xcm-executor/std",
     "parachain-info/std",
     "polkadot-parachain/std",
     "polkadot-runtime-common/std",
@@ -140,7 +134,6 @@ std = [
     "cumulus-primitives-utility/std",
     "cumulus-primitives-timestamp/std",
     "cumulus-pallet-parachain-system/std",
-    "cumulus-pallet-xcm/std",
     "cumulus-pallet-aura-ext/std",
     "pallet-collator-selection/std",
     "frame-benchmarking/std",
@@ -156,5 +149,4 @@ runtime-benchmarks = [
     'pallet-balances/runtime-benchmarks',
     'pallet-timestamp/runtime-benchmarks',
     'pallet-collective/runtime-benchmarks',
-    'xcm-builder/runtime-benchmarks',
 ]

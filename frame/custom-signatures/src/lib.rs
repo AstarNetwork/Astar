@@ -163,12 +163,12 @@ pub mod pallet {
         fn validate_unsigned(_source: TransactionSource, call: &Self::Call) -> TransactionValidity {
             // Call decomposition (we have only one possible value here)
             let (call, signer, signature, nonce) = match call {
-                Call::call { call, signer, signature, nonce } => (
+                Call::call {
                     call,
                     signer,
                     signature,
                     nonce,
-                ),
+                } => (call, signer, signature, nonce),
                 _ => return InvalidTransaction::Call.into(),
             };
 
