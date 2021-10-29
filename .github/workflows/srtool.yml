@@ -41,8 +41,8 @@ jobs:
       # We now get extra information thanks to subwasm
       - name: Install subwasm
         run: |
-          wget https://github.com/chevdor/subwasm/releases/download/v0.12.0/subwasm_linux_amd64_v0.12.0.deb
-          sudo dpkg -i subwasm_linux_amd64_v0.12.0.deb
+          wget https://github.com/chevdor/subwasm/releases/download/v0.14.1/subwasm_linux_amd64_v0.14.1.deb
+          sudo dpkg -i subwasm_linux_amd64_v0.14.1.deb
           subwasm --version
 
       - name: Show Runtime information
