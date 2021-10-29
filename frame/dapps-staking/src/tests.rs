@@ -595,7 +595,8 @@ fn bond_and_stake_different_value_is_ok() {
         register_contract(20, &contract_id);
 
         // Bond&stake almost the entire available balance of the staker.
-        let staker_free_balance = Balances::free_balance(&staker_id);
+        let staker_free_balance =
+            Balances::free_balance(&staker_id).saturating_sub(MINIMUM_REMAINING_AMOUNT);
         assert_ok!(DappsStaking::bond_and_stake(
             Origin::signed(staker_id),
             contract_id.clone(),
@@ -631,12 +632,17 @@ fn bond_and_stake_different_value_is_ok() {
         System::assert_last_event(mock::Event::DappsStaking(Event::BondAndStake(
             staker_id,
             contract_id.clone(),
-            staker_free_balance,
+            staker_free_balance.saturating_sub(MINIMUM_REMAINING_AMOUNT),
         )));
+        // Verify the minimum transferable amount of stakers account
+        let transferable_balance =
+            Balances::free_balance(&staker_id) - Ledger::<TestRuntime>::get(staker_id);
+        assert_eq!(MINIMUM_REMAINING_AMOUNT, transferable_balance);
 
         // Bond&stake some amount, a bit less than free balance
         let staker_id = 3;
-        let staker_free_balance = Balances::free_balance(&staker_id);
+        let staker_free_balance =
+            Balances::free_balance(&staker_id).saturating_sub(MINIMUM_REMAINING_AMOUNT);
         assert_ok!(DappsStaking::bond_and_stake(
             Origin::signed(staker_id),
             contract_id,
