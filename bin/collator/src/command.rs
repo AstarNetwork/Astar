@@ -61,9 +61,9 @@ fn load_spec(
         "" | "shiden" => Box::new(chain_spec::ShidenChainSpec::from_json_bytes(
             &include_bytes!("../res/shiden.raw.json")[..],
         )?),
-        "shibuya-dev" | "testnet" => Box::new(chain_spec::shibuya::get_chain_spec(para_id)),
+        "shibuya-dev" => Box::new(chain_spec::shibuya::get_chain_spec(para_id)),
         "shiden-dev" => Box::new(chain_spec::shiden::get_chain_spec(para_id)),
-        "shibuya" => Box::new(chain_spec::ShidenChainSpec::from_json_bytes(
+        "shibuya" => Box::new(chain_spec::ShibuyaChainSpec::from_json_bytes(
             &include_bytes!("../res/shibuya.raw.json")[..],
         )?),
         path => {
