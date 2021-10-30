@@ -1,5 +1,6 @@
 use sc_chain_spec::ChainSpecExtension;
 use serde::{Deserialize, Serialize};
+use sp_core::{Pair, Public};
 
 pub mod shibuya;
 pub mod shiden;
@@ -27,7 +28,9 @@ impl Extensions {
     }
 }
 
-// TODO: add helper methods here?
-// The problem is that they don't have the same type so how to best handle it?
-// Generics seem a bit of an overkill since I need to introduce dependency on signature pallets then to implement the bound?
-// Introduction of a shared type? Could this also be useful for the SmartContract struct which is copy/pasted across different crates?
+/// Helper function to generate a crypto pair from seed
+fn get_from_seed<TPublic: Public>(seed: &str) -> <TPublic::Pair as Pair>::Public {
+    TPublic::Pair::from_string(&format!("//{}", seed), None)
+        .expect("static values are valid; qed")
+        .public()
+}

@@ -10,7 +10,7 @@ use sp_core::{sr25519, Pair, Public};
 
 use sp_runtime::traits::{IdentifyAccount, Verify};
 
-use super::Extensions;
+use super::{get_from_seed, Extensions};
 
 /// Specialized `ChainSpec` for Shiden Network.
 pub type ShidenChainSpec = sc_service::GenericChainSpec<shiden_runtime::GenesisConfig, Extensions>;
@@ -116,13 +116,6 @@ fn make_genesis(
 }
 
 type AccountPublic = <Signature as Verify>::Signer;
-
-/// Helper function to generate a crypto pair from seed
-fn get_from_seed<TPublic: Public>(seed: &str) -> <TPublic::Pair as Pair>::Public {
-    TPublic::Pair::from_string(&format!("//{}", seed), None)
-        .expect("static values are valid; qed")
-        .public()
-}
 
 /// Helper function to generate an account ID from seed
 fn get_account_id_from_seed<TPublic: Public>(seed: &str) -> AccountId
