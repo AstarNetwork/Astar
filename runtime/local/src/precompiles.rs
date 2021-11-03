@@ -11,6 +11,8 @@ use pallet_evm_precompile_dispatch::Dispatch;
 use pallet_evm_precompile_modexp::Modexp;
 use pallet_evm_precompile_sha3fips::Sha3FIPS256;
 use pallet_evm_precompile_simple::{ECRecover, ECRecoverPublicKey, Identity, Ripemd160, Sha256};
+use pallet_precompile_dapps_staking::DappsStakingWrapper;
+
 use sp_core::H160;
 use sp_std::fmt::Debug;
 use sp_std::marker::PhantomData;
@@ -23,7 +25,7 @@ impl<R> LocalNetworkPrecompiles<R> {
     /// Return all addresses that contain precompiles. This can be used to populate dummy code
     /// under the precompile.
     pub fn used_addresses<AccountId: From<H160>>() -> impl Iterator<Item = AccountId> {
-        sp_std::vec![1, 2, 3, 4, 5, 6, 7, 8, 1024, 1025, 1026]
+        sp_std::vec![1, 2, 3, 4, 5, 6, 7, 8, 1024, 1025, 1026, 20481]
             .into_iter()
             .map(|x| hash(x).into())
     }
@@ -34,6 +36,8 @@ impl<R> LocalNetworkPrecompiles<R> {
 /// 1024-2047 Precompiles that are not in Ethereum Mainnet
 impl<R: pallet_evm::Config> PrecompileSet for LocalNetworkPrecompiles<R>
 where
+    R: pallet_evm::Config + pallet_dapps_staking::Config,
+    DappsStakingWrapper<R>: Precompile,
     R::Call: Dispatchable<PostInfo = PostDispatchInfo> + GetDispatchInfo + Decode,
     <R::Call as Dispatchable>::Origin: From<Option<R::AccountId>>,
 {
@@ -57,6 +61,9 @@ where
             a if a == hash(1024) => Some(Sha3FIPS256::execute(input, target_gas, context)),
             a if a == hash(1025) => Some(Dispatch::<R>::execute(input, target_gas, context)),
             a if a == hash(1026) => Some(ECRecoverPublicKey::execute(input, target_gas, context)),
+            // Astar precompiles (starts from 0x5000):
+            // DappStaking 0x5500
+            a if a == hash(20481) => Some(DappsStakingWrapper::<R>::execute(input, target_gas, context)),
             // Default
             _ => None,
         }

@@ -4320,6 +4320,7 @@ dependencies = [
  "pallet-evm-precompile-sha3fips",
  "pallet-evm-precompile-simple",
  "pallet-grandpa",
+ "pallet-precompile-dapps-staking",
  "pallet-randomness-collective-flip",
  "pallet-sudo",
  "pallet-timestamp",
@@ -5668,6 +5669,20 @@ dependencies = [
  "serde",
  "sp-runtime",
  "sp-staking",
+ "sp-std",
+]
+
+[[package]]
+name = "pallet-precompile-dapps-staking"
+version = "0.1.0"
+dependencies = [
+ "evm",
+ "frame-support",
+ "frame-system",
+ "pallet-dapps-staking",
+ "pallet-evm",
+ "parity-scale-codec",
+ "sp-core",
  "sp-std",
 ]
 
