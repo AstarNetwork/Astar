@@ -2,10 +2,7 @@
 use crate::{
     cli::{Cli, RelayChainCli, Subcommand},
     local::{self, development_config},
-    parachain::{
-        self, shibuya, shiden, start_shibuya_node, start_shiden_node, ShibuyaChainSpec,
-        ShidenChainSpec,
-    },
+    parachain::{self, chain_spec, shibuya, shiden, start_shibuya_node, start_shiden_node},
     primitives::Block,
 };
 use codec::Encode;
@@ -61,17 +58,18 @@ fn load_spec(
 ) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
     Ok(match id {
         "dev" => Box::new(development_config()),
-        "" | "shiden" => Box::new(ShidenChainSpec::from_json_bytes(
+        "" | "shiden" => Box::new(chain_spec::ShidenChainSpec::from_json_bytes(
             &include_bytes!("../res/shiden.raw.json")[..],
         )?),
-        "testnet" => Box::new(parachain::get_chain_spec(para_id)),
-        "shibuya" => Box::new(ShidenChainSpec::from_json_bytes(
+        "shibuya-dev" => Box::new(chain_spec::shibuya::get_chain_spec(para_id)),
+        "shiden-dev" => Box::new(chain_spec::shiden::get_chain_spec(para_id)),
+        "shibuya" => Box::new(chain_spec::ShibuyaChainSpec::from_json_bytes(
             &include_bytes!("../res/shibuya.raw.json")[..],
         )?),
         path => {
-            let chain_spec = ShibuyaChainSpec::from_json_file(path.into())?;
+            let chain_spec = chain_spec::ShibuyaChainSpec::from_json_file(path.into())?;
             if chain_spec.is_shiden() {
-                Box::new(ShidenChainSpec::from_json_file(path.into())?)
+                Box::new(chain_spec::ShidenChainSpec::from_json_file(path.into())?)
             } else {
                 Box::new(chain_spec)
             }

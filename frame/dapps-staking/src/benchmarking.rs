@@ -179,9 +179,6 @@ benchmarks! {
 
         let claimer: T::AccountId = whitelisted_caller();
     }: _(RawOrigin::Signed(claimer.clone()), contract_id.clone(), claim_era)
-    verify {
-        assert_last_event::<T>(Event::<T>::ContractClaimed(contract_id, claim_era, reward).into());
-    }
 
     force_new_era {
     }: _(RawOrigin::Root)

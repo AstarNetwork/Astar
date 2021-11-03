@@ -7,9 +7,8 @@ mod shell_upgrade;
 pub mod service;
 
 /// Parachain specs.
-mod chain_spec;
+pub mod chain_spec;
 
-pub use chain_spec::*;
 pub use service::{
     build_import_queue, new_partial, shibuya, shiden, start_shibuya_node, start_shiden_node,
 };
