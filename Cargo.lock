@@ -9230,6 +9230,7 @@ dependencies = [
  "frame-system",
  "frame-system-benchmarking",
  "frame-system-rpc-runtime-api",
+ "frame-try-runtime",
  "hex-literal 0.3.3",
  "pallet-aura",
  "pallet-authorship",
@@ -9276,6 +9277,7 @@ dependencies = [
  "sp-transaction-pool",
  "sp-version",
  "substrate-wasm-builder",
+ "try-runtime-cli",
 ]
 
 [[package]]
@@ -9295,6 +9297,7 @@ dependencies = [
  "frame-system",
  "frame-system-benchmarking",
  "frame-system-rpc-runtime-api",
+ "frame-try-runtime",
  "hex-literal 0.3.3",
  "pallet-aura",
  "pallet-authorship",
@@ -9341,6 +9344,7 @@ dependencies = [
  "sp-transaction-pool",
  "sp-version",
  "substrate-wasm-builder",
+ "try-runtime-cli",
 ]
 
 [[package]]
