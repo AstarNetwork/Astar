@@ -3,8 +3,6 @@
 #![warn(missing_docs)]
 #![warn(unused_extern_crates)]
 
-/// Genesis token distributions.
-pub mod balances;
 /// Development node support.
 pub mod local;
 /// Parachain node support.

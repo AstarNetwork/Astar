@@ -31,7 +31,7 @@ use sp_runtime::{
         OpaqueKeys, Verify,
     },
     transaction_validity::{TransactionPriority, TransactionSource, TransactionValidity},
-    ApplyExtrinsicResult, FixedPointNumber, Perbill, Perquintill, RuntimeDebug,
+    ApplyExtrinsicResult, FixedPointNumber, Perbill, Perquintill,
 };
 use sp_std::prelude::*;
 
@@ -47,12 +47,12 @@ mod precompiles;
 pub use precompiles::AstarNetworkPrecompiles;
 
 /// Constant values used within the runtime.
-pub const MILLIASTA: Balance = 1_000_000_000_000_000;
-pub const ASTA: Balance = 1_000 * MILLIASTA;
+pub const MILLIASTR: Balance = 1_000_000_000_000_000;
+pub const ASTR: Balance = 1_000 * MILLIASTR;
 
 /// Charge fee for stored bytes and items.
 pub const fn deposit(items: u32, bytes: u32) -> Balance {
-    (items as Balance + bytes as Balance) * MILLIASTA / 1_000_000
+    (items as Balance + bytes as Balance) * MILLIASTR / 1_000_000
 }
 
 /// Change this to adjust the block time.
@@ -79,10 +79,10 @@ pub fn wasm_binary_unwrap() -> &'static [u8] {
 /// Runtime version.
 #[sp_version::runtime_version]
 pub const VERSION: RuntimeVersion = RuntimeVersion {
-    spec_name: create_runtime_str!("shiden"),
-    impl_name: create_runtime_str!("shiden"),
+    spec_name: create_runtime_str!("astar"),
+    impl_name: create_runtime_str!("astar"),
     authoring_version: 1,
-    spec_version: 24,
+    spec_version: 1,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 1,
@@ -142,6 +142,7 @@ impl Contains<Call> for BaseFilter {
     fn contains(call: &Call) -> bool {
         match call {
             // These modules are not allowed to be called by transactions:
+            Call::Balances(_) => false,
             // To leave collator just shutdown it, next session funds will be released
             Call::CollatorSelection(pallet_collator_selection::Call::leave_intent { .. }) => false,
             // Other modules should works:
@@ -202,9 +203,9 @@ impl pallet_timestamp::Config for Runtime {
 }
 
 parameter_types! {
-    pub const BasicDeposit: Balance = 10 * ASTA;       // 258 bytes on-chain
-    pub const FieldDeposit: Balance = 25 * MILLIASTA;  // 66 bytes on-chain
-    pub const SubAccountDeposit: Balance = 2 * ASTA;   // 53 bytes on-chain
+    pub const BasicDeposit: Balance = 10 * ASTR;       // 258 bytes on-chain
+    pub const FieldDeposit: Balance = 25 * MILLIASTR;  // 66 bytes on-chain
+    pub const SubAccountDeposit: Balance = 2 * ASTR;   // 53 bytes on-chain
     pub const MaxSubAccounts: u32 = 100;
     pub const MaxAdditionalFields: u32 = 100;
     pub const MaxRegistrars: u32 = 20;
@@ -245,7 +246,7 @@ impl pallet_multisig::Config for Runtime {
 
 parameter_types! {
     pub const EcdsaUnsignedPriority: TransactionPriority = TransactionPriority::max_value() / 2;
-    pub const CallFee: Balance = ASTA / 10;
+    pub const CallFee: Balance = ASTR / 10;
     pub const CallMagicNumber: u16 = 0x0250;
 }
 
@@ -381,7 +382,7 @@ impl OnUnbalanced<NegativeImbalance> for OnBlockReward {
 }
 
 parameter_types! {
-    pub const RewardAmount: Balance = 2_664 * MILLIASTA;
+    pub const RewardAmount: Balance = 266_400 * MILLIASTR;
 }
 
 impl pallet_block_reward::Config for Runtime {
@@ -409,7 +410,7 @@ impl pallet_balances::Config for Runtime {
 }
 
 parameter_types! {
-    pub const MinVestedTransfer: Balance = 1 * ASTA;
+    pub const MinVestedTransfer: Balance = 1 * ASTR;
 }
 
 impl pallet_vesting::Config for Runtime {
@@ -424,7 +425,7 @@ impl pallet_vesting::Config for Runtime {
 }
 
 parameter_types! {
-    pub const TransactionByteFee: Balance = MILLIASTA / 100;
+    pub const TransactionByteFee: Balance = MILLIASTR / 100;
     pub const TargetBlockFullness: Perquintill = Perquintill::from_percent(25);
     pub const OperationalFeeMultiplier: u8 = 5;
     pub AdjustmentVariable: Multiplier = Multiplier::saturating_from_rational(1, 100_000);
@@ -445,8 +446,8 @@ pub struct WeightToFee;
 impl WeightToFeePolynomial for WeightToFee {
     type Balance = Balance;
     fn polynomial() -> WeightToFeeCoefficients<Self::Balance> {
-        // in Astar, extrinsic base weight (smallest non-zero weight) is mapped to 1/10 mASTA:
-        let p = MILLIASTA;
+        // in Astar, extrinsic base weight (smallest non-zero weight) is mapped to 1/10 mASTR:
+        let p = MILLIASTR;
         let q = 10 * Balance::from(ExtrinsicBaseWeight::get());
         smallvec::smallvec![WeightToFeeCoefficient {
             degree: 1,
@@ -505,7 +506,7 @@ impl pallet_evm::GasWeightMapping for GasWeightMapping {
 pub struct FixedGasPrice;
 impl FeeCalculator for FixedGasPrice {
     fn min_gas_price() -> U256 {
-        (MILLIASTA / 1_000_000).into()
+        (MILLIASTR / 1_000_000).into()
     }
 }
 

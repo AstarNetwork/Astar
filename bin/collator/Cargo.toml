@@ -1,6 +1,6 @@
 [package]
 name = "astar-collator"
-version = "2.7.2"
+version = "3.0.0"
 authors = ["Stake Technologies <devops@stake.co.jp>"]
 description = "Astar collator implementation in Rust."
 build = "build.rs"
@@ -21,10 +21,8 @@ serde = { version = "1.0", features = [ "derive" ] }
 futures = { version = "0.3.1", features = ["compat"] }
 structopt = { version = "0.3.8", optional = true }
 async-trait = "0.1.42"
-lazy_static = "1.4"
 serde_json = "1.0"
 log = "0.4.8"
-hex = "0.4"
 
 # primitives
 sp-api = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.11" }
@@ -77,6 +75,7 @@ pallet-evm = { git = "https://github.com/PlasmNetwork/frontier", branch = "polka
 pallet-ethereum = { git = "https://github.com/PlasmNetwork/frontier", branch = "polkadot-v0.9.11" }
 
 # astar-specific dependencies
+astar-runtime = { path = "../../runtime/astar" }
 local-runtime = { path = "../../runtime/local" }
 shiden-runtime = { path = "../../runtime/shiden" }
 shibuya-runtime = { path = "../../runtime/shibuya" }
