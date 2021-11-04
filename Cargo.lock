@@ -183,6 +183,7 @@ dependencies = [
  "frame-benchmarking",
  "frame-benchmarking-cli",
  "frame-system",
+ "frame-try-runtime",
  "futures 0.3.17",
  "hex",
  "jsonrpc-core",
@@ -240,6 +241,7 @@ dependencies = [
  "substrate-build-script-utils",
  "substrate-frame-rpc-system",
  "substrate-prometheus-endpoint",
+ "try-runtime-cli",
  "vergen",
 ]
 
@@ -4222,6 +4224,7 @@ dependencies = [
  "frame-system",
  "frame-system-benchmarking",
  "frame-system-rpc-runtime-api",
+ "frame-try-runtime",
  "hex-literal 0.3.3",
  "pallet-aura",
  "pallet-balances",
@@ -4260,6 +4263,7 @@ dependencies = [
  "sp-transaction-pool",
  "sp-version",
  "substrate-wasm-builder",
+ "try-runtime-cli",
 ]
 
 [[package]]
@@ -9226,6 +9230,7 @@ dependencies = [
  "frame-system",
  "frame-system-benchmarking",
  "frame-system-rpc-runtime-api",
+ "frame-try-runtime",
  "hex-literal 0.3.3",
  "pallet-aura",
  "pallet-authorship",
@@ -9272,6 +9277,7 @@ dependencies = [
  "sp-transaction-pool",
  "sp-version",
  "substrate-wasm-builder",
+ "try-runtime-cli",
 ]
 
 [[package]]
@@ -9291,6 +9297,7 @@ dependencies = [
  "frame-system",
  "frame-system-benchmarking",
  "frame-system-rpc-runtime-api",
+ "frame-try-runtime",
  "hex-literal 0.3.3",
  "pallet-aura",
  "pallet-authorship",
@@ -9337,6 +9344,7 @@ dependencies = [
  "sp-transaction-pool",
  "sp-version",
  "substrate-wasm-builder",
+ "try-runtime-cli",
 ]
 
 [[package]]

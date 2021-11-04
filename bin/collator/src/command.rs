@@ -424,6 +424,49 @@ pub fn run() -> Result<()> {
                 runner.sync_run(|config| cmd.run::<Block, local::Executor>(config))
             }
         }
+        #[cfg(feature = "try-runtime")]
+        Some(Subcommand::TryRuntime(cmd)) => {
+            let runner = cli.create_runner(cmd)?;
+            let chain_spec = &runner.config().chain_spec;
+
+            if chain_spec.is_shiden() {
+                runner.async_run(|config| {
+                    let registry = config.prometheus_config.as_ref().map(|cfg| &cfg.registry);
+                    let task_manager =
+                        sc_service::TaskManager::new(config.tokio_handle.clone(), registry)
+                            .map_err(|e| {
+                                sc_cli::Error::Service(sc_service::Error::Prometheus(e))
+                            })?;
+                    Ok((
+                        cmd.run::<shiden_runtime::Block, shiden::Executor>(config),
+                        task_manager,
+                    ))
+                })
+            } else if chain_spec.is_shibuya() {
+                runner.async_run(|config| {
+                    let registry = config.prometheus_config.as_ref().map(|cfg| &cfg.registry);
+                    let task_manager =
+                        sc_service::TaskManager::new(config.tokio_handle.clone(), registry)
+                            .map_err(|e| {
+                                sc_cli::Error::Service(sc_service::Error::Prometheus(e))
+                            })?;
+                    Ok((
+                        cmd.run::<shibuya_runtime::Block, shibuya::Executor>(config),
+                        task_manager,
+                    ))
+                })
+            } else {
+                runner.async_run(|config| {
+                    let registry = config.prometheus_config.as_ref().map(|cfg| &cfg.registry);
+                    let task_manager =
+                        sc_service::TaskManager::new(config.tokio_handle.clone(), registry)
+                            .map_err(|e| {
+                                sc_cli::Error::Service(sc_service::Error::Prometheus(e))
+                            })?;
+                    Ok((cmd.run::<Block, local::Executor>(config), task_manager))
+                })
+            }
+        }
         None => {
             let runner = cli.create_runner(&*cli.run)?;
 
