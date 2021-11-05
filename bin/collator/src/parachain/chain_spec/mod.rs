@@ -2,9 +2,11 @@ use sc_chain_spec::ChainSpecExtension;
 use serde::{Deserialize, Serialize};
 use sp_core::{Pair, Public};
 
+pub mod astar;
 pub mod shibuya;
 pub mod shiden;
 
+pub use astar::AstarChainSpec;
 pub use shibuya::ShibuyaChainSpec;
 pub use shiden::ShidenChainSpec;
 

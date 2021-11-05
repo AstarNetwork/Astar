@@ -162,8 +162,9 @@ checksum = "9b34d609dfbaf33d6889b2b7106d3ca345eacad44200913df5ba02bfd31d2ba9"
 
 [[package]]
 name = "astar-collator"
-version = "2.7.2"
+version = "3.0.0"
 dependencies = [
+ "astar-runtime",
  "async-trait",
  "cumulus-client-cli",
  "cumulus-client-consensus-aura",
@@ -185,10 +186,8 @@ dependencies = [
  "frame-system",
  "frame-try-runtime",
  "futures 0.3.17",
- "hex",
  "jsonrpc-core",
  "jsonrpc-pubsub",
- "lazy_static",
  "local-runtime",
  "log",
  "pallet-contracts-rpc",
@@ -243,6 +242,70 @@ dependencies = [
  "substrate-prometheus-endpoint",
  "try-runtime-cli",
  "vergen",
+]
+
+[[package]]
+name = "astar-runtime"
+version = "3.0.0"
+dependencies = [
+ "cumulus-pallet-aura-ext",
+ "cumulus-pallet-parachain-system",
+ "cumulus-primitives-core",
+ "cumulus-primitives-timestamp",
+ "cumulus-primitives-utility",
+ "evm",
+ "fp-rpc",
+ "frame-benchmarking",
+ "frame-executive",
+ "frame-support",
+ "frame-system",
+ "frame-system-benchmarking",
+ "frame-system-rpc-runtime-api",
+ "hex-literal 0.3.3",
+ "pallet-aura",
+ "pallet-authorship",
+ "pallet-balances",
+ "pallet-block-reward",
+ "pallet-collator-selection",
+ "pallet-collective",
+ "pallet-custom-signatures",
+ "pallet-ethereum",
+ "pallet-evm",
+ "pallet-evm-precompile-bn128",
+ "pallet-evm-precompile-dispatch",
+ "pallet-evm-precompile-modexp",
+ "pallet-evm-precompile-sha3fips",
+ "pallet-evm-precompile-simple",
+ "pallet-identity",
+ "pallet-multisig",
+ "pallet-precompile-staking",
+ "pallet-session",
+ "pallet-sudo",
+ "pallet-timestamp",
+ "pallet-transaction-payment",
+ "pallet-transaction-payment-rpc-runtime-api",
+ "pallet-utility",
+ "pallet-vesting",
+ "parachain-info",
+ "parity-scale-codec",
+ "polkadot-parachain",
+ "polkadot-runtime-common",
+ "scale-info",
+ "smallvec",
+ "sp-api",
+ "sp-block-builder",
+ "sp-consensus-aura",
+ "sp-core",
+ "sp-inherents",
+ "sp-io",
+ "sp-offchain",
+ "sp-runtime",
+ "sp-runtime-interface",
+ "sp-session",
+ "sp-std",
+ "sp-transaction-pool",
+ "sp-version",
+ "substrate-wasm-builder",
 ]
 
 [[package]]
@@ -4214,7 +4277,7 @@ dependencies = [
 
 [[package]]
 name = "local-runtime"
-version = "2.7.2"
+version = "3.0.0"
 dependencies = [
  "evm",
  "fp-rpc",
@@ -9215,7 +9278,7 @@ dependencies = [
 
 [[package]]
 name = "shibuya-runtime"
-version = "2.7.2"
+version = "3.0.0"
 dependencies = [
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-parachain-system",
@@ -9282,7 +9345,7 @@ dependencies = [
 
 [[package]]
 name = "shiden-runtime"
-version = "2.7.2"
+version = "3.0.0"
 dependencies = [
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-parachain-system",

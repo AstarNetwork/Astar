@@ -10,5 +10,6 @@ pub mod service;
 pub mod chain_spec;
 
 pub use service::{
-    build_import_queue, new_partial, shibuya, shiden, start_shibuya_node, start_shiden_node,
+    astar, build_import_queue, new_partial, shibuya, shiden, start_astar_node, start_shibuya_node,
+    start_shiden_node,
 };

@@ -2,6 +2,7 @@
 members = [
     "bin/collator",
     "runtime/local",
+    "runtime/astar",
     "runtime/shiden",
     "runtime/shibuya",
     "frame/block-reward",

@@ -2,7 +2,10 @@
 use crate::{
     cli::{Cli, RelayChainCli, Subcommand},
     local::{self, development_config},
-    parachain::{self, chain_spec, shibuya, shiden, start_shibuya_node, start_shiden_node},
+    parachain::{
+        self, astar, chain_spec, shibuya, shiden, start_astar_node, start_shibuya_node,
+        start_shiden_node,
+    },
     primitives::Block,
 };
 use codec::Encode;
@@ -23,12 +26,16 @@ use sp_runtime::traits::Block as BlockT;
 use std::{io::Write, net::SocketAddr};
 
 trait IdentifyChain {
+    fn is_astar(&self) -> bool;
     fn is_dev(&self) -> bool;
     fn is_shiden(&self) -> bool;
     fn is_shibuya(&self) -> bool;
 }
 
 impl IdentifyChain for dyn sc_service::ChainSpec {
+    fn is_astar(&self) -> bool {
+        self.id().starts_with("astar")
+    }
     fn is_dev(&self) -> bool {
         self.id().starts_with("dev")
     }
@@ -41,6 +48,9 @@ impl IdentifyChain for dyn sc_service::ChainSpec {
 }
 
 impl<T: sc_service::ChainSpec + 'static> IdentifyChain for T {
+    fn is_astar(&self) -> bool {
+        <dyn sc_service::ChainSpec>::is_astar(self)
+    }
     fn is_dev(&self) -> bool {
         <dyn sc_service::ChainSpec>::is_dev(self)
     }
@@ -58,17 +68,23 @@ fn load_spec(
 ) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
     Ok(match id {
         "dev" => Box::new(development_config()),
+        "astar-dev" => Box::new(chain_spec::astar::get_chain_spec(para_id)),
+        "shibuya-dev" => Box::new(chain_spec::shibuya::get_chain_spec(para_id)),
+        "shiden-dev" => Box::new(chain_spec::shiden::get_chain_spec(para_id)),
+        "astar" => Box::new(chain_spec::AstarChainSpec::from_json_bytes(
+            &include_bytes!("../res/astar.raw.json")[..],
+        )?),
         "" | "shiden" => Box::new(chain_spec::ShidenChainSpec::from_json_bytes(
             &include_bytes!("../res/shiden.raw.json")[..],
         )?),
-        "shibuya-dev" => Box::new(chain_spec::shibuya::get_chain_spec(para_id)),
-        "shiden-dev" => Box::new(chain_spec::shiden::get_chain_spec(para_id)),
         "shibuya" => Box::new(chain_spec::ShibuyaChainSpec::from_json_bytes(
             &include_bytes!("../res/shibuya.raw.json")[..],
         )?),
         path => {
             let chain_spec = chain_spec::ShibuyaChainSpec::from_json_file(path.into())?;
-            if chain_spec.is_shiden() {
+            if chain_spec.is_astar() {
+                Box::new(chain_spec::AstarChainSpec::from_json_file(path.into())?)
+            } else if chain_spec.is_shiden() {
                 Box::new(chain_spec::ShidenChainSpec::from_json_file(path.into())?)
             } else {
                 Box::new(chain_spec)
@@ -79,7 +95,7 @@ fn load_spec(
 
 impl SubstrateCli for Cli {
     fn impl_name() -> String {
-        "Shiden Collator".into()
+        "Astar Collator".into()
     }
 
     fn impl_version() -> String {
@@ -88,7 +104,7 @@ impl SubstrateCli for Cli {
 
     fn description() -> String {
         format!(
-            "Shiden parachain collator\n\nThe command-line arguments provided first will be \
+            "Astar Collator\n\nThe command-line arguments provided first will be \
         passed to the parachain node, while the arguments provided after -- will be passed \
         to the relaychain node.\n\n\
         {} [parachain-args] -- [relaychain-args]",
@@ -115,6 +131,8 @@ impl SubstrateCli for Cli {
     fn native_runtime_version(chain_spec: &Box<dyn ChainSpec>) -> &'static RuntimeVersion {
         if chain_spec.is_dev() {
             &local_runtime::VERSION
+        } else if chain_spec.is_astar() {
+            &astar_runtime::VERSION
         } else if chain_spec.is_shiden() {
             &shiden_runtime::VERSION
         } else {
@@ -125,7 +143,7 @@ impl SubstrateCli for Cli {
 
 impl SubstrateCli for RelayChainCli {
     fn impl_name() -> String {
-        "Shiden Collator".into()
+        "Astar Collator".into()
     }
 
     fn impl_version() -> String {
@@ -133,7 +151,7 @@ impl SubstrateCli for RelayChainCli {
     }
 
     fn description() -> String {
-        "Shiden parachain collator\n\nThe command-line arguments provided first will be \
+        "Astar Collator\n\nThe command-line arguments provided first will be \
         passed to the parachain node, while the arguments provided after -- will be passed \
         to the relaychain node.\n\n\
         astar-collator [parachain-args] -- [relaychain-args]"
@@ -198,7 +216,20 @@ pub fn run() -> Result<()> {
         }
         Some(Subcommand::CheckBlock(cmd)) => {
             let runner = cli.create_runner(cmd)?;
-            if runner.config().chain_spec.is_shiden() {
+            if runner.config().chain_spec.is_astar() {
+                runner.async_run(|config| {
+                    let PartialComponents {
+                        client,
+                        task_manager,
+                        import_queue,
+                        ..
+                    } = parachain::new_partial::<astar::RuntimeApi, astar::Executor, _>(
+                        &config,
+                        parachain::build_import_queue,
+                    )?;
+                    Ok((cmd.run(client, import_queue), task_manager))
+                })
+            } else if runner.config().chain_spec.is_shiden() {
                 runner.async_run(|config| {
                     let PartialComponents {
                         client,
@@ -228,7 +259,19 @@ pub fn run() -> Result<()> {
         }
         Some(Subcommand::ExportBlocks(cmd)) => {
             let runner = cli.create_runner(cmd)?;
-            if runner.config().chain_spec.is_shiden() {
+            if runner.config().chain_spec.is_astar() {
+                runner.async_run(|config| {
+                    let PartialComponents {
+                        client,
+                        task_manager,
+                        ..
+                    } = parachain::new_partial::<astar::RuntimeApi, astar::Executor, _>(
+                        &config,
+                        parachain::build_import_queue,
+                    )?;
+                    Ok((cmd.run(client, config.database), task_manager))
+                })
+            } else if runner.config().chain_spec.is_shiden() {
                 runner.async_run(|config| {
                     let PartialComponents {
                         client,
@@ -256,7 +299,19 @@ pub fn run() -> Result<()> {
         }
         Some(Subcommand::ExportState(cmd)) => {
             let runner = cli.create_runner(cmd)?;
-            if runner.config().chain_spec.is_shiden() {
+            if runner.config().chain_spec.is_astar() {
+                runner.async_run(|config| {
+                    let PartialComponents {
+                        client,
+                        task_manager,
+                        ..
+                    } = parachain::new_partial::<astar::RuntimeApi, astar::Executor, _>(
+                        &config,
+                        parachain::build_import_queue,
+                    )?;
+                    Ok((cmd.run(client, config.chain_spec), task_manager))
+                })
+            } else if runner.config().chain_spec.is_shiden() {
                 runner.async_run(|config| {
                     let PartialComponents {
                         client,
@@ -284,7 +339,20 @@ pub fn run() -> Result<()> {
         }
         Some(Subcommand::ImportBlocks(cmd)) => {
             let runner = cli.create_runner(cmd)?;
-            if runner.config().chain_spec.is_shiden() {
+            if runner.config().chain_spec.is_astar() {
+                runner.async_run(|config| {
+                    let PartialComponents {
+                        client,
+                        task_manager,
+                        import_queue,
+                        ..
+                    } = parachain::new_partial::<astar::RuntimeApi, astar::Executor, _>(
+                        &config,
+                        parachain::build_import_queue,
+                    )?;
+                    Ok((cmd.run(client, import_queue), task_manager))
+                })
+            } else if runner.config().chain_spec.is_shiden() {
                 runner.async_run(|config| {
                     let PartialComponents {
                         client,
@@ -333,7 +401,20 @@ pub fn run() -> Result<()> {
         }
         Some(Subcommand::Revert(cmd)) => {
             let runner = cli.create_runner(cmd)?;
-            if runner.config().chain_spec.is_shiden() {
+            if runner.config().chain_spec.is_astar() {
+                runner.async_run(|config| {
+                    let PartialComponents {
+                        client,
+                        task_manager,
+                        backend,
+                        ..
+                    } = parachain::new_partial::<astar::RuntimeApi, astar::Executor, _>(
+                        &config,
+                        parachain::build_import_queue,
+                    )?;
+                    Ok((cmd.run(client, backend), task_manager))
+                })
+            } else if runner.config().chain_spec.is_shiden() {
                 runner.async_run(|config| {
                     let PartialComponents {
                         client,
@@ -415,7 +496,9 @@ pub fn run() -> Result<()> {
             let runner = cli.create_runner(cmd)?;
             let chain_spec = &runner.config().chain_spec;
 
-            if chain_spec.is_shiden() {
+            if chain_spec.is_astar() {
+                runner.sync_run(|config| cmd.run::<astar_runtime::Block, astar::Executor>(config))
+            } else if chain_spec.is_shiden() {
                 runner.sync_run(|config| cmd.run::<shiden_runtime::Block, shiden::Executor>(config))
             } else if chain_spec.is_shibuya() {
                 runner
@@ -510,7 +593,12 @@ pub fn run() -> Result<()> {
                     }
                 );
 
-                if config.chain_spec.is_shiden() {
+                if config.chain_spec.is_astar() {
+                    start_astar_node(config, polkadot_config, id)
+                        .await
+                        .map(|r| r.0)
+                        .map_err(Into::into)
+                } else if config.chain_spec.is_shiden() {
                     start_shiden_node(config, polkadot_config, id)
                         .await
                         .map(|r| r.0)
