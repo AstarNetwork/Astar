@@ -6,7 +6,7 @@ use astar_runtime::{
 };
 use cumulus_primitives_core::ParaId;
 use sc_service::ChainType;
-use sp_core::{sr25519, Pair, Public};
+use sp_core::{sr25519, Pair, Public, crypto::Ss58Codec};
 
 use sp_runtime::traits::{IdentifyAccount, Verify};
 
@@ -20,7 +20,7 @@ pub fn get_chain_spec(para_id: u32) -> AstarChainSpec {
     // Alice as default
     let sudo_key = get_account_id_from_seed::<sr25519::Public>("Alice");
     let endowned = vec![
-        (sudo_key, 100 * ASTR),
+        (sudo_key.clone(), 100 * ASTR),
         (
             // Lockdrop
             AccountId::from_ss58check("5HEEAH8enKBb62mERpWY6cymE5pXjqp9vgptTTgj4wcMCunk").unwrap(),

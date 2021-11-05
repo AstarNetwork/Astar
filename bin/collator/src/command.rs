@@ -71,11 +71,9 @@ fn load_spec(
         "astar-dev" => Box::new(chain_spec::astar::get_chain_spec(para_id)),
         "shibuya-dev" => Box::new(chain_spec::shibuya::get_chain_spec(para_id)),
         "shiden-dev" => Box::new(chain_spec::shiden::get_chain_spec(para_id)),
-        /*
         "astar" => Box::new(chain_spec::AstarChainSpec::from_json_bytes(
             &include_bytes!("../res/astar.raw.json")[..],
         )?),
-        */
         "" | "shiden" => Box::new(chain_spec::ShidenChainSpec::from_json_bytes(
             &include_bytes!("../res/shiden.raw.json")[..],
         )?),
