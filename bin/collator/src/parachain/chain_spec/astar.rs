@@ -6,7 +6,7 @@ use astar_runtime::{
 };
 use cumulus_primitives_core::ParaId;
 use sc_service::ChainType;
-use sp_core::{sr25519, Pair, Public, crypto::Ss58Codec};
+use sp_core::{crypto::Ss58Codec, sr25519, Pair, Public};
 
 use sp_runtime::traits::{IdentifyAccount, Verify};
 
