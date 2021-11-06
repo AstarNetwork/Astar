@@ -4,21 +4,41 @@
 
 // use codec::Decode;
 use evm::{executor::PrecompileOutput, Context, ExitError, ExitSucceed};
-use frame_support::{
-    dispatch::{Dispatchable, GetDispatchInfo, PostDispatchInfo},
-    traits::Get,
-};
+use frame_support::{dispatch::{Dispatchable, GetDispatchInfo, PostDispatchInfo}, traits::Get};
 use pallet_evm::{GasWeightMapping, Precompile};
-// use sp_core::H160;
+use sp_core::{U256};
 use sp_std::{marker::PhantomData};
+use sp_runtime::{
+    traits::{Zero},
+};
+use sp_std::convert::TryInto;
+
+const SELECTOR_SIZE_BYTES: usize = 4;
+const ARG_SIZE_BYTES: usize = 32;
 
 // use utils::*;
+
+
+// pub trait EvmDataTrait: Sized {
+//     fn read(input: &mut EvmInput) -> Result<Self, Error>;
+// }
+
+// #[derive(Clone, Debug)]
+// pub struct EvmInput<'a>{
+//     pub data: &'a [u8]
+// }
+
+// impl EvmDataTrait for EvmInput {
+//     fn read
+// }
+
+/// The balance type of this pallet.
 pub struct DappsStakingWrapper<R>(PhantomData<R>);
 
 impl<R> DappsStakingWrapper<R>
 where
-    R: pallet_evm::Config + pallet_dapps_staking::Config + frame_system::Config,
-    R::Call: From<pallet_dapps_staking::Call<R>>,
+R: pallet_evm::Config + pallet_dapps_staking::Config + frame_system::Config,
+R::Call: From<pallet_dapps_staking::Call<R>>,
 {
     fn current_era() -> Result<PrecompileOutput, ExitError> {
         let current_era = pallet_dapps_staking::CurrentEra::<R>::get();
@@ -28,10 +48,7 @@ where
             current_era, gas_used
         );
 
-        let mut buffer = [0u8; 32];
-        buffer[32 - core::mem::size_of::<u32>()..].copy_from_slice(&current_era.to_be_bytes());
-        let output = buffer.to_vec();
-        println!("DappsStakingWrapper current_era in bytes {:?}", output);
+        let output = Self::compose_output(current_era);
 
         Ok(PrecompileOutput {
             exit_status: ExitSucceed::Returned,
@@ -41,14 +58,54 @@ where
         })
     }
 
-    // fn register(
-    //     input: &[u8]
-    // ) -> R::Call {
-    //     let address = R::Sm
-    //     ::Evm(H160::repeat_byte(0x01));
-    //     let contract: R::SmartContract = address;
-    //     pallet_dapps_staking::Call::<R>::register(contract).into()
-    // }
+    fn era_reward_and_stake(input: &[u8]) -> Result<PrecompileOutput, ExitError> {
+
+        let era = Self::get_argument(input, 1).low_u32();
+        let reward_and_stake = pallet_dapps_staking::EraRewardsAndStakes::<R>::get(era);
+        let (reward, staked) = if let Some(r) = reward_and_stake {
+            (r.rewards, r.staked)
+        }
+        else {
+            (Zero::zero(), Zero::zero())
+        };
+        let gas_used = R::GasWeightMapping::weight_to_gas(R::DbWeight::get().read);
+        println!(
+            "DappsStaking response for era={:?}, reward={:?} staked ={:?} gas_used={:?}",
+            era, reward, staked, gas_used
+        );
+
+        let reward = TryInto::<u128>::try_into(reward).unwrap_or(0);
+        let mut output = Self::compose_output_u128(reward);
+
+        let staked = TryInto::<u128>::try_into(staked).unwrap_or(0);
+        let mut staked_vec = Self::compose_output_u128(staked);
+        output.append(&mut staked_vec);
+
+        Ok(PrecompileOutput {
+            exit_status: ExitSucceed::Returned,
+            cost: gas_used,
+            output,
+            logs: Default::default(),
+        })
+    }
+
+    fn get_argument(input: &[u8], position: usize) -> U256 {
+        let offset = SELECTOR_SIZE_BYTES + ARG_SIZE_BYTES * (position - 1);
+        let end = offset + ARG_SIZE_BYTES;
+        sp_core::U256::from_big_endian(&input[offset..end])
+    }
+
+    fn compose_output(value: u32) -> Vec<u8> {
+        let mut buffer = [0u8; ARG_SIZE_BYTES];
+        buffer[32 - core::mem::size_of::<u32>()..].copy_from_slice(&value.to_be_bytes());
+        buffer.to_vec()
+    }
+
+    fn compose_output_u128(value: u128) -> Vec<u8> {
+        let mut buffer = [0u8; ARG_SIZE_BYTES];
+        buffer[32 - core::mem::size_of::<u128>()..].copy_from_slice(&value.to_be_bytes());
+        buffer.to_vec()
+    }
 }
 
 impl<R> Precompile for DappsStakingWrapper<R>
@@ -64,7 +121,6 @@ where
         _target_gas: Option<u64>,
         context: &Context,
     ) -> Result<PrecompileOutput, ExitError> {
-        const SELECTOR_SIZE_BYTES: usize = 4;
         println!(
             "*** DappsStakingWrapper execute input={:?}, len={:?}, context.caller={:?}",
             input,
@@ -79,9 +135,11 @@ where
             // storage getters
             // current_era = [215, 190, 56, 150]
             [0xd7, 0xbe, 0x38, 0x96] => return Self::current_era(),
+            // era_reward_and_stake [185, 183, 14, 142]
+            [0xb9, 0xb7, 0x0e, 0x8e] => return Self::era_reward_and_stake(input),
             // [0x32, 0x1c, 0x9b, 0x7a] => Self::register(input),
             _ => {
-                println!("!!!!!!!!!!! ERROR selector");
+                println!("!!!!!!!!!!! ERROR selector, input={:?}", input);
                 return Err(ExitError::Other(
                     "No method at selector given selector".into(),
                 ))

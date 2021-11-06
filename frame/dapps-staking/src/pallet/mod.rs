@@ -145,7 +145,7 @@ pub mod pallet {
     /// Total block rewards for the pallet per era and total staked funds
     #[pallet::storage]
     #[pallet::getter(fn era_reward_and_stake)]
-    pub(crate) type EraRewardsAndStakes<T: Config> =
+    pub type EraRewardsAndStakes<T: Config> =
         StorageMap<_, Twox64Concat, EraIndex, EraRewardAndStake<BalanceOf<T>>>;
 
     /// Stores amount staked and stakers for a contract per era
