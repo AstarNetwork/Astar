@@ -2,6 +2,9 @@ on: [push]
 
 name: Integration
 
+env:
+  RUST_VERSION: 'nightly-2021-06-29'
+
 jobs:
   native:
     runs-on: ${{ matrix.os }}
@@ -11,7 +14,7 @@ jobs:
     steps:
     - uses: hecrj/setup-rust-action@v1
       with:
-        rust-version: 'nightly-2021-06-29'
+        rust-version: ${{ env.RUST_VERSION }}
         targets: 'wasm32-unknown-unknown'
 
     - name: Checkout the source code
@@ -33,6 +36,49 @@ jobs:
         name: astar-${{ matrix.os }}-x86_64
         path: target/release/astar-collator
 
+  runtime-benchmarks:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: hecrj/setup-rust-action@v1
+      with:
+        rust-version: ${{ env.RUST_VERSION }}
+        targets: 'wasm32-unknown-unknown'
+
+    - name: Checkout the source code
+      uses: actions/checkout@master
+      with:
+        submodules: true
+
+    - name: Check targets are installed correctly
+      run: rustup target list --installed
+
+    - name: Build optimized binary for benchmarking
+      run: cargo build --release --verbose --features runtime-benchmarks
+
+    - uses: actions/upload-artifact@master
+      with:
+        name: astar-runtime-benchmarks
+        path: target/release/astar-collator
+
+  try-runtime:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: hecrj/setup-rust-action@v1
+      with:
+        rust-version: ${{ env.RUST_VERSION }}
+        targets: 'wasm32-unknown-unknown'
+
+    - name: Checkout the source code
+      uses: actions/checkout@master
+      with:
+        submodules: true
+
+    - name: Check targets are installed correctly
+      run: rustup target list --installed
+
+    - name: Check try-runtime compilation
+      run: cargo check --verbose --features try-runtime
+
   nix:
     runs-on: ubuntu-latest
     steps:
@@ -50,7 +96,7 @@ jobs:
     steps:
     - uses: hecrj/setup-rust-action@v1
       with:
-        rust-version: 'nightly-2021-06-29'
+        rust-version: ${{ env.RUST_VERSION }}
         targets: 'wasm32-unknown-unknown'
 
     - name: Set up Docker Buildx
