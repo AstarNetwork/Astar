@@ -84,7 +84,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("shiden"),
     impl_name: create_runtime_str!("shiden"),
     authoring_version: 1,
-    spec_version: 24,
+    spec_version: 25,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 1,
@@ -269,6 +269,7 @@ parameter_types! {
     pub const DeveloperRewardPercentage: Perbill = Perbill::from_percent(80);
     pub const MaxNumberOfStakersPerContract: u32 = 512;
     pub const MinimumStakingAmount: Balance = 100 * SDN;
+    pub const MinimumRemainingAmount: Balance = 1 * SDN;
     pub const HistoryDepth: u32 = 14;
     pub const BonusEraDuration: u32 = 10;
 }
@@ -284,7 +285,7 @@ impl pallet_dapps_staking::Config for Runtime {
     type MaxNumberOfStakersPerContract = MaxNumberOfStakersPerContract;
     type MinimumStakingAmount = MinimumStakingAmount;
     type PalletId = DappsStakingPalletId;
-    type TreasuryPalletId = TreasuryPalletId;
+    type MinimumRemainingAmount = MinimumRemainingAmount;
     type HistoryDepth = HistoryDepth;
     type BonusEraDuration = BonusEraDuration;
 }

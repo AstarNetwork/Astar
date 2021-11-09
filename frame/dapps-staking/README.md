@@ -152,6 +152,7 @@ pub fn bond_and_stake(
 5. The Staker shall stake on only one contract per call
 6. The Staker can stake on an unlimited number of contracts but one at the time.
 7. The number of stakers per contract is limited to `MaxNumberOfStakersPerContract`
+8. Staking will always leave a predefined minimum transferable amount on users account.
 
 
 Events:

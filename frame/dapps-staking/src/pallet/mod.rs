@@ -93,9 +93,9 @@ pub mod pallet {
         #[pallet::constant]
         type PalletId: Get<PalletId>;
 
-        /// Treasury pallet Id
+        /// Minimum amount that should be left on staker account after staking.
         #[pallet::constant]
-        type TreasuryPalletId: Get<PalletId>;
+        type MinimumRemainingAmount: Get<BalanceOf<Self>>;
 
         /// The overarching event type.
         type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
@@ -382,7 +382,8 @@ pub mod pallet {
             let mut ledger = Self::ledger(&staker);
 
             // Ensure that staker has enough balance to bond & stake.
-            let free_balance = T::Currency::free_balance(&staker);
+            let free_balance =
+                T::Currency::free_balance(&staker).saturating_sub(T::MinimumRemainingAmount::get());
 
             // Remove already locked funds from the free balance
             let available_balance = free_balance.saturating_sub(ledger);
