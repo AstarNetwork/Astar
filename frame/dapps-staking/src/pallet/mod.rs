@@ -270,8 +270,9 @@ pub mod pallet {
             origin: OriginFor<T>,
             contract_id: T::SmartContract,
         ) -> DispatchResultWithPostInfo {
+            println!("+++ pallet register entry {:?}", contract_id);
             let developer = ensure_signed(origin)?;
-
+            println!("+++ pallet register developer={:?}", developer);
             ensure!(
                 !RegisteredDevelopers::<T>::contains_key(&developer),
                 Error::<T>::AlreadyUsedDeveloperAccount,
@@ -288,11 +289,15 @@ pub mod pallet {
                     Error::<T>::RequiredContractPreApproval,
                 );
             }
+            println!("+++ pallet register all checks passed");
 
             T::Currency::reserve(&developer, T::RegisterDeposit::get())?;
+            println!("+++ pallet register deposit OK");
 
             RegisteredDapps::<T>::insert(contract_id.clone(), developer.clone());
+            println!("+++ pallet register RegisteredDapps OK");
             RegisteredDevelopers::<T>::insert(&developer, contract_id.clone());
+            println!("+++ pallet register RegisteredDevelopers OK");
 
             Self::deposit_event(Event::<T>::NewContract(developer, contract_id));
 

@@ -2,6 +2,8 @@
 
 pragma solidity >=0.7.0;
 
+/// Interface to the precompiled contract on Shibuya/Shiden/Astar
+/// Predeployed on the address 0x0000000000000000000000000000000000005001
 interface DappsStaking {
     /// @dev Get current era.
     /// Selector: d7be3896
@@ -17,4 +19,8 @@ interface DappsStaking {
     /// Selector: 192fb256
     /// @return address as uint256, not as H160
     function registered_contract(address developer) external view returns (uint256);
+
+    /// @dev Register provided contract.
+    /// Selector: 4420e486
+    function register(address) external;
 }

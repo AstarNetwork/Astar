@@ -2,35 +2,32 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
-// use codec::Decode;
+use codec::{Decode, Encode};
+
 use evm::{executor::PrecompileOutput, Context, ExitError, ExitSucceed};
 use frame_support::{
     dispatch::{Dispatchable, GetDispatchInfo, PostDispatchInfo},
     traits::Get,
 };
-use pallet_evm::{GasWeightMapping, Precompile, AddressMapping};
-use sp_core::{U256, H160};
+use pallet_evm::{AddressMapping, GasWeightMapping, Precompile};
+use sp_core::{H160, U256};
 use sp_runtime::traits::Zero;
 use sp_std::convert::TryInto;
 use sp_std::marker::PhantomData;
 
 const SELECTOR_SIZE_BYTES: usize = 4;
 const ARG_SIZE_BYTES: usize = 32;
-
+const OFFSET_H160: usize = 12;
 // use utils::*;
 
-// pub trait EvmDataTrait: Sized {
-//     fn read(input: &mut EvmInput) -> Result<Self, Error>;
-// }
-
-// #[derive(Clone, Debug)]
-// pub struct EvmInput<'a>{
-//     pub data: &'a [u8]
-// }
-
-// impl EvmDataTrait for EvmInput {
-//     fn read
-// }
+/// Multi-VM pointer to smart contract instance.
+#[derive(PartialEq, Eq, Copy, Clone, Encode, Decode, Debug)]
+pub enum Contract<A> {
+    /// EVM smart contract instance.
+    Evm(H160),
+    /// Wasm smart contract instance. Not used in this precompile
+    Wasm(A),
+}
 
 /// The balance type of this pallet.
 pub struct DappsStakingWrapper<R>(PhantomData<R>);
@@ -40,6 +37,7 @@ where
     R: pallet_evm::Config + pallet_dapps_staking::Config + frame_system::Config,
     R::Call: From<pallet_dapps_staking::Call<R>>,
 {
+    /// Fetch current era from CurrentEra storage map
     fn current_era() -> Result<PrecompileOutput, ExitError> {
         let current_era = pallet_dapps_staking::CurrentEra::<R>::get();
         let gas_used = R::GasWeightMapping::weight_to_gas(R::DbWeight::get().read);
@@ -58,8 +56,9 @@ where
         })
     }
 
+    /// Fetch reward and stake from EraRewardsAndStakes storage map
     fn era_reward_and_stake(input: &[u8]) -> Result<PrecompileOutput, ExitError> {
-        let era = Self::get_argument(input, 1).low_u32();
+        let era = Self::parse_argument_u256(input, 1).low_u32();
         let reward_and_stake = pallet_dapps_staking::EraRewardsAndStakes::<R>::get(era);
         let (reward, staked) = if let Some(r) = reward_and_stake {
             (r.rewards, r.staked)
@@ -87,14 +86,14 @@ where
         })
     }
 
-    // Fetch registered contract from RegisteredDevelopers storage map
+    /// Fetch registered contract from RegisteredDevelopers storage map
     fn registered_contract(input: &[u8]) -> Result<PrecompileOutput, ExitError> {
-        let developer_h160 = Self::get_argument_h160(input, 1);
+        let developer_h160 = Self::parse_argument_h160(input, 1);
         let developer = R::AddressMapping::into_account_id(developer_h160);
         println!("************ developer_h160 {:?}", developer_h160);
         println!("************ developer public key {:?}", developer);
 
-        // let developer = Self::get_argument_account_id(input, 1);
+        // let developer = Self::parse_argument_account_id(input, 1);
         let smart_contract = pallet_dapps_staking::RegisteredDevelopers::<R>::get(&developer);
         let gas_used = R::GasWeightMapping::weight_to_gas(R::DbWeight::get().read);
 
@@ -102,7 +101,7 @@ where
             "************ developer {:?}, contract {:?}",
             developer, smart_contract
         );
-        // let output = Self::compose_output(smart_contract.unwrap_or_default());
+        // let output = Self::compose_output(smart_contract.unwrap_or_default()); // TODO
 
         Ok(PrecompileOutput {
             exit_status: ExitSucceed::Returned,
@@ -112,25 +111,49 @@ where
         })
     }
 
-    fn get_argument(input: &[u8], position: usize) -> U256 {
+    /// Register contract with the dapp-staking pallet
+    fn register(input: &[u8]) -> Result<R::Call, ExitError> {
+        // parse contract's address
+        let contract_h160 = Self::parse_argument_h160(input, 1);
+        println!("contract_h160 {:?}", contract_h160);
+
+        // Encode contract address to fit SmartContract enum.
+        // Since the SmartContract enum type can't be accessed from this pecompile,
+        // use locally defined enum clone (see Contract enum)
+        let contract_enum_encoded = Contract::<H160>::Evm(contract_h160).encode();
+        println!(
+            "contract_enum_encoded({:?}) = {:?}",
+            contract_enum_encoded.len(),
+            contract_enum_encoded
+        );
+
+        // encoded enum will add one byte before the contract's address
+        // therefore we need to decode len(H160) + 1 byte = 21
+        let smart_contract = <R as pallet_dapps_staking::Config>::SmartContract::decode(
+            &mut &contract_enum_encoded[..21],
+        ).map_err(|_| ExitError::DesignatedInvalid)?;
+        println!("smart_contract {:?}", smart_contract);
+
+        Ok(pallet_dapps_staking::Call::<R>::register(smart_contract).into())
+    }
+
+    fn parse_argument_u256(input: &[u8], position: usize) -> U256 {
         let offset = SELECTOR_SIZE_BYTES + ARG_SIZE_BYTES * (position - 1);
         let end = offset + ARG_SIZE_BYTES;
         sp_core::U256::from_big_endian(&input[offset..end])
     }
 
-    // fn get_argument_account_id(input: &[u8], position: usize) -> R::AccountId{
+    // fn parse_argument_account_id(input: &[u8], position: usize) -> R::AccountId{
     //     let offset = SELECTOR_SIZE_BYTES + ARG_SIZE_BYTES * (position - 1);
     //     let end = offset + ARG_SIZE_BYTES;
     //     R::AccountId::decode(&mut &input[offset..end]).unwrap_or_default()
     // }
 
-    fn get_argument_h160(input: &[u8], position: usize) -> H160 {
+    fn parse_argument_h160(input: &[u8], position: usize) -> H160 {
         let offset = SELECTOR_SIZE_BYTES + ARG_SIZE_BYTES * (position - 1);
         let end = offset + ARG_SIZE_BYTES;
         // H160 has 20 bytes. The first 12 bytes in u256 have no meaning
-        let offset_h160 = 12;
-        sp_core::H160::from_slice(&input[(offset + offset_h160)..end]).into()
-        // H160::from_slice(&data[12..32]).into()
+        sp_core::H160::from_slice(&input[(offset + OFFSET_H160)..end]).into()
     }
 
     fn compose_output(value: u32) -> Vec<u8> {
@@ -156,12 +179,12 @@ where
 {
     fn execute(
         input: &[u8],
-        _target_gas: Option<u64>,
+        target_gas: Option<u64>,
         context: &Context,
     ) -> Result<PrecompileOutput, ExitError> {
         println!(
-            "*** DappsStakingWrapper execute input={:?}, len={:?}, context.caller={:?}",
-            input,
+            "**************** DappsStakingWrapper execute selector={:x?}, len={:?} \ncontext.caller={:?}",
+            &input[0..4],
             input.len(),
             context.caller
         );
@@ -169,7 +192,7 @@ where
             return Err(ExitError::Other("input length less than 4 bytes".into()));
         }
 
-        match input[0..SELECTOR_SIZE_BYTES] {
+        let call = match input[0..SELECTOR_SIZE_BYTES] {
             // storage getters
             // current_era = [215, 190, 56, 150]
             [0xd7, 0xbe, 0x38, 0x96] => return Self::current_era(),
@@ -178,36 +201,38 @@ where
             // registered_contract [0x19, 0x2f, 0xb2, 0x56] 'address Developer'
             // registered_contract [0x60, 0x57, 0x36, 0x1d] 'uint256 Developer'
             [0x19, 0x2f, 0xb2, 0x56] => return Self::registered_contract(input),
-            // [0x32, 0x1c, 0x9b, 0x7a] => Self::register(input),
+            // register [0x44, 0x20, 0xe4, 0x86]
+            [0x44, 0x20, 0xe4, 0x86] => Self::register(input)?,
             _ => {
-                println!("!!!!!!!!!!! ERROR selector, input={:?}", input);
+                println!("!!!!!!!!!!! ERROR selector, selector={:x?}", &input[0..4]);
                 return Err(ExitError::Other(
                     "No method at selector given selector".into(),
                 ));
             }
         };
 
-        // let info = call.get_dispatch_info();
-        // if let Some(gas_limit) = target_gas {
-        //     let required_gas = R::GasWeightMapping::weight_to_gas(info.weight);
-        //     if required_gas > gas_limit {
-        //         return Err(ExitError::OutOfGas);
-        //     }
-        // }
+        let info = call.get_dispatch_info();
+        if let Some(gas_limit) = target_gas {
+            let required_gas = R::GasWeightMapping::weight_to_gas(info.weight);
+            if required_gas > gas_limit {
+                return Err(ExitError::OutOfGas);
+            }
+        }
 
-        // let origin = R::AddressMapping::into_account_id(context.caller);
-        // let post_info = call
-        //     .dispatch(Some(origin).into())
-        //     .map_err(|_| ExitError::Other("Method call via EVM failed".into()))?;
+        let origin = R::AddressMapping::into_account_id(context.caller);
+        let post_info = call
+            .dispatch(Some(origin).into())
+            .map_err(|_| ExitError::Other("Method call via EVM failed".into()))?;
 
-        // let gas_used =
-        //     R::GasWeightMapping::weight_to_gas(post_info.actual_weight.unwrap_or(info.weight));
+        let gas_used =
+            R::GasWeightMapping::weight_to_gas(post_info.actual_weight.unwrap_or(info.weight));
+        println!("---------------- gas_used ={:?}", gas_used);
 
-        // Ok(PrecompileOutput {
-        //     exit_status: ExitSucceed::Stopped,
-        //     cost: target_gas.unwrap_or(0),
-        //     output: Default::default(),
-        //     logs: Default::default(),
-        // })
+        Ok(PrecompileOutput {
+            exit_status: ExitSucceed::Returned,
+            cost: gas_used,
+            output: Default::default(),
+            logs: Default::default(),
+        })
     }
 }
