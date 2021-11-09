@@ -4,20 +4,20 @@
 
 // use codec::Decode;
 use evm::{executor::PrecompileOutput, Context, ExitError, ExitSucceed};
-use frame_support::{dispatch::{Dispatchable, GetDispatchInfo, PostDispatchInfo}, traits::Get};
-use pallet_evm::{GasWeightMapping, Precompile};
-use sp_core::{U256};
-use sp_std::{marker::PhantomData};
-use sp_runtime::{
-    traits::{Zero},
+use frame_support::{
+    dispatch::{Dispatchable, GetDispatchInfo, PostDispatchInfo},
+    traits::Get,
 };
+use pallet_evm::{GasWeightMapping, Precompile, AddressMapping};
+use sp_core::{U256, H160};
+use sp_runtime::traits::Zero;
 use sp_std::convert::TryInto;
+use sp_std::marker::PhantomData;
 
 const SELECTOR_SIZE_BYTES: usize = 4;
 const ARG_SIZE_BYTES: usize = 32;
 
 // use utils::*;
-
 
 // pub trait EvmDataTrait: Sized {
 //     fn read(input: &mut EvmInput) -> Result<Self, Error>;
@@ -37,8 +37,8 @@ pub struct DappsStakingWrapper<R>(PhantomData<R>);
 
 impl<R> DappsStakingWrapper<R>
 where
-R: pallet_evm::Config + pallet_dapps_staking::Config + frame_system::Config,
-R::Call: From<pallet_dapps_staking::Call<R>>,
+    R: pallet_evm::Config + pallet_dapps_staking::Config + frame_system::Config,
+    R::Call: From<pallet_dapps_staking::Call<R>>,
 {
     fn current_era() -> Result<PrecompileOutput, ExitError> {
         let current_era = pallet_dapps_staking::CurrentEra::<R>::get();
@@ -59,13 +59,11 @@ R::Call: From<pallet_dapps_staking::Call<R>>,
     }
 
     fn era_reward_and_stake(input: &[u8]) -> Result<PrecompileOutput, ExitError> {
-
         let era = Self::get_argument(input, 1).low_u32();
         let reward_and_stake = pallet_dapps_staking::EraRewardsAndStakes::<R>::get(era);
         let (reward, staked) = if let Some(r) = reward_and_stake {
             (r.rewards, r.staked)
-        }
-        else {
+        } else {
             (Zero::zero(), Zero::zero())
         };
         let gas_used = R::GasWeightMapping::weight_to_gas(R::DbWeight::get().read);
@@ -89,10 +87,50 @@ R::Call: From<pallet_dapps_staking::Call<R>>,
         })
     }
 
+    // Fetch registered contract from RegisteredDevelopers storage map
+    fn registered_contract(input: &[u8]) -> Result<PrecompileOutput, ExitError> {
+        let developer_h160 = Self::get_argument_h160(input, 1);
+        let developer = R::AddressMapping::into_account_id(developer_h160);
+        println!("************ developer_h160 {:?}", developer_h160);
+        println!("************ developer public key {:?}", developer);
+
+        // let developer = Self::get_argument_account_id(input, 1);
+        let smart_contract = pallet_dapps_staking::RegisteredDevelopers::<R>::get(&developer);
+        let gas_used = R::GasWeightMapping::weight_to_gas(R::DbWeight::get().read);
+
+        println!(
+            "************ developer {:?}, contract {:?}",
+            developer, smart_contract
+        );
+        // let output = Self::compose_output(smart_contract.unwrap_or_default());
+
+        Ok(PrecompileOutput {
+            exit_status: ExitSucceed::Returned,
+            cost: gas_used,
+            output: Default::default(),
+            logs: Default::default(),
+        })
+    }
+
     fn get_argument(input: &[u8], position: usize) -> U256 {
         let offset = SELECTOR_SIZE_BYTES + ARG_SIZE_BYTES * (position - 1);
         let end = offset + ARG_SIZE_BYTES;
         sp_core::U256::from_big_endian(&input[offset..end])
+    }
+
+    // fn get_argument_account_id(input: &[u8], position: usize) -> R::AccountId{
+    //     let offset = SELECTOR_SIZE_BYTES + ARG_SIZE_BYTES * (position - 1);
+    //     let end = offset + ARG_SIZE_BYTES;
+    //     R::AccountId::decode(&mut &input[offset..end]).unwrap_or_default()
+    // }
+
+    fn get_argument_h160(input: &[u8], position: usize) -> H160 {
+        let offset = SELECTOR_SIZE_BYTES + ARG_SIZE_BYTES * (position - 1);
+        let end = offset + ARG_SIZE_BYTES;
+        // H160 has 20 bytes. The first 12 bytes in u256 have no meaning
+        let offset_h160 = 12;
+        sp_core::H160::from_slice(&input[(offset + offset_h160)..end]).into()
+        // H160::from_slice(&data[12..32]).into()
     }
 
     fn compose_output(value: u32) -> Vec<u8> {
@@ -137,12 +175,15 @@ where
             [0xd7, 0xbe, 0x38, 0x96] => return Self::current_era(),
             // era_reward_and_stake [185, 183, 14, 142]
             [0xb9, 0xb7, 0x0e, 0x8e] => return Self::era_reward_and_stake(input),
+            // registered_contract [0x19, 0x2f, 0xb2, 0x56] 'address Developer'
+            // registered_contract [0x60, 0x57, 0x36, 0x1d] 'uint256 Developer'
+            [0x19, 0x2f, 0xb2, 0x56] => return Self::registered_contract(input),
             // [0x32, 0x1c, 0x9b, 0x7a] => Self::register(input),
             _ => {
                 println!("!!!!!!!!!!! ERROR selector, input={:?}", input);
                 return Err(ExitError::Other(
                     "No method at selector given selector".into(),
-                ))
+                ));
             }
         };
 

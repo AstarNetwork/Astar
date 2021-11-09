@@ -133,7 +133,7 @@ pub mod pallet {
     /// Registered developer accounts points to coresponding contract
     #[pallet::storage]
     #[pallet::getter(fn registered_contract)]
-    pub(crate) type RegisteredDevelopers<T: Config> =
+    pub type RegisteredDevelopers<T: Config> =
         StorageMap<_, Blake2_128Concat, T::AccountId, T::SmartContract>;
 
     /// Registered dapp points to the developer who registered it

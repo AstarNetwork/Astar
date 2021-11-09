@@ -7,6 +7,7 @@ use local_runtime::{
 };
 use sc_service::ChainType;
 use sp_core::{sr25519, Pair, Public};
+use sp_core::crypto::Ss58Codec;
 
 use sp_runtime::traits::{IdentifyAccount, Verify};
 
@@ -55,6 +56,11 @@ pub fn development_config() -> ChainSpec {
                     get_account_id_from_seed::<sr25519::Public>("Charlie"),
                     get_account_id_from_seed::<sr25519::Public>("Eve"),
                     get_account_id_from_seed::<sr25519::Public>("Ferdie"),
+                    // Arrakis.TEST account in MetaMask
+                    // Use known Arrakis.TEST account with private key
+                    // 0x...
+                    AccountId::from_ss58check("5Gbgok6b2HRpPDm7vSEDffBDsLNmAiFEgRSZcLePVYqKqT3i")
+                        .unwrap(),
                 ],
             )
         },
