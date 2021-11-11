@@ -23,4 +23,8 @@ interface DappsStaking {
     /// @dev Register provided contract.
     /// Selector: 4420e486
     function register(address) external;
+
+    /// @dev Stake provided amount on the contract.
+    /// Selector: 52b73e41
+    function bond_and_stake(address, uint128) external;
 }
