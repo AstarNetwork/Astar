@@ -97,6 +97,16 @@ pub mod pallet {
         #[pallet::constant]
         type MinimumRemainingAmount: Get<BalanceOf<Self>>;
 
+        /// Max number of unlocking chunks per account Id <-> contract Id pairing.
+        /// If value is zero, unlocking becomes impossible.
+        #[pallet::constant]
+        type MaxUnlockingChunks: Get<u32>;
+
+        /// Number of eras that need to pass until unstaked value can be withdrawn.
+        /// If this value is zero, it's equivalent to having no unbonding period.
+        #[pallet::constant]
+        type UnbondingPeriod: Get<u32>;
+
         /// The overarching event type.
         type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
 
@@ -108,7 +118,7 @@ pub mod pallet {
     #[pallet::storage]
     #[pallet::getter(fn ledger)]
     pub(crate) type Ledger<T: Config> =
-        StorageMap<_, Blake2_128Concat, T::AccountId, BalanceOf<T>, ValueQuery>;
+        StorageMap<_, Blake2_128Concat, T::AccountId, AccountLedger<BalanceOf<T>>, ValueQuery>;
 
     /// The current era index.
     #[pallet::storage]
@@ -160,6 +170,11 @@ pub mod pallet {
         EraStakingPoints<T::AccountId, BalanceOf<T>>,
     >;
 
+    /// Stores the current pallet storage version.
+    #[pallet::storage]
+    #[pallet::getter(fn storage_version)]
+    pub(crate) type StorageVersion<T> = StorageValue<_, Version, ValueQuery>;
+
     #[pallet::type_value]
     pub(crate) fn PreApprovalOnEmpty() -> bool {
         false
@@ -181,8 +196,10 @@ pub mod pallet {
     pub enum Event<T: Config> {
         /// Account has bonded and staked funds on a smart contract.
         BondAndStake(T::AccountId, T::SmartContract, BalanceOf<T>),
-        /// Account has unbonded, unstaked and withdrawn funds.
-        UnbondUnstakeAndWithdraw(T::AccountId, T::SmartContract, BalanceOf<T>),
+        /// Account has unbonded & unstaked some funds. Unbonding process begins.
+        UnbondAndUnstake(T::AccountId, T::SmartContract, BalanceOf<T>),
+        /// Account has withdrawn unbonded funds.
+        Withdrawn(T::AccountId, BalanceOf<T>),
         /// New contract added for staking.
         NewContract(T::AccountId, T::SmartContract),
         /// Contract removed from dapps staking.
@@ -207,6 +224,8 @@ pub mod pallet {
         NotStakedContract,
         /// Unstaking a contract with zero value
         UnstakingWithNoValue,
+        /// There are no previously unbonded funds that can be unstaked and withdrawn.
+        NothingToWithdraw,
         /// The contract is already registered by other account
         AlreadyRegisteredContract,
         /// User attempts to register with address which is not contract
@@ -219,6 +238,9 @@ pub mod pallet {
         UnknownEraReward,
         /// Contract hasn't been staked on in this era.
         NotStaked,
+        /// Contract has too many unlocking chunks. Withdraw the existing chunks if possible
+        /// or wait for current chunks to complete unlocking process to withdraw them.
+        TooManyUnlockingChunks,
         /// Contract already claimed in this era and reward is distributed
         AlreadyClaimedInThisEra,
         /// Era parameter is out of bounds
@@ -325,8 +347,9 @@ pub mod pallet {
             let current_era = Self::current_era();
             let staking_info = Self::staking_info(&contract_id, current_era);
             for (staker, amount) in staking_info.stakers.iter() {
-                let ledger = Self::ledger(staker);
-                Self::update_ledger(staker, ledger.saturating_sub(*amount));
+                let mut ledger = Self::ledger(staker);
+                ledger.locked = ledger.locked.saturating_sub(*amount);
+                Self::update_ledger(staker, ledger);
             }
 
             // Need to update total amount staked
@@ -386,7 +409,7 @@ pub mod pallet {
                 T::Currency::free_balance(&staker).saturating_sub(T::MinimumRemainingAmount::get());
 
             // Remove already locked funds from the free balance
-            let available_balance = free_balance.saturating_sub(ledger);
+            let available_balance = free_balance.saturating_sub(ledger.locked);
             let value_to_stake = value.min(available_balance);
             ensure!(
                 value_to_stake > Zero::zero(),
@@ -406,7 +429,8 @@ pub mod pallet {
             }
 
             // Increment ledger and total staker value for contract. Overflow shouldn't be possible but the check is here just for safety.
-            ledger = ledger
+            ledger.locked = ledger
+                .locked
                 .checked_add(&value_to_stake)
                 .ok_or(ArithmeticError::Overflow)?;
             staking_info.total = staking_info
@@ -443,18 +467,20 @@ pub mod pallet {
                 contract_id,
                 value_to_stake,
             ));
-            Ok(Some(T::WeightInfo::bond_and_stake()).into())
+            Ok(().into())
         }
 
-        /// Unbond, unstake and withdraw balance from the contract.
+        /// Start unbonding process and unstake balance from the contract.
         ///
-        /// Value will be unlocked for the user.
+        /// The unstaked amount will no longer be eligible for rewards but still won't be unlocked.
+        /// User needs to wait for the unbonding period to finish before being able to withdraw
+        /// the funds via `withdraw_unbonded` call.
         ///
         /// In case remaining staked balance on contract is below minimum staking amount,
         /// entire stake for that contract will be unstaked.
         ///
-        #[pallet::weight(T::WeightInfo::unbond_unstake_and_withdraw())]
-        pub fn unbond_unstake_and_withdraw(
+        #[pallet::weight(T::WeightInfo::unbond_and_unstake())]
+        pub fn unbond_and_unstake(
             origin: OriginFor<T>,
             contract_id: T::SmartContract,
             #[pallet::compact] value: BalanceOf<T>,
@@ -477,8 +503,6 @@ pub mod pallet {
             );
             let staked_value = staking_info.stakers[&staker];
 
-            ensure!(value <= staked_value, Error::<T>::InsufficientValue);
-
             // Calculate the value which will be unstaked.
             let remaining = staked_value.saturating_sub(value);
             let value_to_unstake = if remaining < T::MinimumStakingAmount::get() {
@@ -488,10 +512,29 @@ pub mod pallet {
                 staking_info.stakers.insert(staker.clone(), remaining);
                 value
             };
+            staking_info.total = staking_info.total.saturating_sub(value_to_unstake);
 
-            // Get the staking ledger and update it
-            let ledger = Self::ledger(&staker);
-            Self::update_ledger(&staker, ledger.saturating_sub(value_to_unstake));
+            // Sanity check
+            ensure!(
+                value_to_unstake > Zero::zero(),
+                Error::<T>::UnstakingWithNoValue
+            );
+
+            let mut ledger = Self::ledger(&staker);
+
+            // Update the chunks and write them to storage
+            const SKIP_CURRENT_ERA: u32 = 1;
+            ledger.unbonding_info.add(UnlockingChunk {
+                amount: value_to_unstake,
+                unlock_era: current_era + SKIP_CURRENT_ERA + T::UnbondingPeriod::get(),
+            });
+            // This should be done AFTER insertion since it's possible for chunks to merge
+            ensure!(
+                ledger.unbonding_info.len() <= T::MaxUnlockingChunks::get(),
+                Error::<T>::TooManyUnlockingChunks
+            );
+
+            Self::update_ledger(&staker, ledger);
 
             // Update total staked value in era.
             EraRewardsAndStakes::<T>::mutate(&current_era, |value| {
@@ -501,19 +544,46 @@ pub mod pallet {
             });
 
             // Update the era staking points
-            staking_info.total = staking_info.total.saturating_sub(value_to_unstake);
             ContractEraStake::<T>::insert(contract_id.clone(), current_era, staking_info);
 
-            Self::deposit_event(Event::<T>::UnbondUnstakeAndWithdraw(
+            Self::deposit_event(Event::<T>::UnbondAndUnstake(
                 staker,
                 contract_id,
                 value_to_unstake,
             ));
 
-            Ok(Some(T::WeightInfo::unbond_unstake_and_withdraw()).into())
+            Ok(().into())
         }
 
-        /// claim the rewards earned by contract_id.
+        /// Withdraw all funds that have completed the unbonding process.
+        ///
+        /// If there are unbonding chunks which will be fully unbonded in future eras,
+        /// they will remain and can be withdrawn later.
+        ///
+        #[pallet::weight(T::WeightInfo::withdraw_unbonded())]
+        pub fn withdraw_unbonded(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
+            let staker = ensure_signed(origin)?;
+
+            let mut ledger = Self::ledger(&staker);
+            let current_era = Self::current_era();
+
+            let (valid_chunks, future_chunks) = ledger.unbonding_info.partition(current_era);
+            let withdraw_amount = valid_chunks.sum();
+
+            ensure!(!withdraw_amount.is_zero(), Error::<T>::NothingToWithdraw);
+
+            // Get the staking ledger and update it
+            ledger.locked = ledger.locked.saturating_sub(withdraw_amount);
+            ledger.unbonding_info = future_chunks;
+
+            Self::update_ledger(&staker, ledger);
+
+            Self::deposit_event(Event::<T>::Withdrawn(staker, withdraw_amount));
+
+            Ok(().into())
+        }
+
+        /// Claim the rewards earned by contract_id.
         /// All stakers and developer for this contract will be paid out with single call.
         /// claim is valid for all unclaimed eras but not longer than history_depth().
         /// Any reward older than history_depth() will go to Treasury.
@@ -522,7 +592,7 @@ pub mod pallet {
         pub fn claim(
             origin: OriginFor<T>,
             contract_id: T::SmartContract,
-            era: EraIndex,
+            #[pallet::compact] era: EraIndex,
         ) -> DispatchResultWithPostInfo {
             let _ = ensure_signed(origin)?;
 
@@ -667,12 +737,12 @@ pub mod pallet {
 
         /// Update the ledger for a staker. This will also update the stash lock.
         /// This lock will lock the entire funds except paying for further transactions.
-        fn update_ledger(staker: &T::AccountId, ledger: BalanceOf<T>) {
-            if ledger.is_zero() {
+        fn update_ledger(staker: &T::AccountId, ledger: AccountLedger<BalanceOf<T>>) {
+            if ledger.locked.is_zero() && ledger.unbonding_info.is_empty() {
                 Ledger::<T>::remove(&staker);
                 T::Currency::remove_lock(STAKING_ID, &staker);
             } else {
-                T::Currency::set_lock(STAKING_ID, &staker, ledger, WithdrawReasons::all());
+                T::Currency::set_lock(STAKING_ID, &staker, ledger.locked, WithdrawReasons::all());
                 Ledger::<T>::insert(staker, ledger);
             }
         }

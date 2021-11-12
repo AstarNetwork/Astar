@@ -79,7 +79,7 @@ fn staking_info_is_ok() {
 
         let mid_era = 7;
         advance_to_era(mid_era);
-        unbond_unstake_and_withdraw_with_verification(staker_2, &contract_id, amount);
+        unbond_and_unstake_with_verification(staker_2, &contract_id, amount);
         bond_and_stake_with_verification(staker_3, &contract_id, amount);
 
         let final_era = 12;
@@ -315,8 +315,8 @@ fn unregister_with_staked_contracts_is_ok() {
         verify_storage_after_unregister(&developer, &contract_id);
 
         // Ensure ledger contains expected stake values. We have a single staked contract remaining.
-        assert_eq!(staked_value_1, DappsStaking::ledger(&staker_1));
-        assert_eq!(staked_value_2, DappsStaking::ledger(&staker_2));
+        assert_eq!(staked_value_1, DappsStaking::ledger(&staker_1).locked);
+        assert_eq!(staked_value_2, DappsStaking::ledger(&staker_2).locked);
 
         // Ensure that era reward&stake has been updated
         assert_eq!(
@@ -367,7 +367,7 @@ fn unregister_stake_and_unstake_is_not_ok() {
         // Register contract, stake it, unstake a bit
         register_contract(developer, &contract_id);
         bond_and_stake_with_verification(staker, &contract_id, 100);
-        unbond_unstake_and_withdraw_with_verification(staker, &contract_id, 10);
+        unbond_and_unstake_with_verification(staker, &contract_id, 10);
 
         // Unregister contract and verify that stake & unstake no longer work
         assert_ok!(DappsStaking::unregister(
@@ -380,11 +380,7 @@ fn unregister_stake_and_unstake_is_not_ok() {
             Error::<TestRuntime>::NotOperatedContract
         );
         assert_noop!(
-            DappsStaking::unbond_unstake_and_withdraw(
-                Origin::signed(staker),
-                contract_id.clone(),
-                100
-            ),
+            DappsStaking::unbond_and_unstake(Origin::signed(staker), contract_id.clone(), 100),
             Error::<TestRuntime>::NotOperatedContract
         );
     })
@@ -636,7 +632,7 @@ fn bond_and_stake_different_value_is_ok() {
         )));
         // Verify the minimum transferable amount of stakers account
         let transferable_balance =
-            Balances::free_balance(&staker_id) - Ledger::<TestRuntime>::get(staker_id);
+            Balances::free_balance(&staker_id) - Ledger::<TestRuntime>::get(staker_id).locked;
         assert_eq!(MINIMUM_REMAINING_AMOUNT, transferable_balance);
 
         // Bond&stake some amount, a bit less than free balance
@@ -811,7 +807,7 @@ fn bond_and_stake_too_many_stakers_per_contract() {
 }
 
 #[test]
-fn unbond_unstake_and_withdraw_multiple_time_is_ok() {
+fn unbond_and_unstake_multiple_time_is_ok() {
     ExternalityBuilder::build().execute_with(|| {
         initialize_first_block();
 
@@ -828,29 +824,16 @@ fn unbond_unstake_and_withdraw_multiple_time_is_ok() {
 
         // Unstake such an amount so there will remain staked funds on the contract
         let unstaked_value = 100;
-        assert_ok!(DappsStaking::unbond_unstake_and_withdraw(
-            Origin::signed(staker_id),
-            contract_id.clone(),
-            unstaked_value
-        ));
-        System::assert_last_event(mock::Event::DappsStaking(Event::UnbondUnstakeAndWithdraw(
-            staker_id,
-            contract_id.clone(),
-            unstaked_value,
-        )));
+        unbond_and_unstake_with_verification(staker_id, &contract_id, unstaked_value);
 
+        // Verify era staking info
         let new_staked_value = original_staked_value - unstaked_value;
-
-        // Verify that storage values for the current are as expected.
-        verify_ledger(staker_id, new_staked_value);
         verify_era_staking_points(
             &contract_id,
             new_staked_value,
             new_era,
             vec![(staker_id, new_staked_value)],
         );
-        verify_pallet_era_staked(new_era, new_staked_value);
-
         // Also verify that the storage values for the old era haven't been changed due to unstaking
         verify_era_staking_points(
             &contract_id,
@@ -862,33 +845,12 @@ fn unbond_unstake_and_withdraw_multiple_time_is_ok() {
         // Unbond yet again, but don't advance era
         // Unstake such an amount so there will remain staked funds on the contract
         let unstaked_value = 50;
-        assert_ok!(DappsStaking::unbond_unstake_and_withdraw(
-            Origin::signed(staker_id),
-            contract_id.clone(),
-            unstaked_value
-        ));
-        System::assert_last_event(mock::Event::DappsStaking(Event::UnbondUnstakeAndWithdraw(
-            staker_id,
-            contract_id.clone(),
-            unstaked_value,
-        )));
-
-        let new_staked_value = new_staked_value - unstaked_value;
-
-        // Verify that storage values for the current are have been changed as expected.
-        verify_ledger(staker_id, new_staked_value);
-        verify_era_staking_points(
-            &contract_id,
-            new_staked_value,
-            new_era,
-            vec![(staker_id, new_staked_value)],
-        );
-        verify_pallet_era_staked(new_era, new_staked_value);
+        unbond_and_unstake_with_verification(staker_id, &contract_id, unstaked_value);
     })
 }
 
 #[test]
-fn unbond_unstake_and_withdraw_value_below_staking_threshold() {
+fn unbond_and_unstake_value_below_staking_threshold() {
     ExternalityBuilder::build().execute_with(|| {
         initialize_first_block();
 
@@ -897,49 +859,20 @@ fn unbond_unstake_and_withdraw_value_below_staking_threshold() {
         let first_value_to_unstake = 300;
         let staked_value = first_value_to_unstake + MINIMUM_STAKING_AMOUNT;
 
-        let current_era = DappsStaking::current_era();
-
         // Insert a contract under registered contracts, bond&stake it.
         register_contract(10, &contract_id);
         bond_and_stake_with_verification(staker_id, &contract_id, staked_value);
 
         // Unstake such an amount that exactly minimum staking amount will remain staked.
-        assert_ok!(DappsStaking::unbond_unstake_and_withdraw(
-            Origin::signed(staker_id),
-            contract_id.clone(),
-            first_value_to_unstake
-        ));
-        System::assert_last_event(mock::Event::DappsStaking(Event::UnbondUnstakeAndWithdraw(
-            staker_id,
-            contract_id.clone(),
-            first_value_to_unstake,
-        )));
+        unbond_and_unstake_with_verification(staker_id, &contract_id, first_value_to_unstake);
 
         // Unstake 1 token and expect that the entire staked amount will be unstaked.
-        assert_ok!(DappsStaking::unbond_unstake_and_withdraw(
-            Origin::signed(staker_id),
-            contract_id.clone(),
-            1
-        ));
-        System::assert_last_event(mock::Event::DappsStaking(Event::UnbondUnstakeAndWithdraw(
-            staker_id,
-            contract_id.clone(),
-            MINIMUM_STAKING_AMOUNT,
-        )));
-        assert!(!Ledger::<TestRuntime>::contains_key(staker_id));
-
-        verify_era_staking_points(&contract_id, Zero::zero(), current_era, vec![]);
-        assert_eq!(
-            EraRewardsAndStakes::<TestRuntime>::get(current_era)
-                .unwrap()
-                .staked,
-            Zero::zero(),
-        );
+        unbond_and_unstake_with_verification(staker_id, &contract_id, 1);
     })
 }
 
 #[test]
-fn unbond_unstake_and_withdraw_in_different_eras() {
+fn unbond_and_unstake_in_different_eras() {
     ExternalityBuilder::build().execute_with(|| {
         initialize_first_block();
 
@@ -960,16 +893,7 @@ fn unbond_unstake_and_withdraw_in_different_eras() {
         let current_era = DappsStaking::current_era();
 
         let first_unstake_value = 100;
-        assert_ok!(DappsStaking::unbond_unstake_and_withdraw(
-            Origin::signed(first_staker_id),
-            contract_id.clone(),
-            first_unstake_value
-        ));
-        System::assert_last_event(mock::Event::DappsStaking(Event::UnbondUnstakeAndWithdraw(
-            first_staker_id,
-            contract_id.clone(),
-            first_unstake_value,
-        )));
+        unbond_and_unstake_with_verification(first_staker_id, &contract_id, first_unstake_value);
 
         // Verify that storage values are as expected for both stakers and total staked value
         let new_total_staked = total_staked_value - first_unstake_value;
@@ -983,23 +907,13 @@ fn unbond_unstake_and_withdraw_in_different_eras() {
                 (second_staker_id, staked_value),
             ],
         );
-        verify_pallet_era_staked(current_era, new_total_staked);
 
         // Advance era, unbond with second staker and verify storage values are as expected
         advance_to_era(current_era + 10);
         let current_era = DappsStaking::current_era();
 
         let second_unstake_value = 333;
-        assert_ok!(DappsStaking::unbond_unstake_and_withdraw(
-            Origin::signed(second_staker_id),
-            contract_id.clone(),
-            second_unstake_value
-        ));
-        System::assert_last_event(mock::Event::DappsStaking(Event::UnbondUnstakeAndWithdraw(
-            second_staker_id,
-            contract_id.clone(),
-            second_unstake_value,
-        )));
+        unbond_and_unstake_with_verification(second_staker_id, &contract_id, second_unstake_value);
 
         // Verify that storage values are as expected for both stakers and total staked value
         let new_total_staked = new_total_staked - second_unstake_value;
@@ -1013,22 +927,17 @@ fn unbond_unstake_and_withdraw_in_different_eras() {
                 (second_staker_id, second_staked_value),
             ],
         );
-        verify_pallet_era_staked(current_era, new_total_staked);
     })
 }
 
 #[test]
-fn unbond_unstake_and_withdraw_history_depth_has_passed_is_ok() {
+fn unbond_and_unstake_history_depth_has_passed_is_ok() {
     ExternalityBuilder::build().execute_with(|| {
         initialize_first_block();
 
         let developer = 1;
         let staker_id = 2;
         let contract_id = MockSmartContract::Evm(H160::repeat_byte(0x01));
-
-        //////////////////////////////////////////////
-        ///// FIRST ERA
-        //////////////////////////////////////////////
 
         let start_era = DappsStaking::current_era();
         register_contract(developer, &contract_id);
@@ -1037,158 +946,284 @@ fn unbond_unstake_and_withdraw_history_depth_has_passed_is_ok() {
         let first_staking_amount = 200;
         bond_and_stake_with_verification(staker_id, &contract_id, first_staking_amount);
 
-        //////////////////////////////////////////////
-        ///// FIRST ERA ADVANCEMENT
-        //////////////////////////////////////////////
-
         // Advance eras beyond history depth
         let history_depth = HistoryDepth::get();
         advance_to_era(start_era + history_depth + 1);
 
         let first_unstake_amount = 30;
-        unbond_unstake_and_withdraw_with_verification(
-            staker_id,
-            &contract_id,
-            first_unstake_amount,
-        );
-
-        // Verify storage content
-        let mut total_staked = first_staking_amount - first_unstake_amount;
-        let current_era = DappsStaking::current_era();
-
-        // Verify storage values related to the current era
-        verify_ledger(staker_id, total_staked);
-        verify_era_staking_points(
-            &contract_id,
-            total_staked,
-            current_era,
-            vec![(staker_id, total_staked)],
-        );
-        assert_eq!(
-            EraRewardsAndStakes::<TestRuntime>::get(current_era)
-                .unwrap()
-                .staked,
-            total_staked,
-        );
-
-        //////////////////////////////////////////////
-        ///// SECOND ERA ADVANCEMENT
-        //////////////////////////////////////////////
+        unbond_and_unstake_with_verification(staker_id, &contract_id, first_unstake_amount);
 
         // Advance era again beyond the history depth
-        advance_to_era(current_era + history_depth + 10);
-        let current_era = DappsStaking::current_era();
+        advance_to_era(DappsStaking::current_era() + history_depth + 10);
 
         let second_unstake_amount = 30;
-        unbond_unstake_and_withdraw_with_verification(
-            staker_id,
+        unbond_and_unstake_with_verification(staker_id, &contract_id, second_unstake_amount);
+    })
+}
+
+#[test]
+fn unbond_and_unstake_in_same_era_can_exceed_max_chunks() {
+    ExternalityBuilder::build().execute_with(|| {
+        initialize_first_block();
+
+        let contract_id = MockSmartContract::Evm(H160::repeat_byte(0x01));
+        register_contract(10, &contract_id);
+
+        let staker = 1;
+
+        bond_and_stake_with_verification(
+            staker,
             &contract_id,
-            second_unstake_amount,
+            200 * MAX_UNLOCKING_CHUNKS as Balance,
         );
 
-        // Verify storage content
-        total_staked -= second_unstake_amount;
+        // Ensure that we can unbond up to a limited amount of time.
+        for _ in 0..MAX_UNLOCKING_CHUNKS * 2 {
+            unbond_and_unstake_with_verification(1, &contract_id, 10);
+            assert_eq!(1, Ledger::<TestRuntime>::get(&staker).unbonding_info.len());
+        }
+    })
+}
 
-        // Verify storage values related to the current era
-        verify_ledger(staker_id, total_staked);
-        verify_era_staking_points(
-            &contract_id,
-            total_staked,
-            current_era,
-            vec![(staker_id, total_staked)],
-        );
-        assert_eq!(
-            EraRewardsAndStakes::<TestRuntime>::get(current_era)
-                .unwrap()
-                .staked,
-            total_staked,
+#[test]
+fn unbond_and_unstake_with_zero_value_is_not_ok() {
+    ExternalityBuilder::build().execute_with(|| {
+        initialize_first_block();
+
+        let contract_id = MockSmartContract::Evm(H160::repeat_byte(0x01));
+        register_contract(10, &contract_id);
+
+        assert_noop!(
+            DappsStaking::unbond_and_unstake(Origin::signed(1), contract_id, 0),
+            Error::<TestRuntime>::UnstakingWithNoValue
         );
     })
 }
 
 #[test]
-fn unbond_unstake_and_withdraw_contract_is_not_ok() {
+fn unbond_and_unstake_on_not_operated_contract_is_not_ok() {
     ExternalityBuilder::build().execute_with(|| {
         initialize_first_block();
 
-        let staker_id = 1;
-        let unstake_value = 100;
-
-        // Contract isn't registered, expect an error.
-        let evm_contract = MockSmartContract::Evm(H160::repeat_byte(0x01));
+        let contract_id = MockSmartContract::Evm(H160::repeat_byte(0x01));
         assert_noop!(
-            DappsStaking::bond_and_stake(Origin::signed(staker_id), evm_contract, unstake_value),
+            DappsStaking::unbond_and_unstake(Origin::signed(1), contract_id, 100),
             Error::<TestRuntime>::NotOperatedContract
         );
     })
 }
 
 #[test]
-fn unbond_unstake_and_withdraw_unstake_not_possible() {
+fn unbond_and_unstake_too_many_unlocking_chunks_is_not_ok() {
     ExternalityBuilder::build().execute_with(|| {
         initialize_first_block();
 
-        let first_staker_id = 1;
-        let first_contract_id = MockSmartContract::Evm(H160::repeat_byte(0x01));
-        let original_staked_value = 100 + MINIMUM_STAKING_AMOUNT;
+        let contract_id = MockSmartContract::Evm(H160::repeat_byte(0x01));
+        register_contract(10, &contract_id);
 
-        // Insert a contract under registered contracts, bond&stake it.
-        register_contract(10, &first_contract_id);
+        let staker = 1;
+        let unstake_amount = 10;
+        let stake_amount =
+            MINIMUM_STAKING_AMOUNT * 10 + unstake_amount * MAX_UNLOCKING_CHUNKS as Balance;
 
-        // Try to unstake with 0, expect an error.
-        assert_noop!(
-            DappsStaking::unbond_unstake_and_withdraw(
-                Origin::signed(first_staker_id),
-                first_contract_id.clone(),
-                Zero::zero()
-            ),
-            Error::<TestRuntime>::UnstakingWithNoValue
+        bond_and_stake_with_verification(staker, &contract_id, stake_amount);
+
+        // Ensure that we can unbond up to a limited amount of time.
+        for _ in 0..MAX_UNLOCKING_CHUNKS {
+            advance_to_era(DappsStaking::current_era() + 1);
+            unbond_and_unstake_with_verification(staker, &contract_id, unstake_amount);
+        }
+
+        // Ensure that we're at the max but can still add new chunks since it should be merged with the existing one
+        assert_eq!(
+            MAX_UNLOCKING_CHUNKS,
+            DappsStaking::ledger(&staker).unbonding_info.len()
         );
+        unbond_and_unstake_with_verification(staker, &contract_id, unstake_amount);
 
-        // Try to unstake contract which hasn't been staked by anyone
+        // Ensure that further unbonding attempts result in an error.
+        advance_to_era(DappsStaking::current_era() + 1);
         assert_noop!(
-            DappsStaking::unbond_unstake_and_withdraw(
-                Origin::signed(first_staker_id),
-                first_contract_id.clone(),
-                original_staked_value
+            DappsStaking::unbond_and_unstake(
+                Origin::signed(staker),
+                contract_id.clone(),
+                unstake_amount
             ),
+            Error::<TestRuntime>::TooManyUnlockingChunks,
+        );
+    })
+}
+
+#[test]
+fn unbond_and_unstake_on_not_staked_contract_is_not_ok() {
+    ExternalityBuilder::build().execute_with(|| {
+        initialize_first_block();
+
+        let contract_id = MockSmartContract::Evm(H160::repeat_byte(0x01));
+        register_contract(10, &contract_id);
+
+        assert_noop!(
+            DappsStaking::unbond_and_unstake(Origin::signed(1), contract_id, 10),
             Error::<TestRuntime>::NotStakedContract,
         );
+    })
+}
 
-        // Now we finally stake the contract
-        bond_and_stake_with_verification(
-            first_staker_id,
-            &first_contract_id,
-            original_staked_value,
-        );
+#[ignore]
+#[test]
+fn unbond_and_unstake_with_no_chunks_allowed() {
+    // UT can be used to verify situation when MaxUnlockingChunks = 0. Requires mock modification.
+    ExternalityBuilder::build().execute_with(|| {
+        initialize_first_block();
 
-        // Try to unbond and withdraw using a different staker, one that hasn't staked on this one. Expect an error.
-        let second_staker_id = 2;
+        // Sanity check
+        assert_eq!(<TestRuntime as Config>::MaxUnlockingChunks::get(), 0);
+
+        let contract_id = MockSmartContract::Evm(H160::repeat_byte(0x01));
+        register_contract(10, &contract_id);
+
+        let staker_id = 1;
+        bond_and_stake_with_verification(staker_id, &contract_id, 100);
+
         assert_noop!(
-            DappsStaking::unbond_unstake_and_withdraw(
-                Origin::signed(second_staker_id),
-                first_contract_id.clone(),
-                original_staked_value
-            ),
-            Error::<TestRuntime>::NotStakedContract
+            DappsStaking::unbond_and_unstake(Origin::signed(staker_id), contract_id.clone(), 20),
+            Error::<TestRuntime>::TooManyUnlockingChunks,
+        );
+    })
+}
+
+#[test]
+fn withdraw_unbonded_is_ok() {
+    ExternalityBuilder::build().execute_with(|| {
+        initialize_first_block();
+
+        let contract_id = MockSmartContract::Evm(H160::repeat_byte(0x01));
+        register_contract(10, &contract_id);
+
+        let staker_id = 1;
+        bond_and_stake_with_verification(staker_id, &contract_id, 1000);
+
+        let first_unbond_value = 75;
+        let second_unbond_value = 39;
+        let initial_era = DappsStaking::current_era();
+
+        // Unbond some amount in the initial era
+        unbond_and_unstake_with_verification(staker_id, &contract_id, first_unbond_value);
+
+        // Advance one era and then unbond some more
+        advance_to_era(initial_era + 1);
+        unbond_and_unstake_with_verification(staker_id, &contract_id, second_unbond_value);
+
+        // Now advance one era before first chunks finishes the unbonding process
+        advance_to_era(initial_era + UNBONDING_PERIOD);
+        assert_noop!(
+            DappsStaking::withdraw_unbonded(Origin::signed(staker_id)),
+            Error::<TestRuntime>::NothingToWithdraw
         );
 
-        // Bond a second contract using the second staker. Ensure that second staker still cannot unbond&withdraw funds from the first contract
-        let second_contract_id = MockSmartContract::Evm(H160::repeat_byte(0x02));
-        register_contract(20, &second_contract_id);
-        bond_and_stake_with_verification(
-            second_staker_id,
-            &second_contract_id,
-            original_staked_value,
-        );
+        // Advance one additional era and expect that the first chunk can be withdrawn
+        advance_to_era(DappsStaking::current_era() + 1);
+        assert_ok!(DappsStaking::withdraw_unbonded(Origin::signed(staker_id),));
+        System::assert_last_event(mock::Event::DappsStaking(Event::Withdrawn(
+            staker_id,
+            first_unbond_value,
+        )));
+
+        // Advance one additional era and expect that the first chunk can be withdrawn
+        advance_to_era(DappsStaking::current_era() + 1);
+        assert_ok!(DappsStaking::withdraw_unbonded(Origin::signed(staker_id),));
+        System::assert_last_event(mock::Event::DappsStaking(Event::Withdrawn(
+            staker_id,
+            second_unbond_value,
+        )));
+
+        // Advance one additional era but since we have nothing else to withdraw, expect an error
+        advance_to_era(initial_era + UNBONDING_PERIOD);
         assert_noop!(
-            DappsStaking::unbond_unstake_and_withdraw(
-                Origin::signed(second_staker_id),
-                first_contract_id.clone(),
-                original_staked_value
-            ),
-            Error::<TestRuntime>::NotStakedContract
+            DappsStaking::withdraw_unbonded(Origin::signed(staker_id)),
+            Error::<TestRuntime>::NothingToWithdraw
         );
+    })
+}
+
+#[test]
+fn withdraw_unbonded_full_vector_is_ok() {
+    ExternalityBuilder::build().execute_with(|| {
+        initialize_first_block();
+
+        let contract_id = MockSmartContract::Evm(H160::repeat_byte(0x01));
+        register_contract(10, &contract_id);
+
+        let staker_id = 1;
+        bond_and_stake_with_verification(staker_id, &contract_id, 1000);
+
+        // Repeatedly start unbonding and advance era to create unlocking chunks
+        let init_unbonding_amount = 15;
+        for x in 1..=MAX_UNLOCKING_CHUNKS {
+            unbond_and_unstake_with_verification(
+                staker_id,
+                &contract_id,
+                init_unbonding_amount * x as u128,
+            );
+            advance_to_era(DappsStaking::current_era() + 1);
+        }
+
+        // Now clean up all that are eligible for cleanu-up
+        withdraw_unbonded_with_verification(staker_id);
+
+        // This is a sanity check for the test. Some chunks should remain, otherwise test isn't testing realistic unbonding period.
+        assert!(!Ledger::<TestRuntime>::get(&staker_id)
+            .unbonding_info
+            .is_empty());
+
+        while !Ledger::<TestRuntime>::get(&staker_id)
+            .unbonding_info
+            .is_empty()
+        {
+            advance_to_era(DappsStaking::current_era() + 1);
+            withdraw_unbonded_with_verification(staker_id);
+        }
+    })
+}
+
+#[test]
+fn withdraw_unbonded_no_value_is_not_ok() {
+    ExternalityBuilder::build().execute_with(|| {
+        initialize_first_block();
+
+        assert_noop!(
+            DappsStaking::withdraw_unbonded(Origin::signed(1)),
+            Error::<TestRuntime>::NothingToWithdraw,
+        );
+    })
+}
+
+#[ignore]
+#[test]
+fn withdraw_unbonded_no_unbonding_period() {
+    // UT can be used to verify situation when UnbondingPeriod = 0. Requires mock modification.
+    ExternalityBuilder::build().execute_with(|| {
+        initialize_first_block();
+
+        // Sanity check
+        assert_eq!(<TestRuntime as Config>::UnbondingPeriod::get(), 0);
+
+        let contract_id = MockSmartContract::Evm(H160::repeat_byte(0x01));
+        register_contract(10, &contract_id);
+
+        let staker_id = 1;
+        bond_and_stake_with_verification(staker_id, &contract_id, 100);
+        unbond_and_unstake_with_verification(staker_id, &contract_id, 20);
+
+        // Try to withdraw but expect an error since current era hasn't passed yet
+        assert_noop!(
+            DappsStaking::withdraw_unbonded(Origin::signed(staker_id)),
+            Error::<TestRuntime>::NothingToWithdraw,
+        );
+
+        // Advance an era and expect successful withdrawal
+        advance_to_era(DappsStaking::current_era() + 1);
+        withdraw_unbonded_with_verification(staker_id);
     })
 }
 
@@ -1688,4 +1723,59 @@ fn claim_two_contracts_three_stakers_new() {
             + expected_c2_dev2_e2_reward;
         check_paidout_rewards_for_contract(&contract2, second_claim_era, expected_contract2_reward);
     })
+}
+
+#[test]
+fn unbonding_info_test() {
+    let mut unbonding_info = UnbondingInfo::<Balance>::default();
+
+    // assert basic ops on empty info
+    assert!(unbonding_info.is_empty());
+    assert!(unbonding_info.len().is_zero());
+    let (first_info, second_info) = unbonding_info.clone().partition(2);
+    assert!(first_info.is_empty());
+    assert!(second_info.is_empty());
+
+    // Prepare unlocking chunks.
+    let count = 5;
+    let base_amount: Balance = 100;
+    let base_unlock_era = 4 * count;
+    let mut chunks = vec![];
+    for x in 1_u32..=count as u32 {
+        chunks.push(UnlockingChunk {
+            amount: base_amount * x as Balance,
+            unlock_era: base_unlock_era - 3 * x,
+        });
+    }
+
+    // Add one unlocking chunk and verify basic ops.
+    unbonding_info.add(chunks[0 as usize]);
+
+    assert!(!unbonding_info.is_empty());
+    assert_eq!(1, unbonding_info.len());
+    assert_eq!(chunks[0 as usize].amount, unbonding_info.sum());
+
+    let (first_info, second_info) = unbonding_info.clone().partition(base_unlock_era);
+    assert_eq!(1, first_info.len());
+    assert_eq!(chunks[0 as usize].amount, first_info.sum());
+    assert!(second_info.is_empty());
+
+    // Add remainder and verify basic ops
+    for x in unbonding_info.len() as usize..chunks.len() {
+        unbonding_info.add(chunks[x]);
+        // Ensure internal vec is sorted
+        assert!(unbonding_info
+            .vec()
+            .windows(2)
+            .all(|w| w[0].unlock_era <= w[1].unlock_era));
+    }
+    assert_eq!(chunks.len(), unbonding_info.len() as usize);
+    let total: Balance = chunks.iter().map(|c| c.amount).sum();
+    assert_eq!(total, unbonding_info.sum());
+
+    let partition_era = chunks[2].unlock_era + 1;
+    let (first_info, second_info) = unbonding_info.clone().partition(partition_era);
+    assert_eq!(3, first_info.len());
+    assert_eq!(2, second_info.len());
+    assert_eq!(unbonding_info.sum(), first_info.sum() + second_info.sum());
 }

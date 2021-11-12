@@ -9,7 +9,10 @@ include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 use codec::{Decode, Encode};
 use frame_support::{
     construct_runtime, parameter_types,
-    traits::{Currency, FindAuthor, Imbalance, KeyOwnerProofSystem, Nothing, OnUnbalanced},
+    traits::{
+        Currency, FindAuthor, Imbalance, KeyOwnerProofSystem, Nothing, OnRuntimeUpgrade,
+        OnUnbalanced,
+    },
     weights::{
         constants::{RocksDbWeight, WEIGHT_PER_SECOND},
         IdentityFee, Weight,
@@ -299,6 +302,8 @@ parameter_types! {
     pub const MinimumRemainingAmount: Balance = 1 * AST;
     pub const HistoryDepth: u32 = 14;
     pub const BonusEraDuration: u32 = 100;
+    pub const MaxUnlockingChunks: u32 = 4;
+    pub const UnbondingPeriod: u32 = 7;
 }
 
 impl pallet_dapps_staking::Config for Runtime {
@@ -315,6 +320,8 @@ impl pallet_dapps_staking::Config for Runtime {
     type MinimumRemainingAmount = MinimumRemainingAmount;
     type HistoryDepth = HistoryDepth;
     type BonusEraDuration = BonusEraDuration;
+    type MaxUnlockingChunks = MaxUnlockingChunks;
+    type UnbondingPeriod = UnbondingPeriod;
 }
 
 /// Multi-VM pointer to smart contract instance.
@@ -614,7 +621,27 @@ pub type Executive = frame_executive::Executive<
     frame_system::ChainContext<Runtime>,
     Runtime,
     AllPallets,
+    (DappsStakingMigrationV2,),
 >;
+
+// Migration for supporting unbonding period in dapps staking.
+pub struct DappsStakingMigrationV2;
+
+impl OnRuntimeUpgrade for DappsStakingMigrationV2 {
+    fn on_runtime_upgrade() -> frame_support::weights::Weight {
+        pallet_dapps_staking::migrations::v2::migrate::<Runtime>()
+    }
+
+    #[cfg(feature = "try-runtime")]
+    fn pre_upgrade() -> Result<(), &'static str> {
+        pallet_dapps_staking::migrations::v2::pre_migrate::<Runtime, Self>()
+    }
+
+    #[cfg(feature = "try-runtime")]
+    fn post_upgrade() -> Result<(), &'static str> {
+        pallet_dapps_staking::migrations::v2::post_migrate::<Runtime, Self>()
+    }
+}
 
 impl fp_self_contained::SelfContainedCall for Call {
     type SignedInfo = H160;
