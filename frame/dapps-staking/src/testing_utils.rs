@@ -1,4 +1,4 @@
-use super::*;
+use super::{Event, *};
 use frame_support::assert_ok;
 use mock::{EraIndex, *};
 use sp_runtime::{traits::AccountIdConversion, Perbill};
@@ -38,6 +38,59 @@ pub(crate) fn bond_and_stake_with_verification(
         contract_id.clone(),
         value,
     ));
+}
+
+/// Used to perform start_unbonding with sucess and storage assertions.
+pub(crate) fn start_unbonding_with_verification(
+    staker: AccountId,
+    contract_id: &MockSmartContract<AccountId>,
+    value: Balance,
+) {
+    // Get latest staking info
+    let current_era = DappsStaking::current_era();
+    let era_staking_points = DappsStaking::staking_info(contract_id, current_era);
+    let staked_value = era_staking_points.stakers[&staker];
+
+    // Get the current unlocking chunks
+    let pre_unbonding_info = UnbondingInfoStorage::<TestRuntime>::get(&staker, contract_id);
+    let pre_unbonding_amount = pre_unbonding_info.sum();
+
+    // Calculate the expected resulting unbonding amount
+    let expected_unbond_amount =
+        if staked_value - pre_unbonding_amount - value < MINIMUM_STAKING_AMOUNT {
+            staked_value - pre_unbonding_amount
+        } else {
+            value
+        };
+
+    // Ensure op is successful and event is emitted
+    assert_ok!(DappsStaking::start_unbonding(
+        Origin::signed(staker),
+        contract_id.clone(),
+        value
+    ));
+    System::assert_last_event(mock::Event::DappsStaking(Event::UnbondingStarted(
+        staker,
+        contract_id.clone(),
+        expected_unbond_amount,
+        current_era,
+    )));
+
+    // Fetch the latest unbonding info so we can compare it to initial unbonding info
+    let post_unbonding_info = UnbondingInfoStorage::<TestRuntime>::get(&staker, contract_id);
+    assert_eq!(pre_unbonding_info.len() + 1, post_unbonding_info.len());
+    assert_eq!(
+        pre_unbonding_amount + expected_unbond_amount,
+        post_unbonding_info.sum()
+    );
+
+    // Push the unlocking chunk we expect to have at the end and compare two structs
+    let mut pre_unbonding_info = pre_unbonding_info;
+    pre_unbonding_info.push(UnlockingChunk {
+        amount: expected_unbond_amount,
+        unlock_era: current_era + UNBONDING_PERIOD,
+    });
+    assert_eq!(pre_unbonding_info, post_unbonding_info);
 }
 
 /// Used to perform unbond_unstake_and_withdraw with success assertion.
