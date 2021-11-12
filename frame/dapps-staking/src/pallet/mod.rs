@@ -97,6 +97,16 @@ pub mod pallet {
         #[pallet::constant]
         type MinimumRemainingAmount: Get<BalanceOf<Self>>;
 
+        /// Max number of unlocking chunks per account Id <-> contract Id pairing.
+        /// If 0, unlocking becomes impossible.
+        #[pallet::constant]
+        type MaxUnlockingChunks: Get<u32>;
+
+        /// Number of eras that need to pass until unstaked value can be withdrawn.
+        /// If this value is zero, it's equivalent to having no unbonding period.
+        #[pallet::constant]
+        type UnbondingPeriod: Get<EraIndex>;
+
         /// The overarching event type.
         type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
 
@@ -160,6 +170,19 @@ pub mod pallet {
         EraStakingPoints<T::AccountId, BalanceOf<T>>,
     >;
 
+    /// Stores the unlocking chunks keyed by account and contract Id
+    #[pallet::storage]
+    #[pallet::getter(fn unlocking_chunks)]
+    pub(crate) type UnbondingInfoStorage<T: Config> = StorageDoubleMap<
+        _,
+        Blake2_128Concat,
+        T::AccountId,
+        Blake2_128Concat,
+        T::SmartContract,
+        UnbondingInfo<BalanceOf<T>>,
+        ValueQuery,
+    >;
+
     #[pallet::type_value]
     pub(crate) fn PreApprovalOnEmpty() -> bool {
         false
@@ -183,6 +206,10 @@ pub mod pallet {
         BondAndStake(T::AccountId, T::SmartContract, BalanceOf<T>),
         /// Account has unbonded, unstaked and withdrawn funds.
         UnbondUnstakeAndWithdraw(T::AccountId, T::SmartContract, BalanceOf<T>),
+        /// Account has unstaked some amount from a contract, beginning the unbonding period.
+        UnbondingStarted(T::AccountId, T::SmartContract, BalanceOf<T>, EraIndex),
+        /// Acount has unstaked, withdrawing the unbonded funds.
+        UnstakeAndWithdraw(T::AccountId, T::SmartContract, BalanceOf<T>),
         /// New contract added for staking.
         NewContract(T::AccountId, T::SmartContract),
         /// Contract removed from dapps staking.
@@ -219,6 +246,9 @@ pub mod pallet {
         UnknownEraReward,
         /// Contract hasn't been staked on in this era.
         NotStaked,
+        /// Contract has too many unlocking chunks. Withdraw the existing chunks if possible
+        /// or wait for current chunks to complete unlocking process to withdraw them.
+        TooManyUnlockingChunks,
         /// Contract already claimed in this era and reward is distributed
         AlreadyClaimedInThisEra,
         /// Era parameter is out of bounds
@@ -444,6 +474,152 @@ pub mod pallet {
                 value_to_stake,
             ));
             Ok(Some(T::WeightInfo::bond_and_stake()).into())
+        }
+
+        // TODO: Update Readme.md!
+
+        // TODO: Documentation!
+        #[pallet::weight(1000_0000)] // TODO: benchmarking
+        pub fn start_unbonding(
+            origin: OriginFor<T>,
+            contract_id: T::SmartContract,
+            #[pallet::compact] value: BalanceOf<T>,
+        ) -> DispatchResultWithPostInfo {
+            let staker = ensure_signed(origin)?;
+
+            ensure!(value > Zero::zero(), Error::<T>::UnstakingWithNoValue);
+            ensure!(
+                Self::is_active(&contract_id),
+                Error::<T>::NotOperatedContract,
+            );
+
+            // Get the unlocking chunks for this staker and contract
+            let mut unbonding_info = UnbondingInfoStorage::<T>::get(&staker, &contract_id);
+            ensure!(
+                unbonding_info.len() < T::MaxUnlockingChunks::get(),
+                Error::<T>::TooManyUnlockingChunks
+            );
+            let unlocking_chunks_sum = unbonding_info.sum();
+
+            // Get the latest era staking points for the contract.
+            let current_era = Self::current_era();
+            let staking_info = Self::staking_info(&contract_id, current_era);
+            ensure!(
+                staking_info.stakers.contains_key(&staker),
+                Error::<T>::NotStakedContract,
+            );
+            let staked_value = staking_info.stakers[&staker];
+
+            // Calculate the value which can be unstaked.
+            let value_available_for_unstaking = staked_value.saturating_sub(unlocking_chunks_sum);
+            let remaining_value_after_unstaking =
+                value_available_for_unstaking.saturating_sub(value);
+
+            // In case we would go below the minimum staking amount, unstake everything
+            let value_to_unstake =
+                if remaining_value_after_unstaking < T::MinimumStakingAmount::get() {
+                    value_available_for_unstaking
+                } else {
+                    value.min(value_available_for_unstaking)
+                };
+
+            // It is possible that the entire value is already in the process of being unstaked.
+            ensure!(
+                value_to_unstake > Zero::zero(),
+                Error::<T>::UnstakingWithNoValue
+            );
+
+            // Update the chunks and write them to storage
+            unbonding_info.push(UnlockingChunk {
+                amount: value_to_unstake,
+                unlock_era: current_era + T::UnbondingPeriod::get(),
+            });
+            UnbondingInfoStorage::<T>::insert(&staker, &contract_id, unbonding_info);
+
+            Self::deposit_event(Event::<T>::UnbondingStarted(
+                staker,
+                contract_id,
+                value_to_unstake,
+                current_era,
+            ));
+
+            Ok(().into())
+        }
+
+        // TODO: documentation
+        #[pallet::weight(1000000)] // TODO: benchmarking
+        pub fn unstake_and_withdraw(
+            origin: OriginFor<T>,
+            contract_id: T::SmartContract,
+        ) -> DispatchResultWithPostInfo {
+            let staker = ensure_signed(origin)?;
+
+            ensure!(
+                Self::is_active(&contract_id),
+                Error::<T>::NotOperatedContract,
+            );
+
+            // Get the unlocking chunks for this staker and contract
+            let unbonding_info = UnbondingInfoStorage::<T>::get(&staker, &contract_id);
+            let current_era = Self::current_era();
+            let (valid_chunks, future_chunks) = unbonding_info.partition(current_era);
+
+            let unstakeable_amount = valid_chunks.sum();
+
+            // Get the latest era staking points for the contract.
+            let mut staking_info = Self::staking_info(&contract_id, current_era);
+            ensure!(
+                staking_info.stakers.contains_key(&staker),
+                Error::<T>::NotStakedContract,
+            );
+            let staked_value = staking_info.stakers[&staker];
+
+            ensure!(
+                unstakeable_amount <= staked_value,
+                Error::<T>::InsufficientValue
+            ); // TODO: is this even needed?
+
+            // TODO: This can be removed but it can also be kept as kind of a safeguard.
+            // Calculate the value which will be unstaked.
+            let remaining = staked_value.saturating_sub(unstakeable_amount);
+            let value_to_unstake = if remaining < T::MinimumStakingAmount::get() {
+                staking_info.stakers.remove(&staker);
+                staked_value
+            } else {
+                staking_info.stakers.insert(staker.clone(), remaining);
+                unstakeable_amount
+            };
+
+            // Get the staking ledger and update it
+            let ledger = Self::ledger(&staker);
+            Self::update_ledger(&staker, ledger.saturating_sub(value_to_unstake));
+
+            // Update total staked value in era.
+            EraRewardsAndStakes::<T>::mutate(&current_era, |value| {
+                if let Some(x) = value {
+                    x.staked = x.staked.saturating_sub(value_to_unstake)
+                }
+            });
+
+            // Update the era staking points
+            staking_info.total = staking_info.total.saturating_sub(value_to_unstake);
+            ContractEraStake::<T>::insert(&contract_id, current_era, staking_info);
+
+            // Update unlocking chunks
+            if future_chunks.is_empty() {
+                UnbondingInfoStorage::<T>::remove(&staker, &contract_id);
+            } else {
+                UnbondingInfoStorage::<T>::insert(&staker, &contract_id, future_chunks);
+            }
+
+            // TODO: new event is needed here
+            Self::deposit_event(Event::<T>::UnstakeAndWithdraw(
+                staker,
+                contract_id,
+                value_to_unstake,
+            ));
+
+            Ok(().into())
         }
 
         /// Unbond, unstake and withdraw balance from the contract.

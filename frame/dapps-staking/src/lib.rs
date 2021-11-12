@@ -8,7 +8,7 @@ use frame_support::traits::Currency;
 use frame_system::{self as system};
 use scale_info::TypeInfo;
 use sp_runtime::RuntimeDebug;
-use sp_std::{collections::btree_map::BTreeMap, prelude::*};
+use sp_std::{collections::btree_map::BTreeMap, ops::Add, prelude::*};
 
 pub mod pallet;
 pub mod traits;
@@ -78,4 +78,85 @@ pub struct EraStakingPoints<AccountId: Ord, Balance: HasCompact> {
     _former_staked_era: EraIndex,
     /// Accrued and claimed rewards on this contract both for stakers and the developer
     claimed_rewards: Balance,
+}
+
+/// Represents an balance amount undergoing the unbonding process.
+/// Since unbonding takes time, it's important to keep track of when and how much was unbonded.
+#[derive(Clone, Copy, PartialEq, Encode, Decode, Default, RuntimeDebug, TypeInfo)]
+pub struct UnlockingChunk<Balance> {
+    /// Amount being unlocked
+    amount: Balance,
+    /// Era in which the amount will become unlocked and can be withdrawn.
+    unlock_era: EraIndex,
+}
+
+/// Contains unlocking chunks.
+/// This is a convenience struct that provides various utility methods to help with unbonding handling.
+#[derive(Clone, PartialEq, Encode, Decode, Default, RuntimeDebug, TypeInfo)]
+pub struct UnbondingInfo<Balance> {
+    unlocking_chunks: Vec<UnlockingChunk<Balance>>,
+}
+
+// TODO: Check if there's a trait that encompasses all used traits?
+// TODO: maybe get rid of copy and just use clone?
+impl<Balance> UnbondingInfo<Balance>
+where
+    Balance: Add<Output = Balance> + Default + Copy,
+{
+    /// Returns total number of unlocking chunks.
+    fn len(&self) -> u32 {
+        self.unlocking_chunks.len() as u32
+    }
+
+    /// True if no unlocking chunks exist, false otherwise.
+    fn is_empty(&self) -> bool {
+        self.unlocking_chunks.is_empty()
+    }
+
+    /// Returns sum of all unlocking chunks.
+    fn sum(&self) -> Balance {
+        self.unlocking_chunks
+            .iter()
+            .map(|chunk| chunk.amount)
+            .reduce(|c1, c2| c1 + c2)
+            .unwrap_or_default()
+    }
+
+    /// Pushes a new unlocking chunk to the end of existing chunks.
+    fn push(&mut self, chunk: UnlockingChunk<Balance>) {
+        self.unlocking_chunks.push(chunk);
+    }
+
+    /// Partitions the unlocking chunks into two groups:
+    ///
+    /// First group includes all chunks which have unlock era lesser or equal to the specified era.
+    /// Second group includes all the rest.
+    ///
+    /// Order of chunks is preserved in the two new structs.
+    fn partition(self, era: EraIndex) -> (Self, Self) {
+        let (valid_chunks, future_chunks): (
+            Vec<UnlockingChunk<Balance>>,
+            Vec<UnlockingChunk<Balance>>,
+        ) = self
+            .unlocking_chunks
+            .iter()
+            .partition(|chunk| chunk.unlock_era <= era);
+
+        (
+            Self {
+                unlocking_chunks: valid_chunks,
+            },
+            Self {
+                unlocking_chunks: future_chunks,
+            },
+        )
+    }
+
+    // TODO: add consolidate method to merge chunks for which should be unlocked in the same era?
+    // Personally, I wouldn't do this because this opens a use case where users can constantly unbond small
+    // chunks which will result in a lot of writes on chain.
+    // If we keep max number of unlocking chunks low (e.g. 1, 2 or 4) and unbonding period relatively short,
+    // there shouldn't be problems with UX.
+    //
+    // Feel free to comment in review! :)
 }

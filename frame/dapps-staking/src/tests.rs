@@ -811,6 +811,132 @@ fn bond_and_stake_too_many_stakers_per_contract() {
 }
 
 #[test]
+fn start_unbonding_is_ok() {
+    ExternalityBuilder::build().execute_with(|| {
+        initialize_first_block();
+
+        let first_contract_id = MockSmartContract::Evm(H160::repeat_byte(0x01));
+        let second_contract_id = MockSmartContract::Evm(H160::repeat_byte(0x02));
+        register_contract(10, &first_contract_id);
+        register_contract(11, &second_contract_id);
+
+        let staker = 1;
+        let staking_value = 100;
+        bond_and_stake_with_verification(staker, &first_contract_id, staking_value);
+        bond_and_stake_with_verification(staker, &second_contract_id, staking_value);
+
+        // Start unbonding process for the first contract in the same era it was staked in
+        let start_era = DappsStaking::current_era();
+        start_unbonding_with_verification(staker, &first_contract_id, 10);
+
+        // Advance one era and then unbond the second contract.
+        advance_to_era(start_era + 1);
+        start_unbonding_with_verification(staker, &second_contract_id, 10);
+    })
+}
+
+#[test]
+fn start_unbonding_with_zero_value_is_not_ok() {
+    ExternalityBuilder::build().execute_with(|| {
+        initialize_first_block();
+
+        let contract_id = MockSmartContract::Evm(H160::repeat_byte(0x01));
+        register_contract(10, &contract_id);
+
+        assert_noop!(
+            DappsStaking::start_unbonding(Origin::signed(1), contract_id, 0),
+            Error::<TestRuntime>::UnstakingWithNoValue
+        );
+    })
+}
+
+#[test]
+fn start_unbonding_on_not_operated_contract_is_not_ok() {
+    ExternalityBuilder::build().execute_with(|| {
+        initialize_first_block();
+
+        let staker_id = 1;
+        let unstake_value = 100;
+
+        // Contract isn't registered, expect an error.
+        let contract_id = MockSmartContract::Evm(H160::repeat_byte(0x01));
+        assert_noop!(
+            DappsStaking::start_unbonding(Origin::signed(staker_id), contract_id, unstake_value),
+            Error::<TestRuntime>::NotOperatedContract
+        );
+    })
+}
+
+#[test]
+fn start_unbonding_on_not_staked_contract_is_not_ok() {
+    ExternalityBuilder::build().execute_with(|| {
+        initialize_first_block();
+
+        let contract_id = MockSmartContract::Evm(H160::repeat_byte(0x01));
+        register_contract(10, &contract_id);
+
+        assert_noop!(
+            DappsStaking::start_unbonding(Origin::signed(1), contract_id, 10),
+            Error::<TestRuntime>::NotStakedContract,
+        );
+    })
+}
+
+#[test]
+fn start_unbonding_too_many_unlocking_chunks_is_not_ok() {
+    ExternalityBuilder::build().execute_with(|| {
+        initialize_first_block();
+
+        let contract_id = MockSmartContract::Evm(H160::repeat_byte(0x01));
+        register_contract(10, &contract_id);
+
+        let staker = 1;
+        let unstake_amount = 10;
+        let stake_amount =
+            MINIMUM_STAKING_AMOUNT + unstake_amount * MAX_UNLOCKING_CHUNKS as Balance;
+
+        bond_and_stake_with_verification(staker, &contract_id, stake_amount);
+
+        // Ensure that we can unbond up to a limited amount of time.
+        for _ in 0..MAX_UNLOCKING_CHUNKS {
+            start_unbonding_with_verification(1, &contract_id, unstake_amount);
+        }
+        // Ensure that further unbonding attempts result in an error.
+        assert_noop!(
+            DappsStaking::start_unbonding(Origin::signed(1), contract_id.clone(), unstake_amount),
+            Error::<TestRuntime>::TooManyUnlockingChunks,
+        );
+    })
+}
+
+#[test]
+fn start_unbonding_with_no_available_value_is_not_ok() {
+    ExternalityBuilder::build().execute_with(|| {
+        initialize_first_block();
+
+        let contract_id = MockSmartContract::Evm(H160::repeat_byte(0x01));
+        register_contract(10, &contract_id);
+
+        let staker = 1;
+        let stake_amount = 100;
+        bond_and_stake_with_verification(staker, &contract_id, stake_amount);
+
+        // This should unstake everything since it should take us below minimum staking amount
+        start_unbonding_with_verification(
+            staker,
+            &contract_id,
+            stake_amount - MINIMUM_STAKING_AMOUNT + 1,
+        );
+
+        // We cannot unbond anything since the entire staked funds are already in the process of becoming unbonded.
+        assert_noop!(
+            DappsStaking::start_unbonding(Origin::signed(staker), contract_id.clone(), 1),
+            Error::<TestRuntime>::UnstakingWithNoValue,
+        );
+    })
+}
+
+#[test]
 fn unbond_unstake_and_withdraw_multiple_time_is_ok() {
     ExternalityBuilder::build().execute_with(|| {
         initialize_first_block();
