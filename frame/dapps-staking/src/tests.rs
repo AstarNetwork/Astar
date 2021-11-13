@@ -825,13 +825,33 @@ fn start_unbonding_is_ok() {
         bond_and_stake_with_verification(staker, &first_contract_id, staking_value);
         bond_and_stake_with_verification(staker, &second_contract_id, staking_value);
 
+        // Ensure there is no unbonding info prior to the first unbonding call.
+        assert!(UnbondingInfoStorage::<TestRuntime>::iter_keys()
+            .count()
+            .is_zero());
+
         // Start unbonding process for the first contract in the same era it was staked in
         let start_era = DappsStaking::current_era();
+        let initial_staking_info =
+            ContractEraStake::<TestRuntime>::get(&first_contract_id, start_era);
         start_unbonding_with_verification(staker, &first_contract_id, 10);
+        assert_eq!(1, UnbondingInfoStorage::<TestRuntime>::iter_keys().count());
 
-        // Advance one era and then unbond the second contract.
+        // Ensure nothing was actually unstaked from the contract
+        let post_unbond_staking_info =
+            ContractEraStake::<TestRuntime>::get(&first_contract_id, start_era);
+        assert_eq!(initial_staking_info, post_unbond_staking_info);
+
+        // Advance one era and then unbond the second contract. Also unbond the first contract again.
         advance_to_era(start_era + 1);
         start_unbonding_with_verification(staker, &second_contract_id, 10);
+        start_unbonding_with_verification(staker, &first_contract_id, 20);
+        assert_eq!(2, UnbondingInfoStorage::<TestRuntime>::iter_keys().count());
+
+        // Advance past the history depth and check that this doesn't affect unlocking chunks
+        advance_to_era(DappsStaking::current_era() + HISTORY_DEPTH + 1);
+        start_unbonding_with_verification(staker, &first_contract_id, 15);
+        start_unbonding_with_verification(staker, &second_contract_id, 5);
     })
 }
 
@@ -1814,4 +1834,47 @@ fn claim_two_contracts_three_stakers_new() {
             + expected_c2_dev2_e2_reward;
         check_paidout_rewards_for_contract(&contract2, second_claim_era, expected_contract2_reward);
     })
+}
+
+#[test]
+fn unbonding_info_test() {
+    let mut unbonding_info = UnbondingInfo::<Balance>::default();
+
+    // assert basic ops on empty info
+    assert!(unbonding_info.is_empty());
+    assert!(unbonding_info.len().is_zero());
+    let (first_info, second_info) = unbonding_info.clone().partition(2);
+    assert!(first_info.is_empty());
+    assert!(second_info.is_empty());
+
+    // Prepare unlocking chunks
+    let base_amount: Balance = 100;
+    let base_unlock_era = 3;
+    let mut chunks = vec![];
+    for x in 1_u32..=5 {
+        chunks.push(UnlockingChunk {
+            amount: base_amount * x as Balance,
+            unlock_era: base_unlock_era * x,
+        });
+    }
+
+    // Add one unlocking chunk and verify basic ops.
+    unbonding_info.push(chunks[0 as usize]);
+
+    assert!(!unbonding_info.is_empty());
+    assert_eq!(1, unbonding_info.len());
+    assert_eq!(chunks[0 as usize].amount, unbonding_info.sum());
+
+    let (first_info, second_info) = unbonding_info.clone().partition(6);
+    assert_eq!(1, first_info.len());
+    assert_eq!(chunks[0 as usize].amount, first_info.sum());
+    assert!(second_info.is_empty());
+
+    // Add remainder and verify basic ops
+    for x in unbonding_info.len() as usize..chunks.len() {
+        unbonding_info.push(chunks[x]);
+    }
+    assert_eq!(chunks.len(), unbonding_info.len() as usize);
+    let total: Balance = chunks.iter().map(|c| c.amount).sum();
+    assert_eq!(total, unbonding_info.sum());
 }

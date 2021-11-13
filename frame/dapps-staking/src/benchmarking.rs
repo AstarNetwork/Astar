@@ -25,6 +25,7 @@ fn initialize<T: Config>() {
     CurrentEra::<T>::kill();
     BlockRewardAccumulator::<T>::kill();
     PreApprovalIsEnabled::<T>::kill();
+    UnbondingInfoStorage::<T>::kill();
 
     // Initialize the first block.
     DappsStaking::<T>::on_unbalanced(T::Currency::issue(BLOCK_REWARD.into()));
