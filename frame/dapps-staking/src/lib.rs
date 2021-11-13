@@ -94,6 +94,7 @@ pub struct UnlockingChunk<Balance> {
 /// This is a convenience struct that provides various utility methods to help with unbonding handling.
 #[derive(Clone, PartialEq, Encode, Decode, Default, RuntimeDebug, TypeInfo)]
 pub struct UnbondingInfo<Balance> {
+    // Vector of unlocking chunks. Sorted in ascending order in respect to unlock_era.
     unlocking_chunks: Vec<UnlockingChunk<Balance>>,
 }
 
@@ -134,7 +135,7 @@ where
     ///
     /// Order of chunks is preserved in the two new structs.
     fn partition(self, era: EraIndex) -> (Self, Self) {
-        let (valid_chunks, future_chunks): (
+        let (matching_chunks, other_chunks): (
             Vec<UnlockingChunk<Balance>>,
             Vec<UnlockingChunk<Balance>>,
         ) = self
@@ -144,10 +145,10 @@ where
 
         (
             Self {
-                unlocking_chunks: valid_chunks,
+                unlocking_chunks: matching_chunks,
             },
             Self {
-                unlocking_chunks: future_chunks,
+                unlocking_chunks: other_chunks,
             },
         )
     }

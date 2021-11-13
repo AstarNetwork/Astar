@@ -563,8 +563,12 @@ pub mod pallet {
             let unbonding_info = UnbondingInfoStorage::<T>::get(&staker, &contract_id);
             let current_era = Self::current_era();
             let (valid_chunks, future_chunks) = unbonding_info.partition(current_era);
-
             let unstakeable_amount = valid_chunks.sum();
+
+            ensure!(
+                !unstakeable_amount.is_zero(),
+                Error::<T>::UnstakingWithNoValue
+            );
 
             // Get the latest era staking points for the contract.
             let mut staking_info = Self::staking_info(&contract_id, current_era);
@@ -577,7 +581,11 @@ pub mod pallet {
             ensure!(
                 unstakeable_amount <= staked_value,
                 Error::<T>::InsufficientValue
-            ); // TODO: is this even needed?
+            );
+            // TODO: Expand this check so it also includes the scenario where remaining
+            // value will be different from zero but below minimum staking amount.
+            // This should never occur but better to have a safe-guard in place.
+            // Or just use the following block of code to unstake everything in case an anomaly occurs?
 
             // TODO: This can be removed but it can also be kept as kind of a safeguard.
             // Calculate the value which will be unstaked.
