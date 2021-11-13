@@ -19,6 +19,16 @@ pallet-dapps-staking = { path = "../../frame/dapps-staking", default-features = 
 pallet-evm = { git = "https://github.com/PlasmNetwork/frontier", branch = "polkadot-v0.9.10", default-features = false }
 sp-runtime = { git = "https://github.com/PlasmNetwork/substrate", branch = "polkadot-v0.9.10",  default-features = false }
 
+[dev-dependencies]
+derive_more = "0.99"
+pallet-balances = { git = "https://github.com/PlasmNetwork/substrate", branch = "polkadot-v0.9.10" }
+pallet-timestamp = { git = "https://github.com/PlasmNetwork/substrate", branch = "polkadot-v0.9.10" }
+serde = "1.0.100"
+sha3 = "0.9"
+sp-io = { git = "https://github.com/PlasmNetwork/substrate", branch = "polkadot-v0.9.10",  default-features = false }
+sp-runtime = { git = "https://github.com/PlasmNetwork/substrate", branch = "polkadot-v0.9.10" }
+scale-info = { version = "1.0", default-features = false, features = ["derive"] }
+
 [features]
 default = ["std"]
 std = [

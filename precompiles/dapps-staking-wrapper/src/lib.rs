@@ -11,14 +11,21 @@ use frame_support::{
 };
 use pallet_evm::{AddressMapping, GasWeightMapping, Precompile};
 use sp_core::{H160, U256};
-use sp_runtime::traits::{Zero, SaturatedConversion};
+use sp_runtime::traits::{SaturatedConversion, Zero};
 use sp_std::convert::TryInto;
 use sp_std::marker::PhantomData;
+extern crate alloc;
 
 const SELECTOR_SIZE_BYTES: usize = 4;
 const ARG_SIZE_BYTES: usize = 32;
 const OFFSET_H160: usize = 12;
+
 // use utils::*;
+
+#[cfg(test)]
+mod mock;
+#[cfg(test)]
+mod tests;
 
 /// Multi-VM pointer to smart contract instance.
 #[derive(PartialEq, Eq, Copy, Clone, Encode, Decode, Debug)]
@@ -46,7 +53,7 @@ where
             current_era, gas_used
         );
 
-        let output = Self::compose_output(current_era);
+        let output = Self::compose_output_u32(current_era);
 
         Ok(PrecompileOutput {
             exit_status: ExitSucceed::Returned,
@@ -122,7 +129,6 @@ where
         Ok(pallet_dapps_staking::Call::<R>::register(smart_contract).into())
     }
 
-
     fn bond_and_stake(input: &[u8]) -> Result<R::Call, ExitError> {
         // parse contract's address
         let contract_h160 = Self::parse_argument_h160(input, 1);
@@ -133,45 +139,52 @@ where
         let value = Self::parse_argument_u256(input, 2).low_u128();
         println!("--- precompile bond value {:?}", value);
 
-        Ok(pallet_dapps_staking::Call::<R>::bond_and_stake(smart_contract, value.saturated_into()).into())
+        Ok(
+            pallet_dapps_staking::Call::<R>::bond_and_stake(smart_contract, value.saturated_into())
+                .into(),
+        )
     }
 
     /// Helper method to decode type SmartContract enum
-    fn decode_smart_contract(contract_h160: H160) -> Result<<R as pallet_dapps_staking::Config>::SmartContract, ExitError>
-    {
+    fn decode_smart_contract(
+        contract_h160: H160,
+    ) -> Result<<R as pallet_dapps_staking::Config>::SmartContract, ExitError> {
         // Encode contract address to fit SmartContract enum.
         // Since the SmartContract enum type can't be accessed from this pecompile,
         // use locally defined enum clone (see Contract enum)
         let contract_enum_encoded = Contract::<H160>::Evm(contract_h160).encode();
-        // println!(
-        //     "contract_enum_encoded({:?}) = {:?}",
-        //     contract_enum_encoded.len(),
-        //     contract_enum_encoded
-        // );
 
         // encoded enum will add one byte before the contract's address
         // therefore we need to decode len(H160) + 1 byte = 21
         let smart_contract = <R as pallet_dapps_staking::Config>::SmartContract::decode(
             &mut &contract_enum_encoded[..21],
-        ).map_err(|_| ExitError::DesignatedInvalid)?;
+        )
+        .map_err(|_| Self::exit_error("Error while decoding SmartContract") )?;
         println!("--- precompile smart_contract decoded {:?}", smart_contract);
 
         Ok(smart_contract)
     }
 
+    /// Returns an evm error with provided (static) text.
+    fn exit_error<T: Into<alloc::borrow::Cow<'static, str>>>(text: T) -> ExitError {
+        ExitError::Other(text.into())
+    }
 
+    /// Parse input and return U256 argument from given position
     fn parse_argument_u256(input: &[u8], position: usize) -> U256 {
         let offset = SELECTOR_SIZE_BYTES + ARG_SIZE_BYTES * (position - 1);
         let end = offset + ARG_SIZE_BYTES;
         sp_core::U256::from_big_endian(&input[offset..end])
     }
 
+    /// Parse input and return AccountId argument from given position
     // fn parse_argument_account_id(input: &[u8], position: usize) -> R::AccountId{
     //     let offset = SELECTOR_SIZE_BYTES + ARG_SIZE_BYTES * (position - 1);
     //     let end = offset + ARG_SIZE_BYTES;
     //     R::AccountId::decode(&mut &input[offset..end]).unwrap_or_default()
     // }
 
+    /// Parse input and return H160 argument from given position
     fn parse_argument_h160(input: &[u8], position: usize) -> H160 {
         let offset = SELECTOR_SIZE_BYTES + ARG_SIZE_BYTES * (position - 1);
         let end = offset + ARG_SIZE_BYTES;
@@ -179,12 +192,14 @@ where
         sp_core::H160::from_slice(&input[(offset + OFFSET_H160)..end]).into()
     }
 
-    fn compose_output(value: u32) -> Vec<u8> {
+    /// Store u32 value in the 32 bytes vector as big endian
+    fn compose_output_u32(value: u32) -> Vec<u8> {
         let mut buffer = [0u8; ARG_SIZE_BYTES];
         buffer[32 - core::mem::size_of::<u32>()..].copy_from_slice(&value.to_be_bytes());
         buffer.to_vec()
     }
 
+    /// Store u128 value in the 32 bytes vector as big endian
     fn compose_output_u128(value: u128) -> Vec<u8> {
         let mut buffer = [0u8; ARG_SIZE_BYTES];
         buffer[32 - core::mem::size_of::<u128>()..].copy_from_slice(&value.to_be_bytes());
@@ -206,13 +221,12 @@ where
         context: &Context,
     ) -> Result<PrecompileOutput, ExitError> {
         println!(
-            "*\n*************** DappsStakingWrapper execute selector={:x?}, len={:?} ************************",
-            &input[0..4],
+            "*\n*************** DappsStakingWrapper execute(), len={:?} ************************",
             input.len(),
         );
         println!("--- precompile context.caller={:?}", context.caller);
         if input.len() < SELECTOR_SIZE_BYTES {
-            return Err(ExitError::Other("input length less than 4 bytes".into()));
+            return Err(ExitError::Other("Input length less than 4 bytes".into()));
         }
 
         let call = match input[0..SELECTOR_SIZE_BYTES] {
@@ -241,7 +255,10 @@ where
         println!("--- precompile info ={:?}", info);
         if let Some(gas_limit) = target_gas {
             let required_gas = R::GasWeightMapping::weight_to_gas(info.weight);
-            println!("--- precompile required_gas={:?}, gas_limit={:?}", required_gas, gas_limit );
+            println!(
+                "--- precompile required_gas={:?}, gas_limit={:?}",
+                required_gas, gas_limit
+            );
             if required_gas > gas_limit {
                 println!("--- precompile !!!!!!! OutOfGas !!!! ");
                 return Err(ExitError::OutOfGas);

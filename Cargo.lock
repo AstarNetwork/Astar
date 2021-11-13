@@ -5676,13 +5676,20 @@ dependencies = [
 name = "pallet-precompile-dapps-staking"
 version = "0.1.0"
 dependencies = [
+ "derive_more",
  "evm",
  "frame-support",
  "frame-system",
+ "pallet-balances",
  "pallet-dapps-staking",
  "pallet-evm",
+ "pallet-timestamp",
  "parity-scale-codec",
+ "scale-info 1.0.0",
+ "serde",
+ "sha3 0.9.1",
  "sp-core",
+ "sp-io",
  "sp-runtime",
  "sp-std",
 ]

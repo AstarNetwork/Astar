@@ -62,7 +62,7 @@ where
             a if a == hash(1025) => Some(Dispatch::<R>::execute(input, target_gas, context)),
             a if a == hash(1026) => Some(ECRecoverPublicKey::execute(input, target_gas, context)),
             // Astar precompiles (starts from 0x5000):
-            // DappStaking 0x5500
+            // DappStaking 0x5001
             a if a == hash(20481) => Some(DappsStakingWrapper::<R>::execute(
                 input, target_gas, context,
             )),
