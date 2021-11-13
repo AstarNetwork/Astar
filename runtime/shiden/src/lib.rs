@@ -7,7 +7,7 @@
 use codec::{Decode, Encode};
 use frame_support::{
     construct_runtime, parameter_types,
-    traits::{Contains, Currency, FindAuthor, Imbalance, OnUnbalanced},
+    traits::{Contains, Currency, FindAuthor, Imbalance, OnUnbalanced, SameOrOther},
     weights::{
         constants::{BlockExecutionWeight, ExtrinsicBaseWeight, WEIGHT_PER_SECOND},
         DispatchClass, Weight, WeightToFeeCoefficient, WeightToFeeCoefficients,
@@ -84,7 +84,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("shiden"),
     impl_name: create_runtime_str!("shiden"),
     authoring_version: 1,
-    spec_version: 25,
+    spec_version: 26,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 1,
@@ -528,8 +528,18 @@ impl OnUnbalanced<NegativeImbalance> for DealWithFees {
             if let Some(tips) = fees_then_tips.next() {
                 tips.merge_into(&mut fees);
             }
+
+            let (to_burn, collators) = fees.ration(20, 80);
+
+            // burn part of fees
+            let burned = Balances::burn(to_burn.peek());
+            assert!(
+                matches!(burned.offset(to_burn), SameOrOther::None),
+                "fees burn check"
+            );
+
             // pay fees to collators
-            <ToStakingPot as OnUnbalanced<_>>::on_unbalanced(fees);
+            <ToStakingPot as OnUnbalanced<_>>::on_unbalanced(collators);
         }
     }
 }
