@@ -162,7 +162,7 @@ checksum = "9b34d609dfbaf33d6889b2b7106d3ca345eacad44200913df5ba02bfd31d2ba9"
 
 [[package]]
 name = "astar-collator"
-version = "3.0.2"
+version = "3.0.3"
 dependencies = [
  "astar-runtime",
  "async-trait",
@@ -246,7 +246,7 @@ dependencies = [
 
 [[package]]
 name = "astar-runtime"
-version = "3.0.2"
+version = "3.0.3"
 dependencies = [
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-parachain-system",
@@ -4277,7 +4277,7 @@ dependencies = [
 
 [[package]]
 name = "local-runtime"
-version = "3.0.2"
+version = "3.0.3"
 dependencies = [
  "evm",
  "fp-rpc",
@@ -9278,7 +9278,7 @@ dependencies = [
 
 [[package]]
 name = "shibuya-runtime"
-version = "3.0.2"
+version = "3.0.3"
 dependencies = [
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-parachain-system",
@@ -9345,7 +9345,7 @@ dependencies = [
 
 [[package]]
 name = "shiden-runtime"
-version = "3.0.2"
+version = "3.0.3"
 dependencies = [
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-parachain-system",

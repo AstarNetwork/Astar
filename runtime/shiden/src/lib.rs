@@ -84,7 +84,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("shiden"),
     impl_name: create_runtime_str!("shiden"),
     authoring_version: 1,
-    spec_version: 26,
+    spec_version: 27,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 1,
@@ -267,7 +267,7 @@ parameter_types! {
     pub const BlockPerEra: BlockNumber = 1 * DAYS;
     pub const RegisterDeposit: Balance = 100 * SDN;
     pub const DeveloperRewardPercentage: Perbill = Perbill::from_percent(80);
-    pub const MaxNumberOfStakersPerContract: u32 = 512;
+    pub const MaxNumberOfStakersPerContract: u32 = 1024;
     pub const MinimumStakingAmount: Balance = 100 * SDN;
     pub const MinimumRemainingAmount: Balance = 1 * SDN;
     pub const HistoryDepth: u32 = 14;
