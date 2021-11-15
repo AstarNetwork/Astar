@@ -481,11 +481,11 @@ pub mod pallet {
         // TODO: Update Readme.md!
 
         /// Start unbonding process for the account Id - contract Id pair.
-        /// 
+        ///
         /// Value being unbonded will be used in case staker has at least that amount staked.
         /// If unstaking the specified `value` would take staker below the `T::MinimumStakingAmount`,
         /// entire staked amount will be unstaked.
-        /// 
+        ///
         /// If user attempts to unstake more than is available, everything will be unstaked.
         ///
         /// The dispatch origin for this call must be _Signed_ by the staker's account.
@@ -565,7 +565,7 @@ pub mod pallet {
 
         /// Unstake and withdraw all funds which have passed the unbonding period.
         /// This value will no longer be considered for rewards in dapps staking.
-        /// 
+        ///
         /// This will remove the dapps staking lock from the unstaked funds.
         ///
         #[pallet::weight(1000000)] // TODO: benchmarking
