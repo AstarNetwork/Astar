@@ -962,13 +962,29 @@ fn unstake_and_withdraw_is_ok() {
         register_contract(10, &contract_id);
 
         let staker_id = 1;
-        bond_and_stake_with_verification(staker_id, &contract_id, 100);
-        // Start unbonding and verify it's still not possible to unstake and withdraw
-        start_unbonding_with_verification(staker_id, &contract_id, 10);
+        bond_and_stake_with_verification(staker_id, &contract_id, 1000);
 
-        advance_to_era(DappsStaking::current_era() + UNBONDING_PERIOD);
+        // Repeatedly start unbonding and advance era to create unlocking chunks
+        let init_unbonding_amount = 15;
+        for x in 1..=MAX_UNLOCKING_CHUNKS {
+            start_unbonding_with_verification(
+                staker_id,
+                &contract_id,
+                init_unbonding_amount * x as u128,
+            );
+            advance_to_era(DappsStaking::current_era() + 1);
+        }
 
+        // Now clean up all that are eligible for cleanu-up
         unstake_and_withdraw_with_verification(staker_id, &contract_id);
+
+        // This is a sanity check for the test. Some chunks should remain, otherwise test isn't testing realistic unbonding period.
+        assert!(!UnbondingInfoStorage::<TestRuntime>::get(&staker_id, contract_id).is_empty());
+
+        while !UnbondingInfoStorage::<TestRuntime>::get(&staker_id, contract_id).is_empty() {
+            advance_to_era(DappsStaking::current_era() + 1);
+            unstake_and_withdraw_with_verification(staker_id, &contract_id);
+        }
     })
 }
 

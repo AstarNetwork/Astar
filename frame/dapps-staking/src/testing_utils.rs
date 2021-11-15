@@ -100,16 +100,18 @@ pub(crate) fn unstake_and_withdraw_with_verification(
 ) {
     // Get latest staking info
     let current_era = DappsStaking::current_era();
-    let era_staking_points = DappsStaking::staking_info(contract_id, current_era);
-    let staked_value = era_staking_points.stakers[&staker];
+    let init_era_staking_points = DappsStaking::staking_info(contract_id, current_era);
+    let staked_value = init_era_staking_points.stakers[&staker];
 
-    // Get the staking amount for the contract in this era
-    let init_rewards_and_stakes = EraRewardsAndStakes::<TestRuntime>::get(current_era);
+    // Get the staking amount for the contract in this era and locked amount for the staker
+    let init_rewards_and_stakes = EraRewardsAndStakes::<TestRuntime>::get(current_era).unwrap();
+    let init_ledger = Ledger::<TestRuntime>::get(&staker);
 
     // Get the current unlocking chunks
     let pre_unbonding_info = UnbondingInfoStorage::<TestRuntime>::get(&staker, contract_id);
     let (valid_info, remaining_info) = pre_unbonding_info.partition(current_era);
     let expected_unbond_amount = valid_info.sum();
+    let remainder_staked_value = staked_value - expected_unbond_amount;
 
     // Ensure op is successful and event is emitted
     assert_ok!(DappsStaking::unstake_and_withdraw(
@@ -122,21 +124,39 @@ pub(crate) fn unstake_and_withdraw_with_verification(
         expected_unbond_amount,
     )));
 
-    // // Fetch the latest unbonding info so we can compare it to initial unbonding info
-    // let post_unbonding_info = UnbondingInfoStorage::<TestRuntime>::get(&staker, contract_id);
-    // assert_eq!(pre_unbonding_info.len() + 1, post_unbonding_info.len());
-    // assert_eq!(
-    //     pre_unbonding_amount + expected_unbond_amount,
-    //     post_unbonding_info.sum()
-    // );
+    // Fetch the latest unbonding info so we can compare it to expected remainder
+    let post_withdraw_info = UnbondingInfoStorage::<TestRuntime>::get(&staker, contract_id);
+    assert_eq!(remaining_info, post_withdraw_info);
+    if post_withdraw_info.is_empty() {
+        assert!(!UnbondingInfoStorage::<TestRuntime>::contains_key(
+            &staker,
+            contract_id
+        ));
+    }
 
-    // // Push the unlocking chunk we expect to have at the end and compare two structs
-    // let mut pre_unbonding_info = pre_unbonding_info;
-    // pre_unbonding_info.push(UnlockingChunk {
-    //     amount: expected_unbond_amount,
-    //     unlock_era: current_era + UNBONDING_PERIOD,
-    // });
-    // assert_eq!(pre_unbonding_info, post_unbonding_info);
+    // Compare the staking info with the initial one
+    let post_era_staking_points = DappsStaking::staking_info(contract_id, current_era);
+    assert_eq!(
+        init_era_staking_points.total - expected_unbond_amount,
+        post_era_staking_points.total
+    );
+    if remainder_staked_value == 0 {
+        assert!(!post_era_staking_points.stakers.contains_key(&staker));
+    } else {
+        assert_eq!(
+            remainder_staked_value,
+            post_era_staking_points.stakers[&staker]
+        );
+    }
+
+    // Compare the ledger and total staked value
+    let post_rewards_and_stakes = EraRewardsAndStakes::<TestRuntime>::get(current_era).unwrap();
+    let post_ledger = Ledger::<TestRuntime>::get(&staker);
+    assert_eq!(
+        post_rewards_and_stakes.staked,
+        init_rewards_and_stakes.staked - expected_unbond_amount
+    );
+    assert_eq!(post_ledger, init_ledger - expected_unbond_amount);
 }
 
 /// Used to perform unbond_unstake_and_withdraw with success assertion.
