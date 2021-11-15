@@ -98,7 +98,7 @@ pub mod pallet {
         type MinimumRemainingAmount: Get<BalanceOf<Self>>;
 
         /// Max number of unlocking chunks per account Id <-> contract Id pairing.
-        /// If 0, unlocking becomes impossible.
+        /// If value is zero, unlocking becomes impossible.
         #[pallet::constant]
         type MaxUnlockingChunks: Get<u32>;
 
@@ -232,7 +232,7 @@ pub mod pallet {
         NotOperatedContract,
         /// Contract isn't staked.
         NotStakedContract,
-        /// Unstaking a contract with zero value TODO: remove this
+        /// Unstaking a contract with zero value
         UnstakingWithNoValue,
         /// There are no previously unbonded funds that can be unstaked and withdrawn.
         NothingToUnstakeAndWithdraw,
@@ -480,8 +480,20 @@ pub mod pallet {
 
         // TODO: Update Readme.md!
 
-        // TODO: Documentation!
-        #[pallet::weight(1000_0000)] // TODO: benchmarking
+        /// Start unbonding process for the account Id - contract Id pair.
+        /// 
+        /// Value being unbonded will be used in case staker has at least that amount staked.
+        /// If unstaking the specified `value` would take staker below the `T::MinimumStakingAmount`,
+        /// entire staked amount will be unstaked.
+        /// 
+        /// If user attempts to unstake more than is available, everything will be unstaked.
+        ///
+        /// The dispatch origin for this call must be _Signed_ by the staker's account.
+        ///
+        /// Note that all funds will remain staked after this call, only the unbonding process is started.
+        /// Staker will still earn rewards as long as funds aren't withdrawn.
+        ///
+        #[pallet::weight(1000_0000)]
         pub fn start_unbonding(
             origin: OriginFor<T>,
             contract_id: T::SmartContract,
@@ -551,7 +563,11 @@ pub mod pallet {
             Ok(().into())
         }
 
-        // TODO: documentation
+        /// Unstake and withdraw all funds which have passed the unbonding period.
+        /// This value will no longer be considered for rewards in dapps staking.
+        /// 
+        /// This will remove the dapps staking lock from the unstaked funds.
+        ///
         #[pallet::weight(1000000)] // TODO: benchmarking
         pub fn unstake_and_withdraw(
             origin: OriginFor<T>,
