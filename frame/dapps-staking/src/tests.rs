@@ -875,13 +875,10 @@ fn start_unbonding_on_not_operated_contract_is_not_ok() {
     ExternalityBuilder::build().execute_with(|| {
         initialize_first_block();
 
-        let staker_id = 1;
-        let unstake_value = 100;
-
         // Contract isn't registered, expect an error.
         let contract_id = MockSmartContract::Evm(H160::repeat_byte(0x01));
         assert_noop!(
-            DappsStaking::start_unbonding(Origin::signed(staker_id), contract_id, unstake_value),
+            DappsStaking::start_unbonding(Origin::signed(1), contract_id, 100),
             Error::<TestRuntime>::NotOperatedContract
         );
     })
@@ -952,6 +949,87 @@ fn start_unbonding_with_no_available_value_is_not_ok() {
         assert_noop!(
             DappsStaking::start_unbonding(Origin::signed(staker), contract_id.clone(), 1),
             Error::<TestRuntime>::UnstakingWithNoValue,
+        );
+    })
+}
+
+#[test]
+fn unstake_and_withdraw_is_ok() {
+    ExternalityBuilder::build().execute_with(|| {
+        initialize_first_block();
+
+        let contract_id = MockSmartContract::Evm(H160::repeat_byte(0x01));
+        register_contract(10, &contract_id);
+
+        let staker_id = 1;
+        bond_and_stake_with_verification(staker_id, &contract_id, 100);
+        // Start unbonding and verify it's still not possible to unstake and withdraw
+        start_unbonding_with_verification(staker_id, &contract_id, 10);
+
+        advance_to_era(DappsStaking::current_era() + UNBONDING_PERIOD);
+
+        unstake_and_withdraw_with_verification(staker_id, &contract_id);
+    })
+}
+
+#[test]
+fn unstake_and_withdraw_not_operated_contract_is_not_ok() {
+    ExternalityBuilder::build().execute_with(|| {
+        initialize_first_block();
+
+        let contract_id = MockSmartContract::Evm(H160::repeat_byte(0x01));
+        assert_noop!(
+            DappsStaking::unstake_and_withdraw(Origin::signed(1), contract_id),
+            Error::<TestRuntime>::NotOperatedContract
+        );
+    })
+}
+
+#[test]
+fn unstake_and_withdraw_not_staked_contract_is_not_ok() {
+    ExternalityBuilder::build().execute_with(|| {
+        initialize_first_block();
+
+        let contract_id = MockSmartContract::Evm(H160::repeat_byte(0x01));
+        register_contract(10, &contract_id);
+
+        assert_noop!(
+            DappsStaking::unstake_and_withdraw(Origin::signed(1), contract_id),
+            Error::<TestRuntime>::NotStakedContract
+        );
+    })
+}
+
+#[test]
+fn unstake_and_withdraw_no_valid_chunks_is_not_ok() {
+    ExternalityBuilder::build().execute_with(|| {
+        initialize_first_block();
+
+        let contract_id = MockSmartContract::Evm(H160::repeat_byte(0x01));
+        register_contract(10, &contract_id);
+
+        let staker_id = 1;
+        bond_and_stake_with_verification(staker_id, &contract_id, 100);
+
+        // Try to unstake and withdraw with no unlocking chunks
+        assert_noop!(
+            DappsStaking::unstake_and_withdraw(Origin::signed(staker_id), contract_id),
+            Error::<TestRuntime>::NothingToUnstakeAndWithdraw
+        );
+
+        // Start unbonding and verify it's still not possible to unstake and withdraw
+        start_unbonding_with_verification(staker_id, &contract_id, 10);
+        assert_noop!(
+            DappsStaking::unstake_and_withdraw(Origin::signed(staker_id), contract_id),
+            Error::<TestRuntime>::NothingToUnstakeAndWithdraw
+        );
+
+        // Advance some eras (less than unbonding period!) and verify it's still not possible to unstake and withdraw
+        let current_era = DappsStaking::current_era();
+        advance_to_era(current_era + UNBONDING_PERIOD - 1);
+        assert_noop!(
+            DappsStaking::unstake_and_withdraw(Origin::signed(staker_id), contract_id),
+            Error::<TestRuntime>::NothingToUnstakeAndWithdraw
         );
     })
 }
@@ -1877,4 +1955,10 @@ fn unbonding_info_test() {
     assert_eq!(chunks.len(), unbonding_info.len() as usize);
     let total: Balance = chunks.iter().map(|c| c.amount).sum();
     assert_eq!(total, unbonding_info.sum());
+
+    let partition_era = base_unlock_era * 3;
+    let (first_info, second_info) = unbonding_info.clone().partition(partition_era);
+    assert_eq!(3, first_info.len());
+    assert_eq!(2, second_info.len());
+    assert_eq!(unbonding_info.sum(), first_info.sum() + second_info.sum());
 }

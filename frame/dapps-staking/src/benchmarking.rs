@@ -22,10 +22,10 @@ fn initialize<T: Config>() {
     RegisteredDapps::<T>::remove_all(None);
     EraRewardsAndStakes::<T>::remove_all(None);
     ContractEraStake::<T>::remove_all(None);
+    UnbondingInfoStorage::<T>::remove_all();
     CurrentEra::<T>::kill();
     BlockRewardAccumulator::<T>::kill();
     PreApprovalIsEnabled::<T>::kill();
-    UnbondingInfoStorage::<T>::kill();
 
     // Initialize the first block.
     DappsStaking::<T>::on_unbalanced(T::Currency::issue(BLOCK_REWARD.into()));
