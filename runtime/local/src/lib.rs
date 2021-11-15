@@ -299,6 +299,8 @@ parameter_types! {
     pub const MinimumRemainingAmount: Balance = 1 * AST;
     pub const HistoryDepth: u32 = 14;
     pub const BonusEraDuration: u32 = 100;
+    pub const MaxUnlockingChunks: u32 = 4;
+    pub const UnbondingPeriod: u32 = 7;
 }
 
 impl pallet_dapps_staking::Config for Runtime {
@@ -315,6 +317,8 @@ impl pallet_dapps_staking::Config for Runtime {
     type MinimumRemainingAmount = MinimumRemainingAmount;
     type HistoryDepth = HistoryDepth;
     type BonusEraDuration = BonusEraDuration;
+    type MaxUnlockingChunks = MaxUnlockingChunks;
+    type UnbondingPeriod = UnbondingPeriod;
 }
 
 /// Multi-VM pointer to smart contract instance.

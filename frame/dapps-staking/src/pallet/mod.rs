@@ -105,7 +105,7 @@ pub mod pallet {
         /// Number of eras that need to pass until unstaked value can be withdrawn.
         /// If this value is zero, it's equivalent to having no unbonding period.
         #[pallet::constant]
-        type UnbondingPeriod: Get<EraIndex>;
+        type UnbondingPeriod: Get<u32>;
 
         /// The overarching event type.
         type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
