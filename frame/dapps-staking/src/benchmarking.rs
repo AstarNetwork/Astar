@@ -22,7 +22,7 @@ fn initialize<T: Config>() {
     RegisteredDapps::<T>::remove_all(None);
     EraRewardsAndStakes::<T>::remove_all(None);
     ContractEraStake::<T>::remove_all(None);
-    UnbondingInfoStorage::<T>::remove_all();
+    UnbondingInfoStorage::<T>::remove_all(None);
     CurrentEra::<T>::kill();
     BlockRewardAccumulator::<T>::kill();
     PreApprovalIsEnabled::<T>::kill();
@@ -144,6 +144,46 @@ benchmarks! {
     }: _(RawOrigin::Signed(staker.clone()), contract_id.clone(), amount.clone())
     verify {
         assert_last_event::<T>(Event::<T>::BondAndStake(staker, contract_id, amount).into());
+    }
+
+    start_unbonding {
+        initialize::<T>();
+
+        let (_, contract_id) = register_contract::<T>()?;
+        prepare_bond_and_stake::<T>(T::MaxNumberOfStakersPerContract::get() - 1, &contract_id, SEED)?;
+
+        let staker = whitelisted_caller();
+        let _ = T::Currency::make_free_balance_be(&staker, BalanceOf::<T>::max_value());
+        let amount = BalanceOf::<T>::max_value() / 2u32.into();
+
+        DappsStaking::<T>::bond_and_stake(RawOrigin::Signed(staker.clone()).into(), contract_id.clone(), amount.clone())?;
+        let current_era = DappsStaking::<T>::current_era();
+
+    }: _(RawOrigin::Signed(staker.clone()), contract_id.clone(), amount.clone())
+    verify {
+        assert_last_event::<T>(Event::<T>::UnbondingStarted(staker, contract_id, amount, current_era).into());
+    }
+
+    unstake_and_withdraw {
+        initialize::<T>();
+
+        let (_, contract_id) = register_contract::<T>()?;
+        prepare_bond_and_stake::<T>(T::MaxNumberOfStakersPerContract::get() - 1, &contract_id, SEED)?;
+
+        let staker = whitelisted_caller();
+        let _ = T::Currency::make_free_balance_be(&staker, BalanceOf::<T>::max_value());
+        let stake_amount = BalanceOf::<T>::max_value() / 2u32.into();
+        let unstake_amount = stake_amount / 2u32.into();
+
+        DappsStaking::<T>::bond_and_stake(RawOrigin::Signed(staker.clone()).into(), contract_id.clone(), stake_amount.clone())?;
+        DappsStaking::<T>::start_unbonding(RawOrigin::Signed(staker.clone()).into(), contract_id.clone(), unstake_amount.clone())?;
+
+        let current_era = DappsStaking::<T>::current_era();
+        advance_to_era::<T>(current_era + T::UnbondingPeriod::get());
+
+    }: _(RawOrigin::Signed(staker.clone()), contract_id.clone())
+    verify {
+        assert_last_event::<T>(Event::<T>::UnstakeAndWithdraw(staker, contract_id, unstake_amount).into());
     }
 
     unbond_unstake_and_withdraw {
