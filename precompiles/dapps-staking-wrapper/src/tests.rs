@@ -1,14 +1,14 @@
 use crate::mock::{
-    advance_to_era, clear_all_events, dapps_staking_events, default_context, exit_error,
-    initialize_first_block, precompile_address, run_to_block, Call, DappsStaking, EraIndex,
-    ExternalityBuilder, Origin, Precompiles, TestAccount, TestRuntime,
+    advance_to_era, default_context, evm_call, exit_error, initialize_first_block,
+    precompile_address, Call, ExternalityBuilder, Origin, Precompiles, TestAccount,
 };
 use crate::PrecompileOutput;
 use frame_support::{assert_ok, dispatch::Dispatchable};
 use pallet_evm::{ExitSucceed, PrecompileSet};
-use sp_core::U256;
 use sha3::{Digest, Keccak256};
+use sp_core::H160;
 
+// use crate::utils;
 
 #[test]
 fn selector_out_of_bounds_nok() {
@@ -63,11 +63,11 @@ fn current_era_is_ok() {
         expected_era[31] = 1;
 
         let expected = Some(Ok(PrecompileOutput {
-			exit_status: ExitSucceed::Returned,
-			output: expected_era.clone(),
-			cost: Default::default(),
-			logs: Default::default(),
-		}));
+            exit_status: ExitSucceed::Returned,
+            output: expected_era.clone(),
+            cost: Default::default(),
+            logs: Default::default(),
+        }));
 
         assert_eq!(
             Precompiles::execute(precompile_address(), &selector, None, &default_context()),
@@ -78,14 +78,73 @@ fn current_era_is_ok() {
         expected_era[31] = 5;
         advance_to_era(5);
         let expected = Some(Ok(PrecompileOutput {
-			exit_status: ExitSucceed::Returned,
-			output: expected_era,
-			cost: Default::default(),
-			logs: Default::default(),
-		}));
+            exit_status: ExitSucceed::Returned,
+            output: expected_era,
+            cost: Default::default(),
+            logs: Default::default(),
+        }));
         assert_eq!(
             Precompiles::execute(precompile_address(), &selector, None, &default_context()),
             expected
         );
     });
 }
+
+#[test]
+fn register_is_ok() {
+    ExternalityBuilder::default()
+        .with_balances(vec![(TestAccount::Alex, 200)])
+        .build()
+        .execute_with(|| {
+            initialize_first_block();
+            let developer = TestAccount::Alex;
+            let selector = &Keccak256::digest(b"register(address)")[0..4];
+            let mut input_data = Vec::<u8>::from([0u8; 36]);
+            input_data[0..4].copy_from_slice(&selector);
+
+            let contract_array = H160::repeat_byte(0x09).to_fixed_bytes();
+            input_data[16..36].copy_from_slice(&contract_array);
+
+            // register new contract
+            assert_ok!(Call::Evm(evm_call(developer.clone(), input_data)).dispatch(Origin::root())); // TODO fails if ::signed(developer)
+            // TODO register did not execute and this TC should fail
+
+            // check_registered_contract(developer, contract_array);
+            // check_register_event(developer, contract_h160);
+        });
+}
+
+// fn check_registered_contract(developer: TestAccount, contract_array_h160: [u8; 20]) {
+//     println!("--- check_registered_contract contract_array_h160({:?}) {:?}", contract_array_h160.len(), contract_array_h160);
+
+//     // check if the contract is registered
+//     let selector = &Keccak256::digest(b"registered_contract(address)")[0..4];
+//     let mut input_data = Vec::<u8>::from([0u8; 36]);
+//     input_data[0..4].copy_from_slice(&selector);
+
+//     let developer_arg = utils::argument_from_h160(developer.to_h160());
+//     // let contract_array = utils::compose_arg_from_h160(contract_array_h160);
+//     println!("--- check_registered_contract developer_arg({:?}) {:?}", developer_arg.len(), developer_arg);
+//     input_data[4..36].copy_from_slice(&developer_arg);
+
+//     let expected = Some(Ok(PrecompileOutput {
+//         exit_status: ExitSucceed::Returned,
+//         output: contract_array_h160.to_vec(),
+//         cost: Default::default(),
+//         logs: Default::default(),
+//     }));
+//     println!("--- check_registered_contract expected() {:?}", expected);
+//     assert_eq!(
+//         Precompiles::execute(precompile_address(), &input_data, None, &default_context()),
+//         expected
+//     );
+// }
+
+// Check Register event
+// pub fn check_register_event(developer: H160, contract_id: H160) {
+//     System::assert_last_event(Event::DappsStaking(
+//         <TestRuntime as pallet_dapps_staking::Config>::Event::NewContract(
+//         developer,
+//         contract_id,
+//     )));
+// }

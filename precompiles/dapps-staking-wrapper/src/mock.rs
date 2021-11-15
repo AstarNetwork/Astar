@@ -8,8 +8,9 @@ use frame_support::{
 };
 use pallet_dapps_staking::weights;
 use pallet_evm::{AddressMapping, EnsureAddressNever, EnsureAddressRoot, PrecompileSet};
+use pallet_evm::Call as EvmCall;
 use serde::{Deserialize, Serialize};
-use sp_core::{H160, H256};
+use sp_core::{H160, U256, H256};
 use sp_io::TestExternalities;
 use sp_runtime::{
     testing::Header,
@@ -210,9 +211,15 @@ pub enum MockSmartContract<AccountId> {
 
 impl<AccountId> Default for MockSmartContract<AccountId> {
     fn default() -> Self {
-        MockSmartContract::Evm(H160::repeat_byte(0x01))
+        MockSmartContract::Evm(H160::repeat_byte(0x00))
     }
 }
+
+// impl MockSmartContract<AccountId> {
+//     fn create(repeat_address: u8) -> Self {
+//         MockSmartContract::Evm(H160::repeat_byte(repeat_address))
+//     }
+// }
 
 impl<AccountId> pallet_dapps_staking::IsContract for MockSmartContract<AccountId> {
     fn is_valid(&self) -> bool {
@@ -331,7 +338,6 @@ pub fn initialize_first_block() {
 
     // We need to beef up the pallet account balance in case of bonus rewards
     let starting_balance = BLOCK_REWARD * BLOCKS_PER_ERA as Balance * REWARD_SCALING as Balance;
-    // &<TestRuntime as crate::pallet::pallet::Config>::PalletId::get().into_account(),
     let _ = Balances::deposit_creating(
         &<TestRuntime as pallet_dapps_staking::Config>::PalletId::get().into_account(),
         starting_balance,
@@ -343,26 +349,27 @@ pub fn initialize_first_block() {
     run_to_block(2);
 }
 
-// Clears all events
-pub fn clear_all_events() {
-    System::reset_events();
-}
+// // Clears all events
+// pub fn clear_all_events() {
+//     System::reset_events();
+// }
 
-// Used to get a vec of all dapps staking events
-pub fn dapps_staking_events() -> Vec<pallet_dapps_staking::Event<TestRuntime>> {
-    System::events()
-        .into_iter()
-        .map(|r| r.event)
-        .filter_map(|e| {
-            if let Event::DappsStaking(inner) = e {
-                Some(inner)
-            } else {
-                None
-            }
-        })
-        .collect()
-}
+// // Used to get a vec of all dapps staking events
+// pub fn dapps_staking_events() -> Vec<pallet_dapps_staking::Event<TestRuntime>> {
+//     System::events()
+//         .into_iter()
+//         .map(|r| r.event)
+//         .filter_map(|e| {
+//             if let Event::DappsStaking(inner) = e {
+//                 Some(inner)
+//             } else {
+//                 None
+//             }
+//         })
+//         .collect()
+// }
 
+/// default evm context
 pub fn default_context() -> evm::Context {
     evm::Context {
         address: Default::default(),
@@ -374,4 +381,17 @@ pub fn default_context() -> evm::Context {
 /// Returns an evm error with provided (static) text.
 pub fn exit_error<T: Into<alloc::borrow::Cow<'static, str>>>(text: T) -> ExitError {
     ExitError::Other(text.into())
+}
+
+/// returns tuple to be used with evm calls
+pub fn evm_call(source: TestAccount, input: Vec<u8>) -> EvmCall<TestRuntime> {
+    EvmCall::call(
+        source.to_h160(),
+        precompile_address(),
+        input,
+        U256::zero(),
+        u64::max_value(),
+        U256::zero().into(),
+        None,
+    )
 }
