@@ -74,11 +74,11 @@ EraRewardAndStake {
 ## Events
 
 * `BondAndStake(AccountId, SmartContract, Balance):` Account has bonded and staked funds on a smart contract.
-* `UnbondUnstakeAndWithdraw(AccountId, SmartContract, Balance):` Account has unbonded, unstaked and withdrawn funds.
+* `UnbondAndUnstake(AccountId, SmartContract, Balance):` Account has unbonded & unstaked some funds. Unbonding process begins.
+* `Withdrawn(AccountId, Balance):` Account has withdrawn unbonded funds.
 * `NewContract(AccountId, SmartContract):` New contract added for staking.
 * `ContractRemoved(AccountId, SmartContract):` Contract removed from dapps staking.
 * `NewDappStakingEra(EraIndex):` New dapps staking era. Distribute era rewards to contracts.
-* `ContractClaimed(SmartContract, EraIndex, Balance):` The contract's reward has been claimed for an era
 * `Reward(AccountId, SmartContract, EraIndex, Balance):` Reward paid to staker or developer.
 
 

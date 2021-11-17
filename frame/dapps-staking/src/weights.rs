@@ -20,7 +20,8 @@ pub trait WeightInfo {
     fn enable_developer_pre_approval() -> Weight;
     fn developer_pre_approval() -> Weight;
     fn bond_and_stake() -> Weight;
-    fn unbond_unstake_and_withdraw() -> Weight;
+    fn unbond_and_unstake() -> Weight;
+	fn withdraw_unbonded() -> Weight;
     /// n - total number of payees
     fn claim(n: u32) -> Weight;
     fn force_new_era() -> Weight;
@@ -77,15 +78,24 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 			.saturating_add(T::DbWeight::get().writes(4 as Weight))
 	}
 	// Storage: DappsStaking RegisteredDapps (r:1 w:0)
+	// Storage: DappsStaking RegisteredDevelopers (r:1 w:0)
+	// Storage: DappsStaking UnbondingInfoStorage (r:1 w:1)
 	// Storage: DappsStaking CurrentEra (r:1 w:0)
-	// Storage: DappsStaking ContractEraStake (r:3 w:1)
+	// Storage: DappsStaking ContractEraStake (r:1 w:1)
+	// Storage: DappsStaking EraRewardsAndStakes (r:1 w:1)
+	fn unbond_and_unstake() -> Weight {
+		(658_336_000 as Weight)
+			.saturating_add(T::DbWeight::get().reads(6 as Weight))
+			.saturating_add(T::DbWeight::get().writes(3 as Weight))
+	}
+	// Storage: DappsStaking UnbondingInfoStorage (r:1 w:1)
+	// Storage: DappsStaking CurrentEra (r:1 w:0)
 	// Storage: DappsStaking Ledger (r:1 w:1)
 	// Storage: Balances Locks (r:1 w:1)
-	// Storage: DappsStaking EraRewardsAndStakes (r:1 w:1)
-	fn unbond_unstake_and_withdraw() -> Weight {
-		(413_106_000 as Weight)
-			.saturating_add(T::DbWeight::get().reads(8 as Weight))
-			.saturating_add(T::DbWeight::get().writes(4 as Weight))
+	fn withdraw_unbonded() -> Weight {
+		(119_282_000 as Weight)
+			.saturating_add(T::DbWeight::get().reads(4 as Weight))
+			.saturating_add(T::DbWeight::get().writes(3 as Weight))
 	}
 	// Storage: DappsStaking RegisteredDapps (r:1 w:0)
 	// Storage: DappsStaking CurrentEra (r:1 w:0)
@@ -156,15 +166,24 @@ impl WeightInfo for () {
 			.saturating_add(RocksDbWeight::get().writes(4 as Weight))
 	}
 	// Storage: DappsStaking RegisteredDapps (r:1 w:0)
+	// Storage: DappsStaking RegisteredDevelopers (r:1 w:0)
+	// Storage: DappsStaking UnbondingInfoStorage (r:1 w:1)
 	// Storage: DappsStaking CurrentEra (r:1 w:0)
-	// Storage: DappsStaking ContractEraStake (r:3 w:1)
+	// Storage: DappsStaking ContractEraStake (r:1 w:1)
+	// Storage: DappsStaking EraRewardsAndStakes (r:1 w:1)
+	fn unbond_and_unstake() -> Weight {
+		(658_336_000 as Weight)
+			.saturating_add(RocksDbWeight::get().reads(6 as Weight))
+			.saturating_add(RocksDbWeight::get().writes(3 as Weight))
+	}
+	// Storage: DappsStaking UnbondingInfoStorage (r:1 w:1)
+	// Storage: DappsStaking CurrentEra (r:1 w:0)
 	// Storage: DappsStaking Ledger (r:1 w:1)
 	// Storage: Balances Locks (r:1 w:1)
-	// Storage: DappsStaking EraRewardsAndStakes (r:1 w:1)
-	fn unbond_unstake_and_withdraw() -> Weight {
-		(413_106_000 as Weight)
-			.saturating_add(RocksDbWeight::get().reads(8 as Weight))
-			.saturating_add(RocksDbWeight::get().writes(4 as Weight))
+	fn withdraw_unbonded() -> Weight {
+		(119_282_000 as Weight)
+			.saturating_add(RocksDbWeight::get().reads(4 as Weight))
+			.saturating_add(RocksDbWeight::get().writes(3 as Weight))
 	}
 	// Storage: DappsStaking RegisteredDapps (r:1 w:0)
 	// Storage: DappsStaking CurrentEra (r:1 w:0)
