@@ -126,6 +126,9 @@ where
     /// Pushes a new unlocking chunk to the end of existing chunks.
     fn push(&mut self, chunk: UnlockingChunk<Balance>) {
         self.unlocking_chunks.push(chunk);
+
+        // TODO: what if unbonding period changes, e.g. shortens? Then this operation will produce inconsistent results!
+        // Maybe use binary search to find insertion place?
     }
 
     /// Partitions the unlocking chunks into two groups:
