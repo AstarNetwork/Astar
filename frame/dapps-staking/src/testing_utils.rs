@@ -41,135 +41,121 @@ pub(crate) fn bond_and_stake_with_verification(
 }
 
 /// Used to perform start_unbonding with sucess and storage assertions.
-pub(crate) fn start_unbonding_with_verification(
+pub(crate) fn unbond_and_unstake_with_verification(
     staker: AccountId,
     contract_id: &MockSmartContract<AccountId>,
     value: Balance,
-) {
-    // Get latest staking info
-    let current_era = DappsStaking::current_era();
-    let era_staking_points = DappsStaking::staking_info(contract_id, current_era);
-    let staked_value = era_staking_points.stakers[&staker];
-
-    // Get the current unlocking chunks
-    let pre_unbonding_info = UnbondingInfoStorage::<TestRuntime>::get(&staker, contract_id);
-    let pre_unbonding_amount = pre_unbonding_info.sum();
-
-    // Calculate the expected resulting unbonding amount
-    let expected_unbond_amount =
-        if staked_value - pre_unbonding_amount - value < MINIMUM_STAKING_AMOUNT {
-            staked_value - pre_unbonding_amount
-        } else {
-            value
-        };
-
-    // Ensure op is successful and event is emitted
-    assert_ok!(DappsStaking::start_unbonding(
-        Origin::signed(staker),
-        contract_id.clone(),
-        value
-    ));
-    System::assert_last_event(mock::Event::DappsStaking(Event::UnbondingStarted(
-        staker,
-        contract_id.clone(),
-        expected_unbond_amount,
-        current_era,
-    )));
-
-    // Fetch the latest unbonding info so we can compare it to initial unbonding info
-    let post_unbonding_info = UnbondingInfoStorage::<TestRuntime>::get(&staker, contract_id);
-    assert_eq!(pre_unbonding_info.len() + 1, post_unbonding_info.len());
-    assert_eq!(
-        pre_unbonding_amount + expected_unbond_amount,
-        post_unbonding_info.sum()
-    );
-
-    // Push the unlocking chunk we expect to have at the end and compare two structs
-    let mut pre_unbonding_info = pre_unbonding_info;
-    pre_unbonding_info.push(UnlockingChunk {
-        amount: expected_unbond_amount,
-        unlock_era: current_era + UNBONDING_PERIOD,
-    });
-    assert_eq!(pre_unbonding_info, post_unbonding_info);
-}
-
-/// Used to perform start_unbonding with sucess and storage assertions.
-pub(crate) fn unstake_and_withdraw_with_verification(
-    staker: AccountId,
-    contract_id: &MockSmartContract<AccountId>,
 ) {
     // Get latest staking info
     let current_era = DappsStaking::current_era();
     let init_era_staking_points = DappsStaking::staking_info(contract_id, current_era);
-    let staked_value = init_era_staking_points.stakers[&staker];
+    let init_staked_value = init_era_staking_points.stakers[&staker];
 
-    // Get the staking amount for the contract in this era and locked amount for the staker
-    let init_rewards_and_stakes = EraRewardsAndStakes::<TestRuntime>::get(current_era).unwrap();
-    let init_ledger = Ledger::<TestRuntime>::get(&staker);
+    // Get current total locked amount
+    let init_locked_amount = Ledger::<TestRuntime>::get(&staker);
 
     // Get the current unlocking chunks
-    let pre_unbonding_info = UnbondingInfoStorage::<TestRuntime>::get(&staker, contract_id);
-    let (valid_info, remaining_info) = pre_unbonding_info.partition(current_era);
-    let expected_unbond_amount = valid_info.sum();
-    let remainder_staked_value = staked_value - expected_unbond_amount;
+    let init_unbonding_info = UnbondingInfoStorage::<TestRuntime>::get(&staker);
+
+    // Get the total staked value for this era
+    let init_rewards_and_stakes = EraRewardsAndStakes::<TestRuntime>::get(&current_era).unwrap();
+
+    // Calculate the expected resulting unbonding amount
+    let remaining_staked = init_staked_value - value;
+    let expected_unbond_amount = if remaining_staked < MINIMUM_STAKING_AMOUNT {
+        init_staked_value
+    } else {
+        value
+    };
+    let remaining_staked = init_staked_value - expected_unbond_amount;
 
     // Ensure op is successful and event is emitted
-    assert_ok!(DappsStaking::unstake_and_withdraw(
+    assert_ok!(DappsStaking::unbond_and_unstake(
         Origin::signed(staker),
         contract_id.clone(),
+        value
     ));
-    System::assert_last_event(mock::Event::DappsStaking(Event::UnstakeAndWithdraw(
+    System::assert_last_event(mock::Event::DappsStaking(Event::UnbondAndUnstake(
         staker,
         contract_id.clone(),
         expected_unbond_amount,
     )));
 
-    // Fetch the latest unbonding info so we can compare it to expected remainder
-    let post_withdraw_info = UnbondingInfoStorage::<TestRuntime>::get(&staker, contract_id);
-    assert_eq!(remaining_info, post_withdraw_info);
-    if post_withdraw_info.is_empty() {
-        assert!(!UnbondingInfoStorage::<TestRuntime>::contains_key(
-            &staker,
-            contract_id
-        ));
-    }
+    // Fetch the latest unbonding info so we can compare it to initial unbonding info
+    let final_unbonding_info = UnbondingInfoStorage::<TestRuntime>::get(&staker);
+    assert_eq!(init_unbonding_info.len() + 1, final_unbonding_info.len());
+    assert_eq!(
+        init_unbonding_info.sum() + expected_unbond_amount,
+        final_unbonding_info.sum()
+    );
 
-    // Compare the staking info with the initial one
-    let post_era_staking_points = DappsStaking::staking_info(contract_id, current_era);
+    // Push the unlocking chunk we expect to have at the end and compare two structs
+    let mut init_unbonding_info = init_unbonding_info;
+    init_unbonding_info.push(UnlockingChunk {
+        amount: expected_unbond_amount,
+        unlock_era: current_era + 1 + UNBONDING_PERIOD,
+    });
+    assert_eq!(init_unbonding_info, final_unbonding_info);
+
+    // Ensure that total staked amount has been decreased for contract and staking points are updated
+    let final_era_staking_points = DappsStaking::staking_info(contract_id, current_era);
     assert_eq!(
         init_era_staking_points.total - expected_unbond_amount,
-        post_era_staking_points.total
+        final_era_staking_points.total
     );
-    if remainder_staked_value == 0 {
-        assert!(!post_era_staking_points.stakers.contains_key(&staker));
+    if remaining_staked > 0 {
+        assert_eq!(remaining_staked, final_era_staking_points.stakers[&staker]);
     } else {
-        assert_eq!(
-            remainder_staked_value,
-            post_era_staking_points.stakers[&staker]
-        );
+        assert!(!final_era_staking_points.stakers.contains_key(&staker));
+    }
+
+    // Ensure that total locked value for staker hasn't been changed.
+    let final_locked_amount = Ledger::<TestRuntime>::get(&staker);
+    assert_eq!(init_locked_amount, final_locked_amount);
+    if final_locked_amount == 0 {
+        assert!(!Ledger::<TestRuntime>::contains_key(&staker));
+    }
+
+    // Ensure that total staked value has been decreased
+    let final_rewards_and_stakes = EraRewardsAndStakes::<TestRuntime>::get(&current_era).unwrap();
+    assert_eq!(
+        init_rewards_and_stakes.staked - expected_unbond_amount,
+        final_rewards_and_stakes.staked
+    );
+}
+
+/// Used to perform start_unbonding with sucess and storage assertions.
+pub(crate) fn withdraw_unbonded_with_verification(staker: AccountId) {
+    let current_era = DappsStaking::current_era();
+
+    let init_rewards_and_stakes = EraRewardsAndStakes::<TestRuntime>::get(current_era).unwrap();
+    let init_ledger = Ledger::<TestRuntime>::get(&staker);
+
+    // Get the current unlocking chunks
+    let init_unbonding_info = UnbondingInfoStorage::<TestRuntime>::get(&staker);
+    let (valid_info, remaining_info) = init_unbonding_info.partition(current_era);
+    let expected_unbond_amount = valid_info.sum();
+
+    // Ensure op is successful and event is emitted
+    assert_ok!(DappsStaking::withdraw_unbonded(Origin::signed(staker),));
+    System::assert_last_event(mock::Event::DappsStaking(Event::Withdrawn(
+        staker,
+        expected_unbond_amount,
+    )));
+
+    // Fetch the latest unbonding info so we can compare it to expected remainder
+    let final_unbonding_info = UnbondingInfoStorage::<TestRuntime>::get(&staker);
+    assert_eq!(remaining_info, final_unbonding_info);
+    if final_unbonding_info.is_empty() {
+        assert!(!UnbondingInfoStorage::<TestRuntime>::contains_key(&staker));
     }
 
     // Compare the ledger and total staked value
-    let post_rewards_and_stakes = EraRewardsAndStakes::<TestRuntime>::get(current_era).unwrap();
-    let post_ledger = Ledger::<TestRuntime>::get(&staker);
-    assert_eq!(
-        post_rewards_and_stakes.staked,
-        init_rewards_and_stakes.staked - expected_unbond_amount
-    );
-    assert_eq!(post_ledger, init_ledger - expected_unbond_amount);
-}
+    let final_rewards_and_stakes = EraRewardsAndStakes::<TestRuntime>::get(current_era).unwrap();
+    assert_eq!(final_rewards_and_stakes, init_rewards_and_stakes);
 
-/// Used to perform unbond_unstake_and_withdraw with success assertion.
-pub(crate) fn unbond_unstake_and_withdraw_with_verification(
-    staker_id: AccountId,
-    contract_id: &MockSmartContract<AccountId>,
-    value: Balance,
-) {
-    assert_ok!(DappsStaking::unbond_unstake_and_withdraw(
-        Origin::signed(staker_id),
-        contract_id.clone(),
-        value,
-    ));
+    let final_ledger = Ledger::<TestRuntime>::get(&staker);
+    assert_eq!(final_ledger, init_ledger - expected_unbond_amount);
 }
 
 /// Used to verify ledger content.
