@@ -1035,8 +1035,85 @@ fn unbond_and_unstake_on_not_staked_contract_is_not_ok() {
     })
 }
 
+#[ignore]
+#[test]
+fn unbond_and_unstake_with_no_chunks_allowed() {
+    // UT can be used to verify situation when MaxUnlockingChunks = 0. Requires mock modification.
+    ExternalityBuilder::build().execute_with(|| {
+        initialize_first_block();
+
+        // Sanity check
+        assert_eq!(<TestRuntime as Config>::MaxUnlockingChunks::get(), 0);
+
+        let contract_id = MockSmartContract::Evm(H160::repeat_byte(0x01));
+        register_contract(10, &contract_id);
+
+        let staker_id = 1;
+        bond_and_stake_with_verification(staker_id, &contract_id, 100);
+
+        assert_noop!(
+            DappsStaking::unbond_and_unstake(Origin::signed(staker_id), contract_id.clone(), 20),
+            Error::<TestRuntime>::TooManyUnlockingChunks,
+        );
+    })
+}
+
 #[test]
 fn withdraw_unbonded_is_ok() {
+    ExternalityBuilder::build().execute_with(|| {
+        initialize_first_block();
+
+        let contract_id = MockSmartContract::Evm(H160::repeat_byte(0x01));
+        register_contract(10, &contract_id);
+
+        let staker_id = 1;
+        bond_and_stake_with_verification(staker_id, &contract_id, 1000);
+
+        let first_unbond_value = 75;
+        let second_unbond_value = 39;
+        let initial_era = DappsStaking::current_era();
+
+        // Unbond some amount in the initial era
+        unbond_and_unstake_with_verification(staker_id, &contract_id, first_unbond_value);
+
+        // Advance one era and then unbond some more
+        advance_to_era(initial_era + 1);
+        unbond_and_unstake_with_verification(staker_id, &contract_id, second_unbond_value);
+
+        // Now advance one era before first chunks finishes the unbonding process
+        advance_to_era(initial_era + UNBONDING_PERIOD);
+        assert_noop!(
+            DappsStaking::withdraw_unbonded(Origin::signed(staker_id)),
+            Error::<TestRuntime>::NothingToWithdraw
+        );
+
+        // Advance one additional era and expect that the first chunk can be withdrawn
+        advance_to_era(DappsStaking::current_era() + 1);
+        assert_ok!(DappsStaking::withdraw_unbonded(Origin::signed(staker_id),));
+        System::assert_last_event(mock::Event::DappsStaking(Event::Withdrawn(
+            staker_id,
+            first_unbond_value,
+        )));
+
+        // Advance one additional era and expect that the first chunk can be withdrawn
+        advance_to_era(DappsStaking::current_era() + 1);
+        assert_ok!(DappsStaking::withdraw_unbonded(Origin::signed(staker_id),));
+        System::assert_last_event(mock::Event::DappsStaking(Event::Withdrawn(
+            staker_id,
+            second_unbond_value,
+        )));
+
+        // Advance one additional era but since we have nothing else to withdraw, expect an error
+        advance_to_era(initial_era + UNBONDING_PERIOD);
+        assert_noop!(
+            DappsStaking::withdraw_unbonded(Origin::signed(staker_id)),
+            Error::<TestRuntime>::NothingToWithdraw
+        );
+    })
+}
+
+#[test]
+fn withdraw_unbonded_full_vector_is_ok() {
     ExternalityBuilder::build().execute_with(|| {
         initialize_first_block();
 
@@ -1071,7 +1148,7 @@ fn withdraw_unbonded_is_ok() {
 }
 
 #[test]
-fn withdraw_unbonded_nothing_to_withdraw_is_not_ok() {
+fn withdraw_unbonded_no_value_is_not_ok() {
     ExternalityBuilder::build().execute_with(|| {
         initialize_first_block();
 
@@ -1079,6 +1156,35 @@ fn withdraw_unbonded_nothing_to_withdraw_is_not_ok() {
             DappsStaking::withdraw_unbonded(Origin::signed(1)),
             Error::<TestRuntime>::NothingToWithdraw,
         );
+    })
+}
+
+#[ignore]
+#[test]
+fn withdraw_unbonded_no_unbonding_period() {
+    // UT can be used to verify situation when UnbondingPeriod = 0. Requires mock modification.
+    ExternalityBuilder::build().execute_with(|| {
+        initialize_first_block();
+
+        // Sanity check
+        assert_eq!(<TestRuntime as Config>::UnbondingPeriod::get(), 0);
+
+        let contract_id = MockSmartContract::Evm(H160::repeat_byte(0x01));
+        register_contract(10, &contract_id);
+
+        let staker_id = 1;
+        bond_and_stake_with_verification(staker_id, &contract_id, 100);
+        unbond_and_unstake_with_verification(staker_id, &contract_id, 20);
+
+        // Try to withdraw but expect an error since current era hasn't passed yet
+        assert_noop!(
+            DappsStaking::withdraw_unbonded(Origin::signed(staker_id)),
+            Error::<TestRuntime>::NothingToWithdraw,
+        );
+
+        // Advance an era and expect successful withdrawal
+        advance_to_era(DappsStaking::current_era() + 1);
+        withdraw_unbonded_with_verification(staker_id);
     })
 }
 
