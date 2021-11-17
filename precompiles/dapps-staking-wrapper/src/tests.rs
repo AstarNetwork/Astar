@@ -1,6 +1,6 @@
 use crate::mock::{
     advance_to_era, default_context, evm_call, exit_error, initialize_first_block,
-    precompile_address, Call, ExternalityBuilder, Origin, Precompiles, TestAccount,
+    precompile_address, Call, ExternalityBuilder, Origin, Precompiles, TestAccount, AST
 };
 use crate::PrecompileOutput;
 use frame_support::{assert_ok, dispatch::Dispatchable};
@@ -93,7 +93,7 @@ fn current_era_is_ok() {
 #[test]
 fn register_is_ok() {
     ExternalityBuilder::default()
-        .with_balances(vec![(TestAccount::Alex, 200)])
+        .with_balances(vec![(TestAccount::Alex, 200 * AST)])
         .build()
         .execute_with(|| {
             initialize_first_block();
@@ -106,8 +106,8 @@ fn register_is_ok() {
             input_data[16..36].copy_from_slice(&contract_array);
 
             // register new contract
-            assert_ok!(Call::Evm(evm_call(developer.clone(), input_data)).dispatch(Origin::root())); // TODO fails if ::signed(developer)
-            // TODO register did not execute and this TC should fail
+            assert_ok!(Call::Evm(evm_call(developer.clone(), input_data)).dispatch(Origin::root()));
+            // TODO register did not execute and this TC will fail
 
             // check_registered_contract(developer, contract_array);
             // check_register_event(developer, contract_h160);

@@ -214,7 +214,12 @@ where
         println!("--> precompile origin = {}", origin);
         let post_info = call
             .dispatch(Some(origin).into())
-            .map_err(|_| ExitError::Other("Method call via EVM failed".into()))?;
+            .map_err(|e| {
+                println!("!!!!!!!!!!! ERROR={:x?}", e);
+                assert!(false);
+                ExitError::Other("Method call via EVM failed".into())
+            }
+        )?;
         println!("--> precompile post_info ={:?}", post_info);
 
         let gas_used =

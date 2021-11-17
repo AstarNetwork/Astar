@@ -24,6 +24,8 @@ pub(crate) type BlockNumber = u64;
 pub(crate) type Balance = u128;
 pub(crate) type EraIndex = u32;
 pub(crate) const REWARD_SCALING: u32 = 2;
+pub const MILLIAST: Balance = 1_000_000_000_000_000;
+pub const AST: Balance = 1_000 * MILLIAST;
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<TestRuntime>;
 type Block = frame_system::mocking::MockBlock<TestRuntime>;
@@ -181,7 +183,7 @@ impl pallet_evm::Config for TestRuntime {
     type GasWeightMapping = ();
     type CallOrigin = EnsureAddressRoot<AccountId>;
     type WithdrawOrigin = EnsureAddressNever<AccountId>;
-    type AddressMapping = TestAccount;
+    type AddressMapping = AccountId;
     type Currency = Balances;
     type Event = Event;
     type Runner = pallet_evm::runner::stack::Runner<Self>;
@@ -384,7 +386,7 @@ pub fn exit_error<T: Into<alloc::borrow::Cow<'static, str>>>(text: T) -> ExitErr
 }
 
 /// returns tuple to be used with evm calls
-pub fn evm_call(source: TestAccount, input: Vec<u8>) -> EvmCall<TestRuntime> {
+pub fn evm_call(source: AccountId, input: Vec<u8>) -> EvmCall<TestRuntime> {
     EvmCall::call(
         source.to_h160(),
         precompile_address(),
