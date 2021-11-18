@@ -83,7 +83,14 @@ pub(crate) fn unbond_and_unstake_with_verification(
 
     // Fetch the latest unbonding info so we can compare it to initial unbonding info
     let final_unbonding_info = UnbondingInfoStorage::<TestRuntime>::get(&staker);
-    assert_eq!(init_unbonding_info.len() + 1, final_unbonding_info.len());
+    let expected_unlock_era = current_era + 1 + UNBONDING_PERIOD;
+    match init_unbonding_info
+        .vec()
+        .binary_search_by(|x| x.unlock_era.cmp(&expected_unlock_era))
+    {
+        Ok(_) => assert_eq!(init_unbonding_info.len(), final_unbonding_info.len()),
+        Err(_) => assert_eq!(init_unbonding_info.len() + 1, final_unbonding_info.len()),
+    }
     assert_eq!(
         init_unbonding_info.sum() + expected_unbond_amount,
         final_unbonding_info.sum()
@@ -91,7 +98,7 @@ pub(crate) fn unbond_and_unstake_with_verification(
 
     // Push the unlocking chunk we expect to have at the end and compare two structs
     let mut init_unbonding_info = init_unbonding_info;
-    init_unbonding_info.push(UnlockingChunk {
+    init_unbonding_info.add(UnlockingChunk {
         amount: expected_unbond_amount,
         unlock_era: current_era + 1 + UNBONDING_PERIOD,
     });
