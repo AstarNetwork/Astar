@@ -7,10 +7,10 @@ use frame_support::{
     PalletId,
 };
 use pallet_dapps_staking::weights;
-use pallet_evm::{AddressMapping, EnsureAddressNever, EnsureAddressRoot, PrecompileSet};
 use pallet_evm::Call as EvmCall;
+use pallet_evm::{AddressMapping, EnsureAddressNever, EnsureAddressRoot, ExitError, PrecompileSet};
 use serde::{Deserialize, Serialize};
-use sp_core::{H160, U256, H256};
+use sp_core::{H160, H256, U256};
 use sp_io::TestExternalities;
 use sp_runtime::{
     testing::Header,

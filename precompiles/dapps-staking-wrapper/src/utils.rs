@@ -1,4 +1,3 @@
-
 use super::*;
 use evm::ExitError;
 use sp_core::{H160, U256};
@@ -17,28 +16,66 @@ pub enum Contract<A> {
     Wasm(A),
 }
 
-/// Parse input and return H160 argument from given position
-pub fn h160_from_argument(input: &[u8], position: usize) -> H160 {
-    println!("parse_argument_h160 ({:?}) {:?}", input.len(), input);
-    let offset = SELECTOR_SIZE_BYTES + ARG_SIZE_BYTES * (position - 1);
-    let end = offset + ARG_SIZE_BYTES;
-    // H160 has 20 bytes. The first 12 bytes in u256 have no meaning
-    sp_core::H160::from_slice(&input[(offset + OFFSET_H160)..end]).into()
+#[derive(Clone, Copy, Debug)]
+pub struct EvmInArg<'a> {
+    pub input: &'a [u8],
 }
 
-/// Parse input and return U256 argument from given position
-pub fn u256_from_argument(input: &[u8], position: usize) -> U256 {
-    let offset = SELECTOR_SIZE_BYTES + ARG_SIZE_BYTES * (position - 1);
-    let end = offset + ARG_SIZE_BYTES;
-    sp_core::U256::from_big_endian(&input[offset..end])
-}
-
-/// Parse input and return AccountId argument from given position
-// fn parse_argument_account_id(input: &[u8], position: usize) -> R::AccountId{
-//     let offset = SELECTOR_SIZE_BYTES + ARG_SIZE_BYTES * (position - 1);
-//     let end = offset + ARG_SIZE_BYTES;
-//     R::AccountId::decode(&mut &input[offset..end]).unwrap_or_default()
+// impl<'a> From<&'a [u8]> for EvmInArg<'a> {
+//     fn from(input: &'a [u8]) -> EvmInArg<'a> {
+//         EvmInArg { input }
+//     }
 // }
+
+impl<'a> EvmInArg<'a> {
+    pub fn new(input: &'a [u8]) -> Self {
+        Self { input }
+    }
+
+    // parse selector from the first 4 bytes.
+    pub fn selector(&self) -> Result<[u8; SELECTOR_SIZE_BYTES], &'static str> {
+        match self.len() {
+            l if l < SELECTOR_SIZE_BYTES => Err("Selector too short"),
+            _ => {
+                let mut selector = [0u8; SELECTOR_SIZE_BYTES];
+                selector.copy_from_slice(&self.input[0..SELECTOR_SIZE_BYTES]);
+                Ok(selector)
+            }
+        }
+    }
+
+    // check that the length of input is as expected
+    pub fn expecting_arguments(&self, num: usize) -> Result<(), &'static str> {
+        let expected_len = SELECTOR_SIZE_BYTES + ARG_SIZE_BYTES * num;
+        println!("expected_len {:?} actual {:?}", expected_len, self.len());
+        match self.len() {
+            l if l < expected_len => Err("Too few arguments"),
+            l if l > expected_len => Err("Too many arguments"),
+            _ => Ok(()),
+        }
+    }
+
+    /// Parse input and return H160 argument from given position
+    pub fn to_h160(&self, position: usize) -> H160 {
+        println!("parse_argument_h160 ({:?}) {:?}", self.len(), self.input);
+        let offset = SELECTOR_SIZE_BYTES + ARG_SIZE_BYTES * (position - 1);
+        let end = offset + ARG_SIZE_BYTES;
+        // H160 has 20 bytes. The first 12 bytes in u256 have no meaning
+        sp_core::H160::from_slice(&self.input[(offset + OFFSET_H160)..end]).into()
+    }
+
+    /// Parse input and return U256 argument from given position
+    pub fn to_u256(&self, position: usize) -> U256 {
+        let offset = SELECTOR_SIZE_BYTES + ARG_SIZE_BYTES * (position - 1);
+        let end = offset + ARG_SIZE_BYTES;
+        sp_core::U256::from_big_endian(&self.input[offset..end])
+    }
+
+    // length for the struct
+    pub fn len(&self) -> usize {
+        self.input.len()
+    }
+}
 
 /// Store u32 value in the 32 bytes vector as big endian
 pub fn argument_from_u32(value: u32) -> Vec<u8> {

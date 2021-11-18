@@ -51,8 +51,9 @@ where
     }
 
     /// Fetch reward and stake from EraRewardsAndStakes storage map
-    fn era_reward_and_stake(input: &[u8]) -> Result<PrecompileOutput, ExitError> {
-        let era = utils::u256_from_argument(input, 1).low_u32();
+    fn era_reward_and_stake(input: EvmInArg) -> Result<PrecompileOutput, ExitError> {
+        input.expecting_arguments(1).map_err(|e| exit_error(e))?;
+        let era = input.to_u256(1).low_u32();
         let reward_and_stake = pallet_dapps_staking::EraRewardsAndStakes::<R>::get(era);
         let (reward, staked) = if let Some(r) = reward_and_stake {
             (r.rewards, r.staked)
@@ -81,9 +82,9 @@ where
     }
 
     /// Fetch registered contract from RegisteredDevelopers storage map
-    fn registered_contract(input: &[u8]) -> Result<PrecompileOutput, ExitError> {
+    fn registered_contract(input: EvmInArg) -> Result<PrecompileOutput, ExitError> {
         println!("--- precompile registered_contract() {:?}", input.len());
-        let developer_h160 = utils::h160_from_argument(input, 1);
+        let developer_h160 = input.to_h160(1);
         let developer = R::AddressMapping::into_account_id(developer_h160);
         println!("--- precompile developer_h160 {:?}", developer_h160);
         println!("--- precompile developer public key {:?}", developer);
@@ -106,10 +107,11 @@ where
     }
 
     /// Register contract with the dapp-staking pallet
-    fn register(input: &[u8]) -> Result<R::Call, ExitError> {
+    fn register(input: EvmInArg) -> Result<R::Call, ExitError> {
         println!("--- precompile register() {:?}", input.len());
+        input.expecting_arguments(1).map_err(|e| exit_error(e))?;
         // parse contract's address
-        let contract_h160 = utils::h160_from_argument(input, 1);
+        let contract_h160 = input.to_h160(1);
         // println!("contract_h160 {:?}", contract_h160);
 
         let smart_contract = Self::decode_smart_contract(contract_h160)?;
@@ -118,14 +120,16 @@ where
     }
 
     /// Lock up and stake balance of the origin account.
-    fn bond_and_stake(input: &[u8]) -> Result<R::Call, ExitError> {
+    fn bond_and_stake(input: EvmInArg) -> Result<R::Call, ExitError> {
+        input.expecting_arguments(2).map_err(|e| exit_error(e))?;
+
         // parse contract's address
-        let contract_h160 = utils::h160_from_argument(input, 1);
+        let contract_h160 = input.to_h160(1);
         // println!("contract_h160 {:?}", contract_h160);
         let smart_contract = Self::decode_smart_contract(contract_h160)?;
 
         // parse balance to be staked
-        let value = utils::u256_from_argument(input, 2).low_u128();
+        let value = input.to_u256(2).low_u128();
         println!("--- precompile bond value {:?}", value);
 
         Ok(
@@ -172,11 +176,10 @@ where
             input.len(),
         );
         println!("--- precompile context.caller={:?}", context.caller);
-        if input.len() < SELECTOR_SIZE_BYTES {
-            return Err(ExitError::Other("Input length less than 4 bytes".into()));
-        }
 
-        let call = match input[0..SELECTOR_SIZE_BYTES] {
+        let input = EvmInArg::new(&input);
+        let selector = input.selector().map_err(|e| exit_error(e))?;
+        let call = match selector {
             // storage getters
             // current_era = [215, 190, 56, 150]
             [0xd7, 0xbe, 0x38, 0x96] => return Self::current_era(),
@@ -184,12 +187,14 @@ where
             [0xb9, 0xb7, 0x0e, 0x8e] => return Self::era_reward_and_stake(input),
             // registered_contract [0x19, 0x2f, 0xb2, 0x56] 'address Developer'
             [0x19, 0x2f, 0xb2, 0x56] => return Self::registered_contract(input),
+
+            // extrinsic calls
             // register [0x44, 0x20, 0xe4, 0x86]
             [0x44, 0x20, 0xe4, 0x86] => Self::register(input)?,
             // bond_and_stake [0x52, 0xb7, 0x3e, 0x41]
             [0x52, 0xb7, 0x3e, 0x41] => Self::bond_and_stake(input)?,
             _ => {
-                println!("!!!!!!!!!!! ERROR selector, selector={:x?}", &input[0..4]);
+                println!("!!!!!!!!!!! ERROR selector, selector={:x?}", selector);
                 return Err(ExitError::Other(
                     "No method at selector given selector".into(),
                 ));
@@ -212,14 +217,11 @@ where
 
         let origin = R::AddressMapping::into_account_id(context.caller);
         println!("--> precompile origin = {}", origin);
-        let post_info = call
-            .dispatch(Some(origin).into())
-            .map_err(|e| {
-                println!("!!!!!!!!!!! ERROR={:x?}", e);
-                assert!(false);
-                ExitError::Other("Method call via EVM failed".into())
-            }
-        )?;
+        let post_info = call.dispatch(Some(origin).into()).map_err(|e| {
+            println!("!!!!!!!!!!! ERROR={:x?}", e);
+            // assert!(false);
+            ExitError::Other("Method call via EVM failed".into())
+        })?;
         println!("--> precompile post_info ={:?}", post_info);
 
         let gas_used =
