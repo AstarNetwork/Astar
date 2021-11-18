@@ -21,7 +21,7 @@ pub trait WeightInfo {
     fn developer_pre_approval() -> Weight;
     fn bond_and_stake() -> Weight;
     fn unbond_and_unstake() -> Weight;
-	fn withdraw_unbonded() -> Weight;
+    fn withdraw_unbonded() -> Weight;
     /// n - total number of payees
     fn claim(n: u32) -> Weight;
     fn force_new_era() -> Weight;

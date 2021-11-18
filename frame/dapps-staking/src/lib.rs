@@ -171,7 +171,7 @@ where
     }
 
     #[cfg(test)]
-    // Return clone of the internal vector. Should only be used for testing.
+    /// Return clone of the internal vector. Should only be used for testing.
     fn vec(&self) -> Vec<UnlockingChunk<Balance>> {
         self.unlocking_chunks.clone()
     }

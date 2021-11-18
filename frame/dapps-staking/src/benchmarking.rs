@@ -157,7 +157,6 @@ benchmarks! {
         let amount = BalanceOf::<T>::max_value() / 2u32.into();
 
         DappsStaking::<T>::bond_and_stake(RawOrigin::Signed(staker.clone()).into(), contract_id.clone(), amount.clone())?;
-        let current_era = DappsStaking::<T>::current_era();
 
     }: _(RawOrigin::Signed(staker.clone()), contract_id.clone(), amount.clone())
     verify {
