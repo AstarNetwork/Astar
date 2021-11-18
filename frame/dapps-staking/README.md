@@ -90,6 +90,9 @@ EraRewardAndStake {
 * `NotOperatedContract`, Targets must be operated contracts
 * `NotStakedContract`, Contract isn't staked.
 * `UnstakingWithNoValue`, Unstaking a contract with zero value.
+* `NothingToWithdraw`, There are no previously unbonded funds that can be unstaked and withdrawn.
+* `TooManyUnlockingChunks`, Contract has too many unlocking chunks. Withdraw the existing chunks if possible or wait for
+current chunks to complete unlocking process to withdraw them.
 * `AlreadyRegisteredContract`, The contract is already registered by other account.
 * `ContractIsNotValid`, User attempts to register with address which is not contract.
 * `AlreadyUsedDeveloperAccount`, This account was already used to register contract.
