@@ -962,6 +962,30 @@ fn unbond_and_unstake_history_depth_has_passed_is_ok() {
 }
 
 #[test]
+fn unbond_and_unstake_in_same_era_can_exceed_max_chunks() {
+    ExternalityBuilder::build().execute_with(|| {
+        initialize_first_block();
+
+        let contract_id = MockSmartContract::Evm(H160::repeat_byte(0x01));
+        register_contract(10, &contract_id);
+
+        let staker = 1;
+
+        bond_and_stake_with_verification(
+            staker,
+            &contract_id,
+            200 * MAX_UNLOCKING_CHUNKS as Balance,
+        );
+
+        // Ensure that we can unbond up to a limited amount of time.
+        for _ in 0..MAX_UNLOCKING_CHUNKS * 2 {
+            unbond_and_unstake_with_verification(1, &contract_id, 10);
+            assert_eq!(1, UnbondingInfoStorage::<TestRuntime>::get(&staker).len());
+        }
+    })
+}
+
+#[test]
 fn unbond_and_unstake_with_zero_value_is_not_ok() {
     ExternalityBuilder::build().execute_with(|| {
         initialize_first_block();
@@ -1007,6 +1031,7 @@ fn unbond_and_unstake_too_many_unlocking_chunks_is_not_ok() {
         // Ensure that we can unbond up to a limited amount of time.
         for _ in 0..MAX_UNLOCKING_CHUNKS {
             unbond_and_unstake_with_verification(1, &contract_id, unstake_amount);
+            advance_to_era(DappsStaking::current_era() + 1);
         }
         // Ensure that further unbonding attempts result in an error.
         assert_noop!(
@@ -1697,38 +1722,44 @@ fn unbonding_info_test() {
     assert!(first_info.is_empty());
     assert!(second_info.is_empty());
 
-    // Prepare unlocking chunks
+    // Prepare unlocking chunks.
+    let count = 5;
     let base_amount: Balance = 100;
-    let base_unlock_era = 3;
+    let base_unlock_era = 4 * count;
     let mut chunks = vec![];
-    for x in 1_u32..=5 {
+    for x in 1_u32..=count as u32 {
         chunks.push(UnlockingChunk {
             amount: base_amount * x as Balance,
-            unlock_era: base_unlock_era * x,
+            unlock_era: base_unlock_era - 3 * x,
         });
     }
 
     // Add one unlocking chunk and verify basic ops.
-    unbonding_info.push(chunks[0 as usize]);
+    unbonding_info.add(chunks[0 as usize]);
 
     assert!(!unbonding_info.is_empty());
     assert_eq!(1, unbonding_info.len());
     assert_eq!(chunks[0 as usize].amount, unbonding_info.sum());
 
-    let (first_info, second_info) = unbonding_info.clone().partition(6);
+    let (first_info, second_info) = unbonding_info.clone().partition(base_unlock_era);
     assert_eq!(1, first_info.len());
     assert_eq!(chunks[0 as usize].amount, first_info.sum());
     assert!(second_info.is_empty());
 
     // Add remainder and verify basic ops
     for x in unbonding_info.len() as usize..chunks.len() {
-        unbonding_info.push(chunks[x]);
+        unbonding_info.add(chunks[x]);
+        // Ensure internal vec is sorted
+        assert!(unbonding_info
+            .vec()
+            .windows(2)
+            .all(|w| w[0].unlock_era <= w[1].unlock_era));
     }
     assert_eq!(chunks.len(), unbonding_info.len() as usize);
     let total: Balance = chunks.iter().map(|c| c.amount).sum();
     assert_eq!(total, unbonding_info.sum());
 
-    let partition_era = base_unlock_era * 3;
+    let partition_era = chunks[2].unlock_era + 1;
     let (first_info, second_info) = unbonding_info.clone().partition(partition_era);
     assert_eq!(3, first_info.len());
     assert_eq!(2, second_info.len());

@@ -527,7 +527,7 @@ pub mod pallet {
 
             // Update the chunks and write them to storage
             const SKIP_CURRENT_ERA: u32 = 1;
-            unbonding_info.push(UnlockingChunk {
+            unbonding_info.add(UnlockingChunk {
                 amount: value_to_unstake,
                 unlock_era: current_era + SKIP_CURRENT_ERA + T::UnbondingPeriod::get(),
             });

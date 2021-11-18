@@ -90,6 +90,16 @@ pub struct UnlockingChunk<Balance> {
     unlock_era: EraIndex,
 }
 
+impl<Balance> UnlockingChunk<Balance>
+where
+    Balance: Add<Output = Balance> + Copy,
+{
+    // Adds the specified amount to this chunk
+    fn add_amount(&mut self, amount: Balance) {
+        self.amount = self.amount + amount
+    }
+}
+
 /// Contains unlocking chunks.
 /// This is a convenience struct that provides various utility methods to help with unbonding handling.
 #[derive(Clone, PartialEq, Encode, Decode, Default, RuntimeDebug, TypeInfo)]
@@ -98,8 +108,6 @@ pub struct UnbondingInfo<Balance> {
     unlocking_chunks: Vec<UnlockingChunk<Balance>>,
 }
 
-// TODO: Check if there's a trait that encompasses all used traits?
-// TODO: maybe get rid of copy and just use clone?
 impl<Balance> UnbondingInfo<Balance>
 where
     Balance: Add<Output = Balance> + Default + Copy,
@@ -123,12 +131,18 @@ where
             .unwrap_or_default()
     }
 
-    /// Pushes a new unlocking chunk to the end of existing chunks.
-    fn push(&mut self, chunk: UnlockingChunk<Balance>) {
-        self.unlocking_chunks.push(chunk);
-
-        // TODO: what if unbonding period changes, e.g. shortens? Then this operation will produce inconsistent results!
-        // Maybe use binary search to find insertion place?
+    /// Adds a new unlocking chunk to the vector, preserving the unlock_era based ordering.
+    fn add(&mut self, chunk: UnlockingChunk<Balance>) {
+        // It is possible that the unbonding period changes so we need to account for that
+        match self
+            .unlocking_chunks
+            .binary_search_by(|x| x.unlock_era.cmp(&chunk.unlock_era))
+        {
+            // Merge with existing chunk if unlock_eras match
+            Ok(pos) => self.unlocking_chunks[pos].add_amount(chunk.amount),
+            // Otherwise insert where it should go. Note that this will in almost all cases return the last index.
+            Err(pos) => self.unlocking_chunks.insert(pos, chunk),
+        }
     }
 
     /// Partitions the unlocking chunks into two groups:
@@ -156,11 +170,9 @@ where
         )
     }
 
-    // TODO: add consolidate method to merge chunks for which should be unlocked in the same era?
-    // Personally, I wouldn't do this because this opens a use case where users can constantly unbond small
-    // chunks which will result in a lot of writes on chain.
-    // If we keep max number of unlocking chunks low (e.g. 1, 2 or 4) and unbonding period relatively short,
-    // there shouldn't be problems with UX.
-    //
-    // Feel free to comment in review! :)
+    #[cfg(test)]
+    // Return clone of the internal vector. Should only be used for testing.
+    fn vec(&self) -> Vec<UnlockingChunk<Balance>> {
+        self.unlocking_chunks.clone()
+    }
 }
