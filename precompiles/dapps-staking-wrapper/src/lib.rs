@@ -114,9 +114,9 @@ where
         let contract_h160 = input.to_h160(1);
         // println!("contract_h160 {:?}", contract_h160);
 
-        let smart_contract = Self::decode_smart_contract(contract_h160)?;
+        let contract_id = Self::decode_smart_contract(contract_h160)?;
 
-        Ok(pallet_dapps_staking::Call::<R>::register(smart_contract).into())
+        Ok(pallet_dapps_staking::Call::<R>::register{contract_id}.into())
     }
 
     /// Lock up and stake balance of the origin account.
@@ -126,14 +126,14 @@ where
         // parse contract's address
         let contract_h160 = input.to_h160(1);
         // println!("contract_h160 {:?}", contract_h160);
-        let smart_contract = Self::decode_smart_contract(contract_h160)?;
+        let contract_id = Self::decode_smart_contract(contract_h160)?;
 
         // parse balance to be staked
-        let value = input.to_u256(2).low_u128();
+        let value = input.to_u256(2).low_u128().saturated_into();
         println!("--- precompile bond value {:?}", value);
 
         Ok(
-            pallet_dapps_staking::Call::<R>::bond_and_stake(smart_contract, value.saturated_into())
+            pallet_dapps_staking::Call::<R>::bond_and_stake{contract_id, value}
                 .into(),
         )
     }

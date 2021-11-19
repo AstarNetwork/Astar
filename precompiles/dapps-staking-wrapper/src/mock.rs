@@ -257,7 +257,6 @@ impl pallet_dapps_staking::Config for TestRuntime {
     type BonusEraDuration = BonusEraDuration;
     type MinimumStakingAmount = MinimumStakingAmount;
     type PalletId = DappsStakingPalletId;
-    type TreasuryPalletId = TreasuryPalletId;
 }
 
 pub struct ExternalityBuilder {
@@ -387,13 +386,13 @@ pub fn exit_error<T: Into<alloc::borrow::Cow<'static, str>>>(text: T) -> ExitErr
 
 /// returns tuple to be used with evm calls
 pub fn evm_call(source: AccountId, input: Vec<u8>) -> EvmCall<TestRuntime> {
-    EvmCall::call(
-        source.to_h160(),
-        precompile_address(),
+    EvmCall::call{
+        source: source.to_h160(),
+        target: precompile_address(),
         input,
-        U256::zero(),
-        u64::max_value(),
-        U256::zero().into(),
-        None,
-    )
+        value: U256::zero(),
+        gas_limit: u64::max_value(),
+        gas_price: U256::zero().into(),
+        nonce: None,
+    }
 }
