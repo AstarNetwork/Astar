@@ -315,8 +315,8 @@ fn unregister_with_staked_contracts_is_ok() {
         verify_storage_after_unregister(&developer, &contract_id);
 
         // Ensure ledger contains expected stake values. We have a single staked contract remaining.
-        assert_eq!(staked_value_1, DappsStaking::ledger(&staker_1));
-        assert_eq!(staked_value_2, DappsStaking::ledger(&staker_2));
+        assert_eq!(staked_value_1, DappsStaking::ledger(&staker_1).locked);
+        assert_eq!(staked_value_2, DappsStaking::ledger(&staker_2).locked);
 
         // Ensure that era reward&stake has been updated
         assert_eq!(
@@ -632,7 +632,7 @@ fn bond_and_stake_different_value_is_ok() {
         )));
         // Verify the minimum transferable amount of stakers account
         let transferable_balance =
-            Balances::free_balance(&staker_id) - Ledger::<TestRuntime>::get(staker_id);
+            Balances::free_balance(&staker_id) - Ledger::<TestRuntime>::get(staker_id).locked;
         assert_eq!(MINIMUM_REMAINING_AMOUNT, transferable_balance);
 
         // Bond&stake some amount, a bit less than free balance
@@ -980,7 +980,7 @@ fn unbond_and_unstake_in_same_era_can_exceed_max_chunks() {
         // Ensure that we can unbond up to a limited amount of time.
         for _ in 0..MAX_UNLOCKING_CHUNKS * 2 {
             unbond_and_unstake_with_verification(1, &contract_id, 10);
-            assert_eq!(1, UnbondingInfoStorage::<TestRuntime>::get(&staker).len());
+            assert_eq!(1, Ledger::<TestRuntime>::get(&staker).unbonding_info.len());
         }
     })
 }
@@ -1163,9 +1163,14 @@ fn withdraw_unbonded_full_vector_is_ok() {
         withdraw_unbonded_with_verification(staker_id);
 
         // This is a sanity check for the test. Some chunks should remain, otherwise test isn't testing realistic unbonding period.
-        assert!(!UnbondingInfoStorage::<TestRuntime>::get(&staker_id).is_empty());
+        assert!(!Ledger::<TestRuntime>::get(&staker_id)
+            .unbonding_info
+            .is_empty());
 
-        while !UnbondingInfoStorage::<TestRuntime>::get(&staker_id).is_empty() {
+        while !Ledger::<TestRuntime>::get(&staker_id)
+            .unbonding_info
+            .is_empty()
+        {
             advance_to_era(DappsStaking::current_era() + 1);
             withdraw_unbonded_with_verification(staker_id);
         }

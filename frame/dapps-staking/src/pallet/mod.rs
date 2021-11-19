@@ -118,7 +118,7 @@ pub mod pallet {
     #[pallet::storage]
     #[pallet::getter(fn ledger)]
     pub(crate) type Ledger<T: Config> =
-        StorageMap<_, Blake2_128Concat, T::AccountId, BalanceOf<T>, ValueQuery>;
+        StorageMap<_, Blake2_128Concat, T::AccountId, AccountLedger<BalanceOf<T>>, ValueQuery>;
 
     /// The current era index.
     #[pallet::storage]
@@ -170,11 +170,10 @@ pub mod pallet {
         EraStakingPoints<T::AccountId, BalanceOf<T>>,
     >;
 
-    /// Stores the unlocking chunks keyed by account and contract Id
+    /// Stores the current pallet storage version.
     #[pallet::storage]
-    #[pallet::getter(fn unlocking_chunks)]
-    pub(crate) type UnbondingInfoStorage<T: Config> =
-        StorageMap<_, Blake2_128Concat, T::AccountId, UnbondingInfo<BalanceOf<T>>, ValueQuery>;
+    #[pallet::getter(fn storage_version)]
+    pub(crate) type StorageVersion<T> = StorageValue<_, Version, ValueQuery>;
 
     #[pallet::type_value]
     pub(crate) fn PreApprovalOnEmpty() -> bool {
@@ -279,6 +278,32 @@ pub mod pallet {
 
             T::DbWeight::get().writes(5)
         }
+
+        fn on_runtime_upgrade() -> Weight {
+            if StorageVersion::<T>::get() == Version::V1_0_0 {
+                migrations::v2::migrate::<T>()
+            } else {
+                T::DbWeight::get().reads(1)
+            }
+        }
+
+        #[cfg(feature = "try-runtime")]
+        fn pre_upgrade() -> Result<(), &'static str> {
+            if StorageVersion::<T>::get() == Version::V1_0_0 {
+                migrations::v2::pre_migrate::<T, Self>()
+            } else {
+                Ok(())
+            }
+        }
+
+        #[cfg(feature = "try-runtime")]
+        fn post_upgrade() -> Result<(), &'static str> {
+            if StorageVersion::<T>::get() == Version::V2_0_0 {
+                migrations::v2::post_migrate::<T, Self>()
+            } else {
+                Ok(())
+            }
+        }
     }
 
     #[pallet::call]
@@ -348,8 +373,9 @@ pub mod pallet {
             let current_era = Self::current_era();
             let staking_info = Self::staking_info(&contract_id, current_era);
             for (staker, amount) in staking_info.stakers.iter() {
-                let ledger = Self::ledger(staker);
-                Self::update_ledger(staker, ledger.saturating_sub(*amount));
+                let mut ledger = Self::ledger(staker);
+                ledger.locked = ledger.locked.saturating_sub(*amount);
+                Self::update_ledger(staker, ledger);
             }
 
             // Need to update total amount staked
@@ -409,7 +435,7 @@ pub mod pallet {
                 T::Currency::free_balance(&staker).saturating_sub(T::MinimumRemainingAmount::get());
 
             // Remove already locked funds from the free balance
-            let available_balance = free_balance.saturating_sub(ledger);
+            let available_balance = free_balance.saturating_sub(ledger.locked);
             let value_to_stake = value.min(available_balance);
             ensure!(
                 value_to_stake > Zero::zero(),
@@ -492,9 +518,10 @@ pub mod pallet {
                 Error::<T>::NotOperatedContract,
             );
 
-            let mut unbonding_info = UnbondingInfoStorage::<T>::get(&staker);
+            let mut ledger = Self::ledger(&staker);
+
             ensure!(
-                unbonding_info.len() < T::MaxUnlockingChunks::get(),
+                ledger.unbonding_info.len() < T::MaxUnlockingChunks::get(),
                 Error::<T>::TooManyUnlockingChunks
             );
 
@@ -527,11 +554,11 @@ pub mod pallet {
 
             // Update the chunks and write them to storage
             const SKIP_CURRENT_ERA: u32 = 1;
-            unbonding_info.add(UnlockingChunk {
+            ledger.unbonding_info.add(UnlockingChunk {
                 amount: value_to_unstake,
                 unlock_era: current_era + SKIP_CURRENT_ERA + T::UnbondingPeriod::get(),
             });
-            UnbondingInfoStorage::<T>::insert(&staker, unbonding_info);
+            Self::update_ledger(&staker, ledger);
 
             // Update total staked value in era.
             EraRewardsAndStakes::<T>::mutate(&current_era, |value| {
@@ -539,7 +566,6 @@ pub mod pallet {
                     x.staked = x.staked.saturating_sub(value_to_unstake)
                 }
             });
-            // TODO: do we need to keep track of total locked value AND the total staked value?
 
             // Update the era staking points
             ContractEraStake::<T>::insert(contract_id.clone(), current_era, staking_info);
@@ -562,26 +588,19 @@ pub mod pallet {
         pub fn withdraw_unbonded(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
             let staker = ensure_signed(origin)?;
 
-            let unbonding_info = UnbondingInfoStorage::<T>::get(&staker);
+            let mut ledger = Self::ledger(&staker);
             let current_era = Self::current_era();
 
-            let (valid_chunks, future_chunks) = unbonding_info.partition(current_era);
+            let (valid_chunks, future_chunks) = ledger.unbonding_info.partition(current_era);
             let withdraw_amount = valid_chunks.sum();
 
             ensure!(!withdraw_amount.is_zero(), Error::<T>::NothingToWithdraw);
 
-            // TODO: Should I merge ledger & unlocking chunks into 1 struct?
-
             // Get the staking ledger and update it
-            let ledger = Self::ledger(&staker);
-            Self::update_ledger(&staker, ledger.saturating_sub(withdraw_amount));
+            ledger.locked = ledger.locked.saturating_sub(withdraw_amount);
+            ledger.unbonding_info = future_chunks;
 
-            // Update unlocking chunks
-            if future_chunks.is_empty() {
-                UnbondingInfoStorage::<T>::remove(&staker);
-            } else {
-                UnbondingInfoStorage::<T>::insert(&staker, future_chunks);
-            }
+            Self::update_ledger(&staker, ledger);
 
             Self::deposit_event(Event::<T>::Withdrawn(staker, withdraw_amount));
 
@@ -742,12 +761,12 @@ pub mod pallet {
 
         /// Update the ledger for a staker. This will also update the stash lock.
         /// This lock will lock the entire funds except paying for further transactions.
-        fn update_ledger(staker: &T::AccountId, ledger: BalanceOf<T>) {
-            if ledger.is_zero() {
+        fn update_ledger(staker: &T::AccountId, ledger: AccountLedger<BalanceOf<T>>) {
+            if ledger.locked.is_zero() && ledger.unbonding_info.is_empty() {
                 Ledger::<T>::remove(&staker);
                 T::Currency::remove_lock(STAKING_ID, &staker);
             } else {
-                T::Currency::set_lock(STAKING_ID, &staker, ledger, WithdrawReasons::all());
+                T::Currency::set_lock(STAKING_ID, &staker, ledger.locked, WithdrawReasons::all());
                 Ledger::<T>::insert(staker, ledger);
             }
         }

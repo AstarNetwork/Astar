@@ -22,7 +22,6 @@ fn initialize<T: Config>() {
     RegisteredDapps::<T>::remove_all(None);
     EraRewardsAndStakes::<T>::remove_all(None);
     ContractEraStake::<T>::remove_all(None);
-    UnbondingInfoStorage::<T>::remove_all(None);
     CurrentEra::<T>::kill();
     BlockRewardAccumulator::<T>::kill();
     PreApprovalIsEnabled::<T>::kill();
