@@ -616,7 +616,7 @@ pub mod pallet {
         pub fn claim(
             origin: OriginFor<T>,
             contract_id: T::SmartContract,
-            era: EraIndex,
+            #[pallet::compact] era: EraIndex,
         ) -> DispatchResultWithPostInfo {
             let _ = ensure_signed(origin)?;
 

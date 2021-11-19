@@ -20,31 +20,45 @@ pub mod v2 {
 
     // The old struct used to sotre staking points. Contains unused `formed_staked_era` value.
     #[derive(Clone, PartialEq, Encode, Decode)]
-    pub struct OldEraStakingPoints<AccountId: Ord, Balance: HasCompact> {
+    struct OldEraStakingPoints<AccountId: Ord, Balance: HasCompact> {
         total: Balance,
         stakers: BTreeMap<AccountId, Balance>,
         former_staked_era: EraIndex,
         claimed_rewards: Balance,
     }
 
+    #[derive(PartialEq, Eq, Clone, Encode, Decode)]
+    struct OldEraRewardAndStake<Balance> {
+        rewards: Balance,
+        staked: Balance,
+    }
+
     #[cfg(feature = "try-runtime")]
     pub fn pre_migrate<T: Config, U: OnRuntimeUpgradeHelpersExt>() -> Result<(), &'static str> {
+        assert_eq!(Version::V1_0_0, StorageVersion::<T>::get());
+
         let ledger_count = Ledger::<T>::iter_keys().count() as u64;
         U::set_temp_storage::<u64>(ledger_count, "ledger_count");
 
         let staking_info_count = ContractEraStake::<T>::iter_keys().count() as u64;
         U::set_temp_storage(staking_info_count, "staking_info_count");
 
+        let rewards_and_stakes_count = EraRewardsAndStakes::<T>::iter_keys().count() as u64;
+        U::set_temp_storage(rewards_and_stakes_count, "rewards_and_stakes_count");
+
         log::info!(
-            ">>> PreMigrate: ledger count: {:?}, staking info count: {:?}",
+            ">>> PreMigrate: ledger count: {:?}, staking info count: {:?}, rewards&stakes count: {:?}",
             ledger_count,
-            staking_info_count
+            staking_info_count,
+            rewards_and_stakes_count,
         );
 
         Ok(().into())
     }
 
     pub fn migrate<T: Config>() -> Weight {
+        assert_eq!(Version::V1_0_0, StorageVersion::<T>::get());
+
         let ledger_size = Ledger::<T>::iter_keys().count() as u64;
         let staking_point_size = ContractEraStake::<T>::iter_keys().count() as u64;
 
@@ -65,6 +79,15 @@ pub mod v2 {
             },
         );
 
+        EraRewardsAndStakes::<T>::translate(
+            |_, old_rewards_and_stakes: OldEraRewardAndStake<BalanceOf<T>>| {
+                Some(EraRewardAndStake {
+                    rewards: old_rewards_and_stakes.rewards,
+                    staked: old_rewards_and_stakes.staked,
+                })
+            },
+        );
+
         StorageVersion::<T>::put(Version::V2_0_0);
 
         T::DbWeight::get().reads_writes(
@@ -75,14 +98,23 @@ pub mod v2 {
 
     #[cfg(feature = "try-runtime")]
     pub fn post_migrate<T: Config, U: OnRuntimeUpgradeHelpersExt>() -> Result<(), &'static str> {
+        assert_eq!(Version::V2_0_0, StorageVersion::<T>::get());
+
         let init_ledger_count = U::get_temp_storage::<u64>("ledger_count").unwrap();
         let init_staking_info_count = U::get_temp_storage::<u64>("staking_info_count").unwrap();
+        let init_reward_and_stakes_count =
+            U::get_temp_storage::<u64>("rewards_and_stakes_count").unwrap();
 
         let current_ledger_count = Ledger::<T>::iter_keys().count() as u64;
-        let current_staking_info_count = U::get_temp_storage::<u64>("staking_info_count").unwrap();
+        let current_staking_info_count = ContractEraStake::<T>::iter_keys().count() as u64;
+        let current_rewards_and_stakes_count = EraRewardsAndStakes::<T>::iter_keys().count() as u64;
 
         assert_eq!(init_ledger_count, current_ledger_count);
         assert_eq!(init_staking_info_count, current_staking_info_count);
+        assert_eq!(
+            init_reward_and_stakes_count,
+            current_rewards_and_stakes_count
+        );
 
         for acc_ledger in Ledger::<T>::iter_values() {
             assert!(acc_ledger.locked > Zero::zero());
@@ -90,9 +122,10 @@ pub mod v2 {
         }
 
         log::info!(
-            ">>> PostMigrate: ledger count: {:?}, staking info count: {:?}",
+            ">>> PostMigrate: ledger count: {:?}, staking info count: {:?}, rewards&stakes count: {:?}",
             current_ledger_count,
-            current_staking_info_count
+            current_staking_info_count,
+            current_rewards_and_stakes_count,
         );
 
         Ok(())
