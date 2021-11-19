@@ -59,10 +59,12 @@ impl Default for Forcing {
 
 /// A record for total rewards and total amount staked for an era
 #[derive(PartialEq, Eq, Clone, Default, Encode, Decode, RuntimeDebug, TypeInfo)]
-pub struct EraRewardAndStake<Balance> {
+pub struct EraRewardAndStake<Balance: HasCompact> {
     /// Total amount of rewards for an era
+    #[codec(compact)]
     rewards: Balance,
     /// Total staked amount for an era
+    #[codec(compact)]
     staked: Balance,
 }
 
@@ -72,10 +74,12 @@ pub struct EraRewardAndStake<Balance> {
 #[derive(Clone, PartialEq, Encode, Decode, Default, RuntimeDebug, TypeInfo)]
 pub struct EraStakingPoints<AccountId: Ord, Balance: HasCompact> {
     /// Total staked amount.
+    #[codec(compact)]
     total: Balance,
     /// The map of stakers and the amount they staked.
     stakers: BTreeMap<AccountId, Balance>,
     /// Accrued and claimed rewards on this contract both for stakers and the developer
+    #[codec(compact)]
     claimed_rewards: Balance,
 }
 
@@ -98,8 +102,10 @@ impl Default for Version {
 #[derive(Clone, Copy, PartialEq, Encode, Decode, Default, RuntimeDebug, TypeInfo)]
 pub struct UnlockingChunk<Balance> {
     /// Amount being unlocked
+    #[codec(compact)]
     amount: Balance,
     /// Era in which the amount will become unlocked and can be withdrawn.
+    #[codec(compact)]
     unlock_era: EraIndex,
 }
 
@@ -192,8 +198,9 @@ where
 
 /// Contains information about account's locked & unbonding balances.
 #[derive(Clone, PartialEq, Encode, Decode, Default, RuntimeDebug, TypeInfo)]
-pub struct AccountLedger<Balance> {
+pub struct AccountLedger<Balance: HasCompact> {
     /// Total balance locked.
+    #[codec(compact)]
     locked: Balance,
     /// Information about unbonding chunks.
     unbonding_info: UnbondingInfo<Balance>,
