@@ -5791,6 +5791,7 @@ version = "0.1.0"
 dependencies = [
  "derive_more",
  "evm",
+ "fp-evm",
  "frame-support 4.0.0-dev (git+https://github.com/PlasmNetwork/substrate?branch=polkadot-v0.9.11)",
  "frame-system 4.0.0-dev (git+https://github.com/PlasmNetwork/substrate?branch=polkadot-v0.9.11)",
  "pallet-balances 4.0.0-dev (git+https://github.com/PlasmNetwork/substrate?branch=polkadot-v0.9.11)",

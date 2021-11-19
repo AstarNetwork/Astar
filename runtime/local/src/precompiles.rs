@@ -34,12 +34,14 @@ impl<R> LocalNetworkPrecompiles<R> {
 /// The following distribution has been decided for the precompiles
 /// 0-1023: Ethereum Mainnet Precompiles
 /// 1024-2047 Precompiles that are not in Ethereum Mainnet
-impl<R: pallet_evm::Config> PrecompileSet for LocalNetworkPrecompiles<R>
+impl<R> PrecompileSet for LocalNetworkPrecompiles<R>
 where
     R: pallet_evm::Config + pallet_dapps_staking::Config,
-    DappsStakingWrapper<R>: Precompile,
-    R::Call: Dispatchable<PostInfo = PostDispatchInfo> + GetDispatchInfo + Decode,
     <R::Call as Dispatchable>::Origin: From<Option<R::AccountId>>,
+    R::Call: From<pallet_dapps_staking::Call<R>>
+        + Dispatchable<PostInfo = PostDispatchInfo>
+        + GetDispatchInfo
+        + Decode,
 {
     fn execute(
         address: H160,

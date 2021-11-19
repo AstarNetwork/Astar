@@ -270,22 +270,7 @@ pub mod pallet {
             origin: OriginFor<T>,
             contract_id: T::SmartContract,
         ) -> DispatchResultWithPostInfo {
-            println!("+++ pallet register entry {:?}", contract_id);
             let developer = ensure_signed(origin)?;
-            println!("+++ pallet register developer={:?}", developer);
-
-            if !RegisteredDevelopers::<T>::contains_key(&developer) {
-                println!("+++ pallet !RegisteredDevelopers::<T>::contains_key ...........OK");
-            };
-            if !RegisteredDapps::<T>::contains_key(&contract_id) {
-                println!("+++ pallet !RegisteredDapps::<T>::contains_key ...........OK");
-            };
-            if contract_id.is_valid() {
-                println!("+++ pallet contract_id.is_valid() ...........OK");
-            };
-            if !Self::pre_approval_is_enabled() {
-                println!("+++ pallet pre_approval disabled ...........OK");
-            };
 
             ensure!(
                 !RegisteredDevelopers::<T>::contains_key(&developer),
@@ -303,22 +288,11 @@ pub mod pallet {
                     Error::<T>::RequiredContractPreApproval,
                 );
             }
-            println!("+++ pallet register all checks passed");
 
-            let reserve_result = T::Currency::reserve(&developer, T::RegisterDeposit::get());
-            match reserve_result {
-                Ok(v) => println!("+++ pallet T::Currency::reserve ...........OK {:?}", v),
-                Err(e) => println!("T::Currency::reserve error {:?}", e),
-            }
-            println!("+++ pallet register deposit OK");
+            T::Currency::reserve(&developer, T::RegisterDeposit::get())?;
 
             RegisteredDapps::<T>::insert(contract_id.clone(), developer.clone());
-            println!("+++ pallet register RegisteredDapps OK");
             RegisteredDevelopers::<T>::insert(&developer, contract_id.clone());
-            println!("+++ pallet register RegisteredDevelopers OK");
-
-            let dev = RegisteredDapps::<T>::get(contract_id.clone()).unwrap_or_default();
-            println!("+++ pallet write check RegisteredDapps developer={:?}", dev);
 
             Self::deposit_event(Event::<T>::NewContract(developer, contract_id));
 
@@ -397,17 +371,12 @@ pub mod pallet {
             #[pallet::compact] value: BalanceOf<T>,
         ) -> DispatchResultWithPostInfo {
             let staker = ensure_signed(origin)?;
-            println!(
-                "+++ pallet bond staker={:?}, \n+++ sc {:?} \n+++ value={:?}",
-                staker, contract_id, value
-            );
 
             // Check that contract is ready for staking.
             ensure!(
                 Self::is_active(&contract_id),
                 Error::<T>::NotOperatedContract
             );
-            println!("+++ pallet bond NotOperatedContract check ..........OK");
 
             // Get the staking ledger or create an entry if it doesn't exist.
             let mut ledger = Self::ledger(&staker);
@@ -419,10 +388,6 @@ pub mod pallet {
             // Remove already locked funds from the free balance
             let available_balance = free_balance.saturating_sub(ledger);
             let value_to_stake = value.min(available_balance);
-            println!(
-                "+++ pallet bond available_balance={:?}, value_to_stake {:?}",
-                available_balance, value_to_stake
-            );
             ensure!(!value_to_stake.is_zero(), Error::<T>::StakingWithNoValue);
 
             // update the ledger value by adding the newly bonded funds
@@ -458,9 +423,7 @@ pub mod pallet {
                     x.staked = x.staked.saturating_add(value_to_stake)
                 }
             });
-            let rs = EraRewardsAndStakes::<T>::get(&current_era).unwrap_or_default();
 
-            println!("+++ pallet bond write check EraRewardsAndStakes={:?}", rs);
             // Update ledger and payee
             Self::update_ledger(&staker, ledger);
 
@@ -472,7 +435,6 @@ pub mod pallet {
                 contract_id,
                 value_to_stake,
             ));
-            println!("+++ pallet bond end ..........OK");
             Ok(Some(T::WeightInfo::bond_and_stake()).into())
         }
 

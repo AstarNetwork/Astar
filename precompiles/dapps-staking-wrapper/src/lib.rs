@@ -4,11 +4,8 @@
 
 use codec::{Decode, Encode};
 
-use evm::{executor::PrecompileOutput, Context, ExitError, ExitSucceed};
-use frame_support::{
-    dispatch::{Dispatchable, GetDispatchInfo, PostDispatchInfo},
-    traits::Get,
-};
+use fp_evm::{Context, ExitError, ExitSucceed, PrecompileOutput};
+use frame_support::dispatch::{Dispatchable, GetDispatchInfo, PostDispatchInfo};
 use pallet_evm::{AddressMapping, GasWeightMapping, Precompile};
 use sp_core::H160;
 use sp_runtime::traits::{SaturatedConversion, Zero};
@@ -23,18 +20,17 @@ mod mock;
 #[cfg(test)]
 mod tests;
 
-/// The balance type of this pallet.
 pub struct DappsStakingWrapper<R>(PhantomData<R>);
 
 impl<R> DappsStakingWrapper<R>
 where
-    R: pallet_evm::Config + pallet_dapps_staking::Config + frame_system::Config,
+    R: pallet_evm::Config + pallet_dapps_staking::Config,
     R::Call: From<pallet_dapps_staking::Call<R>>,
 {
     /// Fetch current era from CurrentEra storage map
     fn current_era() -> Result<PrecompileOutput, ExitError> {
         let current_era = pallet_dapps_staking::CurrentEra::<R>::get();
-        let gas_used = R::GasWeightMapping::weight_to_gas(R::DbWeight::get().read);
+        let gas_used = 1000; //R::GasWeightMapping::weight_to_gas(R::DbWeight::get().read);
         println!(
             "--- precompile DappsStaking response: current_era era={:?} gas_used={:?}",
             current_era, gas_used
@@ -60,7 +56,7 @@ where
         } else {
             (Zero::zero(), Zero::zero())
         };
-        let gas_used = R::GasWeightMapping::weight_to_gas(R::DbWeight::get().read);
+        let gas_used = 1000; //R::GasWeightMapping::weight_to_gas(R::DbWeight::get().read);
         println!(
             "--- precompile DappsStaking response: era={:?}, reward={:?} staked ={:?} gas_used={:?}",
             era, reward, staked, gas_used
@@ -90,7 +86,7 @@ where
         println!("--- precompile developer public key {:?}", developer);
 
         let smart_contract = pallet_dapps_staking::RegisteredDevelopers::<R>::get(&developer);
-        let gas_used = R::GasWeightMapping::weight_to_gas(R::DbWeight::get().read);
+        let gas_used = 1000; // <R as pallet_evm::Config>::GasWeightMapping::weight_to_gas(<R as frame_system::Config>::DbWeight::get().read);
 
         println!(
             "--- precompile developer {:?}, contract {:?}",
@@ -116,7 +112,7 @@ where
 
         let contract_id = Self::decode_smart_contract(contract_h160)?;
 
-        Ok(pallet_dapps_staking::Call::<R>::register{contract_id}.into())
+        Ok(pallet_dapps_staking::Call::<R>::register { contract_id }.into())
     }
 
     /// Lock up and stake balance of the origin account.
@@ -132,10 +128,7 @@ where
         let value = input.to_u256(2).low_u128().saturated_into();
         println!("--- precompile bond value {:?}", value);
 
-        Ok(
-            pallet_dapps_staking::Call::<R>::bond_and_stake{contract_id, value}
-                .into(),
-        )
+        Ok(pallet_dapps_staking::Call::<R>::bond_and_stake { contract_id, value }.into())
     }
     /// Helper method to decode type SmartContract enum
     fn decode_smart_contract(
@@ -163,7 +156,8 @@ where
     R: pallet_evm::Config + pallet_dapps_staking::Config,
     R::Call: From<pallet_dapps_staking::Call<R>>
         + Dispatchable<PostInfo = PostDispatchInfo>
-        + GetDispatchInfo,
+        + GetDispatchInfo
+        + Decode,
     <R::Call as Dispatchable>::Origin: From<Option<R::AccountId>>,
 {
     fn execute(

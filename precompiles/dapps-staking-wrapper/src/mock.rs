@@ -7,7 +7,6 @@ use frame_support::{
     PalletId,
 };
 use pallet_dapps_staking::weights;
-use pallet_evm::Call as EvmCall;
 use pallet_evm::{AddressMapping, EnsureAddressNever, EnsureAddressRoot, ExitError, PrecompileSet};
 use serde::{Deserialize, Serialize};
 use sp_core::{H160, H256, U256};
@@ -35,6 +34,7 @@ pub(crate) const MAX_NUMBER_OF_STAKERS: u32 = 4;
 /// Value shouldn't be less than 2 for testing purposes, otherwise we cannot test certain corner cases.
 pub(crate) const MINIMUM_STAKING_AMOUNT: Balance = 10;
 pub(crate) const DEVELOPER_REWARD_PERCENTAGE: u32 = 80;
+pub(crate) const MINIMUM_REMAINING_AMOUNT: Balance = 1;
 pub(crate) const HISTORY_DEPTH: u32 = 30;
 
 // Do note that this needs to at least be 3 for tests to be valid. It can be greater but not smaller.
@@ -240,7 +240,7 @@ parameter_types! {
     pub const HistoryDepth: u32 = HISTORY_DEPTH;
     pub const DeveloperRewardPercentage: Perbill = Perbill::from_percent(DEVELOPER_REWARD_PERCENTAGE);
     pub const DappsStakingPalletId: PalletId = PalletId(*b"mokdpstk");
-    pub const TreasuryPalletId: PalletId = PalletId(*b"moktrsry");
+    pub const MinimumRemainingAmount: Balance = MINIMUM_REMAINING_AMOUNT;
     pub const BonusEraDuration: u32 = 3;
 }
 
@@ -257,6 +257,7 @@ impl pallet_dapps_staking::Config for TestRuntime {
     type BonusEraDuration = BonusEraDuration;
     type MinimumStakingAmount = MinimumStakingAmount;
     type PalletId = DappsStakingPalletId;
+    type MinimumRemainingAmount = MinimumRemainingAmount;
 }
 
 pub struct ExternalityBuilder {
@@ -301,8 +302,8 @@ construct_runtime!(
         System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
         Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
         Evm: pallet_evm::{Pallet, Call, Storage, Event<T>},
-        Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
-        DappsStaking: pallet_dapps_staking::{Pallet, Call, Storage, Event<T>},
+        Timestamp: pallet_timestamp::{Pallet, Call, Storage},
+        DappsStaking: pallet_dapps_staking::{Pallet, Call, Storage},
     }
 );
 
@@ -384,9 +385,9 @@ pub fn exit_error<T: Into<alloc::borrow::Cow<'static, str>>>(text: T) -> ExitErr
     ExitError::Other(text.into())
 }
 
-/// returns tuple to be used with evm calls
-pub fn evm_call(source: AccountId, input: Vec<u8>) -> EvmCall<TestRuntime> {
-    EvmCall::call{
+/// returns call struct to be used with evm calls
+pub fn evm_call(source: AccountId, input: Vec<u8>) -> pallet_evm::Call<TestRuntime> {
+    pallet_evm::Call::call{
         source: source.to_h160(),
         target: precompile_address(),
         input,
