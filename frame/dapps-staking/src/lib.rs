@@ -17,6 +17,7 @@ pub use traits::*;
 
 #[cfg(any(feature = "runtime-benchmarks"))]
 pub mod benchmarking;
+mod migrations;
 #[cfg(test)]
 mod mock;
 #[cfg(test)]
@@ -74,10 +75,22 @@ pub struct EraStakingPoints<AccountId: Ord, Balance: HasCompact> {
     total: Balance,
     /// The map of stakers and the amount they staked.
     stakers: BTreeMap<AccountId, Balance>,
-    // TODO: Get rid of this
-    _former_staked_era: EraIndex,
     /// Accrued and claimed rewards on this contract both for stakers and the developer
     claimed_rewards: Balance,
+}
+
+/// Storage value representing the current Dapps staking pallet storage version.
+/// Used by `on_runtime_upgrade` to determine whether a storage migration is needed or not.
+#[derive(Encode, Decode, Clone, Copy, PartialEq, Eq, RuntimeDebug, TypeInfo)]
+pub enum Version {
+    V1_0_0,
+    V2_0_0,
+}
+
+impl Default for Version {
+    fn default() -> Self {
+        Version::V1_0_0
+    }
 }
 
 /// Represents an balance amount undergoing the unbonding process.
@@ -175,4 +188,13 @@ where
     fn vec(&self) -> Vec<UnlockingChunk<Balance>> {
         self.unlocking_chunks.clone()
     }
+}
+
+/// Contains information about account's locked & unbonding balances.
+#[derive(Clone, PartialEq, Encode, Decode, Default, RuntimeDebug, TypeInfo)]
+pub struct AccountLedger<Balance> {
+    /// Total balance locked.
+    locked: Balance,
+    /// Information about unbonding chunks.
+    unbonding_info: UnbondingInfo<Balance>,
 }

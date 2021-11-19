@@ -52,10 +52,7 @@ pub(crate) fn unbond_and_unstake_with_verification(
     let init_staked_value = init_era_staking_points.stakers[&staker];
 
     // Get current total locked amount
-    let init_locked_amount = Ledger::<TestRuntime>::get(&staker);
-
-    // Get the current unlocking chunks
-    let init_unbonding_info = UnbondingInfoStorage::<TestRuntime>::get(&staker);
+    let init_ledger = Ledger::<TestRuntime>::get(&staker);
 
     // Get the total staked value for this era
     let init_rewards_and_stakes = EraRewardsAndStakes::<TestRuntime>::get(&current_era).unwrap();
@@ -82,27 +79,40 @@ pub(crate) fn unbond_and_unstake_with_verification(
     )));
 
     // Fetch the latest unbonding info so we can compare it to initial unbonding info
-    let final_unbonding_info = UnbondingInfoStorage::<TestRuntime>::get(&staker);
+    let final_ledger = Ledger::<TestRuntime>::get(&staker);
     let expected_unlock_era = current_era + 1 + UNBONDING_PERIOD;
-    match init_unbonding_info
+    match init_ledger
+        .unbonding_info
         .vec()
         .binary_search_by(|x| x.unlock_era.cmp(&expected_unlock_era))
     {
-        Ok(_) => assert_eq!(init_unbonding_info.len(), final_unbonding_info.len()),
-        Err(_) => assert_eq!(init_unbonding_info.len() + 1, final_unbonding_info.len()),
+        Ok(_) => assert_eq!(
+            init_ledger.unbonding_info.len(),
+            final_ledger.unbonding_info.len()
+        ),
+        Err(_) => assert_eq!(
+            init_ledger.unbonding_info.len() + 1,
+            final_ledger.unbonding_info.len()
+        ),
     }
     assert_eq!(
-        init_unbonding_info.sum() + expected_unbond_amount,
-        final_unbonding_info.sum()
+        init_ledger.unbonding_info.sum() + expected_unbond_amount,
+        final_ledger.unbonding_info.sum()
     );
 
     // Push the unlocking chunk we expect to have at the end and compare two structs
-    let mut init_unbonding_info = init_unbonding_info;
-    init_unbonding_info.add(UnlockingChunk {
+    let mut init_ledger = init_ledger;
+    init_ledger.unbonding_info.add(UnlockingChunk {
         amount: expected_unbond_amount,
         unlock_era: current_era + 1 + UNBONDING_PERIOD,
     });
-    assert_eq!(init_unbonding_info, final_unbonding_info);
+    assert_eq!(init_ledger.unbonding_info, final_ledger.unbonding_info);
+
+    // Ensure that total locked value for staker hasn't been changed.
+    assert_eq!(init_ledger.locked, final_ledger.locked);
+    if final_ledger.unbonding_info.is_empty() && final_ledger.locked == 0 {
+        assert!(!Ledger::<TestRuntime>::contains_key(&staker));
+    }
 
     // Ensure that total staked amount has been decreased for contract and staking points are updated
     let final_era_staking_points = DappsStaking::staking_info(contract_id, current_era);
@@ -114,13 +124,6 @@ pub(crate) fn unbond_and_unstake_with_verification(
         assert_eq!(remaining_staked, final_era_staking_points.stakers[&staker]);
     } else {
         assert!(!final_era_staking_points.stakers.contains_key(&staker));
-    }
-
-    // Ensure that total locked value for staker hasn't been changed.
-    let final_locked_amount = Ledger::<TestRuntime>::get(&staker);
-    assert_eq!(init_locked_amount, final_locked_amount);
-    if final_locked_amount == 0 {
-        assert!(!Ledger::<TestRuntime>::contains_key(&staker));
     }
 
     // Ensure that total staked value has been decreased
@@ -139,8 +142,7 @@ pub(crate) fn withdraw_unbonded_with_verification(staker: AccountId) {
     let init_ledger = Ledger::<TestRuntime>::get(&staker);
 
     // Get the current unlocking chunks
-    let init_unbonding_info = UnbondingInfoStorage::<TestRuntime>::get(&staker);
-    let (valid_info, remaining_info) = init_unbonding_info.partition(current_era);
+    let (valid_info, remaining_info) = init_ledger.unbonding_info.partition(current_era);
     let expected_unbond_amount = valid_info.sum();
 
     // Ensure op is successful and event is emitted
@@ -151,25 +153,26 @@ pub(crate) fn withdraw_unbonded_with_verification(staker: AccountId) {
     )));
 
     // Fetch the latest unbonding info so we can compare it to expected remainder
-    let final_unbonding_info = UnbondingInfoStorage::<TestRuntime>::get(&staker);
-    assert_eq!(remaining_info, final_unbonding_info);
-    if final_unbonding_info.is_empty() {
-        assert!(!UnbondingInfoStorage::<TestRuntime>::contains_key(&staker));
+    let final_ledger = Ledger::<TestRuntime>::get(&staker);
+    assert_eq!(remaining_info, final_ledger.unbonding_info);
+    if final_ledger.unbonding_info.is_empty() && final_ledger.locked == 0 {
+        assert!(!Ledger::<TestRuntime>::contains_key(&staker));
     }
 
     // Compare the ledger and total staked value
     let final_rewards_and_stakes = EraRewardsAndStakes::<TestRuntime>::get(current_era).unwrap();
     assert_eq!(final_rewards_and_stakes, init_rewards_and_stakes);
-
-    let final_ledger = Ledger::<TestRuntime>::get(&staker);
-    assert_eq!(final_ledger, init_ledger - expected_unbond_amount);
+    assert_eq!(
+        final_ledger.locked,
+        init_ledger.locked - expected_unbond_amount
+    );
 }
 
 /// Used to verify ledger content.
 pub(crate) fn verify_ledger(staker_id: AccountId, staked_value: Balance) {
     // Verify that ledger storage values are as expected.
     let ledger = Ledger::<TestRuntime>::get(staker_id);
-    assert_eq!(staked_value, ledger);
+    assert_eq!(staked_value, ledger.locked);
 }
 
 /// Used to verify era staking points content. Note that this requires era staking points for the specified era to exist.
