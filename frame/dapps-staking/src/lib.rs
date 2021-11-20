@@ -60,9 +60,9 @@ impl Default for Forcing {
 #[derive(PartialEq, Eq, Clone, Default, Encode, Decode, RuntimeDebug, TypeInfo)]
 pub struct EraRewardAndStake<Balance> {
     /// Total amount of rewards for an era
-    rewards: Balance,
+    pub rewards: Balance,
     /// Total staked amount for an era
-    staked: Balance,
+    pub staked: Balance,
 }
 
 /// Used to split total EraPayout among contracts.

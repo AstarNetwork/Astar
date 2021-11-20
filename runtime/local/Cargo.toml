@@ -84,6 +84,7 @@ std = [
     "pallet-contracts-rpc-runtime-api/std",
     "pallet-custom-signatures/std",
     "pallet-dapps-staking/std",
+    "pallet-precompile-dapps-staking/std",
     "pallet-ethereum/std",
     "pallet-evm/std",
     "pallet-evm-precompile-simple/std",

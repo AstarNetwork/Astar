@@ -262,7 +262,7 @@ dependencies = [
  "cumulus-primitives-core",
  "cumulus-primitives-timestamp",
  "cumulus-primitives-utility",
- "evm 0.30.1 (git+https://github.com/PlasmNetwork/evm?branch=polkadot-v0.9.11)",
+ "evm",
  "fp-rpc",
  "frame-benchmarking 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.11)",
  "frame-executive",
@@ -2027,24 +2027,6 @@ dependencies = [
 [[package]]
 name = "ethereum"
 version = "0.9.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4a67be3eaf296ef668733f54c637e84d0ca34eaf194f0077455135981ad464c3"
-dependencies = [
- "bytes 1.1.0",
- "ethereum-types",
- "hash-db",
- "hash256-std-hasher",
- "parity-scale-codec",
- "rlp",
- "rlp-derive",
- "serde",
- "sha3 0.9.1",
- "triehash",
-]
-
-[[package]]
-name = "ethereum"
-version = "0.9.0"
 source = "git+https://github.com/PlasmNetwork/ethereum?branch=polkadot-v0.9.11#2b98173bd88c05bfeefad421d260101b9008497b"
 dependencies = [
  "bytes 1.1.0",
@@ -2085,32 +2067,13 @@ checksum = "f7531096570974c3a9dcf9e4b8e1cede1ec26cf5046219fb3b9d897503b9be59"
 [[package]]
 name = "evm"
 version = "0.30.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3144301c57a81101003055c7cab61b58e68060f3bd1c54aa419f663e4f0e6347"
-dependencies = [
- "environmental",
- "ethereum 0.9.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "evm-core 0.30.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "evm-gasometer 0.30.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "evm-runtime 0.30.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "log",
- "parity-scale-codec",
- "primitive-types",
- "rlp",
- "serde",
- "sha3 0.8.2",
-]
-
-[[package]]
-name = "evm"
-version = "0.30.1"
 source = "git+https://github.com/PlasmNetwork/evm?branch=polkadot-v0.9.11#0f170ec4745e6d52f225c5f00b2426f883db0b01"
 dependencies = [
  "environmental",
- "ethereum 0.9.0 (git+https://github.com/PlasmNetwork/ethereum?branch=polkadot-v0.9.11)",
- "evm-core 0.30.0 (git+https://github.com/PlasmNetwork/evm?branch=polkadot-v0.9.11)",
- "evm-gasometer 0.30.0 (git+https://github.com/PlasmNetwork/evm?branch=polkadot-v0.9.11)",
- "evm-runtime 0.30.0 (git+https://github.com/PlasmNetwork/evm?branch=polkadot-v0.9.11)",
+ "ethereum",
+ "evm-core",
+ "evm-gasometer",
+ "evm-runtime",
  "log",
  "parity-scale-codec",
  "primitive-types",
@@ -2118,18 +2081,6 @@ dependencies = [
  "scale-info",
  "serde",
  "sha3 0.8.2",
-]
-
-[[package]]
-name = "evm-core"
-version = "0.30.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a7bfa2dae9a2c6c0172d83c37eb406bfabf6a9d1af17b7ab4958e89853ddae97"
-dependencies = [
- "funty",
- "parity-scale-codec",
- "primitive-types",
- "serde",
 ]
 
 [[package]]
@@ -2147,36 +2098,12 @@ dependencies = [
 [[package]]
 name = "evm-gasometer"
 version = "0.30.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "14d5b12117cb9a5a9b9f031296ea86416da2cd9d8c9a9e3a2fa10275ae55f3ea"
-dependencies = [
- "environmental",
- "evm-core 0.30.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "evm-runtime 0.30.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "primitive-types",
-]
-
-[[package]]
-name = "evm-gasometer"
-version = "0.30.0"
 source = "git+https://github.com/PlasmNetwork/evm?branch=polkadot-v0.9.11#0f170ec4745e6d52f225c5f00b2426f883db0b01"
 dependencies = [
  "environmental",
- "evm-core 0.30.0 (git+https://github.com/PlasmNetwork/evm?branch=polkadot-v0.9.11)",
- "evm-runtime 0.30.0 (git+https://github.com/PlasmNetwork/evm?branch=polkadot-v0.9.11)",
+ "evm-core",
+ "evm-runtime",
  "primitive-types",
-]
-
-[[package]]
-name = "evm-runtime"
-version = "0.30.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3921ac8964cf13d12693392fef6686ef94470328ccd8eea384c6ff9ac0125b01"
-dependencies = [
- "environmental",
- "evm-core 0.30.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "primitive-types",
- "sha3 0.8.2",
 ]
 
 [[package]]
@@ -2185,7 +2112,7 @@ version = "0.30.0"
 source = "git+https://github.com/PlasmNetwork/evm?branch=polkadot-v0.9.11#0f170ec4745e6d52f225c5f00b2426f883db0b01"
 dependencies = [
  "environmental",
- "evm-core 0.30.0 (git+https://github.com/PlasmNetwork/evm?branch=polkadot-v0.9.11)",
+ "evm-core",
  "primitive-types",
  "sha3 0.8.2",
 ]
@@ -2285,9 +2212,9 @@ name = "fc-rpc"
 version = "2.0.0-dev"
 source = "git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.11#1d4ab0e09a6bf9e6bad095c8dff4d4c7a01a990e"
 dependencies = [
- "ethereum 0.9.0 (git+https://github.com/PlasmNetwork/ethereum?branch=polkadot-v0.9.11)",
+ "ethereum",
  "ethereum-types",
- "evm 0.30.1 (git+https://github.com/PlasmNetwork/evm?branch=polkadot-v0.9.11)",
+ "evm",
  "fc-consensus",
  "fc-db",
  "fc-rpc-core",
@@ -2435,7 +2362,7 @@ name = "fp-consensus"
 version = "2.0.0-dev"
 source = "git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.11#1d4ab0e09a6bf9e6bad095c8dff4d4c7a01a990e"
 dependencies = [
- "ethereum 0.9.0 (git+https://github.com/PlasmNetwork/ethereum?branch=polkadot-v0.9.11)",
+ "ethereum",
  "parity-scale-codec",
  "rlp",
  "sha3 0.8.2",
@@ -2449,7 +2376,7 @@ name = "fp-evm"
 version = "3.0.0-dev"
 source = "git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.11#1d4ab0e09a6bf9e6bad095c8dff4d4c7a01a990e"
 dependencies = [
- "evm 0.30.1 (git+https://github.com/PlasmNetwork/evm?branch=polkadot-v0.9.11)",
+ "evm",
  "impl-trait-for-tuples 0.1.3",
  "parity-scale-codec",
  "serde",
@@ -2462,7 +2389,7 @@ name = "fp-rpc"
 version = "3.0.0-dev"
 source = "git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.11#1d4ab0e09a6bf9e6bad095c8dff4d4c7a01a990e"
 dependencies = [
- "ethereum 0.9.0 (git+https://github.com/PlasmNetwork/ethereum?branch=polkadot-v0.9.11)",
+ "ethereum",
  "ethereum-types",
  "fp-evm",
  "parity-scale-codec",
@@ -2479,7 +2406,7 @@ name = "fp-self-contained"
 version = "1.0.0-dev"
 source = "git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.11#1d4ab0e09a6bf9e6bad095c8dff4d4c7a01a990e"
 dependencies = [
- "ethereum 0.9.0 (git+https://github.com/PlasmNetwork/ethereum?branch=polkadot-v0.9.11)",
+ "ethereum",
  "frame-support 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.11)",
  "parity-scale-codec",
  "parity-util-mem",
@@ -4465,7 +4392,7 @@ dependencies = [
 name = "local-runtime"
 version = "3.0.3"
 dependencies = [
- "evm 0.30.1 (git+https://github.com/PlasmNetwork/evm?branch=polkadot-v0.9.11)",
+ "evm",
  "fp-rpc",
  "frame-benchmarking 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.11)",
  "frame-executive",
@@ -5562,9 +5489,9 @@ name = "pallet-ethereum"
 version = "4.0.0-dev"
 source = "git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.11#1d4ab0e09a6bf9e6bad095c8dff4d4c7a01a990e"
 dependencies = [
- "ethereum 0.9.0 (git+https://github.com/PlasmNetwork/ethereum?branch=polkadot-v0.9.11)",
+ "ethereum",
  "ethereum-types",
- "evm 0.30.1 (git+https://github.com/PlasmNetwork/evm?branch=polkadot-v0.9.11)",
+ "evm",
  "fp-consensus",
  "fp-evm",
  "fp-rpc",
@@ -5591,9 +5518,9 @@ name = "pallet-evm"
 version = "6.0.0-dev"
 source = "git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.11#1d4ab0e09a6bf9e6bad095c8dff4d4c7a01a990e"
 dependencies = [
- "evm 0.30.1 (git+https://github.com/PlasmNetwork/evm?branch=polkadot-v0.9.11)",
- "evm-gasometer 0.30.0 (git+https://github.com/PlasmNetwork/evm?branch=polkadot-v0.9.11)",
- "evm-runtime 0.30.0 (git+https://github.com/PlasmNetwork/evm?branch=polkadot-v0.9.11)",
+ "evm",
+ "evm-gasometer",
+ "evm-runtime",
  "fp-evm",
  "frame-benchmarking 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.11)",
  "frame-support 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.11)",
@@ -5863,7 +5790,7 @@ name = "pallet-precompile-dapps-staking"
 version = "0.1.0"
 dependencies = [
  "derive_more",
- "evm 0.30.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "evm",
  "frame-support 4.0.0-dev (git+https://github.com/PlasmNetwork/substrate?branch=polkadot-v0.9.11)",
  "frame-system 4.0.0-dev (git+https://github.com/PlasmNetwork/substrate?branch=polkadot-v0.9.11)",
  "pallet-balances 4.0.0-dev (git+https://github.com/PlasmNetwork/substrate?branch=polkadot-v0.9.11)",
@@ -5884,7 +5811,7 @@ dependencies = [
 name = "pallet-precompile-staking"
 version = "0.2.0"
 dependencies = [
- "evm 0.30.1 (git+https://github.com/PlasmNetwork/evm?branch=polkadot-v0.9.11)",
+ "evm",
  "frame-support 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.11)",
  "frame-system 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.11)",
  "pallet-collator-selection",
@@ -9526,7 +9453,7 @@ dependencies = [
  "cumulus-primitives-core",
  "cumulus-primitives-timestamp",
  "cumulus-primitives-utility",
- "evm 0.30.1 (git+https://github.com/PlasmNetwork/evm?branch=polkadot-v0.9.11)",
+ "evm",
  "fp-rpc",
  "frame-benchmarking 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.11)",
  "frame-executive",
@@ -9593,7 +9520,7 @@ dependencies = [
  "cumulus-primitives-core",
  "cumulus-primitives-timestamp",
  "cumulus-primitives-utility",
- "evm 0.30.1 (git+https://github.com/PlasmNetwork/evm?branch=polkadot-v0.9.11)",
+ "evm",
  "fp-rpc",
  "frame-benchmarking 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.11)",
  "frame-executive",
