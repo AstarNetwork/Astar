@@ -1,0 +1,44 @@
+[package]
+name = "pallet-precompile-dapps-staking"
+version = "0.1.0"
+authors = ["Stake Technologies <devops@stake.co.jp>"]
+edition = "2018"
+license = "Apache-2.0"
+homepage = "https://astar.network"
+repository = "https://github.com/PlasmNetwork/Astar"
+description = "dApps Staking EVM precompiles"
+
+[dependencies]
+codec = { package = "parity-scale-codec", version = "2.0.0", default-features = false }
+evm = { version = "0.30.0", default-features = false }
+sp-std = { git = "https://github.com/PlasmNetwork/substrate", branch = "polkadot-v0.9.11", default-features = false }
+sp-core = { git = "https://github.com/PlasmNetwork/substrate", branch = "polkadot-v0.9.11", default-features = false }
+frame-support = { git = "https://github.com/PlasmNetwork/substrate", branch = "polkadot-v0.9.11", default-features = false }
+frame-system = { git = "https://github.com/PlasmNetwork/substrate", branch = "polkadot-v0.9.11", default-features = false }
+pallet-dapps-staking = { path = "../../frame/dapps-staking", default-features = false }
+pallet-evm = { git = "https://github.com/PlasmNetwork/frontier", branch = "polkadot-v0.9.11", default-features = false }
+sp-runtime = { git = "https://github.com/PlasmNetwork/substrate", branch = "polkadot-v0.9.11",  default-features = false }
+
+[dev-dependencies]
+derive_more = "0.99"
+pallet-balances = { git = "https://github.com/PlasmNetwork/substrate", branch = "polkadot-v0.9.11" }
+pallet-timestamp = { git = "https://github.com/PlasmNetwork/substrate", branch = "polkadot-v0.9.11" }
+serde = "1.0.100"
+sha3 = "0.9"
+sp-io = { git = "https://github.com/PlasmNetwork/substrate", branch = "polkadot-v0.9.11",  default-features = false }
+sp-runtime = { git = "https://github.com/PlasmNetwork/substrate", branch = "polkadot-v0.9.11" }
+scale-info = { version = "1.0", default-features = false, features = ["derive"] }
+
+[features]
+default = ["std"]
+std = [
+	"codec/std",
+    "evm/std",
+    "sp-std/std",
+    "sp-core/std",
+    "sp-runtime/std",
+	"frame-support/std",
+	"frame-system/std",
+    "pallet-dapps-staking/std",
+    "pallet-evm/std",
+]

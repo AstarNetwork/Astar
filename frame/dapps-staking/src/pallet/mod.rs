@@ -133,7 +133,7 @@ pub mod pallet {
     /// Registered developer accounts points to coresponding contract
     #[pallet::storage]
     #[pallet::getter(fn registered_contract)]
-    pub(crate) type RegisteredDevelopers<T: Config> =
+    pub type RegisteredDevelopers<T: Config> =
         StorageMap<_, Blake2_128Concat, T::AccountId, T::SmartContract>;
 
     /// Registered dapp points to the developer who registered it
@@ -145,7 +145,7 @@ pub mod pallet {
     /// Total block rewards for the pallet per era and total staked funds
     #[pallet::storage]
     #[pallet::getter(fn era_reward_and_stake)]
-    pub(crate) type EraRewardsAndStakes<T: Config> =
+    pub type EraRewardsAndStakes<T: Config> =
         StorageMap<_, Twox64Concat, EraIndex, EraRewardAndStake<BalanceOf<T>>>;
 
     /// Stores amount staked and stakers for a contract per era
