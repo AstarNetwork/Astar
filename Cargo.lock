@@ -2013,24 +2013,6 @@ dependencies = [
 [[package]]
 name = "ethereum"
 version = "0.9.0"
-source = "git+https://github.com/PlasmNetwork/ethereum?branch=polkadot-v0.9.11#2b98173bd88c05bfeefad421d260101b9008497b"
-dependencies = [
- "bytes 1.1.0",
- "ethereum-types",
- "hash-db",
- "hash256-std-hasher",
- "parity-scale-codec",
- "rlp",
- "rlp-derive",
- "scale-info",
- "serde",
- "sha3 0.9.1",
- "triehash",
-]
-
-[[package]]
-name = "ethereum"
-version = "0.9.0"
 source = "git+https://github.com/PlasmNetwork/ethereum?branch=polkadot-v0.9.12#2b98173bd88c05bfeefad421d260101b9008497b"
 dependencies = [
  "bytes 1.1.0",
@@ -2071,10 +2053,10 @@ checksum = "f7531096570974c3a9dcf9e4b8e1cede1ec26cf5046219fb3b9d897503b9be59"
 [[package]]
 name = "evm"
 version = "0.30.1"
-source = "git+https://github.com/PlasmNetwork/evm?branch=polkadot-v0.9.12#0f170ec4745e6d52f225c5f00b2426f883db0b01"
+source = "git+https://github.com/PlasmNetwork/evm?branch=polkadot-v0.9.12#d87d59d38eeff2c3b2bb746e7d6e82b38edc0070"
 dependencies = [
  "environmental",
- "ethereum 0.9.0 (git+https://github.com/PlasmNetwork/ethereum?branch=polkadot-v0.9.11)",
+ "ethereum",
  "evm-core",
  "evm-gasometer",
  "evm-runtime",
@@ -2090,7 +2072,7 @@ dependencies = [
 [[package]]
 name = "evm-core"
 version = "0.30.0"
-source = "git+https://github.com/PlasmNetwork/evm?branch=polkadot-v0.9.12#0f170ec4745e6d52f225c5f00b2426f883db0b01"
+source = "git+https://github.com/PlasmNetwork/evm?branch=polkadot-v0.9.12#d87d59d38eeff2c3b2bb746e7d6e82b38edc0070"
 dependencies = [
  "funty",
  "parity-scale-codec",
@@ -2102,7 +2084,7 @@ dependencies = [
 [[package]]
 name = "evm-gasometer"
 version = "0.30.0"
-source = "git+https://github.com/PlasmNetwork/evm?branch=polkadot-v0.9.12#0f170ec4745e6d52f225c5f00b2426f883db0b01"
+source = "git+https://github.com/PlasmNetwork/evm?branch=polkadot-v0.9.12#d87d59d38eeff2c3b2bb746e7d6e82b38edc0070"
 dependencies = [
  "environmental",
  "evm-core",
@@ -2113,7 +2095,7 @@ dependencies = [
 [[package]]
 name = "evm-runtime"
 version = "0.30.0"
-source = "git+https://github.com/PlasmNetwork/evm?branch=polkadot-v0.9.12#0f170ec4745e6d52f225c5f00b2426f883db0b01"
+source = "git+https://github.com/PlasmNetwork/evm?branch=polkadot-v0.9.12#d87d59d38eeff2c3b2bb746e7d6e82b38edc0070"
 dependencies = [
  "environmental",
  "evm-core",
@@ -2216,7 +2198,7 @@ name = "fc-rpc"
 version = "2.0.0-dev"
 source = "git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.12#ebfab976ec1c5de40968f13942e1368c95d045b1"
 dependencies = [
- "ethereum 0.9.0 (git+https://github.com/PlasmNetwork/ethereum?branch=polkadot-v0.9.12)",
+ "ethereum",
  "ethereum-types",
  "evm",
  "fc-consensus",
@@ -2366,7 +2348,7 @@ name = "fp-consensus"
 version = "2.0.0-dev"
 source = "git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.12#ebfab976ec1c5de40968f13942e1368c95d045b1"
 dependencies = [
- "ethereum 0.9.0 (git+https://github.com/PlasmNetwork/ethereum?branch=polkadot-v0.9.12)",
+ "ethereum",
  "parity-scale-codec",
  "rlp",
  "sha3 0.8.2",
@@ -2393,7 +2375,7 @@ name = "fp-rpc"
 version = "3.0.0-dev"
 source = "git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.12#ebfab976ec1c5de40968f13942e1368c95d045b1"
 dependencies = [
- "ethereum 0.9.0 (git+https://github.com/PlasmNetwork/ethereum?branch=polkadot-v0.9.12)",
+ "ethereum",
  "ethereum-types",
  "fp-evm",
  "parity-scale-codec",
@@ -2410,7 +2392,7 @@ name = "fp-self-contained"
 version = "1.0.0-dev"
 source = "git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.12#ebfab976ec1c5de40968f13942e1368c95d045b1"
 dependencies = [
- "ethereum 0.9.0 (git+https://github.com/PlasmNetwork/ethereum?branch=polkadot-v0.9.12)",
+ "ethereum",
  "frame-support",
  "parity-scale-codec",
  "parity-util-mem",
@@ -3653,9 +3635,9 @@ checksum = "830d08ce1d1d941e6b30645f1a0eb5643013d835ce3779a5fc208261dbe10f55"
 
 [[package]]
 name = "libc"
-version = "0.2.107"
+version = "0.2.108"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fbe5e23404da5b4f555ef85ebed98fb4083e55a00c317800bc2a50ede9f3d219"
+checksum = "8521a1b57e76b1ec69af7599e75e38e7b7fad6610f037db8c79b127201b5d119"
 
 [[package]]
 name = "libloading"
@@ -5389,7 +5371,7 @@ name = "pallet-ethereum"
 version = "4.0.0-dev"
 source = "git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.12#ebfab976ec1c5de40968f13942e1368c95d045b1"
 dependencies = [
- "ethereum 0.9.0 (git+https://github.com/PlasmNetwork/ethereum?branch=polkadot-v0.9.12)",
+ "ethereum",
  "ethereum-types",
  "evm",
  "fp-consensus",
@@ -10255,9 +10237,9 @@ checksum = "6e63cff320ae2c57904679ba7cb63280a3dc4613885beafb148ee7bf9aa9042d"
 
 [[package]]
 name = "ss58-registry"
-version = "1.6.0"
+version = "1.8.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dd3280d191d0d8f29c426b85cf6a3778bea71aef8ccd94034c6effac809b8b9b"
+checksum = "78abb01d308934b82e34e9cf1f45846d31539246501745b129539176f4f3368d"
 dependencies = [
  "Inflector",
  "proc-macro2",

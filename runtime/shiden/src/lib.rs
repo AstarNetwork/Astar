@@ -373,7 +373,6 @@ impl pallet_authorship::Config for Runtime {
 }
 
 parameter_types! {
-    pub const DisabledValidatorsThreshold: Perbill = Perbill::from_percent(33);
     pub const SessionPeriod: BlockNumber = 1 * HOURS;
     pub const SessionOffset: BlockNumber = 0;
 }
@@ -387,7 +386,6 @@ impl pallet_session::Config for Runtime {
     type SessionManager = CollatorSelection;
     type SessionHandler = <SessionKeys as OpaqueKeys>::KeyTypeIdProviders;
     type Keys = SessionKeys;
-    type DisabledValidatorsThreshold = DisabledValidatorsThreshold;
     type WeightInfo = pallet_session::weights::SubstrateWeight<Runtime>;
 }
 
