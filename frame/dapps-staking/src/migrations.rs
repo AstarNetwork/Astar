@@ -61,6 +61,7 @@ pub mod v2 {
 
         let ledger_size = Ledger::<T>::iter_keys().count() as u64;
         let staking_point_size = ContractEraStake::<T>::iter_keys().count() as u64;
+        let rewards_and_stakes_size = EraRewardsAndStakes::<T>::iter_keys().count() as u64;
 
         Ledger::<T>::translate(|_, value: OldLedger<T>| {
             Some(AccountLedger {
@@ -91,8 +92,8 @@ pub mod v2 {
         StorageVersion::<T>::put(Version::V2_0_0);
 
         T::DbWeight::get().reads_writes(
-            ledger_size + staking_point_size,
-            ledger_size + staking_point_size + 1,
+            ledger_size + staking_point_size + rewards_and_stakes_size,
+            ledger_size + staking_point_size + rewards_and_stakes_size + 1,
         )
     }
 
