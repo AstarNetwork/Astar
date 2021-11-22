@@ -127,7 +127,7 @@ pub mod pallet {
     /// Bonded amount for the staker
     #[pallet::storage]
     #[pallet::getter(fn ledger)]
-    pub(crate) type Ledger<T: Config> =
+    pub type Ledger<T: Config> =
         StorageMap<_, Blake2_128Concat, T::AccountId, AccountLedger<BalanceOf<T>>, ValueQuery>;
 
     /// The current era index.
@@ -153,25 +153,25 @@ pub mod pallet {
     /// Registered developer accounts points to coresponding contract
     #[pallet::storage]
     #[pallet::getter(fn registered_contract)]
-    pub(crate) type RegisteredDevelopers<T: Config> =
+    pub type RegisteredDevelopers<T: Config> =
         StorageMap<_, Blake2_128Concat, T::AccountId, T::SmartContract>;
 
     /// Registered dapp points to the developer who registered it
     #[pallet::storage]
     #[pallet::getter(fn registered_developer)]
-    pub(crate) type RegisteredDapps<T: Config> =
+    pub type RegisteredDapps<T: Config> =
         StorageMap<_, Blake2_128Concat, T::SmartContract, T::AccountId>;
 
     /// Total block rewards for the pallet per era and total staked funds
     #[pallet::storage]
     #[pallet::getter(fn era_reward_and_stake)]
-    pub(crate) type EraRewardsAndStakes<T: Config> =
+    pub type EraRewardsAndStakes<T: Config> =
         StorageMap<_, Twox64Concat, EraIndex, EraRewardAndStake<BalanceOf<T>>>;
 
     /// Stores amount staked and stakers for a contract per era
     #[pallet::storage]
     #[pallet::getter(fn contract_era_stake)]
-    pub(crate) type ContractEraStake<T: Config> = StorageDoubleMap<
+    pub type ContractEraStake<T: Config> = StorageDoubleMap<
         _,
         Blake2_128Concat,
         T::SmartContract,
@@ -824,7 +824,7 @@ pub mod pallet {
 
         /// This helper returns `EraStakingPoints` for given era if possible or latest stored data
         /// or finally default value if storage have no data for it.
-        pub(crate) fn staking_info(
+        pub fn staking_info(
             contract_id: &T::SmartContract,
             era: EraIndex,
         ) -> EraStakingPoints<T::AccountId, BalanceOf<T>> {

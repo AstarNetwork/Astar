@@ -9,6 +9,7 @@ members = [
     "frame/custom-signatures",
     "frame/dapps-staking",
     "precompiles/staking",
+    "precompiles/dapps-staking",
 ]
 
 exclude = [

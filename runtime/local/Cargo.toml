@@ -53,6 +53,7 @@ pallet-transaction-payment-rpc-runtime-api = { git = "https://github.com/parityt
 pallet-block-reward = { path = "../../frame/block-reward", default-features = false }
 pallet-custom-signatures = { path = "../../frame/custom-signatures", default-features = false }
 pallet-dapps-staking = { path = "../../frame/dapps-staking", default-features = false }
+pallet-precompile-dapps-staking = { path = "../../precompiles/dapps-staking", default-features = false }
 
 # benchmarking
 hex-literal = { version = "0.3.1", optional = true }
@@ -93,6 +94,7 @@ std = [
     "pallet-evm-precompile-modexp/std",
     "pallet-evm-precompile-sha3fips/std",
     "pallet-grandpa/std",
+    "pallet-precompile-dapps-staking/std",
     "pallet-randomness-collective-flip/std",
     "pallet-sudo/std",
     "pallet-timestamp/std",

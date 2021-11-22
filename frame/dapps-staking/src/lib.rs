@@ -62,10 +62,10 @@ impl Default for Forcing {
 pub struct EraRewardAndStake<Balance: HasCompact> {
     /// Total amount of rewards for an era
     #[codec(compact)]
-    rewards: Balance,
+    pub rewards: Balance,
     /// Total staked amount for an era
     #[codec(compact)]
-    staked: Balance,
+    pub staked: Balance,
 }
 
 /// Used to split total EraPayout among contracts.
@@ -75,12 +75,12 @@ pub struct EraRewardAndStake<Balance: HasCompact> {
 pub struct EraStakingPoints<AccountId: Ord, Balance: HasCompact> {
     /// Total staked amount.
     #[codec(compact)]
-    total: Balance,
+    pub total: Balance,
     /// The map of stakers and the amount they staked.
-    stakers: BTreeMap<AccountId, Balance>,
+    pub stakers: BTreeMap<AccountId, Balance>,
     /// Accrued and claimed rewards on this contract both for stakers and the developer
     #[codec(compact)]
-    claimed_rewards: Balance,
+    pub claimed_rewards: Balance,
 }
 
 /// Storage value representing the current Dapps staking pallet storage version.
@@ -201,7 +201,7 @@ where
 pub struct AccountLedger<Balance: HasCompact> {
     /// Total balance locked.
     #[codec(compact)]
-    locked: Balance,
+    pub locked: Balance,
     /// Information about unbonding chunks.
     unbonding_info: UnbondingInfo<Balance>,
 }
