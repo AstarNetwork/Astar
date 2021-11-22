@@ -142,6 +142,12 @@ pub mod pallet {
     pub(crate) type RegisteredDapps<T: Config> =
         StorageMap<_, Blake2_128Concat, T::SmartContract, T::AccountId>;
 
+    /// Whitelisted status for Registered Dapps
+    #[pallet::storage]
+    #[pallet::getter(fn registered_developer)]
+    pub(crate) type WhitelistedDapps<T: Config> =
+        StorageMap<_, Blake2_128Concat, T::SmartContract, bool>;
+
     /// Total block rewards for the pallet per era and total staked funds
     #[pallet::storage]
     #[pallet::getter(fn era_reward_and_stake)]
@@ -185,6 +191,8 @@ pub mod pallet {
         UnbondUnstakeAndWithdraw(T::AccountId, T::SmartContract, BalanceOf<T>),
         /// New contract added for staking.
         NewContract(T::AccountId, T::SmartContract),
+        /// New whitelisted contract for reward.
+        NewWhitlistedDapp(T::SmartContract),
         /// Contract removed from dapps staking.
         ContractRemoved(T::AccountId, T::SmartContract),
         /// New dapps staking era. Distribute era rewards to contracts.
@@ -227,6 +235,8 @@ pub mod pallet {
         RequiredContractPreApproval,
         /// Developer's account is already part of pre-approved list
         AlreadyPreApprovedDeveloper,
+        /// Dapp is not whitelisted yet
+        DappNotWhitelisted
     }
 
     #[pallet::hooks]
@@ -354,6 +364,42 @@ pub mod pallet {
             let number_of_stakers = staking_info.stakers.len();
             Ok(Some(T::WeightInfo::unregister(number_of_stakers as u32)).into())
         }
+
+        /// Whitelist dapps to get reward
+        ///
+        /// This must be called by sudo key.
+        ///
+        /// TODO: Integrate governance/council model
+        #[pallet::weight(T::WeightInfo::register())]
+        pub fn whitelist(
+            origin: OriginFor<T>,
+            contract_id: T::SmartContract,
+            whitelisted: bool
+        ) -> DispatchResultWithPostInfo {
+            let developer = ensure_root(origin)?;
+
+            ensure!(
+                !RegisteredDevelopers::<T>::contains_key(&developer),
+                Error::<T>::AlreadyUsedDeveloperAccount,
+            );
+            ensure!(
+                !RegisteredDapps::<T>::contains_key(&contract_id),
+                Error::<T>::AlreadyRegisteredContract,
+            );
+            ensure!(contract_id.is_valid(), Error::<T>::ContractIsNotValid);
+
+            if Self::pre_approval_is_enabled() {
+                ensure!(
+                    PreApprovedDevelopers::<T>::contains_key(&developer),
+                    Error::<T>::RequiredContractPreApproval,
+                );
+            }
+
+            WhitelistedDapps::<T>::insert(contract_id.clone(), whitelisted);
+            Self::deposit_event(Event::<T>::NewWhitlistedDapp(contract_id));
+
+            Ok(().into())
+        } 
 
         /// Lock up and stake balance of the origin account.
         ///
@@ -516,6 +562,9 @@ pub mod pallet {
             contract_id: T::SmartContract,
             era: EraIndex,
         ) -> DispatchResultWithPostInfo {
+
+            ensure!(WhitelistedDapps::<T>::get(contract_id), Error::<T>::DappNotWhitelisted);
+
             let _ = ensure_signed(origin)?;
 
             let developer =
