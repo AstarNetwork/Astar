@@ -84,7 +84,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("shiden"),
     impl_name: create_runtime_str!("shiden"),
     authoring_version: 1,
-    spec_version: 29,
+    spec_version: 30,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 1,
@@ -530,11 +530,7 @@ impl OnUnbalanced<NegativeImbalance> for DealWithFees {
             let (to_burn, collators) = fees.ration(20, 80);
 
             // burn part of fees
-            let burned = Balances::burn(to_burn.peek());
-            assert!(
-                matches!(burned.offset(to_burn), SameOrOther::None),
-                "fees burn check"
-            );
+            let _ = Balances::burn(to_burn.peek());
 
             // pay fees to collators
             <ToStakingPot as OnUnbalanced<_>>::on_unbalanced(collators);
