@@ -85,7 +85,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("shibuya"),
     impl_name: create_runtime_str!("shibuya"),
     authoring_version: 1,
-    spec_version: 18,
+    spec_version: 19,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 1,
@@ -267,7 +267,7 @@ impl pallet_custom_signatures::Config for Runtime {
 parameter_types! {
     pub const BlockPerEra: BlockNumber = 4 * HOURS;
     pub const RegisterDeposit: Balance = 100 * SDN;
-    pub const DeveloperRewardPercentage: Perbill = Perbill::from_percent(80);
+    pub const DeveloperRewardPercentage: Perbill = Perbill::from_percent(50);
     pub const MaxNumberOfStakersPerContract: u32 = 2048;
     pub const MinimumStakingAmount: Balance = 5 * SDN;
     pub const MinimumRemainingAmount: Balance = 1 * SDN;
