@@ -8,7 +8,7 @@ use frame_support::traits::Currency;
 use frame_system::{self as system};
 use scale_info::TypeInfo;
 use sp_runtime::RuntimeDebug;
-use sp_std::{collections::btree_map::BTreeMap, ops::Add, prelude::*};
+use sp_std::{ops::Add, prelude::*};
 
 pub mod pallet;
 pub mod traits;
@@ -68,17 +68,24 @@ pub struct EraRewardAndStake<Balance: HasCompact> {
     staked: Balance,
 }
 
-/// Used to split total EraPayout among contracts.
-/// Each tuple (contract, era) has this structure.
-/// This will be used to reward contracts developer and his stakers.
+/// Used to store information about total staked amount and the number of stakers
 #[derive(Clone, PartialEq, Encode, Decode, Default, RuntimeDebug, TypeInfo)]
-pub struct EraStakingPoints<AccountId: Ord, Balance: HasCompact> {
+pub struct EraStakingPoints<Balance: HasCompact> {
     /// Total staked amount.
     #[codec(compact)]
     total: Balance,
-    /// The map of stakers and the amount they staked.
-    stakers: BTreeMap<AccountId, Balance>,
-    /// Accrued and claimed rewards on this contract both for stakers and the developer
+    /// Total number of active stakers on this contract for an era
+    #[codec(compact)]
+    number_of_stakers: u32,
+    // TODO: might be useful to keep this as map in order for easier tracking of who staked when/what. Depends on the frotend actually.
+}
+
+#[derive(Clone, PartialEq, Encode, Decode, Default, RuntimeDebug, TypeInfo)]
+pub struct StakerInfo<Balance: HasCompact> {
+    /// Total staked amount.
+    #[codec(compact)]
+    staked: Balance,
+    /// Claimed rewards in this era
     #[codec(compact)]
     claimed_rewards: Balance,
 }
