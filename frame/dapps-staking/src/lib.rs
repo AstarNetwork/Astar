@@ -8,7 +8,7 @@ use frame_support::traits::Currency;
 use frame_system::{self as system};
 use scale_info::TypeInfo;
 use sp_runtime::RuntimeDebug;
-use sp_std::{collections::btree_map::BTreeMap, ops::Add, prelude::*};
+use sp_std::{ops::Add, prelude::*};
 
 pub mod pallet;
 pub mod traits;
@@ -72,13 +72,24 @@ pub struct EraRewardAndStake<Balance: HasCompact> {
 /// Each tuple (contract, era) has this structure.
 /// This will be used to reward contracts developer and his stakers.
 #[derive(Clone, PartialEq, Encode, Decode, Default, RuntimeDebug, TypeInfo)]
-pub struct EraStakingPoints<AccountId: Ord, Balance: HasCompact> {
+pub struct EraStakingPoints<Balance: HasCompact> {
     /// Total staked amount.
     #[codec(compact)]
     total: Balance,
-    /// The map of stakers and the amount they staked.
-    stakers: BTreeMap<AccountId, Balance>,
     /// Accrued and claimed rewards on this contract both for stakers and the developer
+    #[codec(compact)]
+    claimed_rewards: Balance,
+    /// Total number of active stakers on this contract for an era
+    #[codec(compact)]
+    number_of_stakers: u32,
+}
+
+#[derive(Clone, PartialEq, Encode, Decode, Default, RuntimeDebug, TypeInfo)]
+pub struct EraStakeInfo<Balance: HasCompact> {
+    /// Total staked amount.
+    #[codec(compact)]
+    staked: Balance,
+    /// Claimed rewards in this era
     #[codec(compact)]
     claimed_rewards: Balance,
 }

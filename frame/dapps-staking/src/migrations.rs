@@ -74,8 +74,9 @@ pub mod v2 {
             |_, _, old_staking_info: OldEraStakingPoints<T::AccountId, BalanceOf<T>>| {
                 Some(EraStakingPoints {
                     total: old_staking_info.total,
-                    stakers: old_staking_info.stakers,
+                    // stakers: old_staking_info.stakers,
                     claimed_rewards: old_staking_info.claimed_rewards,
+                    number_of_stakers: 0,
                 })
             },
         );
