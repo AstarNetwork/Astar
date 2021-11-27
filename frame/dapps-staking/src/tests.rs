@@ -1024,19 +1024,28 @@ fn unbond_and_unstake_too_many_unlocking_chunks_is_not_ok() {
         let staker = 1;
         let unstake_amount = 10;
         let stake_amount =
-            MINIMUM_STAKING_AMOUNT + unstake_amount * MAX_UNLOCKING_CHUNKS as Balance;
+            MINIMUM_STAKING_AMOUNT * 10 + unstake_amount * MAX_UNLOCKING_CHUNKS as Balance;
 
         bond_and_stake_with_verification(staker, &contract_id, stake_amount);
 
         // Ensure that we can unbond up to a limited amount of time.
         for _ in 0..MAX_UNLOCKING_CHUNKS {
-            unbond_and_unstake_with_verification(1, &contract_id, unstake_amount);
             advance_to_era(DappsStaking::current_era() + 1);
+            unbond_and_unstake_with_verification(staker, &contract_id, unstake_amount);
         }
+
+        // Ensure that we're at the max but can still add new chunks since it should be merged with the existing one
+        assert_eq!(
+            MAX_UNLOCKING_CHUNKS,
+            DappsStaking::ledger(&staker).unbonding_info.len()
+        );
+        unbond_and_unstake_with_verification(staker, &contract_id, unstake_amount);
+
         // Ensure that further unbonding attempts result in an error.
+        advance_to_era(DappsStaking::current_era() + 1);
         assert_noop!(
             DappsStaking::unbond_and_unstake(
-                Origin::signed(1),
+                Origin::signed(staker),
                 contract_id.clone(),
                 unstake_amount
             ),

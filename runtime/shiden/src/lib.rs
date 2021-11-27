@@ -274,8 +274,8 @@ parameter_types! {
     pub const MinimumRemainingAmount: Balance = 1 * SDN;
     pub const HistoryDepth: u32 = 14;
     pub const BonusEraDuration: u32 = 10;
-    pub const MaxUnlockingChunks: u32 = 4;
-    pub const UnbondingPeriod: u32 = 7;
+    pub const MaxUnlockingChunks: u32 = 32;
+    pub const UnbondingPeriod: u32 = 5;
 }
 
 impl pallet_dapps_staking::Config for Runtime {

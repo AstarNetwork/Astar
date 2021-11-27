@@ -518,13 +518,6 @@ pub mod pallet {
                 Error::<T>::NotOperatedContract,
             );
 
-            let mut ledger = Self::ledger(&staker);
-
-            ensure!(
-                ledger.unbonding_info.len() < T::MaxUnlockingChunks::get(),
-                Error::<T>::TooManyUnlockingChunks
-            );
-
             // Get the latest era staking points for the contract.
             let current_era = Self::current_era();
             let mut staking_info = Self::staking_info(&contract_id, current_era);
@@ -552,12 +545,20 @@ pub mod pallet {
                 Error::<T>::UnstakingWithNoValue
             );
 
+            let mut ledger = Self::ledger(&staker);
+
             // Update the chunks and write them to storage
             const SKIP_CURRENT_ERA: u32 = 1;
             ledger.unbonding_info.add(UnlockingChunk {
                 amount: value_to_unstake,
                 unlock_era: current_era + SKIP_CURRENT_ERA + T::UnbondingPeriod::get(),
             });
+            // This should be done AFTER insertion since it's possible for chunks to merge
+            ensure!(
+                ledger.unbonding_info.len() <= T::MaxUnlockingChunks::get(),
+                Error::<T>::TooManyUnlockingChunks
+            );
+
             Self::update_ledger(&staker, ledger);
 
             // Update total staked value in era.

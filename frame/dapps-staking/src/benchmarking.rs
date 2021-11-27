@@ -106,10 +106,6 @@ benchmarks! {
         initialize::<T>();
         let (developer_id, contract_id) = register_contract::<T>()?;
         prepare_bond_and_stake::<T>(n, &contract_id, SEED)?;
-        for id in 0..n {
-            let claimer_id: T::AccountId = account("claimer", id, SEED);
-            let balance: BalanceOf<T> = 100000u32.into();
-        }
 
     }: _(RawOrigin::Signed(developer_id.clone()), contract_id.clone())
     verify {
