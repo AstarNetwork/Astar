@@ -7,7 +7,7 @@
 use codec::{Decode, Encode};
 use frame_support::{
     construct_runtime, parameter_types,
-    traits::{Contains, Currency, FindAuthor, Imbalance, OnUnbalanced, SameOrOther},
+    traits::{Contains, Currency, FindAuthor, Imbalance, OnUnbalanced},
     weights::{
         constants::{BlockExecutionWeight, ExtrinsicBaseWeight, WEIGHT_PER_SECOND},
         DispatchClass, Weight, WeightToFeeCoefficient, WeightToFeeCoefficients,
@@ -84,7 +84,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("shiden"),
     impl_name: create_runtime_str!("shiden"),
     authoring_version: 1,
-    spec_version: 31,
+    spec_version: 32,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 1,
@@ -738,7 +738,17 @@ pub type Executive = frame_executive::Executive<
     frame_system::ChainContext<Runtime>,
     Runtime,
     AllPallets,
+    OnRuntimeUpgrade,
 >;
+
+pub struct OnRuntimeUpgrade;
+impl frame_support::traits::OnRuntimeUpgrade for OnRuntimeUpgrade {
+    fn on_runtime_upgrade() -> u64 {
+        frame_support::migrations::migrate_from_pallet_version_to_storage_version::<
+            AllPalletsWithSystem,
+        >(&RocksDbWeight::get())
+    }
+}
 
 impl_runtime_apis! {
     impl sp_api::Core<Block> for Runtime {
