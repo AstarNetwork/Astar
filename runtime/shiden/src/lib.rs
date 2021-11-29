@@ -7,13 +7,7 @@
 use codec::{Decode, Encode};
 use frame_support::{
     construct_runtime, parameter_types,
-<<<<<<< HEAD
-    traits::{Contains, Currency, FindAuthor, Imbalance, OnUnbalanced},
-=======
-    traits::{
-        Contains, Currency, FindAuthor, Imbalance, OnRuntimeUpgrade, OnUnbalanced, SameOrOther,
-    },
->>>>>>> 705b7038... Remove on_runtime_upgrade hook usage from pallet
+    traits::{Contains, Currency, FindAuthor, Imbalance, OnRuntimeUpgrade, OnUnbalanced},
     weights::{
         constants::{BlockExecutionWeight, ExtrinsicBaseWeight, WEIGHT_PER_SECOND},
         DispatchClass, Weight, WeightToFeeCoefficient, WeightToFeeCoefficients,
