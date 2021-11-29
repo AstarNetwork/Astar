@@ -58,7 +58,7 @@ pub mod v2 {
 
     pub fn migrate<T: Config>() -> Weight {
         if StorageVersion::<T>::get() != Version::V1_0_0 {
-            return T::DbWeight::get().reads(1)
+            return T::DbWeight::get().reads(1);
         }
 
         let ledger_size = Ledger::<T>::iter_keys().count() as u64;
