@@ -7,7 +7,7 @@
 use codec::{Decode, Encode};
 use frame_support::{
     construct_runtime, parameter_types,
-    traits::{Contains, Currency, FindAuthor, Imbalance, OnUnbalanced},
+    traits::{Contains, Currency, FindAuthor, Imbalance, OnRuntimeUpgrade, OnUnbalanced},
     weights::{
         constants::{BlockExecutionWeight, ExtrinsicBaseWeight, WEIGHT_PER_SECOND},
         DispatchClass, Weight, WeightToFeeCoefficient, WeightToFeeCoefficients,
@@ -745,7 +745,27 @@ pub type Executive = frame_executive::Executive<
     frame_system::ChainContext<Runtime>,
     Runtime,
     AllPallets,
+    (DappsStakingMigrationV2,),
 >;
+
+// Migration for supporting unbonding period in dapps staking.
+pub struct DappsStakingMigrationV2;
+
+impl OnRuntimeUpgrade for DappsStakingMigrationV2 {
+    fn on_runtime_upgrade() -> frame_support::weights::Weight {
+        pallet_dapps_staking::migrations::v2::migrate::<Runtime>()
+    }
+
+    #[cfg(feature = "try-runtime")]
+    fn pre_upgrade() -> Result<(), &'static str> {
+        pallet_dapps_staking::migrations::v2::pre_migrate::<Runtime, Self>()
+    }
+
+    #[cfg(feature = "try-runtime")]
+    fn post_upgrade() -> Result<(), &'static str> {
+        pallet_dapps_staking::migrations::v2::post_migrate::<Runtime, Self>()
+    }
+}
 
 impl fp_self_contained::SelfContainedCall for Call {
     type SignedInfo = H160;

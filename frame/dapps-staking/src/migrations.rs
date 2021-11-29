@@ -57,7 +57,9 @@ pub mod v2 {
     }
 
     pub fn migrate<T: Config>() -> Weight {
-        assert_eq!(Version::V1_0_0, StorageVersion::<T>::get());
+        if StorageVersion::<T>::get() != Version::V1_0_0 {
+            return T::DbWeight::get().reads(1)
+        }
 
         let ledger_size = Ledger::<T>::iter_keys().count() as u64;
         let staking_point_size = ContractEraStake::<T>::iter_keys().count() as u64;

@@ -278,32 +278,6 @@ pub mod pallet {
 
             T::DbWeight::get().writes(5)
         }
-
-        fn on_runtime_upgrade() -> Weight {
-            if StorageVersion::<T>::get() == Version::V1_0_0 {
-                migrations::v2::migrate::<T>()
-            } else {
-                T::DbWeight::get().reads(1)
-            }
-        }
-
-        #[cfg(feature = "try-runtime")]
-        fn pre_upgrade() -> Result<(), &'static str> {
-            if StorageVersion::<T>::get() == Version::V1_0_0 {
-                migrations::v2::pre_migrate::<T, Self>()
-            } else {
-                Ok(())
-            }
-        }
-
-        #[cfg(feature = "try-runtime")]
-        fn post_upgrade() -> Result<(), &'static str> {
-            if StorageVersion::<T>::get() == Version::V2_0_0 {
-                migrations::v2::post_migrate::<T, Self>()
-            } else {
-                Ok(())
-            }
-        }
     }
 
     #[pallet::call]
