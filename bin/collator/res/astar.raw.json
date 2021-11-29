@@ -8,6 +8,7 @@
   "telemetryEndpoints": null,
   "protocolId": "astar",
   "properties": {
+    "ss58Format": 5,
     "tokenDecimals": 18,
     "tokenSymbol": "ASTR"
   },
