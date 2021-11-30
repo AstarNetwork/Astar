@@ -14,8 +14,8 @@ use frame_support::{
 };
 use frame_system::{ensure_root, ensure_signed, pallet_prelude::*};
 use sp_runtime::{
-    traits::{AccountIdConversion, Saturating, Zero},
-    Perbill,
+    traits::{AccountIdConversion, CheckedAdd, Saturating, Zero},
+    ArithmeticError, Perbill,
 };
 use sp_std::convert::From;
 
@@ -388,10 +388,10 @@ pub mod pallet {
             // Remove already locked funds from the free balance
             let available_balance = free_balance.saturating_sub(ledger);
             let value_to_stake = value.min(available_balance);
-            ensure!(!value_to_stake.is_zero(), Error::<T>::StakingWithNoValue);
-
-            // update the ledger value by adding the newly bonded funds
-            ledger += value_to_stake;
+            ensure!(
+                value_to_stake > Zero::zero(),
+                Error::<T>::StakingWithNoValue
+            );
 
             // Get the latest era staking point info or create it if contract hasn't been staked yet so far.
             let current_era = Self::current_era();
@@ -405,12 +405,20 @@ pub mod pallet {
                 );
             }
 
-            // Increment total staked amount.
-            staking_info.total += value_to_stake;
+            // Increment ledger and total staker value for contract. Overflow shouldn't be possible but the check is here just for safety.
+            ledger = ledger
+                .checked_add(&value_to_stake)
+                .ok_or(ArithmeticError::Overflow)?;
+            staking_info.total = staking_info
+                .total
+                .checked_add(&value_to_stake)
+                .ok_or(ArithmeticError::Overflow)?;
 
             // Increment personal staking amount.
             let entry = staking_info.stakers.entry(staker.clone()).or_default();
-            *entry += value_to_stake;
+            *entry = entry
+                .checked_add(&value_to_stake)
+                .ok_or(ArithmeticError::Overflow)?;
 
             ensure!(
                 *entry >= T::MinimumStakingAmount::get(),
@@ -545,7 +553,10 @@ pub mod pallet {
             let reward_ratio = Perbill::from_rational(staking_info.total, reward_and_stake.staked);
             let contract_reward = if era < T::BonusEraDuration::get() {
                 // Double reward as a bonus.
-                reward_ratio * reward_and_stake.rewards * REWARD_SCALING.into()
+                reward_ratio
+                    * reward_and_stake
+                        .rewards
+                        .saturating_mul(REWARD_SCALING.into())
             } else {
                 reward_ratio * reward_and_stake.rewards
             };
