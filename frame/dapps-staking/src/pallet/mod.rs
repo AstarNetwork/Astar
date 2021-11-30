@@ -429,7 +429,8 @@ pub mod pallet {
             }
 
             // Increment ledger and total staker value for contract. Overflow shouldn't be possible but the check is here just for safety.
-            ledger = ledger
+            ledger.locked = ledger
+                .locked
                 .checked_add(&value_to_stake)
                 .ok_or(ArithmeticError::Overflow)?;
             staking_info.total = staking_info
