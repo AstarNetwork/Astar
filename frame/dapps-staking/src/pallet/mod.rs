@@ -442,18 +442,27 @@ pub mod pallet {
                 contract_info.number_of_stakers += 1;
             }
 
-            // Increment total staked amount.
-            contract_info.total = contract_info.total.checked_add(&value_to_stake)
-            .ok_or(ArithmeticError::Overflow)?;
-
             // Increment personal staking amount.
-            staker_info.staked = staker_info.staked.checked_add(&value_to_stake)
-            .ok_or(ArithmeticError::Overflow)?;
+            staker_info.staked = staker_info
+                .staked
+                .checked_add(&value_to_stake)
+                .ok_or(ArithmeticError::Overflow)?;
 
             ensure!(
                 staker_info.staked >= T::MinimumStakingAmount::get(),
                 Error::<T>::InsufficientValue,
             );
+
+            // Increment total staked amount.
+            contract_info.total = contract_info
+                .total
+                .checked_add(&value_to_stake)
+                .ok_or(ArithmeticError::Overflow)?;
+
+            ledger.locked = ledger
+                .locked
+                .checked_add(&value_to_stake)
+                .ok_or(ArithmeticError::Overflow)?;
 
             // Update total staked value in era.
             EraRewardsAndStakes::<T>::mutate(&current_era, |value| {
@@ -463,11 +472,7 @@ pub mod pallet {
             });
 
             // Update staked amount for (staker, contract) pairing for current era
-            StakerContractEraInfo::<T>::insert(
-                (&staker, &contract_id),
-                current_era,
-                staker_info,
-            );
+            StakerContractEraInfo::<T>::insert((&staker, &contract_id), current_era, staker_info);
 
             // Update ledger and payee
             Self::update_ledger(&staker, ledger);
@@ -563,11 +568,7 @@ pub mod pallet {
 
             // Update the info for staker. Note that this has to be written even if `remaining` is zero.
             staker_info.staked = staker_info.staked.saturating_sub(value_to_unstake);
-            StakerContractEraInfo::<T>::insert(
-                (&staker, &contract_id),
-                current_era,
-                staker_info,
-            );
+            StakerContractEraInfo::<T>::insert((&staker, &contract_id), current_era, staker_info);
 
             Self::deposit_event(Event::<T>::UnbondAndUnstake(
                 staker,
@@ -624,7 +625,10 @@ pub mod pallet {
 
             let current_era = Self::current_era();
             let era_low_bound = current_era.saturating_sub(T::HistoryDepth::get());
-            ensure!(era < current_era && era >= era_low_bound, Error::<T>::EraOutOfBounds);
+            ensure!(
+                era < current_era && era >= era_low_bound,
+                Error::<T>::EraOutOfBounds
+            );
 
             let mut staker_info = Self::staker_staking_info(&claimer, &contract_id, era);
             ensure!(
@@ -686,11 +690,7 @@ pub mod pallet {
             staker_info.claimed_rewards = claimer_reward;
 
             ContractEraStake::<T>::insert(&contract_id, era, contract_info);
-            StakerContractEraInfo::<T>::insert(
-                (&claimer, &contract_id),
-                era,
-                staker_info,
-            );
+            StakerContractEraInfo::<T>::insert((&claimer, &contract_id), era, staker_info);
 
             Ok(Some(T::WeightInfo::claim(1 as u32)).into())
         }

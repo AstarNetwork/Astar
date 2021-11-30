@@ -89,30 +89,51 @@ fn staking_info_is_ok() {
 
         // Check first interval
         for era in starting_era..mid_era {
-            let staking_info = DappsStaking::staking_info(&contract_id, era);
-            assert_eq!(2_usize, staking_info.stakers.len());
-            assert!(staking_info.stakers.contains_key(&staker_1));
-            assert!(staking_info.stakers.contains_key(&staker_1));
+            let contract_info = DappsStaking::contract_staking_info(&contract_id, era);
+            assert_eq!(2, contract_info.number_of_stakers);
+
+            assert_eq!(
+                amount,
+                DappsStaking::staker_staking_info(&staker_1, &contract_id, era).staked
+            );
+            assert_eq!(
+                amount,
+                DappsStaking::staker_staking_info(&staker_2, &contract_id, era).staked
+            );
         }
 
         // Check second interval
         for era in mid_era..=final_era {
-            let staking_info = DappsStaking::staking_info(&contract_id, era);
-            assert_eq!(2_usize, staking_info.stakers.len());
-            assert!(staking_info.stakers.contains_key(&staker_1));
-            assert!(staking_info.stakers.contains_key(&staker_3));
+            let contract_info = DappsStaking::contract_staking_info(&contract_id, era);
+            assert_eq!(2, contract_info.number_of_stakers);
+
+            assert_eq!(
+                amount,
+                DappsStaking::staker_staking_info(&staker_1, &contract_id, era).staked
+            );
+            assert_eq!(
+                amount,
+                DappsStaking::staker_staking_info(&staker_3, &contract_id, era).staked
+            );
         }
 
         // Check that before starting era nothing exists
-        let staking_info = DappsStaking::staking_info(&contract_id, starting_era - 1);
-        assert!(staking_info.stakers.is_empty());
+        let staking_info = DappsStaking::contract_staking_info(&contract_id, starting_era - 1);
+        assert!(staking_info.number_of_stakers.is_zero());
 
         // TODO: Do we want such behavior?
         // Era hasn't happened yet but value is returned as if it has happened
-        let staking_info = DappsStaking::staking_info(&contract_id, final_era + 1);
-        assert_eq!(2_usize, staking_info.stakers.len());
-        assert!(staking_info.stakers.contains_key(&staker_1));
-        assert!(staking_info.stakers.contains_key(&staker_3));
+        let overflow_era = final_era + 1;
+        let staking_info = DappsStaking::contract_staking_info(&contract_id, overflow_era);
+        assert_eq!(2, staking_info.number_of_stakers);
+        assert_eq!(
+            amount,
+            DappsStaking::staker_staking_info(&staker_1, &contract_id, overflow_era).staked
+        );
+        assert_eq!(
+            amount,
+            DappsStaking::staker_staking_info(&staker_3, &contract_id, overflow_era).staked
+        );
     })
 }
 
@@ -436,7 +457,7 @@ fn bond_and_stake_different_eras_is_ok() {
 
         // Verify storage values to see if contract was successfully bonded and staked.
         verify_ledger(staker_id, first_stake_value);
-        verify_era_staking_points(
+        verify_contract_staking_info(
             &contract_id,
             first_stake_value,
             current_era,
@@ -468,7 +489,7 @@ fn bond_and_stake_different_eras_is_ok() {
 
         // Verify that storage values are as expected
         verify_ledger(staker_id, total_stake_value);
-        verify_era_staking_points(
+        verify_contract_staking_info(
             &contract_id,
             total_stake_value,
             current_era,
@@ -509,13 +530,13 @@ fn bond_and_stake_two_different_contracts_is_ok() {
 
         // Verify storage values to see if funds were successfully bonded
         verify_ledger(staker_id, total_stake_value);
-        verify_era_staking_points(
+        verify_contract_staking_info(
             &first_contract_id,
             first_stake_value,
             current_era,
             vec![(staker_id, first_stake_value)],
         );
-        verify_era_staking_points(
+        verify_contract_staking_info(
             &second_contract_id,
             second_stake_value,
             current_era,
@@ -561,7 +582,7 @@ fn bond_and_stake_two_stakers_one_contract_is_ok() {
         // Verify storage values to see if funds were successfully bonded
         verify_ledger(first_staker_id, first_stake_value);
         verify_ledger(second_staker_id, second_stake_value);
-        verify_era_staking_points(
+        verify_contract_staking_info(
             &contract_id,
             total_stake_value,
             current_era,
@@ -694,7 +715,7 @@ fn bond_and_stake_history_depth_has_passed_is_ok() {
 
         // Verify storage values related to the current era
         verify_ledger(staker_id, total_staked);
-        verify_era_staking_points(
+        verify_contract_staking_info(
             &contract_id,
             total_staked,
             current_era,
@@ -708,7 +729,7 @@ fn bond_and_stake_history_depth_has_passed_is_ok() {
         );
 
         // Also ensure that former values still exists even if they're beyond 'history depth'
-        verify_era_staking_points(
+        verify_contract_staking_info(
             &contract_id,
             first_staking_amount,
             start_era,
@@ -828,14 +849,14 @@ fn unbond_and_unstake_multiple_time_is_ok() {
 
         // Verify era staking info
         let new_staked_value = original_staked_value - unstaked_value;
-        verify_era_staking_points(
+        verify_contract_staking_info(
             &contract_id,
             new_staked_value,
             new_era,
             vec![(staker_id, new_staked_value)],
         );
         // Also verify that the storage values for the old era haven't been changed due to unstaking
-        verify_era_staking_points(
+        verify_contract_staking_info(
             &contract_id,
             original_staked_value,
             old_era,
@@ -898,7 +919,7 @@ fn unbond_and_unstake_in_different_eras() {
         // Verify that storage values are as expected for both stakers and total staked value
         let new_total_staked = total_staked_value - first_unstake_value;
         let first_staked_value = staked_value - first_unstake_value;
-        verify_era_staking_points(
+        verify_contract_staking_info(
             &contract_id,
             new_total_staked,
             current_era,
@@ -918,7 +939,7 @@ fn unbond_and_unstake_in_different_eras() {
         // Verify that storage values are as expected for both stakers and total staked value
         let new_total_staked = new_total_staked - second_unstake_value;
         let second_staked_value = staked_value - second_unstake_value;
-        verify_era_staking_points(
+        verify_contract_staking_info(
             &contract_id,
             new_total_staked,
             current_era,

@@ -11,7 +11,7 @@ use codec::{Decode, Encode};
 use sp_io::TestExternalities;
 use sp_runtime::{
     testing::Header,
-    traits::{AccountIdConversion, BlakeTwo256, IdentityLookup},
+    traits::{BlakeTwo256, IdentityLookup},
     Perbill,
 };
 
@@ -235,14 +235,6 @@ pub fn initialize_first_block() {
     // This assert prevents method misuse
     assert_eq!(System::block_number(), 1 as BlockNumber);
 
-    // We need to beef up the pallet account balance in case of bonus rewards
-    let starting_balance =
-        BLOCK_REWARD * BLOCKS_PER_ERA as Balance * crate::pallet::REWARD_SCALING as Balance;
-    let _ = Balances::deposit_creating(
-        &<TestRuntime as crate::pallet::pallet::Config>::PalletId::get().into_account(),
-        starting_balance,
-    );
-
     // This is performed outside of dapps staking but we expect it before on_initialize
     DappsStaking::on_unbalanced(Balances::issue(BLOCK_REWARD));
     DappsStaking::on_initialize(System::block_number());
@@ -254,8 +246,9 @@ pub fn clear_all_events() {
     System::reset_events();
 }
 
+// TODO: remove me?
 // Used to get a vec of all dapps staking events
-pub fn dapps_staking_events() -> Vec<crate::Event<TestRuntime>> {
+pub fn _dapps_staking_events() -> Vec<crate::Event<TestRuntime>> {
     System::events()
         .into_iter()
         .map(|r| r.event)
