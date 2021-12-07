@@ -59,7 +59,7 @@ jobs:
       with:
         name: astar-runtime-benchmarks
         path: target/release/astar-collator
-        retention-days: 7
+        retention-days: 1
 
   try-runtime:
     runs-on: ubuntu-latest
