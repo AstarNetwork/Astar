@@ -241,24 +241,28 @@ pub(crate) fn claim_with_verification(
     // TODO: this might not be needed if we don't need to verify more than 1 event
     clear_all_events();
 
-    // TODO: add saving of initial state here and compare it later with the final state to improve all UTs
-
     let claimer_is_dev = RegisteredDapps::<TestRuntime>::get(&contract_id).unwrap() == claimer;
 
-    // Calculated expected reward that will be distributed for the contract.
+    let init_free_balance = <TestRuntime as Config>::Currency::free_balance(claimer);
+
+    // Read in structs from storage
     let rewards_and_stakes = DappsStaking::era_reward_and_stake(claim_era).unwrap();
-    let contract_info = DappsStaking::contract_staking_info(&contract_id, claim_era);
-    let staker_info = DappsStaking::staker_staking_info(&claimer, &contract_id, claim_era);
+    let init_contract_info = DappsStaking::contract_staking_info(&contract_id, claim_era);
+    let init_staker_info = DappsStaking::staker_staking_info(&claimer, &contract_id, claim_era);
+    if !claimer_is_dev {
+        assert!(init_staker_info.staked > 0);
+    }
+    assert_eq!(init_staker_info.claimed_rewards, 0);
 
     // Calculate contract portion of the reward
     // TODO: add this function as a helper method to struct?
-    let contract_reward = Perbill::from_rational(contract_info.total, rewards_and_stakes.staked)
+    let contract_reward = Perbill::from_rational(init_contract_info.total, rewards_and_stakes.staked)
         * rewards_and_stakes.rewards;
     let developer_reward_part =
         Perbill::from_percent(DEVELOPER_REWARD_PERCENTAGE) * contract_reward;
     let stakers_joint_reward = contract_reward - developer_reward_part;
     let staker_reward_part =
-        Perbill::from_rational(staker_info.staked, contract_info.total) * stakers_joint_reward;
+        Perbill::from_rational(init_staker_info.staked, init_contract_info.total) * stakers_joint_reward;
 
     let calculated_reward = if claimer_is_dev {
         developer_reward_part + staker_reward_part
@@ -279,70 +283,11 @@ pub(crate) fn claim_with_verification(
         calculated_reward,
     )));
 
-    // // Collect all Reward events and sum up all the rewards.
-    // let emitted_rewards: Balance = dapps_staking_events()
-    //     .iter()
-    //     .filter_map(|e| {
-    //         if let crate::Event::Reward(_, _, _, single_reward) = e {
-    //             Some(*single_reward as Balance)
-    //         } else {
-    //             None
-    //         }
-    //     })
-    //     .sum();
+    let final_free_balance = <TestRuntime as Config>::Currency::free_balance(claimer);
+    assert_eq!(init_free_balance + calculated_reward, final_free_balance);
 
-    // assert_eq!(calculated_reward, emitted_rewards);
-}
-
-/// Used to calculate the expected reward for the staker
-pub(crate) fn calc_expected_staker_reward(
-    claim_era: EraIndex,
-    contract_stake: Balance,
-    staker_stake: Balance,
-) -> Balance {
-    let rewards_and_stakes = DappsStaking::era_reward_and_stake(&claim_era).unwrap();
-    let contract_reward = Perbill::from_rational(contract_stake, rewards_and_stakes.staked)
-        * rewards_and_stakes.rewards;
-    let contract_reward_staker_part =
-        Perbill::from_percent(100 - DEVELOPER_REWARD_PERCENTAGE) * contract_reward;
-
-    Perbill::from_rational(staker_stake, contract_stake) * contract_reward_staker_part
-}
-
-/// Used to calculate the expected reward for the developer
-pub(crate) fn calc_expected_developer_reward(
-    claim_era: EraIndex,
-    contract_stake: Balance,
-) -> Balance {
-    let rewards_and_stakes = DappsStaking::era_reward_and_stake(&claim_era).unwrap();
-    let contract_reward = Perbill::from_rational(contract_stake, rewards_and_stakes.staked)
-        * rewards_and_stakes.rewards;
-    Perbill::from_percent(DEVELOPER_REWARD_PERCENTAGE) * contract_reward
-}
-
-/// Check staker/dev Balance after reward distribution.
-/// Check that claimed rewards for staker/dev are updated.
-pub(crate) fn check_rewards_on_balance_and_storage(
-    user: &AccountId,
-    free_balance: Balance,
-    expected_era_reward: Balance,
-) {
-    assert_eq!(
-        <TestRuntime as Config>::Currency::free_balance(user),
-        free_balance + expected_era_reward
-    );
-}
-
-/// Check that claimed rewards on this contract are updated
-pub(crate) fn check_paidout_rewards_for_contract(
-    contract: &MockSmartContract<AccountId>,
-    era: EraIndex,
-    _expected_rewards: Balance,
-) {
-    let _contract_staking_info =
-        DappsStaking::contract_era_stake(contract, era).unwrap_or_default();
-    // TODO: requires redesign
-    // assert_eq!(contract_staking_info.claimed_rewards, expected_rewards,)
+    let final_staker_info = DappsStaking::staker_staking_info(&claimer, &contract_id, claim_era);
+    assert_eq!(final_staker_info.claimed_rewards, calculated_reward);
 }
 
 /// Used to verify that storage is cleared of all contract related values after unregistration.
