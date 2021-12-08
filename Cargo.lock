@@ -99,15 +99,6 @@ checksum = "fbf688625d06217d5b1bb0ea9d9c44a1635fd0ee3534466388d18203174f4d11"
 
 [[package]]
 name = "ansi_term"
-version = "0.11.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ee49baf6cb617b853aa8d93bf420db2383fab46d314482ca2803b40d5fde979b"
-dependencies = [
- "winapi 0.3.9",
-]
-
-[[package]]
-name = "ansi_term"
 version = "0.12.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d52a9bb7ec0cf484c551830a7ce27bd20d67eac647e1befb56b0be4ee39a55d2"
@@ -117,9 +108,9 @@ dependencies = [
 
 [[package]]
 name = "anyhow"
-version = "1.0.49"
+version = "1.0.51"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0a03e93e97a28fbc9f42fbc5ba0886a3c67eb637b476dbee711f80a6ffe8223d"
+checksum = "8b26702f315f53b6071259e15dd9d64528213b44d61de1ec926eca7715d62203"
 
 [[package]]
 name = "approx"
@@ -171,7 +162,7 @@ checksum = "9b34d609dfbaf33d6889b2b7106d3ca345eacad44200913df5ba02bfd31d2ba9"
 
 [[package]]
 name = "astar-collator"
-version = "3.1.5"
+version = "3.1.6"
 dependencies = [
  "astar-runtime",
  "async-trait",
@@ -255,7 +246,7 @@ dependencies = [
 
 [[package]]
 name = "astar-runtime"
-version = "3.1.5"
+version = "3.1.6"
 dependencies = [
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-parachain-system",
@@ -557,12 +548,12 @@ dependencies = [
 
 [[package]]
 name = "bae"
-version = "0.1.6"
+version = "0.1.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ec107f431ee3d8a8e45e6dd117adab769556ef463959e77bf6a4888d5fd500cf"
+checksum = "33b8de67cc41132507eeece2584804efcb15f85ba516e34c944b7667f480397a"
 dependencies = [
  "heck",
- "proc-macro-error 0.4.12",
+ "proc-macro-error",
  "proc-macro2",
  "quote",
  "syn",
@@ -1056,11 +1047,11 @@ dependencies = [
 
 [[package]]
 name = "clap"
-version = "2.33.3"
+version = "2.34.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "37e58ac78573c40708d45522f0d80fa2f01cc4f9b4e2bf749807255454312002"
+checksum = "a0610544180c38b88101fecf2dd634b174a62eef6946f84dfc6a7127512b381c"
 dependencies = [
- "ansi_term 0.11.0",
+ "ansi_term",
  "atty",
  "bitflags",
  "strsim",
@@ -1117,9 +1108,9 @@ checksum = "5827cebf4670468b8772dd191856768aedcb1b0278a04f989f7766351917b9dc"
 
 [[package]]
 name = "cpp_demangle"
-version = "0.3.4"
+version = "0.3.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "931ab2a3e6330a07900b8e7ca4e106cdcbb93f2b9a52df55e54ee53d8305b55d"
+checksum = "eeaa953eaad386a53111e47172c2fedba671e5684c8dd601a5f474f4f118710f"
 dependencies = [
  "cfg-if 1.0.0",
 ]
@@ -1234,9 +1225,9 @@ dependencies = [
 
 [[package]]
 name = "crc32fast"
-version = "1.2.2"
+version = "1.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3825b1e8580894917dc4468cb634a1b4e9745fddc854edad72d9c04644c0319f"
+checksum = "738c290dfaea84fc1ca15ad9c168d083b05a714e1efddd8edaab678dc28d2836"
 dependencies = [
  "cfg-if 1.0.0",
 ]
@@ -1745,14 +1736,14 @@ dependencies = [
 
 [[package]]
 name = "derive_more"
-version = "0.99.16"
+version = "0.99.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "40eebddd2156ce1bb37b20bbe5151340a31828b1f2d22ba4141f3531710e38df"
+checksum = "4fb810d30a7c1953f91334de7244731fc3f3c10d7fe163338a35b9f640960321"
 dependencies = [
  "convert_case",
  "proc-macro2",
  "quote",
- "rustc_version 0.3.3",
+ "rustc_version 0.4.0",
  "syn",
 ]
 
@@ -2124,7 +2115,7 @@ dependencies = [
 [[package]]
 name = "fc-consensus"
 version = "2.0.0-dev"
-source = "git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.12#ebfab976ec1c5de40968f13942e1368c95d045b1"
+source = "git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.12#fa8b968c2213eaec455135ccf74fb0038fe12145"
 dependencies = [
  "async-trait",
  "derive_more",
@@ -2150,7 +2141,7 @@ dependencies = [
 [[package]]
 name = "fc-db"
 version = "2.0.0-dev"
-source = "git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.12#ebfab976ec1c5de40968f13942e1368c95d045b1"
+source = "git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.12#fa8b968c2213eaec455135ccf74fb0038fe12145"
 dependencies = [
  "fp-storage",
  "kvdb",
@@ -2166,7 +2157,7 @@ dependencies = [
 [[package]]
 name = "fc-mapping-sync"
 version = "2.0.0-dev"
-source = "git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.12#ebfab976ec1c5de40968f13942e1368c95d045b1"
+source = "git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.12#fa8b968c2213eaec455135ccf74fb0038fe12145"
 dependencies = [
  "fc-consensus",
  "fc-db",
@@ -2184,7 +2175,7 @@ dependencies = [
 [[package]]
 name = "fc-rpc"
 version = "2.0.0-dev"
-source = "git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.12#ebfab976ec1c5de40968f13942e1368c95d045b1"
+source = "git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.12#fa8b968c2213eaec455135ccf74fb0038fe12145"
 dependencies = [
  "ethereum",
  "ethereum-types",
@@ -2229,7 +2220,7 @@ dependencies = [
 [[package]]
 name = "fc-rpc-core"
 version = "1.1.0-dev"
-source = "git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.12#ebfab976ec1c5de40968f13942e1368c95d045b1"
+source = "git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.12#fa8b968c2213eaec455135ccf74fb0038fe12145"
 dependencies = [
  "ethereum-types",
  "jsonrpc-core",
@@ -2334,7 +2325,7 @@ dependencies = [
 [[package]]
 name = "fp-consensus"
 version = "2.0.0-dev"
-source = "git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.12#ebfab976ec1c5de40968f13942e1368c95d045b1"
+source = "git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.12#fa8b968c2213eaec455135ccf74fb0038fe12145"
 dependencies = [
  "ethereum",
  "parity-scale-codec",
@@ -2348,7 +2339,7 @@ dependencies = [
 [[package]]
 name = "fp-evm"
 version = "3.0.0-dev"
-source = "git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.12#ebfab976ec1c5de40968f13942e1368c95d045b1"
+source = "git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.12#fa8b968c2213eaec455135ccf74fb0038fe12145"
 dependencies = [
  "evm",
  "impl-trait-for-tuples 0.1.3",
@@ -2361,7 +2352,7 @@ dependencies = [
 [[package]]
 name = "fp-rpc"
 version = "3.0.0-dev"
-source = "git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.12#ebfab976ec1c5de40968f13942e1368c95d045b1"
+source = "git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.12#fa8b968c2213eaec455135ccf74fb0038fe12145"
 dependencies = [
  "ethereum",
  "ethereum-types",
@@ -2378,7 +2369,7 @@ dependencies = [
 [[package]]
 name = "fp-self-contained"
 version = "1.0.0-dev"
-source = "git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.12#ebfab976ec1c5de40968f13942e1368c95d045b1"
+source = "git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.12#fa8b968c2213eaec455135ccf74fb0038fe12145"
 dependencies = [
  "ethereum",
  "frame-support",
@@ -2395,7 +2386,7 @@ dependencies = [
 [[package]]
 name = "fp-storage"
 version = "2.0.0"
-source = "git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.12#ebfab976ec1c5de40968f13942e1368c95d045b1"
+source = "git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.12#fa8b968c2213eaec455135ccf74fb0038fe12145"
 
 [[package]]
 name = "frame-benchmarking"
@@ -2874,9 +2865,9 @@ dependencies = [
 
 [[package]]
 name = "gloo-timers"
-version = "0.2.1"
+version = "0.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "47204a46aaff920a1ea58b11d03dec6f704287d27561724a4631e450654a891f"
+checksum = "6f16c88aa13d2656ef20d1c042086b8767bbe2bdb62526894275a1b062161b2e"
 dependencies = [
  "futures-channel",
  "futures-core",
@@ -3318,9 +3309,9 @@ checksum = "68f2d64f2edebec4ce84ad108148e67e1064789bee435edc5b60ad398714a3a9"
 
 [[package]]
 name = "itertools"
-version = "0.10.1"
+version = "0.10.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "69ddb889f9d0d08a67338271fa9b62996bc788c7796a5c18cf057420aaed5eaf"
+checksum = "a9a9d19fa1e79b6215ff29b9d6880b706147f16e9b1dbb1e4e5947b5b02bc5e3"
 dependencies = [
  "either",
 ]
@@ -3618,9 +3609,9 @@ checksum = "830d08ce1d1d941e6b30645f1a0eb5643013d835ce3779a5fc208261dbe10f55"
 
 [[package]]
 name = "libc"
-version = "0.2.108"
+version = "0.2.109"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8521a1b57e76b1ec69af7599e75e38e7b7fad6610f037db8c79b127201b5d119"
+checksum = "f98a04dce437184842841303488f70d0188c5f51437d2a834dc097eafa909a01"
 
 [[package]]
 name = "libloading"
@@ -4261,7 +4252,7 @@ dependencies = [
 
 [[package]]
 name = "local-runtime"
-version = "3.1.5"
+version = "3.1.6"
 dependencies = [
  "evm",
  "fp-rpc",
@@ -4451,9 +4442,9 @@ dependencies = [
 
 [[package]]
 name = "memoffset"
-version = "0.6.4"
+version = "0.6.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "59accc507f1338036a0477ef61afdae33cde60840f4dfe481319ce3ad116ddf9"
+checksum = "5aa361d4faea93603064a027415f07bd8e1d5c88c9fbf68bf56a285428fd79ce"
 dependencies = [
  "autocfg",
 ]
@@ -4692,7 +4683,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "424f6e86263cd5294cbd7f1e95746b95aca0e0d66bff31e5a40d6baa87b4aa99"
 dependencies = [
  "proc-macro-crate 1.1.0",
- "proc-macro-error 1.0.4",
+ "proc-macro-error",
  "proc-macro2",
  "quote",
  "syn",
@@ -5358,7 +5349,7 @@ dependencies = [
 [[package]]
 name = "pallet-ethereum"
 version = "4.0.0-dev"
-source = "git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.12#ebfab976ec1c5de40968f13942e1368c95d045b1"
+source = "git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.12#fa8b968c2213eaec455135ccf74fb0038fe12145"
 dependencies = [
  "ethereum",
  "ethereum-types",
@@ -5387,7 +5378,7 @@ dependencies = [
 [[package]]
 name = "pallet-evm"
 version = "6.0.0-dev"
-source = "git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.12#ebfab976ec1c5de40968f13942e1368c95d045b1"
+source = "git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.12#fa8b968c2213eaec455135ccf74fb0038fe12145"
 dependencies = [
  "evm",
  "evm-gasometer",
@@ -5415,7 +5406,7 @@ dependencies = [
 [[package]]
 name = "pallet-evm-precompile-bn128"
 version = "2.0.0-dev"
-source = "git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.12#ebfab976ec1c5de40968f13942e1368c95d045b1"
+source = "git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.12#fa8b968c2213eaec455135ccf74fb0038fe12145"
 dependencies = [
  "fp-evm",
  "sp-core",
@@ -5426,7 +5417,7 @@ dependencies = [
 [[package]]
 name = "pallet-evm-precompile-dispatch"
 version = "2.0.0-dev"
-source = "git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.12#ebfab976ec1c5de40968f13942e1368c95d045b1"
+source = "git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.12#fa8b968c2213eaec455135ccf74fb0038fe12145"
 dependencies = [
  "fp-evm",
  "frame-support",
@@ -5439,7 +5430,7 @@ dependencies = [
 [[package]]
 name = "pallet-evm-precompile-modexp"
 version = "2.0.0-dev"
-source = "git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.12#ebfab976ec1c5de40968f13942e1368c95d045b1"
+source = "git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.12#fa8b968c2213eaec455135ccf74fb0038fe12145"
 dependencies = [
  "fp-evm",
  "num",
@@ -5450,7 +5441,7 @@ dependencies = [
 [[package]]
 name = "pallet-evm-precompile-sha3fips"
 version = "2.0.0-dev"
-source = "git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.12#ebfab976ec1c5de40968f13942e1368c95d045b1"
+source = "git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.12#fa8b968c2213eaec455135ccf74fb0038fe12145"
 dependencies = [
  "fp-evm",
  "sp-core",
@@ -5461,7 +5452,7 @@ dependencies = [
 [[package]]
 name = "pallet-evm-precompile-simple"
 version = "2.0.0-dev"
-source = "git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.12#ebfab976ec1c5de40968f13942e1368c95d045b1"
+source = "git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.12#fa8b968c2213eaec455135ccf74fb0038fe12145"
 dependencies = [
  "fp-evm",
  "ripemd160",
@@ -6258,9 +6249,9 @@ checksum = "8b870d8c151b6f2fb93e84a13146138f05d02ed11c7e7c54f8826aaaf7c9f184"
 
 [[package]]
 name = "pkg-config"
-version = "0.3.22"
+version = "0.3.23"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "12295df4f294471248581bc09bef3c38a5e46f1e36d6a37353621a0c6c357e1f"
+checksum = "d1a3ea4f0dd7f1f3e512cf97bf100819aa547f36a6eccac8dbaae839eb92363e"
 
 [[package]]
 name = "platforms"
@@ -7368,40 +7359,14 @@ dependencies = [
 
 [[package]]
 name = "proc-macro-error"
-version = "0.4.12"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "18f33027081eba0a6d8aba6d1b1c3a3be58cbb12106341c2d5759fcd9b5277e7"
-dependencies = [
- "proc-macro-error-attr 0.4.12",
- "proc-macro2",
- "quote",
- "syn",
- "version_check",
-]
-
-[[package]]
-name = "proc-macro-error"
 version = "1.0.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "da25490ff9892aab3fcf7c36f08cfb902dd3e71ca0f9f9517bea02a73a5ce38c"
 dependencies = [
- "proc-macro-error-attr 1.0.4",
+ "proc-macro-error-attr",
  "proc-macro2",
  "quote",
  "syn",
- "version_check",
-]
-
-[[package]]
-name = "proc-macro-error-attr"
-version = "0.4.12"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8a5b4b77fdb63c1eca72173d68d24501c54ab1269409f6b672c85deb18af69de"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn",
- "syn-mid",
  "version_check",
 ]
 
@@ -7424,9 +7389,9 @@ checksum = "dbf0c48bc1d91375ae5c3cd81e3722dff1abcf81a30960240640d223f59fe0e5"
 
 [[package]]
 name = "proc-macro2"
-version = "1.0.32"
+version = "1.0.33"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ba508cc11742c0dc5c1659771673afbab7a0efab23aa17e854cbab0837ed0b43"
+checksum = "fb37d2df5df740e582f28f8560cf425f52bb267d872fe58358eadb554909f07a"
 dependencies = [
  "unicode-xid",
 ]
@@ -7832,9 +7797,9 @@ dependencies = [
 
 [[package]]
 name = "retain_mut"
-version = "0.1.4"
+version = "0.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "448296241d034b96c11173591deaa1302f2c17b56092106c1f92c1bc0183a8c9"
+checksum = "11000e6ba5020e53e7cc26f73b91ae7d5496b4977851479edb66b694c0675c21"
 
 [[package]]
 name = "ring"
@@ -7986,9 +7951,9 @@ dependencies = [
 
 [[package]]
 name = "ryu"
-version = "1.0.5"
+version = "1.0.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "71d301d4193d031abdd79ff7e3dd721168a9572ef3fe51a1517aba235bd8f86e"
+checksum = "3c9613b5a66ab9ba26415184cfc41156594925a9cf3a2057e57f31ff145f6568"
 
 [[package]]
 name = "safe-mix"
@@ -8526,7 +8491,7 @@ name = "sc-informant"
 version = "0.10.0-dev"
 source = "git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.12#d76f39995315ec36980908e4b99709bd14927044"
 dependencies = [
- "ansi_term 0.12.1",
+ "ansi_term",
  "futures 0.3.18",
  "futures-timer 3.0.2",
  "log",
@@ -8884,7 +8849,7 @@ name = "sc-tracing"
 version = "4.0.0-dev"
 source = "git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.12#d76f39995315ec36980908e4b99709bd14927044"
 dependencies = [
- "ansi_term 0.12.1",
+ "ansi_term",
  "atty",
  "chrono",
  "lazy_static",
@@ -9246,7 +9211,7 @@ dependencies = [
 
 [[package]]
 name = "shibuya-runtime"
-version = "3.1.5"
+version = "3.1.6"
 dependencies = [
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-parachain-system",
@@ -9314,7 +9279,7 @@ dependencies = [
 
 [[package]]
 name = "shiden-runtime"
-version = "3.1.5"
+version = "3.1.6"
 dependencies = [
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-parachain-system",
@@ -9388,9 +9353,9 @@ checksum = "43b2853a4d09f215c24cc5489c992ce46052d359b5109343cbafbf26bc62f8a3"
 
 [[package]]
 name = "signal-hook"
-version = "0.3.10"
+version = "0.3.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9c98891d737e271a2954825ef19e46bd16bdb98e2746f2eec4f7a4ef7946efd1"
+checksum = "b5a7a75ea6f4a29c7cd5a752ddcfc5453bd5ed97688db68b50698fd3c82f343a"
 dependencies = [
  "libc",
  "signal-hook-registry",
@@ -10216,9 +10181,9 @@ checksum = "6e63cff320ae2c57904679ba7cb63280a3dc4613885beafb148ee7bf9aa9042d"
 
 [[package]]
 name = "ss58-registry"
-version = "1.8.1"
+version = "1.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "78abb01d308934b82e34e9cf1f45846d31539246501745b129539176f4f3368d"
+checksum = "827441708a5dd8ca54e6b79690dc06d1bede78e61961e667f683c23c16ef964c"
 dependencies = [
  "Inflector",
  "proc-macro2",
@@ -10302,7 +10267,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "dcb5ae327f9cc13b68763b5749770cb9e048a99bd9dfdfa58d0cf05d5f64afe0"
 dependencies = [
  "heck",
- "proc-macro-error 1.0.4",
+ "proc-macro-error",
  "proc-macro2",
  "quote",
  "syn",
@@ -10425,7 +10390,7 @@ name = "substrate-wasm-builder"
 version = "5.0.0-dev"
 source = "git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.12#d76f39995315ec36980908e4b99709bd14927044"
 dependencies = [
- "ansi_term 0.12.1",
+ "ansi_term",
  "build-helper",
  "cargo_metadata",
  "sp-maybe-compressed-blob",
@@ -10456,17 +10421,6 @@ dependencies = [
  "proc-macro2",
  "quote",
  "unicode-xid",
-]
-
-[[package]]
-name = "syn-mid"
-version = "0.5.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "baa8e7560a164edb1621a55d18a0c59abf49d360f47aa7b821061dd7eea7fac9"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn",
 ]
 
 [[package]]
@@ -10781,7 +10735,7 @@ version = "0.2.25"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0e0d2eaa99c3c2e41547cfa109e910a68ea03823cccad4a0525dcbc9b01e8c71"
 dependencies = [
- "ansi_term 0.12.1",
+ "ansi_term",
  "chrono",
  "lazy_static",
  "matchers",
