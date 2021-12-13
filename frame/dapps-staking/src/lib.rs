@@ -8,7 +8,7 @@ use frame_support::traits::Currency;
 use frame_system::{self as system};
 use scale_info::TypeInfo;
 use sp_runtime::RuntimeDebug;
-use sp_std::{ops::Add, prelude::*};
+use sp_std::{collections::btree_map::BTreeMap, ops::Add, prelude::*};
 
 pub mod pallet;
 pub mod traits;
@@ -229,10 +229,39 @@ where
 
 /// Contains information about account's locked & unbonding balances.
 #[derive(Clone, PartialEq, Encode, Decode, Default, RuntimeDebug, TypeInfo)]
-pub struct AccountLedger<Balance: HasCompact> {
+pub struct AccountLedger<SmartContract: Ord + Clone, Balance: HasCompact> {
     /// Total balance locked.
     #[codec(compact)]
     locked: Balance,
     /// Information about unbonding chunks.
     unbonding_info: UnbondingInfo<Balance>,
+    /// Keys represent all contracts that are (or were) staked.
+    /// If value is `None`, contract is still staked.
+    /// If value is `Some(era)`, contract was fully unstaked in `era`.
+    /// Unstaked contracts are removed from the map after some time.
+    staked_contracts: BTreeMap<SmartContract, Option<EraIndex>>,
+}
+
+impl<SmartContract: Ord + Clone, Balance: HasCompact> AccountLedger<SmartContract, Balance> {
+    /// Should be called when contract is staked by a staker.
+    pub(crate) fn contract_staked(&mut self, contract_id: &SmartContract) {
+        if !self.staked_contracts.contains_key(contract_id) {
+            self.staked_contracts.insert(contract_id.clone(), None);
+        }
+    }
+
+    /// Should be called when contract is fully unstaked by a staker.
+    pub(crate) fn contract_unstaked(
+        &mut self,
+        contract_id: &SmartContract,
+        era: EraIndex,
+        history_depth: EraIndex,
+    ) {
+        self.staked_contracts.insert(contract_id.clone(), Some(era));
+
+        self.staked_contracts.retain(|_, v| match v {
+            None => true,
+            Some(unstake_era) => *unstake_era >= era.saturating_sub(history_depth),
+        });
+    }
 }

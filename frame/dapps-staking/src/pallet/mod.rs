@@ -54,7 +54,7 @@ pub mod pallet {
             + ReservableCurrency<Self::AccountId>;
 
         // type used for Accounts on EVM and on Substrate
-        type SmartContract: IsContract + Parameter + Member;
+        type SmartContract: IsContract + Parameter + Member + Ord;
 
         /// Number of blocks per era.
         #[pallet::constant]
@@ -115,8 +115,13 @@ pub mod pallet {
     /// Bonded amount for the staker
     #[pallet::storage]
     #[pallet::getter(fn ledger)]
-    pub(crate) type Ledger<T: Config> =
-        StorageMap<_, Blake2_128Concat, T::AccountId, AccountLedger<BalanceOf<T>>, ValueQuery>;
+    pub(crate) type Ledger<T: Config> = StorageMap<
+        _,
+        Blake2_128Concat,
+        T::AccountId,
+        AccountLedger<T::SmartContract, BalanceOf<T>>,
+        ValueQuery,
+    >;
 
     /// The current era index.
     #[pallet::storage]
@@ -506,6 +511,7 @@ pub mod pallet {
                 .locked
                 .checked_add(&value_to_stake)
                 .ok_or(ArithmeticError::Overflow)?;
+            ledger.contract_staked(&contract_id);
 
             // Update total staked value in era.
             EraRewardsAndStakes::<T>::mutate(&current_era, |value| {
@@ -591,6 +597,9 @@ pub mod pallet {
                 Error::<T>::TooManyUnlockingChunks
             );
 
+            if value_to_unstake == staker_info.staked {
+                ledger.contract_unstaked(&contract_id, current_era, T::HistoryDepth::get());
+            }
             Self::update_ledger(&staker, ledger);
 
             let mut contract_info = Self::contract_staking_info(&contract_id, current_era);
@@ -805,7 +814,10 @@ pub mod pallet {
 
         /// Update the ledger for a staker. This will also update the stash lock.
         /// This lock will lock the entire funds except paying for further transactions.
-        fn update_ledger(staker: &T::AccountId, ledger: AccountLedger<BalanceOf<T>>) {
+        fn update_ledger(
+            staker: &T::AccountId,
+            ledger: AccountLedger<T::SmartContract, BalanceOf<T>>,
+        ) {
             if ledger.locked.is_zero() && ledger.unbonding_info.is_empty() {
                 Ledger::<T>::remove(&staker);
                 T::Currency::remove_lock(STAKING_ID, &staker);

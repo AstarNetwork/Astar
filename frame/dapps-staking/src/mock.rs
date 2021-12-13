@@ -148,19 +148,21 @@ impl pallet_dapps_staking::Config for TestRuntime {
     type UnbondingPeriod = UnbondingPeriod;
 }
 
-#[derive(PartialEq, Eq, Copy, Clone, Encode, Decode, Debug, scale_info::TypeInfo)]
-pub enum MockSmartContract<AccountId> {
+#[derive(
+    Ord, PartialOrd, PartialEq, Eq, Copy, Clone, Encode, Decode, Debug, scale_info::TypeInfo,
+)]
+pub enum MockSmartContract<AccountId: Ord> {
     Evm(sp_core::H160),
     Wasm(AccountId),
 }
 
-impl<AccountId> Default for MockSmartContract<AccountId> {
+impl<AccountId: Ord> Default for MockSmartContract<AccountId> {
     fn default() -> Self {
         MockSmartContract::Evm(H160::repeat_byte(0x01))
     }
 }
 
-impl<AccountId> pallet_dapps_staking::IsContract for MockSmartContract<AccountId> {
+impl<AccountId: Ord> pallet_dapps_staking::IsContract for MockSmartContract<AccountId> {
     fn is_valid(&self) -> bool {
         match self {
             MockSmartContract::Wasm(_account) => false,

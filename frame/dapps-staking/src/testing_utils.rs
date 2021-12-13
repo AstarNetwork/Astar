@@ -3,6 +3,32 @@ use frame_support::assert_ok;
 use mock::{EraIndex, *};
 use sp_runtime::{traits::AccountIdConversion, Perbill};
 
+pub(crate) struct MemorySnapshot {
+    reward_and_stake: EraRewardAndStake<Balance>,
+    dapp_info: DeveloperInfo<AccountId>,
+    contract_info: EraStakingPoints<Balance>,
+    staker_info: StakerInfo<Balance>,
+    ledger: AccountLedger<MockSmartContract<AccountId>, Balance>,
+    staker_balance: Balance,
+}
+
+impl MemorySnapshot {
+    fn new(
+        era: EraIndex,
+        contract_id: &MockSmartContract<AccountId>,
+        staker: Option<AccountId>,
+    ) -> Self {
+        Self {
+            reward_and_stake: DappsStaking::era_reward_and_stake(era).unwrap(),
+            dapp_info: RegisteredDapps::<TestRuntime>::get(contract_id).unwrap(),
+            contract_info: DappsStaking::contract_staking_info(contract_id, era),
+            staker_info: DappsStaking::staker_staking_info(&staker.unwrap(), contract_id, era),
+            ledger: DappsStaking::ledger(&staker.unwrap()),
+            staker_balance: <TestRuntime as Config>::Currency::free_balance(&staker.unwrap()),
+        }
+    }
+}
+
 /// Used to fetch the free balance of dapps staking account
 pub(crate) fn free_balance_of_dapps_staking_account() -> Balance {
     <TestRuntime as Config>::Currency::free_balance(
@@ -27,17 +53,53 @@ pub(crate) fn get_total_reward_per_era() -> Balance {
     BLOCK_REWARD * BLOCKS_PER_ERA as Balance
 }
 
-/// Used to perform bond_and_stake with success assertion.
-pub(crate) fn bond_and_stake_with_verification(
+/// Perform `bond_and_stake` with all the accompanied checks including before/after storage comparison.
+pub(crate) fn assert_bond_and_stake(
     staker_id: AccountId,
     contract_id: &MockSmartContract<AccountId>,
     value: Balance,
 ) {
+    let current_era = DappsStaking::current_era();
+    let init_state = MemorySnapshot::new(current_era, &contract_id, Some(staker_id));
+
+    let available_for_staking = init_state.staker_balance
+        - init_state.ledger.locked
+        - <TestRuntime as Config>::MinimumRemainingAmount::get();
+    let staking_value = available_for_staking.min(value);
+
     assert_ok!(DappsStaking::bond_and_stake(
         Origin::signed(staker_id),
         contract_id.clone(),
         value,
     ));
+    System::assert_last_event(mock::Event::DappsStaking(Event::BondAndStake(
+        staker_id,
+        contract_id.clone(),
+        staking_value,
+    )));
+
+    let final_state = MemorySnapshot::new(current_era, &contract_id, Some(staker_id));
+
+    // TODO: checks scenario where number of stakers is increased!
+
+    assert_eq!(
+        final_state.reward_and_stake.staked,
+        init_state.reward_and_stake.staked + staking_value
+    );
+    assert_eq!(
+        final_state.contract_info.total,
+        init_state.contract_info.total + staking_value
+    );
+    assert_eq!(
+        final_state.staker_info.staked,
+        init_state.staker_info.staked + staking_value
+    );
+
+    assert_eq!(
+        final_state.ledger.locked,
+        init_state.ledger.locked + staking_value
+    );
+    assert_eq!(final_state.ledger.staked_contracts[&contract_id], None);
 }
 
 // TODO: doc
@@ -80,7 +142,7 @@ pub(crate) fn unbond_from_unregistered_contract_with_verification(
 }
 
 /// Used to perform start_unbonding with sucess and storage assertions.
-pub(crate) fn unbond_and_unstake_with_verification(
+pub(crate) fn assert_unbond_and_unstake(
     staker: AccountId,
     contract_id: &MockSmartContract<AccountId>,
     value: Balance,
@@ -191,7 +253,7 @@ pub(crate) fn unbond_and_unstake_with_verification(
 }
 
 /// Used to perform start_unbonding with sucess and storage assertions.
-pub(crate) fn withdraw_unbonded_with_verification(staker: AccountId) {
+pub(crate) fn assert_withdraw_unbonded(staker: AccountId) {
     let current_era = DappsStaking::current_era();
 
     let init_rewards_and_stakes = EraRewardsAndStakes::<TestRuntime>::get(current_era).unwrap();
@@ -224,13 +286,6 @@ pub(crate) fn withdraw_unbonded_with_verification(staker: AccountId) {
     );
 }
 
-/// Used to verify ledger content.
-pub(crate) fn verify_ledger(staker_id: AccountId, staked_value: Balance) {
-    // Verify that ledger storage values are as expected.
-    let ledger = Ledger::<TestRuntime>::get(staker_id);
-    assert_eq!(staked_value, ledger.locked);
-}
-
 /// Used to verify era staking points content. Note that this requires era staking points for the specified era to exist.
 pub(crate) fn verify_contract_staking_info(
     contract_id: &MockSmartContract<AccountId>,
@@ -251,27 +306,8 @@ pub(crate) fn verify_contract_staking_info(
     }
 }
 
-/// Used to verify pallet era staked value.
-pub(crate) fn verify_pallet_era_staked(era: crate::EraIndex, total_staked_value: Balance) {
-    // Verify that total staked amount in era is as expected
-    let era_rewards = EraRewardsAndStakes::<TestRuntime>::get(era).unwrap();
-    assert_eq!(total_staked_value, era_rewards.staked);
-}
-
-/// Used to verify pallet era staked and reward values.
-pub(crate) fn verify_pallet_era_staked_and_reward(
-    era: crate::EraIndex,
-    total_staked_value: Balance,
-    total_reward_value: Balance,
-) {
-    // Verify that total staked amount in era is as expected
-    let era_rewards = EraRewardsAndStakes::<TestRuntime>::get(era).unwrap();
-    assert_eq!(total_staked_value, era_rewards.staked);
-    assert_eq!(total_reward_value, era_rewards.rewards);
-}
-
-/// Used to perform claim with success assertion
-pub(crate) fn claim_with_verification(
+/// Perform `claim` with all the accompanied checks including before/after storage comparison.
+pub(crate) fn assert_claim(
     claimer: AccountId,
     contract_id: MockSmartContract<AccountId>,
     claim_era: EraIndex,
@@ -280,33 +316,29 @@ pub(crate) fn claim_with_verification(
     // TODO: this might not be needed if we don't need to verify more than 1 event
     clear_all_events();
 
-    let claimer_is_dev = RegisteredDapps::<TestRuntime>::get(&contract_id)
-        .unwrap()
-        .developer
-        == claimer;
-
+    let init_state = MemorySnapshot::new(claim_era, &contract_id, Some(claimer));
     let init_free_balance = <TestRuntime as Config>::Currency::free_balance(claimer);
+    let claimer_is_dev = init_state.dapp_info.developer == claimer;
 
     // Read in structs from storage
-    let rewards_and_stakes = DappsStaking::era_reward_and_stake(claim_era).unwrap();
-    let init_contract_info = DappsStaking::contract_staking_info(&contract_id, claim_era);
-    let init_staker_info = DappsStaking::staker_staking_info(&claimer, &contract_id, claim_era);
     if !claimer_is_dev {
-        assert!(init_staker_info.staked > 0);
+        assert!(init_state.staker_info.staked > 0);
     }
-    assert_eq!(init_staker_info.claimed_rewards, 0);
+    assert_eq!(init_state.staker_info.claimed_rewards, 0);
 
     // Calculate contract portion of the reward
-    // TODO: add this function as a helper method to struct?
-    let contract_reward =
-        Perbill::from_rational(init_contract_info.total, rewards_and_stakes.staked)
-            * rewards_and_stakes.rewards;
+    // TODO: add this function as a helper method to struct? Or just a helper function on pallet level?
+    let contract_reward = Perbill::from_rational(
+        init_state.contract_info.total,
+        init_state.reward_and_stake.staked,
+    ) * init_state.reward_and_stake.rewards;
     let developer_reward_part =
         Perbill::from_percent(DEVELOPER_REWARD_PERCENTAGE) * contract_reward;
     let stakers_joint_reward = contract_reward - developer_reward_part;
-    let staker_reward_part =
-        Perbill::from_rational(init_staker_info.staked, init_contract_info.total)
-            * stakers_joint_reward;
+    let staker_reward_part = Perbill::from_rational(
+        init_state.staker_info.staked,
+        init_state.contract_info.total,
+    ) * stakers_joint_reward;
 
     let calculated_reward = if claimer_is_dev {
         developer_reward_part + staker_reward_part
@@ -319,7 +351,6 @@ pub(crate) fn claim_with_verification(
         contract_id,
         claim_era
     ));
-
     System::assert_last_event(mock::Event::DappsStaking(Event::Reward(
         claimer,
         contract_id.clone(),
@@ -330,17 +361,48 @@ pub(crate) fn claim_with_verification(
     let final_free_balance = <TestRuntime as Config>::Currency::free_balance(claimer);
     assert_eq!(init_free_balance + calculated_reward, final_free_balance);
 
-    let final_staker_info = DappsStaking::staker_staking_info(&claimer, &contract_id, claim_era);
-    assert_eq!(final_staker_info.claimed_rewards, calculated_reward);
+    let final_state = MemorySnapshot::new(claim_era, &contract_id, Some(claimer));
+    assert_eq!(final_state.staker_info.claimed_rewards, calculated_reward);
 }
 
-/// Used to verify that storage is cleared of all contract related values after unregistration.
-pub(crate) fn verify_storage_after_unregister(
-    developer: &AccountId,
-    contract_id: &MockSmartContract<AccountId>,
-) {
-    let dapp_info = RegisteredDapps::<TestRuntime>::get(contract_id).unwrap();
-    assert_eq!(dapp_info.state, DAppState::Unregistered);
-    assert_eq!(dapp_info.developer, *developer);
+/// Perform `unregister` with all the accompanied checks including before/after storage comparison.
+pub(crate) fn assert_unregister(developer: AccountId, contract_id: &MockSmartContract<AccountId>) {
+    // dApp should be registered prior to unregistering it
+    let init_dapp_info = RegisteredDapps::<TestRuntime>::get(contract_id).unwrap();
+    assert_eq!(init_dapp_info.state, DAppState::Registered);
+
+    let current_era = DappsStaking::current_era();
+    let init_rewards_and_stakes = DappsStaking::era_reward_and_stake(current_era).unwrap();
+    let init_contract_staking_info = DappsStaking::contract_staking_info(contract_id, current_era);
+    let init_reserved_balance = <TestRuntime as Config>::Currency::reserved_balance(&developer);
+
+    // Ensure that contract can be unregistered
+    assert_ok!(DappsStaking::unregister(
+        Origin::signed(developer),
+        contract_id.clone()
+    ));
+    System::assert_last_event(mock::Event::DappsStaking(Event::ContractRemoved(
+        developer,
+        contract_id.clone(),
+    )));
+
+    let final_reserved_balance = <TestRuntime as Config>::Currency::reserved_balance(&developer);
+    assert_eq!(
+        final_reserved_balance,
+        init_reserved_balance - <TestRuntime as Config>::RegisterDeposit::get()
+    );
+
+    let final_rewards_and_stakes = DappsStaking::era_reward_and_stake(current_era).unwrap();
+    assert_eq!(
+        final_rewards_and_stakes.staked,
+        init_rewards_and_stakes.staked - init_contract_staking_info.total
+    );
+
+    let final_contract_staking_info = DappsStaking::contract_staking_info(contract_id, current_era);
+    assert_eq!(final_contract_staking_info.total, 0);
+
+    let final_dapp_info = RegisteredDapps::<TestRuntime>::get(contract_id).unwrap();
+    assert_eq!(final_dapp_info.state, DAppState::Unregistered);
+    assert_eq!(final_dapp_info.developer, developer);
     assert!(RegisteredDevelopers::<TestRuntime>::contains_key(developer));
 }

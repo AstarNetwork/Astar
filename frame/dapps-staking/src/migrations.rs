@@ -69,6 +69,7 @@ pub mod v2 {
             Some(AccountLedger {
                 locked: value,
                 unbonding_info: Default::default(),
+                staked_contracts: Default::default(),
             })
         });
 
