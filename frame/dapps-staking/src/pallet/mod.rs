@@ -148,7 +148,7 @@ pub mod pallet {
     #[pallet::storage]
     #[pallet::getter(fn registered_developer)]
     pub(crate) type RegisteredDapps<T: Config> =
-        StorageMap<_, Blake2_128Concat, T::SmartContract, T::AccountId>;
+        StorageMap<_, Blake2_128Concat, T::SmartContract, DeveloperInfo<T::AccountId>>;
 
     /// Total block rewards for the pallet per era and total staked funds
     #[pallet::storage]
@@ -231,6 +231,8 @@ pub mod pallet {
         NotOperatedContract,
         /// Contract isn't staked.
         NotStakedContract,
+        /// Contract isn't unregistered.
+        NotUnregisteredContract,
         /// Unstaking a contract with zero value
         UnstakingWithNoValue,
         /// There are no previously unbonded funds that can be unstaked and withdrawn.
@@ -322,7 +324,10 @@ pub mod pallet {
 
             T::Currency::reserve(&developer, T::RegisterDeposit::get())?;
 
-            RegisteredDapps::<T>::insert(contract_id.clone(), developer.clone());
+            RegisteredDapps::<T>::insert(
+                contract_id.clone(),
+                DeveloperInfo::new(developer.clone()),
+            );
             RegisteredDevelopers::<T>::insert(&developer, contract_id.clone());
 
             Self::deposit_event(Event::<T>::NewContract(developer, contract_id));
@@ -342,6 +347,13 @@ pub mod pallet {
         ) -> DispatchResultWithPostInfo {
             let developer = ensure_signed(origin)?;
 
+            let mut dapp_info =
+                RegisteredDapps::<T>::get(&contract_id).ok_or(Error::<T>::NotOperatedContract)?;
+            // TODO: new error for unregistering unregistered contract? Seems like an overkill.
+            ensure!(
+                dapp_info.state == DAppState::Registered,
+                Error::<T>::NotOperatedContract
+            );
             let registered_contract =
                 RegisteredDevelopers::<T>::get(&developer).ok_or(Error::<T>::NotOwnedContract)?;
 
@@ -354,40 +366,71 @@ pub mod pallet {
 
             // We need to unstake all funds that are currently staked
             let current_era = Self::current_era();
-            let staking_info = Self::contract_staking_info(&contract_id, current_era);
-            // TODO: not part of this task, but this needs to be optimized
-            // Perhaps EraStakeInfo can be marked as inactive - that way stakers could withdraw their funds even after contract is unregistered.
-            // for (staker, amount) in staking_info.stakers.iter() {
-            //     let mut ledger = Self::ledger(staker);
-            //     ledger.locked = ledger.locked.saturating_sub(*amount);
-            //     Self::update_ledger(staker, ledger);
-            // }
+            let mut staking_info = Self::contract_staking_info(&contract_id, current_era);
 
             // Need to update total amount staked
             let staking_total = staking_info.total;
-            EraRewardsAndStakes::<T>::mutate(
-                &current_era,
-                // XXX: RewardsAndStakes should be set by `on_initialize` for each era
-                |value| {
-                    if let Some(x) = value {
-                        x.staked = x.staked.saturating_sub(staking_total)
-                    }
-                },
-            );
+            EraRewardsAndStakes::<T>::mutate(&current_era, |value| {
+                if let Some(x) = value {
+                    x.staked = x.staked.saturating_sub(staking_total)
+                }
+            });
 
-            // Nett to update staking data for next era.
-            // TODO: this needs to be revised, see TODO above
-            let empty_staking_info = EraStakingPoints::<BalanceOf<T>>::default();
-            ContractEraStake::<T>::insert(contract_id.clone(), current_era, empty_staking_info);
+            // This makes contract ilegible for rewards from this era onwards.
+            staking_info.total = Zero::zero();
+            ContractEraStake::<T>::insert(contract_id.clone(), current_era, staking_info);
 
-            // Developer account released but contract can not be released more.
             T::Currency::unreserve(&developer, T::RegisterDeposit::get());
-            RegisteredDevelopers::<T>::remove(&developer);
+
+            // TODO: remove staker and reduce number of stakers to zero?
+
+            dapp_info.state = DAppState::Unregistered;
+            RegisteredDapps::<T>::insert(&contract_id, dapp_info);
 
             Self::deposit_event(Event::<T>::ContractRemoved(developer, contract_id));
 
             // let number_of_stakers = staking_info.stakers.len();
             Ok(Some(T::WeightInfo::unregister(1 as u32)).into())
+        }
+
+        // TODO: weight and doc
+        #[pallet::weight(T::WeightInfo::unregister(T::MaxNumberOfStakersPerContract::get()))]
+        pub fn unbond_from_unregistered_contract(
+            origin: OriginFor<T>,
+            contract_id: T::SmartContract,
+        ) -> DispatchResultWithPostInfo {
+            let staker = ensure_signed(origin)?;
+
+            // dApp must exist and it has to be unregistered
+            let dapp_info =
+                RegisteredDapps::<T>::get(&contract_id).ok_or(Error::<T>::NotOperatedContract)?;
+            ensure!(
+                dapp_info.state == DAppState::Unregistered,
+                Error::<T>::NotUnregisteredContract
+            );
+
+            let current_era = Self::current_era();
+
+            // There should be some leftover staked amount
+            let staking_info = Self::staker_staking_info(&staker, &contract_id, current_era);
+            ensure!(
+                staking_info.staked > Zero::zero(),
+                Error::<T>::NotStakedContract
+            );
+
+            // Unlock the staked amount immediately. No unbonding period for this scenario.
+            let mut ledger = Self::ledger(&staker);
+            ledger.locked = ledger.locked.saturating_sub(staking_info.staked);
+            Self::update_ledger(&staker, ledger);
+
+            // Write default empty staker info struct to state that no remaining staked amount remains.
+            StakerContractEraInfo::<T>::insert(
+                (&staker, &contract_id),
+                current_era,
+                StakerInfo::default(),
+            );
+
+            Ok(().into())
         }
 
         /// Lock up and stake balance of the origin account.
@@ -620,8 +663,17 @@ pub mod pallet {
         ) -> DispatchResultWithPostInfo {
             let claimer = ensure_signed(origin)?;
 
-            let developer =
+            let dapp_info =
                 RegisteredDapps::<T>::get(&contract_id).ok_or(Error::<T>::NotOperatedContract)?;
+
+            let contract_info = Self::contract_staking_info(&contract_id, era);
+            if dapp_info.state == DAppState::Unregistered {
+                // TODO: Add a new error here? Claim beyond unregitered era?
+                ensure!(
+                    contract_info.total > Zero::zero(),
+                    Error::<T>::NotOperatedContract
+                );
+            }
 
             let current_era = Self::current_era();
             let era_low_bound = current_era.saturating_sub(T::HistoryDepth::get());
@@ -636,21 +688,19 @@ pub mod pallet {
                 Error::<T>::AlreadyClaimedInThisEra,
             );
             // Dev doesn't need to have anything staked
-            if claimer != developer {
+            if claimer != dapp_info.developer {
                 ensure!(staker_info.staked > Zero::zero(), Error::<T>::NotStaked,);
             }
 
             let reward_and_stake =
                 Self::era_reward_and_stake(era).ok_or(Error::<T>::UnknownEraReward)?;
 
-            let contract_info = Self::contract_staking_info(&contract_id, era);
-
             // Calculate the contract reward for this era.
             let reward_ratio = Perbill::from_rational(contract_info.total, reward_and_stake.staked);
             let contract_reward = reward_ratio * reward_and_stake.rewards;
 
             // Calculate the developer part of the reward. Only dev is eligible for this part.
-            let developer_part_reward = if claimer == developer {
+            let developer_part_reward = if claimer == dapp_info.developer {
                 T::DeveloperRewardPercentage::get() * contract_reward
             } else {
                 Zero::zero()
@@ -828,14 +878,13 @@ pub mod pallet {
             }
         }
 
-        /// Check that contract have active developer linkage.
+        /// Check that contract is registered and active.
         fn is_active(contract_id: &T::SmartContract) -> bool {
-            if let Some(developer) = RegisteredDapps::<T>::get(contract_id) {
-                if let Some(r_contract_id) = RegisteredDevelopers::<T>::get(&developer) {
-                    return r_contract_id == *contract_id;
-                }
+            if let Some(dapp_info) = RegisteredDapps::<T>::get(contract_id) {
+                dapp_info.state == DAppState::Registered
+            } else {
+                false
             }
-            false
         }
     }
 }

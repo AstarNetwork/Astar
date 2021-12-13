@@ -40,6 +40,45 @@ pub(crate) fn bond_and_stake_with_verification(
     ));
 }
 
+// TODO: doc
+pub(crate) fn unbond_from_unregistered_contract_with_verification(
+    staker: AccountId,
+    contract_id: &MockSmartContract<AccountId>,
+) {
+    let current_era = DappsStaking::current_era();
+
+    let init_era_reward_and_stake = DappsStaking::era_reward_and_stake(current_era);
+
+    // dApp must exist and it has to be unregistered
+    let init_dapp_info = RegisteredDapps::<TestRuntime>::get(contract_id).unwrap();
+    assert_eq!(init_dapp_info.state, DAppState::Unregistered);
+
+    let init_ledger = DappsStaking::ledger(&staker);
+    let init_staking_info = DappsStaking::staker_staking_info(&staker, contract_id, current_era);
+    assert!(init_staking_info.staked > 0);
+
+    assert_ok!(DappsStaking::unbond_from_unregistered_contract(
+        Origin::signed(staker.clone()),
+        contract_id.clone()
+    ));
+    // TODO: event
+
+    let final_era_reward_and_stake = DappsStaking::era_reward_and_stake(current_era);
+    assert_eq!(init_era_reward_and_stake, final_era_reward_and_stake);
+
+    let final_dapp_info = RegisteredDapps::<TestRuntime>::get(contract_id).unwrap();
+    assert_eq!(init_dapp_info, final_dapp_info);
+
+    let final_ledger = DappsStaking::ledger(&staker);
+    assert_eq!(
+        final_ledger.locked,
+        init_ledger.locked - init_staking_info.staked
+    );
+
+    let final_staking_info = DappsStaking::staker_staking_info(&staker, contract_id, current_era);
+    assert_eq!(final_staking_info.staked, 0);
+}
+
 /// Used to perform start_unbonding with sucess and storage assertions.
 pub(crate) fn unbond_and_unstake_with_verification(
     staker: AccountId,
@@ -241,7 +280,10 @@ pub(crate) fn claim_with_verification(
     // TODO: this might not be needed if we don't need to verify more than 1 event
     clear_all_events();
 
-    let claimer_is_dev = RegisteredDapps::<TestRuntime>::get(&contract_id).unwrap() == claimer;
+    let claimer_is_dev = RegisteredDapps::<TestRuntime>::get(&contract_id)
+        .unwrap()
+        .developer
+        == claimer;
 
     let init_free_balance = <TestRuntime as Config>::Currency::free_balance(claimer);
 
@@ -256,13 +298,15 @@ pub(crate) fn claim_with_verification(
 
     // Calculate contract portion of the reward
     // TODO: add this function as a helper method to struct?
-    let contract_reward = Perbill::from_rational(init_contract_info.total, rewards_and_stakes.staked)
-        * rewards_and_stakes.rewards;
+    let contract_reward =
+        Perbill::from_rational(init_contract_info.total, rewards_and_stakes.staked)
+            * rewards_and_stakes.rewards;
     let developer_reward_part =
         Perbill::from_percent(DEVELOPER_REWARD_PERCENTAGE) * contract_reward;
     let stakers_joint_reward = contract_reward - developer_reward_part;
     let staker_reward_part =
-        Perbill::from_rational(init_staker_info.staked, init_contract_info.total) * stakers_joint_reward;
+        Perbill::from_rational(init_staker_info.staked, init_contract_info.total)
+            * stakers_joint_reward;
 
     let calculated_reward = if claimer_is_dev {
         developer_reward_part + staker_reward_part
@@ -295,8 +339,8 @@ pub(crate) fn verify_storage_after_unregister(
     developer: &AccountId,
     contract_id: &MockSmartContract<AccountId>,
 ) {
-    assert!(RegisteredDapps::<TestRuntime>::contains_key(contract_id));
-    assert!(!RegisteredDevelopers::<TestRuntime>::contains_key(
-        developer
-    ));
+    let dapp_info = RegisteredDapps::<TestRuntime>::get(contract_id).unwrap();
+    assert_eq!(dapp_info.state, DAppState::Unregistered);
+    assert_eq!(dapp_info.developer, *developer);
+    assert!(RegisteredDevelopers::<TestRuntime>::contains_key(developer));
 }

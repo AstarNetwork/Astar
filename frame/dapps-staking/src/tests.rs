@@ -143,14 +143,18 @@ fn register_is_ok() {
         initialize_first_block();
 
         let developer = 1;
-        let ok_contract = MockSmartContract::Evm(H160::repeat_byte(0x01));
+        let contract_id = MockSmartContract::Evm(H160::repeat_byte(0x01));
 
         assert!(<TestRuntime as Config>::Currency::reserved_balance(&developer).is_zero());
-        register_contract(developer, &ok_contract);
+        register_contract(developer, &contract_id);
         System::assert_last_event(mock::Event::DappsStaking(Event::NewContract(
             developer,
-            ok_contract,
+            contract_id,
         )));
+
+        let dapp_info = RegisteredDapps::<TestRuntime>::get(&contract_id).unwrap();
+        assert_eq!(dapp_info.state, DAppState::Registered);
+        assert_eq!(dapp_info.developer, developer);
 
         assert_eq!(
             RegisterDeposit::get(),
@@ -289,67 +293,6 @@ fn unregister_after_register_is_ok() {
 }
 
 #[test]
-fn unregister_with_staked_contracts_is_ok() {
-    ExternalityBuilder::build().execute_with(|| {
-        initialize_first_block();
-
-        let developer = 1;
-        let dummy_developer = 2;
-        let staker_1 = 3;
-        let staker_2 = 4;
-        let staked_value_1 = 150;
-        let staked_value_2 = 330;
-        let contract_id = MockSmartContract::Evm(H160::repeat_byte(0x01));
-        let dummy_contract_id = MockSmartContract::Evm(H160::repeat_byte(0x05));
-
-        // Register both contracts and stake them
-        register_contract(developer, &contract_id);
-        register_contract(dummy_developer, &dummy_contract_id);
-        bond_and_stake_with_verification(staker_1, &contract_id, staked_value_1);
-        bond_and_stake_with_verification(staker_2, &contract_id, staked_value_2);
-
-        // This contract will just exist so it helps us with testing ledger content
-        bond_and_stake_with_verification(staker_1, &dummy_contract_id, staked_value_1);
-        bond_and_stake_with_verification(staker_2, &dummy_contract_id, staked_value_2);
-
-        // Advance eras. This will accumulate some rewards.
-        advance_to_era(5);
-        let current_era = DappsStaking::current_era();
-
-        // Ensure that era reward&stake are as expected. Later we will verify that this value is reduced.
-        assert_eq!(
-            (staked_value_1 + staked_value_2) * 2,
-            DappsStaking::era_reward_and_stake(&current_era)
-                .unwrap()
-                .staked
-        );
-
-        // Ensure that contract can be unregistered
-        assert_ok!(DappsStaking::unregister(
-            Origin::signed(developer),
-            contract_id.clone()
-        ));
-        System::assert_last_event(mock::Event::DappsStaking(Event::ContractRemoved(
-            developer,
-            contract_id,
-        )));
-        verify_storage_after_unregister(&developer, &contract_id);
-
-        // Ensure ledger contains expected stake values. We have a single staked contract remaining.
-        assert_eq!(staked_value_1, DappsStaking::ledger(&staker_1).locked);
-        assert_eq!(staked_value_2, DappsStaking::ledger(&staker_2).locked);
-
-        // Ensure that era reward&stake has been updated
-        assert_eq!(
-            staked_value_1 + staked_value_2,
-            DappsStaking::era_reward_and_stake(&current_era)
-                .unwrap()
-                .staked
-        );
-    })
-}
-
-#[test]
 fn unregister_with_incorrect_contract_does_not_work() {
     ExternalityBuilder::build().execute_with(|| {
         initialize_first_block();
@@ -403,6 +346,117 @@ fn unregister_stake_and_unstake_is_not_ok() {
         assert_noop!(
             DappsStaking::unbond_and_unstake(Origin::signed(staker), contract_id.clone(), 100),
             Error::<TestRuntime>::NotOperatedContract
+        );
+    })
+}
+
+#[test]
+fn unbond_from_unregistered_contract_is_ok() {
+    ExternalityBuilder::build().execute_with(|| {
+        initialize_first_block();
+
+        let developer = 1;
+        let dummy_developer = 2;
+        let staker_1 = 3;
+        let staker_2 = 4;
+        let staked_value_1 = 150;
+        let staked_value_2 = 330;
+        let contract_id = MockSmartContract::Evm(H160::repeat_byte(0x01));
+        let dummy_contract_id = MockSmartContract::Evm(H160::repeat_byte(0x05));
+
+        // Register both contracts and stake them
+        register_contract(developer, &contract_id);
+        register_contract(dummy_developer, &dummy_contract_id);
+        bond_and_stake_with_verification(staker_1, &contract_id, staked_value_1);
+        bond_and_stake_with_verification(staker_2, &contract_id, staked_value_2);
+
+        // This contract will just exist so it helps us with testing ledger content
+        bond_and_stake_with_verification(staker_1, &dummy_contract_id, staked_value_1);
+
+        // Advance eras. This will accumulate some rewards.
+        advance_to_era(5);
+
+        // Ensure that contract can be unregistered
+        assert_ok!(DappsStaking::unregister(
+            Origin::signed(developer),
+            contract_id.clone()
+        ));
+        System::assert_last_event(mock::Event::DappsStaking(Event::ContractRemoved(
+            developer,
+            contract_id,
+        )));
+        verify_storage_after_unregister(&developer, &contract_id);
+
+        // Unbond everything from the contract.
+        unbond_from_unregistered_contract_with_verification(staker_1, &contract_id);
+        unbond_from_unregistered_contract_with_verification(staker_2, &contract_id);
+
+        // Claim should still work for past eras
+        for era in 1..DappsStaking::current_era() {
+            claim_with_verification(staker_1, contract_id.clone(), era);
+        }
+    })
+}
+
+#[test]
+fn unbond_from_unregistered_contract_when_contract_doesnt_exist() {
+    ExternalityBuilder::build().execute_with(|| {
+        initialize_first_block();
+
+        let contract_id = MockSmartContract::Evm(H160::repeat_byte(0x01));
+        assert_noop!(
+            DappsStaking::unbond_from_unregistered_contract(Origin::signed(1), contract_id),
+            Error::<TestRuntime>::NotOperatedContract
+        );
+    })
+}
+
+#[test]
+fn unbond_from_unregistered_contract_when_contract_is_still_registered() {
+    ExternalityBuilder::build().execute_with(|| {
+        initialize_first_block();
+
+        let developer = 1;
+        let contract_id = MockSmartContract::Evm(H160::repeat_byte(0x01));
+        register_contract(developer, &contract_id);
+
+        assert_noop!(
+            DappsStaking::unbond_from_unregistered_contract(Origin::signed(1), contract_id),
+            Error::<TestRuntime>::NotUnregisteredContract
+        );
+    })
+}
+
+#[test]
+fn unbond_from_unregistered_contract_when_nothing_is_staked() {
+    ExternalityBuilder::build().execute_with(|| {
+        initialize_first_block();
+
+        let developer = 1;
+        let contract_id = MockSmartContract::Evm(H160::repeat_byte(0x01));
+        register_contract(developer, &contract_id);
+
+        let staker = 2;
+        let no_staker = 3;
+        bond_and_stake_with_verification(staker, &contract_id, 100);
+
+        // TODO: add a utility method that does the checkings
+        assert_ok!(DappsStaking::unregister(
+            Origin::signed(developer),
+            contract_id.clone()
+        ));
+
+        // No staked amount so call should fail.
+        assert_noop!(
+            DappsStaking::unbond_from_unregistered_contract(Origin::signed(no_staker), contract_id),
+            Error::<TestRuntime>::NotStakedContract
+        );
+
+        // Call should fail if called twice since no staked funds remain.
+        unbond_from_unregistered_contract_with_verification(staker, &contract_id);
+        assert_noop!(
+            DappsStaking::unbond_from_unregistered_contract(Origin::signed(staker), contract_id),
+            Error::<TestRuntime>::NotStakedContract
         );
     })
 }
@@ -1484,7 +1538,7 @@ fn claim_after_unregister_is_ok() {
         for era in unregistered_era..current_era {
             assert_noop!(
                 DappsStaking::claim(Origin::signed(developer), contract.clone(), era),
-                Error::<TestRuntime>::NotStaked,
+                Error::<TestRuntime>::NotOperatedContract,
             );
         }
     })
@@ -1510,7 +1564,7 @@ fn claim_one_contract_one_staker() {
 
         // Advance some eras to be able to claim rewards. Verify storage is consolidated
         advance_to_era(start_era + 1);
-        
+
         claim_with_verification(staker1, contract, start_era);
         claim_with_verification(developer, contract, start_era);
     })
@@ -1585,14 +1639,14 @@ fn claim_two_contracts_three_stakers() {
         // TODO: a convenient way to find all contract stakers?
 
         // Claim first contract rewards.
-        for era in first_claim_era .. DappsStaking::current_era() {
+        for era in first_claim_era..DappsStaking::current_era() {
             claim_with_verification(developer1, contract1.clone(), era);
             claim_with_verification(staker1, contract1.clone(), era);
             claim_with_verification(staker2, contract1.clone(), era);
         }
 
         // Claim second contract rewards.
-        for era in second_claim_era .. DappsStaking::current_era() {
+        for era in second_claim_era..DappsStaking::current_era() {
             claim_with_verification(developer2, contract2.clone(), era);
             claim_with_verification(staker2, contract2.clone(), era);
             claim_with_verification(staker3, contract2.clone(), era);

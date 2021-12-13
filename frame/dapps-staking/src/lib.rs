@@ -35,6 +35,29 @@ pub type BalanceOf<T> =
 /// Counter for the number of eras that have passed.
 pub type EraIndex = u32;
 
+#[derive(Copy, Clone, PartialEq, Eq, Encode, Decode, RuntimeDebug, TypeInfo)]
+pub enum DAppState {
+    Registered,
+    Unregistered,
+}
+
+#[derive(Clone, PartialEq, Eq, Encode, Decode, RuntimeDebug, TypeInfo)]
+pub struct DeveloperInfo<AccountId> {
+    /// Total balance locked.
+    developer: AccountId,
+    /// Information about unbonding chunks.
+    state: DAppState,
+}
+
+impl<AccountId> DeveloperInfo<AccountId> {
+    fn new(developer: AccountId) -> Self {
+        Self {
+            developer: developer,
+            state: DAppState::Registered,
+        }
+    }
+}
+
 /// Mode of era-forcing.
 #[derive(Copy, Clone, PartialEq, Eq, Encode, Decode, RuntimeDebug, TypeInfo)]
 #[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
