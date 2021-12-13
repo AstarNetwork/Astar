@@ -28,6 +28,9 @@ jobs:
     - name: Run all tests
       run: cargo test --all
 
+    - name: Cleanup after tests
+      run: cargo clean
+
     - name: Build optimized binary
       run: cargo build --release --verbose
 
