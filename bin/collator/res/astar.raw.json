@@ -1,10 +1,8 @@
 {
-  "name": "Astar Testnet",
+  "name": "Astar",
   "id": "astar",
   "chainType": "Live",
-  "bootNodes": [
-    "/ip4/127.0.0.1/tcp/30333/p2p/12D3KooWS8irhuk7SbWAacpz7N7AKzSZUqhHUTkJ168yT5oDrx38"
-  ],
+  "bootNodes": [],
   "telemetryEndpoints": null,
   "protocolId": "astar",
   "properties": {
