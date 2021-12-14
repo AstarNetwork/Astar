@@ -242,6 +242,7 @@ pub struct AccountLedger<SmartContract: Ord + Clone, Balance: HasCompact> {
     /// If value is `Some(era)`, contract was fully unstaked in `era`.
     /// Unstaked contracts are removed from the map after some time.
     staked_contracts: BTreeMap<SmartContract, Option<EraIndex>>,
+    // TODO: introduce reward destination for Compounding Rewards prep?
 }
 
 impl<SmartContract: Ord + Clone, Balance: AtLeast32BitUnsigned + Default + Copy>

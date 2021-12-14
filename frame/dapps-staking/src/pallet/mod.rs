@@ -175,12 +175,13 @@ pub mod pallet {
 
     #[pallet::storage]
     #[pallet::getter(fn staker_contract_era_stake)]
-    pub(crate) type StakerContractEraInfo<T: Config> = StorageDoubleMap<
+    pub(crate) type StakerContractEraInfo<T: Config> = StorageNMap<
         _,
-        Blake2_128Concat,
-        (T::AccountId, T::SmartContract),
-        Twox64Concat,
-        EraIndex,
+        (
+            NMapKey<Blake2_128Concat, T::SmartContract>,
+            NMapKey<Blake2_128Concat, T::AccountId>,
+            NMapKey<Twox64Concat, EraIndex>,
+        ),
         StakerInfo<BalanceOf<T>>,
     >;
 
@@ -432,8 +433,7 @@ pub mod pallet {
 
             // Write default empty staker info struct to state that no remaining staked amount remains.
             StakerContractEraInfo::<T>::insert(
-                (&staker, &contract_id),
-                current_era,
+                (&contract_id, &staker, current_era),
                 StakerInfo::default(),
             );
 
@@ -529,7 +529,7 @@ pub mod pallet {
             });
 
             // Update staked amount for (staker, contract) pairing for current era
-            StakerContractEraInfo::<T>::insert((&staker, &contract_id), current_era, staker_info);
+            StakerContractEraInfo::<T>::insert((&contract_id, &staker, current_era), staker_info);
 
             // Update ledger and payee
             Self::update_ledger(&staker, ledger);
@@ -628,7 +628,7 @@ pub mod pallet {
 
             // Update the info for staker. Note that this has to be written even if `remaining` is zero.
             staker_info.staked = staker_info.staked.saturating_sub(value_to_unstake);
-            StakerContractEraInfo::<T>::insert((&staker, &contract_id), current_era, staker_info);
+            StakerContractEraInfo::<T>::insert((&contract_id, &staker, current_era), staker_info);
 
             Self::deposit_event(Event::<T>::UnbondAndUnstake(
                 staker,
@@ -737,7 +737,7 @@ pub mod pallet {
             staker_info.claimed_rewards = claimer_reward;
 
             ContractEraStake::<T>::insert(&contract_id, era, contract_info);
-            StakerContractEraInfo::<T>::insert((&claimer, &contract_id), era, staker_info);
+            StakerContractEraInfo::<T>::insert((&contract_id, &claimer, era), staker_info);
 
             Self::deposit_event(Event::<T>::Reward(
                 claimer.clone(),
@@ -874,16 +874,19 @@ pub mod pallet {
             contract_id: &T::SmartContract,
             era: EraIndex,
         ) -> StakerInfo<BalanceOf<T>> {
-            let key = (staker_id, contract_id);
-            if let Some(staking_info) = StakerContractEraInfo::<T>::get(key, era) {
+            if let Some(staking_info) =
+                StakerContractEraInfo::<T>::get((contract_id, staker_id, era))
+            {
                 staking_info
             } else {
-                let avail_era = StakerContractEraInfo::<T>::iter_key_prefix(key)
-                    .filter(|x| *x <= era)
-                    .max()
-                    .unwrap_or(Zero::zero());
+                let avail_era =
+                    StakerContractEraInfo::<T>::iter_key_prefix((contract_id, staker_id))
+                        .filter(|x| *x <= era)
+                        .max()
+                        .unwrap_or(Zero::zero());
 
-                let mut info = StakerContractEraInfo::<T>::get(key, avail_era).unwrap_or_default();
+                let mut info = StakerContractEraInfo::<T>::get((contract_id, staker_id, avail_era))
+                    .unwrap_or_default();
                 info.claimed_rewards = Zero::zero();
                 info
             }
