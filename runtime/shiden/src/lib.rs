@@ -297,7 +297,9 @@ impl pallet_dapps_staking::Config for Runtime {
 }
 
 /// Multi-VM pointer to smart contract instance.
-#[derive(PartialEq, Eq, Copy, Clone, Encode, Decode, RuntimeDebug, scale_info::TypeInfo)]
+#[derive(
+    PartialEq, Eq, PartialOrd, Ord, Copy, Clone, Encode, Decode, RuntimeDebug, scale_info::TypeInfo,
+)]
 pub enum SmartContract<AccountId> {
     /// EVM smart contract instance.
     Evm(sp_core::H160),
