@@ -7,6 +7,7 @@ use codec::{Decode, Encode, HasCompact};
 use frame_support::traits::Currency;
 use frame_system::{self as system};
 use scale_info::TypeInfo;
+use sp_arithmetic::traits::AtLeast32BitUnsigned;
 use sp_runtime::RuntimeDebug;
 use sp_std::{collections::btree_map::BTreeMap, ops::Add, prelude::*};
 
@@ -35,21 +36,26 @@ pub type BalanceOf<T> =
 /// Counter for the number of eras that have passed.
 pub type EraIndex = u32;
 
+/// DApp State descriptor
 #[derive(Copy, Clone, PartialEq, Eq, Encode, Decode, RuntimeDebug, TypeInfo)]
 pub enum DAppState {
+    /// Contract is registered and active.
     Registered,
+    /// Contract has been unregistered and is inactive.
+    /// Claim for past eras and unbonding is still possible but no additional staking can be done.
     Unregistered,
 }
 
 #[derive(Clone, PartialEq, Eq, Encode, Decode, RuntimeDebug, TypeInfo)]
 pub struct DeveloperInfo<AccountId> {
-    /// Total balance locked.
+    /// Developer (owner) account
     developer: AccountId,
-    /// Information about unbonding chunks.
+    /// Current DApp State
     state: DAppState,
 }
 
 impl<AccountId> DeveloperInfo<AccountId> {
+    /// Create new `DeveloperInfo` struct instance with the given developer and state `Registered`
     fn new(developer: AccountId) -> Self {
         Self {
             developer: developer,
@@ -68,10 +74,6 @@ pub enum Forcing {
     /// Note that this will force to trigger an election until a new era is triggered, if the
     /// election failed, the next session end will trigger a new election again, until success.
     ForceNew,
-    /// Avoid a new era indefinitely.
-    ForceNone,
-    /// Force a new era at the end of all sessions indefinitely.
-    ForceAlways,
 }
 
 impl Default for Forcing {
@@ -160,7 +162,7 @@ pub struct UnbondingInfo<Balance> {
 
 impl<Balance> UnbondingInfo<Balance>
 where
-    Balance: Add<Output = Balance> + Default + Copy,
+    Balance: AtLeast32BitUnsigned + Default + Copy,
 {
     /// Returns total number of unlocking chunks.
     fn len(&self) -> u32 {
@@ -242,7 +244,14 @@ pub struct AccountLedger<SmartContract: Ord + Clone, Balance: HasCompact> {
     staked_contracts: BTreeMap<SmartContract, Option<EraIndex>>,
 }
 
-impl<SmartContract: Ord + Clone, Balance: HasCompact> AccountLedger<SmartContract, Balance> {
+impl<SmartContract: Ord + Clone, Balance: AtLeast32BitUnsigned + Default + Copy>
+    AccountLedger<SmartContract, Balance>
+{
+    /// `true` if ledger is empty (no locked funds, no unbonding chunks), `false` otherwise.
+    pub(crate) fn is_empty(&self) -> bool {
+        self.locked.is_zero() && self.unbonding_info.is_empty()
+    }
+
     /// Should be called when contract is staked by a staker.
     pub(crate) fn contract_staked(&mut self, contract_id: &SmartContract) {
         if !self.staked_contracts.contains_key(contract_id) {
@@ -261,7 +270,7 @@ impl<SmartContract: Ord + Clone, Balance: HasCompact> AccountLedger<SmartContrac
 
         self.staked_contracts.retain(|_, v| match v {
             None => true,
-            Some(unstake_era) => *unstake_era >= era.saturating_sub(history_depth),
+            Some(unstake_era) => *unstake_era > era.saturating_sub(history_depth),
         });
     }
 }

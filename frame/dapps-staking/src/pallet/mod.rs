@@ -135,7 +135,7 @@ pub mod pallet {
 
     #[pallet::type_value]
     pub fn ForceEraOnEmpty() -> Forcing {
-        Forcing::ForceNone
+        Forcing::NotForcing
     }
 
     /// Mode of era forcing.
@@ -212,6 +212,8 @@ pub mod pallet {
         BondAndStake(T::AccountId, T::SmartContract, BalanceOf<T>),
         /// Account has unbonded & unstaked some funds. Unbonding process begins.
         UnbondAndUnstake(T::AccountId, T::SmartContract, BalanceOf<T>),
+        /// Account has fully withdrawn from an unregistered contract.
+        WithdrawFromUnregistered(T::AccountId, T::SmartContract, BalanceOf<T>),
         /// Account has withdrawn unbonded funds.
         Withdrawn(T::AccountId, BalanceOf<T>),
         /// New contract added for staking.
@@ -286,7 +288,7 @@ pub mod pallet {
                 Self::reward_balance_snapshoot(previous_era, reward);
 
                 if force_new_era {
-                    ForceEra::<T>::put(Forcing::ForceNone);
+                    ForceEra::<T>::put(Forcing::NotForcing);
                 }
 
                 Self::deposit_event(Event::<T>::NewDappStakingEra(next_era));
@@ -354,7 +356,6 @@ pub mod pallet {
 
             let mut dapp_info =
                 RegisteredDapps::<T>::get(&contract_id).ok_or(Error::<T>::NotOperatedContract)?;
-            // TODO: new error for unregistering unregistered contract? Seems like an overkill.
             ensure!(
                 dapp_info.state == DAppState::Registered,
                 Error::<T>::NotOperatedContract
@@ -371,7 +372,7 @@ pub mod pallet {
 
             // We need to unstake all funds that are currently staked
             let current_era = Self::current_era();
-            let mut staking_info = Self::contract_staking_info(&contract_id, current_era);
+            let staking_info = Self::contract_staking_info(&contract_id, current_era);
 
             // Need to update total amount staked
             let staking_total = staking_info.total;
@@ -382,25 +383,26 @@ pub mod pallet {
             });
 
             // This makes contract ilegible for rewards from this era onwards.
-            staking_info.total = Zero::zero();
-            ContractEraStake::<T>::insert(contract_id.clone(), current_era, staking_info);
+            ContractEraStake::<T>::insert(
+                contract_id.clone(),
+                current_era,
+                EraStakingPoints::default(),
+            );
 
             T::Currency::unreserve(&developer, T::RegisterDeposit::get());
-
-            // TODO: remove staker and reduce number of stakers to zero?
 
             dapp_info.state = DAppState::Unregistered;
             RegisteredDapps::<T>::insert(&contract_id, dapp_info);
 
             Self::deposit_event(Event::<T>::ContractRemoved(developer, contract_id));
 
-            // let number_of_stakers = staking_info.stakers.len();
             Ok(Some(T::WeightInfo::unregister(1 as u32)).into())
         }
 
-        // TODO: weight and doc
+        /// Withdraw locked funds from a contract that was unregistered.
+        /// Funds don't need to undergo the unbonding period - they are returned immediately.
         #[pallet::weight(T::WeightInfo::unregister(T::MaxNumberOfStakersPerContract::get()))]
-        pub fn unbond_from_unregistered_contract(
+        pub fn withdraw_from_unregistered(
             origin: OriginFor<T>,
             contract_id: T::SmartContract,
         ) -> DispatchResultWithPostInfo {
@@ -434,6 +436,12 @@ pub mod pallet {
                 current_era,
                 StakerInfo::default(),
             );
+
+            Self::deposit_event(Event::<T>::WithdrawFromUnregistered(
+                staker,
+                contract_id,
+                staking_info.staked,
+            ));
 
             Ok(().into())
         }
@@ -659,11 +667,9 @@ pub mod pallet {
             Ok(().into())
         }
 
-        /// Claim the rewards earned by contract_id.
-        /// All stakers and developer for this contract will be paid out with single call.
-        /// claim is valid for all unclaimed eras but not longer than history_depth().
-        /// Any reward older than history_depth() will go to Treasury.
-        /// Any user can call this function.
+        /// Claim the rewards earned by the caller for a particular contract in a particular era.
+        ///
+        /// If claimer is both staker and developer, they will claim both rewards.
         #[pallet::weight(T::WeightInfo::claim(1))]
         pub fn claim(
             origin: OriginFor<T>,
@@ -677,7 +683,6 @@ pub mod pallet {
 
             let contract_info = Self::contract_staking_info(&contract_id, era);
             if dapp_info.state == DAppState::Unregistered {
-                // TODO: Add a new error here? Claim beyond unregitered era?
                 ensure!(
                     contract_info.total > Zero::zero(),
                     Error::<T>::NotOperatedContract
@@ -704,30 +709,21 @@ pub mod pallet {
             let reward_and_stake =
                 Self::era_reward_and_stake(era).ok_or(Error::<T>::UnknownEraReward)?;
 
-            // Calculate the contract reward for this era.
-            let reward_ratio = Perbill::from_rational(contract_info.total, reward_and_stake.staked);
-            let contract_reward = reward_ratio * reward_and_stake.rewards;
+            // Calculate the reward splits
+            let (dev_reward, staker_joint_reward) = Self::dev_stakers_split(
+                &contract_info,
+                &reward_and_stake,
+                &T::DeveloperRewardPercentage::get(),
+            );
+            let staker_portion = Perbill::from_rational(staker_info.staked, contract_info.total);
+            let staker_reward = staker_portion * staker_joint_reward;
 
-            // Calculate the developer part of the reward. Only dev is eligible for this part.
-            let developer_part_reward = if claimer == dapp_info.developer {
-                T::DeveloperRewardPercentage::get() * contract_reward
+            // Calculate the claimer's total reward
+            let claimer_reward = if claimer == dapp_info.developer {
+                dev_reward + staker_reward
             } else {
-                Zero::zero()
+                staker_reward
             };
-
-            // Calculate the staker part of the reward. This is required since atm dev can be a staker too.
-            let staker_part_reward = if staker_info.staked > Zero::zero() {
-                let stakers_reward =
-                    contract_reward - T::DeveloperRewardPercentage::get() * contract_reward;
-
-                let claimer_ratio = Perbill::from_rational(staker_info.staked, contract_info.total);
-
-                claimer_ratio * stakers_reward
-            } else {
-                Zero::zero()
-            };
-
-            let claimer_reward = developer_part_reward + staker_part_reward;
 
             // Withdraw reward funds from the dapps staking and transfer them to claimer
             let reward_imbalance = T::Currency::withdraw(
@@ -738,6 +734,11 @@ pub mod pallet {
             )?;
             T::Currency::resolve_creating(&claimer, reward_imbalance);
 
+            staker_info.claimed_rewards = claimer_reward;
+
+            ContractEraStake::<T>::insert(&contract_id, era, contract_info);
+            StakerContractEraInfo::<T>::insert((&claimer, &contract_id), era, staker_info);
+
             Self::deposit_event(Event::<T>::Reward(
                 claimer.clone(),
                 contract_id.clone(),
@@ -745,11 +746,6 @@ pub mod pallet {
                 claimer_reward,
             ));
             // TODO: maybe deposit two events? One for staker part and one for developer part?
-
-            staker_info.claimed_rewards = claimer_reward;
-
-            ContractEraStake::<T>::insert(&contract_id, era, contract_info);
-            StakerContractEraInfo::<T>::insert((&claimer, &contract_id), era, staker_info);
 
             Ok(Some(T::WeightInfo::claim(1 as u32)).into())
         }
@@ -818,7 +814,7 @@ pub mod pallet {
             staker: &T::AccountId,
             ledger: AccountLedger<T::SmartContract, BalanceOf<T>>,
         ) {
-            if ledger.locked.is_zero() && ledger.unbonding_info.is_empty() {
+            if ledger.is_empty() {
                 Ledger::<T>::remove(&staker);
                 T::Currency::remove_lock(STAKING_ID, &staker);
             } else {
@@ -849,6 +845,9 @@ pub mod pallet {
             reward_and_stake.rewards = reward;
             EraRewardsAndStakes::<T>::insert(era, reward_and_stake);
         }
+
+        // TODO: iter fetch methods could be optimized to also check for the era_index - 1 key existence.
+        // We can expect that in most cases, we'll either have current era or previous era.
 
         /// This helper returns `EraStakingPoints` for given era if possible or latest stored data
         /// or finally default value if storage have no data for it.
@@ -897,6 +896,24 @@ pub mod pallet {
             } else {
                 false
             }
+        }
+
+        /// Calculate reward split between developer and stakers.
+        ///
+        /// Returns (developer reward, joint stakers reward)
+        pub(crate) fn dev_stakers_split(
+            contract_info: &EraStakingPoints<BalanceOf<T>>,
+            reward_and_stake: &EraRewardAndStake<BalanceOf<T>>,
+            dev_reward_percentage: &Perbill,
+        ) -> (BalanceOf<T>, BalanceOf<T>) {
+            let contract_reward =
+                Perbill::from_rational(contract_info.total, reward_and_stake.staked)
+                    * reward_and_stake.rewards;
+
+            let developer_reward_part = *dev_reward_percentage * contract_reward;
+            let stakers_joint_reward = contract_reward - developer_reward_part;
+
+            (developer_reward_part, stakers_joint_reward)
         }
     }
 }

@@ -11,6 +11,8 @@ use sp_runtime::traits::{Bounded, One};
 const SEED: u32 = 9000;
 const BLOCK_REWARD: u32 = 1000u32;
 
+// TODO: benchmark `on_initialize` method?
+
 /// Used to prepare Dapps staking for testing.
 /// Resets all existing storage ensuring a clean run for the code that follows.
 ///
