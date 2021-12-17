@@ -1,8 +1,14 @@
 {
-  "name": "Astar Testnet",
+  "name": "Astar",
   "id": "astar",
   "chainType": "Live",
-  "bootNodes": [],
+  "bootNodes": [
+    "/dnsaddr/bootnode.astar.network/p2p/12D3KooWB4yB7QCZNFJ4rYrtkrBv6opFVt38RN1v8UoeLcv7nXru",
+    "/dnsaddr/bootnode.astar.network/p2p/12D3KooWFw87dedchfM527P8fqNz2sTqD9xuSkLWht1J3owgQJBn",
+    "/dns4/node-6877180792046243840-0.p2p.onfinality.io/tcp/19932/ws/p2p/12D3KooWARXaG1Ft65ZgCPK8isSg1UBLASQenrH9sJsjEYEDAvQf",
+    "/dns4/node-6877173450521071616-0.p2p.onfinality.io/tcp/12708/ws/p2p/12D3KooWFPbDQjtCXhRjsvu1HCqTrSc6KEazEnETLPQMS4gDpoQq",
+    "/dns4/node-6877173614090539008-0.p2p.onfinality.io/tcp/29128/ws/p2p/12D3KooWERrQFE8ss7zYfcHp8ULVCc1N7gur7GqZ8ESuZB1Nmioh"
+  ],
   "telemetryEndpoints": null,
   "protocolId": "astar",
   "properties": {
