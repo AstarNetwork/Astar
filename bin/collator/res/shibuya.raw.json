@@ -17,6 +17,9 @@
   "paraId": 1000,
   "consensusEngine": null,
   "codeSubstitutes": {},
+  "badBlocks": [
+    "0x6500f5c1b47495d176b406fef3a32a66e04206904fdd33f7c226da93312f34cf"
+  ],
   "genesis": {
     "raw": {
       "top": {
