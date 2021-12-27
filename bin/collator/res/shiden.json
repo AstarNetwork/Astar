@@ -17,6 +17,7 @@
   "paraId": 2007,
   "consensusEngine": null,
   "codeSubstitutes": {},
+  "badBlocks": [],
   "genesis": {
     "runtime": {
       "frameSystem": {

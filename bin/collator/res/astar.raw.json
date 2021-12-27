@@ -19,6 +19,7 @@
   "paraId": 2006,
   "consensusEngine": null,
   "codeSubstitutes": {},
+  "badBlocks": [],
   "genesis": {
     "raw": {
       "top": {
