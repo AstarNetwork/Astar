@@ -83,6 +83,7 @@ pub fn get_chain_spec(para_id: u32) -> AstarChainSpec {
         None,
         None,
         Extensions {
+            bad_blocks: Default::default(),
             relay_chain: "tokyo".into(),
             para_id,
         },

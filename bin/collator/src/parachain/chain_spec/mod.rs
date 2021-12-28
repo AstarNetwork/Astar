@@ -2,6 +2,8 @@ use sc_chain_spec::ChainSpecExtension;
 use serde::{Deserialize, Serialize};
 use sp_core::{Pair, Public};
 
+use crate::primitives::Block;
+
 pub mod astar;
 pub mod shibuya;
 pub mod shiden;
@@ -17,6 +19,8 @@ pub use shiden::ShidenChainSpec;
 #[derive(Default, Clone, Serialize, Deserialize, ChainSpecExtension)]
 #[serde(rename_all = "camelCase")]
 pub struct Extensions {
+    /// Known bad block hashes.
+    pub bad_blocks: sc_client_api::BadBlocks<Block>,
     /// The relay chain of the Parachain.
     pub relay_chain: String,
     /// The id of the Parachain.
