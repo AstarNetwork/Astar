@@ -21,7 +21,10 @@ if [ "$1" != "-chain" ]; then
   usage;
 fi
 
-if [ "$3" != "-rpc-url"]
+if [ "$3" != "-rpc-url"]; then
+  usage;
+fi
+
 Chain=$2
 RPC=$4
 
@@ -29,6 +32,6 @@ git clone https://github.com/graphprotocol/graph-node/ \
 && cd graph-node/docker
 sudo bash ./setup.sh
 
-sed -Ei "s|mainnet:http://172.19.0.1:8545|$2:$4|g" docker-compose.yml 
+sed -Ei "s|mainnet:http://172.19.0.1:8545|$Chain:$RPC|g" docker-compose.yml
 
 sudo docker-compose up
