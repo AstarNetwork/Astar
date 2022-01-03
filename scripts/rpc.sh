@@ -1,3 +1,9 @@
+#!/bin/bash
+set -e
+
+FILE="astar-rpc"
+SERVICE="astar-rpc"
+
 function usage {
    cat << EOF
 Usage: rpc.sh -auth <ngrok auth token>
