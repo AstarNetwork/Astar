@@ -1,3 +1,9 @@
+#!/bin/bash
+set -e
+
+FILE="astar-graph"
+SERVICE="astar-graph"
+
 function usage {
    cat << EOF
 Usage: graph.sh -chain <chain name> -rpc-url <RPC url>
