@@ -13,7 +13,7 @@ EOF
    exit 1
 }
 
-if [ $# -ne 2 ]; then
+if [ $# -ne 4 ]; then
    usage;
 fi
 
