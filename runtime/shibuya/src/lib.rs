@@ -753,7 +753,10 @@ pub struct DappsStakingMigrationV2;
 
 impl OnRuntimeUpgrade for DappsStakingMigrationV2 {
     fn on_runtime_upgrade() -> frame_support::weights::Weight {
-        pallet_dapps_staking::migrations::v2::migrate::<Runtime>()
+        // pallet_dapps_staking::migrations::v2::migrate::<Runtime>()
+        pallet_dapps_staking::migrations::v2::stateful_migrate::<Runtime>(
+            RuntimeBlockWeights::get().max_block / 5 * 3,
+        )
     }
 
     #[cfg(feature = "try-runtime")]
