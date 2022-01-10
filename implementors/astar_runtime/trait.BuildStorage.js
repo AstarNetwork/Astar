@@ -1,0 +1,3 @@
+(function() {var implementors = {};
+implementors["astar_runtime"] = [{"text":"impl <a class=\"trait\" href=\"astar_runtime/trait.BuildStorage.html\" title=\"trait astar_runtime::BuildStorage\">BuildStorage</a> for <a class=\"struct\" href=\"astar_runtime/struct.GenesisConfig.html\" title=\"struct astar_runtime::GenesisConfig\">GenesisConfig</a>","synthetic":false,"types":["astar_runtime::GenesisConfig"]}];
+if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

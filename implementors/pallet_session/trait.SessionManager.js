@@ -1,3 +1,0 @@
-(function() {var implementors = {};
-implementors["pallet_plasm_rewards"] = [{"text":"impl&lt;T:&nbsp;<a class=\"trait\" href=\"pallet_plasm_rewards/trait.Config.html\" title=\"trait pallet_plasm_rewards::Config\">Config</a>&gt; SessionManager&lt;&lt;T as Config&gt;::AccountId&gt; for <a class=\"struct\" href=\"pallet_plasm_rewards/struct.Module.html\" title=\"struct pallet_plasm_rewards::Module\">Module</a>&lt;T&gt;","synthetic":false,"types":["pallet_plasm_rewards::Module"]}];
-if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

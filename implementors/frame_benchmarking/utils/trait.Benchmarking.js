@@ -1,0 +1,3 @@
+(function() {var implementors = {};
+implementors["pallet_dapps_staking"] = [{"text":"impl&lt;T:&nbsp;<a class=\"trait\" href=\"pallet_dapps_staking/pallet/pallet/trait.Config.html\" title=\"trait pallet_dapps_staking::pallet::pallet::Config\">Config</a>&gt; Benchmarking for <a class=\"struct\" href=\"pallet_dapps_staking/pallet/pallet/struct.Pallet.html\" title=\"struct pallet_dapps_staking::pallet::pallet::Pallet\">Pallet</a>&lt;T&gt; <span class=\"where fmt-newline\">where<br>&nbsp;&nbsp;&nbsp;&nbsp;T: Config,&nbsp;</span>","synthetic":false,"types":["pallet_dapps_staking::pallet::pallet::Pallet"]}];
+if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

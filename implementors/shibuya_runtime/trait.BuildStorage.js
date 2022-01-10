@@ -1,0 +1,3 @@
+(function() {var implementors = {};
+implementors["shibuya_runtime"] = [{"text":"impl <a class=\"trait\" href=\"shibuya_runtime/trait.BuildStorage.html\" title=\"trait shibuya_runtime::BuildStorage\">BuildStorage</a> for <a class=\"struct\" href=\"shibuya_runtime/struct.GenesisConfig.html\" title=\"struct shibuya_runtime::GenesisConfig\">GenesisConfig</a>","synthetic":false,"types":["shibuya_runtime::GenesisConfig"]}];
+if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

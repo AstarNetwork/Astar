@@ -1,0 +1,3 @@
+(function() {var implementors = {};
+implementors["local_runtime"] = [{"text":"impl <a class=\"trait\" href=\"local_runtime/trait.BuildStorage.html\" title=\"trait local_runtime::BuildStorage\">BuildStorage</a> for <a class=\"struct\" href=\"local_runtime/struct.GenesisConfig.html\" title=\"struct local_runtime::GenesisConfig\">GenesisConfig</a>","synthetic":false,"types":["local_runtime::GenesisConfig"]}];
+if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

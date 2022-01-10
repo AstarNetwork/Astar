@@ -1,0 +1,3 @@
+(function() {var implementors = {};
+implementors["pallet_block_reward"] = [{"text":"impl&lt;Moment, T:&nbsp;<a class=\"trait\" href=\"pallet_block_reward/pallet/trait.Config.html\" title=\"trait pallet_block_reward::pallet::Config\">Config</a>&gt; OnTimestampSet&lt;Moment&gt; for <a class=\"struct\" href=\"pallet_block_reward/pallet/struct.Pallet.html\" title=\"struct pallet_block_reward::pallet::Pallet\">Pallet</a>&lt;T&gt;","synthetic":false,"types":["pallet_block_reward::pallet::Pallet"]}];
+if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

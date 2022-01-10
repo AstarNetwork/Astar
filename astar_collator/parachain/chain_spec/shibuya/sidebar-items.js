@@ -1,0 +1,1 @@
+initSidebarItems({"fn":[["get_chain_spec","Gen Shibuya chain specification for given parachain id."]],"type":[["ShibuyaChainSpec","Specialized `ChainSpec` for Shibuya testnet."]]});

@@ -1,1 +1,1 @@
-window.ALL_CRATES = ["pallet_custom_signatures","pallet_plasm_operator","pallet_plasm_rewards","pallet_plasm_support","pallet_plasm_validator","plasm","plasm_cli","plasm_primitives","plasm_rpc","plasm_runtime"];
+window.ALL_CRATES = ["astar_collator","astar_runtime","local_runtime","pallet_block_reward","pallet_custom_signatures","pallet_dapps_staking","pallet_precompile_staking","shibuya_runtime","shiden_runtime"];

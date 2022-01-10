@@ -1,0 +1,1 @@
+initSidebarItems({"fn":[["authority_keys_from_seed","Generate an Aura authority key."],["development_config","Development config (single validator Alice)"],["start_node","Builds a new service."]],"struct":[["Executor","Local runtime native executor."]],"type":[["ChainSpec","Specialized `ChainSpec` for Shiden Network."]]});

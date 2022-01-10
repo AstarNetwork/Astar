@@ -1,1 +1,0 @@
-initSidebarItems({"constant":[["TARGET_BLOCK_FULLNESS","The block saturation level. Fees will be updates based on this value."]],"struct":[["Perbill","A fixed point representation of a number in the range [0, 1]."]]});

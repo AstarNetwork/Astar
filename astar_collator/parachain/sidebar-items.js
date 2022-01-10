@@ -1,0 +1,1 @@
+initSidebarItems({"mod":[["chain_spec","Parachain specs."],["service","Parachain specified service. Parachain Service and ServiceFactory implementation."]]});

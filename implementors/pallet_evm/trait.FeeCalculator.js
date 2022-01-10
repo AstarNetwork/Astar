@@ -1,0 +1,6 @@
+(function() {var implementors = {};
+implementors["astar_runtime"] = [{"text":"impl FeeCalculator for <a class=\"struct\" href=\"astar_runtime/struct.FixedGasPrice.html\" title=\"struct astar_runtime::FixedGasPrice\">FixedGasPrice</a>","synthetic":false,"types":["astar_runtime::FixedGasPrice"]}];
+implementors["local_runtime"] = [{"text":"impl FeeCalculator for <a class=\"struct\" href=\"local_runtime/struct.FixedGasPrice.html\" title=\"struct local_runtime::FixedGasPrice\">FixedGasPrice</a>","synthetic":false,"types":["local_runtime::FixedGasPrice"]}];
+implementors["shibuya_runtime"] = [{"text":"impl FeeCalculator for <a class=\"struct\" href=\"shibuya_runtime/struct.FixedGasPrice.html\" title=\"struct shibuya_runtime::FixedGasPrice\">FixedGasPrice</a>","synthetic":false,"types":["shibuya_runtime::FixedGasPrice"]}];
+implementors["shiden_runtime"] = [{"text":"impl FeeCalculator for <a class=\"struct\" href=\"shiden_runtime/struct.FixedGasPrice.html\" title=\"struct shiden_runtime::FixedGasPrice\">FixedGasPrice</a>","synthetic":false,"types":["shiden_runtime::FixedGasPrice"]}];
+if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()
