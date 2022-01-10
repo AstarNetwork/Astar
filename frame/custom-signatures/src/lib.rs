@@ -93,7 +93,7 @@ pub mod pallet {
         /// # </weight>
         #[pallet::weight({
             let dispatch_info = call.get_dispatch_info();
-            (dispatch_info.weight + 10_000, dispatch_info.class)
+            (dispatch_info.weight.saturating_add(10_000), dispatch_info.class)
         })]
         pub fn call(
             origin: OriginFor<T>,
