@@ -76,7 +76,7 @@ pub fn get_chain_spec(para_id: u32) -> AstarChainSpec {
     AstarChainSpec::from_genesis(
         "Astar Testnet",
         "astar",
-        ChainType::Live,
+        ChainType::Development,
         move || make_genesis(endowned.clone(), sudo_key.clone(), para_id.into()),
         vec![],
         None,

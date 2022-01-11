@@ -30,7 +30,7 @@
 					"configuration": {
 						"config": {
 							"validation_upgrade_frequency": 1,
-							"validation_upgrade_delay": 1
+							"validation_upgrade_delay": 10
 						}
 					}
 				}
@@ -40,21 +40,21 @@
 	"parachains": [
 		{
 			"bin": "./bin/astar-collator",
-			"id": "200",
- 			"chain": "testnet",
+			"id": "2007",
+ 			"chain": "shibuya-dev",
 			"balance": "1000000000000000000000",
 			"nodes": [
 				{
 					"wsPort": 9988,
 					"port": 31200,
 					"name": "alice",
-					"flags": ["--force-authoring", "--unsafe-ws-external", "--unsafe-rpc-external", "--rpc-port=8545", "--rpc-cors=all", "--", "--execution=wasm"]
+					"flags": ["--unsafe-ws-external", "--unsafe-rpc-external", "--rpc-port=8545", "--rpc-cors=all", "--", "--execution=wasm"]
 				},
 				{
 					"wsPort": 9989,
 					"port": 31201,
 					"name": "bob",
-					"flags": ["--force-authoring", "--", "--execution=wasm"]
+					"flags": ["--", "--execution=wasm"]
 				}
 			]
 		}
