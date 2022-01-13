@@ -85,7 +85,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_version: 3,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
-    transaction_version: 1,
+    transaction_version: 2,
 };
 
 /// Native version.
@@ -657,11 +657,12 @@ pub type SignedExtra = (
     pallet_transaction_payment::ChargeTransactionPayment<Runtime>,
 );
 /// Unchecked extrinsic type as expected by this runtime.
-pub type UncheckedExtrinsic = generic::UncheckedExtrinsic<Address, Call, Signature, SignedExtra>;
+pub type UncheckedExtrinsic =
+    fp_self_contained::UncheckedExtrinsic<Address, Call, Signature, SignedExtra>;
 /// The payload being signed in transactions.
 pub type SignedPayload = generic::SignedPayload<Call, SignedExtra>;
 /// Extrinsic type that has already been checked.
-pub type CheckedExtrinsic = generic::CheckedExtrinsic<AccountId, Call, SignedExtra>;
+pub type CheckedExtrinsic = fp_self_contained::CheckedExtrinsic<AccountId, Call, SignedExtra, H160>;
 /// Executive: handles dispatch to the various modules.
 pub type Executive = frame_executive::Executive<
     Runtime,
@@ -670,6 +671,53 @@ pub type Executive = frame_executive::Executive<
     Runtime,
     AllPallets,
 >;
+
+impl fp_self_contained::SelfContainedCall for Call {
+    type SignedInfo = H160;
+
+    fn is_self_contained(&self) -> bool {
+        match self {
+            Call::Ethereum(call) => call.is_self_contained(),
+            _ => false,
+        }
+    }
+
+    fn check_self_contained(&self) -> Option<Result<Self::SignedInfo, TransactionValidityError>> {
+        match self {
+            Call::Ethereum(call) => call.check_self_contained(),
+            _ => None,
+        }
+    }
+
+    fn validate_self_contained(&self, info: &Self::SignedInfo) -> Option<TransactionValidity> {
+        match self {
+            Call::Ethereum(call) => call.validate_self_contained(info),
+            _ => None,
+        }
+    }
+
+    fn pre_dispatch_self_contained(
+        &self,
+        info: &Self::SignedInfo,
+    ) -> Option<Result<(), TransactionValidityError>> {
+        match self {
+            Call::Ethereum(call) => call.pre_dispatch_self_contained(info),
+            _ => None,
+        }
+    }
+
+    fn apply_self_contained(
+        self,
+        info: Self::SignedInfo,
+    ) -> Option<sp_runtime::DispatchResultWithInfo<PostDispatchInfoOf<Self>>> {
+        match self {
+            call @ Call::Ethereum(pallet_ethereum::Call::transact { .. }) => Some(call.dispatch(
+                Origin::from(pallet_ethereum::RawOrigin::EthereumTransaction(info)),
+            )),
+            _ => None,
+        }
+    }
+}
 
 impl_runtime_apis! {
     impl sp_api::Core<Block> for Runtime {

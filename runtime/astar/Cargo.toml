@@ -14,6 +14,7 @@ smallvec = "1.6.1"
 
 # primitives
 fp-rpc = { git = "https://github.com/PlasmNetwork/frontier", branch = "polkadot-v0.9.13", default-features = false }
+fp-self-contained = { git = "https://github.com/PlasmNetwork/frontier", branch = "polkadot-v0.9.13", default-features = false }
 sp-api = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.13", default-features = false }
 sp-core = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.13", default-features = false }
 sp-consensus-aura = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.13", default-features = false }
@@ -86,6 +87,7 @@ std = [
     "codec/std",
     "evm/std",
     "fp-rpc/std",
+    "fp-self-contained/std",
     "sp-std/std",
     "sp-api/std",
     "sp-core/std",
