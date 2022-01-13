@@ -35,7 +35,7 @@ pub fn get_chain_spec(para_id: u32) -> ShibuyaChainSpec {
     ShibuyaChainSpec::from_genesis(
         "Shibuya Testnet",
         "shibuya",
-        ChainType::Live,
+        ChainType::Development,
         move || make_genesis(endowned.clone(), sudo_key.clone(), para_id.into()),
         vec![],
         None,

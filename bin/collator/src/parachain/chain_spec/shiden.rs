@@ -30,7 +30,7 @@ pub fn get_chain_spec(para_id: u32) -> ShidenChainSpec {
     ShidenChainSpec::from_genesis(
         "Shiden Testnet",
         "shiden",
-        ChainType::Live,
+        ChainType::Development,
         move || make_genesis(endowned.clone(), sudo_key.clone(), para_id.into()),
         vec![],
         None,
