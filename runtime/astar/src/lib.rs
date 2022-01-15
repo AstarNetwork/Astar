@@ -142,7 +142,6 @@ impl Contains<Call> for BaseFilter {
     fn contains(call: &Call) -> bool {
         match call {
             // These modules are not allowed to be called by transactions:
-            Call::Balances(_) => false,
             // To leave collator just shutdown it, next session funds will be released
             Call::CollatorSelection(pallet_collator_selection::Call::leave_intent { .. }) => false,
             // Other modules should works:

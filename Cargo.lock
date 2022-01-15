@@ -5869,7 +5869,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-precompile-staking"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "evm",
  "frame-support 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.13)",
