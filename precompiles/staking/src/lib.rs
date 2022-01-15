@@ -68,6 +68,9 @@ where
                 let len_offset = SELECTOR_SIZE_BYTES + 32;
                 let keys_offset = len_offset + 32;
                 let keys_len = sp_core::U256::from_big_endian(&input[len_offset..keys_offset]);
+                if input.len() < SELECTOR_SIZE_BYTES + 32 * 2 + keys_len.as_usize() {
+                    return Err(ExitError::Other("wrong input length".into()));
+                }
                 let keys = input[keys_offset..(keys_offset + keys_len.as_usize())].to_vec();
                 Self::set_keys(keys)?
             }
