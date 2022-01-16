@@ -103,7 +103,8 @@ pub mod pallet {
         type MaxUnlockingChunks: Get<u32>;
 
         /// Number of eras that need to pass until unstaked value can be withdrawn.
-        /// If this value is zero, it's equivalent to having no unbonding period.
+        /// Current era is always counted as full era (regardless how much blocks are remaining).
+        /// When set to `0`, it's equal to having no unbonding period.
         #[pallet::constant]
         type UnbondingPeriod: Get<u32>;
 
@@ -523,10 +524,9 @@ pub mod pallet {
             let mut ledger = Self::ledger(&staker);
 
             // Update the chunks and write them to storage
-            const SKIP_CURRENT_ERA: u32 = 1;
             ledger.unbonding_info.add(UnlockingChunk {
                 amount: value_to_unstake,
-                unlock_era: current_era + SKIP_CURRENT_ERA + T::UnbondingPeriod::get(),
+                unlock_era: current_era + T::UnbondingPeriod::get(),
             });
             // This should be done AFTER insertion since it's possible for chunks to merge
             ensure!(

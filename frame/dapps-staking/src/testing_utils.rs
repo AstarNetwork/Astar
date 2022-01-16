@@ -80,7 +80,7 @@ pub(crate) fn unbond_and_unstake_with_verification(
 
     // Fetch the latest unbonding info so we can compare it to initial unbonding info
     let final_ledger = Ledger::<TestRuntime>::get(&staker);
-    let expected_unlock_era = current_era + 1 + UNBONDING_PERIOD;
+    let expected_unlock_era = current_era + UNBONDING_PERIOD;
     match init_ledger
         .unbonding_info
         .vec()
@@ -104,7 +104,7 @@ pub(crate) fn unbond_and_unstake_with_verification(
     let mut init_ledger = init_ledger;
     init_ledger.unbonding_info.add(UnlockingChunk {
         amount: expected_unbond_amount,
-        unlock_era: current_era + 1 + UNBONDING_PERIOD,
+        unlock_era: current_era + UNBONDING_PERIOD,
     });
     assert_eq!(init_ledger.unbonding_info, final_ledger.unbonding_info);
 

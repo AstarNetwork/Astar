@@ -1115,7 +1115,7 @@ fn withdraw_unbonded_is_ok() {
         unbond_and_unstake_with_verification(staker_id, &contract_id, second_unbond_value);
 
         // Now advance one era before first chunks finishes the unbonding process
-        advance_to_era(initial_era + UNBONDING_PERIOD);
+        advance_to_era(initial_era + UNBONDING_PERIOD - 1);
         assert_noop!(
             DappsStaking::withdraw_unbonded(Origin::signed(staker_id)),
             Error::<TestRuntime>::NothingToWithdraw
@@ -1215,14 +1215,7 @@ fn withdraw_unbonded_no_unbonding_period() {
         bond_and_stake_with_verification(staker_id, &contract_id, 100);
         unbond_and_unstake_with_verification(staker_id, &contract_id, 20);
 
-        // Try to withdraw but expect an error since current era hasn't passed yet
-        assert_noop!(
-            DappsStaking::withdraw_unbonded(Origin::signed(staker_id)),
-            Error::<TestRuntime>::NothingToWithdraw,
-        );
-
-        // Advance an era and expect successful withdrawal
-        advance_to_era(DappsStaking::current_era() + 1);
+        // Ensure that funds can be immediately withdrawn
         withdraw_unbonded_with_verification(staker_id);
     })
 }
