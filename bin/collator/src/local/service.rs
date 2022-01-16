@@ -98,7 +98,9 @@ fn new_partial(
     let client = Arc::new(client);
 
     let telemetry = telemetry.map(|(worker, telemetry)| {
-        task_manager.spawn_handle().spawn("telemetry", worker.run());
+        task_manager
+            .spawn_handle()
+            .spawn("telemetry", None, worker.run());
         telemetry
     });
 
@@ -190,7 +192,6 @@ pub fn start_node(config: Configuration) -> Result<TaskManager, ServiceError> {
             transaction_pool: transaction_pool.clone(),
             spawn_handle: task_manager.spawn_handle(),
             import_queue,
-            on_demand: None,
             block_announce_validator_builder: None,
             warp_sync: None,
         })?;
@@ -210,6 +211,7 @@ pub fn start_node(config: Configuration) -> Result<TaskManager, ServiceError> {
     // Maps emulated ethereum data to substrate native data.
     task_manager.spawn_essential_handle().spawn(
         "frontier-mapping-sync-worker",
+        None,
         fc_mapping_sync::MappingSyncWorker::new(
             client.import_notification_stream(),
             Duration::new(6, 0),
@@ -226,6 +228,7 @@ pub fn start_node(config: Configuration) -> Result<TaskManager, ServiceError> {
     const FILTER_RETAIN_THRESHOLD: u64 = 100;
     task_manager.spawn_essential_handle().spawn(
         "frontier-filter-pool",
+        None,
         fc_rpc::EthTask::filter_pool_task(
             client.clone(),
             filter_pool.clone(),
@@ -235,6 +238,7 @@ pub fn start_node(config: Configuration) -> Result<TaskManager, ServiceError> {
 
     task_manager.spawn_essential_handle().spawn(
         "frontier-schema-cache-task",
+        None,
         fc_rpc::EthTask::ethereum_schema_cache_task(client.clone(), frontier_backend.clone()),
     );
 
@@ -280,8 +284,6 @@ pub fn start_node(config: Configuration) -> Result<TaskManager, ServiceError> {
         task_manager: &mut task_manager,
         transaction_pool: transaction_pool.clone(),
         rpc_extensions_builder,
-        on_demand: None,
-        remote_blockchain: None,
         backend,
         system_rpc_tx,
         config,
@@ -337,7 +339,7 @@ pub fn start_node(config: Configuration) -> Result<TaskManager, ServiceError> {
         // fails we take down the service with it.
         task_manager
             .spawn_essential_handle()
-            .spawn_blocking("aura", aura);
+            .spawn_blocking("aura", Some("block-authoring"), aura);
     }
 
     // if the node isn't actively participating in consensus then it doesn't
@@ -380,6 +382,7 @@ pub fn start_node(config: Configuration) -> Result<TaskManager, ServiceError> {
         // if it fails we take down the service with it.
         task_manager.spawn_essential_handle().spawn_blocking(
             "grandpa-voter",
+            None,
             sc_finality_grandpa::run_grandpa_voter(grandpa_config)?,
         );
     }

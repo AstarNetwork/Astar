@@ -120,7 +120,6 @@ fn make_genesis(
     astar_runtime::GenesisConfig {
         system: SystemConfig {
             code: wasm_binary_unwrap().to_vec(),
-            changes_trie_config: Default::default(),
         },
         sudo: astar_runtime::SudoConfig { key: root_key },
         parachain_info: ParachainInfoConfig { parachain_id },

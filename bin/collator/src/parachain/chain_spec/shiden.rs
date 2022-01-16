@@ -74,7 +74,6 @@ fn make_genesis(
     shiden_runtime::GenesisConfig {
         system: SystemConfig {
             code: wasm_binary_unwrap().to_vec(),
-            changes_trie_config: Default::default(),
         },
         sudo: shiden_runtime::SudoConfig { key: root_key },
         parachain_info: ParachainInfoConfig { parachain_id },
