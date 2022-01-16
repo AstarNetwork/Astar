@@ -67,11 +67,11 @@ where
                 // Low level argument parsing
                 let len_offset = SELECTOR_SIZE_BYTES + 32;
                 let keys_offset = len_offset + 32;
-                let keys_len = sp_core::U256::from_big_endian(&input[len_offset..keys_offset]);
-                if input.len() < SELECTOR_SIZE_BYTES + 32 * 2 + keys_len.as_usize() {
+                // Session keys is 32 byte lenght
+                if input.len() < SELECTOR_SIZE_BYTES + 32 * 3 {
                     return Err(ExitError::Other("wrong input length".into()));
                 }
-                let keys = input[keys_offset..(keys_offset + keys_len.as_usize())].to_vec();
+                let keys = input[keys_offset..(keys_offset + 32)].to_vec();
                 Self::set_keys(keys)?
             }
             [0x32, 0x1c, 0x9b, 0x7a] => Self::purge_keys(),
