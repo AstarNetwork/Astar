@@ -7,7 +7,7 @@
 use codec::{Decode, Encode};
 use frame_support::{
     construct_runtime, parameter_types,
-    traits::{Contains, Currency, FindAuthor, Imbalance, OnRuntimeUpgrade, OnUnbalanced},
+    traits::{Contains, Currency, FindAuthor, Imbalance, OnUnbalanced},
     weights::{
         constants::{BlockExecutionWeight, ExtrinsicBaseWeight, WEIGHT_PER_SECOND},
         DispatchClass, Weight, WeightToFeeCoefficient, WeightToFeeCoefficients,
@@ -87,7 +87,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("shibuya"),
     impl_name: create_runtime_str!("shibuya"),
     authoring_version: 1,
-    spec_version: 25,
+    spec_version: 26,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 2,
@@ -275,8 +275,6 @@ parameter_types! {
     pub const MinimumRemainingAmount: Balance = 1 * SDN;
     pub const HistoryDepth: u32 = 60;
     pub const BonusEraDuration: u32 = 600;
-    pub const MaxUnlockingChunks: u32 = 32;
-    pub const UnbondingPeriod: u32 = 2;
 }
 
 impl pallet_dapps_staking::Config for Runtime {
@@ -293,8 +291,6 @@ impl pallet_dapps_staking::Config for Runtime {
     type MinimumRemainingAmount = MinimumRemainingAmount;
     type HistoryDepth = HistoryDepth;
     type BonusEraDuration = BonusEraDuration;
-    type MaxUnlockingChunks = MaxUnlockingChunks;
-    type UnbondingPeriod = UnbondingPeriod;
 }
 
 /// Multi-VM pointer to smart contract instance.
@@ -335,6 +331,7 @@ impl<AccountId> pallet_dapps_staking::traits::IsContract for SmartContract<Accou
 impl pallet_utility::Config for Runtime {
     type Event = Event;
     type Call = Call;
+    type PalletsOrigin = OriginCaller;
     type WeightInfo = ();
 }
 
@@ -571,8 +568,6 @@ impl pallet_evm::GasWeightMapping for ShidenGasWeightMapping {
     }
 
     fn weight_to_gas(weight: Weight) -> u64 {
-        use core::convert::TryFrom;
-
         u64::try_from(weight.wrapping_div(WEIGHT_PER_GAS)).unwrap_or(u32::MAX as u64)
     }
 }
@@ -746,27 +741,7 @@ pub type Executive = frame_executive::Executive<
     frame_system::ChainContext<Runtime>,
     Runtime,
     AllPallets,
-    (DappsStakingMigrationV2,),
 >;
-
-// Migration for supporting unbonding period in dapps staking.
-pub struct DappsStakingMigrationV2;
-
-impl OnRuntimeUpgrade for DappsStakingMigrationV2 {
-    fn on_runtime_upgrade() -> frame_support::weights::Weight {
-        pallet_dapps_staking::migrations::v2::migrate::<Runtime>()
-    }
-
-    #[cfg(feature = "try-runtime")]
-    fn pre_upgrade() -> Result<(), &'static str> {
-        pallet_dapps_staking::migrations::v2::pre_migrate::<Runtime, Self>()
-    }
-
-    #[cfg(feature = "try-runtime")]
-    fn post_upgrade() -> Result<(), &'static str> {
-        pallet_dapps_staking::migrations::v2::post_migrate::<Runtime, Self>()
-    }
-}
 
 impl fp_self_contained::SelfContainedCall for Call {
     type SignedInfo = H160;

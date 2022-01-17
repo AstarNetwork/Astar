@@ -86,7 +86,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("shiden"),
     impl_name: create_runtime_str!("shiden"),
     authoring_version: 1,
-    spec_version: 34,
+    spec_version: 35,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 2,
@@ -330,6 +330,7 @@ impl<AccountId> pallet_dapps_staking::traits::IsContract for SmartContract<Accou
 impl pallet_utility::Config for Runtime {
     type Event = Event;
     type Call = Call;
+    type PalletsOrigin = OriginCaller;
     type WeightInfo = ();
 }
 
@@ -566,8 +567,6 @@ impl pallet_evm::GasWeightMapping for ShidenGasWeightMapping {
     }
 
     fn weight_to_gas(weight: Weight) -> u64 {
-        use core::convert::TryFrom;
-
         u64::try_from(weight.wrapping_div(WEIGHT_PER_GAS)).unwrap_or(u32::MAX as u64)
     }
 }

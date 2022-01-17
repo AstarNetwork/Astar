@@ -28,9 +28,11 @@ use sp_runtime::{
     create_runtime_str, generic, impl_opaque_keys,
     traits::{
         AccountIdConversion, AccountIdLookup, BlakeTwo256, Block as BlockT, ConvertInto,
-        OpaqueKeys, Verify,
+        Dispatchable, OpaqueKeys, PostDispatchInfoOf, Verify,
     },
-    transaction_validity::{TransactionPriority, TransactionSource, TransactionValidity},
+    transaction_validity::{
+        TransactionPriority, TransactionSource, TransactionValidity, TransactionValidityError,
+    },
     ApplyExtrinsicResult, FixedPointNumber, Perbill, Perquintill,
 };
 use sp_std::prelude::*;
@@ -82,10 +84,10 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("astar"),
     impl_name: create_runtime_str!("astar"),
     authoring_version: 1,
-    spec_version: 2,
+    spec_version: 3,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
-    transaction_version: 1,
+    transaction_version: 2,
 };
 
 /// Native version.
@@ -142,7 +144,6 @@ impl Contains<Call> for BaseFilter {
     fn contains(call: &Call) -> bool {
         match call {
             // These modules are not allowed to be called by transactions:
-            Call::Balances(_) => false,
             // To leave collator just shutdown it, next session funds will be released
             Call::CollatorSelection(pallet_collator_selection::Call::leave_intent { .. }) => false,
             // Other modules should works:
@@ -265,6 +266,7 @@ impl pallet_custom_signatures::Config for Runtime {
 impl pallet_utility::Config for Runtime {
     type Event = Event;
     type Call = Call;
+    type PalletsOrigin = OriginCaller;
     type WeightInfo = ();
 }
 
@@ -495,8 +497,6 @@ impl pallet_evm::GasWeightMapping for GasWeightMapping {
     }
 
     fn weight_to_gas(weight: Weight) -> u64 {
-        use core::convert::TryFrom;
-
         u64::try_from(weight.wrapping_div(WEIGHT_PER_GAS)).unwrap_or(u32::MAX as u64)
     }
 }
@@ -657,11 +657,12 @@ pub type SignedExtra = (
     pallet_transaction_payment::ChargeTransactionPayment<Runtime>,
 );
 /// Unchecked extrinsic type as expected by this runtime.
-pub type UncheckedExtrinsic = generic::UncheckedExtrinsic<Address, Call, Signature, SignedExtra>;
+pub type UncheckedExtrinsic =
+    fp_self_contained::UncheckedExtrinsic<Address, Call, Signature, SignedExtra>;
 /// The payload being signed in transactions.
 pub type SignedPayload = generic::SignedPayload<Call, SignedExtra>;
 /// Extrinsic type that has already been checked.
-pub type CheckedExtrinsic = generic::CheckedExtrinsic<AccountId, Call, SignedExtra>;
+pub type CheckedExtrinsic = fp_self_contained::CheckedExtrinsic<AccountId, Call, SignedExtra, H160>;
 /// Executive: handles dispatch to the various modules.
 pub type Executive = frame_executive::Executive<
     Runtime,
@@ -670,6 +671,53 @@ pub type Executive = frame_executive::Executive<
     Runtime,
     AllPallets,
 >;
+
+impl fp_self_contained::SelfContainedCall for Call {
+    type SignedInfo = H160;
+
+    fn is_self_contained(&self) -> bool {
+        match self {
+            Call::Ethereum(call) => call.is_self_contained(),
+            _ => false,
+        }
+    }
+
+    fn check_self_contained(&self) -> Option<Result<Self::SignedInfo, TransactionValidityError>> {
+        match self {
+            Call::Ethereum(call) => call.check_self_contained(),
+            _ => None,
+        }
+    }
+
+    fn validate_self_contained(&self, info: &Self::SignedInfo) -> Option<TransactionValidity> {
+        match self {
+            Call::Ethereum(call) => call.validate_self_contained(info),
+            _ => None,
+        }
+    }
+
+    fn pre_dispatch_self_contained(
+        &self,
+        info: &Self::SignedInfo,
+    ) -> Option<Result<(), TransactionValidityError>> {
+        match self {
+            Call::Ethereum(call) => call.pre_dispatch_self_contained(info),
+            _ => None,
+        }
+    }
+
+    fn apply_self_contained(
+        self,
+        info: Self::SignedInfo,
+    ) -> Option<sp_runtime::DispatchResultWithInfo<PostDispatchInfoOf<Self>>> {
+        match self {
+            call @ Call::Ethereum(pallet_ethereum::Call::transact { .. }) => Some(call.dispatch(
+                Origin::from(pallet_ethereum::RawOrigin::EthereumTransaction(info)),
+            )),
+            _ => None,
+        }
+    }
+}
 
 impl_runtime_apis! {
     impl sp_api::Core<Block> for Runtime {
@@ -891,7 +939,7 @@ impl_runtime_apis! {
         fn extrinsic_filter(
             xts: Vec<<Block as BlockT>::Extrinsic>,
         ) -> Vec<pallet_ethereum::Transaction> {
-            xts.into_iter().filter_map(|xt| match xt.function {
+            xts.into_iter().filter_map(|xt| match xt.0.function {
                 Call::Ethereum(pallet_ethereum::Call::transact { transaction }) => Some(transaction),
                 _ => None
             }).collect::<Vec<pallet_ethereum::Transaction>>()

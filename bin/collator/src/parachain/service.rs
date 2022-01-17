@@ -188,7 +188,9 @@ where
     let telemetry_worker_handle = telemetry.as_ref().map(|(worker, _)| worker.handle());
 
     let telemetry = telemetry.map(|(worker, telemetry)| {
-        task_manager.spawn_handle().spawn("telemetry", worker.run());
+        task_manager
+            .spawn_handle()
+            .spawn("telemetry", None, worker.run());
         telemetry
     });
 
@@ -331,7 +333,6 @@ where
             transaction_pool: transaction_pool.clone(),
             spawn_handle: task_manager.spawn_handle(),
             import_queue: import_queue.clone(),
-            on_demand: None,
             block_announce_validator_builder: Some(Box::new(|_| block_announce_validator)),
             warp_sync: None,
         })?;
@@ -342,6 +343,7 @@ where
     // Maps emulated ethereum data to substrate native data.
     task_manager.spawn_essential_handle().spawn(
         "frontier-mapping-sync-worker",
+        None,
         fc_mapping_sync::MappingSyncWorker::new(
             client.import_notification_stream(),
             Duration::new(6, 0),
@@ -358,6 +360,7 @@ where
     const FILTER_RETAIN_THRESHOLD: u64 = 100;
     task_manager.spawn_essential_handle().spawn(
         "frontier-filter-pool",
+        None,
         fc_rpc::EthTask::filter_pool_task(
             client.clone(),
             filter_pool.clone(),
@@ -367,6 +370,7 @@ where
 
     task_manager.spawn_essential_handle().spawn(
         "frontier-schema-cache-task",
+        None,
         fc_rpc::EthTask::ethereum_schema_cache_task(client.clone(), frontier_backend.clone()),
     );
 
@@ -394,8 +398,6 @@ where
 
     // Spawn basic services.
     sc_service::spawn_tasks(sc_service::SpawnTasksParams {
-        on_demand: None,
-        remote_blockchain: None,
         rpc_extensions_builder,
         client: client.clone(),
         transaction_pool: transaction_pool.clone(),

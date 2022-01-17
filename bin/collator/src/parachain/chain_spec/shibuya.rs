@@ -1,9 +1,7 @@
 //! Shibuya chain specifications.
 
 use cumulus_primitives_core::ParaId;
-use sc_chain_spec::ChainSpecExtension;
 use sc_service::ChainType;
-use serde::{Deserialize, Serialize};
 use shibuya_runtime::{
     wasm_binary_unwrap, AccountId, AuraConfig, AuraId, Balance, BalancesConfig,
     CollatorSelectionConfig, EVMConfig, GenesisConfig, ParachainInfoConfig, SessionConfig,
@@ -15,7 +13,6 @@ use sp_core::{sr25519, Pair, Public};
 use sp_runtime::traits::{IdentifyAccount, Verify};
 
 use super::{get_from_seed, Extensions};
-use crate::primitives::Block;
 
 /// Specialized `ChainSpec` for Shibuya testnet.
 pub type ShibuyaChainSpec = sc_service::GenericChainSpec<GenesisConfig, Extensions>;
@@ -79,7 +76,6 @@ fn make_genesis(
     GenesisConfig {
         system: SystemConfig {
             code: wasm_binary_unwrap().to_vec(),
-            changes_trie_config: Default::default(),
         },
         sudo: SudoConfig { key: root_key },
         parachain_info: ParachainInfoConfig { parachain_id },
