@@ -115,6 +115,8 @@ pub mod v2 {
             return T::DbWeight::get().reads(1);
         }
 
+        log::info!("Executing a step of stateful storage migration.");
+
         let mut migration_state = MigrationStateV2::<T>::get();
         let mut consumed_weight = T::DbWeight::get().reads(2);
 
@@ -123,9 +125,13 @@ pub mod v2 {
             migration_state = MigrationState::Ledger(None);
             PalletDisabled::<T>::put(true);
             consumed_weight += T::DbWeight::get().writes(1);
-        }
 
-        log::info!(">>> Migration state is: {:?}", migration_state);
+            // If normal run, just exit here to avoid the risk of clogging the upgrade block.
+            if !cfg!(feature = "try-runtime") {
+                MigrationStateV2::<T>::put(migration_state);
+                return consumed_weight;
+            }
+        }
 
         // Process ledger
         if let MigrationState::Ledger(last_processed_key) = migration_state.clone() {
@@ -160,7 +166,7 @@ pub mod v2 {
 
                     // we want try-runtime to execute the entire migration
                     if cfg!(feature = "try-runtime") {
-                        return stateful_migrate::<T>(weight_limit)
+                        return stateful_migrate::<T>(weight_limit);
                     } else {
                         return consumed_weight;
                     }
@@ -204,7 +210,7 @@ pub mod v2 {
                     consumed_weight += T::DbWeight::get().writes(1);
 
                     if cfg!(feature = "try-runtime") {
-                        return stateful_migrate::<T>(weight_limit)
+                        return stateful_migrate::<T>(weight_limit);
                     } else {
                         return consumed_weight;
                     }
@@ -243,7 +249,7 @@ pub mod v2 {
                     consumed_weight += T::DbWeight::get().writes(1);
 
                     if cfg!(feature = "try-runtime") {
-                        return stateful_migrate::<T>(weight_limit)
+                        return stateful_migrate::<T>(weight_limit);
                     } else {
                         return consumed_weight;
                     }
