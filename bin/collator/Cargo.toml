@@ -140,8 +140,8 @@ runtime-benchmarks = [
     "local-runtime/runtime-benchmarks",
     "shibuya-runtime/runtime-benchmarks",
     "shiden-runtime/runtime-benchmarks",
-	"pallet-xcm/runtime-benchmarks",
-	"xcm-builder/runtime-benchmarks",
+    "pallet-xcm/runtime-benchmarks",
+    "xcm-builder/runtime-benchmarks",
 ]
 cli = [
     'try-runtime-cli',
