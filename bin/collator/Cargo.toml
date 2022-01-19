@@ -109,7 +109,9 @@ polkadot-cli = { git = "https://github.com/paritytech/polkadot", branch = "relea
 
 # benchmark dependencies
 frame-benchmarking = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.13", optional = true }
-frame-benchmarking-cli = { git = 'https://github.com/paritytech/substrate', branch = "polkadot-v0.9.13", optional = true }
+frame-benchmarking-cli = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.13", optional = true }
+pallet-xcm = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.13", optional = true }
+xcm-builder = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.13", optional = true }
 
 # try-runtime
 frame-try-runtime = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.13", optional = true }
@@ -138,6 +140,8 @@ runtime-benchmarks = [
     "local-runtime/runtime-benchmarks",
     "shibuya-runtime/runtime-benchmarks",
     "shiden-runtime/runtime-benchmarks",
+    "pallet-xcm/runtime-benchmarks",
+    "xcm-builder/runtime-benchmarks",
 ]
 cli = [
     'try-runtime-cli',

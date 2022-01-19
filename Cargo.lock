@@ -195,6 +195,7 @@ dependencies = [
  "pallet-evm",
  "pallet-transaction-payment",
  "pallet-transaction-payment-rpc",
+ "pallet-xcm",
  "parity-scale-codec",
  "polkadot-cli",
  "polkadot-parachain",
@@ -242,6 +243,7 @@ dependencies = [
  "substrate-prometheus-endpoint",
  "try-runtime-cli",
  "vergen",
+ "xcm-builder",
 ]
 
 [[package]]
