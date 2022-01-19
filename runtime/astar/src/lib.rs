@@ -270,7 +270,7 @@ parameter_types! {
     pub const RegisterDeposit: Balance = 100 * ASTR;
     pub const DeveloperRewardPercentage: Perbill = Perbill::from_percent(1);
     pub const MaxNumberOfStakersPerContract: u32 = 512;
-    pub const MinimumStakingAmount: Balance = 50 * ASTR;
+    pub const MinimumStakingAmount: Balance = 500 * ASTR;
     pub const MinimumRemainingAmount: Balance = 1 * ASTR;
     pub const HistoryDepth: u32 = 14;
     pub const BonusEraDuration: u32 = 0;
