@@ -224,6 +224,8 @@ pub mod pallet {
     pub enum Error<T> {
         /// Disabled
         Disabled,
+        /// Upgrade is too heavy, reduce the weight parameter.
+        UpgradeTooHeavy,
         /// Can not stake with zero value.
         StakingWithNoValue,
         /// Can not stake with value less than minimum staking value
@@ -266,6 +268,15 @@ pub mod pallet {
     #[pallet::hooks]
     impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
         fn on_initialize(now: BlockNumberFor<T>) -> Weight {
+            // As long as pallet is disabled, we shouldn't allow any storage modifications.
+            // This means we might prolong an era but it's acceptable.
+            // Runtime upgrade should be timed so we ensure that we complete it before
+            // a new era is triggered. This code is just a safety net to ensure nothing is broken
+            // if we fail to do that.
+            if Self::pallet_disabled() {
+                return T::DbWeight::get().reads(1);
+            }
+
             let force_new_era = Self::force_era().eq(&Forcing::ForceNew);
             let blocks_per_era = T::BlockPerEra::get();
             let previous_era = Self::current_era();
@@ -301,13 +312,13 @@ pub mod pallet {
         ) -> DispatchResultWithPostInfo {
             ensure_root(origin)?;
 
-            // TODO: scale this down bellow 75%. It should probably be an argument that depends on the size of block
-            // dedicated to normal ops.
-            // Make this a constant?
             let weight_limit = weight_limit.unwrap_or(T::BlockWeights::get().max_block / 5 * 3); // e.g. 60%
 
-            // TODO: do some hard-check on weight and terminate extrinsic if weight is too high?
-            // Otherwise we might get stuck again (same as when we upgraded Shibuya)
+            // A sanity check to prevent too heavy upgrade
+            ensure!(
+                weight_limit > T::BlockWeights::get().max_block / 4 * 3,
+                Error::<T>::UpgradeTooHeavy
+            );
 
             let consumed_weight = migrations::v2::stateful_migrate::<T>(weight_limit);
 
