@@ -103,6 +103,9 @@
 <span id="103">103</span>
 <span id="104">104</span>
 <span id="105">105</span>
+<span id="106">106</span>
+<span id="107">107</span>
+<span id="108">108</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Astar collator staking interface.</span>
 
 <span class="attribute">#![<span class="ident">cfg_attr</span>(<span class="ident">not</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>), <span class="ident">no_std</span>)]</span>
@@ -172,8 +175,11 @@
                 <span class="comment">// Low level argument parsing</span>
                 <span class="kw">let</span> <span class="ident">len_offset</span> <span class="op">=</span> <span class="ident">SELECTOR_SIZE_BYTES</span> <span class="op">+</span> <span class="number">32</span>;
                 <span class="kw">let</span> <span class="ident">keys_offset</span> <span class="op">=</span> <span class="ident">len_offset</span> <span class="op">+</span> <span class="number">32</span>;
-                <span class="kw">let</span> <span class="ident">keys_len</span> <span class="op">=</span> <span class="ident">sp_core::U256::from_big_endian</span>(<span class="kw-2">&amp;</span><span class="ident">input</span>[<span class="ident">len_offset</span>..<span class="ident">keys_offset</span>]);
-                <span class="kw">let</span> <span class="ident">keys</span> <span class="op">=</span> <span class="ident">input</span>[<span class="ident">keys_offset</span>..(<span class="ident">keys_offset</span> <span class="op">+</span> <span class="ident">keys_len</span>.<span class="ident">as_usize</span>())].<span class="ident">to_vec</span>();
+                <span class="comment">// Session keys is 32 byte lenght</span>
+                <span class="kw">if</span> <span class="ident">input</span>.<span class="ident">len</span>() <span class="op">&lt;</span> <span class="ident">SELECTOR_SIZE_BYTES</span> <span class="op">+</span> <span class="number">32</span> <span class="op">*</span> <span class="number">3</span> {
+                    <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="ident">ExitError::Other</span>(<span class="string">&quot;wrong input length&quot;</span>.<span class="ident">into</span>()));
+                }
+                <span class="kw">let</span> <span class="ident">keys</span> <span class="op">=</span> <span class="ident">input</span>[<span class="ident">keys_offset</span>..(<span class="ident">keys_offset</span> <span class="op">+</span> <span class="number">32</span>)].<span class="ident">to_vec</span>();
                 <span class="ident"><span class="self">Self</span>::set_keys</span>(<span class="ident">keys</span>)<span class="question-mark">?</span>
             }
             [<span class="number">0x32</span>, <span class="number">0x1c</span>, <span class="number">0x9b</span>, <span class="number">0x7a</span>] =&gt; <span class="ident"><span class="self">Self</span>::purge_keys</span>(),

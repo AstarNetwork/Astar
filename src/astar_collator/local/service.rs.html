@@ -387,6 +387,9 @@
 <span id="387">387</span>
 <span id="388">388</span>
 <span id="389">389</span>
+<span id="390">390</span>
+<span id="391">391</span>
+<span id="392">392</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Local Service and ServiceFactory implementation. Specialized wrapper over substrate service.</span>
 
 <span class="kw">use</span> <span class="ident">fc_consensus::FrontierBlockImport</span>;
@@ -487,7 +490,9 @@
     <span class="kw">let</span> <span class="ident">client</span> <span class="op">=</span> <span class="ident">Arc::new</span>(<span class="ident">client</span>);
 
     <span class="kw">let</span> <span class="ident">telemetry</span> <span class="op">=</span> <span class="ident">telemetry</span>.<span class="ident">map</span>(<span class="op">|</span>(<span class="ident">worker</span>, <span class="ident">telemetry</span>)<span class="op">|</span> {
-        <span class="ident">task_manager</span>.<span class="ident">spawn_handle</span>().<span class="ident">spawn</span>(<span class="string">&quot;telemetry&quot;</span>, <span class="ident">worker</span>.<span class="ident">run</span>());
+        <span class="ident">task_manager</span>
+            .<span class="ident">spawn_handle</span>()
+            .<span class="ident">spawn</span>(<span class="string">&quot;telemetry&quot;</span>, <span class="prelude-val">None</span>, <span class="ident">worker</span>.<span class="ident">run</span>());
         <span class="ident">telemetry</span>
     });
 
@@ -579,7 +584,6 @@
             <span class="ident">transaction_pool</span>: <span class="ident">transaction_pool</span>.<span class="ident">clone</span>(),
             <span class="ident">spawn_handle</span>: <span class="ident">task_manager</span>.<span class="ident">spawn_handle</span>(),
             <span class="ident">import_queue</span>,
-            <span class="ident">on_demand</span>: <span class="prelude-val">None</span>,
             <span class="ident">block_announce_validator_builder</span>: <span class="prelude-val">None</span>,
             <span class="ident">warp_sync</span>: <span class="prelude-val">None</span>,
         })<span class="question-mark">?</span>;
@@ -599,6 +603,7 @@
     <span class="comment">// Maps emulated ethereum data to substrate native data.</span>
     <span class="ident">task_manager</span>.<span class="ident">spawn_essential_handle</span>().<span class="ident">spawn</span>(
         <span class="string">&quot;frontier-mapping-sync-worker&quot;</span>,
+        <span class="prelude-val">None</span>,
         <span class="ident">fc_mapping_sync::MappingSyncWorker::new</span>(
             <span class="ident">client</span>.<span class="ident">import_notification_stream</span>(),
             <span class="ident">Duration::new</span>(<span class="number">6</span>, <span class="number">0</span>),
@@ -615,6 +620,7 @@
     <span class="kw">const</span> <span class="ident">FILTER_RETAIN_THRESHOLD</span>: <span class="ident">u64</span> <span class="op">=</span> <span class="number">100</span>;
     <span class="ident">task_manager</span>.<span class="ident">spawn_essential_handle</span>().<span class="ident">spawn</span>(
         <span class="string">&quot;frontier-filter-pool&quot;</span>,
+        <span class="prelude-val">None</span>,
         <span class="ident">fc_rpc::EthTask::filter_pool_task</span>(
             <span class="ident">client</span>.<span class="ident">clone</span>(),
             <span class="ident">filter_pool</span>.<span class="ident">clone</span>(),
@@ -624,6 +630,7 @@
 
     <span class="ident">task_manager</span>.<span class="ident">spawn_essential_handle</span>().<span class="ident">spawn</span>(
         <span class="string">&quot;frontier-schema-cache-task&quot;</span>,
+        <span class="prelude-val">None</span>,
         <span class="ident">fc_rpc::EthTask::ethereum_schema_cache_task</span>(<span class="ident">client</span>.<span class="ident">clone</span>(), <span class="ident">frontier_backend</span>.<span class="ident">clone</span>()),
     );
 
@@ -669,8 +676,6 @@
         <span class="ident">task_manager</span>: <span class="kw-2">&amp;mut</span> <span class="ident">task_manager</span>,
         <span class="ident">transaction_pool</span>: <span class="ident">transaction_pool</span>.<span class="ident">clone</span>(),
         <span class="ident">rpc_extensions_builder</span>,
-        <span class="ident">on_demand</span>: <span class="prelude-val">None</span>,
-        <span class="ident">remote_blockchain</span>: <span class="prelude-val">None</span>,
         <span class="ident">backend</span>,
         <span class="ident">system_rpc_tx</span>,
         <span class="ident">config</span>,
@@ -726,7 +731,7 @@
         <span class="comment">// fails we take down the service with it.</span>
         <span class="ident">task_manager</span>
             .<span class="ident">spawn_essential_handle</span>()
-            .<span class="ident">spawn_blocking</span>(<span class="string">&quot;aura&quot;</span>, <span class="ident">aura</span>);
+            .<span class="ident">spawn_blocking</span>(<span class="string">&quot;aura&quot;</span>, <span class="prelude-val">Some</span>(<span class="string">&quot;block-authoring&quot;</span>), <span class="ident">aura</span>);
     }
 
     <span class="comment">// if the node isn&#39;t actively participating in consensus then it doesn&#39;t</span>
@@ -769,6 +774,7 @@
         <span class="comment">// if it fails we take down the service with it.</span>
         <span class="ident">task_manager</span>.<span class="ident">spawn_essential_handle</span>().<span class="ident">spawn_blocking</span>(
             <span class="string">&quot;grandpa-voter&quot;</span>,
+            <span class="prelude-val">None</span>,
             <span class="ident">sc_finality_grandpa::run_grandpa_voter</span>(<span class="ident">grandpa_config</span>)<span class="question-mark">?</span>,
         );
     }

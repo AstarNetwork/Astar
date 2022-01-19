@@ -170,7 +170,6 @@
 <span id="170">170</span>
 <span id="171">171</span>
 <span id="172">172</span>
-<span id="173">173</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Astar chain specifications.</span>
 
 <span class="kw">use</span> <span class="ident">astar_runtime</span>::{
@@ -293,7 +292,6 @@
     <span class="ident">astar_runtime::GenesisConfig</span> {
         <span class="ident">system</span>: <span class="ident">SystemConfig</span> {
             <span class="ident">code</span>: <span class="ident">wasm_binary_unwrap</span>().<span class="ident">to_vec</span>(),
-            <span class="ident">changes_trie_config</span>: <span class="ident">Default::default</span>(),
         },
         <span class="ident">sudo</span>: <span class="ident">astar_runtime::SudoConfig</span> { <span class="ident">key</span>: <span class="ident">root_key</span> },
         <span class="ident">parachain_info</span>: <span class="ident">ParachainInfoConfig</span> { <span class="ident">parachain_id</span> },

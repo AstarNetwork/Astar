@@ -129,7 +129,6 @@
 <span id="129">129</span>
 <span id="130">130</span>
 <span id="131">131</span>
-<span id="132">132</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Chain specifications.</span>
 
 <span class="kw">use</span> <span class="ident">local_runtime</span>::{
@@ -211,7 +210,6 @@
     <span class="ident">GenesisConfig</span> {
         <span class="ident">system</span>: <span class="ident">SystemConfig</span> {
             <span class="ident">code</span>: <span class="ident">wasm_binary_unwrap</span>().<span class="ident">to_vec</span>(),
-            <span class="ident">changes_trie_config</span>: <span class="ident">Default::default</span>(),
         },
         <span class="ident">balances</span>: <span class="ident">BalancesConfig</span> {
             <span class="ident">balances</span>: <span class="ident">endowed_accounts</span>

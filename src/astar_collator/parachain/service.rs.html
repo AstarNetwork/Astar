@@ -979,6 +979,8 @@
 <span id="979">979</span>
 <span id="980">980</span>
 <span id="981">981</span>
+<span id="982">982</span>
+<span id="983">983</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Parachain Service and ServiceFactory implementation.</span>
 <span class="kw">use</span> <span class="ident">cumulus_client_consensus_aura</span>::{
     <span class="ident">build_aura_consensus</span>, <span class="ident">BuildAuraConsensusParams</span>, <span class="ident">SlotProportion</span>,
@@ -1169,7 +1171,9 @@
     <span class="kw">let</span> <span class="ident">telemetry_worker_handle</span> <span class="op">=</span> <span class="ident">telemetry</span>.<span class="ident">as_ref</span>().<span class="ident">map</span>(<span class="op">|</span>(<span class="ident">worker</span>, <span class="kw">_</span>)<span class="op">|</span> <span class="ident">worker</span>.<span class="ident">handle</span>());
 
     <span class="kw">let</span> <span class="ident">telemetry</span> <span class="op">=</span> <span class="ident">telemetry</span>.<span class="ident">map</span>(<span class="op">|</span>(<span class="ident">worker</span>, <span class="ident">telemetry</span>)<span class="op">|</span> {
-        <span class="ident">task_manager</span>.<span class="ident">spawn_handle</span>().<span class="ident">spawn</span>(<span class="string">&quot;telemetry&quot;</span>, <span class="ident">worker</span>.<span class="ident">run</span>());
+        <span class="ident">task_manager</span>
+            .<span class="ident">spawn_handle</span>()
+            .<span class="ident">spawn</span>(<span class="string">&quot;telemetry&quot;</span>, <span class="prelude-val">None</span>, <span class="ident">worker</span>.<span class="ident">run</span>());
         <span class="ident">telemetry</span>
     });
 
@@ -1312,7 +1316,6 @@
             <span class="ident">transaction_pool</span>: <span class="ident">transaction_pool</span>.<span class="ident">clone</span>(),
             <span class="ident">spawn_handle</span>: <span class="ident">task_manager</span>.<span class="ident">spawn_handle</span>(),
             <span class="ident">import_queue</span>: <span class="ident">import_queue</span>.<span class="ident">clone</span>(),
-            <span class="ident">on_demand</span>: <span class="prelude-val">None</span>,
             <span class="ident">block_announce_validator_builder</span>: <span class="prelude-val">Some</span>(<span class="ident">Box::new</span>(<span class="op">|</span><span class="kw">_</span><span class="op">|</span> <span class="ident">block_announce_validator</span>)),
             <span class="ident">warp_sync</span>: <span class="prelude-val">None</span>,
         })<span class="question-mark">?</span>;
@@ -1323,6 +1326,7 @@
     <span class="comment">// Maps emulated ethereum data to substrate native data.</span>
     <span class="ident">task_manager</span>.<span class="ident">spawn_essential_handle</span>().<span class="ident">spawn</span>(
         <span class="string">&quot;frontier-mapping-sync-worker&quot;</span>,
+        <span class="prelude-val">None</span>,
         <span class="ident">fc_mapping_sync::MappingSyncWorker::new</span>(
             <span class="ident">client</span>.<span class="ident">import_notification_stream</span>(),
             <span class="ident">Duration::new</span>(<span class="number">6</span>, <span class="number">0</span>),
@@ -1339,6 +1343,7 @@
     <span class="kw">const</span> <span class="ident">FILTER_RETAIN_THRESHOLD</span>: <span class="ident">u64</span> <span class="op">=</span> <span class="number">100</span>;
     <span class="ident">task_manager</span>.<span class="ident">spawn_essential_handle</span>().<span class="ident">spawn</span>(
         <span class="string">&quot;frontier-filter-pool&quot;</span>,
+        <span class="prelude-val">None</span>,
         <span class="ident">fc_rpc::EthTask::filter_pool_task</span>(
             <span class="ident">client</span>.<span class="ident">clone</span>(),
             <span class="ident">filter_pool</span>.<span class="ident">clone</span>(),
@@ -1348,6 +1353,7 @@
 
     <span class="ident">task_manager</span>.<span class="ident">spawn_essential_handle</span>().<span class="ident">spawn</span>(
         <span class="string">&quot;frontier-schema-cache-task&quot;</span>,
+        <span class="prelude-val">None</span>,
         <span class="ident">fc_rpc::EthTask::ethereum_schema_cache_task</span>(<span class="ident">client</span>.<span class="ident">clone</span>(), <span class="ident">frontier_backend</span>.<span class="ident">clone</span>()),
     );
 
@@ -1375,8 +1381,6 @@
 
     <span class="comment">// Spawn basic services.</span>
     <span class="ident">sc_service::spawn_tasks</span>(<span class="ident">sc_service::SpawnTasksParams</span> {
-        <span class="ident">on_demand</span>: <span class="prelude-val">None</span>,
-        <span class="ident">remote_blockchain</span>: <span class="prelude-val">None</span>,
         <span class="ident">rpc_extensions_builder</span>,
         <span class="ident">client</span>: <span class="ident">client</span>.<span class="ident">clone</span>(),
         <span class="ident">transaction_pool</span>: <span class="ident">transaction_pool</span>.<span class="ident">clone</span>(),
