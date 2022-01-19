@@ -21,75 +21,78 @@ use super::*;
 
 // Migration from single schedule to multiple schedules.
 pub(crate) mod v1 {
-	use super::*;
+    use super::*;
 
-	#[cfg(feature = "try-runtime")]
-	pub(crate) fn pre_migrate<T: Config>() -> Result<(), &'static str> {
-		assert!(StorageVersion::<T>::get() == Releases::V0, "Storage version too high.");
+    #[cfg(feature = "try-runtime")]
+    pub(crate) fn pre_migrate<T: Config>() -> Result<(), &'static str> {
+        assert!(
+            StorageVersion::<T>::get() == Releases::V0,
+            "Storage version too high."
+        );
 
-		log::debug!(
-			target: "runtime::vesting",
-			"migration: Vesting storage version v1 PRE migration checks succesful!"
-		);
+        log::debug!(
+            target: "runtime::vesting",
+            "migration: Vesting storage version v1 PRE migration checks succesful!"
+        );
 
-		Ok(())
-	}
+        Ok(())
+    }
 
-	/// Migrate from single schedule to multi schedule storage.
-	/// WARNING: This migration will delete schedules if `MaxVestingSchedules < 1`.
-	pub(crate) fn migrate<T: Config>() -> Weight {
-		let mut reads_writes = 0;
+    /// Migrate from single schedule to multi schedule storage.
+    /// WARNING: This migration will delete schedules if `MaxVestingSchedules < 1`.
+    pub(crate) fn migrate<T: Config>() -> Weight {
+        let mut reads_writes = 0;
 
-		Vesting::<T>::translate::<VestingInfo<BalanceOf<T>, T::BlockNumber>, _>(
-			|_key, vesting_info| {
-				reads_writes += 1;
-				let v: Option<
-					BoundedVec<
-						VestingInfo<BalanceOf<T>, T::BlockNumber>,
-						MaxVestingSchedulesGet<T>,
-					>,
-				> = vec![vesting_info].try_into().ok();
+        Vesting::<T>::translate::<VestingInfo<BalanceOf<T>, T::BlockNumber>, _>(
+            |_key, vesting_info| {
+                reads_writes += 1;
+                let v: Option<
+                    BoundedVec<
+                        VestingInfo<BalanceOf<T>, T::BlockNumber>,
+                        MaxVestingSchedulesGet<T>,
+                    >,
+                > = vec![vesting_info].try_into().ok();
 
-				if v.is_none() {
-					log::warn!(
-						target: "runtime::vesting",
-						"migration: Failed to move a vesting schedule into a BoundedVec"
-					);
-				}
+                if v.is_none() {
+                    log::warn!(
+                        target: "runtime::vesting",
+                        "migration: Failed to move a vesting schedule into a BoundedVec"
+                    );
+                }
 
-				v
-			},
-		);
+                v
+            },
+        );
 
-		T::DbWeight::get().reads_writes(reads_writes, reads_writes)
-	}
+        T::DbWeight::get().reads_writes(reads_writes, reads_writes)
+    }
 
-	#[cfg(feature = "try-runtime")]
-	pub(crate) fn post_migrate<T: Config>() -> Result<(), &'static str> {
-		assert_eq!(StorageVersion::<T>::get(), Releases::V1);
+    #[cfg(feature = "try-runtime")]
+    pub(crate) fn post_migrate<T: Config>() -> Result<(), &'static str> {
+        assert_eq!(StorageVersion::<T>::get(), Releases::V1);
 
-		for (_key, schedules) in Vesting::<T>::iter() {
-			assert!(
-				schedules.len() >= 1,
-				"A bounded vec with incorrect count of items was created."
-			);
+        for (_key, schedules) in Vesting::<T>::iter() {
+            assert!(
+                schedules.len() >= 1,
+                "A bounded vec with incorrect count of items was created."
+            );
 
-			for s in schedules {
-				// It is ok if this does not pass, but ideally pre-existing schedules would pass
-				// this validation logic so we can be more confident about edge cases.
-				if !s.is_valid() {
-					log::warn!(
-						target: "runtime::vesting",
-						"migration: A schedule does not pass new validation logic.",
-					)
-				}
-			}
-		}
+            for s in schedules {
+                // It is ok if this does not pass, but ideally pre-existing schedules would pass
+                // this validation logic so we can be more confident about edge cases.
+                if !s.is_valid() {
+                    log::warn!(
+                        target: "runtime::vesting",
+                        "migration: A schedule does not pass new validation logic.",
+                    )
+                }
+            }
+        }
 
-		log::debug!(
-			target: "runtime::vesting",
-			"migration: Vesting storage version v1 POST migration checks successful!"
-		);
-		Ok(())
-	}
+        log::debug!(
+            target: "runtime::vesting",
+            "migration: Vesting storage version v1 POST migration checks successful!"
+        );
+        Ok(())
+    }
 }

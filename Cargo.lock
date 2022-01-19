@@ -267,9 +267,10 @@ dependencies = [
  "pallet-authorship",
  "pallet-balances",
  "pallet-block-reward",
- "pallet-collator-selection",
+ "pallet-collator-selection 3.0.0",
  "pallet-collective",
  "pallet-custom-signatures",
+ "pallet-dapps-staking",
  "pallet-ethereum",
  "pallet-evm",
  "pallet-evm-precompile-bn128",
@@ -279,7 +280,6 @@ dependencies = [
  "pallet-evm-precompile-simple",
  "pallet-identity",
  "pallet-multisig",
- "pallet-precompile-staking",
  "pallet-session",
  "pallet-sudo",
  "pallet-timestamp",
@@ -5219,6 +5219,32 @@ dependencies = [
 [[package]]
 name = "pallet-collator-selection"
 version = "3.0.0"
+dependencies = [
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "log",
+ "pallet-aura",
+ "pallet-authorship",
+ "pallet-balances",
+ "pallet-session",
+ "pallet-timestamp",
+ "parity-scale-codec",
+ "rand 0.7.3",
+ "scale-info",
+ "serde",
+ "sp-consensus-aura",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-staking",
+ "sp-std",
+ "sp-tracing",
+]
+
+[[package]]
+name = "pallet-collator-selection"
+version = "3.0.0"
 source = "git+https://github.com/paritytech/cumulus?branch=polkadot-v0.9.13#05cc5f0e2acacc18796f45ffa3c7b4626fd1046d"
 dependencies = [
  "frame-benchmarking",
@@ -5738,7 +5764,7 @@ dependencies = [
  "evm",
  "frame-support",
  "frame-system",
- "pallet-collator-selection",
+ "pallet-collator-selection 3.0.0 (git+https://github.com/paritytech/cumulus?branch=polkadot-v0.9.13)",
  "pallet-evm",
  "pallet-session",
  "parity-scale-codec",
@@ -9364,7 +9390,7 @@ dependencies = [
  "pallet-authorship",
  "pallet-balances",
  "pallet-block-reward",
- "pallet-collator-selection",
+ "pallet-collator-selection 3.0.0 (git+https://github.com/paritytech/cumulus?branch=polkadot-v0.9.13)",
  "pallet-collective",
  "pallet-custom-signatures",
  "pallet-dapps-staking",
@@ -9432,7 +9458,7 @@ dependencies = [
  "pallet-authorship",
  "pallet-balances",
  "pallet-block-reward",
- "pallet-collator-selection",
+ "pallet-collator-selection 3.0.0 (git+https://github.com/paritytech/cumulus?branch=polkadot-v0.9.13)",
  "pallet-collective",
  "pallet-custom-signatures",
  "pallet-dapps-staking",
@@ -10396,9 +10422,9 @@ checksum = "8ea5119cdb4c55b55d432abb513a0429384878c15dde60cc77b1c99de1a95a6a"
 
 [[package]]
 name = "structopt"
-version = "0.3.25"
+version = "0.3.26"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "40b9788f4202aa75c240ecc9c15c65185e6a39ccdeb0fd5d008b98825464c87c"
+checksum = "0c6b5c64445ba8094a6ab0c3cd2ad323e07171012d9c98b0b15651daf1787a10"
 dependencies = [
  "clap",
  "lazy_static",
