@@ -115,6 +115,15 @@ pub mod pallet {
         type WeightInfo: WeightInfo;
     }
 
+    #[pallet::storage]
+    #[pallet::getter(fn migration_state_v2)]
+    pub type MigrationStateV2<T: Config> =
+        StorageValue<_, migrations::v2::MigrationState, ValueQuery>;
+
+    #[pallet::storage]
+    #[pallet::getter(fn pallet_disabled)]
+    pub type PalletDisabled<T: Config> = StorageValue<_, bool, ValueQuery>;
+
     /// Bonded amount for the staker
     #[pallet::storage]
     #[pallet::getter(fn ledger)]
@@ -213,6 +222,10 @@ pub mod pallet {
 
     #[pallet::error]
     pub enum Error<T> {
+        /// Disabled
+        Disabled,
+        /// Upgrade is too heavy, reduce the weight parameter.
+        UpgradeTooHeavy,
         /// Can not stake with zero value.
         StakingWithNoValue,
         /// Can not stake with value less than minimum staking value
@@ -255,6 +268,15 @@ pub mod pallet {
     #[pallet::hooks]
     impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
         fn on_initialize(now: BlockNumberFor<T>) -> Weight {
+            // As long as pallet is disabled, we shouldn't allow any storage modifications.
+            // This means we might prolong an era but it's acceptable.
+            // Runtime upgrade should be timed so we ensure that we complete it before
+            // a new era is triggered. This code is just a safety net to ensure nothing is broken
+            // if we fail to do that.
+            if Self::pallet_disabled() {
+                return T::DbWeight::get().reads(1);
+            }
+
             let force_new_era = Self::force_era().eq(&Forcing::ForceNew);
             let blocks_per_era = T::BlockPerEra::get();
             let previous_era = Self::current_era();
@@ -283,6 +305,26 @@ pub mod pallet {
 
     #[pallet::call]
     impl<T: Config> Pallet<T> {
+        #[pallet::weight(weight_limit.unwrap_or(T::BlockWeights::get().max_block / 5 * 3))]
+        pub fn do_upgrade(
+            origin: OriginFor<T>,
+            weight_limit: Option<Weight>,
+        ) -> DispatchResultWithPostInfo {
+            ensure_root(origin)?;
+
+            let weight_limit = weight_limit.unwrap_or(T::BlockWeights::get().max_block / 5 * 3); // e.g. 60%
+
+            // A sanity check to prevent too heavy upgrade
+            ensure!(
+                weight_limit < T::BlockWeights::get().max_block / 4 * 3,
+                Error::<T>::UpgradeTooHeavy
+            );
+
+            let consumed_weight = migrations::v2::stateful_migrate::<T>(weight_limit);
+
+            Ok(Some(consumed_weight).into())
+        }
+
         /// register contract into staking targets.
         /// contract_id should be ink! or evm contract.
         ///
@@ -293,6 +335,8 @@ pub mod pallet {
             origin: OriginFor<T>,
             contract_id: T::SmartContract,
         ) -> DispatchResultWithPostInfo {
+            ensure!(!Self::pallet_disabled(), Error::<T>::Disabled);
+
             let developer = ensure_signed(origin)?;
 
             ensure!(
@@ -332,6 +376,7 @@ pub mod pallet {
             origin: OriginFor<T>,
             contract_id: T::SmartContract,
         ) -> DispatchResultWithPostInfo {
+            ensure!(!Self::pallet_disabled(), Error::<T>::Disabled);
             let developer = ensure_signed(origin)?;
 
             let registered_contract =
@@ -394,6 +439,7 @@ pub mod pallet {
             contract_id: T::SmartContract,
             #[pallet::compact] value: BalanceOf<T>,
         ) -> DispatchResultWithPostInfo {
+            ensure!(!Self::pallet_disabled(), Error::<T>::Disabled);
             let staker = ensure_signed(origin)?;
 
             // Check that contract is ready for staking.
@@ -486,6 +532,7 @@ pub mod pallet {
             contract_id: T::SmartContract,
             #[pallet::compact] value: BalanceOf<T>,
         ) -> DispatchResultWithPostInfo {
+            ensure!(!Self::pallet_disabled(), Error::<T>::Disabled);
             let staker = ensure_signed(origin)?;
 
             ensure!(value > Zero::zero(), Error::<T>::UnstakingWithNoValue);
@@ -562,6 +609,7 @@ pub mod pallet {
         ///
         #[pallet::weight(T::WeightInfo::withdraw_unbonded())]
         pub fn withdraw_unbonded(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
+            ensure!(!Self::pallet_disabled(), Error::<T>::Disabled);
             let staker = ensure_signed(origin)?;
 
             let mut ledger = Self::ledger(&staker);
@@ -594,6 +642,7 @@ pub mod pallet {
             contract_id: T::SmartContract,
             #[pallet::compact] era: EraIndex,
         ) -> DispatchResultWithPostInfo {
+            ensure!(!Self::pallet_disabled(), Error::<T>::Disabled);
             let _ = ensure_signed(origin)?;
 
             let developer =
@@ -690,6 +739,7 @@ pub mod pallet {
         /// # </weight>
         #[pallet::weight(T::WeightInfo::force_new_era())]
         pub fn force_new_era(origin: OriginFor<T>) -> DispatchResult {
+            ensure!(!Self::pallet_disabled(), Error::<T>::Disabled);
             ensure_root(origin)?;
             ForceEra::<T>::put(Forcing::ForceNew);
             Ok(())
@@ -704,6 +754,7 @@ pub mod pallet {
             origin: OriginFor<T>,
             developer: T::AccountId,
         ) -> DispatchResultWithPostInfo {
+            ensure!(!Self::pallet_disabled(), Error::<T>::Disabled);
             ensure_root(origin)?;
 
             ensure!(
@@ -723,6 +774,7 @@ pub mod pallet {
             origin: OriginFor<T>,
             enabled: bool,
         ) -> DispatchResultWithPostInfo {
+            ensure!(!Self::pallet_disabled(), Error::<T>::Disabled);
             ensure_root(origin)?;
             PreApprovalIsEnabled::<T>::put(enabled);
             Ok(().into())
