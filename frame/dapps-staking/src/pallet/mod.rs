@@ -316,7 +316,7 @@ pub mod pallet {
 
             // A sanity check to prevent too heavy upgrade
             ensure!(
-                weight_limit > T::BlockWeights::get().max_block / 4 * 3,
+                weight_limit < T::BlockWeights::get().max_block / 4 * 3,
                 Error::<T>::UpgradeTooHeavy
             );
 
