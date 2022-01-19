@@ -116,6 +116,7 @@ fn testnet_genesis(
         },
         ethereum: Default::default(),
         sudo: SudoConfig { key: root_key },
+        scheduler: Default::default(),
     }
 }
 
