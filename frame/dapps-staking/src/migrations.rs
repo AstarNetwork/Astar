@@ -124,7 +124,7 @@ pub mod v2 {
         if migration_state == MigrationState::NotStarted {
             migration_state = MigrationState::Ledger(None);
             PalletDisabled::<T>::put(true);
-            consumed_weight += T::DbWeight::get().writes(1);
+            consumed_weight = consumed_weight.saturating_add(T::DbWeight::get().writes(1));
 
             // If normal run, just exit here to avoid the risk of clogging the upgrade block.
             if !cfg!(feature = "try-runtime") {
@@ -153,7 +153,8 @@ pub mod v2 {
                 });
 
                 // Increment total consumed weight.
-                consumed_weight += T::DbWeight::get().reads_writes(1, 1);
+                consumed_weight =
+                    consumed_weight.saturating_add(T::DbWeight::get().reads_writes(1, 1));
 
                 // Check if we've consumed enough weight already.
                 if consumed_weight >= weight_limit {
@@ -162,7 +163,7 @@ pub mod v2 {
                         consumed_weight
                     );
                     MigrationStateV2::<T>::put(MigrationState::Ledger(Some(key_as_vec)));
-                    consumed_weight += T::DbWeight::get().writes(1);
+                    consumed_weight = consumed_weight.saturating_add(T::DbWeight::get().writes(1));
 
                     // we want try-runtime to execute the entire migration
                     if cfg!(feature = "try-runtime") {
@@ -199,7 +200,8 @@ pub mod v2 {
                     },
                 );
 
-                consumed_weight += T::DbWeight::get().reads_writes(1, 1);
+                consumed_weight =
+                    consumed_weight.saturating_add(T::DbWeight::get().reads_writes(1, 1));
 
                 if consumed_weight >= weight_limit {
                     log::info!(
@@ -207,7 +209,7 @@ pub mod v2 {
                         consumed_weight
                     );
                     MigrationStateV2::<T>::put(MigrationState::StakingInfo(Some(key_as_vec)));
-                    consumed_weight += T::DbWeight::get().writes(1);
+                    consumed_weight = consumed_weight.saturating_add(T::DbWeight::get().writes(1));
 
                     if cfg!(feature = "try-runtime") {
                         return stateful_migrate::<T>(weight_limit);
@@ -238,7 +240,8 @@ pub mod v2 {
                     })
                 });
 
-                consumed_weight += T::DbWeight::get().reads_writes(1, 1);
+                consumed_weight =
+                    consumed_weight.saturating_add(T::DbWeight::get().reads_writes(1, 1));
 
                 if consumed_weight >= weight_limit {
                     log::info!(
@@ -246,7 +249,7 @@ pub mod v2 {
                         consumed_weight
                     );
                     MigrationStateV2::<T>::put(MigrationState::RewardsAndStakes(Some(key_as_vec)));
-                    consumed_weight += T::DbWeight::get().writes(1);
+                    consumed_weight = consumed_weight.saturating_add(T::DbWeight::get().writes(1));
 
                     if cfg!(feature = "try-runtime") {
                         return stateful_migrate::<T>(weight_limit);
@@ -260,14 +263,14 @@ pub mod v2 {
         }
 
         MigrationStateV2::<T>::put(MigrationState::Finished);
-        consumed_weight += T::DbWeight::get().writes(1);
+        consumed_weight = consumed_weight.saturating_add(T::DbWeight::get().writes(1));
         log::info!(">>> Migration finalized.");
 
         StorageVersion::<T>::put(Version::V2_0_0);
-        consumed_weight += T::DbWeight::get().writes(1);
+        consumed_weight = consumed_weight.saturating_add(T::DbWeight::get().writes(1));
 
         PalletDisabled::<T>::put(false);
-        consumed_weight += T::DbWeight::get().writes(1);
+        consumed_weight = consumed_weight.saturating_add(T::DbWeight::get().writes(1));
 
         consumed_weight
     }
