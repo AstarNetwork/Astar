@@ -1,11 +1,13 @@
 var N = null;var sourcesIndex = {};
 sourcesIndex["astar_collator"] = {"name":"","dirs":[{"name":"local","files":["chain_spec.rs","mod.rs","service.rs"]},{"name":"parachain","dirs":[{"name":"chain_spec","files":["astar.rs","mod.rs","shibuya.rs","shiden.rs"]}],"files":["mod.rs","service.rs","shell_upgrade.rs"]}],"files":["cli.rs","command.rs","lib.rs","primitives.rs","rpc.rs"]};
-sourcesIndex["astar_runtime"] = {"name":"","files":["lib.rs","precompiles.rs"]};
+sourcesIndex["astar_runtime"] = {"name":"","dirs":[{"name":"weights","files":["mod.rs","pallet_dapps_staking.rs"]}],"files":["lib.rs","precompiles.rs"]};
 sourcesIndex["local_runtime"] = {"name":"","dirs":[{"name":"weights","files":["mod.rs","pallet_dapps_staking.rs"]}],"files":["lib.rs","precompiles.rs"]};
 sourcesIndex["pallet_block_reward"] = {"name":"","files":["lib.rs"]};
+sourcesIndex["pallet_collator_selection"] = {"name":"","files":["benchmarking.rs","lib.rs","weights.rs"]};
 sourcesIndex["pallet_custom_signatures"] = {"name":"","files":["ethereum.rs","lib.rs"]};
 sourcesIndex["pallet_dapps_staking"] = {"name":"","dirs":[{"name":"pallet","files":["mod.rs"]}],"files":["benchmarking.rs","lib.rs","traits.rs","weights.rs"]};
 sourcesIndex["pallet_precompile_staking"] = {"name":"","files":["lib.rs"]};
+sourcesIndex["pallet_vesting"] = {"name":"","files":["benchmarking.rs","lib.rs","migrations.rs","vesting_info.rs","weights.rs"]};
 sourcesIndex["shibuya_runtime"] = {"name":"","dirs":[{"name":"weights","files":["mod.rs","pallet_dapps_staking.rs"]}],"files":["lib.rs","precompiles.rs"]};
 sourcesIndex["shiden_runtime"] = {"name":"","dirs":[{"name":"weights","files":["mod.rs","pallet_dapps_staking.rs"]}],"files":["lib.rs","precompiles.rs"]};
 createSourceSidebar();
