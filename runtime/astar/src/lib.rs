@@ -33,7 +33,7 @@ use sp_runtime::{
     transaction_validity::{
         TransactionPriority, TransactionSource, TransactionValidity, TransactionValidityError,
     },
-    ApplyExtrinsicResult, FixedPointNumber, Perbill, Perquintill,
+    ApplyExtrinsicResult, FixedPointNumber, Perbill, Perquintill, RuntimeDebug,
 };
 use sp_std::prelude::*;
 
@@ -47,6 +47,8 @@ pub use sp_runtime::BuildStorage;
 
 mod precompiles;
 pub use precompiles::AstarNetworkPrecompiles;
+
+mod weights;
 
 /// Constant values used within the runtime.
 pub const MILLIASTR: Balance = 1_000_000_000_000_000;
@@ -84,7 +86,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("astar"),
     impl_name: create_runtime_str!("astar"),
     authoring_version: 1,
-    spec_version: 3,
+    spec_version: 4,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 2,
@@ -263,6 +265,68 @@ impl pallet_custom_signatures::Config for Runtime {
     type UnsignedPriority = EcdsaUnsignedPriority;
 }
 
+parameter_types! {
+    pub const BlockPerEra: BlockNumber = 1 * DAYS;
+    pub const RegisterDeposit: Balance = 100 * ASTR;
+    pub const DeveloperRewardPercentage: Perbill = Perbill::from_percent(1);
+    pub const MaxNumberOfStakersPerContract: u32 = 512;
+    pub const MinimumStakingAmount: Balance = 500 * ASTR;
+    pub const MinimumRemainingAmount: Balance = 1 * ASTR;
+    pub const HistoryDepth: u32 = 14;
+    pub const BonusEraDuration: u32 = 0;
+}
+
+impl pallet_dapps_staking::Config for Runtime {
+    type Currency = Balances;
+    type BlockPerEra = BlockPerEra;
+    type SmartContract = SmartContract<AccountId>;
+    type RegisterDeposit = RegisterDeposit;
+    type DeveloperRewardPercentage = DeveloperRewardPercentage;
+    type Event = Event;
+    type WeightInfo = weights::pallet_dapps_staking::WeightInfo<Runtime>;
+    type MaxNumberOfStakersPerContract = MaxNumberOfStakersPerContract;
+    type MinimumStakingAmount = MinimumStakingAmount;
+    type PalletId = DappsStakingPalletId;
+    type MinimumRemainingAmount = MinimumRemainingAmount;
+    type HistoryDepth = HistoryDepth;
+    type BonusEraDuration = BonusEraDuration;
+}
+
+/// Multi-VM pointer to smart contract instance.
+#[derive(PartialEq, Eq, Copy, Clone, Encode, Decode, RuntimeDebug, scale_info::TypeInfo)]
+pub enum SmartContract<AccountId> {
+    /// EVM smart contract instance.
+    Evm(sp_core::H160),
+    /// Wasm smart contract instance.
+    Wasm(AccountId),
+}
+
+impl<AccountId> Default for SmartContract<AccountId> {
+    fn default() -> Self {
+        SmartContract::Evm(H160::repeat_byte(0x00))
+    }
+}
+
+#[cfg(not(feature = "runtime-benchmarks"))]
+impl<AccountId> pallet_dapps_staking::traits::IsContract for SmartContract<AccountId> {
+    fn is_valid(&self) -> bool {
+        match self {
+            SmartContract::Wasm(_account) => false,
+            SmartContract::Evm(account) => EVM::account_codes(&account).len() > 0,
+        }
+    }
+}
+
+#[cfg(feature = "runtime-benchmarks")]
+impl<AccountId> pallet_dapps_staking::traits::IsContract for SmartContract<AccountId> {
+    fn is_valid(&self) -> bool {
+        match self {
+            SmartContract::Wasm(_account) => false,
+            SmartContract::Evm(_account) => true,
+        }
+    }
+}
+
 impl pallet_utility::Config for Runtime {
     type Event = Event;
     type Call = Call;
@@ -371,7 +435,7 @@ impl OnUnbalanced<NegativeImbalance> for OnBlockReward {
     fn on_nonzero_unbalanced(amount: NegativeImbalance) {
         let (dapps, maintain) = amount.ration(50, 50);
         // dapp staking block reward
-        Balances::resolve_creating(&DappsStakingPalletId::get().into_account(), dapps);
+        DappsStaking::on_unbalanced(dapps);
 
         let (treasury, collators) = maintain.ration(40, 10);
         // treasury slice of block reward
@@ -608,6 +672,7 @@ construct_runtime!(
         Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>} = 31,
         Vesting: pallet_vesting::{Pallet, Call, Storage, Config<T>, Event<T>} = 32,
         BlockReward: pallet_block_reward::{Pallet} = 33,
+        DappsStaking: pallet_dapps_staking::{Pallet, Call, Storage, Event<T>} = 34,
 
         Authorship: pallet_authorship::{Pallet, Call, Storage, Inherent} = 40,
         CollatorSelection: pallet_collator_selection::{Pallet, Call, Storage, Event<T>, Config<T>} = 41,

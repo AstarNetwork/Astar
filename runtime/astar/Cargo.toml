@@ -1,6 +1,6 @@
 [package]
 name = "astar-runtime"
-version = "3.3.0"
+version = "3.4.0"
 authors = ["Stake Technologies <devops@stake.co.jp>"]
 edition = "2018"
 build = "build.rs"
@@ -46,7 +46,7 @@ pallet-multisig = { git = "https://github.com/paritytech/substrate", branch = "p
 pallet-session = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.13", default-features = false, features = ["historical"] }
 pallet-utility = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.13", default-features = false }
 pallet-timestamp = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.13", default-features = false }
-pallet-vesting = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.13", default-features = false }
+pallet-vesting = { path = "../../frame/vesting", default-features = false }
 pallet-sudo = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.13", default-features = false }
 frame-support = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.13", default-features = false }
 frame-system = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.13", default-features = false }
@@ -61,7 +61,6 @@ cumulus-primitives-timestamp = { git = "https://github.com/paritytech/cumulus", 
 cumulus-pallet-parachain-system = { git = "https://github.com/paritytech/cumulus", branch = "polkadot-v0.9.13", default-features = false }
 cumulus-pallet-aura-ext = { git = "https://github.com/paritytech/cumulus", branch = "polkadot-v0.9.13", default-features = false }
 parachain-info = { git = "https://github.com/paritytech/cumulus", branch = "polkadot-v0.9.13", default-features = false }
-pallet-collator-selection = { git = "https://github.com/paritytech/cumulus", branch = "polkadot-v0.9.13", default-features = false }
 
 # polkadot dependencies
 polkadot-parachain = { git = "https://github.com/paritytech/polkadot", default-features = false , branch = "release-v0.9.13" }
@@ -75,8 +74,9 @@ pallet-collective = { git = "https://github.com/paritytech/substrate", branch = 
 
 # Astar pallets
 pallet-block-reward = { path = "../../frame/block-reward", default-features = false }
+pallet-collator-selection = { path = "../../frame/collator-selection", default-features = false }
 pallet-custom-signatures = { path = "../../frame/custom-signatures", default-features = false }
-pallet-precompile-staking = { path = "../../precompiles/staking", default-features = false }
+pallet-dapps-staking = { path = "../../frame/dapps-staking", default-features = false }
 
 [build-dependencies]
 substrate-wasm-builder = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.13" }
@@ -108,6 +108,7 @@ std = [
     "pallet-balances/std",
     "pallet-block-reward/std",
     "pallet-custom-signatures/std",
+    "pallet-dapps-staking/std",
     "pallet-ethereum/std",
     "pallet-evm/std",
     "pallet-evm-precompile-simple/std",
@@ -115,7 +116,6 @@ std = [
     "pallet-evm-precompile-dispatch/std",
     "pallet-evm-precompile-modexp/std",
     "pallet-evm-precompile-sha3fips/std",
-    "pallet-precompile-staking/std",
     "pallet-identity/std",
     "pallet-multisig/std",
     "pallet-session/std",

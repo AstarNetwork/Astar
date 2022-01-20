@@ -11,7 +11,6 @@ use pallet_evm_precompile_dispatch::Dispatch;
 use pallet_evm_precompile_modexp::Modexp;
 use pallet_evm_precompile_sha3fips::Sha3FIPS256;
 use pallet_evm_precompile_simple::{ECRecover, ECRecoverPublicKey, Identity, Ripemd160, Sha256};
-use pallet_precompile_staking::Staking;
 use sp_core::H160;
 use sp_std::fmt::Debug;
 use sp_std::marker::PhantomData;
@@ -64,7 +63,6 @@ where
             a if a == hash(1025) => Some(Dispatch::<R>::execute(input, target_gas, context)),
             a if a == hash(1026) => Some(ECRecoverPublicKey::execute(input, target_gas, context)),
             // Astar precompiles (starts from 0x5000):
-            a if a == hash(20480) => Some(Staking::<R>::execute(input, target_gas, context)),
             // Default
             _ => None,
         }
