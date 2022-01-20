@@ -19,7 +19,6 @@ use frame_support::{
     assert_noop, assert_ok,
     traits::{Currency, GenesisBuild, OnInitialize},
 };
-use pallet_balances::Error as BalancesError;
 use sp_runtime::traits::BadOrigin;
 
 #[test]
@@ -167,7 +166,7 @@ fn cannot_register_dupe_candidate() {
         };
         assert_eq!(CollatorSelection::candidates(), vec![addition]);
         assert_eq!(CollatorSelection::last_authored_block(3), 10);
-        assert_eq!(Balances::free_balance(3), 90);
+        assert_eq!(Balances::usable_balance(3), 90);
 
         // but no more
         assert_noop!(
@@ -180,8 +179,8 @@ fn cannot_register_dupe_candidate() {
 #[test]
 fn cannot_register_as_candidate_if_poor() {
     new_test_ext().execute_with(|| {
-        assert_eq!(Balances::free_balance(&3), 100);
-        assert_eq!(Balances::free_balance(&33), 0);
+        assert_eq!(Balances::usable_balance(&3), 100);
+        assert_eq!(Balances::usable_balance(&33), 0);
 
         // works
         assert_ok!(CollatorSelection::register_as_candidate(Origin::signed(3)));
@@ -189,7 +188,7 @@ fn cannot_register_as_candidate_if_poor() {
         // poor
         assert_noop!(
             CollatorSelection::register_as_candidate(Origin::signed(33)),
-            BalancesError::<Test>::InsufficientBalance,
+            Error::<Test>::TooLowFreeBalance,
         );
     });
 }
@@ -204,14 +203,14 @@ fn register_as_candidate_works() {
         assert_eq!(CollatorSelection::invulnerables(), vec![1, 2]);
 
         // take two endowed, non-invulnerables accounts.
-        assert_eq!(Balances::free_balance(&3), 100);
-        assert_eq!(Balances::free_balance(&4), 100);
+        assert_eq!(Balances::usable_balance(&3), 100);
+        assert_eq!(Balances::usable_balance(&4), 100);
 
         assert_ok!(CollatorSelection::register_as_candidate(Origin::signed(3)));
         assert_ok!(CollatorSelection::register_as_candidate(Origin::signed(4)));
 
-        assert_eq!(Balances::free_balance(&3), 90);
-        assert_eq!(Balances::free_balance(&4), 90);
+        assert_eq!(Balances::usable_balance(&3), 90);
+        assert_eq!(Balances::usable_balance(&4), 90);
 
         assert_eq!(CollatorSelection::candidates().len(), 2);
     });
@@ -222,11 +221,11 @@ fn leave_intent() {
     new_test_ext().execute_with(|| {
         // register a candidate.
         assert_ok!(CollatorSelection::register_as_candidate(Origin::signed(3)));
-        assert_eq!(Balances::free_balance(3), 90);
+        assert_eq!(Balances::usable_balance(3), 90);
 
         // register too so can leave above min candidates
         assert_ok!(CollatorSelection::register_as_candidate(Origin::signed(5)));
-        assert_eq!(Balances::free_balance(5), 90);
+        assert_eq!(Balances::usable_balance(5), 90);
 
         // cannot leave if not candidate.
         assert_noop!(
@@ -236,7 +235,7 @@ fn leave_intent() {
 
         // bond is returned
         assert_ok!(CollatorSelection::leave_intent(Origin::signed(3)));
-        assert_eq!(Balances::free_balance(3), 100);
+        assert_eq!(Balances::usable_balance(3), 100);
         assert_eq!(CollatorSelection::last_authored_block(3), 0);
     });
 }
@@ -248,7 +247,7 @@ fn authorship_event_handler() {
         Balances::make_free_balance_be(&CollatorSelection::account_id(), 105);
 
         // 4 is the default author.
-        assert_eq!(Balances::free_balance(4), 100);
+        assert_eq!(Balances::usable_balance(4), 100);
         assert_ok!(CollatorSelection::register_as_candidate(Origin::signed(4)));
         // triggers `note_author`
         Authorship::on_initialize(1);
@@ -262,9 +261,12 @@ fn authorship_event_handler() {
         assert_eq!(CollatorSelection::last_authored_block(4), 0);
 
         // half of the pot goes to the collator who's the author (4 in tests).
-        assert_eq!(Balances::free_balance(4), 140);
+        assert_eq!(Balances::usable_balance(4), 140);
         // half + ED stays.
-        assert_eq!(Balances::free_balance(CollatorSelection::account_id()), 55);
+        assert_eq!(
+            Balances::usable_balance(CollatorSelection::account_id()),
+            55
+        );
     });
 }
 
@@ -276,7 +278,7 @@ fn fees_edgecases() {
         // put some money into the pot at ED
         Balances::make_free_balance_be(&CollatorSelection::account_id(), 5);
         // 4 is the default author.
-        assert_eq!(Balances::free_balance(4), 100);
+        assert_eq!(Balances::usable_balance(4), 100);
         assert_ok!(CollatorSelection::register_as_candidate(Origin::signed(4)));
         // triggers `note_author`
         Authorship::on_initialize(1);
@@ -289,9 +291,9 @@ fn fees_edgecases() {
         assert_eq!(CollatorSelection::candidates(), vec![collator]);
         assert_eq!(CollatorSelection::last_authored_block(4), 0);
         // Nothing received
-        assert_eq!(Balances::free_balance(4), 90);
+        assert_eq!(Balances::usable_balance(4), 90);
         // all fee stays
-        assert_eq!(Balances::free_balance(CollatorSelection::account_id()), 5);
+        assert_eq!(Balances::usable_balance(CollatorSelection::account_id()), 5);
     });
 }
 
@@ -356,7 +358,7 @@ fn kick_mechanism() {
         // 3 gets kicked after 1 session delay
         assert_eq!(SessionHandlerCollators::get(), vec![1, 2, 4]);
         // kicked collator gets funds back
-        assert_eq!(Balances::free_balance(3), 100);
+        assert_eq!(Balances::usable_balance(3), 100);
     });
 }
 
@@ -384,7 +386,7 @@ fn should_not_kick_mechanism_too_few() {
         // 3 gets kicked after 1 session delay
         assert_eq!(SessionHandlerCollators::get(), vec![1, 2, 5]);
         // kicked collator gets funds back
-        assert_eq!(Balances::free_balance(3), 100);
+        assert_eq!(Balances::usable_balance(3), 100);
     });
 }
 
