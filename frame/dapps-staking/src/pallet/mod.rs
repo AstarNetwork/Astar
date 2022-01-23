@@ -310,7 +310,7 @@ pub mod pallet {
             origin: OriginFor<T>,
             weight_limit: Option<Weight>,
         ) -> DispatchResultWithPostInfo {
-            ensure_root(origin)?;
+            ensure_signed(origin)?;
 
             let weight_limit = weight_limit.unwrap_or(T::BlockWeights::get().max_block / 5 * 3); // e.g. 60%
 
