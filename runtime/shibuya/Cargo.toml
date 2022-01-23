@@ -48,7 +48,6 @@ pallet-utility = { git = "https://github.com/paritytech/substrate", branch = "po
 pallet-timestamp = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.13", default-features = false }
 pallet-vesting = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.13", default-features = false }
 pallet-sudo = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.13", default-features = false }
-pallet-scheduler = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.13", default-features = false }
 frame-support = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.13", default-features = false }
 frame-system = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.13", default-features = false }
 frame-system-rpc-runtime-api = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.13", default-features = false }
@@ -72,7 +71,7 @@ polkadot-runtime-common = { git = "https://github.com/paritytech/polkadot", defa
 pallet-block-reward = { path = "../../frame/block-reward", default-features = false }
 pallet-custom-signatures = { path = "../../frame/custom-signatures", default-features = false }
 pallet-precompile-staking = { path = "../../precompiles/staking", default-features = false }
-pallet-dapps-staking = { git = "https://github.com/AstarNetwork/Astar", rev = "6c341a98f3f6dd1ee2bf315d09c51534d372930a" , default-features = false }
+pallet-dapps-staking = { git = "https://github.com/AstarNetwork/Astar", rev = "238f6117b0cadb639ed7d6eb7a3c67a8449e3f9d", default-features = false }
 
 # benchmarking
 hex-literal = { version = "0.3.1", optional = true }
@@ -132,7 +131,6 @@ std = [
     "sp-offchain/std",
     "sp-session/std",
     "pallet-sudo/std",
-    "pallet-scheduler/std",
     "pallet-transaction-payment/std",
     "pallet-transaction-payment-rpc-runtime-api/std",
     "parachain-info/std",
@@ -171,7 +169,6 @@ try-runtime = [
     "pallet-custom-signatures/try-runtime",
     "pallet-dapps-staking/try-runtime",
     "pallet-sudo/try-runtime",
-    "pallet-scheduler/try-runtime",
     "pallet-timestamp/try-runtime",
     "pallet-transaction-payment/try-runtime",
     "pallet-utility/try-runtime",

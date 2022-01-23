@@ -114,7 +114,6 @@ fn make_genesis(
                 .collect(),
         },
         ethereum: Default::default(),
-        scheduler: Default::default(),
     }
 }
 

@@ -4365,7 +4365,6 @@ dependencies = [
  "pallet-evm-precompile-simple",
  "pallet-grandpa",
  "pallet-randomness-collective-flip",
- "pallet-scheduler",
  "pallet-sudo",
  "pallet-timestamp",
  "pallet-transaction-payment",
@@ -5409,7 +5408,7 @@ dependencies = [
 [[package]]
 name = "pallet-dapps-staking"
 version = "2.0.0"
-source = "git+https://github.com/AstarNetwork/Astar?rev=6c341a98f3f6dd1ee2bf315d09c51534d372930a#6c341a98f3f6dd1ee2bf315d09c51534d372930a"
+source = "git+https://github.com/AstarNetwork/Astar?rev=238f6117b0cadb639ed7d6eb7a3c67a8449e3f9d#238f6117b0cadb639ed7d6eb7a3c67a8449e3f9d"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -9430,7 +9429,6 @@ dependencies = [
  "pallet-identity",
  "pallet-multisig",
  "pallet-precompile-staking",
- "pallet-scheduler",
  "pallet-session",
  "pallet-sudo",
  "pallet-timestamp",
