@@ -1,6 +1,6 @@
 [package]
 name = "shibuya-runtime"
-version = "3.4.0"
+version = "3.5.0"
 authors = ["Stake Technologies <devops@stake.co.jp>"]
 edition = "2018"
 build = "build.rs"
@@ -71,8 +71,7 @@ polkadot-runtime-common = { git = "https://github.com/paritytech/polkadot", defa
 pallet-block-reward = { path = "../../frame/block-reward", default-features = false }
 pallet-custom-signatures = { path = "../../frame/custom-signatures", default-features = false }
 pallet-precompile-staking = { path = "../../precompiles/staking", default-features = false }
-pallet-dapps-staking = { path = "../../frame/dapps-staking", default-features = false }
-#pallet-dapps-staking = { git = "https://github.com/AstarNetwork/Astar", rev = "95f76bd62fab31073b4040d02cf2343de7222d99" , default-features = false }
+pallet-dapps-staking = { git = "https://github.com/AstarNetwork/Astar", rev = "238f6117b0cadb639ed7d6eb7a3c67a8449e3f9d", default-features = false }
 
 # benchmarking
 hex-literal = { version = "0.3.1", optional = true }
