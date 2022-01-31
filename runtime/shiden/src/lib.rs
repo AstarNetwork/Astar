@@ -7,7 +7,7 @@
 use codec::{Decode, Encode};
 use frame_support::{
     construct_runtime, parameter_types,
-    traits::{Contains, Currency, FindAuthor, Imbalance, OnUnbalanced},
+    traits::{Contains, Currency, FindAuthor, Imbalance, OnRuntimeUpgrade, OnUnbalanced},
     weights::{
         constants::{BlockExecutionWeight, ExtrinsicBaseWeight, WEIGHT_PER_SECOND},
         DispatchClass, Weight, WeightToFeeCoefficient, WeightToFeeCoefficients,
@@ -86,7 +86,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("shiden"),
     impl_name: create_runtime_str!("shiden"),
     authoring_version: 1,
-    spec_version: 35,
+    spec_version: 36,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 2,
@@ -274,6 +274,8 @@ parameter_types! {
     pub const MinimumRemainingAmount: Balance = 1 * SDN;
     pub const HistoryDepth: u32 = 14;
     pub const BonusEraDuration: u32 = 10;
+    pub const MaxUnlockingChunks: u32 = 5;
+    pub const UnbondingPeriod: u32 = 5;
 }
 
 impl pallet_dapps_staking::Config for Runtime {
@@ -290,6 +292,8 @@ impl pallet_dapps_staking::Config for Runtime {
     type MinimumRemainingAmount = MinimumRemainingAmount;
     type HistoryDepth = HistoryDepth;
     type BonusEraDuration = BonusEraDuration;
+    type MaxUnlockingChunks = MaxUnlockingChunks;
+    type UnbondingPeriod = UnbondingPeriod;
 }
 
 /// Multi-VM pointer to smart contract instance.
@@ -740,7 +744,29 @@ pub type Executive = frame_executive::Executive<
     frame_system::ChainContext<Runtime>,
     Runtime,
     AllPallets,
+    (DappsStakingMigrationV2,),
 >;
+
+// Migration for supporting unbonding period in dapps staking.
+pub struct DappsStakingMigrationV2;
+
+impl OnRuntimeUpgrade for DappsStakingMigrationV2 {
+    fn on_runtime_upgrade() -> frame_support::weights::Weight {
+        pallet_dapps_staking::migrations::v2::stateful_migrate::<Runtime>(
+            RuntimeBlockWeights::get().max_block / 5 * 3,
+        )
+    }
+
+    #[cfg(feature = "try-runtime")]
+    fn pre_upgrade() -> Result<(), &'static str> {
+        pallet_dapps_staking::migrations::v2::pre_migrate::<Runtime, Self>()
+    }
+
+    #[cfg(feature = "try-runtime")]
+    fn post_upgrade() -> Result<(), &'static str> {
+        pallet_dapps_staking::migrations::v2::post_migrate::<Runtime, Self>()
+    }
+}
 
 impl fp_self_contained::SelfContainedCall for Call {
     type SignedInfo = H160;
