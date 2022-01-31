@@ -268,11 +268,11 @@ dependencies = [
  "pallet-aura",
  "pallet-authorship",
  "pallet-balances",
- "pallet-block-reward",
- "pallet-collator-selection 3.0.0",
+ "pallet-block-reward 0.2.0 (git+https://github.com/AstarNetwork/astar-frame?tag=pallet-block-reward-3.0.0/polkadot-0.9.13)",
+ "pallet-collator-selection 3.0.0 (git+https://github.com/AstarNetwork/astar-frame?tag=pallet-collator-selection-3.0.0/polkadot-0.9.13)",
  "pallet-collective",
- "pallet-custom-signatures",
- "pallet-dapps-staking 1.1.2",
+ "pallet-custom-signatures 4.3.0 (git+https://github.com/AstarNetwork/astar-frame?tag=pallet-custom-signatures-4.3.0/polkadot-0.9.13)",
+ "pallet-dapps-staking 1.1.2 (git+https://github.com/AstarNetwork/astar-frame?tag=pallet-dapps-staking-1.1.2/polkadot-0.9.13)",
  "pallet-ethereum",
  "pallet-evm",
  "pallet-evm-precompile-bn128",
@@ -288,7 +288,7 @@ dependencies = [
  "pallet-transaction-payment",
  "pallet-transaction-payment-rpc-runtime-api",
  "pallet-utility",
- "pallet-vesting 4.0.0-dev",
+ "pallet-vesting 4.0.0-dev (git+https://github.com/AstarNetwork/astar-frame?tag=pallet-vesting-4.0.0-dev/polkadot-0.9.13)",
  "parachain-info",
  "parity-scale-codec",
  "polkadot-parachain",
@@ -4350,12 +4350,12 @@ dependencies = [
  "hex-literal 0.3.4",
  "pallet-aura",
  "pallet-balances",
- "pallet-block-reward",
+ "pallet-block-reward 0.2.0 (git+https://github.com/AstarNetwork/astar-frame?tag=pallet-block-reward-3.0.0/polkadot-0.9.13)",
  "pallet-contracts",
  "pallet-contracts-primitives",
  "pallet-contracts-rpc-runtime-api",
- "pallet-custom-signatures",
- "pallet-dapps-staking 1.1.2",
+ "pallet-custom-signatures 4.3.0 (git+https://github.com/AstarNetwork/astar-frame?tag=pallet-custom-signatures-4.3.0/polkadot-0.9.13)",
+ "pallet-dapps-staking 1.1.2 (git+https://github.com/AstarNetwork/astar-frame?tag=pallet-dapps-staking-1.1.2/polkadot-0.9.13)",
  "pallet-ethereum",
  "pallet-evm",
  "pallet-evm-precompile-bn128",
@@ -5202,6 +5202,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-block-reward"
+version = "0.2.0"
+source = "git+https://github.com/AstarNetwork/astar-frame?tag=pallet-block-reward-3.0.0/polkadot-0.9.13#02203f8089318df7876853f88e84baed8fa2d791"
+dependencies = [
+ "frame-support",
+ "frame-system",
+ "parity-scale-codec",
+ "scale-info",
+]
+
+[[package]]
 name = "pallet-bounties"
 version = "4.0.0-dev"
 source = "git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.13#afb74de23dfe2994e7ce38c0870efb9734e966f7"
@@ -5221,27 +5232,21 @@ dependencies = [
 [[package]]
 name = "pallet-collator-selection"
 version = "3.0.0"
+source = "git+https://github.com/AstarNetwork/astar-frame?tag=pallet-collator-selection-3.0.0/polkadot-0.9.13#02203f8089318df7876853f88e84baed8fa2d791"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
  "frame-system",
  "log",
- "pallet-aura",
  "pallet-authorship",
- "pallet-balances",
  "pallet-session",
- "pallet-timestamp",
  "parity-scale-codec",
  "rand 0.7.3",
  "scale-info",
  "serde",
- "sp-consensus-aura",
- "sp-core",
- "sp-io",
  "sp-runtime",
  "sp-staking",
  "sp-std",
- "sp-tracing",
 ]
 
 [[package]]
@@ -5384,6 +5389,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-custom-signatures"
+version = "4.3.0"
+source = "git+https://github.com/AstarNetwork/astar-frame?tag=pallet-custom-signatures-4.3.0/polkadot-0.9.13#02203f8089318df7876853f88e84baed8fa2d791"
+dependencies = [
+ "frame-support",
+ "frame-system",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
 name = "pallet-dapps-staking"
 version = "1.1.2"
 dependencies = [
@@ -5407,8 +5428,31 @@ dependencies = [
 
 [[package]]
 name = "pallet-dapps-staking"
+version = "1.1.2"
+source = "git+https://github.com/AstarNetwork/astar-frame?tag=pallet-dapps-staking-1.1.2/polkadot-0.9.13#02203f8089318df7876853f88e84baed8fa2d791"
+dependencies = [
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "num-traits",
+ "pallet-balances",
+ "pallet-session",
+ "pallet-timestamp",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "sp-arithmetic",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-staking",
+ "sp-std",
+]
+
+[[package]]
+name = "pallet-dapps-staking"
 version = "2.0.0"
-source = "git+https://github.com/AstarNetwork/Astar?rev=238f6117b0cadb639ed7d6eb7a3c67a8449e3f9d#238f6117b0cadb639ed7d6eb7a3c67a8449e3f9d"
+source = "git+https://github.com/AstarNetwork/astar-frame?tag=pallet-dapps-staking-2.0.0/polkadot-0.9.13#0532a5370091d7e9bcf33f88d3cf6d41f591a12e"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -5798,6 +5842,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-precompile-staking"
+version = "0.2.1"
+source = "git+https://github.com/AstarNetwork/astar-frame?tag=pallet-precompile-staking-0.2.1/polkadot-0.9.13#02203f8089318df7876853f88e84baed8fa2d791"
+dependencies = [
+ "evm",
+ "frame-support",
+ "frame-system",
+ "pallet-collator-selection 3.0.0 (git+https://github.com/paritytech/cumulus?branch=polkadot-v0.9.13)",
+ "pallet-evm",
+ "pallet-session",
+ "parity-scale-codec",
+ "sp-core",
+ "sp-std",
+]
+
+[[package]]
 name = "pallet-proxy"
 version = "4.0.0-dev"
 source = "git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.13#afb74de23dfe2994e7ce38c0870efb9734e966f7"
@@ -6023,16 +6083,13 @@ dependencies = [
 [[package]]
 name = "pallet-vesting"
 version = "4.0.0-dev"
+source = "git+https://github.com/AstarNetwork/astar-frame?tag=pallet-vesting-4.0.0-dev/polkadot-0.9.13#02203f8089318df7876853f88e84baed8fa2d791"
 dependencies = [
- "frame-benchmarking",
  "frame-support",
  "frame-system",
  "log",
- "pallet-balances",
  "parity-scale-codec",
  "scale-info",
- "sp-core",
- "sp-io",
  "sp-runtime",
  "sp-std",
 ]
@@ -9414,10 +9471,10 @@ dependencies = [
  "pallet-aura",
  "pallet-authorship",
  "pallet-balances",
- "pallet-block-reward",
+ "pallet-block-reward 0.2.0 (git+https://github.com/AstarNetwork/astar-frame?tag=pallet-block-reward-3.0.0/polkadot-0.9.13)",
  "pallet-collator-selection 3.0.0 (git+https://github.com/paritytech/cumulus?branch=polkadot-v0.9.13)",
  "pallet-collective",
- "pallet-custom-signatures",
+ "pallet-custom-signatures 4.3.0 (git+https://github.com/AstarNetwork/astar-frame?tag=pallet-custom-signatures-4.3.0/polkadot-0.9.13)",
  "pallet-dapps-staking 2.0.0",
  "pallet-ethereum",
  "pallet-evm",
@@ -9428,7 +9485,7 @@ dependencies = [
  "pallet-evm-precompile-simple",
  "pallet-identity",
  "pallet-multisig",
- "pallet-precompile-staking",
+ "pallet-precompile-staking 0.2.1 (git+https://github.com/AstarNetwork/astar-frame?tag=pallet-precompile-staking-0.2.1/polkadot-0.9.13)",
  "pallet-session",
  "pallet-sudo",
  "pallet-timestamp",
@@ -9482,11 +9539,11 @@ dependencies = [
  "pallet-aura",
  "pallet-authorship",
  "pallet-balances",
- "pallet-block-reward",
+ "pallet-block-reward 0.2.0 (git+https://github.com/AstarNetwork/astar-frame?tag=pallet-block-reward-3.0.0/polkadot-0.9.13)",
  "pallet-collator-selection 3.0.0 (git+https://github.com/paritytech/cumulus?branch=polkadot-v0.9.13)",
  "pallet-collective",
- "pallet-custom-signatures",
- "pallet-dapps-staking 1.1.2",
+ "pallet-custom-signatures 4.3.0 (git+https://github.com/AstarNetwork/astar-frame?tag=pallet-custom-signatures-4.3.0/polkadot-0.9.13)",
+ "pallet-dapps-staking 1.1.2 (git+https://github.com/AstarNetwork/astar-frame?tag=pallet-dapps-staking-1.1.2/polkadot-0.9.13)",
  "pallet-ethereum",
  "pallet-evm",
  "pallet-evm-precompile-bn128",
@@ -9496,7 +9553,7 @@ dependencies = [
  "pallet-evm-precompile-simple",
  "pallet-identity",
  "pallet-multisig",
- "pallet-precompile-staking",
+ "pallet-precompile-staking 0.2.1 (git+https://github.com/AstarNetwork/astar-frame?tag=pallet-precompile-staking-0.2.1/polkadot-0.9.13)",
  "pallet-session",
  "pallet-sudo",
  "pallet-timestamp",
