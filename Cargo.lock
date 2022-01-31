@@ -4262,7 +4262,7 @@ checksum = "687387ff42ec7ea4f2149035a5675fedb675d26f98db90a1846ac63d3addb5f5"
 
 [[package]]
 name = "local-runtime"
-version = "3.5.0"
+version = "3.6.0"
 dependencies = [
  "evm",
  "fp-rpc",
