@@ -796,7 +796,7 @@ pub type Executive = frame_executive::Executive<
     frame_system::ChainContext<Runtime>,
     Runtime,
     AllPalletsWithSystem,
-    (DappsStakingMigrationV3,),
+    (DappsStakingMigrationV3, DappsStakingFixEraLength),
 >;
 
 // Migration for supporting unbonding period in dapps staking.
@@ -810,6 +810,32 @@ impl OnRuntimeUpgrade for DappsStakingMigrationV3 {
     #[cfg(feature = "try-runtime")]
     fn post_upgrade() -> Result<(), &'static str> {
         pallet_dapps_staking::migrations::v3::post_migrate_shibuya_fix_for_v3::<Runtime>()
+    }
+}
+
+// Migration for fixing era length in dapps staking.
+pub struct DappsStakingFixEraLength;
+
+impl OnRuntimeUpgrade for DappsStakingFixEraLength {
+    fn on_runtime_upgrade() -> frame_support::weights::Weight {
+        use frame_system::pallet::Config;
+        use pallet_dapps_staking::{Config as DappStakingConfig, CurrentEra, NextEraStartingBlock};
+        use sp_runtime::SaturatedConversion;
+
+        let dapps_staking_block_offset: u32 = 177600; // calculated 2022/03/18
+                                                      // Shibuya: 1066505 - (1066505 % 1200) - (740 * 1200)
+
+        let blocks_per_era =
+            <Runtime as DappStakingConfig>::BlockPerEra::get().saturated_into::<u32>();
+        let current_era = CurrentEra::<Runtime>::get();
+
+        let next_era_starting_block =
+            dapps_staking_block_offset + ((current_era + 1) * blocks_per_era);
+
+        NextEraStartingBlock::<Runtime>::put(
+            next_era_starting_block.saturated_into::<<Runtime as Config>::BlockNumber>(),
+        );
+        <Runtime as Config>::DbWeight::get().reads_writes(1, 1)
     }
 }
 
