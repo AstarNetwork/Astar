@@ -264,12 +264,12 @@ dependencies = [
  "frame-system",
  "frame-system-benchmarking",
  "frame-system-rpc-runtime-api",
- "hex-literal 0.3.4",
+ "hex-literal",
  "pallet-aura",
  "pallet-authorship",
  "pallet-balances",
  "pallet-block-reward",
- "pallet-collator-selection 3.0.0",
+ "pallet-collator-selection 3.0.0 (git+https://github.com/AstarNetwork/astar-frame?tag=pallet-collator-selection-3.0.0/polkadot-0.9.13)",
  "pallet-collective",
  "pallet-custom-signatures",
  "pallet-dapps-staking 1.1.2",
@@ -288,7 +288,7 @@ dependencies = [
  "pallet-transaction-payment",
  "pallet-transaction-payment-rpc-runtime-api",
  "pallet-utility",
- "pallet-vesting 4.0.0-dev",
+ "pallet-vesting 4.0.0-dev (git+https://github.com/AstarNetwork/astar-frame?tag=pallet-vesting-4.0.0-dev/polkadot-0.9.13)",
  "parachain-info",
  "parity-scale-codec",
  "polkadot-parachain",
@@ -560,12 +560,6 @@ name = "base58"
 version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6107fe1be6682a68940da878d9e9f5e90ca5745b3dec9fd1bb393c8777d4f581"
-
-[[package]]
-name = "base64"
-version = "0.12.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3441f0f7b02788e948e47f457ca01f1d7e6d92c693bc132c22b087d3141c03ff"
 
 [[package]]
 name = "base64"
@@ -2956,28 +2950,9 @@ checksum = "7f24254aa9a54b5c858eaee2f5bccdb46aaf0e486a595ed5fd8f86ba55232a70"
 
 [[package]]
 name = "hex-literal"
-version = "0.2.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "961de220ec9a91af2e1e5bd80d02109155695e516771762381ef8581317066e0"
-dependencies = [
- "hex-literal-impl",
- "proc-macro-hack",
-]
-
-[[package]]
-name = "hex-literal"
 version = "0.3.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7ebdb29d2ea9ed0083cd8cece49bbd968021bd99b0849edb4a9a7ee0fdf6a4e0"
-
-[[package]]
-name = "hex-literal-impl"
-version = "0.2.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "853f769599eb31de176303197b7ba4973299c38c7a7604a6bc88c3eef05b9b46"
-dependencies = [
- "proc-macro-hack",
-]
 
 [[package]]
 name = "hex_fmt"
@@ -3820,7 +3795,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "dfeead619eb5dac46e65acc78c535a60aaec803d1428cca6407c3a4fc74d698d"
 dependencies = [
  "asynchronous-codec 0.6.0",
- "base64 0.13.0",
+ "base64",
  "byteorder",
  "bytes 1.1.0",
  "fnv",
@@ -4197,51 +4172,21 @@ dependencies = [
 
 [[package]]
 name = "libsecp256k1"
-version = "0.6.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c9d220bc1feda2ac231cb78c3d26f27676b8cf82c96971f7aeef3d0cf2797c73"
-dependencies = [
- "arrayref",
- "base64 0.12.3",
- "digest 0.9.0",
- "hmac-drbg 0.3.0",
- "libsecp256k1-core 0.2.2",
- "libsecp256k1-gen-ecmult 0.2.1",
- "libsecp256k1-gen-genmult 0.2.1",
- "rand 0.7.3",
- "serde",
- "sha2 0.9.9",
- "typenum",
-]
-
-[[package]]
-name = "libsecp256k1"
 version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b0452aac8bab02242429380e9b2f94ea20cea2b37e2c1777a1358799bbe97f37"
 dependencies = [
  "arrayref",
- "base64 0.13.0",
+ "base64",
  "digest 0.9.0",
  "hmac-drbg 0.3.0",
- "libsecp256k1-core 0.3.0",
- "libsecp256k1-gen-ecmult 0.3.0",
- "libsecp256k1-gen-genmult 0.3.0",
+ "libsecp256k1-core",
+ "libsecp256k1-gen-ecmult",
+ "libsecp256k1-gen-genmult",
  "rand 0.8.4",
  "serde",
  "sha2 0.9.9",
  "typenum",
-]
-
-[[package]]
-name = "libsecp256k1-core"
-version = "0.2.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d0f6ab710cec28cef759c5f18671a27dae2a5f952cdaaee1d8e2908cb2478a80"
-dependencies = [
- "crunchy",
- "digest 0.9.0",
- "subtle 2.4.1",
 ]
 
 [[package]]
@@ -4257,29 +4202,11 @@ dependencies = [
 
 [[package]]
 name = "libsecp256k1-gen-ecmult"
-version = "0.2.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ccab96b584d38fac86a83f07e659f0deafd0253dc096dab5a36d53efe653c5c3"
-dependencies = [
- "libsecp256k1-core 0.2.2",
-]
-
-[[package]]
-name = "libsecp256k1-gen-ecmult"
 version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3038c808c55c87e8a172643a7d87187fc6c4174468159cb3090659d55bcb4809"
 dependencies = [
- "libsecp256k1-core 0.3.0",
-]
-
-[[package]]
-name = "libsecp256k1-gen-genmult"
-version = "0.2.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "67abfe149395e3aa1c48a2beb32b068e2334402df8181f818d3aee2b304c4f5d"
-dependencies = [
- "libsecp256k1-core 0.2.2",
+ "libsecp256k1-core",
 ]
 
 [[package]]
@@ -4288,7 +4215,7 @@ version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3db8d6ba2cec9eacc40e6e8ccc98931840301f1006e95647ceb2dd5c3aa06f7c"
 dependencies = [
- "libsecp256k1-core 0.3.0",
+ "libsecp256k1-core",
 ]
 
 [[package]]
@@ -4347,7 +4274,7 @@ dependencies = [
  "frame-system-benchmarking",
  "frame-system-rpc-runtime-api",
  "frame-try-runtime",
- "hex-literal 0.3.4",
+ "hex-literal",
  "pallet-aura",
  "pallet-balances",
  "pallet-block-reward",
@@ -5194,6 +5121,7 @@ dependencies = [
 [[package]]
 name = "pallet-block-reward"
 version = "0.2.0"
+source = "git+https://github.com/AstarNetwork/astar-frame?tag=pallet-block-reward-3.0.0/polkadot-0.9.13#02203f8089318df7876853f88e84baed8fa2d791"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -5221,27 +5149,21 @@ dependencies = [
 [[package]]
 name = "pallet-collator-selection"
 version = "3.0.0"
+source = "git+https://github.com/AstarNetwork/astar-frame?tag=pallet-collator-selection-3.0.0/polkadot-0.9.13#02203f8089318df7876853f88e84baed8fa2d791"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
  "frame-system",
  "log",
- "pallet-aura",
  "pallet-authorship",
- "pallet-balances",
  "pallet-session",
- "pallet-timestamp",
  "parity-scale-codec",
  "rand 0.7.3",
  "scale-info",
  "serde",
- "sp-consensus-aura",
- "sp-core",
- "sp-io",
  "sp-runtime",
  "sp-staking",
  "sp-std",
- "sp-tracing",
 ]
 
 [[package]]
@@ -5367,18 +5289,15 @@ dependencies = [
 [[package]]
 name = "pallet-custom-signatures"
 version = "4.3.0"
+source = "git+https://github.com/AstarNetwork/astar-frame?tag=pallet-custom-signatures-4.3.0/polkadot-0.9.13#02203f8089318df7876853f88e84baed8fa2d791"
 dependencies = [
  "frame-support",
  "frame-system",
- "hex-literal 0.2.1",
- "libsecp256k1 0.6.0",
- "pallet-balances",
  "parity-scale-codec",
  "scale-info",
  "serde",
  "sp-core",
  "sp-io",
- "sp-keyring",
  "sp-runtime",
  "sp-std",
 ]
@@ -5386,6 +5305,7 @@ dependencies = [
 [[package]]
 name = "pallet-dapps-staking"
 version = "1.1.2"
+source = "git+https://github.com/AstarNetwork/astar-frame?tag=pallet-dapps-staking-1.1.2/polkadot-0.9.13#02203f8089318df7876853f88e84baed8fa2d791"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -5408,7 +5328,7 @@ dependencies = [
 [[package]]
 name = "pallet-dapps-staking"
 version = "2.0.0"
-source = "git+https://github.com/AstarNetwork/Astar?rev=238f6117b0cadb639ed7d6eb7a3c67a8449e3f9d#238f6117b0cadb639ed7d6eb7a3c67a8449e3f9d"
+source = "git+https://github.com/AstarNetwork/astar-frame?tag=pallet-dapps-staking-2.0.0/polkadot-0.9.13#0532a5370091d7e9bcf33f88d3cf6d41f591a12e"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -5785,6 +5705,7 @@ dependencies = [
 [[package]]
 name = "pallet-precompile-staking"
 version = "0.2.1"
+source = "git+https://github.com/AstarNetwork/astar-frame?tag=pallet-precompile-staking-0.2.1/polkadot-0.9.13#02203f8089318df7876853f88e84baed8fa2d791"
 dependencies = [
  "evm",
  "frame-support",
@@ -6023,16 +5944,13 @@ dependencies = [
 [[package]]
 name = "pallet-vesting"
 version = "4.0.0-dev"
+source = "git+https://github.com/AstarNetwork/astar-frame?tag=pallet-vesting-4.0.0-dev/polkadot-0.9.13#02203f8089318df7876853f88e84baed8fa2d791"
 dependencies = [
- "frame-benchmarking",
  "frame-support",
  "frame-system",
  "log",
- "pallet-balances",
  "parity-scale-codec",
  "scale-info",
- "sp-core",
- "sp-io",
  "sp-runtime",
  "sp-std",
 ]
@@ -7117,7 +7035,7 @@ source = "git+https://github.com/paritytech/polkadot?branch=release-v0.9.13#7d8f
 dependencies = [
  "bitvec",
  "frame-system",
- "hex-literal 0.3.4",
+ "hex-literal",
  "parity-scale-codec",
  "parity-util-mem",
  "polkadot-core-primitives",
@@ -7342,7 +7260,7 @@ dependencies = [
  "beefy-primitives",
  "frame-system-rpc-runtime-api",
  "futures 0.3.19",
- "hex-literal 0.3.4",
+ "hex-literal",
  "kvdb",
  "kvdb-rocksdb",
  "lru 0.7.2",
@@ -7557,12 +7475,6 @@ dependencies = [
  "quote",
  "version_check",
 ]
-
-[[package]]
-name = "proc-macro-hack"
-version = "0.5.19"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dbf0c48bc1d91375ae5c3cd81e3722dff1abcf81a30960240640d223f59fe0e5"
 
 [[package]]
 name = "proc-macro2"
@@ -8114,7 +8026,7 @@ version = "0.19.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "35edb675feee39aec9c99fa5ff985081995a06d594114ae14cbe797ad7b7a6d7"
 dependencies = [
- "base64 0.13.0",
+ "base64",
  "log",
  "ring",
  "sct",
@@ -9410,7 +9322,7 @@ dependencies = [
  "frame-system-benchmarking",
  "frame-system-rpc-runtime-api",
  "frame-try-runtime",
- "hex-literal 0.3.4",
+ "hex-literal",
  "pallet-aura",
  "pallet-authorship",
  "pallet-balances",
@@ -9478,7 +9390,7 @@ dependencies = [
  "frame-system-benchmarking",
  "frame-system-rpc-runtime-api",
  "frame-try-runtime",
- "hex-literal 0.3.4",
+ "hex-literal",
  "pallet-aura",
  "pallet-authorship",
  "pallet-balances",
@@ -9654,7 +9566,7 @@ version = "0.7.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "41d1c5305e39e09653383c2c7244f2f78b3bcae37cf50c64cb4789c9f5096ec2"
 dependencies = [
- "base64 0.13.0",
+ "base64",
  "bytes 1.1.0",
  "flate2",
  "futures 0.3.19",
@@ -11429,7 +11341,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "36147930a4995137dc096e5b17a573b446799be2bbaea433e821ce6a80abe2c5"
 dependencies = [
  "anyhow",
- "base64 0.13.0",
+ "base64",
  "bincode",
  "directories-next",
  "file-per-thread-logger",

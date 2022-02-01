@@ -46,7 +46,6 @@ pallet-multisig = { git = "https://github.com/paritytech/substrate", branch = "p
 pallet-session = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.13", default-features = false, features = ["historical"] }
 pallet-utility = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.13", default-features = false }
 pallet-timestamp = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.13", default-features = false }
-pallet-vesting = { path = "../../frame/vesting", default-features = false }
 pallet-sudo = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.13", default-features = false }
 frame-support = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.13", default-features = false }
 frame-system = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.13", default-features = false }
@@ -73,10 +72,11 @@ frame-system-benchmarking = { git = "https://github.com/paritytech/substrate", b
 pallet-collective = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.13", default-features = false, optional = true }
 
 # Astar pallets
-pallet-block-reward = { path = "../../frame/block-reward", default-features = false }
-pallet-collator-selection = { path = "../../frame/collator-selection", default-features = false }
-pallet-custom-signatures = { path = "../../frame/custom-signatures", default-features = false }
-pallet-dapps-staking = { path = "../../frame/dapps-staking", default-features = false }
+pallet-block-reward = { git = "https://github.com/AstarNetwork/astar-frame", tag = "pallet-block-reward-3.0.0/polkadot-0.9.13", default-features = false }
+pallet-collator-selection = { git = "https://github.com/AstarNetwork/astar-frame", tag = "pallet-collator-selection-3.0.0/polkadot-0.9.13", default-features = false }
+pallet-custom-signatures = { git = "https://github.com/AstarNetwork/astar-frame", tag = "pallet-custom-signatures-4.3.0/polkadot-0.9.13", default-features = false }
+pallet-dapps-staking = { git = "https://github.com/AstarNetwork/astar-frame", tag = "pallet-dapps-staking-1.1.2/polkadot-0.9.13", default-features = false }
+pallet-vesting = { git = "https://github.com/AstarNetwork/astar-frame", tag = "pallet-vesting-4.0.0-dev/polkadot-0.9.13", default-features = false }
 
 [build-dependencies]
 substrate-wasm-builder = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.13" }

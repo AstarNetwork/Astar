@@ -5,10 +5,6 @@ members = [
     "runtime/astar",
     "runtime/shiden",
     "runtime/shibuya",
-    "frame/block-reward",
-    "frame/custom-signatures",
-    "frame/dapps-staking",
-    "precompiles/staking",
 ]
 
 exclude = [
