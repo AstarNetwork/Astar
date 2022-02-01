@@ -1105,6 +1105,32 @@
 <span id="1105">1105</span>
 <span id="1106">1106</span>
 <span id="1107">1107</span>
+<span id="1108">1108</span>
+<span id="1109">1109</span>
+<span id="1110">1110</span>
+<span id="1111">1111</span>
+<span id="1112">1112</span>
+<span id="1113">1113</span>
+<span id="1114">1114</span>
+<span id="1115">1115</span>
+<span id="1116">1116</span>
+<span id="1117">1117</span>
+<span id="1118">1118</span>
+<span id="1119">1119</span>
+<span id="1120">1120</span>
+<span id="1121">1121</span>
+<span id="1122">1122</span>
+<span id="1123">1123</span>
+<span id="1124">1124</span>
+<span id="1125">1125</span>
+<span id="1126">1126</span>
+<span id="1127">1127</span>
+<span id="1128">1128</span>
+<span id="1129">1129</span>
+<span id="1130">1130</span>
+<span id="1131">1131</span>
+<span id="1132">1132</span>
+<span id="1133">1133</span>
 </pre><pre class="rust"><code><span class="doccomment">//! The Shiden Network runtime. This can be compiled with ``#[no_std]`, ready for Wasm.</span>
 
 <span class="attribute">#![<span class="ident">cfg_attr</span>(<span class="ident">not</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>), <span class="ident">no_std</span>)]</span>
@@ -1114,7 +1140,7 @@
 <span class="kw">use</span> <span class="ident">codec</span>::{<span class="ident">Decode</span>, <span class="ident">Encode</span>};
 <span class="kw">use</span> <span class="ident">frame_support</span>::{
     <span class="ident">construct_runtime</span>, <span class="ident">parameter_types</span>,
-    <span class="ident">traits</span>::{<span class="ident">Contains</span>, <span class="ident">Currency</span>, <span class="ident">FindAuthor</span>, <span class="ident">Imbalance</span>, <span class="ident">OnUnbalanced</span>},
+    <span class="ident">traits</span>::{<span class="ident">Contains</span>, <span class="ident">Currency</span>, <span class="ident">FindAuthor</span>, <span class="ident">Imbalance</span>, <span class="ident">OnRuntimeUpgrade</span>, <span class="ident">OnUnbalanced</span>},
     <span class="ident">weights</span>::{
         <span class="ident">constants</span>::{<span class="ident">BlockExecutionWeight</span>, <span class="ident">ExtrinsicBaseWeight</span>, <span class="ident">WEIGHT_PER_SECOND</span>},
         <span class="ident">DispatchClass</span>, <span class="ident">Weight</span>, <span class="ident">WeightToFeeCoefficient</span>, <span class="ident">WeightToFeeCoefficients</span>,
@@ -1193,7 +1219,7 @@
     <span class="ident">spec_name</span>: <span class="macro">create_runtime_str!</span>(<span class="string">&quot;shiden&quot;</span>),
     <span class="ident">impl_name</span>: <span class="macro">create_runtime_str!</span>(<span class="string">&quot;shiden&quot;</span>),
     <span class="ident">authoring_version</span>: <span class="number">1</span>,
-    <span class="ident">spec_version</span>: <span class="number">35</span>,
+    <span class="ident">spec_version</span>: <span class="number">36</span>,
     <span class="ident">impl_version</span>: <span class="number">0</span>,
     <span class="ident">apis</span>: <span class="ident">RUNTIME_API_VERSIONS</span>,
     <span class="ident">transaction_version</span>: <span class="number">2</span>,
@@ -1381,6 +1407,8 @@
     <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">MinimumRemainingAmount</span>: <span class="ident">Balance</span> <span class="op">=</span> <span class="number">1</span> <span class="op">*</span> <span class="ident">SDN</span>;
     <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">HistoryDepth</span>: <span class="ident">u32</span> <span class="op">=</span> <span class="number">14</span>;
     <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">BonusEraDuration</span>: <span class="ident">u32</span> <span class="op">=</span> <span class="number">10</span>;
+    <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">MaxUnlockingChunks</span>: <span class="ident">u32</span> <span class="op">=</span> <span class="number">5</span>;
+    <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">UnbondingPeriod</span>: <span class="ident">u32</span> <span class="op">=</span> <span class="number">5</span>;
 }
 
 <span class="kw">impl</span> <span class="ident">pallet_dapps_staking::Config</span> <span class="kw">for</span> <span class="ident">Runtime</span> {
@@ -1397,6 +1425,8 @@
     <span class="kw">type</span> <span class="ident">MinimumRemainingAmount</span> <span class="op">=</span> <span class="ident">MinimumRemainingAmount</span>;
     <span class="kw">type</span> <span class="ident">HistoryDepth</span> <span class="op">=</span> <span class="ident">HistoryDepth</span>;
     <span class="kw">type</span> <span class="ident">BonusEraDuration</span> <span class="op">=</span> <span class="ident">BonusEraDuration</span>;
+    <span class="kw">type</span> <span class="ident">MaxUnlockingChunks</span> <span class="op">=</span> <span class="ident">MaxUnlockingChunks</span>;
+    <span class="kw">type</span> <span class="ident">UnbondingPeriod</span> <span class="op">=</span> <span class="ident">UnbondingPeriod</span>;
 }
 
 <span class="doccomment">/// Multi-VM pointer to smart contract instance.</span>
@@ -1847,7 +1877,29 @@
     <span class="ident">frame_system::ChainContext</span><span class="op">&lt;</span><span class="ident">Runtime</span><span class="op">&gt;</span>,
     <span class="ident">Runtime</span>,
     <span class="ident">AllPallets</span>,
+    (<span class="ident">DappsStakingMigrationV2</span>,),
 <span class="op">&gt;</span>;
+
+<span class="comment">// Migration for supporting unbonding period in dapps staking.</span>
+<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">DappsStakingMigrationV2</span>;
+
+<span class="kw">impl</span> <span class="ident">OnRuntimeUpgrade</span> <span class="kw">for</span> <span class="ident">DappsStakingMigrationV2</span> {
+    <span class="kw">fn</span> <span class="ident">on_runtime_upgrade</span>() -&gt; <span class="ident">frame_support::weights::Weight</span> {
+        <span class="ident">pallet_dapps_staking::migrations::v2::stateful_migrate</span>::<span class="op">&lt;</span><span class="ident">Runtime</span><span class="op">&gt;</span>(
+            <span class="ident">RuntimeBlockWeights::get</span>().<span class="ident">max_block</span> <span class="op">/</span> <span class="number">5</span> <span class="op">*</span> <span class="number">3</span>,
+        )
+    }
+
+    <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;try-runtime&quot;</span>)]</span>
+    <span class="kw">fn</span> <span class="ident">pre_upgrade</span>() -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="kw-2">&amp;</span><span class="lifetime">&#39;static</span> <span class="ident">str</span><span class="op">&gt;</span> {
+        <span class="ident">pallet_dapps_staking::migrations::v2::pre_migrate</span>::<span class="op">&lt;</span><span class="ident">Runtime</span>, <span class="self">Self</span><span class="op">&gt;</span>()
+    }
+
+    <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;try-runtime&quot;</span>)]</span>
+    <span class="kw">fn</span> <span class="ident">post_upgrade</span>() -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="kw-2">&amp;</span><span class="lifetime">&#39;static</span> <span class="ident">str</span><span class="op">&gt;</span> {
+        <span class="ident">pallet_dapps_staking::migrations::v2::post_migrate</span>::<span class="op">&lt;</span><span class="ident">Runtime</span>, <span class="self">Self</span><span class="op">&gt;</span>()
+    }
+}
 
 <span class="kw">impl</span> <span class="ident">fp_self_contained::SelfContainedCall</span> <span class="kw">for</span> <span class="ident">Call</span> {
     <span class="kw">type</span> <span class="ident">SignedInfo</span> <span class="op">=</span> <span class="ident">H160</span>;
