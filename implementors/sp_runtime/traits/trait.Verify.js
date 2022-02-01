@@ -1,3 +1,0 @@
-(function() {var implementors = {};
-implementors["pallet_custom_signatures"] = [{"text":"impl Verify for <a class=\"struct\" href=\"pallet_custom_signatures/ethereum/struct.EthereumSignature.html\" title=\"struct pallet_custom_signatures::ethereum::EthereumSignature\">EthereumSignature</a>","synthetic":false,"types":["pallet_custom_signatures::ethereum::EthereumSignature"]}];
-if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

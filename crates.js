@@ -1,1 +1,1 @@
-window.ALL_CRATES = ["astar_collator","astar_runtime","local_runtime","pallet_block_reward","pallet_collator_selection","pallet_custom_signatures","pallet_dapps_staking","pallet_precompile_staking","pallet_vesting","shibuya_runtime","shiden_runtime"];
+window.ALL_CRATES = ["astar_collator","astar_runtime","local_runtime","shibuya_runtime","shiden_runtime"];
