@@ -79,6 +79,7 @@ impl_opaque_keys! {
 
 mod precompiles;
 pub use precompiles::LocalNetworkPrecompiles;
+pub type Precompiles = LocalNetworkPrecompiles<Runtime>;
 
 /// Constant values used within the runtime.
 pub const MILLIAST: Balance = 1_000_000_000_000_000;
@@ -442,7 +443,7 @@ parameter_types! {
     pub BlockGasLimit: U256 = U256::from(
         NORMAL_DISPATCH_RATIO * WEIGHT_PER_SECOND / WEIGHT_PER_GAS
     );
-    pub PrecompilesValue: LocalNetworkPrecompiles<Runtime> = LocalNetworkPrecompiles::<_>::new();
+    pub PrecompilesValue: Precompiles = LocalNetworkPrecompiles::<_>::new();
 }
 
 impl pallet_evm::Config for Runtime {
@@ -455,7 +456,7 @@ impl pallet_evm::Config for Runtime {
     type Currency = Balances;
     type Event = Event;
     type Runner = pallet_evm::runner::stack::Runner<Self>;
-    type PrecompilesType = LocalNetworkPrecompiles<Self>;
+    type PrecompilesType = Precompiles;
     type PrecompilesValue = PrecompilesValue;
     type ChainId = ChainId;
     type OnChargeTransaction = pallet_evm::EVMCurrencyAdapter<Balances, ()>;

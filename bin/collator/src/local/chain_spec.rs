@@ -1,13 +1,12 @@
 //! Chain specifications.
 
 use local_runtime::{
-    wasm_binary_unwrap, AccountId, AuraConfig, AuraId, BalancesConfig, EVMConfig, GenesisConfig,
-    GrandpaConfig, GrandpaId, LocalNetworkPrecompiles, Signature, SudoConfig, SystemConfig,
+    wasm_binary_unwrap, AccountId, AuraConfig, AuraId, BalancesConfig, BaseFeeConfig, EVMConfig,
+    GenesisConfig, GrandpaConfig, GrandpaId, Precompiles, Signature, SudoConfig, SystemConfig,
     VestingConfig,
 };
 use sc_service::ChainType;
 use sp_core::{sr25519, Pair, Public};
-
 use sp_runtime::traits::{IdentifyAccount, Verify};
 
 type AccountPublic = <Signature as Verify>::Signer;
@@ -100,7 +99,7 @@ fn testnet_genesis(
         evm: EVMConfig {
             // We need _some_ code inserted at the precompile address so that
             // the evm will actually call the address.
-            accounts: LocalNetworkPrecompiles::<()>::used_addresses()
+            accounts: Precompiles::used_addresses()
                 .map(|addr| {
                     (
                         addr,
@@ -115,6 +114,11 @@ fn testnet_genesis(
                 .collect(),
         },
         ethereum: Default::default(),
+        base_fee: BaseFeeConfig::new(
+            sp_core::U256::from(1_000_000_000u64),
+            false,
+            sp_runtime::Permill::from_parts(125_000),
+        ),
         sudo: SudoConfig { key: root_key },
     }
 }

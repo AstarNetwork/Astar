@@ -10,7 +10,7 @@ use cumulus_client_service::{
 };
 use cumulus_primitives_core::ParaId;
 use fc_consensus::FrontierBlockImport;
-use fc_rpc_core::types::FilterPool;
+use fc_rpc_core::types::{FeeHistoryCache, FilterPool};
 use futures::{lock::Mutex, StreamExt};
 use sc_client_api::{BlockchainEvents, ExecutorProvider};
 use sc_consensus::import_queue::BasicQueue;
@@ -258,6 +258,7 @@ where
         + frame_rpc_system::AccountNonceApi<Block, AccountId, Nonce>
         + pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>
         + fp_rpc::EthereumRuntimeRPCApi<Block>
+        + fp_rpc::ConvertTransactionRuntimeApi<Block>
         + cumulus_primitives_core::CollectCollationInfo<Block>,
     sc_client_api::StateBackendFor<TFullBackend<Block>, Block>: sp_api::StateBackend<BlakeTwo256>,
     Executor: sc_executor::NativeExecutionDispatch + 'static,
@@ -338,12 +339,14 @@ where
         })?;
 
     let filter_pool: FilterPool = Arc::new(std::sync::Mutex::new(BTreeMap::new()));
+    let fee_history_cache: FeeHistoryCache = Arc::new(std::sync::Mutex::new(BTreeMap::new()));
+    let overrides = crate::rpc::overrides_handle(client.clone());
 
     // Frontier offchain DB task. Essential.
     // Maps emulated ethereum data to substrate native data.
     task_manager.spawn_essential_handle().spawn(
         "frontier-mapping-sync-worker",
-        None,
+        Some("frontier"),
         fc_mapping_sync::MappingSyncWorker::new(
             client.import_notification_stream(),
             Duration::new(6, 0),
@@ -360,7 +363,7 @@ where
     const FILTER_RETAIN_THRESHOLD: u64 = 100;
     task_manager.spawn_essential_handle().spawn(
         "frontier-filter-pool",
-        None,
+        Some("frontier"),
         fc_rpc::EthTask::filter_pool_task(
             client.clone(),
             filter_pool.clone(),
@@ -370,8 +373,20 @@ where
 
     task_manager.spawn_essential_handle().spawn(
         "frontier-schema-cache-task",
-        None,
+        Some("frontier"),
         fc_rpc::EthTask::ethereum_schema_cache_task(client.clone(), frontier_backend.clone()),
+    );
+
+    const FEE_HISTORY_LIMIT: u64 = 2048;
+    task_manager.spawn_essential_handle().spawn(
+        "frontier-fee-history",
+        Some("frontier"),
+        fc_rpc::EthTask::fee_history_task(
+            client.clone(),
+            overrides.clone(),
+            fee_history_cache.clone(),
+            FEE_HISTORY_LIMIT,
+        ),
     );
 
     let rpc_extensions_builder = {
@@ -390,9 +405,15 @@ where
                 frontier_backend: frontier_backend.clone(),
                 transaction_converter: shiden_runtime::TransactionConverter,
                 filter_pool: filter_pool.clone(),
+                fee_history_limit: FEE_HISTORY_LIMIT,
+                fee_history_cache: fee_history_cache.clone(),
             };
 
-            Ok(crate::rpc::create_full(deps, subscription))
+            Ok(crate::rpc::create_full(
+                deps,
+                subscription,
+                overrides.clone(),
+            ))
         })
     };
 

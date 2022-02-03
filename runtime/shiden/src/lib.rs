@@ -47,6 +47,7 @@ pub use sp_runtime::BuildStorage;
 
 mod precompiles;
 pub use precompiles::ShidenNetworkPrecompiles;
+pub type Precompiles = ShidenNetworkPrecompiles<Runtime>;
 
 mod weights;
 

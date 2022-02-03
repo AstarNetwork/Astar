@@ -4,7 +4,7 @@
 
 use codec::Decode;
 use frame_support::dispatch::{Dispatchable, GetDispatchInfo, PostDispatchInfo};
-use pallet_evm::{AddressMapping, Context, Precompile, PrecompileResult, PrecompileSet};
+use pallet_evm::{Context, Precompile, PrecompileResult, PrecompileSet};
 use pallet_evm_precompile_bn128::{Bn128Add, Bn128Mul, Bn128Pairing};
 use pallet_evm_precompile_dispatch::Dispatch;
 use pallet_evm_precompile_modexp::Modexp;
@@ -18,20 +18,17 @@ use sp_std::marker::PhantomData;
 #[derive(Debug, Clone, Copy)]
 pub struct ShidenNetworkPrecompiles<R>(PhantomData<R>);
 
-impl<R> ShidenNetworkPrecompiles<R>
-where
-    R: pallet_evm::Config,
-{
+impl<R> ShidenNetworkPrecompiles<R> {
     pub fn new() -> Self {
         Self(Default::default())
     }
 
     /// Return all addresses that contain precompiles. This can be used to populate dummy code
     /// under the precompile.
-    pub fn used_addresses() -> impl Iterator<Item = R::AccountId> {
+    pub fn used_addresses() -> impl Iterator<Item = H160> {
         sp_std::vec![1, 2, 3, 4, 5, 6, 7, 8, 1024, 1025, 1026, 20480]
             .into_iter()
-            .map(|x| R::AddressMapping::into_account_id(hash(x)))
+            .map(|x| hash(x))
     }
 }
 
@@ -79,9 +76,7 @@ where
     }
 
     fn is_precompile(&self, address: H160) -> bool {
-        Self::used_addresses()
-            .find(|x| x == &R::AddressMapping::into_account_id(address))
-            .is_some()
+        Self::used_addresses().find(|x| x == &address).is_some()
     }
 }
 

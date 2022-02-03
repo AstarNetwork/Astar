@@ -48,6 +48,7 @@ pub use sp_runtime::BuildStorage;
 
 mod precompiles;
 pub use precompiles::ShibuyaNetworkPrecompiles;
+pub type Precompiles = ShibuyaNetworkPrecompiles<Runtime>;
 
 mod weights;
 
@@ -636,7 +637,7 @@ parameter_types! {
     pub BlockGasLimit: U256 = U256::from(
         NORMAL_DISPATCH_RATIO * MAXIMUM_BLOCK_WEIGHT / WEIGHT_PER_GAS
     );
-    pub PrecompilesValue: ShibuyaNetworkPrecompiles<Runtime> = ShibuyaNetworkPrecompiles::<_>::new();
+    pub PrecompilesValue: Precompiles = ShibuyaNetworkPrecompiles::<_>::new();
 }
 
 impl pallet_evm::Config for Runtime {
@@ -649,7 +650,7 @@ impl pallet_evm::Config for Runtime {
     type Currency = Balances;
     type Event = Event;
     type Runner = pallet_evm::runner::stack::Runner<Self>;
-    type PrecompilesType = ShibuyaNetworkPrecompiles<Self>;
+    type PrecompilesType = Precompiles;
     type PrecompilesValue = PrecompilesValue;
     type ChainId = ChainId;
     type OnChargeTransaction = pallet_evm::EVMCurrencyAdapter<Balances, ToStakingPot>;
