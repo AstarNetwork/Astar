@@ -84,7 +84,7 @@ fn testnet_genesis(
             balances: endowed_accounts
                 .iter()
                 .cloned()
-                .map(|k| (k, 1_000_000_000_000_000_000_000_000_000_000_000_000))
+                .map(|k| (k, 1_000_000_000_000_000_000_000_000_000))
                 .collect(),
         },
         vesting: VestingConfig { vesting: vec![] },

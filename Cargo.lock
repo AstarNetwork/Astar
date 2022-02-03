@@ -4297,7 +4297,7 @@ dependencies = [
  "pallet-transaction-payment",
  "pallet-transaction-payment-rpc-runtime-api",
  "pallet-utility",
- "pallet-vesting 4.0.0-dev",
+ "pallet-vesting 4.0.0-dev (git+https://github.com/AstarNetwork/astar-frame?tag=pallet-vesting-4.0.0-dev/polkadot-0.9.13)",
  "parity-scale-codec",
  "scale-info",
  "sp-api",
