@@ -360,6 +360,32 @@ impl pallet_utility::Config for Runtime {
     type WeightInfo = ();
 }
 
+parameter_types! {
+    // Tells `pallet_base_fee` whether to calculate a new BaseFee `on_finalize` or not.
+    pub IsActive: bool = false;
+    pub DefaultBaseFeePerGas: U256 = (MILLIAST / 1_000_000).into();
+}
+
+pub struct BaseFeeThreshold;
+impl pallet_base_fee::BaseFeeThreshold for BaseFeeThreshold {
+    fn lower() -> Permill {
+        Permill::zero()
+    }
+    fn ideal() -> Permill {
+        Permill::from_parts(500_000)
+    }
+    fn upper() -> Permill {
+        Permill::from_parts(1_000_000)
+    }
+}
+
+impl pallet_base_fee::Config for Runtime {
+    type Event = Event;
+    type Threshold = BaseFeeThreshold;
+    type IsActive = IsActive;
+    type DefaultBaseFeePerGas = DefaultBaseFeePerGas;
+}
+
 /// Current approximation of the gas/s consumption considering
 /// EVM execution over compiled WASM (on 4.4Ghz CPU).
 /// Given the 500ms Weight, from which 75% only are used for transactions,
@@ -416,6 +442,7 @@ parameter_types! {
     pub BlockGasLimit: U256 = U256::from(
         NORMAL_DISPATCH_RATIO * WEIGHT_PER_SECOND / WEIGHT_PER_GAS
     );
+    pub PrecompilesValue: LocalNetworkPrecompiles<Runtime> = LocalNetworkPrecompiles::<_>::new();
 }
 
 impl pallet_evm::Config for Runtime {
@@ -428,7 +455,8 @@ impl pallet_evm::Config for Runtime {
     type Currency = Balances;
     type Event = Event;
     type Runner = pallet_evm::runner::stack::Runner<Self>;
-    type Precompiles = LocalNetworkPrecompiles<Self>;
+    type PrecompilesType = LocalNetworkPrecompiles<Self>;
+    type PrecompilesValue = PrecompilesValue;
     type ChainId = ChainId;
     type OnChargeTransaction = pallet_evm::EVMCurrencyAdapter<Balances, ()>;
     type BlockGasLimit = BlockGasLimit;
@@ -562,6 +590,7 @@ construct_runtime!(
         EVM: pallet_evm::{Pallet, Config, Call, Storage, Event<T>},
         Ethereum: pallet_ethereum::{Pallet, Call, Storage, Event, Origin, Config},
         EthCall: pallet_custom_signatures::{Pallet, Call, Event<T>, ValidateUnsigned},
+        BaseFee: pallet_base_fee::{Pallet, Call, Storage, Config<T>, Event},
         Contracts: pallet_contracts::{Pallet, Call, Storage, Event<T>},
         Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>},
     }
@@ -827,9 +856,11 @@ impl_runtime_apis! {
             data: Vec<u8>,
             value: U256,
             gas_limit: U256,
-            gas_price: Option<U256>,
+            max_fee_per_gas: Option<U256>,
+            max_priority_fee_per_gas: Option<U256>,
             nonce: Option<U256>,
             estimate: bool,
+            _access_list: Option<Vec<(H160, Vec<H256>)>>,
         ) -> Result<pallet_evm::CallInfo, sp_runtime::DispatchError> {
             let config = if estimate {
                 let mut config = <Runtime as pallet_evm::Config>::config().clone();
@@ -845,8 +876,10 @@ impl_runtime_apis! {
                 data,
                 value,
                 gas_limit.low_u64(),
-                gas_price,
+                max_fee_per_gas,
+                max_priority_fee_per_gas,
                 nonce,
+                Vec::new(),
                 config
                     .as_ref()
                     .unwrap_or_else(|| <Runtime as pallet_evm::Config>::config()),
@@ -859,9 +892,11 @@ impl_runtime_apis! {
             data: Vec<u8>,
             value: U256,
             gas_limit: U256,
-            gas_price: Option<U256>,
+            max_fee_per_gas: Option<U256>,
+            max_priority_fee_per_gas: Option<U256>,
             nonce: Option<U256>,
             estimate: bool,
+            _access_list: Option<Vec<(H160, Vec<H256>)>>,
         ) -> Result<pallet_evm::CreateInfo, sp_runtime::DispatchError> {
             let config = if estimate {
                 let mut config = <Runtime as pallet_evm::Config>::config().clone();
@@ -877,8 +912,10 @@ impl_runtime_apis! {
                 data,
                 value,
                 gas_limit.low_u64(),
-                gas_price,
+                max_fee_per_gas,
+                max_priority_fee_per_gas,
                 nonce,
+                Vec::new(),
                 config
                     .as_ref()
                     .unwrap_or(<Runtime as pallet_evm::Config>::config()),
@@ -917,6 +954,20 @@ impl_runtime_apis! {
                 Call::Ethereum(pallet_ethereum::Call::transact { transaction }) => Some(transaction),
                 _ => None
             }).collect::<Vec<pallet_ethereum::Transaction>>()
+        }
+
+        fn elasticity() -> Option<Permill> {
+            Some(BaseFee::elasticity())
+        }
+    }
+
+    impl fp_rpc::ConvertTransactionRuntimeApi<Block> for Runtime {
+        fn convert_transaction(
+            transaction: pallet_ethereum::Transaction
+        ) -> <Block as BlockT>::Extrinsic {
+            UncheckedExtrinsic::new_unsigned(
+                pallet_ethereum::Call::<Runtime>::transact { transaction }.into(),
+            )
         }
     }
 
