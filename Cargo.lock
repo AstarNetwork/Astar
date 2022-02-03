@@ -5352,7 +5352,7 @@ dependencies = [
 [[package]]
 name = "pallet-dapps-staking"
 version = "2.0.0"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=feature/dapps-staking-precompile#75c9687bc420f594f1f4eb93f0f2c6801673bf49"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=feature/dapps-staking-precompile#f85ae4a8dc3af290728ee7efe60e079d26e08808"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -5728,10 +5728,9 @@ dependencies = [
 [[package]]
 name = "pallet-precompile-dapps-staking"
 version = "1.0.0"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=feature/dapps-staking-precompile#75c9687bc420f594f1f4eb93f0f2c6801673bf49"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=feature/dapps-staking-precompile#f85ae4a8dc3af290728ee7efe60e079d26e08808"
 dependencies = [
  "evm",
- "fp-evm",
  "frame-support",
  "frame-system",
  "pallet-dapps-staking 2.0.0 (git+https://github.com/AstarNetwork/astar-frame?branch=feature/dapps-staking-precompile)",
@@ -9381,6 +9380,7 @@ dependencies = [
  "pallet-evm-precompile-simple",
  "pallet-identity",
  "pallet-multisig",
+ "pallet-precompile-dapps-staking",
  "pallet-precompile-staking",
  "pallet-session",
  "pallet-sudo",
