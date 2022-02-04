@@ -390,10 +390,26 @@
 <span id="390">390</span>
 <span id="391">391</span>
 <span id="392">392</span>
+<span id="393">393</span>
+<span id="394">394</span>
+<span id="395">395</span>
+<span id="396">396</span>
+<span id="397">397</span>
+<span id="398">398</span>
+<span id="399">399</span>
+<span id="400">400</span>
+<span id="401">401</span>
+<span id="402">402</span>
+<span id="403">403</span>
+<span id="404">404</span>
+<span id="405">405</span>
+<span id="406">406</span>
+<span id="407">407</span>
+<span id="408">408</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Local Service and ServiceFactory implementation. Specialized wrapper over substrate service.</span>
 
 <span class="kw">use</span> <span class="ident">fc_consensus::FrontierBlockImport</span>;
-<span class="kw">use</span> <span class="ident">fc_rpc_core::types::FilterPool</span>;
+<span class="kw">use</span> <span class="ident">fc_rpc_core::types</span>::{<span class="ident">FeeHistoryCache</span>, <span class="ident">FilterPool</span>};
 <span class="kw">use</span> <span class="ident">futures::StreamExt</span>;
 <span class="kw">use</span> <span class="ident">local_runtime::RuntimeApi</span>;
 <span class="kw">use</span> <span class="ident">sc_client_api</span>::{<span class="ident">BlockchainEvents</span>, <span class="ident">ExecutorProvider</span>};
@@ -598,12 +614,14 @@
     }
 
     <span class="kw">let</span> <span class="ident">filter_pool</span>: <span class="ident">FilterPool</span> <span class="op">=</span> <span class="ident">Arc::new</span>(<span class="ident">std::sync::Mutex::new</span>(<span class="ident">BTreeMap::new</span>()));
+    <span class="kw">let</span> <span class="ident">fee_history_cache</span>: <span class="ident">FeeHistoryCache</span> <span class="op">=</span> <span class="ident">Arc::new</span>(<span class="ident">std::sync::Mutex::new</span>(<span class="ident">BTreeMap::new</span>()));
+    <span class="kw">let</span> <span class="ident">overrides</span> <span class="op">=</span> <span class="ident"><span class="kw">crate</span>::rpc::overrides_handle</span>(<span class="ident">client</span>.<span class="ident">clone</span>());
 
     <span class="comment">// Frontier offchain DB task. Essential.</span>
     <span class="comment">// Maps emulated ethereum data to substrate native data.</span>
     <span class="ident">task_manager</span>.<span class="ident">spawn_essential_handle</span>().<span class="ident">spawn</span>(
         <span class="string">&quot;frontier-mapping-sync-worker&quot;</span>,
-        <span class="prelude-val">None</span>,
+        <span class="prelude-val">Some</span>(<span class="string">&quot;frontier&quot;</span>),
         <span class="ident">fc_mapping_sync::MappingSyncWorker::new</span>(
             <span class="ident">client</span>.<span class="ident">import_notification_stream</span>(),
             <span class="ident">Duration::new</span>(<span class="number">6</span>, <span class="number">0</span>),
@@ -620,7 +638,7 @@
     <span class="kw">const</span> <span class="ident">FILTER_RETAIN_THRESHOLD</span>: <span class="ident">u64</span> <span class="op">=</span> <span class="number">100</span>;
     <span class="ident">task_manager</span>.<span class="ident">spawn_essential_handle</span>().<span class="ident">spawn</span>(
         <span class="string">&quot;frontier-filter-pool&quot;</span>,
-        <span class="prelude-val">None</span>,
+        <span class="prelude-val">Some</span>(<span class="string">&quot;frontier&quot;</span>),
         <span class="ident">fc_rpc::EthTask::filter_pool_task</span>(
             <span class="ident">client</span>.<span class="ident">clone</span>(),
             <span class="ident">filter_pool</span>.<span class="ident">clone</span>(),
@@ -630,8 +648,20 @@
 
     <span class="ident">task_manager</span>.<span class="ident">spawn_essential_handle</span>().<span class="ident">spawn</span>(
         <span class="string">&quot;frontier-schema-cache-task&quot;</span>,
-        <span class="prelude-val">None</span>,
+        <span class="prelude-val">Some</span>(<span class="string">&quot;frontier&quot;</span>),
         <span class="ident">fc_rpc::EthTask::ethereum_schema_cache_task</span>(<span class="ident">client</span>.<span class="ident">clone</span>(), <span class="ident">frontier_backend</span>.<span class="ident">clone</span>()),
+    );
+
+    <span class="kw">const</span> <span class="ident">FEE_HISTORY_LIMIT</span>: <span class="ident">u64</span> <span class="op">=</span> <span class="number">2048</span>;
+    <span class="ident">task_manager</span>.<span class="ident">spawn_essential_handle</span>().<span class="ident">spawn</span>(
+        <span class="string">&quot;frontier-fee-history&quot;</span>,
+        <span class="prelude-val">Some</span>(<span class="string">&quot;frontier&quot;</span>),
+        <span class="ident">fc_rpc::EthTask::fee_history_task</span>(
+            <span class="ident">client</span>.<span class="ident">clone</span>(),
+            <span class="ident">overrides</span>.<span class="ident">clone</span>(),
+            <span class="ident">fee_history_cache</span>.<span class="ident">clone</span>(),
+            <span class="ident">FEE_HISTORY_LIMIT</span>,
+        ),
     );
 
     <span class="kw">let</span> <span class="ident">role</span> <span class="op">=</span> <span class="ident">config</span>.<span class="ident">role</span>.<span class="ident">clone</span>();
@@ -658,9 +688,11 @@
                 <span class="ident">frontier_backend</span>: <span class="ident">frontier_backend</span>.<span class="ident">clone</span>(),
                 <span class="ident">transaction_converter</span>: <span class="ident">local_runtime::TransactionConverter</span>,
                 <span class="ident">filter_pool</span>: <span class="ident">filter_pool</span>.<span class="ident">clone</span>(),
+                <span class="ident">fee_history_limit</span>: <span class="ident">FEE_HISTORY_LIMIT</span>,
+                <span class="ident">fee_history_cache</span>: <span class="ident">fee_history_cache</span>.<span class="ident">clone</span>(),
             };
 
-            <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">io</span> <span class="op">=</span> <span class="ident"><span class="kw">crate</span>::rpc::create_full</span>(<span class="ident">deps</span>, <span class="ident">subscription</span>);
+            <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">io</span> <span class="op">=</span> <span class="ident"><span class="kw">crate</span>::rpc::create_full</span>(<span class="ident">deps</span>, <span class="ident">subscription</span>, <span class="ident">overrides</span>.<span class="ident">clone</span>());
             <span class="comment">// Local node support WASM contracts</span>
             <span class="ident">io</span>.<span class="ident">extend_with</span>(<span class="ident">pallet_contracts_rpc::ContractsApi::to_delegate</span>(
                 <span class="ident">pallet_contracts_rpc::Contracts::new</span>(<span class="ident">client</span>.<span class="ident">clone</span>()),

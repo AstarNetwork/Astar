@@ -129,16 +129,19 @@
 <span id="129">129</span>
 <span id="130">130</span>
 <span id="131">131</span>
+<span id="132">132</span>
+<span id="133">133</span>
+<span id="134">134</span>
+<span id="135">135</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Chain specifications.</span>
 
 <span class="kw">use</span> <span class="ident">local_runtime</span>::{
-    <span class="ident">wasm_binary_unwrap</span>, <span class="ident">AccountId</span>, <span class="ident">AuraConfig</span>, <span class="ident">AuraId</span>, <span class="ident">BalancesConfig</span>, <span class="ident">EVMConfig</span>, <span class="ident">GenesisConfig</span>,
-    <span class="ident">GrandpaConfig</span>, <span class="ident">GrandpaId</span>, <span class="ident">LocalNetworkPrecompiles</span>, <span class="ident">Signature</span>, <span class="ident">SudoConfig</span>, <span class="ident">SystemConfig</span>,
+    <span class="ident">wasm_binary_unwrap</span>, <span class="ident">AccountId</span>, <span class="ident">AuraConfig</span>, <span class="ident">AuraId</span>, <span class="ident">BalancesConfig</span>, <span class="ident">BaseFeeConfig</span>, <span class="ident">EVMConfig</span>,
+    <span class="ident">GenesisConfig</span>, <span class="ident">GrandpaConfig</span>, <span class="ident">GrandpaId</span>, <span class="ident">Precompiles</span>, <span class="ident">Signature</span>, <span class="ident">SudoConfig</span>, <span class="ident">SystemConfig</span>,
     <span class="ident">VestingConfig</span>,
 };
 <span class="kw">use</span> <span class="ident">sc_service::ChainType</span>;
 <span class="kw">use</span> <span class="ident">sp_core</span>::{<span class="ident">sr25519</span>, <span class="ident">Pair</span>, <span class="ident">Public</span>};
-
 <span class="kw">use</span> <span class="ident">sp_runtime::traits</span>::{<span class="ident">IdentifyAccount</span>, <span class="ident">Verify</span>};
 
 <span class="kw">type</span> <span class="ident">AccountPublic</span> <span class="op">=</span> <span class="op">&lt;</span><span class="ident">Signature</span> <span class="kw">as</span> <span class="ident">Verify</span><span class="op">&gt;</span><span class="ident">::Signer</span>;
@@ -231,7 +234,7 @@
         <span class="ident">evm</span>: <span class="ident">EVMConfig</span> {
             <span class="comment">// We need _some_ code inserted at the precompile address so that</span>
             <span class="comment">// the evm will actually call the address.</span>
-            <span class="ident">accounts</span>: <span class="ident">LocalNetworkPrecompiles</span>::<span class="op">&lt;</span>()<span class="op">&gt;</span><span class="ident">::used_addresses</span>()
+            <span class="ident">accounts</span>: <span class="ident">Precompiles::used_addresses</span>()
                 .<span class="ident">map</span>(<span class="op">|</span><span class="ident">addr</span><span class="op">|</span> {
                     (
                         <span class="ident">addr</span>,
@@ -246,6 +249,11 @@
                 .<span class="ident">collect</span>(),
         },
         <span class="ident">ethereum</span>: <span class="ident">Default::default</span>(),
+        <span class="ident">base_fee</span>: <span class="ident">BaseFeeConfig::new</span>(
+            <span class="ident">sp_core::U256::from</span>(<span class="number">1_000_000_000u64</span>),
+            <span class="bool-val">false</span>,
+            <span class="ident">sp_runtime::Permill::from_parts</span>(<span class="number">125_000</span>),
+        ),
         <span class="ident">sudo</span>: <span class="ident">SudoConfig</span> { <span class="ident">key</span>: <span class="ident">root_key</span> },
     }
 }

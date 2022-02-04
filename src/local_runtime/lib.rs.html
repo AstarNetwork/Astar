@@ -1017,6 +1017,58 @@
 <span id="1017">1017</span>
 <span id="1018">1018</span>
 <span id="1019">1019</span>
+<span id="1020">1020</span>
+<span id="1021">1021</span>
+<span id="1022">1022</span>
+<span id="1023">1023</span>
+<span id="1024">1024</span>
+<span id="1025">1025</span>
+<span id="1026">1026</span>
+<span id="1027">1027</span>
+<span id="1028">1028</span>
+<span id="1029">1029</span>
+<span id="1030">1030</span>
+<span id="1031">1031</span>
+<span id="1032">1032</span>
+<span id="1033">1033</span>
+<span id="1034">1034</span>
+<span id="1035">1035</span>
+<span id="1036">1036</span>
+<span id="1037">1037</span>
+<span id="1038">1038</span>
+<span id="1039">1039</span>
+<span id="1040">1040</span>
+<span id="1041">1041</span>
+<span id="1042">1042</span>
+<span id="1043">1043</span>
+<span id="1044">1044</span>
+<span id="1045">1045</span>
+<span id="1046">1046</span>
+<span id="1047">1047</span>
+<span id="1048">1048</span>
+<span id="1049">1049</span>
+<span id="1050">1050</span>
+<span id="1051">1051</span>
+<span id="1052">1052</span>
+<span id="1053">1053</span>
+<span id="1054">1054</span>
+<span id="1055">1055</span>
+<span id="1056">1056</span>
+<span id="1057">1057</span>
+<span id="1058">1058</span>
+<span id="1059">1059</span>
+<span id="1060">1060</span>
+<span id="1061">1061</span>
+<span id="1062">1062</span>
+<span id="1063">1063</span>
+<span id="1064">1064</span>
+<span id="1065">1065</span>
+<span id="1066">1066</span>
+<span id="1067">1067</span>
+<span id="1068">1068</span>
+<span id="1069">1069</span>
+<span id="1070">1070</span>
+<span id="1071">1071</span>
 </pre><pre class="rust"><code><span class="attribute">#![<span class="ident">cfg_attr</span>(<span class="ident">not</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>), <span class="ident">no_std</span>)]</span>
 <span class="comment">// `construct_runtime!` does a lot of recursion and requires us to increase the limit to 256.</span>
 <span class="attribute">#![<span class="ident">recursion_limit</span> <span class="op">=</span> <span class="string">&quot;256&quot;</span>]</span>
@@ -1098,6 +1150,7 @@
 
 <span class="kw">mod</span> <span class="ident">precompiles</span>;
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident">precompiles::LocalNetworkPrecompiles</span>;
+<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">Precompiles</span> <span class="op">=</span> <span class="ident">LocalNetworkPrecompiles</span><span class="op">&lt;</span><span class="ident">Runtime</span><span class="op">&gt;</span>;
 
 <span class="doccomment">/// Constant values used within the runtime.</span>
 <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">MILLIAST</span>: <span class="ident">Balance</span> <span class="op">=</span> <span class="number">1_000_000_000_000_000</span>;
@@ -1379,6 +1432,32 @@
     <span class="kw">type</span> <span class="ident">WeightInfo</span> <span class="op">=</span> ();
 }
 
+<span class="macro">parameter_types!</span> {
+    <span class="comment">// Tells `pallet_base_fee` whether to calculate a new BaseFee `on_finalize` or not.</span>
+    <span class="kw">pub</span> <span class="ident">IsActive</span>: <span class="ident">bool</span> <span class="op">=</span> <span class="bool-val">false</span>;
+    <span class="kw">pub</span> <span class="ident">DefaultBaseFeePerGas</span>: <span class="ident">U256</span> <span class="op">=</span> (<span class="ident">MILLIAST</span> <span class="op">/</span> <span class="number">1_000_000</span>).<span class="ident">into</span>();
+}
+
+<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">BaseFeeThreshold</span>;
+<span class="kw">impl</span> <span class="ident">pallet_base_fee::BaseFeeThreshold</span> <span class="kw">for</span> <span class="ident">BaseFeeThreshold</span> {
+    <span class="kw">fn</span> <span class="ident">lower</span>() -&gt; <span class="ident">Permill</span> {
+        <span class="ident">Permill::zero</span>()
+    }
+    <span class="kw">fn</span> <span class="ident">ideal</span>() -&gt; <span class="ident">Permill</span> {
+        <span class="ident">Permill::from_parts</span>(<span class="number">500_000</span>)
+    }
+    <span class="kw">fn</span> <span class="ident">upper</span>() -&gt; <span class="ident">Permill</span> {
+        <span class="ident">Permill::from_parts</span>(<span class="number">1_000_000</span>)
+    }
+}
+
+<span class="kw">impl</span> <span class="ident">pallet_base_fee::Config</span> <span class="kw">for</span> <span class="ident">Runtime</span> {
+    <span class="kw">type</span> <span class="ident">Event</span> <span class="op">=</span> <span class="ident">Event</span>;
+    <span class="kw">type</span> <span class="ident">Threshold</span> <span class="op">=</span> <span class="ident">BaseFeeThreshold</span>;
+    <span class="kw">type</span> <span class="ident">IsActive</span> <span class="op">=</span> <span class="ident">IsActive</span>;
+    <span class="kw">type</span> <span class="ident">DefaultBaseFeePerGas</span> <span class="op">=</span> <span class="ident">DefaultBaseFeePerGas</span>;
+}
+
 <span class="doccomment">/// Current approximation of the gas/s consumption considering</span>
 <span class="doccomment">/// EVM execution over compiled WASM (on 4.4Ghz CPU).</span>
 <span class="doccomment">/// Given the 500ms Weight, from which 75% only are used for transactions,</span>
@@ -1435,6 +1514,7 @@
     <span class="kw">pub</span> <span class="ident">BlockGasLimit</span>: <span class="ident">U256</span> <span class="op">=</span> <span class="ident">U256::from</span>(
         <span class="ident">NORMAL_DISPATCH_RATIO</span> <span class="op">*</span> <span class="ident">WEIGHT_PER_SECOND</span> <span class="op">/</span> <span class="ident">WEIGHT_PER_GAS</span>
     );
+    <span class="kw">pub</span> <span class="ident">PrecompilesValue</span>: <span class="ident">Precompiles</span> <span class="op">=</span> <span class="ident">LocalNetworkPrecompiles</span>::<span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span><span class="ident">::new</span>();
 }
 
 <span class="kw">impl</span> <span class="ident">pallet_evm::Config</span> <span class="kw">for</span> <span class="ident">Runtime</span> {
@@ -1447,7 +1527,8 @@
     <span class="kw">type</span> <span class="ident">Currency</span> <span class="op">=</span> <span class="ident">Balances</span>;
     <span class="kw">type</span> <span class="ident">Event</span> <span class="op">=</span> <span class="ident">Event</span>;
     <span class="kw">type</span> <span class="ident">Runner</span> <span class="op">=</span> <span class="ident">pallet_evm::runner::stack::Runner</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span>;
-    <span class="kw">type</span> <span class="ident">Precompiles</span> <span class="op">=</span> <span class="ident">LocalNetworkPrecompiles</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span>;
+    <span class="kw">type</span> <span class="ident">PrecompilesType</span> <span class="op">=</span> <span class="ident">Precompiles</span>;
+    <span class="kw">type</span> <span class="ident">PrecompilesValue</span> <span class="op">=</span> <span class="ident">PrecompilesValue</span>;
     <span class="kw">type</span> <span class="ident">ChainId</span> <span class="op">=</span> <span class="ident">ChainId</span>;
     <span class="kw">type</span> <span class="ident">OnChargeTransaction</span> <span class="op">=</span> <span class="ident">pallet_evm::EVMCurrencyAdapter</span><span class="op">&lt;</span><span class="ident">Balances</span>, ()<span class="op">&gt;</span>;
     <span class="kw">type</span> <span class="ident">BlockGasLimit</span> <span class="op">=</span> <span class="ident">BlockGasLimit</span>;
@@ -1581,6 +1662,7 @@
         <span class="ident">EVM</span>: <span class="ident">pallet_evm</span>::{<span class="ident">Pallet</span>, <span class="ident">Config</span>, <span class="ident">Call</span>, <span class="ident">Storage</span>, <span class="ident">Event</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>},
         <span class="ident">Ethereum</span>: <span class="ident">pallet_ethereum</span>::{<span class="ident">Pallet</span>, <span class="ident">Call</span>, <span class="ident">Storage</span>, <span class="ident">Event</span>, <span class="ident">Origin</span>, <span class="ident">Config</span>},
         <span class="ident">EthCall</span>: <span class="ident">pallet_custom_signatures</span>::{<span class="ident">Pallet</span>, <span class="ident">Call</span>, <span class="ident">Event</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>, <span class="ident">ValidateUnsigned</span>},
+        <span class="ident">BaseFee</span>: <span class="ident">pallet_base_fee</span>::{<span class="ident">Pallet</span>, <span class="ident">Call</span>, <span class="ident">Storage</span>, <span class="ident">Config</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>, <span class="ident">Event</span>},
         <span class="ident">Contracts</span>: <span class="ident">pallet_contracts</span>::{<span class="ident">Pallet</span>, <span class="ident">Call</span>, <span class="ident">Storage</span>, <span class="ident">Event</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>},
         <span class="ident">Sudo</span>: <span class="ident">pallet_sudo</span>::{<span class="ident">Pallet</span>, <span class="ident">Call</span>, <span class="ident">Config</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>, <span class="ident">Storage</span>, <span class="ident">Event</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>},
     }
@@ -1846,9 +1928,11 @@
             <span class="ident">data</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>,
             <span class="ident">value</span>: <span class="ident">U256</span>,
             <span class="ident">gas_limit</span>: <span class="ident">U256</span>,
-            <span class="ident">gas_price</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>,
+            <span class="ident">max_fee_per_gas</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>,
+            <span class="ident">max_priority_fee_per_gas</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>,
             <span class="ident">nonce</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>,
             <span class="ident">estimate</span>: <span class="ident">bool</span>,
+            <span class="ident">_access_list</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span>(<span class="ident">H160</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">H256</span><span class="op">&gt;</span>)<span class="op">&gt;</span><span class="op">&gt;</span>,
         ) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">pallet_evm::CallInfo</span>, <span class="ident">sp_runtime::DispatchError</span><span class="op">&gt;</span> {
             <span class="kw">let</span> <span class="ident">config</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">estimate</span> {
                 <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">config</span> <span class="op">=</span> <span class="op">&lt;</span><span class="ident">Runtime</span> <span class="kw">as</span> <span class="ident">pallet_evm::Config</span><span class="op">&gt;</span><span class="ident">::config</span>().<span class="ident">clone</span>();
@@ -1864,8 +1948,10 @@
                 <span class="ident">data</span>,
                 <span class="ident">value</span>,
                 <span class="ident">gas_limit</span>.<span class="ident">low_u64</span>(),
-                <span class="ident">gas_price</span>,
+                <span class="ident">max_fee_per_gas</span>,
+                <span class="ident">max_priority_fee_per_gas</span>,
                 <span class="ident">nonce</span>,
+                <span class="ident">Vec::new</span>(),
                 <span class="ident">config</span>
                     .<span class="ident">as_ref</span>()
                     .<span class="ident">unwrap_or_else</span>(<span class="op">|</span><span class="op">|</span> <span class="op">&lt;</span><span class="ident">Runtime</span> <span class="kw">as</span> <span class="ident">pallet_evm::Config</span><span class="op">&gt;</span><span class="ident">::config</span>()),
@@ -1878,9 +1964,11 @@
             <span class="ident">data</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>,
             <span class="ident">value</span>: <span class="ident">U256</span>,
             <span class="ident">gas_limit</span>: <span class="ident">U256</span>,
-            <span class="ident">gas_price</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>,
+            <span class="ident">max_fee_per_gas</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>,
+            <span class="ident">max_priority_fee_per_gas</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>,
             <span class="ident">nonce</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">U256</span><span class="op">&gt;</span>,
             <span class="ident">estimate</span>: <span class="ident">bool</span>,
+            <span class="ident">_access_list</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span>(<span class="ident">H160</span>, <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">H256</span><span class="op">&gt;</span>)<span class="op">&gt;</span><span class="op">&gt;</span>,
         ) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">pallet_evm::CreateInfo</span>, <span class="ident">sp_runtime::DispatchError</span><span class="op">&gt;</span> {
             <span class="kw">let</span> <span class="ident">config</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">estimate</span> {
                 <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">config</span> <span class="op">=</span> <span class="op">&lt;</span><span class="ident">Runtime</span> <span class="kw">as</span> <span class="ident">pallet_evm::Config</span><span class="op">&gt;</span><span class="ident">::config</span>().<span class="ident">clone</span>();
@@ -1896,8 +1984,10 @@
                 <span class="ident">data</span>,
                 <span class="ident">value</span>,
                 <span class="ident">gas_limit</span>.<span class="ident">low_u64</span>(),
-                <span class="ident">gas_price</span>,
+                <span class="ident">max_fee_per_gas</span>,
+                <span class="ident">max_priority_fee_per_gas</span>,
                 <span class="ident">nonce</span>,
+                <span class="ident">Vec::new</span>(),
                 <span class="ident">config</span>
                     .<span class="ident">as_ref</span>()
                     .<span class="ident">unwrap_or</span>(<span class="op">&lt;</span><span class="ident">Runtime</span> <span class="kw">as</span> <span class="ident">pallet_evm::Config</span><span class="op">&gt;</span><span class="ident">::config</span>()),
@@ -1936,6 +2026,20 @@
                 <span class="ident">Call::Ethereum</span>(<span class="ident">pallet_ethereum::Call::transact</span> { <span class="ident">transaction</span> }) =&gt; <span class="prelude-val">Some</span>(<span class="ident">transaction</span>),
                 <span class="kw">_</span> =&gt; <span class="prelude-val">None</span>
             }).<span class="ident">collect</span>::<span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">pallet_ethereum::Transaction</span><span class="op">&gt;</span><span class="op">&gt;</span>()
+        }
+
+        <span class="kw">fn</span> <span class="ident">elasticity</span>() -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Permill</span><span class="op">&gt;</span> {
+            <span class="prelude-val">Some</span>(<span class="ident">BaseFee::elasticity</span>())
+        }
+    }
+
+    <span class="kw">impl</span> <span class="ident">fp_rpc::ConvertTransactionRuntimeApi</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">Runtime</span> {
+        <span class="kw">fn</span> <span class="ident">convert_transaction</span>(
+            <span class="ident">transaction</span>: <span class="ident">pallet_ethereum::Transaction</span>
+        ) -&gt; <span class="op">&lt;</span><span class="ident">Block</span> <span class="kw">as</span> <span class="ident">BlockT</span><span class="op">&gt;</span><span class="ident">::Extrinsic</span> {
+            <span class="ident">UncheckedExtrinsic::new_unsigned</span>(
+                <span class="ident">pallet_ethereum::Call</span>::<span class="op">&lt;</span><span class="ident">Runtime</span><span class="op">&gt;</span><span class="ident">::transact</span> { <span class="ident">transaction</span> }.<span class="ident">into</span>(),
+            )
         }
     }
 

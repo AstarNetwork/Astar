@@ -182,14 +182,47 @@
 <span id="182">182</span>
 <span id="183">183</span>
 <span id="184">184</span>
+<span id="185">185</span>
+<span id="186">186</span>
+<span id="187">187</span>
+<span id="188">188</span>
+<span id="189">189</span>
+<span id="190">190</span>
+<span id="191">191</span>
+<span id="192">192</span>
+<span id="193">193</span>
+<span id="194">194</span>
+<span id="195">195</span>
+<span id="196">196</span>
+<span id="197">197</span>
+<span id="198">198</span>
+<span id="199">199</span>
+<span id="200">200</span>
+<span id="201">201</span>
+<span id="202">202</span>
+<span id="203">203</span>
+<span id="204">204</span>
+<span id="205">205</span>
+<span id="206">206</span>
+<span id="207">207</span>
+<span id="208">208</span>
+<span id="209">209</span>
+<span id="210">210</span>
+<span id="211">211</span>
+<span id="212">212</span>
+<span id="213">213</span>
+<span id="214">214</span>
+<span id="215">215</span>
+<span id="216">216</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Astar RPCs implementation.</span>
 
 <span class="kw">use</span> <span class="ident">fc_rpc</span>::{
     <span class="ident">EthApi</span>, <span class="ident">EthApiServer</span>, <span class="ident">EthBlockDataCache</span>, <span class="ident">EthFilterApi</span>, <span class="ident">EthFilterApiServer</span>, <span class="ident">EthPubSubApi</span>,
     <span class="ident">EthPubSubApiServer</span>, <span class="ident">HexEncodedIdProvider</span>, <span class="ident">NetApi</span>, <span class="ident">NetApiServer</span>, <span class="ident">OverrideHandle</span>,
-    <span class="ident">RuntimeApiStorageOverride</span>, <span class="ident">SchemaV1Override</span>, <span class="ident">StorageOverride</span>, <span class="ident">Web3Api</span>, <span class="ident">Web3ApiServer</span>,
+    <span class="ident">RuntimeApiStorageOverride</span>, <span class="ident">SchemaV1Override</span>, <span class="ident">SchemaV2Override</span>, <span class="ident">SchemaV3Override</span>,
+    <span class="ident">StorageOverride</span>, <span class="ident">Web3Api</span>, <span class="ident">Web3ApiServer</span>,
 };
-<span class="kw">use</span> <span class="ident">fc_rpc_core::types::FilterPool</span>;
+<span class="kw">use</span> <span class="ident">fc_rpc_core::types</span>::{<span class="ident">FeeHistoryCache</span>, <span class="ident">FilterPool</span>};
 <span class="kw">use</span> <span class="ident">frame_rpc_system</span>::{<span class="ident">FullSystem</span>, <span class="ident">SystemApi</span>};
 <span class="kw">use</span> <span class="ident">jsonrpc_pubsub::manager::SubscriptionManager</span>;
 <span class="kw">use</span> <span class="ident">pallet_ethereum::EthereumStorageSchema</span>;
@@ -234,6 +267,38 @@
     )<span class="question-mark">?</span>))
 }
 
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">overrides_handle</span><span class="op">&lt;</span><span class="ident">C</span>, <span class="ident">BE</span><span class="op">&gt;</span>(<span class="ident">client</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>) -&gt; <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">OverrideHandle</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span><span class="op">&gt;</span>
+<span class="kw">where</span>
+    <span class="ident">C</span>: <span class="ident">ProvideRuntimeApi</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">StorageProvider</span><span class="op">&lt;</span><span class="ident">Block</span>, <span class="ident">BE</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">AuxStore</span>,
+    <span class="ident">C</span>: <span class="ident">HeaderBackend</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">HeaderMetadata</span><span class="op">&lt;</span><span class="ident">Block</span>, <span class="ident">Error</span> <span class="op">=</span> <span class="ident">BlockChainError</span><span class="op">&gt;</span>,
+    <span class="ident">C</span>: <span class="ident">Send</span> <span class="op">+</span> <span class="ident">Sync</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
+    <span class="ident">C::Api</span>: <span class="ident">fp_rpc::EthereumRuntimeRPCApi</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span>,
+    <span class="ident">BE</span>: <span class="ident">Backend</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
+    <span class="ident">BE::State</span>: <span class="ident">StateBackend</span><span class="op">&lt;</span><span class="ident">BlakeTwo256</span><span class="op">&gt;</span>,
+{
+    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">overrides_map</span> <span class="op">=</span> <span class="ident">BTreeMap::new</span>();
+    <span class="ident">overrides_map</span>.<span class="ident">insert</span>(
+        <span class="ident">EthereumStorageSchema::V1</span>,
+        <span class="ident">Box::new</span>(<span class="ident">SchemaV1Override::new</span>(<span class="ident">client</span>.<span class="ident">clone</span>()))
+            <span class="kw">as</span> <span class="ident">Box</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">StorageOverride</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Send</span> <span class="op">+</span> <span class="ident">Sync</span><span class="op">&gt;</span>,
+    );
+    <span class="ident">overrides_map</span>.<span class="ident">insert</span>(
+        <span class="ident">EthereumStorageSchema::V2</span>,
+        <span class="ident">Box::new</span>(<span class="ident">SchemaV2Override::new</span>(<span class="ident">client</span>.<span class="ident">clone</span>()))
+            <span class="kw">as</span> <span class="ident">Box</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">StorageOverride</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Send</span> <span class="op">+</span> <span class="ident">Sync</span><span class="op">&gt;</span>,
+    );
+    <span class="ident">overrides_map</span>.<span class="ident">insert</span>(
+        <span class="ident">EthereumStorageSchema::V3</span>,
+        <span class="ident">Box::new</span>(<span class="ident">SchemaV3Override::new</span>(<span class="ident">client</span>.<span class="ident">clone</span>()))
+            <span class="kw">as</span> <span class="ident">Box</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">StorageOverride</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Send</span> <span class="op">+</span> <span class="ident">Sync</span><span class="op">&gt;</span>,
+    );
+
+    <span class="ident">Arc::new</span>(<span class="ident">OverrideHandle</span> {
+        <span class="ident">schemas</span>: <span class="ident">overrides_map</span>,
+        <span class="ident">fallback</span>: <span class="ident">Box::new</span>(<span class="ident">RuntimeApiStorageOverride::new</span>(<span class="ident">client</span>.<span class="ident">clone</span>())),
+    })
+}
+
 <span class="doccomment">/// Full client dependencies</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">FullDeps</span><span class="op">&lt;</span><span class="ident">C</span>, <span class="ident">P</span>, <span class="ident">T</span>, <span class="ident">A</span>: <span class="ident">ChainApi</span><span class="op">&gt;</span> {
     <span class="doccomment">/// The client instance to use.</span>
@@ -254,12 +319,17 @@
     <span class="kw">pub</span> <span class="ident">transaction_converter</span>: <span class="ident">T</span>,
     <span class="doccomment">/// EthFilterApi pool.</span>
     <span class="kw">pub</span> <span class="ident">filter_pool</span>: <span class="ident">FilterPool</span>,
+    <span class="doccomment">/// Maximum fee history cache size.                                                                                    </span>
+    <span class="kw">pub</span> <span class="ident">fee_history_limit</span>: <span class="ident">u64</span>,
+    <span class="doccomment">/// Fee history cache.</span>
+    <span class="kw">pub</span> <span class="ident">fee_history_cache</span>: <span class="ident">FeeHistoryCache</span>,
 }
 
 <span class="doccomment">/// Instantiate all RPC extensions.</span>
 <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">create_full</span><span class="op">&lt;</span><span class="ident">C</span>, <span class="ident">P</span>, <span class="ident">T</span>, <span class="ident">BE</span>, <span class="ident">A</span><span class="op">&gt;</span>(
     <span class="ident">deps</span>: <span class="ident">FullDeps</span><span class="op">&lt;</span><span class="ident">C</span>, <span class="ident">P</span>, <span class="ident">T</span>, <span class="ident">A</span><span class="op">&gt;</span>,
     <span class="ident">subscription_task_executor</span>: <span class="ident">SubscriptionTaskExecutor</span>,
+    <span class="ident">overrides</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">OverrideHandle</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span><span class="op">&gt;</span>,
 ) -&gt; <span class="ident">jsonrpc_core::IoHandler</span><span class="op">&lt;</span><span class="ident">sc_rpc::Metadata</span><span class="op">&gt;</span>
 <span class="kw">where</span>
     <span class="ident">C</span>: <span class="ident">ProvideRuntimeApi</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span>
@@ -273,6 +343,7 @@
         <span class="op">+</span> <span class="lifetime">&#39;static</span>,
     <span class="ident">C::Api</span>: <span class="ident">frame_rpc_system::AccountNonceApi</span><span class="op">&lt;</span><span class="ident">Block</span>, <span class="ident">AccountId</span>, <span class="ident">Nonce</span><span class="op">&gt;</span>
         <span class="op">+</span> <span class="ident">pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi</span><span class="op">&lt;</span><span class="ident">Block</span>, <span class="ident">Balance</span><span class="op">&gt;</span>
+        <span class="op">+</span> <span class="ident">fp_rpc::ConvertTransactionRuntimeApi</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span>
         <span class="op">+</span> <span class="ident">fp_rpc::EthereumRuntimeRPCApi</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span>
         <span class="op">+</span> <span class="ident">BlockBuilder</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span>,
     <span class="ident">P</span>: <span class="ident">TransactionPool</span><span class="op">&lt;</span><span class="ident">Block</span> <span class="op">=</span> <span class="ident">Block</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Sync</span> <span class="op">+</span> <span class="ident">Send</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
@@ -293,6 +364,8 @@
         <span class="ident">frontier_backend</span>,
         <span class="ident">transaction_converter</span>,
         <span class="ident">filter_pool</span>,
+        <span class="ident">fee_history_limit</span>,
+        <span class="ident">fee_history_cache</span>,
     } <span class="op">=</span> <span class="ident">deps</span>;
 
     <span class="ident">io</span>.<span class="ident">extend_with</span>(<span class="ident">SystemApi::to_delegate</span>(<span class="ident">FullSystem::new</span>(
@@ -305,18 +378,6 @@
         <span class="ident">client</span>.<span class="ident">clone</span>(),
     )));
 
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">overrides_map</span> <span class="op">=</span> <span class="ident">BTreeMap::new</span>();
-    <span class="ident">overrides_map</span>.<span class="ident">insert</span>(
-        <span class="ident">EthereumStorageSchema::V1</span>,
-        <span class="ident">Box::new</span>(<span class="ident">SchemaV1Override::new</span>(<span class="ident">client</span>.<span class="ident">clone</span>()))
-            <span class="kw">as</span> <span class="ident">Box</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">StorageOverride</span><span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Send</span> <span class="op">+</span> <span class="ident">Sync</span><span class="op">&gt;</span>,
-    );
-
-    <span class="kw">let</span> <span class="ident">overrides</span> <span class="op">=</span> <span class="ident">Arc::new</span>(<span class="ident">OverrideHandle</span> {
-        <span class="ident">schemas</span>: <span class="ident">overrides_map</span>,
-        <span class="ident">fallback</span>: <span class="ident">Box::new</span>(<span class="ident">RuntimeApiStorageOverride::new</span>(<span class="ident">client</span>.<span class="ident">clone</span>())),
-    });
-
     <span class="kw">let</span> <span class="ident">max_past_logs</span>: <span class="ident">u32</span> <span class="op">=</span> <span class="number">10_000</span>;
     <span class="kw">let</span> <span class="ident">max_stored_filters</span>: <span class="ident">usize</span> <span class="op">=</span> <span class="number">500</span>;
     <span class="kw">let</span> <span class="ident">block_data_cache</span> <span class="op">=</span> <span class="ident">Arc::new</span>(<span class="ident">EthBlockDataCache::new</span>(<span class="number">50</span>, <span class="number">50</span>));
@@ -325,7 +386,7 @@
         <span class="ident">client</span>.<span class="ident">clone</span>(),
         <span class="ident">pool</span>.<span class="ident">clone</span>(),
         <span class="ident">graph</span>,
-        <span class="ident">transaction_converter</span>,
+        <span class="prelude-val">Some</span>(<span class="ident">transaction_converter</span>),
         <span class="ident">network</span>.<span class="ident">clone</span>(),
         <span class="ident">Default::default</span>(),
         <span class="ident">overrides</span>.<span class="ident">clone</span>(),
@@ -333,6 +394,9 @@
         <span class="ident">is_authority</span>,
         <span class="ident">max_past_logs</span>,
         <span class="ident">block_data_cache</span>.<span class="ident">clone</span>(),
+        <span class="ident">fc_rpc::format::Geth</span>,
+        <span class="ident">fee_history_limit</span>,
+        <span class="ident">fee_history_cache</span>,
     )));
 
     <span class="ident">io</span>.<span class="ident">extend_with</span>(<span class="ident">EthFilterApiServer::to_delegate</span>(<span class="ident">EthFilterApi::new</span>(
