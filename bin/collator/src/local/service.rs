@@ -1,7 +1,7 @@
 //! Local Service and ServiceFactory implementation. Specialized wrapper over substrate service.
 
 use fc_consensus::FrontierBlockImport;
-use fc_rpc_core::types::FilterPool;
+use fc_rpc_core::types::{FeeHistoryCache, FilterPool};
 use futures::StreamExt;
 use local_runtime::RuntimeApi;
 use sc_client_api::{BlockchainEvents, ExecutorProvider};
@@ -206,12 +206,14 @@ pub fn start_node(config: Configuration) -> Result<TaskManager, ServiceError> {
     }
 
     let filter_pool: FilterPool = Arc::new(std::sync::Mutex::new(BTreeMap::new()));
+    let fee_history_cache: FeeHistoryCache = Arc::new(std::sync::Mutex::new(BTreeMap::new()));
+    let overrides = crate::rpc::overrides_handle(client.clone());
 
     // Frontier offchain DB task. Essential.
     // Maps emulated ethereum data to substrate native data.
     task_manager.spawn_essential_handle().spawn(
         "frontier-mapping-sync-worker",
-        None,
+        Some("frontier"),
         fc_mapping_sync::MappingSyncWorker::new(
             client.import_notification_stream(),
             Duration::new(6, 0),
@@ -228,7 +230,7 @@ pub fn start_node(config: Configuration) -> Result<TaskManager, ServiceError> {
     const FILTER_RETAIN_THRESHOLD: u64 = 100;
     task_manager.spawn_essential_handle().spawn(
         "frontier-filter-pool",
-        None,
+        Some("frontier"),
         fc_rpc::EthTask::filter_pool_task(
             client.clone(),
             filter_pool.clone(),
@@ -238,8 +240,20 @@ pub fn start_node(config: Configuration) -> Result<TaskManager, ServiceError> {
 
     task_manager.spawn_essential_handle().spawn(
         "frontier-schema-cache-task",
-        None,
+        Some("frontier"),
         fc_rpc::EthTask::ethereum_schema_cache_task(client.clone(), frontier_backend.clone()),
+    );
+
+    const FEE_HISTORY_LIMIT: u64 = 2048;
+    task_manager.spawn_essential_handle().spawn(
+        "frontier-fee-history",
+        Some("frontier"),
+        fc_rpc::EthTask::fee_history_task(
+            client.clone(),
+            overrides.clone(),
+            fee_history_cache.clone(),
+            FEE_HISTORY_LIMIT,
+        ),
     );
 
     let role = config.role.clone();
@@ -266,9 +280,11 @@ pub fn start_node(config: Configuration) -> Result<TaskManager, ServiceError> {
                 frontier_backend: frontier_backend.clone(),
                 transaction_converter: local_runtime::TransactionConverter,
                 filter_pool: filter_pool.clone(),
+                fee_history_limit: FEE_HISTORY_LIMIT,
+                fee_history_cache: fee_history_cache.clone(),
             };
 
-            let mut io = crate::rpc::create_full(deps, subscription);
+            let mut io = crate::rpc::create_full(deps, subscription, overrides.clone());
             // Local node support WASM contracts
             io.extend_with(pallet_contracts_rpc::ContractsApi::to_delegate(
                 pallet_contracts_rpc::Contracts::new(client.clone()),

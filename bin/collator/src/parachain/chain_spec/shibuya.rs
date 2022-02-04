@@ -3,10 +3,9 @@
 use cumulus_primitives_core::ParaId;
 use sc_service::ChainType;
 use shibuya_runtime::{
-    wasm_binary_unwrap, AccountId, AuraConfig, AuraId, Balance, BalancesConfig,
-    CollatorSelectionConfig, EVMConfig, GenesisConfig, ParachainInfoConfig, SessionConfig,
-    SessionKeys, ShibuyaNetworkPrecompiles, Signature, SudoConfig, SystemConfig, VestingConfig,
-    SDN,
+    wasm_binary_unwrap, AccountId, AuraConfig, AuraId, Balance, BalancesConfig, BaseFeeConfig,
+    CollatorSelectionConfig, EVMConfig, GenesisConfig, ParachainInfoConfig, Precompiles,
+    SessionConfig, SessionKeys, Signature, SudoConfig, SystemConfig, VestingConfig, SDN,
 };
 use sp_core::{sr25519, Pair, Public};
 
@@ -99,7 +98,7 @@ fn make_genesis(
         evm: EVMConfig {
             // We need _some_ code inserted at the precompile address so that
             // the evm will actually call the address.
-            accounts: ShibuyaNetworkPrecompiles::<()>::used_addresses()
+            accounts: Precompiles::used_addresses()
                 .map(|addr| {
                     (
                         addr,
@@ -113,6 +112,11 @@ fn make_genesis(
                 })
                 .collect(),
         },
+        base_fee: BaseFeeConfig::new(
+            sp_core::U256::from(1_000_000_000),
+            false,
+            sp_runtime::Permill::from_parts(125_000),
+        ),
         ethereum: Default::default(),
     }
 }

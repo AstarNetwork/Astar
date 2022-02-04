@@ -1,6 +1,6 @@
 [package]
 name = "local-runtime"
-version = "3.6.0"
+version = "3.7.0"
 authors = ["Stake Technologies <devops@stake.co.jp>"]
 edition = "2018"
 build = "build.rs"
@@ -15,6 +15,7 @@ pallet-balances = { git = "https://github.com/paritytech/substrate", branch = "p
 pallet-contracts = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.13", default-features = false }
 pallet-contracts-primitives = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.13", default-features = false }
 pallet-contracts-rpc-runtime-api = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.13", default-features = false }
+pallet-base-fee = { git="https://github.com/PlasmNetwork/frontier", branch="polkadot-v0.9.13", default-features=false }
 pallet-ethereum = { git="https://github.com/PlasmNetwork/frontier", branch="polkadot-v0.9.13", default-features=false }
 pallet-evm = { git="https://github.com/PlasmNetwork/frontier", branch="polkadot-v0.9.13", default-features=false }
 pallet-evm-precompile-bn128 = { git="https://github.com/PlasmNetwork/frontier", branch="polkadot-v0.9.13", default-features=false }
@@ -85,6 +86,7 @@ std = [
     "pallet-contracts-rpc-runtime-api/std",
     "pallet-custom-signatures/std",
     "pallet-dapps-staking/std",
+    "pallet-base-fee/std",
     "pallet-ethereum/std",
     "pallet-evm/std",
     "pallet-evm-precompile-simple/std",

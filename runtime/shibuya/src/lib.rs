@@ -33,7 +33,7 @@ use sp_runtime::{
     transaction_validity::{
         TransactionPriority, TransactionSource, TransactionValidity, TransactionValidityError,
     },
-    ApplyExtrinsicResult, FixedPointNumber, Perbill, Perquintill, RuntimeDebug,
+    ApplyExtrinsicResult, FixedPointNumber, Perbill, Permill, Perquintill, RuntimeDebug,
 };
 use sp_std::prelude::*;
 
@@ -48,6 +48,7 @@ pub use sp_runtime::BuildStorage;
 
 mod precompiles;
 pub use precompiles::ShibuyaNetworkPrecompiles;
+pub type Precompiles = ShibuyaNetworkPrecompiles<Runtime>;
 
 mod weights;
 
@@ -87,7 +88,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("shibuya"),
     impl_name: create_runtime_str!("shibuya"),
     authoring_version: 1,
-    spec_version: 27,
+    spec_version: 28,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 2,
@@ -555,6 +556,32 @@ impl pallet_transaction_payment::Config for Runtime {
         TargetedFeeAdjustment<Self, TargetBlockFullness, AdjustmentVariable, MinimumMultiplier>;
 }
 
+parameter_types! {
+    // Tells `pallet_base_fee` whether to calculate a new BaseFee `on_finalize` or not.
+    pub IsActive: bool = false;
+    pub DefaultBaseFeePerGas: U256 = (MILLISDN / 1_000_000).into();
+}
+
+pub struct BaseFeeThreshold;
+impl pallet_base_fee::BaseFeeThreshold for BaseFeeThreshold {
+    fn lower() -> Permill {
+        Permill::zero()
+    }
+    fn ideal() -> Permill {
+        Permill::from_parts(500_000)
+    }
+    fn upper() -> Permill {
+        Permill::from_parts(1_000_000)
+    }
+}
+
+impl pallet_base_fee::Config for Runtime {
+    type Event = Event;
+    type Threshold = BaseFeeThreshold;
+    type IsActive = IsActive;
+    type DefaultBaseFeePerGas = DefaultBaseFeePerGas;
+}
+
 /// Current approximation of the gas/s consumption considering
 /// EVM execution over compiled WASM (on 4.4Ghz CPU).
 /// Given the 500ms Weight, from which 75% only are used for transactions,
@@ -610,6 +637,7 @@ parameter_types! {
     pub BlockGasLimit: U256 = U256::from(
         NORMAL_DISPATCH_RATIO * MAXIMUM_BLOCK_WEIGHT / WEIGHT_PER_GAS
     );
+    pub PrecompilesValue: Precompiles = ShibuyaNetworkPrecompiles::<_>::new();
 }
 
 impl pallet_evm::Config for Runtime {
@@ -622,7 +650,8 @@ impl pallet_evm::Config for Runtime {
     type Currency = Balances;
     type Event = Event;
     type Runner = pallet_evm::runner::stack::Runner<Self>;
-    type Precompiles = ShibuyaNetworkPrecompiles<Self>;
+    type PrecompilesType = Precompiles;
+    type PrecompilesValue = PrecompilesValue;
     type ChainId = ChainId;
     type OnChargeTransaction = pallet_evm::EVMCurrencyAdapter<Balances, ToStakingPot>;
     type BlockGasLimit = BlockGasLimit;
@@ -693,6 +722,7 @@ construct_runtime!(
 
         EVM: pallet_evm::{Pallet, Config, Call, Storage, Event<T>} = 60,
         Ethereum: pallet_ethereum::{Pallet, Call, Storage, Event, Origin, Config} = 61,
+        BaseFee: pallet_base_fee::{Pallet, Call, Storage, Config<T>, Event} = 62,
 
         Sudo: pallet_sudo::{Pallet, Call, Storage, Event<T>, Config<T>} = 99,
     }
@@ -950,9 +980,11 @@ impl_runtime_apis! {
             data: Vec<u8>,
             value: U256,
             gas_limit: U256,
-            gas_price: Option<U256>,
+            max_fee_per_gas: Option<U256>,
+            max_priority_fee_per_gas: Option<U256>,
             nonce: Option<U256>,
             estimate: bool,
+            _access_list: Option<Vec<(H160, Vec<H256>)>>,
         ) -> Result<pallet_evm::CallInfo, sp_runtime::DispatchError> {
             let config = if estimate {
                 let mut config = <Runtime as pallet_evm::Config>::config().clone();
@@ -968,8 +1000,10 @@ impl_runtime_apis! {
                 data,
                 value,
                 gas_limit.low_u64(),
-                gas_price,
+                max_fee_per_gas,
+                max_priority_fee_per_gas,
                 nonce,
+                Vec::new(),
                 config
                     .as_ref()
                     .unwrap_or_else(|| <Runtime as pallet_evm::Config>::config()),
@@ -982,9 +1016,11 @@ impl_runtime_apis! {
             data: Vec<u8>,
             value: U256,
             gas_limit: U256,
-            gas_price: Option<U256>,
+            max_fee_per_gas: Option<U256>,
+            max_priority_fee_per_gas: Option<U256>,
             nonce: Option<U256>,
             estimate: bool,
+            _access_list: Option<Vec<(H160, Vec<H256>)>>,
         ) -> Result<pallet_evm::CreateInfo, sp_runtime::DispatchError> {
             let config = if estimate {
                 let mut config = <Runtime as pallet_evm::Config>::config().clone();
@@ -1000,8 +1036,10 @@ impl_runtime_apis! {
                 data,
                 value,
                 gas_limit.low_u64(),
-                gas_price,
+                max_fee_per_gas,
+                max_priority_fee_per_gas,
                 nonce,
+                Vec::new(),
                 config
                     .as_ref()
                     .unwrap_or(<Runtime as pallet_evm::Config>::config()),
@@ -1040,6 +1078,20 @@ impl_runtime_apis! {
                 Call::Ethereum(pallet_ethereum::Call::transact { transaction }) => Some(transaction),
                 _ => None
             }).collect::<Vec<pallet_ethereum::Transaction>>()
+        }
+
+        fn elasticity() -> Option<Permill> {
+            Some(BaseFee::elasticity())
+        }
+    }
+
+    impl fp_rpc::ConvertTransactionRuntimeApi<Block> for Runtime {
+        fn convert_transaction(
+            transaction: pallet_ethereum::Transaction
+        ) -> <Block as BlockT>::Extrinsic {
+            UncheckedExtrinsic::new_unsigned(
+                pallet_ethereum::Call::<Runtime>::transact { transaction }.into(),
+            )
         }
     }
 
