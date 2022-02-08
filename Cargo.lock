@@ -4618,7 +4618,7 @@ dependencies = [
  "pallet-contracts-primitives",
  "pallet-contracts-rpc-runtime-api",
  "pallet-custom-signatures",
- "pallet-dapps-staking 2.1.0",
+ "pallet-dapps-staking 3.0.0",
  "pallet-ethereum",
  "pallet-evm",
  "pallet-evm-precompile-bn128",
@@ -5798,6 +5798,29 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-dapps-staking"
+version = "3.0.0"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=feature/individual-claim#2ee12d00bece540d83bbc8d92097957d28b809fc"
+dependencies = [
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "num-traits",
+ "pallet-balances",
+ "pallet-session",
+ "pallet-timestamp",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "sp-arithmetic",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-staking",
+ "sp-std",
+]
+
+[[package]]
 name = "pallet-democracy"
 version = "4.0.0-dev"
 source = "git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.17#22d40c761a985482f93bbbea5ba4199bdba74f8e"
@@ -6204,12 +6227,12 @@ dependencies = [
 [[package]]
 name = "pallet-precompile-dapps-staking"
 version = "1.1.1"
-source = "git+https://github.com/AstarNetwork/astar-frame?tag=pallet-precompile-dapps-staking-1.1.1/polkadot-v0.9.17#45a78d42f6602c287a4502e2b398be1c18c4f21e"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=feature/individual-claim#2ee12d00bece540d83bbc8d92097957d28b809fc"
 dependencies = [
  "fp-evm",
  "frame-support",
  "frame-system",
- "pallet-dapps-staking 2.1.0",
+ "pallet-dapps-staking 3.0.0",
  "pallet-evm",
  "parity-scale-codec",
  "scale-info",
@@ -10181,7 +10204,7 @@ dependencies = [
  "pallet-contracts-primitives",
  "pallet-contracts-rpc-runtime-api",
  "pallet-custom-signatures",
- "pallet-dapps-staking 2.1.0",
+ "pallet-dapps-staking 3.0.0",
  "pallet-ethereum",
  "pallet-evm",
  "pallet-evm-precompile-bn128",

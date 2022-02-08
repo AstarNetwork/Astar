@@ -9,7 +9,10 @@ include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 use codec::{Decode, Encode};
 use frame_support::{
     construct_runtime, parameter_types,
-    traits::{Currency, FindAuthor, Imbalance, KeyOwnerProofSystem, Nothing, OnUnbalanced},
+    traits::{
+        Currency, FindAuthor, Imbalance, KeyOwnerProofSystem, Nothing, OnRuntimeUpgrade,
+        OnUnbalanced,
+    },
     weights::{
         constants::{RocksDbWeight, WEIGHT_PER_SECOND},
         IdentityFee, Weight,
@@ -301,10 +304,9 @@ parameter_types! {
     pub const MaxNumberOfStakersPerContract: u32 = 512;
     pub const MinimumStakingAmount: Balance = 10 * AST;
     pub const MinimumRemainingAmount: Balance = 1 * AST;
-    pub const HistoryDepth: u32 = 14;
-    pub const BonusEraDuration: u32 = 100;
     pub const MaxUnlockingChunks: u32 = 2;
     pub const UnbondingPeriod: u32 = 2;
+    pub const MaxEraStakeValues: u32 = 20;
 }
 
 impl pallet_dapps_staking::Config for Runtime {
@@ -318,11 +320,10 @@ impl pallet_dapps_staking::Config for Runtime {
     type MaxNumberOfStakersPerContract = MaxNumberOfStakersPerContract;
     type MinimumStakingAmount = MinimumStakingAmount;
     type PalletId = DappsStakingPalletId;
-    type MinimumRemainingAmount = MinimumRemainingAmount;
-    type HistoryDepth = HistoryDepth;
-    type BonusEraDuration = BonusEraDuration;
     type MaxUnlockingChunks = MaxUnlockingChunks;
     type UnbondingPeriod = UnbondingPeriod;
+    type MinimumRemainingAmount = MinimumRemainingAmount;
+    type MaxEraStakeValues = MaxEraStakeValues;
 }
 
 /// Multi-VM pointer to smart contract instance.
@@ -625,7 +626,29 @@ pub type Executive = frame_executive::Executive<
     frame_system::ChainContext<Runtime>,
     Runtime,
     AllPalletsWithSystem,
+    (DappsStakingMigrationV3,),
 >;
+
+// Migration for supporting unbonding period in dapps staking.
+pub struct DappsStakingMigrationV3;
+
+impl OnRuntimeUpgrade for DappsStakingMigrationV3 {
+    fn on_runtime_upgrade() -> frame_support::weights::Weight {
+        pallet_dapps_staking::migrations::v3::stateful_migrate::<Runtime>(
+            RuntimeBlockWeights::get().max_block / 5 * 3,
+        )
+    }
+
+    #[cfg(feature = "try-runtime")]
+    fn pre_upgrade() -> Result<(), &'static str> {
+        pallet_dapps_staking::migrations::v3::pre_migrate::<Runtime, Self>()
+    }
+
+    #[cfg(feature = "try-runtime")]
+    fn post_upgrade() -> Result<(), &'static str> {
+        pallet_dapps_staking::migrations::v3::post_migrate::<Runtime, Self>()
+    }
+}
 
 impl fp_self_contained::SelfContainedCall for Call {
     type SignedInfo = H160;
@@ -1011,6 +1034,7 @@ impl_runtime_apis! {
             let mut list = Vec::<BenchmarkList>::new();
 
             list_benchmark!(list, extra, pallet_dapps_staking, DappsStaking);
+            list_benchmark!(list, extra, pallet_balances, Balances);
 
             let storage_info = AllPalletsWithSystem::storage_info();
 
