@@ -84,7 +84,7 @@ where
 }
 
 /// Full client dependencies
-pub struct FullDeps<C, P, T, A: ChainApi> {
+pub struct FullDeps<C, P, A: ChainApi> {
     /// The client instance to use.
     pub client: Arc<C>,
     /// Transaction pool instance.
@@ -99,8 +99,6 @@ pub struct FullDeps<C, P, T, A: ChainApi> {
     pub is_authority: bool,
     /// Frontier Backend.
     pub frontier_backend: Arc<fc_db::Backend<Block>>,
-    /// Ethereum transaction conversion helper.
-    pub transaction_converter: T,
     /// EthFilterApi pool.
     pub filter_pool: FilterPool,
     /// Maximum fee history cache size.                                                                                    
@@ -110,8 +108,8 @@ pub struct FullDeps<C, P, T, A: ChainApi> {
 }
 
 /// Instantiate all RPC extensions.
-pub fn create_full<C, P, T, BE, A>(
-    deps: FullDeps<C, P, T, A>,
+pub fn create_full<C, P, BE, A>(
+    deps: FullDeps<C, P, A>,
     subscription_task_executor: SubscriptionTaskExecutor,
     overrides: Arc<OverrideHandle<Block>>,
 ) -> jsonrpc_core::IoHandler<sc_rpc::Metadata>
@@ -131,7 +129,6 @@ where
         + fp_rpc::EthereumRuntimeRPCApi<Block>
         + BlockBuilder<Block>,
     P: TransactionPool<Block = Block> + Sync + Send + 'static,
-    T: fp_rpc::ConvertTransaction<sp_runtime::OpaqueExtrinsic> + Sync + Send + 'static,
     BE: Backend<Block> + 'static,
     BE::State: StateBackend<BlakeTwo256>,
     BE::Blockchain: BlockchainBackend<Block>,
@@ -146,7 +143,6 @@ where
         deny_unsafe,
         is_authority,
         frontier_backend,
-        transaction_converter,
         filter_pool,
         fee_history_limit,
         fee_history_cache,
@@ -170,7 +166,6 @@ where
         client.clone(),
         pool.clone(),
         graph,
-        Some(transaction_converter),
         network.clone(),
         Default::default(),
         overrides.clone(),

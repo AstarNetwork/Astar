@@ -278,7 +278,6 @@ pub fn start_node(config: Configuration) -> Result<TaskManager, ServiceError> {
                 is_authority,
                 deny_unsafe,
                 frontier_backend: frontier_backend.clone(),
-                transaction_converter: local_runtime::TransactionConverter,
                 filter_pool: filter_pool.clone(),
                 fee_history_limit: FEE_HISTORY_LIMIT,
                 fee_history_cache: fee_history_cache.clone(),
