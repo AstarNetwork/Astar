@@ -1045,30 +1045,6 @@
 <span id="1045">1045</span>
 <span id="1046">1046</span>
 <span id="1047">1047</span>
-<span id="1048">1048</span>
-<span id="1049">1049</span>
-<span id="1050">1050</span>
-<span id="1051">1051</span>
-<span id="1052">1052</span>
-<span id="1053">1053</span>
-<span id="1054">1054</span>
-<span id="1055">1055</span>
-<span id="1056">1056</span>
-<span id="1057">1057</span>
-<span id="1058">1058</span>
-<span id="1059">1059</span>
-<span id="1060">1060</span>
-<span id="1061">1061</span>
-<span id="1062">1062</span>
-<span id="1063">1063</span>
-<span id="1064">1064</span>
-<span id="1065">1065</span>
-<span id="1066">1066</span>
-<span id="1067">1067</span>
-<span id="1068">1068</span>
-<span id="1069">1069</span>
-<span id="1070">1070</span>
-<span id="1071">1071</span>
 </pre><pre class="rust"><code><span class="attribute">#![<span class="ident">cfg_attr</span>(<span class="ident">not</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>), <span class="ident">no_std</span>)]</span>
 <span class="comment">// `construct_runtime!` does a lot of recursion and requires us to increase the limit to 256.</span>
 <span class="attribute">#![<span class="ident">recursion_limit</span> <span class="op">=</span> <span class="string">&quot;256&quot;</span>]</span>
@@ -1533,30 +1509,6 @@
     <span class="kw">type</span> <span class="ident">OnChargeTransaction</span> <span class="op">=</span> <span class="ident">pallet_evm::EVMCurrencyAdapter</span><span class="op">&lt;</span><span class="ident">Balances</span>, ()<span class="op">&gt;</span>;
     <span class="kw">type</span> <span class="ident">BlockGasLimit</span> <span class="op">=</span> <span class="ident">BlockGasLimit</span>;
     <span class="kw">type</span> <span class="ident">FindAuthor</span> <span class="op">=</span> <span class="ident">FindAuthorTruncated</span><span class="op">&lt;</span><span class="ident">Aura</span><span class="op">&gt;</span>;
-}
-
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">TransactionConverter</span>;
-
-<span class="kw">impl</span> <span class="ident">fp_rpc::ConvertTransaction</span><span class="op">&lt;</span><span class="ident">UncheckedExtrinsic</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">TransactionConverter</span> {
-    <span class="kw">fn</span> <span class="ident">convert_transaction</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">transaction</span>: <span class="ident">pallet_ethereum::Transaction</span>) -&gt; <span class="ident">UncheckedExtrinsic</span> {
-        <span class="ident">UncheckedExtrinsic::new_unsigned</span>(
-            <span class="ident">pallet_ethereum::Call</span>::<span class="op">&lt;</span><span class="ident">Runtime</span><span class="op">&gt;</span><span class="ident">::transact</span> { <span class="ident">transaction</span> }.<span class="ident">into</span>(),
-        )
-    }
-}
-
-<span class="kw">impl</span> <span class="ident">fp_rpc::ConvertTransaction</span><span class="op">&lt;</span><span class="ident">sp_runtime::OpaqueExtrinsic</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">TransactionConverter</span> {
-    <span class="kw">fn</span> <span class="ident">convert_transaction</span>(
-        <span class="kw-2">&amp;</span><span class="self">self</span>,
-        <span class="ident">transaction</span>: <span class="ident">pallet_ethereum::Transaction</span>,
-    ) -&gt; <span class="ident">sp_runtime::OpaqueExtrinsic</span> {
-        <span class="kw">let</span> <span class="ident">extrinsic</span> <span class="op">=</span> <span class="ident">UncheckedExtrinsic::new_unsigned</span>(
-            <span class="ident">pallet_ethereum::Call</span>::<span class="op">&lt;</span><span class="ident">Runtime</span><span class="op">&gt;</span><span class="ident">::transact</span> { <span class="ident">transaction</span> }.<span class="ident">into</span>(),
-        );
-        <span class="kw">let</span> <span class="ident">encoded</span> <span class="op">=</span> <span class="ident">extrinsic</span>.<span class="ident">encode</span>();
-        <span class="ident">sp_runtime::OpaqueExtrinsic::decode</span>(<span class="kw-2">&amp;mut</span> <span class="kw-2">&amp;</span><span class="ident">encoded</span>[..])
-            .<span class="ident">expect</span>(<span class="string">&quot;Encoded extrinsic is always valid&quot;</span>)
-    }
 }
 
 <span class="kw">impl</span> <span class="ident">pallet_ethereum::Config</span> <span class="kw">for</span> <span class="ident">Runtime</span> {

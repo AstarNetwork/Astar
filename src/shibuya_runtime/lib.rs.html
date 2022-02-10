@@ -1138,52 +1138,6 @@
 <span id="1138">1138</span>
 <span id="1139">1139</span>
 <span id="1140">1140</span>
-<span id="1141">1141</span>
-<span id="1142">1142</span>
-<span id="1143">1143</span>
-<span id="1144">1144</span>
-<span id="1145">1145</span>
-<span id="1146">1146</span>
-<span id="1147">1147</span>
-<span id="1148">1148</span>
-<span id="1149">1149</span>
-<span id="1150">1150</span>
-<span id="1151">1151</span>
-<span id="1152">1152</span>
-<span id="1153">1153</span>
-<span id="1154">1154</span>
-<span id="1155">1155</span>
-<span id="1156">1156</span>
-<span id="1157">1157</span>
-<span id="1158">1158</span>
-<span id="1159">1159</span>
-<span id="1160">1160</span>
-<span id="1161">1161</span>
-<span id="1162">1162</span>
-<span id="1163">1163</span>
-<span id="1164">1164</span>
-<span id="1165">1165</span>
-<span id="1166">1166</span>
-<span id="1167">1167</span>
-<span id="1168">1168</span>
-<span id="1169">1169</span>
-<span id="1170">1170</span>
-<span id="1171">1171</span>
-<span id="1172">1172</span>
-<span id="1173">1173</span>
-<span id="1174">1174</span>
-<span id="1175">1175</span>
-<span id="1176">1176</span>
-<span id="1177">1177</span>
-<span id="1178">1178</span>
-<span id="1179">1179</span>
-<span id="1180">1180</span>
-<span id="1181">1181</span>
-<span id="1182">1182</span>
-<span id="1183">1183</span>
-<span id="1184">1184</span>
-<span id="1185">1185</span>
-<span id="1186">1186</span>
 </pre><pre class="rust"><code><span class="doccomment">//! The Shiden Network runtime. This can be compiled with ``#[no_std]`, ready for Wasm.</span>
 
 <span class="attribute">#![<span class="ident">cfg_attr</span>(<span class="ident">not</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>), <span class="ident">no_std</span>)]</span>
@@ -1193,7 +1147,7 @@
 <span class="kw">use</span> <span class="ident">codec</span>::{<span class="ident">Decode</span>, <span class="ident">Encode</span>};
 <span class="kw">use</span> <span class="ident">frame_support</span>::{
     <span class="ident">construct_runtime</span>, <span class="ident">parameter_types</span>,
-    <span class="ident">traits</span>::{<span class="ident">Contains</span>, <span class="ident">Currency</span>, <span class="ident">FindAuthor</span>, <span class="ident">Imbalance</span>, <span class="ident">OnRuntimeUpgrade</span>, <span class="ident">OnUnbalanced</span>},
+    <span class="ident">traits</span>::{<span class="ident">Contains</span>, <span class="ident">Currency</span>, <span class="ident">FindAuthor</span>, <span class="ident">Imbalance</span>, <span class="ident">OnUnbalanced</span>},
     <span class="ident">weights</span>::{
         <span class="ident">constants</span>::{<span class="ident">BlockExecutionWeight</span>, <span class="ident">ExtrinsicBaseWeight</span>, <span class="ident">WEIGHT_PER_SECOND</span>},
         <span class="ident">DispatchClass</span>, <span class="ident">Weight</span>, <span class="ident">WeightToFeeCoefficient</span>, <span class="ident">WeightToFeeCoefficients</span>,
@@ -1274,7 +1228,7 @@
     <span class="ident">spec_name</span>: <span class="macro">create_runtime_str!</span>(<span class="string">&quot;shibuya&quot;</span>),
     <span class="ident">impl_name</span>: <span class="macro">create_runtime_str!</span>(<span class="string">&quot;shibuya&quot;</span>),
     <span class="ident">authoring_version</span>: <span class="number">1</span>,
-    <span class="ident">spec_version</span>: <span class="number">28</span>,
+    <span class="ident">spec_version</span>: <span class="number">29</span>,
     <span class="ident">impl_version</span>: <span class="number">0</span>,
     <span class="ident">apis</span>: <span class="ident">RUNTIME_API_VERSIONS</span>,
     <span class="ident">transaction_version</span>: <span class="number">2</span>,
@@ -1844,30 +1798,6 @@
     <span class="kw">type</span> <span class="ident">FindAuthor</span> <span class="op">=</span> <span class="ident">FindAuthorTruncated</span><span class="op">&lt;</span><span class="ident">Aura</span><span class="op">&gt;</span>;
 }
 
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">TransactionConverter</span>;
-
-<span class="kw">impl</span> <span class="ident">fp_rpc::ConvertTransaction</span><span class="op">&lt;</span><span class="ident">UncheckedExtrinsic</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">TransactionConverter</span> {
-    <span class="kw">fn</span> <span class="ident">convert_transaction</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">transaction</span>: <span class="ident">pallet_ethereum::Transaction</span>) -&gt; <span class="ident">UncheckedExtrinsic</span> {
-        <span class="ident">UncheckedExtrinsic::new_unsigned</span>(
-            <span class="ident">pallet_ethereum::Call</span>::<span class="op">&lt;</span><span class="ident">Runtime</span><span class="op">&gt;</span><span class="ident">::transact</span> { <span class="ident">transaction</span> }.<span class="ident">into</span>(),
-        )
-    }
-}
-
-<span class="kw">impl</span> <span class="ident">fp_rpc::ConvertTransaction</span><span class="op">&lt;</span><span class="ident">sp_runtime::OpaqueExtrinsic</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">TransactionConverter</span> {
-    <span class="kw">fn</span> <span class="ident">convert_transaction</span>(
-        <span class="kw-2">&amp;</span><span class="self">self</span>,
-        <span class="ident">transaction</span>: <span class="ident">pallet_ethereum::Transaction</span>,
-    ) -&gt; <span class="ident">sp_runtime::OpaqueExtrinsic</span> {
-        <span class="kw">let</span> <span class="ident">extrinsic</span> <span class="op">=</span> <span class="ident">UncheckedExtrinsic::new_unsigned</span>(
-            <span class="ident">pallet_ethereum::Call</span>::<span class="op">&lt;</span><span class="ident">Runtime</span><span class="op">&gt;</span><span class="ident">::transact</span> { <span class="ident">transaction</span> }.<span class="ident">into</span>(),
-        );
-        <span class="kw">let</span> <span class="ident">encoded</span> <span class="op">=</span> <span class="ident">extrinsic</span>.<span class="ident">encode</span>();
-        <span class="ident">sp_runtime::OpaqueExtrinsic::decode</span>(<span class="kw-2">&amp;mut</span> <span class="kw-2">&amp;</span><span class="ident">encoded</span>[..])
-            .<span class="ident">expect</span>(<span class="string">&quot;Encoded extrinsic is always valid&quot;</span>)
-    }
-}
-
 <span class="kw">impl</span> <span class="ident">pallet_ethereum::Config</span> <span class="kw">for</span> <span class="ident">Runtime</span> {
     <span class="kw">type</span> <span class="ident">Event</span> <span class="op">=</span> <span class="ident">Event</span>;
     <span class="kw">type</span> <span class="ident">StateRoot</span> <span class="op">=</span> <span class="ident">pallet_ethereum::IntermediateStateRoot</span>;
@@ -1961,29 +1891,7 @@
     <span class="ident">frame_system::ChainContext</span><span class="op">&lt;</span><span class="ident">Runtime</span><span class="op">&gt;</span>,
     <span class="ident">Runtime</span>,
     <span class="ident">AllPallets</span>,
-    (<span class="ident">DappsStakingMigrationV2</span>,),
 <span class="op">&gt;</span>;
-
-<span class="comment">// Migration for supporting unbonding period in dapps staking.</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">DappsStakingMigrationV2</span>;
-
-<span class="kw">impl</span> <span class="ident">OnRuntimeUpgrade</span> <span class="kw">for</span> <span class="ident">DappsStakingMigrationV2</span> {
-    <span class="kw">fn</span> <span class="ident">on_runtime_upgrade</span>() -&gt; <span class="ident">frame_support::weights::Weight</span> {
-        <span class="ident">pallet_dapps_staking::migrations::v2::stateful_migrate</span>::<span class="op">&lt;</span><span class="ident">Runtime</span><span class="op">&gt;</span>(
-            <span class="ident">RuntimeBlockWeights::get</span>().<span class="ident">max_block</span> <span class="op">/</span> <span class="number">5</span> <span class="op">*</span> <span class="number">3</span>,
-        )
-    }
-
-    <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;try-runtime&quot;</span>)]</span>
-    <span class="kw">fn</span> <span class="ident">pre_upgrade</span>() -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="kw-2">&amp;</span><span class="lifetime">&#39;static</span> <span class="ident">str</span><span class="op">&gt;</span> {
-        <span class="ident">pallet_dapps_staking::migrations::v2::pre_migrate</span>::<span class="op">&lt;</span><span class="ident">Runtime</span>, <span class="self">Self</span><span class="op">&gt;</span>()
-    }
-
-    <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;try-runtime&quot;</span>)]</span>
-    <span class="kw">fn</span> <span class="ident">post_upgrade</span>() -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="kw-2">&amp;</span><span class="lifetime">&#39;static</span> <span class="ident">str</span><span class="op">&gt;</span> {
-        <span class="ident">pallet_dapps_staking::migrations::v2::post_migrate</span>::<span class="op">&lt;</span><span class="ident">Runtime</span>, <span class="self">Self</span><span class="op">&gt;</span>()
-    }
-}
 
 <span class="kw">impl</span> <span class="ident">fp_self_contained::SelfContainedCall</span> <span class="kw">for</span> <span class="ident">Call</span> {
     <span class="kw">type</span> <span class="ident">SignedInfo</span> <span class="op">=</span> <span class="ident">H160</span>;

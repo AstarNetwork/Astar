@@ -405,7 +405,6 @@
 <span id="405">405</span>
 <span id="406">406</span>
 <span id="407">407</span>
-<span id="408">408</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Local Service and ServiceFactory implementation. Specialized wrapper over substrate service.</span>
 
 <span class="kw">use</span> <span class="ident">fc_consensus::FrontierBlockImport</span>;
@@ -686,7 +685,6 @@
                 <span class="ident">is_authority</span>,
                 <span class="ident">deny_unsafe</span>,
                 <span class="ident">frontier_backend</span>: <span class="ident">frontier_backend</span>.<span class="ident">clone</span>(),
-                <span class="ident">transaction_converter</span>: <span class="ident">local_runtime::TransactionConverter</span>,
                 <span class="ident">filter_pool</span>: <span class="ident">filter_pool</span>.<span class="ident">clone</span>(),
                 <span class="ident">fee_history_limit</span>: <span class="ident">FEE_HISTORY_LIMIT</span>,
                 <span class="ident">fee_history_cache</span>: <span class="ident">fee_history_cache</span>.<span class="ident">clone</span>(),

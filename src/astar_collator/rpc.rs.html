@@ -209,11 +209,6 @@
 <span id="209">209</span>
 <span id="210">210</span>
 <span id="211">211</span>
-<span id="212">212</span>
-<span id="213">213</span>
-<span id="214">214</span>
-<span id="215">215</span>
-<span id="216">216</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Astar RPCs implementation.</span>
 
 <span class="kw">use</span> <span class="ident">fc_rpc</span>::{
@@ -300,7 +295,7 @@
 }
 
 <span class="doccomment">/// Full client dependencies</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">FullDeps</span><span class="op">&lt;</span><span class="ident">C</span>, <span class="ident">P</span>, <span class="ident">T</span>, <span class="ident">A</span>: <span class="ident">ChainApi</span><span class="op">&gt;</span> {
+<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">FullDeps</span><span class="op">&lt;</span><span class="ident">C</span>, <span class="ident">P</span>, <span class="ident">A</span>: <span class="ident">ChainApi</span><span class="op">&gt;</span> {
     <span class="doccomment">/// The client instance to use.</span>
     <span class="kw">pub</span> <span class="ident">client</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">C</span><span class="op">&gt;</span>,
     <span class="doccomment">/// Transaction pool instance.</span>
@@ -315,8 +310,6 @@
     <span class="kw">pub</span> <span class="ident">is_authority</span>: <span class="ident">bool</span>,
     <span class="doccomment">/// Frontier Backend.</span>
     <span class="kw">pub</span> <span class="ident">frontier_backend</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">fc_db::Backend</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-    <span class="doccomment">/// Ethereum transaction conversion helper.</span>
-    <span class="kw">pub</span> <span class="ident">transaction_converter</span>: <span class="ident">T</span>,
     <span class="doccomment">/// EthFilterApi pool.</span>
     <span class="kw">pub</span> <span class="ident">filter_pool</span>: <span class="ident">FilterPool</span>,
     <span class="doccomment">/// Maximum fee history cache size.                                                                                    </span>
@@ -326,8 +319,8 @@
 }
 
 <span class="doccomment">/// Instantiate all RPC extensions.</span>
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">create_full</span><span class="op">&lt;</span><span class="ident">C</span>, <span class="ident">P</span>, <span class="ident">T</span>, <span class="ident">BE</span>, <span class="ident">A</span><span class="op">&gt;</span>(
-    <span class="ident">deps</span>: <span class="ident">FullDeps</span><span class="op">&lt;</span><span class="ident">C</span>, <span class="ident">P</span>, <span class="ident">T</span>, <span class="ident">A</span><span class="op">&gt;</span>,
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">create_full</span><span class="op">&lt;</span><span class="ident">C</span>, <span class="ident">P</span>, <span class="ident">BE</span>, <span class="ident">A</span><span class="op">&gt;</span>(
+    <span class="ident">deps</span>: <span class="ident">FullDeps</span><span class="op">&lt;</span><span class="ident">C</span>, <span class="ident">P</span>, <span class="ident">A</span><span class="op">&gt;</span>,
     <span class="ident">subscription_task_executor</span>: <span class="ident">SubscriptionTaskExecutor</span>,
     <span class="ident">overrides</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">OverrideHandle</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span><span class="op">&gt;</span>,
 ) -&gt; <span class="ident">jsonrpc_core::IoHandler</span><span class="op">&lt;</span><span class="ident">sc_rpc::Metadata</span><span class="op">&gt;</span>
@@ -347,7 +340,6 @@
         <span class="op">+</span> <span class="ident">fp_rpc::EthereumRuntimeRPCApi</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span>
         <span class="op">+</span> <span class="ident">BlockBuilder</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span>,
     <span class="ident">P</span>: <span class="ident">TransactionPool</span><span class="op">&lt;</span><span class="ident">Block</span> <span class="op">=</span> <span class="ident">Block</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Sync</span> <span class="op">+</span> <span class="ident">Send</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
-    <span class="ident">T</span>: <span class="ident">fp_rpc::ConvertTransaction</span><span class="op">&lt;</span><span class="ident">sp_runtime::OpaqueExtrinsic</span><span class="op">&gt;</span> <span class="op">+</span> <span class="ident">Sync</span> <span class="op">+</span> <span class="ident">Send</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
     <span class="ident">BE</span>: <span class="ident">Backend</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span> <span class="op">+</span> <span class="lifetime">&#39;static</span>,
     <span class="ident">BE::State</span>: <span class="ident">StateBackend</span><span class="op">&lt;</span><span class="ident">BlakeTwo256</span><span class="op">&gt;</span>,
     <span class="ident">BE::Blockchain</span>: <span class="ident">BlockchainBackend</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span>,
@@ -362,7 +354,6 @@
         <span class="ident">deny_unsafe</span>,
         <span class="ident">is_authority</span>,
         <span class="ident">frontier_backend</span>,
-        <span class="ident">transaction_converter</span>,
         <span class="ident">filter_pool</span>,
         <span class="ident">fee_history_limit</span>,
         <span class="ident">fee_history_cache</span>,
@@ -386,7 +377,6 @@
         <span class="ident">client</span>.<span class="ident">clone</span>(),
         <span class="ident">pool</span>.<span class="ident">clone</span>(),
         <span class="ident">graph</span>,
-        <span class="prelude-val">Some</span>(<span class="ident">transaction_converter</span>),
         <span class="ident">network</span>.<span class="ident">clone</span>(),
         <span class="ident">Default::default</span>(),
         <span class="ident">overrides</span>.<span class="ident">clone</span>(),
