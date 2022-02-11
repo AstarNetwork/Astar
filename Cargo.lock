@@ -162,7 +162,7 @@ checksum = "9b34d609dfbaf33d6889b2b7106d3ca345eacad44200913df5ba02bfd31d2ba9"
 
 [[package]]
 name = "astar-collator"
-version = "3.7.1"
+version = "3.8.0"
 dependencies = [
  "astar-runtime",
  "async-trait",
@@ -179,8 +179,8 @@ dependencies = [
  "fc-mapping-sync",
  "fc-rpc",
  "fc-rpc-core",
- "fp-consensus",
- "fp-rpc",
+ "fp-consensus 2.0.0-dev (git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.13)",
+ "fp-rpc 3.0.0-dev (git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.13)",
  "frame-benchmarking",
  "frame-benchmarking-cli",
  "frame-system",
@@ -191,8 +191,8 @@ dependencies = [
  "local-runtime",
  "log",
  "pallet-contracts-rpc",
- "pallet-ethereum",
- "pallet-evm",
+ "pallet-ethereum 4.0.0-dev (git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.13)",
+ "pallet-evm 6.0.0-dev (git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.13)",
  "pallet-transaction-payment",
  "pallet-transaction-payment-rpc",
  "pallet-xcm",
@@ -248,7 +248,7 @@ dependencies = [
 
 [[package]]
 name = "astar-runtime"
-version = "3.7.1"
+version = "3.8.0"
 dependencies = [
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-parachain-system",
@@ -256,8 +256,8 @@ dependencies = [
  "cumulus-primitives-timestamp",
  "cumulus-primitives-utility",
  "evm 0.33.1 (git+https://github.com/PlasmNetwork/evm?branch=polkadot-v0.9.13)",
- "fp-rpc",
- "fp-self-contained",
+ "fp-rpc 3.0.0-dev (git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.13)",
+ "fp-self-contained 1.0.0-dev (git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.13)",
  "frame-benchmarking",
  "frame-executive",
  "frame-support",
@@ -268,19 +268,19 @@ dependencies = [
  "pallet-aura",
  "pallet-authorship",
  "pallet-balances",
- "pallet-base-fee",
+ "pallet-base-fee 1.0.0 (git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.13)",
  "pallet-block-reward",
  "pallet-collator-selection 3.0.0 (git+https://github.com/AstarNetwork/astar-frame?tag=pallet-collator-selection-3.0.0/polkadot-0.9.13)",
  "pallet-collective",
  "pallet-custom-signatures",
  "pallet-dapps-staking 1.1.2",
- "pallet-ethereum",
- "pallet-evm",
- "pallet-evm-precompile-bn128",
- "pallet-evm-precompile-dispatch",
- "pallet-evm-precompile-modexp",
- "pallet-evm-precompile-sha3fips",
- "pallet-evm-precompile-simple",
+ "pallet-ethereum 4.0.0-dev (git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.13)",
+ "pallet-evm 6.0.0-dev (git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.13)",
+ "pallet-evm-precompile-bn128 2.0.0-dev (git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.13)",
+ "pallet-evm-precompile-dispatch 2.0.0-dev (git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.13)",
+ "pallet-evm-precompile-modexp 2.0.0-dev (git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.13)",
+ "pallet-evm-precompile-sha3fips 2.0.0-dev (git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.13)",
+ "pallet-evm-precompile-simple 2.0.0-dev (git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.13)",
  "pallet-identity",
  "pallet-multisig",
  "pallet-session",
@@ -2166,8 +2166,8 @@ dependencies = [
  "async-trait",
  "derive_more",
  "fc-db",
- "fp-consensus",
- "fp-rpc",
+ "fp-consensus 2.0.0-dev (git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.13)",
+ "fp-rpc 3.0.0-dev (git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.13)",
  "futures 0.3.21",
  "log",
  "parity-scale-codec",
@@ -2189,10 +2189,10 @@ name = "fc-db"
 version = "2.0.0-dev"
 source = "git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.13#a435101313b0f0d8ff0bed0940a0fcfdaa41b656"
 dependencies = [
- "fp-storage",
+ "fp-storage 2.0.0 (git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.13)",
  "kvdb",
  "kvdb-rocksdb",
- "pallet-ethereum",
+ "pallet-ethereum 4.0.0-dev (git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.13)",
  "parity-scale-codec",
  "parking_lot 0.11.2",
  "sp-core",
@@ -2207,8 +2207,8 @@ source = "git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.13#a
 dependencies = [
  "fc-consensus",
  "fc-db",
- "fp-consensus",
- "fp-rpc",
+ "fp-consensus 2.0.0-dev (git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.13)",
+ "fp-rpc 3.0.0-dev (git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.13)",
  "futures 0.3.21",
  "futures-timer 3.0.2",
  "log",
@@ -2229,10 +2229,10 @@ dependencies = [
  "fc-consensus",
  "fc-db",
  "fc-rpc-core",
- "fp-consensus",
- "fp-evm",
- "fp-rpc",
- "fp-storage",
+ "fp-consensus 2.0.0-dev (git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.13)",
+ "fp-evm 3.0.0-dev (git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.13)",
+ "fp-rpc 3.0.0-dev (git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.13)",
+ "fp-storage 2.0.0 (git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.13)",
  "futures 0.3.21",
  "jsonrpc-core",
  "jsonrpc-core-client",
@@ -2241,8 +2241,8 @@ dependencies = [
  "libsecp256k1 0.3.5",
  "log",
  "lru 0.6.6",
- "pallet-ethereum",
- "pallet-evm",
+ "pallet-ethereum 4.0.0-dev (git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.13)",
+ "pallet-evm 6.0.0-dev (git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.13)",
  "parity-scale-codec",
  "parking_lot 0.11.2",
  "rand 0.7.3",
@@ -2375,6 +2375,20 @@ dependencies = [
 [[package]]
 name = "fp-consensus"
 version = "2.0.0-dev"
+source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.13#a435101313b0f0d8ff0bed0940a0fcfdaa41b656"
+dependencies = [
+ "ethereum",
+ "parity-scale-codec",
+ "rlp",
+ "sha3 0.8.2",
+ "sp-core",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
+name = "fp-consensus"
+version = "2.0.0-dev"
 source = "git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.13#a435101313b0f0d8ff0bed0940a0fcfdaa41b656"
 dependencies = [
  "ethereum",
@@ -2383,6 +2397,18 @@ dependencies = [
  "sha3 0.8.2",
  "sp-core",
  "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
+name = "fp-evm"
+version = "3.0.0-dev"
+source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.13#a435101313b0f0d8ff0bed0940a0fcfdaa41b656"
+dependencies = [
+ "evm 0.33.1 (git+https://github.com/AstarNetwork/evm?branch=polkadot-v0.9.13)",
+ "parity-scale-codec",
+ "serde",
+ "sp-core",
  "sp-std",
 ]
 
@@ -2401,11 +2427,11 @@ dependencies = [
 [[package]]
 name = "fp-rpc"
 version = "3.0.0-dev"
-source = "git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.13#a435101313b0f0d8ff0bed0940a0fcfdaa41b656"
+source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.13#a435101313b0f0d8ff0bed0940a0fcfdaa41b656"
 dependencies = [
  "ethereum",
  "ethereum-types",
- "fp-evm",
+ "fp-evm 3.0.0-dev (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.13)",
  "parity-scale-codec",
  "scale-info",
  "sp-api",
@@ -2413,6 +2439,40 @@ dependencies = [
  "sp-io",
  "sp-runtime",
  "sp-std",
+]
+
+[[package]]
+name = "fp-rpc"
+version = "3.0.0-dev"
+source = "git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.13#a435101313b0f0d8ff0bed0940a0fcfdaa41b656"
+dependencies = [
+ "ethereum",
+ "ethereum-types",
+ "fp-evm 3.0.0-dev (git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.13)",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-api",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
+name = "fp-self-contained"
+version = "1.0.0-dev"
+source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.13#a435101313b0f0d8ff0bed0940a0fcfdaa41b656"
+dependencies = [
+ "ethereum",
+ "frame-support",
+ "parity-scale-codec",
+ "parity-util-mem",
+ "scale-info",
+ "serde",
+ "sha3 0.8.2",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
 ]
 
 [[package]]
@@ -2431,6 +2491,11 @@ dependencies = [
  "sp-io",
  "sp-runtime",
 ]
+
+[[package]]
+name = "fp-storage"
+version = "2.0.0"
+source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.13#a435101313b0f0d8ff0bed0940a0fcfdaa41b656"
 
 [[package]]
 name = "fp-storage"
@@ -4302,11 +4367,11 @@ checksum = "687387ff42ec7ea4f2149035a5675fedb675d26f98db90a1846ac63d3addb5f5"
 
 [[package]]
 name = "local-runtime"
-version = "3.7.1"
+version = "3.8.0"
 dependencies = [
- "evm 0.33.1 (git+https://github.com/PlasmNetwork/evm?branch=polkadot-v0.9.13)",
- "fp-rpc",
- "fp-self-contained",
+ "evm 0.33.1 (git+https://github.com/AstarNetwork/evm?branch=polkadot-v0.9.13)",
+ "fp-rpc 3.0.0-dev (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.13)",
+ "fp-self-contained 1.0.0-dev (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.13)",
  "frame-benchmarking",
  "frame-executive",
  "frame-support",
@@ -4317,21 +4382,22 @@ dependencies = [
  "hex-literal",
  "pallet-aura",
  "pallet-balances",
- "pallet-base-fee",
+ "pallet-base-fee 1.0.0 (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.13)",
  "pallet-block-reward",
  "pallet-contracts",
  "pallet-contracts-primitives",
  "pallet-contracts-rpc-runtime-api",
  "pallet-custom-signatures",
- "pallet-dapps-staking 1.1.2",
- "pallet-ethereum",
- "pallet-evm",
- "pallet-evm-precompile-bn128",
- "pallet-evm-precompile-dispatch",
- "pallet-evm-precompile-modexp",
- "pallet-evm-precompile-sha3fips",
- "pallet-evm-precompile-simple",
+ "pallet-dapps-staking 2.0.1 (git+https://github.com/AstarNetwork/astar-frame?tag=pallet-dapps-staking-2.0.1/polkadot-0.9.13)",
+ "pallet-ethereum 4.0.0-dev (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.13)",
+ "pallet-evm 6.0.0-dev (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.13)",
+ "pallet-evm-precompile-bn128 2.0.0-dev (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.13)",
+ "pallet-evm-precompile-dispatch 2.0.0-dev (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.13)",
+ "pallet-evm-precompile-modexp 2.0.0-dev (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.13)",
+ "pallet-evm-precompile-sha3fips 2.0.0-dev (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.13)",
+ "pallet-evm-precompile-simple 2.0.0-dev (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.13)",
  "pallet-grandpa",
+ "pallet-precompile-dapps-staking",
  "pallet-randomness-collective-flip",
  "pallet-sudo",
  "pallet-timestamp",
@@ -5142,11 +5208,26 @@ dependencies = [
 [[package]]
 name = "pallet-base-fee"
 version = "1.0.0"
+source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.13#a435101313b0f0d8ff0bed0940a0fcfdaa41b656"
+dependencies = [
+ "frame-support",
+ "frame-system",
+ "pallet-evm 6.0.0-dev (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.13)",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "sp-core",
+ "sp-runtime",
+]
+
+[[package]]
+name = "pallet-base-fee"
+version = "1.0.0"
 source = "git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.13#a435101313b0f0d8ff0bed0940a0fcfdaa41b656"
 dependencies = [
  "frame-support",
  "frame-system",
- "pallet-evm",
+ "pallet-evm 6.0.0-dev (git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.13)",
  "parity-scale-codec",
  "scale-info",
  "serde",
@@ -5384,7 +5465,6 @@ name = "pallet-dapps-staking"
 version = "1.1.2"
 source = "git+https://github.com/AstarNetwork/astar-frame?tag=pallet-dapps-staking-1.1.2/polkadot-0.9.13#02203f8089318df7876853f88e84baed8fa2d791"
 dependencies = [
- "frame-benchmarking",
  "frame-support",
  "frame-system",
  "num-traits",
@@ -5417,6 +5497,50 @@ dependencies = [
  "parity-scale-codec",
  "scale-info",
  "serde",
+ "sp-arithmetic",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-staking",
+ "sp-std",
+]
+
+[[package]]
+name = "pallet-dapps-staking"
+version = "2.0.1"
+source = "git+https://github.com/AstarNetwork/astar-frame?tag=pallet-dapps-staking-2.0.1/polkadot-0.9.13#98682f83a6fb461c7601628503614e7e2f72d318"
+dependencies = [
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "num-traits",
+ "pallet-balances",
+ "pallet-session",
+ "pallet-timestamp",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "sp-arithmetic",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-staking",
+ "sp-std",
+]
+
+[[package]]
+name = "pallet-dapps-staking"
+version = "2.0.1"
+source = "git+https://github.com/AstarNetwork/astar-frame?tag=pallet-precompile-dapps-staking-1.0.0/polkadot-0.9.13#0bae7b22c3282ffe0d791f1493e05435b66e33e8"
+dependencies = [
+ "frame-support",
+ "frame-system",
+ "num-traits",
+ "pallet-balances",
+ "pallet-session",
+ "pallet-timestamp",
+ "parity-scale-codec",
+ "scale-info",
  "sp-arithmetic",
  "sp-core",
  "sp-io",
@@ -5481,21 +5605,51 @@ dependencies = [
 [[package]]
 name = "pallet-ethereum"
 version = "4.0.0-dev"
+source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.13#a435101313b0f0d8ff0bed0940a0fcfdaa41b656"
+dependencies = [
+ "ethereum",
+ "ethereum-types",
+ "evm 0.33.1 (git+https://github.com/AstarNetwork/evm?branch=polkadot-v0.9.13)",
+ "fp-consensus 2.0.0-dev (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.13)",
+ "fp-evm 3.0.0-dev (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.13)",
+ "fp-rpc 3.0.0-dev (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.13)",
+ "fp-self-contained 1.0.0-dev (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.13)",
+ "fp-storage 2.0.0 (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.13)",
+ "frame-support",
+ "frame-system",
+ "num_enum",
+ "pallet-balances",
+ "pallet-evm 6.0.0-dev (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.13)",
+ "pallet-timestamp",
+ "parity-scale-codec",
+ "rlp",
+ "rustc-hex",
+ "scale-info",
+ "serde",
+ "sha3 0.8.2",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
+name = "pallet-ethereum"
+version = "4.0.0-dev"
 source = "git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.13#a435101313b0f0d8ff0bed0940a0fcfdaa41b656"
 dependencies = [
  "ethereum",
  "ethereum-types",
  "evm 0.33.1 (git+https://github.com/AstarNetwork/evm?branch=polkadot-v0.9.13)",
- "fp-consensus",
- "fp-evm",
- "fp-rpc",
- "fp-self-contained",
- "fp-storage",
+ "fp-consensus 2.0.0-dev (git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.13)",
+ "fp-evm 3.0.0-dev (git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.13)",
+ "fp-rpc 3.0.0-dev (git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.13)",
+ "fp-self-contained 1.0.0-dev (git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.13)",
+ "fp-storage 2.0.0 (git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.13)",
  "frame-support",
  "frame-system",
  "num_enum",
  "pallet-balances",
- "pallet-evm",
+ "pallet-evm 6.0.0-dev (git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.13)",
  "pallet-timestamp",
  "parity-scale-codec",
  "rlp",
@@ -5511,12 +5665,40 @@ dependencies = [
 [[package]]
 name = "pallet-evm"
 version = "6.0.0-dev"
+source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.13#a435101313b0f0d8ff0bed0940a0fcfdaa41b656"
+dependencies = [
+ "evm 0.33.1 (git+https://github.com/AstarNetwork/evm?branch=polkadot-v0.9.13)",
+ "evm-gasometer 0.33.0 (git+https://github.com/AstarNetwork/evm?branch=polkadot-v0.9.13)",
+ "evm-runtime 0.33.0 (git+https://github.com/AstarNetwork/evm?branch=polkadot-v0.9.13)",
+ "fp-evm 3.0.0-dev (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.13)",
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "hex",
+ "log",
+ "pallet-balances",
+ "pallet-timestamp",
+ "parity-scale-codec",
+ "primitive-types",
+ "rlp",
+ "scale-info",
+ "serde",
+ "sha3 0.8.2",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
+name = "pallet-evm"
+version = "6.0.0-dev"
 source = "git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.13#a435101313b0f0d8ff0bed0940a0fcfdaa41b656"
 dependencies = [
  "evm 0.33.1 (git+https://github.com/AstarNetwork/evm?branch=polkadot-v0.9.13)",
  "evm-gasometer 0.33.0 (git+https://github.com/AstarNetwork/evm?branch=polkadot-v0.9.13)",
  "evm-runtime 0.33.0 (git+https://github.com/AstarNetwork/evm?branch=polkadot-v0.9.13)",
- "fp-evm",
+ "fp-evm 3.0.0-dev (git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.13)",
  "frame-benchmarking",
  "frame-support",
  "frame-system",
@@ -5539,9 +5721,20 @@ dependencies = [
 [[package]]
 name = "pallet-evm-precompile-bn128"
 version = "2.0.0-dev"
+source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.13#a435101313b0f0d8ff0bed0940a0fcfdaa41b656"
+dependencies = [
+ "fp-evm 3.0.0-dev (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.13)",
+ "sp-core",
+ "sp-io",
+ "substrate-bn",
+]
+
+[[package]]
+name = "pallet-evm-precompile-bn128"
+version = "2.0.0-dev"
 source = "git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.13#a435101313b0f0d8ff0bed0940a0fcfdaa41b656"
 dependencies = [
- "fp-evm",
+ "fp-evm 3.0.0-dev (git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.13)",
  "sp-core",
  "sp-io",
  "substrate-bn",
@@ -5550,12 +5743,36 @@ dependencies = [
 [[package]]
 name = "pallet-evm-precompile-dispatch"
 version = "2.0.0-dev"
+source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.13#a435101313b0f0d8ff0bed0940a0fcfdaa41b656"
+dependencies = [
+ "fp-evm 3.0.0-dev (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.13)",
+ "frame-support",
+ "pallet-evm 6.0.0-dev (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.13)",
+ "parity-scale-codec",
+ "sp-core",
+ "sp-io",
+]
+
+[[package]]
+name = "pallet-evm-precompile-dispatch"
+version = "2.0.0-dev"
 source = "git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.13#a435101313b0f0d8ff0bed0940a0fcfdaa41b656"
 dependencies = [
- "fp-evm",
+ "fp-evm 3.0.0-dev (git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.13)",
  "frame-support",
- "pallet-evm",
+ "pallet-evm 6.0.0-dev (git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.13)",
  "parity-scale-codec",
+ "sp-core",
+ "sp-io",
+]
+
+[[package]]
+name = "pallet-evm-precompile-modexp"
+version = "2.0.0-dev"
+source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.13#a435101313b0f0d8ff0bed0940a0fcfdaa41b656"
+dependencies = [
+ "fp-evm 3.0.0-dev (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.13)",
+ "num",
  "sp-core",
  "sp-io",
 ]
@@ -5565,7 +5782,7 @@ name = "pallet-evm-precompile-modexp"
 version = "2.0.0-dev"
 source = "git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.13#a435101313b0f0d8ff0bed0940a0fcfdaa41b656"
 dependencies = [
- "fp-evm",
+ "fp-evm 3.0.0-dev (git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.13)",
  "num",
  "sp-core",
  "sp-io",
@@ -5574,9 +5791,20 @@ dependencies = [
 [[package]]
 name = "pallet-evm-precompile-sha3fips"
 version = "2.0.0-dev"
+source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.13#a435101313b0f0d8ff0bed0940a0fcfdaa41b656"
+dependencies = [
+ "fp-evm 3.0.0-dev (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.13)",
+ "sp-core",
+ "sp-io",
+ "tiny-keccak",
+]
+
+[[package]]
+name = "pallet-evm-precompile-sha3fips"
+version = "2.0.0-dev"
 source = "git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.13#a435101313b0f0d8ff0bed0940a0fcfdaa41b656"
 dependencies = [
- "fp-evm",
+ "fp-evm 3.0.0-dev (git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.13)",
  "sp-core",
  "sp-io",
  "tiny-keccak",
@@ -5585,9 +5813,20 @@ dependencies = [
 [[package]]
 name = "pallet-evm-precompile-simple"
 version = "2.0.0-dev"
+source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.13#a435101313b0f0d8ff0bed0940a0fcfdaa41b656"
+dependencies = [
+ "fp-evm 3.0.0-dev (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.13)",
+ "ripemd160",
+ "sp-core",
+ "sp-io",
+]
+
+[[package]]
+name = "pallet-evm-precompile-simple"
+version = "2.0.0-dev"
 source = "git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.13#a435101313b0f0d8ff0bed0940a0fcfdaa41b656"
 dependencies = [
- "fp-evm",
+ "fp-evm 3.0.0-dev (git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.13)",
  "ripemd160",
  "sp-core",
  "sp-io",
@@ -5777,6 +6016,24 @@ dependencies = [
  "serde",
  "sp-runtime",
  "sp-staking",
+ "sp-std",
+]
+
+[[package]]
+name = "pallet-precompile-dapps-staking"
+version = "1.0.0"
+source = "git+https://github.com/AstarNetwork/astar-frame?tag=pallet-precompile-dapps-staking-1.0.0/polkadot-0.9.13#0bae7b22c3282ffe0d791f1493e05435b66e33e8"
+dependencies = [
+ "evm 0.33.1 (git+https://github.com/AstarNetwork/evm?branch=polkadot-v0.9.13)",
+ "fp-evm 3.0.0-dev (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.13)",
+ "frame-support",
+ "frame-system",
+ "pallet-dapps-staking 2.0.1 (git+https://github.com/AstarNetwork/astar-frame?tag=pallet-precompile-dapps-staking-1.0.0/polkadot-0.9.13)",
+ "pallet-evm 6.0.0-dev (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.13)",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-core",
+ "sp-runtime",
  "sp-std",
 ]
 
@@ -9367,7 +9624,7 @@ dependencies = [
 
 [[package]]
 name = "shibuya-runtime"
-version = "3.7.1"
+version = "3.8.0"
 dependencies = [
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-parachain-system",
@@ -9375,8 +9632,8 @@ dependencies = [
  "cumulus-primitives-timestamp",
  "cumulus-primitives-utility",
  "evm 0.33.1 (git+https://github.com/PlasmNetwork/evm?branch=polkadot-v0.9.13)",
- "fp-rpc",
- "fp-self-contained",
+ "fp-rpc 3.0.0-dev (git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.13)",
+ "fp-self-contained 1.0.0-dev (git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.13)",
  "frame-benchmarking",
  "frame-executive",
  "frame-support",
@@ -9388,19 +9645,19 @@ dependencies = [
  "pallet-aura",
  "pallet-authorship",
  "pallet-balances",
- "pallet-base-fee",
+ "pallet-base-fee 1.0.0 (git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.13)",
  "pallet-block-reward",
  "pallet-collator-selection 3.0.0 (git+https://github.com/paritytech/cumulus?branch=polkadot-v0.9.13)",
  "pallet-collective",
  "pallet-custom-signatures",
  "pallet-dapps-staking 2.0.0",
- "pallet-ethereum",
- "pallet-evm",
- "pallet-evm-precompile-bn128",
- "pallet-evm-precompile-dispatch",
- "pallet-evm-precompile-modexp",
- "pallet-evm-precompile-sha3fips",
- "pallet-evm-precompile-simple",
+ "pallet-ethereum 4.0.0-dev (git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.13)",
+ "pallet-evm 6.0.0-dev (git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.13)",
+ "pallet-evm-precompile-bn128 2.0.0-dev (git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.13)",
+ "pallet-evm-precompile-dispatch 2.0.0-dev (git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.13)",
+ "pallet-evm-precompile-modexp 2.0.0-dev (git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.13)",
+ "pallet-evm-precompile-sha3fips 2.0.0-dev (git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.13)",
+ "pallet-evm-precompile-simple 2.0.0-dev (git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.13)",
  "pallet-identity",
  "pallet-multisig",
  "pallet-session",
@@ -9435,7 +9692,7 @@ dependencies = [
 
 [[package]]
 name = "shiden-runtime"
-version = "3.7.1"
+version = "3.8.0"
 dependencies = [
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-parachain-system",
@@ -9443,8 +9700,8 @@ dependencies = [
  "cumulus-primitives-timestamp",
  "cumulus-primitives-utility",
  "evm 0.33.1 (git+https://github.com/PlasmNetwork/evm?branch=polkadot-v0.9.13)",
- "fp-rpc",
- "fp-self-contained",
+ "fp-rpc 3.0.0-dev (git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.13)",
+ "fp-self-contained 1.0.0-dev (git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.13)",
  "frame-benchmarking",
  "frame-executive",
  "frame-support",
@@ -9456,19 +9713,19 @@ dependencies = [
  "pallet-aura",
  "pallet-authorship",
  "pallet-balances",
- "pallet-base-fee",
+ "pallet-base-fee 1.0.0 (git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.13)",
  "pallet-block-reward",
  "pallet-collator-selection 3.0.0 (git+https://github.com/paritytech/cumulus?branch=polkadot-v0.9.13)",
  "pallet-collective",
  "pallet-custom-signatures",
  "pallet-dapps-staking 2.0.0",
- "pallet-ethereum",
- "pallet-evm",
- "pallet-evm-precompile-bn128",
- "pallet-evm-precompile-dispatch",
- "pallet-evm-precompile-modexp",
- "pallet-evm-precompile-sha3fips",
- "pallet-evm-precompile-simple",
+ "pallet-ethereum 4.0.0-dev (git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.13)",
+ "pallet-evm 6.0.0-dev (git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.13)",
+ "pallet-evm-precompile-bn128 2.0.0-dev (git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.13)",
+ "pallet-evm-precompile-dispatch 2.0.0-dev (git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.13)",
+ "pallet-evm-precompile-modexp 2.0.0-dev (git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.13)",
+ "pallet-evm-precompile-sha3fips 2.0.0-dev (git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.13)",
+ "pallet-evm-precompile-simple 2.0.0-dev (git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.13)",
  "pallet-identity",
  "pallet-multisig",
  "pallet-session",
