@@ -1,7 +1,5 @@
 //! The Shibuya Network EVM precompiles. This can be compiled with ``#[no_std]`, ready for Wasm.
 
-#![cfg_attr(not(feature = "std"), no_std)]
-
 use codec::Decode;
 use frame_support::dispatch::{Dispatchable, GetDispatchInfo, PostDispatchInfo};
 use pallet_evm::{Context, Precompile, PrecompileResult, PrecompileSet};
