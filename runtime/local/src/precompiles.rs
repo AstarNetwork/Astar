@@ -76,7 +76,7 @@ where
             // Astar precompiles (starts from 0x5000):
             // DappStaking 0x5001
             a if a == hash(20481) => Some(DappsStakingWrapper::<R>::execute(
-                input, target_gas, context,
+                input, target_gas, context, is_static,
             )),
             // Default
             _ => None,

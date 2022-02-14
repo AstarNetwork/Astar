@@ -4388,7 +4388,7 @@ dependencies = [
  "pallet-contracts-primitives",
  "pallet-contracts-rpc-runtime-api",
  "pallet-custom-signatures",
- "pallet-dapps-staking 2.0.1 (git+https://github.com/AstarNetwork/astar-frame?tag=pallet-dapps-staking-2.0.1/polkadot-0.9.13)",
+ "pallet-dapps-staking 2.0.1",
  "pallet-ethereum 4.0.0-dev (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.13)",
  "pallet-evm 6.0.0-dev (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.13)",
  "pallet-evm-precompile-bn128 2.0.0-dev (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.13)",
@@ -5508,7 +5508,7 @@ dependencies = [
 [[package]]
 name = "pallet-dapps-staking"
 version = "2.0.1"
-source = "git+https://github.com/AstarNetwork/astar-frame?tag=pallet-dapps-staking-2.0.1/polkadot-0.9.13#98682f83a6fb461c7601628503614e7e2f72d318"
+source = "git+https://github.com/AstarNetwork/astar-frame?tag=pallet-precompile-dapps-staking-1.0.0/polkadot-0.9.13#0bae7b22c3282ffe0d791f1493e05435b66e33e8"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -5520,27 +5520,6 @@ dependencies = [
  "parity-scale-codec",
  "scale-info",
  "serde",
- "sp-arithmetic",
- "sp-core",
- "sp-io",
- "sp-runtime",
- "sp-staking",
- "sp-std",
-]
-
-[[package]]
-name = "pallet-dapps-staking"
-version = "2.0.1"
-source = "git+https://github.com/AstarNetwork/astar-frame?tag=pallet-precompile-dapps-staking-1.0.0/polkadot-0.9.13#0bae7b22c3282ffe0d791f1493e05435b66e33e8"
-dependencies = [
- "frame-support",
- "frame-system",
- "num-traits",
- "pallet-balances",
- "pallet-session",
- "pallet-timestamp",
- "parity-scale-codec",
- "scale-info",
  "sp-arithmetic",
  "sp-core",
  "sp-io",
@@ -6028,7 +6007,7 @@ dependencies = [
  "fp-evm 3.0.0-dev (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.13)",
  "frame-support",
  "frame-system",
- "pallet-dapps-staking 2.0.1 (git+https://github.com/AstarNetwork/astar-frame?tag=pallet-precompile-dapps-staking-1.0.0/polkadot-0.9.13)",
+ "pallet-dapps-staking 2.0.1",
  "pallet-evm 6.0.0-dev (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.13)",
  "parity-scale-codec",
  "scale-info",
