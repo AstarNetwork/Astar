@@ -37,6 +37,7 @@ pub fn get_chain_spec(para_id: u32) -> ShibuyaChainSpec {
         None,
         None,
         None,
+        None,
         Extensions {
             bad_blocks: Default::default(),
             relay_chain: "tokyo".into(),
@@ -76,7 +77,9 @@ fn make_genesis(
         system: SystemConfig {
             code: wasm_binary_unwrap().to_vec(),
         },
-        sudo: SudoConfig { key: root_key },
+        sudo: SudoConfig {
+            key: Some(root_key),
+        },
         parachain_info: ParachainInfoConfig { parachain_id },
         balances: BalancesConfig { balances },
         vesting: VestingConfig { vesting: vec![] },
