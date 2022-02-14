@@ -498,13 +498,13 @@ parameter_types! {
     // The lazy deletion runs inside on_initialize.
     pub DeletionWeightLimit: Weight = AVERAGE_ON_INITIALIZE_RATIO *
         RuntimeBlockWeights::get().max_block;
-    // The weight needed for decoding the queue should be less or equal than a fifth                                      
+    // The weight needed for decoding the queue should be less or equal than a fifth
     // of the overall weight dedicated to the lazy deletion.
     pub DeletionQueueDepth: u32 = ((DeletionWeightLimit::get() / (
         <Runtime as pallet_contracts::Config>::WeightInfo::on_initialize_per_queue_item(1)
-        -                          
-        <Runtime as pallet_contracts::Config>::WeightInfo::on_initialize_per_queue_item(0))) / 5) as u32;                                                                                                   
-    pub Schedule: pallet_contracts::Schedule<Runtime> = Default::default(); 
+        -
+        <Runtime as pallet_contracts::Config>::WeightInfo::on_initialize_per_queue_item(0))) / 5) as u32;
+    pub Schedule: pallet_contracts::Schedule<Runtime> = Default::default();
 }
 
 parameter_types! {
@@ -535,7 +535,7 @@ impl pallet_contracts::Config for Runtime {
     /// change because that would break already deployed contracts. The `Call` structure itself
     /// is not allowed to change the indices of existing pallets, too.
     type CallFilter = Nothing;
-    type DepositPerItem = DepositPerItem;                                                                                 
+    type DepositPerItem = DepositPerItem;
     type DepositPerByte = DepositPerByte;
     type CallStack = [pallet_contracts::Frame<Self>; 31];
     type WeightPrice = pallet_transaction_payment::Pallet<Self>;
@@ -987,7 +987,7 @@ impl_runtime_apis! {
             code: Vec<u8>,
             storage_deposit_limit: Option<Balance>,
         ) -> pallet_contracts_primitives::CodeUploadResult<Hash, Balance>
-        {                                                                                                                 
+        {
             Contracts::bare_upload_code(origin, code, storage_deposit_limit)
         }
 

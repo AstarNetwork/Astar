@@ -668,11 +668,26 @@ impl CliConfiguration<Self> for RelayChainCli {
         self.base.base.rpc_ws(default_listen_port)
     }
 
-    fn prometheus_config(&self, default_listen_port: u16) -> Result<Option<PrometheusConfig>> {
-        self.base.base.prometheus_config(default_listen_port)
+    fn prometheus_config(
+        &self,
+        default_listen_port: u16,
+        chain_spec: &Box<dyn ChainSpec>,
+    ) -> Result<Option<PrometheusConfig>> {
+        self.base
+            .base
+            .prometheus_config(default_listen_port, chain_spec)
     }
 
-    fn init<C: SubstrateCli>(&self) -> Result<()> {
+    fn init<F>(
+        &self,
+        _support_url: &String,
+        _impl_version: &String,
+        _logger_hook: F,
+        _config: &sc_service::Configuration,
+    ) -> Result<()>
+    where
+        F: FnOnce(&mut sc_cli::LoggerBuilder, &sc_service::Configuration),
+    {
         unreachable!("PolkadotCli is never initialized; qed");
     }
 

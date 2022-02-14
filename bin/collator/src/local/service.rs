@@ -4,7 +4,7 @@ use fc_consensus::FrontierBlockImport;
 use fc_rpc_core::types::{FeeHistoryCache, FilterPool};
 use futures::StreamExt;
 use local_runtime::RuntimeApi;
-use sc_client_api::{BlockchainEvents, ExecutorProvider};
+use sc_client_api::{BlockBackend, BlockchainEvents, ExecutorProvider};
 use sc_consensus_aura::{ImportQueueParams, SlotProportion, StartAuraParams};
 use sc_executor::NativeElseWasmExecutor;
 use sc_finality_grandpa::SharedVoterState;
@@ -87,6 +87,7 @@ fn new_partial(
         config.wasm_method,
         config.default_heap_pages,
         config.max_runtime_instances,
+        config.runtime_cache_size,
     );
 
     let (client, backend, keystore_container, task_manager) =
@@ -365,6 +366,14 @@ pub fn start_node(config: Configuration) -> Result<TaskManager, ServiceError> {
         None
     };
 
+    let protocol_name = sc_finality_grandpa::protocol_standard_name(
+        &client
+            .block_hash(0)
+            .ok()
+            .flatten()
+            .expect("Genesis block exists; qed"),
+        &config.chain_spec,
+    );
     let grandpa_config = sc_finality_grandpa::Config {
         // FIXME #1578 make this available through chainspec
         gossip_duration: Duration::from_millis(333),
@@ -374,6 +383,7 @@ pub fn start_node(config: Configuration) -> Result<TaskManager, ServiceError> {
         keystore,
         local_role: role,
         telemetry: telemetry.as_ref().map(|x| x.handle()),
+        protocol_name,
     };
 
     if enable_grandpa {
