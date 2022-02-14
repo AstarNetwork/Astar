@@ -5508,7 +5508,7 @@ dependencies = [
 [[package]]
 name = "pallet-dapps-staking"
 version = "2.0.1"
-source = "git+https://github.com/AstarNetwork/astar-frame?tag=pallet-precompile-dapps-staking-1.0.0/polkadot-0.9.13#0bae7b22c3282ffe0d791f1493e05435b66e33e8"
+source = "git+https://github.com/AstarNetwork/astar-frame?tag=pallet-dapps-staking-2.0.1/polkadot-0.9.13#98682f83a6fb461c7601628503614e7e2f72d318"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -6000,8 +6000,8 @@ dependencies = [
 
 [[package]]
 name = "pallet-precompile-dapps-staking"
-version = "1.0.0"
-source = "git+https://github.com/AstarNetwork/astar-frame?tag=pallet-precompile-dapps-staking-1.0.0/polkadot-0.9.13#0bae7b22c3282ffe0d791f1493e05435b66e33e8"
+version = "1.0.1"
+source = "git+https://github.com/AstarNetwork/astar-frame?tag=pallet-precompile-dapps-staking-1.0.1/polkadot-0.9.13#88be37c3c955a3e87c5dc6f07398d3ba44eef6a9"
 dependencies = [
  "evm 0.33.1 (git+https://github.com/AstarNetwork/evm?branch=polkadot-v0.9.13)",
  "fp-evm 3.0.0-dev (git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.13)",
