@@ -77,7 +77,9 @@ fn make_genesis(
         system: SystemConfig {
             code: wasm_binary_unwrap().to_vec(),
         },
-        sudo: SudoConfig { key: Some(root_key) },
+        sudo: SudoConfig {
+            key: Some(root_key),
+        },
         parachain_info: ParachainInfoConfig { parachain_id },
         balances: BalancesConfig { balances },
         vesting: VestingConfig { vesting: vec![] },

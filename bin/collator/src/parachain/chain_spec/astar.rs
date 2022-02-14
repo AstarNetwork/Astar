@@ -121,7 +121,9 @@ fn make_genesis(
         system: SystemConfig {
             code: wasm_binary_unwrap().to_vec(),
         },
-        sudo: astar_runtime::SudoConfig { key: Some(root_key) },
+        sudo: astar_runtime::SudoConfig {
+            key: Some(root_key),
+        },
         parachain_info: ParachainInfoConfig { parachain_id },
         balances: astar_runtime::BalancesConfig { balances },
         vesting: astar_runtime::VestingConfig { vesting: vec![] },

@@ -153,7 +153,7 @@ checksum = "9b34d609dfbaf33d6889b2b7106d3ca345eacad44200913df5ba02bfd31d2ba9"
 
 [[package]]
 name = "astar-collator"
-version = "3.7.1"
+version = "3.8.0"
 dependencies = [
  "astar-runtime",
  "async-trait",
@@ -241,7 +241,7 @@ dependencies = [
 
 [[package]]
 name = "astar-runtime"
-version = "3.7.1"
+version = "3.8.0"
 dependencies = [
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-parachain-system",
@@ -4463,7 +4463,7 @@ checksum = "a261afc61b7a5e323933b402ca6a1765183687c614789b1e4db7762ed4230bca"
 
 [[package]]
 name = "local-runtime"
-version = "3.7.1"
+version = "3.8.0"
 dependencies = [
  "evm 0.33.1 (git+https://github.com/PlasmNetwork/evm?branch=polkadot-v0.9.16)",
  "fp-rpc",
@@ -9649,7 +9649,7 @@ dependencies = [
 
 [[package]]
 name = "shibuya-runtime"
-version = "3.7.1"
+version = "3.8.0"
 dependencies = [
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-parachain-system",
@@ -9717,7 +9717,7 @@ dependencies = [
 
 [[package]]
 name = "shiden-runtime"
-version = "3.7.1"
+version = "3.8.0"
 dependencies = [
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-parachain-system",
@@ -11502,7 +11502,7 @@ checksum = "e7141e445af09c8919f1d5f8a20dae0b20c3b57a45dee0d5823c6ed5d237f15a"
 dependencies = [
  "bitflags",
  "chrono",
- "rustc_version 0.2.3",
+ "rustc_version 0.4.0",
 ]
 
 [[package]]
