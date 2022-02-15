@@ -60,6 +60,7 @@ pub fn development_config() -> ChainSpec {
         vec![],
         None,
         None,
+        None,
         Some(properties),
         None,
     )
@@ -119,7 +120,9 @@ fn testnet_genesis(
             false,
             sp_runtime::Permill::from_parts(125_000),
         ),
-        sudo: SudoConfig { key: root_key },
+        sudo: SudoConfig {
+            key: Some(root_key),
+        },
     }
 }
 

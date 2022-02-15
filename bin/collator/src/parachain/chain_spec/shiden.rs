@@ -36,6 +36,7 @@ pub fn get_chain_spec(para_id: u32) -> ShidenChainSpec {
         None,
         None,
         None,
+        None,
         Extensions {
             bad_blocks: Default::default(),
             relay_chain: "tokyo".into(),
@@ -75,7 +76,9 @@ fn make_genesis(
         system: SystemConfig {
             code: wasm_binary_unwrap().to_vec(),
         },
-        sudo: shiden_runtime::SudoConfig { key: root_key },
+        sudo: shiden_runtime::SudoConfig {
+            key: Some(root_key),
+        },
         parachain_info: ParachainInfoConfig { parachain_id },
         balances: shiden_runtime::BalancesConfig { balances },
         vesting: shiden_runtime::VestingConfig { vesting: vec![] },
