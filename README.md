@@ -2,10 +2,10 @@
 
 <div align="center">
 
-[![Integration Action](https://github.com/PlasmNetwork/Astar/workflows/Integration/badge.svg)](https://github.com/PlasmNetwork/Astar/actions)
-[![GitHub tag (latest by date)](https://img.shields.io/github/v/tag/PlasmNetwork/Astar)](https://github.com/PlasmNetwork/Astar/tags)
+[![Integration Action](https://github.com/AstarNetwork/Astar/workflows/Integration/badge.svg)](https://github.com/AstarNetwork/Astar/actions)
+[![GitHub tag (latest by date)](https://img.shields.io/github/v/tag/AstarNetwork/Astar)](https://github.com/AstarNetwork/Astar/tags)
 [![Substrate version](https://img.shields.io/badge/Substrate-3.0.0-brightgreen?logo=Parity%20Substrate)](https://substrate.dev/)
-[![License](https://img.shields.io/github/license/PlasmNetwork/Astar?color=green)](https://github.com/PlasmNetwork/Astar/blob/production/shiden/LICENSE)
+[![License](https://img.shields.io/github/license/AstarNetwork/Astar?color=green)](https://github.com/AstarNetwork/Astar/blob/production/shiden/LICENSE)
  <br />
 [![Twitter URL](https://img.shields.io/twitter/follow/AstarNetwork?style=social)](https://twitter.com/AstarNetwork)
 [![Twitter URL](https://img.shields.io/twitter/follow/ShidenNetwork?style=social)](https://twitter.com/ShidenNetwork)
@@ -33,7 +33,7 @@ Execute the following command from your terminal to set up the development envir
 $ curl https://getsubstrate.io -sSf | bash -s -- --fast
 
 # clone the Git repository
-$ git clone --recurse-submodules https://github.com/PlasmNetwork/Astar.git
+$ git clone --recurse-submodules https://github.com/AstarNetwork/Astar.git
 
 # change current working directory
 $ cd Astar
@@ -89,8 +89,8 @@ For key management and validator rewards, consult our [validator guide online](h
 ## Further Reading
 
 * [Official Documentation](https://docs.astar.network/)
-* [Whitepaper](https://github.com/PlasmNetwork/plasmdocs/blob/master/wp/en.pdf)
-* [Whitepaper(JP)](https://github.com/PlasmNetwork/plasmdocs/blob/master/wp/jp.pdf)
+* [Whitepaper](https://github.com/AstarNetwork/plasmdocs/blob/master/wp/en.pdf)
+* [Whitepaper(JP)](https://github.com/AstarNetwork/plasmdocs/blob/master/wp/jp.pdf)
 * [Subtrate Developer Hub](https://substrate.dev/docs/en/)
 * [Substrate Glossary](https://substrate.dev/docs/en/knowledgebase/getting-started/glossary)
 * [Substrate Client Library Documentation](https://polkadot.js.org/docs/)

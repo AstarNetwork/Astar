@@ -248,7 +248,7 @@ dependencies = [
  "cumulus-primitives-core",
  "cumulus-primitives-timestamp",
  "cumulus-primitives-utility",
- "evm 0.33.1 (git+https://github.com/PlasmNetwork/evm?branch=polkadot-v0.9.16)",
+ "evm",
  "fp-rpc",
  "fp-self-contained",
  "frame-benchmarking",
@@ -2105,29 +2105,9 @@ dependencies = [
  "auto_impl",
  "environmental",
  "ethereum",
- "evm-core 0.33.0 (git+https://github.com/AstarNetwork/evm?branch=polkadot-v0.9.16)",
- "evm-gasometer 0.33.0 (git+https://github.com/AstarNetwork/evm?branch=polkadot-v0.9.16)",
- "evm-runtime 0.33.0 (git+https://github.com/AstarNetwork/evm?branch=polkadot-v0.9.16)",
- "log",
- "parity-scale-codec",
- "primitive-types",
- "rlp",
- "scale-info",
- "serde",
- "sha3 0.8.2",
-]
-
-[[package]]
-name = "evm"
-version = "0.33.1"
-source = "git+https://github.com/PlasmNetwork/evm?branch=polkadot-v0.9.16#7deff4781014e10684253d9c72540ef75f03830f"
-dependencies = [
- "auto_impl",
- "environmental",
- "ethereum",
- "evm-core 0.33.0 (git+https://github.com/PlasmNetwork/evm?branch=polkadot-v0.9.16)",
- "evm-gasometer 0.33.0 (git+https://github.com/PlasmNetwork/evm?branch=polkadot-v0.9.16)",
- "evm-runtime 0.33.0 (git+https://github.com/PlasmNetwork/evm?branch=polkadot-v0.9.16)",
+ "evm-core",
+ "evm-gasometer",
+ "evm-runtime",
  "log",
  "parity-scale-codec",
  "primitive-types",
@@ -2150,36 +2130,13 @@ dependencies = [
 ]
 
 [[package]]
-name = "evm-core"
-version = "0.33.0"
-source = "git+https://github.com/PlasmNetwork/evm?branch=polkadot-v0.9.16#7deff4781014e10684253d9c72540ef75f03830f"
-dependencies = [
- "funty",
- "parity-scale-codec",
- "primitive-types",
- "scale-info",
- "serde",
-]
-
-[[package]]
 name = "evm-gasometer"
 version = "0.33.0"
 source = "git+https://github.com/AstarNetwork/evm?branch=polkadot-v0.9.16#7deff4781014e10684253d9c72540ef75f03830f"
 dependencies = [
  "environmental",
- "evm-core 0.33.0 (git+https://github.com/AstarNetwork/evm?branch=polkadot-v0.9.16)",
- "evm-runtime 0.33.0 (git+https://github.com/AstarNetwork/evm?branch=polkadot-v0.9.16)",
- "primitive-types",
-]
-
-[[package]]
-name = "evm-gasometer"
-version = "0.33.0"
-source = "git+https://github.com/PlasmNetwork/evm?branch=polkadot-v0.9.16#7deff4781014e10684253d9c72540ef75f03830f"
-dependencies = [
- "environmental",
- "evm-core 0.33.0 (git+https://github.com/PlasmNetwork/evm?branch=polkadot-v0.9.16)",
- "evm-runtime 0.33.0 (git+https://github.com/PlasmNetwork/evm?branch=polkadot-v0.9.16)",
+ "evm-core",
+ "evm-runtime",
  "primitive-types",
 ]
 
@@ -2190,19 +2147,7 @@ source = "git+https://github.com/AstarNetwork/evm?branch=polkadot-v0.9.16#7deff4
 dependencies = [
  "auto_impl",
  "environmental",
- "evm-core 0.33.0 (git+https://github.com/AstarNetwork/evm?branch=polkadot-v0.9.16)",
- "primitive-types",
- "sha3 0.8.2",
-]
-
-[[package]]
-name = "evm-runtime"
-version = "0.33.0"
-source = "git+https://github.com/PlasmNetwork/evm?branch=polkadot-v0.9.16#7deff4781014e10684253d9c72540ef75f03830f"
-dependencies = [
- "auto_impl",
- "environmental",
- "evm-core 0.33.0 (git+https://github.com/PlasmNetwork/evm?branch=polkadot-v0.9.16)",
+ "evm-core",
  "primitive-types",
  "sha3 0.8.2",
 ]
@@ -2240,7 +2185,7 @@ dependencies = [
 [[package]]
 name = "fc-consensus"
 version = "2.0.0-dev"
-source = "git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.16#4ac056cd7b1e88f5b10958199f5f3f1ec999546b"
+source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.16#4ac056cd7b1e88f5b10958199f5f3f1ec999546b"
 dependencies = [
  "async-trait",
  "derive_more",
@@ -2266,7 +2211,7 @@ dependencies = [
 [[package]]
 name = "fc-db"
 version = "2.0.0-dev"
-source = "git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.16#4ac056cd7b1e88f5b10958199f5f3f1ec999546b"
+source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.16#4ac056cd7b1e88f5b10958199f5f3f1ec999546b"
 dependencies = [
  "fp-storage",
  "kvdb",
@@ -2282,7 +2227,7 @@ dependencies = [
 [[package]]
 name = "fc-mapping-sync"
 version = "2.0.0-dev"
-source = "git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.16#4ac056cd7b1e88f5b10958199f5f3f1ec999546b"
+source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.16#4ac056cd7b1e88f5b10958199f5f3f1ec999546b"
 dependencies = [
  "fc-consensus",
  "fc-db",
@@ -2300,11 +2245,11 @@ dependencies = [
 [[package]]
 name = "fc-rpc"
 version = "2.0.0-dev"
-source = "git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.16#4ac056cd7b1e88f5b10958199f5f3f1ec999546b"
+source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.16#4ac056cd7b1e88f5b10958199f5f3f1ec999546b"
 dependencies = [
  "ethereum",
  "ethereum-types",
- "evm 0.33.1 (git+https://github.com/AstarNetwork/evm?branch=polkadot-v0.9.16)",
+ "evm",
  "fc-consensus",
  "fc-db",
  "fc-rpc-core",
@@ -2346,7 +2291,7 @@ dependencies = [
 [[package]]
 name = "fc-rpc-core"
 version = "1.1.0-dev"
-source = "git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.16#4ac056cd7b1e88f5b10958199f5f3f1ec999546b"
+source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.16#4ac056cd7b1e88f5b10958199f5f3f1ec999546b"
 dependencies = [
  "ethereum",
  "ethereum-types",
@@ -2454,7 +2399,7 @@ dependencies = [
 [[package]]
 name = "fp-consensus"
 version = "2.0.0-dev"
-source = "git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.16#4ac056cd7b1e88f5b10958199f5f3f1ec999546b"
+source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.16#4ac056cd7b1e88f5b10958199f5f3f1ec999546b"
 dependencies = [
  "ethereum",
  "parity-scale-codec",
@@ -2468,9 +2413,9 @@ dependencies = [
 [[package]]
 name = "fp-evm"
 version = "3.0.0-dev"
-source = "git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.16#4ac056cd7b1e88f5b10958199f5f3f1ec999546b"
+source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.16#4ac056cd7b1e88f5b10958199f5f3f1ec999546b"
 dependencies = [
- "evm 0.33.1 (git+https://github.com/AstarNetwork/evm?branch=polkadot-v0.9.16)",
+ "evm",
  "parity-scale-codec",
  "serde",
  "sp-core",
@@ -2480,7 +2425,7 @@ dependencies = [
 [[package]]
 name = "fp-rpc"
 version = "3.0.0-dev"
-source = "git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.16#4ac056cd7b1e88f5b10958199f5f3f1ec999546b"
+source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.16#4ac056cd7b1e88f5b10958199f5f3f1ec999546b"
 dependencies = [
  "ethereum",
  "ethereum-types",
@@ -2497,7 +2442,7 @@ dependencies = [
 [[package]]
 name = "fp-self-contained"
 version = "1.0.0-dev"
-source = "git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.16#4ac056cd7b1e88f5b10958199f5f3f1ec999546b"
+source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.16#4ac056cd7b1e88f5b10958199f5f3f1ec999546b"
 dependencies = [
  "ethereum",
  "frame-support",
@@ -2514,7 +2459,7 @@ dependencies = [
 [[package]]
 name = "fp-storage"
 version = "2.0.0"
-source = "git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.16#4ac056cd7b1e88f5b10958199f5f3f1ec999546b"
+source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.16#4ac056cd7b1e88f5b10958199f5f3f1ec999546b"
 
 [[package]]
 name = "frame-benchmarking"
@@ -4465,7 +4410,7 @@ checksum = "a261afc61b7a5e323933b402ca6a1765183687c614789b1e4db7762ed4230bca"
 name = "local-runtime"
 version = "3.8.0"
 dependencies = [
- "evm 0.33.1 (git+https://github.com/PlasmNetwork/evm?branch=polkadot-v0.9.16)",
+ "evm",
  "fp-rpc",
  "fp-self-contained",
  "frame-benchmarking",
@@ -5303,7 +5248,7 @@ dependencies = [
 [[package]]
 name = "pallet-base-fee"
 version = "1.0.0"
-source = "git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.16#4ac056cd7b1e88f5b10958199f5f3f1ec999546b"
+source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.16#4ac056cd7b1e88f5b10958199f5f3f1ec999546b"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -5642,11 +5587,11 @@ dependencies = [
 [[package]]
 name = "pallet-ethereum"
 version = "4.0.0-dev"
-source = "git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.16#4ac056cd7b1e88f5b10958199f5f3f1ec999546b"
+source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.16#4ac056cd7b1e88f5b10958199f5f3f1ec999546b"
 dependencies = [
  "ethereum",
  "ethereum-types",
- "evm 0.33.1 (git+https://github.com/AstarNetwork/evm?branch=polkadot-v0.9.16)",
+ "evm",
  "fp-consensus",
  "fp-evm",
  "fp-rpc",
@@ -5672,11 +5617,11 @@ dependencies = [
 [[package]]
 name = "pallet-evm"
 version = "6.0.0-dev"
-source = "git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.16#4ac056cd7b1e88f5b10958199f5f3f1ec999546b"
+source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.16#4ac056cd7b1e88f5b10958199f5f3f1ec999546b"
 dependencies = [
- "evm 0.33.1 (git+https://github.com/AstarNetwork/evm?branch=polkadot-v0.9.16)",
- "evm-gasometer 0.33.0 (git+https://github.com/AstarNetwork/evm?branch=polkadot-v0.9.16)",
- "evm-runtime 0.33.0 (git+https://github.com/AstarNetwork/evm?branch=polkadot-v0.9.16)",
+ "evm",
+ "evm-gasometer",
+ "evm-runtime",
  "fp-evm",
  "frame-benchmarking",
  "frame-support",
@@ -5700,7 +5645,7 @@ dependencies = [
 [[package]]
 name = "pallet-evm-precompile-bn128"
 version = "2.0.0-dev"
-source = "git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.16#4ac056cd7b1e88f5b10958199f5f3f1ec999546b"
+source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.16#4ac056cd7b1e88f5b10958199f5f3f1ec999546b"
 dependencies = [
  "fp-evm",
  "sp-core",
@@ -5711,7 +5656,7 @@ dependencies = [
 [[package]]
 name = "pallet-evm-precompile-dispatch"
 version = "2.0.0-dev"
-source = "git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.16#4ac056cd7b1e88f5b10958199f5f3f1ec999546b"
+source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.16#4ac056cd7b1e88f5b10958199f5f3f1ec999546b"
 dependencies = [
  "fp-evm",
  "frame-support",
@@ -5724,7 +5669,7 @@ dependencies = [
 [[package]]
 name = "pallet-evm-precompile-modexp"
 version = "2.0.0-dev"
-source = "git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.16#4ac056cd7b1e88f5b10958199f5f3f1ec999546b"
+source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.16#4ac056cd7b1e88f5b10958199f5f3f1ec999546b"
 dependencies = [
  "fp-evm",
  "num",
@@ -5735,7 +5680,7 @@ dependencies = [
 [[package]]
 name = "pallet-evm-precompile-sha3fips"
 version = "2.0.0-dev"
-source = "git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.16#4ac056cd7b1e88f5b10958199f5f3f1ec999546b"
+source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.16#4ac056cd7b1e88f5b10958199f5f3f1ec999546b"
 dependencies = [
  "fp-evm",
  "sp-core",
@@ -5746,7 +5691,7 @@ dependencies = [
 [[package]]
 name = "pallet-evm-precompile-simple"
 version = "2.0.0-dev"
-source = "git+https://github.com/PlasmNetwork/frontier?branch=polkadot-v0.9.16#4ac056cd7b1e88f5b10958199f5f3f1ec999546b"
+source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.16#4ac056cd7b1e88f5b10958199f5f3f1ec999546b"
 dependencies = [
  "fp-evm",
  "ripemd160",
@@ -9656,7 +9601,7 @@ dependencies = [
  "cumulus-primitives-core",
  "cumulus-primitives-timestamp",
  "cumulus-primitives-utility",
- "evm 0.33.1 (git+https://github.com/PlasmNetwork/evm?branch=polkadot-v0.9.16)",
+ "evm",
  "fp-rpc",
  "fp-self-contained",
  "frame-benchmarking",
@@ -9724,7 +9669,7 @@ dependencies = [
  "cumulus-primitives-core",
  "cumulus-primitives-timestamp",
  "cumulus-primitives-utility",
- "evm 0.33.1 (git+https://github.com/PlasmNetwork/evm?branch=polkadot-v0.9.16)",
+ "evm",
  "fp-rpc",
  "fp-self-contained",
  "frame-benchmarking",
