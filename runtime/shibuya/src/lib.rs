@@ -88,7 +88,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("shibuya"),
     impl_name: create_runtime_str!("shibuya"),
     authoring_version: 1,
-    spec_version: 30,
+    spec_version: 31,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 2,
@@ -278,7 +278,7 @@ parameter_types! {
     pub const MinimumRemainingAmount: Balance = 1 * SDN;
     pub const HistoryDepth: u32 = 60;
     pub const BonusEraDuration: u32 = 600;
-    pub const MaxUnlockingChunks: u32 = 32;
+    pub const MaxUnlockingChunks: u32 = 2;
     pub const UnbondingPeriod: u32 = 2;
 }
 
