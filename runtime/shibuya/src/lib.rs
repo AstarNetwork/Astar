@@ -7,7 +7,7 @@
 use codec::{Decode, Encode};
 use frame_support::{
     construct_runtime, parameter_types,
-    traits::{Contains, Currency, FindAuthor, Imbalance, OnUnbalanced},
+    traits::{Contains, Currency, FindAuthor, Imbalance, Nothing, OnUnbalanced},
     weights::{
         constants::{BlockExecutionWeight, ExtrinsicBaseWeight, WEIGHT_PER_SECOND},
         DispatchClass, Weight, WeightToFeeCoefficient, WeightToFeeCoefficients,
