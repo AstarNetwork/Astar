@@ -32,7 +32,7 @@ jobs:
       run: cargo clean
 
     - name: Build optimized binary
-      run: cargo build --release --verbose
+      run: cargo build --release
 
     - uses: actions/upload-artifact@master
       with:
