@@ -1,6 +1,6 @@
 [package]
 name = "astar-collator"
-version = "3.8.0"
+version = "3.9.0"
 authors = ["Stake Technologies <devops@stake.co.jp>"]
 description = "Astar collator implementation in Rust."
 build = "build.rs"
@@ -64,15 +64,15 @@ jsonrpc-core = "18.0.0"
 jsonrpc-pubsub = "18.0.0"
 
 # Frontier dependencies
-fc-consensus = { git = "https://github.com/PlasmNetwork/frontier", branch = "polkadot-v0.9.16" }
-fp-consensus = { git = "https://github.com/PlasmNetwork/frontier", branch = "polkadot-v0.9.16" }
-fc-rpc-core = { git = "https://github.com/PlasmNetwork/frontier", branch = "polkadot-v0.9.16" }
-fc-rpc = { git = "https://github.com/PlasmNetwork/frontier", branch = "polkadot-v0.9.16", features = ["rpc_binary_search_estimate"] }
-fp-rpc = { git = "https://github.com/PlasmNetwork/frontier", branch = "polkadot-v0.9.16" }
-fc-db = { git = "https://github.com/PlasmNetwork/frontier", branch = "polkadot-v0.9.16" }
-fc-mapping-sync = { git = "https://github.com/PlasmNetwork/frontier", branch = "polkadot-v0.9.16" }
-pallet-evm = { git = "https://github.com/PlasmNetwork/frontier", branch = "polkadot-v0.9.16" }
-pallet-ethereum = { git = "https://github.com/PlasmNetwork/frontier", branch = "polkadot-v0.9.16" }
+fc-consensus = { git = "https://github.com/AstarNetwork/frontier", branch = "polkadot-v0.9.16" }
+fp-consensus = { git = "https://github.com/AstarNetwork/frontier", branch = "polkadot-v0.9.16" }
+fc-rpc-core = { git = "https://github.com/AstarNetwork/frontier", branch = "polkadot-v0.9.16" }
+fc-rpc = { git = "https://github.com/AstarNetwork/frontier", branch = "polkadot-v0.9.16", features = ["rpc_binary_search_estimate"] }
+fp-rpc = { git = "https://github.com/AstarNetwork/frontier", branch = "polkadot-v0.9.16" }
+fc-db = { git = "https://github.com/AstarNetwork/frontier", branch = "polkadot-v0.9.16" }
+fc-mapping-sync = { git = "https://github.com/AstarNetwork/frontier", branch = "polkadot-v0.9.16" }
+pallet-evm = { git = "https://github.com/AstarNetwork/frontier", branch = "polkadot-v0.9.16" }
+pallet-ethereum = { git = "https://github.com/AstarNetwork/frontier", branch = "polkadot-v0.9.16" }
 
 # astar-specific dependencies
 astar-runtime = { path = "../../runtime/astar" }

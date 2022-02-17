@@ -1,6 +1,6 @@
 [package]
 name = "local-runtime"
-version = "3.8.0"
+version = "3.9.0"
 authors = ["Stake Technologies <devops@stake.co.jp>"]
 edition = "2018"
 build = "build.rs"
@@ -8,21 +8,21 @@ build = "build.rs"
 [dependencies]
 codec = { package = "parity-scale-codec", version = "2.2.0", default-features = false, features = ["derive"] }
 scale-info = { version = "1.0", default-features = false, features = ["derive"] }
-evm = { git = "https://github.com/PlasmNetwork/evm", branch = "polkadot-v0.9.16", default-features = false, features = ["with-codec"] }
+evm = { git = "https://github.com/AstarNetwork/evm", branch = "polkadot-v0.9.16", default-features = false, features = ["with-codec"] }
 
 pallet-aura = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.16", default-features = false }
 pallet-balances = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.16", default-features = false }
 pallet-contracts = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.16", default-features = false }
 pallet-contracts-primitives = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.16", default-features = false }
 pallet-contracts-rpc-runtime-api = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.16", default-features = false }
-pallet-base-fee = { git="https://github.com/PlasmNetwork/frontier", branch="polkadot-v0.9.16", default-features=false }
-pallet-ethereum = { git="https://github.com/PlasmNetwork/frontier", branch="polkadot-v0.9.16", default-features=false }
-pallet-evm = { git="https://github.com/PlasmNetwork/frontier", branch="polkadot-v0.9.16", default-features=false }
-pallet-evm-precompile-bn128 = { git="https://github.com/PlasmNetwork/frontier", branch="polkadot-v0.9.16", default-features=false }
-pallet-evm-precompile-dispatch = { git="https://github.com/PlasmNetwork/frontier", branch="polkadot-v0.9.16", default-features=false }
-pallet-evm-precompile-modexp = { git="https://github.com/PlasmNetwork/frontier", branch="polkadot-v0.9.16", default-features=false }
-pallet-evm-precompile-simple = { git="https://github.com/PlasmNetwork/frontier", branch="polkadot-v0.9.16", default-features=false }
-pallet-evm-precompile-sha3fips = { git="https://github.com/PlasmNetwork/frontier", branch="polkadot-v0.9.16", default-features=false }
+pallet-base-fee = { git="https://github.com/AstarNetwork/frontier", branch="polkadot-v0.9.16", default-features=false }
+pallet-ethereum = { git="https://github.com/AstarNetwork/frontier", branch="polkadot-v0.9.16", default-features=false }
+pallet-evm = { git="https://github.com/AstarNetwork/frontier", branch="polkadot-v0.9.16", default-features=false }
+pallet-evm-precompile-bn128 = { git="https://github.com/AstarNetwork/frontier", branch="polkadot-v0.9.16", default-features=false }
+pallet-evm-precompile-dispatch = { git="https://github.com/AstarNetwork/frontier", branch="polkadot-v0.9.16", default-features=false }
+pallet-evm-precompile-modexp = { git="https://github.com/AstarNetwork/frontier", branch="polkadot-v0.9.16", default-features=false }
+pallet-evm-precompile-simple = { git="https://github.com/AstarNetwork/frontier", branch="polkadot-v0.9.16", default-features=false }
+pallet-evm-precompile-sha3fips = { git="https://github.com/AstarNetwork/frontier", branch="polkadot-v0.9.16", default-features=false }
 frame-support = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.16", default-features = false }
 pallet-grandpa = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.16", default-features = false }
 pallet-randomness-collective-flip = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.16", default-features = false }
@@ -33,8 +33,8 @@ pallet-transaction-payment = { git = "https://github.com/paritytech/substrate", 
 pallet-utility = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.16", default-features = false }
 pallet-vesting = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.16", default-features = false }
 frame-executive = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.16", default-features = false }
-fp-rpc = { git = "https://github.com/PlasmNetwork/frontier", branch = "polkadot-v0.9.16", default-features = false }
-fp-self-contained = { git = "https://github.com/PlasmNetwork/frontier", branch = "polkadot-v0.9.16", default-features = false }
+fp-rpc = { git = "https://github.com/AstarNetwork/frontier", branch = "polkadot-v0.9.16", default-features = false }
+fp-self-contained = { git = "https://github.com/AstarNetwork/frontier", branch = "polkadot-v0.9.16", default-features = false }
 sp-api = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.16", default-features = false }
 sp-block-builder = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.16", default-features = false }
 sp-consensus-aura = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.16", default-features = false }
@@ -54,6 +54,7 @@ pallet-transaction-payment-rpc-runtime-api = { git = "https://github.com/parityt
 pallet-block-reward = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.16", default-features = false }
 pallet-custom-signatures = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.16", default-features = false }
 pallet-dapps-staking = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.16", default-features = false }
+pallet-precompile-dapps-staking = { git = "https://github.com/AstarNetwork/astar-frame", tag = "pallet-precompile-dapps-staking-1.1.0/polkadot-0.9.16", default-features = false }
 
 # benchmarking
 hex-literal = { version = "0.3.1", optional = true }
@@ -95,6 +96,7 @@ std = [
     "pallet-evm-precompile-modexp/std",
     "pallet-evm-precompile-sha3fips/std",
     "pallet-grandpa/std",
+    "pallet-precompile-dapps-staking/std",
     "pallet-randomness-collective-flip/std",
     "pallet-sudo/std",
     "pallet-timestamp/std",
