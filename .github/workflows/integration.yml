@@ -3,7 +3,7 @@ on: [push]
 name: Integration
 
 env:
-  RUST_VERSION: 'nightly-2021-11-01'
+  RUST_VERSION: 'nightly-2021-11-29'
 
 jobs:
   native:
