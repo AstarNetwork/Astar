@@ -133,6 +133,14 @@
 <span id="133">133</span>
 <span id="134">134</span>
 <span id="135">135</span>
+<span id="136">136</span>
+<span id="137">137</span>
+<span id="138">138</span>
+<span id="139">139</span>
+<span id="140">140</span>
+<span id="141">141</span>
+<span id="142">142</span>
+<span id="143">143</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Chain specifications.</span>
 
 <span class="kw">use</span> <span class="ident">local_runtime</span>::{
@@ -141,7 +149,7 @@
     <span class="ident">VestingConfig</span>,
 };
 <span class="kw">use</span> <span class="ident">sc_service::ChainType</span>;
-<span class="kw">use</span> <span class="ident">sp_core</span>::{<span class="ident">sr25519</span>, <span class="ident">Pair</span>, <span class="ident">Public</span>};
+<span class="kw">use</span> <span class="ident">sp_core</span>::{<span class="ident">crypto::Ss58Codec</span>, <span class="ident">sr25519</span>, <span class="ident">Pair</span>, <span class="ident">Public</span>};
 <span class="kw">use</span> <span class="ident">sp_runtime::traits</span>::{<span class="ident">IdentifyAccount</span>, <span class="ident">Verify</span>};
 
 <span class="kw">type</span> <span class="ident">AccountPublic</span> <span class="op">=</span> <span class="op">&lt;</span><span class="ident">Signature</span> <span class="kw">as</span> <span class="ident">Verify</span><span class="op">&gt;</span><span class="ident">::Signer</span>;
@@ -189,10 +197,16 @@
                     <span class="ident">get_account_id_from_seed</span>::<span class="op">&lt;</span><span class="ident">sr25519::Public</span><span class="op">&gt;</span>(<span class="string">&quot;Charlie&quot;</span>),
                     <span class="ident">get_account_id_from_seed</span>::<span class="op">&lt;</span><span class="ident">sr25519::Public</span><span class="op">&gt;</span>(<span class="string">&quot;Eve&quot;</span>),
                     <span class="ident">get_account_id_from_seed</span>::<span class="op">&lt;</span><span class="ident">sr25519::Public</span><span class="op">&gt;</span>(<span class="string">&quot;Ferdie&quot;</span>),
+                    <span class="comment">// Arrakis.TEST account in MetaMask</span>
+                    <span class="comment">// Import known test account with private key</span>
+                    <span class="comment">// 0x0261726d7f71ccf1956d61ccc2b7ec6a4d8b34c60889a8765d39e1840124cd39</span>
+                    <span class="ident">AccountId::from_ss58check</span>(<span class="string">&quot;5Gbgok6b2HRpPDm7vSEDffBDsLNmAiFEgRSZcLePVYqKqT3i&quot;</span>)
+                        .<span class="ident">unwrap</span>(),
                 ],
             )
         },
         <span class="macro">vec!</span>[],
+        <span class="prelude-val">None</span>,
         <span class="prelude-val">None</span>,
         <span class="prelude-val">None</span>,
         <span class="prelude-val">Some</span>(<span class="ident">properties</span>),
@@ -254,7 +268,9 @@
             <span class="bool-val">false</span>,
             <span class="ident">sp_runtime::Permill::from_parts</span>(<span class="number">125_000</span>),
         ),
-        <span class="ident">sudo</span>: <span class="ident">SudoConfig</span> { <span class="ident">key</span>: <span class="ident">root_key</span> },
+        <span class="ident">sudo</span>: <span class="ident">SudoConfig</span> {
+            <span class="ident">key</span>: <span class="prelude-val">Some</span>(<span class="ident">root_key</span>),
+        },
     }
 }
 

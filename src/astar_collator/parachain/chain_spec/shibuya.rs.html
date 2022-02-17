@@ -130,6 +130,9 @@
 <span id="130">130</span>
 <span id="131">131</span>
 <span id="132">132</span>
+<span id="133">133</span>
+<span id="134">134</span>
+<span id="135">135</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Shibuya chain specifications.</span>
 
 <span class="kw">use</span> <span class="ident">cumulus_primitives_core::ParaId</span>;
@@ -166,6 +169,7 @@
         <span class="ident">ChainType::Development</span>,
         <span class="kw">move</span> <span class="op">|</span><span class="op">|</span> <span class="ident">make_genesis</span>(<span class="ident">endowned</span>.<span class="ident">clone</span>(), <span class="ident">sudo_key</span>.<span class="ident">clone</span>(), <span class="ident">para_id</span>.<span class="ident">into</span>()),
         <span class="macro">vec!</span>[],
+        <span class="prelude-val">None</span>,
         <span class="prelude-val">None</span>,
         <span class="prelude-val">None</span>,
         <span class="prelude-val">None</span>,
@@ -208,7 +212,9 @@
         <span class="ident">system</span>: <span class="ident">SystemConfig</span> {
             <span class="ident">code</span>: <span class="ident">wasm_binary_unwrap</span>().<span class="ident">to_vec</span>(),
         },
-        <span class="ident">sudo</span>: <span class="ident">SudoConfig</span> { <span class="ident">key</span>: <span class="ident">root_key</span> },
+        <span class="ident">sudo</span>: <span class="ident">SudoConfig</span> {
+            <span class="ident">key</span>: <span class="prelude-val">Some</span>(<span class="ident">root_key</span>),
+        },
         <span class="ident">parachain_info</span>: <span class="ident">ParachainInfoConfig</span> { <span class="ident">parachain_id</span> },
         <span class="ident">balances</span>: <span class="ident">BalancesConfig</span> { <span class="ident">balances</span> },
         <span class="ident">vesting</span>: <span class="ident">VestingConfig</span> { <span class="ident">vesting</span>: <span class="macro">vec!</span>[] },

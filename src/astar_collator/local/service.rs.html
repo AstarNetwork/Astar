@@ -405,13 +405,24 @@
 <span id="405">405</span>
 <span id="406">406</span>
 <span id="407">407</span>
+<span id="408">408</span>
+<span id="409">409</span>
+<span id="410">410</span>
+<span id="411">411</span>
+<span id="412">412</span>
+<span id="413">413</span>
+<span id="414">414</span>
+<span id="415">415</span>
+<span id="416">416</span>
+<span id="417">417</span>
+<span id="418">418</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Local Service and ServiceFactory implementation. Specialized wrapper over substrate service.</span>
 
 <span class="kw">use</span> <span class="ident">fc_consensus::FrontierBlockImport</span>;
 <span class="kw">use</span> <span class="ident">fc_rpc_core::types</span>::{<span class="ident">FeeHistoryCache</span>, <span class="ident">FilterPool</span>};
 <span class="kw">use</span> <span class="ident">futures::StreamExt</span>;
 <span class="kw">use</span> <span class="ident">local_runtime::RuntimeApi</span>;
-<span class="kw">use</span> <span class="ident">sc_client_api</span>::{<span class="ident">BlockchainEvents</span>, <span class="ident">ExecutorProvider</span>};
+<span class="kw">use</span> <span class="ident">sc_client_api</span>::{<span class="ident">BlockBackend</span>, <span class="ident">BlockchainEvents</span>, <span class="ident">ExecutorProvider</span>};
 <span class="kw">use</span> <span class="ident">sc_consensus_aura</span>::{<span class="ident">ImportQueueParams</span>, <span class="ident">SlotProportion</span>, <span class="ident">StartAuraParams</span>};
 <span class="kw">use</span> <span class="ident">sc_executor::NativeElseWasmExecutor</span>;
 <span class="kw">use</span> <span class="ident">sc_finality_grandpa::SharedVoterState</span>;
@@ -494,6 +505,7 @@
         <span class="ident">config</span>.<span class="ident">wasm_method</span>,
         <span class="ident">config</span>.<span class="ident">default_heap_pages</span>,
         <span class="ident">config</span>.<span class="ident">max_runtime_instances</span>,
+        <span class="ident">config</span>.<span class="ident">runtime_cache_size</span>,
     );
 
     <span class="kw">let</span> (<span class="ident">client</span>, <span class="ident">backend</span>, <span class="ident">keystore_container</span>, <span class="ident">task_manager</span>) <span class="op">=</span>
@@ -591,6 +603,15 @@
         <span class="ident">transaction_pool</span>,
         <span class="ident">other</span>: (<span class="ident">block_import</span>, <span class="ident">grandpa_link</span>, <span class="kw-2">mut</span> <span class="ident">telemetry</span>, <span class="ident">frontier_backend</span>),
     } <span class="op">=</span> <span class="ident">new_partial</span>(<span class="kw-2">&amp;</span><span class="ident">config</span>)<span class="question-mark">?</span>;
+
+    <span class="kw">let</span> <span class="ident">protocol_name</span> <span class="op">=</span> <span class="ident">sc_finality_grandpa::protocol_standard_name</span>(
+        <span class="kw-2">&amp;</span><span class="ident">client</span>
+            .<span class="ident">block_hash</span>(<span class="number">0</span>)
+            .<span class="ident">ok</span>()
+            .<span class="ident">flatten</span>()
+            .<span class="ident">expect</span>(<span class="string">&quot;Genesis block exists; qed&quot;</span>),
+        <span class="kw-2">&amp;</span><span class="ident">config</span>.<span class="ident">chain_spec</span>,
+    );
 
     <span class="kw">let</span> (<span class="ident">network</span>, <span class="ident">system_rpc_tx</span>, <span class="ident">network_starter</span>) <span class="op">=</span>
         <span class="ident">sc_service::build_network</span>(<span class="ident">sc_service::BuildNetworkParams</span> {
@@ -781,6 +802,7 @@
         <span class="ident">keystore</span>,
         <span class="ident">local_role</span>: <span class="ident">role</span>,
         <span class="ident">telemetry</span>: <span class="ident">telemetry</span>.<span class="ident">as_ref</span>().<span class="ident">map</span>(<span class="op">|</span><span class="ident">x</span><span class="op">|</span> <span class="ident">x</span>.<span class="ident">handle</span>()),
+        <span class="ident">protocol_name</span>,
     };
 
     <span class="kw">if</span> <span class="ident">enable_grandpa</span> {

@@ -174,6 +174,9 @@
 <span id="174">174</span>
 <span id="175">175</span>
 <span id="176">176</span>
+<span id="177">177</span>
+<span id="178">178</span>
+<span id="179">179</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Astar chain specifications.</span>
 
 <span class="kw">use</span> <span class="ident">astar_runtime</span>::{
@@ -257,6 +260,7 @@
         <span class="prelude-val">None</span>,
         <span class="prelude-val">None</span>,
         <span class="prelude-val">None</span>,
+        <span class="prelude-val">None</span>,
         <span class="ident">Extensions</span> {
             <span class="ident">bad_blocks</span>: <span class="ident">Default::default</span>(),
             <span class="ident">relay_chain</span>: <span class="string">&quot;tokyo&quot;</span>.<span class="ident">into</span>(),
@@ -296,7 +300,9 @@
         <span class="ident">system</span>: <span class="ident">SystemConfig</span> {
             <span class="ident">code</span>: <span class="ident">wasm_binary_unwrap</span>().<span class="ident">to_vec</span>(),
         },
-        <span class="ident">sudo</span>: <span class="ident">astar_runtime::SudoConfig</span> { <span class="ident">key</span>: <span class="ident">root_key</span> },
+        <span class="ident">sudo</span>: <span class="ident">astar_runtime::SudoConfig</span> {
+            <span class="ident">key</span>: <span class="prelude-val">Some</span>(<span class="ident">root_key</span>),
+        },
         <span class="ident">parachain_info</span>: <span class="ident">ParachainInfoConfig</span> { <span class="ident">parachain_id</span> },
         <span class="ident">balances</span>: <span class="ident">astar_runtime::BalancesConfig</span> { <span class="ident">balances</span> },
         <span class="ident">vesting</span>: <span class="ident">astar_runtime::VestingConfig</span> { <span class="ident">vesting</span>: <span class="macro">vec!</span>[] },
