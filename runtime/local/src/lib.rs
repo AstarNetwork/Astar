@@ -303,7 +303,7 @@ parameter_types! {
     pub const MinimumRemainingAmount: Balance = 1 * AST;
     pub const HistoryDepth: u32 = 14;
     pub const BonusEraDuration: u32 = 100;
-    pub const MaxUnlockingChunks: u32 = 32;
+    pub const MaxUnlockingChunks: u32 = 2;
     pub const UnbondingPeriod: u32 = 2;
 }
 

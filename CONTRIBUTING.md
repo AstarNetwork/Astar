@@ -63,8 +63,8 @@ In the future, we will merge Dusty Network and Shibuya Network into a single Par
 
 ### Contributor Licenses
 
-By contributing, you agree that your contributions will be licensed under the [GNU General Public License v3.0](https://github.com/PlasmNetwork/Astar/blob/development/dusty/LICENSE) as is with the Astar source code. If you have any concerns regarding this matter, please contact the maintainer.
+By contributing, you agree that your contributions will be licensed under the [GNU General Public License v3.0](https://github.com/AstarNetwork/astar-frame/blob/polkadot-v0.9.16/LICENSE) as is with the Astar source code. If you have any concerns regarding this matter, please contact the maintainer.
 
 ## Community Contribution
 
-As a public blockchain network, Astar Network welcomes any contributions that help our community members and create the best blockchain network. Anyone can interact with the community through our [official forum](https://forum.astar.network/), [discord](https://discord.gg/aApeT8r2e4), and [Telegram](https://t.me/PlasmOfficial). You can contribute to the community by actively participating in the forum discussions, helping other members, or sharing Astar Network with others.
+As a public blockchain network, Astar Network welcomes any contributions that help our community members and create the best blockchain network. Anyone can interact with the community through our [official forum](https://forum.astar.network/), [discord](https://discord.gg/Z3nC9U4), and [Telegram](https://t.me/PlasmOfficial). You can contribute to the community by actively participating in the forum discussions, helping other members, or sharing Astar Network with others.

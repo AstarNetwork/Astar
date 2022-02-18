@@ -3,7 +3,7 @@ on: [push]
 name: Integration
 
 env:
-  RUST_VERSION: 'nightly-2021-11-01'
+  RUST_VERSION: 'nightly-2021-11-29'
 
 jobs:
   native:
@@ -55,14 +55,8 @@ jobs:
     - name: Check targets are installed correctly
       run: rustup target list --installed
 
-    - name: Build optimized binary for benchmarking
-      run: cargo build --release --verbose --features runtime-benchmarks
-
-    - uses: actions/upload-artifact@master
-      with:
-        name: astar-runtime-benchmarks
-        path: target/release/astar-collator
-        retention-days: 1
+    - name: Check runtime-benchmarks compilation
+      run: cargo check --verbose --features runtime-benchmarks
 
   try-runtime:
     runs-on: ubuntu-latest
