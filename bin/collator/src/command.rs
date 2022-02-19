@@ -178,10 +178,10 @@ impl SubstrateCli for RelayChainCli {
                 )
                 .unwrap(),
             ))
-        } else if id == "tokyo" {
+        } else if id == "osaka" {
             Ok(Box::new(
                 polkadot_service::WestendChainSpec::from_json_bytes(
-                    &include_bytes!("../res/tokyo.raw.json")[..],
+                    &include_bytes!("../res/osaka.raw.json")[..],
                 )
                 .unwrap(),
             ))
