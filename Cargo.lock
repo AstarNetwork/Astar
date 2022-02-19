@@ -4591,6 +4591,7 @@ dependencies = [
  "pallet-evm-precompile-modexp",
  "pallet-evm-precompile-sha3fips",
  "pallet-evm-precompile-simple",
+ "pallet-evm-precompile-sr25519",
  "pallet-grandpa",
  "pallet-precompile-dapps-staking",
  "pallet-randomness-collective-flip",
@@ -5464,7 +5465,7 @@ dependencies = [
 [[package]]
 name = "pallet-block-reward"
 version = "0.2.0"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.16#c303876bbe0afbd59d891b678976b90812271814"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.16#7cb5f24b8505d8ded4e37d5a612007854088050a"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -5553,7 +5554,7 @@ dependencies = [
 [[package]]
 name = "pallet-collator-selection"
 version = "3.0.0"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.16#c303876bbe0afbd59d891b678976b90812271814"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.16#7cb5f24b8505d8ded4e37d5a612007854088050a"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -5694,7 +5695,7 @@ dependencies = [
 [[package]]
 name = "pallet-custom-signatures"
 version = "4.3.0"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.16#c303876bbe0afbd59d891b678976b90812271814"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.16#7cb5f24b8505d8ded4e37d5a612007854088050a"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -5732,7 +5733,7 @@ dependencies = [
 [[package]]
 name = "pallet-dapps-staking"
 version = "2.1.0"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.16#c303876bbe0afbd59d891b678976b90812271814"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.16#7cb5f24b8505d8ded4e37d5a612007854088050a"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -5923,6 +5924,22 @@ dependencies = [
  "ripemd160",
  "sp-core",
  "sp-io",
+]
+
+[[package]]
+name = "pallet-evm-precompile-sr25519"
+version = "0.1.0"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.16#7cb5f24b8505d8ded4e37d5a612007854088050a"
+dependencies = [
+ "fp-evm",
+ "log",
+ "num_enum",
+ "pallet-evm",
+ "parity-scale-codec",
+ "precompile-utils",
+ "sp-core",
+ "sp-io",
+ "sp-std",
 ]
 
 [[package]]
@@ -6472,7 +6489,7 @@ dependencies = [
 [[package]]
 name = "pallet-vesting"
 version = "4.0.0-dev"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.16#c303876bbe0afbd59d891b678976b90812271814"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.16#7cb5f24b8505d8ded4e37d5a612007854088050a"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -8033,6 +8050,38 @@ name = "ppv-lite86"
 version = "0.2.16"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "eb9f9e6e233e5c4a35559a617bf40a4ec447db2e84c20b55a6f83167b7e57872"
+
+[[package]]
+name = "precompile-utils"
+version = "0.1.0"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.16#7cb5f24b8505d8ded4e37d5a612007854088050a"
+dependencies = [
+ "fp-evm",
+ "frame-support",
+ "frame-system",
+ "log",
+ "num_enum",
+ "pallet-evm",
+ "parity-scale-codec",
+ "precompile-utils-macro",
+ "sha3 0.9.1",
+ "sp-core",
+ "sp-io",
+ "sp-std",
+ "xcm",
+]
+
+[[package]]
+name = "precompile-utils-macro"
+version = "0.1.0"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.16#7cb5f24b8505d8ded4e37d5a612007854088050a"
+dependencies = [
+ "num_enum",
+ "proc-macro2",
+ "quote",
+ "sha3 0.8.2",
+ "syn",
+]
 
 [[package]]
 name = "primitive-types"
@@ -10039,6 +10088,7 @@ dependencies = [
  "pallet-evm-precompile-modexp",
  "pallet-evm-precompile-sha3fips",
  "pallet-evm-precompile-simple",
+ "pallet-evm-precompile-sr25519",
  "pallet-identity",
  "pallet-multisig",
  "pallet-precompile-dapps-staking",
@@ -11482,9 +11532,9 @@ checksum = "360dfd1d6d30e05fda32ace2c8c70e9c0a9da713275777f5a4dbb8a1893930c6"
 
 [[package]]
 name = "tracing"
-version = "0.1.30"
+version = "0.1.31"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2d8d93354fe2a8e50d5953f5ae2e47a3fc2ef03292e7ea46e3cc38f549525fb9"
+checksum = "f6c650a8ef0cd2dd93736f033d21cbd1224c5a967aa0c258d00fcf7dafef9b9f"
 dependencies = [
  "cfg-if 1.0.0",
  "pin-project-lite 0.2.8",
