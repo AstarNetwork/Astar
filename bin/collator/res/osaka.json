@@ -3,9 +3,8 @@
   "id": "westend_osaka",
   "chainType": "Live",
   "bootNodes": [
-      "/ip4/20.74.71.22/tcp/30333/ws/p2p/12D3KooWDN6d7gyFg9izov5RjN89WQVBmEgyjKFfhmap1g6hr4fj",
-      "/ip4/20.74.70.252/tcp/30333/ws/p2p/12D3KooWDSVE3pGqfoSVp5VDwdanE2jc1W35P21PdiChnyRgNaZx",
-      "/ip4/20.74.71.27/tcp/30333/ws/p2p/12D3KooWR5TnsQd3Mefh5coTEtQABY6g2uLd5CGQnZkaWkoDbuxc"
+      "/ip4/20.74.71.22/tcp/30333/ws/p2p/12D3KooWSwS5efvvAJ6edvLjF8oHx19dKVzfWZftyFpUEh8Fep2X"
+      "/ip4/20.74.70.252/tcp/30333/ws/p2p/12D3KooWJHRKUfAHxbjSHyLxXSTCt2rVJkM3GdRuxAXo2CUewA16"
   ],
   "telemetryEndpoints": null,
   "protocolId": "osa",
