@@ -32,6 +32,7 @@ sp-core = { git = "https://github.com/paritytech/substrate", branch = "polkadot-
 sp-consensus-aura = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.16" }
 sp-trie= { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.16" }
 sp-session = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.16" }
+sp-std = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.16" }
 sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.16" }
 sp-keystore= { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.16" }
 sp-offchain = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.16" }

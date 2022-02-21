@@ -5,11 +5,13 @@ use sc_service::ChainType;
 use shibuya_runtime::{
     wasm_binary_unwrap, AccountId, AuraConfig, AuraId, Balance, BalancesConfig, BaseFeeConfig,
     CollatorSelectionConfig, EVMConfig, GenesisConfig, ParachainInfoConfig, Precompiles,
-    SessionConfig, SessionKeys, Signature, SudoConfig, SystemConfig, VestingConfig, SDN,
+    SessionConfig, SessionKeys, Signature, SudoConfig, SystemConfig, VestingConfig,
+    CouncilCollectiveConfig, ElectionsConfig, SDN,
 };
 use sp_core::{sr25519, Pair, Public};
 
 use sp_runtime::traits::{IdentifyAccount, Verify};
+use sp_std::marker::PhantomData;
 
 use super::{get_from_seed, Extensions};
 
@@ -78,7 +80,7 @@ fn make_genesis(
             code: wasm_binary_unwrap().to_vec(),
         },
         sudo: SudoConfig {
-            key: Some(root_key),
+            key: Some(root_key.clone()),
         },
         parachain_info: ParachainInfoConfig { parachain_id },
         balances: BalancesConfig { balances },
@@ -121,6 +123,13 @@ fn make_genesis(
             sp_runtime::Permill::from_parts(125_000),
         ),
         ethereum: Default::default(),
+        council_collective: CouncilCollectiveConfig {
+            members: vec![],
+            phantom: PhantomData,
+        },
+        elections: ElectionsConfig {
+            members: vec![(root_key, 0)],
+        },
     }
 }
 

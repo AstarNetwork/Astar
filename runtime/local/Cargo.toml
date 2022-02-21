@@ -12,10 +12,12 @@ evm = { git = "https://github.com/AstarNetwork/evm", branch = "polkadot-v0.9.16"
 
 pallet-aura = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.16", default-features = false }
 pallet-balances = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.16", default-features = false }
+pallet-collective = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.16", default-features = false }
 pallet-contracts = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.16", default-features = false }
 pallet-contracts-primitives = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.16", default-features = false }
 pallet-contracts-rpc-runtime-api = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.16", default-features = false }
 pallet-base-fee = { git="https://github.com/AstarNetwork/frontier", branch="polkadot-v0.9.16", default-features=false }
+pallet-elections-phragmen = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.16", default-features = false }
 pallet-ethereum = { git="https://github.com/AstarNetwork/frontier", branch="polkadot-v0.9.16", default-features=false }
 pallet-evm = { git="https://github.com/AstarNetwork/frontier", branch="polkadot-v0.9.16", default-features=false }
 pallet-evm-precompile-bn128 = { git="https://github.com/AstarNetwork/frontier", branch="polkadot-v0.9.16", default-features=false }

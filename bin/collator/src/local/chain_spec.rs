@@ -3,11 +3,12 @@
 use local_runtime::{
     wasm_binary_unwrap, AccountId, AuraConfig, AuraId, BalancesConfig, BaseFeeConfig, EVMConfig,
     GenesisConfig, GrandpaConfig, GrandpaId, Precompiles, Signature, SudoConfig, SystemConfig,
-    VestingConfig,
+    VestingConfig, CouncilCollectiveConfig, ElectionsConfig
 };
 use sc_service::ChainType;
 use sp_core::{crypto::Ss58Codec, sr25519, Pair, Public};
 use sp_runtime::traits::{IdentifyAccount, Verify};
+use sp_std::marker::PhantomData;
 
 type AccountPublic = <Signature as Verify>::Signer;
 
@@ -127,6 +128,13 @@ fn testnet_genesis(
         ),
         sudo: SudoConfig {
             key: Some(root_key),
+        },
+        council_collective: CouncilCollectiveConfig {
+            members: vec![],
+            phantom: PhantomData,
+        },
+        elections: ElectionsConfig {
+            members: endowed_accounts.iter().map(|x| (x.clone(), 0)).collect(),
         },
     }
 }

@@ -9,7 +9,7 @@ include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 use codec::{Decode, Encode};
 use frame_support::{
     construct_runtime, parameter_types,
-    traits::{Currency, FindAuthor, Imbalance, KeyOwnerProofSystem, Nothing, OnUnbalanced},
+    traits::{Currency, FindAuthor, Imbalance, KeyOwnerProofSystem, LockIdentifier, Nothing, OnUnbalanced},
     weights::{
         constants::{RocksDbWeight, WEIGHT_PER_SECOND},
         IdentityFee, Weight,
@@ -17,6 +17,7 @@ use frame_support::{
     ConsensusEngineId, PalletId,
 };
 use frame_system::limits::{BlockLength, BlockWeights};
+use pallet_collective::{MemberCount, DefaultVote};
 use pallet_contracts::weights::WeightInfo;
 use pallet_evm::{FeeCalculator, Runner};
 use pallet_grandpa::{fg_primitives, AuthorityList as GrandpaAuthorityList};
@@ -325,6 +326,66 @@ impl pallet_dapps_staking::Config for Runtime {
     type UnbondingPeriod = UnbondingPeriod;
 }
 
+parameter_types! {
+    pub const CouncilMotionDuration: BlockNumber = 7 * DAYS;
+    pub const CouncilMaxProposals: u32 = 10;
+    pub const CouncilMaxMembers: u32 = 7;
+}
+
+type CouncilInstance = pallet_collective::Instance1;
+
+/// Always require a majority to pass a council vote.
+pub struct MoreThanMajorityRequired;
+impl DefaultVote for MoreThanMajorityRequired {
+	fn default_vote(
+		_prime_vote: Option<bool>,
+		yes_votes: MemberCount,
+		_no_votes: MemberCount,
+		len: MemberCount,
+	) -> bool {
+		return yes_votes * 2 > len;
+	}
+}
+
+impl pallet_collective::Config<CouncilInstance> for Runtime {
+    type Origin = Origin;
+    type Event = Event;
+    type Proposal = Call;
+    type MotionDuration = CouncilMotionDuration;
+    type MaxProposals = CouncilMaxProposals;
+    type MaxMembers = CouncilMaxMembers;
+    type DefaultVote = MoreThanMajorityRequired;
+    type WeightInfo = pallet_collective::weights::SubstrateWeight<Runtime>;
+}
+
+parameter_types! {
+  pub const CandidacyBond: Balance = 100 * AST;
+  pub const VotingBondBase: Balance = deposit(1, 64);
+  pub const VotingBondFactor: Balance = deposit(0, 32);
+  pub const TermDuration: BlockNumber = 7 * DAYS;
+  pub const DesiredMembers: u32 = 7;
+  pub const DesiredRunnersUp: u32 = 14;
+  pub const ElectionsPhragmenPalletId: LockIdentifier = *b"phrelect";
+}
+
+impl pallet_elections_phragmen::Config for Runtime {
+    type Event = Event;
+    type Currency = Balances;
+    type ChangeMembers = CouncilCollective;
+    type InitializeMembers = CouncilCollective;
+    type CurrencyToVote = frame_support::traits::SaturatingCurrencyToVote;
+    type CandidacyBond = CandidacyBond;
+    type VotingBondBase = VotingBondBase;
+    type VotingBondFactor = VotingBondFactor;
+    type LoserCandidate = ();
+    type KickedMember = ();
+    type DesiredMembers = DesiredMembers;
+    type DesiredRunnersUp = DesiredRunnersUp;
+    type TermDuration = TermDuration;
+    type PalletId = ElectionsPhragmenPalletId;
+    type WeightInfo = pallet_elections_phragmen::weights::SubstrateWeight<Runtime>;
+}
+
 /// Multi-VM pointer to smart contract instance.
 #[derive(PartialEq, Eq, Copy, Clone, Encode, Decode, RuntimeDebug, scale_info::TypeInfo)]
 pub enum SmartContract<AccountId> {
@@ -575,6 +636,8 @@ construct_runtime!(
         BaseFee: pallet_base_fee::{Pallet, Call, Storage, Config<T>, Event},
         Contracts: pallet_contracts::{Pallet, Call, Storage, Event<T>},
         Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>},
+        CouncilCollective: pallet_collective::<Instance1>::{Pallet, Call, Storage, Event<T>, Origin<T>, Config<T>},
+        Elections: pallet_elections_phragmen::{Pallet, Call, Event<T>, Config<T>},
     }
 );
 
