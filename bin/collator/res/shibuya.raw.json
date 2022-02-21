@@ -13,7 +13,7 @@
     "tokenDecimals": 18,
     "tokenSymbol": "SBY"
   },
-  "relayChain": "tokyo",
+  "relayChain": "osaka",
   "paraId": 1000,
   "consensusEngine": null,
   "codeSubstitutes": {},
