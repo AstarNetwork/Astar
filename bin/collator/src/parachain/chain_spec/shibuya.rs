@@ -6,7 +6,7 @@ use shibuya_runtime::{
     wasm_binary_unwrap, AccountId, AuraConfig, AuraId, Balance, BalancesConfig, BaseFeeConfig,
     CollatorSelectionConfig, EVMConfig, GenesisConfig, ParachainInfoConfig, Precompiles,
     SessionConfig, SessionKeys, Signature, SudoConfig, SystemConfig, VestingConfig,
-    CouncilCollectiveConfig, ElectionsConfig, SDN,
+    CouncilConfig, ElectionsConfig, SDN,
 };
 use sp_core::{sr25519, Pair, Public};
 
@@ -123,7 +123,7 @@ fn make_genesis(
             sp_runtime::Permill::from_parts(125_000),
         ),
         ethereum: Default::default(),
-        council_collective: CouncilCollectiveConfig {
+        council: CouncilConfig {
             members: vec![],
             phantom: PhantomData,
         },

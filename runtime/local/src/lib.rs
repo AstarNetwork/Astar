@@ -371,8 +371,8 @@ parameter_types! {
 impl pallet_elections_phragmen::Config for Runtime {
     type Event = Event;
     type Currency = Balances;
-    type ChangeMembers = CouncilCollective;
-    type InitializeMembers = CouncilCollective;
+    type ChangeMembers = Council;
+    type InitializeMembers = Council;
     type CurrencyToVote = frame_support::traits::SaturatingCurrencyToVote;
     type CandidacyBond = CandidacyBond;
     type VotingBondBase = VotingBondBase;
@@ -636,7 +636,7 @@ construct_runtime!(
         BaseFee: pallet_base_fee::{Pallet, Call, Storage, Config<T>, Event},
         Contracts: pallet_contracts::{Pallet, Call, Storage, Event<T>},
         Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>},
-        CouncilCollective: pallet_collective::<Instance1>::{Pallet, Call, Storage, Event<T>, Origin<T>, Config<T>},
+        Council: pallet_collective::<Instance1>::{Pallet, Call, Storage, Event<T>, Origin<T>, Config<T>},
         Elections: pallet_elections_phragmen::{Pallet, Call, Event<T>, Config<T>},
     }
 );

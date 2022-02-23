@@ -349,8 +349,8 @@ parameter_types! {
 impl pallet_elections_phragmen::Config for Runtime {
     type Event = Event;
     type Currency = Balances;
-    type ChangeMembers = CouncilCollective;
-    type InitializeMembers = CouncilCollective;
+    type ChangeMembers = Council;
+    type InitializeMembers = Council;
     type CurrencyToVote = frame_support::traits::SaturatingCurrencyToVote;
     type CandidacyBond = CandidacyBond;
     type VotingBondBase = VotingBondBase;
@@ -802,7 +802,7 @@ construct_runtime!(
         Aura: pallet_aura::{Pallet, Storage, Config<T>} = 43,
         AuraExt: cumulus_pallet_aura_ext::{Pallet, Storage, Config} = 44,
 
-        CouncilCollective: pallet_collective::<Instance1>::{Pallet, Call, Storage, Event<T>, Origin<T>, Config<T>} = 50,
+        Council: pallet_collective::<Instance1>::{Pallet, Call, Storage, Event<T>, Origin<T>, Config<T>} = 50,
         Elections: pallet_elections_phragmen::{Pallet, Call, Event<T>, Config<T>} = 51,
 
         EVM: pallet_evm::{Pallet, Config, Call, Storage, Event<T>} = 60,

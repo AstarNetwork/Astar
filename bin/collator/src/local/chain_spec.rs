@@ -3,7 +3,7 @@
 use local_runtime::{
     wasm_binary_unwrap, AccountId, AuraConfig, AuraId, BalancesConfig, BaseFeeConfig, EVMConfig,
     GenesisConfig, GrandpaConfig, GrandpaId, Precompiles, Signature, SudoConfig, SystemConfig,
-    VestingConfig, CouncilCollectiveConfig, ElectionsConfig
+    VestingConfig, CouncilConfig, ElectionsConfig
 };
 use sc_service::ChainType;
 use sp_core::{crypto::Ss58Codec, sr25519, Pair, Public};
@@ -129,7 +129,7 @@ fn testnet_genesis(
         sudo: SudoConfig {
             key: Some(root_key),
         },
-        council_collective: CouncilCollectiveConfig {
+        council: CouncilConfig {
             members: vec![],
             phantom: PhantomData,
         },
