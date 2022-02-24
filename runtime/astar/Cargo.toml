@@ -1,6 +1,6 @@
 [package]
 name = "astar-runtime"
-version = "3.9.0"
+version = "3.9.1"
 authors = ["Stake Technologies <devops@stake.co.jp>"]
 edition = "2018"
 build = "build.rs"
@@ -76,7 +76,7 @@ pallet-collective = { git = "https://github.com/paritytech/substrate", branch = 
 pallet-block-reward = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.16", default-features = false }
 pallet-collator-selection = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.16", default-features = false }
 pallet-custom-signatures = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.16", default-features = false }
-pallet-dapps-staking = { git = "https://github.com/AstarNetwork/astar-frame", branch = "pallet-dapps-staking-1.1.2/polkadot-0.9.16", default-features = false }
+pallet-dapps-staking = { git = "https://github.com/AstarNetwork/astar-frame", tag = "pallet-dapps-staking-1.1.2/polkadot-v0.9.16", default-features = false }
 pallet-vesting = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.16", default-features = false }
 
 [build-dependencies]

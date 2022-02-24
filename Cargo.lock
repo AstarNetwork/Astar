@@ -153,7 +153,7 @@ checksum = "9b34d609dfbaf33d6889b2b7106d3ca345eacad44200913df5ba02bfd31d2ba9"
 
 [[package]]
 name = "astar-collator"
-version = "3.9.0"
+version = "3.9.1"
 dependencies = [
  "astar-runtime",
  "async-trait",
@@ -239,7 +239,7 @@ dependencies = [
 
 [[package]]
 name = "astar-runtime"
-version = "3.9.0"
+version = "3.9.1"
 dependencies = [
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-parachain-system",
@@ -4562,7 +4562,7 @@ checksum = "a261afc61b7a5e323933b402ca6a1765183687c614789b1e4db7762ed4230bca"
 
 [[package]]
 name = "local-runtime"
-version = "3.9.0"
+version = "3.9.1"
 dependencies = [
  "evm",
  "fp-rpc",
@@ -5711,7 +5711,7 @@ dependencies = [
 [[package]]
 name = "pallet-dapps-staking"
 version = "1.1.2"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=pallet-dapps-staking-1.1.2/polkadot-0.9.16#602e2f1d3b452a3b655535e11bbe0760c4e1e81b"
+source = "git+https://github.com/AstarNetwork/astar-frame?tag=pallet-dapps-staking-1.1.2/polkadot-v0.9.16#602e2f1d3b452a3b655535e11bbe0760c4e1e81b"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -5733,7 +5733,7 @@ dependencies = [
 [[package]]
 name = "pallet-dapps-staking"
 version = "2.1.0"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.16#7cb5f24b8505d8ded4e37d5a612007854088050a"
+source = "git+https://github.com/AstarNetwork/astar-frame?tag=pallet-dapps-staking-2.1.0/polkadot-v0.9.16#9c27d951e08da38005a0049bbd042d48b352476f"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -6172,8 +6172,8 @@ dependencies = [
 
 [[package]]
 name = "pallet-precompile-dapps-staking"
-version = "1.1.0"
-source = "git+https://github.com/AstarNetwork/astar-frame?tag=pallet-precompile-dapps-staking-1.1.0/polkadot-0.9.16#c303876bbe0afbd59d891b678976b90812271814"
+version = "1.1.1"
+source = "git+https://github.com/AstarNetwork/astar-frame?tag=pallet-precompile-dapps-staking-1.1.1/polkadot-v0.9.16#41793d2fd4e0945ef47d22565d5a7d57eae362f6"
 dependencies = [
  "evm",
  "fp-evm",
@@ -10125,7 +10125,7 @@ dependencies = [
 
 [[package]]
 name = "shiden-runtime"
-version = "3.9.0"
+version = "3.9.1"
 dependencies = [
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-parachain-system",
