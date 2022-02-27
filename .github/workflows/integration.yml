@@ -7,7 +7,7 @@ env:
 
 jobs:
   native-linux:
-    runs-on: self-hosted
+    runs-on: [self-hosted, Linux, X64]
     steps:
     - uses: hecrj/setup-rust-action@v1
       with:
