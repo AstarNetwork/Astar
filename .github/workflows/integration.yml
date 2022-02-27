@@ -33,7 +33,7 @@ jobs:
 
     - uses: actions/upload-artifact@master
       with:
-        name: astar-${{ matrix.os }}-x86_64
+        name: astar-ubuntu-latest-x86_64
         path: target/release/astar-collator
 
   native-macos:
@@ -63,7 +63,7 @@ jobs:
 
     - uses: actions/upload-artifact@master
       with:
-        name: astar-${{ matrix.os }}-x86_64
+        name: astar-macOS-latest-x86_64
         path: target/release/astar-collator
 
   runtime-benchmarks:
