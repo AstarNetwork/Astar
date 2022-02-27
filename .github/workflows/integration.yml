@@ -6,11 +6,45 @@ env:
   RUST_VERSION: 'nightly-2021-11-29'
 
 jobs:
-  native:
-    runs-on: ${{ matrix.os }}
+  native-linux:
+    runs-on: self-hosted
     strategy:
       matrix:
         os: [ubuntu-latest, macOS-latest]
+    steps:
+    - uses: hecrj/setup-rust-action@v1
+      with:
+        rust-version: ${{ env.RUST_VERSION }}
+        targets: 'wasm32-unknown-unknown'
+
+    - name: Checkout the source code
+      uses: actions/checkout@master
+      with:
+        submodules: true
+
+    - name: Check targets are installed correctly
+      run: rustup target list --installed
+
+    - name: Run all tests
+      run: cargo test --all
+
+    - name: Cleanup after tests
+      run: cargo clean
+
+    - name: Build optimized binary
+      run: cargo build --release --verbose
+
+    - uses: actions/upload-artifact@master
+      with:
+        name: astar-${{ matrix.os }}-x86_64
+        path: target/release/astar-collator
+
+  native-macos:
+    # runs-on: ${{ matrix.os }}
+    runs-on: macos-latest
+   # strategy:
+      #matrix:
+        #os: [ubuntu-latest, macOS-latest]
     steps:
     - uses: hecrj/setup-rust-action@v1
       with:
