@@ -517,7 +517,7 @@ where
         + pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>
         + fp_rpc::EthereumRuntimeRPCApi<Block>
         + fp_rpc::ConvertTransactionRuntimeApi<Block>
-        + pallet_contracts_rpc::ContractsApi<Block, AccountId, Balance, BlockNumber, Hash>
+        + pallet_contracts_rpc::ContractsRuntimeApi<Block, AccountId, Balance, BlockNumber, Hash>
         + cumulus_primitives_core::CollectCollationInfo<Block>,
     sc_client_api::StateBackendFor<TFullBackend<Block>, Block>: sp_api::StateBackend<BlakeTwo256>,
     Executor: sc_executor::NativeExecutionDispatch + 'static,
