@@ -210,6 +210,9 @@
 <span id="209">209</span>
 <span id="210">210</span>
 <span id="211">211</span>
+<span id="212">212</span>
+<span id="213">213</span>
+<span id="214">214</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Astar RPCs implementation.</span>
 
 <span class="kw">use</span> <span class="ident">fc_rpc</span>::{
@@ -219,9 +222,9 @@
     <span class="ident">StorageOverride</span>, <span class="ident">Web3Api</span>, <span class="ident">Web3ApiServer</span>,
 };
 <span class="kw">use</span> <span class="ident">fc_rpc_core::types</span>::{<span class="ident">FeeHistoryCache</span>, <span class="ident">FilterPool</span>};
+<span class="kw">use</span> <span class="ident">fp_storage::EthereumStorageSchema</span>;
 <span class="kw">use</span> <span class="ident">frame_rpc_system</span>::{<span class="ident">FullSystem</span>, <span class="ident">SystemApi</span>};
 <span class="kw">use</span> <span class="ident">jsonrpc_pubsub::manager::SubscriptionManager</span>;
-<span class="kw">use</span> <span class="ident">pallet_ethereum::EthereumStorageSchema</span>;
 <span class="kw">use</span> <span class="ident">pallet_transaction_payment_rpc</span>::{<span class="ident">TransactionPayment</span>, <span class="ident">TransactionPaymentApi</span>};
 <span class="kw">use</span> <span class="ident">sc_client_api</span>::{<span class="ident">AuxStore</span>, <span class="ident">Backend</span>, <span class="ident">BlockchainEvents</span>, <span class="ident">StateBackend</span>, <span class="ident">StorageProvider</span>};
 <span class="kw">use</span> <span class="ident">sc_network::NetworkService</span>;
@@ -317,13 +320,16 @@
     <span class="kw">pub</span> <span class="ident">fee_history_limit</span>: <span class="ident">u64</span>,
     <span class="doccomment">/// Fee history cache.</span>
     <span class="kw">pub</span> <span class="ident">fee_history_cache</span>: <span class="ident">FeeHistoryCache</span>,
+    <span class="doccomment">/// Ethereum data access overrides.</span>
+    <span class="kw">pub</span> <span class="ident">overrides</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">OverrideHandle</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+    <span class="doccomment">/// Cache for Ethereum block data.</span>
+    <span class="kw">pub</span> <span class="ident">block_data_cache</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">EthBlockDataCache</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span><span class="op">&gt;</span>,
 }
 
 <span class="doccomment">/// Instantiate all RPC extensions.</span>
 <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">create_full</span><span class="op">&lt;</span><span class="ident">C</span>, <span class="ident">P</span>, <span class="ident">BE</span>, <span class="ident">A</span><span class="op">&gt;</span>(
     <span class="ident">deps</span>: <span class="ident">FullDeps</span><span class="op">&lt;</span><span class="ident">C</span>, <span class="ident">P</span>, <span class="ident">A</span><span class="op">&gt;</span>,
     <span class="ident">subscription_task_executor</span>: <span class="ident">SubscriptionTaskExecutor</span>,
-    <span class="ident">overrides</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">OverrideHandle</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span><span class="op">&gt;</span>,
 ) -&gt; <span class="ident">jsonrpc_core::IoHandler</span><span class="op">&lt;</span><span class="ident">sc_rpc::Metadata</span><span class="op">&gt;</span>
 <span class="kw">where</span>
     <span class="ident">C</span>: <span class="ident">ProvideRuntimeApi</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span>
@@ -358,6 +364,8 @@
         <span class="ident">filter_pool</span>,
         <span class="ident">fee_history_limit</span>,
         <span class="ident">fee_history_cache</span>,
+        <span class="ident">overrides</span>,
+        <span class="ident">block_data_cache</span>,
     } <span class="op">=</span> <span class="ident">deps</span>;
 
     <span class="ident">io</span>.<span class="ident">extend_with</span>(<span class="ident">SystemApi::to_delegate</span>(<span class="ident">FullSystem::new</span>(
@@ -372,7 +380,6 @@
 
     <span class="kw">let</span> <span class="ident">max_past_logs</span>: <span class="ident">u32</span> <span class="op">=</span> <span class="number">10_000</span>;
     <span class="kw">let</span> <span class="ident">max_stored_filters</span>: <span class="ident">usize</span> <span class="op">=</span> <span class="number">500</span>;
-    <span class="kw">let</span> <span class="ident">block_data_cache</span> <span class="op">=</span> <span class="ident">Arc::new</span>(<span class="ident">EthBlockDataCache::new</span>(<span class="number">50</span>, <span class="number">50</span>));
 
     <span class="ident">io</span>.<span class="ident">extend_with</span>(<span class="ident">EthApiServer::to_delegate</span>(<span class="ident">EthApi::new</span>(
         <span class="ident">client</span>.<span class="ident">clone</span>(),
@@ -395,7 +402,6 @@
         <span class="ident">frontier_backend</span>,
         <span class="ident">filter_pool</span>,
         <span class="ident">max_stored_filters</span>,
-        <span class="ident">overrides</span>.<span class="ident">clone</span>(),
         <span class="ident">max_past_logs</span>,
         <span class="ident">block_data_cache</span>.<span class="ident">clone</span>(),
     )));

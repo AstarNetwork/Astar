@@ -417,6 +417,15 @@
 <span id="416">416</span>
 <span id="417">417</span>
 <span id="418">418</span>
+<span id="419">419</span>
+<span id="420">420</span>
+<span id="421">421</span>
+<span id="422">422</span>
+<span id="423">423</span>
+<span id="424">424</span>
+<span id="425">425</span>
+<span id="426">426</span>
+<span id="427">427</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Local Service and ServiceFactory implementation. Specialized wrapper over substrate service.</span>
 
 <span class="kw">use</span> <span class="ident">fc_consensus::FrontierBlockImport</span>;
@@ -693,6 +702,13 @@
     <span class="kw">let</span> <span class="ident">prometheus_registry</span> <span class="op">=</span> <span class="ident">config</span>.<span class="ident">prometheus_registry</span>().<span class="ident">cloned</span>();
     <span class="kw">let</span> <span class="ident">is_authority</span> <span class="op">=</span> <span class="ident">config</span>.<span class="ident">role</span>.<span class="ident">is_authority</span>();
 
+    <span class="kw">let</span> <span class="ident">block_data_cache</span> <span class="op">=</span> <span class="ident">Arc::new</span>(<span class="ident">fc_rpc::EthBlockDataCache::new</span>(
+        <span class="ident">task_manager</span>.<span class="ident">spawn_handle</span>(),
+        <span class="ident">overrides</span>.<span class="ident">clone</span>(),
+        <span class="number">50</span>,
+        <span class="number">50</span>,
+    ));
+
     <span class="kw">let</span> <span class="ident">rpc_extensions_builder</span> <span class="op">=</span> {
         <span class="kw">let</span> <span class="ident">client</span> <span class="op">=</span> <span class="ident">client</span>.<span class="ident">clone</span>();
         <span class="kw">let</span> <span class="ident">network</span> <span class="op">=</span> <span class="ident">network</span>.<span class="ident">clone</span>();
@@ -710,9 +726,11 @@
                 <span class="ident">filter_pool</span>: <span class="ident">filter_pool</span>.<span class="ident">clone</span>(),
                 <span class="ident">fee_history_limit</span>: <span class="ident">FEE_HISTORY_LIMIT</span>,
                 <span class="ident">fee_history_cache</span>: <span class="ident">fee_history_cache</span>.<span class="ident">clone</span>(),
+                <span class="ident">block_data_cache</span>: <span class="ident">block_data_cache</span>.<span class="ident">clone</span>(),
+                <span class="ident">overrides</span>: <span class="ident">overrides</span>.<span class="ident">clone</span>(),
             };
 
-            <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">io</span> <span class="op">=</span> <span class="ident"><span class="kw">crate</span>::rpc::create_full</span>(<span class="ident">deps</span>, <span class="ident">subscription</span>, <span class="ident">overrides</span>.<span class="ident">clone</span>());
+            <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">io</span> <span class="op">=</span> <span class="ident"><span class="kw">crate</span>::rpc::create_full</span>(<span class="ident">deps</span>, <span class="ident">subscription</span>);
             <span class="comment">// Local node support WASM contracts</span>
             <span class="ident">io</span>.<span class="ident">extend_with</span>(<span class="ident">pallet_contracts_rpc::ContractsApi::to_delegate</span>(
                 <span class="ident">pallet_contracts_rpc::Contracts::new</span>(<span class="ident">client</span>.<span class="ident">clone</span>()),

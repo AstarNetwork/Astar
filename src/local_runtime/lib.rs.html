@@ -1534,7 +1534,7 @@
 
 <span class="kw">impl</span> <span class="ident">pallet_ethereum::Config</span> <span class="kw">for</span> <span class="ident">Runtime</span> {
     <span class="kw">type</span> <span class="ident">Event</span> <span class="op">=</span> <span class="ident">Event</span>;
-    <span class="kw">type</span> <span class="ident">StateRoot</span> <span class="op">=</span> <span class="ident">pallet_ethereum::IntermediateStateRoot</span>;
+    <span class="kw">type</span> <span class="ident">StateRoot</span> <span class="op">=</span> <span class="ident">pallet_ethereum::IntermediateStateRoot</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span>;
 }
 
 <span class="macro">parameter_types!</span> {

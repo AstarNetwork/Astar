@@ -165,30 +165,32 @@
 <span id="164">164</span>
 <span id="165">165</span>
 <span id="166">166</span>
-</pre><pre class="rust"><code><span class="kw">use</span> <span class="ident">sc_cli</span>::{<span class="ident">KeySubcommand</span>, <span class="ident">SignCmd</span>, <span class="ident">VanityCmd</span>, <span class="ident">VerifyCmd</span>};
+<span id="167">167</span>
+</pre><pre class="rust"><code><span class="kw">use</span> <span class="ident">clap::Parser</span>;
+<span class="kw">use</span> <span class="ident">sc_cli</span>::{<span class="ident">KeySubcommand</span>, <span class="ident">SignCmd</span>, <span class="ident">VanityCmd</span>, <span class="ident">VerifyCmd</span>};
 <span class="kw">use</span> <span class="ident">std::path::PathBuf</span>;
-<span class="kw">use</span> <span class="ident">structopt::StructOpt</span>;
 
 <span class="doccomment">/// An overarching CLI command definition.</span>
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">StructOpt</span>)]</span>
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">clap::Parser</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Cli</span> {
     <span class="doccomment">/// Possible subcommand with parameters.</span>
-    <span class="attribute">#[<span class="ident">structopt</span>(<span class="ident">subcommand</span>)]</span>
+    <span class="attribute">#[<span class="ident">clap</span>(<span class="ident">subcommand</span>)]</span>
     <span class="kw">pub</span> <span class="ident">subcommand</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Subcommand</span><span class="op">&gt;</span>,
 
     <span class="attribute">#[<span class="ident">allow</span>(<span class="ident">missing_docs</span>)]</span>
-    <span class="attribute">#[<span class="ident">structopt</span>(<span class="ident">flatten</span>)]</span>
+    <span class="attribute">#[<span class="ident">clap</span>(<span class="ident">flatten</span>)]</span>
     <span class="kw">pub</span> <span class="ident">run</span>: <span class="ident">RunCmd</span>,
 
     <span class="doccomment">/// Relaychain arguments</span>
-    <span class="attribute">#[<span class="ident">structopt</span>(<span class="ident">raw</span> <span class="op">=</span> <span class="bool-val">true</span>)]</span>
+    <span class="attribute">#[<span class="ident">clap</span>(<span class="ident">raw</span> <span class="op">=</span> <span class="bool-val">true</span>)]</span>
     <span class="kw">pub</span> <span class="ident">relaychain_args</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>,
 }
 
 <span class="doccomment">/// Possible subcommands of the main binary.</span>
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">StructOpt</span>)]</span>
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">clap::Subcommand</span>)]</span>
 <span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">Subcommand</span> {
     <span class="doccomment">/// Key management cli utilities</span>
+    <span class="attribute">#[<span class="ident">clap</span>(<span class="ident">subcommand</span>)]</span>
     <span class="ident">Key</span>(<span class="ident">KeySubcommand</span>),
 
     <span class="doccomment">/// Verify a signature for a message, provided on STDIN, with a given (public or secret) key.</span>
@@ -222,16 +224,16 @@
     <span class="ident">Revert</span>(<span class="ident">sc_cli::RevertCmd</span>),
 
     <span class="doccomment">/// Export the genesis state of the parachain.</span>
-    <span class="attribute">#[<span class="ident">structopt</span>(<span class="ident">name</span> <span class="op">=</span> <span class="string">&quot;export-genesis-state&quot;</span>)]</span>
+    <span class="attribute">#[<span class="ident">clap</span>(<span class="ident">name</span> <span class="op">=</span> <span class="string">&quot;export-genesis-state&quot;</span>)]</span>
     <span class="ident">ExportGenesisState</span>(<span class="ident">ExportGenesisStateCommand</span>),
 
     <span class="doccomment">/// Export the genesis wasm of the parachain.</span>
-    <span class="attribute">#[<span class="ident">structopt</span>(<span class="ident">name</span> <span class="op">=</span> <span class="string">&quot;export-genesis-wasm&quot;</span>)]</span>
+    <span class="attribute">#[<span class="ident">clap</span>(<span class="ident">name</span> <span class="op">=</span> <span class="string">&quot;export-genesis-wasm&quot;</span>)]</span>
     <span class="ident">ExportGenesisWasm</span>(<span class="ident">ExportGenesisWasmCommand</span>),
 
     <span class="doccomment">/// The custom benchmark subcommmand benchmarking runtime pallets.</span>
     <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;runtime-benchmarks&quot;</span>)]</span>
-    <span class="attribute">#[<span class="ident">structopt</span>(<span class="ident">name</span> <span class="op">=</span> <span class="string">&quot;benchmark&quot;</span>, <span class="ident">about</span> <span class="op">=</span> <span class="string">&quot;Benchmark runtime pallets.&quot;</span>)]</span>
+    <span class="attribute">#[<span class="ident">clap</span>(<span class="ident">name</span> <span class="op">=</span> <span class="string">&quot;benchmark&quot;</span>, <span class="ident">about</span> <span class="op">=</span> <span class="string">&quot;Benchmark runtime pallets.&quot;</span>)]</span>
     <span class="ident">Benchmark</span>(<span class="ident">frame_benchmarking_cli::BenchmarkCmd</span>),
 
     <span class="doccomment">/// Try some command against runtime state.</span>
@@ -240,54 +242,54 @@
 }
 
 <span class="doccomment">/// Command for exporting the genesis state of the parachain</span>
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">StructOpt</span>)]</span>
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">clap::Parser</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">ExportGenesisStateCommand</span> {
     <span class="doccomment">/// Output file name or stdout if unspecified.</span>
-    <span class="attribute">#[<span class="ident">structopt</span>(<span class="ident">parse</span>(<span class="ident">from_os_str</span>))]</span>
+    <span class="attribute">#[<span class="ident">clap</span>(<span class="ident">parse</span>(<span class="ident">from_os_str</span>))]</span>
     <span class="kw">pub</span> <span class="ident">output</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">PathBuf</span><span class="op">&gt;</span>,
 
     <span class="doccomment">/// Write output in binary. Default is to write in hex.</span>
-    <span class="attribute">#[<span class="ident">structopt</span>(<span class="ident">short</span>, <span class="ident">long</span>)]</span>
+    <span class="attribute">#[<span class="ident">clap</span>(<span class="ident">short</span>, <span class="ident">long</span>)]</span>
     <span class="kw">pub</span> <span class="ident">raw</span>: <span class="ident">bool</span>,
 
     <span class="doccomment">/// Id of the parachain this state is for.</span>
     <span class="doccomment">///</span>
     <span class="doccomment">/// Default: 2007 (shiden)</span>
-    <span class="attribute">#[<span class="ident">structopt</span>(<span class="ident">long</span>, <span class="ident">default_value</span> <span class="op">=</span> <span class="string">&quot;2007&quot;</span>)]</span>
+    <span class="attribute">#[<span class="ident">clap</span>(<span class="ident">long</span>, <span class="ident">default_value</span> <span class="op">=</span> <span class="string">&quot;2007&quot;</span>)]</span>
     <span class="kw">pub</span> <span class="ident">parachain_id</span>: <span class="ident">u32</span>,
 
     <span class="doccomment">/// The name of the chain for that the genesis state should be exported.</span>
-    <span class="attribute">#[<span class="ident">structopt</span>(<span class="ident">long</span>)]</span>
+    <span class="attribute">#[<span class="ident">clap</span>(<span class="ident">long</span>)]</span>
     <span class="kw">pub</span> <span class="ident">chain</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>,
 }
 
 <span class="doccomment">/// Command for exporting the genesis wasm file.</span>
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">StructOpt</span>)]</span>
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">clap::Parser</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">ExportGenesisWasmCommand</span> {
     <span class="doccomment">/// Output file name or stdout if unspecified.</span>
-    <span class="attribute">#[<span class="ident">structopt</span>(<span class="ident">parse</span>(<span class="ident">from_os_str</span>))]</span>
+    <span class="attribute">#[<span class="ident">clap</span>(<span class="ident">parse</span>(<span class="ident">from_os_str</span>))]</span>
     <span class="kw">pub</span> <span class="ident">output</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">PathBuf</span><span class="op">&gt;</span>,
 
     <span class="doccomment">/// Write output in binary. Default is to write in hex.</span>
-    <span class="attribute">#[<span class="ident">structopt</span>(<span class="ident">short</span>, <span class="ident">long</span>)]</span>
+    <span class="attribute">#[<span class="ident">clap</span>(<span class="ident">short</span>, <span class="ident">long</span>)]</span>
     <span class="kw">pub</span> <span class="ident">raw</span>: <span class="ident">bool</span>,
 
     <span class="doccomment">/// The name of the chain for that the genesis wasm file should be exported.</span>
-    <span class="attribute">#[<span class="ident">structopt</span>(<span class="ident">long</span>)]</span>
+    <span class="attribute">#[<span class="ident">clap</span>(<span class="ident">long</span>)]</span>
     <span class="kw">pub</span> <span class="ident">chain</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>,
 }
 
 <span class="attribute">#[<span class="ident">allow</span>(<span class="ident">missing_docs</span>)]</span>
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">StructOpt</span>)]</span>
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">clap::Parser</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">RunCmd</span> {
     <span class="attribute">#[<span class="ident">allow</span>(<span class="ident">missing_docs</span>)]</span>
-    <span class="attribute">#[<span class="ident">structopt</span>(<span class="ident">flatten</span>)]</span>
+    <span class="attribute">#[<span class="ident">clap</span>(<span class="ident">flatten</span>)]</span>
     <span class="kw">pub</span> <span class="ident">base</span>: <span class="ident">sc_cli::RunCmd</span>,
 
     <span class="doccomment">/// Id of the parachain this collator collates for.</span>
     <span class="doccomment">///</span>
     <span class="doccomment">/// Default: 2007 (shiden)</span>
-    <span class="attribute">#[<span class="ident">structopt</span>(<span class="ident">long</span>, <span class="ident">default_value</span> <span class="op">=</span> <span class="string">&quot;2007&quot;</span>)]</span>
+    <span class="attribute">#[<span class="ident">clap</span>(<span class="ident">long</span>, <span class="ident">default_value</span> <span class="op">=</span> <span class="string">&quot;2007&quot;</span>)]</span>
     <span class="kw">pub</span> <span class="ident">parachain_id</span>: <span class="ident">u32</span>,
 }
 
@@ -327,7 +329,7 @@
         <span class="self">Self</span> {
             <span class="ident">base_path</span>,
             <span class="ident">chain_id</span>,
-            <span class="ident">base</span>: <span class="ident">polkadot_cli::RunCmd::from_iter</span>(<span class="ident">relay_chain_args</span>),
+            <span class="ident">base</span>: <span class="ident">polkadot_cli::RunCmd::parse_from</span>(<span class="ident">relay_chain_args</span>),
         }
     }
 }
