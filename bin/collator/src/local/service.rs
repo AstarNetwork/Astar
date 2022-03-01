@@ -274,6 +274,13 @@ pub fn start_node(config: Configuration) -> Result<TaskManager, ServiceError> {
     let prometheus_registry = config.prometheus_registry().cloned();
     let is_authority = config.role.is_authority();
 
+    let block_data_cache = Arc::new(fc_rpc::EthBlockDataCache::new(
+        task_manager.spawn_handle(),
+        overrides.clone(),
+        50,
+        50,
+    ));
+
     let rpc_extensions_builder = {
         let client = client.clone();
         let network = network.clone();
@@ -291,9 +298,11 @@ pub fn start_node(config: Configuration) -> Result<TaskManager, ServiceError> {
                 filter_pool: filter_pool.clone(),
                 fee_history_limit: FEE_HISTORY_LIMIT,
                 fee_history_cache: fee_history_cache.clone(),
+                block_data_cache: block_data_cache.clone(),
+                overrides: overrides.clone(),
             };
 
-            let mut io = crate::rpc::create_full(deps, subscription, overrides.clone());
+            let mut io = crate::rpc::create_full(deps, subscription);
             // Local node support WASM contracts
             io.extend_with(pallet_contracts_rpc::ContractsApi::to_delegate(
                 pallet_contracts_rpc::Contracts::new(client.clone()),

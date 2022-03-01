@@ -7,9 +7,9 @@ use fc_rpc::{
     StorageOverride, Web3Api, Web3ApiServer,
 };
 use fc_rpc_core::types::{FeeHistoryCache, FilterPool};
+use fp_storage::EthereumStorageSchema;
 use frame_rpc_system::{FullSystem, SystemApi};
 use jsonrpc_pubsub::manager::SubscriptionManager;
-use pallet_ethereum::EthereumStorageSchema;
 use pallet_transaction_payment_rpc::{TransactionPayment, TransactionPaymentApi};
 use sc_client_api::{AuxStore, Backend, BlockchainEvents, StateBackend, StorageProvider};
 use sc_network::NetworkService;
@@ -105,13 +105,16 @@ pub struct FullDeps<C, P, A: ChainApi> {
     pub fee_history_limit: u64,
     /// Fee history cache.
     pub fee_history_cache: FeeHistoryCache,
+    /// Ethereum data access overrides.
+    pub overrides: Arc<OverrideHandle<Block>>,
+    /// Cache for Ethereum block data.
+    pub block_data_cache: Arc<EthBlockDataCache<Block>>,
 }
 
 /// Instantiate all RPC extensions.
 pub fn create_full<C, P, BE, A>(
     deps: FullDeps<C, P, A>,
     subscription_task_executor: SubscriptionTaskExecutor,
-    overrides: Arc<OverrideHandle<Block>>,
 ) -> jsonrpc_core::IoHandler<sc_rpc::Metadata>
 where
     C: ProvideRuntimeApi<Block>
@@ -146,6 +149,8 @@ where
         filter_pool,
         fee_history_limit,
         fee_history_cache,
+        overrides,
+        block_data_cache,
     } = deps;
 
     io.extend_with(SystemApi::to_delegate(FullSystem::new(
@@ -160,7 +165,6 @@ where
 
     let max_past_logs: u32 = 10_000;
     let max_stored_filters: usize = 500;
-    let block_data_cache = Arc::new(EthBlockDataCache::new(50, 50));
 
     io.extend_with(EthApiServer::to_delegate(EthApi::new(
         client.clone(),
@@ -183,7 +187,6 @@ where
         frontier_backend,
         filter_pool,
         max_stored_filters,
-        overrides.clone(),
         max_past_logs,
         block_data_cache.clone(),
     )));

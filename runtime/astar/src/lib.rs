@@ -87,7 +87,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("astar"),
     impl_name: create_runtime_str!("astar"),
     authoring_version: 1,
-    spec_version: 8,
+    spec_version: 9,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 2,
@@ -650,7 +650,7 @@ impl pallet_evm::Config for Runtime {
 
 impl pallet_ethereum::Config for Runtime {
     type Event = Event;
-    type StateRoot = pallet_ethereum::IntermediateStateRoot;
+    type StateRoot = pallet_ethereum::IntermediateStateRoot<Self>;
 }
 
 impl pallet_sudo::Config for Runtime {
