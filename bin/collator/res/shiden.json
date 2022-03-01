@@ -3,8 +3,8 @@
   "id": "shiden",
   "chainType": "Live",
   "bootNodes": [
-    "/ip4/54.238.76.198/tcp/30333/p2p/12D3KooWHjaW6mwpsDhdDv9CFmWSfgiT13kjDcpsUsTQGDVCyxV6",
-    "/ip4/52.69.166.77/tcp/30333/p2p/12D3KooWEQ4CW9Mbc2zdNrEbRm8epJC2Vj9FWrTob3TB76QLikvo"
+    "/ip4/54.64.145.3/tcp/30333/p2p/12D3KooWDYfspdMj1tQJZuiecmKKaQjGuSX2cy5rExtqcMqmiNrR",
+    "/ip4/20.40.146.192/tcp/30333/p2p/12D3KooWEnYEZpxqD5ZvZ89nsTTqqvijtpCTfYgFchVQcbwA8rve"
   ],
   "telemetryEndpoints": null,
   "protocolId": "shiden",
