@@ -166,14 +166,10 @@ where
     let max_past_logs: u32 = 10_000;
     let max_stored_filters: usize = 500;
 
-    // TODO: is this good enough for us?
-    let convert_transaction: Option<fp_rpc::NoTransactionConverter> = None;
-
     io.extend_with(EthApiServer::to_delegate(EthApi::new(
         client.clone(),
         pool.clone(),
         graph,
-        convert_transaction,
         network.clone(),
         Default::default(),
         overrides.clone(),
