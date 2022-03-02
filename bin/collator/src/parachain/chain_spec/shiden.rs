@@ -3,8 +3,8 @@
 use cumulus_primitives_core::ParaId;
 use sc_service::ChainType;
 use shiden_runtime::{
-    wasm_binary_unwrap, AccountId, AuraId, Balance, EVMConfig, ParachainInfoConfig,
-    ShidenNetworkPrecompiles, Signature, SystemConfig, SDN,
+    wasm_binary_unwrap, AccountId, AuraId, Balance, BaseFeeConfig, EVMConfig, ParachainInfoConfig,
+    Precompiles, Signature, SystemConfig, SDN,
 };
 use sp_core::{sr25519, Pair, Public};
 
@@ -33,6 +33,7 @@ pub fn get_chain_spec(para_id: u32) -> ShidenChainSpec {
         ChainType::Development,
         move || make_genesis(endowned.clone(), sudo_key.clone(), para_id.into()),
         vec![],
+        None,
         None,
         None,
         None,
@@ -75,7 +76,9 @@ fn make_genesis(
         system: SystemConfig {
             code: wasm_binary_unwrap().to_vec(),
         },
-        sudo: shiden_runtime::SudoConfig { key: root_key },
+        sudo: shiden_runtime::SudoConfig {
+            key: Some(root_key),
+        },
         parachain_info: ParachainInfoConfig { parachain_id },
         balances: shiden_runtime::BalancesConfig { balances },
         vesting: shiden_runtime::VestingConfig { vesting: vec![] },
@@ -97,7 +100,7 @@ fn make_genesis(
         evm: EVMConfig {
             // We need _some_ code inserted at the precompile address so that
             // the evm will actually call the address.
-            accounts: ShidenNetworkPrecompiles::<()>::used_addresses()
+            accounts: Precompiles::used_addresses()
                 .map(|addr| {
                     (
                         addr,
@@ -111,6 +114,11 @@ fn make_genesis(
                 })
                 .collect(),
         },
+        base_fee: BaseFeeConfig::new(
+            sp_core::U256::from(1_000_000_000),
+            false,
+            sp_runtime::Permill::from_parts(125_000),
+        ),
         ethereum: Default::default(),
     }
 }

@@ -1,16 +1,16 @@
 //! Parachain Service and ServiceFactory implementation.
-use cumulus_client_consensus_aura::{
-    build_aura_consensus, BuildAuraConsensusParams, SlotProportion,
-};
+use cumulus_client_consensus_aura::{AuraConsensus, BuildAuraConsensusParams, SlotProportion};
 use cumulus_client_consensus_common::{ParachainBlockImport, ParachainConsensus};
 use cumulus_client_consensus_relay_chain::Verifier as RelayChainVerifier;
-use cumulus_client_network::build_block_announce_validator;
+use cumulus_client_network::BlockAnnounceValidator;
 use cumulus_client_service::{
     prepare_node_config, start_collator, start_full_node, StartCollatorParams, StartFullNodeParams,
 };
 use cumulus_primitives_core::ParaId;
+use cumulus_relay_chain_interface::RelayChainInterface;
+use cumulus_relay_chain_local::build_relay_chain_interface;
 use fc_consensus::FrontierBlockImport;
-use fc_rpc_core::types::FilterPool;
+use fc_rpc_core::types::{FeeHistoryCache, FilterPool};
 use futures::{lock::Mutex, StreamExt};
 use sc_client_api::{BlockchainEvents, ExecutorProvider};
 use sc_consensus::import_queue::BasicQueue;
@@ -175,6 +175,7 @@ where
         config.wasm_method,
         config.default_heap_pages,
         config.max_runtime_instances,
+        config.runtime_cache_size,
     );
 
     let (client, backend, keystore_container, task_manager) =
@@ -258,6 +259,7 @@ where
         + frame_rpc_system::AccountNonceApi<Block, AccountId, Nonce>
         + pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>
         + fp_rpc::EthereumRuntimeRPCApi<Block>
+        + fp_rpc::ConvertTransactionRuntimeApi<Block>
         + cumulus_primitives_core::CollectCollationInfo<Block>,
     sc_client_api::StateBackendFor<TFullBackend<Block>, Block>: sp_api::StateBackend<BlakeTwo256>,
     Executor: sc_executor::NativeExecutionDispatch + 'static,
@@ -283,7 +285,7 @@ where
         Option<&Registry>,
         Option<TelemetryHandle>,
         &TaskManager,
-        &polkadot_service::NewFull<polkadot_service::Client>,
+        Arc<dyn RelayChainInterface>,
         Arc<
             sc_transaction_pool::FullPool<
                 Block,
@@ -304,27 +306,22 @@ where
     let params = new_partial::<RuntimeApi, Executor, BIQ>(&parachain_config, build_import_queue)?;
     let (mut telemetry, telemetry_worker_handle, frontier_backend) = params.other;
 
-    let relay_chain_full_node =
-        cumulus_client_service::build_polkadot_full_node(polkadot_config, telemetry_worker_handle)
+    let client = params.client.clone();
+    let backend = params.backend.clone();
+
+    let mut task_manager = params.task_manager;
+    let (relay_chain_interface, collator_key) =
+        build_relay_chain_interface(polkadot_config, telemetry_worker_handle, &mut task_manager)
             .map_err(|e| match e {
                 polkadot_service::Error::Sub(x) => x,
                 s => format!("{}", s).into(),
             })?;
-
-    let client = params.client.clone();
-    let backend = params.backend.clone();
-    let block_announce_validator = build_block_announce_validator(
-        relay_chain_full_node.client.clone(),
-        id,
-        Box::new(relay_chain_full_node.network.clone()),
-        relay_chain_full_node.backend.clone(),
-    );
+    let block_announce_validator = BlockAnnounceValidator::new(relay_chain_interface.clone(), id);
 
     let force_authoring = parachain_config.force_authoring;
     let is_authority = parachain_config.role.is_authority();
     let prometheus_registry = parachain_config.prometheus_registry().cloned();
     let transaction_pool = params.transaction_pool.clone();
-    let mut task_manager = params.task_manager;
     let import_queue = cumulus_client_service::SharedImportQueue::new(params.import_queue);
     let (network, system_rpc_tx, start_network) =
         sc_service::build_network(sc_service::BuildNetworkParams {
@@ -333,17 +330,21 @@ where
             transaction_pool: transaction_pool.clone(),
             spawn_handle: task_manager.spawn_handle(),
             import_queue: import_queue.clone(),
-            block_announce_validator_builder: Some(Box::new(|_| block_announce_validator)),
+            block_announce_validator_builder: Some(Box::new(|_| {
+                Box::new(block_announce_validator)
+            })),
             warp_sync: None,
         })?;
 
     let filter_pool: FilterPool = Arc::new(std::sync::Mutex::new(BTreeMap::new()));
+    let fee_history_cache: FeeHistoryCache = Arc::new(std::sync::Mutex::new(BTreeMap::new()));
+    let overrides = crate::rpc::overrides_handle(client.clone());
 
     // Frontier offchain DB task. Essential.
     // Maps emulated ethereum data to substrate native data.
     task_manager.spawn_essential_handle().spawn(
         "frontier-mapping-sync-worker",
-        None,
+        Some("frontier"),
         fc_mapping_sync::MappingSyncWorker::new(
             client.import_notification_stream(),
             Duration::new(6, 0),
@@ -360,7 +361,7 @@ where
     const FILTER_RETAIN_THRESHOLD: u64 = 100;
     task_manager.spawn_essential_handle().spawn(
         "frontier-filter-pool",
-        None,
+        Some("frontier"),
         fc_rpc::EthTask::filter_pool_task(
             client.clone(),
             filter_pool.clone(),
@@ -370,9 +371,28 @@ where
 
     task_manager.spawn_essential_handle().spawn(
         "frontier-schema-cache-task",
-        None,
+        Some("frontier"),
         fc_rpc::EthTask::ethereum_schema_cache_task(client.clone(), frontier_backend.clone()),
     );
+
+    const FEE_HISTORY_LIMIT: u64 = 2048;
+    task_manager.spawn_essential_handle().spawn(
+        "frontier-fee-history",
+        Some("frontier"),
+        fc_rpc::EthTask::fee_history_task(
+            client.clone(),
+            overrides.clone(),
+            fee_history_cache.clone(),
+            FEE_HISTORY_LIMIT,
+        ),
+    );
+
+    let block_data_cache = Arc::new(fc_rpc::EthBlockDataCache::new(
+        task_manager.spawn_handle(),
+        overrides.clone(),
+        50,
+        50,
+    ));
 
     let rpc_extensions_builder = {
         let client = client.clone();
@@ -388,8 +408,11 @@ where
                 is_authority,
                 deny_unsafe,
                 frontier_backend: frontier_backend.clone(),
-                transaction_converter: shiden_runtime::TransactionConverter,
                 filter_pool: filter_pool.clone(),
+                fee_history_limit: FEE_HISTORY_LIMIT,
+                fee_history_cache: fee_history_cache.clone(),
+                block_data_cache: block_data_cache.clone(),
+                overrides: overrides.clone(),
             };
 
             Ok(crate::rpc::create_full(deps, subscription))
@@ -415,13 +438,15 @@ where
         Arc::new(move |hash, data| network.announce_block(hash, data))
     };
 
+    let relay_chain_slot_duration = Duration::from_secs(6);
+
     if is_authority {
         let parachain_consensus = build_consensus(
             client.clone(),
             prometheus_registry.as_ref(),
             telemetry.as_ref().map(|t| t.handle()),
             &task_manager,
-            &relay_chain_full_node,
+            relay_chain_interface.clone(),
             transaction_pool,
             network,
             params.keystore_container.sync_keystore(),
@@ -436,10 +461,12 @@ where
             announce_block,
             client: client.clone(),
             task_manager: &mut task_manager,
-            relay_chain_full_node,
+            relay_chain_interface: relay_chain_interface.clone(),
             spawner,
             parachain_consensus,
             import_queue,
+            collator_key,
+            relay_chain_slot_duration,
         };
 
         start_collator(params).await?;
@@ -449,7 +476,276 @@ where
             announce_block,
             task_manager: &mut task_manager,
             para_id: id,
-            relay_chain_full_node,
+            relay_chain_interface,
+            relay_chain_slot_duration,
+            import_queue,
+        };
+
+        start_full_node(params)?;
+    }
+
+    start_network.start_network();
+
+    Ok((task_manager, client))
+}
+
+/// Start a node with the given parachain `Configuration` and relay chain `Configuration`.
+///
+/// This is the actual implementation that is abstract over the executor and the runtime api.
+///
+/// NOTE: for runtimes that supports pallet_contracts_rpc
+#[sc_tracing::logging::prefix_logs_with("Parachain")]
+async fn start_contracts_node_impl<RuntimeApi, Executor, BIQ, BIC>(
+    parachain_config: Configuration,
+    polkadot_config: Configuration,
+    id: ParaId,
+    build_import_queue: BIQ,
+    build_consensus: BIC,
+) -> sc_service::error::Result<(
+    TaskManager,
+    Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>,
+)>
+where
+    RuntimeApi: ConstructRuntimeApi<Block, TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>
+        + Send
+        + Sync
+        + 'static,
+    RuntimeApi::RuntimeApi: sp_transaction_pool::runtime_api::TaggedTransactionQueue<Block>
+        + sp_api::Metadata<Block>
+        + sp_session::SessionKeys<Block>
+        + sp_api::ApiExt<
+            Block,
+            StateBackend = sc_client_api::StateBackendFor<TFullBackend<Block>, Block>,
+        > + sp_offchain::OffchainWorkerApi<Block>
+        + sp_block_builder::BlockBuilder<Block>
+        + frame_rpc_system::AccountNonceApi<Block, AccountId, Nonce>
+        + pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>
+        + fp_rpc::EthereumRuntimeRPCApi<Block>
+        + fp_rpc::ConvertTransactionRuntimeApi<Block>
+        + pallet_contracts_rpc::ContractsRuntimeApi<Block, AccountId, Balance, BlockNumber, Hash>
+        + cumulus_primitives_core::CollectCollationInfo<Block>,
+    sc_client_api::StateBackendFor<TFullBackend<Block>, Block>: sp_api::StateBackend<BlakeTwo256>,
+    Executor: sc_executor::NativeExecutionDispatch + 'static,
+    BIQ: FnOnce(
+        Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>,
+        FrontierBlockImport<
+            Block,
+            Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>,
+            TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>,
+        >,
+        &Configuration,
+        Option<TelemetryHandle>,
+        &TaskManager,
+    ) -> Result<
+        sc_consensus::DefaultImportQueue<
+            Block,
+            TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>,
+        >,
+        sc_service::Error,
+    >,
+    BIC: FnOnce(
+        Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>,
+        Option<&Registry>,
+        Option<TelemetryHandle>,
+        &TaskManager,
+        Arc<dyn RelayChainInterface>,
+        Arc<
+            sc_transaction_pool::FullPool<
+                Block,
+                TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>,
+            >,
+        >,
+        Arc<NetworkService<Block, Hash>>,
+        SyncCryptoStorePtr,
+        bool,
+    ) -> Result<Box<dyn ParachainConsensus<Block>>, sc_service::Error>,
+{
+    if matches!(parachain_config.role, Role::Light) {
+        return Err("Light client not supported!".into());
+    }
+
+    let parachain_config = prepare_node_config(parachain_config);
+    let params = new_partial::<RuntimeApi, Executor, BIQ>(&parachain_config, build_import_queue)?;
+    let (mut telemetry, telemetry_worker_handle, frontier_backend) = params.other;
+
+    let client = params.client.clone();
+    let backend = params.backend.clone();
+
+    let mut task_manager = params.task_manager;
+    let (relay_chain_interface, collator_key) =
+        build_relay_chain_interface(polkadot_config, telemetry_worker_handle, &mut task_manager)
+            .map_err(|e| match e {
+                polkadot_service::Error::Sub(x) => x,
+                s => format!("{}", s).into(),
+            })?;
+    let block_announce_validator = BlockAnnounceValidator::new(relay_chain_interface.clone(), id);
+
+    let force_authoring = parachain_config.force_authoring;
+    let is_authority = parachain_config.role.is_authority();
+    let prometheus_registry = parachain_config.prometheus_registry().cloned();
+    let transaction_pool = params.transaction_pool.clone();
+    let import_queue = cumulus_client_service::SharedImportQueue::new(params.import_queue);
+    let (network, system_rpc_tx, start_network) =
+        sc_service::build_network(sc_service::BuildNetworkParams {
+            config: &parachain_config,
+            client: client.clone(),
+            transaction_pool: transaction_pool.clone(),
+            spawn_handle: task_manager.spawn_handle(),
+            import_queue: import_queue.clone(),
+            block_announce_validator_builder: Some(Box::new(|_| {
+                Box::new(block_announce_validator)
+            })),
+            warp_sync: None,
+        })?;
+
+    let filter_pool: FilterPool = Arc::new(std::sync::Mutex::new(BTreeMap::new()));
+    let fee_history_cache: FeeHistoryCache = Arc::new(std::sync::Mutex::new(BTreeMap::new()));
+    let overrides = crate::rpc::overrides_handle(client.clone());
+
+    // Frontier offchain DB task. Essential.
+    // Maps emulated ethereum data to substrate native data.
+    task_manager.spawn_essential_handle().spawn(
+        "frontier-mapping-sync-worker",
+        Some("frontier"),
+        fc_mapping_sync::MappingSyncWorker::new(
+            client.import_notification_stream(),
+            Duration::new(6, 0),
+            client.clone(),
+            backend.clone(),
+            frontier_backend.clone(),
+            fc_mapping_sync::SyncStrategy::Parachain,
+        )
+        .for_each(|()| futures::future::ready(())),
+    );
+
+    // Frontier `EthFilterApi` maintenance. Manages the pool of user-created Filters.
+    // Each filter is allowed to stay in the pool for 100 blocks.
+    const FILTER_RETAIN_THRESHOLD: u64 = 100;
+    task_manager.spawn_essential_handle().spawn(
+        "frontier-filter-pool",
+        Some("frontier"),
+        fc_rpc::EthTask::filter_pool_task(
+            client.clone(),
+            filter_pool.clone(),
+            FILTER_RETAIN_THRESHOLD,
+        ),
+    );
+
+    task_manager.spawn_essential_handle().spawn(
+        "frontier-schema-cache-task",
+        Some("frontier"),
+        fc_rpc::EthTask::ethereum_schema_cache_task(client.clone(), frontier_backend.clone()),
+    );
+
+    const FEE_HISTORY_LIMIT: u64 = 2048;
+    task_manager.spawn_essential_handle().spawn(
+        "frontier-fee-history",
+        Some("frontier"),
+        fc_rpc::EthTask::fee_history_task(
+            client.clone(),
+            overrides.clone(),
+            fee_history_cache.clone(),
+            FEE_HISTORY_LIMIT,
+        ),
+    );
+
+    let block_data_cache = Arc::new(fc_rpc::EthBlockDataCache::new(
+        task_manager.spawn_handle(),
+        overrides.clone(),
+        50,
+        50,
+    ));
+
+    let rpc_extensions_builder = {
+        let client = client.clone();
+        let network = network.clone();
+        let transaction_pool = transaction_pool.clone();
+
+        Box::new(move |deny_unsafe, subscription| {
+            let deps = crate::rpc::FullDeps {
+                client: client.clone(),
+                pool: transaction_pool.clone(),
+                graph: transaction_pool.pool().clone(),
+                network: network.clone(),
+                is_authority,
+                deny_unsafe,
+                frontier_backend: frontier_backend.clone(),
+                filter_pool: filter_pool.clone(),
+                fee_history_limit: FEE_HISTORY_LIMIT,
+                fee_history_cache: fee_history_cache.clone(),
+                block_data_cache: block_data_cache.clone(),
+                overrides: overrides.clone(),
+            };
+
+            let mut io = crate::rpc::create_full(deps, subscription);
+            // This node support WASM contracts
+            io.extend_with(pallet_contracts_rpc::ContractsApi::to_delegate(
+                pallet_contracts_rpc::Contracts::new(client.clone()),
+            ));
+            Ok(io)
+        })
+    };
+
+    // Spawn basic services.
+    sc_service::spawn_tasks(sc_service::SpawnTasksParams {
+        rpc_extensions_builder,
+        client: client.clone(),
+        transaction_pool: transaction_pool.clone(),
+        task_manager: &mut task_manager,
+        config: parachain_config,
+        keystore: params.keystore_container.sync_keystore(),
+        backend: backend.clone(),
+        network: network.clone(),
+        system_rpc_tx,
+        telemetry: telemetry.as_mut(),
+    })?;
+
+    let announce_block = {
+        let network = network.clone();
+        Arc::new(move |hash, data| network.announce_block(hash, data))
+    };
+
+    let relay_chain_slot_duration = Duration::from_secs(6);
+
+    if is_authority {
+        let parachain_consensus = build_consensus(
+            client.clone(),
+            prometheus_registry.as_ref(),
+            telemetry.as_ref().map(|t| t.handle()),
+            &task_manager,
+            relay_chain_interface.clone(),
+            transaction_pool,
+            network,
+            params.keystore_container.sync_keystore(),
+            force_authoring,
+        )?;
+
+        let spawner = task_manager.spawn_handle();
+
+        let params = StartCollatorParams {
+            para_id: id,
+            block_status: client.clone(),
+            announce_block,
+            client: client.clone(),
+            task_manager: &mut task_manager,
+            relay_chain_interface: relay_chain_interface.clone(),
+            spawner,
+            parachain_consensus,
+            import_queue,
+            collator_key,
+            relay_chain_slot_duration,
+        };
+
+        start_collator(params).await?;
+    } else {
+        let params = StartFullNodeParams {
+            client: client.clone(),
+            announce_block,
+            task_manager: &mut task_manager,
+            para_id: id,
+            relay_chain_interface,
+            relay_chain_slot_duration,
+            import_queue,
         };
 
         start_full_node(params)?;
@@ -604,15 +900,11 @@ pub async fn start_astar_node(
          prometheus_registry,
          telemetry,
          task_manager,
-         relay_chain_node,
+         relay_chain_interface,
          transaction_pool,
          sync_oracle,
          keystore,
          force_authoring| {
-            let relay_chain_backend = relay_chain_node.backend.clone();
-            let relay_chain_client = relay_chain_node.client.clone();
-            let relay_chain_backend2 = relay_chain_node.backend.clone();
-            let relay_chain_client2 = relay_chain_node.client.clone();
             let spawn_handle = task_manager.spawn_handle();
 
             let slot_duration =
@@ -627,11 +919,10 @@ pub async fn start_astar_node(
                     telemetry.clone(),
                 );
 
-            Ok(build_aura_consensus::<
+            let relay_chain_for_aura = relay_chain_interface.clone();
+
+            Ok(AuraConsensus::build::<
                 sp_consensus_aura::sr25519::AuthorityPair,
-                _,
-                _,
-                _,
                 _,
                 _,
                 _,
@@ -642,15 +933,15 @@ pub async fn start_astar_node(
                 proposer_factory,
                 create_inherent_data_providers:
                     move |_, (relay_parent, validation_data)| {
-                        let parachain_inherent =
-                            cumulus_primitives_parachain_inherent::ParachainInherentData::create_at_with_client(
-                                relay_parent,
-                                &relay_chain_client2,
-                                &*relay_chain_backend2,
-                                &validation_data,
-                                id,
-                            );
+                        let relay_chain_for_aura = relay_chain_for_aura.clone();
                         async move {
+                            let parachain_inherent =
+                                cumulus_primitives_parachain_inherent::ParachainInherentData::create_at(
+                                    relay_parent,
+                                    &relay_chain_for_aura,
+                                    &validation_data,
+                                    id,
+                                ).await;
                             let time = sp_timestamp::InherentDataProvider::from_system_time();
                             let slot =
                                 sp_consensus_aura::inherents::InherentDataProvider::from_timestamp_and_duration(
@@ -667,8 +958,6 @@ pub async fn start_astar_node(
                         }
                     },
                 block_import: client.clone(),
-                relay_chain_client,
-                relay_chain_backend,
                 para_client: client.clone(),
                 backoff_authoring_blocks: Option::<()>::None,
                 sync_oracle,
@@ -703,18 +992,17 @@ pub async fn start_shiden_node(
          prometheus_registry,
          telemetry,
          task_manager,
-         relay_chain_node,
+         relay_chain_interface,
          transaction_pool,
          sync_oracle,
          keystore,
          force_authoring| {
             let client2 = client.clone();
-            let relay_chain_backend = relay_chain_node.backend.clone();
-            let relay_chain_client = relay_chain_node.client.clone();
             let spawn_handle = task_manager.spawn_handle();
             let transaction_pool2 = transaction_pool.clone();
             let telemetry2 = telemetry.clone();
             let prometheus_registry2 = prometheus_registry.map(|r| (*r).clone());
+            let relay_chain_for_aura = relay_chain_interface.clone();
 
             let aura_consensus = BuildOnAccess::Uninitialized(Some(
                 Box::new(move || {
@@ -730,14 +1018,8 @@ pub async fn start_shiden_node(
                             telemetry2.clone(),
                         );
 
-                    let relay_chain_backend2 = relay_chain_backend.clone();
-                    let relay_chain_client2 = relay_chain_client.clone();
-
-                    build_aura_consensus::<
+                    AuraConsensus::build::<
                         sp_consensus_aura::sr25519::AuthorityPair,
-                        _,
-                        _,
-                        _,
                         _,
                         _,
                         _,
@@ -748,15 +1030,15 @@ pub async fn start_shiden_node(
                         proposer_factory,
                         create_inherent_data_providers:
                             move |_, (relay_parent, validation_data)| {
-                                let parachain_inherent =
-                                cumulus_primitives_parachain_inherent::ParachainInherentData::create_at_with_client(
-                                    relay_parent,
-                                    &relay_chain_client,
-                                    &*relay_chain_backend,
-                                    &validation_data,
-                                    id,
-                                );
+                                let relay_chain_for_aura = relay_chain_for_aura.clone();
                                 async move {
+                                    let parachain_inherent =
+                                        cumulus_primitives_parachain_inherent::ParachainInherentData::create_at(
+                                            relay_parent,
+                                            &relay_chain_for_aura,
+                                            &validation_data,
+                                            id,
+                                        ).await;
                                     let time =
                                         sp_timestamp::InherentDataProvider::from_system_time();
 
@@ -776,8 +1058,6 @@ pub async fn start_shiden_node(
                                 }
                             },
                         block_import: client2.clone(),
-                        relay_chain_client: relay_chain_client2,
-                        relay_chain_backend: relay_chain_backend2,
                         para_client: client2.clone(),
                         backoff_authoring_blocks: Option::<()>::None,
                         sync_oracle,
@@ -801,28 +1081,24 @@ pub async fn start_shiden_node(
                 telemetry.clone(),
             );
 
-            let relay_chain_backend = relay_chain_node.backend.clone();
-            let relay_chain_client = relay_chain_node.client.clone();
-
             let relay_chain_consensus =
                 cumulus_client_consensus_relay_chain::build_relay_chain_consensus(
                     cumulus_client_consensus_relay_chain::BuildRelayChainConsensusParams {
                         para_id: id,
                         proposer_factory,
                         block_import: client.clone(),
-                        relay_chain_client: relay_chain_node.client.clone(),
-                        relay_chain_backend: relay_chain_node.backend.clone(),
+                        relay_chain_interface: relay_chain_interface.clone(),
                         create_inherent_data_providers:
                             move |_, (relay_parent, validation_data)| {
-                                let parachain_inherent =
-                                    cumulus_primitives_parachain_inherent::ParachainInherentData::create_at_with_client(
-                                        relay_parent,
-                                        &relay_chain_client,
-                                        &*relay_chain_backend,
-                                        &validation_data,
-                                        id,
-                                    );
+                                let relay_chain_for_aura = relay_chain_interface.clone();
                                 async move {
+                                    let parachain_inherent =
+                                        cumulus_primitives_parachain_inherent::ParachainInherentData::create_at(
+                                            relay_parent,
+                                            &relay_chain_for_aura,
+                                            &validation_data,
+                                            id,
+                                        ).await;
                                     let parachain_inherent =
                                         parachain_inherent.ok_or_else(|| {
                                             Box::<dyn std::error::Error + Send + Sync>::from(
@@ -856,7 +1132,7 @@ pub async fn start_shibuya_node(
     TaskManager,
     Arc<TFullClient<Block, shibuya::RuntimeApi, NativeElseWasmExecutor<shibuya::Executor>>>,
 )> {
-    start_node_impl::<shibuya::RuntimeApi, shibuya::Executor, _, _>(
+    start_contracts_node_impl::<shibuya::RuntimeApi, shibuya::Executor, _, _>(
         parachain_config,
         polkadot_config,
         id,
@@ -901,15 +1177,11 @@ pub async fn start_shibuya_node(
          prometheus_registry,
          telemetry,
          task_manager,
-         relay_chain_node,
+         relay_chain_interface,
          transaction_pool,
          sync_oracle,
          keystore,
          force_authoring| {
-            let relay_chain_backend = relay_chain_node.backend.clone();
-            let relay_chain_client = relay_chain_node.client.clone();
-            let relay_chain_backend2 = relay_chain_node.backend.clone();
-            let relay_chain_client2 = relay_chain_node.client.clone();
             let spawn_handle = task_manager.spawn_handle();
 
             let slot_duration =
@@ -924,11 +1196,8 @@ pub async fn start_shibuya_node(
                     telemetry.clone(),
                 );
 
-            Ok(build_aura_consensus::<
+            Ok(AuraConsensus::build::<
                 sp_consensus_aura::sr25519::AuthorityPair,
-                _,
-                _,
-                _,
                 _,
                 _,
                 _,
@@ -939,15 +1208,15 @@ pub async fn start_shibuya_node(
                 proposer_factory,
                 create_inherent_data_providers:
                     move |_, (relay_parent, validation_data)| {
-                        let parachain_inherent =
-                            cumulus_primitives_parachain_inherent::ParachainInherentData::create_at_with_client(
-                                relay_parent,
-                                &relay_chain_client2,
-                                &*relay_chain_backend2,
-                                &validation_data,
-                                id,
-                            );
+                        let relay_chain_for_aura = relay_chain_interface.clone();
                         async move {
+                            let parachain_inherent =
+                                cumulus_primitives_parachain_inherent::ParachainInherentData::create_at(
+                                    relay_parent,
+                                    &relay_chain_for_aura,
+                                    &validation_data,
+                                    id,
+                                ).await;
                             let time = sp_timestamp::InherentDataProvider::from_system_time();
                             let slot =
                                 sp_consensus_aura::inherents::InherentDataProvider::from_timestamp_and_duration(
@@ -964,8 +1233,6 @@ pub async fn start_shibuya_node(
                         }
                     },
                 block_import: client.clone(),
-                relay_chain_client,
-                relay_chain_backend,
                 para_client: client.clone(),
                 backoff_authoring_blocks: Option::<()>::None,
                 sync_oracle,

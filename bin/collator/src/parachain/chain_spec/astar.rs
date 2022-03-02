@@ -1,13 +1,12 @@
 //! Astar chain specifications.
 
 use astar_runtime::{
-    wasm_binary_unwrap, AccountId, AstarNetworkPrecompiles, AuraId, Balance, EVMConfig,
-    ParachainInfoConfig, Signature, SystemConfig, ASTR,
+    wasm_binary_unwrap, AccountId, AuraId, Balance, BaseFeeConfig, EVMConfig, ParachainInfoConfig,
+    Precompiles, Signature, SystemConfig, ASTR,
 };
 use cumulus_primitives_core::ParaId;
 use sc_service::ChainType;
 use sp_core::{crypto::Ss58Codec, sr25519, Pair, Public};
-
 use sp_runtime::traits::{IdentifyAccount, Verify};
 
 use super::{get_from_seed, Extensions};
@@ -82,6 +81,7 @@ pub fn get_chain_spec(para_id: u32) -> AstarChainSpec {
         None,
         None,
         None,
+        None,
         Extensions {
             bad_blocks: Default::default(),
             relay_chain: "tokyo".into(),
@@ -121,7 +121,9 @@ fn make_genesis(
         system: SystemConfig {
             code: wasm_binary_unwrap().to_vec(),
         },
-        sudo: astar_runtime::SudoConfig { key: root_key },
+        sudo: astar_runtime::SudoConfig {
+            key: Some(root_key),
+        },
         parachain_info: ParachainInfoConfig { parachain_id },
         balances: astar_runtime::BalancesConfig { balances },
         vesting: astar_runtime::VestingConfig { vesting: vec![] },
@@ -143,7 +145,7 @@ fn make_genesis(
         evm: EVMConfig {
             // We need _some_ code inserted at the precompile address so that
             // the evm will actually call the address.
-            accounts: AstarNetworkPrecompiles::<()>::used_addresses()
+            accounts: Precompiles::used_addresses()
                 .map(|addr| {
                     (
                         addr,
@@ -157,6 +159,11 @@ fn make_genesis(
                 })
                 .collect(),
         },
+        base_fee: BaseFeeConfig::new(
+            sp_core::U256::from(1_000_000_000),
+            false,
+            sp_runtime::Permill::from_parts(125_000),
+        ),
         ethereum: Default::default(),
     }
 }

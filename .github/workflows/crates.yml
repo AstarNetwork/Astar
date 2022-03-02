@@ -10,7 +10,7 @@ jobs:
     steps:
       - uses: hecrj/setup-rust-action@v1
         with:
-          rust-version: 'nightly-2021-11-01'
+          rust-version: 'nightly-2021-11-29'
           targets: 'wasm32-unknown-unknown'
       - name: Checkout the source code
         uses: actions/checkout@master

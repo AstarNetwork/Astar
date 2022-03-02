@@ -1,10 +1,10 @@
 //! Local Service and ServiceFactory implementation. Specialized wrapper over substrate service.
 
 use fc_consensus::FrontierBlockImport;
-use fc_rpc_core::types::FilterPool;
+use fc_rpc_core::types::{FeeHistoryCache, FilterPool};
 use futures::StreamExt;
 use local_runtime::RuntimeApi;
-use sc_client_api::{BlockchainEvents, ExecutorProvider};
+use sc_client_api::{BlockBackend, BlockchainEvents, ExecutorProvider};
 use sc_consensus_aura::{ImportQueueParams, SlotProportion, StartAuraParams};
 use sc_executor::NativeElseWasmExecutor;
 use sc_finality_grandpa::SharedVoterState;
@@ -87,6 +87,7 @@ fn new_partial(
         config.wasm_method,
         config.default_heap_pages,
         config.max_runtime_instances,
+        config.runtime_cache_size,
     );
 
     let (client, backend, keystore_container, task_manager) =
@@ -185,6 +186,15 @@ pub fn start_node(config: Configuration) -> Result<TaskManager, ServiceError> {
         other: (block_import, grandpa_link, mut telemetry, frontier_backend),
     } = new_partial(&config)?;
 
+    let protocol_name = sc_finality_grandpa::protocol_standard_name(
+        &client
+            .block_hash(0)
+            .ok()
+            .flatten()
+            .expect("Genesis block exists; qed"),
+        &config.chain_spec,
+    );
+
     let (network, system_rpc_tx, network_starter) =
         sc_service::build_network(sc_service::BuildNetworkParams {
             config: &config,
@@ -206,12 +216,14 @@ pub fn start_node(config: Configuration) -> Result<TaskManager, ServiceError> {
     }
 
     let filter_pool: FilterPool = Arc::new(std::sync::Mutex::new(BTreeMap::new()));
+    let fee_history_cache: FeeHistoryCache = Arc::new(std::sync::Mutex::new(BTreeMap::new()));
+    let overrides = crate::rpc::overrides_handle(client.clone());
 
     // Frontier offchain DB task. Essential.
     // Maps emulated ethereum data to substrate native data.
     task_manager.spawn_essential_handle().spawn(
         "frontier-mapping-sync-worker",
-        None,
+        Some("frontier"),
         fc_mapping_sync::MappingSyncWorker::new(
             client.import_notification_stream(),
             Duration::new(6, 0),
@@ -228,7 +240,7 @@ pub fn start_node(config: Configuration) -> Result<TaskManager, ServiceError> {
     const FILTER_RETAIN_THRESHOLD: u64 = 100;
     task_manager.spawn_essential_handle().spawn(
         "frontier-filter-pool",
-        None,
+        Some("frontier"),
         fc_rpc::EthTask::filter_pool_task(
             client.clone(),
             filter_pool.clone(),
@@ -238,8 +250,20 @@ pub fn start_node(config: Configuration) -> Result<TaskManager, ServiceError> {
 
     task_manager.spawn_essential_handle().spawn(
         "frontier-schema-cache-task",
-        None,
+        Some("frontier"),
         fc_rpc::EthTask::ethereum_schema_cache_task(client.clone(), frontier_backend.clone()),
+    );
+
+    const FEE_HISTORY_LIMIT: u64 = 2048;
+    task_manager.spawn_essential_handle().spawn(
+        "frontier-fee-history",
+        Some("frontier"),
+        fc_rpc::EthTask::fee_history_task(
+            client.clone(),
+            overrides.clone(),
+            fee_history_cache.clone(),
+            FEE_HISTORY_LIMIT,
+        ),
     );
 
     let role = config.role.clone();
@@ -249,6 +273,13 @@ pub fn start_node(config: Configuration) -> Result<TaskManager, ServiceError> {
     let enable_grandpa = !config.disable_grandpa;
     let prometheus_registry = config.prometheus_registry().cloned();
     let is_authority = config.role.is_authority();
+
+    let block_data_cache = Arc::new(fc_rpc::EthBlockDataCache::new(
+        task_manager.spawn_handle(),
+        overrides.clone(),
+        50,
+        50,
+    ));
 
     let rpc_extensions_builder = {
         let client = client.clone();
@@ -264,8 +295,11 @@ pub fn start_node(config: Configuration) -> Result<TaskManager, ServiceError> {
                 is_authority,
                 deny_unsafe,
                 frontier_backend: frontier_backend.clone(),
-                transaction_converter: local_runtime::TransactionConverter,
                 filter_pool: filter_pool.clone(),
+                fee_history_limit: FEE_HISTORY_LIMIT,
+                fee_history_cache: fee_history_cache.clone(),
+                block_data_cache: block_data_cache.clone(),
+                overrides: overrides.clone(),
             };
 
             let mut io = crate::rpc::create_full(deps, subscription);
@@ -359,6 +393,7 @@ pub fn start_node(config: Configuration) -> Result<TaskManager, ServiceError> {
         keystore,
         local_role: role,
         telemetry: telemetry.as_ref().map(|x| x.handle()),
+        protocol_name,
     };
 
     if enable_grandpa {
