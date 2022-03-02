@@ -1,4 +1,4 @@
-on: [push]
+on: [push, workflow_dispatch]
 
 name: Integration
 
@@ -6,11 +6,38 @@ env:
   RUST_VERSION: 'nightly-2021-11-29'
 
 jobs:
-  native:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-latest, macOS-latest]
+  native-linux:
+    runs-on: [self-hosted, Linux, X64]
+    steps:
+    - uses: hecrj/setup-rust-action@v1
+      with:
+        rust-version: ${{ env.RUST_VERSION }}
+        targets: 'wasm32-unknown-unknown'
+
+    - name: Checkout the source code
+      uses: actions/checkout@master
+      with:
+        submodules: true
+
+    - name: Check targets are installed correctly
+      run: rustup target list --installed
+
+    - name: Run all tests
+      run: cargo test --all
+
+    - name: Cleanup after tests
+      run: cargo clean
+
+    - name: Build optimized binary
+      run: CARGO_PROFILE_RELEASE_LTO=true RUSTFLAGS="-C codegen-units=1" cargo build --release --verbose
+
+    - uses: actions/upload-artifact@master
+      with:
+        name: astar-ubuntu-latest-x86_64
+        path: target/release/astar-collator
+
+  native-macos:
+    runs-on: macos-latest
     steps:
     - uses: hecrj/setup-rust-action@v1
       with:
@@ -36,7 +63,7 @@ jobs:
 
     - uses: actions/upload-artifact@master
       with:
-        name: astar-${{ matrix.os }}-x86_64
+        name: astar-macOS-latest-x86_64
         path: target/release/astar-collator
 
   runtime-benchmarks:
@@ -90,7 +117,7 @@ jobs:
     - run: nix-shell third-party/nix/shell.nix --run "cargo build --release"
 
   docker:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, Linux, X64]
     steps:
     - uses: hecrj/setup-rust-action@v1
       with:
@@ -124,7 +151,7 @@ jobs:
 
     - name: Build optimized binary
       run: |
-        cargo build --locked --release
+        CARGO_PROFILE_RELEASE_LTO=true RUSTFLAGS="-C codegen-units=1" cargo build --locked --release
         cp target/release/astar-collator third-party/docker
 
     - name: Build & Push docker image

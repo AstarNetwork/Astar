@@ -3,8 +3,7 @@ name: Srtool build
 env:
   SUBWASM_VERSION: 0.16.1
 
-on:
-  push: []
+on: [push]
 
 jobs:
   srtool:
