@@ -61,6 +61,11 @@ pub fn development_config() -> ChainSpec {
                     AccountId::from_ss58check("5Gbgok6b2HRpPDm7vSEDffBDsLNmAiFEgRSZcLePVYqKqT3i")
                         .unwrap(),
                 ],
+                vec![
+                    get_account_id_from_seed::<sr25519::Public>("Alice"),
+                    get_account_id_from_seed::<sr25519::Public>("Bob"),
+                    get_account_id_from_seed::<sr25519::Public>("Dave"),
+                ],
             )
         },
         vec![],
@@ -76,6 +81,7 @@ fn testnet_genesis(
     initial_authorities: Vec<(AuraId, GrandpaId)>,
     root_key: AccountId,
     endowed_accounts: Vec<AccountId>,
+    initial_members: Vec<AccountId>,
 ) -> GenesisConfig {
     // This is supposed the be the simplest bytecode to revert without returning any data.
     // We will pre-deploy it under all of our precompiles to ensure they can be called from
@@ -134,7 +140,7 @@ fn testnet_genesis(
             phantom: PhantomData,
         },
         elections: ElectionsConfig {
-            members: endowed_accounts.iter().map(|x| (x.clone(), 0)).collect(),
+            members: initial_members.iter().map(|x| (x.clone(), 0)).collect(),
         },
     }
 }
