@@ -327,7 +327,7 @@ impl pallet_dapps_staking::Config for Runtime {
 }
 
 parameter_types! {
-    pub const CouncilMotionDuration: BlockNumber = 7 * DAYS;
+    pub const CouncilMotionDuration: BlockNumber = 1 * MINUTES;
     pub const CouncilMaxProposals: u32 = 10;
     pub const CouncilMaxMembers: u32 = 7;
 }
@@ -362,9 +362,9 @@ parameter_types! {
   pub const CandidacyBond: Balance = 100 * AST;
   pub const VotingBondBase: Balance = deposit(1, 64);
   pub const VotingBondFactor: Balance = deposit(0, 32);
-  pub const TermDuration: BlockNumber = 7 * DAYS;
-  pub const DesiredMembers: u32 = 7;
-  pub const DesiredRunnersUp: u32 = 14;
+  pub const TermDuration: BlockNumber = 2 * MINUTES;
+  pub const DesiredMembers: u32 = 3;
+  pub const DesiredRunnersUp: u32 = 7;
   pub const ElectionsPhragmenPalletId: LockIdentifier = *b"phrelect";
 }
 
