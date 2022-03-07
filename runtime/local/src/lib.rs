@@ -364,7 +364,7 @@ parameter_types! {
   pub const VotingBondFactor: Balance = deposit(0, 32);
   pub const TermDuration: BlockNumber = 2 * MINUTES;
   pub const DesiredMembers: u32 = 3;
-  pub const DesiredRunnersUp: u32 = 7;
+  pub const DesiredRunnersUp: u32 = 1;
   pub const ElectionsPhragmenPalletId: LockIdentifier = *b"phrelect";
 }
 
