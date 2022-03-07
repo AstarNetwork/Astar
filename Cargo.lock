@@ -2252,14 +2252,30 @@ checksum = "77f3309417938f28bf8228fcff79a4a37103981e3e186d2ccd19c74b38f4eb71"
 [[package]]
 name = "evm"
 version = "0.33.1"
+source = "git+https://github.com/AstarNetwork/evm?branch=polkadot-v0.9.16#7deff4781014e10684253d9c72540ef75f03830f"
+dependencies = [
+ "auto_impl",
+ "ethereum",
+ "evm-core 0.33.0 (git+https://github.com/AstarNetwork/evm?branch=polkadot-v0.9.16)",
+ "evm-gasometer 0.33.0 (git+https://github.com/AstarNetwork/evm?branch=polkadot-v0.9.16)",
+ "evm-runtime 0.33.0 (git+https://github.com/AstarNetwork/evm?branch=polkadot-v0.9.16)",
+ "log",
+ "primitive-types",
+ "rlp",
+ "sha3 0.8.2",
+]
+
+[[package]]
+name = "evm"
+version = "0.33.1"
 source = "git+https://github.com/AstarNetwork/evm?branch=polkadot-v0.9.17#7deff4781014e10684253d9c72540ef75f03830f"
 dependencies = [
  "auto_impl",
  "environmental",
  "ethereum",
- "evm-core",
- "evm-gasometer",
- "evm-runtime",
+ "evm-core 0.33.0 (git+https://github.com/AstarNetwork/evm?branch=polkadot-v0.9.17)",
+ "evm-gasometer 0.33.0 (git+https://github.com/AstarNetwork/evm?branch=polkadot-v0.9.17)",
+ "evm-runtime 0.33.0 (git+https://github.com/AstarNetwork/evm?branch=polkadot-v0.9.17)",
  "log",
  "parity-scale-codec",
  "primitive-types",
@@ -2267,6 +2283,15 @@ dependencies = [
  "scale-info",
  "serde",
  "sha3 0.8.2",
+]
+
+[[package]]
+name = "evm-core"
+version = "0.33.0"
+source = "git+https://github.com/AstarNetwork/evm?branch=polkadot-v0.9.16#7deff4781014e10684253d9c72540ef75f03830f"
+dependencies = [
+ "funty",
+ "primitive-types",
 ]
 
 [[package]]
@@ -2284,12 +2309,33 @@ dependencies = [
 [[package]]
 name = "evm-gasometer"
 version = "0.33.0"
+source = "git+https://github.com/AstarNetwork/evm?branch=polkadot-v0.9.16#7deff4781014e10684253d9c72540ef75f03830f"
+dependencies = [
+ "evm-core 0.33.0 (git+https://github.com/AstarNetwork/evm?branch=polkadot-v0.9.16)",
+ "evm-runtime 0.33.0 (git+https://github.com/AstarNetwork/evm?branch=polkadot-v0.9.16)",
+ "primitive-types",
+]
+
+[[package]]
+name = "evm-gasometer"
+version = "0.33.0"
 source = "git+https://github.com/AstarNetwork/evm?branch=polkadot-v0.9.17#7deff4781014e10684253d9c72540ef75f03830f"
 dependencies = [
  "environmental",
- "evm-core",
- "evm-runtime",
+ "evm-core 0.33.0 (git+https://github.com/AstarNetwork/evm?branch=polkadot-v0.9.17)",
+ "evm-runtime 0.33.0 (git+https://github.com/AstarNetwork/evm?branch=polkadot-v0.9.17)",
  "primitive-types",
+]
+
+[[package]]
+name = "evm-runtime"
+version = "0.33.0"
+source = "git+https://github.com/AstarNetwork/evm?branch=polkadot-v0.9.16#7deff4781014e10684253d9c72540ef75f03830f"
+dependencies = [
+ "auto_impl",
+ "evm-core 0.33.0 (git+https://github.com/AstarNetwork/evm?branch=polkadot-v0.9.16)",
+ "primitive-types",
+ "sha3 0.8.2",
 ]
 
 [[package]]
@@ -2299,7 +2345,7 @@ source = "git+https://github.com/AstarNetwork/evm?branch=polkadot-v0.9.17#7deff4
 dependencies = [
  "auto_impl",
  "environmental",
- "evm-core",
+ "evm-core 0.33.0 (git+https://github.com/AstarNetwork/evm?branch=polkadot-v0.9.17)",
  "primitive-types",
  "sha3 0.8.2",
 ]
@@ -2391,7 +2437,7 @@ source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.17#0
 dependencies = [
  "ethereum",
  "ethereum-types",
- "evm",
+ "evm 0.33.1 (git+https://github.com/AstarNetwork/evm?branch=polkadot-v0.9.17)",
  "fc-db",
  "fc-rpc-core",
  "fp-rpc",
@@ -2548,7 +2594,7 @@ name = "fp-evm"
 version = "3.0.0-dev"
 source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.17#0ddac45c882239b1856296a7cf908716a19cf5a5"
 dependencies = [
- "evm",
+ "evm 0.33.1 (git+https://github.com/AstarNetwork/evm?branch=polkadot-v0.9.17)",
  "parity-scale-codec",
  "serde",
  "sp-core",
@@ -5861,7 +5907,7 @@ source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.17#0
 dependencies = [
  "ethereum",
  "ethereum-types",
- "evm",
+ "evm 0.33.1 (git+https://github.com/AstarNetwork/evm?branch=polkadot-v0.9.17)",
  "fp-consensus",
  "fp-evm",
  "fp-rpc",
@@ -5888,7 +5934,7 @@ name = "pallet-evm"
 version = "6.0.0-dev"
 source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.17#0ddac45c882239b1856296a7cf908716a19cf5a5"
 dependencies = [
- "evm",
+ "evm 0.33.1 (git+https://github.com/AstarNetwork/evm?branch=polkadot-v0.9.17)",
  "fp-evm",
  "frame-benchmarking",
  "frame-support",
@@ -5967,7 +6013,7 @@ dependencies = [
  "num_enum",
  "pallet-evm",
  "parity-scale-codec",
- "precompile-utils",
+ "precompile-utils 0.1.0 (git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.17)",
  "sp-core",
  "sp-io",
  "sp-std",
@@ -6203,15 +6249,18 @@ dependencies = [
 
 [[package]]
 name = "pallet-precompile-dapps-staking"
-version = "1.1.1"
-source = "git+https://github.com/AstarNetwork/astar-frame?tag=pallet-precompile-dapps-staking-1.1.1/polkadot-v0.9.17#45a78d42f6602c287a4502e2b398be1c18c4f21e"
+version = "1.2.0"
 dependencies = [
+ "evm 0.33.1 (git+https://github.com/AstarNetwork/evm?branch=polkadot-v0.9.16)",
  "fp-evm",
  "frame-support",
  "frame-system",
+ "log",
+ "num_enum",
  "pallet-dapps-staking 2.1.0",
  "pallet-evm",
  "parity-scale-codec",
+ "precompile-utils 0.1.0",
  "scale-info",
  "sp-core",
  "sp-runtime",
@@ -8108,6 +8157,25 @@ checksum = "eb9f9e6e233e5c4a35559a617bf40a4ec447db2e84c20b55a6f83167b7e57872"
 [[package]]
 name = "precompile-utils"
 version = "0.1.0"
+dependencies = [
+ "fp-evm",
+ "frame-support",
+ "frame-system",
+ "log",
+ "num_enum",
+ "pallet-evm",
+ "parity-scale-codec",
+ "precompile-utils-macro 0.1.0",
+ "sha3 0.9.1",
+ "sp-core",
+ "sp-io",
+ "sp-std",
+ "xcm",
+]
+
+[[package]]
+name = "precompile-utils"
+version = "0.1.0"
 source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.17#45a78d42f6602c287a4502e2b398be1c18c4f21e"
 dependencies = [
  "fp-evm",
@@ -8117,12 +8185,23 @@ dependencies = [
  "num_enum",
  "pallet-evm",
  "parity-scale-codec",
- "precompile-utils-macro",
+ "precompile-utils-macro 0.1.0 (git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.17)",
  "sha3 0.9.1",
  "sp-core",
  "sp-io",
  "sp-std",
  "xcm",
+]
+
+[[package]]
+name = "precompile-utils-macro"
+version = "0.1.0"
+dependencies = [
+ "num_enum",
+ "proc-macro2",
+ "quote",
+ "sha3 0.8.2",
+ "syn",
 ]
 
 [[package]]
