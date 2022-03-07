@@ -62,9 +62,7 @@ pub fn development_config() -> ChainSpec {
                         .unwrap(),
                 ],
                 vec![
-                    get_account_id_from_seed::<sr25519::Public>("Alice"),
-                    get_account_id_from_seed::<sr25519::Public>("Bob"),
-                    get_account_id_from_seed::<sr25519::Public>("Dave"),
+                    // the council is initially empty
                 ],
             )
         },
