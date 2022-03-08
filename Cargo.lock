@@ -5967,7 +5967,7 @@ dependencies = [
  "num_enum",
  "pallet-evm",
  "parity-scale-codec",
- "precompile-utils",
+ "precompile-utils 0.1.0 (git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.17)",
  "sp-core",
  "sp-io",
  "sp-std",
@@ -6203,15 +6203,17 @@ dependencies = [
 
 [[package]]
 name = "pallet-precompile-dapps-staking"
-version = "1.1.1"
-source = "git+https://github.com/AstarNetwork/astar-frame?tag=pallet-precompile-dapps-staking-1.1.1/polkadot-v0.9.17#45a78d42f6602c287a4502e2b398be1c18c4f21e"
+version = "1.2.0"
 dependencies = [
  "fp-evm",
  "frame-support",
  "frame-system",
+ "log",
+ "num_enum",
  "pallet-dapps-staking 2.1.0",
  "pallet-evm",
  "parity-scale-codec",
+ "precompile-utils 0.1.0",
  "scale-info",
  "sp-core",
  "sp-runtime",
@@ -8108,6 +8110,25 @@ checksum = "eb9f9e6e233e5c4a35559a617bf40a4ec447db2e84c20b55a6f83167b7e57872"
 [[package]]
 name = "precompile-utils"
 version = "0.1.0"
+dependencies = [
+ "fp-evm",
+ "frame-support",
+ "frame-system",
+ "log",
+ "num_enum",
+ "pallet-evm",
+ "parity-scale-codec",
+ "precompile-utils-macro 0.1.0",
+ "sha3 0.9.1",
+ "sp-core",
+ "sp-io",
+ "sp-std",
+ "xcm",
+]
+
+[[package]]
+name = "precompile-utils"
+version = "0.1.0"
 source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.17#45a78d42f6602c287a4502e2b398be1c18c4f21e"
 dependencies = [
  "fp-evm",
@@ -8117,12 +8138,23 @@ dependencies = [
  "num_enum",
  "pallet-evm",
  "parity-scale-codec",
- "precompile-utils-macro",
+ "precompile-utils-macro 0.1.0 (git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.17)",
  "sha3 0.9.1",
  "sp-core",
  "sp-io",
  "sp-std",
  "xcm",
+]
+
+[[package]]
+name = "precompile-utils-macro"
+version = "0.1.0"
+dependencies = [
+ "num_enum",
+ "proc-macro2",
+ "quote",
+ "sha3 0.8.2",
+ "syn",
 ]
 
 [[package]]
