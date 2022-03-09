@@ -7,7 +7,7 @@
 use codec::{Decode, Encode};
 use frame_support::{
     construct_runtime, match_type, parameter_types,
-    traits::{Contains, Currency, Everything, FindAuthor, Imbalance, OnUnbalanced},
+    traits::{Contains, Currency, Everything, FindAuthor, Imbalance, OnUnbalanced, Nothing, PalletInfoAccess},
     weights::{
         constants::{BlockExecutionWeight, ExtrinsicBaseWeight, WEIGHT_PER_SECOND},
         DispatchClass, IdentityFee, Weight, WeightToFeeCoefficient, WeightToFeeCoefficients,
@@ -37,16 +37,16 @@ use sp_runtime::{
 };
 use sp_std::prelude::*;
 
+use pallet_evm_precompile_assets_erc20::AccountIdAssetIdConversion;
+
 // Polkadot imports
-use pallet_xcm::XcmPassthrough;
-use polkadot_parachain::primitives::Sibling;
 use polkadot_runtime_common::{BlockHashCount, RocksDbWeight};
 use xcm::latest::prelude::*;
 use xcm_builder::{
-    AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom,
+    AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom, IsConcrete, CurrencyAdapter,
     AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom, AsPrefixedGeneralIndex,
     ConvertedConcreteAssetId, EnsureXcmOrigin, FixedWeightBounds, FungiblesAdapter,
-    LocationInverter, NativeAsset, ParentAsSuperuser, ParentIsDefault, RelayChainAsNative,
+    LocationInverter, NativeAsset, ParentAsSuperuser, RelayChainAsNative, ParentIsPreset,
     SiblingParachainAsNative, SiblingParachainConvertsVia, SignedAccountId32AsNative,
     SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit, UsingComponents,
 };
@@ -62,7 +62,7 @@ pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 pub use sp_runtime::BuildStorage;
 
 mod precompiles;
-pub use precompiles::ShibuyaNetworkPrecompiles;
+pub use precompiles::{ShibuyaNetworkPrecompiles, ASSET_PRECOMPILE_ADDRESS_PREFIX};
 pub type Precompiles = ShibuyaNetworkPrecompiles<Runtime>;
 
 mod impls;
@@ -87,7 +87,27 @@ pub const HOURS: BlockNumber = MINUTES * 60;
 pub const DAYS: BlockNumber = HOURS * 24;
 
 /// Id used for identifying assets.
-pub type AssetId = u32;
+pub type AssetId = u128;
+
+impl AccountIdAssetIdConversion<AccountId, AssetId> for Runtime {
+    fn account_to_asset_id(account: AccountId) -> Option<AssetId> {
+        let mut data = [0u8; 16];
+        let account_bytes: [u8; 32] = account.into();
+        if ASSET_PRECOMPILE_ADDRESS_PREFIX.eq(&account_bytes[0..4]) {
+            data.copy_from_slice(&account_bytes[4..20]);
+            Some(u128::from_be_bytes(data))
+        } else {
+            None
+        }                                                                                                                 
+    }                                                                                                                     
+
+    fn asset_id_to_account(asset_id: AssetId) -> AccountId {
+        let mut data = [0u8; 32];
+        data[0..4].copy_from_slice(ASSET_PRECOMPILE_ADDRESS_PREFIX);
+        data[4..20].copy_from_slice(&asset_id.to_be_bytes());
+        AccountId::from(data)
+    }
+}
 
 // Make the WASM binary available.
 #[cfg(feature = "std")]
@@ -402,6 +422,14 @@ parameter_types! {
     pub Ancestry: MultiLocation = Parachain(ParachainInfo::parachain_id().into()).into();
     pub const Local: MultiLocation = Here.into();
     pub CheckingAccount: AccountId = PolkadotXcm::check_account();
+    pub AssetsPalletLocation: MultiLocation =
+        PalletInstance(<Assets as PalletInfoAccess>::index() as u8).into();
+    pub AnchoringSelfReserve: MultiLocation = MultiLocation {
+        parents: 0,
+        interior: Junctions::X1(
+            PalletInstance(<Balances as PalletInfoAccess>::index() as u8)
+        )
+   };
 }
 
 /// Type for specifying how a `MultiLocation` can be converted into an `AccountId`. This is used
@@ -409,12 +437,26 @@ parameter_types! {
 /// `Transact` in order to determine the dispatch Origin.
 pub type LocationToAccountId = (
     // The parent (Relay-chain) origin converts to the default `AccountId`.
-    ParentIsDefault<AccountId>,
+    ParentIsPreset<AccountId>,
     // Sibling parachain origins convert to AccountId via the `ParaId::into`.
-    SiblingParachainConvertsVia<Sibling, AccountId>,
+    SiblingParachainConvertsVia<polkadot_parachain::primitives::Sibling, AccountId>,
     // Straight up local `AccountId32` origins just alias directly to `AccountId`.
     AccountId32Aliases<RelayNetwork, AccountId>,
 );
+
+/// Means for transacting the native currency on this chain.
+pub type CurrencyTransactor = CurrencyAdapter<
+    // Use this currency:
+    Balances,
+    // Use this currency when it is a fungible asset matching the given location or name:
+    IsConcrete<Ancestry>,
+    // Convert an XCM MultiLocation into a local account id:
+    LocationToAccountId,
+    // Our chain's account ID type (we can't get away without mentioning it explicitly):
+    AccountId,
+    // We don't track any teleports of `Balances`.
+    (),
+>;
 
 /// Means for transacting assets besides the native currency on this chain.
 pub type FungiblesTransactor = FungiblesAdapter<
@@ -424,7 +466,7 @@ pub type FungiblesTransactor = FungiblesAdapter<
     ConvertedConcreteAssetId<
         AssetId,
         Balance,
-        AsPrefixedGeneralIndex<Local, AssetId, JustTry>,
+        AsPrefixedGeneralIndex<AssetsPalletLocation, AssetId, JustTry>,
         JustTry,
     >,
     // Convert an XCM MultiLocation into a local account id:
@@ -439,7 +481,7 @@ pub type FungiblesTransactor = FungiblesAdapter<
 >;
 
 /// Means for transacting assets on this chain.
-pub type AssetTransactors = FungiblesTransactor;
+pub type AssetTransactors = (CurrencyTransactor, FungiblesTransactor);
 
 /// This is the type we use to convert an (incoming) XCM origin into a local `Origin` instance,
 /// ready for dispatching a transaction with Xcm's `Transact`. There is an `OriginKind` which can
@@ -458,11 +500,11 @@ pub type XcmOriginToTransactDispatchOrigin = (
     // Superuser converter for the Relay-chain (Parent) location. This will allow it to issue a
     // transaction from the Root origin.
     ParentAsSuperuser<Origin>,
+    // Xcm origins can be represented natively under the Xcm pallet's Xcm origin.
+    pallet_xcm::XcmPassthrough<Origin>,
     // Native signed account converter; this just converts an `AccountId32` origin into a normal
     // `Origin::Signed` origin of the same 32-byte value.
     SignedAccountId32AsNative<RelayNetwork, Origin>,
-    // Xcm origins can be represented natively under the Xcm pallet's Xcm origin.
-    XcmPassthrough<Origin>,
 );
 
 parameter_types! {
@@ -478,7 +520,7 @@ match_type! {
     };
 }
 
-pub type Barrier = (
+pub type XcmBarrier = (
     TakeWeightCredit,
     AllowTopLevelPaidExecutionFrom<Everything>,
     // Parent and its plurality get free execution
@@ -498,9 +540,17 @@ impl Config for XcmConfig {
     type IsReserve = NativeAsset;
     type IsTeleporter = NativeAsset; // <- should be enough to allow teleportation of WND
     type LocationInverter = LocationInverter<Ancestry>;
-    type Barrier = Barrier;
+    type Barrier = XcmBarrier;
     type Weigher = FixedWeightBounds<UnitWeightCost, Call, MaxInstructions>;
-    type Trader = UsingComponents<IdentityFee<Balance>, WestendLocation, AccountId, Balances, ()>;
+    type Trader = (
+        UsingComponents<
+            WeightToFee,
+            AnchoringSelfReserve,
+            AccountId,
+            Balances,
+            DealWithFees,
+        >,
+    );
     type ResponseHandler = PolkadotXcm;
     type AssetTrap = PolkadotXcm;
     type AssetClaims = PolkadotXcm;
@@ -550,6 +600,9 @@ impl cumulus_pallet_xcmp_queue::Config for Runtime {
     type XcmExecutor = XcmExecutor<XcmConfig>;
     type ChannelInfo = ParachainSystem;
     type VersionWrapper = PolkadotXcm;
+    type ExecuteOverweightOrigin = frame_system::EnsureRoot<AccountId>;
+    type ControllerOrigin = frame_system::EnsureRoot<AccountId>;
+    type ControllerOriginConverter = XcmOriginToTransactDispatchOrigin;
 }
 
 impl cumulus_pallet_dmp_queue::Config for Runtime {
@@ -676,6 +729,7 @@ parameter_types! {
     // https://github.com/paritytech/substrate/blob/069917b/frame/assets/src/lib.rs#L257L271
     pub const MetadataDepositBase: Balance = deposit(1, 68);
     pub const MetadataDepositPerByte: Balance = deposit(0, 1);
+    pub const AssetAccountDeposit: Balance = deposit(1, 18);
 }
 
 impl pallet_assets::Config for Runtime {
@@ -687,6 +741,7 @@ impl pallet_assets::Config for Runtime {
     type AssetDeposit = AssetDeposit;
     type MetadataDepositBase = MetadataDepositBase;
     type MetadataDepositPerByte = MetadataDepositPerByte;
+    type AssetAccountDeposit = AssetAccountDeposit;
     type ApprovalDeposit = ApprovalDeposit;
     type StringLimit = AssetsStringLimit;
     type Freezer = ();
