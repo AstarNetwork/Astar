@@ -48,12 +48,13 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-sccache-
 
-    - name: Start sccache server
-      env:
-        SCCACHE_IDLE_TIMEOUT: 120
-      run: |
-        sccache --version
-        sccache --start-server
+    # manually started
+    #- name: Start sccache server
+      #env:
+        #SCCACHE_IDLE_TIMEOUT: 120
+      #run: |
+        #sccache --version
+        #sccache --start-server
 
     - name: Check targets are installed correctly
       run: rustup target list --installed
@@ -74,9 +75,9 @@ jobs:
 
     - name: Print sccache stats
       run: sccache --show-stats
-    
-    - name: Stop sccache server
-      run: sccache --stop-server || true
+    # don't stop
+    # - name: Stop sccache server
+      # run: sccache --stop-server || true
 
   native-macos:
     runs-on: macos-latest
