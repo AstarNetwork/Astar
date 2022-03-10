@@ -49,6 +49,8 @@ jobs:
           ${{ runner.os }}-sccache-
 
     - name: Start sccache server
+      env:
+        SCCACHE_IDLE_TIMEOUT: 0
       run: sccache --start-server
 
     - name: Check targets are installed correctly
