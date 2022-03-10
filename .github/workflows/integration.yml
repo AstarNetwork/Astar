@@ -9,7 +9,7 @@ jobs:
   native-linux:
     runs-on: [self-hosted, Linux, X64]
     env:
-      RUSTC_WRAPPER: $HOME/.local/bin/sccache
+      RUSTC_WRAPPER: sccache
       SCCACHE_CACHE_SIZE: 10G
       SCCACHE_DIR: $HOME/.cache/sccache
       # SCCACHE_RECACHE: 1 # Uncomment this to clear cache, then comment it back out
@@ -34,10 +34,7 @@ jobs:
         curl -L "$LINK/v$SCCACHE_VERSION/$SCCACHE_FILE.tar.gz" | tar xz
         mv -f $SCCACHE_FILE/sccache $HOME/.local/bin/sccache
         chmod +x $HOME/.local/bin/sccache
-        pwd
         echo "$HOME/.local/bin" >> $GITHUB_PATH
-        echo $GITHUB_PATH
-        which sccache || true
 
     - name: Prepare sccache
       uses: actions/cache@v2
