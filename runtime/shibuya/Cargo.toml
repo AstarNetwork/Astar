@@ -92,7 +92,10 @@ try-runtime-cli = { git = "https://github.com/paritytech/substrate", branch = "p
 substrate-wasm-builder = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.17" }
 
 [features]
-default = ["std"]
+default = [
+    "std",
+    "pallet-contracts/unstable-interface"
+]
 std = [
     "codec/std",
     "fp-rpc/std",
@@ -183,4 +186,7 @@ try-runtime = [
     "pallet-transaction-payment/try-runtime",
     "pallet-utility/try-runtime",
     "pallet-vesting/try-runtime",
+]
+contracts-unstable-interface = [
+    "pallet-contracts/unstable-interface"
 ]
