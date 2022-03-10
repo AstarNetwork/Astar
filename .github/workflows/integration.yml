@@ -8,6 +8,8 @@ env:
 jobs:
   native-linux:
     runs-on: [self-hosted, Linux, X64]
+    env:
+      CARGO_INCREMENTAL: 1
     steps:
     - uses: hecrj/setup-rust-action@v1
       with:
@@ -18,6 +20,23 @@ jobs:
       uses: actions/checkout@master
       with:
         submodules: true
+        fetch-depth: 1000
+
+    - name: Install Python
+      uses: actions/setup-python@v2
+    
+    - name: Restore mtime
+      run: python ./git-restore-mtime.py
+
+    - uses: actions/cache@v2
+      with:
+        path: |
+          ~/.cargo/bin/
+          ~/.cargo/registry/index/
+          ~/.cargo/registry/cache/
+          ~/.cargo/git/db/
+          target/
+        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
     - name: Check targets are installed correctly
       run: rustup target list --installed
