@@ -76,7 +76,7 @@ polkadot-runtime-common = { git = "https://github.com/paritytech/polkadot", defa
 pallet-block-reward = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.17", default-features = false }
 pallet-custom-signatures = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.17", default-features = false }
 pallet-dapps-staking = { git = "https://github.com/AstarNetwork/astar-frame", branch = "feature/individual-claim", default-features = false }
-pallet-precompile-dapps-staking = { git = "https://github.com/AstarNetwork/astar-frame", branch = "feature/individual-claim", default-features = false }
+pallet-precompile-dapps-staking = { git = "https://github.com/AstarNetwork/astar-frame", branch = "temp/ind-claim-precompile", default-features = false }
 
 # benchmarking
 hex-literal = { version = "0.3.1", optional = true }
