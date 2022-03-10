@@ -36,7 +36,8 @@ jobs:
         chmod +x $HOME/.local/bin/sccache
         pwd
         echo "$HOME/.local/bin" >> $GITHUB_PATH
-        which sccache
+        echo $GITHUB_PATH
+        which sccache || true
 
     - name: Prepare sccache
       uses: actions/cache@v2
