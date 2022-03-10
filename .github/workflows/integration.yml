@@ -50,8 +50,10 @@ jobs:
 
     - name: Start sccache server
       env:
-        SCCACHE_IDLE_TIMEOUT: 0
-      run: sccache --start-server
+        SCCACHE_IDLE_TIMEOUT: 120
+      run: |
+        sccache --version
+        sccache --start-server
 
     - name: Check targets are installed correctly
       run: rustup target list --installed
