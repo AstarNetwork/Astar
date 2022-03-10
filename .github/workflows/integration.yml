@@ -10,7 +10,7 @@ jobs:
     runs-on: [self-hosted, Linux, X64]
     env:
       RUSTC_WRAPPER: sccache
-      SCCACHE_CACHE_SIZE: 1G
+      SCCACHE_CACHE_SIZE: 10G
       SCCACHE_DIR: /home/runner/.cache/sccache
       # SCCACHE_RECACHE: 1 # Uncomment this to clear cache, then comment it back out
     steps:
