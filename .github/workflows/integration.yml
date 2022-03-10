@@ -35,8 +35,9 @@ jobs:
     - name: Run all tests
       run: cargo test --all
 
-    - name: Cleanup after tests
-      run: cargo clean
+    # don't clean. use cache
+    #- name: Cleanup after tests
+    # run: cargo clean
 
     - name: Build optimized binary
       run: CARGO_PROFILE_RELEASE_LTO=true RUSTFLAGS="-C codegen-units=1" cargo build --release --verbose
