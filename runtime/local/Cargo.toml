@@ -11,7 +11,7 @@ scale-info = { version = "1.0", default-features = false, features = ["derive"] 
 
 pallet-aura = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.17", default-features = false }
 pallet-balances = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.17", default-features = false }
-pallet-contracts = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.17", default-features = false }
+pallet-contracts = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.17", default-features = false, features = ["unstable-interface"] }
 pallet-contracts-primitives = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.17", default-features = false }
 pallet-contracts-rpc-runtime-api = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.17", default-features = false }
 pallet-base-fee = { git="https://github.com/AstarNetwork/frontier", branch="polkadot-v0.9.17", default-features=false }
@@ -69,10 +69,7 @@ try-runtime-cli = { git = "https://github.com/paritytech/substrate", branch = "p
 substrate-wasm-builder = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.17", default-features = false }
 
 [features]
-default = [
-    "std",
-    "pallet-contracts/unstable-interface"
-]
+default = ["std"]
 std = [
     "codec/std",
     "fp-rpc/std",
@@ -151,7 +148,4 @@ try-runtime = [
     "pallet-transaction-payment/try-runtime",
     "pallet-utility/try-runtime",
     "pallet-vesting/try-runtime",
-]
-contracts-unstable-interface = [
-    "pallet-contracts/unstable-interface"
 ]
