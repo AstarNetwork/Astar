@@ -279,7 +279,7 @@ parameter_types! {
     pub const MaxNumberOfStakersPerContract: u32 = 2048;
     pub const MinimumStakingAmount: Balance = 5 * SDN;
     pub const MinimumRemainingAmount: Balance = 1 * SDN;
-    pub const MaxEraStakeValues: u32 = 20;
+    pub const MaxEraStakeValues: u32 = 5;
     pub const MaxUnlockingChunks: u32 = 32;
     pub const UnbondingPeriod: u32 = 2;
 }
