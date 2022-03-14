@@ -3,6 +3,7 @@
 use codec::Decode;
 use frame_support::dispatch::{Dispatchable, GetDispatchInfo, PostDispatchInfo};
 use pallet_evm::{Context, Precompile, PrecompileResult, PrecompileSet};
+use pallet_evm_precompile_assets_erc20::Erc20AssetsPrecompileSet;
 use pallet_evm_precompile_bn128::{Bn128Add, Bn128Mul, Bn128Pairing};
 use pallet_evm_precompile_dispatch::Dispatch;
 use pallet_evm_precompile_modexp::Modexp;
@@ -10,7 +11,6 @@ use pallet_evm_precompile_sha3fips::Sha3FIPS256;
 use pallet_evm_precompile_simple::{ECRecover, ECRecoverPublicKey, Identity, Ripemd160, Sha256};
 use pallet_evm_precompile_sr25519::Sr25519Precompile;
 use pallet_precompile_dapps_staking::DappsStakingWrapper;
-use pallet_evm_precompile_assets_erc20::Erc20AssetsPrecompileSet;
 //use pallet_evm_precompile_xtokens::XtokensWrapper;
 use sp_core::H160;
 use sp_std::fmt::Debug;
@@ -106,9 +106,8 @@ where
     }
 
     fn is_precompile(&self, address: H160) -> bool {
-        Self::used_addresses()
-            .find(|x| x == &address)
-            .is_some() || Erc20AssetsPrecompileSet::<R>::new().is_precompile(address)
+        Self::used_addresses().find(|x| x == &address).is_some()
+            || Erc20AssetsPrecompileSet::<R>::new().is_precompile(address)
     }
 }
 

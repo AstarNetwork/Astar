@@ -7,10 +7,13 @@
 use codec::{Decode, Encode};
 use frame_support::{
     construct_runtime, match_type, parameter_types,
-    traits::{Contains, Currency, Everything, FindAuthor, Imbalance, OnUnbalanced, Nothing, PalletInfoAccess},
+    traits::{
+        Contains, Currency, Everything, FindAuthor, Imbalance, Nothing, OnUnbalanced,
+        PalletInfoAccess,
+    },
     weights::{
         constants::{BlockExecutionWeight, ExtrinsicBaseWeight, WEIGHT_PER_SECOND},
-        DispatchClass, IdentityFee, Weight, WeightToFeeCoefficient, WeightToFeeCoefficients,
+        DispatchClass, Weight, WeightToFeeCoefficient, WeightToFeeCoefficients,
         WeightToFeePolynomial,
     },
     ConsensusEngineId, PalletId,
@@ -27,7 +30,7 @@ use sp_inherents::{CheckInherentsResult, InherentData};
 use sp_runtime::{
     create_runtime_str, generic, impl_opaque_keys,
     traits::{
-        AccountIdConversion, AccountIdLookup, BlakeTwo256, Block as BlockT, ConvertInto,
+        AccountIdConversion, AccountIdLookup, BlakeTwo256, Block as BlockT, Convert, ConvertInto,
         Dispatchable, OpaqueKeys, PostDispatchInfoOf, Verify,
     },
     transaction_validity::{
@@ -43,12 +46,13 @@ use pallet_evm_precompile_assets_erc20::AccountIdAssetIdConversion;
 use polkadot_runtime_common::{BlockHashCount, RocksDbWeight};
 use xcm::latest::prelude::*;
 use xcm_builder::{
-    AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom, IsConcrete, CurrencyAdapter,
+    AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom,
     AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom, AsPrefixedGeneralIndex,
-    ConvertedConcreteAssetId, EnsureXcmOrigin, FixedWeightBounds, FungiblesAdapter,
-    LocationInverter, NativeAsset, ParentAsSuperuser, RelayChainAsNative, ParentIsPreset,
-    SiblingParachainAsNative, SiblingParachainConvertsVia, SignedAccountId32AsNative,
-    SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit, UsingComponents,
+    ConvertedConcreteAssetId, CurrencyAdapter, EnsureXcmOrigin, FixedWeightBounds,
+    FungiblesAdapter, IsConcrete, LocationInverter, NativeAsset, ParentAsSuperuser, ParentIsPreset,
+    RelayChainAsNative, SiblingParachainAsNative, SiblingParachainConvertsVia,
+    SignedAccountId32AsNative, SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit,
+    UsingComponents,
 };
 use xcm_executor::{traits::JustTry, Config, XcmExecutor};
 
@@ -98,14 +102,51 @@ impl AccountIdAssetIdConversion<AccountId, AssetId> for Runtime {
             Some(u128::from_be_bytes(data))
         } else {
             None
-        }                                                                                                                 
-    }                                                                                                                     
+        }
+    }
 
     fn asset_id_to_account(asset_id: AssetId) -> AccountId {
         let mut data = [0u8; 32];
         data[0..4].copy_from_slice(ASSET_PRECOMPILE_ADDRESS_PREFIX);
         data[4..20].copy_from_slice(&asset_id.to_be_bytes());
         AccountId::from(data)
+    }
+}
+
+// Our currencyId. We distinguish for now between SelfReserve, and Others, defined by their Id.
+#[derive(Clone, Eq, Debug, PartialEq, Ord, PartialOrd, Encode, Decode, scale_info::TypeInfo)]
+pub enum CurrencyId {
+    SelfReserve,
+    OtherReserve(AssetId),
+}
+
+// How to convert from CurrencyId to MultiLocation
+pub struct CurrencyIdtoMultiLocation<AssetXConverter>(sp_std::marker::PhantomData<AssetXConverter>);
+
+impl<AssetXConverter> sp_runtime::traits::Convert<CurrencyId, Option<MultiLocation>>
+    for CurrencyIdtoMultiLocation<AssetXConverter>
+where
+    AssetXConverter: xcm_executor::traits::Convert<MultiLocation, AssetId>,
+{
+    fn convert(currency: CurrencyId) -> Option<MultiLocation> {
+        match currency {
+            CurrencyId::SelfReserve => {
+                let multi: MultiLocation = AnchoringSelfReserve::get();
+                Some(multi)
+            }
+            CurrencyId::OtherReserve(asset) => AssetXConverter::reverse_ref(asset).ok(),
+        }
+    }
+}
+
+pub struct AccountIdToMultiLocation;
+impl Convert<AccountId, MultiLocation> for AccountIdToMultiLocation {
+    fn convert(account: AccountId) -> MultiLocation {
+        X1(AccountId32 {
+            network: NetworkId::Any,
+            id: account.into(),
+        })
+        .into()
     }
 }
 
@@ -542,15 +583,8 @@ impl Config for XcmConfig {
     type LocationInverter = LocationInverter<Ancestry>;
     type Barrier = XcmBarrier;
     type Weigher = FixedWeightBounds<UnitWeightCost, Call, MaxInstructions>;
-    type Trader = (
-        UsingComponents<
-            WeightToFee,
-            AnchoringSelfReserve,
-            AccountId,
-            Balances,
-            DealWithFees,
-        >,
-    );
+    type Trader =
+        (UsingComponents<WeightToFee, AnchoringSelfReserve, AccountId, Balances, DealWithFees>,);
     type ResponseHandler = PolkadotXcm;
     type AssetTrap = PolkadotXcm;
     type AssetClaims = PolkadotXcm;
@@ -609,6 +643,45 @@ impl cumulus_pallet_dmp_queue::Config for Runtime {
     type Event = Event;
     type XcmExecutor = XcmExecutor<XcmConfig>;
     type ExecuteOverweightOrigin = frame_system::EnsureRoot<AccountId>;
+}
+
+parameter_types! {
+    pub const MaxAssetsForTransfer: usize = 2;
+    pub const BaseXcmWeight: Weight = 100_000_000;
+
+    pub SelfLocation: MultiLocation = MultiLocation {
+        parents:1,
+        interior: Junctions::X1(
+            Parachain(ParachainInfo::parachain_id().into())
+        )
+    };
+}
+
+orml_traits::parameter_type_with_key! {
+    pub ParachainMinFee: |location: MultiLocation| -> u128 {
+        #[allow(clippy::match_ref_pats)] // false positive
+        match (location.parents, location.first_interior()) {
+            // Statemine
+            (1, Some(Parachain(1000))) => 4_000_000_000,
+            _ => u128::MAX,
+        }
+    };
+}
+
+impl orml_xtokens::Config for Runtime {
+    type Event = Event;
+    type Balance = Balance;
+    type CurrencyId = CurrencyId;
+    type AccountIdToMultiLocation = AccountIdToMultiLocation;
+    type CurrencyIdConvert =
+        CurrencyIdtoMultiLocation<AsPrefixedGeneralIndex<AssetsPalletLocation, AssetId, JustTry>>;
+    type XcmExecutor = XcmExecutor<XcmConfig>;
+    type SelfLocation = SelfLocation;
+    type Weigher = FixedWeightBounds<UnitWeightCost, Call, MaxInstructions>;
+    type BaseXcmWeight = BaseXcmWeight;
+    type LocationInverter = LocationInverter<Ancestry>;
+    type MaxAssetsForTransfer = MaxAssetsForTransfer;
+    type MinXcmFee = ParachainMinFee;
 }
 
 parameter_types! {
@@ -1019,6 +1092,7 @@ construct_runtime!(
         PolkadotXcm: pallet_xcm::{Pallet, Call, Storage, Event<T>, Origin} = 51,
         CumulusXcm: cumulus_pallet_xcm::{Pallet, Event<T>, Origin} = 52,
         DmpQueue: cumulus_pallet_dmp_queue::{Pallet, Call, Storage, Event<T>} = 53,
+        XTokens: orml_xtokens::{Pallet, Call, Storage, Event<T>} = 54,
 
         EVM: pallet_evm::{Pallet, Config, Call, Storage, Event<T>} = 60,
         Ethereum: pallet_ethereum::{Pallet, Call, Storage, Event, Origin, Config} = 61,
