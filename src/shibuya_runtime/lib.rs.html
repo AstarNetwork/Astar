@@ -1232,6 +1232,26 @@
 <span id="1231">1231</span>
 <span id="1232">1232</span>
 <span id="1233">1233</span>
+<span id="1234">1234</span>
+<span id="1235">1235</span>
+<span id="1236">1236</span>
+<span id="1237">1237</span>
+<span id="1238">1238</span>
+<span id="1239">1239</span>
+<span id="1240">1240</span>
+<span id="1241">1241</span>
+<span id="1242">1242</span>
+<span id="1243">1243</span>
+<span id="1244">1244</span>
+<span id="1245">1245</span>
+<span id="1246">1246</span>
+<span id="1247">1247</span>
+<span id="1248">1248</span>
+<span id="1249">1249</span>
+<span id="1250">1250</span>
+<span id="1251">1251</span>
+<span id="1252">1252</span>
+<span id="1253">1253</span>
 </pre><pre class="rust"><code><span class="doccomment">//! The Shiden Network runtime. This can be compiled with ``#[no_std]`, ready for Wasm.</span>
 
 <span class="attribute">#![<span class="ident">cfg_attr</span>(<span class="ident">not</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>), <span class="ident">no_std</span>)]</span>
@@ -1241,7 +1261,7 @@
 <span class="kw">use</span> <span class="ident">codec</span>::{<span class="ident">Decode</span>, <span class="ident">Encode</span>};
 <span class="kw">use</span> <span class="ident">frame_support</span>::{
     <span class="ident">construct_runtime</span>, <span class="ident">parameter_types</span>,
-    <span class="ident">traits</span>::{<span class="ident">Contains</span>, <span class="ident">Currency</span>, <span class="ident">FindAuthor</span>, <span class="ident">Imbalance</span>, <span class="ident">Nothing</span>, <span class="ident">OnUnbalanced</span>},
+    <span class="ident">traits</span>::{<span class="ident">Contains</span>, <span class="ident">Currency</span>, <span class="ident">FindAuthor</span>, <span class="ident">Imbalance</span>, <span class="ident">Nothing</span>, <span class="ident">OnRuntimeUpgrade</span>, <span class="ident">OnUnbalanced</span>},
     <span class="ident">weights</span>::{
         <span class="ident">constants</span>::{<span class="ident">BlockExecutionWeight</span>, <span class="ident">ExtrinsicBaseWeight</span>, <span class="ident">WEIGHT_PER_SECOND</span>},
         <span class="ident">DispatchClass</span>, <span class="ident">Weight</span>, <span class="ident">WeightToFeeCoefficient</span>, <span class="ident">WeightToFeeCoefficients</span>,
@@ -1323,7 +1343,7 @@
     <span class="ident">spec_name</span>: <span class="macro">create_runtime_str!</span>(<span class="string">&quot;shibuya&quot;</span>),
     <span class="ident">impl_name</span>: <span class="macro">create_runtime_str!</span>(<span class="string">&quot;shibuya&quot;</span>),
     <span class="ident">authoring_version</span>: <span class="number">1</span>,
-    <span class="ident">spec_version</span>: <span class="number">33</span>,
+    <span class="ident">spec_version</span>: <span class="number">35</span>,
     <span class="ident">impl_version</span>: <span class="number">0</span>,
     <span class="ident">apis</span>: <span class="ident">RUNTIME_API_VERSIONS</span>,
     <span class="ident">transaction_version</span>: <span class="number">2</span>,
@@ -1513,9 +1533,8 @@
     <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">MaxNumberOfStakersPerContract</span>: <span class="ident">u32</span> <span class="op">=</span> <span class="number">2048</span>;
     <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">MinimumStakingAmount</span>: <span class="ident">Balance</span> <span class="op">=</span> <span class="number">5</span> <span class="op">*</span> <span class="ident">SDN</span>;
     <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">MinimumRemainingAmount</span>: <span class="ident">Balance</span> <span class="op">=</span> <span class="number">1</span> <span class="op">*</span> <span class="ident">SDN</span>;
-    <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">HistoryDepth</span>: <span class="ident">u32</span> <span class="op">=</span> <span class="number">60</span>;
-    <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">BonusEraDuration</span>: <span class="ident">u32</span> <span class="op">=</span> <span class="number">600</span>;
-    <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">MaxUnlockingChunks</span>: <span class="ident">u32</span> <span class="op">=</span> <span class="number">2</span>;
+    <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">MaxEraStakeValues</span>: <span class="ident">u32</span> <span class="op">=</span> <span class="number">5</span>;
+    <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">MaxUnlockingChunks</span>: <span class="ident">u32</span> <span class="op">=</span> <span class="number">32</span>;
     <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">UnbondingPeriod</span>: <span class="ident">u32</span> <span class="op">=</span> <span class="number">2</span>;
 }
 
@@ -1530,11 +1549,10 @@
     <span class="kw">type</span> <span class="ident">MaxNumberOfStakersPerContract</span> <span class="op">=</span> <span class="ident">MaxNumberOfStakersPerContract</span>;
     <span class="kw">type</span> <span class="ident">MinimumStakingAmount</span> <span class="op">=</span> <span class="ident">MinimumStakingAmount</span>;
     <span class="kw">type</span> <span class="ident">PalletId</span> <span class="op">=</span> <span class="ident">DappsStakingPalletId</span>;
-    <span class="kw">type</span> <span class="ident">MinimumRemainingAmount</span> <span class="op">=</span> <span class="ident">MinimumRemainingAmount</span>;
-    <span class="kw">type</span> <span class="ident">HistoryDepth</span> <span class="op">=</span> <span class="ident">HistoryDepth</span>;
-    <span class="kw">type</span> <span class="ident">BonusEraDuration</span> <span class="op">=</span> <span class="ident">BonusEraDuration</span>;
     <span class="kw">type</span> <span class="ident">MaxUnlockingChunks</span> <span class="op">=</span> <span class="ident">MaxUnlockingChunks</span>;
     <span class="kw">type</span> <span class="ident">UnbondingPeriod</span> <span class="op">=</span> <span class="ident">UnbondingPeriod</span>;
+    <span class="kw">type</span> <span class="ident">MinimumRemainingAmount</span> <span class="op">=</span> <span class="ident">MinimumRemainingAmount</span>;
+    <span class="kw">type</span> <span class="ident">MaxEraStakeValues</span> <span class="op">=</span> <span class="ident">MaxEraStakeValues</span>;
 }
 
 <span class="doccomment">/// Multi-VM pointer to smart contract instance.</span>
@@ -2032,7 +2050,29 @@
     <span class="ident">frame_system::ChainContext</span><span class="op">&lt;</span><span class="ident">Runtime</span><span class="op">&gt;</span>,
     <span class="ident">Runtime</span>,
     <span class="ident">AllPalletsWithSystem</span>,
+    (<span class="ident">DappsStakingMigrationV3</span>,),
 <span class="op">&gt;</span>;
+
+<span class="comment">// Migration for supporting unbonding period in dapps staking.</span>
+<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">DappsStakingMigrationV3</span>;
+
+<span class="kw">impl</span> <span class="ident">OnRuntimeUpgrade</span> <span class="kw">for</span> <span class="ident">DappsStakingMigrationV3</span> {
+    <span class="kw">fn</span> <span class="ident">on_runtime_upgrade</span>() -&gt; <span class="ident">frame_support::weights::Weight</span> {
+        <span class="ident">pallet_dapps_staking::migrations::v3::stateful_migrate</span>::<span class="op">&lt;</span><span class="ident">Runtime</span><span class="op">&gt;</span>(
+            <span class="ident">RuntimeBlockWeights::get</span>().<span class="ident">max_block</span> <span class="op">/</span> <span class="number">5</span> <span class="op">*</span> <span class="number">3</span>,
+        )
+    }
+
+    <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;try-runtime&quot;</span>)]</span>
+    <span class="kw">fn</span> <span class="ident">pre_upgrade</span>() -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="kw-2">&amp;</span><span class="lifetime">&#39;static</span> <span class="ident">str</span><span class="op">&gt;</span> {
+        <span class="ident">pallet_dapps_staking::migrations::v3::pre_migrate</span>::<span class="op">&lt;</span><span class="ident">Runtime</span>, <span class="self">Self</span><span class="op">&gt;</span>()
+    }
+
+    <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;try-runtime&quot;</span>)]</span>
+    <span class="kw">fn</span> <span class="ident">post_upgrade</span>() -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="kw-2">&amp;</span><span class="lifetime">&#39;static</span> <span class="ident">str</span><span class="op">&gt;</span> {
+        <span class="ident">pallet_dapps_staking::migrations::v3::post_migrate</span>::<span class="op">&lt;</span><span class="ident">Runtime</span>, <span class="self">Self</span><span class="op">&gt;</span>()
+    }
+}
 
 <span class="kw">impl</span> <span class="ident">fp_self_contained::SelfContainedCall</span> <span class="kw">for</span> <span class="ident">Call</span> {
     <span class="kw">type</span> <span class="ident">SignedInfo</span> <span class="op">=</span> <span class="ident">H160</span>;
