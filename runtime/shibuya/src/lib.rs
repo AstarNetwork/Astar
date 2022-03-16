@@ -89,7 +89,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("shibuya"),
     impl_name: create_runtime_str!("shibuya"),
     authoring_version: 1,
-    spec_version: 36,
+    spec_version: 37,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 2,
@@ -804,19 +804,12 @@ pub struct DappsStakingMigrationV3;
 
 impl OnRuntimeUpgrade for DappsStakingMigrationV3 {
     fn on_runtime_upgrade() -> frame_support::weights::Weight {
-        pallet_dapps_staking::migrations::v3::stateful_migrate::<Runtime>(
-            RuntimeBlockWeights::get().max_block / 5 * 3,
-        )
-    }
-
-    #[cfg(feature = "try-runtime")]
-    fn pre_upgrade() -> Result<(), &'static str> {
-        pallet_dapps_staking::migrations::v3::pre_migrate::<Runtime, Self>()
+        pallet_dapps_staking::migrations::v3::shibuya_fix_for_v3::<Runtime>()
     }
 
     #[cfg(feature = "try-runtime")]
     fn post_upgrade() -> Result<(), &'static str> {
-        pallet_dapps_staking::migrations::v3::post_migrate::<Runtime, Self>()
+        pallet_dapps_staking::migrations::v3::post_migrate_shibuya_fix_for_v3::<Runtime>()
     }
 }
 

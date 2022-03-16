@@ -53,8 +53,8 @@ pallet-transaction-payment-rpc-runtime-api = { git = "https://github.com/parityt
 
 pallet-block-reward = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.17", default-features = false }
 pallet-custom-signatures = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.17", default-features = false }
-pallet-dapps-staking = { git = "https://github.com/AstarNetwork/astar-frame", tag = "pallet-dapps-staking-3.0.1/polkadot-v0.9.17", default-features = false }
-pallet-precompile-dapps-staking = { git = "https://github.com/AstarNetwork/astar-frame", tag = "pallet-precompile-dapps-staking-1.2.1/polkadot-v0.9.17", default-features = false }
+pallet-dapps-staking = { git = "https://github.com/AstarNetwork/astar-frame", tag = "pallet-dapps-staking-3.0.2/polkadot-v0.9.17", default-features = false }
+pallet-precompile-dapps-staking = { git = "https://github.com/AstarNetwork/astar-frame", tag = "pallet-dapps-staking-3.0.2/polkadot-v0.9.17", default-features = false }
 
 # benchmarking
 hex-literal = { version = "0.3.1", optional = true }
