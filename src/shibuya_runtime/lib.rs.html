@@ -1245,13 +1245,6 @@
 <span id="1244">1244</span>
 <span id="1245">1245</span>
 <span id="1246">1246</span>
-<span id="1247">1247</span>
-<span id="1248">1248</span>
-<span id="1249">1249</span>
-<span id="1250">1250</span>
-<span id="1251">1251</span>
-<span id="1252">1252</span>
-<span id="1253">1253</span>
 </pre><pre class="rust"><code><span class="doccomment">//! The Shiden Network runtime. This can be compiled with ``#[no_std]`, ready for Wasm.</span>
 
 <span class="attribute">#![<span class="ident">cfg_attr</span>(<span class="ident">not</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>), <span class="ident">no_std</span>)]</span>
@@ -1343,7 +1336,7 @@
     <span class="ident">spec_name</span>: <span class="macro">create_runtime_str!</span>(<span class="string">&quot;shibuya&quot;</span>),
     <span class="ident">impl_name</span>: <span class="macro">create_runtime_str!</span>(<span class="string">&quot;shibuya&quot;</span>),
     <span class="ident">authoring_version</span>: <span class="number">1</span>,
-    <span class="ident">spec_version</span>: <span class="number">36</span>,
+    <span class="ident">spec_version</span>: <span class="number">37</span>,
     <span class="ident">impl_version</span>: <span class="number">0</span>,
     <span class="ident">apis</span>: <span class="ident">RUNTIME_API_VERSIONS</span>,
     <span class="ident">transaction_version</span>: <span class="number">2</span>,
@@ -2058,19 +2051,12 @@
 
 <span class="kw">impl</span> <span class="ident">OnRuntimeUpgrade</span> <span class="kw">for</span> <span class="ident">DappsStakingMigrationV3</span> {
     <span class="kw">fn</span> <span class="ident">on_runtime_upgrade</span>() -&gt; <span class="ident">frame_support::weights::Weight</span> {
-        <span class="ident">pallet_dapps_staking::migrations::v3::stateful_migrate</span>::<span class="op">&lt;</span><span class="ident">Runtime</span><span class="op">&gt;</span>(
-            <span class="ident">RuntimeBlockWeights::get</span>().<span class="ident">max_block</span> <span class="op">/</span> <span class="number">5</span> <span class="op">*</span> <span class="number">3</span>,
-        )
-    }
-
-    <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;try-runtime&quot;</span>)]</span>
-    <span class="kw">fn</span> <span class="ident">pre_upgrade</span>() -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="kw-2">&amp;</span><span class="lifetime">&#39;static</span> <span class="ident">str</span><span class="op">&gt;</span> {
-        <span class="ident">pallet_dapps_staking::migrations::v3::pre_migrate</span>::<span class="op">&lt;</span><span class="ident">Runtime</span>, <span class="self">Self</span><span class="op">&gt;</span>()
+        <span class="ident">pallet_dapps_staking::migrations::v3::shibuya_fix_for_v3</span>::<span class="op">&lt;</span><span class="ident">Runtime</span><span class="op">&gt;</span>()
     }
 
     <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;try-runtime&quot;</span>)]</span>
     <span class="kw">fn</span> <span class="ident">post_upgrade</span>() -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="kw-2">&amp;</span><span class="lifetime">&#39;static</span> <span class="ident">str</span><span class="op">&gt;</span> {
-        <span class="ident">pallet_dapps_staking::migrations::v3::post_migrate</span>::<span class="op">&lt;</span><span class="ident">Runtime</span>, <span class="self">Self</span><span class="op">&gt;</span>()
+        <span class="ident">pallet_dapps_staking::migrations::v3::post_migrate_shibuya_fix_for_v3</span>::<span class="op">&lt;</span><span class="ident">Runtime</span><span class="op">&gt;</span>()
     }
 }
 
