@@ -1,6 +1,6 @@
 [package]
 name = "local-runtime"
-version = "3.11.3"
+version = "3.12.0"
 authors = ["Stake Technologies <devops@stake.co.jp>"]
 edition = "2018"
 build = "build.rs"
@@ -53,8 +53,8 @@ pallet-transaction-payment-rpc-runtime-api = { git = "https://github.com/parityt
 # Astar pallets
 pallet-block-reward = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.17", default-features = false }
 pallet-custom-signatures = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.17", default-features = false }
-pallet-dapps-staking = { git = "https://github.com/AstarNetwork/astar-frame", tag = "pallet-dapps-staking-3.0.3/polkadot-v0.9.17", default-features = false }
-pallet-precompile-dapps-staking = { git = "https://github.com/AstarNetwork/astar-frame", tag = "pallet-dapps-staking-3.0.3/polkadot-v0.9.17", default-features = false }
+pallet-dapps-staking = { git = "https://github.com/AstarNetwork/astar-frame", tag = "pallet-dapps-staking-3.0.4/polkadot-v0.9.17", default-features = false }
+pallet-precompile-dapps-staking = { git = "https://github.com/AstarNetwork/astar-frame", tag = "pallet-dapps-staking-3.0.4/polkadot-v0.9.17", default-features = false }
 pallet-vesting = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.17", default-features = false }
 
 # benchmarking
