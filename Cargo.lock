@@ -153,7 +153,7 @@ checksum = "9b34d609dfbaf33d6889b2b7106d3ca345eacad44200913df5ba02bfd31d2ba9"
 
 [[package]]
 name = "astar-collator"
-version = "3.11.1"
+version = "3.11.2"
 dependencies = [
  "astar-runtime",
  "async-trait",
@@ -239,7 +239,7 @@ dependencies = [
 
 [[package]]
 name = "astar-runtime"
-version = "3.11.1"
+version = "3.11.2"
 dependencies = [
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-parachain-system",
@@ -808,9 +808,9 @@ checksum = "8d696c370c750c948ada61c69a0ee2cbbb9c50b1019ddb86d9317157a99c2cae"
 
 [[package]]
 name = "blocking"
-version = "1.1.0"
+version = "1.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "046e47d4b2d391b1f6f8b407b1deb8dee56c1852ccd868becf2710f601b5f427"
+checksum = "c6ccb65d468978a086b69884437ded69a90faab3bbe6e67f242173ea728acccc"
 dependencies = [
  "async-channel",
  "async-task",
@@ -1397,9 +1397,9 @@ dependencies = [
 
 [[package]]
 name = "crossbeam-channel"
-version = "0.5.2"
+version = "0.5.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e54ea8bc3fb1ee042f5aace6e3c6e025d3874866da222930f70ce62aceba0bfa"
+checksum = "fdbfe11fe19ff083c48923cf179540e8cd0535903dc35e178a1fdeeb59aef51f"
 dependencies = [
  "cfg-if 1.0.0",
  "crossbeam-utils",
@@ -1418,10 +1418,11 @@ dependencies = [
 
 [[package]]
 name = "crossbeam-epoch"
-version = "0.9.7"
+version = "0.9.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c00d6d2ea26e8b151d99093005cb442fb9a37aeaca582a03ec70946f49ab5ed9"
+checksum = "1145cf131a2c6ba0615079ab6a638f7e1973ac9c2634fcbeaaad6114246efe8c"
 dependencies = [
+ "autocfg",
  "cfg-if 1.0.0",
  "crossbeam-utils",
  "lazy_static",
@@ -1431,9 +1432,9 @@ dependencies = [
 
 [[package]]
 name = "crossbeam-utils"
-version = "0.8.7"
+version = "0.8.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b5e5bed1f1c269533fa816a0a5492b3545209a205ca1a54842be180eb63a16a6"
+checksum = "0bf124c720b7686e3c2663cf54062ab0f68a88af2fb6a030e87e30bf721fcb38"
 dependencies = [
  "cfg-if 1.0.0",
  "lazy_static",
@@ -1517,7 +1518,7 @@ dependencies = [
 [[package]]
 name = "cumulus-client-cli"
 version = "0.1.0"
-source = "git+https://github.com/paritytech/cumulus?branch=polkadot-v0.9.17#76479e7fef3af7c8828a44647847b01afd5fefe5"
+source = "git+https://github.com/paritytech/cumulus?branch=polkadot-v0.9.17#db11baacc325537be74ad34517fcb28ed9ded6c6"
 dependencies = [
  "clap",
  "sc-cli",
@@ -1527,7 +1528,7 @@ dependencies = [
 [[package]]
 name = "cumulus-client-collator"
 version = "0.1.0"
-source = "git+https://github.com/paritytech/cumulus?branch=polkadot-v0.9.17#76479e7fef3af7c8828a44647847b01afd5fefe5"
+source = "git+https://github.com/paritytech/cumulus?branch=polkadot-v0.9.17#db11baacc325537be74ad34517fcb28ed9ded6c6"
 dependencies = [
  "cumulus-client-consensus-common",
  "cumulus-client-network",
@@ -1551,7 +1552,7 @@ dependencies = [
 [[package]]
 name = "cumulus-client-consensus-aura"
 version = "0.1.0"
-source = "git+https://github.com/paritytech/cumulus?branch=polkadot-v0.9.17#76479e7fef3af7c8828a44647847b01afd5fefe5"
+source = "git+https://github.com/paritytech/cumulus?branch=polkadot-v0.9.17#db11baacc325537be74ad34517fcb28ed9ded6c6"
 dependencies = [
  "async-trait",
  "cumulus-client-consensus-common",
@@ -1580,7 +1581,7 @@ dependencies = [
 [[package]]
 name = "cumulus-client-consensus-common"
 version = "0.1.0"
-source = "git+https://github.com/paritytech/cumulus?branch=polkadot-v0.9.17#76479e7fef3af7c8828a44647847b01afd5fefe5"
+source = "git+https://github.com/paritytech/cumulus?branch=polkadot-v0.9.17#db11baacc325537be74ad34517fcb28ed9ded6c6"
 dependencies = [
  "async-trait",
  "cumulus-relay-chain-interface",
@@ -1601,7 +1602,7 @@ dependencies = [
 [[package]]
 name = "cumulus-client-consensus-relay-chain"
 version = "0.1.0"
-source = "git+https://github.com/paritytech/cumulus?branch=polkadot-v0.9.17#76479e7fef3af7c8828a44647847b01afd5fefe5"
+source = "git+https://github.com/paritytech/cumulus?branch=polkadot-v0.9.17#db11baacc325537be74ad34517fcb28ed9ded6c6"
 dependencies = [
  "async-trait",
  "cumulus-client-consensus-common",
@@ -1625,7 +1626,7 @@ dependencies = [
 [[package]]
 name = "cumulus-client-network"
 version = "0.1.0"
-source = "git+https://github.com/paritytech/cumulus?branch=polkadot-v0.9.17#76479e7fef3af7c8828a44647847b01afd5fefe5"
+source = "git+https://github.com/paritytech/cumulus?branch=polkadot-v0.9.17#db11baacc325537be74ad34517fcb28ed9ded6c6"
 dependencies = [
  "async-trait",
  "cumulus-relay-chain-interface",
@@ -1650,7 +1651,7 @@ dependencies = [
 [[package]]
 name = "cumulus-client-pov-recovery"
 version = "0.1.0"
-source = "git+https://github.com/paritytech/cumulus?branch=polkadot-v0.9.17#76479e7fef3af7c8828a44647847b01afd5fefe5"
+source = "git+https://github.com/paritytech/cumulus?branch=polkadot-v0.9.17#db11baacc325537be74ad34517fcb28ed9ded6c6"
 dependencies = [
  "cumulus-primitives-core",
  "cumulus-relay-chain-interface",
@@ -1674,7 +1675,7 @@ dependencies = [
 [[package]]
 name = "cumulus-client-service"
 version = "0.1.0"
-source = "git+https://github.com/paritytech/cumulus?branch=polkadot-v0.9.17#76479e7fef3af7c8828a44647847b01afd5fefe5"
+source = "git+https://github.com/paritytech/cumulus?branch=polkadot-v0.9.17#db11baacc325537be74ad34517fcb28ed9ded6c6"
 dependencies = [
  "cumulus-client-collator",
  "cumulus-client-consensus-common",
@@ -1703,7 +1704,7 @@ dependencies = [
 [[package]]
 name = "cumulus-pallet-aura-ext"
 version = "0.1.0"
-source = "git+https://github.com/paritytech/cumulus?branch=polkadot-v0.9.17#76479e7fef3af7c8828a44647847b01afd5fefe5"
+source = "git+https://github.com/paritytech/cumulus?branch=polkadot-v0.9.17#db11baacc325537be74ad34517fcb28ed9ded6c6"
 dependencies = [
  "frame-executive",
  "frame-support",
@@ -1721,7 +1722,7 @@ dependencies = [
 [[package]]
 name = "cumulus-pallet-parachain-system"
 version = "0.1.0"
-source = "git+https://github.com/paritytech/cumulus?branch=polkadot-v0.9.17#76479e7fef3af7c8828a44647847b01afd5fefe5"
+source = "git+https://github.com/paritytech/cumulus?branch=polkadot-v0.9.17#db11baacc325537be74ad34517fcb28ed9ded6c6"
 dependencies = [
  "cumulus-pallet-parachain-system-proc-macro",
  "cumulus-primitives-core",
@@ -1751,7 +1752,7 @@ dependencies = [
 [[package]]
 name = "cumulus-pallet-parachain-system-proc-macro"
 version = "0.1.0"
-source = "git+https://github.com/paritytech/cumulus?branch=polkadot-v0.9.17#76479e7fef3af7c8828a44647847b01afd5fefe5"
+source = "git+https://github.com/paritytech/cumulus?branch=polkadot-v0.9.17#db11baacc325537be74ad34517fcb28ed9ded6c6"
 dependencies = [
  "proc-macro-crate 1.1.3",
  "proc-macro2",
@@ -1762,7 +1763,7 @@ dependencies = [
 [[package]]
 name = "cumulus-primitives-core"
 version = "0.1.0"
-source = "git+https://github.com/paritytech/cumulus?branch=polkadot-v0.9.17#76479e7fef3af7c8828a44647847b01afd5fefe5"
+source = "git+https://github.com/paritytech/cumulus?branch=polkadot-v0.9.17#db11baacc325537be74ad34517fcb28ed9ded6c6"
 dependencies = [
  "frame-support",
  "parity-scale-codec",
@@ -1778,7 +1779,7 @@ dependencies = [
 [[package]]
 name = "cumulus-primitives-parachain-inherent"
 version = "0.1.0"
-source = "git+https://github.com/paritytech/cumulus?branch=polkadot-v0.9.17#76479e7fef3af7c8828a44647847b01afd5fefe5"
+source = "git+https://github.com/paritytech/cumulus?branch=polkadot-v0.9.17#db11baacc325537be74ad34517fcb28ed9ded6c6"
 dependencies = [
  "async-trait",
  "cumulus-primitives-core",
@@ -1801,7 +1802,7 @@ dependencies = [
 [[package]]
 name = "cumulus-primitives-timestamp"
 version = "0.1.0"
-source = "git+https://github.com/paritytech/cumulus?branch=polkadot-v0.9.17#76479e7fef3af7c8828a44647847b01afd5fefe5"
+source = "git+https://github.com/paritytech/cumulus?branch=polkadot-v0.9.17#db11baacc325537be74ad34517fcb28ed9ded6c6"
 dependencies = [
  "cumulus-primitives-core",
  "sp-inherents",
@@ -1812,7 +1813,7 @@ dependencies = [
 [[package]]
 name = "cumulus-primitives-utility"
 version = "0.1.0"
-source = "git+https://github.com/paritytech/cumulus?branch=polkadot-v0.9.17#76479e7fef3af7c8828a44647847b01afd5fefe5"
+source = "git+https://github.com/paritytech/cumulus?branch=polkadot-v0.9.17#db11baacc325537be74ad34517fcb28ed9ded6c6"
 dependencies = [
  "cumulus-primitives-core",
  "frame-support",
@@ -1829,7 +1830,7 @@ dependencies = [
 [[package]]
 name = "cumulus-relay-chain-interface"
 version = "0.1.0"
-source = "git+https://github.com/paritytech/cumulus?branch=polkadot-v0.9.17#76479e7fef3af7c8828a44647847b01afd5fefe5"
+source = "git+https://github.com/paritytech/cumulus?branch=polkadot-v0.9.17#db11baacc325537be74ad34517fcb28ed9ded6c6"
 dependencies = [
  "async-trait",
  "cumulus-primitives-core",
@@ -1850,7 +1851,7 @@ dependencies = [
 [[package]]
 name = "cumulus-relay-chain-local"
 version = "0.1.0"
-source = "git+https://github.com/paritytech/cumulus?branch=polkadot-v0.9.17#76479e7fef3af7c8828a44647847b01afd5fefe5"
+source = "git+https://github.com/paritytech/cumulus?branch=polkadot-v0.9.17#db11baacc325537be74ad34517fcb28ed9ded6c6"
 dependencies = [
  "async-trait",
  "cumulus-primitives-core",
@@ -1878,7 +1879,7 @@ dependencies = [
 [[package]]
 name = "cumulus-test-relay-sproof-builder"
 version = "0.1.0"
-source = "git+https://github.com/paritytech/cumulus?branch=polkadot-v0.9.17#76479e7fef3af7c8828a44647847b01afd5fefe5"
+source = "git+https://github.com/paritytech/cumulus?branch=polkadot-v0.9.17#db11baacc325537be74ad34517fcb28ed9ded6c6"
 dependencies = [
  "cumulus-primitives-core",
  "parity-scale-codec",
@@ -2078,9 +2079,9 @@ dependencies = [
 
 [[package]]
 name = "dyn-clone"
-version = "1.0.4"
+version = "1.0.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ee2626afccd7561a06cf1367e2950c4718ea04565e20fb5029b6c7d8ad09abcf"
+checksum = "21e50f3adc76d6a43f5ed73b698a87d0760ca74617f60f7c3b879003536fdd28"
 
 [[package]]
 name = "ed25519"
@@ -3991,9 +3992,9 @@ checksum = "830d08ce1d1d941e6b30645f1a0eb5643013d835ce3779a5fc208261dbe10f55"
 
 [[package]]
 name = "libc"
-version = "0.2.119"
+version = "0.2.120"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1bf2e165bb3457c8e098ea76f3e3bc9db55f87aa90d52d0e6be741470916aaa4"
+checksum = "ad5c14e80759d0939d013e6ca49930e59fc53dd8e5009132f76240c179380c09"
 
 [[package]]
 name = "libloading"
@@ -4598,7 +4599,7 @@ checksum = "a261afc61b7a5e323933b402ca6a1765183687c614789b1e4db7762ed4230bca"
 
 [[package]]
 name = "local-runtime"
-version = "3.11.0"
+version = "3.11.2"
 dependencies = [
  "fp-rpc",
  "fp-self-contained",
@@ -4618,7 +4619,7 @@ dependencies = [
  "pallet-contracts-primitives",
  "pallet-contracts-rpc-runtime-api",
  "pallet-custom-signatures",
- "pallet-dapps-staking 3.0.2",
+ "pallet-dapps-staking 3.0.3",
  "pallet-ethereum",
  "pallet-evm",
  "pallet-evm-precompile-bn128",
@@ -4904,14 +4905,15 @@ dependencies = [
 
 [[package]]
 name = "mio"
-version = "0.8.0"
+version = "0.8.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ba272f85fa0b41fc91872be579b3bbe0f56b792aa361a380eb669469f68dafb2"
+checksum = "7ba42135c6a5917b9db9cd7b293e5409e1c6b041e6f9825e92e55a894c63b6f8"
 dependencies = [
  "libc",
  "log",
  "miow 0.3.7",
  "ntapi",
+ "wasi 0.11.0+wasi-snapshot-preview1",
  "winapi 0.3.9",
 ]
 
@@ -5110,13 +5112,12 @@ checksum = "2bf50223579dc7cdcfb3bfcacf7069ff68243f8c363f62ffa99cf000a6b9c451"
 
 [[package]]
 name = "nom"
-version = "7.1.0"
+version = "7.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1b1d11e1ef389c76fe5b81bcaf2ea32cf88b62bc494e19f493d0b30e7a930109"
+checksum = "a8903e5a29a317527874d0402f867152a3d21c908bb0b933e416c65e301d4c36"
 dependencies = [
  "memchr",
  "minimal-lexical",
- "version_check",
 ]
 
 [[package]]
@@ -5509,7 +5510,7 @@ dependencies = [
 [[package]]
 name = "pallet-block-reward"
 version = "0.2.0"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.17#45a78d42f6602c287a4502e2b398be1c18c4f21e"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.17#44164de99c064b78a8ac4a093f8b09613b6a08a1"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -5598,7 +5599,7 @@ dependencies = [
 [[package]]
 name = "pallet-collator-selection"
 version = "3.0.0"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.17#45a78d42f6602c287a4502e2b398be1c18c4f21e"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.17#44164de99c064b78a8ac4a093f8b09613b6a08a1"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -5618,7 +5619,7 @@ dependencies = [
 [[package]]
 name = "pallet-collator-selection"
 version = "3.0.0"
-source = "git+https://github.com/paritytech/cumulus?branch=polkadot-v0.9.17#76479e7fef3af7c8828a44647847b01afd5fefe5"
+source = "git+https://github.com/paritytech/cumulus?branch=polkadot-v0.9.17#db11baacc325537be74ad34517fcb28ed9ded6c6"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -5739,7 +5740,7 @@ dependencies = [
 [[package]]
 name = "pallet-custom-signatures"
 version = "4.3.0"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.17#45a78d42f6602c287a4502e2b398be1c18c4f21e"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.17#44164de99c064b78a8ac4a093f8b09613b6a08a1"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -5799,8 +5800,8 @@ dependencies = [
 
 [[package]]
 name = "pallet-dapps-staking"
-version = "3.0.2"
-source = "git+https://github.com/AstarNetwork/astar-frame?tag=pallet-dapps-staking-3.0.2/polkadot-v0.9.17#74f2fca287cbb005e2d133fbd28c843bf7a16ece"
+version = "3.0.3"
+source = "git+https://github.com/AstarNetwork/astar-frame?tag=pallet-dapps-staking-3.0.3/polkadot-v0.9.17#44164de99c064b78a8ac4a093f8b09613b6a08a1"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -5982,15 +5983,15 @@ dependencies = [
 
 [[package]]
 name = "pallet-evm-precompile-sr25519"
-version = "0.1.0"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.17#45a78d42f6602c287a4502e2b398be1c18c4f21e"
+version = "1.0.0"
+source = "git+https://github.com/AstarNetwork/astar-frame?tag=pallet-evm-precompile-sr25519-1.0.0/polkadot-v0.9.17#44164de99c064b78a8ac4a093f8b09613b6a08a1"
 dependencies = [
  "fp-evm",
  "log",
  "num_enum",
  "pallet-evm",
  "parity-scale-codec",
- "precompile-utils 0.1.0 (git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.17)",
+ "precompile-utils 0.1.0 (git+https://github.com/AstarNetwork/astar-frame?tag=pallet-evm-precompile-sr25519-1.0.0/polkadot-v0.9.17)",
  "sp-core",
  "sp-io",
  "sp-std",
@@ -6226,18 +6227,18 @@ dependencies = [
 
 [[package]]
 name = "pallet-precompile-dapps-staking"
-version = "3.0.2"
-source = "git+https://github.com/AstarNetwork/astar-frame?tag=pallet-dapps-staking-3.0.2/polkadot-v0.9.17#74f2fca287cbb005e2d133fbd28c843bf7a16ece"
+version = "3.0.3"
+source = "git+https://github.com/AstarNetwork/astar-frame?tag=pallet-dapps-staking-3.0.3/polkadot-v0.9.17#44164de99c064b78a8ac4a093f8b09613b6a08a1"
 dependencies = [
  "fp-evm",
  "frame-support",
  "frame-system",
  "log",
  "num_enum",
- "pallet-dapps-staking 3.0.2",
+ "pallet-dapps-staking 3.0.3",
  "pallet-evm",
  "parity-scale-codec",
- "precompile-utils 0.1.0 (git+https://github.com/AstarNetwork/astar-frame?tag=pallet-dapps-staking-3.0.2/polkadot-v0.9.17)",
+ "precompile-utils 0.1.0 (git+https://github.com/AstarNetwork/astar-frame?tag=pallet-dapps-staking-3.0.3/polkadot-v0.9.17)",
  "scale-info",
  "sp-core",
  "sp-runtime",
@@ -6545,7 +6546,7 @@ dependencies = [
 [[package]]
 name = "pallet-vesting"
 version = "4.0.0-dev"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.17#45a78d42f6602c287a4502e2b398be1c18c4f21e"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.17#44164de99c064b78a8ac4a093f8b09613b6a08a1"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -6609,7 +6610,7 @@ dependencies = [
 [[package]]
 name = "parachain-info"
 version = "0.1.0"
-source = "git+https://github.com/paritytech/cumulus?branch=polkadot-v0.9.17#76479e7fef3af7c8828a44647847b01afd5fefe5"
+source = "git+https://github.com/paritytech/cumulus?branch=polkadot-v0.9.17#db11baacc325537be74ad34517fcb28ed9ded6c6"
 dependencies = [
  "cumulus-primitives-core",
  "frame-support",
@@ -8134,7 +8135,7 @@ checksum = "eb9f9e6e233e5c4a35559a617bf40a4ec447db2e84c20b55a6f83167b7e57872"
 [[package]]
 name = "precompile-utils"
 version = "0.1.0"
-source = "git+https://github.com/AstarNetwork/astar-frame?tag=pallet-dapps-staking-3.0.2/polkadot-v0.9.17#74f2fca287cbb005e2d133fbd28c843bf7a16ece"
+source = "git+https://github.com/AstarNetwork/astar-frame?tag=pallet-dapps-staking-3.0.3/polkadot-v0.9.17#44164de99c064b78a8ac4a093f8b09613b6a08a1"
 dependencies = [
  "fp-evm",
  "frame-support",
@@ -8143,7 +8144,7 @@ dependencies = [
  "num_enum",
  "pallet-evm",
  "parity-scale-codec",
- "precompile-utils-macro 0.1.0 (git+https://github.com/AstarNetwork/astar-frame?tag=pallet-dapps-staking-3.0.2/polkadot-v0.9.17)",
+ "precompile-utils-macro 0.1.0 (git+https://github.com/AstarNetwork/astar-frame?tag=pallet-dapps-staking-3.0.3/polkadot-v0.9.17)",
  "sha3 0.9.1",
  "sp-core",
  "sp-io",
@@ -8154,7 +8155,7 @@ dependencies = [
 [[package]]
 name = "precompile-utils"
 version = "0.1.0"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.17#45a78d42f6602c287a4502e2b398be1c18c4f21e"
+source = "git+https://github.com/AstarNetwork/astar-frame?tag=pallet-evm-precompile-sr25519-1.0.0/polkadot-v0.9.17#44164de99c064b78a8ac4a093f8b09613b6a08a1"
 dependencies = [
  "fp-evm",
  "frame-support",
@@ -8163,7 +8164,7 @@ dependencies = [
  "num_enum",
  "pallet-evm",
  "parity-scale-codec",
- "precompile-utils-macro 0.1.0 (git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.17)",
+ "precompile-utils-macro 0.1.0 (git+https://github.com/AstarNetwork/astar-frame?tag=pallet-evm-precompile-sr25519-1.0.0/polkadot-v0.9.17)",
  "sha3 0.9.1",
  "sp-core",
  "sp-io",
@@ -8174,7 +8175,7 @@ dependencies = [
 [[package]]
 name = "precompile-utils-macro"
 version = "0.1.0"
-source = "git+https://github.com/AstarNetwork/astar-frame?tag=pallet-dapps-staking-3.0.2/polkadot-v0.9.17#74f2fca287cbb005e2d133fbd28c843bf7a16ece"
+source = "git+https://github.com/AstarNetwork/astar-frame?tag=pallet-dapps-staking-3.0.3/polkadot-v0.9.17#44164de99c064b78a8ac4a093f8b09613b6a08a1"
 dependencies = [
  "num_enum",
  "proc-macro2",
@@ -8186,7 +8187,7 @@ dependencies = [
 [[package]]
 name = "precompile-utils-macro"
 version = "0.1.0"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.17#45a78d42f6602c287a4502e2b398be1c18c4f21e"
+source = "git+https://github.com/AstarNetwork/astar-frame?tag=pallet-evm-precompile-sr25519-1.0.0/polkadot-v0.9.17#44164de99c064b78a8ac4a093f8b09613b6a08a1"
 dependencies = [
  "num_enum",
  "proc-macro2",
@@ -10211,7 +10212,7 @@ dependencies = [
 
 [[package]]
 name = "shibuya-runtime"
-version = "3.11.1"
+version = "3.11.2"
 dependencies = [
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-parachain-system",
@@ -10239,7 +10240,7 @@ dependencies = [
  "pallet-contracts-primitives",
  "pallet-contracts-rpc-runtime-api",
  "pallet-custom-signatures",
- "pallet-dapps-staking 3.0.2",
+ "pallet-dapps-staking 3.0.3",
  "pallet-ethereum",
  "pallet-evm",
  "pallet-evm-precompile-bn128",
@@ -10284,7 +10285,7 @@ dependencies = [
 
 [[package]]
 name = "shiden-runtime"
-version = "3.11.1"
+version = "3.11.2"
 dependencies = [
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-parachain-system",
@@ -11387,9 +11388,9 @@ checksum = "6bdef32e8150c2a081110b42772ffe7d7c9032b606bc226c8260fd97e0976601"
 
 [[package]]
 name = "syn"
-version = "1.0.86"
+version = "1.0.88"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8a65b3f4ffa0092e9887669db0eae07941f023991ab58ea44da8fe8e2d511c6b"
+checksum = "ebd69e719f31e88618baa1eaa6ee2de5c9a1c004f1e9ecdb58e8352a13f20a01"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -11563,7 +11564,7 @@ dependencies = [
  "bytes 1.1.0",
  "libc",
  "memchr",
- "mio 0.8.0",
+ "mio 0.8.1",
  "num_cpus",
  "once_cell",
  "pin-project-lite 0.2.8",
@@ -12058,6 +12059,12 @@ name = "wasi"
 version = "0.10.0+wasi-snapshot-preview1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1a143597ca7c7793eff794def352d41792a93c481eb1042423ff7ff72ba2c31f"
+
+[[package]]
+name = "wasi"
+version = "0.11.0+wasi-snapshot-preview1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9c8d87e72b64a3b4db28d11ce29237c246188f4f51057d65a7eab63b7987e423"
 
 [[package]]
 name = "wasm-bindgen"
