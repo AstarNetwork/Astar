@@ -28,11 +28,15 @@ describe('Astar RPC', () => {
 		await api.isReady;
 	});
 
-	it("should fetch chain name from rpc node", async function () {
+	it("should fetch chain from rpc node", async function () {
 		const chain = await api.rpc.system.chain();
-    	const name = await api.rpc.system.name();
 
 		expect(chain.toString()).to.equal('Astar');
+	});
+
+	it("should fetch chain name from rpc node", async function () {
+		const name = await api.rpc.system.name();
+
 		expect(name.toString()).to.equal('Astar Collator');
 	});
 
