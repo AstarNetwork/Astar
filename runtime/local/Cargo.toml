@@ -31,7 +31,6 @@ frame-system = { git = "https://github.com/paritytech/substrate", branch = "polk
 pallet-timestamp = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.17", default-features = false }
 pallet-transaction-payment = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.17", default-features = false }
 pallet-utility = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.17", default-features = false }
-pallet-vesting = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.17", default-features = false }
 frame-executive = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.17", default-features = false }
 fp-rpc = { git = "https://github.com/AstarNetwork/frontier", branch = "polkadot-v0.9.17", default-features = false }
 fp-self-contained = { git = "https://github.com/AstarNetwork/frontier", branch = "polkadot-v0.9.17", default-features = false }
@@ -51,10 +50,12 @@ sp-version = { git = "https://github.com/paritytech/substrate", branch = "polkad
 frame-system-rpc-runtime-api = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.17", default-features = false }
 pallet-transaction-payment-rpc-runtime-api = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.17", default-features = false }
 
+# Astar pallets
 pallet-block-reward = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.17", default-features = false }
 pallet-custom-signatures = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.17", default-features = false }
 pallet-dapps-staking = { git = "https://github.com/AstarNetwork/astar-frame", tag = "pallet-dapps-staking-3.0.3/polkadot-v0.9.17", default-features = false }
 pallet-precompile-dapps-staking = { git = "https://github.com/AstarNetwork/astar-frame", tag = "pallet-dapps-staking-3.0.3/polkadot-v0.9.17", default-features = false }
+pallet-vesting = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.17", default-features = false }
 
 # benchmarking
 hex-literal = { version = "0.3.1", optional = true }
