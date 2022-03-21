@@ -6,8 +6,8 @@ env:
   RUST_VERSION: 'nightly-2021-11-29'
 
 jobs:
-  native-linux:
-    runs-on: [self-hosted, Linux, X64]
+  test:
+    runs-on: ubuntu-latest
     steps:
     - uses: hecrj/setup-rust-action@v1
       with:
@@ -23,10 +23,40 @@ jobs:
       run: rustup target list --installed
 
     - name: Run all tests
-      run: cargo test --all
+      run: cargo test --all-features
 
-    - name: Cleanup after tests
-      run: cargo clean
+  native-linux:
+    needs: test
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: [self-hosted, Linux, X64]
+    steps:
+    - uses: hecrj/setup-rust-action@v1
+      with:
+        rust-version: ${{ env.RUST_VERSION }}
+        targets: 'wasm32-unknown-unknown'
+
+    - name: Checkout the source code
+      uses: actions/checkout@master
+      with:
+        submodules: true
+
+    - uses: actions/cache@v2
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+          target/
+        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          ${{ runner.os }}-cargo
+
+    - name: Check targets are installed correctly
+      run: rustup target list --installed
+
+    # don't clean. use cache
+    #- name: Cleanup after tests
+    # run: cargo clean
 
     - name: Build optimized binary
       run: CARGO_PROFILE_RELEASE_LTO=true RUSTFLAGS="-C codegen-units=1" cargo build --release --verbose
@@ -37,6 +67,8 @@ jobs:
         path: target/release/astar-collator
 
   native-macos:
+    needs: test
+    if: startsWith(github.ref, 'refs/tags/')
     runs-on: macos-latest
     steps:
     - uses: hecrj/setup-rust-action@v1
@@ -52,9 +84,6 @@ jobs:
     - name: Check targets are installed correctly
       run: rustup target list --installed
 
-    - name: Run all tests
-      run: cargo test --all
-
     - name: Cleanup after tests
       run: cargo clean
 
@@ -66,7 +95,7 @@ jobs:
         name: astar-macOS-latest-x86_64
         path: target/release/astar-collator
 
-  runtime-benchmarks:
+  check-all-features:
     runs-on: ubuntu-latest
     steps:
     - uses: hecrj/setup-rust-action@v1
@@ -82,41 +111,62 @@ jobs:
     - name: Check targets are installed correctly
       run: rustup target list --installed
 
-    - name: Check runtime-benchmarks compilation
-      run: cargo check --verbose --features runtime-benchmarks
+    - name: Check all features compilation
+      run: cargo check --verbose --all-features
 
-  try-runtime:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: hecrj/setup-rust-action@v1
-      with:
-        rust-version: ${{ env.RUST_VERSION }}
-        targets: 'wasm32-unknown-unknown'
+  # runtime-benchmarks:
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #   - uses: hecrj/setup-rust-action@v1
+  #     with:
+  #       rust-version: ${{ env.RUST_VERSION }}
+  #       targets: 'wasm32-unknown-unknown'
+  #
+  #   - name: Checkout the source code
+  #     uses: actions/checkout@master
+  #     with:
+  #       submodules: true
+  #
+  #   - name: Check targets are installed correctly
+  #     run: rustup target list --installed
+  #
+  #   - name: Check runtime-benchmarks compilation
+  #     run: cargo check --verbose --features runtime-benchmarks
 
-    - name: Checkout the source code
-      uses: actions/checkout@master
-      with:
-        submodules: true
+  # try-runtime:
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #   - uses: hecrj/setup-rust-action@v1
+  #     with:
+  #       rust-version: ${{ env.RUST_VERSION }}
+  #       targets: 'wasm32-unknown-unknown'
+  #
+  #   - name: Checkout the source code
+  #     uses: actions/checkout@master
+  #     with:
+  #       submodules: true
+  #
+  #   - name: Check targets are installed correctly
+  #     run: rustup target list --installed
+  #
+  #   - name: Check try-runtime compilation
+  #     run: cargo check --verbose --features try-runtime
 
-    - name: Check targets are installed correctly
-      run: rustup target list --installed
-
-    - name: Check try-runtime compilation
-      run: cargo check --verbose --features try-runtime
-
-  nix:
-    runs-on: ubuntu-latest
-    steps:
-    - name: Checkout the source code
-      uses: actions/checkout@v2
-      with:
-        submodules: true
-    - uses: cachix/install-nix-action@v12
-      with:
-        nix_path: nixpkgs=channel:nixos-21.11
-    - run: nix-shell third-party/nix/shell.nix --run "cargo build --release"
+  # nix:
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #   - name: Checkout the source code
+  #     uses: actions/checkout@v2
+  #     with:
+  #       submodules: true
+  #   - uses: cachix/install-nix-action@v12
+  #     with:
+  #       nix_path: nixpkgs=channel:nixos-21.11
+  #   - run: nix-shell third-party/nix/shell.nix --run "cargo build --release"
 
   docker:
+    needs: test
+    if: startsWith(github.ref, 'refs/tags/')
     runs-on: [self-hosted, Linux, X64]
     steps:
     - uses: hecrj/setup-rust-action@v1
