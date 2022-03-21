@@ -272,8 +272,7 @@ parameter_types! {
     pub const BlockPerEra: BlockNumber = 1 * DAYS;
     pub const RegisterDeposit: Balance = 100 * SDN;
     pub const DeveloperRewardPercentage: Perbill = Perbill::from_percent(50);
-    // TODO: do we change this to a bigger number immediately or later?
-    pub const MaxNumberOfStakersPerContract: u32 = 512;
+    pub const MaxNumberOfStakersPerContract: u32 = 1024;
     pub const MinimumStakingAmount: Balance = 50 * SDN;
     pub const MinimumRemainingAmount: Balance = 1 * SDN;
     pub const MaxUnlockingChunks: u32 = 5;
