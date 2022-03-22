@@ -153,7 +153,7 @@ checksum = "9b34d609dfbaf33d6889b2b7106d3ca345eacad44200913df5ba02bfd31d2ba9"
 
 [[package]]
 name = "astar-collator"
-version = "3.12.0"
+version = "3.13.0"
 dependencies = [
  "astar-runtime",
  "async-trait",
@@ -239,7 +239,7 @@ dependencies = [
 
 [[package]]
 name = "astar-runtime"
-version = "3.12.0"
+version = "3.13.0"
 dependencies = [
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-parachain-system",
@@ -4599,7 +4599,7 @@ checksum = "a261afc61b7a5e323933b402ca6a1765183687c614789b1e4db7762ed4230bca"
 
 [[package]]
 name = "local-runtime"
-version = "3.12.0"
+version = "3.13.0"
 dependencies = [
  "fp-rpc",
  "fp-self-contained",
@@ -5756,7 +5756,7 @@ dependencies = [
 [[package]]
 name = "pallet-dapps-staking"
 version = "1.1.2"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=pallet-dapps-staking-1.1.2/polkadot-v0.9.17#ee2f6a6913a61d7e21144415dac0da0e8fa59375"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=legacy/dapps-staking-astar#ab3c3d363c2ed5f126ff527893cd31a6d58fb74d"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -10189,7 +10189,7 @@ dependencies = [
 
 [[package]]
 name = "shibuya-runtime"
-version = "3.12.0"
+version = "3.13.0"
 dependencies = [
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-parachain-system",
@@ -10262,7 +10262,7 @@ dependencies = [
 
 [[package]]
 name = "shiden-runtime"
-version = "3.12.0"
+version = "3.13.0"
 dependencies = [
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-parachain-system",
