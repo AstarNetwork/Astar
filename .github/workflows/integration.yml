@@ -2,22 +2,17 @@ on: [push, workflow_dispatch]
 
 name: Integration
 
-env:
-  RUST_VERSION: 'nightly-2021-11-29'
-
 jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-    - uses: hecrj/setup-rust-action@v1
-      with:
-        rust-version: ${{ env.RUST_VERSION }}
-        targets: 'wasm32-unknown-unknown'
-
     - name: Checkout the source code
       uses: actions/checkout@master
       with:
         submodules: true
+
+    - name: Install & display rust toolchain
+      run: rustup show
 
     - name: Check targets are installed correctly
       run: rustup target list --installed
@@ -30,15 +25,16 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/')
     runs-on: [self-hosted, Linux, X64]
     steps:
-    - uses: hecrj/setup-rust-action@v1
-      with:
-        rust-version: ${{ env.RUST_VERSION }}
-        targets: 'wasm32-unknown-unknown'
-
     - name: Checkout the source code
       uses: actions/checkout@master
       with:
         submodules: true
+
+    - name: Install & display rust toolchain
+      run: rustup show
+
+    - name: Check targets are installed correctly
+      run: rustup target list --installed
 
     - uses: actions/cache@v2
       with:
@@ -50,9 +46,6 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
           ${{ runner.os }}-cargo
-
-    - name: Check targets are installed correctly
-      run: rustup target list --installed
 
     # don't clean. use cache
     #- name: Cleanup after tests
@@ -71,21 +64,16 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/')
     runs-on: macos-latest
     steps:
-    - uses: hecrj/setup-rust-action@v1
-      with:
-        rust-version: ${{ env.RUST_VERSION }}
-        targets: 'wasm32-unknown-unknown'
-
     - name: Checkout the source code
       uses: actions/checkout@master
       with:
         submodules: true
 
+    - name: Install & display rust toolchain
+      run: rustup show
+
     - name: Check targets are installed correctly
       run: rustup target list --installed
-
-    - name: Cleanup after tests
-      run: cargo clean
 
     - name: Build optimized binary
       run: cargo build --release --verbose
@@ -98,15 +86,13 @@ jobs:
   check-all-features:
     runs-on: ubuntu-latest
     steps:
-    - uses: hecrj/setup-rust-action@v1
-      with:
-        rust-version: ${{ env.RUST_VERSION }}
-        targets: 'wasm32-unknown-unknown'
-
     - name: Checkout the source code
       uses: actions/checkout@master
       with:
         submodules: true
+
+    - name: Install & display rust toolchain
+      run: rustup show
 
     - name: Check targets are installed correctly
       run: rustup target list --installed
@@ -131,10 +117,16 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/')
     runs-on: [self-hosted, Linux, X64]
     steps:
-    - uses: hecrj/setup-rust-action@v1
+    - name: Checkout the source code
+      uses: actions/checkout@v2
       with:
-        rust-version: ${{ env.RUST_VERSION }}
-        targets: 'wasm32-unknown-unknown'
+        submodules: true
+
+    - name: Install & display rust toolchain
+      run: rustup show
+
+    - name: Check targets are installed correctly
+      run: rustup target list --installed
 
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v1
@@ -152,14 +144,6 @@ jobs:
         images: staketechnologies/astar-collator
         tag-custom: shiden 
         tag-sha: true # add git short SHA as Docker tag
-
-    - name: Checkout the source code
-      uses: actions/checkout@v2
-      with:
-        submodules: true
-
-    - name: Check targets are installed correctly
-      run: rustup target list --installed
 
     - name: Build optimized binary
       run: |
