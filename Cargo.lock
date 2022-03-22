@@ -263,7 +263,7 @@ dependencies = [
  "pallet-collator-selection 3.0.0 (git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.17)",
  "pallet-collective",
  "pallet-custom-signatures",
- "pallet-dapps-staking 1.1.2",
+ "pallet-dapps-staking 1.2.0",
  "pallet-ethereum",
  "pallet-evm",
  "pallet-evm-precompile-bn128",
@@ -5755,8 +5755,8 @@ dependencies = [
 
 [[package]]
 name = "pallet-dapps-staking"
-version = "1.1.2"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=legacy/dapps-staking-astar#ab3c3d363c2ed5f126ff527893cd31a6d58fb74d"
+version = "1.2.0"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=legacy/dapps-staking-astar#3ed02e43fba047d856dfcb977b07381ed060588a"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -11701,7 +11701,7 @@ dependencies = [
  "chrono",
  "lazy_static",
  "matchers",
- "parking_lot 0.11.2",
+ "parking_lot 0.10.2",
  "regex",
  "serde",
  "serde_json",
@@ -11832,7 +11832,7 @@ version = "1.6.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4ee73e6e4924fe940354b8d4d98cad5231175d615cd855b758adc658c0aac6a0"
 dependencies = [
- "cfg-if 1.0.0",
+ "cfg-if 0.1.10",
  "rand 0.8.5",
  "static_assertions",
 ]
