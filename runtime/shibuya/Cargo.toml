@@ -82,10 +82,6 @@ xcm-builder = { git = "https://github.com/paritytech/polkadot", default-features
 xcm-executor = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "release-v0.9.17" }
 pallet-xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "release-v0.9.17" }
 
-# orml dependencies
-orml-traits = { git = "https://github.com/AstarNetwork/open-runtime-module-library", default-features = false, branch = "polkadot-v0.9.17" }
-orml-xtokens = { git = "https://github.com/AstarNetwork/open-runtime-module-library", default-features = false, branch = "polkadot-v0.9.17" }
-
 # Astar pallets
 pallet-block-reward = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.17", default-features = false }
 pallet-custom-signatures = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.17", default-features = false }
@@ -128,8 +124,6 @@ std = [
     "frame-executive/std",
     "frame-system/std",
     "frame-system-rpc-runtime-api/std",
-    "orml-traits/std",
-    "orml-xtokens/std",
     "pallet-authorship/std",
     "pallet-aura/std",
     "pallet-assets/std",

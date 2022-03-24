@@ -1,6 +1,7 @@
 [workspace]
 members = [
     "bin/collator",
+    "bin/xcm-tools",
     "runtime/local",
     "runtime/astar",
     "runtime/shiden",
