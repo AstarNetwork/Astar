@@ -33,7 +33,6 @@ frame-executive = { git = "https://github.com/paritytech/substrate", branch = "p
 pallet-authorship = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.17", default-features = false }
 pallet-aura = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.17", default-features = false }
 pallet-assets = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.17", default-features = false }
-pallet-asset-tx-payment = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.17", default-features = false }
 pallet-balances = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.17", default-features = false }
 pallet-contracts = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.17", default-features = false }
 pallet-contracts-primitives = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.17", default-features = false }
@@ -127,7 +126,6 @@ std = [
     "pallet-authorship/std",
     "pallet-aura/std",
     "pallet-assets/std",
-    "pallet-asset-tx-payment/std",
     "pallet-balances/std",
     "pallet-block-reward/std",
     "pallet-contracts/std",
