@@ -70,7 +70,7 @@ $ ./target/release/astar-collator \
   --rpc-port 9933 \
   --telemetry-url 'wss://telemetry.polkadot.io/submit/ 0' \
   --rpc-cors all \
-  --validator
+  --collator
 ```
 
 Now, you can obtain the node's session key by sending the following RPC payload.

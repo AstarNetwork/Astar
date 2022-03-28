@@ -116,7 +116,7 @@ pub struct ExportGenesisWasmCommand {
 pub struct RunCmd {
     #[allow(missing_docs)]
     #[clap(flatten)]
-    pub base: sc_cli::RunCmd,
+    pub base: cumulus_client_cli::RunCmd,
 
     /// Id of the parachain this collator collates for.
     ///
@@ -126,7 +126,7 @@ pub struct RunCmd {
 }
 
 impl std::ops::Deref for RunCmd {
-    type Target = sc_cli::RunCmd;
+    type Target = cumulus_client_cli::RunCmd;
 
     fn deref(&self) -> &Self::Target {
         &self.base

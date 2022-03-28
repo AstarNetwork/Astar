@@ -9,10 +9,7 @@ include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 use codec::{Decode, Encode};
 use frame_support::{
     construct_runtime, parameter_types,
-    traits::{
-        Currency, FindAuthor, Imbalance, KeyOwnerProofSystem, Nothing, OnRuntimeUpgrade,
-        OnUnbalanced,
-    },
+    traits::{Currency, FindAuthor, Imbalance, KeyOwnerProofSystem, Nothing, OnUnbalanced},
     weights::{
         constants::{RocksDbWeight, WEIGHT_PER_SECOND},
         IdentityFee, Weight,
@@ -306,7 +303,7 @@ parameter_types! {
     pub const MinimumRemainingAmount: Balance = 1 * AST;
     pub const MaxUnlockingChunks: u32 = 2;
     pub const UnbondingPeriod: u32 = 2;
-    pub const MaxEraStakeValues: u32 = 20;
+    pub const MaxEraStakeValues: u32 = 5;
 }
 
 impl pallet_dapps_staking::Config for Runtime {
@@ -626,29 +623,7 @@ pub type Executive = frame_executive::Executive<
     frame_system::ChainContext<Runtime>,
     Runtime,
     AllPalletsWithSystem,
-    (DappsStakingMigrationV3,),
 >;
-
-// Migration for supporting unbonding period in dapps staking.
-pub struct DappsStakingMigrationV3;
-
-impl OnRuntimeUpgrade for DappsStakingMigrationV3 {
-    fn on_runtime_upgrade() -> frame_support::weights::Weight {
-        pallet_dapps_staking::migrations::v3::stateful_migrate::<Runtime>(
-            RuntimeBlockWeights::get().max_block / 5 * 3,
-        )
-    }
-
-    #[cfg(feature = "try-runtime")]
-    fn pre_upgrade() -> Result<(), &'static str> {
-        pallet_dapps_staking::migrations::v3::pre_migrate::<Runtime, Self>()
-    }
-
-    #[cfg(feature = "try-runtime")]
-    fn post_upgrade() -> Result<(), &'static str> {
-        pallet_dapps_staking::migrations::v3::post_migrate::<Runtime, Self>()
-    }
-}
 
 impl fp_self_contained::SelfContainedCall for Call {
     type SignedInfo = H160;
