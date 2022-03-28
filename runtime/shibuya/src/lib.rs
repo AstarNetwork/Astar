@@ -796,22 +796,8 @@ pub type Executive = frame_executive::Executive<
     frame_system::ChainContext<Runtime>,
     Runtime,
     AllPalletsWithSystem,
-    (DappsStakingMigrationV3, DappsStakingFixEraLength),
+    DappsStakingFixEraLength,
 >;
-
-// Migration for supporting unbonding period in dapps staking.
-pub struct DappsStakingMigrationV3;
-
-impl OnRuntimeUpgrade for DappsStakingMigrationV3 {
-    fn on_runtime_upgrade() -> frame_support::weights::Weight {
-        pallet_dapps_staking::migrations::v3::shibuya_fix_for_v3::<Runtime>()
-    }
-
-    #[cfg(feature = "try-runtime")]
-    fn post_upgrade() -> Result<(), &'static str> {
-        pallet_dapps_staking::migrations::v3::post_migrate_shibuya_fix_for_v3::<Runtime>()
-    }
-}
 
 // Migration for fixing era length in dapps staking.
 pub struct DappsStakingFixEraLength;
