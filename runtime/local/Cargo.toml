@@ -1,6 +1,6 @@
 [package]
 name = "local-runtime"
-version = "3.12.0"
+version = "3.13.0"
 authors = ["Stake Technologies <devops@stake.co.jp>"]
 edition = "2018"
 build = "build.rs"
