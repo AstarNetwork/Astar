@@ -1245,6 +1245,18 @@
 <span id="1244">1244</span>
 <span id="1245">1245</span>
 <span id="1246">1246</span>
+<span id="1247">1247</span>
+<span id="1248">1248</span>
+<span id="1249">1249</span>
+<span id="1250">1250</span>
+<span id="1251">1251</span>
+<span id="1252">1252</span>
+<span id="1253">1253</span>
+<span id="1254">1254</span>
+<span id="1255">1255</span>
+<span id="1256">1256</span>
+<span id="1257">1257</span>
+<span id="1258">1258</span>
 </pre><pre class="rust"><code><span class="doccomment">//! The Shiden Network runtime. This can be compiled with ``#[no_std]`, ready for Wasm.</span>
 
 <span class="attribute">#![<span class="ident">cfg_attr</span>(<span class="ident">not</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>), <span class="ident">no_std</span>)]</span>
@@ -1336,7 +1348,7 @@
     <span class="ident">spec_name</span>: <span class="macro">create_runtime_str!</span>(<span class="string">&quot;shibuya&quot;</span>),
     <span class="ident">impl_name</span>: <span class="macro">create_runtime_str!</span>(<span class="string">&quot;shibuya&quot;</span>),
     <span class="ident">authoring_version</span>: <span class="number">1</span>,
-    <span class="ident">spec_version</span>: <span class="number">39</span>,
+    <span class="ident">spec_version</span>: <span class="number">40</span>,
     <span class="ident">impl_version</span>: <span class="number">0</span>,
     <span class="ident">apis</span>: <span class="ident">RUNTIME_API_VERSIONS</span>,
     <span class="ident">transaction_version</span>: <span class="number">2</span>,
@@ -2043,20 +2055,32 @@
     <span class="ident">frame_system::ChainContext</span><span class="op">&lt;</span><span class="ident">Runtime</span><span class="op">&gt;</span>,
     <span class="ident">Runtime</span>,
     <span class="ident">AllPalletsWithSystem</span>,
-    (<span class="ident">DappsStakingMigrationV3</span>,),
+    <span class="ident">DappsStakingFixEraLength</span>,
 <span class="op">&gt;</span>;
 
-<span class="comment">// Migration for supporting unbonding period in dapps staking.</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">DappsStakingMigrationV3</span>;
+<span class="comment">// Migration for fixing era length in dapps staking.</span>
+<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">DappsStakingFixEraLength</span>;
 
-<span class="kw">impl</span> <span class="ident">OnRuntimeUpgrade</span> <span class="kw">for</span> <span class="ident">DappsStakingMigrationV3</span> {
+<span class="kw">impl</span> <span class="ident">OnRuntimeUpgrade</span> <span class="kw">for</span> <span class="ident">DappsStakingFixEraLength</span> {
     <span class="kw">fn</span> <span class="ident">on_runtime_upgrade</span>() -&gt; <span class="ident">frame_support::weights::Weight</span> {
-        <span class="ident">pallet_dapps_staking::migrations::v3::shibuya_fix_for_v3</span>::<span class="op">&lt;</span><span class="ident">Runtime</span><span class="op">&gt;</span>()
-    }
+        <span class="kw">use</span> <span class="ident">frame_system::pallet::Config</span>;
+        <span class="kw">use</span> <span class="ident">pallet_dapps_staking</span>::{<span class="ident">Config</span> <span class="kw">as</span> <span class="ident">DappStakingConfig</span>, <span class="ident">CurrentEra</span>, <span class="ident">NextEraStartingBlock</span>};
+        <span class="kw">use</span> <span class="ident">sp_runtime::SaturatedConversion</span>;
 
-    <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;try-runtime&quot;</span>)]</span>
-    <span class="kw">fn</span> <span class="ident">post_upgrade</span>() -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="kw-2">&amp;</span><span class="lifetime">&#39;static</span> <span class="ident">str</span><span class="op">&gt;</span> {
-        <span class="ident">pallet_dapps_staking::migrations::v3::post_migrate_shibuya_fix_for_v3</span>::<span class="op">&lt;</span><span class="ident">Runtime</span><span class="op">&gt;</span>()
+        <span class="kw">let</span> <span class="ident">dapps_staking_block_offset</span>: <span class="ident">u32</span> <span class="op">=</span> <span class="number">177600</span>; <span class="comment">// calculated 2022/03/18</span>
+                                                      <span class="comment">// Shibuya: 1066505 - (1066505 % 1200) - (740 * 1200)</span>
+
+        <span class="kw">let</span> <span class="ident">blocks_per_era</span> <span class="op">=</span>
+            <span class="op">&lt;</span><span class="ident">Runtime</span> <span class="kw">as</span> <span class="ident">DappStakingConfig</span><span class="op">&gt;</span><span class="ident">::BlockPerEra::get</span>().<span class="ident">saturated_into</span>::<span class="op">&lt;</span><span class="ident">u32</span><span class="op">&gt;</span>();
+        <span class="kw">let</span> <span class="ident">current_era</span> <span class="op">=</span> <span class="ident">CurrentEra</span>::<span class="op">&lt;</span><span class="ident">Runtime</span><span class="op">&gt;</span><span class="ident">::get</span>();
+
+        <span class="kw">let</span> <span class="ident">next_era_starting_block</span> <span class="op">=</span>
+            <span class="ident">dapps_staking_block_offset</span> <span class="op">+</span> ((<span class="ident">current_era</span> <span class="op">+</span> <span class="number">1</span>) <span class="op">*</span> <span class="ident">blocks_per_era</span>);
+
+        <span class="ident">NextEraStartingBlock</span>::<span class="op">&lt;</span><span class="ident">Runtime</span><span class="op">&gt;</span><span class="ident">::put</span>(
+            <span class="ident">next_era_starting_block</span>.<span class="ident">saturated_into</span>::<span class="op">&lt;</span><span class="op">&lt;</span><span class="ident">Runtime</span> <span class="kw">as</span> <span class="ident">Config</span><span class="op">&gt;</span><span class="ident">::BlockNumber</span><span class="op">&gt;</span>(),
+        );
+        <span class="op">&lt;</span><span class="ident">Runtime</span> <span class="kw">as</span> <span class="ident">Config</span><span class="op">&gt;</span><span class="ident">::DbWeight::get</span>().<span class="ident">reads_writes</span>(<span class="number">1</span>, <span class="number">1</span>)
     }
 }
 
