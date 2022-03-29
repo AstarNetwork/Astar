@@ -1,6 +1,6 @@
 [package]
 name = "shibuya-runtime"
-version = "3.12.0"
+version = "3.13.0"
 authors = ["Stake Technologies <devops@stake.co.jp>"]
 edition = "2018"
 build = "build.rs"
@@ -74,8 +74,8 @@ polkadot-runtime-common = { git = "https://github.com/paritytech/polkadot", defa
 # Astar pallets
 pallet-block-reward = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.17", default-features = false }
 pallet-custom-signatures = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.17", default-features = false }
-pallet-dapps-staking = { git = "https://github.com/AstarNetwork/astar-frame", tag = "pallet-dapps-staking-3.0.4/polkadot-v0.9.17", default-features = false }
-pallet-precompile-dapps-staking = { git = "https://github.com/AstarNetwork/astar-frame", tag = "pallet-dapps-staking-3.0.4/polkadot-v0.9.17", default-features = false }
+pallet-dapps-staking = { git = "https://github.com/AstarNetwork/astar-frame", tag = "pallet-dapps-staking-3.1.0/polkadot-v0.9.17", default-features = false }
+pallet-precompile-dapps-staking = { git = "https://github.com/AstarNetwork/astar-frame", tag = "pallet-dapps-staking-3.1.0/polkadot-v0.9.17", default-features = false }
 pallet-evm-precompile-sr25519 = { git = "https://github.com/AstarNetwork/astar-frame", tag = "pallet-evm-precompile-sr25519-1.0.0/polkadot-v0.9.17", default-features = false }
 
 # benchmarking
