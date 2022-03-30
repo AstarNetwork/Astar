@@ -813,6 +813,7 @@ pub struct InitRewardConfigSettings;
 
 impl OnRuntimeUpgrade for InitRewardConfigSettings {
     fn on_runtime_upgrade() -> frame_support::weights::Weight {
+        // TODO: discuss these params on sync & with community
         let reward_config = pallet_block_reward::RewardDistributionConfig {
             base_treasury_percent: Perbill::from_percent(10),
             base_staker_percent: Perbill::from_percent(20),
