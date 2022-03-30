@@ -7,7 +7,7 @@
 use codec::{Decode, Encode};
 use frame_support::{
     construct_runtime, parameter_types,
-    traits::{Contains, Currency, FindAuthor, Imbalance, OnUnbalanced},
+    traits::{Contains, Currency, FindAuthor, Get, Imbalance, OnRuntimeUpgrade, OnUnbalanced},
     weights::{
         constants::{BlockExecutionWeight, ExtrinsicBaseWeight, WEIGHT_PER_SECOND},
         DispatchClass, Weight, WeightToFeeCoefficient, WeightToFeeCoefficients,
@@ -87,7 +87,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("astar"),
     impl_name: create_runtime_str!("astar"),
     authoring_version: 1,
-    spec_version: 11,
+    spec_version: 12,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 2,
@@ -270,13 +270,13 @@ impl pallet_custom_signatures::Config for Runtime {
 
 parameter_types! {
     pub const BlockPerEra: BlockNumber = 1 * DAYS;
-    pub const RegisterDeposit: Balance = 100 * ASTR;
-    pub const DeveloperRewardPercentage: Perbill = Perbill::from_percent(1);
-    pub const MaxNumberOfStakersPerContract: u32 = 512;
+    pub const RegisterDeposit: Balance = 1000 * ASTR;
+    pub const MaxNumberOfStakersPerContract: u32 = 16384;
     pub const MinimumStakingAmount: Balance = 500 * ASTR;
     pub const MinimumRemainingAmount: Balance = 1 * ASTR;
-    pub const HistoryDepth: u32 = 14;
-    pub const BonusEraDuration: u32 = 0;
+    pub const MaxEraStakeValues: u32 = 5;
+    pub const MaxUnlockingChunks: u32 = 4;
+    pub const UnbondingPeriod: u32 = 10;
 }
 
 impl pallet_dapps_staking::Config for Runtime {
@@ -284,15 +284,15 @@ impl pallet_dapps_staking::Config for Runtime {
     type BlockPerEra = BlockPerEra;
     type SmartContract = SmartContract<AccountId>;
     type RegisterDeposit = RegisterDeposit;
-    type DeveloperRewardPercentage = DeveloperRewardPercentage;
     type Event = Event;
     type WeightInfo = weights::pallet_dapps_staking::WeightInfo<Runtime>;
     type MaxNumberOfStakersPerContract = MaxNumberOfStakersPerContract;
     type MinimumStakingAmount = MinimumStakingAmount;
     type PalletId = DappsStakingPalletId;
+    type MaxUnlockingChunks = MaxUnlockingChunks;
+    type UnbondingPeriod = UnbondingPeriod;
     type MinimumRemainingAmount = MinimumRemainingAmount;
-    type HistoryDepth = HistoryDepth;
-    type BonusEraDuration = BonusEraDuration;
+    type MaxEraStakeValues = MaxEraStakeValues;
 }
 
 /// Multi-VM pointer to smart contract instance.
@@ -433,18 +433,25 @@ impl OnUnbalanced<NegativeImbalance> for ToStakingPot {
     }
 }
 
-pub struct OnBlockReward;
-impl OnUnbalanced<NegativeImbalance> for OnBlockReward {
-    fn on_nonzero_unbalanced(amount: NegativeImbalance) {
-        let (dapps, maintain) = amount.ration(50, 50);
-        // dapp staking block reward
-        DappsStaking::on_unbalanced(dapps);
+pub struct DappsStakingTvlProvider();
+impl Get<Balance> for DappsStakingTvlProvider {
+    fn get() -> Balance {
+        DappsStaking::tvl()
+    }
+}
 
-        let (treasury, collators) = maintain.ration(40, 10);
-        // treasury slice of block reward
-        Balances::resolve_creating(&TreasuryPalletId::get().into_account(), treasury);
-        // collators block reward
-        ToStakingPot::on_unbalanced(collators);
+pub struct BeneficiaryPayout();
+impl pallet_block_reward::BeneficiaryPayout<NegativeImbalance> for BeneficiaryPayout {
+    fn treasury(reward: NegativeImbalance) {
+        Balances::resolve_creating(&TreasuryPalletId::get().into_account(), reward);
+    }
+
+    fn collators(reward: NegativeImbalance) {
+        ToStakingPot::on_unbalanced(reward);
+    }
+
+    fn dapps_staking(stakers: NegativeImbalance, dapps: NegativeImbalance) {
+        DappsStaking::rewards(stakers, dapps)
     }
 }
 
@@ -454,8 +461,11 @@ parameter_types! {
 
 impl pallet_block_reward::Config for Runtime {
     type Currency = Balances;
-    type OnBlockReward = OnBlockReward;
+    type DappsStakingTvlProvider = DappsStakingTvlProvider;
+    type BeneficiaryPayout = BeneficiaryPayout;
     type RewardAmount = RewardAmount;
+    type Event = Event;
+    type WeightInfo = pallet_block_reward::weights::SubstrateWeight<Runtime>;
 }
 
 parameter_types! {
@@ -676,8 +686,8 @@ construct_runtime!(
         TransactionPayment: pallet_transaction_payment::{Pallet, Storage} = 30,
         Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>} = 31,
         Vesting: pallet_vesting::{Pallet, Call, Storage, Config<T>, Event<T>} = 32,
-        BlockReward: pallet_block_reward::{Pallet} = 33,
         DappsStaking: pallet_dapps_staking::{Pallet, Call, Storage, Event<T>} = 34,
+        BlockReward: pallet_block_reward::{Pallet, Call, Storage, Config, Event<T>} = 35,
 
         Authorship: pallet_authorship::{Pallet, Call, Storage, Inherent} = 40,
         CollatorSelection: pallet_collator_selection::{Pallet, Call, Storage, Event<T>, Config<T>} = 41,
@@ -741,7 +751,46 @@ pub type Executive = frame_executive::Executive<
     frame_system::ChainContext<Runtime>,
     Runtime,
     AllPalletsWithSystem,
+    (FestivalReset,),
 >;
+
+pub struct FestivalReset;
+impl OnRuntimeUpgrade for FestivalReset {
+    #[cfg(feature = "try-runtime")]
+    fn pre_upgrade() -> Result<(), &'static str> {
+        pallet_dapps_staking::migrations::festival_end::pre_migrate::<Runtime>()
+    }
+
+    fn on_runtime_upgrade() -> frame_support::weights::Weight {
+        // TODO: discuss these params on sync & with community
+        let mut reward_config = pallet_block_reward::RewardDistributionConfig {
+            base_treasury_percent: Perbill::from_percent(40),
+            base_staker_percent: Perbill::from_rational(495u32, 1000u32),
+            dapps_percent: Perbill::from_rational(5u32, 1000u32),
+            collators_percent: Perbill::from_percent(10),
+            adjustable_percent: Perbill::from_percent(0),
+            ideal_dapps_staking_tvl: Perbill::from_percent(0),
+        };
+        // This HAS to be tested prior to update - we need to ensure that config is consistent
+        #[cfg(feature = "try-runtime")]
+        assert!(reward_config.is_consistent());
+
+        // This should never execute but we need to have code in place that ensures config is consistent
+        if !reward_config.is_consistent() {
+            reward_config = Default::default();
+        }
+        pallet_block_reward::RewardDistributionConfigStorage::<Runtime>::put(reward_config);
+
+        pallet_dapps_staking::migrations::festival_end::on_runtime_upgrade::<Runtime>(
+            MAXIMUM_BLOCK_WEIGHT / 5,
+        )
+    }
+
+    #[cfg(feature = "try-runtime")]
+    fn post_upgrade() -> Result<(), &'static str> {
+        pallet_dapps_staking::migrations::festival_end::post_migrate::<Runtime>()
+    }
+}
 
 impl fp_self_contained::SelfContainedCall for Call {
     type SignedInfo = H160;
@@ -1041,14 +1090,17 @@ impl_runtime_apis! {
 
     #[cfg(feature = "runtime-benchmarks")]
     impl frame_benchmarking::Benchmark<Block> for Runtime {
-        fn benchmark_metadata(_extra: bool) -> (
+        fn benchmark_metadata(extra: bool) -> (
             Vec<frame_benchmarking::BenchmarkList>,
             Vec<frame_support::traits::StorageInfo>,
         ) {
-            use frame_benchmarking::BenchmarkList;
+            use frame_benchmarking::{list_benchmark, Benchmarking, BenchmarkList};
             use frame_support::traits::StorageInfoTrait;
 
-            let list = Vec::<BenchmarkList>::new();
+            let mut list = Vec::<BenchmarkList>::new();
+
+            list_benchmark!(list, extra, pallet_dapps_staking, DappsStaking);
+            list_benchmark!(list, extra, pallet_block_reward, BlockReward);
 
             let storage_info = AllPalletsWithSystem::storage_info();
 
@@ -1080,9 +1132,23 @@ impl_runtime_apis! {
             add_benchmark!(params, batches, frame_system, SystemBench::<Runtime>);
             add_benchmark!(params, batches, pallet_balances, Balances);
             add_benchmark!(params, batches, pallet_timestamp, Timestamp);
+            add_benchmark!(params, batches, pallet_dapps_staking, DappsStaking);
+            add_benchmark!(params, batches, pallet_block_reward, BlockReward);
 
             if batches.is_empty() { return Err("Benchmark not found for this pallet.".into()) }
             Ok(batches)
+        }
+    }
+
+    #[cfg(feature = "try-runtime")]
+    impl frame_try_runtime::TryRuntime<Block> for Runtime {
+        fn on_runtime_upgrade() -> (Weight, Weight) {
+            let weight = Executive::try_runtime_upgrade().unwrap();
+            (weight, RuntimeBlockWeights::get().max_block)
+        }
+
+        fn execute_block_no_check(block: Block) -> Weight {
+            Executive::execute_block_no_check(block)
         }
     }
 }
