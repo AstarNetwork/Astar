@@ -1,4 +1,4 @@
 (function() {var implementors = {};
 implementors["shibuya_runtime"] = [{"text":"impl OnRuntimeUpgrade for <a class=\"struct\" href=\"shibuya_runtime/struct.DappsStakingFixEraLength.html\" title=\"struct shibuya_runtime::DappsStakingFixEraLength\">DappsStakingFixEraLength</a>","synthetic":false,"types":["shibuya_runtime::DappsStakingFixEraLength"]}];
-implementors["shiden_runtime"] = [{"text":"impl OnRuntimeUpgrade for <a class=\"struct\" href=\"shiden_runtime/struct.DappsStakingMigrationV3.html\" title=\"struct shiden_runtime::DappsStakingMigrationV3\">DappsStakingMigrationV3</a>","synthetic":false,"types":["shiden_runtime::DappsStakingMigrationV3"]}];
+implementors["shiden_runtime"] = [{"text":"impl OnRuntimeUpgrade for <a class=\"struct\" href=\"shiden_runtime/struct.DappsStakingFixEraLength.html\" title=\"struct shiden_runtime::DappsStakingFixEraLength\">DappsStakingFixEraLength</a>","synthetic":false,"types":["shiden_runtime::DappsStakingFixEraLength"]}];
 if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()
