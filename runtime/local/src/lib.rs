@@ -9,7 +9,7 @@ include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 use codec::{Decode, Encode};
 use frame_support::{
     construct_runtime, parameter_types,
-    traits::{Currency, FindAuthor, KeyOwnerProofSystem, Nothing, Get},
+    traits::{Currency, FindAuthor, Get, KeyOwnerProofSystem, Nothing},
     weights::{
         constants::{RocksDbWeight, WEIGHT_PER_SECOND},
         IdentityFee, Weight,

@@ -5532,7 +5532,7 @@ dependencies = [
 [[package]]
 name = "pallet-block-reward"
 version = "2.0.0"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=feature/dynamic-inflation#fe87082e59a37019a4e1a6769475e8f5f33a4a60"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=feature/dynamic-inflation#7f861a9969deec83e800204492ebe50b98b26251"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -5831,7 +5831,7 @@ dependencies = [
 [[package]]
 name = "pallet-dapps-staking"
 version = "3.2.0"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=feature/dynamic-inflation#fe87082e59a37019a4e1a6769475e8f5f33a4a60"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=feature/dynamic-inflation#7f861a9969deec83e800204492ebe50b98b26251"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -6278,7 +6278,7 @@ dependencies = [
 [[package]]
 name = "pallet-precompile-dapps-staking"
 version = "3.2.0"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=feature/dynamic-inflation#fe87082e59a37019a4e1a6769475e8f5f33a4a60"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=feature/dynamic-inflation#7f861a9969deec83e800204492ebe50b98b26251"
 dependencies = [
  "fp-evm",
  "frame-support",
@@ -8225,7 +8225,7 @@ dependencies = [
 [[package]]
 name = "precompile-utils"
 version = "0.1.0"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=feature/dynamic-inflation#fe87082e59a37019a4e1a6769475e8f5f33a4a60"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=feature/dynamic-inflation#7f861a9969deec83e800204492ebe50b98b26251"
 dependencies = [
  "fp-evm",
  "frame-support",
@@ -8269,7 +8269,7 @@ dependencies = [
 [[package]]
 name = "precompile-utils-macro"
 version = "0.1.0"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=feature/dynamic-inflation#fe87082e59a37019a4e1a6769475e8f5f33a4a60"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=feature/dynamic-inflation#7f861a9969deec83e800204492ebe50b98b26251"
 dependencies = [
  "num_enum",
  "proc-macro2",
@@ -11808,7 +11808,7 @@ dependencies = [
  "chrono",
  "lazy_static",
  "matchers",
- "parking_lot 0.11.2",
+ "parking_lot 0.10.2",
  "regex",
  "serde",
  "serde_json",
@@ -11939,7 +11939,7 @@ version = "1.6.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4ee73e6e4924fe940354b8d4d98cad5231175d615cd855b758adc658c0aac6a0"
 dependencies = [
- "cfg-if 1.0.0",
+ "cfg-if 0.1.10",
  "rand 0.8.5",
  "static_assertions",
 ]

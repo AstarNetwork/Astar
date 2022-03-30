@@ -4,9 +4,9 @@ use cumulus_primitives_core::ParaId;
 use sc_service::ChainType;
 use shibuya_runtime::{
     wasm_binary_unwrap, AccountId, AuraConfig, AuraId, Balance, BalancesConfig, BaseFeeConfig,
-    CollatorSelectionConfig, EVMConfig, GenesisConfig, ParachainInfoConfig, Precompiles,
-    BlockRewardConfig, SessionConfig, SessionKeys, Signature, SudoConfig, SystemConfig,
-    VestingConfig, SDN,
+    BlockRewardConfig, CollatorSelectionConfig, EVMConfig, GenesisConfig, ParachainInfoConfig,
+    Precompiles, SessionConfig, SessionKeys, Signature, SudoConfig, SystemConfig, VestingConfig,
+    SDN,
 };
 use sp_core::{sr25519, Pair, Public};
 

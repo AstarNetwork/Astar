@@ -1,8 +1,8 @@
 //! Chain specifications.
 
 use local_runtime::{
-    wasm_binary_unwrap, AccountId, AuraConfig, AuraId, BalancesConfig, BaseFeeConfig, EVMConfig,
-    GenesisConfig, GrandpaConfig, GrandpaId, Precompiles, BlockRewardConfig, Signature,
+    wasm_binary_unwrap, AccountId, AuraConfig, AuraId, BalancesConfig, BaseFeeConfig,
+    BlockRewardConfig, EVMConfig, GenesisConfig, GrandpaConfig, GrandpaId, Precompiles, Signature,
     SudoConfig, SystemConfig, VestingConfig,
 };
 use sc_service::ChainType;
