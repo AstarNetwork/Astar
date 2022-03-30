@@ -87,7 +87,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("shiden"),
     impl_name: create_runtime_str!("shiden"),
     authoring_version: 1,
-    spec_version: 42,
+    spec_version: 43,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 2,
@@ -748,26 +748,32 @@ pub type Executive = frame_executive::Executive<
     frame_system::ChainContext<Runtime>,
     Runtime,
     AllPalletsWithSystem,
-    (DappsStakingMigrationV3,),
+    DappsStakingFixEraLength,
 >;
 
-pub struct DappsStakingMigrationV3;
+// Migration for fixing era length in dapps staking.
+pub struct DappsStakingFixEraLength;
 
-impl OnRuntimeUpgrade for DappsStakingMigrationV3 {
+impl OnRuntimeUpgrade for DappsStakingFixEraLength {
     fn on_runtime_upgrade() -> frame_support::weights::Weight {
-        pallet_dapps_staking::migrations::v3::stateful_migrate::<Runtime>(
-            RuntimeBlockWeights::get().max_block / 5, // should be 100_000_000_000 [ps]
-        )
-    }
+        use frame_system::pallet::Config;
+        use pallet_dapps_staking::{Config as DappStakingConfig, CurrentEra, NextEraStartingBlock};
+        use sp_runtime::SaturatedConversion;
 
-    #[cfg(feature = "try-runtime")]
-    fn pre_upgrade() -> Result<(), &'static str> {
-        pallet_dapps_staking::migrations::v3::pre_migrate::<Runtime, Self>()
-    }
+        let dapps_staking_block_offset: u32 = 489600; // calculated 2022/03/29
+                                                      // Shiden: 1384490 - (1384490 % 7200) - (124 * 7200)
 
-    #[cfg(feature = "try-runtime")]
-    fn post_upgrade() -> Result<(), &'static str> {
-        pallet_dapps_staking::migrations::v3::post_migrate::<Runtime, Self>()
+        let blocks_per_era =
+            <Runtime as DappStakingConfig>::BlockPerEra::get().saturated_into::<u32>();
+        let current_era = CurrentEra::<Runtime>::get();
+
+        let next_era_starting_block =
+            dapps_staking_block_offset + ((current_era + 1) * blocks_per_era);
+
+        NextEraStartingBlock::<Runtime>::put(
+            next_era_starting_block.saturated_into::<<Runtime as Config>::BlockNumber>(),
+        );
+        <Runtime as Config>::DbWeight::get().reads_writes(1, 1)
     }
 }
 

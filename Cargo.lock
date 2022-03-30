@@ -153,7 +153,7 @@ checksum = "9b34d609dfbaf33d6889b2b7106d3ca345eacad44200913df5ba02bfd31d2ba9"
 
 [[package]]
 name = "astar-collator"
-version = "3.13.0"
+version = "3.14.0"
 dependencies = [
  "astar-runtime",
  "async-trait",
@@ -239,7 +239,7 @@ dependencies = [
 
 [[package]]
 name = "astar-runtime"
-version = "3.13.0"
+version = "3.14.0"
 dependencies = [
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-parachain-system",
@@ -4599,7 +4599,7 @@ checksum = "a261afc61b7a5e323933b402ca6a1765183687c614789b1e4db7762ed4230bca"
 
 [[package]]
 name = "local-runtime"
-version = "3.13.0"
+version = "3.14.0"
 dependencies = [
  "fp-rpc",
  "fp-self-contained",
@@ -10275,7 +10275,7 @@ dependencies = [
 
 [[package]]
 name = "shibuya-runtime"
-version = "3.13.0"
+version = "3.14.0"
 dependencies = [
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-parachain-system",
@@ -10348,7 +10348,7 @@ dependencies = [
 
 [[package]]
 name = "shiden-runtime"
-version = "3.13.0"
+version = "3.14.0"
 dependencies = [
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-parachain-system",
@@ -10373,7 +10373,7 @@ dependencies = [
  "pallet-collator-selection 3.0.0 (git+https://github.com/paritytech/cumulus?branch=polkadot-v0.9.17)",
  "pallet-collective",
  "pallet-custom-signatures",
- "pallet-dapps-staking 3.0.4",
+ "pallet-dapps-staking 3.1.0",
  "pallet-ethereum",
  "pallet-evm",
  "pallet-evm-precompile-bn128",
@@ -10384,7 +10384,7 @@ dependencies = [
  "pallet-evm-precompile-sr25519",
  "pallet-identity",
  "pallet-multisig",
- "pallet-precompile-dapps-staking 3.0.4",
+ "pallet-precompile-dapps-staking 3.1.0",
  "pallet-session",
  "pallet-sudo",
  "pallet-timestamp",
@@ -11454,9 +11454,9 @@ checksum = "6bdef32e8150c2a081110b42772ffe7d7c9032b606bc226c8260fd97e0976601"
 
 [[package]]
 name = "syn"
-version = "1.0.89"
+version = "1.0.90"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ea297be220d52398dcc07ce15a209fce436d361735ac1db700cab3b6cdfb9f54"
+checksum = "704df27628939572cd88d33f171cd6f896f4eaca85252c6e0a72d8d8287ee86f"
 dependencies = [
  "proc-macro2",
  "quote",
