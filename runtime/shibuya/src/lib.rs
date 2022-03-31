@@ -91,7 +91,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("shibuya"),
     impl_name: create_runtime_str!("shibuya"),
     authoring_version: 1,
-    spec_version: 40,
+    spec_version: 41,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 2,
@@ -817,8 +817,8 @@ impl OnRuntimeUpgrade for InitRewardConfigSettings {
         let mut reward_config = pallet_block_reward::RewardDistributionConfig {
             base_treasury_percent: Perbill::from_percent(10),
             base_staker_percent: Perbill::from_percent(20),
-            dapps_percent: Perbill::from_percent(20),
-            collators_percent: Perbill::from_percent(5),
+            dapps_percent: Perbill::from_percent(15),
+            collators_percent: Perbill::from_percent(10),
             adjustable_percent: Perbill::from_percent(45),
             ideal_dapps_staking_tvl: Perbill::from_percent(40),
         };
