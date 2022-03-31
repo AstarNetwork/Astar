@@ -814,7 +814,7 @@ pub struct InitRewardConfigSettings;
 impl OnRuntimeUpgrade for InitRewardConfigSettings {
     fn on_runtime_upgrade() -> frame_support::weights::Weight {
         // TODO: discuss these params on sync & with community
-        let reward_config = pallet_block_reward::RewardDistributionConfig {
+        let mut reward_config = pallet_block_reward::RewardDistributionConfig {
             base_treasury_percent: Perbill::from_percent(10),
             base_staker_percent: Perbill::from_percent(20),
             dapps_percent: Perbill::from_percent(20),
@@ -823,11 +823,21 @@ impl OnRuntimeUpgrade for InitRewardConfigSettings {
             ideal_dapps_staking_tvl: Perbill::from_percent(40),
         };
         // This HAS to be tested prior to update - we need to ensure that config is consistent
+        #[cfg(feature = "try-runtime")]
         assert!(reward_config.is_consistent());
 
+        // This should never execute but we need to have code in place that ensures config is consistent
+        if !reward_config.is_consistent() {
+            reward_config = Default::default();
+        }
         pallet_block_reward::RewardDistributionConfigStorage::<Runtime>::put(reward_config);
 
-        <Runtime as frame_system::pallet::Config>::DbWeight::get().writes(1)
+        // Do some storage cleanup for dapps-staking so we can remove these DB entries in the future
+        pallet_dapps_staking::MigrationStateV2::<Runtime>::kill();
+        pallet_dapps_staking::MigrationStateV3::<Runtime>::kill();
+        pallet_dapps_staking::MigrationUndergoingUnbonding::<Runtime>::kill();
+
+        <Runtime as frame_system::pallet::Config>::DbWeight::get().writes(4)
     }
 }
 
