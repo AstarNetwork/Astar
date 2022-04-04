@@ -1,13 +1,16 @@
 //! Chain specifications.
 
 use local_runtime::{
-    wasm_binary_unwrap, AccountId, AuraConfig, AuraId, BalancesConfig, BaseFeeConfig, EVMConfig,
-    GenesisConfig, GrandpaConfig, GrandpaId, Precompiles, Signature, SudoConfig, SystemConfig,
-    VestingConfig,
+    wasm_binary_unwrap, AccountId, AuraConfig, AuraId, BalancesConfig, BaseFeeConfig,
+    BlockRewardConfig, EVMConfig, GenesisConfig, GrandpaConfig, GrandpaId, Precompiles, Signature,
+    SudoConfig, SystemConfig, VestingConfig,
 };
 use sc_service::ChainType;
 use sp_core::{crypto::Ss58Codec, sr25519, Pair, Public};
-use sp_runtime::traits::{IdentifyAccount, Verify};
+use sp_runtime::{
+    traits::{IdentifyAccount, Verify},
+    Perbill,
+};
 
 type AccountPublic = <Signature as Verify>::Signer;
 
@@ -91,6 +94,17 @@ fn testnet_genesis(
                 .cloned()
                 .map(|k| (k, 1_000_000_000_000_000_000_000_000_000))
                 .collect(),
+        },
+        block_reward: BlockRewardConfig {
+            // Make sure sum is 100
+            reward_config: pallet_block_reward::RewardDistributionConfig {
+                base_treasury_percent: Perbill::from_percent(25),
+                base_staker_percent: Perbill::from_percent(30),
+                dapps_percent: Perbill::from_percent(20),
+                collators_percent: Perbill::zero(),
+                adjustable_percent: Perbill::from_percent(25),
+                ideal_dapps_staking_tvl: Perbill::from_percent(40),
+            },
         },
         vesting: VestingConfig { vesting: vec![] },
         aura: AuraConfig {

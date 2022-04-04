@@ -1,6 +1,6 @@
 [package]
 name = "astar-collator"
-version = "3.14.0"
+version = "3.15.0"
 authors = ["Stake Technologies <devops@stake.co.jp>"]
 description = "Astar collator implementation in Rust."
 build = "build.rs"
@@ -80,6 +80,9 @@ astar-runtime = { path = "../../runtime/astar" }
 local-runtime = { path = "../../runtime/local" }
 shiden-runtime = { path = "../../runtime/shiden" }
 shibuya-runtime = { path = "../../runtime/shibuya" }
+
+# astar-frame dependencies
+pallet-block-reward = { git = "https://github.com/AstarNetwork/astar-frame", tag = "pallet-block-reward-2.0.0/polkadot-v0.9.17", default-features = false }
 
 # frame dependencies
 frame-system = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.17" }
