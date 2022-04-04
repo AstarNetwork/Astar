@@ -2,10 +2,9 @@
   "name": "dappsstaking",
   "version": "1.0.0",
   "description": "tests for dapp staking",
-  "main": "index.js",
   "type": "module",
   "scripts": {
-    "test": "export NODE_ENV=test && mocha --timeout 50000 tests/**/test-*.js"
+    "test": "export NODE_ENV=test && mocha tests/**/test-*.js"
   },
   "author": "AstarNetwork",
   "license": "ISC",

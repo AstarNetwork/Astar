@@ -11,7 +11,7 @@ async function startAstarNode () {
 	console.log("Starting Astar node...");
 }
 
-describe('Astar RPC', () => {
+describe('Astar RPC', function() {
 	let api;
 	// Making sure the Astar node has started
 	before("Connecting to Astar Node", async function () {
