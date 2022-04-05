@@ -12,6 +12,10 @@ We welcome any types of contributions that can improve the project/network in an
 
 The Astar Network project uses GitHub as the main source control hosting service. Most forms of communication regarding changes to the code will be done within the issue board of the repository.
 
+The core of Astar Network codebase is split into two repositories:
+* [Astar](https://github.com/AstarNetwork/Astar)
+* [astar-frame](https://github.com/AstarNetwork/astar-frame)
+
 ### Opening an Issue
 
 Contributions within GitHub can take on the following forms:
@@ -28,15 +32,16 @@ In short:
 
 1. Open an issue regarding a bug fix or feature request (fill in our issue templates)
 2. Briefly describe how you plan to make changes to the code
-3. Fork our main branch (Dusty)
-4. Open a pull request to the main branch (fill in our pull request template)
+3. Fork the current default branch on _Astar_ or _astar-frame_ or both (depending on where you need to make changes) 
+4. Open a pull request to the default branch (fill in our pull request template)
 5. Ensure all workflow checks have passed
 6. Wait for the maintainers approval or change requests
 7. Your code will be merged
 
 ### Coding Styles
 
-Contributors should adhere to the [house coding style](https://substrate.dev/recipes/) and the [`rustfmt` styles](https://github.com/rust-lang/rustfmt).
+Contributors should adhere to the [`rustfmt` styles](https://github.com/rust-lang/rustfmt).
+Running `cargo fmt` prior to creating a commit will ensure everything is properly formatted.
 
 ### Branch Rules and Release Process
 
@@ -44,22 +49,18 @@ Contributors should adhere to the [house coding style](https://substrate.dev/rec
 
 All branch names should adhere to the following rules:
 
-- `feature/*`:
-- `documentation/*`:
-- `fix/*`:
+- `feature/*`: new features are added
+- `doc/*`: documentation changes
+- `fix/*`: bug fixes
+
+
+**TODO**: We don't really use this at all from what I've seen?
 - `development/*`: nodes that are actively in development (including release candidates) will have the `development/` prefix in their branch name.
 
-Every major features made for the `development` branch must go through at least one week of internal testing before it is released and deployed.
+Every major feature will be first deployed on our testnet parachain _Shibuya_ after which it can be deployed on one of the production networks.
+The expected flow is:
 
-Due to the different base runtime version for each chain, we need to maintain Astar Ecosystem in separate branches.
-We will be improving this project structure in the near future, but to maintain network stability, major runtime upgrades will follow this process:
-
-- `development/dusty` → `production/astar` (independent blockchain network planed to be a Parachain of Polkadot network)
-- `development/shiden` → `production/shiden` (Parachain of Kusama and focused on cutting edge XCMP development)
-
-In the future, we will merge Dusty Network and Shibuya Network into a single Parachain so that the release flow will be as the following:
-
-`development/unnamed-testnet` → `production/shiden` → `production/astar`
+`local testnet/dry-run` → `Shibuya` → `Shiden` → `Astar`
 
 ### Contributor Licenses
 
