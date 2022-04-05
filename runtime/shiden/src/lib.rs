@@ -759,9 +759,7 @@ pub type Executive = frame_executive::Executive<
     (InitRewardConfigSettings,),
 >;
 
-// Migration for fixing era length in dapps staking.
 pub struct InitRewardConfigSettings;
-
 impl OnRuntimeUpgrade for InitRewardConfigSettings {
     fn on_runtime_upgrade() -> frame_support::weights::Weight {
         // TODO: discuss these params on sync & with community
