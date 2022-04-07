@@ -36,6 +36,7 @@ pallet-balances = { git = "https://github.com/paritytech/substrate", branch = "p
 pallet-base-fee = { git="https://github.com/AstarNetwork/frontier", branch="polkadot-v0.9.17", default-features=false }
 pallet-ethereum = { git="https://github.com/AstarNetwork/frontier", branch="polkadot-v0.9.17", default-features=false }
 pallet-evm = { git="https://github.com/AstarNetwork/frontier", branch="polkadot-v0.9.17", default-features=false }
+pallet-evm-precompile-blake2 = { git="https://github.com/AstarNetwork/frontier", branch="polkadot-v0.9.17", default-features=false }
 pallet-evm-precompile-bn128 = { git="https://github.com/AstarNetwork/frontier", branch="polkadot-v0.9.17", default-features=false }
 pallet-evm-precompile-dispatch = { git="https://github.com/AstarNetwork/frontier", branch="polkadot-v0.9.17", default-features=false }
 pallet-evm-precompile-modexp = { git="https://github.com/AstarNetwork/frontier", branch="polkadot-v0.9.17", default-features=false }

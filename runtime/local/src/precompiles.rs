@@ -1,6 +1,7 @@
 //! The Local EVM precompiles. This can be compiled with ``#[no_std]`, ready for Wasm.
 
 use pallet_evm::{Context, Precompile, PrecompileResult, PrecompileSet};
+use pallet_evm_precompile_blake2::Blake2F;
 use pallet_evm_precompile_bn128::{Bn128Add, Bn128Mul, Bn128Pairing};
 use pallet_evm_precompile_dispatch::Dispatch;
 use pallet_evm_precompile_modexp::Modexp;
@@ -57,6 +58,8 @@ where
             a if a == hash(6) => Some(Bn128Add::execute(input, target_gas, context, is_static)),
             a if a == hash(7) => Some(Bn128Mul::execute(input, target_gas, context, is_static)),
             a if a == hash(8) => Some(Bn128Pairing::execute(input, target_gas, context, is_static)),
+            a if a == hash(9) => Some(Blake2F::execute(input, target_gas, context, is_static)),
+
             // nor Ethereum precompiles :
             a if a == hash(1024) => {
                 Some(Sha3FIPS256::execute(input, target_gas, context, is_static))
