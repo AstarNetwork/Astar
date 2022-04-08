@@ -3,12 +3,15 @@
 use cumulus_primitives_core::ParaId;
 use sc_service::ChainType;
 use shiden_runtime::{
-    wasm_binary_unwrap, AccountId, AuraId, Balance, BaseFeeConfig, EVMConfig, ParachainInfoConfig,
-    Precompiles, Signature, SystemConfig, SDN,
+    wasm_binary_unwrap, AccountId, AuraId, Balance, BaseFeeConfig, BlockRewardConfig, EVMConfig,
+    ParachainInfoConfig, Precompiles, Signature, SystemConfig, SDN,
 };
 use sp_core::{sr25519, Pair, Public};
 
-use sp_runtime::traits::{IdentifyAccount, Verify};
+use sp_runtime::{
+    traits::{IdentifyAccount, Verify},
+    Perbill,
+};
 
 use super::{get_from_seed, Extensions};
 
@@ -81,6 +84,17 @@ fn make_genesis(
         },
         parachain_info: ParachainInfoConfig { parachain_id },
         balances: shiden_runtime::BalancesConfig { balances },
+        block_reward: BlockRewardConfig {
+            // Make sure sum is 100
+            reward_config: pallet_block_reward::RewardDistributionConfig {
+                base_treasury_percent: Perbill::from_percent(40),
+                base_staker_percent: Perbill::from_percent(25),
+                dapps_percent: Perbill::from_percent(25),
+                collators_percent: Perbill::from_percent(10),
+                adjustable_percent: Perbill::from_percent(0),
+                ideal_dapps_staking_tvl: Perbill::from_percent(0),
+            },
+        },
         vesting: shiden_runtime::VestingConfig { vesting: vec![] },
         session: shiden_runtime::SessionConfig {
             keys: authorities

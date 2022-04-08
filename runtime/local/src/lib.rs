@@ -9,7 +9,7 @@ include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 use codec::{Decode, Encode};
 use frame_support::{
     construct_runtime, parameter_types,
-    traits::{Currency, FindAuthor, Imbalance, KeyOwnerProofSystem, Nothing, OnUnbalanced},
+    traits::{Currency, FindAuthor, Get, KeyOwnerProofSystem, Nothing},
     weights::{
         constants::{RocksDbWeight, WEIGHT_PER_SECOND},
         IdentityFee, Weight,
@@ -269,18 +269,25 @@ parameter_types! {
 
 type NegativeImbalance = <Balances as Currency<AccountId>>::NegativeImbalance;
 
-pub struct OnBlockReward;
-impl OnUnbalanced<NegativeImbalance> for OnBlockReward {
-    fn on_nonzero_unbalanced(amount: NegativeImbalance) {
-        let (dapps, maintain) = amount.ration(50, 50);
+pub struct DappsStakingTvlProvider();
+impl Get<Balance> for DappsStakingTvlProvider {
+    fn get() -> Balance {
+        DappsStaking::tvl()
+    }
+}
 
-        // dapp staking block reward
-        DappsStaking::on_unbalanced(dapps);
+pub struct BeneficiaryPayout();
+impl pallet_block_reward::BeneficiaryPayout<NegativeImbalance> for BeneficiaryPayout {
+    fn treasury(reward: NegativeImbalance) {
+        Balances::resolve_creating(&TreasuryPalletId::get().into_account(), reward);
+    }
 
-        // XXX: skip block author reward, it's local runtime didn't
-        let (treasury, _) = maintain.ration(40, 10);
-        // treasury slice of block reward
-        Balances::resolve_creating(&TreasuryPalletId::get().into_account(), treasury);
+    fn collators(_reward: NegativeImbalance) {
+        // no collators for local dev node
+    }
+
+    fn dapps_staking(stakers: NegativeImbalance, dapps: NegativeImbalance) {
+        DappsStaking::rewards(stakers, dapps)
     }
 }
 
@@ -290,14 +297,16 @@ parameter_types! {
 
 impl pallet_block_reward::Config for Runtime {
     type Currency = Balances;
-    type OnBlockReward = OnBlockReward;
+    type DappsStakingTvlProvider = DappsStakingTvlProvider;
+    type BeneficiaryPayout = BeneficiaryPayout;
     type RewardAmount = RewardAmount;
+    type Event = Event;
+    type WeightInfo = pallet_block_reward::weights::SubstrateWeight<Runtime>;
 }
 
 parameter_types! {
     pub const BlockPerEra: BlockNumber = 60;
     pub const RegisterDeposit: Balance = 100 * AST;
-    pub const DeveloperRewardPercentage: Perbill = Perbill::from_percent(80);
     pub const MaxNumberOfStakersPerContract: u32 = 512;
     pub const MinimumStakingAmount: Balance = 10 * AST;
     pub const MinimumRemainingAmount: Balance = 1 * AST;
@@ -311,7 +320,6 @@ impl pallet_dapps_staking::Config for Runtime {
     type BlockPerEra = BlockPerEra;
     type SmartContract = SmartContract<AccountId>;
     type RegisterDeposit = RegisterDeposit;
-    type DeveloperRewardPercentage = DeveloperRewardPercentage;
     type Event = Event;
     type WeightInfo = weights::pallet_dapps_staking::WeightInfo<Runtime>;
     type MaxNumberOfStakersPerContract = MaxNumberOfStakersPerContract;
@@ -565,7 +573,7 @@ construct_runtime!(
         Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
         Vesting: pallet_vesting::{Pallet, Call, Storage, Config<T>, Event<T>},
         DappsStaking: pallet_dapps_staking::{Pallet, Call, Storage, Event<T>},
-        BlockReward: pallet_block_reward::{Pallet},
+        BlockReward: pallet_block_reward::{Pallet, Call, Storage, Config, Event<T>},
         TransactionPayment: pallet_transaction_payment::{Pallet, Storage},
         EVM: pallet_evm::{Pallet, Config, Call, Storage, Event<T>},
         Ethereum: pallet_ethereum::{Pallet, Call, Storage, Event, Origin, Config},
@@ -1009,6 +1017,7 @@ impl_runtime_apis! {
             let mut list = Vec::<BenchmarkList>::new();
 
             list_benchmark!(list, extra, pallet_dapps_staking, DappsStaking);
+            list_benchmark!(list, extra, pallet_dapps_staking, BlockReward);
             list_benchmark!(list, extra, pallet_balances, Balances);
 
             let storage_info = AllPalletsWithSystem::storage_info();
@@ -1042,6 +1051,7 @@ impl_runtime_apis! {
             add_benchmark!(params, batches, pallet_balances, Balances);
             add_benchmark!(params, batches, pallet_timestamp, Timestamp);
             add_benchmark!(params, batches, pallet_dapps_staking, DappsStaking);
+            add_benchmark!(params, batches, pallet_block_reward, BlockReward);
 
             if batches.is_empty() { return Err("Benchmark not found for this pallet.".into()) }
             Ok(batches)

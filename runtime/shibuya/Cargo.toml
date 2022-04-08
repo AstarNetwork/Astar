@@ -1,6 +1,6 @@
 [package]
 name = "shibuya-runtime"
-version = "3.12.0"
+version = "3.16.0"
 authors = ["Stake Technologies <devops@stake.co.jp>"]
 edition = "2018"
 build = "build.rs"
@@ -81,10 +81,10 @@ xcm-executor = { git = "https://github.com/paritytech/polkadot", default-feature
 pallet-xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "release-v0.9.17" }
 
 # Astar pallets
-pallet-block-reward = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.17", default-features = false }
+pallet-block-reward = { git = "https://github.com/AstarNetwork/astar-frame", tag = "pallet-block-reward-2.0.0/polkadot-v0.9.17", default-features = false }
 pallet-custom-signatures = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.17", default-features = false }
-pallet-dapps-staking = { git = "https://github.com/AstarNetwork/astar-frame", tag = "pallet-dapps-staking-3.0.4/polkadot-v0.9.17", default-features = false }
-pallet-precompile-dapps-staking = { git = "https://github.com/AstarNetwork/astar-frame", tag = "pallet-dapps-staking-3.0.4/polkadot-v0.9.17", default-features = false }
+pallet-dapps-staking = { git = "https://github.com/AstarNetwork/astar-frame", tag = "pallet-dapps-staking-3.2.0/polkadot-v0.9.17", default-features = false }
+pallet-precompile-dapps-staking = { git = "https://github.com/AstarNetwork/astar-frame", tag = "pallet-dapps-staking-3.2.0/polkadot-v0.9.17", default-features = false }
 pallet-evm-precompile-sr25519 = { git = "https://github.com/AstarNetwork/astar-frame", tag = "pallet-evm-precompile-sr25519-1.0.0/polkadot-v0.9.17", default-features = false }
 pallet-evm-precompile-assets-erc20 = { git = "https://github.com/AstarNetwork/astar-frame", branch = "feature/xcmp-assets", default-features = false }
 
@@ -183,6 +183,7 @@ runtime-benchmarks = [
     "hex-literal",
     "sp-runtime/runtime-benchmarks",
     "pallet-dapps-staking/runtime-benchmarks",
+    "pallet-block-reward/runtime-benchmarks",
     "pallet-balances/runtime-benchmarks",
     "pallet-timestamp/runtime-benchmarks",
     "pallet-collective/runtime-benchmarks",
