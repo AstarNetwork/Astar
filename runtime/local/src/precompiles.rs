@@ -1,7 +1,5 @@
 //! The Local EVM precompiles. This can be compiled with ``#[no_std]`, ready for Wasm.
 
-use codec::Decode;
-use frame_support::dispatch::{Dispatchable, GetDispatchInfo, PostDispatchInfo};
 use pallet_evm::{Context, Precompile, PrecompileResult, PrecompileSet};
 use pallet_evm_precompile_bn128::{Bn128Add, Bn128Mul, Bn128Pairing};
 use pallet_evm_precompile_dispatch::Dispatch;
@@ -37,12 +35,9 @@ impl<R> LocalNetworkPrecompiles<R> {
 /// 1024-2047 Precompiles that are not in Ethereum Mainnet
 impl<R: pallet_evm::Config> PrecompileSet for LocalNetworkPrecompiles<R>
 where
-    R: pallet_evm::Config + pallet_dapps_staking::Config,
-    <R::Call as Dispatchable>::Origin: From<Option<R::AccountId>>,
-    R::Call: From<pallet_dapps_staking::Call<R>>
-        + Dispatchable<PostInfo = PostDispatchInfo>
-        + GetDispatchInfo
-        + Decode,
+    R: pallet_evm::Config,
+    Dispatch<R>: Precompile,
+    DappsStakingWrapper<R>: Precompile,
 {
     fn execute(
         &self,

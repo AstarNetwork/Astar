@@ -301,10 +301,9 @@ parameter_types! {
     pub const MaxNumberOfStakersPerContract: u32 = 512;
     pub const MinimumStakingAmount: Balance = 10 * AST;
     pub const MinimumRemainingAmount: Balance = 1 * AST;
-    pub const HistoryDepth: u32 = 14;
-    pub const BonusEraDuration: u32 = 100;
     pub const MaxUnlockingChunks: u32 = 2;
     pub const UnbondingPeriod: u32 = 2;
+    pub const MaxEraStakeValues: u32 = 5;
 }
 
 impl pallet_dapps_staking::Config for Runtime {
@@ -318,11 +317,10 @@ impl pallet_dapps_staking::Config for Runtime {
     type MaxNumberOfStakersPerContract = MaxNumberOfStakersPerContract;
     type MinimumStakingAmount = MinimumStakingAmount;
     type PalletId = DappsStakingPalletId;
-    type MinimumRemainingAmount = MinimumRemainingAmount;
-    type HistoryDepth = HistoryDepth;
-    type BonusEraDuration = BonusEraDuration;
     type MaxUnlockingChunks = MaxUnlockingChunks;
     type UnbondingPeriod = UnbondingPeriod;
+    type MinimumRemainingAmount = MinimumRemainingAmount;
+    type MaxEraStakeValues = MaxEraStakeValues;
 }
 
 /// Multi-VM pointer to smart contract instance.
@@ -1011,6 +1009,7 @@ impl_runtime_apis! {
             let mut list = Vec::<BenchmarkList>::new();
 
             list_benchmark!(list, extra, pallet_dapps_staking, DappsStaking);
+            list_benchmark!(list, extra, pallet_balances, Balances);
 
             let storage_info = AllPalletsWithSystem::storage_info();
 

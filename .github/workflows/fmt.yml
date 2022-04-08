@@ -4,9 +4,10 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: hecrj/setup-rust-action@v1
       - name: Checkout the source code
         uses: actions/checkout@master
+      - name: Install & display rust toolchain
+        run: rustup show
       - name: Check targets are installed correctly
         run: rustup target list --installed
       - name: Check fmt

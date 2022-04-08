@@ -1,7 +1,5 @@
 //! The Shibuya Network EVM precompiles. This can be compiled with ``#[no_std]`, ready for Wasm.
 
-use codec::Decode;
-use frame_support::dispatch::{Dispatchable, GetDispatchInfo, PostDispatchInfo};
 use pallet_evm::{Context, Precompile, PrecompileResult, PrecompileSet};
 use pallet_evm_precompile_assets_erc20::Erc20AssetsPrecompileSet;
 use pallet_evm_precompile_bn128::{Bn128Add, Bn128Mul, Bn128Pairing};
@@ -43,14 +41,10 @@ impl<R> ShibuyaNetworkPrecompiles<R> {
 /// 1024-2047 Precompiles that are not in Ethereum Mainnet
 impl<R> PrecompileSet for ShibuyaNetworkPrecompiles<R>
 where
-    R: pallet_evm::Config + pallet_dapps_staking::Config,
-    <R::Call as Dispatchable>::Origin: From<Option<R::AccountId>>,
-    R::Call: From<pallet_dapps_staking::Call<R>>
-        + Dispatchable<PostInfo = PostDispatchInfo>
-        + GetDispatchInfo
-        + Decode,
     Erc20AssetsPrecompileSet<R>: PrecompileSet,
-    //XtokensWrapper<R>: Precompile,
+    DappsStakingWrapper<R>: Precompile,
+    Dispatch<R>: Precompile,
+    R: pallet_evm::Config
 {
     fn execute(
         &self,
@@ -89,12 +83,6 @@ where
             a if a == hash(20482) => Some(Sr25519Precompile::<R>::execute(
                 input, target_gas, context, is_static,
             )),
-            // xTokens     0x5003
-            /*
-            a if a == hash(20483) => Some(XtokensWrapper::<R>::execute(
-                input, target_gas, context, is_static,
-            )),
-            */
             // If the address matches asset prefix, the we route through the asset precompile set
             a if &a.to_fixed_bytes()[0..4] == ASSET_PRECOMPILE_ADDRESS_PREFIX => {
                 Erc20AssetsPrecompileSet::<R>::new()
