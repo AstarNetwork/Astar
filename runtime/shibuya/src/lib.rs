@@ -793,11 +793,8 @@ construct_runtime!(
         Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>} = 31,
         Vesting: pallet_vesting::{Pallet, Call, Storage, Config<T>, Event<T>} = 32,
         DappsStaking: pallet_dapps_staking::{Pallet, Call, Storage, Event<T>} = 34,
-<<<<<<< HEAD
-        Assets: pallet_assets::{Pallet, Call, Storage, Event<T>} = 35,
-=======
         BlockReward: pallet_block_reward::{Pallet, Call, Storage, Config, Event<T>} = 35,
->>>>>>> master
+        Assets: pallet_assets::{Pallet, Call, Storage, Event<T>} = 36,
 
         Authorship: pallet_authorship::{Pallet, Call, Storage, Inherent} = 40,
         CollatorSelection: pallet_collator_selection::{Pallet, Call, Storage, Event<T>, Config<T>} = 41,

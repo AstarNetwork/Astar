@@ -8,6 +8,7 @@ use frame_support::{
     traits::{Nothing, Everything, PalletInfoAccess},
     weights::Weight,
 };
+use sp_runtime::traits::Bounded;
 use sp_std::borrow::Borrow;
 
 // Polkadot imports
@@ -68,18 +69,18 @@ pub struct AsAssetWithRelay<AssetId, GeneralAssetConverter>(
 impl<AssetId, GeneralAssetConverter> xcm_executor::traits::Convert<MultiLocation, AssetId>
     for AsAssetWithRelay<AssetId, GeneralAssetConverter>
 where
-    AssetId: Clone + Eq + From<u32>,
+    AssetId: Clone + Eq + Bounded,
     GeneralAssetConverter: xcm_executor::traits::Convert<MultiLocation, AssetId>,
 {
     fn convert_ref(id: impl Borrow<MultiLocation>) -> Result<AssetId, ()> {
         if id.borrow().eq(&MultiLocation::parent()) {
-            Ok(1.into())
+            Ok(AssetId::max_value())
         } else {
             GeneralAssetConverter::convert_ref(id)
         }
     }
     fn reverse_ref(what: impl Borrow<AssetId>) -> Result<MultiLocation, ()> {
-        if what.borrow().eq(&1.into()) {
+        if what.borrow().eq(&AssetId::max_value().into()) {
             Ok(MultiLocation::parent())
         } else {
             GeneralAssetConverter::reverse_ref(what)
