@@ -4692,6 +4692,7 @@ dependencies = [
  "pallet-evm-precompile-sha3fips",
  "pallet-evm-precompile-simple",
  "pallet-evm-precompile-sr25519",
+ "pallet-evm-precompile-substrate-ecdsa",
  "pallet-grandpa",
  "pallet-precompile-dapps-staking",
  "pallet-randomness-collective-flip",
@@ -6116,6 +6117,22 @@ dependencies = [
  "pallet-evm",
  "parity-scale-codec",
  "precompile-utils 0.1.0 (git+https://github.com/AstarNetwork/astar-frame?tag=pallet-evm-precompile-sr25519-1.0.0/polkadot-v0.9.17)",
+ "sp-core",
+ "sp-io",
+ "sp-std",
+]
+
+[[package]]
+name = "pallet-evm-precompile-substrate-ecdsa"
+version = "1.0.0"
+source = "git+https://github.com/AstarNetwork/astar-frame?tag=pallet-evm-precompile-substrate-ecdsa-1.0.0/polkadot-v0.9.17#8accbc17848e27b14df17f67185ee39b09878c85"
+dependencies = [
+ "fp-evm",
+ "log",
+ "num_enum",
+ "pallet-evm",
+ "parity-scale-codec",
+ "precompile-utils 0.1.0 (git+https://github.com/AstarNetwork/astar-frame?tag=pallet-evm-precompile-substrate-ecdsa-1.0.0/polkadot-v0.9.17)",
  "sp-core",
  "sp-io",
  "sp-std",
@@ -8299,6 +8316,26 @@ dependencies = [
 [[package]]
 name = "precompile-utils"
 version = "0.1.0"
+source = "git+https://github.com/AstarNetwork/astar-frame?tag=pallet-evm-precompile-substrate-ecdsa-1.0.0/polkadot-v0.9.17#8accbc17848e27b14df17f67185ee39b09878c85"
+dependencies = [
+ "fp-evm",
+ "frame-support",
+ "frame-system",
+ "log",
+ "num_enum",
+ "pallet-evm",
+ "parity-scale-codec",
+ "precompile-utils-macro 0.1.0 (git+https://github.com/AstarNetwork/astar-frame?tag=pallet-evm-precompile-substrate-ecdsa-1.0.0/polkadot-v0.9.17)",
+ "sha3 0.9.1",
+ "sp-core",
+ "sp-io",
+ "sp-std",
+ "xcm",
+]
+
+[[package]]
+name = "precompile-utils"
+version = "0.1.0"
 source = "git+https://github.com/AstarNetwork/astar-frame?branch=feature/xcmp-assets#ceacb032de373409213a66af413c31c52f3f60f8"
 dependencies = [
  "fp-evm",
@@ -8332,6 +8369,18 @@ dependencies = [
 name = "precompile-utils-macro"
 version = "0.1.0"
 source = "git+https://github.com/AstarNetwork/astar-frame?tag=pallet-evm-precompile-sr25519-1.0.0/polkadot-v0.9.17#44164de99c064b78a8ac4a093f8b09613b6a08a1"
+dependencies = [
+ "num_enum",
+ "proc-macro2",
+ "quote",
+ "sha3 0.8.2",
+ "syn",
+]
+
+[[package]]
+name = "precompile-utils-macro"
+version = "0.1.0"
+source = "git+https://github.com/AstarNetwork/astar-frame?tag=pallet-evm-precompile-substrate-ecdsa-1.0.0/polkadot-v0.9.17#8accbc17848e27b14df17f67185ee39b09878c85"
 dependencies = [
  "num_enum",
  "proc-macro2",
@@ -10413,6 +10462,7 @@ dependencies = [
  "pallet-evm-precompile-sha3fips",
  "pallet-evm-precompile-simple",
  "pallet-evm-precompile-sr25519",
+ "pallet-evm-precompile-substrate-ecdsa",
  "pallet-identity",
  "pallet-multisig",
  "pallet-precompile-dapps-staking",
