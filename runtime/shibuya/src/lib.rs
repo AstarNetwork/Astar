@@ -23,7 +23,7 @@ use pallet_evm::{FeeCalculator, Runner};
 use pallet_transaction_payment::{
     FeeDetails, Multiplier, RuntimeDispatchInfo, TargetedFeeAdjustment,
 };
-use polkadot_runtime_common::{RocksDbWeight, BlockHashCount};
+use polkadot_runtime_common::{BlockHashCount, RocksDbWeight};
 use sp_api::impl_runtime_apis;
 use sp_core::{OpaqueMetadata, H160, H256, U256};
 use sp_inherents::{CheckInherentsResult, InherentData};
@@ -52,8 +52,8 @@ pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 pub use sp_runtime::BuildStorage;
 
 mod precompiles;
-mod xcm_config;
 mod weights;
+mod xcm_config;
 
 pub use precompiles::{ShibuyaNetworkPrecompiles, ASSET_PRECOMPILE_ADDRESS_PREFIX};
 pub type Precompiles = ShibuyaNetworkPrecompiles<Runtime>;

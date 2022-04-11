@@ -1,11 +1,11 @@
 use super::{
-	AccountId, AssetId, Assets, Balance, Balances, Call, Event, Origin, ParachainInfo,
-	ParachainSystem, PolkadotXcm, Runtime, XcmpQueue, WeightToFee, DealWithFees,
+    AccountId, AssetId, Assets, Balance, Balances, Call, DealWithFees, Event, Origin,
+    ParachainInfo, ParachainSystem, PolkadotXcm, Runtime, WeightToFee, XcmpQueue,
     MAXIMUM_BLOCK_WEIGHT,
 };
 use frame_support::{
     match_type, parameter_types,
-    traits::{Nothing, Everything, PalletInfoAccess},
+    traits::{Everything, Nothing, PalletInfoAccess},
     weights::Weight,
 };
 use sp_runtime::traits::Bounded;
@@ -16,13 +16,16 @@ use xcm::latest::prelude::*;
 use xcm_builder::{
     AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom,
     AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom, AsPrefixedGeneralIndex,
-    ConvertedConcreteAssetId, CurrencyAdapter, EnsureXcmOrigin, FixedWeightBounds,
-    FungiblesAdapter, IsConcrete, LocationInverter, ParentAsSuperuser, ParentIsPreset,
-    RelayChainAsNative, SiblingParachainAsNative, SiblingParachainConvertsVia,
+    ConvertedConcreteAssetId, CurrencyAdapter, EnsureXcmOrigin, FixedRateOfFungible,
+    FixedWeightBounds, FungiblesAdapter, IsConcrete, LocationInverter, ParentAsSuperuser,
+    ParentIsPreset, RelayChainAsNative, SiblingParachainAsNative, SiblingParachainConvertsVia,
     SignedAccountId32AsNative, SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit,
-    UsingComponents, FixedRateOfFungible,
+    UsingComponents,
 };
-use xcm_executor::{traits::{JustTry, FilterAssetLocation}, Config, XcmExecutor};
+use xcm_executor::{
+    traits::{FilterAssetLocation, JustTry},
+    Config, XcmExecutor,
+};
 
 parameter_types! {
     pub const RelayLocation: MultiLocation = MultiLocation::parent();
@@ -85,7 +88,6 @@ where
         } else {
             GeneralAssetConverter::reverse_ref(what)
         }
-
     }
 }
 
@@ -97,10 +99,7 @@ pub type FungiblesTransactor = FungiblesAdapter<
     ConvertedConcreteAssetId<
         AssetId,
         Balance,
-        AsAssetWithRelay<
-            AssetId,
-            AsPrefixedGeneralIndex<AssetsPalletLocation, AssetId, JustTry>,
-        >,
+        AsAssetWithRelay<AssetId, AsPrefixedGeneralIndex<AssetsPalletLocation, AssetId, JustTry>>,
         JustTry,
     >,
     // Convert an XCM MultiLocation into a local account id:

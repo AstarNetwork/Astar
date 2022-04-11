@@ -44,7 +44,7 @@ where
     Erc20AssetsPrecompileSet<R>: PrecompileSet,
     DappsStakingWrapper<R>: Precompile,
     Dispatch<R>: Precompile,
-    R: pallet_evm::Config
+    R: pallet_evm::Config,
 {
     fn execute(
         &self,
