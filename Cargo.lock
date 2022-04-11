@@ -153,7 +153,7 @@ checksum = "9b34d609dfbaf33d6889b2b7106d3ca345eacad44200913df5ba02bfd31d2ba9"
 
 [[package]]
 name = "astar-collator"
-version = "3.16.0"
+version = "3.17.0"
 dependencies = [
  "astar-runtime",
  "async-trait",
@@ -240,7 +240,7 @@ dependencies = [
 
 [[package]]
 name = "astar-runtime"
-version = "3.16.0"
+version = "3.17.0"
 dependencies = [
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-parachain-system",
@@ -267,8 +267,10 @@ dependencies = [
  "pallet-dapps-staking 1.1.2",
  "pallet-ethereum",
  "pallet-evm",
+ "pallet-evm-precompile-blake2",
  "pallet-evm-precompile-bn128",
  "pallet-evm-precompile-dispatch",
+ "pallet-evm-precompile-ed25519",
  "pallet-evm-precompile-modexp",
  "pallet-evm-precompile-sha3fips",
  "pallet-evm-precompile-simple",
@@ -4600,7 +4602,7 @@ checksum = "a261afc61b7a5e323933b402ca6a1765183687c614789b1e4db7762ed4230bca"
 
 [[package]]
 name = "local-runtime"
-version = "3.16.0"
+version = "3.17.0"
 dependencies = [
  "fp-rpc",
  "fp-self-contained",
@@ -4623,8 +4625,10 @@ dependencies = [
  "pallet-dapps-staking 3.2.0",
  "pallet-ethereum",
  "pallet-evm",
+ "pallet-evm-precompile-blake2",
  "pallet-evm-precompile-bn128",
  "pallet-evm-precompile-dispatch",
+ "pallet-evm-precompile-ed25519",
  "pallet-evm-precompile-modexp",
  "pallet-evm-precompile-sha3fips",
  "pallet-evm-precompile-simple",
@@ -5942,6 +5946,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-evm-precompile-blake2"
+version = "2.0.0-dev"
+source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.17#87b790ec1c354903f31674956a022ec73ef5ca26"
+dependencies = [
+ "fp-evm",
+]
+
+[[package]]
 name = "pallet-evm-precompile-bn128"
 version = "2.0.0-dev"
 source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.17#87b790ec1c354903f31674956a022ec73ef5ca26"
@@ -5959,6 +5971,15 @@ dependencies = [
  "fp-evm",
  "frame-support",
  "pallet-evm",
+]
+
+[[package]]
+name = "pallet-evm-precompile-ed25519"
+version = "2.0.0-dev"
+source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.17#87b790ec1c354903f31674956a022ec73ef5ca26"
+dependencies = [
+ "ed25519-dalek",
+ "fp-evm",
 ]
 
 [[package]]
@@ -10221,7 +10242,7 @@ dependencies = [
 
 [[package]]
 name = "shibuya-runtime"
-version = "3.16.0"
+version = "3.17.0"
 dependencies = [
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-parachain-system",
@@ -10252,8 +10273,10 @@ dependencies = [
  "pallet-dapps-staking 3.2.0",
  "pallet-ethereum",
  "pallet-evm",
+ "pallet-evm-precompile-blake2",
  "pallet-evm-precompile-bn128",
  "pallet-evm-precompile-dispatch",
+ "pallet-evm-precompile-ed25519",
  "pallet-evm-precompile-modexp",
  "pallet-evm-precompile-sha3fips",
  "pallet-evm-precompile-simple",
@@ -10294,7 +10317,7 @@ dependencies = [
 
 [[package]]
 name = "shiden-runtime"
-version = "3.16.0"
+version = "3.17.0"
 dependencies = [
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-parachain-system",
@@ -10322,8 +10345,10 @@ dependencies = [
  "pallet-dapps-staking 3.2.0",
  "pallet-ethereum",
  "pallet-evm",
+ "pallet-evm-precompile-blake2",
  "pallet-evm-precompile-bn128",
  "pallet-evm-precompile-dispatch",
+ "pallet-evm-precompile-ed25519",
  "pallet-evm-precompile-modexp",
  "pallet-evm-precompile-sha3fips",
  "pallet-evm-precompile-simple",

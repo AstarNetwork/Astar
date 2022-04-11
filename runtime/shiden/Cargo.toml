@@ -1,6 +1,6 @@
 [package]
 name = "shiden-runtime"
-version = "3.16.0"
+version = "3.17.0"
 authors = ["Stake Technologies <devops@stake.co.jp>"]
 edition = "2018"
 build = "build.rs"
@@ -36,8 +36,10 @@ pallet-balances = { git = "https://github.com/paritytech/substrate", branch = "p
 pallet-base-fee = { git="https://github.com/AstarNetwork/frontier", branch="polkadot-v0.9.17", default-features=false }
 pallet-ethereum = { git="https://github.com/AstarNetwork/frontier", branch="polkadot-v0.9.17", default-features=false }
 pallet-evm = { git="https://github.com/AstarNetwork/frontier", branch="polkadot-v0.9.17", default-features=false }
+pallet-evm-precompile-blake2 = { git="https://github.com/AstarNetwork/frontier", branch="polkadot-v0.9.17", default-features=false }
 pallet-evm-precompile-bn128 = { git="https://github.com/AstarNetwork/frontier", branch="polkadot-v0.9.17", default-features=false }
 pallet-evm-precompile-dispatch = { git="https://github.com/AstarNetwork/frontier", branch="polkadot-v0.9.17", default-features=false }
+pallet-evm-precompile-ed25519 = { git="https://github.com/AstarNetwork/frontier", branch="polkadot-v0.9.17", default-features=false }
 pallet-evm-precompile-modexp = { git="https://github.com/AstarNetwork/frontier", branch="polkadot-v0.9.17", default-features=false }
 pallet-evm-precompile-simple = { git="https://github.com/AstarNetwork/frontier", branch="polkadot-v0.9.17", default-features=false }
 pallet-evm-precompile-sha3fips = { git="https://github.com/AstarNetwork/frontier", branch="polkadot-v0.9.17", default-features=false }
@@ -116,9 +118,11 @@ std = [
     "pallet-base-fee/std",
     "pallet-ethereum/std",
     "pallet-evm/std",
+    "pallet-evm-precompile-blake2/std",
     "pallet-evm-precompile-simple/std",
     "pallet-evm-precompile-bn128/std",
     "pallet-evm-precompile-dispatch/std",
+    "pallet-evm-precompile-ed25519/std",
     "pallet-evm-precompile-modexp/std",
     "pallet-evm-precompile-sha3fips/std",
     "pallet-dapps-staking/std",
