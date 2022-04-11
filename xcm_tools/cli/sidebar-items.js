@@ -1,0 +1,1 @@
+initSidebarItems({"enum":[["Subcommand","Possible subcommands of the main binary."]],"struct":[["AssetIdCmd","Helper that prints AssetId for sibling parachain asset."],["Cli","Astar XCM tools."],["ParachainAccountCmd","Helper that prints AccountId of parachain."]]});

@@ -1,1 +1,1 @@
-window.ALL_CRATES = ["astar_collator","astar_runtime","local_runtime","shibuya_runtime","shiden_runtime"];
+window.ALL_CRATES = ["astar_collator","astar_runtime","local_runtime","shibuya_runtime","shiden_runtime","xcm_tools"];

@@ -1,0 +1,3 @@
+(function() {var implementors = {};
+implementors["shibuya_runtime"] = [{"text":"impl Config&lt;<a class=\"primitive\" href=\"https://doc.rust-lang.org/nightly/std/primitive.unit.html\">()</a>&gt; for <a class=\"struct\" href=\"shibuya_runtime/struct.Runtime.html\" title=\"struct shibuya_runtime::Runtime\">Runtime</a>","synthetic":false,"types":["shibuya_runtime::Runtime"]}];
+if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

@@ -1,3 +1,4 @@
 (function() {var implementors = {};
 implementors["astar_collator"] = [{"text":"impl Subcommand for <a class=\"enum\" href=\"astar_collator/enum.Subcommand.html\" title=\"enum astar_collator::Subcommand\">Subcommand</a>","synthetic":false,"types":["astar_collator::cli::Subcommand"]}];
+implementors["xcm_tools"] = [{"text":"impl Subcommand for <a class=\"enum\" href=\"xcm_tools/cli/enum.Subcommand.html\" title=\"enum xcm_tools::cli::Subcommand\">Subcommand</a>","synthetic":false,"types":["xcm_tools::cli::Subcommand"]}];
 if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

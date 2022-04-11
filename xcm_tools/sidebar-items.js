@@ -1,0 +1,1 @@
+initSidebarItems({"fn":[["main",""]],"mod":[["cli",""],["command","Astar XCM CLI handlers."]]});
