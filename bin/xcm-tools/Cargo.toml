@@ -1,0 +1,23 @@
+[package]
+name = "xcm-tools"
+version = "0.1.0"
+authors = ["Stake Technologies <devops@stake.co.jp>"]
+description = "Astar XCM tools."
+edition = "2021"
+build = "build.rs"
+
+[[bin]]
+name = "xcm-tools"
+path = "src/main.rs"
+
+[dependencies]
+clap = { version = "3.0", features = ["derive"] }
+xcm = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.17" }
+xcm-builder = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.17" }
+xcm-executor = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.17" }
+polkadot-parachain = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.17" }
+polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.17" }
+cumulus-primitives-core = { git = "https://github.com/paritytech/cumulus", branch = "polkadot-v0.9.17" }
+
+[build-dependencies]
+build-script-utils = { package = "substrate-build-script-utils", git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.17" }
