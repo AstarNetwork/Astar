@@ -178,16 +178,33 @@
 <span id="177">177</span>
 <span id="178">178</span>
 <span id="179">179</span>
+<span id="180">180</span>
+<span id="181">181</span>
+<span id="182">182</span>
+<span id="183">183</span>
+<span id="184">184</span>
+<span id="185">185</span>
+<span id="186">186</span>
+<span id="187">187</span>
+<span id="188">188</span>
+<span id="189">189</span>
+<span id="190">190</span>
+<span id="191">191</span>
+<span id="192">192</span>
+<span id="193">193</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Astar chain specifications.</span>
 
 <span class="kw">use</span> <span class="ident">astar_runtime</span>::{
-    <span class="ident">wasm_binary_unwrap</span>, <span class="ident">AccountId</span>, <span class="ident">AuraId</span>, <span class="ident">Balance</span>, <span class="ident">BaseFeeConfig</span>, <span class="ident">EVMConfig</span>, <span class="ident">ParachainInfoConfig</span>,
-    <span class="ident">Precompiles</span>, <span class="ident">Signature</span>, <span class="ident">SystemConfig</span>, <span class="ident">ASTR</span>,
+    <span class="ident">wasm_binary_unwrap</span>, <span class="ident">AccountId</span>, <span class="ident">AuraId</span>, <span class="ident">Balance</span>, <span class="ident">BaseFeeConfig</span>, <span class="ident">BlockRewardConfig</span>, <span class="ident">EVMConfig</span>,
+    <span class="ident">ParachainInfoConfig</span>, <span class="ident">Precompiles</span>, <span class="ident">Signature</span>, <span class="ident">SystemConfig</span>, <span class="ident">ASTR</span>,
 };
 <span class="kw">use</span> <span class="ident">cumulus_primitives_core::ParaId</span>;
 <span class="kw">use</span> <span class="ident">sc_service::ChainType</span>;
 <span class="kw">use</span> <span class="ident">sp_core</span>::{<span class="ident">crypto::Ss58Codec</span>, <span class="ident">sr25519</span>, <span class="ident">Pair</span>, <span class="ident">Public</span>};
-<span class="kw">use</span> <span class="ident">sp_runtime::traits</span>::{<span class="ident">IdentifyAccount</span>, <span class="ident">Verify</span>};
+<span class="kw">use</span> <span class="ident">sp_runtime</span>::{
+    <span class="ident">traits</span>::{<span class="ident">IdentifyAccount</span>, <span class="ident">Verify</span>},
+    <span class="ident">Perbill</span>,
+};
 
 <span class="kw">use</span> <span class="kw">super</span>::{<span class="ident">get_from_seed</span>, <span class="ident">Extensions</span>};
 
@@ -306,6 +323,17 @@
         },
         <span class="ident">parachain_info</span>: <span class="ident">ParachainInfoConfig</span> { <span class="ident">parachain_id</span> },
         <span class="ident">balances</span>: <span class="ident">astar_runtime::BalancesConfig</span> { <span class="ident">balances</span> },
+        <span class="ident">block_reward</span>: <span class="ident">BlockRewardConfig</span> {
+            <span class="comment">// Make sure sum is 100</span>
+            <span class="ident">reward_config</span>: <span class="ident">pallet_block_reward::RewardDistributionConfig</span> {
+                <span class="ident">base_treasury_percent</span>: <span class="ident">Perbill::from_percent</span>(<span class="number">10</span>),
+                <span class="ident">base_staker_percent</span>: <span class="ident">Perbill::from_percent</span>(<span class="number">20</span>),
+                <span class="ident">dapps_percent</span>: <span class="ident">Perbill::from_percent</span>(<span class="number">20</span>),
+                <span class="ident">collators_percent</span>: <span class="ident">Perbill::from_percent</span>(<span class="number">5</span>),
+                <span class="ident">adjustable_percent</span>: <span class="ident">Perbill::from_percent</span>(<span class="number">45</span>),
+                <span class="ident">ideal_dapps_staking_tvl</span>: <span class="ident">Perbill::from_percent</span>(<span class="number">40</span>),
+            },
+        },
         <span class="ident">vesting</span>: <span class="ident">astar_runtime::VestingConfig</span> { <span class="ident">vesting</span>: <span class="macro">vec!</span>[] },
         <span class="ident">session</span>: <span class="ident">astar_runtime::SessionConfig</span> {
             <span class="ident">keys</span>: <span class="ident">authorities</span>
