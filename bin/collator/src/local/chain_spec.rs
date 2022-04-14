@@ -59,8 +59,8 @@ pub fn development_config() -> ChainSpec {
                     get_account_id_from_seed::<sr25519::Public>("Ferdie"),
                     // Arrakis.TEST account in MetaMask
                     // Import known test account with private key
-                    // 0x0261726d7f71ccf1956d61ccc2b7ec6a4d8b34c60889a8765d39e1840124cd39
-                    AccountId::from_ss58check("5Gbgok6b2HRpPDm7vSEDffBDsLNmAiFEgRSZcLePVYqKqT3i")
+                    // 0x81f75e4b748c4c5b25b49d0ea708224e10a6563e8f2d3dcf8ed454269ec1cadc
+                    AccountId::from_ss58check("5Fu9Byna3AeNppnQFJuhgVCYJEqjhH5qkQP5KTHK7X8eCv76")
                         .unwrap(),
                 ],
             )
