@@ -7,7 +7,7 @@
 use codec::{Decode, Encode};
 use frame_support::{
     construct_runtime, parameter_types,
-    traits::{Contains, Currency, FindAuthor, Get, Imbalance, OnRuntimeUpgrade, OnUnbalanced},
+    traits::{Contains, Currency, FindAuthor, Get, Imbalance, OnUnbalanced},
     weights::{
         constants::{BlockExecutionWeight, ExtrinsicBaseWeight, WEIGHT_PER_SECOND},
         DispatchClass, Weight, WeightToFeeCoefficient, WeightToFeeCoefficients,
@@ -87,7 +87,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("astar"),
     impl_name: create_runtime_str!("astar"),
     authoring_version: 1,
-    spec_version: 12,
+    spec_version: 13,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 2,
@@ -751,46 +751,7 @@ pub type Executive = frame_executive::Executive<
     frame_system::ChainContext<Runtime>,
     Runtime,
     AllPalletsWithSystem,
-    (FestivalReset,),
 >;
-
-pub struct FestivalReset;
-impl OnRuntimeUpgrade for FestivalReset {
-    #[cfg(feature = "try-runtime")]
-    fn pre_upgrade() -> Result<(), &'static str> {
-        pallet_dapps_staking::migrations::festival_end::pre_migrate::<Runtime>()
-    }
-
-    fn on_runtime_upgrade() -> frame_support::weights::Weight {
-        // TODO: discuss these params on sync & with community
-        let mut reward_config = pallet_block_reward::RewardDistributionConfig {
-            base_treasury_percent: Perbill::from_percent(40),
-            base_staker_percent: Perbill::from_rational(495u32, 1000u32),
-            dapps_percent: Perbill::from_rational(5u32, 1000u32),
-            collators_percent: Perbill::from_percent(10),
-            adjustable_percent: Perbill::from_percent(0),
-            ideal_dapps_staking_tvl: Perbill::from_percent(0),
-        };
-        // This HAS to be tested prior to update - we need to ensure that config is consistent
-        #[cfg(feature = "try-runtime")]
-        assert!(reward_config.is_consistent());
-
-        // This should never execute but we need to have code in place that ensures config is consistent
-        if !reward_config.is_consistent() {
-            reward_config = Default::default();
-        }
-        pallet_block_reward::RewardDistributionConfigStorage::<Runtime>::put(reward_config);
-
-        pallet_dapps_staking::migrations::festival_end::on_runtime_upgrade::<Runtime>(
-            MAXIMUM_BLOCK_WEIGHT / 5,
-        )
-    }
-
-    #[cfg(feature = "try-runtime")]
-    fn post_upgrade() -> Result<(), &'static str> {
-        pallet_dapps_staking::migrations::festival_end::post_migrate::<Runtime>()
-    }
-}
 
 impl fp_self_contained::SelfContainedCall for Call {
     type SignedInfo = H160;
