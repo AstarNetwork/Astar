@@ -31,7 +31,7 @@ pub fn run() -> Result<(), Error> {
             };
             println!("{}", parachain_account);
         }
-        Some(Subcommand::AssetId(cmd)) => {}
+        Some(Subcommand::AssetId(_cmd)) => {}
         None => {}
     }
     Ok(())
