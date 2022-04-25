@@ -116,7 +116,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("shibuya"),
     impl_name: create_runtime_str!("shibuya"),
     authoring_version: 1,
-    spec_version: 43,
+    spec_version: 44,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 2,
@@ -892,9 +892,10 @@ impl OnRuntimeUpgrade for InitRewardConfigSettings {
         pallet_block_reward::RewardDistributionConfigStorage::<Runtime>::put(reward_config);
 
         // Do some storage cleanup for dapps-staking so we can remove these DB entries in the future
-        pallet_dapps_staking::MigrationStateV2::<Runtime>::kill();
-        pallet_dapps_staking::MigrationStateV3::<Runtime>::kill();
-        pallet_dapps_staking::MigrationUndergoingUnbonding::<Runtime>::kill();
+        // TODO: this is not needed anymore?
+        // pallet_dapps_staking::MigrationStateV2::<Runtime>::kill();
+        // pallet_dapps_staking::MigrationStateV3::<Runtime>::kill();
+        // pallet_dapps_staking::MigrationUndergoingUnbonding::<Runtime>::kill();
 
         <Runtime as frame_system::pallet::Config>::DbWeight::get().writes(4)
     }
