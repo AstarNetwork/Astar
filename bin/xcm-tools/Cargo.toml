@@ -12,6 +12,7 @@ path = "src/main.rs"
 
 [dependencies]
 clap = { version = "3.0", features = ["derive"] }
+sp-core = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.17" }
 xcm = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.17" }
 xcm-builder = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.17" }
 xcm-executor = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.17" }

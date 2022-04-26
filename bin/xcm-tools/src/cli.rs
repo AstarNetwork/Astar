@@ -30,9 +30,7 @@ pub struct ParachainAccountCmd {
 /// Helper that prints AssetId for sibling parachain asset.
 #[derive(Debug, clap::Parser)]
 pub struct AssetIdCmd {
-    /// External ParaId.
-    pub parachain_id: u32,
-
-    /// External AssetId.
-    pub asset_id: u32,
+    /// External AssetId [relay by default].
+    #[clap(default_value = "340282366920938463463374607431768211455")]
+    pub asset_id: u128,
 }
