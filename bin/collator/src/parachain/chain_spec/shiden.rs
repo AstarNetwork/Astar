@@ -5,6 +5,7 @@ use sc_service::ChainType;
 use shiden_runtime::{
     wasm_binary_unwrap, AccountId, AuraId, Balance, BaseFeeConfig, BlockRewardConfig, EVMConfig,
     ParachainInfoConfig, Precompiles, Signature, SystemConfig, SDN,
+    CouncilConfig, TechnicalCommitteeConfig, DemocracyConfig,
 };
 use sp_core::{sr25519, Pair, Public};
 
@@ -134,6 +135,20 @@ fn make_genesis(
             sp_runtime::Permill::from_parts(125_000),
         ),
         ethereum: Default::default(),
+        // TODO: proper Genesis config
+        council: CouncilConfig {
+			members: vec![get_account_id_from_seed::<sr25519::Public>("Alice"),
+			get_account_id_from_seed::<sr25519::Public>("Bob"),
+			get_account_id_from_seed::<sr25519::Public>("Charlie")],
+			phantom: Default::default(),
+		},
+		technical_committee: TechnicalCommitteeConfig {
+			members: vec![get_account_id_from_seed::<sr25519::Public>("Alice"),
+			get_account_id_from_seed::<sr25519::Public>("Bob"),
+			get_account_id_from_seed::<sr25519::Public>("Charlie")],
+			phantom: Default::default(),
+		},
+		democracy: DemocracyConfig::default(),
     }
 }
 

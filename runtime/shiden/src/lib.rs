@@ -7,7 +7,10 @@
 use codec::{Decode, Encode};
 use frame_support::{
     construct_runtime, parameter_types,
-    traits::{Contains, Currency, FindAuthor, Get, Imbalance, OnRuntimeUpgrade, OnUnbalanced},
+    traits::{
+        Contains, Currency, FindAuthor, Get, Imbalance, OnRuntimeUpgrade, OnUnbalanced, EnsureOneOf,
+        EqualPrivilegeOnly, ConstU128,
+    },
     weights::{
         constants::{BlockExecutionWeight, ExtrinsicBaseWeight, WEIGHT_PER_SECOND},
         DispatchClass, Weight, WeightToFeeCoefficient, WeightToFeeCoefficients,
@@ -22,7 +25,10 @@ use pallet_transaction_payment::{
 };
 use polkadot_runtime_common::{BlockHashCount, RocksDbWeight};
 use sp_api::impl_runtime_apis;
-use sp_core::{OpaqueMetadata, H160, H256, U256};
+use sp_core::{
+    u32_trait::{_1, _2, _3, _5},
+    OpaqueMetadata, H160, H256, U256,
+};
 use sp_inherents::{CheckInherentsResult, InherentData};
 use sp_runtime::{
     create_runtime_str, generic, impl_opaque_keys,
@@ -266,6 +272,25 @@ impl pallet_custom_signatures::Config for Runtime {
     type CallFee = CallFee;
     type OnChargeTransaction = ToStakingPot;
     type UnsignedPriority = EcdsaUnsignedPriority;
+}
+
+parameter_types! {
+	pub MaximumSchedulerWeight: Weight = NORMAL_DISPATCH_RATIO * RuntimeBlockWeights::get().max_block;
+    pub const MaxScheduledPerBlock: u32 = 50;
+}
+
+impl pallet_scheduler::Config for Runtime {
+	type Event = Event;
+	type Origin = Origin;
+	type PalletsOrigin = OriginCaller;
+	type Call = Call;
+	type MaximumWeight = MaximumSchedulerWeight;
+	type ScheduleOrigin = frame_system::EnsureRoot<AccountId>;
+	type MaxScheduledPerBlock = MaxScheduledPerBlock;
+	type WeightInfo = pallet_scheduler::weights::SubstrateWeight<Runtime>;
+	type OriginPrivilegeCmp = EqualPrivilegeOnly;
+	type PreimageProvider = ();
+	type NoPreimagePostponement = ();
 }
 
 parameter_types! {
@@ -668,6 +693,119 @@ impl pallet_ethereum::Config for Runtime {
     type StateRoot = pallet_ethereum::IntermediateStateRoot<Self>;
 }
 
+parameter_types! {
+	pub CouncilMotionDuration: BlockNumber = 3 * DAYS;  // TODO: Decide default motion duration. Polkadot - 7days, Moonbeam - 3days
+	pub const CouncilMaxProposals: u32 = 100;
+	pub const CouncilMaxMembers: u32 = 100;
+}
+
+type CouncilCollective = pallet_collective::Instance1;
+impl pallet_collective::Config<CouncilCollective> for Runtime {
+	type Origin = Origin;
+	type Event = Event;
+	type Proposal = Call;
+	type MotionDuration = CouncilMotionDuration;
+	type MaxProposals = CouncilMaxProposals;
+	type MaxMembers = CouncilMaxMembers;
+	type DefaultVote = pallet_collective::PrimeDefaultVote;
+	type WeightInfo = pallet_collective::weights::SubstrateWeight<Runtime>; // TODO: use weights module
+}
+
+parameter_types! {
+	pub const TechnicalMotionDuration: BlockNumber = 3 * DAYS; // TODO: Decide default motion duration. Polkadot - 7days, Moonbeam - 3days
+	pub const TechnicalMaxProposals: u32 = 100;
+	pub const TechnicalMaxMembers: u32 = 100;
+}
+
+type TechnicalCommitteeCollective = pallet_collective::Instance2;
+impl pallet_collective::Config<TechnicalCommitteeCollective> for Runtime {
+	type Origin = Origin;
+	type Event = Event;
+	type Proposal = Call;
+	type MotionDuration = TechnicalMotionDuration;
+	type MaxProposals = TechnicalMaxProposals;
+	type MaxMembers = TechnicalMaxMembers;
+	type DefaultVote = pallet_collective::PrimeDefaultVote;
+	type WeightInfo = pallet_collective::weights::SubstrateWeight<Runtime>; // TODO: use weights module
+}
+
+parameter_types! {
+	pub LaunchPeriod: BlockNumber = 7 * DAYS; // TODO: Decide enactment period. Polkadot - 28 days, moonbeam - 7 days
+	pub VotingPeriod: BlockNumber = 14 * DAYS; // TODO: Decide voting period. Polkadot - 28 days, moonbeam - 14 days
+	pub FastTrackVotingPeriod: BlockNumber = 1 * DAYS; // TODO: Decide fast track voting period. Polkadot - 3 hours, Moonbeam - 1 day
+	pub const MinimumDeposit: Balance = 100 * SDN; // TODO: Decides minimum deposit. Polkadot - 100 DOTs, Moonbeam - 400GRML
+	pub EnactmentPeriod: BlockNumber = 2 * DAYS; // TODO: Decide enactment period. Polkadot - 28 days, moonbeam - 2 days
+    pub VoteLockingPeriod: BlockNumber = 7 * DAYS; // TODO: Decide vote locking period. Polkadot - 28 days (same as enactment period), Moonbeam - 7 days
+	pub CooloffPeriod: BlockNumber = 7 * DAYS;
+	pub const InstantAllowed: bool = true;
+	pub const MaxVotes: u32 = 100;
+	pub const MaxProposals: u32 = 100;
+}
+
+impl pallet_democracy::Config for Runtime {
+	type Proposal = Call;
+	type Event = Event;
+	type Currency = Balances;
+	type EnactmentPeriod = EnactmentPeriod;
+	type LaunchPeriod = LaunchPeriod;
+	type VotingPeriod = VotingPeriod;
+	type VoteLockingPeriod = VoteLockingPeriod;
+	type MinimumDeposit = MinimumDeposit;
+	/// A straight majority of the council can decide what their next motion is.
+	type ExternalOrigin = EnsureOneOf<
+		pallet_collective::EnsureProportionAtLeast<_1, _2, AccountId, CouncilCollective>,
+		frame_system::EnsureRoot<AccountId>,
+	>;
+    /// A 60% super-majority can have the next scheduled referendum be a straight majority-carries vote.
+	type ExternalMajorityOrigin = EnsureOneOf<
+		pallet_collective::EnsureProportionAtLeast<_3, _5, AccountId, CouncilCollective>,
+		frame_system::EnsureRoot<AccountId>,
+	>;
+    /// A unanimous council can have the next scheduled referendum be a straight default-carries
+	/// (NTB) vote.
+	type ExternalDefaultOrigin = EnsureOneOf<
+		pallet_collective::EnsureProportionAtLeast<_1, _1, AccountId, CouncilCollective>,
+		frame_system::EnsureRoot<AccountId>,
+	>;
+	/// Two thirds of the technical committee can have an `ExternalMajority/ExternalDefault` vote
+	/// be tabled immediately and with a shorter voting/enactment period.
+	type FastTrackOrigin = EnsureOneOf<
+		pallet_collective::EnsureProportionAtLeast<_2, _3, AccountId, TechnicalCommitteeCollective>,
+		frame_system::EnsureRoot<AccountId>,
+	>;
+	type InstantOrigin = EnsureOneOf<
+		pallet_collective::EnsureProportionAtLeast<_1, _1, AccountId, TechnicalCommitteeCollective>,
+		frame_system::EnsureRoot<AccountId>,
+	>;
+    type InstantAllowed = InstantAllowed;
+    type FastTrackVotingPeriod = FastTrackVotingPeriod;
+    // To cancel a proposal which has been passed, 2/3 of the council must agree to it.
+	type CancellationOrigin = EnsureOneOf<
+		pallet_collective::EnsureProportionAtLeast<_2, _3, AccountId, CouncilCollective>,
+		frame_system::EnsureRoot<AccountId>,
+	>;
+	// To cancel a proposal before it has been passed, the technical committee must be unanimous or
+	// Root must agree.
+	type CancelProposalOrigin = EnsureOneOf<
+		pallet_collective::EnsureProportionAtLeast<_1, _1, AccountId, TechnicalCommitteeCollective>,
+		frame_system::EnsureRoot<AccountId>,
+	>;
+	type BlacklistOrigin = frame_system::EnsureRoot<AccountId>;
+	// Any single technical committee member may veto a coming council proposal, however they can
+	// only do it once and it lasts only for the cooloff period.
+	type VetoOrigin = pallet_collective::EnsureMember<AccountId, TechnicalCommitteeCollective>;
+	type CooloffPeriod = CooloffPeriod;
+    // The amount of balance that must be deposited per byte of preimage stored.
+	type PreimageByteDeposit = ConstU128<{ deposit(0, 1) }>; // TODO: decide preimage byte deposit fee
+	type Slash = ();
+	type Scheduler = Scheduler;
+	type MaxVotes = MaxVotes;
+	type OperationalPreimageOrigin = pallet_collective::EnsureMember<AccountId, CouncilCollective>;
+	type PalletsOrigin = OriginCaller;
+	type WeightInfo = pallet_democracy::weights::SubstrateWeight<Runtime>; // TODO: use weights module
+	type MaxProposals = MaxProposals;
+}
+
 impl pallet_sudo::Config for Runtime {
     type Event = Event;
     type Call = Call;
@@ -684,6 +822,7 @@ construct_runtime!(
         Identity: pallet_identity::{Pallet, Call, Storage, Event<T>} = 12,
         Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent} = 13,
         Multisig: pallet_multisig::{Pallet, Call, Storage, Event<T>} = 14,
+        Scheduler: pallet_scheduler::{Pallet, Call, Storage, Event<T>} = 15,
 
         ParachainSystem: cumulus_pallet_parachain_system::{Pallet, Call, Storage, Inherent, Event<T>} = 20,
         ParachainInfo: parachain_info::{Pallet, Storage, Config} = 21,
@@ -704,6 +843,13 @@ construct_runtime!(
         Ethereum: pallet_ethereum::{Pallet, Call, Storage, Event, Origin, Config} = 61,
         EthCall: pallet_custom_signatures::{Pallet, Call, Event<T>, ValidateUnsigned} = 62,
         BaseFee: pallet_base_fee::{Pallet, Call, Storage, Config<T>, Event} = 63,
+
+        // reserve 70~ for contracts pallet
+
+        // governance stuff
+        Democracy: pallet_democracy::{Pallet, Call, Storage, Config<T>, Event<T>} = 80,
+		Council: pallet_collective::<Instance1>::{Pallet, Call, Storage, Origin<T>, Event<T>, Config<T>} = 81,
+		TechnicalCommittee: pallet_collective::<Instance2>::{Pallet, Call, Storage, Origin<T>, Event<T>, Config<T>} = 82,
 
         Sudo: pallet_sudo::{Pallet, Call, Storage, Event<T>, Config<T>} = 99,
     }
