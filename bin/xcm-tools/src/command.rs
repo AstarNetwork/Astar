@@ -3,6 +3,7 @@
 use crate::cli::*;
 
 use clap::Parser;
+use sp_core::hexdisplay::HexDisplay;
 use cumulus_primitives_core::ParaId;
 use polkadot_parachain::primitives::{AccountIdConversion, Sibling};
 use polkadot_primitives::v0::AccountId;
@@ -31,7 +32,14 @@ pub fn run() -> Result<(), Error> {
             };
             println!("{}", parachain_account);
         }
-        Some(Subcommand::AssetId(_cmd)) => {}
+        Some(Subcommand::AssetId(cmd)) => {
+            const ASSET_PRECOMPILE_ADDRESS_PREFIX: &[u8] = &[255u8; 4];
+            let mut data = [0u8; 20];
+            data[0..4].copy_from_slice(ASSET_PRECOMPILE_ADDRESS_PREFIX);
+            data[4..20].copy_from_slice(&cmd.asset_id.to_be_bytes());
+            println!("pallet_assets: {}", cmd.asset_id);
+            println!("EVM XC20: 0x{}", HexDisplay::from(&data));
+        }
         None => {}
     }
     Ok(())
