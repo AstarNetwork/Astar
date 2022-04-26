@@ -262,7 +262,7 @@ dependencies = [
  "pallet-balances",
  "pallet-base-fee",
  "pallet-block-reward",
- "pallet-collator-selection 3.0.0 (git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.17)",
+ "pallet-collator-selection 3.0.0 (git+https://github.com/AstarNetwork/astar-frame?tag=pallet-collator-selection-3.0.0/polkadot-v0.9.17)",
  "pallet-collective",
  "pallet-custom-signatures",
  "pallet-dapps-staking 3.2.3",
@@ -5715,7 +5715,7 @@ dependencies = [
 [[package]]
 name = "pallet-collator-selection"
 version = "3.0.0"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.17#bd4a653219194eccbb64313d7607dc5fc3260679"
+source = "git+https://github.com/AstarNetwork/astar-frame?tag=pallet-collator-selection-3.0.0/polkadot-v0.9.17#85a84a9d1e6bb56dc6cd085197c058040841e921"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -5724,7 +5724,7 @@ dependencies = [
  "pallet-authorship",
  "pallet-session",
  "parity-scale-codec",
- "rand 0.8.5",
+ "rand 0.7.3",
  "scale-info",
  "serde",
  "sp-runtime",
@@ -5856,7 +5856,7 @@ dependencies = [
 [[package]]
 name = "pallet-custom-signatures"
 version = "4.3.0"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.17#bd4a653219194eccbb64313d7607dc5fc3260679"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.17#688d8335e541b0e17cbf0fe3920d8a79cd226672"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -6030,7 +6030,7 @@ dependencies = [
 [[package]]
 name = "pallet-evm-precompile-assets-erc20"
 version = "0.2.0"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=feature/xcmp-assets#d9ea85e92a2fce9fdbbacad00898ef1d1d364112"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.17#688d8335e541b0e17cbf0fe3920d8a79cd226672"
 dependencies = [
  "fp-evm",
  "frame-support",
@@ -6715,7 +6715,7 @@ dependencies = [
 [[package]]
 name = "pallet-vesting"
 version = "4.0.0-dev"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.17#bd4a653219194eccbb64313d7607dc5fc3260679"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.17#688d8335e541b0e17cbf0fe3920d8a79cd226672"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -8384,7 +8384,7 @@ dependencies = [
 [[package]]
 name = "precompile-utils"
 version = "0.2.0"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=feature/xcmp-assets#d9ea85e92a2fce9fdbbacad00898ef1d1d364112"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.17#688d8335e541b0e17cbf0fe3920d8a79cd226672"
 dependencies = [
  "fp-evm",
  "frame-support",
@@ -8393,7 +8393,7 @@ dependencies = [
  "num_enum",
  "pallet-evm",
  "parity-scale-codec",
- "precompile-utils-macro 0.1.0 (git+https://github.com/AstarNetwork/astar-frame?branch=feature/xcmp-assets)",
+ "precompile-utils-macro 0.1.0 (git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.17)",
  "sha3 0.9.1",
  "sp-core",
  "sp-io",
@@ -8452,7 +8452,7 @@ dependencies = [
 [[package]]
 name = "precompile-utils-macro"
 version = "0.1.0"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=feature/xcmp-assets#d9ea85e92a2fce9fdbbacad00898ef1d1d364112"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.17#688d8335e541b0e17cbf0fe3920d8a79cd226672"
 dependencies = [
  "num_enum",
  "proc-macro2",
@@ -11837,9 +11837,9 @@ dependencies = [
 
 [[package]]
 name = "tinyvec"
-version = "1.5.1"
+version = "1.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2c1c1d5a42b6245520c249549ec267180beaffcc0615401ac8e31853d4b6d8d2"
+checksum = "87cc5ceb3875bb20c2890005a4e226a4651264a5c75edb2421b52861a0a0cb50"
 dependencies = [
  "tinyvec_macros",
 ]
