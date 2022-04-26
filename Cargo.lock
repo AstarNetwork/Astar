@@ -5872,7 +5872,7 @@ dependencies = [
 [[package]]
 name = "pallet-dapps-staking"
 version = "3.3.0"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=feature/compound-reward#bddd701c376260e2c0b900d5e426f15cca4035af"
+source = "git+https://github.com/AstarNetwork/astar-frame?tag=pallet-dapps-staking-3.3.0/polkadot-v0.9.17#baf73169cc107fd301d26211a8c78832bef50edf"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -6354,7 +6354,7 @@ dependencies = [
 [[package]]
 name = "pallet-precompile-dapps-staking"
 version = "3.3.0"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=feature/compound-reward#bddd701c376260e2c0b900d5e426f15cca4035af"
+source = "git+https://github.com/AstarNetwork/astar-frame?tag=pallet-dapps-staking-3.3.0/polkadot-v0.9.17#baf73169cc107fd301d26211a8c78832bef50edf"
 dependencies = [
  "fp-evm",
  "frame-support",
@@ -6364,7 +6364,7 @@ dependencies = [
  "pallet-dapps-staking",
  "pallet-evm",
  "parity-scale-codec",
- "precompile-utils 0.1.0 (git+https://github.com/AstarNetwork/astar-frame?branch=feature/compound-reward)",
+ "precompile-utils 0.2.0",
  "scale-info",
  "sp-core",
  "sp-runtime",
@@ -8301,7 +8301,7 @@ dependencies = [
 [[package]]
 name = "precompile-utils"
 version = "0.1.0"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=feature/compound-reward#bddd701c376260e2c0b900d5e426f15cca4035af"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=feature/xcmp-assets#ceacb032de373409213a66af413c31c52f3f60f8"
 dependencies = [
  "fp-evm",
  "frame-support",
@@ -8310,7 +8310,7 @@ dependencies = [
  "num_enum",
  "pallet-evm",
  "parity-scale-codec",
- "precompile-utils-macro 0.1.0 (git+https://github.com/AstarNetwork/astar-frame?branch=feature/compound-reward)",
+ "precompile-utils-macro 0.1.0 (git+https://github.com/AstarNetwork/astar-frame?branch=feature/xcmp-assets)",
  "sha3 0.9.1",
  "sp-core",
  "sp-io",
@@ -8321,7 +8321,7 @@ dependencies = [
 [[package]]
 name = "precompile-utils"
 version = "0.2.0"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.17#688d8335e541b0e17cbf0fe3920d8a79cd226672"
+source = "git+https://github.com/AstarNetwork/astar-frame?tag=pallet-dapps-staking-3.3.0/polkadot-v0.9.17#baf73169cc107fd301d26211a8c78832bef50edf"
 dependencies = [
  "fp-evm",
  "frame-support",
@@ -8330,12 +8330,24 @@ dependencies = [
  "num_enum",
  "pallet-evm",
  "parity-scale-codec",
- "precompile-utils-macro 0.1.0 (git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.17)",
+ "precompile-utils-macro 0.1.0 (git+https://github.com/AstarNetwork/astar-frame?tag=pallet-dapps-staking-3.3.0/polkadot-v0.9.17)",
  "sha3 0.9.1",
  "sp-core",
  "sp-io",
  "sp-std",
  "xcm",
+]
+
+[[package]]
+name = "precompile-utils-macro"
+version = "0.1.0"
+source = "git+https://github.com/AstarNetwork/astar-frame?tag=pallet-dapps-staking-3.3.0/polkadot-v0.9.17#baf73169cc107fd301d26211a8c78832bef50edf"
+dependencies = [
+ "num_enum",
+ "proc-macro2",
+ "quote",
+ "sha3 0.8.2",
+ "syn",
 ]
 
 [[package]]
@@ -8354,18 +8366,6 @@ dependencies = [
 name = "precompile-utils-macro"
 version = "0.1.0"
 source = "git+https://github.com/AstarNetwork/astar-frame?tag=pallet-evm-precompile-substrate-ecdsa-1.0.0/polkadot-v0.9.17#8accbc17848e27b14df17f67185ee39b09878c85"
-dependencies = [
- "num_enum",
- "proc-macro2",
- "quote",
- "sha3 0.8.2",
- "syn",
-]
-
-[[package]]
-name = "precompile-utils-macro"
-version = "0.1.0"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=feature/compound-reward#bddd701c376260e2c0b900d5e426f15cca4035af"
 dependencies = [
  "num_enum",
  "proc-macro2",
