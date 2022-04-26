@@ -37,6 +37,14 @@
 <span id="36">36</span>
 <span id="37">37</span>
 <span id="38">38</span>
+<span id="39">39</span>
+<span id="40">40</span>
+<span id="41">41</span>
+<span id="42">42</span>
+<span id="43">43</span>
+<span id="44">44</span>
+<span id="45">45</span>
+<span id="46">46</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Astar XCM CLI handlers.</span>
 
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::cli</span>::<span class="kw-2">*</span>;
@@ -45,6 +53,7 @@
 <span class="kw">use</span> <span class="ident">cumulus_primitives_core::ParaId</span>;
 <span class="kw">use</span> <span class="ident">polkadot_parachain::primitives</span>::{<span class="ident">AccountIdConversion</span>, <span class="ident">Sibling</span>};
 <span class="kw">use</span> <span class="ident">polkadot_primitives::v0::AccountId</span>;
+<span class="kw">use</span> <span class="ident">sp_core::hexdisplay::HexDisplay</span>;
 <span class="kw">use</span> <span class="ident">xcm::latest::prelude</span>::<span class="kw-2">*</span>;
 <span class="kw">use</span> <span class="ident">xcm_builder::SiblingParachainConvertsVia</span>;
 <span class="kw">use</span> <span class="ident">xcm_executor::traits::Convert</span>;
@@ -70,7 +79,14 @@
             };
             <span class="macro">println!</span>(<span class="string">&quot;{}&quot;</span>, <span class="ident">parachain_account</span>);
         }
-        <span class="prelude-val">Some</span>(<span class="ident">Subcommand::AssetId</span>(<span class="ident">_cmd</span>)) =&gt; {}
+        <span class="prelude-val">Some</span>(<span class="ident">Subcommand::AssetId</span>(<span class="ident">cmd</span>)) =&gt; {
+            <span class="kw">const</span> <span class="ident">ASSET_PRECOMPILE_ADDRESS_PREFIX</span>: <span class="kw-2">&amp;</span>[<span class="ident">u8</span>] <span class="op">=</span> <span class="kw-2">&amp;</span>[<span class="number">255u8</span>; <span class="number">4</span>];
+            <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">data</span> <span class="op">=</span> [<span class="number">0u8</span>; <span class="number">20</span>];
+            <span class="ident">data</span>[<span class="number">0</span>..<span class="number">4</span>].<span class="ident">copy_from_slice</span>(<span class="ident">ASSET_PRECOMPILE_ADDRESS_PREFIX</span>);
+            <span class="ident">data</span>[<span class="number">4</span>..<span class="number">20</span>].<span class="ident">copy_from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">cmd</span>.<span class="ident">asset_id</span>.<span class="ident">to_be_bytes</span>());
+            <span class="macro">println!</span>(<span class="string">&quot;pallet_assets: {}&quot;</span>, <span class="ident">cmd</span>.<span class="ident">asset_id</span>);
+            <span class="macro">println!</span>(<span class="string">&quot;EVM XC20: 0x{}&quot;</span>, <span class="ident">HexDisplay::from</span>(<span class="kw-2">&amp;</span><span class="ident">data</span>));
+        }
         <span class="prelude-val">None</span> =&gt; {}
     }
     <span class="prelude-val">Ok</span>(())

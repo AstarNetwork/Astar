@@ -35,8 +35,6 @@
 <span id="34">34</span>
 <span id="35">35</span>
 <span id="36">36</span>
-<span id="37">37</span>
-<span id="38">38</span>
 </pre><pre class="rust"><code><span class="doccomment">/// Astar XCM tools.</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">clap::Parser</span>)]</span>
 <span class="attribute">#[<span class="ident">clap</span>(<span class="ident">subcommand_required</span> <span class="op">=</span> <span class="bool-val">true</span>)]</span>
@@ -69,11 +67,9 @@
 <span class="doccomment">/// Helper that prints AssetId for sibling parachain asset.</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">clap::Parser</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">AssetIdCmd</span> {
-    <span class="doccomment">/// External ParaId.</span>
-    <span class="kw">pub</span> <span class="ident">parachain_id</span>: <span class="ident">u32</span>,
-
-    <span class="doccomment">/// External AssetId.</span>
-    <span class="kw">pub</span> <span class="ident">asset_id</span>: <span class="ident">u32</span>,
+    <span class="doccomment">/// External AssetId [relay by default].</span>
+    <span class="attribute">#[<span class="ident">clap</span>(<span class="ident">default_value</span> <span class="op">=</span> <span class="string">&quot;340282366920938463463374607431768211455&quot;</span>)]</span>
+    <span class="kw">pub</span> <span class="ident">asset_id</span>: <span class="ident">u128</span>,
 }
 </code></pre></div>
 </section><section id="search" class="content hidden"></section><div id="rustdoc-vars" data-root-path="../../" data-current-crate="xcm_tools" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.59.0-nightly (db9d361a4 2021-11-28)" ></div>
