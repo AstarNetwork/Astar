@@ -7,9 +7,7 @@
 use codec::{Decode, Encode};
 use frame_support::{
     construct_runtime, parameter_types,
-    traits::{
-        Contains, Currency, FindAuthor, Get, Imbalance, Nothing, OnRuntimeUpgrade, OnUnbalanced,
-    },
+    traits::{Contains, Currency, FindAuthor, Get, Imbalance, Nothing, OnUnbalanced},
     weights::{
         constants::{BlockExecutionWeight, ExtrinsicBaseWeight, WEIGHT_PER_SECOND},
         DispatchClass, Weight, WeightToFeeCoefficient, WeightToFeeCoefficients,
@@ -116,7 +114,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("shibuya"),
     impl_name: create_runtime_str!("shibuya"),
     authoring_version: 1,
-    spec_version: 43,
+    spec_version: 44,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 2,
@@ -864,41 +862,7 @@ pub type Executive = frame_executive::Executive<
     frame_system::ChainContext<Runtime>,
     Runtime,
     AllPalletsWithSystem,
-    (InitRewardConfigSettings,),
 >;
-
-// Migration for fixing era length in dapps staking.
-pub struct InitRewardConfigSettings;
-
-impl OnRuntimeUpgrade for InitRewardConfigSettings {
-    fn on_runtime_upgrade() -> frame_support::weights::Weight {
-        // TODO: discuss these params on sync & with community
-        let mut reward_config = pallet_block_reward::RewardDistributionConfig {
-            base_treasury_percent: Perbill::from_percent(10),
-            base_staker_percent: Perbill::from_percent(20),
-            dapps_percent: Perbill::from_percent(15),
-            collators_percent: Perbill::from_percent(10),
-            adjustable_percent: Perbill::from_percent(45),
-            ideal_dapps_staking_tvl: Perbill::from_percent(40),
-        };
-        // This HAS to be tested prior to update - we need to ensure that config is consistent
-        #[cfg(feature = "try-runtime")]
-        assert!(reward_config.is_consistent());
-
-        // This should never execute but we need to have code in place that ensures config is consistent
-        if !reward_config.is_consistent() {
-            reward_config = Default::default();
-        }
-        pallet_block_reward::RewardDistributionConfigStorage::<Runtime>::put(reward_config);
-
-        // Do some storage cleanup for dapps-staking so we can remove these DB entries in the future
-        pallet_dapps_staking::MigrationStateV2::<Runtime>::kill();
-        pallet_dapps_staking::MigrationStateV3::<Runtime>::kill();
-        pallet_dapps_staking::MigrationUndergoingUnbonding::<Runtime>::kill();
-
-        <Runtime as frame_system::pallet::Config>::DbWeight::get().writes(4)
-    }
-}
 
 impl fp_self_contained::SelfContainedCall for Call {
     type SignedInfo = H160;
