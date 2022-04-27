@@ -60,6 +60,9 @@ frame-system = { git = "https://github.com/paritytech/substrate", branch = "polk
 frame-system-rpc-runtime-api = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.17", default-features = false }
 pallet-transaction-payment = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.17", default-features = false }
 pallet-transaction-payment-rpc-runtime-api = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.17", default-features = false }
+pallet-scheduler = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.17", default-features = false }
+pallet-collective = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.17", default-features = false }
+pallet-democracy = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.17", default-features = false }
 
 # cumulus dependencies
 cumulus-primitives-core = { git = "https://github.com/paritytech/cumulus", branch = "polkadot-v0.9.17", default-features = false }
@@ -74,9 +77,9 @@ parachain-info = { git = "https://github.com/paritytech/cumulus", branch = "polk
 pallet-collator-selection = { git = "https://github.com/paritytech/cumulus", branch = "polkadot-v0.9.17", default-features = false }
 
 # polkadot dependencies
-polkadot-parachain = { git = "https://github.com/paritytech/polkadot", default-features = false , branch = "release-v0.9.17" }
-polkadot-primitives = { git = "https://github.com/paritytech/polkadot", default-features = false , branch = "release-v0.9.17" }
-polkadot-runtime-common = { git = "https://github.com/paritytech/polkadot", default-features = false , branch = "release-v0.9.17" }
+polkadot-parachain = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "release-v0.9.17" }
+polkadot-primitives = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "release-v0.9.17" }
+polkadot-runtime-common = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "release-v0.9.17" }
 xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "release-v0.9.17" }
 xcm-builder = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "release-v0.9.17" }
 xcm-executor = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "release-v0.9.17" }
@@ -95,7 +98,6 @@ pallet-evm-precompile-assets-erc20 = { git = "https://github.com/AstarNetwork/as
 hex-literal = { version = "0.3.1", optional = true }
 frame-benchmarking = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.17", default-features = false, optional = true }
 frame-system-benchmarking = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.17", default-features = false, optional = true }
-pallet-collective = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.17", default-features = false, optional = true }
 
 # try-runtime
 frame-try-runtime = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.17", default-features = false, optional = true }
@@ -161,6 +163,9 @@ std = [
     "pallet-transaction-payment/std",
     "pallet-transaction-payment-rpc-runtime-api/std",
     "pallet-xcm/std",
+    "pallet-scheduler/std",
+    "pallet-collective/std",
+    "pallet-democracy/std",
     "parachain-info/std",
     "polkadot-parachain/std",
     "polkadot-primitives/std",
@@ -191,7 +196,9 @@ runtime-benchmarks = [
     "pallet-block-reward/runtime-benchmarks",
     "pallet-balances/runtime-benchmarks",
     "pallet-timestamp/runtime-benchmarks",
+    "pallet-scheduler/runtime-benchmarks",
     "pallet-collective/runtime-benchmarks",
+    "pallet-democracy/runtime-benchmarks",
     "pallet-ethereum/runtime-benchmarks",
     "pallet-xcm/runtime-benchmarks",
     "xcm-builder/runtime-benchmarks",
@@ -211,5 +218,8 @@ try-runtime = [
     "pallet-transaction-payment/try-runtime",
     "pallet-utility/try-runtime",
     "pallet-vesting/try-runtime",
+    "pallet-scheduler/std",
+    "pallet-collective/std",
+    "pallet-democracy/std",
 ]
 
