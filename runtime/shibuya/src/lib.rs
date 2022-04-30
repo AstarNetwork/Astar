@@ -791,7 +791,7 @@ impl pallet_ethereum::Config for Runtime {
 }
 
 parameter_types! {
-	pub CouncilMotionDuration: BlockNumber = 3 * DAYS;  // TODO: Decide default motion duration. Polkadot - 7days, Moonbeam - 3days
+	pub CouncilMotionDuration: BlockNumber = 3 * DAYS;
 	pub const CouncilMaxProposals: u32 = 100;
 	pub const CouncilMaxMembers: u32 = 100;
 }
@@ -809,9 +809,9 @@ impl pallet_collective::Config<CouncilCollective> for Runtime {
 }
 
 parameter_types! {
-	pub const TechnicalMotionDuration: BlockNumber = 3 * DAYS; // TODO: Decide default motion duration. Polkadot - 7days, Moonbeam - 3days
-	pub const TechnicalMaxProposals: u32 = 100;
-	pub const TechnicalMaxMembers: u32 = 100;
+	pub const TechnicalCommitteeMotionDuration: BlockNumber = 3 * DAYS;
+	pub const TechnicalCommitteeMaxProposals: u32 = 100;
+	pub const TechnicalCommitteeMaxMembers: u32 = 100;
 }
 
 type TechnicalCommitteeCollective = pallet_collective::Instance2;
@@ -819,20 +819,20 @@ impl pallet_collective::Config<TechnicalCommitteeCollective> for Runtime {
 	type Origin = Origin;
 	type Event = Event;
 	type Proposal = Call;
-	type MotionDuration = TechnicalMotionDuration;
-	type MaxProposals = TechnicalMaxProposals;
-	type MaxMembers = TechnicalMaxMembers;
+	type MotionDuration = TechnicalCommitteeMotionDuration;
+	type MaxProposals = TechnicalCommitteeMaxProposals;
+	type MaxMembers = TechnicalCommitteeMaxMembers;
 	type DefaultVote = pallet_collective::PrimeDefaultVote;
 	type WeightInfo = pallet_collective::weights::SubstrateWeight<Runtime>;
 }
 
 parameter_types! {
-	pub LaunchPeriod: BlockNumber = 7 * DAYS; // TODO: Decide enactment period. Polkadot - 28 days, moonbeam - 7 days
-	pub VotingPeriod: BlockNumber = 14 * DAYS; // TODO: Decide voting period. Polkadot - 28 days, moonbeam - 14 days
-	pub FastTrackVotingPeriod: BlockNumber = 1 * DAYS; // TODO: Decide fast track voting period. Polkadot - 3 hours, Moonbeam - 1 day
-	pub const MinimumDeposit: Balance = 100 * SDN; // TODO: Decides minimum deposit. Polkadot - 100 DOTs, Moonbeam - 400GRML
-	pub EnactmentPeriod: BlockNumber = 2 * DAYS; // TODO: Decide enactment period. Polkadot - 28 days, moonbeam - 2 days
-    pub VoteLockingPeriod: BlockNumber = 7 * DAYS; // TODO: Decide vote locking period. Polkadot - 28 days (same as enactment period), Moonbeam - 7 days
+	pub LaunchPeriod: BlockNumber = 7 * DAYS;
+	pub VotingPeriod: BlockNumber = 14 * DAYS;
+	pub FastTrackVotingPeriod: BlockNumber = 1 * DAYS;
+	pub const MinimumDeposit: Balance = 100 * SDN;
+	pub EnactmentPeriod: BlockNumber = 2 * DAYS;
+    pub VoteLockingPeriod: BlockNumber = 7 * DAYS;
 	pub CooloffPeriod: BlockNumber = 7 * DAYS;
 	pub const InstantAllowed: bool = true;
 	pub const MaxVotes: u32 = 100;

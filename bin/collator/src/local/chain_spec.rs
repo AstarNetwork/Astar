@@ -143,18 +143,19 @@ fn testnet_genesis(
             key: Some(root_key),
         },
         council: CouncilConfig {
-			members: vec![get_account_id_from_seed::<sr25519::Public>("Alice"),
-			get_account_id_from_seed::<sr25519::Public>("Bob"),
-			get_account_id_from_seed::<sr25519::Public>("Charlie")],
-			phantom: Default::default(),
-		},
-		technical_committee: TechnicalCommitteeConfig {
-			members: vec![get_account_id_from_seed::<sr25519::Public>("Alice"),
-			get_account_id_from_seed::<sr25519::Public>("Bob"),
-			get_account_id_from_seed::<sr25519::Public>("Charlie")],
-			phantom: Default::default(),
-		},
-		democracy: DemocracyConfig::default(),
+        members: vec![get_account_id_from_seed::<sr25519::Public>("Alice"),
+            get_account_id_from_seed::<sr25519::Public>("Bob"),
+            get_account_id_from_seed::<sr25519::Public>("Charlie")],
+            phantom: Default::default(),
+        },
+        technical_committee: TechnicalCommitteeConfig {
+            members: vec![get_account_id_from_seed::<sr25519::Public>("Alice"),
+            get_account_id_from_seed::<sr25519::Public>("Bob"),
+            get_account_id_from_seed::<sr25519::Public>("Charlie")],
+            phantom: Default::default(),
+        },
+        democracy: DemocracyConfig::default(),
+        treasury: Default::default(),
     }
 }
 
