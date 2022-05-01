@@ -4,10 +4,9 @@ use cumulus_primitives_core::ParaId;
 use sc_service::ChainType;
 use shibuya_runtime::{
     wasm_binary_unwrap, AccountId, AuraConfig, AuraId, Balance, BalancesConfig, BaseFeeConfig,
-    BlockRewardConfig, CollatorSelectionConfig, EVMConfig, GenesisConfig, ParachainInfoConfig,
-    Precompiles, SessionConfig, SessionKeys, Signature, SudoConfig, SystemConfig, VestingConfig,
-    CouncilConfig, TechnicalCommitteeConfig, DemocracyConfig,
-    SDN,
+    BlockRewardConfig, CollatorSelectionConfig, CouncilConfig, DemocracyConfig, EVMConfig,
+    GenesisConfig, ParachainInfoConfig, Precompiles, SessionConfig, SessionKeys, Signature,
+    SudoConfig, SystemConfig, TechnicalCommitteeConfig, TreasuryConfig, VestingConfig, SDN,
 };
 use sp_core::{sr25519, Pair, Public};
 
@@ -138,18 +137,23 @@ fn make_genesis(
         ),
         ethereum: Default::default(),
         council: CouncilConfig {
-			members: vec![get_account_id_from_seed::<sr25519::Public>("Alice"),
-			get_account_id_from_seed::<sr25519::Public>("Bob"),
-			get_account_id_from_seed::<sr25519::Public>("Charlie")],
-			phantom: Default::default(),
-		},
-		technical_committee: TechnicalCommitteeConfig {
-			members: vec![get_account_id_from_seed::<sr25519::Public>("Alice"),
-			get_account_id_from_seed::<sr25519::Public>("Bob"),
-			get_account_id_from_seed::<sr25519::Public>("Charlie")],
-			phantom: Default::default(),
-		},
-		democracy: DemocracyConfig::default(),
+            members: vec![
+                get_account_id_from_seed::<sr25519::Public>("Alice"),
+                get_account_id_from_seed::<sr25519::Public>("Bob"),
+                get_account_id_from_seed::<sr25519::Public>("Charlie"),
+            ],
+            phantom: Default::default(),
+        },
+        technical_committee: TechnicalCommitteeConfig {
+            members: vec![
+                get_account_id_from_seed::<sr25519::Public>("Alice"),
+                get_account_id_from_seed::<sr25519::Public>("Bob"),
+                get_account_id_from_seed::<sr25519::Public>("Charlie"),
+            ],
+            phantom: Default::default(),
+        },
+        democracy: DemocracyConfig::default(),
+        treasury: TreasuryConfig::default(),
     }
 }
 

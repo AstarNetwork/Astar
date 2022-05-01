@@ -10,8 +10,7 @@ use codec::{Decode, Encode};
 use frame_support::{
     construct_runtime, parameter_types,
     traits::{
-        Currency, FindAuthor, Get, KeyOwnerProofSystem, Nothing,
-        EnsureOneOf, EqualPrivilegeOnly,
+        Currency, EnsureOneOf, EqualPrivilegeOnly, FindAuthor, Get, KeyOwnerProofSystem, Nothing,
     },
     weights::{
         constants::{RocksDbWeight, WEIGHT_PER_SECOND},
@@ -25,8 +24,9 @@ use pallet_evm::{FeeCalculator, Runner};
 use pallet_grandpa::{fg_primitives, AuthorityList as GrandpaAuthorityList};
 use sp_api::impl_runtime_apis;
 use sp_core::{
+    crypto::KeyTypeId,
     u32_trait::{_1, _2, _3, _5},
-    crypto::KeyTypeId, OpaqueMetadata, H160, H256, U256
+    OpaqueMetadata, H160, H256, U256,
 };
 use sp_runtime::{
     create_runtime_str, generic, impl_opaque_keys,
@@ -540,7 +540,7 @@ impl pallet_preimage::Config for Runtime {
 }
 
 parameter_types! {
-    pub CouncilMotionDuration: BlockNumber = 3 * DAYS;
+    pub CouncilMotionDuration: BlockNumber = 3 * MINUTES;
     pub const CouncilMaxProposals: u32 = 100;
     pub const CouncilMaxMembers: u32 = 100;
 }
@@ -558,7 +558,7 @@ impl pallet_collective::Config<CouncilCollective> for Runtime {
 }
 
 parameter_types! {
-    pub const TechnicalCommitteeMotionDuration: BlockNumber = 3 * DAYS;
+    pub const TechnicalCommitteeMotionDuration: BlockNumber = 3 * MINUTES;
     pub const TechnicalCommitteeMaxProposals: u32 = 100;
     pub const TechnicalCommitteeMaxMembers: u32 = 100;
 }
@@ -576,23 +576,10 @@ impl pallet_collective::Config<TechnicalCommitteeCollective> for Runtime {
 }
 
 parameter_types! {
-    pub LaunchPeriod: BlockNumber = 7 * DAYS;
-    pub VotingPeriod: BlockNumber = 14 * DAYS;
-    pub FastTrackVotingPeriod: BlockNumber = 1 * DAYS;
-    pub const MinimumDeposit: Balance = 7000 * AST;
-    pub EnactmentPeriod: BlockNumber = 2 * DAYS;
-    pub VoteLockingPeriod: BlockNumber = 7 * DAYS;
-    pub CooloffPeriod: BlockNumber = 7 * DAYS;
-    pub const InstantAllowed: bool = true;
-    pub const MaxVotes: u32 = 100;
-    pub const MaxProposals: u32 = 100;
-}
-
-parameter_types! {
     pub const ProposalBond: Permill = Permill::from_percent(5);
     pub const ProposalBondMinimum: Balance = 100 * AST;
     pub const ProposalBondMaximum: Balance = 500 * AST;
-    pub const SpendPeriod: BlockNumber = 24 * DAYS;
+    pub const SpendPeriod: BlockNumber = 5 * MINUTES;
     pub const Burn: Permill = Permill::from_percent(1);
     pub const MaxApprovals: u32 = 100;
 }
@@ -619,6 +606,19 @@ impl pallet_treasury::Config for Runtime {
     type SpendFunds = ();
     type MaxApprovals = MaxApprovals;
     type WeightInfo = pallet_treasury::weights::SubstrateWeight<Runtime>;
+}
+
+parameter_types! {
+    pub LaunchPeriod: BlockNumber = 1 * MINUTES;
+    pub VotingPeriod: BlockNumber = 3 * MINUTES;
+    pub FastTrackVotingPeriod: BlockNumber = 1 * MINUTES;
+    pub const MinimumDeposit: Balance = 7000 * AST;
+    pub EnactmentPeriod: BlockNumber = 5 * MINUTES;
+    pub VoteLockingPeriod: BlockNumber = 10 * MINUTES;
+    pub CooloffPeriod: BlockNumber = 10 * MINUTES;
+    pub const InstantAllowed: bool = true;
+    pub const MaxVotes: u32 = 100;
+    pub const MaxProposals: u32 = 100;
 }
 
 impl pallet_democracy::Config for Runtime {

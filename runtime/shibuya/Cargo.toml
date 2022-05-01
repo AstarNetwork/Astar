@@ -34,9 +34,11 @@ pallet-authorship = { git = "https://github.com/paritytech/substrate", branch = 
 pallet-aura = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.17", default-features = false }
 pallet-assets = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.17", default-features = false }
 pallet-balances = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.17", default-features = false }
+pallet-collective = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.17", default-features = false }
 pallet-contracts = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.17", default-features = false, features = ["unstable-interface"] }
 pallet-contracts-primitives = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.17", default-features = false }
 pallet-contracts-rpc-runtime-api = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.17", default-features = false }
+pallet-democracy = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.17", default-features = false }
 pallet-base-fee = { git = "https://github.com/AstarNetwork/frontier", branch = "polkadot-v0.9.17", default-features = false }
 pallet-ethereum = { git = "https://github.com/AstarNetwork/frontier", branch = "polkadot-v0.9.17", default-features = false }
 pallet-evm = { git = "https://github.com/AstarNetwork/frontier", branch = "polkadot-v0.9.17", default-features = false }
@@ -49,8 +51,11 @@ pallet-evm-precompile-simple = { git = "https://github.com/AstarNetwork/frontier
 pallet-evm-precompile-sha3fips = { git = "https://github.com/AstarNetwork/frontier", branch = "polkadot-v0.9.17", default-features = false }
 pallet-identity = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.17", default-features = false }
 pallet-multisig = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.17", default-features = false }
+pallet-preimage = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.17", default-features = false }
 pallet-randomness-collective-flip = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.17", default-features = false }
+pallet-scheduler = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.17", default-features = false }
 pallet-session = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.17", default-features = false }
+pallet-treasury = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.17", default-features = false }
 pallet-utility = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.17", default-features = false }
 pallet-timestamp = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.17", default-features = false }
 pallet-vesting = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.17", default-features = false }
@@ -60,9 +65,6 @@ frame-system = { git = "https://github.com/paritytech/substrate", branch = "polk
 frame-system-rpc-runtime-api = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.17", default-features = false }
 pallet-transaction-payment = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.17", default-features = false }
 pallet-transaction-payment-rpc-runtime-api = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.17", default-features = false }
-pallet-scheduler = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.17", default-features = false }
-pallet-collective = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.17", default-features = false }
-pallet-democracy = { git = "https://github.com/paritytech/substrate.git", branch = "polkadot-v0.9.17", default-features = false }
 
 # cumulus dependencies
 cumulus-primitives-core = { git = "https://github.com/paritytech/cumulus", branch = "polkadot-v0.9.17", default-features = false }
@@ -132,10 +134,12 @@ std = [
     "pallet-assets/std",
     "pallet-balances/std",
     "pallet-block-reward/std",
+    "pallet-collective/std",
     "pallet-contracts/std",
     "pallet-contracts-primitives/std",
     "pallet-contracts-rpc-runtime-api/std",
     "pallet-custom-signatures/std",
+    "pallet-democracy/std",
     "pallet-base-fee/std",
     "pallet-ethereum/std",
     "pallet-evm/std",
@@ -153,6 +157,8 @@ std = [
     "pallet-multisig/std",
     "pallet-randomness-collective-flip/std",
     "pallet-precompile-dapps-staking/std",
+    "pallet-preimage/std",
+    "pallet-scheduler/std",
     "pallet-session/std",
     "pallet-utility/std",
     "pallet-timestamp/std",
@@ -162,10 +168,8 @@ std = [
     "pallet-sudo/std",
     "pallet-transaction-payment/std",
     "pallet-transaction-payment-rpc-runtime-api/std",
+    "pallet-treasury/std",
     "pallet-xcm/std",
-    "pallet-scheduler/std",
-    "pallet-collective/std",
-    "pallet-democracy/std",
     "parachain-info/std",
     "polkadot-parachain/std",
     "polkadot-primitives/std",
@@ -196,9 +200,7 @@ runtime-benchmarks = [
     "pallet-block-reward/runtime-benchmarks",
     "pallet-balances/runtime-benchmarks",
     "pallet-timestamp/runtime-benchmarks",
-    "pallet-scheduler/runtime-benchmarks",
     "pallet-collective/runtime-benchmarks",
-    "pallet-democracy/runtime-benchmarks",
     "pallet-ethereum/runtime-benchmarks",
     "pallet-xcm/runtime-benchmarks",
     "xcm-builder/runtime-benchmarks",
@@ -218,8 +220,5 @@ try-runtime = [
     "pallet-transaction-payment/try-runtime",
     "pallet-utility/try-runtime",
     "pallet-vesting/try-runtime",
-    "pallet-scheduler/try-runtime",
-    "pallet-collective/try-runtime",
-    "pallet-democracy/try-runtime",
 ]
 
