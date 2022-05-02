@@ -156,6 +156,7 @@
 <span id="155">155</span>
 <span id="156">156</span>
 <span id="157">157</span>
+<span id="158">158</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Chain specifications.</span>
 
 <span class="kw">use</span> <span class="ident">local_runtime</span>::{
@@ -217,8 +218,9 @@
                     <span class="ident">get_account_id_from_seed</span>::<span class="op">&lt;</span><span class="ident">sr25519::Public</span><span class="op">&gt;</span>(<span class="string">&quot;Ferdie&quot;</span>),
                     <span class="comment">// Arrakis.TEST account in MetaMask</span>
                     <span class="comment">// Import known test account with private key</span>
-                    <span class="comment">// 0x0261726d7f71ccf1956d61ccc2b7ec6a4d8b34c60889a8765d39e1840124cd39</span>
-                    <span class="ident">AccountId::from_ss58check</span>(<span class="string">&quot;5Gbgok6b2HRpPDm7vSEDffBDsLNmAiFEgRSZcLePVYqKqT3i&quot;</span>)
+                    <span class="comment">// 0x01ab6e801c06e59ca97a14fc0a1978b27fa366fc87450e0b65459dd3515b7391</span>
+                    <span class="comment">// H160 address: 0xaaafB3972B05630fCceE866eC69CdADd9baC2771</span>
+                    <span class="ident">AccountId::from_ss58check</span>(<span class="string">&quot;5FQedkNQcF2fJPwkB6Z1ZcMgGti4vcJQNs6x85YPv3VhjBBT&quot;</span>)
                         .<span class="ident">unwrap</span>(),
                 ],
             )
