@@ -10810,7 +10810,7 @@ dependencies = [
 
 [[package]]
 name = "shiden-runtime"
-version = "3.21.0"
+version = "3.22.0"
 dependencies = [
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-parachain-system",
@@ -10835,7 +10835,7 @@ dependencies = [
  "pallet-collator-selection 3.0.0 (git+https://github.com/paritytech/cumulus?branch=polkadot-v0.9.19)",
  "pallet-collective",
  "pallet-custom-signatures",
- "pallet-dapps-staking 3.2.3",
+ "pallet-dapps-staking 3.3.2",
  "pallet-ethereum",
  "pallet-evm",
  "pallet-evm-precompile-blake2",
@@ -10848,7 +10848,7 @@ dependencies = [
  "pallet-evm-precompile-sr25519",
  "pallet-identity",
  "pallet-multisig",
- "pallet-precompile-dapps-staking 3.2.3",
+ "pallet-precompile-dapps-staking 3.3.2",
  "pallet-session",
  "pallet-sudo",
  "pallet-timestamp",
