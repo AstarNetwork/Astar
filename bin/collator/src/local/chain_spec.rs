@@ -1,12 +1,12 @@
 //! Chain specifications.
 
-use sc_service::ChainType;
 use local_runtime::{
     wasm_binary_unwrap, AccountId, AuraConfig, AuraId, BalancesConfig, BaseFeeConfig,
     BlockRewardConfig, CouncilConfig, DemocracyConfig, EVMConfig, GenesisConfig, GrandpaConfig,
     GrandpaId, Precompiles, Signature, SudoConfig, SystemConfig, TechnicalCommitteeConfig,
     TreasuryConfig, VestingConfig,
 };
+use sc_service::ChainType;
 use sp_core::{crypto::Ss58Codec, sr25519, Pair, Public};
 use sp_runtime::{
     traits::{IdentifyAccount, Verify},
