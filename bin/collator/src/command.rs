@@ -25,6 +25,9 @@ use sp_core::hexdisplay::HexDisplay;
 use sp_runtime::traits::Block as BlockT;
 use std::{io::Write, net::SocketAddr};
 
+#[cfg(feature = "frame-benchmarking")]
+use frame_benchmarking_cli::BenchmarkCmd;
+
 trait IdentifyChain {
     fn is_astar(&self) -> bool;
     fn is_dev(&self) -> bool;
@@ -412,7 +415,11 @@ pub fn run() -> Result<()> {
                         &config,
                         parachain::build_import_queue,
                     )?;
-                    Ok((cmd.run(client, backend), task_manager))
+                    let aux_revert = Box::new(|client, _, blocks| {
+                        sc_finality_grandpa::revert(client, blocks)?;
+                        Ok(())
+                    });
+                    Ok((cmd.run(client, backend, Some(aux_revert)), task_manager))
                 })
             } else if runner.config().chain_spec.is_shiden() {
                 runner.async_run(|config| {
@@ -425,7 +432,11 @@ pub fn run() -> Result<()> {
                         &config,
                         parachain::build_import_queue,
                     )?;
-                    Ok((cmd.run(client, backend), task_manager))
+                    let aux_revert = Box::new(|client, _, blocks| {
+                        sc_finality_grandpa::revert(client, blocks)?;
+                        Ok(())
+                    });
+                    Ok((cmd.run(client, backend, Some(aux_revert)), task_manager))
                 })
             } else {
                 runner.async_run(|config| {
@@ -438,7 +449,11 @@ pub fn run() -> Result<()> {
                         &config,
                         parachain::build_import_queue,
                     )?;
-                    Ok((cmd.run(client, backend), task_manager))
+                    let aux_revert = Box::new(|client, _, blocks| {
+                        sc_finality_grandpa::revert(client, blocks)?;
+                        Ok(())
+                    });
+                    Ok((cmd.run(client, backend, Some(aux_revert)), task_manager))
                 })
             }
         }
@@ -496,15 +511,111 @@ pub fn run() -> Result<()> {
             let runner = cli.create_runner(cmd)?;
             let chain_spec = &runner.config().chain_spec;
 
-            if chain_spec.is_astar() {
-                runner.sync_run(|config| cmd.run::<astar_runtime::Block, astar::Executor>(config))
-            } else if chain_spec.is_shiden() {
-                runner.sync_run(|config| cmd.run::<shiden_runtime::Block, shiden::Executor>(config))
-            } else if chain_spec.is_shibuya() {
-                runner
-                    .sync_run(|config| cmd.run::<shibuya_runtime::Block, shibuya::Executor>(config))
-            } else {
-                runner.sync_run(|config| cmd.run::<Block, local::Executor>(config))
+            match cmd {
+                BenchmarkCmd::Pallet(cmd) => {
+                    if chain_spec.is_astar() {
+                        runner.sync_run(|config| {
+                            cmd.run::<astar_runtime::Block, astar::Executor>(config)
+                        })
+                    } else if chain_spec.is_shiden() {
+                        runner.sync_run(|config| {
+                            cmd.run::<shiden_runtime::Block, shiden::Executor>(config)
+                        })
+                    } else if chain_spec.is_shibuya() {
+                        runner.sync_run(|config| {
+                            cmd.run::<shibuya_runtime::Block, shibuya::Executor>(config)
+                        })
+                    } else {
+                        runner.sync_run(|config| cmd.run::<Block, local::Executor>(config))
+                    }
+                }
+                BenchmarkCmd::Block(cmd) => {
+                    if chain_spec.is_astar() {
+                        return runner.sync_run(|config| {
+                            let params =
+                                parachain::new_partial::<astar::RuntimeApi, astar::Executor, _>(
+                                    &config,
+                                    parachain::build_import_queue,
+                                )?;
+                            cmd.run(params.client)
+                        });
+                    } else if chain_spec.is_shiden() {
+                        return runner.sync_run(|config| {
+                            let params =
+                                parachain::new_partial::<shiden::RuntimeApi, shiden::Executor, _>(
+                                    &config,
+                                    parachain::build_import_queue,
+                                )?;
+                            cmd.run(params.client)
+                        });
+                    } else if chain_spec.is_shibuya() {
+                        return runner.sync_run(|config| {
+                            let params = parachain::new_partial::<
+                                shibuya::RuntimeApi,
+                                shibuya::Executor,
+                                _,
+                            >(
+                                &config, parachain::build_import_queue
+                            )?;
+                            cmd.run(params.client)
+                        });
+                    } else {
+                        return runner.sync_run(|config| {
+                            let params = local::new_partial(&config)?;
+                            cmd.run(params.client)
+                        });
+                    }
+                }
+                BenchmarkCmd::Storage(cmd) => {
+                    if chain_spec.is_astar() {
+                        return runner.sync_run(|config| {
+                            let params =
+                                parachain::new_partial::<astar::RuntimeApi, astar::Executor, _>(
+                                    &config,
+                                    parachain::build_import_queue,
+                                )?;
+                            let db = params.backend.expose_db();
+                            let storage = params.backend.expose_storage();
+
+                            cmd.run(config, params.client, db, storage)
+                        });
+                    } else if chain_spec.is_shiden() {
+                        return runner.sync_run(|config| {
+                            let params =
+                                parachain::new_partial::<shiden::RuntimeApi, shiden::Executor, _>(
+                                    &config,
+                                    parachain::build_import_queue,
+                                )?;
+                            let db = params.backend.expose_db();
+                            let storage = params.backend.expose_storage();
+
+                            cmd.run(config, params.client, db, storage)
+                        });
+                    } else if chain_spec.is_shibuya() {
+                        return runner.sync_run(|config| {
+                            let params = parachain::new_partial::<
+                                shibuya::RuntimeApi,
+                                shibuya::Executor,
+                                _,
+                            >(
+                                &config, parachain::build_import_queue
+                            )?;
+                            let db = params.backend.expose_db();
+                            let storage = params.backend.expose_storage();
+
+                            cmd.run(config, params.client, db, storage)
+                        });
+                    } else {
+                        return runner.sync_run(|config| {
+                            let params = local::new_partial(&config)?;
+                            let db = params.backend.expose_db();
+                            let storage = params.backend.expose_storage();
+
+                            cmd.run(config, params.client, db, storage)
+                        });
+                    }
+                }
+                BenchmarkCmd::Overhead(_) => Err("Benchmark overhead not supported.".into()),
             }
         }
         #[cfg(feature = "try-runtime")]
@@ -552,6 +663,7 @@ pub fn run() -> Result<()> {
         }
         None => {
             let runner = cli.create_runner(&cli.run.normalize())?;
+            let collator_options = cli.run.collator_options();
 
             runner.run_node_until_exit(|config| async move {
                 if config.chain_spec.is_dev() {
@@ -568,7 +680,7 @@ pub fn run() -> Result<()> {
                 let id = ParaId::from(cli.run.parachain_id);
 
                 let parachain_account =
-                    AccountIdConversion::<polkadot_primitives::v0::AccountId>::into_account(&id);
+                    AccountIdConversion::<polkadot_primitives::v2::AccountId>::into_account(&id);
 
                 let state_version = Cli::native_runtime_version(&config.chain_spec).state_version();
                 let block: Block = generate_genesis_block(&config.chain_spec, state_version)
@@ -595,17 +707,17 @@ pub fn run() -> Result<()> {
                 );
 
                 if config.chain_spec.is_astar() {
-                    start_astar_node(config, polkadot_config, id)
+                    start_astar_node(config, polkadot_config, collator_options, id)
                         .await
                         .map(|r| r.0)
                         .map_err(Into::into)
                 } else if config.chain_spec.is_shiden() {
-                    start_shiden_node(config, polkadot_config, id)
+                    start_shiden_node(config, polkadot_config, collator_options, id)
                         .await
                         .map(|r| r.0)
                         .map_err(Into::into)
                 } else {
-                    start_shibuya_node(config, polkadot_config, id)
+                    start_shibuya_node(config, polkadot_config, collator_options, id)
                         .await
                         .map(|r| r.0)
                         .map_err(Into::into)

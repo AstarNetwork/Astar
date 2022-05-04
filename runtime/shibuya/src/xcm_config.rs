@@ -4,7 +4,7 @@ use super::{
     MAXIMUM_BLOCK_WEIGHT,
 };
 use frame_support::{
-    match_type, parameter_types,
+    match_types, parameter_types,
     traits::{Everything, Nothing, PalletInfoAccess},
     weights::Weight,
 };
@@ -146,7 +146,7 @@ parameter_types! {
     pub KsmPerSecond: (xcm::v1::AssetId, u128) = (MultiLocation::parent().into(), 1_000_000_000);
 }
 
-match_type! {
+match_types! {
     pub type ParentOrParentsPlurality: impl Contains<MultiLocation> = {
         MultiLocation { parents: 1, interior: Here } |
         MultiLocation { parents: 1, interior: X1(Plurality { .. }) }
@@ -254,6 +254,7 @@ impl cumulus_pallet_xcmp_queue::Config for Runtime {
     type ExecuteOverweightOrigin = frame_system::EnsureRoot<AccountId>;
     type ControllerOrigin = frame_system::EnsureRoot<AccountId>;
     type ControllerOriginConverter = XcmOriginToTransactDispatchOrigin;
+    type WeightInfo = cumulus_pallet_xcmp_queue::weights::SubstrateWeight<Runtime>;
 }
 
 impl cumulus_pallet_dmp_queue::Config for Runtime {

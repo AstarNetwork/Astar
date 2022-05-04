@@ -64,7 +64,7 @@ The expected flow is:
 
 ### Contributor Licenses
 
-By contributing, you agree that your contributions will be licensed under the [GNU General Public License v3.0](https://github.com/AstarNetwork/astar-frame/blob/polkadot-v0.9.17/LICENSE) as is with the Astar source code. If you have any concerns regarding this matter, please contact the maintainer.
+By contributing, you agree that your contributions will be licensed under the [GNU General Public License v3.0](https://github.com/AstarNetwork/astar-frame/blob/polkadot-v0.9.19/LICENSE) as is with the Astar source code. If you have any concerns regarding this matter, please contact the maintainer.
 
 ## Community Contribution
 

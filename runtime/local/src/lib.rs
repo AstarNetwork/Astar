@@ -12,7 +12,7 @@ use frame_support::{
     traits::{Currency, FindAuthor, Get, KeyOwnerProofSystem, Nothing},
     weights::{
         constants::{RocksDbWeight, WEIGHT_PER_SECOND},
-        IdentityFee, Weight,
+        ConstantMultiplier, IdentityFee, Weight,
     },
     ConsensusEngineId, PalletId,
 };
@@ -256,10 +256,10 @@ parameter_types! {
 
 impl pallet_transaction_payment::Config for Runtime {
     type OnChargeTransaction = CurrencyAdapter<Balances, ()>;
-    type TransactionByteFee = TransactionByteFee;
     type WeightToFee = IdentityFee<Balance>;
     type OperationalFeeMultiplier = OperationalFeeMultiplier;
     type FeeMultiplierUpdate = ();
+    type LengthToFee = ConstantMultiplier<Balance, TransactionByteFee>;
 }
 
 parameter_types! {
@@ -472,6 +472,7 @@ impl pallet_evm::Config for Runtime {
     type OnChargeTransaction = pallet_evm::EVMCurrencyAdapter<Balances, ()>;
     type BlockGasLimit = BlockGasLimit;
     type FindAuthor = FindAuthorTruncated<Aura>;
+    type WeightInfo = pallet_evm::weights::SubstrateWeight<Runtime>;
 }
 
 impl pallet_ethereum::Config for Runtime {
@@ -858,6 +859,7 @@ impl_runtime_apis! {
                 None
             };
 
+            let is_transactional = false;
             <Runtime as pallet_evm::Config>::Runner::call(
                 from,
                 to,
@@ -868,6 +870,7 @@ impl_runtime_apis! {
                 max_priority_fee_per_gas,
                 nonce,
                 Vec::new(),
+                is_transactional,
                 config
                     .as_ref()
                     .unwrap_or_else(|| <Runtime as pallet_evm::Config>::config()),
@@ -894,6 +897,7 @@ impl_runtime_apis! {
                 None
             };
 
+            let is_transactional = false;
             #[allow(clippy::or_fun_call)] // suggestion not helpful here
             <Runtime as pallet_evm::Config>::Runner::create(
                 from,
@@ -904,6 +908,7 @@ impl_runtime_apis! {
                 max_priority_fee_per_gas,
                 nonce,
                 Vec::new(),
+                is_transactional,
                 config
                     .as_ref()
                     .unwrap_or(<Runtime as pallet_evm::Config>::config()),

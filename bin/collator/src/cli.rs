@@ -1,6 +1,8 @@
 use clap::Parser;
+use cumulus_client_cli::CollatorOptions;
 use sc_cli::{KeySubcommand, SignCmd, VanityCmd, VerifyCmd};
 use std::path::PathBuf;
+use url::Url;
 
 /// An overarching CLI command definition.
 #[derive(Debug, clap::Parser)]
@@ -66,6 +68,7 @@ pub enum Subcommand {
     /// The custom benchmark subcommmand benchmarking runtime pallets.
     #[cfg(feature = "runtime-benchmarks")]
     #[clap(name = "benchmark", about = "Benchmark runtime pallets.")]
+    #[clap(subcommand)]
     Benchmark(frame_benchmarking_cli::BenchmarkCmd),
 
     /// Try some command against runtime state.
@@ -123,6 +126,21 @@ pub struct RunCmd {
     /// Default: 2007 (shiden)
     #[clap(long, default_value = "2007")]
     pub parachain_id: u32,
+
+    /// EXPERIMENTAL: Specify an URL to a relay chain full node to communicate with.
+    #[clap(
+        long,
+        parse(try_from_str),
+        conflicts_with = "collator",
+        conflicts_with = "validator",
+        conflicts_with = "alice",
+        conflicts_with = "bob",
+        conflicts_with = "charlie",
+        conflicts_with = "dave",
+        conflicts_with = "eve",
+        conflicts_with = "ferdie"
+    )]
+    pub relay_chain_rpc_url: Option<Url>,
 }
 
 impl std::ops::Deref for RunCmd {
@@ -130,6 +148,15 @@ impl std::ops::Deref for RunCmd {
 
     fn deref(&self) -> &Self::Target {
         &self.base
+    }
+}
+
+impl RunCmd {
+    /// Create [`CollatorOptions`] representing options only relevant to parachain collator nodes
+    pub fn collator_options(&self) -> CollatorOptions {
+        CollatorOptions {
+            relay_chain_rpc_url: self.relay_chain_rpc_url.clone(),
+        }
     }
 }
 

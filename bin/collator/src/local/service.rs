@@ -3,16 +3,16 @@
 use fc_consensus::FrontierBlockImport;
 use fc_rpc_core::types::{FeeHistoryCache, FilterPool};
 use futures::StreamExt;
-use local_runtime::RuntimeApi;
 use sc_client_api::{BlockBackend, BlockchainEvents, ExecutorProvider};
 use sc_consensus_aura::{ImportQueueParams, SlotProportion, StartAuraParams};
 use sc_executor::NativeElseWasmExecutor;
 use sc_finality_grandpa::SharedVoterState;
 use sc_service::{error::Error as ServiceError, Configuration, TaskManager};
 use sc_telemetry::{Telemetry, TelemetryWorker};
-use sp_consensus::SlotData;
 use sp_consensus_aura::sr25519::AuthorityPair as AuraPair;
 use std::{collections::BTreeMap, sync::Arc, time::Duration};
+
+pub use local_runtime::RuntimeApi;
 
 use crate::primitives::*;
 
@@ -39,7 +39,8 @@ type FullClient = sc_service::TFullClient<Block, RuntimeApi, NativeElseWasmExecu
 type FullBackend = sc_service::TFullBackend<Block>;
 type FullSelectChain = sc_consensus::LongestChain<FullBackend, Block>;
 
-fn new_partial(
+/// Build a partial chain component config
+pub fn new_partial(
     config: &Configuration,
 ) -> Result<
     sc_service::PartialComponents<
@@ -129,10 +130,10 @@ fn new_partial(
         frontier_backend.clone(),
     );
 
-    let slot_duration = sc_consensus_aura::slot_duration(&*client)?.slot_duration();
+    let slot_duration = sc_consensus_aura::slot_duration(&*client)?;
 
-    let import_queue =
-        sc_consensus_aura::import_queue::<AuraPair, _, _, _, _, _, _>(ImportQueueParams {
+    let import_queue = sc_consensus_aura::import_queue::<AuraPair, _, _, _, _, _, _>(
+        ImportQueueParams {
             block_import: frontier_block_import.clone(),
             justification_import: Some(Box::new(grandpa_block_import)),
             client: client.clone(),
@@ -140,7 +141,7 @@ fn new_partial(
                 let timestamp = sp_timestamp::InherentDataProvider::from_system_time();
 
                 let slot =
-                    sp_consensus_aura::inherents::InherentDataProvider::from_timestamp_and_duration(
+                    sp_consensus_aura::inherents::InherentDataProvider::from_timestamp_and_slot_duration(
                         *timestamp,
                         slot_duration,
                     );
@@ -154,7 +155,8 @@ fn new_partial(
             registry: config.prometheus_registry(),
             check_for_equivocation: Default::default(),
             telemetry: telemetry.as_ref().map(|x| x.handle()),
-        })?;
+        },
+    )?;
 
     Ok(sc_service::PartialComponents {
         client,
@@ -230,6 +232,8 @@ pub fn start_node(config: Configuration) -> Result<TaskManager, ServiceError> {
             client.clone(),
             backend.clone(),
             frontier_backend.clone(),
+            3,
+            0,
             fc_mapping_sync::SyncStrategy::Parachain,
         )
         .for_each(|()| futures::future::ready(())),
@@ -274,11 +278,12 @@ pub fn start_node(config: Configuration) -> Result<TaskManager, ServiceError> {
     let prometheus_registry = config.prometheus_registry().cloned();
     let is_authority = config.role.is_authority();
 
-    let block_data_cache = Arc::new(fc_rpc::EthBlockDataCache::new(
+    let block_data_cache = Arc::new(fc_rpc::EthBlockDataCacheTask::new(
         task_manager.spawn_handle(),
         overrides.clone(),
         50,
         50,
+        prometheus_registry.clone(),
     ));
 
     let rpc_extensions_builder = {
@@ -337,7 +342,6 @@ pub fn start_node(config: Configuration) -> Result<TaskManager, ServiceError> {
             sp_consensus::CanAuthorWithNativeVersion::new(client.executor().clone());
 
         let slot_duration = sc_consensus_aura::slot_duration(&*client)?;
-        let raw_slot_duration = slot_duration.slot_duration();
 
         let aura = sc_consensus_aura::start_aura::<AuraPair, _, _, _, _, _, _, _, _, _, _, _>(
             StartAuraParams {
@@ -350,9 +354,9 @@ pub fn start_node(config: Configuration) -> Result<TaskManager, ServiceError> {
                     let timestamp = sp_timestamp::InherentDataProvider::from_system_time();
 
                     let slot =
-                        sp_consensus_aura::inherents::InherentDataProvider::from_timestamp_and_duration(
+                        sp_consensus_aura::inherents::InherentDataProvider::from_timestamp_and_slot_duration(
                             *timestamp,
-                            raw_slot_duration,
+                            slot_duration,
                         );
 
                     Ok((timestamp, slot))

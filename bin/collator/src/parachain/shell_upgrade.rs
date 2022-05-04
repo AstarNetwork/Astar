@@ -1,7 +1,7 @@
 ///! Special [`ParachainConsensus`] implementation that waits for the upgrade from
 ///! shell to a parachain runtime that implements Aura.
 use cumulus_client_consensus_common::{ParachainCandidate, ParachainConsensus};
-use cumulus_primitives_core::relay_chain::v1::{Hash as PHash, PersistedValidationData};
+use cumulus_primitives_core::relay_chain::v2::{Hash as PHash, PersistedValidationData};
 use futures::lock::Mutex;
 use sc_consensus::{import_queue::Verifier as VerifierT, BlockImportParams};
 use sp_api::ApiExt;

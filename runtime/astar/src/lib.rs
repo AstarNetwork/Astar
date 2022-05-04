@@ -9,8 +9,8 @@ use frame_support::{
     construct_runtime, parameter_types,
     traits::{Contains, Currency, FindAuthor, Get, Imbalance, OnUnbalanced},
     weights::{
-        constants::{BlockExecutionWeight, ExtrinsicBaseWeight, WEIGHT_PER_SECOND},
-        DispatchClass, Weight, WeightToFeeCoefficient, WeightToFeeCoefficients,
+        constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_PER_SECOND},
+        ConstantMultiplier, DispatchClass, Weight, WeightToFeeCoefficient, WeightToFeeCoefficients,
         WeightToFeePolynomial,
     },
     ConsensusEngineId, PalletId,
@@ -20,7 +20,7 @@ use pallet_evm::{FeeCalculator, Runner};
 use pallet_transaction_payment::{
     FeeDetails, Multiplier, RuntimeDispatchInfo, TargetedFeeAdjustment,
 };
-use polkadot_runtime_common::{BlockHashCount, RocksDbWeight};
+use polkadot_runtime_common::BlockHashCount;
 use sp_api::impl_runtime_apis;
 use sp_core::{OpaqueMetadata, H160, H256, U256};
 use sp_inherents::{CheckInherentsResult, InherentData};
@@ -87,7 +87,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("astar"),
     impl_name: create_runtime_str!("astar"),
     authoring_version: 1,
-    spec_version: 13,
+    spec_version: 14,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 2,
@@ -550,11 +550,11 @@ impl OnUnbalanced<NegativeImbalance> for DealWithFees {
 
 impl pallet_transaction_payment::Config for Runtime {
     type OnChargeTransaction = pallet_transaction_payment::CurrencyAdapter<Balances, DealWithFees>;
-    type TransactionByteFee = TransactionByteFee;
     type WeightToFee = WeightToFee;
     type OperationalFeeMultiplier = OperationalFeeMultiplier;
     type FeeMultiplierUpdate =
         TargetedFeeAdjustment<Self, TargetBlockFullness, AdjustmentVariable, MinimumMultiplier>;
+    type LengthToFee = ConstantMultiplier<Balance, TransactionByteFee>;
 }
 
 parameter_types! {
@@ -656,6 +656,7 @@ impl pallet_evm::Config for Runtime {
     type OnChargeTransaction = pallet_evm::EVMCurrencyAdapter<Balances, ToStakingPot>;
     type BlockGasLimit = BlockGasLimit;
     type FindAuthor = FindAuthorTruncated<Aura>;
+    type WeightInfo = pallet_evm::weights::SubstrateWeight<Runtime>;
 }
 
 impl pallet_ethereum::Config for Runtime {
@@ -948,6 +949,7 @@ impl_runtime_apis! {
                 None
             };
 
+            let is_transactional = false;
             <Runtime as pallet_evm::Config>::Runner::call(
                 from,
                 to,
@@ -958,6 +960,7 @@ impl_runtime_apis! {
                 max_priority_fee_per_gas,
                 nonce,
                 Vec::new(),
+                is_transactional,
                 config
                     .as_ref()
                     .unwrap_or_else(|| <Runtime as pallet_evm::Config>::config()),
@@ -984,6 +987,7 @@ impl_runtime_apis! {
                 None
             };
 
+            let is_transactional = false;
             #[allow(clippy::or_fun_call)] // suggestion not helpful here
             <Runtime as pallet_evm::Config>::Runner::create(
                 from,
@@ -994,6 +998,7 @@ impl_runtime_apis! {
                 max_priority_fee_per_gas,
                 nonce,
                 Vec::new(),
+                is_transactional,
                 config
                     .as_ref()
                     .unwrap_or(<Runtime as pallet_evm::Config>::config()),

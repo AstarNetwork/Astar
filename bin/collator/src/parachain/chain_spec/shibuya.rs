@@ -120,7 +120,7 @@ fn make_genesis(
                 .map(|addr| {
                     (
                         addr,
-                        pallet_evm::GenesisAccount {
+                        fp_evm::GenesisAccount {
                             nonce: Default::default(),
                             balance: Default::default(),
                             storage: Default::default(),
