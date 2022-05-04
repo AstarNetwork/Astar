@@ -258,7 +258,7 @@ impl pallet_identity::Config for Runtime {
     type MaxSubAccounts = MaxSubAccounts;
     type MaxAdditionalFields = MaxAdditionalFields;
     type MaxRegistrars = MaxRegistrars;
-    type Slashed = ();
+    type Slashed = Treasury;
     type ForceOrigin = frame_system::EnsureRoot<AccountId>;
     type RegistrarOrigin = frame_system::EnsureRoot<AccountId>;
     type WeightInfo = ();
@@ -877,7 +877,7 @@ parameter_types! {
     pub VotingPeriod: BlockNumber = 14 * DAYS;
     pub FastTrackVotingPeriod: BlockNumber = 1 * DAYS;
     pub const MinimumDeposit: Balance = 1000 * SDN;
-    pub EnactmentPeriod: BlockNumber = 7 * DAYS;
+    pub EnactmentPeriod: BlockNumber = 2 * DAYS;
     pub VoteLockingPeriod: BlockNumber = 7 * DAYS;
     pub CooloffPeriod: BlockNumber = 7 * DAYS;
     pub const InstantAllowed: bool = true;
