@@ -5,7 +5,7 @@ use crate::cli::*;
 use clap::Parser;
 use cumulus_primitives_core::ParaId;
 use polkadot_parachain::primitives::{AccountIdConversion, Sibling};
-use polkadot_primitives::v0::AccountId;
+use polkadot_primitives::v2::AccountId;
 use sp_core::hexdisplay::HexDisplay;
 use xcm::latest::prelude::*;
 use xcm_builder::SiblingParachainConvertsVia;
