@@ -176,7 +176,6 @@ where
         frontier_backend.clone(),
         is_authority,
         block_data_cache.clone(),
-        fc_rpc::format::Geth,
         fee_history_limit,
         fee_history_cache,
     )));
