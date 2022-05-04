@@ -1151,33 +1151,6 @@
 <span id="1150">1150</span>
 <span id="1151">1151</span>
 <span id="1152">1152</span>
-<span id="1153">1153</span>
-<span id="1154">1154</span>
-<span id="1155">1155</span>
-<span id="1156">1156</span>
-<span id="1157">1157</span>
-<span id="1158">1158</span>
-<span id="1159">1159</span>
-<span id="1160">1160</span>
-<span id="1161">1161</span>
-<span id="1162">1162</span>
-<span id="1163">1163</span>
-<span id="1164">1164</span>
-<span id="1165">1165</span>
-<span id="1166">1166</span>
-<span id="1167">1167</span>
-<span id="1168">1168</span>
-<span id="1169">1169</span>
-<span id="1170">1170</span>
-<span id="1171">1171</span>
-<span id="1172">1172</span>
-<span id="1173">1173</span>
-<span id="1174">1174</span>
-<span id="1175">1175</span>
-<span id="1176">1176</span>
-<span id="1177">1177</span>
-<span id="1178">1178</span>
-<span id="1179">1179</span>
 </pre><pre class="rust"><code><span class="doccomment">//! The Shiden Network runtime. This can be compiled with ``#[no_std]`, ready for Wasm.</span>
 
 <span class="attribute">#![<span class="ident">cfg_attr</span>(<span class="ident">not</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>), <span class="ident">no_std</span>)]</span>
@@ -1187,10 +1160,10 @@
 <span class="kw">use</span> <span class="ident">codec</span>::{<span class="ident">Decode</span>, <span class="ident">Encode</span>};
 <span class="kw">use</span> <span class="ident">frame_support</span>::{
     <span class="ident">construct_runtime</span>, <span class="ident">parameter_types</span>,
-    <span class="ident">traits</span>::{<span class="ident">Contains</span>, <span class="ident">Currency</span>, <span class="ident">FindAuthor</span>, <span class="ident">Get</span>, <span class="ident">Imbalance</span>, <span class="ident">OnRuntimeUpgrade</span>, <span class="ident">OnUnbalanced</span>},
+    <span class="ident">traits</span>::{<span class="ident">Contains</span>, <span class="ident">Currency</span>, <span class="ident">FindAuthor</span>, <span class="ident">Get</span>, <span class="ident">Imbalance</span>, <span class="ident">OnUnbalanced</span>},
     <span class="ident">weights</span>::{
-        <span class="ident">constants</span>::{<span class="ident">BlockExecutionWeight</span>, <span class="ident">ExtrinsicBaseWeight</span>, <span class="ident">WEIGHT_PER_SECOND</span>},
-        <span class="ident">DispatchClass</span>, <span class="ident">Weight</span>, <span class="ident">WeightToFeeCoefficient</span>, <span class="ident">WeightToFeeCoefficients</span>,
+        <span class="ident">constants</span>::{<span class="ident">BlockExecutionWeight</span>, <span class="ident">ExtrinsicBaseWeight</span>, <span class="ident">RocksDbWeight</span>, <span class="ident">WEIGHT_PER_SECOND</span>},
+        <span class="ident">ConstantMultiplier</span>, <span class="ident">DispatchClass</span>, <span class="ident">Weight</span>, <span class="ident">WeightToFeeCoefficient</span>, <span class="ident">WeightToFeeCoefficients</span>,
         <span class="ident">WeightToFeePolynomial</span>,
     },
     <span class="ident">ConsensusEngineId</span>, <span class="ident">PalletId</span>,
@@ -1200,7 +1173,7 @@
 <span class="kw">use</span> <span class="ident">pallet_transaction_payment</span>::{
     <span class="ident">FeeDetails</span>, <span class="ident">Multiplier</span>, <span class="ident">RuntimeDispatchInfo</span>, <span class="ident">TargetedFeeAdjustment</span>,
 };
-<span class="kw">use</span> <span class="ident">polkadot_runtime_common</span>::{<span class="ident">BlockHashCount</span>, <span class="ident">RocksDbWeight</span>};
+<span class="kw">use</span> <span class="ident">polkadot_runtime_common::BlockHashCount</span>;
 <span class="kw">use</span> <span class="ident">sp_api::impl_runtime_apis</span>;
 <span class="kw">use</span> <span class="ident">sp_core</span>::{<span class="ident">OpaqueMetadata</span>, <span class="ident">H160</span>, <span class="ident">H256</span>, <span class="ident">U256</span>};
 <span class="kw">use</span> <span class="ident">sp_inherents</span>::{<span class="ident">CheckInherentsResult</span>, <span class="ident">InherentData</span>};
@@ -1267,7 +1240,7 @@
     <span class="ident">spec_name</span>: <span class="macro">create_runtime_str!</span>(<span class="string">&quot;shiden&quot;</span>),
     <span class="ident">impl_name</span>: <span class="macro">create_runtime_str!</span>(<span class="string">&quot;shiden&quot;</span>),
     <span class="ident">authoring_version</span>: <span class="number">1</span>,
-    <span class="ident">spec_version</span>: <span class="number">45</span>,
+    <span class="ident">spec_version</span>: <span class="number">46</span>,
     <span class="ident">impl_version</span>: <span class="number">0</span>,
     <span class="ident">apis</span>: <span class="ident">RUNTIME_API_VERSIONS</span>,
     <span class="ident">transaction_version</span>: <span class="number">2</span>,
@@ -1736,11 +1709,11 @@
 
 <span class="kw">impl</span> <span class="ident">pallet_transaction_payment::Config</span> <span class="kw">for</span> <span class="ident">Runtime</span> {
     <span class="kw">type</span> <span class="ident">OnChargeTransaction</span> <span class="op">=</span> <span class="ident">pallet_transaction_payment::CurrencyAdapter</span><span class="op">&lt;</span><span class="ident">Balances</span>, <span class="ident">DealWithFees</span><span class="op">&gt;</span>;
-    <span class="kw">type</span> <span class="ident">TransactionByteFee</span> <span class="op">=</span> <span class="ident">TransactionByteFee</span>;
     <span class="kw">type</span> <span class="ident">WeightToFee</span> <span class="op">=</span> <span class="ident">WeightToFee</span>;
     <span class="kw">type</span> <span class="ident">OperationalFeeMultiplier</span> <span class="op">=</span> <span class="ident">OperationalFeeMultiplier</span>;
     <span class="kw">type</span> <span class="ident">FeeMultiplierUpdate</span> <span class="op">=</span>
         <span class="ident">TargetedFeeAdjustment</span><span class="op">&lt;</span><span class="self">Self</span>, <span class="ident">TargetBlockFullness</span>, <span class="ident">AdjustmentVariable</span>, <span class="ident">MinimumMultiplier</span><span class="op">&gt;</span>;
+    <span class="kw">type</span> <span class="ident">LengthToFee</span> <span class="op">=</span> <span class="ident">ConstantMultiplier</span><span class="op">&lt;</span><span class="ident">Balance</span>, <span class="ident">TransactionByteFee</span><span class="op">&gt;</span>;
 }
 
 <span class="macro">parameter_types!</span> {
@@ -1841,6 +1814,7 @@
     <span class="kw">type</span> <span class="ident">OnChargeTransaction</span> <span class="op">=</span> <span class="ident">pallet_evm::EVMCurrencyAdapter</span><span class="op">&lt;</span><span class="ident">Balances</span>, <span class="ident">ToStakingPot</span><span class="op">&gt;</span>;
     <span class="kw">type</span> <span class="ident">BlockGasLimit</span> <span class="op">=</span> <span class="ident">BlockGasLimit</span>;
     <span class="kw">type</span> <span class="ident">FindAuthor</span> <span class="op">=</span> <span class="ident">FindAuthorTruncated</span><span class="op">&lt;</span><span class="ident">Aura</span><span class="op">&gt;</span>;
+    <span class="kw">type</span> <span class="ident">WeightInfo</span> <span class="op">=</span> <span class="ident">pallet_evm::weights::SubstrateWeight</span><span class="op">&lt;</span><span class="ident">Runtime</span><span class="op">&gt;</span>;
 }
 
 <span class="kw">impl</span> <span class="ident">pallet_ethereum::Config</span> <span class="kw">for</span> <span class="ident">Runtime</span> {
@@ -1936,39 +1910,7 @@
     <span class="ident">frame_system::ChainContext</span><span class="op">&lt;</span><span class="ident">Runtime</span><span class="op">&gt;</span>,
     <span class="ident">Runtime</span>,
     <span class="ident">AllPalletsWithSystem</span>,
-    (<span class="ident">InitRewardConfigSettings</span>,),
 <span class="op">&gt;</span>;
-
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">InitRewardConfigSettings</span>;
-<span class="kw">impl</span> <span class="ident">OnRuntimeUpgrade</span> <span class="kw">for</span> <span class="ident">InitRewardConfigSettings</span> {
-    <span class="kw">fn</span> <span class="ident">on_runtime_upgrade</span>() -&gt; <span class="ident">frame_support::weights::Weight</span> {
-        <span class="comment">// TODO: discuss these params on sync &amp; with community</span>
-        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">reward_config</span> <span class="op">=</span> <span class="ident">pallet_block_reward::RewardDistributionConfig</span> {
-            <span class="ident">base_treasury_percent</span>: <span class="ident">Perbill::from_percent</span>(<span class="number">40</span>),
-            <span class="ident">base_staker_percent</span>: <span class="ident">Perbill::from_percent</span>(<span class="number">25</span>),
-            <span class="ident">dapps_percent</span>: <span class="ident">Perbill::from_percent</span>(<span class="number">25</span>),
-            <span class="ident">collators_percent</span>: <span class="ident">Perbill::from_percent</span>(<span class="number">10</span>),
-            <span class="ident">adjustable_percent</span>: <span class="ident">Perbill::from_percent</span>(<span class="number">0</span>),
-            <span class="ident">ideal_dapps_staking_tvl</span>: <span class="ident">Perbill::from_percent</span>(<span class="number">0</span>),
-        };
-        <span class="comment">// This HAS to be tested prior to update - we need to ensure that config is consistent</span>
-        <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;try-runtime&quot;</span>)]</span>
-        <span class="macro">assert!</span>(<span class="ident">reward_config</span>.<span class="ident">is_consistent</span>());
-
-        <span class="comment">// This should never execute but we need to have code in place that ensures config is consistent</span>
-        <span class="kw">if</span> <span class="op">!</span><span class="ident">reward_config</span>.<span class="ident">is_consistent</span>() {
-            <span class="ident">reward_config</span> <span class="op">=</span> <span class="ident">Default::default</span>();
-        }
-        <span class="ident">pallet_block_reward::RewardDistributionConfigStorage</span>::<span class="op">&lt;</span><span class="ident">Runtime</span><span class="op">&gt;</span><span class="ident">::put</span>(<span class="ident">reward_config</span>);
-
-        <span class="comment">// Do some storage cleanup for dapps-staking so we can remove these DB entries in the future</span>
-        <span class="ident">pallet_dapps_staking::MigrationStateV2</span>::<span class="op">&lt;</span><span class="ident">Runtime</span><span class="op">&gt;</span><span class="ident">::kill</span>();
-        <span class="ident">pallet_dapps_staking::MigrationStateV3</span>::<span class="op">&lt;</span><span class="ident">Runtime</span><span class="op">&gt;</span><span class="ident">::kill</span>();
-        <span class="ident">pallet_dapps_staking::MigrationUndergoingUnbonding</span>::<span class="op">&lt;</span><span class="ident">Runtime</span><span class="op">&gt;</span><span class="ident">::kill</span>();
-
-        <span class="op">&lt;</span><span class="ident">Runtime</span> <span class="kw">as</span> <span class="ident">frame_system::pallet::Config</span><span class="op">&gt;</span><span class="ident">::DbWeight::get</span>().<span class="ident">writes</span>(<span class="number">4</span>)
-    }
-}
 
 <span class="kw">impl</span> <span class="ident">fp_self_contained::SelfContainedCall</span> <span class="kw">for</span> <span class="ident">Call</span> {
     <span class="kw">type</span> <span class="ident">SignedInfo</span> <span class="op">=</span> <span class="ident">H160</span>;
@@ -2165,6 +2107,7 @@
                 <span class="prelude-val">None</span>
             };
 
+            <span class="kw">let</span> <span class="ident">is_transactional</span> <span class="op">=</span> <span class="bool-val">false</span>;
             <span class="op">&lt;</span><span class="ident">Runtime</span> <span class="kw">as</span> <span class="ident">pallet_evm::Config</span><span class="op">&gt;</span><span class="ident">::Runner::call</span>(
                 <span class="ident">from</span>,
                 <span class="ident">to</span>,
@@ -2175,6 +2118,7 @@
                 <span class="ident">max_priority_fee_per_gas</span>,
                 <span class="ident">nonce</span>,
                 <span class="ident">Vec::new</span>(),
+                <span class="ident">is_transactional</span>,
                 <span class="ident">config</span>
                     .<span class="ident">as_ref</span>()
                     .<span class="ident">unwrap_or_else</span>(<span class="op">|</span><span class="op">|</span> <span class="op">&lt;</span><span class="ident">Runtime</span> <span class="kw">as</span> <span class="ident">pallet_evm::Config</span><span class="op">&gt;</span><span class="ident">::config</span>()),
@@ -2201,6 +2145,7 @@
                 <span class="prelude-val">None</span>
             };
 
+            <span class="kw">let</span> <span class="ident">is_transactional</span> <span class="op">=</span> <span class="bool-val">false</span>;
             <span class="attribute">#[<span class="ident">allow</span>(<span class="ident">clippy::or_fun_call</span>)]</span> <span class="comment">// suggestion not helpful here</span>
             <span class="op">&lt;</span><span class="ident">Runtime</span> <span class="kw">as</span> <span class="ident">pallet_evm::Config</span><span class="op">&gt;</span><span class="ident">::Runner::create</span>(
                 <span class="ident">from</span>,
@@ -2211,6 +2156,7 @@
                 <span class="ident">max_priority_fee_per_gas</span>,
                 <span class="ident">nonce</span>,
                 <span class="ident">Vec::new</span>(),
+                <span class="ident">is_transactional</span>,
                 <span class="ident">config</span>
                     .<span class="ident">as_ref</span>()
                     .<span class="ident">unwrap_or</span>(<span class="op">&lt;</span><span class="ident">Runtime</span> <span class="kw">as</span> <span class="ident">pallet_evm::Config</span><span class="op">&gt;</span><span class="ident">::config</span>()),

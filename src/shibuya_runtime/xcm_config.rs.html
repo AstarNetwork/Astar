@@ -262,13 +262,14 @@
 <span id="261">261</span>
 <span id="262">262</span>
 <span id="263">263</span>
+<span id="264">264</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="kw">super</span>::{
     <span class="ident">AccountId</span>, <span class="ident">AssetId</span>, <span class="ident">Assets</span>, <span class="ident">Balance</span>, <span class="ident">Balances</span>, <span class="ident">Call</span>, <span class="ident">DealWithFees</span>, <span class="ident">Event</span>, <span class="ident">Origin</span>,
     <span class="ident">ParachainInfo</span>, <span class="ident">ParachainSystem</span>, <span class="ident">PolkadotXcm</span>, <span class="ident">Runtime</span>, <span class="ident">WeightToFee</span>, <span class="ident">XcmpQueue</span>,
     <span class="ident">MAXIMUM_BLOCK_WEIGHT</span>,
 };
 <span class="kw">use</span> <span class="ident">frame_support</span>::{
-    <span class="ident">match_type</span>, <span class="ident">parameter_types</span>,
+    <span class="ident">match_types</span>, <span class="ident">parameter_types</span>,
     <span class="ident">traits</span>::{<span class="ident">Everything</span>, <span class="ident">Nothing</span>, <span class="ident">PalletInfoAccess</span>},
     <span class="ident">weights::Weight</span>,
 };
@@ -410,7 +411,7 @@
     <span class="kw">pub</span> <span class="ident">KsmPerSecond</span>: (<span class="ident">xcm::v1::AssetId</span>, <span class="ident">u128</span>) <span class="op">=</span> (<span class="ident">MultiLocation::parent</span>().<span class="ident">into</span>(), <span class="number">1_000_000_000</span>);
 }
 
-<span class="macro">match_type!</span> {
+<span class="macro">match_types!</span> {
     <span class="kw">pub</span> <span class="kw">type</span> <span class="ident">ParentOrParentsPlurality</span>: <span class="kw">impl</span> <span class="ident">Contains</span><span class="op">&lt;</span><span class="ident">MultiLocation</span><span class="op">&gt;</span> <span class="op">=</span> {
         <span class="ident">MultiLocation</span> { <span class="ident">parents</span>: <span class="number">1</span>, <span class="ident">interior</span>: <span class="ident">Here</span> } <span class="op">|</span>
         <span class="ident">MultiLocation</span> { <span class="ident">parents</span>: <span class="number">1</span>, <span class="ident">interior</span>: <span class="ident">X1</span>(<span class="ident">Plurality</span> { .. }) }
@@ -518,6 +519,7 @@ impl&lt;T: Get&lt;MultiLocation&gt;&gt; FilterAssetLocation for AssetsFrom&lt;T&
     <span class="kw">type</span> <span class="ident">ExecuteOverweightOrigin</span> <span class="op">=</span> <span class="ident">frame_system::EnsureRoot</span><span class="op">&lt;</span><span class="ident">AccountId</span><span class="op">&gt;</span>;
     <span class="kw">type</span> <span class="ident">ControllerOrigin</span> <span class="op">=</span> <span class="ident">frame_system::EnsureRoot</span><span class="op">&lt;</span><span class="ident">AccountId</span><span class="op">&gt;</span>;
     <span class="kw">type</span> <span class="ident">ControllerOriginConverter</span> <span class="op">=</span> <span class="ident">XcmOriginToTransactDispatchOrigin</span>;
+    <span class="kw">type</span> <span class="ident">WeightInfo</span> <span class="op">=</span> <span class="ident">cumulus_pallet_xcmp_queue::weights::SubstrateWeight</span><span class="op">&lt;</span><span class="ident">Runtime</span><span class="op">&gt;</span>;
 }
 
 <span class="kw">impl</span> <span class="ident">cumulus_pallet_dmp_queue::Config</span> <span class="kw">for</span> <span class="ident">Runtime</span> {

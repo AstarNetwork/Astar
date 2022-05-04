@@ -121,7 +121,7 @@
 </pre><pre class="rust"><code><span class="doccomment">///! Special [`ParachainConsensus`] implementation that waits for the upgrade from</span>
 <span class="doccomment">///! shell to a parachain runtime that implements Aura.</span>
 <span class="kw">use</span> <span class="ident">cumulus_client_consensus_common</span>::{<span class="ident">ParachainCandidate</span>, <span class="ident">ParachainConsensus</span>};
-<span class="kw">use</span> <span class="ident">cumulus_primitives_core::relay_chain::v1</span>::{<span class="ident">Hash</span> <span class="kw">as</span> <span class="ident">PHash</span>, <span class="ident">PersistedValidationData</span>};
+<span class="kw">use</span> <span class="ident">cumulus_primitives_core::relay_chain::v2</span>::{<span class="ident">Hash</span> <span class="kw">as</span> <span class="ident">PHash</span>, <span class="ident">PersistedValidationData</span>};
 <span class="kw">use</span> <span class="ident">futures::lock::Mutex</span>;
 <span class="kw">use</span> <span class="ident">sc_consensus</span>::{<span class="ident">import_queue::Verifier</span> <span class="kw">as</span> <span class="ident">VerifierT</span>, <span class="ident">BlockImportParams</span>};
 <span class="kw">use</span> <span class="ident">sp_api::ApiExt</span>;
