@@ -1,6 +1,6 @@
 [package]
 name = "shiden-runtime"
-version = "3.22.0"
+version = "3.23.0"
 authors = ["Stake Technologies <devops@stake.co.jp>"]
 edition = "2021"
 build = "build.rs"
@@ -180,4 +180,5 @@ try-runtime = [
     "pallet-transaction-payment/try-runtime",
     "pallet-utility/try-runtime",
     "pallet-vesting/try-runtime",
+    "pallet-ethereum/try-runtime",
 ]
