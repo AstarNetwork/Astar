@@ -180,4 +180,5 @@ try-runtime = [
     "pallet-transaction-payment/try-runtime",
     "pallet-utility/try-runtime",
     "pallet-vesting/try-runtime",
+    "pallet-ethereum/try-runtime",
 ]

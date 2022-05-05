@@ -7,7 +7,7 @@
 use codec::{Decode, Encode};
 use frame_support::{
     construct_runtime, parameter_types,
-    traits::{Contains, Currency, FindAuthor, Get, Imbalance, OnUnbalanced},
+    traits::{Contains, Currency, FindAuthor, Get, Imbalance, OnRuntimeUpgrade, OnUnbalanced},
     weights::{
         constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_PER_SECOND},
         ConstantMultiplier, DispatchClass, Weight, WeightToFeeCoefficient, WeightToFeeCoefficients,
@@ -87,7 +87,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("shiden"),
     impl_name: create_runtime_str!("shiden"),
     authoring_version: 1,
-    spec_version: 47,
+    spec_version: 48,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 2,
@@ -757,7 +757,25 @@ pub type Executive = frame_executive::Executive<
     frame_system::ChainContext<Runtime>,
     Runtime,
     AllPalletsWithSystem,
+    (EthereumMigrationBlockV2,),
 >;
+
+pub struct EthereumMigrationBlockV2;
+impl OnRuntimeUpgrade for EthereumMigrationBlockV2 {
+    fn on_runtime_upgrade() -> Weight {
+        Ethereum::migrate_block_v0_to_v2()
+    }
+
+    #[cfg(feature = "try-runtime")]
+    fn pre_upgrade() -> Result<(), &'static str> {
+        Ethereum::pre_migrate_block_v2()
+    }
+
+    #[cfg(feature = "try-runtime")]
+    fn post_upgrade() -> Result<(), &'static str> {
+        Ethereum::post_migrate_block_v2()
+    }
+}
 
 impl fp_self_contained::SelfContainedCall for Call {
     type SignedInfo = H160;
