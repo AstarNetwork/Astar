@@ -4,9 +4,9 @@ use cumulus_primitives_core::ParaId;
 use sc_service::ChainType;
 use shibuya_runtime::{
     wasm_binary_unwrap, AccountId, AuraConfig, AuraId, Balance, BalancesConfig, BaseFeeConfig,
-    BlockRewardConfig, CollatorSelectionConfig, EVMConfig, GenesisConfig, ParachainInfoConfig,
-    Precompiles, SessionConfig, SessionKeys, Signature, SudoConfig, SystemConfig, VestingConfig,
-    SDN,
+    BlockRewardConfig, CollatorSelectionConfig, CouncilConfig, DemocracyConfig, EVMConfig,
+    GenesisConfig, ParachainInfoConfig, Precompiles, SessionConfig, SessionKeys, Signature,
+    SudoConfig, SystemConfig, TechnicalCommitteeConfig, TreasuryConfig, VestingConfig, SDN,
 };
 use sp_core::{sr25519, Pair, Public};
 
@@ -136,6 +136,16 @@ fn make_genesis(
             sp_runtime::Permill::from_parts(125_000),
         ),
         ethereum: Default::default(),
+        council: CouncilConfig {
+            members: vec![],
+            phantom: Default::default(),
+        },
+        technical_committee: TechnicalCommitteeConfig {
+            members: vec![],
+            phantom: Default::default(),
+        },
+        democracy: DemocracyConfig::default(),
+        treasury: TreasuryConfig::default(),
     }
 }
 
