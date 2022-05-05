@@ -1303,6 +1303,26 @@
 <span id="1302">1302</span>
 <span id="1303">1303</span>
 <span id="1304">1304</span>
+<span id="1305">1305</span>
+<span id="1306">1306</span>
+<span id="1307">1307</span>
+<span id="1308">1308</span>
+<span id="1309">1309</span>
+<span id="1310">1310</span>
+<span id="1311">1311</span>
+<span id="1312">1312</span>
+<span id="1313">1313</span>
+<span id="1314">1314</span>
+<span id="1315">1315</span>
+<span id="1316">1316</span>
+<span id="1317">1317</span>
+<span id="1318">1318</span>
+<span id="1319">1319</span>
+<span id="1320">1320</span>
+<span id="1321">1321</span>
+<span id="1322">1322</span>
+<span id="1323">1323</span>
+<span id="1324">1324</span>
 </pre><pre class="rust"><code><span class="doccomment">//! The Shiden Network runtime. This can be compiled with ``#[no_std]`, ready for Wasm.</span>
 
 <span class="attribute">#![<span class="ident">cfg_attr</span>(<span class="ident">not</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>), <span class="ident">no_std</span>)]</span>
@@ -1312,7 +1332,9 @@
 <span class="kw">use</span> <span class="ident">codec</span>::{<span class="ident">Decode</span>, <span class="ident">Encode</span>};
 <span class="kw">use</span> <span class="ident">frame_support</span>::{
     <span class="ident">construct_runtime</span>, <span class="ident">parameter_types</span>,
-    <span class="ident">traits</span>::{<span class="ident">Contains</span>, <span class="ident">Currency</span>, <span class="ident">FindAuthor</span>, <span class="ident">Get</span>, <span class="ident">Imbalance</span>, <span class="ident">Nothing</span>, <span class="ident">OnUnbalanced</span>},
+    <span class="ident">traits</span>::{
+        <span class="ident">Contains</span>, <span class="ident">Currency</span>, <span class="ident">FindAuthor</span>, <span class="ident">Get</span>, <span class="ident">Imbalance</span>, <span class="ident">Nothing</span>, <span class="ident">OnRuntimeUpgrade</span>, <span class="ident">OnUnbalanced</span>,
+    },
     <span class="ident">weights</span>::{
         <span class="ident">constants</span>::{<span class="ident">BlockExecutionWeight</span>, <span class="ident">ExtrinsicBaseWeight</span>, <span class="ident">RocksDbWeight</span>, <span class="ident">WEIGHT_PER_SECOND</span>},
         <span class="ident">ConstantMultiplier</span>, <span class="ident">DispatchClass</span>, <span class="ident">Weight</span>, <span class="ident">WeightToFeeCoefficient</span>, <span class="ident">WeightToFeeCoefficients</span>,
@@ -1419,7 +1441,7 @@
     <span class="ident">spec_name</span>: <span class="macro">create_runtime_str!</span>(<span class="string">&quot;shibuya&quot;</span>),
     <span class="ident">impl_name</span>: <span class="macro">create_runtime_str!</span>(<span class="string">&quot;shibuya&quot;</span>),
     <span class="ident">authoring_version</span>: <span class="number">1</span>,
-    <span class="ident">spec_version</span>: <span class="number">45</span>,
+    <span class="ident">spec_version</span>: <span class="number">46</span>,
     <span class="ident">impl_version</span>: <span class="number">0</span>,
     <span class="ident">apis</span>: <span class="ident">RUNTIME_API_VERSIONS</span>,
     <span class="ident">transaction_version</span>: <span class="number">2</span>,
@@ -2168,7 +2190,25 @@
     <span class="ident">frame_system::ChainContext</span><span class="op">&lt;</span><span class="ident">Runtime</span><span class="op">&gt;</span>,
     <span class="ident">Runtime</span>,
     <span class="ident">AllPalletsWithSystem</span>,
+    (<span class="ident">EthereumMigrationBlockV2</span>,),
 <span class="op">&gt;</span>;
+
+<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">EthereumMigrationBlockV2</span>;
+<span class="kw">impl</span> <span class="ident">OnRuntimeUpgrade</span> <span class="kw">for</span> <span class="ident">EthereumMigrationBlockV2</span> {
+    <span class="kw">fn</span> <span class="ident">on_runtime_upgrade</span>() -&gt; <span class="ident">Weight</span> {
+        <span class="ident">Ethereum::migrate_block_v0_to_v2</span>()
+    }
+
+    <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;try-runtime&quot;</span>)]</span>
+    <span class="kw">fn</span> <span class="ident">pre_upgrade</span>() -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="kw-2">&amp;</span><span class="lifetime">&#39;static</span> <span class="ident">str</span><span class="op">&gt;</span> {
+        <span class="ident">Ethereum::pre_migrate_block_v2</span>()
+    }
+
+    <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;try-runtime&quot;</span>)]</span>
+    <span class="kw">fn</span> <span class="ident">post_upgrade</span>() -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="kw-2">&amp;</span><span class="lifetime">&#39;static</span> <span class="ident">str</span><span class="op">&gt;</span> {
+        <span class="ident">Ethereum::post_migrate_block_v2</span>()
+    }
+}
 
 <span class="kw">impl</span> <span class="ident">fp_self_contained::SelfContainedCall</span> <span class="kw">for</span> <span class="ident">Call</span> {
     <span class="kw">type</span> <span class="ident">SignedInfo</span> <span class="op">=</span> <span class="ident">H160</span>;
