@@ -1,12 +1,12 @@
 //! Chain specifications.
 
-use shibuya_runtime::{
-    wasm_binary_unwrap, AccountId, AuraConfig, AuraId, Balance, BalancesConfig, BaseFeeConfig,
-    BlockRewardConfig, CollatorSelectionConfig, CouncilConfig, DemocracyConfig, EVMConfig,
-    GenesisConfig, ParachainInfoConfig, Precompiles, SessionConfig, SessionKeys, Signature,
-    SudoConfig, SystemConfig, TechnicalCommitteeConfig, TreasuryConfig, VestingConfig, SDN,
-};
 use sc_service::ChainType;
+use local_runtime::{
+    wasm_binary_unwrap, AccountId, AuraConfig, AuraId, BalancesConfig, BaseFeeConfig,
+    BlockRewardConfig, CouncilConfig, DemocracyConfig, EVMConfig, GenesisConfig, GrandpaConfig,
+    GrandpaId, Precompiles, Signature, SudoConfig, SystemConfig, TechnicalCommitteeConfig,
+    TreasuryConfig, VestingConfig,
+};
 use sp_core::{crypto::Ss58Codec, sr25519, Pair, Public};
 use sp_runtime::{
     traits::{IdentifyAccount, Verify},

@@ -843,10 +843,8 @@ impl pallet_collective::Config<TechnicalCommitteeCollective> for Runtime {
 
 parameter_types! {
     pub const ProposalBond: Permill = Permill::from_percent(5);
-    pub const ProposalBondMinimum: Balance = 100 * SDN; // TODO: decide
-    pub const ProposalBondMaximum: Balance = 500 * SDN; // TODO: decide
-    pub const SpendPeriod: BlockNumber = 7 * DAYS; // TODO: decide
-    pub const Burn: Permill = Permill::from_percent(1);
+    pub const ProposalBondMinimum: Balance = 100 * SDN;
+    pub const SpendPeriod: BlockNumber = 3 * DAYS;
     pub const MaxApprovals: u32 = 100;
 }
 
@@ -865,9 +863,9 @@ impl pallet_treasury::Config for Runtime {
     type OnSlash = Treasury;
     type ProposalBond = ProposalBond;
     type ProposalBondMinimum = ProposalBondMinimum;
-    type ProposalBondMaximum = ProposalBondMaximum;
+    type ProposalBondMaximum = ();
     type SpendPeriod = SpendPeriod;
-    type Burn = Burn;
+    type Burn = ();
     type BurnDestination = ();
     type SpendFunds = ();
     type MaxApprovals = MaxApprovals;
@@ -878,8 +876,8 @@ parameter_types! {
     pub LaunchPeriod: BlockNumber = 7 * DAYS;
     pub VotingPeriod: BlockNumber = 14 * DAYS;
     pub FastTrackVotingPeriod: BlockNumber = 1 * DAYS;
-    pub const MinimumDeposit: Balance = 100 * SDN;
-    pub EnactmentPeriod: BlockNumber = 2 * DAYS;
+    pub const MinimumDeposit: Balance = 1000 * SDN;
+    pub EnactmentPeriod: BlockNumber = 7 * DAYS;
     pub VoteLockingPeriod: BlockNumber = 7 * DAYS;
     pub CooloffPeriod: BlockNumber = 7 * DAYS;
     pub const InstantAllowed: bool = true;
