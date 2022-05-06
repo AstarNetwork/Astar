@@ -551,7 +551,7 @@ impl pallet_assets::Config for Runtime {
     type StringLimit = AssetsStringLimit;
     type Freezer = ();
     type Extra = ();
-    type WeightInfo = ();
+    type WeightInfo = pallet_assets::weights::SubstrateWeights;
 }
 
 parameter_types! {
