@@ -344,19 +344,19 @@ impl pallet_utility::Config for Runtime {
 }
 
 parameter_types! {
-    // We do anything the parent chain tells us in this runtime.
-    pub const ReservedDmpWeight: Weight = MAXIMUM_BLOCK_WEIGHT / 2;
+    pub const ReservedXcmpWeight: Weight = MAXIMUM_BLOCK_WEIGHT / 4;
+    pub const ReservedDmpWeight: Weight = MAXIMUM_BLOCK_WEIGHT / 4;
 }
 
 impl cumulus_pallet_parachain_system::Config for Runtime {
     type Event = Event;
     type OnSystemEvent = ();
     type SelfParaId = parachain_info::Pallet<Runtime>;
-    type OutboundXcmpMessageSource = ();
-    type DmpMessageHandler = ();
+    type OutboundXcmpMessageSource = XcmpQueue;
+    type DmpMessageHandler = DmpQueue;
     type ReservedDmpWeight = ReservedDmpWeight;
-    type XcmpMessageHandler = ();
-    type ReservedXcmpWeight = ();
+    type XcmpMessageHandler = XcmpQueue;
+    type ReservedXcmpWeight = ReservedXcmpWeight;
 }
 
 impl parachain_info::Config for Runtime {}
