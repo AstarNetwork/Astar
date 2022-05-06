@@ -75,7 +75,14 @@ pub const HOURS: BlockNumber = MINUTES * 60;
 pub const DAYS: BlockNumber = HOURS * 24;
 
 /// Id used for identifying assets.
+///
+/// AssetId allocation:
+/// [1; 2^32-1]     Custom user assets (permissionless)
+/// [2^32; 2^64-1]  Statemine assets (simple map)
+/// [2^64; 2^128-1] Ecosystem assets
+/// 2^128-1         Relay chain token (KSM)
 pub type AssetId = u128;
+
 impl AddressToAssetId<AssetId> for Runtime {
     fn address_to_asset_id(address: H160) -> Option<AssetId> {
         let mut data = [0u8; 16];
@@ -176,9 +183,13 @@ pub struct BaseFilter;
 impl Contains<Call> for BaseFilter {
     fn contains(call: &Call) -> bool {
         match call {
+            // Filter permissionless assets creation
+            Call::Assets(method) => match method {
+                pallet_assets::Call::create { id, .. } => *id < u32::max_value().into(),
+                pallet_assets::Call::destroy { id, .. } => *id < u32::max_value().into(),
+                _ => true,
+            },
             // These modules are not allowed to be called by transactions:
-            // To leave collator just shutdown it, next session funds will be released
-            Call::CollatorSelection(pallet_collator_selection::Call::leave_intent { .. }) => false,
             // Other modules should works:
             _ => true,
         }
@@ -542,7 +553,7 @@ impl pallet_assets::Config for Runtime {
     type StringLimit = AssetsStringLimit;
     type Freezer = ();
     type Extra = ();
-    type WeightInfo = ();
+    type WeightInfo = pallet_assets::weights::SubstrateWeight<Runtime>;
 }
 
 parameter_types! {
