@@ -19,9 +19,10 @@ use xcm_builder::{
     AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom,
     AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom, ConvertedConcreteAssetId,
     CurrencyAdapter, EnsureXcmOrigin, FixedRateOfFungible, FixedWeightBounds, FungiblesAdapter,
-    IsConcrete, LocationInverter, ParentAsSuperuser, ParentIsPreset, RelayChainAsNative,
-    SiblingParachainAsNative, SiblingParachainConvertsVia, SignedAccountId32AsNative,
-    SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit, UsingComponents,
+    IsConcrete, LocationInverter, NativeAsset, ParentAsSuperuser, ParentIsPreset,
+    RelayChainAsNative, SiblingParachainAsNative, SiblingParachainConvertsVia,
+    SignedAccountId32AsNative, SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit,
+    UsingComponents,
 };
 use xcm_executor::{
     traits::{FilterAssetLocation, JustTry},
@@ -154,24 +155,13 @@ pub type XcmBarrier = (
     AllowSubscriptionsFrom<Everything>,
 );
 
-/// Asset filter that allows all assets from a certain location.
-pub struct AssetsFrom<T>(PhantomData<T>);
-impl<T: Get<MultiLocation>> FilterAssetLocation for AssetsFrom<T> {
-    fn filter_asset_location(asset: &MultiAsset, origin: &MultiLocation) -> bool {
-        let loc = T::get();
-        &loc == origin
-            && matches!(asset, MultiAsset { id: xcm::v1::AssetId::Concrete(asset_loc), fun: Fungible(_a) }
-                if asset_loc.match_and_split(&loc).is_some())
-    }
-}
-
 pub struct XcmConfig;
 impl Config for XcmConfig {
     type Call = Call;
     type XcmSender = XcmRouter;
     type AssetTransactor = AssetTransactors;
     type OriginConverter = XcmOriginToTransactDispatchOrigin;
-    type IsReserve = AssetsFrom<RelayLocation>;
+    type IsReserve = NativeAsset;
     type IsTeleporter = ();
     type LocationInverter = LocationInverter<Ancestry>;
     type Barrier = XcmBarrier;
