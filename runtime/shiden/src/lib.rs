@@ -149,7 +149,7 @@ impl Contains<Call> for BaseFilter {
     fn contains(call: &Call) -> bool {
         match call {
             // Filter permission-less assets creation/destroying
-            Call::Assets(method) => match method {                                                                   
+            Call::Assets(method) => match method {
                 pallet_assets::Call::create { id, .. } => *id < u32::max_value().into(),
                 pallet_assets::Call::destroy { id, .. } => *id < u32::max_value().into(),
                 _ => true,
@@ -546,7 +546,7 @@ impl pallet_assets::Config for Runtime {
     type StringLimit = AssetsStringLimit;
     type Freezer = ();
     type Extra = ();
-    type WeightInfo = pallet_assets::weights::SubstrateWeights;
+    type WeightInfo = pallet_assets::weights::SubstrateWeight;
 }
 
 parameter_types! {

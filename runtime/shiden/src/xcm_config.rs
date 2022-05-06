@@ -4,24 +4,24 @@ use super::{
     MAXIMUM_BLOCK_WEIGHT,
 };
 use frame_support::{
-    match_types, parameter_types,
+    match_types,
+    pallet_prelude::Get,
+    parameter_types,
     traits::{Everything, Nothing, PalletInfoAccess},
     weights::Weight,
-    pallet_prelude::Get,
 };
 use sp_runtime::traits::Bounded;
-use sp_std::{marker::PhantomData, borrow::Borrow};
+use sp_std::{borrow::Borrow, marker::PhantomData};
 
 // Polkadot imports
 use xcm::latest::prelude::*;
 use xcm_builder::{
     AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom,
-    AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom, 
-    ConvertedConcreteAssetId, CurrencyAdapter, EnsureXcmOrigin, FixedRateOfFungible,
-    FixedWeightBounds, FungiblesAdapter, IsConcrete, LocationInverter, ParentAsSuperuser,
-    ParentIsPreset, RelayChainAsNative, SiblingParachainAsNative, SiblingParachainConvertsVia,
-    SignedAccountId32AsNative, SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit,
-    UsingComponents,
+    AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom, ConvertedConcreteAssetId,
+    CurrencyAdapter, EnsureXcmOrigin, FixedRateOfFungible, FixedWeightBounds, FungiblesAdapter,
+    IsConcrete, LocationInverter, ParentAsSuperuser, ParentIsPreset, RelayChainAsNative,
+    SiblingParachainAsNative, SiblingParachainConvertsVia, SignedAccountId32AsNative,
+    SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit, UsingComponents,
 };
 use xcm_executor::{
     traits::{FilterAssetLocation, JustTry},
@@ -65,9 +65,7 @@ pub type CurrencyTransactor = CurrencyAdapter<
     (),
 >;
 
-pub struct AsAssetWithRelay<AssetId>(
-    sp_std::marker::PhantomData<AssetId>,
-);
+pub struct AsAssetWithRelay<AssetId>(sp_std::marker::PhantomData<AssetId>);
 impl<AssetId> xcm_executor::traits::Convert<MultiLocation, AssetId> for AsAssetWithRelay<AssetId>
 where
     AssetId: Clone + Eq + Bounded,
@@ -76,14 +74,14 @@ where
         if id.borrow().eq(&MultiLocation::parent()) {
             Ok(AssetId::max_value())
         } else {
-            Err(()) 
+            Err(())
         }
     }
     fn reverse_ref(what: impl Borrow<AssetId>) -> Result<MultiLocation, ()> {
         if what.borrow().eq(&AssetId::max_value().into()) {
             Ok(MultiLocation::parent())
         } else {
-            Err(()) 
+            Err(())
         }
     }
 }
@@ -93,12 +91,7 @@ pub type FungiblesTransactor = FungiblesAdapter<
     // Use this fungibles implementation:
     Assets,
     // Use this currency when it is a fungible asset matching the given location or name:
-    ConvertedConcreteAssetId<
-        AssetId,
-        Balance,
-        AsAssetWithRelay<AssetId>,
-        JustTry,
-    >,
+    ConvertedConcreteAssetId<AssetId, Balance, AsAssetWithRelay<AssetId>, JustTry>,
     // Convert an XCM MultiLocation into a local account id:
     LocationToAccountId,
     // Our chain's account ID type (we can't get away without mentioning it explicitly):
