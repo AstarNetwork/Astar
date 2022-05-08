@@ -123,7 +123,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("shibuya"),
     impl_name: create_runtime_str!("shibuya"),
     authoring_version: 1,
-    spec_version: 47,
+    spec_version: 48,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 2,
@@ -876,23 +876,25 @@ pub type Executive = frame_executive::Executive<
     frame_system::ChainContext<Runtime>,
     Runtime,
     AllPalletsWithSystem,
-    (EthereumMigrationBlockV2,),
+    (RestakeStorageFix,),
 >;
 
-pub struct EthereumMigrationBlockV2;
-impl OnRuntimeUpgrade for EthereumMigrationBlockV2 {
+pub struct RestakeStorageFix;
+impl OnRuntimeUpgrade for RestakeStorageFix {
     fn on_runtime_upgrade() -> Weight {
-        Ethereum::migrate_block_v0_to_v2()
+        pallet_dapps_staking::fix::restake::restake_fix_migration::<Runtime>(
+            RuntimeBlockWeights::get().max_block / 5,
+        )
     }
 
     #[cfg(feature = "try-runtime")]
     fn pre_upgrade() -> Result<(), &'static str> {
-        Ethereum::pre_migrate_block_v2()
+        Ok(())
     }
 
     #[cfg(feature = "try-runtime")]
     fn post_upgrade() -> Result<(), &'static str> {
-        Ethereum::post_migrate_block_v2()
+        pallet_dapps_staking::fix::restake::post_migrate::<Runtime>()
     }
 }
 
