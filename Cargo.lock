@@ -6209,8 +6209,8 @@ dependencies = [
 
 [[package]]
 name = "pallet-dapps-staking"
-version = "3.3.5"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=fix/dapps-staking-restake-v2#82c0ce87d717ac70d826d1c4efdea98fbb2528e9"
+version = "3.3.4"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=fix/dapps-staking-restake-v2#73390fa7058295666679196b10f196ac8df1f80d"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -6731,15 +6731,15 @@ dependencies = [
 
 [[package]]
 name = "pallet-precompile-dapps-staking"
-version = "3.3.5"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=fix/dapps-staking-restake-v2#82c0ce87d717ac70d826d1c4efdea98fbb2528e9"
+version = "3.3.4"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=fix/dapps-staking-restake-v2#73390fa7058295666679196b10f196ac8df1f80d"
 dependencies = [
  "fp-evm",
  "frame-support",
  "frame-system",
  "log",
  "num_enum",
- "pallet-dapps-staking 3.3.5",
+ "pallet-dapps-staking 3.3.4",
  "pallet-evm",
  "parity-scale-codec",
  "precompile-utils 0.2.0 (git+https://github.com/AstarNetwork/astar-frame?branch=fix/dapps-staking-restake-v2)",
@@ -8672,7 +8672,7 @@ dependencies = [
 [[package]]
 name = "precompile-utils"
 version = "0.2.0"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=fix/dapps-staking-restake-v2#82c0ce87d717ac70d826d1c4efdea98fbb2528e9"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=fix/dapps-staking-restake-v2#73390fa7058295666679196b10f196ac8df1f80d"
 dependencies = [
  "fp-evm",
  "frame-support",
@@ -8712,7 +8712,7 @@ dependencies = [
 [[package]]
 name = "precompile-utils-macro"
 version = "0.1.0"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=fix/dapps-staking-restake-v2#82c0ce87d717ac70d826d1c4efdea98fbb2528e9"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=fix/dapps-staking-restake-v2#73390fa7058295666679196b10f196ac8df1f80d"
 dependencies = [
  "num_enum",
  "proc-macro2",
@@ -10831,7 +10831,7 @@ dependencies = [
  "pallet-contracts-primitives",
  "pallet-contracts-rpc-runtime-api",
  "pallet-custom-signatures",
- "pallet-dapps-staking 3.3.5",
+ "pallet-dapps-staking 3.3.4",
  "pallet-ethereum",
  "pallet-evm",
  "pallet-evm-precompile-assets-erc20",
@@ -10846,7 +10846,7 @@ dependencies = [
  "pallet-evm-precompile-substrate-ecdsa",
  "pallet-identity",
  "pallet-multisig",
- "pallet-precompile-dapps-staking 3.3.5",
+ "pallet-precompile-dapps-staking 3.3.4",
  "pallet-randomness-collective-flip",
  "pallet-session",
  "pallet-sudo",
@@ -10914,7 +10914,7 @@ dependencies = [
  "pallet-collator-selection 3.0.0 (git+https://github.com/paritytech/cumulus?branch=polkadot-v0.9.19)",
  "pallet-collective",
  "pallet-custom-signatures",
- "pallet-dapps-staking 3.3.5",
+ "pallet-dapps-staking 3.3.4",
  "pallet-ethereum",
  "pallet-evm",
  "pallet-evm-precompile-assets-erc20",
@@ -10928,7 +10928,7 @@ dependencies = [
  "pallet-evm-precompile-sr25519",
  "pallet-identity",
  "pallet-multisig",
- "pallet-precompile-dapps-staking 3.3.5",
+ "pallet-precompile-dapps-staking 3.3.4",
  "pallet-session",
  "pallet-sudo",
  "pallet-timestamp",
@@ -12582,7 +12582,7 @@ version = "1.6.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "97fee6b57c6a41524a810daee9286c02d7752c4253064d0b05472833a438f675"
 dependencies = [
- "cfg-if 1.0.0",
+ "cfg-if 0.1.10",
  "digest 0.10.3",
  "rand 0.8.5",
  "static_assertions",
