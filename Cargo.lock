@@ -6210,7 +6210,7 @@ dependencies = [
 [[package]]
 name = "pallet-dapps-staking"
 version = "3.3.4"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=fix/dapps-staking-restake-v2#73390fa7058295666679196b10f196ac8df1f80d"
+source = "git+https://github.com/AstarNetwork/astar-frame?tag=pallet-dapps-staking-3.3.4/polkadot-v0.9.19#62afaeb2575e8f4f37dc6c84290a8d24b0fa89bd"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -6732,7 +6732,7 @@ dependencies = [
 [[package]]
 name = "pallet-precompile-dapps-staking"
 version = "3.3.4"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=fix/dapps-staking-restake-v2#73390fa7058295666679196b10f196ac8df1f80d"
+source = "git+https://github.com/AstarNetwork/astar-frame?tag=pallet-dapps-staking-3.3.4/polkadot-v0.9.19#62afaeb2575e8f4f37dc6c84290a8d24b0fa89bd"
 dependencies = [
  "fp-evm",
  "frame-support",
@@ -6742,7 +6742,7 @@ dependencies = [
  "pallet-dapps-staking 3.3.4",
  "pallet-evm",
  "parity-scale-codec",
- "precompile-utils 0.2.0 (git+https://github.com/AstarNetwork/astar-frame?branch=fix/dapps-staking-restake-v2)",
+ "precompile-utils 0.2.0 (git+https://github.com/AstarNetwork/astar-frame?tag=pallet-dapps-staking-3.3.4/polkadot-v0.9.19)",
  "scale-info",
  "sp-core",
  "sp-runtime",
@@ -8672,7 +8672,7 @@ dependencies = [
 [[package]]
 name = "precompile-utils"
 version = "0.2.0"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=fix/dapps-staking-restake-v2#73390fa7058295666679196b10f196ac8df1f80d"
+source = "git+https://github.com/AstarNetwork/astar-frame?tag=pallet-dapps-staking-3.3.4/polkadot-v0.9.19#62afaeb2575e8f4f37dc6c84290a8d24b0fa89bd"
 dependencies = [
  "fp-evm",
  "frame-support",
@@ -8681,7 +8681,7 @@ dependencies = [
  "num_enum",
  "pallet-evm",
  "parity-scale-codec",
- "precompile-utils-macro 0.1.0 (git+https://github.com/AstarNetwork/astar-frame?branch=fix/dapps-staking-restake-v2)",
+ "precompile-utils-macro 0.1.0 (git+https://github.com/AstarNetwork/astar-frame?tag=pallet-dapps-staking-3.3.4/polkadot-v0.9.19)",
  "sha3 0.10.1",
  "sp-core",
  "sp-io",
@@ -8712,7 +8712,7 @@ dependencies = [
 [[package]]
 name = "precompile-utils-macro"
 version = "0.1.0"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=fix/dapps-staking-restake-v2#73390fa7058295666679196b10f196ac8df1f80d"
+source = "git+https://github.com/AstarNetwork/astar-frame?tag=pallet-dapps-staking-3.3.4/polkadot-v0.9.19#62afaeb2575e8f4f37dc6c84290a8d24b0fa89bd"
 dependencies = [
  "num_enum",
  "proc-macro2",
