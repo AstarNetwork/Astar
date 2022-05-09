@@ -4,9 +4,7 @@ use super::{
     MAXIMUM_BLOCK_WEIGHT,
 };
 use frame_support::{
-    match_types,
-    pallet_prelude::Get,
-    parameter_types,
+    match_types, parameter_types,
     traits::{Everything, Nothing, PalletInfoAccess},
     weights::Weight,
 };
@@ -24,10 +22,7 @@ use xcm_builder::{
     SignedAccountId32AsNative, SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit,
     UsingComponents,
 };
-use xcm_executor::{
-    traits::{FilterAssetLocation, JustTry},
-    Config, XcmExecutor,
-};
+use xcm_executor::{traits::JustTry, Config, XcmExecutor};
 
 parameter_types! {
     pub const RelayLocation: MultiLocation = MultiLocation::parent();
@@ -66,7 +61,7 @@ pub type CurrencyTransactor = CurrencyAdapter<
     (),
 >;
 
-pub struct AsAssetWithRelay<AssetId>(sp_std::marker::PhantomData<AssetId>);
+pub struct AsAssetWithRelay<AssetId>(PhantomData<AssetId>);
 impl<AssetId> xcm_executor::traits::Convert<MultiLocation, AssetId> for AsAssetWithRelay<AssetId>
 where
     AssetId: Clone + Eq + Bounded,
