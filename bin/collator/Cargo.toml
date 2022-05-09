@@ -1,6 +1,6 @@
 [package]
 name = "astar-collator"
-version = "3.24.2"
+version = "3.25.0"
 authors = ["Stake Technologies <devops@stake.co.jp>"]
 description = "Astar collator implementation in Rust."
 build = "build.rs"

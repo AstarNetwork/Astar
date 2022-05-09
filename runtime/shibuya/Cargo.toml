@@ -1,6 +1,6 @@
 [package]
 name = "shibuya-runtime"
-version = "3.24.2"
+version = "3.25.0"
 authors = ["Stake Technologies <devops@stake.co.jp>"]
 edition = "2021"
 build = "build.rs"
