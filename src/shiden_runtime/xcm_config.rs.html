@@ -227,20 +227,13 @@
 <span id="226">226</span>
 <span id="227">227</span>
 <span id="228">228</span>
-<span id="229">229</span>
-<span id="230">230</span>
-<span id="231">231</span>
-<span id="232">232</span>
-<span id="233">233</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="kw">super</span>::{
     <span class="ident">AccountId</span>, <span class="ident">AssetId</span>, <span class="ident">Assets</span>, <span class="ident">Balance</span>, <span class="ident">Balances</span>, <span class="ident">Call</span>, <span class="ident">DealWithFees</span>, <span class="ident">Event</span>, <span class="ident">Origin</span>,
     <span class="ident">ParachainInfo</span>, <span class="ident">ParachainSystem</span>, <span class="ident">PolkadotXcm</span>, <span class="ident">Runtime</span>, <span class="ident">WeightToFee</span>, <span class="ident">XcmpQueue</span>,
     <span class="ident">MAXIMUM_BLOCK_WEIGHT</span>,
 };
 <span class="kw">use</span> <span class="ident">frame_support</span>::{
-    <span class="ident">match_types</span>,
-    <span class="ident">pallet_prelude::Get</span>,
-    <span class="ident">parameter_types</span>,
+    <span class="ident">match_types</span>, <span class="ident">parameter_types</span>,
     <span class="ident">traits</span>::{<span class="ident">Everything</span>, <span class="ident">Nothing</span>, <span class="ident">PalletInfoAccess</span>},
     <span class="ident">weights::Weight</span>,
 };
@@ -258,10 +251,7 @@
     <span class="ident">SignedAccountId32AsNative</span>, <span class="ident">SignedToAccountId32</span>, <span class="ident">SovereignSignedViaLocation</span>, <span class="ident">TakeWeightCredit</span>,
     <span class="ident">UsingComponents</span>,
 };
-<span class="kw">use</span> <span class="ident">xcm_executor</span>::{
-    <span class="ident">traits</span>::{<span class="ident">FilterAssetLocation</span>, <span class="ident">JustTry</span>},
-    <span class="ident">Config</span>, <span class="ident">XcmExecutor</span>,
-};
+<span class="kw">use</span> <span class="ident">xcm_executor</span>::{<span class="ident">traits::JustTry</span>, <span class="ident">Config</span>, <span class="ident">XcmExecutor</span>};
 
 <span class="macro">parameter_types!</span> {
     <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">RelayLocation</span>: <span class="ident">MultiLocation</span> <span class="op">=</span> <span class="ident">MultiLocation::parent</span>();
@@ -300,7 +290,7 @@
     (),
 <span class="op">&gt;</span>;
 
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">AsAssetWithRelay</span><span class="op">&lt;</span><span class="ident">AssetId</span><span class="op">&gt;</span>(<span class="ident">sp_std::marker::PhantomData</span><span class="op">&lt;</span><span class="ident">AssetId</span><span class="op">&gt;</span>);
+<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">AsAssetWithRelay</span><span class="op">&lt;</span><span class="ident">AssetId</span><span class="op">&gt;</span>(<span class="ident">PhantomData</span><span class="op">&lt;</span><span class="ident">AssetId</span><span class="op">&gt;</span>);
 <span class="kw">impl</span><span class="op">&lt;</span><span class="ident">AssetId</span><span class="op">&gt;</span> <span class="ident">xcm_executor::traits::Convert</span><span class="op">&lt;</span><span class="ident">MultiLocation</span>, <span class="ident">AssetId</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">AsAssetWithRelay</span><span class="op">&lt;</span><span class="ident">AssetId</span><span class="op">&gt;</span>
 <span class="kw">where</span>
     <span class="ident">AssetId</span>: <span class="ident">Clone</span> <span class="op">+</span> <span class="ident">Eq</span> <span class="op">+</span> <span class="ident">Bounded</span>,
