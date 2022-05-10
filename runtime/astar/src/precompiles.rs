@@ -1,8 +1,7 @@
 //! The Astar Network EVM precompiles. This can be compiled with ``#[no_std]`, ready for Wasm.
 
-#![cfg_attr(not(feature = "std"), no_std)]
-
 use pallet_evm::{Context, Precompile, PrecompileResult, PrecompileSet};
+use pallet_evm_precompile_assets_erc20::Erc20AssetsPrecompileSet;
 use pallet_evm_precompile_blake2::Blake2F;
 use pallet_evm_precompile_bn128::{Bn128Add, Bn128Mul, Bn128Pairing};
 use pallet_evm_precompile_dispatch::Dispatch;
@@ -15,6 +14,10 @@ use pallet_precompile_dapps_staking::DappsStakingWrapper;
 use sp_core::H160;
 use sp_std::fmt::Debug;
 use sp_std::marker::PhantomData;
+
+/// The asset precompile address prefix. Addresses that match against this prefix will be routed
+/// to Erc20AssetsPrecompileSet
+pub const ASSET_PRECOMPILE_ADDRESS_PREFIX: &[u8] = &[255u8; 4];
 
 /// The PrecompileSet installed in the Astar runtime.
 #[derive(Debug, Clone, Copy)]
@@ -42,6 +45,7 @@ where
     R: pallet_evm::Config,
     Dispatch<R>: Precompile,
     DappsStakingWrapper<R>: Precompile,
+    Erc20AssetsPrecompileSet<R>: PrecompileSet,
 {
     fn execute(
         &self,
@@ -84,6 +88,11 @@ where
             a if a == hash(20482) => Some(Sr25519Precompile::<R>::execute(
                 input, target_gas, context, is_static,
             )),
+            // If the address matches asset prefix, the we route through the asset precompile set
+            a if &a.to_fixed_bytes()[0..4] == ASSET_PRECOMPILE_ADDRESS_PREFIX => {
+                Erc20AssetsPrecompileSet::<R>::new()
+                    .execute(address, input, target_gas, context, is_static)
+            }
             // Default
             _ => None,
         }
@@ -91,6 +100,7 @@ where
 
     fn is_precompile(&self, address: H160) -> bool {
         Self::used_addresses().find(|x| x == &address).is_some()
+            || Erc20AssetsPrecompileSet::<R>::new().is_precompile(address)
     }
 }
 

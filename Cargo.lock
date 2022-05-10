@@ -153,7 +153,7 @@ checksum = "9b34d609dfbaf33d6889b2b7106d3ca345eacad44200913df5ba02bfd31d2ba9"
 
 [[package]]
 name = "astar-collator"
-version = "3.24.2"
+version = "3.25.0"
 dependencies = [
  "astar-runtime",
  "async-trait",
@@ -243,10 +243,13 @@ dependencies = [
 
 [[package]]
 name = "astar-runtime"
-version = "3.24.2"
+version = "3.25.0"
 dependencies = [
  "cumulus-pallet-aura-ext",
+ "cumulus-pallet-dmp-queue",
  "cumulus-pallet-parachain-system",
+ "cumulus-pallet-xcm",
+ "cumulus-pallet-xcmp-queue",
  "cumulus-primitives-core",
  "cumulus-primitives-timestamp",
  "cumulus-primitives-utility",
@@ -260,6 +263,7 @@ dependencies = [
  "frame-system-rpc-runtime-api",
  "frame-try-runtime",
  "hex-literal",
+ "pallet-assets",
  "pallet-aura",
  "pallet-authorship",
  "pallet-balances",
@@ -271,6 +275,7 @@ dependencies = [
  "pallet-dapps-staking 3.2.3",
  "pallet-ethereum",
  "pallet-evm",
+ "pallet-evm-precompile-assets-erc20",
  "pallet-evm-precompile-blake2",
  "pallet-evm-precompile-bn128",
  "pallet-evm-precompile-dispatch",
@@ -289,9 +294,11 @@ dependencies = [
  "pallet-transaction-payment-rpc-runtime-api",
  "pallet-utility",
  "pallet-vesting 4.0.0-dev (git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.19)",
+ "pallet-xcm",
  "parachain-info",
  "parity-scale-codec",
  "polkadot-parachain",
+ "polkadot-primitives",
  "polkadot-runtime-common",
  "scale-info",
  "smallvec",
@@ -310,6 +317,9 @@ dependencies = [
  "sp-version",
  "substrate-wasm-builder",
  "try-runtime-cli",
+ "xcm",
+ "xcm-builder",
+ "xcm-executor",
 ]
 
 [[package]]
@@ -4948,7 +4958,7 @@ checksum = "a261afc61b7a5e323933b402ca6a1765183687c614789b1e4db7762ed4230bca"
 
 [[package]]
 name = "local-runtime"
-version = "3.24.2"
+version = "3.25.0"
 dependencies = [
  "fp-rpc",
  "fp-self-contained",
@@ -10799,7 +10809,7 @@ dependencies = [
 
 [[package]]
 name = "shibuya-runtime"
-version = "3.24.2"
+version = "3.25.0"
 dependencies = [
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-dmp-queue",
@@ -10885,7 +10895,7 @@ dependencies = [
 
 [[package]]
 name = "shiden-runtime"
-version = "3.24.2"
+version = "3.25.0"
 dependencies = [
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-dmp-queue",
