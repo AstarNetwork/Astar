@@ -7,9 +7,7 @@
 use codec::{Decode, Encode};
 use frame_support::{
     construct_runtime, parameter_types,
-    traits::{
-        Contains, Currency, FindAuthor, Get, Imbalance, Nothing, OnRuntimeUpgrade, OnUnbalanced,
-    },
+    traits::{Contains, Currency, FindAuthor, Get, Imbalance, Nothing, OnUnbalanced},
     weights::{
         constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_PER_SECOND},
         ConstantMultiplier, DispatchClass, Weight, WeightToFeeCoefficient, WeightToFeeCoefficients,
@@ -123,7 +121,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("shibuya"),
     impl_name: create_runtime_str!("shibuya"),
     authoring_version: 1,
-    spec_version: 48,
+    spec_version: 49,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 2,
@@ -876,27 +874,7 @@ pub type Executive = frame_executive::Executive<
     frame_system::ChainContext<Runtime>,
     Runtime,
     AllPalletsWithSystem,
-    (RestakeStorageFix,),
 >;
-
-pub struct RestakeStorageFix;
-impl OnRuntimeUpgrade for RestakeStorageFix {
-    fn on_runtime_upgrade() -> Weight {
-        pallet_dapps_staking::fix::restake::restake_fix_migration::<Runtime>(
-            RuntimeBlockWeights::get().max_block / 5,
-        )
-    }
-
-    #[cfg(feature = "try-runtime")]
-    fn pre_upgrade() -> Result<(), &'static str> {
-        Ok(())
-    }
-
-    #[cfg(feature = "try-runtime")]
-    fn post_upgrade() -> Result<(), &'static str> {
-        pallet_dapps_staking::fix::restake::post_migrate::<Runtime>()
-    }
-}
 
 impl fp_self_contained::SelfContainedCall for Call {
     type SignedInfo = H160;
