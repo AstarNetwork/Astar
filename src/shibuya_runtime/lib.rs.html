@@ -1314,28 +1314,6 @@
 <span id="1313">1313</span>
 <span id="1314">1314</span>
 <span id="1315">1315</span>
-<span id="1316">1316</span>
-<span id="1317">1317</span>
-<span id="1318">1318</span>
-<span id="1319">1319</span>
-<span id="1320">1320</span>
-<span id="1321">1321</span>
-<span id="1322">1322</span>
-<span id="1323">1323</span>
-<span id="1324">1324</span>
-<span id="1325">1325</span>
-<span id="1326">1326</span>
-<span id="1327">1327</span>
-<span id="1328">1328</span>
-<span id="1329">1329</span>
-<span id="1330">1330</span>
-<span id="1331">1331</span>
-<span id="1332">1332</span>
-<span id="1333">1333</span>
-<span id="1334">1334</span>
-<span id="1335">1335</span>
-<span id="1336">1336</span>
-<span id="1337">1337</span>
 </pre><pre class="rust"><code><span class="doccomment">//! The Shiden Network runtime. This can be compiled with ``#[no_std]`, ready for Wasm.</span>
 
 <span class="attribute">#![<span class="ident">cfg_attr</span>(<span class="ident">not</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>), <span class="ident">no_std</span>)]</span>
@@ -1345,9 +1323,7 @@
 <span class="kw">use</span> <span class="ident">codec</span>::{<span class="ident">Decode</span>, <span class="ident">Encode</span>};
 <span class="kw">use</span> <span class="ident">frame_support</span>::{
     <span class="ident">construct_runtime</span>, <span class="ident">parameter_types</span>,
-    <span class="ident">traits</span>::{
-        <span class="ident">Contains</span>, <span class="ident">Currency</span>, <span class="ident">FindAuthor</span>, <span class="ident">Get</span>, <span class="ident">Imbalance</span>, <span class="ident">Nothing</span>, <span class="ident">OnRuntimeUpgrade</span>, <span class="ident">OnUnbalanced</span>,
-    },
+    <span class="ident">traits</span>::{<span class="ident">Contains</span>, <span class="ident">Currency</span>, <span class="ident">FindAuthor</span>, <span class="ident">Get</span>, <span class="ident">Imbalance</span>, <span class="ident">Nothing</span>, <span class="ident">OnUnbalanced</span>},
     <span class="ident">weights</span>::{
         <span class="ident">constants</span>::{<span class="ident">BlockExecutionWeight</span>, <span class="ident">ExtrinsicBaseWeight</span>, <span class="ident">RocksDbWeight</span>, <span class="ident">WEIGHT_PER_SECOND</span>},
         <span class="ident">ConstantMultiplier</span>, <span class="ident">DispatchClass</span>, <span class="ident">Weight</span>, <span class="ident">WeightToFeeCoefficient</span>, <span class="ident">WeightToFeeCoefficients</span>,
@@ -1461,7 +1437,7 @@
     <span class="ident">spec_name</span>: <span class="macro">create_runtime_str!</span>(<span class="string">&quot;shibuya&quot;</span>),
     <span class="ident">impl_name</span>: <span class="macro">create_runtime_str!</span>(<span class="string">&quot;shibuya&quot;</span>),
     <span class="ident">authoring_version</span>: <span class="number">1</span>,
-    <span class="ident">spec_version</span>: <span class="number">48</span>,
+    <span class="ident">spec_version</span>: <span class="number">49</span>,
     <span class="ident">impl_version</span>: <span class="number">0</span>,
     <span class="ident">apis</span>: <span class="ident">RUNTIME_API_VERSIONS</span>,
     <span class="ident">transaction_version</span>: <span class="number">2</span>,
@@ -2214,27 +2190,7 @@
     <span class="ident">frame_system::ChainContext</span><span class="op">&lt;</span><span class="ident">Runtime</span><span class="op">&gt;</span>,
     <span class="ident">Runtime</span>,
     <span class="ident">AllPalletsWithSystem</span>,
-    (<span class="ident">RestakeStorageFix</span>,),
 <span class="op">&gt;</span>;
-
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">RestakeStorageFix</span>;
-<span class="kw">impl</span> <span class="ident">OnRuntimeUpgrade</span> <span class="kw">for</span> <span class="ident">RestakeStorageFix</span> {
-    <span class="kw">fn</span> <span class="ident">on_runtime_upgrade</span>() -&gt; <span class="ident">Weight</span> {
-        <span class="ident">pallet_dapps_staking::fix::restake::restake_fix_migration</span>::<span class="op">&lt;</span><span class="ident">Runtime</span><span class="op">&gt;</span>(
-            <span class="ident">RuntimeBlockWeights::get</span>().<span class="ident">max_block</span> <span class="op">/</span> <span class="number">5</span>,
-        )
-    }
-
-    <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;try-runtime&quot;</span>)]</span>
-    <span class="kw">fn</span> <span class="ident">pre_upgrade</span>() -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="kw-2">&amp;</span><span class="lifetime">&#39;static</span> <span class="ident">str</span><span class="op">&gt;</span> {
-        <span class="prelude-val">Ok</span>(())
-    }
-
-    <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;try-runtime&quot;</span>)]</span>
-    <span class="kw">fn</span> <span class="ident">post_upgrade</span>() -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="kw-2">&amp;</span><span class="lifetime">&#39;static</span> <span class="ident">str</span><span class="op">&gt;</span> {
-        <span class="ident">pallet_dapps_staking::fix::restake::post_migrate</span>::<span class="op">&lt;</span><span class="ident">Runtime</span><span class="op">&gt;</span>()
-    }
-}
 
 <span class="kw">impl</span> <span class="ident">fp_self_contained::SelfContainedCall</span> <span class="kw">for</span> <span class="ident">Call</span> {
     <span class="kw">type</span> <span class="ident">SignedInfo</span> <span class="op">=</span> <span class="ident">H160</span>;
