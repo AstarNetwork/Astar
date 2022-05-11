@@ -6220,7 +6220,7 @@ dependencies = [
 [[package]]
 name = "pallet-dapps-staking"
 version = "3.4.0"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=feature/nomination-transfer#76670072fc341d971426071f184134680dca3348"
+source = "git+https://github.com/AstarNetwork/astar-frame?tag=pallet-dapps-staking-3.4.0/polkadot-v0.9.19#619ac820a2f7a13623a74e9ed9a4f3e238c32934"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -6742,7 +6742,7 @@ dependencies = [
 [[package]]
 name = "pallet-precompile-dapps-staking"
 version = "3.4.0"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=feature/nomination-transfer#76670072fc341d971426071f184134680dca3348"
+source = "git+https://github.com/AstarNetwork/astar-frame?tag=pallet-dapps-staking-3.4.0/polkadot-v0.9.19#619ac820a2f7a13623a74e9ed9a4f3e238c32934"
 dependencies = [
  "fp-evm",
  "frame-support",
@@ -6752,7 +6752,7 @@ dependencies = [
  "pallet-dapps-staking 3.4.0",
  "pallet-evm",
  "parity-scale-codec",
- "precompile-utils 0.2.0 (git+https://github.com/AstarNetwork/astar-frame?branch=feature/nomination-transfer)",
+ "precompile-utils 0.2.0 (git+https://github.com/AstarNetwork/astar-frame?tag=pallet-dapps-staking-3.4.0/polkadot-v0.9.19)",
  "scale-info",
  "sp-core",
  "sp-runtime",
@@ -8702,7 +8702,7 @@ dependencies = [
 [[package]]
 name = "precompile-utils"
 version = "0.2.0"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=feature/nomination-transfer#76670072fc341d971426071f184134680dca3348"
+source = "git+https://github.com/AstarNetwork/astar-frame?tag=pallet-dapps-staking-3.4.0/polkadot-v0.9.19#619ac820a2f7a13623a74e9ed9a4f3e238c32934"
 dependencies = [
  "fp-evm",
  "frame-support",
@@ -8711,7 +8711,7 @@ dependencies = [
  "num_enum",
  "pallet-evm",
  "parity-scale-codec",
- "precompile-utils-macro 0.1.0 (git+https://github.com/AstarNetwork/astar-frame?branch=feature/nomination-transfer)",
+ "precompile-utils-macro 0.1.0 (git+https://github.com/AstarNetwork/astar-frame?tag=pallet-dapps-staking-3.4.0/polkadot-v0.9.19)",
  "sha3 0.10.1",
  "sp-core",
  "sp-io",
@@ -8754,7 +8754,7 @@ dependencies = [
 [[package]]
 name = "precompile-utils-macro"
 version = "0.1.0"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=feature/nomination-transfer#76670072fc341d971426071f184134680dca3348"
+source = "git+https://github.com/AstarNetwork/astar-frame?tag=pallet-dapps-staking-3.4.0/polkadot-v0.9.19#619ac820a2f7a13623a74e9ed9a4f3e238c32934"
 dependencies = [
  "num_enum",
  "proc-macro2",
