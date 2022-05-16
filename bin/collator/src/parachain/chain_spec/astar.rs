@@ -22,7 +22,7 @@ pub fn get_chain_spec(para_id: u32) -> AstarChainSpec {
     // Alice as default
     let sudo_key = get_account_id_from_seed::<sr25519::Public>("Alice");
     let endowned = vec![
-        (sudo_key.clone(), 100 * ASTR),
+        (sudo_key.clone(), 10000 * ASTR),
         (
             // Lockdrop
             AccountId::from_ss58check("5HEEAH8enKBb62mERpWY6cymE5pXjqp9vgptTTgj4wcMCunk").unwrap(),
