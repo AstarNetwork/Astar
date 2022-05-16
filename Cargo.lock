@@ -6153,29 +6153,6 @@ dependencies = [
 
 [[package]]
 name = "pallet-dapps-staking"
-version = "3.3.4"
-source = "git+https://github.com/AstarNetwork/astar-frame?tag=pallet-dapps-staking-3.3.4/polkadot-v0.9.19#62afaeb2575e8f4f37dc6c84290a8d24b0fa89bd"
-dependencies = [
- "frame-benchmarking",
- "frame-support",
- "frame-system",
- "num-traits",
- "pallet-balances",
- "pallet-session",
- "pallet-timestamp",
- "parity-scale-codec",
- "scale-info",
- "serde",
- "sp-arithmetic",
- "sp-core",
- "sp-io",
- "sp-runtime",
- "sp-staking",
- "sp-std",
-]
-
-[[package]]
-name = "pallet-dapps-staking"
 version = "3.3.5"
 source = "git+https://github.com/AstarNetwork/astar-frame?tag=pallet-dapps-staking-3.3.5/polkadot-v0.9.19#d8af67c0d48ff72fcc26f8d879bd4f5cd94fd949"
 dependencies = [
@@ -6676,26 +6653,6 @@ dependencies = [
  "scale-info",
  "sp-runtime",
  "sp-staking",
- "sp-std",
-]
-
-[[package]]
-name = "pallet-precompile-dapps-staking"
-version = "3.3.4"
-source = "git+https://github.com/AstarNetwork/astar-frame?tag=pallet-dapps-staking-3.3.4/polkadot-v0.9.19#62afaeb2575e8f4f37dc6c84290a8d24b0fa89bd"
-dependencies = [
- "fp-evm",
- "frame-support",
- "frame-system",
- "log",
- "num_enum",
- "pallet-dapps-staking 3.3.4",
- "pallet-evm",
- "parity-scale-codec",
- "precompile-utils 0.2.0 (git+https://github.com/AstarNetwork/astar-frame?tag=pallet-dapps-staking-3.3.4/polkadot-v0.9.19)",
- "scale-info",
- "sp-core",
- "sp-runtime",
  "sp-std",
 ]
 
@@ -8642,26 +8599,6 @@ checksum = "eb9f9e6e233e5c4a35559a617bf40a4ec447db2e84c20b55a6f83167b7e57872"
 [[package]]
 name = "precompile-utils"
 version = "0.2.0"
-source = "git+https://github.com/AstarNetwork/astar-frame?tag=pallet-dapps-staking-3.3.4/polkadot-v0.9.19#62afaeb2575e8f4f37dc6c84290a8d24b0fa89bd"
-dependencies = [
- "fp-evm",
- "frame-support",
- "frame-system",
- "log",
- "num_enum",
- "pallet-evm",
- "parity-scale-codec",
- "precompile-utils-macro 0.1.0 (git+https://github.com/AstarNetwork/astar-frame?tag=pallet-dapps-staking-3.3.4/polkadot-v0.9.19)",
- "sha3 0.10.1",
- "sp-core",
- "sp-io",
- "sp-std",
- "xcm",
-]
-
-[[package]]
-name = "precompile-utils"
-version = "0.2.0"
 source = "git+https://github.com/AstarNetwork/astar-frame?tag=pallet-dapps-staking-3.3.5/polkadot-v0.9.19#d8af67c0d48ff72fcc26f8d879bd4f5cd94fd949"
 dependencies = [
  "fp-evm",
@@ -8717,18 +8654,6 @@ dependencies = [
  "sp-io",
  "sp-std",
  "xcm",
-]
-
-[[package]]
-name = "precompile-utils-macro"
-version = "0.1.0"
-source = "git+https://github.com/AstarNetwork/astar-frame?tag=pallet-dapps-staking-3.3.4/polkadot-v0.9.19#62afaeb2575e8f4f37dc6c84290a8d24b0fa89bd"
-dependencies = [
- "num_enum",
- "proc-macro2",
- "quote",
- "sha3 0.8.2",
- "syn",
 ]
 
 [[package]]
@@ -10936,7 +10861,7 @@ dependencies = [
  "pallet-collator-selection 3.0.0 (git+https://github.com/paritytech/cumulus?branch=polkadot-v0.9.19)",
  "pallet-collective",
  "pallet-custom-signatures",
- "pallet-dapps-staking 3.3.4",
+ "pallet-dapps-staking 3.4.0",
  "pallet-ethereum",
  "pallet-evm",
  "pallet-evm-precompile-assets-erc20",
@@ -10950,7 +10875,7 @@ dependencies = [
  "pallet-evm-precompile-sr25519",
  "pallet-identity",
  "pallet-multisig",
- "pallet-precompile-dapps-staking 3.3.4",
+ "pallet-precompile-dapps-staking 3.4.0",
  "pallet-session",
  "pallet-sudo",
  "pallet-timestamp",

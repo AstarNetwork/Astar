@@ -88,7 +88,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("shiden"),
     impl_name: create_runtime_str!("shiden"),
     authoring_version: 1,
-    spec_version: 50,
+    spec_version: 51,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 2,
@@ -1138,7 +1138,7 @@ impl_runtime_apis! {
         }
     }
 
-    impl fp_rpc::ConvertTransactionRuntimeApi<Block> for Runtime {
+    impl fp_rpc::   <Block> for Runtime {
         fn convert_transaction(
             transaction: pallet_ethereum::Transaction
         ) -> <Block as BlockT>::Extrinsic {
