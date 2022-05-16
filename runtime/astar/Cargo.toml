@@ -1,6 +1,6 @@
 [package]
 name = "astar-runtime"
-version = "3.26.0"
+version = "3.27.0"
 authors = ["Stake Technologies <devops@stake.co.jp>"]
 edition = "2021"
 build = "build.rs"
@@ -91,8 +91,8 @@ pallet-block-reward = { git = "https://github.com/AstarNetwork/astar-frame", bra
 pallet-collator-selection = { git = "https://github.com/AstarNetwork/astar-frame", branch = "pallet-collator-selection-3.0.0/polkadot-v0.9.19", default-features = false }
 pallet-custom-signatures = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.19", default-features = false }
 pallet-vesting = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.19", default-features = false }
-pallet-dapps-staking = { git = "https://github.com/AstarNetwork/astar-frame", branch = "pallet-dapps-staking-3.2.3/polkadot-v0.9.19", default-features = false }
-pallet-precompile-dapps-staking = { git = "https://github.com/AstarNetwork/astar-frame", branch = "pallet-dapps-staking-3.2.3/polkadot-v0.9.19", default-features = false }
+pallet-dapps-staking = { git = "https://github.com/AstarNetwork/astar-frame", tag = "pallet-dapps-staking-3.3.5/polkadot-v0.9.19", default-features = false }
+pallet-precompile-dapps-staking = { git = "https://github.com/AstarNetwork/astar-frame", tag = "pallet-dapps-staking-3.3.5/polkadot-v0.9.19", default-features = false }
 pallet-evm-precompile-sr25519 = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.19", default-features = false }
 pallet-evm-precompile-assets-erc20 = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.19", default-features = false }
 

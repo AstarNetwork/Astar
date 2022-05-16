@@ -6,7 +6,7 @@ use astar_runtime::{
 };
 use cumulus_primitives_core::ParaId;
 use sc_service::ChainType;
-use sp_core::{crypto::Ss58Codec, sr25519, Pair, Public};
+use sp_core::{sr25519, Pair, Public};
 use sp_runtime::{
     traits::{IdentifyAccount, Verify},
     Perbill,
@@ -22,56 +22,13 @@ pub fn get_chain_spec(para_id: u32) -> AstarChainSpec {
     // Alice as default
     let sudo_key = get_account_id_from_seed::<sr25519::Public>("Alice");
     let endowned = vec![
-        (sudo_key.clone(), 100 * ASTR),
         (
-            // Lockdrop
-            AccountId::from_ss58check("5HEEAH8enKBb62mERpWY6cymE5pXjqp9vgptTTgj4wcMCunk").unwrap(),
-            2_100_000_000 * ASTR,
+            get_account_id_from_seed::<sr25519::Public>("Alice"),
+            10_000 * ASTR,
         ),
         (
-            // Parachain Auction
-            AccountId::from_ss58check("5GEXA7G1idwiEDDNJMdpP27Vz3BRw82gziZB1GrPttaxXTGW").unwrap(),
-            1_050_000_000 * ASTR,
-        ),
-        (
-            // Parachain Auction Bonus
-            AccountId::from_ss58check("5DveWyztFMF2bgqT8ZXNfALhuw6k3gqvA4eoUunQwm2Z2RmE").unwrap(),
-            350_000_000 * ASTR,
-        ),
-        (
-            // Parachain Reserve
-            AccountId::from_ss58check("5C5CDyRQzCVvFjWx1FYzN1HY25CvoKH6CbzyBLVuUDzi8ESX").unwrap(),
-            350_000_000 * ASTR,
-        ),
-        (
-            // Protocol Development
-            AccountId::from_ss58check("5F48VxQChQmMpCchszYHyhtARpBXXZ2y1zC4mNYsefMkc1fw").unwrap(),
-            700_000_000 * ASTR,
-        ),
-        (
-            // On Chain DAO
-            AccountId::from_ss58check("5DyanbfmERU3X5EAEtVq9H12XDsbXLupPn47e4y2LjhDdwjL").unwrap(),
-            350_000_000 * ASTR,
-        ),
-        (
-            // Marketing
-            AccountId::from_ss58check("5EL7GdB9Woz8oBL6NP4AvVWguDgi923UjLMGcdPusnNXFA7r").unwrap(),
-            350_000_000 * ASTR,
-        ),
-        (
-            // Institutional Investors
-            AccountId::from_ss58check("5HdeVKsojzVAEaAaCscu7NiWG4X4aG88dVn67VgA5LG7macZ").unwrap(),
-            700_000_000 * ASTR,
-        ),
-        (
-            // Team
-            AccountId::from_ss58check("5G3wWrPihXTbrk7pDDjeoqZz2Hoy823WB4dd4vLzZqmL5F3x").unwrap(),
-            350_000_000 * ASTR,
-        ),
-        (
-            // Foundation
-            AccountId::from_ss58check("5EfMfGRp6vr8JLknyvx77nmyRfZSrFTBzyJQ856Gn2iuoFZc").unwrap(),
-            700_000_000 * ASTR,
+            get_account_id_from_seed::<sr25519::Public>("Bob"),
+            10_000 * ASTR,
         ),
     ];
 
