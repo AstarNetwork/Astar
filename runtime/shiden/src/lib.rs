@@ -1118,7 +1118,7 @@ impl_runtime_apis! {
         }
     }
 
-    impl fp_rpc::   <Block> for Runtime {
+    impl fp_rpc::ConvertTransactionRuntimeApi<Block> for Runtime {
         fn convert_transaction(
             transaction: pallet_ethereum::Transaction
         ) -> <Block as BlockT>::Extrinsic {
