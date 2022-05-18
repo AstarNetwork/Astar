@@ -88,7 +88,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("shiden"),
     impl_name: create_runtime_str!("shiden"),
     authoring_version: 1,
-    spec_version: 52,
+    spec_version: 53,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 2,
@@ -493,12 +493,6 @@ impl pallet_balances::Config for Runtime {
 }
 
 /// Id used for identifying assets.
-///
-/// AssetId allocation:
-/// [1; 2^32-1]     Custom user assets (permissionless)
-/// [2^32; 2^64-1]  Statemine assets (simple map)
-/// [2^64; 2^128-1] Ecosystem assets
-/// 2^128-1         Relay chain token (KSM)
 pub type AssetId = u128;
 
 impl pallet_evm_precompile_assets_erc20::AddressToAssetId<AssetId> for Runtime {

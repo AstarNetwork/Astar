@@ -8,8 +8,7 @@ use frame_support::{
     traits::{Everything, Nothing, PalletInfoAccess},
     weights::Weight,
 };
-use sp_runtime::traits::Bounded;
-use sp_std::{borrow::Borrow, marker::PhantomData};
+use sp_std::borrow::Borrow;
 
 // Polkadot imports
 use xcm::latest::prelude::*;
@@ -61,21 +60,74 @@ pub type CurrencyTransactor = CurrencyAdapter<
     (),
 >;
 
-pub struct AsAssetWithRelay<AssetId>(PhantomData<AssetId>);
-impl<AssetId> xcm_executor::traits::Convert<MultiLocation, AssetId> for AsAssetWithRelay<AssetId>
-where
-    AssetId: Clone + Eq + Bounded,
-{
+pub struct AsAssetWithRelay;
+
+/// AssetId allocation:
+/// [1; 2^32-1]     Custom user assets (permissionless)
+/// [2^32; 2^64-1]  Statemint assets (simple map)
+/// [2^64; 2^128-1] Ecosystem assets
+/// 2^128-1         Relay chain token (DOT)
+impl AsAssetWithRelay {
+    /// Local Id of the relay chain asset (DOT)
+    pub const RELAY_CHAIN_ASSET_ID: AssetId = AssetId::max_value();
+
+    pub const STATEMINT_PARA_ID: u32 = 1000;
+    pub const STATEMINT_ASSET_PALLET_INSTANCE: u8 = 50;
+
+    /// Offset value from which Statemint asset Ids start (or minimumum Statemint asset Id)
+    pub const STATEMINT_OFFSET: AssetId = 1 << 32;
+
+    /// Max value of Statemint asset id
+    pub const MAX_STATEMINT_ASSET_ID: AssetId = (1 << 64) - 1;
+
+    /// `true` if asset is a Statemint asset, `false` otherwise
+    pub fn is_statemint_asset(id: AssetId) -> bool {
+        id >= Self::STATEMINT_OFFSET && id <= Self::MAX_STATEMINT_ASSET_ID
+    }
+}
+
+impl xcm_executor::traits::Convert<MultiLocation, AssetId> for AsAssetWithRelay {
     fn convert_ref(id: impl Borrow<MultiLocation>) -> Result<AssetId, ()> {
-        if id.borrow().eq(&MultiLocation::parent()) {
-            Ok(AssetId::max_value())
-        } else {
-            Err(())
+        match id.borrow() {
+            // Native relaychain asset
+            MultiLocation {
+                parents: 1,
+                interior: Junctions::Here,
+            } => Ok(Self::RELAY_CHAIN_ASSET_ID),
+            // Statemint `pallet_assets` assets
+            MultiLocation {
+                parents: 1,
+                interior:
+                    X3(
+                        Parachain(Self::STATEMINT_PARA_ID),
+                        PalletInstance(Self::STATEMINT_ASSET_PALLET_INSTANCE),
+                        GeneralIndex(index),
+                    ),
+            } => index
+                .checked_add(Self::STATEMINT_OFFSET)
+                .map_or(Err(()), |x| Ok(x)),
+            _ => Err(()),
         }
     }
+
     fn reverse_ref(what: impl Borrow<AssetId>) -> Result<MultiLocation, ()> {
-        if what.borrow().eq(&AssetId::max_value().into()) {
+        let local_asset_id = *what.borrow();
+
+        if local_asset_id == Self::RELAY_CHAIN_ASSET_ID {
             Ok(MultiLocation::parent())
+        } else if Self::is_statemint_asset(local_asset_id) {
+            local_asset_id
+                .checked_sub(Self::STATEMINT_OFFSET)
+                .map_or(Err(()), |x| {
+                    Ok(MultiLocation {
+                        parents: 1,
+                        interior: X3(
+                            Parachain(Self::STATEMINT_PARA_ID),
+                            PalletInstance(Self::STATEMINT_ASSET_PALLET_INSTANCE),
+                            GeneralIndex(x),
+                        ),
+                    })
+                })
         } else {
             Err(())
         }
@@ -87,7 +139,7 @@ pub type FungiblesTransactor = FungiblesAdapter<
     // Use this fungibles implementation:
     Assets,
     // Use this currency when it is a fungible asset matching the given location or name:
-    ConvertedConcreteAssetId<AssetId, Balance, AsAssetWithRelay<AssetId>, JustTry>,
+    ConvertedConcreteAssetId<AssetId, Balance, AsAssetWithRelay, JustTry>,
     // Convert an XCM MultiLocation into a local account id:
     LocationToAccountId,
     // Our chain's account ID type (we can't get away without mentioning it explicitly):
@@ -225,4 +277,76 @@ impl cumulus_pallet_dmp_queue::Config for Runtime {
     type Event = Event;
     type XcmExecutor = XcmExecutor<XcmConfig>;
     type ExecuteOverweightOrigin = frame_system::EnsureRoot<AccountId>;
+}
+
+#[cfg(test)]
+mod test {
+
+    use super::*;
+    use xcm_executor::traits::Convert;
+
+    /// Returns `MultiLocation` representing a Statemint asset
+    fn statemint_asset_location(index: u32) -> MultiLocation {
+        MultiLocation {
+            parents: 1,
+            interior: Junctions::X3(
+                Parachain(1000),
+                PalletInstance(50),
+                GeneralIndex(index.into()),
+            ),
+        }
+    }
+
+    #[test]
+    fn multilocation_to_asset_id() {
+        // Relay chain asset
+        let relay_chain_native_asset = MultiLocation::parent();
+        assert_eq!(
+            AsAssetWithRelay::convert_ref(relay_chain_native_asset),
+            Ok(u128::max_value())
+        );
+
+        // Statemint assets
+        let min_statemint_asset = statemint_asset_location(0);
+        assert_eq!(
+            AsAssetWithRelay::convert_ref(min_statemint_asset),
+            Ok(1_u128 << 32)
+        );
+        let arbitrary_statemint_asset = statemint_asset_location(7 * 13 * 19);
+        assert_eq!(
+            AsAssetWithRelay::convert_ref(arbitrary_statemint_asset),
+            Ok((1_u128 << 32) + 7 * 13 * 19)
+        );
+        // at the moment, we cannot take advantage of the entire Statemint asset Id range since u32 is used
+        let max_statemint_asset = statemint_asset_location(u32::max_value());
+        assert_eq!(
+            AsAssetWithRelay::convert_ref(max_statemint_asset),
+            Ok((1_u128 << 33) - 1)
+        );
+    }
+
+    #[test]
+    fn asset_id_to_multilocation() {
+        // Relay chain asset
+        assert_eq!(
+            AsAssetWithRelay::reverse_ref(u128::max_value()),
+            Ok(MultiLocation::parent())
+        );
+
+        // Statemint assets
+        let min_statemint_asset_id = 0;
+        assert_eq!(
+            AsAssetWithRelay::reverse_ref(1 << 32),
+            Ok(statemint_asset_location(
+                min_statemint_asset_id.try_into().unwrap()
+            ))
+        );
+        let max_statemint_asset_id: AssetId = (u32::max_value()).into();
+        assert_eq!(
+            AsAssetWithRelay::reverse_ref(max_statemint_asset_id + (1 << 32)),
+            Ok(statemint_asset_location(
+                max_statemint_asset_id.try_into().unwrap()
+            ))
+        );
+    }
 }
