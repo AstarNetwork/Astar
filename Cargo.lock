@@ -153,7 +153,7 @@ checksum = "9b34d609dfbaf33d6889b2b7106d3ca345eacad44200913df5ba02bfd31d2ba9"
 
 [[package]]
 name = "astar-collator"
-version = "3.27.0"
+version = "3.28.0"
 dependencies = [
  "astar-runtime",
  "async-trait",
@@ -243,7 +243,7 @@ dependencies = [
 
 [[package]]
 name = "astar-runtime"
-version = "3.27.0"
+version = "3.28.0"
 dependencies = [
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-dmp-queue",
@@ -4958,7 +4958,7 @@ checksum = "a261afc61b7a5e323933b402ca6a1765183687c614789b1e4db7762ed4230bca"
 
 [[package]]
 name = "local-runtime"
-version = "3.27.0"
+version = "3.28.0"
 dependencies = [
  "fp-rpc",
  "fp-self-contained",
@@ -7046,7 +7046,7 @@ dependencies = [
 [[package]]
 name = "pallet-xcm"
 version = "0.9.19"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=feature/pallet-xcm#020c639f0057719f1231fe5801823434376a8908"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=feature/pallet-xcm#59a5753de1ed30e59367a633921eb75fc4ee1431"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -10778,7 +10778,7 @@ dependencies = [
 
 [[package]]
 name = "shibuya-runtime"
-version = "3.27.0"
+version = "3.28.0"
 dependencies = [
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-dmp-queue",
@@ -10864,7 +10864,7 @@ dependencies = [
 
 [[package]]
 name = "shiden-runtime"
-version = "3.27.0"
+version = "3.28.0"
 dependencies = [
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-dmp-queue",
