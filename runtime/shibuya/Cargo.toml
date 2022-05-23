@@ -1,6 +1,6 @@
 [package]
 name = "shibuya-runtime"
-version = "3.27.0"
+version = "3.28.0"
 authors = ["Stake Technologies <devops@stake.co.jp>"]
 edition = "2021"
 build = "build.rs"
@@ -71,7 +71,7 @@ cumulus-pallet-dmp-queue = { git = "https://github.com/paritytech/cumulus", bran
 cumulus-pallet-xcmp-queue = { git = "https://github.com/paritytech/cumulus", branch = "polkadot-v0.9.19", default-features = false }
 cumulus-pallet-xcm = { git = "https://github.com/paritytech/cumulus", branch = "polkadot-v0.9.19", default-features = false }
 parachain-info = { git = "https://github.com/paritytech/cumulus", branch = "polkadot-v0.9.19", default-features = false }
-pallet-collator-selection = { git = "https://github.com/paritytech/cumulus", branch = "polkadot-v0.9.19", default-features = false }
+pallet-collator-selection = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.19", default-features = false }
 
 # polkadot dependencies
 polkadot-parachain = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "release-v0.9.19" }
@@ -80,7 +80,6 @@ polkadot-runtime-common = { git = "https://github.com/paritytech/polkadot", defa
 xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "release-v0.9.19" }
 xcm-builder = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "release-v0.9.19" }
 xcm-executor = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "release-v0.9.19" }
-pallet-xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "release-v0.9.19" }
 
 # Astar pallets
 pallet-block-reward = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.19", default-features = false }
@@ -90,6 +89,7 @@ pallet-precompile-dapps-staking = { git = "https://github.com/AstarNetwork/astar
 pallet-evm-precompile-sr25519 = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.19", default-features = false }
 pallet-evm-precompile-substrate-ecdsa = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.19", default-features = false }
 pallet-evm-precompile-assets-erc20 = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.19", default-features = false }
+pallet-xcm = { git = "https://github.com/AstarNetwork/astar-frame", default-features = false, branch = "polkadot-v0.9.19" }
 
 # benchmarking
 hex-literal = { version = "0.3.1", optional = true }

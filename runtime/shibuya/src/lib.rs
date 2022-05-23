@@ -121,7 +121,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("shibuya"),
     impl_name: create_runtime_str!("shibuya"),
     authoring_version: 1,
-    spec_version: 49,
+    spec_version: 50,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 2,
@@ -440,6 +440,7 @@ parameter_types! {
     pub const MaxCandidates: u32 = 200;
     pub const MinCandidates: u32 = 5;
     pub const MaxInvulnerables: u32 = 20;
+    pub const SlashRatio: Perbill = Perbill::from_percent(10);
 }
 
 impl pallet_collator_selection::Config for Runtime {
@@ -455,6 +456,7 @@ impl pallet_collator_selection::Config for Runtime {
     type ValidatorId = <Self as frame_system::Config>::AccountId;
     type ValidatorIdOf = pallet_collator_selection::IdentityCollator;
     type ValidatorRegistration = Session;
+    type SlashRatio = SlashRatio;
     type WeightInfo = ();
 }
 
