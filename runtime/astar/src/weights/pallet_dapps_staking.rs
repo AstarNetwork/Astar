@@ -144,6 +144,16 @@ impl<T: frame_system::Config> pallet_dapps_staking::WeightInfo for WeightInfo<T>
 			.saturating_add(T::DbWeight::get().writes(1 as Weight))
 	}
 	// Storage: DappsStaking PalletDisabled (r:1 w:0)
+	// Storage: DappsStaking RegisteredDapps (r:2 w:0)
+	// Storage: DappsStaking CurrentEra (r:1 w:0)
+	// Storage: DappsStaking GeneralStakerInfo (r:2 w:2)
+	// Storage: DappsStaking ContractEraStake (r:2 w:2)
+	fn nomination_transfer() -> Weight {
+		(56_495_000 as Weight)
+			.saturating_add(T::DbWeight::get().reads(8 as Weight))
+			.saturating_add(T::DbWeight::get().writes(4 as Weight))
+	}
+	// Storage: DappsStaking PalletDisabled (r:1 w:0)
 	// Storage: DappsStaking RegisteredDapps (r:1 w:0)
 	// Storage: DappsStaking CurrentEra (r:1 w:0)
 	// Storage: DappsStaking ContractEraStake (r:1 w:1)
