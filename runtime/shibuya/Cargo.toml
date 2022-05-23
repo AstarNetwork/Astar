@@ -89,7 +89,7 @@ pallet-precompile-dapps-staking = { git = "https://github.com/AstarNetwork/astar
 pallet-evm-precompile-sr25519 = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.19", default-features = false }
 pallet-evm-precompile-substrate-ecdsa = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.19", default-features = false }
 pallet-evm-precompile-assets-erc20 = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.19", default-features = false }
-pallet-xcm = { git = "https://github.com/AstarNetwork/astar-frame", default-features = false, branch = "feature/pallet-xcm" }
+pallet-xcm = { git = "https://github.com/AstarNetwork/astar-frame", default-features = false, branch = "polkadot-v0.9.19" }
 
 # benchmarking
 hex-literal = { version = "0.3.1", optional = true }
