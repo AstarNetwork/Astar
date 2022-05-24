@@ -10840,7 +10840,7 @@ dependencies = [
  "pallet-transaction-payment-rpc-runtime-api",
  "pallet-utility",
  "pallet-vesting 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.19)",
- "pallet-xcm 0.9.19 (git+https://github.com/paritytech/polkadot?branch=release-v0.9.19)",
+ "pallet-xcm 0.9.19 (git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.19)",
  "parachain-info",
  "parity-scale-codec",
  "polkadot-parachain",
