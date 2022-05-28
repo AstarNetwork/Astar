@@ -56,6 +56,13 @@ where
         context: &Context,
         is_static: bool,
     ) -> Option<PrecompileResult> {
+        if self.is_precompile(address) && address > hash(9) && context.address != address {
+            return Some(Err(PrecompileFailure::Revert {
+                exit_status: ExitRevert::Reverted,
+                output: b"cannot be called with DELEGATECALL or CALLCODE".to_vec(),
+                cost: 0,
+            }));
+        }
         match address {
             // Ethereum precompiles :
             a if a == hash(1) => Some(ECRecover::execute(input, target_gas, context, is_static)),
