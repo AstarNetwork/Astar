@@ -1,6 +1,8 @@
 //! The Shibuya Network EVM precompiles. This can be compiled with ``#[no_std]`, ready for Wasm.
 
-use pallet_evm::{Context, Precompile, PrecompileResult, PrecompileSet};
+use pallet_evm::{
+    Context, ExitRevert, Precompile, PrecompileFailure, PrecompileResult, PrecompileSet,
+};
 use pallet_evm_precompile_assets_erc20::Erc20AssetsPrecompileSet;
 use pallet_evm_precompile_blake2::Blake2F;
 use pallet_evm_precompile_bn128::{Bn128Add, Bn128Mul, Bn128Pairing};
@@ -56,6 +58,13 @@ where
         context: &Context,
         is_static: bool,
     ) -> Option<PrecompileResult> {
+        if self.is_precompile(address) && address > hash(9) && context.address != address {
+            return Some(Err(PrecompileFailure::Revert {
+                exit_status: ExitRevert::Reverted,
+                output: b"cannot be called with DELEGATECALL or CALLCODE".to_vec(),
+                cost: 0,
+            }));
+        }
         match address {
             // Ethereum precompiles :
             a if a == hash(1) => Some(ECRecover::execute(input, target_gas, context, is_static)),

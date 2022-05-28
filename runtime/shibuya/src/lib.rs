@@ -121,7 +121,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("shibuya"),
     impl_name: create_runtime_str!("shibuya"),
     authoring_version: 1,
-    spec_version: 50,
+    spec_version: 51,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 2,
