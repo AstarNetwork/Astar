@@ -16,6 +16,7 @@ crate-type = ["cdylib", "rlib"]
 
 [dependencies]
 # thidr-party dependencies
+parity-util-mem = { version = "0.11.0", default-features = false, features = ["jemalloc-global"] }
 codec = { package = "parity-scale-codec", version = "3.0.0" }
 serde = { version = "1.0", features = [ "derive" ] }
 futures = { version = "0.3.1", features = ["compat"] }
