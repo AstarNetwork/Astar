@@ -67,18 +67,17 @@ pub type CurrencyTransactor = CurrencyAdapter<
     (),
 >;
 
-pub struct AsAssetWithRelay<AssetId, AssetMapper>(
+pub struct AssetLocationIdConverter<AssetId, AssetMapper>(
     sp_std::marker::PhantomData<(AssetId, AssetMapper)>,
 );
 impl<AssetId, AssetMapper> xcm_executor::traits::Convert<MultiLocation, AssetId>
-    for AsAssetWithRelay<AssetId, AssetMapper>
+    for AssetLocationIdConverter<AssetId, AssetMapper>
 where
     AssetId: Clone + Eq + Bounded,
     AssetMapper: AssetLocationGetter<AssetId>,
 {
     fn convert_ref(location: impl Borrow<MultiLocation>) -> Result<AssetId, ()> {
-        // TODO: how to handle execution weight incurred by DB reads in AssetMapper?
-        // TODO should we remove this completely?
+        // TODO should we remove this hardcoding completely?
         if location.borrow().eq(&MultiLocation::parent()) {
             Ok(AssetId::max_value())
         } else if let Some(asset_id) = AssetMapper::get_asset_id(location.borrow().clone()) {
@@ -89,7 +88,7 @@ where
     }
 
     fn reverse_ref(id: impl Borrow<AssetId>) -> Result<MultiLocation, ()> {
-        // TODO should we remove this completely?
+        // TODO should we remove this hardcoing completely?
         if id.borrow().eq(&AssetId::max_value().into()) {
             Ok(MultiLocation::parent())
         } else if let Some(multilocation) = AssetMapper::get_asset_location(id.borrow().clone()) {
@@ -106,7 +105,12 @@ pub type FungiblesTransactor = FungiblesAdapter<
     // Use this fungibles implementation:
     Assets,
     // Use this currency when it is a fungible asset matching the given location or name:
-    ConvertedConcreteAssetId<AssetId, Balance, AsAssetWithRelay<AssetId, XcAssetConfig>, JustTry>,
+    ConvertedConcreteAssetId<
+        AssetId,
+        Balance,
+        AssetLocationIdConverter<AssetId, XcAssetConfig>,
+        JustTry,
+    >,
     // Convert an XCM MultiLocation into a local account id:
     LocationToAccountId,
     // Our chain's account ID type (we can't get away without mentioning it explicitly):
@@ -245,12 +249,24 @@ impl<T: ExecutionPaymentRate, R: TakeRevenue> WeightTrader for FixedRateOfForeig
                         .checked_sub((asset_location.clone(), amount).into())
                         .map_err(|_| XcmError::TooExpensive)?;
 
-                    // TODO: what happens if trader is used multiple times in XCM execution but different assets are in the holding register?
-                    // TODO: what if execution is bought two times in succession?
                     self.weight = self.weight.saturating_add(weight);
-                    self.consumed = self.consumed.saturating_add(amount);
-                    self.asset_location_and_units_per_second =
-                        Some((asset_location, units_per_second));
+
+                    // If there are multiple calls to `BuyExecution` but with different assets, we need to be able to handle that.
+                    // Current primitive implementation will just keep total track of consumed asset for the FIRST consumed asset.
+                    // Others will just be ignored when refund is concerned.
+                    // TODO: improve this, now or via backlog item?
+                    if let Some((old_asset_location, _)) =
+                        self.asset_location_and_units_per_second.clone()
+                    {
+                        if old_asset_location == asset_location {
+                            self.consumed = self.consumed.saturating_add(amount);
+                        }
+                    } else {
+                        self.consumed = self.consumed.saturating_add(amount);
+                        self.asset_location_and_units_per_second =
+                            Some((asset_location, units_per_second));
+                    }
+
                     return Ok(unused);
                 } else {
                     return Err(XcmError::TooExpensive);
@@ -369,4 +385,86 @@ impl cumulus_pallet_dmp_queue::Config for Runtime {
     type Event = Event;
     type XcmExecutor = XcmExecutor<XcmConfig>;
     type ExecuteOverweightOrigin = frame_system::EnsureRoot<AccountId>;
+}
+
+#[cfg(test)]
+mod test {
+
+    use super::*;
+    use xcm_executor::traits::Convert;
+
+    // Primitive, perhaps I improve it later TODO
+    const PARENT: MultiLocation = MultiLocation::parent();
+    const PARACHAIN: MultiLocation = MultiLocation {
+        parents: 1,
+        interior: Junctions::X1(Parachain(10)),
+    };
+    const GENERAL_INDEX: MultiLocation = MultiLocation {
+        parents: 2,
+        interior: Junctions::X1(GeneralIndex(20)),
+    };
+    const RELAY_ASSET: AssetId = AssetId::max_value();
+
+    struct AssetLocationMapper;
+    impl AssetLocationGetter<AssetId> for AssetLocationMapper {
+        fn get_asset_location(asset_id: AssetId) -> Option<MultiLocation> {
+            match asset_id {
+                RELAY_ASSET => Some(PARENT),
+                20 => Some(PARACHAIN),
+                30 => Some(GENERAL_INDEX),
+                _ => None,
+            }
+        }
+
+        fn get_asset_id(asset_location: MultiLocation) -> Option<AssetId> {
+            match asset_location {
+                a if a == PARENT => Some(RELAY_ASSET),
+                a if a == PARACHAIN => Some(20),
+                a if a == GENERAL_INDEX => Some(30),
+                _ => None,
+            }
+        }
+    }
+
+    #[test]
+    fn asset_location_to_id() {
+        assert_eq!(
+            AssetLocationIdConverter::<AssetId, AssetLocationMapper>::convert_ref(PARENT),
+            Ok(u128::max_value())
+        );
+        assert_eq!(
+            AssetLocationIdConverter::<AssetId, AssetLocationMapper>::convert_ref(PARACHAIN),
+            Ok(20)
+        );
+        assert_eq!(
+            AssetLocationIdConverter::<AssetId, AssetLocationMapper>::convert_ref(GENERAL_INDEX),
+            Ok(30)
+        );
+        assert_eq!(
+            AssetLocationIdConverter::<AssetId, AssetLocationMapper>::convert_ref(
+                MultiLocation::here()
+            ),
+            Err(())
+        );
+    }
+
+    #[test]
+    fn asset_id_to_location() {
+        assert_eq!(
+            AssetLocationIdConverter::<AssetId, AssetLocationMapper>::reverse_ref(u128::max_value()),
+            Ok(PARENT)
+        );
+        assert_eq!(
+            AssetLocationIdConverter::<AssetId, AssetLocationMapper>::reverse_ref(20),
+            Ok(PARACHAIN)
+        );
+        assert_eq!(
+            AssetLocationIdConverter::<AssetId, AssetLocationMapper>::reverse_ref(30),
+            Ok(GENERAL_INDEX)
+        );
+        assert_eq!(
+            AssetLocationIdConverter::<AssetId, AssetLocationMapper>::reverse_ref(0),
+            Err(())
+        );
+    }
 }
