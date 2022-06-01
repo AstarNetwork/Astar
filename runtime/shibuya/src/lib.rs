@@ -784,6 +784,12 @@ impl pallet_sudo::Config for Runtime {
     type Call = Call;
 }
 
+impl pallet_xc_asset_config::Config for Runtime {
+    type Event = Event;
+    type AssetId = AssetId;
+    type WeightInfo = pallet_xc_asset_config::weights::SubstrateWeight<Self>;
+}
+
 construct_runtime!(
     pub enum Runtime where
         Block = Block,
@@ -818,6 +824,7 @@ construct_runtime!(
         PolkadotXcm: pallet_xcm::{Pallet, Call, Storage, Event<T>, Origin} = 51,
         CumulusXcm: cumulus_pallet_xcm::{Pallet, Event<T>, Origin} = 52,
         DmpQueue: cumulus_pallet_dmp_queue::{Pallet, Call, Storage, Event<T>} = 53,
+        XcAssetConfig: pallet_xc_asset_config::{Pallet, Call, Storage, Event<T>} = 54,
 
         EVM: pallet_evm::{Pallet, Config, Call, Storage, Event<T>} = 60,
         Ethereum: pallet_ethereum::{Pallet, Call, Storage, Event, Origin, Config} = 61,
@@ -1237,6 +1244,7 @@ impl_runtime_apis! {
 
             list_benchmark!(list, extra, pallet_dapps_staking, DappsStaking);
             list_benchmark!(list, extra, pallet_block_reward, BlockReward);
+            list_benchmark!(list, extra, pallet_xc_asset_config, XcAssetConfig);
 
             let storage_info = AllPalletsWithSystem::storage_info();
 
@@ -1270,6 +1278,7 @@ impl_runtime_apis! {
             add_benchmark!(params, batches, pallet_timestamp, Timestamp);
             add_benchmark!(params, batches, pallet_dapps_staking, DappsStaking);
             add_benchmark!(params, batches, pallet_block_reward, BlockReward);
+            add_benchmark!(params, batches, pallet_xc_asset_config, XcAssetConfig);
 
             if batches.is_empty() { return Err("Benchmark not found for this pallet.".into()) }
             Ok(batches)

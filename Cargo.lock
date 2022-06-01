@@ -7002,6 +7002,24 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-xc-asset-config"
+version = "1.0.0"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=feature/xc-asset-config#6b3dc78936934a1f827565f94408cc5087b10e21"
+dependencies = [
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "log",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+ "xcm",
+]
+
+[[package]]
 name = "pallet-xcm"
 version = "0.9.19"
 source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.19#4a2749748603de92d43ad069fa60d928b4dfe920"
@@ -10762,6 +10780,7 @@ dependencies = [
  "pallet-transaction-payment-rpc-runtime-api",
  "pallet-utility",
  "pallet-vesting 4.0.0-dev (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.19)",
+ "pallet-xc-asset-config",
  "pallet-xcm 0.9.19 (git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.19)",
  "parachain-info",
  "parity-scale-codec",
