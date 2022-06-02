@@ -17,8 +17,8 @@ use xcm::latest::prelude::*;
 use xcm_builder::{
     AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom,
     AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom, ConvertedConcreteAssetId,
-    CurrencyAdapter, EnsureXcmOrigin, FixedRateOfFungible, FixedWeightBounds, FungiblesAdapter,
-    IsConcrete, LocationInverter, ParentAsSuperuser, ParentIsPreset, RelayChainAsNative,
+    CurrencyAdapter, EnsureXcmOrigin, FixedWeightBounds, FungiblesAdapter, IsConcrete,
+    LocationInverter, ParentAsSuperuser, ParentIsPreset, RelayChainAsNative,
     SiblingParachainAsNative, SiblingParachainConvertsVia, SignedAccountId32AsNative,
     SignedToAccountId32, SovereignSignedViaLocation, TakeRevenue, TakeWeightCredit,
     UsingComponents,
@@ -77,10 +77,7 @@ where
     AssetMapper: AssetLocationGetter<AssetId>,
 {
     fn convert_ref(location: impl Borrow<MultiLocation>) -> Result<AssetId, ()> {
-        // TODO should we remove this hardcoding completely?
-        if location.borrow().eq(&MultiLocation::parent()) {
-            Ok(AssetId::max_value())
-        } else if let Some(asset_id) = AssetMapper::get_asset_id(location.borrow().clone()) {
+        if let Some(asset_id) = AssetMapper::get_asset_id(location.borrow().clone()) {
             Ok(asset_id)
         } else {
             Err(())
@@ -88,10 +85,7 @@ where
     }
 
     fn reverse_ref(id: impl Borrow<AssetId>) -> Result<MultiLocation, ()> {
-        // TODO should we remove this hardcoing completely?
-        if id.borrow().eq(&AssetId::max_value().into()) {
-            Ok(MultiLocation::parent())
-        } else if let Some(multilocation) = AssetMapper::get_asset_location(id.borrow().clone()) {
+        if let Some(multilocation) = AssetMapper::get_asset_location(id.borrow().clone()) {
             Ok(multilocation)
         } else {
             Err(())
@@ -151,7 +145,6 @@ parameter_types! {
     // One XCM operation is 1_000_000_000 weight - almost certainly a conservative estimate.
     pub UnitWeightCost: Weight = 1_000_000_000;
     pub const MaxInstructions: u32 = 100;
-    pub KsmPerSecond: (xcm::v1::AssetId, u128) = (MultiLocation::parent().into(), 1_000_000_000);
 }
 
 match_types! {
@@ -319,7 +312,6 @@ impl Config for XcmConfig {
     type Weigher = FixedWeightBounds<UnitWeightCost, Call, MaxInstructions>;
     type Trader = (
         UsingComponents<WeightToFee, AnchoringSelfReserve, AccountId, Balances, DealWithFees>,
-        FixedRateOfFungible<KsmPerSecond, ()>,
         FixedRateOfForeignAsset<XcAssetConfig, ()>,
     );
     type ResponseHandler = PolkadotXcm;

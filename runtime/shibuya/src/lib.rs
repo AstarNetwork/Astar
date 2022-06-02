@@ -784,9 +784,23 @@ impl pallet_sudo::Config for Runtime {
     type Call = Call;
 }
 
+pub struct EvmRevertCodeHandler;
+impl pallet_xc_asset_config::XcAssetChangedCallback<Runtime> for EvmRevertCodeHandler {
+    fn xc_asset_registered(asset_id: AssetId) {
+        let address = Runtime::asset_id_to_address(asset_id);
+        pallet_evm::AccountCodes::<Runtime>::insert(address, vec![0x60, 0x00, 0x60, 0x00, 0xfd]);
+    }
+
+    fn xc_asset_unregistered(asset_id: AssetId) {
+        let address = Runtime::asset_id_to_address(asset_id);
+        pallet_evm::AccountCodes::<Runtime>::remove(address);
+    }
+}
+
 impl pallet_xc_asset_config::Config for Runtime {
     type Event = Event;
     type AssetId = AssetId;
+    type XcAssetChangedCallback = EvmRevertCodeHandler;
     type WeightInfo = pallet_xc_asset_config::weights::SubstrateWeight<Self>;
 }
 
