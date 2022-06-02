@@ -6,7 +6,7 @@ describeWithAstar('Astar RPC', function(context) {
 	it('should fetch chain from rpc node', async function () {
 		const chain = await context.api.rpc.system.chain();
 
-		expect(chain.toString()).to.equal('Astar');
+		expect(chain.toString()).to.equal('Development');
 	});
 
 	it('should fetch chain name from rpc node', async function () {

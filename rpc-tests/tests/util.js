@@ -1,4 +1,4 @@
-import { WsProvider } from '@polkadot/api';
+import { ApiPromise, WsProvider } from '@polkadot/api';
 import { spawn } from 'child_process';
 import chaiAsPromised from 'chai-as-promised';
 import chai from 'chai';
@@ -16,7 +16,6 @@ export async function startAstarNode() {
 	const cmd = BINARY_PATH;
 	const args = [
 		`--dev`,
-		`--instant-sealing`,
 		`--execution=native`, // Faster execution using native
 		`--no-telemetry`,
 		`--no-prometheus`,
@@ -54,9 +53,7 @@ export async function startAstarNode() {
 		}, SPAWNING_TIME - 2000);
 
 		const onData = async (chunk) => {
-			if (DISPLAY_LOG) {
-				console.log(chunk.toString());
-			}
+			console.log(chunk.toString());
 			binaryLogs.push(chunk);
 			console.log(chunk);
 			if (chunk.toString().match(/Listening for new connections/)) {
@@ -90,6 +87,7 @@ export function describeWithAstar(title, cb) {
 		let binary;
 		// Making sure the Astar node has started
 		before('Starting Astar Test Node', async function () {
+			console.log('here');
 			this.timeout(SPAWNING_TIME);
 			const init = await startAstarNode();
 			context.api = init.api;
