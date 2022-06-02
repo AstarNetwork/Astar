@@ -25,7 +25,7 @@ jobs:
           target: wasm32-unknown-unknown
           default: true
       - name: Build
-        run: cargo build
+        run: cargo build --release
 
   test:
     runs-on: ubuntu-latest

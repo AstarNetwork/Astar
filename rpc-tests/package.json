@@ -4,7 +4,7 @@
   "description": "tests for dapp staking",
   "type": "module",
   "scripts": {
-    "test": "export NODE_ENV=test && mocha tests/**/test-*.js"
+    "test": "export NODE_ENV=test && mocha --timeout 50000 tests/**/test-*.js"
   },
   "author": "AstarNetwork",
   "license": "ISC",
