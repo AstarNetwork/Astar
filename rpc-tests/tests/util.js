@@ -42,20 +42,15 @@ export async function startAstarNode() {
 	});
 
 	let api;
-	const binaryLogs = [];
 	await new Promise((resolve, reject) => {
 		const timer = setTimeout(() => {
 			console.error(`Failed to start Astar Collator.`);
 			console.error(`Command: ${cmd} ${args.join(' ')}`);
-			console.error(`Logs:`);
-			console.error(binaryLogs.map((chunk) => chunk.toString()).join('\n'));
 			process.exit(1);
 		}, SPAWNING_TIME - 2000);
 
 		const onData = async (chunk) => {
 			console.log(chunk.toString());
-			binaryLogs.push(chunk);
-			console.log(chunk);
 			if (chunk.toString().match(/Listening for new connections/)) {
 				try {
 					api = await ApiPromise.create({
@@ -87,7 +82,6 @@ export function describeWithAstar(title, cb) {
 		let binary;
 		// Making sure the Astar node has started
 		before('Starting Astar Test Node', async function () {
-			console.log('here');
 			this.timeout(SPAWNING_TIME);
 			const init = await startAstarNode();
 			context.api = init.api;
