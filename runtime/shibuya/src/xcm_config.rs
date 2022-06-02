@@ -234,10 +234,8 @@ impl<T: ExecutionPaymentRate, R: TakeRevenue> WeightTrader for FixedRateOfForeig
         match payment_asset {
             MultiAsset {
                 id: xcm::latest::AssetId::Concrete(asset_location),
-                // sanity check but can be omited? TODO
                 fun: Fungibility::Fungible(_),
             } => {
-                // TODO: have to account for the DB read somewhere in weight. Or already embeded into assumed xcm instruction weight?
                 if let Some(units_per_second) = T::get_units_per_second(asset_location.clone()) {
                     let amount = units_per_second * (weight as u128) / (WEIGHT_PER_SECOND as u128);
                     if amount == 0 {
