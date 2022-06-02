@@ -39,6 +39,6 @@ jobs:
       with:
         node-version: ${{ matrix.node-version }}
     - run: yarn install
-      working-directory: ./tests/dappsStaking
+      working-directory: ./rpc-tests
     - run: yarn test
-      working-directory: ./tests/dappsStaking
+      working-directory: ./rpc-tests
