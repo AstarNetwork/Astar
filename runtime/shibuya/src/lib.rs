@@ -121,7 +121,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("shibuya"),
     impl_name: create_runtime_str!("shibuya"),
     authoring_version: 1,
-    spec_version: 51,
+    spec_version: 52,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 2,
@@ -801,7 +801,7 @@ impl pallet_xc_asset_config::Config for Runtime {
     type Event = Event;
     type AssetId = AssetId;
     type XcAssetChangedCallback = EvmRevertCodeHandler;
-    type WeightInfo = pallet_xc_asset_config::weights::SubstrateWeight<Self>;
+    type WeightInfo = weights::pallet_xc_asset_config::WeightInfo<Self>;
 }
 
 construct_runtime!(

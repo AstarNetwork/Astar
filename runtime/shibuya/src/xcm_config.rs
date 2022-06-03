@@ -244,7 +244,6 @@ impl<T: ExecutionPaymentRate, R: TakeRevenue> WeightTrader for FixedRateOfForeig
                     // If there are multiple calls to `BuyExecution` but with different assets, we need to be able to handle that.
                     // Current primitive implementation will just keep total track of consumed asset for the FIRST consumed asset.
                     // Others will just be ignored when refund is concerned.
-                    // TODO: improve this, now or via backlog item?
                     if let Some((old_asset_location, _)) =
                         self.asset_location_and_units_per_second.clone()
                     {
@@ -384,7 +383,7 @@ mod test {
     use sp_runtime::traits::Zero;
     use xcm_executor::traits::Convert;
 
-    // Primitive, perhaps I improve it later TODO
+    // Primitive, perhaps I improve it later
     const PARENT: MultiLocation = MultiLocation::parent();
     const PARACHAIN: MultiLocation = MultiLocation {
         parents: 1,
@@ -483,8 +482,6 @@ mod test {
             Err(())
         );
     }
-
-    // TODO: look into `TakeRevenue` implementation
 
     #[test]
     fn fixed_rate_of_foreign_asset_buy_is_ok() {
