@@ -17,7 +17,6 @@ use frame_support::{
     ConsensusEngineId, PalletId,
 };
 use frame_system::limits::{BlockLength, BlockWeights};
-
 use pallet_contracts::weights::WeightInfo;
 use pallet_contracts::{
     chain_extension::{
@@ -25,6 +24,7 @@ use pallet_contracts::{
     },
     // ContractInfoOf,
 };
+use pallet_contracts::weights::WeightInfo;
 use pallet_evm::{FeeCalculator, Runner};
 use pallet_transaction_payment::{
     FeeDetails, Multiplier, RuntimeDispatchInfo, TargetedFeeAdjustment,
@@ -366,7 +366,7 @@ impl<AccountId> Default for SmartContract<AccountId> {
 impl<AccountId> pallet_dapps_staking::IsContract for SmartContract<AccountId> {
     fn is_valid(&self) -> bool {
         match self {
-            SmartContract::Wasm(account) => Contracts::get_storage(*account, [0; 32]).is_ok(),
+            SmartContract::Wasm(_account) => true,
             SmartContract::Evm(account) => EVM::account_codes(&account).len() > 0,
         }
     }
