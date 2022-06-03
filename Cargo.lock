@@ -4823,6 +4823,7 @@ dependencies = [
  "frame-system-rpc-runtime-api",
  "frame-try-runtime",
  "hex-literal",
+ "log",
  "pallet-aura",
  "pallet-balances",
  "pallet-base-fee",

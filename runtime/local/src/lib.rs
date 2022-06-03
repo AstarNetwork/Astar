@@ -7,9 +7,12 @@
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
 use codec::{Decode, Encode};
+
 use frame_support::{
-    construct_runtime, parameter_types,
-    traits::{ConstU32, Currency, FindAuthor, Get, KeyOwnerProofSystem, Nothing},
+    construct_runtime,
+    log::{error, trace},
+    parameter_types,
+    traits::{Currency, FindAuthor, Get, KeyOwnerProofSystem, Nothing},
     weights::{
         constants::{RocksDbWeight, WEIGHT_PER_SECOND},
         ConstantMultiplier, IdentityFee, Weight,
@@ -17,7 +20,16 @@ use frame_support::{
     ConsensusEngineId, PalletId,
 };
 use frame_system::limits::{BlockLength, BlockWeights};
+<<<<<<< HEAD
 use pallet_contracts::{weights::WeightInfo, DefaultContractAccessWeight};
+=======
+use pallet_contracts::{
+    chain_extension::{
+        ChainExtension, Environment, Ext, InitState, RetVal, SysConfig, UncheckedFrom,
+    },
+    weights::WeightInfo,
+};
+>>>>>>> fffeca9f (dapps-staking chain extension support for local node)
 use pallet_evm::{FeeCalculator, Runner};
 use pallet_grandpa::{fg_primitives, AuthorityList as GrandpaAuthorityList};
 use sp_api::impl_runtime_apis;
@@ -31,7 +43,7 @@ use sp_runtime::{
     transaction_validity::{
         TransactionPriority, TransactionSource, TransactionValidity, TransactionValidityError,
     },
-    ApplyExtrinsicResult, MultiSignature, RuntimeDebug,
+    ApplyExtrinsicResult, DispatchError, MultiSignature, RuntimeDebug,
 };
 use sp_std::prelude::*;
 #[cfg(feature = "std")]
@@ -350,7 +362,7 @@ impl<AccountId> Default for SmartContract<AccountId> {
 impl<AccountId> pallet_dapps_staking::IsContract for SmartContract<AccountId> {
     fn is_valid(&self) -> bool {
         match self {
-            SmartContract::Wasm(_account) => false,
+            SmartContract::Wasm(_account) => true,
             SmartContract::Evm(account) => EVM::account_codes(&account).len() > 0,
         }
     }
@@ -539,7 +551,7 @@ impl pallet_contracts::Config for Runtime {
     type CallStack = [pallet_contracts::Frame<Self>; 31];
     type WeightPrice = pallet_transaction_payment::Pallet<Self>;
     type WeightInfo = pallet_contracts::weights::SubstrateWeight<Self>;
-    type ChainExtension = ();
+    type ChainExtension = LocalChainExtension;
     type DeletionQueueDepth = DeletionQueueDepth;
     type DeletionWeightLimit = DeletionWeightLimit;
     type Schedule = Schedule;
@@ -552,6 +564,65 @@ impl pallet_contracts::Config for Runtime {
 impl pallet_sudo::Config for Runtime {
     type Event = Event;
     type Call = Call;
+}
+
+/// Contract extension for Local Chain-Extension
+pub struct LocalChainExtension;
+
+impl ChainExtension<Runtime> for LocalChainExtension {
+    fn call<E: Ext>(func_id: u32, env: Environment<E, InitState>) -> Result<RetVal, DispatchError>
+    where
+        <E::T as SysConfig>::AccountId: UncheckedFrom<<E::T as SysConfig>::Hash> + AsRef<[u8]>,
+    {
+        match func_id {
+            //DappsStaking - current_era()
+            2001 => {
+                let mut env = env.buf_in_buf_out();
+                let current_era = crate::DappsStaking::current_era();
+                let current_era_encoded = current_era.encode();
+                trace!(
+                    target: "runtime",
+                    "[ChainExtension]|call|func_id:{:} current_era:{:?}",
+                    func_id,
+                    &current_era_encoded
+                );
+                env.write(&current_era_encoded, false, None).map_err(|_| {
+                    DispatchError::Other("ChainExtension failed to call current_era")
+                })?;
+            }
+
+            // DappsStaking - general_era_info()
+            2002 => {
+                let mut env = env.buf_in_buf_out();
+                let arg: u32 = env.read_as()?;
+                let era_info = DappsStaking::general_era_info(arg)
+                    .ok_or(DispatchError::Other("general_era_info call failed"));
+                sp_std::if_std! {println!("era_info:{:?}", era_info)};
+                let era_info_encoded = era_info.encode();
+                sp_std::if_std! {println!("era_info_encoded:{:?}", era_info_encoded)};
+                trace!(
+                    target: "runtime",
+                    "[ChainExtension]|call|func_id:{:} era_info_encoded:{:?}, arg:{:?}",
+                    func_id,
+                    era_info_encoded,
+                    arg
+                );
+                env.write(&era_info_encoded, false, None).map_err(|_| {
+                    DispatchError::Other("ChainExtension failed to call general_era_info")
+                })?;
+            }
+
+            _ => {
+                error!("Called an unregistered `func_id`: {:}", func_id);
+                return Err(DispatchError::Other("Unimplemented func_id"));
+            }
+        }
+        Ok(RetVal::Converging(0))
+    }
+
+    fn enabled() -> bool {
+        true
+    }
 }
 
 construct_runtime!(

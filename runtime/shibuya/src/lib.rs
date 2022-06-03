@@ -792,6 +792,7 @@ impl pallet_sudo::Config for Runtime {
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 pub struct EvmRevertCodeHandler;
 impl pallet_xc_asset_config::XcAssetChanged<Runtime> for EvmRevertCodeHandler {
     fn xc_asset_registered(asset_id: AssetId) {
@@ -812,6 +813,9 @@ impl pallet_xc_asset_config::Config for Runtime {
     type WeightInfo = weights::pallet_xc_asset_config::WeightInfo<Self>;
 =======
 /// Contract extension for Astar Local Chain-Extension
+=======
+/// Contract extension for Shibuya Chain-Extension
+>>>>>>> fffeca9f (dapps-staking chain extension support for local node)
 pub struct ShibuyaChainExtension;
 
 impl ChainExtension<Runtime> for ShibuyaChainExtension {
