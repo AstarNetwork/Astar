@@ -1,0 +1,3 @@
+(function() {var implementors = {};
+implementors["shibuya_runtime"] = [{"text":"impl XcAssetChanged&lt;<a class=\"struct\" href=\"shibuya_runtime/struct.Runtime.html\" title=\"struct shibuya_runtime::Runtime\">Runtime</a>&gt; for <a class=\"struct\" href=\"shibuya_runtime/struct.EvmRevertCodeHandler.html\" title=\"struct shibuya_runtime::EvmRevertCodeHandler\">EvmRevertCodeHandler</a>","synthetic":false,"types":["shibuya_runtime::EvmRevertCodeHandler"]}];
+if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()
