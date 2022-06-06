@@ -1,6 +1,6 @@
 [package]
 name = "shibuya-runtime"
-version = "3.30.0"
+version = "3.31.0"
 authors = ["Stake Technologies <devops@stake.co.jp>"]
 edition = "2021"
 build = "build.rs"
@@ -10,6 +10,7 @@ build = "build.rs"
 codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = ["derive"] }
 scale-info = { version = "2.1.0", default-features = false, features = ["derive"] }
 smallvec = "1.6.1"
+log = { version = "0.4", default-features = false }
 
 # primitives
 fp-rpc = { git = "https://github.com/AstarNetwork/frontier", branch = "polkadot-v0.9.19", default-features = false }
@@ -89,7 +90,8 @@ pallet-precompile-dapps-staking = { git = "https://github.com/AstarNetwork/astar
 pallet-evm-precompile-sr25519 = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.19", default-features = false }
 pallet-evm-precompile-substrate-ecdsa = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.19", default-features = false }
 pallet-evm-precompile-assets-erc20 = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.19", default-features = false }
-pallet-xcm = { git = "https://github.com/AstarNetwork/astar-frame", default-features = false, branch = "polkadot-v0.9.19" }
+pallet-xcm = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.19", default-features = false }
+pallet-xc-asset-config = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.19", default-features = false }
 
 # benchmarking
 hex-literal = { version = "0.3.1", optional = true }
@@ -161,6 +163,7 @@ std = [
     "pallet-transaction-payment/std",
     "pallet-transaction-payment-rpc-runtime-api/std",
     "pallet-xcm/std",
+    "pallet-xc-asset-config/std",
     "parachain-info/std",
     "polkadot-parachain/std",
     "polkadot-primitives/std",
@@ -194,6 +197,7 @@ runtime-benchmarks = [
     "pallet-collective/runtime-benchmarks",
     "pallet-ethereum/runtime-benchmarks",
     "pallet-xcm/runtime-benchmarks",
+    "pallet-xc-asset-config/runtime-benchmarks",
     "xcm-builder/runtime-benchmarks",
 ]
 try-runtime = [
@@ -212,5 +216,6 @@ try-runtime = [
     "pallet-utility/try-runtime",
     "pallet-vesting/try-runtime",
     "pallet-ethereum/try-runtime",
+    "pallet-xc-asset-config/try-runtime",
 ]
 
