@@ -7,7 +7,9 @@
 use codec::{Decode, Encode};
 use frame_support::{
     construct_runtime, parameter_types,
-    traits::{Contains, Currency, FindAuthor, Get, Imbalance, Nothing, OnUnbalanced},
+    traits::{
+        Contains, Currency, FindAuthor, Get, Imbalance, Nothing, OnRuntimeUpgrade, OnUnbalanced,
+    },
     weights::{
         constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_PER_SECOND},
         ConstantMultiplier, DispatchClass, Weight, WeightToFeeCoefficient, WeightToFeeCoefficients,
@@ -897,7 +899,37 @@ pub type Executive = frame_executive::Executive<
     frame_system::ChainContext<Runtime>,
     Runtime,
     AllPalletsWithSystem,
+    (RelayAssetRegistration,),
 >;
+
+pub struct RelayAssetRegistration;
+impl OnRuntimeUpgrade for RelayAssetRegistration {
+    fn on_runtime_upgrade() -> Weight {
+        use pallet_xc_asset_config::*;
+        use xcm::latest::prelude::*;
+
+        let relay_asset_id = u128::max_value();
+        let relay_asset_multilocation = MultiLocation::parent();
+
+        AssetIdToLocation::<Runtime>::insert(
+            relay_asset_id,
+            relay_asset_multilocation.clone().versioned(),
+        );
+        AssetLocationToId::<Runtime>::insert(
+            relay_asset_multilocation.clone().versioned(),
+            relay_asset_id,
+        );
+
+        AssetLocationUnitsPerSecond::<Runtime>::insert(
+            relay_asset_multilocation.clone().versioned(),
+            1_000_000_000,
+        );
+
+        EvmRevertCodeHandler::xc_asset_registered(relay_asset_id);
+
+        <Runtime as frame_system::Config>::DbWeight::get().writes(4)
+    }
+}
 
 impl fp_self_contained::SelfContainedCall for Call {
     type SignedInfo = H160;
