@@ -12,7 +12,7 @@ use sp_runtime::traits::Bounded;
 use sp_std::{borrow::Borrow, marker::PhantomData};
 
 // Polkadot imports
-use pallet_xc_asset_config::{AssetLocationGetter, ExecutionPaymentRate};
+use pallet_xc_asset_config::{ExecutionPaymentRate, XcAssetLocation};
 use xcm::latest::prelude::*;
 use xcm_builder::{
     AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom,
@@ -74,7 +74,7 @@ impl<AssetId, AssetMapper> xcm_executor::traits::Convert<MultiLocation, AssetId>
     for AssetLocationIdConverter<AssetId, AssetMapper>
 where
     AssetId: Clone + Eq + Bounded,
-    AssetMapper: AssetLocationGetter<AssetId>,
+    AssetMapper: XcAssetLocation<AssetId>,
 {
     fn convert_ref(location: impl Borrow<MultiLocation>) -> Result<AssetId, ()> {
         if let Some(asset_id) = AssetMapper::get_asset_id(location.borrow().clone()) {
@@ -85,7 +85,7 @@ where
     }
 
     fn reverse_ref(id: impl Borrow<AssetId>) -> Result<MultiLocation, ()> {
-        if let Some(multilocation) = AssetMapper::get_asset_location(id.borrow().clone()) {
+        if let Some(multilocation) = AssetMapper::get_xc_asset_location(id.borrow().clone()) {
             Ok(multilocation)
         } else {
             Err(())
@@ -397,8 +397,8 @@ mod test {
 
     /// Helper struct used for testing `AssetLocationIdConverter`
     struct AssetLocationMapper;
-    impl AssetLocationGetter<AssetId> for AssetLocationMapper {
-        fn get_asset_location(asset_id: AssetId) -> Option<MultiLocation> {
+    impl XcAssetLocation<AssetId> for AssetLocationMapper {
+        fn get_xc_asset_location(asset_id: AssetId) -> Option<MultiLocation> {
             match asset_id {
                 RELAY_ASSET => Some(PARENT),
                 20 => Some(PARACHAIN),

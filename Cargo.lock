@@ -7004,7 +7004,7 @@ dependencies = [
 [[package]]
 name = "pallet-xc-asset-config"
 version = "1.0.0"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=feature/xc-asset-config#cc84b324f227c23c3e29c7d681ec685c7ba1974f"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=feature/xc-asset-config#7de0a03fcffb1fc7baa57d5ac7896dda7a12caee"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
