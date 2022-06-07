@@ -36,6 +36,7 @@ use sp_runtime::{
     ApplyExtrinsicResult, FixedPointNumber, Perbill, Permill, Perquintill, RuntimeDebug,
 };
 use sp_std::prelude::*;
+use pallet_evm_precompile_assets_erc20::AddressToAssetId;
 
 #[cfg(any(feature = "std", test))]
 use sp_version::NativeVersion;
@@ -88,7 +89,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("astar"),
     impl_name: create_runtime_str!("astar"),
     authoring_version: 1,
-    spec_version: 18,
+    spec_version: 19,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 2,
@@ -501,7 +502,7 @@ impl pallet_balances::Config for Runtime {
 /// 2^128-1         Relay chain token (KSM)
 pub type AssetId = u128;
 
-impl pallet_evm_precompile_assets_erc20::AddressToAssetId<AssetId> for Runtime {
+impl AddressToAssetId<AssetId> for Runtime {
     fn address_to_asset_id(address: H160) -> Option<AssetId> {
         let mut data = [0u8; 16];
         let address_bytes: [u8; 20] = address.into();
@@ -732,6 +733,26 @@ impl pallet_sudo::Config for Runtime {
     type Call = Call;
 }
 
+pub struct EvmRevertCodeHandler;
+impl pallet_xc_asset_config::XcAssetChanged<Runtime> for EvmRevertCodeHandler {
+    fn xc_asset_registered(asset_id: AssetId) {
+        let address = Runtime::asset_id_to_address(asset_id);
+        pallet_evm::AccountCodes::<Runtime>::insert(address, vec![0x60, 0x00, 0x60, 0x00, 0xfd]);
+    }
+
+    fn xc_asset_unregistered(asset_id: AssetId) {
+        let address = Runtime::asset_id_to_address(asset_id);
+        pallet_evm::AccountCodes::<Runtime>::remove(address);
+    }
+}
+
+impl pallet_xc_asset_config::Config for Runtime {
+    type Event = Event;
+    type AssetId = AssetId;
+    type XcAssetChanged = EvmRevertCodeHandler;
+    type WeightInfo = weights::pallet_xc_asset_config::WeightInfo<Self>;
+}
+
 construct_runtime!(
     pub enum Runtime where
         Block = Block,
@@ -764,6 +785,7 @@ construct_runtime!(
         PolkadotXcm: pallet_xcm::{Pallet, Call, Storage, Event<T>, Origin} = 51,
         CumulusXcm: cumulus_pallet_xcm::{Pallet, Event<T>, Origin} = 52,
         DmpQueue: cumulus_pallet_dmp_queue::{Pallet, Call, Storage, Event<T>} = 53,
+        XcAssetConfig: pallet_xc_asset_config::{Pallet, Call, Storage, Event<T>} = 54,
 
         EVM: pallet_evm::{Pallet, Config, Call, Storage, Event<T>} = 60,
         Ethereum: pallet_ethereum::{Pallet, Call, Storage, Event, Origin, Config} = 61,
@@ -1136,6 +1158,7 @@ impl_runtime_apis! {
 
             list_benchmark!(list, extra, pallet_dapps_staking, DappsStaking);
             list_benchmark!(list, extra, pallet_block_reward, BlockReward);
+            list_benchmark!(list, extra, pallet_xc_asset_config, XcAssetConfig);
 
             let storage_info = AllPalletsWithSystem::storage_info();
 
@@ -1169,6 +1192,7 @@ impl_runtime_apis! {
             add_benchmark!(params, batches, pallet_timestamp, Timestamp);
             add_benchmark!(params, batches, pallet_dapps_staking, DappsStaking);
             add_benchmark!(params, batches, pallet_block_reward, BlockReward);
+            add_benchmark!(params, batches, pallet_xc_asset_config, XcAssetConfig);
 
             if batches.is_empty() { return Err("Benchmark not found for this pallet.".into()) }
             Ok(batches)
