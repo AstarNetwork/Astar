@@ -56,7 +56,10 @@ mod weights;
 mod xcm_config;
 
 pub use precompiles::{ShibuyaNetworkPrecompiles, ASSET_PRECOMPILE_ADDRESS_PREFIX};
-pub type Precompiles = ShibuyaNetworkPrecompiles<Runtime>;
+pub type Precompiles = ShibuyaNetworkPrecompiles<
+    Runtime,
+    xcm_config::AssetLocationIdConverter<AssetId, XcAssetConfig>,
+>;
 
 /// Constant values used within the runtime.
 pub const MILLISDN: Balance = 1_000_000_000_000_000;
@@ -754,7 +757,7 @@ parameter_types! {
     pub BlockGasLimit: U256 = U256::from(
         NORMAL_DISPATCH_RATIO * MAXIMUM_BLOCK_WEIGHT / WEIGHT_PER_GAS
     );
-    pub PrecompilesValue: Precompiles = ShibuyaNetworkPrecompiles::<_>::new();
+    pub PrecompilesValue: Precompiles = ShibuyaNetworkPrecompiles::<_, _>::new();
 }
 
 impl pallet_evm::Config for Runtime {
