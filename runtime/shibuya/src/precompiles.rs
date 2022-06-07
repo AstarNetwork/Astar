@@ -3,7 +3,7 @@
 use pallet_evm::{
     Context, ExitRevert, Precompile, PrecompileFailure, PrecompileResult, PrecompileSet,
 };
-use pallet_evm_precompile_assets_erc20::{Erc20AssetsPrecompileSet, AddressToAssetId};
+use pallet_evm_precompile_assets_erc20::{AddressToAssetId, Erc20AssetsPrecompileSet};
 use pallet_evm_precompile_blake2::Blake2F;
 use pallet_evm_precompile_bn128::{Bn128Add, Bn128Mul, Bn128Pairing};
 use pallet_evm_precompile_dispatch::Dispatch;
@@ -56,7 +56,7 @@ where
         + pallet_assets::Config
         + pallet_xcm::Config
         + AddressToAssetId<<R as pallet_assets::Config>::AssetId>,
-    C: xcm_executor::traits::Convert<MultiLocation, <R as pallet_assets::Config>::AssetId>, 
+    C: xcm_executor::traits::Convert<MultiLocation, <R as pallet_assets::Config>::AssetId>,
 {
     fn execute(
         &self,
