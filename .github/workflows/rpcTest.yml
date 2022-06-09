@@ -10,22 +10,57 @@ on:
       - master
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
+  setup:
+    runs-on: [self-hosted, Linux, X64]
     steps:
-      - uses: actions/checkout@v3
-        with:
-          submodules: recursive
-      - name: Install toolchain
-        uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: nightly-2022-02-19
-          components: rustfmt
-          target: wasm32-unknown-unknown
-          default: true
-      - name: Build
-        run: cargo build --release
+    - name: Checkout the source code
+      uses: actions/checkout@master
+      with:
+        submodules: true
+
+    - name: Install & display rust toolchain
+      run: rustup show
+
+    - name: Check targets are installed correctly
+      run: rustup target list --installed
+
+    - name: Run all tests
+      run: cargo test --all-features
+
+  build:
+    needs: setup
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: [self-hosted, Linux, X64]
+    steps:
+    - name: Checkout the source code
+      uses: actions/checkout@master
+      with:
+        submodules: true
+
+    - name: Install & display rust toolchain
+      run: rustup show
+
+    - name: Check targets are installed correctly
+      run: rustup target list --installed
+
+    - uses: actions/cache@v2
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+          target/
+        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          ${{ runner.os }}-cargo
+
+    - name: Build optimized binary
+      run: CARGO_PROFILE_RELEASE_LTO=true RUSTFLAGS="-C codegen-units=1" cargo build --release --verbose
+
+    - uses: actions/upload-artifact@master
+      with:
+        name: astar-ubuntu-latest-x86_64
+        path: target/release/astar-collator
 
   test:
     runs-on: ubuntu-latest
