@@ -11,7 +11,6 @@ on:
 
 jobs:
   build:
-    if: startsWith(github.ref, 'refs/tags/')
     runs-on: [self-hosted, Linux, X64]
     steps:
     - name: Checkout the source code
