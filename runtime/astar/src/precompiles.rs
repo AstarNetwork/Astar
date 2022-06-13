@@ -1,7 +1,7 @@
 //! The Astar Network EVM precompiles. This can be compiled with ``#[no_std]`, ready for Wasm.
 
 use pallet_evm::{
-    Context, ExitRevert, Precompile, PrecompileFailure, PrecompileResult, PrecompileSet,
+    ExitRevert, Precompile, PrecompileFailure, PrecompileHandle, PrecompileResult, PrecompileSet,
 };
 use pallet_evm_precompile_assets_erc20::Erc20AssetsPrecompileSet;
 use pallet_evm_precompile_blake2::Blake2F;
@@ -49,58 +49,38 @@ where
     DappsStakingWrapper<R>: Precompile,
     Erc20AssetsPrecompileSet<R>: PrecompileSet,
 {
-    fn execute(
-        &self,
-        address: H160,
-        input: &[u8],
-        target_gas: Option<u64>,
-        context: &Context,
-        is_static: bool,
-    ) -> Option<PrecompileResult> {
-        if self.is_precompile(address) && address > hash(9) && context.address != address {
+    fn execute(&self, handle: &mut impl PrecompileHandle) -> Option<PrecompileResult> {
+        let address = handle.code_address();
+        if self.is_precompile(address) && address > hash(9) && handle.context().address != address {
             return Some(Err(PrecompileFailure::Revert {
                 exit_status: ExitRevert::Reverted,
                 output: b"cannot be called with DELEGATECALL or CALLCODE".to_vec(),
-                cost: 0,
             }));
         }
         match address {
             // Ethereum precompiles :
-            a if a == hash(1) => Some(ECRecover::execute(input, target_gas, context, is_static)),
-            a if a == hash(2) => Some(Sha256::execute(input, target_gas, context, is_static)),
-            a if a == hash(3) => Some(Ripemd160::execute(input, target_gas, context, is_static)),
-            a if a == hash(4) => Some(Identity::execute(input, target_gas, context, is_static)),
-            a if a == hash(5) => Some(Modexp::execute(input, target_gas, context, is_static)),
-            a if a == hash(6) => Some(Bn128Add::execute(input, target_gas, context, is_static)),
-            a if a == hash(7) => Some(Bn128Mul::execute(input, target_gas, context, is_static)),
-            a if a == hash(8) => Some(Bn128Pairing::execute(input, target_gas, context, is_static)),
-            a if a == hash(9) => Some(Blake2F::execute(input, target_gas, context, is_static)),
+            a if a == hash(1) => Some(ECRecover::execute(handle)),
+            a if a == hash(2) => Some(Sha256::execute(handle)),
+            a if a == hash(3) => Some(Ripemd160::execute(handle)),
+            a if a == hash(4) => Some(Identity::execute(handle)),
+            a if a == hash(5) => Some(Modexp::execute(handle)),
+            a if a == hash(6) => Some(Bn128Add::execute(handle)),
+            a if a == hash(7) => Some(Bn128Mul::execute(handle)),
+            a if a == hash(8) => Some(Bn128Pairing::execute(handle)),
+            a if a == hash(9) => Some(Blake2F::execute(handle)),
             // nor Ethereum precompiles :
-            a if a == hash(1024) => {
-                Some(Sha3FIPS256::execute(input, target_gas, context, is_static))
-            }
-            a if a == hash(1025) => Some(Dispatch::<R>::execute(
-                input, target_gas, context, is_static,
-            )),
-            a if a == hash(1026) => Some(ECRecoverPublicKey::execute(
-                input, target_gas, context, is_static,
-            )),
-            a if a == hash(1027) => Some(Ed25519Verify::execute(
-                input, target_gas, context, is_static,
-            )),
+            a if a == hash(1024) => Some(Sha3FIPS256::execute(handle)),
+            a if a == hash(1025) => Some(Dispatch::<R>::execute(handle)),
+            a if a == hash(1026) => Some(ECRecoverPublicKey::execute(handle)),
+            a if a == hash(1027) => Some(Ed25519Verify::execute(handle)),
             // Astar precompiles (starts from 0x5000):
             // DappStaking 0x5001
-            a if a == hash(20481) => Some(DappsStakingWrapper::<R>::execute(
-                input, target_gas, context, is_static,
-            )),
+            a if a == hash(20481) => Some(DappsStakingWrapper::<R>::execute(handle)),
             // Sr25519     0x5002
-            a if a == hash(20482) => Some(Sr25519Precompile::<R>::execute(
-                input, target_gas, context, is_static,
-            )),
+            a if a == hash(20482) => Some(Sr25519Precompile::<R>::execute(handle)),
             // If the address matches asset prefix, the we route through the asset precompile set
             a if &a.to_fixed_bytes()[0..4] == ASSET_PRECOMPILE_ADDRESS_PREFIX => {
-                Erc20AssetsPrecompileSet::<R>::new()
-                    .execute(address, input, target_gas, context, is_static)
+                Erc20AssetsPrecompileSet::<R>::new().execute(handle)
             }
             // Default
             _ => None,

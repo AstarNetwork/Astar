@@ -244,7 +244,7 @@ dependencies = [
 
 [[package]]
 name = "astar-runtime"
-version = "3.31.0"
+version = "3.32.0"
 dependencies = [
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-dmp-queue",
@@ -10716,7 +10716,7 @@ dependencies = [
 
 [[package]]
 name = "shiden-runtime"
-version = "3.31.0"
+version = "3.32.0"
 dependencies = [
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-dmp-queue",
