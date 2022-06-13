@@ -367,7 +367,7 @@ impl<AccountId> pallet_dapps_staking::IsContract for SmartContract<AccountId> {
 }
 
 #[cfg(feature = "runtime-benchmarks")]
-impl<AccountId> pallet_dapps_staking::traits::IsContract for SmartContract<AccountId> {
+impl<AccountId> pallet_dapps_staking::IsContract for SmartContract<AccountId> {
     fn is_valid(&self) -> bool {
         match self {
             SmartContract::Wasm(_account) => false,
