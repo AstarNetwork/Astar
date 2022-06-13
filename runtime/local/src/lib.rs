@@ -574,47 +574,57 @@ impl ChainExtension<Runtime> for LocalChainExtension {
     where
         <E::T as SysConfig>::AccountId: UncheckedFrom<<E::T as SysConfig>::Hash> + AsRef<[u8]>,
     {
-        match func_id {
-            //DappsStaking - current_era()
-            2001 => {
-                let mut env = env.buf_in_buf_out();
-                let current_era = crate::DappsStaking::current_era();
-                let current_era_encoded = current_era.encode();
-                trace!(
-                    target: "runtime",
-                    "[ChainExtension]|call|func_id:{:} current_era:{:?}",
-                    func_id,
-                    &current_era_encoded
-                );
-                env.write(&current_era_encoded, false, None).map_err(|_| {
-                    DispatchError::Other("ChainExtension failed to call current_era")
-                })?;
-            }
+        let pallet_id = (func_id / 100) as u8;
+        let func_id_matcher = func_id % 100;
+        match pallet_id {
+            34 => {
+                match func_id_matcher {
+                    //DappsStaking - current_era()
+                    1 => {
+                        let mut env = env.buf_in_buf_out();
+                        let current_era = crate::DappsStaking::current_era();
+                        let current_era_encoded = current_era.encode();
+                        trace!(
+                            target: "runtime",
+                            "[ChainExtension]|call|func_id:{:} current_era:{:?}",
+                            func_id,
+                            &current_era_encoded
+                        );
+                        env.write(&current_era_encoded, false, None).map_err(|_| {
+                            DispatchError::Other("ChainExtension failed to call current_era")
+                        })?;
+                    }
 
-            // DappsStaking - general_era_info()
-            2002 => {
-                let mut env = env.buf_in_buf_out();
-                let arg: u32 = env.read_as()?;
-                let era_info = DappsStaking::general_era_info(arg)
-                    .ok_or(DispatchError::Other("general_era_info call failed"));
-                sp_std::if_std! {println!("era_info:{:?}", era_info)};
-                let era_info_encoded = era_info.encode();
-                sp_std::if_std! {println!("era_info_encoded:{:?}", era_info_encoded)};
-                trace!(
-                    target: "runtime",
-                    "[ChainExtension]|call|func_id:{:} era_info_encoded:{:?}, arg:{:?}",
-                    func_id,
-                    era_info_encoded,
-                    arg
-                );
-                env.write(&era_info_encoded, false, None).map_err(|_| {
-                    DispatchError::Other("ChainExtension failed to call general_era_info")
-                })?;
-            }
+                    // DappsStaking - general_era_info()
+                    2 => {
+                        let mut env = env.buf_in_buf_out();
+                        let arg: u32 = env.read_as()?;
+                        let era_info = DappsStaking::general_era_info(arg)
+                            .ok_or(DispatchError::Other("general_era_info call failed"));
+                        sp_std::if_std! {println!("era_info:{:?}", era_info)};
+                        let era_info_encoded = era_info.encode();
+                        sp_std::if_std! {println!("era_info_encoded:{:?}", era_info_encoded)};
+                        trace!(
+                            target: "runtime",
+                            "[ChainExtension]|call|func_id:{:} era_info_encoded:{:?}, arg:{:?}",
+                            func_id,
+                            era_info_encoded,
+                            arg
+                        );
+                        env.write(&era_info_encoded, false, None).map_err(|_| {
+                            DispatchError::Other("ChainExtension failed to call general_era_info")
+                        })?;
+                    }
 
+                    _ => {
+                        error!("Called an unregistered `func_id`: {:}", func_id);
+                        return Err(DispatchError::Other("Unimplemented func_id"));
+                    }
+                }
+            }
             _ => {
-                error!("Called an unregistered `func_id`: {:}", func_id);
-                return Err(DispatchError::Other("Unimplemented func_id"));
+                error!("Called an unregistered `pallet_id`: {:}", func_id);
+                return Err(DispatchError::Other("Unimplemented pallet_id"));
             }
         }
         Ok(RetVal::Converging(0))

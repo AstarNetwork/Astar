@@ -10682,7 +10682,15 @@ dependencies = [
 
 [[package]]
 name = "shibuya-runtime"
+<<<<<<< HEAD
 version = "4.3.2"
+=======
+<<<<<<< HEAD
+version = "4.3.1"
+=======
+version = "3.31.0"
+>>>>>>> 746ec01a (match restructuring)
+>>>>>>> a84b029c (match restructuring)
 dependencies = [
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-dmp-queue",
@@ -13348,6 +13356,7 @@ dependencies = [
 ]
 
 [[package]]
+<<<<<<< HEAD
 name = "xcm-tools"
 version = "0.2.0"
 dependencies = [
@@ -13364,6 +13373,8 @@ dependencies = [
 ]
 
 [[package]]
+=======
+>>>>>>> 746ec01a (match restructuring)
 name = "yamux"
 version = "0.10.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
