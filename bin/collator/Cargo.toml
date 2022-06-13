@@ -62,8 +62,7 @@ sc-transaction-pool-api = { git = "https://github.com/paritytech/substrate", bra
 sc-consensus-babe = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.23" }
 
 # RPC related dependencies
-jsonrpc-core = "18.0.0"
-jsonrpc-pubsub = "18.0.0"
+jsonrpsee = { version = "0.13.0", features = ["server"] }
 
 # Frontier dependencies
 fc-consensus = { git = "https://github.com/AstarNetwork/frontier", branch = "polkadot-v0.9.23" }
@@ -89,7 +88,7 @@ pallet-block-reward = { git = "https://github.com/AstarNetwork/astar-frame", bra
 
 # frame dependencies
 frame-system = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.23" }
-frame-rpc-system = { package = "substrate-frame-rpc-system", git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.23" }
+substrate-frame-rpc-system = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.23" }
 pallet-transaction-payment = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.23" }
 pallet-transaction-payment-rpc = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.23" }
 pallet-contracts-rpc = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.23" }
