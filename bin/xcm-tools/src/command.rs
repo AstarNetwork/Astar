@@ -4,9 +4,10 @@ use crate::cli::*;
 
 use clap::Parser;
 use cumulus_primitives_core::ParaId;
-use polkadot_parachain::primitives::{AccountIdConversion, Sibling};
+use polkadot_parachain::primitives::Sibling;
 use polkadot_primitives::v2::AccountId;
 use sp_core::hexdisplay::HexDisplay;
+use sp_runtime::traits::AccountIdConversion;
 use xcm::latest::prelude::*;
 use xcm_builder::SiblingParachainConvertsVia;
 use xcm_executor::traits::Convert;
@@ -28,7 +29,7 @@ pub fn run() -> Result<(), Error> {
                 SiblingParachainConvertsVia::<Sibling, AccountId>::convert_ref(&location).unwrap()
             } else {
                 let para_id = ParaId::from(cmd.parachain_id);
-                AccountIdConversion::<AccountId>::into_account(&para_id)
+                AccountIdConversion::<AccountId>::into_account_truncating(&para_id)
             };
             println!("{}", parachain_account);
         }

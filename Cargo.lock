@@ -13276,13 +13276,14 @@ dependencies = [
 
 [[package]]
 name = "xcm-tools"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "clap",
  "cumulus-primitives-core",
  "polkadot-parachain",
  "polkadot-primitives",
  "sp-core",
+ "sp-runtime",
  "substrate-build-script-utils",
  "xcm",
  "xcm-builder",

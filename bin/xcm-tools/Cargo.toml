@@ -1,6 +1,6 @@
 [package]
 name = "xcm-tools"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["Stake Technologies <devops@stake.co.jp>"]
 description = "Astar XCM tools."
 edition = "2021"
@@ -13,6 +13,7 @@ path = "src/main.rs"
 [dependencies]
 clap = { version = "3.0", features = ["derive"] }
 sp-core = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.23" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.23" }
 xcm = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.23" }
 xcm-builder = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.23" }
 xcm-executor = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.23" }
