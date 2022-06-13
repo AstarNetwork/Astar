@@ -22,7 +22,7 @@ use sp_blockchain::{
 use sp_runtime::traits::BlakeTwo256;
 use std::collections::BTreeMap;
 use std::sync::Arc;
-use substrate_frame_rpc_system::{SystemApi, SystemApiServer};
+use substrate_frame_rpc_system::{System, SystemApiServer};
 
 use crate::primitives::*;
 
@@ -154,15 +154,17 @@ where
 
     // TODO: why does frontier explicitly use `Arc::clone` instead of just `.clone()`?
 
-    io.merge(SystemApi::new(Arc::clone(&client), Arc::clone(&pool), deny_unsafe).into_rpc())?;
+    io.merge(System::new(Arc::clone(&client), Arc::clone(&pool), deny_unsafe).into_rpc())?;
     io.merge(TransactionPayment::new(Arc::clone(&client)).into_rpc())?;
+
+    let no_tx_converter: Option<fp_rpc::NoTransactionConverter> = None;
 
     io.merge(
         Eth::new(
             Arc::clone(&client),
             Arc::clone(&pool),
             graph,
-            None,
+            no_tx_converter,
             Arc::clone(&network),
             Default::default(),
             Arc::clone(&overrides),
@@ -204,5 +206,5 @@ where
         .into_rpc(),
     )?;
 
-    io
+    Ok(io)
 }

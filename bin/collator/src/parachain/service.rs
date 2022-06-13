@@ -14,6 +14,7 @@ use cumulus_relay_chain_rpc_interface::RelayChainRPCInterface;
 use fc_consensus::FrontierBlockImport;
 use fc_rpc_core::types::{FeeHistoryCache, FilterPool};
 use futures::{lock::Mutex, StreamExt};
+use pallet_contracts_rpc::ContractsApiServer;
 use polkadot_service::CollatorPair;
 use sc_client_api::{BlockchainEvents, ExecutorProvider};
 use sc_consensus::import_queue::BasicQueue;
@@ -452,7 +453,7 @@ where
                 overrides: overrides.clone(),
             };
 
-            crate::rpc::create_full(deps, subscription)
+            crate::rpc::create_full(deps, subscription).map_err(Into::into)
         })
     };
 
@@ -727,9 +728,8 @@ where
 
             let mut io = crate::rpc::create_full(deps, subscription)?;
             // This node support WASM contracts
-            io.merge(pallet_contracts_rpc::Contracts::new(
-                Arc::clone(&client).into_rpc(),
-            ))?;
+            // TODO: SOLVE THIS ISSUE!
+            // io.merge(pallet_contracts_rpc::Contracts::new(Arc::clone(&client)).into_rpc()).map_err(|_| "TODO".into())?;
 
             Ok(io)
         })
@@ -737,7 +737,7 @@ where
 
     // Spawn basic services.
     sc_service::spawn_tasks(sc_service::SpawnTasksParams {
-        rpc_extensions_builder,
+        rpc_builder: rpc_extensions_builder,
         client: client.clone(),
         transaction_pool: transaction_pool.clone(),
         task_manager: &mut task_manager,
