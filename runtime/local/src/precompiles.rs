@@ -10,7 +10,9 @@ use pallet_evm_precompile_ed25519::Ed25519Verify;
 use pallet_evm_precompile_modexp::Modexp;
 use pallet_evm_precompile_sha3fips::Sha3FIPS256;
 use pallet_evm_precompile_simple::{ECRecover, ECRecoverPublicKey, Identity, Ripemd160, Sha256};
-// use pallet_precompile_dapps_staking::DappsStakingWrapper;
+use pallet_evm_precompile_sr25519::Sr25519Precompile;
+use pallet_evm_precompile_substrate_ecdsa::SubstrateEcdsaPrecompile;
+use pallet_precompile_dapps_staking::DappsStakingWrapper;
 use sp_core::H160;
 use sp_std::fmt::Debug;
 use sp_std::marker::PhantomData;
@@ -40,6 +42,7 @@ impl<R: pallet_evm::Config> PrecompileSet for LocalNetworkPrecompiles<R>
 where
     R: pallet_evm::Config,
     Dispatch<R>: Precompile,
+    DappsStakingWrapper<R>: Precompile,
 {
     fn execute(&self, handle: &mut impl PrecompileHandle) -> Option<PrecompileResult> {
         let address = handle.code_address();
@@ -67,9 +70,11 @@ where
             a if a == hash(1027) => Some(Ed25519Verify::execute(handle)),
             // Astar precompiles (starts from 0x5000):
             // DappStaking 0x5001
-            // a if a == hash(20481) => Some(DappsStakingWrapper::<R>::execute(
-            //     input, target_gas, context, is_static,
-            // )),
+            a if a == hash(20481) => Some(DappsStakingWrapper::<R>::execute(handle)),
+            // Sr25519 0x5002
+            a if a == hash(20482) => Some(Sr25519Precompile::<R>::execute(handle)),
+            // SubstrateEcdsa 0x5003
+            a if a == hash(20483) => Some(SubstrateEcdsaPrecompile::<R>::execute(handle)),
             // Default
             _ => None,
         }
