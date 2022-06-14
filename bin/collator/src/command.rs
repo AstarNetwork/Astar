@@ -615,17 +615,7 @@ pub fn run() -> Result<()> {
                         });
                     }
                 }
-                BenchmarkCmd::Overhead(cmd) => {
-                    //Err("Benchmark overhead not supported.".into()),
-                    let ext_builder = BenchmarkExtrinsicBuilder::new(client.clone());
-
-                    cmd.run(
-                        config,
-                        client,
-                        inherent_benchmark_data()?,
-                        Arc::new(ext_builder),
-                    )
-                }
+                BenchmarkCmd::Overhead(cmd) => Err("Benchmark overhead not supported.".into()),
                 BenchmarkCmd::Machine(cmd) => {
                     return runner
                         .sync_run(|config| cmd.run(&config, SUBSTRATE_REFERENCE_HARDWARE.clone()));
