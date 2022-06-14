@@ -152,25 +152,23 @@ where
         block_data_cache,
     } = deps;
 
-    // TODO: why does frontier explicitly use `Arc::clone` instead of just `.clone()`?
-
-    io.merge(System::new(Arc::clone(&client), Arc::clone(&pool), deny_unsafe).into_rpc())?;
-    io.merge(TransactionPayment::new(Arc::clone(&client)).into_rpc())?;
+    io.merge(System::new(client.clone(), pool.clone(), deny_unsafe).into_rpc())?;
+    io.merge(TransactionPayment::new(client.clone()).into_rpc())?;
 
     let no_tx_converter: Option<fp_rpc::NoTransactionConverter> = None;
 
     io.merge(
         Eth::new(
-            Arc::clone(&client),
-            Arc::clone(&pool),
+            client.clone(),
+            pool.clone(),
             graph,
             no_tx_converter,
-            Arc::clone(&network),
+            network.clone(),
             Default::default(),
-            Arc::clone(&overrides),
-            Arc::clone(&frontier_backend),
+            overrides.clone(),
+            frontier_backend.clone(),
             is_authority,
-            Arc::clone(&block_data_cache),
+            block_data_cache.clone(),
             fee_history_cache,
             fee_history_limit,
         )
@@ -181,27 +179,27 @@ where
     let max_stored_filters: usize = 500;
     io.merge(
         EthFilter::new(
-            Arc::clone(&client),
-            Arc::clone(&frontier_backend),
+            client.clone(),
+            frontier_backend.clone(),
             filter_pool,
             max_stored_filters,
             max_past_logs,
-            Arc::clone(&block_data_cache),
+            block_data_cache.clone(),
         )
         .into_rpc(),
     )?;
 
-    io.merge(Net::new(Arc::clone(&client), Arc::clone(&network), true).into_rpc())?;
+    io.merge(Net::new(client.clone(), network.clone(), true).into_rpc())?;
 
-    io.merge(Web3::new(Arc::clone(&client)).into_rpc())?;
+    io.merge(Web3::new(client.clone()).into_rpc())?;
 
     io.merge(
         EthPubSub::new(
-            Arc::clone(&pool),
-            Arc::clone(&client),
-            Arc::clone(&network),
+            pool.clone(),
+            client.clone(),
+            network.clone(),
             subscription_task_executor,
-            Arc::clone(&overrides),
+            overrides.clone(),
         )
         .into_rpc(),
     )?;

@@ -316,7 +316,6 @@ dependencies = [
  "sp-transaction-pool",
  "sp-version",
  "substrate-wasm-builder",
- "try-runtime-cli",
  "xcm",
  "xcm-builder",
  "xcm-executor",
@@ -4836,7 +4835,6 @@ dependencies = [
  "sp-transaction-pool",
  "sp-version",
  "substrate-wasm-builder",
- "try-runtime-cli",
 ]
 
 [[package]]
@@ -10677,7 +10675,6 @@ dependencies = [
  "sp-transaction-pool",
  "sp-version",
  "substrate-wasm-builder",
- "try-runtime-cli",
  "xcm",
  "xcm-builder",
  "xcm-executor",
@@ -10758,7 +10755,6 @@ dependencies = [
  "sp-transaction-pool",
  "sp-version",
  "substrate-wasm-builder",
- "try-runtime-cli",
  "xcm",
  "xcm-builder",
  "xcm-executor",
