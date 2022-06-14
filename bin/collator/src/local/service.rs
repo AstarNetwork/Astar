@@ -308,12 +308,16 @@ pub fn start_node(config: Configuration) -> Result<TaskManager, ServiceError> {
                 overrides: overrides.clone(),
             };
 
-            let mut io = crate::rpc::create_full(deps, subscription).map_err(Into::into);
+            let mut io = crate::rpc::create_full(deps, subscription)
+                .map_err::<ServiceError, _>(Into::into)?;
 
             // Local node support WASM contracts
-            // TODO: HANDLE THIS!
-            // io.merge(pallet_contracts_rpc::Contracts::new(Arc::clone(&client)).into_rpc())?;
-            io
+            io.merge(pallet_contracts_rpc::Contracts::new(Arc::clone(&client)).into_rpc())
+                .map_err(|_| {
+                    ServiceError::Other("Failed to register pallet-contracts RPC methods.".into())
+                })?;
+
+            Ok(io)
         })
     };
 

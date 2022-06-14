@@ -727,9 +727,14 @@ where
             };
 
             let mut io = crate::rpc::create_full(deps, subscription)?;
+
             // This node support WASM contracts
-            // TODO: SOLVE THIS ISSUE!
-            // io.merge(pallet_contracts_rpc::Contracts::new(Arc::clone(&client)).into_rpc()).map_err(|_| "TODO".into())?;
+            io.merge(pallet_contracts_rpc::Contracts::new(Arc::clone(&client)).into_rpc())
+                .map_err(|_| {
+                    sc_service::Error::Other(
+                        "Failed to register pallet-contracts RPC methods.".into(),
+                    )
+                })?;
 
             Ok(io)
         })
