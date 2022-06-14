@@ -615,7 +615,7 @@ pub fn run() -> Result<()> {
                         });
                     }
                 }
-                BenchmarkCmd::Overhead(cmd) => Err("Benchmark overhead not supported.".into()),
+                BenchmarkCmd::Overhead(_) => Err("Benchmark overhead not supported.".into()),
                 BenchmarkCmd::Machine(cmd) => {
                     return runner
                         .sync_run(|config| cmd.run(&config, SUBSTRATE_REFERENCE_HARDWARE.clone()));
