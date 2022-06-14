@@ -1,13 +1,11 @@
+use pallet_contracts::chain_extension::{Environment, Ext, InitState, SysConfig, UncheckedFrom};
 use sp_runtime::DispatchError;
-// use pallet_contracts::{
-//     chain_extension::{
-//         RetVal, InitState, Environment, Ext, SysConfig, UncheckedFrom,
-//     },
-// };
-use sp_std::vec::Vec;
 
 pub trait AstarChainExtension {
-    fn execute_func(func_id: u32) -> Result<Vec<u8>, DispatchError>;
-    // where
-    // <E::T as SysConfig>::AccountId: UncheckedFrom<<E::T as SysConfig>::Hash> + AsRef<[u8]>,
+    fn execute_func<G: Ext>(
+        func_id: u32,
+        env: Environment<G, InitState>,
+    ) -> Result<(), DispatchError>
+    where
+        <G::T as SysConfig>::AccountId: UncheckedFrom<<G::T as SysConfig>::Hash> + AsRef<[u8]>;
 }

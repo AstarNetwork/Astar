@@ -580,17 +580,12 @@ impl ChainExtension<Runtime> for LocalChainExtension {
         <E::T as SysConfig>::AccountId: UncheckedFrom<<E::T as SysConfig>::Hash> + AsRef<[u8]>,
         DappsStakingExtension: AstarChainExtension,
     {
-        let mut env = env.buf_in_buf_out();
         let pallet_id = (func_id / 100) as u8;
         let func_id_matcher = func_id % 100;
         match pallet_id {
             34 => {
-                let result = DappsStakingExtension::execute_func(func_id_matcher)?;
-                env.write(&result, false, None).map_err(|_| {
-                    DispatchError::Other(
-                        "ChainExtension DappsStakingExtension failed to write result",
-                    )
-                })?;
+                DappsStakingExtension::execute_func(func_id_matcher, env)?;
+
                 //     match func_id_matcher {
                 //         //DappsStaking - current_era()
                 //         1 => {
