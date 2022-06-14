@@ -26,7 +26,7 @@ use sp_runtime::traits::Block as BlockT;
 use std::{io::Write, net::SocketAddr};
 
 #[cfg(feature = "frame-benchmarking")]
-use frame_benchmarking_cli::BenchmarkCmd;
+use frame_benchmarking_cli::{BenchmarkCmd, SUBSTRATE_REFERENCE_HARDWARE};
 
 trait IdentifyChain {
     fn is_astar(&self) -> bool;
@@ -615,7 +615,21 @@ pub fn run() -> Result<()> {
                         });
                     }
                 }
-                BenchmarkCmd::Overhead(_) => Err("Benchmark overhead not supported.".into()),
+                BenchmarkCmd::Overhead(cmd) => {
+                    //Err("Benchmark overhead not supported.".into()),
+                    let ext_builder = BenchmarkExtrinsicBuilder::new(client.clone());
+
+                    cmd.run(
+                        config,
+                        client,
+                        inherent_benchmark_data()?,
+                        Arc::new(ext_builder),
+                    )
+                }
+                BenchmarkCmd::Machine(cmd) => {
+                    return runner
+                        .sync_run(|config| cmd.run(&config, SUBSTRATE_REFERENCE_HARDWARE.clone()));
+                }
             }
         }
         #[cfg(feature = "try-runtime")]
