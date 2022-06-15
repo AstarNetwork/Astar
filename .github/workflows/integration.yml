@@ -159,6 +159,7 @@ jobs:
 
   rpc-test:
     runs-on: [self-hosted, Linux, X64]
+    needs: native-linux
     strategy:
       matrix:
         node-version: [16.x]
