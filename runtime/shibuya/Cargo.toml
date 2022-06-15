@@ -93,6 +93,7 @@ pallet-evm-precompile-assets-erc20 = { git = "https://github.com/AstarNetwork/as
 pallet-evm-precompile-xcm = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.24", default-features = false }
 pallet-xcm = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.24", default-features = false }
 pallet-xc-asset-config = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.24", default-features = false }
+xcm-primitives = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.24", default-features = false }
 
 # benchmarking
 hex-literal = { version = "0.3.1", optional = true }
@@ -184,6 +185,7 @@ std = [
     "xcm/std",
     "xcm-builder/std",
     "xcm-executor/std",
+    "xcm-primitives/std",
 ]
 runtime-benchmarks = [
     "frame-benchmarking",
