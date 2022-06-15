@@ -12,6 +12,7 @@ use pallet_evm_precompile_modexp::Modexp;
 use pallet_evm_precompile_sha3fips::Sha3FIPS256;
 use pallet_evm_precompile_simple::{ECRecover, ECRecoverPublicKey, Identity, Ripemd160, Sha256};
 use pallet_evm_precompile_sr25519::Sr25519Precompile;
+use pallet_evm_precompile_substrate_ecdsa::SubstrateEcdsaPrecompile;
 use pallet_precompile_dapps_staking::DappsStakingWrapper;
 use sp_core::H160;
 use sp_std::fmt::Debug;
@@ -33,7 +34,7 @@ impl<R> AstarNetworkPrecompiles<R> {
     /// Return all addresses that contain precompiles. This can be used to populate dummy code
     /// under the precompile.
     pub fn used_addresses() -> impl Iterator<Item = H160> {
-        sp_std::vec![1, 2, 3, 4, 5, 6, 7, 8, 1024, 1025, 1026, 1027, 20481, 20482]
+        sp_std::vec![1, 2, 3, 4, 5, 6, 7, 8, 1024, 1025, 1026, 1027, 20481, 20482, 20483]
             .into_iter()
             .map(|x| hash(x))
     }
@@ -78,6 +79,8 @@ where
             a if a == hash(20481) => Some(DappsStakingWrapper::<R>::execute(handle)),
             // Sr25519     0x5002
             a if a == hash(20482) => Some(Sr25519Precompile::<R>::execute(handle)),
+            // SubstrateEcdsa 0x5003
+            a if a == hash(20483) => Some(SubstrateEcdsaPrecompile::<R>::execute(handle)),
             // If the address matches asset prefix, the we route through the asset precompile set
             a if &a.to_fixed_bytes()[0..4] == ASSET_PRECOMPILE_ADDRESS_PREFIX => {
                 Erc20AssetsPrecompileSet::<R>::new().execute(handle)
