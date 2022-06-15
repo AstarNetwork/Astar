@@ -159,7 +159,6 @@ jobs:
 
   rpc-test:
     runs-on: [self-hosted, Linux, X64]
-    needs: native-linux
     strategy:
       matrix:
         node-version: [16.x]
@@ -169,6 +168,7 @@ jobs:
       with:
         name: astar-ubuntu-latest-x86_64
         path: target/release/astar-collator
+    - run: chmod +x ./target/release/astar-collator
     - name: Use Node.js ${{ matrix.node-version }}
       uses: actions/setup-node@v2
       with:
