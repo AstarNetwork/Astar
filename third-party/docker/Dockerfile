@@ -6,9 +6,9 @@ ARG BUILD_DATE
 
 LABEL io.parity.image.authors="devops@stake.co.jp" \
 	io.parity.image.vendor="Stake Technologies" \
-	io.parity.image.title="PlasmNetwork/Astar" \
+	io.parity.image.title="AstarNetwork/Astar" \
 	io.parity.image.description="Astar: " \
-	io.parity.image.source="https://github.com/PlasmNetwork/Astar/blob/${VCS_REF}/third-party/docker/Dockerfile" \
+	io.parity.image.source="https://github.com/AstarNetwork/Astar/blob/${VCS_REF}/third-party/docker/Dockerfile" \
 	io.parity.image.revision="${VCS_REF}" \
 	io.parity.image.created="${BUILD_DATE}" \
 	io.parity.image.documentation="https://docs.astar.network"
