@@ -1,6 +1,6 @@
 [package]
 name = "xcm-tools"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["Stake Technologies <devops@stake.co.jp>"]
 description = "Astar XCM tools."
 edition = "2021"
@@ -12,13 +12,14 @@ path = "src/main.rs"
 
 [dependencies]
 clap = { version = "3.0", features = ["derive"] }
-sp-core = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.19" }
-xcm = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.19" }
-xcm-builder = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.19" }
-xcm-executor = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.19" }
-polkadot-parachain = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.19" }
-polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.19" }
-cumulus-primitives-core = { git = "https://github.com/paritytech/cumulus", branch = "polkadot-v0.9.19" }
+sp-core = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.23" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.23" }
+xcm = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.23" }
+xcm-builder = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.23" }
+xcm-executor = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.23" }
+polkadot-parachain = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.23" }
+polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.23" }
+cumulus-primitives-core = { git = "https://github.com/paritytech/cumulus", branch = "polkadot-v0.9.23" }
 
 [build-dependencies]
-build-script-utils = { package = "substrate-build-script-utils", git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.19" }
+build-script-utils = { package = "substrate-build-script-utils", git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.23" }

@@ -1,16 +1,14 @@
 //! Astar RPCs implementation.
 
 use fc_rpc::{
-    EthApi, EthApiServer, EthBlockDataCacheTask, EthFilterApi, EthFilterApiServer, EthPubSubApi,
-    EthPubSubApiServer, HexEncodedIdProvider, NetApi, NetApiServer, OverrideHandle,
-    RuntimeApiStorageOverride, SchemaV1Override, SchemaV2Override, SchemaV3Override,
-    StorageOverride, Web3Api, Web3ApiServer,
+    Eth, EthApiServer, EthBlockDataCacheTask, EthFilter, EthFilterApiServer, EthPubSub,
+    EthPubSubApiServer, Net, NetApiServer, OverrideHandle, RuntimeApiStorageOverride,
+    SchemaV1Override, SchemaV2Override, SchemaV3Override, StorageOverride, Web3, Web3ApiServer,
 };
 use fc_rpc_core::types::{FeeHistoryCache, FilterPool};
 use fp_storage::EthereumStorageSchema;
-use frame_rpc_system::{FullSystem, SystemApi};
-use jsonrpc_pubsub::manager::SubscriptionManager;
-use pallet_transaction_payment_rpc::{TransactionPayment, TransactionPaymentApi};
+use jsonrpsee::RpcModule;
+use pallet_transaction_payment_rpc::{TransactionPayment, TransactionPaymentApiServer};
 use sc_client_api::{AuxStore, Backend, BlockchainEvents, StateBackend, StorageProvider};
 use sc_network::NetworkService;
 pub use sc_rpc::{DenyUnsafe, SubscriptionTaskExecutor};
@@ -24,6 +22,7 @@ use sp_blockchain::{
 use sp_runtime::traits::BlakeTwo256;
 use std::collections::BTreeMap;
 use std::sync::Arc;
+use substrate_frame_rpc_system::{System, SystemApiServer};
 
 use crate::primitives::*;
 
@@ -43,7 +42,7 @@ pub fn open_frontier_backend(
 
     Ok(Arc::new(fc_db::Backend::<Block>::new(
         &fc_db::DatabaseSettings {
-            source: fc_db::DatabaseSettingsSrc::RocksDb {
+            source: fc_db::DatabaseSource::RocksDb {
                 path,
                 cache_size: 0,
             },
@@ -115,7 +114,7 @@ pub struct FullDeps<C, P, A: ChainApi> {
 pub fn create_full<C, P, BE, A>(
     deps: FullDeps<C, P, A>,
     subscription_task_executor: SubscriptionTaskExecutor,
-) -> jsonrpc_core::IoHandler<sc_rpc::Metadata>
+) -> Result<RpcModule<()>, Box<dyn std::error::Error + Send + Sync>>
 where
     C: ProvideRuntimeApi<Block>
         + HeaderBackend<Block>
@@ -126,7 +125,7 @@ where
         + Send
         + Sync
         + 'static,
-    C::Api: frame_rpc_system::AccountNonceApi<Block, AccountId, Nonce>
+    C::Api: substrate_frame_rpc_system::AccountNonceApi<Block, AccountId, Nonce>
         + pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>
         + fp_rpc::ConvertTransactionRuntimeApi<Block>
         + fp_rpc::EthereumRuntimeRPCApi<Block>
@@ -137,7 +136,7 @@ where
     BE::Blockchain: BlockchainBackend<Block>,
     A: ChainApi<Block = Block> + 'static,
 {
-    let mut io = jsonrpc_core::IoHandler::default();
+    let mut io = RpcModule::new(());
     let FullDeps {
         client,
         pool,
@@ -153,60 +152,57 @@ where
         block_data_cache,
     } = deps;
 
-    io.extend_with(SystemApi::to_delegate(FullSystem::new(
-        client.clone(),
-        pool.clone(),
-        deny_unsafe,
-    )));
+    io.merge(System::new(client.clone(), pool.clone(), deny_unsafe).into_rpc())?;
+    io.merge(TransactionPayment::new(client.clone()).into_rpc())?;
 
-    io.extend_with(TransactionPaymentApi::to_delegate(TransactionPayment::new(
-        client.clone(),
-    )));
+    let no_tx_converter: Option<fp_rpc::NoTransactionConverter> = None;
+
+    io.merge(
+        Eth::new(
+            client.clone(),
+            pool.clone(),
+            graph,
+            no_tx_converter,
+            network.clone(),
+            Default::default(),
+            overrides.clone(),
+            frontier_backend.clone(),
+            is_authority,
+            block_data_cache.clone(),
+            fee_history_cache,
+            fee_history_limit,
+        )
+        .into_rpc(),
+    )?;
 
     let max_past_logs: u32 = 10_000;
     let max_stored_filters: usize = 500;
+    io.merge(
+        EthFilter::new(
+            client.clone(),
+            frontier_backend.clone(),
+            filter_pool,
+            max_stored_filters,
+            max_past_logs,
+            block_data_cache.clone(),
+        )
+        .into_rpc(),
+    )?;
 
-    io.extend_with(EthApiServer::to_delegate(EthApi::new(
-        client.clone(),
-        pool.clone(),
-        graph,
-        network.clone(),
-        Default::default(),
-        overrides.clone(),
-        frontier_backend.clone(),
-        is_authority,
-        block_data_cache.clone(),
-        fee_history_limit,
-        fee_history_cache,
-    )));
+    io.merge(Net::new(client.clone(), network.clone(), true).into_rpc())?;
 
-    io.extend_with(EthFilterApiServer::to_delegate(EthFilterApi::new(
-        client.clone(),
-        frontier_backend,
-        filter_pool,
-        max_stored_filters,
-        max_past_logs,
-        block_data_cache.clone(),
-    )));
+    io.merge(Web3::new(client.clone()).into_rpc())?;
 
-    io.extend_with(NetApiServer::to_delegate(NetApi::new(
-        client.clone(),
-        network.clone(),
-        true,
-    )));
+    io.merge(
+        EthPubSub::new(
+            pool.clone(),
+            client.clone(),
+            network.clone(),
+            subscription_task_executor,
+            overrides.clone(),
+        )
+        .into_rpc(),
+    )?;
 
-    io.extend_with(Web3ApiServer::to_delegate(Web3Api::new(client.clone())));
-
-    io.extend_with(EthPubSubApiServer::to_delegate(EthPubSubApi::new(
-        pool,
-        client.clone(),
-        network,
-        SubscriptionManager::<HexEncodedIdProvider>::with_id_provider(
-            HexEncodedIdProvider::default(),
-            Arc::new(subscription_task_executor),
-        ),
-        overrides,
-    )));
-
-    io
+    Ok(io)
 }

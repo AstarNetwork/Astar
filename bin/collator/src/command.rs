@@ -12,7 +12,6 @@ use codec::Encode;
 use cumulus_client_service::genesis::generate_genesis_block;
 use cumulus_primitives_core::ParaId;
 use log::info;
-use polkadot_parachain::primitives::AccountIdConversion;
 use sc_cli::{
     ChainSpec, CliConfiguration, DefaultConfigurationValues, ImportParams, KeystoreParams,
     NetworkParams, Result, RuntimeVersion, SharedParams, SubstrateCli,
@@ -22,11 +21,12 @@ use sc_service::{
     PartialComponents,
 };
 use sp_core::hexdisplay::HexDisplay;
+use sp_runtime::traits::AccountIdConversion;
 use sp_runtime::traits::Block as BlockT;
 use std::{io::Write, net::SocketAddr};
 
 #[cfg(feature = "frame-benchmarking")]
-use frame_benchmarking_cli::BenchmarkCmd;
+use frame_benchmarking_cli::{BenchmarkCmd, SUBSTRATE_REFERENCE_HARDWARE};
 
 trait IdentifyChain {
     fn is_astar(&self) -> bool;
@@ -616,6 +616,10 @@ pub fn run() -> Result<()> {
                     }
                 }
                 BenchmarkCmd::Overhead(_) => Err("Benchmark overhead not supported.".into()),
+                BenchmarkCmd::Machine(cmd) => {
+                    return runner
+                        .sync_run(|config| cmd.run(&config, SUBSTRATE_REFERENCE_HARDWARE.clone()));
+                }
             }
         }
         #[cfg(feature = "try-runtime")]
@@ -680,7 +684,7 @@ pub fn run() -> Result<()> {
                 let id = ParaId::from(cli.run.parachain_id);
 
                 let parachain_account =
-                    AccountIdConversion::<polkadot_primitives::v2::AccountId>::into_account(&id);
+                    AccountIdConversion::<polkadot_primitives::v2::AccountId>::into_account_truncating(&id);
 
                 let state_version = Cli::native_runtime_version(&config.chain_spec).state_version();
                 let block: Block = generate_genesis_block(&config.chain_spec, state_version)

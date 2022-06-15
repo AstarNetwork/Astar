@@ -28,7 +28,7 @@ use sp_runtime::{
     create_runtime_str, generic, impl_opaque_keys,
     traits::{
         AccountIdConversion, AccountIdLookup, BlakeTwo256, Block as BlockT, ConvertInto,
-        Dispatchable, OpaqueKeys, PostDispatchInfoOf, Verify,
+        DispatchInfoOf, Dispatchable, OpaqueKeys, PostDispatchInfoOf, Verify,
     },
     transaction_validity::{
         TransactionPriority, TransactionSource, TransactionValidity, TransactionValidityError,
@@ -88,7 +88,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("astar"),
     impl_name: create_runtime_str!("astar"),
     authoring_version: 1,
-    spec_version: 18,
+    spec_version: 19,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 2,
@@ -317,7 +317,7 @@ impl<AccountId> Default for SmartContract<AccountId> {
 }
 
 #[cfg(not(feature = "runtime-benchmarks"))]
-impl<AccountId> pallet_dapps_staking::traits::IsContract for SmartContract<AccountId> {
+impl<AccountId> pallet_dapps_staking::IsContract for SmartContract<AccountId> {
     fn is_valid(&self) -> bool {
         match self {
             SmartContract::Wasm(_account) => false,
@@ -327,7 +327,7 @@ impl<AccountId> pallet_dapps_staking::traits::IsContract for SmartContract<Accou
 }
 
 #[cfg(feature = "runtime-benchmarks")]
-impl<AccountId> pallet_dapps_staking::traits::IsContract for SmartContract<AccountId> {
+impl<AccountId> pallet_dapps_staking::IsContract for SmartContract<AccountId> {
     fn is_valid(&self) -> bool {
         match self {
             SmartContract::Wasm(_account) => false,
@@ -434,7 +434,7 @@ type NegativeImbalance = <Balances as Currency<AccountId>>::NegativeImbalance;
 pub struct ToStakingPot;
 impl OnUnbalanced<NegativeImbalance> for ToStakingPot {
     fn on_nonzero_unbalanced(amount: NegativeImbalance) {
-        let staking_pot = PotId::get().into_account();
+        let staking_pot = PotId::get().into_account_truncating();
         Balances::resolve_creating(&staking_pot, amount);
     }
 }
@@ -449,7 +449,7 @@ impl Get<Balance> for DappsStakingTvlProvider {
 pub struct BeneficiaryPayout();
 impl pallet_block_reward::BeneficiaryPayout<NegativeImbalance> for BeneficiaryPayout {
     fn treasury(reward: NegativeImbalance) {
-        Balances::resolve_creating(&TreasuryPalletId::get().into_account(), reward);
+        Balances::resolve_creating(&TreasuryPalletId::get().into_account_truncating(), reward);
     }
 
     fn collators(reward: NegativeImbalance) {
@@ -667,13 +667,6 @@ impl pallet_evm::GasWeightMapping for GasWeightMapping {
     }
 }
 
-pub struct FixedGasPrice;
-impl FeeCalculator for FixedGasPrice {
-    fn min_gas_price() -> U256 {
-        (MILLIASTR / 1_000_000).into()
-    }
-}
-
 pub struct FindAuthorTruncated<F>(sp_std::marker::PhantomData<F>);
 impl<F: FindAuthor<u32>> FindAuthor<H160> for FindAuthorTruncated<F> {
     fn find_author<'a, I>(digests: I) -> Option<H160>
@@ -704,7 +697,7 @@ parameter_types! {
 }
 
 impl pallet_evm::Config for Runtime {
-    type FeeCalculator = FixedGasPrice;
+    type FeeCalculator = BaseFee;
     type GasWeightMapping = GasWeightMapping;
     type BlockHashMapping = pallet_ethereum::EthereumBlockHashMapping<Runtime>;
     type CallOrigin = pallet_evm::EnsureAddressRoot<AccountId>;
@@ -719,7 +712,6 @@ impl pallet_evm::Config for Runtime {
     type OnChargeTransaction = pallet_evm::EVMCurrencyAdapter<Balances, ToStakingPot>;
     type BlockGasLimit = BlockGasLimit;
     type FindAuthor = FindAuthorTruncated<Aura>;
-    type WeightInfo = pallet_evm::weights::SubstrateWeight<Runtime>;
 }
 
 impl pallet_ethereum::Config for Runtime {
@@ -840,9 +832,14 @@ impl fp_self_contained::SelfContainedCall for Call {
         }
     }
 
-    fn validate_self_contained(&self, info: &Self::SignedInfo) -> Option<TransactionValidity> {
+    fn validate_self_contained(
+        &self,
+        info: &Self::SignedInfo,
+        dispatch_info: &DispatchInfoOf<Call>,
+        len: usize,
+    ) -> Option<TransactionValidity> {
         match self {
-            Call::Ethereum(call) => call.validate_self_contained(info),
+            Call::Ethereum(call) => call.validate_self_contained(info, dispatch_info, len),
             _ => None,
         }
     }
@@ -977,11 +974,13 @@ impl_runtime_apis! {
         }
 
         fn account_basic(address: H160) -> pallet_evm::Account {
-            EVM::account_basic(&address)
+            let (account, _) = EVM::account_basic(&address);
+            account
         }
 
         fn gas_price() -> U256 {
-            <Runtime as pallet_evm::Config>::FeeCalculator::min_gas_price()
+            let (gas_price, _) = <Runtime as pallet_evm::Config>::FeeCalculator::min_gas_price();
+            gas_price
         }
 
         fn account_code_at(address: H160) -> Vec<u8> {
@@ -1034,7 +1033,7 @@ impl_runtime_apis! {
                     .as_ref()
                     .unwrap_or_else(|| <Runtime as pallet_evm::Config>::config()),
             )
-            .map_err(|err| err.into())
+            .map_err(|err| err.error.into())
         }
 
         fn create(
@@ -1072,7 +1071,7 @@ impl_runtime_apis! {
                     .as_ref()
                     .unwrap_or(<Runtime as pallet_evm::Config>::config()),
                 )
-                .map_err(|err| err.into())
+                .map_err(|err| err.error.into())
         }
 
         fn current_transaction_statuses() -> Option<Vec<fp_rpc::TransactionStatus>> {

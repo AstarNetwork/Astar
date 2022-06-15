@@ -14,6 +14,7 @@ use cumulus_relay_chain_rpc_interface::RelayChainRPCInterface;
 use fc_consensus::FrontierBlockImport;
 use fc_rpc_core::types::{FeeHistoryCache, FilterPool};
 use futures::{lock::Mutex, StreamExt};
+use pallet_contracts_rpc::ContractsApiServer;
 use polkadot_service::CollatorPair;
 use sc_client_api::{BlockchainEvents, ExecutorProvider};
 use sc_consensus::import_queue::BasicQueue;
@@ -251,6 +252,7 @@ async fn build_relay_chain_interface(
             parachain_config,
             telemetry_worker_handle,
             task_manager,
+            None,
         ),
     }
 }
@@ -283,7 +285,7 @@ where
             StateBackend = sc_client_api::StateBackendFor<TFullBackend<Block>, Block>,
         > + sp_offchain::OffchainWorkerApi<Block>
         + sp_block_builder::BlockBuilder<Block>
-        + frame_rpc_system::AccountNonceApi<Block, AccountId, Nonce>
+        + substrate_frame_rpc_system::AccountNonceApi<Block, AccountId, Nonce>
         + pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>
         + fp_rpc::EthereumRuntimeRPCApi<Block>
         + fp_rpc::ConvertTransactionRuntimeApi<Block>
@@ -451,13 +453,13 @@ where
                 overrides: overrides.clone(),
             };
 
-            Ok(crate::rpc::create_full(deps, subscription))
+            crate::rpc::create_full(deps, subscription).map_err(Into::into)
         })
     };
 
     // Spawn basic services.
     sc_service::spawn_tasks(sc_service::SpawnTasksParams {
-        rpc_extensions_builder,
+        rpc_builder: rpc_extensions_builder,
         client: client.clone(),
         transaction_pool: transaction_pool.clone(),
         task_manager: &mut task_manager,
@@ -556,7 +558,7 @@ where
             StateBackend = sc_client_api::StateBackendFor<TFullBackend<Block>, Block>,
         > + sp_offchain::OffchainWorkerApi<Block>
         + sp_block_builder::BlockBuilder<Block>
-        + frame_rpc_system::AccountNonceApi<Block, AccountId, Nonce>
+        + substrate_frame_rpc_system::AccountNonceApi<Block, AccountId, Nonce>
         + pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>
         + fp_rpc::EthereumRuntimeRPCApi<Block>
         + fp_rpc::ConvertTransactionRuntimeApi<Block>
@@ -724,18 +726,23 @@ where
                 overrides: overrides.clone(),
             };
 
-            let mut io = crate::rpc::create_full(deps, subscription);
+            let mut io = crate::rpc::create_full(deps, subscription)?;
+
             // This node support WASM contracts
-            io.extend_with(pallet_contracts_rpc::ContractsApi::to_delegate(
-                pallet_contracts_rpc::Contracts::new(client.clone()),
-            ));
+            io.merge(pallet_contracts_rpc::Contracts::new(Arc::clone(&client)).into_rpc())
+                .map_err(|_| {
+                    sc_service::Error::Other(
+                        "Failed to register pallet-contracts RPC methods.".into(),
+                    )
+                })?;
+
             Ok(io)
         })
     };
 
     // Spawn basic services.
     sc_service::spawn_tasks(sc_service::SpawnTasksParams {
-        rpc_extensions_builder,
+        rpc_builder: rpc_extensions_builder,
         client: client.clone(),
         transaction_pool: transaction_pool.clone(),
         task_manager: &mut task_manager,
