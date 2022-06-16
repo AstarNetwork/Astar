@@ -1,3 +1,0 @@
-(function() {var implementors = {};
-implementors["shibuya_runtime"] = [{"text":"impl OnRuntimeUpgrade for <a class=\"struct\" href=\"shibuya_runtime/struct.RelayAssetRegistration.html\" title=\"struct shibuya_runtime::RelayAssetRegistration\">RelayAssetRegistration</a>","synthetic":false,"types":["shibuya_runtime::RelayAssetRegistration"]}];
-if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()
