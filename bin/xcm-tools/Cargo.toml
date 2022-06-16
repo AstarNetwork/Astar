@@ -12,14 +12,14 @@ path = "src/main.rs"
 
 [dependencies]
 clap = { version = "3.0", features = ["derive"] }
-sp-core = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.23" }
-sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.23" }
-xcm = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.23" }
-xcm-builder = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.23" }
-xcm-executor = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.23" }
-polkadot-parachain = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.23" }
-polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.23" }
-cumulus-primitives-core = { git = "https://github.com/paritytech/cumulus", branch = "polkadot-v0.9.23" }
+sp-core = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.24" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.24" }
+xcm = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.24" }
+xcm-builder = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.24" }
+xcm-executor = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.24" }
+polkadot-parachain = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.24" }
+polkadot-primitives = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.24" }
+cumulus-primitives-core = { git = "https://github.com/paritytech/cumulus", branch = "polkadot-v0.9.24" }
 
 [build-dependencies]
-build-script-utils = { package = "substrate-build-script-utils", git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.23" }
+build-script-utils = { package = "substrate-build-script-utils", git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.24" }
