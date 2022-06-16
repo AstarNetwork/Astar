@@ -7,10 +7,7 @@
 use codec::{Decode, Encode};
 use frame_support::{
     construct_runtime, parameter_types,
-    traits::{
-        ConstU32, Contains, Currency, FindAuthor, Get, Imbalance, Nothing, OnRuntimeUpgrade,
-        OnUnbalanced,
-    },
+    traits::{ConstU32, Contains, Currency, FindAuthor, Get, Imbalance, Nothing, OnUnbalanced},
     weights::{
         constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_PER_SECOND},
         ConstantMultiplier, DispatchClass, Weight, WeightToFeeCoefficient, WeightToFeeCoefficients,
@@ -42,6 +39,7 @@ use sp_runtime::{
 use sp_std::prelude::*;
 
 use pallet_evm_precompile_assets_erc20::AddressToAssetId;
+use xcm_primitives::AssetLocationIdConverter;
 
 #[cfg(any(feature = "std", test))]
 use sp_version::NativeVersion;
@@ -56,11 +54,10 @@ mod precompiles;
 mod weights;
 mod xcm_config;
 
+pub type ShibuyaAssetLocationIdConverter = AssetLocationIdConverter<AssetId, XcAssetConfig>;
+
 pub use precompiles::{ShibuyaNetworkPrecompiles, ASSET_PRECOMPILE_ADDRESS_PREFIX};
-pub type Precompiles = ShibuyaNetworkPrecompiles<
-    Runtime,
-    xcm_config::AssetLocationIdConverter<AssetId, XcAssetConfig>,
->;
+pub type Precompiles = ShibuyaNetworkPrecompiles<Runtime, ShibuyaAssetLocationIdConverter>;
 
 /// Constant values used within the runtime.
 pub const MILLISDN: Balance = 1_000_000_000_000_000;
@@ -898,37 +895,37 @@ pub type Executive = frame_executive::Executive<
     frame_system::ChainContext<Runtime>,
     Runtime,
     AllPalletsWithSystem,
-    (RelayAssetRegistration,),
 >;
 
-pub struct RelayAssetRegistration;
-impl OnRuntimeUpgrade for RelayAssetRegistration {
-    fn on_runtime_upgrade() -> Weight {
-        use pallet_xc_asset_config::*;
-        use xcm::latest::prelude::*;
+// TODO: remove after re-used for Shiden & Astar
+// pub struct RelayAssetRegistration;
+// impl OnRuntimeUpgrade for RelayAssetRegistration {
+//     fn on_runtime_upgrade() -> Weight {
+//         use pallet_xc_asset_config::*;
+//         use xcm::latest::prelude::*;
 
-        let relay_asset_id = u128::max_value();
-        let relay_asset_multilocation = MultiLocation::parent();
+//         let relay_asset_id = u128::max_value();
+//         let relay_asset_multilocation = MultiLocation::parent();
 
-        AssetIdToLocation::<Runtime>::insert(
-            relay_asset_id,
-            relay_asset_multilocation.clone().versioned(),
-        );
-        AssetLocationToId::<Runtime>::insert(
-            relay_asset_multilocation.clone().versioned(),
-            relay_asset_id,
-        );
+//         AssetIdToLocation::<Runtime>::insert(
+//             relay_asset_id,
+//             relay_asset_multilocation.clone().versioned(),
+//         );
+//         AssetLocationToId::<Runtime>::insert(
+//             relay_asset_multilocation.clone().versioned(),
+//             relay_asset_id,
+//         );
 
-        AssetLocationUnitsPerSecond::<Runtime>::insert(
-            relay_asset_multilocation.clone().versioned(),
-            1_000_000_000,
-        );
+//         AssetLocationUnitsPerSecond::<Runtime>::insert(
+//             relay_asset_multilocation.clone().versioned(),
+//             1_000_000_000,
+//         );
 
-        EvmRevertCodeHandler::xc_asset_registered(relay_asset_id);
+//         EvmRevertCodeHandler::xc_asset_registered(relay_asset_id);
 
-        <Runtime as frame_system::Config>::DbWeight::get().writes(4)
-    }
-}
+//         <Runtime as frame_system::Config>::DbWeight::get().writes(4)
+//     }
+// }
 
 impl fp_self_contained::SelfContainedCall for Call {
     type SignedInfo = H160;

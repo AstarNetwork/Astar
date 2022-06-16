@@ -2472,7 +2472,7 @@ checksum = "77f3309417938f28bf8228fcff79a4a37103981e3e186d2ccd19c74b38f4eb71"
 [[package]]
 name = "evm"
 version = "0.35.0"
-source = "git+https://github.com/rust-blockchain/evm?branch=master#01bcbd2205a212c34451d3b4fabc962793b057d3"
+source = "git+https://github.com/rust-blockchain/evm?branch=master#51b8c2ce3104265e1fd5bb0fe5cdfd2e0938239c"
 dependencies = [
  "auto_impl",
  "environmental",
@@ -2492,7 +2492,7 @@ dependencies = [
 [[package]]
 name = "evm-core"
 version = "0.35.0"
-source = "git+https://github.com/rust-blockchain/evm?branch=master#01bcbd2205a212c34451d3b4fabc962793b057d3"
+source = "git+https://github.com/rust-blockchain/evm?branch=master#51b8c2ce3104265e1fd5bb0fe5cdfd2e0938239c"
 dependencies = [
  "parity-scale-codec",
  "primitive-types",
@@ -2503,7 +2503,7 @@ dependencies = [
 [[package]]
 name = "evm-gasometer"
 version = "0.35.0"
-source = "git+https://github.com/rust-blockchain/evm?branch=master#01bcbd2205a212c34451d3b4fabc962793b057d3"
+source = "git+https://github.com/rust-blockchain/evm?branch=master#51b8c2ce3104265e1fd5bb0fe5cdfd2e0938239c"
 dependencies = [
  "environmental",
  "evm-core",
@@ -2514,7 +2514,7 @@ dependencies = [
 [[package]]
 name = "evm-runtime"
 version = "0.35.0"
-source = "git+https://github.com/rust-blockchain/evm?branch=master#01bcbd2205a212c34451d3b4fabc962793b057d3"
+source = "git+https://github.com/rust-blockchain/evm?branch=master#51b8c2ce3104265e1fd5bb0fe5cdfd2e0938239c"
 dependencies = [
  "auto_impl",
  "environmental",
@@ -10774,6 +10774,7 @@ dependencies = [
  "xcm",
  "xcm-builder",
  "xcm-executor",
+ "xcm-primitives",
 ]
 
 [[package]]
@@ -12475,7 +12476,7 @@ version = "1.6.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "97fee6b57c6a41524a810daee9286c02d7752c4253064d0b05472833a438f675"
 dependencies = [
- "cfg-if 0.1.10",
+ "cfg-if 1.0.0",
  "digest 0.10.3",
  "rand 0.8.5",
  "static_assertions",
@@ -13323,6 +13324,21 @@ dependencies = [
  "sp-runtime",
  "sp-std",
  "xcm",
+]
+
+[[package]]
+name = "xcm-primitives"
+version = "0.2.0"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.24#11fe1447e1e5822c34fac385ddffe9094a4722ed"
+dependencies = [
+ "frame-support",
+ "log",
+ "pallet-xc-asset-config",
+ "sp-runtime",
+ "sp-std",
+ "xcm",
+ "xcm-builder",
+ "xcm-executor",
 ]
 
 [[package]]
