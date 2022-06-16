@@ -3,7 +3,7 @@
 use pallet_evm::{
     ExitRevert, Precompile, PrecompileFailure, PrecompileHandle, PrecompileResult, PrecompileSet,
 };
-use pallet_evm_precompile_assets_erc20::Erc20AssetsPrecompileSet;
+use pallet_evm_precompile_assets_erc20::{AddressToAssetId, Erc20AssetsPrecompileSet};
 use pallet_evm_precompile_blake2::Blake2F;
 use pallet_evm_precompile_bn128::{Bn128Add, Bn128Mul, Bn128Pairing};
 use pallet_evm_precompile_dispatch::Dispatch;
@@ -13,10 +13,13 @@ use pallet_evm_precompile_sha3fips::Sha3FIPS256;
 use pallet_evm_precompile_simple::{ECRecover, ECRecoverPublicKey, Identity, Ripemd160, Sha256};
 use pallet_evm_precompile_sr25519::Sr25519Precompile;
 use pallet_evm_precompile_substrate_ecdsa::SubstrateEcdsaPrecompile;
+use pallet_evm_precompile_xcm::XcmPrecompile;
 use pallet_precompile_dapps_staking::DappsStakingWrapper;
 use sp_core::H160;
 use sp_std::fmt::Debug;
 use sp_std::marker::PhantomData;
+
+use xcm::latest::prelude::MultiLocation;
 
 /// The asset precompile address prefix. Addresses that match against this prefix will be routed
 /// to Erc20AssetsPrecompileSet
@@ -24,9 +27,9 @@ pub const ASSET_PRECOMPILE_ADDRESS_PREFIX: &[u8] = &[255u8; 4];
 
 /// The PrecompileSet installed in the Astar runtime.
 #[derive(Debug, Clone, Copy)]
-pub struct AstarNetworkPrecompiles<R>(PhantomData<R>);
+pub struct AstarNetworkPrecompiles<R, C>(PhantomData<(R, C)>);
 
-impl<R> AstarNetworkPrecompiles<R> {
+impl<R, C> AstarNetworkPrecompiles<R, C> {
     pub fn new() -> Self {
         Self(Default::default())
     }
@@ -34,7 +37,7 @@ impl<R> AstarNetworkPrecompiles<R> {
     /// Return all addresses that contain precompiles. This can be used to populate dummy code
     /// under the precompile.
     pub fn used_addresses() -> impl Iterator<Item = H160> {
-        sp_std::vec![1, 2, 3, 4, 5, 6, 7, 8, 1024, 1025, 1026, 1027, 20481, 20482, 20483]
+        sp_std::vec![1, 2, 3, 4, 5, 6, 7, 8, 1024, 1025, 1026, 1027, 20481, 20482, 20483, 20484]
             .into_iter()
             .map(|x| hash(x))
     }
@@ -43,12 +46,17 @@ impl<R> AstarNetworkPrecompiles<R> {
 /// The following distribution has been decided for the precompiles
 /// 0-1023: Ethereum Mainnet Precompiles
 /// 1024-2047 Precompiles that are not in Ethereum Mainnet
-impl<R> PrecompileSet for AstarNetworkPrecompiles<R>
+impl<R, C> PrecompileSet for AstarNetworkPrecompiles<R, C>
 where
-    R: pallet_evm::Config,
-    Dispatch<R>: Precompile,
-    DappsStakingWrapper<R>: Precompile,
     Erc20AssetsPrecompileSet<R>: PrecompileSet,
+    DappsStakingWrapper<R>: Precompile,
+    XcmPrecompile<R, C>: Precompile,
+    Dispatch<R>: Precompile,
+    R: pallet_evm::Config
+        + pallet_assets::Config
+        + pallet_xcm::Config
+        + AddressToAssetId<<R as pallet_assets::Config>::AssetId>,
+    C: xcm_executor::traits::Convert<MultiLocation, <R as pallet_assets::Config>::AssetId>,
 {
     fn execute(&self, handle: &mut impl PrecompileHandle) -> Option<PrecompileResult> {
         let address = handle.code_address();
@@ -81,6 +89,8 @@ where
             a if a == hash(20482) => Some(Sr25519Precompile::<R>::execute(handle)),
             // SubstrateEcdsa 0x5003
             a if a == hash(20483) => Some(SubstrateEcdsaPrecompile::<R>::execute(handle)),
+            // Xcm 0x5004
+            a if a == hash(20484) => Some(XcmPrecompile::<R, C>::execute(handle)),
             // If the address matches asset prefix, the we route through the asset precompile set
             a if &a.to_fixed_bytes()[0..4] == ASSET_PRECOMPILE_ADDRESS_PREFIX => {
                 Erc20AssetsPrecompileSet::<R>::new().execute(handle)
