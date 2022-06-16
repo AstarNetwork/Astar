@@ -7,7 +7,6 @@
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
 use codec::{Decode, Encode};
-
 use frame_support::{
     construct_runtime,
     log::error,
@@ -59,12 +58,10 @@ pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 pub use sp_runtime::BuildStorage;
 pub use sp_runtime::{Perbill, Permill};
 
-mod dapps_staking_extension;
-mod extension_traits;
 mod weights;
 
-use crate::extension_traits::AstarChainExtension;
-pub use dapps_staking_extension::DappsStakingExtension;
+/// Contract extension for Local Chain-Extension
+pub use pallet_chain_extension_dapps_staking::{AstarChainExtension, DappsStakingExtension};
 
 #[cfg(feature = "std")]
 /// Wasm binary unwrapped. If built with `BUILD_DUMMY_WASM_BINARY`, the function panics.
@@ -367,7 +364,7 @@ impl<AccountId> Default for SmartContract<AccountId> {
 impl<AccountId> pallet_dapps_staking::IsContract for SmartContract<AccountId> {
     fn is_valid(&self) -> bool {
         match self {
-            SmartContract::Wasm(_account) => true,
+            SmartContract::Wasm(_account) => false,
             SmartContract::Evm(account) => EVM::account_codes(&account).len() > 0,
         }
     }
@@ -566,73 +563,23 @@ impl pallet_contracts::Config for Runtime {
     type RelaxedMaxCodeLen = ConstU32<{ 256 * 1024 }>;
 }
 
-impl pallet_sudo::Config for Runtime {
-    type Event = Event;
-    type Call = Call;
-}
-
-/// Contract extension for Local Chain-Extension
 pub struct LocalChainExtension;
 
 impl ChainExtension<Runtime> for LocalChainExtension {
     fn call<E: Ext>(func_id: u32, env: Environment<E, InitState>) -> Result<RetVal, DispatchError>
     where
         <E::T as SysConfig>::AccountId: UncheckedFrom<<E::T as SysConfig>::Hash> + AsRef<[u8]>,
-        DappsStakingExtension: AstarChainExtension,
+        E: pallet_dapps_staking::pallet::pallet::Config,
     {
         let pallet_id = (func_id / 100) as u8;
         let func_id_matcher = func_id % 100;
         match pallet_id {
             34 => {
                 DappsStakingExtension::execute_func(func_id_matcher, env)?;
-
-                //     match func_id_matcher {
-                //         //DappsStaking - current_era()
-                //         1 => {
-                //             let mut env = env.buf_in_buf_out();
-                //             let current_era = crate::DappsStaking::current_era();
-                //             let current_era_encoded = current_era.encode();
-                //             trace!(
-                //                 target: "runtime",
-                //                 "[ChainExtension]|call|func_id:{:} current_era:{:?}",
-                //                 func_id,
-                //                 &current_era_encoded
-                //             );
-                //             env.write(&current_era_encoded, false, None).map_err(|_| {
-                //                 DispatchError::Other("ChainExtension failed to call current_era")
-                //             })?;
-                //         }
-
-                //         // DappsStaking - general_era_info()
-                //         2 => {
-                //             let mut env = env.buf_in_buf_out();
-                //             let arg: u32 = env.read_as()?;
-                //             let era_info = DappsStaking::general_era_info(arg)
-                //                 .ok_or(DispatchError::Other("general_era_info call failed"));
-                //             sp_std::if_std! {println!("era_info:{:?}", era_info)};
-                //             let era_info_encoded = era_info.encode();
-                //             sp_std::if_std! {println!("era_info_encoded:{:?}", era_info_encoded)};
-                //             trace!(
-                //                 target: "runtime",
-                //                 "[ChainExtension]|call|func_id:{:} era_info_encoded:{:?}, arg:{:?}",
-                //                 func_id,
-                //                 era_info_encoded,
-                //                 arg
-                //             );
-                //             env.write(&era_info_encoded, false, None).map_err(|_| {
-                //                 DispatchError::Other("ChainExtension failed to call general_era_info")
-                //             })?;
-                //         }
-
-                //         _ => {
-                //             error!("Called an unregistered `func_id`: {:}", func_id);
-                //             return Err(DispatchError::Other("Unimplemented func_id"));
-                //         }
-                //     }
             }
             _ => {
                 error!("Called an unregistered `pallet_id`: {:}", func_id);
-                return Err(DispatchError::Other("Unimplemented pallet_id"));
+                return Err(DispatchError::Other("Unimplemented ChainExtension pallet"));
             }
         }
         Ok(RetVal::Converging(0))
@@ -641,6 +588,11 @@ impl ChainExtension<Runtime> for LocalChainExtension {
     fn enabled() -> bool {
         true
     }
+}
+
+impl pallet_sudo::Config for Runtime {
+    type Event = Event;
+    type Call = Call;
 }
 
 construct_runtime!(

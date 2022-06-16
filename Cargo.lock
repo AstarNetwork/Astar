@@ -272,7 +272,7 @@ dependencies = [
  "pallet-collator-selection 3.0.0 (git+https://github.com/AstarNetwork/astar-frame?branch=pallet-collator-selection-3.0.0/polkadot-v0.9.24)",
  "pallet-collective",
  "pallet-custom-signatures",
- "pallet-dapps-staking",
+ "pallet-dapps-staking 3.4.0",
  "pallet-ethereum",
  "pallet-evm",
  "pallet-evm-precompile-assets-erc20",
@@ -4828,11 +4828,12 @@ dependencies = [
  "pallet-balances",
  "pallet-base-fee",
  "pallet-block-reward",
+ "pallet-chain-extension-dapps-staking",
  "pallet-contracts",
  "pallet-contracts-primitives",
  "pallet-contracts-rpc-runtime-api",
  "pallet-custom-signatures",
- "pallet-dapps-staking",
+ "pallet-dapps-staking 3.4.0",
  "pallet-ethereum",
  "pallet-evm",
  "pallet-evm-precompile-blake2",
@@ -5839,6 +5840,25 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-chain-extension-dapps-staking"
+version = "4.0.0"
+dependencies = [
+ "frame-support",
+ "frame-system",
+ "log",
+ "num_enum",
+ "pallet-contracts",
+ "pallet-contracts-primitives",
+ "pallet-contracts-rpc-runtime-api",
+ "pallet-dapps-staking 3.4.1",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-core",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
 name = "pallet-child-bounties"
 version = "4.0.0-dev"
 source = "git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.24#814752f60ab8cce7e2ece3ce0c1b10799b4eab28"
@@ -6037,6 +6057,27 @@ version = "3.6.0"
 source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.24#11fe1447e1e5822c34fac385ddffe9094a4722ed"
 dependencies = [
  "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "num-traits",
+ "pallet-balances",
+ "pallet-session",
+ "pallet-timestamp",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "sp-arithmetic",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-staking",
+ "sp-std",
+]
+
+[[package]]
+name = "pallet-dapps-staking"
+version = "3.4.1"
+dependencies = [
  "frame-support",
  "frame-system",
  "num-traits",
@@ -6573,7 +6614,7 @@ dependencies = [
  "frame-system",
  "log",
  "num_enum",
- "pallet-dapps-staking",
+ "pallet-dapps-staking 3.4.0",
  "pallet-evm",
  "parity-scale-codec",
  "precompile-utils",
@@ -10723,7 +10764,7 @@ dependencies = [
  "pallet-contracts-primitives",
  "pallet-contracts-rpc-runtime-api",
  "pallet-custom-signatures",
- "pallet-dapps-staking",
+ "pallet-dapps-staking 3.4.0",
  "pallet-ethereum",
  "pallet-evm",
  "pallet-evm-precompile-assets-erc20",
@@ -10808,7 +10849,7 @@ dependencies = [
  "pallet-collator-selection 3.0.0 (git+https://github.com/paritytech/cumulus?branch=polkadot-v0.9.24)",
  "pallet-collective",
  "pallet-custom-signatures",
- "pallet-dapps-staking",
+ "pallet-dapps-staking 3.4.0",
  "pallet-ethereum",
  "pallet-evm",
  "pallet-evm-precompile-assets-erc20",
