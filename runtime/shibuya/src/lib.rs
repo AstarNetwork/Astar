@@ -8,7 +8,7 @@ use codec::{Decode, Encode};
 use frame_support::{
     construct_runtime, parameter_types,
     traits::{
-        ConstU32, Contains, Currency, FindAuthor, Get, Imbalance, Nothing, OnRuntimeUpgrade,
+        ConstU32, Contains, Currency, FindAuthor, Get, Imbalance, Nothing,
         OnUnbalanced,
     },
     weights::{
