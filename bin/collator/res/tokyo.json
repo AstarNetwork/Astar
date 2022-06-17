@@ -34,7 +34,23 @@
         "balances": {
           "balances": [
             [
+              "5G46dZwtgiYY5PpQd5qegJKkVV6HCE7PMVovW3mcGKFmMrWj",
+              10000000000000000000
+            ],
+            [
               "5Cf3UgKyQc1dL6w34LUEH4j7PsZxBj42cakwx5h7ssqsYCmz",
+              10000000000000000000
+            ],
+            [
+              "5Cakru1BpXPiezeD2LRZh3pJamHcbX9yZ13KLBxuqdTpgnYF",
+              10000000000000000000
+            ],
+            [
+              "Wh2nf6F5ZNJguoQu22Z361xo6VFqX1Y2BuQMcJBSJxERh5E",
+              10000000000000000000
+            ],
+            [
+              "aFZSyZy5xw8rbhryMQVNWL8eqgkZ1An7AjGDExE26kFACA9",
               10000000000000000000
             ]
           ]
@@ -136,7 +152,7 @@
           "nextFreeParaId": 2000
         },
         "sudo": {
-          "key": "5Cakru1BpXPiezeD2LRZh3pJamHcbX9yZ13KLBxuqdTpgnYF"
+          "key": "5CsoHvzFyhp6xchBwbnq5QAJAvcvC9EkaLczc42aDWSkGytv"
         },
         "beefy": {
           "authorities": []
