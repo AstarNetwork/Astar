@@ -2,7 +2,9 @@
   "name": "Tokyo",
   "id": "rococo_tokyo",
   "chainType": "Live",
-  "bootNodes": [],
+  "bootNodes": [
+    "/ip4/20.74.71.22/tcp/30333/p2p/12D3KooWF2AHc3zYbFumLRsvGUhtAEswWcuJVBBkHy3EmNXufz4L"
+  ],
   "telemetryEndpoints": null,
   "protocolId": "tokyo",
   "properties": null,
