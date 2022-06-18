@@ -3,7 +3,8 @@
   "id": "rococo_tokyo",
   "chainType": "Live",
   "bootNodes": [
-    "/ip4/20.74.71.22/tcp/30333/p2p/12D3KooWGTFwCy9krsX74tWCvD7493R3hgDf9wKJteUHJ4ccZpCw"
+    "/ip4/20.74.71.22/tcp/30333/p2p/12D3KooWGTFwCy9krsX74tWCvD7493R3hgDf9wKJteUHJ4ccZpCw",
+    "/ip4/20.74.70.252/tcp/30333/p2p/12D3KooWEQe88bSCpLHFAYF4XhjiH4xhU9G8nKThN6NpxYKZJqCx"
   ],
   "telemetryEndpoints": null,
   "protocolId": "tokyo",
