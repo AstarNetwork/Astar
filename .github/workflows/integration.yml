@@ -34,10 +34,6 @@ jobs:
           - TARGET: aarch64-unknown-linux-gnu
             OS: ubuntu-latest
             ARCH: aarch64
-    env:
-      TARGET: ${{ matrix.TARGET }}
-      OS: ${{ matrix.OS }}
-      ARCH: ${{ matrix.ARCH }}
     steps:
     - name: Checkout the source code
       uses: actions/checkout@master
@@ -56,17 +52,17 @@ jobs:
           ~/.cargo/registry
           ~/.cargo/git
           target/
-        key: ${{ OS }}-${{ TARGET }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+        key: ${{ matrix.OS }}-${{ matrix.TARGET }}-cargo-${{ hashFiles('**/Cargo.lock') }}
         restore-keys: |
-          ${{ OS }}-${{ TARGET }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-          ${{ OS }}-${{ TARGET }}-cargo
+          ${{ matrix.OS }}-${{ matrix.TARGET }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          ${{ matrix.OS }}-${{ matrix.TARGET }}-cargo
 
     - name: Build optimized binary
-      run: CARGO_PROFILE_RELEASE_LTO=true RUSTFLAGS="-C codegen-units=1" cargo build --release --target $TARGET --verbose
+      run: CARGO_PROFILE_RELEASE_LTO=true RUSTFLAGS="-C codegen-units=1" cargo build --release --target ${{ matrix.TARGET }} --verbose
 
     - uses: actions/upload-artifact@master
       with:
-        name: astar-ubuntu-latest-${{ ARCH }}
+        name: astar-ubuntu-latest-${{ matrix.ARCH }}
         path: target/release/astar-collator
 
   native-macos:
