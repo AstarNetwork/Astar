@@ -58,11 +58,11 @@ jobs:
           ${{ matrix.OS }}-${{ matrix.TARGET }}-cargo
 
     - name: Build x86_64 optimized binary
-      if: ${{ matrix.TARGET }} == 'x86_64-unknown-linux-gnu'
+      if: ${{ matrix.TARGET == 'x86_64-unknown-linux-gnu' }}
       run: CARGO_PROFILE_RELEASE_LTO=true RUSTFLAGS="-C codegen-units=1" cargo build --release --target ${{ matrix.TARGET }} --verbose
 
     - name: Build non-x86_64 optimized binary # cross-compile needs additional options (devserver is x86_64) 
-      if: ${{ matrix.TARGET }} != 'x86_64-unknown-linux-gnu'
+      if: ${{ matrix.TARGET != 'x86_64-unknown-linux-gnu' }}
       run: CARGO_PROFILE_RELEASE_LTO=true RUSTFLAGS="-C codegen-units=1" cargo build --release --target ${{ matrix.TARGET }} -Zbuild-std --verbose 
 
     - uses: actions/upload-artifact@master
