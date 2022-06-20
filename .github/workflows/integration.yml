@@ -34,10 +34,10 @@ jobs:
           - TARGET: aarch64-unknown-linux-gnu
             OS: ubuntu-latest
             ARCH: aarch64
-      env:
-        TARGET: ${{ matrix.TARGET }}
-        OS: ${{ matrix.OS }}
-        ARCH: ${{ matrix.ARCH }}
+    env:
+      TARGET: ${{ matrix.TARGET }}
+      OS: ${{ matrix.OS }}
+      ARCH: ${{ matrix.ARCH }}
     steps:
     - name: Checkout the source code
       uses: actions/checkout@master
