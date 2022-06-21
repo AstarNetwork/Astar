@@ -285,6 +285,7 @@ dependencies = [
  "pallet-evm-precompile-simple",
  "pallet-evm-precompile-sr25519",
  "pallet-evm-precompile-substrate-ecdsa",
+ "pallet-evm-precompile-xcm",
  "pallet-identity",
  "pallet-multisig",
  "pallet-precompile-dapps-staking",
@@ -295,7 +296,8 @@ dependencies = [
  "pallet-transaction-payment-rpc-runtime-api",
  "pallet-utility",
  "pallet-vesting 4.2.0-dev",
- "pallet-xcm 0.9.24 (git+https://github.com/paritytech/polkadot?branch=release-v0.9.24)",
+ "pallet-xc-asset-config",
+ "pallet-xcm 0.9.24 (git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.24)",
  "parachain-info",
  "parity-scale-codec",
  "polkadot-parachain",
@@ -320,6 +322,7 @@ dependencies = [
  "xcm",
  "xcm-builder",
  "xcm-executor",
+ "xcm-primitives",
 ]
 
 [[package]]
