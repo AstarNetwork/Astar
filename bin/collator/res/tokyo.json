@@ -2,7 +2,10 @@
   "name": "Tokyo",
   "id": "rococo_tokyo_relay",
   "chainType": "Live",
-  "bootNodes": [],
+  "bootNodes": [
+    "/ip4/20.74.71.22/tcp/30333/p2p/12D3KooWT11X3qZDkC7G2GjBecRCaX9UKhk2QxpirHTq5Yb5LLzi",
+    "/ip4/20.74.70.252/tcp/30333/p2p/12D3KooWSXAUY1TEUmWUHuBQACmEtTj3nzyZoCMx8tKzkmuT6XAK"
+  ],
   "telemetryEndpoints": null,
   "protocolId": "tky",
   "properties": null,
