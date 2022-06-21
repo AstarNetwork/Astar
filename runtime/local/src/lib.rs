@@ -569,13 +569,12 @@ impl ChainExtension<Runtime> for LocalChainExtension {
     fn call<E: Ext>(func_id: u32, env: Environment<E, InitState>) -> Result<RetVal, DispatchError>
     where
         <E::T as SysConfig>::AccountId: UncheckedFrom<<E::T as SysConfig>::Hash> + AsRef<[u8]>,
-        E: pallet_dapps_staking::pallet::pallet::Config,
     {
         let pallet_id = (func_id / 100) as u8;
         let func_id_matcher = func_id % 100;
         match pallet_id {
             34 => {
-                DappsStakingExtension::execute_func(func_id_matcher, env)?;
+                DappsStakingExtension::execute_func::<E, Runtime>(func_id_matcher, env)?;
             }
             _ => {
                 error!("Called an unregistered `pallet_id`: {:}", func_id);
