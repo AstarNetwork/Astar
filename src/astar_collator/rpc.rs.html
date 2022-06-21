@@ -211,6 +211,10 @@
 <span id="206">206</span>
 <span id="207">207</span>
 <span id="208">208</span>
+<span id="209">209</span>
+<span id="210">210</span>
+<span id="211">211</span>
+<span id="212">212</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Astar RPCs implementation.</span>
 
 <span class="kw">use</span> <span class="ident">fc_rpc</span>::{
@@ -224,6 +228,7 @@
 <span class="kw">use</span> <span class="ident">pallet_transaction_payment_rpc</span>::{<span class="ident">TransactionPayment</span>, <span class="ident">TransactionPaymentApiServer</span>};
 <span class="kw">use</span> <span class="ident">sc_client_api</span>::{<span class="ident">AuxStore</span>, <span class="ident">Backend</span>, <span class="ident">BlockchainEvents</span>, <span class="ident">StateBackend</span>, <span class="ident">StorageProvider</span>};
 <span class="kw">use</span> <span class="ident">sc_network::NetworkService</span>;
+<span class="kw">use</span> <span class="ident">sc_rpc::dev::DevApiServer</span>;
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident">sc_rpc</span>::{<span class="ident">DenyUnsafe</span>, <span class="ident">SubscriptionTaskExecutor</span>};
 <span class="kw">use</span> <span class="ident">sc_transaction_pool</span>::{<span class="ident">ChainApi</span>, <span class="ident">Pool</span>};
 <span class="kw">use</span> <span class="ident">sc_transaction_pool_api::TransactionPool</span>;
@@ -338,6 +343,7 @@
         <span class="op">+</span> <span class="ident">Send</span>
         <span class="op">+</span> <span class="ident">Sync</span>
         <span class="op">+</span> <span class="lifetime">&#39;static</span>,
+    <span class="ident">C</span>: <span class="ident">sc_client_api::BlockBackend</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span>,
     <span class="ident">C::Api</span>: <span class="ident">substrate_frame_rpc_system::AccountNonceApi</span><span class="op">&lt;</span><span class="ident">Block</span>, <span class="ident">AccountId</span>, <span class="ident">Nonce</span><span class="op">&gt;</span>
         <span class="op">+</span> <span class="ident">pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi</span><span class="op">&lt;</span><span class="ident">Block</span>, <span class="ident">Balance</span><span class="op">&gt;</span>
         <span class="op">+</span> <span class="ident">fp_rpc::ConvertTransactionRuntimeApi</span><span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span>
@@ -405,6 +411,8 @@
     <span class="ident">io</span>.<span class="ident">merge</span>(<span class="ident">Net::new</span>(<span class="ident">client</span>.<span class="ident">clone</span>(), <span class="ident">network</span>.<span class="ident">clone</span>(), <span class="bool-val">true</span>).<span class="ident">into_rpc</span>())<span class="question-mark">?</span>;
 
     <span class="ident">io</span>.<span class="ident">merge</span>(<span class="ident">Web3::new</span>(<span class="ident">client</span>.<span class="ident">clone</span>()).<span class="ident">into_rpc</span>())<span class="question-mark">?</span>;
+
+    <span class="ident">io</span>.<span class="ident">merge</span>(<span class="ident">sc_rpc::dev::Dev::new</span>(<span class="ident">client</span>.<span class="ident">clone</span>(), <span class="ident">deny_unsafe</span>).<span class="ident">into_rpc</span>())<span class="question-mark">?</span>;
 
     <span class="ident">io</span>.<span class="ident">merge</span>(
         <span class="ident">EthPubSub::new</span>(
