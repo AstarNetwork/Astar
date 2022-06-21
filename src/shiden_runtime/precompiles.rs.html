@@ -104,12 +104,22 @@
 <span id="99">99</span>
 <span id="100">100</span>
 <span id="101">101</span>
+<span id="102">102</span>
+<span id="103">103</span>
+<span id="104">104</span>
+<span id="105">105</span>
+<span id="106">106</span>
+<span id="107">107</span>
+<span id="108">108</span>
+<span id="109">109</span>
+<span id="110">110</span>
+<span id="111">111</span>
 </pre><pre class="rust"><code><span class="doccomment">//! The Shiden Network EVM precompiles. This can be compiled with ``#[no_std]`, ready for Wasm.</span>
 
 <span class="kw">use</span> <span class="ident">pallet_evm</span>::{
     <span class="ident">ExitRevert</span>, <span class="ident">Precompile</span>, <span class="ident">PrecompileFailure</span>, <span class="ident">PrecompileHandle</span>, <span class="ident">PrecompileResult</span>, <span class="ident">PrecompileSet</span>,
 };
-<span class="kw">use</span> <span class="ident">pallet_evm_precompile_assets_erc20::Erc20AssetsPrecompileSet</span>;
+<span class="kw">use</span> <span class="ident">pallet_evm_precompile_assets_erc20</span>::{<span class="ident">AddressToAssetId</span>, <span class="ident">Erc20AssetsPrecompileSet</span>};
 <span class="kw">use</span> <span class="ident">pallet_evm_precompile_blake2::Blake2F</span>;
 <span class="kw">use</span> <span class="ident">pallet_evm_precompile_bn128</span>::{<span class="ident">Bn128Add</span>, <span class="ident">Bn128Mul</span>, <span class="ident">Bn128Pairing</span>};
 <span class="kw">use</span> <span class="ident">pallet_evm_precompile_dispatch::Dispatch</span>;
@@ -119,10 +129,13 @@
 <span class="kw">use</span> <span class="ident">pallet_evm_precompile_simple</span>::{<span class="ident">ECRecover</span>, <span class="ident">ECRecoverPublicKey</span>, <span class="ident">Identity</span>, <span class="ident">Ripemd160</span>, <span class="ident">Sha256</span>};
 <span class="kw">use</span> <span class="ident">pallet_evm_precompile_sr25519::Sr25519Precompile</span>;
 <span class="kw">use</span> <span class="ident">pallet_evm_precompile_substrate_ecdsa::SubstrateEcdsaPrecompile</span>;
+<span class="kw">use</span> <span class="ident">pallet_evm_precompile_xcm::XcmPrecompile</span>;
 <span class="kw">use</span> <span class="ident">pallet_precompile_dapps_staking::DappsStakingWrapper</span>;
 <span class="kw">use</span> <span class="ident">sp_core::H160</span>;
 <span class="kw">use</span> <span class="ident">sp_std::fmt::Debug</span>;
 <span class="kw">use</span> <span class="ident">sp_std::marker::PhantomData</span>;
+
+<span class="kw">use</span> <span class="ident">xcm::latest::prelude::MultiLocation</span>;
 
 <span class="doccomment">/// The asset precompile address prefix. Addresses that match against this prefix will be routed</span>
 <span class="doccomment">/// to Erc20AssetsPrecompileSet</span>
@@ -130,9 +143,9 @@
 
 <span class="doccomment">/// The PrecompileSet installed in the Shiden runtime.</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">Copy</span>)]</span>
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">ShidenNetworkPrecompiles</span><span class="op">&lt;</span><span class="ident">R</span><span class="op">&gt;</span>(<span class="ident">PhantomData</span><span class="op">&lt;</span><span class="ident">R</span><span class="op">&gt;</span>);
+<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">ShidenNetworkPrecompiles</span><span class="op">&lt;</span><span class="ident">R</span>, <span class="ident">C</span><span class="op">&gt;</span>(<span class="ident">PhantomData</span><span class="op">&lt;</span>(<span class="ident">R</span>, <span class="ident">C</span>)<span class="op">&gt;</span>);
 
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">R</span><span class="op">&gt;</span> <span class="ident">ShidenNetworkPrecompiles</span><span class="op">&lt;</span><span class="ident">R</span><span class="op">&gt;</span> {
+<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">R</span>, <span class="ident">C</span><span class="op">&gt;</span> <span class="ident">ShidenNetworkPrecompiles</span><span class="op">&lt;</span><span class="ident">R</span>, <span class="ident">C</span><span class="op">&gt;</span> {
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>() -&gt; <span class="self">Self</span> {
         <span class="self">Self</span>(<span class="ident">Default::default</span>())
     }
@@ -140,7 +153,7 @@
     <span class="doccomment">/// Return all addresses that contain precompiles. This can be used to populate dummy code</span>
     <span class="doccomment">/// under the precompile.</span>
     <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">used_addresses</span>() -&gt; <span class="kw">impl</span> <span class="ident">Iterator</span><span class="op">&lt;</span><span class="ident">Item</span> <span class="op">=</span> <span class="ident">H160</span><span class="op">&gt;</span> {
-        <span class="macro">sp_std::vec!</span>[<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">4</span>, <span class="number">5</span>, <span class="number">6</span>, <span class="number">7</span>, <span class="number">8</span>, <span class="number">9</span>, <span class="number">1024</span>, <span class="number">1025</span>, <span class="number">1026</span>, <span class="number">1027</span>, <span class="number">20481</span>, <span class="number">20482</span>, <span class="number">20483</span>]
+        <span class="macro">sp_std::vec!</span>[<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">4</span>, <span class="number">5</span>, <span class="number">6</span>, <span class="number">7</span>, <span class="number">8</span>, <span class="number">9</span>, <span class="number">1024</span>, <span class="number">1025</span>, <span class="number">1026</span>, <span class="number">1027</span>, <span class="number">20481</span>, <span class="number">20482</span>, <span class="number">20483</span>, <span class="number">20484</span>]
             .<span class="ident">into_iter</span>()
             .<span class="ident">map</span>(<span class="op">|</span><span class="ident">x</span><span class="op">|</span> <span class="ident">hash</span>(<span class="ident">x</span>))
     }
@@ -149,12 +162,17 @@
 <span class="doccomment">/// The following distribution has been decided for the precompiles</span>
 <span class="doccomment">/// 0-1023: Ethereum Mainnet Precompiles</span>
 <span class="doccomment">/// 1024-2047 Precompiles that are not in Ethereum Mainnet</span>
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">R</span><span class="op">&gt;</span> <span class="ident">PrecompileSet</span> <span class="kw">for</span> <span class="ident">ShidenNetworkPrecompiles</span><span class="op">&lt;</span><span class="ident">R</span><span class="op">&gt;</span>
+<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">R</span>, <span class="ident">C</span><span class="op">&gt;</span> <span class="ident">PrecompileSet</span> <span class="kw">for</span> <span class="ident">ShidenNetworkPrecompiles</span><span class="op">&lt;</span><span class="ident">R</span>, <span class="ident">C</span><span class="op">&gt;</span>
 <span class="kw">where</span>
-    <span class="ident">R</span>: <span class="ident">pallet_evm::Config</span>,
-    <span class="ident">Dispatch</span><span class="op">&lt;</span><span class="ident">R</span><span class="op">&gt;</span>: <span class="ident">Precompile</span>,
-    <span class="ident">DappsStakingWrapper</span><span class="op">&lt;</span><span class="ident">R</span><span class="op">&gt;</span>: <span class="ident">Precompile</span>,
     <span class="ident">Erc20AssetsPrecompileSet</span><span class="op">&lt;</span><span class="ident">R</span><span class="op">&gt;</span>: <span class="ident">PrecompileSet</span>,
+    <span class="ident">DappsStakingWrapper</span><span class="op">&lt;</span><span class="ident">R</span><span class="op">&gt;</span>: <span class="ident">Precompile</span>,
+    <span class="ident">XcmPrecompile</span><span class="op">&lt;</span><span class="ident">R</span>, <span class="ident">C</span><span class="op">&gt;</span>: <span class="ident">Precompile</span>,
+    <span class="ident">Dispatch</span><span class="op">&lt;</span><span class="ident">R</span><span class="op">&gt;</span>: <span class="ident">Precompile</span>,
+    <span class="ident">R</span>: <span class="ident">pallet_evm::Config</span>
+        <span class="op">+</span> <span class="ident">pallet_assets::Config</span>
+        <span class="op">+</span> <span class="ident">pallet_xcm::Config</span>
+        <span class="op">+</span> <span class="ident">AddressToAssetId</span><span class="op">&lt;</span><span class="op">&lt;</span><span class="ident">R</span> <span class="kw">as</span> <span class="ident">pallet_assets::Config</span><span class="op">&gt;</span><span class="ident">::AssetId</span><span class="op">&gt;</span>,
+    <span class="ident">C</span>: <span class="ident">xcm_executor::traits::Convert</span><span class="op">&lt;</span><span class="ident">MultiLocation</span>, <span class="op">&lt;</span><span class="ident">R</span> <span class="kw">as</span> <span class="ident">pallet_assets::Config</span><span class="op">&gt;</span><span class="ident">::AssetId</span><span class="op">&gt;</span>,
 {
     <span class="kw">fn</span> <span class="ident">execute</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">handle</span>: <span class="kw-2">&amp;mut</span> <span class="kw">impl</span> <span class="ident">PrecompileHandle</span>) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">PrecompileResult</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="ident">address</span> <span class="op">=</span> <span class="ident">handle</span>.<span class="ident">code_address</span>();
@@ -187,6 +205,8 @@
             <span class="ident">a</span> <span class="kw">if</span> <span class="ident">a</span> <span class="op">==</span> <span class="ident">hash</span>(<span class="number">20482</span>) =&gt; <span class="prelude-val">Some</span>(<span class="ident">Sr25519Precompile</span>::<span class="op">&lt;</span><span class="ident">R</span><span class="op">&gt;</span><span class="ident">::execute</span>(<span class="ident">handle</span>)),
             <span class="comment">// SubstrateEcdsa 0x5003</span>
             <span class="ident">a</span> <span class="kw">if</span> <span class="ident">a</span> <span class="op">==</span> <span class="ident">hash</span>(<span class="number">20483</span>) =&gt; <span class="prelude-val">Some</span>(<span class="ident">SubstrateEcdsaPrecompile</span>::<span class="op">&lt;</span><span class="ident">R</span><span class="op">&gt;</span><span class="ident">::execute</span>(<span class="ident">handle</span>)),
+            <span class="comment">// Xcm 0x5004</span>
+            <span class="ident">a</span> <span class="kw">if</span> <span class="ident">a</span> <span class="op">==</span> <span class="ident">hash</span>(<span class="number">20484</span>) =&gt; <span class="prelude-val">Some</span>(<span class="ident">XcmPrecompile</span>::<span class="op">&lt;</span><span class="ident">R</span>, <span class="ident">C</span><span class="op">&gt;</span><span class="ident">::execute</span>(<span class="ident">handle</span>)),
             <span class="comment">// If the address matches asset prefix, the we route through the asset precompile set</span>
             <span class="ident">a</span> <span class="kw">if</span> <span class="kw-2">&amp;</span><span class="ident">a</span>.<span class="ident">to_fixed_bytes</span>()[<span class="number">0</span>..<span class="number">4</span>] <span class="op">==</span> <span class="ident">ASSET_PRECOMPILE_ADDRESS_PREFIX</span> =&gt; {
                 <span class="ident">Erc20AssetsPrecompileSet</span>::<span class="op">&lt;</span><span class="ident">R</span><span class="op">&gt;</span><span class="ident">::new</span>().<span class="ident">execute</span>(<span class="ident">handle</span>)

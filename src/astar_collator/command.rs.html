@@ -874,6 +874,13 @@
 <span id="869">869</span>
 <span id="870">870</span>
 <span id="871">871</span>
+<span id="872">872</span>
+<span id="873">873</span>
+<span id="874">874</span>
+<span id="875">875</span>
+<span id="876">876</span>
+<span id="877">877</span>
+<span id="878">878</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Astar collator CLI handlers.</span>
 <span class="kw">use</span> <span class="kw">crate</span>::{
     <span class="ident">cli</span>::{<span class="ident">Cli</span>, <span class="ident">RelayChainCli</span>, <span class="ident">Subcommand</span>},
@@ -1061,6 +1068,13 @@
             <span class="prelude-val">Ok</span>(<span class="ident">Box::new</span>(
                 <span class="ident">polkadot_service::WestendChainSpec::from_json_bytes</span>(
                     <span class="kw-2">&amp;</span><span class="macro">include_bytes!</span>(<span class="string">&quot;../res/kyoto.raw.json&quot;</span>)[..],
+                )
+                .<span class="ident">unwrap</span>(),
+            ))
+        } <span class="kw">else</span> <span class="kw">if</span> <span class="ident">id</span> <span class="op">==</span> <span class="string">&quot;tokyo&quot;</span> {
+            <span class="prelude-val">Ok</span>(<span class="ident">Box::new</span>(
+                <span class="ident">polkadot_service::WestendChainSpec::from_json_bytes</span>(
+                    <span class="kw-2">&amp;</span><span class="macro">include_bytes!</span>(<span class="string">&quot;../res/tokyo.raw.json&quot;</span>)[..],
                 )
                 .<span class="ident">unwrap</span>(),
             ))

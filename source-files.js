@@ -3,6 +3,6 @@ sourcesIndex["astar_collator"] = {"name":"","dirs":[{"name":"local","files":["ch
 sourcesIndex["astar_runtime"] = {"name":"","dirs":[{"name":"weights","files":["mod.rs","pallet_dapps_staking.rs"]}],"files":["lib.rs","precompiles.rs","xcm_config.rs"]};
 sourcesIndex["local_runtime"] = {"name":"","dirs":[{"name":"weights","files":["mod.rs","pallet_dapps_staking.rs"]}],"files":["lib.rs","precompiles.rs"]};
 sourcesIndex["shibuya_runtime"] = {"name":"","dirs":[{"name":"weights","files":["mod.rs","pallet_dapps_staking.rs","pallet_xc_asset_config.rs"]}],"files":["lib.rs","precompiles.rs","xcm_config.rs"]};
-sourcesIndex["shiden_runtime"] = {"name":"","dirs":[{"name":"weights","files":["mod.rs","pallet_dapps_staking.rs"]}],"files":["lib.rs","precompiles.rs","xcm_config.rs"]};
+sourcesIndex["shiden_runtime"] = {"name":"","dirs":[{"name":"weights","files":["mod.rs","pallet_dapps_staking.rs","pallet_xc_asset_config.rs"]}],"files":["lib.rs","precompiles.rs","xcm_config.rs"]};
 sourcesIndex["xcm_tools"] = {"name":"","files":["cli.rs","command.rs","main.rs"]};
 createSourceSidebar();

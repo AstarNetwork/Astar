@@ -206,65 +206,37 @@
 <span id="201">201</span>
 <span id="202">202</span>
 <span id="203">203</span>
-<span id="204">204</span>
-<span id="205">205</span>
-<span id="206">206</span>
-<span id="207">207</span>
-<span id="208">208</span>
-<span id="209">209</span>
-<span id="210">210</span>
-<span id="211">211</span>
-<span id="212">212</span>
-<span id="213">213</span>
-<span id="214">214</span>
-<span id="215">215</span>
-<span id="216">216</span>
-<span id="217">217</span>
-<span id="218">218</span>
-<span id="219">219</span>
-<span id="220">220</span>
-<span id="221">221</span>
-<span id="222">222</span>
-<span id="223">223</span>
-<span id="224">224</span>
-<span id="225">225</span>
-<span id="226">226</span>
-<span id="227">227</span>
-<span id="228">228</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="kw">super</span>::{
     <span class="ident">AccountId</span>, <span class="ident">AssetId</span>, <span class="ident">Assets</span>, <span class="ident">Balance</span>, <span class="ident">Balances</span>, <span class="ident">Call</span>, <span class="ident">DealWithFees</span>, <span class="ident">Event</span>, <span class="ident">Origin</span>,
-    <span class="ident">ParachainInfo</span>, <span class="ident">ParachainSystem</span>, <span class="ident">PolkadotXcm</span>, <span class="ident">Runtime</span>, <span class="ident">WeightToFee</span>, <span class="ident">XcmpQueue</span>,
-    <span class="ident">MAXIMUM_BLOCK_WEIGHT</span>,
+    <span class="ident">ParachainInfo</span>, <span class="ident">ParachainSystem</span>, <span class="ident">PolkadotXcm</span>, <span class="ident">Runtime</span>, <span class="ident">ShidenAssetLocationIdConverter</span>,
+    <span class="ident">WeightToFee</span>, <span class="ident">XcAssetConfig</span>, <span class="ident">XcmpQueue</span>, <span class="ident">MAXIMUM_BLOCK_WEIGHT</span>,
 };
 <span class="kw">use</span> <span class="ident">frame_support</span>::{
     <span class="ident">match_types</span>, <span class="ident">parameter_types</span>,
-    <span class="ident">traits</span>::{<span class="ident">Everything</span>, <span class="ident">Nothing</span>, <span class="ident">PalletInfoAccess</span>},
+    <span class="ident">traits</span>::{<span class="ident">Everything</span>, <span class="ident">Nothing</span>},
     <span class="ident">weights::Weight</span>,
 };
-<span class="kw">use</span> <span class="ident">sp_runtime::traits::Bounded</span>;
-<span class="kw">use</span> <span class="ident">sp_std</span>::{<span class="ident">borrow::Borrow</span>, <span class="ident">marker::PhantomData</span>};
 
 <span class="comment">// Polkadot imports</span>
 <span class="kw">use</span> <span class="ident">xcm::latest::prelude</span>::<span class="kw-2">*</span>;
 <span class="kw">use</span> <span class="ident">xcm_builder</span>::{
     <span class="ident">AccountId32Aliases</span>, <span class="ident">AllowKnownQueryResponses</span>, <span class="ident">AllowSubscriptionsFrom</span>,
     <span class="ident">AllowTopLevelPaidExecutionFrom</span>, <span class="ident">AllowUnpaidExecutionFrom</span>, <span class="ident">ConvertedConcreteAssetId</span>,
-    <span class="ident">CurrencyAdapter</span>, <span class="ident">EnsureXcmOrigin</span>, <span class="ident">FixedRateOfFungible</span>, <span class="ident">FixedWeightBounds</span>, <span class="ident">FungiblesAdapter</span>,
-    <span class="ident">IsConcrete</span>, <span class="ident">LocationInverter</span>, <span class="ident">NativeAsset</span>, <span class="ident">ParentAsSuperuser</span>, <span class="ident">ParentIsPreset</span>,
-    <span class="ident">RelayChainAsNative</span>, <span class="ident">SiblingParachainAsNative</span>, <span class="ident">SiblingParachainConvertsVia</span>,
-    <span class="ident">SignedAccountId32AsNative</span>, <span class="ident">SignedToAccountId32</span>, <span class="ident">SovereignSignedViaLocation</span>, <span class="ident">TakeWeightCredit</span>,
-    <span class="ident">UsingComponents</span>,
+    <span class="ident">CurrencyAdapter</span>, <span class="ident">EnsureXcmOrigin</span>, <span class="ident">FixedWeightBounds</span>, <span class="ident">FungiblesAdapter</span>, <span class="ident">IsConcrete</span>,
+    <span class="ident">LocationInverter</span>, <span class="ident">ParentAsSuperuser</span>, <span class="ident">ParentIsPreset</span>, <span class="ident">RelayChainAsNative</span>,
+    <span class="ident">SiblingParachainAsNative</span>, <span class="ident">SiblingParachainConvertsVia</span>, <span class="ident">SignedAccountId32AsNative</span>,
+    <span class="ident">SignedToAccountId32</span>, <span class="ident">SovereignSignedViaLocation</span>, <span class="ident">TakeWeightCredit</span>, <span class="ident">UsingComponents</span>,
 };
 <span class="kw">use</span> <span class="ident">xcm_executor</span>::{<span class="ident">traits::JustTry</span>, <span class="ident">Config</span>, <span class="ident">XcmExecutor</span>};
 
+<span class="comment">// Astar imports</span>
+<span class="kw">use</span> <span class="ident">xcm_primitives</span>::{<span class="ident">FixedRateOfForeignAsset</span>, <span class="ident">ReserveAssetFilter</span>};
+
 <span class="macro">parameter_types!</span> {
-    <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">RelayLocation</span>: <span class="ident">MultiLocation</span> <span class="op">=</span> <span class="ident">MultiLocation::parent</span>();
     <span class="kw">pub</span> <span class="ident">RelayNetwork</span>: <span class="ident">NetworkId</span> <span class="op">=</span> <span class="ident">NetworkId::Kusama</span>;
     <span class="kw">pub</span> <span class="ident">RelayChainOrigin</span>: <span class="ident">Origin</span> <span class="op">=</span> <span class="ident">cumulus_pallet_xcm::Origin::Relay</span>.<span class="ident">into</span>();
     <span class="kw">pub</span> <span class="ident">Ancestry</span>: <span class="ident">MultiLocation</span> <span class="op">=</span> <span class="ident">Parachain</span>(<span class="ident">ParachainInfo::parachain_id</span>().<span class="ident">into</span>()).<span class="ident">into</span>();
-    <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">Local</span>: <span class="ident">MultiLocation</span> <span class="op">=</span> <span class="ident">Here</span>.<span class="ident">into</span>();
-    <span class="kw">pub</span> <span class="ident">AnchoringSelfReserve</span>: <span class="ident">MultiLocation</span> <span class="op">=</span>
-        <span class="ident">PalletInstance</span>(<span class="op">&lt;</span><span class="ident">Balances</span> <span class="kw">as</span> <span class="ident">PalletInfoAccess</span><span class="op">&gt;</span><span class="ident">::index</span>() <span class="kw">as</span> <span class="ident">u8</span>).<span class="ident">into</span>();
+    <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">ShidenLocation</span>: <span class="ident">MultiLocation</span> <span class="op">=</span> <span class="ident">Here</span>.<span class="ident">into</span>();
     <span class="kw">pub</span> <span class="ident">CheckingAccount</span>: <span class="ident">AccountId</span> <span class="op">=</span> <span class="ident">PolkadotXcm::check_account</span>();
 }
 
@@ -285,7 +257,7 @@
     <span class="comment">// Use this currency:</span>
     <span class="ident">Balances</span>,
     <span class="comment">// Use this currency when it is a fungible asset matching the given location or name:</span>
-    <span class="ident">IsConcrete</span><span class="op">&lt;</span><span class="ident">AnchoringSelfReserve</span><span class="op">&gt;</span>,
+    <span class="ident">IsConcrete</span><span class="op">&lt;</span><span class="ident">ShidenLocation</span><span class="op">&gt;</span>,
     <span class="comment">// Convert an XCM MultiLocation into a local account id:</span>
     <span class="ident">LocationToAccountId</span>,
     <span class="comment">// Our chain&#39;s account ID type (we can&#39;t get away without mentioning it explicitly):</span>
@@ -294,33 +266,12 @@
     (),
 <span class="op">&gt;</span>;
 
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">AsAssetWithRelay</span><span class="op">&lt;</span><span class="ident">AssetId</span><span class="op">&gt;</span>(<span class="ident">PhantomData</span><span class="op">&lt;</span><span class="ident">AssetId</span><span class="op">&gt;</span>);
-<span class="kw">impl</span><span class="op">&lt;</span><span class="ident">AssetId</span><span class="op">&gt;</span> <span class="ident">xcm_executor::traits::Convert</span><span class="op">&lt;</span><span class="ident">MultiLocation</span>, <span class="ident">AssetId</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">AsAssetWithRelay</span><span class="op">&lt;</span><span class="ident">AssetId</span><span class="op">&gt;</span>
-<span class="kw">where</span>
-    <span class="ident">AssetId</span>: <span class="ident">Clone</span> <span class="op">+</span> <span class="ident">Eq</span> <span class="op">+</span> <span class="ident">Bounded</span>,
-{
-    <span class="kw">fn</span> <span class="ident">convert_ref</span>(<span class="ident">id</span>: <span class="kw">impl</span> <span class="ident">Borrow</span><span class="op">&lt;</span><span class="ident">MultiLocation</span><span class="op">&gt;</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">AssetId</span>, ()<span class="op">&gt;</span> {
-        <span class="kw">if</span> <span class="ident">id</span>.<span class="ident">borrow</span>().<span class="ident">eq</span>(<span class="kw-2">&amp;</span><span class="ident">MultiLocation::parent</span>()) {
-            <span class="prelude-val">Ok</span>(<span class="ident">AssetId::max_value</span>())
-        } <span class="kw">else</span> {
-            <span class="prelude-val">Err</span>(())
-        }
-    }
-    <span class="kw">fn</span> <span class="ident">reverse_ref</span>(<span class="ident">what</span>: <span class="kw">impl</span> <span class="ident">Borrow</span><span class="op">&lt;</span><span class="ident">AssetId</span><span class="op">&gt;</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">MultiLocation</span>, ()<span class="op">&gt;</span> {
-        <span class="kw">if</span> <span class="ident">what</span>.<span class="ident">borrow</span>().<span class="ident">eq</span>(<span class="kw-2">&amp;</span><span class="ident">AssetId::max_value</span>().<span class="ident">into</span>()) {
-            <span class="prelude-val">Ok</span>(<span class="ident">MultiLocation::parent</span>())
-        } <span class="kw">else</span> {
-            <span class="prelude-val">Err</span>(())
-        }
-    }
-}
-
 <span class="doccomment">/// Means for transacting assets besides the native currency on this chain.</span>
 <span class="kw">pub</span> <span class="kw">type</span> <span class="ident">FungiblesTransactor</span> <span class="op">=</span> <span class="ident">FungiblesAdapter</span><span class="op">&lt;</span>
     <span class="comment">// Use this fungibles implementation:</span>
     <span class="ident">Assets</span>,
     <span class="comment">// Use this currency when it is a fungible asset matching the given location or name:</span>
-    <span class="ident">ConvertedConcreteAssetId</span><span class="op">&lt;</span><span class="ident">AssetId</span>, <span class="ident">Balance</span>, <span class="ident">AsAssetWithRelay</span><span class="op">&lt;</span><span class="ident">AssetId</span><span class="op">&gt;</span>, <span class="ident">JustTry</span><span class="op">&gt;</span>,
+    <span class="ident">ConvertedConcreteAssetId</span><span class="op">&lt;</span><span class="ident">AssetId</span>, <span class="ident">Balance</span>, <span class="ident">ShidenAssetLocationIdConverter</span>, <span class="ident">JustTry</span><span class="op">&gt;</span>,
     <span class="comment">// Convert an XCM MultiLocation into a local account id:</span>
     <span class="ident">LocationToAccountId</span>,
     <span class="comment">// Our chain&#39;s account ID type (we can&#39;t get away without mentioning it explicitly):</span>
@@ -332,7 +283,7 @@
 <span class="op">&gt;</span>;
 
 <span class="doccomment">/// Means for transacting assets on this chain.</span>
-<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">AssetTransactors</span> <span class="op">=</span> (<span class="ident">FungiblesTransactor</span>, <span class="ident">CurrencyTransactor</span>);
+<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">AssetTransactors</span> <span class="op">=</span> (<span class="ident">CurrencyTransactor</span>, <span class="ident">FungiblesTransactor</span>);
 
 <span class="doccomment">/// This is the type we use to convert an (incoming) XCM origin into a local `Origin` instance,</span>
 <span class="doccomment">/// ready for dispatching a transaction with Xcm&#39;s `Transact`. There is an `OriginKind` which can</span>
@@ -362,7 +313,6 @@
     <span class="comment">// One XCM operation is 1_000_000_000 weight - almost certainly a conservative estimate.</span>
     <span class="kw">pub</span> <span class="ident">UnitWeightCost</span>: <span class="ident">Weight</span> <span class="op">=</span> <span class="number">1_000_000_000</span>;
     <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">MaxInstructions</span>: <span class="ident">u32</span> <span class="op">=</span> <span class="number">100</span>;
-    <span class="kw">pub</span> <span class="ident">KsmPerSecond</span>: (<span class="ident">xcm::v1::AssetId</span>, <span class="ident">u128</span>) <span class="op">=</span> (<span class="ident">MultiLocation::parent</span>().<span class="ident">into</span>(), <span class="number">1_000_000_000</span>);
 }
 
 <span class="macro">match_types!</span> {
@@ -389,14 +339,14 @@
     <span class="kw">type</span> <span class="ident">XcmSender</span> <span class="op">=</span> <span class="ident">XcmRouter</span>;
     <span class="kw">type</span> <span class="ident">AssetTransactor</span> <span class="op">=</span> <span class="ident">AssetTransactors</span>;
     <span class="kw">type</span> <span class="ident">OriginConverter</span> <span class="op">=</span> <span class="ident">XcmOriginToTransactDispatchOrigin</span>;
-    <span class="kw">type</span> <span class="ident">IsReserve</span> <span class="op">=</span> <span class="ident">NativeAsset</span>;
+    <span class="kw">type</span> <span class="ident">IsReserve</span> <span class="op">=</span> <span class="ident">ReserveAssetFilter</span>;
     <span class="kw">type</span> <span class="ident">IsTeleporter</span> <span class="op">=</span> ();
     <span class="kw">type</span> <span class="ident">LocationInverter</span> <span class="op">=</span> <span class="ident">LocationInverter</span><span class="op">&lt;</span><span class="ident">Ancestry</span><span class="op">&gt;</span>;
     <span class="kw">type</span> <span class="ident">Barrier</span> <span class="op">=</span> <span class="ident">XcmBarrier</span>;
     <span class="kw">type</span> <span class="ident">Weigher</span> <span class="op">=</span> <span class="ident">FixedWeightBounds</span><span class="op">&lt;</span><span class="ident">UnitWeightCost</span>, <span class="ident">Call</span>, <span class="ident">MaxInstructions</span><span class="op">&gt;</span>;
     <span class="kw">type</span> <span class="ident">Trader</span> <span class="op">=</span> (
-        <span class="ident">FixedRateOfFungible</span><span class="op">&lt;</span><span class="ident">KsmPerSecond</span>, ()<span class="op">&gt;</span>,
-        <span class="ident">UsingComponents</span><span class="op">&lt;</span><span class="ident">WeightToFee</span>, <span class="ident">AnchoringSelfReserve</span>, <span class="ident">AccountId</span>, <span class="ident">Balances</span>, <span class="ident">DealWithFees</span><span class="op">&gt;</span>,
+        <span class="ident">UsingComponents</span><span class="op">&lt;</span><span class="ident">WeightToFee</span>, <span class="ident">ShidenLocation</span>, <span class="ident">AccountId</span>, <span class="ident">Balances</span>, <span class="ident">DealWithFees</span><span class="op">&gt;</span>,
+        <span class="ident">FixedRateOfForeignAsset</span><span class="op">&lt;</span><span class="ident">XcAssetConfig</span>, ()<span class="op">&gt;</span>,
     );
     <span class="kw">type</span> <span class="ident">ResponseHandler</span> <span class="op">=</span> <span class="ident">PolkadotXcm</span>;
     <span class="kw">type</span> <span class="ident">AssetTrap</span> <span class="op">=</span> <span class="ident">PolkadotXcm</span>;
