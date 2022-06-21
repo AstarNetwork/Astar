@@ -18,9 +18,9 @@ jobs:
     steps:
     - uses: actions/checkout@v2
 
-    - run: wget https://github.com/AstarNetwork/Astar/releases/download/v3.29.0/astar-collator-3.29.0-ubuntu-x86_64.tar.gz
+    - run: wget -q $(curl -s https://api.github.com/repos/AstarNetwork/Astar/releases/latest | grep browser_download_url | grep "ubuntu-x86_64" | cut -d '"' -f 4)
 
-    - run: tar -xvf astar-collator-3.29.0-ubuntu-x86_64.tar.gz
+    - run: tar -xvf astar-collator-*-ubuntu-x86_64.tar.gz
     
     - run: chmod +x ./astar-collator
 
