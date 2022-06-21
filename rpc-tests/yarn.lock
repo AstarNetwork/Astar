@@ -2,6 +2,13 @@
 # yarn lockfile v1
 
 
+"@acala-network/type-definitions@^4.1.5":
+  version "4.1.5"
+  resolved "https://registry.yarnpkg.com/@acala-network/type-definitions/-/type-definitions-4.1.5.tgz#c02624ba9bb637588ddd184a4ce35ab7d9de2bf6"
+  integrity sha512-XwXtKf5ESfzGk32N1sE3MlBtnamz2JZYtjB6KcKe9eOyv+3lowQvRn4Z347rNSEp+tpenZWnLwBXk4XWhdiSoQ==
+  dependencies:
+    "@open-web3/orml-type-definitions" "^1.1.4"
+
 "@babel/runtime@^7.17.2":
   version "7.17.7"
   resolved "https://registry.yarnpkg.com/@babel/runtime/-/runtime-7.17.7.tgz#a5f3328dc41ff39d803f311cfe17703418cf9825"
@@ -18,6 +25,13 @@
   version "1.5.5"
   resolved "https://registry.yarnpkg.com/@noble/secp256k1/-/secp256k1-1.5.5.tgz#315ab5745509d1a8c8e90d0bdf59823ccf9bcfc3"
   integrity sha512-sZ1W6gQzYnu45wPrWx8D3kwI2/U29VYTx9OjbDAd7jwRItJ0cSTMPRL/C8AWZFn9kWFLQGqEXVEE86w4Z8LpIQ==
+
+"@open-web3/orml-type-definitions@^1.1.4":
+  version "1.1.4"
+  resolved "https://registry.yarnpkg.com/@open-web3/orml-type-definitions/-/orml-type-definitions-1.1.4.tgz#a036b6cf0410783aaedf7e95d27917a5d66c5bed"
+  integrity sha512-diuQx0Pf7cfoBtCpZTrBQOeIur0POp6Y9qfDS3p11RBF2XKwQ7jw/YKEFYqga1AyrzTcoSEE2OYUfeW3AKU94w==
+  dependencies:
+    lodash.merge "^4.6.2"
 
 "@plasm/types@^1.5.4-3":
   version "1.5.4-3"
@@ -802,6 +816,11 @@ locate-path@^6.0.0:
   integrity sha512-iPZK6eYjbxRu3uB4/WZ3EsEIMJFMqAoopl3R+zuq0UjcAm/MO6KCweDgPfP3elTztoKP3KtnVHxTn2NHBSDVUw==
   dependencies:
     p-locate "^5.0.0"
+
+lodash.merge@^4.6.2:
+  version "4.6.2"
+  resolved "https://registry.yarnpkg.com/lodash.merge/-/lodash.merge-4.6.2.tgz#558aa53b43b661e1925a0afdfa36a9a1085fe57a"
+  integrity sha512-0KpjqXRVvrYyCsX1swR/XTK0va6VQkQM6MNo7PqW77ByjAhoARA8EfrP1N4+KlKj8YS0ZUCtRT/YUuhyYDujIQ==
 
 lodash.set@^4.3.2:
   version "4.3.2"

@@ -2,15 +2,15 @@ import { ApiPromise, WsProvider } from '@polkadot/api';
 import { spawn } from 'child_process';
 import chaiAsPromised from 'chai-as-promised';
 import chai from 'chai';
-import plasmTypes from '@plasm/types';
+import { typesBundleForPolkadot } from '@acala-network/type-definitions';
+
+export default { typesBundle: typesBundleForPolkadot };
 
 chai.use(chaiAsPromised);
 
 export const BINARY_PATH = `../target/release/astar-collator`;
 export const SPAWNING_TIME = 120000;
 const WS_PORT = 9944;
-
-const { plasmDefinitions } = plasmTypes;
 
 export async function wait (milliseconds = 0) {
 	return new Promise((resolve, reject) => {
@@ -61,9 +61,7 @@ export async function startAstarNode() {
 				try {
 					api = await ApiPromise.create({
 						provider: new WsProvider(`ws://localhost:${WS_PORT}`),
-						types: {
-							...plasmDefinitions,
-						}
+						typesBundle: typesBundleForPolkadot
 					});
 					await api.isReady;
 
