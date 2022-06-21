@@ -57,7 +57,7 @@ export async function startAstarNode() {
 
 		const onData = async (chunk) => {
 			console.log(chunk.toString());
-			if (chunk.toString().match(/Listening for new connections/)) {
+			if (chunk.toString().match(/Imported #1/)) {
 				try {
 					api = await ApiPromise.create({
 						provider: new WsProvider(`ws://localhost:${WS_PORT}`),
