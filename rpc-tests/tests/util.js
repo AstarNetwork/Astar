@@ -12,6 +12,12 @@ const WS_PORT = 9944;
 
 const { plasmDefinitions } = plasmTypes;
 
+export async function wait (milliseconds = 0) {
+	return new Promise((resolve, reject) => {
+		setTimeout(resolve, milliseconds);
+	});
+}
+
 export async function startAstarNode() {
 	const cmd = BINARY_PATH;
 	const args = [

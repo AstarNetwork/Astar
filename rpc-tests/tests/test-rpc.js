@@ -1,4 +1,3 @@
-import { WsProvider, ApiPromise } from '@polkadot/api';
 import { expect } from 'chai';
 import { describeWithAstar } from './util.js'
 
