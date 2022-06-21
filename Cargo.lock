@@ -153,7 +153,7 @@ checksum = "9b34d609dfbaf33d6889b2b7106d3ca345eacad44200913df5ba02bfd31d2ba9"
 
 [[package]]
 name = "astar-collator"
-version = "4.2.0"
+version = "4.3.0"
 dependencies = [
  "astar-runtime",
  "async-trait",
@@ -243,7 +243,7 @@ dependencies = [
 
 [[package]]
 name = "astar-runtime"
-version = "4.2.0"
+version = "4.3.0"
 dependencies = [
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-dmp-queue",
@@ -4820,7 +4820,7 @@ checksum = "5284f00d480e1c39af34e72f8ad60b94f47007e3481cd3b731c1d67190ddc7b7"
 
 [[package]]
 name = "local-runtime"
-version = "4.2.0"
+version = "4.3.0"
 dependencies = [
  "fp-rpc",
  "fp-self-contained",
@@ -10690,7 +10690,7 @@ dependencies = [
 
 [[package]]
 name = "shibuya-runtime"
-version = "4.2.0"
+version = "4.3.0"
 dependencies = [
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-dmp-queue",
@@ -10779,7 +10779,7 @@ dependencies = [
 
 [[package]]
 name = "shiden-runtime"
-version = "4.2.0"
+version = "4.3.0"
 dependencies = [
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-dmp-queue",
@@ -10821,6 +10821,7 @@ dependencies = [
  "pallet-evm-precompile-simple",
  "pallet-evm-precompile-sr25519",
  "pallet-evm-precompile-substrate-ecdsa",
+ "pallet-evm-precompile-xcm",
  "pallet-identity",
  "pallet-multisig",
  "pallet-precompile-dapps-staking",
@@ -10831,6 +10832,7 @@ dependencies = [
  "pallet-transaction-payment-rpc-runtime-api",
  "pallet-utility",
  "pallet-vesting 4.0.0-dev",
+ "pallet-xc-asset-config",
  "pallet-xcm 0.9.24 (git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.24)",
  "parachain-info",
  "parity-scale-codec",
@@ -10856,6 +10858,7 @@ dependencies = [
  "xcm",
  "xcm-builder",
  "xcm-executor",
+ "xcm-primitives",
 ]
 
 [[package]]

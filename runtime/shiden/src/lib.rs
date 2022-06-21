@@ -7,7 +7,7 @@
 use codec::{Decode, Encode};
 use frame_support::{
     construct_runtime, parameter_types,
-    traits::{Contains, Currency, FindAuthor, Get, Imbalance, OnUnbalanced},
+    traits::{Contains, Currency, FindAuthor, Get, Imbalance, OnRuntimeUpgrade, OnUnbalanced},
     weights::{
         constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_PER_SECOND},
         ConstantMultiplier, DispatchClass, Weight, WeightToFeeCoefficient, WeightToFeeCoefficients,
@@ -37,6 +37,9 @@ use sp_runtime::{
 };
 use sp_std::prelude::*;
 
+use pallet_evm_precompile_assets_erc20::AddressToAssetId;
+use xcm_primitives::AssetLocationIdConverter;
+
 #[cfg(any(feature = "std", test))]
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
@@ -46,11 +49,13 @@ pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 pub use sp_runtime::BuildStorage;
 
 mod precompiles;
-pub use precompiles::{ShidenNetworkPrecompiles, ASSET_PRECOMPILE_ADDRESS_PREFIX};
-pub type Precompiles = ShidenNetworkPrecompiles<Runtime>;
-
 mod weights;
 mod xcm_config;
+
+pub type ShidenAssetLocationIdConverter = AssetLocationIdConverter<AssetId, XcAssetConfig>;
+
+pub use precompiles::{ShidenNetworkPrecompiles, ASSET_PRECOMPILE_ADDRESS_PREFIX};
+pub type Precompiles = ShidenNetworkPrecompiles<Runtime, ShidenAssetLocationIdConverter>;
 
 /// Constant values used within the runtime.
 pub const MILLISDN: Balance = 1_000_000_000_000_000;
@@ -88,7 +93,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("shiden"),
     impl_name: create_runtime_str!("shiden"),
     authoring_version: 1,
-    spec_version: 55,
+    spec_version: 56,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 2,
@@ -501,7 +506,7 @@ impl pallet_balances::Config for Runtime {
 /// 2^128-1         Relay chain token (KSM)
 pub type AssetId = u128;
 
-impl pallet_evm_precompile_assets_erc20::AddressToAssetId<AssetId> for Runtime {
+impl AddressToAssetId<AssetId> for Runtime {
     fn address_to_asset_id(address: H160) -> Option<AssetId> {
         let mut data = [0u8; 16];
         let address_bytes: [u8; 20] = address.into();
@@ -698,7 +703,7 @@ parameter_types! {
     pub BlockGasLimit: U256 = U256::from(
         NORMAL_DISPATCH_RATIO * MAXIMUM_BLOCK_WEIGHT / WEIGHT_PER_GAS
     );
-    pub PrecompilesValue: ShidenNetworkPrecompiles<Runtime> = ShidenNetworkPrecompiles::<_>::new();
+    pub PrecompilesValue: Precompiles = ShidenNetworkPrecompiles::<_, _>::new();
 }
 
 impl pallet_evm::Config for Runtime {
@@ -711,7 +716,7 @@ impl pallet_evm::Config for Runtime {
     type Currency = Balances;
     type Event = Event;
     type Runner = pallet_evm::runner::stack::Runner<Self>;
-    type PrecompilesType = ShidenNetworkPrecompiles<Self>;
+    type PrecompilesType = Precompiles;
     type PrecompilesValue = PrecompilesValue;
     type ChainId = ChainId;
     type OnChargeTransaction = pallet_evm::EVMCurrencyAdapter<Balances, ToStakingPot>;
@@ -727,6 +732,26 @@ impl pallet_ethereum::Config for Runtime {
 impl pallet_sudo::Config for Runtime {
     type Event = Event;
     type Call = Call;
+}
+
+pub struct EvmRevertCodeHandler;
+impl pallet_xc_asset_config::XcAssetChanged<Runtime> for EvmRevertCodeHandler {
+    fn xc_asset_registered(asset_id: AssetId) {
+        let address = Runtime::asset_id_to_address(asset_id);
+        pallet_evm::AccountCodes::<Runtime>::insert(address, vec![0x60, 0x00, 0x60, 0x00, 0xfd]);
+    }
+
+    fn xc_asset_unregistered(asset_id: AssetId) {
+        let address = Runtime::asset_id_to_address(asset_id);
+        pallet_evm::AccountCodes::<Runtime>::remove(address);
+    }
+}
+
+impl pallet_xc_asset_config::Config for Runtime {
+    type Event = Event;
+    type AssetId = AssetId;
+    type XcAssetChanged = EvmRevertCodeHandler;
+    type WeightInfo = weights::pallet_xc_asset_config::WeightInfo<Self>;
 }
 
 construct_runtime!(
@@ -761,6 +786,7 @@ construct_runtime!(
         PolkadotXcm: pallet_xcm::{Pallet, Call, Storage, Event<T>, Origin} = 51,
         CumulusXcm: cumulus_pallet_xcm::{Pallet, Event<T>, Origin} = 52,
         DmpQueue: cumulus_pallet_dmp_queue::{Pallet, Call, Storage, Event<T>} = 53,
+        XcAssetConfig: pallet_xc_asset_config::{Pallet, Call, Storage, Event<T>} = 54,
 
         EVM: pallet_evm::{Pallet, Config, Call, Storage, Event<T>} = 60,
         Ethereum: pallet_ethereum::{Pallet, Call, Storage, Event, Origin, Config} = 61,
@@ -818,7 +844,37 @@ pub type Executive = frame_executive::Executive<
     frame_system::ChainContext<Runtime>,
     Runtime,
     AllPalletsWithSystem,
+    (RelayAssetRegistration,),
 >;
+
+pub struct RelayAssetRegistration;
+impl OnRuntimeUpgrade for RelayAssetRegistration {
+    fn on_runtime_upgrade() -> Weight {
+        use pallet_xc_asset_config::*;
+        use xcm::latest::prelude::*;
+
+        let relay_asset_id = u128::max_value();
+        let relay_asset_multilocation = MultiLocation::parent();
+
+        AssetIdToLocation::<Runtime>::insert(
+            relay_asset_id,
+            relay_asset_multilocation.clone().versioned(),
+        );
+        AssetLocationToId::<Runtime>::insert(
+            relay_asset_multilocation.clone().versioned(),
+            relay_asset_id,
+        );
+
+        AssetLocationUnitsPerSecond::<Runtime>::insert(
+            relay_asset_multilocation.clone().versioned(),
+            1_000_000_000,
+        );
+
+        EvmRevertCodeHandler::xc_asset_registered(relay_asset_id);
+
+        <Runtime as frame_system::Config>::DbWeight::get().writes(4)
+    }
+}
 
 impl fp_self_contained::SelfContainedCall for Call {
     type SignedInfo = H160;
@@ -1140,6 +1196,7 @@ impl_runtime_apis! {
 
             list_benchmark!(list, extra, pallet_dapps_staking, DappsStaking);
             list_benchmark!(list, extra, pallet_block_reward, BlockReward);
+            list_benchmark!(list, extra, pallet_xc_asset_config, XcAssetConfig);
 
             let storage_info = AllPalletsWithSystem::storage_info();
 
@@ -1173,6 +1230,7 @@ impl_runtime_apis! {
             add_benchmark!(params, batches, pallet_timestamp, Timestamp);
             add_benchmark!(params, batches, pallet_dapps_staking, DappsStaking);
             add_benchmark!(params, batches, pallet_block_reward, BlockReward);
+            add_benchmark!(params, batches, pallet_xc_asset_config, XcAssetConfig);
 
             if batches.is_empty() { return Err("Benchmark not found for this pallet.".into()) }
             Ok(batches)

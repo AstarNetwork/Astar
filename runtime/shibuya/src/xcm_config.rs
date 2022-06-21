@@ -5,7 +5,7 @@ use super::{
 };
 use frame_support::{
     match_types, parameter_types,
-    traits::{Everything, Nothing, PalletInfoAccess},
+    traits::{Everything, Nothing},
     weights::Weight,
 };
 
@@ -25,12 +25,9 @@ use xcm_executor::{traits::JustTry, Config, XcmExecutor};
 use xcm_primitives::{FixedRateOfForeignAsset, ReserveAssetFilter};
 
 parameter_types! {
-    pub const RelayLocation: MultiLocation = MultiLocation::parent();
     pub RelayNetwork: NetworkId = NetworkId::Any;
     pub RelayChainOrigin: Origin = cumulus_pallet_xcm::Origin::Relay.into();
     pub Ancestry: MultiLocation = Parachain(ParachainInfo::parachain_id().into()).into();
-    pub AssetsPalletLocation: MultiLocation =
-        PalletInstance(<Assets as PalletInfoAccess>::index() as u8).into();
     pub const ShibuyaLocation: MultiLocation = Here.into();
     pub CheckingAccount: AccountId = PolkadotXcm::check_account();
 }

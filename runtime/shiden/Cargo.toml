@@ -1,6 +1,6 @@
 [package]
 name = "shiden-runtime"
-version = "4.2.0"
+version = "4.3.0"
 authors = ["Stake Technologies <devops@stake.co.jp>"]
 edition = "2021"
 build = "build.rs"
@@ -95,6 +95,9 @@ pallet-evm-precompile-sr25519 = { git = "https://github.com/AstarNetwork/astar-f
 pallet-evm-precompile-assets-erc20 = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.24", default-features = false }
 pallet-xcm = { git = "https://github.com/AstarNetwork/astar-frame", default-features = false, branch = "polkadot-v0.9.24" }
 pallet-evm-precompile-substrate-ecdsa = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.24", default-features = false }
+pallet-evm-precompile-xcm = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.24", default-features = false }
+pallet-xc-asset-config = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.24", default-features = false }
+xcm-primitives = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.24", default-features = false }
 
 [build-dependencies]
 substrate-wasm-builder = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.24" }
@@ -141,6 +144,7 @@ std = [
     "pallet-evm-precompile-sr25519/std",
     "pallet-evm-precompile-assets-erc20/std",
     "pallet-evm-precompile-substrate-ecdsa/std",
+    "pallet-evm-precompile-xcm/std",
     "pallet-identity/std",
     "pallet-multisig/std",
     "pallet-session/std",
@@ -171,6 +175,8 @@ std = [
     "xcm/std",
     "xcm-builder/std",
     "xcm-executor/std",
+    "pallet-xc-asset-config/std",
+    "xcm-primitives/std",
 ]
 runtime-benchmarks = [
     "frame-benchmarking",
@@ -187,6 +193,7 @@ runtime-benchmarks = [
     "pallet-ethereum/runtime-benchmarks",
     "pallet-xcm/runtime-benchmarks",
     "xcm-builder/runtime-benchmarks",
+    "pallet-xc-asset-config/runtime-benchmarks",
 ]
 try-runtime = [
     "frame-try-runtime",
@@ -204,4 +211,5 @@ try-runtime = [
     "pallet-utility/try-runtime",
     "pallet-vesting/try-runtime",
     "pallet-ethereum/try-runtime",
+    "pallet-xc-asset-config/try-runtime",
 ]
