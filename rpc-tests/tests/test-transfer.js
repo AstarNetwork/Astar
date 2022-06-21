@@ -24,7 +24,7 @@ describeWithAstar('Token transfer', function(context) {
       
         console.log('Transfer sent with hash', hash.toHex());
 
-        await wait(3000);
+        await wait(2000);
 
         let { data: { free: newFree } } = await api.query.system.account(BOB);
 
