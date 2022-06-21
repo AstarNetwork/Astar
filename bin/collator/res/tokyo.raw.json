@@ -1,6 +1,6 @@
 {
   "name": "Tokyo",
-  "id": "rococo_tokyo",
+  "id": "rococo_tokyo_relay",
   "chainType": "Live",
   "bootNodes": [],
   "telemetryEndpoints": null,
