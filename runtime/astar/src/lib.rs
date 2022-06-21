@@ -93,7 +93,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("astar"),
     impl_name: create_runtime_str!("astar"),
     authoring_version: 1,
-    spec_version: 21,
+    spec_version: 22,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 2,
@@ -693,7 +693,8 @@ parameter_types! {
     /// * Shibuya: 81
     /// * Shiden: 336
     /// * Astar:  592
-    pub ChainId: u64 = 0x250;
+    /// * Astar-Rococo: 692
+    pub ChainId: u64 = 0x2B4;
     /// EVM gas limit
     pub BlockGasLimit: U256 = U256::from(
         NORMAL_DISPATCH_RATIO * MAXIMUM_BLOCK_WEIGHT / WEIGHT_PER_GAS
