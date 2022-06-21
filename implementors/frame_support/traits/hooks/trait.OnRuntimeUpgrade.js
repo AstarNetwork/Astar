@@ -1,3 +1,4 @@
 (function() {var implementors = {};
+implementors["astar_runtime"] = [{"text":"impl OnRuntimeUpgrade for <a class=\"struct\" href=\"astar_runtime/struct.RelayAssetRegistration.html\" title=\"struct astar_runtime::RelayAssetRegistration\">RelayAssetRegistration</a>","synthetic":false,"types":["astar_runtime::RelayAssetRegistration"]}];
 implementors["shiden_runtime"] = [{"text":"impl OnRuntimeUpgrade for <a class=\"struct\" href=\"shiden_runtime/struct.RelayAssetRegistration.html\" title=\"struct shiden_runtime::RelayAssetRegistration\">RelayAssetRegistration</a>","synthetic":false,"types":["shiden_runtime::RelayAssetRegistration"]}];
 if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

@@ -1218,6 +1218,64 @@
 <span id="1213">1213</span>
 <span id="1214">1214</span>
 <span id="1215">1215</span>
+<span id="1216">1216</span>
+<span id="1217">1217</span>
+<span id="1218">1218</span>
+<span id="1219">1219</span>
+<span id="1220">1220</span>
+<span id="1221">1221</span>
+<span id="1222">1222</span>
+<span id="1223">1223</span>
+<span id="1224">1224</span>
+<span id="1225">1225</span>
+<span id="1226">1226</span>
+<span id="1227">1227</span>
+<span id="1228">1228</span>
+<span id="1229">1229</span>
+<span id="1230">1230</span>
+<span id="1231">1231</span>
+<span id="1232">1232</span>
+<span id="1233">1233</span>
+<span id="1234">1234</span>
+<span id="1235">1235</span>
+<span id="1236">1236</span>
+<span id="1237">1237</span>
+<span id="1238">1238</span>
+<span id="1239">1239</span>
+<span id="1240">1240</span>
+<span id="1241">1241</span>
+<span id="1242">1242</span>
+<span id="1243">1243</span>
+<span id="1244">1244</span>
+<span id="1245">1245</span>
+<span id="1246">1246</span>
+<span id="1247">1247</span>
+<span id="1248">1248</span>
+<span id="1249">1249</span>
+<span id="1250">1250</span>
+<span id="1251">1251</span>
+<span id="1252">1252</span>
+<span id="1253">1253</span>
+<span id="1254">1254</span>
+<span id="1255">1255</span>
+<span id="1256">1256</span>
+<span id="1257">1257</span>
+<span id="1258">1258</span>
+<span id="1259">1259</span>
+<span id="1260">1260</span>
+<span id="1261">1261</span>
+<span id="1262">1262</span>
+<span id="1263">1263</span>
+<span id="1264">1264</span>
+<span id="1265">1265</span>
+<span id="1266">1266</span>
+<span id="1267">1267</span>
+<span id="1268">1268</span>
+<span id="1269">1269</span>
+<span id="1270">1270</span>
+<span id="1271">1271</span>
+<span id="1272">1272</span>
+<span id="1273">1273</span>
 </pre><pre class="rust"><code><span class="doccomment">//! The Astar Network runtime. This can be compiled with ``#[no_std]`, ready for Wasm.</span>
 
 <span class="attribute">#![<span class="ident">cfg_attr</span>(<span class="ident">not</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>), <span class="ident">no_std</span>)]</span>
@@ -1227,7 +1285,7 @@
 <span class="kw">use</span> <span class="ident">codec</span>::{<span class="ident">Decode</span>, <span class="ident">Encode</span>};
 <span class="kw">use</span> <span class="ident">frame_support</span>::{
     <span class="ident">construct_runtime</span>, <span class="ident">parameter_types</span>,
-    <span class="ident">traits</span>::{<span class="ident">Contains</span>, <span class="ident">Currency</span>, <span class="ident">FindAuthor</span>, <span class="ident">Get</span>, <span class="ident">Imbalance</span>, <span class="ident">OnUnbalanced</span>},
+    <span class="ident">traits</span>::{<span class="ident">Contains</span>, <span class="ident">Currency</span>, <span class="ident">FindAuthor</span>, <span class="ident">Get</span>, <span class="ident">Imbalance</span>, <span class="ident">OnRuntimeUpgrade</span>, <span class="ident">OnUnbalanced</span>},
     <span class="ident">weights</span>::{
         <span class="ident">constants</span>::{<span class="ident">BlockExecutionWeight</span>, <span class="ident">ExtrinsicBaseWeight</span>, <span class="ident">RocksDbWeight</span>, <span class="ident">WEIGHT_PER_SECOND</span>},
         <span class="ident">ConstantMultiplier</span>, <span class="ident">DispatchClass</span>, <span class="ident">Weight</span>, <span class="ident">WeightToFeeCoefficient</span>, <span class="ident">WeightToFeeCoefficients</span>,
@@ -1257,6 +1315,9 @@
 };
 <span class="kw">use</span> <span class="ident">sp_std::prelude</span>::<span class="kw-2">*</span>;
 
+<span class="kw">use</span> <span class="ident">pallet_evm_precompile_assets_erc20::AddressToAssetId</span>;
+<span class="kw">use</span> <span class="ident">xcm_primitives::AssetLocationIdConverter</span>;
+
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">any</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>, <span class="ident">test</span>))]</span>
 <span class="kw">use</span> <span class="ident">sp_version::NativeVersion</span>;
 <span class="kw">use</span> <span class="ident">sp_version::RuntimeVersion</span>;
@@ -1266,11 +1327,13 @@
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident">sp_runtime::BuildStorage</span>;
 
 <span class="kw">mod</span> <span class="ident">precompiles</span>;
-<span class="kw">pub</span> <span class="kw">use</span> <span class="ident">precompiles</span>::{<span class="ident">AstarNetworkPrecompiles</span>, <span class="ident">ASSET_PRECOMPILE_ADDRESS_PREFIX</span>};
-<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">Precompiles</span> <span class="op">=</span> <span class="ident">AstarNetworkPrecompiles</span><span class="op">&lt;</span><span class="ident">Runtime</span><span class="op">&gt;</span>;
-
 <span class="kw">mod</span> <span class="ident">weights</span>;
 <span class="kw">mod</span> <span class="ident">xcm_config</span>;
+
+<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">AstarAssetLocationIdConverter</span> <span class="op">=</span> <span class="ident">AssetLocationIdConverter</span><span class="op">&lt;</span><span class="ident">AssetId</span>, <span class="ident">XcAssetConfig</span><span class="op">&gt;</span>;
+
+<span class="kw">pub</span> <span class="kw">use</span> <span class="ident">precompiles</span>::{<span class="ident">AstarNetworkPrecompiles</span>, <span class="ident">ASSET_PRECOMPILE_ADDRESS_PREFIX</span>};
+<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">Precompiles</span> <span class="op">=</span> <span class="ident">AstarNetworkPrecompiles</span><span class="op">&lt;</span><span class="ident">Runtime</span>, <span class="ident">AstarAssetLocationIdConverter</span><span class="op">&gt;</span>;
 
 <span class="doccomment">/// Constant values used within the runtime.</span>
 <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">MILLIASTR</span>: <span class="ident">Balance</span> <span class="op">=</span> <span class="number">1_000_000_000_000_000</span>;
@@ -1308,7 +1371,7 @@
     <span class="ident">spec_name</span>: <span class="macro">create_runtime_str!</span>(<span class="string">&quot;astar&quot;</span>),
     <span class="ident">impl_name</span>: <span class="macro">create_runtime_str!</span>(<span class="string">&quot;astar&quot;</span>),
     <span class="ident">authoring_version</span>: <span class="number">1</span>,
-    <span class="ident">spec_version</span>: <span class="number">20</span>,
+    <span class="ident">spec_version</span>: <span class="number">21</span>,
     <span class="ident">impl_version</span>: <span class="number">0</span>,
     <span class="ident">apis</span>: <span class="ident">RUNTIME_API_VERSIONS</span>,
     <span class="ident">transaction_version</span>: <span class="number">2</span>,
@@ -1721,7 +1784,7 @@
 <span class="doccomment">/// 2^128-1         Relay chain token (KSM)</span>
 <span class="kw">pub</span> <span class="kw">type</span> <span class="ident">AssetId</span> <span class="op">=</span> <span class="ident">u128</span>;
 
-<span class="kw">impl</span> <span class="ident">pallet_evm_precompile_assets_erc20::AddressToAssetId</span><span class="op">&lt;</span><span class="ident">AssetId</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">Runtime</span> {
+<span class="kw">impl</span> <span class="ident">AddressToAssetId</span><span class="op">&lt;</span><span class="ident">AssetId</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">Runtime</span> {
     <span class="kw">fn</span> <span class="ident">address_to_asset_id</span>(<span class="ident">address</span>: <span class="ident">H160</span>) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">AssetId</span><span class="op">&gt;</span> {
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">data</span> <span class="op">=</span> [<span class="number">0u8</span>; <span class="number">16</span>];
         <span class="kw">let</span> <span class="ident">address_bytes</span>: [<span class="ident">u8</span>; <span class="number">20</span>] <span class="op">=</span> <span class="ident">address</span>.<span class="ident">into</span>();
@@ -1913,7 +1976,7 @@
     <span class="kw">pub</span> <span class="ident">BlockGasLimit</span>: <span class="ident">U256</span> <span class="op">=</span> <span class="ident">U256::from</span>(
         <span class="ident">NORMAL_DISPATCH_RATIO</span> <span class="op">*</span> <span class="ident">MAXIMUM_BLOCK_WEIGHT</span> <span class="op">/</span> <span class="ident">WEIGHT_PER_GAS</span>
     );
-    <span class="kw">pub</span> <span class="ident">PrecompilesValue</span>: <span class="ident">Precompiles</span> <span class="op">=</span> <span class="ident">AstarNetworkPrecompiles</span>::<span class="op">&lt;</span><span class="kw">_</span><span class="op">&gt;</span><span class="ident">::new</span>();
+    <span class="kw">pub</span> <span class="ident">PrecompilesValue</span>: <span class="ident">Precompiles</span> <span class="op">=</span> <span class="ident">AstarNetworkPrecompiles</span>::<span class="op">&lt;</span><span class="kw">_</span>, <span class="kw">_</span><span class="op">&gt;</span><span class="ident">::new</span>();
 }
 
 <span class="kw">impl</span> <span class="ident">pallet_evm::Config</span> <span class="kw">for</span> <span class="ident">Runtime</span> {
@@ -1942,6 +2005,26 @@
 <span class="kw">impl</span> <span class="ident">pallet_sudo::Config</span> <span class="kw">for</span> <span class="ident">Runtime</span> {
     <span class="kw">type</span> <span class="ident">Event</span> <span class="op">=</span> <span class="ident">Event</span>;
     <span class="kw">type</span> <span class="ident">Call</span> <span class="op">=</span> <span class="ident">Call</span>;
+}
+
+<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">EvmRevertCodeHandler</span>;
+<span class="kw">impl</span> <span class="ident">pallet_xc_asset_config::XcAssetChanged</span><span class="op">&lt;</span><span class="ident">Runtime</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">EvmRevertCodeHandler</span> {
+    <span class="kw">fn</span> <span class="ident">xc_asset_registered</span>(<span class="ident">asset_id</span>: <span class="ident">AssetId</span>) {
+        <span class="kw">let</span> <span class="ident">address</span> <span class="op">=</span> <span class="ident">Runtime::asset_id_to_address</span>(<span class="ident">asset_id</span>);
+        <span class="ident">pallet_evm::AccountCodes</span>::<span class="op">&lt;</span><span class="ident">Runtime</span><span class="op">&gt;</span><span class="ident">::insert</span>(<span class="ident">address</span>, <span class="macro">vec!</span>[<span class="number">0x60</span>, <span class="number">0x00</span>, <span class="number">0x60</span>, <span class="number">0x00</span>, <span class="number">0xfd</span>]);
+    }
+
+    <span class="kw">fn</span> <span class="ident">xc_asset_unregistered</span>(<span class="ident">asset_id</span>: <span class="ident">AssetId</span>) {
+        <span class="kw">let</span> <span class="ident">address</span> <span class="op">=</span> <span class="ident">Runtime::asset_id_to_address</span>(<span class="ident">asset_id</span>);
+        <span class="ident">pallet_evm::AccountCodes</span>::<span class="op">&lt;</span><span class="ident">Runtime</span><span class="op">&gt;</span><span class="ident">::remove</span>(<span class="ident">address</span>);
+    }
+}
+
+<span class="kw">impl</span> <span class="ident">pallet_xc_asset_config::Config</span> <span class="kw">for</span> <span class="ident">Runtime</span> {
+    <span class="kw">type</span> <span class="ident">Event</span> <span class="op">=</span> <span class="ident">Event</span>;
+    <span class="kw">type</span> <span class="ident">AssetId</span> <span class="op">=</span> <span class="ident">AssetId</span>;
+    <span class="kw">type</span> <span class="ident">XcAssetChanged</span> <span class="op">=</span> <span class="ident">EvmRevertCodeHandler</span>;
+    <span class="kw">type</span> <span class="ident">WeightInfo</span> <span class="op">=</span> <span class="ident">weights::pallet_xc_asset_config::WeightInfo</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span>;
 }
 
 <span class="macro">construct_runtime!</span>(
@@ -1976,6 +2059,7 @@
         <span class="ident">PolkadotXcm</span>: <span class="ident">pallet_xcm</span>::{<span class="ident">Pallet</span>, <span class="ident">Call</span>, <span class="ident">Storage</span>, <span class="ident">Event</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>, <span class="ident">Origin</span>} <span class="op">=</span> <span class="number">51</span>,
         <span class="ident">CumulusXcm</span>: <span class="ident">cumulus_pallet_xcm</span>::{<span class="ident">Pallet</span>, <span class="ident">Event</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>, <span class="ident">Origin</span>} <span class="op">=</span> <span class="number">52</span>,
         <span class="ident">DmpQueue</span>: <span class="ident">cumulus_pallet_dmp_queue</span>::{<span class="ident">Pallet</span>, <span class="ident">Call</span>, <span class="ident">Storage</span>, <span class="ident">Event</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>} <span class="op">=</span> <span class="number">53</span>,
+        <span class="ident">XcAssetConfig</span>: <span class="ident">pallet_xc_asset_config</span>::{<span class="ident">Pallet</span>, <span class="ident">Call</span>, <span class="ident">Storage</span>, <span class="ident">Event</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>} <span class="op">=</span> <span class="number">54</span>,
 
         <span class="ident">EVM</span>: <span class="ident">pallet_evm</span>::{<span class="ident">Pallet</span>, <span class="ident">Config</span>, <span class="ident">Call</span>, <span class="ident">Storage</span>, <span class="ident">Event</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>} <span class="op">=</span> <span class="number">60</span>,
         <span class="ident">Ethereum</span>: <span class="ident">pallet_ethereum</span>::{<span class="ident">Pallet</span>, <span class="ident">Call</span>, <span class="ident">Storage</span>, <span class="ident">Event</span>, <span class="ident">Origin</span>, <span class="ident">Config</span>} <span class="op">=</span> <span class="number">61</span>,
@@ -2033,7 +2117,37 @@
     <span class="ident">frame_system::ChainContext</span><span class="op">&lt;</span><span class="ident">Runtime</span><span class="op">&gt;</span>,
     <span class="ident">Runtime</span>,
     <span class="ident">AllPalletsWithSystem</span>,
+    (<span class="ident">RelayAssetRegistration</span>,),
 <span class="op">&gt;</span>;
+
+<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">RelayAssetRegistration</span>;
+<span class="kw">impl</span> <span class="ident">OnRuntimeUpgrade</span> <span class="kw">for</span> <span class="ident">RelayAssetRegistration</span> {
+    <span class="kw">fn</span> <span class="ident">on_runtime_upgrade</span>() -&gt; <span class="ident">Weight</span> {
+        <span class="kw">use</span> <span class="ident">pallet_xc_asset_config</span>::<span class="kw-2">*</span>;
+        <span class="kw">use</span> <span class="ident">xcm::latest::prelude</span>::<span class="kw-2">*</span>;
+
+        <span class="kw">let</span> <span class="ident">relay_asset_id</span> <span class="op">=</span> <span class="ident">u128::max_value</span>();
+        <span class="kw">let</span> <span class="ident">relay_asset_multilocation</span> <span class="op">=</span> <span class="ident">MultiLocation::parent</span>();
+
+        <span class="ident">AssetIdToLocation</span>::<span class="op">&lt;</span><span class="ident">Runtime</span><span class="op">&gt;</span><span class="ident">::insert</span>(
+            <span class="ident">relay_asset_id</span>,
+            <span class="ident">relay_asset_multilocation</span>.<span class="ident">clone</span>().<span class="ident">versioned</span>(),
+        );
+        <span class="ident">AssetLocationToId</span>::<span class="op">&lt;</span><span class="ident">Runtime</span><span class="op">&gt;</span><span class="ident">::insert</span>(
+            <span class="ident">relay_asset_multilocation</span>.<span class="ident">clone</span>().<span class="ident">versioned</span>(),
+            <span class="ident">relay_asset_id</span>,
+        );
+
+        <span class="ident">AssetLocationUnitsPerSecond</span>::<span class="op">&lt;</span><span class="ident">Runtime</span><span class="op">&gt;</span><span class="ident">::insert</span>(
+            <span class="ident">relay_asset_multilocation</span>.<span class="ident">clone</span>().<span class="ident">versioned</span>(),
+            <span class="number">1_000_000_000</span>,
+        );
+
+        <span class="ident">EvmRevertCodeHandler::xc_asset_registered</span>(<span class="ident">relay_asset_id</span>);
+
+        <span class="op">&lt;</span><span class="ident">Runtime</span> <span class="kw">as</span> <span class="ident">frame_system::Config</span><span class="op">&gt;</span><span class="ident">::DbWeight::get</span>().<span class="ident">writes</span>(<span class="number">4</span>)
+    }
+}
 
 <span class="kw">impl</span> <span class="ident">fp_self_contained::SelfContainedCall</span> <span class="kw">for</span> <span class="ident">Call</span> {
     <span class="kw">type</span> <span class="ident">SignedInfo</span> <span class="op">=</span> <span class="ident">H160</span>;
@@ -2355,6 +2469,7 @@
 
             <span class="macro">list_benchmark!</span>(<span class="ident">list</span>, <span class="ident">extra</span>, <span class="ident">pallet_dapps_staking</span>, <span class="ident">DappsStaking</span>);
             <span class="macro">list_benchmark!</span>(<span class="ident">list</span>, <span class="ident">extra</span>, <span class="ident">pallet_block_reward</span>, <span class="ident">BlockReward</span>);
+            <span class="macro">list_benchmark!</span>(<span class="ident">list</span>, <span class="ident">extra</span>, <span class="ident">pallet_xc_asset_config</span>, <span class="ident">XcAssetConfig</span>);
 
             <span class="kw">let</span> <span class="ident">storage_info</span> <span class="op">=</span> <span class="ident">AllPalletsWithSystem::storage_info</span>();
 
@@ -2388,6 +2503,7 @@
             <span class="macro">add_benchmark!</span>(<span class="ident">params</span>, <span class="ident">batches</span>, <span class="ident">pallet_timestamp</span>, <span class="ident">Timestamp</span>);
             <span class="macro">add_benchmark!</span>(<span class="ident">params</span>, <span class="ident">batches</span>, <span class="ident">pallet_dapps_staking</span>, <span class="ident">DappsStaking</span>);
             <span class="macro">add_benchmark!</span>(<span class="ident">params</span>, <span class="ident">batches</span>, <span class="ident">pallet_block_reward</span>, <span class="ident">BlockReward</span>);
+            <span class="macro">add_benchmark!</span>(<span class="ident">params</span>, <span class="ident">batches</span>, <span class="ident">pallet_xc_asset_config</span>, <span class="ident">XcAssetConfig</span>);
 
             <span class="kw">if</span> <span class="ident">batches</span>.<span class="ident">is_empty</span>() { <span class="kw">return</span> <span class="prelude-val">Err</span>(<span class="string">&quot;Benchmark not found for this pallet.&quot;</span>.<span class="ident">into</span>()) }
             <span class="prelude-val">Ok</span>(<span class="ident">batches</span>)
