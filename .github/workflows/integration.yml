@@ -31,9 +31,11 @@ jobs:
           - TARGET: x86_64-unknown-linux-gnu
             OS: ubuntu-latest
             ARCH: x86_64
+            CROSS: false
           - TARGET: aarch64-unknown-linux-gnu
             OS: ubuntu-latest
             ARCH: aarch64
+            CROSS: true
     steps:
     - name: Checkout the source code
       uses: actions/checkout@master
@@ -52,18 +54,17 @@ jobs:
           ~/.cargo/registry
           ~/.cargo/git
           target/
-        key: ${{ matrix.OS }}-${{ matrix.TARGET }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+        key: ${{ runner.os }}-cargo-${{ matrix.TARGET }}-${{ hashFiles('**/Cargo.lock') }}
         restore-keys: |
-          ${{ matrix.OS }}-${{ matrix.TARGET }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-          ${{ matrix.OS }}-${{ matrix.TARGET }}-cargo
+          ${{ runner.os }}-cargo-${{ matrix.TARGET }}-${{ hashFiles('**/Cargo.lock') }}
+          ${{ runner.os }}-cargo-${{ matrix.TARGET }}
 
-    - name: Build x86_64 optimized binary
-      if: ${{ matrix.TARGET == 'x86_64-unknown-linux-gnu' }}
-      run: CARGO_PROFILE_RELEASE_LTO=true RUSTFLAGS="-C codegen-units=1" cargo build --release --target ${{ matrix.TARGET }} --verbose
-
-    - name: Build non-x86_64 optimized binary # cross-compile needs additional options (devserver is x86_64) 
-      if: ${{ matrix.TARGET != 'x86_64-unknown-linux-gnu' }}
-      run: CARGO_PROFILE_RELEASE_LTO=true RUSTFLAGS="-C codegen-units=1" cargo build --release --target ${{ matrix.TARGET }} -Zbuild-std --verbose 
+    - name: Build
+      uses: actions-rs/cargo@v1
+      with:
+        command: CARGO_PROFILE_RELEASE_LTO=true RUSTFLAGS="-C codegen-units=1" build
+        args: --release --target=${{ matrix.TARGET }} --verbose
+        use-cross: ${{ matrix.CROSS }}
 
     - uses: actions/upload-artifact@master
       with:
