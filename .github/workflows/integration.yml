@@ -62,7 +62,7 @@ jobs:
     - name: Build
       uses: actions-rs/cargo@v1
       with:
-        command: CARGO_PROFILE_RELEASE_LTO=true RUSTFLAGS="-C codegen-units=1" build
+        command: build
         args: --release --target=${{ matrix.TARGET }} --verbose
         use-cross: ${{ matrix.CROSS }}
 
