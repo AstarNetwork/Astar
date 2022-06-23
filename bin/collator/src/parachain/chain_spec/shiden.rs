@@ -134,6 +134,7 @@ fn make_genesis(
             sp_runtime::Permill::from_parts(125_000),
         ),
         ethereum: Default::default(),
+        polkadot_xcm: Default::default(),
     }
 }
 
