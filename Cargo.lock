@@ -272,7 +272,7 @@ dependencies = [
  "pallet-collator-selection 3.0.0 (git+https://github.com/AstarNetwork/astar-frame?branch=pallet-collator-selection-3.0.0/polkadot-v0.9.24)",
  "pallet-collective",
  "pallet-custom-signatures",
- "pallet-dapps-staking 3.4.0",
+ "pallet-dapps-staking 3.6.0 (git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.24)",
  "pallet-ethereum",
  "pallet-evm",
  "pallet-evm-precompile-assets-erc20",
@@ -288,7 +288,7 @@ dependencies = [
  "pallet-evm-precompile-xcm",
  "pallet-identity",
  "pallet-multisig",
- "pallet-precompile-dapps-staking",
+ "pallet-precompile-dapps-staking 3.6.0 (git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.24)",
  "pallet-session",
  "pallet-sudo",
  "pallet-timestamp",
@@ -1085,9 +1085,9 @@ dependencies = [
 
 [[package]]
 name = "cargo_metadata"
-version = "0.14.3"
+version = "0.14.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cf1007653411165d371d51e7174a6f0e81ec815ecb425c0440c30d5f1ae64e0f"
+checksum = "4acbb09d9ee8e23699b9634375c72795d095bf268439da88562cf9b501f181fa"
 dependencies = [
  "camino",
  "cargo-platform",
@@ -3719,9 +3719,9 @@ dependencies = [
 
 [[package]]
 name = "integer-encoding"
-version = "3.0.3"
+version = "3.0.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0e85a1509a128c855368e135cffcde7eac17d8e1083f41e2b98c58bc1a5074be"
+checksum = "8bb03732005da905c88227371639bf1ad885cc712789c011c31c5fb3ab3ccf02"
 
 [[package]]
 name = "integer-sqrt"
@@ -4833,7 +4833,7 @@ dependencies = [
  "pallet-contracts-primitives",
  "pallet-contracts-rpc-runtime-api",
  "pallet-custom-signatures",
- "pallet-dapps-staking 3.4.0",
+ "pallet-dapps-staking 3.6.0",
  "pallet-ethereum",
  "pallet-evm",
  "pallet-evm-precompile-blake2",
@@ -4846,7 +4846,7 @@ dependencies = [
  "pallet-evm-precompile-sr25519",
  "pallet-evm-precompile-substrate-ecdsa",
  "pallet-grandpa",
- "pallet-precompile-dapps-staking",
+ "pallet-precompile-dapps-staking 3.6.0",
  "pallet-randomness-collective-flip",
  "pallet-sudo",
  "pallet-timestamp",
@@ -5270,23 +5270,24 @@ dependencies = [
 
 [[package]]
 name = "netlink-proto"
-version = "0.9.2"
+version = "0.9.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ef8785b8141e8432aa45fceb922a7e876d7da3fad37fa7e7ec702ace3aa0826b"
+checksum = "4e63541012cc8065890064baffdaee82470d862634b29f3cb2f42600b79625ae"
 dependencies = [
  "bytes",
  "futures 0.3.21",
  "log",
  "netlink-packet-core",
  "netlink-sys",
+ "thiserror",
  "tokio",
 ]
 
 [[package]]
 name = "netlink-sys"
-version = "0.8.2"
+version = "0.8.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3e4c9f9547a08241bee7b6558b9b98e1f290d187de8b7cfca2bbb4937bcaa8f8"
+checksum = "92b654097027250401127914afb37cb1f311df6610a9891ff07a757e94199027"
 dependencies = [
  "async-io",
  "bytes",
@@ -5846,11 +5847,11 @@ dependencies = [
  "frame-support",
  "frame-system",
  "log",
- "num_enum",
+ "num-traits",
  "pallet-contracts",
  "pallet-contracts-primitives",
  "pallet-contracts-rpc-runtime-api",
- "pallet-dapps-staking 3.4.1",
+ "pallet-dapps-staking 3.6.0",
  "parity-scale-codec",
  "scale-info",
  "sp-core",
@@ -6054,7 +6055,6 @@ dependencies = [
 [[package]]
 name = "pallet-dapps-staking"
 version = "3.6.0"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.24#11fe1447e1e5822c34fac385ddffe9094a4722ed"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -6076,8 +6076,10 @@ dependencies = [
 
 [[package]]
 name = "pallet-dapps-staking"
-version = "3.4.1"
+version = "3.6.0"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.24#11fe1447e1e5822c34fac385ddffe9094a4722ed"
 dependencies = [
+ "frame-benchmarking",
  "frame-support",
  "frame-system",
  "num-traits",
@@ -6231,7 +6233,7 @@ dependencies = [
  "pallet-balances",
  "pallet-evm",
  "parity-scale-codec",
- "precompile-utils",
+ "precompile-utils 0.4.0 (git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.24)",
  "slices",
  "sp-core",
  "sp-io",
@@ -6314,7 +6316,7 @@ dependencies = [
  "num_enum",
  "pallet-evm",
  "parity-scale-codec",
- "precompile-utils",
+ "precompile-utils 0.4.0 (git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.24)",
  "sp-core",
  "sp-io",
  "sp-std",
@@ -6330,7 +6332,7 @@ dependencies = [
  "num_enum",
  "pallet-evm",
  "parity-scale-codec",
- "precompile-utils",
+ "precompile-utils 0.4.0 (git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.24)",
  "sp-core",
  "sp-io",
  "sp-std",
@@ -6351,7 +6353,7 @@ dependencies = [
  "pallet-evm-precompile-assets-erc20",
  "pallet-xcm 0.9.24 (git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.24)",
  "parity-scale-codec",
- "precompile-utils",
+ "precompile-utils 0.4.0 (git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.24)",
  "sp-core",
  "sp-io",
  "sp-std",
@@ -6607,6 +6609,25 @@ dependencies = [
 [[package]]
 name = "pallet-precompile-dapps-staking"
 version = "3.6.0"
+dependencies = [
+ "fp-evm",
+ "frame-support",
+ "frame-system",
+ "log",
+ "num_enum",
+ "pallet-dapps-staking 3.6.0",
+ "pallet-evm",
+ "parity-scale-codec",
+ "precompile-utils 0.4.0",
+ "scale-info",
+ "sp-core",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
+name = "pallet-precompile-dapps-staking"
+version = "3.6.0"
 source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.24#11fe1447e1e5822c34fac385ddffe9094a4722ed"
 dependencies = [
  "fp-evm",
@@ -6614,10 +6635,10 @@ dependencies = [
  "frame-system",
  "log",
  "num_enum",
- "pallet-dapps-staking 3.4.0",
+ "pallet-dapps-staking 3.6.0 (git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.24)",
  "pallet-evm",
  "parity-scale-codec",
- "precompile-utils",
+ "precompile-utils 0.4.0 (git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.24)",
  "scale-info",
  "sp-core",
  "sp-runtime",
@@ -8499,6 +8520,28 @@ checksum = "eb9f9e6e233e5c4a35559a617bf40a4ec447db2e84c20b55a6f83167b7e57872"
 [[package]]
 name = "precompile-utils"
 version = "0.4.0"
+dependencies = [
+ "evm",
+ "fp-evm",
+ "frame-support",
+ "frame-system",
+ "impl-trait-for-tuples",
+ "log",
+ "num_enum",
+ "pallet-evm",
+ "parity-scale-codec",
+ "precompile-utils-macro 0.1.0",
+ "sha3 0.10.1",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+ "xcm",
+]
+
+[[package]]
+name = "precompile-utils"
+version = "0.4.0"
 source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.24#11fe1447e1e5822c34fac385ddffe9094a4722ed"
 dependencies = [
  "evm",
@@ -8510,13 +8553,24 @@ dependencies = [
  "num_enum",
  "pallet-evm",
  "parity-scale-codec",
- "precompile-utils-macro",
+ "precompile-utils-macro 0.1.0 (git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.24)",
  "sha3 0.10.1",
  "sp-core",
  "sp-io",
  "sp-runtime",
  "sp-std",
  "xcm",
+]
+
+[[package]]
+name = "precompile-utils-macro"
+version = "0.1.0"
+dependencies = [
+ "num_enum",
+ "proc-macro2",
+ "quote",
+ "sha3 0.8.2",
+ "syn",
 ]
 
 [[package]]
@@ -10724,6 +10778,7 @@ dependencies = [
 [[package]]
 name = "shibuya-runtime"
 <<<<<<< HEAD
+<<<<<<< HEAD
 version = "4.3.2"
 =======
 <<<<<<< HEAD
@@ -10732,6 +10787,9 @@ version = "4.3.1"
 version = "3.31.0"
 >>>>>>> 746ec01a (match restructuring)
 >>>>>>> a84b029c (match restructuring)
+=======
+version = "4.3.1"
+>>>>>>> c507185d (rebased to polkadot-v0.9.24)
 dependencies = [
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-dmp-queue",
@@ -10764,7 +10822,7 @@ dependencies = [
  "pallet-contracts-primitives",
  "pallet-contracts-rpc-runtime-api",
  "pallet-custom-signatures",
- "pallet-dapps-staking 3.4.0",
+ "pallet-dapps-staking 3.6.0 (git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.24)",
  "pallet-ethereum",
  "pallet-evm",
  "pallet-evm-precompile-assets-erc20",
@@ -10780,7 +10838,7 @@ dependencies = [
  "pallet-evm-precompile-xcm",
  "pallet-identity",
  "pallet-multisig",
- "pallet-precompile-dapps-staking",
+ "pallet-precompile-dapps-staking 3.6.0 (git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.24)",
  "pallet-randomness-collective-flip",
  "pallet-session",
  "pallet-sudo",
@@ -10849,7 +10907,7 @@ dependencies = [
  "pallet-collator-selection 3.0.0 (git+https://github.com/paritytech/cumulus?branch=polkadot-v0.9.24)",
  "pallet-collective",
  "pallet-custom-signatures",
- "pallet-dapps-staking 3.4.0",
+ "pallet-dapps-staking 3.6.0 (git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.24)",
  "pallet-ethereum",
  "pallet-evm",
  "pallet-evm-precompile-assets-erc20",
@@ -10865,7 +10923,7 @@ dependencies = [
  "pallet-evm-precompile-xcm",
  "pallet-identity",
  "pallet-multisig",
- "pallet-precompile-dapps-staking",
+ "pallet-precompile-dapps-staking 3.6.0 (git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.24)",
  "pallet-session",
  "pallet-sudo",
  "pallet-timestamp",
@@ -13397,25 +13455,6 @@ dependencies = [
 ]
 
 [[package]]
-<<<<<<< HEAD
-name = "xcm-tools"
-version = "0.2.0"
-dependencies = [
- "clap",
- "cumulus-primitives-core",
- "polkadot-parachain",
- "polkadot-primitives",
- "sp-core",
- "sp-runtime",
- "substrate-build-script-utils",
- "xcm",
- "xcm-builder",
- "xcm-executor",
-]
-
-[[package]]
-=======
->>>>>>> 746ec01a (match restructuring)
 name = "yamux"
 version = "0.10.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"

@@ -9,9 +9,9 @@ include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 use codec::{Decode, Encode};
 use frame_support::{
     construct_runtime,
-    log::error,
     parameter_types,
-    traits::{Currency, FindAuthor, Get, KeyOwnerProofSystem, Nothing},
+    log::error,
+    traits::{Currency, FindAuthor, Get, KeyOwnerProofSystem, Nothing, ConstU32},
     weights::{
         constants::{RocksDbWeight, WEIGHT_PER_SECOND},
         ConstantMultiplier, IdentityFee, Weight,
@@ -19,16 +19,14 @@ use frame_support::{
     ConsensusEngineId, PalletId,
 };
 use frame_system::limits::{BlockLength, BlockWeights};
-<<<<<<< HEAD
-use pallet_contracts::{weights::WeightInfo, DefaultContractAccessWeight};
-=======
+
 use pallet_contracts::{
     chain_extension::{
         ChainExtension, Environment, Ext, InitState, RetVal, SysConfig, UncheckedFrom,
     },
+    DefaultContractAccessWeight,
     weights::WeightInfo,
 };
->>>>>>> fffeca9f (dapps-staking chain extension support for local node)
 use pallet_evm::{FeeCalculator, Runner};
 use pallet_grandpa::{fg_primitives, AuthorityList as GrandpaAuthorityList};
 use sp_api::impl_runtime_apis;
