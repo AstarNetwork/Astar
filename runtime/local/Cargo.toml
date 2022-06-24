@@ -1,6 +1,6 @@
 [package]
 name = "local-runtime"
-version = "4.3.1"
+version = "4.3.2"
 authors = ["Stake Technologies <devops@stake.co.jp>"]
 edition = "2021"
 build = "build.rs"
@@ -8,7 +8,6 @@ build = "build.rs"
 [dependencies]
 codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = ["derive"] }
 scale-info = { version = "2.1.0", default-features = false, features = ["derive"] }
-log = "0.4.16"
 
 pallet-aura = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.24", default-features = false }
 pallet-balances = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.24", default-features = false }

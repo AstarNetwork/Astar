@@ -8,9 +8,7 @@ include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
 use codec::{Decode, Encode};
 use frame_support::{
-    construct_runtime,
-    log::error,
-    parameter_types,
+    construct_runtime, parameter_types,
     traits::{ConstU32, Currency, FindAuthor, Get, KeyOwnerProofSystem, Nothing},
     weights::{
         constants::{RocksDbWeight, WEIGHT_PER_SECOND},
@@ -563,27 +561,45 @@ impl pallet_contracts::Config for Runtime {
 
 pub struct LocalChainExtension;
 
+enum ExtensionId {
+    DappsStaking = 34,
+}
+// impl From<u32> for ExtensionId {
+//     fn from(inputId: u32) -> Self {
+//         match inputId {
+//             34 => return ExtensionId::DappsStaking,
+//             _ => return Err(DispatchError::Other("Unimplemented ChainExtension pallet"))
+//         };
+//     }
+// }
+
+impl TryFrom<u32> for ExtensionId {
+    type Error = DispatchError;
+
+    fn try_from(value: u32) -> Result<Self, Self::Error> {
+        match value {
+            34 => return Ok(ExtensionId::DappsStaking),
+            _ => return Err(DispatchError::Other("Unimplemented ChainExtension pallet")),
+        }
+    }
+}
+
 impl ChainExtension<Runtime> for LocalChainExtension {
     fn call<E: Ext>(func_id: u32, env: Environment<E, InitState>) -> Result<RetVal, DispatchError>
     where
         <E::T as SysConfig>::AccountId: UncheckedFrom<<E::T as SysConfig>::Hash> + AsRef<[u8]>,
     {
-        let pallet_id = (func_id / 100) as u8;
+        let pallet_id = ExtensionId::try_from(func_id / 100)?;
         let func_id_matcher = func_id % 100;
         match pallet_id {
-            34 => {
+            ExtensionId::DappsStaking => {
                 DappsStakingExtension::execute_func::<E, Runtime>(func_id_matcher, env)?;
-            }
-            _ => {
-                error!("Called an unregistered `pallet_id`: {:}", func_id);
-                return Err(DispatchError::Other("Unimplemented ChainExtension pallet"));
-            }
+            } // Err(_) => {
+              //     error!("Called an unregistered `pallet_id`: {:}", func_id);
+              //     return Err(DispatchError::Other("Unimplemented ChainExtension pallet"));
+              // }
         }
         Ok(RetVal::Converging(0))
-    }
-
-    fn enabled() -> bool {
-        true
     }
 }
 

@@ -1,11 +1,11 @@
 [workspace]
 members = [
     "bin/collator",
-    # "bin/xcm-tools",
+    "bin/xcm-tools",
     "runtime/local",
-    # "runtime/astar",
-    # "runtime/shiden",
-    # "runtime/shibuya",
+    "runtime/astar",
+    "runtime/shiden",
+    "runtime/shibuya",
 ]
 
 exclude = [
