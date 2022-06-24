@@ -10,7 +10,6 @@ build = "build.rs"
 codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = ["derive"] }
 scale-info = { version = "2.1.0", default-features = false, features = ["derive"] }
 smallvec = "1.6.1"
-log = { version = "0.4", default-features = false }
 
 # primitives
 fp-rpc = { git = "https://github.com/AstarNetwork/frontier", branch = "polkadot-v0.9.24", default-features = false }
