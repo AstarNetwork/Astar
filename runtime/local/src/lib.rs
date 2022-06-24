@@ -9,9 +9,9 @@ include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 use codec::{Decode, Encode};
 use frame_support::{
     construct_runtime,
-    parameter_types,
     log::error,
-    traits::{Currency, FindAuthor, Get, KeyOwnerProofSystem, Nothing, ConstU32},
+    parameter_types,
+    traits::{ConstU32, Currency, FindAuthor, Get, KeyOwnerProofSystem, Nothing},
     weights::{
         constants::{RocksDbWeight, WEIGHT_PER_SECOND},
         ConstantMultiplier, IdentityFee, Weight,
@@ -24,8 +24,8 @@ use pallet_contracts::{
     chain_extension::{
         ChainExtension, Environment, Ext, InitState, RetVal, SysConfig, UncheckedFrom,
     },
-    DefaultContractAccessWeight,
     weights::WeightInfo,
+    DefaultContractAccessWeight,
 };
 use pallet_evm::{FeeCalculator, Runner};
 use pallet_grandpa::{fg_primitives, AuthorityList as GrandpaAuthorityList};
