@@ -1,6 +1,6 @@
 [package]
 name = "shiden-runtime"
-version = "4.3.2"
+version = "4.4.0"
 authors = ["Stake Technologies <devops@stake.co.jp>"]
 edition = "2021"
 build = "build.rs"
@@ -34,7 +34,6 @@ pallet-authorship = { git = "https://github.com/paritytech/substrate", branch = 
 pallet-aura = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.24", default-features = false }
 pallet-assets = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.24", default-features = false }
 pallet-balances = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.24", default-features = false }
-# TODO: keep features = ["unstable-interface"] ???
 pallet-contracts = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.24", default-features = false } 
 pallet-contracts-primitives = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.24", default-features = false }
 pallet-contracts-rpc-runtime-api = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.24", default-features = false }

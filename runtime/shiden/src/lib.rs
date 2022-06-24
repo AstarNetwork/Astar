@@ -815,7 +815,6 @@ construct_runtime!(
         Identity: pallet_identity::{Pallet, Call, Storage, Event<T>} = 12,
         Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent} = 13,
         Multisig: pallet_multisig::{Pallet, Call, Storage, Event<T>} = 14,
-        RandomnessCollectiveFlip: pallet_randomness_collective_flip::{Pallet, Storage} = 15, // TODO: this is 16 on Shibuya but 15 is already taken there
 
         ParachainSystem: cumulus_pallet_parachain_system::{Pallet, Call, Storage, Inherent, Event<T>} = 20,
         ParachainInfo: parachain_info::{Pallet, Storage, Config} = 21,
@@ -845,6 +844,7 @@ construct_runtime!(
         BaseFee: pallet_base_fee::{Pallet, Call, Storage, Config<T>, Event} = 63,
 
         Contracts: pallet_contracts::{Pallet, Call, Storage, Event<T>} = 70,
+        RandomnessCollectiveFlip: pallet_randomness_collective_flip::{Pallet, Storage} = 71,
 
         Sudo: pallet_sudo::{Pallet, Call, Storage, Event<T>, Config<T>} = 99,
     }
