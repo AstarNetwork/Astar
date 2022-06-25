@@ -564,14 +564,6 @@ pub struct LocalChainExtension;
 enum ExtensionId {
     DappsStaking = 34,
 }
-// impl From<u32> for ExtensionId {
-//     fn from(inputId: u32) -> Self {
-//         match inputId {
-//             34 => return ExtensionId::DappsStaking,
-//             _ => return Err(DispatchError::Other("Unimplemented ChainExtension pallet"))
-//         };
-//     }
-// }
 
 impl TryFrom<u32> for ExtensionId {
     type Error = DispatchError;
@@ -594,10 +586,7 @@ impl ChainExtension<Runtime> for LocalChainExtension {
         match pallet_id {
             ExtensionId::DappsStaking => {
                 DappsStakingExtension::execute_func::<E, Runtime>(func_id_matcher, env)?;
-            } // Err(_) => {
-              //     error!("Called an unregistered `pallet_id`: {:}", func_id);
-              //     return Err(DispatchError::Other("Unimplemented ChainExtension pallet"));
-              // }
+            }
         }
         Ok(RetVal::Converging(0))
     }
