@@ -1041,7 +1041,7 @@ pub async fn start_shiden_node(
     TaskManager,
     Arc<TFullClient<Block, shiden::RuntimeApi, NativeElseWasmExecutor<shiden::Executor>>>,
 )> {
-    start_node_impl::<shiden::RuntimeApi, shiden::Executor, _, _>(
+    start_contracts_node_impl::<shiden::RuntimeApi, shiden::Executor, _, _>(
         parachain_config,
         polkadot_config,
         collator_options,
