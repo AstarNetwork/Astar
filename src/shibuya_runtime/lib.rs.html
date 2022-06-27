@@ -1474,7 +1474,7 @@
     <span class="ident">spec_name</span>: <span class="macro">create_runtime_str!</span>(<span class="string">&quot;shibuya&quot;</span>),
     <span class="ident">impl_name</span>: <span class="macro">create_runtime_str!</span>(<span class="string">&quot;shibuya&quot;</span>),
     <span class="ident">authoring_version</span>: <span class="number">1</span>,
-    <span class="ident">spec_version</span>: <span class="number">55</span>,
+    <span class="ident">spec_version</span>: <span class="number">56</span>,
     <span class="ident">impl_version</span>: <span class="number">0</span>,
     <span class="ident">apis</span>: <span class="ident">RUNTIME_API_VERSIONS</span>,
     <span class="ident">transaction_version</span>: <span class="number">2</span>,
@@ -1793,7 +1793,7 @@
     <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">MaxCandidates</span>: <span class="ident">u32</span> <span class="op">=</span> <span class="number">200</span>;
     <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">MinCandidates</span>: <span class="ident">u32</span> <span class="op">=</span> <span class="number">5</span>;
     <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">MaxInvulnerables</span>: <span class="ident">u32</span> <span class="op">=</span> <span class="number">20</span>;
-    <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">SlashRatio</span>: <span class="ident">Perbill</span> <span class="op">=</span> <span class="ident">Perbill::from_percent</span>(<span class="number">10</span>);
+    <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">SlashRatio</span>: <span class="ident">Perbill</span> <span class="op">=</span> <span class="ident">Perbill::from_percent</span>(<span class="number">1</span>);
 }
 
 <span class="kw">impl</span> <span class="ident">pallet_collator_selection::Config</span> <span class="kw">for</span> <span class="ident">Runtime</span> {

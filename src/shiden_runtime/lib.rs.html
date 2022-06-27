@@ -1380,6 +1380,8 @@
 <span id="1375">1375</span>
 <span id="1376">1376</span>
 <span id="1377">1377</span>
+<span id="1378">1378</span>
+<span id="1379">1379</span>
 </pre><pre class="rust"><code><span class="doccomment">//! The Shiden Network runtime. This can be compiled with ``#[no_std]`, ready for Wasm.</span>
 
 <span class="attribute">#![<span class="ident">cfg_attr</span>(<span class="ident">not</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>), <span class="ident">no_std</span>)]</span>
@@ -1479,7 +1481,7 @@
     <span class="ident">spec_name</span>: <span class="macro">create_runtime_str!</span>(<span class="string">&quot;shiden&quot;</span>),
     <span class="ident">impl_name</span>: <span class="macro">create_runtime_str!</span>(<span class="string">&quot;shiden&quot;</span>),
     <span class="ident">authoring_version</span>: <span class="number">1</span>,
-    <span class="ident">spec_version</span>: <span class="number">57</span>,
+    <span class="ident">spec_version</span>: <span class="number">58</span>,
     <span class="ident">impl_version</span>: <span class="number">0</span>,
     <span class="ident">apis</span>: <span class="ident">RUNTIME_API_VERSIONS</span>,
     <span class="ident">transaction_version</span>: <span class="number">2</span>,
@@ -1799,6 +1801,7 @@
     <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">MaxCandidates</span>: <span class="ident">u32</span> <span class="op">=</span> <span class="number">200</span>;
     <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">MinCandidates</span>: <span class="ident">u32</span> <span class="op">=</span> <span class="number">5</span>;
     <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">MaxInvulnerables</span>: <span class="ident">u32</span> <span class="op">=</span> <span class="number">20</span>;
+    <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">SlashRatio</span>: <span class="ident">Perbill</span> <span class="op">=</span> <span class="ident">Perbill::from_percent</span>(<span class="number">1</span>);
 }
 
 <span class="kw">impl</span> <span class="ident">pallet_collator_selection::Config</span> <span class="kw">for</span> <span class="ident">Runtime</span> {
@@ -1814,6 +1817,7 @@
     <span class="kw">type</span> <span class="ident">ValidatorId</span> <span class="op">=</span> <span class="op">&lt;</span><span class="self">Self</span> <span class="kw">as</span> <span class="ident">frame_system::Config</span><span class="op">&gt;</span><span class="ident">::AccountId</span>;
     <span class="kw">type</span> <span class="ident">ValidatorIdOf</span> <span class="op">=</span> <span class="ident">pallet_collator_selection::IdentityCollator</span>;
     <span class="kw">type</span> <span class="ident">ValidatorRegistration</span> <span class="op">=</span> <span class="ident">Session</span>;
+    <span class="kw">type</span> <span class="ident">SlashRatio</span> <span class="op">=</span> <span class="ident">SlashRatio</span>;
     <span class="kw">type</span> <span class="ident">WeightInfo</span> <span class="op">=</span> ();
 }
 
