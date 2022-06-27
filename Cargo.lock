@@ -153,7 +153,7 @@ checksum = "9b34d609dfbaf33d6889b2b7106d3ca345eacad44200913df5ba02bfd31d2ba9"
 
 [[package]]
 name = "astar-collator"
-version = "4.6.0"
+version = "4.6.1"
 dependencies = [
  "astar-runtime",
  "async-trait",
@@ -243,7 +243,7 @@ dependencies = [
 
 [[package]]
 name = "astar-runtime"
-version = "4.6.0"
+version = "4.6.1"
 dependencies = [
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-dmp-queue",
@@ -2605,7 +2605,7 @@ dependencies = [
 [[package]]
 name = "fc-consensus"
 version = "2.0.0-dev"
-source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.24#9e9c560bcb7f9b8fecf5e82451aff859151c3642"
+source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.24#4dfc7a8c0ea916f0052911b700227f6c7b5daa81"
 dependencies = [
  "async-trait",
  "fc-db",
@@ -2624,7 +2624,7 @@ dependencies = [
 [[package]]
 name = "fc-db"
 version = "2.0.0-dev"
-source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.24#9e9c560bcb7f9b8fecf5e82451aff859151c3642"
+source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.24#4dfc7a8c0ea916f0052911b700227f6c7b5daa81"
 dependencies = [
  "fp-storage",
  "kvdb-rocksdb",
@@ -2640,7 +2640,7 @@ dependencies = [
 [[package]]
 name = "fc-mapping-sync"
 version = "2.0.0-dev"
-source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.24#9e9c560bcb7f9b8fecf5e82451aff859151c3642"
+source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.24#4dfc7a8c0ea916f0052911b700227f6c7b5daa81"
 dependencies = [
  "fc-db",
  "fp-consensus",
@@ -2657,7 +2657,7 @@ dependencies = [
 [[package]]
 name = "fc-rpc"
 version = "2.0.0-dev"
-source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.24#9e9c560bcb7f9b8fecf5e82451aff859151c3642"
+source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.24#4dfc7a8c0ea916f0052911b700227f6c7b5daa81"
 dependencies = [
  "ethereum",
  "ethereum-types",
@@ -2697,7 +2697,7 @@ dependencies = [
 [[package]]
 name = "fc-rpc-core"
 version = "1.1.0-dev"
-source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.24#9e9c560bcb7f9b8fecf5e82451aff859151c3642"
+source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.24#4dfc7a8c0ea916f0052911b700227f6c7b5daa81"
 dependencies = [
  "ethereum",
  "ethereum-types",
@@ -2809,7 +2809,7 @@ dependencies = [
 [[package]]
 name = "fp-consensus"
 version = "2.0.0-dev"
-source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.24#9e9c560bcb7f9b8fecf5e82451aff859151c3642"
+source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.24#4dfc7a8c0ea916f0052911b700227f6c7b5daa81"
 dependencies = [
  "ethereum",
  "parity-scale-codec",
@@ -2821,7 +2821,7 @@ dependencies = [
 [[package]]
 name = "fp-evm"
 version = "3.0.0-dev"
-source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.24#9e9c560bcb7f9b8fecf5e82451aff859151c3642"
+source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.24#4dfc7a8c0ea916f0052911b700227f6c7b5daa81"
 dependencies = [
  "evm",
  "frame-support",
@@ -2834,7 +2834,7 @@ dependencies = [
 [[package]]
 name = "fp-rpc"
 version = "3.0.0-dev"
-source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.24#9e9c560bcb7f9b8fecf5e82451aff859151c3642"
+source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.24#4dfc7a8c0ea916f0052911b700227f6c7b5daa81"
 dependencies = [
  "ethereum",
  "ethereum-types",
@@ -2851,7 +2851,7 @@ dependencies = [
 [[package]]
 name = "fp-self-contained"
 version = "1.0.0-dev"
-source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.24#9e9c560bcb7f9b8fecf5e82451aff859151c3642"
+source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.24#4dfc7a8c0ea916f0052911b700227f6c7b5daa81"
 dependencies = [
  "ethereum",
  "frame-support",
@@ -2867,7 +2867,7 @@ dependencies = [
 [[package]]
 name = "fp-storage"
 version = "2.0.0"
-source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.24#9e9c560bcb7f9b8fecf5e82451aff859151c3642"
+source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.24#4dfc7a8c0ea916f0052911b700227f6c7b5daa81"
 dependencies = [
  "parity-scale-codec",
  "serde",
@@ -4811,7 +4811,7 @@ checksum = "5284f00d480e1c39af34e72f8ad60b94f47007e3481cd3b731c1d67190ddc7b7"
 
 [[package]]
 name = "local-runtime"
-version = "4.6.0"
+version = "4.6.1"
 dependencies = [
  "fp-rpc",
  "fp-self-contained",
@@ -5688,7 +5688,7 @@ dependencies = [
 [[package]]
 name = "pallet-base-fee"
 version = "1.0.0"
-source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.24#9e9c560bcb7f9b8fecf5e82451aff859151c3642"
+source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.24#4dfc7a8c0ea916f0052911b700227f6c7b5daa81"
 dependencies = [
  "fp-evm",
  "frame-support",
@@ -6105,7 +6105,7 @@ dependencies = [
 [[package]]
 name = "pallet-ethereum"
 version = "4.0.0-dev"
-source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.24#9e9c560bcb7f9b8fecf5e82451aff859151c3642"
+source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.24#4dfc7a8c0ea916f0052911b700227f6c7b5daa81"
 dependencies = [
  "ethereum",
  "ethereum-types",
@@ -6132,7 +6132,7 @@ dependencies = [
 [[package]]
 name = "pallet-evm"
 version = "6.0.0-dev"
-source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.24#9e9c560bcb7f9b8fecf5e82451aff859151c3642"
+source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.24#4dfc7a8c0ea916f0052911b700227f6c7b5daa81"
 dependencies = [
  "evm",
  "fp-evm",
@@ -6179,7 +6179,7 @@ dependencies = [
 [[package]]
 name = "pallet-evm-precompile-blake2"
 version = "2.0.0-dev"
-source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.24#9e9c560bcb7f9b8fecf5e82451aff859151c3642"
+source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.24#4dfc7a8c0ea916f0052911b700227f6c7b5daa81"
 dependencies = [
  "fp-evm",
 ]
@@ -6187,7 +6187,7 @@ dependencies = [
 [[package]]
 name = "pallet-evm-precompile-bn128"
 version = "2.0.0-dev"
-source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.24#9e9c560bcb7f9b8fecf5e82451aff859151c3642"
+source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.24#4dfc7a8c0ea916f0052911b700227f6c7b5daa81"
 dependencies = [
  "fp-evm",
  "sp-core",
@@ -6197,7 +6197,7 @@ dependencies = [
 [[package]]
 name = "pallet-evm-precompile-dispatch"
 version = "2.0.0-dev"
-source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.24#9e9c560bcb7f9b8fecf5e82451aff859151c3642"
+source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.24#4dfc7a8c0ea916f0052911b700227f6c7b5daa81"
 dependencies = [
  "fp-evm",
  "frame-support",
@@ -6207,7 +6207,7 @@ dependencies = [
 [[package]]
 name = "pallet-evm-precompile-ed25519"
 version = "2.0.0-dev"
-source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.24#9e9c560bcb7f9b8fecf5e82451aff859151c3642"
+source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.24#4dfc7a8c0ea916f0052911b700227f6c7b5daa81"
 dependencies = [
  "ed25519-dalek",
  "fp-evm",
@@ -6216,7 +6216,7 @@ dependencies = [
 [[package]]
 name = "pallet-evm-precompile-modexp"
 version = "2.0.0-dev"
-source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.24#9e9c560bcb7f9b8fecf5e82451aff859151c3642"
+source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.24#4dfc7a8c0ea916f0052911b700227f6c7b5daa81"
 dependencies = [
  "fp-evm",
  "num",
@@ -6225,7 +6225,7 @@ dependencies = [
 [[package]]
 name = "pallet-evm-precompile-sha3fips"
 version = "2.0.0-dev"
-source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.24#9e9c560bcb7f9b8fecf5e82451aff859151c3642"
+source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.24#4dfc7a8c0ea916f0052911b700227f6c7b5daa81"
 dependencies = [
  "fp-evm",
  "tiny-keccak",
@@ -6234,7 +6234,7 @@ dependencies = [
 [[package]]
 name = "pallet-evm-precompile-simple"
 version = "2.0.0-dev"
-source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.24#9e9c560bcb7f9b8fecf5e82451aff859151c3642"
+source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.24#4dfc7a8c0ea916f0052911b700227f6c7b5daa81"
 dependencies = [
  "fp-evm",
  "ripemd",
@@ -10660,7 +10660,7 @@ dependencies = [
 
 [[package]]
 name = "shibuya-runtime"
-version = "4.6.0"
+version = "4.6.1"
 dependencies = [
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-dmp-queue",
@@ -10748,7 +10748,7 @@ dependencies = [
 
 [[package]]
 name = "shiden-runtime"
-version = "4.6.0"
+version = "4.6.1"
 dependencies = [
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-dmp-queue",
@@ -12452,7 +12452,7 @@ version = "1.6.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "97fee6b57c6a41524a810daee9286c02d7752c4253064d0b05472833a438f675"
 dependencies = [
- "cfg-if 1.0.0",
+ "cfg-if 0.1.10",
  "digest 0.10.3",
  "rand 0.8.5",
  "static_assertions",
