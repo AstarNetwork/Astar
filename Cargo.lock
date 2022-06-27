@@ -10748,7 +10748,7 @@ dependencies = [
 
 [[package]]
 name = "shiden-runtime"
-version = "4.6.0"
+version = "4.6.1"
 dependencies = [
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-dmp-queue",
