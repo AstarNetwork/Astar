@@ -1281,6 +1281,105 @@
 <span id="1276">1276</span>
 <span id="1277">1277</span>
 <span id="1278">1278</span>
+<span id="1279">1279</span>
+<span id="1280">1280</span>
+<span id="1281">1281</span>
+<span id="1282">1282</span>
+<span id="1283">1283</span>
+<span id="1284">1284</span>
+<span id="1285">1285</span>
+<span id="1286">1286</span>
+<span id="1287">1287</span>
+<span id="1288">1288</span>
+<span id="1289">1289</span>
+<span id="1290">1290</span>
+<span id="1291">1291</span>
+<span id="1292">1292</span>
+<span id="1293">1293</span>
+<span id="1294">1294</span>
+<span id="1295">1295</span>
+<span id="1296">1296</span>
+<span id="1297">1297</span>
+<span id="1298">1298</span>
+<span id="1299">1299</span>
+<span id="1300">1300</span>
+<span id="1301">1301</span>
+<span id="1302">1302</span>
+<span id="1303">1303</span>
+<span id="1304">1304</span>
+<span id="1305">1305</span>
+<span id="1306">1306</span>
+<span id="1307">1307</span>
+<span id="1308">1308</span>
+<span id="1309">1309</span>
+<span id="1310">1310</span>
+<span id="1311">1311</span>
+<span id="1312">1312</span>
+<span id="1313">1313</span>
+<span id="1314">1314</span>
+<span id="1315">1315</span>
+<span id="1316">1316</span>
+<span id="1317">1317</span>
+<span id="1318">1318</span>
+<span id="1319">1319</span>
+<span id="1320">1320</span>
+<span id="1321">1321</span>
+<span id="1322">1322</span>
+<span id="1323">1323</span>
+<span id="1324">1324</span>
+<span id="1325">1325</span>
+<span id="1326">1326</span>
+<span id="1327">1327</span>
+<span id="1328">1328</span>
+<span id="1329">1329</span>
+<span id="1330">1330</span>
+<span id="1331">1331</span>
+<span id="1332">1332</span>
+<span id="1333">1333</span>
+<span id="1334">1334</span>
+<span id="1335">1335</span>
+<span id="1336">1336</span>
+<span id="1337">1337</span>
+<span id="1338">1338</span>
+<span id="1339">1339</span>
+<span id="1340">1340</span>
+<span id="1341">1341</span>
+<span id="1342">1342</span>
+<span id="1343">1343</span>
+<span id="1344">1344</span>
+<span id="1345">1345</span>
+<span id="1346">1346</span>
+<span id="1347">1347</span>
+<span id="1348">1348</span>
+<span id="1349">1349</span>
+<span id="1350">1350</span>
+<span id="1351">1351</span>
+<span id="1352">1352</span>
+<span id="1353">1353</span>
+<span id="1354">1354</span>
+<span id="1355">1355</span>
+<span id="1356">1356</span>
+<span id="1357">1357</span>
+<span id="1358">1358</span>
+<span id="1359">1359</span>
+<span id="1360">1360</span>
+<span id="1361">1361</span>
+<span id="1362">1362</span>
+<span id="1363">1363</span>
+<span id="1364">1364</span>
+<span id="1365">1365</span>
+<span id="1366">1366</span>
+<span id="1367">1367</span>
+<span id="1368">1368</span>
+<span id="1369">1369</span>
+<span id="1370">1370</span>
+<span id="1371">1371</span>
+<span id="1372">1372</span>
+<span id="1373">1373</span>
+<span id="1374">1374</span>
+<span id="1375">1375</span>
+<span id="1376">1376</span>
+<span id="1377">1377</span>
 </pre><pre class="rust"><code><span class="doccomment">//! The Shiden Network runtime. This can be compiled with ``#[no_std]`, ready for Wasm.</span>
 
 <span class="attribute">#![<span class="ident">cfg_attr</span>(<span class="ident">not</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>), <span class="ident">no_std</span>)]</span>
@@ -1290,7 +1389,10 @@
 <span class="kw">use</span> <span class="ident">codec</span>::{<span class="ident">Decode</span>, <span class="ident">Encode</span>};
 <span class="kw">use</span> <span class="ident">frame_support</span>::{
     <span class="ident">construct_runtime</span>, <span class="ident">parameter_types</span>,
-    <span class="ident">traits</span>::{<span class="ident">Contains</span>, <span class="ident">Currency</span>, <span class="ident">FindAuthor</span>, <span class="ident">Get</span>, <span class="ident">Imbalance</span>, <span class="ident">OnRuntimeUpgrade</span>, <span class="ident">OnUnbalanced</span>},
+    <span class="ident">traits</span>::{
+        <span class="ident">ConstU32</span>, <span class="ident">Contains</span>, <span class="ident">Currency</span>, <span class="ident">FindAuthor</span>, <span class="ident">Get</span>, <span class="ident">Imbalance</span>, <span class="ident">Nothing</span>, <span class="ident">OnRuntimeUpgrade</span>,
+        <span class="ident">OnUnbalanced</span>,
+    },
     <span class="ident">weights</span>::{
         <span class="ident">constants</span>::{<span class="ident">BlockExecutionWeight</span>, <span class="ident">ExtrinsicBaseWeight</span>, <span class="ident">RocksDbWeight</span>, <span class="ident">WEIGHT_PER_SECOND</span>},
         <span class="ident">ConstantMultiplier</span>, <span class="ident">DispatchClass</span>, <span class="ident">Weight</span>, <span class="ident">WeightToFeeCoefficient</span>, <span class="ident">WeightToFeeCoefficients</span>,
@@ -1299,6 +1401,7 @@
     <span class="ident">ConsensusEngineId</span>, <span class="ident">PalletId</span>,
 };
 <span class="kw">use</span> <span class="ident">frame_system::limits</span>::{<span class="ident">BlockLength</span>, <span class="ident">BlockWeights</span>};
+<span class="kw">use</span> <span class="ident">pallet_contracts</span>::{<span class="ident">weights::WeightInfo</span>, <span class="ident">DefaultContractAccessWeight</span>};
 <span class="kw">use</span> <span class="ident">pallet_evm</span>::{<span class="ident">FeeCalculator</span>, <span class="ident">Runner</span>};
 <span class="kw">use</span> <span class="ident">pallet_transaction_payment</span>::{
     <span class="ident">FeeDetails</span>, <span class="ident">Multiplier</span>, <span class="ident">RuntimeDispatchInfo</span>, <span class="ident">TargetedFeeAdjustment</span>,
@@ -1501,6 +1604,8 @@
     <span class="kw">type</span> <span class="ident">MinimumPeriod</span> <span class="op">=</span> <span class="ident">MinimumPeriod</span>;
     <span class="kw">type</span> <span class="ident">WeightInfo</span> <span class="op">=</span> ();
 }
+
+<span class="kw">impl</span> <span class="ident">pallet_randomness_collective_flip::Config</span> <span class="kw">for</span> <span class="ident">Runtime</span> {}
 
 <span class="macro">parameter_types!</span> {
     <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">BasicDeposit</span>: <span class="ident">Balance</span> <span class="op">=</span> <span class="number">10</span> <span class="op">*</span> <span class="ident">SDN</span>;       <span class="comment">// 258 bytes on-chain</span>
@@ -1853,6 +1958,50 @@
 }
 
 <span class="macro">parameter_types!</span> {
+    <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">DepositPerItem</span>: <span class="ident">Balance</span> <span class="op">=</span> <span class="ident">deposit</span>(<span class="number">1</span>, <span class="number">0</span>);
+    <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">DepositPerByte</span>: <span class="ident">Balance</span> <span class="op">=</span> <span class="ident">deposit</span>(<span class="number">0</span>, <span class="number">1</span>);
+    <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">MaxValueSize</span>: <span class="ident">u32</span> <span class="op">=</span> <span class="number">16</span> <span class="op">*</span> <span class="number">1024</span>;
+    <span class="comment">// The lazy deletion runs inside on_initialize.</span>
+    <span class="kw">pub</span> <span class="ident">DeletionWeightLimit</span>: <span class="ident">Weight</span> <span class="op">=</span> <span class="ident">AVERAGE_ON_INITIALIZE_RATIO</span> <span class="op">*</span>
+        <span class="ident">RuntimeBlockWeights::get</span>().<span class="ident">max_block</span>;
+    <span class="comment">// The weight needed for decoding the queue should be less or equal than a fifth</span>
+    <span class="comment">// of the overall weight dedicated to the lazy deletion.</span>
+    <span class="kw">pub</span> <span class="ident">DeletionQueueDepth</span>: <span class="ident">u32</span> <span class="op">=</span> ((<span class="ident">DeletionWeightLimit::get</span>() <span class="op">/</span> (
+        <span class="op">&lt;</span><span class="ident">Runtime</span> <span class="kw">as</span> <span class="ident">pallet_contracts::Config</span><span class="op">&gt;</span><span class="ident">::WeightInfo::on_initialize_per_queue_item</span>(<span class="number">1</span>)
+        <span class="op">-</span>
+        <span class="op">&lt;</span><span class="ident">Runtime</span> <span class="kw">as</span> <span class="ident">pallet_contracts::Config</span><span class="op">&gt;</span><span class="ident">::WeightInfo::on_initialize_per_queue_item</span>(<span class="number">0</span>))) <span class="op">/</span> <span class="number">5</span>) <span class="kw">as</span> <span class="ident">u32</span>;
+    <span class="kw">pub</span> <span class="ident">Schedule</span>: <span class="ident">pallet_contracts::Schedule</span><span class="op">&lt;</span><span class="ident">Runtime</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">Default::default</span>();
+}
+
+<span class="kw">impl</span> <span class="ident">pallet_contracts::Config</span> <span class="kw">for</span> <span class="ident">Runtime</span> {
+    <span class="kw">type</span> <span class="ident">Time</span> <span class="op">=</span> <span class="ident">Timestamp</span>;
+    <span class="kw">type</span> <span class="ident">Randomness</span> <span class="op">=</span> <span class="ident">RandomnessCollectiveFlip</span>;
+    <span class="kw">type</span> <span class="ident">Currency</span> <span class="op">=</span> <span class="ident">Balances</span>;
+    <span class="kw">type</span> <span class="ident">Event</span> <span class="op">=</span> <span class="ident">Event</span>;
+    <span class="kw">type</span> <span class="ident">Call</span> <span class="op">=</span> <span class="ident">Call</span>;
+    <span class="doccomment">/// The safest default is to allow no calls at all.</span>
+    <span class="doccomment">///</span>
+    <span class="doccomment">/// Runtimes should whitelist dispatchables that are allowed to be called from contracts</span>
+    <span class="doccomment">/// and make sure they are stable. Dispatchables exposed to contracts are not allowed to</span>
+    <span class="doccomment">/// change because that would break already deployed contracts. The `Call` structure itself</span>
+    <span class="doccomment">/// is not allowed to change the indices of existing pallets, too.</span>
+    <span class="kw">type</span> <span class="ident">CallFilter</span> <span class="op">=</span> <span class="ident">Nothing</span>;
+    <span class="kw">type</span> <span class="ident">DepositPerItem</span> <span class="op">=</span> <span class="ident">DepositPerItem</span>;
+    <span class="kw">type</span> <span class="ident">DepositPerByte</span> <span class="op">=</span> <span class="ident">DepositPerByte</span>;
+    <span class="kw">type</span> <span class="ident">CallStack</span> <span class="op">=</span> [<span class="ident">pallet_contracts::Frame</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span>; <span class="number">31</span>];
+    <span class="kw">type</span> <span class="ident">WeightPrice</span> <span class="op">=</span> <span class="ident">pallet_transaction_payment::Pallet</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span>;
+    <span class="kw">type</span> <span class="ident">WeightInfo</span> <span class="op">=</span> <span class="ident">pallet_contracts::weights::SubstrateWeight</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span>;
+    <span class="kw">type</span> <span class="ident">ChainExtension</span> <span class="op">=</span> ();
+    <span class="kw">type</span> <span class="ident">DeletionQueueDepth</span> <span class="op">=</span> <span class="ident">DeletionQueueDepth</span>;
+    <span class="kw">type</span> <span class="ident">DeletionWeightLimit</span> <span class="op">=</span> <span class="ident">DeletionWeightLimit</span>;
+    <span class="kw">type</span> <span class="ident">Schedule</span> <span class="op">=</span> <span class="ident">Schedule</span>;
+    <span class="kw">type</span> <span class="ident">AddressGenerator</span> <span class="op">=</span> <span class="ident">pallet_contracts::DefaultAddressGenerator</span>;
+    <span class="kw">type</span> <span class="ident">ContractAccessWeight</span> <span class="op">=</span> <span class="ident">DefaultContractAccessWeight</span><span class="op">&lt;</span><span class="ident">RuntimeBlockWeights</span><span class="op">&gt;</span>;
+    <span class="kw">type</span> <span class="ident">MaxCodeLen</span> <span class="op">=</span> <span class="ident">ConstU32</span><span class="op">&lt;</span>{ <span class="number">128</span> <span class="op">*</span> <span class="number">1024</span> }<span class="op">&gt;</span>;
+    <span class="kw">type</span> <span class="ident">RelaxedMaxCodeLen</span> <span class="op">=</span> <span class="ident">ConstU32</span><span class="op">&lt;</span>{ <span class="number">256</span> <span class="op">*</span> <span class="number">1024</span> }<span class="op">&gt;</span>;
+}
+
+<span class="macro">parameter_types!</span> {
     <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">TransactionByteFee</span>: <span class="ident">Balance</span> <span class="op">=</span> <span class="ident">MILLISDN</span> <span class="op">/</span> <span class="number">100</span>;
     <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">TargetBlockFullness</span>: <span class="ident">Perquintill</span> <span class="op">=</span> <span class="ident">Perquintill::from_percent</span>(<span class="number">25</span>);
     <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">OperationalFeeMultiplier</span>: <span class="ident">u8</span> <span class="op">=</span> <span class="number">5</span>;
@@ -2075,6 +2224,9 @@
         <span class="ident">Ethereum</span>: <span class="ident">pallet_ethereum</span>::{<span class="ident">Pallet</span>, <span class="ident">Call</span>, <span class="ident">Storage</span>, <span class="ident">Event</span>, <span class="ident">Origin</span>, <span class="ident">Config</span>} <span class="op">=</span> <span class="number">61</span>,
         <span class="ident">EthCall</span>: <span class="ident">pallet_custom_signatures</span>::{<span class="ident">Pallet</span>, <span class="ident">Call</span>, <span class="ident">Event</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>, <span class="ident">ValidateUnsigned</span>} <span class="op">=</span> <span class="number">62</span>,
         <span class="ident">BaseFee</span>: <span class="ident">pallet_base_fee</span>::{<span class="ident">Pallet</span>, <span class="ident">Call</span>, <span class="ident">Storage</span>, <span class="ident">Config</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>, <span class="ident">Event</span>} <span class="op">=</span> <span class="number">63</span>,
+
+        <span class="ident">Contracts</span>: <span class="ident">pallet_contracts</span>::{<span class="ident">Pallet</span>, <span class="ident">Call</span>, <span class="ident">Storage</span>, <span class="ident">Event</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>} <span class="op">=</span> <span class="number">70</span>,
+        <span class="ident">RandomnessCollectiveFlip</span>: <span class="ident">pallet_randomness_collective_flip</span>::{<span class="ident">Pallet</span>, <span class="ident">Storage</span>} <span class="op">=</span> <span class="number">71</span>,
 
         <span class="ident">Sudo</span>: <span class="ident">pallet_sudo</span>::{<span class="ident">Pallet</span>, <span class="ident">Call</span>, <span class="ident">Storage</span>, <span class="ident">Event</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>, <span class="ident">Config</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>} <span class="op">=</span> <span class="number">99</span>,
     }
@@ -2463,6 +2615,52 @@
             <span class="ident">UncheckedExtrinsic::new_unsigned</span>(
                 <span class="ident">pallet_ethereum::Call</span>::<span class="op">&lt;</span><span class="ident">Runtime</span><span class="op">&gt;</span><span class="ident">::transact</span> { <span class="ident">transaction</span> }.<span class="ident">into</span>(),
             )
+        }
+    }
+
+    <span class="kw">impl</span> <span class="ident">pallet_contracts_rpc_runtime_api::ContractsApi</span><span class="op">&lt;</span>
+        <span class="ident">Block</span>, <span class="ident">AccountId</span>, <span class="ident">Balance</span>, <span class="ident">BlockNumber</span>, <span class="ident">Hash</span>,
+    <span class="op">&gt;</span>
+        <span class="kw">for</span> <span class="ident">Runtime</span>
+    {
+        <span class="kw">fn</span> <span class="ident">call</span>(
+            <span class="ident">origin</span>: <span class="ident">AccountId</span>,
+            <span class="ident">dest</span>: <span class="ident">AccountId</span>,
+            <span class="ident">value</span>: <span class="ident">Balance</span>,
+            <span class="ident">gas_limit</span>: <span class="ident">u64</span>,
+            <span class="ident">storage_deposit_limit</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Balance</span><span class="op">&gt;</span>,
+            <span class="ident">input_data</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>,
+        ) -&gt; <span class="ident">pallet_contracts_primitives::ContractExecResult</span><span class="op">&lt;</span><span class="ident">Balance</span><span class="op">&gt;</span> {
+            <span class="ident">Contracts::bare_call</span>(<span class="ident">origin</span>, <span class="ident">dest</span>, <span class="ident">value</span>, <span class="ident">gas_limit</span>, <span class="ident">storage_deposit_limit</span>, <span class="ident">input_data</span>, <span class="bool-val">true</span>)
+        }
+
+        <span class="kw">fn</span> <span class="ident">instantiate</span>(
+            <span class="ident">origin</span>: <span class="ident">AccountId</span>,
+            <span class="ident">value</span>: <span class="ident">Balance</span>,
+            <span class="ident">gas_limit</span>: <span class="ident">u64</span>,
+            <span class="ident">storage_deposit_limit</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Balance</span><span class="op">&gt;</span>,
+            <span class="ident">code</span>: <span class="ident">pallet_contracts_primitives::Code</span><span class="op">&lt;</span><span class="ident">Hash</span><span class="op">&gt;</span>,
+            <span class="ident">data</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>,
+            <span class="ident">salt</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>,
+        ) -&gt; <span class="ident">pallet_contracts_primitives::ContractInstantiateResult</span><span class="op">&lt;</span><span class="ident">AccountId</span>, <span class="ident">Balance</span><span class="op">&gt;</span>
+        {
+            <span class="ident">Contracts::bare_instantiate</span>(<span class="ident">origin</span>, <span class="ident">value</span>, <span class="ident">gas_limit</span>, <span class="ident">storage_deposit_limit</span>, <span class="ident">code</span>, <span class="ident">data</span>, <span class="ident">salt</span>, <span class="bool-val">true</span>)
+        }
+
+        <span class="kw">fn</span> <span class="ident">upload_code</span>(
+            <span class="ident">origin</span>: <span class="ident">AccountId</span>,
+            <span class="ident">code</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>,
+            <span class="ident">storage_deposit_limit</span>: <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">Balance</span><span class="op">&gt;</span>,
+        ) -&gt; <span class="ident">pallet_contracts_primitives::CodeUploadResult</span><span class="op">&lt;</span><span class="ident">Hash</span>, <span class="ident">Balance</span><span class="op">&gt;</span>
+        {
+            <span class="ident">Contracts::bare_upload_code</span>(<span class="ident">origin</span>, <span class="ident">code</span>, <span class="ident">storage_deposit_limit</span>)
+        }
+
+        <span class="kw">fn</span> <span class="ident">get_storage</span>(
+            <span class="ident">address</span>: <span class="ident">AccountId</span>,
+            <span class="ident">key</span>: [<span class="ident">u8</span>; <span class="number">32</span>],
+        ) -&gt; <span class="ident">pallet_contracts_primitives::GetStorageResult</span> {
+            <span class="ident">Contracts::get_storage</span>(<span class="ident">address</span>, <span class="ident">key</span>)
         }
     }
 
