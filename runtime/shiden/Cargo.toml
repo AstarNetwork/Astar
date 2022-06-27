@@ -1,6 +1,6 @@
 [package]
 name = "shiden-runtime"
-version = "4.4.0"
+version = "4.5.0"
 authors = ["Stake Technologies <devops@stake.co.jp>"]
 edition = "2021"
 build = "build.rs"
@@ -71,7 +71,6 @@ cumulus-pallet-dmp-queue = { git = "https://github.com/paritytech/cumulus", bran
 cumulus-pallet-xcmp-queue = { git = "https://github.com/paritytech/cumulus", branch = "polkadot-v0.9.24", default-features = false }
 cumulus-pallet-xcm = { git = "https://github.com/paritytech/cumulus", branch = "polkadot-v0.9.24", default-features = false }
 parachain-info = { git = "https://github.com/paritytech/cumulus", branch = "polkadot-v0.9.24", default-features = false }
-pallet-collator-selection = { git = "https://github.com/paritytech/cumulus", branch = "polkadot-v0.9.24", default-features = false }
 
 # polkadot dependencies
 polkadot-parachain = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "release-v0.9.24" }
@@ -93,6 +92,7 @@ frame-try-runtime = { git = "https://github.com/paritytech/substrate", branch = 
 # Astar pallets
 pallet-block-reward = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.24", default-features = false }
 pallet-custom-signatures = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.24", default-features = false }
+pallet-collator-selection = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.24", default-features = false }
 pallet-dapps-staking = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.24", default-features = false }
 pallet-precompile-dapps-staking = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.24", default-features = false }
 pallet-evm-precompile-sr25519 = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.24", default-features = false }
