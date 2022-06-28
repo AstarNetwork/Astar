@@ -57,7 +57,8 @@ pub use sp_runtime::{Perbill, Permill};
 mod weights;
 
 /// Contract extension for Local Chain-Extension
-pub use pallet_chain_extension_dapps_staking::{AstarChainExtension, DappsStakingExtension};
+use pallet_chain_extension_dapps_staking::DappsStakingExtension;
+use chain_extension_traits::ChainExtensionExec;
 
 #[cfg(feature = "std")]
 /// Wasm binary unwrapped. If built with `BUILD_DUMMY_WASM_BINARY`, the function panics.
@@ -579,13 +580,14 @@ impl TryFrom<u32> for ExtensionId {
 impl ChainExtension<Runtime> for LocalChainExtension {
     fn call<E: Ext>(func_id: u32, env: Environment<E, InitState>) -> Result<RetVal, DispatchError>
     where
+        E: Ext<T = Runtime>,
         <E::T as SysConfig>::AccountId: UncheckedFrom<<E::T as SysConfig>::Hash> + AsRef<[u8]>,
     {
         let pallet_id = ExtensionId::try_from(func_id / 100)?;
         let func_id_matcher = func_id % 100;
         match pallet_id {
             ExtensionId::DappsStaking => {
-                DappsStakingExtension::execute_func::<E, Runtime>(func_id_matcher, env)?;
+                DappsStakingExtension::execute_func::<E>(func_id_matcher, env)?;
             }
         }
         Ok(RetVal::Converging(0))
