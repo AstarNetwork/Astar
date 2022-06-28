@@ -138,8 +138,8 @@ jobs:
       with:
         name: astar-ubuntu-latest-x86_64
 
-    - name: Copy binary to docker folder
-      run: cp astar-collator third-party/docker
+    - name: Make binary executable and copy it to docker folder
+      run: chmod +x astar-collator && cp astar-collator third-party/docker
 
     - name: Build & Push docker image
       uses: docker/build-push-action@v2
