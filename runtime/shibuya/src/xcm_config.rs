@@ -1,7 +1,7 @@
 use super::{
     AccountId, AssetId, Assets, Balance, Balances, Call, DealWithFees, Event, Origin,
     ParachainInfo, ParachainSystem, PolkadotXcm, Runtime, ShibuyaAssetLocationIdConverter,
-    WeightToFee, XcAssetConfig, XcmpQueue, MAXIMUM_BLOCK_WEIGHT,
+    TreasuryAccountId, WeightToFee, XcAssetConfig, XcmpQueue, MAXIMUM_BLOCK_WEIGHT,
 };
 use frame_support::{
     match_types, parameter_types,
@@ -22,7 +22,7 @@ use xcm_builder::{
 use xcm_executor::{traits::JustTry, Config, XcmExecutor};
 
 // Astar imports
-use xcm_primitives::{FixedRateOfForeignAsset, ReserveAssetFilter};
+use xcm_primitives::{FixedRateOfForeignAsset, ReserveAssetFilter, XcmFungibleFeeHandler};
 
 parameter_types! {
     pub RelayNetwork: NetworkId = NetworkId::Any;
@@ -125,18 +125,13 @@ pub type XcmBarrier = (
     AllowSubscriptionsFrom<Everything>,
 );
 
-/*
-/// Asset filter that allows all assets from a certain location.
-pub struct AssetsFrom<T>(PhantomData<T>);
-impl<T: Get<MultiLocation>> FilterAssetLocation for AssetsFrom<T> {
-    fn filter_asset_location(asset: &MultiAsset, origin: &MultiLocation) -> bool {
-        let loc = T::get();
-        &loc == origin
-            && matches!(asset, MultiAsset { id: AssetId::Concrete(asset_loc), fun: Fungible(_a) }
-                if asset_loc.match_and_split(&loc).is_some())
-    }
-}
-*/
+// Used to handle XCM fee deposit into treasury account
+pub type ShibuyaXcmFungibleFeeHandler = XcmFungibleFeeHandler<
+    AccountId,
+    ConvertedConcreteAssetId<AssetId, Balance, ShibuyaAssetLocationIdConverter, JustTry>,
+    Assets,
+    TreasuryAccountId,
+>;
 
 pub struct XcmConfig;
 impl Config for XcmConfig {
@@ -151,7 +146,7 @@ impl Config for XcmConfig {
     type Weigher = FixedWeightBounds<UnitWeightCost, Call, MaxInstructions>;
     type Trader = (
         UsingComponents<WeightToFee, ShibuyaLocation, AccountId, Balances, DealWithFees>,
-        FixedRateOfForeignAsset<XcAssetConfig, ()>,
+        FixedRateOfForeignAsset<XcAssetConfig, ShibuyaXcmFungibleFeeHandler>,
     );
     type ResponseHandler = PolkadotXcm;
     type AssetTrap = PolkadotXcm;
