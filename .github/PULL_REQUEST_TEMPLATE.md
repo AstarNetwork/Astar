@@ -3,7 +3,7 @@
 
 **Check list**
 - [ ] added or updated unit tests
-- [ ] updated documentation
+- [ ] updated Astar official documentation
 - [ ] added OnRuntimeUpgrade hook for precompile revert code registration
 - [ ] updated spec version
 - [ ] updated semver
