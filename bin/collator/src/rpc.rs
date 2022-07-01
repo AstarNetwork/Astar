@@ -131,6 +131,7 @@ where
         + pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>
         + fp_rpc::ConvertTransactionRuntimeApi<Block>
         + fp_rpc::EthereumRuntimeRPCApi<Block>
+        // new client api trait?
         + BlockBuilder<Block>,
     P: TransactionPool<Block = Block> + Sync + Send + 'static,
     BE: Backend<Block> + 'static,
@@ -138,6 +139,7 @@ where
     BE::Blockchain: BlockchainBackend<Block>,
     A: ChainApi<Block = Block> + 'static,
 {
+    // Looks like this is where I register the RPC calls eg `debug_traceTransaction`
     let mut io = RpcModule::new(());
     let FullDeps {
         client,

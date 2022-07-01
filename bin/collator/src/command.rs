@@ -70,6 +70,7 @@ fn load_spec(
     para_id: u32,
 ) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
     Ok(match id {
+        // update "dev" config? This looks like runtime, maybe not
         "dev" => Box::new(development_config()),
         "astar-dev" => Box::new(chain_spec::astar::get_chain_spec(para_id)),
         "shibuya-dev" => Box::new(chain_spec::shibuya::get_chain_spec(para_id)),
@@ -218,6 +219,7 @@ fn extract_genesis_wasm(chain_spec: &Box<dyn sc_service::ChainSpec>) -> Result<V
 /// Parse command line arguments into service configuration.
 pub fn run() -> Result<()> {
     let cli = Cli::from_args();
+    // this is where we get the evm-tracing flag
 
     match &cli.subcommand {
         Some(Subcommand::BuildSpec(cmd)) => {
@@ -672,12 +674,14 @@ pub fn run() -> Result<()> {
                 })
             }
         }
+        // no subcommand
         None => {
             let runner = cli.create_runner(&cli.run.normalize())?;
             let collator_options = cli.run.collator_options();
 
             runner.run_node_until_exit(|config| async move {
                 if config.chain_spec.is_dev() {
+                    // make sure evm-tracing flag gets passed in here and parsed
                     return local::start_node(config).map_err(Into::into);
                 }
 

@@ -75,6 +75,8 @@ pub fn development_config() -> ChainSpec {
     )
 }
 
+// this looks like runtime, we don't need to pass in any evm-tracing stuff
+// unless we modify the runtime
 fn testnet_genesis(
     initial_authorities: Vec<(AuraId, GrandpaId)>,
     root_key: AccountId,

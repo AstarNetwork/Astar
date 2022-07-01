@@ -177,6 +177,7 @@ pub fn new_partial(
 }
 
 /// Builds a new service.
+// how do I extend the Configuration trait to support evm-tracing? I assume forking sc_service is not the best way
 pub fn start_node(config: Configuration) -> Result<TaskManager, ServiceError> {
     let sc_service::PartialComponents {
         client,
@@ -271,6 +272,7 @@ pub fn start_node(config: Configuration) -> Result<TaskManager, ServiceError> {
         ),
     );
 
+    // evm tracing bool
     let role = config.role.clone();
     let force_authoring = config.force_authoring;
     let backoff_authoring_blocks: Option<()> = None;
@@ -291,6 +293,7 @@ pub fn start_node(config: Configuration) -> Result<TaskManager, ServiceError> {
         let client = client.clone();
         let network = network.clone();
         let transaction_pool = transaction_pool.clone();
+        // maybe here
 
         Box::new(move |deny_unsafe, subscription| {
             let deps = crate::rpc::FullDeps {
@@ -332,6 +335,7 @@ pub fn start_node(config: Configuration) -> Result<TaskManager, ServiceError> {
         system_rpc_tx,
         config,
         telemetry: telemetry.as_mut(),
+        // maybe here
     })?;
 
     if role.is_authority() {
