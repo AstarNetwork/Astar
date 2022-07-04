@@ -176,8 +176,25 @@ pub fn new_partial(
     })
 }
 
+/*
+Regarding start_node() and new_partial(); adding the `--evm-tracing` flag to collator bin
+
+The CLI flags seem to be defined directly from the sp_service (ie we don't have any Astar collator specific flags like --evm-tracing)
+if I want to add something like `--tracing` or `--evmrpcs=debug` to collator flags, is it best practice to just
+extend the sc_service::Configuration struct with a new struct and modify impl? Forking sc_service:: seems like like a bad idea.
+
+Or can we stick it somewhere in `other` per line 170?
+
+```
+use sc_service::Configuration as SubstrateConfiguration;
+
+struct Configuration {
+    substrate: SubstrateConfiguration
+    evm_tracing: bool
+};
+```
+ */
 /// Builds a new service.
-// how do I extend the Configuration trait to support evm-tracing? I assume forking sc_service is not the best way
 pub fn start_node(config: Configuration) -> Result<TaskManager, ServiceError> {
     let sc_service::PartialComponents {
         client,
@@ -335,7 +352,7 @@ pub fn start_node(config: Configuration) -> Result<TaskManager, ServiceError> {
         system_rpc_tx,
         config,
         telemetry: telemetry.as_mut(),
-        // maybe here
+        // evm_tracing: something,
     })?;
 
     if role.is_authority() {
