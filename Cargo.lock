@@ -1158,6 +1158,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "chain-extension-traits"
+version = "4.0.0"
+dependencies = [
+ "pallet-contracts",
+ "sp-runtime",
+]
+
+[[package]]
 name = "chrono"
 version = "0.4.19"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4813,6 +4821,7 @@ checksum = "5284f00d480e1c39af34e72f8ad60b94f47007e3481cd3b731c1d67190ddc7b7"
 name = "local-runtime"
 version = "4.3.2"
 dependencies = [
+ "chain-extension-traits",
  "fp-rpc",
  "fp-self-contained",
  "frame-benchmarking",
@@ -5843,6 +5852,7 @@ dependencies = [
 name = "pallet-chain-extension-dapps-staking"
 version = "4.0.0"
 dependencies = [
+ "chain-extension-traits",
  "frame-support",
  "frame-system",
  "log",
