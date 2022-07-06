@@ -253,12 +253,6 @@ pub fn start_node(config: Configuration) -> Result<TaskManager, ServiceError> {
         ),
     );
 
-    task_manager.spawn_essential_handle().spawn(
-        "frontier-schema-cache-task",
-        Some("frontier"),
-        fc_rpc::EthTask::ethereum_schema_cache_task(client.clone(), frontier_backend.clone()),
-    );
-
     const FEE_HISTORY_LIMIT: u64 = 2048;
     task_manager.spawn_essential_handle().spawn(
         "frontier-fee-history",
