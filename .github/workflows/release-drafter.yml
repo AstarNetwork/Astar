@@ -1,4 +1,4 @@
-name-template: "${REF##*/}"
+name-template: "${ github.ref_name }"
 change-template: '- $TITLE @$AUTHOR (#$NUMBER)'
 template: |
   Native runtime version

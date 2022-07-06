@@ -238,7 +238,6 @@ jobs:
 
   publish-draft-release:
     needs: ["native-linux", "native-macos", "docker", "srtool"]
-    if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     outputs:
       release_url: ${{ steps.create-release.outputs.html_url }}
@@ -255,7 +254,6 @@ jobs:
 
   upload-collator-binary:
     needs: publish-draft-release
-    if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     strategy:
       matrix:
