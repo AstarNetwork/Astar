@@ -16,7 +16,7 @@ jobs:
       - name: Check fmt
         run: cargo fmt -- --check
 
-      - Check Cargo.toml format
+      - name: Check Cargo.toml format
         run: |
           if taplo --version &> /dev/null; then
             echo "taplo-cli is already installed"
@@ -53,4 +53,4 @@ jobs:
     - uses: actions-rs/clippy-check@v1
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
-        args: --all-features
+        args: --all-features -- -D warnings

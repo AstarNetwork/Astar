@@ -1,7 +1,6 @@
 name: Integration
 on: [push, workflow_dispatch]
 env:
-  REF: ${{ github.ref }}
   SUBWASM_VERSION: 0.16.1
 jobs:
   test:
@@ -32,7 +31,7 @@ jobs:
       run: cargo test --all-features
 
   check-all-features:
-    if: ${{ !startsWith(REF, 'refs/tags/') }}
+    if: ${{ !startsWith(github.ref, 'refs/tags/') }}
     runs-on: ubuntu-latest
     steps:
     - name: Checkout the source code
@@ -61,7 +60,7 @@ jobs:
 
   native-linux:
     needs: test
-    if: startsWith(REF, 'refs/tags/v')
+    if: startsWith(github.ref, 'refs/tags/v')
     runs-on: [self-hosted, Linux, X64]
     steps:
     - name: Checkout the source code
@@ -95,7 +94,7 @@ jobs:
 
   native-macos:
     needs: test
-    if: startsWith(REF, 'refs/tags/v')
+    if: startsWith(github.ref, 'refs/tags/v')
     runs-on: macos-latest
     steps:
     - name: Checkout the source code
@@ -119,7 +118,7 @@ jobs:
 
   docker:
     needs: native-linux
-    if: startsWith(REF, 'refs/tags/v')
+    if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     steps:
     - name: Checkout the source code
@@ -163,7 +162,7 @@ jobs:
 
   srtool:
     needs: test
-    if: startsWith(REF, 'refs/tags/v')
+    if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -239,7 +238,7 @@ jobs:
 
   publish-draft-release:
     needs: ["native-linux", "native-macos", "docker", "srtool"]
-    if: startsWith(REF, 'refs/tags/v')
+    if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     outputs:
       release_url: ${{ steps.create-release.outputs.html_url }}
@@ -256,7 +255,7 @@ jobs:
 
   upload-collator-binary:
     needs: publish-draft-release
-    if: startsWith(REF, 'refs/tags/v')
+    if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -271,7 +270,7 @@ jobs:
       run: |
         ls -R
         chmod +x astar-collator
-        tar zcvf astar-collator-${{ REF##*/ }}-${{ matrix.os }}-x86_64.tar.gz astar-collator
+        tar zcvf astar-collator-${{ github.ref##*/ }}-${{ matrix.os }}-x86_64.tar.gz astar-collator
 
     - name: Upload compressed ${{ matrix.runtime }} wasm
       uses: actions/upload-release-asset@v1
@@ -279,7 +278,7 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ needs.publish-draft-release.outputs.asset_upload_url }}
-        asset_path: astar-collator-${{ REF##*/ }}-${{ matrix.os }}-x86_64.tar.gz
-        asset_name: astar-collator-${{ REF##*/ }}-${{ matrix.os }}-x86_64.tar.gz
+        asset_path: astar-collator-${{ github.ref##*/ }}-${{ matrix.os }}-x86_64.tar.gz
+        asset_name: astar-collator-${{ github.ref##*/ }}-${{ matrix.os }}-x86_64.tar.gz
         asset_content_type: application/gzip
 
