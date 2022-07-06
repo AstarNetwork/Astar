@@ -20,9 +20,38 @@ jobs:
     - name: Run all tests
       run: cargo test --all-features
 
+  check-all-features:
+    if: ${{ !startsWith(github.ref, 'refs/tags/v') }}
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout the source code
+      uses: actions/checkout@master
+      with:
+        submodules: true
+
+    - name: Install & display rust toolchain
+      run: rustup show
+
+    - name: Check targets are installed correctly
+      run: rustup target list --installed
+
+    - uses: actions/cache@v2
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+          target/
+        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          ${{ runner.os }}-cargo
+
+    - name: Check all features compilation
+      run: cargo check --verbose --all-features
+
   native-linux:
     needs: test
-    if: startsWith(github.ref, 'refs/tags/')
+    if: startsWith(github.ref, 'refs/tags/v')
     runs-on: [self-hosted, Linux, X64]
     steps:
     - name: Checkout the source code
@@ -57,7 +86,7 @@ jobs:
 
   native-macos:
     needs: test
-    if: startsWith(github.ref, 'refs/tags/')
+    if: startsWith(github.ref, 'refs/tags/v')
     runs-on: macos-latest
     steps:
     - name: Checkout the source code
@@ -79,40 +108,9 @@ jobs:
         name: astar-macOS-latest-x86_64
         path: target/release/astar-collator
 
-  check-all-features:
-    runs-on: ubuntu-latest
-    steps:
-    - name: Checkout the source code
-      uses: actions/checkout@master
-      with:
-        submodules: true
-
-    - name: Install & display rust toolchain
-      run: rustup show
-
-    - name: Check targets are installed correctly
-      run: rustup target list --installed
-
-    - name: Check all features compilation
-      run: cargo check --verbose --all-features
-
-  nix:
-    needs: test
-    if: startsWith(github.ref, 'refs/tags/')
-    runs-on: ubuntu-latest
-    steps:
-    - name: Checkout the source code
-      uses: actions/checkout@v2
-      with:
-        submodules: true
-    - uses: cachix/install-nix-action@v12
-      with:
-        nix_path: nixpkgs=channel:nixos-21.11
-    - run: nix-shell third-party/nix/shell.nix --run "cargo check --all-features"
-
   docker:
     needs: native-linux
-    if: startsWith(github.ref, 'refs/tags/')
+    if: startsWith(github.ref, 'refs/tags/v')
     runs-on: [self-hosted, Linux, X64]
     steps:
 
