@@ -2468,11 +2468,29 @@ version = "0.35.0"
 source = "git+https://github.com/rust-blockchain/evm?branch=master#51b8c2ce3104265e1fd5bb0fe5cdfd2e0938239c"
 dependencies = [
  "auto_impl",
+ "ethereum",
+ "evm-core 0.35.0 (git+https://github.com/rust-blockchain/evm?branch=master)",
+ "evm-gasometer 0.35.0 (git+https://github.com/rust-blockchain/evm?branch=master)",
+ "evm-runtime 0.35.0 (git+https://github.com/rust-blockchain/evm?branch=master)",
+ "log",
+ "parity-scale-codec",
+ "primitive-types",
+ "rlp",
+ "scale-info",
+ "sha3 0.10.1",
+]
+
+[[package]]
+name = "evm"
+version = "0.35.0"
+source = "git+https://github.com/rust-blockchain/evm?rev=01bcbd2205a212c34451d3b4fabc962793b057d3#01bcbd2205a212c34451d3b4fabc962793b057d3"
+dependencies = [
+ "auto_impl",
  "environmental",
  "ethereum",
- "evm-core",
- "evm-gasometer",
- "evm-runtime",
+ "evm-core 0.35.0 (git+https://github.com/rust-blockchain/evm?rev=01bcbd2205a212c34451d3b4fabc962793b057d3)",
+ "evm-gasometer 0.35.0 (git+https://github.com/rust-blockchain/evm?rev=01bcbd2205a212c34451d3b4fabc962793b057d3)",
+ "evm-runtime 0.35.0 (git+https://github.com/rust-blockchain/evm?rev=01bcbd2205a212c34451d3b4fabc962793b057d3)",
  "log",
  "parity-scale-codec",
  "primitive-types",
@@ -2490,6 +2508,16 @@ dependencies = [
  "parity-scale-codec",
  "primitive-types",
  "scale-info",
+]
+
+[[package]]
+name = "evm-core"
+version = "0.35.0"
+source = "git+https://github.com/rust-blockchain/evm?rev=01bcbd2205a212c34451d3b4fabc962793b057d3#01bcbd2205a212c34451d3b4fabc962793b057d3"
+dependencies = [
+ "parity-scale-codec",
+ "primitive-types",
+ "scale-info",
  "serde",
 ]
 
@@ -2498,9 +2526,19 @@ name = "evm-gasometer"
 version = "0.35.0"
 source = "git+https://github.com/rust-blockchain/evm?branch=master#51b8c2ce3104265e1fd5bb0fe5cdfd2e0938239c"
 dependencies = [
+ "evm-core 0.35.0 (git+https://github.com/rust-blockchain/evm?branch=master)",
+ "evm-runtime 0.35.0 (git+https://github.com/rust-blockchain/evm?branch=master)",
+ "primitive-types",
+]
+
+[[package]]
+name = "evm-gasometer"
+version = "0.35.0"
+source = "git+https://github.com/rust-blockchain/evm?rev=01bcbd2205a212c34451d3b4fabc962793b057d3#01bcbd2205a212c34451d3b4fabc962793b057d3"
+dependencies = [
  "environmental",
- "evm-core",
- "evm-runtime",
+ "evm-core 0.35.0 (git+https://github.com/rust-blockchain/evm?rev=01bcbd2205a212c34451d3b4fabc962793b057d3)",
+ "evm-runtime 0.35.0 (git+https://github.com/rust-blockchain/evm?rev=01bcbd2205a212c34451d3b4fabc962793b057d3)",
  "primitive-types",
 ]
 
@@ -2510,8 +2548,19 @@ version = "0.35.0"
 source = "git+https://github.com/rust-blockchain/evm?branch=master#51b8c2ce3104265e1fd5bb0fe5cdfd2e0938239c"
 dependencies = [
  "auto_impl",
+ "evm-core 0.35.0 (git+https://github.com/rust-blockchain/evm?branch=master)",
+ "primitive-types",
+ "sha3 0.10.1",
+]
+
+[[package]]
+name = "evm-runtime"
+version = "0.35.0"
+source = "git+https://github.com/rust-blockchain/evm?rev=01bcbd2205a212c34451d3b4fabc962793b057d3#01bcbd2205a212c34451d3b4fabc962793b057d3"
+dependencies = [
+ "auto_impl",
  "environmental",
- "evm-core",
+ "evm-core 0.35.0 (git+https://github.com/rust-blockchain/evm?rev=01bcbd2205a212c34451d3b4fabc962793b057d3)",
  "primitive-types",
  "sha3 0.10.1",
 ]
@@ -2605,7 +2654,7 @@ dependencies = [
 [[package]]
 name = "fc-consensus"
 version = "2.0.0-dev"
-source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.24#7c42952c277c998a46b4758607deb3102b7be8d6"
+source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.24#efb2d22d6e79701071743555aa7d603ee9b2983a"
 dependencies = [
  "async-trait",
  "fc-db",
@@ -2624,7 +2673,7 @@ dependencies = [
 [[package]]
 name = "fc-db"
 version = "2.0.0-dev"
-source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.24#7c42952c277c998a46b4758607deb3102b7be8d6"
+source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.24#efb2d22d6e79701071743555aa7d603ee9b2983a"
 dependencies = [
  "fp-storage",
  "kvdb-rocksdb",
@@ -2640,7 +2689,7 @@ dependencies = [
 [[package]]
 name = "fc-mapping-sync"
 version = "2.0.0-dev"
-source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.24#7c42952c277c998a46b4758607deb3102b7be8d6"
+source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.24#efb2d22d6e79701071743555aa7d603ee9b2983a"
 dependencies = [
  "fc-db",
  "fp-consensus",
@@ -2657,11 +2706,11 @@ dependencies = [
 [[package]]
 name = "fc-rpc"
 version = "2.0.0-dev"
-source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.24#7c42952c277c998a46b4758607deb3102b7be8d6"
+source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.24#efb2d22d6e79701071743555aa7d603ee9b2983a"
 dependencies = [
  "ethereum",
  "ethereum-types",
- "evm",
+ "evm 0.35.0 (git+https://github.com/rust-blockchain/evm?rev=01bcbd2205a212c34451d3b4fabc962793b057d3)",
  "fc-db",
  "fc-rpc-core",
  "fp-rpc",
@@ -2676,7 +2725,6 @@ dependencies = [
  "prometheus",
  "rand 0.8.5",
  "rlp",
- "rustc-hex",
  "sc-client-api",
  "sc-network",
  "sc-rpc",
@@ -2697,7 +2745,7 @@ dependencies = [
 [[package]]
 name = "fc-rpc-core"
 version = "1.1.0-dev"
-source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.24#7c42952c277c998a46b4758607deb3102b7be8d6"
+source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.24#efb2d22d6e79701071743555aa7d603ee9b2983a"
 dependencies = [
  "ethereum",
  "ethereum-types",
@@ -2809,7 +2857,7 @@ dependencies = [
 [[package]]
 name = "fp-consensus"
 version = "2.0.0-dev"
-source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.24#7c42952c277c998a46b4758607deb3102b7be8d6"
+source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.24#efb2d22d6e79701071743555aa7d603ee9b2983a"
 dependencies = [
  "ethereum",
  "parity-scale-codec",
@@ -2819,11 +2867,25 @@ dependencies = [
 ]
 
 [[package]]
+name = "fp-ethereum"
+version = "1.0.0-dev"
+source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.24#efb2d22d6e79701071743555aa7d603ee9b2983a"
+dependencies = [
+ "ethereum",
+ "ethereum-types",
+ "fp-evm",
+ "frame-support",
+ "parity-scale-codec",
+ "sp-core",
+ "sp-std",
+]
+
+[[package]]
 name = "fp-evm"
 version = "3.0.0-dev"
-source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.24#7c42952c277c998a46b4758607deb3102b7be8d6"
+source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.24#efb2d22d6e79701071743555aa7d603ee9b2983a"
 dependencies = [
- "evm",
+ "evm 0.35.0 (git+https://github.com/rust-blockchain/evm?rev=01bcbd2205a212c34451d3b4fabc962793b057d3)",
  "frame-support",
  "parity-scale-codec",
  "serde",
@@ -2834,7 +2896,7 @@ dependencies = [
 [[package]]
 name = "fp-rpc"
 version = "3.0.0-dev"
-source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.24#7c42952c277c998a46b4758607deb3102b7be8d6"
+source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.24#efb2d22d6e79701071743555aa7d603ee9b2983a"
 dependencies = [
  "ethereum",
  "ethereum-types",
@@ -2851,7 +2913,7 @@ dependencies = [
 [[package]]
 name = "fp-self-contained"
 version = "1.0.0-dev"
-source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.24#7c42952c277c998a46b4758607deb3102b7be8d6"
+source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.24#efb2d22d6e79701071743555aa7d603ee9b2983a"
 dependencies = [
  "ethereum",
  "frame-support",
@@ -2859,15 +2921,13 @@ dependencies = [
  "parity-util-mem",
  "scale-info",
  "serde",
- "sp-debug-derive",
- "sp-io",
  "sp-runtime",
 ]
 
 [[package]]
 name = "fp-storage"
 version = "2.0.0"
-source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.24#7c42952c277c998a46b4758607deb3102b7be8d6"
+source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.24#efb2d22d6e79701071743555aa7d603ee9b2983a"
 dependencies = [
  "parity-scale-codec",
  "serde",
@@ -5690,7 +5750,7 @@ dependencies = [
 [[package]]
 name = "pallet-base-fee"
 version = "1.0.0"
-source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.24#7c42952c277c998a46b4758607deb3102b7be8d6"
+source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.24#efb2d22d6e79701071743555aa7d603ee9b2983a"
 dependencies = [
  "fp-evm",
  "frame-support",
@@ -6107,12 +6167,13 @@ dependencies = [
 [[package]]
 name = "pallet-ethereum"
 version = "4.0.0-dev"
-source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.24#7c42952c277c998a46b4758607deb3102b7be8d6"
+source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.24#efb2d22d6e79701071743555aa7d603ee9b2983a"
 dependencies = [
  "ethereum",
  "ethereum-types",
- "evm",
+ "evm 0.35.0 (git+https://github.com/rust-blockchain/evm?rev=01bcbd2205a212c34451d3b4fabc962793b057d3)",
  "fp-consensus",
+ "fp-ethereum",
  "fp-evm",
  "fp-rpc",
  "fp-self-contained",
@@ -6125,7 +6186,6 @@ dependencies = [
  "rlp",
  "scale-info",
  "serde",
- "sha3 0.10.1",
  "sp-io",
  "sp-runtime",
  "sp-std",
@@ -6134,9 +6194,9 @@ dependencies = [
 [[package]]
 name = "pallet-evm"
 version = "6.0.0-dev"
-source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.24#7c42952c277c998a46b4758607deb3102b7be8d6"
+source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.24#efb2d22d6e79701071743555aa7d603ee9b2983a"
 dependencies = [
- "evm",
+ "evm 0.35.0 (git+https://github.com/rust-blockchain/evm?rev=01bcbd2205a212c34451d3b4fabc962793b057d3)",
  "fp-evm",
  "frame-benchmarking",
  "frame-support",
@@ -6149,7 +6209,6 @@ dependencies = [
  "rlp",
  "scale-info",
  "serde",
- "sha3 0.10.1",
  "sp-core",
  "sp-io",
  "sp-runtime",
@@ -6181,7 +6240,7 @@ dependencies = [
 [[package]]
 name = "pallet-evm-precompile-blake2"
 version = "2.0.0-dev"
-source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.24#7c42952c277c998a46b4758607deb3102b7be8d6"
+source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.24#efb2d22d6e79701071743555aa7d603ee9b2983a"
 dependencies = [
  "fp-evm",
 ]
@@ -6189,7 +6248,7 @@ dependencies = [
 [[package]]
 name = "pallet-evm-precompile-bn128"
 version = "2.0.0-dev"
-source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.24#7c42952c277c998a46b4758607deb3102b7be8d6"
+source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.24#efb2d22d6e79701071743555aa7d603ee9b2983a"
 dependencies = [
  "fp-evm",
  "sp-core",
@@ -6199,7 +6258,7 @@ dependencies = [
 [[package]]
 name = "pallet-evm-precompile-dispatch"
 version = "2.0.0-dev"
-source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.24#7c42952c277c998a46b4758607deb3102b7be8d6"
+source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.24#efb2d22d6e79701071743555aa7d603ee9b2983a"
 dependencies = [
  "fp-evm",
  "frame-support",
@@ -6209,7 +6268,7 @@ dependencies = [
 [[package]]
 name = "pallet-evm-precompile-ed25519"
 version = "2.0.0-dev"
-source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.24#7c42952c277c998a46b4758607deb3102b7be8d6"
+source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.24#efb2d22d6e79701071743555aa7d603ee9b2983a"
 dependencies = [
  "ed25519-dalek",
  "fp-evm",
@@ -6218,7 +6277,7 @@ dependencies = [
 [[package]]
 name = "pallet-evm-precompile-modexp"
 version = "2.0.0-dev"
-source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.24#7c42952c277c998a46b4758607deb3102b7be8d6"
+source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.24#efb2d22d6e79701071743555aa7d603ee9b2983a"
 dependencies = [
  "fp-evm",
  "num",
@@ -6227,7 +6286,7 @@ dependencies = [
 [[package]]
 name = "pallet-evm-precompile-sha3fips"
 version = "2.0.0-dev"
-source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.24#7c42952c277c998a46b4758607deb3102b7be8d6"
+source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.24#efb2d22d6e79701071743555aa7d603ee9b2983a"
 dependencies = [
  "fp-evm",
  "tiny-keccak",
@@ -6236,7 +6295,7 @@ dependencies = [
 [[package]]
 name = "pallet-evm-precompile-simple"
 version = "2.0.0-dev"
-source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.24#7c42952c277c998a46b4758607deb3102b7be8d6"
+source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.24#efb2d22d6e79701071743555aa7d603ee9b2983a"
 dependencies = [
  "fp-evm",
  "ripemd",
@@ -8440,7 +8499,7 @@ name = "precompile-utils"
 version = "0.4.0"
 source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.24#b95fc09bb41365bd6ba287020e08104dd2d94349"
 dependencies = [
- "evm",
+ "evm 0.35.0 (git+https://github.com/rust-blockchain/evm?branch=master)",
  "fp-evm",
  "frame-support",
  "frame-system",
@@ -12454,7 +12513,7 @@ version = "1.6.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "97fee6b57c6a41524a810daee9286c02d7752c4253064d0b05472833a438f675"
 dependencies = [
- "cfg-if 1.0.0",
+ "cfg-if 0.1.10",
  "digest 0.10.3",
  "rand 0.8.5",
  "static_assertions",
