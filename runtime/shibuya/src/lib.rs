@@ -354,24 +354,10 @@ impl<AccountId> Default for SmartContract<AccountId> {
 }
 
 #[cfg(not(feature = "runtime-benchmarks"))]
-impl<AccountId> pallet_dapps_staking::IsContract for SmartContract<AccountId> {
-    fn is_valid(&self) -> bool {
-        match self {
-            SmartContract::Wasm(_account) => false,
-            SmartContract::Evm(account) => EVM::account_codes(&account).len() > 0,
-        }
-    }
-}
+impl<AccountId> pallet_dapps_staking::IsContract for SmartContract<AccountId> {}
 
 #[cfg(feature = "runtime-benchmarks")]
-impl<AccountId> pallet_dapps_staking::IsContract for SmartContract<AccountId> {
-    fn is_valid(&self) -> bool {
-        match self {
-            SmartContract::Wasm(_account) => false,
-            SmartContract::Evm(_account) => true,
-        }
-    }
-}
+impl<AccountId> pallet_dapps_staking::IsContract for SmartContract<AccountId> {}
 
 impl pallet_utility::Config for Runtime {
     type Event = Event;
