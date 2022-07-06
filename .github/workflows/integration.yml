@@ -1,6 +1,7 @@
 name: Integration
 on: [push, workflow_dispatch]
 env:
+  REF: ${{ github.ref }}
   SUBWASM_VERSION: 0.16.1
 jobs:
   test:
@@ -31,7 +32,7 @@ jobs:
       run: cargo test --all-features
 
   check-all-features:
-    if: ${{ !startsWith(github.ref, 'refs/tags/') }}
+    if: ${{ !startsWith(REF, 'refs/tags/') }}
     runs-on: ubuntu-latest
     steps:
     - name: Checkout the source code
@@ -60,7 +61,7 @@ jobs:
 
   native-linux:
     needs: test
-    if: startsWith(github.ref, 'refs/tags/v')
+    if: startsWith(REF, 'refs/tags/v')
     runs-on: [self-hosted, Linux, X64]
     steps:
     - name: Checkout the source code
@@ -94,7 +95,7 @@ jobs:
 
   native-macos:
     needs: test
-    if: startsWith(github.ref, 'refs/tags/v')
+    if: startsWith(REF, 'refs/tags/v')
     runs-on: macos-latest
     steps:
     - name: Checkout the source code
@@ -118,9 +119,14 @@ jobs:
 
   docker:
     needs: native-linux
-    if: startsWith(github.ref, 'refs/tags/v')
+    if: startsWith(REF, 'refs/tags/v')
     runs-on: ubuntu-latest
     steps:
+    - name: Checkout the source code
+      uses: actions/checkout@v3
+      with:
+        submodules: true
+
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v1
 
@@ -157,7 +163,7 @@ jobs:
 
   srtool:
     needs: test
-    if: startsWith(github.ref, 'refs/tags/v')
+    if: startsWith(REF, 'refs/tags/v')
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -233,35 +239,47 @@ jobs:
 
   publish-draft-release:
     needs: ["native-linux", "native-macos", "docker", "srtool"]
-    if: startsWith(github.ref, 'refs/tags/v')
+    if: startsWith(REF, 'refs/tags/v')
     runs-on: ubuntu-latest
-    permissions:
-      contents: write 
+    outputs:
+      release_url: ${{ steps.create-release.outputs.html_url }}
+      asset_upload_url: ${{ steps.create-release.outputs.upload_url }}
     steps:
-    - name: Download srtool json output
-      uses: actions/download-artifact@v3
-
-    - name: Check downloads
-      run: ls
-
     - name: Generate release notes draft
       id: create-release
       uses: release-drafter/release-drafter@v5
       env:
-        REF: ${{ github.ref }}
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         config-name: release-drafter.yml
         disable-autolabeler: true
 
-    #- name: Upload Release Asset
-      #id: upload-release-asset
-      #uses: actions/upload-release-asset@v1
-      #env:
-        #GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      #with:
-        #upload_url: ${{ steps.create_release.outputs.upload_url }
-        #asset_path: ./astar-ubuntu-latest-x86_64
-        #asset_name: astar-ubuntu-latest-x86_64.zip
-        #asset_content_type: application/zip
+  upload-collator-binary:
+    needs: publish-draft-release
+    if: startsWith(REF, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os: ["ubuntu", "macOS"]
+    steps:
+    - name: Download srtool json output
+      uses: actions/download-artifact@v3
+      with:
+        name: astar-${{ matrix.os }}-latest-x86_64
+
+    - name: Make binary executable
+      run: |
+        ls -R
+        chmod +x astar-collator
+        tar zcvf astar-collator-${{ REF##*/ }}-${{ matrix.os }}-x86_64.tar.gz astar-collator
+
+    - name: Upload compressed ${{ matrix.runtime }} wasm
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ needs.publish-draft-release.outputs.asset_upload_url }}
+        asset_path: astar-collator-${{ REF##*/ }}-${{ matrix.os }}-x86_64.tar.gz
+        asset_name: astar-collator-${{ REF##*/ }}-${{ matrix.os }}-x86_64.tar.gz
+        asset_content_type: application/gzip
 
