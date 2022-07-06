@@ -63,12 +63,10 @@ type PartialComponents = sc_service::PartialComponents<
 >;
 
 /// Build a partial chain component config
-pub fn new_partial(
-    config: &Configuration,
-) -> Result<PartialComponents, ServiceError> {
+pub fn new_partial(config: &Configuration) -> Result<PartialComponents, ServiceError> {
     if config.keystore_remote.is_some() {
         return Err(ServiceError::Other(
-            "Remote Keystores are not supported.".to_string()
+            "Remote Keystores are not supported.".to_string(),
         ));
     }
 

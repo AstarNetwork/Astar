@@ -196,8 +196,7 @@ impl SubstrateCli for RelayChainCli {
                 .unwrap(),
             ))
         } else {
-            polkadot_cli::Cli::from_iter([RelayChainCli::executable_name()].iter())
-                .load_spec(id)
+            polkadot_cli::Cli::from_iter([RelayChainCli::executable_name()].iter()).load_spec(id)
         }
     }
 
@@ -624,8 +623,7 @@ pub fn run() -> Result<()> {
                 }
                 BenchmarkCmd::Overhead(_) => Err("Benchmark overhead not supported.".into()),
                 BenchmarkCmd::Machine(cmd) => {
-                    runner
-                        .sync_run(|config| cmd.run(&config, SUBSTRATE_REFERENCE_HARDWARE.clone()))
+                    runner.sync_run(|config| cmd.run(&config, SUBSTRATE_REFERENCE_HARDWARE.clone()))
                 }
             }
         }

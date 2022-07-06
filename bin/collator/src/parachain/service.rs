@@ -205,8 +205,11 @@ where
     );
 
     let frontier_backend = crate::rpc::open_frontier_backend(config)?;
-    let frontier_block_import =
-        fc_consensus::FrontierBlockImport::new(client.clone(), client.clone(), frontier_backend.clone());
+    let frontier_block_import = fc_consensus::FrontierBlockImport::new(
+        client.clone(),
+        client.clone(),
+        frontier_backend.clone(),
+    );
 
     let import_queue = build_import_queue(
         client.clone(),

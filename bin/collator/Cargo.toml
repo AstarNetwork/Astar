@@ -16,9 +16,11 @@ crate-type = ["cdylib", "rlib"]
 
 [dependencies]
 # thidr-party dependencies
-parity-util-mem = { version = "0.11.0", default-features = false, features = ["jemalloc-global"] }
+parity-util-mem = { version = "0.11.0", default-features = false, features = [
+  "jemalloc-global",
+] }
 codec = { package = "parity-scale-codec", version = "3.0.0" }
-serde = { version = "1.0", features = [ "derive" ] }
+serde = { version = "1.0", features = ["derive"] }
 futures = { version = "0.3.1", features = ["compat"] }
 async-trait = "0.1.42"
 serde_json = "1.0"
@@ -32,10 +34,10 @@ sp-block-builder = { git = "https://github.com/paritytech/substrate", branch = "
 sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.24" }
 sp-core = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.24" }
 sp-consensus-aura = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.24" }
-sp-trie= { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.24" }
+sp-trie = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.24" }
 sp-session = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.24" }
 sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.24" }
-sp-keystore= { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.24" }
+sp-keystore = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.24" }
 sp-offchain = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.24" }
 sp-inherents = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.24" }
 sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.24" }
@@ -68,7 +70,9 @@ jsonrpsee = { version = "0.13.0", features = ["server"] }
 fc-consensus = { git = "https://github.com/AstarNetwork/frontier", branch = "polkadot-v0.9.24" }
 fp-consensus = { git = "https://github.com/AstarNetwork/frontier", branch = "polkadot-v0.9.24" }
 fc-rpc-core = { git = "https://github.com/AstarNetwork/frontier", branch = "polkadot-v0.9.24" }
-fc-rpc = { git = "https://github.com/AstarNetwork/frontier", branch = "polkadot-v0.9.24", features = ["rpc_binary_search_estimate"] }
+fc-rpc = { git = "https://github.com/AstarNetwork/frontier", branch = "polkadot-v0.9.24", features = [
+  "rpc_binary_search_estimate",
+] }
 fp-rpc = { git = "https://github.com/AstarNetwork/frontier", branch = "polkadot-v0.9.24" }
 fp-storage = { git = "https://github.com/AstarNetwork/frontier", branch = "polkadot-v0.9.24" }
 fc-db = { git = "https://github.com/AstarNetwork/frontier", branch = "polkadot-v0.9.24" }
@@ -132,24 +136,14 @@ polkadot-cli = { git = "https://github.com/paritytech/polkadot", branch = "relea
 build-script-utils = { package = "substrate-build-script-utils", git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.24" }
 
 [features]
-default = [
-    "sc-cli",
-    "polkadot-cli",
-    "sc-service",
-    "sc-service/db",
-]
+default = ["sc-cli", "polkadot-cli", "sc-service", "sc-service/db"]
 runtime-benchmarks = [
-    "frame-benchmarking",
-    "frame-benchmarking-cli",
-    "local-runtime/runtime-benchmarks",
-    "shibuya-runtime/runtime-benchmarks",
-    "shiden-runtime/runtime-benchmarks",
-    "polkadot-cli/runtime-benchmarks",
+  "frame-benchmarking",
+  "frame-benchmarking-cli",
+  "local-runtime/runtime-benchmarks",
+  "shibuya-runtime/runtime-benchmarks",
+  "shiden-runtime/runtime-benchmarks",
+  "polkadot-cli/runtime-benchmarks",
 ]
-cli = [
-    'try-runtime-cli',
-]
-try-runtime = [
-    "local-runtime/try-runtime",
-    "try-runtime-cli",
-]
+cli = ['try-runtime-cli']
+try-runtime = ["local-runtime/try-runtime", "try-runtime-cli"]

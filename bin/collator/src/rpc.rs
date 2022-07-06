@@ -198,14 +198,7 @@ where
     io.merge(sc_rpc::dev::Dev::new(client.clone(), deny_unsafe).into_rpc())?;
 
     io.merge(
-        EthPubSub::new(
-            pool,
-            client,
-            network,
-            subscription_task_executor,
-            overrides,
-        )
-        .into_rpc(),
+        EthPubSub::new(pool, client, network, subscription_task_executor, overrides).into_rpc(),
     )?;
 
     Ok(io)
