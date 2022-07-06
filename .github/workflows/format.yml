@@ -1,7 +1,7 @@
-name: fmt
-on: [push]
+name: Format check
+on: [push, workflow_dispatch]
 jobs:
-  build:
+  fmt:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout the source code

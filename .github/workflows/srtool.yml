@@ -3,10 +3,11 @@ name: Srtool build
 env:
   SUBWASM_VERSION: 0.16.1
 
-on: [push]
+on: [push, workflow_dispatch]
 
 jobs:
   srtool:
+    if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
 
     strategy:
