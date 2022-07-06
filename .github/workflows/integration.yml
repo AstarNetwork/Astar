@@ -1,6 +1,7 @@
 name: Integration
 on: [push, workflow_dispatch]
 env:
+  REF: ${{ github.ref }}
   SUBWASM_VERSION: 0.16.1
 jobs:
   test:
@@ -270,7 +271,7 @@ jobs:
       run: |
         ls -R
         chmod +x astar-collator
-        tar zcvf astar-collator-${{ github.ref##*/ }}-${{ matrix.os }}-x86_64.tar.gz astar-collator
+        tar zcvf astar-collator-${{ REF##*/ }}-${{ matrix.os }}-x86_64.tar.gz astar-collator
 
     - name: Upload compressed ${{ matrix.runtime }} wasm
       uses: actions/upload-release-asset@v1
@@ -278,7 +279,7 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ needs.publish-draft-release.outputs.asset_upload_url }}
-        asset_path: astar-collator-${{ github.ref##*/ }}-${{ matrix.os }}-x86_64.tar.gz
-        asset_name: astar-collator-${{ github.ref##*/ }}-${{ matrix.os }}-x86_64.tar.gz
+        asset_path: astar-collator-${{ REF##*/ }}-${{ matrix.os }}-x86_64.tar.gz
+        asset_name: astar-collator-${{ REF##*/ }}-${{ matrix.os }}-x86_64.tar.gz
         asset_content_type: application/gzip
 
