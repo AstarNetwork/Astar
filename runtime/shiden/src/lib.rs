@@ -32,7 +32,7 @@ use sp_runtime::{
     create_runtime_str, generic, impl_opaque_keys,
     traits::{
         AccountIdConversion, AccountIdLookup, BlakeTwo256, Block as BlockT, ConvertInto,
-        DispatchInfoOf, Dispatchable, OpaqueKeys, PostDispatchInfoOf, Verify,
+        DispatchInfoOf, Dispatchable, OpaqueKeys, PostDispatchInfoOf, UniqueSaturatedInto, Verify,
     },
     transaction_validity::{
         TransactionPriority, TransactionSource, TransactionValidity, TransactionValidityError,
@@ -1143,7 +1143,7 @@ impl_runtime_apis! {
                 to,
                 data,
                 value,
-                gas_limit.low_u64(),
+                gas_limit.unique_saturated_into(),
                 max_fee_per_gas,
                 max_priority_fee_per_gas,
                 nonce,
@@ -1183,7 +1183,7 @@ impl_runtime_apis! {
                 from,
                 data,
                 value,
-                gas_limit.low_u64(),
+                gas_limit.unique_saturated_into(),
                 max_fee_per_gas,
                 max_priority_fee_per_gas,
                 nonce,
