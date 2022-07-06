@@ -3,6 +3,7 @@
 use pallet_evm::{
     ExitRevert, Precompile, PrecompileFailure, PrecompileHandle, PrecompileResult, PrecompileSet,
 };
+use pallet_evm_precompile_assets_erc20::{AddressToAssetId, Erc20AssetsPrecompileSet};
 use pallet_evm_precompile_blake2::Blake2F;
 use pallet_evm_precompile_bn128::{Bn128Add, Bn128Mul, Bn128Pairing};
 use pallet_evm_precompile_dispatch::Dispatch;
@@ -16,6 +17,10 @@ use pallet_precompile_dapps_staking::DappsStakingWrapper;
 use sp_core::H160;
 use sp_std::fmt::Debug;
 use sp_std::marker::PhantomData;
+
+/// The asset precompile address prefix. Addresses that match against this prefix will be routed
+/// to Erc20AssetsPrecompileSet
+pub const ASSET_PRECOMPILE_ADDRESS_PREFIX: &[u8] = &[255u8; 4];
 
 /// The PrecompileSet installed in the Local runtime.
 #[derive(Debug, Clone, Copy)]
@@ -38,11 +43,14 @@ impl<R> LocalNetworkPrecompiles<R> {
 /// The following distribution has been decided for the precompiles
 /// 0-1023: Ethereum Mainnet Precompiles
 /// 1024-2047 Precompiles that are not in Ethereum Mainnet
-impl<R: pallet_evm::Config> PrecompileSet for LocalNetworkPrecompiles<R>
+impl<R> PrecompileSet for LocalNetworkPrecompiles<R>
 where
-    R: pallet_evm::Config,
-    Dispatch<R>: Precompile,
+    Erc20AssetsPrecompileSet<R>: PrecompileSet,
     DappsStakingWrapper<R>: Precompile,
+    Dispatch<R>: Precompile,
+    R: pallet_evm::Config
+        + pallet_assets::Config
+        + AddressToAssetId<<R as pallet_assets::Config>::AssetId>,
 {
     fn execute(&self, handle: &mut impl PrecompileHandle) -> Option<PrecompileResult> {
         let address = handle.code_address();
@@ -75,6 +83,10 @@ where
             a if a == hash(20482) => Some(Sr25519Precompile::<R>::execute(handle)),
             // SubstrateEcdsa 0x5003
             a if a == hash(20483) => Some(SubstrateEcdsaPrecompile::<R>::execute(handle)),
+            // If the address matches asset prefix, the we route through the asset precompile set
+            a if &a.to_fixed_bytes()[0..4] == ASSET_PRECOMPILE_ADDRESS_PREFIX => {
+                Erc20AssetsPrecompileSet::<R>::new().execute(handle)
+            }
             // Default
             _ => None,
         }
