@@ -250,22 +250,9 @@ jobs:
       env:
         REF: ${{ github.ref }}
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      name-template: "${REF##*/}"
-      change-template: '- $TITLE @$AUTHOR (#$NUMBER)'
-      template: |
-        Native runtime version
-        ---------------
-        Upgrade priority
-        **Shibuya**
-        **Shiden**
-        **Astar**
-        ---------------
-        Changelog description
-        ---------------
-        **Client**
-        **Shibuya Runtime**
-        **Shiden Runtime**
-        **Astar Runtime**
+      with:
+        config-name: release-drafter.yml
+        disable-autolabeler: true
 
     #- name: Upload Release Asset
       #id: upload-release-asset

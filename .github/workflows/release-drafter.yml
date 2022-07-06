@@ -1,0 +1,16 @@
+name-template: "${REF##*/}"
+change-template: '- $TITLE @$AUTHOR (#$NUMBER)'
+template: |
+  Native runtime version
+  ---------------
+  Upgrade priority
+  **Shibuya**
+  **Shiden**
+  **Astar**
+  ---------------
+  Changelog description
+  ---------------
+  **Client**
+  **Shibuya Runtime**
+  **Shiden Runtime**
+  **Astar Runtime**
