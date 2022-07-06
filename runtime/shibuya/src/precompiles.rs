@@ -29,6 +29,12 @@ pub const ASSET_PRECOMPILE_ADDRESS_PREFIX: &[u8] = &[255u8; 4];
 #[derive(Debug, Clone, Copy)]
 pub struct ShibuyaNetworkPrecompiles<R, C>(PhantomData<(R, C)>);
 
+impl<R, C> Default for ShibuyaNetworkPrecompiles<R, C> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl<R, C> ShibuyaNetworkPrecompiles<R, C> {
     pub fn new() -> Self {
         Self(Default::default())
@@ -39,7 +45,7 @@ impl<R, C> ShibuyaNetworkPrecompiles<R, C> {
     pub fn used_addresses() -> impl Iterator<Item = H160> {
         sp_std::vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 1024, 1025, 1026, 1027, 20481, 20482, 20483, 20484]
             .into_iter()
-            .map(|x| hash(x))
+            .map(hash)
     }
 }
 
@@ -101,7 +107,7 @@ where
     }
 
     fn is_precompile(&self, address: H160) -> bool {
-        Self::used_addresses().find(|x| x == &address).is_some()
+        Self::used_addresses().any(|x| x == address)
             || Erc20AssetsPrecompileSet::<R>::new().is_precompile(address)
     }
 }
