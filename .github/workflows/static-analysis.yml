@@ -37,9 +37,6 @@ jobs:
     - name: Check targets are installed correctly
       run: rustup target list --installed
 
-    - name: Add Clippy
-      run: rustup component add clippy
-
     - uses: actions/cache@v2
       with:
         path: |

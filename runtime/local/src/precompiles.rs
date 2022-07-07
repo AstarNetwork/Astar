@@ -23,14 +23,8 @@ use sp_std::marker::PhantomData;
 pub const ASSET_PRECOMPILE_ADDRESS_PREFIX: &[u8] = &[255u8; 4];
 
 /// The PrecompileSet installed in the Local runtime.
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Default, Clone, Copy)]
 pub struct LocalNetworkPrecompiles<R>(PhantomData<R>);
-
-impl<R> Default for LocalNetworkPrecompiles<R> {
-    fn default() -> Self {
-        Self::new()
-    }
-}
 
 impl<R> LocalNetworkPrecompiles<R> {
     pub fn new() -> Self {

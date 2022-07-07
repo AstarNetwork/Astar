@@ -26,14 +26,8 @@ use xcm::latest::prelude::MultiLocation;
 pub const ASSET_PRECOMPILE_ADDRESS_PREFIX: &[u8] = &[255u8; 4];
 
 /// The PrecompileSet installed in the Shiden runtime.
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Default, Clone, Copy)]
 pub struct ShidenNetworkPrecompiles<R, C>(PhantomData<(R, C)>);
-
-impl<R, C> Default for ShidenNetworkPrecompiles<R, C> {
-    fn default() -> Self {
-        Self::new()
-    }
-}
 
 impl<R, C> ShidenNetworkPrecompiles<R, C> {
     pub fn new() -> Self {
