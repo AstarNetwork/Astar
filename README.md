@@ -86,6 +86,13 @@ $ curl -H 'Content-Type: application/json' --data '{ "jsonrpc":"2.0", "method":"
 After this step, you should have a validator node online with a session key for your node.
 For key management and validator rewards, consult our [validator guide online](https://docs.astar.network/build/validator-guide/configure-node).
 
+## Run RPC Tests
+
+RPC tests suite can be run for any release. To run tests go to https://github.com/AstarNetwork/Astar/actions/workflows/rpcTest.yml. Click Run workflow, in the dropdown input the release version tag you want to run the test suite. Then click the green Run workflow button to start the test suite. 
+
+![Screenshot from 2022-07-07 15-28-46](https://user-images.githubusercontent.com/874046/177785570-330c6613-237d-4190-bfed-69876209daf6.png)
+ 
+
 ## Further Reading
 
 * [Official Documentation](https://docs.astar.network/)
