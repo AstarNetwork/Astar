@@ -1,16 +1,17 @@
 {
-  "name": "Astar Testnet",
+  "name": "Rocstar Testnet",
   "id": "astar",
-  "chainType": "Development",
+  "chainType": "Live",
   "bootNodes": [
-    "/ip4/127.0.0.1/tcp/30333/p2p/12D3KooWCe9CYQBdestzRjvVGFuSuaSENiiRaGFSd1PLxQTvBeGD"
+    "/ip4/51.138.222.112/tcp/30333/p2p/12D3KooWGjSFiLa9CszweZK2tWTzpuq91FRaMmDHfZHggmWsoeky",
+    "/ip4/51.138.223.151/tcp/30333/p2p/12D3KooWLq6zxLuhVViYbc1gCuscDjdbmj5HTzFK8bdgJJzubieP"
   ],
   "telemetryEndpoints": null,
   "protocolId": "rocstar",
   "properties": {
     "ss58Format": 5,
     "tokenDecimals": 18,
-    "tokenSymbol": "ASTR"
+    "tokenSymbol": "RSTR"
   },
   "badBlocks": null,
   "relayChain": "rococo",

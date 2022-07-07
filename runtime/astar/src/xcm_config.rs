@@ -1,37 +1,34 @@
 use super::{
-    AccountId, AssetId, Assets, Balance, Balances, Call, DealWithFees, Event, Origin,
-    ParachainInfo, ParachainSystem, PolkadotXcm, Runtime, WeightToFee, XcmpQueue,
-    MAXIMUM_BLOCK_WEIGHT,
+    AccountId, AssetId, Assets, AstarAssetLocationIdConverter, Balance, Balances, Call,
+    DealWithFees, Event, Origin, ParachainInfo, ParachainSystem, PolkadotXcm, Runtime, WeightToFee,
+    XcAssetConfig, XcmpQueue, MAXIMUM_BLOCK_WEIGHT,
 };
 use frame_support::{
     match_types, parameter_types,
-    traits::{Everything, Nothing, PalletInfoAccess},
+    traits::{Everything, Nothing},
     weights::Weight,
 };
-use sp_runtime::traits::Bounded;
-use sp_std::{borrow::Borrow, marker::PhantomData};
 
 // Polkadot imports
 use xcm::latest::prelude::*;
 use xcm_builder::{
     AccountId32Aliases, AllowKnownQueryResponses, AllowSubscriptionsFrom,
     AllowTopLevelPaidExecutionFrom, AllowUnpaidExecutionFrom, ConvertedConcreteAssetId,
-    CurrencyAdapter, EnsureXcmOrigin, FixedRateOfFungible, FixedWeightBounds, FungiblesAdapter,
-    IsConcrete, LocationInverter, NativeAsset, ParentAsSuperuser, ParentIsPreset,
-    RelayChainAsNative, SiblingParachainAsNative, SiblingParachainConvertsVia,
-    SignedAccountId32AsNative, SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit,
-    UsingComponents,
+    CurrencyAdapter, EnsureXcmOrigin, FixedWeightBounds, FungiblesAdapter, IsConcrete,
+    LocationInverter, ParentAsSuperuser, ParentIsPreset, RelayChainAsNative,
+    SiblingParachainAsNative, SiblingParachainConvertsVia, SignedAccountId32AsNative,
+    SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit, UsingComponents,
 };
 use xcm_executor::{traits::JustTry, Config, XcmExecutor};
 
+// Astar imports
+use xcm_primitives::{FixedRateOfForeignAsset, ReserveAssetFilter};
+
 parameter_types! {
-    pub const RelayLocation: MultiLocation = MultiLocation::parent();
     pub RelayNetwork: NetworkId = NetworkId::Polkadot;
     pub RelayChainOrigin: Origin = cumulus_pallet_xcm::Origin::Relay.into();
     pub Ancestry: MultiLocation = Parachain(ParachainInfo::parachain_id().into()).into();
-    pub const Local: MultiLocation = Here.into();
-    pub AnchoringSelfReserve: MultiLocation =
-        PalletInstance(<Balances as PalletInfoAccess>::index() as u8).into();
+    pub AstarLocation: MultiLocation = Here.into();
     pub CheckingAccount: AccountId = PolkadotXcm::check_account();
 }
 
@@ -52,7 +49,7 @@ pub type CurrencyTransactor = CurrencyAdapter<
     // Use this currency:
     Balances,
     // Use this currency when it is a fungible asset matching the given location or name:
-    IsConcrete<AnchoringSelfReserve>,
+    IsConcrete<AstarLocation>,
     // Convert an XCM MultiLocation into a local account id:
     LocationToAccountId,
     // Our chain's account ID type (we can't get away without mentioning it explicitly):
@@ -61,33 +58,12 @@ pub type CurrencyTransactor = CurrencyAdapter<
     (),
 >;
 
-pub struct AsAssetWithRelay<AssetId>(PhantomData<AssetId>);
-impl<AssetId> xcm_executor::traits::Convert<MultiLocation, AssetId> for AsAssetWithRelay<AssetId>
-where
-    AssetId: Clone + Eq + Bounded,
-{
-    fn convert_ref(id: impl Borrow<MultiLocation>) -> Result<AssetId, ()> {
-        if id.borrow().eq(&MultiLocation::parent()) {
-            Ok(AssetId::max_value())
-        } else {
-            Err(())
-        }
-    }
-    fn reverse_ref(what: impl Borrow<AssetId>) -> Result<MultiLocation, ()> {
-        if what.borrow().eq(&AssetId::max_value().into()) {
-            Ok(MultiLocation::parent())
-        } else {
-            Err(())
-        }
-    }
-}
-
 /// Means for transacting assets besides the native currency on this chain.
 pub type FungiblesTransactor = FungiblesAdapter<
     // Use this fungibles implementation:
     Assets,
     // Use this currency when it is a fungible asset matching the given location or name:
-    ConvertedConcreteAssetId<AssetId, Balance, AsAssetWithRelay<AssetId>, JustTry>,
+    ConvertedConcreteAssetId<AssetId, Balance, AstarAssetLocationIdConverter, JustTry>,
     // Convert an XCM MultiLocation into a local account id:
     LocationToAccountId,
     // Our chain's account ID type (we can't get away without mentioning it explicitly):
@@ -99,7 +75,7 @@ pub type FungiblesTransactor = FungiblesAdapter<
 >;
 
 /// Means for transacting assets on this chain.
-pub type AssetTransactors = (FungiblesTransactor, CurrencyTransactor);
+pub type AssetTransactors = (CurrencyTransactor, FungiblesTransactor);
 
 /// This is the type we use to convert an (incoming) XCM origin into a local `Origin` instance,
 /// ready for dispatching a transaction with Xcm's `Transact`. There is an `OriginKind` which can
@@ -129,7 +105,6 @@ parameter_types! {
     // One XCM operation is 1_000_000_000 weight - almost certainly a conservative estimate.
     pub UnitWeightCost: Weight = 1_000_000_000;
     pub const MaxInstructions: u32 = 100;
-    pub DotPerSecond: (xcm::v1::AssetId, u128) = (MultiLocation::parent().into(), 1_000_000_000);
 }
 
 match_types! {
@@ -156,14 +131,14 @@ impl Config for XcmConfig {
     type XcmSender = XcmRouter;
     type AssetTransactor = AssetTransactors;
     type OriginConverter = XcmOriginToTransactDispatchOrigin;
-    type IsReserve = NativeAsset;
+    type IsReserve = ReserveAssetFilter;
     type IsTeleporter = ();
     type LocationInverter = LocationInverter<Ancestry>;
     type Barrier = XcmBarrier;
     type Weigher = FixedWeightBounds<UnitWeightCost, Call, MaxInstructions>;
     type Trader = (
-        FixedRateOfFungible<DotPerSecond, ()>,
-        UsingComponents<WeightToFee, AnchoringSelfReserve, AccountId, Balances, DealWithFees>,
+        UsingComponents<WeightToFee, AstarLocation, AccountId, Balances, DealWithFees>,
+        FixedRateOfForeignAsset<XcAssetConfig, ()>,
     );
     type ResponseHandler = PolkadotXcm;
     type AssetTrap = PolkadotXcm;

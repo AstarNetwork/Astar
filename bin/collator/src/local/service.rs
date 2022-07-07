@@ -3,6 +3,7 @@
 use fc_consensus::FrontierBlockImport;
 use fc_rpc_core::types::{FeeHistoryCache, FilterPool};
 use futures::StreamExt;
+use pallet_contracts_rpc::ContractsApiServer;
 use sc_client_api::{BlockBackend, BlockchainEvents, ExecutorProvider};
 use sc_consensus_aura::{ImportQueueParams, SlotProportion, StartAuraParams};
 use sc_executor::NativeElseWasmExecutor;
@@ -252,12 +253,6 @@ pub fn start_node(config: Configuration) -> Result<TaskManager, ServiceError> {
         ),
     );
 
-    task_manager.spawn_essential_handle().spawn(
-        "frontier-schema-cache-task",
-        Some("frontier"),
-        fc_rpc::EthTask::ethereum_schema_cache_task(client.clone(), frontier_backend.clone()),
-    );
-
     const FEE_HISTORY_LIMIT: u64 = 2048;
     task_manager.spawn_essential_handle().spawn(
         "frontier-fee-history",
@@ -307,11 +302,15 @@ pub fn start_node(config: Configuration) -> Result<TaskManager, ServiceError> {
                 overrides: overrides.clone(),
             };
 
-            let mut io = crate::rpc::create_full(deps, subscription);
+            let mut io = crate::rpc::create_full(deps, subscription)
+                .map_err::<ServiceError, _>(Into::into)?;
+
             // Local node support WASM contracts
-            io.extend_with(pallet_contracts_rpc::ContractsApi::to_delegate(
-                pallet_contracts_rpc::Contracts::new(client.clone()),
-            ));
+            io.merge(pallet_contracts_rpc::Contracts::new(Arc::clone(&client)).into_rpc())
+                .map_err(|_| {
+                    ServiceError::Other("Failed to register pallet-contracts RPC methods.".into())
+                })?;
+
             Ok(io)
         })
     };
@@ -322,7 +321,7 @@ pub fn start_node(config: Configuration) -> Result<TaskManager, ServiceError> {
         keystore: keystore_container.sync_keystore(),
         task_manager: &mut task_manager,
         transaction_pool: transaction_pool.clone(),
-        rpc_extensions_builder,
+        rpc_builder: rpc_extensions_builder,
         backend,
         system_rpc_tx,
         config,
