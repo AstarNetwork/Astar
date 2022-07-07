@@ -1,13 +1,12 @@
 name: RPC test
 
 on:
-  pull_request:
-    branches:
-      - master
-
-  push:
-    branches:
-      - master
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag version'
+        required: true
+        default: '4.9.0'
 
 jobs:
   test:
@@ -18,7 +17,7 @@ jobs:
     steps:
     - uses: actions/checkout@v2
 
-    - run: wget -q $(curl -s https://api.github.com/repos/AstarNetwork/Astar/releases/latest | grep browser_download_url | grep "ubuntu-x86_64" | cut -d '"' -f 4)
+    - run: wget -q https://github.com/AstarNetwork/Astar/releases/download/v${{ github.event.inputs.tag }}/astar-collator-${{ github.event.inputs.tag }}-ubuntu-x86_64.tar.gz
 
     - run: tar -xvf astar-collator-*-ubuntu-x86_64.tar.gz
     
