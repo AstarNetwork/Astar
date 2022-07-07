@@ -252,13 +252,13 @@ jobs:
       release_url: ${{ steps.create-release.outputs.html_url }}
       asset_upload_url: ${{ steps.create-release.outputs.upload_url }}
     steps:
-      name: Checkout sources
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-          path: astar-collator
+    - name: Checkout sources
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+        path: astar-collator
 
-    - name: Generate release notes draft
+    - name: Generate release notges draft
       id: create-release
       uses: actions/create-release@v1
       env:
