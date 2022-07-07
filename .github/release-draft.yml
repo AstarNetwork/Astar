@@ -1,0 +1,8 @@
+change-template: '- $TITLE @$AUTHOR (#$NUMBER)'
+template: |
+  > Native runtime version: 
+  ---------------
+  Upgrade priority:
+
+  Description
+  ---------------

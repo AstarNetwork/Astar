@@ -249,8 +249,11 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        config-name: release-drafter.yml
+        config-name: release-draft.yml
         disable-autolabeler: true
+        version: ${{ github.ref_name }}
+        name: ${{ github.ref_name }}
+        tag: ${{ github.ref_name }}
 
   upload-collator-binary:
     needs: publish-draft-release
@@ -279,4 +282,13 @@ jobs:
         asset_path: astar-collator-${{ github.ref_name }}-${{ matrix.os }}-x86_64.tar.gz
         asset_name: astar-collator-${{ github.ref_name }}-${{ matrix.os }}-x86_64.tar.gz
         asset_content_type: application/gzip
+
+  #upload-runtimes:
+    #needs: publish-draft-release
+    #runs-on: ubuntu-latest
+    #strategy:
+      #matrix:
+        #chain: ["astar", "shiden", "shibuya"]
+    #steps:
+
 
