@@ -266,7 +266,7 @@ jobs:
       with:
         release_name: ${{ github.ref_name }}
         tag_name: ${{ github.ref_name }}
-        body_path: ./polkadot/scripts/ci/release-notes.md
+        body_path: ./astar-collator/scripts/ci/release-notes.md
         draft: true
 
   # upload-collator-binary:
