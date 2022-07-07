@@ -252,15 +252,22 @@ jobs:
       release_url: ${{ steps.create-release.outputs.html_url }}
       asset_upload_url: ${{ steps.create-release.outputs.upload_url }}
     steps:
+     name: Checkout sources
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          path: astar-collator
+
     - name: Generate release notes draft
       id: create-release
-      uses: release-drafter/release-drafter@v5
+      uses: actions/create-release@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        version: ${{ github.ref_name }}
-        name: ${{ github.ref_name }}
-        tag: ${{ github.ref_name }}
+        release_name: ${{ github.ref_name }}
+        tag_name: ${{ github.ref_name }}
+        body_path: ./polkadot/scripts/ci/release-notes.md
+        draft: true
 
   # upload-collator-binary:
     # needs: publish-draft-release
