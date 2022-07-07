@@ -2,7 +2,9 @@ import { expect } from 'chai';
 import { Keyring } from '@polkadot/api';
 import { describeWithAstar, wait } from './util.js';
 
-const CONTRACT = '0x000000000000000000000000000000000000000001'; //0x01
+const CONTRACT = '0x0000000000000000000000000000000000000001'; //0x01
+
+export const getAddressEnum = (address) => ({ Evm: address });
 
 describeWithAstar('Dapp Staking', function(context) {
 	it('should be able to Register contract on H160 address 0x01 using Alice account', async function () {
@@ -15,7 +17,7 @@ describeWithAstar('Dapp Staking', function(context) {
         const alice = keyring.addFromUri('//Alice');
 
         // Create a extrinsic, transferring 100 units to Bob
-        const transfer = api.tx.dappsStaking.register(CONTRACT);
+        const transfer = api.tx.dappsStaking.register(getAddressEnum(CONTRACT));
       
         // Sign and send the transaction using our account
         const hash = await transfer.signAndSend(alice);
