@@ -1,10 +1,10 @@
 name: Check All Features
 on:
   push:
+    branches:
+    - '**'
     tags-ignore:
     - v[0-9]+.[0-9]+.[0-9]+*
-    branches:
-    - '*'
   workflow_dispatch:
 jobs:
   check-all-features:
