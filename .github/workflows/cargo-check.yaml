@@ -1,4 +1,4 @@
-name: Check All Features
+name: Cargo Check
 on:
   push:
     branches:
@@ -28,8 +28,6 @@ jobs:
           ~/.cargo/git
           target/
         key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-        restore-keys: |
-          ${{ runner.os }}-cargo-
 
     - name: Check all features compilation
       run: cargo check --verbose --all-features
