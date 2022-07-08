@@ -1,5 +1,9 @@
-name: Integration
-on: [push, workflow_dispatch]
+name: Release Build
+on:
+  push:
+    tags:
+      - v[0-9]+.[0-9]+.[0-9]+*
+  workflow_dispatch:
 env:
   SUBWASM_VERSION: 0.16.1
 jobs:
@@ -17,7 +21,7 @@ jobs:
     - name: Check targets are installed correctly
       run: rustup target list --installed
 
-    - uses: actions/cache@v2
+    - uses: actions/cache@v3
       with:
         path: |
           ~/.cargo/registry
@@ -29,24 +33,6 @@ jobs:
 
     - name: Run all tests
       run: cargo test --all-features
-
-  check-all-features:
-    if: ${{ !startsWith(github.ref, 'refs/tags/') }}
-    runs-on: ubuntu-latest
-    steps:
-    - name: Checkout the source code
-      uses: actions/checkout@v3
-      with:
-        submodules: true
-
-    - name: Install & display rust toolchain
-      run: rustup show
-
-    - name: Check targets are installed correctly
-      run: rustup target list --installed
-
-    - name: Check all features compilation
-      run: cargo check --verbose --all-features
 
   native-linux:
     needs: test
@@ -64,7 +50,7 @@ jobs:
     - name: Check targets are installed correctly
       run: rustup target list --installed
 
-    - uses: actions/cache@v2
+    - uses: actions/cache@v3
       with:
         path: |
           ~/.cargo/registry
@@ -98,7 +84,7 @@ jobs:
     - name: Check targets are installed correctly
       run: rustup target list --installed
 
-    - uses: actions/cache@v2
+    - uses: actions/cache@v3
       with:
         path: |
           ~/.cargo/registry
