@@ -1,4 +1,4 @@
-name: Cargo Test
+name: Checks and Tests
 on:
   push:
     branches:
@@ -7,13 +7,11 @@ on:
     - v[0-9]+.[0-9]+.[0-9]+*
   workflow_dispatch:
 jobs:
-  test-all-features:
+  checks-and-tests:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout the source code
       uses: actions/checkout@v3
-      with:
-        submodules: true
 
     - name: Install & display rust toolchain
       run: rustup show
@@ -30,6 +28,9 @@ jobs:
         key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
         restore-keys: |
           ${{ runner.os }}-cargo-
+
+    - name: Check all features compilation
+      run: cargo check --verbose --all-features
 
     - name: Run all tests
       run: cargo test --all-features

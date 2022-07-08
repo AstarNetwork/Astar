@@ -1,11 +1,5 @@
 name: Static Analysis
-on:
-  push:
-    branches:
-    - '**'
-    tags-ignore:
-    - v[0-9]+.[0-9]+.[0-9]+*
-  workflow_dispatch:
+on: [push, workflow_dispatch]
 jobs:
   fmt:
     runs-on: ubuntu-latest

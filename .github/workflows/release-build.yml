@@ -7,7 +7,7 @@ on:
 env:
   SUBWASM_VERSION: 0.16.1
 jobs:
-  test:
+  checks-and-tests:
     runs-on: [self-hosted, Linux, X64]
     steps:
     - name: Checkout the source code
@@ -31,12 +31,14 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-cargo-
 
+    - name: Check all features compilation
+      run: cargo check --verbose --all-features
+
     - name: Run all tests
       run: cargo test --all-features
 
   native-linux:
-    needs: test
-    if: startsWith(github.ref, 'refs/tags/v')
+    needs: checks-and-tests
     runs-on: [self-hosted, Linux, X64]
     steps:
     - name: Checkout the source code
@@ -69,8 +71,7 @@ jobs:
         path: target/release/astar-collator
 
   native-macos:
-    needs: test
-    if: startsWith(github.ref, 'refs/tags/v')
+    needs: checks-and-tests
     runs-on: macos-latest
     steps:
     - name: Checkout the source code
@@ -104,7 +105,6 @@ jobs:
 
   docker:
     needs: native-linux
-    if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     steps:
     - name: Checkout the source code
@@ -147,8 +147,7 @@ jobs:
         push: true
 
   srtool:
-    needs: test
-    if: startsWith(github.ref, 'refs/tags/v')
+    needs: checks-and-tests
     runs-on: ubuntu-latest
     strategy:
       matrix:
