@@ -303,7 +303,7 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ needs.publish-release-draft.outputs.upload_url }}
-        asset_path: ${{ matrix.chain }}-runtime/${{ matrix.chain }}_runtime.compact.compressed.wasm
+        asset_path: ${{ matrix.chain }}_runtime.compact.compressed.wasm
         asset_name: ${{ steps.get-runtime-version.outputs.runtime_version }}
         asset_content_type: application/wasm
 
@@ -313,7 +313,7 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ needs.publish-release-draft.outputs.upload_url }}
-        asset_path: "${{ matrix.chain }}-runtime/${{ matrix.chain }}-metadata.json"
+        asset_path: ${{ matrix.chain }}-metadata.json
         asset_name: ${{ matrix.chain }}-metadata.json
         asset_content_type: application/json
 
@@ -323,6 +323,6 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ needs.publish-release-draft.outputs.upload_url }}
-        asset_path: "${{ matrix.chain }}-runtime/${{ matrix.chain }}-compressed-info.json"
+        asset_path: ${{ matrix.chain }}-compressed-info.json
         asset_name: ${{ matrix.chain }}-metadata.json
         asset_content_type: application/json
