@@ -1,8 +1,8 @@
 name: Release Build
 on:
   push:
-    tags:
-    - v[0-9]+.[0-9]+.[0-9]+*
+  #  tags:
+  #  - v[0-9]+.[0-9]+.[0-9]+*
   workflow_dispatch:
 env:
   SUBWASM_VERSION: 0.16.1
@@ -152,7 +152,6 @@ jobs:
     strategy:
       matrix:
         chain: ["astar", "shiden", "shibuya"]
-
     steps:
     - uses: actions/checkout@v3
       with:
@@ -220,3 +219,26 @@ jobs:
           ${{ matrix.chain }}-compressed-info.json
           ${{ matrix.chain }}-metadata.json
           ${{ matrix.chain }}-diff.txt
+
+  publish-release-draft:
+    # needs: [native-linux, native-macOS, docker, srtool]
+    runs-on: ubuntu-latest
+    outputs:
+      release_url: ${{ steps.create-release.outputs.html_url }}
+      asset_upload_url: ${{ steps.create-release.outputs.upload_url }}
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+
+    - name: Create Release Draft
+      id: create-release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github. }}
+        release_name: Moonbeam ${{ github.ref_name }}
+        body_path: .github/release-draft.md
+        draft: true
+
