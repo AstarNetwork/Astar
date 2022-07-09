@@ -248,7 +248,6 @@ jobs:
   upload-binaries:
     needs: publish-release-draft
     runs-on: ubuntu-latest
-    matrix:
     strategy:
       matrix:
         os: ["ubuntu", "macOS"]
