@@ -281,7 +281,6 @@ jobs:
   upload-runtimes:
     needs: publish-release-draft
     runs-on: ubuntu-latest
-    matrix:
     strategy:
       matrix:
         chain: ["astar", "shiden", "shibuya"]
