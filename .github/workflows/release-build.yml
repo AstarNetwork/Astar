@@ -292,9 +292,9 @@ jobs:
     - name: Get runtime version
       id: get-runtime-version
       run: |
-        cd ${{ matrix.chain }}-runtime
         ls -R
         runtime_version=$(cat $chain-compressed-info.json | jq '.core_version' | tr -d '"' | cut -d ' ' -f 1)
+        echo $runtime_version
         echo "::set-output name=runtime_version::$runtime_version"
 
     - name: Upload ${{ matrix.chain }} Wasm
