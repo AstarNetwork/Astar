@@ -70,38 +70,38 @@ jobs:
         name: astar-ubuntu-latest-x86_64
         path: target/release/astar-collator
 
-  native-macos:
-    needs: checks-and-tests
-    runs-on: macos-latest
-    steps:
-    - name: Checkout the source code
-      uses: actions/checkout@v3
-      with:
-        submodules: true
+  # native-macos:
+    # needs: checks-and-tests
+    # runs-on: macos-latest
+    # steps:
+    # - name: Checkout the source code
+      # uses: actions/checkout@v3
+      # with:
+        # submodules: true
 
-    - name: Install & display rust toolchain
-      run: rustup show
+    # - name: Install & display rust toolchain
+      # run: rustup show
 
-    - name: Check targets are installed correctly
-      run: rustup target list --installed
+    # - name: Check targets are installed correctly
+      # run: rustup target list --installed
 
-    - uses: actions/cache@v3
-      with:
-        path: |
-          ~/.cargo/registry
-          ~/.cargo/git
-          target/
-        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-        restore-keys: |
-          ${{ runner.os }}-cargo-
+    # - uses: actions/cache@v3
+      # with:
+        # path: |
+          # ~/.cargo/registry
+          # ~/.cargo/git
+          # target/
+        # key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+        # restore-keys: |
+          # ${{ runner.os }}-cargo-
 
-    - name: Build optimized binary
-      run: cargo build --release --verbose
+    # - name: Build optimized binary
+      # run: cargo build --release --verbose
 
-    - uses: actions/upload-artifact@v3
-      with:
-        name: astar-macOS-latest-x86_64
-        path: target/release/astar-collator
+    # - uses: actions/upload-artifact@v3
+      # with:
+        # name: astar-macOS-latest-x86_64
+        # path: target/release/astar-collator
 
   docker:
     needs: native-linux
@@ -224,7 +224,7 @@ jobs:
           ${{ matrix.chain }}-diff.txt
 
   publish-release-draft:
-    needs: [native-linux, native-macOS, docker, srtool]
+    needs: [native-linux, docker, srtool]
     runs-on: ubuntu-latest
     outputs:
       release_url: ${{ steps.create-release.outputs.html_url }}
@@ -246,11 +246,11 @@ jobs:
         draft: true
 
   upload-binaries:
-    needs: [publish-release-draft, native-linux, native-macOS, docker]
+    needs: [publish-release-draft, native-linux, docker]
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        os: ["ubuntu", "macOS"]
+        os: ["ubuntu"]
     steps:
     - name: Create download folder
       run: |
