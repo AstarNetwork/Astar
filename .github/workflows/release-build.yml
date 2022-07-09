@@ -149,9 +149,6 @@ jobs:
   srtool:
     needs: checks-and-tests
     runs-on: ubuntu-latest
-    outputs:
-      wasm: ${{ steps.srtool_build.outputs.wasm }}
-      wasm_compressed: ${{ steps.srtool_build.outputs.wasm_compressed }}
     strategy:
       matrix:
         chain: ["astar", "shiden", "shibuya"]
@@ -173,6 +170,8 @@ jobs:
         cat ${{ matrix.chain }}-srtool-digest.json
         echo "Compact Runtime: ${{ steps.srtool_build.outputs.wasm }}"
         echo "Compressed Runtime: ${{ steps.srtool_build.outputs.wasm_compressed }}"
+        cp ${{ steps.srtool_build.outputs.wasm }} ${{ matrix.chain }}_runtime.compact.wasm
+        cp ${{ steps.srtool_build.outputs.wasm_compressed }} ${{ matrix.chain }}_runtime.compact.compressed.wasm
 
     # it takes a while to build the runtime, so let's save the artifact as soon as we have it
     - name: Archive Artifacts for ${{ matrix.chain }}
@@ -180,8 +179,8 @@ jobs:
       with:
         name: ${{ matrix.chain }}-runtime
         path: |
-          ${{ steps.srtool_build.outputs.wasm }}
-          ${{ steps.srtool_build.outputs.wasm_compressed }}
+          ${{ matrix.chain }}_runtime.compact.wasm
+          ${{ matrix.chain }}_runtime.compact.compressed.wasm
           ${{ matrix.chain }}-srtool-digest.json
 
     # We now get extra information thanks to subwasm
@@ -279,7 +278,7 @@ jobs:
         asset_content_type: application/gzip
 
   upload-runtimes:
-    needs: [publish-release-draft, srtool]
+    needs: publish-release-draft
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -302,7 +301,7 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ needs.publish-release-draft.outputs.upload_url }}
-        asset_path: "${{ matrix.chain }}-runtime/${{ needs.srtool.outputs.wasm_compressed }}"
+        asset_path: ${{ matrix.chain }}-runtime/${{ matrix.chain }}_runtime.compact.compressed.wasm
         asset_name: ${{ steps.get-runtime-version.outputs.runtime_version }}
         asset_content_type: application/wasm
 
