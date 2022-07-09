@@ -293,6 +293,7 @@ jobs:
       id: get-runtime-version
       run: |
         ls -R
+        chain=${{ matrix.chain }}
         runtime_version=$(cat $chain-compressed-info.json | jq '.core_version' | tr -d '"' | cut -d ' ' -f 1)
         echo $runtime_version
         echo "::set-output name=runtime_version::$runtime_version"
