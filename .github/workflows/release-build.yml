@@ -246,7 +246,7 @@ jobs:
         draft: true
 
   upload-binaries:
-    needs: publish-release-draft
+    needs: [publish-release-draft, native-linux, native-macOS, docker]
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -279,7 +279,7 @@ jobs:
         asset_content_type: application/gzip
 
   upload-runtimes:
-    needs: publish-release-draft
+    needs: [publish-release-draft, srtool]
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -290,9 +290,11 @@ jobs:
       with:
         name: ${{ matrix.chain }}-runtime
 
-    #- name: Get runtime version
-    #  id: get-runtime-ver
-    #  run: |
+    - name: Get runtime version
+      id: get-runtime-version
+      run: |
+        runtime_version=$(cat $chain-compressed-info.json | jq '.core_version' | tr -d '"' | cut -d ' ' -f 1)
+        echo "::set-output name=runtime_version::$runtime_version"
 
     - name: Upload ${{ matrix.chain }} Wasm
       uses: actions/upload-release-asset@v1
@@ -300,8 +302,8 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ needs.publish-release-draft.outputs.upload_url }}
-        asset_path: "${{ matrix.runtime }}-runtime/${{ needs.srtool.outputs.wasm_compressed }}"
-        asset_name: ${{ matrix.runtime }} # ${{ steps.get-runtime-ver.outputs.version }}
+        asset_path: "${{ matrix.chain }}-runtime/${{ needs.srtool.outputs.wasm_compressed }}"
+        asset_name: ${{ steps.get-runtime-version.outputs.runtime_version }}
         asset_content_type: application/wasm
 
     - name: Upload ${{ matrix.chain }} Metadata
@@ -310,7 +312,7 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ needs.publish-release-draft.outputs.upload_url }}
-        asset_path: "${{ matrix.runtime }}-runtime/${{ matrix.chain }}-metadata.json"
+        asset_path: "${{ matrix.chain }}-runtime/${{ matrix.chain }}-metadata.json"
         asset_name: ${{ matrix.chain }}-metadata.json
         asset_content_type: application/json
 
@@ -320,6 +322,6 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ needs.publish-release-draft.outputs.upload_url }}
-        asset_path: "${{ matrix.runtime }}-runtime/${{ matrix.chain }}-compressed-info.json"
+        asset_path: "${{ matrix.chain }}-runtime/${{ matrix.chain }}-compressed-info.json"
         asset_name: ${{ matrix.chain }}-metadata.json
         asset_content_type: application/json
