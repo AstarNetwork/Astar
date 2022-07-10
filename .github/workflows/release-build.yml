@@ -1,9 +1,9 @@
 name: Release Build
-on: push
-  # push:
-    # tags:
-    # - v[0-9]+.[0-9]+.[0-9]+*
-  # workflow_dispatch:
+on:
+  push:
+    tags:
+    - v[0-9]+.[0-9]+.[0-9]+*
+  workflow_dispatch:
 env:
   SUBWASM_VERSION: 0.16.1
 jobs:
@@ -70,81 +70,81 @@ jobs:
         name: astar-ubuntu-latest-x86_64
         path: target/release/astar-collator
 
-  # native-macos:
-    # needs: checks-and-tests
-    # runs-on: macos-latest
-    # steps:
-    # - name: Checkout the source code
-      # uses: actions/checkout@v3
-      # with:
-        # submodules: true
+  native-macos:
+    needs: checks-and-tests
+    runs-on: macos-latest
+    steps:
+    - name: Checkout the source code
+      uses: actions/checkout@v3
+      with:
+        submodules: true
 
-    # - name: Install & display rust toolchain
-      # run: rustup show
+    - name: Install & display rust toolchain
+      run: rustup show
 
-    # - name: Check targets are installed correctly
-      # run: rustup target list --installed
+    - name: Check targets are installed correctly
+      run: rustup target list --installed
 
-    # - uses: actions/cache@v3
-      # with:
-        # path: |
-          # ~/.cargo/registry
-          # ~/.cargo/git
-          # target/
-        # key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-        # restore-keys: |
-          # ${{ runner.os }}-cargo-
+    - uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+          target/
+        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-cargo-
 
-    # - name: Build optimized binary
-      # run: cargo build --release --verbose
+    - name: Build optimized binary
+      run: cargo build --release --verbose
 
-    # - uses: actions/upload-artifact@v3
-      # with:
-        # name: astar-macOS-latest-x86_64
-        # path: target/release/astar-collator
+    - uses: actions/upload-artifact@v3
+      with:
+        name: astar-macOS-latest-x86_64
+        path: target/release/astar-collator
 
-  # docker:
-    # needs: native-linux
-    # runs-on: ubuntu-latest
-    # steps:
-    # - name: Checkout the source code
-      # uses: actions/checkout@v3
-      # with:
-        # submodules: true
+  docker:
+    needs: native-linux
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout the source code
+      uses: actions/checkout@v3
+      with:
+        submodules: true
 
-    # - name: Set up Docker Buildx
-      # uses: docker/setup-buildx-action@v1
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v1
 
-    # - name: Login to DockerHub
-      # uses: docker/login-action@v1
-      # with:
-        # username: ${{ secrets.DOCKER_USERNAME }}
-        # password: ${{ secrets.DOCKER_PASSWORD }}
+    - name: Login to DockerHub
+      uses: docker/login-action@v1
+      with:
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
 
-    # - name: Docker meta
-      # id: docker_meta
-      # uses: crazy-max/ghaction-docker-meta@v1
-      # with:
-        # images: staketechnologies/astar-collator
-        # tag-custom: shiden 
-        # tag-sha: true # add git short SHA as Docker tag
+    - name: Docker meta
+      id: docker_meta
+      uses: crazy-max/ghaction-docker-meta@v1
+      with:
+        images: staketechnologies/astar-collator
+        tag-custom: shiden 
+        tag-sha: true # add git short SHA as Docker tag
 
-    # - name: Download pre-built linux collator binary
-      # uses: actions/download-artifact@v3
-      # with:
-        # name: astar-ubuntu-latest-x86_64
+    - name: Download pre-built linux collator binary
+      uses: actions/download-artifact@v3
+      with:
+        name: astar-ubuntu-latest-x86_64
 
-    # - name: Make binary executable and copy it to docker folder
-      # run: chmod +x astar-collator && cp astar-collator third-party/docker
+    - name: Make binary executable and copy it to docker folder
+      run: chmod +x astar-collator && cp astar-collator third-party/docker
 
-    # - name: Build & Push docker image
-      # uses: docker/build-push-action@v2
-      # with:
-        # context: third-party/docker 
-        # platforms: linux/amd64
-        # labels: ${{ steps.docker_meta.outputs.labels }}
-        # tags: ${{ steps.docker_meta.outputs.tags }}
-        # push: true
+    - name: Build & Push docker image
+      uses: docker/build-push-action@v2
+      with:
+        context: third-party/docker 
+        platforms: linux/amd64
+        labels: ${{ steps.docker_meta.outputs.labels }}
+        tags: ${{ steps.docker_meta.outputs.tags }}
+        push: true
 
   srtool:
     needs: checks-and-tests
@@ -223,7 +223,7 @@ jobs:
           ${{ matrix.chain }}-diff.txt
 
   publish-release-draft:
-    needs: [native-linux, srtool] # TODO: add mac, docker
+    needs: [native-linux, native-macOS, docker, srtool]
     runs-on: ubuntu-latest
     outputs:
       release_url: ${{ steps.create-release.outputs.html_url }}
@@ -249,7 +249,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        os: ["ubuntu"] # TODO: add mac
+        os: ["ubuntu", "macOS"]
     steps:
     - name: Create download folder
       run: |
