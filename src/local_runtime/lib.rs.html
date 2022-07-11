@@ -1082,6 +1082,66 @@
 <span id="1077">1077</span>
 <span id="1078">1078</span>
 <span id="1079">1079</span>
+<span id="1080">1080</span>
+<span id="1081">1081</span>
+<span id="1082">1082</span>
+<span id="1083">1083</span>
+<span id="1084">1084</span>
+<span id="1085">1085</span>
+<span id="1086">1086</span>
+<span id="1087">1087</span>
+<span id="1088">1088</span>
+<span id="1089">1089</span>
+<span id="1090">1090</span>
+<span id="1091">1091</span>
+<span id="1092">1092</span>
+<span id="1093">1093</span>
+<span id="1094">1094</span>
+<span id="1095">1095</span>
+<span id="1096">1096</span>
+<span id="1097">1097</span>
+<span id="1098">1098</span>
+<span id="1099">1099</span>
+<span id="1100">1100</span>
+<span id="1101">1101</span>
+<span id="1102">1102</span>
+<span id="1103">1103</span>
+<span id="1104">1104</span>
+<span id="1105">1105</span>
+<span id="1106">1106</span>
+<span id="1107">1107</span>
+<span id="1108">1108</span>
+<span id="1109">1109</span>
+<span id="1110">1110</span>
+<span id="1111">1111</span>
+<span id="1112">1112</span>
+<span id="1113">1113</span>
+<span id="1114">1114</span>
+<span id="1115">1115</span>
+<span id="1116">1116</span>
+<span id="1117">1117</span>
+<span id="1118">1118</span>
+<span id="1119">1119</span>
+<span id="1120">1120</span>
+<span id="1121">1121</span>
+<span id="1122">1122</span>
+<span id="1123">1123</span>
+<span id="1124">1124</span>
+<span id="1125">1125</span>
+<span id="1126">1126</span>
+<span id="1127">1127</span>
+<span id="1128">1128</span>
+<span id="1129">1129</span>
+<span id="1130">1130</span>
+<span id="1131">1131</span>
+<span id="1132">1132</span>
+<span id="1133">1133</span>
+<span id="1134">1134</span>
+<span id="1135">1135</span>
+<span id="1136">1136</span>
+<span id="1137">1137</span>
+<span id="1138">1138</span>
+<span id="1139">1139</span>
 </pre><pre class="rust"><code><span class="attribute">#![<span class="ident">cfg_attr</span>(<span class="ident">not</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>), <span class="ident">no_std</span>)]</span>
 <span class="comment">// `construct_runtime!` does a lot of recursion and requires us to increase the limit to 256.</span>
 <span class="attribute">#![<span class="ident">recursion_limit</span> <span class="op">=</span> <span class="string">&quot;256&quot;</span>]</span>
@@ -1103,6 +1163,7 @@
 <span class="kw">use</span> <span class="ident">frame_system::limits</span>::{<span class="ident">BlockLength</span>, <span class="ident">BlockWeights</span>};
 <span class="kw">use</span> <span class="ident">pallet_contracts</span>::{<span class="ident">weights::WeightInfo</span>, <span class="ident">DefaultContractAccessWeight</span>};
 <span class="kw">use</span> <span class="ident">pallet_evm</span>::{<span class="ident">FeeCalculator</span>, <span class="ident">Runner</span>};
+<span class="kw">use</span> <span class="ident">pallet_evm_precompile_assets_erc20::AddressToAssetId</span>;
 <span class="kw">use</span> <span class="ident">pallet_grandpa</span>::{<span class="ident">fg_primitives</span>, <span class="ident">AuthorityList</span> <span class="kw">as</span> <span class="ident">GrandpaAuthorityList</span>};
 <span class="kw">use</span> <span class="ident">sp_api::impl_runtime_apis</span>;
 <span class="kw">use</span> <span class="ident">sp_core</span>::{<span class="ident">crypto::KeyTypeId</span>, <span class="ident">OpaqueMetadata</span>, <span class="ident">H160</span>, <span class="ident">H256</span>, <span class="ident">U256</span>};
@@ -1110,7 +1171,8 @@
     <span class="ident">create_runtime_str</span>, <span class="ident">generic</span>, <span class="ident">impl_opaque_keys</span>,
     <span class="ident">traits</span>::{
         <span class="ident">AccountIdConversion</span>, <span class="ident">AccountIdLookup</span>, <span class="ident">BlakeTwo256</span>, <span class="ident">Block</span> <span class="kw">as</span> <span class="ident">BlockT</span>, <span class="ident">ConvertInto</span>,
-        <span class="ident">DispatchInfoOf</span>, <span class="ident">Dispatchable</span>, <span class="ident">IdentifyAccount</span>, <span class="ident">NumberFor</span>, <span class="ident">PostDispatchInfoOf</span>, <span class="ident">Verify</span>,
+        <span class="ident">DispatchInfoOf</span>, <span class="ident">Dispatchable</span>, <span class="ident">IdentifyAccount</span>, <span class="ident">NumberFor</span>, <span class="ident">PostDispatchInfoOf</span>,
+        <span class="ident">UniqueSaturatedInto</span>, <span class="ident">Verify</span>,
     },
     <span class="ident">transaction_validity</span>::{
         <span class="ident">TransactionPriority</span>, <span class="ident">TransactionSource</span>, <span class="ident">TransactionValidity</span>, <span class="ident">TransactionValidityError</span>,
@@ -1118,6 +1180,7 @@
     <span class="ident">ApplyExtrinsicResult</span>, <span class="ident">MultiSignature</span>, <span class="ident">RuntimeDebug</span>,
 };
 <span class="kw">use</span> <span class="ident">sp_std::prelude</span>::<span class="kw-2">*</span>;
+
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>)]</span>
 <span class="kw">use</span> <span class="ident">sp_version::NativeVersion</span>;
 <span class="kw">use</span> <span class="ident">sp_version::RuntimeVersion</span>;
@@ -1163,7 +1226,7 @@
 }
 
 <span class="kw">mod</span> <span class="ident">precompiles</span>;
-<span class="kw">pub</span> <span class="kw">use</span> <span class="ident">precompiles::LocalNetworkPrecompiles</span>;
+<span class="kw">pub</span> <span class="kw">use</span> <span class="ident">precompiles</span>::{<span class="ident">LocalNetworkPrecompiles</span>, <span class="ident">ASSET_PRECOMPILE_ADDRESS_PREFIX</span>};
 <span class="kw">pub</span> <span class="kw">type</span> <span class="ident">Precompiles</span> <span class="op">=</span> <span class="ident">LocalNetworkPrecompiles</span><span class="op">&lt;</span><span class="ident">Runtime</span><span class="op">&gt;</span>;
 
 <span class="doccomment">/// Constant values used within the runtime.</span>
@@ -1189,6 +1252,28 @@
 <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">HOURS</span>: <span class="ident">BlockNumber</span> <span class="op">=</span> <span class="ident">MINUTES</span> <span class="op">*</span> <span class="number">60</span>;
 <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">DAYS</span>: <span class="ident">BlockNumber</span> <span class="op">=</span> <span class="ident">HOURS</span> <span class="op">*</span> <span class="number">24</span>;
 
+<span class="kw">pub</span> <span class="kw">type</span> <span class="ident">AssetId</span> <span class="op">=</span> <span class="ident">u128</span>;
+
+<span class="kw">impl</span> <span class="ident">AddressToAssetId</span><span class="op">&lt;</span><span class="ident">AssetId</span><span class="op">&gt;</span> <span class="kw">for</span> <span class="ident">Runtime</span> {
+    <span class="kw">fn</span> <span class="ident">address_to_asset_id</span>(<span class="ident">address</span>: <span class="ident">H160</span>) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">AssetId</span><span class="op">&gt;</span> {
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">data</span> <span class="op">=</span> [<span class="number">0u8</span>; <span class="number">16</span>];
+        <span class="kw">let</span> <span class="ident">address_bytes</span>: [<span class="ident">u8</span>; <span class="number">20</span>] <span class="op">=</span> <span class="ident">address</span>.<span class="ident">into</span>();
+        <span class="kw">if</span> <span class="ident">ASSET_PRECOMPILE_ADDRESS_PREFIX</span>.<span class="ident">eq</span>(<span class="kw-2">&amp;</span><span class="ident">address_bytes</span>[<span class="number">0</span>..<span class="number">4</span>]) {
+            <span class="ident">data</span>.<span class="ident">copy_from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">address_bytes</span>[<span class="number">4</span>..<span class="number">20</span>]);
+            <span class="prelude-val">Some</span>(<span class="ident">u128::from_be_bytes</span>(<span class="ident">data</span>))
+        } <span class="kw">else</span> {
+            <span class="prelude-val">None</span>
+        }
+    }
+
+    <span class="kw">fn</span> <span class="ident">asset_id_to_address</span>(<span class="ident">asset_id</span>: <span class="ident">AssetId</span>) -&gt; <span class="ident">H160</span> {
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">data</span> <span class="op">=</span> [<span class="number">0u8</span>; <span class="number">20</span>];
+        <span class="ident">data</span>[<span class="number">0</span>..<span class="number">4</span>].<span class="ident">copy_from_slice</span>(<span class="ident">ASSET_PRECOMPILE_ADDRESS_PREFIX</span>);
+        <span class="ident">data</span>[<span class="number">4</span>..<span class="number">20</span>].<span class="ident">copy_from_slice</span>(<span class="kw-2">&amp;</span><span class="ident">asset_id</span>.<span class="ident">to_be_bytes</span>());
+        <span class="ident">H160::from</span>(<span class="ident">data</span>)
+    }
+}
+
 <span class="doccomment">/// The version information used to identify this runtime when compiled natively.</span>
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>)]</span>
 <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">native_version</span>() -&gt; <span class="ident">NativeVersion</span> {
@@ -1210,7 +1295,7 @@
     <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">BlockHashCount</span>: <span class="ident">BlockNumber</span> <span class="op">=</span> <span class="number">2400</span>;
     <span class="doccomment">/// We allow for 1 seconds of compute with a 2 second average block time.</span>
     <span class="kw">pub</span> <span class="ident">RuntimeBlockWeights</span>: <span class="ident">BlockWeights</span> <span class="op">=</span> <span class="ident">BlockWeights</span>
-        <span class="ident">::with_sensible_defaults</span>(<span class="number">1</span> <span class="op">*</span> <span class="ident">WEIGHT_PER_SECOND</span>, <span class="ident">NORMAL_DISPATCH_RATIO</span>);
+        <span class="ident">::with_sensible_defaults</span>(<span class="ident">WEIGHT_PER_SECOND</span>, <span class="ident">NORMAL_DISPATCH_RATIO</span>);
     <span class="kw">pub</span> <span class="ident">RuntimeBlockLength</span>: <span class="ident">BlockLength</span> <span class="op">=</span> <span class="ident">BlockLength</span>
         <span class="ident">::max_with_normal_ratio</span>(<span class="number">5</span> <span class="op">*</span> <span class="number">1024</span> <span class="op">*</span> <span class="number">1024</span>, <span class="ident">NORMAL_DISPATCH_RATIO</span>);
     <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">SS58Prefix</span>: <span class="ident">u8</span> <span class="op">=</span> <span class="number">5</span>;
@@ -1334,6 +1419,34 @@
 }
 
 <span class="macro">parameter_types!</span> {
+    <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">AssetDeposit</span>: <span class="ident">Balance</span> <span class="op">=</span> <span class="number">1_000_000</span>;
+    <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">ApprovalDeposit</span>: <span class="ident">Balance</span> <span class="op">=</span> <span class="number">1_000_000</span>;
+    <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">AssetsStringLimit</span>: <span class="ident">u32</span> <span class="op">=</span> <span class="number">50</span>;
+    <span class="doccomment">/// Key = 32 bytes, Value = 36 bytes (32+1+1+1+1)</span>
+    <span class="comment">// https://github.com/paritytech/substrate/blob/069917b/frame/assets/src/lib.rs#L257L271</span>
+    <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">MetadataDepositBase</span>: <span class="ident">Balance</span> <span class="op">=</span> <span class="ident">deposit</span>(<span class="number">1</span>, <span class="number">68</span>);
+    <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">MetadataDepositPerByte</span>: <span class="ident">Balance</span> <span class="op">=</span> <span class="ident">deposit</span>(<span class="number">0</span>, <span class="number">1</span>);
+    <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">AssetAccountDeposit</span>: <span class="ident">Balance</span> <span class="op">=</span> <span class="ident">deposit</span>(<span class="number">1</span>, <span class="number">18</span>);
+}
+
+<span class="kw">impl</span> <span class="ident">pallet_assets::Config</span> <span class="kw">for</span> <span class="ident">Runtime</span> {
+    <span class="kw">type</span> <span class="ident">Event</span> <span class="op">=</span> <span class="ident">Event</span>;
+    <span class="kw">type</span> <span class="ident">Balance</span> <span class="op">=</span> <span class="ident">Balance</span>;
+    <span class="kw">type</span> <span class="ident">AssetId</span> <span class="op">=</span> <span class="ident">AssetId</span>;
+    <span class="kw">type</span> <span class="ident">Currency</span> <span class="op">=</span> <span class="ident">Balances</span>;
+    <span class="kw">type</span> <span class="ident">ForceOrigin</span> <span class="op">=</span> <span class="ident">frame_system::EnsureRoot</span><span class="op">&lt;</span><span class="ident">AccountId</span><span class="op">&gt;</span>;
+    <span class="kw">type</span> <span class="ident">AssetDeposit</span> <span class="op">=</span> <span class="ident">AssetDeposit</span>;
+    <span class="kw">type</span> <span class="ident">MetadataDepositBase</span> <span class="op">=</span> <span class="ident">MetadataDepositBase</span>;
+    <span class="kw">type</span> <span class="ident">MetadataDepositPerByte</span> <span class="op">=</span> <span class="ident">MetadataDepositPerByte</span>;
+    <span class="kw">type</span> <span class="ident">AssetAccountDeposit</span> <span class="op">=</span> <span class="ident">AssetAccountDeposit</span>;
+    <span class="kw">type</span> <span class="ident">ApprovalDeposit</span> <span class="op">=</span> <span class="ident">ApprovalDeposit</span>;
+    <span class="kw">type</span> <span class="ident">StringLimit</span> <span class="op">=</span> <span class="ident">AssetsStringLimit</span>;
+    <span class="kw">type</span> <span class="ident">Freezer</span> <span class="op">=</span> ();
+    <span class="kw">type</span> <span class="ident">Extra</span> <span class="op">=</span> ();
+    <span class="kw">type</span> <span class="ident">WeightInfo</span> <span class="op">=</span> <span class="ident">pallet_assets::weights::SubstrateWeight</span><span class="op">&lt;</span><span class="ident">Runtime</span><span class="op">&gt;</span>;
+}
+
+<span class="macro">parameter_types!</span> {
     <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">TransactionByteFee</span>: <span class="ident">Balance</span> <span class="op">=</span> <span class="number">1</span>;
     <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">OperationalFeeMultiplier</span>: <span class="ident">u8</span> <span class="op">=</span> <span class="number">5</span>;
 }
@@ -1393,7 +1506,7 @@
     <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">RegisterDeposit</span>: <span class="ident">Balance</span> <span class="op">=</span> <span class="number">100</span> <span class="op">*</span> <span class="ident">AST</span>;
     <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">MaxNumberOfStakersPerContract</span>: <span class="ident">u32</span> <span class="op">=</span> <span class="number">512</span>;
     <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">MinimumStakingAmount</span>: <span class="ident">Balance</span> <span class="op">=</span> <span class="number">10</span> <span class="op">*</span> <span class="ident">AST</span>;
-    <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">MinimumRemainingAmount</span>: <span class="ident">Balance</span> <span class="op">=</span> <span class="number">1</span> <span class="op">*</span> <span class="ident">AST</span>;
+    <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">MinimumRemainingAmount</span>: <span class="ident">Balance</span> <span class="op">=</span> <span class="ident">AST</span>;
     <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">MaxUnlockingChunks</span>: <span class="ident">u32</span> <span class="op">=</span> <span class="number">2</span>;
     <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">UnbondingPeriod</span>: <span class="ident">u32</span> <span class="op">=</span> <span class="number">2</span>;
     <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">MaxEraStakeValues</span>: <span class="ident">u32</span> <span class="op">=</span> <span class="number">5</span>;
@@ -1500,7 +1613,7 @@
     }
 
     <span class="kw">fn</span> <span class="ident">weight_to_gas</span>(<span class="ident">weight</span>: <span class="ident">Weight</span>) -&gt; <span class="ident">u64</span> {
-        <span class="ident">u64::try_from</span>(<span class="ident">weight</span>.<span class="ident">wrapping_div</span>(<span class="ident">WEIGHT_PER_GAS</span>)).<span class="ident">unwrap_or</span>(<span class="ident">u32::MAX</span> <span class="kw">as</span> <span class="ident">u64</span>)
+        <span class="ident">weight</span>.<span class="ident">wrapping_div</span>(<span class="ident">WEIGHT_PER_GAS</span>)
     }
 }
 
@@ -1591,7 +1704,7 @@
 }
 
 <span class="macro">parameter_types!</span> {
-    <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">MinVestedTransfer</span>: <span class="ident">Balance</span> <span class="op">=</span> <span class="number">1</span> <span class="op">*</span> <span class="ident">AST</span>;
+    <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">MinVestedTransfer</span>: <span class="ident">Balance</span> <span class="op">=</span> <span class="ident">AST</span>;
 }
 
 <span class="kw">impl</span> <span class="ident">pallet_vesting::Config</span> <span class="kw">for</span> <span class="ident">Runtime</span> {
@@ -1661,6 +1774,7 @@
         <span class="ident">BaseFee</span>: <span class="ident">pallet_base_fee</span>::{<span class="ident">Pallet</span>, <span class="ident">Call</span>, <span class="ident">Storage</span>, <span class="ident">Config</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>, <span class="ident">Event</span>},
         <span class="ident">Contracts</span>: <span class="ident">pallet_contracts</span>::{<span class="ident">Pallet</span>, <span class="ident">Call</span>, <span class="ident">Storage</span>, <span class="ident">Event</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>},
         <span class="ident">Sudo</span>: <span class="ident">pallet_sudo</span>::{<span class="ident">Pallet</span>, <span class="ident">Call</span>, <span class="ident">Config</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>, <span class="ident">Storage</span>, <span class="ident">Event</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>},
+        <span class="ident">Assets</span>: <span class="ident">pallet_assets</span>::{<span class="ident">Pallet</span>, <span class="ident">Call</span>, <span class="ident">Storage</span>, <span class="ident">Event</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>},
     }
 );
 
@@ -1745,9 +1859,11 @@
     <span class="kw">fn</span> <span class="ident">pre_dispatch_self_contained</span>(
         <span class="kw-2">&amp;</span><span class="self">self</span>,
         <span class="ident">info</span>: <span class="kw-2">&amp;</span><span class="ident"><span class="self">Self</span>::SignedInfo</span>,
+        <span class="ident">dispatch_info</span>: <span class="kw-2">&amp;</span><span class="ident">DispatchInfoOf</span><span class="op">&lt;</span><span class="ident">Call</span><span class="op">&gt;</span>,
+        <span class="ident">len</span>: <span class="ident">usize</span>,
     ) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="ident">TransactionValidityError</span><span class="op">&gt;</span><span class="op">&gt;</span> {
         <span class="kw">match</span> <span class="self">self</span> {
-            <span class="ident">Call::Ethereum</span>(<span class="ident">call</span>) =&gt; <span class="ident">call</span>.<span class="ident">pre_dispatch_self_contained</span>(<span class="ident">info</span>),
+            <span class="ident">Call::Ethereum</span>(<span class="ident">call</span>) =&gt; <span class="ident">call</span>.<span class="ident">pre_dispatch_self_contained</span>(<span class="ident">info</span>, <span class="ident">dispatch_info</span>, <span class="ident">len</span>),
             <span class="kw">_</span> =&gt; <span class="prelude-val">None</span>,
         }
     }
@@ -1946,17 +2062,19 @@
             };
 
             <span class="kw">let</span> <span class="ident">is_transactional</span> <span class="op">=</span> <span class="bool-val">false</span>;
+            <span class="kw">let</span> <span class="ident">validate</span> <span class="op">=</span> <span class="bool-val">true</span>;
             <span class="op">&lt;</span><span class="ident">Runtime</span> <span class="kw">as</span> <span class="ident">pallet_evm::Config</span><span class="op">&gt;</span><span class="ident">::Runner::call</span>(
                 <span class="ident">from</span>,
                 <span class="ident">to</span>,
                 <span class="ident">data</span>,
                 <span class="ident">value</span>,
-                <span class="ident">gas_limit</span>.<span class="ident">low_u64</span>(),
+                <span class="ident">gas_limit</span>.<span class="ident">unique_saturated_into</span>(),
                 <span class="ident">max_fee_per_gas</span>,
                 <span class="ident">max_priority_fee_per_gas</span>,
                 <span class="ident">nonce</span>,
                 <span class="ident">Vec::new</span>(),
                 <span class="ident">is_transactional</span>,
+                <span class="ident">validate</span>,
                 <span class="ident">config</span>
                     .<span class="ident">as_ref</span>()
                     .<span class="ident">unwrap_or_else</span>(<span class="op">|</span><span class="op">|</span> <span class="op">&lt;</span><span class="ident">Runtime</span> <span class="kw">as</span> <span class="ident">pallet_evm::Config</span><span class="op">&gt;</span><span class="ident">::config</span>()),
@@ -1984,17 +2102,19 @@
             };
 
             <span class="kw">let</span> <span class="ident">is_transactional</span> <span class="op">=</span> <span class="bool-val">false</span>;
+            <span class="kw">let</span> <span class="ident">validate</span> <span class="op">=</span> <span class="bool-val">true</span>;
             <span class="attribute">#[<span class="ident">allow</span>(<span class="ident">clippy::or_fun_call</span>)]</span> <span class="comment">// suggestion not helpful here</span>
             <span class="op">&lt;</span><span class="ident">Runtime</span> <span class="kw">as</span> <span class="ident">pallet_evm::Config</span><span class="op">&gt;</span><span class="ident">::Runner::create</span>(
                 <span class="ident">from</span>,
                 <span class="ident">data</span>,
                 <span class="ident">value</span>,
-                <span class="ident">gas_limit</span>.<span class="ident">low_u64</span>(),
+                <span class="ident">gas_limit</span>.<span class="ident">unique_saturated_into</span>(),
                 <span class="ident">max_fee_per_gas</span>,
                 <span class="ident">max_priority_fee_per_gas</span>,
                 <span class="ident">nonce</span>,
                 <span class="ident">Vec::new</span>(),
                 <span class="ident">is_transactional</span>,
+                <span class="ident">validate</span>,
                 <span class="ident">config</span>
                     .<span class="ident">as_ref</span>()
                     .<span class="ident">unwrap_or</span>(<span class="op">&lt;</span><span class="ident">Runtime</span> <span class="kw">as</span> <span class="ident">pallet_evm::Config</span><span class="op">&gt;</span><span class="ident">::config</span>()),
@@ -2113,7 +2233,7 @@
 
             <span class="kw">let</span> <span class="ident">storage_info</span> <span class="op">=</span> <span class="ident">AllPalletsWithSystem::storage_info</span>();
 
-            <span class="kw">return</span> (<span class="ident">list</span>, <span class="ident">storage_info</span>)
+            (<span class="ident">list</span>, <span class="ident">storage_info</span>)
         }
 
         <span class="kw">fn</span> <span class="ident">dispatch_benchmark</span>(

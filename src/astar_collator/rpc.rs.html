@@ -208,13 +208,6 @@
 <span id="203">203</span>
 <span id="204">204</span>
 <span id="205">205</span>
-<span id="206">206</span>
-<span id="207">207</span>
-<span id="208">208</span>
-<span id="209">209</span>
-<span id="210">210</span>
-<span id="211">211</span>
-<span id="212">212</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Astar RPCs implementation.</span>
 
 <span class="kw">use</span> <span class="ident">fc_rpc</span>::{
@@ -296,7 +289,7 @@
 
     <span class="ident">Arc::new</span>(<span class="ident">OverrideHandle</span> {
         <span class="ident">schemas</span>: <span class="ident">overrides_map</span>,
-        <span class="ident">fallback</span>: <span class="ident">Box::new</span>(<span class="ident">RuntimeApiStorageOverride::new</span>(<span class="ident">client</span>.<span class="ident">clone</span>())),
+        <span class="ident">fallback</span>: <span class="ident">Box::new</span>(<span class="ident">RuntimeApiStorageOverride::new</span>(<span class="ident">client</span>)),
     })
 }
 
@@ -399,11 +392,11 @@
     <span class="ident">io</span>.<span class="ident">merge</span>(
         <span class="ident">EthFilter::new</span>(
             <span class="ident">client</span>.<span class="ident">clone</span>(),
-            <span class="ident">frontier_backend</span>.<span class="ident">clone</span>(),
+            <span class="ident">frontier_backend</span>,
             <span class="ident">filter_pool</span>,
             <span class="ident">max_stored_filters</span>,
             <span class="ident">max_past_logs</span>,
-            <span class="ident">block_data_cache</span>.<span class="ident">clone</span>(),
+            <span class="ident">block_data_cache</span>,
         )
         .<span class="ident">into_rpc</span>(),
     )<span class="question-mark">?</span>;
@@ -415,14 +408,7 @@
     <span class="ident">io</span>.<span class="ident">merge</span>(<span class="ident">sc_rpc::dev::Dev::new</span>(<span class="ident">client</span>.<span class="ident">clone</span>(), <span class="ident">deny_unsafe</span>).<span class="ident">into_rpc</span>())<span class="question-mark">?</span>;
 
     <span class="ident">io</span>.<span class="ident">merge</span>(
-        <span class="ident">EthPubSub::new</span>(
-            <span class="ident">pool</span>.<span class="ident">clone</span>(),
-            <span class="ident">client</span>.<span class="ident">clone</span>(),
-            <span class="ident">network</span>.<span class="ident">clone</span>(),
-            <span class="ident">subscription_task_executor</span>,
-            <span class="ident">overrides</span>.<span class="ident">clone</span>(),
-        )
-        .<span class="ident">into_rpc</span>(),
+        <span class="ident">EthPubSub::new</span>(<span class="ident">pool</span>, <span class="ident">client</span>, <span class="ident">network</span>, <span class="ident">subscription_task_executor</span>, <span class="ident">overrides</span>).<span class="ident">into_rpc</span>(),
     )<span class="question-mark">?</span>;
 
     <span class="prelude-val">Ok</span>(<span class="ident">io</span>)
