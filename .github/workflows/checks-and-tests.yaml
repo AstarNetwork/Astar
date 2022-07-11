@@ -33,7 +33,7 @@ jobs:
       run: cargo check --verbose --all-features
 
   unit-test:
-    runs-on: [self-hosted, Linux, X64]
+    runs-on: ubuntu-latest
     steps:
     - name: Checkout the source code
       uses: actions/checkout@v3
