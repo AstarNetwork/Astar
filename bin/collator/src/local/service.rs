@@ -39,39 +39,35 @@ impl sc_executor::NativeExecutionDispatch for Executor {
 type FullClient = sc_service::TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>;
 type FullBackend = sc_service::TFullBackend<Block>;
 type FullSelectChain = sc_consensus::LongestChain<FullBackend, Block>;
+type PartialComponents = sc_service::PartialComponents<
+    FullClient,
+    FullBackend,
+    FullSelectChain,
+    sc_consensus::DefaultImportQueue<Block, FullClient>,
+    sc_transaction_pool::FullPool<Block, FullClient>,
+    (
+        FrontierBlockImport<
+            Block,
+            sc_finality_grandpa::GrandpaBlockImport<
+                FullBackend,
+                Block,
+                FullClient,
+                FullSelectChain,
+            >,
+            FullClient,
+        >,
+        sc_finality_grandpa::LinkHalf<Block, FullClient, FullSelectChain>,
+        Option<Telemetry>,
+        Arc<fc_db::Backend<Block>>,
+    ),
+>;
 
 /// Build a partial chain component config
-pub fn new_partial(
-    config: &Configuration,
-) -> Result<
-    sc_service::PartialComponents<
-        FullClient,
-        FullBackend,
-        FullSelectChain,
-        sc_consensus::DefaultImportQueue<Block, FullClient>,
-        sc_transaction_pool::FullPool<Block, FullClient>,
-        (
-            FrontierBlockImport<
-                Block,
-                sc_finality_grandpa::GrandpaBlockImport<
-                    FullBackend,
-                    Block,
-                    FullClient,
-                    FullSelectChain,
-                >,
-                FullClient,
-            >,
-            sc_finality_grandpa::LinkHalf<Block, FullClient, FullSelectChain>,
-            Option<Telemetry>,
-            Arc<fc_db::Backend<Block>>,
-        ),
-    >,
-    ServiceError,
-> {
+pub fn new_partial(config: &Configuration) -> Result<PartialComponents, ServiceError> {
     if config.keystore_remote.is_some() {
-        return Err(ServiceError::Other(format!(
-            "Remote Keystores are not supported."
-        )));
+        return Err(ServiceError::Other(
+            "Remote Keystores are not supported.".to_string(),
+        ));
     }
 
     let telemetry = config
@@ -94,7 +90,7 @@ pub fn new_partial(
 
     let (client, backend, keystore_container, task_manager) =
         sc_service::new_full_parts::<Block, RuntimeApi, _>(
-            &config,
+            config,
             telemetry.as_ref().map(|(_, telemetry)| telemetry.handle()),
             executor,
         )?;
@@ -159,7 +155,7 @@ pub fn new_partial(
         },
     )?;
 
-    Ok(sc_service::PartialComponents {
+    Ok(PartialComponents {
         client,
         backend,
         task_manager,
@@ -178,7 +174,7 @@ pub fn new_partial(
 
 /// Builds a new service.
 pub fn start_node(config: Configuration) -> Result<TaskManager, ServiceError> {
-    let sc_service::PartialComponents {
+    let PartialComponents {
         client,
         backend,
         mut task_manager,
@@ -345,7 +341,7 @@ pub fn start_node(config: Configuration) -> Result<TaskManager, ServiceError> {
         let aura = sc_consensus_aura::start_aura::<AuraPair, _, _, _, _, _, _, _, _, _, _, _>(
             StartAuraParams {
                 slot_duration,
-                client: client.clone(),
+                client,
                 select_chain,
                 block_import,
                 proposer_factory,

@@ -93,7 +93,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("astar"),
     impl_name: create_runtime_str!("astar"),
     authoring_version: 1,
-    spec_version: 24,
+    spec_version: 25,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 2,
@@ -280,11 +280,11 @@ impl pallet_custom_signatures::Config for Runtime {
 }
 
 parameter_types! {
-    pub const BlockPerEra: BlockNumber = 1 * DAYS;
+    pub const BlockPerEra: BlockNumber = DAYS;
     pub const RegisterDeposit: Balance = 1000 * ASTR;
     pub const MaxNumberOfStakersPerContract: u32 = 16384;
     pub const MinimumStakingAmount: Balance = 500 * ASTR;
-    pub const MinimumRemainingAmount: Balance = 1 * ASTR;
+    pub const MinimumRemainingAmount: Balance = ASTR;
     pub const MaxEraStakeValues: u32 = 5;
     pub const MaxUnlockingChunks: u32 = 4;
     pub const UnbondingPeriod: u32 = 10;
@@ -390,7 +390,7 @@ impl pallet_authorship::Config for Runtime {
 }
 
 parameter_types! {
-    pub const SessionPeriod: BlockNumber = 1 * HOURS;
+    pub const SessionPeriod: BlockNumber = HOURS;
     pub const SessionOffset: BlockNumber = 0;
 }
 
@@ -555,7 +555,7 @@ impl pallet_assets::Config for Runtime {
 }
 
 parameter_types! {
-    pub const MinVestedTransfer: Balance = 1 * ASTR;
+    pub const MinVestedTransfer: Balance = ASTR;
 }
 
 impl pallet_vesting::Config for Runtime {
@@ -668,7 +668,7 @@ impl pallet_evm::GasWeightMapping for GasWeightMapping {
     }
 
     fn weight_to_gas(weight: Weight) -> u64 {
-        u64::try_from(weight.wrapping_div(WEIGHT_PER_GAS)).unwrap_or(u32::MAX as u64)
+        weight.wrapping_div(WEIGHT_PER_GAS)
     }
 }
 
@@ -861,7 +861,7 @@ impl OnRuntimeUpgrade for RelayAssetRegistration {
         );
 
         AssetLocationUnitsPerSecond::<Runtime>::insert(
-            relay_asset_multilocation.clone().versioned(),
+            relay_asset_multilocation.versioned(),
             1_000_000_000,
         );
 
@@ -1201,7 +1201,7 @@ impl_runtime_apis! {
 
             let storage_info = AllPalletsWithSystem::storage_info();
 
-            return (list, storage_info)
+            (list, storage_info)
         }
 
         fn dispatch_benchmark(
@@ -1268,7 +1268,7 @@ impl cumulus_pallet_parachain_system::CheckInherents<Block> for CheckInherents {
             )
             .create_inherent_data()
             .expect("Could not create the timestamp inherent data");
-        inherent_data.check_extrinsics(&block)
+        inherent_data.check_extrinsics(block)
     }
 }
 

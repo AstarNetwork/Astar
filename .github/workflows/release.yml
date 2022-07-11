@@ -1,0 +1,329 @@
+name: Release Build
+on:
+  push:
+    tags:
+    - v[0-9]+.[0-9]+.[0-9]+*
+  workflow_dispatch:
+env:
+  SUBWASM_VERSION: 0.16.1
+jobs:
+  checks-and-tests:
+    runs-on: [self-hosted, Linux, X64]
+    steps:
+    - name: Checkout the source code
+      uses: actions/checkout@v3
+      with:
+        submodules: true
+
+    - name: Install & display rust toolchain
+      run: rustup show
+
+    - name: Check targets are installed correctly
+      run: rustup target list --installed
+
+    - uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+          target/
+        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-cargo-
+
+    - name: Check all features compilation
+      run: cargo check --verbose --all-features
+
+    - name: Run all tests
+      run: cargo test --all-features
+
+  native-linux:
+    needs: checks-and-tests
+    runs-on: [self-hosted, Linux, X64]
+    steps:
+    - name: Checkout the source code
+      uses: actions/checkout@v3
+      with:
+        submodules: true
+
+    - name: Install & display rust toolchain
+      run: rustup show
+
+    - name: Check targets are installed correctly
+      run: rustup target list --installed
+
+    - uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+          target/
+        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-cargo-
+
+    - name: Build optimized binary
+      run: CARGO_PROFILE_RELEASE_LTO=true RUSTFLAGS="-C codegen-units=1" cargo build --release --verbose
+
+    - uses: actions/upload-artifact@v3
+      with:
+        name: astar-ubuntu-latest-x86_64
+        path: target/release/astar-collator
+
+  native-macos:
+    needs: checks-and-tests
+    runs-on: macos-latest
+    steps:
+    - name: Checkout the source code
+      uses: actions/checkout@v3
+      with:
+        submodules: true
+
+    - name: Install & display rust toolchain
+      run: rustup show
+
+    - name: Check targets are installed correctly
+      run: rustup target list --installed
+
+    - uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+          target/
+        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-cargo-
+
+    - name: Build optimized binary
+      run: cargo build --release --verbose
+
+    - uses: actions/upload-artifact@v3
+      with:
+        name: astar-macOS-latest-x86_64
+        path: target/release/astar-collator
+
+  docker:
+    needs: native-linux
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout the source code
+      uses: actions/checkout@v3
+      with:
+        submodules: true
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v1
+
+    - name: Login to DockerHub
+      uses: docker/login-action@v1
+      with:
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
+
+    - name: Docker meta
+      id: docker_meta
+      uses: crazy-max/ghaction-docker-meta@v1
+      with:
+        images: staketechnologies/astar-collator
+        tag-custom: shiden 
+        tag-sha: true # add git short SHA as Docker tag
+
+    - name: Download pre-built linux collator binary
+      uses: actions/download-artifact@v3
+      with:
+        name: astar-ubuntu-latest-x86_64
+
+    - name: Make binary executable and copy it to docker folder
+      run: chmod +x astar-collator && cp astar-collator third-party/docker
+
+    - name: Build & Push docker image
+      uses: docker/build-push-action@v2
+      with:
+        context: third-party/docker 
+        platforms: linux/amd64
+        labels: ${{ steps.docker_meta.outputs.labels }}
+        tags: ${{ steps.docker_meta.outputs.tags }}
+        push: true
+
+  srtool:
+    needs: checks-and-tests
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        chain: ["astar", "shiden", "shibuya"]
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+
+    - name: Srtool build
+      id: srtool_build
+      uses: chevdor/srtool-actions@v0.3.0
+      with:
+        chain: ${{ matrix.chain }}
+        runtime_dir: runtime/${{ matrix.chain }}
+
+    - name: Summary
+      run: |
+        echo '${{ steps.srtool_build.outputs.json }}' | jq > ${{ matrix.chain }}-srtool-digest.json
+        cat ${{ matrix.chain }}-srtool-digest.json
+        echo "Compact Runtime: ${{ steps.srtool_build.outputs.wasm }}"
+        echo "Compressed Runtime: ${{ steps.srtool_build.outputs.wasm_compressed }}"
+        cp ${{ steps.srtool_build.outputs.wasm }} ${{ matrix.chain }}_runtime.compact.wasm
+        cp ${{ steps.srtool_build.outputs.wasm_compressed }} ${{ matrix.chain }}_runtime.compact.compressed.wasm
+
+    # it takes a while to build the runtime, so let's save the artifact as soon as we have it
+    - name: Archive Artifacts for ${{ matrix.chain }}
+      uses: actions/upload-artifact@v3
+      with:
+        name: ${{ matrix.chain }}-runtime
+        path: |
+          ${{ matrix.chain }}_runtime.compact.wasm
+          ${{ matrix.chain }}_runtime.compact.compressed.wasm
+          ${{ matrix.chain }}-srtool-digest.json
+
+    # We now get extra information thanks to subwasm
+    - name: Install subwasm
+      run: |
+        wget https://github.com/chevdor/subwasm/releases/download/v${{ env.SUBWASM_VERSION }}/subwasm_linux_amd64_v${{ env.SUBWASM_VERSION }}.deb
+        sudo dpkg -i subwasm_linux_amd64_v${{ env.SUBWASM_VERSION }}.deb
+        subwasm --version
+
+    - name: Show Runtime information
+      shell: bash
+      run: |
+        subwasm info ${{ steps.srtool_build.outputs.wasm }}
+        subwasm info ${{ steps.srtool_build.outputs.wasm_compressed }}
+        subwasm --json info ${{ steps.srtool_build.outputs.wasm }} > ${{ matrix.chain }}-info.json
+        subwasm --json info ${{ steps.srtool_build.outputs.wasm_compressed }} > ${{ matrix.chain }}-compressed-info.json
+
+    - name: Extract the metadata
+      shell: bash
+      run: |
+        subwasm meta ${{ steps.srtool_build.outputs.wasm }}
+        subwasm --json meta ${{ steps.srtool_build.outputs.wasm }} > ${{ matrix.chain }}-metadata.json
+
+    - name: Check the metadata diff
+      shell: bash
+      # the following subwasm call will error for chains that are not known and/or live, that includes shell for instance
+      run: |
+        subwasm diff ${{ steps.srtool_build.outputs.wasm }} --chain-b ${{ matrix.chain }} || \
+          echo "Subwasm call failed, check the logs. This is likely because ${{ matrix.chain }} is not known by subwasm" | \
+          tee ${{ matrix.chain }}-diff.txt
+
+    - name: Archive Subwasm results
+      uses: actions/upload-artifact@v3
+      with:
+        name: ${{ matrix.chain }}-runtime
+        path: |
+          ${{ matrix.chain }}-info.json
+          ${{ matrix.chain }}-compressed-info.json
+          ${{ matrix.chain }}-metadata.json
+          ${{ matrix.chain }}-diff.txt
+
+  publish-release-draft:
+    needs: [native-linux, native-macOS, docker, srtool]
+    runs-on: ubuntu-latest
+    outputs:
+      release_url: ${{ steps.create-release.outputs.html_url }}
+      upload_url: ${{ steps.create-release.outputs.upload_url }}
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+
+    - name: Create Release Draft
+      id: create-release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.ref_name }}
+        release_name: ${{ github.ref_name }}
+        body_path: .github/release-draft.md
+        draft: true
+
+  upload-binaries:
+    needs: publish-release-draft
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os: ["ubuntu", "macOS"]
+    steps:
+    - name: Create download folder
+      run: |
+        mkdir -p ${{ matrix.os }}-bin
+
+    - name: Download pre-built collator binary
+      uses: actions/download-artifact@v3
+      with:
+        name: astar-${{ matrix.os }}-latest-x86_64
+        path: ${{ matrix.os }}-bin
+
+    - name: Make binary executable and tar gzip
+      run: |
+        cd ${{ matrix.os }}-bin
+        chmod +x astar-collator
+        tar zcvf astar-collator.tar.gz astar-collator
+
+    - name: Upload binary artifact
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ needs.publish-release-draft.outputs.upload_url }}
+        asset_path: ${{ matrix.os }}-bin/astar-collator.tar.gz
+        asset_name: astar-collator-${{ github.ref_name }}-${{ matrix.os }}-x86_64.tar.gz
+        asset_content_type: application/gzip
+
+  upload-runtimes:
+    needs: publish-release-draft
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        chain: ["astar", "shiden", "shibuya"]
+    steps:
+    - name: Download runtime
+      uses: actions/download-artifact@v3
+      with:
+        name: ${{ matrix.chain }}-runtime
+
+    - name: Get runtime version
+      id: get-runtime-version
+      run: |
+        ls -R
+        chain=${{ matrix.chain }}
+        runtime_version=$(cat $chain-compressed-info.json | jq '.core_version' | tr -d '"' | cut -d ' ' -f 1)
+        echo $runtime_version
+        echo "::set-output name=runtime_version::$runtime_version"
+
+    - name: Upload ${{ matrix.chain }} Wasm
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ needs.publish-release-draft.outputs.upload_url }}
+        asset_path: ${{ matrix.chain }}_runtime.compact.compressed.wasm
+        asset_name: ${{ steps.get-runtime-version.outputs.runtime_version }}
+        asset_content_type: application/wasm
+
+    - name: Upload ${{ matrix.chain }} Metadata
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ needs.publish-release-draft.outputs.upload_url }}
+        asset_path: ${{ matrix.chain }}-metadata.json
+        asset_name: ${{ matrix.chain }}-metadata.json
+        asset_content_type: application/json
+
+    - name: Upload ${{ matrix.chain }} Compressed Info
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ needs.publish-release-draft.outputs.upload_url }}
+        asset_path: ${{ matrix.chain }}-compressed-info.json
+        asset_name: ${{ matrix.chain }}-compressed-info.json
+        asset_content_type: application/json

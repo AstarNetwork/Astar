@@ -79,7 +79,7 @@ where
 
     Arc::new(OverrideHandle {
         schemas: overrides_map,
-        fallback: Box::new(RuntimeApiStorageOverride::new(client.clone())),
+        fallback: Box::new(RuntimeApiStorageOverride::new(client)),
     })
 }
 
@@ -182,11 +182,11 @@ where
     io.merge(
         EthFilter::new(
             client.clone(),
-            frontier_backend.clone(),
+            frontier_backend,
             filter_pool,
             max_stored_filters,
             max_past_logs,
-            block_data_cache.clone(),
+            block_data_cache,
         )
         .into_rpc(),
     )?;
@@ -198,14 +198,7 @@ where
     io.merge(sc_rpc::dev::Dev::new(client.clone(), deny_unsafe).into_rpc())?;
 
     io.merge(
-        EthPubSub::new(
-            pool.clone(),
-            client.clone(),
-            network.clone(),
-            subscription_task_executor,
-            overrides.clone(),
-        )
-        .into_rpc(),
+        EthPubSub::new(pool, client, network, subscription_task_executor, overrides).into_rpc(),
     )?;
 
     Ok(io)

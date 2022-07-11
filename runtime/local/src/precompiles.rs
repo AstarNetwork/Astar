@@ -23,7 +23,7 @@ use sp_std::marker::PhantomData;
 pub const ASSET_PRECOMPILE_ADDRESS_PREFIX: &[u8] = &[255u8; 4];
 
 /// The PrecompileSet installed in the Local runtime.
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Default, Clone, Copy)]
 pub struct LocalNetworkPrecompiles<R>(PhantomData<R>);
 
 impl<R> LocalNetworkPrecompiles<R> {
@@ -36,7 +36,7 @@ impl<R> LocalNetworkPrecompiles<R> {
     pub fn used_addresses() -> impl Iterator<Item = H160> {
         sp_std::vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 1024, 1025, 1026, 1027, 20481, 20482, 20483]
             .into_iter()
-            .map(|x| hash(x))
+            .map(hash)
     }
 }
 
@@ -93,7 +93,7 @@ where
     }
 
     fn is_precompile(&self, address: H160) -> bool {
-        Self::used_addresses().find(|x| x == &address).is_some()
+        Self::used_addresses().any(|x| x == address)
     }
 }
 

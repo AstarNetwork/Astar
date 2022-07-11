@@ -11,7 +11,6 @@ use cumulus_primitives_core::ParaId;
 use cumulus_relay_chain_inprocess_interface::build_inprocess_relay_chain;
 use cumulus_relay_chain_interface::{RelayChainError, RelayChainInterface, RelayChainResult};
 use cumulus_relay_chain_rpc_interface::RelayChainRPCInterface;
-use fc_consensus::FrontierBlockImport;
 use fc_rpc_core::types::{FeeHistoryCache, FilterPool};
 use futures::{lock::Mutex, StreamExt};
 use pallet_contracts_rpc::ContractsApiServer;
@@ -20,7 +19,7 @@ use sc_client_api::{BlockchainEvents, ExecutorProvider};
 use sc_consensus::import_queue::BasicQueue;
 use sc_executor::NativeElseWasmExecutor;
 use sc_network::NetworkService;
-use sc_service::{Configuration, PartialComponents, Role, TFullBackend, TFullClient, TaskManager};
+use sc_service::{Configuration, Role, TFullBackend, TFullClient, TaskManager};
 use sc_telemetry::{Telemetry, TelemetryHandle, TelemetryWorker, TelemetryWorkerHandle};
 use sp_api::ConstructRuntimeApi;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
@@ -101,6 +100,25 @@ pub mod shibuya {
     }
 }
 
+type PartialComponents<RuntimeApi, Executor> = sc_service::PartialComponents<
+    TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>,
+    TFullBackend<Block>,
+    (),
+    sc_consensus::DefaultImportQueue<
+        Block,
+        TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>,
+    >,
+    sc_transaction_pool::FullPool<
+        Block,
+        TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>,
+    >,
+    (
+        Option<Telemetry>,
+        Option<TelemetryWorkerHandle>,
+        Arc<fc_db::Backend<Block>>,
+    ),
+>;
+
 /// Starts a `ServiceBuilder` for a full service.
 ///
 /// Use this macro if you don't actually need the full service, but just the builder in order to
@@ -108,27 +126,7 @@ pub mod shibuya {
 pub fn new_partial<RuntimeApi, Executor, BIQ>(
     config: &Configuration,
     build_import_queue: BIQ,
-) -> Result<
-    PartialComponents<
-        TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>,
-        TFullBackend<Block>,
-        (),
-        sc_consensus::DefaultImportQueue<
-            Block,
-            TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>,
-        >,
-        sc_transaction_pool::FullPool<
-            Block,
-            TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>,
-        >,
-        (
-            Option<Telemetry>,
-            Option<TelemetryWorkerHandle>,
-            Arc<fc_db::Backend<Block>>,
-        ),
-    >,
-    sc_service::Error,
->
+) -> Result<PartialComponents<RuntimeApi, Executor>, sc_service::Error>
 where
     RuntimeApi: ConstructRuntimeApi<Block, TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>
         + Send
@@ -147,7 +145,7 @@ where
     Executor: sc_executor::NativeExecutionDispatch + 'static,
     BIQ: FnOnce(
         Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>,
-        FrontierBlockImport<
+        fc_consensus::FrontierBlockImport<
             Block,
             Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>,
             TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>,
@@ -183,7 +181,7 @@ where
 
     let (client, backend, keystore_container, task_manager) =
         sc_service::new_full_parts::<Block, RuntimeApi, _>(
-            &config,
+            config,
             telemetry.as_ref().map(|(_, telemetry)| telemetry.handle()),
             executor,
         )?;
@@ -207,8 +205,11 @@ where
     );
 
     let frontier_backend = crate::rpc::open_frontier_backend(config)?;
-    let frontier_block_import =
-        FrontierBlockImport::new(client.clone(), client.clone(), frontier_backend.clone());
+    let frontier_block_import = fc_consensus::FrontierBlockImport::new(
+        client.clone(),
+        client.clone(),
+        frontier_backend.clone(),
+    );
 
     let import_queue = build_import_queue(
         client.clone(),
@@ -294,7 +295,7 @@ where
     Executor: sc_executor::NativeExecutionDispatch + 'static,
     BIQ: FnOnce(
         Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>,
-        FrontierBlockImport<
+        fc_consensus::FrontierBlockImport<
             Block,
             Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>,
             TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>,
@@ -562,7 +563,7 @@ where
     Executor: sc_executor::NativeExecutionDispatch + 'static,
     BIQ: FnOnce(
         Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>,
-        FrontierBlockImport<
+        fc_consensus::FrontierBlockImport<
             Block,
             Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>,
             TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>,
@@ -799,24 +800,24 @@ where
     Ok((task_manager, client))
 }
 
+type FrontierBlockImport<RuntimeApi, Executor> = fc_consensus::FrontierBlockImport<
+    Block,
+    Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>,
+    TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>,
+>;
+type DefaultImportQueue<RuntimeApi, Executor> = sc_consensus::DefaultImportQueue<
+    Block,
+    TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>,
+>;
+
 /// Build the import queue.
 pub fn build_import_queue<RuntimeApi, Executor>(
     client: Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>,
-    block_import: FrontierBlockImport<
-        Block,
-        Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>,
-        TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>,
-    >,
+    block_import: FrontierBlockImport<RuntimeApi, Executor>,
     config: &Configuration,
     telemetry_handle: Option<TelemetryHandle>,
     task_manager: &TaskManager,
-) -> Result<
-    sc_consensus::DefaultImportQueue<
-        Block,
-        TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>,
-    >,
-    sc_service::Error,
->
+) -> Result<DefaultImportQueue<RuntimeApi, Executor>, sc_service::Error>
 where
     RuntimeApi: ConstructRuntimeApi<Block, TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>
         + Send
@@ -877,7 +878,7 @@ where
         aura_verifier: BuildOnAccess::Uninitialized(Some(Box::new(aura_verifier))),
     };
 
-    let registry = config.prometheus_registry().clone();
+    let registry = config.prometheus_registry();
     let spawner = task_manager.spawn_essential_handle();
 
     Ok(BasicQueue::new(
@@ -934,7 +935,7 @@ pub async fn start_astar_node(
 
                     Ok((time, slot))
                 },
-                registry: config.prometheus_registry().clone(),
+                registry: config.prometheus_registry(),
                 can_author_with,
                 spawner: &task_manager.spawn_essential_handle(),
                 telemetry,
@@ -1003,7 +1004,7 @@ pub async fn start_astar_node(
                         }
                     },
                 block_import: client.clone(),
-                para_client: client.clone(),
+                para_client: client,
                 backoff_authoring_blocks: Option::<()>::None,
                 sync_oracle,
                 keystore,
@@ -1124,8 +1125,8 @@ pub async fn start_shiden_node(
                 task_manager.spawn_handle(),
                 client.clone(),
                 transaction_pool,
-                prometheus_registry.clone(),
-                telemetry.clone(),
+                prometheus_registry,
+                telemetry,
             );
 
             let relay_chain_consensus =
@@ -1159,7 +1160,7 @@ pub async fn start_shiden_node(
                 );
 
             let parachain_consensus = Box::new(WaitForAuraConsensus {
-                client: client.clone(),
+                client,
                 aura_consensus: Arc::new(Mutex::new(aura_consensus)),
                 relay_chain_consensus: Arc::new(Mutex::new(relay_chain_consensus)),
             });
@@ -1215,7 +1216,7 @@ pub async fn start_shibuya_node(
 
                     Ok((time, slot))
                 },
-                registry: config.prometheus_registry().clone(),
+                registry: config.prometheus_registry(),
                 can_author_with,
                 spawner: &task_manager.spawn_essential_handle(),
                 telemetry,
@@ -1282,7 +1283,7 @@ pub async fn start_shibuya_node(
                         }
                     },
                 block_import: client.clone(),
-                para_client: client.clone(),
+                para_client: client,
                 backoff_authoring_blocks: Option::<()>::None,
                 sync_oracle,
                 keystore,
