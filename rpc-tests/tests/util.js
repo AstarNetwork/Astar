@@ -7,7 +7,6 @@ import config from '../config.js';
 
 chai.use(chaiAsPromised);
 
-export const BINARY_PATH = `../target/release/astar-collator`;
 export const SPAWNING_TIME = 120000;
 const WS_PORT = 9988;
 
