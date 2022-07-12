@@ -31,9 +31,9 @@ jobs:
 
     - run: chmod +x ./polkadot
 
-    - run: mkdir bin
-    - run: mv astar-collator bin/astar-collator
-    - run: mv polkadot bin/polkadot
+    - run: mkdir -p rpc-tests/bin
+    - run: mv astar-collator rpc-tests/bin/astar-collator
+    - run: mv polkadot rpc-tests/bin/polkadot
 
     - name: Use Node.js 16.x
       uses: actions/setup-node@v2
