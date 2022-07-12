@@ -305,7 +305,7 @@ jobs:
       with:
         upload_url: ${{ needs.publish-release-draft.outputs.upload_url }}
         asset_path: ${{ matrix.chain }}_runtime.compact.compressed.wasm
-        asset_name: ${{ steps.get-runtime-version.outputs.runtime_version }}
+        asset_name: ${{ steps.get-runtime-version.outputs.runtime_version }}.wasm
         asset_content_type: application/wasm
 
     - name: Upload ${{ matrix.chain }} Metadata
