@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node-version: [16.x]
+        network: [astar, shiden]
     steps:
     - uses: actions/checkout@v2
 
@@ -23,14 +23,14 @@ jobs:
     
     - run: chmod +x ./astar-collator
 
-    - run: mkdir -p target/release
-    - run: mv astar-collator target/release/astar-collator
-    - name: Use Node.js ${{ matrix.node-version }}
+    - run: mkdir bin
+    - run: mv astar-collator bin/astar-collator
+    - name: Use Node.js 16.x
       uses: actions/setup-node@v2
       with:
         node-version: ${{ matrix.node-version }}
     - run: npm install -g yarn
     - run: yarn install
       working-directory: ./rpc-tests
-    - run: yarn test
+    - run: yarn test:${{ matrix.network }}
       working-directory: ./rpc-tests
