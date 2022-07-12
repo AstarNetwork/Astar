@@ -3,10 +3,14 @@ name: RPC test
 on:
   workflow_dispatch:
     inputs:
-      tag:
-        description: 'Release tag version'
+      astar_tag:
+        description: 'Release tag version for astar collator'
         required: true
         default: '4.9.0'
+      polkadot_tag:
+        description: 'Release tag version for polkadot relay chain'
+        required: true
+        default: '0.9.25'
 
 jobs:
   test:
@@ -17,14 +21,20 @@ jobs:
     steps:
     - uses: actions/checkout@v2
 
-    - run: wget -q https://github.com/AstarNetwork/Astar/releases/download/v${{ github.event.inputs.tag }}/astar-collator-${{ github.event.inputs.tag }}-ubuntu-x86_64.tar.gz
+    - run: wget https://github.com/AstarNetwork/Astar/releases/download/v${{ github.event.inputs.astar_tag }}/astar-collator-${{ github.event.inputs.astar_tag }}-ubuntu-x86_64.tar.gz
 
     - run: tar -xvf astar-collator-*-ubuntu-x86_64.tar.gz
     
     - run: chmod +x ./astar-collator
 
+    - run: wget https://github.com/paritytech/polkadot/releases/download/v${{ github.event.inputs.polkadot_tag }}/polkadot
+
+    - run: chmod +x ./polkadot
+
     - run: mkdir bin
     - run: mv astar-collator bin/astar-collator
+    - run: mv polkadot bin/polkadot
+
     - name: Use Node.js 16.x
       uses: actions/setup-node@v2
       with:
