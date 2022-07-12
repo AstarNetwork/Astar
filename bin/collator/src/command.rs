@@ -196,8 +196,7 @@ impl SubstrateCli for RelayChainCli {
                 .unwrap(),
             ))
         } else {
-            polkadot_cli::Cli::from_iter([RelayChainCli::executable_name().to_string()].iter())
-                .load_spec(id)
+            polkadot_cli::Cli::from_iter([RelayChainCli::executable_name()].iter()).load_spec(id)
         }
     }
 
@@ -206,7 +205,7 @@ impl SubstrateCli for RelayChainCli {
     }
 }
 
-fn extract_genesis_wasm(chain_spec: &Box<dyn sc_service::ChainSpec>) -> Result<Vec<u8>> {
+fn extract_genesis_wasm(chain_spec: &dyn sc_service::ChainSpec) -> Result<Vec<u8>> {
     let mut storage = chain_spec.build_storage()?;
 
     storage
@@ -395,7 +394,7 @@ pub fn run() -> Result<()> {
             runner.sync_run(|config| {
                 let polkadot_cli = RelayChainCli::new(
                     &config,
-                    [RelayChainCli::executable_name().to_string()]
+                    [RelayChainCli::executable_name()]
                         .iter()
                         .chain(cli.relaychain_args.iter()),
                 );
@@ -494,7 +493,7 @@ pub fn run() -> Result<()> {
             let _ = builder.init();
 
             let raw_wasm_blob =
-                extract_genesis_wasm(&cli.load_spec(&params.chain.clone().unwrap_or_default())?)?;
+                extract_genesis_wasm(&*cli.load_spec(&params.chain.clone().unwrap_or_default())?)?;
             let output_buf = if params.raw {
                 raw_wasm_blob
             } else {
@@ -538,25 +537,25 @@ pub fn run() -> Result<()> {
                 }
                 BenchmarkCmd::Block(cmd) => {
                     if chain_spec.is_astar() {
-                        return runner.sync_run(|config| {
+                        runner.sync_run(|config| {
                             let params =
                                 parachain::new_partial::<astar::RuntimeApi, astar::Executor, _>(
                                     &config,
                                     parachain::build_import_queue,
                                 )?;
                             cmd.run(params.client)
-                        });
+                        })
                     } else if chain_spec.is_shiden() {
-                        return runner.sync_run(|config| {
+                        runner.sync_run(|config| {
                             let params =
                                 parachain::new_partial::<shiden::RuntimeApi, shiden::Executor, _>(
                                     &config,
                                     parachain::build_import_queue,
                                 )?;
                             cmd.run(params.client)
-                        });
+                        })
                     } else if chain_spec.is_shibuya() {
-                        return runner.sync_run(|config| {
+                        runner.sync_run(|config| {
                             let params = parachain::new_partial::<
                                 shibuya::RuntimeApi,
                                 shibuya::Executor,
@@ -565,17 +564,17 @@ pub fn run() -> Result<()> {
                                 &config, parachain::build_import_queue
                             )?;
                             cmd.run(params.client)
-                        });
+                        })
                     } else {
-                        return runner.sync_run(|config| {
+                        runner.sync_run(|config| {
                             let params = local::new_partial(&config)?;
                             cmd.run(params.client)
-                        });
+                        })
                     }
                 }
                 BenchmarkCmd::Storage(cmd) => {
                     if chain_spec.is_astar() {
-                        return runner.sync_run(|config| {
+                        runner.sync_run(|config| {
                             let params =
                                 parachain::new_partial::<astar::RuntimeApi, astar::Executor, _>(
                                     &config,
@@ -585,9 +584,9 @@ pub fn run() -> Result<()> {
                             let storage = params.backend.expose_storage();
 
                             cmd.run(config, params.client, db, storage)
-                        });
+                        })
                     } else if chain_spec.is_shiden() {
-                        return runner.sync_run(|config| {
+                        runner.sync_run(|config| {
                             let params =
                                 parachain::new_partial::<shiden::RuntimeApi, shiden::Executor, _>(
                                     &config,
@@ -597,9 +596,9 @@ pub fn run() -> Result<()> {
                             let storage = params.backend.expose_storage();
 
                             cmd.run(config, params.client, db, storage)
-                        });
+                        })
                     } else if chain_spec.is_shibuya() {
-                        return runner.sync_run(|config| {
+                        runner.sync_run(|config| {
                             let params = parachain::new_partial::<
                                 shibuya::RuntimeApi,
                                 shibuya::Executor,
@@ -611,21 +610,20 @@ pub fn run() -> Result<()> {
                             let storage = params.backend.expose_storage();
 
                             cmd.run(config, params.client, db, storage)
-                        });
+                        })
                     } else {
-                        return runner.sync_run(|config| {
+                        runner.sync_run(|config| {
                             let params = local::new_partial(&config)?;
                             let db = params.backend.expose_db();
                             let storage = params.backend.expose_storage();
 
                             cmd.run(config, params.client, db, storage)
-                        });
+                        })
                     }
                 }
                 BenchmarkCmd::Overhead(_) => Err("Benchmark overhead not supported.".into()),
                 BenchmarkCmd::Machine(cmd) => {
-                    return runner
-                        .sync_run(|config| cmd.run(&config, SUBSTRATE_REFERENCE_HARDWARE.clone()));
+                    runner.sync_run(|config| cmd.run(&config, SUBSTRATE_REFERENCE_HARDWARE.clone()))
                 }
             }
         }
@@ -683,7 +681,7 @@ pub fn run() -> Result<()> {
 
                 let polkadot_cli = RelayChainCli::new(
                     &config,
-                    [RelayChainCli::executable_name().to_string()]
+                    [RelayChainCli::executable_name()]
                         .iter()
                         .chain(cli.relaychain_args.iter()),
                 );

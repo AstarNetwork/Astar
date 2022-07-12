@@ -151,7 +151,7 @@ parameter_types! {
     pub const BlockHashCount: BlockNumber = 2400;
     /// We allow for 1 seconds of compute with a 2 second average block time.
     pub RuntimeBlockWeights: BlockWeights = BlockWeights
-        ::with_sensible_defaults(1 * WEIGHT_PER_SECOND, NORMAL_DISPATCH_RATIO);
+        ::with_sensible_defaults(WEIGHT_PER_SECOND, NORMAL_DISPATCH_RATIO);
     pub RuntimeBlockLength: BlockLength = BlockLength
         ::max_with_normal_ratio(5 * 1024 * 1024, NORMAL_DISPATCH_RATIO);
     pub const SS58Prefix: u8 = 5;
@@ -362,7 +362,7 @@ parameter_types! {
     pub const RegisterDeposit: Balance = 100 * AST;
     pub const MaxNumberOfStakersPerContract: u32 = 512;
     pub const MinimumStakingAmount: Balance = 10 * AST;
-    pub const MinimumRemainingAmount: Balance = 1 * AST;
+    pub const MinimumRemainingAmount: Balance = AST;
     pub const MaxUnlockingChunks: u32 = 2;
     pub const UnbondingPeriod: u32 = 2;
     pub const MaxEraStakeValues: u32 = 5;
@@ -469,7 +469,7 @@ impl pallet_evm::GasWeightMapping for LocalGasWeightMapping {
     }
 
     fn weight_to_gas(weight: Weight) -> u64 {
-        u64::try_from(weight.wrapping_div(WEIGHT_PER_GAS)).unwrap_or(u32::MAX as u64)
+        weight.wrapping_div(WEIGHT_PER_GAS)
     }
 }
 
@@ -560,7 +560,7 @@ parameter_types! {
 }
 
 parameter_types! {
-    pub const MinVestedTransfer: Balance = 1 * AST;
+    pub const MinVestedTransfer: Balance = AST;
 }
 
 impl pallet_vesting::Config for Runtime {
@@ -1089,7 +1089,7 @@ impl_runtime_apis! {
 
             let storage_info = AllPalletsWithSystem::storage_info();
 
-            return (list, storage_info)
+            (list, storage_info)
         }
 
         fn dispatch_benchmark(
