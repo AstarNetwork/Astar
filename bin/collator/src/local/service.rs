@@ -39,31 +39,35 @@ impl sc_executor::NativeExecutionDispatch for Executor {
 type FullClient = sc_service::TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>;
 type FullBackend = sc_service::TFullBackend<Block>;
 type FullSelectChain = sc_consensus::LongestChain<FullBackend, Block>;
-type PartialComponents = sc_service::PartialComponents<
-    FullClient,
-    FullBackend,
-    FullSelectChain,
-    sc_consensus::DefaultImportQueue<Block, FullClient>,
-    sc_transaction_pool::FullPool<Block, FullClient>,
-    (
-        FrontierBlockImport<
-            Block,
-            sc_finality_grandpa::GrandpaBlockImport<
-                FullBackend,
-                Block,
-                FullClient,
-                FullSelectChain,
-            >,
-            FullClient,
-        >,
-        sc_finality_grandpa::LinkHalf<Block, FullClient, FullSelectChain>,
-        Option<Telemetry>,
-        Arc<fc_db::Backend<Block>>,
-    ),
->;
 
 /// Build a partial chain component config
-pub fn new_partial(config: &Configuration) -> Result<PartialComponents, ServiceError> {
+pub fn new_partial(
+    config: &Configuration,
+) -> Result<
+    sc_service::PartialComponents<
+        FullClient,
+        FullBackend,
+        FullSelectChain,
+        sc_consensus::DefaultImportQueue<Block, FullClient>,
+        sc_transaction_pool::FullPool<Block, FullClient>,
+        (
+            FrontierBlockImport<
+                Block,
+                sc_finality_grandpa::GrandpaBlockImport<
+                    FullBackend,
+                    Block,
+                    FullClient,
+                    FullSelectChain,
+                >,
+                FullClient,
+            >,
+            sc_finality_grandpa::LinkHalf<Block, FullClient, FullSelectChain>,
+            Option<Telemetry>,
+            Arc<fc_db::Backend<Block>>,
+        ),
+    >,
+    ServiceError,
+> {
     if config.keystore_remote.is_some() {
         return Err(ServiceError::Other(
             "Remote Keystores are not supported.".to_string(),
@@ -80,7 +84,6 @@ pub fn new_partial(config: &Configuration) -> Result<PartialComponents, ServiceE
             Ok((worker, telemetry))
         })
         .transpose()?;
-
     let executor = sc_executor::NativeElseWasmExecutor::<Executor>::new(
         config.wasm_method,
         config.default_heap_pages,
@@ -95,16 +98,13 @@ pub fn new_partial(config: &Configuration) -> Result<PartialComponents, ServiceE
             executor,
         )?;
     let client = Arc::new(client);
-
     let telemetry = telemetry.map(|(worker, telemetry)| {
         task_manager
             .spawn_handle()
             .spawn("telemetry", None, worker.run());
         telemetry
     });
-
     let select_chain = sc_consensus::LongestChain::new(backend.clone());
-
     let transaction_pool = sc_transaction_pool::BasicPool::new_full(
         config.transaction_pool.clone(),
         config.role.is_authority().into(),
@@ -112,23 +112,19 @@ pub fn new_partial(config: &Configuration) -> Result<PartialComponents, ServiceE
         task_manager.spawn_essential_handle(),
         client.clone(),
     );
-
     let (grandpa_block_import, grandpa_link) = sc_finality_grandpa::block_import(
         client.clone(),
         &(client.clone() as Arc<_>),
         select_chain.clone(),
         telemetry.as_ref().map(|x| x.handle()),
     )?;
-
     let frontier_backend = crate::rpc::open_frontier_backend(config)?;
     let frontier_block_import = FrontierBlockImport::new(
         grandpa_block_import.clone(),
         client.clone(),
         frontier_backend.clone(),
     );
-
     let slot_duration = sc_consensus_aura::slot_duration(&*client)?;
-
     let import_queue = sc_consensus_aura::import_queue::<AuraPair, _, _, _, _, _, _>(
         ImportQueueParams {
             block_import: frontier_block_import.clone(),
@@ -136,13 +132,11 @@ pub fn new_partial(config: &Configuration) -> Result<PartialComponents, ServiceE
             client: client.clone(),
             create_inherent_data_providers: move |_, ()| async move {
                 let timestamp = sp_timestamp::InherentDataProvider::from_system_time();
-
                 let slot =
                     sp_consensus_aura::inherents::InherentDataProvider::from_timestamp_and_slot_duration(
                         *timestamp,
                         slot_duration,
                     );
-
                 Ok((timestamp, slot))
             },
             spawner: &task_manager.spawn_essential_handle(),
@@ -155,7 +149,7 @@ pub fn new_partial(config: &Configuration) -> Result<PartialComponents, ServiceE
         },
     )?;
 
-    Ok(PartialComponents {
+    Ok(sc_service::PartialComponents {
         client,
         backend,
         task_manager,
@@ -174,7 +168,7 @@ pub fn new_partial(config: &Configuration) -> Result<PartialComponents, ServiceE
 
 /// Builds a new service.
 pub fn start_node(config: Configuration) -> Result<TaskManager, ServiceError> {
-    let PartialComponents {
+    let sc_service::PartialComponents {
         client,
         backend,
         mut task_manager,
