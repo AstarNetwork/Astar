@@ -12,6 +12,16 @@ const config = (network) => ({
 				"name": "bob",
 				"wsPort": 9955,
 				"port": 30555
+			},
+			{
+				"name": "charlie",
+				"wsPort": 9966,
+				"port": 30666
+			},
+			{
+				"name": "dave",
+				"wsPort": 9977,
+				"port": 30777
 			}
 		],
 		"genesis": {
@@ -39,13 +49,19 @@ const config = (network) => ({
 					"port": 31200,
 					"name": "alice",
 					"flags": [
-						"--unsafe-ws-external", 
-						"--unsafe-rpc-external", 
-						"--rpc-port=8545", 
-						"--rpc-cors=all", 
-						"--", 
+						"--unsafe-ws-external",
+						"--unsafe-rpc-external",
+						"--rpc-port=8545",
+						"--rpc-cors=all",
+						"--",
 						"--execution=wasm"
 					]
+				},
+				{
+					"wsPort": 9989,
+					"port": 31201,
+					"name": "bob",
+					"flags": ["--", "--execution=wasm"]
 				}
 			]
 		}
