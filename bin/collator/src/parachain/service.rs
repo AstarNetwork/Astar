@@ -11,6 +11,7 @@ use cumulus_primitives_core::ParaId;
 use cumulus_relay_chain_inprocess_interface::build_inprocess_relay_chain;
 use cumulus_relay_chain_interface::{RelayChainError, RelayChainInterface, RelayChainResult};
 use cumulus_relay_chain_rpc_interface::RelayChainRPCInterface;
+use fc_consensus::FrontierBlockImport;
 use fc_rpc_core::types::{FeeHistoryCache, FilterPool};
 use futures::{lock::Mutex, StreamExt};
 use pallet_contracts_rpc::ContractsApiServer;
@@ -19,7 +20,7 @@ use sc_client_api::{BlockchainEvents, ExecutorProvider};
 use sc_consensus::import_queue::BasicQueue;
 use sc_executor::NativeElseWasmExecutor;
 use sc_network::NetworkService;
-use sc_service::{Configuration, Role, TFullBackend, TFullClient, TaskManager};
+use sc_service::{Configuration, PartialComponents, Role, TFullBackend, TFullClient, TaskManager};
 use sc_telemetry::{Telemetry, TelemetryHandle, TelemetryWorker, TelemetryWorkerHandle};
 use sp_api::ConstructRuntimeApi;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
@@ -100,25 +101,6 @@ pub mod shibuya {
     }
 }
 
-type PartialComponents<RuntimeApi, Executor> = sc_service::PartialComponents<
-    TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>,
-    TFullBackend<Block>,
-    (),
-    sc_consensus::DefaultImportQueue<
-        Block,
-        TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>,
-    >,
-    sc_transaction_pool::FullPool<
-        Block,
-        TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>,
-    >,
-    (
-        Option<Telemetry>,
-        Option<TelemetryWorkerHandle>,
-        Arc<fc_db::Backend<Block>>,
-    ),
->;
-
 /// Starts a `ServiceBuilder` for a full service.
 ///
 /// Use this macro if you don't actually need the full service, but just the builder in order to
@@ -126,7 +108,27 @@ type PartialComponents<RuntimeApi, Executor> = sc_service::PartialComponents<
 pub fn new_partial<RuntimeApi, Executor, BIQ>(
     config: &Configuration,
     build_import_queue: BIQ,
-) -> Result<PartialComponents<RuntimeApi, Executor>, sc_service::Error>
+) -> Result<
+    PartialComponents<
+        TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>,
+        TFullBackend<Block>,
+        (),
+        sc_consensus::DefaultImportQueue<
+            Block,
+            TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>,
+        >,
+        sc_transaction_pool::FullPool<
+            Block,
+            TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>,
+        >,
+        (
+            Option<Telemetry>,
+            Option<TelemetryWorkerHandle>,
+            Arc<fc_db::Backend<Block>>,
+        ),
+    >,
+    sc_service::Error,
+>
 where
     RuntimeApi: ConstructRuntimeApi<Block, TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>
         + Send
@@ -145,7 +147,7 @@ where
     Executor: sc_executor::NativeExecutionDispatch + 'static,
     BIQ: FnOnce(
         Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>,
-        fc_consensus::FrontierBlockImport<
+        FrontierBlockImport<
             Block,
             Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>,
             TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>,
@@ -205,11 +207,8 @@ where
     );
 
     let frontier_backend = crate::rpc::open_frontier_backend(config)?;
-    let frontier_block_import = fc_consensus::FrontierBlockImport::new(
-        client.clone(),
-        client.clone(),
-        frontier_backend.clone(),
-    );
+    let frontier_block_import =
+        FrontierBlockImport::new(client.clone(), client.clone(), frontier_backend.clone());
 
     let import_queue = build_import_queue(
         client.clone(),
@@ -295,7 +294,7 @@ where
     Executor: sc_executor::NativeExecutionDispatch + 'static,
     BIQ: FnOnce(
         Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>,
-        fc_consensus::FrontierBlockImport<
+        FrontierBlockImport<
             Block,
             Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>,
             TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>,
@@ -563,7 +562,7 @@ where
     Executor: sc_executor::NativeExecutionDispatch + 'static,
     BIQ: FnOnce(
         Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>,
-        fc_consensus::FrontierBlockImport<
+        FrontierBlockImport<
             Block,
             Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>,
             TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>,
@@ -800,24 +799,24 @@ where
     Ok((task_manager, client))
 }
 
-type FrontierBlockImport<RuntimeApi, Executor> = fc_consensus::FrontierBlockImport<
-    Block,
-    Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>,
-    TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>,
->;
-type DefaultImportQueue<RuntimeApi, Executor> = sc_consensus::DefaultImportQueue<
-    Block,
-    TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>,
->;
-
 /// Build the import queue.
 pub fn build_import_queue<RuntimeApi, Executor>(
     client: Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>,
-    block_import: FrontierBlockImport<RuntimeApi, Executor>,
+    block_import: FrontierBlockImport<
+        Block,
+        Arc<TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>,
+        TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>,
+    >,
     config: &Configuration,
     telemetry_handle: Option<TelemetryHandle>,
     task_manager: &TaskManager,
-) -> Result<DefaultImportQueue<RuntimeApi, Executor>, sc_service::Error>
+) -> Result<
+    sc_consensus::DefaultImportQueue<
+        Block,
+        TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>,
+    >,
+    sc_service::Error,
+>
 where
     RuntimeApi: ConstructRuntimeApi<Block, TFullClient<Block, RuntimeApi, NativeElseWasmExecutor<Executor>>>
         + Send
