@@ -1,0 +1,46 @@
+name: RPC test
+
+on:
+  workflow_dispatch:
+    inputs:
+      astar_tag:
+        description: 'Release tag version for astar collator'
+        required: true
+        default: '4.9.0'
+      polkadot_tag:
+        description: 'Release tag version for polkadot relay chain'
+        required: true
+        default: '0.9.25'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        network: [astar, shiden]
+    steps:
+    - uses: actions/checkout@v2
+
+    - run: wget https://github.com/AstarNetwork/Astar/releases/download/v${{ github.event.inputs.astar_tag }}/astar-collator-${{ github.event.inputs.astar_tag }}-ubuntu-x86_64.tar.gz
+
+    - run: tar -xvf astar-collator-*-ubuntu-x86_64.tar.gz
+    
+    - run: chmod +x ./astar-collator
+
+    - run: wget https://github.com/paritytech/polkadot/releases/download/v${{ github.event.inputs.polkadot_tag }}/polkadot
+
+    - run: chmod +x ./polkadot
+
+    - run: mkdir -p rpc-tests/bin
+    - run: mv astar-collator rpc-tests/bin/astar-collator
+    - run: mv polkadot rpc-tests/bin/polkadot
+
+    - name: Use Node.js 16.x
+      uses: actions/setup-node@v2
+      with:
+        node-version: ${{ matrix.node-version }}
+    - run: npm install -g yarn
+    - run: yarn install
+      working-directory: ./rpc-tests
+    - run: yarn test:${{ matrix.network }}
+      working-directory: ./rpc-tests
