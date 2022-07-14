@@ -21,7 +21,7 @@ Build astar collator.
 
 ```
 cargo build --release
-``
+```
 
 Copy the binary in rpc-tests/bin folder.
 
