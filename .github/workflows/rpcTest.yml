@@ -24,7 +24,7 @@ jobs:
     - run: wget https://github.com/AstarNetwork/Astar/releases/download/v${{ github.event.inputs.astar_tag }}/astar-collator-${{ github.event.inputs.astar_tag }}-ubuntu-x86_64.tar.gz
 
     - run: tar -xvf astar-collator-*-ubuntu-x86_64.tar.gz
-    
+
     - run: chmod +x ./astar-collator
 
     - run: wget https://github.com/paritytech/polkadot/releases/download/v${{ github.event.inputs.polkadot_tag }}/polkadot
@@ -38,7 +38,7 @@ jobs:
     - name: Use Node.js 16.x
       uses: actions/setup-node@v2
       with:
-        node-version: ${{ matrix.node-version }}
+        node-version: 16.x
     - run: npm install -g yarn
     - run: yarn install
       working-directory: ./rpc-tests
