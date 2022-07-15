@@ -93,7 +93,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("astar"),
     impl_name: create_runtime_str!("astar"),
     authoring_version: 1,
-    spec_version: 25,
+    spec_version: 26,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 2,
@@ -432,6 +432,7 @@ impl pallet_collator_selection::Config for Runtime {
 parameter_types! {
     pub const TreasuryPalletId: PalletId = PalletId(*b"py/trsry");
     pub const DappsStakingPalletId: PalletId = PalletId(*b"py/dpsst");
+    pub TreasuryAccountId: AccountId = TreasuryPalletId::get().into_account_truncating();
 }
 
 type NegativeImbalance = <Balances as Currency<AccountId>>::NegativeImbalance;
