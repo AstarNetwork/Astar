@@ -1,7 +1,7 @@
 use super::{
     AccountId, AssetId, Assets, AstarAssetLocationIdConverter, Balance, Balances, Call,
-    DealWithFees, Event, Origin, ParachainInfo, ParachainSystem, PolkadotXcm, Runtime, WeightToFee,
-    XcAssetConfig, XcmpQueue, MAXIMUM_BLOCK_WEIGHT,
+    DealWithFees, Event, Origin, ParachainInfo, ParachainSystem, PolkadotXcm, Runtime,
+    TreasuryAccountId, WeightToFee, XcAssetConfig, XcmpQueue, MAXIMUM_BLOCK_WEIGHT,
 };
 use frame_support::{
     match_types, parameter_types,
@@ -22,7 +22,7 @@ use xcm_builder::{
 use xcm_executor::{traits::JustTry, Config, XcmExecutor};
 
 // Astar imports
-use xcm_primitives::{FixedRateOfForeignAsset, ReserveAssetFilter};
+use xcm_primitives::{FixedRateOfForeignAsset, ReserveAssetFilter, XcmFungibleFeeHandler};
 
 parameter_types! {
     pub RelayNetwork: NetworkId = NetworkId::Polkadot;
@@ -125,6 +125,14 @@ pub type XcmBarrier = (
     AllowSubscriptionsFrom<Everything>,
 );
 
+// Used to handle XCM fee deposit into treasury account
+pub type AstarXcmFungibleFeeHandler = XcmFungibleFeeHandler<
+    AccountId,
+    ConvertedConcreteAssetId<AssetId, Balance, AstarAssetLocationIdConverter, JustTry>,
+    Assets,
+    TreasuryAccountId,
+>;
+
 pub struct XcmConfig;
 impl Config for XcmConfig {
     type Call = Call;
@@ -138,7 +146,7 @@ impl Config for XcmConfig {
     type Weigher = FixedWeightBounds<UnitWeightCost, Call, MaxInstructions>;
     type Trader = (
         UsingComponents<WeightToFee, AstarLocation, AccountId, Balances, DealWithFees>,
-        FixedRateOfForeignAsset<XcAssetConfig, ()>,
+        FixedRateOfForeignAsset<XcAssetConfig, AstarXcmFungibleFeeHandler>,
     );
     type ResponseHandler = PolkadotXcm;
     type AssetTrap = PolkadotXcm;
