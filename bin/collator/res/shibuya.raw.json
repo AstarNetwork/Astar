@@ -3,7 +3,7 @@
   "id": "shibuya",
   "chainType": "Live",
   "bootNodes": [
-    "/ip4/35.74.249.69/tcp/30333/p2p/12D3KooWEHWUJ3Rzf8RLRihohbgXafz3Y4LnnKSzFDeZ1sXnopJs",
+    "/ip4/3.114.212.146/tcp/30333/p2p/12D3KooWEHWUJ3Rzf8RLRihohbgXafz3Y4LnnKSzFDeZ1sXnopJs",
     "/ip4/20.40.146.211/tcp/30333/p2p/12D3KooWBVXQ1WgLjHhWMn8mVEdpwF6uepMT1sYkDvAhYAomZvvx"
   ],
   "telemetryEndpoints": null,
