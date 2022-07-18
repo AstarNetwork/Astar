@@ -672,6 +672,7 @@ impl OnUnbalanced<NegativeImbalance> for DealWithFees {
 }
 
 impl pallet_transaction_payment::Config for Runtime {
+    type Event = Event;
     type OnChargeTransaction = pallet_transaction_payment::CurrencyAdapter<Balances, DealWithFees>;
     type WeightToFee = WeightToFee;
     type OperationalFeeMultiplier = OperationalFeeMultiplier;
@@ -809,43 +810,43 @@ construct_runtime!(
         NodeBlock = generic::Block<Header, sp_runtime::OpaqueExtrinsic>,
         UncheckedExtrinsic = UncheckedExtrinsic
     {
-        System: frame_system::{Pallet, Call, Storage, Config, Event<T>} = 10,
-        Utility: pallet_utility::{Pallet, Call, Event} = 11,
-        Identity: pallet_identity::{Pallet, Call, Storage, Event<T>} = 12,
-        Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent} = 13,
-        Multisig: pallet_multisig::{Pallet, Call, Storage, Event<T>} = 14,
-        EthCall: pallet_custom_signatures::{Pallet, Call, Event<T>, ValidateUnsigned} = 15,
-        RandomnessCollectiveFlip: pallet_randomness_collective_flip::{Pallet, Storage} = 16,
+        System: frame_system = 10,
+        Utility: pallet_utility = 11,
+        Identity: pallet_identity = 12,
+        Timestamp: pallet_timestamp = 13,
+        Multisig: pallet_multisig = 14,
+        EthCall: pallet_custom_signatures = 15,
+        RandomnessCollectiveFlip: pallet_randomness_collective_flip = 16,
 
-        ParachainSystem: cumulus_pallet_parachain_system::{Pallet, Call, Storage, Inherent, Event<T>} = 20,
-        ParachainInfo: parachain_info::{Pallet, Storage, Config} = 21,
+        ParachainSystem: cumulus_pallet_parachain_system = 20,
+        ParachainInfo: parachain_info = 21,
 
-        TransactionPayment: pallet_transaction_payment::{Pallet, Storage} = 30,
-        Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>} = 31,
-        Vesting: pallet_vesting::{Pallet, Call, Storage, Config<T>, Event<T>} = 32,
-        DappsStaking: pallet_dapps_staking::{Pallet, Call, Storage, Event<T>} = 34,
-        BlockReward: pallet_block_reward::{Pallet, Call, Storage, Config, Event<T>} = 35,
-        Assets: pallet_assets::{Pallet, Call, Storage, Event<T>} = 36,
+        TransactionPayment: pallet_transaction_payment = 30,
+        Balances: pallet_balances = 31,
+        Vesting: pallet_vesting = 32,
+        DappsStaking: pallet_dapps_staking = 34,
+        BlockReward: pallet_block_reward = 35,
+        Assets: pallet_assets = 36,
 
-        Authorship: pallet_authorship::{Pallet, Call, Storage, Inherent} = 40,
-        CollatorSelection: pallet_collator_selection::{Pallet, Call, Storage, Event<T>, Config<T>} = 41,
-        Session: pallet_session::{Pallet, Call, Storage, Event, Config<T>} = 42,
-        Aura: pallet_aura::{Pallet, Storage, Config<T>} = 43,
-        AuraExt: cumulus_pallet_aura_ext::{Pallet, Storage, Config} = 44,
+        Authorship: pallet_authorship = 40,
+        CollatorSelection: pallet_collator_selection = 41,
+        Session: pallet_session = 42,
+        Aura: pallet_aura = 43,
+        AuraExt: cumulus_pallet_aura_ext = 44,
 
-        XcmpQueue: cumulus_pallet_xcmp_queue::{Pallet, Call, Storage, Event<T>} = 50,
-        PolkadotXcm: pallet_xcm::{Pallet, Call, Storage, Event<T>, Origin, Config} = 51,
-        CumulusXcm: cumulus_pallet_xcm::{Pallet, Event<T>, Origin} = 52,
-        DmpQueue: cumulus_pallet_dmp_queue::{Pallet, Call, Storage, Event<T>} = 53,
-        XcAssetConfig: pallet_xc_asset_config::{Pallet, Call, Storage, Event<T>} = 54,
+        XcmpQueue: cumulus_pallet_xcmp_queue = 50,
+        PolkadotXcm: pallet_xcm = 51,
+        CumulusXcm: cumulus_pallet_xcm = 52,
+        DmpQueue: cumulus_pallet_dmp_queue = 53,
+        XcAssetConfig: pallet_xc_asset_config = 54,
 
-        EVM: pallet_evm::{Pallet, Config, Call, Storage, Event<T>} = 60,
-        Ethereum: pallet_ethereum::{Pallet, Call, Storage, Event, Origin, Config} = 61,
-        BaseFee: pallet_base_fee::{Pallet, Call, Storage, Config<T>, Event} = 62,
+        EVM: pallet_evm = 60,
+        Ethereum: pallet_ethereum = 61,
+        BaseFee: pallet_base_fee = 62,
 
-        Contracts: pallet_contracts::{Pallet, Call, Storage, Event<T>} = 70,
+        Contracts: pallet_contracts = 70,
 
-        Sudo: pallet_sudo::{Pallet, Call, Storage, Event<T>, Config<T>} = 99,
+        Sudo: pallet_sudo = 99,
     }
 );
 
