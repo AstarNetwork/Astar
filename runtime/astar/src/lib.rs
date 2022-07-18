@@ -37,6 +37,8 @@ use sp_runtime::{
 };
 use sp_std::prelude::*;
 
+use cumulus_pallet_parachain_system::RelayNumberStrictlyIncreases;
+
 use pallet_evm_precompile_assets_erc20::AddressToAssetId;
 use xcm_primitives::AssetLocationIdConverter;
 
@@ -362,6 +364,7 @@ impl cumulus_pallet_parachain_system::Config for Runtime {
     type ReservedDmpWeight = ReservedDmpWeight;
     type XcmpMessageHandler = XcmpQueue;
     type ReservedXcmpWeight = ReservedXcmpWeight;
+    type CheckAssociatedRelayNumber = RelayNumberStrictlyIncreases;
 }
 
 impl parachain_info::Config for Runtime {}
