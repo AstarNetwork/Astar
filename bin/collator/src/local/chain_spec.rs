@@ -143,6 +143,8 @@ fn testnet_genesis(
         sudo: SudoConfig {
             key: Some(root_key),
         },
+        assets: Default::default(),
+        transaction_payment: Default::default(),
     }
 }
 

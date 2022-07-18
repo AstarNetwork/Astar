@@ -9,7 +9,7 @@ use crate::{
     primitives::Block,
 };
 use codec::Encode;
-use cumulus_client_service::genesis::generate_genesis_block;
+use cumulus_client_cli::generate_genesis_block;
 use cumulus_primitives_core::ParaId;
 use log::info;
 use sc_cli::{
