@@ -7,7 +7,7 @@ import config from '../config.js';
 
 chai.use(chaiAsPromised);
 
-export const SPAWNING_TIME = 120000;
+export const SPAWNING_TIME = 500000;
 const WS_PORT = 9988;
 
 /**
@@ -50,12 +50,34 @@ export function describeWithNetwork(network, title, cb) {
 				provider: new WsProvider(`ws://localhost:${WS_PORT}`)
 			});
 			await api.isReady;
+
+			await new Promise((resolve, reject) => {
+				let unsubHeads;
+				api.rpc.chain.subscribeNewHeads((lastHead) => {
+					console.log('Parachain blocks:', lastHead.number.toNumber());
+					if (lastHead.number.toNumber() > 1) {
+						if (unsubHeads) {
+							console.log('unsubscribing');
+							unsubHeads();
+						}
+						resolve();
+					}
+				}).then(unsub => {
+					unsubHeads = unsub;
+				});
+
+				setTimeout(() => {
+					reject('Block production failed');
+				}, SPAWNING_TIME);
+			});
+
 			context.api = api;
 		});
 
 		after(async function () {
-			context.api.disconnect()
+			await context.api.disconnect()
 			killAll();
+			process.exit(0);
 		});
 
 		cb(context);
