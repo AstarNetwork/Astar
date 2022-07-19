@@ -5,6 +5,7 @@
 #![recursion_limit = "256"]
 
 use codec::{Decode, Encode};
+use cumulus_pallet_parachain_system::RelayNumberStrictlyIncreases;
 use frame_support::{
     construct_runtime, parameter_types,
     traits::{
@@ -19,7 +20,7 @@ use frame_support::{
     ConsensusEngineId, PalletId,
 };
 use frame_system::limits::{BlockLength, BlockWeights};
-use pallet_contracts::{weights::WeightInfo, DefaultContractAccessWeight};
+use pallet_contracts::DefaultContractAccessWeight;
 use pallet_evm::{FeeCalculator, Runner};
 use pallet_transaction_payment::{
     FeeDetails, Multiplier, RuntimeDispatchInfo, TargetedFeeAdjustment,
@@ -97,7 +98,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("shiden"),
     impl_name: create_runtime_str!("shiden"),
     authoring_version: 1,
-    spec_version: 63,
+    spec_version: 64,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 2,
@@ -368,6 +369,7 @@ impl cumulus_pallet_parachain_system::Config for Runtime {
     type ReservedDmpWeight = ReservedDmpWeight;
     type XcmpMessageHandler = XcmpQueue;
     type ReservedXcmpWeight = ReservedXcmpWeight;
+    type CheckAssociatedRelayNumber = RelayNumberStrictlyIncreases;
 }
 
 impl parachain_info::Config for Runtime {}
@@ -585,12 +587,6 @@ parameter_types! {
     // The lazy deletion runs inside on_initialize.
     pub DeletionWeightLimit: Weight = AVERAGE_ON_INITIALIZE_RATIO *
         RuntimeBlockWeights::get().max_block;
-    // The weight needed for decoding the queue should be less or equal than a fifth
-    // of the overall weight dedicated to the lazy deletion.
-    pub DeletionQueueDepth: u32 = ((DeletionWeightLimit::get() / (
-        <Runtime as pallet_contracts::Config>::WeightInfo::on_initialize_per_queue_item(1)
-        -
-        <Runtime as pallet_contracts::Config>::WeightInfo::on_initialize_per_queue_item(0))) / 5) as u32;
     pub Schedule: pallet_contracts::Schedule<Runtime> = Default::default();
 }
 
@@ -613,13 +609,14 @@ impl pallet_contracts::Config for Runtime {
     type WeightPrice = pallet_transaction_payment::Pallet<Self>;
     type WeightInfo = pallet_contracts::weights::SubstrateWeight<Self>;
     type ChainExtension = ();
-    type DeletionQueueDepth = DeletionQueueDepth;
+    type DeletionQueueDepth = ConstU32<128>;
     type DeletionWeightLimit = DeletionWeightLimit;
     type Schedule = Schedule;
     type AddressGenerator = pallet_contracts::DefaultAddressGenerator;
     type ContractAccessWeight = DefaultContractAccessWeight<RuntimeBlockWeights>;
     type MaxCodeLen = ConstU32<{ 128 * 1024 }>;
     type RelaxedMaxCodeLen = ConstU32<{ 256 * 1024 }>;
+    type MaxStorageKeyLen = ConstU32<128>;
 }
 
 parameter_types! {
@@ -676,6 +673,7 @@ impl OnUnbalanced<NegativeImbalance> for DealWithFees {
 }
 
 impl pallet_transaction_payment::Config for Runtime {
+    type Event = Event;
     type OnChargeTransaction = pallet_transaction_payment::CurrencyAdapter<Balances, DealWithFees>;
     type WeightToFee = WeightToFee;
     type OperationalFeeMultiplier = OperationalFeeMultiplier;
@@ -813,43 +811,43 @@ construct_runtime!(
         NodeBlock = generic::Block<Header, sp_runtime::OpaqueExtrinsic>,
         UncheckedExtrinsic = UncheckedExtrinsic
     {
-        System: frame_system::{Pallet, Call, Storage, Config, Event<T>} = 10,
-        Utility: pallet_utility::{Pallet, Call, Event} = 11,
-        Identity: pallet_identity::{Pallet, Call, Storage, Event<T>} = 12,
-        Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent} = 13,
-        Multisig: pallet_multisig::{Pallet, Call, Storage, Event<T>} = 14,
+        System: frame_system = 10,
+        Utility: pallet_utility = 11,
+        Identity: pallet_identity = 12,
+        Timestamp: pallet_timestamp = 13,
+        Multisig: pallet_multisig = 14,
 
-        ParachainSystem: cumulus_pallet_parachain_system::{Pallet, Call, Storage, Inherent, Event<T>} = 20,
-        ParachainInfo: parachain_info::{Pallet, Storage, Config} = 21,
+        ParachainSystem: cumulus_pallet_parachain_system = 20,
+        ParachainInfo: parachain_info = 21,
 
-        TransactionPayment: pallet_transaction_payment::{Pallet, Storage} = 30,
-        Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>} = 31,
-        Vesting: pallet_vesting::{Pallet, Call, Storage, Config<T>, Event<T>} = 32,
-        DappsStaking: pallet_dapps_staking::{Pallet, Call, Storage, Event<T>} = 34,
-        BlockReward: pallet_block_reward::{Pallet, Call, Storage, Config, Event<T>} = 35,
-        Assets: pallet_assets::{Pallet, Call, Storage, Event<T>} = 36,
+        TransactionPayment: pallet_transaction_payment = 30,
+        Balances: pallet_balances = 31,
+        Vesting: pallet_vesting = 32,
+        DappsStaking: pallet_dapps_staking = 34,
+        BlockReward: pallet_block_reward = 35,
+        Assets: pallet_assets = 36,
 
-        Authorship: pallet_authorship::{Pallet, Call, Storage, Inherent} = 40,
-        CollatorSelection: pallet_collator_selection::{Pallet, Call, Storage, Event<T>, Config<T>} = 41,
-        Session: pallet_session::{Pallet, Call, Storage, Event, Config<T>} = 42,
-        Aura: pallet_aura::{Pallet, Storage, Config<T>} = 43,
-        AuraExt: cumulus_pallet_aura_ext::{Pallet, Storage, Config} = 44,
+        Authorship: pallet_authorship = 40,
+        CollatorSelection: pallet_collator_selection = 41,
+        Session: pallet_session = 42,
+        Aura: pallet_aura = 43,
+        AuraExt: cumulus_pallet_aura_ext = 44,
 
-        XcmpQueue: cumulus_pallet_xcmp_queue::{Pallet, Call, Storage, Event<T>} = 50,
-        PolkadotXcm: pallet_xcm::{Pallet, Call, Storage, Event<T>, Origin, Config} = 51,
-        CumulusXcm: cumulus_pallet_xcm::{Pallet, Event<T>, Origin} = 52,
-        DmpQueue: cumulus_pallet_dmp_queue::{Pallet, Call, Storage, Event<T>} = 53,
-        XcAssetConfig: pallet_xc_asset_config::{Pallet, Call, Storage, Event<T>} = 54,
+        XcmpQueue: cumulus_pallet_xcmp_queue = 50,
+        PolkadotXcm: pallet_xcm = 51,
+        CumulusXcm: cumulus_pallet_xcm = 52,
+        DmpQueue: cumulus_pallet_dmp_queue = 53,
+        XcAssetConfig: pallet_xc_asset_config = 54,
 
-        EVM: pallet_evm::{Pallet, Config, Call, Storage, Event<T>} = 60,
-        Ethereum: pallet_ethereum::{Pallet, Call, Storage, Event, Origin, Config} = 61,
-        EthCall: pallet_custom_signatures::{Pallet, Call, Event<T>, ValidateUnsigned} = 62,
-        BaseFee: pallet_base_fee::{Pallet, Call, Storage, Config<T>, Event} = 63,
+        EVM: pallet_evm = 60,
+        Ethereum: pallet_ethereum = 61,
+        EthCall: pallet_custom_signatures = 62,
+        BaseFee: pallet_base_fee = 63,
 
-        Contracts: pallet_contracts::{Pallet, Call, Storage, Event<T>} = 70,
-        RandomnessCollectiveFlip: pallet_randomness_collective_flip::{Pallet, Storage} = 71,
+        Contracts: pallet_contracts = 70,
+        RandomnessCollectiveFlip: pallet_randomness_collective_flip = 71,
 
-        Sudo: pallet_sudo::{Pallet, Call, Storage, Event<T>, Config<T>} = 99,
+        Sudo: pallet_sudo = 99,
     }
 );
 
@@ -1285,7 +1283,7 @@ impl_runtime_apis! {
 
         fn get_storage(
             address: AccountId,
-            key: [u8; 32],
+            key: Vec<u8>,
         ) -> pallet_contracts_primitives::GetStorageResult {
             Contracts::get_storage(address, key)
         }
