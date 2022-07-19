@@ -27,47 +27,69 @@ describeWithNetwork(network, `${network} RPC`, function(context) {
 		expect(name.toString()).to.equal('Astar Collator');
 	});
 
-	it('should be able to Register contract on H160 address 0x01 using Alice account', async function () {
+	it('should be able to Register contract on H160 address 0x01 using Alice account', function (done) {
         const api = context.api;
 
         // Construct the keyring after the API (crypto has an async init)
         const keyring = new Keyring({ type: 'sr25519' });
-      
+
         // Add Alice to our keyring with a hard-derivation path (empty phrase, so uses dev)
         const alice = keyring.addFromUri('//Alice');
 
-        // Create a extrinsic, transferring 100 units to Bob
-        const transfer = api.tx.dappsStaking.register(getAddressEnum(CONTRACT));
-      
-        // Sign and send the transaction using our account
-        const hash = await transfer.signAndSend(alice, { nonce: -1 });
+        let unsubscribe;
 
-        console.log('Transfer sent with hash', hash.toHex());
+        // Create a extrinsic, transferring 200 units to alice
+        api.tx.dappsStaking
+            .register(getAddressEnum(CONTRACT))
+            .signAndSend(alice, (result) => {
+                console.log(`Current status is ${result?.status}`);
 
-        expect(hash).to.exist;
+                if (result?.status?.isInBlock) {
+                    if (unsubscribe) {
+                        unsubscribe();
+                    }
+
+                    expect(result?.status?.isInBlock).to.be.true;
+                    done();
+                }
+            })
+            .then(unsub => {
+                unsubscribe = unsub;
+            });
     });
 
-	it('should be able to transfer tokens from alice to bob', async function () {
+	it('should be able to transfer tokens from alice to bob', function (done) {
         const api = context.api;
 
         // Construct the keyring after the API (crypto has an async init)
         const keyring = new Keyring({ type: 'sr25519' });
-      
+
         // Add Alice to our keyring with a hard-derivation path (empty phrase, so uses dev)
         const alice = keyring.addFromUri('//Alice');
 
+        let unsubscribe;
+
         // Create a extrinsic, transferring 100 units to Bob
-        const transfer = api.tx.balances.transfer(BOB, 100);
-      
-        // Sign and send the transaction using our account
-        const hash = await transfer.signAndSend(alice, { nonce: -1 });
+        api.tx.balances
+            .transfer(BOB, 100)
+            .signAndSend(alice, (result) => {
+                console.log(`Current status is ${result?.status}`);
 
-        console.log('Transfer sent with hash', hash.toHex());
+                if (result?.status?.isInBlock) {
+                    if (unsubscribe) {
+                        unsubscribe();
+                    }
 
-        expect(hash).to.exist;
+                    expect(result?.status?.isInBlock).to.be.true;
+                    done();
+                }
+            })
+            .then(unsub => {
+                unsubscribe = unsub;
+            });
     });
 
-    it('should be able to transfer tokens from bob to alice', async function () {
+    it('should be able to transfer tokens from bob to alice', function (done) {
         const api = context.api;
 
         // Construct the keyring after the API (crypto has an async init)
@@ -76,14 +98,25 @@ describeWithNetwork(network, `${network} RPC`, function(context) {
         // Add Alice to our keyring with a hard-derivation path (empty phrase, so uses dev)
         const bob = keyring.addFromUri('//Bob');
 
-        // Create a extrinsic, transferring 100 units to Bob
-        const transfer = api.tx.balances.transfer(ALICE, 200);
+        let unsubscribe;
 
-        // Sign and send the transaction using our account
-        const hash = await transfer.signAndSend(bob, { nonce: -1 });
+        // Create a extrinsic, transferring 200 units to alice
+        api.tx.balances
+            .transfer(ALICE, 200)
+            .signAndSend(bob, (result) => {
+                console.log(`Current status is ${result?.status}`);
 
-        console.log('Transfer sent with hash', hash.toHex());
+                if (result?.status?.isInBlock) {
+                    if (unsubscribe) {
+                        unsubscribe();
+                    }
 
-        expect(hash).to.exist;
+                    expect(result?.status?.isInBlock).to.be.true;
+                    done();
+                }
+            })
+            .then(unsub => {
+                unsubscribe = unsub;
+            });
     });
 });
