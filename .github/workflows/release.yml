@@ -7,7 +7,7 @@ on:
 env:
   SUBWASM_VERSION: 0.16.1
 jobs:
-  checks-and-tests:
+  native-linux:
     runs-on: [self-hosted, Linux, X64]
     steps:
     - name: Checkout the source code
@@ -20,47 +20,12 @@ jobs:
 
     - name: Check targets are installed correctly
       run: rustup target list --installed
-
-    - uses: actions/cache@v3
-      with:
-        path: |
-          ~/.cargo/registry
-          ~/.cargo/git
-          target/
-        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-        restore-keys: |
-          ${{ runner.os }}-cargo-
 
     - name: Check all features compilation
       run: cargo check --verbose --all-features
 
     - name: Run all tests
       run: cargo test --all-features
-
-  native-linux:
-    needs: checks-and-tests
-    runs-on: [self-hosted, Linux, X64]
-    steps:
-    - name: Checkout the source code
-      uses: actions/checkout@v3
-      with:
-        submodules: true
-
-    - name: Install & display rust toolchain
-      run: rustup show
-
-    - name: Check targets are installed correctly
-      run: rustup target list --installed
-
-    - uses: actions/cache@v3
-      with:
-        path: |
-          ~/.cargo/registry
-          ~/.cargo/git
-          target/
-        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-        restore-keys: |
-          ${{ runner.os }}-cargo-
 
     - name: Build optimized binary
       run: CARGO_PROFILE_RELEASE_LTO=true RUSTFLAGS="-C codegen-units=1" cargo build --release --verbose
@@ -71,7 +36,6 @@ jobs:
         path: target/release/astar-collator
 
   native-macos:
-    needs: checks-and-tests
     runs-on: macos-latest
     steps:
     - name: Checkout the source code
@@ -84,16 +48,6 @@ jobs:
 
     - name: Check targets are installed correctly
       run: rustup target list --installed
-
-    - uses: actions/cache@v3
-      with:
-        path: |
-          ~/.cargo/registry
-          ~/.cargo/git
-          target/
-        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-        restore-keys: |
-          ${{ runner.os }}-cargo-
 
     - name: Build optimized binary
       run: cargo build --release --verbose
