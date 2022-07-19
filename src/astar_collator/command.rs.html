@@ -842,43 +842,6 @@
 <span id="837">837</span>
 <span id="838">838</span>
 <span id="839">839</span>
-<span id="840">840</span>
-<span id="841">841</span>
-<span id="842">842</span>
-<span id="843">843</span>
-<span id="844">844</span>
-<span id="845">845</span>
-<span id="846">846</span>
-<span id="847">847</span>
-<span id="848">848</span>
-<span id="849">849</span>
-<span id="850">850</span>
-<span id="851">851</span>
-<span id="852">852</span>
-<span id="853">853</span>
-<span id="854">854</span>
-<span id="855">855</span>
-<span id="856">856</span>
-<span id="857">857</span>
-<span id="858">858</span>
-<span id="859">859</span>
-<span id="860">860</span>
-<span id="861">861</span>
-<span id="862">862</span>
-<span id="863">863</span>
-<span id="864">864</span>
-<span id="865">865</span>
-<span id="866">866</span>
-<span id="867">867</span>
-<span id="868">868</span>
-<span id="869">869</span>
-<span id="870">870</span>
-<span id="871">871</span>
-<span id="872">872</span>
-<span id="873">873</span>
-<span id="874">874</span>
-<span id="875">875</span>
-<span id="876">876</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Astar collator CLI handlers.</span>
 <span class="kw">use</span> <span class="kw">crate</span>::{
     <span class="ident">cli</span>::{<span class="ident">Cli</span>, <span class="ident">RelayChainCli</span>, <span class="ident">Subcommand</span>},
@@ -890,7 +853,7 @@
     <span class="ident">primitives::Block</span>,
 };
 <span class="kw">use</span> <span class="ident">codec::Encode</span>;
-<span class="kw">use</span> <span class="ident">cumulus_client_service::genesis::generate_genesis_block</span>;
+<span class="kw">use</span> <span class="ident">cumulus_client_cli::generate_genesis_block</span>;
 <span class="kw">use</span> <span class="ident">cumulus_primitives_core::ParaId</span>;
 <span class="kw">use</span> <span class="ident">log::info</span>;
 <span class="kw">use</span> <span class="ident">sc_cli</span>::{
@@ -904,7 +867,7 @@
 <span class="kw">use</span> <span class="ident">sp_core::hexdisplay::HexDisplay</span>;
 <span class="kw">use</span> <span class="ident">sp_runtime::traits::AccountIdConversion</span>;
 <span class="kw">use</span> <span class="ident">sp_runtime::traits::Block</span> <span class="kw">as</span> <span class="ident">BlockT</span>;
-<span class="kw">use</span> <span class="ident">std</span>::{<span class="ident">io::Write</span>, <span class="ident">net::SocketAddr</span>};
+<span class="kw">use</span> <span class="ident">std::net::SocketAddr</span>;
 
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;frame-benchmarking&quot;</span>)]</span>
 <span class="kw">use</span> <span class="ident">frame_benchmarking_cli</span>::{<span class="ident">BenchmarkCmd</span>, <span class="ident">SUBSTRATE_REFERENCE_HARDWARE</span>};
@@ -1084,15 +1047,6 @@
     <span class="kw">fn</span> <span class="ident">native_runtime_version</span>(<span class="ident">chain_spec</span>: <span class="kw-2">&amp;</span><span class="ident">Box</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">ChainSpec</span><span class="op">&gt;</span>) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;static</span> <span class="ident">RuntimeVersion</span> {
         <span class="ident">polkadot_cli::Cli::native_runtime_version</span>(<span class="ident">chain_spec</span>)
     }
-}
-
-<span class="kw">fn</span> <span class="ident">extract_genesis_wasm</span>(<span class="ident">chain_spec</span>: <span class="kw-2">&amp;</span><span class="kw">dyn</span> <span class="ident">sc_service::ChainSpec</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span><span class="op">&gt;</span> {
-    <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">storage</span> <span class="op">=</span> <span class="ident">chain_spec</span>.<span class="ident">build_storage</span>()<span class="question-mark">?</span>;
-
-    <span class="ident">storage</span>
-        .<span class="ident">top</span>
-        .<span class="ident">remove</span>(<span class="ident">sp_core::storage::well_known_keys::CODE</span>)
-        .<span class="ident">ok_or_else</span>(<span class="op">|</span><span class="op">|</span> <span class="string">&quot;Could not find wasm file in genesis state!&quot;</span>.<span class="ident">into</span>())
 }
 
 <span class="doccomment">/// Parse command line arguments into service configuration.</span>
@@ -1344,50 +1298,22 @@
                 })
             }
         }
-        <span class="prelude-val">Some</span>(<span class="ident">Subcommand::ExportGenesisState</span>(<span class="ident">params</span>)) =&gt; {
-            <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">builder</span> <span class="op">=</span> <span class="ident">sc_cli::LoggerBuilder::new</span>(<span class="string">&quot;&quot;</span>);
-            <span class="ident">builder</span>.<span class="ident">with_profiling</span>(<span class="ident">sc_tracing::TracingReceiver::Log</span>, <span class="string">&quot;&quot;</span>);
-            <span class="kw">let</span> <span class="kw">_</span> <span class="op">=</span> <span class="ident">builder</span>.<span class="ident">init</span>();
+        <span class="prelude-val">Some</span>(<span class="ident">Subcommand::ExportGenesisState</span>(<span class="ident">cmd</span>)) =&gt; {
+            <span class="kw">let</span> <span class="ident">runner</span> <span class="op">=</span> <span class="ident">cli</span>.<span class="ident">create_runner</span>(<span class="ident">cmd</span>)<span class="question-mark">?</span>;
 
-            <span class="kw">let</span> <span class="ident">spec</span> <span class="op">=</span> <span class="ident">cli</span>.<span class="ident">load_spec</span>(<span class="kw-2">&amp;</span><span class="ident">params</span>.<span class="ident">chain</span>.<span class="ident">clone</span>().<span class="ident">unwrap_or_default</span>())<span class="question-mark">?</span>;
-            <span class="kw">let</span> <span class="ident">state_version</span> <span class="op">=</span> <span class="ident">Cli::native_runtime_version</span>(<span class="kw-2">&amp;</span><span class="ident">spec</span>).<span class="ident">state_version</span>();
-
-            <span class="kw">let</span> <span class="ident">block</span>: <span class="ident">Block</span> <span class="op">=</span> <span class="ident">generate_genesis_block</span>(<span class="kw-2">&amp;</span><span class="ident">spec</span>, <span class="ident">state_version</span>)<span class="question-mark">?</span>;
-            <span class="kw">let</span> <span class="ident">raw_header</span> <span class="op">=</span> <span class="ident">block</span>.<span class="ident">header</span>().<span class="ident">encode</span>();
-            <span class="kw">let</span> <span class="ident">output_buf</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">params</span>.<span class="ident">raw</span> {
-                <span class="ident">raw_header</span>
-            } <span class="kw">else</span> {
-                <span class="macro">format!</span>(<span class="string">&quot;0x{:?}&quot;</span>, <span class="ident">HexDisplay::from</span>(<span class="kw-2">&amp;</span><span class="ident">block</span>.<span class="ident">header</span>().<span class="ident">encode</span>())).<span class="ident">into_bytes</span>()
-            };
-
-            <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">output</span>) <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">params</span>.<span class="ident">output</span> {
-                <span class="ident">std::fs::write</span>(<span class="ident">output</span>, <span class="ident">output_buf</span>)<span class="question-mark">?</span>;
-            } <span class="kw">else</span> {
-                <span class="ident">std::io::stdout</span>().<span class="ident">write_all</span>(<span class="kw-2">&amp;</span><span class="ident">output_buf</span>)<span class="question-mark">?</span>;
-            }
-
-            <span class="prelude-val">Ok</span>(())
+            <span class="ident">runner</span>.<span class="ident">sync_run</span>(<span class="op">|</span><span class="ident">_config</span><span class="op">|</span> {
+                <span class="kw">let</span> <span class="ident">spec</span> <span class="op">=</span> <span class="ident">cli</span>.<span class="ident">load_spec</span>(<span class="kw-2">&amp;</span><span class="ident">cmd</span>.<span class="ident">shared_params</span>.<span class="ident">chain</span>.<span class="ident">clone</span>().<span class="ident">unwrap_or_default</span>())<span class="question-mark">?</span>;
+                <span class="kw">let</span> <span class="ident">state_version</span> <span class="op">=</span> <span class="ident">Cli::native_runtime_version</span>(<span class="kw-2">&amp;</span><span class="ident">spec</span>).<span class="ident">state_version</span>();
+                <span class="ident">cmd</span>.<span class="ident">run</span>::<span class="op">&lt;</span><span class="ident">Block</span><span class="op">&gt;</span>(<span class="kw-2">&amp;</span><span class="kw-2">*</span><span class="ident">spec</span>, <span class="ident">state_version</span>)
+            })
         }
-        <span class="prelude-val">Some</span>(<span class="ident">Subcommand::ExportGenesisWasm</span>(<span class="ident">params</span>)) =&gt; {
-            <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">builder</span> <span class="op">=</span> <span class="ident">sc_cli::LoggerBuilder::new</span>(<span class="string">&quot;&quot;</span>);
-            <span class="ident">builder</span>.<span class="ident">with_profiling</span>(<span class="ident">sc_tracing::TracingReceiver::Log</span>, <span class="string">&quot;&quot;</span>);
-            <span class="kw">let</span> <span class="kw">_</span> <span class="op">=</span> <span class="ident">builder</span>.<span class="ident">init</span>();
+        <span class="prelude-val">Some</span>(<span class="ident">Subcommand::ExportGenesisWasm</span>(<span class="ident">cmd</span>)) =&gt; {
+            <span class="kw">let</span> <span class="ident">runner</span> <span class="op">=</span> <span class="ident">cli</span>.<span class="ident">create_runner</span>(<span class="ident">cmd</span>)<span class="question-mark">?</span>;
 
-            <span class="kw">let</span> <span class="ident">raw_wasm_blob</span> <span class="op">=</span>
-                <span class="ident">extract_genesis_wasm</span>(<span class="kw-2">&amp;</span><span class="kw-2">*</span><span class="ident">cli</span>.<span class="ident">load_spec</span>(<span class="kw-2">&amp;</span><span class="ident">params</span>.<span class="ident">chain</span>.<span class="ident">clone</span>().<span class="ident">unwrap_or_default</span>())<span class="question-mark">?</span>)<span class="question-mark">?</span>;
-            <span class="kw">let</span> <span class="ident">output_buf</span> <span class="op">=</span> <span class="kw">if</span> <span class="ident">params</span>.<span class="ident">raw</span> {
-                <span class="ident">raw_wasm_blob</span>
-            } <span class="kw">else</span> {
-                <span class="macro">format!</span>(<span class="string">&quot;0x{:?}&quot;</span>, <span class="ident">HexDisplay::from</span>(<span class="kw-2">&amp;</span><span class="ident">raw_wasm_blob</span>)).<span class="ident">into_bytes</span>()
-            };
-
-            <span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">output</span>) <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">params</span>.<span class="ident">output</span> {
-                <span class="ident">std::fs::write</span>(<span class="ident">output</span>, <span class="ident">output_buf</span>)<span class="question-mark">?</span>;
-            } <span class="kw">else</span> {
-                <span class="ident">std::io::stdout</span>().<span class="ident">write_all</span>(<span class="kw-2">&amp;</span><span class="ident">output_buf</span>)<span class="question-mark">?</span>;
-            }
-
-            <span class="prelude-val">Ok</span>(())
+            <span class="ident">runner</span>.<span class="ident">sync_run</span>(<span class="op">|</span><span class="ident">_config</span><span class="op">|</span> {
+                <span class="kw">let</span> <span class="ident">spec</span> <span class="op">=</span> <span class="ident">cli</span>.<span class="ident">load_spec</span>(<span class="kw-2">&amp;</span><span class="ident">cmd</span>.<span class="ident">shared_params</span>.<span class="ident">chain</span>.<span class="ident">clone</span>().<span class="ident">unwrap_or_default</span>())<span class="question-mark">?</span>;
+                <span class="ident">cmd</span>.<span class="ident">run</span>(<span class="kw-2">&amp;</span><span class="kw-2">*</span><span class="ident">spec</span>)
+            })
         }
         <span class="prelude-val">Some</span>(<span class="ident">Subcommand::Key</span>(<span class="ident">cmd</span>)) =&gt; <span class="ident">cmd</span>.<span class="ident">run</span>(<span class="kw-2">&amp;</span><span class="ident">cli</span>),
         <span class="prelude-val">Some</span>(<span class="ident">Subcommand::Sign</span>(<span class="ident">cmd</span>)) =&gt; <span class="ident">cmd</span>.<span class="ident">run</span>(),
@@ -1573,7 +1499,7 @@
                     <span class="ident">AccountIdConversion</span>::<span class="op">&lt;</span><span class="ident">polkadot_primitives::v2::AccountId</span><span class="op">&gt;</span><span class="ident">::into_account_truncating</span>(<span class="kw-2">&amp;</span><span class="ident">id</span>);
 
                 <span class="kw">let</span> <span class="ident">state_version</span> <span class="op">=</span> <span class="ident">Cli::native_runtime_version</span>(<span class="kw-2">&amp;</span><span class="ident">config</span>.<span class="ident">chain_spec</span>).<span class="ident">state_version</span>();
-                <span class="kw">let</span> <span class="ident">block</span>: <span class="ident">Block</span> <span class="op">=</span> <span class="ident">generate_genesis_block</span>(<span class="kw-2">&amp;</span><span class="ident">config</span>.<span class="ident">chain_spec</span>, <span class="ident">state_version</span>)
+                <span class="kw">let</span> <span class="ident">block</span>: <span class="ident">Block</span> <span class="op">=</span> <span class="ident">generate_genesis_block</span>(<span class="kw-2">&amp;</span><span class="kw-2">*</span><span class="ident">config</span>.<span class="ident">chain_spec</span>, <span class="ident">state_version</span>)
                     .<span class="ident">map_err</span>(<span class="op">|</span><span class="ident">e</span><span class="op">|</span> <span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, <span class="ident">e</span>))<span class="question-mark">?</span>;
                 <span class="kw">let</span> <span class="ident">genesis_state</span> <span class="op">=</span> <span class="macro">format!</span>(<span class="string">&quot;0x{:?}&quot;</span>, <span class="ident">HexDisplay::from</span>(<span class="kw-2">&amp;</span><span class="ident">block</span>.<span class="ident">header</span>().<span class="ident">encode</span>()));
 

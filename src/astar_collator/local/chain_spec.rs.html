@@ -161,6 +161,8 @@
 <span id="156">156</span>
 <span id="157">157</span>
 <span id="158">158</span>
+<span id="159">159</span>
+<span id="160">160</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Chain specifications.</span>
 
 <span class="kw">use</span> <span class="ident">local_runtime</span>::{
@@ -306,6 +308,8 @@
         <span class="ident">sudo</span>: <span class="ident">SudoConfig</span> {
             <span class="ident">key</span>: <span class="prelude-val">Some</span>(<span class="ident">root_key</span>),
         },
+        <span class="ident">assets</span>: <span class="ident">Default::default</span>(),
+        <span class="ident">transaction_payment</span>: <span class="ident">Default::default</span>(),
     }
 }
 

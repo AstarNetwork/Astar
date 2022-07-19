@@ -1387,8 +1387,6 @@
 <span id="1382">1382</span>
 <span id="1383">1383</span>
 <span id="1384">1384</span>
-<span id="1385">1385</span>
-<span id="1386">1386</span>
 </pre><pre class="rust"><code><span class="doccomment">//! The Shiden Network runtime. This can be compiled with ``#[no_std]`, ready for Wasm.</span>
 
 <span class="attribute">#![<span class="ident">cfg_attr</span>(<span class="ident">not</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>), <span class="ident">no_std</span>)]</span>
@@ -1396,6 +1394,7 @@
 <span class="attribute">#![<span class="ident">recursion_limit</span> <span class="op">=</span> <span class="string">&quot;256&quot;</span>]</span>
 
 <span class="kw">use</span> <span class="ident">codec</span>::{<span class="ident">Decode</span>, <span class="ident">Encode</span>};
+<span class="kw">use</span> <span class="ident">cumulus_pallet_parachain_system::RelayNumberStrictlyIncreases</span>;
 <span class="kw">use</span> <span class="ident">frame_support</span>::{
     <span class="ident">construct_runtime</span>, <span class="ident">parameter_types</span>,
     <span class="ident">traits</span>::{
@@ -1410,7 +1409,7 @@
     <span class="ident">ConsensusEngineId</span>, <span class="ident">PalletId</span>,
 };
 <span class="kw">use</span> <span class="ident">frame_system::limits</span>::{<span class="ident">BlockLength</span>, <span class="ident">BlockWeights</span>};
-<span class="kw">use</span> <span class="ident">pallet_contracts</span>::{<span class="ident">weights::WeightInfo</span>, <span class="ident">DefaultContractAccessWeight</span>};
+<span class="kw">use</span> <span class="ident">pallet_contracts::DefaultContractAccessWeight</span>;
 <span class="kw">use</span> <span class="ident">pallet_evm</span>::{<span class="ident">FeeCalculator</span>, <span class="ident">Runner</span>};
 <span class="kw">use</span> <span class="ident">pallet_transaction_payment</span>::{
     <span class="ident">FeeDetails</span>, <span class="ident">Multiplier</span>, <span class="ident">RuntimeDispatchInfo</span>, <span class="ident">TargetedFeeAdjustment</span>,
@@ -1488,7 +1487,7 @@
     <span class="ident">spec_name</span>: <span class="macro">create_runtime_str!</span>(<span class="string">&quot;shiden&quot;</span>),
     <span class="ident">impl_name</span>: <span class="macro">create_runtime_str!</span>(<span class="string">&quot;shiden&quot;</span>),
     <span class="ident">authoring_version</span>: <span class="number">1</span>,
-    <span class="ident">spec_version</span>: <span class="number">63</span>,
+    <span class="ident">spec_version</span>: <span class="number">64</span>,
     <span class="ident">impl_version</span>: <span class="number">0</span>,
     <span class="ident">apis</span>: <span class="ident">RUNTIME_API_VERSIONS</span>,
     <span class="ident">transaction_version</span>: <span class="number">2</span>,
@@ -1759,6 +1758,7 @@
     <span class="kw">type</span> <span class="ident">ReservedDmpWeight</span> <span class="op">=</span> <span class="ident">ReservedDmpWeight</span>;
     <span class="kw">type</span> <span class="ident">XcmpMessageHandler</span> <span class="op">=</span> <span class="ident">XcmpQueue</span>;
     <span class="kw">type</span> <span class="ident">ReservedXcmpWeight</span> <span class="op">=</span> <span class="ident">ReservedXcmpWeight</span>;
+    <span class="kw">type</span> <span class="ident">CheckAssociatedRelayNumber</span> <span class="op">=</span> <span class="ident">RelayNumberStrictlyIncreases</span>;
 }
 
 <span class="kw">impl</span> <span class="ident">parachain_info::Config</span> <span class="kw">for</span> <span class="ident">Runtime</span> {}
@@ -1976,12 +1976,6 @@
     <span class="comment">// The lazy deletion runs inside on_initialize.</span>
     <span class="kw">pub</span> <span class="ident">DeletionWeightLimit</span>: <span class="ident">Weight</span> <span class="op">=</span> <span class="ident">AVERAGE_ON_INITIALIZE_RATIO</span> <span class="op">*</span>
         <span class="ident">RuntimeBlockWeights::get</span>().<span class="ident">max_block</span>;
-    <span class="comment">// The weight needed for decoding the queue should be less or equal than a fifth</span>
-    <span class="comment">// of the overall weight dedicated to the lazy deletion.</span>
-    <span class="kw">pub</span> <span class="ident">DeletionQueueDepth</span>: <span class="ident">u32</span> <span class="op">=</span> ((<span class="ident">DeletionWeightLimit::get</span>() <span class="op">/</span> (
-        <span class="op">&lt;</span><span class="ident">Runtime</span> <span class="kw">as</span> <span class="ident">pallet_contracts::Config</span><span class="op">&gt;</span><span class="ident">::WeightInfo::on_initialize_per_queue_item</span>(<span class="number">1</span>)
-        <span class="op">-</span>
-        <span class="op">&lt;</span><span class="ident">Runtime</span> <span class="kw">as</span> <span class="ident">pallet_contracts::Config</span><span class="op">&gt;</span><span class="ident">::WeightInfo::on_initialize_per_queue_item</span>(<span class="number">0</span>))) <span class="op">/</span> <span class="number">5</span>) <span class="kw">as</span> <span class="ident">u32</span>;
     <span class="kw">pub</span> <span class="ident">Schedule</span>: <span class="ident">pallet_contracts::Schedule</span><span class="op">&lt;</span><span class="ident">Runtime</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">Default::default</span>();
 }
 
@@ -2004,13 +1998,14 @@
     <span class="kw">type</span> <span class="ident">WeightPrice</span> <span class="op">=</span> <span class="ident">pallet_transaction_payment::Pallet</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span>;
     <span class="kw">type</span> <span class="ident">WeightInfo</span> <span class="op">=</span> <span class="ident">pallet_contracts::weights::SubstrateWeight</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span>;
     <span class="kw">type</span> <span class="ident">ChainExtension</span> <span class="op">=</span> ();
-    <span class="kw">type</span> <span class="ident">DeletionQueueDepth</span> <span class="op">=</span> <span class="ident">DeletionQueueDepth</span>;
+    <span class="kw">type</span> <span class="ident">DeletionQueueDepth</span> <span class="op">=</span> <span class="ident">ConstU32</span><span class="op">&lt;</span><span class="number">128</span><span class="op">&gt;</span>;
     <span class="kw">type</span> <span class="ident">DeletionWeightLimit</span> <span class="op">=</span> <span class="ident">DeletionWeightLimit</span>;
     <span class="kw">type</span> <span class="ident">Schedule</span> <span class="op">=</span> <span class="ident">Schedule</span>;
     <span class="kw">type</span> <span class="ident">AddressGenerator</span> <span class="op">=</span> <span class="ident">pallet_contracts::DefaultAddressGenerator</span>;
     <span class="kw">type</span> <span class="ident">ContractAccessWeight</span> <span class="op">=</span> <span class="ident">DefaultContractAccessWeight</span><span class="op">&lt;</span><span class="ident">RuntimeBlockWeights</span><span class="op">&gt;</span>;
     <span class="kw">type</span> <span class="ident">MaxCodeLen</span> <span class="op">=</span> <span class="ident">ConstU32</span><span class="op">&lt;</span>{ <span class="number">128</span> <span class="op">*</span> <span class="number">1024</span> }<span class="op">&gt;</span>;
     <span class="kw">type</span> <span class="ident">RelaxedMaxCodeLen</span> <span class="op">=</span> <span class="ident">ConstU32</span><span class="op">&lt;</span>{ <span class="number">256</span> <span class="op">*</span> <span class="number">1024</span> }<span class="op">&gt;</span>;
+    <span class="kw">type</span> <span class="ident">MaxStorageKeyLen</span> <span class="op">=</span> <span class="ident">ConstU32</span><span class="op">&lt;</span><span class="number">128</span><span class="op">&gt;</span>;
 }
 
 <span class="macro">parameter_types!</span> {
@@ -2067,6 +2062,7 @@
 }
 
 <span class="kw">impl</span> <span class="ident">pallet_transaction_payment::Config</span> <span class="kw">for</span> <span class="ident">Runtime</span> {
+    <span class="kw">type</span> <span class="ident">Event</span> <span class="op">=</span> <span class="ident">Event</span>;
     <span class="kw">type</span> <span class="ident">OnChargeTransaction</span> <span class="op">=</span> <span class="ident">pallet_transaction_payment::CurrencyAdapter</span><span class="op">&lt;</span><span class="ident">Balances</span>, <span class="ident">DealWithFees</span><span class="op">&gt;</span>;
     <span class="kw">type</span> <span class="ident">WeightToFee</span> <span class="op">=</span> <span class="ident">WeightToFee</span>;
     <span class="kw">type</span> <span class="ident">OperationalFeeMultiplier</span> <span class="op">=</span> <span class="ident">OperationalFeeMultiplier</span>;
@@ -2204,43 +2200,43 @@
         <span class="ident">NodeBlock</span> <span class="op">=</span> <span class="ident">generic::Block</span><span class="op">&lt;</span><span class="ident">Header</span>, <span class="ident">sp_runtime::OpaqueExtrinsic</span><span class="op">&gt;</span>,
         <span class="ident">UncheckedExtrinsic</span> <span class="op">=</span> <span class="ident">UncheckedExtrinsic</span>
     {
-        <span class="ident">System</span>: <span class="ident">frame_system</span>::{<span class="ident">Pallet</span>, <span class="ident">Call</span>, <span class="ident">Storage</span>, <span class="ident">Config</span>, <span class="ident">Event</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>} <span class="op">=</span> <span class="number">10</span>,
-        <span class="ident">Utility</span>: <span class="ident">pallet_utility</span>::{<span class="ident">Pallet</span>, <span class="ident">Call</span>, <span class="ident">Event</span>} <span class="op">=</span> <span class="number">11</span>,
-        <span class="ident">Identity</span>: <span class="ident">pallet_identity</span>::{<span class="ident">Pallet</span>, <span class="ident">Call</span>, <span class="ident">Storage</span>, <span class="ident">Event</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>} <span class="op">=</span> <span class="number">12</span>,
-        <span class="ident">Timestamp</span>: <span class="ident">pallet_timestamp</span>::{<span class="ident">Pallet</span>, <span class="ident">Call</span>, <span class="ident">Storage</span>, <span class="ident">Inherent</span>} <span class="op">=</span> <span class="number">13</span>,
-        <span class="ident">Multisig</span>: <span class="ident">pallet_multisig</span>::{<span class="ident">Pallet</span>, <span class="ident">Call</span>, <span class="ident">Storage</span>, <span class="ident">Event</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>} <span class="op">=</span> <span class="number">14</span>,
+        <span class="ident">System</span>: <span class="ident">frame_system</span> <span class="op">=</span> <span class="number">10</span>,
+        <span class="ident">Utility</span>: <span class="ident">pallet_utility</span> <span class="op">=</span> <span class="number">11</span>,
+        <span class="ident">Identity</span>: <span class="ident">pallet_identity</span> <span class="op">=</span> <span class="number">12</span>,
+        <span class="ident">Timestamp</span>: <span class="ident">pallet_timestamp</span> <span class="op">=</span> <span class="number">13</span>,
+        <span class="ident">Multisig</span>: <span class="ident">pallet_multisig</span> <span class="op">=</span> <span class="number">14</span>,
 
-        <span class="ident">ParachainSystem</span>: <span class="ident">cumulus_pallet_parachain_system</span>::{<span class="ident">Pallet</span>, <span class="ident">Call</span>, <span class="ident">Storage</span>, <span class="ident">Inherent</span>, <span class="ident">Event</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>} <span class="op">=</span> <span class="number">20</span>,
-        <span class="ident">ParachainInfo</span>: <span class="ident">parachain_info</span>::{<span class="ident">Pallet</span>, <span class="ident">Storage</span>, <span class="ident">Config</span>} <span class="op">=</span> <span class="number">21</span>,
+        <span class="ident">ParachainSystem</span>: <span class="ident">cumulus_pallet_parachain_system</span> <span class="op">=</span> <span class="number">20</span>,
+        <span class="ident">ParachainInfo</span>: <span class="ident">parachain_info</span> <span class="op">=</span> <span class="number">21</span>,
 
-        <span class="ident">TransactionPayment</span>: <span class="ident">pallet_transaction_payment</span>::{<span class="ident">Pallet</span>, <span class="ident">Storage</span>} <span class="op">=</span> <span class="number">30</span>,
-        <span class="ident">Balances</span>: <span class="ident">pallet_balances</span>::{<span class="ident">Pallet</span>, <span class="ident">Call</span>, <span class="ident">Storage</span>, <span class="ident">Config</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>, <span class="ident">Event</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>} <span class="op">=</span> <span class="number">31</span>,
-        <span class="ident">Vesting</span>: <span class="ident">pallet_vesting</span>::{<span class="ident">Pallet</span>, <span class="ident">Call</span>, <span class="ident">Storage</span>, <span class="ident">Config</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>, <span class="ident">Event</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>} <span class="op">=</span> <span class="number">32</span>,
-        <span class="ident">DappsStaking</span>: <span class="ident">pallet_dapps_staking</span>::{<span class="ident">Pallet</span>, <span class="ident">Call</span>, <span class="ident">Storage</span>, <span class="ident">Event</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>} <span class="op">=</span> <span class="number">34</span>,
-        <span class="ident">BlockReward</span>: <span class="ident">pallet_block_reward</span>::{<span class="ident">Pallet</span>, <span class="ident">Call</span>, <span class="ident">Storage</span>, <span class="ident">Config</span>, <span class="ident">Event</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>} <span class="op">=</span> <span class="number">35</span>,
-        <span class="ident">Assets</span>: <span class="ident">pallet_assets</span>::{<span class="ident">Pallet</span>, <span class="ident">Call</span>, <span class="ident">Storage</span>, <span class="ident">Event</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>} <span class="op">=</span> <span class="number">36</span>,
+        <span class="ident">TransactionPayment</span>: <span class="ident">pallet_transaction_payment</span> <span class="op">=</span> <span class="number">30</span>,
+        <span class="ident">Balances</span>: <span class="ident">pallet_balances</span> <span class="op">=</span> <span class="number">31</span>,
+        <span class="ident">Vesting</span>: <span class="ident">pallet_vesting</span> <span class="op">=</span> <span class="number">32</span>,
+        <span class="ident">DappsStaking</span>: <span class="ident">pallet_dapps_staking</span> <span class="op">=</span> <span class="number">34</span>,
+        <span class="ident">BlockReward</span>: <span class="ident">pallet_block_reward</span> <span class="op">=</span> <span class="number">35</span>,
+        <span class="ident">Assets</span>: <span class="ident">pallet_assets</span> <span class="op">=</span> <span class="number">36</span>,
 
-        <span class="ident">Authorship</span>: <span class="ident">pallet_authorship</span>::{<span class="ident">Pallet</span>, <span class="ident">Call</span>, <span class="ident">Storage</span>, <span class="ident">Inherent</span>} <span class="op">=</span> <span class="number">40</span>,
-        <span class="ident">CollatorSelection</span>: <span class="ident">pallet_collator_selection</span>::{<span class="ident">Pallet</span>, <span class="ident">Call</span>, <span class="ident">Storage</span>, <span class="ident">Event</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>, <span class="ident">Config</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>} <span class="op">=</span> <span class="number">41</span>,
-        <span class="ident">Session</span>: <span class="ident">pallet_session</span>::{<span class="ident">Pallet</span>, <span class="ident">Call</span>, <span class="ident">Storage</span>, <span class="ident">Event</span>, <span class="ident">Config</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>} <span class="op">=</span> <span class="number">42</span>,
-        <span class="ident">Aura</span>: <span class="ident">pallet_aura</span>::{<span class="ident">Pallet</span>, <span class="ident">Storage</span>, <span class="ident">Config</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>} <span class="op">=</span> <span class="number">43</span>,
-        <span class="ident">AuraExt</span>: <span class="ident">cumulus_pallet_aura_ext</span>::{<span class="ident">Pallet</span>, <span class="ident">Storage</span>, <span class="ident">Config</span>} <span class="op">=</span> <span class="number">44</span>,
+        <span class="ident">Authorship</span>: <span class="ident">pallet_authorship</span> <span class="op">=</span> <span class="number">40</span>,
+        <span class="ident">CollatorSelection</span>: <span class="ident">pallet_collator_selection</span> <span class="op">=</span> <span class="number">41</span>,
+        <span class="ident">Session</span>: <span class="ident">pallet_session</span> <span class="op">=</span> <span class="number">42</span>,
+        <span class="ident">Aura</span>: <span class="ident">pallet_aura</span> <span class="op">=</span> <span class="number">43</span>,
+        <span class="ident">AuraExt</span>: <span class="ident">cumulus_pallet_aura_ext</span> <span class="op">=</span> <span class="number">44</span>,
 
-        <span class="ident">XcmpQueue</span>: <span class="ident">cumulus_pallet_xcmp_queue</span>::{<span class="ident">Pallet</span>, <span class="ident">Call</span>, <span class="ident">Storage</span>, <span class="ident">Event</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>} <span class="op">=</span> <span class="number">50</span>,
-        <span class="ident">PolkadotXcm</span>: <span class="ident">pallet_xcm</span>::{<span class="ident">Pallet</span>, <span class="ident">Call</span>, <span class="ident">Storage</span>, <span class="ident">Event</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>, <span class="ident">Origin</span>, <span class="ident">Config</span>} <span class="op">=</span> <span class="number">51</span>,
-        <span class="ident">CumulusXcm</span>: <span class="ident">cumulus_pallet_xcm</span>::{<span class="ident">Pallet</span>, <span class="ident">Event</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>, <span class="ident">Origin</span>} <span class="op">=</span> <span class="number">52</span>,
-        <span class="ident">DmpQueue</span>: <span class="ident">cumulus_pallet_dmp_queue</span>::{<span class="ident">Pallet</span>, <span class="ident">Call</span>, <span class="ident">Storage</span>, <span class="ident">Event</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>} <span class="op">=</span> <span class="number">53</span>,
-        <span class="ident">XcAssetConfig</span>: <span class="ident">pallet_xc_asset_config</span>::{<span class="ident">Pallet</span>, <span class="ident">Call</span>, <span class="ident">Storage</span>, <span class="ident">Event</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>} <span class="op">=</span> <span class="number">54</span>,
+        <span class="ident">XcmpQueue</span>: <span class="ident">cumulus_pallet_xcmp_queue</span> <span class="op">=</span> <span class="number">50</span>,
+        <span class="ident">PolkadotXcm</span>: <span class="ident">pallet_xcm</span> <span class="op">=</span> <span class="number">51</span>,
+        <span class="ident">CumulusXcm</span>: <span class="ident">cumulus_pallet_xcm</span> <span class="op">=</span> <span class="number">52</span>,
+        <span class="ident">DmpQueue</span>: <span class="ident">cumulus_pallet_dmp_queue</span> <span class="op">=</span> <span class="number">53</span>,
+        <span class="ident">XcAssetConfig</span>: <span class="ident">pallet_xc_asset_config</span> <span class="op">=</span> <span class="number">54</span>,
 
-        <span class="ident">EVM</span>: <span class="ident">pallet_evm</span>::{<span class="ident">Pallet</span>, <span class="ident">Config</span>, <span class="ident">Call</span>, <span class="ident">Storage</span>, <span class="ident">Event</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>} <span class="op">=</span> <span class="number">60</span>,
-        <span class="ident">Ethereum</span>: <span class="ident">pallet_ethereum</span>::{<span class="ident">Pallet</span>, <span class="ident">Call</span>, <span class="ident">Storage</span>, <span class="ident">Event</span>, <span class="ident">Origin</span>, <span class="ident">Config</span>} <span class="op">=</span> <span class="number">61</span>,
-        <span class="ident">EthCall</span>: <span class="ident">pallet_custom_signatures</span>::{<span class="ident">Pallet</span>, <span class="ident">Call</span>, <span class="ident">Event</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>, <span class="ident">ValidateUnsigned</span>} <span class="op">=</span> <span class="number">62</span>,
-        <span class="ident">BaseFee</span>: <span class="ident">pallet_base_fee</span>::{<span class="ident">Pallet</span>, <span class="ident">Call</span>, <span class="ident">Storage</span>, <span class="ident">Config</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>, <span class="ident">Event</span>} <span class="op">=</span> <span class="number">63</span>,
+        <span class="ident">EVM</span>: <span class="ident">pallet_evm</span> <span class="op">=</span> <span class="number">60</span>,
+        <span class="ident">Ethereum</span>: <span class="ident">pallet_ethereum</span> <span class="op">=</span> <span class="number">61</span>,
+        <span class="ident">EthCall</span>: <span class="ident">pallet_custom_signatures</span> <span class="op">=</span> <span class="number">62</span>,
+        <span class="ident">BaseFee</span>: <span class="ident">pallet_base_fee</span> <span class="op">=</span> <span class="number">63</span>,
 
-        <span class="ident">Contracts</span>: <span class="ident">pallet_contracts</span>::{<span class="ident">Pallet</span>, <span class="ident">Call</span>, <span class="ident">Storage</span>, <span class="ident">Event</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>} <span class="op">=</span> <span class="number">70</span>,
-        <span class="ident">RandomnessCollectiveFlip</span>: <span class="ident">pallet_randomness_collective_flip</span>::{<span class="ident">Pallet</span>, <span class="ident">Storage</span>} <span class="op">=</span> <span class="number">71</span>,
+        <span class="ident">Contracts</span>: <span class="ident">pallet_contracts</span> <span class="op">=</span> <span class="number">70</span>,
+        <span class="ident">RandomnessCollectiveFlip</span>: <span class="ident">pallet_randomness_collective_flip</span> <span class="op">=</span> <span class="number">71</span>,
 
-        <span class="ident">Sudo</span>: <span class="ident">pallet_sudo</span>::{<span class="ident">Pallet</span>, <span class="ident">Call</span>, <span class="ident">Storage</span>, <span class="ident">Event</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>, <span class="ident">Config</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>} <span class="op">=</span> <span class="number">99</span>,
+        <span class="ident">Sudo</span>: <span class="ident">pallet_sudo</span> <span class="op">=</span> <span class="number">99</span>,
     }
 );
 
@@ -2676,7 +2672,7 @@
 
         <span class="kw">fn</span> <span class="ident">get_storage</span>(
             <span class="ident">address</span>: <span class="ident">AccountId</span>,
-            <span class="ident">key</span>: [<span class="ident">u8</span>; <span class="number">32</span>],
+            <span class="ident">key</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>,
         ) -&gt; <span class="ident">pallet_contracts_primitives::GetStorageResult</span> {
             <span class="ident">Contracts::get_storage</span>(<span class="ident">address</span>, <span class="ident">key</span>)
         }

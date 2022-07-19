@@ -1,0 +1,6 @@
+(function() {var implementors = {};
+implementors["astar_runtime"] = [{"text":"impl MaxEncodedLen for <a class=\"enum\" href=\"astar_runtime/enum.OriginCaller.html\" title=\"enum astar_runtime::OriginCaller\">OriginCaller</a>","synthetic":false,"types":["astar_runtime::OriginCaller"]}];
+implementors["local_runtime"] = [{"text":"impl MaxEncodedLen for <a class=\"enum\" href=\"local_runtime/enum.OriginCaller.html\" title=\"enum local_runtime::OriginCaller\">OriginCaller</a>","synthetic":false,"types":["local_runtime::OriginCaller"]}];
+implementors["shibuya_runtime"] = [{"text":"impl MaxEncodedLen for <a class=\"enum\" href=\"shibuya_runtime/enum.OriginCaller.html\" title=\"enum shibuya_runtime::OriginCaller\">OriginCaller</a>","synthetic":false,"types":["shibuya_runtime::OriginCaller"]}];
+implementors["shiden_runtime"] = [{"text":"impl MaxEncodedLen for <a class=\"enum\" href=\"shiden_runtime/enum.OriginCaller.html\" title=\"enum shiden_runtime::OriginCaller\">OriginCaller</a>","synthetic":false,"types":["shiden_runtime::OriginCaller"]}];
+if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

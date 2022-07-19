@@ -152,6 +152,9 @@
 <span id="147">147</span>
 <span id="148">148</span>
 <span id="149">149</span>
+<span id="150">150</span>
+<span id="151">151</span>
+<span id="152">152</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Shiden chain specifications.</span>
 
 <span class="kw">use</span> <span class="ident">cumulus_primitives_core::ParaId</span>;
@@ -289,6 +292,9 @@
         ),
         <span class="ident">ethereum</span>: <span class="ident">Default::default</span>(),
         <span class="ident">polkadot_xcm</span>: <span class="ident">Default::default</span>(),
+        <span class="ident">assets</span>: <span class="ident">Default::default</span>(),
+        <span class="ident">parachain_system</span>: <span class="ident">Default::default</span>(),
+        <span class="ident">transaction_payment</span>: <span class="ident">Default::default</span>(),
     }
 }
 
