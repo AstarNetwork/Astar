@@ -51,7 +51,7 @@ jobs:
           target/
         key: ${{ runner.os }}-cargo-clippy-${{ hashFiles('**/Cargo.lock') }}
         restore-keys: |
-          ${{ runner.os }}-cargo-
+          ${{ runner.os }}-cargo-clippy-
 
     - uses: actions-rs/clippy-check@v1
       with:

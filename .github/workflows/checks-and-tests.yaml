@@ -7,7 +7,7 @@ on:
     - v[0-9]+.[0-9]+.[0-9]+*
   workflow_dispatch:
 jobs:
-  checks-and-tests:
+  compile-check:
     runs-on: ubuntu-latest
     steps:
     - name: Free disk space
@@ -31,9 +31,9 @@ jobs:
       with:
         path: |
           target/
-        key: ${{ runner.os }}-cargo-checks-${{ hashFiles('**/Cargo.lock') }}
+        key: ${{ runner.os }}-cargo-check-${{ hashFiles('**/Cargo.lock') }}
         restore-keys: |
-          ${{ runner.os }}-cargo-checks-and-tests
+          ${{ runner.os }}-cargo-check-
 
     - name: Check all features compilation
       run: cargo check --verbose --all-features
