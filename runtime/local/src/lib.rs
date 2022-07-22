@@ -10,7 +10,8 @@ use codec::{Decode, Encode};
 use frame_support::{
     construct_runtime, parameter_types,
     traits::{
-        ConstU32, Currency, EitherOfDiverse, EqualPrivilegeOnly, FindAuthor, Get, KeyOwnerProofSystem, Nothing,
+        ConstU32, Currency, EitherOfDiverse, EqualPrivilegeOnly, FindAuthor, Get,
+        KeyOwnerProofSystem, Nothing,
     },
     weights::{
         constants::{RocksDbWeight, WEIGHT_PER_SECOND},

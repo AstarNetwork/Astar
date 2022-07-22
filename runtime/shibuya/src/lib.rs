@@ -9,8 +9,8 @@ use cumulus_pallet_parachain_system::AnyRelayNumber;
 use frame_support::{
     construct_runtime, parameter_types,
     traits::{
-        ConstU32, Contains, Currency, EitherOfDiverse, EqualPrivilegeOnly, FindAuthor, Get, Imbalance, Nothing,
-        OnUnbalanced,
+        ConstU32, Contains, Currency, EitherOfDiverse, EqualPrivilegeOnly, FindAuthor, Get,
+        Imbalance, Nothing, OnUnbalanced,
     },
     weights::{
         constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_PER_SECOND},
