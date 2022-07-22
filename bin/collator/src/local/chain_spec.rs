@@ -144,6 +144,8 @@ fn testnet_genesis(
         sudo: SudoConfig {
             key: Some(root_key),
         },
+        assets: Default::default(),
+        transaction_payment: Default::default(),
         council: CouncilConfig {
             members: vec![
                 get_account_id_from_seed::<sr25519::Public>("Alice"),

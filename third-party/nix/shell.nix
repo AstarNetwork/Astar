@@ -2,7 +2,7 @@
 }:
 
 with release.pkgs;
-with llvmPackages;
+with llvmPackages_10;
 
 stdenv.mkDerivation {
   name = "plasm-nix-shell";

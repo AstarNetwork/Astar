@@ -10,7 +10,7 @@ use codec::{Decode, Encode};
 use frame_support::{
     construct_runtime, parameter_types,
     traits::{
-        Currency, EnsureOneOf, EqualPrivilegeOnly, FindAuthor, Get, KeyOwnerProofSystem, Nothing,
+        ConstU32, Currency, EitherOfDiverse, EqualPrivilegeOnly, FindAuthor, Get, KeyOwnerProofSystem, Nothing,
     },
     weights::{
         constants::{RocksDbWeight, WEIGHT_PER_SECOND},
@@ -19,8 +19,9 @@ use frame_support::{
     ConsensusEngineId, PalletId,
 };
 use frame_system::limits::{BlockLength, BlockWeights};
-use pallet_contracts::weights::WeightInfo;
+use pallet_contracts::DefaultContractAccessWeight;
 use pallet_evm::{FeeCalculator, Runner};
+use pallet_evm_precompile_assets_erc20::AddressToAssetId;
 use pallet_grandpa::{fg_primitives, AuthorityList as GrandpaAuthorityList};
 use sp_api::impl_runtime_apis;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata, H160, H256, U256};
@@ -28,7 +29,8 @@ use sp_runtime::{
     create_runtime_str, generic, impl_opaque_keys,
     traits::{
         AccountIdConversion, AccountIdLookup, BlakeTwo256, Block as BlockT, ConvertInto,
-        Dispatchable, IdentifyAccount, NumberFor, PostDispatchInfoOf, Verify,
+        DispatchInfoOf, Dispatchable, IdentifyAccount, NumberFor, PostDispatchInfoOf,
+        UniqueSaturatedInto, Verify,
     },
     transaction_validity::{
         TransactionPriority, TransactionSource, TransactionValidity, TransactionValidityError,
@@ -36,6 +38,7 @@ use sp_runtime::{
     ApplyExtrinsicResult, MultiSignature, RuntimeDebug,
 };
 use sp_std::prelude::*;
+
 #[cfg(feature = "std")]
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
@@ -81,7 +84,7 @@ impl_opaque_keys! {
 }
 
 mod precompiles;
-pub use precompiles::LocalNetworkPrecompiles;
+pub use precompiles::{LocalNetworkPrecompiles, ASSET_PRECOMPILE_ADDRESS_PREFIX};
 pub type Precompiles = LocalNetworkPrecompiles<Runtime>;
 
 /// Constant values used within the runtime.
@@ -107,6 +110,28 @@ pub const MINUTES: BlockNumber = 60_000 / (MILLISECS_PER_BLOCK as BlockNumber);
 pub const HOURS: BlockNumber = MINUTES * 60;
 pub const DAYS: BlockNumber = HOURS * 24;
 
+pub type AssetId = u128;
+
+impl AddressToAssetId<AssetId> for Runtime {
+    fn address_to_asset_id(address: H160) -> Option<AssetId> {
+        let mut data = [0u8; 16];
+        let address_bytes: [u8; 20] = address.into();
+        if ASSET_PRECOMPILE_ADDRESS_PREFIX.eq(&address_bytes[0..4]) {
+            data.copy_from_slice(&address_bytes[4..20]);
+            Some(u128::from_be_bytes(data))
+        } else {
+            None
+        }
+    }
+
+    fn asset_id_to_address(asset_id: AssetId) -> H160 {
+        let mut data = [0u8; 20];
+        data[0..4].copy_from_slice(ASSET_PRECOMPILE_ADDRESS_PREFIX);
+        data[4..20].copy_from_slice(&asset_id.to_be_bytes());
+        H160::from(data)
+    }
+}
+
 /// The version information used to identify this runtime when compiled natively.
 #[cfg(feature = "std")]
 pub fn native_version() -> NativeVersion {
@@ -128,7 +153,7 @@ parameter_types! {
     pub const BlockHashCount: BlockNumber = 2400;
     /// We allow for 1 seconds of compute with a 2 second average block time.
     pub RuntimeBlockWeights: BlockWeights = BlockWeights
-        ::with_sensible_defaults(1 * WEIGHT_PER_SECOND, NORMAL_DISPATCH_RATIO);
+        ::with_sensible_defaults(WEIGHT_PER_SECOND, NORMAL_DISPATCH_RATIO);
     pub RuntimeBlockLength: BlockLength = BlockLength
         ::max_with_normal_ratio(5 * 1024 * 1024, NORMAL_DISPATCH_RATIO);
     pub const SS58Prefix: u8 = 5;
@@ -252,11 +277,40 @@ impl pallet_balances::Config for Runtime {
 }
 
 parameter_types! {
+    pub const AssetDeposit: Balance = 1_000_000;
+    pub const ApprovalDeposit: Balance = 1_000_000;
+    pub const AssetsStringLimit: u32 = 50;
+    /// Key = 32 bytes, Value = 36 bytes (32+1+1+1+1)
+    // https://github.com/paritytech/substrate/blob/069917b/frame/assets/src/lib.rs#L257L271
+    pub const MetadataDepositBase: Balance = deposit(1, 68);
+    pub const MetadataDepositPerByte: Balance = deposit(0, 1);
+    pub const AssetAccountDeposit: Balance = deposit(1, 18);
+}
+
+impl pallet_assets::Config for Runtime {
+    type Event = Event;
+    type Balance = Balance;
+    type AssetId = AssetId;
+    type Currency = Balances;
+    type ForceOrigin = frame_system::EnsureRoot<AccountId>;
+    type AssetDeposit = AssetDeposit;
+    type MetadataDepositBase = MetadataDepositBase;
+    type MetadataDepositPerByte = MetadataDepositPerByte;
+    type AssetAccountDeposit = AssetAccountDeposit;
+    type ApprovalDeposit = ApprovalDeposit;
+    type StringLimit = AssetsStringLimit;
+    type Freezer = ();
+    type Extra = ();
+    type WeightInfo = pallet_assets::weights::SubstrateWeight<Runtime>;
+}
+
+parameter_types! {
     pub const TransactionByteFee: Balance = 1;
     pub const OperationalFeeMultiplier: u8 = 5;
 }
 
 impl pallet_transaction_payment::Config for Runtime {
+    type Event = Event;
     type OnChargeTransaction = CurrencyAdapter<Balances, ()>;
     type WeightToFee = IdentityFee<Balance>;
     type OperationalFeeMultiplier = OperationalFeeMultiplier;
@@ -281,7 +335,7 @@ impl Get<Balance> for DappsStakingTvlProvider {
 pub struct BeneficiaryPayout();
 impl pallet_block_reward::BeneficiaryPayout<NegativeImbalance> for BeneficiaryPayout {
     fn treasury(reward: NegativeImbalance) {
-        Balances::resolve_creating(&TreasuryPalletId::get().into_account(), reward);
+        Balances::resolve_creating(&TreasuryPalletId::get().into_account_truncating(), reward);
     }
 
     fn collators(_reward: NegativeImbalance) {
@@ -311,7 +365,7 @@ parameter_types! {
     pub const RegisterDeposit: Balance = 100 * AST;
     pub const MaxNumberOfStakersPerContract: u32 = 512;
     pub const MinimumStakingAmount: Balance = 10 * AST;
-    pub const MinimumRemainingAmount: Balance = 1 * AST;
+    pub const MinimumRemainingAmount: Balance = AST;
     pub const MaxUnlockingChunks: u32 = 2;
     pub const UnbondingPeriod: u32 = 2;
     pub const MaxEraStakeValues: u32 = 5;
@@ -349,7 +403,7 @@ impl<AccountId> Default for SmartContract<AccountId> {
 }
 
 #[cfg(not(feature = "runtime-benchmarks"))]
-impl<AccountId> pallet_dapps_staking::traits::IsContract for SmartContract<AccountId> {
+impl<AccountId> pallet_dapps_staking::IsContract for SmartContract<AccountId> {
     fn is_valid(&self) -> bool {
         match self {
             SmartContract::Wasm(_account) => false,
@@ -359,7 +413,7 @@ impl<AccountId> pallet_dapps_staking::traits::IsContract for SmartContract<Accou
 }
 
 #[cfg(feature = "runtime-benchmarks")]
-impl<AccountId> pallet_dapps_staking::traits::IsContract for SmartContract<AccountId> {
+impl<AccountId> pallet_dapps_staking::IsContract for SmartContract<AccountId> {
     fn is_valid(&self) -> bool {
         match self {
             SmartContract::Wasm(_account) => false,
@@ -418,14 +472,7 @@ impl pallet_evm::GasWeightMapping for LocalGasWeightMapping {
     }
 
     fn weight_to_gas(weight: Weight) -> u64 {
-        u64::try_from(weight.wrapping_div(WEIGHT_PER_GAS)).unwrap_or(u32::MAX as u64)
-    }
-}
-
-pub struct FixedGasPrice;
-impl FeeCalculator for FixedGasPrice {
-    fn min_gas_price() -> U256 {
-        (MILLIAST / 1_000_000).into()
+        weight.wrapping_div(WEIGHT_PER_GAS)
     }
 }
 
@@ -459,7 +506,7 @@ parameter_types! {
 }
 
 impl pallet_evm::Config for Runtime {
-    type FeeCalculator = FixedGasPrice;
+    type FeeCalculator = BaseFee;
     type GasWeightMapping = LocalGasWeightMapping;
     type BlockHashMapping = pallet_ethereum::EthereumBlockHashMapping<Runtime>;
     type CallOrigin = pallet_evm::EnsureAddressRoot<AccountId>;
@@ -474,7 +521,6 @@ impl pallet_evm::Config for Runtime {
     type OnChargeTransaction = pallet_evm::EVMCurrencyAdapter<Balances, ()>;
     type BlockGasLimit = BlockGasLimit;
     type FindAuthor = FindAuthorTruncated<Aura>;
-    type WeightInfo = pallet_evm::weights::SubstrateWeight<Runtime>;
 }
 
 impl pallet_ethereum::Config for Runtime {
@@ -584,11 +630,11 @@ parameter_types! {
 impl pallet_treasury::Config for Runtime {
     type PalletId = TreasuryPalletId;
     type Currency = Balances;
-    type ApproveOrigin = EnsureOneOf<
+    type ApproveOrigin = EitherOfDiverse<
         frame_system::EnsureRoot<AccountId>,
         pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 3, 5>,
     >;
-    type RejectOrigin = EnsureOneOf<
+    type RejectOrigin = EitherOfDiverse<
         frame_system::EnsureRoot<AccountId>,
         pallet_collective::EnsureProportionMoreThan<AccountId, CouncilCollective, 1, 2>,
     >;
@@ -603,6 +649,7 @@ impl pallet_treasury::Config for Runtime {
     type SpendFunds = ();
     type MaxApprovals = MaxApprovals;
     type WeightInfo = pallet_treasury::weights::SubstrateWeight<Runtime>;
+    type SpendOrigin = frame_support::traits::NeverEnsureOrigin<Balance>;
 }
 
 parameter_types! {
@@ -628,41 +675,41 @@ impl pallet_democracy::Config for Runtime {
     type VoteLockingPeriod = VoteLockingPeriod;
     type MinimumDeposit = MinimumDeposit;
     /// A straight majority of the council can decide what their next motion is.
-    type ExternalOrigin = EnsureOneOf<
+    type ExternalOrigin = EitherOfDiverse<
         pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 1, 2>,
         frame_system::EnsureRoot<AccountId>,
     >;
     /// A 60% super-majority can have the next scheduled referendum be a straight majority-carries vote.
-    type ExternalMajorityOrigin = EnsureOneOf<
+    type ExternalMajorityOrigin = EitherOfDiverse<
         pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 3, 5>,
         frame_system::EnsureRoot<AccountId>,
     >;
     /// A unanimous council can have the next scheduled referendum be a straight default-carries
     /// (NTB) vote.
-    type ExternalDefaultOrigin = EnsureOneOf<
+    type ExternalDefaultOrigin = EitherOfDiverse<
         pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 1, 1>,
         frame_system::EnsureRoot<AccountId>,
     >;
     /// Two thirds of the technical committee can have an `ExternalMajority/ExternalDefault` vote
     /// be tabled immediately and with a shorter voting/enactment period.
-    type FastTrackOrigin = EnsureOneOf<
+    type FastTrackOrigin = EitherOfDiverse<
         pallet_collective::EnsureProportionAtLeast<AccountId, TechnicalCommitteeCollective, 2, 3>,
         frame_system::EnsureRoot<AccountId>,
     >;
-    type InstantOrigin = EnsureOneOf<
+    type InstantOrigin = EitherOfDiverse<
         pallet_collective::EnsureProportionAtLeast<AccountId, TechnicalCommitteeCollective, 1, 1>,
         frame_system::EnsureRoot<AccountId>,
     >;
     type InstantAllowed = InstantAllowed;
     type FastTrackVotingPeriod = FastTrackVotingPeriod;
     // To cancel a proposal which has been passed, 2/3 of the council must agree to it.
-    type CancellationOrigin = EnsureOneOf<
+    type CancellationOrigin = EitherOfDiverse<
         pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 2, 3>,
         frame_system::EnsureRoot<AccountId>,
     >;
     // To cancel a proposal before it has been passed, the technical committee must be unanimous or
     // Root must agree.
-    type CancelProposalOrigin = EnsureOneOf<
+    type CancelProposalOrigin = EitherOfDiverse<
         pallet_collective::EnsureProportionAtLeast<AccountId, TechnicalCommitteeCollective, 1, 1>,
         frame_system::EnsureRoot<AccountId>,
     >;
@@ -689,17 +736,11 @@ parameter_types! {
     // The lazy deletion runs inside on_initialize.
     pub DeletionWeightLimit: Weight = AVERAGE_ON_INITIALIZE_RATIO *
         RuntimeBlockWeights::get().max_block;
-    // The weight needed for decoding the queue should be less or equal than a fifth
-    // of the overall weight dedicated to the lazy deletion.
-    pub DeletionQueueDepth: u32 = ((DeletionWeightLimit::get() / (
-        <Runtime as pallet_contracts::Config>::WeightInfo::on_initialize_per_queue_item(1)
-        -
-        <Runtime as pallet_contracts::Config>::WeightInfo::on_initialize_per_queue_item(0))) / 5) as u32;
     pub Schedule: pallet_contracts::Schedule<Runtime> = Default::default();
 }
 
 parameter_types! {
-    pub const MinVestedTransfer: Balance = 1 * AST;
+    pub const MinVestedTransfer: Balance = AST;
 }
 
 impl pallet_vesting::Config for Runtime {
@@ -732,10 +773,14 @@ impl pallet_contracts::Config for Runtime {
     type WeightPrice = pallet_transaction_payment::Pallet<Self>;
     type WeightInfo = pallet_contracts::weights::SubstrateWeight<Self>;
     type ChainExtension = ();
-    type DeletionQueueDepth = DeletionQueueDepth;
+    type DeletionQueueDepth = ConstU32<128>;
     type DeletionWeightLimit = DeletionWeightLimit;
     type Schedule = Schedule;
     type AddressGenerator = pallet_contracts::DefaultAddressGenerator;
+    type ContractAccessWeight = DefaultContractAccessWeight<RuntimeBlockWeights>;
+    type MaxCodeLen = ConstU32<{ 128 * 1024 }>;
+    type RelaxedMaxCodeLen = ConstU32<{ 256 * 1024 }>;
+    type MaxStorageKeyLen = ConstU32<128>;
 }
 
 impl pallet_sudo::Config for Runtime {
@@ -749,29 +794,30 @@ construct_runtime!(
         NodeBlock = generic::Block<Header, sp_runtime::OpaqueExtrinsic>,
         UncheckedExtrinsic = UncheckedExtrinsic
     {
-        System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
+        System: frame_system,
+        Utility: pallet_utility,
+        Timestamp: pallet_timestamp,
+        RandomnessCollectiveFlip: pallet_randomness_collective_flip,
+        Aura: pallet_aura,
+        Grandpa: pallet_grandpa,
+        Balances: pallet_balances,
+        Vesting: pallet_vesting,
+        DappsStaking: pallet_dapps_staking,
+        BlockReward: pallet_block_reward,
+        TransactionPayment: pallet_transaction_payment,
+        EVM: pallet_evm,
+        Ethereum: pallet_ethereum,
+        EthCall: pallet_custom_signatures,
+        BaseFee: pallet_base_fee,
+        Contracts: pallet_contracts,
+        Sudo: pallet_sudo,
+        Assets: pallet_assets,
         Scheduler: pallet_scheduler::{Pallet, Call, Storage, Event<T>},
         Preimage: pallet_preimage::{Pallet, Call, Storage, Event<T>},
-        Utility: pallet_utility::{Pallet, Call, Event},
-        Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
-        RandomnessCollectiveFlip: pallet_randomness_collective_flip::{Pallet, Storage},
-        Aura: pallet_aura::{Pallet, Config<T>},
-        Grandpa: pallet_grandpa::{Pallet, Call, Storage, Config, Event},
-        Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
-        Vesting: pallet_vesting::{Pallet, Call, Storage, Config<T>, Event<T>},
-        DappsStaking: pallet_dapps_staking::{Pallet, Call, Storage, Event<T>},
-        BlockReward: pallet_block_reward::{Pallet, Call, Storage, Config, Event<T>},
-        TransactionPayment: pallet_transaction_payment::{Pallet, Storage},
-        EVM: pallet_evm::{Pallet, Config, Call, Storage, Event<T>},
-        Ethereum: pallet_ethereum::{Pallet, Call, Storage, Event, Origin, Config},
-        EthCall: pallet_custom_signatures::{Pallet, Call, Event<T>, ValidateUnsigned},
-        BaseFee: pallet_base_fee::{Pallet, Call, Storage, Config<T>, Event},
-        Contracts: pallet_contracts::{Pallet, Call, Storage, Event<T>},
-        Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>},
-        Democracy: pallet_democracy::{Pallet, Call, Storage, Config<T>, Event<T>},
-        Council: pallet_collective::<Instance1>::{Pallet, Call, Storage, Origin<T>, Event<T>, Config<T>},
-        TechnicalCommittee: pallet_collective::<Instance2>::{Pallet, Call, Storage, Origin<T>, Event<T>, Config<T>},
-        Treasury: pallet_treasury::{Pallet, Call, Storage, Config, Event<T>},
+        Democracy: pallet_democracy,
+        Council: pallet_collective::<Instance1>,
+        TechnicalCommittee: pallet_collective::<Instance2>,
+        Treasury: pallet_treasury,
     }
 );
 
@@ -841,9 +887,14 @@ impl fp_self_contained::SelfContainedCall for Call {
         }
     }
 
-    fn validate_self_contained(&self, info: &Self::SignedInfo) -> Option<TransactionValidity> {
+    fn validate_self_contained(
+        &self,
+        info: &Self::SignedInfo,
+        dispatch_info: &DispatchInfoOf<Call>,
+        len: usize,
+    ) -> Option<TransactionValidity> {
         match self {
-            Call::Ethereum(call) => call.validate_self_contained(info),
+            Call::Ethereum(call) => call.validate_self_contained(info, dispatch_info, len),
             _ => None,
         }
     }
@@ -851,9 +902,11 @@ impl fp_self_contained::SelfContainedCall for Call {
     fn pre_dispatch_self_contained(
         &self,
         info: &Self::SignedInfo,
+        dispatch_info: &DispatchInfoOf<Call>,
+        len: usize,
     ) -> Option<Result<(), TransactionValidityError>> {
         match self {
-            Call::Ethereum(call) => call.pre_dispatch_self_contained(info),
+            Call::Ethereum(call) => call.pre_dispatch_self_contained(info, dispatch_info, len),
             _ => None,
         }
     }
@@ -1008,11 +1061,13 @@ impl_runtime_apis! {
         }
 
         fn account_basic(address: H160) -> pallet_evm::Account {
-            EVM::account_basic(&address)
+            let (account, _) = EVM::account_basic(&address);
+            account
         }
 
         fn gas_price() -> U256 {
-            <Runtime as pallet_evm::Config>::FeeCalculator::min_gas_price()
+            let (gas_price, _) = <Runtime as pallet_evm::Config>::FeeCalculator::min_gas_price();
+            gas_price
         }
 
         fn account_code_at(address: H160) -> Vec<u8> {
@@ -1050,22 +1105,24 @@ impl_runtime_apis! {
             };
 
             let is_transactional = false;
+            let validate = true;
             <Runtime as pallet_evm::Config>::Runner::call(
                 from,
                 to,
                 data,
                 value,
-                gas_limit.low_u64(),
+                gas_limit.unique_saturated_into(),
                 max_fee_per_gas,
                 max_priority_fee_per_gas,
                 nonce,
                 Vec::new(),
                 is_transactional,
+                validate,
                 config
                     .as_ref()
                     .unwrap_or_else(|| <Runtime as pallet_evm::Config>::config()),
             )
-            .map_err(|err| err.into())
+            .map_err(|err| err.error.into())
         }
 
         fn create(
@@ -1088,22 +1145,24 @@ impl_runtime_apis! {
             };
 
             let is_transactional = false;
+            let validate = true;
             #[allow(clippy::or_fun_call)] // suggestion not helpful here
             <Runtime as pallet_evm::Config>::Runner::create(
                 from,
                 data,
                 value,
-                gas_limit.low_u64(),
+                gas_limit.unique_saturated_into(),
                 max_fee_per_gas,
                 max_priority_fee_per_gas,
                 nonce,
                 Vec::new(),
                 is_transactional,
+                validate,
                 config
                     .as_ref()
                     .unwrap_or(<Runtime as pallet_evm::Config>::config()),
                 )
-                .map_err(|err| err.into())
+                .map_err(|err| err.error.into())
         }
 
         fn current_transaction_statuses() -> Option<Vec<fp_rpc::TransactionStatus>> {
@@ -1194,7 +1253,7 @@ impl_runtime_apis! {
 
         fn get_storage(
             address: AccountId,
-            key: [u8; 32],
+            key: Vec<u8>,
         ) -> pallet_contracts_primitives::GetStorageResult {
             Contracts::get_storage(address, key)
         }
@@ -1217,7 +1276,7 @@ impl_runtime_apis! {
 
             let storage_info = AllPalletsWithSystem::storage_info();
 
-            return (list, storage_info)
+            (list, storage_info)
         }
 
         fn dispatch_benchmark(

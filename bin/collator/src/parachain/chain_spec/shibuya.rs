@@ -136,6 +136,10 @@ fn make_genesis(
             sp_runtime::Permill::from_parts(125_000),
         ),
         ethereum: Default::default(),
+        polkadot_xcm: Default::default(),
+        assets: Default::default(),
+        parachain_system: Default::default(),
+        transaction_payment: Default::default(),
         council: CouncilConfig {
             members: vec![],
             phantom: Default::default(),

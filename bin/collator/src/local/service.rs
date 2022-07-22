@@ -3,6 +3,7 @@
 use fc_consensus::FrontierBlockImport;
 use fc_rpc_core::types::{FeeHistoryCache, FilterPool};
 use futures::StreamExt;
+use pallet_contracts_rpc::ContractsApiServer;
 use sc_client_api::{BlockBackend, BlockchainEvents, ExecutorProvider};
 use sc_consensus_aura::{ImportQueueParams, SlotProportion, StartAuraParams};
 use sc_executor::NativeElseWasmExecutor;
@@ -68,9 +69,9 @@ pub fn new_partial(
     ServiceError,
 > {
     if config.keystore_remote.is_some() {
-        return Err(ServiceError::Other(format!(
-            "Remote Keystores are not supported."
-        )));
+        return Err(ServiceError::Other(
+            "Remote Keystores are not supported.".to_string(),
+        ));
     }
 
     let telemetry = config
@@ -83,7 +84,6 @@ pub fn new_partial(
             Ok((worker, telemetry))
         })
         .transpose()?;
-
     let executor = sc_executor::NativeElseWasmExecutor::<Executor>::new(
         config.wasm_method,
         config.default_heap_pages,
@@ -93,21 +93,18 @@ pub fn new_partial(
 
     let (client, backend, keystore_container, task_manager) =
         sc_service::new_full_parts::<Block, RuntimeApi, _>(
-            &config,
+            config,
             telemetry.as_ref().map(|(_, telemetry)| telemetry.handle()),
             executor,
         )?;
     let client = Arc::new(client);
-
     let telemetry = telemetry.map(|(worker, telemetry)| {
         task_manager
             .spawn_handle()
             .spawn("telemetry", None, worker.run());
         telemetry
     });
-
     let select_chain = sc_consensus::LongestChain::new(backend.clone());
-
     let transaction_pool = sc_transaction_pool::BasicPool::new_full(
         config.transaction_pool.clone(),
         config.role.is_authority().into(),
@@ -115,23 +112,19 @@ pub fn new_partial(
         task_manager.spawn_essential_handle(),
         client.clone(),
     );
-
     let (grandpa_block_import, grandpa_link) = sc_finality_grandpa::block_import(
         client.clone(),
         &(client.clone() as Arc<_>),
         select_chain.clone(),
         telemetry.as_ref().map(|x| x.handle()),
     )?;
-
     let frontier_backend = crate::rpc::open_frontier_backend(config)?;
     let frontier_block_import = FrontierBlockImport::new(
         grandpa_block_import.clone(),
         client.clone(),
         frontier_backend.clone(),
     );
-
     let slot_duration = sc_consensus_aura::slot_duration(&*client)?;
-
     let import_queue = sc_consensus_aura::import_queue::<AuraPair, _, _, _, _, _, _>(
         ImportQueueParams {
             block_import: frontier_block_import.clone(),
@@ -139,13 +132,11 @@ pub fn new_partial(
             client: client.clone(),
             create_inherent_data_providers: move |_, ()| async move {
                 let timestamp = sp_timestamp::InherentDataProvider::from_system_time();
-
                 let slot =
                     sp_consensus_aura::inherents::InherentDataProvider::from_timestamp_and_slot_duration(
                         *timestamp,
                         slot_duration,
                     );
-
                 Ok((timestamp, slot))
             },
             spawner: &task_manager.spawn_essential_handle(),
@@ -252,12 +243,6 @@ pub fn start_node(config: Configuration) -> Result<TaskManager, ServiceError> {
         ),
     );
 
-    task_manager.spawn_essential_handle().spawn(
-        "frontier-schema-cache-task",
-        Some("frontier"),
-        fc_rpc::EthTask::ethereum_schema_cache_task(client.clone(), frontier_backend.clone()),
-    );
-
     const FEE_HISTORY_LIMIT: u64 = 2048;
     task_manager.spawn_essential_handle().spawn(
         "frontier-fee-history",
@@ -307,11 +292,15 @@ pub fn start_node(config: Configuration) -> Result<TaskManager, ServiceError> {
                 overrides: overrides.clone(),
             };
 
-            let mut io = crate::rpc::create_full(deps, subscription);
+            let mut io = crate::rpc::create_full(deps, subscription)
+                .map_err::<ServiceError, _>(Into::into)?;
+
             // Local node support WASM contracts
-            io.extend_with(pallet_contracts_rpc::ContractsApi::to_delegate(
-                pallet_contracts_rpc::Contracts::new(client.clone()),
-            ));
+            io.merge(pallet_contracts_rpc::Contracts::new(Arc::clone(&client)).into_rpc())
+                .map_err(|_| {
+                    ServiceError::Other("Failed to register pallet-contracts RPC methods.".into())
+                })?;
+
             Ok(io)
         })
     };
@@ -322,7 +311,7 @@ pub fn start_node(config: Configuration) -> Result<TaskManager, ServiceError> {
         keystore: keystore_container.sync_keystore(),
         task_manager: &mut task_manager,
         transaction_pool: transaction_pool.clone(),
-        rpc_extensions_builder,
+        rpc_builder: rpc_extensions_builder,
         backend,
         system_rpc_tx,
         config,
@@ -346,7 +335,7 @@ pub fn start_node(config: Configuration) -> Result<TaskManager, ServiceError> {
         let aura = sc_consensus_aura::start_aura::<AuraPair, _, _, _, _, _, _, _, _, _, _, _>(
             StartAuraParams {
                 slot_duration,
-                client: client.clone(),
+                client,
                 select_chain,
                 block_import,
                 proposer_factory,

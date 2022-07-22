@@ -1,0 +1,58 @@
+name: Checks and Tests
+on:
+  push:
+    branches:
+    - '**'
+    tags-ignore:
+    - v[0-9]+.[0-9]+.[0-9]+*
+  workflow_dispatch:
+jobs:
+  compile-check:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout the source code
+      uses: actions/checkout@v3
+
+    - name: Install & display rust toolchain
+      run: rustup show
+
+    - name: Check targets are installed correctly
+      run: rustup target list --installed
+
+    - uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+          target/
+        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-cargo-
+
+    - name: Check all features compilation
+      run: cargo check --verbose --all-features
+
+  unit-test:
+    runs-on: [self-hosted, Linux, X64]
+    steps:
+    - name: Checkout the source code
+      uses: actions/checkout@v3
+
+    - name: Install & display rust toolchain
+      run: rustup show
+
+    - name: Check targets are installed correctly
+      run: rustup target list --installed
+
+    - uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+          target/
+        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-cargo-
+
+    - name: Run all tests
+      run: cargo test --all-features

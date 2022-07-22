@@ -9,10 +9,9 @@ use crate::{
     primitives::Block,
 };
 use codec::Encode;
-use cumulus_client_service::genesis::generate_genesis_block;
+use cumulus_client_cli::generate_genesis_block;
 use cumulus_primitives_core::ParaId;
 use log::info;
-use polkadot_parachain::primitives::AccountIdConversion;
 use sc_cli::{
     ChainSpec, CliConfiguration, DefaultConfigurationValues, ImportParams, KeystoreParams,
     NetworkParams, Result, RuntimeVersion, SharedParams, SubstrateCli,
@@ -22,11 +21,12 @@ use sc_service::{
     PartialComponents,
 };
 use sp_core::hexdisplay::HexDisplay;
+use sp_runtime::traits::AccountIdConversion;
 use sp_runtime::traits::Block as BlockT;
-use std::{io::Write, net::SocketAddr};
+use std::net::SocketAddr;
 
 #[cfg(feature = "frame-benchmarking")]
-use frame_benchmarking_cli::BenchmarkCmd;
+use frame_benchmarking_cli::{BenchmarkCmd, SUBSTRATE_REFERENCE_HARDWARE};
 
 trait IdentifyChain {
     fn is_astar(&self) -> bool;
@@ -181,31 +181,28 @@ impl SubstrateCli for RelayChainCli {
                 )
                 .unwrap(),
             ))
-        } else if id == "osaka" {
+        } else if id == "kyoto" {
             Ok(Box::new(
                 polkadot_service::WestendChainSpec::from_json_bytes(
-                    &include_bytes!("../res/osaka.raw.json")[..],
+                    &include_bytes!("../res/kyoto.raw.json")[..],
+                )
+                .unwrap(),
+            ))
+        } else if id == "tokyo" {
+            Ok(Box::new(
+                polkadot_service::WestendChainSpec::from_json_bytes(
+                    &include_bytes!("../res/tokyo.raw.json")[..],
                 )
                 .unwrap(),
             ))
         } else {
-            polkadot_cli::Cli::from_iter([RelayChainCli::executable_name().to_string()].iter())
-                .load_spec(id)
+            polkadot_cli::Cli::from_iter([RelayChainCli::executable_name()].iter()).load_spec(id)
         }
     }
 
     fn native_runtime_version(chain_spec: &Box<dyn ChainSpec>) -> &'static RuntimeVersion {
         polkadot_cli::Cli::native_runtime_version(chain_spec)
     }
-}
-
-fn extract_genesis_wasm(chain_spec: &Box<dyn sc_service::ChainSpec>) -> Result<Vec<u8>> {
-    let mut storage = chain_spec.build_storage()?;
-
-    storage
-        .top
-        .remove(sp_core::storage::well_known_keys::CODE)
-        .ok_or_else(|| "Could not find wasm file in genesis state!".into())
 }
 
 /// Parse command line arguments into service configuration.
@@ -388,7 +385,7 @@ pub fn run() -> Result<()> {
             runner.sync_run(|config| {
                 let polkadot_cli = RelayChainCli::new(
                     &config,
-                    [RelayChainCli::executable_name().to_string()]
+                    [RelayChainCli::executable_name()]
                         .iter()
                         .chain(cli.relaychain_args.iter()),
                 );
@@ -457,50 +454,22 @@ pub fn run() -> Result<()> {
                 })
             }
         }
-        Some(Subcommand::ExportGenesisState(params)) => {
-            let mut builder = sc_cli::LoggerBuilder::new("");
-            builder.with_profiling(sc_tracing::TracingReceiver::Log, "");
-            let _ = builder.init();
+        Some(Subcommand::ExportGenesisState(cmd)) => {
+            let runner = cli.create_runner(cmd)?;
 
-            let spec = cli.load_spec(&params.chain.clone().unwrap_or_default())?;
-            let state_version = Cli::native_runtime_version(&spec).state_version();
-
-            let block: Block = generate_genesis_block(&spec, state_version)?;
-            let raw_header = block.header().encode();
-            let output_buf = if params.raw {
-                raw_header
-            } else {
-                format!("0x{:?}", HexDisplay::from(&block.header().encode())).into_bytes()
-            };
-
-            if let Some(output) = &params.output {
-                std::fs::write(output, output_buf)?;
-            } else {
-                std::io::stdout().write_all(&output_buf)?;
-            }
-
-            Ok(())
+            runner.sync_run(|_config| {
+                let spec = cli.load_spec(&cmd.shared_params.chain.clone().unwrap_or_default())?;
+                let state_version = Cli::native_runtime_version(&spec).state_version();
+                cmd.run::<Block>(&*spec, state_version)
+            })
         }
-        Some(Subcommand::ExportGenesisWasm(params)) => {
-            let mut builder = sc_cli::LoggerBuilder::new("");
-            builder.with_profiling(sc_tracing::TracingReceiver::Log, "");
-            let _ = builder.init();
+        Some(Subcommand::ExportGenesisWasm(cmd)) => {
+            let runner = cli.create_runner(cmd)?;
 
-            let raw_wasm_blob =
-                extract_genesis_wasm(&cli.load_spec(&params.chain.clone().unwrap_or_default())?)?;
-            let output_buf = if params.raw {
-                raw_wasm_blob
-            } else {
-                format!("0x{:?}", HexDisplay::from(&raw_wasm_blob)).into_bytes()
-            };
-
-            if let Some(output) = &params.output {
-                std::fs::write(output, output_buf)?;
-            } else {
-                std::io::stdout().write_all(&output_buf)?;
-            }
-
-            Ok(())
+            runner.sync_run(|_config| {
+                let spec = cli.load_spec(&cmd.shared_params.chain.clone().unwrap_or_default())?;
+                cmd.run(&*spec)
+            })
         }
         Some(Subcommand::Key(cmd)) => cmd.run(&cli),
         Some(Subcommand::Sign(cmd)) => cmd.run(),
@@ -531,25 +500,25 @@ pub fn run() -> Result<()> {
                 }
                 BenchmarkCmd::Block(cmd) => {
                     if chain_spec.is_astar() {
-                        return runner.sync_run(|config| {
+                        runner.sync_run(|config| {
                             let params =
                                 parachain::new_partial::<astar::RuntimeApi, astar::Executor, _>(
                                     &config,
                                     parachain::build_import_queue,
                                 )?;
                             cmd.run(params.client)
-                        });
+                        })
                     } else if chain_spec.is_shiden() {
-                        return runner.sync_run(|config| {
+                        runner.sync_run(|config| {
                             let params =
                                 parachain::new_partial::<shiden::RuntimeApi, shiden::Executor, _>(
                                     &config,
                                     parachain::build_import_queue,
                                 )?;
                             cmd.run(params.client)
-                        });
+                        })
                     } else if chain_spec.is_shibuya() {
-                        return runner.sync_run(|config| {
+                        runner.sync_run(|config| {
                             let params = parachain::new_partial::<
                                 shibuya::RuntimeApi,
                                 shibuya::Executor,
@@ -558,17 +527,17 @@ pub fn run() -> Result<()> {
                                 &config, parachain::build_import_queue
                             )?;
                             cmd.run(params.client)
-                        });
+                        })
                     } else {
-                        return runner.sync_run(|config| {
+                        runner.sync_run(|config| {
                             let params = local::new_partial(&config)?;
                             cmd.run(params.client)
-                        });
+                        })
                     }
                 }
                 BenchmarkCmd::Storage(cmd) => {
                     if chain_spec.is_astar() {
-                        return runner.sync_run(|config| {
+                        runner.sync_run(|config| {
                             let params =
                                 parachain::new_partial::<astar::RuntimeApi, astar::Executor, _>(
                                     &config,
@@ -578,9 +547,9 @@ pub fn run() -> Result<()> {
                             let storage = params.backend.expose_storage();
 
                             cmd.run(config, params.client, db, storage)
-                        });
+                        })
                     } else if chain_spec.is_shiden() {
-                        return runner.sync_run(|config| {
+                        runner.sync_run(|config| {
                             let params =
                                 parachain::new_partial::<shiden::RuntimeApi, shiden::Executor, _>(
                                     &config,
@@ -590,9 +559,9 @@ pub fn run() -> Result<()> {
                             let storage = params.backend.expose_storage();
 
                             cmd.run(config, params.client, db, storage)
-                        });
+                        })
                     } else if chain_spec.is_shibuya() {
-                        return runner.sync_run(|config| {
+                        runner.sync_run(|config| {
                             let params = parachain::new_partial::<
                                 shibuya::RuntimeApi,
                                 shibuya::Executor,
@@ -604,18 +573,21 @@ pub fn run() -> Result<()> {
                             let storage = params.backend.expose_storage();
 
                             cmd.run(config, params.client, db, storage)
-                        });
+                        })
                     } else {
-                        return runner.sync_run(|config| {
+                        runner.sync_run(|config| {
                             let params = local::new_partial(&config)?;
                             let db = params.backend.expose_db();
                             let storage = params.backend.expose_storage();
 
                             cmd.run(config, params.client, db, storage)
-                        });
+                        })
                     }
                 }
                 BenchmarkCmd::Overhead(_) => Err("Benchmark overhead not supported.".into()),
+                BenchmarkCmd::Machine(cmd) => {
+                    runner.sync_run(|config| cmd.run(&config, SUBSTRATE_REFERENCE_HARDWARE.clone()))
+                }
             }
         }
         #[cfg(feature = "try-runtime")]
@@ -672,7 +644,7 @@ pub fn run() -> Result<()> {
 
                 let polkadot_cli = RelayChainCli::new(
                     &config,
-                    [RelayChainCli::executable_name().to_string()]
+                    [RelayChainCli::executable_name()]
                         .iter()
                         .chain(cli.relaychain_args.iter()),
                 );
@@ -680,10 +652,10 @@ pub fn run() -> Result<()> {
                 let id = ParaId::from(cli.run.parachain_id);
 
                 let parachain_account =
-                    AccountIdConversion::<polkadot_primitives::v2::AccountId>::into_account(&id);
+                    AccountIdConversion::<polkadot_primitives::v2::AccountId>::into_account_truncating(&id);
 
                 let state_version = Cli::native_runtime_version(&config.chain_spec).state_version();
-                let block: Block = generate_genesis_block(&config.chain_spec, state_version)
+                let block: Block = generate_genesis_block(&*config.chain_spec, state_version)
                     .map_err(|e| format!("{:?}", e))?;
                 let genesis_state = format!("0x{:?}", HexDisplay::from(&block.header().encode()));
 
