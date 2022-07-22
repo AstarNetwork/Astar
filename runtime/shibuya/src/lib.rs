@@ -318,7 +318,6 @@ impl pallet_custom_signatures::Config for Runtime {
 parameter_types! {
     pub MaximumSchedulerWeight: Weight = NORMAL_DISPATCH_RATIO * RuntimeBlockWeights::get().max_block;
     pub const MaxScheduledPerBlock: u32 = 50;
-    pub const NoPreimagePostponement: Option<u32> = Some(10);
 }
 
 impl pallet_scheduler::Config for Runtime {
@@ -331,24 +330,8 @@ impl pallet_scheduler::Config for Runtime {
     type MaxScheduledPerBlock = MaxScheduledPerBlock;
     type WeightInfo = pallet_scheduler::weights::SubstrateWeight<Runtime>;
     type OriginPrivilegeCmp = EqualPrivilegeOnly;
-    type PreimageProvider = Preimage;
-    type NoPreimagePostponement = NoPreimagePostponement;
-}
-
-parameter_types! {
-    pub const PreimageMaxSize: u32 = 4096 * 1024;
-    pub const PreimageBaseDeposit: Balance = deposit(2, 64);
-    pub const PreimageByteDeposit: Balance = deposit(0, 1);
-}
-
-impl pallet_preimage::Config for Runtime {
-    type WeightInfo = pallet_preimage::weights::SubstrateWeight<Runtime>;
-    type Event = Event;
-    type Currency = Balances;
-    type ManagerOrigin = frame_system::EnsureRoot<AccountId>;
-    type MaxSize = PreimageMaxSize;
-    type BaseDeposit = PreimageBaseDeposit;
-    type ByteDeposit = PreimageByteDeposit;
+    type PreimageProvider = ();
+    type NoPreimagePostponement = ();
 }
 
 parameter_types! {
@@ -895,6 +878,7 @@ parameter_types! {
     pub const InstantAllowed: bool = true;
     pub const MaxVotes: u32 = 100;
     pub const MaxProposals: u32 = 100;
+    pub const PreimageByteDeposit: Balance = deposit(0, 1);
 }
 
 impl pallet_democracy::Config for Runtime {
@@ -1000,7 +984,6 @@ construct_runtime!(
         EthCall: pallet_custom_signatures = 15,
         RandomnessCollectiveFlip: pallet_randomness_collective_flip = 16,
         Scheduler: pallet_scheduler = 17,
-        Preimage: pallet_preimage = 18,
 
         ParachainSystem: cumulus_pallet_parachain_system = 20,
         ParachainInfo: parachain_info = 21,

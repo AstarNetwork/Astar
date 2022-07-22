@@ -550,7 +550,6 @@ impl pallet_custom_signatures::Config for Runtime {
 parameter_types! {
     pub MaximumSchedulerWeight: Weight = NORMAL_DISPATCH_RATIO * RuntimeBlockWeights::get().max_block;
     pub const MaxScheduledPerBlock: u32 = 50;
-    pub const NoPreimagePostponement: Option<u32> = Some(10);
 }
 
 impl pallet_scheduler::Config for Runtime {
@@ -563,24 +562,8 @@ impl pallet_scheduler::Config for Runtime {
     type MaxScheduledPerBlock = MaxScheduledPerBlock;
     type WeightInfo = pallet_scheduler::weights::SubstrateWeight<Runtime>;
     type OriginPrivilegeCmp = EqualPrivilegeOnly;
-    type PreimageProvider = Preimage;
-    type NoPreimagePostponement = NoPreimagePostponement;
-}
-
-parameter_types! {
-    pub const PreimageMaxSize: u32 = 4096 * 1024;
-    pub const PreimageBaseDeposit: Balance = deposit(2, 64);
-    pub const PreimageByteDeposit: Balance = deposit(0, 1);
-}
-
-impl pallet_preimage::Config for Runtime {
-    type WeightInfo = pallet_preimage::weights::SubstrateWeight<Runtime>;
-    type Event = Event;
-    type Currency = Balances;
-    type ManagerOrigin = frame_system::EnsureRoot<AccountId>;
-    type MaxSize = PreimageMaxSize;
-    type BaseDeposit = PreimageBaseDeposit;
-    type ByteDeposit = PreimageByteDeposit;
+    type PreimageProvider = ();
+    type NoPreimagePostponement = ();
 }
 
 parameter_types! {
@@ -664,6 +647,7 @@ parameter_types! {
     pub const InstantAllowed: bool = true;
     pub const MaxVotes: u32 = 100;
     pub const MaxProposals: u32 = 100;
+    pub const PreimageByteDeposit: Balance = deposit(0, 1);
 }
 
 impl pallet_democracy::Config for Runtime {
@@ -813,8 +797,7 @@ construct_runtime!(
         Contracts: pallet_contracts,
         Sudo: pallet_sudo,
         Assets: pallet_assets,
-        Scheduler: pallet_scheduler::{Pallet, Call, Storage, Event<T>},
-        Preimage: pallet_preimage::{Pallet, Call, Storage, Event<T>},
+        Scheduler: pallet_scheduler,
         Democracy: pallet_democracy,
         Council: pallet_collective::<Instance1>,
         TechnicalCommittee: pallet_collective::<Instance2>,
