@@ -269,7 +269,7 @@ dependencies = [
  "pallet-balances",
  "pallet-base-fee",
  "pallet-block-reward",
- "pallet-collator-selection 3.0.1",
+ "pallet-collator-selection",
  "pallet-collective",
  "pallet-custom-signatures",
  "pallet-dapps-staking",
@@ -5713,26 +5713,6 @@ dependencies = [
 
 [[package]]
 name = "pallet-collator-selection"
-version = "3.0.1"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=legacy/pallet-collator-selection#9b8cd49387b84eb69af055c362364c496c531f3e"
-dependencies = [
- "frame-benchmarking",
- "frame-support",
- "frame-system",
- "log",
- "pallet-authorship",
- "pallet-session",
- "parity-scale-codec",
- "rand 0.8.5",
- "scale-info",
- "serde",
- "sp-runtime",
- "sp-staking",
- "sp-std",
-]
-
-[[package]]
-name = "pallet-collator-selection"
 version = "3.3.1"
 source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.26#10aa274d8f940d42acedc08850fad06c19764a4f"
 dependencies = [
@@ -10453,7 +10433,7 @@ dependencies = [
  "pallet-balances",
  "pallet-base-fee",
  "pallet-block-reward",
- "pallet-collator-selection 3.3.1",
+ "pallet-collator-selection",
  "pallet-collective",
  "pallet-contracts",
  "pallet-contracts-primitives",
@@ -10541,7 +10521,7 @@ dependencies = [
  "pallet-balances",
  "pallet-base-fee",
  "pallet-block-reward",
- "pallet-collator-selection 3.3.1",
+ "pallet-collator-selection",
  "pallet-collective",
  "pallet-contracts",
  "pallet-contracts-primitives",
