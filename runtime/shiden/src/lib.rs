@@ -8,10 +8,7 @@ use codec::{Decode, Encode};
 use cumulus_pallet_parachain_system::RelayNumberStrictlyIncreases;
 use frame_support::{
     construct_runtime, parameter_types,
-    traits::{
-        ConstU32, Contains, Currency, FindAuthor, Get, Imbalance, Nothing, OnRuntimeUpgrade,
-        OnUnbalanced,
-    },
+    traits::{ConstU32, Contains, Currency, FindAuthor, Get, Imbalance, Nothing, OnUnbalanced},
     weights::{
         constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_PER_SECOND},
         ConstantMultiplier, DispatchClass, Weight, WeightToFeeCoefficient, WeightToFeeCoefficients,

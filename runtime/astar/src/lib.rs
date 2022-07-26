@@ -904,14 +904,6 @@ impl OnRuntimeUpgrade for CollatorListCleanup {
                 .any(|x| x.id == COLLATOR_STAKING_ID));
         });
 
-        // let prev_count = Self::get_temp_storage::<u32>("prev").unwrap();
-        // let validators = Validators::<T>::count();
-        // assert!(post_count == prev_count + validators);
-
-        // frame_support::ensure!(
-        //     StorageVersion::<T>::get() == crate::Releases::V9_0_0,
-        //     "must upgrade "
-        // );
         Ok(())
     }
 }
