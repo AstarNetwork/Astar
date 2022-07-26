@@ -7,9 +7,17 @@ on:
     - v[0-9]+.[0-9]+.[0-9]+*
   workflow_dispatch:
 jobs:
-  compile-check:
+  build-and-test:
     runs-on: ubuntu-latest
     steps:
+    - name: Free disk space
+      run: |
+        sudo rm -rf /usr/share/dotnet
+        sudo rm -rf /opt/ghc
+        sudo rm -rf "/usr/local/share/boost"
+        sudo rm -rf "$AGENT_TOOLSDIRECTORY"
+        df -h
+
     - name: Checkout the source code
       uses: actions/checkout@v3
 
@@ -21,3 +29,6 @@ jobs:
 
     - name: Check all features compilation
       run: cargo check --verbose --all-features
+
+    - name: Run all tests
+      run: cargo test --all-features
