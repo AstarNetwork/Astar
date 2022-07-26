@@ -1,4 +1,5 @@
 import { ApiPromise, WsProvider } from '@polkadot/api';
+import { Keyring } from '@polkadot/api';
 import chaiAsPromised from 'chai-as-promised';
 import chai from 'chai';
 import { run, killAll } from 'polkadot-launch';
@@ -31,6 +32,59 @@ export async function wait (milliseconds = 0) {
 }
 
 /**
+ * sendTransaction: sign and send transaction from sender accounts.
+ *
+ * @param {*} api ApiPromise from polkadot.js api
+ * @param {*} transaction polkadot js api transaction
+ * @param {*} sender account from which transaction needs to be sent
+ * @param {*} section section for the returned filtered events from finalised block
+ * @param {*} method method for the returned filtered events from finalised block
+ *
+ * @returns filtered events from given section and method
+ */
+export async function sendTransaction(api, transaction, sender, section, method) {
+	return new Promise((resolve, reject) => {
+		let unsubscribe;
+		let timeout;
+
+		transaction.signAndSend(sender, async (result) => {
+			console.log(`Current status is ${result?.status}`);
+
+			if (result?.status?.isInBlock) {
+				if (unsubscribe) {
+					unsubscribe();
+				}
+
+				const blockHash = result?.status?.asInBlock;
+
+				const apiAt = await api.at(blockHash);
+
+				const events = await apiAt.query.system.events();
+
+				const filtered = events.filter((eventObj) => {
+					return (
+						section === eventObj.event.section &&
+						method === eventObj.event.method
+					);
+				});
+
+				clearTimeout(timeout);
+				resolve(filtered);
+			}
+		}).then(unsub => {
+			unsubscribe = unsub;
+		}).catch(error => {
+			console.error(error);
+			reject(error);
+		});
+
+		timeout = setTimeout(() => {
+			reject(new Error('Transaction timeout'));
+		}, SPAWNING_TIME);
+	});
+}
+
+/**
  * describeWithNetwork: special mocha describe which has global setup and teardown steps for spawning and taking down local network
  *
  * @param {string} network [astar | shiden | shibuya]
@@ -39,7 +93,14 @@ export async function wait (milliseconds = 0) {
  */
 export function describeWithNetwork(network, title, cb) {
 	describe(title, () => {
-		let context = { api: null };
+		let context = {
+			api: null,
+			keyring: null,
+			alice: null,
+			bob: null
+		};
+		let timeout;
+
 		// Making sure the Astar node has started
 		before('Starting Astar Test Node', async function () {
 			this.timeout(SPAWNING_TIME);
@@ -53,6 +114,7 @@ export function describeWithNetwork(network, title, cb) {
 
 			await new Promise((resolve, reject) => {
 				let unsubHeads;
+
 				api.rpc.chain.subscribeNewHeads((lastHead) => {
 					console.log('Parachain blocks:', lastHead.number.toNumber());
 					if (lastHead.number.toNumber() > 1) {
@@ -60,18 +122,28 @@ export function describeWithNetwork(network, title, cb) {
 							console.log('unsubscribing');
 							unsubHeads();
 						}
+
+						clearTimeout(timeout);
 						resolve();
 					}
 				}).then(unsub => {
 					unsubHeads = unsub;
 				});
 
-				setTimeout(() => {
-					reject('Block production failed');
+				timeout = setTimeout(() => {
+					reject(new Error('Block production failed'));
 				}, SPAWNING_TIME);
 			});
 
+			const keyring = new Keyring({ type: 'sr25519' });
+
+			const alice = keyring.addFromUri('//Alice');
+			const bob = keyring.addFromUri('//Bob');
+
 			context.api = api;
+			context.keyring = keyring;
+			context.alice = alice;
+			context.bob = bob;
 		});
 
 		after(async function () {
