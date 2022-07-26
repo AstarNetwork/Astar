@@ -1,4 +1,4 @@
-name: Checks and Tests
+name: Base checks
 on:
   push:
     branches:
