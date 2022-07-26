@@ -41,7 +41,7 @@ describeWithNetwork(network, `${network} RPC`, function(context) {
         // Create a extrinsic, transferring 200 units to alice
         api.tx.dappsStaking
             .register(getAddressEnum(CONTRACT))
-            .signAndSend(alice, (result) => {
+            .signAndSend(alice, async (result) => {
                 console.log(`Current status is ${result?.status}`);
 
                 if (result?.status?.isInBlock) {
@@ -49,7 +49,29 @@ describeWithNetwork(network, `${network} RPC`, function(context) {
                         unsubscribe();
                     }
 
+                    const blockHash = result?.status?.asInBlock;
+
+                    const apiAt = await api.at(blockHash);
+
+                    const events = await apiAt.query.system.events();
+
+                    events.forEach(f => console.log(f.toHuman()));
+
+                    const filtered = events.filter((eventObj) => {
+                        const { event: { method, section, data } } = eventObj;
+
+                        return (
+                            section === 'dappsStaking' &&
+                            method === 'NewContract'
+                        );
+                    });
+
                     expect(result?.status?.isInBlock).to.be.true;
+
+                    // Check event is in block for transfer
+                    expect(filtered.length).to.equal(1);
+                    expect(filtered[0].event.section).to.equal('dappsStaking');
+                    expect(filtered[0].event.method).to.equal('NewContract');
                     done();
                 }
             })
@@ -72,7 +94,7 @@ describeWithNetwork(network, `${network} RPC`, function(context) {
         // Create a extrinsic, transferring 100 units to Bob
         api.tx.balances
             .transfer(BOB, 100)
-            .signAndSend(alice, (result) => {
+            .signAndSend(alice, async (result) => {
                 console.log(`Current status is ${result?.status}`);
 
                 if (result?.status?.isInBlock) {
@@ -80,7 +102,30 @@ describeWithNetwork(network, `${network} RPC`, function(context) {
                         unsubscribe();
                     }
 
+                    const blockHash = result?.status?.asInBlock;
+
+                    const apiAt = await api.at(blockHash);
+
+                    const events = await apiAt.query.system.events();
+
+                    const filtered = events.filter((eventObj) => {
+                        const { event: { method, section, data } } = eventObj;
+
+                        return (
+                            section === 'balances' &&
+                            method === 'Transfer' &&
+                            data[0].toString() === ALICE &&
+                            data[1].toString() === BOB &&
+                            data[2].toString() === '100'
+                        );
+                    });
+
                     expect(result?.status?.isInBlock).to.be.true;
+
+                    // Check event is in block for transfer
+                    expect(filtered.length).to.equal(1);
+                    expect(filtered[0].event.section).to.equal('balances');
+                    expect(filtered[0].event.method).to.equal('Transfer');
                     done();
                 }
             })
@@ -103,7 +148,7 @@ describeWithNetwork(network, `${network} RPC`, function(context) {
         // Create a extrinsic, transferring 200 units to alice
         api.tx.balances
             .transfer(ALICE, 200)
-            .signAndSend(bob, (result) => {
+            .signAndSend(bob, async (result) => {
                 console.log(`Current status is ${result?.status}`);
 
                 if (result?.status?.isInBlock) {
@@ -111,7 +156,30 @@ describeWithNetwork(network, `${network} RPC`, function(context) {
                         unsubscribe();
                     }
 
+                    const blockHash = result?.status?.asInBlock;
+
+                    const apiAt = await api.at(blockHash);
+
+                    const events = await apiAt.query.system.events();
+
+                    const filtered = events.filter((eventObj) => {
+                        const { event: { method, section, data } } = eventObj;
+
+                        return (
+                            section === 'balances' &&
+                            method === 'Transfer' &&
+                            data[0].toString() === BOB &&
+                            data[1].toString() === ALICE &&
+                            data[2].toString() === '200'
+                        );
+                    });
+
                     expect(result?.status?.isInBlock).to.be.true;
+
+                    // Check event is in block for transfer
+                    expect(filtered.length).to.equal(1);
+                    expect(filtered[0].event.section).to.equal('balances');
+                    expect(filtered[0].event.method).to.equal('Transfer');
                     done();
                 }
             })
