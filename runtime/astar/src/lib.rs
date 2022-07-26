@@ -95,7 +95,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("astar"),
     impl_name: create_runtime_str!("astar"),
     authoring_version: 1,
-    spec_version: 28,
+    spec_version: 29,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 2,
@@ -414,6 +414,7 @@ parameter_types! {
     pub const MaxCandidates: u32 = 200;
     pub const MinCandidates: u32 = 5;
     pub const MaxInvulnerables: u32 = 20;
+    pub const SlashRatio: Perbill = Perbill::from_percent(1);
 }
 
 impl pallet_collator_selection::Config for Runtime {
@@ -429,6 +430,7 @@ impl pallet_collator_selection::Config for Runtime {
     type ValidatorId = <Self as frame_system::Config>::AccountId;
     type ValidatorIdOf = pallet_collator_selection::IdentityCollator;
     type ValidatorRegistration = Session;
+    type SlashRatio = SlashRatio;
     type WeightInfo = ();
 }
 
@@ -844,35 +846,65 @@ pub type Executive = frame_executive::Executive<
     frame_system::ChainContext<Runtime>,
     Runtime,
     AllPalletsWithSystem,
-    (RelayAssetRegistration,),
+    (CollatorListCleanup,),
 >;
 
-pub struct RelayAssetRegistration;
-impl OnRuntimeUpgrade for RelayAssetRegistration {
+pub struct CollatorListCleanup;
+impl OnRuntimeUpgrade for CollatorListCleanup {
     fn on_runtime_upgrade() -> Weight {
-        use pallet_xc_asset_config::*;
-        use xcm::latest::prelude::*;
+        use frame_support::traits::{LockIdentifier, LockableCurrency};
+        use pallet_collator_selection::{Candidates, LastAuthoredBlock};
 
-        let relay_asset_id = u128::max_value();
-        let relay_asset_multilocation = MultiLocation::parent();
+        const COLLATOR_STAKING_ID: LockIdentifier = *b"colstake";
 
-        AssetIdToLocation::<Runtime>::insert(
-            relay_asset_id,
-            relay_asset_multilocation.clone().versioned(),
-        );
-        AssetLocationToId::<Runtime>::insert(
-            relay_asset_multilocation.clone().versioned(),
-            relay_asset_id,
-        );
+        let mut counter = 0_u64;
 
-        AssetLocationUnitsPerSecond::<Runtime>::insert(
-            relay_asset_multilocation.versioned(),
-            1_000_000_000,
-        );
+        Candidates::<Runtime>::take()
+            .into_iter()
+            .for_each(|candidate| {
+                Balances::remove_lock(COLLATOR_STAKING_ID, &candidate.who);
+                LastAuthoredBlock::<Runtime>::remove(&candidate.who);
 
-        EvmRevertCodeHandler::xc_asset_registered(relay_asset_id);
+                counter += 1;
+            });
 
-        <Runtime as frame_system::Config>::DbWeight::get().writes(4)
+        <Runtime as frame_system::Config>::DbWeight::get()
+            .reads_writes(1 + counter * 3, 1 + counter * 4)
+    }
+
+    #[cfg(feature = "try-runtime")]
+    fn pre_upgrade() -> Result<(), &'static str> {
+        use frame_support::traits::OnRuntimeUpgradeHelpersExt;
+        use pallet_collator_selection::Candidates;
+
+        let candidates = Candidates::<Runtime>::get();
+        Self::set_temp_storage(candidates, "candidates");
+        Ok(())
+    }
+
+    #[cfg(feature = "try-runtime")]
+    fn post_upgrade() -> Result<(), &'static str> {
+        use frame_support::traits::LockIdentifier;
+        use frame_support::traits::OnRuntimeUpgradeHelpersExt;
+        use pallet_balances::Locks;
+        use pallet_collator_selection::{CandidateInfo, Candidates, LastAuthoredBlock};
+
+        const COLLATOR_STAKING_ID: LockIdentifier = *b"colstake";
+
+        //  No old candidates should remain
+        assert!(Candidates::<Runtime>::get().is_empty());
+
+        // Ensure there's no prior info about last authored block and that collator selection lock was released
+        let old_candidates =
+            Self::get_temp_storage::<Vec<CandidateInfo<AccountId, Balance>>>("candidates").unwrap();
+        old_candidates.iter().for_each(|candidate| {
+            assert!(!LastAuthoredBlock::<Runtime>::contains_key(&candidate.who));
+            assert!(!Locks::<Runtime>::get(&candidate.who)
+                .iter()
+                .any(|x| x.id == COLLATOR_STAKING_ID));
+        });
+
+        Ok(())
     }
 }
 
