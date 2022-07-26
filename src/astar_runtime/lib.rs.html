@@ -1287,6 +1287,38 @@
 <span id="1282">1282</span>
 <span id="1283">1283</span>
 <span id="1284">1284</span>
+<span id="1285">1285</span>
+<span id="1286">1286</span>
+<span id="1287">1287</span>
+<span id="1288">1288</span>
+<span id="1289">1289</span>
+<span id="1290">1290</span>
+<span id="1291">1291</span>
+<span id="1292">1292</span>
+<span id="1293">1293</span>
+<span id="1294">1294</span>
+<span id="1295">1295</span>
+<span id="1296">1296</span>
+<span id="1297">1297</span>
+<span id="1298">1298</span>
+<span id="1299">1299</span>
+<span id="1300">1300</span>
+<span id="1301">1301</span>
+<span id="1302">1302</span>
+<span id="1303">1303</span>
+<span id="1304">1304</span>
+<span id="1305">1305</span>
+<span id="1306">1306</span>
+<span id="1307">1307</span>
+<span id="1308">1308</span>
+<span id="1309">1309</span>
+<span id="1310">1310</span>
+<span id="1311">1311</span>
+<span id="1312">1312</span>
+<span id="1313">1313</span>
+<span id="1314">1314</span>
+<span id="1315">1315</span>
+<span id="1316">1316</span>
 </pre><pre class="rust"><code><span class="doccomment">//! The Astar Network runtime. This can be compiled with ``#[no_std]`, ready for Wasm.</span>
 
 <span class="attribute">#![<span class="ident">cfg_attr</span>(<span class="ident">not</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;std&quot;</span>), <span class="ident">no_std</span>)]</span>
@@ -1384,7 +1416,7 @@
     <span class="ident">spec_name</span>: <span class="macro">create_runtime_str!</span>(<span class="string">&quot;astar&quot;</span>),
     <span class="ident">impl_name</span>: <span class="macro">create_runtime_str!</span>(<span class="string">&quot;astar&quot;</span>),
     <span class="ident">authoring_version</span>: <span class="number">1</span>,
-    <span class="ident">spec_version</span>: <span class="number">28</span>,
+    <span class="ident">spec_version</span>: <span class="number">29</span>,
     <span class="ident">impl_version</span>: <span class="number">0</span>,
     <span class="ident">apis</span>: <span class="ident">RUNTIME_API_VERSIONS</span>,
     <span class="ident">transaction_version</span>: <span class="number">2</span>,
@@ -1703,6 +1735,7 @@
     <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">MaxCandidates</span>: <span class="ident">u32</span> <span class="op">=</span> <span class="number">200</span>;
     <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">MinCandidates</span>: <span class="ident">u32</span> <span class="op">=</span> <span class="number">5</span>;
     <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">MaxInvulnerables</span>: <span class="ident">u32</span> <span class="op">=</span> <span class="number">20</span>;
+    <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">SlashRatio</span>: <span class="ident">Perbill</span> <span class="op">=</span> <span class="ident">Perbill::from_percent</span>(<span class="number">1</span>);
 }
 
 <span class="kw">impl</span> <span class="ident">pallet_collator_selection::Config</span> <span class="kw">for</span> <span class="ident">Runtime</span> {
@@ -1718,6 +1751,7 @@
     <span class="kw">type</span> <span class="ident">ValidatorId</span> <span class="op">=</span> <span class="op">&lt;</span><span class="self">Self</span> <span class="kw">as</span> <span class="ident">frame_system::Config</span><span class="op">&gt;</span><span class="ident">::AccountId</span>;
     <span class="kw">type</span> <span class="ident">ValidatorIdOf</span> <span class="op">=</span> <span class="ident">pallet_collator_selection::IdentityCollator</span>;
     <span class="kw">type</span> <span class="ident">ValidatorRegistration</span> <span class="op">=</span> <span class="ident">Session</span>;
+    <span class="kw">type</span> <span class="ident">SlashRatio</span> <span class="op">=</span> <span class="ident">SlashRatio</span>;
     <span class="kw">type</span> <span class="ident">WeightInfo</span> <span class="op">=</span> ();
 }
 
@@ -2133,35 +2167,65 @@
     <span class="ident">frame_system::ChainContext</span><span class="op">&lt;</span><span class="ident">Runtime</span><span class="op">&gt;</span>,
     <span class="ident">Runtime</span>,
     <span class="ident">AllPalletsWithSystem</span>,
-    (<span class="ident">RelayAssetRegistration</span>,),
+    (<span class="ident">CollatorListCleanup</span>,),
 <span class="op">&gt;</span>;
 
-<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">RelayAssetRegistration</span>;
-<span class="kw">impl</span> <span class="ident">OnRuntimeUpgrade</span> <span class="kw">for</span> <span class="ident">RelayAssetRegistration</span> {
+<span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">CollatorListCleanup</span>;
+<span class="kw">impl</span> <span class="ident">OnRuntimeUpgrade</span> <span class="kw">for</span> <span class="ident">CollatorListCleanup</span> {
     <span class="kw">fn</span> <span class="ident">on_runtime_upgrade</span>() -&gt; <span class="ident">Weight</span> {
-        <span class="kw">use</span> <span class="ident">pallet_xc_asset_config</span>::<span class="kw-2">*</span>;
-        <span class="kw">use</span> <span class="ident">xcm::latest::prelude</span>::<span class="kw-2">*</span>;
+        <span class="kw">use</span> <span class="ident">frame_support::traits</span>::{<span class="ident">LockIdentifier</span>, <span class="ident">LockableCurrency</span>};
+        <span class="kw">use</span> <span class="ident">pallet_collator_selection</span>::{<span class="ident">Candidates</span>, <span class="ident">LastAuthoredBlock</span>};
 
-        <span class="kw">let</span> <span class="ident">relay_asset_id</span> <span class="op">=</span> <span class="ident">u128::max_value</span>();
-        <span class="kw">let</span> <span class="ident">relay_asset_multilocation</span> <span class="op">=</span> <span class="ident">MultiLocation::parent</span>();
+        <span class="kw">const</span> <span class="ident">COLLATOR_STAKING_ID</span>: <span class="ident">LockIdentifier</span> <span class="op">=</span> <span class="kw-2">*</span><span class="string">b&quot;colstake&quot;</span>;
 
-        <span class="ident">AssetIdToLocation</span>::<span class="op">&lt;</span><span class="ident">Runtime</span><span class="op">&gt;</span><span class="ident">::insert</span>(
-            <span class="ident">relay_asset_id</span>,
-            <span class="ident">relay_asset_multilocation</span>.<span class="ident">clone</span>().<span class="ident">versioned</span>(),
-        );
-        <span class="ident">AssetLocationToId</span>::<span class="op">&lt;</span><span class="ident">Runtime</span><span class="op">&gt;</span><span class="ident">::insert</span>(
-            <span class="ident">relay_asset_multilocation</span>.<span class="ident">clone</span>().<span class="ident">versioned</span>(),
-            <span class="ident">relay_asset_id</span>,
-        );
+        <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">counter</span> <span class="op">=</span> <span class="number">0_u64</span>;
 
-        <span class="ident">AssetLocationUnitsPerSecond</span>::<span class="op">&lt;</span><span class="ident">Runtime</span><span class="op">&gt;</span><span class="ident">::insert</span>(
-            <span class="ident">relay_asset_multilocation</span>.<span class="ident">versioned</span>(),
-            <span class="number">1_000_000_000</span>,
-        );
+        <span class="ident">Candidates</span>::<span class="op">&lt;</span><span class="ident">Runtime</span><span class="op">&gt;</span><span class="ident">::take</span>()
+            .<span class="ident">into_iter</span>()
+            .<span class="ident">for_each</span>(<span class="op">|</span><span class="ident">candidate</span><span class="op">|</span> {
+                <span class="ident">Balances::remove_lock</span>(<span class="ident">COLLATOR_STAKING_ID</span>, <span class="kw-2">&amp;</span><span class="ident">candidate</span>.<span class="ident">who</span>);
+                <span class="ident">LastAuthoredBlock</span>::<span class="op">&lt;</span><span class="ident">Runtime</span><span class="op">&gt;</span><span class="ident">::remove</span>(<span class="kw-2">&amp;</span><span class="ident">candidate</span>.<span class="ident">who</span>);
 
-        <span class="ident">EvmRevertCodeHandler::xc_asset_registered</span>(<span class="ident">relay_asset_id</span>);
+                <span class="ident">counter</span> <span class="op">+</span><span class="op">=</span> <span class="number">1</span>;
+            });
 
-        <span class="op">&lt;</span><span class="ident">Runtime</span> <span class="kw">as</span> <span class="ident">frame_system::Config</span><span class="op">&gt;</span><span class="ident">::DbWeight::get</span>().<span class="ident">writes</span>(<span class="number">4</span>)
+        <span class="op">&lt;</span><span class="ident">Runtime</span> <span class="kw">as</span> <span class="ident">frame_system::Config</span><span class="op">&gt;</span><span class="ident">::DbWeight::get</span>()
+            .<span class="ident">reads_writes</span>(<span class="number">1</span> <span class="op">+</span> <span class="ident">counter</span> <span class="op">*</span> <span class="number">3</span>, <span class="number">1</span> <span class="op">+</span> <span class="ident">counter</span> <span class="op">*</span> <span class="number">4</span>)
+    }
+
+    <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;try-runtime&quot;</span>)]</span>
+    <span class="kw">fn</span> <span class="ident">pre_upgrade</span>() -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="kw-2">&amp;</span><span class="lifetime">&#39;static</span> <span class="ident">str</span><span class="op">&gt;</span> {
+        <span class="kw">use</span> <span class="ident">frame_support::traits::OnRuntimeUpgradeHelpersExt</span>;
+        <span class="kw">use</span> <span class="ident">pallet_collator_selection::Candidates</span>;
+
+        <span class="kw">let</span> <span class="ident">candidates</span> <span class="op">=</span> <span class="ident">Candidates</span>::<span class="op">&lt;</span><span class="ident">Runtime</span><span class="op">&gt;</span><span class="ident">::get</span>();
+        <span class="ident"><span class="self">Self</span>::set_temp_storage</span>(<span class="ident">candidates</span>, <span class="string">&quot;candidates&quot;</span>);
+        <span class="prelude-val">Ok</span>(())
+    }
+
+    <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;try-runtime&quot;</span>)]</span>
+    <span class="kw">fn</span> <span class="ident">post_upgrade</span>() -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(), <span class="kw-2">&amp;</span><span class="lifetime">&#39;static</span> <span class="ident">str</span><span class="op">&gt;</span> {
+        <span class="kw">use</span> <span class="ident">frame_support::traits::LockIdentifier</span>;
+        <span class="kw">use</span> <span class="ident">frame_support::traits::OnRuntimeUpgradeHelpersExt</span>;
+        <span class="kw">use</span> <span class="ident">pallet_balances::Locks</span>;
+        <span class="kw">use</span> <span class="ident">pallet_collator_selection</span>::{<span class="ident">CandidateInfo</span>, <span class="ident">Candidates</span>, <span class="ident">LastAuthoredBlock</span>};
+
+        <span class="kw">const</span> <span class="ident">COLLATOR_STAKING_ID</span>: <span class="ident">LockIdentifier</span> <span class="op">=</span> <span class="kw-2">*</span><span class="string">b&quot;colstake&quot;</span>;
+
+        <span class="comment">//  No old candidates should remain</span>
+        <span class="macro">assert!</span>(<span class="ident">Candidates</span>::<span class="op">&lt;</span><span class="ident">Runtime</span><span class="op">&gt;</span><span class="ident">::get</span>().<span class="ident">is_empty</span>());
+
+        <span class="comment">// Ensure there&#39;s no prior info about last authored block and that collator selection lock was released</span>
+        <span class="kw">let</span> <span class="ident">old_candidates</span> <span class="op">=</span>
+            <span class="ident"><span class="self">Self</span>::get_temp_storage</span>::<span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">CandidateInfo</span><span class="op">&lt;</span><span class="ident">AccountId</span>, <span class="ident">Balance</span><span class="op">&gt;</span><span class="op">&gt;</span><span class="op">&gt;</span>(<span class="string">&quot;candidates&quot;</span>).<span class="ident">unwrap</span>();
+        <span class="ident">old_candidates</span>.<span class="ident">iter</span>().<span class="ident">for_each</span>(<span class="op">|</span><span class="ident">candidate</span><span class="op">|</span> {
+            <span class="macro">assert!</span>(<span class="op">!</span><span class="ident">LastAuthoredBlock</span>::<span class="op">&lt;</span><span class="ident">Runtime</span><span class="op">&gt;</span><span class="ident">::contains_key</span>(<span class="kw-2">&amp;</span><span class="ident">candidate</span>.<span class="ident">who</span>));
+            <span class="macro">assert!</span>(<span class="op">!</span><span class="ident">Locks</span>::<span class="op">&lt;</span><span class="ident">Runtime</span><span class="op">&gt;</span><span class="ident">::get</span>(<span class="kw-2">&amp;</span><span class="ident">candidate</span>.<span class="ident">who</span>)
+                .<span class="ident">iter</span>()
+                .<span class="ident">any</span>(<span class="op">|</span><span class="ident">x</span><span class="op">|</span> <span class="ident">x</span>.<span class="ident">id</span> <span class="op">==</span> <span class="ident">COLLATOR_STAKING_ID</span>));
+        });
+
+        <span class="prelude-val">Ok</span>(())
     }
 }
 
