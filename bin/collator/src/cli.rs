@@ -58,12 +58,10 @@ pub enum Subcommand {
     Revert(sc_cli::RevertCmd),
 
     /// Export the genesis state of the parachain.
-    #[clap(name = "export-genesis-state")]
-    ExportGenesisState(ExportGenesisStateCommand),
+    ExportGenesisState(cumulus_client_cli::ExportGenesisStateCommand),
 
     /// Export the genesis wasm of the parachain.
-    #[clap(name = "export-genesis-wasm")]
-    ExportGenesisWasm(ExportGenesisWasmCommand),
+    ExportGenesisWasm(cumulus_client_cli::ExportGenesisWasmCommand),
 
     /// The custom benchmark subcommmand benchmarking runtime pallets.
     #[cfg(feature = "runtime-benchmarks")]
@@ -76,42 +74,17 @@ pub enum Subcommand {
     TryRuntime(try_runtime_cli::TryRuntimeCmd),
 }
 
-/// Command for exporting the genesis state of the parachain
-#[derive(Debug, clap::Parser)]
-pub struct ExportGenesisStateCommand {
-    /// Output file name or stdout if unspecified.
-    #[clap(parse(from_os_str))]
-    pub output: Option<PathBuf>,
+fn validate_relay_chain_url(arg: &str) -> Result<Url, String> {
+    let url = Url::parse(arg).map_err(|e| e.to_string())?;
 
-    /// Write output in binary. Default is to write in hex.
-    #[clap(short, long)]
-    pub raw: bool,
-
-    /// Id of the parachain this state is for.
-    ///
-    /// Default: 2007 (shiden)
-    #[clap(long, default_value = "2007")]
-    pub parachain_id: u32,
-
-    /// The name of the chain for that the genesis state should be exported.
-    #[clap(long)]
-    pub chain: Option<String>,
-}
-
-/// Command for exporting the genesis wasm file.
-#[derive(Debug, clap::Parser)]
-pub struct ExportGenesisWasmCommand {
-    /// Output file name or stdout if unspecified.
-    #[clap(parse(from_os_str))]
-    pub output: Option<PathBuf>,
-
-    /// Write output in binary. Default is to write in hex.
-    #[clap(short, long)]
-    pub raw: bool,
-
-    /// The name of the chain for that the genesis wasm file should be exported.
-    #[clap(long)]
-    pub chain: Option<String>,
+    if url.scheme() == "ws" {
+        Ok(url)
+    } else {
+        Err(format!(
+            "'{}' URL scheme not supported. Only websocket RPC is currently supported",
+            url.scheme()
+        ))
+    }
 }
 
 #[allow(missing_docs)]
@@ -129,17 +102,10 @@ pub struct RunCmd {
 
     /// EXPERIMENTAL: Specify an URL to a relay chain full node to communicate with.
     #[clap(
-        long,
-        parse(try_from_str),
-        conflicts_with = "collator",
-        conflicts_with = "validator",
-        conflicts_with = "alice",
-        conflicts_with = "bob",
-        conflicts_with = "charlie",
-        conflicts_with = "dave",
-        conflicts_with = "eve",
-        conflicts_with = "ferdie"
-    )]
+		long,
+		value_parser = validate_relay_chain_url,
+		conflicts_with_all = &["alice", "bob", "charlie", "dave", "eve", "ferdie", "one", "two"]	)
+	]
     pub relay_chain_rpc_url: Option<Url>,
 }
 

@@ -137,6 +137,9 @@ fn make_genesis(
         ),
         ethereum: Default::default(),
         polkadot_xcm: Default::default(),
+        assets: Default::default(),
+        parachain_system: Default::default(),
+        transaction_payment: Default::default(),
     }
 }
 

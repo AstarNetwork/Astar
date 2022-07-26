@@ -159,7 +159,7 @@ jobs:
 
     - name: Srtool build
       id: srtool_build
-      uses: chevdor/srtool-actions@v0.3.0
+      uses: chevdor/srtool-actions@v0.5.0
       with:
         chain: ${{ matrix.chain }}
         runtime_dir: runtime/${{ matrix.chain }}

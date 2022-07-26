@@ -17,7 +17,7 @@ use frame_support::{
     ConsensusEngineId, PalletId,
 };
 use frame_system::limits::{BlockLength, BlockWeights};
-use pallet_contracts::{weights::WeightInfo, DefaultContractAccessWeight};
+use pallet_contracts::DefaultContractAccessWeight;
 use pallet_evm::{FeeCalculator, Runner};
 use pallet_evm_precompile_assets_erc20::AddressToAssetId;
 use pallet_grandpa::{fg_primitives, AuthorityList as GrandpaAuthorityList};
@@ -308,6 +308,7 @@ parameter_types! {
 }
 
 impl pallet_transaction_payment::Config for Runtime {
+    type Event = Event;
     type OnChargeTransaction = CurrencyAdapter<Balances, ()>;
     type WeightToFee = IdentityFee<Balance>;
     type OperationalFeeMultiplier = OperationalFeeMultiplier;
@@ -550,12 +551,6 @@ parameter_types! {
     // The lazy deletion runs inside on_initialize.
     pub DeletionWeightLimit: Weight = AVERAGE_ON_INITIALIZE_RATIO *
         RuntimeBlockWeights::get().max_block;
-    // The weight needed for decoding the queue should be less or equal than a fifth
-    // of the overall weight dedicated to the lazy deletion.
-    pub DeletionQueueDepth: u32 = ((DeletionWeightLimit::get() / (
-        <Runtime as pallet_contracts::Config>::WeightInfo::on_initialize_per_queue_item(1)
-        -
-        <Runtime as pallet_contracts::Config>::WeightInfo::on_initialize_per_queue_item(0))) / 5) as u32;
     pub Schedule: pallet_contracts::Schedule<Runtime> = Default::default();
 }
 
@@ -593,13 +588,14 @@ impl pallet_contracts::Config for Runtime {
     type WeightPrice = pallet_transaction_payment::Pallet<Self>;
     type WeightInfo = pallet_contracts::weights::SubstrateWeight<Self>;
     type ChainExtension = ();
-    type DeletionQueueDepth = DeletionQueueDepth;
+    type DeletionQueueDepth = ConstU32<128>;
     type DeletionWeightLimit = DeletionWeightLimit;
     type Schedule = Schedule;
     type AddressGenerator = pallet_contracts::DefaultAddressGenerator;
     type ContractAccessWeight = DefaultContractAccessWeight<RuntimeBlockWeights>;
     type MaxCodeLen = ConstU32<{ 128 * 1024 }>;
     type RelaxedMaxCodeLen = ConstU32<{ 256 * 1024 }>;
+    type MaxStorageKeyLen = ConstU32<128>;
 }
 
 impl pallet_sudo::Config for Runtime {
@@ -613,24 +609,24 @@ construct_runtime!(
         NodeBlock = generic::Block<Header, sp_runtime::OpaqueExtrinsic>,
         UncheckedExtrinsic = UncheckedExtrinsic
     {
-        System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
-        Utility: pallet_utility::{Pallet, Call, Event},
-        Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
-        RandomnessCollectiveFlip: pallet_randomness_collective_flip::{Pallet, Storage},
-        Aura: pallet_aura::{Pallet, Config<T>},
-        Grandpa: pallet_grandpa::{Pallet, Call, Storage, Config, Event},
-        Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
-        Vesting: pallet_vesting::{Pallet, Call, Storage, Config<T>, Event<T>},
-        DappsStaking: pallet_dapps_staking::{Pallet, Call, Storage, Event<T>},
-        BlockReward: pallet_block_reward::{Pallet, Call, Storage, Config, Event<T>},
-        TransactionPayment: pallet_transaction_payment::{Pallet, Storage},
-        EVM: pallet_evm::{Pallet, Config, Call, Storage, Event<T>},
-        Ethereum: pallet_ethereum::{Pallet, Call, Storage, Event, Origin, Config},
-        EthCall: pallet_custom_signatures::{Pallet, Call, Event<T>, ValidateUnsigned},
-        BaseFee: pallet_base_fee::{Pallet, Call, Storage, Config<T>, Event},
-        Contracts: pallet_contracts::{Pallet, Call, Storage, Event<T>},
-        Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>},
-        Assets: pallet_assets::{Pallet, Call, Storage, Event<T>},
+        System: frame_system,
+        Utility: pallet_utility,
+        Timestamp: pallet_timestamp,
+        RandomnessCollectiveFlip: pallet_randomness_collective_flip,
+        Aura: pallet_aura,
+        Grandpa: pallet_grandpa,
+        Balances: pallet_balances,
+        Vesting: pallet_vesting,
+        DappsStaking: pallet_dapps_staking,
+        BlockReward: pallet_block_reward,
+        TransactionPayment: pallet_transaction_payment,
+        EVM: pallet_evm,
+        Ethereum: pallet_ethereum,
+        EthCall: pallet_custom_signatures,
+        BaseFee: pallet_base_fee,
+        Contracts: pallet_contracts,
+        Sudo: pallet_sudo,
+        Assets: pallet_assets,
     }
 );
 
@@ -1066,7 +1062,7 @@ impl_runtime_apis! {
 
         fn get_storage(
             address: AccountId,
-            key: [u8; 32],
+            key: Vec<u8>,
         ) -> pallet_contracts_primitives::GetStorageResult {
             Contracts::get_storage(address, key)
         }
