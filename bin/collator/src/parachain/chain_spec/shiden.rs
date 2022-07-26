@@ -27,7 +27,10 @@ pub fn get_chain_spec(para_id: u32) -> ShidenChainSpec {
             get_account_id_from_seed::<sr25519::Public>("Alice"),
             1_000_000_000 * SDN,
         ),
-        (get_account_id_from_seed::<sr25519::Public>("Bob"), 1_000_000_000 * SDN),
+        (
+            get_account_id_from_seed::<sr25519::Public>("Bob"),
+            1_000_000_000 * SDN,
+        ),
     ];
 
     ShidenChainSpec::from_genesis(
