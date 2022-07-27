@@ -37,12 +37,10 @@ export async function wait (milliseconds = 0) {
  * @param {*} api ApiPromise from polkadot.js api
  * @param {*} transaction polkadot js api transaction
  * @param {*} sender account from which transaction needs to be sent
- * @param {*} section section for the returned filtered events from finalised block
- * @param {*} method method for the returned filtered events from finalised block
  *
- * @returns filtered events from given section and method
+ * @returns true when transaction is finalised
  */
-export async function sendTransaction(api, transaction, sender, section, method) {
+export async function sendTransaction(api, transaction, sender) {
 	return new Promise((resolve, reject) => {
 		let unsubscribe;
 		let timeout;
@@ -50,26 +48,13 @@ export async function sendTransaction(api, transaction, sender, section, method)
 		transaction.signAndSend(sender, async (result) => {
 			console.log(`Current status is ${result?.status}`);
 
-			if (result?.status?.isInBlock) {
+			if (result.isFinalized) {
 				if (unsubscribe) {
 					unsubscribe();
 				}
 
-				const blockHash = result?.status?.asInBlock;
-
-				const apiAt = await api.at(blockHash);
-
-				const events = await apiAt.query.system.events();
-
-				const filtered = events.filter((eventObj) => {
-					return (
-						section === eventObj.event.section &&
-						method === eventObj.event.method
-					);
-				});
-
 				clearTimeout(timeout);
-				resolve(filtered);
+				resolve(true);
 			}
 		}).then(unsub => {
 			unsubscribe = unsub;
@@ -97,7 +82,9 @@ export function describeWithNetwork(network, title, cb) {
 			api: null,
 			keyring: null,
 			alice: null,
-			bob: null
+			bob: null,
+			charlie: null,
+			dave: null
 		};
 		let timeout;
 
@@ -139,11 +126,15 @@ export function describeWithNetwork(network, title, cb) {
 
 			const alice = keyring.addFromUri('//Alice');
 			const bob = keyring.addFromUri('//Bob');
+			const charlie = keyring.addFromUri('//Charlie');
+			const dave = keyring.addFromUri('//Dave');
 
 			context.api = api;
 			context.keyring = keyring;
 			context.alice = alice;
 			context.bob = bob;
+			context.charlie = charlie;
+			context.dave = dave;
 		});
 
 		after(async function () {
