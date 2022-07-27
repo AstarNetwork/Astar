@@ -1,6 +1,4 @@
 import { expect } from 'chai';
-import { BN } from 'bn.js';
-import { formatBalance } from '@polkadot/util';
 import {
     capitalize,
     describeWithNetwork,
@@ -36,7 +34,6 @@ describeWithNetwork(network, `${network} RPC`, function(context) {
 
 	it('should be able to Register contract on H160 address 0x01 using Alice account', async () => {
         const finalised = await sendTransaction(
-            context.api,
             context.api.tx.dappsStaking.register(getAddressEnum(CONTRACT)),
             context.alice
         );
@@ -55,7 +52,6 @@ describeWithNetwork(network, `${network} RPC`, function(context) {
 	it('should be able to transfer tokens from alice to charlie', async () => {
         const originalBalance = await context.api.query.system.account(CHARLIE);
         const finalised = await sendTransaction(
-            context.api,
             context.api.tx.balances.transfer({ Id: CHARLIE }, 100),
             context.alice
         );
@@ -68,7 +64,6 @@ describeWithNetwork(network, `${network} RPC`, function(context) {
     it('should be able to transfer tokens from bob to dave', async () => {
         const originalBalance = await context.api.query.system.account(DAVE);
         const finalised = await sendTransaction(
-            context.api,
             context.api.tx.balances.transfer({ Id: DAVE }, 200),
             context.bob
         );

@@ -34,13 +34,12 @@ export async function wait (milliseconds = 0) {
 /**
  * sendTransaction: sign and send transaction from sender accounts.
  *
- * @param {*} api ApiPromise from polkadot.js api
  * @param {*} transaction polkadot js api transaction
  * @param {*} sender account from which transaction needs to be sent
  *
  * @returns true when transaction is finalised
  */
-export async function sendTransaction(api, transaction, sender) {
+export async function sendTransaction(transaction, sender) {
 	return new Promise((resolve, reject) => {
 		let unsubscribe;
 		let timeout;
