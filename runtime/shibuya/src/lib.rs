@@ -834,7 +834,7 @@ impl pallet_collective::Config<TechnicalCommitteeCollective> for Runtime {
 parameter_types! {
     pub const ProposalBond: Permill = Permill::from_percent(5);
     pub const ProposalBondMinimum: Balance = 100 * SDN;
-    pub const SpendPeriod: BlockNumber = 3 * DAYS;
+    pub const SpendPeriod: BlockNumber = 1 * DAYS;
 }
 
 impl pallet_treasury::Config for Runtime {
