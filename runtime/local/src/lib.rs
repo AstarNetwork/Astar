@@ -549,7 +549,6 @@ impl pallet_custom_signatures::Config for Runtime {
 
 parameter_types! {
     pub MaximumSchedulerWeight: Weight = NORMAL_DISPATCH_RATIO * RuntimeBlockWeights::get().max_block;
-    pub const MaxScheduledPerBlock: u32 = 50;
 }
 
 impl pallet_scheduler::Config for Runtime {
@@ -559,7 +558,7 @@ impl pallet_scheduler::Config for Runtime {
     type Call = Call;
     type MaximumWeight = MaximumSchedulerWeight;
     type ScheduleOrigin = frame_system::EnsureRoot<AccountId>;
-    type MaxScheduledPerBlock = MaxScheduledPerBlock;
+    type MaxScheduledPerBlock = ConstU32<50>;
     type WeightInfo = pallet_scheduler::weights::SubstrateWeight<Runtime>;
     type OriginPrivilegeCmp = EqualPrivilegeOnly;
     type PreimageProvider = ();
@@ -568,8 +567,6 @@ impl pallet_scheduler::Config for Runtime {
 
 parameter_types! {
     pub CouncilMotionDuration: BlockNumber = 3 * MINUTES;
-    pub const CouncilMaxProposals: u32 = 100;
-    pub const CouncilMaxMembers: u32 = 100;
 }
 
 type CouncilCollective = pallet_collective::Instance1;
@@ -578,16 +575,14 @@ impl pallet_collective::Config<CouncilCollective> for Runtime {
     type Event = Event;
     type Proposal = Call;
     type MotionDuration = CouncilMotionDuration;
-    type MaxProposals = CouncilMaxProposals;
-    type MaxMembers = CouncilMaxMembers;
+    type MaxProposals = ConstU32<100>;
+    type MaxMembers = ConstU32<5>;
     type DefaultVote = pallet_collective::PrimeDefaultVote;
     type WeightInfo = pallet_collective::weights::SubstrateWeight<Runtime>;
 }
 
 parameter_types! {
     pub const TechnicalCommitteeMotionDuration: BlockNumber = 3 * MINUTES;
-    pub const TechnicalCommitteeMaxProposals: u32 = 100;
-    pub const TechnicalCommitteeMaxMembers: u32 = 100;
 }
 
 type TechnicalCommitteeCollective = pallet_collective::Instance2;
@@ -596,8 +591,8 @@ impl pallet_collective::Config<TechnicalCommitteeCollective> for Runtime {
     type Event = Event;
     type Proposal = Call;
     type MotionDuration = TechnicalCommitteeMotionDuration;
-    type MaxProposals = TechnicalCommitteeMaxProposals;
-    type MaxMembers = TechnicalCommitteeMaxMembers;
+    type MaxProposals = ConstU32<100>;
+    type MaxMembers = ConstU32<5>;
     type DefaultVote = pallet_collective::PrimeDefaultVote;
     type WeightInfo = pallet_collective::weights::SubstrateWeight<Runtime>;
 }
@@ -606,9 +601,8 @@ parameter_types! {
     pub const ProposalBond: Permill = Permill::from_percent(5);
     pub const ProposalBondMinimum: Balance = 100 * AST;
     pub const ProposalBondMaximum: Balance = 500 * AST;
-    pub const SpendPeriod: BlockNumber = 5 * MINUTES;
+    pub const SpendPeriod: BlockNumber = 1 * MINUTES;
     pub const Burn: Permill = Permill::from_percent(1);
-    pub const MaxApprovals: u32 = 100;
 }
 
 impl pallet_treasury::Config for Runtime {
@@ -631,7 +625,7 @@ impl pallet_treasury::Config for Runtime {
     type Burn = Burn;
     type BurnDestination = ();
     type SpendFunds = ();
-    type MaxApprovals = MaxApprovals;
+    type MaxApprovals = ConstU32<100>;
     type WeightInfo = pallet_treasury::weights::SubstrateWeight<Runtime>;
     type SpendOrigin = frame_support::traits::NeverEnsureOrigin<Balance>;
 }
@@ -645,8 +639,6 @@ parameter_types! {
     pub VoteLockingPeriod: BlockNumber = 10 * MINUTES;
     pub CooloffPeriod: BlockNumber = 10 * MINUTES;
     pub const InstantAllowed: bool = true;
-    pub const MaxVotes: u32 = 100;
-    pub const MaxProposals: u32 = 100;
     pub const PreimageByteDeposit: Balance = deposit(0, 1);
 }
 
@@ -707,11 +699,11 @@ impl pallet_democracy::Config for Runtime {
     type PreimageByteDeposit = PreimageByteDeposit;
     type Slash = Treasury;
     type Scheduler = Scheduler;
-    type MaxVotes = MaxVotes;
+    type MaxVotes = ConstU32<100>;
     type OperationalPreimageOrigin = pallet_collective::EnsureMember<AccountId, CouncilCollective>;
     type PalletsOrigin = OriginCaller;
     type WeightInfo = pallet_democracy::weights::SubstrateWeight<Runtime>;
-    type MaxProposals = MaxProposals;
+    type MaxProposals = ConstU32<100>;
 }
 
 parameter_types! {

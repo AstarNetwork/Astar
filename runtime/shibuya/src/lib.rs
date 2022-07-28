@@ -800,9 +800,7 @@ impl pallet_ethereum::Config for Runtime {
 }
 
 parameter_types! {
-    pub CouncilMotionDuration: BlockNumber = 3 * DAYS;
-    pub const CouncilMaxProposals: u32 = 100;
-    pub const CouncilMaxMembers: u32 = 100;
+    pub CouncilMotionDuration: BlockNumber = 36 * HOURS;
 }
 
 type CouncilCollective = pallet_collective::Instance1;
@@ -811,16 +809,14 @@ impl pallet_collective::Config<CouncilCollective> for Runtime {
     type Event = Event;
     type Proposal = Call;
     type MotionDuration = CouncilMotionDuration;
-    type MaxProposals = CouncilMaxProposals;
-    type MaxMembers = CouncilMaxMembers;
+    type MaxProposals = ConstU32<100>;
+    type MaxMembers = ConstU32<10>;
     type DefaultVote = pallet_collective::PrimeDefaultVote;
     type WeightInfo = pallet_collective::weights::SubstrateWeight<Runtime>;
 }
 
 parameter_types! {
-    pub const TechnicalCommitteeMotionDuration: BlockNumber = 3 * DAYS;
-    pub const TechnicalCommitteeMaxProposals: u32 = 100;
-    pub const TechnicalCommitteeMaxMembers: u32 = 100;
+    pub const TechnicalCommitteeMotionDuration: BlockNumber = 36 * HOURS;
 }
 
 type TechnicalCommitteeCollective = pallet_collective::Instance2;
@@ -829,8 +825,8 @@ impl pallet_collective::Config<TechnicalCommitteeCollective> for Runtime {
     type Event = Event;
     type Proposal = Call;
     type MotionDuration = TechnicalCommitteeMotionDuration;
-    type MaxProposals = TechnicalCommitteeMaxProposals;
-    type MaxMembers = TechnicalCommitteeMaxMembers;
+    type MaxProposals = ConstU32<100>;
+    type MaxMembers = ConstU32<10>;
     type DefaultVote = pallet_collective::PrimeDefaultVote;
     type WeightInfo = pallet_collective::weights::SubstrateWeight<Runtime>;
 }
@@ -839,7 +835,6 @@ parameter_types! {
     pub const ProposalBond: Permill = Permill::from_percent(5);
     pub const ProposalBondMinimum: Balance = 100 * SDN;
     pub const SpendPeriod: BlockNumber = 3 * DAYS;
-    pub const MaxApprovals: u32 = 100;
 }
 
 impl pallet_treasury::Config for Runtime {
@@ -862,7 +857,7 @@ impl pallet_treasury::Config for Runtime {
     type Burn = ();
     type BurnDestination = ();
     type SpendFunds = ();
-    type MaxApprovals = MaxApprovals;
+    type MaxApprovals = ConstU32<100>;
     type WeightInfo = pallet_treasury::weights::SubstrateWeight<Runtime>;
     type SpendOrigin = frame_support::traits::NeverEnsureOrigin<Balance>;
 }
@@ -876,8 +871,6 @@ parameter_types! {
     pub VoteLockingPeriod: BlockNumber = 7 * DAYS;
     pub CooloffPeriod: BlockNumber = 7 * DAYS;
     pub const InstantAllowed: bool = true;
-    pub const MaxVotes: u32 = 100;
-    pub const MaxProposals: u32 = 100;
     pub const PreimageByteDeposit: Balance = deposit(0, 1);
 }
 
@@ -938,11 +931,11 @@ impl pallet_democracy::Config for Runtime {
     type PreimageByteDeposit = PreimageByteDeposit;
     type Slash = Treasury;
     type Scheduler = Scheduler;
-    type MaxVotes = MaxVotes;
+    type MaxVotes = ConstU32<100>;
     type OperationalPreimageOrigin = pallet_collective::EnsureMember<AccountId, CouncilCollective>;
     type PalletsOrigin = OriginCaller;
     type WeightInfo = pallet_democracy::weights::SubstrateWeight<Runtime>;
-    type MaxProposals = MaxProposals;
+    type MaxProposals = ConstU32<100>;
 }
 
 impl pallet_sudo::Config for Runtime {
