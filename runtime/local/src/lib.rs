@@ -576,7 +576,7 @@ impl pallet_collective::Config<CouncilCollective> for Runtime {
     type Proposal = Call;
     type MotionDuration = CouncilMotionDuration;
     type MaxProposals = ConstU32<100>;
-    type MaxMembers = ConstU32<5>;
+    type MaxMembers = ConstU32<3>;
     type DefaultVote = pallet_collective::PrimeDefaultVote;
     type WeightInfo = pallet_collective::weights::SubstrateWeight<Runtime>;
 }
@@ -592,7 +592,7 @@ impl pallet_collective::Config<TechnicalCommitteeCollective> for Runtime {
     type Proposal = Call;
     type MotionDuration = TechnicalCommitteeMotionDuration;
     type MaxProposals = ConstU32<100>;
-    type MaxMembers = ConstU32<5>;
+    type MaxMembers = ConstU32<3>;
     type DefaultVote = pallet_collective::PrimeDefaultVote;
     type WeightInfo = pallet_collective::weights::SubstrateWeight<Runtime>;
 }
@@ -610,7 +610,7 @@ impl pallet_treasury::Config for Runtime {
     type Currency = Balances;
     type ApproveOrigin = EitherOfDiverse<
         frame_system::EnsureRoot<AccountId>,
-        pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 3, 5>,
+        pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 2, 3>,
     >;
     type RejectOrigin = EitherOfDiverse<
         frame_system::EnsureRoot<AccountId>,
