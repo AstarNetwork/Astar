@@ -24,11 +24,11 @@ pub fn get_chain_spec(para_id: u32) -> AstarChainSpec {
     let endowned = vec![
         (
             get_account_id_from_seed::<sr25519::Public>("Alice"),
-            10_000 * ASTR,
+            1_000_000_000 * ASTR,
         ),
         (
             get_account_id_from_seed::<sr25519::Public>("Bob"),
-            10_000 * ASTR,
+            1_000_000_000 * ASTR,
         ),
     ];
 

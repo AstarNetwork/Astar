@@ -10,6 +10,14 @@ jobs:
   checks-and-tests:
     runs-on: [self-hosted, Linux, X64]
     steps:
+    - name: Free disk space
+      run: |
+        sudo rm -rf /usr/share/dotnet
+        sudo rm -rf /opt/ghc
+        sudo rm -rf "/usr/local/share/boost"
+        sudo rm -rf "$AGENT_TOOLSDIRECTORY"
+        df -h
+
     - name: Checkout the source code
       uses: actions/checkout@v3
       with:
@@ -20,16 +28,6 @@ jobs:
 
     - name: Check targets are installed correctly
       run: rustup target list --installed
-
-    - uses: actions/cache@v3
-      with:
-        path: |
-          ~/.cargo/registry
-          ~/.cargo/git
-          target/
-        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-        restore-keys: |
-          ${{ runner.os }}-cargo-
 
     - name: Check all features compilation
       run: cargo check --verbose --all-features
@@ -51,16 +49,6 @@ jobs:
 
     - name: Check targets are installed correctly
       run: rustup target list --installed
-
-    - uses: actions/cache@v3
-      with:
-        path: |
-          ~/.cargo/registry
-          ~/.cargo/git
-          target/
-        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-        restore-keys: |
-          ${{ runner.os }}-cargo-
 
     - name: Build optimized binary
       run: CARGO_PROFILE_RELEASE_LTO=true RUSTFLAGS="-C codegen-units=1" cargo build --release --verbose
@@ -84,16 +72,6 @@ jobs:
 
     - name: Check targets are installed correctly
       run: rustup target list --installed
-
-    - uses: actions/cache@v3
-      with:
-        path: |
-          ~/.cargo/registry
-          ~/.cargo/git
-          target/
-        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-        restore-keys: |
-          ${{ runner.os }}-cargo-
 
     - name: Build optimized binary
       run: cargo build --release --verbose
