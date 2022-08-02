@@ -63,8 +63,10 @@ pallet-dapps-staking = { git = "https://github.com/AstarNetwork/astar-frame", br
 pallet-evm-precompile-assets-erc20 = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.26", default-features = false }
 pallet-evm-precompile-sr25519 = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.26", default-features = false }
 pallet-evm-precompile-substrate-ecdsa = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.26", default-features = false }
+pallet-evm-precompile-xvm = { git = "https://github.com/AstarNetwork/astar-frame", branch = "feature/add-pallet-xvm", default-features = false }
 pallet-precompile-dapps-staking = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.26", default-features = false }
 pallet-vesting = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.26", default-features = false }
+pallet-xvm = { git = "https://github.com/AstarNetwork/astar-frame", branch = "feature/add-pallet-xvm", default-features = false, features = ["evm","wasm"] }
 
 # benchmarking
 frame-benchmarking = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.26", default-features = false, optional = true }
@@ -109,6 +111,7 @@ std = [
 	"pallet-precompile-dapps-staking/std",
 	"pallet-evm-precompile-sr25519/std",
 	"pallet-evm-precompile-substrate-ecdsa/std",
+	"pallet-evm-precompile-xvm/std",
 	"pallet-grandpa/std",
 	"pallet-randomness-collective-flip/std",
 	"pallet-sudo/std",
@@ -134,6 +137,7 @@ std = [
 	"pallet-democracy/std",
 	"pallet-scheduler/std",
 	"pallet-treasury/std",
+	"pallet-xvm/std",
 ]
 runtime-benchmarks = [
 	"frame-benchmarking",

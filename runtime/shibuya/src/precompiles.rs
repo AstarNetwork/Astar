@@ -38,7 +38,7 @@ impl<R, C> ShibuyaNetworkPrecompiles<R, C> {
     /// Return all addresses that contain precompiles. This can be used to populate dummy code
     /// under the precompile.
     pub fn used_addresses() -> impl Iterator<Item = H160> {
-        sp_std::vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 1024, 1025, 1026, 1027, 20481, 20482, 20483, 20484]
+        sp_std::vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 1024, 1025, 1026, 1027, 20481, 20482, 20483, 20484, 20485]
             .into_iter()
             .map(hash)
     }
@@ -95,7 +95,7 @@ where
             // Xcm 0x5004
             a if a == hash(20484) => Some(XcmPrecompile::<R, C>::execute(handle)),
             // Xvm 0x5005
-            a if a == hash(20484) => Some(XvmPrecompile::<R>::execute(handle)),
+            a if a == hash(20485) => Some(XvmPrecompile::<R>::execute(handle)),
             // If the address matches asset prefix, the we route through the asset precompile set
             a if &a.to_fixed_bytes()[0..4] == ASSET_PRECOMPILE_ADDRESS_PREFIX => {
                 Erc20AssetsPrecompileSet::<R>::new().execute(handle)
