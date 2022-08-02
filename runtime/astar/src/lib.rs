@@ -7,7 +7,7 @@
 use codec::{Decode, Encode};
 use frame_support::{
     construct_runtime, parameter_types,
-    traits::{Contains, Currency, FindAuthor, Get, Imbalance, OnRuntimeUpgrade, OnUnbalanced},
+    traits::{Contains, Currency, FindAuthor, Get, Imbalance, OnUnbalanced},
     weights::{
         constants::{BlockExecutionWeight, ExtrinsicBaseWeight, RocksDbWeight, WEIGHT_PER_SECOND},
         ConstantMultiplier, DispatchClass, Weight, WeightToFeeCoefficient, WeightToFeeCoefficients,
@@ -95,7 +95,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("astar"),
     impl_name: create_runtime_str!("astar"),
     authoring_version: 1,
-    spec_version: 30,
+    spec_version: 31,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 2,
@@ -846,67 +846,7 @@ pub type Executive = frame_executive::Executive<
     frame_system::ChainContext<Runtime>,
     Runtime,
     AllPalletsWithSystem,
-    (CollatorListCleanup,),
 >;
-
-pub struct CollatorListCleanup;
-impl OnRuntimeUpgrade for CollatorListCleanup {
-    fn on_runtime_upgrade() -> Weight {
-        use frame_support::traits::{LockIdentifier, LockableCurrency};
-        use pallet_collator_selection::{Candidates, LastAuthoredBlock};
-
-        const COLLATOR_STAKING_ID: LockIdentifier = *b"colstake";
-
-        let mut counter = 0_u64;
-
-        Candidates::<Runtime>::take()
-            .into_iter()
-            .for_each(|candidate| {
-                Balances::remove_lock(COLLATOR_STAKING_ID, &candidate.who);
-                LastAuthoredBlock::<Runtime>::remove(&candidate.who);
-
-                counter += 1;
-            });
-
-        <Runtime as frame_system::Config>::DbWeight::get()
-            .reads_writes(1 + counter * 3, 1 + counter * 4)
-    }
-
-    #[cfg(feature = "try-runtime")]
-    fn pre_upgrade() -> Result<(), &'static str> {
-        use frame_support::traits::OnRuntimeUpgradeHelpersExt;
-        use pallet_collator_selection::Candidates;
-
-        let candidates = Candidates::<Runtime>::get();
-        Self::set_temp_storage(candidates, "candidates");
-        Ok(())
-    }
-
-    #[cfg(feature = "try-runtime")]
-    fn post_upgrade() -> Result<(), &'static str> {
-        use frame_support::traits::LockIdentifier;
-        use frame_support::traits::OnRuntimeUpgradeHelpersExt;
-        use pallet_balances::Locks;
-        use pallet_collator_selection::{CandidateInfo, Candidates, LastAuthoredBlock};
-
-        const COLLATOR_STAKING_ID: LockIdentifier = *b"colstake";
-
-        //  No old candidates should remain
-        assert!(Candidates::<Runtime>::get().is_empty());
-
-        // Ensure there's no prior info about last authored block and that collator selection lock was released
-        let old_candidates =
-            Self::get_temp_storage::<Vec<CandidateInfo<AccountId, Balance>>>("candidates").unwrap();
-        old_candidates.iter().for_each(|candidate| {
-            assert!(!LastAuthoredBlock::<Runtime>::contains_key(&candidate.who));
-            assert!(!Locks::<Runtime>::get(&candidate.who)
-                .iter()
-                .any(|x| x.id == COLLATOR_STAKING_ID));
-        });
-
-        Ok(())
-    }
-}
 
 impl fp_self_contained::SelfContainedCall for Call {
     type SignedInfo = H160;
