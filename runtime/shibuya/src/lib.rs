@@ -702,6 +702,19 @@ impl pallet_transaction_payment::Config for Runtime {
 }
 
 parameter_types! {
+    pub EvmId: u8 = 0x0F;
+    pub WasmId: u8 = 0x1F;
+}
+
+use pallet_xvm::{evm, wasm};
+impl pallet_xvm::Config for Runtime {
+    type Event = Event;
+    type VmId = u8;
+    type SyncVM = (evm::EVM<EvmId, Self, ()>, wasm::WASM<WasmId, Self, ()>);
+    type AsyncVM = ();
+}
+
+parameter_types! {
     // Tells `pallet_base_fee` whether to calculate a new BaseFee `on_finalize` or not.
     pub IsActive: bool = false;
     pub DefaultBaseFeePerGas: U256 = (MILLISDN / 1_000_000).into();
@@ -1010,6 +1023,8 @@ construct_runtime!(
         Council: pallet_collective::<Instance1> = 81,
         TechnicalCommittee: pallet_collective::<Instance2> = 82,
         Treasury: pallet_treasury = 83,
+
+        Xvm: pallet_xvm = 90,
 
         Sudo: pallet_sudo = 99,
     }

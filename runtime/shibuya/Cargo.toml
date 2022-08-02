@@ -93,9 +93,11 @@ pallet-evm-precompile-assets-erc20 = { git = "https://github.com/AstarNetwork/as
 pallet-evm-precompile-sr25519 = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.26", default-features = false }
 pallet-evm-precompile-substrate-ecdsa = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.26", default-features = false }
 pallet-evm-precompile-xcm = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.26", default-features = false }
+pallet-evm-precompile-xvm = { git = "https://github.com/AstarNetwork/astar-frame", branch = "feature/add-pallet-xvm", default-features = false }
 pallet-precompile-dapps-staking = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.26", default-features = false }
 pallet-xc-asset-config = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.26", default-features = false }
 pallet-xcm = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.26", default-features = false }
+pallet-xvm = { git = "https://github.com/AstarNetwork/astar-frame", branch = "feature/add-pallet-xvm", default-features = false, features = ["evm","wasm"] }
 xcm-primitives = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.26", default-features = false }
 
 # benchmarking
@@ -154,6 +156,7 @@ std = [
 	"pallet-evm-precompile-substrate-ecdsa/std",
 	"pallet-evm-precompile-assets-erc20/std",
 	"pallet-evm-precompile-xcm/std",
+	"pallet-evm-precompile-xvm/std",
 	"pallet-dapps-staking/std",
 	"pallet-identity/std",
 	"pallet-multisig/std",
@@ -169,6 +172,7 @@ std = [
 	"pallet-transaction-payment-rpc-runtime-api/std",
 	"pallet-xcm/std",
 	"pallet-xc-asset-config/std",
+	"pallet-xvm/std",
 	"parachain-info/std",
 	"polkadot-parachain/std",
 	"polkadot-primitives/std",

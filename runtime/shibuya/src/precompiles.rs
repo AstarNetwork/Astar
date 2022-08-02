@@ -14,6 +14,7 @@ use pallet_evm_precompile_simple::{ECRecover, ECRecoverPublicKey, Identity, Ripe
 use pallet_evm_precompile_sr25519::Sr25519Precompile;
 use pallet_evm_precompile_substrate_ecdsa::SubstrateEcdsaPrecompile;
 use pallet_evm_precompile_xcm::XcmPrecompile;
+use pallet_evm_precompile_xvm::XvmPrecompile;
 use pallet_precompile_dapps_staking::DappsStakingWrapper;
 use sp_core::H160;
 use sp_std::fmt::Debug;
@@ -51,10 +52,12 @@ where
     Erc20AssetsPrecompileSet<R>: PrecompileSet,
     DappsStakingWrapper<R>: Precompile,
     XcmPrecompile<R, C>: Precompile,
+    XvmPrecompile<R>: Precompile,
     Dispatch<R>: Precompile,
     R: pallet_evm::Config
         + pallet_assets::Config
         + pallet_xcm::Config
+        + pallet_xvm::Config
         + AddressToAssetId<<R as pallet_assets::Config>::AssetId>,
     C: xcm_executor::traits::Convert<MultiLocation, <R as pallet_assets::Config>::AssetId>,
 {
@@ -91,6 +94,8 @@ where
             a if a == hash(20483) => Some(SubstrateEcdsaPrecompile::<R>::execute(handle)),
             // Xcm 0x5004
             a if a == hash(20484) => Some(XcmPrecompile::<R, C>::execute(handle)),
+            // Xvm 0x5005
+            a if a == hash(20484) => Some(XvmPrecompile::<R>::execute(handle)),
             // If the address matches asset prefix, the we route through the asset precompile set
             a if &a.to_fixed_bytes()[0..4] == ASSET_PRECOMPILE_ADDRESS_PREFIX => {
                 Erc20AssetsPrecompileSet::<R>::new().execute(handle)
