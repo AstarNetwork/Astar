@@ -95,7 +95,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("shiden"),
     impl_name: create_runtime_str!("shiden"),
     authoring_version: 1,
-    spec_version: 66,
+    spec_version: 67,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 2,
@@ -157,8 +157,8 @@ impl Contains<Call> for BaseFilter {
         match call {
             // Filter permission-less assets creation/destroying
             Call::Assets(method) => match method {
-                pallet_assets::Call::create { id, .. } => *id < u32::max_value().into(),
-                pallet_assets::Call::destroy { id, .. } => *id < u32::max_value().into(),
+                pallet_assets::Call::create { id, .. } => *id < u32::MAX.into(),
+                pallet_assets::Call::destroy { id, .. } => *id < u32::MAX.into(),
                 _ => true,
             },
             // These modules are not allowed to be called by transactions:
@@ -266,7 +266,7 @@ impl pallet_multisig::Config for Runtime {
 }
 
 parameter_types! {
-    pub const EcdsaUnsignedPriority: TransactionPriority = TransactionPriority::max_value() / 2;
+    pub const EcdsaUnsignedPriority: TransactionPriority = TransactionPriority::MAX / 2;
     pub const CallFee: Balance = SDN / 10;
     pub const CallMagicNumber: u16 = 0x0150;
 }

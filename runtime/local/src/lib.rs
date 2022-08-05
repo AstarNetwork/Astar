@@ -530,7 +530,7 @@ impl pallet_ethereum::Config for Runtime {
 }
 
 parameter_types! {
-    pub const EcdsaUnsignedPriority: TransactionPriority = TransactionPriority::max_value() / 2;
+    pub const EcdsaUnsignedPriority: TransactionPriority = TransactionPriority::MAX / 2;
     pub const CallFee: Balance = AST / 10;
     pub const CallMagicNumber: u16 = 0xff51;
 }
