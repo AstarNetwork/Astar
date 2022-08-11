@@ -3,8 +3,8 @@
 use cumulus_primitives_core::ParaId;
 use sc_service::ChainType;
 use shiden_runtime::{
-    wasm_binary_unwrap, AccountId, AuraId, Balance, BaseFeeConfig, BlockRewardConfig, EVMConfig,
-    ParachainInfoConfig, Precompiles, Signature, SystemConfig, SDN,
+    wasm_binary_unwrap, AccountId, AuraId, Balance, BaseFeeConfig, BlockRewardConfig, CouncilConfig, DemocracyConfig, EVMConfig,
+    ParachainInfoConfig, Precompiles, Signature, SystemConfig, SDN, TechnicalCommitteeConfig, TreasuryConfig,
 };
 use sp_core::{sr25519, Pair, Public};
 
@@ -141,6 +141,16 @@ fn make_genesis(
         assets: Default::default(),
         parachain_system: Default::default(),
         transaction_payment: Default::default(),
+        council: CouncilConfig {
+            members: vec![],
+            phantom: Default::default(),
+        },
+        technical_committee: TechnicalCommitteeConfig {
+            members: vec![],
+            phantom: Default::default(),
+        },
+        democracy: DemocracyConfig::default(),
+        treasury: TreasuryConfig::default(),
     }
 }
 
