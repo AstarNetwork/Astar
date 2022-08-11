@@ -3,8 +3,9 @@
 use cumulus_primitives_core::ParaId;
 use sc_service::ChainType;
 use shiden_runtime::{
-    wasm_binary_unwrap, AccountId, AuraId, Balance, BaseFeeConfig, BlockRewardConfig, CouncilConfig, DemocracyConfig, EVMConfig,
-    ParachainInfoConfig, Precompiles, Signature, SystemConfig, SDN, TechnicalCommitteeConfig, TreasuryConfig,
+    wasm_binary_unwrap, AccountId, AuraId, Balance, BaseFeeConfig, BlockRewardConfig,
+    CouncilConfig, DemocracyConfig, EVMConfig, ParachainInfoConfig, Precompiles, Signature,
+    SystemConfig, TechnicalCommitteeConfig, TreasuryConfig, SDN,
 };
 use sp_core::{sr25519, Pair, Public};
 
