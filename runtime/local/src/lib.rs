@@ -634,10 +634,10 @@ parameter_types! {
     pub LaunchPeriod: BlockNumber = 1 * MINUTES;
     pub VotingPeriod: BlockNumber = 3 * MINUTES;
     pub FastTrackVotingPeriod: BlockNumber = 1 * MINUTES;
-    pub const MinimumDeposit: Balance = 7000 * AST;
-    pub EnactmentPeriod: BlockNumber = 5 * MINUTES;
-    pub VoteLockingPeriod: BlockNumber = 10 * MINUTES;
-    pub CooloffPeriod: BlockNumber = 10 * MINUTES;
+    pub const MinimumDeposit: Balance = 100 * AST;
+    pub EnactmentPeriod: BlockNumber = 1 * MINUTES;
+    pub VoteLockingPeriod: BlockNumber = 3 * MINUTES;
+    pub CooloffPeriod: BlockNumber = 5 * MINUTES;
     pub const InstantAllowed: bool = true;
     pub const PreimageByteDeposit: Balance = deposit(0, 1);
 }

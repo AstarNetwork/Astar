@@ -128,7 +128,7 @@ impl SubstrateCli for Cli {
     }
 
     fn load_spec(&self, id: &str) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
-        load_spec(id, self.run.parachain_id)
+        load_spec(id, self.run.parachain_id.unwrap_or(2007))
     }
 
     fn native_runtime_version(chain_spec: &Box<dyn ChainSpec>) -> &'static RuntimeVersion {
@@ -650,7 +650,10 @@ pub fn run() -> Result<()> {
                         .chain(cli.relaychain_args.iter()),
                 );
 
-                let id = ParaId::from(cli.run.parachain_id);
+                let extension = chain_spec::Extensions::try_get(&*config.chain_spec);
+				let para_id = extension.map(|e| e.para_id);
+                // Default Shiden (2007)
+				let id = ParaId::from(cli.run.parachain_id.clone().or(para_id).unwrap_or(2007));
 
                 let parachain_account =
                     AccountIdConversion::<polkadot_primitives::v2::AccountId>::into_account_truncating(&id);
