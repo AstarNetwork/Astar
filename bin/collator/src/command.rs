@@ -28,6 +28,9 @@ use std::net::SocketAddr;
 #[cfg(feature = "frame-benchmarking")]
 use frame_benchmarking_cli::{BenchmarkCmd, SUBSTRATE_REFERENCE_HARDWARE};
 
+// Shiden (2007)
+const DEFAULT_PARA_ID: u32 = 2007;
+
 trait IdentifyChain {
     fn is_astar(&self) -> bool;
     fn is_dev(&self) -> bool;
@@ -128,7 +131,7 @@ impl SubstrateCli for Cli {
     }
 
     fn load_spec(&self, id: &str) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
-        load_spec(id, self.run.parachain_id.unwrap_or(2007))
+        load_spec(id, self.run.parachain_id.unwrap_or(DEFAULT_PARA_ID))
     }
 
     fn native_runtime_version(chain_spec: &Box<dyn ChainSpec>) -> &'static RuntimeVersion {
@@ -652,8 +655,7 @@ pub fn run() -> Result<()> {
 
                 let extension = chain_spec::Extensions::try_get(&*config.chain_spec);
 				let para_id = extension.map(|e| e.para_id);
-                // Default Shiden (2007)
-				let id = ParaId::from(cli.run.parachain_id.clone().or(para_id).unwrap_or(2007));
+				let id = ParaId::from(cli.run.parachain_id.clone().or(para_id).unwrap_or(DEFAULT_PARA_ID));
 
                 let parachain_account =
                     AccountIdConversion::<polkadot_primitives::v2::AccountId>::into_account_truncating(&id);
