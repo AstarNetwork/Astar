@@ -65,6 +65,8 @@ pallet-evm-precompile-sr25519 = { git = "https://github.com/AstarNetwork/astar-f
 pallet-evm-precompile-substrate-ecdsa = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.28", default-features = false }
 pallet-precompile-dapps-staking = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.28", default-features = false }
 pallet-vesting = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.28", default-features = false }
+chain-extension-trait = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.28", default-features = false }
+dapps-staking-chain-extension = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.28", default-features = false }
 
 # benchmarking
 frame-benchmarking = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.28", default-features = false, optional = true }
@@ -81,6 +83,8 @@ substrate-wasm-builder = { git = "https://github.com/paritytech/substrate", bran
 default = ["std"]
 std = [
 	"codec/std",
+	"chain-extension-trait/std",
+	"dapps-staking-chain-extension/std",
 	"fp-rpc/std",
 	"fp-self-contained/std",
 	"frame-executive/std",
