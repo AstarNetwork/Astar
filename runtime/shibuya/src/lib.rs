@@ -863,11 +863,11 @@ impl pallet_treasury::Config for Runtime {
 }
 
 parameter_types! {
-    pub LaunchPeriod: BlockNumber = 3 * DAYS;
-    pub VotingPeriod: BlockNumber = 7 * DAYS;
+    pub LaunchPeriod: BlockNumber = 7 * DAYS;
+    pub VotingPeriod: BlockNumber = 14 * DAYS;
     pub FastTrackVotingPeriod: BlockNumber = 1 * DAYS;
-    pub const MinimumDeposit: Balance = 100 * SDN;
-    pub EnactmentPeriod: BlockNumber = 1 * DAYS;
+    pub const MinimumDeposit: Balance = 1000 * SDN;
+    pub EnactmentPeriod: BlockNumber = 2 * DAYS;
     pub VoteLockingPeriod: BlockNumber = 7 * DAYS;
     pub CooloffPeriod: BlockNumber = 7 * DAYS;
     pub const InstantAllowed: bool = true;
