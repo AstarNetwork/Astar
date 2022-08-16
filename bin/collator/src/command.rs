@@ -67,13 +67,19 @@ impl<T: sc_service::ChainSpec + 'static> IdentifyChain for T {
 
 fn load_spec(
     id: &str,
-    para_id: u32,
+    para_id: Option<u32>,
 ) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
     Ok(match id {
         "dev" => Box::new(development_config()),
-        "astar-dev" => Box::new(chain_spec::astar::get_chain_spec(para_id)),
-        "shibuya-dev" => Box::new(chain_spec::shibuya::get_chain_spec(para_id)),
-        "shiden-dev" => Box::new(chain_spec::shiden::get_chain_spec(para_id)),
+        "astar-dev" => Box::new(chain_spec::astar::get_chain_spec(
+            para_id.ok_or::<String>("parachain id is missing".into())?,
+        )),
+        "shibuya-dev" => Box::new(chain_spec::shibuya::get_chain_spec(
+            para_id.ok_or::<String>("parachain id is missing".into())?,
+        )),
+        "shiden-dev" => Box::new(chain_spec::shiden::get_chain_spec(
+            para_id.ok_or::<String>("parachain id is missing".into())?,
+        )),
         "astar" => Box::new(chain_spec::AstarChainSpec::from_json_bytes(
             &include_bytes!("../res/astar.raw.json")[..],
         )?),
@@ -650,7 +656,9 @@ pub fn run() -> Result<()> {
                         .chain(cli.relaychain_args.iter()),
                 );
 
-                let id = ParaId::from(cli.run.parachain_id);
+                let extension = chain_spec::Extensions::try_get(&*config.chain_spec);
+				let para_id = extension.map(|e| e.para_id);
+				let id = ParaId::from(cli.run.parachain_id.clone().or(para_id).ok_or::<String>("parachain id is missing".into())?);
 
                 let parachain_account =
                     AccountIdConversion::<polkadot_primitives::v2::AccountId>::into_account_truncating(&id);
