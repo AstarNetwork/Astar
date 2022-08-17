@@ -21,7 +21,7 @@ jobs:
     steps:
     - uses: actions/checkout@v2
 
-    - run: wget https://github.com/AstarNetwork/Astar/releases/download/v${{ github.event.inputs.astar_tag }}/astar-collator-${{ github.event.inputs.astar_tag }}-ubuntu-x86_64.tar.gz
+    - run: wget https://github.com/AstarNetwork/Astar/releases/download/v${{ github.event.inputs.astar_tag }}/astar-collator-v${{ github.event.inputs.astar_tag }}-ubuntu-x86_64.tar.gz
 
     - run: tar -xvf astar-collator-*-ubuntu-x86_64.tar.gz
 
