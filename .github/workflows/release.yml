@@ -58,6 +58,47 @@ jobs:
         name: astar-ubuntu-latest-x86_64
         path: target/release/astar-collator
 
+  rpc-tests:
+    needs: native-linux
+    runs-on: [self-hosted, Linux, X64]
+    strategy:
+      matrix:
+        network: [astar, shiden]
+
+    steps:
+    - name: Checkout the source code
+      uses: actions/checkout@v3
+
+    - run: mkdir -p rpc-tests/bin
+
+    - name: Download pre-built linux collator binary
+      uses: actions/download-artifact@v3
+      with:
+        name: astar-ubuntu-latest-x86_64
+
+    - name: Make binary executable and copy it to rpc tests folder
+      run: chmod +x astar-collator && cp astar-collator rpc-tests/bin/astar-collator
+
+    - name: Copy polkadot relay chain binary
+      run: |
+        wget https://github.com/paritytech/polkadot/releases/download/v0.9.25/polkadot
+        chmod +x ./polkadot
+        mv polkadot rpc-tests/bin/polkadot
+
+    - name: Use Node.js 16.x
+      uses: actions/setup-node@v2
+      with:
+        node-version: 16.x
+    - name: Install yarn
+      run: |
+        npm install -g yarn
+        yarn install
+      working-directory: ./rpc-tests
+    - name: Run tests
+      run: yarn test:${{ matrix.network }}
+      working-directory: ./rpc-tests
+
+
   native-macos:
     needs: checks-and-tests
     runs-on: macos-latest
@@ -104,7 +145,7 @@ jobs:
       uses: crazy-max/ghaction-docker-meta@v1
       with:
         images: staketechnologies/astar-collator
-        tag-custom: shiden 
+        tag-custom: shiden
         tag-sha: true # add git short SHA as Docker tag
 
     - name: Download pre-built linux collator binary
@@ -118,7 +159,7 @@ jobs:
     - name: Build & Push docker image
       uses: docker/build-push-action@v2
       with:
-        context: third-party/docker 
+        context: third-party/docker
         platforms: linux/amd64
         labels: ${{ steps.docker_meta.outputs.labels }}
         tags: ${{ steps.docker_meta.outputs.tags }}

@@ -49,6 +49,7 @@ const config = (network) => ({
 					"port": 31200,
 					"name": "alice",
 					"flags": [
+						"--parachain-id=2007",
 						"--unsafe-ws-external",
 						"--unsafe-rpc-external",
 						"--rpc-port=8545",
@@ -61,7 +62,7 @@ const config = (network) => ({
 					"wsPort": 9989,
 					"port": 31201,
 					"name": "bob",
-					"flags": ["--", "--execution=wasm"]
+					"flags": ["--parachain-id=2007", "--", "--execution=wasm"]
 				}
 			]
 		}
