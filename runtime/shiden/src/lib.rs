@@ -800,7 +800,7 @@ impl pallet_ethereum::Config for Runtime {
 }
 
 parameter_types! {
-    pub CouncilMotionDuration: BlockNumber = 36 * HOURS;
+    pub CouncilMotionDuration: BlockNumber = 72 * HOURS;
 }
 
 type CouncilCollective = pallet_collective::Instance1;
@@ -816,7 +816,7 @@ impl pallet_collective::Config<CouncilCollective> for Runtime {
 }
 
 parameter_types! {
-    pub const TechnicalCommitteeMotionDuration: BlockNumber = 36 * HOURS;
+    pub const TechnicalCommitteeMotionDuration: BlockNumber = 72 * HOURS;
 }
 
 type TechnicalCommitteeCollective = pallet_collective::Instance2;
@@ -833,8 +833,8 @@ impl pallet_collective::Config<TechnicalCommitteeCollective> for Runtime {
 
 parameter_types! {
     pub const ProposalBond: Permill = Permill::from_percent(5);
-    pub const ProposalBondMinimum: Balance = 100 * SDN;
-    pub const SpendPeriod: BlockNumber = 1 * DAYS;
+    pub const ProposalBondMinimum: Balance = 1000 * SDN;
+    pub const SpendPeriod: BlockNumber = 3 * DAYS;
 }
 
 impl pallet_treasury::Config for Runtime {
