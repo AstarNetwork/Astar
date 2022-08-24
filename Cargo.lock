@@ -5848,7 +5848,7 @@ dependencies = [
 [[package]]
 name = "pallet-dapps-staking"
 version = "3.6.1"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.27#14a5aa9956b4bfb3b067ca84ff320250eecad5cc"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=feature/dapps-staking-root-only-registration#345540886c6dcac2785fb53561ed059955620030"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -6003,7 +6003,7 @@ dependencies = [
  "pallet-balances",
  "pallet-evm",
  "parity-scale-codec",
- "precompile-utils",
+ "precompile-utils 0.4.1 (git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.27)",
  "slices",
  "sp-core 6.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.27)",
  "sp-io 6.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.27)",
@@ -6086,7 +6086,7 @@ dependencies = [
  "num_enum",
  "pallet-evm",
  "parity-scale-codec",
- "precompile-utils",
+ "precompile-utils 0.4.1 (git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.27)",
  "sp-core 6.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.27)",
  "sp-io 6.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.27)",
  "sp-std 4.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.27)",
@@ -6102,7 +6102,7 @@ dependencies = [
  "num_enum",
  "pallet-evm",
  "parity-scale-codec",
- "precompile-utils",
+ "precompile-utils 0.4.1 (git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.27)",
  "sp-core 6.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.27)",
  "sp-io 6.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.27)",
  "sp-std 4.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.27)",
@@ -6123,7 +6123,7 @@ dependencies = [
  "pallet-evm-precompile-assets-erc20",
  "pallet-xcm 0.9.27 (git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.27)",
  "parity-scale-codec",
- "precompile-utils",
+ "precompile-utils 0.4.1 (git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.27)",
  "sp-core 6.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.27)",
  "sp-io 6.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.27)",
  "sp-std 4.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.27)",
@@ -6376,7 +6376,7 @@ dependencies = [
 [[package]]
 name = "pallet-precompile-dapps-staking"
 version = "3.6.1"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.27#14a5aa9956b4bfb3b067ca84ff320250eecad5cc"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=feature/dapps-staking-root-only-registration#345540886c6dcac2785fb53561ed059955620030"
 dependencies = [
  "fp-evm",
  "frame-support",
@@ -6386,7 +6386,7 @@ dependencies = [
  "pallet-dapps-staking",
  "pallet-evm",
  "parity-scale-codec",
- "precompile-utils",
+ "precompile-utils 0.4.1 (git+https://github.com/AstarNetwork/astar-frame?branch=feature/dapps-staking-root-only-registration)",
  "scale-info",
  "sp-core 6.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.27)",
  "sp-runtime",
@@ -8255,6 +8255,29 @@ checksum = "eb9f9e6e233e5c4a35559a617bf40a4ec447db2e84c20b55a6f83167b7e57872"
 [[package]]
 name = "precompile-utils"
 version = "0.4.1"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=feature/dapps-staking-root-only-registration#345540886c6dcac2785fb53561ed059955620030"
+dependencies = [
+ "evm 0.35.0 (git+https://github.com/rust-blockchain/evm?branch=master)",
+ "fp-evm",
+ "frame-support",
+ "frame-system",
+ "impl-trait-for-tuples",
+ "log",
+ "num_enum",
+ "pallet-evm",
+ "parity-scale-codec",
+ "precompile-utils-macro 0.1.0 (git+https://github.com/AstarNetwork/astar-frame?branch=feature/dapps-staking-root-only-registration)",
+ "sha3 0.10.1",
+ "sp-core 6.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.27)",
+ "sp-io 6.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.27)",
+ "sp-runtime",
+ "sp-std 4.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.27)",
+ "xcm",
+]
+
+[[package]]
+name = "precompile-utils"
+version = "0.4.1"
 source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.27#14a5aa9956b4bfb3b067ca84ff320250eecad5cc"
 dependencies = [
  "evm 0.35.0 (git+https://github.com/rust-blockchain/evm?branch=master)",
@@ -8266,13 +8289,25 @@ dependencies = [
  "num_enum",
  "pallet-evm",
  "parity-scale-codec",
- "precompile-utils-macro",
+ "precompile-utils-macro 0.1.0 (git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.27)",
  "sha3 0.10.1",
  "sp-core 6.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.27)",
  "sp-io 6.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.27)",
  "sp-runtime",
  "sp-std 4.0.0 (git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.27)",
  "xcm",
+]
+
+[[package]]
+name = "precompile-utils-macro"
+version = "0.1.0"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=feature/dapps-staking-root-only-registration#345540886c6dcac2785fb53561ed059955620030"
+dependencies = [
+ "num_enum",
+ "proc-macro2",
+ "quote",
+ "sha3 0.8.2",
+ "syn",
 ]
 
 [[package]]
