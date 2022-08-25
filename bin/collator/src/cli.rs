@@ -95,10 +95,8 @@ pub struct RunCmd {
     pub base: cumulus_client_cli::RunCmd,
 
     /// Id of the parachain this collator collates for.
-    ///
-    /// Default: 2007 (shiden)
-    #[clap(long, default_value = "2007")]
-    pub parachain_id: u32,
+    #[clap(long)]
+    pub parachain_id: Option<u32>,
 
     /// EXPERIMENTAL: Specify an URL to a relay chain full node to communicate with.
     #[clap(
