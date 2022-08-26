@@ -6165,7 +6165,7 @@ dependencies = [
 [[package]]
 name = "pallet-evm-precompile-xvm"
 version = "0.1.0"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=feature/add-pallet-xvm#8d0cf409abde59a0a50d218986375f510012e247"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=feature/add-pallet-xvm#ad5d247965f9571c57b7f42861a15f2fbc37d84d"
 dependencies = [
  "fp-evm",
  "frame-support",
@@ -6842,7 +6842,7 @@ dependencies = [
 [[package]]
 name = "pallet-xvm"
 version = "0.1.0"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=feature/add-pallet-xvm#8d0cf409abde59a0a50d218986375f510012e247"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=feature/add-pallet-xvm#ad5d247965f9571c57b7f42861a15f2fbc37d84d"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -8326,7 +8326,7 @@ checksum = "eb9f9e6e233e5c4a35559a617bf40a4ec447db2e84c20b55a6f83167b7e57872"
 [[package]]
 name = "precompile-utils"
 version = "0.4.1"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=feature/add-pallet-xvm#8d0cf409abde59a0a50d218986375f510012e247"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=feature/add-pallet-xvm#ad5d247965f9571c57b7f42861a15f2fbc37d84d"
 dependencies = [
  "evm 0.35.0 (git+https://github.com/rust-blockchain/evm?branch=master)",
  "fp-evm",
@@ -8372,7 +8372,7 @@ dependencies = [
 [[package]]
 name = "precompile-utils-macro"
 version = "0.1.0"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=feature/add-pallet-xvm#8d0cf409abde59a0a50d218986375f510012e247"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=feature/add-pallet-xvm#ad5d247965f9571c57b7f42861a15f2fbc37d84d"
 dependencies = [
  "num_enum",
  "proc-macro2",
