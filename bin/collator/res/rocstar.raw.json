@@ -3,8 +3,8 @@
   "id": "astar",
   "chainType": "Live",
   "bootNodes": [
-    "/ip4/35.223.63.7/tcp/30333/p2p/12D3KooWN8xgFJxKwgoqwakmgpy32pkQ1Wocqu847xMwsR6XWa8V",
-    "/ip4/34.72.170.45/tcp/30333/p2p/12D3KooWKEjMfD2BLmzhfcgUp6LYFuVVaWERsvkqmXEythhj9G2f"
+    "/ip4/35.239.187.141/tcp/30333/p2p/12D3KooWK1aeTm4in14GMxJGTA84HdQKADZbdK1wX5mV7UMyBTSH",
+    "/ip4/35.193.7.84/tcp/30333/p2p/12D3KooWEwfkxq6893rRSmxYHo5fCbqbFvZwNkU1FryLhjmMrYYf"
   ],
   "telemetryEndpoints": null,
   "protocolId": "rocstar",
