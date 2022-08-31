@@ -772,8 +772,8 @@ construct_runtime!(
         Assets: pallet_assets,
         Scheduler: pallet_scheduler,
         Democracy: pallet_democracy,
-        Council: pallet_collective<Instance1>,
-        TechnicalCommittee: pallet_collective<Instance2>,
+        Council: pallet_collective::<Instance1>,
+        TechnicalCommittee: pallet_collective::<Instance2>,
         Treasury: pallet_treasury,
     }
 );
