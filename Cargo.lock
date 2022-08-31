@@ -162,7 +162,11 @@ checksum = "9b34d609dfbaf33d6889b2b7106d3ca345eacad44200913df5ba02bfd31d2ba9"
 
 [[package]]
 name = "astar-collator"
+<<<<<<< HEAD
 version = "4.19.0"
+=======
+version = "4.18.2"
+>>>>>>> 563d4eb2 (increment pallet versions)
 dependencies = [
  "astar-runtime",
  "async-trait",
@@ -252,7 +256,11 @@ dependencies = [
 
 [[package]]
 name = "astar-runtime"
+<<<<<<< HEAD
 version = "4.19.0"
+=======
+version = "4.18.2"
+>>>>>>> 563d4eb2 (increment pallet versions)
 dependencies = [
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-dmp-queue",
@@ -4807,7 +4815,11 @@ checksum = "d4d2456c373231a208ad294c33dc5bff30051eafd954cd4caae83a712b12854d"
 
 [[package]]
 name = "local-runtime"
+<<<<<<< HEAD
 version = "4.19.0"
+=======
+version = "4.18.2"
+>>>>>>> 563d4eb2 (increment pallet versions)
 dependencies = [
  "chain-extension-trait",
  "dapps-staking-chain-extension",
@@ -10591,7 +10603,11 @@ dependencies = [
 
 [[package]]
 name = "shibuya-runtime"
+<<<<<<< HEAD
 version = "4.19.0"
+=======
+version = "4.18.2"
+>>>>>>> 563d4eb2 (increment pallet versions)
 dependencies = [
  "chain-extension-trait",
  "cumulus-pallet-aura-ext",
@@ -10684,7 +10700,11 @@ dependencies = [
 
 [[package]]
 name = "shiden-runtime"
+<<<<<<< HEAD
 version = "4.19.0"
+=======
+version = "4.18.2"
+>>>>>>> 563d4eb2 (increment pallet versions)
 dependencies = [
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-dmp-queue",
