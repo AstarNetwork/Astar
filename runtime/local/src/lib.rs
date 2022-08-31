@@ -403,26 +403,6 @@ impl<AccountId> Default for SmartContract<AccountId> {
     }
 }
 
-#[cfg(not(feature = "runtime-benchmarks"))]
-impl<AccountId> pallet_dapps_staking::IsContract for SmartContract<AccountId> {
-    fn is_valid(&self) -> bool {
-        match self {
-            SmartContract::Wasm(_account) => false,
-            SmartContract::Evm(account) => EVM::account_codes(&account).len() > 0,
-        }
-    }
-}
-
-#[cfg(feature = "runtime-benchmarks")]
-impl<AccountId> pallet_dapps_staking::IsContract for SmartContract<AccountId> {
-    fn is_valid(&self) -> bool {
-        match self {
-            SmartContract::Wasm(_account) => false,
-            SmartContract::Evm(_account) => true,
-        }
-    }
-}
-
 impl pallet_utility::Config for Runtime {
     type Event = Event;
     type Call = Call;
@@ -431,9 +411,9 @@ impl pallet_utility::Config for Runtime {
 }
 
 parameter_types! {
-    // Tells `pallet_base_fee` whether to calculate a new BaseFee `on_finalize` or not.
-    pub IsActive: bool = false;
     pub DefaultBaseFeePerGas: U256 = (MILLIAST / 1_000_000).into();
+    // At the moment, we don't use dynamic fee calculation for local chain by default
+    pub DefaultElasticity: Permill = Permill::zero();
 }
 
 pub struct BaseFeeThreshold;
@@ -452,8 +432,8 @@ impl pallet_base_fee::BaseFeeThreshold for BaseFeeThreshold {
 impl pallet_base_fee::Config for Runtime {
     type Event = Event;
     type Threshold = BaseFeeThreshold;
-    type IsActive = IsActive;
     type DefaultBaseFeePerGas = DefaultBaseFeePerGas;
+    type DefaultElasticity = DefaultElasticity;
 }
 
 /// Current approximation of the gas/s consumption considering
@@ -766,10 +746,11 @@ impl pallet_sudo::Config for Runtime {
 }
 
 construct_runtime!(
-    pub enum Runtime where
+    pub struct Runtime
+    where
         Block = Block,
         NodeBlock = generic::Block<Header, sp_runtime::OpaqueExtrinsic>,
-        UncheckedExtrinsic = UncheckedExtrinsic
+        UncheckedExtrinsic = UncheckedExtrinsic,
     {
         System: frame_system,
         Utility: pallet_utility,
@@ -791,8 +772,8 @@ construct_runtime!(
         Assets: pallet_assets,
         Scheduler: pallet_scheduler,
         Democracy: pallet_democracy,
-        Council: pallet_collective::<Instance1>,
-        TechnicalCommittee: pallet_collective::<Instance2>,
+        Council: pallet_collective<Instance1>,
+        TechnicalCommittee: pallet_collective<Instance2>,
         Treasury: pallet_treasury,
     }
 );
@@ -1028,6 +1009,23 @@ impl_runtime_apis! {
             len: u32,
         ) -> pallet_transaction_payment::FeeDetails<Balance> {
             TransactionPayment::query_fee_details(uxt, len)
+        }
+    }
+
+    impl pallet_transaction_payment_rpc_runtime_api::TransactionPaymentCallApi<Block, Balance, Call>
+        for Runtime
+    {
+        fn query_call_info(
+            call: Call,
+            len: u32,
+        ) -> pallet_transaction_payment::RuntimeDispatchInfo<Balance> {
+            TransactionPayment::query_call_info(call, len)
+        }
+        fn query_call_fee_details(
+            call: Call,
+            len: u32,
+        ) -> pallet_transaction_payment::FeeDetails<Balance> {
+            TransactionPayment::query_call_fee_details(call, len)
         }
     }
 
