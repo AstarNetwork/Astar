@@ -173,6 +173,8 @@ where
             block_data_cache.clone(),
             fee_history_cache,
             fee_history_limit,
+            // Unit multiplier for non-transactional - can be changed in the future
+            1,
         )
         .into_rpc(),
     )?;

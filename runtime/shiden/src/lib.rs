@@ -95,7 +95,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("shiden"),
     impl_name: create_runtime_str!("shiden"),
     authoring_version: 1,
-    spec_version: 67,
+    spec_version: 68,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 2,
@@ -322,26 +322,6 @@ pub enum SmartContract<AccountId> {
 impl<AccountId> Default for SmartContract<AccountId> {
     fn default() -> Self {
         SmartContract::Evm(H160::repeat_byte(0x00))
-    }
-}
-
-#[cfg(not(feature = "runtime-benchmarks"))]
-impl<AccountId> pallet_dapps_staking::IsContract for SmartContract<AccountId> {
-    fn is_valid(&self) -> bool {
-        match self {
-            SmartContract::Wasm(_account) => false,
-            SmartContract::Evm(account) => EVM::account_codes(&account).len() > 0,
-        }
-    }
-}
-
-#[cfg(feature = "runtime-benchmarks")]
-impl<AccountId> pallet_dapps_staking::IsContract for SmartContract<AccountId> {
-    fn is_valid(&self) -> bool {
-        match self {
-            SmartContract::Wasm(_account) => false,
-            SmartContract::Evm(_account) => true,
-        }
     }
 }
 
@@ -680,9 +660,9 @@ impl pallet_transaction_payment::Config for Runtime {
 }
 
 parameter_types! {
-    // Tells `pallet_base_fee` whether to calculate a new BaseFee `on_finalize` or not.
-    pub IsActive: bool = false;
     pub DefaultBaseFeePerGas: U256 = (MILLISDN / 1_000_000).into();
+    // At the moment, we don't use dynamic fee calculation for Shiden by default
+    pub DefaultElasticity: Permill = Permill::zero();
 }
 
 pub struct BaseFeeThreshold;
@@ -701,8 +681,8 @@ impl pallet_base_fee::BaseFeeThreshold for BaseFeeThreshold {
 impl pallet_base_fee::Config for Runtime {
     type Event = Event;
     type Threshold = BaseFeeThreshold;
-    type IsActive = IsActive;
     type DefaultBaseFeePerGas = DefaultBaseFeePerGas;
+    type DefaultElasticity = DefaultElasticity;
 }
 
 /// Current approximation of the gas/s consumption considering
@@ -803,7 +783,7 @@ impl pallet_xc_asset_config::Config for Runtime {
 }
 
 construct_runtime!(
-    pub enum Runtime where
+    pub struct Runtime where
         Block = Block,
         NodeBlock = generic::Block<Header, sp_runtime::OpaqueExtrinsic>,
         UncheckedExtrinsic = UncheckedExtrinsic
@@ -895,7 +875,23 @@ pub type Executive = frame_executive::Executive<
     frame_system::ChainContext<Runtime>,
     Runtime,
     AllPalletsWithSystem,
+    (ElasticityCleanup,),
 >;
+
+use frame_support::traits::OnRuntimeUpgrade;
+pub struct ElasticityCleanup;
+impl OnRuntimeUpgrade for ElasticityCleanup {
+    fn on_runtime_upgrade() -> Weight {
+        pallet_base_fee::Elasticity::<Runtime>::put(Permill::zero());
+        <Runtime as frame_system::Config>::DbWeight::get().writes(1)
+    }
+
+    #[cfg(feature = "try-runtime")]
+    fn post_upgrade() -> Result<(), &'static str> {
+        assert!(pallet_base_fee::Elasticity::<Runtime>::get().is_zero());
+        Ok(())
+    }
+}
 
 impl fp_self_contained::SelfContainedCall for Call {
     type SignedInfo = H160;
@@ -1031,6 +1027,23 @@ impl_runtime_apis! {
         }
         fn query_fee_details(uxt: <Block as BlockT>::Extrinsic, len: u32) -> FeeDetails<Balance> {
             TransactionPayment::query_fee_details(uxt, len)
+        }
+    }
+
+    impl pallet_transaction_payment_rpc_runtime_api::TransactionPaymentCallApi<Block, Balance, Call>
+        for Runtime
+    {
+        fn query_call_info(
+            call: Call,
+            len: u32,
+        ) -> pallet_transaction_payment::RuntimeDispatchInfo<Balance> {
+            TransactionPayment::query_call_info(call, len)
+        }
+        fn query_call_fee_details(
+            call: Call,
+            len: u32,
+        ) -> pallet_transaction_payment::FeeDetails<Balance> {
+            TransactionPayment::query_call_fee_details(call, len)
         }
     }
 
