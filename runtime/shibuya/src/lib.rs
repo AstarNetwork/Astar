@@ -1065,7 +1065,8 @@ impl OnRuntimeUpgrade for ElasticityCleanup {
     fn post_upgrade() -> Result<(), &'static str> {
         assert!(pallet_base_fee::Elasticity::<Runtime>::get().is_zero());
         Ok(())
-
+    }
+}
 #[derive(Default)]
 pub struct DappsStakingChainExtension;
 
