@@ -745,6 +745,8 @@ impl pallet_sudo::Config for Runtime {
     type Call = Call;
 }
 
+// TODO: remove this once https://github.com/paritytech/substrate/issues/12161 is resolved
+#[rustfmt::skip]
 construct_runtime!(
     pub struct Runtime
     where
