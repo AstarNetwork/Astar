@@ -848,8 +848,8 @@ impl ChainExtension<Runtime> for DappsStakingChainExtension {
         E: Ext<T = Runtime>,
         <E::T as SysConfig>::AccountId: UncheckedFrom<<E::T as SysConfig>::Hash> + AsRef<[u8]>,
     {
-        DappsStakingExtension::execute_func::<E>(env.func_id().into(), env)?;
-        Ok(RetVal::Converging(0))
+        let retval = DappsStakingExtension::execute_func::<E>(env.func_id().into(), env)?;
+        Ok(retval)
     }
 }
 
