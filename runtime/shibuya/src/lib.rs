@@ -38,19 +38,27 @@ use sp_runtime::{
     transaction_validity::{
         TransactionPriority, TransactionSource, TransactionValidity, TransactionValidityError,
     },
-    ApplyExtrinsicResult, FixedPointNumber, Perbill, Permill, Perquintill, RuntimeDebug,
+    ApplyExtrinsicResult, DispatchError, FixedPointNumber, Perbill, Permill, Perquintill,
+    RuntimeDebug,
 };
 use sp_std::prelude::*;
 
 use pallet_evm_precompile_assets_erc20::AddressToAssetId;
 use xcm_primitives::AssetLocationIdConverter;
 
+use chain_extension_trait::ChainExtensionExec;
+use dapps_staking_chain_extension::DappsStakingExtension;
+
 #[cfg(any(feature = "std", test))]
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
 
 pub use pallet_balances::Call as BalancesCall;
+use pallet_contracts::chain_extension::{
+    ChainExtension, Environment, Ext, InitState, RegisteredChainExtension, RetVal, SysConfig,
+};
 pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
+use sp_core::crypto::UncheckedFrom;
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
 
@@ -608,7 +616,7 @@ impl pallet_contracts::Config for Runtime {
     type CallStack = [pallet_contracts::Frame<Self>; 31];
     type WeightPrice = pallet_transaction_payment::Pallet<Self>;
     type WeightInfo = pallet_contracts::weights::SubstrateWeight<Self>;
-    type ChainExtension = ();
+    type ChainExtension = DappsStakingChainExtension;
     type DeletionQueueDepth = ConstU32<128>;
     type DeletionWeightLimit = DeletionWeightLimit;
     type Schedule = Schedule;
@@ -1057,6 +1065,22 @@ impl OnRuntimeUpgrade for ElasticityCleanup {
     fn post_upgrade() -> Result<(), &'static str> {
         assert!(pallet_base_fee::Elasticity::<Runtime>::get().is_zero());
         Ok(())
+    }
+}
+#[derive(Default)]
+pub struct DappsStakingChainExtension;
+
+impl RegisteredChainExtension<Runtime> for DappsStakingChainExtension {
+    const ID: u16 = 00;
+}
+
+impl ChainExtension<Runtime> for DappsStakingChainExtension {
+    fn call<E: Ext>(&mut self, env: Environment<E, InitState>) -> Result<RetVal, DispatchError>
+    where
+        E: Ext<T = Runtime>,
+        <E::T as SysConfig>::AccountId: UncheckedFrom<<E::T as SysConfig>::Hash> + AsRef<[u8]>,
+    {
+        DappsStakingExtension::execute_func::<E>(env.func_id().into(), env)
     }
 }
 

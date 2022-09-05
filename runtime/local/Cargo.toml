@@ -57,6 +57,8 @@ frame-system-rpc-runtime-api = { git = "https://github.com/paritytech/substrate"
 pallet-transaction-payment-rpc-runtime-api = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.28", default-features = false }
 
 # Astar pallets
+chain-extension-trait = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.28", default-features = false }
+dapps-staking-chain-extension = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.28", default-features = false }
 pallet-block-reward = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.28", default-features = false }
 pallet-custom-signatures = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.28", default-features = false }
 pallet-dapps-staking = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.28", default-features = false }
@@ -81,6 +83,8 @@ substrate-wasm-builder = { git = "https://github.com/paritytech/substrate", bran
 default = ["std"]
 std = [
 	"codec/std",
+	"chain-extension-trait/std",
+	"dapps-staking-chain-extension/std",
 	"fp-rpc/std",
 	"fp-self-contained/std",
 	"frame-executive/std",
