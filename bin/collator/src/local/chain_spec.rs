@@ -138,8 +138,7 @@ fn testnet_genesis(
         ethereum: Default::default(),
         base_fee: BaseFeeConfig::new(
             sp_core::U256::from(1_000_000_000u64),
-            false,
-            sp_runtime::Permill::from_parts(125_000),
+            sp_runtime::Permill::zero(),
         ),
         sudo: SudoConfig {
             key: Some(root_key),
