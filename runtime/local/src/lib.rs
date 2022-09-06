@@ -9,10 +9,11 @@ include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 use chain_extension_trait::ChainExtensionExec;
 use codec::{Decode, Encode};
 use dapps_staking_chain_extension::DappsStakingExtension;
+use pallet_chain_extension_rmrk::RmrkExtension;
 use frame_support::{
     construct_runtime, parameter_types,
     traits::{
-        ConstU32, Currency, EitherOfDiverse, EqualPrivilegeOnly, FindAuthor, Get,
+        AsEnsureOriginWithArg, ConstU32, Currency, EitherOfDiverse, EqualPrivilegeOnly, FindAuthor, Get,
         KeyOwnerProofSystem, Nothing,
     },
     weights::{
@@ -21,7 +22,7 @@ use frame_support::{
     },
     ConsensusEngineId, PalletId,
 };
-use frame_system::limits::{BlockLength, BlockWeights};
+use frame_system::{limits::{BlockLength, BlockWeights}, EnsureSigned};
 use pallet_contracts::DefaultContractAccessWeight;
 use pallet_evm::{FeeCalculator, Runner};
 use pallet_evm_precompile_assets_erc20::AddressToAssetId;
@@ -53,6 +54,7 @@ use pallet_contracts::chain_extension::{
 pub use pallet_grandpa::AuthorityId as GrandpaId;
 pub use pallet_timestamp::Call as TimestampCall;
 use pallet_transaction_payment::CurrencyAdapter;
+use pallet_rmrk_core;
 pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 use sp_core::crypto::UncheckedFrom;
 #[cfg(any(feature = "std", test))]
@@ -735,7 +737,7 @@ impl pallet_contracts::Config for Runtime {
     type CallStack = [pallet_contracts::Frame<Self>; 31];
     type WeightPrice = pallet_transaction_payment::Pallet<Self>;
     type WeightInfo = pallet_contracts::weights::SubstrateWeight<Self>;
-    type ChainExtension = DappsStakingChainExtension;
+    type ChainExtension = (DappsStakingChainExtension, RmrkChainExtension);
     type DeletionQueueDepth = ConstU32<128>;
     type DeletionWeightLimit = DeletionWeightLimit;
     type Schedule = Schedule;
@@ -749,6 +751,55 @@ impl pallet_contracts::Config for Runtime {
 impl pallet_sudo::Config for Runtime {
     type Event = Event;
     type Call = Call;
+}
+
+parameter_types! {
+	pub const MaxRecursions: u32 = 10;
+	pub const ResourceSymbolLimit: u32 = 10;
+	pub const PartsLimit: u32 = 25;
+	pub const MaxPriorities: u32 = 25;
+	pub const CollectionSymbolLimit: u32 = 100;
+	pub const MaxResourcesOnMint: u32 = 100;
+}
+
+impl pallet_rmrk_core::Config for Runtime {
+	type Event = Event;
+	type ProtocolOrigin = frame_system::EnsureRoot<AccountId>;
+	type MaxRecursions = MaxRecursions;
+	type ResourceSymbolLimit = ResourceSymbolLimit;
+	type PartsLimit = PartsLimit;
+	type MaxPriorities = MaxPriorities;
+	type CollectionSymbolLimit = CollectionSymbolLimit;
+	type MaxResourcesOnMint = MaxResourcesOnMint;
+}
+
+parameter_types! {
+    pub const UniquesStringLimit: u32 = 128;
+    pub const ItemDeposit: Balance = 1 * AST;
+    pub const CollectionDeposit: Balance = 10 * MILLIAST;
+	pub const UniquesMetadataDepositBase: Balance = 10 * MILLIAST;
+	pub const AttributeDepositBase: Balance = 10 * MILLIAST;
+	pub const KeyLimit: u32 = 32;
+	pub const ValueLimit: u32 = 256;
+}
+
+impl pallet_uniques::Config for Runtime {
+	type Event = Event;
+	type CollectionId = u32;
+	type ItemId = u32;
+	type Currency = Balances;
+	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
+	type CreateOrigin = AsEnsureOriginWithArg<EnsureSigned<AccountId>>;
+	type Locker = pallet_rmrk_core::Pallet<Runtime>;
+	type CollectionDeposit = CollectionDeposit;
+	type ItemDeposit = ItemDeposit;
+	type MetadataDepositBase = UniquesMetadataDepositBase;
+	type AttributeDepositBase = AttributeDepositBase;
+	type DepositPerByte = DepositPerByte;
+	type StringLimit = UniquesStringLimit;
+	type KeyLimit = KeyLimit;
+	type ValueLimit = ValueLimit;
+	type WeightInfo = ();
 }
 
 // TODO: remove this once https://github.com/paritytech/substrate/issues/12161 is resolved
@@ -783,6 +834,8 @@ construct_runtime!(
         Council: pallet_collective::<Instance1>,
         TechnicalCommittee: pallet_collective::<Instance2>,
         Treasury: pallet_treasury,
+        RmrkCore: pallet_rmrk_core,
+		Uniques: pallet_uniques,
     }
 );
 
@@ -850,6 +903,23 @@ impl ChainExtension<Runtime> for DappsStakingChainExtension {
     {
         DappsStakingExtension::execute_func::<E>(env.func_id().into(), env)
     }
+}
+
+#[derive(Default)]
+pub struct RmrkChainExtension;
+
+impl RegisteredChainExtension<Runtime> for RmrkChainExtension {
+	const ID: u16 = 0x0001;
+}
+
+impl ChainExtension<Runtime> for RmrkChainExtension {
+	fn call<E: Ext>(&mut self, env: Environment<E, InitState>) -> Result<RetVal, DispatchError>
+	where
+		E: Ext<T = Runtime>,
+		<E::T as SysConfig>::AccountId: UncheckedFrom<<E::T as SysConfig>::Hash> + AsRef<[u8]>,
+	{
+        RmrkExtension::execute_func::<E>(env.func_id().into(), env)
+	}
 }
 
 impl fp_self_contained::SelfContainedCall for Call {

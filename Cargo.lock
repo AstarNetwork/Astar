@@ -4828,6 +4828,7 @@ dependencies = [
  "pallet-balances",
  "pallet-base-fee",
  "pallet-block-reward",
+ "pallet-chain-extension-rmrk",
  "pallet-collective",
  "pallet-contracts",
  "pallet-contracts-primitives",
@@ -4850,12 +4851,14 @@ dependencies = [
  "pallet-grandpa",
  "pallet-precompile-dapps-staking",
  "pallet-randomness-collective-flip",
+ "pallet-rmrk-core",
  "pallet-scheduler",
  "pallet-sudo",
  "pallet-timestamp",
  "pallet-transaction-payment",
  "pallet-transaction-payment-rpc-runtime-api",
  "pallet-treasury",
+ "pallet-uniques",
  "pallet-utility",
  "pallet-vesting 4.2.2-dev",
  "parity-scale-codec",
@@ -5779,6 +5782,29 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-chain-extension-rmrk"
+version = "0.1.0"
+dependencies = [
+ "chain-extension-trait",
+ "frame-support",
+ "frame-system",
+ "log",
+ "num-traits",
+ "pallet-contracts",
+ "pallet-contracts-primitives",
+ "pallet-contracts-rpc-runtime-api",
+ "pallet-rmrk-core",
+ "pallet-uniques",
+ "parity-scale-codec",
+ "rmrk-chain-extension-types",
+ "rmrk-traits",
+ "scale-info",
+ "sp-core",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
 name = "pallet-child-bounties"
 version = "4.0.0-dev"
 source = "git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.28#34a0621761c4a333cb2074ff720f7acbfb92dbb8"
@@ -6541,6 +6567,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-rmrk-core"
+version = "0.0.1"
+source = "git+https://github.com/AstarNetwork/rmrk-substrate?branch=tmp-polkadot-v0.9.28#1b77d36c006c44cae51c289ba960098e29f5ccb4"
+dependencies = [
+ "frame-support",
+ "frame-system",
+ "pallet-balances",
+ "pallet-uniques",
+ "parity-scale-codec",
+ "rmrk-traits",
+ "scale-info",
+ "serde",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
 name = "pallet-scheduler"
 version = "4.0.0-dev"
 source = "git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.28#34a0621761c4a333cb2074ff720f7acbfb92dbb8"
@@ -6756,6 +6799,20 @@ dependencies = [
  "parity-scale-codec",
  "scale-info",
  "serde",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
+name = "pallet-uniques"
+version = "4.0.0-dev"
+source = "git+https://github.com/paritytech/substrate?branch=polkadot-v0.9.28#34a0621761c4a333cb2074ff720f7acbfb92dbb8"
+dependencies = [
+ "frame-support",
+ "frame-system",
+ "log",
+ "parity-scale-codec",
+ "scale-info",
  "sp-runtime",
  "sp-std",
 ]
@@ -8923,6 +8980,32 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn",
+]
+
+[[package]]
+name = "rmrk-chain-extension-types"
+version = "4.0.0"
+dependencies = [
+ "frame-support",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-core",
+ "sp-runtime",
+]
+
+[[package]]
+name = "rmrk-traits"
+version = "0.0.1"
+source = "git+https://github.com/AstarNetwork/rmrk-substrate?branch=tmp-polkadot-v0.9.28#1b77d36c006c44cae51c289ba960098e29f5ccb4"
+dependencies = [
+ "frame-support",
+ "frame-system",
+ "pallet-balances",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "sp-runtime",
+ "sp-std",
 ]
 
 [[package]]
@@ -13168,22 +13251,6 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn",
-]
-
-[[package]]
-name = "xcm-tools"
-version = "0.2.0"
-dependencies = [
- "clap",
- "cumulus-primitives-core",
- "polkadot-parachain",
- "polkadot-primitives",
- "sp-core",
- "sp-runtime",
- "substrate-build-script-utils",
- "xcm",
- "xcm-builder",
- "xcm-executor",
 ]
 
 [[package]]
