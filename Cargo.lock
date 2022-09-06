@@ -162,7 +162,7 @@ checksum = "9b34d609dfbaf33d6889b2b7106d3ca345eacad44200913df5ba02bfd31d2ba9"
 
 [[package]]
 name = "astar-collator"
-version = "4.19.0"
+version = "4.20.0"
 dependencies = [
  "astar-runtime",
  "async-trait",
@@ -252,7 +252,7 @@ dependencies = [
 
 [[package]]
 name = "astar-runtime"
-version = "4.19.0"
+version = "4.20.0"
 dependencies = [
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-dmp-queue",
@@ -4809,7 +4809,7 @@ checksum = "d4d2456c373231a208ad294c33dc5bff30051eafd954cd4caae83a712b12854d"
 
 [[package]]
 name = "local-runtime"
-version = "4.19.0"
+version = "4.20.0"
 dependencies = [
  "chain-extension-trait",
  "dapps-staking-chain-extension",
@@ -4849,6 +4849,7 @@ dependencies = [
  "pallet-evm-precompile-substrate-ecdsa",
  "pallet-grandpa",
  "pallet-precompile-dapps-staking",
+ "pallet-proxy",
  "pallet-randomness-collective-flip",
  "pallet-scheduler",
  "pallet-sudo",
@@ -6074,6 +6075,18 @@ dependencies = [
  "sp-io",
  "sp-runtime",
  "sp-std",
+]
+
+[[package]]
+name = "pallet-evm-chain-id"
+version = "1.0.0-dev"
+source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.28#2e09cac89ef57f688a73dccff72d88c1003c786a"
+dependencies = [
+ "frame-support",
+ "frame-system",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
 ]
 
 [[package]]
@@ -10508,7 +10521,7 @@ dependencies = [
 
 [[package]]
 name = "shibuya-runtime"
-version = "4.19.0"
+version = "4.20.0"
 dependencies = [
  "chain-extension-trait",
  "cumulus-pallet-aura-ext",
@@ -10546,6 +10559,7 @@ dependencies = [
  "pallet-democracy",
  "pallet-ethereum",
  "pallet-evm",
+ "pallet-evm-chain-id",
  "pallet-evm-precompile-assets-erc20",
  "pallet-evm-precompile-blake2",
  "pallet-evm-precompile-bn128",
@@ -10560,6 +10574,7 @@ dependencies = [
  "pallet-identity",
  "pallet-multisig",
  "pallet-precompile-dapps-staking",
+ "pallet-proxy",
  "pallet-randomness-collective-flip",
  "pallet-scheduler",
  "pallet-session",
@@ -10601,7 +10616,7 @@ dependencies = [
 
 [[package]]
 name = "shiden-runtime"
-version = "4.19.0"
+version = "4.20.0"
 dependencies = [
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-dmp-queue",
@@ -12296,7 +12311,7 @@ version = "1.6.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "97fee6b57c6a41524a810daee9286c02d7752c4253064d0b05472833a438f675"
 dependencies = [
- "cfg-if 1.0.0",
+ "cfg-if 0.1.10",
  "digest 0.10.3",
  "rand 0.8.5",
  "static_assertions",

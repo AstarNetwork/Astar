@@ -95,7 +95,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
     spec_name: create_runtime_str!("shiden"),
     impl_name: create_runtime_str!("shiden"),
     authoring_version: 1,
-    spec_version: 68,
+    spec_version: 69,
     impl_version: 0,
     apis: RUNTIME_API_VERSIONS,
     transaction_version: 2,
@@ -875,23 +875,7 @@ pub type Executive = frame_executive::Executive<
     frame_system::ChainContext<Runtime>,
     Runtime,
     AllPalletsWithSystem,
-    (ElasticityCleanup,),
 >;
-
-use frame_support::traits::OnRuntimeUpgrade;
-pub struct ElasticityCleanup;
-impl OnRuntimeUpgrade for ElasticityCleanup {
-    fn on_runtime_upgrade() -> Weight {
-        pallet_base_fee::Elasticity::<Runtime>::put(Permill::zero());
-        <Runtime as frame_system::Config>::DbWeight::get().writes(1)
-    }
-
-    #[cfg(feature = "try-runtime")]
-    fn post_upgrade() -> Result<(), &'static str> {
-        assert!(pallet_base_fee::Elasticity::<Runtime>::get().is_zero());
-        Ok(())
-    }
-}
 
 impl fp_self_contained::SelfContainedCall for Call {
     type SignedInfo = H160;
