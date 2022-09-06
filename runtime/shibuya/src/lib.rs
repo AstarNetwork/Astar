@@ -1101,7 +1101,24 @@ pub type Executive = frame_executive::Executive<
     frame_system::ChainContext<Runtime>,
     Runtime,
     AllPalletsWithSystem,
+    (EvmChainIdSetting,),
 >;
+
+use frame_support::traits::OnRuntimeUpgrade;
+pub struct EvmChainIdSetting;
+const SHIBUYA_EVM_CHAIN_ID: u64 = 0x51;
+impl OnRuntimeUpgrade for EvmChainIdSetting {
+    fn on_runtime_upgrade() -> Weight {
+        pallet_evm_chain_id::ChainId::<Runtime>::put(SHIBUYA_EVM_CHAIN_ID);
+        <Runtime as frame_system::Config>::DbWeight::get().writes(1)
+    }
+
+    #[cfg(feature = "try-runtime")]
+    fn post_upgrade() -> Result<(), &'static str> {
+        assert!(pallet_evm_chain_id::ChainId::<Runtime>::get(), SHIBUYA_EVM_CHAIN_ID);
+        Ok(())
+    }
+}
 
 #[derive(Default)]
 pub struct DappsStakingChainExtension;
