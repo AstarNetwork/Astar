@@ -45,6 +45,7 @@ pallet-contracts-rpc-runtime-api = { git = "https://github.com/paritytech/substr
 pallet-democracy = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.28", default-features = false }
 pallet-ethereum = { git = "https://github.com/AstarNetwork/frontier", branch = "polkadot-v0.9.28", default-features = false }
 pallet-evm = { git = "https://github.com/AstarNetwork/frontier", branch = "polkadot-v0.9.28", default-features = false }
+pallet-evm-chain-id = { git = "https://github.com/AstarNetwork/frontier", branch = "polkadot-v0.9.28", default-features = false }
 pallet-evm-precompile-blake2 = { git = "https://github.com/AstarNetwork/frontier", branch = "polkadot-v0.9.28", default-features = false }
 pallet-evm-precompile-bn128 = { git = "https://github.com/AstarNetwork/frontier", branch = "polkadot-v0.9.28", default-features = false }
 pallet-evm-precompile-dispatch = { git = "https://github.com/AstarNetwork/frontier", branch = "polkadot-v0.9.28", default-features = false }
@@ -147,6 +148,7 @@ std = [
 	"pallet-base-fee/std",
 	"pallet-ethereum/std",
 	"pallet-evm/std",
+	"pallet-evm-chain-id/std",
 	"pallet-evm-precompile-blake2/std",
 	"pallet-evm-precompile-simple/std",
 	"pallet-evm-precompile-bn128/std",

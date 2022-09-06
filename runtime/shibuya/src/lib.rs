@@ -752,11 +752,6 @@ impl<F: FindAuthor<u32>> FindAuthor<H160> for FindAuthorTruncated<F> {
 }
 
 parameter_types! {
-    /// Ethereum-compatible chain_id:
-    /// * Dusty:   80
-    /// * Shibuya: 81
-    /// * Shiden: 336
-    pub ChainId: u64 = 0x51;
     /// EVM gas limit
     pub BlockGasLimit: U256 = U256::from(
         NORMAL_DISPATCH_RATIO * MAXIMUM_BLOCK_WEIGHT / WEIGHT_PER_GAS
@@ -776,11 +771,15 @@ impl pallet_evm::Config for Runtime {
     type Runner = pallet_evm::runner::stack::Runner<Self>;
     type PrecompilesType = Precompiles;
     type PrecompilesValue = PrecompilesValue;
-    type ChainId = ChainId;
+    // Ethereum-compatible chain_id:
+    // * Shibuya: 81
+    type ChainId = EVMChainId;
     type OnChargeTransaction = pallet_evm::EVMCurrencyAdapter<Balances, ToStakingPot>;
     type BlockGasLimit = BlockGasLimit;
     type FindAuthor = FindAuthorTruncated<Aura>;
 }
+
+impl pallet_evm_chain_id::Config for Runtime {}
 
 impl pallet_ethereum::Config for Runtime {
     type Event = Event;
@@ -1042,6 +1041,7 @@ construct_runtime!(
         EVM: pallet_evm = 60,
         Ethereum: pallet_ethereum = 61,
         BaseFee: pallet_base_fee = 62,
+        EVMChainId: pallet_evm_chain_id = 63,
 
         Contracts: pallet_contracts = 70,
 
@@ -1293,7 +1293,7 @@ impl_runtime_apis! {
 
     impl fp_rpc::EthereumRuntimeRPCApi<Block> for Runtime {
         fn chain_id() -> u64 {
-            ChainId::get()
+            EVMChainId::get()
         }
 
         fn account_basic(address: H160) -> pallet_evm::Account {
