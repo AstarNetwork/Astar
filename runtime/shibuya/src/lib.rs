@@ -1115,7 +1115,10 @@ impl OnRuntimeUpgrade for EvmChainIdSetting {
 
     #[cfg(feature = "try-runtime")]
     fn post_upgrade() -> Result<(), &'static str> {
-        assert!(pallet_evm_chain_id::ChainId::<Runtime>::get(), SHIBUYA_EVM_CHAIN_ID);
+        assert_eq!(
+            pallet_evm_chain_id::ChainId::<Runtime>::get(),
+            SHIBUYA_EVM_CHAIN_ID
+        );
         Ok(())
     }
 }
