@@ -6569,7 +6569,7 @@ dependencies = [
 [[package]]
 name = "pallet-rmrk-core"
 version = "0.0.1"
-source = "git+https://github.com/AstarNetwork/rmrk-substrate?branch=tmp-polkadot-v0.9.28#1b77d36c006c44cae51c289ba960098e29f5ccb4"
+source = "git+https://github.com/AstarNetwork/rmrk-substrate?branch=polkadot-v0.9.28#d2d508dda2b19c76c9042163356938d5f58c1e29"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -8996,7 +8996,7 @@ dependencies = [
 [[package]]
 name = "rmrk-traits"
 version = "0.0.1"
-source = "git+https://github.com/AstarNetwork/rmrk-substrate?branch=tmp-polkadot-v0.9.28#1b77d36c006c44cae51c289ba960098e29f5ccb4"
+source = "git+https://github.com/AstarNetwork/rmrk-substrate?branch=polkadot-v0.9.28#d2d508dda2b19c76c9042163356938d5f58c1e29"
 dependencies = [
  "frame-support",
  "frame-system",
