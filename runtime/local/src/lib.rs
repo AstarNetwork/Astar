@@ -6,12 +6,14 @@
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
-use codec::{Decode, Encode};
+use chain_extension_trait::ChainExtensionExec;
+use codec::{Decode, Encode, MaxEncodedLen};
+use dapps_staking_chain_extension::DappsStakingExtension;
 use frame_support::{
     construct_runtime, parameter_types,
     traits::{
-        ConstU32, Currency, EitherOfDiverse, EqualPrivilegeOnly, FindAuthor, Get,
-        KeyOwnerProofSystem, Nothing,
+        ConstU128, ConstU32, Currency, EitherOfDiverse, EqualPrivilegeOnly, FindAuthor, Get,
+        InstanceFilter, KeyOwnerProofSystem, Nothing,
     },
     weights::{
         constants::{RocksDbWeight, WEIGHT_PER_SECOND},
@@ -36,7 +38,7 @@ use sp_runtime::{
     transaction_validity::{
         TransactionPriority, TransactionSource, TransactionValidity, TransactionValidityError,
     },
-    ApplyExtrinsicResult, MultiSignature, RuntimeDebug,
+    ApplyExtrinsicResult, DispatchError, MultiSignature, RuntimeDebug,
 };
 use sp_std::prelude::*;
 
@@ -45,10 +47,14 @@ use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
 
 pub use pallet_balances::Call as BalancesCall;
+use pallet_contracts::chain_extension::{
+    ChainExtension, Environment, Ext, InitState, RegisteredChainExtension, RetVal, SysConfig,
+};
 pub use pallet_grandpa::AuthorityId as GrandpaId;
 pub use pallet_timestamp::Call as TimestampCall;
 use pallet_transaction_payment::CurrencyAdapter;
 pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
+use sp_core::crypto::UncheckedFrom;
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
 pub use sp_runtime::{Perbill, Permill};
@@ -743,7 +749,7 @@ impl pallet_contracts::Config for Runtime {
     type CallStack = [pallet_contracts::Frame<Self>; 31];
     type WeightPrice = pallet_transaction_payment::Pallet<Self>;
     type WeightInfo = pallet_contracts::weights::SubstrateWeight<Self>;
-    type ChainExtension = ();
+    type ChainExtension = DappsStakingChainExtension;
     type DeletionQueueDepth = ConstU32<128>;
     type DeletionWeightLimit = DeletionWeightLimit;
     type Schedule = Schedule;
@@ -757,6 +763,56 @@ impl pallet_contracts::Config for Runtime {
 impl pallet_sudo::Config for Runtime {
     type Event = Event;
     type Call = Call;
+}
+
+/// The type used to represent the kinds of proxying allowed.
+#[derive(
+    Copy,
+    Clone,
+    Eq,
+    PartialEq,
+    Ord,
+    PartialOrd,
+    Encode,
+    Decode,
+    RuntimeDebug,
+    MaxEncodedLen,
+    scale_info::TypeInfo,
+)]
+pub enum ProxyType {
+    Any,
+}
+
+impl Default for ProxyType {
+    fn default() -> Self {
+        Self::Any
+    }
+}
+impl InstanceFilter<Call> for ProxyType {
+    fn filter(&self, _c: &Call) -> bool {
+        match self {
+            ProxyType::Any => true,
+        }
+    }
+}
+
+impl pallet_proxy::Config for Runtime {
+    type Event = Event;
+    type Call = Call;
+    type Currency = Balances;
+    type ProxyType = ProxyType;
+    // One storage item; key size 32, value size 8; .
+    type ProxyDepositBase = ConstU128<{ AST * 10 }>;
+    // Additional storage item size of 33 bytes.
+    type ProxyDepositFactor = ConstU128<{ MILLIAST * 330 }>;
+    type MaxProxies = ConstU32<32>;
+    type WeightInfo = pallet_proxy::weights::SubstrateWeight<Runtime>;
+    type MaxPending = ConstU32<32>;
+    type CallHasher = BlakeTwo256;
+    // Key size 32 + 1 item
+    type AnnouncementDepositBase = ConstU128<{ AST * 10 }>;
+    // Acc Id + Hash + block number
+    type AnnouncementDepositFactor = ConstU128<{ MILLIAST * 660 }>;
 }
 
 // TODO: remove this once https://github.com/paritytech/substrate/issues/12161 is resolved
@@ -792,6 +848,7 @@ construct_runtime!(
         TechnicalCommittee: pallet_collective::<Instance2>,
         Treasury: pallet_treasury,
         Xvm: pallet_xvm,
+        Proxy: pallet_proxy,
     }
 );
 
@@ -843,6 +900,23 @@ pub type Executive = frame_executive::Executive<
     Runtime,
     AllPalletsWithSystem,
 >;
+
+#[derive(Default)]
+pub struct DappsStakingChainExtension;
+
+impl RegisteredChainExtension<Runtime> for DappsStakingChainExtension {
+    const ID: u16 = 00;
+}
+
+impl ChainExtension<Runtime> for DappsStakingChainExtension {
+    fn call<E: Ext>(&mut self, env: Environment<E, InitState>) -> Result<RetVal, DispatchError>
+    where
+        E: Ext<T = Runtime>,
+        <E::T as SysConfig>::AccountId: UncheckedFrom<<E::T as SysConfig>::Hash> + AsRef<[u8]>,
+    {
+        DappsStakingExtension::execute_func::<E>(env.func_id().into(), env)
+    }
+}
 
 impl fp_self_contained::SelfContainedCall for Call {
     type SignedInfo = H160;
