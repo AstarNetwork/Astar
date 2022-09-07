@@ -417,6 +417,20 @@ impl pallet_utility::Config for Runtime {
 }
 
 parameter_types! {
+    pub EvmId: u8 = 0x0F;
+    pub WasmId: u8 = 0x1F;
+}
+
+use pallet_xvm::{evm, wasm};
+impl pallet_xvm::Config for Runtime {
+    type Event = Event;
+    type VmId = u8;
+    type SyncVM = (evm::EVM<EvmId, Self, ()>, wasm::WASM<WasmId, Self, ()>);
+    type AsyncVM = ();
+}
+
+parameter_types! {
+    // Tells `pallet_base_fee` whether to calculate a new BaseFee `on_finalize` or not.
     pub DefaultBaseFeePerGas: U256 = (MILLIAST / 1_000_000).into();
     // At the moment, we don't use dynamic fee calculation for local chain by default
     pub DefaultElasticity: Permill = Permill::zero();
@@ -833,6 +847,7 @@ construct_runtime!(
         Council: pallet_collective::<Instance1>,
         TechnicalCommittee: pallet_collective::<Instance2>,
         Treasury: pallet_treasury,
+        Xvm: pallet_xvm,
         Proxy: pallet_proxy,
     }
 );
