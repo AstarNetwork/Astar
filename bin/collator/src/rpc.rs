@@ -173,8 +173,8 @@ where
             block_data_cache.clone(),
             fee_history_cache,
             fee_history_limit,
-            // Unit multiplier for non-transactional - can be changed in the future
-            1,
+            // Allow 10x max allowed weight for non-transactional calls
+            10,
         )
         .into_rpc(),
     )?;
