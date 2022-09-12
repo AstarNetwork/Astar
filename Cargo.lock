@@ -162,7 +162,7 @@ checksum = "9b34d609dfbaf33d6889b2b7106d3ca345eacad44200913df5ba02bfd31d2ba9"
 
 [[package]]
 name = "astar-collator"
-version = "4.21.0"
+version = "4.21.1"
 dependencies = [
  "astar-runtime",
  "async-trait",
@@ -252,7 +252,7 @@ dependencies = [
 
 [[package]]
 name = "astar-runtime"
-version = "4.21.0"
+version = "4.21.1"
 dependencies = [
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-dmp-queue",
@@ -1022,7 +1022,7 @@ dependencies = [
 [[package]]
 name = "chain-extension-trait"
 version = "1.0.2"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.28#fe26cebb02e3708f81d0664fcc6b072192a349d0"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.28#1f4399a25a8eda9970a71ff4f9f1418212258146"
 dependencies = [
  "pallet-contracts",
  "sp-runtime",
@@ -1973,7 +1973,7 @@ dependencies = [
 [[package]]
 name = "dapps-staking-chain-extension"
 version = "1.0.3"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.28#fe26cebb02e3708f81d0664fcc6b072192a349d0"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.28#1f4399a25a8eda9970a71ff4f9f1418212258146"
 dependencies = [
  "chain-extension-trait",
  "dapps-staking-chain-extension-types",
@@ -1995,7 +1995,7 @@ dependencies = [
 [[package]]
 name = "dapps-staking-chain-extension-types"
 version = "1.0.2"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.28#fe26cebb02e3708f81d0664fcc6b072192a349d0"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.28#1f4399a25a8eda9970a71ff4f9f1418212258146"
 dependencies = [
  "frame-support",
  "parity-scale-codec",
@@ -2383,32 +2383,14 @@ checksum = "0206175f82b8d6bf6652ff7d71a1e27fd2e4efde587fd368662814d6ec1d9ce0"
 [[package]]
 name = "evm"
 version = "0.35.0"
-source = "git+https://github.com/rust-blockchain/evm?branch=master#51b8c2ce3104265e1fd5bb0fe5cdfd2e0938239c"
-dependencies = [
- "auto_impl",
- "ethereum",
- "evm-core 0.35.0 (git+https://github.com/rust-blockchain/evm?branch=master)",
- "evm-gasometer 0.35.0 (git+https://github.com/rust-blockchain/evm?branch=master)",
- "evm-runtime 0.35.0 (git+https://github.com/rust-blockchain/evm?branch=master)",
- "log",
- "parity-scale-codec",
- "primitive-types",
- "rlp",
- "scale-info",
- "sha3 0.10.4",
-]
-
-[[package]]
-name = "evm"
-version = "0.35.0"
 source = "git+https://github.com/rust-blockchain/evm?rev=01bcbd2205a212c34451d3b4fabc962793b057d3#01bcbd2205a212c34451d3b4fabc962793b057d3"
 dependencies = [
  "auto_impl",
  "environmental",
  "ethereum",
- "evm-core 0.35.0 (git+https://github.com/rust-blockchain/evm?rev=01bcbd2205a212c34451d3b4fabc962793b057d3)",
- "evm-gasometer 0.35.0 (git+https://github.com/rust-blockchain/evm?rev=01bcbd2205a212c34451d3b4fabc962793b057d3)",
- "evm-runtime 0.35.0 (git+https://github.com/rust-blockchain/evm?rev=01bcbd2205a212c34451d3b4fabc962793b057d3)",
+ "evm-core",
+ "evm-gasometer",
+ "evm-runtime",
  "log",
  "parity-scale-codec",
  "primitive-types",
@@ -2416,16 +2398,6 @@ dependencies = [
  "scale-info",
  "serde",
  "sha3 0.10.4",
-]
-
-[[package]]
-name = "evm-core"
-version = "0.35.0"
-source = "git+https://github.com/rust-blockchain/evm?branch=master#51b8c2ce3104265e1fd5bb0fe5cdfd2e0938239c"
-dependencies = [
- "parity-scale-codec",
- "primitive-types",
- "scale-info",
 ]
 
 [[package]]
@@ -2442,33 +2414,12 @@ dependencies = [
 [[package]]
 name = "evm-gasometer"
 version = "0.35.0"
-source = "git+https://github.com/rust-blockchain/evm?branch=master#51b8c2ce3104265e1fd5bb0fe5cdfd2e0938239c"
-dependencies = [
- "evm-core 0.35.0 (git+https://github.com/rust-blockchain/evm?branch=master)",
- "evm-runtime 0.35.0 (git+https://github.com/rust-blockchain/evm?branch=master)",
- "primitive-types",
-]
-
-[[package]]
-name = "evm-gasometer"
-version = "0.35.0"
 source = "git+https://github.com/rust-blockchain/evm?rev=01bcbd2205a212c34451d3b4fabc962793b057d3#01bcbd2205a212c34451d3b4fabc962793b057d3"
 dependencies = [
  "environmental",
- "evm-core 0.35.0 (git+https://github.com/rust-blockchain/evm?rev=01bcbd2205a212c34451d3b4fabc962793b057d3)",
- "evm-runtime 0.35.0 (git+https://github.com/rust-blockchain/evm?rev=01bcbd2205a212c34451d3b4fabc962793b057d3)",
+ "evm-core",
+ "evm-runtime",
  "primitive-types",
-]
-
-[[package]]
-name = "evm-runtime"
-version = "0.35.0"
-source = "git+https://github.com/rust-blockchain/evm?branch=master#51b8c2ce3104265e1fd5bb0fe5cdfd2e0938239c"
-dependencies = [
- "auto_impl",
- "evm-core 0.35.0 (git+https://github.com/rust-blockchain/evm?branch=master)",
- "primitive-types",
- "sha3 0.10.4",
 ]
 
 [[package]]
@@ -2478,7 +2429,7 @@ source = "git+https://github.com/rust-blockchain/evm?rev=01bcbd2205a212c34451d3b
 dependencies = [
  "auto_impl",
  "environmental",
- "evm-core 0.35.0 (git+https://github.com/rust-blockchain/evm?rev=01bcbd2205a212c34451d3b4fabc962793b057d3)",
+ "evm-core",
  "primitive-types",
  "sha3 0.10.4",
 ]
@@ -2628,7 +2579,7 @@ source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.28#2
 dependencies = [
  "ethereum",
  "ethereum-types",
- "evm 0.35.0 (git+https://github.com/rust-blockchain/evm?rev=01bcbd2205a212c34451d3b4fabc962793b057d3)",
+ "evm",
  "fc-db",
  "fc-rpc-core",
  "fp-evm",
@@ -2818,7 +2769,7 @@ name = "fp-evm"
 version = "3.0.0-dev"
 source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.28#2e09cac89ef57f688a73dccff72d88c1003c786a"
 dependencies = [
- "evm 0.35.0 (git+https://github.com/rust-blockchain/evm?rev=01bcbd2205a212c34451d3b4fabc962793b057d3)",
+ "evm",
  "frame-support",
  "parity-scale-codec",
  "serde",
@@ -4809,7 +4760,7 @@ checksum = "d4d2456c373231a208ad294c33dc5bff30051eafd954cd4caae83a712b12854d"
 
 [[package]]
 name = "local-runtime"
-version = "4.21.0"
+version = "4.21.1"
 dependencies = [
  "chain-extension-trait",
  "dapps-staking-chain-extension",
@@ -5738,7 +5689,7 @@ dependencies = [
 [[package]]
 name = "pallet-block-reward"
 version = "2.2.2"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.28#fe26cebb02e3708f81d0664fcc6b072192a349d0"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.28#1f4399a25a8eda9970a71ff4f9f1418212258146"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -5794,7 +5745,7 @@ dependencies = [
 [[package]]
 name = "pallet-collator-selection"
 version = "3.3.2"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.28#fe26cebb02e3708f81d0664fcc6b072192a349d0"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.28#1f4399a25a8eda9970a71ff4f9f1418212258146"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -5913,7 +5864,7 @@ dependencies = [
 [[package]]
 name = "pallet-custom-signatures"
 version = "4.5.2"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.28#fe26cebb02e3708f81d0664fcc6b072192a349d0"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.28#1f4399a25a8eda9970a71ff4f9f1418212258146"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -5928,8 +5879,8 @@ dependencies = [
 
 [[package]]
 name = "pallet-dapps-staking"
-version = "3.6.2"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.28#fe26cebb02e3708f81d0664fcc6b072192a349d0"
+version = "3.6.3"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.28#1f4399a25a8eda9970a71ff4f9f1418212258146"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -6026,7 +5977,7 @@ source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.28#2
 dependencies = [
  "ethereum",
  "ethereum-types",
- "evm 0.35.0 (git+https://github.com/rust-blockchain/evm?rev=01bcbd2205a212c34451d3b4fabc962793b057d3)",
+ "evm",
  "fp-consensus",
  "fp-ethereum",
  "fp-evm",
@@ -6051,7 +6002,7 @@ name = "pallet-evm"
 version = "6.0.0-dev"
 source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.28#2e09cac89ef57f688a73dccff72d88c1003c786a"
 dependencies = [
- "evm 0.35.0 (git+https://github.com/rust-blockchain/evm?rev=01bcbd2205a212c34451d3b4fabc962793b057d3)",
+ "evm",
  "fp-evm",
  "frame-benchmarking",
  "frame-support",
@@ -6085,7 +6036,7 @@ dependencies = [
 [[package]]
 name = "pallet-evm-precompile-assets-erc20"
 version = "0.5.2"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.28#fe26cebb02e3708f81d0664fcc6b072192a349d0"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.28#1f4399a25a8eda9970a71ff4f9f1418212258146"
 dependencies = [
  "fp-evm",
  "frame-support",
@@ -6172,7 +6123,7 @@ dependencies = [
 [[package]]
 name = "pallet-evm-precompile-sr25519"
 version = "1.2.1"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.28#fe26cebb02e3708f81d0664fcc6b072192a349d0"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.28#1f4399a25a8eda9970a71ff4f9f1418212258146"
 dependencies = [
  "fp-evm",
  "log",
@@ -6188,7 +6139,7 @@ dependencies = [
 [[package]]
 name = "pallet-evm-precompile-substrate-ecdsa"
 version = "1.2.2"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.28#fe26cebb02e3708f81d0664fcc6b072192a349d0"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.28#1f4399a25a8eda9970a71ff4f9f1418212258146"
 dependencies = [
  "fp-evm",
  "log",
@@ -6204,7 +6155,7 @@ dependencies = [
 [[package]]
 name = "pallet-evm-precompile-xcm"
 version = "0.5.1"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.28#fe26cebb02e3708f81d0664fcc6b072192a349d0"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.28#1f4399a25a8eda9970a71ff4f9f1418212258146"
 dependencies = [
  "fp-evm",
  "frame-support",
@@ -6227,7 +6178,7 @@ dependencies = [
 [[package]]
 name = "pallet-evm-precompile-xvm"
 version = "0.1.0"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.28#fe26cebb02e3708f81d0664fcc6b072192a349d0"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.28#1f4399a25a8eda9970a71ff4f9f1418212258146"
 dependencies = [
  "fp-evm",
  "frame-support",
@@ -6488,7 +6439,7 @@ dependencies = [
 [[package]]
 name = "pallet-precompile-dapps-staking"
 version = "3.6.2"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.28#fe26cebb02e3708f81d0664fcc6b072192a349d0"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.28#1f4399a25a8eda9970a71ff4f9f1418212258146"
 dependencies = [
  "fp-evm",
  "frame-support",
@@ -6819,7 +6770,7 @@ dependencies = [
 [[package]]
 name = "pallet-vesting"
 version = "4.2.2-dev"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.28#fe26cebb02e3708f81d0664fcc6b072192a349d0"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.28#1f4399a25a8eda9970a71ff4f9f1418212258146"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -6833,7 +6784,7 @@ dependencies = [
 [[package]]
 name = "pallet-xc-asset-config"
 version = "1.2.2"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.28#fe26cebb02e3708f81d0664fcc6b072192a349d0"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.28#1f4399a25a8eda9970a71ff4f9f1418212258146"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -6851,7 +6802,7 @@ dependencies = [
 [[package]]
 name = "pallet-xcm"
 version = "0.9.28"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.28#fe26cebb02e3708f81d0664fcc6b072192a349d0"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.28#1f4399a25a8eda9970a71ff4f9f1418212258146"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -6904,7 +6855,7 @@ dependencies = [
 [[package]]
 name = "pallet-xvm"
 version = "0.1.0"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.28#fe26cebb02e3708f81d0664fcc6b072192a349d0"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.28#1f4399a25a8eda9970a71ff4f9f1418212258146"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -8392,10 +8343,10 @@ checksum = "eb9f9e6e233e5c4a35559a617bf40a4ec447db2e84c20b55a6f83167b7e57872"
 
 [[package]]
 name = "precompile-utils"
-version = "0.4.2"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.28#fe26cebb02e3708f81d0664fcc6b072192a349d0"
+version = "0.4.3"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.28#1f4399a25a8eda9970a71ff4f9f1418212258146"
 dependencies = [
- "evm 0.35.0 (git+https://github.com/rust-blockchain/evm?branch=master)",
+ "evm",
  "fp-evm",
  "frame-support",
  "frame-system",
@@ -8416,7 +8367,7 @@ dependencies = [
 [[package]]
 name = "precompile-utils-macro"
 version = "0.1.0"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.28#fe26cebb02e3708f81d0664fcc6b072192a349d0"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.28#1f4399a25a8eda9970a71ff4f9f1418212258146"
 dependencies = [
  "num_enum",
  "proc-macro2",
@@ -10552,7 +10503,7 @@ dependencies = [
 
 [[package]]
 name = "shibuya-runtime"
-version = "4.21.0"
+version = "4.21.1"
 dependencies = [
  "chain-extension-trait",
  "cumulus-pallet-aura-ext",
@@ -10649,7 +10600,7 @@ dependencies = [
 
 [[package]]
 name = "shiden-runtime"
-version = "4.21.0"
+version = "4.21.1"
 dependencies = [
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-dmp-queue",
@@ -12344,7 +12295,7 @@ version = "1.6.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "97fee6b57c6a41524a810daee9286c02d7752c4253064d0b05472833a438f675"
 dependencies = [
- "cfg-if 1.0.0",
+ "cfg-if 0.1.10",
  "digest 0.10.3",
  "rand 0.8.5",
  "static_assertions",
@@ -13195,7 +13146,7 @@ dependencies = [
 [[package]]
 name = "xcm-primitives"
 version = "0.3.2"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.28#fe26cebb02e3708f81d0664fcc6b072192a349d0"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.28#1f4399a25a8eda9970a71ff4f9f1418212258146"
 dependencies = [
  "frame-support",
  "log",
