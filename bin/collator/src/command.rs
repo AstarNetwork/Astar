@@ -11,7 +11,7 @@ use crate::{
 use codec::Encode;
 use cumulus_client_cli::generate_genesis_block;
 use cumulus_primitives_core::ParaId;
-use log::{info, warn};
+use log::{error, info, warn};
 use sc_cli::{
     ChainSpec, CliConfiguration, DefaultConfigurationValues, ImportParams, KeystoreParams,
     NetworkParams, Result, RuntimeVersion, SharedParams, SubstrateCli,
@@ -79,7 +79,7 @@ fn load_spec(
         "astar" => Box::new(chain_spec::AstarChainSpec::from_json_bytes(
             &include_bytes!("../res/astar.raw.json")[..],
         )?),
-        "" | "shiden" => Box::new(chain_spec::ShidenChainSpec::from_json_bytes(
+        "shiden" => Box::new(chain_spec::ShidenChainSpec::from_json_bytes(
             &include_bytes!("../res/shiden.raw.json")[..],
         )?),
         "shibuya" => Box::new(chain_spec::ShibuyaChainSpec::from_json_bytes(
@@ -91,8 +91,10 @@ fn load_spec(
                 Box::new(chain_spec::AstarChainSpec::from_json_file(path.into())?)
             } else if chain_spec.is_shiden() {
                 Box::new(chain_spec::ShidenChainSpec::from_json_file(path.into())?)
-            } else {
+            } else if chain_spec.is_shibuya() {
                 Box::new(chain_spec)
+            } else {
+                Err("Unclear which chain spec to base this chain on. Name should start with astar, shiden or shibuya if custom name is used")?
             }
         }
     })
@@ -705,11 +707,15 @@ pub fn run() -> Result<()> {
                         .await
                         .map(|r| r.0)
                         .map_err(Into::into)
-                } else {
+                } else if config.chain_spec.is_shibuya() {
                     start_shibuya_node(config, polkadot_config, collator_options, id)
                         .await
                         .map(|r| r.0)
                         .map_err(Into::into)
+                } else {
+                    let err_msg = "Unrecognized chain spec - name should start with one of: astar or shiden or shibuya";
+                    error!("{}", err_msg);
+                    Err(err_msg.into())
                 }
             })
         }
