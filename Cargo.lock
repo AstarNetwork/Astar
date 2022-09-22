@@ -281,7 +281,7 @@ dependencies = [
  "pallet-collator-selection",
  "pallet-collective",
  "pallet-custom-signatures",
- "pallet-dapps-staking",
+ "pallet-dapps-staking 3.6.3",
  "pallet-ethereum",
  "pallet-evm",
  "pallet-evm-precompile-assets-erc20",
@@ -297,7 +297,7 @@ dependencies = [
  "pallet-evm-precompile-xcm",
  "pallet-identity",
  "pallet-multisig",
- "pallet-precompile-dapps-staking",
+ "pallet-precompile-dapps-staking 3.6.2 (git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.28)",
  "pallet-session",
  "pallet-sudo",
  "pallet-timestamp",
@@ -1981,11 +1981,11 @@ dependencies = [
 
 [[package]]
 name = "dapps-staking-chain-extension"
-version = "1.0.4"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.28#674356e7b611e561aaf9bf581452cab965cf8e87"
+version = "1.0.3"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=feature/xvm-pallet-v2#d142d4bdc508c1000ddc64f293e90a6c01372760"
 dependencies = [
- "chain-extension-trait 1.0.2 (git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.28)",
- "dapps-staking-chain-extension-types",
+ "chain-extension-trait 1.0.2 (git+https://github.com/AstarNetwork/astar-frame?branch=feature/xvm-pallet-v2)",
+ "dapps-staking-chain-extension-types 1.0.2 (git+https://github.com/AstarNetwork/astar-frame?branch=feature/xvm-pallet-v2)",
  "frame-support",
  "frame-system",
  "log",
@@ -1993,12 +1993,46 @@ dependencies = [
  "pallet-contracts",
  "pallet-contracts-primitives",
  "pallet-contracts-rpc-runtime-api",
- "pallet-dapps-staking",
+ "pallet-dapps-staking 3.6.2",
  "parity-scale-codec",
  "scale-info",
  "sp-core",
  "sp-runtime",
  "sp-std",
+]
+
+[[package]]
+name = "dapps-staking-chain-extension"
+version = "1.0.4"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.28#674356e7b611e561aaf9bf581452cab965cf8e87"
+dependencies = [
+ "chain-extension-trait 1.0.2 (git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.28)",
+ "dapps-staking-chain-extension-types 1.0.2 (git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.28)",
+ "frame-support",
+ "frame-system",
+ "log",
+ "num-traits",
+ "pallet-contracts",
+ "pallet-contracts-primitives",
+ "pallet-contracts-rpc-runtime-api",
+ "pallet-dapps-staking 3.6.3",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-core",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
+name = "dapps-staking-chain-extension-types"
+version = "1.0.2"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=feature/xvm-pallet-v2#d142d4bdc508c1000ddc64f293e90a6c01372760"
+dependencies = [
+ "frame-support",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-core",
+ "sp-runtime",
 ]
 
 [[package]]
@@ -4838,8 +4872,8 @@ checksum = "d4d2456c373231a208ad294c33dc5bff30051eafd954cd4caae83a712b12854d"
 name = "local-runtime"
 version = "4.22.0"
 dependencies = [
- "chain-extension-trait 1.0.2 (git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.28)",
- "dapps-staking-chain-extension",
+ "chain-extension-trait 1.0.2 (git+https://github.com/AstarNetwork/astar-frame?branch=feature/xvm-pallet-v2)",
+ "dapps-staking-chain-extension 1.0.3",
  "fp-rpc",
  "fp-self-contained",
  "frame-benchmarking",
@@ -4860,7 +4894,7 @@ dependencies = [
  "pallet-contracts-primitives",
  "pallet-contracts-rpc-runtime-api",
  "pallet-custom-signatures",
- "pallet-dapps-staking",
+ "pallet-dapps-staking 3.6.2",
  "pallet-democracy",
  "pallet-ethereum",
  "pallet-evm",
@@ -4876,7 +4910,7 @@ dependencies = [
  "pallet-evm-precompile-substrate-ecdsa",
  "pallet-evm-precompile-xvm 0.1.0 (git+https://github.com/AstarNetwork/astar-frame?branch=feature/xvm-pallet-v2)",
  "pallet-grandpa",
- "pallet-precompile-dapps-staking",
+ "pallet-precompile-dapps-staking 3.6.2 (git+https://github.com/AstarNetwork/astar-frame?branch=feature/xvm-pallet-v2)",
  "pallet-proxy",
  "pallet-randomness-collective-flip",
  "pallet-scheduler",
@@ -5956,6 +5990,29 @@ dependencies = [
 
 [[package]]
 name = "pallet-dapps-staking"
+version = "3.6.2"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=feature/xvm-pallet-v2#d142d4bdc508c1000ddc64f293e90a6c01372760"
+dependencies = [
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "num-traits",
+ "pallet-balances",
+ "pallet-session",
+ "pallet-timestamp",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "sp-arithmetic",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-staking",
+ "sp-std",
+]
+
+[[package]]
+name = "pallet-dapps-staking"
 version = "3.6.3"
 source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.28#674356e7b611e561aaf9bf581452cab965cf8e87"
 dependencies = [
@@ -6535,6 +6592,26 @@ dependencies = [
 [[package]]
 name = "pallet-precompile-dapps-staking"
 version = "3.6.2"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=feature/xvm-pallet-v2#d142d4bdc508c1000ddc64f293e90a6c01372760"
+dependencies = [
+ "fp-evm",
+ "frame-support",
+ "frame-system",
+ "log",
+ "num_enum",
+ "pallet-dapps-staking 3.6.2",
+ "pallet-evm",
+ "parity-scale-codec",
+ "precompile-utils 0.4.2",
+ "scale-info",
+ "sp-core",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
+name = "pallet-precompile-dapps-staking"
+version = "3.6.2"
 source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.28#674356e7b611e561aaf9bf581452cab965cf8e87"
 dependencies = [
  "fp-evm",
@@ -6542,7 +6619,7 @@ dependencies = [
  "frame-system",
  "log",
  "num_enum",
- "pallet-dapps-staking",
+ "pallet-dapps-staking 3.6.3",
  "pallet-evm",
  "parity-scale-codec",
  "precompile-utils 0.4.3",
@@ -10664,7 +10741,7 @@ dependencies = [
  "cumulus-primitives-core",
  "cumulus-primitives-timestamp",
  "cumulus-primitives-utility",
- "dapps-staking-chain-extension",
+ "dapps-staking-chain-extension 1.0.4",
  "fp-rpc",
  "fp-self-contained",
  "frame-benchmarking",
@@ -10687,7 +10764,7 @@ dependencies = [
  "pallet-contracts-primitives",
  "pallet-contracts-rpc-runtime-api",
  "pallet-custom-signatures",
- "pallet-dapps-staking",
+ "pallet-dapps-staking 3.6.3",
  "pallet-democracy",
  "pallet-ethereum",
  "pallet-evm",
@@ -10706,7 +10783,7 @@ dependencies = [
  "pallet-evm-precompile-xvm 0.1.0 (git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.28)",
  "pallet-identity",
  "pallet-multisig",
- "pallet-precompile-dapps-staking",
+ "pallet-precompile-dapps-staking 3.6.2 (git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.28)",
  "pallet-proxy",
  "pallet-randomness-collective-flip",
  "pallet-scheduler",
@@ -10782,7 +10859,7 @@ dependencies = [
  "pallet-contracts-primitives",
  "pallet-contracts-rpc-runtime-api",
  "pallet-custom-signatures",
- "pallet-dapps-staking",
+ "pallet-dapps-staking 3.6.3",
  "pallet-ethereum",
  "pallet-evm",
  "pallet-evm-precompile-assets-erc20",
@@ -10798,7 +10875,7 @@ dependencies = [
  "pallet-evm-precompile-xcm",
  "pallet-identity",
  "pallet-multisig",
- "pallet-precompile-dapps-staking",
+ "pallet-precompile-dapps-staking 3.6.2 (git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.28)",
  "pallet-randomness-collective-flip",
  "pallet-session",
  "pallet-sudo",

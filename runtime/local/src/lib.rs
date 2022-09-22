@@ -9,6 +9,7 @@ include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 use chain_extension_trait::ChainExtensionExec;
 use codec::{Decode, Encode, MaxEncodedLen};
 use dapps_staking_chain_extension::DappsStakingExtension;
+use xvm_chain_extension::XvmExtension;
 use frame_support::{
     construct_runtime, parameter_types,
     traits::{
@@ -423,10 +424,9 @@ parameter_types! {
 
 use pallet_xvm::{evm, wasm};
 impl pallet_xvm::Config for Runtime {
-    type Event = Event;
-    type VmId = u8;
-    type SyncVM = (evm::EVM<EvmId, Self, ()>, wasm::WASM<WasmId, Self, ()>);
+    type SyncVM = (evm::EVM<EvmId, Self>, wasm::WASM<WasmId, Self>);
     type AsyncVM = ();
+    type Event = Event;
 }
 
 parameter_types! {
@@ -915,6 +915,23 @@ impl ChainExtension<Runtime> for DappsStakingChainExtension {
         <E::T as SysConfig>::AccountId: UncheckedFrom<<E::T as SysConfig>::Hash> + AsRef<[u8]>,
     {
         DappsStakingExtension::execute_func::<E>(env.func_id().into(), env)
+    }
+}
+
+#[derive(Default)]
+pub struct XvmChainExtension;
+
+impl RegisteredChainExtension<Runtime> for XvmChainExtension {
+    const ID: u16 = 01;
+}
+
+impl ChainExtension<Runtime> for XvmChainExtension {
+    fn call<E: Ext>(&mut self, env: Environment<E, InitState>) -> Result<RetVal, DispatchError>
+    where
+        E: Ext<T = Runtime>,
+        <E::T as SysConfig>::AccountId: UncheckedFrom<<E::T as SysConfig>::Hash> + AsRef<[u8]>,
+    {
+        XvmExtension::execute_func::<E>(env.func_id().into(), env)
     }
 }
 
