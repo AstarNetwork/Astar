@@ -1022,6 +1022,15 @@ dependencies = [
 [[package]]
 name = "chain-extension-trait"
 version = "1.0.2"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=feature/xvm-pallet-v2#d142d4bdc508c1000ddc64f293e90a6c01372760"
+dependencies = [
+ "pallet-contracts",
+ "sp-runtime",
+]
+
+[[package]]
+name = "chain-extension-trait"
+version = "1.0.2"
 source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.28#674356e7b611e561aaf9bf581452cab965cf8e87"
 dependencies = [
  "pallet-contracts",
@@ -1975,7 +1984,7 @@ name = "dapps-staking-chain-extension"
 version = "1.0.4"
 source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.28#674356e7b611e561aaf9bf581452cab965cf8e87"
 dependencies = [
- "chain-extension-trait",
+ "chain-extension-trait 1.0.2 (git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.28)",
  "dapps-staking-chain-extension-types",
  "frame-support",
  "frame-system",
@@ -2383,14 +2392,32 @@ checksum = "0206175f82b8d6bf6652ff7d71a1e27fd2e4efde587fd368662814d6ec1d9ce0"
 [[package]]
 name = "evm"
 version = "0.35.0"
+source = "git+https://github.com/rust-blockchain/evm?branch=master#51b8c2ce3104265e1fd5bb0fe5cdfd2e0938239c"
+dependencies = [
+ "auto_impl",
+ "ethereum",
+ "evm-core 0.35.0 (git+https://github.com/rust-blockchain/evm?branch=master)",
+ "evm-gasometer 0.35.0 (git+https://github.com/rust-blockchain/evm?branch=master)",
+ "evm-runtime 0.35.0 (git+https://github.com/rust-blockchain/evm?branch=master)",
+ "log",
+ "parity-scale-codec",
+ "primitive-types",
+ "rlp",
+ "scale-info",
+ "sha3 0.10.5",
+]
+
+[[package]]
+name = "evm"
+version = "0.35.0"
 source = "git+https://github.com/rust-blockchain/evm?rev=01bcbd2205a212c34451d3b4fabc962793b057d3#01bcbd2205a212c34451d3b4fabc962793b057d3"
 dependencies = [
  "auto_impl",
  "environmental",
  "ethereum",
- "evm-core",
- "evm-gasometer",
- "evm-runtime",
+ "evm-core 0.35.0 (git+https://github.com/rust-blockchain/evm?rev=01bcbd2205a212c34451d3b4fabc962793b057d3)",
+ "evm-gasometer 0.35.0 (git+https://github.com/rust-blockchain/evm?rev=01bcbd2205a212c34451d3b4fabc962793b057d3)",
+ "evm-runtime 0.35.0 (git+https://github.com/rust-blockchain/evm?rev=01bcbd2205a212c34451d3b4fabc962793b057d3)",
  "log",
  "parity-scale-codec",
  "primitive-types",
@@ -2398,6 +2425,16 @@ dependencies = [
  "scale-info",
  "serde",
  "sha3 0.10.5",
+]
+
+[[package]]
+name = "evm-core"
+version = "0.35.0"
+source = "git+https://github.com/rust-blockchain/evm?branch=master#51b8c2ce3104265e1fd5bb0fe5cdfd2e0938239c"
+dependencies = [
+ "parity-scale-codec",
+ "primitive-types",
+ "scale-info",
 ]
 
 [[package]]
@@ -2414,12 +2451,33 @@ dependencies = [
 [[package]]
 name = "evm-gasometer"
 version = "0.35.0"
+source = "git+https://github.com/rust-blockchain/evm?branch=master#51b8c2ce3104265e1fd5bb0fe5cdfd2e0938239c"
+dependencies = [
+ "evm-core 0.35.0 (git+https://github.com/rust-blockchain/evm?branch=master)",
+ "evm-runtime 0.35.0 (git+https://github.com/rust-blockchain/evm?branch=master)",
+ "primitive-types",
+]
+
+[[package]]
+name = "evm-gasometer"
+version = "0.35.0"
 source = "git+https://github.com/rust-blockchain/evm?rev=01bcbd2205a212c34451d3b4fabc962793b057d3#01bcbd2205a212c34451d3b4fabc962793b057d3"
 dependencies = [
  "environmental",
- "evm-core",
- "evm-runtime",
+ "evm-core 0.35.0 (git+https://github.com/rust-blockchain/evm?rev=01bcbd2205a212c34451d3b4fabc962793b057d3)",
+ "evm-runtime 0.35.0 (git+https://github.com/rust-blockchain/evm?rev=01bcbd2205a212c34451d3b4fabc962793b057d3)",
  "primitive-types",
+]
+
+[[package]]
+name = "evm-runtime"
+version = "0.35.0"
+source = "git+https://github.com/rust-blockchain/evm?branch=master#51b8c2ce3104265e1fd5bb0fe5cdfd2e0938239c"
+dependencies = [
+ "auto_impl",
+ "evm-core 0.35.0 (git+https://github.com/rust-blockchain/evm?branch=master)",
+ "primitive-types",
+ "sha3 0.10.5",
 ]
 
 [[package]]
@@ -2429,7 +2487,7 @@ source = "git+https://github.com/rust-blockchain/evm?rev=01bcbd2205a212c34451d3b
 dependencies = [
  "auto_impl",
  "environmental",
- "evm-core",
+ "evm-core 0.35.0 (git+https://github.com/rust-blockchain/evm?rev=01bcbd2205a212c34451d3b4fabc962793b057d3)",
  "primitive-types",
  "sha3 0.10.5",
 ]
@@ -2579,7 +2637,7 @@ source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.28#2
 dependencies = [
  "ethereum",
  "ethereum-types",
- "evm",
+ "evm 0.35.0 (git+https://github.com/rust-blockchain/evm?rev=01bcbd2205a212c34451d3b4fabc962793b057d3)",
  "fc-db",
  "fc-rpc-core",
  "fp-evm",
@@ -2768,7 +2826,7 @@ name = "fp-evm"
 version = "3.0.0-dev"
 source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.28#2e09cac89ef57f688a73dccff72d88c1003c786a"
 dependencies = [
- "evm",
+ "evm 0.35.0 (git+https://github.com/rust-blockchain/evm?rev=01bcbd2205a212c34451d3b4fabc962793b057d3)",
  "frame-support",
  "parity-scale-codec",
  "serde",
@@ -3678,6 +3736,15 @@ dependencies = [
  "autocfg",
  "hashbrown 0.12.3",
  "serde",
+]
+
+[[package]]
+name = "ink_prelude"
+version = "3.3.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e38d71af62cfec3425727d28665a947d636c3be6ae71ac3a79868ef8a08633f3"
+dependencies = [
+ "cfg-if 1.0.0",
 ]
 
 [[package]]
@@ -4771,7 +4838,7 @@ checksum = "d4d2456c373231a208ad294c33dc5bff30051eafd954cd4caae83a712b12854d"
 name = "local-runtime"
 version = "4.22.0"
 dependencies = [
- "chain-extension-trait",
+ "chain-extension-trait 1.0.2 (git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.28)",
  "dapps-staking-chain-extension",
  "fp-rpc",
  "fp-self-contained",
@@ -4807,7 +4874,7 @@ dependencies = [
  "pallet-evm-precompile-simple",
  "pallet-evm-precompile-sr25519",
  "pallet-evm-precompile-substrate-ecdsa",
- "pallet-evm-precompile-xvm",
+ "pallet-evm-precompile-xvm 0.1.0 (git+https://github.com/AstarNetwork/astar-frame?branch=feature/xvm-pallet-v2)",
  "pallet-grandpa",
  "pallet-precompile-dapps-staking",
  "pallet-proxy",
@@ -4820,7 +4887,7 @@ dependencies = [
  "pallet-treasury",
  "pallet-utility",
  "pallet-vesting 4.2.2-dev",
- "pallet-xvm",
+ "pallet-xvm 0.2.0",
  "parity-scale-codec",
  "scale-info",
  "sp-api",
@@ -4835,6 +4902,7 @@ dependencies = [
  "sp-transaction-pool",
  "sp-version",
  "substrate-wasm-builder",
+ "xvm-chain-extension",
 ]
 
 [[package]]
@@ -5986,7 +6054,7 @@ source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.28#2
 dependencies = [
  "ethereum",
  "ethereum-types",
- "evm",
+ "evm 0.35.0 (git+https://github.com/rust-blockchain/evm?rev=01bcbd2205a212c34451d3b4fabc962793b057d3)",
  "fp-consensus",
  "fp-ethereum",
  "fp-evm",
@@ -6011,7 +6079,7 @@ name = "pallet-evm"
 version = "6.0.0-dev"
 source = "git+https://github.com/AstarNetwork/frontier?branch=polkadot-v0.9.28#2e09cac89ef57f688a73dccff72d88c1003c786a"
 dependencies = [
- "evm",
+ "evm 0.35.0 (git+https://github.com/rust-blockchain/evm?rev=01bcbd2205a212c34451d3b4fabc962793b057d3)",
  "fp-evm",
  "frame-benchmarking",
  "frame-support",
@@ -6056,7 +6124,7 @@ dependencies = [
  "pallet-balances",
  "pallet-evm",
  "parity-scale-codec",
- "precompile-utils",
+ "precompile-utils 0.4.3",
  "slices",
  "sp-core",
  "sp-io",
@@ -6139,7 +6207,7 @@ dependencies = [
  "num_enum",
  "pallet-evm",
  "parity-scale-codec",
- "precompile-utils",
+ "precompile-utils 0.4.3",
  "sp-core",
  "sp-io",
  "sp-std",
@@ -6155,7 +6223,7 @@ dependencies = [
  "num_enum",
  "pallet-evm",
  "parity-scale-codec",
- "precompile-utils",
+ "precompile-utils 0.4.3",
  "sp-core",
  "sp-io",
  "sp-std",
@@ -6176,12 +6244,31 @@ dependencies = [
  "pallet-evm-precompile-assets-erc20",
  "pallet-xcm 0.9.28 (git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.28)",
  "parity-scale-codec",
- "precompile-utils",
+ "precompile-utils 0.4.3",
  "sp-core",
  "sp-io",
  "sp-std",
  "xcm",
  "xcm-executor",
+]
+
+[[package]]
+name = "pallet-evm-precompile-xvm"
+version = "0.1.0"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=feature/xvm-pallet-v2#d142d4bdc508c1000ddc64f293e90a6c01372760"
+dependencies = [
+ "fp-evm",
+ "frame-support",
+ "frame-system",
+ "log",
+ "num_enum",
+ "pallet-evm",
+ "pallet-xvm 0.2.0",
+ "parity-scale-codec",
+ "precompile-utils 0.4.2",
+ "sp-core",
+ "sp-io",
+ "sp-std",
 ]
 
 [[package]]
@@ -6195,9 +6282,9 @@ dependencies = [
  "log",
  "num_enum",
  "pallet-evm",
- "pallet-xvm",
+ "pallet-xvm 0.1.0",
  "parity-scale-codec",
- "precompile-utils",
+ "precompile-utils 0.4.3",
  "sp-core",
  "sp-io",
  "sp-std",
@@ -6458,7 +6545,7 @@ dependencies = [
  "pallet-dapps-staking",
  "pallet-evm",
  "parity-scale-codec",
- "precompile-utils",
+ "precompile-utils 0.4.3",
  "scale-info",
  "sp-core",
  "sp-runtime",
@@ -6865,6 +6952,25 @@ dependencies = [
 name = "pallet-xvm"
 version = "0.1.0"
 source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.28#674356e7b611e561aaf9bf581452cab965cf8e87"
+dependencies = [
+ "frame-support",
+ "frame-system",
+ "impl-trait-for-tuples",
+ "log",
+ "pallet-contracts",
+ "pallet-evm",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "sp-core",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
+name = "pallet-xvm"
+version = "0.2.0"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=feature/xvm-pallet-v2#d142d4bdc508c1000ddc64f293e90a6c01372760"
 dependencies = [
  "frame-support",
  "frame-system",
@@ -8352,10 +8458,10 @@ checksum = "eb9f9e6e233e5c4a35559a617bf40a4ec447db2e84c20b55a6f83167b7e57872"
 
 [[package]]
 name = "precompile-utils"
-version = "0.4.3"
-source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.28#674356e7b611e561aaf9bf581452cab965cf8e87"
+version = "0.4.2"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=feature/xvm-pallet-v2#d142d4bdc508c1000ddc64f293e90a6c01372760"
 dependencies = [
- "evm",
+ "evm 0.35.0 (git+https://github.com/rust-blockchain/evm?branch=master)",
  "fp-evm",
  "frame-support",
  "frame-system",
@@ -8364,13 +8470,48 @@ dependencies = [
  "num_enum",
  "pallet-evm",
  "parity-scale-codec",
- "precompile-utils-macro",
+ "precompile-utils-macro 0.1.0 (git+https://github.com/AstarNetwork/astar-frame?branch=feature/xvm-pallet-v2)",
  "sha3 0.10.5",
  "sp-core",
  "sp-io",
  "sp-runtime",
  "sp-std",
  "xcm",
+]
+
+[[package]]
+name = "precompile-utils"
+version = "0.4.3"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.28#674356e7b611e561aaf9bf581452cab965cf8e87"
+dependencies = [
+ "evm 0.35.0 (git+https://github.com/rust-blockchain/evm?rev=01bcbd2205a212c34451d3b4fabc962793b057d3)",
+ "fp-evm",
+ "frame-support",
+ "frame-system",
+ "impl-trait-for-tuples",
+ "log",
+ "num_enum",
+ "pallet-evm",
+ "parity-scale-codec",
+ "precompile-utils-macro 0.1.0 (git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.28)",
+ "sha3 0.10.5",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+ "xcm",
+]
+
+[[package]]
+name = "precompile-utils-macro"
+version = "0.1.0"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=feature/xvm-pallet-v2#d142d4bdc508c1000ddc64f293e90a6c01372760"
+dependencies = [
+ "num_enum",
+ "proc-macro2",
+ "quote",
+ "sha3 0.8.2",
+ "syn",
 ]
 
 [[package]]
@@ -10514,7 +10655,7 @@ dependencies = [
 name = "shibuya-runtime"
 version = "4.22.0"
 dependencies = [
- "chain-extension-trait",
+ "chain-extension-trait 1.0.2 (git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.28)",
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-dmp-queue",
  "cumulus-pallet-parachain-system",
@@ -10562,7 +10703,7 @@ dependencies = [
  "pallet-evm-precompile-sr25519",
  "pallet-evm-precompile-substrate-ecdsa",
  "pallet-evm-precompile-xcm",
- "pallet-evm-precompile-xvm",
+ "pallet-evm-precompile-xvm 0.1.0 (git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.28)",
  "pallet-identity",
  "pallet-multisig",
  "pallet-precompile-dapps-staking",
@@ -10579,7 +10720,7 @@ dependencies = [
  "pallet-vesting 4.0.0-dev",
  "pallet-xc-asset-config",
  "pallet-xcm 0.9.28 (git+https://github.com/AstarNetwork/astar-frame?branch=polkadot-v0.9.28)",
- "pallet-xvm",
+ "pallet-xvm 0.1.0",
  "parachain-info",
  "parity-scale-codec",
  "polkadot-parachain",
@@ -13191,6 +13332,39 @@ dependencies = [
  "xcm",
  "xcm-builder",
  "xcm-executor",
+]
+
+[[package]]
+name = "xvm-chain-extension"
+version = "0.1.0"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=feature/xvm-pallet-v2#d142d4bdc508c1000ddc64f293e90a6c01372760"
+dependencies = [
+ "chain-extension-trait 1.0.2 (git+https://github.com/AstarNetwork/astar-frame?branch=feature/xvm-pallet-v2)",
+ "frame-support",
+ "frame-system",
+ "log",
+ "num-traits",
+ "pallet-contracts",
+ "pallet-contracts-primitives",
+ "pallet-contracts-rpc-runtime-api",
+ "pallet-xvm 0.2.0",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-core",
+ "sp-runtime",
+ "sp-std",
+ "xvm-chain-extension-types",
+]
+
+[[package]]
+name = "xvm-chain-extension-types"
+version = "0.1.0"
+source = "git+https://github.com/AstarNetwork/astar-frame?branch=feature/xvm-pallet-v2#d142d4bdc508c1000ddc64f293e90a6c01372760"
+dependencies = [
+ "ink_prelude",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-runtime",
 ]
 
 [[package]]

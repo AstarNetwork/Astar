@@ -60,16 +60,17 @@ pallet-transaction-payment-rpc-runtime-api = { git = "https://github.com/parityt
 # Astar pallets
 chain-extension-trait = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.28", default-features = false }
 dapps-staking-chain-extension = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.28", default-features = false }
+xvm-chain-extension = { git = "https://github.com/AstarNetwork/astar-frame", branch = "feature/xvm-pallet-v2", default-features = false }
 pallet-block-reward = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.28", default-features = false }
 pallet-custom-signatures = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.28", default-features = false }
 pallet-dapps-staking = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.28", default-features = false }
 pallet-evm-precompile-assets-erc20 = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.28", default-features = false }
 pallet-evm-precompile-sr25519 = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.28", default-features = false }
 pallet-evm-precompile-substrate-ecdsa = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.28", default-features = false }
-pallet-evm-precompile-xvm = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.28", default-features = false }
+pallet-evm-precompile-xvm = { git = "https://github.com/AstarNetwork/astar-frame", branch = "feature/xvm-pallet-v2", default-features = false }
 pallet-precompile-dapps-staking = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.28", default-features = false }
 pallet-vesting = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.28", default-features = false }
-pallet-xvm = { git = "https://github.com/AstarNetwork/astar-frame", branch = "polkadot-v0.9.28", default-features = false, features = ["evm", "wasm"] }
+pallet-xvm = { git = "https://github.com/AstarNetwork/astar-frame", branch = "feature/xvm-pallet-v2", default-features = false, features = ["evm", "wasm"] }
 
 # benchmarking
 frame-benchmarking = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.28", default-features = false, optional = true }
@@ -88,6 +89,7 @@ std = [
 	"codec/std",
 	"chain-extension-trait/std",
 	"dapps-staking-chain-extension/std",
+	"xvm-chain-extension/std",
 	"fp-rpc/std",
 	"fp-self-contained/std",
 	"frame-executive/std",
