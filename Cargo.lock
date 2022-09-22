@@ -2234,7 +2234,7 @@ checksum = "403ef3e961ab98f0ba902771d29f842058578bb1ce7e3c59dad5a6a93e784c69"
 dependencies = [
  "curve25519-dalek 3.2.0",
  "hex",
- "rand_core 0.6.3",
+ "rand_core 0.6.4",
  "sha2 0.9.9",
  "thiserror",
  "zeroize",
@@ -2420,7 +2420,7 @@ dependencies = [
  "rlp",
  "scale-info",
  "serde",
- "sha3 0.10.4",
+ "sha3 0.10.5",
 ]
 
 [[package]]
@@ -2496,7 +2496,7 @@ dependencies = [
  "environmental",
  "evm-core 0.35.0 (git+https://github.com/rust-blockchain/evm?rev=01bcbd2205a212c34451d3b4fabc962793b057d3)",
  "primitive-types",
- "sha3 0.10.4",
+ "sha3 0.10.5",
 ]
 
 [[package]]
@@ -4944,15 +4944,6 @@ name = "lru"
 version = "0.7.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e999beba7b6e8345721bd280141ed958096a2e4abdf74f67ff4ce49b4b54e47a"
-dependencies = [
- "hashbrown 0.12.3",
-]
-
-[[package]]
-name = "lru"
-version = "0.8.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "936d98d2ddd79c18641c6709e7bb09981449694e402d1a0f0f657ea8d61f4a51"
 dependencies = [
  "hashbrown 0.12.3",
 ]
@@ -9693,7 +9684,7 @@ dependencies = [
  "parity-scale-codec",
  "parity-wasm 0.42.2",
  "rustix 0.33.7",
- "rustix 0.35.9",
+ "rustix 0.35.10",
  "sc-allocator",
  "sc-executor-common",
  "sp-runtime-interface",
@@ -12397,7 +12388,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "97fee6b57c6a41524a810daee9286c02d7752c4253064d0b05472833a438f675"
 dependencies = [
  "cfg-if 1.0.0",
- "digest 0.10.3",
+ "digest 0.10.5",
  "rand 0.8.5",
  "static_assertions",
 ]
