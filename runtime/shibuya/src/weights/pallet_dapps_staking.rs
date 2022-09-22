@@ -127,7 +127,7 @@ impl<T: frame_system::Config> pallet_dapps_staking::WeightInfo for WeightInfo<T>
 	// Storage: System Account (r:1 w:1)
 	fn claim_staker_with_restake() -> Weight {
 		Weight::from_ref_time(91_000_000 as u64)
-			.saturating_add(T::DbWeight::get().reads(10 as Weight))
+			.saturating_add(T::DbWeight::get().reads(10 as u64))
 			.saturating_add(T::DbWeight::get().writes(6 as u64))
 	}
 	// Storage: DappsStaking PalletDisabled (r:1 w:0)
