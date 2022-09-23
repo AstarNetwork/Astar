@@ -1117,27 +1117,7 @@ pub type Executive = frame_executive::Executive<
     frame_system::ChainContext<Runtime>,
     Runtime,
     AllPalletsWithSystem,
-    (EvmChainIdSetting,),
 >;
-
-use frame_support::traits::OnRuntimeUpgrade;
-pub struct EvmChainIdSetting;
-const SHIBUYA_EVM_CHAIN_ID: u64 = 0x51;
-impl OnRuntimeUpgrade for EvmChainIdSetting {
-    fn on_runtime_upgrade() -> Weight {
-        pallet_evm_chain_id::ChainId::<Runtime>::put(SHIBUYA_EVM_CHAIN_ID);
-        <Runtime as frame_system::Config>::DbWeight::get().writes(1)
-    }
-
-    #[cfg(feature = "try-runtime")]
-    fn post_upgrade() -> Result<(), &'static str> {
-        assert_eq!(
-            pallet_evm_chain_id::ChainId::<Runtime>::get(),
-            SHIBUYA_EVM_CHAIN_ID
-        );
-        Ok(())
-    }
-}
 
 #[derive(Default)]
 pub struct DappsStakingChainExtension;
@@ -1588,6 +1568,7 @@ impl_runtime_apis! {
     #[cfg(feature = "try-runtime")]
     impl frame_try_runtime::TryRuntime<Block> for Runtime {
         fn on_runtime_upgrade() -> (Weight, Weight) {
+            log::info!("try-runtime::on_runtime_upgrade");
             let weight = Executive::try_runtime_upgrade().unwrap();
             (weight, RuntimeBlockWeights::get().max_block)
         }
@@ -1597,6 +1578,13 @@ impl_runtime_apis! {
             state_root_check: bool,
             select: frame_try_runtime::TryStateSelect
         ) -> Weight {
+            log::info!(
+                "try-runtime: executing block #{} ({:?}) / root checks: {:?} / sanity-checks: {:?}",
+                block.header.number,
+                block.header.hash(),
+                state_root_check,
+                select,
+            );
             Executive::try_execute_block(block, state_root_check, select).expect("execute-block failed")
         }
     }
