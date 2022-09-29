@@ -154,15 +154,15 @@ The Shiden DAO community members are all innovators and free thinkers who create
 
 The Shiden DAO community values function over form, novelty over profitability, the stars over the moon, fun over reason, and chaos over order.
 
-### Article 4
+### Article 5
 
 The Shiden DAO community treats other members and communities with respect.
 
-### Article 5
+### Article 6
 
 The Shiden DAO community will shape the future of the Shiden Network and the entire internet.
 
-### Article 6
+### Article 7
 
 The Shiden DAO community is unstoppable.
 
