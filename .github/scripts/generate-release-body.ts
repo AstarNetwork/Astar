@@ -9,17 +9,39 @@ type Await<T> = T extends PromiseLike<infer U> ? U : T;
 type Commits = Await<ReturnType<Octokit["rest"]["repos"]["compareCommits"]>>["data"]["commits"];
 
 function getCompareLink(packageName: string, previousTag: string, newTag: string) {
+  // Previous
   const previousPackage = execSync(
-    `git show ${previousTag}:../Cargo.lock | grep ${packageName}? | head -1 | grep -o '".*"'`
+    `git show ${previousTag}:../../Cargo.lock | grep ${packageName}? | head -1 | grep -o '".*"'`
   ).toString();
-  const previousCommit = /#([0-9a-f]*)/g.exec(previousPackage)[1].slice(0, 8);
-  const previousRepo = /(https:\/\/.*)\?/g.exec(previousPackage)[1];
 
+  const previousCommitTmp = /#([0-9a-f]*)/g.exec(previousPackage);
+  if (previousCommitTmp == null) { // regexp didn't match
+    return ""
+  };
+  const previousCommit = previousCommitTmp[1].slice(0, 8);
+
+  const previousRepoTmp = /(https:\/\/.*)\?/g.exec(previousPackage);
+  if (previousRepoTmp == null) {
+    return ""
+  };
+  const previousRepo = previousCommitTmp[1];
+
+  // New
   const newPackage = execSync(
-    `git show ${newTag}:../Cargo.lock | grep ${packageName}? | head -1 | grep -o '".*"'`
+    `git show ${newTag}:../../Cargo.lock | grep ${packageName}? | head -1 | grep -o '".*"'`
   ).toString();
-  const newCommit = /#([0-9a-f]*)/g.exec(newPackage)[1].slice(0, 8);
-  const newRepo = /(https:\/\/.*)\?/g.exec(newPackage)[1];
+  const newCommitTmp = /#([0-9a-f]*)/g.exec(newPackage)
+  if (newCommitTmp == null) {
+    return ""
+  };
+  const newCommit = newCommitTmp[1].slice(0, 8);
+
+  const newRepoTmp = /(https:\/\/.*)\?/g.exec(newPackage);
+  if (newRepoTmp == null) {
+    return ""
+  }
+  const newRepo = newRepoTmp[1];
+  console.log(newRepo)
   const newRepoOrganization = /github.com\/([^\/]*)/g.exec(newRepo)[1];
 
   const diffLink =
@@ -214,8 +236,10 @@ ${runtimes
 📦 IPFS:                        ${runtime.srtool.runtimes.compressed.subwasm.ipfs_hash}
 \`\`\`
 `).join(`\n\n`)}` : ""}
+
 ## Build Info
 WASM runtime built using \`${runtimes[0]?.srtool.info.rustc}\`
+
 ## Changes
 ${filteredClientPRs.length > 0 ? `### Client
 ${filteredClientPRs.map((pr) => `* ${printPr(pr)}`).join("\n")}
@@ -223,6 +247,7 @@ ${filteredClientPRs.map((pr) => `* ${printPr(pr)}`).join("\n")}
 ${filteredRuntimePRs.length > 0 ? `### Runtime
 ${filteredRuntimePRs.map((pr) => `* ${printPr(pr)}`).join("\n")}
 ` : ""}
+
 ## Dependency Changes
 Astar: https://github.com/${argv.owner}/${argv.repo}/compare/${previousTag}...${newTag}
 ${moduleLinks.map((modules) => `${capitalize(modules.name)}: ${modules.link}`).join("\n")}
